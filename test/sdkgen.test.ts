@@ -6,6 +6,8 @@ import { Aontu } from 'aontu'
 import { memfs } from 'memfs'
 
 
+import { cmp, each, Project, Folder, File, Code } from 'jostraca'
+
 import {
   SdkGen
 } from '../'
@@ -23,7 +25,7 @@ describe('sdkgen', () => {
     })
     expect(sdkgen).exist()
 
-    const root = makeRoot(sdkgen)
+    const root = makeRoot()
     const model = makeModel()
     // console.log('MODEL', model)
 
@@ -56,21 +58,21 @@ main: sdk: java: {}
   }
 
 
-  function makeRoot(sdkgen: any) {
-    const { cmp, each, Project, Folder, File, Code } = sdkgen
-
-    return (model: any) => Project({ model }, () => {
-      each(model.main.sdk, (sdk: any) => {
-        Folder({ name: sdk.name }, () => {
-          File({ name: 'README.md' }, () => {
-            Code(`
+  function makeRoot() {
+    return cmp(function Root(props: any) {
+      const { model } = props
+      Project({ model }, () => {
+        each(model.main.sdk, (sdk: any) => {
+          Folder({ name: sdk.name }, () => {
+            File({ name: 'README.md' }, () => {
+              Code(`
 # ${model.name} ${sdk.name} SDK
   `)
+            })
           })
         })
       })
     })
   }
-
 })
 

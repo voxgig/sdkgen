@@ -18,26 +18,36 @@ function SdkGen(opts: SdkGenOptions) {
   const folder = opts.folder || '.'
   const jostraca = Jostraca()
 
-  const { cmp, each, Project, Folder, File, Code } = jostraca
+  // const { cmp, each, Project, Folder, File, Code } = jostraca
 
   function generate(spec: any) {
     const { model, root } = spec
 
     jostraca.generate(
       { fs, folder },
-      () => root(model)
+      () => root({ model })
     )
   }
 
   return {
     generate,
 
-    cmp, each,
+    // cmp, each,
 
-    Project, Folder, File, Code
+    // Project, Folder, File, Code
   }
 
 }
+
+
+SdkGen.makeBuild = function(root: any, opts: SdkGenOptions) {
+  const sdkgen = SdkGen(opts)
+
+  return function build(model: any, build: any) {
+    return sdkgen.generate({ model, build, root })
+  }
+}
+
 
 
 export type {

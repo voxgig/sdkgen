@@ -4,6 +4,7 @@ const node_test_1 = require("node:test");
 const code_1 = require("@hapi/code");
 const aontu_1 = require("aontu");
 const memfs_1 = require("memfs");
+const jostraca_1 = require("jostraca");
 const __1 = require("../");
 (0, node_test_1.describe)('sdkgen', () => {
     (0, node_test_1.test)('happy', async () => {
@@ -13,7 +14,7 @@ const __1 = require("../");
             fs, folder: '/top'
         });
         (0, code_1.expect)(sdkgen).exist();
-        const root = makeRoot(sdkgen);
+        const root = makeRoot();
         const model = makeModel();
         // console.log('MODEL', model)
         const spec = {
@@ -40,15 +41,17 @@ main: sdk: python: {}
 main: sdk: java: {}
 `).gen();
     }
-    function makeRoot(sdkgen) {
-        const { cmp, each, Project, Folder, File, Code } = sdkgen;
-        return (model) => Project({ model }, () => {
-            each(model.main.sdk, (sdk) => {
-                Folder({ name: sdk.name }, () => {
-                    File({ name: 'README.md' }, () => {
-                        Code(`
+    function makeRoot() {
+        return (0, jostraca_1.cmp)(function Root(props) {
+            const { model } = props;
+            (0, jostraca_1.Project)({ model }, () => {
+                (0, jostraca_1.each)(model.main.sdk, (sdk) => {
+                    (0, jostraca_1.Folder)({ name: sdk.name }, () => {
+                        (0, jostraca_1.File)({ name: 'README.md' }, () => {
+                            (0, jostraca_1.Code)(`
 # ${model.name} ${sdk.name} SDK
   `);
+                        });
                     });
                 });
             });
