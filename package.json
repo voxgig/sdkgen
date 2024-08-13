@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "types": "dist/sdkgen.d.ts",
@@ -41,6 +41,6 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "jostraca": "^0.1.4"
+    "jostraca": "^0.1.5"
   }
 }
