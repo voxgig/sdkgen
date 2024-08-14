@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "types": "dist/sdkgen.d.ts",
@@ -34,13 +34,13 @@
   ],
   "devDependencies": {
     "@hapi/code": "^9.0.3",
-    "@types/node": "22.2.0",
+    "@types/node": "22.3.0",
     "aontu": "^0.21.1",
     "esbuild": "^0.23.0",
     "memfs": "^4.11.1",
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "jostraca": "^0.1.5"
+    "jostraca": "^0.1.6"
   }
 }
