@@ -27,14 +27,25 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SdkGen = SdkGen;
 const Fs = __importStar(require("node:fs"));
 const jostraca_1 = require("jostraca");
+const apidef_1 = require("@voxgig/apidef");
+const prepare_openapi_1 = require("./prepare-openapi");
 function SdkGen(opts) {
     const fs = opts.fs || Fs;
     const folder = opts.folder || '.';
+    const def = opts.def || 'def.yml';
     const jostraca = (0, jostraca_1.Jostraca)();
     // const { cmp, each, Project, Folder, File, Code } = jostraca
-    function generate(spec) {
+    async function generate(spec) {
         const { model, root } = spec;
+        /*
+        if (await prepare(spec, { fs, folder, def })) {
+          return
+        }
+        */
         jostraca.generate({ fs, folder }, () => root({ model }));
+    }
+    async function prepare(spec, ctx) {
+        return await (0, prepare_openapi_1.PrepareOpenAPI)(spec, ctx);
     }
     return {
         generate,
@@ -42,9 +53,21 @@ function SdkGen(opts) {
         // Project, Folder, File, Code
     };
 }
-SdkGen.makeBuild = function (root, opts) {
+SdkGen.makeBuild = async function (root, opts) {
+    console.log('SDKGEN makeBuild');
     const sdkgen = SdkGen(opts);
-    return function build(model, build) {
+    const apidef = (0, apidef_1.ApiDef)();
+    const spec = {
+        def: opts.def,
+        kind: 'openapi-3',
+        model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
+        meta: {
+            name: 'foo'
+        },
+        entity: opts.model ? opts.model.entity : undefined,
+    };
+    await apidef.watch(spec);
+    return async function build(model, build) {
         return sdkgen.generate({ model, build, root });
     };
 };

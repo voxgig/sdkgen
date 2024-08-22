@@ -4,30 +4,52 @@ import * as Fs from 'node:fs'
 
 import { Jostraca } from 'jostraca'
 
+import { ApiDef } from '@voxgig/apidef'
+
+
+import { PrepareOpenAPI } from './prepare-openapi'
+
 
 type SdkGenOptions = {
   folder: string
+  def?: string
   fs: any
+  model?: {
+    folder: string
+    entity: any
+  }
 }
-
 
 
 
 function SdkGen(opts: SdkGenOptions) {
   const fs = opts.fs || Fs
   const folder = opts.folder || '.'
+  const def = opts.def || 'def.yml'
   const jostraca = Jostraca()
 
   // const { cmp, each, Project, Folder, File, Code } = jostraca
 
-  function generate(spec: any) {
+  async function generate(spec: any) {
     const { model, root } = spec
+
+    /*
+    if (await prepare(spec, { fs, folder, def })) {
+      return
+    }
+    */
 
     jostraca.generate(
       { fs, folder },
       () => root({ model })
     )
   }
+
+
+  async function prepare(spec: any, ctx: any) {
+    return await PrepareOpenAPI(spec, ctx)
+  }
+
 
   return {
     generate,
@@ -40,10 +62,25 @@ function SdkGen(opts: SdkGenOptions) {
 }
 
 
-SdkGen.makeBuild = function(root: any, opts: SdkGenOptions) {
+SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
+  console.log('SDKGEN makeBuild')
   const sdkgen = SdkGen(opts)
 
-  return function build(model: any, build: any) {
+  const apidef = ApiDef()
+
+  const spec = {
+    def: opts.def,
+    kind: 'openapi-3',
+    model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
+    meta: {
+      name: 'foo'
+    },
+    entity: opts.model ? opts.model.entity : undefined,
+  }
+
+  await apidef.watch(spec)
+
+  return async function build(model: any, build: any) {
     return sdkgen.generate({ model, build, root })
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "types": "dist/sdkgen.d.ts",
@@ -34,13 +34,17 @@
   ],
   "devDependencies": {
     "@hapi/code": "^9.0.3",
-    "@types/node": "22.3.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "22.5.0",
     "aontu": "^0.21.1",
-    "esbuild": "^0.23.0",
+    "esbuild": "^0.23.1",
+    "json-schema-to-ts": "^3.1.0",
     "memfs": "^4.11.1",
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "jostraca": "^0.1.6"
+    "@redocly/openapi-core": "^1.20.1",
+    "@voxgig/apidef": "^0.0.2",
+    "jostraca": "^0.2.0"
   }
 }

@@ -21,7 +21,7 @@ const __1 = require("../");
             model,
             root
         };
-        sdkgen.generate(spec);
+        await sdkgen.generate(spec);
         (0, code_1.expect)(vol.toJSON()).equal({
             '/top/js/README.md': '\n# foo js SDK\n  ',
             '/top/python/README.md': '\n# foo python SDK\n  ',

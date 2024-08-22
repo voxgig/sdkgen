@@ -33,7 +33,8 @@ describe('sdkgen', () => {
       model,
       root
     }
-    sdkgen.generate(spec)
+
+    await sdkgen.generate(spec)
 
     expect(vol.toJSON()).equal({
       '/top/js/README.md': '\n# foo js SDK\n  ',
