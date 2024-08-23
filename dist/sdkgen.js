@@ -42,7 +42,13 @@ function SdkGen(opts) {
           return
         }
         */
-        jostraca.generate({ fs, folder }, () => root({ model }));
+        try {
+            jostraca.generate({ fs, folder }, () => root({ model }));
+        }
+        catch (err) {
+            console.log('SDKGEN ERROR: ', err);
+            throw err;
+        }
     }
     async function prepare(spec, ctx) {
         return await (0, prepare_openapi_1.PrepareOpenAPI)(spec, ctx);
@@ -68,6 +74,7 @@ SdkGen.makeBuild = async function (root, opts) {
     };
     await apidef.watch(spec);
     return async function build(model, build) {
+        // TODO: voxgig model needs to handle errors from here
         return sdkgen.generate({ model, build, root });
     };
 };
