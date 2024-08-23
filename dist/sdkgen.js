@@ -60,7 +60,6 @@ function SdkGen(opts) {
     };
 }
 SdkGen.makeBuild = async function (root, opts) {
-    console.log('SDKGEN makeBuild');
     const sdkgen = SdkGen(opts);
     const apidef = (0, apidef_1.ApiDef)();
     const spec = {

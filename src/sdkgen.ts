@@ -69,7 +69,6 @@ function SdkGen(opts: SdkGenOptions) {
 
 
 SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
-  console.log('SDKGEN makeBuild')
   const sdkgen = SdkGen(opts)
 
   const apidef = ApiDef()
