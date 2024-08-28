@@ -6,6 +6,9 @@ type SdkGenOptions = {
         folder: string;
         entity: any;
     };
+    meta: {
+        name: string;
+    };
 };
 declare function SdkGen(opts: SdkGenOptions): {
     generate: (spec: any) => Promise<void>;

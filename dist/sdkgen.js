@@ -34,7 +34,6 @@ function SdkGen(opts) {
     const folder = opts.folder || '.';
     const def = opts.def || 'def.yml';
     const jostraca = (0, jostraca_1.Jostraca)();
-    // const { cmp, each, Project, Folder, File, Code } = jostraca
     async function generate(spec) {
         const { model, root } = spec;
         /*
@@ -43,7 +42,7 @@ function SdkGen(opts) {
         }
         */
         try {
-            jostraca.generate({ fs, folder }, () => root({ model }));
+            jostraca.generate({ fs, folder, meta: { spec } }, () => root({ model }));
         }
         catch (err) {
             console.log('SDKGEN ERROR: ', err);
@@ -66,9 +65,7 @@ SdkGen.makeBuild = async function (root, opts) {
         def: opts.def,
         kind: 'openapi-3',
         model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
-        meta: {
-            name: 'foo'
-        },
+        meta: opts.meta || {},
         entity: opts.model ? opts.model.entity : undefined,
     };
     await apidef.watch(spec);

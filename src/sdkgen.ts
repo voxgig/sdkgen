@@ -18,6 +18,9 @@ type SdkGenOptions = {
     folder: string
     entity: any
   }
+  meta: {
+    name: string
+  }
 }
 
 
@@ -28,7 +31,6 @@ function SdkGen(opts: SdkGenOptions) {
   const def = opts.def || 'def.yml'
   const jostraca = Jostraca()
 
-  // const { cmp, each, Project, Folder, File, Code } = jostraca
 
   async function generate(spec: any) {
     const { model, root } = spec
@@ -41,7 +43,7 @@ function SdkGen(opts: SdkGenOptions) {
 
     try {
       jostraca.generate(
-        { fs, folder },
+        { fs, folder, meta: { spec } },
         () => root({ model })
       )
     }
@@ -77,9 +79,7 @@ SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
     def: opts.def,
     kind: 'openapi-3',
     model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
-    meta: {
-      name: 'foo'
-    },
+    meta: opts.meta || {},
     entity: opts.model ? opts.model.entity : undefined,
   }
 
