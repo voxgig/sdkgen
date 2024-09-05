@@ -2,10 +2,18 @@
 
 import * as Fs from 'node:fs'
 
-import { Jostraca } from 'jostraca'
+
+import * as JostracaModule from 'jostraca'
 
 import { ApiDef } from '@voxgig/apidef'
 
+
+import { Main } from './cmp/Main'
+import { Entity } from './cmp/Entity'
+import { Readme } from './cmp/Readme'
+import { ReadmeInstall } from './cmp/ReadmeInstall'
+import { ReadmeOptions } from './cmp/ReadmeOptions'
+import { ReadmeEntity } from './cmp/ReadmeEntity'
 
 import { PrepareOpenAPI } from './prepare-openapi'
 
@@ -24,6 +32,8 @@ type SdkGenOptions = {
 }
 
 
+const { Jostraca } = JostracaModule
+
 
 function SdkGen(opts: SdkGenOptions) {
   const fs = opts.fs || Fs
@@ -41,11 +51,12 @@ function SdkGen(opts: SdkGenOptions) {
     }
     */
 
+    // console.log('OPTIONS', opts)
+
+    const ctx$ = { fs, folder, meta: { spec } }
+
     try {
-      jostraca.generate(
-        { fs, folder, meta: { spec } },
-        () => root({ model })
-      )
+      jostraca.generate(ctx$, () => root({ model }))
     }
     catch (err: any) {
       console.log('SDKGEN ERROR: ', err)
@@ -98,6 +109,36 @@ export type {
 }
 
 
+// Prevents TS2742
+type Component = (props: any, children?: any) => void
+
+export const cmp: (component: Function) => Component = JostracaModule.cmp
+export const names: (base: any, name: string, prop?: string) => any = JostracaModule.names
+export const each: (subject?: any, apply?: any) => any = JostracaModule.each
+export const snakify: (input: any[] | string) => string = JostracaModule.snakify
+export const camelify: (input: any[] | string) => string = JostracaModule.camelify
+export const kebabify: (input: any[] | string) => string = JostracaModule.kebabify
+export const select: (key: any, map: Record<string, Function>) => any = JostracaModule.select
+export const cmap: (o: any, p: any) => any = JostracaModule.cmap
+export const vmap: (o: any, p: any) => any = JostracaModule.vmap
+export const get: (root: any, path: string | string[]) => any = JostracaModule.get
+export const getx: (root: any, path: string | string[]) => any = JostracaModule.getx
+
+export const Project: Component = JostracaModule.Project
+export const Folder: Component = JostracaModule.Folder
+export const File: Component = JostracaModule.File
+export const Code: Component = JostracaModule.Code
+export const Copy: Component = JostracaModule.Copy
+
+
 export {
+  Main,
+  Entity,
+  Readme,
+  ReadmeInstall,
+  ReadmeOptions,
+  ReadmeEntity,
+
+  Jostraca,
   SdkGen,
 }
