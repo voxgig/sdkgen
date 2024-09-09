@@ -1,58 +1,22 @@
 
-import { cmp, select, Code } from 'jostraca'
+import { cmp, Code } from 'jostraca'
+
+import { requirePath } from '../utility'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
-  const { build } = props
+  const { build, ctx$ } = props
 
   Code(`
 ## Install
 `)
 
-  select(build.name, {
-    js: () => Code(`
-\`\`\`
+  // Optional
+  const ReadmeInstall_sdk = requirePath(ctx$, `./${build.name}/ReadmeInstall_${build.name}`)
 
-npm install ${build.name}SDK
-
-\`\`\`
-`),
-
-    python: () => Code(`
-\`\`\`
-
-pip install ${build.name}SDK
-
-\`\`\`
-`),
-
-    java: () => Code(`
-\`\`\`
-
-maven install ${build.name}SDK
-
-\`\`\`
-`),
-
-    go: () => Code(`
-\`\`\`
-
-go get ${build.name}SDK
-
-\`\`\`
-`),
-
-    ruby: () => Code(`
-\`\`\`
-
-gem install ${build.name}SDK
-
-\`\`\`
-`)
-
-
-  })
-
+  if (ReadmeInstall_sdk) {
+    ReadmeInstall_sdk['ReadmeInstall']({ build })
+  }
 })
 
 

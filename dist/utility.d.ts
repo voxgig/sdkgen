@@ -1,2 +1,5 @@
 declare const resolvePath: (ctx$: any, path: string) => any;
-export { resolvePath };
+declare const requirePath: (ctx$: any, path: string, flags?: {
+    ignore?: boolean;
+}) => any;
+export { resolvePath, requirePath, };
