@@ -26,7 +26,7 @@ type SdkGenOptions = {
     folder: string
     entity: any
   }
-  meta: {
+  meta?: {
     name: string
   }
 }
@@ -82,6 +82,8 @@ function SdkGen(opts: SdkGenOptions) {
 
 
 SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
+  console.log('SdkGen.makeBuild', opts)
+
   const sdkgen = SdkGen(opts)
 
   const apidef = ApiDef()
@@ -98,6 +100,7 @@ SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
 
   return async function build(model: any, build: any) {
     // TODO: voxgig model needs to handle errors from here
+    console.log('SDK GENERATE')
     return sdkgen.generate({ model, build, root })
   }
 }

@@ -76,6 +76,7 @@ function SdkGen(opts) {
     };
 }
 SdkGen.makeBuild = async function (root, opts) {
+    console.log('SdkGen.makeBuild', opts);
     const sdkgen = SdkGen(opts);
     const apidef = (0, apidef_1.ApiDef)();
     const spec = {
@@ -88,6 +89,7 @@ SdkGen.makeBuild = async function (root, opts) {
     await apidef.watch(spec);
     return async function build(model, build) {
         // TODO: voxgig model needs to handle errors from here
+        console.log('SDK GENERATE');
         return sdkgen.generate({ model, build, root });
     };
 };

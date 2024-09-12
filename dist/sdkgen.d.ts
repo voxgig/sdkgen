@@ -13,7 +13,7 @@ type SdkGenOptions = {
         folder: string;
         entity: any;
     };
-    meta: {
+    meta?: {
         name: string;
     };
 };
