@@ -12,7 +12,7 @@ const Readme = (0, jostraca_1.cmp)(function Readme(props) {
     const { build } = props;
     const { model } = props.ctx$;
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
-        (0, jostraca_1.Code)(`
+        (0, jostraca_1.Content)(`
 # ${model.Name} ${build.title} SDK
 `);
         // Sections

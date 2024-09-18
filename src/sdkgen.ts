@@ -72,17 +72,13 @@ function SdkGen(opts: SdkGenOptions) {
 
   return {
     generate,
-
-    // cmp, each,
-
-    // Project, Folder, File, Code
   }
 
 }
 
 
 SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
-  console.log('SdkGen.makeBuild', opts)
+  // console.log('SdkGen.makeBuild', opts)
 
   const sdkgen = SdkGen(opts)
 
@@ -100,7 +96,6 @@ SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
 
   return async function build(model: any, build: any) {
     // TODO: voxgig model needs to handle errors from here
-    console.log('SDK GENERATE')
     return sdkgen.generate({ model, build, root })
   }
 }
@@ -112,9 +107,11 @@ export type {
 }
 
 
-// Prevents TS2742
+
 type Component = (props: any, children?: any) => void
 
+
+// Prevents TS2742
 export const cmp: (component: Function) => Component = JostracaModule.cmp
 export const names: (base: any, name: string, prop?: string) => any = JostracaModule.names
 export const each: (subject?: any, apply?: any) => any = JostracaModule.each
@@ -130,7 +127,7 @@ export const getx: (root: any, path: string | string[]) => any = JostracaModule.
 export const Project: Component = JostracaModule.Project
 export const Folder: Component = JostracaModule.Folder
 export const File: Component = JostracaModule.File
-export const Code: Component = JostracaModule.Code
+export const Content: Component = JostracaModule.Content
 export const Copy: Component = JostracaModule.Copy
 
 

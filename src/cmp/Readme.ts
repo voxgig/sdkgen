@@ -1,5 +1,5 @@
 
-import { cmp, File, Code } from 'jostraca'
+import { cmp, File, Content } from 'jostraca'
 
 
 import { ReadmeIntro } from './ReadmeIntro'
@@ -16,7 +16,7 @@ const Readme = cmp(function Readme(props: any) {
 
   File({ name: 'README.md' }, () => {
 
-    Code(`
+    Content(`
 # ${model.Name} ${build.title} SDK
 `)
     // Sections

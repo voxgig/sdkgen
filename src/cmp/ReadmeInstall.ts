@@ -1,5 +1,6 @@
 
-import { cmp, Code } from 'jostraca'
+
+import { cmp, Content } from 'jostraca'
 
 import { requirePath } from '../utility'
 
@@ -7,7 +8,7 @@ import { requirePath } from '../utility'
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const { build, ctx$ } = props
 
-  Code(`
+  Content(`
 ## Install
 `)
 

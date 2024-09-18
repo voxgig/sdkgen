@@ -7,8 +7,8 @@
   "description": "Voxgig SDK Generator.",
   "homepage": "https://github.com/voxgig/voxgig-sdkgen",
   "keywords": [
-    "voxgig-sdkgen",
-    "voxgig-sdkgen"
+    "voxgig",
+    "sdkgen"
   ],
   "author": "Richard Rodger (http://richardrodger.com)",
   "repository": {

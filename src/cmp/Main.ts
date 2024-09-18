@@ -10,7 +10,7 @@ const Main = cmp(function Main(props: any) {
 
   const Main_sdk = require(resolvePath(ctx$, `${build.name}/Main_${build.name}`))
 
-  Main_sdk['Main_' + build.name]({ model, build })
+  Main_sdk['Main']({ model, build })
 
   // TODO: make optional via build model
   Copy({ from: 'tm/' + build.name + '/LICENSE', name: 'LICENSE' })

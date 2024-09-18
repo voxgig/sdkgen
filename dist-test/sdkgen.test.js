@@ -48,7 +48,7 @@ main: sdk: java: {}
                 (0, jostraca_1.each)(model.main.sdk, (sdk) => {
                     (0, jostraca_1.Folder)({ name: sdk.name }, () => {
                         (0, jostraca_1.File)({ name: 'README.md' }, () => {
-                            (0, jostraca_1.Code)(`
+                            (0, jostraca_1.Content)(`
 # ${model.name} ${sdk.name} SDK
   `);
                         });

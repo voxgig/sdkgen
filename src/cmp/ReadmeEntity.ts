@@ -1,14 +1,13 @@
 
-import { cmp, each, Code } from 'jostraca'
+import { cmp, each, Content } from 'jostraca'
 
 
 const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
-  const { build } = props
-  const { model } = props.ctx$
+  const { ctx$: { model } } = props
 
   const { entity } = model.main.sdk
 
-  Code(`
+  Content(`
 
 ## Entities
 `)
@@ -17,13 +16,13 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   each(entity)
     .filter((entity: any) => entity.publish)
     .map((entity: any) => {
-      Code(`
+      Content(`
 ### Entity: __${entity.Name}__
 
 `)
 
       each(entity.field, (field: any) => {
-        Code(`
+        Content(`
 * __${field.name}__ (${field.type}): ${field.short}
   
 `)

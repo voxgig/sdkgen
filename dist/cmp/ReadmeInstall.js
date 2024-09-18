@@ -5,7 +5,7 @@ const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
 const ReadmeInstall = (0, jostraca_1.cmp)(function ReadmeInstall(props) {
     const { build, ctx$ } = props;
-    (0, jostraca_1.Code)(`
+    (0, jostraca_1.Content)(`
 ## Install
 `);
     // Optional

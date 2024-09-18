@@ -1,5 +1,5 @@
 
-import { cmp, Code } from 'jostraca'
+import { cmp, Content } from 'jostraca'
 
 import { requirePath } from '../utility'
 
@@ -7,7 +7,7 @@ import { requirePath } from '../utility'
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { build, ctx$ } = props
 
-  Code(`
+  Content(`
 ## Quick Start
 
 `)

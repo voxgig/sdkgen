@@ -1,11 +1,11 @@
 
-import { cmp, each, Code } from 'jostraca'
+import { cmp, each, Content } from 'jostraca'
 
 
 const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
   const { build } = props
 
-  Code(`
+  Content(`
 
 ## Options
 
@@ -14,7 +14,7 @@ const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
   each(build.options)
     .filter((option: any) => option.publish)
     .map((option: any) => {
-      Code(`
+      Content(`
 * __${option.name} (${option.kind})__: ${option.short}
 `)
     })

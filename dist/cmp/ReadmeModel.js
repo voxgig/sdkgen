@@ -4,7 +4,7 @@ exports.ReadmeModel = void 0;
 const jostraca_1 = require("jostraca");
 const ReadmeModel = (0, jostraca_1.cmp)(function ReadmeModel(props) {
     const { ctx$: { model } } = props;
-    (0, jostraca_1.Code)(`
+    (0, jostraca_1.Content)(`
 ## Entity Model
 
 This SDK uses an entity-oriented interface, rather than exposing

@@ -7,7 +7,7 @@ const Main = (0, jostraca_1.cmp)(function Main(props) {
     const { build, ctx$ } = props;
     const { model } = ctx$;
     const Main_sdk = require((0, utility_1.resolvePath)(ctx$, `${build.name}/Main_${build.name}`));
-    Main_sdk['Main_' + build.name]({ model, build });
+    Main_sdk['Main']({ model, build });
     // TODO: make optional via build model
     (0, jostraca_1.Copy)({ from: 'tm/' + build.name + '/LICENSE', name: 'LICENSE' });
 });

@@ -24,7 +24,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Jostraca = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Entity = exports.Main = exports.Copy = exports.Code = exports.File = exports.Folder = exports.Project = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
+exports.Jostraca = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Entity = exports.Main = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.SdkGen = SdkGen;
 const Fs = __importStar(require("node:fs"));
 const JostracaModule = __importStar(require("jostraca"));
@@ -71,12 +71,10 @@ function SdkGen(opts) {
     }
     return {
         generate,
-        // cmp, each,
-        // Project, Folder, File, Code
     };
 }
 SdkGen.makeBuild = async function (root, opts) {
-    console.log('SdkGen.makeBuild', opts);
+    // console.log('SdkGen.makeBuild', opts)
     const sdkgen = SdkGen(opts);
     const apidef = (0, apidef_1.ApiDef)();
     const spec = {
@@ -89,10 +87,10 @@ SdkGen.makeBuild = async function (root, opts) {
     await apidef.watch(spec);
     return async function build(model, build) {
         // TODO: voxgig model needs to handle errors from here
-        console.log('SDK GENERATE');
         return sdkgen.generate({ model, build, root });
     };
 };
+// Prevents TS2742
 exports.cmp = JostracaModule.cmp;
 exports.names = JostracaModule.names;
 exports.each = JostracaModule.each;
@@ -107,6 +105,6 @@ exports.getx = JostracaModule.getx;
 exports.Project = JostracaModule.Project;
 exports.Folder = JostracaModule.Folder;
 exports.File = JostracaModule.File;
-exports.Code = JostracaModule.Code;
+exports.Content = JostracaModule.Content;
 exports.Copy = JostracaModule.Copy;
 //# sourceMappingURL=sdkgen.js.map

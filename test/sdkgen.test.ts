@@ -6,7 +6,7 @@ import { Aontu } from 'aontu'
 import { memfs } from 'memfs'
 
 
-import { cmp, each, Project, Folder, File, Code } from 'jostraca'
+import { cmp, each, Project, Folder, File, Content } from 'jostraca'
 
 import {
   SdkGen
@@ -66,7 +66,7 @@ main: sdk: java: {}
         each(model.main.sdk, (sdk: any) => {
           Folder({ name: sdk.name }, () => {
             File({ name: 'README.md' }, () => {
-              Code(`
+              Content(`
 # ${model.name} ${sdk.name} SDK
   `)
             })

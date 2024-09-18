@@ -1,11 +1,11 @@
 
-import { cmp, Code } from 'jostraca'
+import { cmp, Content } from 'jostraca'
 
 
 const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const { ctx$: { model } } = props
 
-  Code(`
+  Content(`
 ## Entity Model
 
 This SDK uses an entity-oriented interface, rather than exposing

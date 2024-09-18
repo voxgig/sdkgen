@@ -40,6 +40,6 @@ export declare const getx: (root: any, path: string | string[]) => any;
 export declare const Project: Component;
 export declare const Folder: Component;
 export declare const File: Component;
-export declare const Code: Component;
+export declare const Content: Component;
 export declare const Copy: Component;
 export { Main, Entity, Readme, ReadmeInstall, ReadmeOptions, ReadmeEntity, Jostraca, SdkGen, };
