@@ -57,9 +57,9 @@ function SdkGen(opts) {
         }
         */
         // console.log('OPTIONS', opts)
-        const ctx$ = { fs, folder, meta: { spec } };
+        const opts = { fs, folder, meta: { spec } };
         try {
-            jostraca.generate(ctx$, () => root({ model }));
+            await jostraca.generate(opts, () => root({ model }));
         }
         catch (err) {
             console.log('SDKGEN ERROR: ', err);
@@ -77,17 +77,17 @@ SdkGen.makeBuild = async function (root, opts) {
     // console.log('SdkGen.makeBuild', opts)
     const sdkgen = SdkGen(opts);
     const apidef = (0, apidef_1.ApiDef)();
-    const spec = {
+    const config = {
         def: opts.def,
         kind: 'openapi-3',
         model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
         meta: opts.meta || {},
         entity: opts.model ? opts.model.entity : undefined,
     };
-    await apidef.watch(spec);
+    await apidef.watch(config);
     return async function build(model, build) {
         // TODO: voxgig model needs to handle errors from here
-        return sdkgen.generate({ model, build, root });
+        return sdkgen.generate({ model, build, root, config });
     };
 };
 // Prevents TS2742

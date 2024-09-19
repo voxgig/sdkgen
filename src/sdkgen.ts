@@ -53,10 +53,10 @@ function SdkGen(opts: SdkGenOptions) {
 
     // console.log('OPTIONS', opts)
 
-    const ctx$ = { fs, folder, meta: { spec } }
+    const opts = { fs, folder, meta: { spec } }
 
     try {
-      jostraca.generate(ctx$, () => root({ model }))
+      await jostraca.generate(opts, () => root({ model }))
     }
     catch (err: any) {
       console.log('SDKGEN ERROR: ', err)
@@ -84,7 +84,7 @@ SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
 
   const apidef = ApiDef()
 
-  const spec = {
+  const config = {
     def: opts.def,
     kind: 'openapi-3',
     model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
@@ -92,11 +92,11 @@ SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
     entity: opts.model ? opts.model.entity : undefined,
   }
 
-  await apidef.watch(spec)
+  await apidef.watch(config)
 
   return async function build(model: any, build: any) {
     // TODO: voxgig model needs to handle errors from here
-    return sdkgen.generate({ model, build, root })
+    return sdkgen.generate({ model, build, root, config })
   }
 }
 

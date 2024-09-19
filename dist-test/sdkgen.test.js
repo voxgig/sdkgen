@@ -22,10 +22,13 @@ const __1 = require("../");
             root
         };
         await sdkgen.generate(spec);
-        (0, code_1.expect)(vol.toJSON()).equal({
-            '/top/js/README.md': '\n# foo js SDK\n  ',
-            '/top/python/README.md': '\n# foo python SDK\n  ',
-            '/top/java/README.md': '\n# foo java SDK\n  '
+        const voljson = vol.toJSON();
+        (0, code_1.expect)(JSON.parse(voljson['/top/.jostraca/info.json']).exclude).equal([]);
+        (0, code_1.expect)(voljson).equal({
+            '/top/.jostraca/info.json': voljson['/top/.jostraca/info.json'],
+            '/top/foo/js/README.md': '\n# foo js SDK\n  ',
+            '/top/foo/python/README.md': '\n# foo python SDK\n  ',
+            '/top/foo/java/README.md': '\n# foo java SDK\n  '
         });
     });
     function makeModel() {
@@ -44,7 +47,7 @@ main: sdk: java: {}
     function makeRoot() {
         return (0, jostraca_1.cmp)(function Root(props) {
             const { model } = props;
-            (0, jostraca_1.Project)({ model }, () => {
+            (0, jostraca_1.Project)({ model, folder: model.name }, () => {
                 (0, jostraca_1.each)(model.main.sdk, (sdk) => {
                     (0, jostraca_1.Folder)({ name: sdk.name }, () => {
                         (0, jostraca_1.File)({ name: 'README.md' }, () => {

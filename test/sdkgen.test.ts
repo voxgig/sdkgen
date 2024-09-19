@@ -36,10 +36,14 @@ describe('sdkgen', () => {
 
     await sdkgen.generate(spec)
 
-    expect(vol.toJSON()).equal({
-      '/top/js/README.md': '\n# foo js SDK\n  ',
-      '/top/python/README.md': '\n# foo python SDK\n  ',
-      '/top/java/README.md': '\n# foo java SDK\n  '
+    const voljson: any = vol.toJSON()
+    expect(JSON.parse(voljson['/top/.jostraca/info.json']).exclude).equal([])
+
+    expect(voljson).equal({
+      '/top/.jostraca/info.json': voljson['/top/.jostraca/info.json'],
+      '/top/foo/js/README.md': '\n# foo js SDK\n  ',
+      '/top/foo/python/README.md': '\n# foo python SDK\n  ',
+      '/top/foo/java/README.md': '\n# foo java SDK\n  '
     })
   })
 
@@ -62,7 +66,7 @@ main: sdk: java: {}
   function makeRoot() {
     return cmp(function Root(props: any) {
       const { model } = props
-      Project({ model }, () => {
+      Project({ model, folder: model.name }, () => {
         each(model.main.sdk, (sdk: any) => {
           Folder({ name: sdk.name }, () => {
             File({ name: 'README.md' }, () => {
