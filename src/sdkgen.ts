@@ -54,7 +54,7 @@ function SdkGen(opts: SdkGenOptions) {
     if (null == Root) {
       clear(config.root)
       const rootModule = require(config.root)
-      Root = rootModule
+      Root = rootModule.Root
     }
 
     /*

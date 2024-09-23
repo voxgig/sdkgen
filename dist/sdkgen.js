@@ -56,7 +56,7 @@ function SdkGen(opts) {
         if (null == Root) {
             clear(config.root);
             const rootModule = require(config.root);
-            Root = rootModule;
+            Root = rootModule.Root;
         }
         /*
         if (await prepare(spec, { fs, folder, def })) {
