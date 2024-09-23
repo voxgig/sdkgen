@@ -6,6 +6,7 @@ import { ReadmeInstall } from './cmp/ReadmeInstall';
 import { ReadmeOptions } from './cmp/ReadmeOptions';
 import { ReadmeEntity } from './cmp/ReadmeEntity';
 type SdkGenOptions = {
+    root: string;
     folder: string;
     def?: string;
     fs: any;
@@ -22,7 +23,7 @@ declare function SdkGen(opts: SdkGenOptions): {
     generate: (spec: any) => Promise<void>;
 };
 declare namespace SdkGen {
-    var makeBuild: (root: any, opts: SdkGenOptions) => Promise<(model: any, build: any) => Promise<void>>;
+    var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any) => Promise<void>>;
 }
 export type { SdkGenOptions, };
 type Component = (props: any, children?: any) => void;

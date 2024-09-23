@@ -50,7 +50,14 @@ function SdkGen(opts) {
     const def = opts.def || 'def.yml';
     const jostraca = Jostraca();
     async function generate(spec) {
-        const { model, root } = spec;
+        const { model, config } = spec;
+        // console.log('SDKGEN.config', config)
+        let Root = spec.root;
+        if (null == Root) {
+            clear(config.root);
+            const rootModule = require(config.root);
+            Root = rootModule;
+        }
         /*
         if (await prepare(spec, { fs, folder, def })) {
           return
@@ -59,7 +66,7 @@ function SdkGen(opts) {
         // console.log('OPTIONS', opts)
         const opts = { fs, folder, meta: { spec } };
         try {
-            await jostraca.generate(opts, () => root({ model }));
+            await jostraca.generate(opts, () => Root({ model }));
         }
         catch (err) {
             console.log('SDKGEN ERROR: ', err);
@@ -73,11 +80,12 @@ function SdkGen(opts) {
         generate,
     };
 }
-SdkGen.makeBuild = async function (root, opts) {
+SdkGen.makeBuild = async function (opts) {
     // console.log('SdkGen.makeBuild', opts)
     const sdkgen = SdkGen(opts);
     const apidef = (0, apidef_1.ApiDef)();
     const config = {
+        root: opts.root,
         def: opts.def,
         kind: 'openapi-3',
         model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
@@ -87,9 +95,29 @@ SdkGen.makeBuild = async function (root, opts) {
     await apidef.watch(config);
     return async function build(model, build) {
         // TODO: voxgig model needs to handle errors from here
-        return sdkgen.generate({ model, build, root, config });
+        return sdkgen.generate({ model, build, config });
     };
 };
+// Adapted from https://github.com/sindresorhus/import-fresh - Thanks!
+function clear(path) {
+    let filePath = require.resolve(path);
+    if (require.cache[filePath]) {
+        const children = require.cache[filePath].children.map(child => child.id);
+        // Delete module from cache
+        delete require.cache[filePath];
+        for (const id of children) {
+            clear(id);
+        }
+    }
+    if (require.cache[filePath] && require.cache[filePath].parent) {
+        let i = require.cache[filePath].parent.children.length;
+        while (i--) {
+            if (require.cache[filePath].parent.children[i].id === filePath) {
+                require.cache[filePath].parent.children.splice(i, 1);
+            }
+        }
+    }
+}
 // Prevents TS2742
 exports.cmp = JostracaModule.cmp;
 exports.names = JostracaModule.names;

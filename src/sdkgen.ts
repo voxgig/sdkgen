@@ -19,6 +19,7 @@ import { PrepareOpenAPI } from './prepare-openapi'
 
 
 type SdkGenOptions = {
+  root: string
   folder: string
   def?: string
   fs: any
@@ -43,7 +44,18 @@ function SdkGen(opts: SdkGenOptions) {
 
 
   async function generate(spec: any) {
-    const { model, root } = spec
+    const { model, config } = spec
+
+
+    // console.log('SDKGEN.config', config)
+
+    let Root = spec.root
+
+    if (null == Root) {
+      clear(config.root)
+      const rootModule = require(config.root)
+      Root = rootModule
+    }
 
     /*
     if (await prepare(spec, { fs, folder, def })) {
@@ -56,7 +68,7 @@ function SdkGen(opts: SdkGenOptions) {
     const opts = { fs, folder, meta: { spec } }
 
     try {
-      await jostraca.generate(opts, () => root({ model }))
+      await jostraca.generate(opts, () => Root({ model }))
     }
     catch (err: any) {
       console.log('SDKGEN ERROR: ', err)
@@ -77,7 +89,7 @@ function SdkGen(opts: SdkGenOptions) {
 }
 
 
-SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
+SdkGen.makeBuild = async function(opts: SdkGenOptions) {
   // console.log('SdkGen.makeBuild', opts)
 
   const sdkgen = SdkGen(opts)
@@ -85,6 +97,7 @@ SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
   const apidef = ApiDef()
 
   const config = {
+    root: opts.root,
     def: opts.def,
     kind: 'openapi-3',
     model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
@@ -96,9 +109,40 @@ SdkGen.makeBuild = async function(root: any, opts: SdkGenOptions) {
 
   return async function build(model: any, build: any) {
     // TODO: voxgig model needs to handle errors from here
-    return sdkgen.generate({ model, build, root, config })
+    return sdkgen.generate({ model, build, config })
   }
 }
+
+
+
+// Adapted from https://github.com/sindresorhus/import-fresh - Thanks!
+function clear(path: string) {
+  let filePath = require.resolve(path)
+
+  if (require.cache[filePath]) {
+    const children = require.cache[filePath].children.map(child => child.id)
+
+    // Delete module from cache
+    delete require.cache[filePath]
+
+    for (const id of children) {
+      clear(id)
+    }
+  }
+
+
+  if (require.cache[filePath] && require.cache[filePath].parent) {
+    let i = require.cache[filePath].parent.children.length
+
+    while (i--) {
+      if (require.cache[filePath].parent.children[i].id === filePath) {
+        require.cache[filePath].parent.children.splice(i, 1)
+      }
+    }
+  }
+
+}
+
 
 
 
