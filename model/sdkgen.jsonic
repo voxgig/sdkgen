@@ -1,0 +1,19 @@
+
+
+main: sdk: entity: &: {
+  name: .$KEY
+  publish: *true | boolean
+}
+
+
+main: sdk: option: &: {
+   name: .$KEY
+   publish: *true | boolean
+}
+
+
+main: sdk: feature: &: {
+  name: .$KEY
+  active: *false | boolean
+}
+
