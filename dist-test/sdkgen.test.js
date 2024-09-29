@@ -11,7 +11,8 @@ const __1 = require("../");
         (0, code_1.expect)(__1.SdkGen).exist();
         const { fs, vol } = (0, memfs_1.memfs)({});
         const sdkgen = (0, __1.SdkGen)({
-            fs, folder: '/top'
+            fs,
+            folder: '/top'
         });
         (0, code_1.expect)(sdkgen).exist();
         const root = makeRoot();
@@ -26,9 +27,9 @@ const __1 = require("../");
         (0, code_1.expect)(JSON.parse(voljson['/top/.jostraca/info.json']).exclude).equal([]);
         (0, code_1.expect)(voljson).equal({
             '/top/.jostraca/info.json': voljson['/top/.jostraca/info.json'],
-            '/top/foo/js/README.md': '\n# foo js SDK\n  ',
-            '/top/foo/python/README.md': '\n# foo python SDK\n  ',
-            '/top/foo/java/README.md': '\n# foo java SDK\n  '
+            '/top/foo/js/README.md': '\n# foo js SDK\n',
+            '/top/foo/python/README.md': '\n# foo python SDK\n',
+            '/top/foo/java/README.md': '\n# foo java SDK\n'
         });
     });
     function makeModel() {
@@ -53,7 +54,7 @@ main: sdk: java: {}
                         (0, jostraca_1.File)({ name: 'README.md' }, () => {
                             (0, jostraca_1.Content)(`
 # ${model.name} ${sdk.name} SDK
-  `);
+`);
                         });
                     });
                 });
