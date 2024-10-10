@@ -20,10 +20,10 @@ import { PrepareOpenAPI } from './prepare-openapi'
 
 
 type SdkGenOptions = {
-  root: string
   folder: string
-  def?: string
   fs: any
+  root?: string
+  def?: string
   model?: {
     folder: string
     entity: any

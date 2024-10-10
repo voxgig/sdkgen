@@ -25,10 +25,10 @@ const __1 = require("../");
         const voljson = vol.toJSON();
         (0, code_1.expect)(JSON.parse(voljson['/top/.jostraca/jostraca.json.log']).exclude).equal([]);
         (0, code_1.expect)(voljson).equal({
+            '/top/foo/js/README.md': '\n# foo js SDK\n',
+            '/top/foo/python/README.md': '\n# foo python SDK\n',
+            '/top/foo/java/README.md': '\n# foo java SDK\n',
             '/top/.jostraca/jostraca.json.log': voljson['/top/.jostraca/jostraca.json.log'],
-            '/top/foo/js/README.md': '\n# foo js SDK\n  ',
-            '/top/foo/python/README.md': '\n# foo python SDK\n  ',
-            '/top/foo/java/README.md': '\n# foo java SDK\n  '
         });
     });
     function makeModel() {
@@ -53,7 +53,7 @@ main: sdk: java: {}
                         (0, jostraca_1.File)({ name: 'README.md' }, () => {
                             (0, jostraca_1.Content)(`
 # ${model.name} ${sdk.name} SDK
-  `);
+`);
                         });
                     });
                 });

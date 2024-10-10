@@ -40,10 +40,10 @@ describe('sdkgen', () => {
     expect(JSON.parse(voljson['/top/.jostraca/jostraca.json.log']).exclude).equal([])
 
     expect(voljson).equal({
+      '/top/foo/js/README.md': '\n# foo js SDK\n',
+      '/top/foo/python/README.md': '\n# foo python SDK\n',
+      '/top/foo/java/README.md': '\n# foo java SDK\n',
       '/top/.jostraca/jostraca.json.log': voljson['/top/.jostraca/jostraca.json.log'],
-      '/top/foo/js/README.md': '\n# foo js SDK\n  ',
-      '/top/foo/python/README.md': '\n# foo python SDK\n  ',
-      '/top/foo/java/README.md': '\n# foo java SDK\n  '
     })
   })
 
@@ -72,12 +72,13 @@ main: sdk: java: {}
             File({ name: 'README.md' }, () => {
               Content(`
 # ${model.name} ${sdk.name} SDK
-  `)
+`)
             })
           })
         })
       })
     })
   }
+
 })
 
