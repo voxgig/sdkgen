@@ -11,7 +11,7 @@ const __1 = require("../");
         (0, code_1.expect)(__1.SdkGen).exist();
         const { fs, vol } = (0, memfs_1.memfs)({});
         const sdkgen = (0, __1.SdkGen)({
-            fs, folder: '/top'
+            fs, folder: '/top', root: ''
         });
         (0, code_1.expect)(sdkgen).exist();
         const root = makeRoot();
@@ -23,9 +23,9 @@ const __1 = require("../");
         };
         await sdkgen.generate(spec);
         const voljson = vol.toJSON();
-        (0, code_1.expect)(JSON.parse(voljson['/top/.jostraca/info.json']).exclude).equal([]);
+        (0, code_1.expect)(JSON.parse(voljson['/top/.jostraca/jostraca.json.log']).exclude).equal([]);
         (0, code_1.expect)(voljson).equal({
-            '/top/.jostraca/info.json': voljson['/top/.jostraca/info.json'],
+            '/top/.jostraca/jostraca.json.log': voljson['/top/.jostraca/jostraca.json.log'],
             '/top/foo/js/README.md': '\n# foo js SDK\n  ',
             '/top/foo/python/README.md': '\n# foo python SDK\n  ',
             '/top/foo/java/README.md': '\n# foo java SDK\n  '

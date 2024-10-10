@@ -24,7 +24,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Jostraca = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Entity = exports.Main = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
+exports.Jostraca = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.SdkGen = SdkGen;
 const Fs = __importStar(require("node:fs"));
 const JostracaModule = __importStar(require("jostraca"));
@@ -33,6 +33,8 @@ const Main_1 = require("./cmp/Main");
 Object.defineProperty(exports, "Main", { enumerable: true, get: function () { return Main_1.Main; } });
 const Entity_1 = require("./cmp/Entity");
 Object.defineProperty(exports, "Entity", { enumerable: true, get: function () { return Entity_1.Entity; } });
+const Feature_1 = require("./cmp/Feature");
+Object.defineProperty(exports, "Feature", { enumerable: true, get: function () { return Feature_1.Feature; } });
 const Readme_1 = require("./cmp/Readme");
 Object.defineProperty(exports, "Readme", { enumerable: true, get: function () { return Readme_1.Readme; } });
 const ReadmeInstall_1 = require("./cmp/ReadmeInstall");
@@ -135,4 +137,6 @@ exports.Folder = JostracaModule.Folder;
 exports.File = JostracaModule.File;
 exports.Content = JostracaModule.Content;
 exports.Copy = JostracaModule.Copy;
+exports.Fragment = JostracaModule.Fragment;
+exports.Inject = JostracaModule.Inject;
 //# sourceMappingURL=sdkgen.js.map

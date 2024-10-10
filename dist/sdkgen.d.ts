@@ -1,6 +1,7 @@
 import * as JostracaModule from 'jostraca';
 import { Main } from './cmp/Main';
 import { Entity } from './cmp/Entity';
+import { Feature } from './cmp/Feature';
 import { Readme } from './cmp/Readme';
 import { ReadmeInstall } from './cmp/ReadmeInstall';
 import { ReadmeOptions } from './cmp/ReadmeOptions';
@@ -43,4 +44,6 @@ export declare const Folder: Component;
 export declare const File: Component;
 export declare const Content: Component;
 export declare const Copy: Component;
-export { Main, Entity, Readme, ReadmeInstall, ReadmeOptions, ReadmeEntity, Jostraca, SdkGen, };
+export declare const Fragment: Component;
+export declare const Inject: Component;
+export { Main, Entity, Feature, Readme, ReadmeInstall, ReadmeOptions, ReadmeEntity, Jostraca, SdkGen, };

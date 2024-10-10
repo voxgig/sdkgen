@@ -21,7 +21,7 @@ describe('sdkgen', () => {
 
     const { fs, vol } = memfs({})
     const sdkgen = SdkGen({
-      fs, folder: '/top'
+      fs, folder: '/top', root: ''
     })
     expect(sdkgen).exist()
 
@@ -37,10 +37,10 @@ describe('sdkgen', () => {
     await sdkgen.generate(spec)
 
     const voljson: any = vol.toJSON()
-    expect(JSON.parse(voljson['/top/.jostraca/info.json']).exclude).equal([])
+    expect(JSON.parse(voljson['/top/.jostraca/jostraca.json.log']).exclude).equal([])
 
     expect(voljson).equal({
-      '/top/.jostraca/info.json': voljson['/top/.jostraca/info.json'],
+      '/top/.jostraca/jostraca.json.log': voljson['/top/.jostraca/jostraca.json.log'],
       '/top/foo/js/README.md': '\n# foo js SDK\n  ',
       '/top/foo/python/README.md': '\n# foo python SDK\n  ',
       '/top/foo/java/README.md': '\n# foo java SDK\n  '

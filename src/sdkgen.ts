@@ -10,6 +10,7 @@ import { ApiDef } from '@voxgig/apidef'
 
 import { Main } from './cmp/Main'
 import { Entity } from './cmp/Entity'
+import { Feature } from './cmp/Feature'
 import { Readme } from './cmp/Readme'
 import { ReadmeInstall } from './cmp/ReadmeInstall'
 import { ReadmeOptions } from './cmp/ReadmeOptions'
@@ -173,11 +174,14 @@ export const Folder: Component = JostracaModule.Folder
 export const File: Component = JostracaModule.File
 export const Content: Component = JostracaModule.Content
 export const Copy: Component = JostracaModule.Copy
+export const Fragment: Component = JostracaModule.Fragment
+export const Inject: Component = JostracaModule.Inject
 
 
 export {
   Main,
   Entity,
+  Feature,
   Readme,
   ReadmeInstall,
   ReadmeOptions,
