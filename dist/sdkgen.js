@@ -23,11 +23,16 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Jostraca = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.SdkGen = SdkGen;
 const Fs = __importStar(require("node:fs"));
 const JostracaModule = __importStar(require("jostraca"));
+const pino_1 = __importDefault(require("pino"));
+const pino_pretty_1 = __importDefault(require("pino-pretty"));
 const apidef_1 = require("@voxgig/apidef");
 const Main_1 = require("./cmp/Main");
 Object.defineProperty(exports, "Main", { enumerable: true, get: function () { return Main_1.Main; } });
@@ -51,8 +56,24 @@ function SdkGen(opts) {
     const folder = opts.folder || '.';
     const def = opts.def || 'def.yml';
     const jostraca = Jostraca();
+    let pino = opts.pino;
+    if (null == pino) {
+        let pretty = (0, pino_pretty_1.default)({ sync: true });
+        const level = null == opts.debug ? 'info' :
+            true === opts.debug ? 'debug' :
+                'string' == typeof opts.debug ? opts.debug :
+                    'info';
+        pino = (0, pino_1.default)({
+            name: 'sdkgen',
+            level,
+        }, pretty);
+    }
+    const log = pino.child({ cmp: 'sdkgen' });
     async function generate(spec) {
+        const start = Date.now();
         const { model, config } = spec;
+        log.info({ point: 'generate-start', start });
+        log.debug({ point: 'generate-spec', spec });
         // console.log('SDKGEN.config', config)
         let Root = spec.root;
         if (null == Root) {
@@ -79,20 +100,20 @@ function SdkGen(opts) {
         return await (0, prepare_openapi_1.PrepareOpenAPI)(spec, ctx);
     }
     return {
+        pino,
         generate,
     };
 }
 SdkGen.makeBuild = async function (opts) {
-    // console.log('SdkGen.makeBuild', opts)
     const sdkgen = SdkGen(opts);
-    const apidef = (0, apidef_1.ApiDef)();
+    const apidef = (0, apidef_1.ApiDef)({
+        pino: sdkgen.pino,
+    });
     const config = {
-        root: opts.root,
         def: opts.def,
         kind: 'openapi-3',
         model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
         meta: opts.meta || {},
-        entity: opts.model ? opts.model.entity : undefined,
     };
     await apidef.watch(config);
     return async function build(model, build) {

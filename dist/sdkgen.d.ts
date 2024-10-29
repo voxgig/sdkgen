@@ -1,4 +1,5 @@
 import * as JostracaModule from 'jostraca';
+import Pino from 'pino';
 import { Main } from './cmp/Main';
 import { Entity } from './cmp/Entity';
 import { Feature } from './cmp/Feature';
@@ -18,9 +19,12 @@ type SdkGenOptions = {
     meta?: {
         name: string;
     };
+    debug?: boolean | string;
+    pino?: ReturnType<typeof Pino>;
 };
 declare const Jostraca: typeof JostracaModule.Jostraca;
 declare function SdkGen(opts: SdkGenOptions): {
+    pino: import("pino").Logger<string, boolean>;
     generate: (spec: any) => Promise<void>;
 };
 declare namespace SdkGen {

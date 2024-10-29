@@ -5,6 +5,10 @@ import * as Fs from 'node:fs'
 
 import * as JostracaModule from 'jostraca'
 
+import Pino from 'pino'
+import PinoPretty from 'pino-pretty'
+
+
 import { ApiDef } from '@voxgig/apidef'
 
 
@@ -31,6 +35,8 @@ type SdkGenOptions = {
   meta?: {
     name: string
   }
+  debug?: boolean | string
+  pino?: ReturnType<typeof Pino>
 }
 
 
@@ -43,10 +49,34 @@ function SdkGen(opts: SdkGenOptions) {
   const def = opts.def || 'def.yml'
   const jostraca = Jostraca()
 
+  let pino = opts.pino
+
+  if (null == pino) {
+    let pretty = PinoPretty({ sync: true })
+    const level = null == opts.debug ? 'info' :
+      true === opts.debug ? 'debug' :
+        'string' == typeof opts.debug ? opts.debug :
+          'info'
+
+    pino = Pino({
+      name: 'sdkgen',
+      level,
+    },
+      pretty
+    )
+  }
+
+
+  const log = pino.child({ cmp: 'sdkgen' })
+
+
 
   async function generate(spec: any) {
+    const start = Date.now()
     const { model, config } = spec
 
+    log.info({ point: 'generate-start', start })
+    log.debug({ point: 'generate-spec', spec })
 
     // console.log('SDKGEN.config', config)
 
@@ -84,6 +114,7 @@ function SdkGen(opts: SdkGenOptions) {
 
 
   return {
+    pino,
     generate,
   }
 
@@ -91,19 +122,17 @@ function SdkGen(opts: SdkGenOptions) {
 
 
 SdkGen.makeBuild = async function(opts: SdkGenOptions) {
-  // console.log('SdkGen.makeBuild', opts)
-
   const sdkgen = SdkGen(opts)
 
-  const apidef = ApiDef()
+  const apidef = ApiDef({
+    pino: sdkgen.pino,
+  })
 
   const config = {
-    root: opts.root,
     def: opts.def,
     kind: 'openapi-3',
     model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
     meta: opts.meta || {},
-    entity: opts.model ? opts.model.entity : undefined,
   }
 
   await apidef.watch(config)
