@@ -5,9 +5,10 @@ import * as Fs from 'node:fs'
 
 import * as JostracaModule from 'jostraca'
 
-import Pino from 'pino'
-import PinoPretty from 'pino-pretty'
+// import Pino from 'pino'
+// import PinoPretty from 'pino-pretty'
 
+import { prettyPino, Pino } from '@voxgig/util'
 
 import { ApiDef } from '@voxgig/apidef'
 
@@ -46,29 +47,14 @@ const { Jostraca } = JostracaModule
 function SdkGen(opts: SdkGenOptions) {
   const fs = opts.fs || Fs
   const folder = opts.folder || '.'
-  const def = opts.def || 'def.yml'
+  // const def = opts.def || 'def.yml'
   const jostraca = Jostraca()
 
-  let pino = opts.pino
-
-  if (null == pino) {
-    let pretty = PinoPretty({ sync: true })
-    const level = null == opts.debug ? 'info' :
-      true === opts.debug ? 'debug' :
-        'string' == typeof opts.debug ? opts.debug :
-          'info'
-
-    pino = Pino({
-      name: 'sdkgen',
-      level,
-    },
-      pretty
-    )
-  }
-
+  const pino = prettyPino('sdkgen', opts)
 
   const log = pino.child({ cmp: 'sdkgen' })
 
+  // console.log('SDKGEN OPTS', opts)
 
 
   async function generate(spec: any) {
@@ -78,13 +64,11 @@ function SdkGen(opts: SdkGenOptions) {
     log.info({ point: 'generate-start', start })
     log.debug({ point: 'generate-spec', spec })
 
-    // console.log('SDKGEN.config', config)
-
     let Root = spec.root
 
-    if (null == Root) {
+    if (null == Root && null != config.root) {
       clear(config.root)
-      const rootModule = require(config.root)
+      const rootModule: any = require(config.root)
       Root = rootModule.Root
     }
 
@@ -94,17 +78,11 @@ function SdkGen(opts: SdkGenOptions) {
     }
     */
 
-    // console.log('OPTIONS', opts)
+    const opts = { fs, folder, log: log.child({ cmp: 'jostraca' }), meta: { spec } }
 
-    const opts = { fs, folder, meta: { spec } }
+    await jostraca.generate(opts, () => Root({ model }))
 
-    try {
-      await jostraca.generate(opts, () => Root({ model }))
-    }
-    catch (err: any) {
-      console.log('SDKGEN ERROR: ', err)
-      throw err
-    }
+    log.info({ point: 'generate-end' })
   }
 
 
@@ -122,24 +100,36 @@ function SdkGen(opts: SdkGenOptions) {
 
 
 SdkGen.makeBuild = async function(opts: SdkGenOptions) {
-  const sdkgen = SdkGen(opts)
-
-  const apidef = ApiDef({
-    pino: sdkgen.pino,
-  })
+  let sdkgen: any = undefined
 
   const config = {
-    def: opts.def,
+    root: opts.root,
+    def: opts.def || 'no-def',
     kind: 'openapi-3',
-    model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
+    model: opts.model ? (opts.model.folder + '/api.jsonic') : 'no-model',
     meta: opts.meta || {},
   }
 
-  await apidef.watch(config)
+  return async function build(model: any, build: any, ctx: any) {
+    if (null == sdkgen) {
+      sdkgen = SdkGen({
+        ...opts,
+        pino: build.log,
+      })
 
-  return async function build(model: any, build: any) {
-    // TODO: voxgig model needs to handle errors from here
-    return sdkgen.generate({ model, build, config })
+      const apidef = ApiDef({
+        pino: build.log,
+      })
+
+      if (true === ctx.watch) {
+        await apidef.watch(config)
+      }
+      else {
+        await apidef.generate(config)
+      }
+    }
+
+    await sdkgen.generate({ model, build, config })
   }
 }
 
@@ -147,6 +137,10 @@ SdkGen.makeBuild = async function(opts: SdkGenOptions) {
 
 // Adapted from https://github.com/sindresorhus/import-fresh - Thanks!
 function clear(path: string) {
+  if (null == path) {
+    return
+  }
+
   let filePath = require.resolve(path)
 
   if (require.cache[filePath]) {

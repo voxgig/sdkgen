@@ -19,7 +19,10 @@ const requirePath = (ctx$: any, path: string, flags?: { ignore?: boolean }): any
     if (!ignore) {
       throw err
     }
-    console.warn('MISSING: ', path)
+
+    // console.log(ctx$.log)
+    // console.warn('MISSING: ', path)
+    ctx$.log.warn({ point: 'require-missing', path, note: path })
   }
 }
 

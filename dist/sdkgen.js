@@ -23,16 +23,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Jostraca = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.SdkGen = SdkGen;
 const Fs = __importStar(require("node:fs"));
 const JostracaModule = __importStar(require("jostraca"));
-const pino_1 = __importDefault(require("pino"));
-const pino_pretty_1 = __importDefault(require("pino-pretty"));
+// import Pino from 'pino'
+// import PinoPretty from 'pino-pretty'
+const util_1 = require("@voxgig/util");
 const apidef_1 = require("@voxgig/apidef");
 const Main_1 = require("./cmp/Main");
 Object.defineProperty(exports, "Main", { enumerable: true, get: function () { return Main_1.Main; } });
@@ -54,29 +52,18 @@ exports.Jostraca = Jostraca;
 function SdkGen(opts) {
     const fs = opts.fs || Fs;
     const folder = opts.folder || '.';
-    const def = opts.def || 'def.yml';
+    // const def = opts.def || 'def.yml'
     const jostraca = Jostraca();
-    let pino = opts.pino;
-    if (null == pino) {
-        let pretty = (0, pino_pretty_1.default)({ sync: true });
-        const level = null == opts.debug ? 'info' :
-            true === opts.debug ? 'debug' :
-                'string' == typeof opts.debug ? opts.debug :
-                    'info';
-        pino = (0, pino_1.default)({
-            name: 'sdkgen',
-            level,
-        }, pretty);
-    }
+    const pino = (0, util_1.prettyPino)('sdkgen', opts);
     const log = pino.child({ cmp: 'sdkgen' });
+    // console.log('SDKGEN OPTS', opts)
     async function generate(spec) {
         const start = Date.now();
         const { model, config } = spec;
         log.info({ point: 'generate-start', start });
         log.debug({ point: 'generate-spec', spec });
-        // console.log('SDKGEN.config', config)
         let Root = spec.root;
-        if (null == Root) {
+        if (null == Root && null != config.root) {
             clear(config.root);
             const rootModule = require(config.root);
             Root = rootModule.Root;
@@ -86,15 +73,9 @@ function SdkGen(opts) {
           return
         }
         */
-        // console.log('OPTIONS', opts)
-        const opts = { fs, folder, meta: { spec } };
-        try {
-            await jostraca.generate(opts, () => Root({ model }));
-        }
-        catch (err) {
-            console.log('SDKGEN ERROR: ', err);
-            throw err;
-        }
+        const opts = { fs, folder, log: log.child({ cmp: 'jostraca' }), meta: { spec } };
+        await jostraca.generate(opts, () => Root({ model }));
+        log.info({ point: 'generate-end' });
     }
     async function prepare(spec, ctx) {
         return await (0, prepare_openapi_1.PrepareOpenAPI)(spec, ctx);
@@ -105,24 +86,38 @@ function SdkGen(opts) {
     };
 }
 SdkGen.makeBuild = async function (opts) {
-    const sdkgen = SdkGen(opts);
-    const apidef = (0, apidef_1.ApiDef)({
-        pino: sdkgen.pino,
-    });
+    let sdkgen = undefined;
     const config = {
-        def: opts.def,
+        root: opts.root,
+        def: opts.def || 'no-def',
         kind: 'openapi-3',
-        model: opts.model ? (opts.model.folder + '/api.jsonic') : undefined,
+        model: opts.model ? (opts.model.folder + '/api.jsonic') : 'no-model',
         meta: opts.meta || {},
     };
-    await apidef.watch(config);
-    return async function build(model, build) {
-        // TODO: voxgig model needs to handle errors from here
-        return sdkgen.generate({ model, build, config });
+    return async function build(model, build, ctx) {
+        if (null == sdkgen) {
+            sdkgen = SdkGen({
+                ...opts,
+                pino: build.log,
+            });
+            const apidef = (0, apidef_1.ApiDef)({
+                pino: build.log,
+            });
+            if (true === ctx.watch) {
+                await apidef.watch(config);
+            }
+            else {
+                await apidef.generate(config);
+            }
+        }
+        await sdkgen.generate({ model, build, config });
     };
 };
 // Adapted from https://github.com/sindresorhus/import-fresh - Thanks!
 function clear(path) {
+    if (null == path) {
+        return;
+    }
     let filePath = require.resolve(path);
     if (require.cache[filePath]) {
         const children = require.cache[filePath].children.map(child => child.id);
