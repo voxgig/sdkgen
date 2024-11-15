@@ -5,9 +5,6 @@ import * as Fs from 'node:fs'
 
 import * as JostracaModule from 'jostraca'
 
-// import Pino from 'pino'
-// import PinoPretty from 'pino-pretty'
-
 import { prettyPino, Pino } from '@voxgig/util'
 
 import { ApiDef } from '@voxgig/apidef'
@@ -53,9 +50,6 @@ function SdkGen(opts: SdkGenOptions) {
   const pino = prettyPino('sdkgen', opts)
 
   const log = pino.child({ cmp: 'sdkgen' })
-
-  // console.log('SDKGEN OPTS', opts)
-
 
   async function generate(spec: any) {
     const start = Date.now()
@@ -117,6 +111,7 @@ SdkGen.makeBuild = async function(opts: SdkGenOptions) {
         pino: build.log,
       })
 
+      // TODO: apidef should be it's own action, same as sdkgen and docgen
       const apidef = ApiDef({
         pino: build.log,
       })

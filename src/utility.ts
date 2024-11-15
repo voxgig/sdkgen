@@ -1,6 +1,7 @@
 
 import Path from 'node:path'
 
+// TODO: move to @voxgig/util as duplicated with @voxgig/sdkgen
 
 const resolvePath = (ctx$: any, path: string): any => {
   const fullpath = Path.join(ctx$.folder, '..', 'dist', path)
