@@ -9,7 +9,7 @@ const ReadmeInstall = (0, jostraca_1.cmp)(function ReadmeInstall(props) {
 ## Install
 `);
     // Optional
-    const ReadmeInstall_sdk = (0, utility_1.requirePath)(ctx$, `./${build.name}/ReadmeInstall_${build.name}`);
+    const ReadmeInstall_sdk = (0, utility_1.requirePath)(ctx$, `./${build.name}/ReadmeInstall_${build.name}`, { ignore: true });
     if (ReadmeInstall_sdk) {
         ReadmeInstall_sdk['ReadmeInstall']({ build });
     }

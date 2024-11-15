@@ -5,8 +5,7 @@ const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
 const Entity = (0, jostraca_1.cmp)(function Entity(props) {
     const { build, entity, ctx$ } = props;
-    // console.log('BUILD name', build.name)
-    const Entity_sdk = require((0, utility_1.resolvePath)(ctx$, `./${build.name}/Entity_${build.name}`));
+    const Entity_sdk = (0, utility_1.requirePath)(ctx$, `./${build.name}/Entity_${build.name}`);
     Entity_sdk['Entity']({ build, entity });
 });
 exports.Entity = Entity;

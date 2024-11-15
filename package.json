@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "types": "dist/sdkgen.d.ts",
@@ -46,9 +46,9 @@
   },
   "dependencies": {
     "@redocly/openapi-core": "^1.25.11",
-    "@voxgig/apidef": "^1.1.0",
+    "@voxgig/apidef": "^1.1.1",
     "@voxgig/util": "^0.0.6",
-    "jostraca": "^0.8.0",
+    "jostraca": "^0.8.1",
     "pino": "^9.5.0",
     "pino-pretty": "^13.0.0"
   }

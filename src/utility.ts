@@ -10,19 +10,18 @@ const resolvePath = (ctx$: any, path: string): any => {
 
 const requirePath = (ctx$: any, path: string, flags?: { ignore?: boolean }): any => {
   const fullpath = resolvePath(ctx$, path)
-  const ignore = null == flags?.ignore ? true : flags.ignore
+  const ignore = null == flags?.ignore ? false : flags.ignore
 
   try {
     return require(fullpath)
   }
   catch (err: any) {
-    if (!ignore) {
+    if (ignore) {
+      ctx$.log.warn({ point: 'require-missing', path, note: path })
+    }
+    else {
       throw err
     }
-
-    // console.log(ctx$.log)
-    // console.warn('MISSING: ', path)
-    ctx$.log.warn({ point: 'require-missing', path, note: path })
   }
 }
 

@@ -12,8 +12,8 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
 `)
 
-
-  const ReadmeQuick_sdk = requirePath(ctx$, `./${build.name}/ReadmeQuick_${build.name}`)
+  const ReadmeQuick_sdk =
+    requirePath(ctx$, `./${build.name}/ReadmeQuick_${build.name}`, { ignore: true })
 
   if (ReadmeQuick_sdk) {
     ReadmeQuick_sdk['ReadmeQuick']({ build })

@@ -12,17 +12,17 @@ const resolvePath = (ctx$, path) => {
 exports.resolvePath = resolvePath;
 const requirePath = (ctx$, path, flags) => {
     const fullpath = resolvePath(ctx$, path);
-    const ignore = null == flags?.ignore ? true : flags.ignore;
+    const ignore = null == flags?.ignore ? false : flags.ignore;
     try {
         return require(fullpath);
     }
     catch (err) {
-        if (!ignore) {
+        if (ignore) {
+            ctx$.log.warn({ point: 'require-missing', path, note: path });
+        }
+        else {
             throw err;
         }
-        // console.log(ctx$.log)
-        // console.warn('MISSING: ', path)
-        ctx$.log.warn({ point: 'require-missing', path, note: path });
     }
 };
 exports.requirePath = requirePath;
