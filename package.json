@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "types": "dist/sdkgen.d.ts",
@@ -38,18 +38,20 @@
     "@hapi/code": "^9.0.3",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "22.9.0",
-    "aontu": "^0.25.1",
     "esbuild": "^0.24.0",
     "json-schema-to-ts": "^3.1.1",
     "memfs": "^4.14.0",
     "typescript": "^5.6.3"
   },
   "dependencies": {
-    "@redocly/openapi-core": "^1.25.11",
-    "@voxgig/apidef": "^1.1.1",
-    "@voxgig/util": "^0.0.6",
-    "jostraca": "^0.8.1",
-    "pino": "^9.5.0",
-    "pino-pretty": "^13.0.0"
+  },
+  "peerDependencies": {
+    "aontu": ">=0",
+    "@redocly/openapi-core": ">=1",
+    "@voxgig/apidef": ">=1",
+    "@voxgig/util": ">=0",
+    "jostraca": ">=0",
+    "pino": ">=9",
+    "pino-pretty": ">=13"
   }
 }
