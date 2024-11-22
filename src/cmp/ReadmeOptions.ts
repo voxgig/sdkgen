@@ -3,7 +3,7 @@ import { cmp, each, Content } from 'jostraca'
 
 
 const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
-  const { build } = props
+  const { target } = props
 
   Content(`
 
@@ -11,7 +11,7 @@ const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
 
 `)
 
-  each(build.options)
+  each(target.options)
     .filter((option: any) => option.publish)
     .map((option: any) => {
       Content(`

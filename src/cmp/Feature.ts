@@ -5,10 +5,10 @@ import { resolvePath } from '../utility'
 
 
 const Feature = cmp(function Feature(props: any) {
-  const { build, feature, ctx$ } = props
+  const { target, feature, ctx$ } = props
 
   Folder({ name: 'src/' + feature.name }, () => {
-    Copy({ from: 'feature/' + feature.name + '/' + build.name })
+    Copy({ from: 'feature/' + feature.name + '/' + target.name })
   })
 
 })

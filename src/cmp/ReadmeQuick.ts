@@ -5,7 +5,7 @@ import { requirePath } from '../utility'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
-  const { build, ctx$ } = props
+  const { target, ctx$ } = props
 
   Content(`
 ## Quick Start
@@ -13,10 +13,10 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 `)
 
   const ReadmeQuick_sdk =
-    requirePath(ctx$, `./${build.name}/ReadmeQuick_${build.name}`, { ignore: true })
+    requirePath(ctx$, `./target/${target.name}/ReadmeQuick_${target.name}`, { ignore: true })
 
   if (ReadmeQuick_sdk) {
-    ReadmeQuick_sdk['ReadmeQuick']({ build })
+    ReadmeQuick_sdk['ReadmeQuick']({ target })
   }
 })
 

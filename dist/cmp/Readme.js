@@ -9,19 +9,19 @@ const ReadmeModel_1 = require("./ReadmeModel");
 const ReadmeOptions_1 = require("./ReadmeOptions");
 const ReadmeEntity_1 = require("./ReadmeEntity");
 const Readme = (0, jostraca_1.cmp)(function Readme(props) {
-    const { build } = props;
+    const { target } = props;
     const { model } = props.ctx$;
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
         (0, jostraca_1.Content)(`
-# ${model.Name} ${build.title} SDK
+# ${model.Name} ${target.title} SDK
 `);
         // Sections
-        (0, ReadmeIntro_1.ReadmeIntro)({ build });
-        (0, ReadmeInstall_1.ReadmeInstall)({ build });
-        (0, ReadmeQuick_1.ReadmeQuick)({ build });
-        (0, ReadmeModel_1.ReadmeModel)({ build });
-        (0, ReadmeOptions_1.ReadmeOptions)({ build });
-        (0, ReadmeEntity_1.ReadmeEntity)({ build });
+        (0, ReadmeIntro_1.ReadmeIntro)({ target });
+        (0, ReadmeInstall_1.ReadmeInstall)({ target });
+        (0, ReadmeQuick_1.ReadmeQuick)({ target });
+        (0, ReadmeModel_1.ReadmeModel)({ target });
+        (0, ReadmeOptions_1.ReadmeOptions)({ target });
+        (0, ReadmeEntity_1.ReadmeEntity)({ target });
     });
 });
 exports.Readme = Readme;

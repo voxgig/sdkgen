@@ -1,5 +1,5 @@
-import * as JostracaModule from 'jostraca';
 import { Pino } from '@voxgig/util';
+import * as JostracaModule from 'jostraca';
 import { Main } from './cmp/Main';
 import { Entity } from './cmp/Entity';
 import { Feature } from './cmp/Feature';
@@ -26,6 +26,7 @@ declare const Jostraca: typeof JostracaModule.Jostraca;
 declare function SdkGen(opts: SdkGenOptions): {
     pino: import("pino").Logger<string, boolean>;
     generate: (spec: any) => Promise<void>;
+    action: (args: string[]) => Promise<void>;
 };
 declare namespace SdkGen {
     var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any, ctx: any) => Promise<void>>;

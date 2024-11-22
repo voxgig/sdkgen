@@ -5,15 +5,15 @@ import { resolvePath } from '../utility'
 
 
 const Main = cmp(function Main(props: any) {
-  const { build, ctx$ } = props
+  const { target, ctx$ } = props
   const { model } = ctx$
 
-  const Main_sdk = require(resolvePath(ctx$, `${build.name}/Main_${build.name}`))
+  const Main_sdk = require(resolvePath(ctx$, `target/${target.name}/Main_${target.name}`))
 
-  Main_sdk['Main']({ model, build })
+  Main_sdk['Main']({ model, target })
 
-  // TODO: make optional via build model
-  Copy({ from: 'tm/' + build.name + '/LICENSE', name: 'LICENSE' })
+  // TODO: make optional via target model
+  Copy({ from: 'tm/target/' + target.name + '/LICENSE', name: 'LICENSE' })
 })
 
 

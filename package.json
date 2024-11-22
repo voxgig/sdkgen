@@ -15,6 +15,9 @@
     "type": "git",
     "url": "git://github.com/voxgig/sdkgen.git"
   },
+  "bin": {
+    "voxgig-sdkgen": "bin/voxgig-sdkgen"
+  },
   "scripts": {
     "test": "node --enable-source-maps --test dist-test",
     "test22": "node --enable-source-maps --test \"dist-test/*.test.js\"",

@@ -1,0 +1,17 @@
+{
+  "name": "$$name$$-sdk",
+  "version": "0.0.1",
+  "description": "",
+  "main": "src/$$const.Name$$SDK.js",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test-accept": "node --test test/accept/*.test.js",
+    "test-all": "npm run test && npm run test-accept"
+  },
+  "author": "$$const.Name$$",
+  "license": "MIT",
+  "devDependencies": {
+    "@hapi/code": "^9.0.3",
+    "dotenv": "^16.4.5"
+  }
+}

@@ -6,7 +6,7 @@ import { requirePath } from '../utility'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
-  const { build, ctx$ } = props
+  const { target, ctx$ } = props
 
   Content(`
 ## Install
@@ -14,10 +14,10 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
   // Optional
   const ReadmeInstall_sdk =
-    requirePath(ctx$, `./${build.name}/ReadmeInstall_${build.name}`, { ignore: true })
+    requirePath(ctx$, `./target/${target.name}/ReadmeInstall_${target.name}`, { ignore: true })
 
   if (ReadmeInstall_sdk) {
-    ReadmeInstall_sdk['ReadmeInstall']({ build })
+    ReadmeInstall_sdk['ReadmeInstall']({ target })
   }
 })
 

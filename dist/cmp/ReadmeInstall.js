@@ -4,14 +4,14 @@ exports.ReadmeInstall = void 0;
 const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
 const ReadmeInstall = (0, jostraca_1.cmp)(function ReadmeInstall(props) {
-    const { build, ctx$ } = props;
+    const { target, ctx$ } = props;
     (0, jostraca_1.Content)(`
 ## Install
 `);
     // Optional
-    const ReadmeInstall_sdk = (0, utility_1.requirePath)(ctx$, `./${build.name}/ReadmeInstall_${build.name}`, { ignore: true });
+    const ReadmeInstall_sdk = (0, utility_1.requirePath)(ctx$, `./target/${target.name}/ReadmeInstall_${target.name}`, { ignore: true });
     if (ReadmeInstall_sdk) {
-        ReadmeInstall_sdk['ReadmeInstall']({ build });
+        ReadmeInstall_sdk['ReadmeInstall']({ target });
     }
 });
 exports.ReadmeInstall = ReadmeInstall;

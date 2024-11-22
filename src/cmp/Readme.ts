@@ -11,21 +11,21 @@ import { ReadmeEntity } from './ReadmeEntity'
 
 
 const Readme = cmp(function Readme(props: any) {
-  const { build } = props
+  const { target } = props
   const { model } = props.ctx$
 
   File({ name: 'README.md' }, () => {
 
     Content(`
-# ${model.Name} ${build.title} SDK
+# ${model.Name} ${target.title} SDK
 `)
     // Sections
-    ReadmeIntro({ build })
-    ReadmeInstall({ build })
-    ReadmeQuick({ build })
-    ReadmeModel({ build })
-    ReadmeOptions({ build })
-    ReadmeEntity({ build })
+    ReadmeIntro({ target })
+    ReadmeInstall({ target })
+    ReadmeQuick({ target })
+    ReadmeModel({ target })
+    ReadmeOptions({ target })
+    ReadmeEntity({ target })
   })
 })
 

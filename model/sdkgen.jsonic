@@ -1,14 +1,18 @@
 
 
-main: sdk: entity: &: {
+main: def: {
+  desc: *'' | string
+}
+
+main: sdk: target: &: {
   name: .$KEY
-  publish: *true | boolean
+  active: *true | boolean
 }
 
 
-main: sdk: option: &: {
-   name: .$KEY
-   publish: *true | boolean
+main: sdk: entity: &: {
+  name: .$KEY
+  active: *true | boolean
 }
 
 
@@ -16,4 +20,14 @@ main: sdk: feature: &: {
   name: .$KEY
   active: *false | boolean
 }
+
+
+main: sdk: option: &: {
+  name: .$KEY
+  active: *true | boolean
+}
+
+
+
+
 
