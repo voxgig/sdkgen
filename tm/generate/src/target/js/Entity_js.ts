@@ -11,7 +11,7 @@ const Entity = cmp(function Entity(props: any) {
 
   Folder({ name: 'src' }, () => {
 
-    File({ name: entity.Name + '.' + target.name }, () => {
+    File({ name: entity.Name + 'Entity.' + target.name }, () => {
 
       const modifyRequest = each(model.main.sdk.feature).map((feature: any) => {
         if (feature.name == 'ratelimiter') {

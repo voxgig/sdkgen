@@ -51,4 +51,5 @@ export declare const Content: Component;
 export declare const Copy: Component;
 export declare const Fragment: Component;
 export declare const Inject: Component;
+export declare const Line: Component;
 export { Main, Entity, Feature, Readme, ReadmeInstall, ReadmeOptions, ReadmeEntity, Jostraca, SdkGen, };

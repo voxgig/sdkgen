@@ -57,8 +57,8 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
   // TODO: model should be a top level ctx property
   ctx$.model = ctx$.meta.model
 
-  console.log('MODEL')
-  console.dir(ctx$.model, { depth: null })
+  // console.log('MODEL')
+  // console.dir(ctx$.model, { depth: null })
 
   Project({}, () => {
     each(targets, (n) => {

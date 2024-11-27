@@ -40,21 +40,16 @@
   "devDependencies": {
     "@hapi/code": "^9.0.3",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "22.9.0",
+    "@types/node": "22.10.0",
     "esbuild": "^0.24.0",
     "json-schema-to-ts": "^3.1.1",
     "memfs": "^4.14.0",
-    "typescript": "^5.6.3"
-  },
-  "dependencies": {
+    "typescript": "^5.7.2"
   },
   "peerDependencies": {
-    "aontu": ">=0",
     "@redocly/openapi-core": ">=1",
-    "@voxgig/apidef": ">=1",
     "@voxgig/util": ">=0",
-    "jostraca": ">=0",
-    "pino": ">=9",
-    "pino-pretty": ">=13"
+    "aontu": ">=0",
+    "jostraca": ">=0"
   }
 }

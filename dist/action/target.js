@@ -30,8 +30,8 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
     const { ctx$, targets } = props;
     // TODO: model should be a top level ctx property
     ctx$.model = ctx$.meta.model;
-    console.log('MODEL');
-    console.dir(ctx$.model, { depth: null });
+    // console.log('MODEL')
+    // console.dir(ctx$.model, { depth: null })
     (0, jostraca_1.Project)({}, () => {
         (0, jostraca_1.each)(targets, (n) => {
             // TODO: validate target is a-z0-9-_. only

@@ -39,13 +39,11 @@ const { ${model.const.Name}SDK } = require('../')
 run()
 
 async function run() {
-  const client = ${model.const.Name}SDK.make({
+  const client = new ${model.const.Name}SDK({
     endpoint: process.env.${model.NAME}_ENDPOINT,
     apikey: process.env.${model.NAME}_APIKEY,
     ${featureOptions}
   })
-
-  let out
 
 `)
 

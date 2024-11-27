@@ -8,9 +8,6 @@ import { Jsonic } from 'jsonic'
 import * as JostracaModule from 'jostraca'
 import { Aontu, Context } from 'aontu'
 
-import { ApiDef } from '@voxgig/apidef'
-
-
 import { SdkGenError } from './utility'
 
 import { Main } from './cmp/Main'
@@ -208,18 +205,6 @@ SdkGen.makeBuild = async function(opts: SdkGenOptions) {
         ...opts,
         pino: build.log,
       })
-
-      // TODO: apidef should be it's own action, same as sdkgen and docgen
-      // apidef = ApiDef({
-      //   pino: build.log,
-      // })
-
-      // if (true === ctx.watch) {
-      //   await apidef.watch(config)
-      // }
-      // else {
-      //   await apidef.generate(config)
-      // }
     }
 
     // await apidef.generate({ model, build, config })
@@ -293,6 +278,7 @@ export const Content: Component = JostracaModule.Content
 export const Copy: Component = JostracaModule.Copy
 export const Fragment: Component = JostracaModule.Fragment
 export const Inject: Component = JostracaModule.Inject
+export const Line: Component = JostracaModule.Line
 
 
 export {
