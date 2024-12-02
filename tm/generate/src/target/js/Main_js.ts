@@ -1,7 +1,10 @@
 
 import * as Path from 'node:path'
 
-import { cmp, each, names, File, Content, Copy, Folder, Fragment, Line } from '@voxgig/sdkgen'
+import {
+  cmp, each, names,
+  List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
+} from '@voxgig/sdkgen'
 
 
 import { MainEntity } from './MainEntity_js'
@@ -24,32 +27,36 @@ const Main = cmp(async function Main(props: any) {
 
     File({ name: model.const.Name + 'SDK.' + target.name }, () => {
 
-      Line(`// ${model.const.Name} ${target.Name} SDK`)
+      Line(`// ${model.const.Name} ${target.Name} SDK\n`)
 
+      List({ item: feature }, ({ item }: any) =>
+        Line(`const { ${item.Name + 'Feature'} } = ` +
+          `require('./${item.name}/${item.Name}Feature')`))
 
-      each(feature, (feature: any) =>
-        Line(`const { ${feature.Name + 'Feature'} } = require('./${feature.name}/${feature.Name}Feature'`))
+      List({ item: entity }, ({ item }: any) =>
+        Line(`const { ${item.Name} } = require('./${item.Name}Entity')`))
 
-      each(entity, (entity: any) =>
-        Line(`const { ${entity.Name} } = require('./${entity.Name}Entity')`))
-
-      each(utility, (utility: any) =>
-        Line(`const { ${utility.name} } = require('./${utility.Name}Utility')`))
-
-
-      const features = each(feature).map((feature: any) =>
-        `${feature.name}: new ${feature.Name}Feature(this, ${JSON.stringify(feature.config || {})})`).join('\n')
-
-      const utilities = each(utility).map((utility: any) =>
-        `this.#utility.${utility.name} = ${utility.name}`).join('\n')
-
+      each(utility, (u: any) =>
+        Line(`const { ${u.name} } = require('./${u.Name}Utility')`))
+      Line('')
 
       Fragment({
         from: Path.normalize(__dirname + '/../../../src/target/js/fragment/Main.fragment.js'),
         replace: {
           Name: model.const.Name,
-          '// #BuildFeatures\n': features,
-          '// #CustomUtilities\n': utilities,
+
+          '#BuildFeature': ({ indent }: any) =>
+            List({ item: feature }, ({ item }) =>
+              Line({ indent }, `${item.name}: ` +
+                `new ${item.Name}Feature(this, ${JSON.stringify(item.config || {})}), `)),
+
+          '#CustomUtility': ({ indent }: any) =>
+            each(utility, (u: any) =>
+              Line({ indent }, `this.#utility.${u.name} = ${u.name}`)),
+
+          '#Feature-Hook': ({ name, indent }: any) =>
+            FeatureHook({ name }, (f: any) =>
+              Line({ indent }, `this.#feature.${f.name}.${name}({ self: this })`)),
         }
       }, () => {
 
@@ -58,24 +65,6 @@ const Main = cmp(async function Main(props: any) {
         })
 
       })
-
-      /*
-    Content(`
-
-function required(type,name,options) {
-const val = options[name]
-if(type !== typeof val) {
-  throw new Error('${model.const.Name}SDK: Invalid option: '+name+'='+val+': must be of type '+type)
-}
-}
-
-module.exports = {
-${model.const.Name}SDK
-}
-
-`)
-*/
-
     })
 
 

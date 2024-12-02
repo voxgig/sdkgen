@@ -34,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Jostraca = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
+exports.Jostraca = exports.FeatureHook = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.SdkGen = SdkGen;
 const Fs = __importStar(require("node:fs"));
 const util_1 = require("@voxgig/util");
@@ -56,6 +56,8 @@ const ReadmeOptions_1 = require("./cmp/ReadmeOptions");
 Object.defineProperty(exports, "ReadmeOptions", { enumerable: true, get: function () { return ReadmeOptions_1.ReadmeOptions; } });
 const ReadmeEntity_1 = require("./cmp/ReadmeEntity");
 Object.defineProperty(exports, "ReadmeEntity", { enumerable: true, get: function () { return ReadmeEntity_1.ReadmeEntity; } });
+const FeatureHook_1 = require("./cmp/FeatureHook");
+Object.defineProperty(exports, "FeatureHook", { enumerable: true, get: function () { return FeatureHook_1.FeatureHook; } });
 const prepare_openapi_1 = require("./prepare-openapi");
 const target_1 = require("./action/target");
 const feature_1 = require("./action/feature");
@@ -88,8 +90,12 @@ function SdkGen(opts) {
           return
         }
         */
-        const opts = { fs, folder, log: log.child({ cmp: 'jostraca' }), meta: { spec } };
-        await jostraca.generate(opts, () => Root({ model }));
+        console.log('SDKGEN DEBUG', opts.debug);
+        const jopts = {
+            fs, folder, log: log.child({ cmp: 'jostraca' }), meta: { spec },
+            debug: 'debug' === opts.debug || 'trace' === opts.debug
+        };
+        await jostraca.generate(jopts, () => Root({ model }));
         log.info({ point: 'generate-end' });
     }
     async function prepare(spec, ctx) {
@@ -173,6 +179,7 @@ SdkGen.makeBuild = async function (opts) {
             sdkgen = SdkGen({
                 ...opts,
                 pino: build.log,
+                debug: build.spec.debug,
             });
         }
         // await apidef.generate({ model, build, config })
@@ -214,6 +221,7 @@ exports.cmap = JostracaModule.cmap;
 exports.vmap = JostracaModule.vmap;
 exports.get = JostracaModule.get;
 exports.getx = JostracaModule.getx;
+exports.template = JostracaModule.template;
 exports.Project = JostracaModule.Project;
 exports.Folder = JostracaModule.Folder;
 exports.File = JostracaModule.File;
@@ -222,4 +230,6 @@ exports.Copy = JostracaModule.Copy;
 exports.Fragment = JostracaModule.Fragment;
 exports.Inject = JostracaModule.Inject;
 exports.Line = JostracaModule.Line;
+exports.Slot = JostracaModule.Slot;
+exports.List = JostracaModule.List;
 //# sourceMappingURL=sdkgen.js.map

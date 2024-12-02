@@ -17,6 +17,7 @@ import { Readme } from './cmp/Readme'
 import { ReadmeInstall } from './cmp/ReadmeInstall'
 import { ReadmeOptions } from './cmp/ReadmeOptions'
 import { ReadmeEntity } from './cmp/ReadmeEntity'
+import { FeatureHook } from './cmp/FeatureHook'
 
 import { PrepareOpenAPI } from './prepare-openapi'
 
@@ -82,9 +83,14 @@ function SdkGen(opts: SdkGenOptions) {
     }
     */
 
-    const opts = { fs, folder, log: log.child({ cmp: 'jostraca' }), meta: { spec } }
+    console.log('SDKGEN DEBUG', opts.debug)
 
-    await jostraca.generate(opts, () => Root({ model }))
+    const jopts = {
+      fs, folder, log: log.child({ cmp: 'jostraca' }), meta: { spec },
+      debug: 'debug' === opts.debug || 'trace' === opts.debug
+    }
+
+    await jostraca.generate(jopts, () => Root({ model }))
 
     log.info({ point: 'generate-end' })
   }
@@ -204,6 +210,7 @@ SdkGen.makeBuild = async function(opts: SdkGenOptions) {
       sdkgen = SdkGen({
         ...opts,
         pino: build.log,
+        debug: build.spec.debug,
       })
     }
 
@@ -270,6 +277,7 @@ export const cmap: (o: any, p: any) => any = JostracaModule.cmap
 export const vmap: (o: any, p: any) => any = JostracaModule.vmap
 export const get: (root: any, path: string | string[]) => any = JostracaModule.get
 export const getx: (root: any, path: string | string[]) => any = JostracaModule.getx
+export const template: (root: any, path: string | string[]) => any = JostracaModule.template
 
 export const Project: Component = JostracaModule.Project
 export const Folder: Component = JostracaModule.Folder
@@ -279,6 +287,8 @@ export const Copy: Component = JostracaModule.Copy
 export const Fragment: Component = JostracaModule.Fragment
 export const Inject: Component = JostracaModule.Inject
 export const Line: Component = JostracaModule.Line
+export const Slot: Component = JostracaModule.Slot
+export const List: Component = JostracaModule.List
 
 
 export {
@@ -289,6 +299,7 @@ export {
   ReadmeInstall,
   ReadmeOptions,
   ReadmeEntity,
+  FeatureHook,
 
   Jostraca,
   SdkGen,

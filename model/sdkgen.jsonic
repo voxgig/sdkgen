@@ -19,6 +19,13 @@ main: sdk: entity: &: {
 main: sdk: feature: &: {
   name: .$KEY
   active: *false | boolean
+  title: string
+  hook: &: {
+    active: *false | boolean
+  }
+
+  hook: PreConstruct: {}
+  hook: PostConstruct: {}
 }
 
 
