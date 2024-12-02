@@ -46,7 +46,7 @@ const Main = cmp(async function Main(props: any) {
           Name: model.const.Name,
 
           '#BuildFeature': ({ indent }: any) =>
-            List({ item: feature }, ({ item }) =>
+            List({ item: feature, line: false }, ({ item }: any) =>
               Line({ indent }, `${item.name}: ` +
                 `new ${item.Name}Feature(this, ${JSON.stringify(item.config || {})}), `)),
 
