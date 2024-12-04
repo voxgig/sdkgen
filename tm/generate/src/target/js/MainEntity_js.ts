@@ -9,7 +9,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
   Content(`
   ${entity.Name}(data) {
     const self = this
-    return new ${entity.Name}(self,data)
+    return new ${entity.Name}Entity(self,data)
   }
 
 `)

@@ -4,6 +4,6 @@ active: true
 
 
 hook: {
-  PostConstruct: active: true
+  PreFetch: active: true
 }
 

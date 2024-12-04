@@ -8,18 +8,17 @@ class NameSDK {
   #utility = Utility
   
   constructor(options) {
-    // #PreConstruct-Hook
 
-    this.features = {
-      // #BuildFeature
-    }
+    // # CustomUtility
 
-    // #CustomUtility
-
-    Object.entries( options?.cmp?.utility||{} )
-      .map(n=>this.utility[n[0]] = n[1])
+    // Object.entries( options?.cmp?.utility||{} )
+    //  .map(n=>this.utility[n[0]] = n[1])
 
     this.#options = this.#utility.validateOptions({self:this, options})
+
+    this.#features = {
+      // #BuildFeature
+    }
 
     // #PostConstruct-Hook
   }

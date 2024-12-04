@@ -1,6 +1,7 @@
 
-title: Telemetry
+title: Logger
 active: true
+
 
 hook: {
   PostConstruct: active: true

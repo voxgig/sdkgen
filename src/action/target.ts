@@ -35,7 +35,7 @@ async function action_target(args: any[], ctx: any) {
 async function cmd_target_add(args: any[], ctx: any) {
 
   let targets = args[2]
-  targets = 'string' === typeof targets ? [targets] : targets
+  targets = 'string' === typeof targets ? targets.split(',') : targets
 
   const jostraca = Jostraca()
 
@@ -63,28 +63,29 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
   Project({}, () => {
     each(targets, (n) => {
       // TODO: validate target is a-z0-9-_. only
-      const target = n.val$
+      const name = n.val$
 
       Folder({ name: 'model/target' }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/tm/generate/model/target/' + target + '.jsonic',
+          from: 'node_modules/@voxgig/sdkgen/tm/generate/model/target/' + name + '.jsonic',
           // exclude: true
         })
       })
 
-      Folder({ name: 'tm/target/' + target }, () => {
+      Folder({ name: 'src/target/' + name }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/tm/generate/tm/target/' + target,
+          from: 'node_modules/@voxgig/sdkgen/tm/generate/src/target/' + name,
           // exclude: true
         })
       })
 
-      Folder({ name: 'src/target/' + target }, () => {
+      Folder({ name: 'tm/' + name }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/tm/generate/src/target/' + target,
-          // exclude: true
+          from: 'node_modules/@voxgig/sdkgen/tm/generate/tm/' + name,
+          exclude: [/src\/feature/]
         })
       })
+
 
     })
   })

@@ -18,6 +18,8 @@ const CMD_MAP: any = {
   add: cmd_feature_add
 }
 
+const BASE = 'node_modules/@voxgig/sdkgen'
+
 async function action_feature(args: any[], ctx: any) {
 
   const cmdname = args[1]
@@ -35,7 +37,7 @@ async function action_feature(args: any[], ctx: any) {
 async function cmd_feature_add(args: any[], ctx: any) {
 
   let features = args[2]
-  features = 'string' === typeof features ? [features] : features
+  features = 'string' === typeof features ? features.split(',') : features
 
   const jostraca = Jostraca()
 
@@ -55,20 +57,29 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
   const { ctx$, features } = props
 
   // TODO: model should be a top level ctx property
-  ctx$.model = ctx$.meta.model
+  const model = ctx$.model = ctx$.meta.model
+  const target = model.main.sdk.target
 
   Project({}, () => {
-    Folder({ name: 'model/feature' }, () => {
-      each(features, (n) => {
-        const feature = n.val$
+    each(features, (n) => {
+      const name = n.val$
+      // TODO: validate feature is a-z0-9-_. only
 
-        // TODO: validate feature is a-z0-9-_. only
-
+      Folder({ name: 'model/feature' }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/tm/generate/model/feature/' + feature + '.jsonic',
+          from: BASE + '/tm/generate/model/feature/' + name + '.jsonic',
           exclude: true
         })
       })
+
+      each(target, (target) =>
+        Folder({ name: 'tm/' + target.name + '/src/feature/' + name }, () => {
+          Copy({
+            from: BASE + '/tm/generate/tm/' + target.name + '/src/feature/' + name,
+            exclude: true
+          })
+        }))
+
     })
   })
 

@@ -13,7 +13,7 @@ const Main = cmp(function Main(props: any) {
   Main_sdk['Main']({ model, target })
 
   // TODO: make optional via target model
-  Copy({ from: 'tm/target/' + target.name + '/LICENSE', name: 'LICENSE' })
+  Copy({ from: 'tm/' + target.name + '/LICENSE', name: 'LICENSE' })
 })
 
 

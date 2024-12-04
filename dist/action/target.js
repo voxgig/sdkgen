@@ -16,7 +16,7 @@ async function action_target(args, ctx) {
 }
 async function cmd_target_add(args, ctx) {
     let targets = args[2];
-    targets = 'string' === typeof targets ? [targets] : targets;
+    targets = 'string' === typeof targets ? targets.split(',') : targets;
     const jostraca = (0, jostraca_1.Jostraca)();
     const opts = {
         fs: ctx.fs,
@@ -35,23 +35,23 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
     (0, jostraca_1.Project)({}, () => {
         (0, jostraca_1.each)(targets, (n) => {
             // TODO: validate target is a-z0-9-_. only
-            const target = n.val$;
+            const name = n.val$;
             (0, jostraca_1.Folder)({ name: 'model/target' }, () => {
                 (0, jostraca_1.Copy)({
-                    from: 'node_modules/@voxgig/sdkgen/tm/generate/model/target/' + target + '.jsonic',
+                    from: 'node_modules/@voxgig/sdkgen/tm/generate/model/target/' + name + '.jsonic',
                     // exclude: true
                 });
             });
-            (0, jostraca_1.Folder)({ name: 'tm/target/' + target }, () => {
+            (0, jostraca_1.Folder)({ name: 'src/target/' + name }, () => {
                 (0, jostraca_1.Copy)({
-                    from: 'node_modules/@voxgig/sdkgen/tm/generate/tm/target/' + target,
+                    from: 'node_modules/@voxgig/sdkgen/tm/generate/src/target/' + name,
                     // exclude: true
                 });
             });
-            (0, jostraca_1.Folder)({ name: 'src/target/' + target }, () => {
+            (0, jostraca_1.Folder)({ name: 'tm/' + name }, () => {
                 (0, jostraca_1.Copy)({
-                    from: 'node_modules/@voxgig/sdkgen/tm/generate/src/target/' + target,
-                    // exclude: true
+                    from: 'node_modules/@voxgig/sdkgen/tm/generate/tm/' + name,
+                    exclude: [/src\/feature/]
                 });
             });
         });

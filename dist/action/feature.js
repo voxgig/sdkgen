@@ -6,6 +6,7 @@ const utility_1 = require("../utility");
 const CMD_MAP = {
     add: cmd_feature_add
 };
+const BASE = 'node_modules/@voxgig/sdkgen';
 async function action_feature(args, ctx) {
     const cmdname = args[1];
     const cmd = CMD_MAP[cmdname];
@@ -16,7 +17,7 @@ async function action_feature(args, ctx) {
 }
 async function cmd_feature_add(args, ctx) {
     let features = args[2];
-    features = 'string' === typeof features ? [features] : features;
+    features = 'string' === typeof features ? features.split(',') : features;
     const jostraca = (0, jostraca_1.Jostraca)();
     const opts = {
         fs: ctx.fs,
@@ -29,17 +30,24 @@ async function cmd_feature_add(args, ctx) {
 const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
     const { ctx$, features } = props;
     // TODO: model should be a top level ctx property
-    ctx$.model = ctx$.meta.model;
+    const model = ctx$.model = ctx$.meta.model;
+    const target = model.main.sdk.target;
     (0, jostraca_1.Project)({}, () => {
-        (0, jostraca_1.Folder)({ name: 'model/feature' }, () => {
-            (0, jostraca_1.each)(features, (n) => {
-                const feature = n.val$;
-                // TODO: validate feature is a-z0-9-_. only
+        (0, jostraca_1.each)(features, (n) => {
+            const name = n.val$;
+            // TODO: validate feature is a-z0-9-_. only
+            (0, jostraca_1.Folder)({ name: 'model/feature' }, () => {
                 (0, jostraca_1.Copy)({
-                    from: 'node_modules/@voxgig/sdkgen/tm/generate/model/feature/' + feature + '.jsonic',
+                    from: BASE + '/tm/generate/model/feature/' + name + '.jsonic',
                     exclude: true
                 });
             });
+            (0, jostraca_1.each)(target, (target) => (0, jostraca_1.Folder)({ name: 'tm/' + target.name + '/src/feature/' + name }, () => {
+                (0, jostraca_1.Copy)({
+                    from: BASE + '/tm/generate/tm/' + target.name + '/src/feature/' + name,
+                    exclude: true
+                });
+            }));
         });
     });
     modifyModel({

@@ -1,6 +1,7 @@
 
 title: Golang
-
+ext: go
+comment: line: "//"
 module: name: $$name$$
 
 

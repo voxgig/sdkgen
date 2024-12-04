@@ -1,5 +1,7 @@
 
-import { cmp } from 'jostraca'
+import {
+  cmp,
+} from 'jostraca'
 
 import { requirePath } from '../utility'
 

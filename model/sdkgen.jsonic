@@ -7,6 +7,11 @@ main: def: {
 main: sdk: target: &: {
   name: .$KEY
   active: *true | boolean
+  ext: string
+  comment: line: string
+  module: {
+    name: string
+  }
 }
 
 
@@ -20,12 +25,17 @@ main: sdk: feature: &: {
   name: .$KEY
   active: *false | boolean
   title: string
+
   hook: &: {
-    active: *false | boolean
+   active: *false | boolean
+   await: *false | boolean
   }
 
-  hook: PreConstruct: {}
-  hook: PostConstruct: {}
+  hook: {
+    PostConstruct: {}
+    PreFetch: {}
+    PostFetch: {}
+  }
 }
 
 

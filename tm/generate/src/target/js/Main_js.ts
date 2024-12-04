@@ -19,7 +19,7 @@ const Main = cmp(async function Main(props: any) {
   const { feature } = model.main.sdk
   const { utility } = model.main.sdk
 
-  Copy({ from: 'tm/target/' + target.name + '/package.json', name: 'package.json' })
+  Copy({ from: 'tm/' + target.name + '/package.json', name: 'package.json' })
 
   Test({ target })
 
@@ -31,10 +31,10 @@ const Main = cmp(async function Main(props: any) {
 
       List({ item: feature }, ({ item }: any) =>
         Line(`const { ${item.Name + 'Feature'} } = ` +
-          `require('./${item.name}/${item.Name}Feature')`))
+          `require('./feature/${item.name}/${item.Name}Feature')`))
 
       List({ item: entity }, ({ item }: any) =>
-        Line(`const { ${item.Name} } = require('./${item.Name}Entity')`))
+        Line(`const { ${item.Name}Entity } = require('./entity/${item.Name}Entity')`))
 
       each(utility, (u: any) =>
         Line(`const { ${u.name} } = require('./${u.Name}Utility')`))
@@ -48,7 +48,8 @@ const Main = cmp(async function Main(props: any) {
           '#BuildFeature': ({ indent }: any) =>
             List({ item: feature, line: false }, ({ item }: any) =>
               Line({ indent }, `${item.name}: ` +
-                `new ${item.Name}Feature(this, ${JSON.stringify(item.config || {})}), `)),
+                `new ${item.Name}Feature(this, this.#options.feature.${item.name}, ` +
+                `${JSON.stringify(item.config || {})}), `)),
 
           '#CustomUtility': ({ indent }: any) =>
             each(utility, (u: any) =>
@@ -56,7 +57,8 @@ const Main = cmp(async function Main(props: any) {
 
           '#Feature-Hook': ({ name, indent }: any) =>
             FeatureHook({ name }, (f: any) =>
-              Line({ indent }, `this.#feature.${f.name}.${name}({ self: this })`)),
+              Line({ indent },
+                `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}({ self: this })`)),
         }
       }, () => {
 
