@@ -5,7 +5,10 @@ active: true
 
 hook: {
   PostConstruct: active: true
+  PreOperation: active: true
+  ModifyOp: active: true
   PreFetch: active: true
   PostFetch: active: true
+  PostOperation: active: true
 }
 

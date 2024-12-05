@@ -1,16 +1,15 @@
 
 async function list(query) {
+
   // #PreOperation-Hook    
 
   let op = await this.#utility.op({name:'Name', op:'list', query, data: this.#data})
-  this.#query = op.query
   
-  // #CustomOp
   // #ModifyOp-Hook
   
+  this.#query = op.query
+
   let spec = await this.#utility.spec(op)
-  // #CustomSpec
-  // #ModifySpec-Hook
 
   // #PreFetch-Hook
 
@@ -19,8 +18,6 @@ async function list(query) {
   // #PostFetch-Hook
 
   let result = await this.#utility.response(op, spec, response)
-  // #CustomResult
-  // #ModifyResult-Hook
   
   // #PostOperation-Hook
 

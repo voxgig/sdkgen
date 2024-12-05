@@ -23,17 +23,28 @@ class LoggerFeature {
   }
 
   PostConstruct(ctx) {
-    print('PostConstruct', this.#options)
+    print('PostConstruct', ctx, this.#options)
+  }
+
+  PreOperation(ctx) {
+    print('PreOperation', ctx)
+  }
+
+  ModifyOp(ctx) {
+    print('ModifyOp', ctx)
   }
 
   PreFetch(ctx) {
-    print('PreFetch', this.#options)
+    print('PreFetch', ctx)
   }
 
   PostFetch(ctx) {
-    print('PostFetch', this.#options)
+    print('PostFetch', ctx)
   }
 
+  PostOperation(ctx) {
+    print('PostOperation', ctx)
+  }
 }
 
 

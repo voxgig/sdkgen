@@ -3,13 +3,46 @@ import * as Path from 'node:path'
 
 import {
   cmp, each, camelify,
-  File, Content, Folder, Fragment
+  File, Content, Folder, Fragment, Line, FeatureHook,
 } from '@voxgig/sdkgen'
+
+
+
+const Operation = cmp(function Operation(props: any) {
+  const { ff, opname, indent, entity } = props
+
+  const featureHookCtx: Record<string, string> = {
+    PreOperation: '',
+    CustomOp: 'op',
+    ModifyOp: 'op',
+    PreFetch: 'op, spec',
+    PostFetch: 'op, spec, response',
+    PostOperation: 'op, spec, response, result',
+  }
+
+
+  Fragment({
+    from: ff + '/Entity' + camelify(opname) + 'Op.fragment.js',
+    indent,
+    replace: {
+      Name: entity.Name,
+      ['async function ' + opname]: 'async ' + opname,
+
+      '#Feature-Hook': ({ name, indent }: any) =>
+        FeatureHook({ name }, (f: any) =>
+          Line({ indent },
+            `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}` +
+            `({ self: this, ${featureHookCtx[name as string]} })`)),
+    }
+  })
+
+})
+
 
 
 const Entity = cmp(function Entity(props: any) {
   const { target, entity } = props
-  const { model } = props.ctx$
+  // const { model } = props.ctx$
 
   const ff = Path.normalize(__dirname + '/../../../src/target/js/fragment')
 
@@ -17,30 +50,22 @@ const Entity = cmp(function Entity(props: any) {
 
     File({ name: entity.Name + 'Entity.' + target.name }, () => {
 
-      const opnames = Object.keys(entity.op) 
+      const opnames = Object.keys(entity.op)
 
-      const replace = {
-          Name: entity.Name,
-
-          ...(['load','list','create','update','remove'].reduce((a:any, opname:string) =>
-            (a['#' + camelify(opname) + 'Op'] =
-              !opnames.includes(opname) ? '' : ({ indent }: any) => {
-                Fragment({
-                  from: ff + '/Entity' + camelify(opname) + 'Op.fragment.js',
-                  indent,
-                  replace: {
-                    Name: entity.Name,
-                    ['async function ' + opname]: 'async ' + opname
-                  }
-                })
-              }, a), {}))
-      }
-
-      // console.log('REPLACE', entity.Name, replace)
+      const opfrags =
+        (['load', 'list', 'create', 'update', 'remove']
+          .reduce((a: any, opname: string) =>
+          (a['#' + camelify(opname) + 'Op'] =
+            !opnames.includes(opname) ? '' : ({ indent }: any) => {
+              Operation({ ff, opname, indent, entity })
+            }, a), {}))
 
       Fragment({
         from: ff + '/Entity.fragment.js',
-        replace
+        replace: {
+          Name: entity.Name,
+          ...opfrags,
+        }
       })
 
 

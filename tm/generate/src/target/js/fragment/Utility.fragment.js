@@ -7,6 +7,19 @@ Utility.validateOptions = function(ctx) {
   return options
 }
 
+
+Utility.op = function(spec) {
+  const op = {
+    name: spec.name,
+    op: spec.op,
+    query: {...spec.query} || {},
+    data: {...spec.data} || {},
+  }
+  return op
+}
+
+
+
 /*
 Utility.endpoint = function(ctx) {
   const { opdef, entity } = ctx

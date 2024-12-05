@@ -33,8 +33,11 @@ main: sdk: feature: &: {
 
   hook: {
     PostConstruct: {}
+    PreOperation: {}
+    ModifyOp: {}
     PreFetch: {}
     PostFetch: {}
+    PostOperation: {}
   }
 }
 

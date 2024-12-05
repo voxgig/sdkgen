@@ -2,6 +2,7 @@
 class NameEntity {  
   #client
   #options
+  #features
   #utility
   #data
   #query
@@ -12,6 +13,7 @@ class NameEntity {
 
     this.#client = client
     this.#options = options
+    this.#features = client.features()
     this.#utility = client.utility()
     this.#data = {}
     this.#query = {}
