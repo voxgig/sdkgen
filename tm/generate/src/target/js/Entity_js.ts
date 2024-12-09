@@ -9,10 +9,24 @@ import {
 
 
 const Operation = cmp(function Operation(props: any) {
+  // console.log('OP', props)
+
   const { ff, opname, indent, entity } = props
 
+  const entop = entity.op[opname]
+  const path = entop.path
+  console.log('ENTOP', entop)
+
+  // TODO: move up to to common Entity
+  const params = JSON.stringify(path
+    .match(/\{[^}]+\}/g)
+    .map((p: string) => p.substring(1, p.length - 1))
+    .filter((p: string) => null != p && '' !== p))
+
+  console.log('PARAMS', params)
+
   const featureHookCtx: Record<string, string> = {
-    PreOperation: '',
+    PreOperation: 'op',
     CustomOp: 'op',
     ModifyOp: 'op',
     PreFetch: 'op, spec',
@@ -20,22 +34,22 @@ const Operation = cmp(function Operation(props: any) {
     PostOperation: 'op, spec, response, result',
   }
 
-
   Fragment({
     from: ff + '/Entity' + camelify(opname) + 'Op.fragment.js',
     indent,
     replace: {
       Name: entity.Name,
+      PATH: entop.path,
+      "['PARAM']": params,
       ['async function ' + opname]: 'async ' + opname,
 
       '#Feature-Hook': ({ name, indent }: any) =>
         FeatureHook({ name }, (f: any) =>
           Line({ indent },
             `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}` +
-            `({ self: this, ${featureHookCtx[name as string]} })`)),
+            `({ client: this.#client, entity: this, ${featureHookCtx[name as string]} })`)),
     }
   })
-
 })
 
 

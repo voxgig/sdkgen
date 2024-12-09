@@ -27,31 +27,31 @@ class LoggerFeature {
   }
 
   PreOperation(ctx) {
-    print('PreOperation', ctx)
+    print('PreOperation', ctx, this.#options)
   }
 
   ModifyOp(ctx) {
-    print('ModifyOp', ctx)
+    print('ModifyOp', ctx, this.#options)
   }
 
   PreFetch(ctx) {
-    print('PreFetch', ctx)
+    print('PreFetch', ctx, this.#options)
   }
 
   PostFetch(ctx) {
-    print('PostFetch', ctx)
+    print('PostFetch', ctx, this.#options)
   }
 
   PostOperation(ctx) {
-    print('PostOperation', ctx)
+    print('PostOperation', ctx, this.#options)
   }
 }
 
 
 
-function print(hook,options) {
+function print(hook,ctx,options) {
   if(options.active) {
-    console.log('LOGGER', hook)
+    console.log('LOGGER', hook, ctx)
   }
 }
 

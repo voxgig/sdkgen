@@ -1,5 +1,6 @@
 
-const { Utility } = require('./Utility')
+const { Config } = require('./Config')
+const { Utility } = require('./utility/Utility')
 
 
 class NameSDK {
@@ -11,10 +12,7 @@ class NameSDK {
 
     // # CustomUtility
 
-    // Object.entries( options?.cmp?.utility||{} )
-    //  .map(n=>this.utility[n[0]] = n[1])
-
-    this.#options = this.#utility.validateOptions({self:this, options})
+    this.#options = this.#utility.options({self:this, options, config:Config})
 
     this.#features = {
       // #BuildFeature

@@ -1,5 +1,5 @@
 
-import { cmp, Copy } from 'jostraca'
+import { cmp, Copy, Folder } from 'jostraca'
 
 import { resolvePath } from '../utility'
 
@@ -14,6 +14,14 @@ const Main = cmp(function Main(props: any) {
 
   // TODO: make optional via target model
   Copy({ from: 'tm/' + target.name + '/LICENSE', name: 'LICENSE' })
+
+  Folder({ name: 'src/utility' }, () => {
+    Copy({
+      from: 'tm/' + target.name + '/src/utility',
+      // TODO: make this work for folders
+      // to: target + '/src'
+    })
+  })
 })
 
 

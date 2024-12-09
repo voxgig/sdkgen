@@ -7,6 +7,7 @@ import {
 } from '@voxgig/sdkgen'
 
 
+import { Config } from './Config_js'
 import { MainEntity } from './MainEntity_js'
 import { Test } from './Test_js'
 
@@ -37,7 +38,7 @@ const Main = cmp(async function Main(props: any) {
         Line(`const { ${item.Name}Entity } = require('./entity/${item.Name}Entity')`))
 
       each(utility, (u: any) =>
-        Line(`const { ${u.name} } = require('./${u.Name}Utility')`))
+        Line(`const { ${u.name} } = require('./utility/${u.Name}Utility')`))
       Line('')
 
       Fragment({
@@ -58,7 +59,7 @@ const Main = cmp(async function Main(props: any) {
           '#Feature-Hook': ({ name, indent }: any) =>
             FeatureHook({ name }, (f: any) =>
               Line({ indent },
-                `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}({ self: this })`)),
+                `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}({ client: this })`)),
         }
       }, () => {
 
@@ -70,15 +71,21 @@ const Main = cmp(async function Main(props: any) {
     })
 
 
-    File({ name: 'Utility.' + target.name }, () => {
-      Fragment({
-        from: Path.normalize(__dirname + '/../../../src/target/js/fragment/Utility.fragment.js'),
-        replace: {
-          Name: model.const.Name,
-        }
-      }, () => { })
-    })
+    Config({ target })
+
   })
+
+  /*
+      File({ name: 'Utility.' + target.name }, () => {
+        Fragment({
+          from: Path.normalize(__dirname + '/../../../src/target/js/fragment/Utility.fragment.js'),
+          replace: {
+            Name: model.const.Name,
+          }
+        }, () => { })
+        })
+        })
+        */
 })
 
 

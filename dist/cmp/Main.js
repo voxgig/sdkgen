@@ -10,6 +10,13 @@ const Main = (0, jostraca_1.cmp)(function Main(props) {
     Main_sdk['Main']({ model, target });
     // TODO: make optional via target model
     (0, jostraca_1.Copy)({ from: 'tm/' + target.name + '/LICENSE', name: 'LICENSE' });
+    (0, jostraca_1.Folder)({ name: 'src/utility' }, () => {
+        (0, jostraca_1.Copy)({
+            from: 'tm/' + target.name + '/src/utility',
+            // TODO: make this work for folders
+            // to: target + '/src'
+        });
+    });
 });
 exports.Main = Main;
 //# sourceMappingURL=Main.js.map
