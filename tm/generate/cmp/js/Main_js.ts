@@ -42,7 +42,7 @@ const Main = cmp(async function Main(props: any) {
       Line('')
 
       Fragment({
-        from: Path.normalize(__dirname + '/../../../src/target/js/fragment/Main.fragment.js'),
+        from: Path.normalize(__dirname + '/../../../src/js/fragment/Main.fragment.js'),
         replace: {
           Name: model.const.Name,
 
@@ -74,18 +74,6 @@ const Main = cmp(async function Main(props: any) {
     Config({ target })
 
   })
-
-  /*
-      File({ name: 'Utility.' + target.name }, () => {
-        Fragment({
-          from: Path.normalize(__dirname + '/../../../src/target/js/fragment/Utility.fragment.js'),
-          replace: {
-            Name: model.const.Name,
-          }
-        }, () => { })
-        })
-        })
-        */
 })
 
 

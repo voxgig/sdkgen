@@ -58,7 +58,7 @@ const Entity = cmp(function Entity(props: any) {
   const { target, entity } = props
   // const { model } = props.ctx$
 
-  const ff = Path.normalize(__dirname + '/../../../src/target/js/fragment')
+  const ff = Path.normalize(__dirname + '/../../../src/js/fragment')
 
   Folder({ name: 'src/entity' }, () => {
 
