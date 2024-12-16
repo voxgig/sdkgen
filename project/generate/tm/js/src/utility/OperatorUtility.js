@@ -10,6 +10,8 @@ function operator(ctx) {
     params: op.params || [],
     query: {...op.query} || {},
     data: {...op.data} || {},
+    state: op.state,
+    extract: op.extract,
   }
 
   return out

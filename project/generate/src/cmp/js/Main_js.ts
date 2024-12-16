@@ -20,7 +20,7 @@ const Main = cmp(async function Main(props: any) {
   const { feature } = model.main.sdk
   const { utility } = model.main.sdk
 
-  Copy({ from: 'tm/' + target.name + '/package.json', name: 'package.json' })
+  Copy({ from: 'tm/' + target.name + '/package.json', to: 'package.json' })
 
   Test({ target })
 
@@ -42,7 +42,7 @@ const Main = cmp(async function Main(props: any) {
       Line('')
 
       Fragment({
-        from: Path.normalize(__dirname + '/../../../src/js/fragment/Main.fragment.js'),
+        from: Path.normalize(__dirname + '/../../../src/cmp/js/fragment/Main.fragment.js'),
         replace: {
           Name: model.const.Name,
 

@@ -38,19 +38,19 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
             const name = n.val$;
             (0, jostraca_1.Folder)({ name: 'model/target' }, () => {
                 (0, jostraca_1.Copy)({
-                    from: 'node_modules/@voxgig/sdkgen/tm/generate/model/target/' + name + '.jsonic',
+                    from: 'node_modules/@voxgig/sdkgen/project/generate/model/target/' + name + '.jsonic',
                     // exclude: true
                 });
             });
-            (0, jostraca_1.Folder)({ name: 'src/target/' + name }, () => {
+            (0, jostraca_1.Folder)({ name: 'src/cmp/' + name }, () => {
                 (0, jostraca_1.Copy)({
-                    from: 'node_modules/@voxgig/sdkgen/tm/generate/src/target/' + name,
+                    from: 'node_modules/@voxgig/sdkgen/project/generate/src/cmp/' + name,
                     // exclude: true
                 });
             });
             (0, jostraca_1.Folder)({ name: 'tm/' + name }, () => {
                 (0, jostraca_1.Copy)({
-                    from: 'node_modules/@voxgig/sdkgen/tm/generate/tm/' + name,
+                    from: 'node_modules/@voxgig/sdkgen/project/generate/tm/' + name,
                     exclude: [/src\/feature/]
                 });
             });
@@ -68,7 +68,7 @@ async function modifyModel({ targets, model, tree, fs }) {
     // Aontu should provide option for as-is AST so that can be used
     // to find injection point more reliably
     const path = tree.url;
-    let src = fs.readFileSync(path, 'utf8');
+    let src = fs().readFileSync(path, 'utf8');
     // Inject target file references into model
     targets.sort().map((target) => {
         const lineRE = new RegExp(`main:\\s+sdk:\\s+target:\\s+${target}:\\s+@"target/${target}.jsonic"`);
@@ -77,6 +77,6 @@ async function modifyModel({ targets, model, tree, fs }) {
                 `main: sdk: target: ${target}: @"target/${target}.jsonic"\n`);
         }
     });
-    fs.writeFileSync(path, src);
+    fs().writeFileSync(path, src);
 }
 //# sourceMappingURL=target.js.map

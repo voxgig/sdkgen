@@ -62,7 +62,7 @@ async function modifyModel({ features, model, tree, fs }) {
     // Aontu should provide option for as-is AST so that can be used
     // to find injection point more reliably
     const path = tree.url;
-    let src = fs.readFileSync(path, 'utf8');
+    let src = fs().readFileSync(path, 'utf8');
     // Inject feature file references into model
     features.sort().map((feature) => {
         const lineRE = new RegExp(`main:\\s+sdk:\\s+feature:\\s+${feature}:\\s+@"feature/${feature}.jsonic"`);
@@ -71,6 +71,6 @@ async function modifyModel({ features, model, tree, fs }) {
                 `main: sdk: feature: ${feature}: @"feature/${feature}.jsonic"\n`);
         }
     });
-    fs.writeFileSync(path, src);
+    fs().writeFileSync(path, src);
 }
 //# sourceMappingURL=feature.js.map

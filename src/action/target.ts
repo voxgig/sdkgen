@@ -67,21 +67,21 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
 
       Folder({ name: 'model/target' }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/tm/generate/model/target/' + name + '.jsonic',
+          from: 'node_modules/@voxgig/sdkgen/project/generate/model/target/' + name + '.jsonic',
           // exclude: true
         })
       })
 
-      Folder({ name: 'src/target/' + name }, () => {
+      Folder({ name: 'src/cmp/' + name }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/tm/generate/src/target/' + name,
+          from: 'node_modules/@voxgig/sdkgen/project/generate/src/cmp/' + name,
           // exclude: true
         })
       })
 
       Folder({ name: 'tm/' + name }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/tm/generate/tm/' + name,
+          from: 'node_modules/@voxgig/sdkgen/project/generate/tm/' + name,
           exclude: [/src\/feature/]
         })
       })
@@ -106,7 +106,7 @@ async function modifyModel({ targets, model, tree, fs }: any) {
   // to find injection point more reliably
 
   const path = tree.url
-  let src = fs.readFileSync(path, 'utf8')
+  let src = fs().readFileSync(path, 'utf8')
 
   // Inject target file references into model
   targets.sort().map((target: string) => {
@@ -118,7 +118,7 @@ async function modifyModel({ targets, model, tree, fs }: any) {
     }
   })
 
-  fs.writeFileSync(path, src)
+  fs().writeFileSync(path, src)
 }
 
 

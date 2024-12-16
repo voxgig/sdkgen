@@ -99,7 +99,7 @@ async function modifyModel({ features, model, tree, fs }: any) {
   // to find injection point more reliably
 
   const path = tree.url
-  let src = fs.readFileSync(path, 'utf8')
+  let src = fs().readFileSync(path, 'utf8')
 
   // Inject feature file references into model
   features.sort().map((feature: string) => {
@@ -111,7 +111,7 @@ async function modifyModel({ features, model, tree, fs }: any) {
     }
   })
 
-  fs.writeFileSync(path, src)
+  fs().writeFileSync(path, src)
 }
 
 

@@ -11,7 +11,7 @@ const __1 = require("../");
         (0, code_1.expect)(__1.SdkGen).exist();
         const { fs, vol } = (0, memfs_1.memfs)({});
         const sdkgen = (0, __1.SdkGen)({
-            fs, folder: '/top', root: ''
+            fs: () => fs, folder: '/top', root: ''
         });
         (0, code_1.expect)(sdkgen).exist();
         const root = makeRoot();

@@ -58,7 +58,6 @@ const ReadmeEntity_1 = require("./cmp/ReadmeEntity");
 Object.defineProperty(exports, "ReadmeEntity", { enumerable: true, get: function () { return ReadmeEntity_1.ReadmeEntity; } });
 const FeatureHook_1 = require("./cmp/FeatureHook");
 Object.defineProperty(exports, "FeatureHook", { enumerable: true, get: function () { return FeatureHook_1.FeatureHook; } });
-const prepare_openapi_1 = require("./prepare-openapi");
 const target_1 = require("./action/target");
 const feature_1 = require("./action/feature");
 const { Jostraca } = JostracaModule;
@@ -70,7 +69,6 @@ const ACTION_MAP = {
 function SdkGen(opts) {
     const fs = opts.fs || Fs;
     const folder = opts.folder || '../';
-    // const def = opts.def || 'def.yml'
     const jostraca = Jostraca();
     const pino = (0, util_1.prettyPino)('sdkgen', opts);
     const log = pino.child({ cmp: 'sdkgen' });
@@ -85,25 +83,18 @@ function SdkGen(opts) {
             const rootModule = require(config.root);
             Root = rootModule.Root;
         }
-        /*
-        if (await prepare(spec, { fs, folder, def })) {
-          return
-        }
-        */
-        console.log('SDKGEN DEBUG', opts.debug);
         const jopts = {
-            fs, folder, log: log.child({ cmp: 'jostraca' }), meta: { spec },
-            debug: 'debug' === opts.debug || 'trace' === opts.debug
+            fs: () => fs,
+            folder,
+            log: log.child({ cmp: 'jostraca' }),
+            meta: { spec },
+            debug: opts.debug,
         };
         await jostraca.generate(jopts, () => Root({ model }));
         log.info({ point: 'generate-end' });
     }
-    async function prepare(spec, ctx) {
-        return await (0, prepare_openapi_1.PrepareOpenAPI)(spec, ctx);
-    }
     async function action(args) {
         const pargs = args.map(arg => (0, jsonic_1.Jsonic)(arg));
-        // console.log(pargs)
         const actname = args[0];
         const action = ACTION_MAP[actname];
         if (null == action) {
@@ -111,7 +102,7 @@ function SdkGen(opts) {
         }
         const { model, tree } = resolveModel();
         const ctx = {
-            fs,
+            fs: () => fs,
             log,
             folder: '.', // The `generate` folder,
             model,

@@ -1,8 +1,10 @@
 
 const { auth } = require('./AuthUtility')
 const { empty } = require('./EmptyUtility')
+const { error } = require('./ErrorUtility')
 const { escre } = require('./EscreUtility')
 const { escurl } = require('./EscurlUtility')
+const { extract } = require('./ExtractUtility')
 const { fetch } = require('./FetchUtility')
 const { fullurl } = require('./FullurlUtility')
 const { headers } = require('./HeadersUtility')
@@ -22,8 +24,10 @@ const { spec } = require('./SpecUtility')
 const Utility = {
   auth,
   empty,
+  error,
   escre,
   escurl,
+  extract,
   fetch,
   fullurl,
   headers,

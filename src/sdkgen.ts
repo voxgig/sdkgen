@@ -19,8 +19,6 @@ import { ReadmeOptions } from './cmp/ReadmeOptions'
 import { ReadmeEntity } from './cmp/ReadmeEntity'
 import { FeatureHook } from './cmp/FeatureHook'
 
-import { PrepareOpenAPI } from './prepare-openapi'
-
 import { action_target } from './action/target'
 import { action_feature } from './action/feature'
 
@@ -55,7 +53,6 @@ const ACTION_MAP: any = {
 function SdkGen(opts: SdkGenOptions) {
   const fs = opts.fs || Fs
   const folder = opts.folder || '../'
-  // const def = opts.def || 'def.yml'
   const jostraca = Jostraca()
 
   const pino = prettyPino('sdkgen', opts)
@@ -77,17 +74,12 @@ function SdkGen(opts: SdkGenOptions) {
       Root = rootModule.Root
     }
 
-    /*
-    if (await prepare(spec, { fs, folder, def })) {
-      return
-    }
-    */
-
-    console.log('SDKGEN DEBUG', opts.debug)
-
     const jopts = {
-      fs, folder, log: log.child({ cmp: 'jostraca' }), meta: { spec },
-      debug: 'debug' === opts.debug || 'trace' === opts.debug
+      fs: () => fs,
+      folder,
+      log: log.child({ cmp: 'jostraca' }),
+      meta: { spec },
+      debug: opts.debug,
     }
 
     await jostraca.generate(jopts, () => Root({ model }))
@@ -96,14 +88,8 @@ function SdkGen(opts: SdkGenOptions) {
   }
 
 
-  async function prepare(spec: any, ctx: any) {
-    return await PrepareOpenAPI(spec, ctx)
-  }
-
-
   async function action(args: string[]) {
     const pargs = args.map(arg => Jsonic(arg))
-    // console.log(pargs)
 
     const actname = args[0]
     const action = ACTION_MAP[actname]
@@ -117,13 +103,12 @@ function SdkGen(opts: SdkGenOptions) {
 
 
     const ctx = {
-      fs,
+      fs: () => fs,
       log,
       folder: '.', // The `generate` folder,
       model,
       tree,
     }
-
 
     await action(pargs, ctx)
   }

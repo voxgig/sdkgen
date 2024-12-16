@@ -8,12 +8,12 @@ const Main = cmp(function Main(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  const Main_sdk = require(resolvePath(ctx$, `${target.name}/Main_${target.name}`))
+  const Main_sdk = require(resolvePath(ctx$, `cmp/${target.name}/Main_${target.name}`))
 
   Main_sdk['Main']({ model, target })
 
   // TODO: make optional via target model
-  Copy({ from: 'tm/' + target.name + '/LICENSE', name: 'LICENSE' })
+  Copy({ from: 'tm/' + target.name + '/LICENSE', to: 'LICENSE' })
 
   Folder({ name: 'src/utility' }, () => {
     Copy({
