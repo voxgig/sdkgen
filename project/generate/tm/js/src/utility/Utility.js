@@ -1,5 +1,6 @@
 
 const { auth } = require('./AuthUtility')
+const { body } = require('./BodyUtility')
 const { empty } = require('./EmptyUtility')
 const { error } = require('./ErrorUtility')
 const { escre } = require('./EscreUtility')
@@ -23,6 +24,7 @@ const { spec } = require('./SpecUtility')
 
 const Utility = {
   auth,
+  body,
   empty,
   error,
   escre,

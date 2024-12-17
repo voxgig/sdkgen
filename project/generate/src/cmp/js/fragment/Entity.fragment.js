@@ -28,15 +28,28 @@ class NameEntity {
   }
 
   data(data) {
+    // NOTE: query cannot be mutated.
     if(null != data) {
-      // #ModifyData-Hook
+
+      // #SetData-Hook
+      
       this.#data = { ...data }
     }
-    return { ...this.#data }
+
+    let out = { ...this.#data }
+
+    // #GetData-Hook
+
+    return out
   }
 
   query() {
-    return { ...this.#query }
+    // NOTE: query cannot be mutated.
+    let out = { ...this.#query }
+
+    // #GetQuery-Hook
+
+    return out
   }
 
 

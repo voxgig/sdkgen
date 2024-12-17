@@ -34,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Jostraca = exports.FeatureHook = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
+exports.Jostraca = exports.FeatureHook = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.SdkGen = SdkGen;
 const Fs = __importStar(require("node:fs"));
 const util_1 = require("@voxgig/util");
@@ -92,6 +92,7 @@ function SdkGen(opts) {
         };
         await jostraca.generate(jopts, () => Root({ model }));
         log.info({ point: 'generate-end' });
+        return { ok: true, name: 'sdkgen' };
     }
     async function action(args) {
         const pargs = args.map(arg => (0, jsonic_1.Jsonic)(arg));
@@ -174,7 +175,7 @@ SdkGen.makeBuild = async function (opts) {
             });
         }
         // await apidef.generate({ model, build, config })
-        await sdkgen.generate({ model, build, config });
+        return await sdkgen.generate({ model, build, config });
     };
 };
 // Adapted from https://github.com/sindresorhus/import-fresh - Thanks!
@@ -213,6 +214,8 @@ exports.vmap = JostracaModule.vmap;
 exports.get = JostracaModule.get;
 exports.getx = JostracaModule.getx;
 exports.template = JostracaModule.template;
+exports.deep = JostracaModule.deep;
+exports.omap = JostracaModule.omap;
 exports.Project = JostracaModule.Project;
 exports.Folder = JostracaModule.Folder;
 exports.File = JostracaModule.File;

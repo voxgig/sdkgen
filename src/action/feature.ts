@@ -67,7 +67,7 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
 
       Folder({ name: 'model/feature' }, () => {
         Copy({
-          from: BASE + '/tm/generate/model/feature/' + name + '.jsonic',
+          from: BASE + '/project/generate/model/feature/' + name + '.jsonic',
           exclude: true
         })
       })
@@ -75,7 +75,7 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
       each(target, (target) =>
         Folder({ name: 'tm/' + target.name + '/src/feature/' + name }, () => {
           Copy({
-            from: BASE + '/tm/generate/tm/' + target.name + '/src/feature/' + name,
+            from: BASE + '/project/generate/tm/' + target.name + '/src/feature/' + name,
             exclude: true
           })
         }))
@@ -104,10 +104,10 @@ async function modifyModel({ features, model, tree, fs }: any) {
   // Inject feature file references into model
   features.sort().map((feature: string) => {
     const lineRE =
-      new RegExp(`main:\\s+sdk:\\s+feature:\\s+${feature}:\\s+@"feature/${feature}.jsonic"`)
+      new RegExp(`@"feature/${feature}.jsonic"`)
     if (!src.match(lineRE)) {
       src = src.replace(/(main:\s+sdk:\s+feature:\s+\{\s*\}\n)/, '$1' +
-        `main: sdk: feature: ${feature}: @"feature/${feature}.jsonic"\n`)
+        `@"feature/${feature}.jsonic"\n`)
     }
   })
 

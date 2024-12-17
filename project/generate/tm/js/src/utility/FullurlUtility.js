@@ -5,11 +5,19 @@ const { escre }  = require('./EscreUtility')
 
 
 function fullurl(ctx) {
-  const { spec } = ctx
-
+  const { op, spec } = ctx
+  const { query, data } = op
+  
   let url = joinurl(spec.base, spec.prefix, spec.path, spec.suffix)
 
-  for(let key in spec.params) {
+  const params = spec.params
+  for(let key of op.params) {
+    if(null == params[key]) {
+      params[key] = 'query' === op.kind ? query[key] : data[key]
+    }
+  }
+  
+  for(let key in params) {
     const val = spec.params[key]
     if(null != val) { 
       url = url.replace(RegExp('{'+escre(key)+'}'), escurl(val))

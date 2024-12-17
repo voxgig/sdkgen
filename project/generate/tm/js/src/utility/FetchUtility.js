@@ -7,7 +7,7 @@ async function fetch(ctx) {
   let response = {}
   
   try {
-    const url = fullurl(ctx)
+    const url = spec.url = fullurl(ctx)
     
     const fetchReq = {
       method: spec.method,

@@ -71,10 +71,10 @@ async function modifyModel({ targets, model, tree, fs }) {
     let src = fs().readFileSync(path, 'utf8');
     // Inject target file references into model
     targets.sort().map((target) => {
-        const lineRE = new RegExp(`main:\\s+sdk:\\s+target:\\s+${target}:\\s+@"target/${target}.jsonic"`);
+        const lineRE = new RegExp(`@"target/${target}.jsonic"`);
         if (!src.match(lineRE)) {
             src = src.replace(/(main:\s+sdk:\s+target:\s+\{\s*\}\n)/, '$1' +
-                `main: sdk: target: ${target}: @"target/${target}.jsonic"\n`);
+                `@"target/${target}.jsonic"\n`);
         }
     });
     fs().writeFileSync(path, src);

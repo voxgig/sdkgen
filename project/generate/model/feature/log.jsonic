@@ -1,0 +1,30 @@
+
+main: sdk: feature: log: {
+
+  name: .$KEY
+  title: Log
+  version: '0.0.1'
+  active: true
+
+
+  hook: {
+    PostConstruct: active: true
+    PreOperation: active: true
+    ModifyOp: active: true
+    PreFetch: active: true
+    PostFetch: active: true
+    ModifyResult: active: true
+    ModifyData: active: true
+    ModifyList: active: true
+    PostOperation: active: true
+  }
+
+
+  target: js: deps: {
+    'pino': { active: true, version: '>=9', kind: peer }
+    'pino-pretty': { active: true, version: '>=13', kind: peer }
+  }
+
+}
+
+

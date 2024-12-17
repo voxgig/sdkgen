@@ -111,10 +111,10 @@ async function modifyModel({ targets, model, tree, fs }: any) {
   // Inject target file references into model
   targets.sort().map((target: string) => {
     const lineRE =
-      new RegExp(`main:\\s+sdk:\\s+target:\\s+${target}:\\s+@"target/${target}.jsonic"`)
+      new RegExp(`@"target/${target}.jsonic"`)
     if (!src.match(lineRE)) {
       src = src.replace(/(main:\s+sdk:\s+target:\s+\{\s*\}\n)/, '$1' +
-        `main: sdk: target: ${target}: @"target/${target}.jsonic"\n`)
+        `@"target/${target}.jsonic"\n`)
     }
   })
 

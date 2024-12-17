@@ -7,6 +7,7 @@ import {
 } from '@voxgig/sdkgen'
 
 
+import { Package } from './Package_js'
 import { Config } from './Config_js'
 import { MainEntity } from './MainEntity_js'
 import { Test } from './Test_js'
@@ -20,7 +21,7 @@ const Main = cmp(async function Main(props: any) {
   const { feature } = model.main.sdk
   const { utility } = model.main.sdk
 
-  Copy({ from: 'tm/' + target.name + '/package.json', to: 'package.json' })
+  Package({ target })
 
   Test({ target })
 
@@ -69,7 +70,6 @@ const Main = cmp(async function Main(props: any) {
 
       })
     })
-
 
     Config({ target })
 

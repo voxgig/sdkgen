@@ -26,11 +26,14 @@ type SdkGenOptions = {
 declare const Jostraca: typeof JostracaModule.Jostraca;
 declare function SdkGen(opts: SdkGenOptions): {
     pino: import("pino").Logger<string, boolean>;
-    generate: (spec: any) => Promise<void>;
+    generate: (spec: any) => Promise<{
+        ok: boolean;
+        name: string;
+    }>;
     action: (args: string[]) => Promise<void>;
 };
 declare namespace SdkGen {
-    var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any, ctx: any) => Promise<void>>;
+    var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any, ctx: any) => Promise<any>>;
 }
 export type { SdkGenOptions, };
 type Component = (props: any, children?: any) => void;
@@ -46,6 +49,8 @@ export declare const vmap: (o: any, p: any) => any;
 export declare const get: (root: any, path: string | string[]) => any;
 export declare const getx: (root: any, path: string | string[]) => any;
 export declare const template: (root: any, path: string | string[]) => any;
+export declare const deep: (...args: any[]) => any;
+export declare const omap: (...args: any[]) => any;
 export declare const Project: Component;
 export declare const Folder: Component;
 export declare const File: Component;

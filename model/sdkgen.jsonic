@@ -12,6 +12,10 @@ main: sdk: target: &: {
   module: {
     name: string
   }
+  deps: &: {
+    active: *false | boolean
+    version: *'*' | string 
+  }
 }
 
 
@@ -22,9 +26,12 @@ main: sdk: entity: &: {
 
 
 main: sdk: feature: &: {
-  name: .$KEY
+  # name: .$KEY # FIX: aontu bug - name not resolved
   active: *false | boolean
   title: string
+
+  # TODO: version '0.0.1' | semver # where semver is a string format type as per semver.org
+  version: *'0.0.1' | string
 
   hook: &: {
    active: *false | boolean
@@ -33,11 +40,24 @@ main: sdk: feature: &: {
 
   hook: {
     PostConstruct: {}
+    SetData: {}
+    GetData: {}
+    GetQuery: {}
+        
     PreOperation: {}
     ModifyOp: {}
     PreFetch: {}
     PostFetch: {}
+    ModifyResult: {}
+    ModifyData: {}
+    ModifyList: {}
     PostOperation: {}
+  }
+
+  # Target specific structures 
+  target: &: deps: &: {
+    active: *false | boolean
+    version: *'*' | string 
   }
 }
 

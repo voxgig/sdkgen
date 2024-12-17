@@ -9,7 +9,13 @@ const Feature = cmp(function Feature(props: any) {
 
   Folder({ name: 'src/feature/' + feature.name }, () => {
     // TODO: Copy should just warn if from not found
-    Copy({ from: 'tm/' + target.name + '/src/feature/' + feature.name })
+    Copy({
+      from: 'tm/' + target.name + '/src/feature/' + feature.name,
+      replace: {
+        FEATURE_VERSION: feature.version,
+        FEATURE_Name: feature.Name,
+      }
+    })
   })
 
 })

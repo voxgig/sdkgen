@@ -85,6 +85,8 @@ function SdkGen(opts: SdkGenOptions) {
     await jostraca.generate(jopts, () => Root({ model }))
 
     log.info({ point: 'generate-end' })
+
+    return { ok: true, name: 'sdkgen' }
   }
 
 
@@ -200,7 +202,7 @@ SdkGen.makeBuild = async function(opts: SdkGenOptions) {
     }
 
     // await apidef.generate({ model, build, config })
-    await sdkgen.generate({ model, build, config })
+    return await sdkgen.generate({ model, build, config })
   }
 }
 
@@ -263,6 +265,10 @@ export const vmap: (o: any, p: any) => any = JostracaModule.vmap
 export const get: (root: any, path: string | string[]) => any = JostracaModule.get
 export const getx: (root: any, path: string | string[]) => any = JostracaModule.getx
 export const template: (root: any, path: string | string[]) => any = JostracaModule.template
+
+export const deep: (...args: any[]) => any = JostracaModule.deep
+export const omap: (...args: any[]) => any = JostracaModule.omap
+
 
 export const Project: Component = JostracaModule.Project
 export const Folder: Component = JostracaModule.Folder

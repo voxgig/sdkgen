@@ -9,7 +9,7 @@ async update(data) {
     path: 'PATH',
     params: ['PARAM'],
     query: this.#query,
-    data,
+    data: null == data ? this.#data : data,
     state: {},
     extract: (ctx)=>'EXTRACT',
   }

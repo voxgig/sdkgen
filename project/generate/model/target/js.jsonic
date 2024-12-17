@@ -1,5 +1,24 @@
 
-title: JavaScript
-ext: js
-comment: line: "//"
-module: name: $$name$$
+main: sdk: target: js: {
+  
+  title: JavaScript
+  ext: js
+  comment: line: "//"
+  module: name: $$name$$
+
+  deps: &: {
+    # TODO: fix aontu disjunctions!
+    kind: *'prod' | string # 'peer' |'dev'
+  }
+  
+  deps: {
+    '@hapi/code': { active: true, version: '^9.0.3', kind: dev }
+    'dotenv': { active: true, version: '^16.4.5', kind: dev }
+  }
+}
+
+
+main: sdk: feature: &: target: js: deps: &: {
+  # TODO: fix aontu disjunctions!
+  kind: *'prod' | string # 'peer' |'dev'
+}

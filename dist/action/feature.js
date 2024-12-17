@@ -38,13 +38,13 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
             // TODO: validate feature is a-z0-9-_. only
             (0, jostraca_1.Folder)({ name: 'model/feature' }, () => {
                 (0, jostraca_1.Copy)({
-                    from: BASE + '/tm/generate/model/feature/' + name + '.jsonic',
+                    from: BASE + '/project/generate/model/feature/' + name + '.jsonic',
                     exclude: true
                 });
             });
             (0, jostraca_1.each)(target, (target) => (0, jostraca_1.Folder)({ name: 'tm/' + target.name + '/src/feature/' + name }, () => {
                 (0, jostraca_1.Copy)({
-                    from: BASE + '/tm/generate/tm/' + target.name + '/src/feature/' + name,
+                    from: BASE + '/project/generate/tm/' + target.name + '/src/feature/' + name,
                     exclude: true
                 });
             }));
@@ -65,10 +65,10 @@ async function modifyModel({ features, model, tree, fs }) {
     let src = fs().readFileSync(path, 'utf8');
     // Inject feature file references into model
     features.sort().map((feature) => {
-        const lineRE = new RegExp(`main:\\s+sdk:\\s+feature:\\s+${feature}:\\s+@"feature/${feature}.jsonic"`);
+        const lineRE = new RegExp(`@"feature/${feature}.jsonic"`);
         if (!src.match(lineRE)) {
             src = src.replace(/(main:\s+sdk:\s+feature:\s+\{\s*\}\n)/, '$1' +
-                `main: sdk: feature: ${feature}: @"feature/${feature}.jsonic"\n`);
+                `@"feature/${feature}.jsonic"\n`);
         }
     });
     fs().writeFileSync(path, src);

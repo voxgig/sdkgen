@@ -49,8 +49,7 @@ const Operation = cmp(function Operation(props: any) {
       '#Feature-Hook': ({ name, indent }: any) =>
         FeatureHook({ name }, (f: any) =>
           Line({ indent },
-            `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}` +
-            `({ client: this.#client, entity: this, ${featureHookCtx[name as string]} })`)),
+            `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}(ctx)`)),
     }
   })
 })

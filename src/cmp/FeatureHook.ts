@@ -11,7 +11,7 @@ const FeatureHook = cmp(function FeatureHook(props: any, children: any) {
   names(hook, props.name)
 
   each(feature)
-    .map(feature => (console.log(props.name, feature), feature))
+    // .map(feature => (console.log(props.name, feature), feature))
     .filter(feature => feature.active && feature.hook[props.name].active)
     .map(feature => each(children, { call: true, args: feature }))
 })
