@@ -17,10 +17,10 @@ async function response(ctx) {
 
   try {
     result = resbasic(result, response)
+    result = resheaders(result, response)
+    result = await resbody(result, response)
     
     if(null == result.err) {
-      result = resheaders(result, response)
-      result = await resbody(result, response)
       result.ok = true
     }
   }

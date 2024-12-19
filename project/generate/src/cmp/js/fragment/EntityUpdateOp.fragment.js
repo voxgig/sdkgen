@@ -11,7 +11,8 @@ async update(data) {
     query: this.#query,
     data: null == data ? this.#data : data,
     state: {},
-    extract: (ctx)=>'EXTRACT',
+    inward: (ctx)=>'INWARD',
+    outward: (ctx)=>'OUTWARD',
   }
   
   let ctx = {client, entity, op}
@@ -42,12 +43,10 @@ async update(data) {
 
 
   if(ctx.result.ok) {
-    ctx.exdata = this.#utility.extract(ctx)
+    ctx.indata = this.#utility.inward(ctx)
   
-    // #ModifyData-Hook
-  
-    if(null != ctx.exdata) {
-      this.#data = ctx.exdata
+    if(null != ctx.indata) {
+      this.#data = ctx.indata
     }
     
     this.#postUpdateHook(ctx)  

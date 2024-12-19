@@ -1,15 +1,15 @@
 
-const { error }  = require('./ErrorUtility')
+const { error } = require('./ErrorUtility')
 
-function extract(ctx) {
-  if(!ctx.result.ok) {
+function inward(ctx) {
+  if (!ctx.result.ok) {
     return undefined
   }
-  
+
   try {
-    return ctx.op.extract(ctx)
+    return ctx.op.inward(ctx)
   }
-  catch(err) {
+  catch (err) {
     // TDOD: need error codes and err msg text
     ctx.result.ok = false
     ctx.result.err = err
@@ -19,5 +19,5 @@ function extract(ctx) {
 
 
 module.exports = {
-  extract
+  inward
 }

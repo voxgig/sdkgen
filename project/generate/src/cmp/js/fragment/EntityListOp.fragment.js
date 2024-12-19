@@ -11,7 +11,8 @@ async list(query) {
     query,
     data: this.#data,
     state: {},
-    extract: (ctx)=>'EXTRACT',
+    inward: (ctx)=>'INWARD',
+    outward: (ctx)=>'OUTWARD',
   }
 
   let ctx = {client, entity, op}
@@ -42,15 +43,13 @@ async list(query) {
 
 
   if(ctx.result.ok) {
-    ctx.exlist = this.#utility.extract(ctx)
-
-    // #ModifyList-Hook
+    ctx.inlist = this.#utility.inward(ctx)
 
     const entities = []
 
-    if(null != ctx.exlist) {
-      for(let entry of ctx.exlist) {
-        const entity = new NameEntity(this.#client, this.#options())
+    if(null != ctx.inlist) {
+      for(let entry of ctx.inlist) {
+        const entity = new NameEntity(this.#client, this.options())
         entity.data(entry)
         entities.push(entity)
       }

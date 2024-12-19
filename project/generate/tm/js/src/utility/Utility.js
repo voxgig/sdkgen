@@ -5,14 +5,15 @@ const { empty } = require('./EmptyUtility')
 const { error } = require('./ErrorUtility')
 const { escre } = require('./EscreUtility')
 const { escurl } = require('./EscurlUtility')
-const { extract } = require('./ExtractUtility')
 const { fetch } = require('./FetchUtility')
 const { fullurl } = require('./FullurlUtility')
 const { headers } = require('./HeadersUtility')
+const { inward } = require('./InwardUtility')
 const { joinurl } = require('./JoinurlUtility')
 const { method } = require('./MethodUtility')
 const { operator } = require('./OperatorUtility')
 const { options } = require('./OptionsUtility')
+const { outward } = require('./outwardUtility')
 const { params } = require('./ParamsUtility')
 const { query } = require('./QueryUtility')
 const { resbasic } = require('./ResbasicUtility')
@@ -29,14 +30,15 @@ const Utility = {
   error,
   escre,
   escurl,
-  extract,
   fetch,
   fullurl,
   headers,
+  inward,
   joinurl,
   method,
   operator,
   options,
+  outward,
   params,
   query,
   resbasic,

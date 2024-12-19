@@ -11,7 +11,8 @@ async remove(query) {
     query,
     data: this.#data,
     state: {},
-    extract: (ctx)=>'EXTRACT',
+    inward: (ctx)=>'INWARD',
+    outward: (ctx)=>'OUTWARD',
   }
   
   let ctx = {client, entity, op}
@@ -42,12 +43,10 @@ async remove(query) {
 
 
   if(ctx.result.ok) {
-    ctx.exdata = this.#utility.extract(ctx)
+    ctx.indata = this.#utility.inward(ctx)
 
-    // #ModifyData-Hook
-
-    if(null != ctx.exdata) {
-      this.#data = ctx.exdata
+    if(null != ctx.indata) {
+      this.#data = ctx.indata
     }
     
     this.#postRemoveHook(ctx)  

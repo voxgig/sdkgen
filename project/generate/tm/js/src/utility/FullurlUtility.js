@@ -13,7 +13,7 @@ function fullurl(ctx) {
   const params = spec.params
   for(let key of op.params) {
     if(null == params[key]) {
-      params[key] = 'query' === op.kind ? query[key] : data[key]
+      params[key] = 'res' === op.kind ? query[key] : data[key]
     }
   }
   

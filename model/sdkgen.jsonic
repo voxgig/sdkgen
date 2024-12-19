@@ -49,8 +49,6 @@ main: sdk: feature: &: {
     PreFetch: {}
     PostFetch: {}
     ModifyResult: {}
-    ModifyData: {}
-    ModifyList: {}
     PostOperation: {}
   }
 

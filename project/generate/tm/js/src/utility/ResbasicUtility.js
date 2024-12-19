@@ -1,8 +1,14 @@
 
 function resbasic(response, fetchResponse) {
-  response.ok = fetchResponse.ok
   response.status = fetchResponse.status
-  response.statusText = fetchResponse.statusText || ''
+  response.statusText = fetchResponse.statusText || 'no-status'
+
+  // TODO: use spec!
+  if(400 <= response.status) {
+    response.ok = false
+    response.err = new Error(response.status+': '+response.statusText)
+  }
+  
   return response
 }
 

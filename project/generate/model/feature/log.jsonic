@@ -14,8 +14,6 @@ main: sdk: feature: log: {
     PreFetch: active: true
     PostFetch: active: true
     ModifyResult: active: true
-    ModifyData: active: true
-    ModifyList: active: true
     PostOperation: active: true
   }
 

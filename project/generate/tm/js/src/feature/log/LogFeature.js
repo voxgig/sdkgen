@@ -85,14 +85,6 @@ class LogFeature {
     this.#loghook('ModifyResult', ctx)
   }
  
-  ModifyData(ctx) {
-    this.#loghook('ModifyData', ctx)
-  }
-
-  ModifyList(ctx) {
-    this.#loghook('ModifyList', ctx)
-  }
-
   PostOperation(ctx) {
     this.#loghook('PostOperation', ctx)
   }

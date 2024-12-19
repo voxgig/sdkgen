@@ -19,8 +19,6 @@ async function fetch(ctx) {
         'object' === typeof spec.body ? JSON.stringify(spec.body) : spec.body
     }
 
-    console.log('FR', url, fetchReq)
-    
     response = global.fetch(url, fetchReq)
   }
   catch(err) {

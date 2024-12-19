@@ -23,16 +23,7 @@ const Operation = cmp(function Operation(props: any) {
     .map((p: string) => p.substring(1, p.length - 1))
     .filter((p: string) => null != p && '' !== p))
 
-  // console.log('PARAMS', params)
-
-  const featureHookCtx: Record<string, string> = {
-    PreOperation: 'op',
-    CustomOp: 'op',
-    ModifyOp: 'op',
-    PreFetch: 'op, spec',
-    PostFetch: 'op, spec, response',
-    PostOperation: 'op, spec, response, result',
-  }
+  const hasp = '' != entop.place
 
   Fragment({
     from: ff + '/Entity' + camelify(opname) + 'Op.fragment.js',
@@ -41,7 +32,12 @@ const Operation = cmp(function Operation(props: any) {
       Name: entity.Name,
       PATH: entop.path,
       "['PARAM']": params,
-      "'EXTRACT'": entop.extract || 'list' === opname ? 'ctx.result.items' : 'ctx.result.body',
+      "'INWARD'":
+        entop.inward ||
+        'ctx.result.body' + ('' === entop.place ? '' : '.' + entop.place),
+      "'OUTWARD'":
+        entop.outward ||
+        (hasp ? '({' + entop.place + ': ' : '') + 'ctx.op.data' + (hasp ? '})' : ''),
 
       'class EntityOperation { // REMOVED': '',
       '} // REMOVED': '',
@@ -75,8 +71,6 @@ const Entity = cmp(function Entity(props: any) {
             !opnames.includes(opname) ? '' : ({ indent }: any) => {
               Operation({ ff, opname, indent, entity })
             }, a), {}))
-
-      console.log('ENTOP', entity.name, opfrags)
 
       Fragment({
         from: ff + '/Entity.fragment.js',

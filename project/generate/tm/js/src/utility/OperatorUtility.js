@@ -1,11 +1,12 @@
 
 
+// NOTE: duplicated in @voxgig/apidef - dedup to @voxgig/util?
 const OPKIND = {
-  create: 'data',
-  update: 'data',
-  load: 'query',
-  list: 'query',
-  remove: 'query',
+  create: 'req',
+  update: 'req',
+  remove: 'req',
+  load: 'res',
+  list: 'res',
 }
 
 
@@ -22,7 +23,8 @@ function operator(ctx) {
     query: {...op.query} || {},
     data: {...op.data} || {},
     state: op.state,
-    extract: op.extract,
+    inward: op.inward,
+    outward: op.outward,
   }
 
   return out
