@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "types": "dist/sdkgen.d.ts",
@@ -32,6 +32,8 @@
   },
   "license": "MIT",
   "files": [
+    "bin",
+    "project",
     "model",
     "src",
     "dist",
