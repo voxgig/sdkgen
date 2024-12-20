@@ -21,7 +21,7 @@ describe('sdkgen', () => {
 
     const { fs, vol } = memfs({})
     const sdkgen = SdkGen({
-      fs: () => fs, folder: '/top', root: ''
+      fs, folder: '/top', root: ''
     })
     expect(sdkgen).exist()
 
@@ -31,7 +31,7 @@ describe('sdkgen', () => {
 
     const spec = {
       model,
-      root
+      root,
     }
 
     await sdkgen.generate(spec)
