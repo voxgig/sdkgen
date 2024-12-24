@@ -5,9 +5,10 @@ async update(data) {
   
   let op = {
     entity: 'Name',
-    name:'create',
+    name:'update',
     path: 'PATH',
-    params: ['PARAM'],
+    params: ['PARAM-LIST'],
+    alias: {'ALIAS':'MAP'},
     query: this.#query,
     data: null == data ? this.#data : data,
     state: {},
@@ -27,7 +28,7 @@ async update(data) {
 
   this.#data = op.data
   
-  ctx.spec = await this.#utility.spec()
+  ctx.spec = await this.#utility.spec(ctx)
 
   
   // #PreFetch-Hook

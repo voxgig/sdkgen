@@ -1,5 +1,6 @@
 import { Pino } from '@voxgig/util';
 import * as JostracaModule from 'jostraca';
+import { requirePath } from './utility';
 import { Main } from './cmp/Main';
 import { Entity } from './cmp/Entity';
 import { Feature } from './cmp/Feature';
@@ -61,4 +62,4 @@ export declare const Inject: Component;
 export declare const Line: Component;
 export declare const Slot: Component;
 export declare const List: Component;
-export { Main, Entity, Feature, Readme, ReadmeInstall, ReadmeOptions, ReadmeEntity, FeatureHook, Jostraca, SdkGen, };
+export { Main, Entity, Feature, Readme, ReadmeInstall, ReadmeOptions, ReadmeEntity, FeatureHook, Jostraca, SdkGen, requirePath, };

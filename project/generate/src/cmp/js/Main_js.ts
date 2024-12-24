@@ -64,8 +64,11 @@ const Main = cmp(async function Main(props: any) {
         }
       }, () => {
 
+        // console.log('ENTITY-SDK', model.main.sdk.entity)
+
         each(entity, (entity: any) => {
-          MainEntity({ model, target, entity })
+          // console.log('ENTITY', entity.name)
+          MainEntity({ target, entity, entitySDK: model.main.sdk.entity[entity.name] })
         })
 
       })

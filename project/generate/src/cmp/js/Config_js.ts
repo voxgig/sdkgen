@@ -9,14 +9,29 @@ import {
 
 
 const Config = cmp(async function Config(props: any) {
-  const { target, ctx$: { model: { main: { def } } } } = props
+  const { target, ctx$: { model } } = props
+  const { main: { def, sdk: { entity } } } = model
 
   File({ name: 'Config.' + target.ext }, () => {
     Content(`
 
 const Config = {
   options: {
-    base: '${def.servers[0].url}'
+    base: '${def.servers[0].url}',
+
+    entity: {
+`)
+
+
+    each(entity, (entity: any) => {
+      Content(`
+      ${entity.name}: {
+      },
+`)
+    })
+
+    Content(`
+    }
   }
 }
 

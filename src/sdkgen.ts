@@ -8,7 +8,7 @@ import { Jsonic } from 'jsonic'
 import * as JostracaModule from 'jostraca'
 import { Aontu, Context } from 'aontu'
 
-import { SdkGenError } from './utility'
+import { SdkGenError, requirePath } from './utility'
 
 import { Main } from './cmp/Main'
 import { Entity } from './cmp/Entity'
@@ -294,4 +294,6 @@ export {
 
   Jostraca,
   SdkGen,
+
+  requirePath,
 }

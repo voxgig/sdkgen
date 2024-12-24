@@ -9,9 +9,7 @@ import {
 
 
 const Operation = cmp(function Operation(props: any) {
-  // console.log('OP', props)
-
-  const { ff, opname, indent, entity } = props
+  const { ff, opname, indent, entity, entitySDK } = props
 
   const entop = entity.op[opname]
   const path = entop.path
@@ -23,6 +21,8 @@ const Operation = cmp(function Operation(props: any) {
     .map((p: string) => p.substring(1, p.length - 1))
     .filter((p: string) => null != p && '' !== p))
 
+  const aliasmap = JSON.stringify(entitySDK.alias.field)
+
   const hasp = '' != entop.place
 
   Fragment({
@@ -31,7 +31,8 @@ const Operation = cmp(function Operation(props: any) {
     replace: {
       Name: entity.Name,
       PATH: entop.path,
-      "['PARAM']": params,
+      "['PARAM-LIST']": params,
+      "{'ALIAS':'MAP'}": aliasmap,
       "'INWARD'":
         entop.inward ||
         'ctx.result.body' + ('' === entop.place ? '' : '.' + entop.place),
@@ -53,8 +54,8 @@ const Operation = cmp(function Operation(props: any) {
 
 
 const Entity = cmp(function Entity(props: any) {
-  const { target, entity } = props
-  // const { model } = props.ctx$
+  const { target, entity, entitySDK } = props
+  // console.log('ENTITY', props)
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/js/fragment')
 
@@ -69,7 +70,7 @@ const Entity = cmp(function Entity(props: any) {
           .reduce((a: any, opname: string) =>
           (a['#' + camelify(opname) + 'Op'] =
             !opnames.includes(opname) ? '' : ({ indent }: any) => {
-              Operation({ ff, opname, indent, entity })
+              Operation({ ff, opname, indent, entity, entitySDK })
             }, a), {}))
 
       Fragment({

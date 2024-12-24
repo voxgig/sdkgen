@@ -22,6 +22,8 @@ const { resheaders } = require('./ResheadersUtility')
 const { response } = require('./ResponseUtility')
 const { spec } = require('./SpecUtility')
 
+const validate = require('./ValidateUtility')
+
 
 const Utility = {
   auth,
@@ -46,6 +48,7 @@ const Utility = {
   resheaders,
   response,
   spec,
+  validate,
 }
 
 

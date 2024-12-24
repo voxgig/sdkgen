@@ -4,7 +4,7 @@ const { resbasic }  = require('./ResbasicUtility')
 const { resbody }  = require('./ResbodyUtility')
 
 async function response(ctx) {
-  let { response } = ctx
+  let { response, spec } = ctx
   
   let result = {
     ok: false,
@@ -27,6 +27,8 @@ async function response(ctx) {
   catch(err) {
     result.err = err
   }
+
+  spec.step = 'response'
   
   return result
 }

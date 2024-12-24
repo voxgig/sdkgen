@@ -28,6 +28,8 @@ function spec(ctx) {
     query: reqQuery,
     headers: reqHeaders,
     body: reqBody,
+    step: 'start',
+    alias: {}
   }
 
   spec = auth(ctx, spec)

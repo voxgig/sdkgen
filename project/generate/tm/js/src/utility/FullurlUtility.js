@@ -2,6 +2,7 @@
 const { joinurl }  = require('./JoinurlUtility')
 const { escurl }  = require('./EscurlUtility')
 const { escre }  = require('./EscreUtility')
+const { findparam }  = require('./FindparamUtility')
 
 
 function fullurl(ctx) {
@@ -13,7 +14,7 @@ function fullurl(ctx) {
   const params = spec.params
   for(let key of op.params) {
     if(null == params[key]) {
-      params[key] = 'res' === op.kind ? query[key] : data[key]
+      params[key] = findparam(ctx, key)
     }
   }
   
@@ -26,12 +27,16 @@ function fullurl(ctx) {
 
   let qsep = '?'
   for(let key in spec.query) {
-    const val = spec.query[key]
-    if(null != val) { 
-      url += qsep + escurl(key) + '=' + escurl(val)
-      qsep = '&'
+    if(null == spec.alias[key]) {
+      const val = spec.query[key]
+      if(null != val) { 
+        url += qsep + escurl(key) + '=' + escurl(val)
+        qsep = '&'
+      }
     }
   }
+
+  console.log('URL', url, spec)
   
   return url
 }

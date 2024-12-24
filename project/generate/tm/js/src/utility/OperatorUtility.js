@@ -1,4 +1,6 @@
 
+const { string }  = require('./ValidateUtility')
+
 
 // NOTE: duplicated in @voxgig/apidef - dedup to @voxgig/util?
 const OPKIND = {
@@ -13,13 +15,16 @@ const OPKIND = {
 // Ensure standard operation definition.
 function operator(ctx) {
   const { op } = ctx
+
+  const whence = 'operator definition: field: '
   
   let out = {
-    name: op.name,
-    kind: OPKIND[op.name],
-    entity: op.entity,
-    path: op.path,
-    params: op.params || [],
+    name: string(op.name, whence+'name'),
+    kind: string(OPKIND[op.name], whence+'kind'),
+    path: string(op.path, whence+'path'),
+    entity: string(op.entity, whence+'entity'),
+    params: (op.params || []).map((p,i)=>string(p,'param '+i)),
+    alias: op.alias || {},
     query: {...op.query} || {},
     data: {...op.data} || {},
     state: op.state,
@@ -27,6 +32,8 @@ function operator(ctx) {
     outward: op.outward,
   }
 
+  console.log('operator', out)
+  
   return out
 }
 

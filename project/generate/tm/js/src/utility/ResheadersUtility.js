@@ -1,8 +1,15 @@
 
 function resheaders(response, fetchResponse) {
-  out = {}
-  fetchResponse.headers.forEach((v,k)=>out[k]=v)
-  response.headers = out
+
+  if(fetchResponse && fetchResponse.headers && fetchResponse.headers.forEach) {
+    const headers = {}
+    fetchResponse.headers.forEach((v,k)=>headers[k]=v)
+    response.headers = headers
+  }
+  else {
+    response.headers = {}
+  }
+  
   return response
 }
 

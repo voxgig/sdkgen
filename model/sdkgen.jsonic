@@ -22,6 +22,8 @@ main: sdk: target: &: {
 main: sdk: entity: &: {
   name: .$KEY
   active: *true | boolean
+
+  alias: {}
 }
 
 

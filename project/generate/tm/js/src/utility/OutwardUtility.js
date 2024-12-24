@@ -2,6 +2,8 @@
 const { error } = require('./ErrorUtility')
 
 function outward(ctx) {
+  const { spec } = ctx
+
   if (!ctx.result.ok) {
     return undefined
   }
@@ -15,6 +17,8 @@ function outward(ctx) {
     ctx.result.err = err
     return error(ctx)
   }
+
+  spec.step = 'outward'
 }
 
 

@@ -1,9 +1,19 @@
 
 function error(ctx) {
 
-  const err = new Error('Error: '+ctx.op.name+': '+(ctx.result.err?.message||'unknown'))
-  err.result = ctx.result
-  err.spec = ctx.spec
+  ctx = ctx || {}
+  const op = ctx.op || {}
+  op.name = op.name || 'unknown operation'
+
+  const result = ctx.result || {}
+  const reserr = result.err || {}
+  reserr.message = reserr.message || 'unknown error'
+
+  const spec = ctx.spec || {}
+  
+  const err = new Error('Error: '+op.name+': '+reserr.message)
+  err.result = result
+  err.spec = spec
 
   // TODO: model option to return instead
   throw err
