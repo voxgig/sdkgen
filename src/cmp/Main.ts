@@ -22,6 +22,13 @@ const Main = cmp(function Main(props: any) {
       // to: target + '/src'
     })
   })
+
+  Folder({ name: 'test/utility' }, () => {
+    Copy({
+      from: 'tm/' + target.name + '/test/utility',
+    })
+  })
+
 })
 
 

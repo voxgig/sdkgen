@@ -17,6 +17,11 @@ const Main = (0, jostraca_1.cmp)(function Main(props) {
             // to: target + '/src'
         });
     });
+    (0, jostraca_1.Folder)({ name: 'test/utility' }, () => {
+        (0, jostraca_1.Copy)({
+            from: 'tm/' + target.name + '/test/utility',
+        });
+    });
 });
 exports.Main = Main;
 //# sourceMappingURL=Main.js.map

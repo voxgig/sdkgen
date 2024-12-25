@@ -35,8 +35,9 @@ const Package = cmp(async function Package(props: any) {
     main: `src/${model.const.Name}SDK.js`,
     scripts: {
       'test': 'node --test test/*.test.js',
+      'test-utility': 'node --test test/utility/*.test.js',
       'test-accept': 'node --test test/accept/*.test.js',
-      'test-all': 'npm run test && npm run test-accept'
+      'test-all': 'npm run test && npm run test-utility'
     },
     author: `${model.const.Name}`,
     license: 'MIT',

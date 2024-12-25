@@ -1,5 +1,5 @@
 
-const { string }  = require('./ValidateUtility')
+const { string, array, object, func }  = require('./ValidateUtility')
 
 
 // NOTE: duplicated in @voxgig/apidef - dedup to @voxgig/util?
@@ -23,17 +23,15 @@ function operator(ctx) {
     kind: string(OPKIND[op.name], whence+'kind'),
     path: string(op.path, whence+'path'),
     entity: string(op.entity, whence+'entity'),
-    params: (op.params || []).map((p,i)=>string(p,'param '+i)),
-    alias: op.alias || {},
-    query: {...op.query} || {},
-    data: {...op.data} || {},
-    state: op.state,
-    inward: op.inward,
-    outward: op.outward,
+    params: array(op.params, true, 'params').map((p, i)=>string(p, 'param '+i)),
+    alias: object(op.alias, true, 'alias'),
+    query: {...object(op.query, true, 'query')},
+    data: {...object(op.data, true, 'data')},
+    state: object(op.state, true, 'state'),
+    inward: func(op.inward, false, 'inward'),
+    outward: func(op.outward, false, 'outward'),
   }
 
-  console.log('operator', out)
-  
   return out
 }
 
