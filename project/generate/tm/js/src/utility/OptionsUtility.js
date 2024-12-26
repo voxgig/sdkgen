@@ -1,7 +1,10 @@
 
-const { empty }  = require('./EmptyUtility')
-
 function options(ctx) {
+  // TODO: handle custom utilities from options here, first
+  
+  const { utility } = ctx
+  const { empty } = utility
+
   let config = ctx.config || {}
   let cfgopts = config.options || {}
   
@@ -20,6 +23,7 @@ function options(ctx) {
     let entcfg = cfgopts.entity[name]
     let entopts = options.entity[name] || (options.entity[name] = {})
 
+    // TODO: does this work?
     entopts.alias = entopts.alias || (entopts.alias = {})
     for(let cfgaliaskey in entcfg.alias) {
       entopts.alias = entopts.alias[cfgaliaskey] || entcfg.alias[cfgaliaskey]

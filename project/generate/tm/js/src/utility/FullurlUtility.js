@@ -1,12 +1,11 @@
 
-const { joinurl }  = require('./JoinurlUtility')
-const { escurl }  = require('./EscurlUtility')
-const { escre }  = require('./EscreUtility')
-const { findparam }  = require('./FindparamUtility')
-
 
 function fullurl(ctx) {
-  const { op, spec } = ctx
+  const { op, spec, utility } = ctx
+
+  const { joinurl, escurl, escre, findparam } = utility
+
+
   const { query, data } = op
   
   let url = joinurl(spec.base, spec.prefix, spec.path, spec.suffix)
@@ -36,7 +35,7 @@ function fullurl(ctx) {
     }
   }
 
-  console.log('URL', url, spec)
+  // console.log('URL', url, spec)
   
   return url
 }

@@ -2,7 +2,7 @@
 import * as Path from 'node:path'
 
 import {
-  cmp, each, names,
+  cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
 } from '@voxgig/sdkgen'
 
@@ -47,11 +47,16 @@ const Main = cmp(async function Main(props: any) {
         replace: {
           Name: model.const.Name,
 
-          '#BuildFeature': ({ indent }: any) =>
+
+          '#FeatureOptions': ({ indent }: any) =>
+            Line({ indent }, `const fopts = this.#options.feature || {}`),
+
+          '#BuildFeature': ({ indent }: any) => {
             List({ item: feature, line: false }, ({ item }: any) =>
               Line({ indent }, `${item.name}: ` +
-                `new ${item.Name}Feature(this, this.#options.feature.${item.name}, ` +
-                `${JSON.stringify(item.config || {})}), `)),
+                `new ${item.Name}Feature(this, fopts.${item.name}, ` +
+                `${JSON.stringify(item.config || {})}), `))
+          },
 
           '#CustomUtility': ({ indent }: any) =>
             each(utility, (u: any) =>
@@ -61,6 +66,17 @@ const Main = cmp(async function Main(props: any) {
             FeatureHook({ name }, (f: any) =>
               Line({ indent },
                 `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}({ client: this })`)),
+
+          '#TestOptions': ({ indent }: any) => {
+            const topts = {
+              feature: cmap(feature, {
+                active: false
+              }),
+            }
+            Content({ indent },
+              JSON.stringify(topts, null, 2)
+                .replace(/^{\n  /, '').replace(/\n}$/, ',\n').replace(/\n  /g, '\n'))
+          }
         }
       }, () => {
 

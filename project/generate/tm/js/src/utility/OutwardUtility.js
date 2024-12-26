@@ -1,9 +1,10 @@
 
-const { error } = require('./ErrorUtility')
+
 
 function outward(ctx) {
-  const { spec } = ctx
-
+  const { spec, utility } = ctx
+  const { error } = utility
+  
   if (!ctx.result.ok) {
     return undefined
   }

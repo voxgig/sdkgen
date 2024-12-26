@@ -1,14 +1,8 @@
 
-const { method }  = require('./MethodUtility')
-const { params }  = require('./ParamsUtility')
-const { query }  = require('./QueryUtility')
-const { headers }  = require('./HeadersUtility')
-const { body }  = require('./BodyUtility')
-const { auth }  = require('./AuthUtility')
-
 // Create request specificaton.
 function spec(ctx) {
-  const {client, op} = ctx
+  const { client, op, utility } = ctx
+  const { method, params, query, headers, body, auth } = utility
   
   let options = client.options()
 

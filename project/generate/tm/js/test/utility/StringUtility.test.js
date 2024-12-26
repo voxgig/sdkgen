@@ -2,7 +2,12 @@
 const { test, describe } = require('node:test')
 const { equal, deepEqual } = require('node:assert')
 
-const { stringify } = require('../../src/utility/StringUtility')
+const { NameSDK } = require('../..')
+
+const client = NameSDK.test()
+const { string } = client.utility()
+
+const { stringify } = string
 
 
 describe('StringUtility', ()=>{

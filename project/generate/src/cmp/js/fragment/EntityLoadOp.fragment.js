@@ -1,9 +1,13 @@
 class EntityOperation { // REMOVED
+
+  // TODO: rename query to match to avoif conflict with url query params  
 async load(query) {
-  let entity = this
-  let client = this.#client
+  const entity = this
+  const client = this.#client
+  const utility = this.#utility
+  const { operator, spec, fetch, response, inward, error } = utility
   
-  let op = {
+  const op = {
     entity:'Name',
     name:'load',
     path: 'PATH',
@@ -16,35 +20,35 @@ async load(query) {
     outward: (ctx)=>'OUTWARD',
   }
 
-  let ctx = {client, entity, op}
+  let ctx = {client, entity, op, utility}
 
   
   // #PreOperation-Hook    
 
-  ctx.op = await this.#utility.operator(ctx)
+  ctx.op = await operator(ctx)
 
   
   // #ModifyOp-Hook
 
   this.#query = op.query
   
-  ctx.spec = await this.#utility.spec(ctx)
+  ctx.spec = await spec(ctx)
 
   
   // #PreFetch-Hook
 
-  ctx.response = await this.#utility.fetch(ctx)
+  ctx.response = await fetch(ctx)
 
   
   // #PostFetch-Hook
 
-  ctx.result = await this.#utility.response(ctx)
+  ctx.result = await response(ctx)
 
   // #ModifyResult-Hook
   
 
   if(ctx.result.ok) {
-    ctx.indata = this.#utility.inward(ctx)
+    ctx.indata = inward(ctx)
 
     if(null != ctx.indata) {
       this.#data = ctx.indata
@@ -57,7 +61,7 @@ async load(query) {
   else {
     this.#postLoadHook(ctx)
 
-    return this.#utility.error(ctx)
+    return error(ctx)
   }
 }
 

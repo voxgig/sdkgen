@@ -1,9 +1,9 @@
 
-const { error } = require('./ErrorUtility')
-
 
 function body(ctx) {
-  const { op } = ctx
+  const { op, utility } = ctx
+  const { error } = utility
+
 
   let body = undefined
 

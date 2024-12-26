@@ -1,6 +1,4 @@
 
-const { string, array, object, func }  = require('./ValidateUtility')
-
 
 // NOTE: duplicated in @voxgig/apidef - dedup to @voxgig/util?
 const OPKIND = {
@@ -14,8 +12,10 @@ const OPKIND = {
 
 // Ensure standard operation definition.
 function operator(ctx) {
-  const { op } = ctx
+  const { op, utility } = ctx
 
+  const { string, array, object, func } = utility.validate
+  
   const whence = 'operator definition: field: '
   
   let out = {

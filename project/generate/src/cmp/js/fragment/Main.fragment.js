@@ -12,8 +12,14 @@ class NameSDK {
 
     // # CustomUtility
 
-    this.#options = this.#utility.options({self:this, options, config:Config})
+    this.#options = this.#utility.options({
+      self:this,
+      utility: this.#utility,
+      options,
+      config:Config
+    })
 
+    // #FeatureOptions
     this.#features = {
       // #BuildFeature
     }
@@ -34,6 +40,13 @@ class NameSDK {
     return { ...this.#utility }
   }
 
+
+  static test(opts) {
+    return new NameSDK({
+      // #TestOptions
+      ...(opts || {})
+    })
+  }
 
   // <[SLOT]>
 }

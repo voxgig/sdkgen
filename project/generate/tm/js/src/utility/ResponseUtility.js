@@ -1,11 +1,9 @@
 
-const { resheaders }  = require('./ResheadersUtility')
-const { resbasic }  = require('./ResbasicUtility')
-const { resbody }  = require('./ResbodyUtility')
-
 async function response(ctx) {
-  let { response, spec } = ctx
+  let { response, spec, utility } = ctx
   
+  const { resheaders, resbasic, resbody } = utility
+
   let result = {
     ok: false,
     status: -1,

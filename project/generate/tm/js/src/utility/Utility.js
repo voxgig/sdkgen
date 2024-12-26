@@ -6,6 +6,7 @@ const { error } = require('./ErrorUtility')
 const { escre } = require('./EscreUtility')
 const { escurl } = require('./EscurlUtility')
 const { fetch } = require('./FetchUtility')
+const { findparam } = require('./FindparamUtility')
 const { fullurl } = require('./FullurlUtility')
 const { headers } = require('./HeadersUtility')
 const { inward } = require('./InwardUtility')
@@ -23,6 +24,7 @@ const { response } = require('./ResponseUtility')
 const { spec } = require('./SpecUtility')
 
 const validate = require('./ValidateUtility')
+const string = require('./StringUtility')
 
 
 const Utility = {
@@ -33,6 +35,7 @@ const Utility = {
   escre,
   escurl,
   fetch,
+  findparam,
   fullurl,
   headers,
   inward,
@@ -48,6 +51,7 @@ const Utility = {
   resheaders,
   response,
   spec,
+  string,
   validate,
 }
 

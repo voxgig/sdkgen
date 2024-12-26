@@ -2,12 +2,17 @@
 const { test, describe } = require('node:test')
 const { equal, deepEqual, throws } = require('node:assert')
 
+const { NameSDK } = require('../..')
+
+const client = NameSDK.test()
+const { validate } = client.utility()
+
 const {
   string,
   array,
   object,
-  func
-} = require('../../src/utility/ValidateUtility')
+  func,
+} = validate
 
 
 describe('ValidateUtility', ()=>{

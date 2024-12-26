@@ -2,7 +2,10 @@
 const { test, describe } = require('node:test')
 const { equal, deepEqual } = require('node:assert')
 
-const { escurl } = require('../../src/utility/EscurlUtility')
+const { NameSDK } = require('../..')
+
+const client = NameSDK.test()
+const { escurl } = client.utility()
 
 
 describe('EscurlUtility', ()=>{

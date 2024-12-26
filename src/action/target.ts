@@ -43,7 +43,8 @@ async function cmd_target_add(args: any[], ctx: any) {
     fs: ctx.fs,
     folder: ctx.folder,
     log: ctx.log.child({ cmp: 'jostraca' }),
-    meta: { model: ctx.model, tree: ctx.tree }
+    meta: { model: ctx.model, tree: ctx.tree },
+    model: ctx.model
   }
 
   await jostraca.generate(opts, () => TargetRoot({ targets }))
@@ -55,10 +56,12 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
   const { ctx$, targets } = props
 
   // TODO: model should be a top level ctx property
-  ctx$.model = ctx$.meta.model
+  // ctx$.model = ctx$.meta.model
 
   // console.log('MODEL')
   // console.dir(ctx$.model, { depth: null })
+
+  const { model } = ctx$
 
   Project({}, () => {
     each(targets, (n) => {
@@ -82,7 +85,10 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       Folder({ name: 'tm/' + name }, () => {
         Copy({
           from: 'node_modules/@voxgig/sdkgen/project/generate/tm/' + name,
-          exclude: [/src\/feature/]
+          exclude: [/src\/feature/],
+          replace: {
+            Name: model.const.Name,
+          }
         })
       })
 

@@ -1,9 +1,10 @@
 
-const { fullurl }  = require('./FullurlUtility')
 
 // Make HTTP request.
 async function fetch(ctx) {
-  const {op, spec} = ctx
+  const { op, spec, utility } = ctx
+  const { fullurl } = utility
+
   let response = {}
 
   const url = spec.url = fullurl(ctx)
