@@ -1,5 +1,5 @@
 class EntityOperation { // REMOVED
-async list(query) {
+async list(match) {
   let entity = this
   let client = this.#client
   const utility = this.#utility
@@ -11,7 +11,7 @@ async list(query) {
     path: 'PATH',
     params: ['PARAM-LIST'],
     alias: {'ALIAS':'MAP'},
-    query,
+    match,
     data: this.#data,
     state: {},
     inward: (ctx)=>'INWARD',
@@ -28,7 +28,7 @@ async list(query) {
   
   // #ModifyOp-Hook
 
-  this.#query = ctx.op.query
+  this.#match = ctx.op.match
   
   ctx.spec = await spec(ctx)
 

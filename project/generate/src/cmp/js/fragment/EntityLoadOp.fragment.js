@@ -1,7 +1,6 @@
 class EntityOperation { // REMOVED
 
-  // TODO: rename query to match to avoif conflict with url query params  
-async load(query) {
+async load(match) {
   const entity = this
   const client = this.#client
   const utility = this.#utility
@@ -13,7 +12,7 @@ async load(query) {
     path: 'PATH',
     params: ['PARAM-LIST'],
     alias: {'ALIAS':'MAP'},
-    query,
+    match,
     data: this.#data,
     state: {},
     inward: (ctx)=>'INWARD',
@@ -30,7 +29,7 @@ async load(query) {
   
   // #ModifyOp-Hook
 
-  this.#query = op.query
+  this.#match = op.match
   
   ctx.spec = await spec(ctx)
 

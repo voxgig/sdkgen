@@ -9,6 +9,10 @@ main: sdk: feature: log: {
 
   hook: {
     PostConstruct: active: true
+    SetData: active: true
+    GetData: active: true
+    GetMatch: active: true
+
     PreOperation: active: true
     ModifyOp: active: true
     PreFetch: active: true

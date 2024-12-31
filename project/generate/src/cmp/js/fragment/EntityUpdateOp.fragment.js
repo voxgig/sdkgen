@@ -11,7 +11,7 @@ async update(data) {
     path: 'PATH',
     params: ['PARAM-LIST'],
     alias: {'ALIAS':'MAP'},
-    query: this.#query,
+    match: this.#match,
     data: null == data ? this.#data : data,
     state: {},
     inward: (ctx)=>'INWARD',

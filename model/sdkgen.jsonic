@@ -44,7 +44,7 @@ main: sdk: feature: &: {
     PostConstruct: {}
     SetData: {}
     GetData: {}
-    GetQuery: {}
+    GetMatch: {}
         
     PreOperation: {}
     ModifyOp: {}

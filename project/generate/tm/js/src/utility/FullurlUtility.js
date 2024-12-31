@@ -6,7 +6,7 @@ function fullurl(ctx) {
   const { joinurl, escurl, escre, findparam } = utility
 
 
-  const { query, data } = op
+  // const { match, data } = op
   
   let url = joinurl(spec.base, spec.prefix, spec.path, spec.suffix)
 

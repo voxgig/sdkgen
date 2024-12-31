@@ -19,7 +19,6 @@ const Main = cmp(async function Main(props: any) {
 
   const { entity } = model.main.api
   const { feature } = model.main.sdk
-  const { utility } = model.main.sdk
 
   Package({ target })
 
@@ -38,10 +37,6 @@ const Main = cmp(async function Main(props: any) {
       List({ item: entity }, ({ item }: any) =>
         Line(`const { ${item.Name}Entity } = require('./entity/${item.Name}Entity')`))
 
-      each(utility, (u: any) =>
-        Line(`const { ${u.name} } = require('./utility/${u.Name}Utility')`))
-      Line('')
-
       Fragment({
         from: Path.normalize(__dirname + '/../../../src/cmp/js/fragment/Main.fragment.js'),
         replace: {
@@ -57,10 +52,6 @@ const Main = cmp(async function Main(props: any) {
                 `new ${item.Name}Feature(this, fopts.${item.name}, ` +
                 `${JSON.stringify(item.config || {})}), `))
           },
-
-          '#CustomUtility': ({ indent }: any) =>
-            each(utility, (u: any) =>
-              Line({ indent }, `this.#utility.${u.name} = ${u.name}`)),
 
           '#Feature-Hook': ({ name, indent }: any) =>
             FeatureHook({ name }, (f: any) =>
@@ -79,14 +70,10 @@ const Main = cmp(async function Main(props: any) {
           }
         }
       }, () => {
-
-        // console.log('ENTITY-SDK', model.main.sdk.entity)
-
         each(entity, (entity: any) => {
           // console.log('ENTITY', entity.name)
           MainEntity({ target, entity, entitySDK: model.main.sdk.entity[entity.name] })
         })
-
       })
     })
 

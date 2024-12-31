@@ -10,16 +10,20 @@ class NameSDK {
   
   constructor(options) {
 
-    // # CustomUtility
-
     this.#options = this.#utility.options({
-      self:this,
+      client: this,
       utility: this.#utility,
+      config: Config,
       options,
-      config:Config
     })
 
+    const customUtils = this.#options.utility || {}
+    for(let key of Object.keys(customUtils)) {
+      this.#utility[key] = customUtils[key]
+    }
+    
     // #FeatureOptions
+
     this.#features = {
       // #BuildFeature
     }

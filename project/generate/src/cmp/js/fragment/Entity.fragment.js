@@ -5,7 +5,7 @@ class NameEntity {
   #features
   #utility
   #data
-  #query
+  #match
   
   constructor(client, options) {
     options = options || {}
@@ -16,7 +16,7 @@ class NameEntity {
     this.#features = client.features()
     this.#utility = client.utility()
     this.#data = {}
-    this.#query = {}
+    this.#match = {}
   }
 
   options() {
@@ -28,7 +28,7 @@ class NameEntity {
   }
 
   data(data) {
-    // NOTE: query cannot be mutated.
+    // NOTE: data can be mutated.
     if(null != data) {
 
       // #SetData-Hook
@@ -43,11 +43,11 @@ class NameEntity {
     return out
   }
 
-  query() {
-    // NOTE: query cannot be mutated.
-    let out = { ...this.#query }
+  match() {
+    // NOTE: match cannot be mutated.
+    let out = { ...this.#match }
 
-    // #GetQuery-Hook
+    // #GetMatch-Hook
 
     return out
   }

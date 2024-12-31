@@ -12,7 +12,6 @@ main: sdk: target: js: {
   }
   
   deps: {
-    '@hapi/code': { active: true, version: '^9.0.3', kind: dev }
     'dotenv': { active: true, version: '^16.4.5', kind: dev }
   }
 }

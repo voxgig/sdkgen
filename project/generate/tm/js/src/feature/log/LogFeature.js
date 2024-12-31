@@ -60,8 +60,8 @@ class LogFeature {
     this.#loghook('GetData', ctx)
   }
   
-  GetQuery(ctx) {
-    this.#loghook('GetQuery', ctx)
+  GetMatch(ctx) {
+    this.#loghook('GetMatch', ctx)
   }
 
 
