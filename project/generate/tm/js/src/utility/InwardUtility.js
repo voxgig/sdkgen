@@ -1,23 +1,27 @@
 
+/* Convert data from request result into a structure suitable for use as entity data.
+ *
+ * The operation (op) property `inward` is a function used to perform the data extraction.
+ */
 function inward(ctx) {
-  const { spec, utility } = ctx
+  const { op, spec, utility, result } = ctx
   const { error } = utility
 
-  if (!ctx.result.ok) {
+  spec.step = 'inward'
+
+  if (!result.ok) {
     return undefined
   }
 
   try {
-    return ctx.op.inward(ctx)
+    return op.inward(ctx)
   }
   catch (err) {
     // TDOD: need error codes and err msg text
-    ctx.result.ok = false
-    ctx.result.err = err
-    return error(ctx)
+    result.ok = false
+    result.err = err
+    return utility.error(ctx)
   }
-
-  spec.step = 'inward'
 }
 
 

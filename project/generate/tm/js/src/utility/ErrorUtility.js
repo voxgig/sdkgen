@@ -11,7 +11,7 @@ function error(ctx) {
 
   const spec = ctx.spec || {}
   
-  const err = new Error('Error: '+op.name+': '+reserr.message)
+  const err = new Error('NameSDK: '+op.name+': '+reserr.message)
   err.result = result
   err.spec = spec
 

@@ -5,30 +5,30 @@ const { equal, deepEqual } = require('node:assert')
 const { NameSDK } = require('../..')
 
 const client = NameSDK.test()
-const { outward } = client.utility()
+const { inward } = client.utility()
 
 
-describe('OutwardUtility', ()=>{
+describe('InwardUtility', ()=>{
   test('exists', async ()=>{
-    equal('function', typeof outward)
-  })
+    equal('function', typeof inward)
+  }) 
 
   test('basic', async ()=>{
     let lasterr
     const ctx = {
       client,
-      result: { body: { foo: {x:1}}},
+      result: {},
       spec: { step: '' },
-      op: { outward: (ctx)=>ctx.result.body.foo },
+      op: { inward: (ctx)=>({foo:{x:1}}) },
       utility: {
         error: (ctx)=>lasterr = ctx.result.err
       }
     }
 
     ctx.result.ok = true
-    deepEqual(outward(ctx), {x:1})
+    deepEqual(inward(ctx), {foo:{x:1}})
     equal(lasterr, undefined)
-    equal(ctx.spec.step, 'outward')
+    equal(ctx.spec.step, 'inward')
   })
 
 
@@ -36,18 +36,18 @@ describe('OutwardUtility', ()=>{
     let lasterr
     const ctx = {
       client,
-      result: { body: { foo: {x:1}}},
+      result: {},
       spec: { step: '' },
-      op: { outward: (ctx)=>ctx.result.body.foo },
+      op: { inward: (ctx)=>({foo:{x:1}}) },
       utility: {
         error: (ctx)=>lasterr = ctx.result.err
       }
     }
 
     ctx.result.ok = false
-    deepEqual(outward(ctx), undefined)
+    deepEqual(inward(ctx), undefined)
     equal(lasterr, undefined)
-    equal(ctx.spec.step, 'outward')
+    equal(ctx.spec.step, 'inward')
   })
 
 
@@ -56,20 +56,21 @@ describe('OutwardUtility', ()=>{
     let lasterr
     const ctx = {
       client,
-      result: { body: { foo: {x:1}}},
+      result: {},
       spec: { step: '' },
-      op: { outward: (ctx)=>{throw err0} },
+      op: { inward: (ctx)=>{throw err0} },
       utility: {
         error: (ctx)=>lasterr = ctx.result.err
       }
     }
 
     ctx.result.ok = true
-    equal(outward(ctx), lasterr)
+    equal(inward(ctx), lasterr)
     equal(err0, lasterr)
-    equal(ctx.spec.step, 'outward')
+    equal(ctx.spec.step, 'inward')
     equal(ctx.result.ok, false)
     equal(ctx.result.err, lasterr)
   })
 
+  
 })
