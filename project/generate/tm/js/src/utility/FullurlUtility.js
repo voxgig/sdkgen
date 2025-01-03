@@ -1,13 +1,8 @@
 
 
 function fullurl(ctx) {
-  const { op, spec, utility } = ctx
+  const { op, spec, utility: { joinurl, escurl, escre, findparam } } = ctx
 
-  const { joinurl, escurl, escre, findparam } = utility
-
-
-  // const { match, data } = op
-  
   let url = joinurl(spec.base, spec.prefix, spec.path, spec.suffix)
 
   const params = spec.params
@@ -18,7 +13,7 @@ function fullurl(ctx) {
   }
   
   for(let key in params) {
-    const val = spec.params[key]
+    const val = params[key]
     if(null != val) { 
       url = url.replace(RegExp('{'+escre(key)+'}'), escurl(val))
     }
@@ -35,8 +30,6 @@ function fullurl(ctx) {
     }
   }
 
-  // console.log('URL', url, spec)
-  
   return url
 }
 

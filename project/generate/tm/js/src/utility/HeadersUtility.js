@@ -2,7 +2,8 @@
 function headers(ctx) {
   const out = {}
 
-  out['content-type'] =  'application/json'
+  // TODO: should come from options via config
+  out['content-type'] = 'application/json'
   
   return out
 }

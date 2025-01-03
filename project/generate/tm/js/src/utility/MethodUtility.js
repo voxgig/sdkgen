@@ -5,6 +5,7 @@ function method(ctx) {
   
   let key = opname
 
+  // TODO: options
   const mmap = {
     create: 'POST',
     save: 'PUT',
