@@ -1,4 +1,18 @@
 
+/* Utility functions.
+ *
+ * Many of these functions expect the operation context as the first argument, and
+ * assume the following top level properties of the context:
+ *   * client: SDK client instance
+ *   * op: operation definition
+ *   * utility: map of these utility functions
+ *   * entity?: SDK entity instance
+ *   * spec?: request specification
+ *   * response?: unprocessed response
+ *   * result?: processed result built from response  
+ *
+ */
+
 const { auth } = require('./AuthUtility')
 const { body } = require('./BodyUtility')
 const { empty } = require('./EmptyUtility')

@@ -18,7 +18,7 @@ async create(data) {
     outward: (ctx)=>'OUTWARD',
   }
   
-  let ctx = { client, entity, op, utility }
+  let ctx = { client, op, utility, entity }
 
   
   // #PreOperation-Hook    
@@ -46,10 +46,10 @@ async create(data) {
 
 
   if(ctx.result.ok) {
-    ctx.indata = inward(ctx)
+    const data = inward(ctx)
 
-    if(null != ctx.indata) {
-      this.#data = ctx.indata
+    if(null != data) {
+      this.#data = data
     }
     
     this.#postCreateHook(ctx)  

@@ -4,11 +4,12 @@
  * The operation (op) property `outward` is a function used to perform the data preparation.
  */
 function outward(ctx) {
-  const { op, spec, utility, result } = ctx
-  const { error } = utility
+  const { op, spec, result, utility: { error } } = ctx
 
-  spec.step = 'outward'
-
+  if(spec) {
+    spec.step = 'outward'
+  }
+  
   if (!result.ok) {
     return undefined
   }
@@ -17,10 +18,11 @@ function outward(ctx) {
     return op.outward(ctx)
   }
   catch (err) {
-    // TDOD: need error codes and err msg text
-    result.ok = false
-    result.err = err
-    return utility.error(ctx)
+    if(result) {
+      result.ok = false
+      result.err = err
+    }
+    return error(ctx)
   }
 }
 

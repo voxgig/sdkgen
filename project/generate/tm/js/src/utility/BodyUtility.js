@@ -1,9 +1,7 @@
 
 
 function body(ctx) {
-  const { op, utility } = ctx
-  const { error } = utility
-
+  const { op, result, utility: { error } } = ctx
 
   let body = undefined
 
@@ -12,9 +10,10 @@ function body(ctx) {
       body = ctx.op.outward(ctx)
     }
     catch (err) {
-      // TDOD: need error codes and err msg text
-      ctx.result.ok = false
-      ctx.result.err = err
+      if(result) {
+        result.ok = false
+        result.err = err
+      }
       return error(ctx)
     }
   }

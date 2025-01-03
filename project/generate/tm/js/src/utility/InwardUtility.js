@@ -4,11 +4,12 @@
  * The operation (op) property `inward` is a function used to perform the data extraction.
  */
 function inward(ctx) {
-  const { op, spec, utility, result } = ctx
-  const { error } = utility
+  const { op, spec, result, utility: { error } } = ctx
 
-  spec.step = 'inward'
-
+  if(spec) {
+    spec.step = 'inward'
+  }
+  
   if (!result.ok) {
     return undefined
   }
@@ -17,10 +18,11 @@ function inward(ctx) {
     return op.inward(ctx)
   }
   catch (err) {
-    // TDOD: need error codes and err msg text
-    result.ok = false
-    result.err = err
-    return utility.error(ctx)
+    if(result) {
+      result.ok = false
+      result.err = err
+    }
+    return error(ctx)
   }
 }
 

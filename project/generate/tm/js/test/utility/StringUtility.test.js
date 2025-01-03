@@ -23,5 +23,7 @@ describe('StringUtility', ()=>{
     equal('[[3],{x:1}]',stringify([[3],{x:1}]))
     equal('{x:4,y:c,z:false}',stringify({x:4,y:'c',z:false}))
     equal('{x:{y:5,z:d},y:[6]}',stringify({x:{y:5,z:'d'},y:[6]}))
+
+    equal('{x:{y:5...',stringify({x:{y:5,z:'d'},y:[6]},10))
   })
 })

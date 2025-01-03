@@ -1,4 +1,8 @@
 
+/* Generate an error from the current context.
+ *
+ * Assumes nothing may be valid.
+ */
 function error(ctx) {
 
   ctx = ctx || {}
