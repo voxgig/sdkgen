@@ -1,11 +1,13 @@
 
-async function resbody(response, fetchResponse) {
-  if(fetchResponse && fetchResponse.json) {
-    const json = await fetchResponse.json()
-    response.body = json
+async function resbody(ctx, result) {
+  const { response } = ctx
+
+  if(response && response.json) {
+    const json = await response.json()
+    result.body = json
   }
   
-  return response
+  return result
 }
 
 module.exports = {

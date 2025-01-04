@@ -1,6 +1,5 @@
 
 
-// NOTE: duplicated in @voxgig/apidef - dedup to @voxgig/util?
 const OPKIND = {
   create: 'req',
   update: 'req',
@@ -19,17 +18,20 @@ function operator(ctx) {
   const whence = 'operator definition: field: '
   
   let out = {
-    name: string(op.name, whence+'name'),
-    kind: string(OPKIND[op.name], whence+'kind'),
-    path: string(op.path, whence+'path'),
-    entity: string(op.entity, whence+'entity'),
-    params: array(op.params, true, 'params').map((p, i)=>string(p, 'param '+i)),
-    alias: object(op.alias, true, 'alias'),
-    match: {...object(op.match, true, 'match')},
-    data: {...object(op.data, true, 'data')},
-    state: object(op.state, true, 'state'),
-    inward: func(op.inward, false, 'inward'),
-    outward: func(op.outward, false, 'outward'),
+    // Required.
+    name: string(op.name, false, whence+'name'),
+    kind: string(OPKIND[op.name], false, whence+'kind'),
+    path: string(op.path, false, whence+'path'),
+    entity: string(op.entity, false, whence+'entity'),
+    inward: func(op.inward, false, whence+'inward'),
+    outward: func(op.outward, false, whence+'outward'),
+
+    // Optional.
+    params: array(op.params, true, whence+'params').map((p, i)=>string(p, whence+'param '+i)),
+    alias: object(op.alias, true, whence+'alias'),
+    match: {...object(op.match, true, whence+'match')},
+    data: {...object(op.data, true, whence+'data')},
+    state: object(op.state, true, whence+'state'),
   }
 
   return out

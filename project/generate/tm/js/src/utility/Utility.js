@@ -9,7 +9,8 @@
  *   * entity?: SDK entity instance
  *   * spec?: request specification
  *   * response?: unprocessed response
- *   * result?: processed result built from response  
+ *   * result?: processed result built from response
+ *   * config?: SDK builtin configuration
  *
  */
 

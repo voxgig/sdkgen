@@ -10,14 +10,19 @@ function options(ctx) {
   
   let options = { ...(ctx.options||{}) }
 
-  options.base = empty(options.base) ?
-    empty(cfgopts.base) ? 'http://localhost:8000' :
-    cfgopts.base : options.base
+  // options.base = empty(options.base) ?
+  //   empty(cfgopts.base) ? 'http://localhost:8000' :
+  //   cfgopts.base : options.base
 
-  options.prefix = empty(options.prefix) ? '' : options.prefix
-  options.suffix = empty(options.suffix) ? '' : options.suffix
+  // options.prefix = empty(options.prefix) ? '' : options.prefix
+  // options.suffix = empty(options.suffix) ? '' : options.suffix
 
+  setopt('base', 'http://localhost:8000', options, cfgopts, empty)
+  setopt('prefix', '', options, cfgopts, empty)
+  setopt('suffix', '', options, cfgopts, empty)
+  
   options.entity = options.entity || {}
+  cfgopts.entity = cfgopts.entity || {}
   let entityNames = Object.keys(cfgopts.entity)
   for(let name of entityNames) {
     let entcfg = cfgopts.entity[name]
@@ -32,6 +37,14 @@ function options(ctx) {
   
   return options
 }
+
+
+function setopt(name, deflt, options, cfgopts, empty) {
+  options[name] = !empty(options[name]) ? options[name] :
+    !empty(cfgopts[name]) ? cfgopts[name] :
+    deflt
+}
+
 
 module.exports = {
   options

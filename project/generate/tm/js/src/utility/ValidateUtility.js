@@ -10,7 +10,7 @@ function string(val, init, whence) {
     }
     else {
       throw new Error('$$const.name$$: '+(null==whence?'':whence+': ')+
-                      'invalid string: '+(''===val?'empty':stringify(val,111)))
+                      'invalid string: '+(null == val || ''===val?'empty':stringify(val,111)))
     }
   }
   return val
@@ -24,8 +24,8 @@ function array(val, init, whence) {
     }
     else {
       throw new Error('$$const.name$$: '+(null==whence?'':whence+': ')+
-                      'invalid array: '+(null===val?'undefined':
-                                           (typeof val)+': '+stringify(val,111)))
+                      'invalid array: '+(null==val?'undefined':
+                                         ((typeof val)+': '+stringify(val,111))))
     }
   }
   return val
@@ -39,8 +39,8 @@ function object(val, init, whence) {
     }
     else {
       throw new Error('$$const.name$$: '+(null==whence?'':whence+': ')+
-                      'invalid object: '+(null===val?'undefined':
-                                           (typeof val)+': '+stringify(val,111)))
+                      'invalid object: '+(null==val?'undefined':
+                                          ((typeof val)+': '+stringify(val,111))))
     }
   }
   return val
@@ -54,8 +54,8 @@ function func(val, init, whence) {
     }
     else {
       throw new Error('$$const.name$$: '+(null==whence?'':whence+': ')+
-                      'invalid function: '+(null===val?'undefined':
-                                           (typeof val)+': '+stringify(val,111)))
+                      'invalid function: '+(null==val?'undefined':
+                                            ((typeof val)+': '+stringify(val,111))))
     }
   }
   return val

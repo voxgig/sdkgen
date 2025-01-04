@@ -4,6 +4,8 @@ async function response(ctx) {
   
   const { resheaders, resbasic, resbody } = utility
 
+  spec.step = 'response'
+    
   let result = {
     ok: false,
     status: -1,
@@ -14,9 +16,9 @@ async function response(ctx) {
   }
 
   try {
-    result = resbasic(result, response)
-    result = resheaders(result, response)
-    result = await resbody(result, response)
+    result = resbasic(ctx, result)
+    result = resheaders(ctx, result)
+    result = await resbody(ctx, result)
     
     if(null == result.err) {
       result.ok = true
@@ -26,8 +28,6 @@ async function response(ctx) {
     result.err = err
   }
 
-  spec.step = 'response'
-  
   return result
 }
 

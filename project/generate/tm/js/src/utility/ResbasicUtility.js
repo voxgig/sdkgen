@@ -1,23 +1,25 @@
 
-function resbasic(response, fetchResponse) {
-  if(null != fetchResponse) {
-    response.status = fetchResponse.status
-    response.statusText = fetchResponse.statusText || 'no-status'
+function resbasic(ctx, result) {
+  const { response } = ctx
+
+  if(null != response) {
+    result.status = response.status || -1
+    result.statusText = response.statusText || 'no-status'
   
     // TODO: use spec!
-    if(400 <= response.status) {
-      const msg = 'fetch: '+response.status+': '+response.statusText
-      if(response.err) {
-        const prevmsg = null == response.err.message ? '' : response.err.message
-        response.err.message = prevmsg+': '+msg
+    if(400 <= result.status) {
+      const msg = 'request: '+result.status+': '+result.statusText
+      if(result.err) {
+        const prevmsg = null == result.err.message ? '' : result.err.message
+        result.err.message = prevmsg+': '+msg
       }
       else {
-        response.err = new Error(msg)
+        result.err = new Error(msg)
       }
     }
   }
   
-  return response
+  return result
 }
 
 module.exports = {

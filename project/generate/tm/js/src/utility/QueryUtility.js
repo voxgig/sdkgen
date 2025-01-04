@@ -1,8 +1,10 @@
 
 function query(ctx) {
   const { op } = ctx
-  const { params, match } = op
-
+  let { params, match } = op
+  params = params || []
+  match = match || {}
+  
   const out = {}
   for(let key of Object.keys(match)) {
     let val = match[key]

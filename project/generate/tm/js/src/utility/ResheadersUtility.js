@@ -1,16 +1,17 @@
 
-function resheaders(response, fetchResponse) {
+function resheaders(ctx, result) {
+  const { response } = ctx
 
-  if(fetchResponse && fetchResponse.headers && fetchResponse.headers.forEach) {
+  if(response && response.headers && response.headers.forEach) {
     const headers = {}
-    fetchResponse.headers.forEach((v,k)=>headers[k]=v)
-    response.headers = headers
+    response.headers.forEach((v,k)=>headers[k]=v)
+    result.headers = headers
   }
   else {
-    response.headers = {}
+    result.headers = {}
   }
   
-  return response
+  return result
 }
 
 module.exports = {
