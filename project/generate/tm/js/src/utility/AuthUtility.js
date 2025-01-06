@@ -5,7 +5,12 @@ function auth(ctx, spec) {
   
   let options = client.options()
 
-  headers['authorization'] = 'Bearer '+options.apikey
+  if(null != options.apikey && '' !== options.apikey) {
+    headers['authorization'] = 'Bearer '+options.apikey
+  }
+  else {
+    delete headers['authorization']
+  }
   
   return spec
 }

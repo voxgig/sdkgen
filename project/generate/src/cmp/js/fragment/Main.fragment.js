@@ -17,11 +17,6 @@ class NameSDK {
       options,
     })
 
-    const customUtils = this.#options.utility || {}
-    for(let key of Object.keys(customUtils)) {
-      this.#utility[key] = customUtils[key]
-    }
-    
     // #FeatureOptions
 
     this.#features = {

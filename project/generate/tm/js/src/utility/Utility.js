@@ -20,7 +20,7 @@ const { empty } = require('./EmptyUtility')
 const { error } = require('./ErrorUtility')
 const { escre } = require('./EscreUtility')
 const { escurl } = require('./EscurlUtility')
-const { fetch } = require('./FetchUtility')
+const { request } = require('./RequestUtility')
 const { findparam } = require('./FindparamUtility')
 const { fullurl } = require('./FullurlUtility')
 const { headers } = require('./HeadersUtility')
@@ -49,7 +49,7 @@ const Utility = {
   error,
   escre,
   escurl,
-  fetch,
+  request,
   findparam,
   fullurl,
   headers,

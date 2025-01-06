@@ -4,7 +4,7 @@ async load(match) {
   const entity = this
   const client = this.#client
   const utility = this.#utility
-  const { operator, spec, fetch, response, inward, error } = utility
+  const { operator, spec, request, response, inward, error } = utility
   
   const op = {
     entity:'Name',
@@ -36,7 +36,7 @@ async load(match) {
   
   // #PreFetch-Hook
 
-  ctx.response = await fetch(ctx)
+  ctx.response = await request(ctx)
 
   
   // #PostFetch-Hook

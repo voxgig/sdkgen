@@ -7,6 +7,7 @@ const { NameSDK } = require('../..')
 const client = NameSDK.test()
 const { options } = client.utility()
 
+const fetch = global.fetch
 
 describe('OptionsUtility', ()=>{
   test('exists', async ()=>{
@@ -19,7 +20,8 @@ describe('OptionsUtility', ()=>{
       base: 'http://localhost:8000',
       entity: {},
       prefix: '',
-      suffix: ''
+      suffix: '',
+      fetch,
     })
 
     ctx0.config = {
@@ -40,7 +42,8 @@ describe('OptionsUtility', ()=>{
         foo: {
           alias: {}
         }
-      }
+      },
+      fetch,
     })
 
   })

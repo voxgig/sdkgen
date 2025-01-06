@@ -1,38 +1,40 @@
 
 
-// Make HTTP request.
-async function fetch(ctx) {
-  const { op, spec, utility } = ctx
+async function request(ctx) {
+  const { op, spec, utility, client } = ctx
   const { fullurl } = utility
 
+  const options = client.options()
+  
   let response = {}
 
   const url = spec.url = fullurl(ctx)
 
   try {
     spec.step = 'prepare'
-    const fetchReq = {
+
+    const reqdef = {
       method: spec.method,
       headers: spec.headers,
     }
 
     if(null != spec.body) {
-      fetchReq.body =
+      reqdef.body =
         'object' === typeof spec.body ? JSON.stringify(spec.body) : spec.body
     }
 
-    spec.step = 'prefetch'
-    response = global.fetch(url, fetchReq)
+    spec.step = 'prerequest'
+    response = options.fetch(url, reqdef)
   }
   catch(err) {
     response.err = err
   }
 
-  spec.step = 'postfetch'
+  spec.step = 'postrequest'
   
   return response
 }
 
 module.exports = {
-  fetch
+  request
 }

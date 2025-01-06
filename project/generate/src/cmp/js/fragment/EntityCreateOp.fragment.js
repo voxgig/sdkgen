@@ -3,7 +3,7 @@ async create(data) {
   let entity = this
   let client = this.#client
   const utility = this.#utility
-  const { operator, spec, fetch, response, inward, error } = utility
+  const { operator, spec, request, response, inward, error } = utility
   
   let op = {
     entity: 'Name',
@@ -35,7 +35,7 @@ async create(data) {
   
   // #PreFetch-Hook
 
-  ctx.response = await fetch(ctx)
+  ctx.response = await request(ctx)
 
   
   // #PostFetch-Hook

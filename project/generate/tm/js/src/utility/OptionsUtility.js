@@ -1,32 +1,31 @@
 
 function options(ctx) {
-  // TODO: handle custom utilities from options here, first
+  const { options, utility } = ctx
+
+  let opts = { ...(options||{}) }
   
-  const { utility } = ctx
+  const customUtils = opts.utility || {}
+  for(let key of Object.keys(customUtils)) {
+    utility[key] = customUtils[key]
+  }
+  
   const { empty } = utility
 
   let config = ctx.config || {}
   let cfgopts = config.options || {}
   
-  let options = { ...(ctx.options||{}) }
+  setopt('base', 'http://localhost:8000', opts, cfgopts, empty)
+  setopt('prefix', '', opts, cfgopts, empty)
+  setopt('suffix', '', opts, cfgopts, empty)
 
-  // options.base = empty(options.base) ?
-  //   empty(cfgopts.base) ? 'http://localhost:8000' :
-  //   cfgopts.base : options.base
-
-  // options.prefix = empty(options.prefix) ? '' : options.prefix
-  // options.suffix = empty(options.suffix) ? '' : options.suffix
-
-  setopt('base', 'http://localhost:8000', options, cfgopts, empty)
-  setopt('prefix', '', options, cfgopts, empty)
-  setopt('suffix', '', options, cfgopts, empty)
+  setopt('fetch', global.fetch, opts, cfgopts, empty)
   
-  options.entity = options.entity || {}
+  opts.entity = opts.entity || {}
   cfgopts.entity = cfgopts.entity || {}
   let entityNames = Object.keys(cfgopts.entity)
   for(let name of entityNames) {
     let entcfg = cfgopts.entity[name]
-    let entopts = options.entity[name] || (options.entity[name] = {})
+    let entopts = opts.entity[name] || (opts.entity[name] = {})
 
     // TODO: does this work?
     entopts.alias = entopts.alias || (entopts.alias = {})
@@ -35,12 +34,12 @@ function options(ctx) {
     }
   }
   
-  return options
+  return opts
 }
 
 
-function setopt(name, deflt, options, cfgopts, empty) {
-  options[name] = !empty(options[name]) ? options[name] :
+function setopt(name, deflt, opts, cfgopts, empty) {
+  opts[name] = !empty(opts[name]) ? opts[name] :
     !empty(cfgopts[name]) ? cfgopts[name] :
     deflt
 }
