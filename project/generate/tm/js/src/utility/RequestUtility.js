@@ -1,7 +1,7 @@
 
 
 async function request(ctx) {
-  const { op, spec, utility, client } = ctx
+  const { spec, utility, client } = ctx
   const { fullurl } = utility
 
   const options = client.options()
@@ -13,18 +13,18 @@ async function request(ctx) {
   try {
     spec.step = 'prepare'
 
-    const reqdef = {
+    const fetchdef = {
       method: spec.method,
       headers: spec.headers,
     }
 
     if(null != spec.body) {
-      reqdef.body =
+      fetchdef.body =
         'object' === typeof spec.body ? JSON.stringify(spec.body) : spec.body
     }
 
     spec.step = 'prerequest'
-    response = options.fetch(url, reqdef)
+    response = options.fetch(url, fetchdef)
   }
   catch(err) {
     response.err = err
