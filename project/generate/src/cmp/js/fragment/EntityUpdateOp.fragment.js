@@ -54,7 +54,7 @@ async update(data) {
     
     this.#postUpdateHook(ctx)  
 
-    return this
+    return this.data()
   }
   else {
     this.#postUpdateHook(ctx)

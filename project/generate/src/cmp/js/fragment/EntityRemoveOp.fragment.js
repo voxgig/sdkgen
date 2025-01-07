@@ -54,7 +54,7 @@ async remove(match) {
     
     this.#postRemoveHook(ctx)  
 
-    return this
+    return this.data()
   }
   else {
     this.#postRemoveHook(ctx)

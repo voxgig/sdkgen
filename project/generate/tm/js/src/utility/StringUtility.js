@@ -1,16 +1,16 @@
 
 
 function stringify(val, maxlen) {
-  let js = JSON.stringify(val)
-  js = 'string' !== typeof js ? '' : js
-  js = js.replace(/"/g,'')
-  let s = js.substring(0, maxlen)
+  let json = JSON.stringify(val)
+  json = 'string' !== typeof json ? '' : json
+  json = json.replace(/"/g,'')
 
-  if(null != maxlen && maxlen < js.length) {
-    s = s.substring(0,maxlen-3)+'...'
+  if(null != maxlen) {
+    let js = json.substring(0, maxlen)
+    json = maxlen < json.length ? (js.substring(0,maxlen-3)+'...') : json
   }
-  
-  return s
+
+  return json
 }
 
 

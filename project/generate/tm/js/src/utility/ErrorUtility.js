@@ -3,7 +3,7 @@
  *
  * Assumes nothing may be valid.
  */
-function error(ctx) {
+function error(ctx, msg) {
 
   ctx = ctx || {}
   const op = ctx.op || {}
@@ -15,7 +15,7 @@ function error(ctx) {
 
   const spec = ctx.spec || {}
   
-  const err = new Error('NameSDK: '+op.name+': '+reserr.message)
+  const err = new Error('NameSDK: '+op.name+': '+(msg || reserr.message))
   err.result = result
   err.spec = spec
 

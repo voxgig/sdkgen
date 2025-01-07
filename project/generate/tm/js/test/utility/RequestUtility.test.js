@@ -15,9 +15,11 @@ describe('AuthUtility', ()=>{
 
   test('basic', async ()=>{
     const client = NameSDK.test({
-      fetch: async (url, fetchdef)=>{
-        return {
-          status: 200,
+      system: {
+        fetch: async (url, fetchdef)=>{
+          return {
+            status: 200,
+          }
         }
       }
     })

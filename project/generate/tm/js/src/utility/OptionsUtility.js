@@ -18,7 +18,12 @@ function options(ctx) {
   setopt('prefix', '', opts, cfgopts, empty)
   setopt('suffix', '', opts, cfgopts, empty)
 
-  setopt('fetch', global.fetch, opts, cfgopts, empty)
+  
+  opts.system = opts.system || {}
+  cfgopts.system = cfgopts.system || {}
+
+  setopt('fetch', global.fetch, opts.system, cfgopts.system, empty)
+
   
   opts.entity = opts.entity || {}
   cfgopts.entity = cfgopts.entity || {}

@@ -2,17 +2,18 @@
 
 async function request(ctx) {
   const { spec, utility, client } = ctx
-  const { fullurl } = utility
-
-  const options = client.options()
+  const { fullurl, error } = utility
   
   let response = {}
-
-  const url = spec.url = fullurl(ctx)
 
   try {
     spec.step = 'prepare'
 
+    const options = client.options()
+    const url = spec.url = fullurl(ctx)
+
+    const fetch = options.system.fetch
+    
     const fetchdef = {
       method: spec.method,
       headers: spec.headers,
@@ -24,9 +25,14 @@ async function request(ctx) {
     }
 
     spec.step = 'prerequest'
-    response = options.fetch(url, fetchdef)
+    response = fetch(url, fetchdef)
+
+    if(null == response) {
+      response = { err: error(ctx, 'response: undefined') }
+    }
   }
   catch(err) {
+    response = response || {}
     response.err = err
   }
 

@@ -21,7 +21,7 @@ describe('OptionsUtility', ()=>{
       entity: {},
       prefix: '',
       suffix: '',
-      fetch,
+      system: { fetch },
     })
 
     ctx0.config = {
@@ -43,7 +43,7 @@ describe('OptionsUtility', ()=>{
           alias: {}
         }
       },
-      fetch,
+      system: { fetch },
     })
 
   })

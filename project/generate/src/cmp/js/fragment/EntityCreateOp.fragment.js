@@ -54,7 +54,7 @@ async create(data) {
     
     this.#postCreateHook(ctx)  
 
-    return this
+    return this.data()
   }
   else {
     this.#postCreateHook(ctx)

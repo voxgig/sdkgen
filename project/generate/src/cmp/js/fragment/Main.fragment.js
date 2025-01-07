@@ -51,6 +51,9 @@ class NameSDK {
 }
 
 
+const SDK = NameSDK
+
 module.exports = {
-  NameSDK
+  NameSDK,
+  SDK,
 }

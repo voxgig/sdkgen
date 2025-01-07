@@ -55,7 +55,7 @@ async load(match) {
     
     this.#postLoadHook(ctx)  
 
-    return this
+    return this.data()
   }
   else {
     this.#postLoadHook(ctx)
