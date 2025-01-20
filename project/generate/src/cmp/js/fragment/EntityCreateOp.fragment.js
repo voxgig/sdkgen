@@ -3,7 +3,7 @@ async create(data) {
   let entity = this
   let client = this.#client
   const utility = this.#utility
-  const { operator, spec, request, response, inward, error } = utility
+  const { operator, spec, request, response, inward, error, struct } = utility
   
   let op = {
     entity: 'Name',
@@ -46,15 +46,17 @@ async create(data) {
 
 
   if(ctx.result.ok) {
-    const data = inward(ctx)
+    ctx.inward = inward(ctx)
 
-    if(null != data) {
-      this.#data = data
+    if(null != ctx.inward) {
+      this.#data = ctx.inward
     }
+
+    ctx.out = this.data()
     
     this.#postCreateHook(ctx)  
 
-    return this.data()
+    return ctx.out
   }
   else {
     this.#postCreateHook(ctx)

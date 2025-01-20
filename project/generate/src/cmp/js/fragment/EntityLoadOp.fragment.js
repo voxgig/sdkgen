@@ -4,7 +4,7 @@ async load(match) {
   const entity = this
   const client = this.#client
   const utility = this.#utility
-  const { operator, spec, request, response, inward, error } = utility
+  const { operator, spec, request, response, inward, error, struct } = utility
   
   const op = {
     entity:'Name',
@@ -47,15 +47,17 @@ async load(match) {
   
 
   if(ctx.result.ok) {
-    ctx.indata = inward(ctx)
+    ctx.inward = inward(ctx)
 
-    if(null != ctx.indata) {
-      this.#data = ctx.indata
+    if(null != ctx.inward) {
+      this.#data = ctx.inward
     }
+
+    ctx.out = this.data()
     
     this.#postLoadHook(ctx)  
 
-    return this.data()
+    return ctx.out
   }
   else {
     this.#postLoadHook(ctx)

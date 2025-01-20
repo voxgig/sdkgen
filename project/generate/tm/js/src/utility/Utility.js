@@ -39,7 +39,7 @@ const { response } = require('./ResponseUtility')
 const { spec } = require('./SpecUtility')
 
 const validate = require('./ValidateUtility')
-const string = require('./StringUtility')
+const struct = require('./StructUtility')
 
 
 const Utility = {
@@ -66,7 +66,7 @@ const Utility = {
   resheaders,
   response,
   spec,
-  string,
+  struct,
   validate,
 }
 

@@ -3,7 +3,7 @@ async update(data) {
   let entity = this
   let client = this.#client
   const utility = this.#utility
-  const { operator, spec, request, response, inward, error } = utility
+  const { operator, spec, request, response, inward, error, struct } = utility
   
   let op = {
     entity: 'Name',
@@ -46,15 +46,17 @@ async update(data) {
 
 
   if(ctx.result.ok) {
-    ctx.indata = inward(ctx)
+    ctx.inward = inward(ctx)
   
-    if(null != ctx.indata) {
-      this.#data = ctx.indata
+    if(null != ctx.inward) {
+      this.#data = ctx.inward
     }
+
+    ctx.out = this.data()
     
     this.#postUpdateHook(ctx)  
 
-    return this.data()
+    return ctx.out
   }
   else {
     this.#postUpdateHook(ctx)

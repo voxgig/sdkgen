@@ -5,9 +5,9 @@ const { equal, deepEqual } = require('node:assert')
 const { NameSDK } = require('../..')
 
 const client = NameSDK.test()
-const { string } = client.utility()
+const { struct } = client.utility()
 
-const { stringify } = string
+const { stringify } = struct
 
 
 describe('StringUtility', ()=>{

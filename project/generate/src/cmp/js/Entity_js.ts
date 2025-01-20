@@ -23,7 +23,7 @@ const Operation = cmp(function Operation(props: any) {
 
   const aliasmap = JSON.stringify(entitySDK.alias.field)
 
-  const hasp = '' != entop.place
+  // const hasp = '' != entop.place
 
   Fragment({
     from: ff + '/Entity' + camelify(opname) + 'Op.fragment.js',
@@ -33,12 +33,16 @@ const Operation = cmp(function Operation(props: any) {
       PATH: entop.path,
       "['PARAM-LIST']": params,
       "{'ALIAS':'MAP'}": aliasmap,
+
       "'INWARD'":
         entop.inward ||
-        'ctx.result.body' + ('' === entop.place ? '' : '.' + entop.place),
+        'struct.transform(ctx.result, ' +
+        ('' === entop.transform.inward ? "'`body`'" : entop.transform.inward) + ')',
+
       "'OUTWARD'":
         entop.outward ||
-        (hasp ? '({' + entop.place + ': ' : '') + 'ctx.op.data' + (hasp ? '})' : ''),
+        'struct.transform(ctx.op, ' +
+        ('' === entop.transform.outward ? "'`data`'" : entop.transform.outward) + ')',
 
       'class EntityOperation { // REMOVED': '',
       '} // REMOVED': '',

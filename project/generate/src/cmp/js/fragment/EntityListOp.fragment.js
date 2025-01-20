@@ -3,7 +3,7 @@ async list(match) {
   let entity = this
   let client = this.#client
   const utility = this.#utility
-  const { operator, spec, request, response, inward, error } = utility
+  const { operator, spec, request, response, inward, error, struct } = utility
   
   let op = {
     entity: 'Name',
@@ -46,21 +46,21 @@ async list(match) {
 
 
   if(ctx.result.ok) {
-    ctx.inlist = inward(ctx)
+    ctx.inward = inward(ctx)
 
-    const entities = []
+    ctx.out = []
 
-    if(null != ctx.inlist) {
-      for(let entry of ctx.inlist) {
+    if(null != ctx.inward) {
+      for(let entry of ctx.inward) {
         const entity = new NameEntity(this.#client, this.options())
         entity.data(entry)
-        entities.push(entity)
+        ctx.out.push(entity)
       }
     }
     
     this.#postListHook(ctx)
     
-    return entities
+    return ctx.out
   }
   else {
     this.#postListHook(ctx)

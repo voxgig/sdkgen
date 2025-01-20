@@ -1,6 +1,6 @@
 
 // TODO: perhaps whence should be ctx and stringify got from there?
-const { stringify }  = require('./StringUtility')
+const { stringify }  = require('./StructUtility')
 
 
 function string(val, init, whence) {

@@ -8,7 +8,7 @@ function method(ctx) {
   // TODO: options
   const mmap = {
     create: 'POST',
-    save: 'PUT',
+    update: 'PUT',
     load: 'GET',
     list: 'GET',
     remove: 'DELETE',
