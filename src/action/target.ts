@@ -70,21 +70,21 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
 
       Folder({ name: 'model/target' }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/project/generate/model/target/' + name + '.jsonic',
+          from: 'node_modules/@voxgig/sdkgen/project/.sdk/model/target/' + name + '.jsonic',
           // exclude: true
         })
       })
 
       Folder({ name: 'src/cmp/' + name }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/project/generate/src/cmp/' + name,
+          from: 'node_modules/@voxgig/sdkgen/project/.sdk/src/cmp/' + name,
           // exclude: true
         })
       })
 
       Folder({ name: 'tm/' + name }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/project/generate/tm/' + name,
+          from: 'node_modules/@voxgig/sdkgen/project/.sdk/tm/' + name,
           exclude: [/src\/feature/],
           replace: {
             Name: model.const.Name,

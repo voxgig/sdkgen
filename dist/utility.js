@@ -7,8 +7,7 @@ exports.SdkGenError = exports.requirePath = exports.resolvePath = void 0;
 const node_path_1 = __importDefault(require("node:path"));
 // TODO: move to @voxgig/util as duplicated with @voxgig/sdkgen
 const resolvePath = (ctx$, path) => {
-    // console.log('RP', ctx$.folder)
-    const fullpath = node_path_1.default.join(ctx$.folder, 'generate', 'dist', path);
+    const fullpath = node_path_1.default.join(ctx$.folder, '.sdk', 'dist', path);
     return fullpath;
 };
 exports.resolvePath = resolvePath;

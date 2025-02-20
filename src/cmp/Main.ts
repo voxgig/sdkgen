@@ -23,9 +23,9 @@ const Main = cmp(function Main(props: any) {
     })
   })
 
-  Folder({ name: 'test/utility' }, () => {
+  Folder({ name: 'test' }, () => {
     Copy({
-      from: 'tm/' + target.name + '/test/utility',
+      from: 'tm/' + target.name + '/test',
     })
   })
 

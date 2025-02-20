@@ -4,8 +4,7 @@ import Path from 'node:path'
 // TODO: move to @voxgig/util as duplicated with @voxgig/sdkgen
 
 const resolvePath = (ctx$: any, path: string): any => {
-  // console.log('RP', ctx$.folder)
-  const fullpath = Path.join(ctx$.folder, 'generate', 'dist', path)
+  const fullpath = Path.join(ctx$.folder, '.sdk', 'dist', path)
   return fullpath
 }
 
