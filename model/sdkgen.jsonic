@@ -42,15 +42,16 @@ main: sdk: feature: &: {
 
   hook: {
     PostConstruct: {}
+    PostConstructEntity: {}
     SetData: {}
     GetData: {}
     GetMatch: {}
         
     PreOperation: {}
-    ModifyOp: {}
-    PreFetch: {}
-    PostFetch: {}
-    ModifyResult: {}
+    PreSpec: {}
+    PreRequest: {}
+    PreResponse: {}
+    PreResult: {}
     PostOperation: {}
   }
 

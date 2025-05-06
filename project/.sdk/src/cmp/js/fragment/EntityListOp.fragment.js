@@ -27,24 +27,24 @@ async list(match) {
   await operator(ctx)
 
   
-  // #ModifyOp-Hook
+  // #PreSpec-Hook
 
   this.#match = ctx.op.match
   
   await spec(ctx)
 
   
-  // #PreFetch-Hook
+  // #PreRequest-Hook
 
   await request(ctx)
 
   
-  // #PostFetch-Hook
+  // #PreResponse-Hook
 
   await response(ctx)
 
   
-  // #ModifyResult-Hook
+  // #PreResult-Hook
 
   await result(ctx)
 

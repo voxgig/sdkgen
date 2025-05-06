@@ -70,7 +70,8 @@ const ACTION_MAP = {
 function SdkGen(opts) {
     const fs = opts.fs || Fs;
     const folder = opts.folder || '../';
-    const jostraca = Jostraca();
+    const now = opts.now || (() => Date.now());
+    const jostraca = Jostraca({ now });
     const pino = (0, util_1.prettyPino)('sdkgen', opts);
     const log = pino.child({ cmp: 'sdkgen' });
     async function generate(spec) {
@@ -90,6 +91,7 @@ function SdkGen(opts) {
             log: log.child({ cmp: 'jostraca' }),
             meta: { spec },
             debug: opts.debug,
+            existing: opts.existing
         };
         await jostraca.generate(jopts, () => Root({ model }));
         log.info({ point: 'generate-end' });

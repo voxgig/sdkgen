@@ -52,6 +52,10 @@ class LogFeature {
     this.#loghook('PostConstruct', ctx)
   }
 
+  PostConstructEntity(ctx) {
+    this.#loghook('PostConstructEntity', ctx)
+  }
+
   SetData(ctx) {
     this.#loghook('SetData', ctx)
   }
@@ -69,20 +73,20 @@ class LogFeature {
     this.#loghook('PreOperation', ctx)
   }
 
-  ModifyOp(ctx) {
-    this.#loghook('ModifyOp', ctx)
+  PreSpec(ctx) {
+    this.#loghook('PreSpec', ctx)
   }
 
-  PreFetch(ctx) {
-    this.#loghook('PreFetch', ctx)
+  PreRequest(ctx) {
+    this.#loghook('PreRequest', ctx)
   }
 
-  PostFetch(ctx) {
-    this.#loghook('PostFetch', ctx)
+  PreResponse(ctx) {
+    this.#loghook('PreResponse', ctx)
   }
 
-  ModifyResult(ctx) {
-    this.#loghook('ModifyResult', ctx)
+  PreResult(ctx) {
+    this.#loghook('PreResult', ctx)
   }
  
   PostOperation(ctx) {

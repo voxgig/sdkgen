@@ -20,6 +20,7 @@ const CMD_MAP: any = {
 
 const BASE = 'node_modules/@voxgig/sdkgen'
 
+
 async function action_feature(args: any[], ctx: any) {
 
   const cmdname = args[1]
@@ -49,7 +50,6 @@ async function cmd_feature_add(args: any[], ctx: any) {
   }
 
   await jostraca.generate(opts, () => FeatureRoot({ features }))
-
 }
 
 
@@ -67,7 +67,8 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
 
       Folder({ name: 'model/feature' }, () => {
         Copy({
-          from: BASE + '/project/generate/model/feature/' + name + '.jsonic',
+          // TODO: these paths needs to be parameterised
+          from: BASE + '/project/.sdk/model/feature/' + name + '.jsonic',
           exclude: true
         })
       })
@@ -75,7 +76,7 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
       each(target, (target) =>
         Folder({ name: 'tm/' + target.name + '/src/feature/' + name }, () => {
           Copy({
-            from: BASE + '/project/generate/tm/' + target.name + '/src/feature/' + name,
+            from: BASE + '/project/.sdk/tm/' + target.name + '/src/feature/' + name,
             exclude: true
           })
         }))

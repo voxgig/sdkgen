@@ -23,7 +23,7 @@ import { action_target } from './action/target'
 import { action_feature } from './action/feature'
 
 
-
+// TODO: use shape
 type SdkGenOptions = {
   folder: string
   fs: any
@@ -38,6 +38,13 @@ type SdkGenOptions = {
   }
   debug?: boolean | string
   pino?: ReturnType<typeof Pino>
+  now?: () => number
+
+  // TODO: match Jostraca
+  existing?: {
+    txt?: any
+    bin?: any
+  }
 }
 
 
@@ -53,7 +60,9 @@ const ACTION_MAP: any = {
 function SdkGen(opts: SdkGenOptions) {
   const fs = opts.fs || Fs
   const folder = opts.folder || '../'
-  const jostraca = Jostraca()
+  const now = opts.now || (() => Date.now())
+
+  const jostraca = Jostraca({ now })
 
   const pino = prettyPino('sdkgen', opts)
   const log = pino.child({ cmp: 'sdkgen' })
@@ -80,6 +89,7 @@ function SdkGen(opts: SdkGenOptions) {
       log: log.child({ cmp: 'jostraca' }),
       meta: { spec },
       debug: opts.debug,
+      existing: opts.existing
     }
 
     await jostraca.generate(jopts, () => Root({ model }))
@@ -100,9 +110,7 @@ function SdkGen(opts: SdkGenOptions) {
       throw new SdkGenError('Unknown action: ' + actname)
     }
 
-
     const { model, tree } = resolveModel()
-
 
     const ctx = {
       fs: () => fs,

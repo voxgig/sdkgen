@@ -38,13 +38,14 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
             // TODO: validate feature is a-z0-9-_. only
             (0, jostraca_1.Folder)({ name: 'model/feature' }, () => {
                 (0, jostraca_1.Copy)({
-                    from: BASE + '/project/generate/model/feature/' + name + '.jsonic',
+                    // TODO: these paths needs to be parameterised
+                    from: BASE + '/project/.sdk/model/feature/' + name + '.jsonic',
                     exclude: true
                 });
             });
             (0, jostraca_1.each)(target, (target) => (0, jostraca_1.Folder)({ name: 'tm/' + target.name + '/src/feature/' + name }, () => {
                 (0, jostraca_1.Copy)({
-                    from: BASE + '/project/generate/tm/' + target.name + '/src/feature/' + name,
+                    from: BASE + '/project/.sdk/tm/' + target.name + '/src/feature/' + name,
                     exclude: true
                 });
             }));

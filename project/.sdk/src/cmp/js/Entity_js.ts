@@ -73,6 +73,11 @@ const Entity = cmp(function Entity(props: any) {
         replace: {
           Name: entity.Name,
 
+          '#Feature-Hook': ({ name, indent }: any) =>
+            FeatureHook({ name }, (f: any) =>
+              Line({ indent },
+                `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}({entity:this})`)),
+
           ...opfrags,
         }
       })

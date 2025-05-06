@@ -17,6 +17,8 @@ class NameEntity {
     this.#utility = client.utility()
     this.#data = {}
     this.#match = {}
+
+    // #PostConstructEntity-Hook
   }
 
   options() {

@@ -47,6 +47,14 @@ class NameSDK {
     })
   }
 
+  test(opts) {
+    return new NameSDK({
+      // #TestOptions
+      ...(opts || this.#options || {})
+    })
+  }
+
+  
   // <[SLOT]>
 }
 

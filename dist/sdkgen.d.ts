@@ -23,6 +23,11 @@ type SdkGenOptions = {
     };
     debug?: boolean | string;
     pino?: ReturnType<typeof Pino>;
+    now?: () => number;
+    existing?: {
+        txt?: any;
+        bin?: any;
+    };
 };
 declare const Jostraca: typeof JostracaModule.Jostraca;
 declare function SdkGen(opts: SdkGenOptions): {
