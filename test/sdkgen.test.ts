@@ -50,18 +50,18 @@ describe('sdkgen', () => {
       '/top/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
-      '/top/.jostraca/generated/top/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
-      '/top/.jostraca/generated/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
-      '/top/.jostraca/generated/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
         '  "last": 1735690140000,\n' +
         '  "hlast": 2025010100090000,\n' +
         '  "files": {\n' +
-        '    "/top/foo/js/README.md": {\n' +
+        '    "foo/js/README.md": {\n' +
         '      "action": "write",\n' +
-        '      "path": "/top/foo/js/README.md",\n' +
+        '      "path": "foo/js/README.md",\n' +
         '      "exists": false,\n' +
         '      "actions": [\n' +
         '        "write"\n' +
@@ -71,9 +71,9 @@ describe('sdkgen', () => {
         '      "when": 1735689840000,\n' +
         '      "hwhen": 2025010100040000\n' +
         '    },\n' +
-        '    "/top/foo/python/README.md": {\n' +
+        '    "foo/python/README.md": {\n' +
         '      "action": "write",\n' +
-        '      "path": "/top/foo/python/README.md",\n' +
+        '      "path": "foo/python/README.md",\n' +
         '      "exists": false,\n' +
         '      "actions": [\n' +
         '        "write"\n' +
@@ -83,9 +83,9 @@ describe('sdkgen', () => {
         '      "when": 1735689960000,\n' +
         '      "hwhen": 2025010100060000\n' +
         '    },\n' +
-        '    "/top/foo/java/README.md": {\n' +
+        '    "foo/java/README.md": {\n' +
         '      "action": "write",\n' +
-        '      "path": "/top/foo/java/README.md",\n' +
+        '      "path": "foo/java/README.md",\n' +
         '      "exists": false,\n' +
         '      "actions": [\n' +
         '        "write"\n' +
@@ -111,18 +111,18 @@ describe('sdkgen', () => {
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=0\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
-      '/top/.jostraca/generated/top/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
-      '/top/.jostraca/generated/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
-      '/top/.jostraca/generated/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
-        '  "last": 1735690980000,\n' +
-        '  "hlast": 2025010100230000,\n' +
+        '  "last": 1735691100000,\n' +
+        '  "hlast": 2025010100250000,\n' +
         '  "files": {\n' +
-        '    "/top/foo/js/README.md": {\n' +
+        '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
-        '      "path": "/top/foo/js/README.md",\n' +
+        '      "path": "foo/js/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "merge"\n' +
@@ -132,21 +132,25 @@ describe('sdkgen', () => {
         '      "when": 1735690800000,\n' +
         '      "hwhen": 2025010100200000\n' +
         '    },\n' +
-        '    "/top/foo/python/README.md": {\n' +
+        '    "foo/python/README.md": {\n' +
         '      "action": "init",\n' +
-        '      "path": "/top/foo/python/README.md",\n' +
+        '      "path": "foo/python/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [],\n' +
         '      "protect": false,\n' +
-        '      "conflict": false\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735690920000,\n' +
+        '      "hwhen": 2025010100220000\n' +
         '    },\n' +
-        '    "/top/foo/java/README.md": {\n' +
+        '    "foo/java/README.md": {\n' +
         '      "action": "init",\n' +
-        '      "path": "/top/foo/java/README.md",\n' +
+        '      "path": "foo/java/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [],\n' +
         '      "protect": false,\n' +
-        '      "conflict": false\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735691040000,\n' +
+        '      "hwhen": 2025010100240000\n' +
         '    }\n' +
         '  }\n' +
         '}'
@@ -162,42 +166,46 @@ describe('sdkgen', () => {
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=0\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
-      '/top/.jostraca/generated/top/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
-      '/top/.jostraca/generated/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
-      '/top/.jostraca/generated/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
-        '  "last": 1735691820000,\n' +
-        '  "hlast": 2025010100370000,\n' +
+        '  "last": 1735692060000,\n' +
+        '  "hlast": 2025010100410000,\n' +
         '  "files": {\n' +
-        '    "/top/foo/js/README.md": {\n' +
+        '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
-        '      "path": "/top/foo/js/README.md",\n' +
+        '      "path": "foo/js/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "merge"\n' +
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
-        '      "when": 1735691640000,\n' +
-        '      "hwhen": 2025010100340000\n' +
+        '      "when": 1735691760000,\n' +
+        '      "hwhen": 2025010100360000\n' +
         '    },\n' +
-        '    "/top/foo/python/README.md": {\n' +
+        '    "foo/python/README.md": {\n' +
         '      "action": "init",\n' +
-        '      "path": "/top/foo/python/README.md",\n' +
+        '      "path": "foo/python/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [],\n' +
         '      "protect": false,\n' +
-        '      "conflict": false\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735691880000,\n' +
+        '      "hwhen": 2025010100380000\n' +
         '    },\n' +
-        '    "/top/foo/java/README.md": {\n' +
+        '    "foo/java/README.md": {\n' +
         '      "action": "init",\n' +
-        '      "path": "/top/foo/java/README.md",\n' +
+        '      "path": "foo/java/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [],\n' +
         '      "protect": false,\n' +
-        '      "conflict": false\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735692000000,\n' +
+        '      "hwhen": 2025010100400000\n' +
         '    }\n' +
         '  }\n' +
         '}'
@@ -213,58 +221,58 @@ describe('sdkgen', () => {
     expect(voljson3).equals({
       '/top/foo/js/README.md': '\n' +
         '# foo js SDK\n' +
-        '<<<<<<< EXISTING: 2025-01-01T00:37:00.000Z\n' +
+        '<<<<<<< EXISTING: 2025-01-01T00:41:00.000Z\n' +
         '# EXTRA\n' +
         '# index=0\n' +
         '=======\n' +
         '# index=1\n' +
-        '>>>>>>> GENERATED: 2025-01-01T00:40:00.000Z\n',
+        '>>>>>>> GENERATED: 2025-01-01T00:44:00.000Z\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
-      '/top/.jostraca/generated/top/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
-      '/top/.jostraca/generated/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
-      '/top/.jostraca/generated/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
-        '  "last": 1735693140000,\n' +
-        '  "hlast": 2025010100590000,\n' +
+        '  "last": 1735693380000,\n' +
+        '  "hlast": 2025010101030000,\n' +
         '  "files": {\n' +
-        '    "/top/foo/js/README.md": {\n' +
+        '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
-        '      "path": "/top/foo/js/README.md",\n' +
+        '      "path": "foo/js/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "merge"\n' +
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": true,\n' +
-        '      "when": 1735692480000,\n' +
-        '      "hwhen": 2025010100480000\n' +
+        '      "when": 1735692720000,\n' +
+        '      "hwhen": 2025010100520000\n' +
         '    },\n' +
-        '    "/top/foo/python/README.md": {\n' +
+        '    "foo/python/README.md": {\n' +
         '      "action": "merge",\n' +
-        '      "path": "/top/foo/python/README.md",\n' +
+        '      "path": "foo/python/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "merge"\n' +
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
-        '      "when": 1735692780000,\n' +
-        '      "hwhen": 2025010100530000\n' +
+        '      "when": 1735693020000,\n' +
+        '      "hwhen": 2025010100570000\n' +
         '    },\n' +
-        '    "/top/foo/java/README.md": {\n' +
+        '    "foo/java/README.md": {\n' +
         '      "action": "merge",\n' +
-        '      "path": "/top/foo/java/README.md",\n' +
+        '      "path": "foo/java/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "merge"\n' +
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
-        '      "when": 1735693080000,\n' +
-        '      "hwhen": 2025010100580000\n' +
+        '      "when": 1735693320000,\n' +
+        '      "hwhen": 2025010101020000\n' +
         '    }\n' +
         '  }\n' +
         '}'
@@ -283,42 +291,46 @@ describe('sdkgen', () => {
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=A\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
-      '/top/.jostraca/generated/top/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
-      '/top/.jostraca/generated/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
-      '/top/.jostraca/generated/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
-        '  "last": 1735693980000,\n' +
-        '  "hlast": 2025010101130000,\n' +
+        '  "last": 1735694340000,\n' +
+        '  "hlast": 2025010101190000,\n' +
         '  "files": {\n' +
-        '    "/top/foo/js/README.md": {\n' +
+        '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
-        '      "path": "/top/foo/js/README.md",\n' +
+        '      "path": "foo/js/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "merge"\n' +
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
-        '      "when": 1735693800000,\n' +
-        '      "hwhen": 2025010101100000\n' +
+        '      "when": 1735694040000,\n' +
+        '      "hwhen": 2025010101140000\n' +
         '    },\n' +
-        '    "/top/foo/python/README.md": {\n' +
+        '    "foo/python/README.md": {\n' +
         '      "action": "init",\n' +
-        '      "path": "/top/foo/python/README.md",\n' +
+        '      "path": "foo/python/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [],\n' +
         '      "protect": false,\n' +
-        '      "conflict": false\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735694160000,\n' +
+        '      "hwhen": 2025010101160000\n' +
         '    },\n' +
-        '    "/top/foo/java/README.md": {\n' +
+        '    "foo/java/README.md": {\n' +
         '      "action": "init",\n' +
-        '      "path": "/top/foo/java/README.md",\n' +
+        '      "path": "foo/java/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [],\n' +
         '      "protect": false,\n' +
-        '      "conflict": false\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735694280000,\n' +
+        '      "hwhen": 2025010101180000\n' +
         '    }\n' +
         '  }\n' +
         '}'
@@ -335,42 +347,46 @@ describe('sdkgen', () => {
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=A\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
-      '/top/.jostraca/generated/top/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
-      '/top/.jostraca/generated/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
-      '/top/.jostraca/generated/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
-        '  "last": 1735694820000,\n' +
-        '  "hlast": 2025010101270000,\n' +
+        '  "last": 1735695300000,\n' +
+        '  "hlast": 2025010101350000,\n' +
         '  "files": {\n' +
-        '    "/top/foo/js/README.md": {\n' +
+        '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
-        '      "path": "/top/foo/js/README.md",\n' +
+        '      "path": "foo/js/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "merge"\n' +
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
-        '      "when": 1735694640000,\n' +
-        '      "hwhen": 2025010101240000\n' +
+        '      "when": 1735695000000,\n' +
+        '      "hwhen": 2025010101300000\n' +
         '    },\n' +
-        '    "/top/foo/python/README.md": {\n' +
+        '    "foo/python/README.md": {\n' +
         '      "action": "init",\n' +
-        '      "path": "/top/foo/python/README.md",\n' +
+        '      "path": "foo/python/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [],\n' +
         '      "protect": false,\n' +
-        '      "conflict": false\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735695120000,\n' +
+        '      "hwhen": 2025010101320000\n' +
         '    },\n' +
-        '    "/top/foo/java/README.md": {\n' +
+        '    "foo/java/README.md": {\n' +
         '      "action": "init",\n' +
-        '      "path": "/top/foo/java/README.md",\n' +
+        '      "path": "foo/java/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [],\n' +
         '      "protect": false,\n' +
-        '      "conflict": false\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735695240000,\n' +
+        '      "hwhen": 2025010101340000\n' +
         '    }\n' +
         '  }\n' +
         '}'
