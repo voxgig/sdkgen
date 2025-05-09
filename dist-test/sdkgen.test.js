@@ -79,7 +79,8 @@ const START_TIME = 1735689600000;
                 '      "hwhen": 2025010100080000\n' +
                 '    }\n' +
                 '  }\n' +
-                '}'
+                '}',
+            '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
         });
         // Modify a generated file
         fs.writeFileSync('/top/foo/js/README.md', '\n# foo js SDK\n# EXTRA\n# index=0\n');
@@ -97,8 +98,8 @@ const START_TIME = 1735689600000;
             '/top/.jostraca/jostraca.meta.log': '{\n' +
                 '  "foldername": ".jostraca",\n' +
                 '  "filename": "jostraca.meta.log",\n' +
-                '  "last": 1735691100000,\n' +
-                '  "hlast": 2025010100250000,\n' +
+                '  "last": 1735691160000,\n' +
+                '  "hlast": 2025010100260000,\n' +
                 '  "files": {\n' +
                 '    "foo/js/README.md": {\n' +
                 '      "action": "merge",\n' +
@@ -109,8 +110,8 @@ const START_TIME = 1735689600000;
                 '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735690800000,\n' +
-                '      "hwhen": 2025010100200000\n' +
+                '      "when": 1735690860000,\n' +
+                '      "hwhen": 2025010100210000\n' +
                 '    },\n' +
                 '    "foo/python/README.md": {\n' +
                 '      "action": "init",\n' +
@@ -119,8 +120,8 @@ const START_TIME = 1735689600000;
                 '      "actions": [],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735690920000,\n' +
-                '      "hwhen": 2025010100220000\n' +
+                '      "when": 1735690980000,\n' +
+                '      "hwhen": 2025010100230000\n' +
                 '    },\n' +
                 '    "foo/java/README.md": {\n' +
                 '      "action": "init",\n' +
@@ -129,11 +130,12 @@ const START_TIME = 1735689600000;
                 '      "actions": [],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735691040000,\n' +
-                '      "hwhen": 2025010100240000\n' +
+                '      "when": 1735691100000,\n' +
+                '      "hwhen": 2025010100250000\n' +
                 '    }\n' +
                 '  }\n' +
-                '}'
+                '}',
+            '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
         });
         // generate again
         let res2 = await sdkgen.generate(spec);
@@ -149,8 +151,8 @@ const START_TIME = 1735689600000;
             '/top/.jostraca/jostraca.meta.log': '{\n' +
                 '  "foldername": ".jostraca",\n' +
                 '  "filename": "jostraca.meta.log",\n' +
-                '  "last": 1735692060000,\n' +
-                '  "hlast": 2025010100410000,\n' +
+                '  "last": 1735692180000,\n' +
+                '  "hlast": 2025010100430000,\n' +
                 '  "files": {\n' +
                 '    "foo/js/README.md": {\n' +
                 '      "action": "merge",\n' +
@@ -161,8 +163,8 @@ const START_TIME = 1735689600000;
                 '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735691760000,\n' +
-                '      "hwhen": 2025010100360000\n' +
+                '      "when": 1735691880000,\n' +
+                '      "hwhen": 2025010100380000\n' +
                 '    },\n' +
                 '    "foo/python/README.md": {\n' +
                 '      "action": "init",\n' +
@@ -171,8 +173,8 @@ const START_TIME = 1735689600000;
                 '      "actions": [],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735691880000,\n' +
-                '      "hwhen": 2025010100380000\n' +
+                '      "when": 1735692000000,\n' +
+                '      "hwhen": 2025010100400000\n' +
                 '    },\n' +
                 '    "foo/java/README.md": {\n' +
                 '      "action": "init",\n' +
@@ -181,11 +183,12 @@ const START_TIME = 1735689600000;
                 '      "actions": [],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735692000000,\n' +
-                '      "hwhen": 2025010100400000\n' +
+                '      "when": 1735692120000,\n' +
+                '      "hwhen": 2025010100420000\n' +
                 '    }\n' +
                 '  }\n' +
-                '}'
+                '}',
+            '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
         });
         // update model
         model.zed.a = 1;
@@ -195,12 +198,12 @@ const START_TIME = 1735689600000;
         (0, code_1.expect)(voljson3).equals({
             '/top/foo/js/README.md': '\n' +
                 '# foo js SDK\n' +
-                '<<<<<<< EXISTING: 2025-01-01T00:41:00.000Z\n' +
+                '<<<<<<< EXISTING: 2025-01-01T00:43:00.000Z\n' +
                 '# EXTRA\n' +
                 '# index=0\n' +
                 '=======\n' +
                 '# index=1\n' +
-                '>>>>>>> GENERATED: 2025-01-01T00:44:00.000Z\n',
+                '>>>>>>> GENERATED: 2025-01-01T00:47:00.000Z\n',
             '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
             '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
             '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
@@ -209,8 +212,8 @@ const START_TIME = 1735689600000;
             '/top/.jostraca/jostraca.meta.log': '{\n' +
                 '  "foldername": ".jostraca",\n' +
                 '  "filename": "jostraca.meta.log",\n' +
-                '  "last": 1735693380000,\n' +
-                '  "hlast": 2025010101030000,\n' +
+                '  "last": 1735693560000,\n' +
+                '  "hlast": 2025010101060000,\n' +
                 '  "files": {\n' +
                 '    "foo/js/README.md": {\n' +
                 '      "action": "merge",\n' +
@@ -221,8 +224,8 @@ const START_TIME = 1735689600000;
                 '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": true,\n' +
-                '      "when": 1735692720000,\n' +
-                '      "hwhen": 2025010100520000\n' +
+                '      "when": 1735692900000,\n' +
+                '      "hwhen": 2025010100550000\n' +
                 '    },\n' +
                 '    "foo/python/README.md": {\n' +
                 '      "action": "merge",\n' +
@@ -233,8 +236,8 @@ const START_TIME = 1735689600000;
                 '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735693020000,\n' +
-                '      "hwhen": 2025010100570000\n' +
+                '      "when": 1735693200000,\n' +
+                '      "hwhen": 2025010101000000\n' +
                 '    },\n' +
                 '    "foo/java/README.md": {\n' +
                 '      "action": "merge",\n' +
@@ -245,11 +248,12 @@ const START_TIME = 1735689600000;
                 '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735693320000,\n' +
-                '      "hwhen": 2025010101020000\n' +
+                '      "when": 1735693500000,\n' +
+                '      "hwhen": 2025010101050000\n' +
                 '    }\n' +
                 '  }\n' +
-                '}'
+                '}',
+            '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
         });
         // Modify a generated file
         fs.writeFileSync('/top/foo/js/README.md', '\n# foo js SDK\n# EXTRA\n# index=A\n');
@@ -266,8 +270,8 @@ const START_TIME = 1735689600000;
             '/top/.jostraca/jostraca.meta.log': '{\n' +
                 '  "foldername": ".jostraca",\n' +
                 '  "filename": "jostraca.meta.log",\n' +
-                '  "last": 1735694340000,\n' +
-                '  "hlast": 2025010101190000,\n' +
+                '  "last": 1735694580000,\n' +
+                '  "hlast": 2025010101230000,\n' +
                 '  "files": {\n' +
                 '    "foo/js/README.md": {\n' +
                 '      "action": "merge",\n' +
@@ -278,8 +282,8 @@ const START_TIME = 1735689600000;
                 '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735694040000,\n' +
-                '      "hwhen": 2025010101140000\n' +
+                '      "when": 1735694280000,\n' +
+                '      "hwhen": 2025010101180000\n' +
                 '    },\n' +
                 '    "foo/python/README.md": {\n' +
                 '      "action": "init",\n' +
@@ -288,8 +292,8 @@ const START_TIME = 1735689600000;
                 '      "actions": [],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735694160000,\n' +
-                '      "hwhen": 2025010101160000\n' +
+                '      "when": 1735694400000,\n' +
+                '      "hwhen": 2025010101200000\n' +
                 '    },\n' +
                 '    "foo/java/README.md": {\n' +
                 '      "action": "init",\n' +
@@ -298,11 +302,12 @@ const START_TIME = 1735689600000;
                 '      "actions": [],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735694280000,\n' +
-                '      "hwhen": 2025010101180000\n' +
+                '      "when": 1735694520000,\n' +
+                '      "hwhen": 2025010101220000\n' +
                 '    }\n' +
                 '  }\n' +
-                '}'
+                '}',
+            '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
         });
         // generate again
         let res5 = await sdkgen.generate(spec);
@@ -318,8 +323,8 @@ const START_TIME = 1735689600000;
             '/top/.jostraca/jostraca.meta.log': '{\n' +
                 '  "foldername": ".jostraca",\n' +
                 '  "filename": "jostraca.meta.log",\n' +
-                '  "last": 1735695300000,\n' +
-                '  "hlast": 2025010101350000,\n' +
+                '  "last": 1735695600000,\n' +
+                '  "hlast": 2025010101400000,\n' +
                 '  "files": {\n' +
                 '    "foo/js/README.md": {\n' +
                 '      "action": "merge",\n' +
@@ -330,8 +335,8 @@ const START_TIME = 1735689600000;
                 '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735695000000,\n' +
-                '      "hwhen": 2025010101300000\n' +
+                '      "when": 1735695300000,\n' +
+                '      "hwhen": 2025010101350000\n' +
                 '    },\n' +
                 '    "foo/python/README.md": {\n' +
                 '      "action": "init",\n' +
@@ -340,8 +345,8 @@ const START_TIME = 1735689600000;
                 '      "actions": [],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735695120000,\n' +
-                '      "hwhen": 2025010101320000\n' +
+                '      "when": 1735695420000,\n' +
+                '      "hwhen": 2025010101370000\n' +
                 '    },\n' +
                 '    "foo/java/README.md": {\n' +
                 '      "action": "init",\n' +
@@ -350,11 +355,12 @@ const START_TIME = 1735689600000;
                 '      "actions": [],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
-                '      "when": 1735695240000,\n' +
-                '      "hwhen": 2025010101340000\n' +
+                '      "when": 1735695540000,\n' +
+                '      "hwhen": 2025010101390000\n' +
                 '    }\n' +
                 '  }\n' +
-                '}'
+                '}',
+            '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
         });
     });
     function makeModel() {
