@@ -9,7 +9,7 @@ const ReadmeQuick = (0, jostraca_1.cmp)(function ReadmeQuick(props) {
 ## Quick Start
 
 `);
-    const ReadmeQuick_sdk = (0, utility_1.requirePath)(ctx$, `./target/${target.name}/ReadmeQuick_${target.name}`, { ignore: true });
+    const ReadmeQuick_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeQuick_${target.name}`, { ignore: true });
     if (ReadmeQuick_sdk) {
         ReadmeQuick_sdk['ReadmeQuick']({ target });
     }

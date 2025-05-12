@@ -14,7 +14,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
   // Optional
   const ReadmeInstall_sdk =
-    requirePath(ctx$, `./target/${target.name}/ReadmeInstall_${target.name}`, { ignore: true })
+    requirePath(ctx$, `./cmp/${target.name}/ReadmeInstall_${target.name}`, { ignore: true })
 
   if (ReadmeInstall_sdk) {
     ReadmeInstall_sdk['ReadmeInstall']({ target })
