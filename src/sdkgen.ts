@@ -273,6 +273,7 @@ export const vmap: (o: any, p: any) => any = JostracaModule.vmap
 export const get: (root: any, path: string | string[]) => any = JostracaModule.get
 export const getx: (root: any, path: string | string[]) => any = JostracaModule.getx
 export const template: (root: any, path: string | string[]) => any = JostracaModule.template
+export const indent: (src: string, indent: string | number | undefined) => any = JostracaModule.indent
 
 export const deep: (...args: any[]) => any = JostracaModule.deep
 export const omap: (...args: any[]) => any = JostracaModule.omap

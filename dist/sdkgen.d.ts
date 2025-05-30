@@ -55,6 +55,7 @@ export declare const vmap: (o: any, p: any) => any;
 export declare const get: (root: any, path: string | string[]) => any;
 export declare const getx: (root: any, path: string | string[]) => any;
 export declare const template: (root: any, path: string | string[]) => any;
+export declare const indent: (src: string, indent: string | number | undefined) => any;
 export declare const deep: (...args: any[]) => any;
 export declare const omap: (...args: any[]) => any;
 export declare const Project: Component;
