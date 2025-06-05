@@ -9,7 +9,7 @@ const Main = cmp(function Main(props: any) {
   const { model } = ctx$
 
   names(model, model.name)
-  console.log('MODEL name', model.name, model.Name)
+  // console.log('MODEL name', model.name, model.Name)
 
   Copy({
     from: 'tm/' + target.name,

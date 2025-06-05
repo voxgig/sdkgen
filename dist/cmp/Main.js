@@ -7,7 +7,7 @@ const Main = (0, jostraca_1.cmp)(function Main(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
     (0, jostraca_1.names)(model, model.name);
-    console.log('MODEL name', model.name, model.Name);
+    // console.log('MODEL name', model.name, model.Name)
     (0, jostraca_1.Copy)({
         from: 'tm/' + target.name,
         replace: {
