@@ -1,5 +1,5 @@
 
-import { cmp, select, Content } from 'jostraca'
+import { cmp, Content } from 'jostraca'
 
 
 const ReadmeIntro = cmp(function ReadmeIntro(props: any) {

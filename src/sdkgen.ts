@@ -267,7 +267,6 @@ export const each: (subject?: any, apply?: any) => any = JostracaModule.each
 export const snakify: (input: any[] | string) => string = JostracaModule.snakify
 export const camelify: (input: any[] | string) => string = JostracaModule.camelify
 export const kebabify: (input: any[] | string) => string = JostracaModule.kebabify
-export const select: (key: any, map: Record<string, Function>) => any = JostracaModule.select
 export const cmap: (o: any, p: any) => any = JostracaModule.cmap
 export const vmap: (o: any, p: any) => any = JostracaModule.vmap
 export const get: (root: any, path: string | string[]) => any = JostracaModule.get

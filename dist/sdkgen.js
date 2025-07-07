@@ -34,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.select = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
+exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.SdkGen = SdkGen;
 const Fs = __importStar(require("node:fs"));
 const util_1 = require("@voxgig/util");
@@ -211,7 +211,6 @@ exports.each = JostracaModule.each;
 exports.snakify = JostracaModule.snakify;
 exports.camelify = JostracaModule.camelify;
 exports.kebabify = JostracaModule.kebabify;
-exports.select = JostracaModule.select;
 exports.cmap = JostracaModule.cmap;
 exports.vmap = JostracaModule.vmap;
 exports.get = JostracaModule.get;

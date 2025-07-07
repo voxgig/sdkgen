@@ -12,9 +12,6 @@ const Main = cmp(function Main(props: any) {
     from: 'tm/' + target.name,
     replace: {
       ...stdrep,
-
-      // TODO: remove, replaced by ProjectName
-      Name: model.Name
     }
   })
 

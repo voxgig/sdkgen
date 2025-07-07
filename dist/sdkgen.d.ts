@@ -49,7 +49,6 @@ export declare const each: (subject?: any, apply?: any) => any;
 export declare const snakify: (input: any[] | string) => string;
 export declare const camelify: (input: any[] | string) => string;
 export declare const kebabify: (input: any[] | string) => string;
-export declare const select: (key: any, map: Record<string, Function>) => any;
 export declare const cmap: (o: any, p: any) => any;
 export declare const vmap: (o: any, p: any) => any;
 export declare const get: (root: any, path: string | string[]) => any;

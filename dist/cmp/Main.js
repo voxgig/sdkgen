@@ -10,8 +10,6 @@ const Main = (0, jostraca_1.cmp)(function Main(props) {
         from: 'tm/' + target.name,
         replace: {
             ...stdrep,
-            // TODO: remove, replaced by ProjectName
-            Name: model.Name
         }
     });
     const Main_sdk = (0, utility_1.requirePath)(ctx$, `cmp/${target.name}/Main_${target.name}`);
