@@ -1,10 +1,10 @@
 
+import Path from 'node:path'
+
 import {
   Jostraca,
   Project,
-  File,
   Folder,
-  Content,
   Copy,
   cmp,
   each,
@@ -63,6 +63,9 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
 
   const { model } = ctx$
 
+  // TODO: jostraca - make from easier to specify 
+  const sdkfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
+
   Project({}, () => {
     each(targets, (n) => {
       // TODO: validate target is a-z0-9-_. only
@@ -70,42 +73,68 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
 
       Folder({ name: 'model/target' }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/project/.sdk/model/target/' + name + '.jsonic',
+          from: sdkfolder + '/model/target/' + name + '.jsonic',
           // exclude: true
         })
       })
 
       Folder({ name: 'src/cmp/' + name }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/project/.sdk/src/cmp/' + name,
+          from: sdkfolder + '/src/cmp/' + name,
           // exclude: true
         })
       })
 
       Folder({ name: 'tm/' + name }, () => {
         Copy({
-          from: 'node_modules/@voxgig/sdkgen/project/.sdk/tm/' + name,
+          from: sdkfolder + '/tm/' + name,
           exclude: [/src\/feature/],
           replace: {
+
+            // TODO: standard replacements
             Name: model.const.Name,
           }
         })
+        Folder({ name: 'src/feature' }, () => {
+          Copy({ from: sdkfolder + '/tm/' + name + '/src/feature/README.md' })
+        })
       })
-
-
     })
   })
 
+
+  // TODO: convert to Jostraca File
+  // Append target to index
+  const fs = ctx$.fs()
+  const tree = ctx$.meta.tree
+
+  // console.log('tree', tree)
+  const modelfolder = Path.dirname(tree.url)
+  const targetindexfile = Path.join(modelfolder, 'target', 'target-index.jsonic')
+
+  const origindex = fs.readFileSync(targetindexfile, 'utf8')
+  let newindex = origindex
+
+  targets.map((tn: string) => {
+    if (!origindex.includes(`@"${tn}.jsonic"`)) {
+      newindex += `\n@"${tn}.jsonic"`
+    }
+  })
+
+  fs.writeFileSync(targetindexfile, newindex)
+
+  /*
   modifyModel({
     targets,
     model: ctx$.meta.model,
     tree: ctx$.meta.tree,
     fs: ctx$.fs
   })
-
+  */
 })
 
 
+/*
 async function modifyModel({ targets, model, tree, fs }: any) {
   // TODO: This is a kludge.
   // Aontu should provide option for as-is AST so that can be used
@@ -126,7 +155,7 @@ async function modifyModel({ targets, model, tree, fs }: any) {
 
   fs().writeFileSync(path, src)
 }
-
+*/
 
 export {
   action_target

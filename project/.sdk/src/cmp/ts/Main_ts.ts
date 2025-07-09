@@ -9,8 +9,8 @@ import {
 
 import { Package } from './Package_ts'
 import { Config } from './Config_ts'
-//import { MainEntity } from './MainEntity_ts'
-//import { Test } from './Test_ts'
+import { MainEntity } from './MainEntity_ts'
+import { Test } from './Test_ts'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -22,60 +22,60 @@ const Main = cmp(async function Main(props: any) {
 
   Package({ target })
 
-  // Test({ target })
+  Test({ target })
 
   Folder({ name: 'src' }, () => {
 
-    // File({ name: model.const.Name + 'SDK.' + target.name }, () => {
+    File({ name: model.const.Name + 'SDK.' + target.name }, () => {
 
-    //   Line(`// ${model.const.Name} ${target.Name} SDK\n`)
+      Line(`// ${model.const.Name} ${target.Name} SDK\n`)
 
-    //   List({ item: feature }, ({ item }: any) =>
-    //     Line(`const { ${item.Name + 'Feature'} } = ` +
-    //       `require('./feature/${item.name}/${item.Name}Feature')`))
+      List({ item: feature }, ({ item }: any) =>
+        Line(`import { ${item.Name + 'Feature'} } ` +
+          `from './feature/${item.name}/${item.Name}Feature'`))
 
-    //   List({ item: entity }, ({ item }: any) =>
-    //     Line(`const { ${item.Name}Entity } = require('./entity/${item.Name}Entity')`))
+      List({ item: entity }, ({ item }: any) =>
+        Line(`import { ${item.Name}Entity } from './entity/${item.Name}Entity'`))
 
-    //   Fragment({
-    //     from: Path.normalize(__dirname + '/../../../src/cmp/js/fragment/Main.fragment.js'),
-    //     replace: {
-    //       Name: model.const.Name,
+      Fragment(
+        {
+          from: Path.normalize(__dirname + '/../../../src/cmp/ts/fragment/Main.fragment.ts'),
+          replace: {
+            // Name: model.const.Name,
+            ...props.ctx$.stdrep,
 
+            '#BuildFeatures': ({ indent }: any) => {
+              List({ item: feature, line: false }, ({ item }: any) =>
+                Line({ indent },
+                  `addfeature(ctx, new ${item.Name}Feature())`))
+            },
 
-    //       '#FeatureOptions': ({ indent }: any) =>
-    //         Line({ indent }, `const fopts = this.#options.feature || {}`),
+            '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
+fres = featurehook(ctx, '${name}')
+if (fres instanceof Promise) { await fres }
+`),
 
-    //       '#BuildFeature': ({ indent }: any) => {
-    //         List({ item: feature, line: false }, ({ item }: any) =>
-    //           Line({ indent }, `${item.name}: ` +
-    //             `new ${item.Name}Feature(this, fopts.${item.name}, ` +
-    //             `${JSON.stringify(item.config || {})}), `))
-    //       },
+            '#TestOptions': ({ indent }: any) => {
+              const topts = {
+                feature: cmap(feature, {
+                  active: false
+                }),
+              }
+              Content({ indent },
+                JSON.stringify(topts, null, 2)
+                  .replace(/^{\n  /, '').replace(/\n}$/, ',\n').replace(/\n  /g, '\n'))
+            }
+          }
+        },
 
-    //       '#Feature-Hook': ({ name, indent }: any) =>
-    //         FeatureHook({ name }, (f: any) =>
-    //           Line({ indent },
-    //             `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}({ client: this })`)),
-
-    //       '#TestOptions': ({ indent }: any) => {
-    //         const topts = {
-    //           feature: cmap(feature, {
-    //             active: false
-    //           }),
-    //         }
-    //         Content({ indent },
-    //           JSON.stringify(topts, null, 2)
-    //             .replace(/^{\n  /, '').replace(/\n}$/, ',\n').replace(/\n  /g, '\n'))
-    //       }
-    //     }
-    //   }, () => {
-    //     each(entity, (entity: any) => {
-    //       // console.log('ENTITY', entity.name)
-    //       MainEntity({ target, entity, entitySDK: model.main.sdk.entity[entity.name] })
-    //     })
-    //   })
-    // })
+        // Entities
+        () => {
+          each(entity, (entity: any) => {
+            const entprops = { target, entity, entitySDK: model.main.api.entity[entity.name] }
+            MainEntity(entprops)
+          })
+        })
+    })
 
     Config({ target })
 

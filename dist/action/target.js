@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.action_target = action_target;
+const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
 const CMD_MAP = {
@@ -34,54 +38,61 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
     // console.log('MODEL')
     // console.dir(ctx$.model, { depth: null })
     const { model } = ctx$;
+    // TODO: jostraca - make from easier to specify 
+    const sdkfolder = 'node_modules/@voxgig/sdkgen/project/.sdk';
     (0, jostraca_1.Project)({}, () => {
         (0, jostraca_1.each)(targets, (n) => {
             // TODO: validate target is a-z0-9-_. only
             const name = n.val$;
             (0, jostraca_1.Folder)({ name: 'model/target' }, () => {
                 (0, jostraca_1.Copy)({
-                    from: 'node_modules/@voxgig/sdkgen/project/.sdk/model/target/' + name + '.jsonic',
+                    from: sdkfolder + '/model/target/' + name + '.jsonic',
                     // exclude: true
                 });
             });
             (0, jostraca_1.Folder)({ name: 'src/cmp/' + name }, () => {
                 (0, jostraca_1.Copy)({
-                    from: 'node_modules/@voxgig/sdkgen/project/.sdk/src/cmp/' + name,
+                    from: sdkfolder + '/src/cmp/' + name,
                     // exclude: true
                 });
             });
             (0, jostraca_1.Folder)({ name: 'tm/' + name }, () => {
                 (0, jostraca_1.Copy)({
-                    from: 'node_modules/@voxgig/sdkgen/project/.sdk/tm/' + name,
+                    from: sdkfolder + '/tm/' + name,
                     exclude: [/src\/feature/],
                     replace: {
+                        // TODO: standard replacements
                         Name: model.const.Name,
                     }
+                });
+                (0, jostraca_1.Folder)({ name: 'src/feature' }, () => {
+                    (0, jostraca_1.Copy)({ from: sdkfolder + '/tm/' + name + '/src/feature/README.md' });
                 });
             });
         });
     });
-    modifyModel({
-        targets,
-        model: ctx$.meta.model,
-        tree: ctx$.meta.tree,
-        fs: ctx$.fs
-    });
-});
-async function modifyModel({ targets, model, tree, fs }) {
-    // TODO: This is a kludge.
-    // Aontu should provide option for as-is AST so that can be used
-    // to find injection point more reliably
-    const path = tree.url;
-    let src = fs().readFileSync(path, 'utf8');
-    // Inject target file references into model
-    targets.sort().map((target) => {
-        const lineRE = new RegExp(`@"target/${target}.jsonic"`);
-        if (!src.match(lineRE)) {
-            src = src.replace(/(main:\s+sdk:\s+target:\s+\{\s*\}\n)/, '$1' +
-                `@"target/${target}.jsonic"\n`);
+    // TODO: convert to Jostraca File
+    // Append target to index
+    const fs = ctx$.fs();
+    const tree = ctx$.meta.tree;
+    // console.log('tree', tree)
+    const modelfolder = node_path_1.default.dirname(tree.url);
+    const targetindexfile = node_path_1.default.join(modelfolder, 'target', 'target-index.jsonic');
+    const origindex = fs.readFileSync(targetindexfile, 'utf8');
+    let newindex = origindex;
+    targets.map((tn) => {
+        if (!origindex.includes(`@"${tn}.jsonic"`)) {
+            newindex += `\n@"${tn}.jsonic"`;
         }
     });
-    fs().writeFileSync(path, src);
-}
+    fs.writeFileSync(targetindexfile, newindex);
+    /*
+    modifyModel({
+      targets,
+      model: ctx$.meta.model,
+      tree: ctx$.meta.tree,
+      fs: ctx$.fs
+    })
+    */
+});
 //# sourceMappingURL=target.js.map

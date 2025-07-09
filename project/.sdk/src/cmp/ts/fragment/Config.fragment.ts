@@ -1,7 +1,14 @@
 
 const Config = {
+
   options: {
-    base: '${def.servers[0].url}',
+    base: '$$main.def.servers.0.url$$',
+
+    auth: {
+      prefix: '$$main.sdk.config.auth.prefix$$',
+    },
+
+    headers: 'HEADERS',
 
     entity: {
       // #EntityConfigs

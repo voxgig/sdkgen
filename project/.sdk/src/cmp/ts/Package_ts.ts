@@ -16,7 +16,7 @@ const Package = cmp(async function Package(props: any) {
   // merge target and feature deps, by kind
   const deps =
     each(feature, (feature: any) =>
-      omap(feature.deps[target.name], ([k, v]: any) =>
+      omap(feature.deps?.[target.name], ([k, v]: any) =>
         [v.active ? k : undefined, v]))
       // TODO: sort by version; rules for version choice?
       .reduce((a: any, deps: any) => (each(deps, (dep: any) =>
@@ -32,12 +32,14 @@ const Package = cmp(async function Package(props: any) {
     name: `${model.const.name}-sdk`,
     version: `0.0.1`,
     description: 'DESCRIPTION',
-    main: `src/${model.const.Name}SDK.js`,
+    main: `dist/${model.const.Name}SDK.js`,
+    type: 'commonjs',
+    types: `dist/${model.const.Name}SDK.d.ts`,
     scripts: {
-      'test': 'node --test test/*.test.js',
-      'test-utility': 'node --test test/utility/*.test.js',
-      'test-accept': 'node --test test/accept/*.test.js',
-      'test-all': 'npm run test && npm run test-utility',
+      'test': 'node --enable-source-maps --test dist-test/**/*.test.js',
+      'test-some': 'node --enable-source-maps ' +
+        '--test-name-pattern=\"$npm_config_pattern\" --test dist-test/**/*.test.js',
+      'test-utility': 'node --enable-source-maps --test test/utility/*.test.ts',
 
       "watch": "tsc --build src test -w",
       "build": "tsc --build src test",

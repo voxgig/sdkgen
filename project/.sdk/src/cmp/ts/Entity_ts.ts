@@ -2,90 +2,65 @@
 import * as Path from 'node:path'
 
 import {
-  cmp, each, camelify,
-  File, Content, Folder, Fragment, Line, FeatureHook,
+  cmp, each, camelify, names,
+  File, Content, Folder, Fragment, Line, FeatureHook, Slot
 } from '@voxgig/sdkgen'
 
-
-
-const Operation = cmp(function Operation(props: any) {
-  const { ff, opname, indent, entity, entitySDK } = props
-
-  const entop = entity.op[opname]
-  const path = entop.path
-  // console.log('ENTOP', entop)
-
-  // TODO: move up to to common Entity
-  const params = JSON.stringify(path
-    .match(/\{[^}]+\}/g)
-    .map((p: string) => p.substring(1, p.length - 1))
-    .filter((p: string) => null != p && '' !== p))
-
-  const aliasmap = JSON.stringify(entitySDK.alias.field)
-
-  // const hasp = '' != entop.place
-
-  Fragment({
-    from: ff + '/Entity' + camelify(opname) + 'Op.fragment.js',
-    indent,
-    replace: {
-      Name: entity.Name,
-      PATH: entop.path,
-      "['PARAM-LIST']": params,
-      "{'ALIAS':'MAP'}": aliasmap,
-      "'REQFORM'": JSON.stringify(entop.reqform),
-      "'RESFORM'": JSON.stringify(entop.resform),
-      'class EntityOperation { // REMOVED': '',
-      '} // REMOVED': '',
-
-      '#Feature-Hook': ({ name, indent }: any) =>
-        FeatureHook({ name }, (f: any) =>
-          Line({ indent },
-            `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}(ctx)`)),
-    }
-  })
-})
-
+import { EntityOperation } from './EntityOperation_ts'
+import { EntityTest } from './EntityTest_ts'
 
 
 const Entity = cmp(function Entity(props: any) {
-  const { target, entity, entitySDK } = props
-  // console.log('ENTITY', props)
+  const { model, stdrep } = props.ctx$
+  const { target, entity } = props
+
+  const entrep = {
+    ...stdrep,
+  }
+
+  names(entrep, entity.Name, 'EntityName')
+  // console.log('ENTREP', entrep)
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/ts/fragment/')
 
-  // Folder({ name: 'src/entity' }, () => {
+  Folder({ name: 'src/entity' }, () => {
 
-  //   File({ name: entity.Name + 'Entity.' + target.name }, () => {
+    File({ name: entity.Name + 'Entity.' + target.name }, () => {
 
-  //     const opnames = Object.keys(entity.op)
+      const opnames = Object.keys(entity.op)
 
-  //     const opfrags =
-  //       (['load', 'list', 'create', 'update', 'remove']
-  //         .reduce((a: any, opname: string) =>
-  //         (a['#' + camelify(opname) + 'Op'] =
-  //           !opnames.includes(opname) ? '' : ({ indent }: any) => {
-  //             Operation({ ff, opname, indent, entity, entitySDK })
-  //           }, a), {}))
+      const opfrags =
+        (['load', 'list', 'create', 'update', 'remove']
+          .reduce((a: any, opname: string) =>
+          (a['#' + camelify(opname) + 'Op'] =
+            !opnames.includes(opname) ? '' : ({ indent }: any) => {
+              EntityOperation({ ff, opname, indent, entity, entrep })
+            }, a), {}))
 
-  //     Fragment({
-  //       from: ff + 'Entity.fragment.js',
-  //       replace: {
-  //         Name: entity.Name,
+      Fragment({
+        from: ff + 'Entity.fragment.ts',
+        replace: {
+          ...entrep,
+          SdkName: model.const.Name,
+          EntityName: entity.Name,
 
-  //         '#Feature-Hook': ({ name, indent }: any) =>
-  //           FeatureHook({ name }, (f: any) =>
-  //             Line({ indent },
-  //               `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}({entity:this})`)),
+          '#Feature-Hook': ({ name, indent }: any) =>
+            Content({ indent }, `
+fres = featurehook(ctx, '${name}')
+if (fres instanceof Promise) { await fres }
+`.trim()),
 
-  //         ...opfrags,
-  //       }
-  //     })
+          ...opfrags,
+        }
+      })
 
-  //   })
-  // })
+    })
+  })
 
+
+  EntityTest({ target, entity, entrep, ff })
 })
+
 
 
 export {
