@@ -79,7 +79,7 @@ class ProjectNameSDK {
   }
 
 
-  test(testopts?: any, sdkopts?: any) {
+  tester(testopts?: any, sdkopts?: any) {
     return ProjectNameSDK.test(testopts, sdkopts)
   }
 

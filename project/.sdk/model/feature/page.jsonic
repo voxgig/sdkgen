@@ -1,9 +1,0 @@
-
-title: Paging
-active: true
-
-
-hook: {
-  PreFetch: active: true
-}
-

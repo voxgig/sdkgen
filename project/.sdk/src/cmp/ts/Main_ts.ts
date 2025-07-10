@@ -41,7 +41,6 @@ const Main = cmp(async function Main(props: any) {
         {
           from: Path.normalize(__dirname + '/../../../src/cmp/ts/fragment/Main.fragment.ts'),
           replace: {
-            // Name: model.const.Name,
             ...props.ctx$.stdrep,
 
             '#BuildFeatures': ({ indent }: any) => {

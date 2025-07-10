@@ -57,7 +57,7 @@ function basicSetup(extra?: any) {
   if ('TRUE' === setup.dm.p.${model.NAME}_TEST_LIVE) {
     client = new ${model.Name}SDK(merge([
       {
-        apikey: process.env.STATUSPAGE_APIKEY,
+        apikey: process.env.${model.Name}_APIKEY,
       },
       extra])
     )
@@ -65,7 +65,7 @@ function basicSetup(extra?: any) {
   
   setup.client = client    
   setup.struct = client.utility().struct
-  setup.explain = 'TRUE' === setup.dm.p.STATUSPAGE_TEST_EXPLAIN
+  setup.explain = 'TRUE' === setup.dm.p.${model.Name}_TEST_EXPLAIN
 
   return setup
 }

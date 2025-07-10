@@ -8,6 +8,12 @@ import { Jsonic } from 'jsonic'
 import * as JostracaModule from 'jostraca'
 import { Aontu, Context } from 'aontu'
 
+
+import type {
+  ActionContext,
+  ActionResult,
+} from './types'
+
 import { SdkGenError, requirePath } from './utility'
 
 import { Main } from './cmp/Main'
@@ -19,8 +25,17 @@ import { ReadmeOptions } from './cmp/ReadmeOptions'
 import { ReadmeEntity } from './cmp/ReadmeEntity'
 import { FeatureHook } from './cmp/FeatureHook'
 
-import { action_target } from './action/target'
-import { action_feature } from './action/feature'
+
+import {
+  action_target,
+  target_add,
+} from './action/target'
+
+import {
+  action_feature,
+  feature_add,
+} from './action/feature'
+
 
 
 // TODO: use shape
@@ -110,9 +125,18 @@ function SdkGen(opts: SdkGenOptions) {
       throw new SdkGenError('Unknown action: ' + actname)
     }
 
+    const ctx = resolveActionContext()
+
+    await action(pargs, ctx)
+  }
+
+
+  function resolveActionContext(): ActionContext {
+
+    // TODO: use AsyncLocalStorage to avoid reloading model
     const { model, tree } = resolveModel()
 
-    const ctx = {
+    const ctx: ActionContext = {
       fs: () => fs,
       log,
       folder: '.', // The `generate` folder,
@@ -120,7 +144,7 @@ function SdkGen(opts: SdkGenOptions) {
       tree,
     }
 
-    await action(pargs, ctx)
+    return ctx
   }
 
 
@@ -179,10 +203,28 @@ function SdkGen(opts: SdkGenOptions) {
   }
 
 
+  const target = {
+    add: async (targets: string[]): Promise<ActionResult> => {
+      const ctx = resolveActionContext()
+      return target_add(targets, ctx)
+    }
+  }
+
+  const feature = {
+    add: async (features: string[]): Promise<ActionResult> => {
+      const ctx = resolveActionContext()
+      return feature_add(features, ctx)
+    }
+  }
+
+
+
   return {
     pino,
     generate,
     action,
+    target,
+    feature,
   }
 
 }

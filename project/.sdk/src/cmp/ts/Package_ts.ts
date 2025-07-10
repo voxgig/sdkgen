@@ -27,9 +27,12 @@ const Package = cmp(async function Package(props: any) {
           dev: only('dev', target.deps),
         })
 
+  const sdkname = model.name
+  const origin = null == model.origin ? '' : `@${model.origin}/`
+
   // TODO: complete SDK meta data in model and use here
   const pkg = {
-    name: `${model.const.name}-sdk`,
+    name: `${origin}${sdkname}-sdk`,
     version: `0.0.1`,
     description: 'DESCRIPTION',
     main: `dist/${model.const.Name}SDK.js`,

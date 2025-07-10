@@ -104,6 +104,11 @@ function SdkGen(opts) {
         if (null == action) {
             throw new utility_1.SdkGenError('Unknown action: ' + actname);
         }
+        const ctx = resolveActionContext();
+        await action(pargs, ctx);
+    }
+    function resolveActionContext() {
+        // TODO: use AsyncLocalStorage to avoid reloading model
         const { model, tree } = resolveModel();
         const ctx = {
             fs: () => fs,
@@ -112,7 +117,7 @@ function SdkGen(opts) {
             model,
             tree,
         };
-        await action(pargs, ctx);
+        return ctx;
     }
     function resolveModel() {
         const path = './model/sdk.jsonic';
@@ -153,10 +158,24 @@ function SdkGen(opts) {
             tree,
         };
     }
+    const target = {
+        add: async (targets) => {
+            const ctx = resolveActionContext();
+            return (0, target_1.target_add)(targets, ctx);
+        }
+    };
+    const feature = {
+        add: async (features) => {
+            const ctx = resolveActionContext();
+            return (0, feature_1.feature_add)(features, ctx);
+        }
+    };
     return {
         pino,
         generate,
         action,
+        target,
+        feature,
     };
 }
 SdkGen.makeBuild = async function (opts) {

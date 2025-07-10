@@ -1,5 +1,6 @@
 import { Pino } from '@voxgig/util';
 import * as JostracaModule from 'jostraca';
+import type { ActionResult } from './types';
 import { requirePath } from './utility';
 import { Main } from './cmp/Main';
 import { Entity } from './cmp/Entity';
@@ -37,6 +38,12 @@ declare function SdkGen(opts: SdkGenOptions): {
         name: string;
     }>;
     action: (args: string[]) => Promise<void>;
+    target: {
+        add: (targets: string[]) => Promise<ActionResult>;
+    };
+    feature: {
+        add: (features: string[]) => Promise<ActionResult>;
+    };
 };
 declare namespace SdkGen {
     var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any, ctx: any) => Promise<any>>;

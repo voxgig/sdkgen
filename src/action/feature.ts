@@ -4,14 +4,24 @@ import {
   Project,
   File,
   Folder,
-  Content,
   Copy,
   cmp,
   each,
 } from 'jostraca'
 
 
+import type {
+  ActionContext,
+  ActionResult,
+} from '../types'
+
 import { SdkGenError } from '../utility'
+
+
+import {
+  UpdateIndex,
+  loadContent,
+} from './action'
 
 
 const CMD_MAP: any = {
@@ -21,7 +31,7 @@ const CMD_MAP: any = {
 const BASE = 'node_modules/@voxgig/sdkgen'
 
 
-async function action_feature(args: any[], ctx: any) {
+async function action_feature(args: string[], actx: ActionContext): Promise<ActionResult> {
 
   const cmdname = args[1]
 
@@ -31,25 +41,40 @@ async function action_feature(args: any[], ctx: any) {
     throw new SdkGenError('Unknown feature cmd: ' + cmdname)
   }
 
-  await cmd(args, ctx)
+  return await cmd(args, actx)
 }
 
 
-async function cmd_feature_add(args: any[], ctx: any) {
+async function cmd_feature_add(args: string[], actx: ActionContext): Promise<ActionResult> {
 
-  let features = args[2]
-  features = 'string' === typeof features ? features.split(',') : features
+  const features_arg = args[2]
+  const features: string[] =
+    'string' === typeof features_arg ? features_arg.split(',') : features_arg
+
+  return feature_add(features, actx)
+}
+
+
+async function feature_add(features: string[], actx: ActionContext): Promise<ActionResult> {
 
   const jostraca = Jostraca()
 
   const opts = {
-    fs: ctx.fs,
-    folder: ctx.folder,
-    log: ctx.log.child({ cmp: 'jostraca' }),
-    meta: { model: ctx.model, tree: ctx.tree }
+    fs: actx.fs,
+    folder: actx.folder,
+    log: actx.log.child({ cmp: 'jostraca' }),
+    meta: {
+      model: actx.model,
+      tree: actx.tree,
+      content: loadContent(actx, 'feature')
+    }
   }
 
-  await jostraca.generate(opts, () => FeatureRoot({ features }))
+  const jres = await jostraca.generate(opts, () => FeatureRoot({ features }))
+
+  return {
+    jres
+  }
 }
 
 
@@ -71,6 +96,10 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
           from: BASE + '/project/.sdk/model/feature/' + name + '.jsonic',
           exclude: true
         })
+        File({ name: 'feature-index.jsonic' }, () => UpdateIndex({
+          content: ctx$.meta.content.feature_index,
+          names: features,
+        }))
       })
 
       each(target, (target) =>
@@ -84,38 +113,10 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
     })
   })
 
-  modifyModel({
-    features,
-    model: ctx$.meta.model,
-    tree: ctx$.meta.tree,
-    fs: ctx$.fs
-  })
-
 })
 
 
-async function modifyModel({ features, model, tree, fs }: any) {
-  // TODO: This is a kludge.
-  // Aontu should provide option for as-is AST so that can be used
-  // to find injection point more reliably
-
-  const path = tree.url
-  let src = fs().readFileSync(path, 'utf8')
-
-  // Inject feature file references into model
-  features.sort().map((feature: string) => {
-    const lineRE =
-      new RegExp(`@"feature/${feature}.jsonic"`)
-    if (!src.match(lineRE)) {
-      src = src.replace(/(main:\s+sdk:\s+feature:\s+\{\s*\}\n)/, '$1' +
-        `@"feature/${feature}.jsonic"\n`)
-    }
-  })
-
-  fs().writeFileSync(path, src)
-}
-
-
 export {
-  action_feature
+  feature_add,
+  action_feature,
 }

@@ -1,44 +1,52 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.action_target = action_target;
-const node_path_1 = __importDefault(require("node:path"));
+exports.target_add = target_add;
 const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
+const feature_1 = require("./feature");
+const action_1 = require("./action");
 const CMD_MAP = {
     add: cmd_target_add
 };
-async function action_target(args, ctx) {
+async function action_target(args, actx) {
     const cmdname = args[1];
     const cmd = CMD_MAP[cmdname];
     if (null == cmd) {
         throw new utility_1.SdkGenError('Unknown target cmd: ' + cmdname);
     }
-    await cmd(args, ctx);
+    return await cmd(args, actx);
 }
-async function cmd_target_add(args, ctx) {
-    let targets = args[2];
-    targets = 'string' === typeof targets ? targets.split(',') : targets;
+async function cmd_target_add(args, actx) {
+    const targets_arg = args[2];
+    const targets = 'string' === typeof targets_arg ? targets_arg.split(',') : targets_arg;
+    return target_add(targets, actx);
+}
+// Code API
+async function target_add(targets, actx) {
     const jostraca = (0, jostraca_1.Jostraca)();
     const opts = {
-        fs: ctx.fs,
-        folder: ctx.folder,
-        log: ctx.log.child({ cmp: 'jostraca' }),
-        meta: { model: ctx.model, tree: ctx.tree },
-        model: ctx.model
+        fs: actx.fs,
+        folder: actx.folder,
+        log: actx.log.child({ cmp: 'jostraca' }),
+        meta: {
+            model: actx.model,
+            tree: actx.tree,
+            content: (0, action_1.loadContent)(actx, 'target')
+        },
+        model: actx.model
     };
-    await jostraca.generate(opts, () => TargetRoot({ targets }));
+    const jres = await jostraca.generate(opts, () => TargetRoot({ targets }));
+    const features = Object.keys(actx.model.main.sdk.feature);
+    (0, feature_1.feature_add)(features, actx);
+    return {
+        jres
+    };
 }
 const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
     const { ctx$, targets } = props;
-    // TODO: model should be a top level ctx property
-    // ctx$.model = ctx$.meta.model
-    // console.log('MODEL')
-    // console.dir(ctx$.model, { depth: null })
     const { model } = ctx$;
-    // TODO: jostraca - make from easier to specify 
+    // TODO: jostraca - make from value easier to specify 
     const sdkfolder = 'node_modules/@voxgig/sdkgen/project/.sdk';
     (0, jostraca_1.Project)({}, () => {
         (0, jostraca_1.each)(targets, (n) => {
@@ -49,6 +57,10 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                     from: sdkfolder + '/model/target/' + name + '.jsonic',
                     // exclude: true
                 });
+                (0, jostraca_1.File)({ name: 'target-index.jsonic' }, () => (0, action_1.UpdateIndex)({
+                    content: ctx$.meta.content.target_index,
+                    names: targets,
+                }));
             });
             (0, jostraca_1.Folder)({ name: 'src/cmp/' + name }, () => {
                 (0, jostraca_1.Copy)({
@@ -62,37 +74,17 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                     exclude: [/src\/feature/],
                     replace: {
                         // TODO: standard replacements
-                        Name: model.const.Name,
+                        ProjectName: model.const.Name,
                     }
                 });
                 (0, jostraca_1.Folder)({ name: 'src/feature' }, () => {
                     (0, jostraca_1.Copy)({ from: sdkfolder + '/tm/' + name + '/src/feature/README.md' });
+                    (0, jostraca_1.Folder)({ name: 'base' }, () => {
+                        (0, jostraca_1.Copy)({ from: sdkfolder + '/tm/' + name + '/src/feature/base' });
+                    });
                 });
             });
         });
     });
-    // TODO: convert to Jostraca File
-    // Append target to index
-    const fs = ctx$.fs();
-    const tree = ctx$.meta.tree;
-    // console.log('tree', tree)
-    const modelfolder = node_path_1.default.dirname(tree.url);
-    const targetindexfile = node_path_1.default.join(modelfolder, 'target', 'target-index.jsonic');
-    const origindex = fs.readFileSync(targetindexfile, 'utf8');
-    let newindex = origindex;
-    targets.map((tn) => {
-        if (!origindex.includes(`@"${tn}.jsonic"`)) {
-            newindex += `\n@"${tn}.jsonic"`;
-        }
-    });
-    fs.writeFileSync(targetindexfile, newindex);
-    /*
-    modifyModel({
-      targets,
-      model: ctx$.meta.model,
-      tree: ctx$.meta.tree,
-      fs: ctx$.fs
-    })
-    */
 });
 //# sourceMappingURL=target.js.map

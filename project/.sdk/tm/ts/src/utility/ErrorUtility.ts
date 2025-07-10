@@ -22,7 +22,7 @@ function error(ctx: Context, err?: any) {
   err = err || new Error('unknown error')
 
   const errmsg = err.message || 'unknown error'
-  const msg = 'StatuspageSDK: ' + op.name + ': ' + errmsg
+  const msg = 'ProjectNameSDK: ' + op.name + ': ' + errmsg
   err.message = clean(ctx, msg)
 
   if (result.err) {

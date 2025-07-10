@@ -6,20 +6,36 @@ import {
   Project,
   Folder,
   Copy,
+  File,
+  Content,
   cmp,
   each,
 } from 'jostraca'
 
 
+import type {
+  ActionContext,
+  ActionResult,
+} from '../types'
+
 import { SdkGenError } from '../utility'
+
+import {
+  feature_add
+} from './feature'
+
+import {
+  UpdateIndex,
+  loadContent,
+} from './action'
 
 
 const CMD_MAP: any = {
   add: cmd_target_add
 }
 
-async function action_target(args: any[], ctx: any) {
 
+async function action_target(args: string[], actx: ActionContext): Promise<ActionResult> {
   const cmdname = args[1]
 
   const cmd = CMD_MAP[cmdname]
@@ -28,42 +44,56 @@ async function action_target(args: any[], ctx: any) {
     throw new SdkGenError('Unknown target cmd: ' + cmdname)
   }
 
-  await cmd(args, ctx)
+  return await cmd(args, actx)
 }
 
 
-async function cmd_target_add(args: any[], ctx: any) {
+async function cmd_target_add(args: string[], actx: ActionContext): Promise<ActionResult> {
 
-  let targets = args[2]
-  targets = 'string' === typeof targets ? targets.split(',') : targets
+  const targets_arg = args[2]
+  const targets: string[] =
+    'string' === typeof targets_arg ? targets_arg.split(',') : targets_arg
 
+  return target_add(targets, actx)
+}
+
+
+// Code API
+async function target_add(targets: string[], actx: ActionContext): Promise<ActionResult> {
   const jostraca = Jostraca()
 
   const opts = {
-    fs: ctx.fs,
-    folder: ctx.folder,
-    log: ctx.log.child({ cmp: 'jostraca' }),
-    meta: { model: ctx.model, tree: ctx.tree },
-    model: ctx.model
+    fs: actx.fs,
+    folder: actx.folder,
+    log: actx.log.child({ cmp: 'jostraca' }),
+    meta: {
+      model: actx.model,
+      tree: actx.tree,
+      content: loadContent(actx, 'target')
+    },
+    model: actx.model
   }
 
-  await jostraca.generate(opts, () => TargetRoot({ targets }))
+  const jres = await jostraca.generate(opts, () => TargetRoot({ targets }))
 
+  const features = Object.keys(actx.model.main.sdk.feature)
+
+  feature_add(features, actx)
+
+  return {
+    jres
+  }
 }
+
 
 
 const TargetRoot = cmp(function TargetRoot(props: any) {
   const { ctx$, targets } = props
 
-  // TODO: model should be a top level ctx property
-  // ctx$.model = ctx$.meta.model
-
-  // console.log('MODEL')
-  // console.dir(ctx$.model, { depth: null })
 
   const { model } = ctx$
 
-  // TODO: jostraca - make from easier to specify 
+  // TODO: jostraca - make from value easier to specify 
   const sdkfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
 
   Project({}, () => {
@@ -76,6 +106,10 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
           from: sdkfolder + '/model/target/' + name + '.jsonic',
           // exclude: true
         })
+        File({ name: 'target-index.jsonic' }, () => UpdateIndex({
+          content: ctx$.meta.content.target_index,
+          names: targets,
+        }))
       })
 
       Folder({ name: 'src/cmp/' + name }, () => {
@@ -92,71 +126,23 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
           replace: {
 
             // TODO: standard replacements
-            Name: model.const.Name,
+            ProjectName: model.const.Name,
           }
         })
         Folder({ name: 'src/feature' }, () => {
           Copy({ from: sdkfolder + '/tm/' + name + '/src/feature/README.md' })
+
+          Folder({ name: 'base' }, () => {
+            Copy({ from: sdkfolder + '/tm/' + name + '/src/feature/base' })
+          })
         })
       })
     })
   })
-
-
-  // TODO: convert to Jostraca File
-  // Append target to index
-  const fs = ctx$.fs()
-  const tree = ctx$.meta.tree
-
-  // console.log('tree', tree)
-  const modelfolder = Path.dirname(tree.url)
-  const targetindexfile = Path.join(modelfolder, 'target', 'target-index.jsonic')
-
-  const origindex = fs.readFileSync(targetindexfile, 'utf8')
-  let newindex = origindex
-
-  targets.map((tn: string) => {
-    if (!origindex.includes(`@"${tn}.jsonic"`)) {
-      newindex += `\n@"${tn}.jsonic"`
-    }
-  })
-
-  fs.writeFileSync(targetindexfile, newindex)
-
-  /*
-  modifyModel({
-    targets,
-    model: ctx$.meta.model,
-    tree: ctx$.meta.tree,
-    fs: ctx$.fs
-  })
-  */
 })
 
 
-/*
-async function modifyModel({ targets, model, tree, fs }: any) {
-  // TODO: This is a kludge.
-  // Aontu should provide option for as-is AST so that can be used
-  // to find injection point more reliably
-
-  const path = tree.url
-  let src = fs().readFileSync(path, 'utf8')
-
-  // Inject target file references into model
-  targets.sort().map((target: string) => {
-    const lineRE =
-      new RegExp(`@"target/${target}.jsonic"`)
-    if (!src.match(lineRE)) {
-      src = src.replace(/(main:\s+sdk:\s+target:\s+\{\s*\}\n)/, '$1' +
-        `@"target/${target}.jsonic"\n`)
-    }
-  })
-
-  fs().writeFileSync(path, src)
-}
-*/
-
 export {
-  action_target
+  action_target,
+  target_add,
 }

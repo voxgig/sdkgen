@@ -2,9 +2,9 @@
 import { test, describe } from 'node:test'
 import { equal } from 'node:assert'
 
-import { StatuspageSDK } from '../..'
+import { ProjectNameSDK } from '../..'
 
-const client = StatuspageSDK.test({}, {
+const client = ProjectNameSDK.test({}, {
   apikey: 'APIKEY01',
 
   // NOTE: original utility.options must remain in place.

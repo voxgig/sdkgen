@@ -1,11 +1,10 @@
 
-main: sdk: feature: log: {
+main: sdk: feature: test: {
 
   name: .$KEY
-  title: Log
+  title: Test
   version: '0.0.1'
   active: true
-
 
   hook: {
     PostConstruct: active: true
@@ -22,14 +21,6 @@ main: sdk: feature: log: {
     PreResult: active: true
     PostOperation: active: true
   }
-
-
-  deps: js: {
-    'pino': { active: true, version: '>=9', kind: peer }
-    'pino-pretty': { active: true, version: '>=13', kind: peer }
-  }
-
-  deps: ts: .js
 }
 
 

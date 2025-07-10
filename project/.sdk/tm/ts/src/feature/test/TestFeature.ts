@@ -1,6 +1,6 @@
 
 import type { Context, FeatureOptions } from '../../types'
-import type { StatuspageSDK } from '../../StatuspageSDK'
+import type { ProjectNameSDK } from '../../ProjectNameSDK'
 
 import { BaseFeature } from '../base/BaseFeature'
 
@@ -10,7 +10,7 @@ class TestFeature extends BaseFeature {
   name = 'test'
   active = true
 
-  _client?: StatuspageSDK
+  _client?: ProjectNameSDK
   _options?: any
 
 

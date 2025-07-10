@@ -7,7 +7,7 @@ import { test, describe } from 'node:test'
 import { equal } from 'node:assert'
 
 
-import { StatuspageSDK, BaseFeature, utility } from '../..'
+import { ProjectNameSDK, BaseFeature, utility } from '../..'
 
 import {
   makeStepData,
