@@ -1,11 +1,9 @@
 
 import { cmp, Copy, Folder } from 'jostraca'
 
-import { resolvePath } from '../utility'
-
-
 const Feature = cmp(function Feature(props: any) {
   const { target, feature, ctx$ } = props
+  const { log } = ctx$
 
   Folder({ name: 'src/feature/' + feature.name }, () => {
     // TODO: Copy should just warn if from not found
@@ -16,6 +14,11 @@ const Feature = cmp(function Feature(props: any) {
         FEATURE_Name: feature.Name,
       }
     })
+  })
+
+  log.info({
+    point: 'generate-feature', target, feature,
+    note: 'target:' + target.name + ', ' + 'feature: ' + feature.name
   })
 
 })

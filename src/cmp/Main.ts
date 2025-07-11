@@ -6,7 +6,7 @@ import { requirePath } from '../utility'
 
 const Main = cmp(function Main(props: any) {
   const { target, ctx$ } = props
-  const { model, stdrep } = ctx$
+  const { model, stdrep, log } = ctx$
 
   Copy({
     from: 'tm/' + target.name,
@@ -19,6 +19,7 @@ const Main = cmp(function Main(props: any) {
 
   Main_sdk['Main']({ model, target, stdrep })
 
+  log.info({ point: 'generate-main', target, note: 'target:' + target.name })
 })
 
 
