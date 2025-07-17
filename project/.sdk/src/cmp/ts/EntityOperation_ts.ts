@@ -5,6 +5,8 @@ import {
 } from '@voxgig/sdkgen'
 
 
+import { jsonify } from '@voxgig/struct'
+
 import { formatJSONSrc } from './utility_ts'
 
 
@@ -22,10 +24,10 @@ const EntityOperation = cmp(function Operation(props: any) {
   const entop = entity.op[opname]
   const path = entop.path
 
-  // TODO: move up to to common Entity
-  const params = JSON.stringify((path.match(/\{[^}]+\}/g) || [])
-    .map((p: string) => p.substring(1, p.length - 1))
-    .filter((p: string) => null != p && '' !== p))
+  // // TODO: move up to to common Entity
+  // const params = JSON.stringify((path.match(/\{[^}]+\}/g) || [])
+  //   .map((p: string) => p.substring(1, p.length - 1))
+  //   .filter((p: string) => null != p && '' !== p))
 
   // const aliasmap = JSON.stringify(entitySDK.alias.field)
   const aliasmap = JSON.stringify(entity.alias.field)
@@ -42,7 +44,8 @@ const EntityOperation = cmp(function Operation(props: any) {
       EntityName: entity.Name,
       entityname: entity.name,
       PATH: entop.path,
-      "['PARAM-LIST']": params,
+      "['PATHALT']": entop.pathalt,
+      "['PARAM-LIST']": jsonify(Object.keys(entop.param)),
       "{ 'ALIAS': 'MAP' }": aliasmap,
       "'REQFORM'": formatJSONSrc(JSON.stringify(entop.reqform)),
       "'RESFORM'": formatJSONSrc(JSON.stringify(entop.resform)),

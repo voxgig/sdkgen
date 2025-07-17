@@ -5,6 +5,9 @@ import { Context } from '../types'
 // Create request specificaton.
 function spec(ctx: Context) {
   const { client, op, utility } = ctx
+  const struct = utility.struct
+  const size = struct.size
+  const select = struct.select
   const { method, params, query, headers, body, auth } = utility
 
   let options = client.options()
@@ -23,17 +26,29 @@ function spec(ctx: Context) {
     alias: {}
   }
 
-  const reqMethod = method(ctx)
-  const reqParams = params(ctx)
-  const reqQuery = query(ctx)
-  const reqHeaders = headers(ctx)
-  const reqBody = body(ctx)
+  ctx.spec.method = method(ctx)
+  ctx.spec.params = params(ctx)
+  ctx.spec.query = query(ctx)
+  ctx.spec.headers = headers(ctx)
+  ctx.spec.body = body(ctx)
 
-  ctx.spec.method = reqMethod
-  ctx.spec.params = reqParams
-  ctx.spec.query = reqQuery
-  ctx.spec.headers = reqHeaders
-  ctx.spec.body = reqBody
+  console.log('PATHALT', op.pathalt, size(op.pathalt))
+
+  if (1 < size(op.pathalt)) {
+    let hasQuery = false
+    const paramQuery: any = {}
+    for (let paramName of op.params) {
+      paramQuery[paramName] = null == ctx.spec.params[paramName] ? undefined : true
+      hasQuery = true
+    }
+    if (hasQuery) {
+      const foundParamAlts = select(op.pathalt, paramQuery)
+      console.log('PQ', paramQuery, foundParamAlts)
+      if (0 < size(foundParamAlts)) {
+        ctx.spec.path = foundParamAlts[0].path
+      }
+    }
+  }
 
   if (ctx.ctrl.explain) {
     ctx.ctrl.explain.spec = ctx.spec

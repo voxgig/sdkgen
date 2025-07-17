@@ -24,6 +24,8 @@ function resform(ctx: Context) {
     const resdata = isfunc(resform) ? resform(ctx) : transform(ctx.result, resform)
     result.resdata = resdata
 
+    console.log('RESDATA', resform, ctx.result, resdata)
+
     return resdata
   }
   catch (err) {

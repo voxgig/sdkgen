@@ -52,6 +52,8 @@ function exit(err) {
 
 
 async function operate(options) {
+  console.log('CMD', options)
+
   const sdkgen = new SdkGen({
     debug: options.debug,
   })

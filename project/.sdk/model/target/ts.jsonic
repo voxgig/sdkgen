@@ -5,6 +5,7 @@ main: sdk: target: ts: {
   ext: ts
   comment: line: "//"
   module: name: $$name$$
+  base: 'BASE'
 
   deps: &: {
     # TODO: fix aontu disjunctions!

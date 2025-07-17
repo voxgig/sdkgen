@@ -20,6 +20,7 @@ class EntityOperation {
       entity: 'entityname',
       name: 'list',
       path: 'PATH',
+      pathalt: ['PATHALT'],
       params: ['PARAM-LIST'],
       alias: { 'ALIAS': 'MAP' },
       state: {},

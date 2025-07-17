@@ -26,7 +26,7 @@ function params(ctx: Context) {
     }
   }
 
-  out = validate(out, op.validate.params)
+  // out = validate(out, op.validate.params)
 
   return out
 }

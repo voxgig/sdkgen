@@ -21,6 +21,7 @@ function opify(opmap: Record<string, any>) {
     name: getprop(opmap, 'name', '_'),
     kind: getprop(opmap, 'kind', '_'),
     path: getprop(opmap, 'path', '_'),
+    pathalt: getprop(opmap, 'pathalt', []),
     entity: getprop(opmap, 'entity', '_'),
     reqform: getprop(opmap, 'reqform', '_'),
     resform: getprop(opmap, 'resform', '_'),
@@ -57,6 +58,11 @@ function operator(ctx: Context): Operation {
     },
 
     // Optional.
+    pathalt: ['`$CHILD`', {
+      path: '`$STRING`',
+      '`$OPEN`': true,
+      // '`$CHILD`': '`$BOOLEAN`'
+    }],
     params: ['`$CHILD`', '`$STRING`'],
     alias: { '`$CHILD`': '`$STRING`' },
     state: {},

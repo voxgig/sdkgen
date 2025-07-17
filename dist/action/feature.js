@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.feature_add = feature_add;
 exports.action_feature = action_feature;
+const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
 const action_1 = require("./action");
@@ -60,8 +64,10 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 }));
             });
             (0, jostraca_1.each)(target, (target) => (0, jostraca_1.Folder)({ name: 'tm/' + target.name + '/src/feature/' + name }, () => {
+                const from = node_path_1.default.join((target.base || node_path_1.default.join(BASE, '/project/.sdk')), 'tm', target.name, '/src/feature/', name);
                 (0, jostraca_1.Copy)({
-                    from: BASE + '/project/.sdk/tm/' + target.name + '/src/feature/' + name,
+                    // from: BASE + '/project/.sdk/tm/' + target.name + '/src/feature/' + name,
+                    from,
                     exclude: true
                 });
             }));

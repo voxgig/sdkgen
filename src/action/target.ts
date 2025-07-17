@@ -12,6 +12,7 @@ import {
   each,
 } from 'jostraca'
 
+import { getelem } from '@voxgig/struct'
 
 import type {
   ActionContext,
@@ -35,6 +36,12 @@ const CMD_MAP: any = {
 }
 
 
+type Target = {
+  origin: string
+  name: string
+}
+
+
 async function action_target(args: string[], actx: ActionContext): Promise<ActionResult> {
   const cmdname = args[1]
 
@@ -49,10 +56,13 @@ async function action_target(args: string[], actx: ActionContext): Promise<Actio
 
 
 async function cmd_target_add(args: string[], actx: ActionContext): Promise<ActionResult> {
+  console.log('ARGS', args)
 
   const targets_arg = args[2]
   const targets: string[] =
     'string' === typeof targets_arg ? targets_arg.split(',') : targets_arg
+
+  console.log('TARGETS', targets)
 
   return target_add(targets, actx)
 }
@@ -89,39 +99,53 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
 
 const TargetRoot = cmp(function TargetRoot(props: any) {
   const { ctx$, targets } = props
-
-
-  const { model } = ctx$
+  const { model, log } = ctx$
 
   // TODO: jostraca - make from value easier to specify 
-  const sdkfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
+  // const tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
 
   Project({}, () => {
     each(targets, (n) => {
-      // TODO: validate target is a-z0-9-_. only
-      const name = n.val$
+      const tref = n.val$
+
+      log.info({ point: 'target-start', target: tref, note: tref })
+
+      const { tname, tfolder, torigname, base } = resolveTarget(tref, ctx$)
+
+      log.info({
+        point: 'target-name', name: tname, folder: tfolder,
+        note: tname + (tname != torigname ? 'original' + torigname : '') + ' from:' + tfolder
+      })
+
+
+      // TODO: validate target name is a-z0-9-_. only
+      // const tname = tref
 
       Folder({ name: 'model/target' }, () => {
         Copy({
-          from: sdkfolder + '/model/target/' + name + '.jsonic',
+          from: tfolder + '/model/target/' + torigname + '.jsonic',
           // exclude: true
+          replace: {
+            "'BASE'": "'" + base + "'"
+          }
         })
         File({ name: 'target-index.jsonic' }, () => UpdateIndex({
           content: ctx$.meta.content.target_index,
-          names: targets,
+          // names: targets,
+          names: [tname]
         }))
       })
 
-      Folder({ name: 'src/cmp/' + name }, () => {
+      Folder({ name: 'src/cmp/' + tname }, () => {
         Copy({
-          from: sdkfolder + '/src/cmp/' + name,
+          from: tfolder + '/src/cmp/' + torigname,
           // exclude: true
         })
       })
 
-      Folder({ name: 'tm/' + name }, () => {
+      Folder({ name: 'tm/' + tname }, () => {
         Copy({
-          from: sdkfolder + '/tm/' + name,
+          from: tfolder + '/tm/' + torigname,
           exclude: [/src\/feature/],
           replace: {
 
@@ -129,17 +153,88 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
             ProjectName: model.const.Name,
           }
         })
+
         Folder({ name: 'src/feature' }, () => {
-          Copy({ from: sdkfolder + '/tm/' + name + '/src/feature/README.md' })
+          Copy({ from: tfolder + '/tm/' + torigname + '/src/feature/README.md' })
 
           Folder({ name: 'base' }, () => {
-            Copy({ from: sdkfolder + '/tm/' + name + '/src/feature/base' })
+            Copy({ from: tfolder + '/tm/' + torigname + '/src/feature/base' })
           })
         })
+      })
+
+      log.info({
+        point: 'target-end', target: tref, note: tname +
+          (tname != tref ? ' ref:' + tref : '')
       })
     })
   })
 })
+
+
+function resolveTarget(tref: string, ctx$: any) {
+  let tname = tref
+  let torigname = tref
+  let tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
+
+  const root = ctx$.folder
+  const fs = ctx$.fs()
+
+  let fulltfolder = Path.normalize(Path.join(root, tfolder))
+  tname = getelem(tref.split('/'), -1)
+
+  let aliasref = tref
+  torigname = getelem(aliasref.split('/'), -1)
+  const aliasing = tref.split('~')
+  if (1 < aliasing.length) {
+    aliasref = aliasing[0]
+    tname = aliasing.slice(1).join('~')
+    torigname = getelem(aliasref.split('/'), -1)
+  }
+
+  const search: string[] = []
+  let found = false
+  if (aliasref.includes('/')) {
+    // NOTE: the last path element of the ref is the target name, not a folder.
+    const aliasbase = Path.dirname(aliasref)
+
+    if (!aliasref.startsWith('/')) {
+      fulltfolder = Path.normalize(Path.join(root, 'node_modules', aliasbase, '.sdk'))
+      search.push(fulltfolder)
+      found = fs.existsSync(fulltfolder)
+
+      if (!found) {
+        fulltfolder = Path.normalize(Path.join(root, aliasbase, '.sdk'))
+        search.push(fulltfolder)
+        found = fs.existsSync(fulltfolder)
+      }
+    }
+    else {
+      fulltfolder = Path.normalize(Path.join(aliasbase, '.sdk'))
+      search.push(fulltfolder)
+      found = fs.existsSync(fulltfolder)
+    }
+  }
+  else {
+    search.push(fulltfolder)
+    found = fs.existsSync(fulltfolder)
+  }
+
+  if (!found) {
+    throw new Error('Target folder not found in:\n' + search.join('\n  '))
+  }
+
+  const rootslash = root.endsWith('/') ? root : root + '/'
+  const out = {
+    tname,
+    tfolder: fulltfolder,
+    torigname,
+    base: fulltfolder.replace(rootslash, '')
+  }
+
+  console.log('resolveTarget', tref, out)
+  return out
+}
 
 
 export {

@@ -1,4 +1,6 @@
 
+import Path from 'node:path'
+
 import {
   Jostraca,
   Project,
@@ -104,8 +106,17 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
 
       each(target, (target) =>
         Folder({ name: 'tm/' + target.name + '/src/feature/' + name }, () => {
+          const from = Path.join(
+            (target.base || Path.join(BASE, '/project/.sdk')),
+            'tm',
+            target.name,
+            '/src/feature/',
+            name
+          )
+
           Copy({
-            from: BASE + '/project/.sdk/tm/' + target.name + '/src/feature/' + name,
+            // from: BASE + '/project/.sdk/tm/' + target.name + '/src/feature/' + name,
+            from,
             exclude: true
           })
         }))

@@ -28,6 +28,7 @@ type Operation = {
   entity: string
   name: string
   path: string
+  pathalt: ({ path: string } & Record<string, boolean>)[],
   params: string[],
   alias: Record<string, string>
   state: Record<string, any>
