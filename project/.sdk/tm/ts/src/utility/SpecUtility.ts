@@ -32,8 +32,6 @@ function spec(ctx: Context) {
   ctx.spec.headers = headers(ctx)
   ctx.spec.body = body(ctx)
 
-  console.log('PATHALT', op.pathalt, size(op.pathalt))
-
   if (1 < size(op.pathalt)) {
     let hasQuery = false
     const paramQuery: any = {}

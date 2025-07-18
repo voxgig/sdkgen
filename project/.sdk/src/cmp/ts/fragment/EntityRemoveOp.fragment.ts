@@ -20,6 +20,7 @@ class EntityOperation {
       entity: 'entityname',
       name: 'remove',
       path: 'PATH',
+      pathalt: ['PATHALT'],
       params: ['PARAM-LIST'],
       alias: { 'ALIAS': 'MAP' },
       state: {},

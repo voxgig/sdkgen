@@ -21,6 +21,7 @@ class EntityOperation {
       entity: 'entityname',
       name: 'load',
       path: 'PATH',
+      pathalt: ['PATHALT'],
       params: ['PARAM-LIST'],
       alias: { 'ALIAS': 'MAP' },
       state: {},
