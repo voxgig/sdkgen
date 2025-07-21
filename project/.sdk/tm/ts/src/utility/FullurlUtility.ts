@@ -14,11 +14,6 @@ function fullurl(ctx: Context) {
   let resmatch: Record<string, any> = {}
 
   const params = spec.params
-  // for (let key of op.params) {
-  //   if (null == params[key]) {
-  //     params[key] = findparam(ctx, key)
-  //   }
-  // }
 
   for (let key in params) {
     const val = params[key]
