@@ -2,27 +2,27 @@
 import { getprop } from './StructUtility'
 
 
-function contextify(ctxmap: Record<string, any>) {
-  const ctx: any = new Context()
+function contextify(ctxmap: Record<string, any>, basectx?: Context): any {
+  const ctx = new Context()
 
-  ctx.ctrl = getprop(ctxmap, 'ctrl', {})
-  ctx.meta = getprop(ctxmap, 'meta', {})
-  ctx.work = getprop(ctxmap, 'work', {})
+  ctx.ctrl = getprop(ctxmap, 'ctrl', getprop(basectx, 'ctrl', {}))
+  ctx.meta = getprop(ctxmap, 'meta', getprop(basectx, 'meta', {}))
+  ctx.work = getprop(ctxmap, 'work', getprop(basectx, 'work', {}))
 
-  ctx.client = getprop(ctxmap, 'client', undefined)
-  ctx.config = getprop(ctxmap, 'config', undefined)
-  ctx.entity = getprop(ctxmap, 'entity', undefined)
-  ctx.op = getprop(ctxmap, 'op', undefined)
-  ctx.entopts = getprop(ctxmap, 'entopts', undefined)
-  ctx.options = getprop(ctxmap, 'options', undefined)
-  ctx.response = getprop(ctxmap, 'response', undefined)
-  ctx.result = getprop(ctxmap, 'result', undefined)
-  ctx.spec = getprop(ctxmap, 'spec', undefined)
-  ctx.utility = getprop(ctxmap, 'utility', undefined)
-  ctx.data = getprop(ctxmap, 'data', undefined)
-  ctx.reqdata = getprop(ctxmap, 'reqdata', undefined)
-  ctx.match = getprop(ctxmap, 'match', undefined)
-  ctx.reqmatch = getprop(ctxmap, 'reqmatch', undefined)
+  ctx.client = getprop(ctxmap, 'client', getprop(basectx, 'client'))
+  ctx.config = getprop(ctxmap, 'config', getprop(basectx, 'config'))
+  ctx.entity = getprop(ctxmap, 'entity', getprop(basectx, 'entity'))
+  ctx.op = getprop(ctxmap, 'op', getprop(basectx, 'op'))
+  ctx.entopts = getprop(ctxmap, 'entopts', getprop(basectx, 'entopts'))
+  ctx.options = getprop(ctxmap, 'options', getprop(basectx, 'options'))
+  ctx.response = getprop(ctxmap, 'response', getprop(basectx, 'response'))
+  ctx.result = getprop(ctxmap, 'result', getprop(basectx, 'result'))
+  ctx.spec = getprop(ctxmap, 'spec', getprop(basectx, 'spec'))
+  ctx.utility = getprop(ctxmap, 'utility', getprop(basectx, 'utility'))
+  ctx.data = getprop(ctxmap, 'data', getprop(basectx, 'data'))
+  ctx.reqdata = getprop(ctxmap, 'reqdata', getprop(basectx, 'reqdata'))
+  ctx.match = getprop(ctxmap, 'match', getprop(basectx, 'match'))
+  ctx.reqmatch = getprop(ctxmap, 'reqmatch', getprop(basectx, 'reqmatch'))
 
   return ctx
 }

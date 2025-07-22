@@ -1,4 +1,6 @@
 
+import { inspect } from 'node:util'
+
 import {
   SdkNameSDK,
   SdkNameEntity,
@@ -19,6 +21,8 @@ class EntityNameEntity {
   #data: any
   #match: any
 
+  #_basectx: any
+
   constructor(client: SdkNameSDK, entopts: any) {
     // super()
     entopts = entopts || {}
@@ -31,10 +35,16 @@ class EntityNameEntity {
     this.#match = {}
 
     const contextify = this.#utility.contextify
-    const ctx = contextify({ client, entity: this })
+    this.#_basectx = contextify({
+      entity: this,
+      client,
+      utility: this.#utility,
+      entopts,
+      options: client.options()
+    })
 
     const featurehook = this.#utility.featurehook
-    featurehook(ctx, 'PostConstructEntity')
+    featurehook(this.#_basectx, 'PostConstructEntity')
   }
 
   entopts() {
@@ -52,9 +62,7 @@ class EntityNameEntity {
 
   data(this: any, data?: any) {
     const featurehook = this.#utility.featurehook
-    const contextify = this.#utility.contextify
-
-    const ctx = contextify({ entity: this })
+    const ctx = this.#_basectx
 
     if (null != data) {
       featurehook(ctx, 'SetData')
@@ -70,9 +78,7 @@ class EntityNameEntity {
 
   match(match?: any) {
     const featurehook = this.#utility.featurehook
-    const contextify = this.#utility.contextify
-
-    const ctx = contextify({ entity: this })
+    const ctx = this.#_basectx
 
     if (null != match) {
       featurehook(ctx, 'SetMatch')
@@ -86,6 +92,15 @@ class EntityNameEntity {
   }
 
 
+  toString() {
+    return 'EntityName ' + this.#utility.struct.jsonify(this.#data)
+  }
+
+  [inspect.custom]() {
+    return this.toString()
+  }
+
+
   // #LoadOp
 
   // #ListOp
@@ -95,6 +110,7 @@ class EntityNameEntity {
   // #UpdateOp
 
   // #RemoveOp
+
 
 
   #unexpected(this: any, ctx: Context, err: any) {

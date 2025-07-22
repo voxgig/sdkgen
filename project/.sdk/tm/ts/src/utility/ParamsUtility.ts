@@ -28,8 +28,6 @@ function params(ctx: Context) {
 
   // out = validate(out, op.validate.params)
 
-  // console.log('PARAMS', op.params, out, ctx.match, ctx.reqmatch)
-
   return out
 }
 

@@ -32,16 +32,11 @@ class EntityOperation {
 
     let ctx: Context = contextify({
       ctrl,
-      client,
       op,
-      utility,
-      entity,
-      entopts: this.#entopts,
-      options: client.options(),
       match: this.#match,
       data: this.#data,
       reqmatch
-    })
+    }, this.#_basectx)
 
     try {
 

@@ -19,6 +19,7 @@ function reqform(ctx: Context) {
     const reqdata = isfunc(reqform) ? reqform(ctx) : transform({
       reqdata: ctx.reqdata
     }, reqform)
+
     return reqdata
   }
   catch (err) {
