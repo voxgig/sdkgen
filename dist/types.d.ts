@@ -7,6 +7,8 @@ type ActionContext = {
     folder: string;
     model: any;
     tree: any;
+    opts: any;
+    jostraca: any;
 };
 type ActionResult = {
     jres: JostracaResult;

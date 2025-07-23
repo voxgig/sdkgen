@@ -52,10 +52,10 @@ function exit(err) {
 
 
 async function operate(options) {
-  console.log('CMD', options)
-
+  console.log('CMD OPTS', options)
   const sdkgen = new SdkGen({
     debug: options.debug,
+    dryrun: options.dryrun,
   })
 
   await sdkgen.action(options.args)
@@ -84,6 +84,11 @@ function resolveOptions() {
         short: 'v',
       },
 
+      dryrun: {
+        type: 'boolean',
+        short: 'y',
+      },
+
     }
   })
 
@@ -91,6 +96,7 @@ function resolveOptions() {
     debug: args.values.debug,
     help: !!args.values.help,
     version: !!args.values.version,
+    dryrun: !!args.values.dryrun,
     args: args.positionals,
   }
 
@@ -103,6 +109,7 @@ function validateOptions(rawOptions) {
     debug: One(String, Boolean),
     help: Boolean,
     version: Boolean,
+    dryrun: Boolean,
     args: [String]
   })
 

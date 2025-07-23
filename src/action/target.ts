@@ -56,13 +56,9 @@ async function action_target(args: string[], actx: ActionContext): Promise<Actio
 
 
 async function cmd_target_add(args: string[], actx: ActionContext): Promise<ActionResult> {
-  console.log('ARGS', args)
-
   const targets_arg = args[2]
   const targets: string[] =
     'string' === typeof targets_arg ? targets_arg.split(',') : targets_arg
-
-  console.log('TARGETS', targets)
 
   return target_add(targets, actx)
 }
@@ -70,7 +66,8 @@ async function cmd_target_add(args: string[], actx: ActionContext): Promise<Acti
 
 // Code API
 async function target_add(targets: string[], actx: ActionContext): Promise<ActionResult> {
-  const jostraca = Jostraca()
+  // const jostraca = Jostraca()
+  const jostraca = actx.jostraca
 
   const opts = {
     fs: actx.fs,
@@ -81,14 +78,28 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
       tree: actx.tree,
       content: loadContent(actx, 'target')
     },
-    model: actx.model
+    model: actx.model,
   }
 
-  const jres = await jostraca.generate(opts, () => TargetRoot({ targets }))
+  const jres = await jostraca.generate(opts, () => TargetRoot({ targets, actx }))
 
-  const features = Object.keys(actx.model.main.sdk.feature)
+  console.log('JRES', jres)
 
-  feature_add(features, actx)
+  console.dir(
+    jres.audit().filter((n: any[]) => n[1].path.includes('LICENSE')),
+    { depth: null }
+  )
+
+  for (let file of jres.files.merged) {
+    opts.log.info({ point: 'target', file, merge: true, note: 'modified: ' + file })
+  }
+
+  for (let file of jres.files.conflicted) {
+    opts.log.info({ point: 'target', file, conflict: true, note: '** CONFLICT: ' + file })
+  }
+
+  // const features = Object.keys(actx.model.main.sdk.feature)
+  // feature_add(features, actx)
 
   return {
     jres
@@ -98,7 +109,7 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
 
 
 const TargetRoot = cmp(function TargetRoot(props: any) {
-  const { ctx$, targets } = props
+  const { ctx$, targets, actx } = props
   const { model, log } = ctx$
 
   // TODO: jostraca - make from value easier to specify 
@@ -108,7 +119,11 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
     each(targets, (n) => {
       const tref = n.val$
 
-      log.info({ point: 'target-start', target: tref, note: tref })
+      log.info({
+        point: 'target-start',
+        target: tref,
+        note: tref + (actx.opts.dryrun ? ' ** DRY RUN **' : '')
+      })
 
       const { tname, tfolder, torigname, base } = resolveTarget(tref, ctx$)
 
@@ -232,7 +247,6 @@ function resolveTarget(tref: string, ctx$: any) {
     base: fulltfolder.replace(rootslash, '')
   }
 
-  console.log('resolveTarget', tref, out)
   return out
 }
 

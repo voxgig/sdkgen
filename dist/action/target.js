@@ -9,7 +9,6 @@ const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const struct_1 = require("@voxgig/struct");
 const utility_1 = require("../utility");
-const feature_1 = require("./feature");
 const action_1 = require("./action");
 const CMD_MAP = {
     add: cmd_target_add
@@ -23,15 +22,14 @@ async function action_target(args, actx) {
     return await cmd(args, actx);
 }
 async function cmd_target_add(args, actx) {
-    console.log('ARGS', args);
     const targets_arg = args[2];
     const targets = 'string' === typeof targets_arg ? targets_arg.split(',') : targets_arg;
-    console.log('TARGETS', targets);
     return target_add(targets, actx);
 }
 // Code API
 async function target_add(targets, actx) {
-    const jostraca = (0, jostraca_1.Jostraca)();
+    // const jostraca = Jostraca()
+    const jostraca = actx.jostraca;
     const opts = {
         fs: actx.fs,
         folder: actx.folder,
@@ -41,24 +39,36 @@ async function target_add(targets, actx) {
             tree: actx.tree,
             content: (0, action_1.loadContent)(actx, 'target')
         },
-        model: actx.model
+        model: actx.model,
     };
-    const jres = await jostraca.generate(opts, () => TargetRoot({ targets }));
-    const features = Object.keys(actx.model.main.sdk.feature);
-    (0, feature_1.feature_add)(features, actx);
+    const jres = await jostraca.generate(opts, () => TargetRoot({ targets, actx }));
+    console.log('JRES', jres);
+    console.dir(jres.audit().filter((n) => n[1].path.includes('LICENSE')), { depth: null });
+    for (let file of jres.files.merged) {
+        opts.log.info({ point: 'target', file, merge: true, note: 'modified: ' + file });
+    }
+    for (let file of jres.files.conflicted) {
+        opts.log.info({ point: 'target', file, conflict: true, note: '** CONFLICT: ' + file });
+    }
+    // const features = Object.keys(actx.model.main.sdk.feature)
+    // feature_add(features, actx)
     return {
         jres
     };
 }
 const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
-    const { ctx$, targets } = props;
+    const { ctx$, targets, actx } = props;
     const { model, log } = ctx$;
     // TODO: jostraca - make from value easier to specify 
     // const tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
     (0, jostraca_1.Project)({}, () => {
         (0, jostraca_1.each)(targets, (n) => {
             const tref = n.val$;
-            log.info({ point: 'target-start', target: tref, note: tref });
+            log.info({
+                point: 'target-start',
+                target: tref,
+                note: tref + (actx.opts.dryrun ? ' ** DRY RUN **' : '')
+            });
             const { tname, tfolder, torigname, base } = resolveTarget(tref, ctx$);
             log.info({
                 point: 'target-name', name: tname, folder: tfolder,
@@ -160,7 +170,6 @@ function resolveTarget(tref, ctx$) {
         torigname,
         base: fulltfolder.replace(rootslash, '')
     };
-    console.log('resolveTarget', tref, out);
     return out;
 }
 //# sourceMappingURL=target.js.map

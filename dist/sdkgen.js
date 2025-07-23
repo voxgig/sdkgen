@@ -71,13 +71,25 @@ function SdkGen(opts) {
     const fs = opts.fs || Fs;
     const folder = opts.folder || '../';
     const now = opts.now || (() => Date.now());
-    const jostraca = Jostraca({ now });
+    const jopts = {
+        now,
+        control: {
+            dryrun: opts.dryrun
+        },
+        existing: {
+            txt: {
+                merge: true
+            }
+        }
+    };
+    console.log('JOPTS', jopts);
+    const jostraca = Jostraca(jopts);
     const pino = (0, util_1.prettyPino)('sdkgen', opts);
     const log = pino.child({ cmp: 'sdkgen' });
     async function generate(spec) {
         const start = Date.now();
         const { model, config } = spec;
-        log.info({ point: 'generate-start', start });
+        log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' });
         log.debug({ point: 'generate-spec', spec });
         let Root = spec.root;
         if (null == Root && null != config.root) {
@@ -91,7 +103,7 @@ function SdkGen(opts) {
             log: log.child({ cmp: 'jostraca' }),
             meta: { spec },
             debug: opts.debug,
-            existing: opts.existing
+            existing: opts.existing,
         };
         await jostraca.generate(jopts, () => Root({ model }));
         log.info({ point: 'generate-end' });
@@ -116,6 +128,8 @@ function SdkGen(opts) {
             folder: '.', // The `generate` folder,
             model,
             tree,
+            jostraca,
+            opts,
         };
         return ctx;
     }

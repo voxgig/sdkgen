@@ -60,6 +60,8 @@ type SdkGenOptions = {
     txt?: any
     bin?: any
   }
+
+  dryrun?: boolean
 }
 
 
@@ -77,7 +79,19 @@ function SdkGen(opts: SdkGenOptions) {
   const folder = opts.folder || '../'
   const now = opts.now || (() => Date.now())
 
-  const jostraca = Jostraca({ now })
+  const jopts = {
+    now,
+    control: {
+      dryrun: opts.dryrun
+    },
+    existing: {
+      txt: {
+        merge: true
+      }
+    }
+  }
+  console.log('JOPTS', jopts)
+  const jostraca = Jostraca(jopts)
 
   const pino = prettyPino('sdkgen', opts)
   const log = pino.child({ cmp: 'sdkgen' })
@@ -87,7 +101,7 @@ function SdkGen(opts: SdkGenOptions) {
     const start = Date.now()
     const { model, config } = spec
 
-    log.info({ point: 'generate-start', start })
+    log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' })
     log.debug({ point: 'generate-spec', spec })
 
     let Root = spec.root
@@ -104,7 +118,7 @@ function SdkGen(opts: SdkGenOptions) {
       log: log.child({ cmp: 'jostraca' }),
       meta: { spec },
       debug: opts.debug,
-      existing: opts.existing
+      existing: opts.existing,
     }
 
     await jostraca.generate(jopts, () => Root({ model }))
@@ -142,6 +156,8 @@ function SdkGen(opts: SdkGenOptions) {
       folder: '.', // The `generate` folder,
       model,
       tree,
+      jostraca,
+      opts,
     }
 
     return ctx

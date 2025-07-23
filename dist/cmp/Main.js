@@ -7,6 +7,8 @@ const Main = (0, jostraca_1.cmp)(function Main(props) {
     const { target, ctx$ } = props;
     const { model, stdrep, log } = ctx$;
     (0, jostraca_1.Copy)({
+        // This folder is relative to the .sdk folder in the project, as that is where
+        // the sdk is generated from.
         from: 'tm/' + target.name,
         replace: {
             ...stdrep,

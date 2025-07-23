@@ -29,6 +29,7 @@ type SdkGenOptions = {
         txt?: any;
         bin?: any;
     };
+    dryrun?: boolean;
 };
 declare const Jostraca: typeof JostracaModule.Jostraca;
 declare function SdkGen(opts: SdkGenOptions): {
