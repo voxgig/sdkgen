@@ -7,8 +7,10 @@ exports.action_target = action_target;
 exports.target_add = target_add;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
+const util_1 = require("@voxgig/util");
 const struct_1 = require("@voxgig/struct");
 const utility_1 = require("../utility");
+const feature_1 = require("./feature");
 const action_1 = require("./action");
 const CMD_MAP = {
     add: cmd_target_add
@@ -35,29 +37,30 @@ async function target_add(targets, actx) {
         folder: actx.folder,
         log: actx.log.child({ cmp: 'jostraca' }),
         meta: {
-            model: actx.model,
+            // model: actx.model,
             tree: actx.tree,
             content: (0, action_1.loadContent)(actx, 'target')
         },
         model: actx.model,
     };
+    opts.log.info({
+        point: 'target-start',
+        note: (actx.opts.dryrun ? '** DRY RUN **' : '')
+    });
     const jres = await jostraca.generate(opts, () => TargetRoot({ targets, actx }));
-    console.log('JRES', jres);
-    console.dir(jres.audit().filter((n) => n[1].path.includes('LICENSE')), { depth: null });
-    for (let file of jres.files.merged) {
-        opts.log.info({ point: 'target', file, merge: true, note: 'modified: ' + file });
-    }
-    for (let file of jres.files.conflicted) {
-        opts.log.info({ point: 'target', file, conflict: true, note: '** CONFLICT: ' + file });
-    }
-    // const features = Object.keys(actx.model.main.sdk.feature)
-    // feature_add(features, actx)
+    (0, util_1.showChanges)(opts.log, 'target-result', jres);
+    const features = Object.keys(actx.model.main.sdk.feature);
+    await (0, feature_1.feature_add)(features, actx);
+    opts.log.info({
+        point: 'target-end',
+        note: (actx.opts.dryrun ? '** DRY RUN **' : '')
+    });
     return {
         jres
     };
 }
 const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
-    const { ctx$, targets, actx } = props;
+    const { ctx$, targets } = props;
     const { model, log } = ctx$;
     // TODO: jostraca - make from value easier to specify 
     // const tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
@@ -65,17 +68,18 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
         (0, jostraca_1.each)(targets, (n) => {
             const tref = n.val$;
             log.info({
-                point: 'target-start',
+                point: 'target-build',
                 target: tref,
-                note: tref + (actx.opts.dryrun ? ' ** DRY RUN **' : '')
+                note: tref
             });
             const { tname, tfolder, torigname, base } = resolveTarget(tref, ctx$);
+            const targetNote = tname + (tname != tref ? ' ref:' + tref : '');
             log.info({
                 point: 'target-name', name: tname, folder: tfolder,
+                target: tref,
+                tname,
                 note: tname + (tname != torigname ? 'original' + torigname : '') + ' from:' + tfolder
             });
-            // TODO: validate target name is a-z0-9-_. only
-            // const tname = tref
             (0, jostraca_1.Folder)({ name: 'model/target' }, () => {
                 (0, jostraca_1.Copy)({
                     from: tfolder + '/model/target/' + torigname + '.jsonic',
@@ -113,8 +117,7 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 });
             });
             log.info({
-                point: 'target-end', target: tref, note: tname +
-                    (tname != tref ? ' ref:' + tref : '')
+                point: 'target-done', target: tref, note: targetNote
             });
         });
     });

@@ -7,6 +7,7 @@ exports.feature_add = feature_add;
 exports.action_feature = action_feature;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
+const util_1 = require("@voxgig/util");
 const utility_1 = require("../utility");
 const action_1 = require("./action");
 const CMD_MAP = {
@@ -33,29 +34,43 @@ async function feature_add(features, actx) {
         folder: actx.folder,
         log: actx.log.child({ cmp: 'jostraca' }),
         meta: {
-            model: actx.model,
+            // model: actx.model,
             tree: actx.tree,
             content: (0, action_1.loadContent)(actx, 'feature')
-        }
+        },
+        model: actx.model
     };
+    opts.log.info({
+        point: 'feature-start',
+        note: (actx.opts.dryrun ? '** DRY RUN **' : '')
+    });
     const jres = await jostraca.generate(opts, () => FeatureRoot({ features }));
+    (0, util_1.showChanges)(opts.log, 'feature-result', jres);
+    opts.log.info({
+        point: 'feature-end',
+        note: (actx.opts.dryrun ? '** DRY RUN **' : '')
+    });
     return {
         jres
     };
 }
 const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
     const { ctx$, features } = props;
-    // TODO: model should be a top level ctx property
-    const model = ctx$.model = ctx$.meta.model;
+    const { model, log } = ctx$;
     const target = model.main.sdk.target;
     (0, jostraca_1.Project)({}, () => {
         (0, jostraca_1.each)(features, (n) => {
-            const name = n.val$;
+            const fname = n.val$;
             // TODO: validate feature is a-z0-9-_. only
+            log.info({
+                point: 'feature-build',
+                feature: fname,
+                note: fname
+            });
             (0, jostraca_1.Folder)({ name: 'model/feature' }, () => {
                 (0, jostraca_1.Copy)({
                     // TODO: these paths needs to be parameterised
-                    from: BASE + '/project/.sdk/model/feature/' + name + '.jsonic',
+                    from: BASE + '/project/.sdk/model/feature/' + fname + '.jsonic',
                     exclude: true
                 });
                 (0, jostraca_1.File)({ name: 'feature-index.jsonic' }, () => (0, action_1.UpdateIndex)({
@@ -63,14 +78,18 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                     names: features,
                 }));
             });
-            (0, jostraca_1.each)(target, (target) => (0, jostraca_1.Folder)({ name: 'tm/' + target.name + '/src/feature/' + name }, () => {
-                const from = node_path_1.default.join((target.base || node_path_1.default.join(BASE, '/project/.sdk')), 'tm', target.name, '/src/feature/', name);
+            (0, jostraca_1.each)(target, (target) => (0, jostraca_1.Folder)({ name: 'tm/' + target.name + '/src/feature/' + fname }, () => {
+                const from = node_path_1.default.join((target.base || node_path_1.default.join(BASE, '/project/.sdk')), 'tm', target.name, '/src/feature/', fname);
                 (0, jostraca_1.Copy)({
                     // from: BASE + '/project/.sdk/tm/' + target.name + '/src/feature/' + name,
                     from,
                     exclude: true
                 });
             }));
+            log.info({
+                point: 'feature-done', feature: fname,
+                note: fname
+            });
         });
     });
 });

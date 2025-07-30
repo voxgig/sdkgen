@@ -1,6 +1,7 @@
 /* Copyright (c) 2024 Richard Rodger, MIT License */
 
-import * as Fs from 'node:fs'
+import Fs from 'node:fs'
+import Path from 'node:path'
 
 import { prettyPino, Pino } from '@voxgig/util'
 
@@ -8,6 +9,10 @@ import { Jsonic } from 'jsonic'
 import * as JostracaModule from 'jostraca'
 import { Aontu, Context } from 'aontu'
 
+import {
+  showChanges,
+  getdlog,
+} from '@voxgig/util'
 
 import type {
   ActionContext,
@@ -52,7 +57,7 @@ type SdkGenOptions = {
     name: string
   }
   debug?: boolean | string
-  pino?: ReturnType<typeof Pino>
+  pino?: any, // ReturnType<typeof Pino>
   now?: () => number
 
   // TODO: match Jostraca
@@ -74,6 +79,9 @@ const ACTION_MAP: any = {
 }
 
 
+const dlog = getdlog('sdkgen', __filename)
+
+
 function SdkGen(opts: SdkGenOptions) {
   const fs = opts.fs || Fs
   const folder = opts.folder || '../'
@@ -90,7 +98,7 @@ function SdkGen(opts: SdkGenOptions) {
       }
     }
   }
-  console.log('JOPTS', jopts)
+
   const jostraca = Jostraca(jopts)
 
   const pino = prettyPino('sdkgen', opts)
@@ -121,7 +129,16 @@ function SdkGen(opts: SdkGenOptions) {
       existing: opts.existing,
     }
 
-    await jostraca.generate(jopts, () => Root({ model }))
+    const jres = await jostraca.generate(jopts, () => Root({ model }))
+
+    showChanges(jopts.log, 'generate-result', jres, Path.dirname(process.cwd()))
+
+    const dlogs = dlog.log()
+    if (0 < dlogs.length) {
+      for (let dlogentry of dlogs) {
+        log.debug({ point: 'generate-warning', dlogentry, note: String(dlogentry) })
+      }
+    }
 
     log.info({ point: 'generate-end' })
 
@@ -236,7 +253,7 @@ function SdkGen(opts: SdkGenOptions) {
 
 
   return {
-    pino,
+    pino: pino as any,
     generate,
     action,
     target,

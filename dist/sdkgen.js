@@ -33,14 +33,19 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.SdkGen = SdkGen;
-const Fs = __importStar(require("node:fs"));
+const node_fs_1 = __importDefault(require("node:fs"));
+const node_path_1 = __importDefault(require("node:path"));
 const util_1 = require("@voxgig/util");
 const jsonic_1 = require("jsonic");
 const JostracaModule = __importStar(require("jostraca"));
 const aontu_1 = require("aontu");
+const util_2 = require("@voxgig/util");
 const utility_1 = require("./utility");
 Object.defineProperty(exports, "requirePath", { enumerable: true, get: function () { return utility_1.requirePath; } });
 const Main_1 = require("./cmp/Main");
@@ -67,8 +72,9 @@ const ACTION_MAP = {
     target: target_1.action_target,
     feature: feature_1.action_feature,
 };
+const dlog = (0, util_2.getdlog)('sdkgen', __filename);
 function SdkGen(opts) {
-    const fs = opts.fs || Fs;
+    const fs = opts.fs || node_fs_1.default;
     const folder = opts.folder || '../';
     const now = opts.now || (() => Date.now());
     const jopts = {
@@ -82,7 +88,6 @@ function SdkGen(opts) {
             }
         }
     };
-    console.log('JOPTS', jopts);
     const jostraca = Jostraca(jopts);
     const pino = (0, util_1.prettyPino)('sdkgen', opts);
     const log = pino.child({ cmp: 'sdkgen' });
@@ -105,7 +110,14 @@ function SdkGen(opts) {
             debug: opts.debug,
             existing: opts.existing,
         };
-        await jostraca.generate(jopts, () => Root({ model }));
+        const jres = await jostraca.generate(jopts, () => Root({ model }));
+        (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
+        const dlogs = dlog.log();
+        if (0 < dlogs.length) {
+            for (let dlogentry of dlogs) {
+                log.debug({ point: 'generate-warning', dlogentry, note: String(dlogentry) });
+            }
+        }
         log.info({ point: 'generate-end' });
         return { ok: true, name: 'sdkgen' };
     }
@@ -185,7 +197,7 @@ function SdkGen(opts) {
         }
     };
     return {
-        pino,
+        pino: pino,
         generate,
         action,
         target,

@@ -2,15 +2,15 @@
 import Path from 'node:path'
 
 import {
-  Jostraca,
   Project,
   Folder,
   Copy,
   File,
-  Content,
   cmp,
   each,
 } from 'jostraca'
+
+import { showChanges } from '@voxgig/util'
 
 import { getelem } from '@voxgig/struct'
 
@@ -74,32 +74,30 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
     folder: actx.folder,
     log: actx.log.child({ cmp: 'jostraca' }),
     meta: {
-      model: actx.model,
+      // model: actx.model,
       tree: actx.tree,
       content: loadContent(actx, 'target')
     },
     model: actx.model,
   }
 
+  opts.log.info({
+    point: 'target-start',
+    note: (actx.opts.dryrun ? '** DRY RUN **' : '')
+  })
+
+
   const jres = await jostraca.generate(opts, () => TargetRoot({ targets, actx }))
 
-  console.log('JRES', jres)
+  showChanges(opts.log, 'target-result', jres)
 
-  console.dir(
-    jres.audit().filter((n: any[]) => n[1].path.includes('LICENSE')),
-    { depth: null }
-  )
+  const features = Object.keys(actx.model.main.sdk.feature)
+  await feature_add(features, actx)
 
-  for (let file of jres.files.merged) {
-    opts.log.info({ point: 'target', file, merge: true, note: 'modified: ' + file })
-  }
-
-  for (let file of jres.files.conflicted) {
-    opts.log.info({ point: 'target', file, conflict: true, note: '** CONFLICT: ' + file })
-  }
-
-  // const features = Object.keys(actx.model.main.sdk.feature)
-  // feature_add(features, actx)
+  opts.log.info({
+    point: 'target-end',
+    note: (actx.opts.dryrun ? '** DRY RUN **' : '')
+  })
 
   return {
     jres
@@ -107,9 +105,8 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
 }
 
 
-
 const TargetRoot = cmp(function TargetRoot(props: any) {
-  const { ctx$, targets, actx } = props
+  const { ctx$, targets } = props
   const { model, log } = ctx$
 
   // TODO: jostraca - make from value easier to specify 
@@ -120,21 +117,20 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       const tref = n.val$
 
       log.info({
-        point: 'target-start',
+        point: 'target-build',
         target: tref,
-        note: tref + (actx.opts.dryrun ? ' ** DRY RUN **' : '')
+        note: tref
       })
 
       const { tname, tfolder, torigname, base } = resolveTarget(tref, ctx$)
+      const targetNote = tname + (tname != tref ? ' ref:' + tref : '')
 
       log.info({
         point: 'target-name', name: tname, folder: tfolder,
+        target: tref,
+        tname,
         note: tname + (tname != torigname ? 'original' + torigname : '') + ' from:' + tfolder
       })
-
-
-      // TODO: validate target name is a-z0-9-_. only
-      // const tname = tref
 
       Folder({ name: 'model/target' }, () => {
         Copy({
@@ -179,9 +175,9 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       })
 
       log.info({
-        point: 'target-end', target: tref, note: tname +
-          (tname != tref ? ' ref:' + tref : '')
+        point: 'target-done', target: tref, note: targetNote
       })
+
     })
   })
 })

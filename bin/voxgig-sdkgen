@@ -11,7 +11,7 @@ const Pkg = require('../package.json')
 const { SdkGen } = require('../dist/sdkgen.js')
 
 
-let CONSOLE = console
+let KONSOLE = console
 
 run()
 
@@ -52,7 +52,6 @@ function exit(err) {
 
 
 async function operate(options) {
-  console.log('CMD OPTS', options)
   const sdkgen = new SdkGen({
     debug: options.debug,
     dryrun: options.dryrun,
@@ -126,19 +125,19 @@ function validateOptions(rawOptions) {
 
 async function handleError(err) {
   const errdesc = 'SdkGenError' === err.name ? err.message : err
-  CONSOLE.log('Voxgig SDK Generation Error:', errdesc)
+  KONSOLE.log('Voxgig SDK Generation Error:', errdesc)
   exit(err)
 }
 
 
 function version() {
-  CONSOLE.log(Pkg.version)
+  KONSOLE.log(Pkg.version)
 }
 
 
 function help() {
   const s = 'TODO'
-  CONSOLE.log(s)
+  KONSOLE.log(s)
 }
 
 

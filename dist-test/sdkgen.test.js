@@ -114,20 +114,24 @@ const START_TIME = 1735689600000;
                 '      "hwhen": 2025010100210000\n' +
                 '    },\n' +
                 '    "foo/python/README.md": {\n' +
-                '      "action": "init",\n' +
+                '      "action": "skip",\n' +
                 '      "path": "foo/python/README.md",\n' +
                 '      "exists": true,\n' +
-                '      "actions": [],\n' +
+                '      "actions": [\n' +
+                '        "skip"\n' +
+                '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
                 '      "when": 1735690980000,\n' +
                 '      "hwhen": 2025010100230000\n' +
                 '    },\n' +
                 '    "foo/java/README.md": {\n' +
-                '      "action": "init",\n' +
+                '      "action": "skip",\n' +
                 '      "path": "foo/java/README.md",\n' +
                 '      "exists": true,\n' +
-                '      "actions": [],\n' +
+                '      "actions": [\n' +
+                '        "skip"\n' +
+                '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
                 '      "when": 1735691100000,\n' +
@@ -167,20 +171,24 @@ const START_TIME = 1735689600000;
                 '      "hwhen": 2025010100380000\n' +
                 '    },\n' +
                 '    "foo/python/README.md": {\n' +
-                '      "action": "init",\n' +
+                '      "action": "skip",\n' +
                 '      "path": "foo/python/README.md",\n' +
                 '      "exists": true,\n' +
-                '      "actions": [],\n' +
+                '      "actions": [\n' +
+                '        "skip"\n' +
+                '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
                 '      "when": 1735692000000,\n' +
                 '      "hwhen": 2025010100400000\n' +
                 '    },\n' +
                 '    "foo/java/README.md": {\n' +
-                '      "action": "init",\n' +
+                '      "action": "skip",\n' +
                 '      "path": "foo/java/README.md",\n' +
                 '      "exists": true,\n' +
-                '      "actions": [],\n' +
+                '      "actions": [\n' +
+                '        "skip"\n' +
+                '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
                 '      "when": 1735692120000,\n' +
@@ -286,20 +294,24 @@ const START_TIME = 1735689600000;
                 '      "hwhen": 2025010101180000\n' +
                 '    },\n' +
                 '    "foo/python/README.md": {\n' +
-                '      "action": "init",\n' +
+                '      "action": "skip",\n' +
                 '      "path": "foo/python/README.md",\n' +
                 '      "exists": true,\n' +
-                '      "actions": [],\n' +
+                '      "actions": [\n' +
+                '        "skip"\n' +
+                '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
                 '      "when": 1735694400000,\n' +
                 '      "hwhen": 2025010101200000\n' +
                 '    },\n' +
                 '    "foo/java/README.md": {\n' +
-                '      "action": "init",\n' +
+                '      "action": "skip",\n' +
                 '      "path": "foo/java/README.md",\n' +
                 '      "exists": true,\n' +
-                '      "actions": [],\n' +
+                '      "actions": [\n' +
+                '        "skip"\n' +
+                '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
                 '      "when": 1735694520000,\n' +
@@ -339,20 +351,24 @@ const START_TIME = 1735689600000;
                 '      "hwhen": 2025010101350000\n' +
                 '    },\n' +
                 '    "foo/python/README.md": {\n' +
-                '      "action": "init",\n' +
+                '      "action": "skip",\n' +
                 '      "path": "foo/python/README.md",\n' +
                 '      "exists": true,\n' +
-                '      "actions": [],\n' +
+                '      "actions": [\n' +
+                '        "skip"\n' +
+                '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
                 '      "when": 1735695420000,\n' +
                 '      "hwhen": 2025010101370000\n' +
                 '    },\n' +
                 '    "foo/java/README.md": {\n' +
-                '      "action": "init",\n' +
+                '      "action": "skip",\n' +
                 '      "path": "foo/java/README.md",\n' +
                 '      "exists": true,\n' +
-                '      "actions": [],\n' +
+                '      "actions": [\n' +
+                '        "skip"\n' +
+                '      ],\n' +
                 '      "protect": false,\n' +
                 '      "conflict": false,\n' +
                 '      "when": 1735695540000,\n' +

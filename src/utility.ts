@@ -1,15 +1,17 @@
 
 import Path from 'node:path'
 
-// TODO: move to @voxgig/util as duplicated with @voxgig/sdkgen
+import { JostracaResult } from 'jostraca'
 
-const resolvePath = (ctx$: any, path: string): any => {
+
+
+function resolvePath(ctx$: any, path: string): any {
   const fullpath = Path.join(ctx$.folder, '.sdk', 'dist', path)
   return fullpath
 }
 
 
-const requirePath = (ctx$: any, path: string, flags?: { ignore?: boolean }): any => {
+function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any {
   const fullpath = resolvePath(ctx$, path)
   const ignore = null == flags?.ignore ? false : flags.ignore
 

@@ -1,4 +1,3 @@
-import { Pino } from '@voxgig/util';
 import * as JostracaModule from 'jostraca';
 import type { ActionResult } from './types';
 import { requirePath } from './utility';
@@ -23,7 +22,7 @@ type SdkGenOptions = {
         name: string;
     };
     debug?: boolean | string;
-    pino?: ReturnType<typeof Pino>;
+    pino?: any;
     now?: () => number;
     existing?: {
         txt?: any;
@@ -33,7 +32,7 @@ type SdkGenOptions = {
 };
 declare const Jostraca: typeof JostracaModule.Jostraca;
 declare function SdkGen(opts: SdkGenOptions): {
-    pino: import("pino").Logger<string, boolean>;
+    pino: any;
     generate: (spec: any) => Promise<{
         ok: boolean;
         name: string;

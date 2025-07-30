@@ -1,7 +1,7 @@
-declare const resolvePath: (ctx$: any, path: string) => any;
-declare const requirePath: (ctx$: any, path: string, flags?: {
+declare function resolvePath(ctx$: any, path: string): any;
+declare function requirePath(ctx$: any, path: string, flags?: {
     ignore?: boolean;
-}) => any;
+}): any;
 declare class SdkGenError extends Error {
     constructor(...args: any[]);
 }

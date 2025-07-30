@@ -19,9 +19,8 @@
     "voxgig-sdkgen": "bin/voxgig-sdkgen"
   },
   "scripts": {
-    "test": "node --enable-source-maps --test dist-test",
-    "test22": "node --enable-source-maps --test \"dist-test/*.test.js\"",
-    "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test dist-test",
+    "test": "node --enable-source-maps --test dist-test/**/*.test.js",
+    "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test dist-test/**/*.test.js",
     "watch": "tsc --build src test -w",
     "build": "tsc --build src test",
     "clean": "rm -rf node_modules yarn.lock package-lock.json",
@@ -42,10 +41,9 @@
   "devDependencies": {
     "@hapi/code": "^9.0.3",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "24.0.13",
-    "esbuild": "^0.25.6",
+    "@types/node": "24.1.0",
     "json-schema-to-ts": "^3.1.1",
-    "memfs": "^4.17.2",
+    "memfs": "^4.24.0",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {

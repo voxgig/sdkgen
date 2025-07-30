@@ -3,15 +3,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SdkGenError = exports.requirePath = exports.resolvePath = void 0;
+exports.SdkGenError = void 0;
+exports.resolvePath = resolvePath;
+exports.requirePath = requirePath;
 const node_path_1 = __importDefault(require("node:path"));
-// TODO: move to @voxgig/util as duplicated with @voxgig/sdkgen
-const resolvePath = (ctx$, path) => {
+function resolvePath(ctx$, path) {
     const fullpath = node_path_1.default.join(ctx$.folder, '.sdk', 'dist', path);
     return fullpath;
-};
-exports.resolvePath = resolvePath;
-const requirePath = (ctx$, path, flags) => {
+}
+function requirePath(ctx$, path, flags) {
     const fullpath = resolvePath(ctx$, path);
     const ignore = null == flags?.ignore ? false : flags.ignore;
     try {
@@ -25,8 +25,7 @@ const requirePath = (ctx$, path, flags) => {
             throw err;
         }
     }
-};
-exports.requirePath = requirePath;
+}
 class SdkGenError extends Error {
     constructor(...args) {
         super(...args);

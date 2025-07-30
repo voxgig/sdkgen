@@ -11,6 +11,7 @@ import {
   each,
 } from 'jostraca'
 
+import { showChanges } from '@voxgig/util'
 
 import type {
   ActionContext,
@@ -66,13 +67,26 @@ async function feature_add(features: string[], actx: ActionContext): Promise<Act
     folder: actx.folder,
     log: actx.log.child({ cmp: 'jostraca' }),
     meta: {
-      model: actx.model,
+      // model: actx.model,
       tree: actx.tree,
       content: loadContent(actx, 'feature')
-    }
+    },
+    model: actx.model
   }
 
+  opts.log.info({
+    point: 'feature-start',
+    note: (actx.opts.dryrun ? '** DRY RUN **' : '')
+  })
+
   const jres = await jostraca.generate(opts, () => FeatureRoot({ features }))
+
+  showChanges(opts.log, 'feature-result', jres)
+
+  opts.log.info({
+    point: 'feature-end',
+    note: (actx.opts.dryrun ? '** DRY RUN **' : '')
+  })
 
   return {
     jres
@@ -82,20 +96,26 @@ async function feature_add(features: string[], actx: ActionContext): Promise<Act
 
 const FeatureRoot = cmp(function FeatureRoot(props: any) {
   const { ctx$, features } = props
+  const { model, log } = ctx$
 
-  // TODO: model should be a top level ctx property
-  const model = ctx$.model = ctx$.meta.model
   const target = model.main.sdk.target
 
   Project({}, () => {
     each(features, (n) => {
-      const name = n.val$
+      const fname = n.val$
       // TODO: validate feature is a-z0-9-_. only
+
+      log.info({
+        point: 'feature-build',
+        feature: fname,
+        note: fname
+      })
+
 
       Folder({ name: 'model/feature' }, () => {
         Copy({
           // TODO: these paths needs to be parameterised
-          from: BASE + '/project/.sdk/model/feature/' + name + '.jsonic',
+          from: BASE + '/project/.sdk/model/feature/' + fname + '.jsonic',
           exclude: true
         })
         File({ name: 'feature-index.jsonic' }, () => UpdateIndex({
@@ -105,13 +125,13 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
       })
 
       each(target, (target) =>
-        Folder({ name: 'tm/' + target.name + '/src/feature/' + name }, () => {
+        Folder({ name: 'tm/' + target.name + '/src/feature/' + fname }, () => {
           const from = Path.join(
             (target.base || Path.join(BASE, '/project/.sdk')),
             'tm',
             target.name,
             '/src/feature/',
-            name
+            fname
           )
 
           Copy({
@@ -121,6 +141,10 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
           })
         }))
 
+      log.info({
+        point: 'feature-done', feature: fname,
+        note: fname
+      })
     })
   })
 
