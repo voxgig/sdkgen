@@ -232,12 +232,13 @@ describe('sdkgen', () => {
     expect(voljson3).equals({
       '/top/foo/js/README.md': '\n' +
         '# foo js SDK\n' +
-        '<<<<<<< EXISTING: 2025-01-01T00:43:00.000Z/merge\n' +
+        '<<<<<<< GENERATED: 2025-01-01T00:47:00.000Z/merge\n' +
+        '# index=1\n' +
+        '=======\n' +
         '# EXTRA\n' +
         '# index=0\n' +
-        '=======\n' +
-        '# index=1\n' +
-        '>>>>>>> GENERATED: 2025-01-01T00:47:00.000Z/merge\n',
+        '>>>>>>> EXISTING: 2025-01-01T00:43:00.000Z/merge\n' +
+        '',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
