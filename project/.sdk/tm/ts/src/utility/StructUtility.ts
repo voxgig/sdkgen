@@ -756,11 +756,12 @@ function merge(val: any): any {
           parent: any,
           path: string[]
         ) {
+          // No key at top.
           if (null == key) {
             return val
           }
 
-          // Get the curent value at the current path in obj.
+          // Get the current value at the current path in obj.
           // NOTE: this is not exactly efficient, and should be optimised.
           let lenpath = path.length
           cI = lenpath - 1
@@ -775,9 +776,19 @@ function merge(val: any): any {
 
           // Node child is just ahead of us on the stack, since
           // `walk` traverses leaves before nodes.
-          if (isnode(val) && !isempty(val)) {
-            setprop(cur[cI], key, cur[cI + 1])
-            cur[cI + 1] = UNDEF
+          if (isnode(val)) {
+            const missing = UNDEF === getprop(cur[cI], key)
+            if (!isempty(val) || missing) { //  || ) {
+              // console.log('CCC')
+
+              // if (missing) {
+              //   console.log('MISSING', key, val, cur[cI], cur[cI + 1])
+              // }
+
+              const mval = missing ? val : cur[cI + 1]
+              setprop(cur[cI], key, mval)
+              cur[cI + 1] = UNDEF
+            }
           }
 
           // Scalar child.
@@ -2304,6 +2315,8 @@ const _injecthandler: Injector = (
   const iscmd = isfunc(val) && (UNDEF === ref || ref.startsWith(S_DS))
 
   // Only call val function if it is a special command ($NAME format).
+  // TODO: OR if meta.'$CALL'
+
   if (iscmd) {
     out = (val as Injector)(inj, val, ref, store)
   }

@@ -57,7 +57,7 @@ function basicSetup(extra?: any) {
   if ('TRUE' === setup.dm.p.${model.NAME}_TEST_LIVE) {
     client = new ${model.Name}SDK(merge([
       {
-        apikey: process.env.${model.Name}_APIKEY,
+        apikey: process.env.${model.NAME}_APIKEY,
       },
       extra])
     )
