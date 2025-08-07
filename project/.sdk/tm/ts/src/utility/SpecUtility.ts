@@ -32,9 +32,6 @@ function spec(ctx: Context) {
   ctx.spec.headers = headers(ctx)
   ctx.spec.body = body(ctx)
 
-  console.log('OP params', op.params)
-  console.log('SPEC params', ctx.spec.params)
-
   if (1 < size(op.pathalt)) {
     let hasQuery = false
     const paramQuery: any = {}
@@ -43,11 +40,8 @@ function spec(ctx: Context) {
       hasQuery = true
     }
 
-    console.log('PATHALT', hasQuery, paramQuery)
-
     if (hasQuery) {
       const foundParamAlts = select(op.pathalt, paramQuery)
-      console.log('PATHALT-FOUND', foundParamAlts)
       if (0 < size(foundParamAlts)) {
         ctx.spec.path = foundParamAlts[0].path
       }

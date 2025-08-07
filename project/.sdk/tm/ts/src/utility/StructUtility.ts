@@ -769,10 +769,16 @@ function merge(val: any): any {
             cur[cI] = getpath(out, slice(path, 0, lenpath - 1))
           }
 
+          // console.log('AAA', path, cur[cI])
+
           // Create node if needed.
           if (!isnode(cur[cI])) {
             cur[cI] = islist(parent) ? [] : {}
           }
+
+          // console.log('BBB', path, cur[cI])
+
+          // console.log('VAL', path, val, isnode(val), isempty(val))
 
           // Node child is just ahead of us on the stack, since
           // `walk` traverses leaves before nodes.
@@ -793,6 +799,7 @@ function merge(val: any): any {
 
           // Scalar child.
           else {
+            // console.log('DDD', cur[cI], key, val)
             setprop(cur[cI], key, val)
           }
 
