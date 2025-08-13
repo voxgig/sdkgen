@@ -65,7 +65,7 @@ function basicSetup(extra?: any) {
   
   setup.client = client    
   setup.struct = client.utility().struct
-  setup.explain = 'TRUE' === setup.dm.p.${model.Name}_TEST_EXPLAIN
+  setup.explain = 'TRUE' === setup.dm.p.${model.NAME}_TEST_EXPLAIN
 
   return setup
 }

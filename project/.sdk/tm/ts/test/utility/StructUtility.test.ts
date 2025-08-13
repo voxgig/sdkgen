@@ -1,4 +1,4 @@
-// VERSION: @voxgig/struct 0.0.4
+// VERSION: @voxgig/struct 0.0.9
 // RUN: npm test
 // RUN-SOME: npm run test-some --pattern=getpath
 
@@ -184,7 +184,7 @@ describe('struct', async () => {
   test('minor-getprop', async () => {
     const { getprop } = struct
     await runsetflags(spec.minor.getprop, { null: false }, (vin: any) =>
-      null == vin.alt ? getprop(vin.val, vin.key) : getprop(vin.val, vin.key, vin.alt))
+      undefined === vin.alt ? getprop(vin.val, vin.key) : getprop(vin.val, vin.key, vin.alt))
   })
 
 
@@ -290,7 +290,7 @@ describe('struct', async () => {
 
     const test = clone(spec.walk.log)
 
-    const log: string[] = []
+    let log: string[] = []
 
     function walklog(key: any, val: any, parent: any, path: any) {
       log.push('k=' + stringify(key) +
@@ -300,8 +300,16 @@ describe('struct', async () => {
       return val
     }
 
+    walk(test.in, undefined, walklog)
+    deepEqual(log, test.out.after)
+
+    log = []
     walk(test.in, walklog)
-    deepEqual(log, test.out)
+    deepEqual(log, test.out.before)
+
+    log = []
+    walk(test.in, walklog, walklog)
+    deepEqual(log, test.out.both)
   })
 
 
@@ -311,6 +319,33 @@ describe('struct', async () => {
     }
 
     await runset(spec.walk.basic, (vin: any) => struct.walk(vin, walkpath))
+  })
+
+
+  test('walk-depth', async () => {
+
+    await runsetflags(spec.walk.depth, { null: false },
+      (vin: any) => {
+        let top: any = undefined
+        let cur: any = undefined
+        function copy(key: any, val: any, _parent: any, _path: any) {
+          if (undefined === key || struct.isnode(val)) {
+            let child = struct.islist(val) ? [] : {}
+            if (undefined === key) {
+              top = cur = child
+            }
+            else {
+              cur = cur[key] = child
+            }
+          }
+          else {
+            cur[key] = val
+          }
+          return val
+        }
+        struct.walk(vin.src, copy, undefined, vin.maxdepth)
+        return top
+      })
   })
 
 
@@ -352,6 +387,34 @@ describe('struct', async () => {
     deepEqual(merge([{ a: global.fetch }]), { a: global.fetch })
     deepEqual(merge([[global.fetch]]), [global.fetch])
     deepEqual(merge([{ a: { b: global.fetch } }]), { a: { b: global.fetch } })
+
+    class Bar { x = 1 }
+    const b0 = new Bar()
+    let out
+
+    equal(merge([{ x: 10 }, b0]), b0)
+    equal(b0.x, 1)
+    equal(b0 instanceof Bar, true)
+
+    deepEqual(merge([{ a: b0 }, { a: { x: 11 } }]), { a: { x: 11 } })
+    equal(b0.x, 1)
+    equal(b0 instanceof Bar, true)
+
+    deepEqual(merge([b0, { x: 20 }]), { x: 20 })
+    equal(b0.x, 1)
+    equal(b0 instanceof Bar, true)
+
+    out = merge([{ a: { x: 21 } }, { a: b0 }])
+    deepEqual(out, { a: b0 })
+    equal(b0, out.a)
+    equal(b0.x, 1)
+    equal(b0 instanceof Bar, true)
+
+    out = merge([{}, { b: b0 }])
+    deepEqual(out, { b: b0 })
+    equal(b0, out.b)
+    equal(b0.x, 1)
+    equal(b0 instanceof Bar, true)
   })
 
 
@@ -471,7 +534,7 @@ describe('struct', async () => {
 
 
   test('transform-extra', async () => {
-    deepEqual(struct.struct.transform(
+    deepEqual(struct.transform(
       { a: 1 },
       { x: '`a`', b: '`$COPY`', c: '`$UPPER`' },
       {
@@ -660,3 +723,4 @@ describe('struct', async () => {
 
 
 })
+

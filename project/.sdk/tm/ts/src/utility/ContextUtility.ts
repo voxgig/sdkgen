@@ -75,11 +75,16 @@ class Context {
     this.entopts = getprop(ctxmap, 'entopts', getprop(basectx, 'entopts'))
     this.options = getprop(ctxmap, 'options', getprop(basectx, 'options'))
 
-    this.data = getprop(ctxmap, 'data', getprop(basectx, 'data'))
-    this.match = getprop(ctxmap, 'match', getprop(basectx, 'match'))
-
     this.entity = getprop(ctxmap, 'entity', getprop(basectx, 'entity'))
     this.shared = getprop(ctxmap, 'sharedd', getprop(basectx, 'shared'))
+
+    // this.data = getprop(ctxmap, 'data', getprop(basectx, 'data'))
+    // this.match = getprop(ctxmap, 'match', getprop(basectx, 'match'))
+
+    this.data = getprop(ctxmap, 'data')
+    this.reqdata = getprop(ctxmap, 'reqdata')
+    this.match = getprop(ctxmap, 'match')
+    this.reqmatch = getprop(ctxmap, 'reqmatch')
   }
 
 

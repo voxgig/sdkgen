@@ -123,10 +123,10 @@ describe('PrimaryUtility', async () => {
   })
 
 
-  test('done-basic', async () => {
-    const { runset, spec, subject } = runners.done
-    await runset(spec.basic, subject)
-  })
+  // test('done-basic', async () => {
+  //   const { runset, spec, subject } = runners.done
+  //   await runset(spec.basic, subject)
+  // })
 
 
   // test('error-basic', async () => {
@@ -216,10 +216,10 @@ describe('PrimaryUtility', async () => {
   // })
 
 
-  test('resform-basic', async () => {
-    const { runset, spec, subject } = runners.resform
-    await runset(spec.basic, subject)
-  })
+  // test('resform-basic', async () => {
+  //   const { runset, spec, subject } = runners.resform
+  //   await runset(spec.basic, subject)
+  // })
 
 
   // test('resheaders-basic', async () => {

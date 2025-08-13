@@ -1,4 +1,6 @@
 
+import { inspect } from 'node:util'
+
 import type { Context, Feature } from './types'
 
 import { Config } from './Config'
@@ -15,7 +17,6 @@ class ProjectNameSDK {
   _options: any
   _utility = utility
   _features: Feature[]
-  _shared: any = {}
   _rootctx: Context
 
   constructor(options?: any) {
@@ -74,21 +75,33 @@ class ProjectNameSDK {
 
 
   static test(testopts?: any, sdkopts?: any) {
-    const active = null == testopts ? false : null == testopts.active ? true : !!testopts.active
-    testopts = testopts || {}
-    testopts.active = active
-
     sdkopts = sdkopts || {}
     sdkopts.feature = sdkopts.feature || {}
     sdkopts.feature.test = testopts || {}
     sdkopts.feature.test.active = true
 
-    return new ProjectNameSDK(sdkopts)
+    const testsdk = new ProjectNameSDK(sdkopts)
+    testsdk._mode = 'test'
+
+    return testsdk
   }
 
 
   tester(testopts?: any, sdkopts?: any) {
     return ProjectNameSDK.test(testopts, sdkopts)
+  }
+
+
+  toJSON() {
+    return { name: 'ProjectName' }
+  }
+
+  toString() {
+    return 'ProjectName ' + this._utility.struct.jsonify(this.toJSON())
+  }
+
+  [inspect.custom]() {
+    return this.toString()
   }
 
 }
