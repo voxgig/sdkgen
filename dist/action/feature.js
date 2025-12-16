@@ -35,7 +35,8 @@ async function feature_add(features, actx) {
         log: actx.log.child({ cmp: 'jostraca' }),
         meta: {
             // model: actx.model,
-            tree: actx.tree,
+            // tree: actx.tree,
+            url: actx.url,
             content: (0, action_1.loadContent)(actx, 'feature')
         },
         model: actx.model

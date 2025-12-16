@@ -73,6 +73,7 @@ const ACTION_MAP = {
     feature: feature_1.action_feature,
 };
 const dlog = (0, util_2.getdlog)('sdkgen', __filename);
+const aontu = new aontu_1.Aontu();
 function SdkGen(opts) {
     const fs = opts.fs || node_fs_1.default;
     const folder = opts.folder || '../';
@@ -133,13 +134,13 @@ function SdkGen(opts) {
     }
     function resolveActionContext() {
         // TODO: use AsyncLocalStorage to avoid reloading model
-        const { model, tree } = resolveModel();
+        const { model, url } = resolveModel();
         const ctx = {
             fs: () => fs,
             log,
             folder: '.', // The `generate` folder,
             model,
-            tree,
+            url,
             jostraca,
             opts,
         };
@@ -147,41 +148,27 @@ function SdkGen(opts) {
     }
     function resolveModel() {
         const path = './model/sdk.jsonic';
-        const aopts = { path };
+        const errs = [];
+        const aopts = { path, errs };
         const src = fs.readFileSync(path, 'utf8');
-        const tree = (0, aontu_1.Aontu)(src, aopts);
-        const hasErr = tree.err && 0 < tree.err.length;
-        if (hasErr) {
-            for (let serr of tree.err) {
+        const model = aontu.generate(src, aopts);
+        if (0 < errs.length) {
+            for (let serr of errs) {
                 let err = new utility_1.SdkGenError('Model Error: ' + serr.msg);
                 err.cause$ = [serr];
                 if ('syntax' === serr.why) {
                     err.uxmsg$ = true;
                 }
-                // log.error({ fail: 'parse', point: 'guide-parse', file: path, err })
-                err.rooterrs$ = tree.err;
+                err.rooterrs$ = errs;
                 throw err;
             }
         }
-        let genctx = new aontu_1.Context({ root: tree });
-        const model = tree.gen(genctx);
-        // TODO: collect all errors
-        if (genctx.err && 0 < genctx.err.length) {
-            const err = new utility_1.SdkGenError('Model Error:\n' +
-                (genctx.err.map((pe) => pe.msg)).join('\n'));
-            // log.error({ fail: 'build', what: 'guide', file: path, err })
-            err.errs = () => genctx.err;
-            throw err;
-        }
-        // TODO: FIX: This is a hack to set the correct src file
-        // aontu bug: url is empty
-        tree.url = path;
         model.const = { name: model.name };
         (0, exports.names)(model.const, model.name);
         model.const.year = new Date().getFullYear();
         return {
             model,
-            tree,
+            url: path,
         };
     }
     const target = {

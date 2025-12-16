@@ -6,12 +6,10 @@ const { parseArgs } = require('node:util')
 
 const { Gubu, Fault, One } = require('gubu')
 
-const Pkg = require('../package.json')
-
 const { SdkGen } = require('../dist/sdkgen.js')
 
-
-let KONSOLE = console
+const VERSION = '0.25.0'
+const KONSOLE = console
 
 run()
 
@@ -130,9 +128,7 @@ async function handleError(err) {
 }
 
 
-function version() {
-  KONSOLE.log(Pkg.version)
-}
+function version() { return VERSION }
 
 
 function help() {

@@ -7,7 +7,7 @@ import { prettyPino, Pino } from '@voxgig/util'
 
 import { Jsonic } from 'jsonic'
 import * as JostracaModule from 'jostraca'
-import { Aontu, Context } from 'aontu'
+import { Aontu } from 'aontu'
 
 import {
   showChanges,
@@ -80,6 +80,9 @@ const ACTION_MAP: any = {
 
 
 const dlog = getdlog('sdkgen', __filename)
+
+
+const aontu = new Aontu()
 
 
 function SdkGen(opts: SdkGenOptions) {
@@ -165,14 +168,14 @@ function SdkGen(opts: SdkGenOptions) {
   function resolveActionContext(): ActionContext {
 
     // TODO: use AsyncLocalStorage to avoid reloading model
-    const { model, tree } = resolveModel()
+    const { model, url } = resolveModel()
 
     const ctx: ActionContext = {
       fs: () => fs,
       log,
       folder: '.', // The `generate` folder,
       model,
-      tree,
+      url,
       jostraca,
       opts,
     }
@@ -183,14 +186,14 @@ function SdkGen(opts: SdkGenOptions) {
 
   function resolveModel() {
     const path = './model/sdk.jsonic'
-    const aopts = { path }
+    const errs: any[] = []
+    const aopts = { path, errs }
     const src = fs.readFileSync(path, 'utf8')
 
-    const tree = Aontu(src, aopts)
-    const hasErr = tree.err && 0 < tree.err.length
+    const model = aontu.generate(src, aopts)
 
-    if (hasErr) {
-      for (let serr of tree.err) {
+    if (0 < errs.length) {
+      for (let serr of errs) {
         let err: any = new SdkGenError('Model Error: ' + serr.msg)
         err.cause$ = [serr]
 
@@ -198,30 +201,10 @@ function SdkGen(opts: SdkGenOptions) {
           err.uxmsg$ = true
         }
 
-        // log.error({ fail: 'parse', point: 'guide-parse', file: path, err })
-
-
-        err.rooterrs$ = tree.err
+        err.rooterrs$ = errs
         throw err
       }
     }
-
-    let genctx = new Context({ root: tree })
-    const model = tree.gen(genctx)
-
-    // TODO: collect all errors
-    if (genctx.err && 0 < genctx.err.length) {
-      const err: any = new SdkGenError('Model Error:\n' +
-        (genctx.err.map((pe: any) => pe.msg)).join('\n'))
-      // log.error({ fail: 'build', what: 'guide', file: path, err })
-      err.errs = () => genctx.err
-      throw err
-    }
-
-    // TODO: FIX: This is a hack to set the correct src file
-    // aontu bug: url is empty
-    tree.url = path
-
 
     model.const = { name: model.name }
 
@@ -231,7 +214,7 @@ function SdkGen(opts: SdkGenOptions) {
 
     return {
       model,
-      tree,
+      url: path,
     }
   }
 

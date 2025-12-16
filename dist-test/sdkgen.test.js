@@ -8,6 +8,7 @@ const jostraca_1 = require("jostraca");
 const __1 = require("../");
 // 2025-01-01T00:00:00.000Z
 const START_TIME = 1735689600000;
+const aontu = new aontu_1.Aontu();
 (0, node_test_1.describe)('sdkgen', () => {
     (0, node_test_1.test)('merge', async () => {
         let nowI = 0;
@@ -381,7 +382,7 @@ const START_TIME = 1735689600000;
         });
     });
     function makeModel() {
-        return (0, aontu_1.Aontu)(`
+        return aontu.generate(`
 name: 'foo'
 
 zed: a: 0
@@ -393,7 +394,7 @@ main: sdk: js: {}
 main: sdk: python: {}
 
 main: sdk: java: {}
-`).gen();
+`);
     }
     function makeRoot() {
         return (0, jostraca_1.cmp)(function Root(props) {

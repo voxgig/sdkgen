@@ -6,7 +6,7 @@ type ActionContext = {
     log: any;
     folder: string;
     model: any;
-    tree: any;
+    url: string;
     opts: any;
     jostraca: any;
 };

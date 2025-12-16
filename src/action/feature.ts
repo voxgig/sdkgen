@@ -68,7 +68,8 @@ async function feature_add(features: string[], actx: ActionContext): Promise<Act
     log: actx.log.child({ cmp: 'jostraca' }),
     meta: {
       // model: actx.model,
-      tree: actx.tree,
+      // tree: actx.tree,
+      url: actx.url,
       content: loadContent(actx, 'feature')
     },
     model: actx.model

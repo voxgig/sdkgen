@@ -17,6 +17,8 @@ import {
 const START_TIME = 1735689600000
 
 
+const aontu = new Aontu()
+
 describe('sdkgen', () => {
 
   test('merge', async () => {
@@ -419,7 +421,7 @@ describe('sdkgen', () => {
 
 
   function makeModel() {
-    return Aontu(`
+    return aontu.generate(`
 name: 'foo'
 
 zed: a: 0
@@ -431,7 +433,7 @@ main: sdk: js: {}
 main: sdk: python: {}
 
 main: sdk: java: {}
-`).gen()
+`)
   }
 
 

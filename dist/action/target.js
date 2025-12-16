@@ -38,7 +38,8 @@ async function target_add(targets, actx) {
         log: actx.log.child({ cmp: 'jostraca' }),
         meta: {
             // model: actx.model,
-            tree: actx.tree,
+            // tree: actx.tree,
+            url: actx.url,
             content: (0, action_1.loadContent)(actx, 'target')
         },
         model: actx.model,

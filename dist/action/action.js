@@ -23,8 +23,7 @@ function loadContent(actx, which) {
     which = Array.isArray(which) ? which : [which];
     const content = {};
     const fs = actx.fs();
-    const tree = actx.tree;
-    const modelfolder = node_path_1.default.dirname(tree.url);
+    const modelfolder = node_path_1.default.dirname(actx.url);
     which.map((w) => {
         const indexfile = node_path_1.default.join(modelfolder, w, w + '-index.jsonic');
         const indexcontent = fs.readFileSync(indexfile, 'utf8');

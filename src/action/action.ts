@@ -34,8 +34,7 @@ function loadContent(actx: ActionContext, which: string | string[]) {
   const content: any = {}
 
   const fs = actx.fs()
-  const tree = actx.tree
-  const modelfolder = Path.dirname(tree.url)
+  const modelfolder = Path.dirname(actx.url)
 
   which.map((w: string) => {
     const indexfile = Path.join(modelfolder, w, w + '-index.jsonic')
