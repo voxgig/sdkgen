@@ -3,8 +3,8 @@ import { Context } from '../types'
 
 
 function query(ctx: Context) {
-  const { op } = ctx
-  let { params } = op
+  const { alt } = ctx
+  let { params } = alt
   let { reqmatch } = ctx
 
   params = params || []

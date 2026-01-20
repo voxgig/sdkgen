@@ -2,10 +2,10 @@
 const Config = {
 
   options: {
-    base: '$$main.def.servers.0.url$$',
+    base: '$$main.kit.info.servers.0.url$$',
 
     auth: {
-      prefix: '$$main.sdk.config.auth.prefix$$',
+      prefix: '$$main.kit.config.auth.prefix$$',
     },
 
     headers: 'HEADERS',

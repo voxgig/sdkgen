@@ -21,7 +21,7 @@ class ProjectNameSDK {
 
   constructor(options?: any) {
 
-    this._rootctx = this._utility.contextify({
+    this._rootctx = this._utility.makeContext({
       client: this,
       utility: this._utility,
       config: Config,
@@ -56,8 +56,8 @@ class ProjectNameSDK {
       initfeature(this._rootctx, f)
     }
 
-    const featurehook = this._utility.featurehook
-    featurehook(this._rootctx, 'PostConstruct')
+    const featureHook = this._utility.featureHook
+    featureHook(this._rootctx, 'PostConstruct')
   }
 
 

@@ -2,16 +2,16 @@
 import { Context } from '../types'
 
 function body(ctx: Context) {
-  const { op, utility } = ctx
+  const { alt, utility } = ctx
   const { error, reqform } = utility
 
   let body = undefined
 
-  if ('req' === op.kind) {
+  if ('req' === alt.kind) {
     try {
       body = reqform(ctx)
 
-      if (op.check.nobody && null == body) {
+      if (alt.check.nobody && null == body) {
         return error(ctx, new Error('Request body is empty.'))
       }
     }

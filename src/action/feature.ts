@@ -13,6 +13,10 @@ import {
 
 import { showChanges } from '@voxgig/util'
 
+import {
+  KIT
+} from '../types'
+
 import type {
   ActionContext,
   ActionResult,
@@ -99,7 +103,7 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
   const { ctx$, features } = props
   const { model, log } = ctx$
 
-  const target = model.main.sdk.target
+  const target = model.main[KIT].target
 
   Project({}, () => {
     each(features, (n) => {

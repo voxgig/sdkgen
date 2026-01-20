@@ -7,15 +7,21 @@ import {
 } from '@voxgig/sdkgen'
 
 
+import {
+  KIT,
+  getModelPath
+} from '@voxgig/apidef'
+
+
 
 
 const Config = cmp(async function Config(props: any) {
   const { target, ctx$: { model } } = props
-  const { main: { sdk: { entity } } } = model
 
+  const entity = getModelPath(model, `main.${KIT}.entity`)
   const ff = Path.normalize(__dirname + '/../../../src/cmp/ts/fragment/')
 
-  const headers = model?.main?.sdk?.config?.headers || {}
+  const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
   File({ name: 'Config.' + target.ext }, () => {
 

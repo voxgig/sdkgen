@@ -4,8 +4,8 @@ main: def: {
   desc: *'' | string
 }
 
-main: sdk: target: &: {
-  name: .$KEY
+main: kit: target: &: {
+  name: key()
   active: *true | boolean
   ext: string
   comment: line: string
@@ -19,16 +19,16 @@ main: sdk: target: &: {
 }
 
 
-main: sdk: entity: &: {
-  name: .$KEY
+main: kit: entity: &: {
+  name: key()
   active: *true | boolean
 
   alias: {}
 }
 
 
-main: sdk: feature: &: {
-  # name: .$KEY # FIX: aontu bug - name not resolved
+main: kit: feature: &: {
+  name: key()
   active: *false | boolean
   title: string
 
@@ -63,8 +63,8 @@ main: sdk: feature: &: {
 }
 
 
-main: sdk: option: &: {
-  name: .$KEY
+main: kit: option: &: {
+  name: key()
   active: *true | boolean
 }
 

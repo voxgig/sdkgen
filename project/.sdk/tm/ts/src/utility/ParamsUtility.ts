@@ -7,12 +7,11 @@ function params(ctx: Context) {
   const findparam = utility.findparam
 
   const struct = utility.struct
-  const { validate } = struct
+  // const { validate } = struct
 
+  const { alt } = ctx
 
-  const { op } = ctx
-
-  let { params } = op
+  let { params } = alt
   let { reqmatch } = ctx
 
   params = params || []

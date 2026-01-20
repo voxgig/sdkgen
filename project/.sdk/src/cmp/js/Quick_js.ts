@@ -21,7 +21,7 @@ const Quick = cmp(function Quick(props: any) {
 
   // TODO: selected features should be active by default!
 
-  const featureOptions = each(model.main.sdk.feature)
+  const featureOptions = each(model.main.kit.feature)
     .filter((f: any) => f.active)
     .reduce((a: any, f: any) => a + `\n    ${f.name}: { active: true },`, '')
 

@@ -1,11 +1,16 @@
 
 import { cmp, each, Content } from 'jostraca'
 
+import {
+  KIT,
+  getModelPath
+} from '../types'
+
 
 const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   const { ctx$: { model } } = props
 
-  const { entity } = model.main.sdk
+  const entity = getModelPath(model, `main.${KIT}.entity`)
 
   Content(`
 

@@ -6,6 +6,9 @@ import {
   SdkNameEntity,
 } from '../SdkNameSDK'
 
+import {
+  Utility
+} from '../utility/Utility'
 
 import type {
   Operation,
@@ -16,8 +19,8 @@ import type {
 
 class EntityNameEntity {
   #client: SdkNameSDK
+  #utility: Utility
   #entopts: any
-  #utility: any
   #data: any
   #match: any
 
@@ -34,15 +37,15 @@ class EntityNameEntity {
     this.#data = {}
     this.#match = {}
 
-    const contextify = this.#utility.contextify
+    const makeContext = this.#utility.makeContext
 
-    this._entctx = contextify({
+    this._entctx = makeContext({
       entity: this,
       entopts,
     }, client._rootctx)
 
-    const featurehook = this.#utility.featurehook
-    featurehook(this._entctx, 'PostConstructEntity')
+    const featureHook = this.#utility.featureHook
+    featureHook(this._entctx, 'PostConstructEntity')
   }
 
   entopts() {
@@ -59,31 +62,31 @@ class EntityNameEntity {
 
 
   data(this: any, data?: any) {
-    const featurehook = this.#utility.featurehook
+    const featureHook = this.#utility.featureHook
 
     if (null != data) {
-      featurehook(this._entctx, 'SetData')
+      featureHook(this._entctx, 'SetData')
       this.#data = { ...data }
     }
 
     let out = { ...this.#data }
 
-    featurehook(this._entctx, 'GetData')
+    featureHook(this._entctx, 'GetData')
     return out
   }
 
 
   match(match?: any) {
-    const featurehook = this.#utility.featurehook
+    const featureHook = this.#utility.featureHook
 
     if (null != match) {
-      featurehook(this._entctx, 'SetMatch')
+      featureHook(this._entctx, 'SetMatch')
       this.#match = { ...match }
     }
 
     let out = { ...this.#match }
 
-    featurehook(this._entctx, 'GetMatch')
+    featureHook(this._entctx, 'GetMatch')
     return out
   }
 

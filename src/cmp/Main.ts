@@ -3,6 +3,10 @@ import { cmp, names, Copy } from 'jostraca'
 
 import { requirePath } from '../utility'
 
+import {
+  KIT
+} from '../types'
+
 
 const Main = cmp(function Main(props: any) {
   const { target, ctx$ } = props

@@ -5,10 +5,17 @@ import {
 } from '@voxgig/sdkgen'
 
 
+import {
+  KIT,
+  getModelPath
+} from '@voxgig/apidef'
+
 
 const Package = cmp(async function Package(props: any) {
   const { target, ctx$: { model } } = props
-  const { main: { sdk: { feature } } } = model
+  // const { main: { sdk: { feature } } } = model
+
+  const feature = getModelPath(model, `main.${KIT}.feature`)
 
   const only = (kind: string, deps: any) =>
     omap(deps, ([k, v]: any) => [v.active && kind === v.kind ? k : undefined, v.version])

@@ -17,8 +17,8 @@ const Main = cmp(async function Main(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  const { entity } = model.main.api
-  const { feature } = model.main.sdk
+  const { entity } = model.main.kit
+  const { feature } = model.main.kit
 
   Package({ target })
 
@@ -72,7 +72,7 @@ const Main = cmp(async function Main(props: any) {
       }, () => {
         each(entity, (entity: any) => {
           // console.log('ENTITY', entity.name)
-          MainEntity({ target, entity, entitySDK: model.main.sdk.entity[entity.name] })
+          MainEntity({ target, entity, entitySDK: model.main.kit.entity[entity.name] })
         })
       })
     })

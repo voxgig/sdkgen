@@ -4,19 +4,24 @@ type Control = any
 
 class EntityOperation {
 
+  #match: any
+  #data: any
+  #utility: any
+
+
   // EJECT-START
 
   async update(this: any, reqdata?: any, ctrl?: Control) {
-    let entity = this
-    let client = this.#client
+
     const utility = this.#utility
+
     const {
-      contextify,
+      makeContext,
+      makeOperation,
       done,
       error,
-      featurehook,
-      operator,
-      opify,
+      featureHook,
+      selection,
       request,
       response,
       result,
@@ -25,19 +30,14 @@ class EntityOperation {
 
     let fres: Promise<any> | undefined = undefined
 
-    let op: Operation = opify({
+    let op: Operation = makeOperation({
       entity: 'entityname',
       name: 'update',
-      path: 'PATH',
-      params: ['PARAM-LIST'],
-      alias: { 'ALIAS': 'MAP' },
-      state: {},
-      reqform: 'REQFORM',
-      resform: 'RESFORM',
-      validate: 'VALIDATE',
+      select: 'data',
+      alts: ['ALTS'],
     })
 
-    let ctx: Context = contextify({
+    let ctx: Context = makeContext({
       current: new WeakMap(),
       ctrl,
       op,
@@ -48,11 +48,11 @@ class EntityOperation {
 
     try {
 
-      // #PreOperation-Hook    
+      // #PreSelection-Hook    
 
-      ctx.out.operator = operator(ctx)
-      if (ctx.out.operator instanceof Error) {
-        return error(ctx, ctx.out.operator)
+      ctx.out.selected = selection(ctx)
+      if (ctx.out.selected instanceof Error) {
+        return error(ctx, ctx.out.selected)
       }
 
 
@@ -88,7 +88,7 @@ class EntityOperation {
       }
 
 
-      // #PostOperation-Hook
+      // #PreDone-Hook
 
       if (null != ctx.result) {
         if (null != ctx.result.resmatch) {
@@ -103,6 +103,8 @@ class EntityOperation {
       return done(ctx)
     }
     catch (err: any) {
+      // #PreUnexpected-Hook
+
       err = this.#unexpected(ctx, err)
 
       if (err) {
@@ -115,6 +117,7 @@ class EntityOperation {
   }
 
   // EJECT-END
+
 
   #unexpected(this: any, ctx: Context, ctrl: any, err: any): any { return err }
 

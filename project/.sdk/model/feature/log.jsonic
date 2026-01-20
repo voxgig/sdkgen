@@ -1,5 +1,5 @@
 
-main: sdk: feature: log: {
+main: kit: feature: log: {
 
   name: .$KEY
   title: Log

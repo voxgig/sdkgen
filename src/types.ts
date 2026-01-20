@@ -6,6 +6,10 @@ import type {
 } from 'jostraca'
 
 
+import {
+  KIT
+} from '@voxgig/apidef'
+
 type FsUtil = typeof Fs
 
 
@@ -25,6 +29,9 @@ type ActionResult = {
 }
 
 
+export {
+  KIT
+}
 
 export type {
   ActionContext,

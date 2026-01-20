@@ -1,5 +1,5 @@
 
-main: sdk: feature: test: {
+main: kit: feature: test: {
 
   name: .$KEY
   title: Test

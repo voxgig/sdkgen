@@ -1,7 +1,7 @@
 
 import { Context } from '../types'
 
-import { getprop } from './StructUtility'
+import { setprop, getprop } from './StructUtility'
 
 
 /* Find value of a match parameter, possibly using an alias.
@@ -12,9 +12,9 @@ import { getprop } from './StructUtility'
  * This function returns `undefined` rather than failing.
  */
 function findparam(ctx: Context, key: string) {
-  let { op, spec, match, reqmatch, data, reqdata } = ctx
+  let { alt, spec, match, reqmatch, data, reqdata } = ctx
 
-  let akey = op.alias[key]
+  let akey = getprop(alt.alias, key)
 
   let val = getprop(reqmatch, key)
 
@@ -25,7 +25,7 @@ function findparam(ctx: Context, key: string) {
   if (null == val && null != akey) {
 
     if (null != spec) {
-      spec.alias[akey] = key
+      setprop(spec.alias, akey, key)
     }
 
     val = getprop(reqmatch, akey)

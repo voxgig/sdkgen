@@ -7,6 +7,12 @@ import {
 import { jsonify } from '@voxgig/struct'
 
 
+import {
+  KIT,
+  getModelPath
+} from '@voxgig/apidef'
+
+
 
 
 const EntityTest = cmp(function EntityTest(props: any) {
@@ -26,7 +32,7 @@ const EntityTest = cmp(function EntityTest(props: any) {
       }, () => {
 
         // TODO: should be EntityFlow
-        const basicflow = model?.main?.sdk?.flow?.['Basic' + entity.Name + 'Flow']
+        const basicflow = getModelPath(model, `main.${KIT}.flow.Basic${entity.Name}Flow`)
 
         const dobasic = basicflow && true === basicflow.active
 

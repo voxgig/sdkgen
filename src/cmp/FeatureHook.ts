@@ -1,11 +1,16 @@
 
 import { each, cmp, names, Content } from 'jostraca'
 
+import {
+  KIT,
+  getModelPath
+} from '../types'
+
 
 const FeatureHook = cmp(function FeatureHook(props: any, children: any) {
   const { ctx$: { model } } = props
 
-  const { feature } = model.main.sdk
+  const feature = getModelPath(model, `main.${KIT}.feature`)
 
   const hook: any = {}
   names(hook, props.name)

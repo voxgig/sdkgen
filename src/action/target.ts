@@ -14,6 +14,10 @@ import { showChanges } from '@voxgig/util'
 
 import { getelem } from '@voxgig/struct'
 
+import {
+  KIT
+} from '../types'
+
 import type {
   ActionContext,
   ActionResult,
@@ -35,11 +39,6 @@ const CMD_MAP: any = {
   add: cmd_target_add
 }
 
-
-type Target = {
-  origin: string
-  name: string
-}
 
 
 async function action_target(args: string[], actx: ActionContext): Promise<ActionResult> {
@@ -92,7 +91,7 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
 
   showChanges(opts.log, 'target-result', jres)
 
-  const features = Object.keys(actx.model.main.sdk.feature)
+  const features = Object.keys(actx.model.main[KIT].feature)
   await feature_add(features, actx)
 
   opts.log.info({

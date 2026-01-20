@@ -1,13 +1,25 @@
 
+import { inspect } from 'node:util'
+
 import { ProjectNameSDK } from './ProjectNameSDK'
 
-import { Context } from './utility/ContextUtility'
+import { Utility } from './utility/Utility'
+import { getprop } from './utility/StructUtility'
+
+
+
+
+// TODO: convert to classes
 
 
 type Operation = {
-  kind: string
   entity: string
   name: string
+  select: string
+  alts: Alt[]
+
+  /*
+  kind: string
   path: string
   pathalt: ({ path: string } & Record<string, boolean>)[],
   params: string[],
@@ -19,10 +31,29 @@ type Operation = {
     params: Record<string, any>
   }
   check: Record<string, any>
+  */
+}
+
+
+type Alt = {
+  args: {
+    param: any[]
+  }
+  rename: {
+    param: Record<string, string>
+  }
+  method: string
+  orig: string
+  parts: string[]
+  select: any
+  active: boolean
+  relations: any[]
 }
 
 
 type Spec = {
+  parts: string[]
+
   headers: Record<string, string>
   alias: any
   base: string
@@ -33,8 +64,10 @@ type Spec = {
   step: string
   method: string
   body: any
-  path: string
   url?: string
+
+  path?: string
+
 }
 
 
@@ -66,6 +99,91 @@ type Control = {
 }
 
 
+
+class Context {
+
+  id = 'C' + ('' + Math.random()).substring(2, 10)
+
+  // Store the output of each operation step.
+  out: Record<string, any> = {}
+
+  // Store for the current operation.
+  current: WeakMap<String, any> = new WeakMap()
+
+
+  ctrl: Record<string, any> = {}
+  meta: Record<string, any> = {}
+
+  client: ProjectNameSDK
+  utility: Utility
+
+  op: Operation
+  alt: any
+
+  config: Record<string, any>
+  entopts: Record<string, any>
+  options: Record<string, any>
+
+  response?: Response
+  result?: Result
+  spec?: Spec
+
+  data?: any
+  reqdata?: any
+  match?: any
+  reqmatch?: any
+
+  entity?: any
+
+  // Shared persistent store.
+  shared: WeakMap<String, any>
+
+
+  constructor(ctxmap: Record<string, any>, basectx?: Context) {
+    this.client = getprop(ctxmap, 'client', getprop(basectx, 'client'))
+    this.utility = getprop(ctxmap, 'utility', getprop(basectx, 'utility'))
+
+    this.ctrl = getprop(ctxmap, 'ctrl', getprop(basectx, 'ctrl', this.ctrl))
+    this.meta = getprop(ctxmap, 'meta', getprop(basectx, 'meta', this.meta))
+
+    this.op = getprop(ctxmap, 'op', getprop(basectx, 'op'))
+
+    this.config = getprop(ctxmap, 'config', getprop(basectx, 'config'))
+    this.entopts = getprop(ctxmap, 'entopts', getprop(basectx, 'entopts'))
+    this.options = getprop(ctxmap, 'options', getprop(basectx, 'options'))
+
+    this.entity = getprop(ctxmap, 'entity', getprop(basectx, 'entity'))
+    this.shared = getprop(ctxmap, 'sharedd', getprop(basectx, 'shared'))
+
+    this.data = getprop(ctxmap, 'data')
+    this.reqdata = getprop(ctxmap, 'reqdata')
+    this.match = getprop(ctxmap, 'match')
+    this.reqmatch = getprop(ctxmap, 'reqmatch')
+  }
+
+
+  toJSON() {
+    return {
+      id: this.id,
+      op: this.op,
+      spec: this.spec,
+      entity: this.entity,
+      result: this.result,
+      meta: this.meta,
+    }
+  }
+
+  toString() {
+    return 'Context ' + (this as any).utility?.struct.jsonify(this.toJSON())
+  }
+
+  [inspect.custom]() {
+    return this.toString()
+  }
+
+}
+
+
 type FeatureOptions = Record<string, any> | {
   active: boolean
 }
@@ -93,10 +211,13 @@ interface Feature {
 }
 
 
+export {
+  Context
+}
 
 export type {
-  Context,
   Operation,
+  Alt,
   Spec,
   Control,
   FeatureOptions,

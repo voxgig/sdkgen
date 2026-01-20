@@ -1,5 +1,5 @@
 
-main: sdk: target: js: {
+main: kit: target: js: {
   
   title: JavaScript
   ext: js
@@ -17,7 +17,7 @@ main: sdk: target: js: {
 }
 
 
-main: sdk: feature: &: target: js: deps: &: {
+main: kit: feature: &: target: js: deps: &: {
   # TODO: fix aontu disjunctions!
   kind: *'prod' | string # 'peer' |'dev'
 }

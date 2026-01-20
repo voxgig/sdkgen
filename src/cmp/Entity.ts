@@ -5,12 +5,17 @@ import {
 
 import { requirePath } from '../utility'
 
+import {
+  KIT,
+  getModelPath
+} from '../types'
+
 
 const Entity = cmp(function Entity(props: any) {
   const { target, entity, ctx$ } = props
   const { log } = ctx$
 
-  const entitySDK = ctx$.model.main.sdk.entity[entity.name]
+  const entitySDK = getModelPath(ctx$.model, `main.${KIT}.entity.${entity.name}`)
 
   const Entity_sdk = requirePath(ctx$, `./cmp/${target.name}/Entity_${target.name}`)
   Entity_sdk['Entity']({ target, entity, entitySDK })

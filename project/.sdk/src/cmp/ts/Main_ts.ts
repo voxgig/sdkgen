@@ -7,6 +7,17 @@ import {
 } from '@voxgig/sdkgen'
 
 
+import type {
+  ModelEntity
+} from '@voxgig/apidef'
+
+
+import {
+  KIT,
+  getModelPath
+} from '@voxgig/apidef'
+
+
 import { Package } from './Package_ts'
 import { Config } from './Config_ts'
 import { MainEntity } from './MainEntity_ts'
@@ -17,8 +28,8 @@ const Main = cmp(async function Main(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  const { entity } = model.main.api
-  const { feature } = model.main.sdk
+  const entity: ModelEntity = getModelPath(model, `main.${KIT}.entity`)
+  const feature = getModelPath(model, `main.${KIT}.feature`)
 
   Package({ target })
 
@@ -50,7 +61,7 @@ const Main = cmp(async function Main(props: any) {
             },
 
             '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
-fres = featurehook(ctx, '${name}')
+fres = featureHook(ctx, '${name}')
 if (fres instanceof Promise) { await fres }
 `),
 
@@ -69,8 +80,9 @@ if (fres instanceof Promise) { await fres }
 
         // Entities
         () => {
-          each(entity, (entity: any) => {
-            const entprops = { target, entity, entitySDK: model.main.api.entity[entity.name] }
+          each(entity, (entity: ModelEntity) => {
+            const entitySDK = getModelPath(model, `main.${KIT}.entity.${entity.name}`)
+            const entprops = { target, entity, entitySDK }
             MainEntity(entprops)
           })
         })

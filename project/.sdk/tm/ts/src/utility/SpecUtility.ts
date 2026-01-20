@@ -5,19 +5,22 @@ import { Context, Spec } from '../types'
 // Create request specificaton.
 function spec(ctx: Context): Spec | Error {
   if (ctx.out.spec) {
-    return ctx.out.spec
+    return ctx.spec = ctx.out.spec
   }
 
-  const { op, utility, options } = ctx
+  const { op, alt, utility, options } = ctx
   const struct = utility.struct
   const size = struct.size
   const select = struct.select
-  const { method, params, query, headers, body, auth } = utility
+
+  // TODO: rename others to prepareNAME
+  const { method, params, query, headers, body, preparePath, auth } = utility
 
   ctx.spec = {
     base: options.base, // string, URL endpoint base prefix,
     prefix: options.prefix,
-    path: op.path,
+    // path: op.path,
+    parts: alt.parts,
     suffix: options.suffix,
     method: 'GET',
     params: {},
@@ -27,7 +30,6 @@ function spec(ctx: Context): Spec | Error {
     step: 'start',
     alias: {}
   }
-
 
   ctx.spec.method = method(ctx)
 
@@ -41,7 +43,9 @@ function spec(ctx: Context): Spec | Error {
   ctx.spec.query = query(ctx)
   ctx.spec.headers = headers(ctx)
   ctx.spec.body = body(ctx)
+  ctx.spec.path = preparePath(ctx)
 
+  /*
   if (1 < size(op.pathalt)) {
     let hasQuery = false
     const paramQuery: any = {}
@@ -57,12 +61,17 @@ function spec(ctx: Context): Spec | Error {
       }
     }
   }
+  */
 
   if (ctx.ctrl.explain) {
     ctx.ctrl.explain.spec = ctx.spec
   }
 
   const spec = auth(ctx)
+
+  if (!(spec instanceof Error)) {
+    ctx.spec = spec
+  }
 
   return spec
 }

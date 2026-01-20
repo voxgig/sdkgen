@@ -19,7 +19,6 @@ const Entity = cmp(function Entity(props: any) {
   }
 
   names(entrep, entity.Name, 'EntityName')
-  // console.log('ENTREP', entrep)
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/ts/fragment/')
 
@@ -46,7 +45,7 @@ const Entity = cmp(function Entity(props: any) {
 
           '#Feature-Hook': ({ name, indent }: any) =>
             Content({ indent }, `
-fres = featurehook(ctx, '${name}')
+fres = featureHook(ctx, '${name}')
 if (fres instanceof Promise) { await fres }
 `.trim()),
 

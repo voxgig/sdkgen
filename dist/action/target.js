@@ -9,6 +9,7 @@ const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const util_1 = require("@voxgig/util");
 const struct_1 = require("@voxgig/struct");
+const types_1 = require("../types");
 const utility_1 = require("../utility");
 const feature_1 = require("./feature");
 const action_1 = require("./action");
@@ -50,7 +51,7 @@ async function target_add(targets, actx) {
     });
     const jres = await jostraca.generate(opts, () => TargetRoot({ targets, actx }));
     (0, util_1.showChanges)(opts.log, 'target-result', jres);
-    const features = Object.keys(actx.model.main.sdk.feature);
+    const features = Object.keys(actx.model.main[types_1.KIT].feature);
     await (0, feature_1.feature_add)(features, actx);
     opts.log.info({
         point: 'target-end',

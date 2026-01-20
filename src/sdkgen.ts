@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 Richard Rodger, MIT License */
+/* Copyright (c) 2024-2025 Richard Rodger, MIT License */
 
 import Fs from 'node:fs'
 import Path from 'node:path'

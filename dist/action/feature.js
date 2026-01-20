@@ -8,6 +8,7 @@ exports.action_feature = action_feature;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const util_1 = require("@voxgig/util");
+const types_1 = require("../types");
 const utility_1 = require("../utility");
 const action_1 = require("./action");
 const CMD_MAP = {
@@ -58,7 +59,7 @@ async function feature_add(features, actx) {
 const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
     const { ctx$, features } = props;
     const { model, log } = ctx$;
-    const target = model.main.sdk.target;
+    const target = model.main[types_1.KIT].target;
     (0, jostraca_1.Project)({}, () => {
         (0, jostraca_1.each)(features, (n) => {
             const fname = n.val$;
