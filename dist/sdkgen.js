@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Feature = exports.Entity = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
+exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeInstall = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.SdkGen = SdkGen;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -56,6 +56,8 @@ const Feature_1 = require("./cmp/Feature");
 Object.defineProperty(exports, "Feature", { enumerable: true, get: function () { return Feature_1.Feature; } });
 const Readme_1 = require("./cmp/Readme");
 Object.defineProperty(exports, "Readme", { enumerable: true, get: function () { return Readme_1.Readme; } });
+const Test_1 = require("./cmp/Test");
+Object.defineProperty(exports, "Test", { enumerable: true, get: function () { return Test_1.Test; } });
 const ReadmeInstall_1 = require("./cmp/ReadmeInstall");
 Object.defineProperty(exports, "ReadmeInstall", { enumerable: true, get: function () { return ReadmeInstall_1.ReadmeInstall; } });
 const ReadmeOptions_1 = require("./cmp/ReadmeOptions");
@@ -125,12 +127,12 @@ function SdkGen(opts) {
     async function action(args) {
         const pargs = args.map(arg => (0, jsonic_1.Jsonic)(arg));
         const actname = args[0];
-        const action = ACTION_MAP[actname];
-        if (null == action) {
+        const actionFunc = ACTION_MAP[actname];
+        if (null == actionFunc) {
             throw new utility_1.SdkGenError('Unknown action: ' + actname);
         }
         const ctx = resolveActionContext();
-        await action(pargs, ctx);
+        await actionFunc(pargs, ctx);
     }
     function resolveActionContext() {
         // TODO: use AsyncLocalStorage to avoid reloading model

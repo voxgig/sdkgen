@@ -7,7 +7,7 @@ const types_1 = require("../types");
 const Entity = (0, jostraca_1.cmp)(function Entity(props) {
     const { target, entity, ctx$ } = props;
     const { log } = ctx$;
-    const entitySDK = ctx$.model.main[types_1.KIT].entity[entity.name];
+    const entitySDK = (0, types_1.getModelPath)(ctx$.model, `main.${types_1.KIT}.entity.${entity.name}`);
     const Entity_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/Entity_${target.name}`);
     Entity_sdk['Entity']({ target, entity, entitySDK });
     log.info({

@@ -5,7 +5,7 @@ const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const ReadmeEntity = (0, jostraca_1.cmp)(function ReadmeEntity(props) {
     const { ctx$: { model } } = props;
-    const { entity } = model.main[types_1.KIT];
+    const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
     (0, jostraca_1.Content)(`
 
 ## Entities

@@ -7,7 +7,8 @@ import type {
 
 
 import {
-  KIT
+  KIT,
+  getModelPath,
 } from '@voxgig/apidef'
 
 type FsUtil = typeof Fs
@@ -30,7 +31,8 @@ type ActionResult = {
 
 
 export {
-  KIT
+  KIT,
+  getModelPath,
 }
 
 export type {

@@ -387,24 +387,24 @@ name: 'foo'
 
 zed: a: 0
 
-main: sdk: &: { name: .$KEY }
+main: kit: &: { name: .$KEY }
 
-main: sdk: js: {}
+main: kit: js: {}
 
-main: sdk: python: {}
+main: kit: python: {}
 
-main: sdk: java: {}
+main: kit: java: {}
 `);
     }
     function makeRoot() {
         return (0, jostraca_1.cmp)(function Root(props) {
             const { model } = props;
             (0, jostraca_1.Project)({ model, folder: model.name }, () => {
-                (0, jostraca_1.each)(model.main.sdk, (sdk) => {
-                    (0, jostraca_1.Folder)({ name: sdk.name }, () => {
+                (0, jostraca_1.each)(model.main.kit, (kit) => {
+                    (0, jostraca_1.Folder)({ name: kit.name }, () => {
                         (0, jostraca_1.File)({ name: 'README.md' }, () => {
                             (0, jostraca_1.Content)(`
-# ${model.name} ${sdk.name} SDK
+# ${model.name} ${kit.name} SDK
 # index=${model.zed.a}
 `);
                         });

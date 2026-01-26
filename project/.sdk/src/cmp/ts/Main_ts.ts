@@ -21,7 +21,7 @@ import {
 import { Package } from './Package_ts'
 import { Config } from './Config_ts'
 import { MainEntity } from './MainEntity_ts'
-import { Test } from './Test_ts'
+// import { Test } from './Test_ts'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -33,7 +33,7 @@ const Main = cmp(async function Main(props: any) {
 
   Package({ target })
 
-  Test({ target })
+  // Test({ target })
 
   Folder({ name: 'src' }, () => {
 

@@ -25,6 +25,7 @@ import { Main } from './cmp/Main'
 import { Entity } from './cmp/Entity'
 import { Feature } from './cmp/Feature'
 import { Readme } from './cmp/Readme'
+import { Test } from './cmp/Test'
 import { ReadmeInstall } from './cmp/ReadmeInstall'
 import { ReadmeOptions } from './cmp/ReadmeOptions'
 import { ReadmeEntity } from './cmp/ReadmeEntity'
@@ -153,15 +154,15 @@ function SdkGen(opts: SdkGenOptions) {
     const pargs = args.map(arg => Jsonic(arg))
 
     const actname = args[0]
-    const action = ACTION_MAP[actname]
+    const actionFunc = ACTION_MAP[actname]
 
-    if (null == action) {
+    if (null == actionFunc) {
       throw new SdkGenError('Unknown action: ' + actname)
     }
 
     const ctx = resolveActionContext()
 
-    await action(pargs, ctx)
+    await actionFunc(pargs, ctx)
   }
 
 
@@ -352,6 +353,7 @@ export {
   Main,
   Entity,
   Feature,
+  Test,
   Readme,
   ReadmeInstall,
   ReadmeOptions,

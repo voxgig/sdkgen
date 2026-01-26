@@ -1,6 +1,6 @@
 import Fs from 'node:fs';
 import type { JostracaResult } from 'jostraca';
-import { KIT } from '@voxgig/apidef';
+import { KIT, getModelPath } from '@voxgig/apidef';
 type FsUtil = typeof Fs;
 type ActionContext = {
     fs: () => FsUtil;
@@ -14,5 +14,5 @@ type ActionContext = {
 type ActionResult = {
     jres: JostracaResult;
 };
-export { KIT };
+export { KIT, getModelPath, };
 export type { ActionContext, ActionResult, };

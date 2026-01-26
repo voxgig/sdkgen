@@ -21,6 +21,8 @@ const EntityTest = cmp(function EntityTest(props: any) {
   const { target, entity, entrep, ff } = props
 
   Folder({ name: 'test/entity' }, () => {
+    return;
+
 
     File({ name: entity.Name + 'Entity.test.' + target.name }, () => {
 

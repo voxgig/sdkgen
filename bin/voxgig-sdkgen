@@ -11,6 +11,10 @@ const { SdkGen } = require('../dist/sdkgen.js')
 const VERSION = '0.25.0'
 const KONSOLE = console
 
+
+// NOTE: generatation is NOT called from this script, but
+// from @voxgig/model
+
 run()
 
 
