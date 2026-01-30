@@ -36,8 +36,9 @@ type Flags = Record<string, boolean>
 
 type Utility = {
   struct: any
-  contextify: (ctxmap: Record<string, any>) => any
+  makeContext: (ctxmap: Record<string, any>, basectx?: any) => any
 }
+
 
 type Client = {
   utility: () => Utility
@@ -251,7 +252,7 @@ function resolveArgs(
     let first = args[0]
     if (structUtils.ismap(first)) {
       first = structUtils.clone(first)
-      first = utility.contextify(first)
+      first = utility.makeContext(first)
       args[0] = first
       entry.ctx = first
 

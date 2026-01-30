@@ -7,7 +7,7 @@ import {
 } from '@voxgig/sdkgen'
 
 import { EntityOperation } from './EntityOperation_ts'
-import { EntityTest } from './EntityTest_ts'
+// import { EntityTest } from './EntityTest_ts'
 
 
 const Entity = cmp(function Entity(props: any) {
@@ -56,8 +56,7 @@ if (fres instanceof Promise) { await fres }
     })
   })
 
-
-  EntityTest({ target, entity, entrep, ff })
+  // EntityTest({ target, entity, entrep, ff })
 })
 
 

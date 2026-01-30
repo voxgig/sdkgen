@@ -99,7 +99,7 @@ type Control = {
 }
 
 
-
+// TODO: move to own file
 class Context {
 
   id = 'C' + ('' + Math.random()).substring(2, 10)
@@ -155,10 +155,10 @@ class Context {
     this.entity = getprop(ctxmap, 'entity', getprop(basectx, 'entity'))
     this.shared = getprop(ctxmap, 'sharedd', getprop(basectx, 'shared'))
 
-    this.data = getprop(ctxmap, 'data')
-    this.reqdata = getprop(ctxmap, 'reqdata')
-    this.match = getprop(ctxmap, 'match')
-    this.reqmatch = getprop(ctxmap, 'reqmatch')
+    this.data = getprop(ctxmap, 'data', {})
+    this.reqdata = getprop(ctxmap, 'reqdata', {})
+    this.match = getprop(ctxmap, 'match', {})
+    this.reqmatch = getprop(ctxmap, 'reqmatch', {})
   }
 
 

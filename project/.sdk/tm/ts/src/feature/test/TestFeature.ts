@@ -18,17 +18,15 @@ class TestFeature extends BaseFeature {
     this._client = ctx.client
     this._options = options
 
-    // console.log('TEST FEATURE', this._options)
-
     const { struct } = ctx.utility
-    const { walk, size, setprop, stringify } = struct
+    const { walk, size, setprop } = struct
 
     const entity = this._options.entity
 
     this._client._mode = 'test'
 
-    // Set entity ids to correct values
-    walk(entity, (k: any, v: any, parent: any, path: any) => {
+    // Ensure entity ids are correct.
+    walk(entity, (k: any, v: any, _parent: any, path: any) => {
       if (2 === size(path)) {
         setprop(v, 'id', k)
       }
@@ -37,8 +35,7 @@ class TestFeature extends BaseFeature {
 
     ctx.utility.fetcher = (ctx: any, _fullurl: string, _fetchdef: any) => {
       const { findparam, struct } = ctx.utility
-      const { getprop, clone, merge, keysof, size, select, delprop } = struct
-
+      const { getprop, clone, merge, keysof, getelem, select, delprop } = struct
 
       function respond(status: number, data?: any, res?: any) {
         const out = merge([
@@ -89,13 +86,14 @@ class TestFeature extends BaseFeature {
 
       if ('load' === op.name) {
         const found = select(entmap, q)
-        const ent = found[0]
+        const ent = getelem(found, 0)
         if (null == ent) {
           return respond(404, undefined, { statusText: 'Not found' })
         }
         else {
           delprop(ent, '$KEY')
-          return respond(200, clone(ent))
+          const out = clone(ent)
+          return respond(200, out)
         }
       }
       else if ('list' === op.name) {
@@ -105,24 +103,26 @@ class TestFeature extends BaseFeature {
         }
         else {
           found.map((ent: any) => delprop(ent, '$KEY'))
-          return respond(200, clone(found))
+          const out = clone(found)
+          return respond(200, out)
         }
       }
       else if ('update' === op.name) {
         const found = select(entmap, q)
-        const ent = found[0]
+        const ent = getelem(found, 0)
         if (null == ent) {
           return respond(404, undefined, { statusText: 'Not found' })
         }
         else {
           merge([ent, (ctx.reqdata || {})])
           delprop(ent, '$KEY')
-          return respond(200, clone(ent))
+          const out = clone(ent)
+          return respond(200, out)
         }
       }
       else if ('remove' === op.name) {
         const found = select(entmap, q)
-        const ent = found[0]
+        const ent = getelem(found, 0)
         if (null == ent) {
           return respond(404, undefined, { statusText: 'Not found' })
         }
@@ -132,17 +132,20 @@ class TestFeature extends BaseFeature {
         }
       }
       else if ('create' === op.name) {
-        const id = findparam(ctx, 'id')
-        if (null != id) {
-          const ent = clone(ctx.reqdata)
-          ent.id = id
-          setprop(entmap, 'id', ent)
-          delprop(ent, '$KEY')
-          return respond(200, clone(ent))
+        let id = findparam(ctx, 'id')
+        if (null == id) {
+          id = ((1e4 * Math.random() | 0).toString(16) +
+            (1e4 * Math.random() | 0).toString(16) +
+            (1e4 * Math.random() | 0).toString(16) +
+            (1e4 * Math.random() | 0).toString(16)).padEnd(16, '0')
         }
-        else {
-          return respond(400, undefined, { statusText: 'Missing id' })
-        }
+
+        const ent = clone(ctx.reqdata)
+        setprop(ent, 'id', id)
+        setprop(entmap, id, ent)
+        delprop(ent, '$KEY')
+        const out = clone(ent)
+        return respond(200, out)
       }
     }
   }
