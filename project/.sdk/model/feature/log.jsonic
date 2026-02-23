@@ -1,7 +1,7 @@
 
 main: kit: feature: log: {
 
-  name: .$KEY
+  name: key()
   title: Log
   version: '0.0.1'
   active: true

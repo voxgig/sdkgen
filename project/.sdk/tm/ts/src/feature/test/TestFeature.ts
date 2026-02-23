@@ -5,6 +5,9 @@ import type { ProjectNameSDK } from '../../ProjectNameSDK'
 import { BaseFeature } from '../base/BaseFeature'
 
 
+const S_NOT_FOUND = 'Not found'
+
+
 class TestFeature extends BaseFeature {
   version = '0.0.1'
   name = 'test'
@@ -18,8 +21,10 @@ class TestFeature extends BaseFeature {
     this._client = ctx.client
     this._options = options
 
-    const { struct } = ctx.utility
-    const { walk, size, setprop } = struct
+    const struct = ctx.utility.struct
+    const walk = struct.walk
+    const size = struct.size
+    const setprop = struct.setprop
 
     const entity = this._options.entity
 
@@ -33,9 +38,19 @@ class TestFeature extends BaseFeature {
       return v
     })
 
+    const self = this
+
     ctx.utility.fetcher = (ctx: any, _fullurl: string, _fetchdef: any) => {
-      const { findparam, struct } = ctx.utility
-      const { getprop, clone, merge, keysof, getelem, select, delprop } = struct
+      const struct = ctx.utility.struct
+      const findparam = ctx.utility.findparam
+
+      const getprop = struct.getprop
+      const clone = struct.clone
+      const merge = struct.merge
+      const getelem = struct.getelem
+      const select = struct.select
+      const delprop = struct.delprop
+      const getdef = struct.getdef
 
       function respond(status: number, data?: any, res?: any) {
         const out = merge([
@@ -44,10 +59,12 @@ class TestFeature extends BaseFeature {
             statusText: 'OK',
             json: async () => data,
           },
-          res || {}
+          getdef(res, {})
         ])
 
-        const headers: any = out.headers || {}
+        const headers: any = getprop(out, 'headers', {})
+
+        // JS specific iterator.
         out.headers = {
           forEach(callback: any) {
             Object.keys(headers).forEach((key) => {
@@ -63,32 +80,12 @@ class TestFeature extends BaseFeature {
       const op = ctx.op
       const entmap = getprop(entity, op.entity, {})
 
-      const qand: any[] = []
-      const q = { '`$AND`': qand }
-
-      for (let k of keysof(ctx.reqmatch)) {
-        const v = findparam(ctx, k)
-        const ka = getprop(op.alias, k)
-
-        let qor: any = [{ [k]: v }]
-        if (null != ka) {
-          qor.push({ [ka]: v })
-        }
-
-        qor = { '`$OR`': qor }
-
-        qand.push(qor)
-      }
-
-      if (ctx.ctrl.explain) {
-        ctx.ctrl.explain.test = { query: q }
-      }
-
       if ('load' === op.name) {
-        const found = select(entmap, q)
+        const args = self.buildArgs(ctx, op, ctx.reqmatch)
+        const found = select(entmap, args)
         const ent = getelem(found, 0)
         if (null == ent) {
-          return respond(404, undefined, { statusText: 'Not found' })
+          return respond(404, undefined, { statusText: S_NOT_FOUND })
         }
         else {
           delprop(ent, '$KEY')
@@ -97,9 +94,10 @@ class TestFeature extends BaseFeature {
         }
       }
       else if ('list' === op.name) {
-        const found = select(entmap, q)
+        const args = self.buildArgs(ctx, op, ctx.reqmatch)
+        const found = select(entmap, args)
         if (null == found) {
-          return respond(404, undefined, { statusText: 'Not found' })
+          return respond(404, undefined, { statusText: S_NOT_FOUND })
         }
         else {
           found.map((ent: any) => delprop(ent, '$KEY'))
@@ -108,10 +106,11 @@ class TestFeature extends BaseFeature {
         }
       }
       else if ('update' === op.name) {
-        const found = select(entmap, q)
+        const args = self.buildArgs(ctx, op, ctx.reqdata)
+        const found = select(entmap, args)
         const ent = getelem(found, 0)
         if (null == ent) {
-          return respond(404, undefined, { statusText: 'Not found' })
+          return respond(404, undefined, { statusText: S_NOT_FOUND })
         }
         else {
           merge([ent, (ctx.reqdata || {})])
@@ -121,10 +120,11 @@ class TestFeature extends BaseFeature {
         }
       }
       else if ('remove' === op.name) {
-        const found = select(entmap, q)
+        const args = self.buildArgs(ctx, op, ctx.reqmatch)
+        const found = select(entmap, args)
         const ent = getelem(found, 0)
         if (null == ent) {
-          return respond(404, undefined, { statusText: 'Not found' })
+          return respond(404, undefined, { statusText: S_NOT_FOUND })
         }
         else {
           delprop(entmap, getprop(ent, 'id'))
@@ -132,6 +132,7 @@ class TestFeature extends BaseFeature {
         }
       }
       else if ('create' === op.name) {
+        const args = self.buildArgs(ctx, op, ctx.reqdata)
         let id = findparam(ctx, 'id')
         if (null == id) {
           id = ((1e4 * Math.random() | 0).toString(16) +
@@ -149,9 +150,56 @@ class TestFeature extends BaseFeature {
       }
     }
   }
+
+
+  buildArgs(ctx: any, op: any, args: any): any {
+    const struct = ctx.utility.struct
+    const findparam = ctx.utility.findparam
+
+    const getprop = struct.getprop
+    const keysof = struct.keysof
+    const getpath = struct.getpath
+    const getelem = struct.getelem
+    const select = struct.select
+    const transform = struct.transform
+    const isempty = struct.isempty
+
+    const opname = getprop(op, 'name')
+    const alt =
+      getelem(getpath(ctx.config, [
+        'entity', getprop(ctx.entity, 'name'), 'op', opname, 'alts']), -1)
+
+    const reqd = transform(
+      select(getpath(alt, ['args', 'param']), { reqd: true }),
+      ['`$EACH`', '', '`$KEY.name`']
+    )
+
+    const qand: any[] = []
+    const q = { '`$AND`': qand }
+
+    for (let k of keysof(args)) {
+      if ('id' === k || !isempty(select(reqd, k))) {
+        const v = findparam(ctx, k)
+        const ka = getprop(op.alias, k)
+
+        let qor: any = [{ [k]: v }]
+        if (null != ka) {
+          qor.push({ [ka]: v })
+        }
+
+        qor = { '`$OR`': qor }
+
+        qand.push(qor)
+      }
+    }
+
+    if (ctx.ctrl.explain) {
+      ctx.ctrl.explain.test = { query: q }
+    }
+
+    return q
+  }
 }
-
-
 
 
 export {

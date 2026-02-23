@@ -1,5 +1,4 @@
 type Context = any
-type Operation = any
 type Control = any
 
 class EntityOperation {
@@ -17,7 +16,6 @@ class EntityOperation {
 
     const {
       makeContext,
-      makeOperation,
       done,
       error,
       featureHook,
@@ -30,17 +28,9 @@ class EntityOperation {
 
     let fres: Promise<any> | undefined = undefined
 
-    let op: Operation = makeOperation({
-      entity: 'entityname',
-      name: 'remove',
-      select: 'match',
-      alts: ['ALTS'],
-    })
-
     let ctx: Context = makeContext({
-      current: new WeakMap(),
+      opname: 'remove',
       ctrl,
-      op,
       match: this.#match,
       data: this.#data,
       reqmatch

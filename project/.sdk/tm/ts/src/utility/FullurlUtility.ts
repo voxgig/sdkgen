@@ -1,14 +1,17 @@
 
 import { Context } from '../types'
 
+
 function fullurl(ctx: Context): Error | string {
   const utility = ctx.utility
-  // const findparam = utility.findparam
+  const spec = ctx.spec
+  const result = ctx.result
 
   const struct = utility.struct
-  const { escurl, escre, joinurl } = struct
+  const escurl = struct.escurl
+  const escre = struct.escre
+  const join = struct.join
 
-  const { spec, result } = ctx
 
   if (null == spec) {
     return new Error('Expected context spec property to be defined.')
@@ -19,7 +22,8 @@ function fullurl(ctx: Context): Error | string {
   }
 
 
-  let url = joinurl([spec.base, spec.prefix, spec.path, spec.suffix])
+  // TODO: use parts to avoid regexp?
+  let url = join([spec.base, spec.prefix, spec.path, spec.suffix], '/', true)
   let resmatch: Record<string, any> = {}
 
   const params = spec.params

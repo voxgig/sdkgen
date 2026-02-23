@@ -1,13 +1,13 @@
 
 import { Context } from '../types'
 
-import { joinurl } from './StructUtility'
+import { join } from './StructUtility'
 
 
 function preparePath(ctx: Context) {
   const { alt } = ctx
 
-  const path = joinurl(alt.parts)
+  const path = join(alt.parts, '/', true)
 
   return path
 }

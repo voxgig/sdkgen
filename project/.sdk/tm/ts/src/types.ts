@@ -4,7 +4,7 @@ import { inspect } from 'node:util'
 import { ProjectNameSDK } from './ProjectNameSDK'
 
 import { Utility } from './utility/Utility'
-import { getprop } from './utility/StructUtility'
+import { getprop, setprop, getpath } from './utility/StructUtility'
 
 
 
@@ -17,21 +17,6 @@ type Operation = {
   name: string
   select: string
   alts: Alt[]
-
-  /*
-  kind: string
-  path: string
-  pathalt: ({ path: string } & Record<string, boolean>)[],
-  params: string[],
-  alias: Record<string, string>
-  state: Record<string, any>
-  reqform: any
-  resform: any
-  validate: {
-    params: Record<string, any>
-  }
-  check: Record<string, any>
-  */
 }
 
 
@@ -124,6 +109,8 @@ class Context {
   entopts: Record<string, any>
   options: Record<string, any>
 
+  opmap: Record<string, Operation>
+
   response?: Response
   result?: Result
   spec?: Spec
@@ -146,19 +133,47 @@ class Context {
     this.ctrl = getprop(ctxmap, 'ctrl', getprop(basectx, 'ctrl', this.ctrl))
     this.meta = getprop(ctxmap, 'meta', getprop(basectx, 'meta', this.meta))
 
-    this.op = getprop(ctxmap, 'op', getprop(basectx, 'op'))
-
     this.config = getprop(ctxmap, 'config', getprop(basectx, 'config'))
     this.entopts = getprop(ctxmap, 'entopts', getprop(basectx, 'entopts'))
     this.options = getprop(ctxmap, 'options', getprop(basectx, 'options'))
 
     this.entity = getprop(ctxmap, 'entity', getprop(basectx, 'entity'))
-    this.shared = getprop(ctxmap, 'sharedd', getprop(basectx, 'shared'))
+    this.shared = getprop(ctxmap, 'shared', getprop(basectx, 'shared'))
+    this.opmap = getprop(ctxmap, 'opmap', getprop(basectx, 'opmap'))
 
     this.data = getprop(ctxmap, 'data', {})
     this.reqdata = getprop(ctxmap, 'reqdata', {})
     this.match = getprop(ctxmap, 'match', {})
     this.reqmatch = getprop(ctxmap, 'reqmatch', {})
+
+    const opname = getprop(ctxmap, 'opname')
+    this.op = this.resolveOp(opname)
+  }
+
+
+  resolveOp(opname: string): Operation {
+    let op: Operation = getprop(this.opmap, opname)
+
+    if (null == op && null != opname) {
+      const entname = getprop(this.entity, 'name', '')
+      const opcfg = getpath(this.config, ['entity', entname, 'op', opname])
+      let select = 'match'
+
+      if ('update' === opname || 'create' === opname) {
+        select = 'data'
+      }
+
+      op = {
+        entity: entname,
+        name: opname,
+        select,
+        alts: getprop(opcfg, 'alts', [])
+      }
+
+      setprop(this.opmap, opname, op)
+    }
+
+    return op
   }
 
 
@@ -215,13 +230,14 @@ export {
   Context
 }
 
+
 export type {
-  Operation,
   Alt,
-  Spec,
   Control,
-  FeatureOptions,
   Feature,
+  FeatureOptions,
+  Operation,
   Response,
   Result,
+  Spec,
 }

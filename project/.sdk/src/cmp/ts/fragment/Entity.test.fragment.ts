@@ -9,15 +9,15 @@ import { test, describe } from 'node:test'
 import assert from 'node:assert'
 
 
-import { ProjectNameSDK, BaseFeature, utility } from '../../..'
+import { ProjectNameSDK, BaseFeature, stdutil } from '../../..'
 
 import {
-  makeStepData,
+  envOverride,
+  makeCtrl,
   makeMatch,
   makeReqdata,
+  makeStepData,
   makeValid,
-  makeCtrl,
-  envOverride,
 } from '../../utility'
 
 

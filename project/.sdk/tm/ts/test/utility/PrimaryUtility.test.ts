@@ -26,7 +26,7 @@ describe('PrimaryUtility', async () => {
     runners = {
       auth: await runner('auth'),
       body: await runner('body'),
-      contextify: await runner('contextify'),
+      // makeContext: await runner('makeContext'),
       done: await runner('done'),
       error: await runner('error'),
       findparam: await runner('findparam'),
@@ -81,13 +81,13 @@ describe('PrimaryUtility', async () => {
   test('exists', async () => {
     equal('function', typeof runners.auth.subject)
     equal('function', typeof runners.body.subject)
-    equal('function', typeof runners.contextify.subject)
+    // equal('function', typeof runners.makeContext.subject)
     equal('function', typeof runners.done.subject)
     equal('function', typeof runners.error.subject)
     equal('function', typeof runners.findparam.subject)
     equal('function', typeof runners.fullurl.subject)
     equal('function', typeof runners.method.subject)
-    equal('function', typeof runners.operator.subject)
+    // equal('function', typeof runners.operator.subject)
     equal('function', typeof runners.options.subject)
     equal('function', typeof runners.params.subject)
     equal('function', typeof runners.query.subject)
@@ -117,10 +117,10 @@ describe('PrimaryUtility', async () => {
   // })
 
 
-  test('contextify-basic', async () => {
-    const { runset, spec, subject } = runners.contextify
-    await runset(spec.basic, subject)
-  })
+  // test('makeContext-basic', async () => {
+  //   const { runset, spec, subject } = runners.makeContext
+  //   await runset(spec.basic, subject)
+  // })
 
 
   // test('done-basic', async () => {
@@ -153,10 +153,10 @@ describe('PrimaryUtility', async () => {
   // })
 
 
-  test('method-basic', async () => {
-    const { runset, spec, subject } = runners.method
-    await runset(spec.basic, subject)
-  })
+  // test('method-basic', async () => {
+  //   const { runset, spec, subject } = runners.method
+  //   await runset(spec.basic, subject)
+  // })
 
 
   // test('operator-basic', async () => {

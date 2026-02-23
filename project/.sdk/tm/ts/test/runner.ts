@@ -1,4 +1,4 @@
-// VERSION: @voxgig/struct 0.0.8
+// VERSION: @voxgig/struct 0.0.10
 // This test utility runs the JSON-specified tests in build/test/test.json.
 // (or .sdk/test/test.json if used in a @voxgig/sdkgen project)
 
@@ -16,6 +16,7 @@ type RunSet = (testspec: any, testsubject: Function) => Promise<any>
 type RunSetFlags = (testspec: any, flags: Record<string, boolean>, testsubject: Function)
   => Promise<any>
 
+
 type RunPack = {
   spec: Record<string, any>
   runset: RunSet
@@ -23,6 +24,7 @@ type RunPack = {
   subject: Subject
   client: any
 }
+
 
 type TestPack = {
   name?: string
@@ -81,7 +83,7 @@ async function makeRunner(testfile: string, client: Client) {
           res = fixJSON(res, flags)
           entry.res = res
 
-          checkResult(entry, res, structUtils)
+          checkResult(entry, args, res, structUtils)
         }
         catch (err: any) {
           if (err instanceof AssertionError) {
@@ -111,8 +113,7 @@ async function makeRunner(testfile: string, client: Client) {
 
 function resolveSpec(name: string, testfile: string): Record<string, any> {
   const alltests =
-    JSON.parse(readFileSync(join(
-      __dirname, testfile), 'utf8'))
+    JSON.parse(readFileSync(join(__dirname, testfile), 'utf8'))
 
   let spec = alltests.primary?.[name] || alltests[name] || alltests
   return spec
@@ -164,7 +165,7 @@ function resolveEntry(entry: any, flags: Flags): any {
 }
 
 
-function checkResult(entry: any, res: any, structUtils: Record<string, any>) {
+function checkResult(entry: any, args: any[], res: any, structUtils: Record<string, any>) {
   let matched = false
 
   if (entry.err) {
@@ -173,7 +174,7 @@ function checkResult(entry: any, res: any, structUtils: Record<string, any>) {
   }
 
   if (entry.match) {
-    const result = { in: entry.in, out: entry.res, ctx: entry.ctx }
+    const result = { in: entry.in, args, out: entry.res, ctx: entry.ctx }
     match(
       entry.match,
       result,

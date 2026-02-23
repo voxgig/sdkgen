@@ -1,9 +1,24 @@
 
+import * as Path from 'node:path'
+
+
+import {
+  clone,
+  walk,
+} from '@voxgig/struct'
+
+
+function projectPath(suffix?: string): string {
+  return Path.normalize(Path.join(__dirname, '../../..', suffix ?? ''))
+}
+
+
 function formatJSONSrc(jsonsrc: string) {
   return jsonsrc
     .replace(/([{:\[,])/g, '$1 ')
     .replace(/([}\]])/g, ' $1')
 }
+
 
 function formatJson(obj: any, flags?: { line?: boolean, margin?: number }): string {
   const marginSize = flags?.margin ?? 0
@@ -30,7 +45,20 @@ function formatJson(obj: any, flags?: { line?: boolean, margin?: number }): stri
   return json
 }
 
+
+function clean(o: any) {
+  return walk(clone(o), (k: any, v: any, p: any) => {
+    if (null != k && k.endsWith('$')) {
+      delete p[k]
+    }
+    return v
+  })
+}
+
+
 export {
+  clean,
   formatJSONSrc,
-  formatJson
+  formatJson,
+  projectPath,
 }

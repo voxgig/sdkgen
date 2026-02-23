@@ -2,33 +2,54 @@
 import * as Path from 'node:path'
 
 
-import { jsonify } from '@voxgig/struct'
+import {
+  flatten,
+  items,
+  join,
+  jsonify,
+  slice,
+} from '@voxgig/struct'
 
 import {
-  nom,
   KIT,
-  getModelPath,
   Model,
   ModelEntity,
   ModelEntityFlow,
   ModelEntityFlowStep,
+  getModelPath,
+  nom,
 } from '@voxgig/apidef'
 
 
 import {
-  cmp, camelify, Content, Folder, Fragment, File, Slot, each,
+  Content,
+  File,
+  Folder,
+  Fragment,
+  Slot,
+  cmp,
+  each,
 } from '@voxgig/sdkgen'
+
+
+import {
+  projectPath
+} from './utility_ts'
 
 
 type OpGen = (model: any, entity: any, flow: any, step: any, index: any) => void
 
 
 const TestEntity = cmp(function TestEntity(props: any) {
-  const { model, stdrep } = props.ctx$
-  const { target, entity } = props
+  const ctx$ = props.ctx$
+  const model = ctx$.model
+  const stdrep = ctx$.stdrep
 
-  // TODO: should a utility function
-  const ff = Path.normalize(__dirname + '/../../../src/cmp/ts/fragment/')
+  const target = props.target
+  const entity = props.entity
+
+  // TODO: should be a utility function
+  const ff = projectPath('src/cmp/ts/fragment/')
 
   Folder({ name: entity.name }, () => {
 
@@ -51,57 +72,83 @@ const TestEntity = cmp(function TestEntity(props: any) {
           return;
         }
 
-        let indent = 2
+        const indent = 2
+
+        const idlist = flatten([
+          '${entity.name}01',
+          '${entity.name}02',
+          '${entity.name}03',
+          flatten(items(entity.relations.ancestors, (ap: any) =>
+            items(ap[1], (a: any) =>
+              items(['01', '02', '03'], (n: any) =>
+                a[1] + n[1]))), 2)
+        ])
 
         Slot({ name: 'basicSetup' }, () => {
           Content(`
 function basicSetup(extra?: any) {
-  extra = extra || {}
-
+  // TODO: fix test def options
   const options: any = {} // ${jsonify(basicflow.test, { offset: indent - 2 })}
 
+  // TODO: needs test utility to resolve path
   const entityDataFile =
     Path.resolve(__dirname, 
-      '../../../../.sdk/test/entity/planet/${nom(entity, 'Name')}TestData.json')
+      '../../../../.sdk/test/entity/${entity.name}/${nom(entity, 'Name')}TestData.json')
 
-  const entityDataSource =
-    Fs.readFileSync(entityDataFile).toString('utf8')
+  // TODO: file ready util needed?
+  const entityDataSource = Fs.readFileSync(entityDataFile).toString('utf8')
 
   // TODO: need a xlang JSON parse utility in voxgig/struct with better error msgs
   const entityData = JSON.parse(entityDataSource)
 
   options.entity = entityData.existing
 
-  const setup: any = {
-    dm: {
-      // p: envOverride($ {jsonify(basicflow.param, { offset: 2 + indent })}),
-      p: {},
-      s: {},
-    },
-    options,
+  let client = ${model.Name}SDK.test(options, extra)
+  const struct = client.utility().struct
+  const merge = struct.merge
+  const transform = struct.transform
+
+  let idmap = transform(
+    ['${join(idlist, '\',\'')}'],
+    {
+      '\`$PACK\`': ['', {
+        '\`$KEY\`': '\`$COPY\`',
+        '\`$VAL\`': ['\`$FORMAT\`', 'upper', '\`$COPY\`']
+      }]
+    })
+
+  const env = envOverride({
+    '${nom(model.const, 'NAME')}_TEST_${nom(entity, 'NAME')}_ENTID': idmap,
+    '${nom(model.const, 'NAME')}_TEST_LIVE': 'FALSE',
+    '${nom(model.const, 'NAME')}_TEST_EXPLAIN': 'FALSE',
+    '${nom(model.const, 'NAME')}_APIKEY': 'NONE',
+  })
+
+  idmap = env['${nom(model.const, 'NAME')}_TEST_${nom(entity, 'NAME')}_ENTID']
+
+  if ('TRUE' === env.${model.NAME}_TEST_LIVE) {
+    client = new ${model.Name}SDK(merge([
+      {
+        apikey: env.${nom(model.const, 'NAME')}_APIKEY,
+      },
+      extra
+    ]))
   }
 
-  const { merge } = utility.struct
-
-  let client = ${model.Name}SDK.test(options, extra)
-  // if ('TRUE' === setup.dm.p.${model.NAME}_TEST_LIVE) {
-  //   client = new ${model.Name}SDK(merge([
-  //     {
-  //       apikey: process.env.${model.NAME}_APIKEY,
-  //     },
-  //     extra])
-  //   )
-  // }
-
-  setup.data = entityData  
-  setup.client = client    
-  setup.struct = client.utility().struct
-  setup.explain = 'TRUE' === setup.dm.p.${model.NAME}_TEST_EXPLAIN
-  setup.now = Date.now()
+  const setup = {
+    idmap,
+    env,
+    options,
+    client,
+    struct,
+    data: entityData,
+    explain: 'TRUE' === env.${nom(model.const, 'NAME')}_TEST_EXPLAIN,
+    now: Date.now(),
+  }
 
   return setup
 }
-`)
+  `)
         })
 
 
@@ -109,10 +156,13 @@ function basicSetup(extra?: any) {
           Content(`
     const setup = basicSetup()
     const client = setup.client
+    const struct = setup.struct
+
+    const isempty = struct.isempty
+    const select = struct.select
 
 `)
 
-          const opmap = entity.op
           each(basicflow.step, (step: any, index: any) => {
             const opgen: OpGen = GENERATE_OP[step.op]
             opgen(model, entity, basicflow, step, index)
@@ -139,10 +189,10 @@ const generateCreate: OpGen = (
   Content(`
     // CREATE
     const ${entvar} = client.${nom(entity, 'Name')}()
-    const ${datavar} = 
+    const ${datavar} =
       await ${entvar}.create(setup.data.new.${entity.name}['${ref}'])
     assert(null != ${datavar}.id)
-`)
+  `)
 }
 
 
@@ -160,21 +210,27 @@ const generateList: OpGen = (
 
   Content(`
     // LIST
-    const ${matchvar} = {}
+    const ${matchvar}: any = {}
+  `)
+
+  each(step.match, (mi: any) => {
+    Content(`    ${matchvar}['${mi.key$}'] = setup.idmap['${mi.key$}']
+  `)
+  })
+
+  Content(`
     const ${listvar} = await ${entvar}.list(${matchvar})
 `)
   for (let vI = 0; vI < step.valid.length; vI++) {
     const validator = step.valid[vI]
     if ('ItemExists' === validator.apply) {
       Content(`
-    assert(null != ${listvar}.find((entdata: any) =>
-      entdata.data().id == ${validator.def.ref}_data.id))
+    assert(!isempty(select(${listvar}, { id: ${validator.def.ref}_data.id })))
 `)
     }
     else if ('ItemNotExists' === validator.apply) {
       Content(`
-    assert(null == ${listvar}.find((entdata: any) =>
-      entdata.data().id == ${validator.def.ref}_data.id))
+    assert(isempty(select(${listvar}, { id: ${validator.def.ref}_data.id })))
 `)
     }
   }
@@ -201,28 +257,36 @@ const generateUpdate: OpGen = (
     ${datavar}.id = ${srcdatavar}.id
 `)
 
+  each(step.data, (mi: any) => {
+    if ('id' !== mi.key$) {
+      Content(`    ${datavar} ['${mi.key$}'] = setup.idmap['${mi.key$}']
+`)
+    }
+  })
+
+
   for (let sI = 0; sI < step.spec.length; sI++) {
     const spec = step.spec[sI]
     if ('TextFieldMark' === spec.apply && null != step.input.textfield) {
       const fieldname = step.input.textfield
       const fieldvalue = spec.def.mark
       Content(`
-    const ${markdefvar} = { name: '${fieldname}', value: '${fieldvalue}_'+setup.now }
-    ${datavar}[${markdefvar}.name] = ${markdefvar}.value
+    const ${markdefvar} = { name: '${fieldname}', value: '${fieldvalue}_' + setup.now }
+    ${datavar} [${markdefvar}.name] = ${markdefvar}.value
 `)
     }
   }
 
   Content(`
     const ${resdatavar} = await ${entvar}.update(${datavar})
-    assert.equal(${resdatavar}.id, ${datavar}.id)
+    assert(${resdatavar}.id === ${datavar}.id)
 `)
 
   for (let sI = 0; sI < step.spec.length; sI++) {
     const spec = step.spec[sI]
     if ('TextFieldMark' === spec.apply) {
       Content(`
-    assert.equal(${resdatavar}[${markdefvar}.name], ${markdefvar}.value)
+    assert(${resdatavar}[${markdefvar}.name] === ${markdefvar}.value)
 `)
     }
   }
@@ -249,7 +313,7 @@ const generateLoad: OpGen = (
     ${matchvar}.id = ${srcdatavar}.id
     const ${datavar} = await ${entvar}.load(${matchvar})
     assert(${datavar}.id === ${srcdatavar}.id)
-    `)
+`)
 }
 
 
@@ -270,7 +334,7 @@ const generateRemove: OpGen = (
     const ${matchvar}: any = {}
     ${matchvar}.id = ${srcdatavar}.id
     await ${entvar}.remove(${matchvar})
-    `)
+  `)
 }
 
 
