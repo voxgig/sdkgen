@@ -62,6 +62,7 @@ type Response = {
   headers: any,
   json: Function,
   err?: Error,
+  body?: any,
 }
 
 

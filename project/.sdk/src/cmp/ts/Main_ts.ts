@@ -43,10 +43,6 @@ const Main = cmp(async function Main(props: any) {
 
       Line(`// ${model.const.Name} ${target.Name} SDK\n`)
 
-      // List({ item: feature }, ({ item }: any) =>
-      //   Line(`import { ${item.Name + 'Feature'} } ` +
-      //     `from './feature/${item.name}/${item.Name}Feature'`))
-
       List({ item: entity }, ({ item }: any) =>
         Line(`import { ${item.Name}Entity } from './entity/${item.Name}Entity'`))
 

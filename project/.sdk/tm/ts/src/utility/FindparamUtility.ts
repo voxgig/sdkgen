@@ -11,8 +11,12 @@ import { setprop, getprop } from './StructUtility'
  *
  * This function returns `undefined` rather than failing.
  */
-function findparam(ctx: Context, key: string) {
+function findparam(ctx: Context, param: any) {
   let { alt, spec, match, reqmatch, data, reqdata } = ctx
+
+  // TODO: review this search algorithm
+
+  const key = param.name
 
   let akey = getprop(alt.alias, key)
 

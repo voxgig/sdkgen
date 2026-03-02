@@ -6,25 +6,26 @@ function params(ctx: Context) {
   const utility = ctx.utility
   const findparam = utility.findparam
 
-  const struct = utility.struct
+  // const struct = utility.struct
   // const { validate } = struct
 
-  const { alt } = ctx
+  const alt = ctx.alt
 
-  let { params } = alt
-  let { reqmatch } = ctx
+  let param = alt.args.param
+  let reqmatch = ctx.reqmatch
 
-  params = params || []
+  param = param || []
   reqmatch = reqmatch || {}
 
   let out: any = {}
-  for (let key of params) {
-    let val = findparam(ctx, key)
+  for (let pd of param) {
+    let val = findparam(ctx, pd)
     if (null != val) {
-      out[key] = val
+      out[pd.name] = val
     }
   }
 
+  // TODO: review
   // out = validate(out, op.validate.params)
 
   return out

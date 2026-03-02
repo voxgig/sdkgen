@@ -40,7 +40,7 @@ class TestFeature extends BaseFeature {
 
     const self = this
 
-    ctx.utility.fetcher = (ctx: any, _fullurl: string, _fetchdef: any) => {
+    function testFetcher(ctx: any, _fullurl: string, _fetchdef: any) {
       const struct = ctx.utility.struct
       const findparam = ctx.utility.findparam
 
@@ -58,6 +58,7 @@ class TestFeature extends BaseFeature {
             status,
             statusText: 'OK',
             json: async () => data,
+            body: 'not-used',
           },
           getdef(res, {})
         ])
@@ -149,6 +150,8 @@ class TestFeature extends BaseFeature {
         return respond(200, out)
       }
     }
+
+    ctx.utility.fetcher = testFetcher
   }
 
 

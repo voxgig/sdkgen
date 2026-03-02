@@ -23,6 +23,9 @@ function error(ctx: Context, err?: any) {
   err = err || new Error('unknown error')
 
   const errmsg = err.message || 'unknown error'
+  // TODO: project name should come from config
+  // avoids spurious changes between template and generated utility
+  // applies for all utility files
   const msg = 'ProjectNameSDK: ' + op.name + ': ' + errmsg
   err.message = clean(ctx, msg)
 

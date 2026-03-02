@@ -18,6 +18,11 @@ class Config {
   }
 
 
+  main = {
+    name: 'ProjectName',
+  }
+
+
   feature = {
     // #FeatureConfigs
   }

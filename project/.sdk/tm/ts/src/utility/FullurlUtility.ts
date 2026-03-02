@@ -36,6 +36,8 @@ function fullurl(ctx: Context): Error | string {
     }
   }
 
+
+  /* TODO: fix
   let qsep = '?'
   for (let key in spec.query) {
     if (null == spec.alias[key]) {
@@ -47,6 +49,7 @@ function fullurl(ctx: Context): Error | string {
       }
     }
   }
+  */
 
   result.resmatch = resmatch
 

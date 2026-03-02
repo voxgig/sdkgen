@@ -16,7 +16,7 @@ const stdutil = new Utility()
 class ProjectNameSDK {
   _mode: string = 'live'
   _options: any
-  _utility = stdutil
+  _utility = new Utility()
   _features: Feature[]
   _rootctx: Context
 

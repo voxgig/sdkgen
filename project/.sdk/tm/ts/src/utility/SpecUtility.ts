@@ -8,13 +8,18 @@ function spec(ctx: Context): Spec | Error {
     return ctx.spec = ctx.out.spec
   }
 
-  const { op, alt, utility, options } = ctx
-  const struct = utility.struct
-  const size = struct.size
-  const select = struct.select
+  const alt = ctx.alt
+  const options = ctx.options
+  const utility = ctx.utility
 
+  const method = utility.method
+  const params = utility.params
+  const query = utility.query
+  const headers = utility.headers
+  const body = utility.body
   // TODO: rename others to prepareNAME
-  const { method, params, query, headers, body, preparePath, auth } = utility
+  const preparePath = utility.preparePath
+  const auth = utility.auth
 
   ctx.spec = {
     base: options.base, // string, URL endpoint base prefix,
@@ -38,30 +43,11 @@ function spec(ctx: Context): Spec | Error {
       '" not allowed by SDK option allow.method value: "' + options.allow.method + '"')
   }
 
-
   ctx.spec.params = params(ctx)
   ctx.spec.query = query(ctx)
   ctx.spec.headers = headers(ctx)
   ctx.spec.body = body(ctx)
   ctx.spec.path = preparePath(ctx)
-
-  /*
-  if (1 < size(op.pathalt)) {
-    let hasQuery = false
-    const paramQuery: any = {}
-    for (let paramName of op.params) {
-      paramQuery[paramName] = null == ctx.spec.params[paramName] ? false : true
-      hasQuery = true
-    }
-
-    if (hasQuery) {
-      const foundParamAlts = select(op.pathalt, paramQuery)
-      if (0 < size(foundParamAlts)) {
-        ctx.spec.path = foundParamAlts[0].path
-      }
-    }
-  }
-  */
 
   if (ctx.ctrl.explain) {
     ctx.ctrl.explain.spec = ctx.spec
