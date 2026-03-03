@@ -9,36 +9,52 @@ import { getprop, setprop, getpath } from './utility/StructUtility'
 
 
 
-// TODO: convert to classes
-
-
-type Operation = {
+class Operation {
   entity: string
   name: string
   select: string
   alts: Alt[]
+
+  constructor(opmap: Record<string, any>) {
+    this.entity = getprop(opmap, 'entity', '_')
+    this.name = getprop(opmap, 'name', '_')
+    this.select = getprop(opmap, 'select', '_')
+    this.alts = getprop(opmap, 'alts', [])
+  }
 }
 
 
-type Alt = {
-  args: {
-    param: any[]
-  }
-  rename: {
-    param: Record<string, string>
-  }
+class Alt {
+  args: { param: any[] }
+  rename: { param: Record<string, string> }
   method: string
   orig: string
   parts: string[]
+  params: string[]
   select: any
   active: boolean
   relations: any[]
+  alias: Record<string, string>
+  transform: { req: any, res: any }
+
+  constructor(altmap: Record<string, any>) {
+    this.args = getprop(altmap, 'args', { param: [] })
+    this.rename = getprop(altmap, 'rename', { param: {} })
+    this.method = getprop(altmap, 'method', '')
+    this.orig = getprop(altmap, 'orig', '')
+    this.parts = getprop(altmap, 'parts', [])
+    this.params = getprop(altmap, 'params', [])
+    this.select = getprop(altmap, 'select')
+    this.active = getprop(altmap, 'active', false)
+    this.relations = getprop(altmap, 'relations', [])
+    this.alias = getprop(altmap, 'alias', {})
+    this.transform = getprop(altmap, 'transform', { req: undefined, res: undefined })
+  }
 }
 
 
-type Spec = {
+class Spec {
   parts: string[]
-
   headers: Record<string, string>
   alias: any
   base: string
@@ -50,23 +66,46 @@ type Spec = {
   method: string
   body: any
   url?: string
-
   path?: string
 
+  constructor(specmap: Record<string, any>) {
+    this.parts = getprop(specmap, 'parts', [])
+    this.headers = getprop(specmap, 'headers', {})
+    this.alias = getprop(specmap, 'alias', {})
+    this.base = getprop(specmap, 'base', '')
+    this.prefix = getprop(specmap, 'prefix', '')
+    this.suffix = getprop(specmap, 'suffix', '')
+    this.params = getprop(specmap, 'params', {})
+    this.query = getprop(specmap, 'query', {})
+    this.step = getprop(specmap, 'step', '')
+    this.method = getprop(specmap, 'method', 'GET')
+    this.body = getprop(specmap, 'body')
+    this.url = getprop(specmap, 'url')
+    this.path = getprop(specmap, 'path')
+  }
 }
 
 
-type Response = {
-  status: number,
-  statusText: string,
-  headers: any,
-  json: Function,
-  err?: Error,
-  body?: any,
+class Response {
+  status: number
+  statusText: string
+  headers: any
+  json: Function
+  err?: Error
+  body?: any
+
+  constructor(resmap: Record<string, any>) {
+    this.status = getprop(resmap, 'status', -1)
+    this.statusText = getprop(resmap, 'statusText', '')
+    this.headers = getprop(resmap, 'headers')
+    this.json = resmap.json ? resmap.json.bind(resmap) : async () => undefined
+    this.body = getprop(resmap, 'body')
+    this.err = getprop(resmap, 'err')
+  }
 }
 
 
-type Result = {
+class Result {
   ok: boolean
   status: number
   statusText: string
@@ -75,13 +114,30 @@ type Result = {
   err?: any
   resdata?: any
   resmatch?: any
+
+  constructor(resmap: Record<string, any>) {
+    this.ok = getprop(resmap, 'ok', false)
+    this.status = getprop(resmap, 'status', -1)
+    this.statusText = getprop(resmap, 'statusText', '')
+    this.headers = getprop(resmap, 'headers', {})
+    this.body = getprop(resmap, 'body')
+    this.err = getprop(resmap, 'err')
+    this.resdata = getprop(resmap, 'resdata')
+    this.resmatch = getprop(resmap, 'resmatch')
+  }
 }
 
 
-type Control = {
+class Control {
   throw?: boolean
   err?: any
   explain?: any
+
+  constructor(ctrlmap: Record<string, any>) {
+    this.throw = getprop(ctrlmap, 'throw')
+    this.err = getprop(ctrlmap, 'err')
+    this.explain = getprop(ctrlmap, 'explain')
+  }
 }
 
 
@@ -164,12 +220,12 @@ class Context {
         select = 'data'
       }
 
-      op = {
+      op = new Operation({
         entity: entname,
         name: opname,
         select,
         alts: getprop(opcfg, 'alts', [])
-      }
+      })
 
       setprop(this.opmap, opname, op)
     }
@@ -228,17 +284,17 @@ interface Feature {
 
 
 export {
-  Context
-}
-
-
-export type {
   Alt,
+  Context,
   Control,
-  Feature,
-  FeatureOptions,
   Operation,
   Response,
   Result,
   Spec,
+}
+
+
+export type {
+  Feature,
+  FeatureOptions,
 }

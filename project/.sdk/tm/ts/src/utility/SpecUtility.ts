@@ -12,48 +12,40 @@ function spec(ctx: Context): Spec | Error {
   const options = ctx.options
   const utility = ctx.utility
 
-  const method = utility.method
-  const params = utility.params
-  const query = utility.query
-  const headers = utility.headers
-  const body = utility.body
-  // TODO: rename others to prepareNAME
+  const prepareMethod = utility.prepareMethod
+  const prepareParams = utility.prepareParams
+  const prepareQuery = utility.prepareQuery
+  const prepareHeaders = utility.prepareHeaders
+  const prepareBody = utility.prepareBody
   const preparePath = utility.preparePath
-  const auth = utility.auth
+  const prepareAuth = utility.prepareAuth
 
-  ctx.spec = {
+  ctx.spec = new Spec({
     base: options.base, // string, URL endpoint base prefix,
     prefix: options.prefix,
-    // path: op.path,
     parts: alt.parts,
     suffix: options.suffix,
-    method: 'GET',
-    params: {},
-    query: {},
-    headers: {},
-    body: undefined,
     step: 'start',
-    alias: {}
-  }
+  })
 
-  ctx.spec.method = method(ctx)
+  ctx.spec.method = prepareMethod(ctx)
 
   if (!options.allow.method.includes(ctx.spec.method)) {
     return Error('Method "' + ctx.spec.method +
       '" not allowed by SDK option allow.method value: "' + options.allow.method + '"')
   }
 
-  ctx.spec.params = params(ctx)
-  ctx.spec.query = query(ctx)
-  ctx.spec.headers = headers(ctx)
-  ctx.spec.body = body(ctx)
+  ctx.spec.params = prepareParams(ctx)
+  ctx.spec.query = prepareQuery(ctx)
+  ctx.spec.headers = prepareHeaders(ctx)
+  ctx.spec.body = prepareBody(ctx)
   ctx.spec.path = preparePath(ctx)
 
   if (ctx.ctrl.explain) {
     ctx.ctrl.explain.spec = ctx.spec
   }
 
-  const spec = auth(ctx)
+  const spec = prepareAuth(ctx)
 
   if (!(spec instanceof Error)) {
     ctx.spec = spec

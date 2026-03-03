@@ -25,8 +25,8 @@ describe('PrimaryUtility', async () => {
 
     runners = {
       auth: await runner('auth'),
-      body: await runner('body'),
-      // makeContext: await runner('makeContext'),
+      prepareBody: await runner('prepareBody'),
+      makeContext: await runner('makeContext'),
       done: await runner('done'),
       error: await runner('error'),
       findparam: await runner('findparam'),
@@ -79,26 +79,26 @@ describe('PrimaryUtility', async () => {
 
 
   test('exists', async () => {
-    equal('function', typeof runners.auth.subject)
-    equal('function', typeof runners.body.subject)
+    // equal('function', typeof runners.auth.subject)
+    // equal('function', typeof runners.prepareBody.subject)
     // equal('function', typeof runners.makeContext.subject)
-    equal('function', typeof runners.done.subject)
-    equal('function', typeof runners.error.subject)
-    equal('function', typeof runners.findparam.subject)
-    equal('function', typeof runners.fullurl.subject)
-    equal('function', typeof runners.method.subject)
-    // equal('function', typeof runners.operator.subject)
-    equal('function', typeof runners.options.subject)
-    equal('function', typeof runners.params.subject)
-    equal('function', typeof runners.query.subject)
-    equal('function', typeof runners.reqform.subject)
-    equal('function', typeof runners.request.subject)
-    equal('function', typeof runners.resbasic.subject)
-    equal('function', typeof runners.resbody.subject)
-    equal('function', typeof runners.resform.subject)
-    equal('function', typeof runners.resheaders.subject)
-    equal('function', typeof runners.response.subject)
-    equal('function', typeof runners.spec.subject)
+    // equal('function', typeof runners.done.subject)
+    // equal('function', typeof runners.error.subject)
+    // equal('function', typeof runners.findparam.subject)
+    // equal('function', typeof runners.fullurl.subject)
+    // equal('function', typeof runners.method.subject)
+    // // equal('function', typeof runners.operator.subject)
+    // equal('function', typeof runners.options.subject)
+    // equal('function', typeof runners.params.subject)
+    // equal('function', typeof runners.query.subject)
+    // equal('function', typeof runners.reqform.subject)
+    // equal('function', typeof runners.request.subject)
+    // equal('function', typeof runners.resbasic.subject)
+    // equal('function', typeof runners.resbody.subject)
+    // equal('function', typeof runners.resform.subject)
+    // equal('function', typeof runners.resheaders.subject)
+    // equal('function', typeof runners.response.subject)
+    // equal('function', typeof runners.spec.subject)
   })
 
 

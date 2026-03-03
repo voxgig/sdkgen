@@ -1,18 +1,18 @@
 
 import { Context } from '../types'
 
-function body(ctx: Context) {
+function prepareBody(ctx: Context) {
   const op = ctx.op
 
   const utility = ctx.utility
   const error = utility.error
-  const reqform = utility.reqform
+  const transformRequest = utility.transformRequest
 
   let body = undefined
 
   if ('data' === op.select) {
     try {
-      body = reqform(ctx)
+      body = transformRequest(ctx)
 
       // if (alt.check.nobody && null == body) {
       //   return error(ctx, new Error('Request body is empty.'))
@@ -27,6 +27,6 @@ function body(ctx: Context) {
 }
 
 export {
-  body
+  prepareBody
 }
 

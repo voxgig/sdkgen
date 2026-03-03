@@ -9,7 +9,7 @@ function result(ctx: Context): Result | Error {
   }
 
   const utility = ctx.utility
-  const resform = utility.resform
+  const transformResponse = utility.transformResponse
 
   const op = ctx.op
   const entity = ctx.entity
@@ -27,7 +27,7 @@ function result(ctx: Context): Result | Error {
 
   spec.step = 'result'
 
-  resform(ctx)
+  transformResponse(ctx)
 
   if ('list' == op.name) {
     const resdata = result.resdata

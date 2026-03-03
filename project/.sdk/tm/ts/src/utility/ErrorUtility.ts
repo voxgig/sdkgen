@@ -14,7 +14,7 @@ function error(ctx: Context, err?: any) {
   op.name = op.name || 'unknown operation'
 
 
-  const result = ctx.result || ({} as Result)
+  const result = ctx.result || new Result({})
   result.ok = false
 
   const reserr = result.err

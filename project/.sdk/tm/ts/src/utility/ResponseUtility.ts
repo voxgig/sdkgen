@@ -12,7 +12,7 @@ async function response(ctx: Context): Promise<Response | Error> {
   const resbasic = utility.resbasic
   const resheaders = utility.resheaders
   const resbody = utility.resbody
-  const resform = utility.resform
+  const transformResponse = utility.transformResponse
 
   const spec = ctx.spec
   const result = ctx.result
@@ -38,7 +38,7 @@ async function response(ctx: Context): Promise<Response | Error> {
     resbasic(ctx)
     resheaders(ctx)
     await resbody(ctx)
-    resform(ctx)
+    transformResponse(ctx)
 
     if (null == result.err) {
       result.ok = true

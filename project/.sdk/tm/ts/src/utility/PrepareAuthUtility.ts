@@ -9,7 +9,7 @@ const OPTION_apikey = 'apikey'
 const NOTFOUND = ''
 
 
-function auth(ctx: Context): Spec | Error {
+function prepareAuth(ctx: Context): Spec | Error {
   const utility = ctx.utility
 
   const struct = utility.struct
@@ -44,5 +44,5 @@ function auth(ctx: Context): Spec | Error {
 
 
 export {
-  auth
+  prepareAuth
 }

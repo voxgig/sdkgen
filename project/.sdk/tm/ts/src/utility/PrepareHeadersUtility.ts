@@ -5,7 +5,7 @@ import { Context } from '../types'
 import { getprop } from './StructUtility'
 
 
-function headers(ctx: Context) {
+function prepareHeaders(ctx: Context) {
   const utility = ctx.utility
   const clone = utility.struct.clone
 
@@ -20,5 +20,5 @@ function headers(ctx: Context) {
 
 
 export {
-  headers
+  prepareHeaders
 }

@@ -1,5 +1,5 @@
 
-import { Context, Response } from '../types'
+import { Context, Response, Result } from '../types'
 
 
 async function request(ctx: Context): Promise<Response | Error> {
@@ -11,16 +11,9 @@ async function request(ctx: Context): Promise<Response | Error> {
   const { spec, utility } = ctx
   const { fullurl, fetcher } = utility
 
-  let response: any = {}
+  let response = new Response({})
 
-  let result = {
-    ok: false,
-    status: -1,
-    statusText: '',
-    headers: {},
-    body: undefined,
-    err: undefined,
-  }
+  let result = new Result({})
 
   ctx.result = result
 
@@ -56,18 +49,20 @@ async function request(ctx: Context): Promise<Response | Error> {
     spec.step = 'prerequest'
 
     // TODO: see js code, use `native` prop here
-    response = await fetcher(ctx, url, fetchdef)
+    const fetched = await fetcher(ctx, url, fetchdef)
 
-    if (null == response) {
-      response = { err: new Error('response: undefined') }
+    if (null == fetched) {
+      response = new Response({ err: new Error('response: undefined') })
     }
-    else if (response instanceof Error) {
-      response = { err: response }
+    else if (fetched instanceof Error) {
+      response = new Response({ err: fetched })
+    }
+    else {
+      response = new Response(fetched)
     }
   }
   catch (err) {
-    response = response || {}
-    response.err = err
+    response.err = err as Error
   }
 
   spec.step = 'postrequest'

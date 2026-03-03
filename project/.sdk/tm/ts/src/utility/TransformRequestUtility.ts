@@ -5,7 +5,7 @@ import { Context } from '../types'
  *
  * The operation (op) property `reqform` is used to perform the data preparation.
  */
-function reqform(ctx: Context) {
+function transformRequest(ctx: Context) {
   const { spec, utility, alt } = ctx
   const { struct, error } = utility
   const { isfunc, transform } = struct
@@ -29,5 +29,5 @@ function reqform(ctx: Context) {
 
 
 export {
-  reqform
+  transformRequest
 }

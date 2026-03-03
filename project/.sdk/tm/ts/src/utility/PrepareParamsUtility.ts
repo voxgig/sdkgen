@@ -2,7 +2,7 @@
 import { Context } from '../types'
 
 
-function params(ctx: Context) {
+function prepareParams(ctx: Context) {
   const utility = ctx.utility
   const findparam = utility.findparam
 
@@ -33,5 +33,5 @@ function params(ctx: Context) {
 
 
 export {
-  params
+  prepareParams
 }

@@ -6,7 +6,7 @@ import { Context } from '../types'
  *
  * The operation (op) property `resform` is used to perform the data extraction.
  */
-function resform(ctx: Context) {
+function transformResponse(ctx: Context) {
   const { spec, result, utility, alt } = ctx
   const { struct, error } = utility
   const { isfunc, transform } = struct
@@ -32,5 +32,5 @@ function resform(ctx: Context) {
 
 
 export {
-  resform
+  transformResponse
 }

@@ -1,7 +1,7 @@
 
 import { Context } from '../types'
 
-function method(ctx: Context) {
+function prepareMethod(ctx: Context) {
   const { op } = ctx
   const opname = op.name
 
@@ -21,5 +21,5 @@ function method(ctx: Context) {
 
 
 export {
-  method
+  prepareMethod
 }

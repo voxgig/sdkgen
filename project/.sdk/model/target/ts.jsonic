@@ -13,9 +13,9 @@ main: kit: target: ts: {
   }
   
   deps: {
-    'dotenv': { active: true, version: '^16.4.5', kind: dev }
-    'typescript': { active: true, version: '^5.8.3', kind: dev }
-    '@types/node': { active: true, version: '^22.15.3', kind: dev }
+    'dotenv': { active: true, version: '^17.3.1', kind: dev }
+    'typescript': { active: true, version: '^5.9.3', kind: dev }
+    '@types/node': { active: true, version: '^25.3.3', kind: dev }
   }
 }
 

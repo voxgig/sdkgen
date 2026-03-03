@@ -1,9 +1,6 @@
 
 import { Context } from '../types'
 
-import { setprop, getprop } from './StructUtility'
-
-
 /* Find value of a match parameter, possibly using an alias.
  *
  * The match parameter may have an alias key. For example, the parameter `foo_id` may be
@@ -12,11 +9,22 @@ import { setprop, getprop } from './StructUtility'
  * This function returns `undefined` rather than failing.
  */
 function findparam(ctx: Context, param: any) {
-  let { alt, spec, match, reqmatch, data, reqdata } = ctx
+  const { alt, spec, match, reqmatch, data, reqdata } = ctx
+
+  const utility = ctx.utility
+  const struct = utility.struct
+
+  const getprop = struct.getprop
+  const setprop = struct.setprop
+
+  const typify = struct.typify
+  const T_string = struct.T_string
+
+  const pt = typify(param)
 
   // TODO: review this search algorithm
 
-  const key = param.name
+  const key = 0 < (T_string & pt) ? param : getprop(param, 'name')
 
   let akey = getprop(alt.alias, key)
 

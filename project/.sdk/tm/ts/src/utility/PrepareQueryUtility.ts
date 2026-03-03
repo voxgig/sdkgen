@@ -2,7 +2,7 @@
 import { Context } from '../types'
 
 
-function query(ctx: Context) {
+function prepareQuery(ctx: Context) {
   const { alt } = ctx
   let { params } = alt
   let { reqmatch } = ctx
@@ -23,5 +23,5 @@ function query(ctx: Context) {
 
 
 export {
-  query
+  prepareQuery
 }

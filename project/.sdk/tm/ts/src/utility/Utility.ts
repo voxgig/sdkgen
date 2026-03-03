@@ -16,8 +16,8 @@
 
 
 import { addfeature } from './AddfeatureUtility'
-import { auth } from './AuthUtility'
-import { body } from './BodyUtility'
+import { prepareAuth } from './PrepareAuthUtility'
+import { prepareBody } from './PrepareBodyUtility'
 import { clean } from './CleanUtility'
 import { done } from './DoneUtility'
 import { error } from './ErrorUtility'
@@ -25,20 +25,20 @@ import { featureHook } from './FeatureHookUtility'
 import { fetcher } from './FetcherUtility'
 import { findparam } from './FindparamUtility'
 import { fullurl } from './FullurlUtility'
-import { headers } from './HeadersUtility'
+import { prepareHeaders } from './PrepareHeadersUtility'
 import { initfeature } from './InitfeatureUtility'
-import { makeContext } from './ContextUtility'
+import { makeContext } from './MakeContextUtility'
 import { makeOperation } from './OperationUtility'
-import { method } from './MethodUtility'
+import { prepareMethod } from './PrepareMethodUtility'
 import { options } from './OptionsUtility'
-import { params } from './ParamsUtility'
+import { prepareParams } from './PrepareParamsUtility'
 import { preparePath } from './PreparePathUtility'
-import { query } from './QueryUtility'
-import { reqform } from './ReqformUtility'
+import { prepareQuery } from './PrepareQueryUtility'
+import { transformRequest } from './TransformRequestUtility'
 import { request } from './RequestUtility'
 import { resbasic } from './ResbasicUtility'
 import { resbody } from './ResbodyUtility'
-import { resform } from './ResformUtility'
+import { transformResponse } from './TransformResponseUtility'
 import { resheaders } from './ResheadersUtility'
 import { response } from './ResponseUtility'
 import { result } from './ResultUtility'
@@ -51,8 +51,8 @@ import { StructUtility } from './StructUtility'
 class Utility {
 
   addfeature = addfeature
-  auth = auth
-  body = body
+  prepareAuth = prepareAuth
+  prepareBody = prepareBody
   clean = clean
   done = done
   error = error
@@ -60,20 +60,20 @@ class Utility {
   fetcher = fetcher
   findparam = findparam
   fullurl = fullurl
-  headers = headers
+  prepareHeaders = prepareHeaders
   initfeature = initfeature
   makeContext = makeContext
   makeOperation = makeOperation
-  method = method
+  prepareMethod = prepareMethod
   options = options
-  params = params
+  prepareParams = prepareParams
   preparePath = preparePath
-  query = query
-  reqform = reqform
+  prepareQuery = prepareQuery
+  transformRequest = transformRequest
   request = request
   resbasic = resbasic
   resbody = resbody
-  resform = resform
+  transformResponse = transformResponse
   resheaders = resheaders
   response = response
   result = result
