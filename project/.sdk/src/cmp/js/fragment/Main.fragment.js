@@ -10,7 +10,7 @@ class NameSDK {
   
   constructor(options) {
 
-    this.#options = this.#utility.options({
+    this.#options = this.#utility.makeOptions({
       client: this,
       utility: this.#utility,
       config: Config,

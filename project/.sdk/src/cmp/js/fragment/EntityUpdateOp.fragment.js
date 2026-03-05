@@ -4,7 +4,7 @@ async update(data) {
   let entity = this
   let client = this.#client
   const utility = this.#utility
-  const { operator, spec, request, response, result, error, struct, done } = utility
+  const { operator, makeSpec, makeRequest, makeResponse, makeResult, error, struct, done } = utility
   
   let op = {
     entity: 'Name',
@@ -31,22 +31,22 @@ async update(data) {
 
   this.#data = op.data
   
-  await spec(ctx)
+  await makeSpec(ctx)
 
   
   // #PreRequest-Hook
 
-  await request(ctx)
+  await makeRequest(ctx)
 
   
   // #PreResponse-Hook
 
-  await response(ctx)
+  await makeResponse(ctx)
 
   
   // #PreResult-Hook
 
-  await result(ctx)
+  await makeResult(ctx)
 
 
   // #PostOperation-Hook

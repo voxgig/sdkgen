@@ -2,7 +2,7 @@
 import { Context } from '../types'
 
 
-function fullurl(ctx: Context): Error | string {
+function makeUrl(ctx: Context): Error | string {
   const utility = ctx.utility
   const spec = ctx.spec
   const result = ctx.result
@@ -58,5 +58,5 @@ function fullurl(ctx: Context): Error | string {
 
 
 export {
-  fullurl
+  makeUrl
 }

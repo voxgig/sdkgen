@@ -55,7 +55,7 @@ const Main = cmp(async function Main(props: any) {
             '#BuildFeatures': ({ indent }: any) => {
               List({ item: feature, line: false }, ({ item }: any) =>
                 Line({ indent },
-                  `addfeature(this._rootctx, new ${item.Name}Feature())`))
+                  `featureAdd(this._rootctx, new ${item.Name}Feature())`))
             },
 
             '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `

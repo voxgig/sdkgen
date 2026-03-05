@@ -2,7 +2,7 @@
 import { Context } from '../types'
 
 
-async function resbody(ctx: Context) {
+async function resultBody(ctx: Context) {
   const { response, result } = ctx
 
   if (result) {
@@ -17,5 +17,5 @@ async function resbody(ctx: Context) {
 
 
 export {
-  resbody
+  resultBody
 }

@@ -6,7 +6,7 @@ import { getprop } from './StructUtility'
 
 // Ensure standard operation definition.
 // TODO: rename to alt
-function selection(ctx: Context): Alt | Error {
+function makeSelection(ctx: Context): Alt | Error {
   if (ctx.out.selected) {
     return ctx.alt = ctx.out.selected
   }
@@ -74,5 +74,5 @@ function selection(ctx: Context): Alt | Error {
 
 
 export {
-  selection,
+  makeSelection,
 }

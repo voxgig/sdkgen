@@ -2,7 +2,7 @@
 import { Context } from '../types'
 
 
-function options(ctx: Context) {
+function makeOptions(ctx: Context) {
   const utility = ctx.utility
   const options = ctx.options
   const struct = utility.struct
@@ -90,5 +90,5 @@ function options(ctx: Context) {
 
 
 export {
-  options
+  makeOptions
 }

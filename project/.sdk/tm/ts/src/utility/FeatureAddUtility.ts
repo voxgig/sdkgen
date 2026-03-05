@@ -2,7 +2,7 @@
 import { Context, Feature } from '../types'
 
 
-function addfeature(ctx: Context, f: Feature) {
+function featureAdd(ctx: Context, f: Feature) {
   const client = ctx.client
   const struct = ctx.utility.struct
   const setprop = struct.setprop
@@ -43,5 +43,5 @@ function addfeature(ctx: Context, f: Feature) {
 
 
 export {
-  addfeature
+  featureAdd
 }

@@ -8,7 +8,7 @@ import { Context } from '../types'
  *
  * This function returns `undefined` rather than failing.
  */
-function findparam(ctx: Context, param: any) {
+function param(ctx: Context, paramdef: any) {
   const { alt, spec, match, reqmatch, data, reqdata } = ctx
 
   const utility = ctx.utility
@@ -20,11 +20,11 @@ function findparam(ctx: Context, param: any) {
   const typify = struct.typify
   const T_string = struct.T_string
 
-  const pt = typify(param)
+  const pt = typify(paramdef)
 
   // TODO: review this search algorithm
 
-  const key = 0 < (T_string & pt) ? param : getprop(param, 'name')
+  const key = 0 < (T_string & pt) ? paramdef : getprop(paramdef, 'name')
 
   let akey = getprop(alt.alias, key)
 
@@ -64,6 +64,6 @@ function findparam(ctx: Context, param: any) {
 
 
 export {
-  findparam
+  param
 }
 

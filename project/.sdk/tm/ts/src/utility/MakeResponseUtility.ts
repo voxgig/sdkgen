@@ -2,16 +2,16 @@
 import { Context, Response } from '../types'
 
 
-async function response(ctx: Context): Promise<Response | Error> {
+async function makeResponse(ctx: Context): Promise<Response | Error> {
   // PreResponse feature hook has already provided a result.
   if (ctx.out.response) {
     return ctx.out.response
   }
 
   const utility = ctx.utility
-  const resbasic = utility.resbasic
-  const resheaders = utility.resheaders
-  const resbody = utility.resbody
+  const resultBasic = utility.resultBasic
+  const resultHeaders = utility.resultHeaders
+  const resultBody = utility.resultBody
   const transformResponse = utility.transformResponse
 
   const spec = ctx.spec
@@ -35,9 +35,9 @@ async function response(ctx: Context): Promise<Response | Error> {
   spec.step = 'response'
 
   try {
-    resbasic(ctx)
-    resheaders(ctx)
-    await resbody(ctx)
+    resultBasic(ctx)
+    resultHeaders(ctx)
+    await resultBody(ctx)
     transformResponse(ctx)
 
     if (null == result.err) {
@@ -57,5 +57,5 @@ async function response(ctx: Context): Promise<Response | Error> {
 
 
 export {
-  response
+  makeResponse
 }

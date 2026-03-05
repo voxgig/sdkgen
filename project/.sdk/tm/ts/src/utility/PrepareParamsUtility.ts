@@ -4,21 +4,21 @@ import { Context } from '../types'
 
 function prepareParams(ctx: Context) {
   const utility = ctx.utility
-  const findparam = utility.findparam
+  const findparam = utility.param
 
   // const struct = utility.struct
   // const { validate } = struct
 
   const alt = ctx.alt
 
-  let param = alt.args.param
+  let params = alt.args.param
   let reqmatch = ctx.reqmatch
 
-  param = param || []
+  params = params || []
   reqmatch = reqmatch || {}
 
   let out: any = {}
-  for (let pd of param) {
+  for (let pd of params) {
     let val = findparam(ctx, pd)
     if (null != val) {
       out[pd.name] = val

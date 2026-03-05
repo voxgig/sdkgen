@@ -15,7 +15,7 @@
  */
 
 
-import { addfeature } from './AddfeatureUtility'
+import { featureAdd } from './FeatureAddUtility'
 import { prepareAuth } from './PrepareAuthUtility'
 import { prepareBody } from './PrepareBodyUtility'
 import { clean } from './CleanUtility'
@@ -23,34 +23,34 @@ import { done } from './DoneUtility'
 import { error } from './ErrorUtility'
 import { featureHook } from './FeatureHookUtility'
 import { fetcher } from './FetcherUtility'
-import { findparam } from './FindparamUtility'
-import { fullurl } from './FullurlUtility'
+import { param } from './ParamUtility'
+import { makeUrl } from './MakeUrlUtility'
 import { prepareHeaders } from './PrepareHeadersUtility'
-import { initfeature } from './InitfeatureUtility'
+import { featureInit } from './FeatureInitUtility'
 import { makeContext } from './MakeContextUtility'
 import { makeOperation } from './OperationUtility'
 import { prepareMethod } from './PrepareMethodUtility'
-import { options } from './OptionsUtility'
+import { makeOptions } from './MakeOptionsUtility'
 import { prepareParams } from './PrepareParamsUtility'
 import { preparePath } from './PreparePathUtility'
 import { prepareQuery } from './PrepareQueryUtility'
 import { transformRequest } from './TransformRequestUtility'
-import { request } from './RequestUtility'
-import { resbasic } from './ResbasicUtility'
-import { resbody } from './ResbodyUtility'
+import { makeRequest } from './MakeRequestUtility'
+import { resultBasic } from './ResultBasicUtility'
+import { resultBody } from './ResultBodyUtility'
 import { transformResponse } from './TransformResponseUtility'
-import { resheaders } from './ResheadersUtility'
-import { response } from './ResponseUtility'
-import { result } from './ResultUtility'
-import { selection } from './SelectionUtility'
-import { spec } from './SpecUtility'
+import { resultHeaders } from './ResultHeadersUtility'
+import { makeResponse } from './MakeResponseUtility'
+import { makeResult } from './MakeResultUtility'
+import { makeSelection } from './MakeSelectionUtility'
+import { makeSpec } from './MakeSpecUtility'
 
 import { StructUtility } from './StructUtility'
 
 
 class Utility {
 
-  addfeature = addfeature
+  featureAdd = featureAdd
   prepareAuth = prepareAuth
   prepareBody = prepareBody
   clean = clean
@@ -58,27 +58,27 @@ class Utility {
   error = error
   featureHook = featureHook
   fetcher = fetcher
-  findparam = findparam
-  fullurl = fullurl
+  param = param
+  makeUrl = makeUrl
   prepareHeaders = prepareHeaders
-  initfeature = initfeature
+  featureInit = featureInit
   makeContext = makeContext
   makeOperation = makeOperation
   prepareMethod = prepareMethod
-  options = options
+  makeOptions = makeOptions
   prepareParams = prepareParams
   preparePath = preparePath
   prepareQuery = prepareQuery
   transformRequest = transformRequest
-  request = request
-  resbasic = resbasic
-  resbody = resbody
+  makeRequest = makeRequest
+  resultBasic = resultBasic
+  resultBody = resultBody
   transformResponse = transformResponse
-  resheaders = resheaders
-  response = response
-  result = result
-  selection = selection
-  spec = spec
+  resultHeaders = resultHeaders
+  makeResponse = makeResponse
+  makeResult = makeResult
+  makeSelection = makeSelection
+  makeSpec = makeSpec
 
   struct = new StructUtility()
 }

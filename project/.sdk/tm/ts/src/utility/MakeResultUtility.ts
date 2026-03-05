@@ -2,7 +2,7 @@
 import { Result, Context } from '../types'
 
 
-function result(ctx: Context): Result | Error {
+function makeResult(ctx: Context): Result | Error {
   // PreResult feature hook has already provided a result.
   if (ctx.out.result) {
     return ctx.out.result
@@ -52,5 +52,5 @@ function result(ctx: Context): Result | Error {
 
 
 export {
-  result
+  makeResult
 }

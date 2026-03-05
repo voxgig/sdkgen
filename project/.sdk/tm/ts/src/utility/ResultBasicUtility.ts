@@ -2,7 +2,7 @@
 import { Context } from '../types'
 
 
-function resbasic(ctx: Context) {
+function resultBasic(ctx: Context) {
   const { response, result } = ctx
 
   if (null != result && null != response) {
@@ -30,5 +30,5 @@ function resbasic(ctx: Context) {
 
 
 export {
-  resbasic
+  resultBasic
 }

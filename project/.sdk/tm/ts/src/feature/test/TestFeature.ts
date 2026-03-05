@@ -42,7 +42,7 @@ class TestFeature extends BaseFeature {
 
     function testFetcher(ctx: any, _fullurl: string, _fetchdef: any) {
       const struct = ctx.utility.struct
-      const findparam = ctx.utility.findparam
+      const param = ctx.utility.param
 
       const getprop = struct.getprop
       const clone = struct.clone
@@ -134,7 +134,7 @@ class TestFeature extends BaseFeature {
       }
       else if ('create' === op.name) {
         const args = self.buildArgs(ctx, op, ctx.reqdata)
-        let id = findparam(ctx, 'id')
+        let id = param(ctx, 'id')
         if (null == id) {
           id = ((1e4 * Math.random() | 0).toString(16) +
             (1e4 * Math.random() | 0).toString(16) +
@@ -157,7 +157,7 @@ class TestFeature extends BaseFeature {
 
   buildArgs(ctx: any, op: any, args: any): any {
     const struct = ctx.utility.struct
-    const findparam = ctx.utility.findparam
+    const param = ctx.utility.param
 
     const getprop = struct.getprop
     const keysof = struct.keysof
@@ -182,7 +182,7 @@ class TestFeature extends BaseFeature {
 
     for (let k of keysof(args)) {
       if ('id' === k || !isempty(select(reqd, k))) {
-        const v = findparam(ctx, k)
+        const v = param(ctx, k)
         const ka = getprop(op.alias, k)
 
         let qor: any = [{ [k]: v }]

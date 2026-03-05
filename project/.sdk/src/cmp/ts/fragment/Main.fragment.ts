@@ -30,7 +30,7 @@ class ProjectNameSDK {
       shared: new WeakMap()
     })
 
-    this._options = this._utility.options(this._rootctx)
+    this._options = this._utility.makeOptions(this._rootctx)
 
     const struct = this._utility.struct
     const getpath = struct.getpath
@@ -44,25 +44,25 @@ class ProjectNameSDK {
 
     this._features = []
 
-    const addfeature = this._utility.addfeature
-    const initfeature = this._utility.initfeature
+    const featureAdd = this._utility.featureAdd
+    const featureInit = this._utility.featureInit
 
     items(this._options.feature, (fitem: [string, any]) => {
       const fname = fitem[0]
       const fopts = fitem[1]
       if (fopts.active) {
-        addfeature(this._rootctx, this._rootctx.config.makeFeature(fname))
+        featureAdd(this._rootctx, this._rootctx.config.makeFeature(fname))
       }
     })
 
     if (null != this._options.extend) {
       for (let f of this._options.extend) {
-        addfeature(this._rootctx, f)
+        featureAdd(this._rootctx, f)
       }
     }
 
     for (let f of this._features) {
-      initfeature(this._rootctx, f)
+      featureInit(this._rootctx, f)
     }
 
     const featureHook = this._utility.featureHook

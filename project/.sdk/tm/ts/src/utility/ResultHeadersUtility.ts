@@ -2,7 +2,7 @@
 import { Context } from '../types'
 
 
-function resheaders(ctx: Context) {
+function resultHeaders(ctx: Context) {
   const { response, result } = ctx
 
   if (result) {
@@ -21,5 +21,5 @@ function resheaders(ctx: Context) {
 
 
 export {
-  resheaders
+  resultHeaders
 }

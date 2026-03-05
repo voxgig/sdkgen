@@ -3,7 +3,7 @@ import { Context, Spec } from '../types'
 
 
 // Create request specificaton.
-function spec(ctx: Context): Spec | Error {
+function makeSpec(ctx: Context): Spec | Error {
   if (ctx.out.spec) {
     return ctx.spec = ctx.out.spec
   }
@@ -56,5 +56,5 @@ function spec(ctx: Context): Spec | Error {
 
 
 export {
-  spec
+  makeSpec
 }

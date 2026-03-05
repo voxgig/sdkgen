@@ -2,14 +2,14 @@
 import { Context, Response, Result } from '../types'
 
 
-async function request(ctx: Context): Promise<Response | Error> {
+async function makeRequest(ctx: Context): Promise<Response | Error> {
   // PreRequest feature hook has already provided a result.
   if (ctx.out.request) {
     return ctx.out.request
   }
 
   const { spec, utility } = ctx
-  const { fullurl, fetcher } = utility
+  const { makeUrl, fetcher } = utility
 
   let response = new Response({})
 
@@ -25,7 +25,7 @@ async function request(ctx: Context): Promise<Response | Error> {
   try {
     spec.step = 'prepare'
 
-    const url = fullurl(ctx)
+    const url = makeUrl(ctx)
     if (url instanceof Error) {
       throw url
     }
@@ -74,5 +74,5 @@ async function request(ctx: Context): Promise<Response | Error> {
 
 
 export {
-  request
+  makeRequest
 }

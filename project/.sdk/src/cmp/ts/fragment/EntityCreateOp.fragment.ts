@@ -18,11 +18,11 @@ class EntityOperation {
       done,
       error,
       featureHook,
-      selection,
-      request,
-      response,
-      result,
-      spec,
+      makeSelection,
+      makeRequest,
+      makeResponse,
+      makeResult,
+      makeSpec,
     } = utility
 
     let fres: Promise<any> | undefined = undefined
@@ -38,7 +38,7 @@ class EntityOperation {
     try {
       // #PreSelection-Hook    
 
-      ctx.out.selected = selection(ctx)
+      ctx.out.selected = makeSelection(ctx)
       if (ctx.out.selected instanceof Error) {
         return error(ctx, ctx.out.selected)
       }
@@ -46,7 +46,7 @@ class EntityOperation {
 
       // #PreSpec-Hook
 
-      ctx.out.spec = spec(ctx)
+      ctx.out.spec = makeSpec(ctx)
       if (ctx.out.spec instanceof Error) {
         return error(ctx, ctx.out.spec)
       }
@@ -54,7 +54,7 @@ class EntityOperation {
 
       // #PreRequest-Hook
 
-      ctx.out.request = await request(ctx)
+      ctx.out.request = await makeRequest(ctx)
       if (ctx.out.request instanceof Error) {
         return error(ctx, ctx.out.request)
       }
@@ -62,7 +62,7 @@ class EntityOperation {
 
       // #PreResponse-Hook
 
-      ctx.out.response = await response(ctx)
+      ctx.out.response = await makeResponse(ctx)
       if (ctx.out.response instanceof Error) {
         return error(ctx, ctx.out.response)
       }
@@ -70,7 +70,7 @@ class EntityOperation {
 
       // #PreResult-Hook
 
-      ctx.out.result = await result(ctx)
+      ctx.out.result = await makeResult(ctx)
       if (ctx.out.result instanceof Error) {
         return error(ctx, ctx.out.result)
       }
