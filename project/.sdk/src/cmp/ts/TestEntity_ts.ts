@@ -189,10 +189,18 @@ const generateCreate: OpGen = (
   Content(`
     // CREATE
     const ${entvar} = client.${nom(entity, 'Name')}()
-    const ${datavar} =
-      await ${entvar}.create(setup.data.new.${entity.name}['${ref}'])
+    let ${datavar} = setup.data.new.${entity.name}['${ref}']
+`)
+
+  each(step.match, (mi: any) => {
+    Content(`    ${datavar}['${mi.key$}'] = setup.idmap['${mi.val$}']
+`)
+  })
+
+  Content(`
+    ${datavar} = await ${entvar}.create(${datavar})
     assert(null != ${datavar}.id)
-  `)
+`)
 }
 
 
@@ -211,11 +219,11 @@ const generateList: OpGen = (
   Content(`
     // LIST
     const ${matchvar}: any = {}
-  `)
+`)
 
   each(step.match, (mi: any) => {
-    Content(`    ${matchvar}['${mi.key$}'] = setup.idmap['${mi.key$}']
-  `)
+    Content(`    ${matchvar}['${mi.key$}'] = setup.idmap['${mi.val$}']
+`)
   })
 
   Content(`
