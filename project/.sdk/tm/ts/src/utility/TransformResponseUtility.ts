@@ -7,9 +7,12 @@ import { Context } from '../types'
  * The operation (op) property `resform` is used to perform the data extraction.
  */
 function transformResponse(ctx: Context) {
-  const { spec, result, utility, alt } = ctx
-  const { struct, error } = utility
-  const { isfunc, transform } = struct
+  const spec = ctx.spec
+  const result = ctx.result
+  const utility = ctx.utility
+  const target = ctx.target
+  const isfunc = utility.struct.isfunc
+  const transform = utility.struct.transform
 
   if (spec) {
     spec.step = 'resform'
@@ -20,13 +23,13 @@ function transformResponse(ctx: Context) {
   }
 
   try {
-    const resform = alt.transform.res
+    const resform = target.transform.res
     const resdata = isfunc(resform) ? resform(ctx) : transform(ctx.result, resform)
     result.resdata = resdata
     return resdata
   }
   catch (err) {
-    return error(ctx, err)
+    return utility.makeError(ctx, err)
   }
 }
 

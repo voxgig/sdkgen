@@ -1,7 +1,7 @@
 
 import { ProjectNameSDK } from './ProjectNameSDK'
 
-import { Alt } from './Alt'
+import { Target } from './Target'
 import { Context } from './Context'
 import { Control } from './Control'
 import { Operation } from './Operation'
@@ -38,7 +38,7 @@ interface Feature {
 
 
 export {
-  Alt,
+  Target,
   Context,
   Control,
   Operation,

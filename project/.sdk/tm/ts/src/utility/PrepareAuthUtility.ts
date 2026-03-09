@@ -6,7 +6,7 @@ const HEADER_auth = 'authorization'
 
 const OPTION_apikey = 'apikey'
 
-const NOTFOUND = ''
+const NOTFOUND = '__NOTFOUND__'
 
 
 function prepareAuth(ctx: Context): Spec | Error {
@@ -21,7 +21,7 @@ function prepareAuth(ctx: Context): Spec | Error {
   const spec = ctx.spec
 
   if (null == spec) {
-    return new Error('Expected context spec property to be defined.')
+    return ctx.error('auth_no_spec', 'Expected context spec property to be defined.')
   }
 
 

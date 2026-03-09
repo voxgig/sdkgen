@@ -3,7 +3,8 @@ import { Context } from '../types'
 
 
 function resultHeaders(ctx: Context) {
-  const { response, result } = ctx
+  const response = ctx.response
+  const result = ctx.result
 
   if (result) {
     if (response && response.headers && response.headers.forEach) {

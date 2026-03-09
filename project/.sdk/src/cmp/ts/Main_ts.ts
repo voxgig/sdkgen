@@ -21,7 +21,7 @@ import {
 import { Package } from './Package_ts'
 import { Config } from './Config_ts'
 import { MainEntity } from './MainEntity_ts'
-// import { Test } from './Test_ts'
+import { SdkError } from './SdkError_ts'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -35,9 +35,9 @@ const Main = cmp(async function Main(props: any) {
 
   Package({ target })
 
-  // Test({ target })
-
   Folder({ name: 'src' }, () => {
+
+    SdkError({ target })
 
     File({ name: model.const.Name + 'SDK.' + target.name }, () => {
 

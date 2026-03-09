@@ -1,36 +1,34 @@
 
-import { Context, Alt } from '../types'
-
-import { getprop } from './StructUtility'
+import { Context, Target } from '../types'
 
 
-// Ensure standard operation definition.
-// TODO: rename to alt
-function makeSelection(ctx: Context): Alt | Error {
-  if (ctx.out.selected) {
-    return ctx.alt = ctx.out.selected
+function makeTarget(ctx: Context): Target | Error {
+  if (ctx.out.target) {
+    return ctx.target = ctx.out.target
   }
 
-  const { op, options } = ctx
+  const getprop = ctx.utility.struct.getprop
+  const op = ctx.op
+  const options = ctx.options
 
   if (!options.allow.op.includes(op.name)) {
-    return Error('Operation "' + op.name +
+    ctx.error('target_op_allow', 'Operation "' + op.name +
       '" not allowed by SDK option allow.op value: "' + options.allow.op + '"')
   }
 
   // Choose the appropriate operation alternate based on the match or data.
-  if (1 === op.alts.length) {
-    ctx.alt = op.alts[0]
+  if (1 === op.targets.length) {
+    ctx.target = op.targets[0]
   }
   else {
     // Operation argument has priority, but also look in current data or match.
     const reqselector = getprop(ctx, 'req' + op.select)
     const selector = getprop(ctx, op.select)
 
-    let alt
-    for (let i = 0; i < op.alts.length; i++) {
-      alt = op.alts[i]
-      const select = alt.select
+    let target
+    for (let i = 0; i < op.targets.length; i++) {
+      target = op.targets[i]
+      const select = target.select
       let found = true
 
       if (selector && select.exist) {
@@ -59,20 +57,20 @@ function makeSelection(ctx: Context): Alt | Error {
 
     if (
       null != reqselector.$action &&
-      null != alt &&
-      reqselector.$action !== alt.select.$action
+      null != target &&
+      reqselector.$action !== target.select.$action
     ) {
-      return Error('Operation "' + op.name +
+      return ctx.error('target_action_invalid', 'Operation "' + op.name +
         '" action "' + reqselector.$action + '" is not valid.')
     }
 
-    ctx.alt = alt
+    ctx.target = target
   }
 
-  return ctx.alt
+  return ctx.target
 }
 
 
 export {
-  makeSelection,
+  makeTarget,
 }

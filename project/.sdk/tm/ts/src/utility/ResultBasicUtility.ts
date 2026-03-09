@@ -3,7 +3,8 @@ import { Context } from '../types'
 
 
 function resultBasic(ctx: Context) {
-  const { response, result } = ctx
+  const response = ctx.response
+  const result = ctx.result
 
   if (null != result && null != response) {
     result.status = response.status || -1
@@ -17,7 +18,7 @@ function resultBasic(ctx: Context) {
         result.err.message = prevmsg + ': ' + msg
       }
       else {
-        result.err = new Error(msg)
+        result.err = ctx.error('request_status', msg)
       }
     }
     else if (response.err) {

@@ -8,8 +8,10 @@ async function makeRequest(ctx: Context): Promise<Response | Error> {
     return ctx.out.request
   }
 
-  const { spec, utility } = ctx
-  const { makeUrl, fetcher } = utility
+  const spec = ctx.spec
+  const utility = ctx.utility
+  const makeUrl = utility.makeUrl
+  const fetcher = utility.fetcher
 
   let response = new Response({})
 
@@ -18,7 +20,7 @@ async function makeRequest(ctx: Context): Promise<Response | Error> {
   ctx.result = result
 
   if (null == spec) {
-    return new Error('Expected context spec property to be defined.')
+    return ctx.error('request_no_spec', 'Expected context spec property to be defined.')
   }
 
 
@@ -52,7 +54,7 @@ async function makeRequest(ctx: Context): Promise<Response | Error> {
     const fetched = await fetcher(ctx, url, fetchdef)
 
     if (null == fetched) {
-      response = new Response({ err: new Error('response: undefined') })
+      response = new Response({ err: ctx.error('request_no_response', 'response: undefined') })
     }
     else if (fetched instanceof Error) {
       response = new Response({ err: fetched })

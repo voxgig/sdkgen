@@ -6,15 +6,18 @@ function makeOptions(ctx: Context) {
   const utility = ctx.utility
   const options = ctx.options
   const struct = utility.struct
+  const items = struct.items
+  const setprop = struct.setprop
+  const merge = struct.merge
+  const validate = struct.validate
+  const escre = struct.escre
 
   let opts = { ...(options || {}) }
 
   const customUtils = opts.utility || {}
-  for (let key of Object.keys(customUtils)) {
-    struct.setprop(utility, key, customUtils[key])
+  for (let [key, val] of items(customUtils)) {
+    setprop(utility, key, val)
   }
-
-  const { merge, validate } = utility.struct
 
   let config = ctx.config || {}
   let cfgopts = config.options || {}
@@ -79,7 +82,7 @@ function makeOptions(ctx: Context) {
   const keyre = opts.clean.keys
     .split(/\s*,\s*/)
     .filter((s: string) => null != s && '' !== s)
-    .map((key: string) => struct.escre(key)).join('|')
+    .map((key: string) => escre(key)).join('|')
 
   if ('' != keyre) {
     opts.__derived__.clean.keyre = keyre

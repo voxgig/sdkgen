@@ -7,15 +7,15 @@ function prepareParams(ctx: Context) {
   const findparam = utility.param
 
   // const struct = utility.struct
-  // const { validate } = struct
+  // const validate = struct.validate
 
-  const alt = ctx.alt
+  const target = ctx.target
 
-  let params = alt.args.param
-  let reqmatch = ctx.reqmatch
+  let params = target.args.params
+  // let reqmatch = ctx.reqmatch
 
   params = params || []
-  reqmatch = reqmatch || {}
+  // reqmatch = reqmatch || {}
 
   let out: any = {}
   for (let pd of params) {
@@ -26,7 +26,7 @@ function prepareParams(ctx: Context) {
   }
 
   // TODO: review
-  // out = validate(out, op.validate.params)
+  // out = validate(out, target.validate.params)
 
   return out
 }

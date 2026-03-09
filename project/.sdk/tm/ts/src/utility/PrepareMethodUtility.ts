@@ -2,21 +2,21 @@
 import { Context } from '../types'
 
 function prepareMethod(ctx: Context) {
-  const { op } = ctx
+  const op = ctx.op
   const opname = op.name
 
   let key = opname
 
-  // TODO: options
-  const mmap: any = {
+  const methodMap: any = {
     create: 'POST',
     update: 'PUT',
     load: 'GET',
     list: 'GET',
     remove: 'DELETE',
+    patch: 'PATCH',
   }
 
-  return mmap[key]
+  return methodMap[key]
 }
 
 

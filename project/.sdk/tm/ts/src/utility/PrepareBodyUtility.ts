@@ -5,7 +5,7 @@ function prepareBody(ctx: Context) {
   const op = ctx.op
 
   const utility = ctx.utility
-  const error = utility.error
+  const error = utility.makeError
   const transformRequest = utility.transformRequest
 
   let body = undefined
@@ -14,7 +14,7 @@ function prepareBody(ctx: Context) {
     try {
       body = transformRequest(ctx)
 
-      // if (alt.check.nobody && null == body) {
+      // if (target.check.nobody && null == body) {
       //   return error(ctx, new Error('Request body is empty.'))
       // }
     }

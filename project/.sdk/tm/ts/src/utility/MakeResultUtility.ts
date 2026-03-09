@@ -18,11 +18,11 @@ function makeResult(ctx: Context): Result | Error {
   const result = ctx.result
 
   if (null == spec) {
-    return new Error('Expected context spec property to be defined.')
+    return ctx.error('result_no_spec', 'Expected context spec property to be defined.')
   }
 
   if (null == result) {
-    return new Error('Expected context result property to be defined.')
+    return ctx.error('result_no_result', 'Expected context result property to be defined.')
   }
 
   spec.step = 'result'

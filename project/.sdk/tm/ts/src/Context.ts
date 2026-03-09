@@ -2,6 +2,7 @@
 import { inspect } from 'node:util'
 
 import { ProjectNameSDK } from './ProjectNameSDK'
+import { ProjectNameError } from './ProjectNameError'
 
 import { Utility } from './utility/Utility'
 import { getprop, setprop, getpath } from './utility/StructUtility'
@@ -31,7 +32,7 @@ class Context {
   utility: Utility
 
   op: Operation
-  alt: any
+  target: any
 
   config: Record<string, any>
   entopts: Record<string, any>
@@ -95,13 +96,18 @@ class Context {
         entity: entname,
         name: opname,
         select,
-        alts: getprop(opcfg, 'alts', [])
+        targets: getprop(opcfg, 'targets', [])
       })
 
       setprop(this.opmap, opname, op)
     }
 
     return op
+  }
+
+
+  error(code: string, msg: string) {
+    return new ProjectNameError(code, msg, this)
   }
 
 

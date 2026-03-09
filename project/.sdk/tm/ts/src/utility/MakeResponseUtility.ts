@@ -20,15 +20,15 @@ async function makeResponse(ctx: Context): Promise<Response | Error> {
 
 
   if (null == spec) {
-    return new Error('Expected context spec property to be defined.')
+    return ctx.error('response_no_spec', 'Expected context spec property to be defined.')
   }
 
   if (null == response) {
-    return new Error('Expected context response property to be defined.')
+    return ctx.error('response_no_response', 'Expected context response property to be defined.')
   }
 
   if (null == result) {
-    return new Error('Expected context result property to be defined.')
+    return ctx.error('response_no_result', 'Expected context result property to be defined.')
   }
 
 

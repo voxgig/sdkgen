@@ -7,7 +7,7 @@ import { clean } from './CleanUtility'
 import { clone, delprop } from './StructUtility'
 
 
-function error(ctx: Context, err?: any) {
+function makeError(ctx: Context, err?: any) {
 
   ctx = ctx || {}
   const op = ctx.op || {}
@@ -20,7 +20,7 @@ function error(ctx: Context, err?: any) {
   const reserr = result.err
 
   err = undefined === err ? reserr : err
-  err = err || new Error('unknown error')
+  err = err || ctx.error('unknown', 'unknown error')
 
   const errmsg = err.message || 'unknown error'
   // TODO: project name should come from config
@@ -59,5 +59,5 @@ function error(ctx: Context, err?: any) {
 
 
 export {
-  error
+  makeError
 }

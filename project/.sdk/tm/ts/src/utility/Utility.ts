@@ -2,7 +2,7 @@
 
 import { clean } from './CleanUtility'
 import { done } from './DoneUtility'
-import { error } from './ErrorUtility'
+import { makeError } from './MakeErrorUtility'
 import { featureAdd } from './FeatureAddUtility'
 import { featureHook } from './FeatureHookUtility'
 import { featureInit } from './FeatureInitUtility'
@@ -12,7 +12,7 @@ import { makeOptions } from './MakeOptionsUtility'
 import { makeRequest } from './MakeRequestUtility'
 import { makeResponse } from './MakeResponseUtility'
 import { makeResult } from './MakeResultUtility'
-import { makeSelection } from './MakeSelectionUtility'
+import { makeTarget } from './MakeTargetUtility'
 import { makeSpec } from './MakeSpecUtility'
 import { makeUrl } from './MakeUrlUtility'
 import { param } from './ParamUtility'
@@ -36,7 +36,7 @@ class Utility {
 
   clean = clean
   done = done
-  error = error
+  makeError = makeError
   featureAdd = featureAdd
   featureHook = featureHook
   featureInit = featureInit
@@ -46,7 +46,7 @@ class Utility {
   makeRequest = makeRequest
   makeResponse = makeResponse
   makeResult = makeResult
-  makeSelection = makeSelection
+  makeTarget = makeTarget
   makeSpec = makeSpec
   makeUrl = makeUrl
   param = param

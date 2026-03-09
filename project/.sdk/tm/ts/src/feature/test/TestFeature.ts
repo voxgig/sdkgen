@@ -168,12 +168,12 @@ class TestFeature extends BaseFeature {
     const isempty = struct.isempty
 
     const opname = getprop(op, 'name')
-    const alt =
+    const target =
       getelem(getpath(ctx.config, [
-        'entity', getprop(ctx.entity, 'name'), 'op', opname, 'alts']), -1)
+        'entity', getprop(ctx.entity, 'name'), 'op', opname, 'targets']), -1)
 
     const reqd = transform(
-      select(getpath(alt, ['args', 'param']), { reqd: true }),
+      select(getpath(target, ['args', 'params']), { reqd: true }),
       ['`$EACH`', '', '`$KEY.name`']
     )
 

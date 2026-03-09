@@ -2,9 +2,9 @@
 import { getprop } from './utility/StructUtility'
 
 
-class Alt {
-  args: { param: any[] }
-  rename: { param: Record<string, string> }
+class Target {
+  args: { params: any[] }
+  rename: { params: Record<string, string> }
   method: string
   orig: string
   parts: string[]
@@ -16,8 +16,8 @@ class Alt {
   transform: { req: any, res: any }
 
   constructor(altmap: Record<string, any>) {
-    this.args = getprop(altmap, 'args', { param: [] })
-    this.rename = getprop(altmap, 'rename', { param: {} })
+    this.args = getprop(altmap, 'args', { params: [] })
+    this.rename = getprop(altmap, 'rename', { params: {} })
     this.method = getprop(altmap, 'method', '')
     this.orig = getprop(altmap, 'orig', '')
     this.parts = getprop(altmap, 'parts', [])
@@ -32,5 +32,5 @@ class Alt {
 
 
 export {
-  Alt,
+  Target,
 }

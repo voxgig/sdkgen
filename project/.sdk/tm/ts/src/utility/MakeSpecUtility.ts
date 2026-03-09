@@ -8,7 +8,7 @@ function makeSpec(ctx: Context): Spec | Error {
     return ctx.spec = ctx.out.spec
   }
 
-  const alt = ctx.alt
+  const target = ctx.target
   const options = ctx.options
   const utility = ctx.utility
 
@@ -23,15 +23,16 @@ function makeSpec(ctx: Context): Spec | Error {
   ctx.spec = new Spec({
     base: options.base, // string, URL endpoint base prefix,
     prefix: options.prefix,
-    parts: alt.parts,
+    parts: target.parts,
     suffix: options.suffix,
     step: 'start',
   })
 
   ctx.spec.method = prepareMethod(ctx)
 
+  // TODO: Add string utils to StructUtility
   if (!options.allow.method.includes(ctx.spec.method)) {
-    return Error('Method "' + ctx.spec.method +
+    return ctx.error('spec_method_allow', 'Method "' + ctx.spec.method +
       '" not allowed by SDK option allow.method value: "' + options.allow.method + '"')
   }
 

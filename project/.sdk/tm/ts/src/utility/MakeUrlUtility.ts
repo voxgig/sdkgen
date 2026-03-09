@@ -11,14 +11,15 @@ function makeUrl(ctx: Context): Error | string {
   const escurl = struct.escurl
   const escre = struct.escre
   const join = struct.join
+  const items = struct.items
 
 
   if (null == spec) {
-    return new Error('Expected context spec property to be defined.')
+    return ctx.error('url_no_spec', 'Expected context spec property to be defined.')
   }
 
   if (null == result) {
-    return new Error('Expected context result property to be defined.')
+    return ctx.error('url_no_result', 'Expected context result property to be defined.')
   }
 
 
@@ -28,8 +29,7 @@ function makeUrl(ctx: Context): Error | string {
 
   const params = spec.params
 
-  for (let key in params) {
-    const val = params[key]
+  for (let [key, val] of items(params)) {
     if (null != val) {
       url = url.replace(RegExp('{' + escre(key) + '}'), escurl(val))
       resmatch[key] = val
@@ -39,9 +39,8 @@ function makeUrl(ctx: Context): Error | string {
 
   /* TODO: fix
   let qsep = '?'
-  for (let key in spec.query) {
+  for (let [key, val] of items(spec.query)) {
     if (null == spec.alias[key]) {
-      const val = spec.query[key]
       if (null != val) {
         url += qsep + escurl(key) + '=' + escurl(val)
         qsep = '&'

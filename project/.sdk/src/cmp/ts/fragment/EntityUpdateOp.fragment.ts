@@ -19,7 +19,7 @@ class EntityOperation {
       done,
       error,
       featureHook,
-      makeSelection,
+      makeTarget,
       makeRequest,
       makeResponse,
       makeResult,
@@ -40,9 +40,9 @@ class EntityOperation {
 
       // #PreSelection-Hook    
 
-      ctx.out.selected = makeSelection(ctx)
-      if (ctx.out.selected instanceof Error) {
-        return error(ctx, ctx.out.selected)
+      ctx.out.target = makeTarget(ctx)
+      if (ctx.out.target instanceof Error) {
+        return error(ctx, ctx.out.target)
       }
 
 

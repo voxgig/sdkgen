@@ -3,16 +3,19 @@ import { Context } from '../types'
 
 
 function prepareQuery(ctx: Context) {
-  const { alt } = ctx
-  let { params } = alt
-  let { reqmatch } = ctx
+  const utility = ctx.utility
+  const struct = utility.struct
+  const items = struct.items
+
+  const target = ctx.target
+  let params = target.params
+  let reqmatch = ctx.reqmatch
 
   params = params || []
   reqmatch = reqmatch || {}
 
   const out: any = {}
-  for (let key of Object.keys(reqmatch)) {
-    let val = reqmatch[key]
+  for (let [key, val] of items(reqmatch)) {
     if (null != val && !params.includes(key)) {
       out[key] = val
     }

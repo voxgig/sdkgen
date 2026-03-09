@@ -6,16 +6,18 @@ import { Context } from '../types'
  * The operation (op) property `reqform` is used to perform the data preparation.
  */
 function transformRequest(ctx: Context) {
-  const { spec, utility, alt } = ctx
-  const { struct, error } = utility
-  const { isfunc, transform } = struct
+  const spec = ctx.spec
+  const utility = ctx.utility
+  const target = ctx.target
+  const isfunc = utility.struct.isfunc
+  const transform = utility.struct.transform
 
   if (spec) {
     spec.step = 'reqform'
   }
 
   try {
-    const reqform = alt.transform.req
+    const reqform = target.transform.req
     const reqdata = isfunc(reqform) ? reqform(ctx) : transform({
       reqdata: ctx.reqdata
     }, reqform)
@@ -23,7 +25,7 @@ function transformRequest(ctx: Context) {
     return reqdata
   }
   catch (err) {
-    return error(ctx, err)
+    return utility.makeError(ctx, err)
   }
 }
 

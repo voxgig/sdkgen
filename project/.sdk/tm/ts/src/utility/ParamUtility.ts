@@ -9,7 +9,12 @@ import { Context } from '../types'
  * This function returns `undefined` rather than failing.
  */
 function param(ctx: Context, paramdef: any) {
-  const { alt, spec, match, reqmatch, data, reqdata } = ctx
+  const target = ctx.target
+  const spec = ctx.spec
+  const match = ctx.match
+  const reqmatch = ctx.reqmatch
+  const data = ctx.data
+  const reqdata = ctx.reqdata
 
   const utility = ctx.utility
   const struct = utility.struct
@@ -26,7 +31,7 @@ function param(ctx: Context, paramdef: any) {
 
   const key = 0 < (T_string & pt) ? paramdef : getprop(paramdef, 'name')
 
-  let akey = getprop(alt.alias, key)
+  let akey = getprop(target.alias, key)
 
   let val = getprop(reqmatch, key)
 

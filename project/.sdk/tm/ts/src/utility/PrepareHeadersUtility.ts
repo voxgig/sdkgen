@@ -2,12 +2,10 @@
 import { Context } from '../types'
 
 
-import { getprop } from './StructUtility'
-
-
 function prepareHeaders(ctx: Context) {
-  const utility = ctx.utility
-  const clone = utility.struct.clone
+  const struct = ctx.utility.struct
+  const clone = struct.clone
+  const getprop = struct.getprop
 
   const client = ctx.client
 
