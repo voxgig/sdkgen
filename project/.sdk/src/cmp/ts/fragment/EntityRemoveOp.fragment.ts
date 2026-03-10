@@ -38,7 +38,7 @@ class EntityOperation {
 
     try {
 
-      // #PreOperation-Hook    
+      // #PreTarget-Hook    
 
       ctx.out.target = makeTarget(ctx)
       if (ctx.out.target instanceof Error) {

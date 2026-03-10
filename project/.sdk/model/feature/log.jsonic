@@ -15,7 +15,7 @@ main: kit: feature: log: {
     SetMatch: active: true
     GetMatch: active: true
 
-    PreOperation: active: true
+    PreTarget: active: true
     PreSpec: active: true
     PreRequest: active: true
     PreResponse: active: true

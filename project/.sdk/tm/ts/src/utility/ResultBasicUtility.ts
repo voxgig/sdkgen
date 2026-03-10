@@ -3,12 +3,16 @@ import { Context } from '../types'
 
 
 function resultBasic(ctx: Context) {
+  const utility = ctx.utility
+  const struct = utility.struct
+  const getprop = struct.getprop
+
   const response = ctx.response
   const result = ctx.result
 
   if (null != result && null != response) {
-    result.status = response.status || -1
-    result.statusText = response.statusText || 'no-status'
+    result.status = getprop(response, 'status', -1)
+    result.statusText = getprop(response, 'statusText', 'no-status')
 
     // TODO: use spec!
     if (400 <= result.status) {

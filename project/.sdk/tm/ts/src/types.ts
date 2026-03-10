@@ -28,7 +28,7 @@ interface Feature {
   GetData: (this: ProjectNameSDK, ctx: Context) => void | Promise<any>
   GetMatch: (this: ProjectNameSDK, ctx: Context) => void | Promise<any>
 
-  PreOperation: (this: ProjectNameSDK, ctx: Context) => void | Promise<any>
+  PreTarget: (this: ProjectNameSDK, ctx: Context) => void | Promise<any>
   PreSpec: (this: ProjectNameSDK, ctx: Context) => void | Promise<any>
   PreRequest: (this: ProjectNameSDK, ctx: Context) => void | Promise<any>
   PreResponse: (this: ProjectNameSDK, ctx: Context) => void | Promise<any>

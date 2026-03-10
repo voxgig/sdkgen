@@ -23,7 +23,7 @@ class BaseFeature implements Feature {
   GetMatch(this: any, _ctx: any) { }
 
 
-  PreOperation(this: any, _ctx: any) { }
+  PreTarget(this: any, _ctx: any) { }
 
   PreSpec(this: any, _ctx: any) { }
 

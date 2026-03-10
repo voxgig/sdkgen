@@ -69,8 +69,8 @@ class LogFeature {
   }
 
 
-  PreOperation(ctx) {
-    this.#loghook('PreOperation', ctx)
+  PreTarget(ctx) {
+    this.#loghook('PreTarget', ctx)
   }
 
   PreSpec(ctx) {

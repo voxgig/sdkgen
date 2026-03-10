@@ -86,16 +86,16 @@ class Context {
     if (null == op && null != opname) {
       const entname = getprop(this.entity, 'name', '')
       const opcfg = getpath(this.config, ['entity', entname, 'op', opname])
-      let select = 'match'
+      let input = 'match'
 
       if ('update' === opname || 'create' === opname) {
-        select = 'data'
+        input = 'data'
       }
 
       op = new Operation({
         entity: entname,
         name: opname,
-        select,
+        input,
         targets: getprop(opcfg, 'targets', [])
       })
 

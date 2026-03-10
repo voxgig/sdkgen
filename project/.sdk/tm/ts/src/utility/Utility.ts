@@ -7,6 +7,7 @@ import { featureAdd } from './FeatureAddUtility'
 import { featureHook } from './FeatureHookUtility'
 import { featureInit } from './FeatureInitUtility'
 import { fetcher } from './FetcherUtility'
+import { makeFetchDef } from './MakeFetchDefUtility'
 import { makeContext } from './MakeContextUtility'
 import { makeOptions } from './MakeOptionsUtility'
 import { makeRequest } from './MakeRequestUtility'
@@ -41,6 +42,7 @@ class Utility {
   featureHook = featureHook
   featureInit = featureInit
   fetcher = fetcher
+  makeFetchDef = makeFetchDef
   makeContext = makeContext
   makeOptions = makeOptions
   makeRequest = makeRequest

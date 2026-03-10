@@ -10,7 +10,7 @@ function prepareBody(ctx: Context) {
 
   let body = undefined
 
-  if ('data' === op.select) {
+  if ('data' === op.input) {
     try {
       body = transformRequest(ctx)
 

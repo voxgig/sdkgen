@@ -22,7 +22,7 @@ async update(data) {
   let ctx = {client, entity, op, utility}
 
 
-  // #PreOperation-Hook    
+  // #PreTarget-Hook    
 
   await operator(ctx)
 

@@ -22,8 +22,8 @@ function makeTarget(ctx: Context): Target | Error {
   }
   else {
     // Operation argument has priority, but also look in current data or match.
-    const reqselector = getprop(ctx, 'req' + op.select)
-    const selector = getprop(ctx, op.select)
+    const reqselector = getprop(ctx, 'req' + op.input)
+    const selector = getprop(ctx, op.input)
 
     let target
     for (let i = 0; i < op.targets.length; i++) {

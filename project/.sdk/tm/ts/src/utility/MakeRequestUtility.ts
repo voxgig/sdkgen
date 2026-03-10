@@ -10,8 +10,8 @@ async function makeRequest(ctx: Context): Promise<Response | Error> {
 
   const spec = ctx.spec
   const utility = ctx.utility
-  const makeUrl = utility.makeUrl
   const fetcher = utility.fetcher
+  const makeFetchDef = utility.makeFetchDef
 
   let response = new Response({})
 
@@ -25,23 +25,9 @@ async function makeRequest(ctx: Context): Promise<Response | Error> {
 
 
   try {
-    spec.step = 'prepare'
-
-    const url = makeUrl(ctx)
-    if (url instanceof Error) {
-      throw url
-    }
-
-    spec.url = url
-
-    const fetchdef: any = {
-      method: spec.method,
-      headers: spec.headers,
-    }
-
-    if (null != spec.body) {
-      fetchdef.body =
-        'object' === typeof spec.body ? JSON.stringify(spec.body) : spec.body
+    const fetchdef = makeFetchDef(ctx)
+    if (fetchdef instanceof Error) {
+      throw fetchdef
     }
 
     if (ctx.ctrl.explain) {
@@ -51,7 +37,7 @@ async function makeRequest(ctx: Context): Promise<Response | Error> {
     spec.step = 'prerequest'
 
     // TODO: see js code, use `native` prop here
-    const fetched = await fetcher(ctx, url, fetchdef)
+    const fetched = await fetcher(ctx, fetchdef.url, fetchdef)
 
     if (null == fetched) {
       response = new Response({ err: ctx.error('request_no_response', 'response: undefined') })

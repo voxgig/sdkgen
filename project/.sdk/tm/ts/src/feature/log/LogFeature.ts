@@ -65,8 +65,8 @@ class LogFeature extends BaseFeature {
   }
 
 
-  PreOperation(this: any, ctx: any) {
-    this._loghook('PreOperation', ctx)
+  PreTarget(this: any, ctx: any) {
+    this._loghook('PreTarget', ctx)
   }
 
   PreSpec(this: any, ctx: any) {

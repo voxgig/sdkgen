@@ -80,6 +80,102 @@ class ProjectNameSDK {
   }
 
 
+  async prepare(fetchargs?: any) {
+    const utility = this._utility
+    const struct = utility.struct
+    const clone = struct.clone
+
+    const {
+      makeContext,
+      makeFetchDef,
+      prepareHeaders,
+      prepareAuth,
+    } = utility
+
+    fetchargs = fetchargs || {}
+
+    let ctx: Context = makeContext({
+      opname: 'prepare',
+      ctrl: fetchargs.ctrl || {},
+    }, this._rootctx)
+
+    const options = this._options
+
+    // Build spec directly from SDK options + user-provided fetch args.
+    const spec: any = {
+      base: options.base,
+      prefix: options.prefix,
+      suffix: options.suffix,
+      path: fetchargs.path || '',
+      method: fetchargs.method || 'GET',
+      params: fetchargs.params || {},
+      query: fetchargs.query || {},
+      headers: prepareHeaders(ctx),
+      body: fetchargs.body,
+      step: 'start',
+    }
+
+    ctx.spec = spec
+
+    // Merge user-provided headers over SDK defaults.
+    if (fetchargs.headers) {
+      const uheaders = fetchargs.headers
+      for (let key in uheaders) {
+        spec.headers[key] = uheaders[key]
+      }
+    }
+
+    // Apply SDK auth (apikey, auth prefix, etc.)
+    const authResult = prepareAuth(ctx)
+    if (authResult instanceof Error) {
+      return authResult
+    }
+
+    return makeFetchDef(ctx)
+  }
+
+
+  async direct(fetchargs?: any) {
+    const utility = this._utility
+    const fetcher = utility.fetcher
+    const makeContext = utility.makeContext
+
+    const fetchdef = await this.prepare(fetchargs)
+    if (fetchdef instanceof Error) {
+      return fetchdef
+    }
+
+    let ctx: Context = makeContext({
+      opname: 'direct',
+      ctrl: (fetchargs || {}).ctrl || {},
+    }, this._rootctx)
+
+    try {
+      const fetched = await fetcher(ctx, fetchdef.url, fetchdef)
+
+      if (null == fetched) {
+        return { ok: false, err: ctx.error('direct_no_response', 'response: undefined') }
+      }
+      else if (fetched instanceof Error) {
+        return { ok: false, err: fetched }
+      }
+
+      const status = fetched.status
+      const json = 'function' === typeof fetched.json ? await fetched.json() : fetched.json
+
+      return {
+        ok: status >= 200 && status < 300,
+        status,
+        headers: fetched.headers,
+        data: json,
+      }
+    }
+    catch (err: any) {
+      return { ok: false, err }
+    }
+  }
+
+
   // <[SLOT]>
 
 
