@@ -75,6 +75,11 @@ class Context {
     this.match = getprop(ctxmap, 'match', {})
     this.reqmatch = getprop(ctxmap, 'reqmatch', {})
 
+    this.target = getprop(ctxmap, 'target', getprop(basectx, 'target'))
+    this.spec = getprop(ctxmap, 'spec', getprop(basectx, 'spec'))
+    this.result = getprop(ctxmap, 'result', getprop(basectx, 'result'))
+    this.response = getprop(ctxmap, 'response', getprop(basectx, 'response'))
+
     const opname = getprop(ctxmap, 'opname')
     this.op = this.resolveOp(opname)
   }

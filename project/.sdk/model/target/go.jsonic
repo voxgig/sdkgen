@@ -1,7 +1,21 @@
 
-title: Golang
-ext: go
-comment: line: "//"
-module: name: $$name$$
+main: kit: target: go: {
+
+  title: Golang
+  ext: go
+  comment: line: "//"
+  module: name: $$name$$
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  deps: {
+    'github.com/stretchr/testify': { active: true, version: 'v1.9.0', kind: dev }
+  }
+}
 
 
+main: kit: feature: &: target: go: deps: &: {
+  kind: *'prod' | string
+}
