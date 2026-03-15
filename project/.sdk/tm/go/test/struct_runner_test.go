@@ -1,13 +1,15 @@
+// Vendored from github.com/voxgig/struct/go/testutil
 // Test runner that uses the test model in build/test.
 
-package runner
+package sdktest
 
 import (
 	"fmt"
 
-	sdk "GOMODULE/sdk"
+	voxgigstruct "github.com/voxgig/struct"
 
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -17,26 +19,66 @@ import (
 	"unicode"
 )
 
-// Client interface defines the minimum needed to work with the runner
-type Client interface {
-	Utility() Utility
+// StructClient interface defines the minimum needed to work with the runner
+type StructClient interface {
+	Utility() StructUtilityIF
 }
 
-type Utility interface {
+type StructUtilityIF interface {
 	Struct() *StructUtility
 	Check(ctx map[string]any) map[string]any
-	MakeContext(ctxmap map[string]any) map[string]any
 }
 
 type StructUtility struct {
 	IsNode     func(val any) bool
 	Clone      func(val any) any
 	CloneFlags func(val any, flags map[string]bool) any
-	GetPath    func(path any, store any) any
-	Inject     func(val any, store any) any
+	GetPath    func(path any, store any, injdefs ...*voxgigstruct.Injection) any
+	Inject     func(val any, store any, injdefs ...*voxgigstruct.Injection) any
 	Items      func(val any) [][2]any
 	Stringify  func(val any, maxlen ...int) string
-	Walk       func(val any, apply sdk.WalkApply, opts ...any) any
+	Walk       func(val any, apply voxgigstruct.WalkApply, opts ...any) any
+
+	DelProp    func(parent any, key any) any
+	EscRe      func(s string) string
+	EscUrl     func(s string) string
+	Filter     func(val any, check func([2]any) bool) []any
+	Flatten    func(list any, depths ...int) any
+	GetDef     func(val any, alt any) any
+	GetElem    func(val any, key any, alts ...any) any
+	GetProp    func(val any, key any, alts ...any) any
+	HasKey     func(val any, key any) bool
+	IsEmpty    func(val any) bool
+	IsFunc     func(val any) bool
+	IsKey      func(val any) bool
+	IsList     func(val any) bool
+	IsMap      func(val any) bool
+	Join       func(arr []any, args ...any) string
+	Jsonify    func(val any, flags ...map[string]any) string
+	KeysOf     func(val any) []string
+	Merge      func(val any, maxdepths ...int) any
+	Pad        func(str any, args ...any) string
+	Pathify    func(val any, from ...int) string
+	Select     func(children any, query any) []any
+	SetPath    func(store any, path any, val any, injdefs ...map[string]any) any
+	SetProp    func(parent any, key any, newval any) any
+	Size       func(val any) int
+	Slice      func(val any, args ...any) any
+	StrKey     func(key any) string
+	Transform  func(data any, spec any, injdefs ...*voxgigstruct.Injection) any
+	Typify     func(value any) int
+	Typename   func(t int) string
+	Validate   func(data any, spec any, injdefs ...*voxgigstruct.Injection) (any, error)
+
+	SKIP   any
+	DELETE any
+
+	Jo func(kv ...any) map[string]any
+	Ja func(v ...any) []any
+
+	CheckPlacement func(modes int, ijname string, parentTypes int, inj *voxgigstruct.Injection) bool
+	InjectorArgs   func(argTypes []int, args []any) []any
+	InjectChild    func(child any, store any, inj *voxgigstruct.Injection) *voxgigstruct.Injection
 }
 
 type Subject func(args ...any) (any, error)
@@ -59,25 +101,24 @@ type RunPack struct {
 	RunSet      RunSet
 	RunSetFlags RunSetFlags
 	Subject     Subject
-	Client      Client
-	Clients     map[string]Client
+	Client      StructClient
 }
 
 type TestPack struct {
 	Name    string
-	Client  Client
+	Client  StructClient
 	Subject Subject
-	Utility Utility
+	Utility StructUtilityIF
 }
 
 var (
-	NULLMARK   = "__NULL__"   // Value is JSON null
-	UNDEFMARK  = "__UNDEF__"  // Value is not present (thus, undefined)
-	EXISTSMARK = "__EXISTS__" // Value exists (not undefined)
+	NULLMARK   = "__NULL__"
+	UNDEFMARK  = "__UNDEF__"
+	EXISTSMARK = "__EXISTS__"
 )
 
 // MakeRunner creates a runner function that can be used to run tests
-func MakeRunner(testfile string, client Client) func(name string, store any) (*RunPack, error) {
+func MakeRunner(testfile string, client StructClient) func(name string, store any) (*RunPack, error) {
 
 	return func(name string, store any) (*RunPack, error) {
 		utility := client.Utility()
@@ -90,7 +131,7 @@ func MakeRunner(testfile string, client Client) func(name string, store any) (*R
 			return nil, err
 		}
 
-		subject, _, err := resolveSubject(name, utility)
+		subject, err := resolveSubject(name, utility)
 		if err != nil {
 			return nil, err
 		}
@@ -107,10 +148,6 @@ func MakeRunner(testfile string, client Client) func(name string, store any) (*R
 
 			flags = resolveFlags(flags)
 
-			if testspec == nil {
-				return
-			}
-
 			var testspecmap = fixJSON(
 				testspec.(map[string]any),
 				flags,
@@ -119,7 +156,6 @@ func MakeRunner(testfile string, client Client) func(name string, store any) (*R
 			testset, ok := testspecmap["set"].([]any)
 			if !ok {
 				panic(fmt.Sprintf("No test set in %v", name))
-				return
 			}
 
 			for _, entryVal := range testset {
@@ -133,7 +169,7 @@ func MakeRunner(testfile string, client Client) func(name string, store any) (*R
 				_, hasOut := entry["out"]
 				if !hasIn || !hasOut {
 					if outVal, ok := entry["out"]; ok {
-						if outNum, ok := outVal.(int); ok && outNum == sdk.T_noval {
+						if outNum, ok := outVal.(int); ok && outNum == voxgigstruct.T_noval {
 							continue
 						}
 					}
@@ -184,7 +220,7 @@ func MakeRunner(testfile string, client Client) func(name string, store any) (*R
 			}
 		}
 
-		var runset RunSet = func(
+		var runsetFn RunSet = func(
 			t *testing.T,
 			testspec any,
 			testsubject any,
@@ -194,11 +230,9 @@ func MakeRunner(testfile string, client Client) func(name string, store any) (*R
 
 		return &RunPack{
 			Spec:        spec,
-			RunSet:      runset,
+			RunSet:      runsetFn,
 			RunSetFlags: runsetFlags,
 			Subject:     subject,
-			Client:      client,
-			Clients:     clients,
 		}, nil
 	}
 }
@@ -246,9 +280,29 @@ func resolveClients(
 	spec map[string]any,
 	store any,
 	structUtil *StructUtility,
-	baseClient Client,
-) (map[string]Client, error) {
-	clients := make(map[string]Client)
+	baseClient StructClient,
+) (map[string]StructClient, error) {
+	clients := make(map[string]StructClient)
+
+	defRaw, hasDef := spec["DEF"]
+	if !hasDef {
+		return clients, nil
+	}
+
+	defMap, ok := defRaw.(map[string]any)
+	if !ok {
+		return clients, nil
+	}
+
+	clientRaw, hasClient := defMap["client"]
+	if !hasClient {
+		return clients, nil
+	}
+
+	clientMap, ok := clientRaw.(map[string]any)
+	if !ok {
+		return clients, nil
+	}
 
 	// Check if the client has a Tester method using reflection
 	baseClientValue := reflect.ValueOf(baseClient)
@@ -257,25 +311,7 @@ func resolveClients(
 		return clients, nil
 	}
 
-	// Collect client definitions from top-level DEF and nested group DEFs.
-	allClientDefs := map[string]map[string]any{}
-
-	// Check top-level DEF
-	if defMap, ok := spec["DEF"].(map[string]any); ok {
-		if clientMap, ok := defMap["client"].(map[string]any); ok {
-			for k, v := range clientMap {
-				if vm, ok := v.(map[string]any); ok {
-					allClientDefs[k] = vm
-				}
-			}
-		}
-	}
-
-	if len(allClientDefs) == 0 {
-		return clients, nil
-	}
-
-	for _, cdef := range structUtil.Items(allClientDefs) {
+	for _, cdef := range structUtil.Items(clientMap) {
 		key, _ := cdef[0].(string)
 		valMap, _ := cdef[1].(map[string]any)
 
@@ -308,9 +344,9 @@ func resolveClients(
 
 		// Get the new client instance
 		newClientValue := results[0].Interface()
-		newClient, ok := newClientValue.(Client)
+		newClient, ok := newClientValue.(StructClient)
 		if !ok {
-			return nil, fmt.Errorf("resolveClients: Tester method did not return a Client")
+			return nil, fmt.Errorf("resolveClients: Tester method did not return a StructClient")
 		}
 
 		clients[key] = newClient
@@ -322,47 +358,44 @@ func resolveClients(
 func resolveSubject(
 	name string,
 	container any,
-) (Subject, bool, error) {
+) (Subject, error) {
 	name = uppercaseFirstLetter(name)
 
 	val := reflect.ValueOf(container)
 
-	if _, ok := container.(Utility); ok {
+	if _, ok := container.(StructUtilityIF); ok {
 		subjectVal := val.MethodByName(name)
-		if subjectVal.IsValid() {
-			subjectIF := subjectVal.Interface()
-			subject := subjectify(subjectIF)
-			return subject, true, nil
-		}
+		subjectIF := subjectVal.Interface()
+		subject := subjectify(subjectIF)
+		return subject, nil
 	}
 
 	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
 	}
 	if val.Kind() != reflect.Struct {
-		// Return a no-op subject; individual tests can override via testsubject arg
-		return func(args ...any) (any, error) {
-			return nil, nil
-		}, false, nil
+		return nil, errors.New("resolveSubject: not a struct or struct pointer")
 	}
 
 	fieldVal := val.FieldByName(name)
 
-	if !fieldVal.IsValid() || fieldVal.Kind() != reflect.Func {
-		// Return a no-op subject; individual tests can override via testsubject arg
-		return func(args ...any) (any, error) {
-			return nil, nil
-		}, false, nil
+	if !fieldVal.IsValid() {
+		return nil, fmt.Errorf("resolveSubject: field %q is not a func", name)
+	}
+
+	if fieldVal.Kind() != reflect.Func {
+		return nil, fmt.Errorf("resolveSubject: field %q is not a func", name)
 	}
 
 	fn := fieldVal.Interface()
+	var sfn Subject
 
 	sfn, ok := fn.(Subject)
 	if !ok {
 		sfn = subjectify(fn)
 	}
 
-	return sfn, true, nil
+	return sfn, nil
 }
 
 func resolveFlags(flags map[string]bool) map[string]bool {
@@ -402,26 +435,15 @@ func checkResult(
 	// Check if this test expects an output or an error
 	_, hasExpectedErr := entry["err"]
 
-	// If the test expects an error but none was thrown, fail.
+	// Special case for array tests
 	if hasExpectedErr && entry["err"] != nil {
-		// Special case for null errors in struct tests
 		errStr, isStr := entry["err"].(string)
 		if isStr && strings.Contains(errStr, "null:") {
 			return
 		}
-		// Expected error did not occur
-		t.Error(fmt.Sprintf("Expected error did not occur: %v\n\nENTRY: %s",
-			entry["err"], structUtils.Stringify(entry)))
-		return
 	}
 
-	outVal := entry["out"]
-	isNullOut := false
-	if s, ok := outVal.(string); ok && s == NULLMARK {
-		isNullOut = true
-	}
-
-	if !isNullOut && (entry["match"] == nil || outVal != nil) {
+	if entry["match"] == nil || entry["out"] != nil {
 		var cleanRes any
 		if res != nil {
 			flags := map[string]bool{"func": false}
@@ -430,8 +452,8 @@ func checkResult(
 			cleanRes = res
 		}
 
-		if !reflect.DeepEqual(cleanRes, outVal) {
-			t.Error(outFail(entry, cleanRes, outVal))
+		if !reflect.DeepEqual(cleanRes, entry["out"]) {
+			t.Error(outFail(entry, cleanRes, entry["out"]))
 			return
 		}
 	}
@@ -569,122 +591,6 @@ func handleError(
 	}
 }
 
-// bridgeTestData bridges old test data format to current SDK conventions.
-// This handles:
-//   - op.name → opname
-//   - op.kind → op.input (req→data, res→match)
-//   - op.match → match, reqmatch
-//   - op.data → reqdata
-//   - op.params/alias → target
-//   - op.reqform → target.transform.req
-//   - op.resform → target.transform.res
-//   - response.native → response (unwrap) + reason → statusText
-func bridgeTestData(cfm map[string]any) {
-	op, _ := cfm["op"].(map[string]any)
-
-	if op != nil {
-		// Bridge op.name → opname
-		if _, hasOpname := cfm["opname"]; !hasOpname {
-			if name, ok := op["name"].(string); ok {
-				cfm["opname"] = name
-			}
-		}
-
-		// Bridge op.kind → op.input (req→data, res→match)
-		if kind, _ := op["kind"].(string); kind != "" {
-			if _, hasInput := op["input"]; !hasInput {
-				if kind == "req" {
-					op["input"] = "data"
-				} else {
-					op["input"] = "match"
-				}
-			}
-		}
-
-		// Bridge op.match → match, reqmatch (only if not already set at top level)
-		if opMatch := sdk.GetProp(op, "match"); opMatch != nil {
-			if existing, _ := cfm["match"].(map[string]any); existing == nil || len(existing) == 0 {
-				cfm["match"] = opMatch
-			}
-			if existing, _ := cfm["reqmatch"].(map[string]any); existing == nil || len(existing) == 0 {
-				cfm["reqmatch"] = opMatch
-			}
-		}
-
-		// Bridge op.data → reqdata and data
-		if opData := sdk.GetProp(op, "data"); opData != nil {
-			if _, has := cfm["reqdata"]; !has {
-				cfm["reqdata"] = opData
-			}
-			if _, has := cfm["data"]; !has {
-				cfm["data"] = opData
-			}
-		}
-
-		// Bridge op.params, op.alias → target
-		if _, has := cfm["target"]; !has {
-			target := map[string]any{}
-			hasTarget := false
-
-			if opParams := sdk.GetProp(op, "params"); opParams != nil {
-				target["params"] = opParams
-				target["args"] = map[string]any{"params": opParams}
-				hasTarget = true
-			}
-
-			if opAlias := sdk.GetProp(op, "alias"); opAlias != nil {
-				target["alias"] = opAlias
-				hasTarget = true
-			}
-
-			// Bridge op.reqform → target.transform.req
-			if opReqform := sdk.GetProp(op, "reqform"); opReqform != nil {
-				transform, _ := target["transform"].(map[string]any)
-				if transform == nil {
-					transform = map[string]any{}
-					target["transform"] = transform
-				}
-				transform["req"] = opReqform
-				hasTarget = true
-			}
-
-			// Bridge op.resform → target.transform.res
-			if opResform := sdk.GetProp(op, "resform"); opResform != nil {
-				transform, _ := target["transform"].(map[string]any)
-				if transform == nil {
-					transform = map[string]any{}
-					target["transform"] = transform
-				}
-				transform["res"] = opResform
-				hasTarget = true
-			}
-
-			if hasTarget {
-				cfm["target"] = target
-			}
-		}
-	}
-
-	// Bridge response.native → response (unwrap) + reason → statusText
-	if response, _ := cfm["response"].(map[string]any); response != nil {
-		if native, _ := response["native"].(map[string]any); native != nil {
-			// Map reason → statusText
-			if _, has := native["statusText"]; !has {
-				if reason := sdk.GetProp(native, "reason"); reason != nil {
-					native["statusText"] = reason
-				}
-			}
-			// Preserve non-native properties (like err) on the unwrapped response
-			for k, v := range response {
-				if k != "native" {
-					native[k] = v
-				}
-			}
-			cfm["response"] = native
-		}
-	}
-}
-
 func resolveArgs(entry map[string]any, testpack TestPack) []any {
 	structUtils := testpack.Utility.Struct()
 
@@ -708,17 +614,12 @@ func resolveArgs(entry map[string]any, testpack TestPack) []any {
 			first := args[0]
 			if firstMap, ok := first.(map[string]any); ok && first != nil {
 				clonedFirst := structUtils.Clone(firstMap)
-				cfm, _ := clonedFirst.(map[string]any)
-
-				// Bridge old test data format to current conventions
-				bridgeTestData(cfm)
-
-				// Create context via MakeContext
-				clonedCtx := testpack.Utility.MakeContext(cfm)
-				args[0] = clonedCtx
-				entry["ctx"] = clonedCtx
-				clonedCtx["client"] = testpack.Client
-				clonedCtx["utility"] = testpack.Utility
+				args[0] = clonedFirst
+				entry["ctx"] = clonedFirst
+				if m, ok := clonedFirst.(map[string]any); ok {
+					m["client"] = testpack.Client
+					m["utility"] = testpack.Utility
+				}
 			}
 		}
 	}
@@ -730,8 +631,8 @@ func resolveTestPack(
 	name string,
 	entry any,
 	testsubject any,
-	client Client,
-	clients map[string]Client,
+	client StructClient,
+	clients map[string]StructClient,
 ) (TestPack, error) {
 
 	subject, ok := testsubject.(Subject)
@@ -754,10 +655,7 @@ func resolveTestPack(
 				if cl, found := clients[clientKey]; found {
 					testpack.Client = cl
 					testpack.Utility = cl.Utility()
-					// Only override subject if a real one is found for this module
-					if newSubject, subjectFound, _ := resolveSubject(name, testpack.Utility.Struct()); subjectFound {
-						testpack.Subject = newSubject
-					}
+					testpack.Subject, err = resolveSubject(name, testpack.Utility.Struct())
 				}
 			}
 		}
@@ -860,61 +758,33 @@ func subjectify(fn any) Subject {
 
 	return func(args ...any) (any, error) {
 
-		isVariadic := fnType.IsVariadic()
-		numFixed := fnType.NumIn()
-		if isVariadic {
-			numFixed-- // Last param is the variadic slice
-		}
+		argCount := fnType.NumIn()
 
-		// For non-variadic: ensure we have enough args
-		if !isVariadic && len(args) < fnType.NumIn() {
-			extended := make([]any, fnType.NumIn())
+		if len(args) < argCount {
+			extended := make([]any, argCount)
 			copy(extended, args)
 			args = extended
 		}
 
 		// Build reflect.Value slice for call
-		var in []reflect.Value
-
-		// Add fixed (non-variadic) params
-		for i := 0; i < numFixed; i++ {
+		in := make([]reflect.Value, fnType.NumIn())
+		for i := 0; i < fnType.NumIn(); i++ {
 			paramType := fnType.In(i)
-			var arg any
-			if i < len(args) {
-				arg = args[i]
-			}
+			arg := args[i]
 
 			if arg == nil {
-				in = append(in, reflect.Zero(paramType))
+				in[i] = reflect.Zero(paramType)
 			} else {
 				val := reflect.ValueOf(arg)
+
+				// Check compatibility so we don't panic on invalid type
 				if !val.Type().AssignableTo(paramType) {
 					return nil, fmt.Errorf(
 						"subjectify: argument %d type %T not assignable to parameter type %s",
 						i, arg, paramType,
 					)
 				}
-				in = append(in, val)
-			}
-		}
-
-		// Add variadic params (if any extra args remain)
-		if isVariadic {
-			elemType := fnType.In(fnType.NumIn() - 1).Elem()
-			for i := numFixed; i < len(args); i++ {
-				arg := args[i]
-				if arg == nil {
-					in = append(in, reflect.Zero(elemType))
-				} else {
-					val := reflect.ValueOf(arg)
-					if !val.Type().AssignableTo(elemType) {
-						return nil, fmt.Errorf(
-							"subjectify: variadic argument %d type %T not assignable to element type %s",
-							i, arg, elemType,
-						)
-					}
-					in = append(in, val)
-				}
+				in[i] = val
 			}
 		}
 
@@ -1019,20 +889,19 @@ func NullModifier(
 	val any,
 	key any,
 	parent any,
-	state *sdk.Injection,
-	current any,
+	inj *voxgigstruct.Injection,
 	store any,
 ) {
 	switch v := val.(type) {
 	case string:
 		if NULLMARK == v {
-			_ = sdk.SetProp(parent, key, nil)
+			_ = voxgigstruct.SetProp(parent, key, nil)
 		} else if UNDEFMARK == v {
-			_ = sdk.SetProp(parent, key, nil)
+			_ = voxgigstruct.SetProp(parent, key, nil)
 		} else if EXISTSMARK == v {
-			// Marker used during matching, not a value to be transformed
+			// For EXISTSMARK, no transform needed
 		} else {
-			_ = sdk.SetProp(parent, key,
+			_ = voxgigstruct.SetProp(parent, key,
 				strings.ReplaceAll(v, NULLMARK, "null"))
 		}
 	}
@@ -1083,4 +952,143 @@ func uppercaseFirstLetter(s string) string {
 	runes := []rune(s)
 	runes[0] = unicode.ToUpper(runes[0])
 	return string(runes)
+}
+
+// StructSDK is the test SDK client for the struct runner
+type StructSDK struct {
+	opts    map[string]any
+	utility *StructSDKUtility
+}
+
+// StructSDKUtility implements the StructUtilityIF interface
+type StructSDKUtility struct {
+	sdk     *StructSDK
+	structu *StructUtility
+}
+
+// Struct returns the StructUtility
+func (u *StructSDKUtility) Struct() *StructUtility {
+	return u.structu
+}
+
+// Contextify implements the contextify function
+func (u *StructSDKUtility) Contextify(ctxmap map[string]any) map[string]any {
+	return ctxmap
+}
+
+// Check implements the check function
+func (u *StructSDKUtility) Check(ctx map[string]any) map[string]any {
+	zed := "ZED"
+	if u.sdk.opts != nil {
+		if foo, ok := u.sdk.opts["foo"]; ok && foo != nil {
+			zed += fmt.Sprint(foo)
+		}
+	}
+	zed += "_"
+
+	if ctx == nil {
+		zed += "0"
+	} else if meta, ok := ctx["meta"].(map[string]any); ok && meta != nil {
+		if bar, ok := meta["bar"]; ok && bar != nil {
+			zed += fmt.Sprint(bar)
+		} else {
+			zed += "0"
+		}
+	} else {
+		zed += "0"
+	}
+
+	return map[string]any{
+		"zed": zed,
+	}
+}
+
+// NewStructSDK creates a new StructSDK instance with the given options
+func NewStructSDK(opts map[string]any) *StructSDK {
+	if opts == nil {
+		opts = map[string]any{}
+	}
+
+	sdk := &StructSDK{
+		opts: opts,
+	}
+
+	// Create the StructUtility
+	structUtil := &StructUtility{
+		IsNode:     voxgigstruct.IsNode,
+		Clone:      voxgigstruct.Clone,
+		CloneFlags: voxgigstruct.CloneFlags,
+		GetPath:    voxgigstruct.GetPath,
+		Inject:     voxgigstruct.Inject,
+		Items:      voxgigstruct.Items,
+		Stringify:  voxgigstruct.Stringify,
+		Walk:       voxgigstruct.Walk,
+
+		DelProp:    voxgigstruct.DelProp,
+		EscRe:      voxgigstruct.EscRe,
+		EscUrl:     voxgigstruct.EscUrl,
+		Filter:     voxgigstruct.Filter,
+		Flatten:    voxgigstruct.Flatten,
+		GetDef:     voxgigstruct.GetDef,
+		GetElem:    voxgigstruct.GetElem,
+		GetProp:    voxgigstruct.GetProp,
+		HasKey:     voxgigstruct.HasKey,
+		IsEmpty:    voxgigstruct.IsEmpty,
+		IsFunc:     voxgigstruct.IsFunc,
+		IsKey:      voxgigstruct.IsKey,
+		IsList:     voxgigstruct.IsList,
+		IsMap:      voxgigstruct.IsMap,
+		Join:       voxgigstruct.Join,
+		Jsonify:    voxgigstruct.Jsonify,
+		KeysOf:     voxgigstruct.KeysOf,
+		Merge:      voxgigstruct.Merge,
+		Pad:        voxgigstruct.Pad,
+		Pathify:    voxgigstruct.Pathify,
+		Select:     voxgigstruct.Select,
+		SetPath:    voxgigstruct.SetPath,
+		SetProp:    voxgigstruct.SetProp,
+		Size:       voxgigstruct.Size,
+		Slice:      voxgigstruct.Slice,
+		StrKey:     voxgigstruct.StrKey,
+		Transform:  voxgigstruct.Transform,
+		Typify:     voxgigstruct.Typify,
+		Typename:   voxgigstruct.Typename,
+		Validate:   voxgigstruct.Validate,
+
+		SKIP:   voxgigstruct.SKIP,
+		DELETE: voxgigstruct.DELETE,
+
+		Jo: voxgigstruct.Jo,
+		Ja: voxgigstruct.Ja,
+
+		CheckPlacement: voxgigstruct.CheckPlacement,
+		InjectorArgs:   voxgigstruct.InjectorArgs,
+		InjectChild:    voxgigstruct.InjectChild,
+	}
+
+	// Create the utility
+	sdk.utility = &StructSDKUtility{
+		sdk:     sdk,
+		structu: structUtil,
+	}
+
+	return sdk
+}
+
+// MakeTestStructSDK creates a new StructSDK instance for testing
+func MakeTestStructSDK(opts map[string]any) (*StructSDK, error) {
+	return NewStructSDK(opts), nil
+}
+
+// Tester creates a new StructSDK instance with options or default options
+func (s *StructSDK) Tester(opts map[string]any) (*StructSDK, error) {
+	if opts == nil {
+		opts = s.opts
+	}
+	return NewStructSDK(opts), nil
+}
+
+// Utility returns the utility object
+func (s *StructSDK) Utility() StructUtilityIF {
+	return s.utility
 }

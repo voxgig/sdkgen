@@ -1,20 +1,10 @@
+.PHONY: test build clean
 
-.PHONY: build test vet tidy clean setup
+test:
+	go test ./... -v
 
-setup:
-	go mod tidy
-
-build: setup
+build:
 	go build ./...
 
-test: build
-	go test ./...
-
-vet: build
-	go vet ./...
-
-tidy:
-	go mod tidy
-
 clean:
-	go clean -cache -testcache
+	go clean ./...

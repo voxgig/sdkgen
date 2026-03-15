@@ -10,7 +10,7 @@ import { formatGoMap } from './utility_go'
 
 const EntityOperation = cmp(function Operation(props: any) {
   const { model } = props.ctx$
-  const { ff, opname, entity, entrep } = props
+  const { ff, opname, entity, entrep, gomodule } = props
 
   let { indent } = props
 
@@ -29,12 +29,13 @@ const EntityOperation = cmp(function Operation(props: any) {
     indent,
     replace: {
       ...entrep,
+      'GOMODULE': gomodule,
       ProjectName: model.const.Name,
       EntityName: entity.Name,
       entityname: entity.name,
       '#Feature-Hook': ({ name, indent }: any) =>
         Content({ indent }, `
-sdk.FeatureHook(ctx, "${name}")
+u.FeatureHook(ctx, "${name}")
 `)
 
     }

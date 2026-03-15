@@ -1,86 +1,88 @@
-package ProjectNamePkg
+package entity
 
 import (
-	"ProjectNameModule/sdk"
+	"GOMODULE/core"
+
+	vs "github.com/voxgig/struct"
 )
 
-// EntityNameEntity represents the EntityName entity.
 type EntityNameEntity struct {
 	name    string
-	client  *ProjectNameSDK
+	client  *core.ProjectNameSDK
+	utility *core.Utility
 	entopts map[string]any
 	data    map[string]any
 	match   map[string]any
-	entctx  map[string]any
+	entctx  *core.Context
 }
 
-// NewEntityNameEntity creates a new EntityName entity.
-func NewEntityNameEntity(client *ProjectNameSDK, entopts map[string]any) *EntityNameEntity {
+func NewEntityNameEntity(client *core.ProjectNameSDK, entopts map[string]any) *EntityNameEntity {
 	if entopts == nil {
 		entopts = map[string]any{}
+	}
+	if _, ok := entopts["active"]; !ok {
+		entopts["active"] = true
+	} else if entopts["active"] == false {
+		// keep false
+	} else {
+		entopts["active"] = true
 	}
 
 	e := &EntityNameEntity{
 		name:    "entityname",
 		client:  client,
+		utility: client.GetUtility(),
 		entopts: entopts,
 		data:    map[string]any{},
 		match:   map[string]any{},
 	}
 
-	e.entctx = sdk.MakeContext(map[string]any{
+	e.entctx = e.utility.MakeContext(map[string]any{
 		"entity":  e,
 		"entopts": entopts,
-	}, client.rootctx)
+	}, client.GetRootCtx())
 
-	sdk.FeatureHook(e.entctx, "PostConstructEntity")
+	e.utility.FeatureHook(e.entctx, "PostConstructEntity")
 
 	return e
 }
 
-// EntOpts returns the entity options.
-func (e *EntityNameEntity) EntOpts() map[string]any {
-	out, _ := sdk.Clone(e.entopts).(map[string]any)
-	return out
+func (e *EntityNameEntity) GetName() string { return e.name }
+
+func (e *EntityNameEntity) Make() core.Entity {
+	opts := map[string]any{}
+	for k, v := range e.entopts {
+		opts[k] = v
+	}
+	return NewEntityNameEntity(e.client, opts)
 }
 
-// Client returns the SDK client.
-func (e *EntityNameEntity) Client() *ProjectNameSDK {
-	return e.client
-}
-
-// Make creates a new entity instance.
-func (e *EntityNameEntity) Make() *EntityNameEntity {
-	return NewEntityNameEntity(e.client, e.EntOpts())
-}
-
-// Data gets or sets entity data.
-func (e *EntityNameEntity) Data(data ...map[string]any) map[string]any {
-	if len(data) > 0 && data[0] != nil {
-		e.data, _ = sdk.Clone(data[0]).(map[string]any)
-		sdk.FeatureHook(e.entctx, "SetData")
+func (e *EntityNameEntity) Data(args ...any) any {
+	if len(args) > 0 && args[0] != nil {
+		e.data = core.ToMapAny(vs.Clone(args[0]))
+		if e.data == nil {
+			e.data = map[string]any{}
+		}
+		e.utility.FeatureHook(e.entctx, "SetData")
 	}
 
-	sdk.FeatureHook(e.entctx, "GetData")
-	out, _ := sdk.Clone(e.data).(map[string]any)
+	e.utility.FeatureHook(e.entctx, "GetData")
+	out := vs.Clone(e.data)
 	return out
 }
 
-// Match gets or sets entity match criteria.
-func (e *EntityNameEntity) Match(match ...map[string]any) map[string]any {
-	if len(match) > 0 && match[0] != nil {
-		e.match, _ = sdk.Clone(match[0]).(map[string]any)
-		sdk.FeatureHook(e.entctx, "SetMatch")
+func (e *EntityNameEntity) Match(args ...any) any {
+	if len(args) > 0 && args[0] != nil {
+		e.match = core.ToMapAny(vs.Clone(args[0]))
+		if e.match == nil {
+			e.match = map[string]any{}
+		}
+		e.utility.FeatureHook(e.entctx, "SetMatch")
 	}
 
-	sdk.FeatureHook(e.entctx, "GetMatch")
-	out, _ := sdk.Clone(e.match).(map[string]any)
+	e.utility.FeatureHook(e.entctx, "GetMatch")
+	out := vs.Clone(e.match)
 	return out
-}
-
-// Name returns the entity name.
-func (e *EntityNameEntity) Name() string {
-	return e.name
 }
 
 // #LoadOp
@@ -92,3 +94,53 @@ func (e *EntityNameEntity) Name() string {
 // #UpdateOp
 
 // #RemoveOp
+
+func (e *EntityNameEntity) runOp(ctx *core.Context, postDone func()) (any, error) {
+	utility := e.utility
+
+	// #PreSelection-Hook
+
+	target, err := utility.MakeTarget(ctx)
+	ctx.Out["target"] = target
+	if err != nil {
+		return utility.MakeError(ctx, err)
+	}
+
+	// #PreSpec-Hook
+
+	spec, err := utility.MakeSpec(ctx)
+	ctx.Out["spec"] = spec
+	if err != nil {
+		return utility.MakeError(ctx, err)
+	}
+
+	// #PreRequest-Hook
+
+	resp, err := utility.MakeRequest(ctx)
+	ctx.Out["request"] = resp
+	if err != nil {
+		return utility.MakeError(ctx, err)
+	}
+
+	// #PreResponse-Hook
+
+	resp2, err := utility.MakeResponse(ctx)
+	ctx.Out["response"] = resp2
+	if err != nil {
+		return utility.MakeError(ctx, err)
+	}
+
+	// #PreResult-Hook
+
+	result, err := utility.MakeResult(ctx)
+	ctx.Out["result"] = result
+	if err != nil {
+		return utility.MakeError(ctx, err)
+	}
+
+	// #PreDone-Hook
+
+	postDone()
+
+	return utility.Done(ctx)
+}

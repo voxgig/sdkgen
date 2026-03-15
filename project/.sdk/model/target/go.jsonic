@@ -5,13 +5,14 @@ main: kit: target: go: {
   ext: go
   comment: line: "//"
   module: name: $$name$$
+  srcfeature: false
 
   deps: &: {
     kind: *'prod' | string
   }
 
   deps: {
-    'github.com/stretchr/testify': { active: true, version: 'v1.9.0', kind: dev }
+    'github.com/voxgig/struct': { active: true, version: 'v0.0.0', replace: './utility/struct' }
   }
 }
 

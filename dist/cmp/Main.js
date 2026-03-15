@@ -6,14 +6,18 @@ const utility_1 = require("../utility");
 const Main = (0, jostraca_1.cmp)(function Main(props) {
     const { target, ctx$ } = props;
     const { model, stdrep, log } = ctx$;
-    (0, jostraca_1.Copy)({
+    const copyOpts = {
         // This folder is relative to the .sdk folder in the project, as that is where
         // the sdk is generated from.
         from: 'tm/' + target.name,
         replace: {
             ...stdrep,
         }
-    });
+    };
+    if (false === target.srcfeature) {
+        copyOpts.exclude = [/src\//];
+    }
+    (0, jostraca_1.Copy)(copyOpts);
     const Main_sdk = (0, utility_1.requirePath)(ctx$, `cmp/${target.name}/Main_${target.name}`);
     Main_sdk['Main']({ model, target, stdrep });
     log.info({ point: 'generate-main', target, note: 'target:' + target.name });

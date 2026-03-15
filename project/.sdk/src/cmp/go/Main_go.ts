@@ -31,55 +31,175 @@ const Main = cmp(async function Main(props: any) {
   const entity: ModelEntity = getModelPath(model, `main.${KIT}.entity`)
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
-  const origin = null == model.origin ? '' : `${model.origin}/`
-  const gomodule = `${origin}${model.name}`
+  // Module name: concatenated lowercase (e.g., voxgigsolardemosdk)
+  const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
+  const gomodule = orgPrefix + model.name + 'sdk'
 
   Package({ target })
 
-  // Overwrite tm/go files that need the full Go module path (including origin).
+  // Copy tm/go files with replacements
   Copy({
     from: 'tm/' + target.name,
+    exclude: [/src\//],
     replace: {
       ...props.ctx$.stdrep,
       GOMODULE: gomodule,
     }
   })
 
-  File({ name: model.name + '.' + target.ext }, () => {
+  // Generate main SDK file in core/ folder
+  Folder({ name: 'core' }, () => {
 
-    Fragment(
-      {
-        from: Path.normalize(__dirname + '/../../../src/cmp/go/fragment/Main.fragment.go'),
-        replace: {
-          ...props.ctx$.stdrep,
-          'ProjectNameModule': gomodule,
-          'ProjectNamePkg': model.name,
+    File({ name: model.name + '_sdk.' + target.ext }, () => {
 
-          '#BuildFeatures': ({ indent }: any) => {
-            // Go features are built differently - iterate and add
-            List({ item: feature, line: false }, ({ item }: any) =>
-              Line({ indent },
-                `// Feature: ${item.name}`))
-          },
+      Fragment(
+        {
+          from: Path.normalize(__dirname + '/../../../src/cmp/go/fragment/Main.fragment.go'),
+          replace: {
+            ...props.ctx$.stdrep,
+            'ProjectNameModule': gomodule,
 
-          '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
-sdk.FeatureHook(s.rootctx, "${name}")
+            '#BuildFeatures': ({ indent }: any) => {
+              each(feature, (feat: any) => {
+                if (feat.name === 'base') {
+                  Content({ indent }, `u.FeatureAdd(s.rootctx, NewBaseFeatureFunc())
+`)
+                } else if (feat.name === 'test') {
+                  Content({ indent }, `u.FeatureAdd(s.rootctx, NewTestFeatureFunc())
+`)
+                }
+              })
+            },
+
+            '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
+s.utility.FeatureHook(s.rootctx, "${name}")
 `),
 
-        }
-      },
+          }
+        },
 
-      // Entities - injected at SLOT
-      () => {
-        each(entity, (entity: ModelEntity) => {
-          const entitySDK = getModelPath(model, `main.${KIT}.entity.${entity.name}`)
-          const entprops = { target, entity, entitySDK }
-          MainEntity(entprops)
+        // Entities - injected at SLOT
+        () => {
+          each(entity, (entity: ModelEntity) => {
+            const entitySDK = getModelPath(model, `main.${KIT}.entity.${entity.name}`)
+            const entprops = { target, entity, entitySDK, gomodule }
+            MainEntity(entprops)
+          })
         })
+    })
+
+    Config({ target })
+
+    // Generate registry.go with all constructor function vars
+    File({ name: 'registry.' + target.ext }, () => {
+      Content(`package core
+
+var UtilityRegistrar func(u *Utility)
+
+var NewBaseFeatureFunc func() Feature
+
+`)
+      // Feature constructor function vars (non-base)
+      each(feature, (feat: any) => {
+        if (feat.name !== 'base') {
+          const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
+          Content(`var New${fname}FeatureFunc func() Feature
+
+`)
+        }
       })
+
+      // Entity constructor function vars
+      each(entity, (ent: any) => {
+        Content(`var New${ent.Name}EntityFunc func(client *${model.const.Name}SDK, entopts map[string]any) ${model.const.Name}Entity
+
+`)
+      })
+    })
   })
 
-  Config({ target })
+  // Generate root package file
+  File({ name: model.name + '.' + target.ext }, () => {
+    Content(`package ${gomodule}
+
+import (
+	"${gomodule}/core"
+	"${gomodule}/entity"
+	"${gomodule}/feature"
+	_ "${gomodule}/utility"
+)
+
+// Type aliases preserve external API.
+type ${model.const.Name}SDK = core.${model.const.Name}SDK
+type Context = core.Context
+type Utility = core.Utility
+type Feature = core.Feature
+type Entity = core.Entity
+type ${model.const.Name}Entity = core.${model.const.Name}Entity
+type FetcherFunc = core.FetcherFunc
+type Spec = core.Spec
+type Result = core.Result
+type Response = core.Response
+type Operation = core.Operation
+type Control = core.Control
+type ${model.const.Name}Error = core.${model.const.Name}Error
+
+// BaseFeature from feature package.
+type BaseFeature = feature.BaseFeature
+
+func init() {
+`)
+
+    // Register feature constructors - base is always present
+    Content(`	core.NewBaseFeatureFunc = func() core.Feature {
+		return feature.NewBaseFeature()
+	}
+`)
+
+    // Register non-base feature constructors
+    each(feature, (feat: any) => {
+      if (feat.name !== 'base') {
+        const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
+        Content(`	core.New${fname}FeatureFunc = func() core.Feature {
+		return feature.New${fname}Feature()
+	}
+`)
+      }
+    })
+
+    // Register entity constructors
+    each(entity, (ent: any) => {
+      Content(`	core.New${ent.Name}EntityFunc = func(client *core.${model.const.Name}SDK, entopts map[string]any) core.${model.const.Name}Entity {
+		return entity.New${ent.Name}Entity(client, entopts)
+	}
+`)
+    })
+
+    Content(`}
+
+// Constructor re-exports.
+var New${model.const.Name}SDK = core.New${model.const.Name}SDK
+var TestSDK = core.TestSDK
+var NewContext = core.NewContext
+var NewSpec = core.NewSpec
+var NewResult = core.NewResult
+var NewResponse = core.NewResponse
+var NewOperation = core.NewOperation
+var MakeConfig = core.MakeConfig
+`)
+
+    // Feature constructor re-exports - base is always present
+    Content(`var NewBaseFeature = feature.NewBaseFeature
+`)
+
+    each(feature, (feat: any) => {
+      if (feat.name !== 'base') {
+        const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
+        Content(`var New${fname}Feature = feature.New${fname}Feature
+`)
+      }
+    })
+  })
 
 })
 

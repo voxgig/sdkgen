@@ -39,49 +39,75 @@ const Config = cmp(async function Config(props: any) {
   const authPrefix = getModelPath(model, `main.${KIT}.config.auth.prefix`)
   const baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`)
 
+  // Config is now in core/ package
   File({ name: 'config.' + target.ext }, () => {
 
-    Content(`package ${model.name}
+    Content(`package core
 
 `)
 
-    Content(`var config = map[string]any{
-	"main": map[string]any{
-		"name": "${model.const.Name}",
-	},
-	"feature": map[string]any{
+    Content(`func MakeConfig() map[string]any {
+	return map[string]any{
+		"main": map[string]any{
+			"name": "${model.const.Name}",
+		},
+		"feature": map[string]any{
 `)
 
     each(feature, (f: any) => {
       const fconfig = f.config || {}
-      Content(`		"${f.name}": ${formatGoMap(fconfig, 2)},
-`)
-    })
-
-    Content(`	},
-	"options": map[string]any{
-		"base": "${baseUrl}",
-		"auth": map[string]any{
-			"prefix": "${authPrefix}",
-		},
-		"headers": ${formatGoMap(headers, 2)},
-		"entity": map[string]any{
-`)
-
-    each(entity, (entity: any) => {
-      Content(`			"${entity.name}": map[string]any{},
+      Content(`			"${f.name}": ${formatGoMap(fconfig, 3)},
 `)
     })
 
     Content(`		},
-	},
-	"entity": ${formatGoMap(
+		"options": map[string]any{
+			"base": "${baseUrl}",
+			"auth": map[string]any{
+				"prefix": "${authPrefix}",
+			},
+			"headers": ${formatGoMap(headers, 3)},
+			"entity": map[string]any{
+`)
+
+    each(entity, (entity: any) => {
+      Content(`				"${entity.name}": map[string]any{},
+`)
+    })
+
+    Content(`			},
+		},
+		"entity": ${formatGoMap(
       Object.values(entity).reduce((a: any, n: any) => (a[n.name] = clean({
         fields: n.fields,
         name: n.name,
         op: n.op,
         relations: n.relations,
-      }), a), {}), 1)},
+      }), a), {}), 2)},
+	}
+}
+
+func makeFeature(name string) Feature {
+	switch name {
+`)
+
+    each(feature, (f: any) => {
+      const fname = f.name.charAt(0).toUpperCase() + f.name.slice(1)
+      if (f.name !== 'base') {
+        Content(`	case "${f.name}":
+		if New${fname}FeatureFunc != nil {
+			return New${fname}FeatureFunc()
+		}
+`)
+      }
+    })
+
+    Content(`	default:
+		if NewBaseFeatureFunc != nil {
+			return NewBaseFeatureFunc()
+		}
+	}
+	return nil
 }
 `)
   })

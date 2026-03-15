@@ -1,176 +1,250 @@
-package ProjectNamePkg
+package core
 
 import (
-	"ProjectNameModule/sdk"
+	vs "github.com/voxgig/struct"
 )
 
-// ProjectNameSDK is the main SDK client.
 type ProjectNameSDK struct {
-	mode     string
-	opts     map[string]any
-	features []any
-	rootctx  map[string]any
+	Mode     string
+	options  map[string]any
+	utility  *Utility
+	Features []Feature
+	rootctx  *Context
 }
 
-// New creates a new ProjectNameSDK client.
-func New(opts map[string]any) *ProjectNameSDK {
-	if opts == nil {
-		opts = map[string]any{}
+func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {
+	sdk := &ProjectNameSDK{
+		Mode:     "live",
+		Features: []Feature{},
 	}
 
-	s := &ProjectNameSDK{
-		mode:     "live",
-		features: []any{},
-	}
+	sdk.utility = NewUtility()
 
-	s.rootctx = sdk.MakeContext(map[string]any{
-		"client":  s,
-		"options": opts,
+	config := MakeConfig()
+
+	sdk.rootctx = sdk.utility.MakeContext(map[string]any{
+		"client":  sdk,
+		"utility": sdk.utility,
 		"config":  config,
-	})
+		"options": options,
+		"shared":  map[string]any{},
+	}, nil)
 
-	s.opts = sdk.MakeOptions(s.rootctx)
+	sdk.options = sdk.utility.MakeOptions(sdk.rootctx)
 
-	testActive, _ := sdk.GetPath([]string{"feature", "test", "active"}, s.opts).(bool)
-	if testActive {
-		s.mode = "test"
+	if vs.GetPath([]any{"feature", "test", "active"}, sdk.options) == true {
+		sdk.Mode = "test"
 	}
 
-	s.rootctx["options"] = s.opts
+	sdk.rootctx.Options = sdk.options
 
-	// #BuildFeatures
-
-	for _, f := range s.features {
-		sdk.FeatureInit(s.rootctx, f)
-	}
-
-	sdk.FeatureHook(s.rootctx, "PostConstruct")
-
-	return s
-}
-
-// Options returns a clone of the SDK options.
-func (s *ProjectNameSDK) Options() map[string]any {
-	out, _ := sdk.Clone(s.opts).(map[string]any)
-	if out == nil {
-		return map[string]any{}
-	}
-	return out
-}
-
-// Mode returns the SDK mode (live or test).
-func (s *ProjectNameSDK) Mode() string {
-	return s.mode
-}
-
-// Features returns the SDK features.
-func (s *ProjectNameSDK) Features() []any {
-	return s.features
-}
-
-// SetFeatures sets the SDK features.
-func (s *ProjectNameSDK) SetFeatures(f []any) {
-	s.features = f
-}
-
-// Prepare builds a fetch definition from SDK options and user-provided arguments.
-func (s *ProjectNameSDK) Prepare(fetchargs map[string]any) (map[string]any, error) {
-	if fetchargs == nil {
-		fetchargs = map[string]any{}
-	}
-
-	ctx := sdk.MakeContext(map[string]any{
-		"opname": "prepare",
-		"ctrl":   sdk.GetProp(fetchargs, "ctrl", map[string]any{}),
-	}, s.rootctx)
-
-	spec := map[string]any{
-		"base":    sdk.GetProp(s.opts, "base", ""),
-		"prefix":  sdk.GetProp(s.opts, "prefix", ""),
-		"suffix":  sdk.GetProp(s.opts, "suffix", ""),
-		"path":    sdk.GetProp(fetchargs, "path", ""),
-		"method":  sdk.GetProp(fetchargs, "method", "GET"),
-		"params":  sdk.GetProp(fetchargs, "params", map[string]any{}),
-		"query":   sdk.GetProp(fetchargs, "query", map[string]any{}),
-		"headers": sdk.PrepareHeaders(ctx),
-		"body":    sdk.GetProp(fetchargs, "body"),
-		"step":    "start",
-		"alias":   map[string]any{},
-	}
-
-	ctx["spec"] = spec
-
-	if userHeaders := sdk.GetProp(fetchargs, "headers"); userHeaders != nil {
-		if uh, ok := userHeaders.(map[string]any); ok {
-			specHeaders, _ := spec["headers"].(map[string]any)
-			for k, v := range uh {
-				specHeaders[k] = v
+	// Add features from config.
+	featureOpts := ToMapAny(vs.GetProp(sdk.options, "feature"))
+	if featureOpts != nil {
+		for _, item := range vs.Items(featureOpts) {
+			fname, _ := item[0].(string)
+			fopts := ToMapAny(item[1])
+			if fopts != nil {
+				if active, ok := fopts["active"]; ok {
+					if ab, ok := active.(bool); ok && ab {
+						sdk.utility.FeatureAdd(sdk.rootctx, makeFeature(fname))
+					}
+				}
 			}
 		}
 	}
 
-	_, err := sdk.PrepareAuth(ctx)
-	if err != nil {
-		return nil, err
+	// Add extension features.
+	if extend := vs.GetProp(sdk.options, "extend"); extend != nil {
+		if extList, ok := extend.([]any); ok {
+			for _, f := range extList {
+				if feat, ok := f.(Feature); ok {
+					sdk.utility.FeatureAdd(sdk.rootctx, feat)
+				}
+			}
+		}
 	}
 
-	return sdk.MakeFetchDef(ctx)
+	// Initialize features.
+	for _, f := range sdk.Features {
+		sdk.utility.FeatureInit(sdk.rootctx, f)
+	}
+
+	sdk.utility.FeatureHook(sdk.rootctx, "PostConstruct")
+
+	return sdk
 }
 
-// Direct makes a direct HTTP request using the SDK configuration.
-func (s *ProjectNameSDK) Direct(fetchargs map[string]any) (map[string]any, error) {
-	fetchdef, err := s.Prepare(fetchargs)
+func (sdk *ProjectNameSDK) OptionsMap() map[string]any {
+	out := vs.Clone(sdk.options)
+	if om, ok := out.(map[string]any); ok {
+		return om
+	}
+	return map[string]any{}
+}
+
+func (sdk *ProjectNameSDK) GetUtility() *Utility {
+	return CopyUtility(sdk.utility)
+}
+
+func (sdk *ProjectNameSDK) GetRootCtx() *Context {
+	return sdk.rootctx
+}
+
+func (sdk *ProjectNameSDK) Prepare(fetchargs map[string]any) (map[string]any, error) {
+	utility := sdk.utility
+
+	if fetchargs == nil {
+		fetchargs = map[string]any{}
+	}
+
+	var ctrl map[string]any
+	if c := vs.GetProp(fetchargs, "ctrl"); c != nil {
+		if cm, ok := c.(map[string]any); ok {
+			ctrl = cm
+		}
+	}
+	if ctrl == nil {
+		ctrl = map[string]any{}
+	}
+
+	ctx := utility.MakeContext(map[string]any{
+		"opname": "prepare",
+		"ctrl":   ctrl,
+	}, sdk.rootctx)
+
+	options := sdk.options
+
+	path, _ := vs.GetProp(fetchargs, "path").(string)
+	method, _ := vs.GetProp(fetchargs, "method").(string)
+	if method == "" {
+		method = "GET"
+	}
+
+	params := ToMapAny(vs.GetProp(fetchargs, "params"))
+	if params == nil {
+		params = map[string]any{}
+	}
+	query := ToMapAny(vs.GetProp(fetchargs, "query"))
+	if query == nil {
+		query = map[string]any{}
+	}
+
+	headers := utility.PrepareHeaders(ctx)
+
+	base, _ := vs.GetProp(options, "base").(string)
+	prefix, _ := vs.GetProp(options, "prefix").(string)
+	suffix, _ := vs.GetProp(options, "suffix").(string)
+
+	ctx.Spec = NewSpec(map[string]any{
+		"base":    base,
+		"prefix":  prefix,
+		"suffix":  suffix,
+		"path":    path,
+		"method":  method,
+		"params":  params,
+		"query":   query,
+		"headers": headers,
+		"body":    vs.GetProp(fetchargs, "body"),
+		"step":    "start",
+	})
+
+	// Merge user-provided headers.
+	if uh := vs.GetProp(fetchargs, "headers"); uh != nil {
+		if uhm, ok := uh.(map[string]any); ok {
+			for k, v := range uhm {
+				ctx.Spec.Headers[k] = v
+			}
+		}
+	}
+
+	_, err := utility.PrepareAuth(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx := sdk.MakeContext(map[string]any{
+	return utility.MakeFetchDef(ctx)
+}
+
+func (sdk *ProjectNameSDK) Direct(fetchargs map[string]any) (map[string]any, error) {
+	utility := sdk.utility
+
+	fetchdef, err := sdk.Prepare(fetchargs)
+	if err != nil {
+		return map[string]any{"ok": false, "err": err}, nil
+	}
+
+	if fetchargs == nil {
+		fetchargs = map[string]any{}
+	}
+
+	var ctrl map[string]any
+	if c := vs.GetProp(fetchargs, "ctrl"); c != nil {
+		if cm, ok := c.(map[string]any); ok {
+			ctrl = cm
+		}
+	}
+	if ctrl == nil {
+		ctrl = map[string]any{}
+	}
+
+	ctx := utility.MakeContext(map[string]any{
 		"opname": "direct",
-		"ctrl":   sdk.GetProp(fetchargs, "ctrl", map[string]any{}),
-	}, s.rootctx)
+		"ctrl":   ctrl,
+	}, sdk.rootctx)
 
 	url, _ := fetchdef["url"].(string)
-	fetched, fetchErr := sdk.Fetcher(ctx, url, fetchdef)
+	fetched, fetchErr := utility.Fetcher(ctx, url, fetchdef)
 
 	if fetchErr != nil {
 		return map[string]any{"ok": false, "err": fetchErr}, nil
 	}
 
 	if fetched == nil {
-		return map[string]any{"ok": false, "err": "response: undefined"}, nil
+		return map[string]any{
+			"ok":  false,
+			"err": ctx.MakeError("direct_no_response", "response: undefined"),
+		}, nil
 	}
 
-	fetchedMap, _ := fetched.(map[string]any)
-	if fetchedMap == nil {
-		return map[string]any{"ok": false, "err": "response: invalid type"}, nil
+	if fm, ok := fetched.(map[string]any); ok {
+		status := ToInt(vs.GetProp(fm, "status"))
+		var jsonData any
+		if jf := vs.GetProp(fm, "json"); jf != nil {
+			if f, ok := jf.(func() any); ok {
+				jsonData = f()
+			}
+		}
+
+		return map[string]any{
+			"ok":      status >= 200 && status < 300,
+			"status":  status,
+			"headers": vs.GetProp(fm, "headers"),
+			"data":    jsonData,
+		}, nil
 	}
 
-	status, _ := sdk.GetProp(fetchedMap, "status").(float64)
-
-	return map[string]any{
-		"ok":      status >= 200 && status < 300,
-		"status":  status,
-		"headers": sdk.GetProp(fetchedMap, "headers"),
-		"data":    sdk.GetProp(fetchedMap, "body"),
-	}, nil
+	return map[string]any{"ok": false, "err": ctx.MakeError("direct_invalid", "invalid response type")}, nil
 }
 
 // <[SLOT]>
 
-// Test creates a test SDK instance.
-func Test(testoptsarg, sdkoptsarg map[string]any) *ProjectNameSDK {
-	sdkopts, _ := sdk.GetDef(sdk.Clone(sdkoptsarg), map[string]any{}).(map[string]any)
-	testopts, _ := sdk.GetDef(sdk.Clone(testoptsarg), map[string]any{}).(map[string]any)
-	sdk.SetProp(testopts, "active", true)
-	sdk.SetPath(sdkopts, []string{"feature", "test"}, testopts)
+func TestSDK(testopts map[string]any, sdkopts map[string]any) *ProjectNameSDK {
+	if sdkopts == nil {
+		sdkopts = map[string]any{}
+	}
+	sdkopts = vs.Clone(sdkopts).(map[string]any)
 
-	s := New(sdkopts)
-	s.mode = "test"
+	if testopts == nil {
+		testopts = map[string]any{}
+	}
+	testopts = vs.Clone(testopts).(map[string]any)
+	testopts["active"] = true
 
-	return s
-}
+	vs.SetPath(sdkopts, []any{"feature", "test"}, testopts)
 
-// Tester creates a test SDK instance with options.
-func (s *ProjectNameSDK) Tester(testopts, sdkopts map[string]any) (*ProjectNameSDK, error) {
-	return Test(testopts, sdkopts), nil
+	sdk := NewProjectNameSDK(sdkopts)
+	sdk.Mode = "test"
+
+	return sdk
 }

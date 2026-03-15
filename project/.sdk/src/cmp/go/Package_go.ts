@@ -22,18 +22,20 @@ const Package = cmp(async function Package(props: any) {
 
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
-  const sdkname = model.name
-  const origin = null == model.origin ? '' : `${model.origin}/`
+  // Module name: concatenated lowercase (e.g., voxgigsolardemosdk)
+  const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
+  const gomodule = orgPrefix + model.name + 'sdk'
 
   File({ name: 'go.mod' }, () => {
-    Content(`module ${origin}${sdkname}
+    Content(`module ${gomodule}
 
-go 1.21
+go 1.20
 
 `)
 
     // Collect dependencies from features
     const deps: Record<string, string> = {}
+    const replaceDirs: Record<string, string> = {}
 
     each(feature, (f: any) => {
       const goDeps = f.deps?.go
@@ -52,6 +54,9 @@ go 1.21
       each(targetDeps, (dep: any) => {
         if (dep.active !== false) {
           deps[dep.key$] = dep.version || 'v0.0.0'
+          if (dep.replace) {
+            replaceDirs[dep.key$] = dep.replace
+          }
         }
       })
     }
@@ -60,11 +65,20 @@ go 1.21
       Content(`require (
 `)
       for (const [name, version] of Object.entries(deps)) {
-        Content(`	${name} ${version}
+        Content(`\t${name} ${version}
 `)
       }
       Content(`)
 `)
+    }
+
+    if (Object.keys(replaceDirs).length > 0) {
+      Content(`
+`)
+      for (const [name, dir] of Object.entries(replaceDirs)) {
+        Content(`replace ${name} => ${dir}
+`)
+      }
     }
   })
 })

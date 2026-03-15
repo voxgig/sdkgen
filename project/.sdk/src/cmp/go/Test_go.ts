@@ -19,13 +19,14 @@ const Test = cmp(function Test(props: any) {
   const { model, stdrep } = props.ctx$
   const { target } = props
 
-  Folder({ name: 'test' }, () => {
+  // Module name: concatenated lowercase
+  const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
+  const gomodule = orgPrefix + model.name + 'sdk'
 
-    Folder({ name: 'entity' }, () => {
-      each(model.main[KIT].entity, (entity: ModelEntity) => {
-        TestEntity({ target, entity })
-        TestDirect({ target, entity })
-      })
+  Folder({ name: 'test' }, () => {
+    each(model.main[KIT].entity, (entity: ModelEntity) => {
+      TestEntity({ target, entity, gomodule })
+      TestDirect({ target, entity, gomodule })
     })
   })
 })
