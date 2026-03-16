@@ -1,9 +1,16 @@
 
+const envlocal = __dirname + '/../../../.env.local'
+require('dotenv').config({ quiet: true, path: [envlocal] })
+
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
 
 
 import { ProjectNameSDK } from '../../..'
+
+import {
+  envOverride,
+} from '../../utility'
 
 
 describe('EntityNameDirect', async () => {
