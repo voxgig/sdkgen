@@ -8,7 +8,7 @@ const { Gubu, Fault, One } = require('gubu')
 
 const { SdkGen } = require('../dist/sdkgen.js')
 
-const VERSION = '0.26.1'
+const VERSION = '0.28.0'
 const KONSOLE = console
 
 
