@@ -170,7 +170,7 @@ function checkResult(entry: any, args: any[], res: any, structUtils: Record<stri
 
   if (entry.err) {
     return fail('Expected error did not occur: ' + entry.err +
-      '\n\nENTRY: ' + JSON.stringify(entry, null, 2))
+      '\n\nENTRY: ' + safeStringify(entry))
   }
 
   if (entry.match) {
@@ -195,7 +195,7 @@ function checkResult(entry: any, args: any[], res: any, structUtils: Record<stri
     return
   }
 
-  deepStrictEqual(null != res ? JSON.parse(JSON.stringify(res)) : res, entry.out)
+  deepStrictEqual(null != res ? JSON.parse(safeStringify(res)) : res, entry.out)
 }
 
 
@@ -223,10 +223,10 @@ function handleError(entry: any, err: any, structUtils: Record<string, any>) {
 
   // Unexpected error (test didn't specify an error expectation)
   else if (err instanceof AssertionError) {
-    fail(err.message + '\n\nENTRY: ' + JSON.stringify(entry, null, 2))
+    fail(err.message + '\n\nENTRY: ' + safeStringify(entry))
   }
   else {
-    fail(err.stack + '\\nnENTRY: ' + JSON.stringify(entry, null, 2))
+    fail(err.stack + '\n\nENTRY: ' + safeStringify(entry))
   }
 }
 
@@ -356,11 +356,27 @@ function matchval(
 }
 
 
+function safeStringify(val: any): string {
+  const seen = new WeakSet()
+  return JSON.stringify(val, (_k, v) => {
+    if ('object' === typeof v && null !== v) {
+      if (seen.has(v)) return '[Circular]'
+      seen.add(v)
+    }
+    if (v instanceof Error) {
+      return { name: v.name, message: v.message }
+    }
+    return v
+  }, 2)
+}
+
+
 function fixJSON(val: any, flags?: Flags): any {
   if (null == val) {
     return flags?.null ? NULLMARK : val
   }
 
+  const seen = new WeakSet()
   const replacer = (_k: string, v: any) => {
     if (null == v && flags?.null) {
       return NULLMARK
@@ -372,6 +388,11 @@ function fixJSON(val: any, flags?: Flags): any {
         name: v.name,
         message: v.message,
       }
+    }
+
+    if ('object' === typeof v && null !== v) {
+      if (seen.has(v)) return '[Circular]'
+      seen.add(v)
     }
 
     return v

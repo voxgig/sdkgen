@@ -123,6 +123,7 @@ class Context {
       spec: this.spec,
       entity: this.entity,
       result: this.result,
+      response: this.response,
       meta: this.meta,
     }
   }
