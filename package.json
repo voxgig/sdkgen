@@ -49,10 +49,10 @@
   },
   "peerDependencies": {
     "@redocly/openapi-core": ">=1 <2",
-    "@voxgig/util": ">=0",
-    "@voxgig/struct": ">=0",
     "@voxgig/apidef": ">=3",
-    "aontu": ">=0",
+    "@voxgig/struct": ">=0",
+    "@voxgig/util": ">=0",
+    "aontu": "^0.38.0",
     "jostraca": ">=0"
   }
 }
