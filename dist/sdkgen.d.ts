@@ -9,6 +9,7 @@ import { Test } from './cmp/Test';
 import { ReadmeInstall } from './cmp/ReadmeInstall';
 import { ReadmeOptions } from './cmp/ReadmeOptions';
 import { ReadmeEntity } from './cmp/ReadmeEntity';
+import { ReadmeRef } from './cmp/ReadmeRef';
 import { FeatureHook } from './cmp/FeatureHook';
 type SdkGenOptions = {
     folder: string;
@@ -75,4 +76,4 @@ export declare const Inject: Component;
 export declare const Line: Component;
 export declare const Slot: Component;
 export declare const List: Component;
-export { Main, Entity, Feature, Test, Readme, ReadmeInstall, ReadmeOptions, ReadmeEntity, FeatureHook, Jostraca, SdkGen, requirePath, };
+export { Main, Entity, Feature, Test, Readme, ReadmeInstall, ReadmeOptions, ReadmeEntity, ReadmeRef, FeatureHook, Jostraca, SdkGen, requirePath, };
