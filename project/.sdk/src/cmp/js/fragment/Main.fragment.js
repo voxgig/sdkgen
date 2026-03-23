@@ -1,68 +1,105 @@
 
-const { Config } = require('./Config')
+const { inspect } = require('node:util')
+
+const { config } = require('./Config')
 const { Utility } = require('./utility/Utility')
 
 
-class NameSDK {
-  #options
-  #features
-  #utility = Utility
-  
+const { BaseFeature } = require('./feature/base/BaseFeature')
+
+
+const stdutil = new Utility()
+
+
+class ProjectNameSDK {
+  _mode = 'live'
+  _options
+  _utility = new Utility()
+  _features
+  _rootctx
+
   constructor(options) {
 
-    this.#options = this.#utility.makeOptions({
+    this._rootctx = this._utility.makeContext({
       client: this,
-      utility: this.#utility,
-      config: Config,
+      utility: this._utility,
+      config,
       options,
+      shared: new WeakMap()
     })
 
-    // #FeatureOptions
+    this._options = this._utility.makeOptions(this._rootctx)
 
-    this.#features = {
-      // #BuildFeature
+    const struct = this._utility.struct
+    const getpath = struct.getpath
+    const items = struct.items
+
+    if (true === getpath(this._options.feature, 'test.active')) {
+      this._mode = 'test'
     }
 
-    // #PostConstruct-Hook
+    this._rootctx.options = this._options
+
+    this._features = []
+
+    const featureAdd = this._utility.featureAdd
+    const featureInit = this._utility.featureInit
+
+    items(this._options.feature, (fitem) => {
+      const fname = fitem[0]
+      const fopts = fitem[1]
+      if (fopts.active) {
+        featureAdd(this._rootctx, this._rootctx.config.makeFeature(fname))
+      }
+    })
+
+    if (null != this._options.extend) {
+      for (let f of this._options.extend) {
+        featureAdd(this._rootctx, f)
+      }
+    }
+
+    for (let f of this._features) {
+      featureInit(this._rootctx, f)
+    }
+
+    const featureHook = this._utility.featureHook
+    featureHook(this._rootctx, 'PostConstruct')
   }
 
 
   options() {
-    return { ...this.#options }
+    return this._utility.struct.clone(this._options)
   }
 
-  features() {
-    return { ...this.#features }
-  }
 
   utility() {
-    return { ...this.#utility }
+    return this._utility.struct.clone(this._utility)
   }
 
 
-  static test(opts) {
-    return new NameSDK({
-      // #TestOptions
-      ...(opts || {})
-    })
-  }
-
-  test(opts) {
-    return new NameSDK({
-      // #TestOptions
-      ...(opts || this.#options || {})
-    })
-  }
-
-  
   async prepare(fetchargs) {
-    const utility = this.#utility
-    const { headers, auth, fullurl } = utility
+    const utility = this._utility
+    const struct = utility.struct
+    const clone = struct.clone
+
+    const {
+      makeContext,
+      makeFetchDef,
+      prepareHeaders,
+      prepareAuth,
+    } = utility
 
     fetchargs = fetchargs || {}
 
-    const options = this.options()
+    let ctx = makeContext({
+      opname: 'prepare',
+      ctrl: fetchargs.ctrl || {},
+    }, this._rootctx)
 
+    const options = this._options
+
+    // Build spec directly from SDK options + user-provided fetch args.
     const spec = {
       base: options.base,
       prefix: options.prefix,
@@ -71,11 +108,12 @@ class NameSDK {
       method: fetchargs.method || 'GET',
       params: fetchargs.params || {},
       query: fetchargs.query || {},
-      headers: headers({ client: this, utility }),
+      headers: prepareHeaders(ctx),
       body: fetchargs.body,
       step: 'start',
-      alias: {},
     }
+
+    ctx.spec = spec
 
     // Merge user-provided headers over SDK defaults.
     if (fetchargs.headers) {
@@ -85,51 +123,48 @@ class NameSDK {
       }
     }
 
-    // Apply SDK auth.
-    const ctx = { client: this, op: { params: [] }, spec, utility }
-    auth(ctx)
-
-    // Build URL.
-    const url = fullurl(ctx)
-
-    const fetchdef = {
-      url,
-      method: spec.method,
-      headers: { ...spec.headers },
+    // Apply SDK auth (apikey, auth prefix, etc.)
+    const authResult = prepareAuth(ctx)
+    if (authResult instanceof Error) {
+      return authResult
     }
 
-    if (null != spec.body) {
-      fetchdef.body =
-        'object' === typeof spec.body ? JSON.stringify(spec.body) : spec.body
-    }
-
-    return fetchdef
+    return makeFetchDef(ctx)
   }
 
 
   async direct(fetchargs) {
+    const utility = this._utility
+    const fetcher = utility.fetcher
+    const makeContext = utility.makeContext
+
     const fetchdef = await this.prepare(fetchargs)
     if (fetchdef instanceof Error) {
       return fetchdef
     }
 
-    const options = this.options()
-    const fetch = options.system.fetch
+    let ctx = makeContext({
+      opname: 'direct',
+      ctrl: (fetchargs || {}).ctrl || {},
+    }, this._rootctx)
 
     try {
-      const response = await fetch(fetchdef.url, fetchdef)
+      const fetched = await fetcher(ctx, fetchdef.url, fetchdef)
 
-      if (null == response) {
-        return { ok: false, err: new Error('response: undefined') }
+      if (null == fetched) {
+        return { ok: false, err: ctx.error('direct_no_response', 'response: undefined') }
+      }
+      else if (fetched instanceof Error) {
+        return { ok: false, err: fetched }
       }
 
-      const status = response.status
-      const json = 'function' === typeof response.json ? await response.json() : response.json
+      const status = fetched.status
+      const json = 'function' === typeof fetched.json ? await fetched.json() : fetched.json
 
       return {
         ok: status >= 200 && status < 300,
         status,
-        headers: response.headers,
+        headers: fetched.headers,
         data: json,
       }
     }
@@ -140,12 +175,62 @@ class NameSDK {
 
 
   // <[SLOT]>
+
+
+  static test(testoptsarg, sdkoptsarg) {
+    const struct = stdutil.struct
+    const setpath = struct.setpath
+    const getdef = struct.getdef
+    const clone = struct.clone
+    const setprop = struct.setprop
+
+    const sdkopts = getdef(clone(sdkoptsarg), {})
+    const testopts = getdef(clone(testoptsarg), {})
+    setprop(testopts, 'active', true)
+    setpath(sdkopts, 'feature.test', testopts)
+
+    const testsdk = new ProjectNameSDK(sdkopts)
+    testsdk._mode = 'test'
+
+    return testsdk
+  }
+
+
+  tester(testopts, sdkopts) {
+    return ProjectNameSDK.test(testopts, sdkopts)
+  }
+
+
+  toJSON() {
+    return { name: 'ProjectName' }
+  }
+
+  toString() {
+    return 'ProjectName ' + this._utility.struct.jsonify(this.toJSON())
+  }
+
+  [inspect.custom]() {
+    return this.toString()
+  }
+
 }
 
 
-const SDK = NameSDK
+class ProjectNameEntity {
+
+}
+
+
+const SDK = ProjectNameSDK
+
 
 module.exports = {
-  NameSDK,
+  stdutil,
+
+  BaseFeature,
+  ProjectNameEntity,
+
+  ProjectNameSDK,
   SDK,
 }
+

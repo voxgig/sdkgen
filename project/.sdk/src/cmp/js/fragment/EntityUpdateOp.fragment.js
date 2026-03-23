@@ -1,61 +1,113 @@
-class EntityOperation { // REMOVED
 
-async update(data) {
-  let entity = this
-  let client = this.#client
-  const utility = this.#utility
-  const { operator, makeSpec, makeRequest, makeResponse, makeResult, error, struct, done } = utility
-  
-  let op = {
-    entity: 'Name',
-    name: 'update',
-    path: 'PATH',
-    params: ['PARAM-LIST'],
-    alias: {'ALIAS':'MAP'},
-    match: this.#match,
-    data: null == data ? this.#data : data,
-    state: {},
-    reqform: 'REQFORM',
-    resform: 'RESFORM',
+class EntityOperation {
+
+  #match
+  #data
+  #utility
+
+
+  // EJECT-START
+
+  async update(reqdata, ctrl) {
+
+    const utility = this.#utility
+
+    const {
+      makeContext,
+      done,
+      error,
+      featureHook,
+      makeTarget,
+      makeRequest,
+      makeResponse,
+      makeResult,
+      makeSpec,
+    } = utility
+
+    let fres = undefined
+
+    let ctx = makeContext({
+      opname: 'update',
+      ctrl,
+      match: this.#match,
+      data: this.#data,
+      reqdata
+    }, this._entctx)
+
+    try {
+
+      // #PreSelection-Hook
+
+      ctx.out.target = makeTarget(ctx)
+      if (ctx.out.target instanceof Error) {
+        return error(ctx, ctx.out.target)
+      }
+
+
+      // #PreSpec-Hook
+
+      ctx.out.spec = makeSpec(ctx)
+      if (ctx.out.spec instanceof Error) {
+        return error(ctx, ctx.out.spec)
+      }
+
+
+      // #PreRequest-Hook
+
+      ctx.out.request = await makeRequest(ctx)
+      if (ctx.out.request instanceof Error) {
+        return error(ctx, ctx.out.request)
+      }
+
+
+      // #PreResponse-Hook
+
+      ctx.out.response = await makeResponse(ctx)
+      if (ctx.out.response instanceof Error) {
+        return error(ctx, ctx.out.response)
+      }
+
+
+      // #PreResult-Hook
+
+      ctx.out.result = await makeResult(ctx)
+      if (ctx.out.result instanceof Error) {
+        return error(ctx, ctx.out.result)
+      }
+
+
+      // #PreDone-Hook
+
+      if (null != ctx.result) {
+        if (null != ctx.result.resmatch) {
+          this.#match = ctx.result.resmatch
+        }
+
+        if (null != ctx.result.resdata) {
+          this.#data = ctx.result.resdata
+        }
+      }
+
+      return done(ctx)
+    }
+    catch (err) {
+      // #PreUnexpected-Hook
+
+      err = this.#unexpected(ctx, err)
+
+      if (err) {
+        throw err
+      }
+      else {
+        return undefined
+      }
+    }
   }
-  
-  let ctx = {client, entity, op, utility}
+
+  // EJECT-END
 
 
-  // #PreTarget-Hook    
+  #unexpected(ctx, err) { return err }
 
-  await operator(ctx)
-
-  
-  // #PreSpec-Hook
-
-  this.#data = op.data
-  
-  await makeSpec(ctx)
-
-  
-  // #PreRequest-Hook
-
-  await makeRequest(ctx)
-
-  
-  // #PreResponse-Hook
-
-  await makeResponse(ctx)
-
-  
-  // #PreResult-Hook
-
-  await makeResult(ctx)
-
-
-  // #PostOperation-Hook
-
-  if(null != ctx.result.resdata) {
-    this.#data = ctx.result.resdata
-  }
-
-  return done(ctx)
 }
 
-} // REMOVED
