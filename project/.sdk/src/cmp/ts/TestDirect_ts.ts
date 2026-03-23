@@ -29,8 +29,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const ff = projectPath('src/cmp/ts/fragment/')
 
-  const PROJECTNAME = model.Name.toUpperCase()
-  const entidEnvVar = `${PROJECTNAME}_TEST_${entity.Name.toUpperCase()}_ENTID`
+  const PROJECTNAME = model.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
+  const entidEnvVar = `${PROJECTNAME}_TEST_${entity.Name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID`
 
   const opnames = Object.keys(entity.op)
   const hasLoad = opnames.includes('load')
