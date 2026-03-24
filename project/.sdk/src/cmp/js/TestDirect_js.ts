@@ -16,7 +16,7 @@ import {
 
 import {
   projectPath
-} from './utility_ts'
+} from './utility_js'
 
 
 const TestDirect = cmp(function TestDirect(props: any) {
@@ -27,7 +27,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const target = props.target
   const entity = props.entity
 
-  const ff = projectPath('src/cmp/ts/fragment/')
+  const ff = projectPath('src/cmp/js/fragment/')
 
   const PROJECTNAME = model.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
   const entidEnvVar = `${PROJECTNAME}_TEST_${entity.Name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID`
@@ -45,7 +45,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     File({ name: nom(entity, 'Name') + 'Direct.test.' + target.name }, () => {
 
       Fragment({
-        from: ff + 'Direct.test.fragment.ts',
+        from: ff + 'Direct.test.fragment.js',
         replace: {
           SdkName: nom(model.const, 'Name'),
           EntityName: nom(entity, 'Name'),
@@ -57,8 +57,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
         Slot({ name: 'directSetup' }, () => {
           Content(`
-function directSetup(mockres?: any) {
-  const calls: any[] = []
+function directSetup(mockres) {
+  const calls = []
 
   const env = envOverride({
     '${entidEnvVar}': {},
@@ -73,7 +73,7 @@ function directSetup(mockres?: any) {
       apikey: env.${PROJECTNAME}_APIKEY,
     })
 
-    let idmap: any = env['${entidEnvVar}']
+    let idmap = env['${entidEnvVar}']
     if ('string' === typeof idmap && idmap.startsWith('{')) {
       idmap = JSON.parse(idmap)
     }
@@ -81,7 +81,7 @@ function directSetup(mockres?: any) {
     return { client, calls, live, idmap }
   }
 
-  const mockFetch = async (url: string, init: any) => {
+  const mockFetch = async (url, init) => {
     calls.push({ url, init })
     return {
       status: 200,
@@ -96,7 +96,7 @@ function directSetup(mockres?: any) {
     system: { fetch: mockFetch },
   })
 
-  return { client, calls, live, idmap: {} as any }
+  return { client, calls, live, idmap: {} }
 }
   `)
         })
@@ -165,7 +165,7 @@ function generateDirectLoad(model: any, entity: any) {
       `      params.${lp.name} = setup.idmap['${lp.key}']`).join('\n')
 
     liveParamsBlock = `    if (setup.live) {
-      const listResult: any = await client.direct({
+      const listResult = await client.direct({
         path: '${listPath}',
         method: 'GET',
         params: {
@@ -193,10 +193,10 @@ ${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 
     const setup = directSetup({ id: 'direct01' })
     const { client, calls } = setup
 
-    const params: any = {}
+    const params = {}
 ${liveParamsBlock}
 
-    const result: any = await client.direct({
+    const result = await client.direct({
       path: '${loadPath}',
       method: 'GET',
       params,
@@ -245,7 +245,7 @@ function generateDirectList(model: any, entity: any) {
     const mockLines = listParams.map((p: any, i: number) =>
       `      params.${p.name} = 'direct0${i + 1}'`).join('\n')
 
-    paramsBlock = `    const params: any = {}
+    paramsBlock = `    const params = {}
     if (setup.live) {
 ${liveLines}
     } else {
@@ -253,7 +253,7 @@ ${mockLines}
     }
 `
   } else {
-    paramsBlock = `    const params: any = {}
+    paramsBlock = `    const params = {}
 `
   }
 
@@ -263,7 +263,7 @@ ${mockLines}
     const { client, calls } = setup
 
 ${paramsBlock}
-    const result: any = await client.direct({
+    const result = await client.direct({
       path: '${listPath}',
       method: 'GET',
       params,

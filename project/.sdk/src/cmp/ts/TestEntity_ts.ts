@@ -48,6 +48,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const target = props.target
   const entity = props.entity
 
+  const PROJENVNAME = nom(model.const, 'NAME').replace(/[^A-Z_]/g, '_')
+  const ENTENVNAME = nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')
+
   // TODO: should be a utility function
   const ff = projectPath('src/cmp/ts/fragment/')
 
@@ -118,18 +121,18 @@ function basicSetup(extra?: any) {
     })
 
   const env = envOverride({
-    '${nom(model.const, 'NAME')}_TEST_${nom(entity, 'NAME')}_ENTID': idmap,
-    '${nom(model.const, 'NAME')}_TEST_LIVE': 'FALSE',
-    '${nom(model.const, 'NAME')}_TEST_EXPLAIN': 'FALSE',
-    '${nom(model.const, 'NAME')}_APIKEY': 'NONE',
+    '${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID': idmap,
+    '${PROJENVNAME}_TEST_LIVE': 'FALSE',
+    '${PROJENVNAME}_TEST_EXPLAIN': 'FALSE',
+    '${PROJENVNAME}_APIKEY': 'NONE',
   })
 
-  idmap = env['${nom(model.const, 'NAME')}_TEST_${nom(entity, 'NAME')}_ENTID']
+  idmap = env['${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID']
 
-  if ('TRUE' === env.${model.NAME}_TEST_LIVE) {
+  if ('TRUE' === env.${PROJENVNAME}_TEST_LIVE) {
     client = new ${model.Name}SDK(merge([
       {
-        apikey: env.${nom(model.const, 'NAME')}_APIKEY,
+        apikey: env.${PROJENVNAME}_APIKEY,
       },
       extra
     ]))
@@ -142,7 +145,7 @@ function basicSetup(extra?: any) {
     client,
     struct,
     data: entityData,
-    explain: 'TRUE' === env.${nom(model.const, 'NAME')}_TEST_EXPLAIN,
+    explain: 'TRUE' === env.${PROJENVNAME}_TEST_EXPLAIN,
     now: Date.now(),
   }
 

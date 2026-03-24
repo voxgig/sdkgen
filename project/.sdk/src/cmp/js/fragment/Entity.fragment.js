@@ -1,28 +1,52 @@
 
-class NameEntity {  
+const { inspect } = require('node:util')
+
+const {
+  SdkNameSDK,
+  SdkNameEntity,
+} = require('../SdkNameSDK')
+
+const {
+  Utility
+} = require('../utility/Utility')
+
+
+// TODO: needs Entity superclass
+class EntityNameEntity {
+  name = 'entityname'
+
   #client
-  #options
-  #features
   #utility
+  #entopts
   #data
   #match
-  
-  constructor(client, options) {
-    options = options || {}
-    options.active = false !== options.active
+
+  _entctx
+
+  constructor(client, entopts) {
+    // super()
+    entopts = entopts || {}
+    entopts.active = false !== entopts.active
 
     this.#client = client
-    this.#options = options
-    this.#features = client.features()
+    this.#entopts = entopts
     this.#utility = client.utility()
     this.#data = {}
     this.#match = {}
 
-    // #PostConstructEntity-Hook
+    const makeContext = this.#utility.makeContext
+
+    this._entctx = makeContext({
+      entity: this,
+      entopts,
+    }, client._rootctx)
+
+    const featureHook = this.#utility.featureHook
+    featureHook(this._entctx, 'PostConstructEntity')
   }
 
-  options() {
-    return { ...this.#options }
+  entopts() {
+    return { ...this.#entopts }
   }
 
   client() {
@@ -30,34 +54,53 @@ class NameEntity {
   }
 
   make() {
-    return new NameEntity(this.#client, this.options())
+    return new EntityNameEntity(this.#client, this.entopts())
   }
 
-  
-  data(data) {
-    // NOTE: data can be mutated.
-    if(null != data) {
 
-      // #SetData-Hook
-      
-      this.#data = { ...data }
+  data(data) {
+    const struct = this.#utility.struct
+    const featureHook = this.#utility.featureHook
+
+    if (null != data) {
+      this.#data = struct.clone(data)
+      featureHook(this._entctx, 'SetData')
     }
 
-    let out = { ...this.#data }
-
-    // #GetData-Hook
+    featureHook(this._entctx, 'GetData')
+    let out = struct.clone(this.#data)
 
     return out
   }
 
-  
-  match() {
-    // NOTE: match cannot be mutated.
-    let out = { ...this.#match }
 
-    // #GetMatch-Hook
+  match(match) {
+    const struct = this.#utility.struct
+    const featureHook = this.#utility.featureHook
+
+    if (null != match) {
+      this.#match = struct.clone(match)
+      featureHook(this._entctx, 'SetMatch')
+    }
+
+    featureHook(this._entctx, 'GetMatch')
+    let out = struct.clone(this.#match)
 
     return out
+  }
+
+
+  toJSON() {
+    const struct = this.#utility.struct
+    return struct.merge([{}, struct.getdef(this.#data, {}), { $entity: 'EntityName' }])
+  }
+
+  toString() {
+    return 'EntityName ' + this.#utility.struct.jsonify(this.#data)
+  }
+
+  [inspect.custom]() {
+    return this.toString()
   }
 
 
@@ -71,9 +114,57 @@ class NameEntity {
 
   // #RemoveOp
 
+
+  #unexpected(ctx, err) {
+    const clean = this.#utility.clean
+    const struct = this.#utility.struct
+
+    const delprop = struct.delprop
+    const clone = struct.clone
+    const merge = struct.merge
+
+    const ctrl = ctx.ctrl
+
+    ctrl.err = err
+
+    if (ctrl.explain) {
+      ctx.ctrl.explain = clean(ctx, ctx.ctrl.explain)
+      delprop(ctx.ctrl.explain.result, 'err')
+
+      if (null != ctx.result && null != ctx.result.err) {
+        ctrl.explain.err = clean(ctx, merge([
+          clone({ err: ctx.result.err }).err,
+          {
+            message: ctx.result.err.message,
+            stack: ctx.result.err.stack,
+          }]))
+      }
+
+      const cleanerr = clean(ctx, merge([
+        clone({ err }).err,
+        {
+          message: err.message,
+          stack: err.stack,
+        }]))
+
+      if (null == ctrl.explain.err) {
+        ctrl.explain.err = cleanerr
+      }
+      else if (ctrl.explain.err.message != cleanerr.message) {
+        ctrl.explain.unexpected = cleanerr
+      }
+    }
+
+    if (false === ctrl.throw) {
+      return undefined
+    }
+
+    return err
+  }
+
 }
 
 
 module.exports = {
-  NameEntity
+  EntityNameEntity
 }

@@ -14,7 +14,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const entity = props.entity
   const gomodule = props.gomodule
 
-  const PROJECTNAME = model.Name.toUpperCase()
+  const PROJECTNAME = model.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
 
   const opnames = Object.keys(entity.op)
   const hasLoad = opnames.includes('load')
@@ -38,7 +38,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listParams = listTarget?.args?.params || []
 
   // Build the ENTID env var name for this entity
-  const entidEnvVar = `${PROJECTNAME}_TEST_${entity.Name.toUpperCase()}_ENTID`
+  const entidEnvVar = `${PROJECTNAME}_TEST_${entity.Name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID`
 
   File({ name: entity.name + '_direct_test.' + target.ext }, () => {
 

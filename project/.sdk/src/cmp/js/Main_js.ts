@@ -7,74 +7,83 @@ import {
 } from '@voxgig/sdkgen'
 
 
+import type {
+  ModelEntity
+} from '@voxgig/apidef'
+
+
+import {
+  KIT,
+  getModelPath
+} from '@voxgig/apidef'
+
+
 import { Package } from './Package_js'
 import { Config } from './Config_js'
 import { MainEntity } from './MainEntity_js'
-import { Test } from './Test_js'
+import { SdkError } from './SdkError_js'
 
 
 const Main = cmp(async function Main(props: any) {
+
+  // Needs type: target object
   const { target } = props
   const { model } = props.ctx$
 
-  const { entity } = model.main.kit
-  const { feature } = model.main.kit
+  const entity: ModelEntity = getModelPath(model, `main.${KIT}.entity`)
+  const feature = getModelPath(model, `main.${KIT}.feature`)
 
   Package({ target })
 
-  Test({ target })
-
   Folder({ name: 'src' }, () => {
+
+    SdkError({ target })
 
     File({ name: model.const.Name + 'SDK.' + target.name }, () => {
 
       Line(`// ${model.const.Name} ${target.Name} SDK\n`)
 
-      List({ item: feature }, ({ item }: any) =>
-        Line(`const { ${item.Name + 'Feature'} } = ` +
-          `require('./feature/${item.name}/${item.Name}Feature')`))
-
       List({ item: entity }, ({ item }: any) =>
         Line(`const { ${item.Name}Entity } = require('./entity/${item.Name}Entity')`))
 
-      Fragment({
-        from: Path.normalize(__dirname + '/../../../src/cmp/js/fragment/Main.fragment.js'),
-        replace: {
-          Name: model.const.Name,
+      Fragment(
+        {
+          from: Path.normalize(__dirname + '/../../../src/cmp/js/fragment/Main.fragment.js'),
+          replace: {
+            ...props.ctx$.stdrep,
 
+            '#BuildFeatures': ({ indent }: any) => {
+              List({ item: feature, line: false }, ({ item }: any) =>
+                Line({ indent },
+                  `featureAdd(this._rootctx, new ${item.Name}Feature())`))
+            },
 
-          '#FeatureOptions': ({ indent }: any) =>
-            Line({ indent }, `const fopts = this.#options.feature || {}`),
+            '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
+fres = featureHook(ctx, '${name}')
+if (fres instanceof Promise) { await fres }
+`),
 
-          '#BuildFeature': ({ indent }: any) => {
-            List({ item: feature, line: false }, ({ item }: any) =>
-              Line({ indent }, `${item.name}: ` +
-                `new ${item.Name}Feature(this, fopts.${item.name}, ` +
-                `${JSON.stringify(item.config || {})}), `))
-          },
-
-          '#Feature-Hook': ({ name, indent }: any) =>
-            FeatureHook({ name }, (f: any) =>
-              Line({ indent },
-                `${f.await ? 'await ' : ''}this.#features.${f.name}.${name}({ client: this })`)),
-
-          '#TestOptions': ({ indent }: any) => {
-            const topts = {
-              feature: cmap(feature, {
-                active: false
-              }),
+            '#TestOptions': ({ indent }: any) => {
+              const topts = {
+                feature: cmap(feature, {
+                  active: false
+                }),
+              }
+              Content({ indent },
+                JSON.stringify(topts, null, 2)
+                  .replace(/^{\n  /, '').replace(/\n}$/, ',\n').replace(/\n  /g, '\n'))
             }
-            Content({ indent },
-              JSON.stringify(topts, null, 2)
-                .replace(/^{\n  /, '').replace(/\n}$/, ',\n').replace(/\n  /g, '\n'))
           }
-        }
-      }, () => {
-        each(entity, (entity: any) => {
-          // console.log('ENTITY', entity.name)
-          MainEntity({ target, entity, entitySDK: model.main.kit.entity[entity.name] })
+        },
+
+        // Entities
+        () => {
+          each(entity, (entity: ModelEntity) => {
+            const entitySDK = getModelPath(model, `main.${KIT}.entity.${entity.name}`)
+            const entprops = { target, entity, entitySDK }
+            MainEntity(entprops)
+          })
         })
-      })
     })
 
     Config({ target })

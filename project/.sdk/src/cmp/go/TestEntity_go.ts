@@ -39,7 +39,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // Convert snake_case ref to camelCase for Go variable names
   const refVar = ref.replace(/_([a-z0-9])/g, (_: any, c: string) => c.toUpperCase())
   const ancestors = (entity.relations?.ancestors || []).flat()
-  const PROJUPPER = model.const.Name.toUpperCase()
+  const PROJUPPER = model.const.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
   const textfield = updateStep?.input?.textfield || 'kind'
   const mark = updateStep?.spec?.[0]?.def?.mark || `Mark01-${ref}`
 
@@ -290,13 +290,13 @@ func Test${entity.Name}Entity(t *testing.T) {
 
     Content(`
 	env := envOverride(map[string]any{
-		"${PROJUPPER}_TEST_${entity.name.toUpperCase()}_ENTID": idmap,
+		"${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID": idmap,
 		"${PROJUPPER}_TEST_LIVE":      "FALSE",
 		"${PROJUPPER}_TEST_EXPLAIN":   "FALSE",
 		"${PROJUPPER}_APIKEY":         "NONE",
 	})
 
-	idmapResolved := core.ToMapAny(env["${PROJUPPER}_TEST_${entity.name.toUpperCase()}_ENTID"])
+	idmapResolved := core.ToMapAny(env["${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID"])
 	if idmapResolved == nil {
 		idmapResolved = core.ToMapAny(idmap)
 	}

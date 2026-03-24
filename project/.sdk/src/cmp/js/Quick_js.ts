@@ -17,7 +17,7 @@ const Quick = cmp(function Quick(props: any) {
   }
 
   ent = ent || { name: 'Entity' }
-  names(ent, ent.name)// , ent.key$ || 'name')
+  names(ent, ent.name)
 
   // TODO: selected features should be active by default!
 
@@ -25,13 +25,10 @@ const Quick = cmp(function Quick(props: any) {
     .filter((f: any) => f.active)
     .reduce((a: any, f: any) => a + `\n    ${f.name}: { active: true },`, '')
 
-  // console.log('QUICK', ent, featureOptions)
-
 
   File({ name: 'quick.' + target.name }, () => {
 
     Content(`
-// ENT 3
 require('dotenv').config({ path: ['../../.env.local']})
 
 const { ${model.const.Name}SDK } = require('../')
@@ -40,7 +37,6 @@ run()
 
 async function run() {
   const client = new ${model.const.Name}SDK({
-    endpoint: process.env.${model.NAME}_ENDPOINT,
     apikey: process.env.${model.NAME}_APIKEY,
     ${featureOptions}
   })
@@ -48,21 +44,21 @@ async function run() {
 `)
 
     if (ent.test?.quick.create) {
-      Content(`    
+      Content(`
   out = await client.${ent.Name}().create(${JSON.stringify(ent.test?.quick.create)})
-  console.log('${ent.Name}.load', out) 
+  console.log('${ent.Name}.load', out)
 `)
     }
 
     if (ent.test?.quick.load) {
-      Content(`    
+      Content(`
   out = await client.${ent.Name}().load(${JSON.stringify(ent.test?.quick.load)})
-  console.log('${ent.Name}.load', out) 
+  console.log('${ent.Name}.load', out)
 `)
     }
 
     if (ent.test?.quick.list) {
-      Content(`    
+      Content(`
   out = await client.${ent.Name}().list(${JSON.stringify(ent.test?.quick.list)})
   console.log('${ent.Name}.list', out)
 `)

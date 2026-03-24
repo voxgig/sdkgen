@@ -4,21 +4,50 @@ import { cmp, each, Content } from 'jostraca'
 
 const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
   const { target } = props
+  const { model } = props.ctx$
+
+  const publishedOptions = each(target.options)
+    .filter((option: any) => option.publish)
+
+  if (0 === publishedOptions.length) {
+    return
+  }
 
   Content(`
 
 ## Options
 
+Pass options when creating a client instance:
+
+\`\`\`ts
+const client = new ${model.Name}SDK({
 `)
 
-  each(target.options)
-    .filter((option: any) => option.publish)
-    .map((option: any) => {
-      Content(`
-* __${option.name} (${option.kind})__: ${option.short}
+  publishedOptions.map((option: any) => {
+    if ('apikey' === option.name) {
+      Content(`  ${option.name}: process.env.${model.NAME}_APIKEY,
 `)
-    })
+    }
+    else {
+      Content(`  // ${option.name}: ${option.kind === 'string' ? "'...'" : '...'},
+`)
+    }
+  })
 
+  Content(`})
+\`\`\`
+
+| Option | Type | Description |
+| --- | --- | --- |
+`)
+
+  publishedOptions.map((option: any) => {
+    Content(`| \`${option.name}\` | \`${option.kind}\` | ${option.short} |
+`)
+  })
+
+  Content(`
+`)
 
 })
 

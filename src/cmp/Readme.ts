@@ -8,6 +8,7 @@ import { ReadmeQuick } from './ReadmeQuick'
 import { ReadmeModel } from './ReadmeModel'
 import { ReadmeOptions } from './ReadmeOptions'
 import { ReadmeEntity } from './ReadmeEntity'
+import { ReadmeRef } from './ReadmeRef'
 
 
 const Readme = cmp(function Readme(props: any) {
@@ -26,7 +27,18 @@ const Readme = cmp(function Readme(props: any) {
     ReadmeModel({ target })
     ReadmeOptions({ target })
     ReadmeEntity({ target })
+
+    Content(`
+## Reference
+
+See [REFERENCE.md](REFERENCE.md) for complete API reference
+documentation including all method signatures, entity field schemas,
+and detailed usage examples.
+`)
   })
+
+  // Generate separate reference documentation
+  ReadmeRef({ target })
 })
 
 

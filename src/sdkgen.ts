@@ -29,6 +29,7 @@ import { Test } from './cmp/Test'
 import { ReadmeInstall } from './cmp/ReadmeInstall'
 import { ReadmeOptions } from './cmp/ReadmeOptions'
 import { ReadmeEntity } from './cmp/ReadmeEntity'
+import { ReadmeRef } from './cmp/ReadmeRef'
 import { FeatureHook } from './cmp/FeatureHook'
 
 
@@ -358,6 +359,7 @@ export {
   ReadmeInstall,
   ReadmeOptions,
   ReadmeEntity,
+  ReadmeRef,
   FeatureHook,
 
   Jostraca,

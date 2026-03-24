@@ -1,6 +1,6 @@
 
 
-import { cmp, each, File, Content } from '@voxgig/sdkgen'
+import { cmp, Content } from '@voxgig/sdkgen'
 
 
 const MainEntity = cmp(async function MainEntity(props: any) {
