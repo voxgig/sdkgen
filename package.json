@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "0.32.3",
+  "version": "0.33.0",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "types": "dist/sdkgen.d.ts",
@@ -48,8 +48,7 @@
     "typescript": "^6.0.2"
   },
   "peerDependencies": {
-    "@redocly/openapi-core": ">=1 <2",
-    "@voxgig/apidef": ">=3",
+    "@voxgig/apidef": ">=4",
     "@voxgig/struct": ">=0",
     "@voxgig/util": ">=0",
     "aontu": ">=0",
