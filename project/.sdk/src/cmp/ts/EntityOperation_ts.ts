@@ -32,7 +32,7 @@ const EntityOperation = cmp(function Operation(props: any) {
       SdkName: model.const.Name,
       EntityName: entity.Name,
       entityname: entity.name,
-      "['TARGETS']": formatJson(entop.targets, { margin: 6 }).trim(),
+      "['POINTS']": formatJson(entop.points, { margin: 6 }).trim(),
       '#Feature-Hook': ({ name, indent }: any) =>
         Content({ indent }, `
 fres = featureHook(ctx, '${name}')

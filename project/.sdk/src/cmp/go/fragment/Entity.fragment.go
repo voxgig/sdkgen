@@ -98,10 +98,10 @@ func (e *EntityNameEntity) Match(args ...any) any {
 func (e *EntityNameEntity) runOp(ctx *core.Context, postDone func()) (any, error) {
 	utility := e.utility
 
-	// #PreSelection-Hook
+	// #PrePoint-Hook
 
-	target, err := utility.MakeTarget(ctx)
-	ctx.Out["target"] = target
+	point, err := utility.MakePoint(ctx)
+	ctx.Out["point"] = point
 	if err != nil {
 		return utility.MakeError(ctx, err)
 	}

@@ -9,9 +9,9 @@ function prepareParams(ctx: Context) {
   // const struct = utility.struct
   // const validate = struct.validate
 
-  const target = ctx.target
+  const point = ctx.point
 
-  let params = target.args.params
+  let params = point.args.params
   // let reqmatch = ctx.reqmatch
 
   params = params || []
@@ -26,7 +26,7 @@ function prepareParams(ctx: Context) {
   }
 
   // TODO: review
-  // out = validate(out, target.validate.params)
+  // out = validate(out, point.validate.params)
 
   return out
 }

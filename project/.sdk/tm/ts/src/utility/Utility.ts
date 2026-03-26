@@ -13,7 +13,7 @@ import { makeOptions } from './MakeOptionsUtility'
 import { makeRequest } from './MakeRequestUtility'
 import { makeResponse } from './MakeResponseUtility'
 import { makeResult } from './MakeResultUtility'
-import { makeTarget } from './MakeTargetUtility'
+import { makePoint } from './MakePointUtility'
 import { makeSpec } from './MakeSpecUtility'
 import { makeUrl } from './MakeUrlUtility'
 import { param } from './ParamUtility'
@@ -48,7 +48,7 @@ class Utility {
   makeRequest = makeRequest
   makeResponse = makeResponse
   makeResult = makeResult
-  makeTarget = makeTarget
+  makePoint = makePoint
   makeSpec = makeSpec
   makeUrl = makeUrl
   param = param

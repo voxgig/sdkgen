@@ -2,7 +2,7 @@
 import { getprop } from './utility/StructUtility'
 
 
-class Target {
+class Point {
   args: { params: any[] }
   rename: { params: Record<string, string> }
   method: string
@@ -32,5 +32,5 @@ class Target {
 
 
 export {
-  Target,
+  Point,
 }

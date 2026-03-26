@@ -8,10 +8,10 @@ import (
 	"GOMODULE/core"
 )
 
-func makeTargetUtil(ctx *core.Context) (map[string]any, error) {
-	if ctx.Out["target"] != nil {
-		if tm, ok := ctx.Out["target"].(map[string]any); ok {
-			ctx.Target = tm
+func makePointUtil(ctx *core.Context) (map[string]any, error) {
+	if ctx.Out["point"] != nil {
+		if tm, ok := ctx.Out["point"].(map[string]any); ok {
+			ctx.Point = tm
 			return tm, nil
 		}
 	}
@@ -21,13 +21,13 @@ func makeTargetUtil(ctx *core.Context) (map[string]any, error) {
 
 	allowOp, _ := vs.GetPath([]any{"allow", "op"}, options).(string)
 	if !strings.Contains(allowOp, op.Name) {
-		return nil, ctx.MakeError("target_op_allow",
+		return nil, ctx.MakeError("point_op_allow",
 			"Operation \""+op.Name+
 				"\" not allowed by SDK option allow.op value: \""+allowOp+"\"")
 	}
 
-	if len(op.Targets) == 1 {
-		ctx.Target = op.Targets[0]
+	if len(op.Points) == 1 {
+		ctx.Point = op.Points[0]
 	} else {
 		var reqselector map[string]any
 		var selector map[string]any
@@ -40,10 +40,10 @@ func makeTargetUtil(ctx *core.Context) (map[string]any, error) {
 			selector = ctx.Match
 		}
 
-		var target map[string]any
-		for i := 0; i < len(op.Targets); i++ {
-			target = op.Targets[i]
-			selectDef := core.ToMapAny(vs.GetProp(target, "select"))
+		var point map[string]any
+		for i := 0; i < len(op.Points); i++ {
+			point = op.Points[i]
+			selectDef := core.ToMapAny(vs.GetProp(point, "select"))
 			found := true
 
 			if selector != nil && selectDef != nil {
@@ -77,19 +77,19 @@ func makeTargetUtil(ctx *core.Context) (map[string]any, error) {
 
 		if reqselector != nil {
 			reqAction := vs.GetProp(reqselector, "$action")
-			if reqAction != nil && target != nil {
-				targetSelect := core.ToMapAny(vs.GetProp(target, "select"))
-				targetAction := vs.GetProp(targetSelect, "$action")
-				if reqAction != targetAction {
-					return nil, ctx.MakeError("target_action_invalid",
+			if reqAction != nil && point != nil {
+				pointSelect := core.ToMapAny(vs.GetProp(point, "select"))
+				pointAction := vs.GetProp(pointSelect, "$action")
+				if reqAction != pointAction {
+					return nil, ctx.MakeError("point_action_invalid",
 						"Operation \""+op.Name+
 							"\" action \""+vs.Stringify(reqAction)+"\" is not valid.")
 				}
 			}
 		}
 
-		ctx.Target = target
+		ctx.Point = point
 	}
 
-	return ctx.Target, nil
+	return ctx.Point, nil
 }

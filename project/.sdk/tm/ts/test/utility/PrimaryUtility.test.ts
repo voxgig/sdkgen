@@ -48,7 +48,7 @@ describe('PrimaryUtility', async () => {
     const fns = [
       'clean', 'done', 'makeError', 'featureAdd', 'featureHook', 'featureInit',
       'fetcher', 'makeFetchDef', 'makeContext', 'makeOptions', 'makeRequest',
-      'makeResponse', 'makeResult', 'makeTarget', 'makeSpec', 'makeUrl',
+      'makeResponse', 'makeResult', 'makePoint', 'makeSpec', 'makeUrl',
       'param', 'prepareAuth', 'prepareBody', 'prepareHeaders', 'prepareMethod',
       'prepareParams', 'preparePath', 'prepareQuery', 'resultBasic',
       'resultBody', 'resultHeaders', 'transformRequest', 'transformResponse',
@@ -119,7 +119,7 @@ describe('PrimaryUtility', async () => {
       entity: opmap.entity || '_',
       name: opmap.name || '_',
       input: opmap.input || '_',
-      targets: opmap.targets || [],
+      points: opmap.points || [],
     }))
   })
 
@@ -245,9 +245,9 @@ describe('PrimaryUtility', async () => {
   })
 
 
-  test('makeTarget-single', () => {
+  test('makePoint-single', () => {
     const ctx = makeCtx()
-    const target = {
+    const point = {
       parts: ['items', '{id}'],
       args: { params: [] },
       params: [],
@@ -256,11 +256,11 @@ describe('PrimaryUtility', async () => {
       active: true,
       transform: { req: undefined, res: undefined },
     }
-    ctx.op.targets = [target]
+    ctx.op.points = [point]
 
-    const result = utility.makeTarget(ctx)
+    const result = utility.makePoint(ctx)
     ok(!(result instanceof Error))
-    equal(ctx.target, target)
+    equal(ctx.point, point)
   })
 
 
@@ -443,7 +443,7 @@ describe('PrimaryUtility', async () => {
 
   function makeFullCtx(overrides?: any) {
     const ctx = makeCtx(overrides)
-    ctx.target = {
+    ctx.point = {
       parts: ['items', '{id}'],
       args: { params: [{ name: 'id', reqd: true }] },
       params: ['id'],

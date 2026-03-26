@@ -69,8 +69,8 @@ class LogFeature {
   }
 
 
-  PreTarget(ctx) {
-    this.#loghook('PreTarget', ctx)
+  PrePoint(ctx) {
+    this.#loghook('PrePoint', ctx)
   }
 
   PreSpec(ctx) {
@@ -89,11 +89,6 @@ class LogFeature {
     this.#loghook('PreResult', ctx)
   }
  
-  PostOperation(ctx) {
-    this.#loghook('PostOperation', ctx)
-  }
-
-  
   #loghook(hook, ctx, level) {
     level = level || 'info'
     if(this.#logger) {

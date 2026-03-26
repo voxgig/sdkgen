@@ -4,7 +4,7 @@ import (
 	vs "github.com/voxgig/struct"
 )
 
-type Target struct {
+type Point struct {
 	Args      map[string]any
 	Rename    map[string]any
 	Method    string
@@ -18,8 +18,8 @@ type Target struct {
 	Transform map[string]any
 }
 
-func NewTarget(altmap map[string]any) *Target {
-	t := &Target{}
+func NewPoint(altmap map[string]any) *Point {
+	t := &Point{}
 
 	if args := vs.GetProp(altmap, "args"); args != nil {
 		if am, ok := args.(map[string]any); ok {

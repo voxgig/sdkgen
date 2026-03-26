@@ -48,7 +48,7 @@
     "typescript": "^6.0.2"
   },
   "peerDependencies": {
-    "@voxgig/apidef": ">=4",
+    "@voxgig/apidef": ">=5",
     "@voxgig/struct": ">=0",
     "@voxgig/util": ">=0",
     "aontu": ">=0",

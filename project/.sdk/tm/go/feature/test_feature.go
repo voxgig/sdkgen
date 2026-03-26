@@ -151,12 +151,12 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 func (f *TestFeature) buildArgs(ctx *core.Context, op *core.Operation, args map[string]any) any {
 	opname := op.Name
 
-	// Get last target from config.
-	targets := vs.GetPath([]any{"entity", ctx.Entity.GetName(), "op", opname, "targets"}, ctx.Config)
-	target := vs.GetElem(targets, -1)
+	// Get last point from config.
+	points := vs.GetPath([]any{"entity", ctx.Entity.GetName(), "op", opname, "points"}, ctx.Config)
+	point := vs.GetElem(points, -1)
 
 	// Get required params.
-	paramsPath := vs.GetPath([]any{"args", "params"}, target)
+	paramsPath := vs.GetPath([]any{"args", "params"}, point)
 	reqdParams := vs.Select(paramsPath, map[string]any{"reqd": true})
 	reqd := vs.Transform(reqdParams, []any{"`$EACH`", "", "`$KEY.name`"})
 

@@ -7,8 +7,8 @@ function prepareQuery(ctx: Context) {
   const struct = utility.struct
   const items = struct.items
 
-  const target = ctx.target
-  let params = target.params
+  const point = ctx.point
+  let params = point.params
   let reqmatch = ctx.reqmatch
 
   params = params || []

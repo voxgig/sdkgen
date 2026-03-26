@@ -32,7 +32,7 @@ class Context {
   utility: Utility
 
   op: Operation
-  target: any
+  point: any
 
   config: Record<string, any>
   entopts: Record<string, any>
@@ -75,7 +75,7 @@ class Context {
     this.match = getprop(ctxmap, 'match', {})
     this.reqmatch = getprop(ctxmap, 'reqmatch', {})
 
-    this.target = getprop(ctxmap, 'target', getprop(basectx, 'target'))
+    this.point = getprop(ctxmap, 'point', getprop(basectx, 'point'))
     this.spec = getprop(ctxmap, 'spec', getprop(basectx, 'spec'))
     this.result = getprop(ctxmap, 'result', getprop(basectx, 'result'))
     this.response = getprop(ctxmap, 'response', getprop(basectx, 'response'))
@@ -101,7 +101,7 @@ class Context {
         entity: entname,
         name: opname,
         input,
-        targets: getprop(opcfg, 'targets', [])
+        points: getprop(opcfg, 'points', [])
       })
 
       setprop(this.opmap, opname, op)

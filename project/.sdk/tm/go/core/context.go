@@ -15,7 +15,7 @@ type Context struct {
 	Client   *ProjectNameSDK
 	Utility  *Utility
 	Op       *Operation
-	Target   map[string]any
+	Point    map[string]any
 	Config   map[string]any
 	Entopts  map[string]any
 	Options  map[string]any
@@ -169,14 +169,14 @@ func NewContext(ctxmap map[string]any, basectx *Context) *Context {
 		ctx.Reqmatch = map[string]any{}
 	}
 
-	// Target
-	if t := getCtxProp(ctxmap, "target"); t != nil {
+	// Point
+	if t := getCtxProp(ctxmap, "point"); t != nil {
 		if tm, ok := t.(map[string]any); ok {
-			ctx.Target = tm
+			ctx.Point = tm
 		}
 	}
-	if ctx.Target == nil && basectx != nil {
-		ctx.Target = basectx.Target
+	if ctx.Point == nil && basectx != nil {
+		ctx.Point = basectx.Point
 	}
 
 	// Spec
@@ -240,7 +240,7 @@ func (ctx *Context) resolveOp(opname string) *Operation {
 	var targets []any
 	if opcfg != nil {
 		if ocm, ok := opcfg.(map[string]any); ok {
-			if t := vs.GetProp(ocm, "targets"); t != nil {
+			if t := vs.GetProp(ocm, "points"); t != nil {
 				if tl, ok := t.([]any); ok {
 					targets = tl
 				}
@@ -255,7 +255,7 @@ func (ctx *Context) resolveOp(opname string) *Operation {
 		"entity":  entname,
 		"name":    opname,
 		"input":   input,
-		"targets": targets,
+		"points": targets,
 	})
 
 	ctx.Opmap[opname] = op

@@ -7,7 +7,7 @@ import (
 )
 
 func paramUtil(ctx *core.Context, paramdef any) any {
-	target := ctx.Target
+	point := ctx.Point
 	spec := ctx.Spec
 	match := ctx.Match
 	reqmatch := ctx.Reqmatch
@@ -25,8 +25,8 @@ func paramUtil(ctx *core.Context, paramdef any) any {
 	}
 
 	var akey string
-	if target != nil {
-		alias := core.ToMapAny(vs.GetProp(target, "alias"))
+	if point != nil {
+		alias := core.ToMapAny(vs.GetProp(point, "alias"))
 		if alias != nil {
 			if ak := vs.GetProp(alias, key); ak != nil {
 				akey, _ = ak.(string)

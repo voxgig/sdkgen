@@ -14,7 +14,7 @@ type Utility struct {
 	MakeRequest       func(ctx *Context) (*Response, error)
 	MakeResponse      func(ctx *Context) (*Response, error)
 	MakeResult        func(ctx *Context) (*Result, error)
-	MakeTarget        func(ctx *Context) (map[string]any, error)
+	MakePoint         func(ctx *Context) (map[string]any, error)
 	MakeSpec          func(ctx *Context) (*Spec, error)
 	MakeUrl           func(ctx *Context) (string, error)
 	Param             func(ctx *Context, paramdef any) any

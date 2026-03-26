@@ -17,7 +17,7 @@ class EntityOperation {
       done,
       error,
       featureHook,
-      makeTarget,
+      makePoint,
       makeRequest,
       makeResponse,
       makeResult,
@@ -36,11 +36,11 @@ class EntityOperation {
 
     try {
 
-      // #PreTarget-Hook
+      // #PrePoint-Hook
 
-      ctx.out.target = makeTarget(ctx)
-      if (ctx.out.target instanceof Error) {
-        return error(ctx, ctx.out.target)
+      ctx.out.point = makePoint(ctx)
+      if (ctx.out.point instanceof Error) {
+        return error(ctx, ctx.out.point)
       }
 
 
@@ -91,7 +91,7 @@ class EntityOperation {
       return done(ctx)
     }
     catch (err) {
-      // #PreSelection-Hook
+      // #PreUnexpected-Hook
 
       err = this.#unexpected(ctx, err)
 

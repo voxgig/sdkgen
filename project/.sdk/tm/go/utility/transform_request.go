@@ -8,13 +8,13 @@ import (
 
 func transformRequestUtil(ctx *core.Context) any {
 	spec := ctx.Spec
-	target := ctx.Target
+	point := ctx.Point
 
 	if spec != nil {
 		spec.Step = "reqform"
 	}
 
-	transform := core.ToMapAny(vs.GetProp(target, "transform"))
+	transform := core.ToMapAny(vs.GetProp(point, "transform"))
 	if transform == nil {
 		return ctx.Reqdata
 	}

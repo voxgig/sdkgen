@@ -9,7 +9,7 @@ import (
 func transformResponseUtil(ctx *core.Context) any {
 	spec := ctx.Spec
 	result := ctx.Result
-	target := ctx.Target
+	point := ctx.Point
 
 	if spec != nil {
 		spec.Step = "resform"
@@ -19,7 +19,7 @@ func transformResponseUtil(ctx *core.Context) any {
 		return nil
 	}
 
-	transform := core.ToMapAny(vs.GetProp(target, "transform"))
+	transform := core.ToMapAny(vs.GetProp(point, "transform"))
 	if transform == nil {
 		return nil
 	}

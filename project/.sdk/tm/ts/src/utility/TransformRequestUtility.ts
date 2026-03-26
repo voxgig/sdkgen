@@ -8,7 +8,7 @@ import { Context } from '../types'
 function transformRequest(ctx: Context) {
   const spec = ctx.spec
   const utility = ctx.utility
-  const target = ctx.target
+  const point = ctx.point
   const isfunc = utility.struct.isfunc
   const transform = utility.struct.transform
 
@@ -17,7 +17,7 @@ function transformRequest(ctx: Context) {
   }
 
   try {
-    const reqform = target.transform.req
+    const reqform = point.transform.req
     const reqdata = isfunc(reqform) ? reqform(ctx) : transform({
       reqdata: ctx.reqdata
     }, reqform)

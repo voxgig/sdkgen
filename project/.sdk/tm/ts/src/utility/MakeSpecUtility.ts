@@ -8,7 +8,7 @@ function makeSpec(ctx: Context): Spec | Error {
     return ctx.spec = ctx.out.spec
   }
 
-  const target = ctx.target
+  const point = ctx.point
   const options = ctx.options
   const utility = ctx.utility
 
@@ -23,7 +23,7 @@ function makeSpec(ctx: Context): Spec | Error {
   ctx.spec = new Spec({
     base: options.base, // string, URL endpoint base prefix,
     prefix: options.prefix,
-    parts: target.parts,
+    parts: point.parts,
     suffix: options.suffix,
     step: 'start',
   })

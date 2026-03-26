@@ -27,15 +27,15 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const loadOp = entity.op.load
   const listOp = entity.op.list
 
-  // Get load target info
-  const loadTarget = loadOp?.targets?.[0]
-  const loadPath = loadTarget ? (loadTarget.parts || []).join('/') : ''
-  const loadParams = loadTarget?.args?.params || []
+  // Get load point info
+  const loadPoint = loadOp?.points?.[0]
+  const loadPath = loadPoint ? (loadPoint.parts || []).join('/') : ''
+  const loadParams = loadPoint?.args?.params || []
 
-  // Get list target info
-  const listTarget = listOp?.targets?.[0]
-  const listPath = listTarget ? (listTarget.parts || []).join('/') : ''
-  const listParams = listTarget?.args?.params || []
+  // Get list point info
+  const listPoint = listOp?.points?.[0]
+  const listPath = listPoint ? (listPoint.parts || []).join('/') : ''
+  const listParams = listPoint?.args?.params || []
 
   // Build the ENTID env var name for this entity
   const entidEnvVar = `${PROJECTNAME}_TEST_${entity.Name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID`
@@ -58,7 +58,7 @@ func Test${entity.Name}Direct(t *testing.T) {
 `)
 
     // Generate list test first (load needs list results in live mode)
-    if (hasList && listTarget) {
+    if (hasList && listPoint) {
       const listParamStr = listParams.length > 0
         ? listParams.map((p: any, i: number) =>
           `"${p.name}": "direct0${i + 1}"`).join(', ')
@@ -160,7 +160,7 @@ func Test${entity.Name}Direct(t *testing.T) {
     }
 
     // Generate load test - in live mode, first list to get a real entity ID
-    if (hasLoad && loadTarget) {
+    if (hasLoad && loadPoint) {
       const loadParamStr = loadParams.length > 0
         ? loadParams.map((p: any, i: number) =>
           `"${p.name}": "direct0${i + 1}"`).join(', ')

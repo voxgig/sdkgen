@@ -14,7 +14,7 @@ function prepareBody(ctx: Context) {
     try {
       body = transformRequest(ctx)
 
-      // if (target.check.nobody && null == body) {
+      // if (point.check.nobody && null == body) {
       //   return error(ctx, new Error('Request body is empty.'))
       // }
     }

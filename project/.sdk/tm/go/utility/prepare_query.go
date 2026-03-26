@@ -7,15 +7,15 @@ import (
 )
 
 func prepareQueryUtil(ctx *core.Context) map[string]any {
-	target := ctx.Target
+	point := ctx.Point
 	reqmatch := ctx.Reqmatch
 	if reqmatch == nil {
 		reqmatch = map[string]any{}
 	}
 
 	var params []any
-	if target != nil {
-		if p := vs.GetProp(target, "params"); p != nil {
+	if point != nil {
+		if p := vs.GetProp(point, "params"); p != nil {
 			if pl, ok := p.([]any); ok {
 				params = pl
 			}

@@ -8,10 +8,10 @@ import (
 
 func prepareParamsUtil(ctx *core.Context) map[string]any {
 	utility := ctx.Utility
-	target := ctx.Target
+	point := ctx.Point
 
 	var params []any
-	if args := vs.GetProp(target, "args"); args != nil {
+	if args := vs.GetProp(point, "args"); args != nil {
 		if argsMap, ok := args.(map[string]any); ok {
 			if p := vs.GetProp(argsMap, "params"); p != nil {
 				if pl, ok := p.([]any); ok {

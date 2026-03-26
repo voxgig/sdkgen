@@ -9,7 +9,7 @@ import { Context } from '../types'
  * This function returns `undefined` rather than failing.
  */
 function param(ctx: Context, paramdef: any) {
-  const target = ctx.target
+  const point = ctx.point
   const spec = ctx.spec
   const match = ctx.match
   const reqmatch = ctx.reqmatch
@@ -31,7 +31,7 @@ function param(ctx: Context, paramdef: any) {
 
   const key = 0 < (T_string & pt) ? paramdef : getprop(paramdef, 'name')
 
-  let akey = getprop(target.alias, key)
+  let akey = getprop(point.alias, key)
 
   let val = getprop(reqmatch, key)
 

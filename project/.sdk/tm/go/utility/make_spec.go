@@ -16,7 +16,7 @@ func makeSpecUtil(ctx *core.Context) (*core.Spec, error) {
 		}
 	}
 
-	target := ctx.Target
+	point := ctx.Point
 	options := ctx.Options
 	utility := ctx.Utility
 
@@ -25,7 +25,7 @@ func makeSpecUtil(ctx *core.Context) (*core.Spec, error) {
 	suffix, _ := vs.GetProp(options, "suffix").(string)
 
 	var parts []any
-	if p := vs.GetProp(target, "parts"); p != nil {
+	if p := vs.GetProp(point, "parts"); p != nil {
 		if pl, ok := p.([]any); ok {
 			parts = pl
 		}

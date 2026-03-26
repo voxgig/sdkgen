@@ -7,10 +7,10 @@ import (
 )
 
 func preparePathUtil(ctx *core.Context) string {
-	target := ctx.Target
+	point := ctx.Point
 
 	var parts []any
-	if p := vs.GetProp(target, "parts"); p != nil {
+	if p := vs.GetProp(point, "parts"); p != nil {
 		if pl, ok := p.([]any); ok {
 			parts = pl
 		}

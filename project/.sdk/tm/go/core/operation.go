@@ -8,7 +8,7 @@ type Operation struct {
 	Entity  string
 	Name    string
 	Input   string
-	Targets []map[string]any
+	Points []map[string]any
 	Alias   map[string]any
 }
 
@@ -27,15 +27,15 @@ func NewOperation(opmap map[string]any) *Operation {
 	}
 
 	var targets []map[string]any
-	rawTargets := vs.GetProp(opmap, "targets")
-	if rawTargets != nil {
-		if tlist, ok := rawTargets.([]any); ok {
+	rawPoints := vs.GetProp(opmap, "points")
+	if rawPoints != nil {
+		if tlist, ok := rawPoints.([]any); ok {
 			for _, t := range tlist {
 				if tm, ok := t.(map[string]any); ok {
 					targets = append(targets, tm)
 				}
 			}
-		} else if tlist, ok := rawTargets.([]map[string]any); ok {
+		} else if tlist, ok := rawPoints.([]map[string]any); ok {
 			targets = tlist
 		}
 	}
@@ -55,7 +55,7 @@ func NewOperation(opmap map[string]any) *Operation {
 		Entity:  entity,
 		Name:    name,
 		Input:   input,
-		Targets: targets,
+		Points: targets,
 		Alias:   alias,
 	}
 }

@@ -15,12 +15,11 @@ main: kit: feature: log: {
     SetMatch: active: true
     GetMatch: active: true
 
-    PreTarget: active: true
+    PrePoint: active: true
     PreSpec: active: true
     PreRequest: active: true
     PreResponse: active: true
     PreResult: active: true
-    PostOperation: active: true
   }
 
 

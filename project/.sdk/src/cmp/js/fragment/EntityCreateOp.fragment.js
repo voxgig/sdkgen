@@ -16,7 +16,7 @@ class EntityOperation {
       done,
       error,
       featureHook,
-      makeTarget,
+      makePoint,
       makeRequest,
       makeResponse,
       makeResult,
@@ -34,11 +34,11 @@ class EntityOperation {
     }, this._entctx)
 
     try {
-      // #PreSelection-Hook
+      // #PrePoint-Hook
 
-      ctx.out.target = makeTarget(ctx)
-      if (ctx.out.target instanceof Error) {
-        return error(ctx, ctx.out.target)
+      ctx.out.point = makePoint(ctx)
+      if (ctx.out.point instanceof Error) {
+        return error(ctx, ctx.out.point)
       }
 
 

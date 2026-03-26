@@ -1,10 +1,10 @@
 
-import { Context, Target } from '../types'
+import { Context, Point } from '../types'
 
 
-function makeTarget(ctx: Context): Target | Error {
-  if (ctx.out.target) {
-    return ctx.target = ctx.out.target
+function makePoint(ctx: Context): Point | Error {
+  if (ctx.out.point) {
+    return ctx.point = ctx.out.point
   }
 
   const getprop = ctx.utility.struct.getprop
@@ -12,23 +12,23 @@ function makeTarget(ctx: Context): Target | Error {
   const options = ctx.options
 
   if (!options.allow.op.includes(op.name)) {
-    ctx.error('target_op_allow', 'Operation "' + op.name +
+    return ctx.error('point_op_allow', 'Operation "' + op.name +
       '" not allowed by SDK option allow.op value: "' + options.allow.op + '"')
   }
 
-  // Choose the appropriate operation alternate based on the match or data.
-  if (1 === op.targets.length) {
-    ctx.target = op.targets[0]
+  // Choose the appropriate point based on the match or data.
+  if (1 === op.points.length) {
+    ctx.point = op.points[0]
   }
   else {
     // Operation argument has priority, but also look in current data or match.
     const reqselector = getprop(ctx, 'req' + op.input)
     const selector = getprop(ctx, op.input)
 
-    let target
-    for (let i = 0; i < op.targets.length; i++) {
-      target = op.targets[i]
-      const select = target.select
+    let point
+    for (let i = 0; i < op.points.length; i++) {
+      point = op.points[i]
+      const select = point.select
       let found = true
 
       if (selector && select.exist) {
@@ -57,20 +57,20 @@ function makeTarget(ctx: Context): Target | Error {
 
     if (
       null != reqselector.$action &&
-      null != target &&
-      reqselector.$action !== target.select.$action
+      null != point &&
+      reqselector.$action !== point.select.$action
     ) {
-      return ctx.error('target_action_invalid', 'Operation "' + op.name +
+      return ctx.error('point_action_invalid', 'Operation "' + op.name +
         '" action "' + reqselector.$action + '" is not valid.')
     }
 
-    ctx.target = target
+    ctx.point = point
   }
 
-  return ctx.target
+  return ctx.point
 }
 
 
 export {
-  makeTarget,
+  makePoint,
 }

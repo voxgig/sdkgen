@@ -20,7 +20,7 @@ func registerAll(u *core.Utility) {
 	u.MakeRequest = makeRequestUtil
 	u.MakeResponse = makeResponseUtil
 	u.MakeResult = makeResultUtil
-	u.MakeTarget = makeTargetUtil
+	u.MakePoint = makePointUtil
 	u.MakeSpec = makeSpecUtil
 	u.MakeUrl = makeUrlUtil
 	u.Param = paramUtil

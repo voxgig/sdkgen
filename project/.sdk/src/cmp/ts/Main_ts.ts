@@ -21,6 +21,7 @@ import {
 import { Package } from './Package_ts'
 import { Config } from './Config_ts'
 import { MainEntity } from './MainEntity_ts'
+import { EntityBase } from './EntityBase_ts'
 import { SdkError } from './SdkError_ts'
 
 
@@ -87,6 +88,7 @@ if (fres instanceof Promise) { await fres }
     })
 
     Config({ target })
+    EntityBase({ target })
 
   })
 })

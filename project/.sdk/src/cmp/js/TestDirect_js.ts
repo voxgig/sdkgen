@@ -121,21 +121,21 @@ function directSetup(mockres) {
 
 function generateDirectLoad(model: any, entity: any) {
   const loadOp = entity.op.load
-  const loadTarget = loadOp.targets[0]
+  const loadPoint = loadOp.points[0]
 
-  if (null == loadTarget) {
+  if (null == loadPoint) {
     return
   }
 
-  const loadPath = (loadTarget.parts || []).join('/')
-  const loadParams = loadTarget.args?.params || []
+  const loadPath = (loadPoint.parts || []).join('/')
+  const loadParams = loadPoint.args?.params || []
 
   // Get list info for live mode bootstrapping
   const listOp = entity.op.list
-  const listTarget = listOp?.targets?.[0]
-  const listPath = listTarget ? (listTarget.parts || []).join('/') : ''
-  const listParams = listTarget?.args?.params || []
-  const hasList = null != listTarget
+  const listPoint = listOp?.points?.[0]
+  const listPath = listPoint ? (listPoint.parts || []).join('/') : ''
+  const listParams = listPoint?.args?.params || []
+  const hasList = null != listPoint
 
   // Ancestor params (not 'id') for live mode
   const ancestorParams = loadParams.filter((p: any) => p.name !== 'id')
@@ -218,14 +218,14 @@ ${paramAsserts}    }
 
 function generateDirectList(model: any, entity: any) {
   const listOp = entity.op.list
-  const listTarget = listOp.targets[0]
+  const listPoint = listOp.points[0]
 
-  if (null == listTarget) {
+  if (null == listPoint) {
     return
   }
 
-  const listPath = (listTarget.parts || []).join('/')
-  const listParams = listTarget.args?.params || []
+  const listPath = (listPoint.parts || []).join('/')
+  const listParams = listPoint.args?.params || []
 
   // Build live params
   const liveParams = listParams.map((p: any) => {

@@ -10,7 +10,7 @@ function transformResponse(ctx: Context) {
   const spec = ctx.spec
   const result = ctx.result
   const utility = ctx.utility
-  const target = ctx.target
+  const point = ctx.point
   const isfunc = utility.struct.isfunc
   const transform = utility.struct.transform
 
@@ -23,7 +23,7 @@ function transformResponse(ctx: Context) {
   }
 
   try {
-    const resform = target.transform.res
+    const resform = point.transform.res
     const resdata = isfunc(resform) ? resform(ctx) : transform(ctx.result, resform)
     result.resdata = resdata
     return resdata

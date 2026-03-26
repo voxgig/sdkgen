@@ -29,12 +29,10 @@ func (f *BaseFeature) SetData(ctx *core.Context)                       {}
 func (f *BaseFeature) GetData(ctx *core.Context)                       {}
 func (f *BaseFeature) GetMatch(ctx *core.Context)                      {}
 func (f *BaseFeature) SetMatch(ctx *core.Context)                      {}
-func (f *BaseFeature) PreTarget(ctx *core.Context)                     {}
-func (f *BaseFeature) PreSelection(ctx *core.Context)                  {}
+func (f *BaseFeature) PrePoint(ctx *core.Context)                      {}
 func (f *BaseFeature) PreSpec(ctx *core.Context)                       {}
 func (f *BaseFeature) PreRequest(ctx *core.Context)                    {}
 func (f *BaseFeature) PreResponse(ctx *core.Context)                   {}
 func (f *BaseFeature) PreResult(ctx *core.Context)                     {}
 func (f *BaseFeature) PreDone(ctx *core.Context)                       {}
 func (f *BaseFeature) PreUnexpected(ctx *core.Context)                 {}
-func (f *BaseFeature) PostOperation(ctx *core.Context)                 {}
