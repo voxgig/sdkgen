@@ -3,15 +3,15 @@ import { inspect } from 'node:util'
 
 import {
   ProjectNameSDK,
-} from '../ProjectNameSDK'
+} from './ProjectNameSDK'
 
 import {
   Utility
-} from '../utility/Utility'
+} from './utility/Utility'
 
 import type {
   Context,
-} from '../types'
+} from './types'
 
 
 // TODO: needs Entity superclass
