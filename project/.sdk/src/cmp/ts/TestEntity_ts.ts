@@ -37,7 +37,7 @@ import {
 } from './utility_ts'
 
 
-type OpGen = (model: any, entity: any, flow: any, step: any, index: any) => void
+type OpGen = (model: any, entity: any, flow: any, step: any, index: { key$: number, val$: any }) => void
 
 
 const TestEntity = cmp(function TestEntity(props: any) {
@@ -183,7 +183,7 @@ const generateCreate: OpGen = (
   entity: ModelEntity,
   flow: ModelEntityFlow,
   step: ModelEntityFlowStep,
-  index: number
+  index: any
 ) => {
   const ref = step.input.ref ?? entity.name + '_ref01'
   const entvar = step.input.entvar ?? ref + '_ent'
@@ -212,16 +212,24 @@ const generateList: OpGen = (
   entity: ModelEntity,
   flow: ModelEntityFlow,
   step: ModelEntityFlowStep,
-  index: number
+  index: any
 ) => {
   const ref = step.input.ref ?? entity.name + '_ref01'
   const entvar = step.input.entvar ?? ref + '_ent'
   const matchvar = step.input.matchvar ?? (ref + '_match' + (step.input.suffix ?? ''))
   const listvar = step.input.listvar ?? (ref + '_list' + (step.input.suffix ?? ''))
 
+  const priorSteps = Object.values(flow.step).slice(0, index.key$)
+  const needsEnt = !priorSteps.some((s: any) => 'create' === s.op)
+
   Content(`
     // LIST
-    const ${matchvar}: any = {}
+`)
+  if (needsEnt) {
+    Content(`    const ${entvar} = client.${nom(entity, 'Name')}()
+`)
+  }
+  Content(`    const ${matchvar}: any = {}
 `)
 
   each(step.match, (mi: any) => {
@@ -232,16 +240,21 @@ const generateList: OpGen = (
   Content(`
     const ${listvar} = await ${entvar}.list(${matchvar})
 `)
+  const allSteps = Object.values(flow.step)
   for (let vI = 0; vI < step.valid.length; vI++) {
     const validator = step.valid[vI]
-    if ('ItemExists' === validator.apply) {
+    const validRef = validator.def?.ref
+    const hasRefData = validRef && allSteps.some((s: any) => 'create' === s.op &&
+      ((s.input?.ref ?? entity.name + '_ref01') === validRef))
+
+    if ('ItemExists' === validator.apply && hasRefData) {
       Content(`
-    assert(!isempty(select(${listvar}, { id: ${validator.def.ref}_data.id })))
+    assert(!isempty(select(${listvar}, { id: ${validRef}_data.id })))
 `)
     }
-    else if ('ItemNotExists' === validator.apply) {
+    else if ('ItemNotExists' === validator.apply && hasRefData) {
       Content(`
-    assert(isempty(select(${listvar}, { id: ${validator.def.ref}_data.id })))
+    assert(isempty(select(${listvar}, { id: ${validRef}_data.id })))
 `)
     }
   }
@@ -253,7 +266,7 @@ const generateUpdate: OpGen = (
   entity: ModelEntity,
   flow: ModelEntityFlow,
   step: ModelEntityFlowStep,
-  index: number
+  index: any
 ) => {
   const ref = step.input.ref ?? entity.name + '_ref01'
   const entvar = step.input.entvar ?? ref + '_ent'
@@ -310,7 +323,7 @@ const generateLoad: OpGen = (
   entity: ModelEntity,
   flow: ModelEntityFlow,
   step: ModelEntityFlowStep,
-  index: number
+  index: any
 ) => {
   const ref = step.input.ref ?? entity.name + '_ref01'
   const entvar = step.input.entvar ?? ref + '_ent'
@@ -318,9 +331,18 @@ const generateLoad: OpGen = (
   const datavar = step.input.datavar ?? (ref + '_data' + (step.input.suffix ?? ''))
   const srcdatavar = step.input.srcdatavar ?? (ref + '_data' + (step.input.suffix ?? ''))
 
+  const priorSteps = Object.values(flow.step).slice(0, index.key$)
+  const hasCreate = priorSteps.some((s: any) => 'create' === s.op)
+
   Content(`
     // LOAD
-    const ${matchvar}: any = {}
+`)
+  if (!hasCreate) {
+    Content(`    const ${entvar} = client.${nom(entity, 'Name')}()
+    const ${srcdatavar} = Object.values(setup.data.existing.${entity.name})[0] as any
+`)
+  }
+  Content(`    const ${matchvar}: any = {}
     ${matchvar}.id = ${srcdatavar}.id
     const ${datavar} = await ${entvar}.load(${matchvar})
     assert(${datavar}.id === ${srcdatavar}.id)
@@ -333,16 +355,24 @@ const generateRemove: OpGen = (
   entity: ModelEntity,
   flow: ModelEntityFlow,
   step: ModelEntityFlowStep,
-  index: number
+  index: any
 ) => {
   const ref = step.input.ref ?? entity.name + '_ref01'
   const entvar = step.input.entvar ?? ref + '_ent'
   const matchvar = step.input.matchvar ?? (ref + '_match' + (step.input.suffix ?? ''))
   const srcdatavar = step.input.srcdatavar ?? (ref + '_data')
 
+  const priorSteps = Object.values(flow.step).slice(0, index.key$)
+  const needsEnt = !priorSteps.some((s: any) => 'create' === s.op)
+
   Content(`
     // REMOVE
-    const ${matchvar}: any = {}
+`)
+  if (needsEnt) {
+    Content(`    const ${entvar} = client.${nom(entity, 'Name')}()
+`)
+  }
+  Content(`    const ${matchvar}: any = {}
     ${matchvar}.id = ${srcdatavar}.id
     await ${entvar}.remove(${matchvar})
   `)
