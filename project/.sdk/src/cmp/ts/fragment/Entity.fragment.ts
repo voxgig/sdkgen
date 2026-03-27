@@ -20,6 +20,9 @@ class EntityNameEntity extends ProjectNameEntityBase {
 
   constructor(client: ProjectNameSDK, entopts: any) {
     super(client, entopts)
+    this.name = 'entityname'
+    this.name_ = 'entityname'
+    this.Name = 'EntityName'
   }
 
 
