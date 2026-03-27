@@ -14,21 +14,17 @@ const EntityBase = cmp(async function EntityBase(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  Folder({ name: 'src' }, () => {
+  File({ name: model.const.Name + 'EntityBase.' + target.name }, () => {
 
-    File({ name: model.const.Name + 'Base.' + target.name }, () => {
+    Fragment(
+      {
+        from:
+          Path.normalize(__dirname + '/../../../src/cmp/ts/fragment/EntityBase.fragment.ts'),
 
-      Fragment(
-        {
-          from:
-            Path.normalize(__dirname + '/../../../src/cmp/ts/fragment/EntityBase.fragment.ts'),
-
-          replace: {
-            ...props.ctx$.stdrep,
-          }
-        })
-    })
-
+        replace: {
+          ...props.ctx$.stdrep,
+        }
+      })
   })
 })
 

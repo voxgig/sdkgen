@@ -12,7 +12,7 @@ class EntityOperation {
 
   async list(this: any, reqmatch?: any, ctrl?: Control) {
 
-    const utility = this.#utility
+    const utility = this._utility
 
     const {
       makeContext,
@@ -31,8 +31,8 @@ class EntityOperation {
     let ctx: Context = makeContext({
       opname: 'list',
       ctrl,
-      match: this.#match,
-      data: this.#data,
+      match: this._match,
+      data: this._data,
       reqmatch
     }, this._entctx)
 
@@ -81,7 +81,7 @@ class EntityOperation {
 
       if (null != ctx.result) {
         if (null != ctx.result.resmatch) {
-          this.#match = ctx.result.resmatch
+          this._match = ctx.result.resmatch
         }
       }
 

@@ -12,7 +12,7 @@ class EntityOperation {
 
   async create(this: any, reqdata?: any, ctrl?: Control) {
 
-    const utility = this.#utility
+    const utility = this._utility
     const {
       makeContext,
       done,
@@ -30,8 +30,8 @@ class EntityOperation {
     let ctx: Context = makeContext({
       opname: 'create',
       ctrl,
-      match: this.#match,
-      data: this.#data,
+      match: this._match,
+      data: this._data,
       reqdata
     }, this._entctx)
 
@@ -80,7 +80,7 @@ class EntityOperation {
 
       if (null != ctx.result) {
         if (null != ctx.result.resdata) {
-          this.#data = ctx.result.resdata
+          this._data = ctx.result.resdata
         }
       }
 

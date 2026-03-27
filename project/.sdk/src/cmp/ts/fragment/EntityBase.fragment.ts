@@ -2,8 +2,8 @@
 import { inspect } from 'node:util'
 
 import {
-  SdkNameSDK,
-} from '../SdkNameSDK'
+  ProjectNameSDK,
+} from '../ProjectNameSDK'
 
 import {
   Utility
@@ -20,7 +20,7 @@ class ProjectNameEntityBase {
   name_ = ''
   Name = ''
 
-  _client: SdkNameSDK
+  _client: ProjectNameSDK
   _utility: Utility
   _entopts: any
   _data: any
@@ -28,7 +28,7 @@ class ProjectNameEntityBase {
   _entctx: Context
 
 
-  constructor(client: SdkNameSDK, entopts: any) {
+  constructor(client: ProjectNameSDK, entopts: any) {
     entopts = entopts || {}
     entopts.active = false !== entopts.active
 
@@ -50,7 +50,7 @@ class ProjectNameEntityBase {
   }
 
   entopts() {
-    return this._utility.merge({}, this._entopts, 1)
+    return this._utility.struct.merge([{}, this._entopts])
   }
 
   client() {
