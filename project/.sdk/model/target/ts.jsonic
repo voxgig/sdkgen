@@ -4,7 +4,7 @@ main: kit: target: ts: {
   title: TypeScript
   ext: ts
   comment: line: "//"
-  module: name: $$name$$
+  module: name: '$$name$$'
   base: 'BASE'
 
   deps: &: {
