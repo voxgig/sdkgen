@@ -1,9 +1,10 @@
 
 import { inspect } from 'node:util'
 
-import {
+import { ProjectNameEntityBase } from '../ProjectNameEntityBase'
+
+import type {
   ProjectNameSDK,
-  ProjectNameEntityBase,
 } from '../ProjectNameSDK'
 
 
