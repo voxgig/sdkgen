@@ -16,6 +16,11 @@ function makePoint(ctx: Context): Point | Error {
       '" not allowed by SDK option allow.op value: "' + options.allow.op + '"')
   }
 
+  if (0 === op.points.length) {
+    return ctx.error('point_no_points',
+      'Operation "' + op.name + '" has no endpoint definitions.')
+  }
+
   // Choose the appropriate point based on the match or data.
   if (1 === op.points.length) {
     ctx.point = op.points[0]

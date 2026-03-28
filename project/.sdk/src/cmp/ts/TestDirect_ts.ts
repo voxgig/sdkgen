@@ -121,7 +121,7 @@ function directSetup(mockres?: any) {
 
 function generateDirectLoad(model: any, entity: any) {
   const loadOp = entity.op.load
-  const loadPoint = loadOp.points[0]
+  const loadPoint = loadOp?.points?.[0]
 
   if (null == loadPoint) {
     return
@@ -218,7 +218,7 @@ ${paramAsserts}    }
 
 function generateDirectList(model: any, entity: any) {
   const listOp = entity.op.list
-  const listPoint = listOp.points[0]
+  const listPoint = listOp?.points?.[0]
 
   if (null == listPoint) {
     return

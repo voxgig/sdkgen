@@ -26,6 +26,11 @@ func makePointUtil(ctx *core.Context) (map[string]any, error) {
 				"\" not allowed by SDK option allow.op value: \""+allowOp+"\"")
 	}
 
+	if len(op.Points) == 0 {
+		return nil, ctx.MakeError("point_no_points",
+			"Operation \""+op.Name+"\" has no endpoint definitions.")
+	}
+
 	if len(op.Points) == 1 {
 		ctx.Point = op.Points[0]
 	} else {

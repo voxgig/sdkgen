@@ -189,11 +189,33 @@ const generateCreate: OpGen = (
   const entvar = step.input.entvar ?? ref + '_ent'
   const datavar = step.input.datavar ?? (ref + '_data' + (step.input.suffix ?? ''))
 
+  const priorSteps = Object.values(flow.step).slice(0, Number(index))
+  const needsEnt = !priorSteps.some((s: any) =>
+    ['create', 'list', 'load', 'remove'].includes(s.op))
+
+  const hasDatvar = priorSteps.some((s: any) => {
+    if ('create' === s.op) {
+      const priorRef = s.input?.ref ?? entity.name + '_ref01'
+      const priorDatvar = s.input?.datavar ?? (priorRef + '_data' + (s.input?.suffix ?? ''))
+      return priorDatvar === datavar
+    }
+    return false
+  })
+
   Content(`
     // CREATE
-    const ${entvar} = client.${nom(entity, 'Name')}()
-    let ${datavar} = setup.data.new.${entity.name}['${ref}']
 `)
+  if (needsEnt) {
+    Content(`    const ${entvar} = client.${nom(entity, 'Name')}()
+`)
+  }
+  if (hasDatvar) {
+    Content(`    ${datavar} = setup.data.new.${entity.name}['${ref}']
+`)
+  } else {
+    Content(`    let ${datavar} = setup.data.new.${entity.name}['${ref}']
+`)
+  }
 
   each(step.match, (mi: any) => {
     Content(`    ${datavar}['${mi.key$}'] = setup.idmap['${mi.val$}']
@@ -219,8 +241,9 @@ const generateList: OpGen = (
   const matchvar = step.input.matchvar ?? (ref + '_match' + (step.input.suffix ?? ''))
   const listvar = step.input.listvar ?? (ref + '_list' + (step.input.suffix ?? ''))
 
-  const priorSteps = Object.values(flow.step).slice(0, index.key$)
-  const needsEnt = !priorSteps.some((s: any) => 'create' === s.op)
+  const priorSteps = Object.values(flow.step).slice(0, Number(index))
+  const needsEnt = !priorSteps.some((s: any) =>
+    ['create', 'list', 'load', 'remove'].includes(s.op))
 
   Content(`
     // LIST
@@ -331,13 +354,14 @@ const generateLoad: OpGen = (
   const datavar = step.input.datavar ?? (ref + '_data' + (step.input.suffix ?? ''))
   const srcdatavar = step.input.srcdatavar ?? (ref + '_data' + (step.input.suffix ?? ''))
 
-  const priorSteps = Object.values(flow.step).slice(0, index.key$)
-  const hasCreate = priorSteps.some((s: any) => 'create' === s.op)
+  const priorSteps = Object.values(flow.step).slice(0, Number(index))
+  const hasEntVar = priorSteps.some((s: any) =>
+    ['create', 'list', 'load', 'remove'].includes(s.op))
 
   Content(`
     // LOAD
 `)
-  if (!hasCreate) {
+  if (!hasEntVar) {
     Content(`    const ${entvar} = client.${nom(entity, 'Name')}()
     const ${srcdatavar} = Object.values(setup.data.existing.${entity.name})[0] as any
 `)
@@ -362,8 +386,9 @@ const generateRemove: OpGen = (
   const matchvar = step.input.matchvar ?? (ref + '_match' + (step.input.suffix ?? ''))
   const srcdatavar = step.input.srcdatavar ?? (ref + '_data')
 
-  const priorSteps = Object.values(flow.step).slice(0, index.key$)
-  const needsEnt = !priorSteps.some((s: any) => 'create' === s.op)
+  const priorSteps = Object.values(flow.step).slice(0, Number(index))
+  const needsEnt = !priorSteps.some((s: any) =>
+    ['create', 'list', 'load', 'remove'].includes(s.op))
 
   Content(`
     // REMOVE

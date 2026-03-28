@@ -39,6 +39,7 @@ const Entity = cmp(function Entity(props: any) {
         from: ff + 'Entity.fragment.js',
         replace: {
           ...entrep,
+          entityname: entity.name,
           SdkName: model.const.Name,
           EntityName: entity.Name,
 
