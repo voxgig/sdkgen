@@ -11,6 +11,7 @@ import {
   Fragment,
   Slot,
   cmp,
+  snakify,
 } from '@voxgig/sdkgen'
 
 
@@ -127,14 +128,14 @@ function generateDirectLoad(model: any, entity: any) {
     return
   }
 
-  const loadPath = (loadPoint.parts || []).join('/')
   const loadParams = loadPoint.args?.params || []
+  const loadPath = normalizePathParams(loadPoint.parts || [], loadParams)
 
   // Get list info for live mode bootstrapping
   const listOp = entity.op.list
   const listPoint = listOp?.points?.[0]
-  const listPath = listPoint ? (listPoint.parts || []).join('/') : ''
   const listParams = listPoint?.args?.params || []
+  const listPath = listPoint ? normalizePathParams(listPoint.parts || [], listParams) : ''
   const hasList = null != listPoint
 
   // Ancestor params (not 'id') for live mode
@@ -224,8 +225,8 @@ function generateDirectList(model: any, entity: any) {
     return
   }
 
-  const listPath = (listPoint.parts || []).join('/')
   const listParams = listPoint.args?.params || []
+  const listPath = normalizePathParams(listPoint.parts || [], listParams)
 
   // Build live params
   const liveParams = listParams.map((p: any) => {
@@ -280,6 +281,21 @@ ${paramsBlock}
 ${paramAsserts}    }
   })
 `)
+}
+
+
+// Replace raw OpenAPI parameter names in path parts with model parameter names.
+// Path parts may have e.g. {subBreed} while model params use sub_breed.
+function normalizePathParams(parts: string[], params: any[]): string {
+  return parts.map((part: string) => {
+    if (part.startsWith('{') && part.endsWith('}')) {
+      const rawName = part.slice(1, -1)
+      const snaked = snakify(rawName)
+      const param = params.find((p: any) => p.orig === snaked || p.name === snaked)
+      if (param) return '{' + param.name + '}'
+    }
+    return part
+  }).join('/')
 }
 
 

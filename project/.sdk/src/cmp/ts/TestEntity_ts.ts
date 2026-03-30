@@ -78,9 +78,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
         const indent = 2
 
         const idlist = flatten([
-          '${entity.name}01',
-          '${entity.name}02',
-          '${entity.name}03',
+          entity.name + '01',
+          entity.name + '02',
+          entity.name + '03',
           flatten(items(entity.relations.ancestors, (ap: any) =>
             items(ap[1], (a: any) =>
               items(['01', '02', '03'], (n: any) =>
@@ -358,12 +358,25 @@ const generateLoad: OpGen = (
   const hasEntVar = priorSteps.some((s: any) =>
     ['create', 'list', 'load', 'remove'].includes(s.op))
 
+  // Check if srcdatavar was declared by a prior create step
+  const hasSrcData = priorSteps.some((s: any) => {
+    if ('create' === s.op) {
+      const priorRef = s.input?.ref ?? entity.name + '_ref01'
+      const priorDatvar = s.input?.datavar ?? (priorRef + '_data' + (s.input?.suffix ?? ''))
+      return priorDatvar === srcdatavar
+    }
+    return false
+  })
+
   Content(`
     // LOAD
 `)
   if (!hasEntVar) {
     Content(`    const ${entvar} = client.${nom(entity, 'Name')}()
-    const ${srcdatavar} = Object.values(setup.data.existing.${entity.name})[0] as any
+`)
+  }
+  if (!hasSrcData) {
+    Content(`    const ${srcdatavar} = Object.values(setup.data.existing.${entity.name})[0] as any
 `)
   }
   Content(`    const ${matchvar}: any = {}
