@@ -1,6 +1,7 @@
 
 import {
   nom,
+  depluralize,
 } from '@voxgig/apidef'
 
 
@@ -129,13 +130,13 @@ function generateDirectLoad(model: any, entity: any) {
   }
 
   const loadParams = loadPoint.args?.params || []
-  const loadPath = normalizePathParams(loadPoint.parts || [], loadParams)
+  const loadPath = normalizePathParams(loadPoint.parts || [], loadParams, loadPoint.rename?.param)
 
   // Get list info for live mode bootstrapping
   const listOp = entity.op.list
   const listPoint = listOp?.points?.[0]
   const listParams = listPoint?.args?.params || []
-  const listPath = listPoint ? normalizePathParams(listPoint.parts || [], listParams) : ''
+  const listPath = listPoint ? normalizePathParams(listPoint.parts || [], listParams, listPoint.rename?.param) : ''
   const hasList = null != listPoint
 
   // Ancestor params (not 'id') for live mode
@@ -226,7 +227,7 @@ function generateDirectList(model: any, entity: any) {
   }
 
   const listParams = listPoint.args?.params || []
-  const listPath = normalizePathParams(listPoint.parts || [], listParams)
+  const listPath = normalizePathParams(listPoint.parts || [], listParams, listPoint.rename?.param)
 
   // Build live params
   const liveParams = listParams.map((p: any) => {
@@ -286,15 +287,46 @@ ${paramAsserts}    }
 
 // Replace raw OpenAPI parameter names in path parts with model parameter names.
 // Path parts may have e.g. {subBreed} while model params use sub_breed.
-function normalizePathParams(parts: string[], params: any[]): string {
+// When a rename mapping exists (e.g. closureId -> id), path parts contain the
+// renamed form {id} but params still use the original name closure_id.
+// The rename mapping is used to reverse-lookup the original param name.
+function normalizePathParams(
+  parts: string[],
+  params: any[],
+  rename?: Record<string, string>
+): string {
   return parts.map((part: string) => {
-    if (part.startsWith('{') && part.endsWith('}')) {
-      const rawName = part.slice(1, -1)
+    // Replace each {paramName} occurrence within the part.
+    // Handles both simple parts like "{id}" and compound parts like
+    // "{outputFields}.{format}" that contain multiple parameters.
+    return part.replace(/\{([^}]+)\}/g, (match: string, rawName: string) => {
       const snaked = snakify(rawName)
-      const param = params.find((p: any) => p.orig === snaked || p.name === snaked)
+      const depluralized = depluralize(snaked)
+      const param = params.find((p: any) =>
+        p.orig === snaked || p.name === snaked ||
+        p.orig === depluralized || p.name === depluralized
+      )
       if (param) return '{' + param.name + '}'
-    }
-    return part
+
+      // Reverse-lookup through rename mapping: if rawName is a renamed value
+      // (e.g. "id"), find the original camelCase key (e.g. "closureId"),
+      // snakify+depluralize it (e.g. "closure_id"), and match against params.
+      if (rename) {
+        for (const [origCamel, renamedTo] of Object.entries(rename)) {
+          if (renamedTo === rawName) {
+            const origSnaked = snakify(origCamel)
+            const origDepluralized = depluralize(origSnaked)
+            const renamedParam = params.find(
+              (p: any) => p.orig === origSnaked || p.name === origSnaked ||
+                p.orig === origDepluralized || p.name === origDepluralized
+            )
+            if (renamedParam) return '{' + renamedParam.name + '}'
+          }
+        }
+      }
+
+      return match
+    })
   }).join('/')
 }
 
