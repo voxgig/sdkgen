@@ -219,9 +219,6 @@ class ProjectNameSDK {
 }
 
 
-class ProjectNameEntity {
-
-}
 
 
 const SDK = ProjectNameSDK

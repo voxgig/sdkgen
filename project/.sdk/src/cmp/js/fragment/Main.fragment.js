@@ -216,9 +216,6 @@ class ProjectNameSDK {
 }
 
 
-class ProjectNameEntity {
-
-}
 
 
 const SDK = ProjectNameSDK
@@ -228,7 +225,6 @@ module.exports = {
   stdutil,
 
   BaseFeature,
-  ProjectNameEntity,
 
   ProjectNameSDK,
   SDK,
