@@ -73,7 +73,7 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
-  const publishedEntities = each(entity).filter((e: any) => e.publish)
+  const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
   const isGo = target.name === 'go'
   const lang = isGo ? 'go' : 'ts'

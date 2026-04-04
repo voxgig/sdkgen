@@ -15,7 +15,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
   const gomodule = orgPrefix + model.name + 'sdk'
 
-  const exampleEntity = Object.values(entity).find((e: any) => e.publish) as any
+  const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   Content(`\`\`\`go
 import sdk "${gomodule}"
@@ -38,7 +38,7 @@ ${eName.toLowerCase()}s, err := client.${eName}(nil).List(nil, nil)
 
     // Find a nested entity for a more interesting example
     const nestedEntity = Object.values(entity).find((e: any) =>
-      e.publish && e.ancestors && e.ancestors.length > 0
+      e.active !== false && e.ancestors && e.ancestors.length > 0
     ) as any
 
     if (nestedEntity && opnames.includes('load')) {

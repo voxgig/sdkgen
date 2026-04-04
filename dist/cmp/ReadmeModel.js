@@ -8,7 +8,7 @@ const ReadmeModel = (0, jostraca_1.cmp)(function ReadmeModel(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
-    const entityList = Object.values(entity).filter((e) => e.publish);
+    const entityList = Object.values(entity).filter((e) => e.active !== false);
     (0, jostraca_1.Content)(`
 ## Reference
 

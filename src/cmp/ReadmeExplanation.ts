@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from 'jostraca'
+import { cmp, each, names, Content } from 'jostraca'
 
 import {
   KIT,
@@ -84,7 +84,8 @@ a function that receives the context.
 `)
   each(feature, (feat: any) => {
     if (!feat.active) return
-    const purpose = feat.title || feat.Name
+    if (!feat.Name) names(feat, feat.name)
+    const purpose = feat.title || feat.Name || feat.name
     Content(`- **${feat.Name}Feature**: ${purpose}
 `)
   })

@@ -12,7 +12,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const exampleEntity = Object.values(entity).find((e: any) => e.publish) as any
+  const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   Content(`\`\`\`ts
 import { ${model.const.Name}SDK } from '${target.module.name}'
@@ -35,7 +35,7 @@ const ${eName.toLowerCase()}s = await client.${eName}().list()
 
     // Find a nested entity for a more interesting example
     const nestedEntity = Object.values(entity).find((e: any) =>
-      e.publish && e.ancestors && e.ancestors.length > 0
+      e.active !== false && e.ancestors && e.ancestors.length > 0
     ) as any
 
     if (nestedEntity && opnames.includes('load')) {

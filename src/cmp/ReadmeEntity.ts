@@ -25,7 +25,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   const lang = isGo ? 'go' : 'ts'
 
   const publishedEntities = each(entity)
-    .filter((entity: any) => entity.publish)
+    .filter((entity: any) => entity.active !== false)
 
   if (0 === publishedEntities.length) {
     return

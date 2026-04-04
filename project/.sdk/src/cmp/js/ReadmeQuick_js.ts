@@ -14,7 +14,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
   // Find the first published entity for examples
-  const exampleEntity = Object.values(entity).find((e: any) => e.publish) as any
+  const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   Content(`
 ### Create a Client

@@ -11,7 +11,12 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
     const target = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`);
     const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`);
-    const publishedEntities = (0, jostraca_1.each)(entity).filter((e) => e.publish);
+    // Ensure names are computed on entities and features
+    (0, jostraca_1.each)(entity, (ent) => { if (!ent.Name)
+        (0, jostraca_1.names)(ent, ent.name); });
+    (0, jostraca_1.each)(feature, (feat) => { if (!feat.Name)
+        (0, jostraca_1.names)(feat, feat.name); });
+    const activeEntities = (0, jostraca_1.each)(entity).filter((e) => e.active !== false);
     const activeTargets = (0, jostraca_1.each)(target);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
         (0, jostraca_1.Content)(`# ${model.Name} SDK
@@ -28,23 +33,23 @@ ${desc}
 `);
         }
         // Entities section
-        if (publishedEntities.length > 0) {
+        if (activeEntities.length > 0) {
             (0, jostraca_1.Content)(`
 ## Entities
 
-The API exposes ${publishedEntities.length === 1 ? 'one entity' : publishedEntities.length + ' entities'}:
+The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.length + ' entities'}:
 
 | Entity | Description | API path |
 | --- | --- | --- |
 `);
-            publishedEntities.map((ent) => {
-                const desc = ent.short || '';
+            activeEntities.map((ent) => {
+                const entdesc = ent.short || '';
                 const ops = ent.op || {};
                 const points = Object.values(ops).map((op) => op.points ? Object.values(op.points) : []).flat();
                 const path = points.length > 0
                     ? points[0].path || ''
                     : '';
-                (0, jostraca_1.Content)(`| **${ent.Name}** | ${desc} | \`${path}\` |
+                (0, jostraca_1.Content)(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
 `);
             });
             (0, jostraca_1.Content)(`
@@ -80,8 +85,8 @@ Features are hook-based middleware that extend SDK behaviour.
         (0, jostraca_1.each)(feature, (feat) => {
             if (!feat.active)
                 return;
-            const purpose = feat.title || feat.Name;
-            (0, jostraca_1.Content)(`| **${feat.Name}Feature** | ${purpose} |
+            const purpose = feat.title || feat.Name || feat.name;
+            (0, jostraca_1.Content)(`| **${feat.Name || feat.name}Feature** | ${purpose} |
 `);
         });
         (0, jostraca_1.Content)(`

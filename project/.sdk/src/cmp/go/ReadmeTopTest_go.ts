@@ -15,7 +15,7 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
   const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
   const gomodule = orgPrefix + model.name + 'sdk'
 
-  const exampleEntity = Object.values(entity).find((e: any) => e.publish) as any
+  const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   Content(`\`\`\`go
 client := sdk.TestSDK(nil, nil)

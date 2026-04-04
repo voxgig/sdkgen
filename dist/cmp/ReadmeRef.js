@@ -62,7 +62,7 @@ const ReadmeRef = (0, jostraca_1.cmp)(function ReadmeRef(props) {
     const { model } = props.ctx$;
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
     const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`);
-    const publishedEntities = (0, jostraca_1.each)(entity).filter((e) => e.publish);
+    const publishedEntities = (0, jostraca_1.each)(entity).filter((e) => e.active !== false);
     const isGo = target.name === 'go';
     const lang = isGo ? 'go' : 'ts';
     const OP_SIGNATURES = isGo ? OP_SIGNATURES_GO : OP_SIGNATURES_TS;

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, File } from 'jostraca'
+import { cmp, each, names, Content, File } from 'jostraca'
 
 import {
   KIT,
@@ -18,7 +18,11 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const target = getModelPath(model, `main.${KIT}.target`)
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
-  const publishedEntities = each(entity).filter((e: any) => e.publish)
+  // Ensure names are computed on entities and features
+  each(entity, (ent: any) => { if (!ent.Name) names(ent, ent.name) })
+  each(feature, (feat: any) => { if (!feat.Name) names(feat, feat.name) })
+
+  const activeEntities = each(entity).filter((e: any) => e.active !== false)
   const activeTargets = each(target)
 
   File({ name: 'README.md' }, () => {
@@ -42,18 +46,18 @@ ${desc}
 
 
     // Entities section
-    if (publishedEntities.length > 0) {
+    if (activeEntities.length > 0) {
       Content(`
 ## Entities
 
-The API exposes ${publishedEntities.length === 1 ? 'one entity' : publishedEntities.length + ' entities'}:
+The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.length + ' entities'}:
 
 | Entity | Description | API path |
 | --- | --- | --- |
 `)
 
-      publishedEntities.map((ent: any) => {
-        const desc = ent.short || ''
+      activeEntities.map((ent: any) => {
+        const entdesc = ent.short || ''
         const ops = ent.op || {}
         const points = Object.values(ops).map((op: any) =>
           op.points ? Object.values(op.points) : []
@@ -61,7 +65,7 @@ The API exposes ${publishedEntities.length === 1 ? 'one entity' : publishedEntit
         const path = points.length > 0
           ? (points[0] as any).path || ''
           : ''
-        Content(`| **${ent.Name}** | ${desc} | \`${path}\` |
+        Content(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
 `)
       })
 
@@ -100,8 +104,8 @@ Features are hook-based middleware that extend SDK behaviour.
 
     each(feature, (feat: any) => {
       if (!feat.active) return
-      const purpose = feat.title || feat.Name
-      Content(`| **${feat.Name}Feature** | ${purpose} |
+      const purpose = feat.title || feat.Name || feat.name
+      Content(`| **${feat.Name || feat.name}Feature** | ${purpose} |
 `)
     })
 

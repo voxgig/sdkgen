@@ -12,7 +12,7 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const exampleEntity = Object.values(entity).find((e: any) => e.publish) as any
+  const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   Content(`\`\`\`ts
 const client = ${model.const.Name}SDK.test()

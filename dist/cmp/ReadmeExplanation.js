@@ -73,7 +73,9 @@ a function that receives the context.
     (0, jostraca_1.each)(feature, (feat) => {
         if (!feat.active)
             return;
-        const purpose = feat.title || feat.Name;
+        if (!feat.Name)
+            (0, jostraca_1.names)(feat, feat.name);
+        const purpose = feat.title || feat.Name || feat.name;
         (0, jostraca_1.Content)(`- **${feat.Name}Feature**: ${purpose}
 `);
     });

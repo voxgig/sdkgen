@@ -16,11 +16,11 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const gomodule = orgPrefix + model.name + 'sdk'
 
   // Find the first published entity for examples
-  const exampleEntity = Object.values(entity).find((e: any) => e.publish) as any
+  const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   // Find a nested entity if available
   const nestedEntity = Object.values(entity).find((e: any) =>
-    e.publish && e.ancestors && e.ancestors.length > 0
+    e.active !== false && e.ancestors && e.ancestors.length > 0
   ) as any
 
   Content(`### 1. Create a client

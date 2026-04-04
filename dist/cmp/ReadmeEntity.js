@@ -17,7 +17,7 @@ const ReadmeEntity = (0, jostraca_1.cmp)(function ReadmeEntity(props) {
     const isGo = target.name === 'go';
     const lang = isGo ? 'go' : 'ts';
     const publishedEntities = (0, jostraca_1.each)(entity)
-        .filter((entity) => entity.publish);
+        .filter((entity) => entity.active !== false);
     if (0 === publishedEntities.length) {
         return;
     }

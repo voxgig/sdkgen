@@ -11,7 +11,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = Object.values(entity).filter((e: any) => e.publish)
+  const entityList = Object.values(entity).filter((e: any) => e.active !== false)
 
   const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
   const gomodule = orgPrefix + model.name + 'sdk'
