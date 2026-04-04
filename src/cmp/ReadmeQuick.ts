@@ -8,7 +8,10 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$ } = props
 
   Content(`
-## Quick Start
+## Tutorial: your first API call
+
+This tutorial walks through creating a client, listing entities, and
+loading a specific record.
 
 `)
 

@@ -12,6 +12,8 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
+  const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
+  const gomodule = orgPrefix + model.name + 'sdk'
 
   // Find the first published entity for examples
   const exampleEntity = Object.values(entity).find((e: any) => e.publish) as any
@@ -23,16 +25,24 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
   Content(`### 1. Create a client
 
-\`\`\`ts
-import { ${model.const.Name}SDK } from '${target.module.name}'
+\`\`\`go
+package main
 
-const client = new ${model.const.Name}SDK({
-  apikey: process.env.${model.NAME}_APIKEY,
-})
+import (
+    "fmt"
+    "os"
+
+    sdk "${gomodule}"
+    "${gomodule}/core"
+)
+
+func main() {
+    client := sdk.New${model.const.Name}SDK(map[string]any{
+        "apikey": os.Getenv("${model.NAME}_APIKEY"),
+    })
 \`\`\`
 
 `)
-
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
@@ -41,20 +51,25 @@ const client = new ${model.const.Name}SDK({
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()}s
 
-\`\`\`ts
-const result = await client.${eName}().list()
+\`\`\`go
+    result, err := client.${eName}(nil).List(nil, nil)
+    if err != nil {
+        panic(err)
+    }
 
-if (result.ok) {
-  for (const item of result.data) {
-    console.log(item.id, item.name)
-  }
-}
+    rm := core.ToMapAny(result)
+    if rm["ok"] == true {
+        for _, item := range rm["data"].([]any) {
+            p := core.ToMapAny(item)
+            fmt.Println(p["id"], p["name"])
+        }
+    }
 \`\`\`
 
 `)
     }
 
-    if (nestedEntity) {
+    if (nestedEntity && opnames.includes('load')) {
       const neName = nom(nestedEntity, 'Name')
       const parentFields = (nestedEntity.field || [])
         .filter((f: any) => f.name !== 'id' && f.name.endsWith('_id'))
@@ -64,15 +79,19 @@ if (result.ok) {
 
 ${neName} is nested under ${eName}, so provide the \`${parentParam}\`:
 
-\`\`\`ts
-const ${neName.toLowerCase()} = client.${neName}()
-const result = await ${neName.toLowerCase()}.load({
-  ${parentParam}: 'example',
-  id: 'example_id',
-})
+\`\`\`go
+    ${neName.toLowerCase()} := client.${neName}(nil)
+    result, err = ${neName.toLowerCase()}.Load(
+        map[string]any{"${parentParam}": "example", "id": "example_id"}, nil,
+    )
+    if err != nil {
+        panic(err)
+    }
 
-if (result.ok) {
-  console.log(result.data)
+    rm = core.ToMapAny(result)
+    if rm["ok"] == true {
+        fmt.Println(rm["data"])
+    }
 }
 \`\`\`
 
@@ -81,11 +100,18 @@ if (result.ok) {
     else if (opnames.includes('load')) {
       Content(`### 3. Load a ${eName.toLowerCase()}
 
-\`\`\`ts
-const result = await client.${eName}().load({ id: 'example_id' })
+\`\`\`go
+    result, err = client.${eName}(nil).Load(
+        map[string]any{"id": "example_id"}, nil,
+    )
+    if err != nil {
+        panic(err)
+    }
 
-if (result.ok) {
-  console.log(result.data)
+    rm = core.ToMapAny(result)
+    if rm["ok"] == true {
+        fmt.Println(rm["data"])
+    }
 }
 \`\`\`
 
@@ -96,30 +122,31 @@ if (result.ok) {
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
-\`\`\`ts
+\`\`\`go
 `)
       if (opnames.includes('create')) {
         Content(`// Create
-const created = await client.${eName}().create({
-  name: 'Example',
-})
+created, _ := client.${eName}(nil).Create(
+    map[string]any{"name": "Example"}, nil,
+)
+cm := core.ToMapAny(created)
+newID := core.ToMapAny(cm["data"])["id"]
 
 `)
       }
       if (opnames.includes('update')) {
         Content(`// Update
-const updated = await client.${eName}().update({
-  id: created.data.id,
-  name: 'Example-Renamed',
-})
+client.${eName}(nil).Update(
+    map[string]any{"id": newID, "name": "Example-Renamed"}, nil,
+)
 
 `)
       }
       if (opnames.includes('remove')) {
         Content(`// Remove
-const removed = await client.${eName}().remove({
-  id: created.data.id,
-})
+client.${eName}(nil).Remove(
+    map[string]any{"id": newID}, nil,
+)
 `)
       }
       Content(`\`\`\`
