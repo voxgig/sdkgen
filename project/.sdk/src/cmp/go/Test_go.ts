@@ -8,7 +8,7 @@ import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, Folder } from '@voxgig/sdkgen'
+import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
 
 
 import { TestEntity } from './TestEntity_go'
@@ -24,6 +24,29 @@ const Test = cmp(function Test(props: any) {
   const gomodule = orgPrefix + model.name + 'sdk'
 
   Folder({ name: 'test' }, () => {
+
+    // Generate exists_test.go programmatically to avoid duplication
+    // with any scaffolded test file (e.g. projectname_sdk_test.go).
+    File({ name: 'exists_test.' + target.ext }, () => {
+      Content(`package sdktest
+
+import (
+	"testing"
+
+	sdk "${gomodule}"
+)
+
+func TestExists(t *testing.T) {
+	t.Run("test-mode", func(t *testing.T) {
+		testsdk := sdk.TestSDK(nil, nil)
+		if testsdk == nil {
+			t.Fatal("expected non-nil SDK")
+		}
+	})
+}
+`)
+    })
+
     each(model.main[KIT].entity, (entity: ModelEntity) => {
       TestEntity({ target, entity, gomodule })
       TestDirect({ target, entity, gomodule })
