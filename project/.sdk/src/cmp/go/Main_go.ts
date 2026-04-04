@@ -61,13 +61,9 @@ const Main = cmp(async function Main(props: any) {
 
             '#BuildFeatures': ({ indent }: any) => {
               each(feature, (feat: any) => {
-                if (feat.name === 'base') {
-                  Content({ indent }, `u.FeatureAdd(s.rootctx, NewBaseFeatureFunc())
+                const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
+                Content({ indent }, `u.FeatureAdd(s.rootctx, New${fname}FeatureFunc())
 `)
-                } else if (feat.name === 'test') {
-                  Content({ indent }, `u.FeatureAdd(s.rootctx, NewTestFeatureFunc())
-`)
-                }
               })
             },
 
