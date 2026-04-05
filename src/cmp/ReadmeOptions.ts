@@ -6,6 +6,8 @@ const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
+  const isGo = target.name === 'go'
+
   const publishedOptions = each(target.options)
     .filter((option: any) => option.publish)
 
@@ -19,25 +21,52 @@ const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
 
 Pass options when creating a client instance:
 
-\`\`\`ts
+`)
+
+  if (isGo) {
+    Content(`\`\`\`go
+client := sdk.New${model.const.Name}SDK(map[string]any{
+`)
+
+    publishedOptions.map((option: any) => {
+      if ('apikey' === option.name) {
+        Content(`    "${option.name}": os.Getenv("${model.NAME}_APIKEY"),
+`)
+      }
+      else {
+        Content(`    // "${option.name}": ${option.kind === 'string' ? '"..."' : '...'},
+`)
+      }
+    })
+
+    Content(`})
+\`\`\`
+
+`)
+  }
+  else {
+    Content(`\`\`\`ts
 const client = new ${model.Name}SDK({
 `)
 
-  publishedOptions.map((option: any) => {
-    if ('apikey' === option.name) {
-      Content(`  ${option.name}: process.env.${model.NAME}_APIKEY,
+    publishedOptions.map((option: any) => {
+      if ('apikey' === option.name) {
+        Content(`  ${option.name}: process.env.${model.NAME}_APIKEY,
 `)
-    }
-    else {
-      Content(`  // ${option.name}: ${option.kind === 'string' ? "'...'" : '...'},
+      }
+      else {
+        Content(`  // ${option.name}: ${option.kind === 'string' ? "'...'" : '...'},
 `)
-    }
-  })
+      }
+    })
 
-  Content(`})
+    Content(`})
 \`\`\`
 
-| Option | Type | Description |
+`)
+  }
+
+  Content(`| Option | Type | Description |
 | --- | --- | --- |
 `)
 

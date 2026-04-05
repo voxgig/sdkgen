@@ -7,38 +7,24 @@ import {
 } from '../types'
 
 
+const TARGET_INTRO: Record<string, string> = {
+  ts: 'Provides a type-safe,\nentity-oriented interface with full async/await support.',
+  go: 'Provides an entity-oriented interface\nusing standard Go conventions \u2014 no generics required, data flows as\n`map[string]any`.',
+  js: 'Provides an entity-oriented\ninterface with full async/await support.',
+}
+
+
 const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
   const desc = model.main.def.desc || ''
-  const entity = getModelPath(model, `main.${KIT}.entity`)
 
-  const entityNames = Object.values(entity)
-    .filter((e: any) => e.publish)
-    .map((e: any) => `\`${e.Name}\``)
+  const targetIntro = TARGET_INTRO[target.name] || 'Provides an entity-oriented interface.'
 
-  Content(`
-## Introduction
+  Content(`# ${model.Name} ${target.title} SDK
 
-${desc}
-`)
-
-  if (entityNames.length > 0) {
-    Content(`
-This SDK provides an entity-oriented interface for the ${model.Name} API.
-The following entities are available: ${entityNames.join(', ')}.
-
-`)
-  }
-
-  Content(`
-### Features
-
-- Entity-based API: work with business objects directly.
-- Type safe: full TypeScript definitions included.
-- Direct HTTP access: call any API endpoint using \`client.direct()\`.
-- Testable: built-in test mode with mock support.
+The ${target.title} SDK for the ${model.Name} API. ${targetIntro}
 
 `)
 

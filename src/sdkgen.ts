@@ -25,10 +25,16 @@ import { Main } from './cmp/Main'
 import { Entity } from './cmp/Entity'
 import { Feature } from './cmp/Feature'
 import { Readme } from './cmp/Readme'
+import { ReadmeTop } from './cmp/ReadmeTop'
 import { Test } from './cmp/Test'
 import { ReadmeInstall } from './cmp/ReadmeInstall'
+import { ReadmeQuick } from './cmp/ReadmeQuick'
+import { ReadmeIntro } from './cmp/ReadmeIntro'
+import { ReadmeModel } from './cmp/ReadmeModel'
 import { ReadmeOptions } from './cmp/ReadmeOptions'
 import { ReadmeEntity } from './cmp/ReadmeEntity'
+import { ReadmeHowto } from './cmp/ReadmeHowto'
+import { ReadmeExplanation } from './cmp/ReadmeExplanation'
 import { ReadmeRef } from './cmp/ReadmeRef'
 import { FeatureHook } from './cmp/FeatureHook'
 
@@ -356,9 +362,15 @@ export {
   Feature,
   Test,
   Readme,
+  ReadmeTop,
   ReadmeInstall,
+  ReadmeQuick,
+  ReadmeIntro,
+  ReadmeModel,
   ReadmeOptions,
   ReadmeEntity,
+  ReadmeHowto,
+  ReadmeExplanation,
   ReadmeRef,
   FeatureHook,
 
