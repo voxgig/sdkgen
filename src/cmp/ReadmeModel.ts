@@ -14,7 +14,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const { model } = ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = Object.values(entity).filter((e: any) => e.active !== false)
+  const entityList = each(entity).filter((e: any) => e.active !== false)
 
   Content(`
 ## Reference

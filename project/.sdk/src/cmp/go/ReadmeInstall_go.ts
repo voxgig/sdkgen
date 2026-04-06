@@ -13,6 +13,13 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 go get ${gomodule}
 \`\`\`
 
+If the module is not yet published to a registry, use a \`replace\` directive
+in your \`go.mod\` to point to a local checkout:
+
+\`\`\`bash
+go mod edit -replace ${gomodule}=../path/to/${gomodule}
+\`\`\`
+
 `)
 })
 

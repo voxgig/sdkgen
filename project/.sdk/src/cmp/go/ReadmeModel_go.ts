@@ -11,7 +11,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = Object.values(entity).filter((e: any) => e.active !== false)
+  const entityList = each(entity).filter((e: any) => e.active !== false)
 
   const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
   const gomodule = orgPrefix + model.name + 'sdk'
@@ -95,13 +95,13 @@ On error, \`"ok"\` is \`false\` and \`"err"\` contains the error value.
 
 `)
   each(entityList, (ent: any) => {
-    const fields = ent.field || []
+    const fields = ent.fields || []
     const opnames = Object.keys(ent.op || {})
     const ops = ent.op || {}
-    const points = Object.values(ops).map((op: any) =>
-      op.points ? Object.values(op.points) : []
+    const points = each(ops).map((op: any) =>
+      op.points ? each(op.points) : []
     ).flat()
-    const path = points.length > 0 ? (points[0] as any).path || '' : ''
+    const path = points.length > 0 ? (points[0] as any).orig || '' : ''
 
     Content(`#### ${ent.Name}
 

@@ -59,11 +59,11 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
       activeEntities.map((ent: any) => {
         const entdesc = ent.short || ''
         const ops = ent.op || {}
-        const points = Object.values(ops).map((op: any) =>
-          op.points ? Object.values(op.points) : []
+        const points = each(ops).map((op: any) =>
+          op.points ? each(op.points) : []
         ).flat()
         const path = points.length > 0
-          ? (points[0] as any).path || ''
+          ? (points[0] as any).orig || ''
           : ''
         Content(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
 `)

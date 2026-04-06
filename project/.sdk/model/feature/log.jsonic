@@ -2,10 +2,14 @@
 main: kit: feature: log: {
 
   name: key()
-  title: Log
+  title: "Structured request and response logging"
   version: '0.0.1'
   active: true
 
+
+  config: {
+    options: active: true
+  }
 
   hook: {
     PostConstruct: active: true

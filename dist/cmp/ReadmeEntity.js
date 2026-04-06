@@ -28,7 +28,7 @@ const ReadmeEntity = (0, jostraca_1.cmp)(function ReadmeEntity(props) {
 `);
     publishedEntities.map((entity) => {
         const opnames = Object.keys(entity.op || {});
-        const fields = entity.field || [];
+        const fields = entity.fields || [];
         (0, jostraca_1.Content)(`
 ### ${entity.Name}
 

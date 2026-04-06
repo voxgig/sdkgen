@@ -39,7 +39,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
-    const fields = entity.field || []
+    const fields = entity.fields || []
 
     Content(`
 ### ${entity.Name}

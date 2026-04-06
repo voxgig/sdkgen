@@ -43,7 +43,7 @@ ${eName.toLowerCase()}s, err := client.${eName}(nil).List(nil, nil)
 
     if (nestedEntity && opnames.includes('load')) {
       const neName = nom(nestedEntity, 'Name')
-      const parentFields = (nestedEntity.field || [])
+      const parentFields = (nestedEntity.fields || [])
         .filter((f: any) => f.name !== 'id' && f.name.endsWith('_id'))
       const parentParam = parentFields.length > 0 ? parentFields[0].name : 'parent_id'
 

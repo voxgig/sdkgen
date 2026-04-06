@@ -11,7 +11,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = Object.values(entity).filter((e: any) => e.active !== false)
+  const entityList = each(entity).filter((e: any) => e.active !== false)
 
   Content(`### ${model.const.Name}SDK
 
@@ -125,13 +125,13 @@ The \`prepare()\` method returns:
 `)
 
   each(entityList, (ent: any) => {
-    const fields = ent.field || []
+    const fields = ent.fields || []
     const opnames = Object.keys(ent.op || {})
     const ops = ent.op || {}
-    const points = Object.values(ops).map((op: any) =>
-      op.points ? Object.values(op.points) : []
+    const points = each(ops).map((op: any) =>
+      op.points ? each(op.points) : []
     ).flat()
-    const path = points.length > 0 ? (points[0] as any).path || '' : ''
+    const path = points.length > 0 ? (points[0] as any).orig || '' : ''
 
     Content(`#### ${ent.Name}
 

@@ -270,7 +270,7 @@ Alias for \`${model.Name}SDK.test()\`.
         // Entity reference sections
         publishedEntities.map((ent) => {
             const opnames = Object.keys(ent.op || {});
-            const fields = ent.field || [];
+            const fields = ent.fields || [];
             (0, jostraca_1.Content)(`
 ---
 

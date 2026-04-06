@@ -296,7 +296,7 @@ Alias for \`${model.Name}SDK.test()\`.
     // Entity reference sections
     publishedEntities.map((ent: any) => {
       const opnames = Object.keys(ent.op || {})
-      const fields = ent.field || []
+      const fields = ent.fields || []
 
       Content(`
 ---

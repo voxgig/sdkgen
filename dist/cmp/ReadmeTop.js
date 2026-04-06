@@ -45,9 +45,9 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
             activeEntities.map((ent) => {
                 const entdesc = ent.short || '';
                 const ops = ent.op || {};
-                const points = Object.values(ops).map((op) => op.points ? Object.values(op.points) : []).flat();
+                const points = (0, jostraca_1.each)(ops).map((op) => op.points ? (0, jostraca_1.each)(op.points) : []).flat();
                 const path = points.length > 0
-                    ? points[0].path || ''
+                    ? points[0].orig || ''
                     : '';
                 (0, jostraca_1.Content)(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
 `);
