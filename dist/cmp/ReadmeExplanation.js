@@ -33,7 +33,13 @@ PrePoint \u2192 PreSpec \u2192 PreRequest \u2192 PreResponse \u2192 PreResult \u
 
 `);
     // Target-specific error description
-    if (target.name === 'lua') {
+    if (target.name === 'rb') {
+        (0, jostraca_1.Content)(`If any stage returns an error, the pipeline short-circuits and the
+error is returned to the caller as a second return value.
+
+`);
+    }
+    else if (target.name === 'lua') {
         (0, jostraca_1.Content)(`If any stage returns an error, the pipeline short-circuits and the
 error is returned to the caller as a second return value.
 
@@ -59,7 +65,14 @@ propagating.
     (0, jostraca_1.Content)(`### Features and hooks
 
 `);
-    if (target.name === 'lua') {
+    if (target.name === 'rb') {
+        (0, jostraca_1.Content)(`Features are the extension mechanism. A feature is a Ruby class
+with hook methods named after pipeline stages (e.g. \`PrePoint\`,
+\`PreSpec\`). Each method receives the context.
+
+`);
+    }
+    else if (target.name === 'lua') {
         (0, jostraca_1.Content)(`Features are the extension mechanism. A feature is a Lua table
 with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
@@ -106,7 +119,24 @@ were added, so later features can override earlier ones.
     (0, jostraca_1.Content)(`### Entity state
 
 `);
-    if (target.name === 'lua') {
+    if (target.name === 'rb') {
+        (0, jostraca_1.Content)(`Entity instances are stateful. After a successful \`load\`, the entity
+stores the returned data and match criteria internally.
+
+\`\`\`ruby
+moon = client.Moon
+moon.load({ "planet_id" => "earth", "id" => "luna" })
+
+# moon.data_get now returns the loaded moon data
+# moon.match_get returns the last match criteria
+\`\`\`
+
+Call \`make\` to create a fresh instance with the same configuration
+but no stored state.
+
+`);
+    }
+    else if (target.name === 'lua') {
         (0, jostraca_1.Content)(`Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally.
 
@@ -165,7 +195,15 @@ The entity interface handles URL construction, parameter placement,
 and response parsing automatically. Use it for standard CRUD operations.
 
 `);
-    if (target.name === 'lua') {
+    if (target.name === 'rb') {
+        (0, jostraca_1.Content)(`\`direct\` gives full control over the HTTP request. Use it for
+non-standard endpoints, bulk operations, or any path not modelled as
+an entity. \`prepare\` builds the request without sending it \u2014 useful
+for debugging or custom transport.
+
+`);
+    }
+    else if (target.name === 'lua') {
         (0, jostraca_1.Content)(`\`direct()\` gives full control over the HTTP request. Use it for
 non-standard endpoints, bulk operations, or any path not modelled as
 an entity. \`prepare()\` builds the request without sending it \u2014 useful
