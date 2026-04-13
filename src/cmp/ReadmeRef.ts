@@ -93,6 +93,34 @@ const OP_SIGNATURES_RB: Record<string, { sig: string, returns: string, desc: str
   },
 }
 
+const OP_SIGNATURES_PY: Record<string, { sig: string, returns: string, desc: string }> = {
+  load: {
+    sig: 'load(reqmatch, ctrl=None) -> tuple',
+    returns: '(result, err)',
+    desc: 'Load a single entity matching the given criteria.',
+  },
+  list: {
+    sig: 'list(reqmatch, ctrl=None) -> tuple',
+    returns: '(result, err)',
+    desc: 'List entities matching the given criteria. Returns an array.',
+  },
+  create: {
+    sig: 'create(reqdata, ctrl=None) -> tuple',
+    returns: '(result, err)',
+    desc: 'Create a new entity with the given data.',
+  },
+  update: {
+    sig: 'update(reqdata, ctrl=None) -> tuple',
+    returns: '(result, err)',
+    desc: 'Update an existing entity. The data must include the entity `id`.',
+  },
+  remove: {
+    sig: 'remove(reqmatch, ctrl=None) -> tuple',
+    returns: '(result, err)',
+    desc: 'Remove the entity matching the given criteria.',
+  },
+}
+
 const OP_SIGNATURES_PHP: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(array $reqmatch, ?array $ctrl = null): array',
@@ -163,8 +191,9 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const isLua = target.name === 'lua'
   const isRb = target.name === 'rb'
   const isPhp = target.name === 'php'
-  const lang = isGo ? 'go' : isLua ? 'lua' : isRb ? 'rb' : isPhp ? 'php' : 'ts'
-  const OP_SIGNATURES = isGo ? OP_SIGNATURES_GO : isLua ? OP_SIGNATURES_LUA : isRb ? OP_SIGNATURES_RB : isPhp ? OP_SIGNATURES_PHP : OP_SIGNATURES_TS
+  const isPy = target.name === 'py'
+  const lang = isGo ? 'go' : isLua ? 'lua' : isRb ? 'rb' : isPhp ? 'php' : isPy ? 'py' : 'ts'
+  const OP_SIGNATURES = isGo ? OP_SIGNATURES_GO : isLua ? OP_SIGNATURES_LUA : isRb ? OP_SIGNATURES_RB : isPhp ? OP_SIGNATURES_PHP : isPy ? OP_SIGNATURES_PY : OP_SIGNATURES_TS
 
   File({ name: 'REFERENCE.md' }, () => {
 
@@ -179,7 +208,31 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
-    if (isPhp) {
+    if (isPy) {
+      Content(`\`\`\`python
+from ${model.name}_sdk import ${model.const.Name}SDK
+
+client = ${model.const.Name}SDK(options)
+\`\`\`
+
+Create a new SDK client instance.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| \`options\` | \`dict\` | SDK configuration options. |
+| \`options["apikey"]\` | \`str\` | API key for authentication. |
+| \`options["base"]\` | \`str\` | Base URL for API requests. |
+| \`options["prefix"]\` | \`str\` | URL prefix appended after base. |
+| \`options["suffix"]\` | \`str\` | URL suffix appended after path. |
+| \`options["headers"]\` | \`dict\` | Custom headers for all requests. |
+| \`options["feature"]\` | \`dict\` | Feature configuration. |
+| \`options["system"]\` | \`dict\` | System overrides (e.g. custom fetch). |
+
+`)
+    }
+    else if (isPhp) {
       Content(`\`\`\`php
 require_once __DIR__ . '/${model.name}_sdk.php';
 
@@ -301,7 +354,18 @@ Create a new SDK client instance.
 
 `)
 
-    if (isPhp) {
+    if (isPy) {
+      Content(`#### \`${model.const.Name}SDK.test(testopts=None, sdkopts=None)\`
+
+Create a test client with mock features active. Both arguments may be \`None\`.
+
+\`\`\`python
+client = ${model.const.Name}SDK.test()
+\`\`\`
+
+`)
+    }
+    else if (isPhp) {
       Content(`#### \`${model.const.Name}SDK::test($testopts = null, $sdkopts = null)\`
 
 Create a test client with mock features active. Both arguments may be \`null\`.
@@ -375,7 +439,14 @@ const client = ${model.Name}SDK.test()
 
     // Entity factory methods
     publishedEntities.map((ent: any) => {
-      if (isPhp) {
+      if (isPy) {
+        Content(`#### \`${ent.Name}(data=None)\`
+
+Create a new \`${ent.Name}Entity\` instance. Pass \`None\` for no initial data.
+
+`)
+      }
+      else if (isPhp) {
         Content(`#### \`${ent.Name}($data = null)\`
 
 Create a new \`${ent.Name}Entity\` instance. Pass \`null\` for no initial data.
@@ -421,7 +492,39 @@ Create a new \`${ent.Name}\` entity instance.
     })
 
 
-    if (isPhp) {
+    if (isPy) {
+      Content(`#### \`options_map() -> dict\`
+
+Return a deep copy of the current SDK options.
+
+#### \`get_utility() -> Utility\`
+
+Return a copy of the SDK utility object.
+
+#### \`direct(fetchargs=None) -> tuple\`
+
+Make a direct HTTP request to any API endpoint. Returns \`(result, err)\`.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| \`fetchargs["path"]\` | \`str\` | URL path with optional \`{param}\` placeholders. |
+| \`fetchargs["method"]\` | \`str\` | HTTP method (default: \`"GET"\`). |
+| \`fetchargs["params"]\` | \`dict\` | Path parameter values. |
+| \`fetchargs["query"]\` | \`dict\` | Query string parameters. |
+| \`fetchargs["headers"]\` | \`dict\` | Request headers (merged with defaults). |
+| \`fetchargs["body"]\` | \`any\` | Request body (dicts are JSON-serialized). |
+
+**Returns:** \`(result_dict, err)\`
+
+#### \`prepare(fetchargs=None) -> tuple\`
+
+Prepare a fetch definition without sending. Returns \`(fetchdef, err)\`.
+
+`)
+    }
+    else if (isPhp) {
       Content(`#### \`optionsMap(): array\`
 
 Return a deep copy of the current SDK options.
@@ -628,7 +731,14 @@ Alias for \`${model.Name}SDK.test()\`.
 `)
       }
 
-      if (isPhp) {
+      if (isPy) {
+        Content(`\`\`\`python
+${ent.name} = client.${ent.Name}()
+\`\`\`
+
+`)
+      }
+      else if (isPhp) {
         Content(`\`\`\`php
 $${ent.name} = $client->${ent.Name}();
 \`\`\`
@@ -726,7 +836,48 @@ ${info.desc}
 `)
 
           // Show example
-          if (isPhp) {
+          if (isPy) {
+            if ('load' === opname || 'remove' === opname) {
+              Content(`\`\`\`python
+result, err = client.${ent.Name}().${opname}({"id": "${ent.name}_id"})
+\`\`\`
+
+`)
+            }
+            else if ('list' === opname) {
+              Content(`\`\`\`python
+results, err = client.${ent.Name}().list({})
+\`\`\`
+
+`)
+            }
+            else if ('create' === opname) {
+              Content(`\`\`\`python
+result, err = client.${ent.Name}().create({
+`)
+              each(fields, (field: any) => {
+                if ('id' !== field.name && field.req) {
+                  Content(`    "${field.name}": # ${field.type || 'value'},
+`)
+                }
+              })
+              Content(`})
+\`\`\`
+
+`)
+            }
+            else if ('update' === opname) {
+              Content(`\`\`\`python
+result, err = client.${ent.Name}().update({
+    "id": "${ent.name}_id",
+    # Fields to update
+})
+\`\`\`
+
+`)
+            }
+          }
+          else if (isPhp) {
             if ('load' === opname || 'remove' === opname) {
               Content(`\`\`\`php
 [$result, $err] = $client->${ent.Name}()->${opname}(["id" => "${ent.name}_id"]);
@@ -937,7 +1088,36 @@ const result = await client.${ent.Name}().update({
 
 
       // Common methods
-      if (isPhp) {
+      if (isPy) {
+        Content(`### Common Methods
+
+#### \`data_get() -> dict\`
+
+Get the entity data.
+
+#### \`data_set(data)\`
+
+Set the entity data.
+
+#### \`match_get() -> dict\`
+
+Get the entity match criteria.
+
+#### \`match_set(match)\`
+
+Set the entity match criteria.
+
+#### \`make() -> Entity\`
+
+Create a new \`${ent.Name}Entity\` instance with the same options.
+
+#### \`get_name() -> str\`
+
+Return the entity name.
+
+`)
+      }
+      else if (isPhp) {
         Content(`### Common Methods
 
 #### \`dataGet(): array\`
@@ -1105,7 +1285,22 @@ Features are activated via the \`feature\` option:
 
 `)
 
-      if (isPhp) {
+      if (isPy) {
+        Content(`\`\`\`python
+client = ${model.const.Name}SDK({
+    "feature": {
+`)
+        activeFeatures.map((f: any) => {
+          Content(`        "${f.name}": {"active": True},
+`)
+        })
+        Content(`    },
+})
+\`\`\`
+
+`)
+      }
+      else if (isPhp) {
         Content(`\`\`\`php
 $client = new ${model.const.Name}SDK([
   "feature" => [

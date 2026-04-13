@@ -1,0 +1,23 @@
+
+main: kit: target: py: {
+
+  title: Python
+  ext: py
+  comment: line: "#"
+  module: name: $$name$$
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  deps: {
+    'voxgig-struct': { active: true, version: '0.0.10' }
+    'requests': { active: true, version: '2.31' }
+  }
+}
+
+
+main: kit: feature: &: target: py: deps: &: {
+  kind: *'prod' | string
+}
