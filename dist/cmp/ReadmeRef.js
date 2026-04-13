@@ -30,6 +30,33 @@ const OP_SIGNATURES_TS = {
         desc: 'Remove the entity matching the given criteria.',
     },
 };
+const OP_SIGNATURES_LUA = {
+    load: {
+        sig: 'load(reqmatch, ctrl) -> any, err',
+        returns: 'any, err',
+        desc: 'Load a single entity matching the given criteria.',
+    },
+    list: {
+        sig: 'list(reqmatch, ctrl) -> any, err',
+        returns: 'any, err',
+        desc: 'List entities matching the given criteria. Returns an array.',
+    },
+    create: {
+        sig: 'create(reqdata, ctrl) -> any, err',
+        returns: 'any, err',
+        desc: 'Create a new entity with the given data.',
+    },
+    update: {
+        sig: 'update(reqdata, ctrl) -> any, err',
+        returns: 'any, err',
+        desc: 'Update an existing entity. The data must include the entity `id`.',
+    },
+    remove: {
+        sig: 'remove(reqmatch, ctrl) -> any, err',
+        returns: 'any, err',
+        desc: 'Remove the entity matching the given criteria.',
+    },
+};
 const OP_SIGNATURES_GO = {
     load: {
         sig: 'Load(reqmatch, ctrl map[string]any) (any, error)',
@@ -64,8 +91,9 @@ const ReadmeRef = (0, jostraca_1.cmp)(function ReadmeRef(props) {
     const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`);
     const publishedEntities = (0, jostraca_1.each)(entity).filter((e) => e.active !== false);
     const isGo = target.name === 'go';
-    const lang = isGo ? 'go' : 'ts';
-    const OP_SIGNATURES = isGo ? OP_SIGNATURES_GO : OP_SIGNATURES_TS;
+    const isLua = target.name === 'lua';
+    const lang = isGo ? 'go' : isLua ? 'lua' : 'ts';
+    const OP_SIGNATURES = isGo ? OP_SIGNATURES_GO : isLua ? OP_SIGNATURES_LUA : OP_SIGNATURES_TS;
     (0, jostraca_1.File)({ name: 'REFERENCE.md' }, () => {
         (0, jostraca_1.Content)(`# ${model.Name} ${target.title} SDK Reference
 
@@ -77,7 +105,30 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 ### Constructor
 
 `);
-        if (isGo) {
+        if (isLua) {
+            (0, jostraca_1.Content)(`\`\`\`lua
+local sdk = require("${model.name}_sdk")
+local client = sdk.new(options)
+\`\`\`
+
+Create a new SDK client instance.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| \`options\` | \`table\` | SDK configuration options. |
+| \`options.apikey\` | \`string\` | API key for authentication. |
+| \`options.base\` | \`string\` | Base URL for API requests. |
+| \`options.prefix\` | \`string\` | URL prefix appended after base. |
+| \`options.suffix\` | \`string\` | URL suffix appended after path. |
+| \`options.headers\` | \`table\` | Custom headers for all requests. |
+| \`options.feature\` | \`table\` | Feature configuration. |
+| \`options.system\` | \`table\` | System overrides (e.g. custom fetch). |
+
+`);
+        }
+        else if (isGo) {
             (0, jostraca_1.Content)(`\`\`\`go
 func New${model.const.Name}SDK(options map[string]any) *${model.const.Name}SDK
 \`\`\`
@@ -125,7 +176,18 @@ Create a new SDK client instance.
 ### Static Methods
 
 `);
-        if (isGo) {
+        if (isLua) {
+            (0, jostraca_1.Content)(`#### \`sdk.test(testopts, sdkopts)\`
+
+Create a test client with mock features active. Both arguments may be \`nil\`.
+
+\`\`\`lua
+local client = sdk.test(nil, nil)
+\`\`\`
+
+`);
+        }
+        else if (isGo) {
             (0, jostraca_1.Content)(`#### \`TestSDK(testopts, sdkopts map[string]any) *${model.const.Name}SDK\`
 
 Create a test client with mock features active. Both arguments may be \`nil\`.
@@ -162,7 +224,14 @@ const client = ${model.Name}SDK.test()
 `);
         // Entity factory methods
         publishedEntities.map((ent) => {
-            if (isGo) {
+            if (isLua) {
+                (0, jostraca_1.Content)(`#### \`${ent.Name}(data)\`
+
+Create a new \`${ent.Name}\` entity instance. Pass \`nil\` for no initial data.
+
+`);
+            }
+            else if (isGo) {
                 (0, jostraca_1.Content)(`#### \`${ent.Name}(data map[string]any) ${model.const.Name}Entity\`
 
 Create a new \`${ent.Name}\` entity instance. Pass \`nil\` for no initial data.
@@ -185,7 +254,43 @@ Create a new \`${ent.Name}\` entity instance.
 `);
             }
         });
-        if (isGo) {
+        if (isLua) {
+            (0, jostraca_1.Content)(`#### \`options_map() -> table\`
+
+Return a deep copy of the current SDK options.
+
+#### \`get_utility() -> Utility\`
+
+Return a copy of the SDK utility object.
+
+#### \`direct(fetchargs) -> table, err\`
+
+Make a direct HTTP request to any API endpoint.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| \`fetchargs.path\` | \`string\` | URL path with optional \`{param}\` placeholders. |
+| \`fetchargs.method\` | \`string\` | HTTP method (default: \`"GET"\`). |
+| \`fetchargs.params\` | \`table\` | Path parameter values for \`{param}\` substitution. |
+| \`fetchargs.query\` | \`table\` | Query string parameters. |
+| \`fetchargs.headers\` | \`table\` | Request headers (merged with defaults). |
+| \`fetchargs.body\` | \`any\` | Request body (tables are JSON-serialized). |
+| \`fetchargs.ctrl\` | \`table\` | Control options (e.g. \`{ explain = true }\`). |
+
+**Returns:** \`table, err\`
+
+#### \`prepare(fetchargs) -> table, err\`
+
+Prepare a fetch definition without sending the request. Accepts the
+same parameters as \`direct()\`.
+
+**Returns:** \`table, err\`
+
+`);
+        }
+        else if (isGo) {
             (0, jostraca_1.Content)(`#### \`OptionsMap() map[string]any\`
 
 Return a deep copy of the current SDK options.
@@ -282,7 +387,14 @@ Alias for \`${model.Name}SDK.test()\`.
 
 `);
             }
-            if (isGo) {
+            if (isLua) {
+                (0, jostraca_1.Content)(`\`\`\`lua
+local ${ent.name} = client:${ent.Name}(nil)
+\`\`\`
+
+`);
+            }
+            else if (isGo) {
                 (0, jostraca_1.Content)(`\`\`\`go
 ${ent.name} := client.${ent.Name}(nil)
 \`\`\`
@@ -353,7 +465,48 @@ ${info.desc}
 
 `);
                     // Show example
-                    if (isGo) {
+                    if (isLua) {
+                        if ('load' === opname || 'remove' === opname) {
+                            (0, jostraca_1.Content)(`\`\`\`lua
+local result, err = client:${ent.Name}(nil):${opname}({ id = "${ent.name}_id" }, nil)
+\`\`\`
+
+`);
+                        }
+                        else if ('list' === opname) {
+                            (0, jostraca_1.Content)(`\`\`\`lua
+local results, err = client:${ent.Name}(nil):list(nil, nil)
+\`\`\`
+
+`);
+                        }
+                        else if ('create' === opname) {
+                            (0, jostraca_1.Content)(`\`\`\`lua
+local result, err = client:${ent.Name}(nil):create({
+`);
+                            (0, jostraca_1.each)(fields, (field) => {
+                                if ('id' !== field.name && field.req) {
+                                    (0, jostraca_1.Content)(`  ${field.name} = --[[ ${field.type || 'value'} ]],
+`);
+                                }
+                            });
+                            (0, jostraca_1.Content)(`}, nil)
+\`\`\`
+
+`);
+                        }
+                        else if ('update' === opname) {
+                            (0, jostraca_1.Content)(`\`\`\`lua
+local result, err = client:${ent.Name}(nil):update({
+  id = "${ent.name}_id",
+  -- Fields to update
+}, nil)
+\`\`\`
+
+`);
+                        }
+                    }
+                    else if (isGo) {
                         if ('load' === opname || 'remove' === opname) {
                             const goOpName = opname.charAt(0).toUpperCase() + opname.slice(1);
                             (0, jostraca_1.Content)(`\`\`\`go
@@ -439,7 +592,37 @@ const result = await client.${ent.Name}().update({
                 });
             }
             // Common methods
-            if (isGo) {
+            if (isLua) {
+                (0, jostraca_1.Content)(`### Common Methods
+
+#### \`data_get() -> table\`
+
+Get the entity data. Returns a copy of the current data.
+
+#### \`data_set(data)\`
+
+Set the entity data.
+
+#### \`match_get() -> table\`
+
+Get the entity match criteria.
+
+#### \`match_set(match)\`
+
+Set the entity match criteria.
+
+#### \`make() -> Entity\`
+
+Create a new \`${ent.Name}Entity\` instance with the same client and
+options.
+
+#### \`get_name() -> string\`
+
+Return the entity name.
+
+`);
+            }
+            else if (isGo) {
                 (0, jostraca_1.Content)(`### Common Methods
 
 #### \`Data(args ...any) any\`
@@ -512,7 +695,22 @@ Return a copy of the entity options.
 Features are activated via the \`feature\` option:
 
 `);
-            if (isGo) {
+            if (isLua) {
+                (0, jostraca_1.Content)(`\`\`\`lua
+local client = sdk.new({
+  feature = {
+`);
+                activeFeatures.map((f) => {
+                    (0, jostraca_1.Content)(`    ${f.name} = { active = true },
+`);
+                });
+                (0, jostraca_1.Content)(`  },
+})
+\`\`\`
+
+`);
+            }
+            else if (isGo) {
                 (0, jostraca_1.Content)(`\`\`\`go
 client := sdk.New${model.const.Name}SDK(map[string]any{
     "feature": map[string]any{

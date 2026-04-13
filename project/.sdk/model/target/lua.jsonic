@@ -1,0 +1,23 @@
+
+main: kit: target: lua: {
+
+  title: Lua
+  ext: lua
+  comment: line: "--"
+  module: name: $$name$$
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  deps: {
+    'voxgig-struct': { active: true, version: '0.0.10' }
+    'dkjson': { active: true, version: '2.5' }
+  }
+}
+
+
+main: kit: feature: &: target: lua: deps: &: {
+  kind: *'prod' | string
+}
