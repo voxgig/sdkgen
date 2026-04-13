@@ -1,0 +1,22 @@
+
+main: kit: target: php: {
+
+  title: PHP
+  ext: php
+  comment: line: "//"
+  module: name: $$name$$
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  deps: {
+    'voxgig/struct': { active: true, version: '0.0.10' }
+  }
+}
+
+
+main: kit: feature: &: target: php: deps: &: {
+  kind: *'prod' | string
+}
