@@ -7,7 +7,7 @@ class ProjectNamePrepareHeaders
 {
     public static function call(ProjectNameContext $ctx): array
     {
-        $options = $ctx->client->options_map;
+        $options = $ctx->client->options_map();
         $headers = \Voxgig\Struct\Struct::getprop($options, 'headers');
         if (!$headers) {
             return [];

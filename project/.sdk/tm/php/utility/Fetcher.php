@@ -81,7 +81,7 @@ class ProjectNameFetcher
                 "Request blocked by mode: \"{$ctx->client->mode}\" (URL was: \"{$fullurl}\")")];
         }
 
-        $options = $ctx->client->options_map;
+        $options = $ctx->client->options_map();
         if (\Voxgig\Struct\Struct::getpath($options, 'feature.test.active') === true) {
             return [null, $ctx->make_error('fetch_test_block',
                 "Request blocked as test feature is active (URL was: \"{$fullurl}\")")];

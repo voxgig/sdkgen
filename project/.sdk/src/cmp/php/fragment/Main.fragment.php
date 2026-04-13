@@ -221,7 +221,10 @@ class ProjectNameSDK
         $testopts = is_array($testopts) ? $testopts : [];
         $testopts["active"] = true;
 
-        Struct::setpath($sdkopts, "feature.test", $testopts);
+        if (!isset($sdkopts["feature"])) {
+            $sdkopts["feature"] = [];
+        }
+        $sdkopts["feature"]["test"] = $testopts;
 
         $sdk = new ProjectNameSDK($sdkopts);
         $sdk->mode = "test";

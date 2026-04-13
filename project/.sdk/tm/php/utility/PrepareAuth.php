@@ -17,7 +17,7 @@ class ProjectNamePrepareAuth
         }
 
         $headers = &$spec->headers;
-        $options = $ctx->client->options_map;
+        $options = $ctx->client->options_map();
         $apikey = \Voxgig\Struct\Struct::getprop($options, self::OPTION_APIKEY, self::NOT_FOUND);
 
         if (is_string($apikey) && $apikey === self::NOT_FOUND) {
