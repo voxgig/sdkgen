@@ -15,7 +15,11 @@ class ProjectNameDone
             }
         }
         if ($ctx->result && $ctx->result->ok) {
-            return [$ctx->result->resdata, null];
+            $resdata = $ctx->result->resdata;
+            if (is_object($resdata)) {
+                $resdata = (array)$resdata;
+            }
+            return [$resdata, null];
         }
         return ($ctx->utility->make_error)($ctx, null);
     }

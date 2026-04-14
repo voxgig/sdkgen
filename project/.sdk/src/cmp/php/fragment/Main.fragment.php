@@ -89,7 +89,21 @@ class ProjectNameSDK
 
     public function options_map(): array
     {
-        $out = Struct::clone($this->options);
+        // Save and strip system.fetch (closures can't be deep-cloned).
+        $sys_fetch = Struct::getpath($this->options, 'system.fetch');
+        $opts = $this->options;
+        if (isset($opts['system']['fetch'])) {
+            unset($opts['system']['fetch']);
+        }
+        $out = Struct::clone($opts);
+        // Restore on both.
+        if ($sys_fetch) {
+            $this->options['system']['fetch'] = $sys_fetch;
+            if (is_array($out)) {
+                if (!isset($out['system'])) $out['system'] = [];
+                $out['system']['fetch'] = $sys_fetch;
+            }
+        }
         return is_array($out) ? $out : [];
     }
 

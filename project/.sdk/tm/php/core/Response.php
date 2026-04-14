@@ -18,10 +18,13 @@ class ProjectNameResponse
         $this->status = is_numeric($s) ? (int)$s : -1;
         $st = \Voxgig\Struct\Struct::getprop($resmap, 'statusText');
         $this->status_text = is_string($st) ? $st : '';
-        $this->headers = \Voxgig\Struct\Struct::getprop($resmap, 'headers');
+        $h = \Voxgig\Struct\Struct::getprop($resmap, 'headers');
+        $this->headers = ($h === '__UNDEFINED__') ? null : $h;
         $jf = \Voxgig\Struct\Struct::getprop($resmap, 'json');
         $this->json_func = is_callable($jf) ? $jf : null;
-        $this->body = \Voxgig\Struct\Struct::getprop($resmap, 'body');
-        $this->err = \Voxgig\Struct\Struct::getprop($resmap, 'err');
+        $b = \Voxgig\Struct\Struct::getprop($resmap, 'body');
+        $this->body = ($b === '__UNDEFINED__') ? null : $b;
+        $e = \Voxgig\Struct\Struct::getprop($resmap, 'err');
+        $this->err = ($e === '__UNDEFINED__') ? null : $e;
     }
 }

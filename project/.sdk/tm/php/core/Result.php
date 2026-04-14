@@ -23,9 +23,12 @@ class ProjectNameResult
         $this->status_text = is_string($st) ? $st : '';
         $h = \Voxgig\Struct\Struct::getprop($resmap, 'headers');
         $this->headers = is_array($h) ? $h : [];
-        $this->body = \Voxgig\Struct\Struct::getprop($resmap, 'body');
-        $this->err = \Voxgig\Struct\Struct::getprop($resmap, 'err');
-        $this->resdata = \Voxgig\Struct\Struct::getprop($resmap, 'resdata');
+        $b = \Voxgig\Struct\Struct::getprop($resmap, 'body');
+        $this->body = ($b === '__UNDEFINED__') ? null : $b;
+        $e = \Voxgig\Struct\Struct::getprop($resmap, 'err');
+        $this->err = ($e === '__UNDEFINED__') ? null : $e;
+        $rd = \Voxgig\Struct\Struct::getprop($resmap, 'resdata');
+        $this->resdata = ($rd === '__UNDEFINED__' || $rd === null) ? null : $rd;
         $rm = \Voxgig\Struct\Struct::getprop($resmap, 'resmatch');
         $this->resmatch = is_array($rm) ? $rm : null;
     }
