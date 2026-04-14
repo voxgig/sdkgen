@@ -7,6 +7,9 @@ class ProjectNameMakeOptions
 {
     private static function to_array_deep(mixed $val): mixed
     {
+        if ($val instanceof \Closure) {
+            return $val;
+        }
         if (is_object($val)) {
             $val = (array)$val;
         }
@@ -31,27 +34,13 @@ class ProjectNameMakeOptions
             }
         }
 
-        // Preserve system.fetch before clone (closures can't be deep-cloned).
-        $sys_fetch = null;
-        if (is_array($options) && isset($options['system']) && is_array($options['system']) && isset($options['system']['fetch'])) {
-            $sys_fetch = $options['system']['fetch'];
-            unset($options['system']['fetch']);
-        }
+        // Preserve system.fetch before merge/validate.
+        $sys_fetch = \Voxgig\Struct\Struct::getpath($options, 'system.fetch');
 
         $opts = \Voxgig\Struct\Struct::clone($options);
-
-        // Restore on original options.
-        if ($sys_fetch !== null) {
-            $options['system']['fetch'] = $sys_fetch;
-        }
         $opts = self::to_array_deep($opts);
         if (!is_array($opts)) {
             $opts = [];
-        }
-
-        // Remove stale clone of fetch (clone may drop or corrupt closures).
-        if (isset($opts['system']['fetch'])) {
-            unset($opts['system']['fetch']);
         }
 
         $config = $ctx->config ?? [];
