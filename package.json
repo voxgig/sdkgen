@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "0.35.2",
+  "version": "0.36.0",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "types": "dist/sdkgen.d.ts",
@@ -42,7 +42,7 @@
   "devDependencies": {
     "@hapi/code": "^9.0.3",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "25.5.2",
+    "@types/node": "25.6.0",
     "json-schema-to-ts": "^3.1.1",
     "memfs": "^4.57.1",
     "typescript": "^5.9.3"
