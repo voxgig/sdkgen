@@ -75,6 +75,8 @@ local sdk = require("${model.name}_sdk")
 local helpers = require("core.helpers")
 local runner = require("test.runner")
 
+local _test_dir = debug.getinfo(1, "S").source:match("^@(.+/)")  or "./"
+
 describe("${entity.Name}Entity", function()
   it("should create instance", function()
     local testsdk = sdk.test(nil, nil)
@@ -120,7 +122,7 @@ end)
     Content(`function ${entity.name}_basic_setup(extra)
   runner.load_env_local()
 
-  local entity_data_file = "../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json"
+  local entity_data_file = _test_dir .. "../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json"
   local f = io.open(entity_data_file, "r")
   if f == nil then
     error("failed to read ${entity.name} test data: " .. entity_data_file)

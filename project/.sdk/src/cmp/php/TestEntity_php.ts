@@ -138,17 +138,12 @@ class ${entity.Name}EntityTest extends TestCase
 
 `)
 
-    // Generate idmap via Vs::transform
-    Content(`    // Generate idmap via transform.
-    $idmap = Vs::transform(
-        [${idnamesStr}],
-        [
-            "\`\\$PACK\`" => ["", [
-                "\`\\$KEY\`" => "\`\\$COPY\`",
-                "\`\\$VAL\`" => ["\`\\$FORMAT\`", "upper", "\`\\$COPY\`"],
-            ]],
-        ]
-    );
+    // Generate idmap: key => UPPER(key)
+    Content(`    // Generate idmap.
+    $idmap = [];
+    foreach ([${idnamesStr}] as $k) {
+        $idmap[$k] = strtoupper($k);
+    }
 
 `)
 
@@ -307,18 +302,18 @@ const generateList: OpGen = (ctx, step, index) => {
       if ('ItemExists' === validator.apply && hasRefData) {
         const refDataVar = validRef + '_data'
         Content(`
-        $found_item = Vs::select(
+        $found_item = sdk_select(
             Runner::entity_list_to_data($${listvar}_result),
             ["id" => $${refDataVar}["id"]]);
-        $this->assertFalse(Vs::isempty($found_item));
+        $this->assertNotEmpty($found_item);
 `)
       } else if ('ItemNotExists' === validator.apply && hasRefData) {
         const refDataVar = validRef + '_data'
         Content(`
-        $not_found_item = Vs::select(
+        $not_found_item = sdk_select(
             Runner::entity_list_to_data($${listvar}_result),
             ["id" => $${refDataVar}["id"]]);
-        $this->assertTrue(Vs::isempty($not_found_item));
+        $this->assertEmpty($not_found_item);
 `)
       }
     }

@@ -1,74 +1,74 @@
 
-/* Utility functions.
- *
- * Many of these functions expect the operation context as the first argument, and
- * assume the following top level properties of the context:
- *   * client: SDK client instance
- *   * op: operation definition
- *   * utility: map of these utility functions
- *   * entity?: SDK entity instance
- *   * spec?: request specification
- *   * response?: unprocessed response
- *   * result?: processed result built from response
- *   * config?: SDK builtin configuration
- *
- */
 
-const { auth } = require('./AuthUtility')
-const { body } = require('./BodyUtility')
+const { clean } = require('./CleanUtility')
 const { done } = require('./DoneUtility')
-const { error } = require('./ErrorUtility')
-const { findparam } = require('./FindparamUtility')
-const { fullurl } = require('./FullurlUtility')
-const { headers } = require('./HeadersUtility')
-const { method } = require('./MethodUtility')
-const { operator } = require('./OperatorUtility')
-const { options } = require('./OptionsUtility')
-const { params } = require('./ParamsUtility')
-const { query } = require('./QueryUtility')
-const { reqform } = require('./ReqformUtility')
-const { request } = require('./RequestUtility')
-const { resbasic } = require('./ResbasicUtility')
-const { resbody } = require('./ResbodyUtility')
-const { resform } = require('./ResformUtility')
-const { resheaders } = require('./ResheadersUtility')
-const { response } = require('./ResponseUtility')
-const { result } = require('./ResultUtility')
-const { spec } = require('./SpecUtility')
+const { makeError } = require('./MakeErrorUtility')
+const { featureAdd } = require('./FeatureAddUtility')
+const { featureHook } = require('./FeatureHookUtility')
+const { featureInit } = require('./FeatureInitUtility')
+const { fetcher } = require('./FetcherUtility')
+const { makeFetchDef } = require('./MakeFetchDefUtility')
+const { makeContext } = require('./MakeContextUtility')
+const { makeOptions } = require('./MakeOptionsUtility')
+const { makeRequest } = require('./MakeRequestUtility')
+const { makeResponse } = require('./MakeResponseUtility')
+const { makeResult } = require('./MakeResultUtility')
+const { makePoint } = require('./MakePointUtility')
+const { makeSpec } = require('./MakeSpecUtility')
+const { makeUrl } = require('./MakeUrlUtility')
+const { param } = require('./ParamUtility')
+const { prepareAuth } = require('./PrepareAuthUtility')
+const { prepareBody } = require('./PrepareBodyUtility')
+const { prepareHeaders } = require('./PrepareHeadersUtility')
+const { prepareMethod } = require('./PrepareMethodUtility')
+const { prepareParams } = require('./PrepareParamsUtility')
+const { preparePath } = require('./PreparePathUtility')
+const { prepareQuery } = require('./PrepareQueryUtility')
+const { resultBasic } = require('./ResultBasicUtility')
+const { resultBody } = require('./ResultBodyUtility')
+const { resultHeaders } = require('./ResultHeadersUtility')
+const { transformRequest } = require('./TransformRequestUtility')
+const { transformResponse } = require('./TransformResponseUtility')
+
+const { StructUtility } = require('./StructUtility')
 
 
-const struct = require('./StructUtility')
-// const validate = require('./ValidateUtility')
+class Utility {
 
-const Utility = {
-  auth,
-  body,
-  done,
-  error,
-  findparam,
-  fullurl,
-  headers,
-  method,
-  operator,
-  options,
-  params,
-  query,
-  reqform,
-  request,
-  resbasic,
-  resbody,
-  resform,
-  resheaders,
-  response,
-  result,
-  spec,
+  clean = clean
+  done = done
+  makeError = makeError
+  featureAdd = featureAdd
+  featureHook = featureHook
+  featureInit = featureInit
+  fetcher = fetcher
+  makeFetchDef = makeFetchDef
+  makeContext = makeContext
+  makeOptions = makeOptions
+  makeRequest = makeRequest
+  makeResponse = makeResponse
+  makeResult = makeResult
+  makePoint = makePoint
+  makeSpec = makeSpec
+  makeUrl = makeUrl
+  param = param
+  prepareAuth = prepareAuth
+  prepareBody = prepareBody
+  prepareHeaders = prepareHeaders
+  prepareMethod = prepareMethod
+  prepareParams = prepareParams
+  preparePath = preparePath
+  prepareQuery = prepareQuery
+  resultBasic = resultBasic
+  resultBody = resultBody
+  resultHeaders = resultHeaders
+  transformRequest = transformRequest
+  transformResponse = transformResponse
 
-  struct,
-  // validate,
+  struct = new StructUtility()
 }
 
 
 module.exports = {
   Utility
 }
-

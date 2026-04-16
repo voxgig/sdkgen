@@ -63,3 +63,8 @@ module ProjectNameTestRunner
     out
   end
 end
+
+# Module-level aliases for test convenience.
+Runner = ProjectNameTestRunner
+Helpers = ProjectNameHelpers
+Vs = VoxgigStruct

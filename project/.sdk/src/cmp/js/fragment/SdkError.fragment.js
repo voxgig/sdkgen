@@ -1,6 +1,4 @@
 
-const { Context } = require('./Context')
-
 
 class ProjectNameError extends Error {
 

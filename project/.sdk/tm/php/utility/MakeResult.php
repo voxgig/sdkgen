@@ -33,6 +33,9 @@ class ProjectNameMakeResult
                 $entities = [];
                 foreach ($resdata as $entry) {
                     $ent = $entity->make();
+                    if ($entry instanceof \stdClass) {
+                        $entry = (array)$entry;
+                    }
                     if (is_array($entry)) {
                         $ent->data_set($entry);
                     }

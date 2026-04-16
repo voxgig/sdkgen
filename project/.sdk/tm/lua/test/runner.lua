@@ -13,8 +13,8 @@ function runner.load_env_local()
   end
   local content = f:read("*a")
   f:close()
-  for line in content:gmatch("[^\r\n]+") do
-    line = line:match("^%s*(.-)%s*$")
+  for raw_line in content:gmatch("[^\r\n]+") do
+    local line = raw_line:match("^%s*(.-)%s*$")
     if line ~= "" and not line:match("^#") then
       local key, val = line:match("^([^=]+)=(.*)$")
       if key and val then

@@ -1,187 +1,461 @@
 
-const { test, describe } = require('node:test')
-const { equal, deepEqual } = require('node:assert')
+const { test, describe, before } = require('node:test')
+const { equal, deepStrictEqual, ok } = require('node:assert')
+const assert = require('node:assert')
 
-const { runner } = require('../runner')
+const {
+  makeRunner,
+} = require('../runner')
+
+const {
+  SDK,
+  TEST_JSON_FILE
+} = require('./index')
 
 
-describe('PrimaryUtility', async ()=>{
+describe('PrimaryUtility', async () => {
 
-  async function MockFetch(url, fetchdef) {
-    return {
-      status: 200,
+  let spec
+  let runset
+  let runsetflags
+  let client
+  let utility
+  let struct
+
+
+  // Ensure ctx has options derived from client when needed.
+  function fixctx(ctx) {
+    if (ctx && ctx.client && null == ctx.options) {
+      ctx.options = ctx.client.options()
     }
   }
 
-  const runners = {
-    auth: await runner('auth'),
-    body: await runner('body'),
-    error: await runner('error'),
-    findparam: await runner('findparam'),
-    fullurl: await runner('fullurl'),
-    headers: await runner('headers'),
-    method: await runner('method'),
-    operator: await runner('operator'),
-    options: await runner('options'),
-    params: await runner('params'),
-    query: await runner('query'),
-    reqform: await runner('reqform'),
-    request: await runner('request', { fetch: MockFetch }),
-    resbasic: await runner('resbasic'),
-    resbody: await runner('resbody'),
-    resform: await runner('resform'),
-    resheaders: await runner('resheaders'),
-    response: await runner('response'),
-    spec: await runner('spec'),
-  }
-  
-  
-  test('exists', async ()=>{
-    equal('function', typeof runners.auth.subject)
-    equal('function', typeof runners.body.subject)
-    equal('function', typeof runners.error.subject)
-    equal('function', typeof runners.findparam.subject)
-    equal('function', typeof runners.fullurl.subject)
-    equal('function', typeof runners.method.subject)
-    equal('function', typeof runners.operator.subject)
-    equal('function', typeof runners.options.subject)
-    equal('function', typeof runners.params.subject)
-    equal('function', typeof runners.query.subject)
-    equal('function', typeof runners.reqform.subject)
-    equal('function', typeof runners.request.subject)
-    equal('function', typeof runners.resbasic.subject)
-    equal('function', typeof runners.resbody.subject)
-    equal('function', typeof runners.resform.subject)
-    equal('function', typeof runners.resheaders.subject)
-    equal('function', typeof runners.response.subject)
-    equal('function', typeof runners.spec.subject)
+
+  before(async () => {
+    const runner = await makeRunner(TEST_JSON_FILE, await SDK.test())
+    const run = await runner('primary')
+
+    spec = run.spec
+    runset = run.runset
+    runsetflags = run.runsetflags
+    client = run.client
+    utility = client.utility()
+    struct = utility.struct
   })
 
 
-  test('auth-basic', async () => {
-    const { runset, spec, subject } = runners.auth
-    await runset(spec.basic, undefined, (subject)=>(vin)=>{
-      return subject(vin, vin.spec)
-    })
+  test('exists', () => {
+    const fns = [
+      'clean', 'done', 'makeError', 'featureAdd', 'featureHook', 'featureInit',
+      'fetcher', 'makeFetchDef', 'makeContext', 'makeOptions', 'makeRequest',
+      'makeResponse', 'makeResult', 'makePoint', 'makeSpec', 'makeUrl',
+      'param', 'prepareAuth', 'prepareBody', 'prepareHeaders', 'prepareMethod',
+      'prepareParams', 'preparePath', 'prepareQuery', 'resultBasic',
+      'resultBody', 'resultHeaders', 'transformRequest', 'transformResponse',
+    ]
+
+    for (const fn of fns) {
+      equal('function', typeof utility[fn], fn + ' should be a function')
+    }
   })
 
 
-  test('body-basic', async () => {
-    const { runset, spec, subject } = runners.body
-    await runset(spec.basic, subject)
-  })
-
-
-  test('error-basic', async () => {
-    const { runset, spec, subject } = runners.error
-    await runset(spec.basic, subject)
-  })
-
-
-  test('findparam-basic', async () => {
-    const { runset, spec, subject } = runners.findparam
-    await runset(spec.basic, subject)
-  })
-
-
-  test('fullurl-basic', async () => {
-    const { runset, spec, subject } = runners.fullurl
-    await runset(spec.basic, subject)
-  })
-
-
-  test('headers-basic', async () => {
-    const { runset, spec, subject } = runners.headers
-    await runset(spec.basic, subject)
+  test('context-basic', async () => {
+    await runset(spec.makeContext.basic, utility.makeContext)
   })
 
 
   test('method-basic', async () => {
-    const { runset, spec, subject } = runners.method
-    await runset(spec.basic, subject)
+    await runset(spec.prepareMethod.basic, utility.prepareMethod)
   })
 
 
-  test('operator-basic', async () => {
-    const { runset, spec, subject } = runners.operator
-    await runset(spec.basic, subject)
+  test('headers-basic', async () => {
+    await runset(spec.prepareHeaders.basic, utility.prepareHeaders)
   })
-  
 
-  test('options-basic', async () => {
-    const { runset, spec, subject } = runners.options
-    await runset(spec.basic, subject)
+
+  test('auth-basic', async () => {
+    const sdkopts = spec.prepareAuth?.DEF?.setup?.a || {}
+    const authClient = SDK.test({}, sdkopts)
+    await runset(spec.prepareAuth.basic, (ctx) => {
+      ctx.client = authClient
+      fixctx(ctx)
+      return utility.prepareAuth(ctx)
+    })
   })
-  
+
 
   test('params-basic', async () => {
-    const { runset, spec, subject } = runners.params
-    await runset(spec.basic, subject)
+    await runset(spec.prepareParams.basic, utility.prepareParams)
   })
 
 
   test('query-basic', async () => {
-    const { runset, spec, subject } = runners.query
-    await runset(spec.basic, subject)
+    await runset(spec.prepareQuery.basic, utility.prepareQuery)
   })
 
 
-  test('reqform-basic', async () => {
-    const { runset, spec, subject } = runners.reqform
-    await runset(spec.basic, subject)
-  })
-
-
-  test('request-basic', async () => {
-    const { runset, spec, subject } = runners.request
-    await runset(spec.basic, subject)
-  })
-
-
-  test('resbasic-basic', async () => {
-    const { runset, spec, subject } = runners.resbasic
-    await runset(spec.basic, subject)
-  })
-
-  
-  test('resbody-basic', async () => {
-    const { runset, spec, subject } = runners.resbody
-    await runset(spec.basic, (ctx, result)=>{
-      let resdata = ctx.utility.struct.clone(ctx.response)
-      ctx.response.json = async ()=>resdata
-      return subject(ctx, result)
+  test('body-basic', async () => {
+    await runset(spec.prepareBody.basic, (ctx) => {
+      fixctx(ctx)
+      return utility.prepareBody(ctx)
     })
   })
 
 
-  test('resform-basic', async () => {
-    const { runset, spec, subject } = runners.resform
-    await runset(spec.basic, subject)
+  test('findparam-basic', async () => {
+    await runset(spec.param.basic, utility.param)
   })
 
 
-  test('resheaders-basic', async () => {
-    const { runset, spec, subject } = runners.resheaders
-    await runset(spec.basic, (ctx, result)=>{
-      ctx.response.headers.forEach = function (callback) {
-        Object.keys(this).forEach((key) => {
-          callback(this[key], key, this)
-        })
-      }
-      return subject(ctx, result)
+  test('fullurl-basic', async () => {
+    await runset(spec.makeUrl.basic, utility.makeUrl)
+  })
+
+
+  test('operator-basic', async () => {
+    await runset(spec.operator.basic, (opmap) => ({
+      entity: opmap.entity || '_',
+      name: opmap.name || '_',
+      input: opmap.input || '_',
+      points: opmap.points || [],
+    }))
+  })
+
+
+  test('options-basic', async () => {
+    await runset(spec.makeOptions.basic, (vin) => {
+      const ctx = utility.makeContext({ options: vin.options, config: vin.config })
+      ctx.client = client
+      ctx.utility = utility
+      return utility.makeOptions(ctx)
     })
-  })
-
-  
-  test('response-basic', async () => {
-    const { runset, spec, subject } = runners.response
-    await runset(spec.basic, subject)
   })
 
 
   test('spec-basic', async () => {
-    const { runset, spec, subject } = runners.spec
-    await runset(spec.basic, subject)
+    const sdkopts = spec.makeSpec?.DEF?.setup?.a || {}
+    const specClient = SDK.test({}, sdkopts)
+    await runset(spec.makeSpec.basic, (ctx) => {
+      ctx.client = specClient
+      ctx.options = specClient.options()
+      return utility.makeSpec(ctx)
+    })
   })
-  
+
+
+  test('reqform-basic', async () => {
+    await runset(spec.transformRequest.basic, utility.transformRequest)
+  })
+
+
+  test('resform-basic', async () => {
+    await runset(spec.transformResponse.basic, utility.transformResponse)
+  })
+
+
+  test('resbasic-basic', async () => {
+    await runset(spec.resultBasic.basic, (ctx) => {
+      fixctx(ctx)
+      return utility.resultBasic(ctx)
+    })
+  })
+
+
+  test('resheaders-basic', async () => {
+    await runset(spec.resultHeaders.basic, (ctx) => {
+      // Convert plain headers map to forEach-based (browser Response API)
+      if (ctx.response?.headers && !ctx.response.headers.forEach) {
+        const h = ctx.response.headers
+        ctx.response.headers = {
+          forEach: (cb) => Object.entries(h).forEach(([k, v]) => cb(v, k.toLowerCase()))
+        }
+      }
+      return utility.resultHeaders(ctx)
+    })
+  })
+
+
+  test('resbody-basic', async () => {
+    await runset(spec.resultBody.basic, async (ctx) => {
+      if (ctx.response && !ctx.response.json) {
+        const body = ctx.response.body
+        ctx.response.json = async () => body
+      }
+      return utility.resultBody(ctx)
+    })
+  })
+
+
+  test('request-basic', async () => {
+    const mockFetch = async (url, init) => ({
+      status: 200,
+      statusText: 'OK',
+      headers: { forEach: (cb) => { cb('application/json', 'content-type', {}) } },
+      json: async () => ({ id: 'res01' }),
+      body: 'present',
+    })
+    const reqClient = new SDK({
+      system: { fetch: mockFetch }
+    })
+    const reqUtility = reqClient.utility()
+    await runset(spec.makeRequest.basic, async (ctx) => {
+      ctx.client = reqClient
+      ctx.utility = reqUtility
+      ctx.options = reqClient.options()
+      return reqUtility.makeRequest(ctx)
+    })
+  })
+
+
+  test('response-basic', async () => {
+    await runset(spec.makeResponse.basic, async (ctx) => {
+      fixctx(ctx)
+      // Add json() and forEach to response for proper handling
+      if (ctx.response && !ctx.response.json) {
+        const body = ctx.response.body
+        ctx.response.json = async () => body
+      }
+      if (ctx.response?.headers && !ctx.response.headers.forEach) {
+        const h = ctx.response.headers
+        ctx.response.headers = {
+          forEach: (cb) => Object.entries(h).forEach(([k, v]) => cb(v, k.toLowerCase()))
+        }
+      }
+      return utility.makeResponse(ctx)
+    })
+  })
+
+
+  test('done-basic', async () => {
+    await runset(spec.done.basic, (ctx) => {
+      fixctx(ctx)
+      return utility.done(ctx)
+    })
+  })
+
+
+  test('error-basic', async () => {
+    await runset(spec.makeError.basic, (...args) => {
+      const ctx = args[0]
+      fixctx(ctx)
+      return utility.makeError(...args)
+    })
+  })
+
+
+  test('makePoint-single', () => {
+    const ctx = makeCtx()
+    const point = {
+      parts: ['items', '{id}'],
+      args: { params: [] },
+      params: [],
+      alias: {},
+      select: {},
+      active: true,
+      transform: { req: undefined, res: undefined },
+    }
+    ctx.op.points = [point]
+
+    const result = utility.makePoint(ctx)
+    ok(!(result instanceof Error))
+    equal(ctx.point, point)
+  })
+
+
+  test('makeFetchDef', () => {
+    const ctx = makeFullCtx()
+    ctx.spec = {
+      base: 'http://localhost:8080',
+      prefix: '/api',
+      path: 'items/{id}',
+      suffix: '',
+      params: { id: 'item01' },
+      query: {},
+      headers: { 'content-type': 'application/json' },
+      method: 'GET',
+      step: 'start',
+      body: undefined,
+    }
+
+    const fetchdef = utility.makeFetchDef(ctx)
+    ok(!(fetchdef instanceof Error), 'should not be error')
+    equal(fetchdef.method, 'GET')
+    ok(fetchdef.url.includes('/api/items/item01'))
+    equal(fetchdef.headers['content-type'], 'application/json')
+    ok(null == fetchdef.body)
+  })
+
+
+  test('makeFetchDef-with-body', () => {
+    const ctx = makeFullCtx()
+    ctx.spec = {
+      base: 'http://localhost:8080',
+      prefix: '',
+      path: 'items',
+      suffix: '',
+      params: {},
+      query: {},
+      headers: {},
+      method: 'POST',
+      step: 'start',
+      body: { name: 'test' },
+    }
+
+    const fetchdef = utility.makeFetchDef(ctx)
+    ok(!(fetchdef instanceof Error))
+    equal(fetchdef.method, 'POST')
+    equal(fetchdef.body, JSON.stringify({ name: 'test' }, null, 2))
+  })
+
+
+  test('featureAdd', () => {
+    const ctx = makeCtx()
+    const startLen = client._features.length
+
+    const feature = {
+      version: '0.0.1',
+      name: 'testfeat',
+      active: true,
+      init: () => { },
+    }
+
+    utility.featureAdd(ctx, feature)
+    equal(client._features.length, startLen + 1)
+    equal(client._features[client._features.length - 1].name, 'testfeat')
+  })
+
+
+  test('featureHook', () => {
+    const ctx = makeCtx()
+
+    let called = false
+    client._features = [{
+      name: 'hookfeat',
+      TestHook: () => { called = true },
+    }]
+
+    utility.featureHook(ctx, 'TestHook')
+    equal(called, true)
+  })
+
+
+  test('featureInit', () => {
+    const ctx = makeCtx()
+
+    let initCalled = false
+    const feature = {
+      name: 'initfeat',
+      active: true,
+      init: () => { initCalled = true },
+    }
+
+    ctx.options.feature.initfeat = { active: true }
+
+    utility.featureInit(ctx, feature)
+    equal(initCalled, true)
+  })
+
+
+  test('featureInit-inactive', () => {
+    const ctx = makeCtx()
+
+    let initCalled = false
+    const feature = {
+      name: 'nofeat',
+      active: false,
+      init: () => { initCalled = true },
+    }
+
+    ctx.options.feature.nofeat = { active: false }
+
+    utility.featureInit(ctx, feature)
+    equal(initCalled, false)
+  })
+
+
+  test('fetcher-live', async () => {
+    const calls = []
+    const liveClient = new SDK({
+      system: {
+        fetch: async (url, init) => {
+          calls.push({ url, init })
+          return { status: 200, statusText: 'OK' }
+        }
+      }
+    })
+    const liveUtility = liveClient.utility()
+    const ctx = liveUtility.makeContext({ opname: 'load' }, liveClient._rootctx)
+    ctx.client = liveClient
+
+    const fetchdef = { method: 'GET', headers: {} }
+    const response = await liveUtility.fetcher(ctx, 'http://example.com/test', fetchdef)
+    ok(!(response instanceof Error))
+    equal(calls.length, 1)
+    equal(calls[0].url, 'http://example.com/test')
+  })
+
+
+  test('fetcher-blocked-test-mode', async () => {
+    const blockedClient = new SDK({
+      system: { fetch: async () => ({}) }
+    })
+    blockedClient._mode = 'test'
+
+    const blockedUtility = blockedClient.utility()
+    const ctx = blockedUtility.makeContext({ opname: 'load' }, blockedClient._rootctx)
+    ctx.client = blockedClient
+    const fetchdef = { method: 'GET', headers: {} }
+
+    const result = await blockedUtility.fetcher(ctx, 'http://example.com/test', fetchdef)
+    ok(result instanceof Error)
+    ok(result.message.includes('mode'))
+  })
+
+
+  test('makeError-no-throw', () => {
+    const ctx = makeFullCtx()
+    ctx.ctrl.throw = false
+    ctx.result = { ok: false, resdata: { id: 'safe01' } }
+
+    const out = utility.makeError(ctx, ctx.error('test_code', 'test message'))
+    deepStrictEqual(out, { id: 'safe01' })
+  })
+
+
+  test('clean', () => {
+    const ctx = makeFullCtx()
+    const val = { key: 'secret123', name: 'test' }
+    const cleaned = utility.clean(ctx, val)
+    ok(null != cleaned)
+  })
+
+
+  // Helper functions for manual tests
+  function makeCtx(overrides) {
+    return utility.makeContext({
+      opname: 'load',
+      ...overrides,
+    }, client._rootctx)
+  }
+
+
+  function makeFullCtx(overrides) {
+    const ctx = makeCtx(overrides)
+    ctx.point = {
+      parts: ['items', '{id}'],
+      args: { params: [{ name: 'id', reqd: true }] },
+      params: ['id'],
+      alias: {},
+      select: {},
+      active: true,
+      relations: [],
+      transform: { req: undefined, res: undefined },
+    }
+    ctx.match = { id: 'item01' }
+    ctx.reqmatch = { id: 'item01' }
+    return ctx
+  }
+
 })

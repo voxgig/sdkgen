@@ -117,7 +117,7 @@ func (f *LogFeature) loghook(hook string, ctx *core.Context, level string) {
 	}
 
 	if ctx.Spec != nil {
-		attrs = append(attrs, "spec", ctx.Spec.Name)
+		attrs = append(attrs, "spec", ctx.Spec.Method+" "+ctx.Spec.Path)
 	}
 
 	switch level {

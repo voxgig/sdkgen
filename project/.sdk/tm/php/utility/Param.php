@@ -35,32 +35,34 @@ class ProjectNameParam
             }
         }
 
+        $undef = '__UNDEFINED__';
+
         $val = \Voxgig\Struct\Struct::getprop($reqmatch, $key);
-        if ($val === null) {
+        if ($val === null || $val === $undef) {
             $val = \Voxgig\Struct\Struct::getprop($match_val, $key);
         }
 
-        if ($val === null && $akey !== '') {
+        if (($val === null || $val === $undef) && $akey !== '') {
             if ($spec) {
                 $spec->alias_map[$akey] = $key;
             }
             $val = \Voxgig\Struct\Struct::getprop($reqmatch, $akey);
         }
 
-        if ($val === null) {
+        if ($val === null || $val === $undef) {
             $val = \Voxgig\Struct\Struct::getprop($reqdata, $key);
         }
-        if ($val === null) {
+        if ($val === null || $val === $undef) {
             $val = \Voxgig\Struct\Struct::getprop($data, $key);
         }
 
-        if ($val === null && $akey !== '') {
+        if (($val === null || $val === $undef) && $akey !== '') {
             $val = \Voxgig\Struct\Struct::getprop($reqdata, $akey);
-            if ($val === null) {
+            if ($val === null || $val === $undef) {
                 $val = \Voxgig\Struct\Struct::getprop($data, $akey);
             }
         }
 
-        return $val;
+        return ($val === $undef) ? null : $val;
     }
 }

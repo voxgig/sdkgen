@@ -1,16 +1,12 @@
 
 class EntityOperation {
 
-  #match
-  #data
-  #utility
-
 
   // EJECT-START
 
   async create(reqdata, ctrl) {
 
-    const utility = this.#utility
+    const utility = this._utility
     const {
       makeContext,
       done,
@@ -28,8 +24,8 @@ class EntityOperation {
     let ctx = makeContext({
       opname: 'create',
       ctrl,
-      match: this.#match,
-      data: this.#data,
+      match: this._match,
+      data: this._data,
       reqdata
     }, this._entctx)
 
@@ -78,7 +74,7 @@ class EntityOperation {
 
       if (null != ctx.result) {
         if (null != ctx.result.resdata) {
-          this.#data = ctx.result.resdata
+          this._data = ctx.result.resdata
         }
       }
 
@@ -87,7 +83,7 @@ class EntityOperation {
     catch (err) {
       // #PreUnexpected-Hook
 
-      err = this.#unexpected(ctx, err)
+      err = this._unexpected(ctx, err)
 
       if (err) {
         throw err
@@ -101,5 +97,5 @@ class EntityOperation {
   // EJECT-END
 
 
-  #unexpected(ctx, err) { return err }
+  _unexpected(ctx, err) { return err }
 }

@@ -36,8 +36,12 @@ const Config = cmp(async function Config(props: any) {
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
-  const authPrefix = getModelPath(model, `main.${KIT}.config.auth.prefix`)
-  const baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`)
+
+  let authPrefix = ''
+  try { authPrefix = getModelPath(model, `main.${KIT}.config.auth.prefix`) } catch (_e) { }
+
+  let baseUrl = ''
+  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
 
   File({ name: 'config.' + target.ext }, () => {
 

@@ -75,3 +75,16 @@ class ProjectNameTestRunner:
             else:
                 out.append(item)
         return out
+
+
+# Module-level convenience functions.
+def load_env_local():
+    ProjectNameTestRunner.load_env_local()
+
+
+def env_override(m):
+    return ProjectNameTestRunner.env_override(m)
+
+
+def entity_list_to_data(lst):
+    return ProjectNameTestRunner.entity_list_to_data(lst)

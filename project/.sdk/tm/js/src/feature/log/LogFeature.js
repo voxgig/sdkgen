@@ -1,98 +1,97 @@
 
 
+const { BaseFeature } = require('../base/BaseFeature')
+
+
 const Pino = require('pino')
 const PinoPretty = require('pino-pretty')
 
 
-class LogFeature {
-  version = 'FEATURE_VERSION'
-  
-  #client // SDK client instance
-  #options // SDK client feature options
-  #config // Feature config from model
-  #logger // Pino-style interface
-  
-  constructor(client, options, config) {
-    // TOOD: make this a default for all features
-    options = options || {}
-    options.active = false !== options.active
 
-    this.#client = client
-    this.#options = options
-    this.#config = config
+class LogFeature extends BaseFeature {
+  version = '0.0.1'
+  name = 'log'
+  active = true
 
-    if(options.active) {
-      let logger = options.logger
+  _client
+  _options
+  _logger
 
-      if(null ==logger) {
+
+  init(ctx, options) {
+    this._client = ctx.client
+    this._options = options
+    this.active = options.active
+
+    if (this.active) {
+      let logger = this._options.logger
+
+      if (null == logger) {
         let pretty = PinoPretty({
           sync: true,
           ignore: 'ctx',
         })
 
-        let name = options.name || 'FEATURE_Name'
-        let level = options.level || 'info'
-        
-        logger = Pino({ name, level }, pretty)
+        let level = this._options.level || 'info'
+
+        logger = Pino({ name: 'log', level }, pretty)
+
+        this._logger = logger
       }
-      this.#logger = logger
     }
   }
 
-  options() {
-    return { ...this.#options }
-  }
 
-  client() {
-    return this.#client
-  }
-
-  
   PostConstruct(ctx) {
-    this.#loghook('PostConstruct', ctx)
+    this._loghook('PostConstruct', ctx)
   }
 
   PostConstructEntity(ctx) {
-    this.#loghook('PostConstructEntity', ctx)
+    this._loghook('PostConstructEntity', ctx)
   }
 
   SetData(ctx) {
-    this.#loghook('SetData', ctx)
+    this._loghook('SetData', ctx)
   }
-  
+
   GetData(ctx) {
-    this.#loghook('GetData', ctx)
+    this._loghook('GetData', ctx)
   }
-  
+
   GetMatch(ctx) {
-    this.#loghook('GetMatch', ctx)
+    this._loghook('GetMatch', ctx)
   }
 
 
   PrePoint(ctx) {
-    this.#loghook('PrePoint', ctx)
+    this._loghook('PrePoint', ctx)
   }
 
   PreSpec(ctx) {
-    this.#loghook('PreSpec', ctx)
+    this._loghook('PreSpec', ctx)
   }
 
   PreRequest(ctx) {
-    this.#loghook('PreRequest', ctx)
+    this._loghook('PreRequest', ctx)
   }
 
   PreResponse(ctx) {
-    this.#loghook('PreResponse', ctx)
+    this._loghook('PreResponse', ctx)
   }
 
   PreResult(ctx) {
-    this.#loghook('PreResult', ctx)
+    this._loghook('PreResult', ctx)
   }
- 
-  #loghook(hook, ctx, level) {
+
+  _loghook(hook, ctx, level) {
     level = level || 'info'
-    if(this.#logger) {
-      this.#logger[level]({hook,op:ctx.op,spec:ctx.spec,ctx})
+    if (this._logger) {
+      this._logger[level]({
+        hook,
+        op: ctx.op,
+        spec: ctx.spec,
+        ctx
+      })
     }
   }
 }

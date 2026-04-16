@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -140,7 +141,7 @@ func runset(t *testing.T, testspec map[string]any, subject RunSubject) {
 			if expectedErr != nil {
 				errMsg := err.Error()
 				if expStr, ok := expectedErr.(string); ok {
-					if !strings.Contains(errMsg, expStr) {
+					if !matchString(expStr, errMsg) {
 						t.Errorf("entry %d%s: error mismatch: got %q, want contains %q",
 							i, mark, errMsg, expStr)
 					}
@@ -272,7 +273,7 @@ func matchDeep(t *testing.T, entryIdx int, mark string, check any, base any, pat
 		if !reflect.DeepEqual(normCheck, normBase) {
 			if isStr && checkStr != "" {
 				baseStr := vs.Stringify(base)
-				if strings.Contains(strings.ToLower(baseStr), strings.ToLower(checkStr)) {
+				if matchString(checkStr, baseStr) {
 					return
 				}
 			}
@@ -280,6 +281,19 @@ func matchDeep(t *testing.T, entryIdx int, mark string, check any, base any, pat
 				entryIdx, mark, path, jsonStr(normBase), jsonStr(normCheck))
 		}
 	}
+}
+
+// matchString checks if val matches pattern. If pattern is /regex/, use regexp;
+// otherwise do case-insensitive contains.
+func matchString(pattern string, val string) bool {
+	if len(pattern) >= 2 && pattern[0] == '/' && pattern[len(pattern)-1] == '/' {
+		re, err := regexp.Compile(pattern[1 : len(pattern)-1])
+		if err != nil {
+			return false
+		}
+		return re.MatchString(val)
+	}
+	return strings.Contains(strings.ToLower(val), strings.ToLower(pattern))
 }
 
 // makeCtxFromMap creates a Context from a JSON test entry's ctx or args map.

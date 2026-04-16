@@ -3,6 +3,7 @@ const { inspect } = require('node:util')
 
 const { config } = require('./Config')
 const { Utility } = require('./utility/Utility')
+const { ProjectNameEntityBase } = require('./ProjectNameEntityBase')
 
 
 const { BaseFeature } = require('./feature/base/BaseFeature')
@@ -225,6 +226,7 @@ module.exports = {
   stdutil,
 
   BaseFeature,
+  ProjectNameEntityBase,
 
   ProjectNameSDK,
   SDK,

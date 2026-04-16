@@ -22,6 +22,7 @@ import { Package } from './Package_js'
 import { Config } from './Config_js'
 import { MainEntity } from './MainEntity_js'
 import { SdkError } from './SdkError_js'
+import { EntityBase } from './EntityBase_js'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -87,6 +88,8 @@ if (fres instanceof Promise) { await fres }
     })
 
     Config({ target })
+
+    EntityBase({ target })
 
   })
 })

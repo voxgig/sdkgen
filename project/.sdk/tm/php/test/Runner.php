@@ -41,7 +41,7 @@ class ProjectNameTestRunner
         return $val !== false ? $val : null;
     }
 
-    public static function env_override(array &$m): array
+    public static function env_override(array $m): array
     {
         $live = self::getenv('PROJECTNAME_TEST_LIVE');
         $override = self::getenv('PROJECTNAME_TEST_OVERRIDE');
@@ -86,4 +86,27 @@ class ProjectNameTestRunner
         }
         return $out;
     }
+}
+
+// Aliases for test convenience.
+class_alias('ProjectNameTestRunner', 'Runner');
+class_alias('ProjectNameHelpers', 'Helpers');
+class_alias('Voxgig\Struct\Struct', 'Vs');
+
+// Filter array of maps by matching key-value criteria.
+function sdk_select(array $list, array $criteria): array
+{
+    $out = [];
+    foreach ($list as $item) {
+        if (!is_array($item)) continue;
+        $match = true;
+        foreach ($criteria as $k => $v) {
+            if (!isset($item[$k]) || $item[$k] !== $v) {
+                $match = false;
+                break;
+            }
+        }
+        if ($match) $out[] = $item;
+    }
+    return $out;
 }

@@ -78,6 +78,8 @@ import pytest
 from utility.voxgig_struct import voxgig_struct as vs
 from ${model.name}_sdk import ${model.const.Name}SDK
 from core import helpers
+
+_TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 from test import runner
 
 
@@ -121,7 +123,7 @@ class Test${entity.Name}Entity:
 def ${entity.name}_basic_setup(extra):
     runner.load_env_local()
 
-    entity_data_file = "../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json"
+    entity_data_file = os.path.join(_TEST_DIR, "../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json")
     with open(entity_data_file, "r") as f:
         entity_data_source = f.read()
 

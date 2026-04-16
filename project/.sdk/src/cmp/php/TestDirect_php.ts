@@ -204,7 +204,7 @@ function ${entity.name}_direct_setup($mockres)
 {
     Runner::load_env_local();
 
-    $calls = [];
+    $calls = new \\ArrayObject();
 
     $env = Runner::env_override([
         "${entidEnvVar}" => [],
@@ -227,7 +227,7 @@ function ${entity.name}_direct_setup($mockres)
         ];
     }
 
-    $mock_fetch = function ($url, $init) use (&$calls, $mockres) {
+    $mock_fetch = function ($url, $init) use ($calls, $mockres) {
         $calls[] = ["url" => $url, "init" => $init];
         return [
             [

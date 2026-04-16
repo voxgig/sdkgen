@@ -1,85 +1,63 @@
 
 const { test, describe } = require('node:test')
-const { equal, deepEqual } = require('node:assert')
+const { equal } = require('node:assert')
 
-const { StatuspageSDK } = require('../..')
-
-const client = StatuspageSDK.test({
-  apikey: 'APIKEY01',
-  utility: {
-    auth: ()=> ({util:'AUTH'}),
-    body: () => ({util:'BODY'}),
-    empty: () => ({util:'EMPTY'}),
-    error: () => ({util:'ERROR'}),
-    escre: () => ({util:'ESCRE'}),
-    escurl: () => ({util:'ESCURL'}),
-    fetch: () => ({util:'FETCH'}),
-    findparam: () => ({util:'FINDPARAM'}),
-    fullurl: () => ({util:'FULLURL'}),
-    headers: () => ({util:'HEADERS'}),
-    inward: () => ({util:'INWARD'}),
-    joinurl: () => ({util:'JOINURL'}),
-    method: () => ({util:'METHOD'}),
-    operator: () => ({util:'OPERATOR'}),
-    options: () => ({util:'OPTIONS'}),
-    outward: () => ({util:'OUTWARD'}),
-    params: () => ({util:'PARAMS'}),
-    query: () => ({util:'QUERY'}),
-    resbasic: () => ({util:'RESBASIC'}),
-    resbody: () => ({util:'RESBODY'}),
-    resheaders: () => ({util:'RESHEADERS'}),
-    response: () => ({util:'RESPONSE'}),
-    spec: () => ({util:'SPEC'}),
-
-    string: {
-      stringify: () => ({util:'STRING-STRINGIFY'}),
-    },
-
-    validate: {
-      string: () => ({util:'VALIDATE-STRING'}),
-      array: () => ({util:'VALIDATE-ARRAY'}),
-      object: () => ({util:'VALIDATE-OBJECT'}),
-      func: () => ({util:'VALIDATE-FUNC'}),
-    }
-
-  }
-})
+const { ProjectNameSDK } = require('../..')
 
 
-describe('Custom', ()=>{
-  test('basic', async ()=>{
+describe('Custom', () => {
+
+  test('basic', async () => {
+    const client = ProjectNameSDK.test({}, {
+      apikey: 'APIKEY01',
+
+      // NOTE: original utility.options must remain in place.
+      utility: {
+        auth: () => ({ util: 'AUTH' }),
+        body: () => ({ util: 'BODY' }),
+        contextify: () => ({ util: 'CONTEXTIFY' }),
+        done: () => ({ util: 'DONE' }),
+        error: () => ({ util: 'ERROR' }),
+        findparam: () => ({ util: 'FINDPARAM' }),
+        fullurl: () => ({ util: 'FULLURL' }),
+        headers: () => ({ util: 'HEADERS' }),
+        method: () => ({ util: 'METHOD' }),
+        operator: () => ({ util: 'OPERATOR' }),
+        params: () => ({ util: 'PARAMS' }),
+        query: () => ({ util: 'QUERY' }),
+        reqform: () => ({ util: 'REQFORM' }),
+        request: () => ({ util: 'REQUEST' }),
+        resbasic: () => ({ util: 'RESBASIC' }),
+        resbody: () => ({ util: 'RESBODY' }),
+        resform: () => ({ util: 'RESFORM' }),
+        resheaders: () => ({ util: 'RESHEADERS' }),
+        response: () => ({ util: 'RESPONSE' }),
+        result: () => ({ util: 'RESULT' }),
+        spec: () => ({ util: 'SPEC' }),
+      }
+    })
+
     const u = client.utility()
 
     equal(u.auth().util, 'AUTH')
     equal(u.body().util, 'BODY')
-    equal(u.empty().util, 'EMPTY')
+    equal(u.contextify().util, 'CONTEXTIFY')
+    equal(u.done().util, 'DONE')
     equal(u.error().util, 'ERROR')
-    equal(u.escre().util, 'ESCRE')
-    equal(u.escurl().util, 'ESCURL')
-    equal(u.fetch().util, 'FETCH')
     equal(u.findparam().util, 'FINDPARAM')
     equal(u.fullurl().util, 'FULLURL')
     equal(u.headers().util, 'HEADERS')
-    equal(u.inward().util, 'INWARD')
-    equal(u.joinurl().util, 'JOINURL')
     equal(u.method().util, 'METHOD')
     equal(u.operator().util, 'OPERATOR')
-    equal(u.options().util, 'OPTIONS')
-    equal(u.outward().util, 'OUTWARD')
     equal(u.params().util, 'PARAMS')
     equal(u.query().util, 'QUERY')
+    equal(u.reqform().util, 'REQFORM')
     equal(u.resbasic().util, 'RESBASIC')
     equal(u.resbody().util, 'RESBODY')
+    equal(u.resform().util, 'RESFORM')
     equal(u.resheaders().util, 'RESHEADERS')
     equal(u.response().util, 'RESPONSE')
+    equal(u.result().util, 'RESULT')
     equal(u.spec().util, 'SPEC')
-
-    equal(u.string.stringify().util, 'STRING-STRINGIFY')
-
-    equal(u.validate.string().util, 'VALIDATE-STRING')
-    equal(u.validate.array().util, 'VALIDATE-ARRAY')
-    equal(u.validate.object().util, 'VALIDATE-OBJECT')
-    equal(u.validate.func().util, 'VALIDATE-FUNC')
-    
   })
 })

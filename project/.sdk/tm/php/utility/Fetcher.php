@@ -40,8 +40,12 @@ class ProjectNameFetcher
         $status_text = '';
         $resp_headers = [];
 
-        if (isset($http_response_header) && is_array($http_response_header)) {
-            foreach ($http_response_header as $header) {
+        $response_headers = function_exists('http_get_last_response_headers')
+            ? http_get_last_response_headers()
+            : ($http_response_header ?? []);
+
+        if (is_array($response_headers)) {
+            foreach ($response_headers as $header) {
                 if (preg_match('/^HTTP\/\S+\s+(\d+)\s+(.*)$/i', $header, $matches)) {
                     $status = (int)$matches[1];
                     $status_text = trim($matches[2]);
