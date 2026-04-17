@@ -36,6 +36,13 @@ const Main = cmp(async function Main(props: any) {
 
   Package({ target })
 
+  Copy({
+    from: 'tm/' + target.name,
+    replace: {
+      ...props.ctx$.stdrep,
+    }
+  })
+
   Folder({ name: 'src' }, () => {
 
     SdkError({ target })

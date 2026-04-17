@@ -1,5 +1,5 @@
 
-import { cmp, names, Copy } from 'jostraca'
+import { cmp, names } from 'jostraca'
 
 import { requirePath } from '../utility'
 
@@ -11,21 +11,6 @@ import {
 const Main = cmp(function Main(props: any) {
   const { target, ctx$ } = props
   const { model, stdrep, log } = ctx$
-
-  const copyOpts: any = {
-    // This folder is relative to the .sdk folder in the project, as that is where
-    // the sdk is generated from.
-    from: 'tm/' + target.name,
-    replace: {
-      ...stdrep,
-    }
-  }
-
-  if (false === target.srcfeature) {
-    copyOpts.exclude = [/src\//]
-  }
-
-  Copy(copyOpts)
 
   const Main_sdk = requirePath(ctx$, `cmp/${target.name}/Main_${target.name}`)
 

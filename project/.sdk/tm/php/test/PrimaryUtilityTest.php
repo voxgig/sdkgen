@@ -120,6 +120,7 @@ class PrimaryUtilityTest extends TestCase
                     $result_map['ctx'] = $entry['ctx'];
                 }
                 $this->match_deep($i, $mark, $entry['match'], $result_map, '');
+                $this->assertTrue(true, "entry {$i}{$mark}: match completed");
                 $matched = true;
             }
 

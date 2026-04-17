@@ -65,7 +65,11 @@ class ProjectNameMakeOptions
             'clean' => ['keys' => 'key,token,id'],
         ];
 
-        $merged = \Voxgig\Struct\Struct::merge([(object)[], $cfgopts, $opts]);
+        // Empty [] would be treated as a list and clobber the map under merge;
+        // substitute an empty stdClass to preserve map semantics.
+        $cfgopts_merge = empty($cfgopts) ? new \stdClass() : $cfgopts;
+        $opts_merge = empty($opts) ? new \stdClass() : $opts;
+        $merged = \Voxgig\Struct\Struct::merge([(object)[], $cfgopts_merge, $opts_merge]);
         $validated = \Voxgig\Struct\Struct::validate($merged, $optspec);
         $opts = self::to_array_deep($validated);
         if (!is_array($opts)) {
