@@ -28,7 +28,7 @@ main: kit: feature: log: {
 
 
   deps: js: {
-    'pino': { active: true, version: '>=9', kind: peer }
+    'pino': { active: true, version: '>=10', kind: peer }
     'pino-pretty': { active: true, version: '>=13', kind: peer }
   }
 

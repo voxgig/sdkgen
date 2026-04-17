@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_test_1 = require("node:test");
-const code_1 = require("@hapi/code");
+const node_assert_1 = require("node:assert");
 const aontu_1 = require("aontu");
 const memfs_1 = require("memfs");
 const jostraca_1 = require("jostraca");
@@ -13,13 +13,13 @@ const aontu = new aontu_1.Aontu();
     (0, node_test_1.test)('merge', async () => {
         let nowI = 0;
         const now = () => START_TIME + (++nowI * (60 * 1000));
-        (0, code_1.expect)(__1.SdkGen).exist();
+        (0, node_assert_1.ok)(__1.SdkGen);
         const { fs, vol } = (0, memfs_1.memfs)({});
         const sdkgen = (0, __1.SdkGen)({
             now, fs, folder: '/top', root: '',
             existing: { txt: { merge: true } }
         });
-        (0, code_1.expect)(sdkgen).exist();
+        (0, node_assert_1.ok)(sdkgen);
         const root = makeRoot();
         const model = makeModel();
         // console.log('MODEL', model)
@@ -28,9 +28,9 @@ const aontu = new aontu_1.Aontu();
             root,
         };
         let res0 = await sdkgen.generate(spec);
-        (0, code_1.expect)(res0).includes({ ok: true });
+        (0, node_assert_1.strictEqual)(res0.ok, true);
         const voljson = vol.toJSON();
-        (0, code_1.expect)(voljson).equals({
+        (0, node_assert_1.deepStrictEqual)(voljson, {
             '/top/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
             '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
             '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
@@ -87,9 +87,9 @@ const aontu = new aontu_1.Aontu();
         fs.writeFileSync('/top/foo/js/README.md', '\n# foo js SDK\n# EXTRA\n# index=0\n');
         let res1 = await sdkgen.generate(spec);
         // console.log('RES1', res1)
-        (0, code_1.expect)(res1).includes({ ok: true });
+        (0, node_assert_1.strictEqual)(res1.ok, true);
         const voljson1 = vol.toJSON();
-        (0, code_1.expect)(voljson1).equals({
+        (0, node_assert_1.deepStrictEqual)(voljson1, {
             '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=0\n',
             '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
             '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
@@ -144,9 +144,9 @@ const aontu = new aontu_1.Aontu();
         });
         // generate again
         let res2 = await sdkgen.generate(spec);
-        (0, code_1.expect)(res2).includes({ ok: true });
+        (0, node_assert_1.strictEqual)(res2.ok, true);
         const voljson2 = vol.toJSON();
-        (0, code_1.expect)(voljson2).equals({
+        (0, node_assert_1.deepStrictEqual)(voljson2, {
             '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=0\n',
             '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
             '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
@@ -202,9 +202,9 @@ const aontu = new aontu_1.Aontu();
         // update model
         model.zed.a = 1;
         let res3 = await sdkgen.generate(spec);
-        (0, code_1.expect)(res3).includes({ ok: true });
+        (0, node_assert_1.strictEqual)(res3.ok, true);
         const voljson3 = vol.toJSON();
-        (0, code_1.expect)(voljson3).equals({
+        (0, node_assert_1.deepStrictEqual)(voljson3, {
             '/top/foo/js/README.md': '\n' +
                 '# foo js SDK\n' +
                 '<<<<<<< GENERATED: 2025-01-01T00:47:00.000Z/merge\n' +
@@ -268,9 +268,9 @@ const aontu = new aontu_1.Aontu();
         // Modify a generated file
         fs.writeFileSync('/top/foo/js/README.md', '\n# foo js SDK\n# EXTRA\n# index=A\n');
         let res4 = await sdkgen.generate(spec);
-        (0, code_1.expect)(res4).includes({ ok: true });
+        (0, node_assert_1.strictEqual)(res4.ok, true);
         const voljson4 = vol.toJSON();
-        (0, code_1.expect)(voljson4).equals({
+        (0, node_assert_1.deepStrictEqual)(voljson4, {
             '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=A\n',
             '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
             '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
@@ -325,9 +325,9 @@ const aontu = new aontu_1.Aontu();
         });
         // generate again
         let res5 = await sdkgen.generate(spec);
-        (0, code_1.expect)(res5).includes({ ok: true });
+        (0, node_assert_1.strictEqual)(res5.ok, true);
         const voljson5 = vol.toJSON();
-        (0, code_1.expect)(voljson5).equals({
+        (0, node_assert_1.deepStrictEqual)(voljson5, {
             '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=A\n',
             '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
             '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',

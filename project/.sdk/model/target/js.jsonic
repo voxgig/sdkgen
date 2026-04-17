@@ -12,7 +12,7 @@ main: kit: target: js: {
   }
   
   deps: {
-    'dotenv': { active: true, version: '^16.4.5', kind: dev }
+    'dotenv': { active: true, version: '^17.4.2', kind: dev }
   }
 }
 

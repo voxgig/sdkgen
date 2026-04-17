@@ -31,7 +31,7 @@ const Package = cmp(async function Package(props: any) {
   "license": "MIT",
   "minimum-stability": "stable",
   "require": {
-    "php": ">=8.1"`)
+    "php": ">=8.2"`)
 
     // Collect dependencies from features
     const deps: { name: string, version: string }[] = []
@@ -64,7 +64,7 @@ const Package = cmp(async function Package(props: any) {
     Content(`
   },
   "require-dev": {
-    "phpunit/phpunit": "^10.0"
+    "phpunit/phpunit": "^11.0"
   },
   "autoload": {
     "psr-4": {

@@ -1,6 +1,6 @@
 
 import { test, describe } from 'node:test'
-import { expect } from '@hapi/code'
+import { deepStrictEqual, ok, strictEqual } from 'node:assert'
 
 import { Aontu } from 'aontu'
 import { memfs } from 'memfs'
@@ -25,14 +25,14 @@ describe('sdkgen', () => {
     let nowI = 0
     const now = () => START_TIME + (++nowI * (60 * 1000))
 
-    expect(SdkGen).exist()
+    ok(SdkGen)
 
     const { fs, vol } = memfs({})
     const sdkgen = SdkGen({
       now, fs, folder: '/top', root: '',
       existing: { txt: { merge: true } }
     })
-    expect(sdkgen).exist()
+    ok(sdkgen)
 
     const root = makeRoot()
     const model = makeModel()
@@ -44,11 +44,11 @@ describe('sdkgen', () => {
     }
 
     let res0 = await sdkgen.generate(spec)
-    expect(res0).includes({ ok: true })
+    strictEqual(res0.ok, true)
 
     const voljson: any = vol.toJSON()
 
-    expect(voljson).equals({
+    deepStrictEqual(voljson, {
       '/top/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
@@ -107,10 +107,10 @@ describe('sdkgen', () => {
 
     let res1 = await sdkgen.generate(spec)
     // console.log('RES1', res1)
-    expect(res1).includes({ ok: true })
+    strictEqual(res1.ok, true)
 
     const voljson1: any = vol.toJSON()
-    expect(voljson1).equals({
+    deepStrictEqual(voljson1, {
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=0\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
@@ -167,10 +167,10 @@ describe('sdkgen', () => {
 
     // generate again
     let res2 = await sdkgen.generate(spec)
-    expect(res2).includes({ ok: true })
+    strictEqual(res2.ok, true)
 
     const voljson2: any = vol.toJSON()
-    expect(voljson2).equals({
+    deepStrictEqual(voljson2, {
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=0\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
@@ -228,10 +228,10 @@ describe('sdkgen', () => {
     // update model
     model.zed.a = 1
     let res3 = await sdkgen.generate(spec)
-    expect(res3).includes({ ok: true })
+    strictEqual(res3.ok, true)
 
     const voljson3: any = vol.toJSON()
-    expect(voljson3).equals({
+    deepStrictEqual(voljson3, {
       '/top/foo/js/README.md': '\n' +
         '# foo js SDK\n' +
         '<<<<<<< GENERATED: 2025-01-01T00:47:00.000Z/merge\n' +
@@ -299,10 +299,10 @@ describe('sdkgen', () => {
 
 
     let res4 = await sdkgen.generate(spec)
-    expect(res4).includes({ ok: true })
+    strictEqual(res4.ok, true)
 
     const voljson4: any = vol.toJSON()
-    expect(voljson4).equals({
+    deepStrictEqual(voljson4, {
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=A\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
@@ -360,10 +360,10 @@ describe('sdkgen', () => {
     // generate again
 
     let res5 = await sdkgen.generate(spec)
-    expect(res5).includes({ ok: true })
+    strictEqual(res5.ok, true)
 
     const voljson5: any = vol.toJSON()
-    expect(voljson5).equals({
+    deepStrictEqual(voljson5, {
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=A\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',

@@ -34,7 +34,7 @@ description = "${model.const.Name} SDK for Python"
 license = "MIT"
 requires-python = ">=3.8"
 dependencies = [
-    "requests>=2.28",
+    "requests>=2.33",
 `)
 
     // Collect dependencies from features

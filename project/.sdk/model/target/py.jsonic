@@ -13,7 +13,7 @@ main: kit: target: py: {
 
   deps: {
     'voxgig-struct': { active: true, version: '0.0.10' }
-    'requests': { active: true, version: '2.31' }
+    'requests': { active: true, version: '2.33' }
   }
 }
 
