@@ -4,11 +4,11 @@ const Path = require('node:path')
 const { statSync } = require('node:fs')
 const { parseArgs } = require('node:util')
 
-const { Gubu, Fault, One } = require('gubu')
+const { Shape, One } = require('shape')
 
 const { SdkGen } = require('../dist/sdkgen.js')
 
-const VERSION = '0.39.0'
+const VERSION = '0.39.1'
 const KONSOLE = console
 
 
@@ -23,11 +23,11 @@ async function run() {
     let options = resolveOptions()
 
     if (options.version) {
-      version()
+      KONSOLE.log(version())
     }
 
     if (options.help) {
-      help()
+      KONSOLE.log(help())
     }
 
     if (options.version || options.help) {
@@ -106,7 +106,7 @@ function resolveOptions() {
 
 
 function validateOptions(rawOptions) {
-  const optShape = Gubu({
+  const optShape = Shape({
     debug: One(String, Boolean),
     help: Boolean,
     version: Boolean,
@@ -136,8 +136,14 @@ function version() { return VERSION }
 
 
 function help() {
-  const s = 'TODO'
-  KONSOLE.log(s)
+  return `Usage: voxgig-sdkgen [options] <action> [args...]
+
+Options:
+  -h, --help            Show this help message
+  -v, --version         Show version
+  -g, --debug <level>   Debug level (default: info)
+  -y, --dryrun          Dry run (no changes written)
+`
 }
 
 
