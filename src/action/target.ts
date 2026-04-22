@@ -91,7 +91,13 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
 
   showChanges(opts.log, 'target-result', jres)
 
-  const features = Object.keys(actx.model.main[KIT].feature)
+  // The `test` feature is required by every generated target (SDK.test()
+  // depends on it), so ensure it is added even if the model does not yet
+  // declare it.
+  const features = Array.from(new Set([
+    'test',
+    ...Object.keys(actx.model.main[KIT].feature),
+  ]))
   await feature_add(features, actx)
 
   opts.log.info({
