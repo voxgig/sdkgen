@@ -90,7 +90,7 @@ const ACTION_MAP: any = {
 const dlog = getdlog('sdkgen', __filename)
 
 
-const aontu = new Aontu()
+let aontu: any = null
 
 
 function SdkGen(opts: SdkGenOptions) {
@@ -195,6 +195,17 @@ function SdkGen(opts: SdkGenOptions) {
   function resolveModel() {
     const path = './model/sdk.jsonic'
     const errs: any[] = []
+
+    if (null == aontu) {
+      aontu = new Aontu({
+        preload: {
+          folders: ['./model'],
+          ext: ['.jsonic', '.json'],
+          recursive: true,
+        }
+      })
+    }
+
     const aopts = { path, errs }
     const src = fs.readFileSync(path, 'utf8')
 

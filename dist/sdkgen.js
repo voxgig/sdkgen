@@ -89,7 +89,7 @@ const ACTION_MAP = {
     feature: feature_1.action_feature,
 };
 const dlog = (0, util_2.getdlog)('sdkgen', __filename);
-const aontu = new aontu_1.Aontu();
+let aontu = null;
 function SdkGen(opts) {
     const fs = opts.fs || node_fs_1.default;
     const folder = opts.folder || '../';
@@ -165,6 +165,15 @@ function SdkGen(opts) {
     function resolveModel() {
         const path = './model/sdk.jsonic';
         const errs = [];
+        if (null == aontu) {
+            aontu = new aontu_1.Aontu({
+                preload: {
+                    folders: ['./model'],
+                    ext: ['.jsonic', '.json'],
+                    recursive: true,
+                }
+            });
+        }
         const aopts = { path, errs };
         const src = fs.readFileSync(path, 'utf8');
         const model = aontu.generate(src, aopts);

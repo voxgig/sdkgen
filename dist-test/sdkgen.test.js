@@ -387,7 +387,7 @@ name: 'foo'
 
 zed: a: 0
 
-main: kit: &: { name: .$KEY }
+main: kit: &: { name: key() }
 
 main: kit: js: {}
 
