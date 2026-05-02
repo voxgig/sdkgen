@@ -11,9 +11,8 @@ main: kit: target: php: {
     kind: *'prod' | string
   }
 
-  deps: {
-    'voxgig/struct': { active: true, version: '0.0.10' }
-  }
+  # struct utility is vendored under tm/php/utility/struct - no manifest dep needed
+  deps: {}
 }
 
 

@@ -11,8 +11,8 @@ main: kit: target: py: {
     kind: *'prod' | string
   }
 
+  # struct utility is vendored under tm/py/utility/voxgig_struct - no manifest dep needed
   deps: {
-    'voxgig-struct': { active: true, version: '0.0.10' }
     'requests': { active: true, version: '2.33' }
   }
 }

@@ -38,6 +38,11 @@ import { ReadmeExplanation } from './cmp/ReadmeExplanation'
 import { ReadmeRef } from './cmp/ReadmeRef'
 import { FeatureHook } from './cmp/FeatureHook'
 
+import { buildIdNames } from './helpers/buildIdNames'
+import { getMatchEntries } from './helpers/getMatchEntries'
+import { collectDeps } from './helpers/collectDeps'
+import type { DepEntry } from './helpers/collectDeps'
+
 
 import {
   action_target,
@@ -330,6 +335,7 @@ function clear(path: string) {
 
 export type {
   SdkGenOptions,
+  DepEntry,
 }
 
 
@@ -389,4 +395,8 @@ export {
   SdkGen,
 
   requirePath,
+
+  buildIdNames,
+  getMatchEntries,
+  collectDeps,
 }

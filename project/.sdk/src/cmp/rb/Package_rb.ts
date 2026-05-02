@@ -3,14 +3,12 @@ import {
   Content,
   File,
   cmp,
-  each,
+  collectDeps,
 } from '@voxgig/sdkgen'
 
 
-import {
-  KIT,
+import type {
   Model,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
@@ -20,7 +18,8 @@ const Package = cmp(async function Package(props: any) {
 
   const model: Model = ctx$.model
 
-  const feature = getModelPath(model, `main.${KIT}.feature`)
+  const versionOf = (d: { version: string; source: 'feature' | 'target' }) =>
+    d.source === 'target' ? (d.version || '0.0') : d.version
 
   // Generate Gemfile
   File({ name: 'Gemfile' }, () => {
@@ -30,28 +29,9 @@ gemspec
 
 `)
 
-    // Collect dependencies from features
-    each(feature, (f: any) => {
-      const rbDeps = f.deps?.rb
-      if (rbDeps) {
-        each(rbDeps, (dep: any) => {
-          if (dep.active) {
-            Content(`gem "${dep.key$}", "~> ${dep.version}"
+    for (const d of collectDeps(model, target.name, target.deps)) {
+      Content(`gem "${d.name}", "~> ${versionOf(d)}"
 `)
-          }
-        })
-      }
-    })
-
-    // Add target-level deps
-    const targetDeps = target.deps
-    if (targetDeps) {
-      each(targetDeps, (dep: any) => {
-        if (dep.active !== false) {
-          Content(`gem "${dep.key$}", "~> ${dep.version || '0.0'}"
-`)
-        }
-      })
     }
   })
 
@@ -73,28 +53,9 @@ gemspec
   spec.add_dependency "json"
 `)
 
-    // Collect dependencies from features
-    each(feature, (f: any) => {
-      const rbDeps = f.deps?.rb
-      if (rbDeps) {
-        each(rbDeps, (dep: any) => {
-          if (dep.active) {
-            Content(`  spec.add_dependency "${dep.key$}", "~> ${dep.version}"
+    for (const d of collectDeps(model, target.name, target.deps)) {
+      Content(`  spec.add_dependency "${d.name}", "~> ${versionOf(d)}"
 `)
-          }
-        })
-      }
-    })
-
-    // Add target-level deps
-    const targetDeps = target.deps
-    if (targetDeps) {
-      each(targetDeps, (dep: any) => {
-        if (dep.active !== false) {
-          Content(`  spec.add_dependency "${dep.key$}", "~> ${dep.version || '0.0'}"
-`)
-        }
-      })
     }
 
     Content(`

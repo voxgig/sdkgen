@@ -67,6 +67,24 @@ class ${model.const.Name}Config
 `)
     })
 
+    // PHP can't distinguish empty list from empty map; the SDK runtime
+    // validator wants an object for `entity` and `feature.test.entity`. Use
+    // `(object)[]` when the map is empty so the merge preserves map shape.
+    const entityIsEmpty = Object.keys(entity || {}).length === 0
+    if (entityIsEmpty) {
+      Content(`            ],
+            "options" => [
+                "base" => "${baseUrl}",
+                "auth" => [
+                    "prefix" => "${authPrefix}",
+                ],
+                "headers" => ${formatPhpArray(headers, 4)},
+                "entity" => (object)[],
+            ],
+            "entity" => (object)[],
+        ];
+`)
+    } else {
     Content(`            ],
             "options" => [
                 "base" => "${baseUrl}",
@@ -92,7 +110,10 @@ class ${model.const.Name}Config
         relations: n.relations,
       }), a), {}), 3)},
         ];
+`)
     }
+
+    Content(`    }
 
 
     public static function make_feature(string $name)

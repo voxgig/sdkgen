@@ -20,10 +20,13 @@ function normalizePathParams(
     return part.replace(/\{([^}]+)\}/g, (match: string, rawName: string) => {
       const snaked = snakify(rawName)
       const depluralized = depluralize(snaked)
+      // Prefer exact name match — orig matches can collide when one param's
+      // original name was renamed to another param's current name (e.g. badge
+      // load: param 'group_id' has orig 'id', and another param has name 'id').
       const param = params.find((p: any) =>
-        p.orig === snaked || p.name === snaked ||
-        p.orig === depluralized || p.name === depluralized
-      )
+          p.name === snaked || p.name === depluralized) ||
+        params.find((p: any) =>
+          p.orig === snaked || p.orig === depluralized)
       if (param) return '{' + param.name + '}'
 
       if (rename) {
@@ -95,7 +98,7 @@ class Test${entity.Name}Direct:
 
     if (hasList && listPoint) {
       Content(`    def test_should_direct_list_${entity.name}(self):
-        setup = ${entity.name}_direct_setup([
+        setup = _${entity.name}_direct_setup([
             {"id": "direct01"},
             {"id": "direct02"},
         ])
@@ -147,7 +150,7 @@ class Test${entity.Name}Direct:
 
     if (hasLoad && loadPoint) {
       Content(`    def test_should_direct_load_${entity.name}(self):
-        setup = ${entity.name}_direct_setup({"id": "direct01"})
+        setup = _${entity.name}_direct_setup({"id": "direct01"})
         client = setup["client"]
 
 `)
@@ -190,7 +193,7 @@ class Test${entity.Name}Direct:
 
     Content(`
 
-def ${entity.name}_direct_setup(mockres):
+def _${entity.name}_direct_setup(mockres):
     runner.load_env_local()
 
     calls = []

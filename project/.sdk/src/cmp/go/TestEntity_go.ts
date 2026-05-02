@@ -16,6 +16,8 @@ import {
   File,
   cmp,
   each,
+  buildIdNames,
+  getMatchEntries,
 } from '@voxgig/sdkgen'
 
 
@@ -53,15 +55,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const PROJUPPER = model.const.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
 
-  const ancestors = (entity.relations?.ancestors || []).flat()
-
-  // Build idmap names: entity's own + ancestor ids
-  const idnames: string[] = []
-  for (let i = 1; i <= 3; i++) idnames.push(`${entity.name}0${i}`)
-  for (const anc of ancestors) {
-    for (let i = 1; i <= 3; i++) idnames.push(`${anc}0${i}`)
-  }
-
+  const idnames = buildIdNames(entity, basicflow)
   const idnamesStr = idnames.map(n => `"${n}"`).join(', ')
 
   // Get all update data entries for alias generation
@@ -74,13 +68,20 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, gomodule, flow: basicflow, PROJUPPER }
 
+  // fmt is only used by the TextFieldMark Update branch — omit the import
+  // when no step needs it, otherwise Go's strict unused-import check fails.
+  const needsFmt = allSteps.some((s: any) =>
+    s.op === 'update' &&
+    s.input?.textfield &&
+    Array.isArray(s.spec) &&
+    s.spec.some((sp: any) => sp.apply === 'TextFieldMark'))
+
   File({ name: entity.name + '_entity_test.' + target.ext }, () => {
 
     Content(`package sdktest
 
 import (
-	"encoding/json"
-	"fmt"
+	"encoding/json"${needsFmt ? '\n\t"fmt"' : ''}
 	"os"
 	"path/filepath"
 	"runtime"
@@ -104,20 +105,22 @@ func Test${entity.Name}Entity(t *testing.T) {
 
 	t.Run("basic", func(t *testing.T) {
 		setup := ${entity.name}BasicSetup(nil)
-		client := setup.client
-
-`)
+${allSteps.length > 0 ? '\t\tclient := setup.client\n\n' : ''}`)
 
     // Check if the flow has a create step; if not, bootstrap entity data
     const flowHasCreate = allSteps.some((s: any) => s.op === 'create')
     if (!flowHasCreate) {
       const preambleRef = entity.name + '_ref01'
+      const preambleVar = goVar(preambleRef)
       Content(`		// Bootstrap entity data from existing test data (no create step in flow).
-		${goVar(preambleRef)}DataRaw := vs.Items(core.ToMapAny(vs.GetProp(setup.data, "existing.${entity.name}")))
-		var ${goVar(preambleRef)}Data map[string]any
-		if len(${goVar(preambleRef)}DataRaw) > 0 {
-			${goVar(preambleRef)}Data = core.ToMapAny(${goVar(preambleRef)}DataRaw[0][1])
+		${preambleVar}DataRaw := vs.Items(core.ToMapAny(vs.GetPath("existing.${entity.name}", setup.data)))
+		var ${preambleVar}Data map[string]any
+		if len(${preambleVar}DataRaw) > 0 {
+			${preambleVar}Data = core.ToMapAny(${preambleVar}DataRaw[0][1])
 		}
+		// Discard guards against Go's unused-var check when the flow's steps
+		// happen not to consume the bootstrap data (e.g. list-only flows).
+		_ = ${preambleVar}Data
 
 `)
     }
@@ -222,13 +225,6 @@ func Test${entity.Name}Entity(t *testing.T) {
 })
 
 
-// Get match entries from a step, filtering out $ keys.
-function getMatchEntries(step: any): [string, any][] {
-  if (!step?.match) return []
-  return Object.entries(step.match).filter(([k]: any) => !k.endsWith('$'))
-}
-
-
 const generateCreate: OpGen = (ctx, step, index) => {
   const { entity, flow } = ctx
   const ref = step.input?.ref ?? entity.name + '_ref01'
@@ -323,19 +319,32 @@ const generateList: OpGen = (ctx, step, index) => {
 `)
   }
 
+  // Only declare ${listvar} as a real var when a downstream validator
+  // actually uses it; otherwise `_` to satisfy Go's unused-var check.
+  const allSteps = Object.values(flow.step) as any[]
+  const listvarUsed = !!step.valid?.some((v: any) => {
+    if ('ItemExists' !== v.apply && 'ItemNotExists' !== v.apply) return false
+    const validRef = v.def?.ref
+    return validRef && allSteps.some((s: any) => 'create' === s.op &&
+      ((s.input?.ref ?? entity.name + '_ref01') === validRef))
+  })
+  const listvarBind = listvarUsed ? listvar : '_'
+
+  // Use a list-step-unique `ok` name; if a prior list emitted plain `ok`,
+  // a second `_, ok :=` would be "no new variables on left side of :=".
+  const okvar = listvar + 'Ok'
   Content(`
 		${listvar}Result, err := ${entvar}.List(${matchvar}, nil)
 		if err != nil {
 			t.Fatalf("list failed: %v", err)
 		}
-		${listvar}, ok := ${listvar}Result.([]any)
-		if !ok {
+		${listvarBind}, ${okvar} := ${listvar}Result.([]any)
+		if !${okvar} {
 			t.Fatalf("expected list result to be an array, got %T", ${listvar}Result)
 		}
 `)
 
   // Handle validators from step.valid
-  const allSteps = Object.values(flow.step) as any[]
   if (step.valid) {
     for (const validator of step.valid) {
       const validRef = validator.def?.ref
@@ -474,7 +483,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 `)
   }
   if (!hasSrcData) {
-    Content(`		${srcdatavar}Raw := vs.Items(core.ToMapAny(vs.GetProp(setup.data, "existing.${entity.name}")))
+    Content(`		${srcdatavar}Raw := vs.Items(core.ToMapAny(vs.GetPath("existing.${entity.name}", setup.data)))
 		var ${srcdatavar} map[string]any
 		if len(${srcdatavar}Raw) > 0 {
 			${srcdatavar} = core.ToMapAny(${srcdatavar}Raw[0][1])
@@ -510,6 +519,10 @@ const generateRemove: OpGen = (ctx, step, index) => {
   const needsEnt = !priorSteps.some((s: any) =>
     ['create', 'list', 'load', 'update', 'remove'].includes(s.op))
 
+  // Use `:=` when this is the first op step (so `err` gets declared);
+  // otherwise reuse the `err` from a prior op step.
+  const errOp = needsEnt ? ':=' : '='
+
   Content(`		// REMOVE
 `)
   if (needsEnt) {
@@ -519,7 +532,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
   Content(`		${matchvar} := map[string]any{
 			"id": ${srcdatavar}["id"],
 		}
-		_, err = ${entvar}.Remove(${matchvar}, nil)
+		_, err ${errOp} ${entvar}.Remove(${matchvar}, nil)
 		if err != nil {
 			t.Fatalf("remove failed: %v", err)
 		}

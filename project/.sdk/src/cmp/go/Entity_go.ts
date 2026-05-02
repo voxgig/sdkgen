@@ -32,13 +32,25 @@ const Entity = cmp(function Entity(props: any) {
 
       const opnames = Object.keys(entity.op)
 
+      // For each CRUD op: if the spec defines it, splice in the real
+      // implementation. Otherwise emit a stub that satisfies the static
+      // ProjectNameEntity interface (so the package compiles) but errors
+      // at runtime if the caller invokes an unsupported op.
       const opfrags =
         (['load', 'list', 'create', 'update', 'remove']
           .reduce((a: any, opname: string) =>
           (a['// #' + camelify(opname) + 'Op'] =
-            !opnames.includes(opname) ? '' : ({ indent }: any) => {
-              EntityOperation({ ff, opname, indent, entity, entrep, gomodule })
-            }, a), {}))
+            !opnames.includes(opname) ?
+              ({ indent }: any) => {
+                const Method = camelify(opname)
+                Content({ indent }, `func (e *${entity.Name}Entity) ${Method}(_ map[string]any, _ map[string]any) (any, error) {
+	return core.UnsupportedOp("${opname}", e.name)
+}
+`)
+              } :
+              ({ indent }: any) => {
+                EntityOperation({ ff, opname, indent, entity, entrep, gomodule })
+              }, a), {}))
 
       Fragment({
         from: ff + 'Entity.fragment.go',

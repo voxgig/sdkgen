@@ -1,7 +1,7 @@
 .PHONY: test build clean
 
 test:
-	busted test/
+	busted -p _test test/
 
 build:
 	@echo "No build step for Lua"

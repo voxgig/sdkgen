@@ -3,14 +3,12 @@ import {
   Content,
   File,
   cmp,
-  each,
+  collectDeps,
 } from '@voxgig/sdkgen'
 
 
-import {
-  KIT,
+import type {
   Model,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
@@ -19,8 +17,6 @@ const Package = cmp(async function Package(props: any) {
   const target = props.target
 
   const model: Model = ctx$.model
-
-  const feature = getModelPath(model, `main.${KIT}.feature`)
 
   File({ name: model.name + '.rockspec' }, () => {
     Content(`package = "${model.name}-sdk"
@@ -37,28 +33,10 @@ dependencies = {
   "dkjson >= 2.5",
 `)
 
-    // Collect dependencies from features
-    each(feature, (f: any) => {
-      const luaDeps = f.deps?.lua
-      if (luaDeps) {
-        each(luaDeps, (dep: any) => {
-          if (dep.active) {
-            Content(`  "${dep.key$} >= ${dep.version}",
+    for (const d of collectDeps(model, target.name, target.deps)) {
+      const v = d.source === 'target' ? (d.version || '0.0') : d.version
+      Content(`  "${d.name} >= ${v}",
 `)
-          }
-        })
-      }
-    })
-
-    // Add target-level deps
-    const targetDeps = target.deps
-    if (targetDeps) {
-      each(targetDeps, (dep: any) => {
-        if (dep.active !== false) {
-          Content(`  "${dep.key$} >= ${dep.version || '0.0'}",
-`)
-        }
-      })
     }
 
     Content(`}

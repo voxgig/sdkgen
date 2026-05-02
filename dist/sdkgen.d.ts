@@ -17,6 +17,10 @@ import { ReadmeHowto } from './cmp/ReadmeHowto';
 import { ReadmeExplanation } from './cmp/ReadmeExplanation';
 import { ReadmeRef } from './cmp/ReadmeRef';
 import { FeatureHook } from './cmp/FeatureHook';
+import { buildIdNames } from './helpers/buildIdNames';
+import { getMatchEntries } from './helpers/getMatchEntries';
+import { collectDeps } from './helpers/collectDeps';
+import type { DepEntry } from './helpers/collectDeps';
 type SdkGenOptions = {
     folder: string;
     fs: any;
@@ -56,7 +60,7 @@ declare function SdkGen(opts: SdkGenOptions): {
 declare namespace SdkGen {
     var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any, ctx: any) => Promise<any>>;
 }
-export type { SdkGenOptions, };
+export type { SdkGenOptions, DepEntry, };
 type Component = (props: any, children?: any) => void;
 export declare const cmp: (component: Function) => Component;
 export declare const names: (base: any, name: string, prop?: string) => any;
@@ -82,4 +86,4 @@ export declare const Inject: Component;
 export declare const Line: Component;
 export declare const Slot: Component;
 export declare const List: Component;
-export { Main, Entity, Feature, Test, Readme, ReadmeTop, ReadmeInstall, ReadmeQuick, ReadmeIntro, ReadmeModel, ReadmeOptions, ReadmeEntity, ReadmeHowto, ReadmeExplanation, ReadmeRef, FeatureHook, Jostraca, SdkGen, requirePath, };
+export { Main, Entity, Feature, Test, Readme, ReadmeTop, ReadmeInstall, ReadmeQuick, ReadmeIntro, ReadmeModel, ReadmeOptions, ReadmeEntity, ReadmeHowto, ReadmeExplanation, ReadmeRef, FeatureHook, Jostraca, SdkGen, requirePath, buildIdNames, getMatchEntries, collectDeps, };

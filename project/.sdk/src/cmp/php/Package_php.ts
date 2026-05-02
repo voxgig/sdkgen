@@ -3,14 +3,12 @@ import {
   Content,
   File,
   cmp,
-  each,
+  collectDeps,
 } from '@voxgig/sdkgen'
 
 
-import {
-  KIT,
+import type {
   Model,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
@@ -19,8 +17,6 @@ const Package = cmp(async function Package(props: any) {
   const target = props.target
 
   const model: Model = ctx$.model
-
-  const feature = getModelPath(model, `main.${KIT}.feature`)
 
   // Generate composer.json
   File({ name: 'composer.json' }, () => {
@@ -33,32 +29,10 @@ const Package = cmp(async function Package(props: any) {
   "require": {
     "php": ">=8.2"`)
 
-    // Collect dependencies from features
-    const deps: { name: string, version: string }[] = []
-    each(feature, (f: any) => {
-      const phpDeps = f.deps?.php
-      if (phpDeps) {
-        each(phpDeps, (dep: any) => {
-          if (dep.active) {
-            deps.push({ name: dep.key$, version: dep.version })
-          }
-        })
-      }
-    })
-
-    // Add target-level deps
-    const targetDeps = target.deps
-    if (targetDeps) {
-      each(targetDeps, (dep: any) => {
-        if (dep.active !== false) {
-          deps.push({ name: dep.key$, version: dep.version || '0.0' })
-        }
-      })
-    }
-
-    for (const dep of deps) {
+    for (const d of collectDeps(model, target.name, target.deps)) {
+      const v = d.source === 'target' ? (d.version || '0.0') : d.version
       Content(`,
-    "${dep.name}": "^${dep.version}"`)
+    "${d.name}": "^${v}"`)
     }
 
     Content(`

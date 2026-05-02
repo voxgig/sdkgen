@@ -1,5 +1,15 @@
 package core
 
+import "fmt"
+
+// UnsupportedOp is returned by entity stub methods for operations the
+// underlying API spec doesn't define. The static ProjectNameEntity interface
+// requires every CRUD method on every entity, so absent ops must still be
+// callable — they error at runtime instead of failing to compile.
+func UnsupportedOp(opname, entityname string) (any, error) {
+	return nil, fmt.Errorf("operation '%s' not supported by entity '%s'", opname, entityname)
+}
+
 func ToMapAny(v any) map[string]any {
 	if v == nil {
 		return nil

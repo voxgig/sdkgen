@@ -24,10 +24,13 @@ function normalizePathParams(
     return part.replace(/\{([^}]+)\}/g, (match: string, rawName: string) => {
       const snaked = snakify(rawName)
       const depluralized = depluralize(snaked)
+      // Prefer exact name match — orig matches can collide when one param's
+      // original name was renamed to another param's current name (e.g. badge
+      // load: param 'group_id' has orig 'id', and another param has name 'id').
       const param = params.find((p: any) =>
-        p.orig === snaked || p.name === snaked ||
-        p.orig === depluralized || p.name === depluralized
-      )
+          p.name === snaked || p.name === depluralized) ||
+        params.find((p: any) =>
+          p.orig === snaked || p.orig === depluralized)
       if (param) return '{' + param.name + '}'
 
       if (rename) {
@@ -128,14 +131,18 @@ func Test${entity.Name}Direct(t *testing.T) {
       if (listParams.length > 0) {
         Content(`		params := map[string]any{}
 `)
-        for (const lp of listLiveParams) {
+        listLiveParams.forEach((lp: any, i: number) => {
+          // Each path param gets its own placeholder ("direct01", "direct02", ...)
+          // in non-live mode so URL-shape assertions can verify the params
+          // landed in distinct positions in the URL.
+          const placeholder = 'direct0' + (i + 1)
           Content(`		if setup.live {
 			params["${lp.name}"] = setup.idmap["${lp.key}"]
 		} else {
-			params["${lp.name}"] = "direct01"
+			params["${lp.name}"] = "${placeholder}"
 		}
 `)
-        }
+        })
         Content(`
 		result, err := client.Direct(map[string]any{
 			"path":   "${listPath}",
@@ -320,7 +327,7 @@ func Test${entity.Name}Direct(t *testing.T) {
 					t.Fatalf("expected method GET, got %v", initMap["method"])
 				}
 			}
-			if url, ok := call["url"].(string); ok {
+			if ${loadParams.length > 0 ? 'url' : '_'}, ok := call["url"].(string); ok {
 `)
 
       for (let i = 0; i < loadParams.length; i++) {

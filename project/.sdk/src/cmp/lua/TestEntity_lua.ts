@@ -16,6 +16,8 @@ import {
   File,
   cmp,
   each,
+  buildIdNames,
+  getMatchEntries,
 } from '@voxgig/sdkgen'
 
 
@@ -45,15 +47,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const PROJUPPER = model.const.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
 
-  const ancestors = (entity.relations?.ancestors || []).flat()
-
-  // Build idmap names
-  const idnames: string[] = []
-  for (let i = 1; i <= 3; i++) idnames.push(`${entity.name}0${i}`)
-  for (const anc of ancestors) {
-    for (let i = 1; i <= 3; i++) idnames.push(`${anc}0${i}`)
-  }
-
+  const idnames = buildIdNames(entity, basicflow)
   const idnamesStr = idnames.map(n => `"${n}"`).join(', ')
 
   const allSteps = Object.values(basicflow.step) as any[]
@@ -95,7 +89,7 @@ describe("${entity.Name}Entity", function()
     if (!flowHasCreate) {
       Content(`    -- Bootstrap entity data from existing test data.
     local ${entity.name}_ref01_data_raw = vs.items(helpers.to_map(
-      vs.getprop(setup.data, "existing.${entity.name}")))
+      vs.getpath(setup.data, "existing.${entity.name}")))
     local ${entity.name}_ref01_data = nil
     if #${entity.name}_ref01_data_raw > 0 then
       ${entity.name}_ref01_data = helpers.to_map(${entity.name}_ref01_data_raw[1][2])
@@ -198,12 +192,6 @@ end
 `)
   })
 })
-
-
-function getMatchEntries(step: any): [string, any][] {
-  if (!step?.match) return []
-  return Object.entries(step.match).filter(([k]: any) => !k.endsWith('$'))
-}
 
 
 const generateCreate: OpGen = (ctx, step, index) => {
@@ -426,7 +414,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (!hasSrcData) {
     Content(`    local ${srcdatavar}_raw = vs.items(helpers.to_map(
-      vs.getprop(setup.data, "existing.${entity.name}")))
+      vs.getpath(setup.data, "existing.${entity.name}")))
     local ${srcdatavar} = nil
     if #${srcdatavar}_raw > 0 then
       ${srcdatavar} = helpers.to_map(${srcdatavar}_raw[1][2])

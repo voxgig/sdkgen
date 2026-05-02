@@ -16,6 +16,8 @@ import {
   File,
   cmp,
   each,
+  buildIdNames,
+  getMatchEntries,
 } from '@voxgig/sdkgen'
 
 
@@ -26,6 +28,7 @@ type GenCtx = {
   entity: any
   flow: any
   PROJUPPER: string
+  accessor: string
 }
 
 
@@ -43,17 +46,16 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
+  // PHP method names are case-insensitive — an entity literally named 'test'
+  // collides with the static `test()` test-mode constructor on the SDK class.
+  // Mirror the mangling done in MainEntity_php.ts.
+  const accessor = 'test' === entity.Name.toLowerCase()
+    ? entity.Name + '_'
+    : entity.Name
+
   const PROJUPPER = model.const.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
 
-  const ancestors = (entity.relations?.ancestors || []).flat()
-
-  // Build idmap names
-  const idnames: string[] = []
-  for (let i = 1; i <= 3; i++) idnames.push(`${entity.name}0${i}`)
-  for (const anc of ancestors) {
-    for (let i = 1; i <= 3; i++) idnames.push(`${anc}0${i}`)
-  }
-
+  const idnames = buildIdNames(entity, basicflow)
   const idnamesStr = idnames.map(n => `"${n}"`).join(', ')
 
   const allSteps = Object.values(basicflow.step) as any[]
@@ -63,7 +65,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
     : []
   const aliases = updateData.map(([k, v]: any) => [k, v])
 
-  const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
+  const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER, accessor }
 
   File({ name: entity.Name + 'EntityTest.' + target.ext }, () => {
 
@@ -83,7 +85,7 @@ class ${entity.Name}EntityTest extends TestCase
     public function test_create_instance(): void
     {
         $testsdk = ${model.const.Name}SDK::test(null, null);
-        $ent = $testsdk->${entity.Name}(null);
+        $ent = $testsdk->${accessor}(null);
         $this->assertNotNull($ent);
     }
 
@@ -99,7 +101,7 @@ class ${entity.Name}EntityTest extends TestCase
     if (!flowHasCreate) {
       Content(`        // Bootstrap entity data from existing test data.
         $${entity.name}_ref01_data_raw = Vs::items(Helpers::to_map(
-            Vs::getprop($setup["data"], "existing.${entity.name}")));
+            Vs::getpath($setup["data"], "existing.${entity.name}")));
         $${entity.name}_ref01_data = null;
         if (count($${entity.name}_ref01_data_raw) > 0) {
             $${entity.name}_ref01_data = Helpers::to_map($${entity.name}_ref01_data_raw[0][1]);
@@ -194,14 +196,8 @@ class ${entity.Name}EntityTest extends TestCase
 })
 
 
-function getMatchEntries(step: any): [string, any][] {
-  if (!step?.match) return []
-  return Object.entries(step.match).filter(([k]: any) => !k.endsWith('$'))
-}
-
-
 const generateCreate: OpGen = (ctx, step, index) => {
-  const { entity, flow } = ctx
+  const { entity, flow, accessor } = ctx
   const ref = step.input?.ref ?? entity.name + '_ref01'
   const entvar = step.input?.entvar ?? ref + '_ent'
   const datavar = step.input?.datavar ?? (ref + '_data' + (step.input?.suffix ?? ''))
@@ -222,7 +218,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
   Content(`        // CREATE
 `)
   if (needsEnt) {
-    Content(`        $${entvar} = $client->${entity.Name}(null);
+    Content(`        $${entvar} = $client->${accessor}(null);
 `)
   }
 
@@ -253,7 +249,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
 
 const generateList: OpGen = (ctx, step, index) => {
-  const { entity, flow } = ctx
+  const { entity, flow, accessor } = ctx
   const ref = step.input?.ref ?? entity.name + '_ref01'
   const entvar = step.input?.entvar ?? ref + '_ent'
   const matchvar = step.input?.matchvar ?? (ref + '_match' + (step.input?.suffix ?? ''))
@@ -266,7 +262,7 @@ const generateList: OpGen = (ctx, step, index) => {
   Content(`        // LIST
 `)
   if (needsEnt) {
-    Content(`        $${entvar} = $client->${entity.Name}(null);
+    Content(`        $${entvar} = $client->${accessor}(null);
 `)
   }
 
@@ -322,7 +318,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
 
 const generateUpdate: OpGen = (ctx, step, index) => {
-  const { entity, flow } = ctx
+  const { entity, flow, accessor } = ctx
   const ref = step.input?.ref ?? entity.name + '_ref01'
   const entvar = step.input?.entvar ?? ref + '_ent'
   const datavar = step.input?.datavar ?? (ref + '_data' + (step.input?.suffix ?? ''))
@@ -337,7 +333,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`        // UPDATE
 `)
   if (needsEnt) {
-    Content(`        $${entvar} = $client->${entity.Name}(null);
+    Content(`        $${entvar} = $client->${accessor}(null);
 `)
   }
   Content(`        $${datavar}_up = [
@@ -389,7 +385,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
 
 const generateLoad: OpGen = (ctx, step, index) => {
-  const { entity, flow } = ctx
+  const { entity, flow, accessor } = ctx
   const ref = step.input?.ref ?? entity.name + '_ref01'
   const entvar = step.input?.entvar ?? ref + '_ent'
   const matchvar = step.input?.matchvar ?? (ref + '_match' + (step.input?.suffix ?? ''))
@@ -415,12 +411,12 @@ const generateLoad: OpGen = (ctx, step, index) => {
   Content(`        // LOAD
 `)
   if (!hasEntVar) {
-    Content(`        $${entvar} = $client->${entity.Name}(null);
+    Content(`        $${entvar} = $client->${accessor}(null);
 `)
   }
   if (!hasSrcData) {
     Content(`        $${srcdatavar}_raw = Vs::items(Helpers::to_map(
-            Vs::getprop($setup["data"], "existing.${entity.name}")));
+            Vs::getpath($setup["data"], "existing.${entity.name}")));
         $${srcdatavar} = null;
         if (count($${srcdatavar}_raw) > 0) {
             $${srcdatavar} = Helpers::to_map($${srcdatavar}_raw[0][1]);
@@ -440,7 +436,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
 
 const generateRemove: OpGen = (ctx, step, index) => {
-  const { entity, flow } = ctx
+  const { entity, flow, accessor } = ctx
   const ref = step.input?.ref ?? entity.name + '_ref01'
   const entvar = step.input?.entvar ?? ref + '_ent'
   const matchvar = step.input?.matchvar ?? (ref + '_match' + (step.input?.suffix ?? ''))
@@ -453,7 +449,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
   Content(`        // REMOVE
 `)
   if (needsEnt) {
-    Content(`        $${entvar} = $client->${entity.Name}(null);
+    Content(`        $${entvar} = $client->${accessor}(null);
 `)
   }
   Content(`        $${matchvar} = [

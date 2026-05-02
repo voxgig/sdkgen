@@ -115,12 +115,13 @@ var NewBaseFeatureFunc func() Feature
   })
 
   // Generate root package file
+  const hasEntities = Object.keys(entity || {}).length > 0
+  const entityImport = hasEntities ? `\n\t"${gomodule}/entity"` : ''
   File({ name: model.name + '.' + target.ext }, () => {
     Content(`package ${gomodule}
 
 import (
-	"${gomodule}/core"
-	"${gomodule}/entity"
+	"${gomodule}/core"${entityImport}
 	"${gomodule}/feature"
 	_ "${gomodule}/utility"
 )

@@ -1,7 +1,7 @@
 .PHONY: test build clean
 
 test:
-	./vendor/bin/phpunit
+	./vendor/bin/phpunit test
 
 build:
 	@echo "No build step for PHP"

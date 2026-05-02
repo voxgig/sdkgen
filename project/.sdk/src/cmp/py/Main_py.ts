@@ -119,11 +119,11 @@ def _make_feature(name):
 `)
   })
 
-  // Generate __init__.py files for packages
-  File({ name: '__init__.' + target.ext }, () => {
-    Content(``)
-  })
-
+  // Generate __init__.py files for sub-packages.
+  // NOTE: deliberately omit __init__.py at the language-root (py/) level —
+  // making py/ a package collides with the third-party `py` module on PyPI
+  // (a single-file `py.py`), which causes pytest to construct test module
+  // paths as `py.test.<file>` and fail with "'py' is not a package".
   Folder({ name: 'core' }, () => {
     File({ name: '__init__.' + target.ext }, () => {
       Content(``)

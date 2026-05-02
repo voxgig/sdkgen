@@ -16,6 +16,8 @@ import {
   File,
   cmp,
   each,
+  buildIdNames,
+  getMatchEntries,
 } from '@voxgig/sdkgen'
 
 
@@ -45,15 +47,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const PROJUPPER = model.const.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
 
-  const ancestors = (entity.relations?.ancestors || []).flat()
-
-  // Build idmap names
-  const idnames: string[] = []
-  for (let i = 1; i <= 3; i++) idnames.push(`${entity.name}0${i}`)
-  for (const anc of ancestors) {
-    for (let i = 1; i <= 3; i++) idnames.push(`${anc}0${i}`)
-  }
-
+  const idnames = buildIdNames(entity, basicflow)
   const idnamesStr = idnames.map(n => `"${n}"`).join(', ')
 
   const allSteps = Object.values(basicflow.step) as any[]
@@ -91,7 +85,7 @@ class Test${entity.Name}Entity:
         assert ent is not None
 
     def test_should_run_basic_flow(self):
-        setup = ${entity.name}_basic_setup(None)
+        setup = _${entity.name}_basic_setup(None)
         client = setup["client"]
 
 `)
@@ -101,7 +95,7 @@ class Test${entity.Name}Entity:
     if (!flowHasCreate) {
       Content(`        # Bootstrap entity data from existing test data.
         ${entity.name}_ref01_data_raw = vs.items(helpers.to_map(
-            vs.getprop(setup["data"], "existing.${entity.name}")))
+            vs.getpath(setup["data"], "existing.${entity.name}")))
         ${entity.name}_ref01_data = None
         if len(${entity.name}_ref01_data_raw) > 0:
             ${entity.name}_ref01_data = helpers.to_map(${entity.name}_ref01_data_raw[0][1])
@@ -120,7 +114,7 @@ class Test${entity.Name}Entity:
 
     Content(`
 
-def ${entity.name}_basic_setup(extra):
+def _${entity.name}_basic_setup(extra):
     runner.load_env_local()
 
     entity_data_file = os.path.join(_TEST_DIR, "../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json")
@@ -191,12 +185,6 @@ def ${entity.name}_basic_setup(extra):
 `)
   })
 })
-
-
-function getMatchEntries(step: any): [string, any][] {
-  if (!step?.match) return []
-  return Object.entries(step.match).filter(([k]: any) => !k.endsWith('$'))
-}
 
 
 const generateCreate: OpGen = (ctx, step, index) => {
@@ -419,7 +407,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (!hasSrcData) {
     Content(`        ${srcdatavar}_raw = vs.items(helpers.to_map(
-            vs.getprop(setup["data"], "existing.${entity.name}")))
+            vs.getpath(setup["data"], "existing.${entity.name}")))
         ${srcdatavar} = None
         if len(${srcdatavar}_raw) > 0:
             ${srcdatavar} = helpers.to_map(${srcdatavar}_raw[0][1])

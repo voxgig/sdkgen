@@ -3,14 +3,12 @@ import {
   Content,
   File,
   cmp,
-  each,
+  collectDeps,
 } from '@voxgig/sdkgen'
 
 
-import {
-  KIT,
+import type {
   Model,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
@@ -20,12 +18,10 @@ const Package = cmp(async function Package(props: any) {
 
   const model: Model = ctx$.model
 
-  const feature = getModelPath(model, `main.${KIT}.feature`)
-
   File({ name: 'pyproject.toml' }, () => {
     Content(`[build-system]
 requires = ["setuptools>=61.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "${model.name}-sdk"
@@ -37,34 +33,21 @@ dependencies = [
     "requests>=2.33",
 `)
 
-    // Collect dependencies from features
-    each(feature, (f: any) => {
-      const pyDeps = f.deps?.py
-      if (pyDeps) {
-        each(pyDeps, (dep: any) => {
-          if (dep.active) {
-            Content(`    "${dep.key$}>=${dep.version}",
+    for (const d of collectDeps(model, target.name, target.deps)) {
+      const v = d.source === 'target' ? (d.version || '0.0') : d.version
+      Content(`    "${d.name}>=${v}",
 `)
-          }
-        })
-      }
-    })
-
-    // Add target-level deps
-    const targetDeps = target.deps
-    if (targetDeps) {
-      each(targetDeps, (dep: any) => {
-        if (dep.active !== false) {
-          Content(`    "${dep.key$}>=${dep.version || '0.0'}",
-`)
-        }
-      })
     }
 
     Content(`]
 
 [project.urls]
 Homepage = "https://github.com/voxgig/${model.name}-sdk"
+
+# Explicit package list — setuptools auto-discovery refuses to pick when
+# multiple top-level dirs (core/entity/feature/utility) are present.
+[tool.setuptools.packages.find]
+include = ["core*", "entity*", "feature*", "utility*"]
 `)
   })
 })

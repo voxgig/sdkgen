@@ -20,10 +20,13 @@ function normalizePathParams(
     return part.replace(/\{([^}]+)\}/g, (match: string, rawName: string) => {
       const snaked = snakify(rawName)
       const depluralized = depluralize(snaked)
+      // Prefer exact name match — orig matches can collide when one param's
+      // original name was renamed to another param's current name (e.g. badge
+      // load: param 'group_id' has orig 'id', and another param has name 'id').
       const param = params.find((p: any) =>
-        p.orig === snaked || p.name === snaked ||
-        p.orig === depluralized || p.name === depluralized
-      )
+          p.name === snaked || p.name === depluralized) ||
+        params.find((p: any) =>
+          p.orig === snaked || p.orig === depluralized)
       if (param) return '{' + param.name + '}'
 
       if (rename) {
