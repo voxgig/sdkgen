@@ -2,7 +2,7 @@
 
 local json = require("dkjson")
 local vs = require("utility.struct.struct")
-local sdk = require("ProjectName_sdk")
+local sdk = require("projectname_sdk")
 local helpers = require("core.helpers")
 local runner = require("test.runner")
 local Context = require("core.context")
