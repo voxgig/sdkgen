@@ -18,7 +18,7 @@ Use \`helpers.to_map()\` to safely validate that a value is a dict.
 
 \`\`\`
 py/
-├── ${model.name}_sdk.py         -- Main SDK module
+├── ${model.const.Name.toLowerCase()}_sdk.py         -- Main SDK module
 ├── config.py                    -- Configuration
 ├── features.py                  -- Feature factory
 ├── core/                        -- Core types and context
@@ -28,7 +28,7 @@ py/
 └── test/                        -- Test suites
 \`\`\`
 
-The main module (\`${model.name}_sdk\`) exports the SDK class.
+The main module (\`${model.const.Name.toLowerCase()}_sdk\`) exports the SDK class.
 Import entity or utility modules directly only when needed.
 
 `)

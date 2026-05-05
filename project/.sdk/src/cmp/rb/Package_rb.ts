@@ -36,7 +36,7 @@ gemspec
   })
 
   // Generate gemspec
-  File({ name: model.name + '_sdk.gemspec' }, () => {
+  File({ name: model.const.Name + '_sdk.gemspec' }, () => {
     Content(`Gem::Specification.new do |spec|
   spec.name          = "${model.name}-sdk"
   spec.version       = "0.0.1"

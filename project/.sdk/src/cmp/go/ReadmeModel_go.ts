@@ -14,7 +14,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const entityList = each(entity).filter((e: any) => e.active !== false)
 
   const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
-  const gomodule = orgPrefix + model.name + 'sdk'
+  const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
 
   Content(`### New${model.const.Name}SDK
 

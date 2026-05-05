@@ -26,7 +26,7 @@ const Test = cmp(function Test(props: any) {
       Content(`# ${model.const.Name} SDK exists test
 
 require "minitest/autorun"
-require_relative "../${model.name}_sdk"
+require_relative "../${model.const.Name}_sdk"
 
 class ExistsTest < Minitest::Test
   def test_create_test_sdk

@@ -21,7 +21,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   Content(`### 1. Create a client
 
 \`\`\`ruby
-require_relative "${model.name}_sdk"
+require_relative "${model.const.Name}_sdk"
 
 client = ${model.const.Name}SDK.new({
   "apikey" => ENV["${model.NAME}_APIKEY"],

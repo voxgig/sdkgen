@@ -22,7 +22,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
 \`\`\`python
 import os
-from ${model.name}_sdk import ${model.const.Name}SDK
+from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
 
 client = ${model.const.Name}SDK({
     "apikey": os.environ.get("${model.NAME}_APIKEY"),

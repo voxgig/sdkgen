@@ -16,7 +16,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   Content(`### ${model.const.Name}SDK
 
 \`\`\`python
-from ${model.name}_sdk import ${model.const.Name}SDK
+from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
 
 client = ${model.const.Name}SDK(options)
 \`\`\`

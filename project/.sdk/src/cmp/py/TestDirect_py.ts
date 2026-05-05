@@ -87,7 +87,7 @@ import json
 import pytest
 
 from utility.voxgig_struct import voxgig_struct as vs
-from ${model.name}_sdk import ${model.const.Name}SDK
+from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
 from core import helpers
 from test import runner
 

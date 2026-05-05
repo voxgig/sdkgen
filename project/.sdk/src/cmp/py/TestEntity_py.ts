@@ -70,7 +70,7 @@ import time
 import pytest
 
 from utility.voxgig_struct import voxgig_struct as vs
-from ${model.name}_sdk import ${model.const.Name}SDK
+from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
 from core import helpers
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))

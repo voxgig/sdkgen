@@ -18,7 +18,7 @@ Use \`Helpers.to_map()\` to safely validate that a value is a hash.
 
 \`\`\`
 rb/
-├── ${model.name}_sdk.rb       -- Main SDK module
+├── ${model.const.Name}_sdk.rb       -- Main SDK module
 ├── config.rb                  -- Configuration
 ├── features.rb                -- Feature factory
 ├── core/                      -- Core types and context
@@ -28,7 +28,7 @@ rb/
 └── test/                      -- Test suites
 \`\`\`
 
-The main module (\`${model.name}_sdk\`) exports the SDK class
+The main module (\`${model.const.Name}_sdk\`) exports the SDK class
 and test helper. Import entity or utility modules directly only
 when needed.
 

@@ -6,7 +6,7 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const { target, ctx$: { model } } = props
 
   const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
-  const gomodule = orgPrefix + model.name + 'sdk'
+  const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
 
   Content(`### Data as maps
 

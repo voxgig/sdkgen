@@ -16,7 +16,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   Content(`\`\`\`ruby
-require_relative "${model.name}_sdk"
+require_relative "${model.const.Name}_sdk"
 
 client = ${model.const.Name}SDK.new({
   "apikey" => ENV["${model.NAME}_APIKEY"],

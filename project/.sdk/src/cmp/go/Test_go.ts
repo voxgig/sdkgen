@@ -21,7 +21,7 @@ const Test = cmp(function Test(props: any) {
 
   // Module name: concatenated lowercase
   const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
-  const gomodule = orgPrefix + model.name + 'sdk'
+  const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
 
   Folder({ name: 'test' }, () => {
 

@@ -4,7 +4,7 @@ main: kit: target: py: {
   title: Python
   ext: py
   comment: line: "#"
-  module: name: $$name$$
+  module: name: '$$name$$'
   srcfeature: false
 
   deps: &: {

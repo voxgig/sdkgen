@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 // ${model.const.Name} SDK exists test
 
-require_once __DIR__ . '/../${model.name}_sdk.php';
+require_once __DIR__ . '/../${model.const.Name.toLowerCase()}_sdk.php';
 
 use PHPUnit\\Framework\\TestCase;
 

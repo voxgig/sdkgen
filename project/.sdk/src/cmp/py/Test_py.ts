@@ -31,7 +31,7 @@ const Test = cmp(function Test(props: any) {
       Content(`# ProjectName SDK exists test
 
 import pytest
-from ${model.name}_sdk import ${model.const.Name}SDK
+from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
 
 
 class TestExists:

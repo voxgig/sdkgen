@@ -16,7 +16,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   Content(`### ${model.const.Name}SDK
 
 \`\`\`php
-require_once '${model.name}_sdk.php';
+require_once '${model.const.Name.toLowerCase()}_sdk.php';
 $client = new ${model.const.Name}SDK($options);
 \`\`\`
 

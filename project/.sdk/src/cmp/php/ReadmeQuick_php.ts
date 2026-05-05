@@ -22,7 +22,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
 \`\`\`php
 <?php
-require_once '${model.name}_sdk.php';
+require_once '${model.const.Name.toLowerCase()}_sdk.php';
 
 $client = new ${model.const.Name}SDK([
     "apikey" => getenv("${model.NAME}_APIKEY"),

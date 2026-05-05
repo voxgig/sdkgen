@@ -13,7 +13,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
-  const gomodule = orgPrefix + model.name + 'sdk'
+  const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
 
   // Find the first published entity for examples
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any

@@ -85,7 +85,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
 require "minitest/autorun"
 require "json"
-require_relative "../${model.name}_sdk"
+require_relative "../${model.const.Name}_sdk"
 require_relative "runner"
 
 class ${entity.Name}DirectTest < Minitest::Test

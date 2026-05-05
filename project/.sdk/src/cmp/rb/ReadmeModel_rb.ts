@@ -16,7 +16,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   Content(`### ${model.const.Name}SDK
 
 \`\`\`ruby
-require_relative "${model.name}_sdk"
+require_relative "${model.const.Name}_sdk"
 client = ${model.const.Name}SDK.new(options)
 \`\`\`
 

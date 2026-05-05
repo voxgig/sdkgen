@@ -43,7 +43,7 @@ const Main = cmp(async function Main(props: any) {
   })
 
   // Generate main SDK file
-  File({ name: model.name + '_sdk.' + target.ext }, () => {
+  File({ name: model.const.Name + '_sdk.' + target.ext }, () => {
 
     Fragment(
       {

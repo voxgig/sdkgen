@@ -86,7 +86,7 @@ declare(strict_types=1);
 
 // ${entity.Name} direct test
 
-require_once __DIR__ . '/../${model.name}_sdk.php';
+require_once __DIR__ . '/../${model.const.Name.toLowerCase()}_sdk.php';
 require_once __DIR__ . '/Runner.php';
 
 use PHPUnit\\Framework\\TestCase;

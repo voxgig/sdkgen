@@ -18,7 +18,7 @@ Use \`Helpers::to_map()\` to safely validate that a value is an array.
 
 \`\`\`
 php/
-├── ${model.name}_sdk.php          -- Main SDK class
+├── ${model.const.Name.toLowerCase()}_sdk.php          -- Main SDK class
 ├── config.php                     -- Configuration
 ├── features.php                   -- Feature factory
 ├── core/                          -- Core types and context
@@ -28,7 +28,7 @@ php/
 └── test/                          -- Test suites
 \`\`\`
 
-The main class (\`${model.name}_sdk.php\`) exports the SDK class
+The main class (\`${model.const.Name.toLowerCase()}_sdk.php\`) exports the SDK class
 and test helper. Import entity or utility modules directly only
 when needed.
 

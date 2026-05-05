@@ -4,7 +4,7 @@ main: kit: target: js: {
   title: JavaScript
   ext: js
   comment: line: "//"
-  module: name: $$name$$
+  module: name: '$$name$$'
 
   deps: &: {
     # TODO: fix aontu disjunctions!
