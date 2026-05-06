@@ -20,6 +20,7 @@ import {
 
 import { Package } from './Package_go'
 import { Config } from './Config_go'
+import { Gitignore } from './Gitignore_go'
 import { MainEntity } from './MainEntity_go'
 
 
@@ -36,6 +37,8 @@ const Main = cmp(async function Main(props: any) {
   const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
 
   Package({ target })
+
+  Gitignore({})
 
   // Copy tm/go files with replacements
   Copy({

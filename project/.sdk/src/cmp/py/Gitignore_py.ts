@@ -1,4 +1,14 @@
-# Byte-compiled / optimized / DLL files
+
+import {
+  Content,
+  File,
+  cmp,
+} from '@voxgig/sdkgen'
+
+
+const Gitignore = cmp(async function Gitignore(_props: any) {
+  File({ name: '.gitignore' }, () => {
+    Content(`# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -35,3 +45,11 @@ ENV/
 .idea/
 .vscode/
 .DS_Store
+`)
+  })
+})
+
+
+export {
+  Gitignore
+}

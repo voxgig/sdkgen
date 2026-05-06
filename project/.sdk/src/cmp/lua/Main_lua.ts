@@ -20,6 +20,7 @@ import {
 
 import { Package } from './Package_lua'
 import { Config } from './Config_lua'
+import { Gitignore } from './Gitignore_lua'
 import { MainEntity } from './MainEntity_lua'
 
 
@@ -32,6 +33,8 @@ const Main = cmp(async function Main(props: any) {
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
   Package({ target })
+
+  Gitignore({})
 
   // Copy tm/lua files with replacements
   Copy({

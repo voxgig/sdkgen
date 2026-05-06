@@ -20,6 +20,7 @@ import {
 
 import { Package } from './Package_ts'
 import { Config } from './Config_ts'
+import { Gitignore } from './Gitignore_ts'
 import { MainEntity } from './MainEntity_ts'
 import { EntityBase } from './EntityBase_ts'
 import { SdkError } from './SdkError_ts'
@@ -35,6 +36,8 @@ const Main = cmp(async function Main(props: any) {
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
   Package({ target })
+
+  Gitignore({})
 
   Copy({
     from: 'tm/' + target.name,

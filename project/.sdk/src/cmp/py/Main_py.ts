@@ -20,6 +20,7 @@ import {
 
 import { Package } from './Package_py'
 import { Config } from './Config_py'
+import { Gitignore } from './Gitignore_py'
 import { MainEntity } from './MainEntity_py'
 
 
@@ -32,6 +33,8 @@ const Main = cmp(async function Main(props: any) {
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
   Package({ target })
+
+  Gitignore({})
 
   // Copy tm/py files with replacements
   Copy({

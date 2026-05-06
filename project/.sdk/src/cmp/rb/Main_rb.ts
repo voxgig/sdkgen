@@ -20,6 +20,7 @@ import {
 
 import { Package } from './Package_rb'
 import { Config } from './Config_rb'
+import { Gitignore } from './Gitignore_rb'
 import { MainEntity } from './MainEntity_rb'
 
 
@@ -32,6 +33,8 @@ const Main = cmp(async function Main(props: any) {
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
   Package({ target })
+
+  Gitignore({})
 
   // Copy tm/rb files with replacements
   Copy({
