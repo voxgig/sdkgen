@@ -49,21 +49,21 @@ describe('sdkgen', () => {
     const voljson: any = vol.toJSON()
 
     deepStrictEqual(voljson, {
+      '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
-      '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
       '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
-      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
         '  "last": 1735690140000,\n' +
         '  "hlast": 2025010100090000,\n' +
         '  "files": {\n' +
-        '    "foo/js/README.md": {\n' +
+        '    "foo/java/README.md": {\n' +
         '      "action": "write",\n' +
-        '      "path": "foo/js/README.md",\n' +
+        '      "path": "foo/java/README.md",\n' +
         '      "exists": false,\n' +
         '      "actions": [\n' +
         '        "write"\n' +
@@ -73,9 +73,9 @@ describe('sdkgen', () => {
         '      "when": 1735689840000,\n' +
         '      "hwhen": 2025010100040000\n' +
         '    },\n' +
-        '    "foo/python/README.md": {\n' +
+        '    "foo/js/README.md": {\n' +
         '      "action": "write",\n' +
-        '      "path": "foo/python/README.md",\n' +
+        '      "path": "foo/js/README.md",\n' +
         '      "exists": false,\n' +
         '      "actions": [\n' +
         '        "write"\n' +
@@ -85,9 +85,9 @@ describe('sdkgen', () => {
         '      "when": 1735689960000,\n' +
         '      "hwhen": 2025010100060000\n' +
         '    },\n' +
-        '    "foo/java/README.md": {\n' +
+        '    "foo/python/README.md": {\n' +
         '      "action": "write",\n' +
-        '      "path": "foo/java/README.md",\n' +
+        '      "path": "foo/python/README.md",\n' +
         '      "exists": false,\n' +
         '      "actions": [\n' +
         '        "write"\n' +
@@ -111,18 +111,30 @@ describe('sdkgen', () => {
 
     const voljson1: any = vol.toJSON()
     deepStrictEqual(voljson1, {
+      '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=0\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
-      '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
       '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
-      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
         '  "last": 1735691160000,\n' +
         '  "hlast": 2025010100260000,\n' +
         '  "files": {\n' +
+        '    "foo/java/README.md": {\n' +
+        '      "action": "skip",\n' +
+        '      "path": "foo/java/README.md",\n' +
+        '      "exists": true,\n' +
+        '      "actions": [\n' +
+        '        "skip"\n' +
+        '      ],\n' +
+        '      "protect": false,\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735690680000,\n' +
+        '      "hwhen": 2025010100180000\n' +
+        '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
         '      "path": "foo/js/README.md",\n' +
@@ -132,24 +144,12 @@ describe('sdkgen', () => {
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
-        '      "when": 1735690860000,\n' +
-        '      "hwhen": 2025010100210000\n' +
+        '      "when": 1735690980000,\n' +
+        '      "hwhen": 2025010100230000\n' +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "skip",\n' +
         '      "path": "foo/python/README.md",\n' +
-        '      "exists": true,\n' +
-        '      "actions": [\n' +
-        '        "skip"\n' +
-        '      ],\n' +
-        '      "protect": false,\n' +
-        '      "conflict": false,\n' +
-        '      "when": 1735690980000,\n' +
-        '      "hwhen": 2025010100230000\n' +
-        '    },\n' +
-        '    "foo/java/README.md": {\n' +
-        '      "action": "skip",\n' +
-        '      "path": "foo/java/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "skip"\n' +
@@ -171,18 +171,30 @@ describe('sdkgen', () => {
 
     const voljson2: any = vol.toJSON()
     deepStrictEqual(voljson2, {
+      '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=0\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
-      '/top/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=0\n',
       '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=0\n',
-      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=0\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
         '  "last": 1735692180000,\n' +
         '  "hlast": 2025010100430000,\n' +
         '  "files": {\n' +
+        '    "foo/java/README.md": {\n' +
+        '      "action": "skip",\n' +
+        '      "path": "foo/java/README.md",\n' +
+        '      "exists": true,\n' +
+        '      "actions": [\n' +
+        '        "skip"\n' +
+        '      ],\n' +
+        '      "protect": false,\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735691700000,\n' +
+        '      "hwhen": 2025010100350000\n' +
+        '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
         '      "path": "foo/js/README.md",\n' +
@@ -192,24 +204,12 @@ describe('sdkgen', () => {
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
-        '      "when": 1735691880000,\n' +
-        '      "hwhen": 2025010100380000\n' +
+        '      "when": 1735692000000,\n' +
+        '      "hwhen": 2025010100400000\n' +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "skip",\n' +
         '      "path": "foo/python/README.md",\n' +
-        '      "exists": true,\n' +
-        '      "actions": [\n' +
-        '        "skip"\n' +
-        '      ],\n' +
-        '      "protect": false,\n' +
-        '      "conflict": false,\n' +
-        '      "when": 1735692000000,\n' +
-        '      "hwhen": 2025010100400000\n' +
-        '    },\n' +
-        '    "foo/java/README.md": {\n' +
-        '      "action": "skip",\n' +
-        '      "path": "foo/java/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "skip"\n' +
@@ -232,6 +232,7 @@ describe('sdkgen', () => {
 
     const voljson3: any = vol.toJSON()
     deepStrictEqual(voljson3, {
+      '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/foo/js/README.md': '\n' +
         '# foo js SDK\n' +
         '<<<<<<< GENERATED: 2025-01-01T00:47:00.000Z/merge\n' +
@@ -242,16 +243,27 @@ describe('sdkgen', () => {
         '>>>>>>> EXISTING: 2025-01-01T00:43:00.000Z/merge\n' +
         '',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
-      '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
       '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
-      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
         '  "last": 1735693560000,\n' +
         '  "hlast": 2025010101060000,\n' +
         '  "files": {\n' +
+        '    "foo/java/README.md": {\n' +
+        '      "action": "merge",\n' +
+        '      "path": "foo/java/README.md",\n' +
+        '      "exists": true,\n' +
+        '      "actions": [\n' +
+        '        "merge"\n' +
+        '      ],\n' +
+        '      "protect": false,\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735692900000,\n' +
+        '      "hwhen": 2025010100550000\n' +
+        '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
         '      "path": "foo/js/README.md",\n' +
@@ -261,24 +273,12 @@ describe('sdkgen', () => {
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": true,\n' +
-        '      "when": 1735692900000,\n' +
-        '      "hwhen": 2025010100550000\n' +
+        '      "when": 1735693200000,\n' +
+        '      "hwhen": 2025010101000000\n' +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "merge",\n' +
         '      "path": "foo/python/README.md",\n' +
-        '      "exists": true,\n' +
-        '      "actions": [\n' +
-        '        "merge"\n' +
-        '      ],\n' +
-        '      "protect": false,\n' +
-        '      "conflict": false,\n' +
-        '      "when": 1735693200000,\n' +
-        '      "hwhen": 2025010101000000\n' +
-        '    },\n' +
-        '    "foo/java/README.md": {\n' +
-        '      "action": "merge",\n' +
-        '      "path": "foo/java/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "merge"\n' +
@@ -303,18 +303,30 @@ describe('sdkgen', () => {
 
     const voljson4: any = vol.toJSON()
     deepStrictEqual(voljson4, {
+      '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=A\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
-      '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
       '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
-      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
         '  "last": 1735694580000,\n' +
         '  "hlast": 2025010101230000,\n' +
         '  "files": {\n' +
+        '    "foo/java/README.md": {\n' +
+        '      "action": "skip",\n' +
+        '      "path": "foo/java/README.md",\n' +
+        '      "exists": true,\n' +
+        '      "actions": [\n' +
+        '        "skip"\n' +
+        '      ],\n' +
+        '      "protect": false,\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735694100000,\n' +
+        '      "hwhen": 2025010101150000\n' +
+        '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
         '      "path": "foo/js/README.md",\n' +
@@ -324,24 +336,12 @@ describe('sdkgen', () => {
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
-        '      "when": 1735694280000,\n' +
-        '      "hwhen": 2025010101180000\n' +
+        '      "when": 1735694400000,\n' +
+        '      "hwhen": 2025010101200000\n' +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "skip",\n' +
         '      "path": "foo/python/README.md",\n' +
-        '      "exists": true,\n' +
-        '      "actions": [\n' +
-        '        "skip"\n' +
-        '      ],\n' +
-        '      "protect": false,\n' +
-        '      "conflict": false,\n' +
-        '      "when": 1735694400000,\n' +
-        '      "hwhen": 2025010101200000\n' +
-        '    },\n' +
-        '    "foo/java/README.md": {\n' +
-        '      "action": "skip",\n' +
-        '      "path": "foo/java/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "skip"\n' +
@@ -364,18 +364,30 @@ describe('sdkgen', () => {
 
     const voljson5: any = vol.toJSON()
     deepStrictEqual(voljson5, {
+      '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/foo/js/README.md': '\n# foo js SDK\n# EXTRA\n# index=A\n',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
-      '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
+      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/.jostraca/generated/foo/js/README.md': '\n# foo js SDK\n# index=1\n',
       '/top/.jostraca/generated/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
-      '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/.jostraca/jostraca.meta.log': '{\n' +
         '  "foldername": ".jostraca",\n' +
         '  "filename": "jostraca.meta.log",\n' +
         '  "last": 1735695600000,\n' +
         '  "hlast": 2025010101400000,\n' +
         '  "files": {\n' +
+        '    "foo/java/README.md": {\n' +
+        '      "action": "skip",\n' +
+        '      "path": "foo/java/README.md",\n' +
+        '      "exists": true,\n' +
+        '      "actions": [\n' +
+        '        "skip"\n' +
+        '      ],\n' +
+        '      "protect": false,\n' +
+        '      "conflict": false,\n' +
+        '      "when": 1735695120000,\n' +
+        '      "hwhen": 2025010101320000\n' +
+        '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
         '      "path": "foo/js/README.md",\n' +
@@ -385,24 +397,12 @@ describe('sdkgen', () => {
         '      ],\n' +
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
-        '      "when": 1735695300000,\n' +
-        '      "hwhen": 2025010101350000\n' +
+        '      "when": 1735695420000,\n' +
+        '      "hwhen": 2025010101370000\n' +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "skip",\n' +
         '      "path": "foo/python/README.md",\n' +
-        '      "exists": true,\n' +
-        '      "actions": [\n' +
-        '        "skip"\n' +
-        '      ],\n' +
-        '      "protect": false,\n' +
-        '      "conflict": false,\n' +
-        '      "when": 1735695420000,\n' +
-        '      "hwhen": 2025010101370000\n' +
-        '    },\n' +
-        '    "foo/java/README.md": {\n' +
-        '      "action": "skip",\n' +
-        '      "path": "foo/java/README.md",\n' +
         '      "exists": true,\n' +
         '      "actions": [\n' +
         '        "skip"\n' +
