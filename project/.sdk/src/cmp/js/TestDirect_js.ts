@@ -1,5 +1,8 @@
 
 import {
+  Model,
+  ModelEntity,
+  ModelPoint,
   nom,
   depluralize,
 } from '@voxgig/apidef'
@@ -13,6 +16,7 @@ import {
   Slot,
   cmp,
   snakify,
+  isAuthActive,
 } from '@voxgig/sdkgen'
 
 
@@ -23,16 +27,25 @@ import {
 
 const TestDirect = cmp(function TestDirect(props: any) {
   const ctx$ = props.ctx$
-  const model = ctx$.model
+  const model: Model = ctx$.model
   const stdrep = ctx$.stdrep
 
   const target = props.target
-  const entity = props.entity
+  const entity: ModelEntity = props.entity
 
   const ff = projectPath('src/cmp/js/fragment/')
 
-  const PROJECTNAME = model.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
-  const entidEnvVar = `${PROJECTNAME}_TEST_${entity.Name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID`
+  const PROJECTNAME = nom(model, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
+  const entidEnvVar = `${PROJECTNAME}_TEST_${nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')}_ENTID`
+
+  const authActive = isAuthActive(model)
+  const apikeyEnvEntry = authActive
+    ? `\n    '${PROJECTNAME}_APIKEY': 'NONE',`
+    : ''
+  const apikeyLiveField = authActive
+    ? `
+      apikey: env.${PROJECTNAME}_APIKEY,`
+    : ''
 
   const opnames = Object.keys(entity.op)
   const hasLoad = opnames.includes('load')
@@ -64,15 +77,13 @@ function directSetup(mockres) {
 
   const env = envOverride({
     '${entidEnvVar}': {},
-    '${PROJECTNAME}_TEST_LIVE': 'FALSE',
-    '${PROJECTNAME}_APIKEY': 'NONE',
+    '${PROJECTNAME}_TEST_LIVE': 'FALSE',${apikeyEnvEntry}
   })
 
   const live = 'TRUE' === env.${PROJECTNAME}_TEST_LIVE
 
   if (live) {
-    const client = new ${nom(model.const, 'Name')}SDK({
-      apikey: env.${PROJECTNAME}_APIKEY,
+    const client = new ${nom(model.const, 'Name')}SDK({${apikeyLiveField}
     })
 
     let idmap = env['${entidEnvVar}']
@@ -121,9 +132,9 @@ function directSetup(mockres) {
 })
 
 
-function generateDirectLoad(model: any, entity: any) {
+function generateDirectLoad(model: Model, entity: ModelEntity) {
   const loadOp = entity.op.load
-  const loadPoint = loadOp?.points?.[0]
+  const loadPoint: ModelPoint | undefined = loadOp?.points?.[0]
 
   if (null == loadPoint) {
     return
@@ -218,9 +229,9 @@ ${paramAsserts}    }
 }
 
 
-function generateDirectList(model: any, entity: any) {
+function generateDirectList(model: Model, entity: ModelEntity) {
   const listOp = entity.op.list
-  const listPoint = listOp?.points?.[0]
+  const listPoint: ModelPoint | undefined = listOp?.points?.[0]
 
   if (null == listPoint) {
     return

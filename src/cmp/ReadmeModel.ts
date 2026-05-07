@@ -6,7 +6,7 @@ import {
   getModelPath
 } from '../types'
 
-import { requirePath } from '../utility'
+import { requirePath, isAuthActive } from '../utility'
 
 
 const ReadmeModel = cmp(function ReadmeModel(props: any) {
@@ -30,13 +30,16 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   else {
     // Fallback: generic reference summary
-    ReadmeModelGeneric({ target, model, entityList })
+    ReadmeModelGeneric({ target, model, entityList, authActive: isAuthActive(model) })
   }
 })
 
 
 const ReadmeModelGeneric = cmp(function ReadmeModelGeneric(props: any) {
-  const { target, model, entityList } = props
+  const { target, model, entityList, authActive } = props
+  const apikeyRow = authActive
+    ? '| `apikey` | `string` | API key for authentication. |\n'
+    : ''
 
   Content(`### ${model.Name}SDK
 
@@ -44,8 +47,7 @@ const ReadmeModelGeneric = cmp(function ReadmeModelGeneric(props: any) {
 
 | Option | Type | Description |
 | --- | --- | --- |
-| \`apikey\` | \`string\` | API key for authentication. |
-| \`base\` | \`string\` | Base URL of the API server. |
+${apikeyRow}| \`base\` | \`string\` | Base URL of the API server. |
 | \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
 | \`suffix\` | \`string\` | URL path suffix appended to all requests. |
 | \`feature\` | \`object\` | Feature activation flags. |

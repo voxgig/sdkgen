@@ -20,20 +20,22 @@ const ReadmeModel = (0, jostraca_1.cmp)(function ReadmeModel(props) {
     }
     else {
         // Fallback: generic reference summary
-        ReadmeModelGeneric({ target, model, entityList });
+        ReadmeModelGeneric({ target, model, entityList, authActive: (0, utility_1.isAuthActive)(model) });
     }
 });
 exports.ReadmeModel = ReadmeModel;
 const ReadmeModelGeneric = (0, jostraca_1.cmp)(function ReadmeModelGeneric(props) {
-    const { target, model, entityList } = props;
+    const { target, model, entityList, authActive } = props;
+    const apikeyRow = authActive
+        ? '| `apikey` | `string` | API key for authentication. |\n'
+        : '';
     (0, jostraca_1.Content)(`### ${model.Name}SDK
 
 #### Constructor
 
 | Option | Type | Description |
 | --- | --- | --- |
-| \`apikey\` | \`string\` | API key for authentication. |
-| \`base\` | \`string\` | Base URL of the API server. |
+${apikeyRow}| \`base\` | \`string\` | Base URL of the API server. |
 | \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
 | \`suffix\` | \`string\` | URL path suffix appended to all requests. |
 | \`feature\` | \`object\` | Feature activation flags. |

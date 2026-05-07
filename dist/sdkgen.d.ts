@@ -1,6 +1,6 @@
 import * as JostracaModule from 'jostraca';
 import type { ActionResult } from './types';
-import { requirePath } from './utility';
+import { requirePath, isAuthActive } from './utility';
 import { Main } from './cmp/Main';
 import { Entity } from './cmp/Entity';
 import { Feature } from './cmp/Feature';
@@ -86,4 +86,4 @@ export declare const Inject: Component;
 export declare const Line: Component;
 export declare const Slot: Component;
 export declare const List: Component;
-export { Main, Entity, Feature, Test, Readme, ReadmeTop, ReadmeInstall, ReadmeQuick, ReadmeIntro, ReadmeModel, ReadmeOptions, ReadmeEntity, ReadmeHowto, ReadmeExplanation, ReadmeRef, FeatureHook, Jostraca, SdkGen, requirePath, buildIdNames, getMatchEntries, collectDeps, };
+export { Main, Entity, Feature, Test, Readme, ReadmeTop, ReadmeInstall, ReadmeQuick, ReadmeIntro, ReadmeModel, ReadmeOptions, ReadmeEntity, ReadmeHowto, ReadmeExplanation, ReadmeRef, FeatureHook, Jostraca, SdkGen, requirePath, isAuthActive, buildIdNames, getMatchEntries, collectDeps, };

@@ -2,69 +2,17 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeOptions = void 0;
 const jostraca_1 = require("jostraca");
+const utility_1 = require("../utility");
+// Per-language Options block lives in
+// `project/.sdk/src/cmp/<lang>/ReadmeOptions_<lang>.ts`.
+// Each language emits its own constructor-call shape and option-table
+// formatting; they share the data source (target.options).
 const ReadmeOptions = (0, jostraca_1.cmp)(function ReadmeOptions(props) {
-    const { target } = props;
-    const { model } = props.ctx$;
-    const isGo = target.name === 'go';
-    const publishedOptions = (0, jostraca_1.each)(target.options)
-        .filter((option) => option.publish);
-    if (0 === publishedOptions.length) {
-        return;
+    const { target, ctx$ } = props;
+    const ReadmeOptions_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeOptions_${target.name}`, { ignore: true });
+    if (ReadmeOptions_sdk) {
+        ReadmeOptions_sdk['ReadmeOptions']({ target });
     }
-    (0, jostraca_1.Content)(`
-
-## Options
-
-Pass options when creating a client instance:
-
-`);
-    if (isGo) {
-        (0, jostraca_1.Content)(`\`\`\`go
-client := sdk.New${model.const.Name}SDK(map[string]any{
-`);
-        publishedOptions.map((option) => {
-            if ('apikey' === option.name) {
-                (0, jostraca_1.Content)(`    "${option.name}": os.Getenv("${model.NAME}_APIKEY"),
-`);
-            }
-            else {
-                (0, jostraca_1.Content)(`    // "${option.name}": ${option.kind === 'string' ? '"..."' : '...'},
-`);
-            }
-        });
-        (0, jostraca_1.Content)(`})
-\`\`\`
-
-`);
-    }
-    else {
-        (0, jostraca_1.Content)(`\`\`\`ts
-const client = new ${model.Name}SDK({
-`);
-        publishedOptions.map((option) => {
-            if ('apikey' === option.name) {
-                (0, jostraca_1.Content)(`  ${option.name}: process.env.${model.NAME}_APIKEY,
-`);
-            }
-            else {
-                (0, jostraca_1.Content)(`  // ${option.name}: ${option.kind === 'string' ? "'...'" : '...'},
-`);
-            }
-        });
-        (0, jostraca_1.Content)(`})
-\`\`\`
-
-`);
-    }
-    (0, jostraca_1.Content)(`| Option | Type | Description |
-| --- | --- | --- |
-`);
-    publishedOptions.map((option) => {
-        (0, jostraca_1.Content)(`| \`${option.name}\` | \`${option.kind}\` | ${option.short} |
-`);
-    });
-    (0, jostraca_1.Content)(`
-`);
 });
 exports.ReadmeOptions = ReadmeOptions;
 //# sourceMappingURL=ReadmeOptions.js.map

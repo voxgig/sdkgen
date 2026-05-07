@@ -19,7 +19,7 @@ import type {
   ActionResult,
 } from './types'
 
-import { SdkGenError, requirePath } from './utility'
+import { SdkGenError, requirePath, isAuthActive } from './utility'
 
 import { Main } from './cmp/Main'
 import { Entity } from './cmp/Entity'
@@ -395,6 +395,7 @@ export {
   SdkGen,
 
   requirePath,
+  isAuthActive,
 
   buildIdNames,
   getMatchEntries,

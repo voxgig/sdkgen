@@ -1,36 +1,22 @@
 
-import { cmp, Content } from 'jostraca'
+import { cmp } from 'jostraca'
 
-import {
-  KIT,
-  getModelPath
-} from '../types'
+import { requirePath } from '../utility'
 
 
-const TARGET_INTRO: Record<string, string> = {
-  ts: 'Provides a type-safe,\nentity-oriented interface with full async/await support.',
-  go: 'Provides an entity-oriented interface\nusing standard Go conventions \u2014 no generics required, data flows as\n`map[string]any`.',
-  js: 'Provides an entity-oriented\ninterface with full async/await support.',
-}
-
-
+// Per-language intro lives in `project/.sdk/src/cmp/<lang>/ReadmeIntro_<lang>.ts`.
+// Each language declares its own tagline and stylistic emphasis (Go's
+// `map[string]any` data-flow note, TS's async/await emphasis, etc.).
 const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
-  const { target } = props
-  const { model } = props.ctx$
+  const { target, ctx$ } = props
 
-  const desc = model.main.def.desc || ''
+  const ReadmeIntro_sdk =
+    requirePath(ctx$, `./cmp/${target.name}/ReadmeIntro_${target.name}`, { ignore: true })
 
-  const targetIntro = TARGET_INTRO[target.name] || 'Provides an entity-oriented interface.'
-
-  Content(`# ${model.Name} ${target.title} SDK
-
-The ${target.title} SDK for the ${model.Name} API. ${targetIntro}
-
-`)
-
+  if (ReadmeIntro_sdk) {
+    ReadmeIntro_sdk['ReadmeIntro']({ target })
+  }
 })
-
-
 
 
 export {

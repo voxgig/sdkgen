@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -16,15 +16,17 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // Find the first published entity for examples
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
+  const apikeyArg = isAuthActive(model)
+    ? `\n  apikey: process.env.${model.NAME}_APIKEY,\n`
+    : ''
+
   Content(`
 ### Create a Client
 
 \`\`\`js
 const { ${model.const.Name}SDK } = require('${target.module.name}')
 
-const client = new ${model.const.Name}SDK({
-  apikey: process.env.${model.NAME}_APIKEY,
-})
+const client = new ${model.const.Name}SDK({${apikeyArg}})
 \`\`\`
 `)
 

@@ -3,11 +3,22 @@ import Path from 'node:path'
 
 import { JostracaResult } from 'jostraca'
 
+import { KIT, getModelPath } from '@voxgig/apidef'
 
 
 function resolvePath(ctx$: any, path: string): any {
   const fullpath = Path.join(ctx$.folder, '.sdk', 'dist', path)
   return fullpath
+}
+
+
+// True unless the model explicitly declares main.kit.config.auth.active: false.
+// Used by templates to gate apikey-related code, docs, and examples for
+// public APIs that need no authentication.
+function isAuthActive(model: any): boolean {
+  const auth = getModelPath(model, `main.${KIT}.config.auth`,
+    { only_active: false, required: false })
+  return null == auth || false !== auth.active
 }
 
 
@@ -40,5 +51,6 @@ class SdkGenError extends Error {
 export {
   resolvePath,
   requirePath,
+  isAuthActive,
   SdkGenError,
 }

@@ -1,5 +1,8 @@
 
 import {
+  Model,
+  ModelEntity,
+  nom,
   depluralize,
 } from '@voxgig/apidef'
 
@@ -8,6 +11,7 @@ import {
   File,
   cmp,
   snakify,
+  isAuthActive,
 } from '@voxgig/sdkgen'
 
 
@@ -55,13 +59,21 @@ function normalizePathParams(
 
 const TestDirect = cmp(function TestDirect(props: any) {
   const ctx$ = props.ctx$
-  const model = ctx$.model
+  const model: Model = ctx$.model
 
   const target = props.target
-  const entity = props.entity
+  const entity: ModelEntity = props.entity
   const gomodule = props.gomodule
 
-  const PROJECTNAME = model.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJECTNAME = nom(model, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
+
+  const authActive = isAuthActive(model)
+  const apikeyEnvEntry = authActive
+    ? `\n\t\t"${PROJECTNAME}_APIKEY":       "NONE",`
+    : ''
+  const apikeyLiveField = authActive
+    ? `\n\t\t\t"apikey": env["${PROJECTNAME}_APIKEY"],`
+    : ''
 
   const opnames = Object.keys(entity.op)
   const hasLoad = opnames.includes('load')
@@ -85,7 +97,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listParams = listPoint?.args?.params || []
 
   // Build the ENTID env var name for this entity
-  const entidEnvVar = `${PROJECTNAME}_TEST_${entity.Name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID`
+  const entidEnvVar = `${PROJECTNAME}_TEST_${nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')}_ENTID`
 
   File({ name: entity.name + '_direct_test.' + target.ext }, () => {
 
@@ -360,15 +372,13 @@ func ${entity.name}DirectSetup(mockres any) *${entity.name}DirectSetupResult {
 
 	env := envOverride(map[string]any{
 		"${entidEnvVar}": map[string]any{},
-		"${PROJECTNAME}_TEST_LIVE":    "FALSE",
-		"${PROJECTNAME}_APIKEY":       "NONE",
+		"${PROJECTNAME}_TEST_LIVE":    "FALSE",${apikeyEnvEntry}
 	})
 
 	live := env["${PROJECTNAME}_TEST_LIVE"] == "TRUE"
 
 	if live {
-		mergedOpts := map[string]any{
-			"apikey": env["${PROJECTNAME}_APIKEY"],
+		mergedOpts := map[string]any{${apikeyLiveField}
 		}
 		client := sdk.New${model.const.Name}SDK(mergedOpts)
 

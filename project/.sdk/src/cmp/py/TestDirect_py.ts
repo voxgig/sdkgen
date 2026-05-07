@@ -1,5 +1,8 @@
 
 import {
+  Model,
+  ModelEntity,
+  nom,
   depluralize,
 } from '@voxgig/apidef'
 
@@ -8,6 +11,7 @@ import {
   File,
   cmp,
   snakify,
+  isAuthActive,
 } from '@voxgig/sdkgen'
 
 
@@ -51,12 +55,20 @@ function normalizePathParams(
 
 const TestDirect = cmp(function TestDirect(props: any) {
   const ctx$ = props.ctx$
-  const model = ctx$.model
+  const model: Model = ctx$.model
 
   const target = props.target
-  const entity = props.entity
+  const entity: ModelEntity = props.entity
 
-  const PROJECTNAME = model.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJECTNAME = nom(model, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
+
+  const authActive = isAuthActive(model)
+  const apikeyEnvEntry = authActive
+    ? `\n        "${PROJECTNAME}_APIKEY": "NONE",`
+    : ''
+  const apikeyLiveField = authActive
+    ? `\n            "apikey": env.get("${PROJECTNAME}_APIKEY"),`
+    : ''
 
   const opnames = Object.keys(entity.op)
   const hasLoad = opnames.includes('load')
@@ -77,7 +89,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listPath = listPoint ? normalizePathParams(listPoint.parts || [], listPoint?.args?.params || [], listPoint?.rename?.param) : ''
   const listParams = listPoint?.args?.params || []
 
-  const entidEnvVar = `${PROJECTNAME}_TEST_${entity.Name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID`
+  const entidEnvVar = `${PROJECTNAME}_TEST_${nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')}_ENTID`
 
   File({ name: 'test_' + entity.name + '_direct.' + target.ext }, () => {
 
@@ -200,15 +212,13 @@ def _${entity.name}_direct_setup(mockres):
 
     env = runner.env_override({
         "${entidEnvVar}": {},
-        "${PROJECTNAME}_TEST_LIVE": "FALSE",
-        "${PROJECTNAME}_APIKEY": "NONE",
+        "${PROJECTNAME}_TEST_LIVE": "FALSE",${apikeyEnvEntry}
     })
 
     live = env.get("${PROJECTNAME}_TEST_LIVE") == "TRUE"
 
     if live:
-        merged_opts = {
-            "apikey": env.get("${PROJECTNAME}_APIKEY"),
+        merged_opts = {${apikeyLiveField}
         }
         client = ${model.const.Name}SDK(merged_opts)
         return {

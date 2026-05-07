@@ -1,5 +1,8 @@
 
 import {
+  Model,
+  ModelEntity,
+  ModelPoint,
   nom,
   depluralize,
 } from '@voxgig/apidef'
@@ -13,6 +16,7 @@ import {
   Slot,
   cmp,
   snakify,
+  isAuthActive,
 } from '@voxgig/sdkgen'
 
 
@@ -23,16 +27,25 @@ import {
 
 const TestDirect = cmp(function TestDirect(props: any) {
   const ctx$ = props.ctx$
-  const model = ctx$.model
+  const model: Model = ctx$.model
   const stdrep = ctx$.stdrep
 
   const target = props.target
-  const entity = props.entity
+  const entity: ModelEntity = props.entity
 
   const ff = projectPath('src/cmp/ts/fragment/')
 
-  const PROJECTNAME = model.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
-  const entidEnvVar = `${PROJECTNAME}_TEST_${entity.Name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID`
+  const PROJECTNAME = nom(model, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
+  const entidEnvVar = `${PROJECTNAME}_TEST_${nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')}_ENTID`
+
+  const authActive = isAuthActive(model)
+  const apikeyEnvEntry = authActive
+    ? `\n    '${PROJECTNAME}_APIKEY': 'NONE',`
+    : ''
+  const apikeyLiveField = authActive
+    ? `
+      apikey: env.${PROJECTNAME}_APIKEY,`
+    : ''
 
   const opnames = Object.keys(entity.op)
   const hasLoad = opnames.includes('load')
@@ -64,15 +77,13 @@ function directSetup(mockres?: any) {
 
   const env = envOverride({
     '${entidEnvVar}': {},
-    '${PROJECTNAME}_TEST_LIVE': 'FALSE',
-    '${PROJECTNAME}_APIKEY': 'NONE',
+    '${PROJECTNAME}_TEST_LIVE': 'FALSE',${apikeyEnvEntry}
   })
 
   const live = 'TRUE' === env.${PROJECTNAME}_TEST_LIVE
 
   if (live) {
-    const client = new ${nom(model.const, 'Name')}SDK({
-      apikey: env.${PROJECTNAME}_APIKEY,
+    const client = new ${nom(model.const, 'Name')}SDK({${apikeyLiveField}
     })
 
     let idmap: any = env['${entidEnvVar}']
@@ -121,9 +132,9 @@ function directSetup(mockres?: any) {
 })
 
 
-function generateDirectLoad(model: any, entity: any) {
+function generateDirectLoad(model: Model, entity: ModelEntity) {
   const loadOp = entity.op.load
-  const loadPoint = loadOp?.points?.[0]
+  const loadPoint: ModelPoint | undefined = loadOp?.points?.[0]
 
   if (null == loadPoint) {
     return
@@ -131,6 +142,19 @@ function generateDirectLoad(model: any, entity: any) {
 
   const loadParams = loadPoint.args?.params || []
   const loadPath = normalizePathParams(loadPoint.parts || [], loadParams, loadPoint.rename?.param)
+
+  // Required query params that the spec advertises an example value for.
+  // Live mode needs these on the request or the API returns 4xx; mock mode
+  // ignores them. Optional query params (e.g. `app`, `version`) are skipped
+  // even when they have examples — only the strictly required ones are
+  // necessary to satisfy the contract.
+  const loadQuery = loadPoint.args?.query || []
+  const liveQueryEntries = loadQuery
+    .filter((q: any) => q.reqd && undefined !== q.example && null !== q.example)
+  const hasLiveQuery = liveQueryEntries.length > 0
+  const liveQueryLines = liveQueryEntries
+    .map((q: any) => `      query.${q.name} = ${JSON.stringify(q.example)}`)
+    .join('\n')
 
   // Get list info for live mode bootstrapping
   const listOp = entity.op.list
@@ -159,6 +183,10 @@ function generateDirectLoad(model: any, entity: any) {
     return { name: p.name, key }
   })
 
+  // Prefix the live block with required-query setup so it applies to both
+  // the list-bootstrapped and the no-list cases.
+  const liveQueryPrefix = liveQueryLines ? liveQueryLines + '\n' : ''
+
   let liveParamsBlock = ''
   if (hasList) {
     const listParamLines = liveListParams.map((lp: any) =>
@@ -167,7 +195,7 @@ function generateDirectLoad(model: any, entity: any) {
       `      params.${lp.name} = setup.idmap['${lp.key}']`).join('\n')
 
     liveParamsBlock = `    if (setup.live) {
-      const listResult: any = await client.direct({
+${liveQueryPrefix}      const listResult: any = await client.direct({
         path: '${listPath}',
         method: 'GET',
         params: {
@@ -184,10 +212,14 @@ ${ancestorParamLines}
     } else {
 ${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 1}'`).join('\n')}
     }`
-  } else {
-    liveParamsBlock = `    if (!setup.live) {
+  } else if (hasLiveQuery || loadParams.length > 0) {
+    liveParamsBlock = `    if (setup.live) {
+${liveQueryPrefix.replace(/\n$/, '')}
+    } else {
 ${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 1}'`).join('\n')}
     }`
+  } else {
+    liveParamsBlock = ''
   }
 
   Content(`
@@ -196,12 +228,14 @@ ${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 
     const { client, calls } = setup
 
     const params: any = {}
+    const query: any = {}
 ${liveParamsBlock}
 
     const result: any = await client.direct({
       path: '${loadPath}',
       method: 'GET',
       params,
+      query,
     })
 
     assert(result.ok === true)
@@ -218,9 +252,9 @@ ${paramAsserts}    }
 }
 
 
-function generateDirectList(model: any, entity: any) {
+function generateDirectList(model: Model, entity: ModelEntity) {
   const listOp = entity.op.list
-  const listPoint = listOp?.points?.[0]
+  const listPoint: ModelPoint | undefined = listOp?.points?.[0]
 
   if (null == listPoint) {
     return
@@ -228,6 +262,14 @@ function generateDirectList(model: any, entity: any) {
 
   const listParams = listPoint.args?.params || []
   const listPath = normalizePathParams(listPoint.parts || [], listParams, listPoint.rename?.param)
+
+  // Required query params with spec-provided examples — needed to satisfy
+  // the API contract in live mode (see generateDirectLoad for rationale).
+  const listQuery = listPoint.args?.query || []
+  const liveQueryLines = listQuery
+    .filter((q: any) => q.reqd && undefined !== q.example && null !== q.example)
+    .map((q: any) => `      query.${q.name} = ${JSON.stringify(q.example)}`)
+    .join('\n')
 
   // Build live params
   const liveParams = listParams.map((p: any) => {
@@ -241,21 +283,26 @@ function generateDirectList(model: any, entity: any) {
     '      assert(calls[0].url.includes(\'direct0' + (i + 1) + '\'))\n').join('')
 
   let paramsBlock = ''
-  if (listParams.length > 0) {
-    const liveLines = liveParams.map((lp: any) =>
-      `      params.${lp.name} = setup.idmap['${lp.key}']`).join('\n')
+  if (listParams.length > 0 || liveQueryLines) {
+    const liveLines = [
+      liveQueryLines,
+      liveParams.map((lp: any) =>
+        `      params.${lp.name} = setup.idmap['${lp.key}']`).join('\n'),
+    ].filter(Boolean).join('\n')
     const mockLines = listParams.map((p: any, i: number) =>
       `      params.${p.name} = 'direct0${i + 1}'`).join('\n')
 
     paramsBlock = `    const params: any = {}
+    const query: any = {}
     if (setup.live) {
 ${liveLines}
-    } else {
+    }${mockLines ? ` else {
 ${mockLines}
-    }
+    }` : ''}
 `
   } else {
     paramsBlock = `    const params: any = {}
+    const query: any = {}
 `
   }
 
@@ -269,6 +316,7 @@ ${paramsBlock}
       path: '${listPath}',
       method: 'GET',
       params,
+      query,
     })
 
     assert(result.ok === true)

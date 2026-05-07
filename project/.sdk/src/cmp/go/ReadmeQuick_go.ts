@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -23,23 +23,27 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     e.active !== false && e.ancestors && e.ancestors.length > 0
   ) as any
 
+  const authActive = isAuthActive(model)
+  const goImports = authActive
+    ? `    "fmt"\n    "os"\n`
+    : `    "fmt"\n`
+  const apikeyArg = authActive
+    ? `\n        "apikey": os.Getenv("${model.NAME}_APIKEY"),\n    `
+    : ''
+
   Content(`### 1. Create a client
 
 \`\`\`go
 package main
 
 import (
-    "fmt"
-    "os"
-
+${goImports}
     sdk "${gomodule}"
     "${gomodule}/core"
 )
 
 func main() {
-    client := sdk.New${model.const.Name}SDK(map[string]any{
-        "apikey": os.Getenv("${model.NAME}_APIKEY"),
-    })
+    client := sdk.New${model.const.Name}SDK(map[string]any{${apikeyArg}})
 \`\`\`
 
 `)

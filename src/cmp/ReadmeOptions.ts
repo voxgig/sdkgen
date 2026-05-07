@@ -1,85 +1,23 @@
 
-import { cmp, each, Content } from 'jostraca'
+import { cmp } from 'jostraca'
+
+import { requirePath } from '../utility'
 
 
+// Per-language Options block lives in
+// `project/.sdk/src/cmp/<lang>/ReadmeOptions_<lang>.ts`.
+// Each language emits its own constructor-call shape and option-table
+// formatting; they share the data source (target.options).
 const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
-  const { target } = props
-  const { model } = props.ctx$
+  const { target, ctx$ } = props
 
-  const isGo = target.name === 'go'
+  const ReadmeOptions_sdk =
+    requirePath(ctx$, `./cmp/${target.name}/ReadmeOptions_${target.name}`, { ignore: true })
 
-  const publishedOptions = each(target.options)
-    .filter((option: any) => option.publish)
-
-  if (0 === publishedOptions.length) {
-    return
+  if (ReadmeOptions_sdk) {
+    ReadmeOptions_sdk['ReadmeOptions']({ target })
   }
-
-  Content(`
-
-## Options
-
-Pass options when creating a client instance:
-
-`)
-
-  if (isGo) {
-    Content(`\`\`\`go
-client := sdk.New${model.const.Name}SDK(map[string]any{
-`)
-
-    publishedOptions.map((option: any) => {
-      if ('apikey' === option.name) {
-        Content(`    "${option.name}": os.Getenv("${model.NAME}_APIKEY"),
-`)
-      }
-      else {
-        Content(`    // "${option.name}": ${option.kind === 'string' ? '"..."' : '...'},
-`)
-      }
-    })
-
-    Content(`})
-\`\`\`
-
-`)
-  }
-  else {
-    Content(`\`\`\`ts
-const client = new ${model.Name}SDK({
-`)
-
-    publishedOptions.map((option: any) => {
-      if ('apikey' === option.name) {
-        Content(`  ${option.name}: process.env.${model.NAME}_APIKEY,
-`)
-      }
-      else {
-        Content(`  // ${option.name}: ${option.kind === 'string' ? "'...'" : '...'},
-`)
-      }
-    })
-
-    Content(`})
-\`\`\`
-
-`)
-  }
-
-  Content(`| Option | Type | Description |
-| --- | --- | --- |
-`)
-
-  publishedOptions.map((option: any) => {
-    Content(`| \`${option.name}\` | \`${option.kind}\` | ${option.short} |
-`)
-  })
-
-  Content(`
-`)
-
 })
-
 
 
 export {

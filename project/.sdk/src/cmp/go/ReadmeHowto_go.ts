@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,10 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 
   const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
   const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
+
+  const apikeyEnvLine = isAuthActive(model)
+    ? `\n${model.NAME}_APIKEY=<your-key>`
+    : ''
 
   Content(`### Make a direct HTTP request
 
@@ -92,8 +96,7 @@ client := sdk.New${model.const.Name}SDK(map[string]any{
 Create a \`.env.local\` file at the project root:
 
 \`\`\`
-${model.NAME}_TEST_LIVE=TRUE
-${model.NAME}_APIKEY=<your-key>
+${model.NAME}_TEST_LIVE=TRUE${apikeyEnvLine}
 \`\`\`
 
 Then run:

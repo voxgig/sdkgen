@@ -24,9 +24,15 @@ function prepareAuth(ctx) {
 
   const options = client.options()
 
+  // Public APIs that need no auth omit the options.auth block entirely.
+  if (null == options.auth) {
+    delprop(headers, HEADER_auth)
+    return spec
+  }
+
   const apikey = getprop(options, OPTION_apikey, NOTFOUND)
 
-  if (NOTFOUND === apikey) {
+  if (NOTFOUND === apikey || null == apikey || '' === apikey) {
     delprop(headers, HEADER_auth)
   }
   else {
