@@ -100,6 +100,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -120,6 +121,27 @@ func Test${entity.Name}Entity(t *testing.T) {
 
 	t.Run("basic", func(t *testing.T) {
 		setup := ${entity.name}BasicSetup(nil)
+		// Per-op sdk-test-control.json skip — basic test exercises a flow
+		// with multiple ops; skipping any op skips the whole flow.
+		_mode := "unit"
+		if setup.live {
+			_mode = "live"
+		}
+		for _, _op := range []string{${(Array.from(new Set((allSteps as any[]).map((s: any) => s.op).filter(Boolean)))).map(o => `"${o}"`).join(', ')}} {
+			if _shouldSkip, _reason := isControlSkipped("entityOp", "${entity.name}." + _op, _mode); _shouldSkip {
+				if _reason == "" {
+					_reason = "skipped via sdk-test-control.json"
+				}
+				t.Skip(_reason)
+				return
+			}
+		}
+		// The basic flow consumes synthetic IDs from the fixture. In live mode
+		// without an *_ENTID env override, those IDs hit the live API and 4xx.
+		if setup.syntheticOnly {
+			t.Skip("live entity test uses synthetic IDs from fixture — set ${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID JSON to run live")
+			return
+		}
 ${allSteps.length > 0 ? '\t\tclient := setup.client\n\n' : ''}`)
 
     // Check if the flow has a create step; if not, bootstrap entity data
@@ -193,6 +215,12 @@ ${allSteps.length > 0 ? '\t\tclient := setup.client\n\n' : ''}`)
     Content('\t)\n')
 
     Content(`
+	// Detect ENTID env override before envOverride consumes it. When live
+	// mode is on without a real override, the basic test runs against synthetic
+	// IDs from the fixture and 4xx's. Surface this so the test can skip.
+	entidEnvRaw := os.Getenv("${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID")
+	idmapOverridden := entidEnvRaw != "" && strings.HasPrefix(strings.TrimSpace(entidEnvRaw), "{")
+
 	env := envOverride(map[string]any{
 		"${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID": idmap,
 		"${PROJUPPER}_TEST_LIVE":      "FALSE",
@@ -224,13 +252,16 @@ ${allSteps.length > 0 ? '\t\tclient := setup.client\n\n' : ''}`)
 		client = sdk.New${model.const.Name}SDK(core.ToMapAny(mergedOpts))
 	}
 
+	live := env["${PROJUPPER}_TEST_LIVE"] == "TRUE"
 	return &entityTestSetup{
-		client:  client,
-		data:    entityData,
-		idmap:   idmapResolved,
-		env:     env,
-		explain: env["${PROJUPPER}_TEST_EXPLAIN"] == "TRUE",
-		now:     time.Now().UnixMilli(),
+		client:        client,
+		data:          entityData,
+		idmap:         idmapResolved,
+		env:           env,
+		explain:       env["${PROJUPPER}_TEST_EXPLAIN"] == "TRUE",
+		live:          live,
+		syntheticOnly: live && !idmapOverridden,
+		now:           time.Now().UnixMilli(),
 	}
 }
 `)

@@ -83,6 +83,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
         replace: {
           SdkName: nom(model.const, 'Name'),
           EntityName: nom(entity, 'Name'),
+          entityname: entity.name,
+          PROJECTNAME: PROJENVNAME,
           ...stdrep,
         }
       }, () => {
@@ -140,6 +142,13 @@ function basicSetup(extra?: any) {
       }]
     })
 
+  // Detect whether the user provided a real ENTID JSON via env var. The
+  // basic flow consumes synthetic IDs from the fixture file; without an
+  // override those synthetic IDs reach the live API and 4xx. Surface this
+  // to the test so it can skip rather than fail.
+  const idmapEnvVal = process.env['${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID']
+  const idmapOverridden = null != idmapEnvVal && idmapEnvVal.trim().startsWith('{')
+
   const env = envOverride({
     '${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID': idmap,
     '${PROJENVNAME}_TEST_LIVE': 'FALSE',
@@ -148,7 +157,9 @@ function basicSetup(extra?: any) {
 
   idmap = env['${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID']
 
-  if ('TRUE' === env.${PROJENVNAME}_TEST_LIVE) {
+  const live = 'TRUE' === env.${PROJENVNAME}_TEST_LIVE
+
+  if (live) {
     client = new ${model.Name}SDK(merge([
       {${apikeyLiveField}
       },
@@ -164,6 +175,8 @@ function basicSetup(extra?: any) {
     struct,
     data: entityData,
     explain: 'TRUE' === env.${PROJENVNAME}_TEST_EXPLAIN,
+    live,
+    syntheticOnly: live && !idmapOverridden,
     now: Date.now(),
   }
 
@@ -178,8 +191,30 @@ function basicSetup(extra?: any) {
             (s: any) => s.op === 'create'
           )
 
+          // The basic test exercises a flow with one or more ops (load,
+          // list, create, update, remove, ...). The control file lets users
+          // skip per-op for an entity. Since the flow is sequential and
+          // dependent (e.g. update needs prior load), skipping ANY op the
+          // flow exercises skips the whole basic test.
+          const flowOps = Array.from(new Set(
+            (basicflow.step as any[]).map((s: any) => s.op).filter(Boolean)
+          ))
+          const flowOpsLiteral = '[' + flowOps.map((o: any) => `'${o}'`).join(', ') + ']'
+
           Content(`
+    const live = 'TRUE' === process.env.${PROJENVNAME}_TEST_LIVE
+    for (const op of ${flowOpsLiteral}) {
+      if (maybeSkipControl(t, 'entityOp', '${entity.name}.' + op, live)) return
+    }
+
     const setup = basicSetup()
+    // The basic flow consumes synthetic IDs and field values from the
+    // fixture (entity TestData.json). Those don't exist on the live API.
+    // Skip live runs unless the user provided a real ENTID env override.
+    if (setup.syntheticOnly) {
+      t.skip('live entity test uses synthetic IDs from fixture — set ${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID JSON to run live')
+      return
+    }
     const client = setup.client
     const struct = setup.struct
 
@@ -419,6 +454,29 @@ const generateLoad: OpGen = (ctx, step, index) => {
     })
 
   const hasEntId = null != entity.id
+
+  // When the entity has no id model field but the load operation requires
+  // path parameters (e.g. cotizacion needs {casa}/{fecha}), calling
+  // load({}) leaves the URL with literal {param} placeholders and the live
+  // API returns 404 HTML, which the SDK then fails to parse as JSON. There
+  // is no synthetic identifier to substitute, so skip emitting the load
+  // step's call in that case — but still declare the entity-var if no
+  // prior step has, so that later flow steps (e.g. remove) referencing
+  // ${entvar} compile.
+  const loadOp = entity.op?.load
+  const loadPoint = loadOp?.points?.[0]
+  const loadPathParams = loadPoint?.args?.params || []
+  const loadHasRequiredParams = loadPathParams.some((p: any) => p.reqd !== false)
+  if (!hasEntId && loadHasRequiredParams) {
+    if (!hasEntVar) {
+      Content(`
+    // LOAD: skipped — no entity id field and load requires path params.
+    // Entity-var is declared here so later flow steps still compile.
+    const ${entvar} = client.${nom(entity, 'Name')}()
+`)
+    }
+    return
+  }
 
   Content(`
     // LOAD

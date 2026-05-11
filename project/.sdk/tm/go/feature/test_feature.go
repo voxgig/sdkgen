@@ -91,9 +91,37 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			out := vs.Clone(found)
 			return respond(200, out, nil), nil
 		} else if op.Name == "update" {
-			args := self.buildArgs(ctx, op, ctx.Reqdata)
+			// Match the existing entity by id only (or its alias). Reqdata
+			// also contains the new field values, which would otherwise
+			// cause Select to filter out the entity we want to update.
+			// Falls back to first entity when no match found, mirroring
+			// the TS mock.
+			updateMatch := map[string]any{}
+			if ctx.Reqdata != nil {
+				if v, has := ctx.Reqdata["id"]; has {
+					updateMatch["id"] = v
+				}
+				if op.Alias != nil {
+					if aliasIdRaw := vs.GetProp(op.Alias, "id"); aliasIdRaw != nil {
+						if aliasId, ok := aliasIdRaw.(string); ok {
+							if v, has := ctx.Reqdata[aliasId]; has {
+								updateMatch[aliasId] = v
+							}
+						}
+					}
+				}
+			}
+			args := self.buildArgs(ctx, op, updateMatch)
 			found := vs.Select(entmap, args)
 			ent := vs.GetElem(found, 0)
+			if ent == nil && entmap != nil {
+				for _, e := range entmap {
+					if _, ok := e.(map[string]any); ok {
+						ent = e
+						break
+					}
+				}
+			}
 			if ent == nil {
 				return respond(404, nil, map[string]any{"statusText": "Not found"}), nil
 			}

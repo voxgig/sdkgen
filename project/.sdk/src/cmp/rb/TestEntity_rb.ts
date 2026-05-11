@@ -91,6 +91,21 @@ class ${entity.Name}EntityTest < Minitest::Test
 
   def test_basic_flow
     setup = ${entity.name}_basic_setup(nil)
+    # Per-op sdk-test-control.json skip.
+    _live = setup[:live] || false
+    [${(Array.from(new Set((allSteps as any[]).map((s: any) => s.op).filter(Boolean)))).map(o => `"${o}"`).join(', ')}].each do |_op|
+      _should_skip, _reason = Runner.is_control_skipped("entityOp", "${entity.name}." + _op, _live ? "live" : "unit")
+      if _should_skip
+        skip(_reason || "skipped via sdk-test-control.json")
+        return
+      end
+    end
+    # The basic flow consumes synthetic IDs from the fixture. In live mode
+    # without an *_ENTID env override, those IDs hit the live API and 4xx.
+    if setup[:synthetic_only]
+      skip "live entity test uses synthetic IDs from fixture — set ${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID JSON to run live"
+      return
+    end
     client = setup[:client]
 
 `)
@@ -152,7 +167,13 @@ end
 
 `)
 
-    Content(`  env = Runner.env_override({
+    Content(`  # Detect ENTID env override before envOverride consumes it. When live
+  # mode is on without a real override, the basic test runs against synthetic
+  # IDs from the fixture and 4xx's. Surface this so the test can skip.
+  entid_env_raw = ENV["${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID"]
+  idmap_overridden = !entid_env_raw.nil? && entid_env_raw.strip.start_with?("{")
+
+  env = Runner.env_override({
     "${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID" => idmap,
     "${PROJUPPER}_TEST_LIVE" => "FALSE",
     "${PROJUPPER}_TEST_EXPLAIN" => "FALSE",${apikeyEnvEntry}
@@ -183,12 +204,15 @@ end
     client = ${model.const.Name}SDK.new(Helpers.to_map(merged_opts))
   end
 
+  live = env["${PROJUPPER}_TEST_LIVE"] == "TRUE"
   {
     client: client,
     data: entity_data,
     idmap: idmap_resolved,
     env: env,
     explain: env["${PROJUPPER}_TEST_EXPLAIN"] == "TRUE",
+    live: live,
+    synthetic_only: live && !idmap_overridden,
     now: (Time.now.to_f * 1000).to_i,
   }
 end
