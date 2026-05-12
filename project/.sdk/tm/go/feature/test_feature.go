@@ -69,8 +69,28 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			entmap = map[string]any{}
 		}
 
+		// For single-entity ops (load, remove) with an empty explicit match,
+		// fall back to the id the entity client already knows from a prior
+		// create/load (in ctx.Match / ctx.Data). Mirrors the TS mock where
+		// param() resolves the id from that accumulated state.
+		resolveMatch := func(explicit map[string]any) map[string]any {
+			if len(explicit) > 0 {
+				return explicit
+			}
+			for _, src := range []any{ctx.Match, ctx.Data} {
+				if src == nil {
+					continue
+				}
+				v := vs.GetProp(src, "id")
+				if v != nil && v != "__UNDEFINED__" {
+					return map[string]any{"id": v}
+				}
+			}
+			return map[string]any{}
+		}
+
 		if op.Name == "load" {
-			args := self.buildArgs(ctx, op, ctx.Reqmatch)
+			args := self.buildArgs(ctx, op, resolveMatch(ctx.Reqmatch))
 			found := vs.Select(entmap, args)
 			ent := vs.GetElem(found, 0)
 			if ent == nil {
@@ -137,7 +157,7 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			out := vs.Clone(ent)
 			return respond(200, out, nil), nil
 		} else if op.Name == "remove" {
-			args := self.buildArgs(ctx, op, ctx.Reqmatch)
+			args := self.buildArgs(ctx, op, resolveMatch(ctx.Reqmatch))
 			found := vs.Select(entmap, args)
 			ent := vs.GetElem(found, 0)
 			if ent == nil {

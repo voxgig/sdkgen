@@ -48,8 +48,22 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
       entmap = VoxgigStruct.getprop(entity, op.entity)
       entmap = {} unless entmap.is_a?(Hash)
 
+      # For single-entity ops (load, remove) with an empty explicit match, fall
+      # back to the id the entity client already knows from a prior create/load
+      # (in fctx.match / fctx.data). Mirrors the TS mock where param() resolves
+      # the id from that accumulated state.
+      resolve_match = lambda do |explicit|
+        return explicit if explicit.is_a?(Hash) && !explicit.empty?
+        [fctx.match, fctx.data].each do |src|
+          next if src.nil?
+          v = VoxgigStruct.getprop(src, "id")
+          return { "id" => v } if !v.nil? && v != "__UNDEFINED__"
+        end
+        {}
+      end
+
       if op.name == "load"
-        args = test_self.build_args(fctx, op, fctx.reqmatch)
+        args = test_self.build_args(fctx, op, resolve_match.call(fctx.reqmatch))
         found = VoxgigStruct.select(entmap, args)
         ent = VoxgigStruct.getelem(found, 0)
         return respond.call(404, nil, { "statusText" => "Not found" }) unless ent
@@ -99,7 +113,7 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         respond.call(200, out, nil)
 
       elsif op.name == "remove"
-        args = test_self.build_args(fctx, op, fctx.reqmatch)
+        args = test_self.build_args(fctx, op, resolve_match.call(fctx.reqmatch))
         found = VoxgigStruct.select(entmap, args)
         ent = VoxgigStruct.getelem(found, 0)
         return respond.call(404, nil, { "statusText" => "Not found" }) unless ent

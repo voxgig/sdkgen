@@ -62,8 +62,27 @@ function TestFeature:init(ctx, options)
       entmap = {}
     end
 
+    -- For single-entity ops (load, remove) with an empty explicit match, fall
+    -- back to the id the entity client already knows from a prior create/load
+    -- (in fctx.match / fctx.data). Mirrors the TS mock where param() resolves
+    -- the id from that accumulated state.
+    local function resolve_match(explicit)
+      if type(explicit) == "table" and next(explicit) ~= nil then
+        return explicit
+      end
+      local function id_of(src)
+        if src == nil then return nil end
+        local v = vs.getprop(src, "id")
+        if v ~= nil and v ~= "__UNDEFINED__" then return v end
+        return nil
+      end
+      local v = id_of(fctx.match) or id_of(fctx.data)
+      if v ~= nil then return { id = v } end
+      return {}
+    end
+
     if op.name == "load" then
-      local args = test_self:build_args(fctx, op, fctx.reqmatch)
+      local args = test_self:build_args(fctx, op, resolve_match(fctx.reqmatch))
       local found = vs.select(entmap, args)
       local ent = vs.getelem(found, 0)
       if ent == nil then
@@ -126,7 +145,7 @@ function TestFeature:init(ctx, options)
       return respond(200, out, nil)
 
     elseif op.name == "remove" then
-      local args = test_self:build_args(fctx, op, fctx.reqmatch)
+      local args = test_self:build_args(fctx, op, resolve_match(fctx.reqmatch))
       local found = vs.select(entmap, args)
       local ent = vs.getelem(found, 0)
       if ent == nil then
