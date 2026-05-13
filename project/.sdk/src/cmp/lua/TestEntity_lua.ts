@@ -94,6 +94,21 @@ describe("${entity.Name}Entity", function()
 
   it("should run basic flow", function()
     local setup = ${entity.name}_basic_setup(nil)
+    -- Per-op sdk-test-control.json skip.
+    local _live = setup.live or false
+    for _, _op in ipairs({${(Array.from(new Set((allSteps as any[]).map((s: any) => s.op).filter(Boolean)))).map(o => `"${o}"`).join(', ')}}) do
+      local _should_skip, _reason = runner.is_control_skipped("entityOp", "${entity.name}." .. _op, _live and "live" or "unit")
+      if _should_skip then
+        pending(_reason or "skipped via sdk-test-control.json")
+        return
+      end
+    end
+    -- The basic flow consumes synthetic IDs from the fixture. In live mode
+    -- without an *_ENTID env override, those IDs hit the live API and 4xx.
+    if setup.synthetic_only then
+      pending("live entity test uses synthetic IDs from fixture — set ${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID JSON to run live")
+      return
+    end
     local client = setup.client
 
 `)
@@ -161,7 +176,13 @@ end)
 
 `)
 
-    Content(`  local env = runner.env_override({
+    Content(`  -- Detect ENTID env override before envOverride consumes it. When live
+  -- mode is on without a real override, the basic test runs against synthetic
+  -- IDs from the fixture and 4xx's. Surface this so the test can skip.
+  local entid_env_raw = os.getenv("${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID")
+  local idmap_overridden = entid_env_raw ~= nil and entid_env_raw:match("^%s*{") ~= nil
+
+  local env = runner.env_override({
     ["${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID"] = idmap,
     ["${PROJUPPER}_TEST_LIVE"] = "FALSE",
     ["${PROJUPPER}_TEST_EXPLAIN"] = "FALSE",${apikeyEnvEntry}
@@ -192,12 +213,15 @@ end)
     client = sdk.new(helpers.to_map(merged_opts))
   end
 
+  local live = env["${PROJUPPER}_TEST_LIVE"] == "TRUE"
   return {
     client = client,
     data = entity_data,
     idmap = idmap_resolved,
     env = env,
     explain = env["${PROJUPPER}_TEST_EXPLAIN"] == "TRUE",
+    live = live,
+    synthetic_only = live and not idmap_overridden,
     now = os.time() * 1000,
   }
 end

@@ -48,8 +48,22 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
       entmap = VoxgigStruct.getprop(entity, op.entity)
       entmap = {} unless entmap.is_a?(Hash)
 
+      # For single-entity ops (load, remove) with an empty explicit match, fall
+      # back to the id the entity client already knows from a prior create/load
+      # (in fctx.match / fctx.data). Mirrors the TS mock where param() resolves
+      # the id from that accumulated state.
+      resolve_match = lambda do |explicit|
+        return explicit if explicit.is_a?(Hash) && !explicit.empty?
+        [fctx.match, fctx.data].each do |src|
+          next if src.nil?
+          v = VoxgigStruct.getprop(src, "id")
+          return { "id" => v } if !v.nil? && v != "__UNDEFINED__"
+        end
+        {}
+      end
+
       if op.name == "load"
-        args = test_self.build_args(fctx, op, fctx.reqmatch)
+        args = test_self.build_args(fctx, op, resolve_match.call(fctx.reqmatch))
         found = VoxgigStruct.select(entmap, args)
         ent = VoxgigStruct.getelem(found, 0)
         return respond.call(404, nil, { "statusText" => "Not found" }) unless ent
@@ -68,9 +82,28 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         respond.call(200, out, nil)
 
       elsif op.name == "update"
-        args = test_self.build_args(fctx, op, fctx.reqdata)
+        # Match the existing entity by id only (or its alias). reqdata also
+        # contains the new field values, which would otherwise cause select
+        # to filter out the entity we want to update. Falls back to first
+        # entity when no id present and no match found, mirroring the TS
+        # mock's empirical behavior where param(undef) collapses to "no
+        # constraint" and select returns all.
+        update_match = {}
+        if fctx.reqdata.is_a?(Hash)
+          update_match["id"] = fctx.reqdata["id"] if fctx.reqdata.key?("id")
+          if op.alias_map
+            alias_id = VoxgigStruct.getprop(op.alias_map, "id")
+            if alias_id && fctx.reqdata.key?(alias_id)
+              update_match[alias_id] = fctx.reqdata[alias_id]
+            end
+          end
+        end
+        args = test_self.build_args(fctx, op, update_match)
         found = VoxgigStruct.select(entmap, args)
         ent = VoxgigStruct.getelem(found, 0)
+        if ent.nil? && entmap.is_a?(Hash) && !entmap.empty?
+          ent = entmap.values.find { |e| e.is_a?(Hash) }
+        end
         return respond.call(404, nil, { "statusText" => "Not found" }) unless ent
         if ent.is_a?(Hash) && fctx.reqdata
           fctx.reqdata.each { |k, v| ent[k] = v }
@@ -80,7 +113,7 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         respond.call(200, out, nil)
 
       elsif op.name == "remove"
-        args = test_self.build_args(fctx, op, fctx.reqmatch)
+        args = test_self.build_args(fctx, op, resolve_match.call(fctx.reqmatch))
         found = VoxgigStruct.select(entmap, args)
         ent = VoxgigStruct.getelem(found, 0)
         return respond.call(404, nil, { "statusText" => "Not found" }) unless ent

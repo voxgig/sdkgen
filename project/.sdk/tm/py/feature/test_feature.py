@@ -52,8 +52,21 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
             if not isinstance(entmap, dict):
                 entmap = {}
 
+            # For single-entity ops (load, remove) with an empty explicit
+            # match, fall back to the id the entity client already knows from a
+            # prior create/load (in fctx.match / fctx.data). Mirrors the TS
+            # mock where param() resolves the id from that accumulated state.
+            def _resolve_match(explicit):
+                if isinstance(explicit, dict) and len(explicit) > 0:
+                    return explicit
+                for src in (getattr(fctx, "match", None), getattr(fctx, "data", None)):
+                    v = vs.getprop(src, "id") if src is not None else None
+                    if v is not None and v != "__UNDEFINED__":
+                        return {"id": v}
+                return {}
+
             if op.name == "load":
-                args = test_self.build_args(fctx, op, fctx.reqmatch)
+                args = test_self.build_args(fctx, op, _resolve_match(fctx.reqmatch))
                 found = vs.select(entmap, args)
                 ent = vs.getelem(found, 0)
                 if ent is None:
@@ -74,9 +87,28 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
                 return respond(200, out)
 
             elif op.name == "update":
-                args = test_self.build_args(fctx, op, fctx.reqdata)
+                # Match the existing entity by id only (or its alias). reqdata
+                # also contains the new field values, which would otherwise
+                # cause select to filter out the entity we want to update.
+                # Falls back to first entity when no match found, mirroring
+                # the TS mock.
+                update_match = {}
+                if isinstance(fctx.reqdata, dict):
+                    if "id" in fctx.reqdata:
+                        update_match["id"] = fctx.reqdata["id"]
+                    alias_map = getattr(op, "alias_map", None)
+                    if alias_map is not None:
+                        alias_id = vs.getprop(alias_map, "id")
+                        if alias_id is not None and alias_id in fctx.reqdata:
+                            update_match[alias_id] = fctx.reqdata[alias_id]
+                args = test_self.build_args(fctx, op, update_match)
                 found = vs.select(entmap, args)
                 ent = vs.getelem(found, 0)
+                if ent is None and isinstance(entmap, dict):
+                    for e in entmap.values():
+                        if isinstance(e, dict):
+                            ent = e
+                            break
                 if ent is None:
                     return respond(404, None, {"statusText": "Not found"})
                 if isinstance(ent, dict):
@@ -89,7 +121,7 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
                 return respond(200, out)
 
             elif op.name == "remove":
-                args = test_self.build_args(fctx, op, fctx.reqmatch)
+                args = test_self.build_args(fctx, op, _resolve_match(fctx.reqmatch))
                 found = vs.select(entmap, args)
                 ent = vs.getelem(found, 0)
                 if ent is None:

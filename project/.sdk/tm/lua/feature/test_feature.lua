@@ -62,8 +62,27 @@ function TestFeature:init(ctx, options)
       entmap = {}
     end
 
+    -- For single-entity ops (load, remove) with an empty explicit match, fall
+    -- back to the id the entity client already knows from a prior create/load
+    -- (in fctx.match / fctx.data). Mirrors the TS mock where param() resolves
+    -- the id from that accumulated state.
+    local function resolve_match(explicit)
+      if type(explicit) == "table" and next(explicit) ~= nil then
+        return explicit
+      end
+      local function id_of(src)
+        if src == nil then return nil end
+        local v = vs.getprop(src, "id")
+        if v ~= nil and v ~= "__UNDEFINED__" then return v end
+        return nil
+      end
+      local v = id_of(fctx.match) or id_of(fctx.data)
+      if v ~= nil then return { id = v } end
+      return {}
+    end
+
     if op.name == "load" then
-      local args = test_self:build_args(fctx, op, fctx.reqmatch)
+      local args = test_self:build_args(fctx, op, resolve_match(fctx.reqmatch))
       local found = vs.select(entmap, args)
       local ent = vs.getelem(found, 0)
       if ent == nil then
@@ -88,9 +107,28 @@ function TestFeature:init(ctx, options)
       return respond(200, out, nil)
 
     elseif op.name == "update" then
-      local args = test_self:build_args(fctx, op, fctx.reqdata)
+      -- Match the existing entity by id only (or its alias). reqdata also
+      -- contains the new field values, which would otherwise cause select
+      -- to filter out the entity we want to update. Falls back to first
+      -- entity when no match found, mirroring the TS mock.
+      local update_match = {}
+      if type(fctx.reqdata) == "table" then
+        if fctx.reqdata["id"] ~= nil then update_match["id"] = fctx.reqdata["id"] end
+        if op.alias_map ~= nil then
+          local alias_id = vs.getprop(op.alias_map, "id")
+          if alias_id ~= nil and fctx.reqdata[alias_id] ~= nil then
+            update_match[alias_id] = fctx.reqdata[alias_id]
+          end
+        end
+      end
+      local args = test_self:build_args(fctx, op, update_match)
       local found = vs.select(entmap, args)
       local ent = vs.getelem(found, 0)
+      if ent == nil and type(entmap) == "table" then
+        for _, e in pairs(entmap) do
+          if type(e) == "table" then ent = e; break end
+        end
+      end
       if ent == nil then
         return respond(404, nil, { statusText = "Not found" })
       end
@@ -107,7 +145,7 @@ function TestFeature:init(ctx, options)
       return respond(200, out, nil)
 
     elseif op.name == "remove" then
-      local args = test_self:build_args(fctx, op, fctx.reqmatch)
+      local args = test_self:build_args(fctx, op, resolve_match(fctx.reqmatch))
       local found = vs.select(entmap, args)
       local ent = vs.getelem(found, 0)
       if ent == nil then
