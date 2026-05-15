@@ -593,16 +593,14 @@ const generateRemove: OpGen = (ctx, step, index) => {
   // otherwise reuse the `err` from a prior op step.
   const errOp = needsEnt ? ':=' : '='
 
-  const hasEntIdR = null != entity.id
-
   Content(`		// REMOVE
 `)
   if (needsEnt) {
     Content(`		${entvar} := client.${entity.Name}(nil)
 `)
   }
-  if (hasEntIdR) {
-    Content(`		${matchvar} := map[string]any{
+  // Always match the prior-created entity by id to avoid mock-order flakes.
+  Content(`		${matchvar} := map[string]any{
 			"id": ${srcdatavar}["id"],
 		}
 		_, err ${errOp} ${entvar}.Remove(${matchvar}, nil)
@@ -610,15 +608,6 @@ const generateRemove: OpGen = (ctx, step, index) => {
 			t.Fatalf("remove failed: %v", err)
 		}
 `)
-  }
-  else {
-    Content(`		${matchvar} := map[string]any{}
-		_, err ${errOp} ${entvar}.Remove(${matchvar}, nil)
-		if err != nil {
-			t.Fatalf("remove failed: %v", err)
-		}
-`)
-  }
 }
 
 

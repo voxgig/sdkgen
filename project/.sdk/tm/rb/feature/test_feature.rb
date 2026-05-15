@@ -117,7 +117,8 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         args = test_self.build_args(fctx, op, resolve_match.call(fctx.reqmatch))
         found = VoxgigStruct.select(entmap, args)
         ent = VoxgigStruct.getelem(found, 0)
-        return respond.call(404, nil, { "statusText" => "Not found" }) unless ent
+        # Remove only the first matched entity. If nothing matches,
+        # succeed as a no-op rather than erroring.
         if ent.is_a?(Hash)
           id = VoxgigStruct.getprop(ent, "id")
           VoxgigStruct.delprop(entmap, id)

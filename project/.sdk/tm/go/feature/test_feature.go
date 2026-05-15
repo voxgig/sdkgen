@@ -165,9 +165,8 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			args := self.buildArgs(ctx, op, resolveMatch(ctx.Reqmatch))
 			found := vs.Select(entmap, args)
 			ent := vs.GetElem(found, 0)
-			if ent == nil {
-				return respond(404, nil, map[string]any{"statusText": "Not found"}), nil
-			}
+			// Remove only the first matched entity. If nothing matches,
+			// succeed as a no-op rather than erroring.
 			if entm, ok := ent.(map[string]any); ok {
 				id := vs.GetProp(entm, "id")
 				vs.DelProp(entmap, id)

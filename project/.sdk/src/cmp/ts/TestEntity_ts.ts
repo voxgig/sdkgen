@@ -516,8 +516,6 @@ const generateRemove: OpGen = (ctx, step, index) => {
   const needsEnt = !priorSteps.some(s =>
     ['create', 'list', 'load', 'update', 'remove'].includes(s.op))
 
-  const hasEntIdR = null != entity.id
-
   Content(`
     // REMOVE
 `)
@@ -525,13 +523,11 @@ const generateRemove: OpGen = (ctx, step, index) => {
     Content(`    const ${entvar} = client.${nom(entity, 'Name')}()
 `)
   }
-  Content(`    const ${matchvar}: any = {}
-`)
-  if (hasEntIdR) {
-    Content(`    ${matchvar}.id = ${srcdatavar}.id
-`)
-  }
-  Content(`    await ${entvar}.remove(${matchvar})
+  // Always match the prior-created entity by id. The mock test feature
+  // removes the first match in entmap, so without a specific id the
+  // result depends on hash-sort order and flakes (see cheapshark).
+  Content(`    const ${matchvar}: any = { id: ${srcdatavar}.id }
+    await ${entvar}.remove(${matchvar})
   `)
 }
 

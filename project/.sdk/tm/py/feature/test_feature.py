@@ -128,8 +128,8 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
                 args = test_self.build_args(fctx, op, _resolve_match(fctx.reqmatch))
                 found = vs.select(entmap, args)
                 ent = vs.getelem(found, 0)
-                if ent is None:
-                    return respond(404, None, {"statusText": "Not found"})
+                # Remove only the first matched entity. If nothing matches,
+                # succeed as a no-op rather than erroring.
                 if isinstance(ent, dict):
                     eid = vs.getprop(ent, "id")
                     vs.delprop(entmap, eid)

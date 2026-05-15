@@ -153,9 +153,8 @@ function TestFeature:init(ctx, options)
       local args = test_self:build_args(fctx, op, resolve_match(fctx.reqmatch))
       local found = vs.select(entmap, args)
       local ent = vs.getelem(found, 0)
-      if ent == nil then
-        return respond(404, nil, { statusText = "Not found" })
-      end
+      -- Remove only the first matched entity. If nothing matches,
+      -- succeed as a no-op rather than erroring.
       if type(ent) == "table" then
         local id = vs.getprop(ent, "id")
         vs.delprop(entmap, id)

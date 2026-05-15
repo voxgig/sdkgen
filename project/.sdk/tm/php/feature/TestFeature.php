@@ -199,9 +199,8 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
 
             } elseif ($op->name === 'remove') {
                 $ent = $find_first($entmap, $resolve_match($fctx->reqmatch), $alias);
-                if ($ent === null) {
-                    return $respond(404, null, ['statusText' => 'Not found']);
-                }
+                // Remove only the first matched entity. If nothing matches,
+                // succeed as a no-op rather than erroring.
                 $id = is_array($ent) ? ($ent['id'] ?? null) : null;
                 if ($id !== null) {
                     unset($entmap[$id]);

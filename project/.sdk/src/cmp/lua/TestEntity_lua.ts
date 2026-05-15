@@ -502,28 +502,19 @@ const generateRemove: OpGen = (ctx, step, index) => {
   const needsEnt = !priorSteps.some((s: any) =>
     ['create', 'list', 'load', 'update', 'remove'].includes(s.op))
 
-  const hasEntIdR = null != entity.id
-
   Content(`    -- REMOVE
 `)
   if (needsEnt) {
     Content(`    local ${entvar} = client:${entity.Name}(nil)
 `)
   }
-  if (hasEntIdR) {
-    Content(`    local ${matchvar} = {
+  // Always match the prior-created entity by id to avoid mock-order flakes.
+  Content(`    local ${matchvar} = {
       id = ${srcdatavar}["id"],
     }
     local _, err = ${entvar}:remove(${matchvar}, nil)
     assert.is_nil(err)
 `)
-  }
-  else {
-    Content(`    local ${matchvar} = {}
-    local _, err = ${entvar}:remove(${matchvar}, nil)
-    assert.is_nil(err)
-`)
-  }
 }
 
 
