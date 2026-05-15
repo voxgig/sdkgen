@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "types": "dist/sdkgen.d.ts",
@@ -51,6 +51,7 @@
     "@voxgig/struct": ">=0",
     "@voxgig/util": ">=0",
     "aontu": ">=0",
-    "jostraca": ">=0"
+    "jostraca": ">=0",
+    "shape": ">=10.1"
   }
 }
