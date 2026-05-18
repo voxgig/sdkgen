@@ -16,11 +16,9 @@ import {
 } from '@voxgig/apidef'
 
 
-// Path to the AQL engine source. Local replace is used because the
-// engine isn't yet published with a subdirectory tag (eng/vX.Y.Z).
-// Once it's published, swap this for a `require` line with that
-// version and delete the `replace`.
-const AQL_ENG_LOCAL_PATH = '/home/richard/Projects/aql-lang/aql/eng/go'
+// Published aql/eng/go version. Tagged at aql-lang/aql under
+// eng/go/v<X.Y.Z>. Bump here when adopting a newer engine.
+const AQL_ENG_VERSION = 'v0.0.1'
 
 
 const Main = cmp(function Main(props: any) {
@@ -40,16 +38,16 @@ const Main = cmp(function Main(props: any) {
   File({ name: '.gitignore' }, () => Content(`/${model.name}-cli
 `))
 
-  // go.mod — sibling SDK via relative replace; aql/eng via local replace.
+  // go.mod — sibling SDK via relative replace; aql/eng/go from the
+  // public Go module proxy.
   File({ name: 'go.mod' }, () => Content(`module ${cliModule}
 
-go 1.20
+go 1.21
 
 require ${sdkModule} v0.0.0
-require github.com/aql-lang/aql/eng v0.0.0
+require github.com/aql-lang/aql/eng/go ${AQL_ENG_VERSION}
 
 replace ${sdkModule} => ../go
-replace github.com/aql-lang/aql/eng => ${AQL_ENG_LOCAL_PATH}
 `))
 
   // main.go — produced from fragment/main.fragment.go with two Slots
