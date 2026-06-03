@@ -279,7 +279,7 @@ Each entity supports the following operations where available: **load**,
 
     // 9. Testing — keep, but slim
     if (sdkTargets.length > 0) {
-      Content(`## Testing without the network
+      Content(`## Unit testing in offline mode
 
 Every SDK ships a test mode that swaps the HTTP transport for an
 in-memory mock, so unit tests run offline.
