@@ -14,14 +14,14 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
-  const apikeyArg = isAuthActive(model)
-    ? `\n  apikey: process.env.${model.NAME}_APIKEY,\n`
-    : ''
+  const ctor = isAuthActive(model)
+    ? `new ${model.const.Name}SDK({\n  apikey: process.env.${model.NAME}_APIKEY,\n})`
+    : `new ${model.const.Name}SDK()`
 
   Content(`\`\`\`js
 const { ${model.const.Name}SDK } = require('${target.module.name}')
 
-const client = new ${model.const.Name}SDK({${apikeyArg}})
+const client = ${ctor}
 
 `)
 

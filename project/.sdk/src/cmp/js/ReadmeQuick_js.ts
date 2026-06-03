@@ -16,9 +16,9 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // Find the first published entity for examples
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
-  const apikeyArg = isAuthActive(model)
-    ? `\n  apikey: process.env.${model.NAME}_APIKEY,\n`
-    : ''
+  const ctor = isAuthActive(model)
+    ? `new ${model.const.Name}SDK({\n  apikey: process.env.${model.NAME}_APIKEY,\n})`
+    : `new ${model.const.Name}SDK()`
 
   Content(`
 ### Create a Client
@@ -26,7 +26,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 \`\`\`js
 const { ${model.const.Name}SDK } = require('${target.module.name}')
 
-const client = new ${model.const.Name}SDK({${apikeyArg}})
+const client = ${ctor}
 \`\`\`
 `)
 
