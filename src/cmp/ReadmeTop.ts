@@ -73,7 +73,6 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const licenseShort = info.license_short || ''
   const homepage = info.homepage || (info.contact && info.contact.url) || ''
   const docsUrl = info.docs_url || ''
-  const requiredParamsMd = info.required_params_md || ''
   const entityDesc = info.entity_desc || {}
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -156,11 +155,6 @@ ${cmd}
       Content(`## 30-second quickstart
 
 `)
-      if (requiredParamsMd) {
-        Content(`${requiredParamsMd.trim()}
-
-`)
-      }
       Content(`### ${leadTarget.title}
 
 `)

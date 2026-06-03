@@ -58,7 +58,6 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const licenseShort = info.license_short || '';
     const homepage = info.homepage || (info.contact && info.contact.url) || '';
     const docsUrl = info.docs_url || '';
-    const requiredParamsMd = info.required_params_md || '';
     const entityDesc = info.entity_desc || {};
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
     const target = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`);
@@ -134,11 +133,6 @@ ${cmd}
             (0, jostraca_1.Content)(`## 30-second quickstart
 
 `);
-            if (requiredParamsMd) {
-                (0, jostraca_1.Content)(`${requiredParamsMd.trim()}
-
-`);
-            }
             (0, jostraca_1.Content)(`### ${leadTarget.title}
 
 `);
