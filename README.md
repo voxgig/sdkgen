@@ -90,14 +90,16 @@ Comprehensive docs live in [`docs/`](./docs/README.md):
 
 ```bash
 npm install
-npm run build            # tsc --build src test  (→ dist/, dist-test/)
-npm test                 # Node test runner over dist-test/**/*.test.js
+npm run build            # tsc --build ts/src ts/test  (→ ts/dist/, ts/dist-test/)
+npm test                 # Node test runner over ts/dist-test/**/*.test.js
 npm run test-some --pattern="<name>"   # run a subset by test name
 npm run watch            # incremental compile
 ```
 
-Always build before testing — tests run against the compiled output in
-`dist-test/`. `dist/` is committed; `dist-test/` is not.
+The tool's own TypeScript lives under `ts/` (`ts/src/` source, `ts/test/`
+tests, compiled to `ts/dist/` and `ts/dist-test/`). Always build before
+testing — tests run against the compiled output in `ts/dist-test/`.
+`ts/dist/` is committed; `ts/dist-test/` is not.
 
 ## Related projects
 

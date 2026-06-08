@@ -32,14 +32,16 @@ Pipeline: `OpenAPI → apidef → model (.jsonic) → aontu (unify) → jostraca
 
 ```bash
 npm install
-npm run build       # tsc --build src test  → dist/ (committed) + dist-test/ (gitignored)
-npm test            # node --test over dist-test/**/*.test.js
+npm run build       # tsc --build ts/src ts/test  → ts/dist/ (committed) + ts/dist-test/ (gitignored)
+npm test            # node --test over ts/dist-test/**/*.test.js
 npm run test-some --pattern="<name>"   # subset by test name
 npm run watch       # incremental compile
 ```
 
-**Always build before testing** — tests run against compiled `dist-test/`.
-There are currently 48 tests across `test/*.test.ts`.
+The tool's own TypeScript lives under `ts/` (`ts/src/`, `ts/test/`,
+compiled to `ts/dist/` and `ts/dist-test/`) — mirroring a generated SDK's
+layout. **Always build before testing** — tests run against compiled
+`ts/dist-test/`. There are currently 48 tests across `ts/test/*.test.ts`.
 
 Environment note: a transitive dep (`shape`) declares `engines.node >=24`.
 Builds/tests pass on Node 22 with an `EBADENGINE` warning; ignore it.
@@ -55,7 +57,7 @@ Each language target is generated from **two layers**:
 | **Templates** | `project/.sdk/tm/<lang>/` | Plain target-language source, copied verbatim with placeholder substitution | the broken/changed file looks the **same for every API** (transport, base classes, utilities, runtime) |
 | **Components** | `project/.sdk/src/cmp/<lang>/` | TypeScript that **generates** source by walking the model | the file's shape **depends on the entities/operations** (entity classes, the constructor, README, tests) |
 
-Plus the language-neutral components in `src/cmp/` (this package's own
+Plus the language-neutral components in `ts/src/cmp/` (this package's own
 source) which delegate to the per-language ones via `requirePath`.
 
 > Decision rule: *same for every API → template; depends on the API →
@@ -73,7 +75,7 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 | Fix generated **API-specific** source (entity, main, readme, tests) | `project/.sdk/src/cmp/<lang>/…` | propagate (below) |
 | Change a target's deps / ext / module | `project/.sdk/model/target/<lang>.jsonic` | propagate |
 | Change a feature's hooks / deps | `project/.sdk/model/feature/<name>.jsonic` | propagate |
-| Change the **generator core** (CLI, actions, neutral components, helpers) | `src/…` | `npm run build && npm test` |
+| Change the **generator core** (CLI, actions, neutral components, helpers) | `ts/src/…` | `npm run build && npm test` |
 | Change the base model schema | `model/sdkgen.jsonic` | `npm run build && npm test` |
 
 ### Never edit generated output
@@ -104,14 +106,15 @@ Debugging a failing target: [debug-generation](./docs/how-to/debug-generation.md
 ## Conventions
 
 - **CommonJS**, strict TypeScript, ES2021 target. Source maps on.
-- `dist/` is **committed**; `dist-test/` is gitignored. A clean rebuild
-  must leave `dist/` unchanged (deterministic) — if `git status` shows
-  `dist/` changes after `npm run build`, commit them with your source.
+- `ts/dist/` is **committed**; `ts/dist-test/` is gitignored. A clean
+  rebuild must leave `ts/dist/` unchanged (deterministic) — if
+  `git status` shows `ts/dist/` changes after `npm run build`, commit them
+  with your source.
 - Index the `kit` namespace with the **`KIT`** constant
   (`getModelPath(model, \`main.${KIT}.entity\`)`), not a hardcoded
   `'kit'`.
 - The model is dynamic (aontu metadata: `key$`, `val$`, `Name`, …).
-  Typed model interfaces live in `src/types.ts` (`SdkModel`,
+  Typed model interfaces live in `ts/src/types.ts` (`SdkModel`,
   `ModelTarget`, `ModelFeature`, …) with permissive index signatures —
   prefer them over bare `any` at function boundaries.
 - `each(...)` iterates objects in **sorted-key order** for deterministic,
@@ -123,7 +126,7 @@ Debugging a failing target: [debug-generation](./docs/how-to/debug-generation.md
 
 ## Testing
 
-- Node's built-in runner; files are `test/*.test.ts` → `dist-test/*.test.js`.
+- Node's built-in runner; files are `ts/test/*.test.ts` → `ts/dist-test/*.test.js`.
 - Pure helpers (`collectDeps`, `buildIdNames`, `getMatchEntries`,
   `resolveTarget`, `isAuthActive`, `requirePath`) have direct unit tests.
 - Components are tested by **rendering them through jostraca into memfs**
@@ -184,19 +187,20 @@ cd ../<lang> && <lang-test-command>             # target builds + tests
 ```
 bin/voxgig-sdkgen      CLI entry
 model/sdkgen.jsonic    base model schema
-src/                   generator core (TypeScript)
-  sdkgen.ts            SdkGen, makeBuild, public exports
-  types.ts             ActionContext + model interfaces
-  utility.ts           requirePath, resolvePath, isAuthActive
-  action/              target add / feature add / index updates
-  cmp/                 language-neutral components (delegate per-language)
-  helpers/             collectDeps, buildIdNames, getMatchEntries
+ts/                    the tool's own TypeScript (mirrors a generated SDK)
+  src/                 generator core
+    sdkgen.ts          SdkGen, makeBuild, public exports
+    types.ts           ActionContext + model interfaces
+    utility.ts         requirePath, resolvePath, isAuthActive
+    action/            target add / feature add / index updates
+    cmp/               language-neutral components (delegate per-language)
+    helpers/           collectDeps, buildIdNames, getMatchEntries
+  test/                Node test runner suites
+  dist/ (committed)    dist-test/ (gitignored)
 project/.sdk/          the scaffold copied into consumer projects
   model/{target,feature}/   target & feature definitions
   src/cmp/<lang>/      per-language COMPONENTS
   tm/<lang>/           per-language TEMPLATES
-test/                  Node test runner suites
-dist/ (committed)  dist-test/ (gitignored)
 ```
 
 Targets: `ts js go py php rb lua` + `go-cli go-mcp`. Features: `log test`.
@@ -206,7 +210,7 @@ Targets: `ts js go py php rb lua` + `go-cli go-mcp`. Features: `log test`.
 ## Git / workflow
 
 - Develop on the branch you were given; do not push to others.
-- Commit `dist/` changes alongside the `src/` change that produced them.
+- Commit `ts/dist/` changes alongside the `ts/src/` change that produced them.
 - Do not create pull requests unless explicitly asked.
 
 ---

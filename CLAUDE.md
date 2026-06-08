@@ -16,25 +16,26 @@ multi-language client SDKs (ts, js, go, py, php, rb, lua, plus go-cli and
 go-mcp) from an OpenAPI-derived model.
 
 ## Build & Test
-- **Build:** `npm run build` (TypeScript, compiles `src/` → `dist/`, `test/` → `dist-test/`)
-- **Test:** `npm test` (Node.js built-in test runner, runs `dist-test/**/*.test.js`)
+- **Build:** `npm run build` (TypeScript, compiles `ts/src/` → `ts/dist/`, `ts/test/` → `ts/dist-test/`)
+- **Test:** `npm test` (Node.js built-in test runner, runs `ts/dist-test/**/*.test.js`)
 - **Test subset:** `npm run test-some --pattern="<pattern>"` (matches test names)
 - **Watch:** `npm run watch` (TypeScript watch mode)
-- **Always build before testing** — tests run against compiled JS in `dist-test/`.
+- **Always build before testing** — tests run against compiled JS in `ts/dist-test/`.
 - A transitive dep (`shape`) wants Node ≥24; on Node 22 you get a harmless `EBADENGINE` warning.
 
 ## Code Structure
-- `src/` — TypeScript source (CommonJS, ES2021 target)
+The tool's own TypeScript lives under `ts/` (mirrors a generated SDK's layout):
+- `ts/src/` — TypeScript source (CommonJS, ES2021 target)
   - `sdkgen.ts` — main entry point (`SdkGen`, `makeBuild`, public exports)
   - `types.ts` — `ActionContext` + model interfaces (`SdkModel`, `ModelTarget`, …)
   - `utility.ts` — `requirePath`, `resolvePath`, `isAuthActive`, `SdkGenError`
   - `action/` — action handlers (`action`, `feature`, `target`; includes `resolveTarget`)
   - `cmp/` — language-neutral components (Entity, Feature, Main, Readme*, Test, FeatureHook)
   - `helpers/` — `collectDeps`, `buildIdNames`, `getMatchEntries`
-- `test/` — tests (`*.test.ts`)
+- `ts/test/` — tests (`*.test.ts`)
+- `ts/dist/` — compiled output (committed); `ts/dist-test/` — compiled tests (gitignored)
 - `model/` — base model schema (`sdkgen.jsonic`)
 - `project/.sdk/` — the scaffold: per-language `tm/` (templates) and `src/cmp/` (components) + `model/`
-- `dist/` — compiled output (committed); `dist-test/` — compiled tests (gitignored)
 
 ## Two-layer generation (the key idea)
 Each target = **templates** (`project/.sdk/tm/<lang>/`, copied verbatim
@@ -53,7 +54,7 @@ component.* See [docs/explanation/components-and-templates](./docs/explanation/c
 - Index the kit namespace with the `KIT` constant, not a hardcoded `'kit'`.
 - `each(...)` iterates in sorted-key order — output is byte-stable; don't rely on insertion order.
 - The `ts`/`js` targets are the reference implementation; keep other languages in parity.
-- Commit `dist/` changes with the `src/` change that produced them.
+- Commit `ts/dist/` changes with the `ts/src/` change that produced them.
 
 ## Related Projects
 - **apidef** (`~/Projects/voxgig/apidef`) — parses OpenAPI definitions into the model used by sdkgen

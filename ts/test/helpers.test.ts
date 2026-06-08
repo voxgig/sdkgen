@@ -6,7 +6,7 @@ import {
   collectDeps,
   buildIdNames,
   getMatchEntries,
-} from '../'
+} from '../dist/sdkgen.js'
 
 
 describe('helpers', () => {

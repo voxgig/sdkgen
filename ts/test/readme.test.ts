@@ -5,7 +5,7 @@ import { strictEqual, ok, match } from 'node:assert'
 import { Jostraca, Project, Folder, File } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { ReadmeExplanation } from '../'
+import { ReadmeExplanation } from '../dist/sdkgen.js'
 
 
 // A logger stub keeps requirePath's "optional template missing" warning

@@ -10,7 +10,7 @@ import { cmp, each, Project, Folder, File, Content } from 'jostraca'
 
 import {
   SdkGen
-} from '../'
+} from '../dist/sdkgen.js'
 
 
 // 2025-01-01T00:00:00.000Z

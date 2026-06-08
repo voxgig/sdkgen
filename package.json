@@ -1,9 +1,9 @@
 {
   "name": "@voxgig/sdkgen",
   "version": "1.2.1",
-  "main": "dist/sdkgen.js",
+  "main": "ts/dist/sdkgen.js",
   "type": "commonjs",
-  "types": "dist/sdkgen.d.ts",
+  "types": "ts/dist/sdkgen.d.ts",
   "description": "Voxgig SDK Generator.",
   "homepage": "https://github.com/voxgig/voxgig-sdkgen",
   "keywords": [
@@ -19,10 +19,10 @@
     "voxgig-sdkgen": "bin/voxgig-sdkgen"
   },
   "scripts": {
-    "test": "node --enable-source-maps --test dist-test/**/*.test.js",
-    "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test dist-test/**/*.test.js",
-    "watch": "tsc --build src test -w",
-    "build": "tsc --build src test",
+    "test": "node --enable-source-maps --test ts/dist-test/**/*.test.js",
+    "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test ts/dist-test/**/*.test.js",
+    "watch": "tsc --build ts/src ts/test -w",
+    "build": "tsc --build ts/src ts/test",
     "clean": "rm -rf node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test",
     "embed-version": "node build/version.js",
@@ -35,8 +35,8 @@
     "bin",
     "project",
     "model",
-    "src",
-    "dist",
+    "ts/src",
+    "ts/dist",
     "LICENSE"
   ],
   "devDependencies": {

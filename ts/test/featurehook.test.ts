@@ -5,7 +5,7 @@ import { strictEqual } from 'node:assert'
 import { Jostraca, Project, Folder, File, Content } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { FeatureHook } from '../'
+import { FeatureHook } from '../dist/sdkgen.js'
 
 
 describe('FeatureHook', () => {

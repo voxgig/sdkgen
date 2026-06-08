@@ -97,7 +97,7 @@ Key points:
 - `each(...)` iterates objects in sorted-key order, so output is
   deterministic.
 
-See the test suite (`test/*.test.ts`) for worked examples covering the
+See the test suite (`ts/test/*.test.ts`) for worked examples covering the
 helpers (`collectDeps`, `buildIdNames`, `getMatchEntries`), `resolveTarget`,
 `requirePath`, and `ReadmeExplanation`.
 

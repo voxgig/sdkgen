@@ -13,19 +13,23 @@ sdkgen/
 │   └── version.js             # embeds package version into the build
 ├── model/
 │   └── sdkgen.jsonic          # base model schema (defaults + constraints)
-├── src/                       # TypeScript source (CommonJS, ES2021)
-│   ├── sdkgen.ts              # entry: SdkGen, makeBuild, all public exports
-│   ├── types.ts              # ActionContext + model interfaces (SdkModel, …)
-│   ├── utility.ts            # requirePath, resolvePath, isAuthActive, SdkGenError
-│   ├── action/
-│   │   ├── action.ts         # UpdateIndex, appendIndexEntries, loadContent
-│   │   ├── target.ts         # target_add, action_target, resolveTarget, TargetRoot
-│   │   └── feature.ts        # feature_add, action_feature, FeatureRoot
-│   ├── cmp/                  # language-neutral components (delegate per-language)
-│   │   ├── Main.ts  Entity.ts  Feature.ts  Test.ts  FeatureHook.ts
-│   │   └── Readme*.ts        # Readme, ReadmeTop, ReadmeExplanation, …
-│   └── helpers/
-│       ├── collectDeps.ts    buildIdNames.ts    getMatchEntries.ts
+├── ts/                        # the tool's own TypeScript (mirrors a generated SDK)
+│   ├── src/                   # TypeScript source (CommonJS, ES2021)
+│   │   ├── sdkgen.ts          # entry: SdkGen, makeBuild, all public exports
+│   │   ├── types.ts          # ActionContext + model interfaces (SdkModel, …)
+│   │   ├── utility.ts        # requirePath, resolvePath, isAuthActive, SdkGenError
+│   │   ├── action/
+│   │   │   ├── action.ts     # UpdateIndex, appendIndexEntries, loadContent
+│   │   │   ├── target.ts     # target_add, action_target, resolveTarget, TargetRoot
+│   │   │   └── feature.ts    # feature_add, action_feature, FeatureRoot
+│   │   ├── cmp/              # language-neutral components (delegate per-language)
+│   │   │   ├── Main.ts  Entity.ts  Feature.ts  Test.ts  FeatureHook.ts
+│   │   │   └── Readme*.ts    # Readme, ReadmeTop, ReadmeExplanation, …
+│   │   └── helpers/
+│   │       ├── collectDeps.ts    buildIdNames.ts    getMatchEntries.ts
+│   ├── test/                  # Node test runner (*.test.ts)
+│   ├── dist/                  # compiled output (committed)
+│   └── dist-test/             # compiled tests (gitignored, regenerated)
 ├── project/
 │   └── .sdk/                 # the scaffold copied into consumer projects
 │       ├── model/
@@ -33,10 +37,7 @@ sdkgen/
 │       │   └── feature/<name>.jsonic      # feature definitions + index
 │       ├── src/cmp/<lang>/   # per-language generator COMPONENTS
 │       └── tm/<lang>/        # per-language TEMPLATES (copied verbatim)
-├── test/                     # Node test runner (*.test.ts)
-├── docs/                     # this documentation
-├── dist/                     # compiled output (committed)
-└── dist-test/                # compiled tests (gitignored, regenerated)
+└── docs/                     # this documentation
 ```
 
 ### The `project/.sdk/` scaffold
@@ -101,8 +102,8 @@ ts/
 
 | Directory | Committed? | Produced by |
 | --- | --- | --- |
-| `dist/` | yes | `npm run build` (`tsc --build src`) |
-| `dist-test/` | no (gitignored) | `npm run build` (`tsc --build test`) |
+| `ts/dist/` | yes | `npm run build` (`tsc --build ts/src`) |
+| `ts/dist-test/` | no (gitignored) | `npm run build` (`tsc --build ts/test`) |
 
 ## See also
 

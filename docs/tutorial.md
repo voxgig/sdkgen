@@ -90,7 +90,7 @@ Let's prove the generator is the source of truth. Suppose you want to
 tweak wording in the generated README's explanation section.
 
 1. In the **sdkgen** repo, the explanation prose lives in
-   `src/cmp/ReadmeExplanation.ts` (language-neutral) and
+   `ts/src/cmp/ReadmeExplanation.ts` (language-neutral) and
    `project/.sdk/src/cmp/<lang>/ReadmeExplanation_<lang>.ts`
    (language-specific). Edit there — **never** edit the generated
    `ts/README.md`, which is overwritten on the next generate.
