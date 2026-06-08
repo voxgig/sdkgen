@@ -2,7 +2,6 @@
 import Path from 'node:path'
 
 import {
-  Jostraca,
   Project,
   File,
   Folder,
@@ -64,7 +63,10 @@ async function cmd_feature_add(args: string[], actx: ActionContext): Promise<Act
 
 async function feature_add(features: string[], actx: ActionContext): Promise<ActionResult> {
 
-  const jostraca = Jostraca()
+  // Reuse the caller's Jostraca instance so feature generation honours the
+  // shared controls (notably `dryrun`). A fresh Jostraca() defaults dryrun
+  // to false and would write files during a dry run.
+  const jostraca = actx.jostraca
 
   const opts = {
     fs: actx.fs,
@@ -129,12 +131,12 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
         }))
       })
 
-      each(target, (target) =>
-        Folder({ name: 'tm/' + target.name + '/src/feature/' + fname }, () => {
+      each(target, (t) =>
+        Folder({ name: 'tm/' + t.name + '/src/feature/' + fname }, () => {
           const from = Path.join(
-            (target.base || Path.join(BASE, '/project/.sdk')),
+            (t.base || Path.join(BASE, '/project/.sdk')),
             'tm',
-            target.name,
+            t.name,
             '/src/feature/',
             fname
           )

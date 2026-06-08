@@ -54,7 +54,12 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const { ctx$ } = props
   const { model } = ctx$
 
-  const info = (model.main && model.main.kit && model.main.kit.info) || {}
+  // Ensure the Name/NAME case variants exist (apidef usually sets these,
+  // but guard so the header never renders "undefined SDK"). Entity/feature
+  // names are guarded the same way below.
+  if (model.name && !model.Name) names(model, model.name)
+
+  const info = (model.main && model.main[KIT] && model.main[KIT].info) || {}
   const def = (model.main && model.main.def) || {}
 
   // Plain-text title — prefer the OpenAPI `info.title` when it's

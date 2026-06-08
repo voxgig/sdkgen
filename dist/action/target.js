@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.action_target = action_target;
 exports.target_add = target_add;
+exports.resolveTarget = resolveTarget;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const util_1 = require("@voxgig/util");

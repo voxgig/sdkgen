@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from 'jostraca'
+import { cmp, each, names, Content } from 'jostraca'
 
 import {
   KIT,
@@ -12,6 +12,10 @@ import { requirePath, isAuthActive } from '../utility'
 const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
+
+  // Guard the Name case variant so the reference header never renders
+  // "undefinedSDK" if apidef did not populate it.
+  if (model.name && !model.Name) names(model, model.name)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const entityList = each(entity).filter((e: any) => e.active !== false)

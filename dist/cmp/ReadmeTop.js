@@ -42,7 +42,12 @@ function pickLeadTarget(activeTargets) {
 const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
-    const info = (model.main && model.main.kit && model.main.kit.info) || {};
+    // Ensure the Name/NAME case variants exist (apidef usually sets these,
+    // but guard so the header never renders "undefined SDK"). Entity/feature
+    // names are guarded the same way below.
+    if (model.name && !model.Name)
+        (0, jostraca_1.names)(model, model.name);
+    const info = (model.main && model.main[types_1.KIT] && model.main[types_1.KIT].info) || {};
     const def = (model.main && model.main.def) || {};
     // Plain-text title — prefer the OpenAPI `info.title` when it's
     // recognisably the product name (e.g. "Aare.guru API"), fall back

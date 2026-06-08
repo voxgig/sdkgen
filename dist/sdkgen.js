@@ -96,11 +96,13 @@ const ACTION_MAP = {
     feature: feature_1.action_feature,
 };
 const dlog = (0, util_2.getdlog)('sdkgen', __filename);
-let aontu = null;
 function SdkGen(opts) {
     const fs = opts.fs || node_fs_1.default;
     const folder = opts.folder || '../';
     const now = opts.now || (() => Date.now());
+    // Per-instance cache of the Aontu model loader. Previously a module-level
+    // global, which leaked the (relative) preload across SdkGen instances.
+    let aontu = null;
     const jopts = {
         now,
         control: {
@@ -121,7 +123,7 @@ function SdkGen(opts) {
         log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' });
         log.debug({ point: 'generate-spec', spec });
         let Root = spec.root;
-        if (null == Root && null != config.root) {
+        if (null == Root && null != config?.root) {
             clear(config.root);
             const rootModule = require(config.root);
             Root = rootModule.Root;
@@ -185,15 +187,14 @@ function SdkGen(opts) {
         const src = fs.readFileSync(path, 'utf8');
         const model = aontu.generate(src, aopts);
         if (0 < errs.length) {
-            for (let serr of errs) {
-                let err = new utility_1.SdkGenError('Model Error: ' + serr.msg);
-                err.cause$ = [serr];
-                if ('syntax' === serr.why) {
-                    err.uxmsg$ = true;
-                }
-                err.rooterrs$ = errs;
-                throw err;
+            const serr = errs[0];
+            const err = new utility_1.SdkGenError('Model Error: ' + serr.msg);
+            err.cause$ = [serr];
+            if ('syntax' === serr.why) {
+                err.uxmsg$ = true;
             }
+            err.rooterrs$ = errs;
+            throw err;
         }
         model.const = { name: model.name };
         (0, exports.names)(model.const, model.name);

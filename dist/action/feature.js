@@ -29,7 +29,10 @@ async function cmd_feature_add(args, actx) {
     return feature_add(features, actx);
 }
 async function feature_add(features, actx) {
-    const jostraca = (0, jostraca_1.Jostraca)();
+    // Reuse the caller's Jostraca instance so feature generation honours the
+    // shared controls (notably `dryrun`). A fresh Jostraca() defaults dryrun
+    // to false and would write files during a dry run.
+    const jostraca = actx.jostraca;
     const opts = {
         fs: actx.fs,
         folder: actx.folder,
@@ -80,8 +83,8 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                     names: features,
                 }));
             });
-            (0, jostraca_1.each)(target, (target) => (0, jostraca_1.Folder)({ name: 'tm/' + target.name + '/src/feature/' + fname }, () => {
-                const from = node_path_1.default.join((target.base || node_path_1.default.join(BASE, '/project/.sdk')), 'tm', target.name, '/src/feature/', fname);
+            (0, jostraca_1.each)(target, (t) => (0, jostraca_1.Folder)({ name: 'tm/' + t.name + '/src/feature/' + fname }, () => {
+                const from = node_path_1.default.join((t.base || node_path_1.default.join(BASE, '/project/.sdk')), 'tm', t.name, '/src/feature/', fname);
                 (0, jostraca_1.Copy)({
                     // from: BASE + '/project/.sdk/tm/' + target.name + '/src/feature/' + name,
                     from,

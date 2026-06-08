@@ -7,6 +7,10 @@ const utility_1 = require("../utility");
 const ReadmeModel = (0, jostraca_1.cmp)(function ReadmeModel(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
+    // Guard the Name case variant so the reference header never renders
+    // "undefinedSDK" if apidef did not populate it.
+    if (model.name && !model.Name)
+        (0, jostraca_1.names)(model, model.name);
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
     const entityList = (0, jostraca_1.each)(entity).filter((e) => e.active !== false);
     (0, jostraca_1.Content)(`

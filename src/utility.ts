@@ -32,17 +32,22 @@ function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any
   const fullpath = resolvePath(ctx$, path)
   const ignore = null == flags?.ignore ? false : flags.ignore
 
-  try {
-    return require(fullpath)
-  }
-  catch (err: any) {
-    if (ignore) {
+  // When `ignore` is set, only swallow a genuine "module not found"
+  // resolution failure. A module that resolves but throws while loading
+  // (syntax error, runtime bug, or a missing *nested* dependency) must
+  // propagate — otherwise the optional component silently renders nothing
+  // and the real failure is invisible.
+  if (ignore) {
+    try {
+      require.resolve(fullpath)
+    }
+    catch (err: any) {
       ctx$.log.warn({ point: 'require-missing', path, note: path })
-    }
-    else {
-      throw err
+      return undefined
     }
   }
+
+  return require(fullpath)
 }
 
 

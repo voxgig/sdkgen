@@ -54,7 +54,7 @@ function exit(err) {
 
 
 async function operate(options) {
-  const sdkgen = new SdkGen({
+  const sdkgen = SdkGen({
     debug: options.debug,
     dryrun: options.dryrun,
   })

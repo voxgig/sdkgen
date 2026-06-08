@@ -256,4 +256,5 @@ function resolveTarget(tref: string, ctx$: any) {
 export {
   action_target,
   target_add,
+  resolveTarget,
 }

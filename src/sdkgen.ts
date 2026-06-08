@@ -95,13 +95,14 @@ const ACTION_MAP: any = {
 const dlog = getdlog('sdkgen', __filename)
 
 
-let aontu: any = null
-
-
 function SdkGen(opts: SdkGenOptions) {
   const fs = opts.fs || Fs
   const folder = opts.folder || '../'
   const now = opts.now || (() => Date.now())
+
+  // Per-instance cache of the Aontu model loader. Previously a module-level
+  // global, which leaked the (relative) preload across SdkGen instances.
+  let aontu: any = null
 
   const jopts = {
     now,
@@ -130,7 +131,7 @@ function SdkGen(opts: SdkGenOptions) {
 
     let Root = spec.root
 
-    if (null == Root && null != config.root) {
+    if (null == Root && null != config?.root) {
       clear(config.root)
       const rootModule: any = require(config.root)
       Root = rootModule.Root
@@ -217,17 +218,16 @@ function SdkGen(opts: SdkGenOptions) {
     const model = aontu.generate(src, aopts)
 
     if (0 < errs.length) {
-      for (let serr of errs) {
-        let err: any = new SdkGenError('Model Error: ' + serr.msg)
-        err.cause$ = [serr]
+      const serr = errs[0]
+      const err: any = new SdkGenError('Model Error: ' + serr.msg)
+      err.cause$ = [serr]
 
-        if ('syntax' === serr.why) {
-          err.uxmsg$ = true
-        }
-
-        err.rooterrs$ = errs
-        throw err
+      if ('syntax' === serr.why) {
+        err.uxmsg$ = true
       }
+
+      err.rooterrs$ = errs
+      throw err
     }
 
     model.const = { name: model.name }

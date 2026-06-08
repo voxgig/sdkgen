@@ -12,19 +12,25 @@ import type {
 } from '../types'
 
 
-const UpdateIndex = cmp(function UpdateIndex(props: any) {
-  const names = props.names
+// Append `@"<name>.jsonic"` import lines for each name not already present in
+// the index content. Checking against the accumulating result (not the
+// original) means duplicate names in the same call are added at most once.
+function appendIndexEntries(content: string, names: string[]): string {
+  let out = content
 
-  let oldcontent = props.content
-  let newcontent = oldcontent
-
-  names.map((n: string) => {
-    if (!oldcontent.includes(`@"${n}.jsonic"`)) {
-      newcontent += `\n@"${n}.jsonic"`
+  for (const n of names) {
+    const entry = `@"${n}.jsonic"`
+    if (!out.includes(entry)) {
+      out += '\n' + entry
     }
-  })
+  }
 
-  Content(newcontent)
+  return out
+}
+
+
+const UpdateIndex = cmp(function UpdateIndex(props: any) {
+  Content(appendIndexEntries(props.content, props.names))
 })
 
 
@@ -49,5 +55,6 @@ function loadContent(actx: ActionContext, which: string | string[]) {
 
 export {
   UpdateIndex,
+  appendIndexEntries,
   loadContent
 }
