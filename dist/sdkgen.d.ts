@@ -61,6 +61,7 @@ declare namespace SdkGen {
     var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any, ctx: any) => Promise<any>>;
 }
 export type { SdkGenOptions, DepEntry, };
+export type { SdkModel, ModelKit, ModelTarget, ModelFeature, ModelEntity, ModelDep, ModelHook, } from './types';
 type Component = (props: any, children?: any) => void;
 export declare const cmp: (component: Function) => Component;
 export declare const names: (base: any, name: string, prop?: string) => any;

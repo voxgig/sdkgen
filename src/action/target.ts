@@ -96,7 +96,7 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
   // declare it.
   const features = Array.from(new Set([
     'test',
-    ...Object.keys(actx.model.main[KIT].feature),
+    ...Object.keys(actx.model.main[KIT]?.feature ?? {}),
   ]))
   await feature_add(features, actx)
 

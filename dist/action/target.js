@@ -57,7 +57,7 @@ async function target_add(targets, actx) {
     // declare it.
     const features = Array.from(new Set([
         'test',
-        ...Object.keys(actx.model.main[types_1.KIT].feature),
+        ...Object.keys(actx.model.main[types_1.KIT]?.feature ?? {}),
     ]));
     await (0, feature_1.feature_add)(features, actx);
     opts.log.info({

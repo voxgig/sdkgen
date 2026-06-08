@@ -338,6 +338,16 @@ export type {
   DepEntry,
 }
 
+export type {
+  SdkModel,
+  ModelKit,
+  ModelTarget,
+  ModelFeature,
+  ModelEntity,
+  ModelDep,
+  ModelHook,
+} from './types'
+
 
 
 type Component = (props: any, children?: any) => void

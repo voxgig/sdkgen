@@ -14,17 +14,19 @@
 import { each } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
+import type { SdkModel, ModelDep } from '../types'
+
 type DepEntry = {
   name: string
   version: string
   source: 'feature' | 'target'
-  raw: any
+  raw: ModelDep
 }
 
 function collectDeps(
-  model: any,
+  model: SdkModel,
   targetName: string,
-  targetDeps: any,
+  targetDeps: Record<string, ModelDep> | undefined,
 ): DepEntry[] {
   const out: DepEntry[] = []
   const feature = getModelPath(model, `main.${KIT}.feature`)
