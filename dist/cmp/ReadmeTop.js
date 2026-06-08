@@ -31,13 +31,10 @@ function installCommand(target, model) {
             return '';
     }
 }
-// Pick the language we lead the README with. TypeScript first if
-// present (matches the cold-outbound positioning), otherwise the first
-// active target. Returns undefined if there are no targets.
-function pickLeadTarget(activeTargets) {
-    return activeTargets.find((t) => t.name === 'ts')
-        || activeTargets.find((t) => t.name === 'js')
-        || activeTargets[0];
+// Pick the language we lead the README with — first entry from the
+// docs-ordered SDK targets. Returns undefined if there are no targets.
+function pickLeadTarget(sdkTargets) {
+    return sdkTargets[0];
 }
 const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const { ctx$ } = props;
@@ -69,7 +66,21 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const hasCli = activeTargets.some((t) => t.name === 'go-cli');
     const hasMcp = activeTargets.some((t) => t.name === 'go-mcp');
     const hasJsLike = activeTargets.some((t) => t.name === 'ts' || t.name === 'js');
-    const sdkTargets = activeTargets.filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp');
+    // Canonical docs order from main.kit.config.docs_order (with a
+    // schema-supplied default of ['ts','py','php','go','rb','lua']).
+    // Targets present but not listed get appended in spec-defined order,
+    // so adding a new target never silently disappears from the docs.
+    const docsOrder = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.config.docs_order`, { only_active: false, required: false }) || [];
+    const sdkTargets = activeTargets
+        .filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp')
+        .slice()
+        .sort((a, b) => {
+        const ai = docsOrder.indexOf(a.name);
+        const bi = docsOrder.indexOf(b.name);
+        const av = ai === -1 ? docsOrder.length : ai;
+        const bv = bi === -1 ? docsOrder.length : bi;
+        return av - bv;
+    });
     const langList = sdkTargets.map((t) => t.title).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
