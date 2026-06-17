@@ -4,6 +4,15 @@ main: def: {
   desc: *'' | string
 }
 
+
+# Canonical order for language targets in generated documentation
+# (top-level README, per-language docs links). Targets present in the
+# SDK but not listed here are appended afterwards in spec-defined
+# order. Override per-SDK by setting
+# `main.kit.config.docs_order: ['py','ts',...]` in
+# `<sdk>/.sdk/model/config.jsonic`.
+main: kit: config: docs_order: *['ts','py','php','go','rb','lua'] | [&: string]
+
 main: kit: target: &: {
   name: key()
   active: *true | boolean

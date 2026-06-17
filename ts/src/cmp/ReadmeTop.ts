@@ -40,13 +40,10 @@ function installCommand(target: any, model: any): string {
 }
 
 
-// Pick the language we lead the README with. TypeScript first if
-// present (matches the cold-outbound positioning), otherwise the first
-// active target. Returns undefined if there are no targets.
-function pickLeadTarget(activeTargets: any[]): any | undefined {
-  return activeTargets.find((t: any) => t.name === 'ts')
-    || activeTargets.find((t: any) => t.name === 'js')
-    || activeTargets[0]
+// Pick the language we lead the README with — first entry from the
+// docs-ordered SDK targets. Returns undefined if there are no targets.
+function pickLeadTarget(sdkTargets: any[]): any | undefined {
+  return sdkTargets[0]
 }
 
 
@@ -69,7 +66,7 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
 
   const tagline = info.tagline
     || def.tagline
-    || `Idiomatic ${productName} client, generated from the OpenAPI spec.`
+    || `${productName} client, generated from the OpenAPI spec.`
 
   const aboutMd = info.about_md || ''
   const licenseMd = info.license_md || ''
@@ -92,9 +89,23 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const hasMcp = activeTargets.some((t: any) => t.name === 'go-mcp')
   const hasJsLike = activeTargets.some((t: any) => t.name === 'ts' || t.name === 'js')
 
-  const sdkTargets = activeTargets.filter((t: any) =>
-    t.name !== 'go-cli' && t.name !== 'go-mcp'
-  )
+  // Canonical docs order from main.kit.config.docs_order (with a
+  // schema-supplied default of ['ts','py','php','go','rb','lua']).
+  // Targets present but not listed get appended in spec-defined order,
+  // so adding a new target never silently disappears from the docs.
+  const docsOrder: string[] = (getModelPath(model, `main.${KIT}.config.docs_order`,
+    { only_active: false, required: false }) as any) || []
+
+  const sdkTargets = activeTargets
+    .filter((t: any) => t.name !== 'go-cli' && t.name !== 'go-mcp')
+    .slice()
+    .sort((a: any, b: any) => {
+      const ai = docsOrder.indexOf(a.name)
+      const bi = docsOrder.indexOf(b.name)
+      const av = ai === -1 ? docsOrder.length : ai
+      const bv = bi === -1 ? docsOrder.length : bi
+      return av - bv
+    })
 
   const langList = sdkTargets.map((t: any) => t.title).join(', ')
   const leadTarget = pickLeadTarget(sdkTargets)
@@ -153,12 +164,11 @@ ${cmd}
       })
     }
 
-    // 4. 30-second quickstart in the lead language
+    // 4. Quickstart in the lead language
     if (leadTarget) {
-      Content(`## 30-second quickstart
+      Content(`## Quickstart
 
-`)
-      Content(`### ${leadTarget.title}
+### ${leadTarget.title}
 
 `)
       const LeadQuick =
@@ -167,30 +177,29 @@ ${cmd}
         LeadQuick['ReadmeTopQuick']({ target: leadTarget })
       }
       Content(`
-See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the
-full guide, or scroll down for the same example in other languages.
+See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
 
 `)
     }
 
-    // 5. What's in the box — surface table
+    // 5. Surface table
     if (sdkTargets.length > 0 || hasCli || hasMcp) {
-      Content(`## What's in the box
+      Content(`## Surfaces
 
-| Surface | Use it for | Path |
-| --- | --- | --- |
+| Surface | Path |
+| --- | --- |
 `)
       if (sdkTargets.length > 0) {
         const paths = sdkTargets.map((t: any) => `\`${t.name}/\``).join(' ')
-        Content(`| **SDK** (${langList}) | App integration | ${paths} |
+        Content(`| **SDK** (${langList}) | ${paths} |
 `)
       }
       if (hasCli) {
-        Content(`| **CLI** | Scripts, CI, ops, one-off API calls | \`go-cli/\` |
+        Content(`| **CLI** | \`go-cli/\` |
 `)
       }
       if (hasMcp) {
-        Content(`| **MCP server** | AI agents (Claude, Cursor, Cline) | \`go-mcp/\` |
+        Content(`| **MCP server** | \`go-mcp/\` |
 `)
       }
       Content(`

@@ -31,13 +31,10 @@ function installCommand(target, model) {
             return '';
     }
 }
-// Pick the language we lead the README with. TypeScript first if
-// present (matches the cold-outbound positioning), otherwise the first
-// active target. Returns undefined if there are no targets.
-function pickLeadTarget(activeTargets) {
-    return activeTargets.find((t) => t.name === 'ts')
-        || activeTargets.find((t) => t.name === 'js')
-        || activeTargets[0];
+// Pick the language we lead the README with — first entry from the
+// docs-ordered SDK targets. Returns undefined if there are no targets.
+function pickLeadTarget(sdkTargets) {
+    return sdkTargets[0];
 }
 const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const { ctx$ } = props;
@@ -55,7 +52,7 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const productName = info.title || `${model.Name} API`;
     const tagline = info.tagline
         || def.tagline
-        || `Idiomatic ${productName} client, generated from the OpenAPI spec.`;
+        || `${productName} client, generated from the OpenAPI spec.`;
     const aboutMd = info.about_md || '';
     const licenseMd = info.license_md || '';
     const licenseShort = info.license_short || '';
@@ -74,7 +71,21 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const hasCli = activeTargets.some((t) => t.name === 'go-cli');
     const hasMcp = activeTargets.some((t) => t.name === 'go-mcp');
     const hasJsLike = activeTargets.some((t) => t.name === 'ts' || t.name === 'js');
-    const sdkTargets = activeTargets.filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp');
+    // Canonical docs order from main.kit.config.docs_order (with a
+    // schema-supplied default of ['ts','py','php','go','rb','lua']).
+    // Targets present but not listed get appended in spec-defined order,
+    // so adding a new target never silently disappears from the docs.
+    const docsOrder = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.config.docs_order`, { only_active: false, required: false }) || [];
+    const sdkTargets = activeTargets
+        .filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp')
+        .slice()
+        .sort((a, b) => {
+        const ai = docsOrder.indexOf(a.name);
+        const bi = docsOrder.indexOf(b.name);
+        const av = ai === -1 ? docsOrder.length : ai;
+        const bv = bi === -1 ? docsOrder.length : bi;
+        return av - bv;
+    });
     const langList = sdkTargets.map((t) => t.title).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
@@ -131,12 +142,11 @@ ${cmd}
 `);
             });
         }
-        // 4. 30-second quickstart in the lead language
+        // 4. Quickstart in the lead language
         if (leadTarget) {
-            (0, jostraca_1.Content)(`## 30-second quickstart
+            (0, jostraca_1.Content)(`## Quickstart
 
-`);
-            (0, jostraca_1.Content)(`### ${leadTarget.title}
+### ${leadTarget.title}
 
 `);
             const LeadQuick = (0, utility_1.requirePath)(ctx$, `./cmp/${leadTarget.name}/ReadmeTopQuick_${leadTarget.name}`, { ignore: true });
@@ -144,29 +154,28 @@ ${cmd}
                 LeadQuick['ReadmeTopQuick']({ target: leadTarget });
             }
             (0, jostraca_1.Content)(`
-See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the
-full guide, or scroll down for the same example in other languages.
+See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
 
 `);
         }
-        // 5. What's in the box — surface table
+        // 5. Surface table
         if (sdkTargets.length > 0 || hasCli || hasMcp) {
-            (0, jostraca_1.Content)(`## What's in the box
+            (0, jostraca_1.Content)(`## Surfaces
 
-| Surface | Use it for | Path |
-| --- | --- | --- |
+| Surface | Path |
+| --- | --- |
 `);
             if (sdkTargets.length > 0) {
                 const paths = sdkTargets.map((t) => `\`${t.name}/\``).join(' ');
-                (0, jostraca_1.Content)(`| **SDK** (${langList}) | App integration | ${paths} |
+                (0, jostraca_1.Content)(`| **SDK** (${langList}) | ${paths} |
 `);
             }
             if (hasCli) {
-                (0, jostraca_1.Content)(`| **CLI** | Scripts, CI, ops, one-off API calls | \`go-cli/\` |
+                (0, jostraca_1.Content)(`| **CLI** | \`go-cli/\` |
 `);
             }
             if (hasMcp) {
-                (0, jostraca_1.Content)(`| **MCP server** | AI agents (Claude, Cursor, Cline) | \`go-mcp/\` |
+                (0, jostraca_1.Content)(`| **MCP server** | \`go-mcp/\` |
 `);
             }
             (0, jostraca_1.Content)(`
