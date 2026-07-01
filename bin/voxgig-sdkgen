@@ -6,7 +6,7 @@ const { parseArgs } = require('node:util')
 
 const { Shape, One } = require('shape')
 
-const { SdkGen } = require('../dist/sdkgen.js')
+const { SdkGen } = require('../ts/dist/sdkgen.js')
 
 const VERSION = '1.2.1'
 const KONSOLE = console
@@ -54,7 +54,7 @@ function exit(err) {
 
 
 async function operate(options) {
-  const sdkgen = new SdkGen({
+  const sdkgen = SdkGen({
     debug: options.debug,
     dryrun: options.dryrun,
   })

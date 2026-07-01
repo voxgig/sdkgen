@@ -1,0 +1,413 @@
+/* Copyright (c) 2024-2025 Richard Rodger, MIT License */
+
+import Fs from 'node:fs'
+import Path from 'node:path'
+
+import { prettyPino, Pino } from '@voxgig/util'
+
+import { Jsonic } from 'jsonic'
+import * as JostracaModule from 'jostraca'
+import { Aontu } from 'aontu'
+
+import {
+  showChanges,
+  getdlog,
+} from '@voxgig/util'
+
+import type {
+  ActionContext,
+  ActionResult,
+} from './types'
+
+import { SdkGenError, requirePath, isAuthActive } from './utility'
+
+import { Main } from './cmp/Main'
+import { Entity } from './cmp/Entity'
+import { Feature } from './cmp/Feature'
+import { Readme } from './cmp/Readme'
+import { ReadmeTop } from './cmp/ReadmeTop'
+import { Test } from './cmp/Test'
+import { ReadmeInstall } from './cmp/ReadmeInstall'
+import { ReadmeQuick } from './cmp/ReadmeQuick'
+import { ReadmeIntro } from './cmp/ReadmeIntro'
+import { ReadmeModel } from './cmp/ReadmeModel'
+import { ReadmeOptions } from './cmp/ReadmeOptions'
+import { ReadmeEntity } from './cmp/ReadmeEntity'
+import { ReadmeHowto } from './cmp/ReadmeHowto'
+import { ReadmeExplanation } from './cmp/ReadmeExplanation'
+import { ReadmeRef } from './cmp/ReadmeRef'
+import { FeatureHook } from './cmp/FeatureHook'
+
+import { buildIdNames } from './helpers/buildIdNames'
+import { getMatchEntries } from './helpers/getMatchEntries'
+import { collectDeps } from './helpers/collectDeps'
+import type { DepEntry } from './helpers/collectDeps'
+
+
+import {
+  action_target,
+  target_add,
+} from './action/target'
+
+import {
+  action_feature,
+  feature_add,
+} from './action/feature'
+
+
+
+// TODO: use shape
+type SdkGenOptions = {
+  folder: string
+  fs: any
+  root?: string
+  def?: string
+  model?: {
+    folder: string
+    entity: any
+  }
+  meta?: {
+    name: string
+  }
+  debug?: boolean | string
+  pino?: any, // ReturnType<typeof Pino>
+  now?: () => number
+
+  // TODO: match Jostraca
+  existing?: {
+    txt?: any
+    bin?: any
+  }
+
+  dryrun?: boolean
+}
+
+
+const { Jostraca } = JostracaModule
+
+
+const ACTION_MAP: any = {
+  target: action_target,
+  feature: action_feature,
+}
+
+
+const dlog = getdlog('sdkgen', __filename)
+
+
+function SdkGen(opts: SdkGenOptions) {
+  const fs = opts.fs || Fs
+  const folder = opts.folder || '../'
+  const now = opts.now || (() => Date.now())
+
+  // Per-instance cache of the Aontu model loader. Previously a module-level
+  // global, which leaked the (relative) preload across SdkGen instances.
+  let aontu: any = null
+
+  const jopts = {
+    now,
+    control: {
+      dryrun: opts.dryrun
+    },
+    existing: {
+      txt: {
+        merge: true
+      }
+    }
+  }
+
+  const jostraca = Jostraca(jopts)
+
+  const pino = prettyPino('sdkgen', opts)
+  const log = pino.child({ cmp: 'sdkgen' })
+
+
+  async function generate(spec: any) {
+    const start = Date.now()
+    const { model, config } = spec
+
+    log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' })
+    log.debug({ point: 'generate-spec', spec })
+
+    let Root = spec.root
+
+    if (null == Root && null != config?.root) {
+      clear(config.root)
+      const rootModule: any = require(config.root)
+      Root = rootModule.Root
+    }
+
+    const jopts = {
+      fs: () => fs,
+      folder,
+      log: log.child({ cmp: 'jostraca' }),
+      meta: { spec },
+      debug: opts.debug,
+      existing: opts.existing,
+    }
+
+    const jres = await jostraca.generate(jopts, () => Root({ model }))
+
+    showChanges(jopts.log, 'generate-result', jres, Path.dirname(process.cwd()))
+
+    const dlogs = dlog.log()
+    if (0 < dlogs.length) {
+      for (let dlogentry of dlogs) {
+        log.debug({ point: 'generate-warning', dlogentry, note: String(dlogentry) })
+      }
+    }
+
+    log.info({ point: 'generate-end' })
+
+    return { ok: true, name: 'sdkgen' }
+  }
+
+
+  async function action(args: string[]) {
+    const pargs = args.map(arg => Jsonic(arg))
+
+    const actname = args[0]
+    const actionFunc = ACTION_MAP[actname]
+
+    if (null == actionFunc) {
+      throw new SdkGenError('Unknown action: ' + actname)
+    }
+
+    const ctx = resolveActionContext()
+
+    await actionFunc(pargs, ctx)
+  }
+
+
+  function resolveActionContext(): ActionContext {
+
+    // TODO: use AsyncLocalStorage to avoid reloading model
+    const { model, url } = resolveModel()
+
+    const ctx: ActionContext = {
+      fs: () => fs,
+      log,
+      folder: '.', // The `generate` folder,
+      model,
+      url,
+      jostraca,
+      opts,
+    }
+
+    return ctx
+  }
+
+
+  function resolveModel() {
+    const path = './model/sdk.jsonic'
+    const errs: any[] = []
+
+    if (null == aontu) {
+      aontu = new Aontu({
+        preload: {
+          folders: ['./model'],
+          ext: ['.jsonic', '.json'],
+          recursive: true,
+        }
+      })
+    }
+
+    const aopts = { path, errs }
+    const src = fs.readFileSync(path, 'utf8')
+
+    const model = aontu.generate(src, aopts)
+
+    if (0 < errs.length) {
+      const serr = errs[0]
+      const err: any = new SdkGenError('Model Error: ' + serr.msg)
+      err.cause$ = [serr]
+
+      if ('syntax' === serr.why) {
+        err.uxmsg$ = true
+      }
+
+      err.rooterrs$ = errs
+      throw err
+    }
+
+    model.const = { name: model.name }
+
+    names(model.const, model.name)
+
+    model.const.year = new Date().getFullYear()
+
+    return {
+      model,
+      url: path,
+    }
+  }
+
+
+  const target = {
+    add: async (targets: string[]): Promise<ActionResult> => {
+      const ctx = resolveActionContext()
+      return target_add(targets, ctx)
+    }
+  }
+
+  const feature = {
+    add: async (features: string[]): Promise<ActionResult> => {
+      const ctx = resolveActionContext()
+      return feature_add(features, ctx)
+    }
+  }
+
+
+
+  return {
+    pino: pino as any,
+    generate,
+    action,
+    target,
+    feature,
+  }
+
+}
+
+
+SdkGen.makeBuild = async function(opts: SdkGenOptions) {
+  let sdkgen: any = undefined
+  // let apidef: any = undefined
+
+  const config = {
+    root: opts.root,
+    def: opts.def || 'no-def',
+    kind: 'openapi-3',
+    model: opts.model ? (opts.model.folder + '/api.jsonic') : 'no-model',
+    meta: opts.meta || {},
+  }
+
+  return async function build(model: any, build: any, ctx: any) {
+    if (null == sdkgen) {
+      sdkgen = SdkGen({
+        ...opts,
+        pino: build.log,
+        debug: build.spec.debug,
+      })
+    }
+
+    // await apidef.generate({ model, build, config })
+    return await sdkgen.generate({ model, build, config })
+  }
+}
+
+
+
+// Adapted from https://github.com/sindresorhus/import-fresh - Thanks!
+function clear(path: string) {
+  if (null == path) {
+    return
+  }
+
+  let filePath = require.resolve(path)
+
+  if (require.cache[filePath]) {
+    const children = require.cache[filePath].children.map(child => child.id)
+
+    // Delete module from cache
+    delete require.cache[filePath]
+
+    for (const id of children) {
+      clear(id)
+    }
+  }
+
+
+  if (require.cache[filePath] && require.cache[filePath].parent) {
+    let i = require.cache[filePath].parent.children.length
+
+    while (i--) {
+      if (require.cache[filePath].parent.children[i].id === filePath) {
+        require.cache[filePath].parent.children.splice(i, 1)
+      }
+    }
+  }
+
+}
+
+
+
+
+export type {
+  SdkGenOptions,
+  DepEntry,
+}
+
+export type {
+  SdkModel,
+  ModelKit,
+  ModelTarget,
+  ModelFeature,
+  ModelEntity,
+  ModelDep,
+  ModelHook,
+} from './types'
+
+
+
+type Component = (props: any, children?: any) => void
+
+
+// Prevents TS2742
+export const cmp: (component: Function) => Component = JostracaModule.cmp
+export const names: (base: any, name: string, prop?: string) => any = JostracaModule.names
+export const each: (subject?: any, apply?: any) => any = JostracaModule.each
+export const snakify: (input: any[] | string) => string = JostracaModule.snakify
+export const camelify: (input: any[] | string) => string = JostracaModule.camelify
+export const kebabify: (input: any[] | string) => string = JostracaModule.kebabify
+export const cmap: (o: any, p: any) => any = JostracaModule.cmap
+export const vmap: (o: any, p: any) => any = JostracaModule.vmap
+export const get: (root: any, path: string | string[]) => any = JostracaModule.get
+export const getx: (root: any, path: string | string[]) => any = JostracaModule.getx
+export const template: (root: any, path: string | string[]) => any = JostracaModule.template
+export const indent: (src: string, indent: string | number | undefined) => any = JostracaModule.indent
+
+export const deep: (...args: any[]) => any = JostracaModule.deep
+export const omap: (...args: any[]) => any = JostracaModule.omap
+
+
+export const Project: Component = JostracaModule.Project
+export const Folder: Component = JostracaModule.Folder
+export const File: Component = JostracaModule.File
+export const Content: Component = JostracaModule.Content
+export const Copy: Component = JostracaModule.Copy
+export const Fragment: Component = JostracaModule.Fragment
+export const Inject: Component = JostracaModule.Inject
+export const Line: Component = JostracaModule.Line
+export const Slot: Component = JostracaModule.Slot
+export const List: Component = JostracaModule.List
+
+
+export {
+  Main,
+  Entity,
+  Feature,
+  Test,
+  Readme,
+  ReadmeTop,
+  ReadmeInstall,
+  ReadmeQuick,
+  ReadmeIntro,
+  ReadmeModel,
+  ReadmeOptions,
+  ReadmeEntity,
+  ReadmeHowto,
+  ReadmeExplanation,
+  ReadmeRef,
+  FeatureHook,
+
+  Jostraca,
+  SdkGen,
+
+  requirePath,
+  isAuthActive,
+
+  buildIdNames,
+  getMatchEntries,
+  collectDeps,
+}
