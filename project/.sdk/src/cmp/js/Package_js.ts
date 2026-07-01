@@ -50,7 +50,9 @@ const Package = cmp(async function Package(props: any) {
 
   // TODO: complete SDK meta data in model and use here
   const pkg = {
-    name: `${origin}${sdkname}${sdknamesuffix}`,
+    // The ts target publishes the canonical `${sdkname}${sdknamesuffix}` npm
+    // name; the js target appends `-js` so the two never collide on npm.
+    name: `${origin}${sdkname}${sdknamesuffix}-js`,
     version: `0.0.1`,
     description: 'DESCRIPTION',
     main: `src/${SdkName}SDK.js`,
