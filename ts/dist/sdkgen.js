@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.collectDeps = exports.getMatchEntries = exports.buildIdNames = exports.isAuthActive = exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeQuick = exports.ReadmeInstall = exports.ReadmeTop = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
+exports.collectDeps = exports.getMatchEntries = exports.buildIdNames = exports.isAuthActive = exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeQuick = exports.ReadmeInstall = exports.ReadmeTop = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.SdkGen = SdkGen;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -51,6 +51,8 @@ Object.defineProperty(exports, "requirePath", { enumerable: true, get: function 
 Object.defineProperty(exports, "isAuthActive", { enumerable: true, get: function () { return utility_1.isAuthActive; } });
 const Main_1 = require("./cmp/Main");
 Object.defineProperty(exports, "Main", { enumerable: true, get: function () { return Main_1.Main; } });
+const Deploy_1 = require("./cmp/Deploy");
+Object.defineProperty(exports, "Deploy", { enumerable: true, get: function () { return Deploy_1.Deploy; } });
 const Entity_1 = require("./cmp/Entity");
 Object.defineProperty(exports, "Entity", { enumerable: true, get: function () { return Entity_1.Entity; } });
 const Feature_1 = require("./cmp/Feature");

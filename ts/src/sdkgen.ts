@@ -22,6 +22,7 @@ import type {
 import { SdkGenError, requirePath, isAuthActive } from './utility'
 
 import { Main } from './cmp/Main'
+import { Deploy } from './cmp/Deploy'
 import { Entity } from './cmp/Entity'
 import { Feature } from './cmp/Feature'
 import { Readme } from './cmp/Readme'
@@ -379,6 +380,7 @@ export const List: Component = JostracaModule.List
 
 export {
   Main,
+  Deploy,
   Entity,
   Feature,
   Test,
