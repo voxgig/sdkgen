@@ -175,13 +175,7 @@ function SdkGen(opts) {
         const path = './model/sdk.jsonic';
         const errs = [];
         if (null == aontu) {
-            aontu = new aontu_1.Aontu({
-                preload: {
-                    folders: ['./model'],
-                    ext: ['.jsonic', '.json'],
-                    recursive: true,
-                }
-            });
+            aontu = new aontu_1.Aontu();
         }
         const aopts = { path, errs };
         const src = fs.readFileSync(path, 'utf8');

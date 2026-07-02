@@ -87,10 +87,6 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
   })
 
 
-  const jres = await jostraca.generate(opts, () => TargetRoot({ targets, actx }))
-
-  showChanges(opts.log, 'target-result', jres)
-
   // The `test` feature is required by every generated target (SDK.test()
   // depends on it), so ensure it is added even if the model does not yet
   // declare it.
@@ -98,6 +94,15 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
     'test',
     ...Object.keys(actx.model.main[KIT]?.feature ?? {}),
   ]))
+
+  const jres = await jostraca.generate(opts, () =>
+    TargetRoot({ targets, features, actx }))
+
+  showChanges(opts.log, 'target-result', jres)
+
+  // feature_add copies feature templates for targets already registered in
+  // the model. The targets added above are not in the in-memory model yet,
+  // so TargetRoot copies their feature templates itself.
   await feature_add(features, actx)
 
   opts.log.info({
@@ -112,7 +117,7 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
 
 
 const TargetRoot = cmp(function TargetRoot(props: any) {
-  const { ctx$, targets } = props
+  const { ctx$, targets, features } = props
   const { model, log } = ctx$
 
   // TODO: jostraca - make from value easier to specify 
@@ -174,8 +179,11 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
         Folder({ name: 'src/feature' }, () => {
           Copy({ from: tfolder + '/tm/' + torigname + '/src/feature/README.md' })
 
-          Folder({ name: 'base' }, () => {
-            Copy({ from: tfolder + '/tm/' + torigname + '/src/feature/base' })
+          each(Array.from(new Set(['base', ...(features ?? [])])), (f: any) => {
+            const fname = f.val$
+            Folder({ name: fname }, () => {
+              Copy({ from: tfolder + '/tm/' + torigname + '/src/feature/' + fname })
+            })
           })
         })
       })

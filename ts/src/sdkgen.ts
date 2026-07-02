@@ -203,13 +203,7 @@ function SdkGen(opts: SdkGenOptions) {
     const errs: any[] = []
 
     if (null == aontu) {
-      aontu = new Aontu({
-        preload: {
-          folders: ['./model'],
-          ext: ['.jsonic', '.json'],
-          recursive: true,
-        }
-      })
+      aontu = new Aontu()
     }
 
     const aopts = { path, errs }

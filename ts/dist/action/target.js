@@ -50,8 +50,6 @@ async function target_add(targets, actx) {
         point: 'target-start',
         note: (actx.opts.dryrun ? '** DRY RUN **' : '')
     });
-    const jres = await jostraca.generate(opts, () => TargetRoot({ targets, actx }));
-    (0, util_1.showChanges)(opts.log, 'target-result', jres);
     // The `test` feature is required by every generated target (SDK.test()
     // depends on it), so ensure it is added even if the model does not yet
     // declare it.
@@ -59,6 +57,11 @@ async function target_add(targets, actx) {
         'test',
         ...Object.keys(actx.model.main[types_1.KIT]?.feature ?? {}),
     ]));
+    const jres = await jostraca.generate(opts, () => TargetRoot({ targets, features, actx }));
+    (0, util_1.showChanges)(opts.log, 'target-result', jres);
+    // feature_add copies feature templates for targets already registered in
+    // the model. The targets added above are not in the in-memory model yet,
+    // so TargetRoot copies their feature templates itself.
     await (0, feature_1.feature_add)(features, actx);
     opts.log.info({
         point: 'target-end',
@@ -69,7 +72,7 @@ async function target_add(targets, actx) {
     };
 }
 const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
-    const { ctx$, targets } = props;
+    const { ctx$, targets, features } = props;
     const { model, log } = ctx$;
     // TODO: jostraca - make from value easier to specify 
     // const tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
@@ -120,8 +123,11 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 });
                 (0, jostraca_1.Folder)({ name: 'src/feature' }, () => {
                     (0, jostraca_1.Copy)({ from: tfolder + '/tm/' + torigname + '/src/feature/README.md' });
-                    (0, jostraca_1.Folder)({ name: 'base' }, () => {
-                        (0, jostraca_1.Copy)({ from: tfolder + '/tm/' + torigname + '/src/feature/base' });
+                    (0, jostraca_1.each)(Array.from(new Set(['base', ...(features ?? [])])), (f) => {
+                        const fname = f.val$;
+                        (0, jostraca_1.Folder)({ name: fname }, () => {
+                            (0, jostraca_1.Copy)({ from: tfolder + '/tm/' + torigname + '/src/feature/' + fname });
+                        });
                     });
                 });
             });
