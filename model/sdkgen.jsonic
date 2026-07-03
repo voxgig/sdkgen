@@ -40,6 +40,11 @@ main: kit: target: &: {
     tag: {
       active: *true | boolean
       prefix: *'' | string       # '' -> target name
+      # Who implements the tag publish: 'port' delegates to the port's
+      # own Makefile publish recipe (which may do more, e.g. go proxy
+      # priming); 'root' uses the generated root tag-push recipe (for
+      # ports without a Makefile, e.g. go-cli / go-mcp).
+      via: *'port' | string
       vault: {
         recipe: *'github' | string   # aql `vault exec --for=<recipe>=<alias>`
         alias: *'github' | string    # default vault alias for the token

@@ -14,8 +14,9 @@ import {
 //                       (--for recipe + alias, default github/github).
 //   publish.registry  — package registry details (name, url, vault
 //                       credential recipe or raw env mapping) plus an
-//                       `active` flag. Real deploys REFUSE while a
-//                       registry is inactive; rehearsals always run.
+//                       `active` flag. While a registry is inactive a
+//                       real deploy publishes the git tag only; the
+//                       package upload starts when `active` flips true.
 //                       Tag-only ports (go family) have no registry.
 //
 // Follows the voxgig/struct root Makefile conventions: per-target deploy
@@ -106,33 +107,56 @@ function makeDeployMakefile(model: any, targets: any[]): string {
   const summary = targets.map((t: any) => {
     const reg = registryOf(t)
     const state = reg
-      ? `${reg.name} (${reg.active ? 'ACTIVE' : 'inactive'}) ${reg.url || ''}`.trim()
+      ? `${reg.name} (${reg.active ? 'ACTIVE' : 'inactive: deploy publishes the git tag only'}) ${reg.url || ''}`.trim()
       : 'tag-only'
     return `#   ${t.name.padEnd(8)} ${state}`
   }).join('\n')
 
   const deployRules = targets.map((t: any) => {
     const reg = registryOf(t)
+    // The github token is the only credential a tag-only deploy needs.
+    const tagVault = t.publish?.tag?.vault || {}
+    const ghRecipe = tagVault.recipe || 'github'
+    const ghArgs = `--for=${ghRecipe}=$(${aliasVarName(ghRecipe)})`
     const args = vaultExecArgs(t)
-    const publishCmd = `aql vault exec ${args} -- $(MAKE) -C ${t.name} publish`
 
-    const real = (reg && !reg.active)
-      ? `deploy-${t.name}:
-\t@echo "deploy-${t.name}: ${reg.name} publication is INACTIVE in the model — refusing real deploy."
-\t@echo "Enable it in .sdk/model/target/${t.name}.jsonic (main.kit.target.${t.name}.publish.registry.active) and regenerate."
-\t@exit 1`
-      : `deploy-${t.name}:
-\t${publishCmd}`
+    const via = t.publish?.tag?.via || 'port'
 
-    const dryNote = (reg && !reg.active)
-      ? `\n\t@echo "note: ${t.name} registry (${reg.name}) is inactive — rehearsal only, real deploy will refuse."`
-      : ''
-
-    return `
-${real}
+    if (!reg && 'root' === via) {
+      // Tag-only port with no Makefile of its own (e.g. go-cli): the
+      // root tag-push recipe is the whole deploy.
+      return `
+deploy-${t.name}:
+\t@echo "deploy-${t.name}: tag-only port — publishing the git tag."
+\taql vault exec ${ghArgs} -- $(MAKE) tag-push-${t.name}
 
 deploy-dry-${t.name}:
-\taql vault exec --dry-run ${args} -- $(MAKE) -C ${t.name} publish${dryNote}
+\taql vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
+${tagPushRecipe(t.name, 'tag-only port')}
+`
+    }
+
+    if (reg && !reg.active) {
+      // Inactive registry: deploying this target publishes its git tag
+      // only. The package upload turns on by flipping
+      // publish.registry.active in the model and regenerating.
+      return `
+deploy-${t.name}:
+\t@echo "deploy-${t.name}: ${reg.name} publication is inactive — publishing the git tag only."
+\taql vault exec ${ghArgs} -- $(MAKE) tag-push-${t.name}
+
+deploy-dry-${t.name}:
+\taql vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
+${tagPushRecipe(t.name, reg.name + ' publication inactive — tag-only deploy')}
+`
+    }
+
+    return `
+deploy-${t.name}:
+\taql vault exec ${args} -- $(MAKE) -C ${t.name} publish
+
+deploy-dry-${t.name}:
+\taql vault exec --dry-run ${args} -- $(MAKE) -C ${t.name} publish
 `
   }).join('')
 
@@ -153,8 +177,9 @@ ${summary}
 #
 #   make deploy               list per-target deploy commands
 #   make deploy-<target>      deploy ONE target (no deploy-all: each
-#                             registry upload is irreversible); refuses
-#                             while the target's registry is inactive
+#                             registry upload is irreversible); while a
+#                             registry is inactive this publishes the
+#                             port's git tag only
 #   make deploy-dry           rehearse EVERY target: aql --dry-run
 #                             injects a filler token that each publish
 #                             recipe detects, so build + test run in full
@@ -166,10 +191,15 @@ SHELL := /bin/bash
 
 ${varLines}
 
+# Lockstep SDK version, read from the canonical ts manifest.
+VERSION := $(shell node -p "require('./ts/package.json').version" 2>/dev/null || echo 0.0.0)
+AQL_DRY_RUN_FILLER := AQL-DRY-RUN-FILLER-NOT-A-REAL-SECRET
+
 TARGETS := ${targets.map((t: any) => t.name).join(' ')}
 
 .PHONY: deploy deploy-dry \\
-  $(addprefix deploy-,$(TARGETS)) $(addprefix deploy-dry-,$(TARGETS))
+  $(addprefix deploy-,$(TARGETS)) $(addprefix deploy-dry-,$(TARGETS)) \\
+  $(addprefix tag-push-,$(TARGETS))
 
 deploy:
 \t@echo "Deployment is per-target — pick one (each upload is irreversible):"
@@ -177,7 +207,7 @@ deploy:
 \t@echo "Registry state is set in the model (.sdk/model/target/<t>.jsonic):"
 ${targets.map((t: any) => {
     const reg = registryOf(t)
-    const state = reg ? `${reg.name} ${reg.active ? 'ACTIVE' : 'inactive'}` : 'tag-only'
+    const state = reg ? `${reg.name} ${reg.active ? 'ACTIVE' : 'inactive (deploy = git tag only)'}` : 'tag-only'
     return `\t@echo "  deploy-${t.name.padEnd(8)} ${state}"`
   }).join('\n')}
 \t@echo "Rehearse everything safely first: make deploy-dry"
@@ -187,6 +217,27 @@ deploy-dry: $(addprefix deploy-dry-,$(TARGETS))
 ${deployRules}`
 }
 
+
+
+// The root-level tag creation + push recipe for a target: aql --dry-run
+// filler cooperation, idempotent tag creation, token-authenticated https
+// push (works from an ssh-remote clone without ssh keys).
+function tagPushRecipe(name: string, note: string): string {
+  return `
+tag-push-${name}:
+\t@set -e; tag="${name}/v$(VERSION)"; \\
+\ttoken="\$\${GITHUB_TOKEN:-$$GH_TOKEN}"; \\
+\tif [ "$$token" = "$(AQL_DRY_RUN_FILLER)" ]; then \\
+\t  echo "[dry-run] aql filler token detected: would create (if missing) and push tag $$tag; nothing pushed."; exit 0; fi; \\
+\tif [ -z "$$token" ]; then echo "tag-push-${name}: no GITHUB_TOKEN in env — run via make deploy-${name} (aql vault exec)"; exit 1; fi; \\
+\tif git rev-parse -q --verify "refs/tags/$$tag" >/dev/null; then \\
+\t  echo "tag $$tag already exists — pushing existing tag"; \\
+\telse git tag -a "$$tag" -m "Release $$tag"; fi; \\
+\turl=$$(git remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#'); \\
+\thdr="AUTHORIZATION: basic $$(printf 'x-access-token:%s' "$$token" | base64 | tr -d '\\n')"; \\
+\tgit -c http.extraheader="$$hdr" push "$$url" "$$tag"; \\
+\techo "pushed $$tag (${note})"`
+}
 
 export {
   Deploy
