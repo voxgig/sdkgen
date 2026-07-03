@@ -8,6 +8,14 @@ import {
 
 import { requirePath } from '../utility'
 
+import {
+  installCommand as pkgInstall,
+  packageName,
+  apiName,
+  nonAffiliation,
+  SECURITY_EMAIL,
+} from '../helpers/packageMeta'
+
 
 const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen'
 
@@ -17,26 +25,9 @@ const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen'
 // but emit extra prose ("Or install from source: ..."); for the
 // landing-page README we want a single copy-paste line per language.
 function installCommand(target: any, model: any): string {
-  const modname = target.module?.name || model.name
-  switch (target.name) {
-    case 'ts':
-    case 'js':
-      return `npm install ${modname}`
-    case 'py':
-      return `pip install ${model.name}-sdk`
-    case 'go':
-      return `go get github.com/${model.origin || 'voxgig-sdk'}/${model.name}-sdk/go`
-    case 'go-cli':
-      return `go install github.com/${model.origin || 'voxgig-sdk'}/${model.name}-sdk/go-cli/cmd/${model.name}@latest`
-    case 'php':
-      return `composer require voxgig/${model.name}-sdk`
-    case 'lua':
-      return `luarocks install ${model.name}-sdk`
-    case 'rb':
-      return `gem install ${model.name}-sdk`
-    default:
-      return ''
-  }
+  // Delegate to the single source of truth so the README install command can
+  // never drift from the real published package name (see helpers/packageMeta).
+  return pkgInstall(model, target.name)
 }
 
 
@@ -112,10 +103,12 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
 
   File({ name: 'README.md' }, () => {
 
-    // 1. H1 + one-line value prop
+    // 1. H1 + one-line value prop + unofficial / non-affiliation disclosure
     Content(`# ${model.Name} SDK
 
 ${tagline}
+
+${nonAffiliation(model)}
 
 `)
 
@@ -147,21 +140,21 @@ ${aboutMd.trim()}
 `)
     }
 
-    // 3. Try it — copy-paste install per language
+    // 3. Packages — real published package name + install command per ecosystem
     if (sdkTargets.length > 0) {
-      Content(`## Try it
+      Content(`## Packages
 
+| Language | Package | Install |
+| --- | --- | --- |
 `)
       sdkTargets.forEach((tgt: any) => {
         const cmd = installCommand(tgt, model)
         if (!cmd) return
-        Content(`**${tgt.title}**
-\`\`\`bash
-${cmd}
-\`\`\`
-
+        Content(`| ${tgt.title} | \`${packageName(model, tgt.name)}\` | \`${cmd}\` |
 `)
       })
+      Content(`
+`)
     }
 
     // 4. Quickstart in the lead language
@@ -379,31 +372,36 @@ When the entity interface does not cover an endpoint, use \`direct\`:
 `)
     }
 
-    // 13. API attribution / license (upstream API, not the SDK)
-    if (licenseMd || licenseShort || homepage || docsUrl) {
-      Content(`## Using the ${productName}
+    // 13. Upstream API — contact/servers from the OpenAPI info block
+    const upstreamUrl = (info.contact && info.contact.url)
+      || (info.servers && info.servers[0] && info.servers[0].url)
+      || homepage
+    if (upstreamUrl || docsUrl) {
+      Content(`## Upstream API
+
+This SDK is generated from the upstream OpenAPI specification. It is an
+unofficial client and is not affiliated with the API provider.
 
 `)
-      if (homepage) {
-        Content(`- Upstream: [${homepage}](${homepage})
+      if (upstreamUrl) {
+        Content(`- Upstream API: [${upstreamUrl}](${upstreamUrl})
 `)
       }
-      if (docsUrl && docsUrl !== homepage) {
-        Content(`- API docs: [${docsUrl}](${docsUrl})
+      if (docsUrl && docsUrl !== upstreamUrl) {
+        Content(`- Documentation: [${docsUrl}](${docsUrl})
 `)
       }
       Content(`
 `)
-      if (licenseMd) {
-        Content(`${licenseMd.trim()}
-
-`)
-      } else if (licenseShort) {
-        Content(`${licenseShort}
-
-`)
-      }
     }
+
+    // 13b. Security
+    Content(`## Security
+
+Please report security issues to ${SECURITY_EMAIL}. See [SECURITY.md](SECURITY.md).
+Do not open public issues for suspected vulnerabilities.
+
+`)
 
     // 14. Provenance footer
     Content(`---

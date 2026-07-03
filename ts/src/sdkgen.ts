@@ -27,6 +27,9 @@ import { Entity } from './cmp/Entity'
 import { Feature } from './cmp/Feature'
 import { Readme } from './cmp/Readme'
 import { ReadmeTop } from './cmp/ReadmeTop'
+import { License } from './cmp/License'
+import { Security } from './cmp/Security'
+import { Changelog } from './cmp/Changelog'
 import { Test } from './cmp/Test'
 import { ReadmeInstall } from './cmp/ReadmeInstall'
 import { ReadmeQuick } from './cmp/ReadmeQuick'
@@ -43,6 +46,20 @@ import { buildIdNames } from './helpers/buildIdNames'
 import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
+import {
+  packageName,
+  installCommand,
+  pkgDescription,
+  nonAffiliation,
+  keywords,
+  repoInfo,
+  apiName,
+  langLabel,
+  PUBLISHER,
+  PUBLISHER_URL,
+  SECURITY_EMAIL,
+  GENERATOR_URL,
+} from './helpers/packageMeta'
 
 
 import {
@@ -381,6 +398,9 @@ export const List: Component = JostracaModule.List
 export {
   Main,
   Deploy,
+  License,
+  Security,
+  Changelog,
   Entity,
   Feature,
   Test,
@@ -406,4 +426,17 @@ export {
   buildIdNames,
   getMatchEntries,
   collectDeps,
+
+  packageName,
+  installCommand,
+  pkgDescription,
+  nonAffiliation,
+  keywords,
+  repoInfo,
+  apiName,
+  langLabel,
+  PUBLISHER,
+  PUBLISHER_URL,
+  SECURITY_EMAIL,
+  GENERATOR_URL,
 }

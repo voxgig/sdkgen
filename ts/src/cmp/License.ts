@@ -1,6 +1,22 @@
-MIT License
+import { cmp, Content, File } from 'jostraca'
 
-Copyright (c) $$const.year$$ Voxgig
+import { PUBLISHER, nonAffiliation } from '../helpers/packageMeta'
+
+
+// Root MIT LICENSE for the generated SDK repo. The copyright holder is the
+// PUBLISHER (Voxgig): this is an unofficial, generated SDK, so it is NOT
+// attributed to the upstream API owner. A non-affiliation note is appended so
+// the license file itself carries the disclosure.
+const License = cmp(function License(props: any) {
+  const { ctx$ } = props
+  const { model } = ctx$
+
+  const year = (model.const && model.const.year) || new Date().getFullYear()
+
+  File({ name: 'LICENSE' }, () => {
+    Content(`MIT License
+
+Copyright (c) ${year} ${PUBLISHER}
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,3 +36,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+---
+
+${nonAffiliation(model)}
+`)
+  })
+})
+
+
+export {
+  License
+}

@@ -5,6 +5,12 @@ import {
   cmp,
   each,
   omap,
+  packageName,
+  pkgDescription,
+  keywords,
+  repoInfo,
+  PUBLISHER,
+  PUBLISHER_URL,
 } from '@voxgig/sdkgen'
 
 
@@ -43,18 +49,19 @@ const Package = cmp(async function Package(props: any) {
           dev: only('dev', target.deps),
         })
 
-  const sdkname = model.name
   const SdkName = nom(model, 'Name')
-  const origin = null == model.origin ? '' : `@${model.origin}/`
-  const sdknamesuffix = model.origin?.endsWith('-sdk') ? '' : '-sdk'
+  const { repoUrl, issuesUrl } = repoInfo(model)
 
-  // TODO: complete SDK meta data in model and use here
   const pkg = {
-    // The ts target publishes the canonical `${sdkname}${sdknamesuffix}` npm
-    // name; the js target appends `-js` so the two never collide on npm.
-    name: `${origin}${sdkname}${sdknamesuffix}-js`,
+    // The ts target publishes the canonical scoped npm name; the js target
+    // appends `-js` so the two never collide on npm.
+    name: packageName(model, 'js'),
     version: `0.0.1`,
-    description: 'DESCRIPTION',
+    description: pkgDescription(model, target.name),
+    keywords: keywords(model),
+    homepage: `${repoUrl}#readme`,
+    repository: { type: 'git', url: `git+${repoUrl}.git` },
+    bugs: { url: issuesUrl },
     main: `src/${SdkName}SDK.js`,
     type: 'commonjs',
     scripts: {
@@ -66,7 +73,7 @@ const Package = cmp(async function Package(props: any) {
       "clean": "rm -rf node_modules yarn.lock package-lock.json",
       "reset": "npm run clean && npm i && npm test",
     },
-    author: `${SdkName}`,
+    author: { name: PUBLISHER, url: PUBLISHER_URL },
 
     // TODO: needs to be config
     license: 'MIT',

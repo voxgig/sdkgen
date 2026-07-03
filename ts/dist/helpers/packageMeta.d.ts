@@ -1,0 +1,21 @@
+declare const PUBLISHER = "Voxgig";
+declare const PUBLISHER_URL = "https://voxgig.com";
+declare const SECURITY_EMAIL = "security@voxgig.com";
+declare const GENERATOR_URL = "https://github.com/voxgig/sdkgen";
+declare const LANG_LABEL: Record<string, string>;
+declare function langLabel(target: string): string;
+declare function repoInfo(model: any): {
+    slug: any;
+    origin: any;
+    repo: string;
+    repoUrl: string;
+    issuesUrl: string;
+    changelogUrl: string;
+};
+declare function apiName(model: any): string;
+declare function packageName(model: any, eco: string): string;
+declare function installCommand(model: any, target: string): string;
+declare function pkgDescription(model: any, target: string): string;
+declare function nonAffiliation(model: any): string;
+declare function keywords(model: any): string[];
+export { PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, repoInfo, apiName, packageName, installCommand, pkgDescription, nonAffiliation, keywords, };

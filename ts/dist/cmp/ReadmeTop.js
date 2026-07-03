@@ -4,32 +4,16 @@ exports.ReadmeTop = void 0;
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
+const packageMeta_1 = require("../helpers/packageMeta");
 const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen';
 // Per-language install commands rendered in the top-level "Try it"
 // section. The per-language `ReadmeInstall_<lang>.ts` templates exist
 // but emit extra prose ("Or install from source: ..."); for the
 // landing-page README we want a single copy-paste line per language.
 function installCommand(target, model) {
-    const modname = target.module?.name || model.name;
-    switch (target.name) {
-        case 'ts':
-        case 'js':
-            return `npm install ${modname}`;
-        case 'py':
-            return `pip install ${model.name}-sdk`;
-        case 'go':
-            return `go get github.com/${model.origin || 'voxgig-sdk'}/${model.name}-sdk/go`;
-        case 'go-cli':
-            return `go install github.com/${model.origin || 'voxgig-sdk'}/${model.name}-sdk/go-cli/cmd/${model.name}@latest`;
-        case 'php':
-            return `composer require voxgig/${model.name}-sdk`;
-        case 'lua':
-            return `luarocks install ${model.name}-sdk`;
-        case 'rb':
-            return `gem install ${model.name}-sdk`;
-        default:
-            return '';
-    }
+    // Delegate to the single source of truth so the README install command can
+    // never drift from the real published package name (see helpers/packageMeta).
+    return (0, packageMeta_1.installCommand)(model, target.name);
 }
 // Pick the language we lead the README with — first entry from the
 // docs-ordered SDK targets. Returns undefined if there are no targets.
@@ -89,10 +73,12 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const langList = sdkTargets.map((t) => t.title).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
-        // 1. H1 + one-line value prop
+        // 1. H1 + one-line value prop + unofficial / non-affiliation disclosure
         (0, jostraca_1.Content)(`# ${model.Name} SDK
 
 ${tagline}
+
+${(0, packageMeta_1.nonAffiliation)(model)}
 
 `);
         // Positioning line, only when we actually have multiple SDK targets.
@@ -125,22 +111,22 @@ ${aboutMd.trim()}
 
 `);
         }
-        // 3. Try it — copy-paste install per language
+        // 3. Packages — real published package name + install command per ecosystem
         if (sdkTargets.length > 0) {
-            (0, jostraca_1.Content)(`## Try it
+            (0, jostraca_1.Content)(`## Packages
 
+| Language | Package | Install |
+| --- | --- | --- |
 `);
             sdkTargets.forEach((tgt) => {
                 const cmd = installCommand(tgt, model);
                 if (!cmd)
                     return;
-                (0, jostraca_1.Content)(`**${tgt.title}**
-\`\`\`bash
-${cmd}
-\`\`\`
-
+                (0, jostraca_1.Content)(`| ${tgt.title} | \`${(0, packageMeta_1.packageName)(model, tgt.name)}\` | \`${cmd}\` |
 `);
             });
+            (0, jostraca_1.Content)(`
+`);
         }
         // 4. Quickstart in the lead language
         if (leadTarget) {
@@ -338,32 +324,35 @@ When the entity interface does not cover an endpoint, use \`direct\`:
             (0, jostraca_1.Content)(`
 `);
         }
-        // 13. API attribution / license (upstream API, not the SDK)
-        if (licenseMd || licenseShort || homepage || docsUrl) {
-            (0, jostraca_1.Content)(`## Using the ${productName}
+        // 13. Upstream API — contact/servers from the OpenAPI info block
+        const upstreamUrl = (info.contact && info.contact.url)
+            || (info.servers && info.servers[0] && info.servers[0].url)
+            || homepage;
+        if (upstreamUrl || docsUrl) {
+            (0, jostraca_1.Content)(`## Upstream API
+
+This SDK is generated from the upstream OpenAPI specification. It is an
+unofficial client and is not affiliated with the API provider.
 
 `);
-            if (homepage) {
-                (0, jostraca_1.Content)(`- Upstream: [${homepage}](${homepage})
+            if (upstreamUrl) {
+                (0, jostraca_1.Content)(`- Upstream API: [${upstreamUrl}](${upstreamUrl})
 `);
             }
-            if (docsUrl && docsUrl !== homepage) {
-                (0, jostraca_1.Content)(`- API docs: [${docsUrl}](${docsUrl})
+            if (docsUrl && docsUrl !== upstreamUrl) {
+                (0, jostraca_1.Content)(`- Documentation: [${docsUrl}](${docsUrl})
 `);
             }
             (0, jostraca_1.Content)(`
 `);
-            if (licenseMd) {
-                (0, jostraca_1.Content)(`${licenseMd.trim()}
-
-`);
-            }
-            else if (licenseShort) {
-                (0, jostraca_1.Content)(`${licenseShort}
-
-`);
-            }
         }
+        // 13b. Security
+        (0, jostraca_1.Content)(`## Security
+
+Please report security issues to ${packageMeta_1.SECURITY_EMAIL}. See [SECURITY.md](SECURITY.md).
+Do not open public issues for suspected vulnerabilities.
+
+`);
         // 14. Provenance footer
         (0, jostraca_1.Content)(`---
 
