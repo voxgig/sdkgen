@@ -6,42 +6,32 @@ import {
 } from '../types'
 
 
-// Per-target `aql vault exec` credential recipes, mirroring the header
-// documentation of each target's publish Makefile (project/.sdk/tm/<t>/
-// Makefile). The alias Make variables let a deployer point at their own
-// vault aliases without editing the generated file:
-//   make deploy-ts NPM_ALIAS=work:npm
-// Targets without an entry fall back to github-only (tag push is the
-// common denominator of every publish recipe).
-const VAULT_RECIPE: Record<string, string> = {
-  ts: '--for=npm=$(NPM_ALIAS) --for=github=$(GITHUB_ALIAS)',
-  js: '--for=npm=$(NPM_ALIAS) --for=github=$(GITHUB_ALIAS)',
-  go: '--for=github=$(GITHUB_ALIAS)',
-  py: '--for=pypi=$(PYPI_ALIAS) --for=github=$(GITHUB_ALIAS)',
-  php: '--for=github=$(GITHUB_ALIAS)',
-  rb: '--for=gem=$(GEM_ALIAS) --for=github=$(GITHUB_ALIAS)',
-  // luarocks has no aql --for preset: map aliases to env vars directly.
-  lua: "'$(LUAROCKS_ALIAS)=LUAROCKS_API_KEY,$(GITHUB_ALIAS)=GITHUB_TOKEN'",
-}
-
-const DEFAULT_RECIPE = '--for=github=$(GITHUB_ALIAS)'
-
-
-// Generate the SDK root deployment Makefile. Deploying a target runs that
-// target's `make publish` (build + test + registry upload + version tag)
-// with credentials injected at exec time by the aql key vault — never on
-// disk or argv. Follows the voxgig/struct root Makefile conventions:
-// per-target deploy targets, deliberately no all-targets real deploy
-// (each upload is irreversible), and an everything-at-once DRY run that
-// leans on `aql vault exec --dry-run` filler-token cooperation in each
+// Generate the SDK root deployment Makefile from the model's per-target
+// `publish` sections (see model/sdkgen.jsonic):
+//
+//   publish.tag       — git release tag `<prefix>/vX.Y.Z`; every port has
+//                       one, pushed with a token from the aql key vault
+//                       (--for recipe + alias, default github/github).
+//   publish.registry  — package registry details (name, url, vault
+//                       credential recipe or raw env mapping) plus an
+//                       `active` flag. Real deploys REFUSE while a
+//                       registry is inactive; rehearsals always run.
+//                       Tag-only ports (go family) have no registry.
+//
+// Follows the voxgig/struct root Makefile conventions: per-target deploy
+// targets, deliberately no all-targets real deploy (each upload is
+// irreversible), and an everything-at-once DRY run leaning on
+// `aql vault exec --dry-run` filler-token cooperation in each target's
 // publish recipe.
 const Deploy = cmp(function Deploy(props: any) {
   const { ctx$ } = props
   const { model } = ctx$
 
   const targetMap = getModelPath(model, `main.${KIT}.target`) || {}
-  const targets: string[] = []
-  each(targetMap, (t: any) => { targets.push(t.name) })
+  const targets: any[] = []
+  each(targetMap, (t: any) => {
+    if (false !== t.active) targets.push(t)
+  })
 
   if (0 === targets.length) {
     return
@@ -51,34 +41,120 @@ const Deploy = cmp(function Deploy(props: any) {
     Content(makeDeployMakefile(model, targets))
   })
 
-  ctx$.log.info({ point: 'generate-deploy', note: 'targets: ' + targets.join(',') })
+  ctx$.log.info({
+    point: 'generate-deploy',
+    note: 'targets: ' + targets.map((t: any) =>
+      t.name + (registryOf(t) ? (':' + registryOf(t).name + (registryOf(t).active ? '' : '(inactive)')) : ':tag-only')
+    ).join(',')
+  })
 })
 
 
-function makeDeployMakefile(model: any, targets: string[]): string {
-  const deployRules = targets.map((t) => {
-    const recipe = VAULT_RECIPE[t] || DEFAULT_RECIPE
-    return `
-deploy-${t}:
-\taql vault exec ${recipe} -- $(MAKE) -C ${t} publish
+function registryOf(t: any): any | undefined {
+  const reg = t.publish?.registry
+  return (reg && '' !== (reg.name || '')) ? reg : undefined
+}
 
-deploy-dry-${t}:
-\taql vault exec --dry-run ${recipe} -- $(MAKE) -C ${t} publish
+
+function aliasVarName(name: string): string {
+  return name.toUpperCase().replace(/[^A-Z0-9]+/g, '_') + '_ALIAS'
+}
+
+
+// The aql vault exec argument string for a target: `--for=<recipe>=<alias>`
+// flags where a preset recipe exists, or a raw `'alias=ENV_VAR,...'`
+// mapping when any credential lacks a preset (e.g. luarocks). The github
+// token for the tag push is always included.
+function vaultExecArgs(t: any): string {
+  const tagVault = t.publish?.tag?.vault || {}
+  const ghRecipe = tagVault.recipe || 'github'
+  const ghVar = aliasVarName(ghRecipe)
+  const reg = registryOf(t)
+  const regVault = reg?.vault || {}
+  const regVar = reg ? aliasVarName(reg.name) : ''
+
+  if (reg && '' === (regVault.recipe || '') && '' !== (regVault.env || '')) {
+    // Raw env mapping style: every credential as alias=ENV_VAR.
+    return `'$(${regVar})=${regVault.env},$(${ghVar})=GITHUB_TOKEN'`
+  }
+
+  const flags = []
+  if (reg && '' !== (regVault.recipe || '')) {
+    flags.push(`--for=${regVault.recipe}=$(${regVar})`)
+  }
+  flags.push(`--for=${ghRecipe}=$(${ghVar})`)
+  return flags.join(' ')
+}
+
+
+function makeDeployMakefile(model: any, targets: any[]): string {
+  // Alias variables: one per distinct vault credential, defaulting to the
+  // model's alias (or the registry/recipe name).
+  const aliasVars = new Map<string, string>()
+  for (const t of targets) {
+    const tagVault = t.publish?.tag?.vault || {}
+    const ghRecipe = tagVault.recipe || 'github'
+    if (!aliasVars.has(aliasVarName(ghRecipe))) {
+      aliasVars.set(aliasVarName(ghRecipe), tagVault.alias || ghRecipe)
+    }
+    const reg = registryOf(t)
+    if (reg && !aliasVars.has(aliasVarName(reg.name))) {
+      aliasVars.set(aliasVarName(reg.name), reg.vault?.alias || reg.name)
+    }
+  }
+
+  const summary = targets.map((t: any) => {
+    const reg = registryOf(t)
+    const state = reg
+      ? `${reg.name} (${reg.active ? 'ACTIVE' : 'inactive'}) ${reg.url || ''}`.trim()
+      : 'tag-only'
+    return `#   ${t.name.padEnd(8)} ${state}`
+  }).join('\n')
+
+  const deployRules = targets.map((t: any) => {
+    const reg = registryOf(t)
+    const args = vaultExecArgs(t)
+    const publishCmd = `aql vault exec ${args} -- $(MAKE) -C ${t.name} publish`
+
+    const real = (reg && !reg.active)
+      ? `deploy-${t.name}:
+\t@echo "deploy-${t.name}: ${reg.name} publication is INACTIVE in the model — refusing real deploy."
+\t@echo "Enable it in .sdk/model/target/${t.name}.jsonic (main.kit.target.${t.name}.publish.registry.active) and regenerate."
+\t@exit 1`
+      : `deploy-${t.name}:
+\t${publishCmd}`
+
+    const dryNote = (reg && !reg.active)
+      ? `\n\t@echo "note: ${t.name} registry (${reg.name}) is inactive — rehearsal only, real deploy will refuse."`
+      : ''
+
+    return `
+${real}
+
+deploy-dry-${t.name}:
+\taql vault exec --dry-run ${args} -- $(MAKE) -C ${t.name} publish${dryNote}
 `
   }).join('')
 
+  const varLines = Array.from(aliasVars.entries())
+    .map(([v, def]) => `${v} ?= ${def}`).join('\n')
+
   return `# ${model.Name} SDK deployment. GENERATED by @voxgig/sdkgen — regenerated
-# on every \`npm run generate\` in .sdk/; change the model, not this file.
+# on every \`npm run generate\` in .sdk/; publication details live in the
+# model (.sdk/model/target/<target>.jsonic, \`publish\` section).
 #
-# Deploying a target publishes its package to that ecosystem's registry
-# and pushes a <target>/vX.Y.Z tag (see <target>/Makefile publish).
-# Credentials are injected at exec time by the aql key vault
-# (https://github.com/aql-lang/aql) — never stored on disk or passed on
-# the command line.
+# Every port gets a git release tag <target>/vX.Y.Z. Ports with an ACTIVE
+# registry also publish a package there. Credentials are injected at exec
+# time by the aql key vault (https://github.com/aql-lang/aql) — never
+# stored on disk or passed on the command line.
+#
+# Publication state (from the model):
+${summary}
 #
 #   make deploy               list per-target deploy commands
 #   make deploy-<target>      deploy ONE target (no deploy-all: each
-#                             registry upload is irreversible)
+#                             registry upload is irreversible); refuses
+#                             while the target's registry is inactive
 #   make deploy-dry           rehearse EVERY target: aql --dry-run
 #                             injects a filler token that each publish
 #                             recipe detects, so build + test run in full
@@ -88,13 +164,9 @@ deploy-dry-${t}:
 
 SHELL := /bin/bash
 
-NPM_ALIAS ?= npm
-GITHUB_ALIAS ?= github
-PYPI_ALIAS ?= pypi
-GEM_ALIAS ?= gem
-LUAROCKS_ALIAS ?= luarocks
+${varLines}
 
-TARGETS := ${targets.join(' ')}
+TARGETS := ${targets.map((t: any) => t.name).join(' ')}
 
 .PHONY: deploy deploy-dry \\
   $(addprefix deploy-,$(TARGETS)) $(addprefix deploy-dry-,$(TARGETS))
@@ -102,6 +174,12 @@ TARGETS := ${targets.join(' ')}
 deploy:
 \t@echo "Deployment is per-target — pick one (each upload is irreversible):"
 \t@echo "  make deploy-<target>    targets: $(TARGETS)"
+\t@echo "Registry state is set in the model (.sdk/model/target/<t>.jsonic):"
+${targets.map((t: any) => {
+    const reg = registryOf(t)
+    const state = reg ? `${reg.name} ${reg.active ? 'ACTIVE' : 'inactive'}` : 'tag-only'
+    return `\t@echo "  deploy-${t.name.padEnd(8)} ${state}"`
+  }).join('\n')}
 \t@echo "Rehearse everything safely first: make deploy-dry"
 
 deploy-dry: $(addprefix deploy-dry-,$(TARGETS))

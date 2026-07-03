@@ -23,7 +23,41 @@ main: kit: target: &: {
   }
   deps: &: {
     active: *false | boolean
-    version: *'*' | string 
+    version: *'*' | string
+  }
+
+  # Publication: how (and whether) this port is released. Credentials are
+  # always injected by the aql key vault (never on disk or argv).
+  #
+  # Every port gets a git release tag `<prefix>/vX.Y.Z` (prefix defaults
+  # to the target name). Ports with a `registry` entry also publish a
+  # package to that registry — but only when `registry.active` is true:
+  # registries are activated one at a time as each ecosystem is ready.
+  # Tag-only ports (the go family: the Go proxy resolves from GitHub
+  # tags) simply leave `registry` unset.
+  publish: {
+    # Git release tag (all ports).
+    tag: {
+      active: *true | boolean
+      prefix: *'' | string       # '' -> target name
+      vault: {
+        recipe: *'github' | string   # aql `vault exec --for=<recipe>=<alias>`
+        alias: *'github' | string    # default vault alias for the token
+      }
+    }
+
+    # Package registry (omit for tag-only ports).
+    registry: {
+      active: *false | boolean   # real publishes refuse when false
+      name: *'' | string         # npm | pypi | packagist | rubygems | luarocks
+      url: *'' | string
+      package: *'' | string      # registry package name ('' -> derived)
+      vault: {
+        recipe: *'' | string     # aql --for preset (npm, pypi, gem, ...)
+        alias: *'' | string      # vault alias ('' -> registry name)
+        env: *'' | string        # raw env var to inject when no preset exists
+      }
+    }
   }
 }
 

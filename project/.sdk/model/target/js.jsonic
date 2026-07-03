@@ -21,3 +21,15 @@ main: kit: feature: &: target: js: deps: &: {
   # TODO: fix aontu disjunctions!
   kind: *'prod' | string # 'peer' |'dev'
 }
+
+
+# Publication: npm registry (declared but not yet active).
+main: kit: target: js: publish: {
+  tag: { active: true }
+  registry: {
+    active: false
+    name: 'npm'
+    url: 'https://registry.npmjs.org'
+    vault: { recipe: 'npm', alias: 'npm' }
+  }
+}
