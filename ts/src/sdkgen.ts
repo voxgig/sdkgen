@@ -46,6 +46,7 @@ import { buildIdNames } from './helpers/buildIdNames'
 import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
+import { canonToType, canonKey } from './helpers/canonType'
 import {
   packageName,
   installCommand,
@@ -431,6 +432,8 @@ export {
   buildIdNames,
   getMatchEntries,
   collectDeps,
+  canonToType,
+  canonKey,
 
   packageName,
   installCommand,

@@ -38,7 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.collectDeps = exports.getMatchEntries = exports.buildIdNames = exports.isAuthActive = exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeQuick = exports.ReadmeInstall = exports.ReadmeTop = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Changelog = exports.Security = exports.License = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
-exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.langLabel = exports.apiName = exports.repoInfo = exports.envName = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = void 0;
+exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.langLabel = exports.apiName = exports.repoInfo = exports.envName = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = exports.canonKey = exports.canonToType = void 0;
 exports.SdkGen = SdkGen;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -96,6 +96,9 @@ const getMatchEntries_1 = require("./helpers/getMatchEntries");
 Object.defineProperty(exports, "getMatchEntries", { enumerable: true, get: function () { return getMatchEntries_1.getMatchEntries; } });
 const collectDeps_1 = require("./helpers/collectDeps");
 Object.defineProperty(exports, "collectDeps", { enumerable: true, get: function () { return collectDeps_1.collectDeps; } });
+const canonType_1 = require("./helpers/canonType");
+Object.defineProperty(exports, "canonToType", { enumerable: true, get: function () { return canonType_1.canonToType; } });
+Object.defineProperty(exports, "canonKey", { enumerable: true, get: function () { return canonType_1.canonKey; } });
 const packageMeta_1 = require("./helpers/packageMeta");
 Object.defineProperty(exports, "packageName", { enumerable: true, get: function () { return packageMeta_1.packageName; } });
 Object.defineProperty(exports, "installCommand", { enumerable: true, get: function () { return packageMeta_1.installCommand; } });
