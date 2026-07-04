@@ -237,8 +237,11 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
 `)
 
       activeEntities.map((ent: any) => {
-        const entdesc = entityDesc[ent.name] || ent.short || ent.desc || ''
         const ops = ent.op || {}
+        const opNames = Object.keys(ops).filter((o: string) => (ops as any)[o]?.active !== false)
+        // Never emit a blank description cell: fall back to an ops-derived line.
+        const entdesc = entityDesc[ent.name] || ent.short || ent.desc ||
+          `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`
         const points = each(ops).map((op: any) =>
           op.points ? each(op.points) : []
         ).flat()

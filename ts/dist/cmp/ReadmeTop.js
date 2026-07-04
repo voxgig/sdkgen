@@ -203,8 +203,11 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
 | --- | --- | --- |
 `);
             activeEntities.map((ent) => {
-                const entdesc = entityDesc[ent.name] || ent.short || ent.desc || '';
                 const ops = ent.op || {};
+                const opNames = Object.keys(ops).filter((o) => ops[o]?.active !== false);
+                // Never emit a blank description cell: fall back to an ops-derived line.
+                const entdesc = entityDesc[ent.name] || ent.short || ent.desc ||
+                    `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`;
                 const points = (0, jostraca_1.each)(ops).map((op) => op.points ? (0, jostraca_1.each)(op.points) : []).flat();
                 const path = points.length > 0
                     ? points[0].orig || ''
