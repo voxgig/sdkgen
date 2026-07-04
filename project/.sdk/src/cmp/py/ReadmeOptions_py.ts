@@ -1,12 +1,13 @@
 
-import { cmp, each, Content, envName } from '@voxgig/sdkgen'
+import { cmp, each, Content, envName, isAuthActive } from '@voxgig/sdkgen'
 
 
 const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  const publishedOptions = each(target.options).filter((option: any) => option.publish)
+  const publishedOptions = each(target.options).filter((option: any) =>
+    option.publish && ('apikey' !== option.name || isAuthActive(model)))
   if (0 === publishedOptions.length) {
     return
   }

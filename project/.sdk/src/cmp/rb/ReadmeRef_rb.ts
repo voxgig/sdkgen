@@ -72,8 +72,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`Hash\` | SDK configuration options. |
-| \`options["apikey"]\` | \`String\` | API key for authentication. |
-| \`options["base"]\` | \`String\` | Base URL for API requests. |
+${isAuthActive(model) ? '| \`options["apikey"]\` | \`String\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`String\` | Base URL for API requests. |
 | \`options["prefix"]\` | \`String\` | URL prefix appended after base. |
 | \`options["suffix"]\` | \`String\` | URL suffix appended after path. |
 | \`options["headers"]\` | \`Hash\` | Custom headers for all requests. |
