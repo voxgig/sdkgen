@@ -4,6 +4,11 @@ class EntityOperation {
 
   // EJECT-START
 
+  /**
+   * @param {EntityNameListMatch} [reqmatch]
+   * @param {Object} [ctrl]
+   * @returns {Promise<EntityName[]>}
+   */
   async list(reqmatch, ctrl) {
 
     const utility = this._utility

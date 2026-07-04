@@ -4,6 +4,11 @@ class EntityOperation {
 
   // EJECT-START
 
+  /**
+   * @param {EntityNameRemoveMatch} [reqmatch]
+   * @param {Object} [ctrl]
+   * @returns {Promise<EntityName>}
+   */
   async remove(reqmatch, ctrl) {
 
     const utility = this._utility

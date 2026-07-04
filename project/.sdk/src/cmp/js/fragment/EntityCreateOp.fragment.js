@@ -4,6 +4,11 @@ class EntityOperation {
 
   // EJECT-START
 
+  /**
+   * @param {EntityNameCreateData} [reqdata]
+   * @param {Object} [ctrl]
+   * @returns {Promise<EntityName>}
+   */
   async create(reqdata, ctrl) {
 
     const utility = this._utility

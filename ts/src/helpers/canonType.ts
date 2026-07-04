@@ -36,18 +36,19 @@ type CanonLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go'
 // each against that language's idioms before wiring its EntityTypes_<lang>.ts.
 const CANON_TYPE: Record<string, Record<CanonLang, string>> = {
   STRING: { ts: 'string', js: 'string', py: 'str', php: 'string', rb: 'String', lua: 'string', go: 'string' },
-  INTEGER: { ts: 'number', js: 'number', py: 'int', php: 'int', rb: 'Integer', lua: 'number', go: 'int64' },
+  INTEGER: { ts: 'number', js: 'number', py: 'int', php: 'int', rb: 'Integer', lua: 'number', go: 'int' },
   NUMBER: { ts: 'number', js: 'number', py: 'float', php: 'float', rb: 'Float', lua: 'number', go: 'float64' },
   BOOLEAN: { ts: 'boolean', js: 'boolean', py: 'bool', php: 'bool', rb: 'Boolean', lua: 'boolean', go: 'bool' },
   NULL: { ts: 'null', js: 'null', py: 'None', php: 'null', rb: 'NilClass', lua: 'nil', go: 'any' },
-  ARRAY: { ts: 'any[]', js: 'any[]', py: 'list', php: 'array', rb: 'Array', lua: 'table', go: '[]any' },
-  OBJECT: { ts: 'Record<string, any>', js: 'object', py: 'dict', php: 'array', rb: 'Hash', lua: 'table', go: 'map[string]any' },
-  ANY: { ts: 'any', js: 'any', py: 'Any', php: 'mixed', rb: 'Object', lua: 'any', go: 'any' },
+  ARRAY: { ts: 'any[]', js: 'Array', py: 'list', php: 'array', rb: 'Array', lua: 'table', go: '[]any' },
+  OBJECT: { ts: 'Record<string, any>', js: 'Object', py: 'dict', php: 'array', rb: 'Hash', lua: 'table', go: 'map[string]any' },
+  ANY: { ts: 'any', js: '*', py: 'Any', php: 'mixed', rb: 'Object', lua: 'any', go: 'any' },
 }
 
 // Per-language fallback for unknown / missing sentinels.
+// js uses JSDoc's `*` (any type); lua uses `any` (LuaLS).
 const CANON_ANY: Record<CanonLang, string> = {
-  ts: 'any', js: 'any', py: 'Any', php: 'mixed', rb: 'Object', lua: 'any', go: 'any',
+  ts: 'any', js: '*', py: 'Any', php: 'mixed', rb: 'Object', lua: 'any', go: 'any',
 }
 
 

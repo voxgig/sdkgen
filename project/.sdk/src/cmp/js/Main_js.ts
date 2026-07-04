@@ -24,6 +24,7 @@ import { Gitignore } from './Gitignore_js'
 import { MainEntity } from './MainEntity_js'
 import { SdkError } from './SdkError_js'
 import { EntityBase } from './EntityBase_js'
+import { EntityTypes } from './EntityTypes_js'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -100,6 +101,8 @@ if (fres instanceof Promise) { await fres }
     Config({ target })
 
     EntityBase({ target })
+
+    EntityTypes({ target })
 
   })
 })

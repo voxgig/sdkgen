@@ -13,6 +13,9 @@ require_relative 'config'
 require_relative 'feature/base_feature'
 require_relative 'features'
 
+# Load typed models (Struct value objects).
+require_relative 'ProjectName_types'
+
 
 class ProjectNameSDK
   attr_accessor :mode, :features, :options

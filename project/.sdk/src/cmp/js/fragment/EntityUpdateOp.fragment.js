@@ -4,6 +4,11 @@ class EntityOperation {
 
   // EJECT-START
 
+  /**
+   * @param {EntityNameUpdateData} [reqdata]
+   * @param {Object} [ctrl]
+   * @returns {Promise<EntityName>}
+   */
   async update(reqdata, ctrl) {
 
     const utility = this._utility
