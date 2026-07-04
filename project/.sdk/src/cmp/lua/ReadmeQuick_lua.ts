@@ -41,7 +41,7 @@ local client = ${ctor}
       Content(`### 2. List ${eName.toLowerCase()}s
 
 \`\`\`lua
-local result, err = client:${eName}():list()
+local result, err = client:${eName.toLowerCase()}():list()
 if err then error(err) end
 
 if type(result) == "table" then
@@ -59,7 +59,7 @@ end
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
 \`\`\`lua
-local result, err = client:${eName}():load({ id = "example_id" })
+local result, err = client:${eName.toLowerCase()}():load({ id = "example_id" })
 if err then error(err) end
 print(result)
 \`\`\`
@@ -74,19 +74,19 @@ print(result)
 `)
       if (opnames.includes('create')) {
         Content(`-- Create
-local created, _ = client:${eName}():create({ name = "Example" })
+local created, _ = client:${eName.toLowerCase()}():create({ name = "Example" })
 
 `)
       }
       if (opnames.includes('update')) {
         Content(`-- Update
-client:${eName}():update({ id = created["id"], name = "Example-Renamed" })
+client:${eName.toLowerCase()}():update({ id = created["id"], name = "Example-Renamed" })
 
 `)
       }
       if (opnames.includes('remove')) {
         Content(`-- Remove
-client:${eName}():remove({ id = created["id"] })
+client:${eName.toLowerCase()}():remove({ id = created["id"] })
 `)
       }
       Content(`\`\`\`

@@ -41,7 +41,7 @@ const client = ${ctor}
 ### Load ${article} ${eName}
 
 \`\`\`js
-const ${exampleEntity.name} = await client.${eName}().load({ id: '${exampleEntity.name}_id' })
+const ${exampleEntity.name} = await client.${eName.toLowerCase()}.load({ id: '${exampleEntity.name}_id' })
 console.log(${exampleEntity.name})
 \`\`\`
 `)
@@ -52,7 +52,7 @@ console.log(${exampleEntity.name})
 ### List ${eName} Records
 
 \`\`\`js
-const ${exampleEntity.name}s = await client.${eName}().list()
+const ${exampleEntity.name}s = await client.${eName.toLowerCase()}.list()
 console.log(${exampleEntity.name}s)
 \`\`\`
 `)
@@ -63,7 +63,7 @@ console.log(${exampleEntity.name}s)
 ### Create a ${eName}
 
 \`\`\`js
-const created = await client.${eName}().create({
+const created = await client.${eName.toLowerCase()}.create({
   // Provide ${exampleEntity.name} fields
 })
 console.log(created)
@@ -76,7 +76,7 @@ console.log(created)
 ### Update a ${eName}
 
 \`\`\`js
-const updated = await client.${eName}().update({
+const updated = await client.${eName.toLowerCase()}.update({
   id: '${exampleEntity.name}_id',
   // Fields to update
 })
@@ -90,7 +90,7 @@ console.log(updated)
 ### Remove a ${eName}
 
 \`\`\`js
-await client.${eName}().remove({ id: '${exampleEntity.name}_id' })
+await client.${eName.toLowerCase()}.remove({ id: '${exampleEntity.name}_id' })
 \`\`\`
 `)
     }

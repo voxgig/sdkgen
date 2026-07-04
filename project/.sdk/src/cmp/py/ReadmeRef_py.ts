@@ -165,7 +165,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
       }
 
       Content(`\`\`\`python
-${ent.name} = client.${ent.Name}()
+${ent.name} = client.${ent.name}
 \`\`\`
 
 `)
@@ -234,21 +234,21 @@ ${info.desc}
           // Show example
           if ('load' === opname || 'remove' === opname) {
             Content(`\`\`\`python
-result = client.${ent.Name}().${opname}({"id": "${ent.name}_id"})
+result = client.${ent.name}.${opname}({"id": "${ent.name}_id"})
 \`\`\`
 
 `)
           }
           else if ('list' === opname) {
             Content(`\`\`\`python
-results = client.${ent.Name}().list({})
+results = client.${ent.name}.list({})
 \`\`\`
 
 `)
           }
           else if ('create' === opname) {
             Content(`\`\`\`python
-result = client.${ent.Name}().create({
+result = client.${ent.name}.create({
 `)
             each(fields, (field: any) => {
               if ('id' !== field.name && field.req) {
@@ -263,7 +263,7 @@ result = client.${ent.Name}().create({
           }
           else if ('update' === opname) {
             Content(`\`\`\`python
-result = client.${ent.Name}().update({
+result = client.${ent.name}.update({
     "id": "${ent.name}_id",
     # Fields to update
 })

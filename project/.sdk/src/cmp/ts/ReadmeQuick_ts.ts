@@ -45,7 +45,7 @@ const client = ${ctor}
       Content(`### 2. List ${eName.toLowerCase()}s
 
 \`\`\`ts
-const result = await client.${eName}().list()
+const result = await client.${eName.toLowerCase()}.list()
 
 if (result.ok) {
   for (const item of result.data) {
@@ -69,7 +69,7 @@ if (result.ok) {
 ${neName} is nested under ${eName}, so provide the \`${parentParam}\`:
 
 \`\`\`ts
-const ${neName.toLowerCase()} = client.${neName}()
+const ${neName.toLowerCase()} = client.${neName.toLowerCase()}
 const result = await ${neName.toLowerCase()}.load({
   ${parentParam}: 'example',
   id: 'example_id',
@@ -86,7 +86,7 @@ if (result.ok) {
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
 \`\`\`ts
-const result = await client.${eName}().load({ id: 'example_id' })
+const result = await client.${eName.toLowerCase()}.load({ id: 'example_id' })
 
 if (result.ok) {
   console.log(result.data)
@@ -104,7 +104,7 @@ if (result.ok) {
 `)
       if (opnames.includes('create')) {
         Content(`// Create
-const created = await client.${eName}().create({
+const created = await client.${eName.toLowerCase()}.create({
   name: 'Example',
 })
 
@@ -112,7 +112,7 @@ const created = await client.${eName}().create({
       }
       if (opnames.includes('update')) {
         Content(`// Update
-const updated = await client.${eName}().update({
+const updated = await client.${eName.toLowerCase()}.update({
   id: created.data.id,
   name: 'Example-Renamed',
 })
@@ -121,7 +121,7 @@ const updated = await client.${eName}().update({
       }
       if (opnames.includes('remove')) {
         Content(`// Remove
-const removed = await client.${eName}().remove({
+const removed = await client.${eName.toLowerCase()}.remove({
   id: created.data.id,
 })
 `)

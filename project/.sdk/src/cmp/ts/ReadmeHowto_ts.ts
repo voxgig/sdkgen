@@ -61,7 +61,7 @@ Create a mock client for unit testing \u2014 no server required:
 \`\`\`ts
 const client = ${model.const.Name}SDK.test()
 
-const result = await client.${eName}().load({ id: 'test01' })
+const result = await client.${eName.toLowerCase()}.load({ id: 'test01' })
 // result.ok === true
 // result.data contains mock response data
 \`\`\`
@@ -78,7 +78,7 @@ const testClient = client.tester()
 Entity instances remember their last match and data:
 
 \`\`\`ts
-const entity = client.${eName}()
+const entity = client.${eName.toLowerCase()}
 
 // First call sets internal match
 await entity.load({ id: 'example' })

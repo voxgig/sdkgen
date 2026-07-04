@@ -62,7 +62,7 @@ Create a mock client for unit testing — no server required:
 \`\`\`ruby
 client = ${model.const.Name}SDK.test
 
-result = client.${eName}().load({ "id" => "test01" })
+result = client.${eName.toLowerCase()}.load({ "id" => "test01" })
 # result contains mock response data
 \`\`\`
 

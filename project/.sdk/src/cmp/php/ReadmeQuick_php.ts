@@ -43,7 +43,7 @@ $client = ${ctor};
 
 \`\`\`php
 try {
-    $result = $client->${eName}()->list();
+    $result = $client->${eName.toLowerCase()}()->list();
     if (is_array($result)) {
         foreach ($result as $item) {
             $d = $item->data_get();
@@ -63,7 +63,7 @@ try {
 
 \`\`\`php
 try {
-    $result = $client->${eName}()->load(["id" => "example_id"]);
+    $result = $client->${eName.toLowerCase()}()->load(["id" => "example_id"]);
     print_r($result);
 } catch (\\Exception $err) {
     echo "Error: " . $err->getMessage();
@@ -80,19 +80,19 @@ try {
 `)
       if (opnames.includes('create')) {
         Content(`// Create
-$created = $client->${eName}()->create(["name" => "Example"]);
+$created = $client->${eName.toLowerCase()}()->create(["name" => "Example"]);
 
 `)
       }
       if (opnames.includes('update')) {
         Content(`// Update
-$client->${eName}()->update(["id" => $created["id"], "name" => "Example-Renamed"]);
+$client->${eName.toLowerCase()}()->update(["id" => $created["id"], "name" => "Example-Renamed"]);
 
 `)
       }
       if (opnames.includes('remove')) {
         Content(`// Remove
-$client->${eName}()->remove(["id" => $created["id"]]);
+$client->${eName.toLowerCase()}()->remove(["id" => $created["id"]]);
 `)
       }
       Content(`\`\`\`

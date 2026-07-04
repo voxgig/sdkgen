@@ -109,7 +109,7 @@ describe('ReadmeExplanation', () => {
     const out = await renderExplanation('lua')
     ok(out.includes('```lua'))
     ok(out.includes('A feature is a Lua table'))
-    ok(out.includes('client:Moon()'))
+    ok(out.includes('client:moon()')) // lowercase facade accessor
   })
 
   test('go variant', async () => {

@@ -42,7 +42,7 @@ client = ${ctor}
 
 \`\`\`ruby
 begin
-  result = client.${eName}().list
+  result = client.${eName.toLowerCase()}.list
   if result.is_a?(Array)
     result.each do |item|
       d = item.data_get
@@ -62,7 +62,7 @@ end
 
 \`\`\`ruby
 begin
-  result = client.${eName}().load({ "id" => "example_id" })
+  result = client.${eName.toLowerCase()}.load({ "id" => "example_id" })
   puts result
 rescue => err
   warn "load failed: #{err}"
@@ -79,19 +79,19 @@ end
 `)
       if (opnames.includes('create')) {
         Content(`# Create
-created = client.${eName}().create({ "name" => "Example" })
+created = client.${eName.toLowerCase()}.create({ "name" => "Example" })
 
 `)
       }
       if (opnames.includes('update')) {
         Content(`# Update
-client.${eName}().update({ "id" => created["id"], "name" => "Example-Renamed" })
+client.${eName.toLowerCase()}.update({ "id" => created["id"], "name" => "Example-Renamed" })
 
 `)
       }
       if (opnames.includes('remove')) {
         Content(`# Remove
-client.${eName}().remove({ "id" => created["id"] })
+client.${eName.toLowerCase()}.remove({ "id" => created["id"] })
 `)
       }
       Content(`\`\`\`

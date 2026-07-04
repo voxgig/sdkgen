@@ -44,7 +44,7 @@ client = ${ctor}
 
 \`\`\`python
 try:
-    result = client.${eName}().list()
+    result = client.${eName.toLowerCase()}.list()
     for item in result:
         d = item.data_get()
         print(d["id"], d["name"])
@@ -60,7 +60,7 @@ except Exception as err:
 
 \`\`\`python
 try:
-    result = client.${eName}().load({"id": "example_id"})
+    result = client.${eName.toLowerCase()}.load({"id": "example_id"})
     print(result)
 except Exception as err:
     print(f"load failed: {err}")
@@ -76,19 +76,19 @@ except Exception as err:
 `)
       if (opnames.includes('create')) {
         Content(`# Create
-created = client.${eName}().create({"name": "Example"})
+created = client.${eName.toLowerCase()}.create({"name": "Example"})
 
 `)
       }
       if (opnames.includes('update')) {
         Content(`# Update
-client.${eName}().update({"id": created["id"], "name": "Example-Renamed"})
+client.${eName.toLowerCase()}.update({"id": created["id"], "name": "Example-Renamed"})
 
 `)
       }
       if (opnames.includes('remove')) {
         Content(`# Remove
-client.${eName}().remove({"id": created["id"]})
+client.${eName.toLowerCase()}.remove({"id": created["id"]})
 `)
       }
       Content(`\`\`\`

@@ -31,7 +31,7 @@ const client = ${ctor}
 
     if (opnames.includes('list')) {
       Content(`// List all ${eName.toLowerCase()}s
-const ${eName.toLowerCase()}s = await client.${eName}().list()
+const ${eName.toLowerCase()}s = await client.${eName.toLowerCase()}.list()
 `)
     }
 
@@ -48,7 +48,7 @@ const ${eName.toLowerCase()}s = await client.${eName}().list()
 
       Content(`
 // Load a specific ${neName.toLowerCase()}
-const ${neName.toLowerCase()} = await client.${neName}().load({
+const ${neName.toLowerCase()} = await client.${neName.toLowerCase()}.load({
   ${parentParam}: 'example',
   id: 'example_id',
 })
