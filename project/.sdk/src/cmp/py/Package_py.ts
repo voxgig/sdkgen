@@ -62,6 +62,11 @@ Homepage = "${repoUrl}"
 Repository = "${repoUrl}"
 Issues = "${issuesUrl}"
 
+# Ship the top-level single-file modules (setuptools find only discovers
+# package dirs, never these) so the documented import actually installs.
+[tool.setuptools]
+py-modules = ["${model.const.Name.toLowerCase()}_sdk", "config", "features"]
+
 # Explicit package list — setuptools auto-discovery refuses to pick when
 # multiple top-level dirs (core/entity/feature/utility) are present.
 [tool.setuptools.packages.find]

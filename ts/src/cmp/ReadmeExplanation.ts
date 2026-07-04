@@ -108,7 +108,7 @@ stores the returned data and match criteria internally.
 
 \`\`\`php
 $moon = $client->Moon();
-[$result, $err] = $moon->load(["planet_id" => "earth", "id" => "luna"]);
+$moon->load(["planet_id" => "earth", "id" => "luna"]);
 
 // $moon->dataGet() now returns the loaded moon data
 // $moon->matchGet() returns the last match criteria
