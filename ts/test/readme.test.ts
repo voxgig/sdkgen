@@ -20,11 +20,16 @@ const log: any = {
 function makeModel() {
   return {
     name: 'demo',
-    main: { kit: { feature: {
-      test: { active: true, name: 'test', title: 'Test mode (offline)' },
-      log: { active: true, name: 'log', title: 'Structured logging' },
-      retry: { active: false, name: 'retry', title: 'Retry' },
-    } } },
+    main: { kit: {
+      entity: {
+        moon: { active: true, name: 'moon' },
+      },
+      feature: {
+        test: { active: true, name: 'test', title: 'Test mode (offline)' },
+        log: { active: true, name: 'log', title: 'Structured logging' },
+        retry: { active: false, name: 'retry', title: 'Retry' },
+      },
+    } },
   }
 }
 
@@ -104,7 +109,7 @@ describe('ReadmeExplanation', () => {
     const out = await renderExplanation('lua')
     ok(out.includes('```lua'))
     ok(out.includes('A feature is a Lua table'))
-    ok(out.includes('client:Moon(nil)'))
+    ok(out.includes('client:Moon()'))
   })
 
   test('go variant', async () => {
