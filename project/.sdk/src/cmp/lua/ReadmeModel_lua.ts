@@ -12,6 +12,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const entityList = each(entity).filter((e: any) => e.active !== false)
+  const exEnt: any = entityList[0] || {}
+  const eName = exEnt.Name || 'Entity'
+  const eLower = String(exEnt.name || 'entity').toLowerCase()
 
   const apikeyOptionRow = isAuthActive(model)
     ? '| `apikey` | `string` | API key for authentication. |\n'
@@ -90,9 +93,9 @@ data **directly** — there is no wrapper:
 
 Check \`err\` first (it is non-\`nil\` on failure), then use \`value\`:
 
-    local advice, err = client:Advice():load({ id = "example_id" })
+    local ${eLower}, err = client:${eName}():load({ id = "example_id" })
     if err then error(err) end
-    -- advice is the loaded record
+    -- ${eLower} is the loaded record
 
 Only \`direct()\` returns a response envelope — a \`table\` with \`ok\`,
 \`status\`, \`headers\`, and \`data\` keys.
