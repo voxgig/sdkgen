@@ -38,7 +38,7 @@ local client = ${ctor}
     const opnames = Object.keys(exampleEntity.op || {})
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()}s
+      Content(`### 2. List ${eName.toLowerCase()} records
 
 \`\`\`lua
 local result, err = client:${eName.toLowerCase()}():list()

@@ -51,7 +51,8 @@ ${apikeyRow}| \`base\` | \`string\` | Base URL of the API server. |
 | --- | --- | --- |
 `);
     (0, jostraca_1.each)(entityList, (ent) => {
-        (0, jostraca_1.Content)(`| \`${ent.Name}(data?)\` | \`${ent.Name}Entity\` | Create a ${ent.Name} entity instance. |
+        const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a';
+        (0, jostraca_1.Content)(`| \`${ent.Name}(data?)\` | \`${ent.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
 `);
     });
     (0, jostraca_1.Content)(`| \`options()\` | \`object\` | Deep copy of current SDK options. |

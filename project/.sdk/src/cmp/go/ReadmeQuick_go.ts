@@ -53,7 +53,7 @@ func main() {
     const opnames = Object.keys(exampleEntity.op || {})
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()}s
+      Content(`### 2. List ${eName.toLowerCase()} records
 
 \`\`\`go
     result, err := client.${eName}(nil).List(nil, nil)
