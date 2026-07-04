@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -21,7 +21,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const authActive = isAuthActive(model)
   const apikeyImport = authActive ? `import os\n` : ''
   const ctor = authActive
-    ? `${model.const.Name}SDK({\n    "apikey": os.environ.get("${model.NAME}_APIKEY"),\n})`
+    ? `${model.const.Name}SDK({\n    "apikey": os.environ.get("${envName(model)}_APIKEY"),\n})`
     : `${model.const.Name}SDK()`
 
   Content(`### 1. Create a client
@@ -36,6 +36,7 @@ client = ${ctor}
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
+    const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
     const opnames = Object.keys(exampleEntity.op || {})
 
     if (opnames.includes('list')) {
@@ -56,7 +57,7 @@ if isinstance(result, list):
     }
 
     if (opnames.includes('load')) {
-      Content(`### 3. Load a ${eName.toLowerCase()}
+      Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
 \`\`\`python
 result, err = client.${eName}().load({"id": "example_id"})

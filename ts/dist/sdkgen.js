@@ -38,7 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.collectDeps = exports.getMatchEntries = exports.buildIdNames = exports.isAuthActive = exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeQuick = exports.ReadmeInstall = exports.ReadmeTop = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Changelog = exports.Security = exports.License = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
-exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.langLabel = exports.apiName = exports.repoInfo = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.installCommand = exports.packageName = void 0;
+exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.langLabel = exports.apiName = exports.repoInfo = exports.envName = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.installCommand = exports.packageName = void 0;
 exports.SdkGen = SdkGen;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -102,6 +102,7 @@ Object.defineProperty(exports, "installCommand", { enumerable: true, get: functi
 Object.defineProperty(exports, "pkgDescription", { enumerable: true, get: function () { return packageMeta_1.pkgDescription; } });
 Object.defineProperty(exports, "nonAffiliation", { enumerable: true, get: function () { return packageMeta_1.nonAffiliation; } });
 Object.defineProperty(exports, "keywords", { enumerable: true, get: function () { return packageMeta_1.keywords; } });
+Object.defineProperty(exports, "envName", { enumerable: true, get: function () { return packageMeta_1.envName; } });
 Object.defineProperty(exports, "repoInfo", { enumerable: true, get: function () { return packageMeta_1.repoInfo; } });
 Object.defineProperty(exports, "apiName", { enumerable: true, get: function () { return packageMeta_1.apiName; } });
 Object.defineProperty(exports, "langLabel", { enumerable: true, get: function () { return packageMeta_1.langLabel; } });

@@ -24,6 +24,7 @@ exports.installCommand = installCommand;
 exports.pkgDescription = pkgDescription;
 exports.nonAffiliation = nonAffiliation;
 exports.keywords = keywords;
+exports.envName = envName;
 const apidef_1 = require("@voxgig/apidef");
 const PUBLISHER = 'Voxgig';
 exports.PUBLISHER = PUBLISHER;
@@ -145,5 +146,11 @@ function nonAffiliation(model) {
 }
 function keywords(model) {
     return ['voxgig', 'sdk', 'generated-sdk', 'openapi', 'api-client', model.name];
+}
+// A VALID uppercase env-var base derived from the slug: 'unsolicited-advice' ->
+// 'UNSOLICITED_ADVICE'. Use for <NAME>_APIKEY / <NAME>_TEST_LIVE so examples are
+// valid identifiers (model.NAME left a hyphen in, breaking process.env.X).
+function envName(model) {
+    return String(model.name || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
 //# sourceMappingURL=packageMeta.js.map

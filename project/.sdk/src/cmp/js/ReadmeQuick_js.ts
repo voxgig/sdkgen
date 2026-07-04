@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,14 +17,14 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   const ctor = isAuthActive(model)
-    ? `new ${model.const.Name}SDK({\n  apikey: process.env.${model.NAME}_APIKEY,\n})`
+    ? `new ${model.const.Name}SDK({\n  apikey: process.env.${envName(model)}_APIKEY,\n})`
     : `new ${model.const.Name}SDK()`
 
   Content(`
 ### Create a Client
 
 \`\`\`js
-const { ${model.const.Name}SDK } = require('${target.module.name}')
+const { ${model.const.Name}SDK } = require('${packageName(model, target.name)}')
 
 const client = ${ctor}
 \`\`\`
@@ -33,11 +33,12 @@ const client = ${ctor}
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
+    const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
     const opnames = Object.keys(exampleEntity.op || {})
 
     if (opnames.includes('load')) {
       Content(`
-### Load a ${eName}
+### Load ${article} ${eName}
 
 \`\`\`js
 const ${exampleEntity.name} = await client.${eName}().load({ id: '${exampleEntity.name}_id' })

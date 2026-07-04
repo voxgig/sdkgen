@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from '@voxgig/sdkgen'
+import { cmp, each, Content, envName } from '@voxgig/sdkgen'
 
 
 const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
@@ -25,7 +25,7 @@ client = ${model.Name}SDK({
 
   publishedOptions.map((option: any) => {
     if ('apikey' === option.name) {
-      Content(`    "${option.name}": os.environ.get("${model.NAME}_APIKEY"),
+      Content(`    "${option.name}": os.environ.get("${envName(model)}_APIKEY"),
 `)
     }
     else {

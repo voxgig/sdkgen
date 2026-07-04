@@ -1,12 +1,22 @@
 
-import { cmp, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+  getModelPath,
+  nom,
+} from '@voxgig/apidef'
 
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
 
+  const entity = getModelPath(model, `main.${KIT}.entity`)
+  const exampleEntity = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
+  const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
+
   const apikeyEnvLine = isAuthActive(model)
-    ? `\n${model.NAME}_APIKEY=<your-key>`
+    ? `\n${envName(model)}_APIKEY=<your-key>`
     : ''
 
   Content(`### Make a direct HTTP request
@@ -49,7 +59,7 @@ Create a mock client for unit testing — no server required:
 \`\`\`ruby
 client = ${model.const.Name}SDK.test
 
-result, err = client.${model.const.Name}().load({ "id" => "test01" })
+result, err = client.${eName}().load({ "id" => "test01" })
 # result contains mock response data
 \`\`\`
 
@@ -80,7 +90,7 @@ client = ${model.const.Name}SDK.new({
 Create a \`.env.local\` file at the project root:
 
 \`\`\`
-${model.NAME}_TEST_LIVE=TRUE${apikeyEnvLine}
+${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
 \`\`\`
 
 Then run:

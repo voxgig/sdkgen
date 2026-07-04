@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,7 +17,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const authActive = isAuthActive(model)
   const ctor = authActive
-    ? `${model.const.Name}SDK.new({\n  "apikey" => ENV["${model.NAME}_APIKEY"],\n})`
+    ? `${model.const.Name}SDK.new({\n  "apikey" => ENV["${envName(model)}_APIKEY"],\n})`
     : `${model.const.Name}SDK.new`
 
   Content(`\`\`\`ruby

@@ -18,4 +18,5 @@ declare function installCommand(model: any, target: string): string;
 declare function pkgDescription(model: any, target: string): string;
 declare function nonAffiliation(model: any): string;
 declare function keywords(model: any): string[];
-export { PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, repoInfo, apiName, packageName, installCommand, pkgDescription, nonAffiliation, keywords, };
+declare function envName(model: any): string;
+export { PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, repoInfo, apiName, packageName, installCommand, pkgDescription, nonAffiliation, keywords, envName, };
