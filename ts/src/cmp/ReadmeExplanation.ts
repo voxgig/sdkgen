@@ -16,7 +16,9 @@ import { requirePath } from '../utility'
 type LangExplain = {
   error: string       // what happens when a pipeline stage errors
   featureKind: string // what a "feature" is in this language
-  entityState: string // stateful-entity explanation + example
+  // stateful-entity explanation + example; parameterised by the real
+  // example entity name so the snippet never references a phantom entity
+  entityState: (eName: string, eLower: string) => string
   direct: string      // direct/prepare explanation
 }
 
@@ -34,16 +36,16 @@ propagating.
 a function that receives the context.
 
 `,
-  entityState: `Entity instances are stateful. After a successful \`load\`, the entity
+  entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally. Subsequent
 calls on the same instance can rely on this state.
 
 \`\`\`ts
-const moon = client.Moon()
-await moon.load({ planet_id: 'earth', id: 'luna' })
+const ${eLower} = client.${eName}()
+await ${eLower}.load({ id: "example_id" })
 
-// moon.data() now returns the loaded moon data
-// moon.match() returns { planet_id: 'earth', id: 'luna' }
+// ${eLower}.data() now returns the loaded ${eLower} data
+// ${eLower}.match() returns { id: "example_id" }
 \`\`\`
 
 Call \`make()\` to create a fresh instance with the same configuration
@@ -70,15 +72,15 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`python
-moon = client.Moon()
-moon.load({"planet_id": "earth", "id": "luna"})
+${eLower} = client.${eName}()
+${eLower}.load({"id": "example_id"})
 
-# moon.data_get() now returns the loaded moon data
-# moon.match_get() returns the last match criteria
+# ${eLower}.data_get() now returns the loaded ${eLower} data
+# ${eLower}.match_get() returns the last match criteria
 \`\`\`
 
 Call \`make()\` to create a fresh instance with the same configuration
@@ -103,15 +105,15 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`php
-$moon = $client->Moon();
-$moon->load(["planet_id" => "earth", "id" => "luna"]);
+$${eLower} = $client->${eName}();
+$${eLower}->load(["id" => "example_id"]);
 
-// $moon->dataGet() now returns the loaded moon data
-// $moon->matchGet() returns the last match criteria
+// $${eLower}->dataGet() now returns the loaded ${eLower} data
+// $${eLower}->matchGet() returns the last match criteria
 \`\`\`
 
 Call \`make()\` to create a fresh instance with the same configuration
@@ -136,15 +138,15 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`ruby
-moon = client.Moon
-moon.load({ "planet_id" => "earth", "id" => "luna" })
+${eLower} = client.${eName}
+${eLower}.load({ "id" => "example_id" })
 
-# moon.data_get now returns the loaded moon data
-# moon.match_get returns the last match criteria
+# ${eLower}.data_get now returns the loaded ${eLower} data
+# ${eLower}.match_get returns the last match criteria
 \`\`\`
 
 Call \`make\` to create a fresh instance with the same configuration
@@ -169,15 +171,15 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`lua
-local moon = client:Moon(nil)
-moon:load({ planet_id = "earth", id = "luna" }, nil)
+local ${eLower} = client:${eName}()
+${eLower}:load({ id = "example_id" })
 
--- moon:data_get() now returns the loaded moon data
--- moon:match_get() returns the last match criteria
+-- ${eLower}:data_get() now returns the loaded ${eLower} data
+-- ${eLower}:match_get() returns the last match criteria
 \`\`\`
 
 Call \`make()\` to create a fresh instance with the same configuration
@@ -203,15 +205,15 @@ error is returned to the caller. An unexpected panic triggers the
 stage names.
 
 `,
-    entityState: `Entity instances are stateful. After a successful \`Load\`, the entity
+    entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`Load\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`go
-moon := client.Moon(nil)
-moon.Load(map[string]any{"planet_id": "earth", "id": "luna"}, nil)
+${eLower} := client.${eName}(nil)
+${eLower}.Load(map[string]any{"id": "example_id"}, nil)
 
-// moon.Data() now returns the loaded moon data
-// moon.Match() returns the last match criteria
+// ${eLower}.Data() now returns the loaded ${eLower} data
+// ${eLower}.Match() returns the last match criteria
 \`\`\`
 
 Call \`Make()\` to create a fresh instance with the same configuration
@@ -234,6 +236,14 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
 
   const feature = getModelPath(model, `main.${KIT}.feature`)
   const lang = LANGS[target.name] || DEFAULT_LANG
+
+  // Derive a real example entity from the model (the same way the sibling
+  // Readme components do) so the entity-state example never references a
+  // phantom entity.
+  const entity = getModelPath(model, `main.${KIT}.entity`)
+  const ex = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
+  const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity'
+  const eLower = eName.toLowerCase()
 
   Content(`
 ## Explanation
@@ -302,7 +312,7 @@ were added, so later features can override earlier ones.
 
 `)
 
-  Content(lang.entityState)
+  Content(lang.entityState(eName, eLower))
 
 
   // Direct vs entity access
