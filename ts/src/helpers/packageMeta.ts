@@ -50,6 +50,64 @@ function repoInfo(model: any) {
     repoUrl,
     issuesUrl: `${repoUrl}/issues`,
     changelogUrl: `${repoUrl}/blob/main/CHANGELOG.md`,
+    // Version-agnostic releases page: where the `<target>/vX.Y.Z` git tags
+    // that a pending (not-yet-on-registry) package is installed from live.
+    releasesUrl: `${repoUrl}/releases`,
+  }
+}
+
+
+// Publication state of a target's package registry, tri-state + tag-only:
+//   'tag'      — no registry (the go family); resolved from the git tag.
+//   'pending'  — registry declared but the package is not uploaded yet
+//                (the fleet default): install from the git tag.
+//   'active'   — package is live on the registry: show the real install cmd.
+//   'inactive' — registry deliberately disabled (tag-only, like pending).
+// Reads main.kit.target.<t>.publish.registry.state (default 'pending').
+// The legacy boolean `registry.active: true` is honoured as a back-compat
+// alias for state === 'active'.
+function registryState(model: any, target: string): 'tag' | 'pending' | 'active' | 'inactive' {
+  if ('go' === target || 'go-cli' === target || 'go-mcp' === target) return 'tag'
+  const reg = model?.main?.[KIT]?.target?.[target]?.publish?.registry
+  if (null == reg || '' === (reg.name || '')) return 'tag'
+  if (true === reg.active) return 'active' // legacy alias
+  const s = reg.state
+  if ('active' === s || 'inactive' === s || 'pending' === s) return s
+  return 'pending'
+}
+
+// True only when the package is actually live on its registry (so a README
+// may print the real `npm install`/`pip install`/... command). Everything
+// else — pending, inactive, tag-only — installs from the git tag instead.
+function isPublished(model: any, target: string): boolean {
+  return 'active' === registryState(model, target)
+}
+
+// The registry a target uploads to (npm | pypi | packagist | ...), or ''
+// for tag-only ports. Used in the "not yet on <registry>" pending message.
+function registryName(model: any, target: string): string {
+  const reg = model?.main?.[KIT]?.target?.[target]?.publish?.registry
+  return (reg && reg.name) ? String(reg.name) : ''
+}
+
+// The vendor / git-tag install pointer for a NOT-yet-published target. For
+// the go family this is the canonical install (`go get <module>@latest`,
+// which the Go proxy resolves from the `<subdir>/vX.Y.Z` tag). For registry
+// ports it is a short "not yet on <registry> — install from the git tag"
+// pointer carrying the releases URL.
+function vendorCommand(model: any, target: string): string {
+  const { releasesUrl } = repoInfo(model)
+  switch (target) {
+    case 'go':
+      return `go get ${packageName(model, 'go')}@latest`
+    case 'go-mcp':
+      return `go get ${packageName(model, 'go-mcp')}@latest`
+    case 'go-cli':
+      return `go install ${packageName(model, 'go-cli')}/cmd/${model.name}@latest`
+    default: {
+      const reg = registryName(model, target)
+      return `not yet on ${reg || 'the registry'} — install from the git tag: ${releasesUrl}`
+    }
   }
 }
 
@@ -99,7 +157,14 @@ function packageName(model: any, eco: string): string {
 }
 
 // Copy-paste install command for a target, using the REAL package name.
+// Only a package that is actually live on its registry (isPublished) gets a
+// registry install command; everything else (pending / inactive / tag-only,
+// including the whole go family) returns the git-tag vendor command instead,
+// so a README never prints a `npm install ...` that 404s.
 function installCommand(model: any, target: string): string {
+  if (!isPublished(model, target)) {
+    return vendorCommand(model, target)
+  }
   switch (target) {
     case 'ts':
       return `npm install ${packageName(model, 'npm')}`
@@ -160,6 +225,10 @@ export {
   apiName,
   packageName,
   installCommand,
+  registryState,
+  isPublished,
+  registryName,
+  vendorCommand,
   pkgDescription,
   nonAffiliation,
   keywords,

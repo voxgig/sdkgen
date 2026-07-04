@@ -23,10 +23,11 @@ main: kit: feature: &: target: js: deps: &: {
 }
 
 
-# Publication: npm registry (declared but not yet active).
+# Publication: npm registry (declared, publish pending — git-tag only).
 main: kit: target: js: publish: {
   tag: { active: true }
   registry: {
+    state: 'pending'
     active: false
     name: 'npm'
     url: 'https://registry.npmjs.org'

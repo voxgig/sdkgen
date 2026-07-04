@@ -49,6 +49,10 @@ import type { DepEntry } from './helpers/collectDeps'
 import {
   packageName,
   installCommand,
+  registryState,
+  isPublished,
+  registryName,
+  vendorCommand,
   pkgDescription,
   nonAffiliation,
   keywords,
@@ -430,6 +434,10 @@ export {
 
   packageName,
   installCommand,
+  registryState,
+  isPublished,
+  registryName,
+  vendorCommand,
   pkgDescription,
   nonAffiliation,
   keywords,

@@ -11,8 +11,11 @@ import { requirePath } from '../utility'
 import {
   installCommand as pkgInstall,
   packageName,
+  registryState,
+  vendorCommand,
   apiName,
   nonAffiliation,
+  repoInfo,
   SECURITY_EMAIL,
 } from '../helpers/packageMeta'
 
@@ -140,17 +143,33 @@ ${aboutMd.trim()}
 `)
     }
 
-    // 3. Packages — real published package name + install command per ecosystem
+    // 3. Packages — real published package name + install command per
+    // ecosystem. A package that is NOT yet live on its registry (the fleet
+    // default: 'pending') must NOT advertise a `npm install ...` that 404s —
+    // its Install cell links to the git-tag releases page instead. The go
+    // family resolves from the tag directly (`go get <mod>@latest`).
     if (sdkTargets.length > 0) {
+      const { releasesUrl } = repoInfo(model)
       Content(`## Packages
 
 | Language | Package | Install |
 | --- | --- | --- |
 `)
       sdkTargets.forEach((tgt: any) => {
-        const cmd = installCommand(tgt, model)
-        if (!cmd) return
-        Content(`| ${tgt.title} | \`${packageName(model, tgt.name)}\` | \`${cmd}\` |
+        const state = registryState(model, tgt.name)
+        let cell: string
+        if ('active' === state) {
+          const cmd = installCommand(tgt, model)
+          if (!cmd) return
+          cell = '`' + cmd + '`'
+        } else if ('tag' === state) {
+          // Tag-only port (go): the vendor command IS the real install.
+          cell = '`' + vendorCommand(model, tgt.name) + '`'
+        } else {
+          // pending / inactive: point at the git tag, never a 404 command.
+          cell = `publish pending — [install from git tag](${releasesUrl})`
+        }
+        Content(`| ${tgt.title} | \`${packageName(model, tgt.name)}\` | ${cell} |
 `)
       })
       Content(`

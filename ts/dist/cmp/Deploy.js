@@ -10,11 +10,14 @@ const types_1 = require("../types");
 //                       one, pushed with a token from the aql key vault
 //                       (--for recipe + alias, default github/github).
 //   publish.registry  — package registry details (name, url, vault
-//                       credential recipe or raw env mapping) plus an
-//                       `active` flag. While a registry is inactive a
-//                       real deploy publishes the git tag only; the
-//                       package upload starts when `active` flips true.
-//                       Tag-only ports (go family) have no registry.
+//                       credential recipe or raw env mapping) plus a
+//                       `state` (pending | active | inactive; the legacy
+//                       `active: true` bool is honoured as an alias for
+//                       state === 'active'). While a registry is NOT
+//                       active (publish pending) a real deploy publishes
+//                       the git tag only; the package upload starts when
+//                       state flips to 'active'. Tag-only ports (go
+//                       family) have no registry.
 //
 // Follows the voxgig/struct root Makefile conventions: per-target deploy
 // targets, deliberately no all-targets real deploy (each upload is
@@ -38,13 +41,24 @@ const Deploy = (0, jostraca_1.cmp)(function Deploy(props) {
     });
     ctx$.log.info({
         point: 'generate-deploy',
-        note: 'targets: ' + targets.map((t) => t.name + (registryOf(t) ? (':' + registryOf(t).name + (registryOf(t).active ? '' : '(inactive)')) : ':tag-only')).join(',')
+        note: 'targets: ' + targets.map((t) => t.name + (registryOf(t) ? (':' + registryOf(t).name + (regIsActive(registryOf(t)) ? '' : '(publish pending)')) : ':tag-only')).join(',')
     });
 });
 exports.Deploy = Deploy;
 function registryOf(t) {
     const reg = t.publish?.registry;
     return (reg && '' !== (reg.name || '')) ? reg : undefined;
+}
+// A registry is active (package really uploaded) when its tri-state
+// `state === 'active'`. The legacy boolean `active: true` is honoured as a
+// back-compat alias. Anything else — 'pending' (the default), 'inactive' —
+// means a deploy publishes the git tag only.
+function regIsActive(reg) {
+    if (null == reg)
+        return false;
+    if (true === reg.active)
+        return true; // legacy alias
+    return 'active' === reg.state;
 }
 function aliasVarName(name) {
     return name.toUpperCase().replace(/[^A-Z0-9]+/g, '_') + '_ALIAS';
@@ -89,7 +103,7 @@ function makeDeployMakefile(model, targets) {
     const summary = targets.map((t) => {
         const reg = registryOf(t);
         const state = reg
-            ? `${reg.name} (${reg.active ? 'ACTIVE' : 'inactive: deploy publishes the git tag only'}) ${reg.url || ''}`.trim()
+            ? `${reg.name} (${regIsActive(reg) ? 'ACTIVE' : 'publish pending: deploy publishes the git tag only'}) ${reg.url || ''}`.trim()
             : 'tag-only';
         return `#   ${t.name.padEnd(8)} ${state}`;
     }).join('\n');
@@ -114,18 +128,18 @@ deploy-dry-${t.name}:
 ${tagPushRecipe(t.name, 'tag-only port')}
 `;
         }
-        if (reg && !reg.active) {
-            // Inactive registry: deploying this target publishes its git tag
+        if (reg && !regIsActive(reg)) {
+            // Publish pending: deploying this target publishes its git tag
             // only. The package upload turns on by flipping
-            // publish.registry.active in the model and regenerating.
+            // publish.registry.state to 'active' in the model and regenerating.
             return `
 deploy-${t.name}:
-\t@echo "deploy-${t.name}: ${reg.name} publication is inactive — publishing the git tag only."
+\t@echo "deploy-${t.name}: ${reg.name} publication is pending — publishing the git tag only."
 \taql vault exec ${ghArgs} -- $(MAKE) tag-push-${t.name}
 
 deploy-dry-${t.name}:
 \taql vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, reg.name + ' publication inactive — tag-only deploy')}
+${tagPushRecipe(t.name, reg.name + ' publication pending — tag-only deploy')}
 `;
         }
         return `
@@ -153,7 +167,7 @@ ${summary}
 #   make deploy               list per-target deploy commands
 #   make deploy-<target>      deploy ONE target (no deploy-all: each
 #                             registry upload is irreversible); while a
-#                             registry is inactive this publishes the
+#                             registry is pending this publishes the
 #                             port's git tag only
 #   make deploy-dry           rehearse EVERY target: aql --dry-run
 #                             injects a filler token that each publish
@@ -182,7 +196,7 @@ deploy:
 \t@echo "Registry state is set in the model (.sdk/model/target/<t>.jsonic):"
 ${targets.map((t) => {
         const reg = registryOf(t);
-        const state = reg ? `${reg.name} ${reg.active ? 'ACTIVE' : 'inactive (deploy = git tag only)'}` : 'tag-only';
+        const state = reg ? `${reg.name} ${regIsActive(reg) ? 'ACTIVE' : 'publish pending (deploy = git tag only)'}` : 'tag-only';
         return `\t@echo "  deploy-${t.name.padEnd(8)} ${state}"`;
     }).join('\n')}
 \t@echo "Rehearse everything safely first: make deploy-dry"

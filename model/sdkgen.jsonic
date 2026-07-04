@@ -31,10 +31,13 @@ main: kit: target: &: {
   #
   # Every port gets a git release tag `<prefix>/vX.Y.Z` (prefix defaults
   # to the target name). Ports with a `registry` entry also publish a
-  # package to that registry — but only when `registry.active` is true:
-  # registries are activated one at a time as each ecosystem is ready.
+  # package to that registry — but only when the registry is active
+  # (`registry.state === 'active'`): registries are activated one at a
+  # time as each ecosystem is ready. Until then a port is 'pending'
+  # (declared + git-tag-published, but not yet uploaded to the registry).
   # Tag-only ports (the go family: the Go proxy resolves from GitHub
-  # tags) simply leave `registry` unset.
+  # tags) simply leave `registry` unset — they are implicitly pending
+  # until their `<target>/vX.Y.Z` tag exists.
   publish: {
     # Git release tag (all ports).
     tag: {
@@ -53,7 +56,19 @@ main: kit: target: &: {
 
     # Package registry (omit for tag-only ports).
     registry: {
-      active: *false | boolean   # real publishes refuse when false
+      # Publication state (tri-state):
+      #   'pending'  — declared + git-tag-published, NOT yet on the
+      #                registry (the default: READMEs point at the git
+      #                tag, deploy publishes the tag only).
+      #   'active'   — package is uploaded to the registry; READMEs show
+      #                the real `npm install`/`pip install`/... command.
+      #   'inactive' — registry deliberately disabled (also tag-only).
+      # Kept as a plain string (default 'pending') rather than a literal
+      # disjunction to sidestep aontu's literal-disjunction fragility;
+      # code (packageMeta.registryState / Deploy) enforces the tri-state.
+      state: *'pending' | string
+      # Back-compat alias: `active: true` still means state === 'active'.
+      active: *false | boolean   # real publishes refuse when not active
       name: *'' | string         # npm | pypi | packagist | rubygems | luarocks
       url: *'' | string
       package: *'' | string      # registry package name ('' -> derived)
