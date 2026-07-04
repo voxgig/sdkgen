@@ -211,7 +211,7 @@ const ReadmeExplanation = (0, jostraca_1.cmp)(function ReadmeExplanation(props) 
     // Derive a real example entity from the model (the same way the sibling
     // Readme components do) so the entity-state example never references a
     // phantom entity.
-    const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
+    const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`, { only_active: false, required: false });
     const ex = Object.values(entity || {}).find((e) => e && e.active !== false);
     const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity';
     const eLower = eName.toLowerCase();

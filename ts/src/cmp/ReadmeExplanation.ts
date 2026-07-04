@@ -240,7 +240,7 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   // Derive a real example entity from the model (the same way the sibling
   // Readme components do) so the entity-state example never references a
   // phantom entity.
-  const entity = getModelPath(model, `main.${KIT}.entity`)
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   const ex = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
   const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity'
   const eLower = eName.toLowerCase()
