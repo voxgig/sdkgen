@@ -24,32 +24,35 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 For endpoints not covered by entity methods:
 
 \`\`\`ruby
-result, err = client.direct({
+result = client.direct({
   "path" => "/api/resource/{id}",
   "method" => "GET",
   "params" => { "id" => "example" },
 })
-raise err if err
 
 if result["ok"]
   puts result["status"]  # 200
   puts result["data"]    # response body
+else
+  warn result["err"]
 end
 \`\`\`
 
 ### Prepare a request without sending it
 
 \`\`\`ruby
-fetchdef, err = client.prepare({
-  "path" => "/api/resource/{id}",
-  "method" => "DELETE",
-  "params" => { "id" => "example" },
-})
-raise err if err
-
-puts fetchdef["url"]
-puts fetchdef["method"]
-puts fetchdef["headers"]
+begin
+  fetchdef = client.prepare({
+    "path" => "/api/resource/{id}",
+    "method" => "DELETE",
+    "params" => { "id" => "example" },
+  })
+  puts fetchdef["url"]
+  puts fetchdef["method"]
+  puts fetchdef["headers"]
+rescue => err
+  warn "prepare failed: #{err}"
+end
 \`\`\`
 
 ### Use test mode
@@ -59,7 +62,7 @@ Create a mock client for unit testing — no server required:
 \`\`\`ruby
 client = ${model.const.Name}SDK.test
 
-result, err = client.${eName}().load({ "id" => "test01" })
+result = client.${eName}().load({ "id" => "test01" })
 # result contains mock response data
 \`\`\`
 

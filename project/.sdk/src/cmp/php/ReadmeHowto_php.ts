@@ -20,28 +20,31 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 For endpoints not covered by entity methods:
 
 \`\`\`php
-[$result, $err] = $client->direct([
+// direct() is the raw-HTTP escape hatch: it returns a result array
+// (it does not throw). Branch on $result["ok"].
+$result = $client->direct([
     "path" => "/api/resource/{id}",
     "method" => "GET",
     "params" => ["id" => "example"],
 ]);
-if ($err) { throw new \\Exception($err); }
 
 if ($result["ok"]) {
     echo $result["status"];  // 200
     print_r($result["data"]);  // response body
+} else {
+    echo "Error: " . $result["err"]->getMessage();
 }
 \`\`\`
 
 ### Prepare a request without sending it
 
 \`\`\`php
-[$fetchdef, $err] = $client->prepare([
+// prepare() throws on error and returns the fetch definition.
+$fetchdef = $client->prepare([
     "path" => "/api/resource/{id}",
     "method" => "DELETE",
     "params" => ["id" => "example"],
 ]);
-if ($err) { throw new \\Exception($err); }
 
 echo $fetchdef["url"];
 echo $fetchdef["method"];
@@ -55,7 +58,7 @@ Create a mock client for unit testing — no server required:
 \`\`\`php
 $client = ${model.const.Name}SDK::test();
 
-[$result, $err] = $client->${eName}()->load(["id" => "test01"]);
+$result = $client->${eName}()->load(["id" => "test01"]);
 // $result contains mock response data
 \`\`\`
 

@@ -24,29 +24,28 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 For endpoints not covered by entity methods:
 
 \`\`\`python
-result, err = client.direct({
+result = client.direct({
     "path": "/api/resource/{id}",
     "method": "GET",
     "params": {"id": "example"},
 })
-if err:
-    raise Exception(err)
 
 if result["ok"]:
     print(result["status"])  # 200
     print(result["data"])    # response body
+else:
+    print(result["err"])     # error value
 \`\`\`
 
 ### Prepare a request without sending it
 
 \`\`\`python
-fetchdef, err = client.prepare({
+# prepare() returns the fetch definition and raises on error.
+fetchdef = client.prepare({
     "path": "/api/resource/{id}",
     "method": "DELETE",
     "params": {"id": "example"},
 })
-if err:
-    raise Exception(err)
 
 print(fetchdef["url"])
 print(fetchdef["method"])
@@ -60,7 +59,7 @@ Create a mock client for unit testing — no server required:
 \`\`\`python
 client = ${model.const.Name}SDK.test()
 
-result, err = client.${eName}().load({"id": "test01"})
+result = client.${eName}().load({"id": "test01"})
 # result contains mock response data
 \`\`\`
 

@@ -134,3 +134,7 @@ out
 *~
 *.local.*
 
+
+# Python bytecode (never ship into tm/ copies)
+__pycache__/
+*.pyc

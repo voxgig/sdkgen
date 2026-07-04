@@ -93,7 +93,7 @@ class EntityNameEntity
 
     // #RemoveOp
 
-    private function _run_op($ctx, callable $post_done): array
+    private function _run_op($ctx, callable $post_done): mixed
     {
         $utility = $this->_utility;
 

@@ -43,14 +43,13 @@ client = ${ctor}
       Content(`### 2. List ${eName.toLowerCase()}s
 
 \`\`\`python
-result, err = client.${eName}().list()
-if err:
-    raise Exception(err)
-
-if isinstance(result, list):
+try:
+    result = client.${eName}().list()
     for item in result:
         d = item.data_get()
         print(d["id"], d["name"])
+except Exception as err:
+    print(f"list failed: {err}")
 \`\`\`
 
 `)
@@ -60,10 +59,11 @@ if isinstance(result, list):
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
 \`\`\`python
-result, err = client.${eName}().load({"id": "example_id"})
-if err:
-    raise Exception(err)
-print(result)
+try:
+    result = client.${eName}().load({"id": "example_id"})
+    print(result)
+except Exception as err:
+    print(f"load failed: {err}")
 \`\`\`
 
 `)
@@ -76,7 +76,7 @@ print(result)
 `)
       if (opnames.includes('create')) {
         Content(`# Create
-created, _ = client.${eName}().create({"name": "Example"})
+created = client.${eName}().create({"name": "Example"})
 
 `)
       }

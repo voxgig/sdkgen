@@ -42,14 +42,16 @@ $client = ${ctor};
       Content(`### 2. List ${eName.toLowerCase()}s
 
 \`\`\`php
-[$result, $err] = $client->${eName}()->list();
-if ($err) { throw new \\Exception($err); }
-
-if (is_array($result)) {
-    foreach ($result as $item) {
-        $d = $item->data_get();
-        echo $d["id"] . " " . $d["name"] . "\\n";
+try {
+    $result = $client->${eName}()->list();
+    if (is_array($result)) {
+        foreach ($result as $item) {
+            $d = $item->data_get();
+            echo $d["id"] . " " . $d["name"] . "\\n";
+        }
     }
+} catch (\\Exception $err) {
+    echo "Error: " . $err->getMessage();
 }
 \`\`\`
 
@@ -60,9 +62,12 @@ if (is_array($result)) {
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
 \`\`\`php
-[$result, $err] = $client->${eName}()->load(["id" => "example_id"]);
-if ($err) { throw new \\Exception($err); }
-print_r($result);
+try {
+    $result = $client->${eName}()->load(["id" => "example_id"]);
+    print_r($result);
+} catch (\\Exception $err) {
+    echo "Error: " . $err->getMessage();
+}
 \`\`\`
 
 `)
@@ -75,7 +80,7 @@ print_r($result);
 `)
       if (opnames.includes('create')) {
         Content(`// Create
-[$created, $_] = $client->${eName}()->create(["name" => "Example"]);
+$created = $client->${eName}()->create(["name" => "Example"]);
 
 `)
       }

@@ -41,14 +41,16 @@ client = ${ctor}
       Content(`### 2. List ${eName.toLowerCase()}s
 
 \`\`\`ruby
-result, err = client.${eName}().list
-raise err if err
-
-if result.is_a?(Array)
-  result.each do |item|
-    d = item.data_get
-    puts "#{d["id"]} #{d["name"]}"
+begin
+  result = client.${eName}().list
+  if result.is_a?(Array)
+    result.each do |item|
+      d = item.data_get
+      puts "#{d["id"]} #{d["name"]}"
+    end
   end
+rescue => err
+  warn "list failed: #{err}"
 end
 \`\`\`
 
@@ -59,9 +61,12 @@ end
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
 \`\`\`ruby
-result, err = client.${eName}().load({ "id" => "example_id" })
-raise err if err
-puts result
+begin
+  result = client.${eName}().load({ "id" => "example_id" })
+  puts result
+rescue => err
+  warn "load failed: #{err}"
+end
 \`\`\`
 
 `)
@@ -74,7 +79,7 @@ puts result
 `)
       if (opnames.includes('create')) {
         Content(`# Create
-created, _ = client.${eName}().create({ "name" => "Example" })
+created = client.${eName}().create({ "name" => "Example" })
 
 `)
       }

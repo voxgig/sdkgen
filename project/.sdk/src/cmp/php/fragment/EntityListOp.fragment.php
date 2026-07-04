@@ -1,6 +1,6 @@
 // EJECT-START
 
-    public function list($reqmatch, $ctrl = null): array
+    public function list($reqmatch, $ctrl = null): mixed
     {
         $utility = $this->_utility;
         $ctx = ($utility->make_context)([

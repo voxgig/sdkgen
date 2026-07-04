@@ -3,7 +3,7 @@ require_once __DIR__ . '/../core/Helpers.php';
 
 // EJECT-START
 
-    public function remove($reqmatch, $ctrl = null): array
+    public function remove($reqmatch, $ctrl = null): mixed
     {
         $utility = $this->_utility;
         $ctx = ($utility->make_context)([
