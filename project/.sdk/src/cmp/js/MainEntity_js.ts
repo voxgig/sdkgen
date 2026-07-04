@@ -7,12 +7,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
   const { entity } = props
 
   Content(`
-  // Idiomatic facade: \`client.${entity.name}.list()\` / \`client.${entity.name}.load({ id })\`.
-  get ${entity.name}() {
-    return (this._${entity.name} ??= new ${entity.Name}Entity(this, undefined))
-  }
-
-  /** @deprecated Use \`client.${entity.name}\` instead. */
+  // Entity access: \`client.${entity.Name}().list()\` / \`client.${entity.Name}().load({ id })\`.
   ${entity.Name}(data) {
     const self = this
     return new ${entity.Name}Entity(self,data)

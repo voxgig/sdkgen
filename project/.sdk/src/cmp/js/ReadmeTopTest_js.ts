@@ -1,11 +1,23 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
   nom,
 } from '@voxgig/apidef'
+
+
+// Match the reference (ts) example values: the id field's canon type
+// decides whether the literal is a bare number or a quoted string.
+function exampleLiteral(entity: any, placeholder: string): string {
+  const idName = (entity.id && entity.id.field) || 'id'
+  const idField = (entity.fields || []).find((f: any) => f.name === idName)
+  const key = canonKey(idField && idField.type)
+  if ('INTEGER' === key || 'NUMBER' === key) return '1'
+  if ('BOOLEAN' === key) return 'true'
+  return `'${placeholder}'`
+}
 
 
 const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
@@ -20,8 +32,10 @@ const client = ${model.const.Name}SDK.test()
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    Content(`const result = await client.${eName.toLowerCase()}.load({ id: 'test01' })
-// result.ok === true, result.data contains mock data
+    const idName = (exampleEntity.id && exampleEntity.id.field) || 'id'
+    Content(`const ${eName.toLowerCase()} = await client.${eName}().load({ ${idName}: ${exampleLiteral(exampleEntity, 'test01')} })
+// ${eName.toLowerCase()} is a bare entity populated with mock data
+console.log(${eName.toLowerCase()})
 `)
   }
 

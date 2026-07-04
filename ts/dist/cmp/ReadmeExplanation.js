@@ -22,7 +22,7 @@ stores the returned data and match criteria internally. Subsequent
 calls on the same instance can rely on this state.
 
 \`\`\`ts
-const ${eLower} = client.${eLower}
+const ${eLower} = client.${eName}()
 await ${eLower}.load({ id: "example_id" })
 
 // ${eLower}.data() now returns the loaded ${eLower} data
@@ -55,7 +55,7 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 stores the returned data and match criteria internally.
 
 \`\`\`python
-${eLower} = client.${eLower}
+${eLower} = client.${eName}()
 ${eLower}.load({"id": "example_id"})
 
 # ${eLower}.data_get() now returns the loaded ${eLower} data
@@ -87,7 +87,7 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 stores the returned data and match criteria internally.
 
 \`\`\`php
-$${eLower} = $client->${eLower}();
+$${eLower} = $client->${eName}();
 $${eLower}->load(["id" => "example_id"]);
 
 // $${eLower}->dataGet() now returns the loaded ${eLower} data
@@ -119,7 +119,7 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 stores the returned data and match criteria internally.
 
 \`\`\`ruby
-${eLower} = client.${eLower}
+${eLower} = client.${eName}
 ${eLower}.load({ "id" => "example_id" })
 
 # ${eLower}.data_get now returns the loaded ${eLower} data
@@ -151,7 +151,7 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 stores the returned data and match criteria internally.
 
 \`\`\`lua
-local ${eLower} = client:${eLower}()
+local ${eLower} = client:${eName}()
 ${eLower}:load({ id = "example_id" })
 
 -- ${eLower}:data_get() now returns the loaded ${eLower} data
