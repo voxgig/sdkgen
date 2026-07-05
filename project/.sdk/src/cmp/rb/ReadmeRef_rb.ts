@@ -1,10 +1,22 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
+
+
+// A type-correct Ruby literal for a field's canonical type — the create body
+// is EXECUTED by the doc test, so it must carry a real value per field.
+function rbLit(type: any): string {
+  const k = canonKey(type)
+  if ('INTEGER' === k || 'NUMBER' === k) return '1'
+  if ('BOOLEAN' === k) return 'true'
+  if ('ARRAY' === k) return '[]'
+  if ('OBJECT' === k) return '{}'
+  return '"example"'
+}
 
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
@@ -264,7 +276,7 @@ result = client.${ent.Name}.create({
 `)
             each(fields, (field: any) => {
               if ('id' !== field.name && field.req) {
-                Content(`  "${field.name}" => nil, # ${canonToType(field.type, target.name)}
+                Content(`  "${field.name}" => ${rbLit(field.type)}, # ${canonToType(field.type, target.name)}
 `)
               }
             })
