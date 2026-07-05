@@ -136,9 +136,11 @@ ${entityLines}
   end
 
   # Every runnable block (one that performs an entity operation) is executed
-  # offline in test mode and must not raise a real Ruby-level error. Snippets
-  # that only illustrate a signature or non-entity call are syntax-checked but
-  # not executed here.
+  # offline in test mode and must not raise a real Ruby-level error — even one
+  # an error-handling example swallows in a rescue and prints: the captured
+  # output is scanned for FATAL either way, so a programming error in a
+  # documented begin/rescue cannot slip through. Snippets that only illustrate a
+  # signature or non-entity call are syntax-checked but not executed here.
   def test_ruby_examples_run_offline
     ran = 0
     failures = []
@@ -149,7 +151,12 @@ ${entityLines}
         f.write(to_runner(block))
         f.flush
         out, status = Open3.capture2e("ruby", f.path)
-        if !status.success? && out =~ FATAL
+        # A programming error counts whether it escapes (non-zero exit) or is
+        # swallowed by an error-handling example's rescue and printed: scan the
+        # captured output for it either way. Expected domain errors (e.g.
+        # "404: Not found") never match FATAL, so caught not-found cases stay
+        # tolerated.
+        if out =~ FATAL
           failures << "block ##{i} (exit #{status.exitstatus}):\\n#{out}\\n#{block}"
         end
       end

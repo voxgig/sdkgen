@@ -47,7 +47,8 @@ except Exception as err:
 
 `,
         direct: `\`direct()\` does **not** raise — it returns the result envelope. Branch
-on \`ok\`, and read the \`err\` value on failure:
+on \`ok\`; on failure \`status\` holds the HTTP status (for error responses)
+and \`err\` holds a transport error, so read both defensively:
 
 \`\`\`python
 result = client.direct({
@@ -57,7 +58,7 @@ result = client.direct({
 })
 
 if not result["ok"]:
-    print(result.get("err"))
+    print("request failed:", result.get("status"), result.get("err"))
 \`\`\`
 
 `,
@@ -76,7 +77,8 @@ try {
 
 `,
         direct: `\`direct()\` does **not** throw — it returns the result array. Branch on
-\`ok\`, and read the \`err\` value on failure:
+\`ok\`; on failure \`status\` holds the HTTP status (for error responses) and
+\`err\` holds a transport error, so read both defensively:
 
 \`\`\`php
 $result = $client->direct([
@@ -86,7 +88,8 @@ $result = $client->direct([
 ]);
 
 if (! $result["ok"]) {
-    echo $result["err"]->getMessage();
+    $err = $result["err"] ?? null;
+    echo "request failed: " . ($err ? $err->getMessage() : "HTTP " . $result["status"]);
 }
 \`\`\`
 
@@ -105,7 +108,8 @@ end
 
 `,
         direct: `\`direct\` does **not** raise — it returns the result hash. Branch on
-\`ok\`, and read the \`err\` value on failure:
+\`ok\`; on failure \`status\` holds the HTTP status (for error responses) and
+\`err\` holds a transport error, so read both defensively:
 
 \`\`\`ruby
 result = client.direct({
@@ -114,7 +118,7 @@ result = client.direct({
   "params" => { "id" => "example_id" },
 })
 
-warn result["err"] unless result["ok"]
+warn "request failed: #{result["err"] || "HTTP #{result["status"]}"}" unless result["ok"]
 \`\`\`
 
 `,

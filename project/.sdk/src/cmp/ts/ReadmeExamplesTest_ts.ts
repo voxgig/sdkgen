@@ -38,6 +38,15 @@ import {
 // that are documentation rather than runnable code. This catches the same
 // class of API-shape drift in REFERENCE.md — e.g. a `number` id shown as a
 // quoted string in a `load({ id })` example is a compile error.
+//
+// A FOURTH gate TYPE-CHECKS this target's OWN per-language README.md the
+// exact same way (same `tsc --noEmit` against the shared seeded client, same
+// `isReferenceSnippet` illustration-skip). The per-language README carries
+// ~20 how-to / error-handling / entity examples that no other gate touches;
+// without this gate a merged section can ship a real type bug — e.g. a
+// string id passed to a `number`-typed `load({ id })` (TS2322) — undetected.
+// Shape-illustration blocks (`{ ok: boolean; status: number; ... }`) list
+// bare type keywords as values, so isReferenceSnippet skips them too.
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { ctx$: { model } } = props
   const Name = model.const.Name
@@ -57,7 +66,7 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   File({ name: 'readme_examples.test.ts' }, () => {
     Content(`// Verifies every TypeScript snippet in the repo's root README.md both
 // TYPE-CHECKS and EXECUTES in offline test mode, and TYPE-CHECKS the usage
-// snippets in this target's REFERENCE.md.
+// snippets in this target's REFERENCE.md AND its per-language README.md.
 //
 // (1) Type-check: each fenced \\\`\\\`\\\`ts block is extracted, wrapped in
 //     its own block scope inside one async function, written to a temp
@@ -134,17 +143,33 @@ function buildModule(blocks: string[]): string {
 }
 
 
-// REFERENCE.md also carries method-signature ILLUSTRATION blocks (e.g. a
-// bare constructor signature with typed params) and placeholder-valued
-// create examples — documentation, not runnable TS. Type-check only the
-// real usage blocks: skip any block that shows a typed-parameter signature
-// ("?:") or a placeholder-comment value ("/*"). Everything that survives is
-// compiled against a shared seeded client, exactly like the root README.
+// REFERENCE.md and the per-language README.md also carry ILLUSTRATION blocks
+// — documentation, not runnable TS — that must be skipped so the gate does
+// not falsely fail on them (a false failure on an illustration block is a
+// gate bug). Three shapes are skipped:
+//   1. method-signature blocks with a typed-parameter signature ("?:")
+//      (e.g. a bare constructor signature \\\`options?: { base?: string }\\\`);
+//   2. placeholder-comment values ("/*") in create examples
+//      (e.g. \\\`field: /* string */\\\`);
+//   3. type-SHAPE blocks that list fields as \\\`name: TypeKeyword\\\` with the
+//      type standing alone as the value — e.g. the DirectResult / FetchDef
+//      shape \\\`{ ok: boolean; status: number; ... }\\\`. Those bare keywords are
+//      undeclared VALUES (TS2693 "only refers to a type"), so the block is
+//      documentation. Matched only at the START of a line, so a genuine
+//      annotation inside runnable code (e.g. \\\`(ctx: any) => ...\\\`) is NOT
+//      skipped and still type-checks.
+// Everything that survives is compiled against a shared seeded client,
+// exactly like the root README.
+const SHAPE_ILLUSTRATION =
+  /^\\s*[A-Za-z_$][\\w$]*\\??\\s*:\\s*(?:boolean|number|string|object|any|unknown|never|void|symbol|bigint|Record<|Partial<|Array<|Map<|Set<)/m
 function isReferenceSnippet(code: string): boolean {
   if (code.includes('?:')) {
     return false
   }
   if (code.includes('/*')) {
+    return false
+  }
+  if (SHAPE_ILLUSTRATION.test(code)) {
     return false
   }
   return true
@@ -244,6 +269,55 @@ describe('README examples', () => {
       const out = ((res.stdout || '') + (res.stderr || '')).trim()
       assert.strictEqual(res.status, 0,
         'REFERENCE.md TypeScript snippets failed to type-check:\\n\\n' + out + '\\n')
+    } finally {
+      Fs.rmSync(tmpFile, { force: true })
+    }
+  })
+
+
+  it('every usage TypeScript snippet in the per-language README.md type-checks', () => {
+    // The per-language README (this target's README.md, one level up from
+    // test/) carries the tutorial / error-handling / how-to / entity-interface
+    // examples. Type-check them exactly like REFERENCE.md: extract the \\\`\\\`\\\`ts
+    // blocks, drop the illustration blocks (isReferenceSnippet), and compile
+    // the rest against the shared seeded client. This is what catches a real
+    // type bug in a merged section — e.g. \\\`load({ id: 'example_id' })\\\` against
+    // a \\\`number\\\`-typed match (TS2322).
+    const readmePath = Path.join(__dirname, '..', 'README.md')
+    // A target without a per-language README.md has nothing to check.
+    if (!Fs.existsSync(readmePath)) {
+      return
+    }
+    const md = Fs.readFileSync(readmePath, 'utf8')
+
+    const blocks = extractTsBlocks(md).filter(isReferenceSnippet)
+    assert(blocks.length > 0, 'No checkable TypeScript code blocks found in the per-language README.md')
+
+    const tsDir = Path.join(__dirname, '..')
+    const tmpFile = Path.join(tsDir, 'test', '.readme_lang_examples.gen.ts')
+    Fs.writeFileSync(tmpFile, buildModule(blocks), 'utf8')
+
+    try {
+      const requireFrom = createRequire(__filename)
+      const tsc = requireFrom.resolve('typescript/bin/tsc')
+
+      const res = spawnSync(process.execPath, [
+        tsc,
+        '--noEmit',
+        '--strict',
+        '--target', 'ES2022',
+        '--module', 'nodenext',
+        '--moduleResolution', 'nodenext',
+        '--esModuleInterop',
+        '--resolveJsonModule',
+        '--skipLibCheck',
+        '--types', 'node',
+        tmpFile,
+      ], { cwd: tsDir, encoding: 'utf8' })
+
+      const out = ((res.stdout || '') + (res.stderr || '')).trim()
+      assert.strictEqual(res.status, 0,
+        'Per-language README.md TypeScript snippets failed to type-check:\\n\\n' + out + '\\n')
     } finally {
       Fs.rmSync(tmpFile, { force: true })
     }

@@ -170,7 +170,10 @@ ${entityLines}
 
     /**
      * Every runnable block (one that performs an entity operation) is executed
-     * offline in test mode and must not raise a real PHP-level error. Snippets
+     * offline in test mode and must not raise a real PHP-level error — even one
+     * an error-handling example swallows in a catch (Throwable) and echoes via
+     * getMessage(): the captured output is scanned for FATAL either way, so a
+     * programming error in a documented try/catch cannot slip through. Snippets
      * that only illustrate a signature or non-entity call are syntax-checked
      * but not executed here.
      */
@@ -191,11 +194,14 @@ ${entityLines}
             $rc = 0;
             exec('php ' . escapeshellarg($tmp) . ' 2>&1', $out, $rc);
             @unlink($tmp);
-            if ($rc !== 0) {
-                $text = implode("\\n", $out);
-                if (preg_match(self::FATAL, $text) === 1) {
-                    $failures[] = 'block #' . $i . ' (exit ' . $rc . "):\\n" . $text . "\\n" . $block;
-                }
+            $text = implode("\\n", $out);
+            // A programming error counts whether it escapes (non-zero exit) or
+            // is swallowed by an error-handling example's catch (Throwable) and
+            // echoed via getMessage(): scan the captured output for it either
+            // way. Expected domain errors (e.g. "404: Not found") never match
+            // FATAL, so caught not-found cases stay tolerated.
+            if (preg_match(self::FATAL, $text) === 1) {
+                $failures[] = 'block #' . $i . ' (exit ' . $rc . "):\\n" . $text . "\\n" . $block;
             }
         }
         $this->assertGreaterThan(0, $ran, 'expected at least one runnable example to execute');

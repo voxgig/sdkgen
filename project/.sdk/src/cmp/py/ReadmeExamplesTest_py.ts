@@ -9,19 +9,25 @@ import {
 
 
 // Emits py/test/test_readme_examples.py — a pytest module that validates
-// every ```python fenced block in the repository ROOT README.md AND in the
-// per-language py/REFERENCE.md.
+// every ```python fenced block in the repository ROOT README.md, in the
+// per-language py/README.md, AND in the per-language py/REFERENCE.md.
 //
 // What the generated test checks (documented in its own module docstring):
 //   1. compile / ast.parse EVERY python block           -> catches SYNTAX errors.
-//   2. if mypy is importable: concatenate the blocks and type-check them
-//      (the SDK ships py.typed + TypedDicts, so entity ops are typed and
-//      e.g. `.data` on a list() result is a real error)  -> catches TYPE errors.
+//   2. if mypy is importable: concatenate the ROOT README blocks and
+//      type-check them (the SDK ships py.typed + TypedDicts, so entity ops are
+//      typed and e.g. `.data` on a list() result is a real error) -> TYPE errors.
 //   3. EXECUTE every runnable python block offline: each block that builds a
 //      client is rewritten into seeded TEST mode (so load/list resolve against
-//      the in-memory mock) and run in a subprocess. A programming error
+//      the in-memory mock) and run in a subprocess. For the per-language
+//      py/README.md — which reads as a narrative where an early snippet builds
+//      `client` and later how-to/error-handling snippets drive it — a block
+//      that uses `client` without building one gets a seeded test client
+//      injected first, so it too runs. A programming error
 //      (Name/Attribute/Type/Key/Index/Import/Syntax) FAILS the test; a domain
-//      error (e.g. not-found for an unseeded id) is tolerated.
+//      error (e.g. not-found for an unseeded id) is tolerated. This is what
+//      surfaces a bug like `result["err"]` indexing on a direct() envelope
+//      that has no err key (a KeyError at runtime).
 //
 // The emitted Python is written WITHOUT backticks or backslashes (chr(96) is
 // the fence marker, chr(10) is newline) so this TS template literal stays
@@ -48,10 +54,12 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   File({ name: 'test_readme_examples.' + target.ext }, () => {
     Content(`# ${Name} SDK — documentation python-examples test.
 #
-# Validates every python fenced code block in the repository ROOT README.md
-# (one directory above the py/ package) AND in the per-language py/REFERENCE.md
-# (in the package root). It exists to keep the documented examples honest as
-# the generator evolves.
+# Validates every python fenced code block in three documents:
+#   - the repository ROOT README.md (one directory above the py/ package),
+#   - the per-language py/README.md (tutorial, how-to, error-handling,
+#     testing and entity-op examples — in the package root),
+#   - the per-language py/REFERENCE.md (in the package root).
+# It exists to keep the documented examples honest as the generator evolves.
 #
 # Checks, in order:
 #
@@ -79,10 +87,16 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
 #      drives the SDK. This catches real bugs — a snippet calling a method
 #      that does not exist raises AttributeError and fails here.
 #
-# The per-language REFERENCE.md is held to the COMPILE and EXECUTE gates
-# (checks 1 and 3) by the parallel test_reference_* functions below. That is
-# what catches a bad constructor import such as a hyphenated module name
-# ("from my-slug_sdk import ..."), which is a Python SyntaxError.
+# The per-language py/README.md and py/REFERENCE.md are held to the COMPILE
+# and EXECUTE gates (checks 1 and 3) by the parallel test_local_readme_* and
+# test_reference_* functions below. The compile gate catches a bad constructor
+# import such as a hyphenated module name ("from my-slug_sdk import ..."),
+# which is a Python SyntaxError. For py/README.md the examples read as one
+# narrative — an early snippet builds "client", later how-to/error-handling
+# snippets drive it — so the execute gate injects a seeded test "client"
+# before any block that uses it without building one. That is what would
+# surface, e.g., a KeyError from indexing result["err"] on a direct() envelope
+# that has no err key.
 
 import ast
 import os
@@ -97,6 +111,7 @@ _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _PY_ROOT = os.path.dirname(_TEST_DIR)                       # the py/ package root
 _README = os.path.abspath(os.path.join(_PY_ROOT, "..", "README.md"))  # repo root
 _REFERENCE = os.path.join(_PY_ROOT, "REFERENCE.md")        # per-language reference
+_LOCAL_README = os.path.join(_PY_ROOT, "README.md")        # per-language README
 
 _FENCE = chr(96) * 3   # the triple-backtick markdown code fence
 _NL = chr(10)          # newline
@@ -104,6 +119,13 @@ _WS = (chr(32), chr(9), chr(13), chr(10))   # space, tab, CR, LF
 
 _SDK_MODULE = "${sdkModule}"
 _SDK_CLASS = "${sdkClass}"
+
+# The variable the generated narrative examples bind the client to. A
+# per-language README reads as a sequence: an early snippet builds "client",
+# later snippets drive it. A block that uses "client." without building one
+# gets a seeded test client injected so it can run standalone (see
+# _execute_blocks(..., inject_client=True)).
+_CLIENT_VAR = "client"
 
 # The API's capitalised semantic entities -> lowercase fixture key.
 _ENTITIES = ${entitiesLiteral}
@@ -139,6 +161,10 @@ def _python_blocks():
 
 def _reference_blocks():
     return _blocks_in(_read_doc(_REFERENCE, "py REFERENCE.md"))
+
+
+def _local_readme_blocks():
+    return _blocks_in(_read_doc(_LOCAL_README, "py README.md"))
 
 
 def test_readme_has_python_blocks():
@@ -303,11 +329,17 @@ def _rewrite_to_test_mode(block):
     return "".join(out)
 
 
-def _execute_blocks(blocks, label):
+def _execute_blocks(blocks, label, inject_client=False):
     # Runtime gate (offline): every python block that constructs a client is
     # rewritten into seeded test mode and executed in a subprocess. A
     # programming error fails the test; a domain error is tolerated. Returns
     # the number of blocks actually executed.
+    #
+    # inject_client=True (the per-language README narrative): a block that
+    # drives "client." without building one gets a seeded test client injected
+    # first, so error-handling/how-to snippets run rather than being merely
+    # compiled. That is what surfaces, e.g., a KeyError from indexing
+    # result["err"] on a direct() envelope that has no err key.
     env = dict(os.environ)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["PYTHONPATH"] = _PY_ROOT + os.pathsep + env.get("PYTHONPATH", "")
@@ -316,11 +348,20 @@ def _execute_blocks(blocks, label):
 
     executed = 0
     for i, block in enumerate(blocks):
-        # Only blocks that build a client are self-contained enough to run.
-        if _SDK_CLASS not in block:
+        if _SDK_CLASS in block:
+            # Self-contained: the block builds its own client.
+            source = preamble + _rewrite_to_test_mode(block)
+        elif inject_client and (_CLIENT_VAR + ".") in block:
+            # Narrative block: it drives a "client" an earlier snippet built.
+            # Inject a seeded test client (mock records for the entities this
+            # block references) and run the block verbatim.
+            seed = repr(_seed_literal(block))
+            inject = _CLIENT_VAR + " = " + _SDK_CLASS + ".test(" + seed + ")" + _NL
+            source = preamble + inject + block
+        else:
+            # Neither builds nor drives a client (a signature/illustration
+            # block); the compile gate already covered it — nothing to run.
             continue
-
-        source = preamble + _rewrite_to_test_mode(block)
 
         proc = subprocess.run(
             [sys.executable, "-c", source],
@@ -362,6 +403,39 @@ def test_reference_python_blocks_execute():
     executed = _execute_blocks(_reference_blocks(), "py REFERENCE.md")
     assert executed > 0, (
         "expected at least one client-constructing python block in py/REFERENCE.md to execute"
+    )
+
+
+def test_local_readme_has_python_blocks():
+    assert len(_local_readme_blocks()) > 0, (
+        "expected at least one python block in py/README.md"
+    )
+
+
+def test_local_readme_python_blocks_compile():
+    # Syntax gate for the per-language py/README.md — the tutorial, how-to,
+    # error-handling, testing and entity-op examples that no other test
+    # compiled until now.
+    for i, block in enumerate(_local_readme_blocks()):
+        try:
+            ast.parse(block)
+            compile(block, "<local-readme-block-" + str(i) + ">", "exec")
+        except SyntaxError as err:
+            pytest.fail(
+                "py/README.md python block #" + str(i)
+                + " is not valid Python: " + str(err) + _NL + _NL + block
+            )
+
+
+def test_local_readme_python_blocks_execute():
+    # Runtime gate for py/README.md. Blocks that build a client run in seeded
+    # test mode; blocks that only drive an earlier snippet's "client" get a
+    # seeded test client injected (inject_client=True) so they run too. A
+    # programming error (e.g. result["err"] KeyError on a direct() envelope
+    # with no err key) fails; a not-found domain error is tolerated.
+    executed = _execute_blocks(_local_readme_blocks(), "py README.md", inject_client=True)
+    assert executed > 0, (
+        "expected at least one python block in py/README.md to execute"
     )
 `)
   })
