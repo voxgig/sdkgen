@@ -18,11 +18,20 @@ const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`) || {}
   const exampleEntity = Object.values(entity).find((e: any) => e && e.active !== false) as any
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : null
-  const opnames = exampleEntity
-    ? ['list', 'load', 'create', 'update', 'remove']
-      .filter((op) => exampleEntity.op && exampleEntity.op[op])
-    : []
-  const opList = opnames.length > 0 ? opnames.join('`/`') : 'list`/`load`/`create`/`update`/`remove'
+  // Model-driven op list — union of the operations the active entities
+  // actually expose (a read-only entity has just list+load), in canonical
+  // order; never claim create/update/remove exist when no entity has them.
+  const CANON_OPS = ['list', 'load', 'create', 'update', 'remove']
+  const opSet = new Set<string>()
+  Object.values(entity || {}).forEach((e: any) => {
+    if (!e || e.active === false) return
+    Object.keys(e.op || {}).forEach((o: string) => {
+      if (e.op[o] && e.op[o].active !== false) opSet.add(o)
+    })
+  })
+  const opnames = CANON_OPS.filter((o) => opSet.has(o))
+    .concat([...opSet].filter((o) => !CANON_OPS.includes(o)))
+  const opList = (opnames.length > 0 ? opnames : ['list', 'load']).join('`/`')
 
   const semantic = eName
     ? `The SDK exposes the API as capitalised, semantic **Entities** — for example \`client.${eName}\` — with named operations (\`${opList}\`) instead of raw URL paths and query strings. Working with resources and verbs keeps call sites self-describing and reduces cognitive load.

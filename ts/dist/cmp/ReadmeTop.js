@@ -120,12 +120,21 @@ ${aboutMd.trim()}
                 ? entNames.slice(0, -1).join(', ') + ' and ' + entNames[entNames.length - 1]
                 : entNames[0];
             const ex = activeEntities[0].Name;
+            // Model-driven op list — only the operations the entities actually expose
+            // (advice may be list+load only; never claim create/update/remove exist).
+            const CANON_OPS = ['list', 'load', 'create', 'update', 'remove'];
+            const opSet = new Set();
+            activeEntities.forEach((e) => Object.keys(e.op || {})
+                .forEach((o) => { if (e.op[o] && e.op[o].active !== false)
+                opSet.add(o); }));
+            const opNames = CANON_OPS.filter((o) => opSet.has(o)).concat([...opSet].filter((o) => !CANON_OPS.includes(o)));
+            const opList = (opNames.length ? opNames : ['list', 'load']).map((o) => '`' + o + '`').join(', ');
             (0, jostraca_1.Content)(`## Entities, not endpoints
 
 This SDK exposes the API as a small set of **semantic entities** — ${entList} — that you
 call directly, instead of assembling URL paths and query strings. Entities are
-**Capitalised** to mark them as the primary surface; each offers the standard
-operations \`list\`, \`load\`, \`create\`, \`update\`, and \`remove\`:
+**Capitalised** to mark them as the primary surface, each with the operations they
+support (${opList}):
 
 \`\`\`ts
 const client = new ${model.Name}SDK()
@@ -259,9 +268,15 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
                 (0, jostraca_1.Content)(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
 `);
             });
+            const opUnion = new Set();
+            activeEntities.forEach((e) => Object.keys(e.op || {})
+                .forEach((o) => { if (e.op[o]?.active !== false)
+                opUnion.add(o); }));
+            const opAvail = ['load', 'list', 'create', 'update', 'remove'].filter((o) => opUnion.has(o));
+            const opBold = (opAvail.length ? opAvail : ['load', 'list']).map((o) => '**' + o + '**').join(', ');
             (0, jostraca_1.Content)(`
-Each entity supports the following operations where available: **load**,
-**list**, **create**, **update**, and **remove**.
+The operations available across these entities are ${opBold} — see each entity's
+own list above for exactly which it supports.
 
 `);
         }

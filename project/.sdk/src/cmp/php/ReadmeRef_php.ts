@@ -196,15 +196,18 @@ $${ent.name} = $client->${ent.Name}();
         // Field operations breakdown
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
+          // Only emit columns for operations this entity actually exposes —
+          // never advertise a create/update/remove column the entity lacks.
+          const opcols = ['load', 'list', 'create', 'update', 'remove']
+            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
-| Field | load | list | create | update | remove |
-| --- | --- | --- | --- | --- | --- |
+| Field | ${opcols.join(' | ')} |
+| --- | ${opcols.map(() => '---').join(' | ')} |
 `)
           each(fields, (field: any) => {
             const fops = field.op || {}
-            const cols = ['load', 'list', 'create', 'update', 'remove'].map((op: string) => {
-              if (!opnames.includes(op)) return '-'
+            const cols = opcols.map((op: string) => {
               const fop = fops[op]
               if (null == fop) return '-'
               if (fop.active === false) return '-'
