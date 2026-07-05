@@ -8,8 +8,8 @@ import {
 
 
 // Emits test/ReadmeExamplesTest.php — a PHPUnit suite that guards the PHP
-// code examples in the package README against drift. It reads ../README.md,
-// extracts every fenced php block, and:
+// code examples in the package docs against drift. It reads ../README.md and
+// ../REFERENCE.md, extracts every fenced php block, and:
 //
 //   1. syntax-checks each block with `php -l` (prepending <?php when absent);
 //   2. EXECUTES every runnable block (one that performs an entity operation)
@@ -44,10 +44,11 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
     Content(`<?php
 declare(strict_types=1);
 
-// ${model.const.Name} SDK — README example snippet tests.
+// ${model.const.Name} SDK — README + REFERENCE example snippet tests.
 //
-// Guards the PHP code examples in the package README against drift. Reads
-// ../README.md, extracts every fenced php block, and checks each:
+// Guards the PHP code examples in the package docs against drift. Reads
+// ../README.md and ../REFERENCE.md, extracts every fenced php block, and
+// checks each:
 //
 //   1. SYNTAX — runs 'php -l' on every block (a leading <?php is prepended
 //      when the snippet omits one). Proves every documented PHP example
@@ -82,16 +83,21 @@ ${entityLines}
     // opposed to an expected not-found / domain error, which is tolerated).
     private const FATAL = '/(Call to undefined method|Call to undefined function|Call to a member function|ArgumentCountError|Too few arguments|Undefined constant|Uncaught TypeError)/';
 
-    /** Extract every fenced php block from the package README. */
+    /** Extract every fenced php block from the package README and REFERENCE. */
     private function phpBlocks(): array
     {
-        $readme = __DIR__ . '/../README.md';
-        $this->assertFileExists($readme);
-        $src = file_get_contents($readme);
         $fence = str_repeat(chr(96), 3);
         $pattern = '/' . $fence . 'php\\r?\\n(.*?)' . $fence . '/s';
-        preg_match_all($pattern, $src, $m);
-        return $m[1];
+        $blocks = [];
+        foreach (['README.md', 'REFERENCE.md'] as $doc) {
+            $path = __DIR__ . '/../' . $doc;
+            $this->assertFileExists($path);
+            preg_match_all($pattern, file_get_contents($path), $m);
+            foreach ($m[1] as $b) {
+                $blocks[] = $b;
+            }
+        }
+        return $blocks;
     }
 
     public function test_readme_has_php_examples(): void

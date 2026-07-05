@@ -90,8 +90,8 @@ stores the returned data and match criteria internally.
 $${eLower} = $client->${eName}();
 $${eLower}->load(["id" => "example_id"]);
 
-// $${eLower}->dataGet() now returns the loaded ${eLower} data
-// $${eLower}->matchGet() returns the last match criteria
+// $${eLower}->data_get() now returns the loaded ${eLower} data
+// $${eLower}->match_get() returns the last match criteria
 \`\`\`
 
 Call \`make()\` to create a fresh instance with the same configuration

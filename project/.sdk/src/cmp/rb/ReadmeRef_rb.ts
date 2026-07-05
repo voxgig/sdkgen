@@ -60,7 +60,7 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 `)
 
     Content(`\`\`\`ruby
-require_relative '${model.name}_sdk'
+require_relative '${model.const.Name}_sdk'
 
 client = ${model.const.Name}SDK.new(options)
 \`\`\`
@@ -258,7 +258,7 @@ result = client.${ent.Name}.create({
 `)
             each(fields, (field: any) => {
               if ('id' !== field.name && field.req) {
-                Content(`  "${field.name}" => # ${field.type || 'value'},
+                Content(`  "${field.name}" => nil, # ${field.type || 'value'}
 `)
               }
             })

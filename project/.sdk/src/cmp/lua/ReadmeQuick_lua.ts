@@ -37,6 +37,24 @@ local client = ${ctor}
     const article = /^[aeiou]/i.test(eName) ? "an" : "a"
     const opnames = Object.keys(exampleEntity.op || {})
 
+    // MODEL-DRIVEN display field: the list example must reference a field
+    // the entity actually has, not a hardcoded "name". Pick the entity's
+    // first non-id string field (falling back to the first non-id field of
+    // any type). The id key stays `id` — the SDK renames every id param to
+    // `id`, matching the load example and the seeded test fixture.
+    const idNames = new Set<string>(['id',
+      (exampleEntity.id && exampleEntity.id.field) || 'id'])
+    const fields: any[] = Array.isArray(exampleEntity.fields) ? exampleEntity.fields : []
+    const isStringField = (f: any) =>
+      f && typeof f.type === 'string' && /STRING/i.test(f.type)
+    const displayFieldObj =
+      fields.find((f: any) => f && !idNames.has(f.name) && isStringField(f)) ||
+      fields.find((f: any) => f && !idNames.has(f.name))
+    const displayField = displayFieldObj ? displayFieldObj.name : null
+    const printLine = displayField
+      ? `  print(item["id"], item["${displayField}"])`
+      : `  print(item["id"])`
+
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
@@ -48,7 +66,7 @@ local ${eName.toLowerCase()}s, err = client:${eName}():list()
 if err then error(err) end
 
 for _, item in ipairs(${eName.toLowerCase()}s) do
-  print(item["id"], item["name"])
+${printLine}
 end
 \`\`\`
 

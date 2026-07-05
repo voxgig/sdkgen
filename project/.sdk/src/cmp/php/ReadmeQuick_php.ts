@@ -38,6 +38,18 @@ $client = ${ctor};
     const article = /^[aeiou]/i.test(eName) ? "an" : "a"
     const opnames = Object.keys(exampleEntity.op || {})
 
+    // Model-driven display field: the entity's first non-id string field
+    // (falling back to any non-id field), so the list example prints a real
+    // column instead of a hardcoded "name" the entity may not have.
+    const fields = exampleEntity.fields || []
+    const displayField =
+      fields.find((f: any) => f && f.name !== 'id' && f.type === '$STRING') ||
+      fields.find((f: any) => f && f.name !== 'id') ||
+      null
+    const itemPrint = displayField
+      ? `$item["id"] . " " . $item[${JSON.stringify(displayField.name)}]`
+      : `$item["id"]`
+
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
@@ -46,7 +58,7 @@ try {
     // list() returns an array of ${eName} records — iterate directly.
     $${eName.toLowerCase()}s = $client->${eName}()->list();
     foreach ($${eName.toLowerCase()}s as $item) {
-        echo $item["id"] . " " . $item["name"] . "\\n";
+        echo ${itemPrint} . "\\n";
     }
 } catch (\\Throwable $err) {
     echo "Error: " . $err->getMessage();

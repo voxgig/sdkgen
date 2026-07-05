@@ -6,6 +6,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { exampleValue } from './utility_js'
+
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
@@ -263,7 +265,7 @@ ${info.desc}
           // Show example
           if ('load' === opname || 'remove' === opname) {
             Content(`\`\`\`ts
-const result = await client.${ent.Name}().${opname}({ id: '${ent.name}_id' })
+const result = await client.${ent.Name}().${opname}({ id: ${exampleValue(ent, ent.op && ent.op[opname], 'id', ent.name + '_id')} })
 \`\`\`
 
 `)
@@ -293,7 +295,7 @@ const result = await client.${ent.Name}().create({
           else if ('update' === opname) {
             Content(`\`\`\`ts
 const result = await client.${ent.Name}().update({
-  id: '${ent.name}_id',
+  id: ${exampleValue(ent, ent.op && ent.op.update, 'id', ent.name + '_id')},
   // Fields to update
 })
 \`\`\`

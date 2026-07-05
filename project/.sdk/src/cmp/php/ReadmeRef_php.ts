@@ -60,7 +60,7 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 `)
 
     Content(`\`\`\`php
-require_once __DIR__ . '/${model.name}_sdk.php';
+require_once __DIR__ . '/${model.const.Name.toLowerCase()}_sdk.php';
 
 $client = new ${model.const.Name}SDK($options);
 \`\`\`
@@ -114,11 +114,11 @@ Create a new \`${ent.Name}Entity\` instance. Pass \`null\` for no initial data.
     })
 
 
-    Content(`#### \`optionsMap(): array\`
+    Content(`#### \`options_map(): array\`
 
 Return a deep copy of the current SDK options.
 
-#### \`getUtility(): ProjectNameUtility\`
+#### \`get_utility(): ${model.const.Name}Utility\`
 
 Return a copy of the SDK utility object.
 
@@ -257,7 +257,7 @@ $result = $client->${ent.Name}()->create([
 `)
             each(fields, (field: any) => {
               if ('id' !== field.name && field.req) {
-                Content(`  "${field.name}" => /* ${field.type || 'value'} */,
+                Content(`  "${field.name}" => null, // ${field.type || 'value'}
 `)
               }
             })
@@ -283,19 +283,19 @@ $result = $client->${ent.Name}()->update([
       // Common methods
       Content(`### Common Methods
 
-#### \`dataGet(): array\`
+#### \`data_get(): array\`
 
 Get the entity data. Returns a copy of the current data.
 
-#### \`dataSet($data): void\`
+#### \`data_set($data): void\`
 
 Set the entity data.
 
-#### \`matchGet(): array\`
+#### \`match_get(): array\`
 
 Get the entity match criteria.
 
-#### \`matchSet($match): void\`
+#### \`match_set($match): void\`
 
 Set the entity match criteria.
 
@@ -304,7 +304,7 @@ Set the entity match criteria.
 Create a new \`${ent.Name}Entity\` instance with the same client and
 options.
 
-#### \`getName(): string\`
+#### \`get_name(): string\`
 
 Return the entity name.
 

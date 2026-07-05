@@ -9,7 +9,8 @@ import {
 
 
 // Emits py/test/test_readme_examples.py — a pytest module that validates
-// every ```python fenced block in the repository ROOT README.md.
+// every ```python fenced block in the repository ROOT README.md AND in the
+// per-language py/REFERENCE.md.
 //
 // What the generated test checks (documented in its own module docstring):
 //   1. compile / ast.parse EVERY python block           -> catches SYNTAX errors.
@@ -45,11 +46,12 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
       .join('\n') + '\n}'
 
   File({ name: 'test_readme_examples.' + target.ext }, () => {
-    Content(`# ${Name} SDK — root README python-examples test.
+    Content(`# ${Name} SDK — documentation python-examples test.
 #
 # Validates every python fenced code block in the repository ROOT README.md
-# (one directory above the py/ package). It exists to keep the documented
-# examples honest as the generator evolves.
+# (one directory above the py/ package) AND in the per-language py/REFERENCE.md
+# (in the package root). It exists to keep the documented examples honest as
+# the generator evolves.
 #
 # Checks, in order:
 #
@@ -76,6 +78,11 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
 #      tolerated: it proves the snippet is structurally valid Python that
 #      drives the SDK. This catches real bugs — a snippet calling a method
 #      that does not exist raises AttributeError and fails here.
+#
+# The per-language REFERENCE.md is held to the COMPILE and EXECUTE gates
+# (checks 1 and 3) by the parallel test_reference_* functions below. That is
+# what catches a bad constructor import such as a hyphenated module name
+# ("from my-slug_sdk import ..."), which is a Python SyntaxError.
 
 import ast
 import os
@@ -89,6 +96,7 @@ import pytest
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _PY_ROOT = os.path.dirname(_TEST_DIR)                       # the py/ package root
 _README = os.path.abspath(os.path.join(_PY_ROOT, "..", "README.md"))  # repo root
+_REFERENCE = os.path.join(_PY_ROOT, "REFERENCE.md")        # per-language reference
 
 _FENCE = chr(96) * 3   # the triple-backtick markdown code fence
 _NL = chr(10)          # newline
@@ -101,18 +109,19 @@ _SDK_CLASS = "${sdkClass}"
 _ENTITIES = ${entitiesLiteral}
 
 
-def _read_readme():
-    if not os.path.exists(_README):
-        pytest.skip("root README not found: " + _README)
-    with open(_README, "r", encoding="utf-8") as fh:
+def _read_doc(path, label):
+    if not os.path.exists(path):
+        pytest.skip(label + " not found: " + path)
+    with open(path, "r", encoding="utf-8") as fh:
         return fh.read()
 
 
-def _python_blocks():
+def _blocks_in(text):
     # Split on the code fence: odd-indexed segments are the inside of a fenced
     # block (an info string on the first line, then the code). No regex, no
-    # backslashes — keeps this robust and generator-friendly.
-    text = _read_readme()
+    # backslashes — keeps this robust and generator-friendly. Only fences whose
+    # info string is exactly "python" are returned, so signature/markdown
+    # tables (plain text or other fences) are skipped.
     parts = text.split(_FENCE)
     blocks = []
     for i in range(1, len(parts), 2):
@@ -122,6 +131,14 @@ def _python_blocks():
         if info == "python":
             blocks.append(_NL.join(lines[1:]))
     return blocks
+
+
+def _python_blocks():
+    return _blocks_in(_read_doc(_README, "root README"))
+
+
+def _reference_blocks():
+    return _blocks_in(_read_doc(_REFERENCE, "py REFERENCE.md"))
 
 
 def test_readme_has_python_blocks():
@@ -137,6 +154,26 @@ def test_readme_python_blocks_compile():
         except SyntaxError as err:
             pytest.fail(
                 "root README python block #" + str(i)
+                + " is not valid Python: " + str(err) + _NL + _NL + block
+            )
+
+
+def test_reference_has_python_blocks():
+    assert len(_reference_blocks()) > 0, "expected at least one python block in py/REFERENCE.md"
+
+
+def test_reference_python_blocks_compile():
+    # Syntax gate for the per-language REFERENCE.md. Its constructor example
+    # imports the SDK module; if the emitted module name were hyphenated
+    # (e.g. "from my-slug_sdk import ...") ast.parse would raise here. The doc
+    # module name must match the real ${sdkModule}.py file.
+    for i, block in enumerate(_reference_blocks()):
+        try:
+            ast.parse(block)
+            compile(block, "<reference-block-" + str(i) + ">", "exec")
+        except SyntaxError as err:
+            pytest.fail(
+                "py/REFERENCE.md python block #" + str(i)
                 + " is not valid Python: " + str(err) + _NL + _NL + block
             )
 
@@ -266,12 +303,11 @@ def _rewrite_to_test_mode(block):
     return "".join(out)
 
 
-def test_readme_python_blocks_execute():
+def _execute_blocks(blocks, label):
     # Runtime gate (offline): every python block that constructs a client is
     # rewritten into seeded test mode and executed in a subprocess. A
-    # programming error fails the test; a domain error is tolerated.
-    blocks = _python_blocks()
-
+    # programming error fails the test; a domain error is tolerated. Returns
+    # the number of blocks actually executed.
     env = dict(os.environ)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["PYTHONPATH"] = _PY_ROOT + os.pathsep + env.get("PYTHONPATH", "")
@@ -307,14 +343,26 @@ def test_readme_python_blocks_execute():
 
         if exc_type in _PROGRAMMING_ERROR_NAMES:
             pytest.fail(
-                "root README python block #" + str(i)
+                label + " python block #" + str(i)
                 + " raised a programming error: " + last + _NL + _NL
                 + "--- rewritten source ---" + _NL + source
                 + _NL + _NL + "--- stderr ---" + _NL + stderr
             )
         # else: domain-level SDK error (e.g. unseeded id) — tolerated.
 
+    return executed
+
+
+def test_readme_python_blocks_execute():
+    executed = _execute_blocks(_python_blocks(), "root README")
     assert executed > 0, "expected at least one client-constructing python block to execute"
+
+
+def test_reference_python_blocks_execute():
+    executed = _execute_blocks(_reference_blocks(), "py REFERENCE.md")
+    assert executed > 0, (
+        "expected at least one client-constructing python block in py/REFERENCE.md to execute"
+    )
 `)
   })
 })

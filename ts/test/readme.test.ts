@@ -93,7 +93,7 @@ describe('ReadmeExplanation', () => {
     ok(out.includes('return array'))
     ok(out.includes('```php'))
     ok(out.includes('A feature is a PHP class'))
-    ok(out.includes('$moon->dataGet()'))
+    ok(out.includes('$moon->data_get()')) // snake_case matches generated PHP
   })
 
   test('ruby variant (no-paren accessors)', async () => {

@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { exampleValue } from './utility_js'
+
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
@@ -41,7 +43,7 @@ const client = ${ctor}
 ### Load ${article} ${eName}
 
 \`\`\`js
-const ${exampleEntity.name} = await client.${eName}().load({ id: '${exampleEntity.name}_id' })
+const ${exampleEntity.name} = await client.${eName}().load({ id: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, 'id', exampleEntity.name + '_id')} })
 console.log(${exampleEntity.name})
 \`\`\`
 `)
@@ -79,7 +81,7 @@ console.log(created)
 
 \`\`\`js
 const updated = await client.${eName}().update({
-  id: '${exampleEntity.name}_id',
+  id: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.update, 'id', exampleEntity.name + '_id')},
   // Fields to update
 })
 console.log(updated)
@@ -92,7 +94,7 @@ console.log(updated)
 ### Remove a ${eName}
 
 \`\`\`js
-await client.${eName}().remove({ id: '${exampleEntity.name}_id' })
+await client.${eName}().remove({ id: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.remove, 'id', exampleEntity.name + '_id')} })
 \`\`\`
 `)
     }

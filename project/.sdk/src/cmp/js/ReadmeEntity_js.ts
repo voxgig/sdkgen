@@ -6,6 +6,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { exampleValue } from './utility_js'
+
 
 // Operation method spelling differs between Go and other languages — Go
 // uses PascalCase methods with explicit ctrl arg, others use lowercase
@@ -96,7 +98,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`#### Example: Load
 
 \`\`\`ts
-const ${entity.name} = await client.${entity.Name}().load({ id: '${entity.name}_id' })
+const ${entity.name} = await client.${entity.Name}().load({ id: ${exampleValue(entity, entity.op && entity.op.load, 'id', entity.name + '_id')} })
 \`\`\`
 
 `)

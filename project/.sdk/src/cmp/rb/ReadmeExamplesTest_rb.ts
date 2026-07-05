@@ -8,8 +8,8 @@ import {
 
 
 // Emits test/readme_examples_test.rb — a Minitest suite that guards the Ruby
-// code examples in the package README against drift. It reads ../README.md,
-// extracts every fenced ruby block, and:
+// code examples in the package docs against drift. It reads ../README.md and
+// ../REFERENCE.md, extracts every fenced ruby block, and:
 //
 //   1. syntax-checks each block with `ruby -c`;
 //   2. EXECUTES every runnable block (one that performs an entity operation)
@@ -41,10 +41,11 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
     .join('\n')
 
   File({ name: 'readme_examples_test.' + target.ext }, () => {
-    Content(`# ${model.const.Name} SDK — README example snippet tests.
+    Content(`# ${model.const.Name} SDK — README + REFERENCE example snippet tests.
 #
-# Guards the Ruby code examples in the package README against drift. Reads
-# ../README.md, extracts every fenced ruby block, and checks each:
+# Guards the Ruby code examples in the package docs against drift. Reads
+# ../README.md and ../REFERENCE.md, extracts every fenced ruby block, and
+# checks each:
 #
 #   1. SYNTAX — runs 'ruby -c' on every block. Proves every documented Ruby
 #      example parses.
@@ -67,6 +68,7 @@ require "open3"
 
 class ReadmeExamplesTest < Minitest::Test
   README = File.join(__dir__, "..", "README.md")
+  REFERENCE = File.join(__dir__, "..", "REFERENCE.md")
   SDK = File.join(__dir__, "..", "${sdkfile}")
   SDK_CLASS = "${model.const.Name}SDK"
 
@@ -79,11 +81,12 @@ ${entityLines}
   # opposed to an expected not-found / domain error, which is tolerated).
   FATAL = /NoMethodError|NameError|ArgumentError|undefined method|undefined local variable|uninitialized constant|wrong number of arguments/
 
-  # Extract every fenced ruby block from the package README.
+  # Extract every fenced ruby block from the package README and REFERENCE.
   def ruby_blocks
-    src = File.read(README)
     fence = (96.chr) * 3
-    src.scan(/#{fence}ruby\\r?\\n(.*?)#{fence}/m).map { |a| a[0] }
+    [README, REFERENCE].flat_map do |doc|
+      File.read(doc).scan(/#{fence}ruby\\r?\\n(.*?)#{fence}/m).map { |a| a[0] }
+    end
   end
 
   def test_readme_has_ruby_examples

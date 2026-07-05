@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { exampleValue } from './utility_ts'
+
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
@@ -63,6 +65,7 @@ for (const ${eName.toLowerCase()} of ${eName.toLowerCase()}s) {
       const parentFields = (nestedEntity.fields || [])
         .filter((f: any) => f.name !== 'id' && f.name.endsWith('_id'))
       const parentParam = parentFields.length > 0 ? parentFields[0].name : 'parent_id'
+      const loadOp = nestedEntity.op && nestedEntity.op.load
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
@@ -72,8 +75,8 @@ ${neName} is nested under ${eName}, so provide the \`${parentParam}\`.
 \`\`\`ts
 try {
   const ${neName.toLowerCase()} = await client.${neName}().load({
-    ${parentParam}: 'example',
-    id: 'example_id',
+    ${parentParam}: ${exampleValue(nestedEntity, loadOp, parentParam, 'example')},
+    id: ${exampleValue(nestedEntity, loadOp, 'id', 'example_id')},
   })
   console.log(${neName.toLowerCase()})
 } catch (err) {
@@ -90,7 +93,7 @@ try {
 
 \`\`\`ts
 try {
-  const ${eName.toLowerCase()} = await client.${eName}().load({ id: 'example_id' })
+  const ${eName.toLowerCase()} = await client.${eName}().load({ id: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, 'id', 'example_id')} })
   console.log(${eName.toLowerCase()})
 } catch (err) {
   console.error('load failed:', err)

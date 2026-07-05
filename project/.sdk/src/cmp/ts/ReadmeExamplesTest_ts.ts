@@ -31,6 +31,13 @@ import {
 // Both gates run against whatever the README currently says, so editing a
 // snippet to misuse the SDK — at the type level OR the runtime level —
 // makes THIS test fail.
+//
+// A THIRD gate TYPE-CHECKS the per-language REFERENCE.md: its ```ts blocks
+// are extracted and compiled the same way, minus the method-signature
+// illustration blocks (typed-param sigs, `field: /* type */` placeholders)
+// that are documentation rather than runnable code. This catches the same
+// class of API-shape drift in REFERENCE.md — e.g. a `number` id shown as a
+// quoted string in a `load({ id })` example is a compile error.
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { ctx$: { model } } = props
   const Name = model.const.Name
@@ -49,7 +56,8 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
 
   File({ name: 'readme_examples.test.ts' }, () => {
     Content(`// Verifies every TypeScript snippet in the repo's root README.md both
-// TYPE-CHECKS and EXECUTES in offline test mode.
+// TYPE-CHECKS and EXECUTES in offline test mode, and TYPE-CHECKS the usage
+// snippets in this target's REFERENCE.md.
 //
 // (1) Type-check: each fenced \\\`\\\`\\\`ts block is extracted, wrapped in
 //     its own block scope inside one async function, written to a temp
@@ -126,6 +134,23 @@ function buildModule(blocks: string[]): string {
 }
 
 
+// REFERENCE.md also carries method-signature ILLUSTRATION blocks (e.g. a
+// bare constructor signature with typed params) and placeholder-valued
+// create examples — documentation, not runnable TS. Type-check only the
+// real usage blocks: skip any block that shows a typed-parameter signature
+// ("?:") or a placeholder-comment value ("/*"). Everything that survives is
+// compiled against a shared seeded client, exactly like the root README.
+function isReferenceSnippet(code: string): boolean {
+  if (code.includes('?:')) {
+    return false
+  }
+  if (code.includes('/*')) {
+    return false
+  }
+  return true
+}
+
+
 // Turn a documented snippet into an offline-runnable one: strip imports,
 // rewrite real client construction (\\\`new ${Name}SDK(...)\\\` and any
 // \\\`${Name}SDK.test(...)\\\`) to a seeded test-mode client, and give
@@ -177,6 +202,48 @@ describe('README examples', () => {
       const out = ((res.stdout || '') + (res.stderr || '')).trim()
       assert.strictEqual(res.status, 0,
         'README TypeScript snippets failed to type-check:\\n\\n' + out + '\\n')
+    } finally {
+      Fs.rmSync(tmpFile, { force: true })
+    }
+  })
+
+
+  it('every usage TypeScript snippet in REFERENCE.md type-checks', () => {
+    const refPath = Path.join(__dirname, '..', 'REFERENCE.md')
+    // A target without a REFERENCE.md has nothing to check.
+    if (!Fs.existsSync(refPath)) {
+      return
+    }
+    const md = Fs.readFileSync(refPath, 'utf8')
+
+    const blocks = extractTsBlocks(md).filter(isReferenceSnippet)
+    assert(blocks.length > 0, 'No checkable TypeScript code blocks found in REFERENCE.md')
+
+    const tsDir = Path.join(__dirname, '..')
+    const tmpFile = Path.join(tsDir, 'test', '.reference_examples.gen.ts')
+    Fs.writeFileSync(tmpFile, buildModule(blocks), 'utf8')
+
+    try {
+      const requireFrom = createRequire(__filename)
+      const tsc = requireFrom.resolve('typescript/bin/tsc')
+
+      const res = spawnSync(process.execPath, [
+        tsc,
+        '--noEmit',
+        '--strict',
+        '--target', 'ES2022',
+        '--module', 'nodenext',
+        '--moduleResolution', 'nodenext',
+        '--esModuleInterop',
+        '--resolveJsonModule',
+        '--skipLibCheck',
+        '--types', 'node',
+        tmpFile,
+      ], { cwd: tsDir, encoding: 'utf8' })
+
+      const out = ((res.stdout || '') + (res.stderr || '')).trim()
+      assert.strictEqual(res.status, 0,
+        'REFERENCE.md TypeScript snippets failed to type-check:\\n\\n' + out + '\\n')
     } finally {
       Fs.rmSync(tmpFile, { force: true })
     }
