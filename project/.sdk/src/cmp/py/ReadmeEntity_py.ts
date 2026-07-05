@@ -12,7 +12,7 @@ import {
 // methods with optional ctrl. The op descriptions are language-agnostic.
 const OP_DESC: Record<string, { method: string, desc: string }> = {
   load:   { method: 'load(match)',   desc: 'Load a single entity by match criteria.' },
-  list:   { method: 'list(match)',   desc: 'List entities matching the criteria.' },
+  list:   { method: 'list()',        desc: 'List entities, optionally matching the given criteria.' },
   create: { method: 'create(data)',  desc: 'Create a new entity with the given data.' },
   update: { method: 'update(data)',  desc: 'Update an existing entity.' },
   remove: { method: 'remove(match)', desc: 'Remove the matching entity.' },
@@ -106,7 +106,7 @@ ${entity.name} = client.${entity.Name}().load({"id": "${entity.name}_id"})
       Content(`#### Example: List
 
 \`\`\`python
-${entity.name}s = client.${entity.Name}().list({})
+${entity.name}s = client.${entity.Name}().list()
 \`\`\`
 
 `)

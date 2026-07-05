@@ -14,9 +14,9 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     desc: 'Load a single entity matching the given criteria. Throws on error.',
   },
   list: {
-    sig: 'list(array $reqmatch, ?array $ctrl = null): mixed',
+    sig: 'list(?array $reqmatch = null, ?array $ctrl = null): mixed',
     returns: 'array — the list of results; throws on error',
-    desc: 'List entities matching the given criteria. Returns an array. Throws on error.',
+    desc: 'List entities matching the given criteria (call with no argument to list all). Returns an array. Throws on error.',
   },
   create: {
     sig: 'create(array $reqdata, ?array $ctrl = null): mixed',
@@ -246,7 +246,7 @@ $result = $client->${ent.Name}()->${opname}(["id" => "${ent.name}_id"]);
           }
           else if ('list' === opname) {
             Content(`\`\`\`php
-$results = $client->${ent.Name}()->list([]);
+$results = $client->${ent.Name}()->list();
 \`\`\`
 
 `)

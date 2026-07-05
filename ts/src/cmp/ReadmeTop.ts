@@ -143,6 +143,33 @@ ${aboutMd.trim()}
 `)
     }
 
+    // 2b. Entities-first framing: the API surface is a small set of semantic,
+    // Capitalised entities — NOT raw URL paths/queries — which is the core
+    // mental model the SDK is built around (model-driven; lists real entities).
+    if (activeEntities.length > 0) {
+      const entNames = activeEntities.map((e: any) => e.Name)
+      const entList = entNames.length > 1
+        ? entNames.slice(0, -1).join(', ') + ' and ' + entNames[entNames.length - 1]
+        : entNames[0]
+      const ex = activeEntities[0].Name
+      Content(`## Entities, not endpoints
+
+This SDK exposes the API as a small set of **semantic entities** — ${entList} — that you
+call directly, instead of assembling URL paths and query strings. Entities are
+**Capitalised** to mark them as the primary surface; each offers the standard
+operations \`list\`, \`load\`, \`create\`, \`update\`, and \`remove\`:
+
+\`\`\`ts
+const client = new ${model.Name}SDK()
+const items = await client.${ex}().list()
+\`\`\`
+
+Thinking in entities keeps the mental model small — for people and AI agents alike —
+rather than reasoning about raw HTTP routes and query parameters.
+
+`)
+    }
+
     // 3. Packages — real published package name + install command per
     // ecosystem. A package that is NOT yet live on its registry (the fleet
     // default: 'pending') must NOT advertise a `npm install ...` that 404s —

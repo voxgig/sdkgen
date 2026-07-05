@@ -67,7 +67,7 @@ All entities share the same interface.
 | Method | Signature | Description |
 | --- | --- | --- |
 | \`load\` | \`(reqmatch, ctrl) -> any\` | Load a single entity by match criteria. Raises on error. |
-| \`list\` | \`(reqmatch, ctrl) -> Array\` | List entities matching the criteria. Raises on error. |
+| \`list\` | \`(reqmatch = nil, ctrl) -> Array\` | List entities matching the criteria (call with no argument to list all). Raises on error. |
 | \`create\` | \`(reqdata, ctrl) -> any\` | Create a new entity. Raises on error. |
 | \`update\` | \`(reqdata, ctrl) -> any\` | Update an existing entity. Raises on error. |
 | \`remove\` | \`(reqmatch, ctrl) -> any\` | Remove an entity. Raises on error. |

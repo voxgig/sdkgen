@@ -47,7 +47,7 @@ error — iterate it directly.
 
 \`\`\`python
 try:
-    ${eName.toLowerCase()}s = client.${eName}().list({})
+    ${eName.toLowerCase()}s = client.${eName}().list()
     for ${eName.toLowerCase()} in ${eName.toLowerCase()}s:
         print(${eName.toLowerCase()})
 except Exception as err:

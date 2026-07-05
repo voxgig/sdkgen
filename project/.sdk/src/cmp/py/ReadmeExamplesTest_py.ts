@@ -1,5 +1,11 @@
 
-import { cmp, File, Content } from '@voxgig/sdkgen'
+import { cmp, each, File, Content } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+  getModelPath,
+  nom,
+} from '@voxgig/apidef'
 
 
 // Emits py/test/test_readme_examples.py — a pytest module that validates
@@ -10,20 +16,33 @@ import { cmp, File, Content } from '@voxgig/sdkgen'
 //   2. if mypy is importable: concatenate the blocks and type-check them
 //      (the SDK ships py.typed + TypedDicts, so entity ops are typed and
 //      e.g. `.data` on a list() result is a real error)  -> catches TYPE errors.
-//   3. mypy-absent fallback: execute the TEST-MODE snippets (those calling
-//      `.test()`, which run offline against the mock transport) and assert
-//      they raise no PROGRAMMING error (Name/Attribute/Type/Key/Import).
-//      A domain SDK error (e.g. a 404 for an unseeded mock id) is allowed.
+//   3. EXECUTE every runnable python block offline: each block that builds a
+//      client is rewritten into seeded TEST mode (so load/list resolve against
+//      the in-memory mock) and run in a subprocess. A programming error
+//      (Name/Attribute/Type/Key/Index/Import/Syntax) FAILS the test; a domain
+//      error (e.g. not-found for an unseeded id) is tolerated.
 //
 // The emitted Python is written WITHOUT backticks or backslashes (chr(96) is
 // the fence marker, chr(10) is newline) so this TS template literal stays
-// clean — the only interpolations are the SDK module/class names.
+// clean — the only interpolations are the SDK module/class names and the
+// generated entity map.
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target, ctx$: { model } } = props
 
   const Name = model.const.Name
   const sdkModule = Name.toLowerCase() + '_sdk'
   const sdkClass = Name + 'SDK'
+
+  // The API's capitalised semantic entities, mapped to their lowercase
+  // fixture key: { "Fact": "fact", "User": "user" }. Used at runtime to seed
+  // a mock record for every entity a README block references.
+  const entities = each(getModelPath(model, `main.${KIT}.entity`))
+    .filter((e: any) => e.active !== false)
+  const entitiesLiteral = 0 === entities.length
+    ? '{}'
+    : '{\n' + entities
+      .map((e: any) => `    "${nom(e, 'Name')}": "${e.name}",`)
+      .join('\n') + '\n}'
 
   File({ name: 'test_readme_examples.' + target.ext }, () => {
     Content(`# ${Name} SDK — root README python-examples test.
@@ -46,13 +65,17 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
 #      Only errors attributed to the concatenated snippet file fail the test;
 #      import-resolution noise is treated as inconclusive.
 #
-#   3. RUNTIME FALLBACK (always runs; the real safety net when mypy is absent):
-#      every TEST-MODE snippet (one that calls .test(), which runs fully
-#      offline against the in-memory mock transport) is executed and must not
-#      raise a PROGRAMMING error — NameError / AttributeError / TypeError /
-#      KeyError / IndexError / ImportError. A domain-level SDK error (for
-#      instance a 404 because the mock id is not seeded) is acceptable: it
-#      proves the snippet is structurally valid Python that reaches the SDK.
+#   3. EXECUTE (always runs; the real safety net): every python block that
+#      constructs a client is rewritten into offline TEST mode — the live
+#      constructor and any existing .test(...) call both become
+#      .test({"entity": {...}}) seeding one mock record (id "test01") for each
+#      entity the block references — and then run in a subprocess. Any
+#      PROGRAMMING error (NameError / AttributeError / TypeError / KeyError /
+#      IndexError / ImportError / SyntaxError) fails the test. A domain-level
+#      SDK error (for instance a 404 because a referenced id is not seeded) is
+#      tolerated: it proves the snippet is structurally valid Python that
+#      drives the SDK. This catches real bugs — a snippet calling a method
+#      that does not exist raises AttributeError and fails here.
 
 import ast
 import os
@@ -69,6 +92,13 @@ _README = os.path.abspath(os.path.join(_PY_ROOT, "..", "README.md"))  # repo roo
 
 _FENCE = chr(96) * 3   # the triple-backtick markdown code fence
 _NL = chr(10)          # newline
+_WS = (chr(32), chr(9), chr(13), chr(10))   # space, tab, CR, LF
+
+_SDK_MODULE = "${sdkModule}"
+_SDK_CLASS = "${sdkClass}"
+
+# The API's capitalised semantic entities -> lowercase fixture key.
+_ENTITIES = ${entitiesLiteral}
 
 
 def _read_readme():
@@ -122,10 +152,10 @@ def _mypy_available():
 def test_readme_python_blocks_typecheck():
     # Type gate: concatenate the blocks and run mypy over them. Only fails on
     # errors mypy attributes to our snippet file; environmental import noise is
-    # inconclusive (skipped). When mypy is unavailable the runtime fallback
-    # below is the safety net.
+    # inconclusive (skipped). When mypy is unavailable the execute gate below
+    # is the safety net.
     if not _mypy_available():
-        pytest.skip("mypy not importable — covered by the runtime fallback test")
+        pytest.skip("mypy not importable — covered by the execute gate")
 
     source = (_NL + _NL).join(_python_blocks()) + _NL
 
@@ -136,7 +166,7 @@ def test_readme_python_blocks_typecheck():
 
         env = dict(os.environ)
         env["PYTHONDONTWRITEBYTECODE"] = "1"
-        # Resolve "from ${sdkModule} import ${sdkClass}" against the package root.
+        # Resolve "from _SDK_MODULE import _SDK_CLASS" against the package root.
         env["MYPYPATH"] = _PY_ROOT + os.pathsep + env.get("MYPYPATH", "")
 
         proc = subprocess.run(
@@ -172,38 +202,119 @@ def test_readme_python_blocks_typecheck():
             )
 
 
-_PROGRAMMING_ERRORS = (
-    SyntaxError, NameError, AttributeError, TypeError,
-    KeyError, IndexError, ImportError,
-)
+# Exception TYPE names that signal a programming (not domain) error. Matched
+# against the last line of a failed subprocess's traceback.
+_PROGRAMMING_ERROR_NAMES = frozenset([
+    "SyntaxError", "IndentationError", "NameError", "AttributeError",
+    "TypeError", "KeyError", "IndexError", "ImportError", "ModuleNotFoundError",
+])
 
 
-def test_readme_testmode_snippets_run():
-    # Runtime gate (offline): execute the test-mode snippets against the mock
-    # transport and assert they contain no programming error. Domain errors
-    # (e.g. a 404 for an unseeded mock id) are tolerated — they still prove the
-    # snippet is valid Python that drives the SDK.
-    from ${sdkModule} import ${sdkClass}
+def _seed_literal(block):
+    # Build a test() fixture seeding one mock record (id "test01") for every
+    # entity the block references, so list()/load() resolve offline. Detection
+    # is by the "client.<Entity>(" factory call the generated examples use.
+    seeded = {}
+    for cap, key in _ENTITIES.items():
+        if ("." + cap + "(") in block:
+            seeded[key] = {"test01": {"id": "test01"}}
+    return {"entity": seeded}
 
-    blocks = [b for b in _python_blocks() if ".test()" in b]
-    if not blocks:
-        pytest.skip("no test-mode (.test()) python blocks in the root README")
 
+def _rewrite_to_test_mode(block):
+    # Force every client construction into offline test mode with seeded
+    # fixtures: both _SDK_CLASS(...) (live) and _SDK_CLASS.test(...) become
+    # _SDK_CLASS.test({"entity": {...}}). Balanced-paren aware, so a
+    # multi-line constructor argument is consumed whole. A bare mention of the
+    # class name (e.g. in an import) is left untouched.
+    seed = repr(_seed_literal(block))
+    replacement = _SDK_CLASS + ".test(" + seed + ")"
+    out = []
+    i = 0
+    n = len(block)
+    while True:
+        j = block.find(_SDK_CLASS, i)
+        if j < 0:
+            out.append(block[i:])
+            break
+        out.append(block[i:j])
+        k = j + len(_SDK_CLASS)
+        if block[k:k + 5] == ".test":
+            k += 5
+        while k < n and block[k] in _WS:
+            k += 1
+        if k < n and block[k] == "(":
+            depth = 0
+            m = k
+            while m < n:
+                c = block[m]
+                if c == "(":
+                    depth += 1
+                elif c == ")":
+                    depth -= 1
+                    if depth == 0:
+                        m += 1
+                        break
+                m += 1
+            out.append(replacement)
+            i = m
+        else:
+            # Not a construction (e.g. "from ..._sdk import _SDK_CLASS") —
+            # keep the original text verbatim.
+            out.append(block[j:k])
+            i = k
+    return "".join(out)
+
+
+def test_readme_python_blocks_execute():
+    # Runtime gate (offline): every python block that constructs a client is
+    # rewritten into seeded test mode and executed in a subprocess. A
+    # programming error fails the test; a domain error is tolerated.
+    blocks = _python_blocks()
+
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    env["PYTHONPATH"] = _PY_ROOT + os.pathsep + env.get("PYTHONPATH", "")
+
+    preamble = "import os" + _NL + "from " + _SDK_MODULE + " import " + _SDK_CLASS + _NL
+
+    executed = 0
     for i, block in enumerate(blocks):
-        # Seed the names the snippet relies on from the surrounding narrative
-        # (the SDK import lives in the quickstart block above it).
-        namespace = {"${sdkClass}": ${sdkClass}, "os": os}
-        try:
-            exec(compile(block, "<readme-testmode-" + str(i) + ">", "exec"), namespace)
-        except _PROGRAMMING_ERRORS as err:
+        # Only blocks that build a client are self-contained enough to run.
+        if _SDK_CLASS not in block:
+            continue
+
+        source = preamble + _rewrite_to_test_mode(block)
+
+        proc = subprocess.run(
+            [sys.executable, "-c", source],
+            cwd=_PY_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        executed += 1
+
+        if proc.returncode == 0:
+            continue
+
+        stderr = proc.stderr or ""
+        errlines = [ln for ln in stderr.split(_NL) if ln.strip()]
+        last = errlines[-1] if errlines else ""
+        # Traceback's final line is "ExceptionType: message"; the type may be
+        # dotted (module-qualified) so compare the short name.
+        exc_type = last.split(":", 1)[0].strip().split(".")[-1]
+
+        if exc_type in _PROGRAMMING_ERROR_NAMES:
             pytest.fail(
-                "root README test-mode block #" + str(i)
-                + " raised a programming error: "
-                + type(err).__name__ + ": " + str(err) + _NL + _NL + block
+                "root README python block #" + str(i)
+                + " raised a programming error: " + last + _NL + _NL
+                + "--- rewritten source ---" + _NL + source
+                + _NL + _NL + "--- stderr ---" + _NL + stderr
             )
-        except Exception:
-            # Domain-level SDK error — acceptable (mock data may be absent).
-            pass
+        # else: domain-level SDK error (e.g. unseeded id) — tolerated.
+
+    assert executed > 0, "expected at least one client-constructing python block to execute"
 `)
   })
 })

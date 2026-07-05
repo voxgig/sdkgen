@@ -14,9 +14,9 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     desc: 'Load a single entity matching the given criteria. Returns the entity data and raises on error.',
   },
   list: {
-    sig: 'list(reqmatch, ctrl=None) -> list',
+    sig: 'list(reqmatch=None, ctrl=None) -> list',
     returns: 'a list of entities',
-    desc: 'List entities matching the given criteria. Returns a list and raises on error.',
+    desc: 'List entities matching the given criteria. The match is optional — call `list()` with no argument to list all records. Returns a list and raises on error.',
   },
   create: {
     sig: 'create(reqdata, ctrl=None) -> dict',
@@ -242,7 +242,7 @@ result = client.${ent.Name}().${opname}({"id": "${ent.name}_id"})
           }
           else if ('list' === opname) {
             Content(`\`\`\`python
-results = client.${ent.Name}().list({})
+results = client.${ent.Name}().list()
 for ${ent.name} in results:
     print(${ent.name})
 \`\`\`

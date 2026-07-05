@@ -14,9 +14,9 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     desc: 'Load a single entity matching the given criteria. Raises on error.',
   },
   list: {
-    sig: 'list(reqmatch, ctrl = nil) -> Array',
+    sig: 'list(reqmatch = nil, ctrl = nil) -> Array',
     returns: 'Array',
-    desc: 'List entities matching the given criteria. Returns an array. Raises on error.',
+    desc: 'List entities matching the given criteria (call with no argument to list all). Returns an array. Raises on error.',
   },
   create: {
     sig: 'create(reqdata, ctrl = nil) -> result',
@@ -247,7 +247,7 @@ result = client.${ent.Name}.${opname}({ "id" => "${ent.name}_id" })
           }
           else if ('list' === opname) {
             Content(`\`\`\`ruby
-results = client.${ent.Name}.list(nil)
+results = client.${ent.Name}.list
 \`\`\`
 
 `)

@@ -1,15 +1,28 @@
 
 import { cmp, File, Content } from '@voxgig/sdkgen'
 
+import {
+  KIT,
+  getModelPath,
+} from '@voxgig/apidef'
+
 
 // Emits test/ReadmeExamplesTest.php — a PHPUnit suite that guards the PHP
 // code examples in the package README against drift. It reads ../README.md,
 // extracts every fenced php block, and:
 //
 //   1. syntax-checks each block with `php -l` (prepending <?php when absent);
-//   2. runs the offline test-mode snippets (those that build a client via
-//      ::test(...) AND call an entity operation) against the real SDK and
-//      asserts they complete without throwing.
+//   2. EXECUTES every runnable block (one that performs an entity operation)
+//      offline in test mode against the real SDK, and fails on any real
+//      PHP-level error (call to undefined method, wrong-arg-count, TypeError,
+//      ...).
+//
+// A runnable block is rewritten so its client is a test-mode client
+// (<Sdk>SDK::test) seeded with an in-memory fixture for every entity it
+// references — any real `new <Sdk>SDK`/`<Sdk>SDK::test` constructor is
+// rewritten, and a block that only *uses* $client (constructed in an earlier
+// fenced block) gets a test client prepended. This is what turns the
+// previously syntax-only "live" examples into executed ones.
 //
 // The emitted PHP builds the ``` fence via chr(96) so this generator string
 // contains no backticks of its own.
@@ -18,6 +31,14 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { model } = props.ctx$
 
   const sdkfile = model.const.Name.toLowerCase() + '_sdk.php'
+
+  // Entity accessor ($client->Name()) => fixture storage key (lowercase name),
+  // derived from the model so fixtures seed under the key the mock expects.
+  const entity = getModelPath(model, `main.${KIT}.entity`) || {}
+  const entityLines = Object.values(entity)
+    .filter((e: any) => e && e.active !== false)
+    .map((e: any) => `        ${JSON.stringify(e.Name)} => ${JSON.stringify(e.name)},`)
+    .join('\n')
 
   File({ name: 'ReadmeExamplesTest.' + target.ext }, () => {
     Content(`<?php
@@ -31,14 +52,17 @@ declare(strict_types=1);
 //   1. SYNTAX — runs 'php -l' on every block (a leading <?php is prepended
 //      when the snippet omits one). Proves every documented PHP example
 //      parses.
-//   2. RUN — offline test-mode snippets (those that construct a client via
-//      ::test(...) AND perform an entity operation load/list/create/update/
-//      remove) are executed against the real SDK. test() swaps in an
-//      in-memory mock transport, so the block runs offline; it must complete
-//      without throwing. Signature-only snippets (e.g. ::test(\\$testopts,
-//      \\$sdkopts)) are syntax-checked but not executed.
+//   2. RUN — every runnable block (one that performs an entity operation
+//      load/list/create/update/remove) is EXECUTED offline against the real
+//      SDK. Each such block is rewritten to build a test-mode client
+//      (${model.const.Name}SDK::test) seeded with an in-memory fixture for
+//      every entity it references, so it runs without a live server. A block
+//      that only uses \\$client (constructed in an earlier block) gets a test
+//      client prepended. Execution must not raise a real PHP-level error
+//      (undefined method, wrong-arg-count, TypeError, ...); expected
+//      not-found domain errors are tolerated.
 //
-// PHP is dynamically typed, so syntax + running the offline snippets is the
+// PHP is dynamically typed, so syntax + actually running every example is the
 // strongest check available without a live server.
 
 require_once __DIR__ . '/../${sdkfile}';
@@ -47,6 +71,17 @@ use PHPUnit\\Framework\\TestCase;
 
 class ReadmeExamplesTest extends TestCase
 {
+    private const SDK_CLASS = '${model.const.Name}SDK';
+
+    // Entity accessor (\\$client->Name()) => fixture storage key (lowercase name).
+    private const ENTITIES = [
+${entityLines}
+    ];
+
+    // PHP-level errors that indicate a real bug in a documented example (as
+    // opposed to an expected not-found / domain error, which is tolerated).
+    private const FATAL = '/(Call to undefined method|Call to undefined function|Call to a member function|ArgumentCountError|Too few arguments|Undefined constant|Uncaught TypeError)/';
+
     /** Extract every fenced php block from the package README. */
     private function phpBlocks(): array
     {
@@ -84,25 +119,66 @@ class ReadmeExamplesTest extends TestCase
     }
 
     /**
-     * Offline test-mode snippets must run without throwing. A snippet
-     * qualifies when it builds a test client (::test(...)) and calls an entity
-     * operation; it is executed in a subprocess against the real SDK (mock
-     * transport, no network). Snippets that only show a signature are skipped.
+     * Build the SDK 'entity' fixture option for the entities a block
+     * references, falling back to seeding all entities when none are named.
      */
-    public function test_php_testmode_snippets_run(): void
+    private function fixturesFor(string $block): array
+    {
+        $refs = [];
+        foreach (self::ENTITIES as $name => $storage) {
+            if (preg_match('/\\$client->' . preg_quote($name, '/') . '\\b/', $block)) {
+                $refs[$storage] = ["test01" => ["id" => "test01"]];
+            }
+        }
+        if (empty($refs)) {
+            foreach (self::ENTITIES as $storage) {
+                $refs[$storage] = ["test01" => ["id" => "test01"]];
+            }
+        }
+        return ["entity" => $refs];
+    }
+
+    /**
+     * Rewrite a runnable block into an executable offline test-mode program:
+     * any real client constructor (new <Sdk>SDK/<Sdk>SDK::test) becomes
+     * <Sdk>SDK::test(<fixtures>); a block that only uses \\$client gets such a
+     * constructor prepended. (The constructor arg-list match is deliberately
+     * shallow — it does not span nested parens — because runnable op blocks
+     * never build a client inline with a closure argument.)
+     */
+    private function toRunner(string $block, string $sdk): string
+    {
+        $cls = self::SDK_CLASS;
+        $fixtures = var_export($this->fixturesFor($block), true);
+        $body = preg_replace('/^\\s*<\\?php\\s*/', '', $block);
+        $ctorRe = '/(?:new\\s+' . preg_quote($cls, '/') . '|' . preg_quote($cls, '/') . '::test)(?:\\([^()]*\\))?/';
+        if (preg_match($ctorRe, $body)) {
+            $body = preg_replace_callback($ctorRe, function () use ($cls, $fixtures) {
+                return $cls . '::test(' . $fixtures . ')';
+            }, $body);
+        } else {
+            $body = '$client = ' . $cls . '::test(' . $fixtures . ");\\n" . $body;
+        }
+        return "<?php\\nrequire_once " . var_export($sdk, true) . ";\\n" . $body;
+    }
+
+    /**
+     * Every runnable block (one that performs an entity operation) is executed
+     * offline in test mode and must not raise a real PHP-level error. Snippets
+     * that only illustrate a signature or non-entity call are syntax-checked
+     * but not executed here.
+     */
+    public function test_php_examples_run_offline(): void
     {
         $ran = 0;
         $failures = [];
         $sdk = __DIR__ . '/../${sdkfile}';
         foreach ($this->phpBlocks() as $i => $block) {
-            $isTest = strpos($block, '::test(') !== false;
-            $hasOp = preg_match('/->(load|list|create|update|remove)\\s*\\(/', $block) === 1;
-            if (!($isTest && $hasOp)) {
+            if (preg_match('/->(?:load|list|create|update|remove)\\s*\\(/', $block) !== 1) {
                 continue;
             }
             $ran++;
-            $body = preg_replace('/^\\s*<\\?php\\s*/', '', $block);
-            $runner = "<?php\\nrequire_once " . var_export($sdk, true) . ";\\n" . $body;
+            $runner = $this->toRunner($block, $sdk);
             $tmp = tempnam(sys_get_temp_dir(), 'readme_run_') . '.php';
             file_put_contents($tmp, $runner);
             $out = [];
@@ -110,11 +186,14 @@ class ReadmeExamplesTest extends TestCase
             exec('php ' . escapeshellarg($tmp) . ' 2>&1', $out, $rc);
             @unlink($tmp);
             if ($rc !== 0) {
-                $failures[] = 'block #' . $i . ' (exit ' . $rc . "):\\n" . implode("\\n", $out) . "\\n" . $block;
+                $text = implode("\\n", $out);
+                if (preg_match(self::FATAL, $text) === 1) {
+                    $failures[] = 'block #' . $i . ' (exit ' . $rc . "):\\n" . $text . "\\n" . $block;
+                }
             }
         }
-        $this->assertGreaterThan(0, $ran, 'expected at least one offline test-mode snippet to run');
-        $this->assertSame([], $failures, "README test-mode snippets that threw:\\n" . implode("\\n\\n", $failures));
+        $this->assertGreaterThan(0, $ran, 'expected at least one runnable example to execute');
+        $this->assertSame([], $failures, "README examples raised a real error when run offline:\\n" . implode("\\n\\n", $failures));
     }
 }
 `)

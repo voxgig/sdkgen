@@ -36,7 +36,7 @@ client = ${ctor}
 
     if (opnames.includes('list')) {
       Content(`# List all ${eName.toLowerCase()}s (returns a list, raises on error)
-${eName.toLowerCase()}s = client.${eName}().list({})
+${eName.toLowerCase()}s = client.${eName}().list()
 for ${eName.toLowerCase()} in ${eName.toLowerCase()}s:
     print(${eName.toLowerCase()})
 `)

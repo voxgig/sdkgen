@@ -67,7 +67,7 @@ All entities share the same interface.
 | Method | Signature | Description |
 | --- | --- | --- |
 | \`load\` | \`($reqmatch, $ctrl): array\` | Load a single entity by match criteria. |
-| \`list\` | \`($reqmatch, $ctrl): array\` | List entities matching the criteria. |
+| \`list\` | \`(?array $reqmatch = null, $ctrl): array\` | List entities matching the criteria (call with no argument to list all). |
 | \`create\` | \`($reqdata, $ctrl): array\` | Create a new entity. |
 | \`update\` | \`($reqdata, $ctrl): array\` | Update an existing entity. |
 | \`remove\` | \`($reqmatch, $ctrl): array\` | Remove an entity. |

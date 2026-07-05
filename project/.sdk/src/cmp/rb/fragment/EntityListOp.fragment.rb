@@ -2,10 +2,11 @@
 
   # List EntityName items matching the given filter.
   #
-  # @param reqmatch [EntityNameListMatch, Hash, nil] match filter (any subset of EntityName fields)
+  # @param reqmatch [EntityNameListMatch, Hash, nil] match filter (any subset of
+  #   EntityName fields); defaults to nil, treated as an empty match that lists all.
   # @param ctrl [Object, nil] optional per-call control
   # @return [Array<EntityName>, Array] the matching EntityName items; raises ProjectNameError on failure
-  def list(reqmatch, ctrl = nil)
+  def list(reqmatch = nil, ctrl = nil)
     utility = @_utility
     ctx = utility.make_context.call({
       "opname" => "list",
