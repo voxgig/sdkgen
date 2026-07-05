@@ -6,6 +6,8 @@ import {
   getModelPath
 } from '../types'
 
+import { entityIdField } from '../helpers/opShape'
+
 
 // Error handling is one of the everyday developer tasks, so it gets its
 // own user-facing section rather than being buried in the pipeline
@@ -23,19 +25,21 @@ import {
 // integer-typed, else a quoted string) so the snippets both reference a real
 // entity and type-check. Targets not listed here (ts, js, ...) use DEFAULT_LANG.
 type LangErrors = {
-  // prose + snippet for the entity-op convention
-  entity: (eName: string, eLower: string, idLit: string) => string
+  // prose + snippet for the entity-op convention. `idF` is the entity's
+  // id-like key field name, or null when it has none — then the load example
+  // matches on no argument rather than a phantom `id`.
+  entity: (eName: string, eLower: string, idLit: string, idF: string | null) => string
   // prose + snippet for the direct()/prepare() convention
   direct: string
 }
 
 
 const DEFAULT_LANG: LangErrors = {
-  entity: (eName, eLower, idLit) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
+  entity: (eName, eLower, idLit, idF) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
 
 \`\`\`ts
 try {
-  const ${eLower} = await client.${eName}().load({ id: ${idLit} })
+  const ${eLower} = await client.${eName}().load(${idF ? `{ ${idF}: ${idLit} }` : ''})
   console.log(${eLower})
 } catch (err) {
   console.error('load failed:', err)
@@ -64,11 +68,11 @@ if (result instanceof Error) {
 
 const LANGS: Record<string, LangErrors> = {
   py: {
-    entity: (eName, eLower, idLit) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
+    entity: (eName, eLower, idLit, idF) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
 
 \`\`\`python
 try:
-    ${eLower} = client.${eName}().load({"id": ${idLit}})
+    ${eLower} = client.${eName}().load(${idF ? `{"${idF}": ${idLit}}` : ''})
     print(${eLower})
 except Exception as err:
     print(f"load failed: {err}")
@@ -94,12 +98,12 @@ if not result["ok"]:
   },
 
   php: {
-    entity: (eName, eLower, idLit) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
+    entity: (eName, eLower, idLit, idF) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
 \`try\` / \`catch\`:
 
 \`\`\`php
 try {
-    $${eLower} = $client->${eName}()->load(["id" => ${idLit}]);
+    $${eLower} = $client->${eName}()->load(${idF ? `["${idF}" => ${idLit}]` : ''});
 } catch (\\Throwable $err) {
     echo "Error: " . $err->getMessage();
 }
@@ -127,11 +131,11 @@ if (! $result["ok"]) {
   },
 
   rb: {
-    entity: (eName, eLower, idLit) => `Entity operations raise on failure, so rescue them:
+    entity: (eName, eLower, idLit, idF) => `Entity operations raise on failure, so rescue them:
 
 \`\`\`ruby
 begin
-  ${eLower} = client.${eName}.load({ "id" => ${idLit} })
+  ${eLower} = client.${eName}.load(${idF ? `{ "${idF}" => ${idLit} }` : ''})
 rescue => err
   warn "load failed: #{err}"
 end
@@ -156,11 +160,11 @@ warn "request failed: #{result["err"] || "HTTP #{result["status"]}"}" unless res
   },
 
   lua: {
-    entity: (eName, eLower, idLit) => `Entity operations return \`(value, err)\`. Check \`err\` before using
+    entity: (eName, eLower, idLit, idF) => `Entity operations return \`(value, err)\`. Check \`err\` before using
 the value:
 
 \`\`\`lua
-local ${eLower}, err = client:${eName}():load({ id = ${idLit} })
+local ${eLower}, err = client:${eName}():load(${idF ? `{ ${idF} = ${idLit} }` : ''})
 if err then error(err) end
 \`\`\`
 
@@ -180,11 +184,11 @@ if err then error(err) end
   },
 
   go: {
-    entity: (eName, eLower, idLit) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
+    entity: (eName, eLower, idLit, idF) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
 using the value — there is no exception to catch:
 
 \`\`\`go
-${eLower}, err := client.${eName}(nil).Load(map[string]any{"id": ${idLit}}, nil)
+${eLower}, err := client.${eName}(nil).Load(${idF ? `map[string]any{"${idF}": ${idLit}}` : 'nil'}, nil)
 if err != nil {
     // handle err
     return
@@ -225,11 +229,15 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
   const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity'
   const eLower = eName.toLowerCase()
 
+  // The entity's id-like key field name, or null when it has none (a
+  // response-wrapped spec can model an entity with no id). Drives whether the
+  // load example keys on an id at all.
+  const idF = entityIdField(ex)
   // Type-correct example id literal: a numeric literal when the id field is
   // integer-typed (so a typed load-match like `{ id: number }` compiles), else
   // a double-quoted string (valid in every target, incl. Go).
   const flds = ex && ex.fields ? (Array.isArray(ex.fields) ? ex.fields : Object.values(ex.fields)) : []
-  const idField: any = flds.find((f: any) => f && f.name === 'id') || {}
+  const idField: any = flds.find((f: any) => f && f.name === (idF || 'id')) || {}
   const idLit = /INTEGER|NUMBER/i.test(String(idField.type || '')) ? '1' : '"example_id"'
 
   Content(`
@@ -237,7 +245,7 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
 
 `)
 
-  Content(lang.entity(eName, eLower, idLit))
+  Content(lang.entity(eName, eLower, idLit, idF))
 
   Content(lang.direct)
 })

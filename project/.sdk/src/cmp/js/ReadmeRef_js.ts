@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -181,6 +181,9 @@ Alias for \`${model.Name}SDK.test()\`.
     publishedEntities.map((ent: any) => {
       const opnames = Object.keys(ent.op || {})
       const fields = ent.fields || []
+      // Model-driven id key: null when this entity has no id-like field, in
+      // which case load/remove match on no argument and update omits the id.
+      const idF = entityIdField(ent)
 
       Content(`
 ---
@@ -268,7 +271,7 @@ ${info.desc}
           // Show example
           if ('load' === opname || 'remove' === opname) {
             Content(`\`\`\`ts
-const result = await client.${ent.Name}().${opname}({ id: ${exampleValue(ent, ent.op && ent.op[opname], 'id', ent.name + '_id')} })
+const result = await client.${ent.Name}().${opname}(${idF ? `{ ${idF}: ${exampleValue(ent, ent.op && ent.op[opname], idF, ent.name + '_id')} }` : ''})
 \`\`\`
 
 `)
@@ -296,10 +299,12 @@ const result = await client.${ent.Name}().create({
 `)
           }
           else if ('update' === opname) {
+            const updateIdLine = idF
+              ? `  ${idF}: ${exampleValue(ent, ent.op && ent.op.update, idF, ent.name + '_id')},\n`
+              : ''
             Content(`\`\`\`ts
 const result = await client.${ent.Name}().update({
-  id: ${exampleValue(ent, ent.op && ent.op.update, 'id', ent.name + '_id')},
-  // Fields to update
+${updateIdLine}  // Fields to update
 })
 \`\`\`
 

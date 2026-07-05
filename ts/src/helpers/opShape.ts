@@ -142,11 +142,39 @@ function opRequestShape(ent: any, opname: string):
 }
 
 
+// The entity's id-like key field, or null when it has none. Used by the doc
+// generators to decide whether an example may key a load/remove on `{ id: ... }`
+// and access `.id` on a returned entity, OR must degrade to `load()` with no
+// argument (some APIs model an entity whose load match carries no id — e.g. a
+// response-wrapped spec, where AqiLoadMatch is { code, data, msg }). Prefers the
+// model's declared id field name, then a literal `id`, checking the load-match
+// shape first and the entity's own fields as a fallback.
+function entityIdField(ent: any): string | null {
+  if (null == ent) {
+    return null
+  }
+  const idName = (ent.id && ent.id.field) || 'id'
+  const loadItems = opRequestShape(ent, 'load').items
+  if (loadItems.some((it: OpShapeItem) => it.name === idName)) {
+    return idName
+  }
+  if (loadItems.some((it: OpShapeItem) => it.name === 'id')) {
+    return 'id'
+  }
+  const fields = ent.fields ? each(ent.fields) : []
+  if (fields.some((f: any) => f && (f.name === idName || f.name === 'id'))) {
+    return fields.some((f: any) => f && f.name === idName) ? idName : 'id'
+  }
+  return null
+}
+
+
 export {
   OP_SUFFIX,
   opTypeName,
   opParams,
   opRequestShape,
+  entityIdField,
 }
 
 export type {

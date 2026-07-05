@@ -22,7 +22,11 @@ function makeModel() {
     name: 'demo',
     main: { kit: {
       entity: {
-        moon: { active: true, name: 'moon' },
+        // An id-bearing entity: the id-like key drives the load-example match
+        // (`{ id: ... }` / `map[string]any{"id": ...}`). An entity with no id
+        // field would instead degrade to a no-argument load (entityIdField ->
+        // null), which is exercised end-to-end by the id-less SDK targets.
+        moon: { active: true, name: 'moon', fields: { id: { name: 'id' } } },
       },
       feature: {
         test: { active: true, name: 'test', title: 'Test mode (offline)' },

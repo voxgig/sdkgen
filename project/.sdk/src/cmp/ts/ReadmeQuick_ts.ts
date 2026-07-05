@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -42,6 +42,10 @@ const client = ${ctor}
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
     const opnames = Object.keys(exampleEntity.op || {})
+    // Model-driven id key: `idF` is the entity's id-like field name, or null
+    // when it has none (then load/remove match on no argument, and we never
+    // read `.id` off a returned entity — both would fail the typed gate).
+    const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
@@ -67,6 +71,14 @@ for (const ${eName.toLowerCase()} of ${eName.toLowerCase()}s) {
       const parentParam = parentFields.length > 0 ? parentFields[0].name : 'parent_id'
       const loadOp = nestedEntity.op && nestedEntity.op.load
 
+      // Model-driven id key: only emit an id match line if this nested entity
+      // actually has an id-like key field (some response-wrapped specs do not).
+      const neIdF = entityIdField(nestedEntity)
+      const neMatchLines = [`    ${parentParam}: ${exampleValue(nestedEntity, loadOp, parentParam, 'example')},`]
+      if (neIdF) {
+        neMatchLines.push(`    ${neIdF}: ${exampleValue(nestedEntity, loadOp, neIdF, 'example_id')},`)
+      }
+
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${eName}, so provide the \`${parentParam}\`.
@@ -75,8 +87,7 @@ ${neName} is nested under ${eName}, so provide the \`${parentParam}\`.
 \`\`\`ts
 try {
   const ${neName.toLowerCase()} = await client.${neName}().load({
-    ${parentParam}: ${exampleValue(nestedEntity, loadOp, parentParam, 'example')},
-    id: ${exampleValue(nestedEntity, loadOp, 'id', 'example_id')},
+${neMatchLines.join('\n')}
   })
   console.log(${neName.toLowerCase()})
 } catch (err) {
@@ -93,7 +104,7 @@ try {
 
 \`\`\`ts
 try {
-  const ${eName.toLowerCase()} = await client.${eName}().load({ id: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, 'id', 'example_id')} })
+  const ${eName.toLowerCase()} = await client.${eName}().load(${idF ? `{ ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, idF, 'example_id')} }` : ''})
   console.log(${eName.toLowerCase()})
 } catch (err) {
   console.error('load failed:', err)
@@ -109,10 +120,9 @@ try {
     // non-id fields and render a type-correct literal per field via
     // exampleValue — never a hardcoded field the entity may not have.
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
-      const idField = (exampleEntity.id && exampleEntity.id.field) || 'id'
       const exampleFields = (opname: string): string[] =>
         opRequestShape(exampleEntity, opname).items
-          .filter((it: any) => it.name !== idField && it.name !== 'id')
+          .filter((it: any) => it.name !== idF && it.name !== 'id')
           .slice(0, 2)
           .map((it: any) =>
             `  ${it.name}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
@@ -133,20 +143,19 @@ const created = await client.${eName}().create({${createBody}})
         // The id comes straight off the returned entity. Entity fields are
         // optional under the typed-partiality model, so id is `number |
         // undefined`; after a successful create it is present, hence the
-        // non-null assertion required by the `number` match type.
-        const updateLines = ['  id: created.id!,'].concat(exampleFields('update'))
-        Content(`// Update — the id comes straight off the returned entity
-const updated = await client.${eName}().update({
-${updateLines.join('\n')}
-})
+        // non-null assertion required by the `number` match type. When the
+        // entity has no id-like key (idF === null) the update degrades to the
+        // writable fields only — the match type is all-optional.
+        const updateLines = (idF ? [`  ${idF}: created.${idF}!,`] : []).concat(exampleFields('update'))
+        const updateBody = updateLines.length ? '\n' + updateLines.join('\n') + '\n' : ''
+        Content(`// Update${idF ? ' — the id comes straight off the returned entity' : ''}
+const updated = await client.${eName}().update({${updateBody}})
 
 `)
       }
       if (opnames.includes('remove')) {
         Content(`// Remove
-await client.${eName}().remove({
-  id: created.id!,
-})
+await client.${eName}().remove(${idF ? `{\n  ${idF}: created.${idF}!,\n}` : ''})
 `)
       }
       Content(`\`\`\`

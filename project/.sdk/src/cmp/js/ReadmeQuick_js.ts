@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -41,10 +41,12 @@ const client = ${ctor}
     // Model-driven example fields, in parity with the ts target: derive the
     // create/update body from the op shape (opRequestShape) so the docs show
     // REAL writable fields, not a hardcoded field the entity may not have.
-    const idField = (exampleEntity.id && exampleEntity.id.field) || 'id'
+    // `idF` is the entity's id-like field name, or null when it has none —
+    // then load/remove match on no argument and update omits the id.
+    const idF = entityIdField(exampleEntity)
     const exampleFields = (opname: string): string[] =>
       opRequestShape(exampleEntity, opname).items
-        .filter((it: any) => it.name !== idField && it.name !== 'id')
+        .filter((it: any) => it.name !== idF && it.name !== 'id')
         .slice(0, 2)
         .map((it: any) =>
           `  ${it.name}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
@@ -54,7 +56,7 @@ const client = ${ctor}
 ### Load ${article} ${eName}
 
 \`\`\`js
-const ${exampleEntity.name} = await client.${eName}().load({ id: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, 'id', exampleEntity.name + '_id')} })
+const ${exampleEntity.name} = await client.${eName}().load(${idF ? `{ ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, idF, exampleEntity.name + '_id')} }` : ''})
 console.log(${exampleEntity.name})
 \`\`\`
 `)
@@ -87,16 +89,15 @@ console.log(created)
     }
 
     if (opnames.includes('update')) {
-      const updateLines = [
-        `  id: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.update, 'id', exampleEntity.name + '_id')},`
-      ].concat(exampleFields('update'))
+      const updateLines = (idF
+        ? [`  ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.update, idF, exampleEntity.name + '_id')},`]
+        : []).concat(exampleFields('update'))
+      const updateBody = updateLines.length ? '\n' + updateLines.join('\n') + '\n' : ''
       Content(`
 ### Update a ${eName}
 
 \`\`\`js
-const updated = await client.${eName}().update({
-${updateLines.join('\n')}
-})
+const updated = await client.${eName}().update({${updateBody}})
 console.log(updated)
 \`\`\`
 `)
@@ -107,7 +108,7 @@ console.log(updated)
 ### Remove a ${eName}
 
 \`\`\`js
-await client.${eName}().remove({ id: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.remove, 'id', exampleEntity.name + '_id')} })
+await client.${eName}().remove(${idF ? `{ ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.remove, idF, exampleEntity.name + '_id')} }` : ''})
 \`\`\`
 `)
     }

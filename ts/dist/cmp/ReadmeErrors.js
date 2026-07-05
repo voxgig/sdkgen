@@ -3,12 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeErrors = void 0;
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
+const opShape_1 = require("../helpers/opShape");
 const DEFAULT_LANG = {
-    entity: (eName, eLower, idLit) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
+    entity: (eName, eLower, idLit, idF) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
 
 \`\`\`ts
 try {
-  const ${eLower} = await client.${eName}().load({ id: ${idLit} })
+  const ${eLower} = await client.${eName}().load(${idF ? `{ ${idF}: ${idLit} }` : ''})
   console.log(${eLower})
 } catch (err) {
   console.error('load failed:', err)
@@ -35,11 +36,11 @@ if (result instanceof Error) {
 };
 const LANGS = {
     py: {
-        entity: (eName, eLower, idLit) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
+        entity: (eName, eLower, idLit, idF) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
 
 \`\`\`python
 try:
-    ${eLower} = client.${eName}().load({"id": ${idLit}})
+    ${eLower} = client.${eName}().load(${idF ? `{"${idF}": ${idLit}}` : ''})
     print(${eLower})
 except Exception as err:
     print(f"load failed: {err}")
@@ -64,12 +65,12 @@ if not result["ok"]:
 `,
     },
     php: {
-        entity: (eName, eLower, idLit) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
+        entity: (eName, eLower, idLit, idF) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
 \`try\` / \`catch\`:
 
 \`\`\`php
 try {
-    $${eLower} = $client->${eName}()->load(["id" => ${idLit}]);
+    $${eLower} = $client->${eName}()->load(${idF ? `["${idF}" => ${idLit}]` : ''});
 } catch (\\Throwable $err) {
     echo "Error: " . $err->getMessage();
 }
@@ -96,11 +97,11 @@ if (! $result["ok"]) {
 `,
     },
     rb: {
-        entity: (eName, eLower, idLit) => `Entity operations raise on failure, so rescue them:
+        entity: (eName, eLower, idLit, idF) => `Entity operations raise on failure, so rescue them:
 
 \`\`\`ruby
 begin
-  ${eLower} = client.${eName}.load({ "id" => ${idLit} })
+  ${eLower} = client.${eName}.load(${idF ? `{ "${idF}" => ${idLit} }` : ''})
 rescue => err
   warn "load failed: #{err}"
 end
@@ -124,11 +125,11 @@ warn "request failed: #{result["err"] || "HTTP #{result["status"]}"}" unless res
 `,
     },
     lua: {
-        entity: (eName, eLower, idLit) => `Entity operations return \`(value, err)\`. Check \`err\` before using
+        entity: (eName, eLower, idLit, idF) => `Entity operations return \`(value, err)\`. Check \`err\` before using
 the value:
 
 \`\`\`lua
-local ${eLower}, err = client:${eName}():load({ id = ${idLit} })
+local ${eLower}, err = client:${eName}():load(${idF ? `{ ${idF} = ${idLit} }` : ''})
 if err then error(err) end
 \`\`\`
 
@@ -147,11 +148,11 @@ if err then error(err) end
 `,
     },
     go: {
-        entity: (eName, eLower, idLit) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
+        entity: (eName, eLower, idLit, idF) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
 using the value — there is no exception to catch:
 
 \`\`\`go
-${eLower}, err := client.${eName}(nil).Load(map[string]any{"id": ${idLit}}, nil)
+${eLower}, err := client.${eName}(nil).Load(${idF ? `map[string]any{"${idF}": ${idLit}}` : 'nil'}, nil)
 if err != nil {
     // handle err
     return
@@ -187,17 +188,21 @@ const ReadmeErrors = (0, jostraca_1.cmp)(function ReadmeErrors(props) {
     const ex = Object.values(entity || {}).find((e) => e && e.active !== false);
     const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity';
     const eLower = eName.toLowerCase();
+    // The entity's id-like key field name, or null when it has none (a
+    // response-wrapped spec can model an entity with no id). Drives whether the
+    // load example keys on an id at all.
+    const idF = (0, opShape_1.entityIdField)(ex);
     // Type-correct example id literal: a numeric literal when the id field is
     // integer-typed (so a typed load-match like `{ id: number }` compiles), else
     // a double-quoted string (valid in every target, incl. Go).
     const flds = ex && ex.fields ? (Array.isArray(ex.fields) ? ex.fields : Object.values(ex.fields)) : [];
-    const idField = flds.find((f) => f && f.name === 'id') || {};
+    const idField = flds.find((f) => f && f.name === (idF || 'id')) || {};
     const idLit = /INTEGER|NUMBER/i.test(String(idField.type || '')) ? '1' : '"example_id"';
     (0, jostraca_1.Content)(`
 ## Error handling
 
 `);
-    (0, jostraca_1.Content)(lang.entity(eName, eLower, idLit));
+    (0, jostraca_1.Content)(lang.entity(eName, eLower, idLit, idF));
     (0, jostraca_1.Content)(lang.direct);
 });
 exports.ReadmeErrors = ReadmeErrors;

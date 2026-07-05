@@ -48,7 +48,7 @@ import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonKey } from './helpers/canonType'
-import { OP_SUFFIX, opTypeName, opParams, opRequestShape } from './helpers/opShape'
+import { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField } from './helpers/opShape'
 import {
   packageName,
   installCommand,
@@ -442,6 +442,7 @@ export {
   opTypeName,
   opParams,
   opRequestShape,
+  entityIdField,
 
   packageName,
   installCommand,

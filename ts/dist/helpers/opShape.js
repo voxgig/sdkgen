@@ -31,6 +31,7 @@ exports.OP_SUFFIX = void 0;
 exports.opTypeName = opTypeName;
 exports.opParams = opParams;
 exports.opRequestShape = opRequestShape;
+exports.entityIdField = entityIdField;
 const jostraca_1 = require("jostraca");
 // The five ops, and whether their request payload is a `Match` (query/id) or
 // `Data` (body) — this fixes the generated type-name suffix per op.
@@ -116,5 +117,30 @@ function opRequestShape(ent, opname) {
         optional: fieldOptional(f, opname),
     }));
     return { items, fromParams: false };
+}
+// The entity's id-like key field, or null when it has none. Used by the doc
+// generators to decide whether an example may key a load/remove on `{ id: ... }`
+// and access `.id` on a returned entity, OR must degrade to `load()` with no
+// argument (some APIs model an entity whose load match carries no id — e.g. a
+// response-wrapped spec, where AqiLoadMatch is { code, data, msg }). Prefers the
+// model's declared id field name, then a literal `id`, checking the load-match
+// shape first and the entity's own fields as a fallback.
+function entityIdField(ent) {
+    if (null == ent) {
+        return null;
+    }
+    const idName = (ent.id && ent.id.field) || 'id';
+    const loadItems = opRequestShape(ent, 'load').items;
+    if (loadItems.some((it) => it.name === idName)) {
+        return idName;
+    }
+    if (loadItems.some((it) => it.name === 'id')) {
+        return 'id';
+    }
+    const fields = ent.fields ? (0, jostraca_1.each)(ent.fields) : [];
+    if (fields.some((f) => f && (f.name === idName || f.name === 'id'))) {
+        return fields.some((f) => f && f.name === idName) ? idName : 'id';
+    }
+    return null;
 }
 //# sourceMappingURL=opShape.js.map

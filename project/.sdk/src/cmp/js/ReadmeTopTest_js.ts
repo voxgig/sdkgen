@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -22,9 +22,12 @@ const client = ${model.const.Name}SDK.test()
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    const idName = (exampleEntity.id && exampleEntity.id.field) || 'id'
+    // Model-driven id key: null when the entity has no id-like field, in which
+    // case the test-mode load takes no match argument.
+    const idF = entityIdField(exampleEntity)
     const loadOp = exampleEntity.op && exampleEntity.op.load
-    Content(`const ${eName.toLowerCase()} = await client.${eName}().load({ ${idName}: ${exampleValue(exampleEntity, loadOp, idName, 'test01')} })
+    const loadArg = idF ? `{ ${idF}: ${exampleValue(exampleEntity, loadOp, idF, 'test01')} }` : ''
+    Content(`const ${eName.toLowerCase()} = await client.${eName}().load(${loadArg})
 // ${eName.toLowerCase()} is a bare entity populated with mock data
 console.log(${eName.toLowerCase()})
 `)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, packageName, envName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, packageName, envName, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -56,11 +56,18 @@ for (const ${eName.toLowerCase()} of ${eName.toLowerCase()}s) {
       const parentParam = parentFields.length > 0 ? parentFields[0].name : 'parent_id'
       const loadOp = nestedEntity.op && nestedEntity.op.load
 
+      // Model-driven id key: only emit an id match line if the nested entity
+      // has an id-like key field.
+      const neIdF = entityIdField(nestedEntity)
+      const neMatchLines = [`  ${parentParam}: ${exampleValue(nestedEntity, loadOp, parentParam, 'example')},`]
+      if (neIdF) {
+        neMatchLines.push(`  ${neIdF}: ${exampleValue(nestedEntity, loadOp, neIdF, 'example_id')},`)
+      }
+
       Content(`
 // Load a specific ${neName.toLowerCase()} (returns a ${neName})
 const ${neName.toLowerCase()} = await client.${neName}().load({
-  ${parentParam}: ${exampleValue(nestedEntity, loadOp, parentParam, 'example')},
-  id: ${exampleValue(nestedEntity, loadOp, 'id', 'example_id')},
+${neMatchLines.join('\n')}
 })
 console.log(${neName.toLowerCase()})
 `)

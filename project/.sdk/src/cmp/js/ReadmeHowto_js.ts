@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -20,8 +20,16 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // Model-driven id literals so the load examples match the generated
   // match type (e.g. a numeric id must not be quoted).
   const loadOp = exampleEntity && exampleEntity.op && exampleEntity.op.load
-  const testIdLit = exampleEntity ? exampleValue(exampleEntity, loadOp, 'id', 'test01') : `'test01'`
-  const stateIdLit = exampleEntity ? exampleValue(exampleEntity, loadOp, 'id', 'example') : `'example'`
+  // Model-driven id key: `idF` is the entity's id-like field name, or null
+  // when it has none — then load() takes no match and we never read `.id`.
+  const idF = exampleEntity ? entityIdField(exampleEntity) : null
+  const testIdLit = exampleEntity ? exampleValue(exampleEntity, loadOp, idF || 'id', 'test01') : `'test01'`
+  const stateIdLit = exampleEntity ? exampleValue(exampleEntity, loadOp, idF || 'id', 'example') : `'example'`
+  const testLoadArg = idF ? `{ ${idF}: ${testIdLit} }` : ''
+  const stateLoadArg = idF ? `{ ${idF}: ${stateIdLit} }` : ''
+  const stateDataLine = idF
+    ? `console.log(data.${idF}) // ${stateIdLit}`
+    : `console.log(data)`
 
   const authActive = isAuthActive(model)
   const apikeyTesterCtor = authActive
@@ -72,7 +80,7 @@ Create a mock client for unit testing — no server required:
 \`\`\`js
 const client = ${model.const.Name}SDK.test()
 
-const ${eName.toLowerCase()} = await client.${eName}().load({ id: ${testIdLit} })
+const ${eName.toLowerCase()} = await client.${eName}().load(${testLoadArg})
 // ${eName.toLowerCase()} is a bare entity populated with mock response data
 console.log(${eName.toLowerCase()})
 \`\`\`
@@ -92,11 +100,11 @@ Entity instances remember their last match and data:
 const entity = client.${eName}()
 
 // First call sets internal match
-await entity.load({ id: ${stateIdLit} })
+await entity.load(${stateLoadArg})
 
 // Subsequent calls reuse the stored match
 const data = entity.data()
-console.log(data.id) // ${stateIdLit}
+${stateDataLine}
 \`\`\`
 
 ### Add custom middleware
