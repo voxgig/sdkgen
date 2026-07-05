@@ -70,8 +70,8 @@ All entities share the same interface.
 | \`create\` | \`create(reqdata?, ctrl?): Promise<Entity>\` | Create a new entity. |
 | \`update\` | \`update(reqdata?, ctrl?): Promise<Entity>\` | Update an existing entity. |
 | \`remove\` | \`remove(reqmatch?, ctrl?): Promise<void>\` | Remove an entity. |
-| \`data\` | \`data(data?): any\` | Get or set entity data. |
-| \`match\` | \`match(match?): any\` | Get or set entity match criteria. |
+| \`data\` | \`data(data?: Partial<Entity>): Entity\` | Get or set entity data. |
+| \`match\` | \`match(match?: Partial<Entity>): Partial<Entity>\` | Get or set entity match criteria. |
 | \`make\` | \`make(): Entity\` | Create a new instance with the same options. |
 | \`client\` | \`client(): ${model.const.Name}SDK\` | Return the parent SDK client. |
 | \`entopts\` | \`entopts(): object\` | Return a copy of the entity options. |
