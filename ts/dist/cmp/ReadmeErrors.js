@@ -4,11 +4,11 @@ exports.ReadmeErrors = void 0;
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const DEFAULT_LANG = {
-    entity: (eName, eLower) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
+    entity: (eName, eLower, idLit) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
 
 \`\`\`ts
 try {
-  const ${eLower} = await client.${eName}().load({ id: 'example_id' })
+  const ${eLower} = await client.${eName}().load({ id: ${idLit} })
   console.log(${eLower})
 } catch (err) {
   console.error('load failed:', err)
@@ -16,8 +16,8 @@ try {
 \`\`\`
 
 `,
-    direct: `The low-level \`direct()\` method does **not** throw — it returns an
-\`Error\` value instead, so check the result before using it:
+    direct: `The low-level \`direct()\` method does **not** throw — it returns the
+value or an \`Error\`, so check the result before using it:
 
 \`\`\`ts
 const result = await client.direct({
@@ -35,19 +35,19 @@ if (result instanceof Error) {
 };
 const LANGS = {
     py: {
-        entity: (eName, eLower) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
+        entity: (eName, eLower, idLit) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
 
 \`\`\`python
 try:
-    ${eLower} = client.${eName}().load({"id": "example_id"})
+    ${eLower} = client.${eName}().load({"id": ${idLit}})
     print(${eLower})
 except Exception as err:
     print(f"load failed: {err}")
 \`\`\`
 
 `,
-        direct: `\`direct()\` does **not** raise — it returns a result dict with an
-\`err\` key instead:
+        direct: `\`direct()\` does **not** raise — it returns the result envelope. Branch
+on \`ok\`, and read the \`err\` value on failure:
 
 \`\`\`python
 result = client.direct({
@@ -56,27 +56,27 @@ result = client.direct({
     "params": {"id": "example_id"},
 })
 
-if result["err"]:
-    print(result["err"])
+if not result["ok"]:
+    print(result.get("err"))
 \`\`\`
 
 `,
     },
     php: {
-        entity: (eName, eLower) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
+        entity: (eName, eLower, idLit) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
 \`try\` / \`catch\`:
 
 \`\`\`php
 try {
-    $${eLower} = $client->${eName}()->load(["id" => "example_id"]);
+    $${eLower} = $client->${eName}()->load(["id" => ${idLit}]);
 } catch (\\Throwable $err) {
     echo "Error: " . $err->getMessage();
 }
 \`\`\`
 
 `,
-        direct: `\`direct()\` does **not** throw — it returns a result array with an
-\`err\` key instead:
+        direct: `\`direct()\` does **not** throw — it returns the result array. Branch on
+\`ok\`, and read the \`err\` value on failure:
 
 \`\`\`php
 $result = $client->direct([
@@ -85,7 +85,7 @@ $result = $client->direct([
     "params" => ["id" => "example_id"],
 ]);
 
-if ($result["err"] !== null) {
+if (! $result["ok"]) {
     echo $result["err"]->getMessage();
 }
 \`\`\`
@@ -93,19 +93,19 @@ if ($result["err"] !== null) {
 `,
     },
     rb: {
-        entity: (eName, eLower) => `Entity operations raise on failure, so rescue them:
+        entity: (eName, eLower, idLit) => `Entity operations raise on failure, so rescue them:
 
 \`\`\`ruby
 begin
-  ${eLower} = client.${eName}.load({ "id" => "example_id" })
+  ${eLower} = client.${eName}.load({ "id" => ${idLit} })
 rescue => err
   warn "load failed: #{err}"
 end
 \`\`\`
 
 `,
-        direct: `\`direct\` does **not** raise — it returns a result hash with an
-\`err\` key instead:
+        direct: `\`direct\` does **not** raise — it returns the result hash. Branch on
+\`ok\`, and read the \`err\` value on failure:
 
 \`\`\`ruby
 result = client.direct({
@@ -114,17 +114,17 @@ result = client.direct({
   "params" => { "id" => "example_id" },
 })
 
-warn result["err"] if result["err"]
+warn result["err"] unless result["ok"]
 \`\`\`
 
 `,
     },
     lua: {
-        entity: (eName, eLower) => `Entity operations return \`(value, err)\`. Check \`err\` before using
+        entity: (eName, eLower, idLit) => `Entity operations return \`(value, err)\`. Check \`err\` before using
 the value:
 
 \`\`\`lua
-local ${eLower}, err = client:${eName}():load({ id = "example_id" })
+local ${eLower}, err = client:${eName}():load({ id = ${idLit} })
 if err then error(err) end
 \`\`\`
 
@@ -143,11 +143,11 @@ if err then error(err) end
 `,
     },
     go: {
-        entity: (eName, eLower) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
+        entity: (eName, eLower, idLit) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
 using the value — there is no exception to catch:
 
 \`\`\`go
-${eLower}, err := client.${eName}(nil).Load(map[string]any{"id": "example_id"}, nil)
+${eLower}, err := client.${eName}(nil).Load(map[string]any{"id": ${idLit}}, nil)
 if err != nil {
     // handle err
     return
@@ -163,7 +163,7 @@ result, err := client.Direct(map[string]any{
     "path":   "/api/resource/{id}",
     "method": "GET",
     "params": map[string]any{"id": "example_id"},
-}, nil)
+})
 if err != nil {
     // handle err
 }
@@ -183,11 +183,17 @@ const ReadmeErrors = (0, jostraca_1.cmp)(function ReadmeErrors(props) {
     const ex = Object.values(entity || {}).find((e) => e && e.active !== false);
     const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity';
     const eLower = eName.toLowerCase();
+    // Type-correct example id literal: a numeric literal when the id field is
+    // integer-typed (so a typed load-match like `{ id: number }` compiles), else
+    // a double-quoted string (valid in every target, incl. Go).
+    const flds = ex && ex.fields ? (Array.isArray(ex.fields) ? ex.fields : Object.values(ex.fields)) : [];
+    const idField = flds.find((f) => f && f.name === 'id') || {};
+    const idLit = /INTEGER|NUMBER/i.test(String(idField.type || '')) ? '1' : '"example_id"';
     (0, jostraca_1.Content)(`
 ## Error handling
 
 `);
-    (0, jostraca_1.Content)(lang.entity(eName, eLower));
+    (0, jostraca_1.Content)(lang.entity(eName, eLower, idLit));
     (0, jostraca_1.Content)(lang.direct);
 });
 exports.ReadmeErrors = ReadmeErrors;

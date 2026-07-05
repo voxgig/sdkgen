@@ -17,7 +17,7 @@ type LangExplain = {
   featureKind: string // what a "feature" is in this language
   // stateful-entity explanation + example; parameterised by the real
   // example entity name so the snippet never references a phantom entity
-  entityState: (eName: string, eLower: string) => string
+  entityState: (eName: string, eLower: string, idLit: string) => string
   direct: string      // direct/prepare explanation
 }
 
@@ -28,16 +28,16 @@ const DEFAULT_LANG: LangExplain = {
 a function that receives the context.
 
 `,
-  entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`load\`, the entity
+  entityState: (eName, eLower, idLit) => `Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally. Subsequent
 calls on the same instance can rely on this state.
 
 \`\`\`ts
 const ${eLower} = client.${eName}()
-await ${eLower}.load({ id: "example_id" })
+await ${eLower}.load({ id: ${idLit} })
 
 // ${eLower}.data() now returns the loaded ${eLower} data
-// ${eLower}.match() returns { id: "example_id" }
+// ${eLower}.match() returns { id: ${idLit} }
 \`\`\`
 
 Call \`make()\` to create a fresh instance with the same configuration
@@ -60,12 +60,12 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower, idLit) => `Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`python
 ${eLower} = client.${eName}()
-${eLower}.load({"id": "example_id"})
+${eLower}.load({"id": ${idLit}})
 
 # ${eLower}.data_get() now returns the loaded ${eLower} data
 # ${eLower}.match_get() returns the last match criteria
@@ -89,12 +89,12 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower, idLit) => `Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`php
 $${eLower} = $client->${eName}();
-$${eLower}->load(["id" => "example_id"]);
+$${eLower}->load(["id" => ${idLit}]);
 
 // $${eLower}->data_get() now returns the loaded ${eLower} data
 // $${eLower}->match_get() returns the last match criteria
@@ -118,12 +118,12 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower, idLit) => `Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`ruby
 ${eLower} = client.${eName}
-${eLower}.load({ "id" => "example_id" })
+${eLower}.load({ "id" => ${idLit} })
 
 # ${eLower}.data_get now returns the loaded ${eLower} data
 # ${eLower}.match_get returns the last match criteria
@@ -147,12 +147,12 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower, idLit) => `Entity instances are stateful. After a successful \`load\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`lua
 local ${eLower} = client:${eName}()
-${eLower}:load({ id = "example_id" })
+${eLower}:load({ id = ${idLit} })
 
 -- ${eLower}:data_get() now returns the loaded ${eLower} data
 -- ${eLower}:match_get() returns the last match criteria
@@ -176,12 +176,12 @@ for debugging or custom transport.
 stage names.
 
 `,
-    entityState: (eName, eLower) => `Entity instances are stateful. After a successful \`Load\`, the entity
+    entityState: (eName, eLower, idLit) => `Entity instances are stateful. After a successful \`Load\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`go
 ${eLower} := client.${eName}(nil)
-${eLower}.Load(map[string]any{"id": "example_id"}, nil)
+${eLower}.Load(map[string]any{"id": ${idLit}}, nil)
 
 // ${eLower}.Data() now returns the loaded ${eLower} data
 // ${eLower}.Match() returns the last match criteria
@@ -215,6 +215,10 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const ex = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
   const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity'
   const eLower = eName.toLowerCase()
+  // Type-correct example id literal (numeric when the id field is integer-typed).
+  const _flds = ex && ex.fields ? (Array.isArray(ex.fields) ? ex.fields : Object.values(ex.fields)) : []
+  const _idField: any = _flds.find((f: any) => f && f.name === 'id') || {}
+  const idLit = /INTEGER|NUMBER/i.test(String(_idField.type || '')) ? '1' : '"example_id"'
 
   Content(`
 ## Advanced
@@ -289,7 +293,7 @@ were added, so later features can override earlier ones.
 
 `)
 
-  Content(lang.entityState(eName, eLower))
+  Content(lang.entityState(eName, eLower, idLit))
 
 
   // Direct vs entity access

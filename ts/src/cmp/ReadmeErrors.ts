@@ -14,26 +14,28 @@ import {
 //   1. Entity operations (load/list/create/update/remove) either THROW
 //      (ts, js, py, php, rb) or return an error value (go, lua).
 //   2. The low-level `direct()`/`prepare()` escape hatch does NOT always
-//      follow the entity-op convention — in the throwing languages it
-//      returns an error value instead.
+//      follow the entity-op convention. In go/lua it returns (value, err);
+//      in ts/js it returns the value or an `Error`; in py/php/rb it returns
+//      the result envelope — branch on `ok`, and read `err` on failure.
 //
-// Each entry below captures both, parameterised by the real example
-// entity name so the snippets never reference a phantom entity. Targets
-// not listed here (ts, js, ...) use DEFAULT_LANG.
+// Each entry below captures both, parameterised by the real example entity
+// name AND a type-correct example id literal (`1` when the id field is
+// integer-typed, else a quoted string) so the snippets both reference a real
+// entity and type-check. Targets not listed here (ts, js, ...) use DEFAULT_LANG.
 type LangErrors = {
   // prose + snippet for the entity-op convention
-  entity: (eName: string, eLower: string) => string
+  entity: (eName: string, eLower: string, idLit: string) => string
   // prose + snippet for the direct()/prepare() convention
   direct: string
 }
 
 
 const DEFAULT_LANG: LangErrors = {
-  entity: (eName, eLower) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
+  entity: (eName, eLower, idLit) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
 
 \`\`\`ts
 try {
-  const ${eLower} = await client.${eName}().load({ id: 'example_id' })
+  const ${eLower} = await client.${eName}().load({ id: ${idLit} })
   console.log(${eLower})
 } catch (err) {
   console.error('load failed:', err)
@@ -41,8 +43,8 @@ try {
 \`\`\`
 
 `,
-  direct: `The low-level \`direct()\` method does **not** throw — it returns an
-\`Error\` value instead, so check the result before using it:
+  direct: `The low-level \`direct()\` method does **not** throw — it returns the
+value or an \`Error\`, so check the result before using it:
 
 \`\`\`ts
 const result = await client.direct({
@@ -62,19 +64,19 @@ if (result instanceof Error) {
 
 const LANGS: Record<string, LangErrors> = {
   py: {
-    entity: (eName, eLower) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
+    entity: (eName, eLower, idLit) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
 
 \`\`\`python
 try:
-    ${eLower} = client.${eName}().load({"id": "example_id"})
+    ${eLower} = client.${eName}().load({"id": ${idLit}})
     print(${eLower})
 except Exception as err:
     print(f"load failed: {err}")
 \`\`\`
 
 `,
-    direct: `\`direct()\` does **not** raise — it returns a result dict with an
-\`err\` key instead:
+    direct: `\`direct()\` does **not** raise — it returns the result envelope. Branch
+on \`ok\`, and read the \`err\` value on failure:
 
 \`\`\`python
 result = client.direct({
@@ -83,28 +85,28 @@ result = client.direct({
     "params": {"id": "example_id"},
 })
 
-if result["err"]:
-    print(result["err"])
+if not result["ok"]:
+    print(result.get("err"))
 \`\`\`
 
 `,
   },
 
   php: {
-    entity: (eName, eLower) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
+    entity: (eName, eLower, idLit) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
 \`try\` / \`catch\`:
 
 \`\`\`php
 try {
-    $${eLower} = $client->${eName}()->load(["id" => "example_id"]);
+    $${eLower} = $client->${eName}()->load(["id" => ${idLit}]);
 } catch (\\Throwable $err) {
     echo "Error: " . $err->getMessage();
 }
 \`\`\`
 
 `,
-    direct: `\`direct()\` does **not** throw — it returns a result array with an
-\`err\` key instead:
+    direct: `\`direct()\` does **not** throw — it returns the result array. Branch on
+\`ok\`, and read the \`err\` value on failure:
 
 \`\`\`php
 $result = $client->direct([
@@ -113,7 +115,7 @@ $result = $client->direct([
     "params" => ["id" => "example_id"],
 ]);
 
-if ($result["err"] !== null) {
+if (! $result["ok"]) {
     echo $result["err"]->getMessage();
 }
 \`\`\`
@@ -122,19 +124,19 @@ if ($result["err"] !== null) {
   },
 
   rb: {
-    entity: (eName, eLower) => `Entity operations raise on failure, so rescue them:
+    entity: (eName, eLower, idLit) => `Entity operations raise on failure, so rescue them:
 
 \`\`\`ruby
 begin
-  ${eLower} = client.${eName}.load({ "id" => "example_id" })
+  ${eLower} = client.${eName}.load({ "id" => ${idLit} })
 rescue => err
   warn "load failed: #{err}"
 end
 \`\`\`
 
 `,
-    direct: `\`direct\` does **not** raise — it returns a result hash with an
-\`err\` key instead:
+    direct: `\`direct\` does **not** raise — it returns the result hash. Branch on
+\`ok\`, and read the \`err\` value on failure:
 
 \`\`\`ruby
 result = client.direct({
@@ -143,18 +145,18 @@ result = client.direct({
   "params" => { "id" => "example_id" },
 })
 
-warn result["err"] if result["err"]
+warn result["err"] unless result["ok"]
 \`\`\`
 
 `,
   },
 
   lua: {
-    entity: (eName, eLower) => `Entity operations return \`(value, err)\`. Check \`err\` before using
+    entity: (eName, eLower, idLit) => `Entity operations return \`(value, err)\`. Check \`err\` before using
 the value:
 
 \`\`\`lua
-local ${eLower}, err = client:${eName}():load({ id = "example_id" })
+local ${eLower}, err = client:${eName}():load({ id = ${idLit} })
 if err then error(err) end
 \`\`\`
 
@@ -174,11 +176,11 @@ if err then error(err) end
   },
 
   go: {
-    entity: (eName, eLower) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
+    entity: (eName, eLower, idLit) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
 using the value — there is no exception to catch:
 
 \`\`\`go
-${eLower}, err := client.${eName}(nil).Load(map[string]any{"id": "example_id"}, nil)
+${eLower}, err := client.${eName}(nil).Load(map[string]any{"id": ${idLit}}, nil)
 if err != nil {
     // handle err
     return
@@ -194,7 +196,7 @@ result, err := client.Direct(map[string]any{
     "path":   "/api/resource/{id}",
     "method": "GET",
     "params": map[string]any{"id": "example_id"},
-}, nil)
+})
 if err != nil {
     // handle err
 }
@@ -219,12 +221,19 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
   const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity'
   const eLower = eName.toLowerCase()
 
+  // Type-correct example id literal: a numeric literal when the id field is
+  // integer-typed (so a typed load-match like `{ id: number }` compiles), else
+  // a double-quoted string (valid in every target, incl. Go).
+  const flds = ex && ex.fields ? (Array.isArray(ex.fields) ? ex.fields : Object.values(ex.fields)) : []
+  const idField: any = flds.find((f: any) => f && f.name === 'id') || {}
+  const idLit = /INTEGER|NUMBER/i.test(String(idField.type || '')) ? '1' : '"example_id"'
+
   Content(`
 ## Error handling
 
 `)
 
-  Content(lang.entity(eName, eLower))
+  Content(lang.entity(eName, eLower, idLit))
 
   Content(lang.direct)
 })
