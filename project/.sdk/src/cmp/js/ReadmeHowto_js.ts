@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, entityPrimaryOp, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -16,19 +16,36 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
+  const eVar = safeVarName(eName.toLowerCase(), 'js')
 
-  // Model-driven id literals so the load examples match the generated
-  // match type (e.g. a numeric id must not be quoted).
-  const loadOp = exampleEntity && exampleEntity.op && exampleEntity.op.load
-  // Model-driven id key: `idF` is the entity's id-like field name, or null
-  // when it has none — then load() takes no match and we never read `.id`.
+  // Drive the test-mode / stateful examples off the entity's PRIMARY op — an op
+  // it actually exposes — never a hardcoded `load` a create-only entity lacks.
+  const primaryOp = exampleEntity ? (entityPrimaryOp(exampleEntity) || 'load') : 'load'
+  const primaryOpDef = exampleEntity && exampleEntity.op && exampleEntity.op[primaryOp]
+  const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
+  // idF is the MATCH key; dataIdF is the id on the RETURNED record's data type
+  // (guard `.id` reads off a returned record on this, not the match key).
   const idF = exampleEntity ? entityIdField(exampleEntity) : null
-  const testIdLit = exampleEntity ? exampleValue(exampleEntity, loadOp, idF || 'id', 'test01') : `'test01'`
-  const stateIdLit = exampleEntity ? exampleValue(exampleEntity, loadOp, idF || 'id', 'example') : `'example'`
-  const testLoadArg = idF ? `{ ${idF}: ${testIdLit} }` : ''
-  const stateLoadArg = idF ? `{ ${idF}: ${stateIdLit} }` : ''
-  const stateDataLine = idF
-    ? `console.log(data.${idF}) // ${stateIdLit}`
+  const dataIdF = exampleEntity ? entityDataIdField(exampleEntity) : null
+
+  const primaryArg = (idPlaceholder: string): string => {
+    if (!exampleEntity) return ''
+    if ('list' === primaryOp) return ''
+    if (isMatchOp) {
+      return idF ? `{ ${idF}: ${exampleValue(exampleEntity, primaryOpDef, idF, idPlaceholder)} }` : ''
+    }
+    const items = opRequestShape(exampleEntity, primaryOp).items
+      .filter((it: any) => it.name !== idF && it.name !== 'id')
+    const required = items.filter((it: any) => !it.optional)
+    const chosen = required.length ? required : items.slice(0, 3)
+    const pairs = chosen.map((it: any) =>
+      `${it.name}: ${exampleValue(exampleEntity, primaryOpDef, it.name, 'example_' + it.name)}`)
+    return `{ ${pairs.join(', ')} }`
+  }
+  const testCallArg = primaryArg('test01')
+  const stateCallArg = primaryArg('example')
+  const stateDataLine = dataIdF
+    ? `console.log(data.${dataIdF})`
     : `console.log(data)`
 
   const authActive = isAuthActive(model)
@@ -80,9 +97,9 @@ Create a mock client for unit testing — no server required:
 \`\`\`js
 const client = ${model.const.Name}SDK.test()
 
-const ${eName.toLowerCase()} = await client.${eName}().load(${testLoadArg})
-// ${eName.toLowerCase()} is a bare entity populated with mock response data
-console.log(${eName.toLowerCase()})
+const ${eVar} = await client.${eName}().${primaryOp}(${testCallArg})
+// ${eVar} is a bare entity populated with mock response data
+console.log(${eVar})
 \`\`\`
 
 You can also use the instance method:
@@ -99,10 +116,10 @@ Entity instances remember their last match and data:
 \`\`\`js
 const entity = client.${eName}()
 
-// First call sets internal match
-await entity.load(${stateLoadArg})
+// First call runs the operation and stores its result
+await entity.${primaryOp}(${stateCallArg})
 
-// Subsequent calls reuse the stored match
+// Subsequent calls reuse the stored state
 const data = entity.data()
 ${stateDataLine}
 \`\`\`

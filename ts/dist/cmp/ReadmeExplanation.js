@@ -5,22 +5,27 @@ const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
 const opShape_1 = require("../helpers/opShape");
+const opExample_1 = require("../helpers/opExample");
+const naming_1 = require("../helpers/naming");
+function cap(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
 const DEFAULT_LANG = {
     featureKind: `Features are the extension mechanism. A feature is an object with a
 \`hooks\` map. Each hook key is a pipeline stage name, and the value is
 a function that receives the context.
 
 `,
-    entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower, op, arg, matchIdF, idLit) => `Entity instances are stateful. After a successful \`${op}\`, the entity
 stores the returned data and match criteria internally. Subsequent
 calls on the same instance can rely on this state.
 
 \`\`\`ts
 const ${eLower} = client.${eName}()
-await ${eLower}.load(${idF ? `{ ${idF}: ${idLit} }` : ''})
+await ${eLower}.${op}(${arg})
 
-// ${eLower}.data() now returns the loaded ${eLower} data
-${idF ? `// ${eLower}.match() returns { ${idF}: ${idLit} }` : `// ${eLower}.match() returns the last match criteria`}
+// ${eLower}.data() now returns the ${eLower} data from the last \`${op}\`
+${matchIdF ? `// ${eLower}.match() returns { ${matchIdF}: ${idLit} }` : `// ${eLower}.match() returns the last match criteria`}
 \`\`\`
 
 Call \`make()\` to create a fresh instance with the same configuration
@@ -41,14 +46,14 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-        entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`load\`, the entity
+        entityState: (eName, eLower, op, arg) => `Entity instances are stateful. After a successful \`${op}\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`python
 ${eLower} = client.${eName}()
-${eLower}.load(${idF ? `{"${idF}": ${idLit}}` : ''})
+${eLower}.${op}(${arg})
 
-# ${eLower}.data_get() now returns the loaded ${eLower} data
+# ${eLower}.data_get() now returns the ${eLower} data from the last ${op}
 # ${eLower}.match_get() returns the last match criteria
 \`\`\`
 
@@ -69,14 +74,14 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-        entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`load\`, the entity
+        entityState: (eName, eLower, op, arg) => `Entity instances are stateful. After a successful \`${op}\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`php
 $${eLower} = $client->${eName}();
-$${eLower}->load(${idF ? `["${idF}" => ${idLit}]` : ''});
+$${eLower}->${op}(${arg});
 
-// $${eLower}->data_get() now returns the loaded ${eLower} data
+// $${eLower}->data_get() now returns the ${eLower} data from the last ${op}
 // $${eLower}->match_get() returns the last match criteria
 \`\`\`
 
@@ -97,14 +102,14 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-        entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`load\`, the entity
+        entityState: (eName, eLower, op, arg) => `Entity instances are stateful. After a successful \`${op}\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`ruby
 ${eLower} = client.${eName}
-${eLower}.load(${idF ? `{ "${idF}" => ${idLit} }` : ''})
+${eLower}.${op}(${arg})
 
-# ${eLower}.data_get now returns the loaded ${eLower} data
+# ${eLower}.data_get now returns the ${eLower} data from the last ${op}
 # ${eLower}.match_get returns the last match criteria
 \`\`\`
 
@@ -125,14 +130,14 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-        entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`load\`, the entity
+        entityState: (eName, eLower, op, arg) => `Entity instances are stateful. After a successful \`${op}\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`lua
 local ${eLower} = client:${eName}()
-${eLower}:load(${idF ? `{ ${idF} = ${idLit} }` : ''})
+${eLower}:${op}(${arg})
 
--- ${eLower}:data_get() now returns the loaded ${eLower} data
+-- ${eLower}:data_get() now returns the ${eLower} data from the last ${op}
 -- ${eLower}:match_get() returns the last match criteria
 \`\`\`
 
@@ -153,14 +158,14 @@ for debugging or custom transport.
 stage names.
 
 `,
-        entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`Load\`, the entity
+        entityState: (eName, eLower, op, arg) => `Entity instances are stateful. After a successful \`${cap(op)}\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`go
 ${eLower} := client.${eName}(nil)
-${eLower}.Load(${idF ? `map[string]any{"${idF}": ${idLit}}` : 'nil'}, nil)
+${eLower}.${cap(op)}(${arg}, nil)
 
-// ${eLower}.Data() now returns the loaded ${eLower} data
+// ${eLower}.Data() now returns the ${eLower} data from the last ${op}
 // ${eLower}.Match() returns the last match criteria
 \`\`\`
 
@@ -187,15 +192,35 @@ const ReadmeExplanation = (0, jostraca_1.cmp)(function ReadmeExplanation(props) 
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`, { only_active: false, required: false });
     const ex = Object.values(entity || {}).find((e) => e && e.active !== false);
     const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity';
-    const eLower = eName.toLowerCase();
+    // Sanitise against the target's reserved words (a `Delete` entity must not
+    // bind `const delete = ...`).
+    const eLower = (0, naming_1.safeVarName)(eName.toLowerCase(), target.name);
+    const lname = target.name;
     // The entity's id-like key field name, or null when it has none (a
     // response-wrapped spec can model an entity with no id). Drives whether the
-    // load example keys on an id at all.
+    // state example keys on an id at all.
     const idF = (0, opShape_1.entityIdField)(ex);
-    // Type-correct example id literal (numeric when the id field is integer-typed).
-    const _flds = ex && ex.fields ? (Array.isArray(ex.fields) ? ex.fields : Object.values(ex.fields)) : [];
-    const _idField = _flds.find((f) => f && f.name === (idF || 'id')) || {};
-    const idLit = /INTEGER|NUMBER/i.test(String(_idField.type || '')) ? '1' : '"example_id"';
+    // The entity's PRIMARY op — an op it actually exposes (never a hardcoded
+    // `load` a create-only entity lacks).
+    const primaryOp = (0, opShape_1.entityPrimaryOp)(ex) || 'load';
+    const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp;
+    // Type-correct example id literal (numeric when the id param is integer-typed),
+    // derived from the OP's param type so an id carried only in the match compiles.
+    const idLit = (0, opExample_1.idLiteral)(ex, primaryOp, idF);
+    // Language-correct call argument for the primary op: a match for load/remove,
+    // a required-field body for create/update, nothing for list.
+    let stateArg;
+    if ('list' === primaryOp) {
+        stateArg = 'go' === target.name ? 'nil' : '';
+    }
+    else if (isMatchOp) {
+        stateArg = (0, opExample_1.matchArg)(lname, idF, idLit);
+    }
+    else {
+        stateArg = (0, opExample_1.dataArg)(lname, ex, primaryOp, idF);
+    }
+    // Only a match op keys the `.match()` comment on `{ id: ... }`.
+    const matchIdF = isMatchOp ? idF : null;
     (0, jostraca_1.Content)(`
 ## Advanced
 
@@ -259,7 +284,7 @@ were added, so later features can override earlier ones.
     (0, jostraca_1.Content)(`### Entity state
 
 `);
-    (0, jostraca_1.Content)(lang.entityState(eName, eLower, idLit, idF));
+    (0, jostraca_1.Content)(lang.entityState(eName, eLower, primaryOp, stateArg, matchIdF, idLit));
     // Direct vs entity access
     (0, jostraca_1.Content)(`### Direct vs entity access
 

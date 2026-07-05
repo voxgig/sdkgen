@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -50,9 +50,18 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   // First published entity name, for the Result shape illustration.
   const firstEntityName = (entityList[0] as any)?.Name || 'Entity'
+  const firstEntityVar = safeVarName(firstEntityName.toLowerCase(), 'go')
   // Model-driven id key: null when the example entity has no id-like field, so
-  // the Result-shape load illustration passes a nil match.
+  // the Result-shape illustration passes a nil match.
   const firstIdF = entityIdField(entityList[0] || {})
+  // The example entity's PRIMARY op — an op it actually exposes (never a
+  // hardcoded `Load` a create-only entity lacks).
+  const firstPrimaryOp = entityList[0] ? (entityPrimaryOp(entityList[0]) || 'load') : 'load'
+  const firstPrimaryMethod = firstPrimaryOp.charAt(0).toUpperCase() + firstPrimaryOp.slice(1)
+  const firstIsMatchOp = 'load' === firstPrimaryOp || 'remove' === firstPrimaryOp
+  const firstOpArg = firstIsMatchOp
+    ? (firstIdF ? `map[string]any{"${firstIdF}": "example_id"}` : 'nil')
+    : 'map[string]any{/* fields */}'
 
   Content(`### New${model.const.Name}SDK
 
@@ -121,9 +130,9 @@ Check \`err\` first, then use the value directly (or the typed
 \`...Typed\` variants, which return the entity's model struct and a typed
 slice):
 
-    ${firstEntityName.toLowerCase()}, err := client.${firstEntityName}(nil).Load(${firstIdF ? `map[string]any{"${firstIdF}": "example_id"}` : 'nil'}, nil)
+    ${firstEntityVar}, err := client.${firstEntityName}(nil).${firstPrimaryMethod}(${firstOpArg}, nil)
     if err != nil { /* handle */ }
-    // ${firstEntityName.toLowerCase()} is the loaded record
+    // ${firstEntityVar} is the returned record
 
 Only \`Direct()\` returns a response envelope — a \`map[string]any\` with
 \`"ok"\`, \`"status"\`, \`"headers"\`, and \`"data"\` keys.

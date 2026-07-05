@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -36,10 +36,12 @@ local client = ${ctor}
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? "an" : "a"
     const opnames = Object.keys(exampleEntity.op || {})
-    // Model-driven id key: null when the entity has no id-like field (a
-    // response-wrapped spec). When null, load/remove take no argument and no
-    // record id is read off a returned record.
+    // Model-driven id key: `idF` is the MATCH key (null when none). `dataIdF`
+    // is the id on the RETURNED record's data type — an entity can key its match
+    // on an id it does not carry as data, so a record id read (`item["id"]`,
+    // `created["id"]`) must be guarded on this, not the match key.
     const idF = entityIdField(exampleEntity)
+    const dataIdF = entityDataIdField(exampleEntity)
 
     // MODEL-DRIVEN display field: the list example must reference a field
     // the entity actually has, not a hardcoded "name". Pick the entity's
@@ -55,7 +57,7 @@ local client = ${ctor}
       fields.find((f: any) => f && !idNames.has(f.name) && isStringField(f)) ||
       fields.find((f: any) => f && !idNames.has(f.name))
     const displayField = displayFieldObj ? displayFieldObj.name : null
-    const idCol = idF ? `item["${idF}"]` : null
+    const idCol = dataIdF ? `item["${dataIdF}"]` : null
     const dispCol = displayField ? `item["${displayField}"]` : null
     const printCols = [idCol, dispCol].filter(Boolean).join(', ')
     const printLine = printCols ? `  print(${printCols})` : `  print(item)`
@@ -103,11 +105,25 @@ print(${eName.toLowerCase()})
     }
     const luaKey = (name: string): string =>
       /^[A-Za-z_]\w*$/.test(name) ? name : `["${name}"]`
-    const examplePairs = (opname: string): string[] =>
-      opRequestShape(exampleEntity, opname).items
+    const examplePairs = (opname: string): string[] => {
+      const items = opRequestShape(exampleEntity, opname).items
         .filter((it: any) => !idNames.has(it.name))
-        .slice(0, 2)
-        .map((it: any) => `${luaKey(it.name)} = ${luaLit(it.type)}`)
+      const required = items.filter((it: any) => !it.optional)
+      const chosen = 'create' === opname
+        ? (required.length ? required : items.slice(0, 2))
+        : items.slice(0, 2)
+      return chosen.map((it: any) => `${luaKey(it.name)} = ${luaLit(it.type)}`)
+    }
+
+    // The id VALUE for an update/remove match: off the returned `created` record
+    // only when its data type carries the id AND a create ran, else a literal.
+    const idParamType = (opname: string): any => {
+      const it = opRequestShape(exampleEntity, opname).items.find((x: any) => x.name === idF)
+      return it && it.type
+    }
+    const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
+      ? `created["${dataIdF}"]`
+      : luaLit(idParamType(opname))
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
@@ -122,7 +138,7 @@ if err then error(err) end
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${idF} = created["${idF}"]`] : []).concat(examplePairs('update'))
+        const updatePairs = (idF ? [`${idF} = ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`-- Update
 client:${eName}():update({ ${updatePairs.join(', ')} })
 
@@ -130,7 +146,7 @@ client:${eName}():update({ ${updatePairs.join(', ')} })
       }
       if (opnames.includes('remove')) {
         Content(`-- Remove
-client:${eName}():remove(${idF ? `{ ${idF} = created["${idF}"] }` : ''})
+client:${eName}():remove(${idF ? `{ ${idF} = ${idValueFor('remove')} }` : ''})
 `)
       }
       Content(`\`\`\`

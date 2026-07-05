@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, packageName, envName, entityIdField } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, packageName, envName, entityIdField, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -30,15 +30,16 @@ const client = ${ctor}
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
+    const eVar = safeVarName(eName.toLowerCase(), 'ts')
     const opnames = Object.keys(exampleEntity.op || {})
 
     let hasCall = false
 
     if (opnames.includes('list')) {
       Content(`// List all ${eName.toLowerCase()}s (returns ${eName}[])
-const ${eName.toLowerCase()}s = await client.${eName}().list()
-for (const ${eName.toLowerCase()} of ${eName.toLowerCase()}s) {
-  console.log(${eName.toLowerCase()})
+const ${eVar}s = await client.${eName}().list()
+for (const ${eVar} of ${eVar}s) {
+  console.log(${eVar})
 }
 `)
       hasCall = true
@@ -51,6 +52,7 @@ for (const ${eName.toLowerCase()} of ${eName.toLowerCase()}s) {
 
     if (nestedEntity && opnames.includes('load')) {
       const neName = nom(nestedEntity, 'Name')
+      const neVar = safeVarName(neName.toLowerCase(), 'ts')
       const parentFields = (nestedEntity.fields || [])
         .filter((f: any) => f.name !== 'id' && f.name.endsWith('_id'))
       const parentParam = parentFields.length > 0 ? parentFields[0].name : 'parent_id'
@@ -66,10 +68,10 @@ for (const ${eName.toLowerCase()} of ${eName.toLowerCase()}s) {
 
       Content(`
 // Load a specific ${neName.toLowerCase()} (returns a ${neName})
-const ${neName.toLowerCase()} = await client.${neName}().load({
+const ${neVar} = await client.${neName}().load({
 ${neMatchLines.join('\n')}
 })
-console.log(${neName.toLowerCase()})
+console.log(${neVar})
 `)
       hasCall = true
     }
@@ -79,8 +81,8 @@ console.log(${neName.toLowerCase()})
     // match is always valid (the match arg is optional).
     if (!hasCall && opnames.includes('load')) {
       Content(`// Load ${eName.toLowerCase()} data (returns a ${eName})
-const ${eName.toLowerCase()} = await client.${eName}().load()
-console.log(${eName.toLowerCase()})
+const ${eVar} = await client.${eName}().load()
+console.log(${eVar})
 `)
       hasCall = true
     }

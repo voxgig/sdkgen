@@ -1,11 +1,25 @@
 
-import { cmp, Content, entityIdField } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, entityIdField, entityPrimaryOp, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
   nom,
 } from '@voxgig/apidef'
+
+
+// A type-correct Lua literal for a field's canonical type.
+function luaLit(type: any): string {
+  const k = canonKey(type)
+  if ('INTEGER' === k || 'NUMBER' === k) return '1'
+  if ('BOOLEAN' === k) return 'true'
+  if ('ARRAY' === k || 'OBJECT' === k) return '{}'
+  return '"example"'
+}
+
+function luaKey(name: string): string {
+  return /^[A-Za-z_]\w*$/.test(name) ? name : `["${name}"]`
+}
 
 
 const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
@@ -21,10 +35,22 @@ local client = sdk.test()
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    // Model-driven id key: null when the entity has no id-like field, so the
-    // test-mode load takes no match argument.
+    // Drive the test-mode example off the entity's PRIMARY op (never a hardcoded
+    // `load` a create-only entity lacks).
     const idF = entityIdField(exampleEntity)
-    Content(`local result, err = client:${eName}():load(${idF ? `{ ${idF} = "test01" }` : ''})
+    const primaryOp = entityPrimaryOp(exampleEntity) || 'load'
+    const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
+    let arg = ''
+    if (isMatchOp) {
+      arg = idF ? `{ ${idF} = "test01" }` : ''
+    } else if ('create' === primaryOp || 'update' === primaryOp) {
+      const items = opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => it.name !== idF && it.name !== 'id')
+      const required = items.filter((it: any) => !it.optional)
+      const chosen = required.length ? required : items.slice(0, 3)
+      arg = `{ ${chosen.map((it: any) => `${luaKey(it.name)} = ${luaLit(it.type)}`).join(', ')} }`
+    }
+    Content(`local result, err = client:${eName}():${primaryOp}(${arg})
 `)
   }
 

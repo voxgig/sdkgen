@@ -32,6 +32,9 @@ exports.opTypeName = opTypeName;
 exports.opParams = opParams;
 exports.opRequestShape = opRequestShape;
 exports.entityIdField = entityIdField;
+exports.entityDataIdField = entityDataIdField;
+exports.entityOps = entityOps;
+exports.entityPrimaryOp = entityPrimaryOp;
 const jostraca_1 = require("jostraca");
 // The five ops, and whether their request payload is a `Match` (query/id) or
 // `Data` (body) — this fixes the generated type-name suffix per op.
@@ -140,6 +143,50 @@ function entityIdField(ent) {
     const fields = ent.fields ? (0, jostraca_1.each)(ent.fields) : [];
     if (fields.some((f) => f && (f.name === idName || f.name === 'id'))) {
         return fields.some((f) => f && f.name === idName) ? idName : 'id';
+    }
+    return null;
+}
+// The entity's ACTIVE op names, in canonical CRUD order (list, load, create,
+// update, remove), with any non-canonical ops appended in sorted order. Doc
+// generators must gate an op example on this (an op present in the model but
+// `active: false` generates no method, so an example calling it would not
+// compile) — NOT on the raw `Object.keys(ent.op)`, which includes inactive ops.
+const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'remove'];
+function entityOps(ent) {
+    const ops = (ent && ent.op) || {};
+    const active = Object.keys(ops).filter((o) => ops[o] && ops[o].active !== false);
+    return CANON_OP_ORDER.filter((o) => active.includes(o))
+        .concat(active.filter((o) => !CANON_OP_ORDER.includes(o)).sort());
+}
+// The entity's primary/representative op for a single illustrative call —
+// prefer a read op (list, then load) so the snippet needs no fabricated match,
+// then fall back to create/update/remove. null when the entity exposes no op.
+// Doc generators MUST pick their "primary" op through this rather than
+// hardcoding `load`: a create-only entity has no `load` method.
+function entityPrimaryOp(ent) {
+    const ops = entityOps(ent);
+    for (const o of CANON_OP_ORDER) {
+        if (ops.includes(o)) {
+            return o;
+        }
+    }
+    return ops[0] || null;
+}
+// The id field on the entity's DATA type (its fields[]), or null. DISTINCT from
+// entityIdField (the load-MATCH key): an API can model a load match that carries
+// an `id` param while the response entity itself has no `id` field, so `.id`
+// access on a RETURNED record must be guarded on this, not on the match key.
+function entityDataIdField(ent) {
+    if (null == ent) {
+        return null;
+    }
+    const idName = (ent.id && ent.id.field) || 'id';
+    const fields = ent.fields ? (0, jostraca_1.each)(ent.fields) : [];
+    if (fields.some((f) => f && f.name === idName)) {
+        return idName;
+    }
+    if (fields.some((f) => f && f.name === 'id')) {
+        return 'id';
     }
     return null;
 }

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, entityPrimaryOp, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -8,15 +8,40 @@ import {
 } from '@voxgig/apidef'
 
 
+// A type-correct Python literal for a field's canonical type.
+function pyLit(type: any): string {
+  const k = canonKey(type)
+  if ('INTEGER' === k || 'NUMBER' === k) return '1'
+  if ('BOOLEAN' === k) return 'True'
+  if ('ARRAY' === k) return '[]'
+  if ('OBJECT' === k) return '{}'
+  return '"example"'
+}
+
+
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
-  // Model-driven id key: null when the entity has no id-like field, so the
-  // test-mode load takes no match argument.
+  // Model-driven id key: null when the entity has no id-like field, so a
+  // match op takes no argument.
   const idF = exampleEntity ? entityIdField(exampleEntity) : null
+  // Drive the test-mode example off the entity's PRIMARY op — never a hardcoded
+  // `load` a create-only entity lacks.
+  const primaryOp = exampleEntity ? (entityPrimaryOp(exampleEntity) || 'load') : 'load'
+  const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
+  let testArg = ''
+  if (exampleEntity && isMatchOp) {
+    testArg = idF ? `{"${idF}": "test01"}` : ''
+  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
+    const items = opRequestShape(exampleEntity, primaryOp).items
+      .filter((it: any) => it.name !== idF && it.name !== 'id')
+    const required = items.filter((it: any) => !it.optional)
+    const chosen = required.length ? required : items.slice(0, 3)
+    testArg = `{${chosen.map((it: any) => `"${it.name}": ${pyLit(it.type)}`).join(', ')}}`
+  }
 
   const apikeyEnvLine = isAuthActive(model)
     ? `\n${envName(model)}_APIKEY=<your-key>`
@@ -66,7 +91,7 @@ Create a mock client for unit testing — no server required:
 client = ${model.const.Name}SDK.test()
 
 # Entity ops return the bare record and raise on error.
-${eName.toLowerCase()} = client.${eName}().load(${idF ? `{"${idF}": "test01"}` : ''})
+${eName.toLowerCase()} = client.${eName}().${primaryOp}(${testArg})
 # ${eName.toLowerCase()} contains the mock response record
 \`\`\`
 

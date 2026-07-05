@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -44,20 +44,27 @@ const client = ${ctor}
     // `idF` is the entity's id-like field name, or null when it has none —
     // then load/remove match on no argument and update omits the id.
     const idF = entityIdField(exampleEntity)
-    const exampleFields = (opname: string): string[] =>
-      opRequestShape(exampleEntity, opname).items
+    // Variable-safe lowercase name (a `Delete` entity must not bind `delete`).
+    const eVar = safeVarName(exampleEntity.name, 'js')
+    const exampleFields = (opname: string): string[] => {
+      const items = opRequestShape(exampleEntity, opname).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
-        .slice(0, 2)
-        .map((it: any) =>
-          `  ${it.name}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
+      const required = items.filter((it: any) => !it.optional)
+      // create needs ALL required fields for parity with the typed ts target.
+      const chosen = 'create' === opname
+        ? (required.length ? required : items.slice(0, 2))
+        : items.slice(0, 2)
+      return chosen.map((it: any) =>
+        `  ${it.name}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
+    }
 
     if (opnames.includes('load')) {
       Content(`
 ### Load ${article} ${eName}
 
 \`\`\`js
-const ${exampleEntity.name} = await client.${eName}().load(${idF ? `{ ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, idF, exampleEntity.name + '_id')} }` : ''})
-console.log(${exampleEntity.name})
+const ${eVar} = await client.${eName}().load(${idF ? `{ ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, idF, exampleEntity.name + '_id')} }` : ''})
+console.log(${eVar})
 \`\`\`
 `)
     }
@@ -67,9 +74,9 @@ console.log(${exampleEntity.name})
 ### List ${eName} Records
 
 \`\`\`js
-const ${exampleEntity.name}s = await client.${eName}().list()
-for (const ${exampleEntity.name} of ${exampleEntity.name}s) {
-  console.log(${exampleEntity.name})
+const ${eVar}s = await client.${eName}().list()
+for (const ${eVar} of ${eVar}s) {
+  console.log(${eVar})
 }
 \`\`\`
 `)

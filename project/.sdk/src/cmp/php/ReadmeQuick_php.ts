@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -37,10 +37,12 @@ $client = ${ctor};
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? "an" : "a"
     const opnames = Object.keys(exampleEntity.op || {})
-    // Model-driven id key: null when the entity has no id-like field (a
-    // response-wrapped spec). When null, load/remove take no argument and no
-    // `["id"]` is read off a returned record.
+    // Model-driven id key: `idF` is the MATCH key (null when none). `dataIdF` is
+    // the id on the RETURNED record's data type — an entity can key its match on
+    // an id it does not carry as data, so `["id"]` off a returned record must be
+    // guarded on this, not the match key.
     const idF = entityIdField(exampleEntity)
+    const dataIdF = entityDataIdField(exampleEntity)
 
     // Model-driven display field: the entity's first non-id string field
     // (falling back to any non-id field), so the list example prints a real
@@ -50,7 +52,7 @@ $client = ${ctor};
       fields.find((f: any) => f && f.name !== 'id' && f.type === '$STRING') ||
       fields.find((f: any) => f && f.name !== 'id') ||
       null
-    const idCol = idF ? `$item[${JSON.stringify(idF)}]` : null
+    const idCol = dataIdF ? `$item[${JSON.stringify(dataIdF)}]` : null
     const dispCol = displayField ? `$item[${JSON.stringify(displayField.name)}]` : null
     const itemPrint = [idCol, dispCol].filter(Boolean).join(' . " " . ') || 'json_encode($item)'
 
@@ -100,11 +102,26 @@ try {
       if ('ARRAY' === k || 'OBJECT' === k) return '[]'
       return '"example"'
     }
-    const examplePairs = (opname: string): string[] =>
-      opRequestShape(exampleEntity, opname).items
+    const examplePairs = (opname: string): string[] => {
+      const items = opRequestShape(exampleEntity, opname).items
         .filter((it: any) => it.name !== idField && it.name !== 'id')
-        .slice(0, 2)
-        .map((it: any) => `"${it.name}" => ${phpLit(it.type)}`)
+      const required = items.filter((it: any) => !it.optional)
+      const chosen = 'create' === opname
+        ? (required.length ? required : items.slice(0, 2))
+        : items.slice(0, 2)
+      return chosen.map((it: any) => `"${it.name}" => ${phpLit(it.type)}`)
+    }
+
+    // The id VALUE for an update/remove match: off the returned `$created`
+    // record only when its data type carries the id AND a create ran, else a
+    // type-correct literal.
+    const idParamType = (opname: string): any => {
+      const it = opRequestShape(exampleEntity, opname).items.find((x: any) => x.name === idF)
+      return it && it.type
+    }
+    const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
+      ? `$created["${dataIdF}"]`
+      : phpLit(idParamType(opname))
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
@@ -118,15 +135,16 @@ $created = $client->${eName}()->create([${examplePairs('create').join(', ')}]);
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`"${idF}" => $created["${idF}"]`] : []).concat(examplePairs('update'))
-        Content(`// Update${idF ? ` — index the bare record directly ($created["${idF}"]).` : ''}
+        const updatePairs = (idF ? [`"${idF}" => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const fromCreated = null != dataIdF && opnames.includes('create')
+        Content(`// Update${fromCreated ? ` — index the bare record directly ($created["${dataIdF}"]).` : ''}
 $client->${eName}()->update([${updatePairs.join(', ')}]);
 
 `)
       }
       if (opnames.includes('remove')) {
         Content(`// Remove
-$client->${eName}()->remove(${idF ? `["${idF}" => $created["${idF}"]]` : ''});
+$client->${eName}()->remove(${idF ? `["${idF}" => ${idValueFor('remove')}]` : ''});
 `)
       }
       Content(`\`\`\`

@@ -6,7 +6,10 @@ import {
   getModelPath
 } from '../types'
 
-import { entityIdField } from '../helpers/opShape'
+import { entityIdField, entityPrimaryOp } from '../helpers/opShape'
+import { primaryOpCall } from '../helpers/opExample'
+import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
+import { safeVarName } from '../helpers/naming'
 
 
 // Error handling is one of the everyday developer tasks, so it gets its
@@ -20,29 +23,28 @@ import { entityIdField } from '../helpers/opShape'
 //      in ts/js it returns the value or an `Error`; in py/php/rb it returns
 //      the result envelope — branch on `ok`, and read `err` on failure.
 //
-// Each entry below captures both, parameterised by the real example entity
-// name AND a type-correct example id literal (`1` when the id field is
-// integer-typed, else a quoted string) so the snippets both reference a real
-// entity and type-check. Targets not listed here (ts, js, ...) use DEFAULT_LANG.
+// The entity-op snippet is rendered from the entity's PRIMARY op (never a
+// hardcoded `load`, which a create-only entity lacks) with a type-correct
+// match id (a numeric id renders `1`, not "example_id"). Targets not listed
+// here (ts, js) use DEFAULT_LANG.
 type LangErrors = {
-  // prose + snippet for the entity-op convention. `idF` is the entity's
-  // id-like key field name, or null when it has none — then the load example
-  // matches on no argument rather than a phantom `id`.
-  entity: (eName: string, eLower: string, idLit: string, idF: string | null) => string
+  // prose + snippet for the entity-op convention, given the pre-rendered
+  // primary-op invocation and its op name.
+  entity: (call: PrimaryCall, op: string) => string
   // prose + snippet for the direct()/prepare() convention
   direct: string
 }
 
 
 const DEFAULT_LANG: LangErrors = {
-  entity: (eName, eLower, idLit, idF) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
+  entity: (call, op) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
 
 \`\`\`ts
 try {
-  const ${eLower} = await client.${eName}().load(${idF ? `{ ${idF}: ${idLit} }` : ''})
-  console.log(${eLower})
+  const ${call.resultVar} = await ${call.expr}
+  console.log(${call.resultVar})
 } catch (err) {
-  console.error('load failed:', err)
+  console.error('${op} failed:', err)
 }
 \`\`\`
 
@@ -68,14 +70,14 @@ if (result instanceof Error) {
 
 const LANGS: Record<string, LangErrors> = {
   py: {
-    entity: (eName, eLower, idLit, idF) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
+    entity: (call, op) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
 
 \`\`\`python
 try:
-    ${eLower} = client.${eName}().load(${idF ? `{"${idF}": ${idLit}}` : ''})
-    print(${eLower})
+    ${call.resultVar} = ${call.expr}
+    print(${call.resultVar})
 except Exception as err:
-    print(f"load failed: {err}")
+    print(f"${op} failed: {err}")
 \`\`\`
 
 `,
@@ -98,12 +100,12 @@ if not result["ok"]:
   },
 
   php: {
-    entity: (eName, eLower, idLit, idF) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
+    entity: (call, op) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
 \`try\` / \`catch\`:
 
 \`\`\`php
 try {
-    $${eLower} = $client->${eName}()->load(${idF ? `["${idF}" => ${idLit}]` : ''});
+    $${call.resultVar} = ${call.expr};
 } catch (\\Throwable $err) {
     echo "Error: " . $err->getMessage();
 }
@@ -131,13 +133,13 @@ if (! $result["ok"]) {
   },
 
   rb: {
-    entity: (eName, eLower, idLit, idF) => `Entity operations raise on failure, so rescue them:
+    entity: (call, op) => `Entity operations raise on failure, so rescue them:
 
 \`\`\`ruby
 begin
-  ${eLower} = client.${eName}.load(${idF ? `{ "${idF}" => ${idLit} }` : ''})
+  ${call.resultVar} = ${call.expr}
 rescue => err
-  warn "load failed: #{err}"
+  warn "${op} failed: #{err}"
 end
 \`\`\`
 
@@ -160,11 +162,11 @@ warn "request failed: #{result["err"] || "HTTP #{result["status"]}"}" unless res
   },
 
   lua: {
-    entity: (eName, eLower, idLit, idF) => `Entity operations return \`(value, err)\`. Check \`err\` before using
+    entity: (call, op) => `Entity operations return \`(value, err)\`. Check \`err\` before using
 the value:
 
 \`\`\`lua
-local ${eLower}, err = client:${eName}():load(${idF ? `{ ${idF} = ${idLit} }` : ''})
+local ${call.resultVar}, err = ${call.expr}
 if err then error(err) end
 \`\`\`
 
@@ -184,16 +186,16 @@ if err then error(err) end
   },
 
   go: {
-    entity: (eName, eLower, idLit, idF) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
+    entity: (call, op) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
 using the value — there is no exception to catch:
 
 \`\`\`go
-${eLower}, err := client.${eName}(nil).Load(${idF ? `map[string]any{"${idF}": ${idLit}}` : 'nil'}, nil)
+${call.resultVar}, err := ${call.expr}
 if err != nil {
     // handle err
     return
 }
-_ = ${eLower}
+_ = ${call.resultVar}
 \`\`\`
 
 `,
@@ -227,25 +229,24 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   const ex = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
   const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity'
-  const eLower = eName.toLowerCase()
+  // Sanitise the variable name against the target's reserved words (a `Delete`
+  // entity must not bind `const delete = ...`).
+  const eLower = safeVarName(eName.toLowerCase(), target.name)
 
-  // The entity's id-like key field name, or null when it has none (a
-  // response-wrapped spec can model an entity with no id). Drives whether the
-  // load example keys on an id at all.
+  // The entity's id-like key field name, or null when it has none.
   const idF = entityIdField(ex)
-  // Type-correct example id literal: a numeric literal when the id field is
-  // integer-typed (so a typed load-match like `{ id: number }` compiles), else
-  // a double-quoted string (valid in every target, incl. Go).
-  const flds = ex && ex.fields ? (Array.isArray(ex.fields) ? ex.fields : Object.values(ex.fields)) : []
-  const idField: any = flds.find((f: any) => f && f.name === (idF || 'id')) || {}
-  const idLit = /INTEGER|NUMBER/i.test(String(idField.type || '')) ? '1' : '"example_id"'
+  // The entity's PRIMARY op — an op it actually exposes (prefer list/load, else
+  // create/update/remove). A create-only entity therefore never shows a
+  // phantom `.load()`.
+  const primaryOp = entityPrimaryOp(ex) || 'load'
+  const call = primaryOpCall(target.name as ExampleLang, eName, eLower, primaryOp, idF, ex)
 
   Content(`
 ## Error handling
 
 `)
 
-  Content(lang.entity(eName, eLower, idLit, idF))
+  Content(lang.entity(call, primaryOp))
 
   Content(lang.direct)
 })

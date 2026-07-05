@@ -4,15 +4,17 @@ exports.ReadmeErrors = void 0;
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const opShape_1 = require("../helpers/opShape");
+const opExample_1 = require("../helpers/opExample");
+const naming_1 = require("../helpers/naming");
 const DEFAULT_LANG = {
-    entity: (eName, eLower, idLit, idF) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
+    entity: (call, op) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
 
 \`\`\`ts
 try {
-  const ${eLower} = await client.${eName}().load(${idF ? `{ ${idF}: ${idLit} }` : ''})
-  console.log(${eLower})
+  const ${call.resultVar} = await ${call.expr}
+  console.log(${call.resultVar})
 } catch (err) {
-  console.error('load failed:', err)
+  console.error('${op} failed:', err)
 }
 \`\`\`
 
@@ -36,14 +38,14 @@ if (result instanceof Error) {
 };
 const LANGS = {
     py: {
-        entity: (eName, eLower, idLit, idF) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
+        entity: (call, op) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
 
 \`\`\`python
 try:
-    ${eLower} = client.${eName}().load(${idF ? `{"${idF}": ${idLit}}` : ''})
-    print(${eLower})
+    ${call.resultVar} = ${call.expr}
+    print(${call.resultVar})
 except Exception as err:
-    print(f"load failed: {err}")
+    print(f"${op} failed: {err}")
 \`\`\`
 
 `,
@@ -65,12 +67,12 @@ if not result["ok"]:
 `,
     },
     php: {
-        entity: (eName, eLower, idLit, idF) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
+        entity: (call, op) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
 \`try\` / \`catch\`:
 
 \`\`\`php
 try {
-    $${eLower} = $client->${eName}()->load(${idF ? `["${idF}" => ${idLit}]` : ''});
+    $${call.resultVar} = ${call.expr};
 } catch (\\Throwable $err) {
     echo "Error: " . $err->getMessage();
 }
@@ -97,13 +99,13 @@ if (! $result["ok"]) {
 `,
     },
     rb: {
-        entity: (eName, eLower, idLit, idF) => `Entity operations raise on failure, so rescue them:
+        entity: (call, op) => `Entity operations raise on failure, so rescue them:
 
 \`\`\`ruby
 begin
-  ${eLower} = client.${eName}.load(${idF ? `{ "${idF}" => ${idLit} }` : ''})
+  ${call.resultVar} = ${call.expr}
 rescue => err
-  warn "load failed: #{err}"
+  warn "${op} failed: #{err}"
 end
 \`\`\`
 
@@ -125,11 +127,11 @@ warn "request failed: #{result["err"] || "HTTP #{result["status"]}"}" unless res
 `,
     },
     lua: {
-        entity: (eName, eLower, idLit, idF) => `Entity operations return \`(value, err)\`. Check \`err\` before using
+        entity: (call, op) => `Entity operations return \`(value, err)\`. Check \`err\` before using
 the value:
 
 \`\`\`lua
-local ${eLower}, err = client:${eName}():load(${idF ? `{ ${idF} = ${idLit} }` : ''})
+local ${call.resultVar}, err = ${call.expr}
 if err then error(err) end
 \`\`\`
 
@@ -148,16 +150,16 @@ if err then error(err) end
 `,
     },
     go: {
-        entity: (eName, eLower, idLit, idF) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
+        entity: (call, op) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
 using the value — there is no exception to catch:
 
 \`\`\`go
-${eLower}, err := client.${eName}(nil).Load(${idF ? `map[string]any{"${idF}": ${idLit}}` : 'nil'}, nil)
+${call.resultVar}, err := ${call.expr}
 if err != nil {
     // handle err
     return
 }
-_ = ${eLower}
+_ = ${call.resultVar}
 \`\`\`
 
 `,
@@ -187,22 +189,21 @@ const ReadmeErrors = (0, jostraca_1.cmp)(function ReadmeErrors(props) {
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`, { only_active: false, required: false });
     const ex = Object.values(entity || {}).find((e) => e && e.active !== false);
     const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity';
-    const eLower = eName.toLowerCase();
-    // The entity's id-like key field name, or null when it has none (a
-    // response-wrapped spec can model an entity with no id). Drives whether the
-    // load example keys on an id at all.
+    // Sanitise the variable name against the target's reserved words (a `Delete`
+    // entity must not bind `const delete = ...`).
+    const eLower = (0, naming_1.safeVarName)(eName.toLowerCase(), target.name);
+    // The entity's id-like key field name, or null when it has none.
     const idF = (0, opShape_1.entityIdField)(ex);
-    // Type-correct example id literal: a numeric literal when the id field is
-    // integer-typed (so a typed load-match like `{ id: number }` compiles), else
-    // a double-quoted string (valid in every target, incl. Go).
-    const flds = ex && ex.fields ? (Array.isArray(ex.fields) ? ex.fields : Object.values(ex.fields)) : [];
-    const idField = flds.find((f) => f && f.name === (idF || 'id')) || {};
-    const idLit = /INTEGER|NUMBER/i.test(String(idField.type || '')) ? '1' : '"example_id"';
+    // The entity's PRIMARY op — an op it actually exposes (prefer list/load, else
+    // create/update/remove). A create-only entity therefore never shows a
+    // phantom `.load()`.
+    const primaryOp = (0, opShape_1.entityPrimaryOp)(ex) || 'load';
+    const call = (0, opExample_1.primaryOpCall)(target.name, eName, eLower, primaryOp, idF, ex);
     (0, jostraca_1.Content)(`
 ## Error handling
 
 `);
-    (0, jostraca_1.Content)(lang.entity(eName, eLower, idLit, idF));
+    (0, jostraca_1.Content)(lang.entity(call, primaryOp));
     (0, jostraca_1.Content)(lang.direct);
 });
 exports.ReadmeErrors = ReadmeErrors;

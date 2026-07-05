@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -35,7 +35,9 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    const eLower = eName.toLowerCase()
+    // Variable-safe lowercase name — a `Type`/`Range` entity must not bind a Go
+    // keyword (`type, err := ...` fails `go build`).
+    const eLower = safeVarName(eName.toLowerCase(), 'go')
     const opnames = Object.keys(exampleEntity.op || {})
 
     // Model-driven example fields (from the same op shape the request types are
@@ -54,11 +56,15 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       if ('OBJECT' === k) return 'map[string]any{}'
       return '"example"'
     }
-    const examplePairs = (opname: string): string[] =>
-      opRequestShape(exampleEntity, opname).items
+    const examplePairs = (opname: string): string[] => {
+      const items = opRequestShape(exampleEntity, opname).items
         .filter((it: any) => it.name !== idField && it.name !== 'id')
-        .slice(0, 2)
-        .map((it: any) => `"${it.name}": ${goLit(it.type)}`)
+      const required = items.filter((it: any) => !it.optional)
+      const chosen = 'create' === opname
+        ? (required.length ? required : items.slice(0, 2))
+        : items.slice(0, 2)
+      return chosen.map((it: any) => `"${it.name}": ${goLit(it.type)}`)
+    }
     const idOp = opnames.includes('load') ? 'load' : (opnames.includes('update') ? 'update' : 'remove')
     const idShape = opRequestShape(exampleEntity, idOp)
       .items.find((it: any) => it.name === idField || it.name === 'id')

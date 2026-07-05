@@ -11,5 +11,8 @@ declare function opRequestShape(ent: any, opname: string): {
     fromParams: boolean;
 };
 declare function entityIdField(ent: any): string | null;
-export { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, };
+declare function entityOps(ent: any): string[];
+declare function entityPrimaryOp(ent: any): string | null;
+declare function entityDataIdField(ent: any): string | null;
+export { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, };
 export type { OpShapeItem, };

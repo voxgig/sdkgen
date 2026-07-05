@@ -1,10 +1,24 @@
 
-import { cmp, each, Content, canonToType, entityIdField } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
+
+
+// A type-correct, JSON-serialisable Python literal for a field's canonical
+// type. The create example is EXECUTED by the doc test (the body is
+// JSON-serialised), so an Ellipsis (`...`) placeholder would raise
+// "Object of type ellipsis is not JSON serializable" — use a real value.
+function pyLit(type: any): string {
+  const k = canonKey(type)
+  if ('INTEGER' === k || 'NUMBER' === k) return '1'
+  if ('BOOLEAN' === k) return 'True'
+  if ('ARRAY' === k) return '[]'
+  if ('OBJECT' === k) return '{}'
+  return '"example"'
+}
 
 
 // Operation method spelling differs between Go and other languages — Go
@@ -122,7 +136,7 @@ ${entity.name} = client.${entity.Name}().create({
 `)
       each(fields, (field: any) => {
         if ('id' !== field.name && field.req) {
-          Content(`    "${field.name}": ...,  # ${canonToType(field.type, target.name)}
+          Content(`    "${field.name}": ${pyLit(field.type)},  # ${canonToType(field.type, target.name)}
 `)
         }
       })

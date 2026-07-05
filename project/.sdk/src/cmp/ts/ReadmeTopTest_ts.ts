@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityIdField } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField, entityPrimaryOp, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -22,14 +22,26 @@ const client = ${model.const.Name}SDK.test()
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    // Model-driven id key: null when the entity has no id-like field, in which
-    // case the test-mode load takes no match argument.
+    const eVar = safeVarName(eName.toLowerCase(), 'ts')
+    // Drive the test-mode example off the entity's PRIMARY op (never a
+    // hardcoded `load` a create-only entity lacks).
+    const primaryOp = entityPrimaryOp(exampleEntity) || 'load'
+    const primaryOpDef = exampleEntity.op && exampleEntity.op[primaryOp]
     const idF = entityIdField(exampleEntity)
-    const loadOp = exampleEntity.op && exampleEntity.op.load
-    const loadArg = idF ? `{ ${idF}: ${exampleValue(exampleEntity, loadOp, idF, 'test01')} }` : ''
-    Content(`const ${eName.toLowerCase()} = await client.${eName}().load(${loadArg})
-// ${eName.toLowerCase()} is a bare ${eName} populated with mock data
-console.log(${eName.toLowerCase()})
+    let arg = ''
+    if ('load' === primaryOp || 'remove' === primaryOp) {
+      arg = idF ? `{ ${idF}: ${exampleValue(exampleEntity, primaryOpDef, idF, 'test01')} }` : ''
+    } else if ('create' === primaryOp || 'update' === primaryOp) {
+      const items = opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => it.name !== idF && it.name !== 'id')
+      const required = items.filter((it: any) => !it.optional)
+      const chosen = required.length ? required : items.slice(0, 3)
+      arg = `{ ${chosen.map((it: any) =>
+        `${it.name}: ${exampleValue(exampleEntity, primaryOpDef, it.name, 'example_' + it.name)}`).join(', ')} }`
+    }
+    Content(`const ${eVar} = await client.${eName}().${primaryOp}(${arg})
+// ${eVar} is a bare ${eName} populated with mock data
+console.log(${eVar})
 `)
   }
 

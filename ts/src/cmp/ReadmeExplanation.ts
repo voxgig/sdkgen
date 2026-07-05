@@ -8,7 +8,15 @@ import {
 
 import { requirePath } from '../utility'
 
-import { entityIdField } from '../helpers/opShape'
+import { entityIdField, entityPrimaryOp } from '../helpers/opShape'
+import { idLiteral, matchArg, dataArg } from '../helpers/opExample'
+import type { ExampleLang } from '../helpers/opExample'
+import { safeVarName } from '../helpers/naming'
+
+
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
 
 
 // The four sections below differ by target language but share an identical
@@ -17,11 +25,16 @@ import { entityIdField } from '../helpers/opShape'
 // DEFAULT_LANG.
 type LangExplain = {
   featureKind: string // what a "feature" is in this language
-  // stateful-entity explanation + example; parameterised by the real example
-  // entity name AND its id-like key field name `idF` (null when the entity has
-  // none) so the load example keys on the real id field, or takes no match
-  // argument at all — never a phantom `id` the entity's type does not carry.
-  entityState: (eName: string, eLower: string, idLit: string, idF: string | null) => string
+  // stateful-entity explanation + example, driven by the entity's PRIMARY op
+  // (`op`) — never a hardcoded `load` a create-only entity lacks. `arg` is the
+  // pre-rendered, language-correct call argument; `matchIdF` is the id key when
+  // the op is a match op (so the `.match()` comment shows `{ id: ... }`), else
+  // null (a generic comment).
+  entityState: (
+    eName: string, eLower: string,
+    op: string, arg: string,
+    matchIdF: string | null, idLit: string,
+  ) => string
   direct: string      // direct/prepare explanation
 }
 
@@ -32,16 +45,16 @@ const DEFAULT_LANG: LangExplain = {
 a function that receives the context.
 
 `,
-  entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`load\`, the entity
+  entityState: (eName, eLower, op, arg, matchIdF, idLit) => `Entity instances are stateful. After a successful \`${op}\`, the entity
 stores the returned data and match criteria internally. Subsequent
 calls on the same instance can rely on this state.
 
 \`\`\`ts
 const ${eLower} = client.${eName}()
-await ${eLower}.load(${idF ? `{ ${idF}: ${idLit} }` : ''})
+await ${eLower}.${op}(${arg})
 
-// ${eLower}.data() now returns the loaded ${eLower} data
-${idF ? `// ${eLower}.match() returns { ${idF}: ${idLit} }` : `// ${eLower}.match() returns the last match criteria`}
+// ${eLower}.data() now returns the ${eLower} data from the last \`${op}\`
+${matchIdF ? `// ${eLower}.match() returns { ${matchIdF}: ${idLit} }` : `// ${eLower}.match() returns the last match criteria`}
 \`\`\`
 
 Call \`make()\` to create a fresh instance with the same configuration
@@ -64,14 +77,14 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower, op, arg) => `Entity instances are stateful. After a successful \`${op}\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`python
 ${eLower} = client.${eName}()
-${eLower}.load(${idF ? `{"${idF}": ${idLit}}` : ''})
+${eLower}.${op}(${arg})
 
-# ${eLower}.data_get() now returns the loaded ${eLower} data
+# ${eLower}.data_get() now returns the ${eLower} data from the last ${op}
 # ${eLower}.match_get() returns the last match criteria
 \`\`\`
 
@@ -93,14 +106,14 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower, op, arg) => `Entity instances are stateful. After a successful \`${op}\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`php
 $${eLower} = $client->${eName}();
-$${eLower}->load(${idF ? `["${idF}" => ${idLit}]` : ''});
+$${eLower}->${op}(${arg});
 
-// $${eLower}->data_get() now returns the loaded ${eLower} data
+// $${eLower}->data_get() now returns the ${eLower} data from the last ${op}
 // $${eLower}->match_get() returns the last match criteria
 \`\`\`
 
@@ -122,14 +135,14 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower, op, arg) => `Entity instances are stateful. After a successful \`${op}\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`ruby
 ${eLower} = client.${eName}
-${eLower}.load(${idF ? `{ "${idF}" => ${idLit} }` : ''})
+${eLower}.${op}(${arg})
 
-# ${eLower}.data_get now returns the loaded ${eLower} data
+# ${eLower}.data_get now returns the ${eLower} data from the last ${op}
 # ${eLower}.match_get returns the last match criteria
 \`\`\`
 
@@ -151,14 +164,14 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
 
 `,
-    entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`load\`, the entity
+    entityState: (eName, eLower, op, arg) => `Entity instances are stateful. After a successful \`${op}\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`lua
 local ${eLower} = client:${eName}()
-${eLower}:load(${idF ? `{ ${idF} = ${idLit} }` : ''})
+${eLower}:${op}(${arg})
 
--- ${eLower}:data_get() now returns the loaded ${eLower} data
+-- ${eLower}:data_get() now returns the ${eLower} data from the last ${op}
 -- ${eLower}:match_get() returns the last match criteria
 \`\`\`
 
@@ -180,14 +193,14 @@ for debugging or custom transport.
 stage names.
 
 `,
-    entityState: (eName, eLower, idLit, idF) => `Entity instances are stateful. After a successful \`Load\`, the entity
+    entityState: (eName, eLower, op, arg) => `Entity instances are stateful. After a successful \`${cap(op)}\`, the entity
 stores the returned data and match criteria internally.
 
 \`\`\`go
 ${eLower} := client.${eName}(nil)
-${eLower}.Load(${idF ? `map[string]any{"${idF}": ${idLit}}` : 'nil'}, nil)
+${eLower}.${cap(op)}(${arg}, nil)
 
-// ${eLower}.Data() now returns the loaded ${eLower} data
+// ${eLower}.Data() now returns the ${eLower} data from the last ${op}
 // ${eLower}.Match() returns the last match criteria
 \`\`\`
 
@@ -218,15 +231,33 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   const ex = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
   const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity'
-  const eLower = eName.toLowerCase()
+  // Sanitise against the target's reserved words (a `Delete` entity must not
+  // bind `const delete = ...`).
+  const eLower = safeVarName(eName.toLowerCase(), target.name)
+  const lname = target.name as ExampleLang
   // The entity's id-like key field name, or null when it has none (a
   // response-wrapped spec can model an entity with no id). Drives whether the
-  // load example keys on an id at all.
+  // state example keys on an id at all.
   const idF = entityIdField(ex)
-  // Type-correct example id literal (numeric when the id field is integer-typed).
-  const _flds = ex && ex.fields ? (Array.isArray(ex.fields) ? ex.fields : Object.values(ex.fields)) : []
-  const _idField: any = _flds.find((f: any) => f && f.name === (idF || 'id')) || {}
-  const idLit = /INTEGER|NUMBER/i.test(String(_idField.type || '')) ? '1' : '"example_id"'
+  // The entity's PRIMARY op — an op it actually exposes (never a hardcoded
+  // `load` a create-only entity lacks).
+  const primaryOp = entityPrimaryOp(ex) || 'load'
+  const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
+  // Type-correct example id literal (numeric when the id param is integer-typed),
+  // derived from the OP's param type so an id carried only in the match compiles.
+  const idLit = idLiteral(ex, primaryOp, idF)
+  // Language-correct call argument for the primary op: a match for load/remove,
+  // a required-field body for create/update, nothing for list.
+  let stateArg: string
+  if ('list' === primaryOp) {
+    stateArg = 'go' === target.name ? 'nil' : ''
+  } else if (isMatchOp) {
+    stateArg = matchArg(lname, idF, idLit)
+  } else {
+    stateArg = dataArg(lname, ex, primaryOp, idF)
+  }
+  // Only a match op keys the `.match()` comment on `{ id: ... }`.
+  const matchIdF = isMatchOp ? idF : null
 
   Content(`
 ## Advanced
@@ -301,7 +332,7 @@ were added, so later features can override earlier ones.
 
 `)
 
-  Content(lang.entityState(eName, eLower, idLit, idF))
+  Content(lang.entityState(eName, eLower, primaryOp, stateArg, matchIdF, idLit))
 
 
   // Direct vs entity access
