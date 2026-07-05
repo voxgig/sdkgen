@@ -161,10 +161,10 @@ function entityIdField(ent: any): string | null {
   if (loadItems.some((it: OpShapeItem) => it.name === 'id')) {
     return 'id'
   }
-  const fields = ent.fields ? each(ent.fields) : []
-  if (fields.some((f: any) => f && (f.name === idName || f.name === 'id'))) {
-    return fields.some((f: any) => f && f.name === idName) ? idName : 'id'
-  }
+  // NO fallback to entity.fields: this is the load-MATCH key. An entity whose
+  // DATA type has an `id` field but whose load match does NOT (a query-param
+  // load, e.g. playstation-store's StoreLoadMatch { age, country, ... }) must
+  // degrade to a no-arg load(); `.id` access is decided by entityDataIdField.
   return null
 }
 

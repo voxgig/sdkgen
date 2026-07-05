@@ -140,10 +140,10 @@ function entityIdField(ent) {
     if (loadItems.some((it) => it.name === 'id')) {
         return 'id';
     }
-    const fields = ent.fields ? (0, jostraca_1.each)(ent.fields) : [];
-    if (fields.some((f) => f && (f.name === idName || f.name === 'id'))) {
-        return fields.some((f) => f && f.name === idName) ? idName : 'id';
-    }
+    // NO fallback to entity.fields: this is the load-MATCH key. An entity whose
+    // DATA type has an `id` field but whose load match does NOT (a query-param
+    // load, e.g. playstation-store's StoreLoadMatch { age, country, ... }) must
+    // degrade to a no-arg load(); `.id` access is decided by entityDataIdField.
     return null;
 }
 // The entity's ACTIVE op names, in canonical CRUD order (list, load, create,

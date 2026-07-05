@@ -26,7 +26,14 @@ function makeModel() {
         // (`{ id: ... }` / `map[string]any{"id": ...}`). An entity with no id
         // field would instead degrade to a no-argument load (entityIdField ->
         // null), which is exercised end-to-end by the id-less SDK targets.
-        moon: { active: true, name: 'moon', fields: { id: { name: 'id' } } },
+        // A realistic id-bearing entity: a load op whose match carries the id
+        // param (so entityIdField resolves the load-MATCH key, and the examples
+        // key load on `{ id: ... }`). An entity whose load match lacks id would
+        // degrade to a no-argument load (exercised by the id-less SDK targets).
+        moon: {
+          active: true, name: 'moon', fields: { id: { name: 'id' } },
+          op: { load: { active: true, points: [{ args: { params: [{ name: 'id', type: '$INTEGER' }] } }] } },
+        },
       },
       feature: {
         test: { active: true, name: 'test', title: 'Test mode (offline)' },
