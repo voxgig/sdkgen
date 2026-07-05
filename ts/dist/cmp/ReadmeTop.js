@@ -303,8 +303,40 @@ in-memory mock, so unit tests run offline.
                 }
             });
         }
-        // 10. How it works (was: Architecture)
-        (0, jostraca_1.Content)(`## How it works
+        // 10. Direct and prepare — a common everyday task (the low-level
+        // escape hatch for endpoints the entity model doesn't cover).
+        (0, jostraca_1.Content)(`## Direct and prepare
+
+For endpoints the entity model doesn't cover, use the low-level methods:
+
+- **\`direct(fetchargs)\`** — build and send an HTTP request in one step.
+- **\`prepare(fetchargs)\`** — build the request without sending it.
+
+Both accept a map with \`path\`, \`method\`, \`params\`, \`query\`,
+\`headers\`, and \`body\`. See the [How-to guides](#how-to-guides) below.
+
+`);
+        // 11. How-to guides — keep, useful for the engineer reader
+        (0, jostraca_1.Content)(`## How-to guides
+
+### Make a direct API call
+
+When the entity interface does not cover an endpoint, use \`direct\`:
+
+`);
+        sdkTargets.forEach((tgt) => {
+            const Howto = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopHowto_${tgt.name}`, { ignore: true });
+            if (Howto) {
+                Howto['ReadmeTopHowto']({ target: tgt });
+            }
+        });
+        // 11b. Advanced — the pipeline model and feature hooks are internal
+        // machinery: useful when extending the SDK, but not part of everyday
+        // use, so they live below the task-focused sections above.
+        (0, jostraca_1.Content)(`## Advanced
+
+> Everyday use only needs the sections above. This explains the internals
+> behind every call — relevant when writing custom features.
 
 Every SDK call runs the same five-stage pipeline:
 
@@ -334,31 +366,7 @@ forking the SDK.
         (0, jostraca_1.Content)(`
 Pass custom features via the \`extend\` option at construction time.
 
-### Direct and Prepare
-
-For endpoints the entity model doesn't cover, use the low-level methods:
-
-- **\`direct(fetchargs)\`** — build and send an HTTP request in one step.
-- **\`prepare(fetchargs)\`** — build the request without sending it.
-
-Both accept a map with \`path\`, \`method\`, \`params\`, \`query\`,
-\`headers\`, and \`body\`. See the [How-to guides](#how-to-guides) below.
-
 `);
-        // 11. How-to guides — keep, useful for the engineer reader
-        (0, jostraca_1.Content)(`## How-to guides
-
-### Make a direct API call
-
-When the entity interface does not cover an endpoint, use \`direct\`:
-
-`);
-        sdkTargets.forEach((tgt) => {
-            const Howto = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopHowto_${tgt.name}`, { ignore: true });
-            if (Howto) {
-                Howto['ReadmeTopHowto']({ target: tgt });
-            }
-        });
         // 12. Per-language docs links
         if (sdkTargets.length > 0) {
             (0, jostraca_1.Content)(`## Per-language documentation

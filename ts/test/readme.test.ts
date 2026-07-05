@@ -5,7 +5,7 @@ import { strictEqual, ok, match } from 'node:assert'
 import { Jostraca, Project, Folder, File } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { ReadmeExplanation } from '../dist/sdkgen.js'
+import { ReadmeExplanation, ReadmeErrors } from '../dist/sdkgen.js'
 
 
 // A logger stub keeps requirePath's "optional template missing" warning
@@ -33,7 +33,7 @@ function makeModel() {
   }
 }
 
-async function renderExplanation(langName: string): Promise<string> {
+async function render(comp: any, langName: string): Promise<string> {
   const { fs, vol } = memfs({})
   const jostraca = Jostraca()
 
@@ -43,7 +43,7 @@ async function renderExplanation(langName: string): Promise<string> {
       Project({ folder: 'p' }, () => {
         Folder({ name: 'd' }, () => {
           File({ name: 'out.md' }, () => {
-            ReadmeExplanation({ target: { name: langName } })
+            comp({ target: { name: langName } })
           })
         })
       })
@@ -55,13 +55,19 @@ async function renderExplanation(langName: string): Promise<string> {
   return json[key]
 }
 
+const renderExplanation = (langName: string) => render(ReadmeExplanation, langName)
+const renderErrors = (langName: string) => render(ReadmeErrors, langName)
+
 
 describe('ReadmeExplanation', () => {
 
   test('renders the shared scaffolding for every language', async () => {
     for (const lang of ['py', 'php', 'rb', 'lua', 'go', 'ts', 'js', 'java']) {
       const out = await renderExplanation(lang)
-      ok(out.includes('## Explanation'), `${lang}: explanation heading`)
+      // The pipeline + feature hooks are demoted to an advanced/internal
+      // section, no longer a prominent "Explanation".
+      ok(out.includes('## Advanced'), `${lang}: advanced heading`)
+      ok(!out.includes('## Explanation'), `${lang}: no explanation heading`)
       ok(out.includes('### The operation pipeline'), `${lang}: pipeline heading`)
       ok(
         out.includes('PrePoint → PreSpec → PreRequest → PreResponse → PreResult → PreDone'),
@@ -70,6 +76,9 @@ describe('ReadmeExplanation', () => {
       ok(out.includes('### Features and hooks'), `${lang}: features heading`)
       ok(out.includes('### Entity state'), `${lang}: entity state heading`)
       ok(out.includes('### Direct vs entity access'), `${lang}: direct heading`)
+      // Error-handling detail now lives in its own section; the pipeline
+      // only cross-links to it.
+      ok(out.includes('[Error handling](#error-handling)'), `${lang}: error cross-ref`)
     }
   })
 
@@ -82,7 +91,6 @@ describe('ReadmeExplanation', () => {
 
   test('python variant', async () => {
     const out = await renderExplanation('py')
-    ok(out.includes('return tuple'))
     ok(out.includes('```python'))
     ok(out.includes('A feature is a Python class'))
     ok(out.includes('moon.data_get()'))
@@ -90,7 +98,6 @@ describe('ReadmeExplanation', () => {
 
   test('php variant', async () => {
     const out = await renderExplanation('php')
-    ok(out.includes('return array'))
     ok(out.includes('```php'))
     ok(out.includes('A feature is a PHP class'))
     ok(out.includes('$moon->data_get()')) // snake_case matches generated PHP
@@ -98,7 +105,6 @@ describe('ReadmeExplanation', () => {
 
   test('ruby variant (no-paren accessors)', async () => {
     const out = await renderExplanation('rb')
-    ok(out.includes('as a second return value'))
     ok(out.includes('```ruby'))
     ok(out.includes('A feature is a Ruby class'))
     ok(out.includes('# moon.data_get now returns')) // no-paren accessor
@@ -114,7 +120,6 @@ describe('ReadmeExplanation', () => {
 
   test('go variant', async () => {
     const out = await renderExplanation('go')
-    ok(out.includes('An unexpected panic triggers'))
     ok(out.includes('```go'))
     ok(out.includes('map[string]any'))
     ok(out.includes('`Feature` interface'))
@@ -124,7 +129,6 @@ describe('ReadmeExplanation', () => {
 
   test('default variant (ts) and js/unknown fall back to it', async () => {
     const ts = await renderExplanation('ts')
-    ok(ts.includes('An unexpected exception triggers'))
     ok(ts.includes('```ts'))
     ok(ts.includes('moon.data()'))
     ok(ts.includes('A feature is an object with a'))
@@ -135,5 +139,46 @@ describe('ReadmeExplanation', () => {
     const cobol = await renderExplanation('cobol')
     ok(cobol.includes('A feature is an object with a'))
     ok(cobol.includes('```ts'))
+  })
+})
+
+
+describe('ReadmeErrors', () => {
+
+  test('renders an Error handling section for every language', async () => {
+    for (const lang of ['py', 'php', 'rb', 'lua', 'go', 'ts', 'js', 'java']) {
+      const out = await renderErrors(lang)
+      ok(out.includes('## Error handling'), `${lang}: error handling heading`)
+      // The example uses the real model entity, never a phantom one.
+      ok(/[Mm]oon/.test(out), `${lang}: references the example entity`)
+    }
+  })
+
+  test('throwing languages show try/catch on the entity op', async () => {
+    ok((await renderErrors('ts')).includes('} catch (err) {'))
+    ok((await renderErrors('py')).includes('except Exception as err:'))
+    ok((await renderErrors('php')).includes('} catch (\\Throwable $err) {'))
+    ok((await renderErrors('rb')).includes('rescue => err'))
+  })
+
+  test('value-return languages check err instead of throwing', async () => {
+    const go = await renderErrors('go')
+    ok(go.includes('(value, error)'))
+    ok(go.includes('if err != nil {'))
+    ok(go.includes('client.Moon(nil).Load'))
+
+    const lua = await renderErrors('lua')
+    ok(lua.includes('(value, err)'))
+    ok(lua.includes('if err then error(err) end'))
+    ok(lua.includes('client:Moon():load'))
+  })
+
+  test('direct() convention is documented per language', async () => {
+    // Throwing languages: direct() returns an error value instead.
+    ok((await renderErrors('ts')).includes('result instanceof Error'))
+    ok((await renderErrors('py')).includes('result["err"]'))
+    // js and an unmodelled language fall back to the ts default.
+    strictEqual(await renderErrors('js'), await renderErrors('ts'))
+    ok((await renderErrors('cobol')).includes('result instanceof Error'))
   })
 })

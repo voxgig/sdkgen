@@ -5,13 +5,6 @@ const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
 const DEFAULT_LANG = {
-    error: `If any stage returns an error, the pipeline short-circuits and the
-error is returned to the caller.
-
-An unexpected exception triggers the \`PreUnexpected\` hook before
-propagating.
-
-`,
     featureKind: `Features are the extension mechanism. A feature is an object with a
 \`hooks\` map. Each hook key is a pipeline stage name, and the value is
 a function that receives the context.
@@ -42,10 +35,6 @@ shows exactly what \`direct\` would send.
 };
 const LANGS = {
     py: {
-        error: `If any stage returns an error, the pipeline short-circuits and the
-error is returned to the caller as the second element in the return tuple.
-
-`,
         featureKind: `Features are the extension mechanism. A feature is a Python class
 with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
@@ -74,10 +63,6 @@ for debugging or custom transport.
 `,
     },
     php: {
-        error: `If any stage returns an error, the pipeline short-circuits and the
-error is returned to the caller as the second element in the return array.
-
-`,
         featureKind: `Features are the extension mechanism. A feature is a PHP class
 with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
@@ -106,10 +91,6 @@ for debugging or custom transport.
 `,
     },
     rb: {
-        error: `If any stage returns an error, the pipeline short-circuits and the
-error is returned to the caller as a second return value.
-
-`,
         featureKind: `Features are the extension mechanism. A feature is a Ruby class
 with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
@@ -138,10 +119,6 @@ for debugging or custom transport.
 `,
     },
     lua: {
-        error: `If any stage returns an error, the pipeline short-circuits and the
-error is returned to the caller as a second return value.
-
-`,
         featureKind: `Features are the extension mechanism. A feature is a Lua table
 with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 \`PreSpec\`). Each method receives the context.
@@ -170,11 +147,6 @@ for debugging or custom transport.
 `,
     },
     go: {
-        error: `If any stage returns an error, the pipeline short-circuits and the
-error is returned to the caller. An unexpected panic triggers the
-\`PreUnexpected\` hook.
-
-`,
         featureKind: `Features are the extension mechanism. A feature implements the
 \`Feature\` interface and provides hooks — functions keyed by pipeline
 stage names.
@@ -216,7 +188,11 @@ const ReadmeExplanation = (0, jostraca_1.cmp)(function ReadmeExplanation(props) 
     const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity';
     const eLower = eName.toLowerCase();
     (0, jostraca_1.Content)(`
-## Explanation
+## Advanced
+
+> The sections above cover everyday use. The material below explains the
+> SDK's internals — useful when extending it with custom features, but not
+> needed for normal use.
 
 ### The operation pipeline
 
@@ -238,8 +214,11 @@ PrePoint → PreSpec → PreRequest → PreResponse → PreResult → PreDone
 - **PreDone**: Final stage before returning to the caller. Entity
   state (match, data) is updated here.
 
+If any stage errors, the pipeline short-circuits and the error surfaces
+to the caller — see [Error handling](#error-handling) for how that looks
+in this language.
+
 `);
-    (0, jostraca_1.Content)(lang.error);
     // Features and hooks
     (0, jostraca_1.Content)(`### Features and hooks
 
