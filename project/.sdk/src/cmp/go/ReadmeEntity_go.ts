@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -84,7 +84,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.short || ''
-        Content(`| \`${field.name}\` | \`${field.type || 'any'}\` | ${desc} |
+        Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${desc} |
 `)
       })
 
@@ -128,7 +128,7 @@ result, err := client.${entity.Name}(nil).Create(map[string]any{
 `)
       each(fields, (field: any) => {
         if ('id' !== field.name && field.req) {
-          Content(`    "${field.name}": /* ${field.type || 'value'} */,
+          Content(`    "${field.name}": /* ${canonToType(field.type, target.name)} */,
 `)
         }
       })

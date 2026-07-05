@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, File, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -212,7 +212,7 @@ const ${ent.name} = client.${ent.Name}()
         each(fields, (field: any) => {
           const req = field.req ? 'Yes' : 'No'
           const desc = field.short || ''
-          Content(`| \`${field.name}\` | \`${field.type || 'any'}\` | ${req} | ${desc} |
+          Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${req} | ${desc} |
 `)
         })
 
@@ -283,7 +283,7 @@ const result = await client.${ent.Name}().create({
 `)
             each(fields, (field: any) => {
               if ('id' !== field.name && field.req) {
-                Content(`  ${field.name}: /* ${field.type || 'value'} */,
+                Content(`  ${field.name}: /* ${canonToType(field.type, target.name)} */,
 `)
               }
             })
