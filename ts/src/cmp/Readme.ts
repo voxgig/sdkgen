@@ -5,6 +5,7 @@ import { cmp, File, Content } from 'jostraca'
 import { ReadmeIntro } from './ReadmeIntro'
 import { ReadmeInstall } from './ReadmeInstall'
 import { ReadmeQuick } from './ReadmeQuick'
+import { ReadmeErrors } from './ReadmeErrors'
 import { ReadmeModel } from './ReadmeModel'
 import { ReadmeOptions } from './ReadmeOptions'
 import { ReadmeEntity } from './ReadmeEntity'
@@ -22,6 +23,7 @@ const Readme = cmp(function Readme(props: any) {
     ReadmeIntro({ target })
     ReadmeInstall({ target })
     ReadmeQuick({ target })
+    ReadmeErrors({ target })
     ReadmeHowto({ target })
     ReadmeModel({ target })
     ReadmeOptions({ target })

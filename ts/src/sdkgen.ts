@@ -33,6 +33,7 @@ import { Changelog } from './cmp/Changelog'
 import { Test } from './cmp/Test'
 import { ReadmeInstall } from './cmp/ReadmeInstall'
 import { ReadmeQuick } from './cmp/ReadmeQuick'
+import { ReadmeErrors } from './cmp/ReadmeErrors'
 import { ReadmeIntro } from './cmp/ReadmeIntro'
 import { ReadmeModel } from './cmp/ReadmeModel'
 import { ReadmeOptions } from './cmp/ReadmeOptions'
@@ -47,6 +48,7 @@ import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonKey } from './helpers/canonType'
+import { OP_SUFFIX, opTypeName, opParams, opRequestShape } from './helpers/opShape'
 import {
   packageName,
   installCommand,
@@ -414,6 +416,7 @@ export {
   ReadmeTop,
   ReadmeInstall,
   ReadmeQuick,
+  ReadmeErrors,
   ReadmeIntro,
   ReadmeModel,
   ReadmeOptions,
@@ -434,6 +437,11 @@ export {
   collectDeps,
   canonToType,
   canonKey,
+
+  OP_SUFFIX,
+  opTypeName,
+  opParams,
+  opRequestShape,
 
   packageName,
   installCommand,
