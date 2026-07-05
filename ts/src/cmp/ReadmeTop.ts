@@ -152,6 +152,15 @@ ${aboutMd.trim()}
         ? entNames.slice(0, -1).join(', ') + ' and ' + entNames[entNames.length - 1]
         : entNames[0]
       const ex = activeEntities[0].Name
+      const exLower = ex.toLowerCase()
+      const exOps = Object.keys(activeEntities[0].op || {})
+        .filter((o: string) => (activeEntities[0].op as any)[o] && (activeEntities[0].op as any)[o].active !== false)
+      // The example call uses an op the example entity actually has (list -> the
+      // array; otherwise load -> the record) so a load-only entity never shows a
+      // phantom .list() that would not compile.
+      const exCall = exOps.includes('list')
+        ? `const items = await client.${ex}().list()`
+        : `const ${exLower} = await client.${ex}().load()`
       // Model-driven op list — only the operations the entities actually expose
       // (advice may be list+load only; never claim create/update/remove exist).
       const CANON_OPS = ['list', 'load', 'create', 'update', 'remove']
@@ -169,7 +178,7 @@ support (${opList}):
 
 \`\`\`ts
 const client = new ${model.Name}SDK()
-const items = await client.${ex}().list()
+${exCall}
 \`\`\`
 
 Thinking in entities keeps the mental model small — for people and AI agents alike —
