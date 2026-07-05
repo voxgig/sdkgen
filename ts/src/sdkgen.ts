@@ -33,6 +33,7 @@ import { Changelog } from './cmp/Changelog'
 import { Test } from './cmp/Test'
 import { ReadmeInstall } from './cmp/ReadmeInstall'
 import { ReadmeQuick } from './cmp/ReadmeQuick'
+import { ReadmeErrors } from './cmp/ReadmeErrors'
 import { ReadmeIntro } from './cmp/ReadmeIntro'
 import { ReadmeModel } from './cmp/ReadmeModel'
 import { ReadmeOptions } from './cmp/ReadmeOptions'
@@ -414,6 +415,7 @@ export {
   ReadmeTop,
   ReadmeInstall,
   ReadmeQuick,
+  ReadmeErrors,
   ReadmeIntro,
   ReadmeModel,
   ReadmeOptions,
