@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -150,6 +150,9 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
     publishedEntities.map((ent: any) => {
       const opnames = Object.keys(ent.op || {})
       const fields = ent.fields || []
+      // Model-driven id key: null when this entity has no id-like field, in
+      // which case load/remove match on no argument and update omits the id.
+      const idF = entityIdField(ent)
 
       Content(`
 ---
@@ -238,7 +241,7 @@ ${info.desc}
           // error; direct() is the only method that returns a result dict.
           if ('load' === opname || 'remove' === opname) {
             Content(`\`\`\`python
-result = client.${ent.Name}().${opname}({"id": "${ent.name}_id"})
+result = client.${ent.Name}().${opname}(${idF ? `{"${idF}": "${ent.name}_id"}` : ''})
 \`\`\`
 
 `)
@@ -268,10 +271,10 @@ result = client.${ent.Name}().create({
 `)
           }
           else if ('update' === opname) {
+            const updateIdLine = idF ? `    "${idF}": "${ent.name}_id",\n` : ''
             Content(`\`\`\`python
 result = client.${ent.Name}().update({
-    "id": "${ent.name}_id",
-    # Fields to update
+${updateIdLine}    # Fields to update
 })
 \`\`\`
 

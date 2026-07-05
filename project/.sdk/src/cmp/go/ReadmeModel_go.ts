@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -50,6 +50,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   // First published entity name, for the Result shape illustration.
   const firstEntityName = (entityList[0] as any)?.Name || 'Entity'
+  // Model-driven id key: null when the example entity has no id-like field, so
+  // the Result-shape load illustration passes a nil match.
+  const firstIdF = entityIdField(entityList[0] || {})
 
   Content(`### New${model.const.Name}SDK
 
@@ -118,7 +121,7 @@ Check \`err\` first, then use the value directly (or the typed
 \`...Typed\` variants, which return the entity's model struct and a typed
 slice):
 
-    ${firstEntityName.toLowerCase()}, err := client.${firstEntityName}(nil).Load(map[string]any{"id": "example_id"}, nil)
+    ${firstEntityName.toLowerCase()}, err := client.${firstEntityName}(nil).Load(${firstIdF ? `map[string]any{"${firstIdF}": "example_id"}` : 'nil'}, nil)
     if err != nil { /* handle */ }
     // ${firstEntityName.toLowerCase()} is the loaded record
 

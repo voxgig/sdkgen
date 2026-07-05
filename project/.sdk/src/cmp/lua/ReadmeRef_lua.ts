@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -153,6 +153,9 @@ same parameters as \`direct()\`.
     publishedEntities.map((ent: any) => {
       const opnames = Object.keys(ent.op || {})
       const fields = ent.fields || []
+      // Model-driven id key: null when this entity has no id-like field, in
+      // which case load/remove match on no argument and update omits the id.
+      const idF = entityIdField(ent)
 
       Content(`
 ---
@@ -240,7 +243,7 @@ ${info.desc}
           // Show example
           if ('load' === opname || 'remove' === opname) {
             Content(`\`\`\`lua
-local result, err = client:${ent.Name}():${opname}({ id = "${ent.name}_id" })
+local result, err = client:${ent.Name}():${opname}(${idF ? `{ ${idF} = "${ent.name}_id" }` : ''})
 \`\`\`
 
 `)
@@ -268,10 +271,10 @@ local result, err = client:${ent.Name}():create({
 `)
           }
           else if ('update' === opname) {
+            const updateIdLine = idF ? `  ${idF} = "${ent.name}_id",\n` : ''
             Content(`\`\`\`lua
 local result, err = client:${ent.Name}():update({
-  id = "${ent.name}_id",
-  -- Fields to update
+${updateIdLine}  -- Fields to update
 })
 \`\`\`
 

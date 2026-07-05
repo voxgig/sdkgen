@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -14,6 +14,17 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
+  // Model-driven id key: null when the entity has no id-like field (a
+  // response-wrapped spec). When null the fixture seeds no id and load takes
+  // no match argument.
+  const idF = exampleEntity ? entityIdField(exampleEntity) : null
+  const seedSentence = idF
+    ? '. Seed fixture\ndata via the `entity` option so offline calls resolve without a live server'
+    : ''
+  const testCtor = idF
+    ? `${model.const.Name}SDK.test({\n  "entity" => { "${eName.toLowerCase()}" => { "test01" => { "${idF}" => "test01" } } },\n})`
+    : `${model.const.Name}SDK.test`
+  const testLoadArg = idF ? `{ "${idF}" => "test01" }` : ''
 
   const apikeyEnvLine = isAuthActive(model)
     ? `\n${envName(model)}_APIKEY=<your-key>`
@@ -59,16 +70,13 @@ end
 
 ### Use test mode
 
-Create a mock client for unit testing — no server required. Seed fixture
-data via the \`entity\` option so offline calls resolve without a live server:
+Create a mock client for unit testing — no server required${seedSentence}:
 
 \`\`\`ruby
-client = ${model.const.Name}SDK.test({
-  "entity" => { "${eName.toLowerCase()}" => { "test01" => { "id" => "test01" } } },
-})
+client = ${testCtor}
 
 # load returns the bare mock record (raises on error).
-${eName.toLowerCase()} = client.${eName}.load({ "id" => "test01" })
+${eName.toLowerCase()} = client.${eName}.load(${testLoadArg})
 puts ${eName.toLowerCase()}
 \`\`\`
 

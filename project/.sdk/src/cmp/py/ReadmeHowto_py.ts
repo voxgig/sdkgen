@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -14,6 +14,9 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
+  // Model-driven id key: null when the entity has no id-like field, so the
+  // test-mode load takes no match argument.
+  const idF = exampleEntity ? entityIdField(exampleEntity) : null
 
   const apikeyEnvLine = isAuthActive(model)
     ? `\n${envName(model)}_APIKEY=<your-key>`
@@ -63,7 +66,7 @@ Create a mock client for unit testing — no server required:
 client = ${model.const.Name}SDK.test()
 
 # Entity ops return the bare record and raise on error.
-${eName.toLowerCase()} = client.${eName}().load({"id": "test01"})
+${eName.toLowerCase()} = client.${eName}().load(${idF ? `{"${idF}": "test01"}` : ''})
 # ${eName.toLowerCase()} contains the mock response record
 \`\`\`
 

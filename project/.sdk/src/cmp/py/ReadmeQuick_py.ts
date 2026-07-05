@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -38,6 +38,10 @@ client = ${ctor}
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
     const opnames = Object.keys(exampleEntity.op || {})
+    // Model-driven id key: `idF` is the entity's id-like field name, or null
+    // when it has none (a response-wrapped spec). When null the load/remove
+    // match takes no argument and no `.id` is read off a returned record.
+    const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
@@ -64,7 +68,7 @@ except Exception as err:
 
 \`\`\`python
 try:
-    ${eName.toLowerCase()} = client.${eName}().load({"id": "example_id"})
+    ${eName.toLowerCase()} = client.${eName}().load(${idF ? `{"${idF}": "example_id"}` : ''})
     print(${eName.toLowerCase()})
 except Exception as err:
     print(f"load failed: {err}")
@@ -104,15 +108,15 @@ created = client.${eName}().create({${examplePairs('create').join(', ')}})
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = ['"id": created["id"]'].concat(examplePairs('update'))
-        Content(`# Update — the created record's id is a plain dict key
+        const updatePairs = (idF ? [`"${idF}": created["${idF}"]`] : []).concat(examplePairs('update'))
+        Content(`# Update${idF ? " — the created record's id is a plain dict key" : ''}
 client.${eName}().update({${updatePairs.join(', ')}})
 
 `)
       }
       if (opnames.includes('remove')) {
         Content(`# Remove
-client.${eName}().remove({"id": created["id"]})
+client.${eName}().remove(${idF ? `{"${idF}": created["${idF}"]}` : ''})
 `)
       }
       Content(`\`\`\`

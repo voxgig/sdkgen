@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -160,6 +160,9 @@ same parameters as \`Direct()\`.
     publishedEntities.map((ent: any) => {
       const opnames = Object.keys(ent.op || {})
       const fields = ent.fields || []
+      // Model-driven id key: null when this entity has no id-like field, in
+      // which case load/remove pass a nil match and update omits the id.
+      const idF = entityIdField(ent)
 
       Content(`
 ---
@@ -248,7 +251,7 @@ ${info.desc}
           if ('load' === opname || 'remove' === opname) {
             const goOpName = opname.charAt(0).toUpperCase() + opname.slice(1)
             Content(`\`\`\`go
-result, err := client.${ent.Name}(nil).${goOpName}(map[string]any{"id": "${ent.name}_id"}, nil)
+result, err := client.${ent.Name}(nil).${goOpName}(${idF ? `map[string]any{"${idF}": "${ent.name}_id"}` : 'nil'}, nil)
 \`\`\`
 
 `)
@@ -276,10 +279,10 @@ result, err := client.${ent.Name}(nil).Create(map[string]any{
 `)
           }
           else if ('update' === opname) {
+            const updateIdLine = idF ? `    "${idF}": "${ent.name}_id",\n` : ''
             Content(`\`\`\`go
 result, err := client.${ent.Name}(nil).Update(map[string]any{
-    "id": "${ent.name}_id",
-    // Fields to update
+${updateIdLine}    // Fields to update
 }, nil)
 \`\`\`
 

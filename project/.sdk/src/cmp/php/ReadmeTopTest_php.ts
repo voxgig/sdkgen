@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -18,12 +18,17 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
     const ename = eName.toLowerCase()
+    // Model-driven id key: null when the entity has no id-like field, so the
+    // seeded record carries no id and the load takes no match argument.
+    const idF = entityIdField(exampleEntity)
+    const recBody = idF ? `["${idF}" => "test01"]` : '[]'
+    const loadArg = idF ? `["${idF}" => "test01"]` : ''
     Content(`\`\`\`php
 // Seed fixture data so offline calls resolve without a live server.
 $client = ${model.const.Name}SDK::test([
-    "entity" => ["${ename}" => ["test01" => ["id" => "test01"]]],
+    "entity" => ["${ename}" => ["test01" => ${recBody}]],
 ]);
-$${ename} = $client->${eName}()->load(["id" => "test01"]);
+$${ename} = $client->${eName}()->load(${loadArg});
 \`\`\`
 `)
   } else {

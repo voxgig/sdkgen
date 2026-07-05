@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -42,6 +42,10 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     // built from) so create/update reference REAL writable fields, not a
     // hardcoded "name", and ids use a type-correct literal.
     const idField = (exampleEntity.id && exampleEntity.id.field) || 'id'
+    // Model-driven id key: null when the entity has no id-like field (a
+    // response-wrapped spec). When null, load/remove pass a nil match and
+    // update omits the id member.
+    const idF = entityIdField(exampleEntity)
     const goLit = (type: any): string => {
       const k = canonKey(type)
       if ('INTEGER' === k || 'NUMBER' === k) return '1'
@@ -75,7 +79,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
     if (opnames.includes('load')) {
       body.push(`    // Load a single ${eLower} — the value is the loaded record.`)
-      body.push(`    ${eLower}, err := client.${eName}(nil).Load(map[string]any{"id": ${idLit}}, nil)`)
+      body.push(`    ${eLower}, err := client.${eName}(nil).Load(${idF ? `map[string]any{"${idF}": ${idLit}}` : 'nil'}, nil)`)
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)
@@ -97,7 +101,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
     if (opnames.includes('update')) {
       body.push(`    // Update a ${eLower}.`)
-      body.push(`    updated, err := client.${eName}(nil).Update(map[string]any{${['"id": ' + idLit].concat(examplePairs('update')).join(', ')}}, nil)`)
+      body.push(`    updated, err := client.${eName}(nil).Update(map[string]any{${(idF ? [`"${idF}": ${idLit}`] : []).concat(examplePairs('update')).join(', ')}}, nil)`)
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)
@@ -108,7 +112,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
     if (opnames.includes('remove')) {
       body.push(`    // Remove a ${eLower}.`)
-      body.push(`    removed, err := client.${eName}(nil).Remove(map[string]any{"id": ${idLit}}, nil)`)
+      body.push(`    removed, err := client.${eName}(nil).Remove(${idF ? `map[string]any{"${idF}": ${idLit}}` : 'nil'}, nil)`)
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)

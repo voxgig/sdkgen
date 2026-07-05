@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -23,8 +23,11 @@ client := sdk.Test()
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
+    // Model-driven id key: null when the entity has no id-like field, so the
+    // test-mode load passes a nil match.
+    const idF = entityIdField(exampleEntity)
     Content(`result, err := client.${eName}(nil).Load(
-    map[string]any{"id": "test01"}, nil,
+    ${idF ? `map[string]any{"${idF}": "test01"}` : 'nil'}, nil,
 )
 `)
   }

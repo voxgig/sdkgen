@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -21,7 +21,10 @@ client = ${model.const.Name}SDK.test()
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    Content(`${eName.toLowerCase()} = client.${eName}().load({"id": "test01"})
+    // Model-driven id key: null when the entity has no id-like field, so the
+    // test-mode load takes no match argument.
+    const idF = entityIdField(exampleEntity)
+    Content(`${eName.toLowerCase()} = client.${eName}().load(${idF ? `{"${idF}": "test01"}` : ''})
 print(${eName.toLowerCase()})
 `)
   }

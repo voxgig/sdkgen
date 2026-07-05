@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -41,6 +41,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
     const fields = entity.fields || []
+    // Model-driven id key: null when this entity has no id-like field.
+    const idF = entityIdField(entity)
 
     Content(`
 ### ${entity.Name}
@@ -96,7 +98,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`#### Example: Load
 
 \`\`\`go
-${entity.name}, err := client.${entity.Name}(nil).Load(map[string]any{"id": "${entity.name}_id"}, nil)
+${entity.name}, err := client.${entity.Name}(nil).Load(${idF ? `map[string]any{"${idF}": "${entity.name}_id"}` : 'nil'}, nil)
 if err != nil {
     panic(err)
 }

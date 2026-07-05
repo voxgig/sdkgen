@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,6 +17,9 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
+  // Model-driven id key: null when the entity has no id-like field, so the
+  // test-mode load passes a nil match.
+  const idF = exampleEntity ? entityIdField(exampleEntity) : null
 
   const apikeyEnvLine = isAuthActive(model)
     ? `\n${envName(model)}_APIKEY=<your-key>`
@@ -67,7 +70,7 @@ Create a mock client for unit testing \u2014 no server required:
 client := sdk.Test()
 
 ${eName.toLowerCase()}, err := client.${eName}(nil).Load(
-    map[string]any{"id": "test01"}, nil,
+    ${idF ? `map[string]any{"${idF}": "test01"}` : 'nil'}, nil,
 )
 if err != nil {
     panic(err)

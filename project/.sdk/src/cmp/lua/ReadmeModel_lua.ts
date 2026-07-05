@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -43,6 +43,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const exEnt: any = entityList[0] || {}
   const eName = exEnt.Name || 'Entity'
   const eLower = String(exEnt.name || 'entity').toLowerCase()
+  // Model-driven id key: null when the example entity has no id-like field, so
+  // the Result-shape load illustration takes no match argument.
+  const idF = entityIdField(exEnt)
 
   const apikeyOptionRow = isAuthActive(model)
     ? '| `apikey` | `string` | API key for authentication. |\n'
@@ -116,7 +119,7 @@ ${resultShapeRows}
 
 Check \`err\` first (it is non-\`nil\` on failure), then use \`value\`:
 
-    local ${eLower}, err = client:${eName}():load({ id = "example_id" })
+    local ${eLower}, err = client:${eName}():load(${idF ? `{ ${idF} = "example_id" }` : ''})
     if err then error(err) end
     -- ${eLower} is the loaded record
 

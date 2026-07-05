@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -36,6 +36,10 @@ local client = ${ctor}
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? "an" : "a"
     const opnames = Object.keys(exampleEntity.op || {})
+    // Model-driven id key: null when the entity has no id-like field (a
+    // response-wrapped spec). When null, load/remove take no argument and no
+    // record id is read off a returned record.
+    const idF = entityIdField(exampleEntity)
 
     // MODEL-DRIVEN display field: the list example must reference a field
     // the entity actually has, not a hardcoded "name". Pick the entity's
@@ -51,9 +55,10 @@ local client = ${ctor}
       fields.find((f: any) => f && !idNames.has(f.name) && isStringField(f)) ||
       fields.find((f: any) => f && !idNames.has(f.name))
     const displayField = displayFieldObj ? displayFieldObj.name : null
-    const printLine = displayField
-      ? `  print(item["id"], item["${displayField}"])`
-      : `  print(item["id"])`
+    const idCol = idF ? `item["${idF}"]` : null
+    const dispCol = displayField ? `item["${displayField}"]` : null
+    const printCols = [idCol, dispCol].filter(Boolean).join(', ')
+    const printLine = printCols ? `  print(${printCols})` : `  print(item)`
 
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
@@ -77,7 +82,7 @@ end
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
 \`\`\`lua
-local ${eName.toLowerCase()}, err = client:${eName}():load({ id = "example_id" })
+local ${eName.toLowerCase()}, err = client:${eName}():load(${idF ? `{ ${idF} = "example_id" }` : ''})
 if err then error(err) end
 print(${eName.toLowerCase()})
 \`\`\`
@@ -117,7 +122,7 @@ if err then error(err) end
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = ['id = created["id"]'].concat(examplePairs('update'))
+        const updatePairs = (idF ? [`${idF} = created["${idF}"]`] : []).concat(examplePairs('update'))
         Content(`-- Update
 client:${eName}():update({ ${updatePairs.join(', ')} })
 
@@ -125,7 +130,7 @@ client:${eName}():update({ ${updatePairs.join(', ')} })
       }
       if (opnames.includes('remove')) {
         Content(`-- Remove
-client:${eName}():remove({ id = created["id"] })
+client:${eName}():remove(${idF ? `{ ${idF} = created["${idF}"] }` : ''})
 `)
       }
       Content(`\`\`\`

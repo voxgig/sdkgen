@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -36,6 +36,10 @@ client = ${ctor}
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? "an" : "a"
     const opnames = Object.keys(exampleEntity.op || {})
+    // Model-driven id key: null when the entity has no id-like field (a
+    // response-wrapped spec). When null, load/remove take no argument and no
+    // record id is read off a returned record.
+    const idF = entityIdField(exampleEntity)
 
     // Model-driven display field: the entity's first non-id string field
     // (falling back to any non-id field), so the list example prints a real
@@ -45,9 +49,9 @@ client = ${ctor}
       fields.find((f: any) => f && f.name !== 'id' && f.type === '$STRING') ||
       fields.find((f: any) => f && f.name !== 'id') ||
       null
-    const itemPrint = displayField
-      ? `#{item["id"]} #{item[${JSON.stringify(displayField.name)}]}`
-      : `#{item["id"]}`
+    const idCol = idF ? `#{item[${JSON.stringify(idF)}]}` : null
+    const dispCol = displayField ? `#{item[${JSON.stringify(displayField.name)}]}` : null
+    const itemPrint = [idCol, dispCol].filter(Boolean).join(' ') || '#{item}'
 
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
@@ -73,7 +77,7 @@ end
 \`\`\`ruby
 begin
   # load returns the bare ${eName} record (raises on error).
-  ${eName.toLowerCase()} = client.${eName}.load({ "id" => "example_id" })
+  ${eName.toLowerCase()} = client.${eName}.load(${idF ? `{ "${idF}" => "example_id" }` : ''})
   puts ${eName.toLowerCase()}
 rescue => err
   warn "load failed: #{err}"
@@ -114,15 +118,15 @@ created = client.${eName}.create({ ${examplePairs('create').join(', ')} })
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = ['"id" => created["id"]'].concat(examplePairs('update'))
-        Content(`# Update — index the bare record directly (created["id"]).
+        const updatePairs = (idF ? [`"${idF}" => created["${idF}"]`] : []).concat(examplePairs('update'))
+        Content(`# Update${idF ? ` — index the bare record directly (created["${idF}"]).` : ''}
 client.${eName}.update({ ${updatePairs.join(', ')} })
 
 `)
       }
       if (opnames.includes('remove')) {
         Content(`# Remove
-client.${eName}.remove({ "id" => created["id"] })
+client.${eName}.remove(${idF ? `{ "${idF}" => created["${idF}"] }` : ''})
 `)
       }
       Content(`\`\`\`

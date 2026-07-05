@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -53,11 +53,17 @@ fmt.Println(${eName.toLowerCase()}s)
       const parentFields = (nestedEntity.fields || [])
         .filter((f: any) => f.name !== 'id' && f.name.endsWith('_id'))
       const parentParam = parentFields.length > 0 ? parentFields[0].name : 'parent_id'
+      // Model-driven id key: only include the nested entity's id if it has one.
+      const neIdF = entityIdField(nestedEntity)
+      const neMatchPairs = [`"${parentParam}": "example"`]
+      if (neIdF) {
+        neMatchPairs.push(`"${neIdF}": "example_id"`)
+      }
 
       Content(`
 // Load a specific ${neName.toLowerCase()}
 ${neName.toLowerCase()}, err := client.${neName}(nil).Load(
-    map[string]any{"${parentParam}": "example", "id": "example_id"}, nil,
+    map[string]any{${neMatchPairs.join(', ')}}, nil,
 )
 fmt.Println(${neName.toLowerCase()})
 `)
