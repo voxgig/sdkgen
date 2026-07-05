@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -73,6 +73,25 @@ except Exception as err:
 `)
     }
 
+    // Model-driven example fields: derive the create/update body from the op
+    // shape (opRequestShape) so the docs reference REAL writable fields, not a
+    // hardcoded "name" the entity may not have. Literals are Python-typed by
+    // the field's canonical type.
+    const idField = (exampleEntity.id && exampleEntity.id.field) || 'id'
+    const pyLit = (type: any): string => {
+      const k = canonKey(type)
+      if ('INTEGER' === k || 'NUMBER' === k) return '1'
+      if ('BOOLEAN' === k) return 'True'
+      if ('ARRAY' === k) return '[]'
+      if ('OBJECT' === k) return '{}'
+      return '"example"'
+    }
+    const examplePairs = (opname: string): string[] =>
+      opRequestShape(exampleEntity, opname).items
+        .filter((it: any) => it.name !== idField && it.name !== 'id')
+        .slice(0, 2)
+        .map((it: any) => `"${it.name}": ${pyLit(it.type)}`)
+
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
@@ -80,13 +99,14 @@ except Exception as err:
 `)
       if (opnames.includes('create')) {
         Content(`# Create — returns the bare created record (a dict)
-created = client.${eName}().create({"name": "Example"})
+created = client.${eName}().create({${examplePairs('create').join(', ')}})
 
 `)
       }
       if (opnames.includes('update')) {
+        const updatePairs = ['"id": created["id"]'].concat(examplePairs('update'))
         Content(`# Update — the created record's id is a plain dict key
-client.${eName}().update({"id": created["id"], "name": "Example-Renamed"})
+client.${eName}().update({${updatePairs.join(', ')}})
 
 `)
       }

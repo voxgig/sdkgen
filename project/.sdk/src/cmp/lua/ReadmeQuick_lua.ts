@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -85,6 +85,25 @@ print(${eName.toLowerCase()})
 `)
     }
 
+    // Model-driven example fields: derive the create/update body from the op
+    // shape (opRequestShape) so the docs reference REAL writable fields, not a
+    // hardcoded "name" the entity may not have. Literals are Lua-typed by the
+    // field's canonical type; non-identifier keys use bracket syntax.
+    const luaLit = (type: any): string => {
+      const k = canonKey(type)
+      if ('INTEGER' === k || 'NUMBER' === k) return '1'
+      if ('BOOLEAN' === k) return 'true'
+      if ('ARRAY' === k || 'OBJECT' === k) return '{}'
+      return '"example"'
+    }
+    const luaKey = (name: string): string =>
+      /^[A-Za-z_]\w*$/.test(name) ? name : `["${name}"]`
+    const examplePairs = (opname: string): string[] =>
+      opRequestShape(exampleEntity, opname).items
+        .filter((it: any) => !idNames.has(it.name))
+        .slice(0, 2)
+        .map((it: any) => `${luaKey(it.name)} = ${luaLit(it.type)}`)
+
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
@@ -92,14 +111,15 @@ print(${eName.toLowerCase()})
 `)
       if (opnames.includes('create')) {
         Content(`-- Create
-local created, err = client:${eName}():create({ name = "Example" })
+local created, err = client:${eName}():create({ ${examplePairs('create').join(', ')} })
 if err then error(err) end
 
 `)
       }
       if (opnames.includes('update')) {
+        const updatePairs = ['id = created["id"]'].concat(examplePairs('update'))
         Content(`-- Update
-client:${eName}():update({ id = created["id"], name = "Example-Renamed" })
+client:${eName}():update({ ${updatePairs.join(', ')} })
 
 `)
       }

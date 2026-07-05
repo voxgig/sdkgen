@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -84,6 +84,24 @@ try {
 `)
     }
 
+    // Model-driven example fields: derive the create/update body from the op
+    // shape (opRequestShape) so the docs reference REAL writable fields, not a
+    // hardcoded "name" the entity may not have. Literals are PHP-typed by the
+    // field's canonical type.
+    const idField = (exampleEntity.id && exampleEntity.id.field) || 'id'
+    const phpLit = (type: any): string => {
+      const k = canonKey(type)
+      if ('INTEGER' === k || 'NUMBER' === k) return '1'
+      if ('BOOLEAN' === k) return 'true'
+      if ('ARRAY' === k || 'OBJECT' === k) return '[]'
+      return '"example"'
+    }
+    const examplePairs = (opname: string): string[] =>
+      opRequestShape(exampleEntity, opname).items
+        .filter((it: any) => it.name !== idField && it.name !== 'id')
+        .slice(0, 2)
+        .map((it: any) => `"${it.name}" => ${phpLit(it.type)}`)
+
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
@@ -91,13 +109,14 @@ try {
 `)
       if (opnames.includes('create')) {
         Content(`// create() returns the bare created ${eName} record.
-$created = $client->${eName}()->create(["name" => "Example"]);
+$created = $client->${eName}()->create([${examplePairs('create').join(', ')}]);
 
 `)
       }
       if (opnames.includes('update')) {
+        const updatePairs = ['"id" => $created["id"]'].concat(examplePairs('update'))
         Content(`// Update — index the bare record directly ($created["id"]).
-$client->${eName}()->update(["id" => $created["id"], "name" => "Example-Renamed"]);
+$client->${eName}()->update([${updatePairs.join(', ')}]);
 
 `)
       }

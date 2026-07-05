@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -38,6 +38,17 @@ const client = ${ctor}
     const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
     const opnames = Object.keys(exampleEntity.op || {})
 
+    // Model-driven example fields, in parity with the ts target: derive the
+    // create/update body from the op shape (opRequestShape) so the docs show
+    // REAL writable fields, not a hardcoded field the entity may not have.
+    const idField = (exampleEntity.id && exampleEntity.id.field) || 'id'
+    const exampleFields = (opname: string): string[] =>
+      opRequestShape(exampleEntity, opname).items
+        .filter((it: any) => it.name !== idField && it.name !== 'id')
+        .slice(0, 2)
+        .map((it: any) =>
+          `  ${it.name}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
+
     if (opnames.includes('load')) {
       Content(`
 ### Load ${article} ${eName}
@@ -63,26 +74,28 @@ for (const ${exampleEntity.name} of ${exampleEntity.name}s) {
     }
 
     if (opnames.includes('create')) {
+      const createLines = exampleFields('create')
+      const createBody = createLines.length ? '\n' + createLines.join('\n') + '\n' : ''
       Content(`
 ### Create a ${eName}
 
 \`\`\`js
-const created = await client.${eName}().create({
-  // Provide ${exampleEntity.name} fields
-})
+const created = await client.${eName}().create({${createBody}})
 console.log(created)
 \`\`\`
 `)
     }
 
     if (opnames.includes('update')) {
+      const updateLines = [
+        `  id: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.update, 'id', exampleEntity.name + '_id')},`
+      ].concat(exampleFields('update'))
       Content(`
 ### Update a ${eName}
 
 \`\`\`js
 const updated = await client.${eName}().update({
-  id: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.update, 'id', exampleEntity.name + '_id')},
-  // Fields to update
+${updateLines.join('\n')}
 })
 console.log(updated)
 \`\`\`

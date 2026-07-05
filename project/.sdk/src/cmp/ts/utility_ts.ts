@@ -45,8 +45,9 @@ function paramCanonType(entity: any, op: any, paramName: string): unknown {
 // A type-correct example literal for a named match/data parameter of an op,
 // derived entirely from the model. INTEGER/NUMBER render as the bare number
 // `1` (a quoted string on a `number` field is a compile error), BOOLEAN as
-// `true`, everything else (STRING, unknown, missing) as the quoted
-// `placeholder`.
+// `true`, ARRAY as the empty `[]` and OBJECT as the empty `{}` (a quoted
+// string is not assignable to `any[]` / `Record<string, any>`), everything
+// else (STRING, unknown, missing) as the quoted `placeholder`.
 function exampleValue(entity: any, op: any, paramName: string, placeholder: string): string {
   const key = canonKey(paramCanonType(entity, op, paramName))
   if ('INTEGER' === key || 'NUMBER' === key) {
@@ -54,6 +55,12 @@ function exampleValue(entity: any, op: any, paramName: string, placeholder: stri
   }
   if ('BOOLEAN' === key) {
     return 'true'
+  }
+  if ('ARRAY' === key) {
+    return '[]'
+  }
+  if ('OBJECT' === key) {
+    return '{}'
   }
   return `'${placeholder}'`
 }

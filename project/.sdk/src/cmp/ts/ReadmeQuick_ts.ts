@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -103,25 +103,41 @@ try {
 `)
     }
 
-    // CRUD operations
+    // CRUD operations. The create/update example payloads are derived from the
+    // SAME op shapes that generate the <Name>CreateData / <Name>UpdateData types
+    // (opRequestShape), so the snippet always type-checks. Prefer writable
+    // non-id fields and render a type-correct literal per field via
+    // exampleValue — never a hardcoded field the entity may not have.
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+      const idField = (exampleEntity.id && exampleEntity.id.field) || 'id'
+      const exampleFields = (opname: string): string[] =>
+        opRequestShape(exampleEntity, opname).items
+          .filter((it: any) => it.name !== idField && it.name !== 'id')
+          .slice(0, 2)
+          .map((it: any) =>
+            `  ${it.name}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
+
       Content(`### 4. Create, update, and remove
 
 \`\`\`ts
 `)
       if (opnames.includes('create')) {
+        const createLines = exampleFields('create')
+        const createBody = createLines.length ? '\n' + createLines.join('\n') + '\n' : ''
         Content(`// Create — returns the created ${eName}
-const created = await client.${eName}().create({
-  name: 'Example',
-})
+const created = await client.${eName}().create({${createBody}})
 
 `)
       }
       if (opnames.includes('update')) {
+        // The id comes straight off the returned entity. Entity fields are
+        // optional under the typed-partiality model, so id is `number |
+        // undefined`; after a successful create it is present, hence the
+        // non-null assertion required by the `number` match type.
+        const updateLines = ['  id: created.id!,'].concat(exampleFields('update'))
         Content(`// Update — the id comes straight off the returned entity
 const updated = await client.${eName}().update({
-  id: created.id,
-  name: 'Example-Renamed',
+${updateLines.join('\n')}
 })
 
 `)
@@ -129,7 +145,7 @@ const updated = await client.${eName}().update({
       if (opnames.includes('remove')) {
         Content(`// Remove
 await client.${eName}().remove({
-  id: created.id,
+  id: created.id!,
 })
 `)
       }

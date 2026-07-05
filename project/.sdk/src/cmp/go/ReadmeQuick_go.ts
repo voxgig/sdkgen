@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -38,6 +38,28 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     const eLower = eName.toLowerCase()
     const opnames = Object.keys(exampleEntity.op || {})
 
+    // Model-driven example fields (from the same op shape the request types are
+    // built from) so create/update reference REAL writable fields, not a
+    // hardcoded "name", and ids use a type-correct literal.
+    const idField = (exampleEntity.id && exampleEntity.id.field) || 'id'
+    const goLit = (type: any): string => {
+      const k = canonKey(type)
+      if ('INTEGER' === k || 'NUMBER' === k) return '1'
+      if ('BOOLEAN' === k) return 'true'
+      if ('ARRAY' === k) return '[]any{}'
+      if ('OBJECT' === k) return 'map[string]any{}'
+      return '"example"'
+    }
+    const examplePairs = (opname: string): string[] =>
+      opRequestShape(exampleEntity, opname).items
+        .filter((it: any) => it.name !== idField && it.name !== 'id')
+        .slice(0, 2)
+        .map((it: any) => `"${it.name}": ${goLit(it.type)}`)
+    const idOp = opnames.includes('load') ? 'load' : (opnames.includes('update') ? 'update' : 'remove')
+    const idShape = opRequestShape(exampleEntity, idOp)
+      .items.find((it: any) => it.name === idField || it.name === 'id')
+    const idLit = idShape ? goLit(idShape.type) : '"example_id"'
+
     if (opnames.includes('list')) {
       body.push(`    // List ${eLower} records — the value is the array of records itself.`)
       body.push(`    ${eLower}s, err := client.${eName}(nil).List(nil, nil)`)
@@ -53,7 +75,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
     if (opnames.includes('load')) {
       body.push(`    // Load a single ${eLower} — the value is the loaded record.`)
-      body.push(`    ${eLower}, err := client.${eName}(nil).Load(map[string]any{"id": "example_id"}, nil)`)
+      body.push(`    ${eLower}, err := client.${eName}(nil).Load(map[string]any{"id": ${idLit}}, nil)`)
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)
@@ -64,7 +86,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
     if (opnames.includes('create')) {
       body.push(`    // Create a ${eLower}.`)
-      body.push(`    created, err := client.${eName}(nil).Create(map[string]any{"name": "Example"}, nil)`)
+      body.push(`    created, err := client.${eName}(nil).Create(map[string]any{${examplePairs('create').join(', ')}}, nil)`)
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)
@@ -75,7 +97,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
     if (opnames.includes('update')) {
       body.push(`    // Update a ${eLower}.`)
-      body.push(`    updated, err := client.${eName}(nil).Update(map[string]any{"id": "example_id", "name": "Renamed"}, nil)`)
+      body.push(`    updated, err := client.${eName}(nil).Update(map[string]any{${['"id": ' + idLit].concat(examplePairs('update')).join(', ')}}, nil)`)
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)
@@ -86,7 +108,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
     if (opnames.includes('remove')) {
       body.push(`    // Remove a ${eLower}.`)
-      body.push(`    removed, err := client.${eName}(nil).Remove(map[string]any{"id": "example_id"}, nil)`)
+      body.push(`    removed, err := client.${eName}(nil).Remove(map[string]any{"id": ${idLit}}, nil)`)
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)
