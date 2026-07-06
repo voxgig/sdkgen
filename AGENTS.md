@@ -8,6 +8,13 @@ Human-oriented docs live in [`docs/`](./docs/README.md) (tutorial,
 how-to, reference, explanation). This file is the agent-facing summary
 plus the gotchas.
 
+**Building an SDK, not modifying the generator?** If your goal is to
+produce an SDK for your own API — i.e. *consume* this tool rather than
+change it — start at
+[`create-sdkgen/AGENTS.md`](https://github.com/voxgig/create-sdkgen/blob/main/AGENTS.md): the end-to-end
+spec → scaffold → generate → test → publish guide. This file is for
+working *on* the generator itself.
+
 ---
 
 ## What this tool is

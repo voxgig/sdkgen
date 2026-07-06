@@ -3,6 +3,11 @@
 `@voxgig/sdkgen` turns an API definition into idiomatic, multi-language
 client SDKs (plus a CLI and an MCP server) from a single source of truth.
 
+> **Building an SDK for your own API?** Start at
+> [`create-sdkgen`'s AGENTS.md](https://github.com/voxgig/create-sdkgen/blob/main/AGENTS.md) for the
+> end-to-end spec → scaffold → generate → test onboarding. The material
+> below documents the generator itself in depth.
+
 This documentation is organised into four kinds of material. Pick the one
 that matches what you are trying to do right now:
 

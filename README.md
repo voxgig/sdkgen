@@ -12,6 +12,12 @@ offline test suite.
 OpenAPI spec ──▶ model ──▶ [ ts  js  go  py  php  rb  lua  go-cli  go-mcp ]
 ```
 
+> **Just want to build an SDK for your API?** Start with
+> [`create-sdkgen`](https://github.com/voxgig/create-sdkgen) — its
+> [`AGENTS.md`](https://github.com/voxgig/create-sdkgen/blob/main/AGENTS.md) walks an agent (or you) from an
+> OpenAPI spec to a tested SDK end-to-end. This README is about the generator
+> itself.
+
 ## How it works in one minute
 
 - An OpenAPI definition is parsed into a structured **model** by
