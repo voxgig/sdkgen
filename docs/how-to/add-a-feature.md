@@ -35,7 +35,7 @@ A feature is defined by a model file plus per-language template code.
 
 ### 1. Define the model
 
-Create `project/.sdk/model/feature/retry.jsonic` (in this repo) or
+Create `ts/project/.sdk/model/feature/retry.jsonic` (in this repo) or
 `.sdk/model/feature/retry.jsonic` (in a project):
 
 ```jsonic
@@ -80,8 +80,8 @@ Each target copies feature source from
 target you support, modelled on the built-ins:
 
 ```
-project/.sdk/tm/ts/src/feature/retry/RetryFeature.ts
-project/.sdk/tm/go/src/feature/retry/retry_feature.go
+ts/project/.sdk/tm/ts/src/feature/retry/RetryFeature.ts
+ts/project/.sdk/tm/go/src/feature/retry/retry_feature.go
 # …one per target
 ```
 

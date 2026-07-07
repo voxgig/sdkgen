@@ -91,7 +91,7 @@ tweak wording in the generated README's explanation section.
 
 1. In the **sdkgen** repo, the explanation prose lives in
    `ts/src/cmp/ReadmeExplanation.ts` (language-neutral) and
-   `project/.sdk/src/cmp/<lang>/ReadmeExplanation_<lang>.ts`
+   `ts/project/.sdk/src/cmp/<lang>/ReadmeExplanation_<lang>.ts`
    (language-specific). Edit there — **never** edit the generated
    `ts/README.md`, which is overwritten on the next generate.
 
@@ -113,7 +113,7 @@ tweak wording in the generated README's explanation section.
 - A project is scaffolded by `create-sdkgen` and built from its `.sdk/`.
 - `target add` / `feature add` bring a language and features into the
   project; `generate` turns the model into SDK source.
-- The generated output is disposable — the **generator** (`project/.sdk/`
+- The generated output is disposable — the **generator** (`ts/project/.sdk/`
   templates and components) is the source of truth.
 
 ## Where to go next

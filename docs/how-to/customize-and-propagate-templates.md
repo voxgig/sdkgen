@@ -11,8 +11,8 @@ A build/compile error in the generated SDK points at one of two places:
 
 | Symptom | Fix in |
 | --- | --- |
-| The wrong *literal* source (transport, base class, utility) | a **template**: `project/.sdk/tm/<lang>/…` |
-| The wrong *generated* source (an entity class, the constructor, README, tests) | a **component**: `project/.sdk/src/cmp/<lang>/…` |
+| The wrong *literal* source (transport, base class, utility) | a **template**: `ts/project/.sdk/tm/<lang>/…` |
+| The wrong *generated* source (an entity class, the constructor, README, tests) | a **component**: `ts/project/.sdk/src/cmp/<lang>/…` |
 
 Rule of thumb: if the broken file looks the same for every API, it's a
 template; if its shape depends on the entities/operations, it's a
@@ -21,7 +21,7 @@ component. See
 
 ## Step 2 — make the fix in this repo
 
-Edit the template or component under `project/.sdk/`. Then confirm sdkgen
+Edit the template or component under `ts/project/.sdk/`. Then confirm sdkgen
 itself still builds and tests:
 
 ```bash

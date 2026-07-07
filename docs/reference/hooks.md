@@ -2,7 +2,7 @@
 
 This is the authoritative list of hooks a feature can implement. The
 runtime source of truth is the base feature class shipped with each
-target (TypeScript: `project/.sdk/tm/ts/src/feature/base/BaseFeature.ts`).
+target (TypeScript: `ts/project/.sdk/tm/ts/src/feature/base/BaseFeature.ts`).
 For the concepts behind it, see
 [The operation pipeline](../explanation/operation-pipeline.md).
 

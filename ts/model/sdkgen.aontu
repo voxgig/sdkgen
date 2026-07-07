@@ -1,0 +1,137 @@
+
+
+main: def: {
+  desc: *'' | string
+}
+
+
+# Canonical order for language targets in generated documentation
+# (top-level README, per-language docs links). Targets present in the
+# SDK but not listed here are appended afterwards in spec-defined
+# order. Override per-SDK by setting
+# `main.kit.config.docs_order: ['py','ts',...]` in
+# `<sdk>/.sdk/model/config.jsonic`.
+main: kit: config: docs_order: *['ts','py','php','go','rb','lua'] | [&: string]
+
+main: kit: target: &: {
+  name: key()
+  active: *true | boolean
+  ext: string
+  comment: line: string
+  module: {
+    name: string
+  }
+  deps: &: {
+    active: *false | boolean
+    version: *'*' | string
+  }
+
+  # Publication: how (and whether) this port is released. Credentials are
+  # always injected by the aql key vault (never on disk or argv).
+  #
+  # Every port gets a git release tag `<prefix>/vX.Y.Z` (prefix defaults
+  # to the target name). Ports with a `registry` entry also publish a
+  # package to that registry — but only when the registry is active
+  # (`registry.state === 'active'`): registries are activated one at a
+  # time as each ecosystem is ready. Until then a port is 'pending'
+  # (declared + git-tag-published, but not yet uploaded to the registry).
+  # Tag-only ports (the go family: the Go proxy resolves from GitHub
+  # tags) simply leave `registry` unset — they are implicitly pending
+  # until their `<target>/vX.Y.Z` tag exists.
+  publish: {
+    # Git release tag (all ports).
+    tag: {
+      active: *true | boolean
+      prefix: *'' | string       # '' -> target name
+      # Who implements the tag publish: 'port' delegates to the port's
+      # own Makefile publish recipe (which may do more, e.g. go proxy
+      # priming); 'root' uses the generated root tag-push recipe (for
+      # ports without a Makefile, e.g. go-cli / go-mcp).
+      via: *'port' | string
+      vault: {
+        recipe: *'github' | string   # aql `vault exec --for=<recipe>=<alias>`
+        alias: *'github' | string    # default vault alias for the token
+      }
+    }
+
+    # Package registry (omit for tag-only ports).
+    registry: {
+      # Publication state (tri-state):
+      #   'pending'  — declared + git-tag-published, NOT yet on the
+      #                registry (the default: READMEs point at the git
+      #                tag, deploy publishes the tag only).
+      #   'active'   — package is uploaded to the registry; READMEs show
+      #                the real `npm install`/`pip install`/... command.
+      #   'inactive' — registry deliberately disabled (also tag-only).
+      # Kept as a plain string (default 'pending') rather than a literal
+      # disjunction to sidestep aontu's literal-disjunction fragility;
+      # code (packageMeta.registryState / Deploy) enforces the tri-state.
+      state: *'pending' | string
+      # Back-compat alias: `active: true` still means state === 'active'.
+      active: *false | boolean   # real publishes refuse when not active
+      name: *'' | string         # npm | pypi | packagist | rubygems | luarocks
+      url: *'' | string
+      package: *'' | string      # registry package name ('' -> derived)
+      vault: {
+        recipe: *'' | string     # aql --for preset (npm, pypi, gem, ...)
+        alias: *'' | string      # vault alias ('' -> registry name)
+        env: *'' | string        # raw env var to inject when no preset exists
+      }
+    }
+  }
+}
+
+
+main: kit: entity: &: {
+  name: key()
+  active: *true | boolean
+
+  alias: {}
+}
+
+
+main: kit: feature: &: {
+  name: key()
+  active: *false | boolean
+  title: string
+
+  # TODO: version '0.0.1' | semver # where semver is a string format type as per semver.org
+  version: *'0.0.1' | string
+
+  hook: &: {
+   active: *false | boolean
+   await: *false | boolean
+  }
+
+  hook: {
+    PostConstruct: {}
+    PostConstructEntity: {}
+    SetData: {}
+    GetData: {}
+    GetMatch: {}
+        
+    PreTarget: {}
+    PreSpec: {}
+    PreRequest: {}
+    PreResponse: {}
+    PreResult: {}
+    PostOperation: {}
+  }
+
+  # Target specific structures 
+  target: &: deps: &: {
+    active: *false | boolean
+    version: *'*' | string 
+  }
+}
+
+
+main: kit: option: &: {
+  name: key()
+  active: *true | boolean
+}
+
+
+
+
+

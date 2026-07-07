@@ -15,16 +15,16 @@ every other SDK implements.
 
 | Piece | Location | What you provide |
 | --- | --- | --- |
-| Target definition | `project/.sdk/model/target/<lang>.jsonic` | name, ext, comment token, module name, deps |
-| Templates | `project/.sdk/tm/<lang>/` | the language-neutral runtime, as real source |
-| Components | `project/.sdk/src/cmp/<lang>/` | API-specific generators (entities, main, tests, readme) |
+| Target definition | `ts/project/.sdk/model/target/<lang>.jsonic` | name, ext, comment token, module name, deps |
+| Templates | `ts/project/.sdk/tm/<lang>/` | the language-neutral runtime, as real source |
+| Components | `ts/project/.sdk/src/cmp/<lang>/` | API-specific generators (entities, main, tests, readme) |
 
 ## Step 1 — the target definition
 
 Copy an existing one and adapt it:
 
 ```jsonic
-// project/.sdk/model/target/<lang>.jsonic
+// ts/project/.sdk/model/target/<lang>.jsonic
 main: kit: target: <lang>: {
   title: "<Language>"
   ext: <ext>
@@ -94,7 +94,7 @@ and for the top-level README: `ReadmeTopQuick_<lang>`,
 ### Component skeleton
 
 ```ts
-// project/.sdk/src/cmp/<lang>/Entity_<lang>.ts
+// ts/project/.sdk/src/cmp/<lang>/Entity_<lang>.ts
 import { cmp, each, File, Content } from '@voxgig/sdkgen'
 
 const Entity = cmp(function Entity(props: any) {

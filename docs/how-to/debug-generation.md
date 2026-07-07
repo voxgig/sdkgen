@@ -8,9 +8,9 @@ It keeps you fixing the *generator* rather than the disposable output.
 A compile/build error in the generated SDK (e.g. `go build ./...` fails)
 points to one of two sources:
 
-- a **template** — `project/.sdk/tm/<lang>/…` — for literal,
+- a **template** — `ts/project/.sdk/tm/<lang>/…` — for literal,
   API-independent source (transport, base classes, utilities); or
-- a **component** — `project/.sdk/src/cmp/<lang>/…` — for generated,
+- a **component** — `ts/project/.sdk/src/cmp/<lang>/…` — for generated,
   API-dependent source (entity classes, the constructor, README, tests).
 
 Open the broken generated file. If it looks the same for every API, the
@@ -36,7 +36,7 @@ rather than being swallowed, so a stack trace pointing into
 
 Generated files in `go/`, `ts/`, `js/`, … are overwritten by
 `generate` / `reset`. Edit the template or component in
-`project/.sdk/`, then propagate. **Never** edit the generated file as the
+`ts/project/.sdk/`, then propagate. **Never** edit the generated file as the
 fix.
 
 ## 4. Propagate and force a clean copy when needed
@@ -70,7 +70,7 @@ in particular should mirror `js/test/runner.js`.
 
 ```bash
 # sdkgen still healthy
-cd sdkgen && npm run build && npm test
+cd sdkgen && make build test          # npm package lives in ts/; make wraps it
 
 # regenerate the affected target
 cd <project>/.sdk

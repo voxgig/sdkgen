@@ -103,7 +103,7 @@ import everything from one place.
 ### SDK components
 
 Language-neutral components that delegate to the per-language
-implementation in `project/.sdk/src/cmp/<lang>/`:
+implementation in `ts/project/.sdk/src/cmp/<lang>/`:
 
 `Main`, `Entity`, `Feature`, `Test`, `Readme`, `ReadmeTop`,
 `ReadmeInstall`, `ReadmeQuick`, `ReadmeIntro`, `ReadmeModel`,
@@ -199,7 +199,7 @@ See the [model schema](./model.md).
 A minimal per-language component, and how it is wired:
 
 ```ts
-// project/.sdk/src/cmp/ts/Greeting_ts.ts
+// ts/project/.sdk/src/cmp/ts/Greeting_ts.ts
 import { cmp, File, Content } from '@voxgig/sdkgen'
 
 const Greeting = cmp(function Greeting(props: any) {

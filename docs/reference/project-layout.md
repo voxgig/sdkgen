@@ -5,42 +5,49 @@ Two layouts matter: **this repository** (the generator) and a
 
 ## This repository (`@voxgig/sdkgen`)
 
+`ts/` is the self-contained npm package root; the top-level holds only the
+canonical `model/`, the `Makefile`, and `docs/`.
+
 ```
 sdkgen/
-├── bin/
-│   └── voxgig-sdkgen          # CLI entry (target add / feature add)
-├── build/
-│   └── version.js             # embeds package version into the build
 ├── model/
-│   └── sdkgen.jsonic          # base model schema (defaults + constraints)
-├── ts/                        # the tool's own TypeScript (mirrors a generated SDK)
-│   ├── src/                   # TypeScript source (CommonJS, ES2021)
-│   │   ├── sdkgen.ts          # entry: SdkGen, makeBuild, all public exports
-│   │   ├── types.ts          # ActionContext + model interfaces (SdkModel, …)
-│   │   ├── utility.ts        # requirePath, resolvePath, isAuthActive, SdkGenError
-│   │   ├── action/
-│   │   │   ├── action.ts     # UpdateIndex, appendIndexEntries, loadContent
-│   │   │   ├── target.ts     # target_add, action_target, resolveTarget, TargetRoot
-│   │   │   └── feature.ts    # feature_add, action_feature, FeatureRoot
-│   │   ├── cmp/              # language-neutral components (delegate per-language)
-│   │   │   ├── Main.ts  Entity.ts  Feature.ts  Test.ts  FeatureHook.ts
-│   │   │   └── Readme*.ts    # Readme, ReadmeTop, ReadmeExplanation, …
-│   │   └── helpers/
-│   │       ├── collectDeps.ts    buildIdNames.ts    getMatchEntries.ts
-│   ├── test/                  # Node test runner (*.test.ts)
-│   ├── dist/                  # compiled output (committed)
-│   └── dist-test/             # compiled tests (gitignored, regenerated)
-├── project/
-│   └── .sdk/                 # the scaffold copied into consumer projects
-│       ├── model/
-│       │   ├── target/<lang>.jsonic       # target definitions
-│       │   └── feature/<name>.jsonic      # feature definitions + index
-│       ├── src/cmp/<lang>/   # per-language generator COMPONENTS
-│       └── tm/<lang>/        # per-language TEMPLATES (copied verbatim)
-└── docs/                     # this documentation
+│   └── sdkgen.aontu           # canonical base model schema (defaults + constraints)
+├── Makefile                   # build / test / check-model / sync-model (wraps ts/ npm)
+├── docs/                      # this documentation
+└── ts/                        # the self-contained npm package root (@voxgig/sdkgen)
+    ├── package.json           # npm manifest (main: dist/sdkgen.js)
+    ├── bin/
+    │   └── voxgig-sdkgen      # CLI entry (target add / feature add)
+    ├── build/
+    │   └── version.js         # embeds package version into bin/ at publish time
+    ├── model/
+    │   └── sdkgen.aontu       # npm-shipped mirror of ../model/ (kept in sync by `make sync-model`)
+    ├── src/                   # TypeScript source (CommonJS, ES2021)
+    │   ├── sdkgen.ts          # entry: SdkGen, makeBuild, all public exports
+    │   ├── types.ts           # ActionContext + model interfaces (SdkModel, …)
+    │   ├── utility.ts         # requirePath, resolvePath, isAuthActive, SdkGenError
+    │   ├── action/
+    │   │   ├── action.ts      # UpdateIndex, appendIndexEntries, loadContent
+    │   │   ├── target.ts      # target_add, action_target, resolveTarget, TargetRoot
+    │   │   └── feature.ts     # feature_add, action_feature, FeatureRoot
+    │   ├── cmp/               # language-neutral components (delegate per-language)
+    │   │   ├── Main.ts  Entity.ts  Feature.ts  Test.ts  FeatureHook.ts
+    │   │   └── Readme*.ts     # Readme, ReadmeTop, ReadmeExplanation, …
+    │   └── helpers/
+    │       ├── collectDeps.ts    buildIdNames.ts    getMatchEntries.ts
+    ├── test/                  # Node test runner (*.test.ts, + model-mirror guard)
+    ├── dist/                  # compiled output (committed)
+    ├── dist-test/             # compiled tests (gitignored, regenerated)
+    └── project/
+        └── .sdk/              # the scaffold copied into consumer projects
+            ├── model/
+            │   ├── target/<lang>.jsonic       # target definitions
+            │   └── feature/<name>.jsonic      # feature definitions + index
+            ├── src/cmp/<lang>/   # per-language generator COMPONENTS
+            └── tm/<lang>/        # per-language TEMPLATES (copied verbatim)
 ```
 
-### The `project/.sdk/` scaffold
+### The `ts/project/.sdk/` scaffold
 
 This is the most important directory to understand. For each language it
 holds the **two layers** described in
@@ -102,8 +109,8 @@ ts/
 
 | Directory | Committed? | Produced by |
 | --- | --- | --- |
-| `ts/dist/` | yes | `npm run build` (`tsc --build ts/src`) |
-| `ts/dist-test/` | no (gitignored) | `npm run build` (`tsc --build ts/test`) |
+| `ts/dist/` | yes | `cd ts && npm run build` (`tsc --build src`) |
+| `ts/dist-test/` | no (gitignored) | `cd ts && npm run build` (`tsc --build test`) |
 
 ## See also
 

@@ -94,18 +94,25 @@ Comprehensive docs live in [`docs/`](./docs/README.md):
 
 ## Develop this package
 
+The npm package root is `ts/`. Run npm there, or use the top-level
+`Makefile` (`make build`, `make test`) which wraps it.
+
 ```bash
-npm install
-npm run build            # tsc --build ts/src ts/test  (→ ts/dist/, ts/dist-test/)
-npm test                 # Node test runner over ts/dist-test/**/*.test.js
-npm run test-some --pattern="<name>"   # run a subset by test name
-npm run watch            # incremental compile
+cd ts && npm install
+cd ts && npm run build   # tsc --build src test  (→ ts/dist/, ts/dist-test/)
+cd ts && npm test        # Node test runner over dist-test/**/*.test.js
+cd ts && npm run test-some --pattern="<name>"   # run a subset by test name
+cd ts && npm run watch   # incremental compile
 ```
 
-The tool's own TypeScript lives under `ts/` (`ts/src/` source, `ts/test/`
-tests, compiled to `ts/dist/` and `ts/dist-test/`). Always build before
-testing — tests run against the compiled output in `ts/dist-test/`.
-`ts/dist/` is committed; `ts/dist-test/` is not.
+`ts/` is the self-contained npm package root: `package.json`, `bin/`,
+`build/`, `node_modules/`, and the shipped `project/` scaffold live under
+it, alongside the tool's own TypeScript (`ts/src/` source, `ts/test/`
+tests, compiled to `ts/dist/` and `ts/dist-test/`). The canonical model
+lives at top-level `model/` and is mirrored into `ts/model/` (npm can only
+ship files under the package root) — edit `model/`, then `make sync-model`.
+Always build before testing — tests run against `ts/dist-test/`. `ts/dist/`
+is committed; `ts/dist-test/` is not.
 
 ## Related projects
 

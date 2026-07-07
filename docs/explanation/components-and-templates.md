@@ -6,7 +6,7 @@ without getting lost.
 
 | | **Templates** | **Components** |
 | --- | --- | --- |
-| Location | `project/.sdk/tm/<lang>/` | `project/.sdk/src/cmp/<lang>/` |
+| Location | `ts/project/.sdk/tm/<lang>/` | `ts/project/.sdk/src/cmp/<lang>/` |
 | What they are | Plain source files in the *target* language | TypeScript that runs at generation time |
 | How they become output | Copied verbatim, with placeholder substitution | Executed; they *emit* source by walking the model |
 | Depend on the specific API? | No | Yes |
@@ -100,8 +100,8 @@ Editing a template or component in this repo does not change a generated
 SDK by itself. The change must propagate:
 
 ```
-edit project/.sdk/tm/<lang>/...        (template)
-  or project/.sdk/src/cmp/<lang>/...   (component)
+edit ts/project/.sdk/tm/<lang>/...        (template)
+  or ts/project/.sdk/src/cmp/<lang>/...   (component)
         │
         ▼  in the consumer .sdk/:  npm run add-target <lang>
 copies updated templates/components into the consumer's .sdk/

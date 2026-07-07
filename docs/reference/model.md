@@ -2,13 +2,13 @@
 
 The **model** is the single structured object that drives generation. It
 is assembled by `aontu` from several `.jsonic` fragments and constrained
-by the base schema in [`model/sdkgen.jsonic`](../../model/sdkgen.jsonic).
+by the base schema in [`model/sdkgen.aontu`](../../model/sdkgen.aontu).
 
 A model is the unification of:
 
 1. **API model** — entities, operations, points, fields, flows, and API
    `info`, produced by `@voxgig/apidef` from the OpenAPI spec.
-2. **Base schema** — `model/sdkgen.jsonic` (this repo): defaults and
+2. **Base schema** — `model/sdkgen.aontu` (this repo): defaults and
    constraints for targets, entities, features, options.
 3. **Target / feature / option definitions** — added into the project's
    `.sdk/model/` by `target add` / `feature add`.
@@ -46,8 +46,8 @@ A model is the unification of:
 
 ## `main.kit.target.<name>`
 
-From [`model/sdkgen.jsonic`](../../model/sdkgen.jsonic) and the per-target
-files in `project/.sdk/model/target/`:
+From [`model/sdkgen.aontu`](../../model/sdkgen.aontu) and the per-target
+files in `ts/project/.sdk/model/target/`:
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -63,7 +63,7 @@ files in `project/.sdk/model/target/`:
 | `deps.<dep>.version` | string | `'*'` | Version constraint. |
 | `deps.<dep>.kind` | string | `'prod'` | `prod` / `dev` / `peer` (target-defined). |
 
-Example (`project/.sdk/model/target/ts.jsonic`):
+Example (`ts/project/.sdk/model/target/ts.jsonic`):
 
 ```jsonic
 main: kit: target: ts: {
@@ -112,7 +112,7 @@ API supports them.
 | `target.<lang>.deps.<dep>` | object | — | Target-scoped dep overrides. |
 
 The available hook names are listed in the [hooks reference](./hooks.md).
-Example (`project/.sdk/model/feature/log.jsonic`):
+Example (`ts/project/.sdk/model/feature/log.jsonic`):
 
 ```jsonic
 main: kit: feature: log: {

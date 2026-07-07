@@ -23,7 +23,7 @@ target language.
         │
         │  +  target/feature/option definitions
         │     (added by `voxgig-sdkgen target add` / `feature add`)
-        │  +  the sdkgen base schema (model/sdkgen.jsonic)
+        │  +  the sdkgen base schema (model/sdkgen.aontu)
         ▼
   ┌───────────────┐   unify (CUE-like)
   │     aontu      │ ─────────────────────▶  one coherent model object
@@ -64,7 +64,7 @@ in three ways:
 
 1. **As a CLI** — `voxgig-sdkgen target add <lang>` / `feature add <name>`
    scaffold a language target or feature into a project's `.sdk/`
-   directory by copying this package's `project/.sdk/` templates and
+   directory by copying this package's `ts/project/.sdk/` templates and
    components.
 
 2. **As the generation engine** — `@voxgig/model` calls
@@ -74,7 +74,7 @@ in three ways:
    actions.)
 
 3. **As a component toolkit** — every per-language component in
-   `project/.sdk/src/cmp/<lang>/` is authored against this package's
+   `ts/project/.sdk/src/cmp/<lang>/` is authored against this package's
    public API (`cmp`, `File`, `Content`, `Copy`, `each`, `FeatureHook`,
    `getModelPath`, …). See the [API reference](../reference/api.md).
 
@@ -83,12 +83,12 @@ in three ways:
 The single most important architectural idea is that each language target
 is produced from **two layers**:
 
-- **Templates** (`project/.sdk/tm/<lang>/`) — plain source files copied
+- **Templates** (`ts/project/.sdk/tm/<lang>/`) — plain source files copied
   verbatim, with simple placeholder substitution (`ProjectName`,
   `GOMODULE`, …). These are the parts of an SDK that are the same for
   every API: the HTTP transport, the feature runtime, base classes.
 
-- **Components** (`project/.sdk/src/cmp/<lang>/`) — TypeScript that
+- **Components** (`ts/project/.sdk/src/cmp/<lang>/`) — TypeScript that
   *generates* source by walking the model: one file per entity, the
   constructor with all operations, the README, the test suite. These are
   the parts that depend on the specific API.

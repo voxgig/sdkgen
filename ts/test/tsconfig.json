@@ -3,6 +3,7 @@
     "esModuleInterop": true,
     "module": "nodenext",
     "noEmitOnError": true,
+    "skipLibCheck": true,
     "outDir":"../dist-test",
     "rootDir":".",
     "resolveJsonModule": true,

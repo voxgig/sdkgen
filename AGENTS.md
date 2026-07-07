@@ -30,25 +30,32 @@ OpenAPI-derived **model**. It is a **library + CLI**, consumed three ways:
    public API (`cmp`, `File`, `Content`, `Copy`, `each`, `FeatureHook`,
    `getModelPath`, …).
 
-Pipeline: `OpenAPI → apidef → model (.jsonic) → aontu (unify) → jostraca
+Pipeline: `OpenAPI → apidef → model (.aontu) → aontu (unify) → jostraca
 (+ sdkgen components/templates) → SDK source`.
 
 ---
 
 ## Commands
 
+The npm package root is **`ts/`** — run npm there. The top-level
+`Makefile` wraps it (`make build`, `make test`, `make check-model`, `make
+sync-model`) and runs from the repo root.
+
 ```bash
-npm install
-npm run build       # tsc --build ts/src ts/test  → ts/dist/ (committed) + ts/dist-test/ (gitignored)
-npm test            # node --test over ts/dist-test/**/*.test.js
-npm run test-some --pattern="<name>"   # subset by test name
-npm run watch       # incremental compile
+cd ts && npm install
+cd ts && npm run build       # tsc --build src test  → ts/dist/ (committed) + ts/dist-test/ (gitignored)
+cd ts && npm test            # node --test over dist-test/**/*.test.js
+cd ts && npm run test-some --pattern="<name>"   # subset by test name
+cd ts && npm run watch       # incremental compile
 ```
 
-The tool's own TypeScript lives under `ts/` (`ts/src/`, `ts/test/`,
+`ts/` is the self-contained npm package root: `package.json`,
+`node_modules/`, `bin/`, `build/`, and the shipped `project/` scaffold all
+live under it, alongside the tool's own TypeScript (`ts/src/`, `ts/test/`,
 compiled to `ts/dist/` and `ts/dist-test/`) — mirroring a generated SDK's
-layout. **Always build before testing** — tests run against compiled
-`ts/dist-test/`. There are currently 48 tests across `ts/test/*.test.ts`.
+layout. The top-level holds only the shared, non-npm pieces: the canonical
+`model/`, `docs/`, and the `Makefile`. **Always build before testing** —
+tests run against compiled `ts/dist-test/`.
 
 Environment note: a transitive dep (`shape`) declares `engines.node >=24`.
 Builds/tests pass on Node 22 with an `EBADENGINE` warning; ignore it.
@@ -61,8 +68,8 @@ Each language target is generated from **two layers**:
 
 | Layer | Path | Nature | Edit it when… |
 | --- | --- | --- | --- |
-| **Templates** | `project/.sdk/tm/<lang>/` | Plain target-language source, copied verbatim with placeholder substitution | the broken/changed file looks the **same for every API** (transport, base classes, utilities, runtime) |
-| **Components** | `project/.sdk/src/cmp/<lang>/` | TypeScript that **generates** source by walking the model | the file's shape **depends on the entities/operations** (entity classes, the constructor, README, tests) |
+| **Templates** | `ts/project/.sdk/tm/<lang>/` | Plain target-language source, copied verbatim with placeholder substitution | the broken/changed file looks the **same for every API** (transport, base classes, utilities, runtime) |
+| **Components** | `ts/project/.sdk/src/cmp/<lang>/` | TypeScript that **generates** source by walking the model | the file's shape **depends on the entities/operations** (entity classes, the constructor, README, tests) |
 
 Plus the language-neutral components in `ts/src/cmp/` (this package's own
 source) which delegate to the per-language ones via `requirePath`.
@@ -78,12 +85,12 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 
 | Goal | Edit | Then |
 | --- | --- | --- |
-| Fix generated **runtime** source (HTTP, base feature, utility) | `project/.sdk/tm/<lang>/…` | propagate (below) |
-| Fix generated **API-specific** source (entity, main, readme, tests) | `project/.sdk/src/cmp/<lang>/…` | propagate (below) |
-| Change a target's deps / ext / module | `project/.sdk/model/target/<lang>.jsonic` | propagate |
-| Change a feature's hooks / deps | `project/.sdk/model/feature/<name>.jsonic` | propagate |
-| Change the **generator core** (CLI, actions, neutral components, helpers) | `ts/src/…` | `npm run build && npm test` |
-| Change the base model schema | `model/sdkgen.jsonic` | `npm run build && npm test` |
+| Fix generated **runtime** source (HTTP, base feature, utility) | `ts/project/.sdk/tm/<lang>/…` | propagate (below) |
+| Fix generated **API-specific** source (entity, main, readme, tests) | `ts/project/.sdk/src/cmp/<lang>/…` | propagate (below) |
+| Change a target's deps / ext / module | `ts/project/.sdk/model/target/<lang>.jsonic` | propagate |
+| Change a feature's hooks / deps | `ts/project/.sdk/model/feature/<name>.jsonic` | propagate |
+| Change the **generator core** (CLI, actions, neutral components, helpers) | `ts/src/…` | `cd ts && npm run build && npm test` |
+| Change the base model schema | `model/sdkgen.aontu` (canonical) | `make sync-model` then `make build test` |
 
 ### Never edit generated output
 
@@ -92,7 +99,7 @@ Files in a generated SDK (`ts/`, `go/`, …) are overwritten by
 
 ---
 
-## Propagating a `project/.sdk/` change into a generated SDK
+## Propagating a `ts/project/.sdk/` change into a generated SDK
 
 ```
 edit sdkgen template/component
@@ -164,7 +171,7 @@ Debugging a failing target: [debug-generation](./docs/how-to/debug-generation.md
 Validation sequence for a template/component change:
 
 ```bash
-cd sdkgen && npm run build && npm test          # generator healthy
+cd sdkgen && make build test                    # generator healthy (npm runs in ts/)
 cd <project>/.sdk && npm run add-target <lang> && npm run generate
 cd ../<lang> && <lang-test-command>             # target builds + tests
 # re-run ts/js target tests too (reference parity)
@@ -192,9 +199,14 @@ cd ../<lang> && <lang-test-command>             # target builds + tests
 ## Project map (this repo)
 
 ```
-bin/voxgig-sdkgen      CLI entry
-model/sdkgen.jsonic    base model schema
-ts/                    the tool's own TypeScript (mirrors a generated SDK)
+model/sdkgen.aontu     canonical base model schema (mirrored to ts/model/)
+Makefile               build/test/check-model/sync-model (wraps ts/ npm)
+docs/                  human-oriented documentation
+ts/                    the self-contained npm package root (@voxgig/sdkgen)
+  package.json         the npm manifest (main: dist/sdkgen.js)
+  bin/voxgig-sdkgen    CLI entry
+  build/version.js     stamps the version into bin/ at publish time
+  model/sdkgen.aontu   npm-shipped mirror of the canonical model/
   src/                 generator core
     sdkgen.ts          SdkGen, makeBuild, public exports
     types.ts           ActionContext + model interfaces
@@ -202,12 +214,12 @@ ts/                    the tool's own TypeScript (mirrors a generated SDK)
     action/            target add / feature add / index updates
     cmp/               language-neutral components (delegate per-language)
     helpers/           collectDeps, buildIdNames, getMatchEntries
-  test/                Node test runner suites
+  test/                Node test runner suites (+ model-mirror guard)
   dist/ (committed)    dist-test/ (gitignored)
-project/.sdk/          the scaffold copied into consumer projects
-  model/{target,feature}/   target & feature definitions
-  src/cmp/<lang>/      per-language COMPONENTS
-  tm/<lang>/           per-language TEMPLATES
+  project/.sdk/        the scaffold copied into consumer projects
+    model/{target,feature}/   target & feature definitions
+    src/cmp/<lang>/    per-language COMPONENTS
+    tm/<lang>/         per-language TEMPLATES
 ```
 
 Targets: `ts js go py php rb lua` + `go-cli go-mcp`. Features: `log test`.

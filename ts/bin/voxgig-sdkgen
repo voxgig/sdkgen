@@ -6,7 +6,7 @@ const { parseArgs } = require('node:util')
 
 const { Shape, One } = require('shape')
 
-const { SdkGen } = require('../ts/dist/sdkgen.js')
+const { SdkGen } = require('../dist/sdkgen.js')
 
 const VERSION = '1.2.1'
 const KONSOLE = console

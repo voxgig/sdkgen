@@ -1,9 +1,9 @@
 {
   "name": "@voxgig/sdkgen",
   "version": "1.2.1",
-  "main": "ts/dist/sdkgen.js",
+  "main": "dist/sdkgen.js",
   "type": "commonjs",
-  "types": "ts/dist/sdkgen.d.ts",
+  "types": "dist/sdkgen.d.ts",
   "description": "Voxgig SDK Generator.",
   "homepage": "https://github.com/voxgig/voxgig-sdkgen",
   "keywords": [
@@ -19,11 +19,11 @@
     "voxgig-sdkgen": "bin/voxgig-sdkgen"
   },
   "scripts": {
-    "test": "node --enable-source-maps --test ts/dist-test/**/*.test.js",
-    "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test ts/dist-test/**/*.test.js",
-    "watch": "tsc --build ts/src ts/test -w",
-    "build": "tsc --build ts/src ts/test",
-    "clean": "rm -rf node_modules yarn.lock package-lock.json",
+    "test": "node --enable-source-maps --test dist-test/**/*.test.js",
+    "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test dist-test/**/*.test.js",
+    "watch": "tsc --build src test -w",
+    "build": "tsc --build src test",
+    "clean": "rm -rf dist dist-test node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test",
     "embed-version": "node build/version.js",
     "repo-bump": "npm version patch --no-git-tag-version && node -e \"console.log('bumped to v' + require('./package.json').version + ' (package.json only - commit via repo-tag / repo-release)')\"",
@@ -41,15 +41,15 @@
     "bin",
     "project",
     "model",
-    "ts/src",
-    "ts/dist",
+    "src",
+    "dist",
     "LICENSE"
   ],
   "devDependencies": {
     "@types/js-yaml": "4.0.9",
-    "@types/node": "25.9.2",
+    "@types/node": "26.1.0",
     "json-schema-to-ts": "3.1.1",
-    "memfs": "4.57.6",
+    "memfs": "4.62.0",
     "typescript": "6.0.3"
   },
   "peerDependencies": {
