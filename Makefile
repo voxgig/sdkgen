@@ -24,6 +24,7 @@ check-model:
 	  cmp -s model/$$f ts/model/$$f || { echo "DRIFT: ts/model/$$f != model/$$f (run: make sync-model)"; exit 1; }; \
 	done
 	@echo "model mirror in sync"
+	@cd ts && node build/check-model.js
 
 # TypeScript
 build-ts:
