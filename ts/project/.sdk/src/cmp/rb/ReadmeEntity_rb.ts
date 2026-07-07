@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, entityIdField } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,13 +9,14 @@ import {
 
 // A type-correct Ruby literal for a field's canonical type — the create body
 // is EXECUTED by the doc test, so it must carry a real value per field.
-function rbLit(type: any): string {
+// Strings render the quoted placeholder.
+function rbLit(type: any, placeholder: string = 'example'): string {
   const k = canonKey(type)
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return '"example"'
+  return `"${placeholder}"`
 }
 
 
@@ -107,11 +108,23 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     }
 
     if (opnames.includes('load')) {
+      // The id key plus every REQUIRED match key (parent path params like
+      // page_id) — the same shape the runtime resolves path params from, so
+      // the example always works.
+      const loadItems = opRequestShape(entity, 'load').items
+        .filter((it: any) => !it.optional || it.name === idF)
+        .sort((a: any, b: any) =>
+          (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+      const loadArg = 0 < loadItems.length
+        ? `{ ${loadItems.map((it: any) =>
+          `"${it.name}" => ${rbLit(it.type,
+            it.name === idF ? entity.name + '_id' : it.name)}`).join(', ')} }`
+        : ''
       Content(`#### Example: Load
 
 \`\`\`ruby
 # load returns the bare ${entity.Name} record (raises on error).
-${entity.name} = client.${entity.Name}.load(${idF ? `{ "${idF}" => "${entity.name}_id" }` : ''})
+${entity.name} = client.${entity.Name}.load(${loadArg})
 \`\`\`
 
 `)
@@ -129,16 +142,21 @@ ${entity.name}s = client.${entity.Name}.list
     }
 
     if (opnames.includes('create')) {
+      // Members come from the SAME shape the runtime validates
+      // (opRequestShape): every required member must appear — including a
+      // required id and parent keys like page_id — with a real, executable
+      // literal (the doc test RUNS this block, so a comment placeholder
+      // would break it).
+      const createItems = opRequestShape(entity, 'create').items
+        .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 
 \`\`\`ruby
 ${entity.name} = client.${entity.Name}.create({
 `)
-      each(fields, (field: any) => {
-        if ('id' !== field.name && field.req) {
-          Content(`  "${field.name}" => ${rbLit(field.type)}, # ${canonToType(field.type, target.name)}
+      createItems.map((it: any) => {
+        Content(`  "${it.name}" => ${rbLit(it.type, 'example_' + it.name)}, # ${canonToType(it.type, target.name)}
 `)
-        }
       })
       Content(`})
 \`\`\`

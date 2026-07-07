@@ -41,8 +41,8 @@ sdkgen/
     └── project/
         └── .sdk/              # the scaffold copied into consumer projects
             ├── model/
-            │   ├── target/<lang>.jsonic       # target definitions
-            │   └── feature/<name>.jsonic      # feature definitions + index
+            │   ├── target/<lang>.aontu       # target definitions
+            │   └── feature/<name>.aontu      # feature definitions + index
             ├── src/cmp/<lang>/   # per-language generator COMPONENTS
             └── tm/<lang>/        # per-language TEMPLATES (copied verbatim)
 ```
@@ -55,8 +55,8 @@ holds the **two layers** described in
 
 | Path | Layer | Becomes |
 | --- | --- | --- |
-| `model/target/<lang>.jsonic` | model | the target definition (deps, ext, module) |
-| `model/feature/<name>.jsonic` | model | the feature definition (hooks, deps) |
+| `model/target/<lang>.aontu` | model | the target definition (deps, ext, module) |
+| `model/feature/<name>.aontu` | model | the feature definition (hooks, deps) |
 | `src/cmp/<lang>/*.ts` | components | API-specific source (entities, README, tests) |
 | `src/cmp/<lang>/fragment/*` | components | reusable source fragments |
 | `tm/<lang>/**` | templates | language-neutral runtime, copied with substitution |
@@ -73,9 +73,9 @@ project looks like:
 my-sdk/
 ├── .sdk/                      # build tooling + copied templates/components
 │   ├── model/
-│   │   ├── api.jsonic         # apidef output (entities, operations, info)
-│   │   ├── target/            # target defs + target-index.jsonic
-│   │   └── feature/           # feature defs + feature-index.jsonic
+│   │   ├── api.aontu         # apidef output (entities, operations, info)
+│   │   ├── target/            # target defs + target-index.aontu
+│   │   └── feature/           # feature defs + feature-index.aontu
 │   ├── src/cmp/<lang>/        # components copied from sdkgen by `target add`
 │   ├── tm/<lang>/             # templates copied from sdkgen by `target add`
 │   └── dist/                  # compiled components (the `generate` step requires these)

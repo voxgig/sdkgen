@@ -42,7 +42,16 @@ local client = sdk.test()
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = ''
     if (isMatchOp) {
-      arg = idF ? `{ ${idF} = "test01" }` : ''
+      // Every REQUIRED match key (id first, then parent path params like
+      // page_id) — the same shape the runtime resolves path params from.
+      const items = opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF)
+        .sort((a: any, b: any) =>
+          (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+      arg = 0 < items.length
+        ? `{ ${items.map((it: any) =>
+          `${luaKey(it.name)} = ${it.name === idF ? '"test01"' : luaLit(it.type)}`).join(', ')} }`
+        : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
@@ -50,7 +59,9 @@ local client = sdk.test()
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `{ ${chosen.map((it: any) => `${luaKey(it.name)} = ${luaLit(it.type)}`).join(', ')} }`
     }
-    Content(`local result, err = client:${eName}():${primaryOp}(${arg})
+    // A list result is an array — name the variable accordingly.
+    const rVar = 'list' === primaryOp ? 'results' : 'result'
+    Content(`local ${rVar}, err = client:${eName}():${primaryOp}(${arg})
 `)
   }
 

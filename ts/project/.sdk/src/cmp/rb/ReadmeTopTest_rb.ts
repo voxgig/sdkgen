@@ -39,7 +39,16 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
     const recBody = idF ? `{ "${idF}" => "test01" }` : '{}'
     let callArg = ''
     if (isMatchOp) {
-      callArg = idF ? `{ "${idF}" => "test01" }` : ''
+      // Every REQUIRED match key (id first, then parent path params like
+      // page_id) — the same shape the runtime resolves path params from.
+      const items = opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF)
+        .sort((a: any, b: any) =>
+          (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+      callArg = 0 < items.length
+        ? `{ ${items.map((it: any) =>
+          `"${it.name}" => ${it.name === idF ? '"test01"' : rbLit(it.type)}`).join(', ')} }`
+        : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
@@ -47,12 +56,14 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
       const chosen = required.length ? required : items.slice(0, 3)
       callArg = `{ ${chosen.map((it: any) => `"${it.name}" => ${rbLit(it.type)}`).join(', ')} }`
     }
+    // A list result is an Array — name the variable accordingly.
+    const eVar = ename + ('list' === primaryOp ? 's' : '')
     Content(`\`\`\`ruby
 # Seed fixture data so offline calls resolve without a live server.
 client = ${model.const.Name}SDK.test({
   "entity" => { "${ename}" => { "test01" => ${recBody} } },
 })
-${ename} = client.${eName}.${primaryOp}(${callArg})
+${eVar} = client.${eName}.${primaryOp}(${callArg})
 \`\`\`
 `)
   } else {

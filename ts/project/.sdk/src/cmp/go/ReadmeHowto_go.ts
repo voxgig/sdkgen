@@ -1,11 +1,13 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, entityPrimaryOp, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, entityPrimaryOp, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
   nom,
 } from '@voxgig/apidef'
+
+import { goVarName } from './utility_go'
 
 
 // A type-correct Go literal for a field's canonical type.
@@ -32,7 +34,9 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
-  const eLower = safeVarName(eName.toLowerCase(), 'go')
+  // camelCase Go identifier (never snake_case or flattened lowercase,
+  // never a Go keyword).
+  const eLower = exampleEntity ? goVarName(exampleEntity.name) : 'entity'
   // Model-driven id key: null when the entity has no id-like field.
   const idF = exampleEntity ? entityIdField(exampleEntity) : null
   // Drive the test-mode example off the entity's PRIMARY op — never a hardcoded

@@ -10,7 +10,7 @@ main: def: {
 # SDK but not listed here are appended afterwards in spec-defined
 # order. Override per-SDK by setting
 # `main.kit.config.docs_order: ['py','ts',...]` in
-# `<sdk>/.sdk/model/config.jsonic`.
+# `<sdk>/.sdk/model/config.aontu`.
 main: kit: config: docs_order: *['ts','py','php','go','rb','lua'] | [&: string]
 
 main: kit: target: &: {

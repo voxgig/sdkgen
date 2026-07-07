@@ -116,3 +116,73 @@ describe('opRequestShape — partiality policy', () => {
     strictEqual(opt.label, true, 'no id -> required-key convention does not fire')
   })
 })
+
+
+describe('opRequestShape — multi-point param merging', () => {
+
+  // An op serving several alternative routes: a param is required only if
+  // every canonical point requires it, and $action points do not shape the
+  // canonical payload at all.
+  function makeNestedEntity() {
+    return {
+      Name: 'Component', name: 'component',
+      fields: {},
+      op: {
+        // Alternative list routes: by page, by page+group, by page+user.
+        list: { points: [
+          { args: { params: {
+            page_access_group_id: { name: 'page_access_group_id', type: '`$STRING`', reqd: true },
+            page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
+          } } },
+          { args: { params: {
+            page_access_user_id: { name: 'page_access_user_id', type: '`$STRING`', reqd: true },
+            page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
+          } } },
+          { args: { params: {
+            page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
+          } } },
+        ] },
+        // A real create route plus folded-in sub-resource action routes.
+        create: { points: [
+          { select: { '$action': 'page_access_group' }, args: { params: {
+            id: { name: 'id', type: '`$STRING`', reqd: true },
+            page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
+          } } },
+          { args: { params: {
+            page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
+          } } },
+        ] },
+        // Only action points: they are all that exists, so they are kept.
+        invoke: { points: [
+          { select: { '$action': 'resend' }, args: { params: {
+            id: { name: 'id', type: '`$STRING`', reqd: true },
+          } } },
+        ] },
+      },
+    }
+  }
+
+  test('required is the intersection across alternative points', () => {
+    const { items, fromParams } = opRequestShape(makeNestedEntity(), 'list')
+    strictEqual(fromParams, true)
+    const opt = optionalByName(items)
+    deepStrictEqual(opt, {
+      page_id: false,
+      page_access_group_id: true,
+      page_access_user_id: true,
+    }, 'shared parent id required; per-route siblings optional')
+  })
+
+  test('$action points are excluded from the canonical shape', () => {
+    const { items } = opRequestShape(makeNestedEntity(), 'create')
+    const opt = optionalByName(items)
+    deepStrictEqual(opt, { page_id: false },
+      'the action route neither adds params nor makes them required')
+  })
+
+  test('an op with only $action points keeps them', () => {
+    const { items } = opRequestShape(makeNestedEntity(), 'invoke')
+    const opt = optionalByName(items)
+    deepStrictEqual(opt, { id: false })
+  })
+})

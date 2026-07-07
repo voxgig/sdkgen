@@ -39,7 +39,7 @@ is replaced:
 | Token | Replaced with | Set by |
 | --- | --- | --- |
 | `ProjectName` | The Pascal-case SDK name (e.g. `Solardemo`) | `target add` (`model.const.Name`) |
-| `$$name$$` | The SDK name, via model interpolation | aontu, in the target `.jsonic` |
+| `$$name$$` | The SDK name, via model interpolation | aontu, in the target `.aontu` |
 | `'BASE'` | The resolved template base path | `target add` |
 | `FEATURE_Name` / `FEATURE_VERSION` | The feature's name / version | `feature add` |
 | `GOMODULE` | The Go module path | generation (go target) |

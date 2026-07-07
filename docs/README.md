@@ -34,7 +34,7 @@ that matches what you are trying to do right now:
 ### Reference
 - [CLI: `voxgig-sdkgen`](./reference/cli.md)
 - [Programmatic API](./reference/api.md)
-- [Model schema (`.jsonic`)](./reference/model.md)
+- [Model schema (`.aontu`)](./reference/model.md)
 - [Project layout](./reference/project-layout.md)
 - [Operation pipeline and feature hooks](./reference/hooks.md)
 

@@ -91,7 +91,7 @@ reference implementation.
 | A README section silently missing | optional component returned `undefined` | confirm the `cmp/<lang>/Readme*_<lang>` exists/compiles |
 | A README section throws during generate | bug in an optional component (no longer swallowed) | the stack trace names the file |
 | Entity method missing | component didn't emit it for that op | `cmp/<lang>/Entity*_<lang>` |
-| Feature hook not firing | hook not `active` in the model, or not implemented | feature `.jsonic` + `tm/<lang>/src/feature/<name>` |
+| Feature hook not firing | hook not `active` in the model, or not implemented | feature `.aontu` + `tm/<lang>/src/feature/<name>` |
 
 ## See also
 

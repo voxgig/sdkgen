@@ -87,8 +87,8 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 | --- | --- | --- |
 | Fix generated **runtime** source (HTTP, base feature, utility) | `ts/project/.sdk/tm/<lang>/…` | propagate (below) |
 | Fix generated **API-specific** source (entity, main, readme, tests) | `ts/project/.sdk/src/cmp/<lang>/…` | propagate (below) |
-| Change a target's deps / ext / module | `ts/project/.sdk/model/target/<lang>.jsonic` | propagate |
-| Change a feature's hooks / deps | `ts/project/.sdk/model/feature/<name>.jsonic` | propagate |
+| Change a target's deps / ext / module | `ts/project/.sdk/model/target/<lang>.aontu` | propagate |
+| Change a feature's hooks / deps | `ts/project/.sdk/model/feature/<name>.aontu` | propagate |
 | Change the **generator core** (CLI, actions, neutral components, helpers) | `ts/src/…` | `cd ts && npm run build && npm test` |
 | Change the base model schema | `model/sdkgen.aontu` (canonical) | `make sync-model` then `make build test` |
 

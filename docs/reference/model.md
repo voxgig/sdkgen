@@ -1,7 +1,7 @@
-# Reference: the model schema (`.jsonic`)
+# Reference: the model schema (`.aontu`)
 
 The **model** is the single structured object that drives generation. It
-is assembled by `aontu` from several `.jsonic` fragments and constrained
+is assembled by `aontu` from several `.aontu` fragments and constrained
 by the base schema in [`model/sdkgen.aontu`](../../model/sdkgen.aontu).
 
 A model is the unification of:
@@ -13,9 +13,9 @@ A model is the unification of:
 3. **Target / feature / option definitions** — added into the project's
    `.sdk/model/` by `target add` / `feature add`.
 
-## `.jsonic` / aontu syntax primer
+## `.aontu` / aontu syntax primer
 
-`.jsonic` is a relaxed JSON; `aontu` adds unification semantics:
+`.aontu` is a relaxed JSON; `aontu` adds unification semantics:
 
 | Syntax | Meaning |
 | --- | --- |
@@ -24,7 +24,7 @@ A model is the unification of:
 | `*default \| type` | A default value, unified against a type (e.g. `*true \| boolean`). |
 | `name: key()` | Bind the field to the map key (so `feature: log: {}` gets `name: 'log'`). |
 | `'$$name$$'` | Interpolate the model `name` into a string. |
-| `@"file.jsonic"` | Include another fragment (how index files work). |
+| `@"file.aontu"` | Include another fragment (how index files work). |
 | `x: .y` | Reference another path's value (e.g. `deps: ts: .js`). |
 
 ## Top level
@@ -63,7 +63,7 @@ files in `ts/project/.sdk/model/target/`:
 | `deps.<dep>.version` | string | `'*'` | Version constraint. |
 | `deps.<dep>.kind` | string | `'prod'` | `prod` / `dev` / `peer` (target-defined). |
 
-Example (`ts/project/.sdk/model/target/ts.jsonic`):
+Example (`ts/project/.sdk/model/target/ts.aontu`):
 
 ```jsonic
 main: kit: target: ts: {
@@ -112,7 +112,7 @@ API supports them.
 | `target.<lang>.deps.<dep>` | object | — | Target-scoped dep overrides. |
 
 The available hook names are listed in the [hooks reference](./hooks.md).
-Example (`ts/project/.sdk/model/feature/log.jsonic`):
+Example (`ts/project/.sdk/model/feature/log.aontu`):
 
 ```jsonic
 main: kit: feature: log: {
@@ -154,14 +154,14 @@ Build/runtime configuration. The generator reads `config.auth.active`
 
 ## Index files
 
-`feature-index.jsonic` and `target-index.jsonic` are plain include lists.
-`feature add` / `target add` append `@"<name>.jsonic"` lines (idempotently
+`feature-index.aontu` and `target-index.aontu` are plain include lists.
+`feature add` / `target add` append `@"<name>.aontu"` lines (idempotently
 — a name already present is not added again):
 
 ```jsonic
 # Features
-@"test.jsonic"
-@"log.jsonic"
+@"test.aontu"
+@"log.aontu"
 ```
 
 ## See also

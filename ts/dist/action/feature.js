@@ -24,9 +24,7 @@ async function action_feature(args, actx) {
     return await cmd(args, actx);
 }
 async function cmd_feature_add(args, actx) {
-    const features_arg = args[2];
-    const features = 'string' === typeof features_arg ? features_arg.split(',') : features_arg;
-    return feature_add(features, actx);
+    return feature_add((0, action_1.parseAddNames)(args), actx);
 }
 async function feature_add(features, actx) {
     // Reuse the caller's Jostraca instance so feature generation honours the
@@ -75,10 +73,10 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
             (0, jostraca_1.Folder)({ name: 'model/feature' }, () => {
                 (0, jostraca_1.Copy)({
                     // TODO: these paths needs to be parameterised
-                    from: BASE + '/project/.sdk/model/feature/' + fname + '.jsonic',
+                    from: BASE + '/project/.sdk/model/feature/' + fname + '.aontu',
                     exclude: true
                 });
-                (0, jostraca_1.File)({ name: 'feature-index.jsonic' }, () => (0, action_1.UpdateIndex)({
+                (0, jostraca_1.File)({ name: 'feature-index.aontu' }, () => (0, action_1.UpdateIndex)({
                     content: ctx$.meta.content.feature_index,
                     names: features,
                 }));

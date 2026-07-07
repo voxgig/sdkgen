@@ -37,8 +37,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMatchEntries = exports.buildIdNames = exports.isAuthActive = exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeErrors = exports.ReadmeQuick = exports.ReadmeInstall = exports.ReadmeTop = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Changelog = exports.Security = exports.License = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
-exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.langLabel = exports.apiName = exports.repoInfo = exports.envName = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = exports.safeVarName = exports.isReservedName = exports.entityPrimaryOp = exports.entityOps = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonKey = exports.canonToType = exports.collectDeps = void 0;
+exports.buildIdNames = exports.resolveAuthPrefix = exports.isAuthActive = exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeErrors = exports.ReadmeQuick = exports.ReadmeInstall = exports.ReadmeTop = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Changelog = exports.Security = exports.License = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
+exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.langLabel = exports.apiName = exports.repoInfo = exports.envName = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = exports.safeVarName = exports.isReservedName = exports.entityPrimaryOp = exports.entityOps = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonKey = exports.canonToType = exports.collectDeps = exports.getMatchEntries = void 0;
 exports.SdkGen = SdkGen;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -50,6 +50,7 @@ const util_2 = require("@voxgig/util");
 const utility_1 = require("./utility");
 Object.defineProperty(exports, "requirePath", { enumerable: true, get: function () { return utility_1.requirePath; } });
 Object.defineProperty(exports, "isAuthActive", { enumerable: true, get: function () { return utility_1.isAuthActive; } });
+Object.defineProperty(exports, "resolveAuthPrefix", { enumerable: true, get: function () { return utility_1.resolveAuthPrefix; } });
 const Main_1 = require("./cmp/Main");
 Object.defineProperty(exports, "Main", { enumerable: true, get: function () { return Main_1.Main; } });
 const Deploy_1 = require("./cmp/Deploy");
@@ -216,7 +217,7 @@ function SdkGen(opts) {
         return ctx;
     }
     function resolveModel() {
-        const path = './model/sdk.jsonic';
+        const path = './model/sdk.aontu';
         const errs = [];
         if (null == aontu) {
             aontu = new aontu_1.Aontu();
@@ -269,7 +270,7 @@ SdkGen.makeBuild = async function (opts) {
         root: opts.root,
         def: opts.def || 'no-def',
         kind: 'openapi-3',
-        model: opts.model ? (opts.model.folder + '/api.jsonic') : 'no-model',
+        model: opts.model ? (opts.model.folder + '/api.aontu') : 'no-model',
         meta: opts.meta || {},
     };
     return async function build(model, build, ctx) {

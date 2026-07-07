@@ -46,7 +46,7 @@ voxgig-sdkgen target add go~go2
 ```
 
 This creates a `go2` target whose templates come from `go`. Edit
-`.sdk/model/target/go2.jsonic` to differentiate it (module name, deps).
+`.sdk/model/target/go2.aontu` to differentiate it (module name, deps).
 
 ## Use a target from another package
 

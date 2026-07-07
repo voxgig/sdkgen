@@ -19,7 +19,7 @@ target language.
         ▼
   ┌───────────────┐   parse + transform     entities, operations,
   │  @voxgig/apidef│ ─────────────────────▶  points, fields, flows
-  └───────────────┘                          as .jsonic model fragments
+  └───────────────┘                          as .aontu model fragments
         │
         │  +  target/feature/option definitions
         │     (added by `voxgig-sdkgen target add` / `feature add`)
@@ -44,7 +44,7 @@ target language.
 | Package | Role | Why it's separate |
 | --- | --- | --- |
 | **`@voxgig/apidef`** | Parses an OpenAPI definition into the model (entities, operations, points, fields, flows). Owns `KIT`, `getModelPath`. | Spec parsing is a large concern with its own heuristics; SDK generation should not care how the model was produced. |
-| **`aontu`** | Unifies many `.jsonic` fragments into one model, applying defaults and constraints (CUE-like data unification). | Lets the model be assembled from independent files (API model + per-target + per-feature) that each contribute and constrain fields. |
+| **`aontu`** | Unifies many `.aontu` fragments into one model, applying defaults and constraints (CUE-like data unification). | Lets the model be assembled from independent files (API model + per-target + per-feature) that each contribute and constrain fields. |
 | **`jostraca`** | The code-generation engine: the `Project/Folder/File/Content/Copy` component tree, the `generate()` run, and the 3-way merge with existing files. | Generation mechanics (filesystem, merge, dry-run) are generic and reusable beyond SDKs. |
 | **`@voxgig/sdkgen`** (this repo) | The SDK-specific layer: the base model schema, the per-language **templates** and **components**, and the `target add` / `feature add` / `generate` actions. | The opinionated "what an SDK looks like" lives here. |
 | **`shape`** | Options and value validation. | Shared validation primitive. |
@@ -54,7 +54,7 @@ target language.
 
 | Project | Role |
 | --- | --- |
-| **`create-sdkgen`** | Scaffolds a new SDK project (`npm create @voxgig/sdkgen`). Owns the build tooling (`.sdk/` scripts like `add-target`, `generate`) and the test `.jsonic` data. |
+| **`create-sdkgen`** | Scaffolds a new SDK project (`npm create @voxgig/sdkgen`). Owns the build tooling (`.sdk/` scripts like `add-target`, `generate`) and the test `.aontu` data. |
 | **`@voxgig/model`** | Orchestrates a build. It calls `SdkGen.makeBuild(...)` to run the generation step as part of a larger model build. |
 
 ## Where this package sits at runtime

@@ -41,8 +41,8 @@ comma-separated to add several at once.
 Scaffold one or more language targets into `.sdk/`. This copies, for each
 target:
 
-- the target model (`.sdk/model/target/<name>.jsonic`) and registers it
-  in `target-index.jsonic`;
+- the target model (`.sdk/model/target/<name>.aontu`) and registers it
+  in `target-index.aontu`;
 - the generator components (`.sdk/src/cmp/<name>/`);
 - the templates (`.sdk/tm/<name>/`).
 
@@ -82,8 +82,8 @@ and the two non-SDK surfaces `go-cli` and `go-mcp`.
 ### `feature add <name>[,<name>...]`
 
 Scaffold one or more features into `.sdk/`. This copies the feature model
-(`.sdk/model/feature/<name>.jsonic`), registers it in
-`feature-index.jsonic`, and copies the per-target feature templates
+(`.sdk/model/feature/<name>.aontu`), registers it in
+`feature-index.aontu`, and copies the per-target feature templates
 (`.sdk/tm/<target>/src/feature/<name>/`) for every active target.
 
 ```bash

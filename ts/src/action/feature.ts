@@ -26,6 +26,7 @@ import { SdkGenError } from '../utility'
 
 import {
   UpdateIndex,
+  parseAddNames,
   loadContent,
 } from './action'
 
@@ -52,12 +53,7 @@ async function action_feature(args: string[], actx: ActionContext): Promise<Acti
 
 
 async function cmd_feature_add(args: string[], actx: ActionContext): Promise<ActionResult> {
-
-  const features_arg = args[2]
-  const features: string[] =
-    'string' === typeof features_arg ? features_arg.split(',') : features_arg
-
-  return feature_add(features, actx)
+  return feature_add(parseAddNames(args), actx)
 }
 
 
@@ -122,10 +118,10 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
       Folder({ name: 'model/feature' }, () => {
         Copy({
           // TODO: these paths needs to be parameterised
-          from: BASE + '/project/.sdk/model/feature/' + fname + '.jsonic',
+          from: BASE + '/project/.sdk/model/feature/' + fname + '.aontu',
           exclude: true
         })
-        File({ name: 'feature-index.jsonic' }, () => UpdateIndex({
+        File({ name: 'feature-index.aontu' }, () => UpdateIndex({
           content: ctx$.meta.content.feature_index,
           names: features,
         }))

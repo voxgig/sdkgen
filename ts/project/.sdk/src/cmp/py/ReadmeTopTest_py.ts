@@ -39,7 +39,16 @@ client = ${model.const.Name}SDK.test()
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = ''
     if (isMatchOp) {
-      arg = idF ? `{"${idF}": "test01"}` : ''
+      // Every REQUIRED match key (id first) — the same shape that generates
+      // the op's Match type, so the block also satisfies the mypy doc gate.
+      const items = opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF)
+        .sort((a: any, b: any) =>
+          (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+      arg = 0 < items.length
+        ? `{${items.map((it: any) =>
+          `"${it.name}": ${it.name === idF ? '"test01"' : pyLit(it.type)}`).join(', ')}}`
+        : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
@@ -47,8 +56,12 @@ client = ${model.const.Name}SDK.test()
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `{${chosen.map((it: any) => `"${it.name}": ${pyLit(it.type)}`).join(', ')}}`
     }
-    Content(`${eName.toLowerCase()} = client.${eName}().${primaryOp}(${arg})
-print(${eName.toLowerCase()})
+    // A list() result is a list — name the variable accordingly (the root
+    // README doc gate concatenates blocks, so reusing the singular name for
+    // a different type is a mypy assignment error).
+    const eVar = eName.toLowerCase() + ('list' === primaryOp ? 's' : '')
+    Content(`${eVar} = client.${eName}().${primaryOp}(${arg})
+print(${eVar})
 `)
   }
 

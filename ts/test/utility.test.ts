@@ -10,6 +10,7 @@ import {
   resolvePath,
   requirePath,
   isAuthActive,
+  resolveAuthPrefix,
 } from '../dist/utility.js'
 
 
@@ -41,6 +42,49 @@ describe('utility', () => {
 
     test('info present but auth not disabled stays active', () => {
       strictEqual(isAuthActive({ main: { kit: { info: { auth: true } } } }), true)
+    })
+  })
+
+
+  describe('resolveAuthPrefix', () => {
+
+    test('defaults to Bearer when nothing declared', () => {
+      strictEqual(resolveAuthPrefix({}), 'Bearer')
+    })
+
+    test('spec-derived info.security.prefix wins over the default', () => {
+      strictEqual(
+        resolveAuthPrefix({ main: { kit: { info: { security: { prefix: 'OAuth' } } } } }),
+        'OAuth',
+      )
+    })
+
+    test('config.auth.prefix overrides the spec-derived value', () => {
+      strictEqual(
+        resolveAuthPrefix({
+          main: {
+            kit: {
+              config: { auth: { prefix: 'Token' } },
+              info: { security: { prefix: 'OAuth' } },
+            },
+          },
+        }),
+        'Token',
+      )
+    })
+
+    test('empty string is a valid resolved prefix (raw credential)', () => {
+      strictEqual(
+        resolveAuthPrefix({ main: { kit: { info: { security: { prefix: '' } } } } }),
+        '',
+      )
+    })
+
+    test('security present without prefix falls back to Bearer', () => {
+      strictEqual(
+        resolveAuthPrefix({ main: { kit: { info: { security: { type: 'apiKey' } } } } }),
+        'Bearer',
+      )
     })
   })
 

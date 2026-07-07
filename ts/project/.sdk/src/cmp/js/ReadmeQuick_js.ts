@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityOps, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -36,7 +36,9 @@ const client = ${ctor}
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
-    const opnames = Object.keys(exampleEntity.op || {})
+    // ACTIVE ops only — an inactive op generates no method, so an example
+    // calling it would be wrong.
+    const opnames = entityOps(exampleEntity)
 
     // Model-driven example fields, in parity with the ts target: derive the
     // create/update body from the op shape (opRequestShape) so the docs show
@@ -47,15 +49,37 @@ const client = ${ctor}
     // Variable-safe lowercase name (a `Delete` entity must not bind `delete`).
     const eVar = safeVarName(exampleEntity.name, 'js')
     const exampleFields = (opname: string): string[] => {
+      // ids are rendered separately as the match key for update/remove; a
+      // REQUIRED id stays for create (dropping it makes the payload
+      // incomplete).
       const items = opRequestShape(exampleEntity, opname).items
-        .filter((it: any) => it.name !== idF && it.name !== 'id')
+        .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
+          ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
-      // create needs ALL required fields for parity with the typed ts target.
+      const optional = items.filter((it: any) => it.optional)
+      // create needs ALL required fields for parity with the typed ts target;
+      // update is a patch, so the required members plus a sample optional
+      // field or two suffice.
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
-        : items.slice(0, 2)
+        : required.concat(optional).slice(0, Math.max(2, required.length))
       return chosen.map((it: any) =>
         `  ${it.name}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
+    }
+
+    // The full REQUIRED match for load/remove (id first, then parent path
+    // params like page_id) — the same shape the runtime resolves path params
+    // from, so the example always carries the keys the route needs.
+    const matchArg = (opname: string): string => {
+      const matchItems = opRequestShape(exampleEntity, opname).items
+        .filter((it: any) => !it.optional || it.name === idF)
+        .sort((a: any, b: any) =>
+          (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+      return 0 < matchItems.length
+        ? `{ ${matchItems.map((it: any) =>
+          `${it.name}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op[opname], it.name,
+            it.name === idF ? exampleEntity.name + '_id' : 'example_' + it.name)}`).join(', ')} }`
+        : ''
     }
 
     if (opnames.includes('load')) {
@@ -63,7 +87,7 @@ const client = ${ctor}
 ### Load ${article} ${eName}
 
 \`\`\`js
-const ${eVar} = await client.${eName}().load(${idF ? `{ ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, idF, exampleEntity.name + '_id')} }` : ''})
+const ${eVar} = await client.${eName}().load(${matchArg('load')})
 console.log(${eVar})
 \`\`\`
 `)
@@ -115,7 +139,7 @@ console.log(updated)
 ### Remove a ${eName}
 
 \`\`\`js
-await client.${eName}().remove(${idF ? `{ ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.remove, idF, exampleEntity.name + '_id')} }` : ''})
+await client.${eName}().remove(${matchArg('remove')})
 \`\`\`
 `)
     }

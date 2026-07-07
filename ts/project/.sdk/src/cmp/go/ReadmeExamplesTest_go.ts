@@ -206,10 +206,14 @@ func TestReadmeGoSnippets(t *testing.T) {
 
 	// Build. The Go compiler is the oracle for unused imports/vars in the
 	// wrapped fragments: blank them out and rebuild. Any OTHER error is a
-	// genuine snippet bug and fails the test.
+	// genuine snippet bug and fails the test. The loop is progress-based,
+	// not attempt-capped: \`-gcflags=-e\` lifts the compiler's 10-error cap so
+	// every error surfaces in one round, applyFixes repairs them all, and
+	// the loop continues while a round makes progress. It fails hard when no
+	// fix applies, and fails as non-converged when a round changes nothing
+	// in the build output (the fixes stopped helping).
 	var lastOut string
-	built := false
-	for attempt := 0; attempt < 15; attempt++ {
+	for {
 		for name, content := range fragFiles {
 			if err := os.WriteFile(filepath.Join(fragDir, name+".go"), []byte(content), 0o644); err != nil {
 				t.Fatal(err)
@@ -217,16 +221,15 @@ func TestReadmeGoSnippets(t *testing.T) {
 		}
 		out, buildErr := runGoBuild(moduleRoot, binDir, progDirs, fragPkg)
 		if buildErr == nil {
-			built = true
 			break
+		}
+		if out == lastOut {
+			t.Fatalf("README go snippets did not converge to a clean build:\\n%s", out)
 		}
 		lastOut = out
 		if !applyFixes(out, fragFiles) {
 			t.Fatalf("README go snippet failed to compile:\\n%s", out)
 		}
-	}
-	if !built {
-		t.Fatalf("README go snippets did not converge to a clean build:\\n%s", lastOut)
 	}
 
 	// Everything compiled. Now RUN the test-mode variants of the complete
@@ -357,15 +360,16 @@ func isIdentByte(c byte) bool {
 		(c >= '0' && c <= '9')
 }
 
-// runGoBuild type-checks the fragment package with a plain \`go build\`
-// (a non-main package produces no output but is still fully type-checked
-// — unlike \`go build -o dir/\`, which skips non-main packages), and builds
-// each complete program with \`-o binDir/\`. Any compile error from either
-// is returned.
+// runGoBuild type-checks the fragment package with \`go build -gcflags=-e\`
+// (a non-main package produces no output but is still fully type-checked —
+// unlike \`go build -o dir/\`, which skips non-main packages — and \`-e\` lifts
+// the compiler's 10-errors-per-package cap so EVERY unused-var/import error
+// surfaces in a single round), and builds each complete program with
+// \`-o binDir/\`. Any compile error from either is returned.
 func runGoBuild(dir, binDir string, progDirs []string, fragPkg string) (string, error) {
 	var out strings.Builder
 	if fragPkg != "" {
-		cmd := exec.Command("go", "build", fragPkg)
+		cmd := exec.Command("go", "build", "-gcflags=-e", fragPkg)
 		cmd.Dir = dir
 		o, err := cmd.CombinedOutput()
 		out.Write(o)
@@ -374,7 +378,7 @@ func runGoBuild(dir, binDir string, progDirs []string, fragPkg string) (string, 
 		}
 	}
 	if len(progDirs) > 0 {
-		args := append([]string{"build", "-o", binDir + string(os.PathSeparator)}, progDirs...)
+		args := append([]string{"build", "-gcflags=-e", "-o", binDir + string(os.PathSeparator)}, progDirs...)
 		cmd := exec.Command("go", args...)
 		cmd.Dir = dir
 		o, err := cmd.CombinedOutput()

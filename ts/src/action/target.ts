@@ -31,6 +31,7 @@ import {
 
 import {
   UpdateIndex,
+  parseAddNames,
   loadContent,
 } from './action'
 
@@ -55,11 +56,7 @@ async function action_target(args: string[], actx: ActionContext): Promise<Actio
 
 
 async function cmd_target_add(args: string[], actx: ActionContext): Promise<ActionResult> {
-  const targets_arg = args[2]
-  const targets: string[] =
-    'string' === typeof targets_arg ? targets_arg.split(',') : targets_arg
-
-  return target_add(targets, actx)
+  return target_add(parseAddNames(args), actx)
 }
 
 
@@ -124,6 +121,11 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
   // const tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
 
   Project({}, () => {
+    // Resolved names of every target in this run. The index File is
+    // re-rendered per target and the last render wins, so each render must
+    // carry all names seen so far, not just its own.
+    const tnames: string[] = []
+
     each(targets, (n) => {
       const tref = n.val$
 
@@ -134,6 +136,7 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       })
 
       const { tname, tfolder, torigname, base } = resolveTarget(tref, ctx$)
+      tnames.push(tname)
       const targetNote = tname + (tname != tref ? ' ref:' + tref : '')
 
       log.info({
@@ -145,16 +148,15 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
 
       Folder({ name: 'model/target' }, () => {
         Copy({
-          from: tfolder + '/model/target/' + torigname + '.jsonic',
+          from: tfolder + '/model/target/' + torigname + '.aontu',
           // exclude: true
           replace: {
             "'BASE'": "'" + base + "'"
           }
         })
-        File({ name: 'target-index.jsonic' }, () => UpdateIndex({
+        File({ name: 'target-index.aontu' }, () => UpdateIndex({
           content: ctx$.meta.content.target_index,
-          // names: targets,
-          names: [tname]
+          names: tnames,
         }))
       })
 

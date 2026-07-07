@@ -19,7 +19,7 @@ import type {
   ActionResult,
 } from './types'
 
-import { SdkGenError, requirePath, isAuthActive } from './utility'
+import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix } from './utility'
 
 import { Main } from './cmp/Main'
 import { Deploy } from './cmp/Deploy'
@@ -226,7 +226,7 @@ function SdkGen(opts: SdkGenOptions) {
 
 
   function resolveModel() {
-    const path = './model/sdk.jsonic'
+    const path = './model/sdk.aontu'
     const errs: any[] = []
 
     if (null == aontu) {
@@ -299,7 +299,7 @@ SdkGen.makeBuild = async function(opts: SdkGenOptions) {
     root: opts.root,
     def: opts.def || 'no-def',
     kind: 'openapi-3',
-    model: opts.model ? (opts.model.folder + '/api.jsonic') : 'no-model',
+    model: opts.model ? (opts.model.folder + '/api.aontu') : 'no-model',
     meta: opts.meta || {},
   }
 
@@ -432,6 +432,7 @@ export {
 
   requirePath,
   isAuthActive,
+  resolveAuthPrefix,
 
   buildIdNames,
   getMatchEntries,

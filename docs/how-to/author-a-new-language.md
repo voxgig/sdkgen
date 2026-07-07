@@ -15,7 +15,7 @@ every other SDK implements.
 
 | Piece | Location | What you provide |
 | --- | --- | --- |
-| Target definition | `ts/project/.sdk/model/target/<lang>.jsonic` | name, ext, comment token, module name, deps |
+| Target definition | `ts/project/.sdk/model/target/<lang>.aontu` | name, ext, comment token, module name, deps |
 | Templates | `ts/project/.sdk/tm/<lang>/` | the language-neutral runtime, as real source |
 | Components | `ts/project/.sdk/src/cmp/<lang>/` | API-specific generators (entities, main, tests, readme) |
 
@@ -24,7 +24,7 @@ every other SDK implements.
 Copy an existing one and adapt it:
 
 ```jsonic
-// ts/project/.sdk/model/target/<lang>.jsonic
+// ts/project/.sdk/model/target/<lang>.aontu
 main: kit: target: <lang>: {
   title: "<Language>"
   ext: <ext>

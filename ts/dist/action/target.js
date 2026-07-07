@@ -26,9 +26,7 @@ async function action_target(args, actx) {
     return await cmd(args, actx);
 }
 async function cmd_target_add(args, actx) {
-    const targets_arg = args[2];
-    const targets = 'string' === typeof targets_arg ? targets_arg.split(',') : targets_arg;
-    return target_add(targets, actx);
+    return target_add((0, action_1.parseAddNames)(args), actx);
 }
 // Code API
 async function target_add(targets, actx) {
@@ -77,6 +75,10 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
     // TODO: jostraca - make from value easier to specify 
     // const tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
     (0, jostraca_1.Project)({}, () => {
+        // Resolved names of every target in this run. The index File is
+        // re-rendered per target and the last render wins, so each render must
+        // carry all names seen so far, not just its own.
+        const tnames = [];
         (0, jostraca_1.each)(targets, (n) => {
             const tref = n.val$;
             log.info({
@@ -85,6 +87,7 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 note: tref
             });
             const { tname, tfolder, torigname, base } = resolveTarget(tref, ctx$);
+            tnames.push(tname);
             const targetNote = tname + (tname != tref ? ' ref:' + tref : '');
             log.info({
                 point: 'target-name', name: tname, folder: tfolder,
@@ -94,16 +97,15 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
             });
             (0, jostraca_1.Folder)({ name: 'model/target' }, () => {
                 (0, jostraca_1.Copy)({
-                    from: tfolder + '/model/target/' + torigname + '.jsonic',
+                    from: tfolder + '/model/target/' + torigname + '.aontu',
                     // exclude: true
                     replace: {
                         "'BASE'": "'" + base + "'"
                     }
                 });
-                (0, jostraca_1.File)({ name: 'target-index.jsonic' }, () => (0, action_1.UpdateIndex)({
+                (0, jostraca_1.File)({ name: 'target-index.aontu' }, () => (0, action_1.UpdateIndex)({
                     content: ctx$.meta.content.target_index,
-                    // names: targets,
-                    names: [tname]
+                    names: tnames,
                 }));
             });
             (0, jostraca_1.Folder)({ name: 'src/cmp/' + tname }, () => {

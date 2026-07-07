@@ -60,20 +60,58 @@ type OpShapeItem = {
 }
 
 
-// Collect an op's params, deduped by name across all of its points.
+// Collect an op's params, deduped by name across its points.
+//
+// Points tagged with `select.$action` are sub-resource/action routes folded
+// into the op (e.g. POST .../components/{component_id}/page_access_groups on
+// the create op); they do not describe the op's canonical request payload,
+// so they are excluded — unless the op consists only of action points.
+//
+// Requiredness merges by INTERSECTION: with several alternative canonical
+// points, a param the caller must always supply is one required by every
+// point; a param only some routes use is optional in the merged shape.
+// (Union-required makes the common route untypeable — e.g. a plain
+// list-by-parent-id call failing because sibling routes' ids are demanded —
+// and steers callers into passing keys that flip runtime point dispatch to
+// the wrong route.)
 function opParams(op: any): any[] {
-  const points = op && op.points ? each(op.points) : []
-  const seen: Record<string, boolean> = {}
+  let points: any[] = op && op.points ? each(op.points) : []
+
+  const canonical = points.filter((pt: any) =>
+    null == (pt && pt.select && pt.select['$action']))
+  if (0 < canonical.length) {
+    points = canonical
+  }
+
+  const seen: Record<string, any> = {}
+  const requiredOnAll: Record<string, boolean> = {}
   const out: any[] = []
-  points.forEach((pt: any) => {
+
+  points.forEach((pt: any, pointIndex: number) => {
     const params = pt && pt.args && pt.args.params ? each(pt.args.params) : []
+    const requiredHere: Record<string, boolean> = {}
     params.forEach((p: any) => {
-      if (p && null != p.name && !seen[p.name]) {
-        seen[p.name] = true
-        out.push(p)
+      if (p && null != p.name) {
+        requiredHere[p.name] = false !== p.reqd
+        if (!seen[p.name]) {
+          seen[p.name] = { ...p }
+          // A param first seen on a later point was absent earlier: optional.
+          requiredOnAll[p.name] = 0 === pointIndex
+          out.push(seen[p.name])
+        }
+      }
+    })
+    Object.keys(requiredOnAll).forEach((name) => {
+      if (true !== requiredHere[name]) {
+        requiredOnAll[name] = false
       }
     })
   })
+
+  out.forEach((p: any) => {
+    p.reqd = true === requiredOnAll[p.name]
+  })
+
   return out
 }
 

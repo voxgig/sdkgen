@@ -24,7 +24,7 @@ npm create @voxgig/sdkgen@latest -- solardemo -o voxgig-solardemo-sdk \
   -d old-voxgig-solardemo-sdk/app/def/solardemo-1.0.0-openapi-3.0.0.yaml
 ```
 
-Or use local create-sdkgen if test data (`.jsonic`) changed:
+Or use local create-sdkgen if test data (`.aontu`) changed:
 ```
 ~/Projects/voxgig/create-sdkgen/bin/create-sdkgen solardemo \
   -o voxgig-solardemo-sdk \
@@ -82,13 +82,13 @@ All tests should pass against the live server.
 ### Verify connection errors
 Stop the server (`kill` or Ctrl-C), then re-run the same live test command. Entity and direct tests should fail with `ECONNREFUSED` errors — this confirms the SDK correctly attempts real HTTP calls in live mode.
 
-## If test data (`.jsonic`) changed
+## If test data (`.aontu`) changed
 
-Test data source lives in `~/Projects/voxgig/create-sdkgen/project/standard/.sdk/test/`. After editing `.jsonic` files:
+Test data source lives in `~/Projects/voxgig/create-sdkgen/project/standard/.sdk/test/`. After editing `.aontu` files:
 1. Rebuild `test.json` in create-sdkgen: `cd ~/Projects/voxgig/create-sdkgen/project/standard/.sdk && npm run test-model`
 2. Use the local create-sdkgen binary in step 3 above
 3. Also run `npm run test-model` in the generated SDK's `.sdk/` dir (step 5)
 
 ## Related projects
-- **create-sdkgen** (`~/Projects/voxgig/create-sdkgen`) — scaffolds new SDK projects; owns test `.jsonic` data in `project/standard/.sdk/test/`
+- **create-sdkgen** (`~/Projects/voxgig/create-sdkgen`) — scaffolds new SDK projects; owns test `.aontu` data in `project/standard/.sdk/test/`
 - **Generated SDK** (`~/Projects/voxgig-sdk/voxgig-solardemo-sdk`) — the test target; `ts/` has the TypeScript SDK, `.sdk/` has the build tooling

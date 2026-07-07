@@ -35,8 +35,8 @@ A feature is defined by a model file plus per-language template code.
 
 ### 1. Define the model
 
-Create `ts/project/.sdk/model/feature/retry.jsonic` (in this repo) or
-`.sdk/model/feature/retry.jsonic` (in a project):
+Create `ts/project/.sdk/model/feature/retry.aontu` (in this repo) or
+`.sdk/model/feature/retry.aontu` (in a project):
 
 ```jsonic
 main: kit: feature: retry: {
@@ -63,14 +63,14 @@ marked `active: true` fire.
 
 ### 2. Register it
 
-`feature add` appends the include to `feature-index.jsonic` automatically.
+`feature add` appends the include to `feature-index.aontu` automatically.
 If you created the model by hand, add the line yourself:
 
 ```jsonic
 # Features
-@"test.jsonic"
-@"log.jsonic"
-@"retry.jsonic"
+@"test.aontu"
+@"log.aontu"
+@"retry.aontu"
 ```
 
 ### 3. Provide the per-language implementation

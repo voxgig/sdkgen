@@ -15,7 +15,7 @@ function resolvePath(ctx$: any, path: string): any {
 // True unless the model declares auth off. Templates use this to gate
 // apikey-related code, docs, and examples for public APIs that need no
 // authentication. Two opt-outs, in priority order:
-//   1. main.kit.info.auth: false        (user-facing, set in api-info.jsonic)
+//   1. main.kit.info.auth: false        (user-facing, set in api-info.aontu)
 //   2. main.kit.config.auth.active: false
 function isAuthActive(model: any): boolean {
   const info = getModelPath(model, `main.${KIT}.info`,
@@ -25,6 +25,28 @@ function isAuthActive(model: any): boolean {
   const auth = getModelPath(model, `main.${KIT}.config.auth`,
     { only_active: false, required: false })
   return null == auth || false !== auth.active
+}
+
+
+// The credential prefix for the Authorization header value, resolved in
+// priority order:
+//   1. main.kit.config.auth.prefix   (per-SDK user override)
+//   2. main.kit.info.security.prefix (spec-derived, set by apidef from the
+//      API's securityScheme — e.g. 'OAuth' for Statuspage)
+//   3. 'Bearer'                      (conventional fallback)
+// '' is a valid resolved value: it means a raw credential with no prefix
+// (e.g. an apiKey scheme in a custom header). Config generators for every
+// language target must use this instead of hardcoding 'Bearer'.
+function resolveAuthPrefix(model: any): string {
+  const auth = getModelPath(model, `main.${KIT}.config.auth`,
+    { only_active: false, required: false })
+  if (null != auth && null != auth.prefix) return String(auth.prefix)
+
+  const security = getModelPath(model, `main.${KIT}.info.security`,
+    { only_active: false, required: false })
+  if (null != security && null != security.prefix) return String(security.prefix)
+
+  return 'Bearer'
 }
 
 
@@ -63,5 +85,6 @@ export {
   resolvePath,
   requirePath,
   isAuthActive,
+  resolveAuthPrefix,
   SdkGenError,
 }

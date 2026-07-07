@@ -1,10 +1,12 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
+
+import { goVarName } from './utility_go'
 
 
 const ReadmeModel = cmp(function ReadmeModel(props: any) {
@@ -50,7 +52,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   // First published entity name, for the Result shape illustration.
   const firstEntityName = (entityList[0] as any)?.Name || 'Entity'
-  const firstEntityVar = safeVarName(firstEntityName.toLowerCase(), 'go')
+  // camelCase Go identifier (never snake_case or flattened lowercase,
+  // never a Go keyword).
+  const firstEntityVar = goVarName((entityList[0] as any)?.name || 'entity')
   // Model-driven id key: null when the example entity has no id-like field, so
   // the Result-shape illustration passes a nil match.
   const firstIdF = entityIdField(entityList[0] || {})
