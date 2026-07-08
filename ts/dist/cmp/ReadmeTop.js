@@ -61,6 +61,16 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const homepage = info.homepage || '';
     const docsUrl = info.docs_url || '';
     const entityDesc = info.entity_desc || {};
+    // Spec-derived (apidef): a short "what this API is" blurb and a link back
+    // to the API's own website. Both surface right under the title, before
+    // the unofficial-SDK disclosure, so a reader immediately sees what the
+    // underlying API is and where it comes from.
+    const apiSummary = (info.summary || '').trim();
+    const apiWebsite = (info.website || '').trim();
+    const websiteLine = apiWebsite
+        ? `Learn more about ${productName} at ` +
+            `[${apiWebsite.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${apiWebsite}).`
+        : '';
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
     const target = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`);
     const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`);
@@ -91,12 +101,24 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const langList = sdkTargets.map((t) => t.title).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
-        // 1. H1 + one-line value prop + unofficial / non-affiliation disclosure
+        // 1. H1 + one-line value prop, then the API's own purpose + website
+        // (spec-derived), then the unofficial / non-affiliation disclosure.
         (0, jostraca_1.Content)(`# ${model.Name} SDK
 
 ${tagline}
 
-${(0, packageMeta_1.nonAffiliation)(model)}
+`);
+        if (apiSummary) {
+            (0, jostraca_1.Content)(`${apiSummary}
+
+`);
+        }
+        if (websiteLine) {
+            (0, jostraca_1.Content)(`${websiteLine}
+
+`);
+        }
+        (0, jostraca_1.Content)(`${(0, packageMeta_1.nonAffiliation)(model)}
 
 `);
         // Positioning line, only when we actually have multiple SDK targets.

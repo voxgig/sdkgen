@@ -86,6 +86,17 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const docsUrl = info.docs_url || ''
   const entityDesc = info.entity_desc || {}
 
+  // Spec-derived (apidef): a short "what this API is" blurb and a link back
+  // to the API's own website. Both surface right under the title, before
+  // the unofficial-SDK disclosure, so a reader immediately sees what the
+  // underlying API is and where it comes from.
+  const apiSummary = (info.summary || '').trim()
+  const apiWebsite = (info.website || '').trim()
+  const websiteLine = apiWebsite
+    ? `Learn more about ${productName} at ` +
+    `[${apiWebsite.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${apiWebsite}).`
+    : ''
+
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const target = getModelPath(model, `main.${KIT}.target`)
   const feature = getModelPath(model, `main.${KIT}.feature`)
@@ -123,12 +134,24 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
 
   File({ name: 'README.md' }, () => {
 
-    // 1. H1 + one-line value prop + unofficial / non-affiliation disclosure
+    // 1. H1 + one-line value prop, then the API's own purpose + website
+    // (spec-derived), then the unofficial / non-affiliation disclosure.
     Content(`# ${model.Name} SDK
 
 ${tagline}
 
-${nonAffiliation(model)}
+`)
+    if (apiSummary) {
+      Content(`${apiSummary}
+
+`)
+    }
+    if (websiteLine) {
+      Content(`${websiteLine}
+
+`)
+    }
+    Content(`${nonAffiliation(model)}
 
 `)
 
