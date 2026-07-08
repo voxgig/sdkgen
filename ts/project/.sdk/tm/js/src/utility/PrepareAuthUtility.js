@@ -36,7 +36,9 @@ function prepareAuth(ctx) {
     delprop(headers, HEADER_auth)
   }
   else {
-    setprop(headers, HEADER_auth, options.auth.prefix + ' ' + apikey)
+    // Empty prefix (raw apiKey credential) must not add a leading space.
+    setprop(headers, HEADER_auth,
+      options.auth.prefix ? options.auth.prefix + ' ' + apikey : apikey)
   }
 
   return spec
