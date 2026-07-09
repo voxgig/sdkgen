@@ -6,6 +6,7 @@ import {
   collectDeps,
   buildIdNames,
   getMatchEntries,
+  safeVarName,
 } from '../dist/sdkgen.js'
 
 
@@ -152,6 +153,30 @@ describe('helpers', () => {
       deepStrictEqual(getMatchEntries({}), [])
       deepStrictEqual(getMatchEntries(undefined), [])
       deepStrictEqual(getMatchEntries({ match: {} }), [])
+    })
+  })
+
+
+  describe('safeVarName', () => {
+
+    test('sanitises reserved words per language with a trailing _', () => {
+      // Ruby: `self = ...` is a SyntaxError (Cloudsmith's Self entity).
+      strictEqual(safeVarName('self', 'rb'), 'self_')
+      strictEqual(safeVarName('end', 'rb'), 'end_')
+      // Python keyword.
+      strictEqual(safeVarName('class', 'py'), 'class_')
+      // Lua keyword — but `self` is NOT reserved in Lua.
+      strictEqual(safeVarName('end', 'lua'), 'end_')
+      strictEqual(safeVarName('self', 'lua'), 'self')
+      // Existing languages still work.
+      strictEqual(safeVarName('delete', 'ts'), 'delete_')
+      strictEqual(safeVarName('type', 'go'), 'type_')
+    })
+
+    test('leaves non-reserved names untouched', () => {
+      strictEqual(safeVarName('component', 'rb'), 'component')
+      strictEqual(safeVarName('cargo', 'py'), 'cargo')
+      strictEqual(safeVarName('abort', 'lua'), 'abort')
     })
   })
 
