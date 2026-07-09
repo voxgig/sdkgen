@@ -104,7 +104,7 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   // back to the catalogue that kindly supplied the metadata.
   const metaSource = (info.meta_source || '').trim()
   const metaSourceLine = metaSource
-    ? `Meta data kindly supplied by ` +
+    ? `Metadata kindly supplied by ` +
     `[${metaSource.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${metaSource}).`
     : ''
 

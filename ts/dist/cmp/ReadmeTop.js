@@ -78,7 +78,7 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     // back to the catalogue that kindly supplied the metadata.
     const metaSource = (info.meta_source || '').trim();
     const metaSourceLine = metaSource
-        ? `Meta data kindly supplied by ` +
+        ? `Metadata kindly supplied by ` +
             `[${metaSource.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${metaSource}).`
         : '';
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
