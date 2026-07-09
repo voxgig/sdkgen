@@ -9,6 +9,7 @@ const canonType_1 = require("../helpers/canonType");
 const naming_1 = require("../helpers/naming");
 const packageMeta_1 = require("../helpers/packageMeta");
 const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen';
+const VOXGIG_SDK = 'https://voxgig.com/sdk/';
 // A type-correct TS example literal for a model field, keyed off its canonical
 // type sentinel — mirrors the per-language `exampleValue`, but inline because
 // this neutral component renders the intro `ts` block directly.
@@ -71,6 +72,15 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
         ? `Learn more about ${productName} at ` +
             `[${apiWebsite.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${apiWebsite}).`
         : '';
+    // Attribution for API metadata sourced from a third-party catalogue (e.g.
+    // freepublicapis.com). Rendered only when the model carries an
+    // `info.meta_source` URL, so first-party SDKs never show it. The link points
+    // back to the catalogue that kindly supplied the metadata.
+    const metaSource = (info.meta_source || '').trim();
+    const metaSourceLine = metaSource
+        ? `Meta data kindly supplied by ` +
+            `[${metaSource.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${metaSource}).`
+        : '';
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
     const target = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`);
     const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`);
@@ -88,16 +98,26 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     // Targets present but not listed get appended in spec-defined order,
     // so adding a new target never silently disappears from the docs.
     const docsOrder = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.config.docs_order`, { only_active: false, required: false }) || [];
+    const orderOf = (name) => {
+        const i = docsOrder.indexOf(name);
+        if (i !== -1)
+            return i;
+        // Unlisted targets go after the languages; keep the CLI then MCP last.
+        if (name === 'go-cli')
+            return docsOrder.length + 1;
+        if (name === 'go-mcp')
+            return docsOrder.length + 2;
+        return docsOrder.length;
+    };
     const sdkTargets = activeTargets
         .filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp')
         .slice()
-        .sort((a, b) => {
-        const ai = docsOrder.indexOf(a.name);
-        const bi = docsOrder.indexOf(b.name);
-        const av = ai === -1 ? docsOrder.length : ai;
-        const bv = bi === -1 ? docsOrder.length : bi;
-        return av - bv;
-    });
+        .sort((a, b) => orderOf(a.name) - orderOf(b.name));
+    // Every installable port for the Packages table — including the go-cli and
+    // go-mcp binaries, which publish as Go modules via git tags.
+    const pkgTargets = activeTargets
+        .slice()
+        .sort((a, b) => orderOf(a.name) - orderOf(b.name));
     const langList = sdkTargets.map((t) => t.title).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
@@ -120,7 +140,14 @@ ${tagline}
         }
         (0, jostraca_1.Content)(`${(0, packageMeta_1.nonAffiliation)(model)}
 
+Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
+
 `);
+        if (metaSourceLine) {
+            (0, jostraca_1.Content)(`${metaSourceLine}
+
+`);
+        }
         // Positioning line, only when we actually have multiple SDK targets.
         if (sdkTargets.length > 1) {
             const surfaces = [];
@@ -212,19 +239,41 @@ rather than reasoning about raw HTTP routes and query parameters.
 
 `);
         }
+        // 2c. Offline unit testing — a headline feature: every SDK ships a mock
+        // transport, so it belongs high up, right after the entity model.
+        if (sdkTargets.length > 0) {
+            (0, jostraca_1.Content)(`## Offline unit testing
+
+Every SDK ships a built-in **test mode** that swaps the HTTP transport for
+an in-memory mock, so your unit tests run fully offline — no server, no
+network, and no credentials:
+
+`);
+            sdkTargets.forEach((tgt) => {
+                const Test = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopTest_${tgt.name}`, { ignore: true });
+                if (Test) {
+                    (0, jostraca_1.Content)(`### ${tgt.title}
+
+`);
+                    Test['ReadmeTopTest']({ target: tgt });
+                    (0, jostraca_1.Content)(`
+`);
+                }
+            });
+        }
         // 3. Packages — real published package name + install command per
         // ecosystem. A package that is NOT yet live on its registry (the fleet
         // default: 'pending') must NOT advertise a `npm install ...` that 404s —
         // its Install cell links to the git-tag releases page instead. The go
         // family resolves from the tag directly (`go get <mod>@latest`).
-        if (sdkTargets.length > 0) {
+        if (pkgTargets.length > 0) {
             const { releasesUrl } = (0, packageMeta_1.repoInfo)(model);
             (0, jostraca_1.Content)(`## Packages
 
 | Language | Package | Install |
 | --- | --- | --- |
 `);
-            sdkTargets.forEach((tgt) => {
+            pkgTargets.forEach((tgt) => {
                 const state = (0, packageMeta_1.registryState)(model, tgt.name);
                 let cell;
                 if ('active' === state) {
@@ -359,26 +408,6 @@ own list above for exactly which it supports.
 
 `);
                     Quick['ReadmeTopQuick']({ target: tgt });
-                    (0, jostraca_1.Content)(`
-`);
-                }
-            });
-        }
-        // 9. Testing — keep, but slim
-        if (sdkTargets.length > 0) {
-            (0, jostraca_1.Content)(`## Unit testing in offline mode
-
-Every SDK ships a test mode that swaps the HTTP transport for an
-in-memory mock, so unit tests run offline.
-
-`);
-            sdkTargets.forEach((tgt) => {
-                const Test = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopTest_${tgt.name}`, { ignore: true });
-                if (Test) {
-                    (0, jostraca_1.Content)(`### ${tgt.title}
-
-`);
-                    Test['ReadmeTopTest']({ target: tgt });
                     (0, jostraca_1.Content)(`
 `);
                 }

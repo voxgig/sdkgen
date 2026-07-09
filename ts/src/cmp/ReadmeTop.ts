@@ -25,6 +25,7 @@ import {
 
 
 const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen'
+const VOXGIG_SDK = 'https://voxgig.com/sdk/'
 
 
 // A type-correct TS example literal for a model field, keyed off its canonical
@@ -97,6 +98,16 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     `[${apiWebsite.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${apiWebsite}).`
     : ''
 
+  // Attribution for API metadata sourced from a third-party catalogue (e.g.
+  // freepublicapis.com). Rendered only when the model carries an
+  // `info.meta_source` URL, so first-party SDKs never show it. The link points
+  // back to the catalogue that kindly supplied the metadata.
+  const metaSource = (info.meta_source || '').trim()
+  const metaSourceLine = metaSource
+    ? `Meta data kindly supplied by ` +
+    `[${metaSource.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${metaSource}).`
+    : ''
+
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const target = getModelPath(model, `main.${KIT}.target`)
   const feature = getModelPath(model, `main.${KIT}.feature`)
@@ -118,16 +129,25 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const docsOrder: string[] = (getModelPath(model, `main.${KIT}.config.docs_order`,
     { only_active: false, required: false }) as any) || []
 
+  const orderOf = (name: string): number => {
+    const i = docsOrder.indexOf(name)
+    if (i !== -1) return i
+    // Unlisted targets go after the languages; keep the CLI then MCP last.
+    if (name === 'go-cli') return docsOrder.length + 1
+    if (name === 'go-mcp') return docsOrder.length + 2
+    return docsOrder.length
+  }
+
   const sdkTargets = activeTargets
     .filter((t: any) => t.name !== 'go-cli' && t.name !== 'go-mcp')
     .slice()
-    .sort((a: any, b: any) => {
-      const ai = docsOrder.indexOf(a.name)
-      const bi = docsOrder.indexOf(b.name)
-      const av = ai === -1 ? docsOrder.length : ai
-      const bv = bi === -1 ? docsOrder.length : bi
-      return av - bv
-    })
+    .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
+
+  // Every installable port for the Packages table — including the go-cli and
+  // go-mcp binaries, which publish as Go modules via git tags.
+  const pkgTargets = activeTargets
+    .slice()
+    .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
   const langList = sdkTargets.map((t: any) => t.title).join(', ')
   const leadTarget = pickLeadTarget(sdkTargets)
@@ -153,7 +173,14 @@ ${tagline}
     }
     Content(`${nonAffiliation(model)}
 
+Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
+
 `)
+    if (metaSourceLine) {
+      Content(`${metaSourceLine}
+
+`)
+    }
 
     // Positioning line, only when we actually have multiple SDK targets.
     if (sdkTargets.length > 1) {
@@ -242,19 +269,43 @@ rather than reasoning about raw HTTP routes and query parameters.
 `)
     }
 
+    // 2c. Offline unit testing — a headline feature: every SDK ships a mock
+    // transport, so it belongs high up, right after the entity model.
+    if (sdkTargets.length > 0) {
+      Content(`## Offline unit testing
+
+Every SDK ships a built-in **test mode** that swaps the HTTP transport for
+an in-memory mock, so your unit tests run fully offline — no server, no
+network, and no credentials:
+
+`)
+      sdkTargets.forEach((tgt: any) => {
+        const Test =
+          requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopTest_${tgt.name}`, { ignore: true })
+        if (Test) {
+          Content(`### ${tgt.title}
+
+`)
+          Test['ReadmeTopTest']({ target: tgt })
+          Content(`
+`)
+        }
+      })
+    }
+
     // 3. Packages — real published package name + install command per
     // ecosystem. A package that is NOT yet live on its registry (the fleet
     // default: 'pending') must NOT advertise a `npm install ...` that 404s —
     // its Install cell links to the git-tag releases page instead. The go
     // family resolves from the tag directly (`go get <mod>@latest`).
-    if (sdkTargets.length > 0) {
+    if (pkgTargets.length > 0) {
       const { releasesUrl } = repoInfo(model)
       Content(`## Packages
 
 | Language | Package | Install |
 | --- | --- | --- |
 `)
-      sdkTargets.forEach((tgt: any) => {
+      pkgTargets.forEach((tgt: any) => {
         const state = registryState(model, tgt.name)
         let cell: string
         if ('active' === state) {
@@ -396,28 +447,6 @@ own list above for exactly which it supports.
 
 `)
           Quick['ReadmeTopQuick']({ target: tgt })
-          Content(`
-`)
-        }
-      })
-    }
-
-    // 9. Testing — keep, but slim
-    if (sdkTargets.length > 0) {
-      Content(`## Unit testing in offline mode
-
-Every SDK ships a test mode that swaps the HTTP transport for an
-in-memory mock, so unit tests run offline.
-
-`)
-      sdkTargets.forEach((tgt: any) => {
-        const Test =
-          requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopTest_${tgt.name}`, { ignore: true })
-        if (Test) {
-          Content(`### ${tgt.title}
-
-`)
-          Test['ReadmeTopTest']({ target: tgt })
           Content(`
 `)
         }
