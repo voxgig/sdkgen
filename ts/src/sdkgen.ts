@@ -27,6 +27,9 @@ import { Entity } from './cmp/Entity'
 import { Feature } from './cmp/Feature'
 import { Readme } from './cmp/Readme'
 import { ReadmeTop } from './cmp/ReadmeTop'
+import { AgentGuideTop } from './cmp/AgentGuideTop'
+import { AgentGuide } from './cmp/AgentGuide'
+import { AgentGuideFeature } from './cmp/AgentGuideFeature'
 import { License } from './cmp/License'
 import { Security } from './cmp/Security'
 import { Changelog } from './cmp/Changelog'
@@ -415,6 +418,9 @@ export {
   Test,
   Readme,
   ReadmeTop,
+  AgentGuideTop,
+  AgentGuide,
+  AgentGuideFeature,
   ReadmeInstall,
   ReadmeQuick,
   ReadmeErrors,
