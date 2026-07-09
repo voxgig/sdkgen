@@ -8,7 +8,7 @@ import {
 
 import { requirePath } from '../utility'
 
-import { entityIdField, entityPrimaryOp } from '../helpers/opShape'
+import { entityIdField, pickExampleEntity } from '../helpers/opShape'
 import { idLiteral, matchArg, dataArg } from '../helpers/opExample'
 import type { ExampleLang } from '../helpers/opExample'
 import { safeVarName } from '../helpers/naming'
@@ -225,39 +225,40 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const feature = getModelPath(model, `main.${KIT}.feature`)
   const lang = LANGS[target.name] || DEFAULT_LANG
 
-  // Derive a real example entity from the model (the same way the sibling
-  // Readme components do) so the entity-state example never references a
-  // phantom entity.
+  // Pick a real example entity WITH a real op (prefer a read op) so the
+  // entity-state example never references a phantom entity or fabricates a
+  // `.load()` on an op-less one (e.g. Cloudsmith's `Abort`). primaryOp is null
+  // only when NO entity exposes any op — then the entity-state section is
+  // skipped (a direct()-only SDK has no entity op to illustrate).
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
-  const ex = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
-  const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity'
-  // Sanitise against the target's reserved words (a `Delete` entity must not
-  // bind `const delete = ...`).
-  const eLower = safeVarName(eName.toLowerCase(), target.name)
+  const { entity: ex, primaryOp } = pickExampleEntity(entity || {})
   const lname = target.name as ExampleLang
-  // The entity's id-like key field name, or null when it has none (a
-  // response-wrapped spec can model an entity with no id). Drives whether the
-  // state example keys on an id at all.
-  const idF = entityIdField(ex)
-  // The entity's PRIMARY op — an op it actually exposes (never a hardcoded
-  // `load` a create-only entity lacks).
-  const primaryOp = entityPrimaryOp(ex) || 'load'
-  const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
-  // Type-correct example id literal (numeric when the id param is integer-typed),
-  // derived from the OP's param type so an id carried only in the match compiles.
-  const idLit = idLiteral(ex, primaryOp, idF)
-  // Language-correct call argument for the primary op: a match for load/remove,
-  // a required-field body for create/update, nothing for list.
-  let stateArg: string
-  if ('list' === primaryOp) {
-    stateArg = 'go' === target.name ? 'nil' : ''
-  } else if (isMatchOp) {
-    stateArg = matchArg(lname, idF, idLit)
-  } else {
-    stateArg = dataArg(lname, ex, primaryOp, idF)
+  const hasEntityExample = !!(ex && primaryOp)
+
+  let eName = 'Entity', eLower = 'entity', stateArg = '', matchIdF: string | null = null, idLit = ''
+  if (hasEntityExample) {
+    eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))
+    // Sanitise against the target's reserved words (a `Delete` entity must
+    // not bind `const delete = ...`).
+    eLower = safeVarName(eName.toLowerCase(), target.name)
+    const idF = entityIdField(ex)
+    const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
+    // Type-correct example id literal (numeric when the id param is integer-
+    // typed), derived from the OP's param type so an id carried only in the
+    // match compiles.
+    idLit = idLiteral(ex, primaryOp as string, idF)
+    // Language-correct call argument for the primary op: a match for
+    // load/remove, a required-field body for create/update, nothing for list.
+    if ('list' === primaryOp) {
+      stateArg = 'go' === target.name ? 'nil' : ''
+    } else if (isMatchOp) {
+      stateArg = matchArg(lname, idF, idLit)
+    } else {
+      stateArg = dataArg(lname, ex, primaryOp as string, idF)
+    }
+    // Only a match op keys the `.match()` comment on `{ id: ... }`.
+    matchIdF = isMatchOp ? idF : null
   }
-  // Only a match op keys the `.match()` comment on `{ id: ... }`.
-  const matchIdF = isMatchOp ? idF : null
 
   Content(`
 ## Advanced
@@ -327,12 +328,13 @@ were added, so later features can override earlier ones.
   }
 
 
-  // Entity state
-  Content(`### Entity state
+  // Entity state — only when the SDK actually has an entity op to show.
+  if (hasEntityExample) {
+    Content(`### Entity state
 
 `)
-
-  Content(lang.entityState(eName, eLower, primaryOp, stateArg, matchIdF, idLit))
+    Content(lang.entityState(eName, eLower, primaryOp as string, stateArg, matchIdF, idLit))
+  }
 
 
   // Direct vs entity access

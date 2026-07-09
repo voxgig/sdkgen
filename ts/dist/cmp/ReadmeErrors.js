@@ -184,26 +184,26 @@ const ReadmeErrors = (0, jostraca_1.cmp)(function ReadmeErrors(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
     const lang = LANGS[target.name] || DEFAULT_LANG;
-    // Derive a real example entity from the model (the same way the sibling
-    // Readme components do) so the snippet never references a phantom entity.
+    // Pick a real example entity WITH a real op (prefer a read op) so the
+    // error-handling snippet never references a phantom entity or fabricates a
+    // `.load()` on an op-less one (e.g. Cloudsmith's `Abort`). primaryOp is null
+    // only when NO entity exposes any op — then the entity example is skipped
+    // and only the direct() error handling (which every SDK has) is shown.
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`, { only_active: false, required: false });
-    const ex = Object.values(entity || {}).find((e) => e && e.active !== false);
-    const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity';
-    // Sanitise the variable name against the target's reserved words (a `Delete`
-    // entity must not bind `const delete = ...`).
-    const eLower = (0, naming_1.safeVarName)(eName.toLowerCase(), target.name);
-    // The entity's id-like key field name, or null when it has none.
-    const idF = (0, opShape_1.entityIdField)(ex);
-    // The entity's PRIMARY op — an op it actually exposes (prefer list/load, else
-    // create/update/remove). A create-only entity therefore never shows a
-    // phantom `.load()`.
-    const primaryOp = (0, opShape_1.entityPrimaryOp)(ex) || 'load';
-    const call = (0, opExample_1.primaryOpCall)(target.name, eName, eLower, primaryOp, idF, ex);
+    const { entity: ex, primaryOp } = (0, opShape_1.pickExampleEntity)(entity || {});
     (0, jostraca_1.Content)(`
 ## Error handling
 
 `);
-    (0, jostraca_1.Content)(lang.entity(call, primaryOp));
+    if (ex && primaryOp) {
+        const eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1));
+        // Sanitise the variable name against the target's reserved words (a
+        // `Delete` entity must not bind `const delete = ...`).
+        const eLower = (0, naming_1.safeVarName)(eName.toLowerCase(), target.name);
+        const idF = (0, opShape_1.entityIdField)(ex);
+        const call = (0, opExample_1.primaryOpCall)(target.name, eName, eLower, primaryOp, idF, ex);
+        (0, jostraca_1.Content)(lang.entity(call, primaryOp));
+    }
     (0, jostraca_1.Content)(lang.direct);
 });
 exports.ReadmeErrors = ReadmeErrors;

@@ -186,41 +186,41 @@ const ReadmeExplanation = (0, jostraca_1.cmp)(function ReadmeExplanation(props) 
     const { model } = ctx$;
     const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`);
     const lang = LANGS[target.name] || DEFAULT_LANG;
-    // Derive a real example entity from the model (the same way the sibling
-    // Readme components do) so the entity-state example never references a
-    // phantom entity.
+    // Pick a real example entity WITH a real op (prefer a read op) so the
+    // entity-state example never references a phantom entity or fabricates a
+    // `.load()` on an op-less one (e.g. Cloudsmith's `Abort`). primaryOp is null
+    // only when NO entity exposes any op — then the entity-state section is
+    // skipped (a direct()-only SDK has no entity op to illustrate).
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`, { only_active: false, required: false });
-    const ex = Object.values(entity || {}).find((e) => e && e.active !== false);
-    const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity';
-    // Sanitise against the target's reserved words (a `Delete` entity must not
-    // bind `const delete = ...`).
-    const eLower = (0, naming_1.safeVarName)(eName.toLowerCase(), target.name);
+    const { entity: ex, primaryOp } = (0, opShape_1.pickExampleEntity)(entity || {});
     const lname = target.name;
-    // The entity's id-like key field name, or null when it has none (a
-    // response-wrapped spec can model an entity with no id). Drives whether the
-    // state example keys on an id at all.
-    const idF = (0, opShape_1.entityIdField)(ex);
-    // The entity's PRIMARY op — an op it actually exposes (never a hardcoded
-    // `load` a create-only entity lacks).
-    const primaryOp = (0, opShape_1.entityPrimaryOp)(ex) || 'load';
-    const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp;
-    // Type-correct example id literal (numeric when the id param is integer-typed),
-    // derived from the OP's param type so an id carried only in the match compiles.
-    const idLit = (0, opExample_1.idLiteral)(ex, primaryOp, idF);
-    // Language-correct call argument for the primary op: a match for load/remove,
-    // a required-field body for create/update, nothing for list.
-    let stateArg;
-    if ('list' === primaryOp) {
-        stateArg = 'go' === target.name ? 'nil' : '';
+    const hasEntityExample = !!(ex && primaryOp);
+    let eName = 'Entity', eLower = 'entity', stateArg = '', matchIdF = null, idLit = '';
+    if (hasEntityExample) {
+        eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1));
+        // Sanitise against the target's reserved words (a `Delete` entity must
+        // not bind `const delete = ...`).
+        eLower = (0, naming_1.safeVarName)(eName.toLowerCase(), target.name);
+        const idF = (0, opShape_1.entityIdField)(ex);
+        const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp;
+        // Type-correct example id literal (numeric when the id param is integer-
+        // typed), derived from the OP's param type so an id carried only in the
+        // match compiles.
+        idLit = (0, opExample_1.idLiteral)(ex, primaryOp, idF);
+        // Language-correct call argument for the primary op: a match for
+        // load/remove, a required-field body for create/update, nothing for list.
+        if ('list' === primaryOp) {
+            stateArg = 'go' === target.name ? 'nil' : '';
+        }
+        else if (isMatchOp) {
+            stateArg = (0, opExample_1.matchArg)(lname, idF, idLit);
+        }
+        else {
+            stateArg = (0, opExample_1.dataArg)(lname, ex, primaryOp, idF);
+        }
+        // Only a match op keys the `.match()` comment on `{ id: ... }`.
+        matchIdF = isMatchOp ? idF : null;
     }
-    else if (isMatchOp) {
-        stateArg = (0, opExample_1.matchArg)(lname, idF, idLit);
-    }
-    else {
-        stateArg = (0, opExample_1.dataArg)(lname, ex, primaryOp, idF);
-    }
-    // Only a match op keys the `.match()` comment on `{ id: ... }`.
-    const matchIdF = isMatchOp ? idF : null;
     (0, jostraca_1.Content)(`
 ## Advanced
 
@@ -280,11 +280,13 @@ were added, so later features can override earlier ones.
     if (ReadmeExplanation_sdk) {
         ReadmeExplanation_sdk['ReadmeExplanation']({ target });
     }
-    // Entity state
-    (0, jostraca_1.Content)(`### Entity state
+    // Entity state — only when the SDK actually has an entity op to show.
+    if (hasEntityExample) {
+        (0, jostraca_1.Content)(`### Entity state
 
 `);
-    (0, jostraca_1.Content)(lang.entityState(eName, eLower, primaryOp, stateArg, matchIdF, idLit));
+        (0, jostraca_1.Content)(lang.entityState(eName, eLower, primaryOp, stateArg, matchIdF, idLit));
+    }
     // Direct vs entity access
     (0, jostraca_1.Content)(`### Direct vs entity access
 

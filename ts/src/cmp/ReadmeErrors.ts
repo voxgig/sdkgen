@@ -6,7 +6,7 @@ import {
   getModelPath
 } from '../types'
 
-import { entityIdField, entityPrimaryOp } from '../helpers/opShape'
+import { entityIdField, pickExampleEntity } from '../helpers/opShape'
 import { primaryOpCall } from '../helpers/opExample'
 import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { safeVarName } from '../helpers/naming'
@@ -224,29 +224,28 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
 
   const lang = LANGS[target.name] || DEFAULT_LANG
 
-  // Derive a real example entity from the model (the same way the sibling
-  // Readme components do) so the snippet never references a phantom entity.
+  // Pick a real example entity WITH a real op (prefer a read op) so the
+  // error-handling snippet never references a phantom entity or fabricates a
+  // `.load()` on an op-less one (e.g. Cloudsmith's `Abort`). primaryOp is null
+  // only when NO entity exposes any op — then the entity example is skipped
+  // and only the direct() error handling (which every SDK has) is shown.
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
-  const ex = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
-  const eName = ex ? (ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))) : 'Entity'
-  // Sanitise the variable name against the target's reserved words (a `Delete`
-  // entity must not bind `const delete = ...`).
-  const eLower = safeVarName(eName.toLowerCase(), target.name)
-
-  // The entity's id-like key field name, or null when it has none.
-  const idF = entityIdField(ex)
-  // The entity's PRIMARY op — an op it actually exposes (prefer list/load, else
-  // create/update/remove). A create-only entity therefore never shows a
-  // phantom `.load()`.
-  const primaryOp = entityPrimaryOp(ex) || 'load'
-  const call = primaryOpCall(target.name as ExampleLang, eName, eLower, primaryOp, idF, ex)
+  const { entity: ex, primaryOp } = pickExampleEntity(entity || {})
 
   Content(`
 ## Error handling
 
 `)
 
-  Content(lang.entity(call, primaryOp))
+  if (ex && primaryOp) {
+    const eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))
+    // Sanitise the variable name against the target's reserved words (a
+    // `Delete` entity must not bind `const delete = ...`).
+    const eLower = safeVarName(eName.toLowerCase(), target.name)
+    const idF = entityIdField(ex)
+    const call = primaryOpCall(target.name as ExampleLang, eName, eLower, primaryOp, idF, ex)
+    Content(lang.entity(call, primaryOp))
+  }
 
   Content(lang.direct)
 })
