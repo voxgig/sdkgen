@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -61,6 +61,9 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     const fields = entity.fields || []
     // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
+    // Sanitise the local variable name — an entity whose lowercased name is a
+    // Lua keyword (e.g. `end`) would otherwise emit uncompilable code.
+    const eVar = safeVarName(entity.name, 'lua')
 
     Content(`
 ### ${entity.Name}
@@ -73,7 +76,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
     }
 
-    Content(`Create an instance: \`local ${entity.name} = client:${entity.Name}(nil)\`
+    Content(`Create an instance: \`local ${eVar} = client:${entity.Name}(nil)\`
 
 `)
 
@@ -128,7 +131,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`#### Example: Load
 
 \`\`\`lua
-local ${entity.name}, err = client:${entity.Name}():load(${loadArg})
+local ${eVar}, err = client:${entity.Name}():load(${loadArg})
 \`\`\`
 
 `)
@@ -138,7 +141,7 @@ local ${entity.name}, err = client:${entity.Name}():load(${loadArg})
       Content(`#### Example: List
 
 \`\`\`lua
-local ${entity.name}s, err = client:${entity.Name}():list()
+local ${eVar}s, err = client:${entity.Name}():list()
 \`\`\`
 
 `)
@@ -155,7 +158,7 @@ local ${entity.name}s, err = client:${entity.Name}():list()
       Content(`#### Example: Create
 
 \`\`\`lua
-local ${entity.name}, err = client:${entity.Name}():create({
+local ${eVar}, err = client:${entity.Name}():create({
 `)
       createItems.map((it: any) => {
         Content(`  ${luaKey(it.name)} = ${luaLit(it.type, 'example_' + it.name)}, -- ${canonToType(it.type, target.name)}

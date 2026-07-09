@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -174,6 +174,9 @@ same parameters as \`direct()\`.
       // Model-driven id key: null when this entity has no id-like field, in
       // which case load/remove match on no argument and update omits the id.
       const idF = entityIdField(ent)
+      // Sanitise the local variable name — an entity whose lowercased name is
+      // a Lua keyword (e.g. `end`) would otherwise emit uncompilable code.
+      const eVar = safeVarName(ent.name, 'lua')
 
       Content(`
 ---
@@ -189,7 +192,7 @@ same parameters as \`direct()\`.
       }
 
       Content(`\`\`\`lua
-local ${ent.name} = client:${ent.Name}(nil)
+local ${eVar} = client:${ent.Name}(nil)
 \`\`\`
 
 `)

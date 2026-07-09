@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -43,6 +43,9 @@ local client = ${ctor}
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? "an" : "a"
+    // Sanitise the local variable name — an entity whose lowercased name is a
+    // Lua keyword (e.g. `end`) would otherwise emit uncompilable code.
+    const eVar = safeVarName(eName.toLowerCase(), 'lua')
     const opnames = entityOps(exampleEntity)
     // Model-driven id key: `idF` is the MATCH key (null when none). `dataIdF`
     // is the id on the RETURNED record's data type — an entity can key its match
@@ -91,10 +94,10 @@ Entity operations return \`(value, err)\`. For \`list\`, \`value\` is the
 array of records itself — iterate it directly (there is no wrapper).
 
 \`\`\`lua
-local ${eName.toLowerCase()}s, err = client:${eName}():list()
+local ${eVar}s, err = client:${eName}():list()
 if err then error(err) end
 
-for _, item in ipairs(${eName.toLowerCase()}s) do
+for _, item in ipairs(${eVar}s) do
 ${printLine}
 end
 \`\`\`
@@ -105,7 +108,7 @@ end
     if (nestedEntity) {
       const neName = nom(nestedEntity, 'Name')
       const neArticle = /^[aeiou]/i.test(neName) ? "an" : "a"
-      const neVar = neName.toLowerCase()
+      const neVar = safeVarName(neName.toLowerCase(), 'lua')
 
       // Model-driven match: every REQUIRED load-match key — the same shape
       // the runtime resolves path params from, so the example always works.
@@ -151,9 +154,9 @@ print(${neVar})
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
 \`\`\`lua
-local ${eName.toLowerCase()}, err = client:${eName}():load(${loadArg})
+local ${eVar}, err = client:${eName}():load(${loadArg})
 if err then error(err) end
-print(${eName.toLowerCase()})
+print(${eVar})
 \`\`\`
 
 `)

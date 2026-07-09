@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -172,6 +172,9 @@ same parameters as \`direct()\`. Raises on error.
       // Model-driven id key: null when this entity has no id-like field, in
       // which case load/remove match on no argument and update omits the id.
       const idF = entityIdField(ent)
+      // Sanitise the local variable name — an entity whose lowercased name is
+      // a Ruby keyword (e.g. `self`) would otherwise emit uncompilable code.
+      const eVar = safeVarName(ent.name, 'rb')
 
       Content(`
 ---
@@ -187,7 +190,7 @@ same parameters as \`direct()\`. Raises on error.
       }
 
       Content(`\`\`\`ruby
-${ent.name} = client.${ent.Name}
+${eVar} = client.${ent.Name}
 \`\`\`
 
 `)

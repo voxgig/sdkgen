@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -28,6 +28,11 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // only when NO entity exposes any op (a direct()-only SDK).
   const { entity: exampleEntity, primaryOp } = pickExampleEntity(entity)
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
+  // Sanitise the local variable name — an entity whose lowercased name is a
+  // Ruby keyword (e.g. `self`) would otherwise emit uncompilable code. The
+  // fixture KEY (`"${eName.toLowerCase()}"`) stays raw — it must match the
+  // entity's registered name for the mock lookup to resolve.
+  const eVar = safeVarName(eName.toLowerCase(), 'rb')
   // Model-driven id key: null when the entity has no id-like field (a
   // response-wrapped spec). When null the fixture seeds no id and a match op
   // takes no argument.
@@ -56,8 +61,8 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
   const testModeExample = primaryOp
     ? `# Entity ops return the bare mock record (raises on error).
-${eName.toLowerCase()} = client.${eName}.${primaryOp}(${testCallArg})
-puts ${eName.toLowerCase()}`
+${eVar} = client.${eName}.${primaryOp}(${testCallArg})
+puts ${eVar}`
     : `result = client.direct({ "path" => "/api/resource", "method" => "GET" })
 puts result`
 

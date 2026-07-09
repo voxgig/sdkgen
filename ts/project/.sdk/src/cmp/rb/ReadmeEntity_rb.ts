@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -56,6 +56,9 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     const fields = entity.fields || []
     // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
+    // Sanitise the local variable name — an entity whose lowercased name is a
+    // Ruby keyword (e.g. `self`) would otherwise emit uncompilable code.
+    const eVar = safeVarName(entity.name, 'rb')
 
     Content(`
 ### ${entity.Name}
@@ -68,7 +71,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
     }
 
-    Content(`Create an instance: \`${entity.name} = client.${entity.Name}\`
+    Content(`Create an instance: \`${eVar} = client.${entity.Name}\`
 
 `)
 
@@ -124,7 +127,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
 \`\`\`ruby
 # load returns the bare ${entity.Name} record (raises on error).
-${entity.name} = client.${entity.Name}.load(${loadArg})
+${eVar} = client.${entity.Name}.load(${loadArg})
 \`\`\`
 
 `)
@@ -135,7 +138,7 @@ ${entity.name} = client.${entity.Name}.load(${loadArg})
 
 \`\`\`ruby
 # list returns an Array of ${entity.Name} records (raises on error).
-${entity.name}s = client.${entity.Name}.list
+${eVar}s = client.${entity.Name}.list
 \`\`\`
 
 `)
@@ -152,7 +155,7 @@ ${entity.name}s = client.${entity.Name}.list
       Content(`#### Example: Create
 
 \`\`\`ruby
-${entity.name} = client.${entity.Name}.create({
+${eVar} = client.${entity.Name}.create({
 `)
       createItems.map((it: any) => {
         Content(`  "${it.name}" => ${rbLit(it.type, 'example_' + it.name)}, # ${canonToType(it.type, target.name)}

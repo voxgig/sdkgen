@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -28,6 +28,9 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // only when NO entity exposes any op (a direct()-only SDK).
   const { entity: exampleEntity, primaryOp } = pickExampleEntity(entity)
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
+  // Sanitise the local variable name — an entity whose lowercased name is a
+  // Python keyword (e.g. `class`) would otherwise emit uncompilable code.
+  const eVar = safeVarName(eName.toLowerCase(), 'py')
   // Model-driven id key: null when the entity has no id-like field, so a
   // match op takes no argument.
   const idF = exampleEntity ? entityIdField(exampleEntity) : null
@@ -47,8 +50,8 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
   const testModeExample = primaryOp
     ? `# Entity ops return the bare record and raise on error.
-${eName.toLowerCase()} = client.${eName}().${primaryOp}(${testArg})
-# ${eName.toLowerCase()} contains the mock response record`
+${eVar} = client.${eName}().${primaryOp}(${testArg})
+# ${eVar} contains the mock response record`
     : `result = client.direct({"path": "/api/resource", "method": "GET"})
 print(result)`
 

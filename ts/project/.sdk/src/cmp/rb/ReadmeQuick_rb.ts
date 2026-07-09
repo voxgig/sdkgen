@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -43,6 +43,9 @@ client = ${ctor}
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? "an" : "a"
+    // Sanitise the local variable name — an entity whose lowercased name is a
+    // Ruby keyword (e.g. `self`) would otherwise emit uncompilable code.
+    const eVar = safeVarName(eName.toLowerCase(), 'rb')
     const opnames = entityOps(exampleEntity)
     // Model-driven id keys: `idF` is the load-MATCH key (null when the entity
     // has no id-like field — a response-wrapped spec); when null, load/remove
@@ -84,8 +87,8 @@ client = ${ctor}
 \`\`\`ruby
 begin
   # list returns an Array of ${eName} records — iterate directly.
-  ${eName.toLowerCase()}s = client.${eName}.list
-  ${eName.toLowerCase()}s.each do |item|
+  ${eVar}s = client.${eName}.list
+  ${eVar}s.each do |item|
     puts "${itemPrint}"
   end
 rescue => err
@@ -99,7 +102,7 @@ end
     if (nestedEntity) {
       const neName = nom(nestedEntity, 'Name')
       const neArticle = /^[aeiou]/i.test(neName) ? "an" : "a"
-      const neVar = neName.toLowerCase()
+      const neVar = safeVarName(neName.toLowerCase(), 'rb')
 
       // Model-driven match: every REQUIRED load-match key — the same shape
       // the runtime resolves path params from, so the example always works.
@@ -151,8 +154,8 @@ end
 \`\`\`ruby
 begin
   # load returns the bare ${eName} record (raises on error).
-  ${eName.toLowerCase()} = client.${eName}.load(${loadArg})
-  puts ${eName.toLowerCase()}
+  ${eVar} = client.${eName}.load(${loadArg})
+  puts ${eVar}
 rescue => err
   warn "load failed: #{err}"
 end

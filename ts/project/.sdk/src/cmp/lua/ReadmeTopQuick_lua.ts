@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -46,6 +46,9 @@ local client = ${ctor}
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
+    // Sanitise the local variable name — an entity whose lowercased name is a
+    // Lua keyword (e.g. `end`) would otherwise emit uncompilable code.
+    const eVar = safeVarName(eName.toLowerCase(), 'lua')
     const opnames = Object.keys(exampleEntity.op || {})
     // Model-driven id key: null when the entity has no id-like field, in which
     // case the load example takes no match argument.
@@ -55,8 +58,8 @@ local client = ${ctor}
 
     if (opnames.includes('list')) {
       Content(`-- List all ${eName.toLowerCase()}s
-local ${eName.toLowerCase()}s, err = client:${eName}():list()
-print(${eName.toLowerCase()}s)
+local ${eVar}s, err = client:${eName}():list()
+print(${eVar}s)
 `)
       hasCall = true
     }
@@ -76,8 +79,8 @@ print(${eName.toLowerCase()}s)
         : ''
       Content(`
 -- Load a specific ${eName.toLowerCase()}
-local ${eName.toLowerCase()}, err = client:${eName}():load(${loadArg})
-print(${eName.toLowerCase()})
+local ${eVar}, err = client:${eName}():load(${loadArg})
+print(${eVar})
 `)
       hasCall = true
     }

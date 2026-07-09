@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -45,6 +45,9 @@ client = ${ctor}
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
+    // Sanitise the local variable name — an entity whose lowercased name is a
+    // Python keyword (e.g. `class`) would otherwise emit uncompilable code.
+    const eVar = safeVarName(eName.toLowerCase(), 'py')
     const opnames = entityOps(exampleEntity)
     // Model-driven id key: `idF` is the entity's id-like MATCH field name, or
     // null when it has none (a response-wrapped spec). `dataIdF` is the id on
@@ -75,9 +78,9 @@ error — iterate it directly.
 
 \`\`\`python
 try:
-    ${eName.toLowerCase()}s = client.${eName}().list()
-    for ${eName.toLowerCase()} in ${eName.toLowerCase()}s:
-        print(${eName.toLowerCase()})
+    ${eVar}s = client.${eName}().list()
+    for ${eVar} in ${eVar}s:
+        print(${eVar})
 except Exception as err:
     print(f"list failed: {err}")
 \`\`\`
@@ -88,7 +91,7 @@ except Exception as err:
     if (nestedEntity) {
       const neName = nom(nestedEntity, 'Name')
       const neArticle = /^[aeiou]/i.test(neName) ? 'an' : 'a'
-      const neVar = neName.toLowerCase()
+      const neVar = safeVarName(neName.toLowerCase(), 'py')
 
       // Model-driven match: every REQUIRED load-match key — the same shape
       // the runtime resolves path params from, so the example always works.
@@ -140,8 +143,8 @@ except Exception as err:
 
 \`\`\`python
 try:
-    ${eName.toLowerCase()} = client.${eName}().load(${loadArg})
-    print(${eName.toLowerCase()})
+    ${eVar} = client.${eName}().load(${loadArg})
+    print(${eVar})
 except Exception as err:
     print(f"load failed: {err}")
 \`\`\`

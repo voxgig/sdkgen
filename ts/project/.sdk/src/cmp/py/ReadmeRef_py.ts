@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -166,6 +166,9 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
       // Model-driven id key: null when this entity has no id-like field, in
       // which case load/remove match on no argument and update omits the id.
       const idF = entityIdField(ent)
+      // Sanitise the local variable name — an entity whose lowercased name is
+      // a Python keyword (e.g. `class`) would otherwise emit uncompilable code.
+      const eVar = safeVarName(ent.name, 'py')
 
       Content(`
 ---
@@ -181,7 +184,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
       }
 
       Content(`\`\`\`python
-${ent.name} = client.${ent.Name}()
+${eVar} = client.${ent.Name}()
 \`\`\`
 
 `)
@@ -274,8 +277,8 @@ result = client.${ent.Name}().${opname}(${arg})
           else if ('list' === opname) {
             Content(`\`\`\`python
 results = client.${ent.Name}().list()
-for ${ent.name} in results:
-    print(${ent.name})
+for ${eVar} in results:
+    print(${eVar})
 \`\`\`
 
 `)
