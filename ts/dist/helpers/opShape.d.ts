@@ -13,6 +13,11 @@ declare function opRequestShape(ent: any, opname: string): {
 declare function entityIdField(ent: any): string | null;
 declare function entityOps(ent: any): string[];
 declare function entityPrimaryOp(ent: any): string | null;
+declare function entityClassName(ent: any, entityColl: any): string;
+declare function pickExampleEntity(entity: any): {
+    entity: any;
+    primaryOp: string | null;
+};
 declare function entityDataIdField(ent: any): string | null;
-export { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, };
+export { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, };
 export type { OpShapeItem, };

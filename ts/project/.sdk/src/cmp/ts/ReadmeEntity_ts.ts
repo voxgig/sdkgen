@@ -131,10 +131,10 @@ const ${eVar}s = await client.${entity.Name}().list()
     }
 
     if (opnames.includes('create')) {
-      // Members come from the SAME shape that generates <Name>CreateData:
-      // every required member must appear (the /* type */ placeholders also
-      // mark the block as an illustration for the doc gates); an
-      // all-optional create renders an empty — still assignable — literal.
+      // Members come from the SAME shape that generates <Name>CreateData
+      // (every required member appears), with a type-correct example VALUE
+      // via exampleValue — a `name: /* type */` comment is not a value and
+      // yields invalid TS (TS1109), so the example must carry a real literal.
       const createItems = opRequestShape(entity, 'create').items
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
@@ -143,7 +143,7 @@ const ${eVar}s = await client.${entity.Name}().list()
 const ${eVar} = await client.${entity.Name}().create({
 `)
       createItems.map((it: any) => {
-        Content(`  ${it.name}: /* ${canonToType(it.type, target.name)} */,
+        Content(`  ${it.name}: ${exampleValue(entity, entity.op && entity.op.create, it.name, 'example_' + it.name)},
 `)
       })
       Content(`})

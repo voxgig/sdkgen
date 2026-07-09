@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, entityPrimaryOp, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -14,14 +14,14 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const exampleEntity = Object.values(entity || {}).find((e: any) => e && e.active !== false) as any
+  // Pick an entity with a real op (prefer a read op) — never fabricate a
+  // `load` on an op-less entity like Cloudsmith's `Abort`. primaryOp is null
+  // only when NO entity exposes any op (a direct()-only SDK).
+  const { entity: exampleEntity, primaryOp } = pickExampleEntity(entity)
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
   const eVar = safeVarName(eName.toLowerCase(), 'js')
 
-  // Drive the test-mode / stateful examples off the entity's PRIMARY op — an op
-  // it actually exposes — never a hardcoded `load` a create-only entity lacks.
-  const primaryOp = exampleEntity ? (entityPrimaryOp(exampleEntity) || 'load') : 'load'
-  const primaryOpDef = exampleEntity && exampleEntity.op && exampleEntity.op[primaryOp]
+  const primaryOpDef = exampleEntity && primaryOp && exampleEntity.op && exampleEntity.op[primaryOp]
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
   // idF is the MATCH key; dataIdF is the id on the RETURNED record's data type
   // (guard `.id` reads off a returned record on this, not the match key).
@@ -29,7 +29,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const dataIdF = exampleEntity ? entityDataIdField(exampleEntity) : null
 
   const primaryArg = (idPlaceholder: string): string => {
-    if (!exampleEntity) return ''
+    if (!exampleEntity || !primaryOp) return ''
     if ('list' === primaryOp) return ''
     if (isMatchOp) {
       return idF ? `{ ${idF}: ${exampleValue(exampleEntity, primaryOpDef, idF, idPlaceholder)} }` : ''
@@ -47,6 +47,34 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const stateDataLine = dataIdF
     ? `console.log(data.${dataIdF})`
     : `console.log(data)`
+
+  // The op-driven example lines, shown only when the SDK has an entity op.
+  // A direct()-only SDK (no ops anywhere) shows a direct() test call instead
+  // and omits the stateful section (there is no op to retain state across).
+  const testModeExample = primaryOp
+    ? `const ${eVar} = await client.${eName}().${primaryOp}(${testCallArg})
+// ${eVar} is a bare entity populated with mock response data
+console.log(${eVar})`
+    : `const result = await client.direct({ path: '/api/resource', method: 'GET' })
+console.log(result)`
+  const stateSection = primaryOp
+    ? `### Retain entity state across calls
+
+Entity instances remember their last match and data:
+
+\`\`\`js
+const entity = client.${eName}()
+
+// First call runs the operation and stores its result
+await entity.${primaryOp}(${stateCallArg})
+
+// Subsequent calls reuse the stored state
+const data = entity.data()
+${stateDataLine}
+\`\`\`
+
+`
+    : ''
 
   const authActive = isAuthActive(model)
   const apikeyTesterCtor = authActive
@@ -97,9 +125,7 @@ Create a mock client for unit testing — no server required:
 \`\`\`js
 const client = ${model.const.Name}SDK.test()
 
-const ${eVar} = await client.${eName}().${primaryOp}(${testCallArg})
-// ${eVar} is a bare entity populated with mock response data
-console.log(${eVar})
+${testModeExample}
 \`\`\`
 
 You can also use the instance method:
@@ -109,22 +135,7 @@ const client = ${apikeyTesterCtor}
 const testClient = client.tester()
 \`\`\`
 
-### Retain entity state across calls
-
-Entity instances remember their last match and data:
-
-\`\`\`js
-const entity = client.${eName}()
-
-// First call runs the operation and stores its result
-await entity.${primaryOp}(${stateCallArg})
-
-// Subsequent calls reuse the stored state
-const data = entity.data()
-${stateDataLine}
-\`\`\`
-
-### Add custom middleware
+${stateSection}### Add custom middleware
 
 Pass features via the \`extend\` option:
 

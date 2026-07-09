@@ -143,10 +143,10 @@ fmt.Println(${eVar}s) // the array of records
 
     if (opnames.includes('create')) {
       // Members come from the SAME shape that generates the op's request
-      // data: every required member must appear — including a required id
-      // (the /* type */ placeholders also mark the block as an illustration
-      // for the doc gates); an all-optional create renders an empty — still
-      // valid — literal, and the compiled example is self-consuming.
+      // data (every required member appears, including a required id), each
+      // with a type-correct example VALUE via exampleValue — a
+      // `"name": /* type */` comment is not a value and yields uncompilable
+      // Go, so the example must carry a real literal.
       const createItems = opRequestShape(entity, 'create').items
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
@@ -155,7 +155,7 @@ fmt.Println(${eVar}s) // the array of records
 result, err := client.${entity.Name}(nil).Create(map[string]any{
 `)
       createItems.map((it: any) => {
-        Content(`    "${it.name}": /* ${canonToType(it.type, target.name)} */,
+        Content(`    "${it.name}": ${exampleValue(entity, entity.op && entity.op.create, it.name, 'example_' + it.name)},
 `)
       })
       Content(`}, nil)

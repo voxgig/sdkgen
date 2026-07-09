@@ -299,17 +299,16 @@ const results = await client.${ent.Name}().${opname}()
           }
           else if ('create' === opname) {
             // Members come from the SAME shape that generates
-            // <Name>CreateData: every required member must appear (the
-            // /* type */ placeholders also mark the block as an illustration
-            // for the doc gates); an all-optional create renders an empty —
-            // still assignable — literal.
+            // <Name>CreateData (every required member appears), each with a
+            // type-correct example VALUE via exampleValue — a `name: /* type */`
+            // comment is not a value and yields invalid TS (TS1109).
             const createItems = opRequestShape(ent, 'create').items
               .filter((it: any) => !it.optional)
             Content(`\`\`\`ts
 const result = await client.${ent.Name}().create({
 `)
             createItems.map((it: any) => {
-              Content(`  ${it.name}: /* ${canonToType(it.type, target.name)} */,
+              Content(`  ${it.name}: ${exampleValue(ent, ent.op && ent.op.create, it.name, 'example_' + it.name)},
 `)
             })
             Content(`})

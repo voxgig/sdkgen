@@ -5,7 +5,7 @@ const { ProjectNameEntityBase } = require('../ProjectNameEntityBase')
 
 
 // TODO: needs Entity superclass
-class EntityNameEntity extends ProjectNameEntityBase {
+class EntyClass extends ProjectNameEntityBase {
 
   constructor(client, entopts) {
     super(client, entopts)
@@ -16,7 +16,7 @@ class EntityNameEntity extends ProjectNameEntityBase {
 
 
   make() {
-    return new EntityNameEntity(this._client, this.entopts())
+    return new EntyClass(this._client, this.entopts())
   }
 
 
@@ -34,5 +34,5 @@ class EntityNameEntity extends ProjectNameEntityBase {
 
 
 module.exports = {
-  EntityNameEntity
+  EntyClass
 }

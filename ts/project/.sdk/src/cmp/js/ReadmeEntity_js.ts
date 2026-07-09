@@ -132,10 +132,10 @@ const ${eVar}s = await client.${entity.Name}().list()
 
     if (opnames.includes('create')) {
       // Members come from the SAME shape the runtime validates
-      // (opRequestShape): every required member must appear — including a
-      // required id and parent keys like page_id (the /* type */
-      // placeholders mark the block as an illustration); an all-optional
-      // create renders an empty — still valid — literal.
+      // (opRequestShape): every required member appears — including a
+      // required id and parent keys like page_id — each with a type-correct
+      // example VALUE via exampleValue — a `name: /* type */` comment is not
+      // a value and yields invalid code.
       const createItems = opRequestShape(entity, 'create').items
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
@@ -144,7 +144,7 @@ const ${eVar}s = await client.${entity.Name}().list()
 const ${eVar} = await client.${entity.Name}().create({
 `)
       createItems.map((it: any) => {
-        Content(`  ${it.name}: /* ${canonToType(it.type, target.name)} */,
+        Content(`  ${it.name}: ${exampleValue(entity, entity.op && entity.op.create, it.name, 'example_' + it.name)},
 `)
       })
       Content(`})

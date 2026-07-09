@@ -35,6 +35,8 @@ exports.entityIdField = entityIdField;
 exports.entityDataIdField = entityDataIdField;
 exports.entityOps = entityOps;
 exports.entityPrimaryOp = entityPrimaryOp;
+exports.pickExampleEntity = pickExampleEntity;
+exports.entityClassName = entityClassName;
 const jostraca_1 = require("jostraca");
 // The five ops, and whether their request payload is a `Match` (query/id) or
 // `Data` (body) — this fixes the generated type-name suffix per op.
@@ -203,6 +205,82 @@ function entityPrimaryOp(ent) {
         }
     }
     return ops[0] || null;
+}
+// Collision-free target-language CLASS name for an entity. The natural
+// class name is `<Name>Entity`, but that can equal another entity's
+// canonical DATA-type name `<Name'>` when Name' === Name + 'Entity' (e.g.
+// GitLab's `project` -> class `ProjectEntity` collides with `project_entity`
+// -> data type `ProjectEntity`), which redeclares a type in Go and merges/
+// shadows it in ts/py/rb. This assigns each entity a class name that is
+// unique across ALL emitted top-level type names (every entity's data type
+// and per-op Match/Data types, plus already-assigned class names): the
+// natural `<Name>Entity` when free, else `<Name>EntityClient`, `...Client2`,
+// … The DATA type keeps its canonical `<Name>` — only the suffixed class
+// yields. Deterministic (sorted-key iteration) and stable across runs.
+//
+// Memoised per entity-collection object so the O(n) assignment runs once.
+const _classNameCache = new WeakMap();
+function entityClassNames(entityColl) {
+    const cached = _classNameCache.get(entityColl);
+    if (null != cached) {
+        return cached;
+    }
+    const ents = (0, jostraca_1.each)(entityColl).filter((e) => e && e.active !== false);
+    // 1. Every top-level DATA-type name the target emits.
+    const taken = {};
+    ents.forEach((e) => {
+        taken[e.Name] = true;
+        for (const op of ['load', 'list', 'create', 'update', 'remove']) {
+            if (e.op && e.op[op]) {
+                taken[opTypeName(e.Name, op)] = true;
+            }
+        }
+    });
+    // 2. Assign each class name, avoiding all data types and prior classes.
+    const out = {};
+    ents.forEach((e) => {
+        let name = e.Name + 'Entity';
+        if (taken[name]) {
+            const base = name + 'Client';
+            name = base;
+            let n = 1;
+            while (taken[name]) {
+                n++;
+                name = base + n;
+            }
+        }
+        taken[name] = true;
+        out[e.name] = name;
+    });
+    _classNameCache.set(entityColl, out);
+    return out;
+}
+// The collision-free class name for one entity (see entityClassNames).
+// `entityColl` is main.<KIT>.entity (the collection the entity belongs to).
+function entityClassName(ent, entityColl) {
+    if (null == ent) {
+        return '';
+    }
+    const map = entityClassNames(entityColl);
+    return map[ent.name] || (ent.Name + 'Entity');
+}
+// Pick a representative entity for a single illustrative snippet (e.g. the
+// README's test-mode example): the first ACTIVE entity that exposes a read
+// op (list/load) so the snippet is meaningful, else the first with ANY
+// active op, else the first active entity. Returns { entity, primaryOp }
+// where primaryOp is null only when NO entity has an op — so callers never
+// fabricate an op the entity lacks (the cause of `.load()` on an op-less
+// entity like Cloudsmith's `Abort`). Entities iterate in sorted-key order
+// for deterministic output.
+function pickExampleEntity(entity) {
+    const actives = (0, jostraca_1.each)(entity).filter((e) => e && e.active !== false);
+    const readable = actives.find((e) => {
+        const op = entityPrimaryOp(e);
+        return 'list' === op || 'load' === op;
+    });
+    const withOp = actives.find((e) => null != entityPrimaryOp(e));
+    const chosen = readable || withOp || actives[0] || null;
+    return { entity: chosen, primaryOp: null == chosen ? null : entityPrimaryOp(chosen) };
 }
 // The id field on the entity's DATA type (its fields[]), or null. DISTINCT from
 // entityIdField (the load-MATCH key): an API can model a load match that carries

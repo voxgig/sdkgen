@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, entityIdField, entityPrimaryOp, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -23,16 +23,15 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
-  const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
+  // Pick an entity with a real op (prefer a read op) — never fabricate a
+  // `load` on an op-less entity like Cloudsmith's `Abort`.
+  const { entity: exampleEntity, primaryOp } = pickExampleEntity(entity)
 
-  if (exampleEntity) {
+  if (exampleEntity && primaryOp) {
     const eName = nom(exampleEntity, 'Name')
     const ename = eName.toLowerCase()
     // Model-driven id key: null when the entity has no id-like field.
     const idF = entityIdField(exampleEntity)
-    // Drive the test-mode example off the entity's PRIMARY op (never a hardcoded
-    // `load` a create-only entity lacks).
-    const primaryOp = entityPrimaryOp(exampleEntity) || 'load'
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     const recBody = idF ? `["${idF}" => "test01"]` : '[]'
     let callArg = ''

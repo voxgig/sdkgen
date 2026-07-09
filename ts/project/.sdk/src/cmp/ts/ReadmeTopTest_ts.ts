@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityIdField, entityPrimaryOp, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -14,17 +14,16 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
+  // Pick an entity with a real op (prefer a read op) — never fabricate a
+  // `load` on an op-less entity like Cloudsmith's `Abort`.
+  const { entity: exampleEntity, primaryOp } = pickExampleEntity(entity)
 
   Content(`\`\`\`ts
 const client = ${model.const.Name}SDK.test()
 `)
 
-  if (exampleEntity) {
+  if (exampleEntity && primaryOp) {
     const eName = nom(exampleEntity, 'Name')
-    // Drive the test-mode example off the entity's PRIMARY op (never a
-    // hardcoded `load` a create-only entity lacks).
-    const primaryOp = entityPrimaryOp(exampleEntity) || 'load'
     // A list() result is an array — name the variable accordingly.
     const eVar = safeVarName(eName.toLowerCase(), 'ts') +
       ('list' === primaryOp ? 's' : '')

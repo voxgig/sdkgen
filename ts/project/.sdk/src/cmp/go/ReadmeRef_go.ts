@@ -296,17 +296,17 @@ fmt.Println(results)
           }
           else if ('create' === opname) {
             // Members come from the SAME shape that generates the op's
-            // request data: every required member must appear — including a
-            // required id (the /* type */ placeholders also mark the block
-            // as an illustration for the doc gates); an all-optional create
-            // renders an empty — still valid — literal.
+            // request data (every required member appears, including a
+            // required id), each with a type-correct example VALUE via
+            // exampleValue — a `"name": /* type */` comment is not a value
+            // and yields uncompilable Go.
             const createItems = opRequestShape(ent, 'create').items
               .filter((it: any) => !it.optional)
             Content(`\`\`\`go
 result, err := client.${ent.Name}(nil).Create(map[string]any{
 `)
             createItems.map((it: any) => {
-              Content(`    "${it.name}": /* ${canonToType(it.type, target.name)} */,
+              Content(`    "${it.name}": ${exampleValue(ent, ent.op && ent.op.create, it.name, 'example_' + it.name)},
 `)
             })
             Content(`}, nil)

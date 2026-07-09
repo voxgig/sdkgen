@@ -2,7 +2,7 @@
 import { test, describe } from 'node:test'
 import { strictEqual, deepStrictEqual, ok } from 'node:assert'
 
-import { opRequestShape, opTypeName, OP_SUFFIX } from '../dist/sdkgen.js'
+import { opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity } from '../dist/sdkgen.js'
 
 
 // A model entity with a mix of required/optional fields, a per-op exclusion,
@@ -184,5 +184,72 @@ describe('opRequestShape — multi-point param merging', () => {
     const { items } = opRequestShape(makeNestedEntity(), 'invoke')
     const opt = optionalByName(items)
     deepStrictEqual(opt, { id: false })
+  })
+})
+
+
+describe('entityClassName — collision-free class names', () => {
+
+  // GitLab's shape: `project` (class ProjectEntity) vs `project_entity`
+  // (data type ProjectEntity). Keys iterate in sorted order.
+  const coll = {
+    project: { name: 'project', Name: 'Project', op: { load: {}, list: {} } },
+    project_entity: { name: 'project_entity', Name: 'ProjectEntity', op: { create: {} } },
+    user: { name: 'user', Name: 'User', op: { load: {} } },
+  }
+
+  test('the colliding class yields to the canonical data type', () => {
+    // project's natural class ProjectEntity == project_entity's data type,
+    // so project's class becomes ProjectEntityClient.
+    strictEqual(entityClassName(coll.project, coll), 'ProjectEntityClient')
+    // project_entity's own class (ProjectEntityEntity) is free — unchanged.
+    strictEqual(entityClassName(coll.project_entity, coll), 'ProjectEntityEntity')
+    // a non-colliding entity keeps the natural <Name>Entity.
+    strictEqual(entityClassName(coll.user, coll), 'UserEntity')
+  })
+
+  test('assignment is stable/idempotent (memoised) across calls', () => {
+    strictEqual(entityClassName(coll.project, coll), 'ProjectEntityClient')
+    strictEqual(entityClassName(coll.project, coll), 'ProjectEntityClient')
+  })
+
+  test('no collision -> plain <Name>Entity for every entity', () => {
+    const plain = {
+      a: { name: 'a', Name: 'Alpha', op: { load: {} } },
+      b: { name: 'b', Name: 'Beta', op: { list: {} } },
+    }
+    strictEqual(entityClassName(plain.a, plain), 'AlphaEntity')
+    strictEqual(entityClassName(plain.b, plain), 'BetaEntity')
+  })
+})
+
+
+describe('pickExampleEntity', () => {
+
+  test('prefers an entity with a read (list/load) op', () => {
+    const coll = {
+      abort: { name: 'abort', Name: 'Abort', active: true, op: {} },
+      cargo: { name: 'cargo', Name: 'Cargo', active: true, op: { list: {} } },
+    }
+    const { entity, primaryOp } = pickExampleEntity(coll)
+    strictEqual(entity.name, 'cargo')
+    strictEqual(primaryOp, 'list')
+  })
+
+  test('falls back to any op, never fabricating one', () => {
+    const coll = {
+      abort: { name: 'abort', Name: 'Abort', active: true, op: {} },
+      make: { name: 'make', Name: 'Make', active: true, op: { create: {} } },
+    }
+    const { entity, primaryOp } = pickExampleEntity(coll)
+    strictEqual(entity.name, 'make')
+    strictEqual(primaryOp, 'create')
+  })
+
+  test('an all-op-less model yields a null primaryOp (caller skips the call)', () => {
+    const coll = { abort: { name: 'abort', Name: 'Abort', active: true, op: {} } }
+    const { entity, primaryOp } = pickExampleEntity(coll)
+    strictEqual(entity.name, 'abort')
+    strictEqual(primaryOp, null)
   })
 })
