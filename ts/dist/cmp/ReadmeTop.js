@@ -183,9 +183,22 @@ ${aboutMd.trim()}
         // mental model the SDK is built around (model-driven; lists real entities).
         if (activeEntities.length > 0) {
             const entNames = activeEntities.map((e) => e.Name);
-            const entList = entNames.length > 1
+            const entCount = entNames.length;
+            const entList = entCount > 1
                 ? entNames.slice(0, -1).join(', ') + ' and ' + entNames[entNames.length - 1]
                 : entNames[0];
+            // Only enumerate the entity names inline when the set is small enough that
+            // the list clarifies the mental model rather than becoming a wall of names
+            // at the top of the README. Larger APIs get a count and a pointer to the
+            // Entities table below — and we never assert a "small set" when it isn't.
+            const NAME_INLINE_MAX = 6;
+            const inlineNames = entCount <= NAME_INLINE_MAX;
+            const surface = inlineNames
+                ? `a small set of **semantic entities** — ${entList} —`
+                : `**${entCount} semantic entities**`;
+            const seeEntities = inlineNames
+                ? ''
+                : ' See the [Entities](#entities) table below for the full list.';
             const exEnt = activeEntities[0];
             const ex = exEnt.Name;
             const exLower = (0, naming_1.safeVarName)(ex.toLowerCase(), 'ts');
@@ -225,8 +238,8 @@ ${aboutMd.trim()}
             const opList = (opNames.length ? opNames : ['list', 'load']).map((o) => '`' + o + '`').join(', ');
             (0, jostraca_1.Content)(`## Entities, not endpoints
 
-This SDK exposes the API as a small set of **semantic entities** — ${entList} — that you
-call directly, instead of assembling URL paths and query strings. Entities are
+This SDK exposes the API as ${surface} that you
+call directly, instead of assembling URL paths and query strings.${seeEntities} Entities are
 **Capitalised** to mark them as the primary surface, each with the operations they
 support (${opList}):
 
