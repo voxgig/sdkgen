@@ -144,13 +144,16 @@ sdkgen \`go-cli\` target. See the target source under
 `))
 
   // go.mod — sibling SDK via relative replace; aql/eng/go from the
-  // public Go module proxy.
+  // public Go module proxy. The go directive must be >= aql/eng/go's own
+  // (go 1.24.7 at eng/go/v0.0.1) — keep in step with AQL_ENG_VERSION.
   File({ name: 'go.mod' }, () => Content(`module ${cliModule}
 
-go 1.21
+go 1.24.7
 
 require ${sdkModule} v0.0.0
 require github.com/aql-lang/aql/eng/go ${AQL_ENG_VERSION}
+
+require github.com/jsonicjs/jsonic/go v0.1.6 // indirect
 
 replace ${sdkModule} => ../go
 `))
