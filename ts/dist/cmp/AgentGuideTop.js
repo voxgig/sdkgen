@@ -52,8 +52,9 @@ There are companion guides deeper in the tree: one per language
             (0, jostraca_1.Content)(`**Features** (${features.length}): `);
             (0, jostraca_1.Content)(features.map((f) => `\`${f.name}\``).join(', ') + `.
 
-Each feature is generated into every target at \`<lang>/src/feature/<name>/\`
-with its own guide.
+Each feature is generated into every SDK target — as a directory
+\`<lang>/src/feature/<name>/\` (ts/js) or a flat file in the \`<lang>/feature/\`
+package (other languages). Each target's guide documents its features.
 
 `);
         }
@@ -72,7 +73,7 @@ with its own guide.
 
 \`\`\`
 .sdk/
-  model/          the model: target/, feature/, and index .jsonic files
+  model/          the model: target/, feature/, and index .aontu files
   src/cmp/<lang>/  components — TypeScript that generates API-specific source
   tm/<lang>/       templates — verbatim source copied with placeholders
   dist/            compiled components (npm run build)

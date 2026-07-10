@@ -17,40 +17,88 @@ import {
 } from '../types'
 
 
-// Best-effort build/test commands for a generated target directory. Advisory
-// (a guide, not a runner); unknown targets fall back to a generic note.
-type LangCmd = { install?: string, build?: string, test?: string, note?: string }
+// Build/test commands for a generated target directory. Every SDK target ships
+// a Makefile (`make build` / `make test` are the source of truth), so
+// `viaMake` targets render those; only the dependency-install step is
+// ecosystem-specific. go-cli / go-mcp are non-SDK surfaces (build only).
+type LangCmd = { install?: string, build?: string, test?: string, viaMake?: boolean, note?: string }
 
 const LANG_CMD: Record<string, LangCmd> = {
-  ts:  { install: 'npm install', build: 'npm run build', test: 'npm test' },
-  js:  { install: 'npm install', test: 'npm test' },
-  go:  { build: 'go build ./...', test: 'go test ./...' },
-  py:  { install: 'pip install -e .', test: 'python -m pytest' },
-  php: { install: 'composer install', test: 'composer test' },
-  rb:  { install: 'bundle install', test: 'rake test' },
-  lua: { test: 'busted' },
+  ts:  { install: 'npm install', viaMake: true },
+  js:  { install: 'npm install', viaMake: true },
+  go:  { viaMake: true },
+  py:  { install: 'pip install -e .', viaMake: true },
+  php: { install: 'composer install', viaMake: true },
+  rb:  { install: 'bundle install', viaMake: true },
+  lua: { install: 'luarocks make', viaMake: true },
   'go-cli': { build: 'go build ./...', note: 'A CLI surface, not an SDK client library.' },
   'go-mcp': { build: 'go build ./...', note: 'An MCP server surface for AI agents, not an SDK client library.' },
 }
 
 
 function langCmd(name: string): LangCmd {
-  return LANG_CMD[name] || {}
+  return LANG_CMD[name] || { viaMake: true }
 }
 
 
-// A fenced shell block of the per-target build/test commands, or a generic
-// fallback line when the target has none registered.
+// A fenced shell block of the per-target build/test commands, run **in the
+// target directory** (the per-language guide already lives there). Prefers the
+// target's Makefile recipes (`make build` / `make test`).
 function langCommandsBlock(name: string): string {
   const c = langCmd(name)
   const lines: string[] = []
   if (c.install) lines.push(c.install)
-  if (c.build) lines.push(c.build)
-  if (c.test) lines.push(c.test)
-  if (0 === lines.length) {
-    return `Build and test \`${name}/\` with that language's standard toolchain.\n`
+  if (c.viaMake) {
+    lines.push('make build')
+    lines.push('make test')
   }
-  return '```bash\ncd ' + name + '\n' + lines.join('\n') + '\n```\n'
+  else {
+    if (c.build) lines.push(c.build)
+    if (c.test) lines.push(c.test)
+  }
+  if (0 === lines.length) {
+    return `Build and test with \`${name}\`'s standard toolchain.\n`
+  }
+  return '```bash\n# in this target directory (' + name + '/):\n' + lines.join('\n') + '\n```\n'
+}
+
+
+// --- feature layout helpers (targets differ) --------------------------------
+
+// Whether a target generates per-feature output at all. go-cli / go-mcp
+// disable the feature phase (`phase.feature.active: false`).
+function featuresEnabled(target: any): boolean {
+  return target?.phase?.feature?.active !== false
+}
+
+// ts/js lay each feature out as a directory `src/feature/<name>/`; the other
+// SDK targets (`srcfeature: false`) use flat files in a shared `feature/`
+// package. Drives where feature guides live / are referenced.
+function isDirLayout(target: any): boolean {
+  return target?.srcfeature !== false
+}
+
+function featureBase(target: any): string {
+  return isDirLayout(target) ? 'src/feature' : 'feature'
+}
+
+// The generated runtime file for a feature in a flat-layout target:
+// `<name>_feature.<ext>` (go/py/rb/lua) or `<Name>Feature.php` (php).
+function featureRuntimeFile(target: any, feature: any): string {
+  const ext = target?.ext || target?.name || ''
+  if ('php' === target?.name) {
+    return (feature.Name || feature.name) + 'Feature.php'
+  }
+  return feature.name + '_feature.' + ext
+}
+
+// A feature's active hook-stage names (feature.hook.<Stage>.active === true),
+// sorted (each() marks map keys as key$).
+function featureHooks(feature: any): string[] {
+  return each(feature.hook || {})
+    .filter((h: any) => h && h.active)
+    .map((h: any) => h.name || h.key$)
+    .filter(Boolean)
 }
 
 
@@ -116,9 +164,8 @@ function featureSection(): string {
   return `## Adding a feature
 
 A **feature** is a pipeline extension: an object of hooks that fire at named
-stages of every entity operation (see the feature guides under
-\`<lang>/src/feature/<name>/AGENTS.md\`). Built-in features are \`log\` and
-\`test\`.
+stages of every entity operation (each target's guide documents its
+features). Built-in features are \`log\` and \`test\`.
 
 \`\`\`bash
 cd .sdk
@@ -128,14 +175,15 @@ npm run build && npm run generate
 
 To author a **new** feature:
 
-1. Define its model at \`.sdk/model/feature/<name>.jsonic\` — \`name: key()\`,
+1. Define its model at \`.sdk/model/feature/<name>.aontu\` — \`name: key()\`,
    \`title\`, \`version\`, \`active\`, \`config.options.active\`, a \`hook\`
    map (\`<Stage>: active: true\`), and per-language \`deps\`.
-2. Register it in \`.sdk/model/feature/feature-index.jsonic\` with
-   \`@"<name>.jsonic"\`.
-3. Provide the per-language runtime at
-   \`.sdk/tm/<lang>/src/feature/<name>/\` (the \`FEATURE_Name\` /
-   \`FEATURE_VERSION\` placeholders are substituted on \`add-feature\`).
+2. Register it in \`.sdk/model/feature/feature-index.aontu\` with
+   \`@"<name>.aontu"\`.
+3. Provide the per-language runtime under that target's feature template dir
+   (\`.sdk/tm/<lang>/src/feature/<name>/\` for ts/js, \`.sdk/tm/<lang>/feature/\`
+   otherwise) — the \`FEATURE_Name\` / \`FEATURE_VERSION\` placeholders are
+   substituted on \`add-feature\`.
 4. \`npm run add-feature <name> && npm run build && npm run generate\`.
 `
 }
@@ -157,25 +205,25 @@ Each language target is generated from **two layers**:
 
 Placeholders substituted on copy: \`ProjectName\` (Pascal-case SDK name),
 \`GOMODULE\` (Go module path), \`FEATURE_Name\` / \`FEATURE_VERSION\`, and the
-\`$$path$$\` interpolation of a model value (such as the name) in \`.jsonic\`.
+\`$$path$$\` interpolation of a model value (such as the name) in \`.aontu\`.
 
 Propagate a change: edit the template/component → \`npm run build\` (only
 needed if you touched a component) → \`npm run generate\`. Target shape and
-deps live in \`.sdk/model/target/<lang>.jsonic\`; features in
-\`.sdk/model/feature/<name>.jsonic\`.
+deps live in \`.sdk/model/target/<lang>.aontu\`; features in
+\`.sdk/model/feature/<name>.aontu\`.
 `
 }
 
 
 // (d) how the aontu model language works.
 function aontuSection(): string {
-  return `## The model language (aontu \`.jsonic\`)
+  return `## The model language (aontu, \`.aontu\` files)
 
 The model is one structured object assembled by **aontu** (a unification
 engine) from three sources: the API model (entities/operations, from the
 OpenAPI spec via \`@voxgig/apidef\`), the base schema, and the target/feature
-definitions in \`.sdk/model/\`. \`.jsonic\` is a relaxed JSON with unification
-semantics:
+definitions in \`.sdk/model/\`. An \`.aontu\` file is a relaxed JSON (jsonic
+syntax) with unification semantics:
 
 | Syntax | Meaning |
 | --- | --- |
@@ -184,12 +232,12 @@ semantics:
 | \`*default \\| type\` | A default value unified against a type (e.g. \`*true \\| boolean\`). |
 | \`name: key()\` | Bind a field to its map key (so \`feature: log: {}\` gets \`name: 'log'\`). |
 | \`$$path$$\` | Interpolate a model value into a string — e.g. the SDK \`name\`. |
-| \`@"file.jsonic"\` | Include another fragment (how the index files work). |
+| \`@"file.aontu"\` | Include another fragment (how the index files work). |
 | \`x: .y\` | Reference another path's value (e.g. \`deps: ts: .js\`). |
 
 For example, the schema for every feature entry:
 
-\`\`\`jsonic
+\`\`\`aontu
 main: kit: feature: &: {
   name: key()
   active: *false | boolean
@@ -221,6 +269,11 @@ export {
   LANG_CMD,
   langCmd,
   langCommandsBlock,
+  featuresEnabled,
+  isDirLayout,
+  featureBase,
+  featureRuntimeFile,
+  featureHooks,
   activeTargets,
   activeFeatures,
   activeEntities,

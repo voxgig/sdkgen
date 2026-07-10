@@ -55,22 +55,24 @@ later feature can override an earlier one.
 
 | Part | Path |
 | --- | --- |
-| Model definition | \`.sdk/model/feature/${name}.jsonic\` (name, title, version, \`config.options.active\`, the \`hook\` map, per-language \`deps\`) |
-| Registered in | \`.sdk/model/feature/feature-index.jsonic\` (\`@"${name}.jsonic"\`) |
+| Model definition | \`.sdk/model/feature/${name}.aontu\` (name, title, version, \`config.options.active\`, the \`hook\` map, per-language \`deps\`) |
+| Registered in | \`.sdk/model/feature/feature-index.aontu\` (\`@"${name}.aontu"\`) |
 | Runtime template | \`.sdk/tm/${lang}/src/feature/${name}/\` (copied here on \`generate\`; \`FEATURE_Name\`/\`FEATURE_VERSION\` substituted) |
+
+(Paths are relative to the **project root** — four levels up from here.)
 
 ## Customising this feature
 
 - **Turn hooks on/off**: edit the \`hook\` map in
-  \`.sdk/model/feature/${name}.jsonic\` (\`<Stage>: active: true|false\`).
+  \`.sdk/model/feature/${name}.aontu\` (\`<Stage>: active: true|false\`).
 - **Change default activation**: set \`config.options.active\` in the same file.
 - **Dependencies**: edit \`deps.<lang>\` in the same file.
 - **Behaviour**: edit the runtime template under
   \`.sdk/tm/${lang}/src/feature/${name}/\`, then regenerate.
 
-After any change: \`cd .sdk && npm run generate\` (add \`npm run build\` first
-if you changed a component). If a regenerated file shows a literal
-\`FEATURE_Name\`/\`ProjectName\`, delete it and regenerate.
+After any change: \`cd ../../../../.sdk && npm run generate\` (add
+\`npm run build\` first if you changed a component). If a regenerated file
+shows a literal \`FEATURE_Name\`/\`ProjectName\`, delete it and regenerate.
 
 To author a **new** feature, copy this one's model + template shape — see the
 [project guide](../../../../AGENTS.md) and the
