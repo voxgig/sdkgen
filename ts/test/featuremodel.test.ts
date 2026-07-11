@@ -11,7 +11,7 @@
 import { test, describe } from 'node:test'
 import { strictEqual, ok, deepStrictEqual } from 'node:assert'
 
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import Path from 'node:path'
 
 import { Aontu } from 'aontu'
@@ -131,5 +131,51 @@ describe('feature-template-consistency', () => {
       .sort()
     const expected = ENTERPRISE.concat(['base', 'log', 'test']).sort()
     deepStrictEqual(dirs, expected)
+  })
+})
+
+
+// Every language target must ship the same feature set. ts/js keep features
+// under src/feature/<name>/<Name>Feature.<ext>; the other languages keep a
+// flat feature/ package (e.g. tm/go/feature/retry_feature.go) plus
+// src/feature/<name>/ copy-target dirs for `feature add`.
+describe('feature-language-parity', () => {
+
+  const TM = Path.join(SDK, 'tm')
+
+  function cap(n: string): string {
+    return n.charAt(0).toUpperCase() + n.slice(1)
+  }
+
+  const IMPL: Record<string, (n: string) => string> = {
+    ts: (n) => Path.join('ts', 'src', 'feature', n, cap(n) + 'Feature.ts'),
+    js: (n) => Path.join('js', 'src', 'feature', n, cap(n) + 'Feature.js'),
+    go: (n) => Path.join('go', 'feature', n + '_feature.go'),
+    py: (n) => Path.join('py', 'feature', n + '_feature.py'),
+    php: (n) => Path.join('php', 'feature', cap(n) + 'Feature.php'),
+    rb: (n) => Path.join('rb', 'feature', n + '_feature.rb'),
+    lua: (n) => Path.join('lua', 'feature', n + '_feature.lua'),
+  }
+
+  // Languages whose features are copied per-feature by `feature add` need a
+  // src/feature/<name>/ dir to copy (flat-feature languages use .gitkeep).
+  const ADD_TARGETS = ['ts', 'js', 'go', 'py', 'php', 'rb', 'lua', 'go-cli', 'go-mcp']
+
+  for (const [lang, impl] of Object.entries(IMPL)) {
+    test(`${lang}: every enterprise feature is implemented`, () => {
+      for (const name of ENTERPRISE) {
+        const p = Path.join(TM, impl(name))
+        ok(existsSync(p), `missing ${lang} implementation: ${p}`)
+      }
+    })
+  }
+
+  test('every target has a feature-add copy dir per feature', () => {
+    for (const t of ADD_TARGETS) {
+      for (const name of ENTERPRISE) {
+        const dir = Path.join(TM, t, 'src', 'feature', name)
+        ok(existsSync(dir), `missing feature-add dir: tm/${t}/src/feature/${name}`)
+      }
+    }
   })
 })

@@ -18,6 +18,10 @@ require_once __DIR__ . '/features.php';
 
 use Voxgig\Struct\Struct;
 
+// Features record diagnostic state on the client as dynamic properties
+// (_retry, _cache, _metrics, ...); allow them explicitly (PHP 8.2+
+// deprecates implicit dynamic properties).
+#[\AllowDynamicProperties]
 class ProjectNameSDK
 {
     public string $mode;

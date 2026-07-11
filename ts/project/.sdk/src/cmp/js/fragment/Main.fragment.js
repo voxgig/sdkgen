@@ -224,6 +224,7 @@ const SDK = ProjectNameSDK
 
 module.exports = {
   stdutil,
+  config,
 
   BaseFeature,
   ProjectNameEntityBase,

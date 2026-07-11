@@ -79,40 +79,46 @@ class EntyClass
   def _run_op(ctx, &post_done)
     utility = @_utility
 
-    # #PrePoint-Hook
+    begin
+      # #PrePoint-Hook
 
-    point, err = utility.make_point.call(ctx)
-    ctx.out["point"] = point
-    return utility.make_error.call(ctx, err) if err
+      point, err = utility.make_point.call(ctx)
+      ctx.out["point"] = point
+      return utility.make_error.call(ctx, err) if err
 
-    # #PreSpec-Hook
+      # #PreSpec-Hook
 
-    spec, err = utility.make_spec.call(ctx)
-    ctx.out["spec"] = spec
-    return utility.make_error.call(ctx, err) if err
+      spec, err = utility.make_spec.call(ctx)
+      ctx.out["spec"] = spec
+      return utility.make_error.call(ctx, err) if err
 
-    # #PreRequest-Hook
+      # #PreRequest-Hook
 
-    resp, err = utility.make_request.call(ctx)
-    ctx.out["request"] = resp
-    return utility.make_error.call(ctx, err) if err
+      resp, err = utility.make_request.call(ctx)
+      ctx.out["request"] = resp
+      return utility.make_error.call(ctx, err) if err
 
-    # #PreResponse-Hook
+      # #PreResponse-Hook
 
-    resp2, err = utility.make_response.call(ctx)
-    ctx.out["response"] = resp2
-    return utility.make_error.call(ctx, err) if err
+      resp2, err = utility.make_response.call(ctx)
+      ctx.out["response"] = resp2
+      return utility.make_error.call(ctx, err) if err
 
-    # #PreResult-Hook
+      # #PreResult-Hook
 
-    result, err = utility.make_result.call(ctx)
-    ctx.out["result"] = result
-    return utility.make_error.call(ctx, err) if err
+      result, err = utility.make_result.call(ctx)
+      ctx.out["result"] = result
+      return utility.make_error.call(ctx, err) if err
 
-    # #PreDone-Hook
+      # #PreDone-Hook
 
-    post_done.call
+      post_done.call
 
-    utility.done.call(ctx)
+      utility.done.call(ctx)
+    rescue StandardError => operr
+      # #PreUnexpected-Hook
+
+      raise operr
+    end
   end
 end

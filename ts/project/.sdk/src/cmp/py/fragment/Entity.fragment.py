@@ -73,43 +73,49 @@ class EntyClass:
     def _run_op(self, ctx, post_done):
         utility = self._utility
 
-        # #PrePoint-Hook
+        try:
+            # #PrePoint-Hook
 
-        point, err = utility.make_point(ctx)
-        ctx.out["point"] = point
-        if err is not None:
-            return utility.make_error(ctx, err)
+            point, err = utility.make_point(ctx)
+            ctx.out["point"] = point
+            if err is not None:
+                return utility.make_error(ctx, err)
 
-        # #PreSpec-Hook
+            # #PreSpec-Hook
 
-        spec, err = utility.make_spec(ctx)
-        ctx.out["spec"] = spec
-        if err is not None:
-            return utility.make_error(ctx, err)
+            spec, err = utility.make_spec(ctx)
+            ctx.out["spec"] = spec
+            if err is not None:
+                return utility.make_error(ctx, err)
 
-        # #PreRequest-Hook
+            # #PreRequest-Hook
 
-        resp, err = utility.make_request(ctx)
-        ctx.out["request"] = resp
-        if err is not None:
-            return utility.make_error(ctx, err)
+            resp, err = utility.make_request(ctx)
+            ctx.out["request"] = resp
+            if err is not None:
+                return utility.make_error(ctx, err)
 
-        # #PreResponse-Hook
+            # #PreResponse-Hook
 
-        resp2, err = utility.make_response(ctx)
-        ctx.out["response"] = resp2
-        if err is not None:
-            return utility.make_error(ctx, err)
+            resp2, err = utility.make_response(ctx)
+            ctx.out["response"] = resp2
+            if err is not None:
+                return utility.make_error(ctx, err)
 
-        # #PreResult-Hook
+            # #PreResult-Hook
 
-        result, err = utility.make_result(ctx)
-        ctx.out["result"] = result
-        if err is not None:
-            return utility.make_error(ctx, err)
+            result, err = utility.make_result(ctx)
+            ctx.out["result"] = result
+            if err is not None:
+                return utility.make_error(ctx, err)
 
-        # #PreDone-Hook
+            # #PreDone-Hook
 
-        post_done()
+            post_done()
 
-        return utility.done(ctx)
+            return utility.done(ctx)
+
+        except Exception:
+            # #PreUnexpected-Hook
+
+            raise
