@@ -428,6 +428,50 @@ class PipelineTest < Minitest::Test
     assert_equal [a, b], client.features
   end
 
+  def named_feature(name)
+    f = ProjectNameBaseFeature.new
+    f.name = name
+    f
+  end
+
+  # `_options` on an extend-feature instance positions it relative to an
+  # already-added feature (mirrors the ts featureAdd).
+  def test_feature_add_ordering_before_after_replace
+    client = ProjectNameSDK.test(nil, nil)
+    utility = client.get_utility
+    ctx = utility.make_context.call({
+      "opname" => "load", "client" => client, "utility" => utility,
+    }, nil)
+
+    client.features = []
+    names = -> { client.features.map(&:name) }
+
+    utility.feature_add.call(ctx, named_feature("a"))
+    utility.feature_add.call(ctx, named_feature("b"))
+    assert_equal %w[a b], names.call
+
+    before = named_feature("z1")
+    before._options = { "__before__" => "b" }
+    utility.feature_add.call(ctx, before)
+    assert_equal %w[a z1 b], names.call
+
+    after = named_feature("z2")
+    after._options = { "__after__" => "a" }
+    utility.feature_add.call(ctx, after)
+    assert_equal %w[a z2 z1 b], names.call
+
+    replace = named_feature("z3")
+    replace._options = { "__replace__" => "z1" }
+    utility.feature_add.call(ctx, replace)
+    assert_equal %w[a z2 z3 b], names.call
+
+    # An ordering option naming no existing feature falls back to append.
+    miss = named_feature("z4")
+    miss._options = { "__before__" => "missing" }
+    utility.feature_add.call(ctx, miss)
+    assert_equal %w[a z2 z3 b z4], names.call
+  end
+
 
   # === prepare_auth ===
 

@@ -9,9 +9,6 @@
 #
 # Deliberate differences from the ts pipeline suite (genuinely
 # inapplicable here):
-# - feature_add ordering options (__before__/__after__/__replace__) are not
-#   implemented by the py feature_add utility, which always appends; the
-#   append behaviour and the transport wrapping order are tested instead.
 # - a body-parse exception is not captured on result.err by the py
 #   result_body utility (it has no parse guard), so that ts case is
 #   omitted.
@@ -421,9 +418,6 @@ class TestFeatureOrdering:
         return feature
 
     def test_feature_add_appends_in_call_order(self):
-        # NOTE: the ts featureAdd supports __before__/__after__/__replace__
-        # ordering options; the py feature_add utility always appends, so
-        # only append ordering applies here.
         client = _client()
         ctx = _ctx(client)
         utility = client._utility
@@ -431,6 +425,42 @@ class TestFeatureOrdering:
         utility.feature_add(ctx, self._named_feature("aaa"))
         utility.feature_add(ctx, self._named_feature("zzz"))
         assert [f.get_name() for f in client.features] == start + ["aaa", "zzz"]
+
+    def test_feature_add_ordering_before_after_replace(self):
+        # `_options` on an extend-feature instance positions it relative to
+        # an already-added feature (mirrors the ts featureAdd).
+        client = _client()
+        ctx = _ctx(client)
+        utility = client._utility
+        client.features.clear()
+
+        def names():
+            return [f.get_name() for f in client.features]
+
+        utility.feature_add(ctx, self._named_feature("a"))
+        utility.feature_add(ctx, self._named_feature("b"))
+        assert names() == ["a", "b"]
+
+        before = self._named_feature("z1")
+        before._options = {"__before__": "b"}
+        utility.feature_add(ctx, before)
+        assert names() == ["a", "z1", "b"]
+
+        after = self._named_feature("z2")
+        after._options = {"__after__": "a"}
+        utility.feature_add(ctx, after)
+        assert names() == ["a", "z2", "z1", "b"]
+
+        replace = self._named_feature("z3")
+        replace._options = {"__replace__": "z1"}
+        utility.feature_add(ctx, replace)
+        assert names() == ["a", "z2", "z3", "b"]
+
+        # An ordering option naming no existing feature falls back to append.
+        miss = self._named_feature("z4")
+        miss._options = {"__before__": "missing"}
+        utility.feature_add(ctx, miss)
+        assert names() == ["a", "z2", "z3", "b", "z4"]
 
     def test_later_inits_wrap_earlier_ones_on_the_transport(self):
         # Transport-wrapping features compose by init order: the feature

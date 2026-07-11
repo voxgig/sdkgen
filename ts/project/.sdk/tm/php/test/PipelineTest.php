@@ -15,9 +15,6 @@ declare(strict_types=1);
 // - "a body-parse exception is captured on result.err": the PHP
 //   result_body utility calls the response json closure without a guard,
 //   so a throwing body surfaces as an exception, not on result->err.
-// - featureAdd __before__/__after__/__replace__ ordering: the PHP
-//   feature_add utility only appends (no ordering options yet); the append
-//   behaviour is asserted below.
 // - makeFetchDef "inits a missing result": covered, but note the PHP
 //   make_fetch_def builds the URL through make_url (spec parts/path), not
 //   inline.
@@ -496,10 +493,6 @@ class PipelineTest extends TestCase
 
     public function test_feature_add_appends_in_call_order(): void
     {
-        // Note: unlike the TS featureAdd, the PHP feature_add utility has no
-        // __before__/__after__/__replace__ ordering options — it only
-        // appends. Ordering therefore follows the add/init call order, which
-        // also determines transport-wrap nesting.
         $client = new PlClient([]);
         $ctx = self::ctx(['client' => $client]);
         $a = new ProjectNameBaseFeature();
@@ -507,6 +500,47 @@ class PipelineTest extends TestCase
         ProjectNameFeatureAdd::call($ctx, $a);
         ProjectNameFeatureAdd::call($ctx, $b);
         $this->assertSame([$a, $b], $client->features);
+    }
+
+    private static function named_feature(string $name): ProjectNameBaseFeature
+    {
+        $f = new ProjectNameBaseFeature();
+        $f->name = $name;
+        return $f;
+    }
+
+    public function test_feature_add_ordering_before_after_replace(): void
+    {
+        // `_options` on an extend-feature instance positions it relative to
+        // an already-added feature (mirrors the TS featureAdd).
+        $client = new PlClient([]);
+        $ctx = self::ctx(['client' => $client]);
+        $names = fn() => array_map(fn($f) => $f->name, $client->features);
+
+        ProjectNameFeatureAdd::call($ctx, self::named_feature('a'));
+        ProjectNameFeatureAdd::call($ctx, self::named_feature('b'));
+        $this->assertSame(['a', 'b'], $names());
+
+        $before = self::named_feature('z1');
+        $before->_options = ['__before__' => 'b'];
+        ProjectNameFeatureAdd::call($ctx, $before);
+        $this->assertSame(['a', 'z1', 'b'], $names());
+
+        $after = self::named_feature('z2');
+        $after->_options = ['__after__' => 'a'];
+        ProjectNameFeatureAdd::call($ctx, $after);
+        $this->assertSame(['a', 'z2', 'z1', 'b'], $names());
+
+        $replace = self::named_feature('z3');
+        $replace->_options = ['__replace__' => 'z1'];
+        ProjectNameFeatureAdd::call($ctx, $replace);
+        $this->assertSame(['a', 'z2', 'z3', 'b'], $names());
+
+        // An ordering option naming no existing feature falls back to append.
+        $miss = self::named_feature('z4');
+        $miss->_options = ['__before__' => 'missing'];
+        ProjectNameFeatureAdd::call($ctx, $miss);
+        $this->assertSame(['a', 'z2', 'z3', 'b', 'z4'], $names());
     }
 
 

@@ -354,10 +354,60 @@ func TestPipelineFeatureAdd(t *testing.T) {
 	})
 
 	t.Run("ordering-before-after-replace", func(t *testing.T) {
-		// The ts target supports __before__/__after__/__replace__ options on
-		// featureAdd; the Go featureAdd only appends. Skipped until the Go
-		// target grows ordering support.
-		t.Skip("Go featureAdd appends only; __before__/__after__/__replace__ not supported")
+		named := func(name string) *sdk.BaseFeature {
+			f := sdk.NewBaseFeature()
+			f.Name = name
+			return f
+		}
+
+		client, utility := plClient(t, nil)
+		ctx := plCtx(client, utility, nil)
+		client.Features = nil
+
+		names := func() string {
+			out := ""
+			for i, ef := range client.Features {
+				if i > 0 {
+					out += ","
+				}
+				out += ef.GetName()
+			}
+			return out
+		}
+		utility.FeatureAdd(ctx, named("a"))
+		utility.FeatureAdd(ctx, named("b"))
+		if got := names(); got != "a,b" {
+			t.Fatalf("setup: expected a,b got %s", got)
+		}
+
+		before := named("z1")
+		before.AddOpts = map[string]any{"__before__": "b"}
+		utility.FeatureAdd(ctx, before)
+		if got := names(); got != "a,z1,b" {
+			t.Fatalf("__before__: expected a,z1,b got %s", got)
+		}
+
+		after := named("z2")
+		after.AddOpts = map[string]any{"__after__": "a"}
+		utility.FeatureAdd(ctx, after)
+		if got := names(); got != "a,z2,z1,b" {
+			t.Fatalf("__after__: expected a,z2,z1,b got %s", got)
+		}
+
+		repl := named("z3")
+		repl.AddOpts = map[string]any{"__replace__": "z1"}
+		utility.FeatureAdd(ctx, repl)
+		if got := names(); got != "a,z2,z3,b" {
+			t.Fatalf("__replace__: expected a,z2,z3,b got %s", got)
+		}
+
+		// An ordering option naming no existing feature falls back to append.
+		miss := named("z4")
+		miss.AddOpts = map[string]any{"__before__": "missing"}
+		utility.FeatureAdd(ctx, miss)
+		if got := names(); got != "a,z2,z3,b,z4" {
+			t.Fatalf("fallback append: expected a,z2,z3,b,z4 got %s", got)
+		}
 	})
 }
 

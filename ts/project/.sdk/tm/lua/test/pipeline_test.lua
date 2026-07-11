@@ -11,9 +11,6 @@
 -- - Lua utilities return `(value, err)` pairs instead of Error instances,
 --   so error assertions check the second return value's `code`.
 -- - `done`/`make_error` return errors rather than throwing.
--- - The Lua `feature_add` appends only; the TS `__before__`/`__after__`/
---   `__replace__` ordering directives are not implemented in this target,
---   so ordering is asserted via insertion order.
 -- - A body-parse exception test is inapplicable: the Lua `result_body`
 --   calls `json_func` directly (transport json functions are plain Lua
 --   closures, not deserialisers that can throw on re-read).
@@ -440,9 +437,6 @@ describe("pipeline", function()
 
   describe("feature ordering", function()
 
-    -- Adapted: the Lua feature_add appends only; the TS ordering
-    -- directives (__before__/__after__/__replace__) are not implemented
-    -- in this target.
     it("feature_add appends to the client feature list", function()
       local client = { features = { { name = "a" }, { name = "b" } } }
       local ctx = { client = client }
@@ -453,6 +447,38 @@ describe("pipeline", function()
         table.insert(names, f.name)
       end
       assert.are.equal("a,b,z", table.concat(names, ","))
+    end)
+
+    -- `_options` on an extend-feature instance positions it relative to an
+    -- already-added feature (mirrors the ts featureAdd).
+    it("feature_add honours __before__/__after__/__replace__", function()
+      local client = { features = {} }
+      local ctx = { client = client }
+      local u = Utility.new()
+      local function names()
+        local out = {}
+        for _, f in ipairs(client.features) do
+          table.insert(out, f.name)
+        end
+        return table.concat(out, ",")
+      end
+
+      u.feature_add(ctx, { name = "a" })
+      u.feature_add(ctx, { name = "b" })
+      assert.are.equal("a,b", names())
+
+      u.feature_add(ctx, { name = "z1", _options = { __before__ = "b" } })
+      assert.are.equal("a,z1,b", names())
+
+      u.feature_add(ctx, { name = "z2", _options = { __after__ = "a" } })
+      assert.are.equal("a,z2,z1,b", names())
+
+      u.feature_add(ctx, { name = "z3", _options = { __replace__ = "z1" } })
+      assert.are.equal("a,z2,z3,b", names())
+
+      -- An ordering option naming no existing feature falls back to append.
+      u.feature_add(ctx, { name = "z4", _options = { __before__ = "missing" } })
+      assert.are.equal("a,z2,z3,b,z4", names())
     end)
 
     it("feature_hook fires hooks in feature-list order", function()
