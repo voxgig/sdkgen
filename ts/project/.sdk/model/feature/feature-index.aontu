@@ -1,5 +1,24 @@
 # Features
 
-
+# Core
 @"test.aontu"
 @"log.aontu"
+
+# Enterprise capabilities
+@"retry.aontu"
+@"timeout.aontu"
+@"ratelimit.aontu"
+@"cache.aontu"
+@"idempotency.aontu"
+@"paging.aontu"
+@"streaming.aontu"
+@"proxy.aontu"
+@"telemetry.aontu"
+@"metrics.aontu"
+@"debug.aontu"
+@"audit.aontu"
+@"clienttrack.aontu"
+@"rbac.aontu"
+
+# Test support: network behaviour simulation
+@"netsim.aontu"

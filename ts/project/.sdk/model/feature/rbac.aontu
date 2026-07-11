@@ -1,0 +1,24 @@
+
+main: kit: feature: rbac: {
+
+  name: key()
+  title: "Client-side role/permission enforcement"
+  version: '0.0.1'
+  active: true
+
+  config: {
+    options: {
+      active: false
+      # permissions the client holds ('*' grants everything)
+      permissions: []
+      # required permission keyed by '<entity>.<op>', '<op>', or '*'
+      rules: {}
+      # deny operations that have no matching rule
+      deny: false
+    }
+  }
+
+  hook: {
+    PrePoint: active: true
+  }
+}

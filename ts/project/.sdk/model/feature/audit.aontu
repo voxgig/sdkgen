@@ -1,0 +1,22 @@
+
+main: kit: feature: audit: {
+
+  name: key()
+  title: "Structured audit trail of operations"
+  version: '0.0.1'
+  active: true
+
+  config: {
+    options: {
+      active: false
+      actor: 'anonymous'
+      # maximum retained records
+      max: 1000
+    }
+  }
+
+  hook: {
+    PreDone: active: true
+    PreUnexpected: active: true
+  }
+}

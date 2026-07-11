@@ -1,0 +1,23 @@
+
+main: kit: feature: paging: {
+
+  name: key()
+  title: "Pagination signals for list operations"
+  version: '0.0.1'
+  active: true
+
+  config: {
+    options: {
+      active: false
+      pageParam: 'page'
+      limitParam: 'limit'
+      cursorParam: 'cursor'
+      startPage: 1
+    }
+  }
+
+  hook: {
+    PreRequest: active: true
+    PreResult: active: true
+  }
+}

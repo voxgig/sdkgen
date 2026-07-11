@@ -1,0 +1,21 @@
+
+main: kit: feature: clienttrack: {
+
+  name: key()
+  title: "Client identity and per-request correlation headers"
+  version: '0.0.1'
+  active: true
+
+  config: {
+    options: {
+      active: false
+      clientName: 'ProjectName-SDK'
+      clientVersion: '0.0.1'
+    }
+  }
+
+  hook: {
+    PostConstruct: active: true
+    PreRequest: active: true
+  }
+}
