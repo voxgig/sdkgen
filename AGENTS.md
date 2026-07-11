@@ -246,6 +246,22 @@ source** through a simulated pipeline+network offline (see
 `ts/test/featureharness.ts`); `ts/test/featuremodel.test.ts` guards
 model↔template consistency.
 
+### Generated-SDK test surfaces (ts templates)
+
+Every generated ts SDK ships its own coverage-oriented tests:
+
+- `test/feature.test.ts` + `test/feature/harness.ts` — drive each present
+  feature (discovered via `config.makeFeature`) through a mock pipeline;
+  `test/netsim.test.ts` covers the `test` feature's `net` simulation.
+- `test/pipeline.test.ts` — direct unit tests of the operation-pipeline
+  utilities' error/edge branches (missing spec/response, 4xx, transport
+  failure, feature ordering, auth shaping) reached via `stdutil`.
+- `npm run test-coverage` (or `make coverage`) enforces a coverage floor on
+  the SDK source (test files excluded); thresholds live in the generated
+  `package.json`. Note: `--enable-source-maps` (used by `npm test`) maps
+  coverage back to `.ts` and reads several points **lower** than true `.js`
+  coverage — the gate omits it deliberately.
+
 ---
 
 ## Git / workflow
