@@ -9,7 +9,6 @@ main: kit: feature: clienttrack: {
   config: {
     options: {
       active: false
-      clientName: 'ProjectName-SDK'
       clientVersion: '0.0.1'
     }
   }
