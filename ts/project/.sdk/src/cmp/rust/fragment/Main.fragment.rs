@@ -270,7 +270,10 @@ pub fn test_sdk(testopts: Value, sdkopts: Value) -> Rc<ProjectNameSDK> {
     };
     setp(&testopts, "active", Value::Bool(true));
 
-    let sdkopts = vs::set_path(
+    // set_path mutates `sdkopts` in place and returns the inner parent node;
+    // discard the return so we pass the full options root (mirrors go's
+    // vs.SetPath(sdkopts, ...) which does not rebind).
+    vs::set_path(
         &sdkopts,
         &Value::list(vec![Value::str("feature"), Value::str("test")]),
         testopts,

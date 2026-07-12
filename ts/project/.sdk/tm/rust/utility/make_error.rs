@@ -17,7 +17,11 @@ pub fn make_error_util(
         opname = "unknown operation".to_string();
     }
 
-    let result = match ctx.result.borrow().clone() {
+    // Bind the clone to a local first: a `match` scrutinee keeps its
+    // temporary `Ref` alive for the whole match, which would collide with the
+    // `borrow_mut()` in the None arm ("RefCell already borrowed").
+    let cur_result = ctx.result.borrow().clone();
+    let result = match cur_result {
         Some(r) => r,
         None => {
             let r = Rc::new(RefCell::new(SdkResult::new(&Value::empty_map())));
