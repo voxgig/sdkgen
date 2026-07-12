@@ -1,0 +1,37 @@
+
+main: kit: target: c: {
+
+  title: C
+  ext: c
+  comment: line: "//"
+  module: name: '$$name$$'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  # struct is vendored under utility/struct — no external dep. The whole
+  # pipeline is synchronous; the transport uses libcurl when available at
+  # build time (weak, optional) else returns a transport error.
+  deps: {
+  }
+}
+
+
+main: kit: feature: &: target: c: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Publication: C has no central registry — publishing IS the git tag.
+main: kit: target: c: publish: {
+  tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'none'
+    url: ''
+    vault: { alias: 'none', env: 'NONE' }
+  }
+}
