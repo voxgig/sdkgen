@@ -13,8 +13,8 @@ pub mod ordered_map;
 pub mod re;
 pub mod value;
 
-mod major;
-mod mini;
+pub mod major;
+pub mod mini;
 
 pub use value::{Sentinel, Value, DELETE, SKIP};
 
@@ -26,7 +26,7 @@ pub use consts::{
 pub use mini::{
     clone, del_prop, esc_re, esc_url, filter, filter_vals, flatten, get_def, get_elem,
     get_elem_or_else, get_prop, has_key, is_empty, is_func, is_key, is_list, is_map, is_node,
-    items, jm, join, join_vals, jsonify, jt, keys_of, keysof_vec, lookup, pad, pathify, re_compile,
+    items, items_vec, jm, join, join_vals, jsonify, jt, keys_of, keysof_vec, lookup, pad, pathify, re_compile,
     re_escape, re_find, re_find_all, re_replace, re_test, set_prop, size, slice, str_key,
     stringify, type_name, typify,
 };

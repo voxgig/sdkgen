@@ -51,7 +51,12 @@ class Context {
     client = vs.getprop(ctxmap, 'client') ?? basectx?.client;
     utility = vs.getprop(ctxmap, 'utility') ?? basectx?.utility;
 
-    ctrl = vs.getprop(ctxmap, 'ctrl') ?? basectx?.ctrl ?? {};
+    final rawctrl = vs.getprop(ctxmap, 'ctrl');
+    ctrl = null != rawctrl
+        ? (rawctrl is Map && rawctrl is! Map<String, dynamic>
+            ? Map<String, dynamic>.from(rawctrl)
+            : rawctrl)
+        : (basectx?.ctrl ?? {});
     meta = vs.getprop(ctxmap, 'meta') ?? basectx?.meta ?? {};
 
     config = vs.getprop(ctxmap, 'config') ?? basectx?.config;

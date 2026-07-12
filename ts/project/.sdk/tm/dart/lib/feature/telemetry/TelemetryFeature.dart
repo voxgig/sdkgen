@@ -30,7 +30,7 @@ class TelemetryFeature extends BaseFeature {
 
     final track = _client.track;
     if (null == track['telemetry']) {
-      track['telemetry'] = {'spans': [], 'active': 0};
+      track['telemetry'] = <String, dynamic>{'spans': <dynamic>[], 'active': 0};
     }
     return null;
   }

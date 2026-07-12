@@ -142,7 +142,7 @@ class RetryFeature extends BaseFeature {
   void _track(dynamic ctx, int attempt, dynamic res, int wait) {
     final track = _client.track;
     if (null == track['retry']) {
-      track['retry'] = {'attempts': 0, 'retries': []};
+      track['retry'] = <String, dynamic>{'attempts': 0, 'retries': <dynamic>[]};
     }
     track['retry']['attempts']++;
     track['retry']['retries'].add({

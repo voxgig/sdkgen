@@ -114,7 +114,7 @@ class PagingFeature extends BaseFeature {
     result.paging = paging;
 
     final track = _client.track;
-    track['paging'] = {'last': paging};
+    track['paging'] = <String, dynamic>{'last': paging};
     return null;
   }
 

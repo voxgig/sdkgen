@@ -56,7 +56,7 @@ dynamic base([Map<String, dynamic>? over]) {
         ctx.out = Map<String, dynamic>.from(v);
         break;
       case 'ctrl':
-        ctx.ctrl = v;
+        ctx.ctrl = v is Map ? Map<String, dynamic>.from(v) : v;
         break;
       case 'utility':
         ctx.utility = v;

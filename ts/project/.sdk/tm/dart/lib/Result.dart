@@ -32,6 +32,7 @@ class Result {
         'statusText': statusText,
         'headers': headers,
         'body': body,
+        'err': err,
         'resdata': resdata,
         'resmatch': resmatch,
       };

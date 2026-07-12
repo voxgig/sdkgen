@@ -97,7 +97,7 @@ class TimeoutFeature extends BaseFeature {
   void _track(dynamic ctx, int ms) {
     final track = _client.track;
     if (null == track['timeout']) {
-      track['timeout'] = {'count': 0, 'ms': ms};
+      track['timeout'] = <String, dynamic>{'count': 0, 'ms': ms};
     }
     track['timeout']['count']++;
   }

@@ -26,9 +26,9 @@ class MetricsFeature extends BaseFeature {
 
     final track = _client.track;
     if (null == track['metrics']) {
-      track['metrics'] = {
-        'total': {'count': 0, 'ok': 0, 'err': 0, 'totalMs': 0, 'maxMs': 0},
-        'ops': {},
+      track['metrics'] = <String, dynamic>{
+        'total': <String, dynamic>{'count': 0, 'ok': 0, 'err': 0, 'totalMs': 0, 'maxMs': 0},
+        'ops': <String, dynamic>{},
       };
     }
     return null;
@@ -77,7 +77,7 @@ class MetricsFeature extends BaseFeature {
 
     var op = m['ops'][key];
     if (null == op) {
-      op = m['ops'][key] = {'count': 0, 'ok': 0, 'err': 0, 'totalMs': 0, 'maxMs': 0};
+      op = m['ops'][key] = <String, dynamic>{'count': 0, 'ok': 0, 'err': 0, 'totalMs': 0, 'maxMs': 0};
     }
 
     _bump(m['total'], ok, dur);

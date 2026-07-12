@@ -30,7 +30,7 @@ class AuditFeature extends BaseFeature {
 
     final track = _client.track;
     if (null == track['audit']) {
-      track['audit'] = {'records': []};
+      track['audit'] = <String, dynamic>{'records': <dynamic>[]};
     }
     return null;
   }

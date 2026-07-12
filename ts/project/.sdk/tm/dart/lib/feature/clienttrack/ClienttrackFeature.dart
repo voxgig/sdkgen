@@ -34,7 +34,7 @@ class ClienttrackFeature extends BaseFeature {
   @override
   dynamic PostConstruct(dynamic ctx) {
     _session = (options['sessionId'] ?? _genid('session')).toString();
-    _client.track['clienttrack'] = {
+    _client.track['clienttrack'] = <String, dynamic>{
       'session': _session,
       'requests': 0,
       'clientName': _name(),
@@ -63,7 +63,7 @@ class ClienttrackFeature extends BaseFeature {
 
     final track = _client.track;
     if (null == track['clienttrack']) {
-      track['clienttrack'] = {
+      track['clienttrack'] = <String, dynamic>{
         'session': _session,
         'requests': 0,
         'clientName': _name(),

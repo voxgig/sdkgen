@@ -13,7 +13,7 @@ use std::rc::Rc;
 
 use common::*;
 
-use RUSTCRATE::core::helpers::{get_bool, get_str, getp, ja, jo, setp, vfn};
+use RUSTCRATE::core::helpers::{get_bool, get_str, getp, ja, jo, vfn};
 use RUSTCRATE::feature::audit::AuditFeature;
 use RUSTCRATE::feature::cache::CacheFeature;
 use RUSTCRATE::feature::clienttrack::ClienttrackFeature;

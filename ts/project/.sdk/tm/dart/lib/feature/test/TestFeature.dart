@@ -40,7 +40,7 @@ class TestFeature extends BaseFeature {
 
     dynamic respond(int status, [dynamic data, dynamic res]) {
       final out = vs.merge([
-        {
+        <String, dynamic>{
           'status': status,
           'statusText': 'OK',
           'json': () => data,
@@ -91,7 +91,17 @@ class TestFeature extends BaseFeature {
         if (null == ent) {
           return respond(404, null, {'statusText': S_NOT_FOUND});
         } else {
-          vs.merge([ent, fctx.reqdata ?? {}]);
+          // Dart's single null stands in for the donor's undefined: merge
+          // must not overwrite stored values with absent ones.
+          final upddata = <String, dynamic>{};
+          if (fctx.reqdata is Map) {
+            (fctx.reqdata as Map).forEach((k, v) {
+              if (null != v) {
+                upddata[k.toString()] = v;
+              }
+            });
+          }
+          vs.merge([ent, upddata]);
           vs.delprop(ent, r'$KEY');
           final out = vs.clone(ent);
           return respond(200, out);
@@ -187,7 +197,7 @@ class TestFeature extends BaseFeature {
       if (call <= failTimes) {
         await sleep(pickLatency());
         final status = null == net['failStatus'] ? 503 : net['failStatus'];
-        return {
+        return <String, dynamic>{
           'status': status,
           'statusText': 'Simulated Failure',
           'body': 'not-used',
@@ -220,6 +230,11 @@ class TestFeature extends BaseFeature {
     for (final k in vs.keysof(args)) {
       if ('id' == k || !vs.isempty(vs.select(reqd, k))) {
         final v = param(ctx, k);
+        // Dart's single null stands in for the donor's undefined: an
+        // absent match value constrains nothing.
+        if (null == v) {
+          continue;
+        }
         // NOTE: mirrors the donor: op.alias is not present on Operation,
         // so no alias alternates are generated here.
         dynamic qor = [

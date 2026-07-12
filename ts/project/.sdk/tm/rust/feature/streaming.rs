@@ -80,7 +80,8 @@ impl Feature for StreamingFeature {
                     Some(r) => r,
                     None => return Vec::new(),
                 };
-                iterate(&options, &result.borrow().resdata)
+                let resdata = result.borrow().resdata.clone();
+                iterate(&options, &resdata)
             }));
         }
 

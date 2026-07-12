@@ -913,16 +913,22 @@ impl FhHarness {
         self.utility.feature_hook(&ctx, "PreDone");
 
         let result = ctx.result.borrow().clone();
-        if let Some(r) = &result {
-            if r.borrow().ok {
-                return FhOpResult {
-                    ok: true,
-                    data: r.borrow().resdata.clone(),
-                    err: None,
-                    result,
-                    ctx,
-                };
+        let ok_data = result.as_ref().and_then(|r| {
+            let r = r.borrow();
+            if r.ok {
+                Some(r.resdata.clone())
+            } else {
+                None
             }
+        });
+        if let Some(data) = ok_data {
+            return FhOpResult {
+                ok: true,
+                data,
+                err: None,
+                result,
+                ctx,
+            };
         }
 
         let err = result

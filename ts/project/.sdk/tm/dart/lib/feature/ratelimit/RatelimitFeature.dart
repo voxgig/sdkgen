@@ -95,7 +95,7 @@ class RatelimitFeature extends BaseFeature {
   void _track(dynamic ctx, int waitMs) {
     final track = _client.track;
     if (null == track['ratelimit']) {
-      track['ratelimit'] = {'throttled': 0, 'waitMs': 0};
+      track['ratelimit'] = <String, dynamic>{'throttled': 0, 'waitMs': 0};
     }
     track['ratelimit']['throttled']++;
     track['ratelimit']['waitMs'] += waitMs;

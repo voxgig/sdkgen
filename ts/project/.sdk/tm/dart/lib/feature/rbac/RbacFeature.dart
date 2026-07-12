@@ -95,10 +95,10 @@ class RbacFeature extends BaseFeature {
   void _track(dynamic ctx, String required, bool allowed) {
     final track = _client.track;
     if (null == track['rbac']) {
-      track['rbac'] = {'allowed': 0, 'denied': 0, 'last': null};
+      track['rbac'] = <String, dynamic>{'allowed': 0, 'denied': 0, 'last': null};
     }
     track['rbac'][allowed ? 'allowed' : 'denied']++;
-    track['rbac']['last'] = {
+    track['rbac']['last'] = <String, dynamic>{
       'required': required,
       'allowed': allowed,
       'op': null == ctx.op ? null : ctx.op.name,

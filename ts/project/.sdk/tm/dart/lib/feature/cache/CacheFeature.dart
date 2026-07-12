@@ -72,7 +72,7 @@ class CacheFeature extends BaseFeature {
       final snapshot = await _snapshot(res);
       final ttl = null == options['ttl'] ? 5000 : options['ttl'];
       _evict();
-      _store[key] = {'expiry': now + ttl, 'snapshot': snapshot};
+      _store[key] = <String, dynamic>{'expiry': now + ttl, 'snapshot': snapshot};
       _track('miss');
       return _replay(snapshot);
     }
@@ -104,7 +104,7 @@ class CacheFeature extends BaseFeature {
     if (rh is Map) {
       rh.forEach((k, v) => headers[k.toString()] = v);
     }
-    return {
+    return <String, dynamic>{
       'status': vs.getprop(res, 'status'),
       'statusText': vs.getprop(res, 'statusText'),
       'data': data,
@@ -115,7 +115,7 @@ class CacheFeature extends BaseFeature {
   dynamic _replay(dynamic snapshot) {
     final headers = snapshot['headers'] ?? {};
     final data = snapshot['data'];
-    return {
+    return <String, dynamic>{
       'status': snapshot['status'],
       'statusText': snapshot['statusText'],
       'body': 'not-used',
@@ -145,7 +145,7 @@ class CacheFeature extends BaseFeature {
   void _track(String kind) {
     final track = _client.track;
     if (null == track['cache']) {
-      track['cache'] = {'hit': 0, 'miss': 0, 'bypass': 0};
+      track['cache'] = <String, dynamic>{'hit': 0, 'miss': 0, 'bypass': 0};
     }
     track['cache'][kind]++;
   }

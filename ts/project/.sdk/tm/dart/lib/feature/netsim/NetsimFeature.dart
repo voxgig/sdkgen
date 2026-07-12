@@ -158,7 +158,7 @@ class NetsimFeature extends BaseFeature {
   void _track(dynamic ctx, dynamic applied) {
     final track = _client.track;
     if (null == track['netsim']) {
-      track['netsim'] = {'calls': 0, 'applied': []};
+      track['netsim'] = <String, dynamic>{'calls': 0, 'applied': <dynamic>[]};
     }
     track['netsim']['calls']++;
     track['netsim']['applied'].add(applied);
@@ -170,7 +170,7 @@ class NetsimFeature extends BaseFeature {
   // Build a transport-shaped response (matching the test feature's mock).
   dynamic _respond(dynamic ctx, dynamic status, [dynamic data, dynamic extra]) {
     final out = vs.merge([
-      {
+      <String, dynamic>{
         'status': status,
         'statusText': 'OK',
         'json': () => data,

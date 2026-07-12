@@ -15,7 +15,7 @@ pub fn param_util(ctx: &Rc<Context>, paramdef: &Value) -> Value {
 
     let pt = vs::typify(paramdef);
 
-    let key = if 0 < (vs::T_STRING & pt) {
+    let key = if 0 != ((vs::T_STRING as i64) & pt) {
         match paramdef {
             Value::Str(s) => s.clone(),
             _ => String::new(),

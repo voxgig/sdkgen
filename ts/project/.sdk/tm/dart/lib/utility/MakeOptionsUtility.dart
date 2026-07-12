@@ -61,7 +61,9 @@ dynamic makeOptions(dynamic ctx) {
   // merge/validate, defaulting to the dart:io transport.
   final sysFetch = vs.getpath(options, 'system.fetch') ?? httpFetch;
 
-  dynamic opts = vs.merge([{}, cfgopts, options ?? {}]);
+  // User option maps are cloned first — their (possibly narrow) literal
+  // types must not constrain the merged structures.
+  dynamic opts = vs.merge([{}, cfgopts, vs.clone(options ?? {})]);
 
   opts = vs.validate(opts, optspec);
 

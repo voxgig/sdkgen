@@ -50,7 +50,7 @@ class IdempotencyFeature extends BaseFeature {
 
     final track = _client.track;
     if (null == track['idempotency']) {
-      track['idempotency'] = {'issued': 0, 'last': null};
+      track['idempotency'] = <String, dynamic>{'issued': 0, 'last': null};
     }
     track['idempotency']['issued']++;
     track['idempotency']['last'] = key;

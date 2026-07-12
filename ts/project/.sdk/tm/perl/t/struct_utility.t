@@ -381,11 +381,29 @@ if (Voxgig::Struct::ismap($struct_spec->{transform})) {
            });
 }
 
-# Validate.
+# Validate. The canonical runner applies the NULLMARK fixup (flags.null,
+# the default) to these sections, so JSON nulls in data/spec/out are
+# encoded as "__NULL__" strings before validate runs - genuine nulls only
+# flow through the sections run with { null: false } (basic, invalid),
+# mirroring the rb struct_utility_test flags.
 if (Voxgig::Struct::ismap($struct_spec->{validate})) {
     my $vd = $struct_spec->{validate};
-    for my $sec (qw(basic child one exact invalid special)) {
+    for my $sec (qw(basic invalid)) {
         runset("validate.$sec", $vd->{$sec}{set},
+               sub {
+                   my $in = $_[0];
+                   return Voxgig::Struct::validate(
+                       Voxgig::Struct::clone($in->{data}),
+                       Voxgig::Struct::clone($in->{spec}),
+                       $in->{inj},
+                   );
+               });
+    }
+    for my $sec (qw(child one exact special)) {
+        my $entries = $vd->{$sec}{set};
+        next unless Voxgig::Struct::islist($entries);
+        my $fixed = $fix_null->(Voxgig::Struct::clone($entries));
+        runset("validate.$sec", $fixed,
                sub {
                    my $in = $_[0];
                    return Voxgig::Struct::validate(

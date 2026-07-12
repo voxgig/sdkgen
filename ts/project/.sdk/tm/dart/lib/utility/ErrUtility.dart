@@ -11,6 +11,10 @@ String errmsg(dynamic err) {
   if (null == err) {
     return 'unknown error';
   }
+  if (err is Map) {
+    final m = err['message'];
+    return (m is String && '' != m) ? m : 'unknown error';
+  }
   try {
     final m = (err as dynamic).message;
     if (m is String && '' != m) {
@@ -25,6 +29,10 @@ String errmsg(dynamic err) {
 String errcode(dynamic err) {
   if (null == err) {
     return '';
+  }
+  if (err is Map) {
+    final c = err['code'];
+    return c is String ? c : '';
   }
   try {
     final c = (err as dynamic).code;

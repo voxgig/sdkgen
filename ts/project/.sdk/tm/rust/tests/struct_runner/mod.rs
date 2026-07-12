@@ -4,10 +4,8 @@
 // (mirrors tm/go/test/struct_runner_test.go).
 #![allow(dead_code)]
 
-use std::cell::RefCell;
 use std::fs;
 use std::path::PathBuf;
-use std::rc::Rc;
 
 use RUSTCRATE::utility::voxgigstruct::ordered_map::OrderedMap;
 

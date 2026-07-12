@@ -27,7 +27,7 @@ class DebugFeature extends BaseFeature {
 
     final track = _client.track;
     if (null == track['debug']) {
-      track['debug'] = {'entries': []};
+      track['debug'] = <String, dynamic>{'entries': <dynamic>[]};
     }
     return null;
   }

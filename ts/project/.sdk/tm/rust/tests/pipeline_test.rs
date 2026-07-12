@@ -12,7 +12,7 @@ use std::rc::Rc;
 
 use common::*;
 
-use RUSTCRATE::core::helpers::{getp, jo, setp};
+use RUSTCRATE::core::helpers::{getp, jo};
 use RUSTCRATE::utility::voxgigstruct as vs;
 use RUSTCRATE::{
     test_sdk, BaseFeature, Context, CtxSpec, Entity, FeatureRef, FetcherFn, Operation,
