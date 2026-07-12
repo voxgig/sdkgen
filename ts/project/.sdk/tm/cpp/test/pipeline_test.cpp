@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "testlib.hpp"
 #include "harness.hpp"
 
 using namespace sdk;
