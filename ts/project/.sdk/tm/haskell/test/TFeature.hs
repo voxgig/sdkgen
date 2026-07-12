@@ -19,7 +19,7 @@ bnum m k = do v <- getp m k; pure (case v of VNum n -> n; _ -> -999)
 specHeader :: OpResult -> String -> IO Value
 specHeader r name = do
   sp <- readIORef (cSpec (orCtx r))
-  case sp of VMap _ -> do h <- getp sp "headers"; headerCI h name; _ -> pure VNoval
+  case sp of { VMap _ -> do { h <- getp sp "headers"; headerCI h name }; _ -> pure VNoval }
 
 tests :: Counters -> IO ()
 tests c = do

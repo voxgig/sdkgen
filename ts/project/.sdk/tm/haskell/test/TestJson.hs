@@ -1,11 +1,13 @@
 -- Self-contained JSON reader building struct `Value` nodes directly (no
--- third-party dependency). Vendored from the voxgig/struct haskell corpus
--- runner; shared by the struct corpus runner and the entity-fixture tests.
+-- third-party dependency beyond the `array` boot library). Shared by the
+-- struct corpus runner and the entity-fixture tests. Uses O(1) array indexing
+-- so large corpora parse in linear time.
 
 {-# LANGUAGE LambdaCase #-}
 
 module TestJson (jsonRead) where
 
+import Data.Array (Array, listArray, (!))
 import Data.Char (chr)
 import Data.IORef
 import Numeric (readHex)
@@ -15,9 +17,9 @@ import VoxgigStruct
 jsonRead :: String -> IO Value
 jsonRead s0 = do
   posRef <- newIORef 0
-  let arr = s0
-      n = length arr
-      at i = arr !! i
+  let n = length s0
+      a = listArray (0, max 0 (n - 1)) s0 :: Array Int Char
+      at i = a ! i
       peek = do p <- readIORef posRef; return (if p < n then Just (at p) else Nothing)
       adv = modifyIORef' posRef (+ 1)
       skipWs = do
@@ -86,7 +88,7 @@ jsonRead s0 = do
                   'f' -> push '\f' >> loop
                   'u' -> do
                     pp <- readIORef posRef
-                    let hex = take 4 (drop pp arr)
+                    let hex = [at (pp + k) | k <- [0 .. 3], pp + k < n]
                     modifyIORef' posRef (+ 4)
                     case readHex hex of { [(code, _)] -> push (chr code) >> loop; _ -> loop }
                   _ -> push e >> loop
@@ -100,6 +102,6 @@ jsonRead s0 = do
               if p < n && (at p `elem` "0123456789-+.eE") then adv >> go else return ()
         go
         end <- readIORef posRef
-        let tok = take (end - start) (drop start arr)
+        let tok = [at j | j <- [start .. end - 1]]
         return (VNum (read tok))
   pval

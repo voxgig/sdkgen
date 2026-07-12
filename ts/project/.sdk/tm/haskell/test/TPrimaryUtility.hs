@@ -45,6 +45,10 @@ tests c alltests = do
   runTest c "primary.make_options_map" $ do
     cl <- C.testSdk0
     ctx <- mkCtx cl "load"
+    -- make_options runs once on raw options at construction; re-run on a
+    -- fresh raw map (the inherited options already carry __derived__).
+    raw <- emptyMap
+    writeIORef (cOptions ctx) raw
     o <- makeOptionsUtil ctx
     pure (ismap o)
 
