@@ -136,7 +136,7 @@ and utility = {
   mutable u_feature_hook : ctx -> string -> unit;
   mutable u_feature_init : ctx -> feature -> unit;
   mutable u_make_fetch_def : ctx -> (value * sdk_error option);
-  mutable u_make_context : value -> ctx option -> ctx;
+  mutable u_make_context : ctxspec -> ctx option -> ctx;
   mutable u_make_options : ctx -> value;
   mutable u_make_request : ctx -> (response option * sdk_error option);
   mutable u_make_response : ctx -> (response option * sdk_error option);
@@ -202,6 +202,31 @@ and entity_obj = {
   mutable e_create : value -> value -> value;
   mutable e_update : value -> value -> value;
   mutable e_remove : value -> value -> value;
+}
+
+(* Construction spec for a context (py passes an untyped ctxmap dict that
+ * mixes struct data with live objects; OCaml uses this typed optional-field
+ * builder, mirroring the rust CtxSpec). *)
+and ctxspec = {
+  mutable cs_opname : string option;
+  mutable cs_client : sdk_client option;
+  mutable cs_utility : utility option;
+  mutable cs_ctrl : value option;       (* ctrl as a {throw,explain,actor,paging} map *)
+  mutable cs_meta : value option;
+  mutable cs_config : value option;
+  mutable cs_entopts : value option;
+  mutable cs_options : value option;
+  mutable cs_entity : entity_obj option;
+  mutable cs_shared : value option;
+  mutable cs_opmap : (string, operation) Hashtbl.t option;
+  mutable cs_data : value option;
+  mutable cs_reqdata : value option;
+  mutable cs_match : value option;
+  mutable cs_reqmatch : value option;
+  mutable cs_point : value option;
+  mutable cs_spec : spec option;
+  mutable cs_result : result option;
+  mutable cs_response : response option;
 }
 
 and ctx = {
