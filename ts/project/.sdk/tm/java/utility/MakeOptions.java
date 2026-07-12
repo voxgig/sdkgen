@@ -62,6 +62,9 @@ final class MakeOptions {
 
     // Preserve system.fetch before merge/validate.
     Object sysFetch = Struct.getpath(opts, List.of("system", "fetch"));
+    if (sysFetch == Struct.UNDEF) {
+      sysFetch = null;
+    }
 
     List<Object> mergeList = new ArrayList<>();
     mergeList.add(new LinkedHashMap<String, Object>());

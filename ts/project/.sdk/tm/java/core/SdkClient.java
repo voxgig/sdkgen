@@ -151,7 +151,7 @@ public abstract class SdkClient {
     specmap.put("params", params);
     specmap.put("query", query);
     specmap.put("headers", headers);
-    specmap.put("body", Struct.getprop(fetchargs, "body"));
+    specmap.put("body", Struct.getprop(fetchargs, "body", null));
     specmap.put("step", "start");
     ctx.spec = new Spec(specmap);
 

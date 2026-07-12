@@ -97,7 +97,7 @@ public class TestFeature extends BaseFeature {
       if (src == null) {
         continue;
       }
-      Object v = Struct.getprop(src, "id");
+      Object v = Struct.getprop(src, "id", null);
       if (v != null && !"__UNDEFINED__".equals(v)) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", v);
@@ -191,7 +191,7 @@ public class TestFeature extends BaseFeature {
       // Remove only the first matched entity. If nothing matches,
       // succeed as a no-op rather than erroring.
       if (ent instanceof Map) {
-        Object id = Struct.getprop(ent, "id");
+        Object id = Struct.getprop(ent, "id", null);
         Struct.delprop(entmap, id);
       }
       return respond(200, null, null);

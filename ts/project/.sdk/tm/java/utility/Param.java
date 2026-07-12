@@ -41,31 +41,31 @@ final class Param {
       }
     }
 
-    Object val = Struct.getprop(reqmatch, key);
+    Object val = Struct.getprop(reqmatch, key, null);
 
     if (val == null) {
-      val = Struct.getprop(match, key);
+      val = Struct.getprop(match, key, null);
     }
 
     if (val == null && !"".equals(akey)) {
       if (spec != null) {
         spec.alias.put(akey, key);
       }
-      val = Struct.getprop(reqmatch, akey);
+      val = Struct.getprop(reqmatch, akey, null);
     }
 
     if (val == null) {
-      val = Struct.getprop(reqdata, key);
+      val = Struct.getprop(reqdata, key, null);
     }
 
     if (val == null) {
-      val = Struct.getprop(data, key);
+      val = Struct.getprop(data, key, null);
     }
 
     if (val == null && !"".equals(akey)) {
-      val = Struct.getprop(reqdata, akey);
+      val = Struct.getprop(reqdata, akey, null);
       if (val == null) {
-        val = Struct.getprop(data, akey);
+        val = Struct.getprop(data, akey, null);
       }
     }
 

@@ -22,7 +22,7 @@ final class TransformRequest {
       return ctx.reqdata;
     }
 
-    Object reqform = Struct.getprop(transform, "req");
+    Object reqform = Struct.getprop(transform, "req", null);
     if (reqform == null) {
       return ctx.reqdata;
     }

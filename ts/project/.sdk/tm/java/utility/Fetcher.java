@@ -152,6 +152,9 @@ final class Fetcher {
     }
 
     Object sysFetch = Struct.getpath(options, List.of("system", "fetch"));
+    if (sysFetch == Struct.UNDEF) {
+      sysFetch = null;
+    }
 
     if (sysFetch == null) {
       return defaultHttpFetch(fullurl, fetchdef);

@@ -29,7 +29,7 @@ final class TransformResponse {
       return null;
     }
 
-    Object resform = Struct.getprop(transform, "res");
+    Object resform = Struct.getprop(transform, "res", null);
     if (resform == null) {
       return null;
     }

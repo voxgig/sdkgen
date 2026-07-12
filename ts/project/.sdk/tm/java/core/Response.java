@@ -26,14 +26,14 @@ public class Response {
       this.statusText = (String) st;
     }
 
-    this.headers = Struct.getprop(resmap, "headers");
+    this.headers = Struct.getprop(resmap, "headers", null);
 
     Object jf = Struct.getprop(resmap, "json");
     if (jf instanceof Supplier) {
       this.jsonFunc = castSupplier(jf);
     }
 
-    this.body = Struct.getprop(resmap, "body");
+    this.body = Struct.getprop(resmap, "body", null);
 
     Object e = Struct.getprop(resmap, "err");
     if (e instanceof RuntimeException) {

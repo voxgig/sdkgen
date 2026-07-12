@@ -47,14 +47,14 @@ public class Result {
       this.headers = (Map<String, Object>) h;
     }
 
-    this.body = Struct.getprop(resmap, "body");
+    this.body = Struct.getprop(resmap, "body", null);
 
     Object e = Struct.getprop(resmap, "err");
     if (e instanceof RuntimeException) {
       this.err = (RuntimeException) e;
     }
 
-    this.resdata = Struct.getprop(resmap, "resdata");
+    this.resdata = Struct.getprop(resmap, "resdata", null);
 
     Object rm = Struct.getprop(resmap, "resmatch");
     if (rm instanceof Map) {

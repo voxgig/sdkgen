@@ -73,8 +73,8 @@ final class MakePoint {
           if (exist instanceof List) {
             for (Object ek : (List<Object>) exist) {
               String existkey = ek instanceof String ? (String) ek : "";
-              Object rv = Struct.getprop(reqselector, existkey);
-              Object sv = Struct.getprop(selector, existkey);
+              Object rv = Struct.getprop(reqselector, existkey, null);
+              Object sv = Struct.getprop(selector, existkey, null);
               if (rv == null && sv == null) {
                 found = false;
                 break;
@@ -84,8 +84,8 @@ final class MakePoint {
         }
 
         if (found) {
-          Object reqAction = Struct.getprop(reqselector, "$action");
-          Object selectAction = Struct.getprop(selectDef, "$action");
+          Object reqAction = Struct.getprop(reqselector, "$action", null);
+          Object selectAction = Struct.getprop(selectDef, "$action", null);
           if (!java.util.Objects.equals(reqAction, selectAction)) {
             found = false;
           }
@@ -97,11 +97,11 @@ final class MakePoint {
       }
 
       if (reqselector != null) {
-        Object reqAction = Struct.getprop(reqselector, "$action");
+        Object reqAction = Struct.getprop(reqselector, "$action", null);
         if (reqAction != null && point != null) {
           Map<String, Object> pointSelect =
               Helpers.toMapAny(Struct.getprop(point, "select"));
-          Object pointAction = Struct.getprop(pointSelect, "$action");
+          Object pointAction = Struct.getprop(pointSelect, "$action", null);
           if (!java.util.Objects.equals(reqAction, pointAction)) {
             throw ctx.makeError("point_action_invalid",
                 "Operation \"" + op.name
