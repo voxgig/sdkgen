@@ -288,8 +288,9 @@ let feature_hook_util (ctx : ctx) (name : string) : unit =
   | None -> ()
   | Some client -> List.iter (fun f -> f.f_hook name ctx) client.cl_features
 
-(* Convenience used by the generated op-runner hook markers
- * (`(* #PreRequest-Hook *)` -> `feature_hook ctx "PreRequest";`). *)
+(* Convenience used by the generated op-runner: each pipeline-stage hook
+ * marker line is rewritten by the generator into a `feature_hook ctx "PreX"`
+ * call that fans the hook out to every active feature. *)
 let feature_hook (ctx : ctx) (name : string) : unit =
   (cu ctx).u_feature_hook ctx name
 
