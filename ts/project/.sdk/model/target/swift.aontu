@@ -1,0 +1,35 @@
+main: kit: target: swift: {
+
+  title: "Swift"
+  ext: swift
+  comment: line: "//"
+  module: name: '$$name$$'
+  base: 'BASE'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  # struct utility is vendored under Sources/ProjectNameSDK/Struct - no manifest dep needed.
+  # The runtime uses only Foundation (URLSession + the in-tree JSON parser).
+  deps: {}
+}
+
+
+main: kit: feature: &: target: swift: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Publication: SwiftPM registry is git-tag only (publish pending).
+main: kit: target: swift: publish: {
+  tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'swiftpm'
+    url: 'https://swift.org/package-manager'
+    vault: { alias: 'swiftpm', env: 'SWIFTPM_TOKEN' }
+  }
+}

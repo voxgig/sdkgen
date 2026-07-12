@@ -1,0 +1,35 @@
+
+main: kit: target: cpp: {
+
+  title: 'C++'
+  ext: hpp
+  comment: line: "//"
+  module: name: '$$name$$'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  // struct is vendored under utility/voxgigstruct — no external dep. The SDK
+  // is header-only; JSON parsing is the vendored struct parser and the mock
+  // transport needs no network. Tests need only a C++17 compiler (g++).
+  deps: {}
+}
+
+
+main: kit: feature: &: target: cpp: deps: &: {
+  kind: *'prod' | string
+}
+
+
+// Publication: header-only; publishing is the git tag cpp/vX.Y.Z (no registry).
+main: kit: target: cpp: publish: {
+  tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'none'
+    url: ''
+  }
+}
