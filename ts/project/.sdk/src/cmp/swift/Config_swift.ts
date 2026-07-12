@@ -80,7 +80,11 @@ const Config = cmp(async function Config(props: any) {
     entity: entityDefs,
   }
 
+  // Model-data defaults may carry the ProjectName placeholder (e.g. the
+  // clienttrack clientName); resolve it to the API name so the embedded JSON
+  // matches the token-replaced runtime.
   const configJson = JSON.stringify(configObj, null, 2)
+    .replace(/ProjectName/g, model.const.Name)
 
   File({ name: 'Config.' + target.ext }, () => {
 

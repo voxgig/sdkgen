@@ -161,6 +161,24 @@ enum SdkRunner {
     }
   }
 
+  // nativeCtx converts a loose Value ctx map into the native [String:Any?]
+  // shape Context expects: opname -> String, map fields -> VMap, spec/result/
+  // response omitted (materialised as typed objects by the caller).
+  static func nativeCtx(_ ctxmap: VMap) -> [String: Any?] {
+    var nctx: [String: Any?] = [:]
+    for (k, v) in ctxmap.entries {
+      if k == "spec" || k == "result" || k == "response" { continue }
+      if k == "opname" {
+        nctx["opname"] = v.asString ?? ""
+      } else if let m = v.asMap {
+        nctx[k] = m
+      } else {
+        nctx[k] = v
+      }
+    }
+    return nctx
+  }
+
   // makeCtxFromMap builds a Context from a JSON test entry's ctx/args map,
   // materialising typed spec/result/response from their JSON shapes.
   static func makeCtxFromMap(_ ctxmapIn: VMap?, _ client: ProjectNameSDK?, _ utility: Utility?)
@@ -168,15 +186,7 @@ enum SdkRunner {
   {
     let ctxmap = ctxmapIn ?? VMap()
 
-    // Build the native ctx dictionary from the loose map (opname etc.).
-    var nctx: [String: Any?] = [:]
-    for (k, v) in ctxmap.entries {
-      switch k {
-      case "spec", "result", "response": break  // materialised below
-      default: nctx[k] = v
-      }
-    }
-    let ctx = Context(nctx, nil)
+    let ctx = Context(nativeCtx(ctxmap), nil)
 
     if let client = client {
       ctx.client = client
