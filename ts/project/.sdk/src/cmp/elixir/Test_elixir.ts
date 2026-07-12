@@ -1,0 +1,47 @@
+
+import {
+  KIT,
+} from '@voxgig/apidef'
+
+import type {
+  ModelEntity
+} from '@voxgig/apidef'
+
+import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
+
+
+import { TestEntity } from './TestEntity_elixir'
+import { TestDirect } from './TestDirect_elixir'
+
+
+const Test = cmp(function Test(props: any) {
+  const { model } = props.ctx$
+  const { target } = props
+
+  const Name = model.const.Name
+
+  Folder({ name: 'test' }, () => {
+
+    File({ name: 'exists_test.exs' }, () => {
+      Content(`defmodule ${Name}.ExistsTest do
+  use ExUnit.Case
+
+  test "should create test sdk" do
+    testsdk = ${Name}.test()
+    assert testsdk != nil
+  end
+end
+`)
+    })
+
+    each(model.main[KIT].entity, (entity: ModelEntity) => {
+      TestEntity({ target, entity })
+      TestDirect({ target, entity })
+    })
+  })
+})
+
+
+export {
+  Test
+}

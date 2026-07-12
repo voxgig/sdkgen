@@ -50,7 +50,7 @@ defmodule ProjectName.Feature.Retry do
       end
 
     if not retryable(opts, res, err, raised) or attempt >= retries do
-      if raised != nil, do: reraise(raised, __STACKTRACE__), else: {res, err}
+      if raised != nil, do: raise(raised), else: {res, err}
     else
       wait = backoff(opts, res, attempt, min_delay, max_delay, factor)
       track(f, ctx, attempt + 1, res, err, raised, wait)
