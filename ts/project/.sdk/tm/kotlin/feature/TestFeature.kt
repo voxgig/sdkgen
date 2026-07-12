@@ -119,7 +119,7 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
       }
       "update" -> {
         // Match the existing entity by id only (or its alias).
-        var updateMatch = linkedMapOf<String, Any?>()
+        var updateMatch: MutableMap<String, Any?> = linkedMapOf()
         val reqdata = ctx.reqdata
         if (reqdata.containsKey("id")) {
           updateMatch["id"] = reqdata["id"]

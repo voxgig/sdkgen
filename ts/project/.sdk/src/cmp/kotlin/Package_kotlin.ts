@@ -88,6 +88,13 @@ tasks.test {
     useJUnitPlatform()
 }
 
+// Keep the Java and Kotlin compile tasks on the same bytecode target (the
+// empty compileJava task otherwise defaults to the JDK version and clashes).
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)

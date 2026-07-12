@@ -436,7 +436,7 @@ ${authActive ? `      envm["${PROJECTNAME}_APIKEY"] = "NONE"\n` : ''}      val e
 ${authActive ? `        mergedOpts["apikey"] = env["${PROJECTNAME}_APIKEY"]\n` : ''}        setup.client = ${SDK}(mergedOpts)
         setup.live = true
 
-        var idmap = linkedMapOf<String, Any?>()
+        var idmap: MutableMap<String, Any?> = linkedMapOf()
         val entidRaw = env["${entidEnvVar}"]
         if (entidRaw is String && entidRaw.startsWith("{")) {
           val parsed = Helpers.toMapAny(Json.parseOrNull(entidRaw))
