@@ -38,6 +38,7 @@ pub fn build(b: *std.Build) void {
         "test/generated_test.zig",
         "test/pipeline_test.zig",
         "test/feature_test.zig",
+        "test/primary_utility_test.zig",
         "test/gotcha_test.zig",
     };
 
