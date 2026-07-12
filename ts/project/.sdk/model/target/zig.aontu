@@ -1,0 +1,27 @@
+
+main: kit: target: zig: {
+
+  title: Zig
+  ext: zig
+  comment: line: "//"
+  module: name: '$$name$$'
+  srcfeature: false
+
+  # The vendored voxgig struct port is in-tree (utility/voxgigstruct) — Zig
+  # has no package registry to depend on, so there are no external deps.
+  deps: &: {
+    kind: *'prod' | string
+  }
+}
+
+
+main: kit: feature: &: target: zig: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Publication: Zig has no central registry — publishing IS the git tag
+# (declared; the Makefile pushes zig/vX.Y.Z).
+main: kit: target: zig: publish: {
+  tag: { active: true }
+}
