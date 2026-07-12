@@ -1,0 +1,36 @@
+
+main: kit: target: ocaml: {
+
+  title: OCaml
+  ext: ml
+  comment: line: "//"
+  module: name: '$$name$$'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  # struct is vendored under utility/ (voxgig_struct.ml + vregex.ml) — the
+  # runtime is dependency-free: it compiles with the stock ocamlc, no opam
+  # packages, no dune. So there are no manifest dependencies.
+  deps: {}
+}
+
+
+main: kit: feature: &: target: ocaml: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Publication: opam registry (declared, publish pending — git-tag only).
+main: kit: target: ocaml: publish: {
+  tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'opam'
+    url: 'https://opam.ocaml.org'
+    vault: { alias: 'opam', env: 'OPAM_PUBLISH_TOKEN' }
+  }
+}
