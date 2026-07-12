@@ -155,11 +155,36 @@ describe('feature-language-parity', () => {
     php: (n) => Path.join('php', 'feature', cap(n) + 'Feature.php'),
     rb: (n) => Path.join('rb', 'feature', n + '_feature.rb'),
     lua: (n) => Path.join('lua', 'feature', n + '_feature.lua'),
+    // Added language targets. Per-feature source files; naming follows each
+    // language's convention (clojure/ocaml/haskell keep all features in a
+    // single module, so they are covered by the copy-dir + model checks
+    // below rather than a per-feature file).
+    csharp: (n) => Path.join('csharp', 'feature', cap(n) + 'Feature.cs'),
+    java: (n) => Path.join('java', 'feature', cap(n) + 'Feature.java'),
+    kotlin: (n) => Path.join('kotlin', 'feature', cap(n) + 'Feature.kt'),
+    scala: (n) => Path.join('scala', 'feature', cap(n) + 'Feature.scala'),
+    swift: (n) =>
+      Path.join('swift', 'Sources', 'ProjectNameSDK', 'feature', cap(n) + 'Feature.swift'),
+    dart: (n) => Path.join('dart', 'lib', 'feature', n, cap(n) + 'Feature.dart'),
+    perl: (n) => Path.join('perl', 'feature', n + '_feature.pm'),
+    rust: (n) => Path.join('rust', 'feature', n + '.rs'),
+    c: (n) => Path.join('c', 'feature', n + '.c'),
+    cpp: (n) => Path.join('cpp', 'feature', n + '.hpp'),
+    zig: (n) => Path.join('zig', 'feature', n + '.zig'),
+    elixir: (n) => Path.join('elixir', 'lib', 'projectname', 'feature', n + '.ex'),
   }
 
-  // Languages whose features are copied per-feature by `feature add` need a
-  // src/feature/<name>/ dir to copy (flat-feature languages use .gitkeep).
-  const ADD_TARGETS = ['ts', 'js', 'go', 'py', 'php', 'rb', 'lua', 'go-cli', 'go-mcp']
+  // Every SDK target (per-feature-file and single-module alike). Each must
+  // have a target definition and a feature-add copy dir per enterprise feature.
+  const SDK_TARGETS = [
+    'ts', 'js', 'go', 'py', 'php', 'rb', 'lua',
+    'csharp', 'java', 'kotlin', 'scala', 'swift', 'dart', 'rust', 'c', 'cpp',
+    'zig', 'perl', 'clojure', 'elixir', 'ocaml', 'haskell',
+  ]
+
+  // Every SDK target plus the two non-SDK surfaces need a src/feature/<name>/
+  // dir for `feature add` to copy (flat-feature languages use .gitkeep).
+  const ADD_TARGETS = SDK_TARGETS.concat(['go-cli', 'go-mcp'])
 
   for (const [lang, impl] of Object.entries(IMPL)) {
     test(`${lang}: every enterprise feature is implemented`, () => {
@@ -176,6 +201,14 @@ describe('feature-language-parity', () => {
         const dir = Path.join(TM, t, 'src', 'feature', name)
         ok(existsSync(dir), `missing feature-add dir: tm/${t}/src/feature/${name}`)
       }
+    }
+  })
+
+  test('every SDK target has a target definition', () => {
+    const TARGET_MODEL = Path.join(SDK, 'model', 'target')
+    for (const t of SDK_TARGETS) {
+      const p = Path.join(TARGET_MODEL, t + '.aontu')
+      ok(existsSync(p), `missing target definition: model/target/${t}.aontu`)
     }
   })
 })
