@@ -110,8 +110,15 @@ static void audit_hook(Feature* f, const char* name, Context* ctx) {
   }
 }
 
+static voxgig_value* audit_track(Feature* f) {
+  AuditFeature* af = (AuditFeature*)f;
+  int64_t n = (int64_t)voxgig_list_len(voxgig_as_list(af->records));
+  return cmap(2, "records", v_num((double)n), "seq", v_num((double)af->seq));
+}
+
 static const FeatureVT AUDIT_VT = {
   audit_name, audit_active, audit_add_options, audit_init, audit_hook,
+  audit_track,
 };
 
 Feature* feature_audit_new(void) {

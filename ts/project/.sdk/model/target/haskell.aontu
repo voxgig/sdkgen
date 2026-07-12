@@ -7,6 +7,16 @@ main: kit: target: haskell: {
   module: name: '$$name$$'
   srcfeature: false
 
+  # Entities are generic (config-driven F.makeEntity), so no per-entity or
+  # per-feature generated modules: only Main (client + config) and Test run.
+  phase: {
+    entity:     { active: false }
+    feature:    { active: false }
+    readme:     { active: false }
+    agentguide: { active: false }
+    test:       { active: true }
+  }
+
   deps: &: {
     kind: *'prod' | string
   }

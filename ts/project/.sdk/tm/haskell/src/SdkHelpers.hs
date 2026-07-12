@@ -315,3 +315,23 @@ splitOnChar c s = case break (== c) s of
 
 strip :: String -> String
 strip = f . f where f = reverse . dropWhile (== ' ')
+
+-- ----- config literal builder (used by the generated SdkConfig) -----
+
+-- | A pure config literal the generator emits; `buildCV` realises it as a
+-- struct 'Value' (the config is JSON-shaped API model data).
+data CV
+  = CVNull
+  | CVStr String
+  | CVNum Double
+  | CVBool Bool
+  | CVList [CV]
+  | CVMap [(String, CV)]
+
+buildCV :: CV -> IO Value
+buildCV CVNull = pure VNull
+buildCV (CVStr s) = pure (VStr s)
+buildCV (CVNum n) = pure (VNum n)
+buildCV (CVBool b) = pure (VBool b)
+buildCV (CVList xs) = mapM buildCV xs >>= mkList
+buildCV (CVMap kvs) = mapM (\(k, v) -> (,) k <$> buildCV v) kvs >>= mkMap

@@ -140,8 +140,15 @@ static void idem_hook(Feature* f, const char* name, Context* ctx) {
   }
 }
 
+static voxgig_value* idem_track(Feature* f) {
+  IdempotencyFeature* idf = (IdempotencyFeature*)f;
+  return cmap(2, "issued", v_num((double)idf->issued),
+              "last", v_str(idf->last ? idf->last : ""));
+}
+
 static const FeatureVT IDEMPOTENCY_VT = {
   idem_name, idem_active, idem_add_options, idem_init, idem_hook,
+  idem_track,
 };
 
 Feature* feature_idempotency_new(void) {

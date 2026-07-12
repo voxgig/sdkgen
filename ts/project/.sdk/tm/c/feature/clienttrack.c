@@ -118,8 +118,15 @@ static void ct_hook(Feature* f, const char* name, Context* ctx) {
   }
 }
 
+static voxgig_value* ct_track(Feature* f) {
+  ClienttrackFeature* cf = (ClienttrackFeature*)f;
+  return cmap(2, "requests", v_num((double)cf->requests),
+              "session", v_str(cf->session ? cf->session : ""));
+}
+
 static const FeatureVT CLIENTTRACK_VT = {
   ct_name, ct_active, ct_add_options, ct_init, ct_hook,
+  ct_track,
 };
 
 Feature* feature_clienttrack_new(void) {

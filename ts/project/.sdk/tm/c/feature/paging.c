@@ -208,6 +208,7 @@ static void paging_hook(Feature* f, const char* name, Context* ctx) {
 
 static const FeatureVT PAGING_VT = {
   paging_name, paging_active, paging_add_options, paging_init, paging_hook,
+  NULL, // paging state observed via result.paging, not a track snapshot
 };
 
 Feature* feature_paging_new(void) {

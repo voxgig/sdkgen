@@ -101,8 +101,15 @@ static void ratelimit_hook(Feature* f, const char* name, Context* ctx) {
   (void)f; (void)name; (void)ctx;
 }
 
+static voxgig_value* ratelimit_track(Feature* f) {
+  RatelimitTrack* t = ((RatelimitFeature*)f)->track;
+  return cmap(2, "throttled", v_num((double)t->throttled),
+              "waitMs", v_num((double)t->wait_ms));
+}
+
 static const FeatureVT RATELIMIT_VT = {
   ratelimit_name, ratelimit_active, ratelimit_add_options, ratelimit_init, ratelimit_hook,
+  ratelimit_track,
 };
 
 Feature* feature_ratelimit_new(void) {

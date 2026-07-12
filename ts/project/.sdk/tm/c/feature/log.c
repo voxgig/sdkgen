@@ -64,6 +64,7 @@ static void log_hook(Feature* f, const char* name, Context* ctx) {
 
 static const FeatureVT LOG_VT = {
   log_name, log_active, log_add_options, log_init, log_hook,
+  NULL, // no activity tracking
 };
 
 Feature* feature_log_new(void) {

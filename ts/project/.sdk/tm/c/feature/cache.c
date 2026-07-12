@@ -237,8 +237,15 @@ static void cache_hook(Feature* f, const char* name, Context* ctx) {
   (void)f; (void)name; (void)ctx;
 }
 
+static voxgig_value* cache_track(Feature* f) {
+  CacheTrack* t = ((CacheFeature*)f)->track;
+  return cmap(3, "hit", v_num((double)t->hit), "miss", v_num((double)t->miss),
+              "bypass", v_num((double)t->bypass));
+}
+
 static const FeatureVT CACHE_VT = {
   cache_name, cache_active, cache_add_options, cache_init, cache_hook,
+  cache_track,
 };
 
 Feature* feature_cache_new(void) {

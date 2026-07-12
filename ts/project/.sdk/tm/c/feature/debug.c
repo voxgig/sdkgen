@@ -207,8 +207,15 @@ static void debug_hook(Feature* f, const char* name, Context* ctx) {
   }
 }
 
+static voxgig_value* debug_track(Feature* f) {
+  DebugFeature* df = (DebugFeature*)f;
+  int64_t n = (int64_t)voxgig_list_len(voxgig_as_list(df->entries));
+  return cmap(1, "entries", v_num((double)n));
+}
+
 static const FeatureVT DEBUG_VT = {
   debug_name, debug_active, debug_add_options, debug_init, debug_hook,
+  debug_track,
 };
 
 Feature* feature_debug_new(void) {

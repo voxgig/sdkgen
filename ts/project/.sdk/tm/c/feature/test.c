@@ -371,6 +371,7 @@ static void test_hook(Feature* f, const char* name, Context* ctx) {
 
 static const FeatureVT TEST_VT = {
   test_name, test_active, test_add_options, test_init, test_hook,
+  NULL, // no activity tracking
 };
 
 Feature* feature_test_new(void) {

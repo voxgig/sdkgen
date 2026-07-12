@@ -125,8 +125,14 @@ static void streaming_hook(Feature* f, const char* name, Context* ctx) {
   }
 }
 
+static voxgig_value* streaming_track(Feature* f) {
+  StreamingFeature* sf = (StreamingFeature*)f;
+  return cmap(1, "opened", v_num((double)sf->opened));
+}
+
 static const FeatureVT STREAMING_VT = {
   streaming_name, streaming_active, streaming_add_options, streaming_init, streaming_hook,
+  streaming_track,
 };
 
 Feature* feature_streaming_new(void) {

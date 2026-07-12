@@ -1,0 +1,105 @@
+import * as Path from 'node:path'
+
+import {
+  clone,
+  walk,
+} from '@voxgig/struct'
+
+
+function projectPath(suffix?: string): string {
+  return Path.normalize(Path.join(__dirname, '../../..', suffix ?? ''))
+}
+
+
+// Haskell reserved words that cannot be used as identifiers.
+const HS_RESERVED = new Set<string>([
+  'case', 'class', 'data', 'default', 'deriving', 'do', 'else', 'foreign',
+  'if', 'import', 'in', 'infix', 'infixl', 'infixr', 'instance', 'let',
+  'module', 'newtype', 'of', 'then', 'type', 'where', 'as', 'hiding',
+  'qualified',
+])
+
+
+// A collision-free lower-camel Haskell identifier for a model name.
+function hsVarName(name: string): string {
+  let s = String(name).replace(/[^a-zA-Z0-9_]/g, '_')
+  if (s.length === 0) {
+    s = 'x'
+  }
+  // Identifiers must start with a lowercase letter.
+  s = s.charAt(0).toLowerCase() + s.slice(1)
+  if (!/^[a-z_]/.test(s)) {
+    s = 'e_' + s
+  }
+  return HS_RESERVED.has(s) ? s + '_' : s
+}
+
+
+// A Haskell string literal (7-bit safe: non-printable / non-ASCII use the
+// decimal numeric escape with a `\&` separator so digits never merge).
+function hsString(s: string): string {
+  let out = '"'
+  for (const ch of String(s)) {
+    const code = ch.codePointAt(0) as number
+    if (ch === '"') out += '\\"'
+    else if (ch === '\\') out += '\\\\'
+    else if (ch === '\n') out += '\\n'
+    else if (ch === '\t') out += '\\t'
+    else if (ch === '\r') out += '\\r'
+    else if (code >= 32 && code < 127) out += ch
+    else out += '\\' + code + '\\&'
+  }
+  return out + '"'
+}
+
+
+// Render a JSON-shaped value as a Haskell `CV` literal (the generated
+// SdkConfig realises it with buildCV). Keys sorted for byte-stable output;
+// empty map/list render as (CVMap []) / (CVList []) — valid for 0, 1 or N
+// entries (N-feature-safe).
+function formatHsValue(val: any): string {
+  if (val === null || val === undefined) {
+    return 'CVNull'
+  }
+  if (typeof val === 'string') {
+    return '(CVStr ' + hsString(val) + ')'
+  }
+  if (typeof val === 'number') {
+    return '(CVNum (' + (Number.isFinite(val) ? String(val) : '0') + '))'
+  }
+  if (typeof val === 'boolean') {
+    return '(CVBool ' + (val ? 'True' : 'False') + ')'
+  }
+  if (Array.isArray(val)) {
+    const items = val.map((v) => formatHsValue(v)).join(', ')
+    return '(CVList [' + items + '])'
+  }
+  if (typeof val === 'object') {
+    const keys = Object.keys(val).sort()
+    const items = keys
+      .map((k) => '(' + hsString(k) + ', ' + formatHsValue(val[k]) + ')')
+      .join(', ')
+    return '(CVMap [' + items + '])'
+  }
+  return 'CVNull'
+}
+
+
+// Remove `$`-suffixed model annotation keys.
+function clean(o: any) {
+  return walk(clone(o), (k: any, v: any, p: any) => {
+    if (null != k && k.endsWith('$')) {
+      delete p[k]
+    }
+    return v
+  })
+}
+
+
+export {
+  clean,
+  formatHsValue,
+  hsString,
+  hsVarName,
+  projectPath,
+}

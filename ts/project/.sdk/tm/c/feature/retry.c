@@ -140,8 +140,14 @@ static void retry_hook(Feature* f, const char* name, Context* ctx) {
   (void)f; (void)name; (void)ctx;
 }
 
+static voxgig_value* retry_track(Feature* f) {
+  RetryTrack* t = ((RetryFeature*)f)->track;
+  return cmap(1, "attempts", v_num((double)t->attempts));
+}
+
 static const FeatureVT RETRY_VT = {
   retry_name, retry_active, retry_add_options, retry_init, retry_hook,
+  retry_track,
 };
 
 Feature* feature_retry_new(void) {

@@ -258,6 +258,11 @@ typedef struct FeatureVT {
   void (*init)(Feature*, Context* ctx, voxgig_value* options);
   // Hook dispatch by name (PostConstruct, PrePoint, ...). Default no-op.
   void (*hook)(Feature*, const char* name, Context* ctx);
+  // Test-support: return a fresh snapshot Map of the feature's activity
+  // counters (mirrors the rust feature `track`/state fields the behavioural
+  // tests inspect). Optional — a feature that tracks nothing leaves this NULL,
+  // and feature_track() then returns Noval.
+  voxgig_value* (*track)(Feature*);
 } FeatureVT;
 
 struct Feature {
@@ -501,5 +506,9 @@ Feature* feature_audit_new(void);
 Feature* feature_clienttrack_new(void);
 Feature* feature_rbac_new(void);
 Feature* feature_netsim_new(void);
+
+// Test-support: snapshot a feature's activity counters (Noval if the feature
+// exposes none). Backed by the optional FeatureVT.track slot.
+voxgig_value* feature_track(Feature* f);
 
 #endif // PROJECTNAME_SDK_H

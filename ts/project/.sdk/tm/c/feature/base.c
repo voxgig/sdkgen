@@ -27,6 +27,7 @@ static void base_hook(Feature* f, const char* name, Context* ctx) {
 
 static const FeatureVT BASE_VT = {
   base_name, base_active, base_add_options, base_init, base_hook,
+  NULL, // no activity tracking
 };
 
 Feature* feature_base_new(void) {

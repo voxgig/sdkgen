@@ -1,0 +1,201 @@
+import {
+  KIT,
+  getModelPath
+} from '@voxgig/apidef'
+
+import type {
+  ModelEntity
+} from '@voxgig/apidef'
+
+import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
+
+import { hsVarName } from './utility_haskell'
+
+
+// test/SdkGenTests.hs — model-driven per-entity tests: an instance test, a
+// CRUD basic-flow test driven through the in-memory mock (test mode), and a
+// direct() call test against an injected system.fetch mock. Only ops the
+// entity actually defines are exercised.
+const Test = cmp(function Test(props: any) {
+  const { model } = props.ctx$
+  const { target } = props
+
+  const entity = getModelPath(model, `main.${KIT}.entity`)
+
+  Folder({ name: 'test' }, () => {
+    File({ name: 'SdkGenTests.' + target.ext }, () => {
+
+      let calls = ''
+      let defs = ''
+
+      each(entity, (e: any) => {
+        const fn = hsVarName(e.name)
+        const ops = Object.keys(e.op || {})
+        const hasCreate = ops.includes('create')
+        const hasList = ops.includes('list')
+        const hasLoad = ops.includes('load')
+        const hasUpdate = ops.includes('update')
+        const hasRemove = ops.includes('remove')
+
+        // Pick a text field to mutate in update (first non-id field with a
+        // string value in the new-ref data, else "name").
+        let updField = 'name'
+        try {
+          const nf = e.fields || {}
+          const cand = Object.keys(nf).find((k) => k !== 'id' && !k.endsWith('$'))
+          if (cand) updField = cand
+        } catch (_e) { }
+
+        const instFn = `${fn}InstanceTest`
+        const basicFn = `${fn}BasicTest`
+        const directFn = `${fn}DirectTest`
+
+        calls += `  ${instFn} c\n`
+        calls += `  ${basicFn} c\n`
+        calls += `  ${directFn} c\n`
+
+        defs += `
+${instFn} :: Counters -> IO ()
+${instFn} c = runTest c "${e.name}.instance" $ do
+  sdk <- C.testSdk0
+  ent <- C.${fn} sdk VNoval
+  pure (eName ent == "${e.name}")
+
+${basicFn} :: Counters -> IO ()
+${basicFn} c = do
+  fixture <- loadFixture "${e.Name}"
+  existing <- getp fixture "existing"
+  opts <- jo [("entity", existing)]
+`
+        // Basic flow. Each op is an independent runTest.
+        if (hasList) {
+          defs += `  runTest c "${e.name}.list" $ do
+    sdk <- C.testSdk opts VNoval
+    ent <- C.${fn} sdk VNoval
+    em1 <- emptyMap; em2 <- emptyMap
+    lst <- eList ent em1 em2
+    pure (islist lst)
+`
+        }
+        if (hasLoad) {
+          defs += `  runTest c "${e.name}.load" $ do
+    sdk <- C.testSdk opts VNoval
+    ent <- C.${fn} sdk VNoval
+    entmap <- getp existing "${e.name}"
+    ids <- keysof entmap
+    case ids of
+      [] -> pure True
+      (id0 : _) -> do
+        m <- jo [("id", VStr id0)]; ctrl <- emptyMap
+        loaded <- eLoad ent m ctrl
+        lid <- getp loaded "id"
+        pure (ismap loaded && vstring lid == id0)
+`
+        }
+        if (hasCreate) {
+          defs += `  runTest c "${e.name}.create" $ do
+    sdk <- C.testSdk opts VNoval
+    ent <- C.${fn} sdk VNoval
+    d <- newRefData fixture "${e.name}"
+    ctrl <- emptyMap
+    created <- eCreate ent d ctrl
+    cid <- getp created "id"
+    pure (ismap created && not (isNoval cid))
+`
+        }
+        if (hasCreate && hasUpdate) {
+          defs += `  runTest c "${e.name}.update" $ do
+    sdk <- C.testSdk opts VNoval
+    ent <- C.${fn} sdk VNoval
+    d <- newRefData fixture "${e.name}"
+    ctrl <- emptyMap
+    created <- eCreate ent d ctrl
+    cid <- getp created "id"
+    upd <- jo [("id", cid), ("${updField}", VStr "UpdatedMark")]
+    ctrl2 <- emptyMap
+    updated <- eUpdate ent upd ctrl2
+    uv <- getp updated "${updField}"
+    pure (ismap updated && vstring uv == "UpdatedMark")
+`
+        }
+        if (hasCreate && hasRemove) {
+          defs += `  runTest c "${e.name}.remove" $ do
+    sdk <- C.testSdk opts VNoval
+    ent <- C.${fn} sdk VNoval
+    d <- newRefData fixture "${e.name}"
+    ctrl <- emptyMap
+    created <- eCreate ent d ctrl
+    cid <- getp created "id"
+    rm <- jo [("id", cid)]; ctrl2 <- emptyMap
+    _ <- eRemove ent rm ctrl2
+    pure True
+`
+        }
+
+        // Direct call test (via injected system.fetch mock).
+        defs += `
+${directFn} :: Counters -> IO ()
+${directFn} c = runTest c "${e.name}.direct" $ do
+  calls <- newIORef (0 :: Int)
+  let mock = VFunc (\\_ _ _ _ -> do
+        modifyIORef calls (+ 1)
+        d <- jo [("id", VStr "direct01")]
+        jo [("status", VNum 200), ("statusText", VStr "OK"), ("json", jsonThunk d)])
+  sys <- jo [("fetch", mock)]
+  opts <- jo [("base", VStr "http://localhost:8080"), ("system", sys)]
+  sdk <- C.newSdk opts
+  args <- jo [("path", VStr "/${e.name}/x"), ("method", VStr "GET")]
+  res <- F.direct sdk args
+  ok <- getp res "ok"
+  st <- getp res "status"
+  dat <- getp res "data"
+  did <- getp dat "id"
+  n <- readIORef calls
+  pure (isTrueV ok && toInt st == 200 && vstring did == "direct01" && n == 1)
+`
+      })
+
+      Content(`-- Generated model-driven entity + direct tests.
+{-# LANGUAGE ScopedTypeVariables #-}
+
+module SdkGenTests (genTests) where
+
+import Control.Exception (SomeException, try)
+import Data.IORef
+
+import VoxgigStruct (Value (..), emptyMap, keysof, ismap, islist, isNoval, clone)
+import SdkTypes
+import SdkHelpers
+import qualified SdkFeatures as F
+import qualified SdkClient as C
+import Testutil
+import TestJson (jsonRead)
+
+-- Load an entity fixture (../.sdk/test/entity/<name>/<Name>TestData.json).
+loadFixture :: String -> IO Value
+loadFixture entName = do
+  let lname = map toLowerCh entName
+  raw <- readFile ("../.sdk/test/entity/" ++ lname ++ "/" ++ entName ++ "TestData.json")
+  jsonRead raw
+  where toLowerCh ch = if ch >= 'A' && ch <= 'Z' then toEnum (fromEnum ch + 32) else ch
+
+-- The first new-ref data map for an entity (fixture.new.<entity>.<ref0>).
+newRefData :: Value -> String -> IO Value
+newRefData fixture entName = do
+  newEnts <- getpathS fixture ("new." ++ entName)
+  refs <- keysof newEnts
+  case refs of
+    [] -> emptyMap
+    (r0 : _) -> do d <- getp newEnts r0; clone d
+
+genTests :: Counters -> IO ()
+genTests c = do
+${calls}${defs}`)
+    })
+  })
+})
+
+
+export {
+  Test
+}

@@ -186,8 +186,14 @@ static void netsim_hook(Feature* f, const char* name, Context* ctx) {
   (void)f; (void)name; (void)ctx;
 }
 
+static voxgig_value* netsim_track(Feature* f) {
+  NetsimTrack* t = ((NetsimFeature*)f)->track;
+  return cmap(1, "calls", v_num((double)t->calls));
+}
+
 static const FeatureVT NETSIM_VT = {
   netsim_name, netsim_active, netsim_add_options, netsim_init, netsim_hook,
+  netsim_track,
 };
 
 Feature* feature_netsim_new(void) {

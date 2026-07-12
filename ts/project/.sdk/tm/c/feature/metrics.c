@@ -141,8 +141,24 @@ static void metrics_hook(Feature* f, const char* name, Context* ctx) {
   }
 }
 
+static voxgig_value* bucket_value(const MetricsBucket* b) {
+  return cmap(5, "count", v_num((double)b->count), "ok", v_num((double)b->ok),
+              "err", v_num((double)b->err), "totalMs", v_num((double)b->total_ms),
+              "maxMs", v_num((double)b->max_ms));
+}
+
+static voxgig_value* metrics_track(Feature* f) {
+  MetricsFeature* mf = (MetricsFeature*)f;
+  voxgig_value* ops = v_map();
+  for (size_t i = 0; i < mf->ops_len; i++) {
+    setp(ops, mf->op_keys[i], bucket_value(&mf->op_buckets[i]));
+  }
+  return cmap(2, "total", bucket_value(&mf->total), "ops", ops);
+}
+
 static const FeatureVT METRICS_VT = {
   metrics_name, metrics_active, metrics_add_options, metrics_init, metrics_hook,
+  metrics_track,
 };
 
 Feature* feature_metrics_new(void) {

@@ -84,8 +84,14 @@ static void timeout_hook(Feature* f, const char* name, Context* ctx) {
   (void)f; (void)name; (void)ctx;
 }
 
+static voxgig_value* timeout_track(Feature* f) {
+  TimeoutTrack* t = ((TimeoutFeature*)f)->track;
+  return cmap(2, "count", v_num((double)t->count), "ms", v_num((double)t->ms));
+}
+
 static const FeatureVT TIMEOUT_VT = {
   timeout_name, timeout_active, timeout_add_options, timeout_init, timeout_hook,
+  timeout_track,
 };
 
 Feature* feature_timeout_new(void) {

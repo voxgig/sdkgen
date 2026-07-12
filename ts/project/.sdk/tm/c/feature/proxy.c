@@ -223,8 +223,14 @@ static void proxy_hook(Feature* f, const char* name, Context* ctx) {
   (void)f; (void)name; (void)ctx;
 }
 
+static voxgig_value* proxy_track(Feature* f) {
+  ProxyTrack* t = ((ProxyFeature*)f)->track;
+  return cmap(1, "routed", v_num((double)t->routed));
+}
+
 static const FeatureVT PROXY_VT = {
   proxy_name, proxy_active, proxy_add_options, proxy_init, proxy_hook,
+  proxy_track,
 };
 
 Feature* feature_proxy_new(void) {

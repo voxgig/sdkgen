@@ -107,3 +107,9 @@ int64_t fparse_int(const char* s, int64_t def) {
   if (end == s) return def;
   return (int64_t)v;
 }
+
+// Test-support: dispatch to the feature's optional track() vtable slot.
+voxgig_value* feature_track(Feature* f) {
+  if (f && f->vt->track) return f->vt->track(f);
+  return voxgig_new_undef();
+}

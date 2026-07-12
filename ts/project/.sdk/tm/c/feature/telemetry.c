@@ -179,8 +179,16 @@ static void telemetry_hook(Feature* f, const char* name, Context* ctx) {
   }
 }
 
+static voxgig_value* telemetry_track(Feature* f) {
+  TelemetryFeature* tf = (TelemetryFeature*)f;
+  int64_t nspans = (int64_t)voxgig_list_len(voxgig_as_list(tf->spans));
+  return cmap(2, "spans", v_num((double)nspans),
+              "active", v_num((double)tf->active_spans));
+}
+
 static const FeatureVT TELEMETRY_VT = {
   telemetry_name, telemetry_active, telemetry_add_options, telemetry_init, telemetry_hook,
+  telemetry_track,
 };
 
 Feature* feature_telemetry_new(void) {

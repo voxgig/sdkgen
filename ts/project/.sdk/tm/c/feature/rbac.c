@@ -141,8 +141,15 @@ static void rbac_hook(Feature* f, const char* name, Context* ctx) {
   }
 }
 
+static voxgig_value* rbac_track_snapshot(Feature* f) {
+  RbacFeature* rf = (RbacFeature*)f;
+  return cmap(2, "allowed", v_num((double)rf->allowed),
+              "denied", v_num((double)rf->denied));
+}
+
 static const FeatureVT RBAC_VT = {
   rbac_name, rbac_active, rbac_add_options, rbac_init, rbac_hook,
+  rbac_track_snapshot,
 };
 
 Feature* feature_rbac_new(void) {
