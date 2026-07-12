@@ -1,0 +1,34 @@
+main: kit: target: dart: {
+
+  title: Dart
+  ext: dart
+  comment: line: "//"
+  module: name: '$$name$$'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  # struct utility is vendored under tm/dart/lib/utility/voxgig_struct.dart -
+  # the runtime is dependency-free (dart:io HttpClient + dart:convert only).
+  deps: {}
+}
+
+
+main: kit: feature: &: target: dart: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Publication: pub.dev registry (declared, publish pending — git-tag only).
+main: kit: target: dart: publish: {
+  tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'pub.dev'
+    url: 'https://pub.dev'
+    vault: { alias: 'pubdev', env: 'PUB_CREDENTIALS' }
+  }
+}

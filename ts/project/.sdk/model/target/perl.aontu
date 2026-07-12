@@ -1,0 +1,37 @@
+
+main: kit: target: perl: {
+
+  title: Perl
+  ext: pl
+  comment: line: "#"
+  module: name: '$$name$$'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  # Zero non-core runtime deps: HTTP transport uses HTTP::Tiny and the
+  # struct utility is vendored under tm/perl/lib/Voxgig/Struct.pm (both
+  # pure-Perl / core) - no manifest deps needed.
+  deps: {
+  }
+}
+
+
+main: kit: feature: &: target: perl: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Publication: CPAN registry (declared, publish pending — git-tag only).
+main: kit: target: perl: publish: {
+  tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'cpan'
+    url: 'https://www.cpan.org'
+    vault: { recipe: 'cpan', alias: 'cpan' }
+  }
+}

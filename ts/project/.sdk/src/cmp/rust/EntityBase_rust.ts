@@ -1,0 +1,59 @@
+
+import {
+  Content,
+  File,
+  Folder,
+  cmp,
+  each,
+  entityClassName,
+} from '@voxgig/sdkgen'
+
+
+import {
+  KIT,
+  getModelPath
+} from '@voxgig/apidef'
+
+
+import { rustVarName } from './utility_rust'
+
+
+// entity/mod.rs — the entity module index: declares one module per
+// generated entity and re-exports the entity client types. (The shared
+// entity behaviour itself lives in each generated entity via the Entity
+// fragment, mirroring the go layout.)
+const EntityBase = cmp(async function EntityBase(props: any) {
+  const { target } = props
+  const { model } = props.ctx$
+
+  const entity = getModelPath(model, `main.${KIT}.entity`)
+  const entityColl = entity
+
+  Folder({ name: 'entity' }, () => {
+    File({ name: 'mod.' + target.ext }, () => {
+      Content(`// ${model.const.Name} SDK entities (generated).
+
+`)
+      each(entity, (ent: any) => {
+        Content(`pub mod ${rustVarName(ent.name)};
+`)
+      })
+
+      if (0 < Object.keys(entity || {}).length) {
+        Content(`
+`)
+      }
+
+      each(entity, (ent: any) => {
+        const cls = entityClassName(ent, entityColl)
+        Content(`pub use ${rustVarName(ent.name)}::${cls};
+`)
+      })
+    })
+  })
+})
+
+
+export {
+  EntityBase
+}
