@@ -222,7 +222,8 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
     tm/<lang>/         per-language TEMPLATES
 ```
 
-Targets: `ts js go py php rb lua` + `go-cli go-mcp`.
+Targets: `ts js go py php rb lua csharp java kotlin scala swift dart rust c
+cpp zig perl clojure elixir ocaml haskell` + `go-cli go-mcp`.
 
 Features (all inactive by default — opt in per SDK via
 `options.feature.<name>.active`):
@@ -230,13 +231,15 @@ Features (all inactive by default — opt in per SDK via
 - **Core:** `log` (structured logging), `test` (in-memory mock transport;
   accepts an optional `net` block to simulate latency / failures / offline
   — see [how-to/simulate-network](./docs/how-to/simulate-network.md)).
-- **Enterprise (ts):** `retry`, `timeout`, `ratelimit`, `cache`,
+- **Enterprise:** `retry`, `timeout`, `ratelimit`, `cache`,
   `idempotency`, `paging`, `streaming`, `proxy`, `telemetry`, `metrics`,
   `debug`, `audit`, `clienttrack`, `rbac`.
 - **Test support:** `netsim` (wraps any transport to inject network
   conditions; composes with `retry`/`timeout` etc.).
 
-Enterprise features are **ts-only** so far. Two mechanisms: *transport
+Enterprise features are implemented across **all SDK targets** (each with a
+vendored `@voxgig/struct` port and a full offline feature-behaviour test
+suite at parity). Two mechanisms: *transport
 wrappers* replace `ctx.utility.fetcher` in `init()` (retry, timeout,
 ratelimit, cache, proxy, netsim); *pipeline hooks* implement the stages in
 [hooks.md](./docs/reference/hooks.md) (idempotency, rbac, metrics,

@@ -36,7 +36,8 @@ target language.
   └───────────────┘
         │
         ▼   merge with what's already on disk (3-way), write changes
-   ts/  js/  go/  py/  php/  rb/  lua/  go-cli/  go-mcp/
+   ts/ js/ go/ py/ php/ rb/ lua/ csharp/ java/ kotlin/ scala/ swift/ dart/
+   rust/ c/ cpp/ zig/ perl/ clojure/ elixir/ ocaml/ haskell/ go-cli/ go-mcp/
 ```
 
 ## Who does what

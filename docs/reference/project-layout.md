@@ -61,8 +61,13 @@ holds the **two layers** described in
 | `src/cmp/<lang>/fragment/*` | components | reusable source fragments |
 | `tm/<lang>/**` | templates | language-neutral runtime, copied with substitution |
 
-Built-in targets: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`, plus the
-non-SDK surfaces `go-cli` and `go-mcp`. Built-in features: `log`, `test`.
+Built-in targets: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`, `csharp`,
+`java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`, `zig`,
+`perl`, `clojure`, `elixir`, `ocaml`, `haskell`, plus the non-SDK surfaces
+`go-cli` and `go-mcp`. Built-in features: `log`, `test`, plus the
+enterprise features `retry`, `timeout`, `ratelimit`, `cache`, `idempotency`,
+`paging`, `streaming`, `proxy`, `telemetry`, `metrics`, `debug`, `audit`,
+`clienttrack`, `rbac`, and `netsim` (all inactive by default).
 
 ## A scaffolded SDK project
 
