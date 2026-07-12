@@ -138,17 +138,11 @@ defmodule ProjectName.Feature.Debug do
       end
 
       client = S.getprop(f, "client")
-      debug = S.getprop(client, "_debug")
-      buf = S.getprop(debug, "entries")
+      buf = S.getprop(S.getprop(client, "_debug"), "entries")
       F.list_push(buf, entry)
 
       mx = case S.getprop(F.opts(f), "max") do nil -> 100; v -> v end
-      size = S.size(buf)
-
-      if size > mx do
-        kept = Enum.drop(opt_list(buf, []), size - mx)
-        S.setprop(debug, "entries", S.jt(kept))
-      end
+      trim_front(buf, mx)
 
       on_entry = S.getprop(F.opts(f), "onEntry")
 
@@ -208,6 +202,17 @@ defmodule ProjectName.Feature.Debug do
       is_binary(e) -> e
       true -> S.stringify(e)
     end
+  end
+
+  # Python `while len(buf) > mx: buf.pop(0)` — drop from the front in place
+  # (delprop on a list re-indexes, so the entries node reference is stable).
+  defp trim_front(buf, mx) do
+    if S.size(buf) > mx and S.size(buf) > 0 do
+      S.delprop(buf, 0)
+      trim_front(buf, mx)
+    end
+
+    nil
   end
 
   # Python `v or default`: falsy = nil, false, "".
