@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "../core/sdk.hpp"
+#include "testlib.hpp"
 
 namespace sdk {
 namespace fh {

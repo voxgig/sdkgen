@@ -1,0 +1,36 @@
+
+main: kit: target: clojure: {
+
+  title: Clojure
+  ext: clj
+  comment: line: ";"
+  module: name: '$$name$$'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  # struct is vendored under src/voxgig/struct.clj — no external dep.
+  # The library itself needs only org.clojure/clojure (declared in deps.edn).
+  deps: {
+  }
+}
+
+
+main: kit: feature: &: target: clojure: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Publication: Clojars registry (declared, publish pending — git-tag only).
+main: kit: target: clojure: publish: {
+  tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'clojars'
+    url: 'https://clojars.org'
+    vault: { alias: 'clojars' }
+  }
+}
