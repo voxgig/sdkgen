@@ -310,6 +310,9 @@ object SdkTestMain {
     { val f = new NetsimFeature()
       val h = fhMake(null, fhF(f, om("active" -> B(false), "offline" -> B(true))))
       val r = h.op(fhOp("load")); check("netsim.inactive.ok", r.ok, "err=" + r.err); eqI("netsim.inactive.calls", 0, f.calls) }
+    { val clk = new FhClock(); val f = new NetsimFeature()
+      val h = fhMake(null, fhF(f, om("latency" -> om("min" -> I(100), "max" -> I(300)), "seed" -> I(7), "sleep" -> f0(clk.sleepFn))))
+      h.op(fhOp("load")); check("netsim.ranged", clk.t >= 100 && clk.t < 300, "expected latency in [100,300), got " + clk.t) }
   }
 
   private def testRetry(): Unit = {
@@ -331,6 +334,14 @@ object SdkTestMain {
     { val rec = new FhRecorder(); rec.reply = (n, fd) => fhResponse(503, null, null)
       val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new RetryFeature(), om("active" -> B(false))))
       h.op(fhOp("load")); eqI("retry.inactive", 1, rec.calls.size()) }
+    { val clk = new FhClock(); val n = new Array[Int](1)
+      val srv: FetcherFn = (c, u, fd) => { n(0) += 1; throw c.makeError("boom", "boom") }
+      val h = fhMake(srv, fhF(new RetryFeature(), om("retries" -> I(2), "minDelay" -> I(1), "jitter" -> B(false), "sleep" -> f0(clk.sleepFn))))
+      val r = h.op(fhOp("load")); check("retry.transportError.fail", !r.ok, "expected failure"); eqI("retry.transportError.attempts", 3, n(0)) }
+    { val n = new Array[Int](1)
+      val srv: FetcherFn = (c, u, fd) => { n(0) += 1; if (n(0) < 2) null else fhResponse(200, om("ok" -> B(true)), null) }
+      val h = fhMake(srv, fhF(new RetryFeature(), om("retries" -> I(3), "minDelay" -> I(0))))
+      val r = h.op(fhOp("load")); check("retry.nilTransport.ok", r.ok, "err=" + r.err); eqI("retry.nilTransport.attempts", 2, n(0)) }
   }
 
   private def testTimeout(): Unit = {
@@ -341,6 +352,8 @@ object SdkTestMain {
       check("timeout.fast", h.op(fhOp("load")).ok, "expected ok") }
     { val h = fhMake(null, fhF(new TimeoutFeature(), om("ms" -> I(0))))
       check("timeout.zero", h.op(fhOp("load")).ok, "expected ok") }
+    { val h = fhMake(null, fhF(new TimeoutFeature(), om("active" -> B(false))))
+      check("timeout.inactive", h.op(fhOp("load")).ok, "expected ok") }
   }
 
   private def testRatelimit(): Unit = {
@@ -352,6 +365,9 @@ object SdkTestMain {
       val h = fhMake(null, fhF(f, om("rate" -> I(2), "now" -> f0(clk.nowFn), "sleep" -> f0(clk.sleepFn))))
       h.op(fhOp("load")); h.op(fhOp("load")); clk.advance(1000); h.op(fhOp("load"))
       eqI("ratelimit.refill", 0, f.throttled) }
+    { val f = new RatelimitFeature()
+      val h = fhMake(null, fhF(f, om("active" -> B(false))))
+      check("ratelimit.inactive.ok", h.op(fhOp("load")).ok, "expected ok"); eqI("ratelimit.inactive.throttled", 0, f.throttled) }
   }
 
   private def testCache(): Unit = {
@@ -368,6 +384,13 @@ object SdkTestMain {
     { val clk = new FhClock(); val rec = new FhRecorder()
       val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new CacheFeature(), om("ttl" -> I(1000), "now" -> f0(clk.nowFn))))
       h.op(fhOp("load").withPath("/w")); clk.advance(1500); h.op(fhOp("load").withPath("/w")); eqI("cache.ttl", 2, rec.calls.size()) }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new CacheFeature(), om("ttl" -> I(10000), "max" -> I(1))))
+      h.op(fhOp("load").withPath("/a")); h.op(fhOp("load").withPath("/b")); h.op(fhOp("load").withPath("/a"))
+      eqI("cache.evict", 3, rec.calls.size()) }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new CacheFeature(), om("active" -> B(false))))
+      h.op(fhOp("load").withPath("/x")); h.op(fhOp("load").withPath("/x")); eqI("cache.inactive", 2, rec.calls.size()) }
   }
 
   private def testIdempotency(): Unit = {
@@ -381,6 +404,15 @@ object SdkTestMain {
       val ks: Supplier[Object] = () => "K1"
       val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(f, om("keygen" -> ks)))
       h.op(fhOp("create").withPath("/w")); eq("idem.injected", "K1", rec.headers(0).get("Idempotency-Key")); eqI("idem.issued", 1, f.issued) }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new IdempotencyFeature(), null))
+      h.op(fhOp("act").withMethod("PUT").withPath("/w")); check("idem.byMethod", rec.headers(0).get("Idempotency-Key") != null, "expected key on PUT") }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new IdempotencyFeature(), om("header" -> "X-Idem")))
+      h.op(fhOp("create").withPath("/w").withHeaders(om("X-Idem" -> "caller-1"))); eq("idem.preserveCaller", "caller-1", rec.headers(0).get("X-Idem")) }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new IdempotencyFeature(), om("active" -> B(false))))
+      h.op(fhOp("create").withPath("/w")); check("idem.inactive", rec.headers(0).get("Idempotency-Key") == null, "expected no key") }
   }
 
   private def testRbac(): Unit = {
@@ -395,6 +427,8 @@ object SdkTestMain {
       check("rbac.defaultAllow", allow.op(fhOp("load")).ok, "expected default allow")
       val deny = fhMake(null, fhF(new RbacFeature(), om("deny" -> B(true), "permissions" -> jl())))
       eq("rbac.defaultDeny", "rbac_denied", fhErrCode(deny.op(fhOp("load")).err)) }
+    { val h = fhMake(null, fhF(new RbacFeature(), om("active" -> B(false), "deny" -> B(true))))
+      check("rbac.inactive", h.op(fhOp("load")).ok, "inactive rbac must not deny") }
   }
 
   private def testMetrics(): Unit = {
@@ -406,6 +440,9 @@ object SdkTestMain {
     { val clk = new FhClock(); val f = new MetricsFeature()
       val h = fhMake(null, fhF(f, om("now" -> f0(clk.nowFn))))
       h.op(fhOp("load")); eqI("metrics.injected.count", 1, f.total.count); eqL("metrics.injected.ms", 0, f.total.totalMs) }
+    { val f = new MetricsFeature()
+      val h = fhMake(null, fhF(f, om("active" -> B(false))))
+      h.op(fhOp("load")); eqI("metrics.inactive", 0, f.total.count) }
   }
 
   private def testTelemetry(): Unit = {
@@ -413,7 +450,9 @@ object SdkTestMain {
       val exp: Consumer[JMap[String, Object]] = (m) => exported.add(m)
       val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(f, om("exporter" -> exp)))
       val r = h.op(fhOp("load")); check("telemetry.ok", r.ok, "err=" + r.err); eqI("telemetry.spans", 1, f.spans.size()); eqI("telemetry.export", 1, exported.size())
-      eq("telemetry.traceId", f.spans.get(0).get("traceId"), rec.headers(0).get("X-Trace-Id")) }
+      eq("telemetry.traceId", f.spans.get(0).get("traceId"), rec.headers(0).get("X-Trace-Id"))
+      val tp = rec.headers(0).get("traceparent") match { case s: String => s; case _ => "" }
+      check("telemetry.traceparent", tp.matches("^00-.+-.+-01$"), "expected W3C traceparent, got " + tp) }
     { val f = new TelemetryFeature()
       val h = fhMake(null, fhF(new NetsimFeature(), om("failTimes" -> I(1), "failStatus" -> I(500))), fhF(f, null))
       h.op(fhOp("load")); eqI("telemetry.failSpan.n", 1, f.spans.size()); eq("telemetry.failSpan.ok", B(false), f.spans.get(0).get("ok")) }
@@ -421,6 +460,9 @@ object SdkTestMain {
       val idg: JFunction[String, String] = (k) => k + "-X"
       val h = fhMake(null, fhF(f, om("idgen" -> idg, "now" -> f0(clk.nowFn))))
       h.op(fhOp("load")); eq("telemetry.injId", "trace-X", f.spans.get(0).get("traceId")); eq("telemetry.injDur", java.lang.Long.valueOf(0L), f.spans.get(0).get("durationMs")) }
+    { val f = new TelemetryFeature()
+      val h = fhMake(null, fhF(f, om("active" -> B(false))))
+      h.op(fhOp("load")); eqI("telemetry.inactive", 0, f.spans.size()) }
   }
 
   private def testDebug(): Unit = {
@@ -433,6 +475,14 @@ object SdkTestMain {
     { val f = new DebugFeature()
       val h = fhMake(null, fhF(new NetsimFeature(), om("failTimes" -> I(1), "failStatus" -> I(500))), fhF(f, null))
       h.op(fhOp("load")); eqI("debug.fail.n", 1, f.entries.size()); eq("debug.fail.ok", B(false), f.entries.get(0).get("ok")) }
+    { val clk = new FhClock(); val f = new DebugFeature()
+      val h = fhMake(null, fhF(f, om("now" -> f0(clk.nowFn), "redact" -> jl("x-secret"))))
+      h.op(fhOp("load").withHeaders(om("x-secret" -> "hide", "x-ok" -> "show")))
+      val dh = Helpers.toMapAny(f.entries.get(0).get("headers"))
+      eq("debug.redact.secret", "<redacted>", dh.get("x-secret")); eq("debug.redact.ok", "show", dh.get("x-ok")) }
+    { val f = new DebugFeature()
+      val h = fhMake(null, fhF(f, om("active" -> B(false))))
+      h.op(fhOp("load")); eqI("debug.inactive", 0, f.entries.size()) }
   }
 
   private def testAudit(): Unit = {
@@ -446,6 +496,12 @@ object SdkTestMain {
       val ns: LongSupplier = () => 42L
       val h = fhMake(null, fhF(f, om("now" -> ns)))
       h.op(fhOp("load")); eq("audit.ts", java.lang.Long.valueOf(42L), f.records.get(0).get("ts")) }
+    { val f = new AuditFeature()
+      val h = fhMake(null, fhF(f, null))
+      h.op(fhOp("load")); eq("audit.defaultActor", "anonymous", f.records.get(0).get("actor")) }
+    { val f = new AuditFeature()
+      val h = fhMake(null, fhF(f, om("active" -> B(false))))
+      h.op(fhOp("load")); eqI("audit.inactive", 0, f.records.size()) }
   }
 
   private def testClienttrack(): Unit = {
@@ -458,6 +514,12 @@ object SdkTestMain {
     { val rec = new FhRecorder(); val idg: JFunction[String, String] = (k) => k + "-1"
       val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new ClienttrackFeature(), om("sessionId" -> "S1", "idgen" -> idg)))
       h.op(fhOp("load")); eq("clienttrack.session", "S1", rec.headers(0).get("X-Client-Id")); eq("clienttrack.injReq", "request-1", rec.headers(0).get("X-Request-Id")) }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new ClienttrackFeature(), null))
+      h.op(fhOp("load").withHeaders(om("User-Agent" -> "mine"))); eq("clienttrack.noClobber", "mine", rec.headers(0).get("User-Agent")) }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new ClienttrackFeature(), om("active" -> B(false))))
+      h.op(fhOp("load")); check("clienttrack.inactive", rec.headers(0).get("X-Client-Id") == null, "inactive must not stamp") }
   }
 
   private def testPaging(): Unit = {
@@ -473,6 +535,15 @@ object SdkTestMain {
     { val rec = new FhRecorder()
       val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new PagingFeature(), null))
       h.op(fhOp("load").withPath("/w/1")); check("paging.nonList", !rec.url(0).contains("page="), "url=" + rec.url(0)) }
+    { val rec = new FhRecorder()
+      rec.reply = (n, fd) => fhResponse(200, om("nextCursor" -> "abc", "hasMore" -> B(true)), null)
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new PagingFeature(), null))
+      val r = h.op(fhOp("list").withPath("/w").withCtrl(om("paging" -> om("cursor" -> "xyz"))))
+      check("paging.cursorStamp", rec.url(0).contains("cursor=xyz"), "url=" + rec.url(0))
+      eq("paging.bodyCursor", "abc", r.result.paging.get("cursor")); eq("paging.hasMore", B(true), r.result.paging.get("hasMore")) }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new PagingFeature(), om("active" -> B(false))))
+      h.op(fhOp("list").withPath("/w")); check("paging.inactive", !rec.url(0).contains("page="), "url=" + rec.url(0)) }
   }
 
   private def testStreaming(): Unit = {
@@ -485,6 +556,16 @@ object SdkTestMain {
       eq("streaming.items", jl("a", "b", "c"), seen); eqL("streaming.delay", 15, clk.t) }
     { val h = fhMake(null, fhF(new StreamingFeature(), null))
       val r = h.op(fhOp("load")); check("streaming.nonList", !r.result.streaming, "expected no stream") }
+    { val rec = new FhRecorder()
+      rec.reply = (n, fd) => fhResponse(200, jl(I(1), I(2), I(3), I(4), I(5)), null)
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new StreamingFeature(), om("chunkSize" -> I(2))))
+      val r = h.op(fhOp("list").withPath("/w"))
+      val seen = new ArrayList[Object](); val it = r.result.stream.get()
+      while (it.hasNext) seen.add(it.next())
+      eq("streaming.batches", jl(jl(I(1), I(2)), jl(I(3), I(4)), jl(I(5))), seen) }
+    { val f = new StreamingFeature()
+      val h = fhMake(null, fhF(f, om("active" -> B(false))))
+      val r = h.op(fhOp("list").withPath("/w")); check("streaming.inactive.nostream", !r.result.streaming, "inactive must not attach"); eqI("streaming.inactive.opened", 0, f.opened) }
   }
 
   private def testProxy(): Unit = {
@@ -494,6 +575,12 @@ object SdkTestMain {
     { val rec = new FhRecorder()
       val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new ProxyFeature(), om("url" -> "http://proxy:8080", "noProxy" -> jl("api.test"))))
       h.op(fhOp("load")); check("proxy.bypass", rec.fetchdef(0).get("proxy") == null, "expected bypass") }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new ProxyFeature(), null))
+      h.op(fhOp("load")); check("proxy.noUrl", rec.fetchdef(0).get("proxy") == null, "expected no annotation") }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new ProxyFeature(), om("active" -> B(false), "url" -> "http://proxy:8080")))
+      h.op(fhOp("load")); check("proxy.inactive", rec.fetchdef(0).get("proxy") == null, "inactive must not route") }
   }
 
   private def testComposition(): Unit = {

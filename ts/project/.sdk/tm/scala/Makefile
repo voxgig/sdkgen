@@ -4,11 +4,13 @@
 build:
 	scala-cli compile .
 
-# Run the runtime test suite (plain scala-cli main) then the shared struct
-# corpus (vendored voxgig struct against ../.sdk/test/test.json). Either
-# reporting a failure exits non-zero.
+# Run the runtime test suite (plain scala-cli main), the generated per-entity
+# entity/direct tests (SdkEntityTestMain), then the shared struct corpus
+# (vendored voxgig struct against ../.sdk/test/test.json). Any one reporting a
+# failure exits non-zero.
 test:
 	scala-cli run . --main-class SdkTestMain
+	scala-cli run . --main-class SdkEntityTestMain
 	scala-cli run . --main-class Runner -- ../.sdk/test/test.json
 
 corpus:
