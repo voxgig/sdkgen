@@ -1,8 +1,8 @@
 # ProjectName SDK operation pipeline
 #
 # run_op drives one operation through the stages, firing feature hooks
-# between them (the `# #<Name>-Hook` marker lines are replaced by the
-# generator with Utility.feature_hook/2 calls). An early error is delivered
+# between them (the generator replaces each marker line with a
+# Utility.feature_hook/2 call). An early error is delivered
 # through make_error, which either raises the SDK error (default) — caught
 # by the rescue clause so PreUnexpected still fires — or returns bare
 # resdata when throw_err is disabled, delivered via the :sdk_ret throw.

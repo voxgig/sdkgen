@@ -331,13 +331,13 @@ defmodule ProjectName.FeatureHarness do
 
         throw({:harness_raise, err})
       end
-    catch
-      {:harness_raise, err} ->
+    rescue
+      err ->
         S.setprop(S.getprop(ctx, "ctrl"), "err", err)
         feature_hook(h, ctx, "PreUnexpected")
         %{ok: false, error: err, result: S.getprop(ctx, "result"), ctx: ctx, data: nil}
-    rescue
-      err ->
+    catch
+      {:harness_raise, err} ->
         S.setprop(S.getprop(ctx, "ctrl"), "err", err)
         feature_hook(h, ctx, "PreUnexpected")
         %{ok: false, error: err, result: S.getprop(ctx, "result"), ctx: ctx, data: nil}

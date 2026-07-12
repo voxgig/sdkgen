@@ -10,8 +10,6 @@
 # pseudo-random failures via a seeded LCG for coverage-style testing.
 
 defmodule ProjectName.Feature.Netsim do
-  import Bitwise
-
   alias Voxgig.Struct, as: S
   alias ProjectName.Helpers, as: H
   alias ProjectName.{Feature, Context}
