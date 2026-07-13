@@ -70,8 +70,11 @@ const Package = cmp(async function Package(props: any) {
       'test-utility': 'node --enable-source-maps --test test/utility/*.test.ts',
 
       "watch": "tsc --build src test -w",
-      "build": "tsc --build src test",
-      "clean": "rm -rf node_modules yarn.lock package-lock.json",
+      // Prune compiled output before building: `tsc --build` is incremental and
+      // never deletes .js for a removed source, so entity tests that the model
+      // folds away would otherwise keep running from stale dist-test/ and fail.
+      "build": "rm -rf dist dist-test && tsc --build src test",
+      "clean": "rm -rf node_modules yarn.lock package-lock.json dist dist-test",
       "reset": "npm run clean && npm i && npm run build && npm test",
     },
     author: { name: PUBLISHER, url: PUBLISHER_URL },
