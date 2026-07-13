@@ -49,6 +49,15 @@ dynamic makeError(dynamic ctx, [dynamic err]) {
 
   ctx.ctrl['err'] = sdkerr;
 
+  // Fire PreUnexpected so observability features (metrics, telemetry, audit,
+  // debug) close/record error paths that never reach PreDone (e.g. a PrePoint
+  // rbac short-circuit). Fires after ctx.ctrl['err'] is set so hooks can read
+  // the error; features guard against double-recording when PreDone fired.
+  final utility = ctx.utility;
+  if (null != utility && null != utility.featureHook) {
+    utility.featureHook(ctx, 'PreUnexpected');
+  }
+
   // TODO: model option to return instead
   if (false == ctx.ctrl['throw']) {
     return result.resdata;

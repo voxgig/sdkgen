@@ -214,6 +214,12 @@ pub fn make_error_util(ctx: *Context) E!Value {
 
     c.err = sdk_err;
 
+    // Fire PreUnexpected so observability features (metrics, telemetry, audit,
+    // debug) close/record error paths that never reach PreDone (e.g. a PrePoint
+    // rbac short-circuit). Fires after ctrl.err is set so hooks can read the
+    // error; features guard against double-recording when PreDone already fired.
+    feature_hook_util(ctx, "PreUnexpected");
+
     if (c.throw != null and c.throw.? == false) {
         return result.resdata;
     }

@@ -736,6 +736,13 @@
                            :spec (ucall ctx :clean spec)
                            :code (if (sdk-error? err) (:code err) ""))]
         (oset! (oget ctx :ctrl) :err sdk-err)
+        ;; Fire PreUnexpected so observability features (metrics, telemetry,
+        ;; audit, debug) close/record error paths that never reach PreDone
+        ;; (e.g. a PrePoint rbac short-circuit). Fires after ctrl.err is set so
+        ;; hooks can read the error; features guard against double-recording
+        ;; when PreDone already fired.
+        (when (oget ctx :utility)
+          (ucall ctx :feature-hook "PreUnexpected"))
         (if (= false (oget (oget ctx :ctrl) :throw))
           (oget result :resdata)
           (sdk-throw sdk-err))))))

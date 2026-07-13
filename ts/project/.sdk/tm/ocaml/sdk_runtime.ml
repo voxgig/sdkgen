@@ -266,6 +266,11 @@ let make_error_util (ctx : ctx) (err_opt : sdk_error option) : value =
     err_spec = (match ctx.c_spec with Some s -> (cu ctx).u_clean ctx (spec_to_value s) | None -> Noval);
   } in
   ctx.c_ctrl.ctrl_err <- Some sdk_err;
+  (* Fire PreUnexpected so observability features (metrics, telemetry, audit,
+     debug) close/record error paths that never reach PreDone (e.g. a PrePoint
+     rbac short-circuit). Fires after ctrl_err is set so hooks can read the
+     error; features guard against double-recording when PreDone already fired. *)
+  (cu ctx).u_feature_hook ctx "PreUnexpected";
   if ctx.c_ctrl.ctrl_throw = Some false then result.rt_resdata
   else raise (Sdk_error_exc sdk_err)
 

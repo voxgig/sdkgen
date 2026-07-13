@@ -247,6 +247,11 @@ makeErrorUtil ctx merr = do
   sdkErr <- jo [ ("__sdkerr__", VBool True), ("code", VStr ecode), ("message", VStr msg)
                , ("result", rv), ("spec", sv) ]
   setp ctrl "err" sdkErr
+  -- Fire PreUnexpected so observability features (metrics, telemetry, audit,
+  -- debug) close/record error paths that never reach PreDone (e.g. a PrePoint
+  -- rbac short-circuit). Fires after ctrl err is set so hooks can read the
+  -- error; features guard against double-recording when PreDone already fired.
+  featureHookUtil ctx "PreUnexpected"
   thr <- getp ctrl "throw"
   case thr of
     VBool False -> getp result "resdata"

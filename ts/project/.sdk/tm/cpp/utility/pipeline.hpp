@@ -40,6 +40,10 @@ inline Value clean(CtxPtr ctx, const Value& val) { return val; }
 
 // ---- makeError --------------------------------------------------------
 
+// Forward declaration: makeError fires the PreUnexpected feature hook, whose
+// definition appears later in this header.
+inline void featureHook(CtxPtr ctx, const std::string& name);
+
 inline Value makeError(CtxPtr ctx, SdkErrorPtr err) {
   std::string opname = (!ctx->op) ? "" : ctx->op->name;
   if (opname.empty() || opname == "_") opname = "unknown operation";
@@ -71,6 +75,12 @@ inline Value makeError(CtxPtr ctx, SdkErrorPtr err) {
   sdkErr->spec_obj = spec;
 
   ctx->ctrl->err = sdkErr;
+
+  // Fire PreUnexpected so observability features (metrics, telemetry, audit,
+  // debug) close/record error paths that never reach PreDone (e.g. a PrePoint
+  // rbac short-circuit). Fires after ctx->ctrl->err is set so hooks can read
+  // the error; features guard against double-recording when PreDone fired.
+  featureHook(ctx, "PreUnexpected");
 
   if (is_false(ctx->ctrl->throwing)) {
     return result->resdata;
