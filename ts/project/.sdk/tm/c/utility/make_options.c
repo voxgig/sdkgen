@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int mo_cmp_cstr(const void* a, const void* b) {
+  return strcmp(*(const char* const*)a, *(const char* const*)b);
+}
+
 voxgig_value* make_options_util(Context* ctx) {
   voxgig_value* options = voxgig_is_map(ctx->options) ? ctx->options : voxgig_new_map();
 
@@ -19,6 +23,32 @@ voxgig_value* make_options_util(Context* ctx) {
   }
 
   voxgig_value* opts = voxgig_clone(options);
+
+  // Feature add-order. options.feature may be an ordered list of
+  // { name, active, ...opts } entries (the list position IS the order in which
+  // features are added), or a { name: {opts} } map. Normalize a list to a map
+  // (so merge/validate are unchanged) and remember the explicit order; a map
+  // defaults to test-first so the `test` mock transport is installed as the
+  // base of the transport wrapper chain.
+  voxgig_value* feature_order = v_list();
+  voxgig_value* raw_feature = getp(opts, "feature");
+  if (v_is_list(raw_feature)) {
+    voxgig_value* fmap = v_map();
+    voxgig_list* fl = voxgig_as_list(raw_feature);
+    for (size_t i = 0; i < fl->len; i++) {
+      voxgig_value* entry = fl->items[i];
+      if (v_is_map(entry)) {
+        const char* nm = get_str(entry, "name");
+        if (nm) {
+          voxgig_value* fopts = v_clone(entry);
+          voxgig_delprop(fopts, v_str("name"));
+          setp(fmap, nm, fopts);
+          voxgig_list_push(voxgig_as_list(feature_order), v_str(nm));
+        }
+      }
+    }
+    setp(opts, "feature", fmap);
+  }
 
   voxgig_value* config = ctx->config;
   voxgig_value* cfgopts = to_map(getp(config, "options"));
@@ -112,7 +142,38 @@ voxgig_value* make_options_util(Context* ctx) {
   voxgig_value* derived_clean = (keyre_len == 0) ? v_map()
                                                  : cmap(1, "keyre", v_str(keyre));
   free(keyre);
-  setp(opts, "__derived__", cmap(1, "clean", derived_clean));
+
+  // Resolve the feature add-order: an explicit list order (above) wins;
+  // otherwise order the map test-first, then the remaining names sorted, so
+  // the outcome is deterministic and `test` is always the base transport.
+  if (voxgig_as_list(feature_order)->len == 0) {
+    voxgig_value* fmap = getp(opts, "feature");
+    if (v_is_map(fmap)) {
+      voxgig_map* fm = voxgig_as_map(fmap);
+      size_t fn = fm->len;
+      if (fn > 0) {
+        const char** names = (const char**)malloc(sizeof(char*) * fn);
+        for (size_t i = 0; i < fn; i++) names[i] = fm->entries[i].key;
+        qsort(names, fn, sizeof(char*), mo_cmp_cstr);
+        bool has_test = false;
+        for (size_t i = 0; i < fn; i++) {
+          if (strcmp(names[i], "test") == 0) has_test = true;
+        }
+        if (has_test) {
+          voxgig_list_push(voxgig_as_list(feature_order), v_str("test"));
+        }
+        for (size_t i = 0; i < fn; i++) {
+          if (strcmp(names[i], "test") != 0) {
+            voxgig_list_push(voxgig_as_list(feature_order), v_str(names[i]));
+          }
+        }
+        free(names);
+      }
+    }
+  }
+
+  setp(opts, "__derived__",
+       cmap(2, "clean", derived_clean, "featureorder", feature_order));
 
   return opts;
 }

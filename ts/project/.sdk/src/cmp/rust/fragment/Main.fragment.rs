@@ -55,15 +55,24 @@ impl ProjectNameSDK {
         *rootctx.options.borrow_mut() = opts.clone();
         *sdk.rootctx.borrow_mut() = Some(rootctx.clone());
 
-        // Add features from config-driven options.
+        // Add features in the resolved order (make_options puts an explicit
+        // List order first, else defaults to test-first). Ordering matters:
+        // the `test` feature installs the base mock transport and the
+        // transport features (retry/cache/netsim/proxy/ratelimit) wrap
+        // whatever is current, so `test` must be added before them to sit at
+        // the base of the transport wrapper chain.
         let feature_opts = to_map(&getp(&opts, "feature"));
-        if let Value::Map(fm) = &feature_opts {
-            let entries: Vec<(String, Value)> = fm
+        if let Value::List(order) = getpath(&["__derived__", "featureorder"], &opts) {
+            let names: Vec<String> = order
                 .borrow()
                 .iter()
-                .map(|(k, v)| (k.clone(), v.clone()))
+                .filter_map(|v| match v {
+                    Value::Str(s) => Some(s.clone()),
+                    _ => None,
+                })
                 .collect();
-            for (fname, fopts) in entries {
+            for fname in names {
+                let fopts = getp(&feature_opts, &fname);
                 if let Value::Map(_) = fopts {
                     if get_bool(&fopts, "active") == Some(true) {
                         sdk.utility.feature_add(&rootctx, make_feature(&fname));

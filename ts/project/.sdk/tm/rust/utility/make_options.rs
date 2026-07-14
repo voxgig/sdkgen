@@ -25,6 +25,28 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
 
     let mut opts = vs::clone(&options);
 
+    // Feature add-order. `options.feature` may be an ordered List of
+    // { name, active, ...opts } entries (the List position IS the order in
+    // which features are added), or a { name: {opts} } map. Normalize a List
+    // to a map (so merge/validate are unchanged) and remember the explicit
+    // order; a map defaults to test-first so the `test` mock transport is
+    // installed as the base of the transport wrapper chain.
+    let mut feature_order: Vec<String> = Vec::new();
+    if let Value::List(fl) = getp(&opts, "feature") {
+        let fmap = Value::empty_map();
+        for entry in fl.borrow().iter() {
+            if let Value::Map(_) = entry {
+                if let Value::Str(nm) = getp(entry, "name") {
+                    let fopts = vs::clone(entry);
+                    vs::del_prop(fopts.clone(), &Value::str("name"));
+                    setp(&fmap, &nm, fopts);
+                    feature_order.push(nm);
+                }
+            }
+        }
+        setp(&opts, "feature", fmap);
+    }
+
     let config = ctx.config.borrow().clone();
     let cfgopts = match to_map(&getp(&config, "options")) {
         Value::Map(m) => Value::Map(m),
@@ -112,12 +134,37 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         .collect();
     let keyre = filtered.join("|");
 
+    // Resolve the feature add-order: an explicit List order (above) wins;
+    // otherwise order the map test-first, then the remaining names sorted, so
+    // the outcome is deterministic and `test` is always the base transport.
+    if feature_order.is_empty() {
+        if let Value::Map(fm) = getp(&opts, "feature") {
+            let mut names: Vec<String> =
+                fm.borrow().iter().map(|(k, _)| k.clone()).collect();
+            names.sort();
+            if names.iter().any(|n| n == "test") {
+                feature_order.push("test".to_string());
+                for n in names.into_iter().filter(|n| n != "test") {
+                    feature_order.push(n);
+                }
+            } else {
+                feature_order = names;
+            }
+        }
+    }
+    let order_list =
+        Value::list(feature_order.into_iter().map(|n| Value::str(n)).collect());
+
     let derived_clean = if keyre.is_empty() {
         Value::empty_map()
     } else {
         jo(vec![("keyre", Value::str(keyre))])
     };
-    setp(&opts, "__derived__", jo(vec![("clean", derived_clean)]));
+    setp(
+        &opts,
+        "__derived__",
+        jo(vec![("clean", derived_clean), ("featureorder", order_list)]),
+    );
 
     opts
 }

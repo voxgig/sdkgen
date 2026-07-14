@@ -441,6 +441,59 @@ static void prepareAuth_publicApiNoAuthBlockDropsHeader() {
   ASSERT_TRUE(is_nullish(getp(ctx->spec->headers, "authorization")), "expected authorization dropped");
 }
 
+// --- feature order (array form + test-first default) ------------------------
+
+static Value featureOrderOpts(const Value& feature) {
+  auto client = plClient(Value::undef());
+  UtilityPtr utility = client->getUtility();
+  CtxSpec cs;
+  cs.utility = utility;
+  cs.options = fhMap({{"feature", feature}});
+  cs.config = fhMap({{"options", vmap()}});
+  CtxPtr ctx = utility->makeContext(cs, nullptr);
+  return utility->makeOptions(ctx);
+}
+
+static std::string orderJoin(const Value& opts) {
+  Value order = Struct::getpath(opts, {"__derived__", "featureorder"});
+  std::string out;
+  if (order.is_list()) {
+    bool first = true;
+    for (const auto& v : *order.as_list()) {
+      if (!first) out += ",";
+      if (v.is_string()) out += v.as_string();
+      first = false;
+    }
+  }
+  return out;
+}
+
+static void featureOrder_mapIsTestFirst() {
+  Value opts = featureOrderOpts(fhMap({
+      {"metrics", fhMap({{"active", Value(true)}})},
+      {"test", fhMap({{"active", Value(true)}})}}));
+  ASSERT_EQ(orderJoin(opts), std::string("test,metrics"), "map is test-first");
+}
+
+static void featureOrder_arrayIsExplicit() {
+  Value opts = featureOrderOpts(vlist({
+      fhMap({{"name", Value("metrics")}, {"active", Value(true)}}),
+      fhMap({{"name", Value("test")}, {"active", Value(true)}})}));
+  ASSERT_EQ(orderJoin(opts), std::string("metrics,test"), "array is explicit");
+  // the list is normalized to a map for merge/init, opts preserved.
+  ASSERT_TRUE(is_true(Struct::getpath(opts, {"feature", "metrics", "active"})),
+              "metrics.active preserved");
+  ASSERT_TRUE(is_true(Struct::getpath(opts, {"feature", "test", "active"})),
+              "test.active preserved");
+}
+
+static void featureOrder_mapNoTestSorted() {
+  Value opts = featureOrderOpts(fhMap({
+      {"retry", fhMap({{"active", Value(true)}})},
+      {"cache", fhMap({{"active", Value(true)}})}}));
+  ASSERT_EQ(orderJoin(opts), std::string("cache,retry"), "map no-test sorted");
+}
+
 int main() {
   T_RUN(makeResponse_guardsMissingSpecResponseResult);
   T_RUN(makeResponse_4xxSetsResultErrAndCopiesHeaders);
@@ -460,6 +513,9 @@ int main() {
   T_RUN(makeError_recordsToCtrlExplain);
   T_RUN(featureAdd_appendsByDefault);
   T_RUN(featureAdd_orderingBeforeAfterReplace);
+  T_RUN(featureOrder_mapIsTestFirst);
+  T_RUN(featureOrder_arrayIsExplicit);
+  T_RUN(featureOrder_mapNoTestSorted);
   T_RUN(prepareAuth_guardsMissingSpec);
   T_RUN(prepareAuth_apikeyWithPrefixSpaceJoined);
   T_RUN(prepareAuth_rawApikeyEmptyPrefixAsIs);

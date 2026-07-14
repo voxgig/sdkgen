@@ -53,11 +53,17 @@ class ProjectNameSDK {
     final featureAdd = _utility.featureAdd;
     final featureInit = _utility.featureInit;
 
-    for (final fitem in struct.items(_options['feature'])) {
-      final fname = fitem[0].toString();
-      final fopts = fitem[1];
+    // Add features in the resolved order (makeOptions puts an explicit List
+    // order first, else defaults to test-first). Ordering matters: the
+    // `test` feature installs the base mock transport and the transport
+    // features (retry/cache/netsim/proxy/ratelimit) wrap whatever is current,
+    // so `test` must be added before them to sit at the base of the chain.
+    final featureorder =
+        struct.getpath(_options, '__derived__.featureorder') ?? [];
+    for (final fname in featureorder) {
+      final fopts = _options['feature'][fname];
       if (fopts is Map && true == fopts['active']) {
-        featureAdd(rootctx, config.makeFeature(fname));
+        featureAdd(rootctx, config.makeFeature(fname.toString()));
       }
     }
 

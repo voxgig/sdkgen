@@ -108,6 +108,97 @@ pub const EntyClass = struct {
         return self.doneResult(ctx);
     }
 
+    /// Streaming operation. Runs `action` through the full pipeline and
+    /// returns a slice of the result items, so the `streaming` feature's
+    /// incremental output is reachable from a generated entity (a normal op
+    /// call materialises the whole result). This runtime is synchronous and
+    /// zig has no built-in lazy iterators, so the returned slice is a
+    /// materialised cursor the caller walks. `callopts` parameterises the
+    /// call: inbound yields the streaming feature's items when active, else
+    /// the materialised items; outbound attaches an iterable `body` to the
+    /// request (reqdata `body$`); `ctrl` threads pipeline control.
+    pub fn stream(self: *EntyClass, action: []const u8, args: Value, callopts: Value) []Value {
+        const utility = self.utility;
+
+        const stream_opts: Value = switch (callopts) {
+            .object => callopts,
+            else => h.omap(),
+        };
+
+        const ctrl: Value = switch (h.to_map(h.getp(stream_opts, "ctrl"))) {
+            .object => h.to_map(h.getp(stream_opts, "ctrl")),
+            else => h.omap(),
+        };
+        h.setp(ctrl, "stream", stream_opts);
+
+        const reqmatch: Value = switch (args) {
+            .object => args,
+            else => h.omap(),
+        };
+
+        const ctx = utility.make_context(CtxSpec{
+            .opname = action,
+            .ctrl = ctrl,
+            .mtch = self.mtch,
+            .data = self.data,
+            .reqmatch = reqmatch,
+        }, self.ent_ctx());
+
+        // Outbound: attach a caller `body` so the transport can stream a
+        // request payload (reqdata `body$`).
+        const body = h.getp(stream_opts, "body");
+        if (!h.is_noval(body)) {
+            const reqdata: Value = switch (ctx.reqdata) {
+                .object => ctx.reqdata,
+                else => h.omap(),
+            };
+            h.setp(reqdata, "body$", body);
+            ctx.reqdata = reqdata;
+        }
+
+        // Run the same pipeline as run_op, firing the feature hooks (the
+        // streaming feature attaches result.stream on PreResult).
+        utility.feature_hook(ctx, "PrePoint");
+        const point = utility.make_point(ctx) catch return &.{};
+        ctx.out_set("point", OutVal{ .val = point });
+
+        utility.feature_hook(ctx, "PreSpec");
+        const spec = utility.make_spec(ctx) catch return &.{};
+        ctx.out_set("spec", OutVal{ .spec = spec });
+
+        utility.feature_hook(ctx, "PreRequest");
+        const resp = utility.make_request(ctx) catch return &.{};
+        ctx.out_set("request", OutVal{ .response = resp });
+
+        utility.feature_hook(ctx, "PreResponse");
+        const resp2 = utility.make_response(ctx) catch return &.{};
+        ctx.out_set("response", OutVal{ .response = resp2 });
+
+        utility.feature_hook(ctx, "PreResult");
+        const result = utility.make_result(ctx) catch return &.{};
+        ctx.out_set("result", OutVal{ .result = result });
+
+        utility.feature_hook(ctx, "PreDone");
+
+        // Inbound: prefer the streaming feature's incremental producer; else
+        // fall back to the materialised items so stream always yields.
+        if (ctx.result) |res| {
+            if (res.stream) |sf| {
+                return sf.call(sf.ctx);
+            }
+        }
+
+        const data = utility.done(ctx) catch return &.{};
+        if (data == .array) {
+            return data.array.data.items;
+        } else if (!h.is_noval(data)) {
+            var out = std.ArrayList(Value).init(h.A());
+            out.append(data) catch {};
+            return out.toOwnedSlice() catch &.{};
+        }
+        return &.{};
+    }
+
     // ---- Entity interface ----
 
     fn e_of(p: *anyopaque) *EntyClass {

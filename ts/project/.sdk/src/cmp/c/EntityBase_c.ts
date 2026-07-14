@@ -44,6 +44,7 @@ const EntityBase = cmp(async function EntityBase(props: any) {
         Content(`// ${ent.Name} entity.
 Entity* ${evar}_entity_new(${Name}SDK* client, voxgig_value* entopts);
 Entity* ${ident}_${evar}(${Name}SDK* client, voxgig_value* entopts);
+voxgig_value* ${evar}_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err);
 `)
       })
 

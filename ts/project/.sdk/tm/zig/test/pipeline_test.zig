@@ -439,3 +439,55 @@ test "pipeline prepare_auth: public api no auth block drops header" {
     _ = utility.prepare_auth(ctx) catch {};
     try testing.expect(h.is_noval(h.getp(ctx.spec.?.headers, "authorization")));
 }
+
+// --- feature order (array form + test-first default) ------------------------
+
+fn makeOptsFeature(feature: Value) Value {
+    const client = sdk.test_sdk(vnull(), vnull());
+    const utility = client.get_utility();
+    const ctx = utility.make_context(sdk.CtxSpec{
+        .utility = utility,
+        .options = h.jo(&.{.{ "feature", feature }}),
+        .config = h.jo(&.{.{ "options", h.omap() }}),
+    }, null);
+    return utility.make_options(ctx);
+}
+
+fn orderJoin(opts: Value) []const u8 {
+    const order = h.getpath(&.{ "__derived__", "featureorder" }, opts);
+    var out = std.ArrayList(u8).init(h.A());
+    if (order == .array) {
+        for (order.array.data.items, 0..) |v, i| {
+            if (i > 0) out.appendSlice(",") catch {};
+            if (v == .string) out.appendSlice(v.string) catch {};
+        }
+    }
+    return out.toOwnedSlice() catch "";
+}
+
+test "pipeline feature order: map is test-first" {
+    const opts = makeOptsFeature(h.jo(&.{
+        .{ "metrics", h.jo(&.{.{ "active", h.vbool(true) }}) },
+        .{ "test", h.jo(&.{.{ "active", h.vbool(true) }}) },
+    }));
+    try testing.expect(std.mem.eql(u8, orderJoin(opts), "test,metrics"));
+}
+
+test "pipeline feature order: array is explicit" {
+    const opts = makeOptsFeature(h.ja(&.{
+        h.jo(&.{ .{ "name", h.vstr("metrics") }, .{ "active", h.vbool(true) } }),
+        h.jo(&.{ .{ "name", h.vstr("test") }, .{ "active", h.vbool(true) } }),
+    }));
+    try testing.expect(std.mem.eql(u8, orderJoin(opts), "metrics,test"));
+    // the list is normalized to a map for merge/init, opts preserved.
+    try testing.expect(h.veq(h.getpath(&.{ "feature", "metrics", "active" }, opts), h.vbool(true)));
+    try testing.expect(h.veq(h.getpath(&.{ "feature", "test", "active" }, opts), h.vbool(true)));
+}
+
+test "pipeline feature order: map without test is sorted" {
+    const opts = makeOptsFeature(h.jo(&.{
+        .{ "retry", h.jo(&.{.{ "active", h.vbool(true) }}) },
+        .{ "cache", h.jo(&.{.{ "active", h.vbool(true) }}) },
+    }));
+    try testing.expect(std.mem.eql(u8, orderJoin(opts), "cache,retry"));
+}

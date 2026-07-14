@@ -42,13 +42,20 @@ ProjectNameSDK* projectname_sdk_new(voxgig_value* options) {
   rootctx->options = v_share(opts);
   sdk->rootctx = rootctx;
 
-  // Add features from config-driven options.
+  // Add features in the resolved order (make_options puts an explicit list
+  // order first, else defaults to test-first). Ordering matters: the `test`
+  // feature installs the base mock transport and the transport features
+  // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+  // must be added before them to sit at the base of the transport chain.
   voxgig_value* feature_opts = to_map(getp(opts, "feature"));
-  if (voxgig_is_map(feature_opts)) {
-    voxgig_map* fm = voxgig_as_map(feature_opts);
-    for (size_t i = 0; i < fm->len; i++) {
-      const char* fname = fm->entries[i].key;
-      voxgig_value* fopts = fm->entries[i].value;
+  voxgig_value* feature_order = getpath2(opts, "__derived__", "featureorder");
+  if (voxgig_is_map(feature_opts) && v_is_list(feature_order)) {
+    voxgig_list* order = voxgig_as_list(feature_order);
+    for (size_t i = 0; i < order->len; i++) {
+      voxgig_value* fname_v = order->items[i];
+      if (!v_is_str(fname_v)) continue;
+      const char* fname = voxgig_as_string(fname_v);
+      voxgig_value* fopts = getp(feature_opts, fname);
       if (voxgig_is_map(fopts)) {
         bool active = false;
         if (get_bool(fopts, "active", &active) && active) {

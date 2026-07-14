@@ -61,9 +61,37 @@ dynamic makeOptions(dynamic ctx) {
   // merge/validate, defaulting to the dart:io transport.
   final sysFetch = vs.getpath(options, 'system.fetch') ?? httpFetch;
 
+  // Feature add-order. `options.feature` may be given as an ordered List of
+  // { name, active, ...opts } entries (the List position IS the order in
+  // which features are added), or as a { name: {opts} } map. Normalize a
+  // List to a map (so merge/validate are unchanged) and remember the
+  // explicit order; a map defaults to test-first so the `test` mock
+  // transport is installed as the base of the transport wrapper chain.
+  final featureorder = <String>[];
+  dynamic mergeOptions = options ?? {};
+  final rawFeature = vs.getprop(options, 'feature');
+  if (rawFeature is List) {
+    final fmap = <String, dynamic>{};
+    for (final entry in rawFeature) {
+      if (entry is Map && null != vs.getprop(entry, 'name')) {
+        final fname = vs.getprop(entry, 'name').toString();
+        final fopts = <String, dynamic>{};
+        entry.forEach((k, v) {
+          if ('name' != k) {
+            fopts[k.toString()] = v;
+          }
+        });
+        fmap[fname] = fopts;
+        featureorder.add(fname);
+      }
+    }
+    mergeOptions = vs.clone(options);
+    mergeOptions['feature'] = fmap;
+  }
+
   // User option maps are cloned first — their (possibly narrow) literal
   // types must not constrain the merged structures.
-  dynamic opts = vs.merge([{}, cfgopts, vs.clone(options ?? {})]);
+  dynamic opts = vs.merge([{}, cfgopts, vs.clone(mergeOptions)]);
 
   opts = vs.validate(opts, optspec);
 
@@ -86,10 +114,33 @@ dynamic makeOptions(dynamic ctx) {
   }
   final keyre = parts.join('|');
 
+  // Resolve the feature add-order: an explicit List order (above) wins;
+  // otherwise order the map test-first, then the remaining names sorted, so
+  // the outcome is deterministic and `test` is always the base transport.
+  if (0 == featureorder.length) {
+    final featureMap = vs.getprop(opts, 'feature') ?? {};
+    final names = <String>[];
+    for (final it in vs.items(featureMap)) {
+      names.add(it[0].toString());
+    }
+    names.sort();
+    if (names.contains('test')) {
+      featureorder.add('test');
+      for (final n in names) {
+        if ('test' != n) {
+          featureorder.add(n);
+        }
+      }
+    } else {
+      featureorder.addAll(names);
+    }
+  }
+
   opts['__derived__'] = {
     'clean': {
       'keyre': '' == keyre ? null : keyre,
     },
+    'featureorder': featureorder,
   };
 
   return opts;

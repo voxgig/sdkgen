@@ -7,6 +7,7 @@
 #ifndef SDK_UTILITY_PIPELINE_HPP
 #define SDK_UTILITY_PIPELINE_HPP
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -894,6 +895,33 @@ inline Value makeOptions(CtxPtr ctx) {
 
   Value opts = Struct::clone(options);
 
+  // Feature add-order. options.feature may be an ordered list of
+  // { name, active, ...opts } entries (the list position IS the order in which
+  // features are added), or a { name: {opts} } map. Normalize a list to a map
+  // (so merge/validate are unchanged) and remember the explicit order; a map
+  // defaults to test-first so the `test` mock transport is installed as the
+  // base of the transport wrapper chain.
+  std::vector<std::string> featureOrder;
+  {
+    Value rawFeature = getp(opts, "feature");
+    if (rawFeature.is_list()) {
+      Value fmap = vmap();
+      for (const auto& entry : *rawFeature.as_list()) {
+        if (entry.is_map()) {
+          Value nameV = getp(entry, "name");
+          if (nameV.is_string()) {
+            std::string nm = nameV.as_string();
+            Value fopts = Struct::clone(entry);
+            map_remove(fopts, "name");
+            map_put(fmap, nm, fopts);
+            featureOrder.push_back(nm);
+          }
+        }
+      }
+      map_put(opts, "feature", fmap);
+    }
+  }
+
   Value config = ctx->config;
   if (!config.is_map()) config = vmap();
   Value cfgopts = Helpers::toMapAny(getp(config, "options"));
@@ -952,10 +980,32 @@ inline Value makeOptions(CtxPtr ctx) {
     keyre += parts[i];
   }
 
+  // Resolve the feature add-order: an explicit list order (above) wins;
+  // otherwise order the map test-first, then the remaining names sorted, so
+  // the outcome is deterministic and `test` is always the base transport.
+  if (featureOrder.empty()) {
+    Value featureMap = Helpers::toMapAny(getp(opts, "feature"));
+    if (featureMap.is_map()) {
+      std::vector<std::string> names;
+      for (const auto& item : Struct::items(featureMap)) {
+        names.push_back(as_str(pair_key(item)));
+      }
+      std::sort(names.begin(), names.end());
+      bool hasTest = std::find(names.begin(), names.end(), "test") != names.end();
+      if (hasTest) featureOrder.push_back("test");
+      for (const auto& n : names) {
+        if (n != "test") featureOrder.push_back(n);
+      }
+    }
+  }
+  Value orderList = vlist();
+  for (const auto& n : featureOrder) orderList.as_list()->push_back(Value(n));
+
   Value derived = vmap();
   Value derivedClean = vmap();
   if (!keyre.empty()) map_put(derivedClean, "keyre", Value(keyre));
   map_put(derived, "clean", derivedClean);
+  map_put(derived, "featureorder", orderList);
   map_put(opts, "__derived__", derived);
 
   return opts;

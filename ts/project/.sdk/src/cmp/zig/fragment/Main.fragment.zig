@@ -56,13 +56,19 @@ pub const ProjectNameSDK = struct {
         rootctx.options = opts;
         sdk.rootctx = rootctx;
 
-        // Add features from config-driven options.
+        // Add features in the resolved order (make_options puts an explicit
+        // list order first, else defaults to test-first). Ordering matters:
+        // the `test` feature installs the base mock transport and the
+        // transport features (retry/cache/netsim/proxy/ratelimit) wrap
+        // whatever is current, so `test` must be added before them to sit at
+        // the base of the transport wrapper chain.
         const feature_opts = h.to_map(h.getp(opts, "feature"));
-        if (feature_opts == .object) {
-            var it = feature_opts.object.iterator();
-            while (it.next()) |kv| {
-                const fname = kv.key_ptr.*;
-                const fopts = kv.value_ptr.*;
+        const feature_order = h.getpath(&.{ "__derived__", "featureorder" }, opts);
+        if (feature_opts == .object and feature_order == .array) {
+            for (feature_order.array.data.items) |fname_v| {
+                if (fname_v != .string) continue;
+                const fname = fname_v.string;
+                const fopts = h.getp(feature_opts, fname);
                 if (fopts == .object) {
                     if (h.get_bool(fopts, "active") orelse false) {
                         sdk.utility.feature_add(rootctx, config.make_feature(fname));

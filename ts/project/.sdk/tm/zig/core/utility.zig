@@ -289,6 +289,10 @@ pub fn feature_init_util(ctx: *Context, f: Feature) void {
 // make_options
 // ============================================================================
 
+fn mo_str_less(_: void, a: []const u8, b: []const u8) bool {
+    return std.mem.order(u8, a, b) == .lt;
+}
+
 pub fn make_options_util(ctx: *Context) Value {
     const options: Value = switch (ctx.options) {
         .object => ctx.options,
@@ -307,6 +311,29 @@ pub fn make_options_util(ctx: *Context) Value {
     }
 
     var opts = h.clone(options);
+
+    // Feature add-order. options.feature may be an ordered list of
+    // { name, active, ...opts } entries (the list position IS the order in
+    // which features are added), or a { name: {opts} } map. Normalize a list
+    // to a map (so merge/validate are unchanged) and remember the explicit
+    // order; a map defaults to test-first so the `test` mock transport is
+    // installed as the base of the transport wrapper chain.
+    const feature_order = h.olist();
+    const raw_feature = h.getp(opts, "feature");
+    if (raw_feature == .array) {
+        const fmap = h.omap();
+        for (raw_feature.array.data.items) |entry| {
+            if (entry == .object) {
+                if (h.get_str(entry, "name")) |nm| {
+                    const fopts = h.clone(entry);
+                    h.del_prop(fopts, h.vstr("name"));
+                    h.setp(fmap, nm, fopts);
+                    feature_order.array.append(h.vstr(nm)) catch {};
+                }
+            }
+        }
+        h.setp(opts, "feature", fmap);
+    }
 
     const config = ctx.config;
     const cfgopts: Value = switch (h.to_map(h.getp(config, "options"))) {
@@ -376,8 +403,32 @@ pub fn make_options_util(ctx: *Context) Value {
     }
     const keyre = std.mem.join(h.A(), "|", parts.items) catch "";
 
+    // Resolve the feature add-order: an explicit list order (above) wins;
+    // otherwise order the map test-first, then the remaining names sorted, so
+    // the outcome is deterministic and `test` is always the base transport.
+    if (feature_order.array.data.items.len == 0) {
+        const fmapv = h.getp(opts, "feature");
+        if (fmapv == .object) {
+            var names = std.ArrayList([]const u8).init(h.A());
+            var nit = fmapv.object.iterator();
+            while (nit.next()) |kv| names.append(kv.key_ptr.*) catch {};
+            std.mem.sort([]const u8, names.items, {}, mo_str_less);
+            var has_test = false;
+            for (names.items) |nm| {
+                if (std.mem.eql(u8, nm, "test")) has_test = true;
+            }
+            if (has_test) feature_order.array.append(h.vstr("test")) catch {};
+            for (names.items) |nm| {
+                if (!std.mem.eql(u8, nm, "test")) feature_order.array.append(h.vstr(nm)) catch {};
+            }
+        }
+    }
+
     const derived_clean = if (keyre.len == 0) h.omap() else h.jo(&.{.{ "keyre", h.vstr(keyre) }});
-    h.setp(opts, "__derived__", h.jo(&.{.{ "clean", derived_clean }}));
+    h.setp(opts, "__derived__", h.jo(&.{
+        .{ "clean", derived_clean },
+        .{ "featureorder", feature_order },
+    }));
 
     return opts;
 }

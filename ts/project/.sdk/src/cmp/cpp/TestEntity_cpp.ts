@@ -148,6 +148,28 @@ static void ${evar}_entity_instance() {
   ASSERT_EQ(ent->getName(), std::string("${entity.name}"), "entity name");
 }
 
+static void ${evar}_entity_stream() {
+  // stream() runs the list op through the full pipeline and returns the
+  // result items. Seed two entities via test mode; with the streaming feature
+  // active it yields the feature's incremental items, else it falls back to
+  // the materialised items — either way every item is yielded.
+  Value seed = vmap({{"entity", vmap({{"${entity.name}", vmap({
+      {"strm01", vmap({{"id", Value("strm01")}})},
+      {"strm02", vmap({{"id", Value("strm02")}})}})}})}});
+  Value sdkopts = vmap({{"feature",
+      vmap({{"streaming", vmap({{"active", Value(true)}})}})}});
+
+  auto strsdk = ${ProjectName}SDK::testSDK(seed, sdkopts);
+  auto se = strsdk->${method}();
+  std::vector<Value> items = se->stream("list", Value::undef(), Value::undef());
+  ASSERT_EQ((int)items.size(), 2, "stream yields both seeded items");
+
+  auto plainsdk = ${ProjectName}SDK::testSDK(seed, Value::undef());
+  auto pe = plainsdk->${method}();
+  std::vector<Value> pitems = pe->stream("list", Value::undef(), Value::undef());
+  ASSERT_EQ((int)pitems.size(), 2, "fallback stream yields both items");
+}
+
 static void ${evar}_entity_basic() {
   auto setup = ${evar}_basic_setup(Value::undef());
   std::string mode = setup.live ? "live" : "unit";
@@ -186,6 +208,7 @@ static void ${evar}_entity_basic() {
 
 int main() {
   T_RUN(${evar}_entity_instance);
+  T_RUN(${evar}_entity_stream);
   T_RUN(${evar}_entity_basic);
   return sdktest::summary("${entity.name}_entity_test");
 }

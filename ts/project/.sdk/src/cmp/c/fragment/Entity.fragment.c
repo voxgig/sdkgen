@@ -111,6 +111,99 @@ static voxgig_value* entyvar_run_op(entyvar_entity* self, Context* ctx,
   return done_util(ctx, err);
 }
 
+// Streaming operation. Runs `action` through the full pipeline and returns a
+// List of the result items, so the `streaming` feature's incremental output
+// is reachable from a generated entity (a normal op call materialises the
+// whole result). This runtime is synchronous and C has no lazy iterators, so
+// the returned value is a List cursor the caller walks (voxgig_as_list).
+// `callopts` parameterises the call:
+//   - inbound (download): the items/chunks the streaming feature produces when
+//     active, else the materialised items;
+//   - outbound (upload): a `body` in `callopts` is attached to the request
+//     (reqdata `body$`) so the transport can stream a payload;
+//   - `ctrl` (pipeline control) threads pipeline options.
+voxgig_value* entyvar_stream(Entity* e, const char* action, voxgig_value* args,
+                             voxgig_value* callopts, PNError** err) {
+  entyvar_entity* self = (entyvar_entity*)e;
+  *err = NULL;
+
+  voxgig_value* stream_opts = voxgig_is_map(callopts) ? callopts : voxgig_new_map();
+
+  voxgig_value* ctrl = to_map(getp(stream_opts, "ctrl"));
+  if (!voxgig_is_map(ctrl)) ctrl = voxgig_new_map();
+  setp(ctrl, "stream", v_share(stream_opts));
+
+  voxgig_value* reqmatch = to_map(args);
+  if (!voxgig_is_map(reqmatch)) reqmatch = voxgig_new_map();
+
+  CtxSpec cs;
+  memset(&cs, 0, sizeof(cs));
+  cs.opname = action;
+  cs.ctrl = ctrl;
+  cs.mtch = self->mtch;
+  cs.data = self->data;
+  cs.reqmatch = reqmatch;
+  Context* ctx = make_context_util(cs, entyvar_ent_ctx(self));
+
+  // Outbound: attach a caller `body` so the transport can stream a payload.
+  voxgig_value* body = getp(stream_opts, "body");
+  if (!v_is_noval(body) && !v_is_null(body)) {
+    voxgig_value* reqdata = voxgig_is_map(ctx->reqdata) ? ctx->reqdata : voxgig_new_map();
+    setp(reqdata, "body$", v_share(body));
+    ctx->reqdata = reqdata;
+  }
+
+  PNError* pe = NULL;
+
+  feature_hook_util(ctx, "PrePoint");
+  voxgig_value* point = make_point_util(ctx, &pe);
+  if (pe) { *err = pe; return NULL; }
+  ctx_out_set_point_val(ctx, point);
+
+  feature_hook_util(ctx, "PreSpec");
+  Spec* spec = make_spec_util(ctx, &pe);
+  if (pe) { *err = pe; return NULL; }
+  ctx->out_spec = spec;
+
+  feature_hook_util(ctx, "PreRequest");
+  Response* resp = make_request_util(ctx, &pe);
+  if (pe) { *err = pe; return NULL; }
+  ctx->out_request = resp;
+
+  feature_hook_util(ctx, "PreResponse");
+  Response* resp2 = make_response_util(ctx, &pe);
+  if (pe) { *err = pe; return NULL; }
+  ctx->out_response = resp2;
+
+  feature_hook_util(ctx, "PreResult");
+  SdkResult* result = make_result_util(ctx, &pe);
+  if (pe) { *err = pe; return NULL; }
+  ctx->out_result = result;
+
+  feature_hook_util(ctx, "PreDone");
+
+  // Inbound: prefer the streaming feature's incremental producer; else fall
+  // back to the materialised items so `stream` always yields.
+  SdkResult* res = ctx->result;
+  if (res && res->stream) {
+    return res->stream(res->stream_ud);
+  }
+
+  voxgig_value* data = done_util(ctx, err);
+  if (*err) return NULL;
+
+  voxgig_value* out = voxgig_new_list();
+  if (voxgig_is_list(data)) {
+    voxgig_list* l = voxgig_as_list(data);
+    for (size_t i = 0; i < l->len; i++) {
+      voxgig_list_push(voxgig_as_list(out), voxgig_retain(l->items[i]));
+    }
+  } else if (!v_is_noval(data) && !v_is_null(data)) {
+    voxgig_list_push(voxgig_as_list(out), voxgig_retain(data));
+  }
+  return out;
+}
+
 static const char* entyvar_get_name(Entity* e) {
   return ((entyvar_entity*)e)->name;
 }

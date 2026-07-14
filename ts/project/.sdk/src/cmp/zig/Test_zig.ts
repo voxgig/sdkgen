@@ -79,6 +79,28 @@ test "${method}_list_smoke" {
     const res = e.list(vnull(), vnull());
     try std.testing.expect(res == .ok);
 }
+
+test "${method}_stream_smoke" {
+    // stream() runs the list op through the full pipeline and returns the
+    // result items. Seed two entities via test mode; with the streaming
+    // feature active it yields the feature's incremental items, else it falls
+    // back to the materialised items — either way every item is yielded.
+    const fixture = h.jo(&.{.{ "${ent.name}", h.jo(&.{
+        .{ "strm01", h.jo(&.{.{ "id", h.vstr("strm01") }}) },
+        .{ "strm02", h.jo(&.{.{ "id", h.vstr("strm02") }}) },
+    }) }});
+    const sdkopts = h.jo(&.{.{ "feature", h.jo(&.{.{ "streaming", h.jo(&.{.{ "active", h.vbool(true) }}) }}) }});
+    const testsdk = sdk.test_sdk(h.jo(&.{.{ "entity", fixture }}), sdkopts);
+    const e = testsdk.${method}(vnull());
+    const items = e.stream("list", vnull(), vnull());
+    try std.testing.expect(items.len == 2);
+
+    // Fallback: streaming inactive still yields both materialised items.
+    const plainsdk = sdk.test_sdk(h.jo(&.{.{ "entity", fixture }}), vnull());
+    const pe = plainsdk.${method}(vnull());
+    const pitems = pe.stream("list", vnull(), vnull());
+    try std.testing.expect(pitems.len == 2);
+}
 `)
         }
       })

@@ -478,6 +478,47 @@ void tests() {
     });
   });
 
+  describe('pipeline:feature order', () {
+    dynamic resolve(dynamic feature) {
+      final ctx = stdutil.makeContext({
+        'utility': stdutil,
+        'options': {'feature': feature},
+        'config': {'options': {}},
+      });
+      return stdutil.makeOptions(ctx);
+    }
+
+    test('map form is ordered test-first (test is the base transport)', (t) {
+      final o = resolve({
+        'metrics': {'active': true},
+        'test': {'active': true}
+      });
+      equal('test,metrics',
+          (o['__derived__']['featureorder'] as List).join(','));
+    });
+
+    test('array form preserves the explicit developer-specified order', (t) {
+      final o = resolve([
+        {'name': 'metrics', 'active': true},
+        {'name': 'test', 'active': true}
+      ]);
+      equal('metrics,test',
+          (o['__derived__']['featureorder'] as List).join(','));
+      // the List is normalized to a map for merge/init, opts preserved
+      equal(true, o['feature']['metrics']['active']);
+      equal(true, o['feature']['test']['active']);
+    });
+
+    test('map form with no test orders names deterministically', (t) {
+      final o = resolve({
+        'retry': {'active': true},
+        'cache': {'active': true}
+      });
+      equal('cache,retry',
+          (o['__derived__']['featureorder'] as List).join(','));
+    });
+  });
+
   describe('pipeline:prepareAuth', () {
     // Fake client so the exact options.auth / apikey shape is controlled.
     dynamic authCtx(dynamic options, dynamic headers) {

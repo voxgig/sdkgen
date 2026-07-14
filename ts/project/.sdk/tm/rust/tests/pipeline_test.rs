@@ -12,7 +12,7 @@ use std::rc::Rc;
 
 use common::*;
 
-use RUSTCRATE::core::helpers::{getp, jo};
+use RUSTCRATE::core::helpers::{getp, getpath, ja, jo};
 use RUSTCRATE::utility::voxgigstruct as vs;
 use RUSTCRATE::{
     test_sdk, BaseFeature, Context, CtxSpec, Entity, FeatureRef, FetcherFn, Operation,
@@ -501,6 +501,78 @@ fn pipeline_feature_add_ordering_before_after_replace() {
     miss.borrow_mut().add_opts = Some(jo(vec![("__before__", Value::str("missing"))]));
     utility.feature_add(&ctx, miss);
     assert_eq!(names(&client), "a,z2,z3,b,z4", "fallback append");
+}
+
+// --- feature order (array form + test-first default) --------------------
+
+fn make_opts_with_feature(utility: &Rc<Utility>, feature: Value) -> Value {
+    let ctx = utility.make_context(
+        CtxSpec {
+            utility: Some(utility.clone()),
+            options: Some(jo(vec![("feature", feature)])),
+            config: Some(jo(vec![("options", Value::empty_map())])),
+            ..Default::default()
+        },
+        None,
+    );
+    utility.make_options(&ctx)
+}
+
+fn feature_order_str(opts: &Value) -> String {
+    match getpath(&["__derived__", "featureorder"], opts) {
+        Value::List(l) => l
+            .borrow()
+            .iter()
+            .filter_map(|v| match v {
+                Value::Str(s) => Some(s.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join(","),
+        _ => String::new(),
+    }
+}
+
+#[test]
+fn pipeline_feature_order_map_is_test_first() {
+    let (_c, utility) = pl_client(Value::Noval);
+    let opts = make_opts_with_feature(
+        &utility,
+        jo(vec![
+            ("metrics", jo(vec![("active", Value::Bool(true))])),
+            ("test", jo(vec![("active", Value::Bool(true))])),
+        ]),
+    );
+    assert_eq!(feature_order_str(&opts), "test,metrics");
+}
+
+#[test]
+fn pipeline_feature_order_array_is_explicit() {
+    let (_c, utility) = pl_client(Value::Noval);
+    let opts = make_opts_with_feature(
+        &utility,
+        ja(vec![
+            jo(vec![("name", Value::str("metrics")), ("active", Value::Bool(true))]),
+            jo(vec![("name", Value::str("test")), ("active", Value::Bool(true))]),
+        ]),
+    );
+    assert_eq!(feature_order_str(&opts), "metrics,test");
+    // the List is normalized to a map for merge/init, opts preserved.
+    assert_eq!(getpath(&["feature", "metrics", "active"], &opts), Value::Bool(true));
+    assert_eq!(getpath(&["feature", "test", "active"], &opts), Value::Bool(true));
+}
+
+#[test]
+fn pipeline_feature_order_map_no_test_is_sorted() {
+    let (_c, utility) = pl_client(Value::Noval);
+    let opts = make_opts_with_feature(
+        &utility,
+        jo(vec![
+            ("retry", jo(vec![("active", Value::Bool(true))])),
+            ("cache", jo(vec![("active", Value::Bool(true))])),
+        ]),
+    );
+    assert_eq!(feature_order_str(&opts), "cache,retry");
 }
 
 fn auth_spec(headers: Value) -> Rc<RefCell<Spec>> {

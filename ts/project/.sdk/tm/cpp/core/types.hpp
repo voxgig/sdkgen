@@ -596,6 +596,18 @@ public:
   Value data(const Value& arg = Value::undef()) override;
   Value match(const Value& arg = Value::undef()) override;
 
+  // stream runs `action` through the full pipeline and returns the result
+  // items, so the streaming feature's incremental output is reachable from a
+  // generated entity (a normal op call materialises the whole result). This
+  // runtime is synchronous, so the returned vector is a materialised cursor
+  // the caller iterates. `callopts` parameterises the call: inbound yields the
+  // streaming feature's items when active, else the materialised items;
+  // outbound attaches an iterable `body` to the request (reqdata `body$`);
+  // `ctrl` threads pipeline control.
+  std::vector<Value> stream(const std::string& action,
+                            const Value& args = Value::undef(),
+                            const Value& callopts = Value::undef());
+
 protected:
   // runOp drives one operation through the pipeline with feature hooks.
   Value runOp(CtxPtr ctx, const std::function<void()>& postDone);
@@ -754,13 +766,18 @@ inline SdkClient::SdkClient(const Value& options_) {
 
   rootctx->options = options;
 
-  // Add features from options.
+  // Add features in the resolved order (makeOptions puts an explicit list
+  // order first, else defaults to test-first). Ordering matters: the `test`
+  // feature installs the base mock transport and the transport features
+  // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+  // must be added before them to sit at the base of the transport chain.
   Value featureOpts = Helpers::toMapAny(getp(options, "feature"));
-  if (featureOpts.is_map()) {
-    for (const auto& item : Struct::items(featureOpts)) {
-      Value fnamev = pair_key(item);
-      Value fopts = Helpers::toMapAny(pair_val(item));
-      if (fnamev.is_string() && fopts.is_map() && is_true(getp(fopts, "active"))) {
+  Value featureOrder = Struct::getpath(options, {"__derived__", "featureorder"});
+  if (featureOpts.is_map() && featureOrder.is_list()) {
+    for (const auto& fnamev : *featureOrder.as_list()) {
+      if (!fnamev.is_string()) continue;
+      Value fopts = Helpers::toMapAny(getp(featureOpts, fnamev.as_string()));
+      if (fopts.is_map() && is_true(getp(fopts, "active"))) {
         FeaturePtr f = makeFeature(fnamev.as_string());
         if (f) utility->featureAdd(rootctx, f);
       }
@@ -1006,6 +1023,80 @@ inline Value EntityBase::runOp(CtxPtr ctx, const std::function<void()>& postDone
   } catch (const SdkErrorPtr& err) {
     if (ctx->ctrl->err && err == ctx->ctrl->err) throw;
     return u->makeError(ctx, err);
+  }
+}
+
+inline std::vector<Value> EntityBase::stream(const std::string& action,
+                                             const Value& args,
+                                             const Value& callopts) {
+  UtilityPtr u = utility;
+
+  Value streamOpts = callopts.is_map() ? callopts : vmap();
+
+  Value ctrl = Helpers::toMapAny(getp(streamOpts, "ctrl"));
+  if (!ctrl.is_map()) ctrl = vmap();
+  map_put(ctrl, "stream", streamOpts);
+
+  CtxSpec cs;
+  cs.setOpname(action);
+  cs.ctrlMap = ctrl;
+  cs.match = match_;
+  cs.data = data_;
+  cs.reqmatch = args.is_map() ? args : vmap();
+  CtxPtr ctx = u->makeContext(cs, entctx);
+
+  // Outbound: attach a caller iterable `body` so the transport can stream a
+  // request payload.
+  Value body = getp(streamOpts, "body");
+  if (!is_nullish(body)) {
+    Value reqdata = ctx->reqdata.is_map() ? ctx->reqdata : vmap();
+    map_put(reqdata, "body$", body);
+    ctx->reqdata = reqdata;
+  }
+
+  try {
+    u->featureHook(ctx, "PrePoint");
+    Value point = u->makePoint(ctx);
+    ctx->out.has_point = true;
+    ctx->out.point = point;
+
+    u->featureHook(ctx, "PreSpec");
+    SpecPtr spec = u->makeSpec(ctx);
+    ctx->out.spec = spec;
+
+    u->featureHook(ctx, "PreRequest");
+    ResponsePtr request = u->makeRequest(ctx);
+    ctx->out.request = request;
+
+    u->featureHook(ctx, "PreResponse");
+    ResponsePtr response = u->makeResponse(ctx);
+    ctx->out.response = response;
+
+    u->featureHook(ctx, "PreResult");
+    ResultPtr result = u->makeResult(ctx);
+    ctx->out.result = result;
+
+    u->featureHook(ctx, "PreDone");
+
+    // Inbound: prefer the streaming feature's incremental producer; else fall
+    // back to the materialised items so stream always yields.
+    ResultPtr res = ctx->result;
+    if (res && res->stream) {
+      return res->stream();
+    }
+
+    Value data = u->done(ctx);
+    std::vector<Value> out;
+    if (data.is_list()) {
+      for (const auto& item : *data.as_list()) out.push_back(item);
+    } else if (!is_nullish(data)) {
+      out.push_back(data);
+    }
+    return out;
+  } catch (const SdkErrorPtr& err) {
+    if (ctx->ctrl->err && err == ctx->ctrl->err) throw;
+    u->makeError(ctx, err);
+    return std::vector<Value>();
   }
 }
 

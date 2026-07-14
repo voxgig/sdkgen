@@ -464,6 +464,69 @@ static void test_prepare_auth_public_api_no_auth_block_drops_header(void) {
 
 // =============================================================================
 
+// ---- feature order (array form + test-first default) -----------------------
+
+static voxgig_value* make_opts_feature(voxgig_value* feature) {
+  CtxSpec cs;
+  memset(&cs, 0, sizeof(cs));
+  cs.client = PL_CLIENT;
+  cs.utility = PL_UTIL;
+  cs.options = cmap(1, "feature", feature);
+  cs.config = cmap(1, "options", v_map());
+  Context* ctx = make_context_util(cs, NULL);
+  return make_options_util(ctx);
+}
+
+static void order_join(voxgig_value* opts, char* out, size_t n) {
+  voxgig_value* order = getpath2(opts, "__derived__", "featureorder");
+  out[0] = '\0';
+  if (v_is_list(order)) {
+    voxgig_list* l = voxgig_as_list(order);
+    for (size_t i = 0; i < l->len; i++) {
+      if (i > 0) strncat(out, ",", n - strlen(out) - 1);
+      if (v_is_str(l->items[i])) {
+        strncat(out, voxgig_as_string(l->items[i]), n - strlen(out) - 1);
+      }
+    }
+  }
+}
+
+static void test_feature_order_map_is_test_first(void) {
+  pl_client(v_undef());
+  voxgig_value* opts = make_opts_feature(cmap(2,
+    "metrics", cmap(1, "active", v_bool(true)),
+    "test", cmap(1, "active", v_bool(true))));
+  char buf[128];
+  order_join(opts, buf, sizeof(buf));
+  CHECK_STR_EQ(buf, "test,metrics", "feature order: map is test-first");
+}
+
+static void test_feature_order_array_is_explicit(void) {
+  pl_client(v_undef());
+  voxgig_value* opts = make_opts_feature(clist(2,
+    cmap(2, "name", v_str("metrics"), "active", v_bool(true)),
+    cmap(2, "name", v_str("test"), "active", v_bool(true))));
+  char buf[128];
+  order_join(opts, buf, sizeof(buf));
+  CHECK_STR_EQ(buf, "metrics,test", "feature order: array is explicit");
+  // the list is normalized to a map for merge/init, opts preserved.
+  bool ma = false, ta = false;
+  CHECK(get_bool(getpath2(opts, "feature", "metrics"), "active", &ma) && ma,
+        "feature order: array metrics.active preserved");
+  CHECK(get_bool(getpath2(opts, "feature", "test"), "active", &ta) && ta,
+        "feature order: array test.active preserved");
+}
+
+static void test_feature_order_map_no_test_is_sorted(void) {
+  pl_client(v_undef());
+  voxgig_value* opts = make_opts_feature(cmap(2,
+    "retry", cmap(1, "active", v_bool(true)),
+    "cache", cmap(1, "active", v_bool(true))));
+  char buf[128];
+  order_join(opts, buf, sizeof(buf));
+  CHECK_STR_EQ(buf, "cache,retry", "feature order: map no-test is sorted");
+}
+
 int main(void) {
   RUN(test_make_response_guards_missing_spec_response_result);
   RUN(test_make_response_4xx_sets_result_err_and_copies_headers);
@@ -483,6 +546,9 @@ int main(void) {
   RUN(test_make_error_records_to_ctrl_explain);
   RUN(test_feature_add_appends_by_default);
   RUN(test_feature_add_ordering_before_after_replace);
+  RUN(test_feature_order_map_is_test_first);
+  RUN(test_feature_order_array_is_explicit);
+  RUN(test_feature_order_map_no_test_is_sorted);
   RUN(test_prepare_auth_guards_missing_spec);
   RUN(test_prepare_auth_apikey_with_prefix_space_joined);
   RUN(test_prepare_auth_raw_apikey_empty_prefix_as_is);
