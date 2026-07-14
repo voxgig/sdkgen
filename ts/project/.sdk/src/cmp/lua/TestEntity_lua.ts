@@ -45,6 +45,12 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const target = props.target
   const entity: ModelEntity = props.entity
 
+  // The stream test streams the "list" op and asserts a 3-item collection, so
+  // it only applies to entities that declare a list op. Others (e.g. Batch =
+  // create/load) have no list endpoint — make_point errors and the stream
+  // yields nothing — so skip the stream test for them.
+  const hasList = !!(entity.op && (entity.op as any).list)
+
   const basicflow: ModelEntityFlow | undefined =
     getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)
   if (null == basicflow || true !== basicflow.active) {
@@ -91,7 +97,7 @@ describe("${entity.Name}Entity", function()
     local ent = testsdk:${entity.Name}(nil)
     assert.is_not_nil(ent)
   end)
-
+${hasList ? `
   -- Feature #4: the entity stream(action, ...) method runs the op pipeline and
   -- returns an iterator over result items. With the streaming feature active it
   -- yields the feature's incremental output; otherwise it falls back to the
@@ -132,7 +138,7 @@ describe("${entity.Name}Entity", function()
       assert.are.equal(3, #got)
     end
   end)
-
+` : ''}
   it("should run basic flow", function()
     local setup = ${entity.name}_basic_setup(nil)
     -- Per-op sdk-test-control.json skip.
