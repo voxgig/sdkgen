@@ -49,6 +49,46 @@ errCodeIs e code = do c <- errCode e; pure (c == code)
 
 tests :: Counters -> IO ()
 tests c = do
+  -- feature order (PR review #2): makeOptions resolves the feature add-order
+  -- into __derived__.featureorder. A map defaults test-first (so the test mock
+  -- is the base transport), an explicit array preserves the developer order,
+  -- and a map without test is deterministic (names sorted).
+  let orderNames opts = do
+        fo <- getpathS opts "__derived__.featureorder"
+        case fo of
+          VList ref -> do { xs <- readIORef ref; pure [s | VStr s <- xs] }
+          _ -> pure []
+      resolveOrder feature = do
+        cl <- client
+        ctx <- mkCtx cl "load"
+        o <- jo [("feature", feature)]; writeIORef (cOptions ctx) o
+        cfgo <- emptyMap; cf <- jo [("options", cfgo)]; writeIORef (cConfig ctx) cf
+        makeOptionsUtil ctx
+
+  runTest c "feature_order.map_test_first" $ do
+    m <- jo [("active", VBool True)]; t <- jo [("active", VBool True)]
+    feat <- jo [("metrics", m), ("test", t)]
+    o <- resolveOrder feat
+    order <- orderNames o
+    pure (order == ["test", "metrics"])
+
+  runTest c "feature_order.array_preserves_order" $ do
+    e1 <- jo [("name", VStr "metrics"), ("active", VBool True)]
+    e2 <- jo [("name", VStr "test"), ("active", VBool True)]
+    feat <- ja [e1, e2]
+    o <- resolveOrder feat
+    order <- orderNames o
+    ma <- getpathS o "feature.metrics.active"
+    ta <- getpathS o "feature.test.active"
+    pure (order == ["metrics", "test"] && isTrueV ma && isTrueV ta)
+
+  runTest c "feature_order.map_no_test_deterministic" $ do
+    r <- jo [("active", VBool True)]; ca <- jo [("active", VBool True)]
+    feat <- jo [("retry", r), ("cache", ca)]
+    o <- resolveOrder feat
+    order <- orderNames o
+    pure (order == ["cache", "retry"])
+
   runTest c "make_point.rejects_disallowed_op" $ do
     cl <- client; ctx <- mkCtx cl "nope"
     ao <- jo [("op", VStr "load")]; o <- jo [("allow", ao)]; writeIORef (cOptions ctx) o

@@ -153,6 +153,68 @@ ${directFn} c = runTest c "${e.name}.direct" $ do
   n <- readIORef calls
   pure (isTrueV ok && toInt st == 200 && vstring did == "direct01" && n == 1)
 `
+
+        // PR review #4: entity eStream(action, args, callopts) runs the op
+        // through the full pipeline and returns a lazy list. Fallback (no
+        // streaming feature) yields the materialised items; with the streaming
+        // feature active it yields from the streaming iterator (chunkSize
+        // groups into batches). Needs a list op; seeds three records.
+        if (hasList) {
+          const streamFn = `${fn}StreamTest`
+          calls += `  ${streamFn} c\n`
+          defs += `
+${streamFn} :: Counters -> IO ()
+${streamFn} c = do
+  let mkSeed = do
+        r1 <- jo [("id", VStr "S1"), ("name", VStr "a")]
+        r2 <- jo [("id", VStr "S2"), ("name", VStr "b")]
+        r3 <- jo [("id", VStr "S3"), ("name", VStr "c")]
+        recs <- jo [("S1", r1), ("S2", r2), ("S3", r3)]
+        jo [("${e.name}", recs)]
+      hasStreaming = do
+        sdk0 <- C.testSdk0
+        fs <- getp (clConfig sdk0) "feature"
+        st <- getp fs "streaming"
+        pure (not (isNoval st))
+  runTest c "${e.name}.stream" $ do
+    seed <- mkSeed; opts <- jo [("entity", seed)]
+    sdk <- C.testSdk opts VNoval
+    ent <- C.${fn} sdk VNoval
+    em1 <- emptyMap
+    items <- eStream ent "list" em1 VNoval
+    pure (length items == 3 && (case items of (x : _) -> ismap x; [] -> False))
+  runTest c "${e.name}.stream_signal" $ do
+    seed <- mkSeed; opts <- jo [("entity", seed)]
+    sdk <- C.testSdk opts VNoval
+    ent <- C.${fn} sdk VNoval
+    em1 <- emptyMap
+    n <- newIORef (0 :: Int)
+    let sig = vfunc0 (do modifyIORef n (+ 1); v <- readIORef n; pure (VBool (v >= 2)))
+    co <- jo [("signal", sig)]
+    items <- eStream ent "list" em1 co
+    pure (length items == 1)
+  runTest c "${e.name}.stream_active" $ do
+    hs <- hasStreaming
+    if not hs then pure True else do
+      seed <- mkSeed; opts <- jo [("entity", seed)]
+      stg <- jo [("active", VBool True)]; strm <- jo [("streaming", stg)]; sopts <- jo [("feature", strm)]
+      sdk <- C.testSdk opts sopts
+      ent <- C.${fn} sdk VNoval
+      em1 <- emptyMap
+      items <- eStream ent "list" em1 VNoval
+      pure (length items == 3)
+  runTest c "${e.name}.stream_chunk" $ do
+    hs <- hasStreaming
+    if not hs then pure True else do
+      seed <- mkSeed; opts <- jo [("entity", seed)]
+      stg <- jo [("active", VBool True), ("chunkSize", VNum 2)]; strm <- jo [("streaming", stg)]; sopts <- jo [("feature", strm)]
+      sdk <- C.testSdk opts sopts
+      ent <- C.${fn} sdk VNoval
+      em1 <- emptyMap
+      batches <- eStream ent "list" em1 VNoval
+      pure (length batches == 2)
+`
+        }
       })
 
       Content(`-- Generated model-driven entity + direct tests.
