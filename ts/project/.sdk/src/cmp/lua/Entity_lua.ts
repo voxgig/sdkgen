@@ -62,15 +62,13 @@ const Entity = cmp(function Entity(props: any) {
           // Entity.fragment.lua so the class can be renamed independently.
           EntyClass: cls,
 
-          // Fill the six per-op pipeline hook markers with real feature_hook
-          // calls. jostraca's `//`-based `#Name` slot pattern does not fire for
-          // Lua's `-- #`-comment markers, so substitute them as literal keys
-          // (exactly like the op fragments above).
-          ...Object.fromEntries(
-            ['PrePoint', 'PreSpec', 'PreRequest', 'PreResponse', 'PreResult', 'PreDone']
-              .map((h: string) => [`-- #${h}-Hook`,
-              ({ indent }: any) => Content({ indent }, `utility.feature_hook(ctx, "${h}")`)])
-          ),
+          // Feature-hook wiring: the built-in `#Name-Hook` tag replacement
+          // is hardwired to `//` line comments, so Lua's `-- #PrePoint-Hook`
+          // markers were never matched and no pipeline hooks fired in
+          // generated code. Match the Lua-comment hook tags explicitly.
+          '/(?<indent>[ \\t]*)-- #(?<name>[A-Za-z0-9]+)-Hook[ \\t]*\\n?/':
+            ({ name, indent }: any) =>
+              `${indent}utility.feature_hook(ctx, "${name}")\n`,
 
           ...opfrags,
         }

@@ -77,7 +77,10 @@ If the source `.sdk` folder cannot be found, the CLI fails and lists the
 locations it searched.
 
 The built-in targets are: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
-and the two non-SDK surfaces `go-cli` and `go-mcp`.
+`csharp`, `java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`,
+`zig`, `perl`, `clojure`, `elixir`, `ocaml`, `haskell`, and the two non-SDK
+surfaces `go-cli` and `go-mcp`. Every SDK target vendors a `@voxgig/struct`
+port and ships all enterprise features with a full offline test suite.
 
 ### `feature add <name>[,<name>...]`
 

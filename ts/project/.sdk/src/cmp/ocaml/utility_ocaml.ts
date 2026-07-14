@@ -1,0 +1,129 @@
+
+import {
+  clone,
+  walk,
+} from '@voxgig/struct'
+
+
+// OCaml keywords that are illegal as a lowercase identifier. sdkgen's shared
+// safeVarName has no ocaml entry, so the guard lives here.
+const OCAML_RESERVED = new Set<string>([
+  'and', 'as', 'assert', 'asr', 'begin', 'class', 'constraint', 'do', 'done',
+  'downto', 'else', 'end', 'exception', 'external', 'false', 'for', 'fun',
+  'function', 'functor', 'if', 'in', 'include', 'inherit', 'initializer',
+  'land', 'lazy', 'let', 'lor', 'lsl', 'lsr', 'lxor', 'match', 'method', 'mod',
+  'module', 'mutable', 'new', 'nonrec', 'object', 'of', 'open', 'or', 'private',
+  'rec', 'sig', 'struct', 'then', 'to', 'true', 'try', 'type', 'val', 'virtual',
+  'when', 'while', 'with',
+])
+
+
+// A collision-free snake_case OCaml (lowercase) identifier for a model name.
+function ocamlVarName(name: string): string {
+  let snake = String(name).replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()
+  if ('' === snake || !/^[a-z_]/.test(snake)) {
+    snake = '_' + snake
+  }
+  return OCAML_RESERVED.has(snake) ? snake + '_' : snake
+}
+
+
+// The generated per-entity module basename (module Sdk_entity_<name>).
+function entityModule(name: string): string {
+  return 'sdk_entity_' + ocamlVarName(name)
+}
+
+
+// The opam / distribution package name, e.g. voxgig-solar-sdk (mirrors the go
+// module naming: org prefix from model.origin).
+function packageName(model: any): string {
+  const org = (model.origin || 'voxgig-sdk').replace(/-sdk$/, '')
+  return `${org}-${model.name}-sdk`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+}
+
+
+// Escape a JS string as an OCaml string literal body (byte string). OCaml
+// accepts `\\`, `\"`, `\n`, `\r`, `\t` and decimal `\ddd` escapes; other bytes
+// (incl. UTF-8) pass through literally.
+function ocamlString(s: string): string {
+  let out = ''
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]
+    const code = s.charCodeAt(i)
+    if ('\\' === c) out += '\\\\'
+    else if ('"' === c) out += '\\"'
+    else if ('\n' === c) out += '\\n'
+    else if ('\r' === c) out += '\\r'
+    else if ('\t' === c) out += '\\t'
+    else if (code < 0x20) out += '\\' + String(code).padStart(3, '0')
+    else out += c
+  }
+  return out
+}
+
+
+// Render a JSON-shaped JS value as OCaml source constructing the equivalent
+// voxgig struct `value` (the OCaml twin of go's formatGoMap / rust's
+// formatRustValue). Uses the sdk_helpers `jo`/`ja` builders.
+function formatOcamlValue(val: any, indent: number = 0): string {
+  const pad = '  '.repeat(indent)
+  const padInner = '  '.repeat(indent + 1)
+
+  if (null === val || undefined === val) {
+    return 'Null'
+  }
+  if ('string' === typeof val) {
+    return `(Str "${ocamlString(val)}")`
+  }
+  if ('number' === typeof val) {
+    const n = Number.isInteger(val) ? val + '.' : String(val)
+    return `(Num (${n}))`
+  }
+  if ('boolean' === typeof val) {
+    return `(Bool ${val})`
+  }
+  if (Array.isArray(val)) {
+    if (0 === val.length) {
+      return '(empty_list ())'
+    }
+    const items = val
+      .map((v) => padInner + formatOcamlValue(v, indent + 1))
+      .join(';\n')
+    return `(ja [\n${items} ])`
+  }
+  if ('object' === typeof val) {
+    const entries = Object.entries(val)
+    if (0 === entries.length) {
+      return '(empty_map ())'
+    }
+    const items = entries
+      .map(
+        ([k, v]) =>
+          `${padInner}("${ocamlString(k)}", ${formatOcamlValue(v, indent + 1)})`
+      )
+      .join(';\n')
+    return `(jo [\n${items} ])`
+  }
+  return `(Str "${ocamlString(String(val))}")`
+}
+
+
+// Deep-remove meta keys (`foo$`) from a model subtree (twin of go's clean).
+function clean(o: any) {
+  return walk(clone(o), (k: any, v: any, p: any) => {
+    if (null != k && String(k).endsWith('$')) {
+      delete p[k]
+    }
+    return v
+  })
+}
+
+
+export {
+  clean,
+  entityModule,
+  formatOcamlValue,
+  ocamlString,
+  ocamlVarName,
+  packageName,
+}

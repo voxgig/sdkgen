@@ -14,10 +14,21 @@ voxgig-sdkgen feature add log
 npm run add-feature log
 ```
 
-Built-in features: `log`, `test`. Several at once:
+Built-in features:
+
+- **Core:** `log`, `test`.
+- **Enterprise (ts):** `retry`, `timeout`, `ratelimit`, `cache`,
+  `idempotency`, `paging`, `streaming`, `proxy`, `telemetry`, `metrics`,
+  `debug`, `audit`, `clienttrack`, `rbac`.
+- **Test support:** `netsim` (network-condition simulation — see
+  [Simulate network conditions](./simulate-network.md)).
+
+All features are **inactive by default**; enable one per SDK with
+`options.feature.<name>.active = true` (and its tuning options). Several at
+once:
 
 ```bash
-voxgig-sdkgen feature add log,test
+voxgig-sdkgen feature add retry,timeout,cache
 ```
 
 Then regenerate:

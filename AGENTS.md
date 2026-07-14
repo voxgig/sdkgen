@@ -222,7 +222,48 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
     tm/<lang>/         per-language TEMPLATES
 ```
 
-Targets: `ts js go py php rb lua` + `go-cli go-mcp`. Features: `log test`.
+Targets: `ts js go py php rb lua csharp java kotlin scala swift dart rust c
+cpp zig perl clojure elixir ocaml haskell` + `go-cli go-mcp`.
+
+Features (all inactive by default — opt in per SDK via
+`options.feature.<name>.active`):
+
+- **Core:** `log` (structured logging), `test` (in-memory mock transport;
+  accepts an optional `net` block to simulate latency / failures / offline
+  — see [how-to/simulate-network](./docs/how-to/simulate-network.md)).
+- **Enterprise:** `retry`, `timeout`, `ratelimit`, `cache`,
+  `idempotency`, `paging`, `streaming`, `proxy`, `telemetry`, `metrics`,
+  `debug`, `audit`, `clienttrack`, `rbac`.
+- **Test support:** `netsim` (wraps any transport to inject network
+  conditions; composes with `retry`/`timeout` etc.).
+
+Enterprise features are implemented across **all SDK targets** (each with a
+vendored `@voxgig/struct` port and a full offline feature-behaviour test
+suite at parity). Two mechanisms: *transport
+wrappers* replace `ctx.utility.fetcher` in `init()` (retry, timeout,
+ratelimit, cache, proxy, netsim); *pipeline hooks* implement the stages in
+[hooks.md](./docs/reference/hooks.md) (idempotency, rbac, metrics,
+telemetry, debug, audit, clienttrack, paging, streaming). Behaviour is
+covered by `ts/test/feature.test.ts`, which drives the **real template
+source** through a simulated pipeline+network offline (see
+`ts/test/featureharness.ts`); `ts/test/featuremodel.test.ts` guards
+model↔template consistency.
+
+### Generated-SDK test surfaces (ts templates)
+
+Every generated ts SDK ships its own coverage-oriented tests:
+
+- `test/feature.test.ts` + `test/feature/harness.ts` — drive each present
+  feature (discovered via `config.makeFeature`) through a mock pipeline;
+  `test/netsim.test.ts` covers the `test` feature's `net` simulation.
+- `test/pipeline.test.ts` — direct unit tests of the operation-pipeline
+  utilities' error/edge branches (missing spec/response, 4xx, transport
+  failure, feature ordering, auth shaping) reached via `stdutil`.
+- `npm run test-coverage` (or `make coverage`) enforces a coverage floor on
+  the SDK source (test files excluded); thresholds live in the generated
+  `package.json`. Note: `--enable-source-maps` (used by `npm test`) maps
+  coverage back to `.ts` and reads several points **lower** than true `.js`
+  coverage — the gate omits it deliberately.
 
 ---
 

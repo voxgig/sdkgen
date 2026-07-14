@@ -26,6 +26,7 @@ that matches what you are trying to do right now:
 ### How-to guides
 - [Add a language target](./how-to/add-a-target.md)
 - [Add a feature](./how-to/add-a-feature.md)
+- [Simulate network conditions in offline tests](./how-to/simulate-network.md)
 - [Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md)
 - [Author a brand-new language target](./how-to/author-a-new-language.md)
 - [Debug a failing generated target](./how-to/debug-generation.md)

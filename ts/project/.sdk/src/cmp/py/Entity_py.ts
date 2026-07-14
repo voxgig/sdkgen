@@ -88,15 +88,14 @@ const Entity = cmp(function Entity(props: any) {
           // frag slots) — fills in the typed-model import for this entity.
           '# #TypeImports': typeImport,
 
-          // Fill the six per-op pipeline hook markers with real feature_hook
-          // calls. jostraca's `//`-based `#Name` slot pattern does not fire for
-          // Python's `# #`-comment markers, so substitute them as literal keys
-          // (exactly like the op fragments and `# #TypeImports` above).
-          ...Object.fromEntries(
-            ['PrePoint', 'PreSpec', 'PreRequest', 'PreResponse', 'PreResult', 'PreDone']
-              .map((h: string) => [`# #${h}-Hook`,
-              ({ indent }: any) => Content({ indent }, `utility.feature_hook(ctx, "${h}")`)])
-          ),
+          // Feature-hook markers. jostraca's built-in `#Name-Tag` pattern is
+          // hardcoded to `//` comments, so the Python fragment's
+          // `# #<Name>-Hook` marker lines never matched it and the pipeline
+          // hooks (PrePoint, PreRequest, ...) were silently dropped from the
+          // generated op runner. Match the `#`-comment form explicitly.
+          '/(?<indent>[ \\t]*)#[ \\t]*#(?<name>[A-Za-z0-9]+)-Hook[ \\t]*\\n?/':
+            ({ name, indent }: any) =>
+              `${indent}utility.feature_hook(ctx, "${name}")\n`,
 
           ...opfrags,
         }

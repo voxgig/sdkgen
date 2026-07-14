@@ -1,0 +1,33 @@
+
+main: kit: target: elixir: {
+
+  title: Elixir
+  ext: ex
+  comment: line: "#"
+  module: name: '$$name$$'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  # struct utility is vendored under tm/elixir/lib/utility/struct - no manifest dep needed
+}
+
+
+main: kit: feature: &: target: elixir: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Publication: hex registry (declared, publish pending — git-tag only).
+main: kit: target: elixir: publish: {
+  tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'hex'
+    url: 'https://hex.pm'
+    vault: { recipe: 'hex', alias: 'hex' }
+  }
+}

@@ -19,8 +19,10 @@ voxgig-sdkgen target add ts
 npm run add-target ts
 ```
 
-Built-in targets: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`, and the
-non-SDK surfaces `go-cli`, `go-mcp`.
+Built-in targets: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`, `csharp`,
+`java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`, `zig`,
+`perl`, `clojure`, `elixir`, `ocaml`, `haskell`, and the non-SDK surfaces
+`go-cli`, `go-mcp`.
 
 This copies the target's model, components, and templates into `.sdk/`
 and ensures the `test` feature is present. Then generate:

@@ -81,6 +81,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
         replace: {
           SdkName: nom(model.const, 'Name'),
           EntityName: nom(entity, 'Name'),
+          EntityLower: entity.name,
           ...stdrep,
         }
       }, () => {

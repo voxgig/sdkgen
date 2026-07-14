@@ -1,0 +1,37 @@
+main: kit: target: scala: {
+
+  title: Scala
+  ext: scala
+  comment: line: "//"
+  module: name: '$$name$$'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  // struct is inlined under utility/struct — no external runtime dep.
+  // JSON parsing is the zero-dep utility/Json.java; HTTP transport is
+  // java.net.http.HttpClient (JDK built-in). The corpus runner and pipeline
+  // tests are plain scala-cli mains (no test-framework dependency).
+  deps: {}
+}
+
+
+main: kit: feature: &: target: scala: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Publication: tag-only for now (tag scala/vX.Y.Z) — Maven Central
+# publication via the Sonatype Central Portal is declared but pending.
+main: kit: target: scala: publish: {
+  tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'maven-central'
+    url: 'https://central.sonatype.com'
+    vault: { recipe: 'maven', alias: 'central' }
+  }
+}

@@ -1,0 +1,21 @@
+
+main: kit: feature: ratelimit: {
+
+  name: key()
+  title: "Client-side rate limiting via a token bucket"
+  version: '0.0.1'
+  active: true
+
+  config: {
+    options: {
+      active: false
+      # tokens per second
+      rate: 5
+      # bucket capacity (defaults to `rate` when unset)
+      burst: 5
+    }
+  }
+
+  # Ratelimit wraps the transport in init(); it dispatches no pipeline hooks.
+  hook: {}
+}

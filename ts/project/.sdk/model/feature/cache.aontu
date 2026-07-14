@@ -1,0 +1,23 @@
+
+main: kit: feature: cache: {
+
+  name: key()
+  title: "Response caching for safe read requests"
+  version: '0.0.1'
+  active: true
+
+  config: {
+    options: {
+      active: false
+      # time-to-live in milliseconds
+      ttl: 5000
+      # maximum cached entries (oldest evicted)
+      max: 256
+      # cacheable request methods
+      methods: ['GET']
+    }
+  }
+
+  # Cache wraps the transport in init(); it dispatches no pipeline hooks.
+  hook: {}
+}

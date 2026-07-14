@@ -1,0 +1,21 @@
+
+main: kit: feature: telemetry: {
+
+  name: key()
+  title: "Distributed tracing spans with W3C trace-context propagation"
+  version: '0.0.1'
+  active: true
+
+  config: {
+    options: {
+      active: false
+    }
+  }
+
+  hook: {
+    PrePoint: active: true
+    PreRequest: active: true
+    PreDone: active: true
+    PreUnexpected: active: true
+  }
+}

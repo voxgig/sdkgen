@@ -1,0 +1,20 @@
+
+main: kit: feature: metrics: {
+
+  name: key()
+  title: "Statistics capture: per-operation counters and latency"
+  version: '0.0.1'
+  active: true
+
+  config: {
+    options: {
+      active: false
+    }
+  }
+
+  hook: {
+    PrePoint: active: true
+    PreDone: active: true
+    PreUnexpected: active: true
+  }
+}

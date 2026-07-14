@@ -1,0 +1,35 @@
+main: kit: target: csharp: {
+
+  title: "C#"
+  ext: cs
+  comment: line: "//"
+  module: name: '$$name$$'
+  base: 'BASE'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  # struct utility is vendored under tm/csharp/utility/struct - no manifest dep needed.
+  # The runtime uses only the .NET 8 BCL (System.Net.Http + System.Text.Json).
+  deps: {}
+}
+
+
+main: kit: feature: &: target: csharp: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Publication: NuGet registry (declared, publish pending — git-tag only).
+main: kit: target: csharp: publish: {
+  tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'nuget'
+    url: 'https://www.nuget.org'
+    vault: { alias: 'nuget', env: 'NUGET_API_KEY' }
+  }
+}
