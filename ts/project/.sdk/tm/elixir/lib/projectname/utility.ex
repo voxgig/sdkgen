@@ -203,6 +203,38 @@ defmodule ProjectName.Utility do
     opts0 = S.clone(options)
     opts0 = if S.ismap(opts0), do: opts0, else: S.jm([])
 
+    # Feature add-order. options.feature may be given as an ordered LIST of
+    # {name, active, ...opts} entries (list position = add order) or a
+    # {name => {opts}} map. Normalize a list to a map (so merge/validate/init
+    # are unchanged) and remember the explicit order; a map defaults to
+    # test-first so the `test` mock transport is the base of the wrapper chain.
+    feature_raw = S.getprop(opts0, "feature")
+
+    explicit_order =
+      if S.islist(feature_raw) and S.size(feature_raw) > 0 do
+        fmap = S.jm([])
+
+        order =
+          Enum.reduce(0..(S.size(feature_raw) - 1), [], fn i, acc ->
+            entry = S.getelem(feature_raw, i)
+            nm = if S.ismap(entry), do: S.getprop(entry, "name"), else: nil
+
+            if is_binary(nm) do
+              fopts = S.clone(entry)
+              S.delprop(fopts, "name")
+              S.setprop(fmap, nm, fopts)
+              acc ++ [nm]
+            else
+              acc
+            end
+          end)
+
+        S.setprop(opts0, "feature", fmap)
+        order
+      else
+        nil
+      end
+
     config = H.or_(S.getprop(ctx, "config"), S.jm([]))
     co = S.getprop(config, "options")
     cfgopts = if S.ismap(co), do: co, else: S.jm([])
@@ -254,8 +286,29 @@ defmodule ProjectName.Utility do
       |> Enum.map(&S.escre/1)
       |> Enum.join("|")
 
+    # Resolve the feature add-order: an explicit list order (above) wins;
+    # otherwise order the map test-first, then the remaining names sorted, so
+    # the outcome is deterministic and `test` is always the base transport.
+    feature_order =
+      case explicit_order do
+        nil ->
+          fmap = S.getprop(opts, "feature")
+          fmap = if S.ismap(fmap), do: fmap, else: S.jm([])
+          names = S.keysof(fmap)
+
+          if Enum.member?(names, "test") do
+            ["test" | Enum.reject(names, &(&1 == "test"))]
+          else
+            names
+          end
+
+        list ->
+          list
+      end
+
     derived = S.jm(["clean", S.jm([])])
     if keyre != "", do: S.setprop(derived, "clean", S.jm(["keyre", keyre]))
+    S.setprop(derived, "featureorder", S.jt(feature_order))
     S.setprop(opts, "__derived__", derived)
 
     opts

@@ -658,6 +658,87 @@ object SdkTestMain {
     pass()
   }
 
+  // ---- feature order (PR #2) -----------------------------------------------
+
+  private def testFeatureOrder(): Unit = {
+    val client = ProjectNameSDK.testSDK()
+    val utility = client.getUtility()
+
+    def resolve(feature: Object): JMap[String, Object] = {
+      val options = om("feature" -> feature)
+      val cfg = om("options" -> new LinkedHashMap[String, Object]())
+      val ctxmap = new LinkedHashMap[String, Object]()
+      ctxmap.put("client", client); ctxmap.put("utility", utility)
+      ctxmap.put("options", options); ctxmap.put("config", cfg)
+      val ctx = utility.makeContext(ctxmap, client.getRootCtx())
+      utility.makeOptions(ctx)
+    }
+    def order(opts: JMap[String, Object]): String = {
+      Struct.getpath(opts, java.util.List.of("__derived__", "featureorder")) match {
+        case l: JList[_] =>
+          val sb = new StringBuilder(); var i = 0
+          val li = l.asInstanceOf[JList[Object]]
+          while (i < li.size()) {
+            if (i > 0) sb.append(",")
+            sb.append(li.get(i) match { case s: String => s; case _ => "" }); i += 1
+          }
+          sb.toString
+        case _ => ""
+      }
+    }
+
+    // map form -> ordered test-first (test is the base transport).
+    eq("featureOrder.mapTestFirst", "test,metrics",
+      order(resolve(om("metrics" -> om("active" -> B(true)), "test" -> om("active" -> B(true))))))
+
+    // list form -> the explicit developer-specified order is preserved.
+    val listForm = jl(om("name" -> "metrics", "active" -> B(true)),
+      om("name" -> "test", "active" -> B(true)))
+    val lo = resolve(listForm)
+    eq("featureOrder.listExplicit", "metrics,test", order(lo))
+    // The list is normalized to a map for merge/init; opts are preserved.
+    eq("featureOrder.listNormMetrics", B(true),
+      Struct.getpath(lo, java.util.List.of("feature", "metrics", "active")))
+    eq("featureOrder.listNormTest", B(true),
+      Struct.getpath(lo, java.util.List.of("feature", "test", "active")))
+
+    // map form without test -> names ordered deterministically.
+    eq("featureOrder.mapNoTest", "cache,retry",
+      order(resolve(om("retry" -> om("active" -> B(true)), "cache" -> om("active" -> B(true))))))
+  }
+
+  // ---- entity stream() through the mock transport (PR #4) ------------------
+
+  private def testEntityStream(): Unit = {
+    val fixtures = om("planet" -> om(
+      "mars" -> om("id" -> "mars", "name" -> "Mars"),
+      "venus" -> om("id" -> "venus", "name" -> "Venus")))
+
+    // Streaming active: stream("list") yields from the streaming feature's
+    // incremental iterator.
+    val sdk = ProjectNameSDK.testSDK(om("entity" -> fixtures),
+      om("feature" -> om("streaming" -> om("active" -> B(true)))))
+    val planet = sdk.planet(null)
+
+    val listed = planet.list(new LinkedHashMap[String, Object](), null)
+    val listedN = listed match { case l: JList[_] => l.size(); case _ => 0 }
+
+    val streamed = new ArrayList[Object]()
+    val it = planet.stream("list", new LinkedHashMap[String, Object](), null)
+    while (it.hasNext) streamed.add(it.next())
+    check("stream.yields", streamed.size() > 0, "expected stream to yield items")
+    eqI("stream.count", listedN, streamed.size())
+
+    // Fallback: with streaming inactive, stream still yields the materialised
+    // items.
+    val sdk2 = ProjectNameSDK.testSDK(om("entity" -> fixtures), null)
+    val planet2 = sdk2.planet(null)
+    val streamed2 = new ArrayList[Object]()
+    val it2 = planet2.stream("list", new LinkedHashMap[String, Object](), null)
+    while (it2.hasNext) streamed2.add(it2.next())
+    eqI("stream.fallback.count", listedN, streamed2.size())
+  }
+
   // Small identity wrapper so IntConsumer/LongSupplier land in the map as-is.
   private def f0(o: Object): Object = o
 
@@ -668,7 +749,9 @@ object SdkTestMain {
       "rbac" -> testRbac, "metrics" -> testMetrics, "telemetry" -> testTelemetry,
       "debug" -> testDebug, "audit" -> testAudit, "clienttrack" -> testClienttrack,
       "paging" -> testPaging, "streaming" -> testStreaming, "proxy" -> testProxy,
-      "composition" -> testComposition, "featureAdd" -> testFeatureAdd, "entityCrud" -> testEntityCrud)
+      "composition" -> testComposition, "featureAdd" -> testFeatureAdd,
+      "featureOrder" -> testFeatureOrder, "entityCrud" -> testEntityCrud,
+      "entityStream" -> testEntityStream)
 
     suites.foreach { case (name, fn) =>
       try fn()

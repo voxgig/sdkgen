@@ -765,6 +765,26 @@
       (doseq [item (or (vs/items custom-utils) [])]
         (.put ^java.util.Map (oget (oget ctx :utility) :custom) (vs/getprop item 0) (vs/getprop item 1))))
     (let [opts0 (let [c (vs/clone options)] (if (vs/ismap c) c (vs/jm)))
+          ;; Feature add-order. options.feature may be given as an ordered
+          ;; ARRAY of {name active ...opts} entries (array position = add
+          ;; order) or a {name {opts}} map. Normalize an array to a map (so
+          ;; merge/validate/init are unchanged) and remember the explicit
+          ;; order; a map defaults to test-first so the `test` mock transport
+          ;; is the base of the transport wrapper chain.
+          explicit-order
+          (let [feature-raw (vs/getprop opts0 "feature")]
+            (when (vs/islist feature-raw)
+              (let [fmap (vs/jm) order (vs/jt)]
+                (doseq [entry (vec feature-raw)]
+                  (when (vs/ismap entry)
+                    (let [nm (vs/getprop entry "name")]
+                      (when (string? nm)
+                        (let [fopts (vs/clone entry)]
+                          (vs/delprop fopts "name")
+                          (.put ^java.util.Map fmap nm fopts)
+                          (.add ^java.util.List order nm))))))
+                (.put ^java.util.Map opts0 "feature" fmap)
+                order)))
           config (or (oget ctx :config) (vs/jm))
           cfgopts (let [c (vs/getprop config "options")] (if (vs/ismap c) c (vs/jm)))
           optspec (vs/jm
@@ -789,7 +809,21 @@
       (let [clean-keys (let [k (vs/getpath opts "clean.keys")] (if (string? k) k "key,token,id"))
             parts (->> (str/split clean-keys #",") (map str/trim) (remove empty?) (map vs/escre))
             keyre (str/join "|" parts)
-            derived (vs/jm "clean" (if (empty? keyre) (vs/jm) (vs/jm "keyre" keyre)))]
+            ;; Resolve the feature add-order: an explicit array order (above)
+            ;; wins; otherwise order the map test-first, then the remaining
+            ;; names sorted, so the outcome is deterministic and `test` is
+            ;; always the base transport.
+            feature-order
+            (if explicit-order
+              explicit-order
+              (let [fmap (let [f (vs/getprop opts "feature")] (if (vs/ismap f) f (vs/jm)))
+                    names (vec (sort (map str (or (vs/keysof fmap) []))))
+                    order (vs/jt)]
+                (when (some #(= % "test") names) (.add ^java.util.List order "test"))
+                (doseq [n names] (when (not= n "test") (.add ^java.util.List order n)))
+                order))
+            derived (vs/jm "clean" (if (empty? keyre) (vs/jm) (vs/jm "keyre" keyre))
+                           "featureorder" feature-order)]
         (.put ^java.util.Map opts "__derived__" derived)
         opts))))
 

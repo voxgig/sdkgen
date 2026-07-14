@@ -69,6 +69,26 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
 
   let opts = clone(.map(options)).asMap ?? VMap()
 
+  // Feature add-order. options.feature may be given as an ordered LIST of
+  // { name, active, ...opts } entries (the list position IS the order in which
+  // features are added), or as a { name: {opts} } map. Normalize a list to a
+  // map (so merge/validate/init are unchanged) and remember the explicit
+  // order; a map defaults to test-first so the `test` mock transport is
+  // installed as the base of the transport wrapper chain.
+  var featureorder: [Value] = []
+  if let flist = opts.entries["feature"]?.asList {
+    let fmap = VMap()
+    for entry in flist.items {
+      if let em = entry.asMap, let fname = em.entries["name"]?.asString, fname != "" {
+        let fopts = VMap()
+        for (k, v) in em.entries where k != "name" { fopts.entries[k] = v }
+        fmap.entries[fname] = .map(fopts)
+        featureorder.append(.string(fname))
+      }
+    }
+    opts.entries["feature"] = .map(fmap)
+  }
+
   let config = ctx.config ?? VMap()
   let cfgopts = gp(config, "options").asMap ?? VMap()
 
@@ -103,6 +123,20 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     .map { escre(.string($0)) }
   let keyre = filtered.joined(separator: "|")
 
+  // Resolve the feature add-order: an explicit list order (above) wins;
+  // otherwise order the map test-first, then the remaining names sorted, so
+  // the outcome is deterministic and `test` is always the base transport.
+  if featureorder.isEmpty {
+    let fmap = gp(result, "feature").asMap ?? VMap()
+    let names = fmap.entries.keys.sorted()
+    if names.contains("test") {
+      featureorder.append(.string("test"))
+      for n in names where n != "test" { featureorder.append(.string(n)) }
+    } else {
+      for n in names { featureorder.append(.string(n)) }
+    }
+  }
+
   let derived = VMap()
   derived.entries["clean"] = .map(VMap())
   if keyre != "" {
@@ -110,6 +144,7 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     cm.entries["keyre"] = .string(keyre)
     derived.entries["clean"] = .map(cm)
   }
+  derived.entries["featureorder"] = .list(VList(featureorder))
   result.entries["__derived__"] = .map(derived)
 
   return result

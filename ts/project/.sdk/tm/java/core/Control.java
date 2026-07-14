@@ -15,4 +15,9 @@ public class Control {
   public String actor = "";
 
   public Map<String, Object> paging;
+
+  // Outbound streaming marker: the entity `stream` method sets this to the
+  // caller-supplied streamable payload so the request builder / transport
+  // can stream it as the request body.
+  public Object streamOut;
 }

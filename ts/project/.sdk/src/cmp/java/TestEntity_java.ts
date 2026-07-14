@@ -97,6 +97,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -161,6 +162,53 @@ ${allSteps.length > 0 ? `    ${SDK} client = setup.client;\n\n` : ''}`)
     Content(`  }
 
 `)
+
+    // Stream test (PR #4): the entity `stream` method runs the op pipeline and
+    // returns a Stream. With the streaming feature active it yields from the
+    // feature's incremental iterator; otherwise it falls back to the
+    // materialised items. Only emitted for entities whose flow lists.
+    const flowHasList = allSteps.some((s: any) => s.op === 'list')
+    if (flowHasList) {
+      Content(`  @Test
+  public void stream() {
+    Map<String, Object> streamingActive = new LinkedHashMap<>();
+    Map<String, Object> streamingOpts = new LinkedHashMap<>();
+    streamingOpts.put("active", true);
+    Map<String, Object> featureOpts = new LinkedHashMap<>();
+    featureOpts.put("streaming", streamingOpts);
+    streamingActive.put("feature", featureOpts);
+
+    RunnerSupport.EntityTestSetup setup = ${accessor}BasicSetup(streamingActive);
+    Assumptions.assumeFalse(setup.live,
+        "stream test streams the seeded fixture data (unit mode only)");
+
+    SdkEntity ent = setup.client.${accessor}(null);
+    Map<String, Object> match = new LinkedHashMap<>();
+
+    // Materialised list result for the same op.
+    Object listedResult = ent.list(match, null);
+    List<Object> listed = listedResult instanceof List
+        ? (List<Object>) listedResult : new ArrayList<>();
+
+    // stream("list") yields items via the streaming feature's iterator.
+    List<Object> streamed = ent.stream("list", match, null)
+        .collect(Collectors.toList());
+    assertTrue(streamed.size() > 0, "expected stream to yield items");
+    assertEquals(listed.size(), streamed.size(),
+        "expected stream to yield the same item count as list");
+
+    // Fallback: with streaming inactive, stream still yields the
+    // materialised items.
+    RunnerSupport.EntityTestSetup setup2 = ${accessor}BasicSetup(null);
+    SdkEntity ent2 = setup2.client.${accessor}(null);
+    List<Object> streamed2 = ent2.stream("list", match, null)
+        .collect(Collectors.toList());
+    assertEquals(listed.size(), streamed2.size(),
+        "expected fallback stream to yield the materialised items");
+  }
+
+`)
+    }
 
     // Generate setup function
     Content(`  static RunnerSupport.EntityTestSetup ${accessor}BasicSetup(Map<String, Object> extra) {

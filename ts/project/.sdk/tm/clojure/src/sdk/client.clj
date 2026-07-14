@@ -27,14 +27,18 @@
     (when (= true (vs/getpath validated "feature.test.active"))
       (reset! (:mode client) "test"))
     (core/oset! rootctx :options validated)
-    ;; Add features declared active in the (validated) options.
-    (let [feature-opts (core/to-map (vs/getprop validated "feature"))]
-      (when feature-opts
-        (doseq [item (or (vs/items feature-opts) [])]
-          (let [fname (vs/getprop item 0)
-                fopts (core/to-map (vs/getprop item 1))]
-            (when (and fopts (= true (vs/getprop fopts "active")))
-              ((core/uget rootctx :feature-add) rootctx (features/make-feature fname)))))))
+    ;; Add features in the resolved order (make-options records an explicit
+    ;; array order, else defaults to test-first). Ordering matters: the `test`
+    ;; feature installs the base mock transport and the transport features
+    ;; (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so
+    ;; `test` must be added before them to sit at the base of the chain.
+    (let [feature-opts (let [f (core/to-map (vs/getprop validated "feature"))] (or f (vs/jm)))
+          feature-order (let [o (vs/getpath validated "__derived__.featureorder")]
+                          (if (vs/islist o) (vec o) []))]
+      (doseq [fname feature-order]
+        (let [fopts (core/to-map (vs/getprop feature-opts fname))]
+          (when (and fopts (= true (vs/getprop fopts "active")))
+            ((core/uget rootctx :feature-add) rootctx (features/make-feature fname))))))
     ;; Extension features (feature atoms supplied via options.extend).
     (let [extend-val (vs/getprop validated "extend")]
       (when (vs/islist extend-val)

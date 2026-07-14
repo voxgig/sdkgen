@@ -8,7 +8,7 @@
 defmodule ProjectName.EntityBase do
   alias Voxgig.Struct, as: S
   alias ProjectName.Helpers, as: H
-  alias ProjectName.{Context, Utility}
+  alias ProjectName.{Context, Utility, Pipeline}
 
   def construct(module, client, name, entopts \\ nil) do
     entopts = if S.ismap(entopts), do: entopts, else: S.jm([])
@@ -74,5 +74,82 @@ defmodule ProjectName.EntityBase do
   def match_get(ent) do
     Utility.feature_hook(S.getprop(ent, "_entctx"), "GetMatch")
     S.clone(S.getprop(ent, "_match"))
+  end
+
+  # Streaming operation. Runs `action` (an op name, e.g. "list") through the
+  # full pipeline and returns a lazy Elixir Stream of result items, so the
+  # `streaming` feature's incremental output is reachable (a normal op call
+  # materialises the whole result). When the streaming feature is active the
+  # result carries a `stream` closure and this yields from it (honouring
+  # chunkSize); otherwise it falls back to the materialised items, so stream
+  # always yields. Records are unwrapped to bare struct maps (matching list).
+  # `callopts` parameterises the call:
+  #   - ctrl:   per-call pipeline control (threaded onto the op ctx);
+  #   - body:   an enumerable/list payload for outbound (upload) streaming,
+  #             attached to the request (reqdata.body$ + a stream_out marker);
+  #   - signal: an optional 0-arity fn; when it returns true iteration stops.
+  def stream(ent, action, args \\ nil, callopts \\ nil) do
+    callopts = if S.ismap(callopts), do: callopts, else: S.jm([])
+    ctrl = H.or_(H.to_map(S.getprop(callopts, "ctrl")), S.jm([]))
+    S.setprop(ctrl, "stream", callopts)
+
+    ctxmap =
+      S.jm([
+        "opname", action,
+        "ctrl", ctrl,
+        "match", S.getprop(ent, "_match"),
+        "data", S.getprop(ent, "_data")
+      ])
+
+    am = H.to_map(args)
+    if am != nil, do: Enum.each(H.entries(am), fn {k, v} -> S.setprop(ctxmap, k, v) end)
+
+    ctx = Context.new(ctxmap, S.getprop(ent, "_entctx"))
+
+    # Outbound: expose an enumerable/list payload so the request builder /
+    # transport can stream it as the request body.
+    body = S.getprop(callopts, "body")
+
+    if body != nil do
+      reqdata = H.or_(H.to_map(S.getprop(ctx, "reqdata")), S.jm([]))
+      S.setprop(reqdata, "body$", body)
+      S.setprop(ctx, "reqdata", reqdata)
+      S.setprop(ctx, "stream_out", body)
+    end
+
+    Pipeline.run_op(ctx, fn -> nil end)
+
+    result = S.getprop(ctx, "result")
+    signal = S.getprop(callopts, "signal")
+    stream_fn = if result != nil, do: S.getprop(result, "stream"), else: nil
+
+    # Inbound: prefer the streaming feature's iterator; else fall back to the
+    # materialised items so stream always yields.
+    items =
+      if S.isfunc(stream_fn) do
+        stream_fn.()
+      else
+        rd = if result != nil, do: S.getprop(result, "resdata"), else: nil
+
+        cond do
+          S.islist(rd) -> Enum.map(0..(S.size(rd) - 1), fn i -> S.getelem(rd, i) end)
+          rd == nil -> []
+          true -> [rd]
+        end
+      end
+
+    items
+    |> Stream.take_while(fn _ -> not (S.isfunc(signal) and signal.() == true) end)
+    |> Stream.map(&stream_unwrap/1)
+  end
+
+  # Unwrap an entity node to its bare record; recurse into chunk lists.
+  defp stream_unwrap(item) do
+    cond do
+      S.ismap(item) and S.getprop(item, "_module") != nil -> data_get(item)
+      is_list(item) -> Enum.map(item, &stream_unwrap/1)
+      S.islist(item) -> Enum.map(0..(S.size(item) - 1), fn i -> stream_unwrap(S.getelem(item, i)) end)
+      true -> item
+    end
   end
 end

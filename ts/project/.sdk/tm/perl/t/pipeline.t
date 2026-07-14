@@ -505,6 +505,50 @@ sub named_feature {
 }
 
 
+# === feature order ===
+
+{
+  # make_options resolves the feature add-order into
+  # __derived__.featureorder: a map defaults test-first (so the test mock is
+  # the base transport), an explicit array preserves the developer order, and
+  # a map without test is deterministic (names sorted).
+  my $resolve = sub {
+    my ($feature) = @_;
+    my $ctx = $utility->{make_context}->({
+      'client' => $client, 'utility' => $utility,
+    }, undef);
+    $ctx->{options} = { 'feature' => $feature };
+    $ctx->{config} = { 'options' => {} };
+    return $utility->{make_options}->($ctx);
+  };
+
+  my $o1 = $resolve->({
+    'metrics' => { 'active' => Voxgig::Struct::JTRUE() },
+    'test' => { 'active' => Voxgig::Struct::JTRUE() },
+  });
+  is(join(',', @{ $o1->{__derived__}{featureorder} }), 'test,metrics',
+    'feature order: map form is ordered test-first');
+
+  my $o2 = $resolve->([
+    { 'name' => 'metrics', 'active' => Voxgig::Struct::JTRUE() },
+    { 'name' => 'test', 'active' => Voxgig::Struct::JTRUE() },
+  ]);
+  is(join(',', @{ $o2->{__derived__}{featureorder} }), 'metrics,test',
+    'feature order: array form preserves the explicit developer order');
+  ok(ProjectNameHelpers::is_true($o2->{feature}{metrics}{active}),
+    'feature order: array normalized to a map (metrics opts preserved)');
+  ok(ProjectNameHelpers::is_true($o2->{feature}{test}{active}),
+    'feature order: array normalized to a map (test opts preserved)');
+
+  my $o3 = $resolve->({
+    'retry' => { 'active' => Voxgig::Struct::JTRUE() },
+    'cache' => { 'active' => Voxgig::Struct::JTRUE() },
+  });
+  is(join(',', @{ $o3->{__derived__}{featureorder} }), 'cache,retry',
+    'feature order: map form with no test orders names deterministically');
+}
+
+
 # === prepare_auth ===
 
 sub auth_ctx {

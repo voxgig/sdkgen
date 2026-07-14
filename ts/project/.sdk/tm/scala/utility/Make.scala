@@ -155,6 +155,34 @@ object MakeOptions {
 
     var opts = Struct.clone(options).asInstanceOf[JMap[String, Object]]
 
+    // Feature add-order. options.feature may be given as an ordered LIST of
+    // { name, active, ...opts } entries (the list position IS the order in
+    // which features are added), or as a { name: {opts} } map. Normalize a
+    // list to a map (so merge/validate/init are unchanged) and remember the
+    // explicit order; a map defaults to test-first so the `test` mock
+    // transport is installed as the base of the transport wrapper chain.
+    val featureorder = new ArrayList[Object]()
+    opts.get("feature") match {
+      case flist: JList[_] =>
+        val fmap = new LinkedHashMap[String, Object]()
+        val fit = flist.asInstanceOf[JList[Object]].iterator()
+        while (fit.hasNext) {
+          val em = Helpers.toMapAny(fit.next())
+          if (em != null) {
+            em.get("name") match {
+              case fname: String if "" != fname =>
+                val fopts = new LinkedHashMap[String, Object](em)
+                fopts.remove("name")
+                fmap.put(fname, fopts)
+                featureorder.add(fname)
+              case _ =>
+            }
+          }
+        }
+        opts.put("feature", fmap)
+      case _ =>
+    }
+
     var config = ctx.config
     if (config == null) config = new LinkedHashMap[String, Object]()
     var cfgopts = Helpers.toMapAny(config.get("options"))
@@ -215,10 +243,28 @@ object MakeOptions {
     }
     val keyre = String.join("|", filtered)
 
+    // Resolve the feature add-order: an explicit list order (above) wins;
+    // otherwise order the map test-first, then the remaining names sorted, so
+    // the outcome is deterministic and `test` is always the base transport.
+    if (featureorder.isEmpty) {
+      val fmap = Helpers.toMapAny(opts.get("feature"))
+      val names = new ArrayList[String]()
+      if (fmap != null) names.addAll(fmap.keySet())
+      java.util.Collections.sort(names)
+      if (names.contains("test")) {
+        featureorder.add("test")
+        val nit = names.iterator()
+        while (nit.hasNext) { val n = nit.next(); if ("test" != n) featureorder.add(n) }
+      } else {
+        featureorder.addAll(names)
+      }
+    }
+
     val derived = new LinkedHashMap[String, Object]()
     val derivedClean = new LinkedHashMap[String, Object]()
     if ("" != keyre) derivedClean.put("keyre", keyre)
     derived.put("clean", derivedClean)
+    derived.put("featureorder", featureorder)
     opts.put("__derived__", derived)
 
     opts

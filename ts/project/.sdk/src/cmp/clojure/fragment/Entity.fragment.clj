@@ -95,6 +95,58 @@
       ; #PreUnexpected-Hook
       (throw operr))))
 
+;; Streaming operation. Runs `action` (an op name, e.g. "list") through the
+;; full pipeline and returns a LAZY SEQUENCE of result items, so the
+;; `streaming` feature's incremental output is reachable (a normal op call
+;; materialises the whole result). When the streaming feature is active the
+;; result carries a `stream` thunk and this yields from it (honouring
+;; chunkSize); otherwise it falls back to the materialised items, so stream
+;; always yields. Records are unwrapped to bare struct maps (matching list).
+;; `callopts` parameterises the call:
+;;   - ctrl:   per-call pipeline control (threaded onto the op ctx);
+;;   - body:   an async-iterable/list payload for outbound (upload) streaming,
+;;             attached to the request (reqdata.body$ + a stream-out marker);
+;;   - signal: an optional 0-arg fn; when it returns true iteration stops.
+(defn stream [ent action args callopts]
+  (let [callopts (let [m (core/to-map callopts)] (if m m (vs/jm)))
+        ctrl (let [c (core/to-map (vs/getprop callopts "ctrl"))] (if c c (vs/jm)))
+        _ (.put ^java.util.Map ctrl "stream" callopts)
+        ctxmap (vs/jm "opname" action "ctrl" ctrl
+                      "match" (deref (:_match ent)) "data" (deref (:_data ent)))
+        _ (when-let [am (core/to-map args)]
+            (doseq [item (or (vs/items am) [])]
+              (.put ^java.util.Map ctxmap (vs/getprop item 0) (vs/getprop item 1))))
+        ctx (core/make-context ctxmap (:_entctx ent))]
+    ;; Outbound: expose an async-iterable/list payload so the request builder /
+    ;; transport can stream it as the request body.
+    (when-let [body (vs/getprop callopts "body")]
+      (let [reqdata (let [r (core/to-map (core/oget ctx :reqdata))] (if r r (vs/jm)))]
+        (.put ^java.util.Map reqdata "body$" body)
+        (core/oset! ctx :reqdata reqdata)
+        (core/oset! ctx :stream-out body)))
+    (run-op ctx (fn []))
+    (let [result (core/oget ctx :result)
+          signal (vs/getprop callopts "signal")
+          signalled? (fn [] (and (fn? signal) (boolean (signal))))
+          unwrap (fn unwrap [item]
+                   (cond
+                     (nil? item) item
+                     (and (map? item) (:data-get item)) ((:data-get item))
+                     (vs/islist item) (mapv unwrap (vec item))
+                     :else item))
+          ;; Inbound: prefer the streaming feature's iterator; else fall back
+          ;; to the materialised items so stream always yields.
+          raw (if (and result (fn? (core/oget result :stream)))
+                (vec ((core/oget result :stream)))
+                (let [rd (when result (core/oget result :resdata))]
+                  (cond (vs/islist rd) (vec rd) (nil? rd) [] :else [rd])))
+          items (mapv unwrap raw)]
+      ;; A lazy sequence that checks `signal` between yields.
+      (letfn [(lz [xs] (lazy-seq
+                         (when (and (seq xs) (not (signalled?)))
+                           (cons (first xs) (lz (rest xs))))))]
+        (lz items)))))
+
 ; #LoadOp
 
 ; #ListOp

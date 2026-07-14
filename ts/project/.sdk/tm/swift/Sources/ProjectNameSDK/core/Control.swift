@@ -11,5 +11,10 @@ public final class Control {
   public var actor: String = ""
   public var paging: VMap? = nil
 
+  // Outbound streaming marker: the entity `stream` method sets this to the
+  // caller-supplied streamable payload so the request builder / transport can
+  // stream it as the request body.
+  public var streamOut: Value? = nil
+
   public init() {}
 }

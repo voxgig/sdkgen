@@ -37,6 +37,7 @@ const Test = cmp(function Test(props: any) {
         Content(`;; ${model.const.Name} SDK generated API tests.
 (ns sdk.gentest
   (:require [sdk.api :as api]
+            [sdk.config :as config]
             [sdk.testutil :as t]
             [voxgig.struct :as vs]${requires}))
 
@@ -74,6 +75,36 @@ const Test = cmp(function Test(props: any) {
           }
           Content(`             )))
 `)
+
+          // PR review #4: entity stream(action, args, callopts). Runs the op
+          // through the full pipeline and returns a lazy seq of items. Seeds
+          // three records via the test mock (SDK.test entity seed) and streams
+          // them; needs only a list op.
+          if (hasList) {
+            Content(`  (t/run-check rec "gen-stream-${e.name}"
+    (fn [] (let [seed (vs/jm "${e.name}" (vs/jm "S1" (vs/jm "id" "S1" "name" "a")
+                                                "S2" (vs/jm "id" "S2" "name" "b")
+                                                "S3" (vs/jm "id" "S3" "name" "c")))]
+             ;; Fallback (no streaming feature): materialised items.
+             (let [sdk (api/test-sdk (vs/jm "entity" seed) nil)
+                   items (vec (e-${e.name}/stream (api/${e.name} sdk nil) "list" (vs/jm) nil))]
+               (t/is-eq (count items) 3 "stream fallback yields materialised items")
+               (t/is-true (vs/ismap (first items)) "stream yields bare record maps"))
+             ;; signal cancels iteration between yields.
+             (let [sdk (api/test-sdk (vs/jm "entity" seed) nil)
+                   n (atom 0) sig (fn [] (>= (swap! n inc) 2))
+                   items (vec (e-${e.name}/stream (api/${e.name} sdk nil) "list" (vs/jm) (vs/jm "signal" sig)))]
+               (t/is-eq (count items) 1 "stream signal stops after first yield"))
+             ;; Streaming feature active: yields from the streaming iterator.
+             (when (vs/getpath (config/make-config) "feature.streaming")
+               (let [ssdk (api/test-sdk (vs/jm "entity" seed) (vs/jm "feature" (vs/jm "streaming" (vs/jm "active" true))))]
+                 (t/is-eq (count (vec (e-${e.name}/stream (api/${e.name} ssdk nil) "list" (vs/jm) nil))) 3
+                          "stream (streaming active) yields all items"))
+               (let [csdk (api/test-sdk (vs/jm "entity" seed) (vs/jm "feature" (vs/jm "streaming" (vs/jm "active" true "chunkSize" 2))))
+                     batches (vec (e-${e.name}/stream (api/${e.name} csdk nil) "list" (vs/jm) nil))]
+                 (t/is-eq (count batches) 2 "stream chunkSize groups items into 2 batches"))))))
+`)
+          }
         }
 
         Content(`  nil)

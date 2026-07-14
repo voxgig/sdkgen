@@ -1,6 +1,7 @@
 package JAVAPACKAGE.core;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * The full CRUD entity contract of the ProjectName SDK. Every generated
@@ -18,4 +19,10 @@ public interface SdkEntity extends Entity {
   Object update(Map<String, Object> reqdata, Map<String, Object> ctrl);
 
   Object remove(Map<String, Object> reqmatch, Map<String, Object> ctrl);
+
+  // Runs `action` through the pipeline and returns a Stream over result
+  // items (the streaming feature's incremental output when active, else the
+  // materialised items). See EntityBase.stream.
+  Stream<Object> stream(String action, Map<String, Object> args,
+      Map<String, Object> callopts);
 }

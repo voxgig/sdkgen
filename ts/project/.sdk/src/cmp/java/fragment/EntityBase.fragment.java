@@ -1,7 +1,15 @@
 package JAVAPACKAGE.entity;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.BooleanSupplier;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import JAVAPACKAGE.core.Context;
 import JAVAPACKAGE.core.Helpers;
@@ -129,5 +137,99 @@ public abstract class EntityBase implements SdkEntity {
       }
       return utility.makeError.apply(ctx, err);
     }
+  }
+
+  /**
+   * Streaming operations. Runs `action` through the full pipeline and
+   * returns a Stream over result items, so the streaming feature's
+   * incremental output is reachable from a generated entity (a normal op
+   * call materialises the whole result). `callopts` parameterises the call:
+   *   - inbound (download): iterate the yielded items/chunks (from the
+   *     streaming feature when active, else the materialised items);
+   *   - outbound (upload): pass a streamable payload as callopts["body"] - it
+   *     is attached to the request so the transport can send it;
+   *   - callopts["ctrl"] threads pipeline control and callopts["signal"] (a
+   *     BooleanSupplier that returns true when aborted) is honoured between
+   *     yields.
+   */
+  public Stream<Object> stream(
+      String action, Map<String, Object> args, Map<String, Object> callopts) {
+    Utility utility = this.utility;
+
+    if (callopts == null) {
+      callopts = new LinkedHashMap<>();
+    }
+
+    Object signalObj = callopts.get("signal");
+    final BooleanSupplier signal =
+        signalObj instanceof BooleanSupplier ? (BooleanSupplier) signalObj : null;
+
+    Map<String, Object> ctrl = Helpers.toMapAny(callopts.get("ctrl"));
+    if (ctrl == null) {
+      ctrl = new LinkedHashMap<>();
+    }
+    ctrl.put("stream", callopts);
+
+    Map<String, Object> ctxmap = new LinkedHashMap<>();
+    ctxmap.put("opname", action);
+    ctxmap.put("ctrl", ctrl);
+    ctxmap.put("match", this.match);
+    ctxmap.put("data", this.data);
+    if (args != null) {
+      ctxmap.putAll(args);
+    }
+
+    Context ctx = this.utility.makeContext.apply(ctxmap, this.entctx);
+
+    // Outbound: expose the caller's streamable payload so the request
+    // builder / transport can stream it as the request body.
+    Object body = callopts.get("body");
+    if (body != null) {
+      ctx.reqdata.put("body$", body);
+      ctx.ctrl.streamOut = body;
+    }
+
+    // Run the same pipeline the op methods run.
+    Object materialised = runOp(ctx, () -> {});
+
+    // Inbound: prefer the streaming feature's incremental iterator; else fall
+    // back to the materialised items so `stream` always yields.
+    Iterator<Object> source;
+    if (ctx.result != null && ctx.result.stream != null) {
+      source = ctx.result.stream.get();
+    }
+    else {
+      List<Object> items;
+      if (materialised instanceof List) {
+        items = (List<Object>) materialised;
+      }
+      else if (materialised == null) {
+        items = new ArrayList<>();
+      }
+      else {
+        items = new ArrayList<>();
+        items.add(materialised);
+      }
+      source = items.iterator();
+    }
+
+    final Iterator<Object> src = source;
+    Iterator<Object> guarded = new Iterator<Object>() {
+      @Override
+      public boolean hasNext() {
+        if (signal != null && signal.getAsBoolean()) {
+          return false;
+        }
+        return src.hasNext();
+      }
+
+      @Override
+      public Object next() {
+        return src.next();
+      }
+    };
+
+    return StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(guarded, Spliterator.ORDERED), false);
   }
 }

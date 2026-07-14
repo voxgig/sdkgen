@@ -152,6 +152,48 @@ ${allSteps.length > 0 ? `    val client = setup.client\n\n` : ''}`)
 
 `)
 
+    // Stream test (PR #4): the entity `stream` method runs the op pipeline and
+    // returns a Sequence. With the streaming feature active it yields from the
+    // feature's incremental iterator; otherwise it falls back to the
+    // materialised items. Only emitted for entities whose flow lists.
+    const flowHasList = allSteps.some((s: any) => s.op === 'list')
+    if (flowHasList) {
+      Content(`  @Test
+  fun stream() {
+    val streamingActive = linkedMapOf<String, Any?>(
+      "feature" to linkedMapOf<String, Any?>(
+        "streaming" to linkedMapOf<String, Any?>("active" to true),
+      ),
+    )
+    val setup = ${accessor}BasicSetup(streamingActive)
+    Assumptions.assumeFalse(
+      setup.live,
+      "stream test streams the seeded fixture data (unit mode only)",
+    )
+
+    val ent = setup.client.${accessor}(null)
+    val match = linkedMapOf<String, Any?>()
+
+    // Materialised list result for the same op.
+    val listedResult = ent.list(match, null)
+    val listed = (listedResult as? List<Any?>) ?: emptyList<Any?>()
+
+    // stream("list") yields items via the streaming feature's iterator.
+    val streamed = ent.stream("list", match, null).toList()
+    assertTrue(streamed.size > 0, "expected stream to yield items")
+    assertEquals(listed.size, streamed.size, "expected stream to match list count")
+
+    // Fallback: with streaming inactive, stream still yields the materialised
+    // items.
+    val setup2 = ${accessor}BasicSetup(null)
+    val ent2 = setup2.client.${accessor}(null)
+    val streamed2 = ent2.stream("list", match, null).toList()
+    assertEquals(listed.size, streamed2.size, "expected fallback stream to match list")
+  }
+
+`)
+    }
+
     // Setup function (companion object).
     Content(`  companion object {
     fun ${accessor}BasicSetup(extra: MutableMap<String, Any?>?): RunnerSupport.EntityTestSetup {

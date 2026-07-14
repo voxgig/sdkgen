@@ -156,6 +156,57 @@ ${allSteps.length > 0 ? '        var client = setup.Client;\n\n' : ''}`)
 
 `)
 
+    // Stream test (PR #4): the entity `stream` method runs the op pipeline and
+    // returns an async iterator. With the streaming feature active it yields
+    // from the feature's incremental iterator; otherwise it falls back to the
+    // materialised items. Only emitted for entities whose flow lists.
+    const flowHasList = allSteps.some((s: any) => s.op === 'list')
+    if (flowHasList) {
+      Content(`    [Fact]
+    public async Task Stream()
+    {
+        var setup = ${entity.Name}BasicSetup(new Dictionary<string, object?>
+        {
+            ["feature"] = new Dictionary<string, object?>
+            {
+                ["streaming"] = new Dictionary<string, object?> { ["active"] = true },
+            },
+        });
+        if (setup.Live)
+        {
+            return; // unit mode only - streams the seeded fixture data
+        }
+
+        var ent = setup.Client.${entity.Name}();
+        var match = new Dictionary<string, object?>();
+
+        // Materialised list result for the same op.
+        var listed = ent.List(match, null) as List<object?> ?? new List<object?>();
+
+        // stream("list") yields items via the streaming feature's iterator.
+        var streamed = new List<object?>();
+        await foreach (var item in ent.Stream("list", match, null))
+        {
+            streamed.Add(item);
+        }
+        Assert.True(streamed.Count > 0, "expected stream to yield items");
+        Assert.Equal(listed.Count, streamed.Count);
+
+        // Fallback: with streaming inactive, stream still yields the
+        // materialised items.
+        var setup2 = ${entity.Name}BasicSetup(null);
+        var ent2 = setup2.Client.${entity.Name}();
+        var streamed2 = new List<object?>();
+        await foreach (var item in ent2.Stream("list", match, null))
+        {
+            streamed2.Add(item);
+        }
+        Assert.Equal(listed.Count, streamed2.Count);
+    }
+
+`)
+    }
+
     // Generate setup function
     Content(`    private static EntityTestSetup ${entity.Name}BasicSetup(
         Dictionary<string, object?>? extra)

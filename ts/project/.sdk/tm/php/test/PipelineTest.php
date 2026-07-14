@@ -118,6 +118,51 @@ class PipelineTest extends TestCase
     }
 
 
+    // --- feature order (feature #2) -----------------------------------------
+    // options['feature'] accepts an ordered LIST (developer add-order) or a map
+    // (defaults test-first); make_options records the resolved order in
+    // __derived__.featureorder.
+
+    private static function resolve_order(mixed $feature): string
+    {
+        $utility = self::utility();
+        $client = new PlClient([]);
+        $ctx = new ProjectNameContext([
+            'client' => $client,
+            'utility' => $utility,
+        ], null);
+        $ctx->options = ['feature' => $feature];
+        $ctx->config = ['options' => []];
+        $opts = ($utility->make_options)($ctx);
+        $order = $opts['__derived__']['featureorder'] ?? [];
+        return implode(',', $order);
+    }
+
+    public function test_feature_order_map_is_test_first(): void
+    {
+        $this->assertSame('test,metrics', self::resolve_order([
+            'metrics' => ['active' => true],
+            'test' => ['active' => true],
+        ]));
+    }
+
+    public function test_feature_order_list_preserves_order(): void
+    {
+        $this->assertSame('metrics,test', self::resolve_order([
+            ['name' => 'metrics', 'active' => true],
+            ['name' => 'test', 'active' => true],
+        ]));
+    }
+
+    public function test_feature_order_no_test_deterministic(): void
+    {
+        $this->assertSame('cache,retry', self::resolve_order([
+            'retry' => ['active' => true],
+            'cache' => ['active' => true],
+        ]));
+    }
+
+
     // --- make_point + make_spec ---------------------------------------------
 
     public function test_make_point_rejects_a_disallowed_operation(): void

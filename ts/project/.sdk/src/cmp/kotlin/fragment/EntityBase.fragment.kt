@@ -114,4 +114,82 @@ abstract class EntityBase(nm: String, clientIn: SdkClient, entoptsIn: MutableMap
       return utility.makeError(ctx, err)
     }
   }
+
+  /**
+   * Streaming operations. Runs `action` through the full pipeline and returns
+   * a Sequence over result items, so the streaming feature's incremental
+   * output is reachable from a generated entity (a normal op call materialises
+   * the whole result). `callopts` parameterises the call:
+   *   - inbound (download): iterate the yielded items/chunks (from the
+   *     streaming feature when active, else the materialised items);
+   *   - outbound (upload): pass a streamable payload as callopts["body"] - it
+   *     is attached to the request so the transport can send it;
+   *   - callopts["ctrl"] threads pipeline control and callopts["signal"] (a
+   *     () -> Boolean that returns true when aborted) is honoured between
+   *     yields.
+   */
+  override fun stream(
+    action: String,
+    args: MutableMap<String, Any?>?,
+    callopts: MutableMap<String, Any?>?,
+  ): Sequence<Any?> {
+    val opts = callopts ?: linkedMapOf()
+
+    val signal = opts["signal"]
+
+    val ctrl = Helpers.toMapAny(opts["ctrl"]) ?: linkedMapOf()
+    ctrl["stream"] = opts
+
+    val ctxmap = linkedMapOf<String, Any?>()
+    ctxmap["opname"] = action
+    ctxmap["ctrl"] = ctrl
+    ctxmap["match"] = this.match
+    ctxmap["data"] = this.data
+    if (args != null) {
+      ctxmap.putAll(args)
+    }
+
+    val ctx = this.utility.makeContext(ctxmap, this.entctx)
+
+    // Outbound: expose the caller's streamable payload so the request builder
+    // / transport can stream it as the request body.
+    val body = opts["body"]
+    if (body != null) {
+      ctx.reqdata["body\$"] = body
+      ctx.ctrl.streamOut = body
+    }
+
+    // Run the same pipeline the op methods run.
+    val materialised = runOp(ctx) {}
+
+    // Inbound: prefer the streaming feature's incremental iterator; else fall
+    // back to the materialised items so `stream` always yields.
+    val source: Iterator<Any?> = ctx.result?.stream?.get()
+      ?: run {
+        val items: List<Any?> = when (materialised) {
+          is List<*> -> materialised
+          null -> emptyList()
+          else -> listOf(materialised)
+        }
+        items.iterator()
+      }
+
+    val aborted: () -> Boolean = when (signal) {
+      is Function0<*> -> {
+        { (signal as Function0<Any?>).invoke() == true }
+      }
+      else -> {
+        { false }
+      }
+    }
+
+    return sequence {
+      while (source.hasNext()) {
+        if (aborted()) {
+          return@sequence
+        }
+        yield(source.next())
+      }
+    }
+  }
 }

@@ -65,6 +65,44 @@ class PipelineTest < Minitest::Test
   end
 
 
+  # === feature order (feature #2) ===
+  # options["feature"] accepts an ordered ARRAY (developer add-order) or a map
+  # (defaults test-first); make_options records the resolved order in
+  # __derived__.featureorder.
+
+  def resolve_order(feature)
+    ctx = @utility.make_context.call({
+      "client" => @client,
+      "utility" => @utility,
+    }, nil)
+    ctx.options = { "feature" => feature }
+    ctx.config = { "options" => {} }
+    opts = @utility.make_options.call(ctx)
+    (opts["__derived__"]["featureorder"] || []).join(",")
+  end
+
+  def test_feature_order_map_is_test_first
+    assert_equal "test,metrics", resolve_order({
+      "metrics" => { "active" => true },
+      "test" => { "active" => true },
+    })
+  end
+
+  def test_feature_order_array_preserves_order
+    assert_equal "metrics,test", resolve_order([
+      { "name" => "metrics", "active" => true },
+      { "name" => "test", "active" => true },
+    ])
+  end
+
+  def test_feature_order_no_test_deterministic
+    assert_equal "cache,retry", resolve_order({
+      "retry" => { "active" => true },
+      "cache" => { "active" => true },
+    })
+  end
+
+
   # === make_point ===
 
   def test_make_point_rejects_a_disallowed_operation

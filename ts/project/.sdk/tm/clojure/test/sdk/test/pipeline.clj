@@ -243,6 +243,31 @@
                     (let [miss (named "z4")] (swap! miss assoc :_options (vs/jm "__before__" "missing")) ((core/uget ctx :feature-add) ctx miss))
                     (t/is-deep (names) ["a" "z2" "z3" "b" "z4"] "append fallback"))))
 
+      ;; ---- feature order (PR review #2) ----
+      ;; make-options resolves the feature add-order into
+      ;; __derived__.featureorder: a map defaults test-first (so the test mock
+      ;; is the base transport), an explicit array preserves the developer
+      ;; order, and a map without test is deterministic (names sorted).
+      (let [resolve-order
+            (fn [feature]
+              (let [ctx (make-ctx sdk "load")]
+                (core/oset! ctx :options (vs/jm "feature" feature))
+                (core/oset! ctx :config (vs/jm "options" (vs/jm)))
+                (let [o ((core/uget ctx :make-options) ctx)]
+                  o)))]
+        (chk "feature-order-map-test-first"
+             (fn [] (let [o (resolve-order (vs/jm "metrics" (vs/jm "active" true) "test" (vs/jm "active" true)))]
+                      (t/is-deep (vec (vs/getpath o "__derived__.featureorder")) ["test" "metrics"] "test-first"))))
+        (chk "feature-order-array-preserves-order"
+             (fn [] (let [o (resolve-order (vs/jt (vs/jm "name" "metrics" "active" true)
+                                                  (vs/jm "name" "test" "active" true)))]
+                      (t/is-deep (vec (vs/getpath o "__derived__.featureorder")) ["metrics" "test"] "explicit order")
+                      (t/is-eq (vs/getpath o "feature.metrics.active") true "metrics normalized")
+                      (t/is-eq (vs/getpath o "feature.test.active") true "test normalized"))))
+        (chk "feature-order-no-test-deterministic"
+             (fn [] (let [o (resolve-order (vs/jm "retry" (vs/jm "active" true) "cache" (vs/jm "active" true)))]
+                      (t/is-deep (vec (vs/getpath o "__derived__.featureorder")) ["cache" "retry"] "sorted")))))
+
       ;; ---- prepare-auth ----
       (let [auth-ctx (fn [opts headers]
                        (let [c (fake-client-opts opts)

@@ -32,11 +32,17 @@ public final class ProjectNameSDK {
 
     rootctx.options = options
 
-    // Add features from config.
-    if let featureOpts = gp(options, "feature").asMap {
-      for item in items(.map(featureOpts)) {
-        let fname = item[0].asString ?? ""
-        if let fopts = item[1].asMap, fopts.entries["active"]?.asBool == true {
+    // Add features in the resolved order (makeOptions puts an explicit list
+    // order first, else defaults to test-first). Ordering matters: the `test`
+    // feature installs the base mock transport and the transport features
+    // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+    // must be added before them to sit at the base of the chain.
+    let featureOpts = gp(options, "feature").asMap ?? VMap()
+    if let featureOrder = gpath(options, "__derived__", "featureorder").asList {
+      for fnameVal in featureOrder.items {
+        let fname = fnameVal.asString ?? ""
+        if fname != "", let fopts = gp(featureOpts, fname).asMap,
+          fopts.entries["active"]?.asBool == true {
           utility.featureAdd(rootctx, SdkConfig.makeFeature(fname))
         }
       }

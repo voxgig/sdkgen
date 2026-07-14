@@ -1048,14 +1048,21 @@ let make_client_base ~(config : value) ~(make_feature : string -> feature) (opti
   client.cl_options <- opts;
   if getpath_s opts "feature.test.active" = Bool true then client.cl_mode <- "test";
   rootctx.c_options <- opts;
-  (match to_map (getp opts "feature") with
-   | Map _ as fm ->
-     List.iter (fun fname ->
-         match to_map (getp fm fname) with
+  (* Add features in the resolved order (make_options records an explicit
+     array order, else defaults to test-first). Ordering matters: the `test`
+     feature installs the base mock transport and the transport features
+     (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+     must be added before them to sit at the base of the wrapper chain. *)
+  let feature_opts = match to_map (getp opts "feature") with Map _ as m -> m | _ -> empty_map () in
+  let feature_order = match getpath_s opts "__derived__.featureorder" with List r -> !r | _ -> [] in
+  List.iter (fun fname_v ->
+      match fname_v with
+      | Str fname ->
+        (match to_map (getp feature_opts fname) with
          | Map _ as fopts -> if getp fopts "active" = Bool true then utility.u_feature_add rootctx (make_feature fname)
          | _ -> ())
-       (keysof fm)
-   | _ -> ());
+      | _ -> ())
+    feature_order;
   List.iter (fun ftr -> utility.u_feature_init rootctx ftr) client.cl_features;
   utility.u_feature_hook rootctx "PostConstruct";
   client

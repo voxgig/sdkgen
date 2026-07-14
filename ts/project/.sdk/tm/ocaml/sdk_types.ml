@@ -202,6 +202,8 @@ and entity_obj = {
   mutable e_create : value -> value -> value;
   mutable e_update : value -> value -> value;
   mutable e_remove : value -> value -> value;
+  (* stream action args callopts -> a lazy Seq over result items. *)
+  mutable e_stream : string -> value -> value -> value Seq.t;
 }
 
 (* Construction spec for a context (py passes an untyped ctxmap dict that

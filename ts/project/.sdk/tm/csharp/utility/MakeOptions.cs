@@ -29,6 +29,31 @@ public static partial class SdkUtility
         var opts = StructUtils.Clone(options) as Dictionary<string, object?>
             ?? new Dictionary<string, object?>();
 
+        // Feature add-order. options.feature may be given as an ordered LIST of
+        // { name, active, ...opts } entries (the list position IS the order in
+        // which features are added), or as a { name: {opts} } map. Normalize a
+        // list to a map (so merge/validate/init are unchanged) and remember the
+        // explicit order; a map defaults to test-first so the `test` mock
+        // transport is installed as the base of the transport wrapper chain.
+        var featureorder = new List<object?>();
+        if (opts.TryGetValue("feature", out var frawInit) &&
+            frawInit is List<object?> flist)
+        {
+            var fmap = new Dictionary<string, object?>();
+            foreach (var entry in flist)
+            {
+                if (entry is Dictionary<string, object?> em &&
+                    StructUtils.GetProp(em, "name") is string fname && fname != "")
+                {
+                    var fopts = new Dictionary<string, object?>(em);
+                    fopts.Remove("name");
+                    fmap[fname] = fopts;
+                    featureorder.Add(fname);
+                }
+            }
+            opts["feature"] = fmap;
+        }
+
         var config = ctx.Config ?? new Dictionary<string, object?>();
         var cfgopts = config.TryGetValue("options", out var co) &&
             co is Dictionary<string, object?> cm
@@ -130,6 +155,35 @@ public static partial class SdkUtility
             .ToList();
         var keyre = string.Join("|", filtered);
 
+        // Resolve the feature add-order: an explicit list order (above) wins;
+        // otherwise order the map test-first, then the remaining names sorted,
+        // so the outcome is deterministic and `test` is always the base
+        // transport.
+        if (featureorder.Count == 0)
+        {
+            var fmap = Helpers.ToMapAny(StructUtils.GetProp(opts, "feature"))
+                ?? new Dictionary<string, object?>();
+            var names = fmap.Keys.OrderBy(k => k, StringComparer.Ordinal).ToList();
+            if (names.Contains("test"))
+            {
+                featureorder.Add("test");
+                foreach (var n in names)
+                {
+                    if (n != "test")
+                    {
+                        featureorder.Add(n);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var n in names)
+                {
+                    featureorder.Add(n);
+                }
+            }
+        }
+
         var derived = new Dictionary<string, object?>
         {
             ["clean"] = new Dictionary<string, object?>(),
@@ -141,6 +195,7 @@ public static partial class SdkUtility
                 ["keyre"] = keyre,
             };
         }
+        derived["featureorder"] = featureorder;
         opts["__derived__"] = derived;
 
         return opts;

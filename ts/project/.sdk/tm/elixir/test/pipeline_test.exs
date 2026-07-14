@@ -65,6 +65,41 @@ defmodule ProjectName.PipelineTest do
     c
   end
 
+  # === feature order (PR review #2) ===
+
+  # make_options resolves the feature add-order into __derived__.featureorder:
+  # a map defaults test-first (so the test mock is the base transport), an
+  # explicit array preserves the developer order, and a map without test is
+  # deterministic (names sorted).
+  defp resolve_order(feature) do
+    ctx = Context.new(S.jm(["opname", "load", "ctrl", S.jm([])]), ProjectName.get_root_ctx(client()))
+    S.setprop(ctx, "options", S.jm(["feature", feature]))
+    S.setprop(ctx, "config", S.jm(["options", S.jm([])]))
+    Utility.make_options(ctx)
+  end
+
+  defp order_list(opts) do
+    fo = S.getpath(opts, "__derived__.featureorder")
+    if S.islist(fo), do: Enum.map(0..(S.size(fo) - 1), fn i -> S.getelem(fo, i) end), else: []
+  end
+
+  test "feature order: map form is ordered test-first" do
+    o = resolve_order(S.jm(["metrics", S.jm(["active", true]), "test", S.jm(["active", true])]))
+    assert order_list(o) == ["test", "metrics"]
+  end
+
+  test "feature order: array form preserves the explicit developer order" do
+    o = resolve_order(S.jt([S.jm(["name", "metrics", "active", true]), S.jm(["name", "test", "active", true])]))
+    assert order_list(o) == ["metrics", "test"]
+    assert S.getpath(o, "feature.metrics.active") == true
+    assert S.getpath(o, "feature.test.active") == true
+  end
+
+  test "feature order: map form with no test orders names deterministically" do
+    o = resolve_order(S.jm(["retry", S.jm(["active", true]), "cache", S.jm(["active", true])]))
+    assert order_list(o) == ["cache", "retry"]
+  end
+
   # === make_point ===
 
   test "make_point rejects a disallowed operation" do

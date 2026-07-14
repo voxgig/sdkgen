@@ -68,6 +68,42 @@ end
 
 describe("pipeline", function()
 
+  describe("feature order", function()
+    -- Feature #2: options.feature accepts an ordered LIST (developer add-order)
+    -- or a map (defaults test-first); make_options records the resolved order
+    -- in __derived__.featureorder.
+
+    local function resolve(feature)
+      local ctx = Context.new({}, nil)
+      ctx.utility = Utility.new()
+      ctx.options = { feature = feature }
+      ctx.config = { options = {} }
+      local opts = ctx.utility.make_options(ctx)
+      return table.concat(opts["__derived__"].featureorder, ",")
+    end
+
+    it("map form is ordered test-first", function()
+      assert.are.equal("test,metrics", resolve({
+        metrics = { active = true },
+        test = { active = true },
+      }))
+    end)
+
+    it("list form preserves the explicit order", function()
+      assert.are.equal("metrics,test", resolve({
+        { name = "metrics", active = true },
+        { name = "test", active = true },
+      }))
+    end)
+
+    it("map form with no test orders deterministically", function()
+      assert.are.equal("cache,retry", resolve({
+        retry = { active = true },
+        cache = { active = true },
+      }))
+    end)
+  end)
+
   describe("makePoint + makeSpec", function()
 
     it("make_point rejects a disallowed operation", function()

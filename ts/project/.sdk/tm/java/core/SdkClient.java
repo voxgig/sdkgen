@@ -49,13 +49,23 @@ public abstract class SdkClient {
 
     this.rootctx.options = this.options;
 
-    // Add features from config/options.
+    // Add features in the resolved order (makeOptions puts an explicit list
+    // order first, else defaults to test-first). Ordering matters: the `test`
+    // feature installs the base mock transport and the transport features
+    // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+    // must be added before them to sit at the base of the chain.
     Map<String, Object> featureOpts =
         Helpers.toMapAny(Struct.getprop(this.options, "feature"));
-    if (featureOpts != null) {
-      for (List<Object> item : Struct.items(featureOpts)) {
-        String fname = item.get(0) instanceof String ? (String) item.get(0) : null;
-        Map<String, Object> fopts = Helpers.toMapAny(item.get(1));
+    if (featureOpts == null) {
+      featureOpts = new java.util.LinkedHashMap<>();
+    }
+    Object featureOrderRaw =
+        Struct.getpath(this.options, List.of("__derived__", "featureorder"));
+    if (featureOrderRaw instanceof List) {
+      for (Object fnameObj : (List<Object>) featureOrderRaw) {
+        String fname = fnameObj instanceof String ? (String) fnameObj : null;
+        Map<String, Object> fopts =
+            Helpers.toMapAny(Struct.getprop(featureOpts, fname));
         if (fname != null && fopts != null
             && Boolean.TRUE.equals(fopts.get("active"))) {
           Feature f = Config.makeFeature(fname);

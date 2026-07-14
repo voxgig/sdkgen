@@ -1,6 +1,6 @@
 package SCALAPACKAGE.entity
 
-import java.util.{LinkedHashMap, Map => JMap}
+import java.util.{ArrayList, LinkedHashMap, Iterator => JIterator, List => JList, Map => JMap}
 import SCALAPACKAGE.core.{Context, Helpers, SdkClient, SdkEntity, Utility}
 import SCALAPACKAGE.utility.struct.Struct
 
@@ -99,6 +99,71 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
         // An error already finalised by makeError must not be wrapped twice.
         if (err eq ctx.ctrl.err) throw err
         utility.makeError(ctx, err)
+    }
+  }
+
+  // Streaming operations. Runs `action` through the full pipeline and returns
+  // an Iterator over result items, so the streaming feature's incremental
+  // output is reachable from a generated entity (a normal op call materialises
+  // the whole result). `callopts` parameterises the call:
+  //   - inbound (download): iterate the yielded items/chunks (from the
+  //     streaming feature when active, else the materialised items);
+  //   - outbound (upload): pass a streamable payload as callopts["body"] - it
+  //     is attached to the request so the transport can send it;
+  //   - callopts["ctrl"] threads pipeline control and callopts["signal"] (a
+  //     () => Boolean that returns true when aborted) is honoured between
+  //     yields.
+  override def stream(action: String, args: JMap[String, Object],
+      callopts: JMap[String, Object]): Iterator[Object] = {
+    val opts = if (callopts == null) new LinkedHashMap[String, Object]() else callopts
+
+    val signal = opts.get("signal")
+
+    var ctrl = Helpers.toMapAny(opts.get("ctrl"))
+    if (ctrl == null) ctrl = new LinkedHashMap[String, Object]()
+    ctrl.put("stream", opts)
+
+    val ctxmap = new LinkedHashMap[String, Object]()
+    ctxmap.put("opname", action)
+    ctxmap.put("ctrl", ctrl)
+    ctxmap.put("match", this.matchState)
+    ctxmap.put("data", this.dataState)
+    if (args != null) ctxmap.putAll(args)
+
+    val ctx = this.utility.makeContext(ctxmap, this.entctx)
+
+    // Outbound: expose the caller's streamable payload so the request builder
+    // / transport can stream it as the request body.
+    val body = opts.get("body")
+    if (body != null) {
+      ctx.reqdata.put("body$", body)
+      ctx.ctrl.streamOut = body
+    }
+
+    // Run the same pipeline the op methods run.
+    val materialised = runOp(ctx, () => {})
+
+    // Inbound: prefer the streaming feature's incremental iterator; else fall
+    // back to the materialised items so `stream` always yields.
+    val source: JIterator[Object] =
+      if (ctx.result != null && ctx.result.stream != null) ctx.result.stream.get()
+      else {
+        val items: JList[Object] = materialised match {
+          case l: JList[_] => l.asInstanceOf[JList[Object]]
+          case null => new ArrayList[Object]()
+          case other => { val a = new ArrayList[Object](); a.add(other); a }
+        }
+        items.iterator()
+      }
+
+    val aborted: () => Boolean = signal match {
+      case f: Function0[_] => () => f.asInstanceOf[Function0[Object]].apply() == java.lang.Boolean.TRUE
+      case _ => () => false
+    }
+
+    new Iterator[Object] {
+      override def hasNext: Boolean = !aborted() && source.hasNext
+      override def next(): Object = source.next()
     }
   }
 }

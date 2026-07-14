@@ -35,6 +35,7 @@ import JAVAPACKAGE.core.SdkError;
 import JAVAPACKAGE.core.Spec;
 import JAVAPACKAGE.core.Utility;
 import JAVAPACKAGE.feature.BaseFeature;
+import JAVAPACKAGE.utility.struct.Struct;
 
 @SuppressWarnings({"unchecked"})
 public class PipelineTest {
@@ -53,6 +54,82 @@ public class PipelineTest {
       ctxmap.put("ctrl", ctrl);
     }
     return utility.makeContext.apply(ctxmap, client.getRootCtx());
+  }
+
+  // --- feature order (PR #2) ----------------------------------------------
+
+  // resolveOpts runs makeOptions over an options.feature value (map or list)
+  // and returns the derived options so __derived__.featureorder can be
+  // asserted.
+  static Map<String, Object> resolveOpts(Object feature) {
+    ProjectNameSDK client = plClient(null);
+    Utility utility = client.getUtility();
+    Map<String, Object> options = new LinkedHashMap<>();
+    options.put("feature", feature);
+    Map<String, Object> cfg = new LinkedHashMap<>();
+    cfg.put("options", new LinkedHashMap<>());
+    Map<String, Object> ctxmap = new LinkedHashMap<>();
+    ctxmap.put("client", client);
+    ctxmap.put("utility", utility);
+    ctxmap.put("options", options);
+    ctxmap.put("config", cfg);
+    Context ctx = utility.makeContext.apply(ctxmap, client.getRootCtx());
+    return utility.makeOptions.apply(ctx);
+  }
+
+  static String featureOrder(Map<String, Object> opts) {
+    Object raw = Struct.getpath(opts, List.of("__derived__", "featureorder"));
+    List<String> names = new ArrayList<>();
+    if (raw instanceof List) {
+      for (Object o : (List<Object>) raw) {
+        names.add(o instanceof String ? (String) o : "");
+      }
+    }
+    return String.join(",", names);
+  }
+
+  @Test
+  void featureOrderMapIsTestFirst() {
+    Map<String, Object> metrics = new LinkedHashMap<>();
+    metrics.put("active", true);
+    Map<String, Object> test = new LinkedHashMap<>();
+    test.put("active", true);
+    Map<String, Object> feature = new LinkedHashMap<>();
+    feature.put("metrics", metrics);
+    feature.put("test", test);
+    assertEquals("test,metrics", featureOrder(resolveOpts(feature)));
+  }
+
+  @Test
+  void featureOrderArrayPreservesExplicitOrder() {
+    Map<String, Object> m1 = new LinkedHashMap<>();
+    m1.put("name", "metrics");
+    m1.put("active", true);
+    Map<String, Object> m2 = new LinkedHashMap<>();
+    m2.put("name", "test");
+    m2.put("active", true);
+    List<Object> feature = new ArrayList<>();
+    feature.add(m1);
+    feature.add(m2);
+    Map<String, Object> o = resolveOpts(feature);
+    assertEquals("metrics,test", featureOrder(o));
+    // The list is normalized to a map for merge/init; opts are preserved.
+    assertEquals(Boolean.TRUE,
+        Struct.getpath(o, List.of("feature", "metrics", "active")));
+    assertEquals(Boolean.TRUE,
+        Struct.getpath(o, List.of("feature", "test", "active")));
+  }
+
+  @Test
+  void featureOrderMapNoTestIsSorted() {
+    Map<String, Object> retry = new LinkedHashMap<>();
+    retry.put("active", true);
+    Map<String, Object> cache = new LinkedHashMap<>();
+    cache.put("active", true);
+    Map<String, Object> feature = new LinkedHashMap<>();
+    feature.put("retry", retry);
+    feature.put("cache", cache);
+    assertEquals("cache,retry", featureOrder(resolveOpts(feature)));
   }
 
   // plEntity is a minimal fake entity for the list-wrap test.

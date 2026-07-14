@@ -60,18 +60,21 @@ sub new {
 
   $self->{_rootctx}{options} = $self->{options};
 
-  # Add features from config.
+  # Add features in the resolved order (make_options records an explicit
+  # array order, else defaults to test-first). Ordering matters: the `test`
+  # feature installs the base mock transport and the transport features
+  # (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+  # must be added before them to sit at the base of the wrapper chain.
   my $feature_opts = ProjectNameHelpers::to_map(
-    ProjectNameHelpers::gp($self->{options}, 'feature'));
-  if ($feature_opts) {
-    my $items = Voxgig::Struct::items($feature_opts);
-    for my $item (@{ $items || [] }) {
-      my ($fname, $fopts_raw) = @$item;
-      my $fopts = ProjectNameHelpers::to_map($fopts_raw);
-      if ($fopts && ProjectNameHelpers::is_true($fopts->{active})) {
-        $utility->{feature_add}->($self->{_rootctx},
-          ProjectNameFeatures::make_feature($fname));
-      }
+    ProjectNameHelpers::gp($self->{options}, 'feature')) || {};
+  my $featureorder = ProjectNameHelpers::gpath(
+    $self->{options}, '__derived__.featureorder');
+  $featureorder = [] unless Voxgig::Struct::islist($featureorder);
+  for my $fname (@$featureorder) {
+    my $fopts = ProjectNameHelpers::to_map($feature_opts->{$fname});
+    if ($fopts && ProjectNameHelpers::is_true($fopts->{active})) {
+      $utility->{feature_add}->($self->{_rootctx},
+        ProjectNameFeatures::make_feature($fname));
     }
   }
 

@@ -136,4 +136,67 @@ open class ProjectNameEntityBase: Entity {
 
     return try utility.done(ctx)
   }
+
+  // Streaming operations. Runs `action` through the full pipeline and returns
+  // an AsyncStream over result items, so the `streaming` feature's incremental
+  // output is reachable from a generated entity (a normal op call materialises
+  // the whole result). `callopts` parameterises the call:
+  //   - inbound (download): iterate the yielded items/chunks (from the
+  //     streaming feature when active, else the materialised items);
+  //   - outbound (upload): pass a streamable payload as callopts["body"] - it
+  //     is attached to the request so the transport can send it;
+  //   - callopts["ctrl"] threads pipeline control and callopts["signal"] (a
+  //     native () -> Bool that returns true when aborted) is honoured between
+  //     yields.
+  public func stream(_ action: String, _ args: VMap? = nil, _ callopts: VMap? = nil)
+    throws -> AsyncStream<Value>
+  {
+    let opts = callopts ?? VMap()
+
+    let signal = opts.entries["signal"]?.asNative as? @Sendable () -> Bool
+
+    let ctrl = opts.entries["ctrl"]?.asMap ?? VMap()
+    ctrl.entries["stream"] = .map(opts)
+
+    var ctxmap: [String: Any?] = [
+      "opname": action,
+      "ctrl": ctrl,
+      "match": match,
+      "data": data,
+    ]
+    if let a = args {
+      for (k, v) in a.entries { ctxmap[k] = v }
+    }
+
+    let ctx = utility.makeContext(ctxmap, entctx)
+
+    // Outbound: expose the caller's streamable payload so the request builder
+    // / transport can stream it as the request body.
+    if let body = opts.entries["body"], !isNil(body) {
+      ctx.reqdata.entries["body$"] = body
+      ctx.ctrl.streamOut = body
+    }
+
+    // Run the same pipeline the op methods run.
+    let materialised = try runOp(ctx, {})
+
+    // Inbound: prefer the streaming feature's incremental iterator; else fall
+    // back to the materialised items so `stream` always yields.
+    var items: [Value] = []
+    if let result = ctx.result, let streamFn = result.stream {
+      items = streamFn()
+    } else if let list = materialised.asList {
+      items = list.items
+    } else if !isNil(materialised) {
+      items = [materialised]
+    }
+
+    return AsyncStream { continuation in
+      for item in items {
+        if let s = signal, s() { break }
+        continuation.yield(item)
+      }
+      continuation.finish()
+    }
+  }
 }

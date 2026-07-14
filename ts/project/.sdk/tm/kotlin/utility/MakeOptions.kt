@@ -20,6 +20,30 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
 
   var opts = Struct.clone(options) as MutableMap<String, Any?>
 
+  // Feature add-order. options.feature may be given as an ordered LIST of
+  // { name, active, ...opts } entries (the list position IS the order in which
+  // features are added), or as a { name: {opts} } map. Normalize a list to a
+  // map (so merge/validate/init are unchanged) and remember the explicit
+  // order; a map defaults to test-first so the `test` mock transport is
+  // installed as the base of the transport wrapper chain.
+  val featureorder = mutableListOf<Any?>()
+  val frawInit = opts["feature"]
+  if (frawInit is List<*>) {
+    val fmap = linkedMapOf<String, Any?>()
+    for (entry in frawInit) {
+      val em = Helpers.toMapAny(entry)
+      val fname = em?.get("name") as? String
+      if (em != null && fname != null && "" != fname) {
+        val fopts = linkedMapOf<String, Any?>()
+        fopts.putAll(em)
+        fopts.remove("name")
+        fmap[fname] = fopts
+        featureorder.add(fname)
+      }
+    }
+    opts["feature"] = fmap
+  }
+
   var config = ctx.config
   if (config == null) {
     config = linkedMapOf()
@@ -97,12 +121,31 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
   }
   val keyre = filtered.joinToString("|")
 
+  // Resolve the feature add-order: an explicit list order (above) wins;
+  // otherwise order the map test-first, then the remaining names sorted, so
+  // the outcome is deterministic and `test` is always the base transport.
+  if (featureorder.isEmpty()) {
+    val fmap = Helpers.toMapAny(opts["feature"])
+    val names = (fmap?.keys?.toMutableList() ?: mutableListOf()).also { it.sort() }
+    if (names.contains("test")) {
+      featureorder.add("test")
+      for (n in names) {
+        if ("test" != n) {
+          featureorder.add(n)
+        }
+      }
+    } else {
+      featureorder.addAll(names)
+    }
+  }
+
   val derived = linkedMapOf<String, Any?>()
   val derivedClean = linkedMapOf<String, Any?>()
   if ("" != keyre) {
     derivedClean["keyre"] = keyre
   }
   derived["clean"] = derivedClean
+  derived["featureorder"] = featureorder
   opts["__derived__"] = derived
 
   return opts

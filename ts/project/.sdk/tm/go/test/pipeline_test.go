@@ -411,6 +411,63 @@ func TestPipelineFeatureAdd(t *testing.T) {
 	})
 }
 
+// Feature #2: options.feature accepts an ordered ARRAY (developer add-order)
+// or a map (defaults test-first); MakeOptions records the resolved order in
+// __derived__.featureorder.
+func TestPipelineFeatureOrder(t *testing.T) {
+	resolve := func(feature any) string {
+		client, utility := plClient(t, nil)
+		ctx := utility.MakeContext(map[string]any{
+			"client":  client,
+			"utility": utility,
+		}, client.GetRootCtx())
+		ctx.Options = map[string]any{"feature": feature}
+		ctx.Config = map[string]any{"options": map[string]any{}}
+		opts := utility.MakeOptions(ctx)
+		derived, _ := opts["__derived__"].(map[string]any)
+		fo, _ := derived["featureorder"].([]any)
+		out := ""
+		for i, n := range fo {
+			if i > 0 {
+				out += ","
+			}
+			s, _ := n.(string)
+			out += s
+		}
+		return out
+	}
+
+	t.Run("map-form-is-test-first", func(t *testing.T) {
+		got := resolve(map[string]any{
+			"metrics": map[string]any{"active": true},
+			"test":    map[string]any{"active": true},
+		})
+		if got != "test,metrics" {
+			t.Fatalf("expected test,metrics got %s", got)
+		}
+	})
+
+	t.Run("array-form-preserves-order", func(t *testing.T) {
+		got := resolve([]any{
+			map[string]any{"name": "metrics", "active": true},
+			map[string]any{"name": "test", "active": true},
+		})
+		if got != "metrics,test" {
+			t.Fatalf("expected metrics,test got %s", got)
+		}
+	})
+
+	t.Run("map-form-no-test-deterministic", func(t *testing.T) {
+		got := resolve(map[string]any{
+			"retry": map[string]any{"active": true},
+			"cache": map[string]any{"active": true},
+		})
+		if got != "cache,retry" {
+			t.Fatalf("expected cache,retry got %s", got)
+		}
+	})
+}
+
 func TestPipelinePrepareAuth(t *testing.T) {
 
 	authSpec := func(headers map[string]any) *sdk.Spec {

@@ -15,4 +15,9 @@ class Control {
   var actor: String = ""
 
   var paging: JMap[String, Object] = null
+
+  // Outbound streaming marker: the entity `stream` method sets this to the
+  // caller-supplied streamable payload so the request builder / transport can
+  // stream it as the request body.
+  var streamOut: Object = null
 }

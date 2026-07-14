@@ -9,6 +9,8 @@
 
 using Xunit;
 
+using Voxgig.Struct;
+
 using ProjectNameSdk;
 using ProjectNameSdk.Feature;
 
@@ -54,6 +56,73 @@ public class PipelineTest
         {
             return "";
         }
+    }
+
+    // --- feature order (PR #2) ----------------------------------------------
+
+    // ResolveOpts runs makeOptions over an options.feature value (map or list)
+    // and returns the derived options so __derived__.featureorder can be
+    // asserted.
+    private static Dictionary<string, object?> ResolveOpts(object? feature)
+    {
+        var (client, utility) = PlClient(null);
+        var ctx = utility.MakeContext(new Dictionary<string, object?>
+        {
+            ["client"] = client,
+            ["utility"] = utility,
+            ["options"] = new Dictionary<string, object?> { ["feature"] = feature },
+            ["config"] = new Dictionary<string, object?>
+            {
+                ["options"] = new Dictionary<string, object?>(),
+            },
+        }, client.GetRootCtx());
+        return utility.MakeOptions(ctx);
+    }
+
+    private static string FeatureOrder(Dictionary<string, object?> opts)
+    {
+        var raw = StructUtils.GetPath(opts,
+            StructUtils.Jt("__derived__", "featureorder")) as List<object?>
+            ?? new List<object?>();
+        return string.Join(",", raw.Select(x => x as string ?? ""));
+    }
+
+    [Fact]
+    public void FeatureOrderMapIsTestFirst()
+    {
+        var o = ResolveOpts(new Dictionary<string, object?>
+        {
+            ["metrics"] = new Dictionary<string, object?> { ["active"] = true },
+            ["test"] = new Dictionary<string, object?> { ["active"] = true },
+        });
+        Assert.Equal("test,metrics", FeatureOrder(o));
+    }
+
+    [Fact]
+    public void FeatureOrderArrayPreservesExplicitOrder()
+    {
+        var o = ResolveOpts(new List<object?>
+        {
+            new Dictionary<string, object?> { ["name"] = "metrics", ["active"] = true },
+            new Dictionary<string, object?> { ["name"] = "test", ["active"] = true },
+        });
+        Assert.Equal("metrics,test", FeatureOrder(o));
+        // The list is normalized to a map for merge/init; opts are preserved.
+        Assert.True(Equals(StructUtils.GetPath(o,
+            StructUtils.Jt("feature", "metrics", "active")), true));
+        Assert.True(Equals(StructUtils.GetPath(o,
+            StructUtils.Jt("feature", "test", "active")), true));
+    }
+
+    [Fact]
+    public void FeatureOrderMapNoTestIsSorted()
+    {
+        var o = ResolveOpts(new Dictionary<string, object?>
+        {
+            ["retry"] = new Dictionary<string, object?> { ["active"] = true },
+            ["cache"] = new Dictionary<string, object?> { ["active"] = true },
+        });
+        Assert.Equal("cache,retry", FeatureOrder(o));
     }
 
     // PlEntity is a minimal fake entity for the list-wrap test.

@@ -40,11 +40,18 @@ defmodule ProjectName do
     if S.getpath(opts, "feature.test.active") == true, do: S.setprop(client, "mode", "test")
     S.setprop(rootctx, "options", opts)
 
-    feature_opts = H.to_map(S.getprop(opts, "feature"))
+    # Add features in the resolved order (make_options records an explicit
+    # array order, else defaults to test-first). Ordering matters: the `test`
+    # feature installs the base mock transport and the transport features
+    # (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+    # must be added before them to sit at the base of the wrapper chain.
+    feature_opts = H.or_(H.to_map(S.getprop(opts, "feature")), S.jm([]))
+    feature_order = S.getpath(opts, "__derived__.featureorder")
 
-    if feature_opts != nil do
-      Enum.each(H.entries(feature_opts), fn {fname, fo} ->
-        fom = H.to_map(fo)
+    if S.islist(feature_order) and S.size(feature_order) > 0 do
+      Enum.each(0..(S.size(feature_order) - 1), fn i ->
+        fname = S.getelem(feature_order, i)
+        fom = H.to_map(S.getprop(feature_opts, fname))
 
         if fom != nil and S.getprop(fom, "active") == true do
           Utility.feature_add(rootctx, ProjectName.Features.make_feature(fname))

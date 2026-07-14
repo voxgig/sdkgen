@@ -99,6 +99,90 @@ sub match_get {
 
 # #RemoveOp
 
+# Streaming operation. Runs `action` (an op name, e.g. 'list') through the
+# full operation pipeline and returns an ITERATOR coderef: each call yields
+# the next item (undef when exhausted), so the `streaming` feature's
+# incremental output is reachable (a normal op call materialises the whole
+# result). When the streaming feature is active the result carries a `stream`
+# coderef and this yields from it (honouring chunkSize / chunkDelay); else it
+# falls back to yielding the materialised items so stream() always yields.
+# Yielded records are unwrapped to bare hashrefs (matching list()).
+#
+# $callopts parameterises the call:
+#   - ctrl:   per-call pipeline control (threaded onto the op ctx);
+#   - body:   an iterator coderef / arrayref payload for outbound (upload)
+#             streaming - attached to the request (reqdata.body$ + a
+#             stream_out marker on ctx) so the transport can stream it;
+#   - signal: an optional coderef; when it returns true the iterator stops.
+sub stream {
+  my ($self, $action, $args, $callopts) = @_;
+  my $utility = $self->{_utility};
+  $callopts = ProjectNameHelpers::to_map($callopts) || {};
+  my $signal = ProjectNameHelpers::gp($callopts, 'signal');
+  my $ctrl = ProjectNameHelpers::to_map(
+    ProjectNameHelpers::gp($callopts, 'ctrl')) || {};
+  $ctrl->{stream} = $callopts;
+
+  my $ctx = $utility->{make_context}->({
+    'opname' => $action,
+    'ctrl' => $ctrl,
+    'match' => $self->{_match},
+    'data' => $self->{_data},
+    %{ ProjectNameHelpers::to_map($args) || {} },
+  }, $self->{_entctx});
+
+  # Outbound: expose an async-iterable/list payload so the request builder /
+  # transport can stream it as the request body.
+  my $body = ProjectNameHelpers::gp($callopts, 'body');
+  if (defined $body) {
+    my $reqdata = ProjectNameHelpers::to_map($ctx->{reqdata}) || {};
+    $reqdata->{'body$'} = $body;
+    $ctx->{reqdata} = $reqdata;
+    $ctx->{stream_out} = $body;
+  }
+
+  $self->_run_op($ctx, sub { return });
+
+  # Unwrap an Entity instance to its bare record; recurse into chunk arrays.
+  my $unwrap;
+  $unwrap = sub {
+    my ($item) = @_;
+    return $item unless defined $item;
+    return $item->data_get
+      if Scalar::Util::blessed($item) && $item->can('data_get');
+    return [map { $unwrap->($_) } @$item] if Voxgig::Struct::islist($item);
+    return $item;
+  };
+
+  my $aborted = sub {
+    return (ref $signal eq 'CODE' && $signal->()) ? 1 : 0;
+  };
+
+  my $result = $ctx->{result};
+
+  # Inbound: prefer the streaming feature's incremental iterator; else fall
+  # back to the materialised items so stream() always yields.
+  if ($result && ref $result->{stream} eq 'CODE') {
+    my $src = $result->{stream};
+    return sub {
+      return undef if $aborted->();
+      my $item = $src->();
+      return undef unless defined $item;
+      return $unwrap->($item);
+    };
+  }
+
+  my $data = $result ? $result->{resdata} : undef;
+  my @items = Voxgig::Struct::islist($data) ? @$data
+    : (!defined $data ? () : ($data));
+  @items = map { $unwrap->($_) } @items;
+  return sub {
+    return undef if $aborted->();
+    return undef unless @items;
+    return shift @items;
+  };
+}
+
 sub _run_op {
   my ($self, $ctx, $post_done) = @_;
   my $utility = $self->{_utility};

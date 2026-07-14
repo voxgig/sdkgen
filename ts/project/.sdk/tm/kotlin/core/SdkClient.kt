@@ -42,12 +42,18 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
 
     this.rootctx.options = this.options
 
-    // Add features from config/options.
+    // Add features in the resolved order (makeOptions puts an explicit list
+    // order first, else defaults to test-first). Ordering matters: the `test`
+    // feature installs the base mock transport and the transport features
+    // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+    // must be added before them to sit at the base of the chain.
     val featureOpts = Helpers.toMapAny(Struct.getprop(this.options, "feature"))
-    if (featureOpts != null) {
-      for (item in Struct.items(featureOpts)) {
-        val fname = item[0] as? String
-        val fopts = Helpers.toMapAny(item[1])
+      ?: linkedMapOf()
+    val featureOrder = Struct.getpath(this.options, listOf("__derived__", "featureorder"))
+    if (featureOrder is List<*>) {
+      for (fnameObj in featureOrder) {
+        val fname = fnameObj as? String
+        val fopts = Helpers.toMapAny(Struct.getprop(featureOpts, fname))
         if (fname != null && fopts != null && fopts["active"] == true) {
           val f = Config.makeFeature(fname)
           this.util.featureAdd(this.rootctx, f)

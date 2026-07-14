@@ -3,6 +3,8 @@
 // unsupported-op implementations of every CRUD method. Generated entity
 // classes derive from this and override the operations their API defines.
 
+using System.Runtime.CompilerServices;
+
 using Voxgig.Struct;
 
 namespace ProjectNameSdk;
@@ -166,5 +168,101 @@ public abstract class ProjectNameEntityBase : IEntity
         postDone();
 
         return utility.Done(ctx);
+    }
+
+    // Streaming operations. Runs `action` through the full pipeline and returns
+    // an async iterator over result items, so the `streaming` feature's
+    // incremental output is reachable from a generated entity (a normal op call
+    // materialises the whole result). `callopts` parameterises the call:
+    //   - inbound (download): iterate the yielded items/chunks (from the
+    //     streaming feature when active, else the materialised items);
+    //   - outbound (upload): pass a streamable payload as callopts["body"] - it
+    //     is attached to the request so the transport can send it;
+    //   - callopts["ctrl"] threads pipeline control and callopts["signal"] (a
+    //     CancellationToken) is honoured between yields.
+    public async IAsyncEnumerable<object?> Stream(
+        string action,
+        Dictionary<string, object?>? args = null,
+        Dictionary<string, object?>? callopts = null,
+        [EnumeratorCancellation] CancellationToken cancel = default)
+    {
+        callopts ??= new Dictionary<string, object?>();
+
+        var signal =
+            StructUtils.GetProp(callopts, "signal") is CancellationToken sigTok
+                ? sigTok
+                : CancellationToken.None;
+
+        var ctrl = Helpers.ToMapAny(StructUtils.GetProp(callopts, "ctrl"))
+            ?? new Dictionary<string, object?>();
+        ctrl["stream"] = callopts;
+
+        var ctxmap = new Dictionary<string, object?>
+        {
+            ["opname"] = action,
+            ["ctrl"] = ctrl,
+            ["match"] = match,
+            ["data"] = data,
+        };
+        if (args != null)
+        {
+            foreach (var kv in args)
+            {
+                ctxmap[kv.Key] = kv.Value;
+            }
+        }
+
+        var ctx = utility.MakeContext(ctxmap, entctx);
+
+        // Outbound: expose the caller's streamable payload so the request
+        // builder / transport can stream it as the request body.
+        var body = StructUtils.GetProp(callopts, "body");
+        if (body != null)
+        {
+            ctx.Reqdata["body$"] = body;
+            ctx.Ctrl.Stream_out = body;
+        }
+
+        // Run the same pipeline the op methods run.
+        var materialised = RunOp(ctx, () =>
+        {
+            if (ctx.Result?.Resmatch != null)
+            {
+                match = ctx.Result.Resmatch;
+            }
+        });
+
+        await Task.CompletedTask;
+
+        // Inbound: prefer the streaming feature's incremental iterator; else
+        // fall back to the materialised items so `stream` always yields.
+        var stream = ctx.Result?.Stream;
+        if (stream != null)
+        {
+            foreach (var item in stream())
+            {
+                if (cancel.IsCancellationRequested || signal.IsCancellationRequested)
+                {
+                    yield break;
+                }
+                yield return item;
+            }
+        }
+        else
+        {
+            var items = materialised is List<object?> list
+                ? list
+                : (materialised == null
+                    ? new List<object?>()
+                    : new List<object?> { materialised });
+            foreach (var item in items)
+            {
+                if (cancel.IsCancellationRequested || signal.IsCancellationRequested)
+                {
+                    yield break;
+                }
+                yield return item;
+            }
+        }
     }
 }

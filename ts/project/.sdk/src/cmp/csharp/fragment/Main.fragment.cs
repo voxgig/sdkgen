@@ -39,20 +39,26 @@ public class ProjectNameSDK
 
         _rootctx.Options = _options;
 
-        // Add features from config.
-        var featureOpts = Helpers.ToMapAny(StructUtils.GetProp(_options, "feature"));
-        if (featureOpts != null)
+        // Add features in the resolved order (MakeOptions puts an explicit
+        // list order first, else defaults to test-first). Ordering matters:
+        // the `test` feature installs the base mock transport and the transport
+        // features (retry/cache/netsim/proxy/ratelimit) wrap whatever is
+        // current, so `test` must be added before them to sit at the base of
+        // the chain.
+        var featureOpts = Helpers.ToMapAny(StructUtils.GetProp(_options, "feature"))
+            ?? new Dictionary<string, object?>();
+        var featureOrder = StructUtils.GetPath(_options,
+            StructUtils.Jt("__derived__", "featureorder")) as List<object?>
+            ?? new List<object?>();
+        foreach (var fnameObj in featureOrder)
         {
-            foreach (var item in StructUtils.Items(featureOpts))
+            var fname = fnameObj as string ?? "";
+            var fopts = Helpers.ToMapAny(StructUtils.GetProp(featureOpts, fname));
+            if (fopts != null &&
+                fopts.TryGetValue("active", out var active) &&
+                active is bool ab && ab)
             {
-                var fname = item[0] as string ?? "";
-                var fopts = Helpers.ToMapAny(item[1]);
-                if (fopts != null &&
-                    fopts.TryGetValue("active", out var active) &&
-                    active is bool ab && ab)
-                {
-                    _utility.FeatureAdd(_rootctx, SdkConfig.MakeFeature(fname));
-                }
+                _utility.FeatureAdd(_rootctx, SdkConfig.MakeFeature(fname));
             }
         }
 

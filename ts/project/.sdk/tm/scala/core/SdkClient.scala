@@ -36,19 +36,25 @@ abstract class SdkClient(options0: JMap[String, Object]) {
 
     this.rootctx.options = this.options
 
-    // Add features from config/options.
-    val featureOpts = Helpers.toMapAny(Struct.getprop(this.options, "feature"))
-    if (featureOpts != null) {
-      val it = Struct.items(featureOpts).iterator()
-      while (it.hasNext) {
-        val item = it.next().asInstanceOf[JList[Object]]
-        val fname = item.get(0) match { case s: String => s; case _ => null }
-        val fopts = Helpers.toMapAny(item.get(1))
-        if (fname != null && fopts != null && (java.lang.Boolean.TRUE == fopts.get("active"))) {
-          val f = Config.makeFeature(fname)
-          if (f != null) this.utility.featureAdd(this.rootctx, f)
+    // Add features in the resolved order (makeOptions puts an explicit list
+    // order first, else defaults to test-first). Ordering matters: the `test`
+    // feature installs the base mock transport and the transport features
+    // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+    // must be added before them to sit at the base of the chain.
+    var featureOpts = Helpers.toMapAny(Struct.getprop(this.options, "feature"))
+    if (featureOpts == null) featureOpts = new LinkedHashMap[String, Object]()
+    Struct.getpath(this.options, java.util.List.of("__derived__", "featureorder")) match {
+      case order: JList[_] =>
+        val it = order.asInstanceOf[JList[Object]].iterator()
+        while (it.hasNext) {
+          val fname = it.next() match { case s: String => s; case _ => null }
+          val fopts = Helpers.toMapAny(Struct.getprop(featureOpts, fname))
+          if (fname != null && fopts != null && (java.lang.Boolean.TRUE == fopts.get("active"))) {
+            val f = Config.makeFeature(fname)
+            if (f != null) this.utility.featureAdd(this.rootctx, f)
+          }
         }
-      }
+      case _ =>
     }
 
     // Add extension features.

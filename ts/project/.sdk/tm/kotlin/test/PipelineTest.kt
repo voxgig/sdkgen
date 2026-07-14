@@ -21,6 +21,7 @@ import KOTLINPACKAGE.core.SdkError
 import KOTLINPACKAGE.core.Spec
 import KOTLINPACKAGE.core.Utility
 import KOTLINPACKAGE.feature.BaseFeature
+import KOTLINPACKAGE.utility.struct.Struct
 import KOTLINPACKAGE.sdktest.FeatureHarness.fhErrCode
 import KOTLINPACKAGE.sdktest.FeatureHarness.fhMap
 import KOTLINPACKAGE.sdktest.FeatureHarness.fhResponse
@@ -41,6 +42,67 @@ class PipelineTest {
       ctxmap["ctrl"] = ctrl
     }
     return utility.makeContext(ctxmap, client.getRootCtx())
+  }
+
+  // --- feature order (PR #2) ----------------------------------------------
+
+  // resolveOpts runs makeOptions over an options.feature value (map or list)
+  // and returns the derived options so __derived__.featureorder can be
+  // asserted.
+  private fun resolveOpts(feature: Any?): MutableMap<String, Any?> {
+    val client = plClient(null)
+    val utility = client.getUtility()
+    val options = linkedMapOf<String, Any?>("feature" to feature)
+    val cfg = linkedMapOf<String, Any?>("options" to linkedMapOf<String, Any?>())
+    val ctxmap = linkedMapOf<String, Any?>()
+    ctxmap["client"] = client
+    ctxmap["utility"] = utility
+    ctxmap["options"] = options
+    ctxmap["config"] = cfg
+    val ctx = utility.makeContext(ctxmap, client.getRootCtx())
+    return utility.makeOptions(ctx)
+  }
+
+  private fun featureOrder(opts: MutableMap<String, Any?>): String {
+    val raw = Struct.getpath(opts, listOf("__derived__", "featureorder"))
+    val names = mutableListOf<String>()
+    if (raw is List<*>) {
+      for (o in raw) {
+        names.add(o as? String ?: "")
+      }
+    }
+    return names.joinToString(",")
+  }
+
+  @Test
+  fun featureOrderMapIsTestFirst() {
+    val feature = linkedMapOf<String, Any?>(
+      "metrics" to linkedMapOf<String, Any?>("active" to true),
+      "test" to linkedMapOf<String, Any?>("active" to true),
+    )
+    assertEquals("test,metrics", featureOrder(resolveOpts(feature)))
+  }
+
+  @Test
+  fun featureOrderArrayPreservesExplicitOrder() {
+    val feature = mutableListOf<Any?>(
+      linkedMapOf<String, Any?>("name" to "metrics", "active" to true),
+      linkedMapOf<String, Any?>("name" to "test", "active" to true),
+    )
+    val o = resolveOpts(feature)
+    assertEquals("metrics,test", featureOrder(o))
+    // The list is normalized to a map for merge/init; opts are preserved.
+    assertEquals(true, Struct.getpath(o, listOf("feature", "metrics", "active")))
+    assertEquals(true, Struct.getpath(o, listOf("feature", "test", "active")))
+  }
+
+  @Test
+  fun featureOrderMapNoTestIsSorted() {
+    val feature = linkedMapOf<String, Any?>(
+      "retry" to linkedMapOf<String, Any?>("active" to true),
+      "cache" to linkedMapOf<String, Any?>("active" to true),
+    )
+    assertEquals("cache,retry", featureOrder(resolveOpts(feature)))
   }
 
   // plEntity is a minimal fake entity for the list-wrap test.

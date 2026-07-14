@@ -775,6 +775,29 @@ let make_options_util (ctx : ctx) : value =
       | None -> ())
    | _ -> ());
   let opts = match clone options with Map _ as m -> m | _ -> empty_map () in
+  (* Feature add-order. options.feature may be given as an ordered LIST of
+     {name; active; ...opts} entries (list position = add order) or a
+     {name => {opts}} map. Normalize a list to a map (so merge/validate/init
+     are unchanged) and remember the explicit order; a map defaults to
+     test-first so the `test` mock transport is the base of the wrapper chain. *)
+  let explicit_order =
+    match getp opts "feature" with
+    | List r ->
+      let fmap = empty_map () in
+      let order = List.filter_map (fun entry ->
+          match entry with
+          | Map _ ->
+            (match getp entry "name" with
+             | Str nm ->
+               let fopts = clone entry in
+               ignore (delprop fopts (Str "name"));
+               setp fmap nm fopts;
+               Some nm
+             | _ -> None)
+          | _ -> None) !r in
+      setp opts "feature" fmap;
+      Some order
+    | _ -> None in
   let config = match ctx.c_config with Map _ as m -> m | _ -> empty_map () in
   let cfgopts = match to_map (getp config "options") with Map _ as m -> m | _ -> empty_map () in
   let optspec = opt_spec_value () in
@@ -790,8 +813,21 @@ let make_options_util (ctx : ctx) : value =
   let parts = List.filter_map (fun p -> let t = String.trim p in if t = "" then None else Some (escre_s t))
       (String.split_on_char ',' clean_keys) in
   let keyre = String.concat "|" parts in
+  (* Resolve the feature add-order: an explicit list order (above) wins;
+     otherwise order the map test-first, then the remaining names sorted, so
+     the outcome is deterministic and `test` is always the base transport. *)
+  let feature_order =
+    match explicit_order with
+    | Some ord -> ord
+    | None ->
+      let fmap = match getp opts "feature" with Map _ as m -> m | _ -> empty_map () in
+      let names = keysof fmap in
+      if List.mem "test" names
+      then "test" :: List.filter (fun n -> n <> "test") names
+      else names in
   let derived = jo [("clean", empty_map ())] in
   if keyre <> "" then setp derived "clean" (jo [("keyre", Str keyre)]);
+  setp derived "featureorder" (ja (List.map (fun s -> Str s) feature_order));
   setp opts "__derived__" derived;
   opts
 

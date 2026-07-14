@@ -574,3 +574,33 @@ class TestResultHelpers:
         ctx.result = ProjectNameResult({})
         client._utility.result_body(ctx)
         assert ctx.result.body is None
+
+
+class TestFeatureOrder:
+    # Feature #2: options["feature"] accepts an ordered LIST (developer
+    # add-order) or a map (defaults test-first); make_options records the
+    # resolved order in __derived__.featureorder.
+
+    def _resolve(self, feature):
+        client = _client()
+        ctx = client._utility.make_context({
+            "client": client,
+            "utility": client._utility,
+            "options": {"feature": feature},
+            "config": {"options": {}},
+        }, None)
+        opts = client._utility.make_options(ctx)
+        return ",".join(opts["__derived__"]["featureorder"])
+
+    def test_map_form_is_test_first(self):
+        assert self._resolve(
+            {"metrics": {"active": True}, "test": {"active": True}}) == "test,metrics"
+
+    def test_list_form_preserves_order(self):
+        assert self._resolve(
+            [{"name": "metrics", "active": True},
+             {"name": "test", "active": True}]) == "metrics,test"
+
+    def test_map_form_no_test_deterministic(self):
+        assert self._resolve(
+            {"retry": {"active": True}, "cache": {"active": True}}) == "cache,retry"

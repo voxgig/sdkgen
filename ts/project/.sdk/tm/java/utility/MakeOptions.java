@@ -29,6 +29,31 @@ final class MakeOptions {
 
     Map<String, Object> opts = (Map<String, Object>) Struct.clone(options);
 
+    // Feature add-order. options.feature may be given as an ordered LIST of
+    // { name, active, ...opts } entries (the list position IS the order in
+    // which features are added), or as a { name: {opts} } map. Normalize a
+    // list to a map (so merge/validate/init are unchanged) and remember the
+    // explicit order; a map defaults to test-first so the `test` mock
+    // transport is installed as the base of the transport wrapper chain.
+    List<Object> featureorder = new ArrayList<>();
+    Object frawInit = opts.get("feature");
+    if (frawInit instanceof List) {
+      Map<String, Object> fmap = new LinkedHashMap<>();
+      for (Object entry : (List<Object>) frawInit) {
+        Map<String, Object> em = Helpers.toMapAny(entry);
+        if (em != null && em.get("name") instanceof String) {
+          String fname = (String) em.get("name");
+          if (!"".equals(fname)) {
+            Map<String, Object> fopts = new LinkedHashMap<>(em);
+            fopts.remove("name");
+            fmap.put(fname, fopts);
+            featureorder.add(fname);
+          }
+        }
+      }
+      opts.put("feature", fmap);
+    }
+
     Map<String, Object> config = ctx.config;
     if (config == null) {
       config = new LinkedHashMap<>();
@@ -106,12 +131,36 @@ final class MakeOptions {
     }
     String keyre = String.join("|", filtered);
 
+    // Resolve the feature add-order: an explicit list order (above) wins;
+    // otherwise order the map test-first, then the remaining names sorted, so
+    // the outcome is deterministic and `test` is always the base transport.
+    if (featureorder.isEmpty()) {
+      Map<String, Object> fmap = Helpers.toMapAny(opts.get("feature"));
+      List<String> names = new ArrayList<>();
+      if (fmap != null) {
+        names.addAll(fmap.keySet());
+      }
+      names.sort(null);
+      if (names.contains("test")) {
+        featureorder.add("test");
+        for (String n : names) {
+          if (!"test".equals(n)) {
+            featureorder.add(n);
+          }
+        }
+      }
+      else {
+        featureorder.addAll(names);
+      }
+    }
+
     Map<String, Object> derived = new LinkedHashMap<>();
     Map<String, Object> derivedClean = new LinkedHashMap<>();
     if (!"".equals(keyre)) {
       derivedClean.put("keyre", keyre);
     }
     derived.put("clean", derivedClean);
+    derived.put("featureorder", featureorder);
     opts.put("__derived__", derived);
 
     return opts;

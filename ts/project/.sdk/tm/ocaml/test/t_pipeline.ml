@@ -39,10 +39,44 @@ let make_factory (cl : sdk_client) (made : value list ref) : entity_obj =
     e_match_set = (fun _ -> ()); e_match_get = (fun () -> empty_map ());
     e_load = (fun _ _ -> Noval); e_list = (fun _ _ -> Noval); e_create = (fun _ _ -> Noval);
     e_update = (fun _ _ -> Noval); e_remove = (fun _ _ -> Noval);
+    e_stream = (fun _ _ _ -> Seq.empty);
   } in
   child ()
 
+(* make_options resolves the feature add-order into __derived__.featureorder:
+   a map defaults test-first (so the test mock is the base transport), an
+   explicit array preserves the developer order, and a map without test is
+   deterministic (names sorted). *)
+let resolve_order (feature : value) : value =
+  let cl = client () in
+  let ctx = mk_ctx cl "load" in
+  ctx.c_options <- jo [("feature", feature)];
+  ctx.c_config <- jo [("options", empty_map ())];
+  cl.cl_utility.u_make_options ctx
+
+let order_str (opts : value) : string =
+  match getpath_s opts "__derived__.featureorder" with
+  | List r -> String.concat "," (List.map (function Str s -> s | _ -> "") !r)
+  | _ -> ""
+
 let () =
+  test "feature_order.map_test_first" (fun () ->
+      let o = resolve_order (jo [("metrics", jo [("active", Bool true)]);
+                                 ("test", jo [("active", Bool true)])]) in
+      check_str "order" (order_str o) "test,metrics");
+
+  test "feature_order.array_preserves_order" (fun () ->
+      let o = resolve_order (ja [jo [("name", Str "metrics"); ("active", Bool true)];
+                                 jo [("name", Str "test"); ("active", Bool true)]]) in
+      check_str "order" (order_str o) "metrics,test";
+      check_vbool "metrics active" (getpath_s o "feature.metrics.active") true;
+      check_vbool "test active" (getpath_s o "feature.test.active") true);
+
+  test "feature_order.map_no_test_deterministic" (fun () ->
+      let o = resolve_order (jo [("retry", jo [("active", Bool true)]);
+                                 ("cache", jo [("active", Bool true)])]) in
+      check_str "order" (order_str o) "cache,retry");
+
   test "make_point.rejects_disallowed_op" (fun () ->
       let cl = client () in
       let ctx = mk_ctx cl "nope" in

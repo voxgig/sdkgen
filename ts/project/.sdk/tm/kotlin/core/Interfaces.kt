@@ -26,6 +26,15 @@ interface SdkEntity : Entity {
   fun update(reqdata: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>?): Any?
 
   fun remove(reqmatch: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>?): Any?
+
+  // Runs `action` through the pipeline and returns a Sequence over result
+  // items (the streaming feature's incremental output when active, else the
+  // materialised items). See EntityBase.stream.
+  fun stream(
+    action: String,
+    args: MutableMap<String, Any?>?,
+    callopts: MutableMap<String, Any?>?,
+  ): Sequence<Any?>
 }
 
 /**
