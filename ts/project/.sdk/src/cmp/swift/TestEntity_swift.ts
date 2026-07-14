@@ -40,10 +40,11 @@ final class ${entity.Name}EntityTest: XCTestCase {
     if (hasList) {
       Content(`
   func testStream() async throws {
-    // Seed two records and activate the streaming feature.
-    let fixtures = vm(("${entity.name}", .map(vm(
+    // Seed two records (under the test feature's entity key) and activate
+    // the streaming feature.
+    let fixtures = vm(("entity", .map(vm(("${entity.name}", .map(vm(
       ("s1", .map(vm(("id", .string("s1"))))),
-      ("s2", .map(vm(("id", .string("s2")))))))))
+      ("s2", .map(vm(("id", .string("s2"))))))))))))
     let sdkopts = vm(
       ("feature", .map(vm(("streaming", .map(vm(("active", .bool(true)))))))))
     let sdk = ${Name}SDK.testSDK(fixtures, sdkopts)
