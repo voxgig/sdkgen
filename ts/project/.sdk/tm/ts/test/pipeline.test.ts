@@ -296,6 +296,33 @@ describe('pipeline:featureAdd ordering', () => {
 })
 
 
+describe('pipeline:feature order', () => {
+
+  function resolve(feature: any) {
+    const ctx = { utility: stdutil, options: { feature }, config: { options: {} } } as any
+    return (stdutil as any).makeOptions(ctx)
+  }
+
+  test('map form is ordered test-first (test is the base transport)', () => {
+    const o = resolve({ metrics: { active: true }, test: { active: true } })
+    strictEqual(o.__derived__.featureorder.join(','), 'test,metrics')
+  })
+
+  test('array form preserves the explicit developer-specified order', () => {
+    const o = resolve([{ name: 'metrics', active: true }, { name: 'test', active: true }])
+    strictEqual(o.__derived__.featureorder.join(','), 'metrics,test')
+    // the array is normalized to a map for merge/init, opts preserved
+    strictEqual(o.feature.metrics.active, true)
+    strictEqual(o.feature.test.active, true)
+  })
+
+  test('map form with no test orders names deterministically', () => {
+    const o = resolve({ retry: { active: true }, cache: { active: true } })
+    strictEqual(o.__derived__.featureorder.join(','), 'cache,retry')
+  })
+})
+
+
 describe('pipeline:prepareAuth', () => {
 
   // Fake client so the exact options.auth / apikey shape is controlled.
