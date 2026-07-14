@@ -1028,15 +1028,20 @@ makeClientBase config makeFeature options = do
   ta <- getpathS opts "feature.test.active"
   when (isTrueV ta) (writeIORef modeR "test")
   writeIORef (cOptions rootctx) opts
-  fm <- toMap <$> getp opts "feature"
-  case fm of
-    VMap _ -> do
-      ks <- keysof fm
-      forM_ ks $ \fname -> do
-        foptsV <- toMap <$> getp fm fname
-        case foptsV of
-          VMap _ -> do a <- getp foptsV "active"; when (isTrueV a) $ do ftr <- makeFeature fname; featureAddUtil rootctx ftr
-          _ -> pure ()
+  -- Add features in the resolved order (makeOptions records an explicit array
+  -- order, else defaults to test-first). Ordering matters: the `test` feature
+  -- installs the base mock transport and the transport features
+  -- (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+  -- must be added before them to sit at the base of the wrapper chain.
+  featureOpts <- do fmV <- toMap <$> getp opts "feature"; case fmV of VMap _ -> pure fmV; _ -> emptyMap
+  orderV <- getpathS opts "__derived__.featureorder"
+  order <- case orderV of VList ref -> readIORef ref; _ -> pure []
+  forM_ order $ \fnameV -> case fnameV of
+    VStr fname -> do
+      foptsV <- toMap <$> getp featureOpts fname
+      case foptsV of
+        VMap _ -> do a <- getp foptsV "active"; when (isTrueV a) $ do ftr <- makeFeature fname; featureAddUtil rootctx ftr
+        _ -> pure ()
     _ -> pure ()
   feats <- readIORef featsR
   forM_ feats (featureInitUtil rootctx)
@@ -1153,6 +1158,14 @@ runOpPipeline ctx postDone = do
                       postDone
                       doneUtil ctx
 
+-- Truncate a materialised stream when the signal fn returns true (checked
+-- before each element, mirroring an async iterator's per-yield cancellation).
+streamTakeUntil :: Value -> [Value] -> IO [Value]
+streamTakeUntil _ [] = pure []
+streamTakeUntil sig (x : xs) = do
+  r <- callVfn sig VNoval
+  if isTrueV r then pure [] else do rest <- streamTakeUntil sig xs; pure (x : rest)
+
 makeEntity :: Client -> String -> Value -> IO Entity
 makeEntity client name entopts = do
   entopts' <- case entopts of VMap _ -> pure entopts; _ -> emptyMap
@@ -1192,6 +1205,45 @@ makeEntity client name entopts = do
         , eCreate = \rd ctrl -> mkOp "create" "data" rd ctrl postCreate
         , eUpdate = \rd ctrl -> mkOp "update" "data" rd ctrl postUpdate
         , eRemove = \rm ctrl -> mkOp "remove" "match" rm ctrl postRemove
+        -- Streaming operation. Runs `action` through the full pipeline and
+        -- returns a lazy list of result items, so the streaming feature's
+        -- incremental output is reachable (a normal op call materialises the
+        -- whole result). When the streaming feature is active the result
+        -- carries a stream closure and this yields from it (honouring
+        -- chunkSize); otherwise it falls back to the materialised items, so
+        -- stream always yields. callopts: ctrl (per-call pipeline control),
+        -- body (an enumerable/list payload attached to the request for
+        -- outbound streaming), signal (a 0-arity fn -> Bool; stop when true).
+        , eStream = \action args callopts -> do
+            ec <- entCtx
+            coV <- case toMap callopts of VMap _ -> pure callopts; _ -> emptyMap
+            ctrlV <- getp coV "ctrl"
+            ctrl <- case toMap ctrlV of VMap _ -> pure ctrlV; _ -> emptyMap
+            setp ctrl "stream" coV
+            mv <- readIORef matchR; dv <- readIORef dataR
+            mC <- clone mv; dC <- clone dv
+            reqmatch <- case toMap args of VMap _ -> pure args; _ -> emptyMap
+            let cspec = defaultCtxSpec { csOpname = Just action, csCtrl = Just ctrl, csMatch = Just mC, csData = Just dC, csReqmatch = Just reqmatch }
+            ctx <- makeContextImpl cspec (Just ec)
+            body <- getp coV "body"
+            when (not (isNoval body) && not (isNullV body)) $ do
+              rdV <- readIORef (cReqdata ctx)
+              rd <- case rdV of VMap _ -> pure rdV; _ -> emptyMap
+              setp rd "body$" body
+              writeIORef (cReqdata ctx) rd
+            _ <- runOpPipeline ctx (pure ())
+            rv <- readIORef (cResult ctx)
+            raw <- case rv of
+              VMap _ -> do
+                sf <- getp rv "stream"
+                case sf of
+                  VFunc _ -> do r <- callVfn sf VNoval; case r of VList _ -> listItems r; _ -> pure []
+                  _ -> do resdata <- getp rv "resdata"; case resdata of VList _ -> listItems resdata; VNoval -> pure []; v -> pure [v]
+              _ -> pure []
+            sig <- getp coV "signal"
+            case sig of
+              VFunc _ -> streamTakeUntil sig raw
+              _ -> pure raw
         }
   root <- readIORef (clRootctx client)
   entctx <- makeContextImpl (defaultCtxSpec { csEntity = Just ent, csEntopts = Just entopts' }) root

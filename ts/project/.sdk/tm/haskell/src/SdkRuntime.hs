@@ -885,6 +885,30 @@ makeOptionsUtil ctx = do
     _ -> pure ()
   optsC <- clone options
   opts0 <- case optsC of VMap _ -> pure optsC; _ -> emptyMap
+  -- Feature add-order. options.feature may be given as an ordered LIST of
+  -- {name, active, ...opts} entries (list position = add order) or a
+  -- {name => {opts}} map. Normalize a list to a map (so merge/validate/init
+  -- are unchanged) and remember the explicit order; a map defaults to
+  -- test-first so the `test` mock transport is the base of the wrapper chain.
+  featureRaw <- getp opts0 "feature"
+  explicitOrder <- case featureRaw of
+    VList ref -> do
+      entries <- readIORef ref
+      fmap' <- emptyMap
+      order <- fmap concat $ mapM (\entry -> case entry of
+        VMap _ -> do
+          nm <- getp entry "name"
+          case nm of
+            VStr name -> do
+              fopts <- clone entry
+              _ <- delprop fopts (VStr "name")
+              setp fmap' name fopts
+              pure [name]
+            _ -> pure []
+        _ -> pure []) entries
+      setp opts0 "feature" fmap'
+      pure (Just order)
+    _ -> pure Nothing
   configV <- readIORef (cConfig ctx)
   config <- case configV of VMap _ -> pure configV; _ -> emptyMap
   cfgoptsV <- toMap <$> getp config "options"
@@ -908,6 +932,17 @@ makeOptionsUtil ctx = do
   cleanEmpty <- emptyMap
   derived <- jo [("clean", cleanEmpty)]
   when (keyre /= "") $ do cm <- jo [("keyre", VStr keyre)]; setp derived "clean" cm
+  -- Resolve the feature add-order: an explicit list order (above) wins;
+  -- otherwise order the map test-first, then the remaining names sorted
+  -- (keysof returns sorted keys), so the result is deterministic.
+  featureOrder <- case explicitOrder of
+    Just ord -> pure ord
+    Nothing -> do
+      fmapV <- getp opts "feature"
+      names <- case fmapV of VMap _ -> keysof fmapV; _ -> pure []
+      pure $ if "test" `elem` names then "test" : filter (/= "test") names else names
+  orderList <- ja (map VStr featureOrder)
+  setp derived "featureorder" orderList
   setp opts "__derived__" derived
   pure opts
 

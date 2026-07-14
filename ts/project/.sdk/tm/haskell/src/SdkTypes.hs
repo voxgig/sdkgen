@@ -116,6 +116,8 @@ data Entity = Entity
   , eCreate  :: Value -> Value -> IO Value
   , eUpdate  :: Value -> Value -> IO Value
   , eRemove  :: Value -> Value -> IO Value
+  -- | stream action args callopts -> a lazy list of result items.
+  , eStream  :: String -> Value -> Value -> IO [Value]
   }
 
 data Context = Context

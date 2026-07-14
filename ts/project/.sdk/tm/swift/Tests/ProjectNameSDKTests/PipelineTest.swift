@@ -39,6 +39,53 @@ final class PipelineTest: XCTestCase {
     return m
   }
 
+  // --- feature order (PR #2) ----------------------------------------------
+
+  // resolveOpts runs makeOptions over an options.feature value (map or list)
+  // and returns the derived options so __derived__.featureorder can be
+  // asserted.
+  private func resolveOpts(_ feature: Value) -> VMap {
+    let (client, utility) = plClient(nil)
+    let options = VMap()
+    options.entries["feature"] = feature
+    let cfg = VMap()
+    cfg.entries["options"] = .map(VMap())
+    let ctxmap: [String: Any?] = [
+      "client": client, "utility": utility, "options": options, "config": cfg,
+    ]
+    let ctx = utility.makeContext(ctxmap, client.getRootCtx())
+    return utility.makeOptions(ctx)
+  }
+
+  private func featureOrder(_ opts: VMap) -> String {
+    guard let list = gpath(opts, "__derived__", "featureorder").asList else { return "" }
+    return list.items.map { $0.asString ?? "" }.joined(separator: ",")
+  }
+
+  func testFeatureOrderMapIsTestFirst() {
+    let feature = vm(
+      ("metrics", .map(vm(("active", .bool(true))))),
+      ("test", .map(vm(("active", .bool(true))))))
+    XCTAssertEqual(featureOrder(resolveOpts(.map(feature))), "test,metrics")
+  }
+
+  func testFeatureOrderArrayPreservesExplicitOrder() {
+    let e1 = vm(("name", .string("metrics")), ("active", .bool(true)))
+    let e2 = vm(("name", .string("test")), ("active", .bool(true)))
+    let o = resolveOpts(.list(VList([.map(e1), .map(e2)])))
+    XCTAssertEqual(featureOrder(o), "metrics,test")
+    // The list is normalized to a map for merge/init; opts are preserved.
+    XCTAssertEqual(gpath(o, "feature", "metrics", "active"), .bool(true))
+    XCTAssertEqual(gpath(o, "feature", "test", "active"), .bool(true))
+  }
+
+  func testFeatureOrderMapNoTestIsSorted() {
+    let feature = vm(
+      ("retry", .map(vm(("active", .bool(true))))),
+      ("cache", .map(vm(("active", .bool(true))))))
+    XCTAssertEqual(featureOrder(resolveOpts(.map(feature))), "cache,retry")
+  }
+
   // PlEntity is a minimal fake entity for the list-wrap test.
   final class PlEntity: Entity {
     let nm: String
