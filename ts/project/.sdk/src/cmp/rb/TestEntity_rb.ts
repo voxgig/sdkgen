@@ -168,6 +168,14 @@ ${hasList ? `
 
     // Model-driven step iteration
     each(basicflow.step, (step: any, index: any) => {
+      // Never emit a REMOVE (or its removed-item verify LIST) without a
+      // preceding CREATE: a coherent CRUD flow only removes what it created,
+      // so a create-less remove would mutate pre-existing (live) data.
+      if (!flowHasCreate) {
+        if ('remove' === step.op) { return }
+        if ('list' === step.op &&
+          (step.valid || []).some((v: any) => 'ItemNotExists' === v.apply)) { return }
+      }
       const opgen: OpGen = GENERATE_OP[step.op]
       if (opgen) {
         opgen(genCtx, step, index)
