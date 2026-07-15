@@ -81,6 +81,41 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 
 ---
 
+## Language parity is CRITICAL
+
+The whole value of sdkgen is that **every target language behaves identically**.
+A component or template lives in a per-language directory
+(`src/cmp/<lang>/`, `tm/<lang>/`), so the SAME logical concern is implemented
+~22 times. **A fix, feature, or behavioural change to one language is almost
+never done until it is mirrored across ALL languages that have that
+component.** Treat "I fixed it in go" as "I have started fixing it everywhere."
+
+Rules:
+
+- **Fix the class, not the instance.** When you fix a bug in one language's
+  component, immediately grep the sibling `src/cmp/*/` files for the same
+  shape and fix every one. Enumerate the targets — don't fix the language in
+  front of you and move on.
+- **`ts`/`js` are the reference implementation.** Bring a change to `ts`/`js`
+  first, then port to the rest; check the others against them.
+- **Parity is testable.** `ts/test/feature.test.ts` /
+  `featuremodel.test.ts` assert cross-language parity — extend them when you
+  add behaviour, and expect a parity test to fail loudly if one language drifts.
+- **A per-language divergence must be deliberate and commented.** If one
+  language genuinely must differ (e.g. go emits a typed struct for EVERY entity
+  because go-cli/go-mcp dispatch all entities dynamically, whereas others emit
+  only for active entities), say so in a comment at the divergence — otherwise
+  a reader can't tell a bug from a decision.
+
+> **Cautionary example (real):** the typed-model emitter filtered structs on the
+> lazily-derived `Name` (`filter(null != e.Name)`), silently dropping fieldless
+> placeholder entities and producing `undefined: Gon2` in generated Go. The fix
+> (derive `Name` via `names()` before emitting) had to land in **all eight**
+> `EntityTypes_<lang>` components — go was merely where it surfaced first. Fixing
+> only go would have left seven latent copies of the same defect.
+
+---
+
 ## Where do I make this change?
 
 | Goal | Edit | Then |
@@ -134,7 +169,9 @@ Debugging a failing target: [debug-generation](./docs/how-to/debug-generation.md
 - `each(...)` iterates objects in **sorted-key order** for deterministic,
   byte-stable output. Do not rely on insertion order.
 - **The `ts`/`js` targets are the reference implementation.** When fixing
-  one language, check the others against `ts`/`js`.
+  one language, check — and fix — the others against `ts`/`js`. Language
+  parity is a hard requirement, not a nicety: see
+  [Language parity is CRITICAL](#language-parity-is-critical).
 
 ---
 
