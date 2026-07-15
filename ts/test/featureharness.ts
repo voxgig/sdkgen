@@ -22,7 +22,7 @@
 import { readFileSync } from 'node:fs'
 import Path from 'node:path'
 
-import * as ts from 'typescript'
+import { transform } from 'sucrase'
 import * as struct from '@voxgig/struct'
 
 
@@ -38,12 +38,10 @@ function cap(name: string): string {
 // `require` returns the shims map (plus real node_modules as a fallback).
 function sandboxLoad(file: string, shims: Record<string, any>): any {
   const src = readFileSync(file, 'utf8')
-  const js = ts.transpileModule(src, {
-    compilerOptions: {
-      module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.ES2020,
-    },
-  }).outputText
+  const js = transform(src, {
+    transforms: ['typescript', 'imports'],
+    filePath: file,
+  }).code
 
   const mod: any = { exports: {} }
   const req = (p: string) => {
