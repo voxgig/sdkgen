@@ -23,6 +23,7 @@ import { Config } from './Config_kotlin'
 import { Gitignore } from './Gitignore_kotlin'
 import { MainEntity } from './MainEntity_kotlin'
 import { EntityBase } from './EntityBase_kotlin'
+import { EntityTypes } from './EntityTypes_kotlin'
 import { SdkError } from './SdkError_kotlin'
 import { kotlinPackage } from './utility_kotlin'
 
@@ -84,6 +85,11 @@ const Main = cmp(async function Main(props: any) {
     })
 
     Config({ target })
+
+    // Generate the typed reference-model file (<Name>Types.kt) beside the
+    // other generated core files. Documentation/DX shapes only — not wired
+    // into the loose-object-model op signatures.
+    EntityTypes({ target, kotlinpackage })
   })
 
 })

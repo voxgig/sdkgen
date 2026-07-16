@@ -23,6 +23,7 @@ import { Config } from './Config_java'
 import { Gitignore } from './Gitignore_java'
 import { MainEntity } from './MainEntity_java'
 import { EntityBase } from './EntityBase_java'
+import { EntityTypes } from './EntityTypes_java'
 import { SdkError } from './SdkError_java'
 import { javaPackage } from './utility_java'
 
@@ -90,6 +91,11 @@ this.utility.featureHook.apply(this.rootctx, "${name}");
     })
 
     Config({ target })
+
+    // Generate the typed reference-model file (<Name>Types.java) beside the
+    // other generated core files. Documentation/DX shapes only — not wired
+    // into the loose-object-model op signatures.
+    EntityTypes({ target, javapackage })
   })
 
 })

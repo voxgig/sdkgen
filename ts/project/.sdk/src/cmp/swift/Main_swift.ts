@@ -24,6 +24,7 @@ import { Gitignore } from './Gitignore_swift'
 import { MainEntity } from './MainEntity_swift'
 import { SdkError } from './SdkError_swift'
 import { EntityBase } from './EntityBase_swift'
+import { EntityTypes } from './EntityTypes_swift'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -86,6 +87,10 @@ const Main = cmp(async function Main(props: any) {
       })
     })
   })
+
+  // entity/<Name>Types.swift — documentary typed models (one struct per entity
+  // + per op). Compiles with the SwiftPM target; nothing consumes it yet.
+  EntityTypes({ target })
 })
 
 

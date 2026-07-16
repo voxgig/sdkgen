@@ -10,6 +10,25 @@
 
 #include "harness.hpp"
 
+// The enterprise feature classes exercised below. Every feature header is
+// shipped with the runtime; blocks whose feature is absent from this SDK's
+// config are skipped at runtime via `have(...)` but must still compile.
+#include "../feature/audit.hpp"
+#include "../feature/cache.hpp"
+#include "../feature/clienttrack.hpp"
+#include "../feature/debug.hpp"
+#include "../feature/idempotency.hpp"
+#include "../feature/metrics.hpp"
+#include "../feature/netsim.hpp"
+#include "../feature/paging.hpp"
+#include "../feature/proxy.hpp"
+#include "../feature/ratelimit.hpp"
+#include "../feature/rbac.hpp"
+#include "../feature/retry.hpp"
+#include "../feature/streaming.hpp"
+#include "../feature/telemetry.hpp"
+#include "../feature/timeout.hpp"
+
 using namespace sdk;
 using namespace sdk::fh;
 

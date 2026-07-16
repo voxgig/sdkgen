@@ -23,6 +23,7 @@ import { Config } from './Config_cpp'
 import { Gitignore } from './Gitignore_cpp'
 import { MainEntity } from './MainEntity_cpp'
 import { EntityBase } from './EntityBase_cpp'
+import { EntityTypes } from './EntityTypes_cpp'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -48,6 +49,10 @@ const Main = cmp(async function Main(props: any) {
 
   // entity/entities.hpp — the entity umbrella (declares every entity header).
   EntityBase({ target })
+
+  // <sdk>_types.hpp — documentation/reference structs (not used by the
+  // Value-based runtime; safe convenience types for consumers).
+  EntityTypes({ target })
 
   Folder({ name: 'core' }, () => {
 

@@ -93,12 +93,30 @@ pub fn make_config() Value {
 pub fn make_feature(name: []const u8) Feature {
 `)
 
+    // The factory must be able to instantiate any built-in feature by name,
+    // not just the ones the current API model configures — a caller can enable
+    // a shipped feature (e.g. netsim) purely through runtime options even when
+    // the API def does not list it. The built-in set mirrors the feature
+    // templates in tm/zig/feature/ (excluding `base`, the fallback, and
+    // `support`, a helper module). Any model feature not already built in is
+    // appended so bespoke features still resolve.
+    const builtinFeatures = [
+      'audit', 'cache', 'clienttrack', 'debug', 'idempotency', 'log',
+      'metrics', 'netsim', 'paging', 'proxy', 'ratelimit', 'rbac',
+      'retry', 'streaming', 'telemetry', 'test', 'timeout',
+    ]
+
+    const featureNames: string[] = [...builtinFeatures]
     each(feature, (f: any) => {
-      const fname = f.name.charAt(0).toUpperCase() + f.name.slice(1)
-      if (f.name !== 'base') {
-        Content(`    if (std.mem.eql(u8, name, "${f.name}")) return @import("../feature/${f.name}.zig").${fname}Feature.make();
-`)
+      if (f.name !== 'base' && !featureNames.includes(f.name)) {
+        featureNames.push(f.name)
       }
+    })
+
+    featureNames.forEach((name: string) => {
+      const fname = name.charAt(0).toUpperCase() + name.slice(1)
+      Content(`    if (std.mem.eql(u8, name, "${name}")) return @import("../feature/${name}.zig").${fname}Feature.make();
+`)
     })
 
     Content(`    return @import("../feature/base.zig").BaseFeature.make();

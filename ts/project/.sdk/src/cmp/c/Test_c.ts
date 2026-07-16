@@ -13,6 +13,7 @@ import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
 
 import { TestEntity } from './TestEntity_c'
 import { TestDirect } from './TestDirect_c'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_c'
 
 
 const Test = cmp(function Test(props: any) {
@@ -42,6 +43,9 @@ int main(void) {
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })
+
+    // Validate the documented C examples in the READMEs are well-formed.
+    ReadmeExamplesTest({ target })
   })
 })
 

@@ -24,6 +24,7 @@ import { Gitignore } from './Gitignore_csharp'
 import { MainEntity } from './MainEntity_csharp'
 import { SdkError } from './SdkError_csharp'
 import { EntityBase } from './EntityBase_csharp'
+import { EntityTypes } from './EntityTypes_csharp'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -82,6 +83,11 @@ const Main = cmp(async function Main(props: any) {
     SdkError({ target })
 
     EntityBase({ target })
+
+    // Generate the typed reference-model file (<Name>Types.cs) beside the
+    // other generated core files. Documentation/DX shapes only — not wired
+    // into the loose-object-model op signatures.
+    EntityTypes({ target })
   })
 })
 

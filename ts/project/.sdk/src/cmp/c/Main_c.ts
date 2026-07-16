@@ -23,6 +23,7 @@ import { Config } from './Config_c'
 import { Gitignore } from './Gitignore_c'
 import { MainEntity } from './MainEntity_c'
 import { EntityBase } from './EntityBase_c'
+import { EntityTypes } from './EntityTypes_c'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -74,6 +75,9 @@ const Main = cmp(async function Main(props: any) {
 
   // core/api.h — the per-API public header (entity constructors + accessors).
   EntityBase({ target })
+
+  // entity/types.h — documentary typed models (one struct per entity + op).
+  EntityTypes({ target })
 
 })
 

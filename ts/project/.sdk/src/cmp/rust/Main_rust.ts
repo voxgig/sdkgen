@@ -24,6 +24,7 @@ import { Config } from './Config_rust'
 import { Gitignore } from './Gitignore_rust'
 import { MainEntity } from './MainEntity_rust'
 import { EntityBase } from './EntityBase_rust'
+import { EntityTypes } from './EntityTypes_rust'
 import { SdkError } from './SdkError_rust'
 import { crateIdent } from './utility_rust'
 
@@ -86,6 +87,10 @@ const Main = cmp(async function Main(props: any) {
 
   // entity/mod.rs — the entity module index.
   EntityBase({ target })
+
+  // entity/types.rs — the documentary typed models (one struct per entity +
+  // per op). Declared as a module by EntityBase so it compiles with the crate.
+  EntityTypes({ target })
 
   // lib.rs — the crate root: module declarations plus the public API
   // re-exports (twin of the go root package file).

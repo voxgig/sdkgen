@@ -81,11 +81,16 @@ recordingServer mreply = do
 
 -- ----- feature presence -----
 
+-- A feature is present when the generated feature factory dispatches the
+-- name to a real implementation. In this SDK every feature is always
+-- compiled in (Cfg.makeFeature maps each known name to its own factory and
+-- falls back to the "base" feature for unknown names), so presence is
+-- determined by the factory, not by the model's default-active `feature`
+-- map (which for a minimal API may list only `test`).
 hasFeature :: String -> IO Bool
 hasFeature name = do
-  cfg <- Cfg.makeConfig
-  fm <- getp cfg "feature"
-  case fm of { VMap _ -> do { v <- getp fm name; pure (not (isNullish v)) }; _ -> pure False }
+  ftr <- Cfg.makeFeature name
+  pure (fName ftr == name)
 
 -- ----- harness -----
 

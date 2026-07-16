@@ -6,6 +6,43 @@ import {
   walk,
 } from '@voxgig/struct'
 
+import {
+  canonKey,
+} from '@voxgig/sdkgen'
+
+
+// Map a canonical type sentinel ($STRING, $INTEGER, ...) to an idiomatic
+// Elixir typespec. Unknown/missing sentinels fall back to `any()` (never
+// throws). The shared canonToType helper has no `elixir` column, so the SDK
+// owns this mapping locally.
+function elixirType(sentinel: unknown): string {
+  switch (canonKey(sentinel)) {
+    case 'STRING': return 'String.t()'
+    case 'INTEGER': return 'integer()'
+    case 'NUMBER': return 'float()'
+    case 'BOOLEAN': return 'boolean()'
+    case 'NULL': return 'nil'
+    case 'ARRAY': return 'list()'
+    case 'OBJECT': return 'map()'
+    default: return 'any()'
+  }
+}
+
+
+// A type-correct, executable Elixir literal for a field/param of the given
+// canonical type. Strings render the quoted placeholder; numeric/boolean/
+// collection types render a real literal so example blocks parse and run.
+function elixirLit(sentinel: unknown, placeholder: string = 'example'): string {
+  switch (canonKey(sentinel)) {
+    case 'INTEGER':
+    case 'NUMBER': return '1'
+    case 'BOOLEAN': return 'true'
+    case 'ARRAY': return '[]'
+    case 'OBJECT': return '%{}'
+    default: return `"${placeholder}"`
+  }
+}
+
 
 function projectPath(suffix?: string): string {
   return Path.normalize(Path.join(__dirname, '../../..', suffix ?? ''))
@@ -81,5 +118,7 @@ export {
   clean,
   formatElixir,
   elixirString,
+  elixirType,
+  elixirLit,
   projectPath,
 }

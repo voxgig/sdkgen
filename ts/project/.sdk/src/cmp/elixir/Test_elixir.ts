@@ -12,6 +12,7 @@ import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
 
 import { TestEntity } from './TestEntity_elixir'
 import { TestDirect } from './TestDirect_elixir'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_elixir'
 
 
 const Test = cmp(function Test(props: any) {
@@ -38,6 +39,9 @@ end
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })
+
+    // Validate the documented elixir examples in the README/REFERENCE docs.
+    ReadmeExamplesTest({ target })
   })
 })
 

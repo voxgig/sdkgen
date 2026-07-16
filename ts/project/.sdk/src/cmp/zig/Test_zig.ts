@@ -10,15 +10,22 @@ import type {
 
 import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
 
-import { zigVarName } from './utility_zig'
+import { TestEntity } from './TestEntity_zig'
+import { TestDirect } from './TestDirect_zig'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_zig'
 
 
 // Generated tests. The bulk of behavioural coverage lives in the hand-written
 // template suite (test/*.zig, copied verbatim): the struct corpus, the
-// pipeline, every feature, and the cross-language gotchas. Here we emit a
-// model-driven smoke test per entity that drives the full pipeline
-// (point -> spec -> request -> mock -> response -> result) through the
-// offline `test` transport.
+// pipeline, every feature, and the cross-language gotchas. Here we emit the
+// model-driven smoke tests.
+//
+// zig's build.zig picks up an EXPLICIT test-file list, so every generated test
+// must land in the single `test/generated_test.zig` file it already lists —
+// the per-entity generators (TestEntity, TestDirect) and the readme-examples
+// gate all emit their `test` blocks INTO this one open File rather than opening
+// their own (the go/rust one-file-per-entity split relies on auto-discovery
+// zig does not have).
 const Test = cmp(function Test(props: any) {
   const { model } = props.ctx$
   const { target } = props
@@ -47,63 +54,12 @@ test "sdk_constructs_in_test_mode" {
 `)
 
       each(entity, (ent: ModelEntity) => {
-        const method = zigVarName(ent.name)
-        const ops = ent.op || {}
-
-        if (ops.load) {
-          Content(`
-test "${method}_load_smoke" {
-    const fixture = h.jo(&.{.{ "${ent.name}", h.jo(&.{.{ "t01", h.jo(&.{.{ "id", h.vstr("t01") }}) }}) }});
-    const testsdk = sdk.test_sdk(h.jo(&.{.{ "entity", fixture }}), vnull());
-    const e = testsdk.${method}(vnull());
-    const res = e.load(h.jo(&.{.{ "id", h.vstr("t01") }}), vnull());
-    switch (res) {
-        .ok => |data| {
-            try std.testing.expect(std.mem.eql(u8, h.get_str(data, "id") orelse "", "t01"));
-        },
-        .err => |er| {
-            std.debug.print("${method} load failed: {s}\\n", .{er.msg});
-            try std.testing.expect(false);
-        },
-    }
-}
-`)
-        }
-
-        if (ops.list) {
-          Content(`
-test "${method}_list_smoke" {
-    const fixture = h.jo(&.{.{ "${ent.name}", h.jo(&.{.{ "t01", h.jo(&.{.{ "id", h.vstr("t01") }}) }}) }});
-    const testsdk = sdk.test_sdk(h.jo(&.{.{ "entity", fixture }}), vnull());
-    const e = testsdk.${method}(vnull());
-    const res = e.list(vnull(), vnull());
-    try std.testing.expect(res == .ok);
-}
-
-test "${method}_stream_smoke" {
-    // stream() runs the list op through the full pipeline and returns the
-    // result items. Seed two entities via test mode; with the streaming
-    // feature active it yields the feature's incremental items, else it falls
-    // back to the materialised items — either way every item is yielded.
-    const fixture = h.jo(&.{.{ "${ent.name}", h.jo(&.{
-        .{ "strm01", h.jo(&.{.{ "id", h.vstr("strm01") }}) },
-        .{ "strm02", h.jo(&.{.{ "id", h.vstr("strm02") }}) },
-    }) }});
-    const sdkopts = h.jo(&.{.{ "feature", h.jo(&.{.{ "streaming", h.jo(&.{.{ "active", h.vbool(true) }}) }}) }});
-    const testsdk = sdk.test_sdk(h.jo(&.{.{ "entity", fixture }}), sdkopts);
-    const e = testsdk.${method}(vnull());
-    const items = e.stream("list", vnull(), vnull());
-    try std.testing.expect(items.len == 2);
-
-    // Fallback: streaming inactive still yields both materialised items.
-    const plainsdk = sdk.test_sdk(h.jo(&.{.{ "entity", fixture }}), vnull());
-    const pe = plainsdk.${method}(vnull());
-    const pitems = pe.stream("list", vnull(), vnull());
-    try std.testing.expect(pitems.len == 2);
-}
-`)
-        }
+        TestEntity({ target, entity: ent })
+        TestDirect({ target, entity: ent })
       })
+
+      // Validate the documented zig quick-start examples run.
+      ReadmeExamplesTest({ target })
     })
   })
 })

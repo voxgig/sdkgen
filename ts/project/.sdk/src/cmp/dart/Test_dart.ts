@@ -14,6 +14,7 @@ import { cmp, each, snakify, Folder, File, Content } from '@voxgig/sdkgen'
 
 import { TestDirect } from './TestDirect_dart'
 import { TestEntity } from './TestEntity_dart'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_dart'
 
 
 const Test = cmp(function Test(props: any) {
@@ -41,6 +42,7 @@ import 'pipeline_test.dart' as pipeline_test;
 import 'feature_test.dart' as feature_test;
 import 'netsim_test.dart' as netsim_test;
 import 'custom_test.dart' as custom_test;
+import 'readme_examples_test.dart' as readme_examples_test;
 `)
 
       each(entity, (ent: ModelEntity) => {
@@ -62,6 +64,7 @@ Future<void> main() async {
   feature_test.tests();
   netsim_test.tests();
   custom_test.tests();
+  readme_examples_test.tests();
 `)
 
       each(entity, (ent: ModelEntity) => {
@@ -82,6 +85,9 @@ Future<void> main() async {
 }
 `)
     })
+
+    // Documentation dart-examples presence & completeness gate.
+    ReadmeExamplesTest({ target })
 
     Folder({ name: 'entity' }, () => {
       each(entity, (ent: ModelEntity) => {

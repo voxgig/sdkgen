@@ -13,6 +13,7 @@ import { cmp, each, Folder } from '@voxgig/sdkgen'
 
 import { TestEntity } from './TestEntity_csharp'
 import { TestDirect } from './TestDirect_csharp'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_csharp'
 
 
 const Test = cmp(function Test(props: any) {
@@ -29,6 +30,9 @@ const Test = cmp(function Test(props: any) {
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })
+
+    // Validate the documented csharp examples in the root + per-language docs.
+    ReadmeExamplesTest({ target })
   })
 })
 

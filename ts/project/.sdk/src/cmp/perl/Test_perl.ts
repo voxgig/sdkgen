@@ -13,6 +13,7 @@ import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
 
 import { TestEntity } from './TestEntity_perl'
 import { TestDirect } from './TestDirect_perl'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_perl'
 
 
 const Test = cmp(function Test(props: any) {
@@ -45,6 +46,9 @@ done_testing();
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })
+
+    // README example snippet gate (syntax + offline test-mode run).
+    ReadmeExamplesTest({ target })
   })
 })
 
