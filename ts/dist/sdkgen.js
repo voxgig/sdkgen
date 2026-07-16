@@ -198,6 +198,10 @@ function SdkGen(opts) {
             log: log.child({ cmp: 'jostraca' }),
             meta: { spec },
             debug: opts.debug,
+            // Respect the caller's `existing` policy (the .sdk/build/sdkgen.js action
+            // config). SDK output should be OVERWRITE, not 3-way merge — that is set
+            // at the scaffold source (create-sdkgen build/sdkgen.js: existing.txt =
+            // { write:true, merge:false }); see docs/explanation/regeneration-overwrite.md.
             existing: opts.existing,
         };
         const jres = await jostraca.generate(jopts, () => Root({ model }));
