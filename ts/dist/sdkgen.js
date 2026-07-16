@@ -161,9 +161,20 @@ function SdkGen(opts) {
         control: {
             dryrun: opts.dryrun
         },
+        // Generated SDK output is fully model-derived and never hand-edited, so
+        // OVERWRITE existing files on regenerate (jostraca's default). Do NOT enable
+        // the 3-way `merge` here: it merges against a `.jostraca` base that drifts
+        // from the toolchain, which (a) silently KEEPS a stale generated file when a
+        // template adds a field a newer component references (-> `undefined: X`
+        // compile errors, e.g. Control.Actor / Result.Stream), and (b) injects
+        // `<<<<<<<` conflict markers when a generated/index file is touched, which
+        // then break downstream parsers (aontu) and compilers. Overwrite makes
+        // generation deterministic: same model -> byte-stable output.
+        // See docs/explanation/regeneration-overwrite.md.
         existing: {
             txt: {
-                merge: true
+                write: true,
+                merge: false
             }
         }
     };
@@ -187,6 +198,10 @@ function SdkGen(opts) {
             log: log.child({ cmp: 'jostraca' }),
             meta: { spec },
             debug: opts.debug,
+            // Respect the caller's `existing` policy (the .sdk/build/sdkgen.js action
+            // config). SDK output should be OVERWRITE, not 3-way merge — that is set
+            // at the scaffold source (create-sdkgen build/sdkgen.js: existing.txt =
+            // { write:true, merge:false }); see docs/explanation/regeneration-overwrite.md.
             existing: opts.existing,
         };
         const jres = await jostraca.generate(jopts, () => Root({ model }));

@@ -130,7 +130,10 @@ Rules:
 ### Never edit generated output
 
 Files in a generated SDK (`ts/`, `go/`, …) are overwritten by
-`generate`/`reset`. Fix the **template or component**, then regenerate.
+`generate`/`reset` — generation is **overwrite, not merge**, so any hand-edit is
+lost. Fix the **template or component**, then regenerate. Why overwrite (and not
+jostraca's 3-way merge, which silently kept stale files and injected `<<<<<<<`
+markers on toolchain bumps): [regeneration-overwrite](./docs/explanation/regeneration-overwrite.md).
 
 ---
 
