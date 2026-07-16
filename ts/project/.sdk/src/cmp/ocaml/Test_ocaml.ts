@@ -13,6 +13,7 @@ import { cmp, each, Folder } from '@voxgig/sdkgen'
 
 import { TestEntity } from './TestEntity_ocaml'
 import { TestDirect } from './TestDirect_ocaml'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_ocaml'
 
 
 const Test = cmp(function Test(props: any) {
@@ -26,6 +27,9 @@ const Test = cmp(function Test(props: any) {
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })
+
+    // Structural gate over the ```ocaml blocks in the generated docs.
+    ReadmeExamplesTest({ target })
   })
 })
 

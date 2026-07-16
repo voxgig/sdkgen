@@ -10,6 +10,7 @@ import type {
 import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
 
 import { hsVarName } from './utility_haskell'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_haskell'
 
 
 // test/SdkGenTests.hs — model-driven per-entity tests: an instance test, a
@@ -23,6 +24,12 @@ const Test = cmp(function Test(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
   Folder({ name: 'test' }, () => {
+
+    // Structural gate over the documented Haskell examples (emits
+    // test/TReadmeExamples.hs); wired into genTests below so it runs in the
+    // standard Runner.
+    ReadmeExamplesTest({ target })
+
     File({ name: 'SdkGenTests.' + target.ext }, () => {
 
       let calls = ''
@@ -230,6 +237,7 @@ import SdkTypes
 import SdkHelpers
 import qualified SdkFeatures as F
 import qualified SdkClient as C
+import qualified TReadmeExamples
 import Testutil
 import TestJson (jsonRead)
 
@@ -252,6 +260,7 @@ newRefData fixture entName = do
 
 genTests :: Counters -> IO ()
 genTests c = do
+  TReadmeExamples.tests c
 ${calls}${defs}`)
     })
   })

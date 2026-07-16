@@ -23,11 +23,15 @@ SDK = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml
 
 ENTITY_TESTS = $(sort $(wildcard test/*_entity_test.ml) $(wildcard test/*_direct_test.ml))
 
+# Doc-example structural gate (present only when the readme phase generated it).
+# Wildcard so an absent file is simply skipped, never a missing-target error.
+DOC_TESTS = $(sort $(wildcard test/readme_examples_test.ml))
+
 # Fixed test order: harness deps first, generated/behaviour tests, summary last.
 SDK_TEST = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml \
   test/testutil.ml test/harness.ml \
   test/t_pipeline.ml test/t_feature.ml test/custom_utility.ml \
-  $(ENTITY_TESTS) test/t_main.ml
+  $(ENTITY_TESTS) $(DOC_TESTS) test/t_main.ml
 
 CORPUS_SRC = utility/vregex.ml utility/voxgig_struct.ml test/struct_corpus.ml
 

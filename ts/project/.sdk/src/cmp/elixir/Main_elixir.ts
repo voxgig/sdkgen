@@ -17,6 +17,7 @@ import { Package } from './Package_elixir'
 import { Config } from './Config_elixir'
 import { Gitignore } from './Gitignore_elixir'
 import { MainEntity } from './MainEntity_elixir'
+import { EntityTypes } from './EntityTypes_elixir'
 
 
 // #`-comment hook marker key (gotcha #1: jostraca's built-in #Name-Tag
@@ -43,6 +44,9 @@ const Main = cmp(async function Main(props: any) {
 
   Package({ target })
   Gitignore({})
+
+  // Generate the documented typespec module (lib/<app>_types.ex).
+  EntityTypes({ target })
 
   // Copy tm/elixir verbatim (with ProjectName/projectname substitution).
   Copy({

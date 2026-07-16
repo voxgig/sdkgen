@@ -13,6 +13,7 @@ import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
 
 import { TestEntity } from './TestEntity_rust'
 import { TestDirect } from './TestDirect_rust'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_rust'
 import { crateIdent } from './utility_rust'
 
 
@@ -42,6 +43,9 @@ fn exists_test_mode() {
       TestEntity({ target, entity, rustcrate })
       TestDirect({ target, entity, rustcrate })
     })
+
+    // Validate the documented rust examples in the READMEs are well-formed.
+    ReadmeExamplesTest({ target })
   })
 })
 

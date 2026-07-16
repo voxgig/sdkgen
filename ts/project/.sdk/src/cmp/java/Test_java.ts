@@ -13,6 +13,7 @@ import { cmp, each, Folder } from '@voxgig/sdkgen'
 
 import { TestEntity } from './TestEntity_java'
 import { TestDirect } from './TestDirect_java'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_java'
 import { javaPackage } from './utility_java'
 
 
@@ -33,6 +34,9 @@ const Test = cmp(function Test(props: any) {
       TestEntity({ target, entity, javapackage })
       TestDirect({ target, entity, javapackage })
     })
+
+    // Validate the documented java examples in the root + per-language docs.
+    ReadmeExamplesTest({ target, javapackage })
   })
 })
 

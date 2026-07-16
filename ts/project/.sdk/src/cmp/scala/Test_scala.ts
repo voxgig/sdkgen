@@ -14,6 +14,7 @@ import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
 
 import { TestEntity } from './TestEntity_scala'
 import { TestDirect } from './TestDirect_scala'
+import { ReadmeExamplesTest } from './ReadmeExamplesTest_scala'
 import { scalaPackage } from './utility_scala'
 
 
@@ -54,6 +55,11 @@ const Test = cmp(function Test(props: any) {
       }
     })
 
+    // Documentation scala-examples presence + structure gate over the root
+    // README, scala/README.md and scala/REFERENCE.md. Driven through the same
+    // shared report by the SdkEntityTestMain aggregator below.
+    ReadmeExamplesTest({ target, scalapackage })
+
     // Aggregating main: run every generated per-entity test through one
     // shared report and exit non-zero on any failure.
     File({ name: 'SdkEntityTestMain.' + target.ext }, () => {
@@ -79,6 +85,8 @@ object SdkEntityTestMain {
         }
       }
       Content(`
+    ReadmeExamplesTest.run(rep)
+
     rep.finish("ENTITY")
   }
 }
