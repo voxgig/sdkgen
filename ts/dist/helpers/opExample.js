@@ -51,16 +51,36 @@ function idLiteral(ent, op, idF) {
 }
 // Render a match object `{ idF: idLit }` (or empty when the entity has no id
 // key) in the target language's object syntax.
+// Spec-derived field names are NOT constrained to be identifiers — e.g.
+// Evervault's `/payments/3ds-sessions/{3ds_session_id}` yields the match key
+// `3ds_session_id`. py/php/rb/go quote every literal key already, but ts/js
+// (`{ key: v }`) and lua (`{ key = v }`) write them bare, and a leading digit
+// or a `-` makes that a syntax error (TS1351 / Lua "'}' expected"). Quote
+// exactly those, leaving ordinary keys in the idiomatic bare form.
+const JS_IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
+// A `key<sep>value` literal pair in the target language's object syntax.
+function litPair(lang, name, value) {
+    switch (lang) {
+        case 'py': return `"${name}": ${value}`;
+        case 'php': return `"${name}" => ${value}`;
+        case 'rb': return `"${name}" => ${value}`;
+        case 'go': return `"${name}": ${value}`;
+        case 'lua': return LUA_IDENT.test(name) ?
+            `${name} = ${value}` : `["${name}"] = ${value}`;
+        default: return JS_IDENT.test(name) ?
+            `${name}: ${value}` : `'${name}': ${value}`;
+    }
+}
 function matchArg(lang, idF, idLit) {
     if (null == idF)
         return 'go' === lang ? 'nil' : '';
+    const p = litPair(lang, idF, idLit);
     switch (lang) {
-        case 'py': return `{"${idF}": ${idLit}}`;
-        case 'php': return `["${idF}" => ${idLit}]`;
-        case 'rb': return `{ "${idF}" => ${idLit} }`;
-        case 'lua': return `{ ${idF} = ${idLit} }`;
-        case 'go': return `map[string]any{"${idF}": ${idLit}}`;
-        default: return `{ ${idF}: ${idLit} }`;
+        case 'py': return `{${p}}`;
+        case 'php': return `[${p}]`;
+        case 'go': return `map[string]any{${p}}`;
+        default: return `{ ${p} }`;
     }
 }
 // The entity's required writable fields for a create/update body, rendered as
@@ -73,17 +93,7 @@ function dataArg(lang, ent, op, idF) {
     // ALL required fields must appear (a typed CreateData rejects a partial); cap
     // only the optional fallback used when the op declares no required field.
     const chosen = required.length ? required : items.slice(0, 3);
-    const pairs = chosen.map((it) => {
-        const v = litFor(lang, it.type);
-        switch (lang) {
-            case 'py': return `"${it.name}": ${v}`;
-            case 'php': return `"${it.name}" => ${v}`;
-            case 'rb': return `"${it.name}" => ${v}`;
-            case 'lua': return `${it.name} = ${v}`;
-            case 'go': return `"${it.name}": ${v}`;
-            default: return `${it.name}: ${v}`;
-        }
-    });
+    const pairs = chosen.map((it) => litPair(lang, it.name, litFor(lang, it.type)));
     switch (lang) {
         case 'php': return `[${pairs.join(', ')}]`;
         case 'lua': return `{ ${pairs.join(', ')} }`;

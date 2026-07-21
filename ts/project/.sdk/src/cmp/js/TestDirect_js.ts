@@ -17,6 +17,7 @@ import {
   cmp,
   snakify,
   isAuthActive,
+  jsProp,
 } from '@voxgig/sdkgen'
 
 
@@ -175,7 +176,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
     const listParamLines = liveListParams.map((lp: any) =>
       `        ${lp.name}: setup.idmap['${lp.key}'],`).join('\n')
     const ancestorParamLines = liveAncestorParams.map((lp: any) =>
-      `      params.${lp.name} = setup.idmap['${lp.key}']`).join('\n')
+      `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']`).join('\n')
 
     liveParamsBlock = `    if (setup.live) {
       const listResult = await client.direct({
@@ -193,11 +194,11 @@ ${listParamLines}
       params.id = listData[0].id
 ${ancestorParamLines}
     } else {
-${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 1}'`).join('\n')}
+${loadParams.map((p: any, i: number) => `      ${jsProp('params', p.name)} = 'direct0${i + 1}'`).join('\n')}
     }`
   } else {
     liveParamsBlock = `    if (!setup.live) {
-${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 1}'`).join('\n')}
+${loadParams.map((p: any, i: number) => `      ${jsProp('params', p.name)} = 'direct0${i + 1}'`).join('\n')}
     }`
   }
 
@@ -254,9 +255,9 @@ function generateDirectList(model: Model, entity: ModelEntity) {
   let paramsBlock = ''
   if (listParams.length > 0) {
     const liveLines = liveParams.map((lp: any) =>
-      `      params.${lp.name} = setup.idmap['${lp.key}']`).join('\n')
+      `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']`).join('\n')
     const mockLines = listParams.map((p: any, i: number) =>
-      `      params.${p.name} = 'direct0${i + 1}'`).join('\n')
+      `      ${jsProp('params', p.name)} = 'direct0${i + 1}'`).join('\n')
 
     paramsBlock = `    const params = {}
     if (setup.live) {

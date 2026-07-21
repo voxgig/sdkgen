@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, safeVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -39,7 +39,7 @@ const client = ${model.const.Name}SDK.test()
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `{ ${items.map((it: any) =>
-          `${it.name}: ${exampleValue(exampleEntity, primaryOpDef, it.name,
+          `${jsKey(it.name)}: ${exampleValue(exampleEntity, primaryOpDef, it.name,
             it.name === idF ? 'test01' : 'example_' + it.name)}`).join(', ')} }`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
@@ -48,7 +48,7 @@ const client = ${model.const.Name}SDK.test()
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `{ ${chosen.map((it: any) =>
-        `${it.name}: ${exampleValue(exampleEntity, primaryOpDef, it.name, 'example_' + it.name)}`).join(', ')} }`
+        `${jsKey(it.name)}: ${exampleValue(exampleEntity, primaryOpDef, it.name, 'example_' + it.name)}`).join(', ')} }`
     }
     Content(`const ${eVar} = await client.${eName}().${primaryOp}(${arg})
 // ${eVar} is ${'list' === primaryOp ? `an array of bare ${eName} records` : `a bare ${eName}`} populated with mock data

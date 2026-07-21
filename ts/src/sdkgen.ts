@@ -52,7 +52,7 @@ import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonKey } from './helpers/canonType'
 import { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName } from './helpers/opShape'
-import { isReservedName, safeVarName } from './helpers/naming'
+import { isReservedName, safeVarName, jsProp, jsOptProp, jsKey } from './helpers/naming'
 import {
   packageName,
   installCommand,
@@ -473,6 +473,9 @@ export {
   entityClassName,
   isReservedName,
   safeVarName,
+  jsProp,
+  jsOptProp,
+  jsKey,
 
   packageName,
   installCommand,

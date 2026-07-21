@@ -31,7 +31,7 @@ import { collectDeps } from './helpers/collectDeps';
 import type { DepEntry } from './helpers/collectDeps';
 import { canonToType, canonKey } from './helpers/canonType';
 import { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName } from './helpers/opShape';
-import { isReservedName, safeVarName } from './helpers/naming';
+import { isReservedName, safeVarName, jsProp, jsOptProp, jsKey } from './helpers/naming';
 import { packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, envName, repoInfo, apiName, langLabel, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL } from './helpers/packageMeta';
 type SdkGenOptions = {
     folder: string;
@@ -99,4 +99,4 @@ export declare const Inject: Component;
 export declare const Line: Component;
 export declare const Slot: Component;
 export declare const List: Component;
-export { Main, Deploy, License, Security, Changelog, Entity, Feature, Test, Readme, ReadmeTop, AgentGuideTop, AgentGuide, AgentGuideFeature, ReadmeInstall, ReadmeQuick, ReadmeErrors, ReadmeIntro, ReadmeModel, ReadmeOptions, ReadmeEntity, ReadmeHowto, ReadmeExplanation, ReadmeRef, FeatureHook, Jostraca, SdkGen, requirePath, isAuthActive, resolveAuthPrefix, buildIdNames, getMatchEntries, collectDeps, canonToType, canonKey, OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, isReservedName, safeVarName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, envName, repoInfo, apiName, langLabel, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, };
+export { Main, Deploy, License, Security, Changelog, Entity, Feature, Test, Readme, ReadmeTop, AgentGuideTop, AgentGuide, AgentGuideFeature, ReadmeInstall, ReadmeQuick, ReadmeErrors, ReadmeIntro, ReadmeModel, ReadmeOptions, ReadmeEntity, ReadmeHowto, ReadmeExplanation, ReadmeRef, FeatureHook, Jostraca, SdkGen, requirePath, isAuthActive, resolveAuthPrefix, buildIdNames, getMatchEntries, collectDeps, canonToType, canonKey, OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, isReservedName, safeVarName, jsProp, jsOptProp, jsKey, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, envName, repoInfo, apiName, langLabel, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, };

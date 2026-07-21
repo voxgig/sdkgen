@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -94,7 +94,7 @@ for (const ${eVar} of ${eVar}s) {
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatchLines = neRequired.map((it: any) =>
-        `    ${it.name}: ${exampleValue(nestedEntity, loadOp, it.name,
+        `    ${jsKey(it.name)}: ${exampleValue(nestedEntity, loadOp, it.name,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)},`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -124,7 +124,7 @@ ${neMatchLines.join('\n')}
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `{ ${loadRequired.map((it: any) =>
-          `${it.name}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, it.name,
+          `${jsKey(it.name)}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, it.name,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')} }`
         : ''
 
@@ -169,7 +169,7 @@ try {
           ? (required.length ? required : items.slice(0, 2))
           : required.concat(optional).slice(0, Math.max(2, required.length))
         return chosen.map((it: any) =>
-          `  ${it.name}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
+          `  ${jsKey(it.name)}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
       }
 
       // The id VALUE for an update/remove match. When the entity's DATA type
@@ -211,8 +211,8 @@ const updated = await client.${eName}().update({${updateBody}})
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `  ${it.name}: ${idValueFor('remove')},`
-            : `  ${it.name}: ${exampleValue(exampleEntity, exampleEntity.op.remove, it.name, 'example_' + it.name)},`)
+            ? `  ${jsKey(it.name)}: ${idValueFor('remove')},`
+            : `  ${jsKey(it.name)}: ${exampleValue(exampleEntity, exampleEntity.op.remove, it.name, 'example_' + it.name)},`)
         Content(`// Remove
 await client.${eName}().remove(${removeLines.length ? `{\n${removeLines.join('\n')}\n}` : ''})
 `)

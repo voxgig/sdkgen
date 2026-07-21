@@ -83,7 +83,40 @@ function safeVarName(name: string, lang: string): string {
 }
 
 
+// A valid ECMAScript identifier — the only shape `obj.name` can express.
+const JS_IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/
+
+
+// A safe JS/TS property-access expression for a SPEC-DERIVED key: dot
+// notation when the key is a valid identifier, bracket notation otherwise.
+// OpenAPI path/query parameter names are not constrained to identifiers —
+// e.g. Evervault's `/payments/3ds-sessions/{3ds_session_id}` yields
+// `3ds_session_id`, and `params.3ds_session_id` is a syntax error (TS1434).
+// The other language targets already quote these keys (`params["..."]`);
+// this keeps ts/js in parity.
+function jsProp(obj: string, name: string): string {
+  return JS_IDENT.test(name) ? `${obj}.${name}` : `${obj}[${JSON.stringify(name)}]`
+}
+
+
+// A safe JS/TS OBJECT-LITERAL key for a spec-derived field name: bare when
+// the name is a valid identifier, single-quoted otherwise. `{ 3ds_session_id:
+// 1 }` is a syntax error (TS1351) — doc examples must quote such keys.
+function jsKey(name: string): string {
+  return JS_IDENT.test(name) ? name : `'${name}'`
+}
+
+
+// As `jsProp`, but optional-chained: `obj?.name` / `obj?.["3ds_session_id"]`.
+function jsOptProp(obj: string, name: string): string {
+  return JS_IDENT.test(name) ? `${obj}?.${name}` : `${obj}?.[${JSON.stringify(name)}]`
+}
+
+
 export {
   isReservedName,
   safeVarName,
+  jsProp,
+  jsOptProp,
+  jsKey,
 }

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape, safeVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -281,7 +281,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `{ ${matchItems.map((it: any) =>
-                `${it.name}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
+                `${jsKey(it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')} }`
               : ''
             Content(`\`\`\`ts
@@ -308,7 +308,7 @@ const results = await client.${ent.Name}().${opname}()
 const result = await client.${ent.Name}().create({
 `)
             createItems.map((it: any) => {
-              Content(`  ${it.name}: ${exampleValue(ent, ent.op && ent.op.create, it.name, 'example_' + it.name)},
+              Content(`  ${jsKey(it.name)}: ${exampleValue(ent, ent.op && ent.op.create, it.name, 'example_' + it.name)},
 `)
             })
             Content(`})
@@ -324,7 +324,7 @@ const result = await client.${ent.Name}().create({
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `  ${it.name}: ${exampleValue(ent, ent.op && ent.op.update, it.name,
+              `  ${jsKey(it.name)}: ${exampleValue(ent, ent.op && ent.op.update, it.name,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`ts
 const result = await client.${ent.Name}().update({

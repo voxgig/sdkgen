@@ -17,6 +17,8 @@ import {
   cmp,
   snakify,
   isAuthActive,
+  jsProp,
+  jsOptProp,
 } from '@voxgig/sdkgen'
 
 
@@ -192,7 +194,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
     .filter((q: any) => q.reqd && undefined !== q.example && null !== q.example)
   const hasLiveQuery = liveQueryEntries.length > 0
   const liveQueryLines = liveQueryEntries
-    .map((q: any) => `      query.${q.name} = ${JSON.stringify(q.example)}`)
+    .map((q: any) => `      ${jsProp('query', q.name)} = ${JSON.stringify(q.example)}`)
     .join('\n')
 
   // Get list info for live mode bootstrapping
@@ -245,12 +247,12 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   let liveParamsBlock = ''
   if (allLoadParamsHaveExamples) {
     const exampleLines = loadParams.map(
-      (p: any) => `      params.${p.name} = ${JSON.stringify(p.example)}`
+      (p: any) => `      ${jsProp('params', p.name)} = ${JSON.stringify(p.example)}`
     ).join('\n')
     liveParamsBlock = `    if (setup.live) {
 ${liveQueryPrefix}${exampleLines}
     } else {
-${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 1}'`).join('\n')}
+${loadParams.map((p: any, i: number) => `      ${jsProp('params', p.name)} = 'direct0${i + 1}'`).join('\n')}
     }`
   }
   else if (hasList) {
@@ -262,7 +264,7 @@ ${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 
     const listParamLines = liveListParams.map((lp: any) =>
       `        ${lp.name}: setup.idmap['${lp.key}'],`).join('\n')
     const ancestorParamLines = liveAncestorParams.map((lp: any) =>
-      `      params.${lp.name} = setup.idmap['${lp.key}']`).join('\n')
+      `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']`).join('\n')
     // Try every load-path param name as the candidate field on listData[0].
     // Some APIs name the path param differently from the response field
     // (e.g. path uses {id} while response has mal_id), so we attempt the
@@ -286,14 +288,14 @@ ${listParamLines}
       if (null == listArr || listArr.length === 0) {
         return // skip: no entities to load in live mode
       }
-      const candidateId = listArr[0]?.${idParamName} ?? listArr[0]?.id
+      const candidateId = ${jsOptProp('listArr[0]', idParamName)} ?? listArr[0]?.id
       if (null == candidateId) {
         return // skip: list response shape does not expose load identifier
       }
-      params.${idParamName} = candidateId
+      ${jsProp('params', idParamName)} = candidateId
 ${ancestorParamLines}
     } else {
-${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 1}'`).join('\n')}
+${loadParams.map((p: any, i: number) => `      ${jsProp('params', p.name)} = 'direct0${i + 1}'`).join('\n')}
     }`
   } else if (hasLiveQuery || loadParams.length > 0) {
     // Synthetic-only fallback: if there are load params with no examples
@@ -306,7 +308,7 @@ ${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 
     liveParamsBlock = `    if (setup.live) {
 ${liveQueryPrefix.replace(/\n$/, '')}
     } else {
-${loadParams.map((p: any, i: number) => `      params.${p.name} = 'direct0${i + 1}'`).join('\n')}
+${loadParams.map((p: any, i: number) => `      ${jsProp('params', p.name)} = 'direct0${i + 1}'`).join('\n')}
     }`
   } else {
     liveParamsBlock = ''
@@ -369,7 +371,7 @@ function generateDirectList(model: Model, entity: ModelEntity) {
   const listQuery = listPoint.args?.query || []
   const liveQueryLines = listQuery
     .filter((q: any) => q.reqd && undefined !== q.example && null !== q.example)
-    .map((q: any) => `      query.${q.name} = ${JSON.stringify(q.example)}`)
+    .map((q: any) => `      ${jsProp('query', q.name)} = ${JSON.stringify(q.example)}`)
     .join('\n')
 
   // Build live params
@@ -388,10 +390,10 @@ function generateDirectList(model: Model, entity: ModelEntity) {
     const liveLines = [
       liveQueryLines,
       liveParams.map((lp: any) =>
-        `      params.${lp.name} = setup.idmap['${lp.key}']`).join('\n'),
+        `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']`).join('\n'),
     ].filter(Boolean).join('\n')
     const mockLines = listParams.map((p: any, i: number) =>
-      `      params.${p.name} = 'direct0${i + 1}'`).join('\n')
+      `      ${jsProp('params', p.name)} = 'direct0${i + 1}'`).join('\n')
 
     paramsBlock = `    const params: any = {}
     const query: any = {}

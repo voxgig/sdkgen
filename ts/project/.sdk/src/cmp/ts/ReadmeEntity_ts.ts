@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, opRequestShape, safeVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -108,7 +108,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `{ ${loadItems.map((it: any) =>
-          `${it.name}: ${exampleValue(entity, entity.op && entity.op.load, it.name,
+          `${jsKey(it.name)}: ${exampleValue(entity, entity.op && entity.op.load, it.name,
             it.name === idF ? entity.name + '_id' : it.name)}`).join(', ')} }`
         : ''
       Content(`#### Example: Load
@@ -143,7 +143,7 @@ const ${eVar}s = await client.${entity.Name}().list()
 const ${eVar} = await client.${entity.Name}().create({
 `)
       createItems.map((it: any) => {
-        Content(`  ${it.name}: ${exampleValue(entity, entity.op && entity.op.create, it.name, 'example_' + it.name)},
+        Content(`  ${jsKey(it.name)}: ${exampleValue(entity, entity.op && entity.op.create, it.name, 'example_' + it.name)},
 `)
       })
       Content(`})

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityOps, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityOps, safeVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -64,7 +64,7 @@ const client = ${ctor}
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
       return chosen.map((it: any) =>
-        `  ${it.name}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
+        `  ${jsKey(it.name)}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)},`)
     }
 
     // The full REQUIRED match for load/remove (id first, then parent path
@@ -77,7 +77,7 @@ const client = ${ctor}
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       return 0 < matchItems.length
         ? `{ ${matchItems.map((it: any) =>
-          `${it.name}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op[opname], it.name,
+          `${jsKey(it.name)}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op[opname], it.name,
             it.name === idF ? exampleEntity.name + '_id' : 'example_' + it.name)}`).join(', ')} }`
         : ''
     }

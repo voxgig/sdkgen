@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -70,7 +70,7 @@ for (const ${eVar} of ${eVar}s) {
         .sort((a: any, b: any) =>
           (a.name === neIdF ? 1 : 0) - (b.name === neIdF ? 1 : 0))
         .map((it: any) =>
-          `  ${it.name}: ${exampleValue(nestedEntity, loadOp, it.name,
+          `  ${jsKey(it.name)}: ${exampleValue(nestedEntity, loadOp, it.name,
             it.name === neIdF ? 'example_id' : 'example_' + it.name)},`)
 
       Content(`
