@@ -64,6 +64,14 @@ const Entity = cmp(function Entity(props: any) {
             `// Typed models: see ../${model.const.Name}Types.dart ` +
             `(${entity.Name} and the per-op request/match types).`),
 
+          // dart:async (Future/Stream) and ErrUtility are only referenced by
+          // op method bodies, so an op-less entity would import them unused.
+          // Emit them only when the entity actually has operations.
+          '#OpImports': opnames.length > 0
+            ? ({ indent }: any) => Content({ indent },
+              `import 'dart:async';\nimport '../utility/ErrUtility.dart';`)
+            : '',
+
           ...opfrags,
         }
       })

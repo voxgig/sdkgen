@@ -39,7 +39,10 @@ Future<dynamic> makeRequest(dynamic ctx) async {
 
     spec.step = 'prerequest';
 
-    final fetched =
+    // `dynamic` (not the inferred non-nullable type): the fetcher is injected
+    // and may return null at runtime, so the null guard below is real — an
+    // inferred non-null type would make it an `unnecessary_null_comparison`.
+    final dynamic fetched =
         await Future.value(fetcher(ctx, fetchdef['url'], fetchdef));
 
     if (null == fetched) {

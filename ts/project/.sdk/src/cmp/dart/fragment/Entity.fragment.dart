@@ -1,10 +1,8 @@
 
 // ignore_for_file: non_constant_identifier_names
 
-import 'dart:async';
-
+// #OpImports
 import '../ProjectNameEntityBase.dart';
-import '../utility/ErrUtility.dart';
 
 // #TypeImports
 
