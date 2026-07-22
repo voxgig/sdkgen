@@ -20,8 +20,18 @@ main: kit: feature: &: target: zig: deps: &: {
 }
 
 
-# Publication: Zig has no central registry — publishing IS the git tag
-# (declared; the Makefile pushes zig/vX.Y.Z).
+# Publication: Zig has no central registry — publishing IS the git tag.
+# The `registry: { state:'pending', name:'none' }` placeholder (same as c/cpp)
+# routes deploy-zig to the root tag-push recipe. WITHOUT it, Deploy.ts falls
+# through to `make -C zig publish` — but zig's Makefile has no `publish` target,
+# so the deploy fails. Mirror c.aontu exactly.
 main: kit: target: zig: publish: {
   tag: { active: true }
+  registry: {
+    state: 'pending'
+    active: false
+    name: 'none'
+    url: ''
+    vault: { alias: 'none', env: 'NONE' }
+  }
 }
