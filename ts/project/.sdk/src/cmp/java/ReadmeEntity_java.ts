@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,20 +9,7 @@ import {
 import { javaVarName } from './utility_java'
 
 
-// Map the canonical sentinels to real Java types. The SDK's loose object
-// model stores every value in a Map<String, Object>, so these are the
-// documented shapes a caller sees.
-function javaType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'String'
-  if ('INTEGER' === k) return 'long'
-  if ('NUMBER' === k) return 'double'
-  if ('BOOLEAN' === k) return 'boolean'
-  if ('ARRAY' === k) return 'List<Object>'
-  if ('OBJECT' === k) return 'Map<String, Object>'
-  return 'Object'
-}
-
+// Type names come from the shared canonToType 'java' column (single source of truth).
 
 // A type-correct, JSON-serialisable Java literal for a field's canonical type.
 function javaLit(type: any, placeholder: string = 'example'): string {
@@ -118,7 +105,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.short || ''
-        Content(`| \`${field.name}\` | \`${javaType(field.type)}\` | ${desc} |
+        Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${desc} |
 `)
       })
 
@@ -171,7 +158,7 @@ Object ${eVar} = client.${accessor}(null).create(Map.of(
 `)
       createItems.map((it: any, i: number) => {
         const comma = i < createItems.length - 1 ? ',' : ''
-        Content(`    "${it.name}", ${javaLit(it.type, 'example_' + it.name)}${comma}  // ${javaType(it.type)}
+        Content(`    "${it.name}", ${javaLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`), null);

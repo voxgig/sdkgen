@@ -14,16 +14,19 @@
 //
 // The typedefs are emitted at file (script) scope so they are GLOBAL across
 // the SDK's JS program — the op fragments reference them by bare name
-// (@param {AdviceLoadMatch} / @returns {Promise<Advice>}). Keeps the SAME
-// type-name scheme as the TS reference (<Name>, <Name>LoadMatch,
-// <Name>ListMatch, <Name>CreateData, <Name>UpdateData, <Name>RemoveMatch).
+// (@param {AdviceLoadMatch} / @returns {Promise<Advice>}). The program itself
+// is established by the tm/js/jsconfig.json template shipped at the SDK root
+// (one project spanning src/ + test/), so resolution does not depend on
+// editor workspace inference. Keeps the SAME type-name scheme as the TS
+// reference (<Name>, <Name>LoadMatch, <Name>ListMatch, <Name>CreateData,
+// <Name>UpdateData, <Name>RemoveMatch).
 
 import {
   cmp, each, names,
   File, Content,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -42,14 +45,28 @@ function propKey(name: string): string {
 
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = each(entity).filter((e: any) => e.active !== false)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
+  // Emit for EVERY entity that gets generated entity code: the consumer
+  // scaffold (create-sdkgen Root.ts) iterates entities WITHOUT an active
+  // filter, so inactive entities still get class files referencing these
+  // typed names. Filter on `name` (always present), NOT `active` — parity
+  // with the go emitter's fix.
+  const entityList = each(entity).filter((e: any) => e && null != e.name)
   // Derive the PascalCase Name up-front — it is set LAZILY by names(), so an
   // entity not yet named (e.g. a fieldless placeholder) would otherwise read
   // `Name = undefined` below. Parity with the go emitter's fix.
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   File({ name: model.const.Name + 'Types.' + LANG }, () => {
 

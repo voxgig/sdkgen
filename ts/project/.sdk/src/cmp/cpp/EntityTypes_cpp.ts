@@ -12,10 +12,12 @@
 // safe (it cannot affect the runtime or the test build).
 //
 // Field/param sentinels ($STRING, $INTEGER, ...) map to concrete C++ types via
-// a local table (the shared canonToType has no C++ column). Object/array/any
-// surface as the dynamic sdk::Value. Optional (req:false) members are marked
-// with a trailing `// optional` comment — a struct member is always present in
-// C++, so key-optionality is documented rather than encoded.
+// the SHARED canonToType 'cpp' column (the single source of truth per language
+// — do not keep a local table here). Array surfaces as std::vector<Value>,
+// object as std::map<std::string, Value>, and any/null/unknown as the dynamic
+// sdk::Value. Optional (req:false) members are marked with a trailing
+// `// optional` comment — a struct member is always present in C++, so
+// key-optionality is documented rather than encoded.
 //
 // Keep the SAME type-name scheme as every other language: <Name>,
 // <Name>LoadMatch, <Name>ListMatch, <Name>CreateData, <Name>UpdateData,
@@ -24,7 +26,7 @@
 import {
   cmp, each, names,
   File, Content,
-  canonKey, opTypeName, opRequestShape,
+  canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions,
 } from '@voxgig/sdkgen'
 
 import {
@@ -33,17 +35,7 @@ import {
 } from '@voxgig/apidef'
 
 
-// Map a canonical type sentinel to a concrete C++ type. Array/object/any
-// surface as the dynamic sdk::Value (the runtime type).
-function cppType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'std::string'
-  if ('INTEGER' === k) return 'int64_t'
-  if ('NUMBER' === k) return 'double'
-  if ('BOOLEAN' === k) return 'bool'
-  if ('ARRAY' === k) return 'std::vector<Value>'
-  return 'Value'
-}
+const LANG = 'cpp'
 
 
 // A valid C++ identifier for a struct member; non-identifier field names have
@@ -55,8 +47,22 @@ function cppIdent(name: string): boolean {
 
 
 // Emit a struct named `typeName` from a list of {name, type, optional} items.
-function emitStruct(typeName: string, items: any[]): void {
+// An item whose name is not a legal identifier is skipped (WITH a warning —
+// the key stays reachable via the runtime Value map, but its absence from the
+// typed model should be visible, not silent).
+function emitStruct(typeName: string, items: any[], log?: any): void {
   const usable = items.filter((it: any) => it && null != it.name && cppIdent(it.name))
+
+  items.forEach((it: any) => {
+    if (it && null != it.name && !cppIdent(it.name) && log && log.warn) {
+      log.warn({
+        point: 'entity-types-skip-field', typeName, field: it.name,
+        note: `cpp: field "${it.name}" of ${typeName} has no legal C++ ` +
+          `identifier form; omitted from the typed model (still reachable ` +
+          `via the runtime Value map)`,
+      })
+    }
+  })
 
   if (0 === usable.length) {
     Content(`struct ${typeName} {};
@@ -69,7 +75,7 @@ function emitStruct(typeName: string, items: any[]): void {
 `)
   usable.forEach((it: any) => {
     const opt = it.optional ? '  // optional' : ''
-    Content(`  ${cppType(it.type)} ${it.name};${opt}
+    Content(`  ${canonToType(it.type, LANG)} ${it.name};${opt}
 `)
   })
   Content(`};
@@ -79,14 +85,28 @@ function emitStruct(typeName: string, items: any[]): void {
 
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
   const target = props.target || {}
   const ext = target.ext || 'hpp'
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = each(entity).filter((e: any) => e.active !== false)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
+  // Emit for EVERY entity that gets generated entity code: the consumer
+  // scaffold (create-sdkgen Root.ts) iterates entities WITHOUT an active
+  // filter, so inactive entities still get class files referencing these
+  // typed names. Filter on `name` (always present), NOT `active` — parity
+  // with the go emitter's fix.
+  const entityList = each(entity).filter((e: any) => e && null != e.name)
   // Derive the PascalCase Name up-front — it is set LAZILY by names().
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   const guard = 'SDK_' + model.const.Name.toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_TYPES_HPP'
 
@@ -97,7 +117,8 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 // GENERATED from the API model: main.${KIT}.entity.<e>.fields[] and per-op
 // params. The C++ SDK runtime is Value-based, so these structs are
 // DOCUMENTATION / convenience types only — the SDK neither includes nor
-// requires this header. Object/array/any fields surface as sdk::Value.
+// requires this header. Array fields surface as std::vector<Value>, object
+// fields as std::map<std::string, Value>, and any/null fields as sdk::Value.
 // Optional (req:false) members are flagged with a trailing "// optional"
 // comment. Do not edit by hand.
 
@@ -105,6 +126,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 #define ${guard}
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -123,7 +145,7 @@ namespace types {
       // Entity data model: one member per field, `req:false` -> optional.
       emitStruct(Name, fields.map((f: any) => ({
         name: f.name, type: f.type, optional: false === f.req,
-      })))
+      })), log)
 
       // Per active op: a request/match type. Members and their optionality
       // come from the shared partiality policy (opRequestShape).
@@ -134,7 +156,7 @@ namespace types {
         }
         const typeName = opTypeName(Name, opname)
         const { items } = opRequestShape(ent, opname)
-        emitStruct(typeName, items)
+        emitStruct(typeName, items, log)
       })
     })
 

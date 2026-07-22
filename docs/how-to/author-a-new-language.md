@@ -78,7 +78,12 @@ are loaded *without* `ignore`, so a missing one is a hard error):
 
 `Main_<lang>` typically composes sub-components you also write:
 `Package_<lang>` (the manifest), `Config_<lang>`, `MainEntity_<lang>`,
-`EntityBase_<lang>`, `SdkError_<lang>`, `EntityOperation_<lang>`.
+`EntityBase_<lang>`, `SdkError_<lang>`, `EntityOperation_<lang>`, and
+`EntityTypes_<lang>` (the typed-model emitter — see
+[typed models](../reference/typed-models.md) and the PORT RECIPE header in
+`EntityTypes_ts.ts`; add the language's `CANON_TYPE` column in
+`ts/src/helpers/canonType.ts` first, and extend `canontype.test.ts` /
+`entitytypes.test.ts` to cover it).
 
 ### Optional README components
 

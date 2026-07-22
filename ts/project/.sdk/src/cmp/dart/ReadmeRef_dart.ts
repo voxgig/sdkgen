@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,23 +9,7 @@ import {
 import { dartPackageName } from './Package_dart'
 
 
-// Sentinel -> Dart type. Dart is not in the shared canonToType table, so the
-// mapping is local (mirrors EntityTypes_dart.ts DART_TYPE).
-const DART_TYPE: Record<string, string> = {
-  STRING: 'String',
-  INTEGER: 'int',
-  NUMBER: 'num',
-  BOOLEAN: 'bool',
-  NULL: 'Object',
-  ARRAY: 'List<dynamic>',
-  OBJECT: 'Map<String, dynamic>',
-  ANY: 'dynamic',
-}
-
-function dartType(type: any): string {
-  return DART_TYPE[canonKey(type)] ?? 'dynamic'
-}
-
+// Type names come from the shared canonToType 'dart' column (single source of truth).
 
 // A type-correct Dart literal for a field's canonical type. Strings render
 // the quoted placeholder (single-quoted, matching the generated Dart style).
@@ -215,7 +199,7 @@ final ${eVar} = client.${ent.Name}();
         each(fields, (field: any) => {
           const req = field.req ? 'Yes' : 'No'
           const desc = field.short || ''
-          Content(`| \`${field.name}\` | \`${dartType(field.type)}\` | ${req} | ${desc} |
+          Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${req} | ${desc} |
 `)
         })
 
@@ -299,7 +283,7 @@ for (final ${eVar} in results) {
 final result = await client.${ent.Name}().create({
 `)
             createItems.map((it: any) => {
-              Content(`  '${it.name}': ${dartLit(it.type, 'example_' + it.name)},  // ${dartType(it.type)}
+              Content(`  '${it.name}': ${dartLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`});

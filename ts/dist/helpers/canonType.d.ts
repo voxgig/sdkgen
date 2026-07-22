@@ -1,7 +1,8 @@
-type CanonLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go';
+type CanonLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go' | 'csharp' | 'java' | 'kotlin' | 'scala' | 'swift' | 'dart' | 'rust' | 'c' | 'cpp' | 'elixir';
 declare const CANON_TYPE: Record<string, Record<CanonLang, string>>;
 declare const CANON_ANY: Record<CanonLang, string>;
+declare const CANON_UNION_JOIN: Partial<Record<CanonLang, string>>;
 declare function canonKey(sentinel: unknown): string;
 declare function canonToType(sentinel: unknown, lang: string): string;
-export { canonToType, canonKey, CANON_TYPE, CANON_ANY, };
+export { canonToType, canonKey, CANON_TYPE, CANON_ANY, CANON_UNION_JOIN, };
 export type { CanonLang, };

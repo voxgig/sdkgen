@@ -31,7 +31,7 @@ import {
   File, Content, Folder,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -74,9 +74,13 @@ function fieldLine(name: string, sentinel: any, optional: boolean): string {
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
   const { target } = props
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   // Emit for every entity that gets an entity file. Main_go.ts / Entity_go.ts
   // iterate entities WITHOUT an `active` filter and reference the typed data
   // type `<Name>` in every *_entity.go, so a struct is required for each or the
@@ -88,6 +92,11 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   // the struct set is deterministic and matches the *_entity.go set.
   const entityList = each(entity).filter((e: any) => e && null != e.name)
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   Folder({ name: 'entity' }, () => {
 

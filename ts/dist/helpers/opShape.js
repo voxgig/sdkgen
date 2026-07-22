@@ -37,6 +37,8 @@ exports.entityOps = entityOps;
 exports.entityPrimaryOp = entityPrimaryOp;
 exports.pickExampleEntity = pickExampleEntity;
 exports.entityClassName = entityClassName;
+exports.entityTypeCollisions = entityTypeCollisions;
+exports.warnEntityTypeCollisions = warnEntityTypeCollisions;
 const jostraca_1 = require("jostraca");
 // The five ops, and whether their request payload is a `Match` (query/id) or
 // `Data` (body) — this fixes the generated type-name suffix per op.
@@ -263,6 +265,56 @@ function entityClassName(ent, entityColl) {
     }
     const map = entityClassNames(entityColl);
     return map[ent.name] || (ent.Name + 'Entity');
+}
+// Cross-entity TYPE-name collision detection. entityClassNames keeps CLASS
+// names collision-free, but the DATA/op type names are the raw `<Name>` /
+// opTypeName(...) — two entities whose PascalCase Name coincides (e.g.
+// `foo-bar` vs `foo_bar`), or a data-type name equal to another entity's
+// op-type name, emit DUPLICATE top-level type declarations: a redeclaration
+// compile error in go/rust/c/cpp/csharp and the JVM containers, silent
+// merging in ts. The names cannot be auto-renamed here — the generated
+// entity classes and op fragments reference them by token — so the guard
+// surfaces the collision loudly instead. Returns the sorted duplicate names
+// (empty when clean). Callers must have derived `Name` on each entity
+// (every EntityTypes emitter does).
+//
+// Memoised per entity-collection object, like entityClassNames.
+const _typeCollisionCache = new WeakMap();
+function entityTypeCollisions(entityColl) {
+    const cached = _typeCollisionCache.get(entityColl);
+    if (null != cached) {
+        return cached;
+    }
+    const counts = {};
+    const bump = (n) => { counts[n] = (counts[n] || 0) + 1; };
+    (0, jostraca_1.each)(entityColl)
+        .filter((e) => e && null != e.name && null != e.Name)
+        .forEach((e) => {
+        bump(e.Name);
+        for (const op of ['load', 'list', 'create', 'update', 'remove']) {
+            if (e.op && e.op[op]) {
+                bump(opTypeName(e.Name, op));
+            }
+        }
+    });
+    const out = Object.keys(counts).filter((n) => 1 < counts[n]).sort();
+    _typeCollisionCache.set(entityColl, out);
+    return out;
+}
+// Emitter convenience: warn (once per collection per target run) when the
+// generated typed model would contain duplicate top-level type names.
+function warnEntityTypeCollisions(entityColl, log, lang) {
+    const dups = entityTypeCollisions(entityColl);
+    if (0 < dups.length && log && log.warn) {
+        log.warn({
+            point: 'entity-types-name-collision', lang, names: dups,
+            note: `${lang}: duplicate generated type name(s) ${dups.join(', ')} — ` +
+                `two entities produce the same PascalCase type name; rename one ` +
+                `entity (or alias it) in the model or the generated typed model ` +
+                `will not compile in statically-typed targets`,
+        });
+    }
+    return dups;
 }
 // Pick a representative entity for a single illustrative snippet (e.g. the
 // README's test-mode example): the first ACTIVE entity that exposes a read

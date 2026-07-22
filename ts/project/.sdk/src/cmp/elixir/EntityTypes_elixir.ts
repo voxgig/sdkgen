@@ -14,18 +14,22 @@
 // documented in the accompanying @typedoc (the honest Elixir analogue of the
 // TS interface / rb Struct). Field/param sentinels ($STRING, $INTEGER, ...) are
 // turned into real Elixir typespec fragments (String.t(), integer(), ...) by
-// the SDK-local `elixirType` helper.
+// the shared sdkgen canonToType 'elixir' column (via the `elixirType`
+// delegate in utility_elixir).
 //
-// Op type-name scheme mirrors every other language (snake_cased for Elixir):
+// Op type-name scheme mirrors every other language — derived from the SHARED
+// OP_SUFFIX policy, snake_cased for Elixir:
 //   <ename>, <ename>_load_match, <ename>_list_match, <ename>_create_data,
 //   <ename>_update_data, <ename>_remove_match.
+// The generated entity modules reference these aliases from @spec annotations
+// on their op functions (see fragment/Entity*Op.fragment.ex).
 
 import {
   cmp, each, names,
   File, Folder, Content,
 } from '@voxgig/sdkgen'
 
-import { opRequestShape } from '@voxgig/sdkgen'
+import { opRequestShape, OP_SUFFIX, warnEntityTypeCollisions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -35,13 +39,11 @@ import {
 import { elixirType } from './utility_elixir'
 
 
-// Op -> snake_case type-name suffix (mirrors opShape OP_SUFFIX).
-const OP_SUFFIX: Record<string, string> = {
-  load: 'load_match',
-  list: 'list_match',
-  remove: 'remove_match',
-  create: 'create_data',
-  update: 'update_data',
+// Snake_case op type name, derived from the SHARED OP_SUFFIX policy (the
+// PascalCase scheme <Name><Op><Match|Data> rendered Elixir-style):
+//   <ename>_load_match, <ename>_create_data, ...
+function elixirOpTypeName(ename: string, opname: string): string {
+  return ename + '_' + opname + '_' + (OP_SUFFIX[opname] || 'Match').toLowerCase()
 }
 
 
@@ -68,17 +70,34 @@ function emitType(
 }
 
 
+const LANG = 'elixir'
+
+
 const EntityTypes = cmp(function EntityTypes(props: any) {
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
 
   const Name = model.const.Name
   const app = model.const.name.toLowerCase()
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = each(entity).filter((e: any) => e.active !== false)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
+  // Emit for EVERY entity that gets an entity module: the consumer scaffold
+  // (create-sdkgen Root.ts) iterates entities WITHOUT an active filter, and
+  // each generated module carries @specs referencing its Types aliases, so an
+  // alias is required for each or the project won't compile. Filter on `name`
+  // (always present), NOT `active` — parity with the go emitter's fix.
+  const entityList = each(entity).filter((e: any) => e && null != e.name)
   // Derive the PascalCase Name up-front — it is set LAZILY by names(), so an
   // entity not yet named would otherwise read `Name = undefined` below.
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   Folder({ name: 'lib' }, () => {
     File({ name: app + '_types.ex' }, () => {
@@ -123,7 +142,7 @@ defmodule ${Name}.Types do
             return
           }
 
-          const typeName = ename + '_' + OP_SUFFIX[opname]
+          const typeName = elixirOpTypeName(ename, opname)
           const { items } = opRequestShape(ent, opname)
 
           emitType(

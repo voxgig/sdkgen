@@ -27,8 +27,8 @@
 // EMPTY SHAPES: Kotlin forbids a `data class` with zero components, so an
 // empty shape is emitted as a plain marker `class <Name>` instead.
 //
-// canonToType has no `kotlin` column, so map the canonical sentinels to real
-// Kotlin types locally, matching the ReadmeEntity / ReadmeRef mapping.
+// Sentinels map to Kotlin types via the SHARED canonToType 'kotlin' column
+// (the single source of truth per language — do not keep a local table here).
 //
 // Keep the SAME type-name scheme as every other language: <Name>,
 // <Name>LoadMatch, <Name>ListMatch, <Name>CreateData, <Name>UpdateData,
@@ -39,7 +39,7 @@ import {
   File, Content,
 } from '@voxgig/sdkgen'
 
-import { canonKey, opTypeName, opRequestShape } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -66,27 +66,33 @@ function kotlinIdent(name: string): boolean {
 }
 
 
-// Map a canonical type sentinel to a real (nullable) Kotlin type.
-function kotlinType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'String?'
-  if ('INTEGER' === k) return 'Long?'
-  if ('NUMBER' === k) return 'Double?'
-  if ('BOOLEAN' === k) return 'Boolean?'
-  if ('ARRAY' === k) return 'List<Any?>?'
-  if ('OBJECT' === k) return 'Map<String, Any?>?'
-  return 'Any?'
-}
+const LANG = 'kotlin'
 
 
 // Emit a nested `data class <typeName>(...)` from {name, type} items. An item
-// whose name is not a legal identifier is skipped; a duplicate component name
-// (after the identifier filter) is dropped. An empty shape becomes a plain
-// marker `class <typeName>` (Kotlin forbids a zero-component data class).
-function emitRecord(typeName: string, items: any[]): void {
+// whose name is not a legal identifier is skipped (WITH a warning — the key
+// stays reachable via the runtime map, but its absence from the typed model
+// should be visible, not silent); a duplicate component name (after the
+// identifier filter) is dropped. An empty shape becomes a plain marker
+// `class <typeName>` (Kotlin forbids a zero-component data class).
+function emitRecord(typeName: string, items: any[], log?: any): void {
   const seen = new Set<string>()
   const usable = items.filter((it: any) => {
-    if (!it || null == it.name || !kotlinIdent(it.name) || seen.has(it.name)) {
+    if (!it || null == it.name) {
+      return false
+    }
+    if (!kotlinIdent(it.name)) {
+      if (log && log.warn) {
+        log.warn({
+          point: 'entity-types-skip-field', typeName, field: it.name,
+          note: `kotlin: field "${it.name}" of ${typeName} has no legal ` +
+            `Kotlin identifier form; omitted from the typed model (still ` +
+            `reachable via the runtime map)`,
+        })
+      }
+      return false
+    }
+    if (seen.has(it.name)) {
       return false
     }
     seen.add(it.name)
@@ -101,7 +107,7 @@ function emitRecord(typeName: string, items: any[]): void {
   }
 
   const params = usable
-    .map((it: any) => `val ${it.name}: ${kotlinType(it.type)}`)
+    .map((it: any) => `val ${it.name}: ${canonToType(it.type, LANG)}`)
     .join(', ')
   Content(`  data class ${typeName}(${params})
 
@@ -110,18 +116,32 @@ function emitRecord(typeName: string, items: any[]): void {
 
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
   const target = props.target || {}
   const ext = target.ext || 'kt'
 
   const kotlinpackage = props.kotlinpackage || kotlinPackage(model)
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = each(entity).filter((e: any) => e.active !== false)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
+  // Emit for EVERY entity that gets generated entity code: the consumer
+  // scaffold (create-sdkgen Root.ts) iterates entities WITHOUT an active
+  // filter, so inactive entities still get class files referencing these
+  // typed names. Filter on `name` (always present), NOT `active` — parity
+  // with the go emitter's fix.
+  const entityList = each(entity).filter((e: any) => e && null != e.name)
   // Derive the PascalCase Name up-front — it is set LAZILY by names(), so an
   // entity not yet named (e.g. a fieldless placeholder) would otherwise read
   // `Name = undefined` below. Parity with the go/py/csharp/java emitter's fix.
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   File({ name: model.const.Name + 'Types.' + ext }, () => {
 
@@ -153,7 +173,7 @@ object ${model.const.Name}Types {
       // Entity data model: one component per field.
       emitRecord(Name, fields.map((f: any) => ({
         name: f.name, type: f.type,
-      })))
+      })), log)
 
       // Per active op: a request/match type. Members come from the shared
       // partiality policy (opRequestShape).
@@ -166,7 +186,7 @@ object ${model.const.Name}Types {
         const typeName = opTypeName(Name, opname)
         const { items } = opRequestShape(ent, opname)
 
-        emitRecord(typeName, items)
+        emitRecord(typeName, items, log)
       })
     })
 

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,19 +9,7 @@ import {
 import { rustVarName } from './utility_rust'
 
 
-// Canonical type sentinel -> a rust type name for the field/param tables.
-// (The shared canonToType helper has no rust column, so map locally.)
-function rustType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'String'
-  if ('INTEGER' === k) return 'i64'
-  if ('NUMBER' === k) return 'f64'
-  if ('BOOLEAN' === k) return 'bool'
-  if ('ARRAY' === k) return 'Vec<Value>'
-  if ('OBJECT' === k) return 'Value'
-  return 'Value'
-}
-
+// Type names come from the shared canonToType 'rust' column (single source of truth).
 
 // A type-correct rust expression constructing a voxgig struct Value.
 function rustLit(type: any, placeholder: string = 'example'): string {
@@ -112,7 +100,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.short || ''
-        Content(`| \`${field.name}\` | \`${rustType(field.type)}\` | ${desc} |
+        Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${desc} |
 `)
       })
 
@@ -158,7 +146,7 @@ let ${eVar}s = client.${method}(Value::Noval).list(Value::Noval, Value::Noval).u
 let ${eVar} = client.${method}(Value::Noval).create(jo(vec![
 `)
       createItems.map((it: any) => {
-        Content(`    ("${it.name}", ${rustLit(it.type, 'example_' + it.name)}),  // ${rustType(it.type)}
+        Content(`    ("${it.name}", ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`]), Value::Noval).unwrap();

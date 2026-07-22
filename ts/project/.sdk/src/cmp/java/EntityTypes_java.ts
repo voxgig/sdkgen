@@ -25,9 +25,8 @@
 // OPTIONAL FIELDS: every component is a boxed reference type, hence inherently
 // nullable, so a `req:false` field/param needs no distinct rendering in Java.
 //
-// canonToType has no `java` column (it falls back to `any`), so map the
-// canonical sentinels to real Java types locally, matching the ReadmeEntity /
-// ReadmeRef mapping.
+// Sentinels map to Java types via the SHARED canonToType 'java' column (the
+// single source of truth per language — do not keep a local table here).
 //
 // Keep the SAME type-name scheme as every other language: <Name>,
 // <Name>LoadMatch, <Name>ListMatch, <Name>CreateData, <Name>UpdateData,
@@ -38,7 +37,7 @@ import {
   File, Content,
 } from '@voxgig/sdkgen'
 
-import { canonKey, opTypeName, opRequestShape } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -69,27 +68,33 @@ function javaIdent(name: string): boolean {
 }
 
 
-// Map a canonical type sentinel to a real (boxed, nullable) Java type.
-function javaType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'String'
-  if ('INTEGER' === k) return 'Long'
-  if ('NUMBER' === k) return 'Double'
-  if ('BOOLEAN' === k) return 'Boolean'
-  if ('ARRAY' === k) return 'List<Object>'
-  if ('OBJECT' === k) return 'Map<String, Object>'
-  return 'Object'
-}
+const LANG = 'java'
 
 
 // Emit a nested `public record <typeName>(...)` from {name, type} items. An
-// item whose name is not a legal identifier is skipped; a duplicate component
-// name (after the identifier filter) is dropped. An empty record is a valid,
-// zero-component shape.
-function emitRecord(typeName: string, items: any[]): void {
+// item whose name is not a legal identifier is skipped (WITH a warning — the
+// key stays reachable via the runtime map, but its absence from the typed
+// model should be visible, not silent); a duplicate component name (after the
+// identifier filter) is dropped. An empty record is a valid, zero-component
+// shape.
+function emitRecord(typeName: string, items: any[], log?: any): void {
   const seen = new Set<string>()
   const usable = items.filter((it: any) => {
-    if (!it || null == it.name || !javaIdent(it.name) || seen.has(it.name)) {
+    if (!it || null == it.name) {
+      return false
+    }
+    if (!javaIdent(it.name)) {
+      if (log && log.warn) {
+        log.warn({
+          point: 'entity-types-skip-field', typeName, field: it.name,
+          note: `java: field "${it.name}" of ${typeName} has no legal Java ` +
+            `identifier form; omitted from the typed model (still reachable ` +
+            `via the runtime map)`,
+        })
+      }
+      return false
+    }
+    if (seen.has(it.name)) {
       return false
     }
     seen.add(it.name)
@@ -104,7 +109,7 @@ function emitRecord(typeName: string, items: any[]): void {
   }
 
   const params = usable
-    .map((it: any) => `${javaType(it.type)} ${it.name}`)
+    .map((it: any) => `${canonToType(it.type, LANG)} ${it.name}`)
     .join(', ')
   Content(`  public record ${typeName}(${params}) {}
 
@@ -113,18 +118,32 @@ function emitRecord(typeName: string, items: any[]): void {
 
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
   const target = props.target || {}
   const ext = target.ext || 'java'
 
   const javapackage = props.javapackage || javaPackage(model)
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = each(entity).filter((e: any) => e.active !== false)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
+  // Emit for EVERY entity that gets generated entity code: the consumer
+  // scaffold (create-sdkgen Root.ts) iterates entities WITHOUT an active
+  // filter, so inactive entities still get class files referencing these
+  // typed names. Filter on `name` (always present), NOT `active` — parity
+  // with the go emitter's fix.
+  const entityList = each(entity).filter((e: any) => e && null != e.name)
   // Derive the PascalCase Name up-front — it is set LAZILY by names(), so an
   // entity not yet named (e.g. a fieldless placeholder) would otherwise read
   // `Name = undefined` below. Parity with the go/py/csharp emitter's fix.
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   File({ name: model.const.Name + 'Types.' + ext }, () => {
 
@@ -160,7 +179,7 @@ public final class ${model.const.Name}Types {
       // Entity data model: one component per field.
       emitRecord(Name, fields.map((f: any) => ({
         name: f.name, type: f.type,
-      })))
+      })), log)
 
       // Per active op: a request/match record. Members come from the shared
       // partiality policy (opRequestShape).
@@ -173,7 +192,7 @@ public final class ${model.const.Name}Types {
         const typeName = opTypeName(Name, opname)
         const { items } = opRequestShape(ent, opname)
 
-        emitRecord(typeName, items)
+        emitRecord(typeName, items, log)
       })
     })
 

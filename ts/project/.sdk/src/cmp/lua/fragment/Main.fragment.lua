@@ -8,6 +8,8 @@ local helpers = require("core.helpers")
 -- Load utility registration (populates Utility._registrar)
 require("utility.register")
 
+-- #TypesRequire
+
 -- Load features
 local BaseFeature = require("feature.base_feature")
 local features_factory = require("features")

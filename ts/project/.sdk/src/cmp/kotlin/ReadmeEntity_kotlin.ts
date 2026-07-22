@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,20 +9,7 @@ import {
 import { kotlinVarName } from './utility_kotlin'
 
 
-// Map the canonical sentinels to real Kotlin types. The SDK's loose object
-// model stores every value in a MutableMap<String, Any?>, so these are the
-// documented shapes a caller sees.
-function kotlinType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'String'
-  if ('INTEGER' === k) return 'Long'
-  if ('NUMBER' === k) return 'Double'
-  if ('BOOLEAN' === k) return 'Boolean'
-  if ('ARRAY' === k) return 'List<Any?>'
-  if ('OBJECT' === k) return 'Map<String, Any?>'
-  return 'Any?'
-}
-
+// Type names come from the shared canonToType 'kotlin' column (single source of truth).
 
 // A type-correct Kotlin literal for a field's canonical type.
 function kotlinLit(type: any, placeholder: string = 'example'): string {
@@ -118,7 +105,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.short || ''
-        Content(`| \`${field.name}\` | \`${kotlinType(field.type)}\` | ${desc} |
+        Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${desc} |
 `)
       })
 
@@ -171,7 +158,7 @@ val ${eVar} = client.${accessor}(null).create(mutableMapOf<String, Any?>(
 `)
       createItems.map((it: any, i: number) => {
         const comma = i < createItems.length - 1 ? ',' : ''
-        Content(`    "${it.name}" to ${kotlinLit(it.type, 'example_' + it.name)}${comma}  // ${kotlinType(it.type)}
+        Content(`    "${it.name}" to ${kotlinLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`), null)
