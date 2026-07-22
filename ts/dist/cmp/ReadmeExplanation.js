@@ -213,7 +213,7 @@ const ReadmeExplanation = (0, jostraca_1.cmp)(function ReadmeExplanation(props) 
             stateArg = 'go' === target.name ? 'nil' : '';
         }
         else if (isMatchOp) {
-            stateArg = (0, opExample_1.matchArg)(lname, idF, idLit);
+            stateArg = (0, opExample_1.matchArg)(lname, ex, primaryOp, idF, idLit);
         }
         else {
             stateArg = (0, opExample_1.dataArg)(lname, ex, primaryOp, idF);

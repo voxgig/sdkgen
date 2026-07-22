@@ -252,7 +252,7 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
     if ('list' === primaryOp) {
       stateArg = 'go' === target.name ? 'nil' : ''
     } else if (isMatchOp) {
-      stateArg = matchArg(lname, idF, idLit)
+      stateArg = matchArg(lname, ex, primaryOp as string, idF, idLit)
     } else {
       stateArg = dataArg(lname, ex, primaryOp as string, idF)
     }

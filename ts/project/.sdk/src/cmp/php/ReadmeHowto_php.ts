@@ -34,7 +34,12 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     : `${model.const.Name}SDK::test()`
   let testCallArg = ''
   if (exampleEntity && isMatchOp) {
-    testCallArg = idF ? `["${idF}" => "test01"]` : ''
+    const items = opRequestShape(exampleEntity, primaryOp).items
+      .filter((it: any) => !it.optional || it.name === idF)
+      .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+    testCallArg = 0 < items.length
+      ? `[${items.map((it: any) => `"${it.name}" => ${it.name === idF ? '"test01"' : phpLit(it.type)}`).join(', ')}]`
+      : ''
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')

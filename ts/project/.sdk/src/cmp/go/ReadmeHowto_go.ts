@@ -45,7 +45,12 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
   let testArg = 'nil'
   if (exampleEntity && isMatchOp) {
-    testArg = idF ? `map[string]any{"${idF}": "test01"}` : 'nil'
+    const items = opRequestShape(exampleEntity, primaryOp).items
+      .filter((it: any) => !it.optional || it.name === idF)
+      .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+    testArg = 0 < items.length
+      ? `map[string]any{${items.map((it: any) => `"${it.name}": ${it.name === idF ? '"test01"' : goLit(it.type)}`).join(', ')}}`
+      : 'nil'
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')

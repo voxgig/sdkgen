@@ -72,15 +72,22 @@ function litPair(lang, name, value) {
             `${name}: ${value}` : `'${name}': ${value}`;
     }
 }
-function matchArg(lang, idF, idLit) {
-    if (null == idF)
+// The match argument for a load/remove — ALL required match params, not just
+// the primary id. A composite-match entity (e.g. Umbrella's FlatPermission,
+// `/public/database/{id}/permission/{msisdn}`) has two required path params
+// (database_id + id); emitting only `{ id }` fails the typed <Name>LoadMatch.
+// The idF field takes the specific id literal; other required fields take a
+// type-correct example value (mirrors dataArg).
+function matchArg(lang, ent, op, idF, idLit) {
+    const items = (0, opShape_1.opRequestShape)(ent, op).items.filter((it) => !it.optional);
+    if (0 === items.length)
         return 'go' === lang ? 'nil' : '';
-    const p = litPair(lang, idF, idLit);
+    const pairs = items.map((it) => litPair(lang, it.name, it.name === idF ? idLit : litFor(lang, it.type)));
     switch (lang) {
-        case 'py': return `{${p}}`;
-        case 'php': return `[${p}]`;
-        case 'go': return `map[string]any{${p}}`;
-        default: return `{ ${p} }`;
+        case 'py': return `{${pairs.join(', ')}}`;
+        case 'php': return `[${pairs.join(', ')}]`;
+        case 'go': return `map[string]any{${pairs.join(', ')}}`;
+        default: return `{ ${pairs.join(', ')} }`;
     }
 }
 // The entity's required writable fields for a create/update body, rendered as
@@ -140,7 +147,7 @@ function primaryOpCall(lang, eName, eLower, op, idF, ent) {
         arg = 'go' === lang ? 'nil' : '';
     }
     else if (isMatch) {
-        arg = matchArg(lang, idF, idLit);
+        arg = matchArg(lang, ent, op, idF, idLit);
     }
     else if (isData) {
         arg = dataArg(lang, ent, op, idF);
