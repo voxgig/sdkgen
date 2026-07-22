@@ -173,7 +173,7 @@ static void ${evar}_entity_stream() {
 static void ${evar}_entity_basic() {
   auto setup = ${evar}_basic_setup(Value::undef());
   std::string mode = setup.live ? "live" : "unit";
-  for (const std::string& op : {${opsList}}) {
+  for (const std::string& op : std::vector<std::string>{${opsList}}) {
     auto sk = is_control_skipped("entityOp", std::string("${entity.name}.") + op, mode);
     if (sk.first) { std::cerr << "skip: " << (sk.second.empty()? "sdk-test-control.json" : sk.second) << "\\n"; return; }
   }
@@ -186,7 +186,11 @@ static void ${evar}_entity_basic() {
       const preambleVar = cppVarName(entity.name + '_ref01')
       Content(`
   // Bootstrap entity data from existing test data (no create step in flow).
+  // Declare _data at FUNCTION scope (later load/update steps reference it);
+  // only _data_raw was declared, so the block-local assignment left _data
+  // undeclared ("was not declared in this scope").
   Value ${preambleVar}_data_raw = Helpers::toMapAny(Struct::getpath(setup.data, {"existing", "${entity.name}"}));
+  Value ${preambleVar}_data = vmap();
   {
     std::vector<Value> its = Struct::items(${preambleVar}_data_raw);
     ${preambleVar}_data = its.empty() ? vmap() : Helpers::toMapAny(pair_val(its[0]));

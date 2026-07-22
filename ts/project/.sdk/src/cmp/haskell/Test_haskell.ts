@@ -138,6 +138,12 @@ ${basicFn} c = do
     pure True
 `
         }
+        // An op-less entity (no list/load/create — e.g. a bare path entity)
+        // appends no runTest, leaving the do-block ending on `opts <- jo [...]`
+        // (a bind), which is illegal as the final statement. Terminate it.
+        if (!hasList && !hasLoad && !hasCreate) {
+          defs += `  pure ()\n`
+        }
 
         // Direct call test (via injected system.fetch mock).
         defs += `

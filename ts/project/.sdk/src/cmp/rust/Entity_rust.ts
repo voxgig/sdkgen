@@ -53,7 +53,7 @@ const Entity = cmp(function Entity(props: any) {
               ({ indent }: any) => {
                 const arg = ('create' === opname || 'update' === opname) ?
                   'reqdata' : 'reqmatch'
-                Content({ indent }, `fn ${opname}(&self, _${arg}: Value, _ctrl: Value) -> Result<Value, ProjectNameError> {
+                Content({ indent }, `fn ${opname}(&self, _${arg}: Value, _ctrl: Value) -> Result<Value, ${model.const.Name}Error> {
     Err(crate::core::helpers::unsupported_op("${opname}", &self.name))
 }
 `)
