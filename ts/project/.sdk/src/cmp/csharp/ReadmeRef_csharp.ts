@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, File, isAuthActive, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,19 +9,7 @@ import {
 import { csVarName } from './utility_csharp'
 
 
-// canonToType has no `csharp` column; map the canonical sentinels to real C#
-// types locally (loose object model — values live in Dictionary<string, object?>).
-function csType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'string'
-  if ('INTEGER' === k) return 'long'
-  if ('NUMBER' === k) return 'double'
-  if ('BOOLEAN' === k) return 'bool'
-  if ('ARRAY' === k) return 'List<object?>'
-  if ('OBJECT' === k) return 'Dictionary<string, object?>'
-  return 'object?'
-}
-
+// Type names come from the shared canonToType 'csharp' column (single source of truth).
 
 // A type-correct C# literal for a field's canonical type.
 function csLit(type: any, placeholder: string = 'example'): string {
@@ -218,7 +206,7 @@ var ${eVar} = client.${ent.Name}();
         each(fields, (field: any) => {
           const req = field.req ? 'Yes' : 'No'
           const desc = field.short || ''
-          Content(`| \`${field.name}\` | \`${csType(field.type)}\` | ${req} | ${desc} |
+          Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${req} | ${desc} |
 `)
         })
 
@@ -301,7 +289,7 @@ var result = client.${ent.Name}().Create(new Dictionary<string, object?>
 {
 `)
             createItems.map((it: any) => {
-              Content(`    ["${it.name}"] = ${csLit(it.type, 'example_' + it.name)},  // ${csType(it.type)}
+              Content(`    ["${it.name}"] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`});

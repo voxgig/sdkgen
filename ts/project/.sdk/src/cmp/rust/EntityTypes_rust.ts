@@ -5,8 +5,11 @@
 // Reads main.<KIT>.entity.<e>.fields[] and per-op params
 // (op.<name>.points[].args.params[]) and emits one file, entity/types.rs, with
 // a rust `struct <Name> { ... }` per entity plus a request/match struct per
-// active op. Field/param sentinels ($STRING, $INTEGER, ...) are turned into
-// rust types locally (the shared canonToType helper has no rust column).
+// active op. Field/param sentinels ($STRING, $INTEGER, ...) map to rust types
+// via the SHARED canonToType 'rust' column (the single source of truth per
+// language — do not keep a local table here). Note OBJECT renders as
+// std::collections::HashMap<String, Value> (fully qualified, no import
+// needed).
 //
 // DESIGN NOTE (rust specifics vs the go reference):
 //   * The rust runtime is fully DYNAMIC: every op takes and returns the
@@ -26,7 +29,7 @@ import {
   File, Content, Folder,
 } from '@voxgig/sdkgen'
 
-import { opTypeName, opRequestShape, canonKey } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -36,24 +39,14 @@ import {
 import { rustVarName } from './utility_rust'
 
 
-// Canonical type sentinel -> a rust type. Unknown/missing -> the dynamic
-// `Value` (never throws), matching the runtime's open shape.
-function rustType(sentinel: any): string {
-  const k = canonKey(sentinel)
-  if ('STRING' === k) return 'String'
-  if ('INTEGER' === k) return 'i64'
-  if ('NUMBER' === k) return 'f64'
-  if ('BOOLEAN' === k) return 'bool'
-  if ('ARRAY' === k) return 'Vec<Value>'
-  return 'Value'
-}
+const LANG = 'rust'
 
 
 // One rust struct field line. `optional` -> Option<T>. Field names are
 // snake_case + keyword-safe via rustVarName; duplicates are dropped by the
 // caller so a struct never declares the same field twice.
 function fieldLine(name: string, sentinel: any, optional: boolean): string {
-  const rt = rustType(sentinel)
+  const rt = canonToType(sentinel, LANG)
   const typ = optional ? `Option<${rt}>` : rt
   return `    pub ${rustVarName(name)}: ${typ},\n`
 }
@@ -82,14 +75,23 @@ pub struct ${typeName} {
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
   const { target } = props
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   // Emit for every entity that gets an entity file (filter on `name`, always
   // present; derive `Name` here so the struct set is deterministic — parity
   // with the go emitter's fix).
   const entityList = each(entity).filter((e: any) => e && null != e.name)
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   Folder({ name: 'entity' }, () => {
 

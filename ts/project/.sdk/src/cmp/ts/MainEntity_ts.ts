@@ -18,9 +18,11 @@ const MainEntity = cmp(async function MainEntity(props: any) {
 
   Content(`
   // Entity access: \`client.${entity.Name}().list()\` / \`client.${entity.Name}().load({ id })\`.
-  ${entity.Name}(data?: any) {
+  // The argument is the entity OPTIONS object (passed to the entity
+  // constructor as entopts), not initial entity data.
+  ${entity.Name}(entopts?: Record<string, any>) {
     const self = this
-    return new ${cls}(self,data)
+    return new ${cls}(self, entopts)
   }
 
 `)

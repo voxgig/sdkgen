@@ -14,10 +14,12 @@ declare function entityIdField(ent: any): string | null;
 declare function entityOps(ent: any): string[];
 declare function entityPrimaryOp(ent: any): string | null;
 declare function entityClassName(ent: any, entityColl: any): string;
+declare function entityTypeCollisions(entityColl: any): string[];
+declare function warnEntityTypeCollisions(entityColl: any, log: any, lang: string): string[];
 declare function pickExampleEntity(entity: any): {
     entity: any;
     primaryOp: string | null;
 };
 declare function entityDataIdField(ent: any): string | null;
-export { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, };
+export { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, };
 export type { OpShapeItem, };

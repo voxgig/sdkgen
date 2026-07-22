@@ -22,9 +22,8 @@
 // uninitialised required reference properties (CS8618) are already suppressed
 // by the generated csproj, so no initialisation is forced.
 //
-// canonToType has no `csharp` column (it falls back to `any`), so map the
-// canonical sentinels to real C# types locally, matching the ReadmeEntity /
-// ReadmeRef mapping.
+// Sentinels map to C# types via the SHARED canonToType 'csharp' column (the
+// single source of truth per language — do not keep a local table here).
 //
 // Keep the SAME type-name scheme as every other language: <Name>,
 // <Name>LoadMatch, <Name>ListMatch, <Name>CreateData, <Name>UpdateData,
@@ -35,7 +34,7 @@ import {
   File, Content,
 } from '@voxgig/sdkgen'
 
-import { canonKey, opTypeName, opRequestShape } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -76,25 +75,25 @@ function csProp(name: string): string {
 }
 
 
-// Map a canonical type sentinel to a real C# type.
-function csType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'string'
-  if ('INTEGER' === k) return 'long'
-  if ('NUMBER' === k) return 'double'
-  if ('BOOLEAN' === k) return 'bool'
-  if ('ARRAY' === k) return 'List<object?>'
-  if ('OBJECT' === k) return 'Dictionary<string, object?>'
-  return 'object?'
-}
-
-
 // Emit `public record <typeName>` from {name, type, optional} items. Optional
 // items become nullable properties (`T?`); required items the plain type. An
-// item whose name is not a legal identifier is skipped. An empty record is a
-// valid, zero-member shape.
-function emitRecord(typeName: string, items: any[]): void {
+// item whose name is not a legal identifier is skipped (WITH a warning — the
+// key stays reachable via the runtime dict, but its absence from the typed
+// model should be visible, not silent). An empty record is a valid,
+// zero-member shape.
+function emitRecord(typeName: string, items: any[], log?: any): void {
   const usable = items.filter((it: any) => it && null != it.name && csIdent(it.name))
+
+  items.forEach((it: any) => {
+    if (it && null != it.name && !csIdent(it.name) && log && log.warn) {
+      log.warn({
+        point: 'entity-types-skip-field', typeName, field: it.name,
+        note: `csharp: field "${it.name}" of ${typeName} has no legal C# ` +
+          `identifier form; omitted from the typed model (still reachable ` +
+          `via the runtime dictionary)`,
+      })
+    }
+  })
 
   if (0 === usable.length) {
     Content(`public record ${typeName}();
@@ -107,7 +106,7 @@ function emitRecord(typeName: string, items: any[]): void {
 {
 `)
   usable.forEach((it: any) => {
-    const base = csType(it.type)
+    const base = canonToType(it.type, LANG)
     // `object?` is already nullable; other types get a trailing `?` when optional.
     const t = it.optional && !base.endsWith('?') ? base + '?' : base
     Content(`    public ${t} ${csProp(it.name)} { get; init; }
@@ -120,16 +119,30 @@ function emitRecord(typeName: string, items: any[]): void {
 
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
   const target = props.target || {}
   const ext = target.ext || 'cs'
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = each(entity).filter((e: any) => e.active !== false)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
+  // Emit for EVERY entity that gets generated entity code: the consumer
+  // scaffold (create-sdkgen Root.ts) iterates entities WITHOUT an active
+  // filter, so inactive entities still get class files referencing these
+  // typed names. Filter on `name` (always present), NOT `active` — parity
+  // with the go emitter's fix.
+  const entityList = each(entity).filter((e: any) => e && null != e.name)
   // Derive the PascalCase Name up-front — it is set LAZILY by names(), so an
   // entity not yet named (e.g. a fieldless placeholder) would otherwise read
   // `Name = undefined` below. Parity with the go/py emitter's fix.
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   File({ name: model.const.Name + 'Types.' + ext }, () => {
 
@@ -158,7 +171,7 @@ namespace ${model.const.Name}Sdk.Types;
       // Entity data model: one property per field, `req:false` -> nullable.
       emitRecord(Name, fields.map((f: any) => ({
         name: f.name, type: f.type, optional: false === f.req,
-      })))
+      })), log)
 
       // Per active op: a request/match record. Members and their optionality
       // come from the shared partiality policy (opRequestShape).
@@ -171,7 +184,7 @@ namespace ${model.const.Name}Sdk.Types;
         const typeName = opTypeName(Name, opname)
         const { items } = opRequestShape(ent, opname)
 
-        emitRecord(typeName, items)
+        emitRecord(typeName, items, log)
       })
     })
   })

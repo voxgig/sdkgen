@@ -5,10 +5,10 @@
 // (op.<name>.points[].args.params[]) and emits one file,
 // lib/<Sdk>Types.dart, with a Dart class per active entity plus a
 // request/match class per active op. Field/param sentinels ($STRING,
-// $INTEGER, ...) are turned into Dart types locally (Dart is not in the
-// shared canonToType table); the sentinel key comes from the shared
-// canonKey helper so the source of truth (@voxgig/apidef VALID_CANON) is
-// respected.
+// $INTEGER, ...) map to Dart types via the SHARED canonToType 'dart' column
+// (the single source of truth per language — do not keep a local table
+// here); the doc-comment sentinel key comes from the shared canonKey helper
+// so the source of truth (@voxgig/apidef VALID_CANON) is respected.
 //
 // TYPE CHOICE: plain classes with nullable fields + fromMap/toMap. The
 // generated ops accept/return runtime maps (Dart has no structural typing),
@@ -23,7 +23,7 @@ import {
   File, Content,
 } from '@voxgig/sdkgen'
 
-import { canonKey, opTypeName, opRequestShape } from '@voxgig/sdkgen'
+import { canonKey, canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -31,21 +31,7 @@ import {
 } from '@voxgig/apidef'
 
 
-// Sentinel -> Dart type (nullable added at emission).
-const DART_TYPE: Record<string, string> = {
-  STRING: 'String',
-  INTEGER: 'int',
-  NUMBER: 'num',
-  BOOLEAN: 'bool',
-  NULL: 'Object',
-  ARRAY: 'List<dynamic>',
-  OBJECT: 'Map<String, dynamic>',
-  ANY: 'dynamic',
-}
-
-function dartType(sentinel: unknown): string {
-  return DART_TYPE[canonKey(sentinel)] ?? 'dynamic'
-}
+const LANG = 'dart'
 
 
 // Dart reserved words that cannot be used as field names.
@@ -65,14 +51,28 @@ function dartIdent(name: string): boolean {
 
 // Emit a Dart data class from a list of {name, type, optional} items. All
 // fields are nullable (`optional` is documented) since the runtime passes
-// partial maps; fromMap is lenient (mismatched value types become null).
-function emitClass(typeName: string, items: any[]): void {
+// partial maps; fromMap is lenient (mismatched value types become null). An
+// item whose name is not a legal identifier is skipped (WITH a warning — the
+// key stays reachable via the runtime map, but its absence from the typed
+// model should be visible, not silent).
+function emitClass(typeName: string, items: any[], log?: any): void {
   const usable = items.filter((it: any) => it && null != it.name && dartIdent(it.name))
+
+  items.forEach((it: any) => {
+    if (it && null != it.name && !dartIdent(it.name) && log && log.warn) {
+      log.warn({
+        point: 'entity-types-skip-field', typeName, field: it.name,
+        note: `dart: field "${it.name}" of ${typeName} has no legal Dart ` +
+          `identifier form; omitted from the typed model (still reachable ` +
+          `via the runtime map)`,
+      })
+    }
+  })
 
   Content(`class ${typeName} {
 `)
   usable.forEach((it: any) => {
-    const base = dartType(it.type)
+    const base = canonToType(it.type, LANG)
     const t = 'dynamic' === base ? 'dynamic' : base + '?'
     const req = it.optional ? '' : ' (required at the API)'
     Content(`  /// ${canonKey(it.type) || 'ANY'}${req}
@@ -101,7 +101,7 @@ function emitClass(typeName: string, items: any[]): void {
   factory ${typeName}.fromMap(Map<String, dynamic> m) => ${typeName}(
 `)
     usable.forEach((it: any) => {
-      const base = dartType(it.type)
+      const base = canonToType(it.type, LANG)
       if ('dynamic' === base) {
         Content(`        ${it.name}: m['${it.name}'],
 `)
@@ -134,15 +134,29 @@ function emitClass(typeName: string, items: any[]): void {
 
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
   const { target } = props
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityList = each(entity).filter((e: any) => e.active !== false)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
+  // Emit for EVERY entity that gets generated entity code: the consumer
+  // scaffold (create-sdkgen Root.ts) iterates entities WITHOUT an active
+  // filter, so inactive entities still get class files referencing these
+  // typed names. Filter on `name` (always present), NOT `active` — parity
+  // with the go emitter's fix.
+  const entityList = each(entity).filter((e: any) => e && null != e.name)
   // Derive the PascalCase Name up-front — it is set LAZILY by names(), so an
   // entity not yet named (e.g. a fieldless placeholder) would otherwise read
   // `Name = undefined` below. Parity with the go emitter's fix.
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   File({ name: model.const.Name + 'Types.' + target.ext }, () => {
 
@@ -168,7 +182,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
         name: f.name,
         type: f.type,
         optional: false === f.req,
-      })))
+      })), log)
 
       // Per active op: a request/match type. The members and each member's
       // required/optional decision come from the shared partiality policy
@@ -182,7 +196,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
         const typeName = opTypeName(Name, opname)
         const { items } = opRequestShape(ent, opname)
 
-        emitClass(typeName, items)
+        emitClass(typeName, items, log)
       })
     })
   })

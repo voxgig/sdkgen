@@ -5,8 +5,9 @@
 // Reads main.<KIT>.entity.<e>.fields[] and per-op params
 // (op.<name>.points[].args.params[]) and emits one header, entity/types.h,
 // with a C `typedef struct { ... } <Name>;` per entity plus a request/match
-// struct per active op. Field/param sentinels ($STRING, $INTEGER, ...) are
-// turned into C types locally (the shared canonToType helper has no C column).
+// struct per active op. Field/param sentinels ($STRING, $INTEGER, ...) map to
+// C types via the SHARED canonToType 'c' column (the single source of truth
+// per language — do not keep a local table here).
 //
 // DESIGN NOTE (C specifics vs the rust/go reference):
 //   * The C runtime is fully DYNAMIC: every op takes and returns the vendored
@@ -31,7 +32,7 @@ import {
   File, Content, Folder,
 } from '@voxgig/sdkgen'
 
-import { opTypeName, opRequestShape, canonKey } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -41,23 +42,13 @@ import {
 import { cVarName } from './utility_c'
 
 
-// Canonical type sentinel -> a C type. Unknown/missing -> the dynamic
-// `voxgig_value*` (never throws), matching the runtime's open shape.
-function cType(sentinel: any): string {
-  const k = canonKey(sentinel)
-  if ('STRING' === k) return 'char*'
-  if ('INTEGER' === k) return 'int64_t'
-  if ('NUMBER' === k) return 'double'
-  if ('BOOLEAN' === k) return 'bool'
-  if ('ARRAY' === k) return 'voxgig_value*'
-  return 'voxgig_value*'
-}
+const LANG = 'c'
 
 
 // One C struct member line. `optional` -> a trailing marker (C has no
 // Option<T>). Member names are snake_case + keyword-safe via cVarName.
 function memberLine(name: string, sentinel: any, optional: boolean): string {
-  const ct = cType(sentinel)
+  const ct = canonToType(sentinel, LANG)
   const sep = ct.endsWith('*') ? '' : ' '
   return `  ${ct}${sep}${cVarName(name)};${optional ? '  // optional' : ''}\n`
 }
@@ -92,14 +83,23 @@ typedef struct {
 
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   // Emit for every entity that gets an entity file (filter on `name`, always
   // present; derive `Name` here so the struct set is deterministic — parity
   // with the go/rust emitters' fix).
   const entityList = each(entity).filter((e: any) => e && null != e.name)
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   const guard = String(model.const.Name).toUpperCase().replace(/[^A-Z0-9_]/g, '_') + '_ENTITY_TYPES_H'
 

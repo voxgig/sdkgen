@@ -6,7 +6,9 @@
 // (op.<name>.points[].args.params[]) and emits one file,
 // Sources/ProjectNameSDK/entity/<Name>Types.swift, with a `struct <Name>` per
 // entity plus a request/match struct per active op. Field/param sentinels
-// ($STRING, $INTEGER, ...) are mapped to Swift types locally.
+// ($STRING, $INTEGER, ...) map to Swift types via the SHARED canonToType
+// 'swift' column (the single source of truth per language — do not keep a
+// local table here).
 //
 // DESIGN NOTE: the Swift runtime is fully DYNAMIC — every op takes and returns
 // the vendored `Value` enum (throws on error) and the op fragments emit no
@@ -23,7 +25,7 @@ import {
   File, Content, Folder,
 } from '@voxgig/sdkgen'
 
-import { opTypeName, opRequestShape, canonKey } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -33,25 +35,14 @@ import {
 import { swiftVarName } from './utility_swift'
 
 
-// Canonical type sentinel -> a Swift type. Unknown/missing -> the dynamic
-// `Value` (the loose object model's open shape).
-function swiftType(sentinel: any): string {
-  const k = canonKey(sentinel)
-  if ('STRING' === k) return 'String'
-  if ('INTEGER' === k) return 'Int'
-  if ('NUMBER' === k) return 'Double'
-  if ('BOOLEAN' === k) return 'Bool'
-  if ('ARRAY' === k) return '[Value]'
-  if ('OBJECT' === k) return 'VMap'
-  return 'Value'
-}
+const LANG = 'swift'
 
 
 // One Swift struct property line. `optional` -> `T?`. Property names are
 // keyword-safe + lowerCamelCase via swiftVarName; duplicates are dropped by the
 // caller so a struct never declares the same property twice.
 function propLine(name: string, sentinel: any, optional: boolean): string {
-  const st = swiftType(sentinel)
+  const st = canonToType(sentinel, LANG)
   const typ = optional ? `${st}?` : st
   return `  public var ${swiftVarName(name)}: ${typ}\n`
 }
@@ -80,14 +71,23 @@ public struct ${typeName} {
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
   const { target } = props
-  const { model } = props.ctx$
+  const { model, log } = props.ctx$
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
+  // only_active:false — getModelPath DROPS active:false entries by default,
+  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
+  // collection, so inactive entities still get generated entity code that
+  // references these typed names. The typed model must cover them too.
+  const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   // Emit for every entity that gets an entity file (filter on `name`, always
   // present; derive `Name` here so the struct set is deterministic — parity
   // with the rust/go emitter's fix).
   const entityList = each(entity).filter((e: any) => e && null != e.name)
   entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+
+  // Surface duplicate generated type names (two entities with the same
+  // PascalCase Name) — they would redeclare a type in statically-typed
+  // targets. Detection only; renaming is a model-level decision.
+  warnEntityTypeCollisions(entity, log, LANG)
 
   Folder({ name: 'Sources' }, () => {
     Folder({ name: 'ProjectNameSDK' }, () => {

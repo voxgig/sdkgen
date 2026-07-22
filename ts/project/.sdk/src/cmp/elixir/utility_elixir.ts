@@ -8,24 +8,17 @@ import {
 
 import {
   canonKey,
+  canonToType,
 } from '@voxgig/sdkgen'
 
 
 // Map a canonical type sentinel ($STRING, $INTEGER, ...) to an idiomatic
 // Elixir typespec. Unknown/missing sentinels fall back to `any()` (never
-// throws). The shared canonToType helper has no `elixir` column, so the SDK
-// owns this mapping locally.
+// throws). Thin delegate to the SHARED canonToType 'elixir' column (the
+// single source of truth per language — do not keep a local table here);
+// kept as an exported function so existing importers keep working.
 function elixirType(sentinel: unknown): string {
-  switch (canonKey(sentinel)) {
-    case 'STRING': return 'String.t()'
-    case 'INTEGER': return 'integer()'
-    case 'NUMBER': return 'float()'
-    case 'BOOLEAN': return 'boolean()'
-    case 'NULL': return 'nil'
-    case 'ARRAY': return 'list()'
-    case 'OBJECT': return 'map()'
-    default: return 'any()'
-  }
+  return canonToType(sentinel, 'elixir')
 }
 
 

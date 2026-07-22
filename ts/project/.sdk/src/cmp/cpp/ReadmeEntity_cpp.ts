@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,19 +9,7 @@ import {
 import { cppVarName } from './utility_cpp'
 
 
-// Map a canonical type sentinel to the C++ type used to document a field.
-// The runtime is Value-based; these are documentation types. Array/object/any
-// surface as the dynamic sdk::Value.
-function cppType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'std::string'
-  if ('INTEGER' === k) return 'int64_t'
-  if ('NUMBER' === k) return 'double'
-  if ('BOOLEAN' === k) return 'bool'
-  if ('ARRAY' === k) return 'std::vector<sdk::Value>'
-  return 'sdk::Value'
-}
-
+// Type names come from the shared canonToType 'cpp' column (single source of truth).
 
 // A type-correct C++ literal for a field's canonical type.
 function cppLit(type: any, placeholder: string = 'example'): string {
@@ -115,7 +103,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.short || ''
-        Content(`| \`${field.name}\` | \`${cppType(field.type)}\` | ${desc} |
+        Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${desc} |
 `)
       })
 
@@ -165,7 +153,7 @@ Value ${eVar}s = client->${acc}()->list(Value::undef(), Value::undef());
 Value ${eVar} = client->${acc}()->create(vmap({
 `)
       createItems.map((it: any) => {
-        Content(`    {"${it.name}", ${cppLit(it.type, 'example_' + it.name)}},  // ${cppType(it.type)}
+        Content(`    {"${it.name}", ${cppLit(it.type, 'example_' + it.name)}},  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`}), Value::undef());

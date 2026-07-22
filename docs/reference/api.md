@@ -182,6 +182,35 @@ flow. `$`-suffixed sentinels are skipped and the result is de-duplicated.
 The user-facing entries of a flow step's `match` object — keys ending in
 `$` (jostraca/aontu sentinels) are filtered out.
 
+### Typing helpers
+
+The typed-model subsystem (full picture:
+[typed models](./typed-models.md)) exports:
+
+- **`canonToType(sentinel, lang) → string`** — map a canonical type
+  sentinel (`` `$STRING` ``, …, or the `['`$ONE`', [members]]` union
+  form) to a concrete type name in `lang`. Unknown sentinel or language →
+  that language's "any"; never throws. **`canonKey(sentinel) → string`**
+  normalizes a sentinel to its bare key (`'`$STRING`' → 'STRING'`).
+- **`OP_SUFFIX`** / **`opTypeName(Name, op) → string`** — the generated
+  request-type name scheme (`<Name>LoadMatch`, `<Name>CreateData`, …).
+- **`opRequestShape(ent, op) → { items, fromParams }`** — an op's request
+  members with the required/optional decision applied (the partiality
+  policy). **`opParams(op)`** is the underlying param merge (dedupe by
+  name; required = intersection across points; `$action` points excluded).
+- **`entityClassName(ent, entityColl) → string`** — collision-free entity
+  class name (`<Name>Entity`, disambiguated when it would clash with a
+  generated type name).
+- **`entityTypeCollisions(entityColl) → string[]`** /
+  **`warnEntityTypeCollisions(entityColl, log, lang)`** — detect (and
+  warn about) duplicate generated type names across entities.
+- **`entityIdField(ent)`** / **`entityDataIdField(ent)`** — the id-like
+  key of the load match / of the data type (they differ; doc generators
+  must pick the right one). **`entityOps(ent)`** — active op names in
+  canonical order; **`entityPrimaryOp(ent)`** — the representative op for
+  a single example; **`pickExampleEntity(entityColl)`** — the entity a
+  README example should use.
+
 ---
 
 ## Exported types

@@ -1,12 +1,13 @@
 
-import { cmp, each, Content, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
 
-import { elixirType, elixirLit } from './utility_elixir'
+// Type names come from the shared canonToType 'elixir' column (single source of truth).
+import { elixirLit } from './utility_elixir'
 
 
 // Operation method spelling for the Elixir target: each op is a function on
@@ -22,6 +23,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
 
 
 const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
+  const { target } = props
   const { model } = props.ctx$
 
   const Name = model.const.Name
@@ -92,7 +94,7 @@ takes an entity handle built from the client:
 
       each(fields, (field: any) => {
         const desc = field.short || ''
-        Content(`| \`${field.name}\` | \`${elixirType(field.type)}\` | ${desc} |
+        Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${desc} |
 `)
       })
 
@@ -144,7 +146,7 @@ ${eVar} = ${Name}.${eVar}(sdk)
 record = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
       createItems.map((it: any) => {
-        Content(`  "${it.name}" => ${elixirLit(it.type, 'example_' + it.name)},  # ${elixirType(it.type)}
+        Content(`  "${it.name}" => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
 `)
       })
       Content(`}))

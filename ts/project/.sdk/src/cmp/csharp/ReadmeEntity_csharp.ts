@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,21 +9,7 @@ import {
 import { csVarName } from './utility_csharp'
 
 
-// canonToType has no `csharp` column (it falls back to `any`), so map the
-// canonical sentinels to real C# types locally. The SDK's loose object model
-// stores every value in a Dictionary<string, object?>, so these are the
-// documented shapes a caller sees.
-function csType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'string'
-  if ('INTEGER' === k) return 'long'
-  if ('NUMBER' === k) return 'double'
-  if ('BOOLEAN' === k) return 'bool'
-  if ('ARRAY' === k) return 'List<object?>'
-  if ('OBJECT' === k) return 'Dictionary<string, object?>'
-  return 'object?'
-}
-
+// Type names come from the shared canonToType 'csharp' column (single source of truth).
 
 // A type-correct, JSON-serialisable C# literal for a field's canonical type.
 function csLit(type: any, placeholder: string = 'example'): string {
@@ -118,7 +104,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.short || ''
-        Content(`| \`${field.name}\` | \`${csType(field.type)}\` | ${desc} |
+        Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${desc} |
 `)
       })
 
@@ -171,7 +157,7 @@ var ${eVar} = client.${entity.Name}().Create(new Dictionary<string, object?>
 {
 `)
       createItems.map((it: any) => {
-        Content(`    ["${it.name}"] = ${csLit(it.type, 'example_' + it.name)},  // ${csType(it.type)}
+        Content(`    ["${it.name}"] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`});

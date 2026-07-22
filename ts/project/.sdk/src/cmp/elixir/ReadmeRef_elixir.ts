@@ -1,12 +1,13 @@
 
-import { cmp, each, Content, File, isAuthActive, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
 
-import { elixirType, elixirLit } from './utility_elixir'
+// Type names come from the shared canonToType 'elixir' column (single source of truth).
+import { elixirLit } from './utility_elixir'
 
 
 const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
@@ -171,7 +172,7 @@ ${eVar} = ${Name}.${eVar}(sdk)
         each(fields, (field: any) => {
           const req = field.req ? 'Yes' : 'No'
           const desc = field.short || ''
-          Content(`| \`${field.name}\` | \`${elixirType(field.type)}\` | ${req} | ${desc} |
+          Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${req} | ${desc} |
 `)
         })
 
@@ -226,7 +227,7 @@ records = ${Name}.Entity.${EName}.list(${eVar})
 record = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
             createItems.map((it: any) => {
-              Content(`  "${it.name}" => ${elixirLit(it.type, 'example_' + it.name)},  # ${elixirType(it.type)}
+              Content(`  "${it.name}" => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
 `)
             })
             Content(`}))

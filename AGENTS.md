@@ -102,10 +102,14 @@ Rules:
   `featuremodel.test.ts` assert cross-language parity — extend them when you
   add behaviour, and expect a parity test to fail loudly if one language drifts.
 - **A per-language divergence must be deliberate and commented.** If one
-  language genuinely must differ (e.g. go emits a typed struct for EVERY entity
-  because go-cli/go-mcp dispatch all entities dynamically, whereas others emit
-  only for active entities), say so in a comment at the divergence — otherwise
-  a reader can't tell a bug from a decision.
+  language genuinely must differ (e.g. go additionally emits `LoadTyped`
+  wrappers because go-cli/go-mcp dispatch entities through the untyped
+  interface, which the other targets don't have), say so in a comment at the
+  divergence — otherwise a reader can't tell a bug from a decision. (The
+  typed-model emitters themselves are deliberately UNIFORM: every
+  `EntityTypes_<lang>` emits for every entity — active or not — via
+  `only_active: false`, and maps sentinels through the shared `canonToType`
+  column; see [docs/reference/typed-models](./docs/reference/typed-models.md).)
 
 > **Cautionary example (real):** the typed-model emitter filtered structs on the
 > lazily-derived `Name` (`filter(null != e.Name)`), silently dropping fieldless

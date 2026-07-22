@@ -1,5 +1,9 @@
 # EJECT-START
 
+  # Returns the entityname entity map (ProjectName.Types.entityname/0) on
+  # success; pipeline errors surface as the error value built by
+  # Utility.make_error (shape is utility-configurable), hence term().
+  @spec load(map(), ProjectName.Types.entityname_load_match() | nil, map() | nil) :: term()
   def load(ent, reqmatch \\ nil, ctrl \\ nil) do
     reqmatch = if reqmatch == nil, do: S.jm([]), else: reqmatch
 

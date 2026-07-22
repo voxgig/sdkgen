@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, File, isAuthActive, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,19 +9,7 @@ import {
 import { swiftVarName } from './utility_swift'
 
 
-// Map the canonical sentinels to real Swift types (loose object model —
-// values live in a `VMap` of `Value`).
-function swiftType(type: any): string {
-  const k = canonKey(type)
-  if ('STRING' === k) return 'String'
-  if ('INTEGER' === k) return 'Int'
-  if ('NUMBER' === k) return 'Double'
-  if ('BOOLEAN' === k) return 'Bool'
-  if ('ARRAY' === k) return '[Value]'
-  if ('OBJECT' === k) return 'VMap'
-  return 'Value'
-}
-
+// Type names come from the shared canonToType 'swift' column (single source of truth).
 
 // A type-correct Swift `Value` literal for a field's canonical type.
 function swiftLit(type: any, placeholder: string = 'example'): string {
@@ -217,7 +205,7 @@ let ${eVar} = client.${accessor}()
         each(fields, (field: any) => {
           const req = field.req ? 'Yes' : 'No'
           const desc = field.short || ''
-          Content(`| \`${field.name}\` | \`${swiftType(field.type)}\` | ${req} | ${desc} |
+          Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${req} | ${desc} |
 `)
         })
 
@@ -300,7 +288,7 @@ let result = try client.${accessor}().create(VMap([
 `)
             createItems.map((it: any, i: number) => {
               const comma = i < createItems.length - 1 ? ',' : ''
-              Content(`    ("${it.name}", ${swiftLit(it.type, 'example_' + it.name)})${comma}  // ${swiftType(it.type)}
+              Content(`    ("${it.name}", ${swiftLit(it.type, 'example_' + it.name)})${comma}  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`]), nil)
