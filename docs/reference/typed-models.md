@@ -86,6 +86,14 @@ per-language decision:
 - Optionality fidelity varies by tier: type-level (`?`/`Option<T>`) in
   ts/py/csharp/swift/rust; inherent nullability on the JVM; comment-only in
   c/cpp; dart renders all fields nullable and notes requiredness in docs.
+- The ts base class types accreted match state as `Partial<D>` (and go's
+  `MatchTyped` takes the data type), but a load match can legitimately
+  carry non-entity keys (query params) — op signatures use the accurate
+  `<Name>*Match` types; the persistent match-state slot is looser.
+- The documentary-tier targets deliberately do NOT wire types into op
+  signatures. Promoting one to go's additive `*Typed`-wrapper tier is a
+  per-language feature (conversion helpers + wrappers), best done with
+  that language's toolchain available to verify.
 
 ## Porting checklist (new language)
 
