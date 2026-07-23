@@ -39,7 +39,14 @@ int main(void) {
   Entity* e = ${ident}_${evar}(sdk, NULL);
   CHECK(e != NULL, "entity instance");
   CHECK_STR_EQ(e->vt->get_name(e), "${entity.name}", "entity get_name");
+`)
 
+    // The stream test drives the list op; only emit it when the entity has a
+    // list op — a create/load-only entity has no list endpoint, so
+    // stream("list") would error.
+    const hasList = null != (entity.op && (entity.op as any).list)
+    if (hasList) {
+      Content(`
   // stream(): runs the list op through the full pipeline and returns a List
   // of items. Seed two entities via test mode; with the streaming feature
   // active it yields the feature's incremental items, else it falls back to
@@ -69,7 +76,10 @@ int main(void) {
     CHECK(perr == NULL, "stream fallback: no error");
     CHECK_INT_EQ((int64_t)voxgig_as_list(pitems)->len, 2, "stream fallback: yields both items");
   }
+`)
+    }
 
+    Content(`
   TEST_SUMMARY("${evar}_entity");
 }
 `)

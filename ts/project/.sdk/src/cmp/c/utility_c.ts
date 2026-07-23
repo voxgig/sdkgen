@@ -23,9 +23,15 @@ function cVarName(name: string): string {
 }
 
 
-// The C project identifier used as a function-name prefix, e.g. solar.
+// The C project identifier used as a function-name prefix, e.g. solar. Must
+// match the SQUASHED `projectname` token that the umbrella header/fragment use
+// for the constructor (`<ident>_sdk_new`): a hyphenated slug
+// (bluefin-decryptx-p2pe) squashes to `bluefindecryptxp2pe`, so drop every
+// non-alphanumeric char rather than mapping them to `_` (which produced
+// `bluefin_decryptx_p2pe_sdk_new` callers that never linked against the
+// squashed definition). No-op for single-word names.
 function cIdent(model: any): string {
-  return String(model.name).toLowerCase().replace(/[^a-z0-9_]/g, '_')
+  return String(model.name).toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
 
