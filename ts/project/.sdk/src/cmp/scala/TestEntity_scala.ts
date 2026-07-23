@@ -17,6 +17,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
+  entityDataIdField,
 } from '@voxgig/sdkgen'
 
 
@@ -119,6 +120,23 @@ object ${EntityName}EntityTest {
     Content(`      val now = System.currentTimeMillis()
 `)
 
+    // Preamble bootstrap: a flow with no `create` step (e.g. a read-only
+    // load/list entity) has nothing to declare the standard `<ref>_data` var
+    // that a later load/update/remove reads its id from. Seed it from the
+    // shipped "existing" fixtures here, mirroring the ts generator. Guarded on a
+    // DATA id field — an entity that carries no id has no `.get("id")` to read.
+    const flowHasCreate = allSteps.some((s: any) => s.op === 'create')
+    const needsPreambleData = !flowHasCreate &&
+      null != entityDataIdField(entity) &&
+      allSteps.some((s: any) => ['load', 'update', 'remove'].includes(s.op))
+    if (needsPreambleData) {
+      const preambleData = scalaVarName(entity.name + '_ref01_data')
+      Content(`      val ${preambleData}Raw = Struct.items(Helpers.toMapAny(
+          Struct.getpath(entityData, "existing.${ENTLOWER}")))
+      val ${preambleData} = Helpers.toMapAny(${preambleData}Raw.get(0).get(1))
+`)
+    }
+
     // Model-driven step iteration (sorted-key order for byte-stable output).
     each(basicflow.step, (step: any, index: any) => {
       const opgen: OpGen = GENERATE_OP[step.op]
@@ -166,7 +184,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
       ${datavar} = Helpers.toMapAny(${datavar}Result)
       rep.check("${ENTLOWER}.create.map", ${datavar} != null, "expected create result to be a map")
 `)
-  if (null != entity.id) {
+  if (null != entityDataIdField(entity)) {
     Content(`      rep.check("${ENTLOWER}.create.id", ${datavar} != null && ${datavar}.get("id") != null, "expected created entity to have an id")
 `)
   }
@@ -199,8 +217,12 @@ const generateList: OpGen = (ctx, step, index) => {
 `)
   }
 
+  // Select-by-id assertions require the DATA type to carry an id field
+  // (entityDataIdField); an entity keyed only on a load-MATCH id it does not
+  // return as data has no `.get("id")` to compare, so skip them.
+  const hasDataId = null != entityDataIdField(entity)
   const allSteps = Object.values(flow.step) as any[]
-  const listvarUsed = !!step.valid?.some((v: any) => {
+  const listvarUsed = hasDataId && !!step.valid?.some((v: any) => {
     if ('ItemExists' !== v.apply && 'ItemNotExists' !== v.apply) return false
     const validRef = v.def?.ref
     return validRef && allSteps.some((s: any) => 'create' === s.op &&
@@ -222,12 +244,12 @@ const generateList: OpGen = (ctx, step, index) => {
         ((s.input.ref ?? entity.name + '_ref01') === validRef))
       const refDataVar = scalaVarName(validRef + '_data')
 
-      if ('ItemExists' === validator.apply && hasRefData) {
+      if ('ItemExists' === validator.apply && hasRefData && hasDataId) {
         Content(`      val ${listvar}Found = Struct.select(
           SdkTestSupport.entityListToData(${listvar}), SdkTestSupport.om("id" -> ${refDataVar}.get("id")))
       rep.check("${ENTLOWER}.list.exists", !Struct.isempty(${listvar}Found), "expected to find created entity in list")
 `)
-      } else if ('ItemNotExists' === validator.apply && hasRefData) {
+      } else if ('ItemNotExists' === validator.apply && hasRefData && hasDataId) {
         Content(`      val ${listvar}NotFound = Struct.select(
           SdkTestSupport.entityListToData(${listvar}), SdkTestSupport.om("id" -> ${refDataVar}.get("id")))
       rep.check("${ENTLOWER}.list.notexists", Struct.isempty(${listvar}NotFound), "expected removed entity to not be in list")
@@ -251,7 +273,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   const needsEnt = !priorSteps.some((s: any) =>
     ['create', 'list', 'load', 'update', 'remove'].includes(s.op))
 
-  const hasEntId = null != entity.id
+  const hasDataId = null != entityDataIdField(entity)
 
   Content(`      // UPDATE
 `)
@@ -261,7 +283,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
   Content(`      val ${datavar}Up = new LinkedHashMap[String, Object]()
 `)
-  if (hasEntId) {
+  if (hasDataId) {
     Content(`      ${datavar}Up.put("id", ${srcdatavar}.get("id"))
 `)
   }
@@ -293,7 +315,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
       val ${resdatavar} = Helpers.toMapAny(${resdatavar}Result)
       rep.check("${ENTLOWER}.update.map", ${resdatavar} != null, "expected update result to be a map")
 `)
-  if (hasEntId) {
+  if (hasDataId) {
     Content(`      rep.eq("${ENTLOWER}.update.id", ${datavar}Up.get("id"), ${resdatavar}.get("id"))
 `)
   }
@@ -328,7 +350,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
       return false
     })
 
-  const hasEntId = null != entity.id
+  const hasDataId = null != entityDataIdField(entity)
 
   Content(`      // LOAD
 `)
@@ -336,7 +358,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`      val ${entvar} = client.${accessor}(null)
 `)
   }
-  if (!hasSrcData && hasEntId) {
+  if (!hasSrcData && hasDataId) {
     Content(`      val ${srcdatavar}Raw = Struct.items(Helpers.toMapAny(
           Struct.getpath(entityData, "existing.${ENTLOWER}")))
       val ${srcdatavar} = Helpers.toMapAny(${srcdatavar}Raw.get(0).get(1))
@@ -344,7 +366,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   Content(`      val ${matchvar} = new LinkedHashMap[String, Object]()
 `)
-  if (hasEntId) {
+  if (hasDataId) {
     Content(`      ${matchvar}.put("id", ${srcdatavar}.get("id"))
       val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
       val ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded)
@@ -365,6 +387,12 @@ const generateRemove: OpGen = (ctx, step, index) => {
   const entvar = scalaVarName(step.input.entvar ?? ref + '_ent')
   const matchvar = scalaVarName(step.input.matchvar ?? (ref + '_match' + (step.input.suffix ?? '')))
   const srcdatavar = scalaVarName(step.input.srcdatavar ?? (ref + '_data'))
+
+  // The remove-by-id match reads ${srcdatavar}.get("id"); skip the whole step
+  // when the DATA type has no id field (there is no created id to remove by).
+  if (null == entityDataIdField(entity)) {
+    return
+  }
 
   const priorSteps = Object.values(flow.step).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
