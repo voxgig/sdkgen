@@ -96,6 +96,58 @@ const TestEntity = cmp(function TestEntity(props: any) {
                 a[1] + n[1]))), 2)
         ])
 
+        // The stream test drives the `list` op; only emit it when the entity
+        // actually has a list op (a create-only entity like a *_result has no
+        // list endpoint, so ent.stream('list', …) would throw point_no_points).
+        const flowHasList = Object.values(basicflow.step)
+          .some((s: any) => 'list' === s.op)
+        Slot({ name: 'stream' }, () => {
+          if (!flowHasList) {
+            return
+          }
+          Content(`test('stream', (t) async {
+      // stream() runs the list op through the full pipeline and yields each
+      // result item. Seed two entities via test mode; with the \`streaming\`
+      // feature active it yields the feature's incremental items, else it
+      // falls back to the materialised items — either way every item yields.
+      final seed = <String, dynamic>{
+        'entity': {
+          '${entity.name}': {
+            'strm01': <String, dynamic>{'id': 'strm01'},
+            'strm02': <String, dynamic>{'id': 'strm02'},
+          }
+        }
+      };
+
+      final sdkopts = <String, dynamic>{};
+      if (null != config.feature['streaming']) {
+        sdkopts['feature'] = {
+          'streaming': {'active': true}
+        };
+      }
+
+      final testsdk = ${model.Name}SDK.test(seed, sdkopts);
+      final ent = testsdk.${nom(entity, 'Name')}();
+
+      final seen = [];
+      await for (final item in ent.stream('list', <String, dynamic>{})) {
+        seen.add(item);
+      }
+      equal(2, seen.length);
+
+      // Fallback: with streaming inactive, stream() still yields both items
+      // from the materialised result.
+      final plainsdk = ${model.Name}SDK.test(seed);
+      final plainent = plainsdk.${nom(entity, 'Name')}();
+      final seen2 = [];
+      await for (final item in plainent.stream('list', <String, dynamic>{})) {
+        seen2.add(item);
+      }
+      equal(2, seen2.length);
+    });
+`)
+        })
+
         Slot({ name: 'basicSetup' }, () => {
           Content(`
 Map<String, dynamic> basicSetup([dynamic extra]) {
