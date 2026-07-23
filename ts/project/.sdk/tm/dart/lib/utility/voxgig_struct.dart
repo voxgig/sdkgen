@@ -2127,7 +2127,13 @@ void _validation(dynamic pval, dynamic key, dynamic parent, dynamic inj0) {
       var ckeys = keysof(cval);
       var pkeys = keysof(pval);
       if (pkeys.isNotEmpty && getprop(pval, S_BOPEN) != true) {
-        var badkeys = ckeys.where((ck) => _lookup(pval, ck) == null).toList();
+        // A child key is "unexpected" only when the shape does not CONTAIN it.
+        // Test presence, not `_lookup(...) == null`: a key that is present in
+        // the shape but maps to a null value (e.g. a record whose optional
+        // `serial_number` is null, merged into the shape by a `$AND` select)
+        // must NOT be rejected as unexpected.
+        var badkeys = ckeys.where((ck) =>
+            !(pval is Map && (pval as Map).containsKey(_mapKey(ck)))).toList();
         if (badkeys.isNotEmpty) {
           _pushErr(
               inj,
