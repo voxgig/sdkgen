@@ -40,7 +40,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
       .filter((it: any) => !it.optional || it.name === idF)
       .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
     testCallArg = 0 < items.length
-      ? `{ ${items.map((it: any) => `${it.name} = ${it.name === idF ? '"test01"' : luaLit(it.type)}`).join(', ')} }`
+      ? `{ ${items.map((it: any) => `${luaKey(it.name)} = ${it.name === idF ? '"test01"' : luaLit(it.type)}`).join(', ')} }`
       : ''
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
