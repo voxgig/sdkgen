@@ -373,13 +373,52 @@ function warnEntityTypeCollisions(entityColl: any, log: any, lang: string): stri
 // for deterministic output.
 function pickExampleEntity(entity: any): { entity: any, primaryOp: string | null } {
   const actives = each(entity).filter((e: any) => e && e.active !== false)
-  const readable = actives.find((e: any) => {
+  const readable = actives.filter((e: any) => {
     const op = entityPrimaryOp(e)
     return 'list' === op || 'load' === op
   })
-  const withOp = actives.find((e: any) => null != entityPrimaryOp(e))
-  const chosen = readable || withOp || actives[0] || null
+  const withOp = actives.filter((e: any) => null != entityPrimaryOp(e))
+  // Prefer a readable entity, then any entity with an op, then anything at all.
+  // WITHIN the chosen tier pick an entity of MEDIAN "size" — median name length
+  // and median field count — so the generated README/examples showcase a
+  // representative entity, not the alphabetically-first one (often a degenerate
+  // stub with a terse name and no fields) nor an atypically sprawling one.
+  const pool = readable.length ? readable : (withOp.length ? withOp : actives)
+  const chosen = pickMedianEntity(pool)
   return { entity: chosen, primaryOp: null == chosen ? null : entityPrimaryOp(chosen) }
+}
+
+
+// The pool entity closest to the median on both axes (name length, field
+// count). Distance on each axis is normalised by that axis's own median so the
+// two are comparable, then summed. Ties keep the pool's existing key-sorted
+// order (each() is byte-stable), so the pick is deterministic.
+function pickMedianEntity(pool: any[]): any {
+  if (0 === pool.length) return null
+  if (1 === pool.length) return pool[0]
+  const fieldCount = (e: any): number => (e && e.fields ? each(e.fields).length : 0)
+  const nameLen = (e: any): number => (e && e.name ? String(e.name).length : 0)
+  const medName = medianOf(pool.map(nameLen))
+  const medField = medianOf(pool.map(fieldCount))
+  let best = pool[0]
+  let bestScore = Infinity
+  for (const e of pool) {
+    const score =
+      Math.abs(nameLen(e) - medName) / (medName || 1) +
+      Math.abs(fieldCount(e) - medField) / (medField || 1)
+    if (score < bestScore) {
+      bestScore = score
+      best = e
+    }
+  }
+  return best
+}
+
+
+function medianOf(xs: number[]): number {
+  const s = xs.slice().sort((a, b) => a - b)
+  const m = Math.floor(s.length / 2)
+  return 0 === s.length ? 0 : (s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2)
 }
 
 
