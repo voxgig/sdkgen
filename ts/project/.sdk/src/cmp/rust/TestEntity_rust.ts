@@ -104,7 +104,14 @@ fn ${evar}_entity_instance() {
     let ent = testsdk.${method}(Value::Noval);
     assert_eq!(ent.get_name(), "${entity.name}");
 }
+`)
 
+    // The stream test drives the list op; only emit it when the entity has a
+    // list op (a create/load-only entity has no list endpoint, so
+    // stream("list") panics with point_no_points).
+    const flowHasList = allSteps.some((s: any) => 'list' === s.op)
+    if (flowHasList) {
+      Content(`
 #[test]
 fn ${evar}_entity_stream() {
     // stream() runs the list op through the full pipeline and yields each
@@ -144,7 +151,10 @@ fn ${evar}_entity_stream() {
         .collect();
     assert_eq!(plain_items.len(), 2, "fallback stream should yield both items");
 }
+`)
+    }
 
+    Content(`
 #[test]
 fn ${evar}_entity_basic() {
     let setup = ${evar}_basic_setup(Value::Noval);
