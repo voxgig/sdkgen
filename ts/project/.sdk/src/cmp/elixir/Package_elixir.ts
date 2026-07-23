@@ -20,7 +20,9 @@ const Package = cmp(async function Package(props: any) {
   const model: Model = ctx$.model
 
   const Name = model.const.Name
-  const app = model.const.name
+  // Elixir app names are atoms: a hyphenated slug (`bluefin-decryptx-p2pe`)
+  // is invalid (`:a-b` parses as subtraction). Snake_case it.
+  const app = String(model.const.name).replace(/-/g, '_')
   const { repoUrl } = repoInfo(model)
 
   File({ name: 'mix.exs' }, () => {
