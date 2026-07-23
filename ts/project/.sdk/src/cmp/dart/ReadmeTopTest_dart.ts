@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -60,7 +60,7 @@ Future<void> main() async {
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `{${chosen.map((it: any) => `'${it.name}': ${dartLit(it.type)}`).join(', ')}}`
     }
-    const eVar = safeVarName(eName.toLowerCase(), 'dart') + ('list' === primaryOp ? 's' : '')
+    const eVar = exampleVarName(eName.toLowerCase(), 'dart') + ('list' === primaryOp ? 's' : '')
     Content(`  final ${eVar} = await client.${eName}().${primaryOp}(${arg});
   print(${eVar});
 `)

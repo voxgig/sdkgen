@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityOps, safeVarName, jsKey } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityOps, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -47,7 +47,7 @@ const client = ${ctor}
     // then load/remove match on no argument and update omits the id.
     const idF = entityIdField(exampleEntity)
     // Variable-safe lowercase name (a `Delete` entity must not bind `delete`).
-    const eVar = safeVarName(exampleEntity.name, 'js')
+    const eVar = exampleVarName(exampleEntity.name, 'js')
     const exampleFields = (opname: string): string[] => {
       // ids are rendered separately as the match key for update/remove; a
       // REQUIRED id stays for create (dropping it makes the payload

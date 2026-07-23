@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, opRequestShape, safeVarName, jsKey } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -20,7 +20,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { entity: exampleEntity, primaryOp } = pickExampleEntity(entity)
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
   // Variable-safe lowercase name (a `Delete` entity must not bind `delete`).
-  const eVar = safeVarName(eName.toLowerCase(), 'ts')
+  const eVar = exampleVarName(eName.toLowerCase(), 'ts')
 
   const primaryOpDef = exampleEntity && primaryOp && exampleEntity.op && exampleEntity.op[primaryOp]
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp

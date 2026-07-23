@@ -10,7 +10,7 @@ import { requirePath } from '../utility'
 
 import { entityPrimaryOp, entityIdField, opRequestShape } from '../helpers/opShape'
 import { canonKey } from '../helpers/canonType'
-import { safeVarName } from '../helpers/naming'
+import { safeVarName, exampleVarName } from '../helpers/naming'
 
 import {
   installCommand as pkgInstall,
@@ -233,7 +233,7 @@ ${aboutMd.trim()}
         : ' See the [Entities](#entities) table below for the full list.'
       const exEnt = activeEntities[0]
       const ex = exEnt.Name
-      const exLower = safeVarName(ex.toLowerCase(), 'ts')
+      const exLower = exampleVarName(ex.toLowerCase(), 'ts')
       // The example call uses the entity's PRIMARY op — an op it actually
       // exposes (prefer list -> the array, then load -> the record, else a
       // create with its required fields). A create-only entity therefore never

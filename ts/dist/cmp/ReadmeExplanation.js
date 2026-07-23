@@ -200,7 +200,7 @@ const ReadmeExplanation = (0, jostraca_1.cmp)(function ReadmeExplanation(props) 
         eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1));
         // Sanitise against the target's reserved words (a `Delete` entity must
         // not bind `const delete = ...`).
-        eLower = (0, naming_1.safeVarName)(eName.toLowerCase(), target.name);
+        eLower = (0, naming_1.exampleVarName)(eName.toLowerCase(), target.name);
         const idF = (0, opShape_1.entityIdField)(ex);
         const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp;
         // Type-correct example id literal (numeric when the id param is integer-

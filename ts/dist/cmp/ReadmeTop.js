@@ -201,7 +201,7 @@ ${aboutMd.trim()}
                 : ' See the [Entities](#entities) table below for the full list.';
             const exEnt = activeEntities[0];
             const ex = exEnt.Name;
-            const exLower = (0, naming_1.safeVarName)(ex.toLowerCase(), 'ts');
+            const exLower = (0, naming_1.exampleVarName)(ex.toLowerCase(), 'ts');
             // The example call uses the entity's PRIMARY op — an op it actually
             // exposes (prefer list -> the array, then load -> the record, else a
             // create with its required fields). A create-only entity therefore never

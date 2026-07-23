@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, opRequestShape, safeVarName, jsKey } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -46,7 +46,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
     // Variable-safe lowercase name (a `Delete` entity must not bind `delete`).
-    const eVar = safeVarName(entity.name, target.name)
+    const eVar = exampleVarName(entity.name, target.name)
 
     Content(`
 ### ${entity.Name}

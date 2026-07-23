@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -47,7 +47,7 @@ Future<void> main() async {
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    const eVar = safeVarName(eName.toLowerCase(), 'dart')
+    const eVar = exampleVarName(eName.toLowerCase(), 'dart')
     const opnames = Object.keys(exampleEntity.op || {})
     // Model-driven id key: null when the entity has no id-like field, in which
     // case the load example takes no match argument.

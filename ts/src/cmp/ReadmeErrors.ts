@@ -9,7 +9,7 @@ import {
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
 import { primaryOpCall } from '../helpers/opExample'
 import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
-import { safeVarName } from '../helpers/naming'
+import { safeVarName, exampleVarName } from '../helpers/naming'
 
 
 // Error handling is one of the everyday developer tasks, so it gets its
@@ -241,7 +241,7 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
     const eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))
     // Sanitise the variable name against the target's reserved words (a
     // `Delete` entity must not bind `const delete = ...`).
-    const eLower = safeVarName(eName.toLowerCase(), target.name)
+    const eLower = exampleVarName(eName.toLowerCase(), target.name)
     const idF = entityIdField(ex)
     const call = primaryOpCall(target.name as ExampleLang, eName, eLower, primaryOp, idF, ex)
     Content(lang.entity(call, primaryOp))

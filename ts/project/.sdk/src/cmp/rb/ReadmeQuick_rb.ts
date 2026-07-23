@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -45,7 +45,7 @@ client = ${ctor}
     const article = /^[aeiou]/i.test(eName) ? "an" : "a"
     // Sanitise the local variable name — an entity whose lowercased name is a
     // Ruby keyword (e.g. `self`) would otherwise emit uncompilable code.
-    const eVar = safeVarName(eName.toLowerCase(), 'rb')
+    const eVar = exampleVarName(eName.toLowerCase(), 'rb')
     const opnames = entityOps(exampleEntity)
     // Model-driven id keys: `idF` is the load-MATCH key (null when the entity
     // has no id-like field — a response-wrapped spec); when null, load/remove
@@ -102,7 +102,7 @@ end
     if (nestedEntity) {
       const neName = nom(nestedEntity, 'Name')
       const neArticle = /^[aeiou]/i.test(neName) ? "an" : "a"
-      const neVar = safeVarName(neName.toLowerCase(), 'rb')
+      const neVar = exampleVarName(neName.toLowerCase(), 'rb')
 
       // Model-driven match: every REQUIRED load-match key — the same shape
       // the runtime resolves path params from, so the example always works.

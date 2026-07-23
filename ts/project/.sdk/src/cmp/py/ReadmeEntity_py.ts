@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -60,7 +60,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     const idF = entityIdField(entity)
     // Sanitise the local variable name — an entity whose lowercased name is a
     // Python keyword (e.g. `class`) would otherwise emit uncompilable code.
-    const eVar = safeVarName(entity.name, 'py')
+    const eVar = exampleVarName(entity.name, 'py')
 
     Content(`
 ### ${entity.Name}

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -32,7 +32,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // Ruby keyword (e.g. `self`) would otherwise emit uncompilable code. The
   // fixture KEY (`"${eName.toLowerCase()}"`) stays raw — it must match the
   // entity's registered name for the mock lookup to resolve.
-  const eVar = safeVarName(eName.toLowerCase(), 'rb')
+  const eVar = exampleVarName(eName.toLowerCase(), 'rb')
   // Model-driven id key: null when the entity has no id-like field (a
   // response-wrapped spec). When null the fixture seeds no id and a match op
   // takes no argument.

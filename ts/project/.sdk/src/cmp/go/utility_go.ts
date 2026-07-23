@@ -6,7 +6,7 @@ import {
   camelify,
   canonKey,
   each,
-  safeVarName,
+  exampleVarName,
 } from '@voxgig/sdkgen'
 
 import {
@@ -77,7 +77,8 @@ function exampleValue(entity: any, op: any, paramName: string, placeholder: stri
 // `type`/`range` entity must not bind a Go keyword).
 function goVarName(name: string): string {
   const pascal = camelify(name)
-  return safeVarName(pascal.charAt(0).toLowerCase() + pascal.slice(1), 'go')
+  // exampleVarName also guards `client`, the doc examples' SDK-instance var.
+  return exampleVarName(pascal.charAt(0).toLowerCase() + pascal.slice(1), 'go')
 }
 
 

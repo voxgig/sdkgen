@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape, safeVarName, jsKey } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -185,7 +185,7 @@ Alias for \`${model.Name}SDK.test()\`.
       // which case load/remove match on no argument and update omits the id.
       const idF = entityIdField(ent)
       // Variable-safe lowercase name (a `Delete` entity must not bind `delete`).
-      const eVar = safeVarName(ent.name, target.name)
+      const eVar = exampleVarName(ent.name, target.name)
 
       Content(`
 ---

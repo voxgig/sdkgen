@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -168,7 +168,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
       const idF = entityIdField(ent)
       // Sanitise the local variable name — an entity whose lowercased name is
       // a Python keyword (e.g. `class`) would otherwise emit uncompilable code.
-      const eVar = safeVarName(ent.name, 'py')
+      const eVar = exampleVarName(ent.name, 'py')
 
       Content(`
 ---

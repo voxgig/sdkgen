@@ -83,6 +83,19 @@ function safeVarName(name: string, lang: string): string {
 }
 
 
+// A variable name for a doc EXAMPLE entity. Doc examples bind the SDK instance
+// to `client` (e.g. `const client = ...SDK.test()`), so an entity whose
+// lowercased name is also `client` — an API with a `Client` entity — would
+// shadow it: `const client = client.Client()...` is self-referential (TS2448/
+// TS7022) and breaks the readme_examples type-check. Append `_` to keep the
+// example variable distinct from the SDK instance. Also applies the normal
+// language-reserved-word guard.
+function exampleVarName(name: string, lang: string): string {
+  const v = safeVarName(name, lang)
+  return 'client' === v ? v + '_' : v
+}
+
+
 // A valid ECMAScript identifier — the only shape `obj.name` can express.
 const JS_IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/
 
@@ -116,6 +129,7 @@ function jsOptProp(obj: string, name: string): string {
 export {
   isReservedName,
   safeVarName,
+  exampleVarName,
   jsProp,
   jsOptProp,
   jsKey,

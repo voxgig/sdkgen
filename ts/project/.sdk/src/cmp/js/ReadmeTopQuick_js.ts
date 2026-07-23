@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, jsKey } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -29,7 +29,7 @@ const client = ${ctor}
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    const eVar = safeVarName(eName.toLowerCase(), 'js')
+    const eVar = exampleVarName(eName.toLowerCase(), 'js')
     // ACTIVE ops only — an inactive op generates no method, so an example
     // calling it would be wrong.
     const opnames = entityOps(exampleEntity)
@@ -57,7 +57,7 @@ for (const ${eVar} of ${eVar}s) {
 
     if (nestedEntity) {
       const neName = nom(nestedEntity, 'Name')
-      const neVar = safeVarName(neName.toLowerCase(), 'js')
+      const neVar = exampleVarName(neName.toLowerCase(), 'js')
       const loadOp = nestedEntity.op && nestedEntity.op.load
 
       // Every REQUIRED load-match key (parent keys like page_id first, the

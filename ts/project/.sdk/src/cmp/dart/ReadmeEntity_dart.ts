@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -55,7 +55,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     const fields = entity.fields || []
     // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
-    const eVar = safeVarName(entity.name, 'dart')
+    const eVar = exampleVarName(entity.name, 'dart')
 
     Content(`
 ### ${entity.Name}

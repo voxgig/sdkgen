@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -167,7 +167,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` (or an erro
       const opnames = Object.keys(ent.op || {})
       const fields = ent.fields || []
       const idF = entityIdField(ent)
-      const eVar = safeVarName(ent.name, 'dart')
+      const eVar = exampleVarName(ent.name, 'dart')
 
       Content(`
 ---

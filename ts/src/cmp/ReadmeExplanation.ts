@@ -11,7 +11,7 @@ import { requirePath } from '../utility'
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
 import { idLiteral, matchArg, dataArg } from '../helpers/opExample'
 import type { ExampleLang } from '../helpers/opExample'
-import { safeVarName } from '../helpers/naming'
+import { safeVarName, exampleVarName } from '../helpers/naming'
 
 
 function cap(s: string): string {
@@ -240,7 +240,7 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
     eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))
     // Sanitise against the target's reserved words (a `Delete` entity must
     // not bind `const delete = ...`).
-    eLower = safeVarName(eName.toLowerCase(), target.name)
+    eLower = exampleVarName(eName.toLowerCase(), target.name)
     const idF = entityIdField(ex)
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     // Type-correct example id literal (numeric when the id param is integer-

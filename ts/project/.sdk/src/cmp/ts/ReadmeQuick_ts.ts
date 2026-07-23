@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, jsKey } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -48,7 +48,7 @@ const client = ${ctor}
     const eName = nom(exampleEntity, 'Name')
     // Variable-safe lowercase name — a `Delete`/`Class` entity must not bind a
     // reserved word (`const delete = ...` is a TS1109 syntax error).
-    const eVar = safeVarName(eName.toLowerCase(), 'ts')
+    const eVar = exampleVarName(eName.toLowerCase(), 'ts')
     const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
     const opnames = entityOps(exampleEntity)
     // Model-driven id key: `idF` is the entity's id-like MATCH field name, or
@@ -78,7 +78,7 @@ for (const ${eVar} of ${eVar}s) {
 
     if (nestedEntity) {
       const neName = nom(nestedEntity, 'Name')
-      const neVar = safeVarName(neName.toLowerCase(), 'ts')
+      const neVar = exampleVarName(neName.toLowerCase(), 'ts')
       const neArticle = /^[aeiou]/i.test(neName) ? 'an' : 'a'
       const loadOp = nestedEntity.op && nestedEntity.op.load
 
@@ -176,8 +176,26 @@ try {
       // carries the id (dataIdF) AND a `created` record exists, take it off the
       // returned record; otherwise use a type-correct literal — reading
       // `created.id` off an id-less data type is a TS2339.
-      const canUseCreatedId = null != dataIdF && opnames.includes('create')
-      const idValueFor = (opname: string): string => canUseCreatedId
+      // Type of the data field we would read off `created` (e.g. number for an
+      // integer id). null when unknown.
+      const dataFields: any[] = exampleEntity.fields ? each(exampleEntity.fields) : []
+      const dataIdType = dataIdF
+        ? (dataFields.find((f: any) => f && f.name === dataIdF) || {}).type
+        : null
+      // `created.<dataIdF>` is only usable as an op's id-match value when its
+      // type matches that op's id PARAM type. An id that is integer in the data
+      // type but string in the match path (a spec quirk seen on management
+      // APIs) would be a TS2322 otherwise — fall back to a type-correct literal.
+      const usesCreatedId = (opname: string): boolean => {
+        if (null == dataIdF || !opnames.includes('create')) {
+          return false
+        }
+        const matchItem = opRequestShape(exampleEntity, opname).items
+          .find((it: any) => it.name === idF)
+        const matchType = matchItem ? matchItem.type : null
+        return null == matchType || null == dataIdType || matchType === dataIdType
+      }
+      const idValueFor = (opname: string): string => usesCreatedId(opname)
         ? `created.${dataIdF}!`
         : exampleValue(exampleEntity, exampleEntity.op[opname], idF as string, 'example_id')
 
@@ -198,7 +216,7 @@ const created = await client.${eName}().create({${createBody}})
         // type carries one, else a literal), plus a couple of patch fields.
         const updateLines = (idF ? [`  ${idF}: ${idValueFor('update')},`] : []).concat(exampleFields('update'))
         const updateBody = updateLines.length ? '\n' + updateLines.join('\n') + '\n' : ''
-        Content(`// Update${canUseCreatedId ? ' — the id comes straight off the returned entity' : ''}
+        Content(`// Update${usesCreatedId('update') ? ' — the id comes straight off the returned entity' : ''}
 const updated = await client.${eName}().update({${updateBody}})
 
 `)

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -48,7 +48,7 @@ final client = ${ctor};
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
-    const eVar = safeVarName(eName.toLowerCase(), 'dart')
+    const eVar = exampleVarName(eName.toLowerCase(), 'dart')
     const opnames = entityOps(exampleEntity)
     // Model-driven id keys: `idF` is the entity's id-like MATCH field name, or
     // null when it has none. `dataIdF` is the id on the RETURNED record's data
@@ -89,7 +89,7 @@ try {
     if (nestedEntity) {
       const neName = nom(nestedEntity, 'Name')
       const neArticle = /^[aeiou]/i.test(neName) ? 'an' : 'a'
-      const neVar = safeVarName(neName.toLowerCase(), 'dart')
+      const neVar = exampleVarName(neName.toLowerCase(), 'dart')
 
       // Model-driven match: every REQUIRED load-match key. Parent keys (e.g.
       // page_id) first, the entity's own id last.

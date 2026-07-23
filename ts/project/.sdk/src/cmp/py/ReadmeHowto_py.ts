@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -30,7 +30,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
   // Sanitise the local variable name — an entity whose lowercased name is a
   // Python keyword (e.g. `class`) would otherwise emit uncompilable code.
-  const eVar = safeVarName(eName.toLowerCase(), 'py')
+  const eVar = exampleVarName(eName.toLowerCase(), 'py')
   // Model-driven id key: null when the entity has no id-like field, so a
   // match op takes no argument.
   const idF = exampleEntity ? entityIdField(exampleEntity) : null

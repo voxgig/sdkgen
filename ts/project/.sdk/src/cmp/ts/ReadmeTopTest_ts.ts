@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, safeVarName, jsKey } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -25,7 +25,7 @@ const client = ${model.const.Name}SDK.test()
   if (exampleEntity && primaryOp) {
     const eName = nom(exampleEntity, 'Name')
     // A list() result is an array — name the variable accordingly.
-    const eVar = safeVarName(eName.toLowerCase(), 'ts') +
+    const eVar = exampleVarName(eName.toLowerCase(), 'ts') +
       ('list' === primaryOp ? 's' : '')
     const primaryOpDef = exampleEntity.op && exampleEntity.op[primaryOp]
     const idF = entityIdField(exampleEntity)
