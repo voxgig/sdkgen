@@ -250,10 +250,20 @@ import TestJson (jsonRead)
 -- Load an entity fixture (../.sdk/test/entity/<name>/<Name>TestData.json).
 loadFixture :: String -> IO Value
 loadFixture entName = do
-  let lname = map toLowerCh entName
+  -- The fixture DIRECTORY is the snake_case entity name (create_result), so a
+  -- plain lowercase of the CamelCase entName (createresult) misses the
+  -- underscores for multi-word entities. Convert CamelCase -> snake_case.
+  let lname = camelToSnake entName
   raw <- readFile ("../.sdk/test/entity/" ++ lname ++ "/" ++ entName ++ "TestData.json")
   jsonRead raw
-  where toLowerCh ch = if ch >= 'A' && ch <= 'Z' then toEnum (fromEnum ch + 32) else ch
+  where
+    toLowerCh ch = if ch >= 'A' && ch <= 'Z' then toEnum (fromEnum ch + 32) else ch
+    camelToSnake [] = []
+    camelToSnake (c0 : rest) = toLowerCh c0 : go rest
+    go [] = []
+    go (c : cs)
+      | c >= 'A' && c <= 'Z' = '_' : toLowerCh c : go cs
+      | otherwise = c : go cs
 
 -- The first new-ref data map for an entity (fixture.new.<entity>.<ref0>).
 newRefData :: Value -> String -> IO Value
