@@ -24,6 +24,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
+  entityDataIdField,
 } from '@voxgig/sdkgen'
 
 
@@ -396,6 +397,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
 const generateList: OpGen = (ctx, step, index) => {
   const { entity, flow } = ctx
+  const hasDataId = null != entityDataIdField(entity)
   const ref = step.input.ref ?? entity.name + '_ref01'
   const entvar = goVar(step.input.entvar ?? ref + '_ent')
   const matchvar = goVar(step.input.matchvar ?? (ref + '_match' + (step.input.suffix ?? '')))
@@ -431,7 +433,9 @@ const generateList: OpGen = (ctx, step, index) => {
   // Only declare ${listvar} as a real var when a downstream validator
   // actually uses it; otherwise `_` to satisfy Go's unused-var check.
   const allSteps = Object.values(flow.step) as any[]
-  const listvarUsed = !!step.valid?.some((v: any) => {
+  // hasDataId: the ItemExists/ItemNotExists asserts (the only listvar users) are
+  // now gated on a real DATA id field, so without one the list result is unused.
+  const listvarUsed = hasDataId && !!step.valid?.some((v: any) => {
     if ('ItemExists' !== v.apply && 'ItemNotExists' !== v.apply) return false
     const validRef = v.def?.ref
     return validRef && allSteps.some((s: any) => 'create' === s.op &&
@@ -460,7 +464,7 @@ const generateList: OpGen = (ctx, step, index) => {
       const hasRefData = validRef && allSteps.some((s: any) => 'create' === s.op &&
         ((s.input.ref ?? entity.name + '_ref01') === validRef))
 
-      if ('ItemExists' === validator.apply && hasRefData) {
+      if ('ItemExists' === validator.apply && hasRefData && hasDataId) {
         const refDataVar = goVar(validRef + '_data')
         Content(`
 		foundItem := vs.Select(entityListToData(${listvar}), map[string]any{"id": ${refDataVar}["id"]})
@@ -468,7 +472,7 @@ const generateList: OpGen = (ctx, step, index) => {
 			t.Fatal("expected to find created entity in list")
 		}
 `)
-      } else if ('ItemNotExists' === validator.apply && hasRefData) {
+      } else if ('ItemNotExists' === validator.apply && hasRefData && hasDataId) {
         const refDataVar = goVar(validRef + '_data')
         Content(`
 		notFoundItem := vs.Select(entityListToData(${listvar}), map[string]any{"id": ${refDataVar}["id"]})
@@ -642,6 +646,9 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
 const generateRemove: OpGen = (ctx, step, index) => {
   const { entity, flow } = ctx
+  if (null == entityDataIdField(entity)) {
+    return
+  }
   const ref = step.input.ref ?? entity.name + '_ref01'
   const entvar = goVar(step.input.entvar ?? ref + '_ent')
   const matchvar = goVar(step.input.matchvar ?? (ref + '_match' + (step.input.suffix ?? '')))
