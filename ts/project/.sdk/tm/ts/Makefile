@@ -35,7 +35,7 @@ publish: test
 	  echo "[dry-run] aql filler token detected: would publish to npm and tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
-	npm publish --access public --registry https://registry.npmjs.org; \
+	npm stage publish --access public --registry https://registry.npmjs.org; \
 	git tag -a "$(TAG)" -m "ts v$(VERSION)"; \
 	url=$$(git remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#'); \
 	if [ -n "$$token" ] && printf '%s' "$$url" | grep -q '^https://github.com/'; then \
