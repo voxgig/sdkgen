@@ -48,7 +48,7 @@ const Entity = cmp(function Entity(props: any) {
               ({ indent }: any) => {
                 const arg = ('create' === opname || 'update' === opname) ?
                   'reqdata' : 'reqmatch'
-                Content({ indent }, `pub fn ${opname}(self: *EntyClass, _${arg}: Value, _ctrl: Value) OpResult {
+                Content({ indent }, `pub fn ${opname}(self: *${cls}, _${arg}: Value, _ctrl: Value) OpResult {
     _ = _${arg};
     _ = _ctrl;
     return .{ .err = h.unsupported_op("${opname}", self.name) };
