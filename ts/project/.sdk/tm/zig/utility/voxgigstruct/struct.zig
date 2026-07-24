@@ -3731,7 +3731,7 @@ fn validationModify(allocator: Allocator, _: JsonValue, key: []const u8, parent:
                 var bad = std.ArrayList([]const u8).init(allocator);
                 for (ckeys.array.data.items) |ck| {
                     if (ck != .string) continue;
-                    if (!((haskey(allocator, pval, ck) catch false))) {
+                    if (!((pval == .object) and (pval.object.get(ck.string) != null))) {
                         bad.append(ck.string) catch {};
                     }
                 }

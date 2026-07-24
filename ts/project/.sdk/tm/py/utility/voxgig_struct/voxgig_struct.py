@@ -2401,7 +2401,7 @@ def _validation(
         if 0 < len(pkeys) and True != getprop(pval, '`$OPEN`'):
             badkeys = []
             for ckey in ckeys:
-                if not haskey(pval, ckey):
+                if str(ckey) not in pval:
                     badkeys.append(ckey)
             if 0 < size(badkeys):
                 msg = 'Unexpected keys at field ' + pathify(inj.path, 1) + S_VIZ + join(badkeys, ', ')

@@ -2361,7 +2361,7 @@ defmodule Voxgig.Struct do
                 pkeys = keysof(pval)
 
                 if pkeys != [] and getprop(pval, @s_bopen) != true do
-                  badkeys = Enum.filter(ckeys, fn ck -> lookup_(pval, ck) == nil end)
+                  badkeys = Enum.filter(ckeys, fn ck -> match?(:error, omap_get(map_pairs(pval), mapkey(ck))) end)
                   if badkeys != [], do: push_err(inj, "Unexpected keys at field " <> pathify(ig(inj, :path), 1) <> @s_viz <> Enum.join(badkeys, ", "))
                 else
                   merge(vlist_new([pval, cval]))
