@@ -2133,7 +2133,7 @@ void _validation(dynamic pval, dynamic key, dynamic parent, dynamic inj0) {
         // `serial_number` is null, merged into the shape by a `$AND` select)
         // must NOT be rejected as unexpected.
         var badkeys = ckeys.where((ck) =>
-            !(pval is Map && (pval as Map).containsKey(_mapKey(ck)))).toList();
+            !(pval is Map && pval.containsKey(_mapKey(ck)))).toList();
         if (badkeys.isNotEmpty) {
           _pushErr(
               inj,
