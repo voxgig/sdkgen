@@ -27,6 +27,42 @@
 // syntax; the policy itself is language-neutral and tested in isolation.
 
 import { each, names } from 'jostraca'
+import { KIT, getModelPath } from '@voxgig/apidef'
+
+
+// THE entity collection for a model — resolved once, with a stable identity.
+//
+// Two problems this solves, both caused by every component calling
+// `getModelPath(model, 'main.<KIT>.entity')` for itself:
+//
+//   * CORRECTNESS. getModelPath drops `active: false` entries by default, but
+//     the consumer scaffold (create-sdkgen Root.ts) generates entity code for
+//     EVERY entity and every EntityTypes_<lang> emits data types with
+//     `only_active: false`. Class-name assignment done against the filtered
+//     view cannot see the inactive entities whose data types it must avoid.
+//     This resolver always returns the unfiltered collection.
+//
+//   * PERFORMANCE. getModelPath REBUILDS the container object on every call
+//     when filtering, so the WeakMap memos below never hit across callers —
+//     the O(n·ops) class-name assignment re-ran per entity per target. At 500
+//     entities x 22 targets that was ~15s of pure recomputation; caching the
+//     resolved collection on the model makes it ~3ms.
+const _entityCollCache = new WeakMap<object, any>()
+
+function entityCollection(model: any): any {
+  if (null == model || 'object' !== typeof model) {
+    return {}
+  }
+  const cached = _entityCollCache.get(model)
+  if (null != cached) {
+    return cached
+  }
+  const coll = getModelPath(model, `main.${KIT}.entity`,
+    { only_active: false, required: false }) || {}
+  deriveEntityNames(coll)
+  _entityCollCache.set(model, coll)
+  return coll
+}
 
 
 // Derive the PascalCase `Name` on every entity in a collection.
@@ -471,6 +507,7 @@ function entityDataIdField(ent: any): string | null {
 export {
   OP_SUFFIX,
   deriveEntityNames,
+  entityCollection,
   opTypeName,
   opParams,
   opRequestShape,

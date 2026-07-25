@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each,
   List, File, Copy, Folder, Fragment, Line,
-  entityClassName,
+  entityClassName, entityCollection,
 } from '@voxgig/sdkgen'
 
 
@@ -61,7 +61,7 @@ const Main = cmp(async function Main(props: any) {
       Line(``)
 
       List({ item: entity }, ({ item }: any) => {
-        const cls = entityClassName(item, entity)
+        const cls = entityClassName(item, entityCollection(model))
         return Line(`import 'entity/${cls}.dart';`)
       })
 
@@ -70,7 +70,7 @@ const Main = cmp(async function Main(props: any) {
       Line(``)
       Line(`export '${model.const.Name}Types.dart';`)
       List({ item: entity }, ({ item }: any) => {
-        const cls = entityClassName(item, entity)
+        const cls = entityClassName(item, entityCollection(model))
         return Line(`export 'entity/${cls}.dart';`)
       })
 

@@ -62,6 +62,43 @@ describe('helpers', () => {
       strictEqual(names.includes('github.com/x/nope'), false)
     })
 
+    test('a package required by two features appears once', () => {
+      // Duplicate manifest keys are a hard parse error in go.mod / Cargo.toml
+      // and silently last-wins in package.json, so the same package required
+      // by several features must collapse to a single entry.
+      const model: any = makeModel()
+      model.main.kit.feature.extra = {
+        active: true,
+        deps: { go: { 'github.com/x/auth': { active: true, version: 'v1.0.0' } } },
+      }
+      const names = collectDeps(model, 'go', undefined).map((d) => d.name)
+      deepStrictEqual(names, ['github.com/x/auth'])
+    })
+
+    test('a conflicting duplicate version keeps the first and warns', () => {
+      const model: any = makeModel()
+      model.main.kit.feature.extra = {
+        active: true,
+        deps: { go: { 'github.com/x/auth': { active: true, version: 'v2.0.0' } } },
+      }
+      const warnings: any[] = []
+      const log = { warn: (w: any) => warnings.push(w) }
+      const out = collectDeps(model, 'go', undefined, log)
+      deepStrictEqual(out.map((d) => d.name), ['github.com/x/auth'])
+      strictEqual(out[0].version, 'v1.0.0', 'first (sorted-key) occurrence wins')
+      strictEqual(warnings.length, 1)
+      strictEqual(warnings[0].point, 'dep-version-conflict')
+      strictEqual(warnings[0].dropped, 'v2.0.0')
+    })
+
+    test('a target dep duplicating a feature dep does not double up', () => {
+      const out = collectDeps(makeModel(), 'go', {
+        'github.com/x/auth': { version: 'v1.0.0' },
+      } as any)
+      deepStrictEqual(out.map((d) => d.name), ['github.com/x/auth'])
+      strictEqual(out[0].source, 'feature', 'feature entry retained')
+    })
+
     test('no deps for a language with none', () => {
       strictEqual(collectDeps(makeModel(), 'py', undefined).length, 0)
     })

@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityClassName } from '@voxgig/sdkgen'
+import { cmp, Content, entityClassName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,7 +12,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
   const { model } = props.ctx$
 
   // Collision-free entity CLASS name (see entityClassName).
-  const entityColl = getModelPath(model, `main.${KIT}.entity`)
+  const entityColl = entityCollection(model)
   const cls = entityClassName(entity, entityColl)
 
   // C# keeps the PascalCase accessor: public members are PascalCase, so a

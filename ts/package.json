@@ -3,6 +3,9 @@
   "version": "1.3.17",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
   "types": "dist/sdkgen.d.ts",
   "description": "Voxgig SDK Generator.",
   "homepage": "https://github.com/voxgig/voxgig-sdkgen",
@@ -54,11 +57,11 @@
     "typescript": "7.0.2"
   },
   "peerDependencies": {
-    "@voxgig/apidef": ">=6",
-    "@voxgig/struct": ">=0",
-    "@voxgig/util": ">=0",
-    "aontu": ">=0",
-    "jostraca": ">=0",
-    "shape": ">=10.1"
+    "@voxgig/apidef": ">=6.3.1 <7",
+    "@voxgig/struct": ">=0.2.1 <0.3",
+    "@voxgig/util": ">=0.5.1 <0.6",
+    "aontu": ">=0.48.1 <0.49",
+    "jostraca": ">=0.31.0 <0.32",
+    "shape": ">=10.1 <11"
   }
 }

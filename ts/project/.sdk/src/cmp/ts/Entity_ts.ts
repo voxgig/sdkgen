@@ -24,7 +24,7 @@ const Entity = cmp(function Entity(props: any) {
   // `<Name>Entity`, disambiguated when it would clash with another entity's
   // data-type name. The DATA type stays `<Name>`. The class file name and the
   // Main import path both use this, so they always agree.
-  const entityColl = getModelPath(model, `main.${KIT}.entity`)
+  const entityColl = entityCollection(model)
   const cls = entityClassName(entity, entityColl)
 
   const entrep = {

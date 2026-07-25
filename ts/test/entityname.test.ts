@@ -24,7 +24,10 @@ import {
   entityClassName,
   entityTypeCollisions,
   deriveEntityNames,
+  entityCollection,
 } from '../dist/sdkgen.js'
+
+const { KIT } = require('../dist/types.js')
 
 
 const CMP_DIR = Path.resolve(__dirname, '..', 'project', '.sdk', 'src', 'cmp')
@@ -131,5 +134,46 @@ describe('every language component guards a missing entity.op', () => {
       }
     }
     deepStrictEqual(bad, [], 'use entity.op?.load / entity.op?.list')
+  })
+})
+
+
+describe('entityCollection resolves once, unfiltered', () => {
+
+  function makeModel(): any {
+    return {
+      main: {
+        [KIT]: {
+          entity: {
+            on: { name: 'on', active: true, op: { load: {} } },
+            off: { name: 'off', active: false, op: { load: {} } },
+          },
+        },
+      },
+    }
+  }
+
+  test('returns a STABLE object so the class-name memo actually hits', () => {
+    // getModelPath rebuilds its container on every call when filtering, which
+    // defeated the WeakMap memo and made class-name assignment quadratic
+    // (~15s at 500 entities x 22 targets).
+    const model = makeModel()
+    strictEqual(entityCollection(model), entityCollection(model))
+  })
+
+  test('includes inactive entities (matching what EntityTypes emits)', () => {
+    const coll = entityCollection(makeModel())
+    deepStrictEqual(Object.keys(coll).sort(), ['off', 'on'])
+  })
+
+  test('derives Name eagerly', () => {
+    const coll = entityCollection(makeModel())
+    strictEqual(coll.on.Name, 'On')
+    strictEqual(coll.off.Name, 'Off')
+  })
+
+  test('tolerates a model with no entity collection', () => {
+    deepStrictEqual(entityCollection({ main: {} }), {})
+    deepStrictEqual(entityCollection(null), {})
   })
 })

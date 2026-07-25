@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, camelify, names,
   Content, File, Folder, Fragment,
-  entityClassName,
+  entityClassName, entityCollection,
 } from '@voxgig/sdkgen'
 
 import {
@@ -20,7 +20,7 @@ const Entity = cmp(function Entity(props: any) {
   const { target, entity } = props
 
   // Collision-free entity CLASS name (see entityClassName).
-  const entityColl = getModelPath(model, `main.${KIT}.entity`)
+  const entityColl = entityCollection(model)
   const cls = entityClassName(entity, entityColl)
 
   const entrep = {
