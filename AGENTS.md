@@ -98,9 +98,23 @@ Rules:
   front of you and move on.
 - **`ts`/`js` are the reference implementation.** Bring a change to `ts`/`js`
   first, then port to the rest; check the others against them.
-- **Parity is testable.** `ts/test/feature.test.ts` /
-  `featuremodel.test.ts` assert cross-language parity — extend them when you
-  add behaviour, and expect a parity test to fail loudly if one language drifts.
+- **Parity is testable.** `ts/test/parity.test.ts` states the coverage TIERS
+  as data and enforces them: FULL (drives the shared `.aontu` corpus),
+  MIRRORED (hand-written mirror, free to drift), UNCOVERED (no primary-utility
+  suite). Adding or removing a target fails until its tier is declared.
+  `ts/test/feature.test.ts` / `featuremodel.test.ts` cover feature behaviour
+  and model/template consistency. Extend them when you add behaviour.
+- **A corpus section with zero cases is a FAILURE, not a pass.** The runners
+  (`tm/go/test/runner_test.go`, `tm/rust/tests/common/mod.rs`,
+  `tm/ts/test/utility/PrimaryUtility.test.ts`) reject an empty or missing
+  section unless it is on their PENDING list, which must match the PENDING
+  headers on the fixtures in create-sdkgen. Nine fixtures once shipped empty
+  and every language "passed" them.
+- **The corpus is compiled.** Targets execute `.sdk/test/test.json`, not the
+  `.aontu` fixtures. Edit a fixture and you MUST recompile (`npm run
+  test-model` in a scaffolded project) and copy back only the changed
+  sections — create-sdkgen's `test/corpus.test.ts` fails on drift between the
+  two.
 - **A per-language divergence must be deliberate and commented.** If one
   language genuinely must differ (e.g. go additionally emits `LoadTyped`
   wrappers because go-cli/go-mcp dispatch entities through the untyped
@@ -237,6 +251,24 @@ cd ../<lang> && <lang-test-command>             # target builds + tests
   and will write during a `-y` run.
 - **Index updates** (`feature-index` / `target-index`) must be idempotent
   — adding a name already present must not duplicate it.
+- **`ts/project/.sdk/src/cmp/**` is NOT compiled by `tsc --build src test`.**
+  It compiles only inside a consumer project, so a missing import is invisible
+  here and breaks every generated SDK of that language. `npm run build` runs
+  `check-scaffold` (`tsconfig.scaffold.json`) to type-check it — do not remove
+  that step.
+- **Resolve the entity collection with `entityCollection(model)`**, never
+  `getModelPath(model, \`main.${KIT}.entity\`)` in a component. getModelPath
+  rebuilds its container on every call when filtering, which defeats the
+  class-name memo (quadratic: ~15s at 500 entities x 22 targets) and hands you
+  an ACTIVE-filtered view that cannot see the inactive entities whose data
+  types EntityTypes still emits.
+- **`Name` is derived lazily.** Do not assume a component ran before you.
+  `entityClassName` / `entityTypeCollisions` derive it themselves; if you add
+  a helper that reads `e.Name`, call `deriveEntityNames()` first — and never
+  memoise a result computed from an underived collection.
+- **An entity need not declare `op`.** Read it as `entity.op || {}` /
+  `entity.op?.load`; an unguarded `Object.keys(entity.op)` aborts generation
+  for every target. `ts/test/entityname.test.ts` fails if one is reintroduced.
 
 ---
 
