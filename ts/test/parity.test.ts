@@ -184,3 +184,36 @@ describe('reference-target invariants', () => {
     ok(/is EMPTY/.test(src), 'a zero-case section must fail')
   })
 })
+
+
+// The scaffold components (project/.sdk/src/cmp/**) are TypeScript that only
+// ever compiles inside a CONSUMER project, so `tsc --build src test` never
+// sees them: a missing import there is invisible here and fatal there (every
+// generated SDK of that language fails to build). tsconfig.scaffold.json
+// type-checks them against this package's own source; `npm run build` runs it.
+//
+// A source-level approximation was tried first and abandoned — the components
+// EMIT target-language source, so identifiers like `cmap(`, `names(` and
+// `template(` appear inside string literals and comments and cannot be told
+// apart from real call sites by regex. Only a real compile is sound.
+describe('scaffold components are type-checked', () => {
+
+  test('the scaffold typecheck is wired into the build', () => {
+    const pkg = JSON.parse(
+      readFileSync(Path.resolve(__dirname, '..', 'package.json'), 'utf8'))
+    ok(/check-scaffold/.test(pkg.scripts.build),
+      'npm run build must type-check project/.sdk/src/cmp/**')
+    ok(/tsconfig\.scaffold\.json/.test(pkg.scripts['check-scaffold'] || ''),
+      'check-scaffold must run the scaffold tsconfig')
+  })
+
+  test('the scaffold tsconfig covers the components and skips fragments', () => {
+    const cfg = JSON.parse(
+      readFileSync(Path.resolve(__dirname, '..', 'tsconfig.scaffold.json'), 'utf8'))
+    deepStrictEqual(cfg.include, ['project/.sdk/src/cmp/**/*.ts'])
+    ok((cfg.exclude || []).some((e: string) => /fragment/.test(e)),
+      'fragments are template source, not standalone modules')
+    ok(cfg.compilerOptions?.paths?.['@voxgig/sdkgen'],
+      'components must resolve @voxgig/sdkgen to this package source')
+  })
+})
