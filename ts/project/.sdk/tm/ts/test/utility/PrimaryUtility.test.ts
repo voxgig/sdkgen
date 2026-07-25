@@ -31,6 +31,34 @@ describe('PrimaryUtility', async () => {
   }
 
 
+  // Sections deliberately left empty in the shared corpus
+  // (.sdk/test/primary/<name>.aontu carries a PENDING header). Everything
+  // else MUST contribute cases.
+  const PENDING = new Set([
+    'fetcher', 'makeFetchDef', 'makePoint', 'makeResult',
+    'featureAdd', 'featureHook', 'featureInit',
+  ])
+
+  // Run one corpus section, failing loudly when it would run ZERO cases.
+  // A renamed section or a fixture that compiled to an empty `set` used to
+  // pass silently, which defeats the point of a shared oracle. (The guard
+  // lives here rather than in runner.ts, which is vendored verbatim from
+  // @voxgig/struct and must stay byte-identical to upstream.)
+  async function runsection(name: string, subject: Function) {
+    const section = spec[name]
+    ok(null != section,
+      `test corpus section '${name}' missing — check the name against .sdk/test/primary/`)
+    ok(null != section.basic && Array.isArray(section.basic.set),
+      `test corpus section '${name}' has no basic.set list`)
+    if (0 === section.basic.set.length && !PENDING.has(name)) {
+      throw new Error(
+        `test corpus section '${name}' is EMPTY — zero cases would run; ` +
+        `add cases, or mark the fixture PENDING in .sdk/test/primary/`)
+    }
+    return runset(section.basic, subject)
+  }
+
+
   before(async () => {
     const runner = await makeRunner(TEST_JSON_FILE, await SDK.test())
     const run = await runner('primary')
@@ -421,6 +449,18 @@ describe('PrimaryUtility', async () => {
 
     const out = utility.makeError(ctx, ctx.error('test_code', 'test message'))
     deepStrictEqual(out, { id: 'safe01' })
+  })
+
+
+  test('path-basic', async () => {
+    // preparePath shipped as an empty `set: []` — every port "passed" it while
+    // running zero cases. Now corpus-driven like every other section.
+    await runsection('preparePath', (ctx: any) => utility.preparePath(ctx))
+  })
+
+
+  test('clean-corpus', async () => {
+    await runsection('clean', (...args: any[]) => utility.clean(args[0], args[1]))
   })
 
 

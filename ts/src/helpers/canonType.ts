@@ -14,9 +14,14 @@
 // the SINGLE mapping per language: components must not keep local copies.
 //
 // Kept as a small mirror here (rather than importing VALID_CANON at runtime)
-// because apidef is a peer dependency and the table is the INVERSE direction;
-// `ts/test/canontype.test.ts` asserts this table covers apidef's exported
-// sentinel vocabulary whenever apidef is installed, so drift fails the suite.
+// because apidef is a peer dependency and the table is the INVERSE direction.
+//
+// `ts/test/canonsync.test.ts` guards it two ways: the vocabulary and every
+// language column are pinned LOCALLY (that check always runs), and the table
+// is cross-checked against apidef's exported VALID_CANON/CANON_ONE when the
+// installed apidef exports them. Note that the currently published apidef
+// (6.3.1) does NOT export them, so the cross-check skips — do not rely on it
+// alone; add a new sentinel to the local list in the same change.
 //
 // KNOWN GAPS (papered over sanely, documented for the port):
 //  - Unknown / missing sentinel  -> the language's "any" (never throws).
