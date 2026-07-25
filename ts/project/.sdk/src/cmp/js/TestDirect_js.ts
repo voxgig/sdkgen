@@ -48,7 +48,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
       apikey: env.${PROJECTNAME}_APIKEY,`
     : ''
 
-  const opnames = Object.keys(entity.op)
+  const opnames = Object.keys(entity.op || {})
   const hasLoad = opnames.includes('load')
   const hasList = opnames.includes('list')
 
@@ -134,7 +134,7 @@ function directSetup(mockres) {
 
 
 function generateDirectLoad(model: Model, entity: ModelEntity) {
-  const loadOp = entity.op.load
+  const loadOp = entity.op?.load
   const loadPoint: ModelPoint | undefined = loadOp?.points?.[0]
 
   if (null == loadPoint) {
@@ -145,7 +145,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   const loadPath = normalizePathParams(loadPoint.parts || [], loadParams, loadPoint.rename?.param)
 
   // Get list info for live mode bootstrapping
-  const listOp = entity.op.list
+  const listOp = entity.op?.list
   const listPoint = listOp?.points?.[0]
   const listParams = listPoint?.args?.params || []
   const listPath = listPoint ? normalizePathParams(listPoint.parts || [], listParams, listPoint.rename?.param) : ''
@@ -231,7 +231,7 @@ ${paramAsserts}    }
 
 
 function generateDirectList(model: Model, entity: ModelEntity) {
-  const listOp = entity.op.list
+  const listOp = entity.op?.list
   const listPoint: ModelPoint | undefined = listOp?.points?.[0]
 
   if (null == listPoint) {

@@ -28,6 +28,7 @@
 // syntax; the policy itself is language-neutral and tested in isolation.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OP_SUFFIX = void 0;
+exports.deriveEntityNames = deriveEntityNames;
 exports.opTypeName = opTypeName;
 exports.opParams = opParams;
 exports.opRequestShape = opRequestShape;
@@ -40,6 +41,22 @@ exports.entityClassName = entityClassName;
 exports.entityTypeCollisions = entityTypeCollisions;
 exports.warnEntityTypeCollisions = warnEntityTypeCollisions;
 const jostraca_1 = require("jostraca");
+// Derive the PascalCase `Name` on every entity in a collection.
+//
+// `Name` is injected LAZILY by jostraca's names(), historically by whichever
+// component happened to run first (create-sdkgen Root.ts, or an EntityTypes
+// emitter). Anything reading `e.Name` before that ran saw `undefined` — and
+// because the helpers below MEMOISE, one early read poisoned the result for
+// the whole run (`undefinedEntity` class names; a permanently empty collision
+// list). The helpers therefore derive `Name` themselves, up front, so they
+// never depend on component ordering. Idempotent: names() is only called for
+// an entity that lacks `Name`.
+function deriveEntityNames(entityColl) {
+    const ents = (0, jostraca_1.each)(entityColl).filter((e) => e && null != e.name);
+    ents.forEach((e) => { if (null == e.Name)
+        (0, jostraca_1.names)(e, e.name); });
+    return ents;
+}
 // The five ops, and whether their request payload is a `Match` (query/id) or
 // `Data` (body) — this fixes the generated type-name suffix per op.
 const OP_SUFFIX = {
@@ -220,6 +237,16 @@ function entityPrimaryOp(ent) {
 // … The DATA type keeps its canonical `<Name>` — only the suffixed class
 // yields. Deterministic (sorted-key iteration) and stable across runs.
 //
+// Covers EVERY entity, active or not: the consumer scaffold (create-sdkgen
+// Root.ts) iterates the RAW entity collection, and every EntityTypes_<lang>
+// emits with `only_active: false`, so an inactive entity still contributes a
+// generated data type AND still needs a class name. Filtering to actives here
+// left inactive entities on the un-deduped `<Name>Entity` fallback and left
+// their data types out of `taken` — so an ACTIVE entity's class could collide
+// with an INACTIVE entity's emitted data type (e.g. active `project` ->
+// class `ProjectEntity` vs inactive `project-entity` -> type `ProjectEntity`,
+// a redeclaration in Go).
+//
 // Memoised per entity-collection object so the O(n) assignment runs once.
 const _classNameCache = new WeakMap();
 function entityClassNames(entityColl) {
@@ -227,7 +254,7 @@ function entityClassNames(entityColl) {
     if (null != cached) {
         return cached;
     }
-    const ents = (0, jostraca_1.each)(entityColl).filter((e) => e && e.active !== false);
+    const ents = deriveEntityNames(entityColl);
     // 1. Every top-level DATA-type name the target emits.
     const taken = {};
     ents.forEach((e) => {
@@ -275,8 +302,8 @@ function entityClassName(ent, entityColl) {
 // merging in ts. The names cannot be auto-renamed here — the generated
 // entity classes and op fragments reference them by token — so the guard
 // surfaces the collision loudly instead. Returns the sorted duplicate names
-// (empty when clean). Callers must have derived `Name` on each entity
-// (every EntityTypes emitter does).
+// (empty when clean). `Name` is derived here (deriveEntityNames), so the
+// guard cannot be silently disabled by running before an emitter.
 //
 // Memoised per entity-collection object, like entityClassNames.
 const _typeCollisionCache = new WeakMap();
@@ -287,8 +314,7 @@ function entityTypeCollisions(entityColl) {
     }
     const counts = {};
     const bump = (n) => { counts[n] = (counts[n] || 0) + 1; };
-    (0, jostraca_1.each)(entityColl)
-        .filter((e) => e && null != e.name && null != e.Name)
+    deriveEntityNames(entityColl)
         .forEach((e) => {
         bump(e.Name);
         for (const op of ['load', 'list', 'create', 'update', 'remove']) {

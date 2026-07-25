@@ -1,3 +1,4 @@
+declare function deriveEntityNames(entityColl: any): any[];
 declare const OP_SUFFIX: Record<string, 'Match' | 'Data'>;
 declare function opTypeName(Name: string, opname: string): string;
 type OpShapeItem = {
@@ -21,5 +22,5 @@ declare function pickExampleEntity(entity: any): {
     primaryOp: string | null;
 };
 declare function entityDataIdField(ent: any): string | null;
-export { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, };
+export { OP_SUFFIX, deriveEntityNames, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, };
 export type { OpShapeItem, };

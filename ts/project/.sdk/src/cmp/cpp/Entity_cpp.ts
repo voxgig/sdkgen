@@ -33,7 +33,7 @@ const Entity = cmp(function Entity(props: any) {
 
     File({ name: cppVarName(entity.name) + '.' + target.ext }, () => {
 
-      const opnames = Object.keys(entity.op)
+      const opnames = Object.keys(entity.op || {})
 
       // For each CRUD op: splice the real method if the spec defines it, else
       // a stub that satisfies the SdkEntity interface but throws at runtime.

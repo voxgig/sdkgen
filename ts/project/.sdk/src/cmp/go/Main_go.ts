@@ -26,6 +26,19 @@ import { MainEntity } from './MainEntity_go'
 import { EntityTypes } from './EntityTypes_go'
 
 
+// The Go identifier fragment for a feature constructor (New<Fname>Feature...).
+// Uses the jostraca-derived PascalCase `Name` (falling back to deriving it)
+// rather than upper-casing the first character: a feature named `rate-limit`
+// would otherwise emit `NewRate-limitFeatureFunc`, which is not a legal Go
+// identifier. Parity with Main_ts.ts, which uses `feature.Name` directly.
+function featName(feat: any): string {
+  if (null == feat.Name) {
+    names(feat, feat.name)
+  }
+  return feat.Name
+}
+
+
 const Main = cmp(async function Main(props: any) {
 
   const { target } = props
@@ -82,7 +95,7 @@ const Main = cmp(async function Main(props: any) {
 
             '#BuildFeatures': ({ indent }: any) => {
               each(feature, (feat: any) => {
-                const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
+                const fname = featName(feat)
                 Content({ indent }, `u.FeatureAdd(s.rootctx, New${fname}FeatureFunc())
 `)
               })
@@ -119,7 +132,7 @@ var NewBaseFeatureFunc func() Feature
       // Feature constructor function vars (non-base)
       each(feature, (feat: any) => {
         if (feat.name !== 'base') {
-          const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
+          const fname = featName(feat)
           Content(`var New${fname}FeatureFunc func() Feature
 
 `)
@@ -177,7 +190,7 @@ func init() {
     // Register non-base feature constructors
     each(feature, (feat: any) => {
       if (feat.name !== 'base') {
-        const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
+        const fname = featName(feat)
         Content(`	core.New${fname}FeatureFunc = func() core.Feature {
 		return feature.New${fname}Feature()
 	}
@@ -219,7 +232,7 @@ func Test() *${model.const.Name}SDK { return TestSDK(nil, nil) }
 
     each(feature, (feat: any) => {
       if (feat.name !== 'base') {
-        const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
+        const fname = featName(feat)
         Content(`var New${fname}Feature = feature.New${fname}Feature
 `)
       }

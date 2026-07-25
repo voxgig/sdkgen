@@ -27,6 +27,7 @@ import {
   cmp, each, names,
   File, Content,
   canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions,
+  deriveEntityNames,
 } from '@voxgig/sdkgen'
 
 import {
@@ -99,9 +100,8 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   // filter, so inactive entities still get class files referencing these
   // typed names. Filter on `name` (always present), NOT `active` — parity
   // with the go emitter's fix.
-  const entityList = each(entity).filter((e: any) => e && null != e.name)
+  const entityList = deriveEntityNames(entity)
   // Derive the PascalCase Name up-front — it is set LAZILY by names().
-  entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
 
   // Surface duplicate generated type names (two entities with the same
   // PascalCase Name) — they would redeclare a type in statically-typed

@@ -42,7 +42,7 @@ const Entity = cmp(function Entity(props: any) {
 
     File({ name: cls + '.' + target.ext }, () => {
 
-      const opnames = Object.keys(entity.op)
+      const opnames = Object.keys(entity.op || {})
 
       // For each CRUD op: if the spec defines it, splice in the real
       // implementation. Otherwise emit a stub that satisfies the SdkEntity

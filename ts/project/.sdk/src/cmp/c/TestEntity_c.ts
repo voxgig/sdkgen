@@ -44,7 +44,7 @@ int main(void) {
     // The stream test drives the list op; only emit it when the entity has a
     // list op — a create/load-only entity has no list endpoint, so
     // stream("list") would error.
-    const hasList = null != (entity.op && (entity.op as any).list)
+    const hasList = null != (entity.op && (entity.op as any)?.list)
     if (hasList) {
       Content(`
   // stream(): runs the list op through the full pipeline and returns a List

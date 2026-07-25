@@ -27,11 +27,11 @@
 //     with every field optional (Go's analog of TS `Partial<Name>`).
 
 import {
-  cmp, each, names,
+  cmp, each,
   File, Content, Folder,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -62,13 +62,50 @@ function goField(name: string): string {
 }
 
 
+// A Go struct-tag-safe rendering of a spec-derived field name. Struct tags are
+// backquoted string literals holding a double-quoted value, so a name carrying
+// a `"` or a backtick would terminate the literal and break the generated file.
+// Neither character can survive here, so they are stripped (the Go field
+// identifier is what code uses; the tag only has to round-trip JSON).
+function tagName(name: string): string {
+  return String(name).replace(/[`"\\]/g, '')
+}
+
+
 // One Go struct field line. `optional` -> pointer + ,omitempty (Go's closest
-// analog to an optional/absent field).
-function fieldLine(name: string, sentinel: any, optional: boolean): string {
+// analog to an optional/absent field). `ident` overrides the derived field
+// identifier when goField() would collide with a sibling (see uniqueGoFields).
+function fieldLine(name: string, sentinel: any, optional: boolean, ident?: string): string {
   const gt = canonToType(sentinel, LANG)
   const typ = optional ? ('*' + gt) : gt
-  const tag = optional ? `\`json:"${name},omitempty"\`` : `\`json:"${name}"\``
-  return `\t${goField(name)} ${typ} ${tag}\n`
+  const jn = tagName(name)
+  const tag = optional ? `\`json:"${jn},omitempty"\`` : `\`json:"${jn}"\``
+  return `\t${ident || goField(name)} ${typ} ${tag}\n`
+}
+
+
+// Collision-free Go field identifiers for one struct's members.
+//
+// goField() is lossy — it strips every non-alphanumeric character — so
+// `some_field`, `some-field` and `someField` all map to `SomeField`. Emitting
+// them into the same struct is a "field redeclared" compile error, and Go is
+// the only target exposed to it (ts/py/… keep the raw key). Later duplicates
+// get a numeric suffix; the FIRST occurrence keeps the natural name, and the
+// json tag always keeps the original wire name, so behaviour is unchanged.
+// Deterministic: members arrive in sorted-key order from opRequestShape/each.
+function uniqueGoFields(members: { name: string }[]): string[] {
+  const taken: Record<string, boolean> = {}
+  return members.map((m) => {
+    const base = goField(m.name)
+    let ident = base
+    let n = 1
+    while (taken[ident]) {
+      n++
+      ident = base + n
+    }
+    taken[ident] = true
+    return ident
+  })
 }
 
 
@@ -84,14 +121,11 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   // Emit for every entity that gets an entity file. Main_go.ts / Entity_go.ts
   // iterate entities WITHOUT an `active` filter and reference the typed data
   // type `<Name>` in every *_entity.go, so a struct is required for each or the
-  // package won't compile. Filter on `name` (always present), NOT `Name`:
-  // `Name` is the PascalCase variant derived LAZILY by `names()`, so filtering
-  // on it silently drops any entity whose `Name` hasn't been derived yet by an
-  // earlier component (order-dependent — e.g. fieldless placeholder entities),
-  // producing `undefined: <Name>` in the generated Go. Derive `Name` here so
-  // the struct set is deterministic and matches the *_entity.go set.
-  const entityList = each(entity).filter((e: any) => e && null != e.name)
-  entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+  // package won't compile. deriveEntityNames() selects on `name` (always
+  // present) and derives the lazily-set PascalCase `Name` up front, so the
+  // struct set is deterministic and matches the *_entity.go set regardless of
+  // which component runs first.
+  const entityList = deriveEntityNames(entity)
 
   // Surface duplicate generated type names (two entities with the same
   // PascalCase Name) — they would redeclare a type in statically-typed
@@ -123,8 +157,9 @@ import "encoding/json"
         Content(`// ${Name} is the typed data model for the ${ent.name} entity.
 type ${Name} struct {
 `)
-        fields.forEach((f: any) => {
-          Content(fieldLine(f.name, f.type, false === f.req))
+        const fieldIdents = uniqueGoFields(fields)
+        fields.forEach((f: any, i: number) => {
+          Content(fieldLine(f.name, f.type, false === f.req, fieldIdents[i]))
         })
         Content(`}
 
@@ -146,8 +181,9 @@ type ${Name} struct {
           Content(`// ${typeName} is the typed request payload for ${Name}.${cap(opname)}Typed.
 type ${typeName} struct {
 `)
-          items.forEach((it: any) => {
-            Content(fieldLine(it.name, it.type, it.optional))
+          const itemIdents = uniqueGoFields(items)
+          items.forEach((it: any, i: number) => {
+            Content(fieldLine(it.name, it.type, it.optional, itemIdents[i]))
           })
           Content(`}
 

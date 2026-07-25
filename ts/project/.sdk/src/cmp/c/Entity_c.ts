@@ -34,7 +34,7 @@ const Entity = cmp(function Entity(props: any) {
 
     File({ name: evar + '.c' }, () => {
 
-      const opnames = Object.keys(entity.op)
+      const opnames = Object.keys(entity.op || {})
 
       // For each CRUD op: splice the real implementation when the spec
       // defines it, otherwise emit a stub that errors at runtime (so the

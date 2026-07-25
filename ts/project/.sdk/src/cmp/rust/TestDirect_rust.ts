@@ -73,7 +73,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     ? `("apikey", getp(&env, "${PROJECTNAME}_APIKEY"))`
     : ''
 
-  const opnames = Object.keys(entity.op)
+  const opnames = Object.keys(entity.op || {})
   const hasLoad = opnames.includes('load')
   const hasList = opnames.includes('list')
 
@@ -81,8 +81,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
     return
   }
 
-  const loadOp = (entity.op as any).load
-  const listOp = (entity.op as any).list
+  const loadOp = (entity.op as any)?.load
+  const listOp = (entity.op as any)?.list
 
   // Load point info.
   const loadPoint = loadOp?.points?.[0]

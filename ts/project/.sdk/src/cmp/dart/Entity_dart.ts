@@ -38,7 +38,7 @@ const Entity = cmp(function Entity(props: any) {
 
     File({ name: cls + '.' + target.ext }, () => {
 
-      const opnames = Object.keys(entity.op)
+      const opnames = Object.keys(entity.op || {})
 
       const opfrags =
         (['load', 'list', 'create', 'update', 'remove']
