@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, camelify, names,
   File, Content, Folder, Fragment, Line, FeatureHook, Slot,
-  opTypeName, entityClassName,
+  opTypeName, entityClassName, entityCollection,
 } from '@voxgig/sdkgen'
 
 import {
