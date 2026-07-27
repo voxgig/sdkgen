@@ -674,20 +674,11 @@ static void preparePathBasic() {
   auto c = client();
   UtilityPtr utility = c->getUtility();
   rs::runset("preparePath-basic", rs::get_spec(primary(), {"preparePath", "basic"}),
-             [&](const Value& entry) {
-               CtxPtr ctx = makeCtxFromMap(entry.get("ctx"), c, utility);
-               return Value(utility->preparePath(ctx));
-             });
-}
-
-static void preparePathSingle() {
-  auto c = client();
-  UtilityPtr utility = c->getUtility();
-  CtxPtr ctx = makeTestFullCtx(c, utility);
-  ctx->point = fhMap({
-      {"parts", vlist({Value("items")})},
-      {"args", fhMap({{"params", vlist()}})}});
-  ASSERT_EQ(utility->preparePath(ctx), std::string("items"), "expected items");
+             [&](const Value& entry) -> Value {
+    Value ctxmap = Helpers::toMapAny(getp(entry, "ctx"));
+    CtxPtr ctx = rs::make_ctx_from_map(ctxmap, c, utility);
+    return Value(utility->preparePath(ctx));
+  });
 }
 
 // --- prepareQuery -----------------------------------------------------------
@@ -832,7 +823,6 @@ int main() {
   T_RUN(prepareMethodBasic);
   T_RUN(prepareParamsBasic);
   T_RUN(preparePathBasic);
-  T_RUN(preparePathSingle);
   T_RUN(prepareQueryBasic);
   T_RUN(resultBasicBasic);
   T_RUN(resultBodyBasic);

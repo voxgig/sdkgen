@@ -1146,7 +1146,7 @@ class PrimaryUtilityTest extends TestCase
         $this->runset(self::get_spec($primary, 'preparePath', 'basic'), function (array $entry) use ($client, $utility) {
             $ctxmap = $entry['ctx'] ?? [];
             $ctx = self::make_ctx_from_map($ctxmap, $client, $utility);
-            return ($utility->prepare_path)($ctx);
+            return [($utility->prepare_path)($ctx), null];
         });
     }
 
