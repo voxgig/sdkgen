@@ -43,7 +43,7 @@ path = "lib.rs"
 
     const prod: Record<string, string> = {}
     const dev: Record<string, string> = {}
-    for (const d of collectDeps(model, target.name, target.deps)) {
+    for (const d of collectDeps(model, target.name, target.deps, ctx$.log)) {
       // Target-level deps default to '*' when version is absent; feature
       // deps require an explicit version.
       const version = d.source === 'target' ? (d.version || '*') : d.version

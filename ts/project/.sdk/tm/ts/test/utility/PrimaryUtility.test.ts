@@ -44,6 +44,10 @@ describe('PrimaryUtility', async () => {
   // pass silently, which defeats the point of a shared oracle. (The guard
   // lives here rather than in runner.ts, which is vendored verbatim from
   // @voxgig/struct and must stay byte-identical to upstream.)
+  //
+  // EVERY corpus-backed test goes through here — a guard that only some
+  // sections opt into leaves the rest able to run zero assertions, which is
+  // the exact hole it was added to close.
   async function runsection(name: string, subject: Function) {
     const section = spec[name]
     ok(null != section,
@@ -89,24 +93,24 @@ describe('PrimaryUtility', async () => {
 
 
   test('context-basic', async () => {
-    await runset(spec.makeContext.basic, utility.makeContext)
+    await runsection('makeContext', utility.makeContext)
   })
 
 
   test('method-basic', async () => {
-    await runset(spec.prepareMethod.basic, utility.prepareMethod)
+    await runsection('prepareMethod', utility.prepareMethod)
   })
 
 
   test('headers-basic', async () => {
-    await runset(spec.prepareHeaders.basic, utility.prepareHeaders)
+    await runsection('prepareHeaders', utility.prepareHeaders)
   })
 
 
   test('auth-basic', async () => {
     const sdkopts = spec.prepareAuth?.DEF?.setup?.a || {}
     const authClient = SDK.test({}, sdkopts)
-    await runset(spec.prepareAuth.basic, (ctx: any) => {
+    await runsection('prepareAuth', (ctx: any) => {
       ctx.client = authClient
       fixctx(ctx)
       return utility.prepareAuth(ctx)
@@ -115,17 +119,17 @@ describe('PrimaryUtility', async () => {
 
 
   test('params-basic', async () => {
-    await runset(spec.prepareParams.basic, utility.prepareParams)
+    await runsection('prepareParams', utility.prepareParams)
   })
 
 
   test('query-basic', async () => {
-    await runset(spec.prepareQuery.basic, utility.prepareQuery)
+    await runsection('prepareQuery', utility.prepareQuery)
   })
 
 
   test('body-basic', async () => {
-    await runset(spec.prepareBody.basic, (ctx: any) => {
+    await runsection('prepareBody', (ctx: any) => {
       fixctx(ctx)
       return utility.prepareBody(ctx)
     })
@@ -133,17 +137,17 @@ describe('PrimaryUtility', async () => {
 
 
   test('findparam-basic', async () => {
-    await runset(spec.param.basic, utility.param)
+    await runsection('param', utility.param)
   })
 
 
   test('fullurl-basic', async () => {
-    await runset(spec.makeUrl.basic, utility.makeUrl)
+    await runsection('makeUrl', utility.makeUrl)
   })
 
 
   test('operator-basic', async () => {
-    await runset(spec.operator.basic, (opmap: any) => ({
+    await runsection('operator', (opmap: any) => ({
       entity: opmap.entity || '_',
       name: opmap.name || '_',
       input: opmap.input || '_',
@@ -153,7 +157,7 @@ describe('PrimaryUtility', async () => {
 
 
   test('options-basic', async () => {
-    await runset(spec.makeOptions.basic, (vin: any) => {
+    await runsection('makeOptions', (vin: any) => {
       const ctx = utility.makeContext({ options: vin.options, config: vin.config })
       ctx.client = client
       ctx.utility = utility
@@ -165,7 +169,7 @@ describe('PrimaryUtility', async () => {
   test('spec-basic', async () => {
     const sdkopts = spec.makeSpec?.DEF?.setup?.a || {}
     const specClient = SDK.test({}, sdkopts)
-    await runset(spec.makeSpec.basic, (ctx: any) => {
+    await runsection('makeSpec', (ctx: any) => {
       ctx.client = specClient
       ctx.options = specClient.options()
       return utility.makeSpec(ctx)
@@ -174,17 +178,17 @@ describe('PrimaryUtility', async () => {
 
 
   test('reqform-basic', async () => {
-    await runset(spec.transformRequest.basic, utility.transformRequest)
+    await runsection('transformRequest', utility.transformRequest)
   })
 
 
   test('resform-basic', async () => {
-    await runset(spec.transformResponse.basic, utility.transformResponse)
+    await runsection('transformResponse', utility.transformResponse)
   })
 
 
   test('resbasic-basic', async () => {
-    await runset(spec.resultBasic.basic, (ctx: any) => {
+    await runsection('resultBasic', (ctx: any) => {
       fixctx(ctx)
       return utility.resultBasic(ctx)
     })
@@ -192,7 +196,7 @@ describe('PrimaryUtility', async () => {
 
 
   test('resheaders-basic', async () => {
-    await runset(spec.resultHeaders.basic, (ctx: any) => {
+    await runsection('resultHeaders', (ctx: any) => {
       // Convert plain headers map to forEach-based (browser Response API)
       if (ctx.response?.headers && !ctx.response.headers.forEach) {
         const h = ctx.response.headers
@@ -206,7 +210,7 @@ describe('PrimaryUtility', async () => {
 
 
   test('resbody-basic', async () => {
-    await runset(spec.resultBody.basic, async (ctx: any) => {
+    await runsection('resultBody', async (ctx: any) => {
       if (ctx.response && !ctx.response.json) {
         const body = ctx.response.body
         ctx.response.json = async () => body
@@ -228,7 +232,7 @@ describe('PrimaryUtility', async () => {
       system: { fetch: mockFetch }
     })
     const reqUtility = reqClient.utility()
-    await runset(spec.makeRequest.basic, async (ctx: any) => {
+    await runsection('makeRequest', async (ctx: any) => {
       ctx.client = reqClient
       ctx.utility = reqUtility
       ctx.options = reqClient.options()
@@ -238,7 +242,7 @@ describe('PrimaryUtility', async () => {
 
 
   test('response-basic', async () => {
-    await runset(spec.makeResponse.basic, async (ctx: any) => {
+    await runsection('makeResponse', async (ctx: any) => {
       fixctx(ctx)
       // Add json() and forEach to response for proper TS handling
       if (ctx.response && !ctx.response.json) {
@@ -257,7 +261,7 @@ describe('PrimaryUtility', async () => {
 
 
   test('done-basic', async () => {
-    await runset(spec.done.basic, (ctx: any) => {
+    await runsection('done', (ctx: any) => {
       fixctx(ctx)
       return utility.done(ctx)
     })
@@ -265,7 +269,7 @@ describe('PrimaryUtility', async () => {
 
 
   test('error-basic', async () => {
-    await runset(spec.makeError.basic, (...args: any[]) => {
+    await runsection('makeError', (...args: any[]) => {
       const ctx = args[0]
       fixctx(ctx)
       return utility.makeError(...args)

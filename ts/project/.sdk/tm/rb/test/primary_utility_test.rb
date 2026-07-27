@@ -610,14 +610,13 @@ class PrimaryUtilityTest < Minitest::Test
   # === preparePath ===
 
   def test_prepare_path_basic
-    ctx = make_test_full_ctx(@client, @utility)
-    ctx.point = {
-      "parts" => ["api", "planet", "{id}"],
-      "args" => { "params" => [] },
-    }
-
-    path = @utility.prepare_path.call(ctx)
-    assert_equal "api/planet/{id}", path
+    # Was hand-written cases that had drifted out of the shared corpus
+    # (the preparePath fixture shipped as an empty `set: []`).
+    runset(get_spec(@primary, "preparePath", "basic")) do |entry|
+      ctxmap = entry["ctx"] || {}
+      ctx = make_ctx_from_map(ctxmap, @client, @utility)
+      @utility.prepare_path.call(ctx)
+    end
   end
 
   def test_prepare_path_single

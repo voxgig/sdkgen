@@ -888,23 +888,14 @@ runset('prepareParams.basic', get_spec($PRIMARY, 'prepareParams', 'basic'), sub 
 
 # === preparePath ===
 
-{
-  my $ctx = make_test_full_ctx($client, $utility);
-  $ctx->{point} = {
-    'parts' => ['api', 'planet', '{id}'],
-    'args' => { 'params' => [] },
-  };
-  is($utility->{prepare_path}->($ctx), 'api/planet/{id}', 'prepare_path basic');
-}
-
-{
-  my $ctx = make_test_full_ctx($client, $utility);
-  $ctx->{point} = {
-    'parts' => ['items'],
-    'args' => { 'params' => [] },
-  };
-  is($utility->{prepare_path}->($ctx), 'items', 'prepare_path single');
-}
+# Was two hand-written cases that had drifted out of the shared corpus
+# (the preparePath fixture shipped as an empty `set: []`).
+runset('preparePath.basic', get_spec($PRIMARY, 'preparePath', 'basic'), sub {
+  my ($entry) = @_;
+  my $ctxmap = $entry->{ctx} || {};
+  my $ctx = make_ctx_from_map($ctxmap, $client, $utility);
+  return $utility->{prepare_path}->($ctx);
+});
 
 
 # === prepareQuery ===

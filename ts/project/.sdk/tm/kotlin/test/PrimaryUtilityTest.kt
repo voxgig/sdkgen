@@ -694,28 +694,15 @@ class PrimaryUtilityTest {
 
   @Test
   fun preparePathBasic() {
+    // Was two hand-written cases that had drifted out of the shared corpus
+    // (the preparePath fixture shipped as an empty `set: []`).
     val client = client()
     val utility = client.getUtility()
-    val ctx = makeTestFullCtx(client, utility)
-    val parts = mutableListOf<Any?>()
-    parts.add("api")
-    parts.add("planet")
-    parts.add("{id}")
-    ctx.point = fhMap("parts", parts, "args", fhMap("params", mutableListOf<Any?>()))
-
-    assertEquals("api/planet/{id}", utility.preparePath(ctx))
-  }
-
-  @Test
-  fun preparePathSingle() {
-    val client = client()
-    val utility = client.getUtility()
-    val ctx = makeTestFullCtx(client, utility)
-    val parts = mutableListOf<Any?>()
-    parts.add("items")
-    ctx.point = fhMap("parts", parts, "args", fhMap("params", mutableListOf<Any?>()))
-
-    assertEquals("items", utility.preparePath(ctx))
+    runset(getSpec(primary(), "preparePath", "basic")) { entry ->
+      val ctxmap = Helpers.toMapAny(entry["ctx"])
+      val ctx = makeCtxFromMap(ctxmap, client, utility)
+      utility.preparePath(ctx)
+    }
   }
 
   @Test

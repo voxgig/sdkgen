@@ -25,6 +25,7 @@ import {
 import {
   clean,
   formatGoMap,
+  goFeatureName,
 } from './utility_go'
 
 
@@ -102,7 +103,9 @@ func makeFeature(name string) Feature {
 `)
 
     each(feature, (f: any) => {
-      const fname = f.name.charAt(0).toUpperCase() + f.name.slice(1)
+      // MUST match Main_go.ts, which DECLARES these identifiers in registry.go
+      // and the root init(); see goFeatureName.
+      const fname = goFeatureName(f)
       if (f.name !== 'base') {
         Content(`	case "${f.name}":
 		if New${fname}FeatureFunc != nil {

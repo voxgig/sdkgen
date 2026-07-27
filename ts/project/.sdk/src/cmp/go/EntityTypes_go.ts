@@ -62,13 +62,44 @@ function goField(name: string): string {
 }
 
 
-// A Go struct-tag-safe rendering of a spec-derived field name. Struct tags are
-// backquoted string literals holding a double-quoted value, so a name carrying
-// a `"` or a backtick would terminate the literal and break the generated file.
-// Neither character can survive here, so they are stripped (the Go field
-// identifier is what code uses; the tag only has to round-trip JSON).
-function tagName(name: string): string {
-  return String(name).replace(/[`"\\]/g, '')
+// The json struct tag is the WIRE CONTRACT: it decides the key requests
+// marshal under and the key responses populate from.
+//
+// Can this spec-derived name be carried in a Go json struct tag AT ALL?
+//
+// It cannot always be. `encoding/json`'s isValidTag accepts letters, digits and
+// a fixed punctuation set; a name containing a double quote, a backtick or a
+// backslash is REJECTED, and Go then silently falls back to the Go FIELD name.
+// Verified against go1.24 — for a field named `na"me`:
+//
+//   raw literal      `json:"na"me"`        -> marshals as {"na": ...}   (truncated)
+//   escaped literal  "json:\"na\\\"me\""   -> marshals as {"NaMe": ...} (tag ignored)
+//
+// So there is no encoding that preserves such a name. An earlier version here
+// stripped the offending characters, which is worse than either: it silently
+// changed the wire contract, marshalling under a key the API never uses and
+// never populating from the real response key. Names that cannot be
+// represented are skipped with a warning instead — the same treatment
+// csharp/java give names with no legal identifier form.
+const GO_TAG_PUNCT = '!#$%&()*+-./:;<=>?@[]^_{|}~ '
+
+function goTaggable(name: string): boolean {
+  const s = String(name)
+  if ('' === s) {
+    return false
+  }
+  for (const c of s) {
+    if (GO_TAG_PUNCT.includes(c)) continue
+    if (/[\p{L}\p{Nd}]/u.test(c)) continue
+    return false
+  }
+  return true
+}
+
+
+function goTag(name: string, omitempty: boolean): string {
+  const jsonName = String(name) + (omitempty ? ',omitempty' : '')
+  return '`json:"' + jsonName + '"`'
 }
 
 
@@ -78,9 +109,7 @@ function tagName(name: string): string {
 function fieldLine(name: string, sentinel: any, optional: boolean, ident?: string): string {
   const gt = canonToType(sentinel, LANG)
   const typ = optional ? ('*' + gt) : gt
-  const jn = tagName(name)
-  const tag = optional ? `\`json:"${jn},omitempty"\`` : `\`json:"${jn}"\``
-  return `\t${ident || goField(name)} ${typ} ${tag}\n`
+  return `\t${ident || goField(name)} ${typ} ${goTag(name, optional)}\n`
 }
 
 
@@ -107,6 +136,29 @@ function uniqueGoFields(members: { name: string }[]): string[] {
     return ident
   })
 }
+
+
+// Keep a member only when its name survives into a Go json tag; warn once per
+// dropped member so the omission is visible rather than a silent contract change.
+function skipUntaggable(member: any, typeName: string, log: any): boolean {
+  if (null == member || null == member.name) {
+    return false
+  }
+  if (goTaggable(member.name)) {
+    return true
+  }
+  if (log && log.warn) {
+    log.warn({
+      point: 'entity-types-skip-field', typeName, field: member.name,
+      note: `go: field "${member.name}" of ${typeName} cannot be carried in a ` +
+        `Go json struct tag (encoding/json rejects the name, and Go would ` +
+        `silently marshal under the field name instead); omitted from the ` +
+        `typed model (still reachable via the runtime map)`,
+    })
+  }
+  return false
+}
+
 
 
 const EntityTypes = cmp(function EntityTypes(props: any) {
@@ -157,8 +209,10 @@ import "encoding/json"
         Content(`// ${Name} is the typed data model for the ${ent.name} entity.
 type ${Name} struct {
 `)
-        const fieldIdents = uniqueGoFields(fields)
-        fields.forEach((f: any, i: number) => {
+        const taggable = fields.filter(
+          (f: any) => skipUntaggable(f, Name, log))
+        const fieldIdents = uniqueGoFields(taggable)
+        taggable.forEach((f: any, i: number) => {
           Content(fieldLine(f.name, f.type, false === f.req, fieldIdents[i]))
         })
         Content(`}
@@ -181,8 +235,10 @@ type ${Name} struct {
           Content(`// ${typeName} is the typed request payload for ${Name}.${cap(opname)}Typed.
 type ${typeName} struct {
 `)
-          const itemIdents = uniqueGoFields(items)
-          items.forEach((it: any, i: number) => {
+          const taggableItems = items.filter(
+            (it: any) => skipUntaggable(it, typeName, log))
+          const itemIdents = uniqueGoFields(taggableItems)
+          taggableItems.forEach((it: any, i: number) => {
             Content(fieldLine(it.name, it.type, it.optional, itemIdents[i]))
           })
           Content(`}

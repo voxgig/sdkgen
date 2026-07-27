@@ -18,7 +18,7 @@
 // added without a decision about its tier, fails here.
 
 import { test, describe } from 'node:test'
-import { ok, deepStrictEqual } from 'node:assert'
+import { ok, deepStrictEqual, strictEqual } from 'node:assert'
 
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import Path from 'node:path'
@@ -102,6 +102,18 @@ function primaryTestFile(lang: string): string | undefined {
 const CORPUS_LOADERS =
   /test\.json|test_json|testJson|TEST_JSON|loadTestSpec|load_test_spec|LoadTestSpec|makeRunner|getSpec|resolveSpec/
 
+// Tokens that look up a section IN the corpus, in each language's idiom.
+// A section counts as driven only when its name appears on a line that also
+// contains one of these — i.e. the name is being PASSED to the corpus lookup.
+//
+// A bare `src.includes(section)` is not enough and was actively misleading:
+// every suite lists all 22 section names in its "these utilities exist"
+// assertion, so ten FULL-tier targets passed while running preparePath through
+// private hand-written contexts. That is the same "green while checking
+// nothing" failure this file exists to catch, reproduced in the checker.
+const SECTION_LOOKUP =
+  /getSpec|get_spec|GetSpec|getspec|spec\.|spec\[|primary|runsection|runset|runSet|_runset|_g\(/
+
 
 describe('cross-language corpus coverage', () => {
 
@@ -124,10 +136,14 @@ describe('cross-language corpus coverage', () => {
       ok(CORPUS_LOADERS.test(src),
         `${lang}: primary suite does not load the shared corpus (${p})`)
 
-      const missing = CORPUS_SECTIONS.filter((s) => !src.includes(s))
+      const lines = src.split('\n')
+      const missing = CORPUS_SECTIONS.filter((section) =>
+        !lines.some((l) => l.includes(section) && SECTION_LOOKUP.test(l)))
+
       deepStrictEqual(missing, [],
-        `${lang}: corpus sections not exercised — a section a target skips is ` +
-        `a behaviour no test compares against the reference`)
+        `${lang}: these sections are NAMED but never passed to the corpus ` +
+        `lookup — the target runs its own hand-written cases for them, so ` +
+        `nothing compares that behaviour against the reference`)
     })
   }
 
@@ -217,3 +233,58 @@ describe('scaffold components are type-checked', () => {
       'components must resolve @voxgig/sdkgen to this package source')
   })
 })
+
+
+// Identifiers that one component DECLARES and another REFERENCES must be
+// derived in exactly one place. Two copies agree until one is fixed alone.
+describe('go feature identifiers are derived once', () => {
+
+  const GO = Path.join(TM, '..', 'src', 'cmp', 'go')
+
+  test('Main_go and Config_go share goFeatureName', () => {
+    // Main_go DECLARES New<F>FeatureFunc (registry.go + root init()); Config_go
+    // REFERENCES it (makeFeature). Both used to hand-roll
+    // `name.charAt(0).toUpperCase() + name.slice(1)` — consistently wrong for a
+    // name needing real normalisation, but at least agreeing. Fixing Main_go
+    // alone made `rate_limit` NewRateLimitFeatureFunc in the registry and
+    // NewRate_limitFeatureFunc in config: an undefined identifier in the
+    // generated Go, i.e. worse than the bug it replaced.
+    for (const file of ['Main_go.ts', 'Config_go.ts']) {
+      const src = readFileSync(Path.join(GO, file), 'utf8')
+      ok(/goFeatureName\(/.test(src),
+        `${file} must derive the feature identifier via goFeatureName`)
+      ok(!/\bf?e?a?t?\.?name\.charAt\(0\)\.toUpperCase\(\)/.test(src) ||
+        !/Feature(Func)?/.test(src.split('charAt(0).toUpperCase()')[0].slice(-200)),
+        `${file} still hand-rolls a feature identifier`)
+    }
+  })
+
+  test('goFeatureName normalises a multi-word feature name', () => {
+    const { goFeatureName } = loadGoUtility()
+    strictEqual(goFeatureName({ name: 'ratelimit' }), 'Ratelimit')
+    // The cases that broke: hyphen and underscore must yield a LEGAL Go
+    // identifier, identical on both sides.
+    strictEqual(goFeatureName({ name: 'rate_limit' }), 'RateLimit')
+    strictEqual(goFeatureName({ name: 'rate-limit' }), 'RateLimit')
+  })
+})
+
+
+// utility_go.ts is scaffold source (only compiled in a consumer project), so
+// load it the way entitytypes.test.ts loads emitters: transpile + shim.
+function loadGoUtility(): any {
+  const { transform } = require('sucrase')
+  const sdkgen = require('../dist/sdkgen.js')
+  const file = Path.resolve(
+    __dirname, '..', 'project', '.sdk', 'src', 'cmp', 'go', 'utility_go.ts')
+  const js = transform(readFileSync(file, 'utf8'),
+    { transforms: ['typescript', 'imports'], filePath: file }).code
+  const mod: any = { exports: {} }
+  const req = (p: string) =>
+    '@voxgig/sdkgen' === p ? sdkgen :
+      '@voxgig/apidef' === p ? require('../dist/types.js') : require(p)
+  // eslint-disable-next-line no-new-func
+  new Function('exports', 'require', 'module', '__dirname', '__filename', js)(
+    mod.exports, req, mod, Path.dirname(file), file)
+  return mod.exports
+}

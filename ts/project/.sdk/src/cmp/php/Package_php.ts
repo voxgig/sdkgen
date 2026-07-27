@@ -49,7 +49,7 @@ const Package = cmp(async function Package(props: any) {
   "require": {
     "php": ">=8.2"`)
 
-    for (const d of collectDeps(model, target.name, target.deps)) {
+    for (const d of collectDeps(model, target.name, target.deps, ctx$.log)) {
       const v = d.source === 'target' ? (d.version || '0.0') : d.version
       Content(`,
     "${d.name}": "^${v}"`)

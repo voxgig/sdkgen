@@ -669,13 +669,15 @@ static void prepareParamsBasic() {
 // --- preparePath ------------------------------------------------------------
 
 static void preparePathBasic() {
+  // Was hand-written cases that had drifted out of the shared corpus (the
+  // preparePath fixture shipped as an empty `set: []`).
   auto c = client();
   UtilityPtr utility = c->getUtility();
-  CtxPtr ctx = makeTestFullCtx(c, utility);
-  ctx->point = fhMap({
-      {"parts", vlist({Value("api"), Value("planet"), Value("{id}")})},
-      {"args", fhMap({{"params", vlist()}})}});
-  ASSERT_EQ(utility->preparePath(ctx), std::string("api/planet/{id}"), "expected api/planet/{id}");
+  rs::runset("preparePath-basic", rs::get_spec(primary(), {"preparePath", "basic"}),
+             [&](const Value& entry) {
+               CtxPtr ctx = makeCtxFromMap(entry.get("ctx"), c, utility);
+               return Value(utility->preparePath(ctx));
+             });
 }
 
 static void preparePathSingle() {
