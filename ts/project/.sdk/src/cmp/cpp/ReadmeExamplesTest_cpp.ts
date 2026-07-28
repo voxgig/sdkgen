@@ -59,20 +59,25 @@ static std::string trim(const std::string& s) {
   return s.substr(a, b - a + 1);
 }
 
-// Balanced (), [], {} outside of string literals. Naive quote toggle: the
-// generated snippets never embed an escaped quote inside a string.
+// Balanced (), [], {} outside of string literals, with each closer matching
+// the most-recent opener (so "([)]" is rejected, not just counted). Naive
+// quote toggle: the generated snippets never embed an escaped quote inside a
+// string.
 static bool is_balanced(const std::string& block) {
   bool in_str = false;
-  int depth = 0;
+  std::vector<char> stack;
   for (char c : block) {
     if (c == '"') { in_str = !in_str; continue; }
     if (in_str) continue;
-    if (c == '(' || c == '[' || c == '{') depth++;
+    if (c == '(') stack.push_back(')');
+    else if (c == '[') stack.push_back(']');
+    else if (c == '{') stack.push_back('}');
     else if (c == ')' || c == ']' || c == '}') {
-      if (--depth < 0) return false;
+      if (stack.empty() || stack.back() != c) return false;
+      stack.pop_back();
     }
   }
-  return depth == 0 && !in_str;
+  return stack.empty() && !in_str;
 }
 
 // Scan one doc: for every \`\`\`cpp ... \`\`\` block, check non-empty + balanced.
@@ -101,6 +106,9 @@ static int check_doc(const std::string& label, const std::string& path) {
       block += '\\n';
     }
   }
+  // A fence opened but never closed is a malformed doc — fail rather than
+  // silently skipping the unterminated block.
+  ASSERT_TRUE(!in_block, label + ": cpp fence closed");
   return blocks;
 }
 
