@@ -45,8 +45,11 @@ let read_file (path : string) : string option =
 
 let split_lines (s : string) : string list = String.split_on_char '\\n' s
 
-(* Extract the body of every \`\`\`ocaml ... \`\`\` fenced block from markdown. *)
-let extract_ocaml_blocks (md : string) : string list =
+(* Extract the body of every \`\`\`ocaml ... \`\`\` fenced block from markdown.
+ * Returns (blocks, unclosed) where unclosed is true when a fence was opened
+ * but never closed before EOF — a malformed doc that must fail rather than
+ * silently drop the unterminated block. *)
+let extract_ocaml_blocks (md : string) : string list * bool =
   let blocks = ref [] in
   let cur = ref [] in
   let in_block = ref false in
@@ -61,23 +64,31 @@ let extract_ocaml_blocks (md : string) : string list =
       end
       else cur := line :: !cur)
     (split_lines md);
-  List.rev !blocks
+  (List.rev !blocks, !in_block)
 
-(* Balanced (), [], {} outside of string literals. Naive quote toggle: the
- * generated snippets never embed an escaped quote inside a string. *)
+(* Balanced (), [], {} outside of string literals, with each closer matching
+ * the most-recent opener (so "([)]" is rejected, not just counted). Naive
+ * quote toggle: the generated snippets never embed an escaped quote inside a
+ * string. *)
 let is_balanced (block : string) : bool =
   let in_str = ref false in
-  let depth = ref 0 in
+  let stack = ref [] in
   let ok = ref true in
   String.iter (fun c ->
-      if c = '"' then in_str := not !in_str
-      else if not !in_str then
-        match c with
-        | '(' | '[' | '{' -> incr depth
-        | ')' | ']' | '}' -> decr depth; if !depth < 0 then ok := false
-        | _ -> ())
+      if !ok then
+        if c = '"' then in_str := not !in_str
+        else if not !in_str then
+          match c with
+          | '(' -> stack := ')' :: !stack
+          | '[' -> stack := ']' :: !stack
+          | '{' -> stack := '}' :: !stack
+          | ')' | ']' | '}' ->
+            (match !stack with
+             | top :: rest when top = c -> stack := rest
+             | _ -> ok := false)
+          | _ -> ())
     block;
-  !ok && !depth = 0 && not !in_str
+  !ok && !stack = [] && not !in_str
 
 let docs = [
   ("root README", "../README.md");
@@ -92,13 +103,17 @@ let () =
           match read_file path with
           | None -> ()   (* doc not generated in this run — tolerate *)
           | Some src ->
+            let (blocks, unclosed) = extract_ocaml_blocks src in
+            (* A fence opened but never closed is a malformed doc — fail
+             * rather than silently skipping the unterminated block. *)
+            check (label ^ " ocaml fence closed") (not unclosed);
             List.iteri (fun i block ->
                 check (label ^ " block " ^ string_of_int (i + 1) ^ " non-empty")
                   (trim block <> "");
                 check (label ^ " block " ^ string_of_int (i + 1) ^ " balanced delimiters")
                   (is_balanced block);
                 incr total)
-              (extract_ocaml_blocks src))
+              blocks)
         docs;
       check "at least one ocaml code block across the docs" (!total > 0))
 `)

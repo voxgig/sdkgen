@@ -67,35 +67,44 @@ readDoc path = do
   pure (either (const "") id r)
 
 
--- Extract the body of every fenced Haskell block from markdown. The fence
--- marker (three backticks) is built from its char code so this source stays
--- backtick-free.
-haskellBlocks :: String -> [String]
+-- Extract the body of every fenced Haskell block from markdown. Returns
+-- (blocks, allClosed) where allClosed is False when a fence was opened but
+-- never closed before EOF — a malformed doc that must fail rather than pass
+-- silently on the unterminated block. The fence marker (three backticks) is
+-- built from its char code so this source stays backtick-free.
+haskellBlocks :: String -> ([String], Bool)
 haskellBlocks src = go (lines src)
   where
     fence3 = replicate 3 (toEnum 96 :: Char)
     fenceHs = fence3 ++ "haskell"
-    go [] = []
+    go [] = ([], True)
     go (l : ls)
       | trimWs l == fenceHs =
-          let (blk, rest) = break (\\x -> trimWs x == fence3) ls
-          in unlines blk : go (drop 1 rest)
+          case break (\\x -> trimWs x == fence3) ls of
+            (blk, [])       -> ([unlines blk], False)
+            (blk, _ : rest) -> let (bs, ok) = go rest in (unlines blk : bs, ok)
       | otherwise = go ls
 
 
--- Balanced (), [], {} ignoring the contents of double-quoted string literals.
--- The generated snippets never embed an escaped quote inside a string.
+-- Balanced (), [], {} outside of double-quoted string literals, with each
+-- closer matching the most-recent opener via a stack (so "([)]" is rejected,
+-- not merely counted). The generated snippets never embed an escaped quote
+-- inside a string.
 balanced :: String -> Bool
-balanced = go False (0 :: Int)
+balanced = go False []
   where
-    go inStr d [] = not inStr && d == 0
-    go inStr d (c : cs)
-      | c == '"'                          = go (not inStr) d cs
-      | inStr                             = go inStr d cs
-      | c == '(' || c == '[' || c == '{'  = go inStr (d + 1) cs
+    go inStr stack [] = not inStr && null stack
+    go inStr stack (c : cs)
+      | c == '"'                          = go (not inStr) stack cs
+      | inStr                             = go inStr stack cs
+      | c == '('                          = go inStr (')' : stack) cs
+      | c == '['                          = go inStr (']' : stack) cs
+      | c == '{'                          = go inStr ('}' : stack) cs
       | c == ')' || c == ']' || c == '}'  =
-          if d <= 0 then False else go inStr (d - 1) cs
-      | otherwise                         = go inStr d cs
+          case stack of
+            (top : rest) | top == c -> go inStr rest cs
+            _                        -> False
+      | otherwise                         = go inStr stack cs
 
 
 -- The three documents held to the gate, tagged by human label.
@@ -111,7 +120,8 @@ tests :: Counters -> IO ()
 tests c =
   forM_ docs (\\(label, path) -> do
     src <- readDoc path
-    let blocks = haskellBlocks src
+    let (blocks, closed) = haskellBlocks src
+    runTest c (label ++ " haskell fences closed") (pure closed)
     forM_ (zip [1 :: Int ..] blocks) (\\(i, blk) ->
       runTest c (label ++ " haskell block " ++ show i ++ " well-formed")
         (pure (not (null (trimWs blk)) && balanced blk))))

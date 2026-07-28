@@ -95,6 +95,23 @@ public class ReadmeExamplesTest {
     return blocks;
   }
 
+  // A well-formed doc has an even number of triple-backtick fence markers:
+  // every opening fence has a matching close. An odd count means a fence was
+  // opened but never closed — a truncated or malformed generated doc. The
+  // split-based javaBlocks() would silently treat the unterminated tail as a
+  // complete block, so this must be checked explicitly.
+  private static boolean fencesClosed(String text) {
+    String fence = String.valueOf((char) 96).repeat(3);
+    int count = 0;
+    int from = 0;
+    int idx;
+    while ((idx = text.indexOf(fence, from)) >= 0) {
+      count++;
+      from = idx + fence.length();
+    }
+    return count % 2 == 0;
+  }
+
   private static String readDoc(Path path, String label) {
     assertTrue(Files.exists(path), label + " not found: " + path);
     try {
@@ -158,7 +175,12 @@ public class ReadmeExamplesTest {
       if (!Files.exists(path)) {
         continue;
       }
-      List<String> blocks = javaBlocks(readDoc(path, doc[0]));
+      String src = readDoc(path, doc[0]);
+      if (!fencesClosed(src)) {
+        failures.add(doc[0] +
+            " has an unclosed code fence (opened but never closed)");
+      }
+      List<String> blocks = javaBlocks(src);
       int balancedCount = 0;
       for (int i = 0; i < blocks.size(); i++) {
         if (balanced(blocks.get(i))) {

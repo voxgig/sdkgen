@@ -33,7 +33,10 @@ use std::fs;
 use std::path::PathBuf;
 
 // Extract the body of every \`\`\`rust ... \`\`\` fenced block from markdown.
-fn extract_rust_blocks(md: &str) -> Vec<String> {
+// Returns the blocks plus a flag that is true when the scan reached EOF with a
+// fence still open (an unterminated \`\`\`rust block) — the caller fails on it
+// rather than silently dropping the malformed block.
+fn extract_rust_blocks(md: &str) -> (Vec<String>, bool) {
     let mut blocks: Vec<String> = Vec::new();
     let mut in_block = false;
     let mut cur: Vec<&str> = Vec::new();
@@ -53,14 +56,15 @@ fn extract_rust_blocks(md: &str) -> Vec<String> {
         }
         cur.push(line);
     }
-    blocks
+    (blocks, in_block)
 }
 
-// Balanced (), [], {} outside of string literals. Naive quote toggle: the
-// generated snippets never embed an escaped quote inside a string.
+// Balanced (), [], {} outside of string literals, with each closer matching the
+// most-recent opener (so "([)]" is rejected, not just counted). Naive quote
+// toggle: the generated snippets never embed an escaped quote inside a string.
 fn is_balanced(block: &str) -> bool {
     let mut in_str = false;
-    let mut depth: i32 = 0;
+    let mut stack: Vec<char> = Vec::new();
     for c in block.chars() {
         if c == '"' {
             in_str = !in_str;
@@ -70,17 +74,18 @@ fn is_balanced(block: &str) -> bool {
             continue;
         }
         match c {
-            '(' | '[' | '{' => depth += 1,
+            '(' => stack.push(')'),
+            '[' => stack.push(']'),
+            '{' => stack.push('}'),
             ')' | ']' | '}' => {
-                depth -= 1;
-                if depth < 0 {
+                if stack.pop() != Some(c) {
                     return false;
                 }
             }
             _ => {}
         }
     }
-    depth == 0 && !in_str
+    stack.is_empty() && !in_str
 }
 
 #[test]
@@ -98,7 +103,14 @@ fn readme_rust_snippets_wellformed() {
             Ok(s) => s,
             Err(_) => continue, // doc not generated in this run — tolerate
         };
-        let blocks = extract_rust_blocks(&src);
+        let (blocks, unterminated) = extract_rust_blocks(&src);
+        // A fence opened but never closed is a malformed doc — fail rather than
+        // silently skipping the unterminated block.
+        assert!(
+            !unterminated,
+            "{}: unterminated \`\`\`rust fence (block never closed)",
+            label
+        );
         for (i, block) in blocks.iter().enumerate() {
             assert!(
                 !block.trim().is_empty(),
