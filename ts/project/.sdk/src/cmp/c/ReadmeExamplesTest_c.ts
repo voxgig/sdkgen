@@ -67,22 +67,31 @@ static void ltrim_eq_buf(const char* start, const char* end, char* out, size_t c
   out[len] = '\\0';
 }
 
-// Balanced (), [], {} outside of string literals. Naive quote toggle: the
-// generated snippets never embed an escaped quote inside a string.
+// Balanced (), [], {} outside of string literals, with each closer matching
+// the most-recent opener (so "([)]" is rejected, not just counted). Naive
+// quote toggle: the generated snippets never embed an escaped quote inside a
+// string.
 static int is_balanced(const char* block, size_t len) {
   int in_str = 0;
-  int depth = 0;
+  // Depth can never exceed len; a per-call heap stack keeps this reentrant.
+  char* stack = (char*)malloc(len + 1);
+  if (!stack) return 0;
+  size_t top = 0;
   for (size_t i = 0; i < len; i++) {
     char c = block[i];
     if (c == '"') { in_str = !in_str; continue; }
     if (in_str) continue;
-    if (c == '(' || c == '[' || c == '{') depth++;
+    if (c == '(') stack[top++] = ')';
+    else if (c == '[') stack[top++] = ']';
+    else if (c == '{') stack[top++] = '}';
     else if (c == ')' || c == ']' || c == '}') {
-      depth--;
-      if (depth < 0) return 0;
+      if (top == 0 || stack[top - 1] != c) { free(stack); return 0; }
+      top--;
     }
   }
-  return depth == 0 && !in_str;
+  int ok = (top == 0 && !in_str);
+  free(stack);
+  return ok;
 }
 
 // Scan one doc: for every \`\`\`c ... \`\`\` block, check non-empty + balanced.
@@ -124,6 +133,14 @@ static int check_doc(const char* label, const char* path) {
 
     if (!nl) break;
     p = nl + 1;
+  }
+
+  // A fence opened but never closed is a malformed doc — fail rather than
+  // silently skipping the unterminated block.
+  {
+    char msg[128];
+    snprintf(msg, sizeof(msg), "%s: c fence closed", label);
+    CHECK(!in_block, msg);
   }
 
   free(src);

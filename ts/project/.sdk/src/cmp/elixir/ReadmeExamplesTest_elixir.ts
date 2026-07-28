@@ -71,9 +71,18 @@ defmodule ${Name}.ReadmeExamplesTest do
     end)
   end
 
+  # True when every opening fence in \`text\` has a matching closing fence.
+  # Splitting on the fence yields (fence_count + 1) segments, so an even fence
+  # count (odd segment count) means all fences are paired. An unclosed
+  # \`\`\`elixir fence at EOF would otherwise leave a truncated/empty block that
+  # parses cleanly and slips through the syntax gate silently.
+  defp fences_balanced?(text) do
+    rem(length(String.split(text, @fence)) - 1, 2) == 0
+  end
+
   defp doc_blocks(path) do
     case File.read(path) do
-      {:ok, text} -> {:present, elixir_blocks(text)}
+      {:ok, text} -> {:present, elixir_blocks(text), fences_balanced?(text)}
       _ -> :absent
     end
   end
@@ -85,7 +94,16 @@ defmodule ${Name}.ReadmeExamplesTest do
           :absent ->
             {fails, present, total}
 
-          {:present, blocks} ->
+          {:present, blocks, balanced?} ->
+            # An unclosed fence is a malformed doc — fail rather than silently
+            # scanning past the truncated block.
+            fence_fails =
+              if balanced? do
+                []
+              else
+                [label <> " has an unclosed " <> @fence <> "elixir fence (odd fence count)"]
+              end
+
             block_fails =
               blocks
               |> Enum.with_index()
@@ -105,7 +123,7 @@ defmodule ${Name}.ReadmeExamplesTest do
                 end
               end)
 
-            {fails ++ block_fails, present + 1, total + length(blocks)}
+            {fails ++ fence_fails ++ block_fails, present + 1, total + length(blocks)}
         end
       end)
 

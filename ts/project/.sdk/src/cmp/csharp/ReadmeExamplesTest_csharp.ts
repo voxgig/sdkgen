@@ -160,13 +160,25 @@ public class ReadmeExamplesTest
     public void AllCsharpBlocksAreStructurallyBalanced()
     {
         var failures = new List<string>();
+        var fence = new string((char)96, 3);
         foreach (var doc in Docs())
         {
             if (!System.IO.File.Exists(doc.path))
             {
                 continue;
             }
-            var blocks = CsharpBlocks(System.IO.File.ReadAllText(doc.path));
+            var text = System.IO.File.ReadAllText(doc.path);
+            // A well-formed document has an EVEN number of triple-backtick fence
+            // markers — every block that opens also closes. An odd count means a
+            // fence was opened but never closed at end-of-document; because block
+            // extraction keys off fence parity, such an unterminated csharp block
+            // can silently vanish instead of being checked. Fail loudly.
+            if ((text.Split(fence).Length - 1) % 2 != 0)
+            {
+                failures.Add(doc.label +
+                    " has an unclosed code fence (odd number of triple-backtick markers)");
+            }
+            var blocks = CsharpBlocks(text);
             var balanced = 0;
             for (var i = 0; i < blocks.Count; i++)
             {
