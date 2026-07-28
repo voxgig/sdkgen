@@ -629,14 +629,13 @@ final class PrimaryUtilityTest: XCTestCase {
   }
 
   func testPreparePathBasic() {
-    let ctx = makeTestFullCtx(client, utility)
-    ctx.point = vm(
-      ("parts", .list([.string("api"), .string("planet"), .string("{id}")])),
-      ("args", .map(vm(("params", .list([])))))
-    )
-
-    let path = utility.preparePath(ctx)
-    XCTAssertEqual(path, "api/planet/{id}")
+    // Was hand-written cases that had drifted out of the shared corpus
+    // (the preparePath fixture shipped as an empty `set: []`).
+    SdkRunner.runSet(SdkRunner.spec(primary, "preparePath", "basic")) { entry in
+      let ctxmap = entry.entries["ctx"]?.asMap
+      let ctx = SdkRunner.makeCtxFromMap(ctxmap, self.client, self.utility)
+      return .string(self.utility.preparePath(ctx))
+    }
   }
 
   func testPreparePathSingle() {

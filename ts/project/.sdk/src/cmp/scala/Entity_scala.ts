@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, camelify, names,
   File, Content, Folder, Fragment,
-  entityClassName,
+  entityClassName, entityCollection,
 } from '@voxgig/sdkgen'
 
 import {
@@ -23,7 +23,7 @@ const Entity = cmp(function Entity(props: any) {
   const scalapackage = scalaPackage(model)
 
   // Collision-free entity CLASS name.
-  const entityColl = getModelPath(model, `main.${KIT}.entity`)
+  const entityColl = entityCollection(model)
   const cls = entityClassName(entity, entityColl)
 
   const entrep = {
@@ -39,7 +39,7 @@ const Entity = cmp(function Entity(props: any) {
 
     File({ name: cls + '.' + target.ext }, () => {
 
-      const opnames = Object.keys(entity.op)
+      const opnames = Object.keys(entity.op || {})
 
       // For each CRUD op: if the spec defines it, splice in the real
       // implementation. Otherwise emit a stub that satisfies the SdkEntity

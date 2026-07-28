@@ -96,6 +96,14 @@ describe('PrimaryUtility', async () => {
   })
 
 
+  // preparePath shipped as an empty `set: []`, so no port drove it and several
+  // kept private hand-written cases instead. Corpus-driven like every other
+  // section now.
+  test('path-basic', async () => {
+    await runset(spec.preparePath.basic, utility.preparePath)
+  })
+
+
   test('body-basic', async () => {
     await runset(spec.prepareBody.basic, (ctx) => {
       fixctx(ctx)

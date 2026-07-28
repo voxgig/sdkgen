@@ -39,7 +39,7 @@ gemspec
 
 `)
 
-    for (const d of collectDeps(model, target.name, target.deps)) {
+    for (const d of collectDeps(model, target.name, target.deps, ctx$.log)) {
       Content(`gem "${d.name}", "~> ${versionOf(d)}"
 `)
     }
@@ -51,7 +51,7 @@ gemspec
     // twice (Gem::InvalidSpecificationException at `gem build`), so the
     // unconstrained json fallback is only emitted when the model's own
     // dependency list doesn't already declare json.
-    const deps = collectDeps(model, target.name, target.deps)
+    const deps = collectDeps(model, target.name, target.deps, ctx$.log)
     const hasJson = deps.some((d: any) => 'json' === d.name)
 
     Content(`Gem::Specification.new do |spec|

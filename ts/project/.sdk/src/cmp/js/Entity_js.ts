@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, camelify, names,
   File, Content, Folder, Fragment, Line, FeatureHook, Slot,
-  entityClassName,
+  entityClassName, entityCollection,
 } from '@voxgig/sdkgen'
 
 import {
@@ -22,7 +22,7 @@ const Entity = cmp(function Entity(props: any) {
   // Collision-free entity CLASS name (see entityClassName): normally
   // `<Name>Entity`, disambiguated when it would clash with another entity's
   // data-type name. The class file name and the Main require path both use this.
-  const entityColl = getModelPath(model, `main.${KIT}.entity`)
+  const entityColl = entityCollection(model)
   const cls = entityClassName(entity, entityColl)
 
   const entrep = {
@@ -37,7 +37,7 @@ const Entity = cmp(function Entity(props: any) {
 
     File({ name: cls + '.' + target.name }, () => {
 
-      const opnames = Object.keys(entity.op)
+      const opnames = Object.keys(entity.op || {})
 
       const opfrags =
         (['load', 'list', 'create', 'update', 'remove']

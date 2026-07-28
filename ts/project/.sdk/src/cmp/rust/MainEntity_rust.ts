@@ -1,6 +1,6 @@
 
 
-import { cmp, Content, entityClassName } from '@voxgig/sdkgen'
+import { cmp, Content, entityClassName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,7 +17,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
   const { entity } = props
   const { model } = props.ctx$
 
-  const entityColl = getModelPath(model, `main.${KIT}.entity`)
+  const entityColl = entityCollection(model)
   const cls = entityClassName(entity, entityColl)
   const method = rustVarName(entity.name)
   const mod = rustVarName(entity.name)

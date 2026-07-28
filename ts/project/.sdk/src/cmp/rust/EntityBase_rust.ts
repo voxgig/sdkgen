@@ -5,7 +5,7 @@ import {
   Folder,
   cmp,
   each,
-  entityClassName,
+  entityClassName, entityCollection,
 } from '@voxgig/sdkgen'
 
 
@@ -27,7 +27,7 @@ const EntityBase = cmp(async function EntityBase(props: any) {
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const entityColl = entity
+  const entityColl = entityCollection(model)
 
   Folder({ name: 'entity' }, () => {
     File({ name: 'mod.' + target.ext }, () => {

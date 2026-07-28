@@ -31,7 +31,7 @@ const Entity = cmp(function Entity(props: any) {
 
         File({ name: entity.name + '.' + target.ext }, () => {
 
-          const opnames = Object.keys(entity.op)
+          const opnames = Object.keys(entity.op || {})
 
           // For each CRUD op: splice the real implementation when the spec
           // defines it; otherwise leave the slot empty (the fn is simply not

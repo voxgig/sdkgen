@@ -21,8 +21,12 @@ const Entity = cmp(function Entity(props: any) {
   const Entity_sdk = requirePath(ctx$, `./cmp/${target.name}/Entity_${target.name}`)
   Entity_sdk['Entity']({ target, entity, entitySDK })
 
+  // Log identifiers, not the model subtrees. `target` and `entity` are large
+  // aontu nodes and this fires once per entity per target (thousands of times
+  // for a big API x 22 targets), so passing them serialised the whole model
+  // fragment each time at default log level.
   log.info({
-    point: 'generate-entity', target, entity,
+    point: 'generate-entity', target: target.name, entity: entity.name,
     note: 'target:' + target.name + ', ' + 'entity: ' + entity.name
   })
 })

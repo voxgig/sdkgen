@@ -19,7 +19,8 @@ const Feature = cmp(function Feature(props: any) {
   }
 
   log.info({
-    point: 'generate-feature', target, feature,
+    // Identifiers only — see the note in Entity.ts.
+    point: 'generate-feature', target: target.name, feature: feature.name,
     note: 'target:' + target.name + ', ' + 'feature: ' + feature.name
   })
 

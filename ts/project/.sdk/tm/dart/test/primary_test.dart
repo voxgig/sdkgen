@@ -94,6 +94,13 @@ void tests() {
       await _runset(_g('prepareQuery.basic'), _utility.prepareQuery);
     });
 
+    // preparePath shipped as an empty `set: []`, so no port drove it and
+    // several kept private hand-written cases instead.
+    test('path-basic', (t) async {
+      await _setup();
+      await _runset(_g('preparePath.basic'), _utility.preparePath);
+    });
+
     test('body-basic', (t) async {
       await _setup();
       await _runset(_g('prepareBody.basic'), (dynamic ctx) {

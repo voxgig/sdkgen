@@ -669,23 +669,16 @@ static void prepareParamsBasic() {
 // --- preparePath ------------------------------------------------------------
 
 static void preparePathBasic() {
+  // Was hand-written cases that had drifted out of the shared corpus (the
+  // preparePath fixture shipped as an empty `set: []`).
   auto c = client();
   UtilityPtr utility = c->getUtility();
-  CtxPtr ctx = makeTestFullCtx(c, utility);
-  ctx->point = fhMap({
-      {"parts", vlist({Value("api"), Value("planet"), Value("{id}")})},
-      {"args", fhMap({{"params", vlist()}})}});
-  ASSERT_EQ(utility->preparePath(ctx), std::string("api/planet/{id}"), "expected api/planet/{id}");
-}
-
-static void preparePathSingle() {
-  auto c = client();
-  UtilityPtr utility = c->getUtility();
-  CtxPtr ctx = makeTestFullCtx(c, utility);
-  ctx->point = fhMap({
-      {"parts", vlist({Value("items")})},
-      {"args", fhMap({{"params", vlist()}})}});
-  ASSERT_EQ(utility->preparePath(ctx), std::string("items"), "expected items");
+  rs::runset("preparePath-basic", rs::get_spec(primary(), {"preparePath", "basic"}),
+             [&](const Value& entry) -> Value {
+    Value ctxmap = Helpers::toMapAny(getp(entry, "ctx"));
+    CtxPtr ctx = rs::make_ctx_from_map(ctxmap, c, utility);
+    return Value(utility->preparePath(ctx));
+  });
 }
 
 // --- prepareQuery -----------------------------------------------------------
@@ -830,7 +823,6 @@ int main() {
   T_RUN(prepareMethodBasic);
   T_RUN(prepareParamsBasic);
   T_RUN(preparePathBasic);
-  T_RUN(preparePathSingle);
   T_RUN(prepareQueryBasic);
   T_RUN(resultBasicBasic);
   T_RUN(resultBodyBasic);

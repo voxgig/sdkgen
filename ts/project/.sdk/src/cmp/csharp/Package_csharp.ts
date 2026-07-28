@@ -31,7 +31,7 @@ const Package = cmp(async function Package(props: any) {
   const { repoUrl } = repoInfo(model)
 
   const deps: Record<string, string> = {}
-  for (const d of collectDeps(model, target.name, target.deps)) {
+  for (const d of collectDeps(model, target.name, target.deps, ctx$.log)) {
     deps[d.name] = d.source === 'target' ? (d.version || '0.0.0') : d.version
   }
 

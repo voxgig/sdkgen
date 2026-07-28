@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, camelify, names,
   Content, File, Folder, Fragment,
-  entityClassName,
+  entityClassName, entityCollection,
 } from '@voxgig/sdkgen'
 
 import {
@@ -23,7 +23,7 @@ const Entity = cmp(function Entity(props: any) {
   // `<Name>Entity`, disambiguated when it would clash with another entity's
   // data-type name. The class file name and the Main accessor both use
   // this, so they always agree.
-  const entityColl = getModelPath(model, `main.${KIT}.entity`)
+  const entityColl = entityCollection(model)
   const cls = entityClassName(entity, entityColl)
 
   const entrep = {
@@ -38,7 +38,7 @@ const Entity = cmp(function Entity(props: any) {
 
     File({ name: cls + '.' + target.ext }, () => {
 
-      const opnames = Object.keys(entity.op)
+      const opnames = Object.keys(entity.op || {})
 
       const opfrags =
         (['load', 'list', 'create', 'update', 'remove']

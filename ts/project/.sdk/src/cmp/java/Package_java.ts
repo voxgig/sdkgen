@@ -31,7 +31,7 @@ const Package = cmp(async function Package(props: any) {
 
   // Dep name convention: "groupId:artifactId" with an explicit version.
   const deps: { groupId: string, artifactId: string, version: string, kind: string }[] = []
-  for (const d of collectDeps(model, target.name, target.deps)) {
+  for (const d of collectDeps(model, target.name, target.deps, ctx$.log)) {
     const [dgroup, dartifact] = String(d.name).split(':')
     if (dgroup && dartifact && d.version) {
       deps.push({

@@ -18,7 +18,8 @@ const Feature = (0, jostraca_1.cmp)(function Feature(props) {
         });
     }
     log.info({
-        point: 'generate-feature', target, feature,
+        // Identifiers only — see the note in Entity.ts.
+        point: 'generate-feature', target: target.name, feature: feature.name,
         note: 'target:' + target.name + ', ' + 'feature: ' + feature.name
     });
 });

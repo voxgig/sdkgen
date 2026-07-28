@@ -72,7 +72,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const authActive = isAuthActive(model)
 
-  const opnames = Object.keys(entity.op)
+  const opnames = Object.keys(entity.op || {})
   const hasLoad = opnames.includes('load')
   const hasList = opnames.includes('list')
 
@@ -80,8 +80,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
     return
   }
 
-  const loadOp = entity.op.load
-  const listOp = entity.op.list
+  const loadOp = entity.op?.load
+  const listOp = entity.op?.list
 
   const loadPoint = loadOp?.points?.[0]
   const loadPath = loadPoint ? normalizePathParams(loadPoint.parts || [], loadPoint?.args?.params || [], loadPoint?.rename?.param) : ''

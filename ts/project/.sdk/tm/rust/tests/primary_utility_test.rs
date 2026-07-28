@@ -810,35 +810,21 @@ fn primary_prepare_params_basic() {
     );
 }
 
+// Was two hand-written cases that had drifted out of the shared corpus (the
+// preparePath fixture shipped as an empty `set: []`). Now driven by the
+// corpus like every other section, so all ports assert the same separator /
+// blank-segment behaviour.
 #[test]
 fn primary_prepare_path_basic() {
     let (client, utility) = base_client();
-    let ctx = make_test_full_ctx(&client, &utility);
-    *ctx.point.borrow_mut() = jo(vec![
-        (
-            "parts",
-            ja(vec![
-                Value::str("api"),
-                Value::str("planet"),
-                Value::str("{id}"),
-            ]),
-        ),
-        ("args", jo(vec![("params", Value::empty_list())])),
-    ]);
-
-    assert_eq!(utility.prepare_path(&ctx), "api/planet/{id}");
-}
-
-#[test]
-fn primary_prepare_path_single() {
-    let (client, utility) = base_client();
-    let ctx = make_test_full_ctx(&client, &utility);
-    *ctx.point.borrow_mut() = jo(vec![
-        ("parts", ja(vec![Value::str("items")])),
-        ("args", jo(vec![("params", Value::empty_list())])),
-    ]);
-
-    assert_eq!(utility.prepare_path(&ctx), "items");
+    let primary = primary();
+    runset(
+        &get_spec(&primary, &["preparePath", "basic"]),
+        &mut |entry| {
+            let ctx = make_ctx_from_map(&getp(entry, "ctx"), &client, &utility);
+            Ok(Value::str(utility.prepare_path(&ctx)))
+        },
+    );
 }
 
 #[test]

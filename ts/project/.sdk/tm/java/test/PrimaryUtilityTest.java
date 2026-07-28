@@ -717,32 +717,15 @@ public class PrimaryUtilityTest {
 
   @Test
   public void preparePathBasic() {
+    // Was two hand-written cases that had drifted out of the shared corpus
+    // (the preparePath fixture shipped as an empty `set: []`).
     ProjectNameSDK client = client();
     Utility utility = client.getUtility();
-    Context ctx = makeTestFullCtx(client, utility);
-    List<Object> parts = new ArrayList<>();
-    parts.add("api");
-    parts.add("planet");
-    parts.add("{id}");
-    ctx.point = fhMap(
-        "parts", parts,
-        "args", fhMap("params", new ArrayList<>()));
-
-    assertEquals("api/planet/{id}", utility.preparePath.apply(ctx));
-  }
-
-  @Test
-  public void preparePathSingle() {
-    ProjectNameSDK client = client();
-    Utility utility = client.getUtility();
-    Context ctx = makeTestFullCtx(client, utility);
-    List<Object> parts = new ArrayList<>();
-    parts.add("items");
-    ctx.point = fhMap(
-        "parts", parts,
-        "args", fhMap("params", new ArrayList<>()));
-
-    assertEquals("items", utility.preparePath.apply(ctx));
+    runset(getSpec(primary(), "preparePath", "basic"), (entry) -> {
+      Map<String, Object> ctxmap = Helpers.toMapAny(entry.get("ctx"));
+      Context ctx = makeCtxFromMap(ctxmap, client, utility);
+      return utility.preparePath.apply(ctx);
+    });
   }
 
   @Test

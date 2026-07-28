@@ -1,6 +1,6 @@
 
 
-import { cmp, Content, entityClassName } from '@voxgig/sdkgen'
+import { cmp, Content, entityClassName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -20,7 +20,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
 
   // Collision-free entity CLASS name (entityClassName); the accessor METHOD name
   // (below) is unchanged so callers still write $client->${entity.Name}().
-  const cls = entityClassName(entity, getModelPath(model, `main.${KIT}.entity`))
+  const cls = entityClassName(entity, entityCollection(model))
 
   // Canonical facade method name is the PascalCase entity Name
   // (`$client->${entity.Name}()`). PHP method names are case-insensitive, so
