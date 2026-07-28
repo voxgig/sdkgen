@@ -64,15 +64,15 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const evar = cVarName(entity.name)
   const Name = model.const.Name
 
-  const opnames = Object.keys(entity.op)
+  const opnames = Object.keys(entity.op || {})
   const hasLoad = opnames.includes('load')
   const hasList = opnames.includes('list')
   if (!hasLoad && !hasList) {
     return
   }
 
-  const loadOp = (entity.op as any).load
-  const listOp = (entity.op as any).list
+  const loadOp = (entity.op as any)?.load
+  const listOp = (entity.op as any)?.list
 
   const loadPoint = loadOp?.points?.[0]
   const loadPath = loadPoint ? normalizePathParams(loadPoint.parts || [], loadPoint?.args?.params || [], loadPoint?.rename?.param) : ''

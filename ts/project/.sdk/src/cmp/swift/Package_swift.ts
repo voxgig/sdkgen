@@ -28,7 +28,7 @@ const Package = cmp(async function Package(props: any) {
   const Name = model.const.Name
 
   const deps: Record<string, string> = {}
-  for (const d of collectDeps(model, target.name, target.deps)) {
+  for (const d of collectDeps(model, target.name, target.deps, ctx$.log)) {
     deps[d.name] = d.source === 'target' ? (d.version || '0.0.0') : d.version
   }
   // Vendored, dependency-free by design; declared deps (if any) are ignored

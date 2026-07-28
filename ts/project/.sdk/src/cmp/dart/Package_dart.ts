@@ -59,7 +59,7 @@ topics:
     // Runtime is dependency-free (dart:io + dart:convert + vendored struct);
     // target/feature deps, when declared, land here.
     const deps: Record<string, string> = {}
-    for (const d of collectDeps(model, target.name, target.deps)) {
+    for (const d of collectDeps(model, target.name, target.deps, ctx$.log)) {
       deps[d.name] = d.source === 'target' ? (d.version || 'any') : d.version
     }
 

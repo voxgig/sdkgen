@@ -82,7 +82,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // it only applies to entities that actually declare a `list` op. Others
   // (e.g. Batch = create/load) have no list endpoint — make_point would error
   // and the stream would yield nothing — so skip the test for them.
-  const hasList = !!(entity.op && (entity.op as any).list)
+  const hasList = !!(entity.op && (entity.op as any)?.list)
 
   File({ name: 'test_' + entity.name + '_entity.' + target.ext }, () => {
 

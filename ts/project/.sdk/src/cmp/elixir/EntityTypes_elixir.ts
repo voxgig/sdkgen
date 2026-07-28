@@ -29,7 +29,7 @@ import {
   File, Folder, Content,
 } from '@voxgig/sdkgen'
 
-import { opRequestShape, OP_SUFFIX, warnEntityTypeCollisions } from '@voxgig/sdkgen'
+import { opRequestShape, OP_SUFFIX, warnEntityTypeCollisions, deriveEntityNames } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -89,10 +89,9 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   // each generated module carries @specs referencing its Types aliases, so an
   // alias is required for each or the project won't compile. Filter on `name`
   // (always present), NOT `active` — parity with the go emitter's fix.
-  const entityList = each(entity).filter((e: any) => e && null != e.name)
+  const entityList = deriveEntityNames(entity)
   // Derive the PascalCase Name up-front — it is set LAZILY by names(), so an
   // entity not yet named would otherwise read `Name = undefined` below.
-  entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
 
   // Surface duplicate generated type names (two entities with the same
   // PascalCase Name) — they would redeclare a type in statically-typed

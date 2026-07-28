@@ -789,38 +789,20 @@ public class PrimaryUtilityTest
         });
     }
 
+    // Was two hand-written cases that had drifted out of the shared corpus
+    // (the preparePath fixture shipped as an empty `set: []`). Now driven by
+    // the corpus like every other section, so all ports assert the same
+    // separator / blank-segment behaviour.
     [Fact]
     public void PreparePathBasic()
     {
-        var ctx = MakeTestFullCtx(_client, _utility);
-        ctx.Point = new Dictionary<string, object?>
+        TestRunner.RunSet(TestRunner.GetSpec(_primary, "preparePath", "basic"), entry =>
         {
-            ["parts"] = new List<object?> { "api", "planet", "{id}" },
-            ["args"] = new Dictionary<string, object?>
-            {
-                ["params"] = new List<object?>(),
-            },
-        };
-
-        var path = _utility.PreparePath(ctx);
-        Assert.Equal("api/planet/{id}", path);
-    }
-
-    [Fact]
-    public void PreparePathSingle()
-    {
-        var ctx = MakeTestFullCtx(_client, _utility);
-        ctx.Point = new Dictionary<string, object?>
-        {
-            ["parts"] = new List<object?> { "items" },
-            ["args"] = new Dictionary<string, object?>
-            {
-                ["params"] = new List<object?>(),
-            },
-        };
-
-        var path = _utility.PreparePath(ctx);
-        Assert.Equal("items", path);
+            var ctxmap = entry.TryGetValue("ctx", out var c)
+                ? c as Dictionary<string, object?> : null;
+            var ctx = TestRunner.MakeCtxFromMap(ctxmap, _client, _utility);
+            return _utility.PreparePath(ctx);
+        });
     }
 
     [Fact]

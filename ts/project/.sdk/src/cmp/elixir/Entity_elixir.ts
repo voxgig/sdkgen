@@ -23,7 +23,7 @@ const Entity = cmp(function Entity(props: any) {
     Folder({ name: 'entity' }, () => {
       File({ name: entity.name + '_entity.' + target.ext }, () => {
 
-        const opnames = Object.keys(entity.op)
+        const opnames = Object.keys(entity.op || {})
 
         const opfrags =
           (['load', 'list', 'create', 'update', 'remove']

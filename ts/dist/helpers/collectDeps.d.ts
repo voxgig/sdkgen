@@ -5,6 +5,6 @@ type DepEntry = {
     source: 'feature' | 'target';
     raw: ModelDep;
 };
-declare function collectDeps(model: SdkModel, targetName: string, targetDeps: Record<string, ModelDep> | undefined): DepEntry[];
+declare function collectDeps(model: SdkModel, targetName: string, targetDeps: Record<string, ModelDep> | undefined, log?: any): DepEntry[];
 export type { DepEntry, };
 export { collectDeps, };

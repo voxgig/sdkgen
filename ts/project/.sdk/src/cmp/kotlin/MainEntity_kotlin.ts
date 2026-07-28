@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityClassName } from '@voxgig/sdkgen'
+import { cmp, Content, entityClassName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,7 +17,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
   const { model } = props.ctx$
 
   const kotlinpackage = kotlinPackage(model)
-  const entityColl = getModelPath(model, `main.${KIT}.entity`)
+  const entityColl = entityCollection(model)
   const cls = entityClassName(entity, entityColl)
   const accessor = kotlinVarName(entity.name)
 

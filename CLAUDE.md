@@ -66,6 +66,13 @@ component.* See [docs/explanation/components-and-templates](./docs/explanation/c
 - `each(...)` iterates in sorted-key order — output is byte-stable; don't rely on insertion order.
 - The `ts`/`js` targets are the reference implementation; keep other languages in parity.
 - Commit `ts/dist/` changes with the `ts/src/` change that produced them.
+- In components, get entities via `entityCollection(model)` — not
+  `getModelPath(...)`, which is quadratic here and active-filtered.
+- `entity.op` is optional: `entity.op || {}`, `entity.op?.load`.
+- `npm run build` also type-checks `ts/project/.sdk/src/cmp/**`
+  (`check-scaffold`); that tree is invisible to `tsc --build src test`.
+- Parity tiers and the zero-case corpus guard live in `ts/test/parity.test.ts`
+  — see AGENTS.md "Language parity is CRITICAL".
 
 ## Related Projects
 - **apidef** (`~/Projects/voxgig/apidef`) — parses OpenAPI definitions into the model used by sdkgen

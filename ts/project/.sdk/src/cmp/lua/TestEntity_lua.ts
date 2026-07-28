@@ -50,7 +50,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // it only applies to entities that declare a list op. Others (e.g. Batch =
   // create/load) have no list endpoint — make_point errors and the stream
   // yields nothing — so skip the stream test for them.
-  const hasList = !!(entity.op && (entity.op as any).list)
+  const hasList = !!(entity.op && (entity.op as any)?.list)
 
   const basicflow: ModelEntityFlow | undefined =
     getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)

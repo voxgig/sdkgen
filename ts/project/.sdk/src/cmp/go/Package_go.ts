@@ -31,7 +31,7 @@ go 1.20
 
     const deps: Record<string, string> = {}
     const replaceDirs: Record<string, string> = {}
-    for (const d of collectDeps(model, target.name, target.deps)) {
+    for (const d of collectDeps(model, target.name, target.deps, ctx$.log)) {
       // Target-level deps default to 'v0.0.0' when version is absent;
       // feature deps require an explicit version.
       deps[d.name] = d.source === 'target' ? (d.version || 'v0.0.0') : d.version

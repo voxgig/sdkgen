@@ -1,0 +1,32 @@
+{
+  "_comment": [
+    "Type-check ONLY \u2014 the shipped scaffold components (project/.sdk/src/cmp/**).",
+    "These compile inside a CONSUMER project, never as part of sdkgen's own",
+    "`tsc --build src test`, so a missing import or a renamed export is invisible",
+    "here and fatal there: every generated SDK of that language fails to build.",
+    "(That is exactly what happened with entityCollection in Entity_ts.ts.)",
+    "@voxgig/sdkgen is mapped to this package's own source so the components",
+    "resolve the same names a consumer would. fragment/ is excluded: fragments",
+    "are template source with placeholder tokens, not valid standalone modules."
+  ],
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "strict": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "paths": {
+      "@voxgig/sdkgen": [
+        "./src/sdkgen.ts"
+      ]
+    }
+  },
+  "include": [
+    "project/.sdk/src/cmp/**/*.ts"
+  ],
+  "exclude": [
+    "project/.sdk/src/cmp/**/fragment/**"
+  ]
+}

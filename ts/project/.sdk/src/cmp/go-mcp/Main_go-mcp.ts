@@ -2,7 +2,7 @@
 import * as Path from 'node:path'
 
 import {
-  cmp, each,
+  cmp, each, deriveEntityNames,
   File, Content, Fragment, Slot,
 } from '@voxgig/sdkgen'
 
@@ -54,6 +54,14 @@ const Main = cmp(function Main(props: any) {
   const mcpModule = `github.com/${org}/${model.name}-sdk/go-mcp`
 
   const entityMap: any = getModelPath(model, `main.${KIT}.entity`)
+  // Derive each entity's PascalCase `Name` here rather than relying on another
+  // TARGET having run first. This target sets `phase.entity: { active: false }`
+  // (see model/target/go-{cli,mcp}.aontu), so create-sdkgen's Root.ts never
+  // calls names() for it — the accessor emitted below used to read `Name` off
+  // objects the `go` target happened to have named as a side effect, which
+  // yields `client.undefined(nil)` whenever this target is generated without
+  // `go`, or before it in target order.
+  deriveEntityNames(entityMap)
   const entityNames = Object.keys(entityMap).map(n => n.toLowerCase())
   const entityHelp = entityNames.length > 0 ? entityNames.join(' | ') : '(none)'
 

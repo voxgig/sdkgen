@@ -57,7 +57,7 @@ dependencies = {
 `)
 
     const seen = new Set<string>(['lua', 'dkjson'])
-    for (const d of collectDeps(model, target.name, target.deps)) {
+    for (const d of collectDeps(model, target.name, target.deps, ctx$.log)) {
       if (seen.has(d.name)) continue
       seen.add(d.name)
       const v = d.source === 'target' ? (d.version || '0.0') : d.version

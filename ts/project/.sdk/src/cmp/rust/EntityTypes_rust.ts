@@ -25,11 +25,11 @@
 //     types yet (parity intent, not dead-code churn).
 
 import {
-  cmp, each, names,
+  cmp, each,
   File, Content, Folder,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -85,8 +85,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   // Emit for every entity that gets an entity file (filter on `name`, always
   // present; derive `Name` here so the struct set is deterministic — parity
   // with the go emitter's fix).
-  const entityList = each(entity).filter((e: any) => e && null != e.name)
-  entityList.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
+  const entityList = deriveEntityNames(entity)
 
   // Surface duplicate generated type names (two entities with the same
   // PascalCase Name) — they would redeclare a type in statically-typed

@@ -24,7 +24,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const Name = model.const.Name
 
-  const opnames = Object.keys(entity.op)
+  const opnames = Object.keys(entity.op || {})
   if (!opnames.includes('load') && !opnames.includes('list')) {
     return
   }

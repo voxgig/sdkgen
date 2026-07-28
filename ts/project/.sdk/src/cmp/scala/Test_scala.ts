@@ -40,7 +40,7 @@ const Test = cmp(function Test(props: any) {
         getModelPath(model, `main.${KIT}.flow.Basic${EntityName}Flow`)
       const hasEntity = null != basicflow && true === basicflow.active
 
-      const opnames = Object.keys(entity.op)
+      const opnames = Object.keys(entity.op || {})
       const hasDirect = opnames.includes('load') || opnames.includes('list')
 
       if (hasEntity) {

@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
-  entityClassName,
+  entityClassName, entityCollection,
 } from '@voxgig/sdkgen'
 
 
@@ -57,7 +57,7 @@ const Main = cmp(async function Main(props: any) {
       Line(`// ${model.const.Name} ${target.Name} SDK\n`)
 
       List({ item: entity }, ({ item }: any) => {
-        const cls = entityClassName(item, entity)
+        const cls = entityClassName(item, entityCollection(model))
         return Line(`const { ${cls} } = require('./entity/${cls}')`)
       })
 

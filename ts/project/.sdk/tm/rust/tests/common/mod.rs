@@ -291,14 +291,50 @@ pub fn match_deep(check: &Value, base: &Value) -> Option<String> {
 
 // ---- runset (mirrors go runner_test.go runset) -----------------------------------
 
+// Sections deliberately left empty in the shared corpus
+// (.sdk/test/primary/<name>.aontu carries a PENDING header). Everything else
+// MUST contribute cases.
+pub const PENDING_SECTIONS: &[&str] = &[
+    "fetcher", "makeFetchDef", "makePoint", "makeResult", "featureAdd",
+    "featureHook", "featureInit",
+];
+
 pub fn runset(
+    testspec: &Value,
+    subject: &mut dyn FnMut(&Value) -> Result<Value, ProjectNameError>,
+) {
+    runset_named("", testspec, subject)
+}
+
+/// Drive one section of the shared test corpus.
+///
+/// This used to `return` silently when "set" was missing or not a list, so a
+/// renamed section, a fixture that failed to compile, or an empty set reported
+/// PASS while running zero assertions — the whole point of a shared oracle lost
+/// without a single red test. Both conditions now panic, except for the
+/// sections explicitly marked PENDING in the corpus.
+pub fn runset_named(
+    name: &str,
     testspec: &Value,
     subject: &mut dyn FnMut(&Value) -> Result<Value, ProjectNameError>,
 ) {
     let set = match getp(testspec, "set") {
         Value::List(l) => Value::List(l),
-        _ => return,
+        _ => panic!(
+            "test corpus section {:?} has no `set` list — zero cases would run",
+            name
+        ),
     };
+
+    if let Value::List(l) = &set {
+        if l.borrow().is_empty() && !PENDING_SECTIONS.contains(&name) {
+            panic!(
+                "test corpus section {:?} is EMPTY — zero cases would run; add \
+                 cases, or mark the fixture PENDING in .sdk/test/primary/",
+                name
+            );
+        }
+    }
 
     let entries: Vec<Value> = match &set {
         Value::List(l) => l.borrow().clone(),

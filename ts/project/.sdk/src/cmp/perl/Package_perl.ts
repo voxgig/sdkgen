@@ -27,7 +27,7 @@ const Package = cmp(async function Package(props: any) {
   // (e.g. "Voxgig::SDK::Solar" -> dist voxgig-sdk-solar).
   const Name = model.const.Name
 
-  const deps = collectDeps(model, target.name, target.deps)
+  const deps = collectDeps(model, target.name, target.deps, ctx$.log)
   const prereq = deps
     .map((d: any) => `        '${d.name}' => '${d.version || '0'}',`)
     .join('\n')
