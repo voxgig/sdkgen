@@ -61,7 +61,13 @@ const MIRRORED = ['c', 'clojure', 'elixir', 'haskell', 'zig']
 
 // TIER 3 — no primary-utility suite at all. These targets' request-shaping
 // utilities are unverified in every language-neutral sense.
-const UNCOVERED = ['ocaml', 'scala']
+//
+// `lean` is a special case: its generated SDK ships its OWN test lanes — an
+// offline `structcorpus` exe (the full shared struct corpus, 1360 assertions)
+// and a live `runner` exe (entity list + CRUD) — but it does not participate
+// in this in-harness parity mechanism (no per-language primary-utility file),
+// so by that definition it is UNCOVERED here.
+const UNCOVERED = ['lean', 'ocaml', 'scala']
 
 
 function sdkTargets(): string[] {
