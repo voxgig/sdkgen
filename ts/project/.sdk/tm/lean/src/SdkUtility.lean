@@ -451,6 +451,152 @@ def makeRequest (ctx : Value) : SIO (Value × Option Value) := do
   let _ ← gpMap ctx "result"
   pure ((← gp ctx "response"), none)
 
+/-- The initial result carrier the pipeline fills in. -/
+def makeResult (ctx : Value) : SIO Value := do
+  let resmatch ← emptyMap
+  let res ← newMap #[("ok", .bool false), ("status", .num (-1.0)),
+                     ("statusText", .str ""), ("resmatch", resmatch)]
+  sp ctx "result" res
+  pure res
+
+/-- Select the endpoint for this operation: the single point, else the first
+    whose `select.exist` keys are all present and whose `$action` agrees. -/
+def makePoint (ctx : Value) : SIO Value := do
+  let op ← gp ctx "op"
+  let matchV ← gp ctx "reqmatch"
+  let dataV ← gp ctx "reqdata"
+  let pts ← match (← gp op "points") with
+    | .list i => listItems i
+    | _ => pure #[]
+  if pts.size == 0 then pure .noval
+  else if pts.size == 1 then do
+    sp ctx "point" (pts[0]!)
+    pure (pts[0]!)
+  else do
+    let mut chosen : Value := .noval
+    for pt in pts do
+      if isNov chosen then
+        let sel ← gp pt "select"
+        let mut ok := true
+        match (← gp sel "exist") with
+        | .list i =>
+          for ek in (← listItems i) do
+            let k := vs ek
+            if isNov (← gp matchV k) && isNov (← gp dataV k) then ok := false
+        | _ => pure ()
+        if ok && ((← gp sel "$action") == (← gp matchV "$action")) then
+          chosen := pt
+    if !(isNov chosen) then sp ctx "point" chosen
+    pure chosen
+
+/-- The transport payload: method, headers and (for data ops) the body. -/
+def makeFetchDef (ctx : Value) : SIO Value := do
+  let specV ← gp ctx "spec"
+  let method ← gpS specV "method"
+  let headers ← asMap (← gp specV "headers")
+  let out ← newMap #[("method", .str method), ("headers", headers)]
+  let body ← gp specV "body"
+  if !(isNov body) then sp out "body" body
+  pure out
+
+/-- Remove configured sensitive keys (options.clean.keys) from a value. -/
+def clean (ctx : Value) (v : Value) : SIO Value := do
+  let options ← gp ctx "options"
+  let keysStr ← gpS (← gp options "clean") "keys"
+  let drop := if keysStr == "" then #[] else (keysStr.splitOn ",").toArray
+  let out ← clone v
+  match out with
+  | .map _ =>
+    for k in drop do
+      if k != "" then dp out k
+  | _ => pure ()
+  pure out
+
+/-- The transport step. In test mode the client answers from its own store, so
+    this is only reached for live calls; the concrete send is injected by the
+    runtime (SdkRuntime.curlFetch) to keep this layer transport-agnostic. -/
+def fetcher (ctx : Value) (url : String) (fetchdef : Value) : SIO Value := do
+  let out ← emptyMap
+  sp out "url" (.str url)
+  sp out "fetchdef" fetchdef
+  sp ctx "fetch" out
+  pure out
+
+-- ---------------------------------------------------------------------------
+-- features
+-- ---------------------------------------------------------------------------
+
+/-- The client's ordered feature list. -/
+def featureList (client : Value) : SIO Value := do
+  match (← gp client "features") with
+  | .list i => pure (Value.list i)
+  | _ => do
+    let l ← emptyList
+    sp client "features" l
+    pure l
+
+/-- Add a feature, honouring `__before__` / `__after__` / `__replace__`
+    placement against the named feature (append by default). -/
+def featureAdd (client : Value) (feat : Value) : SIO Unit := do
+  let feats ← featureList client
+  let items ← match feats with
+    | .list i => listItems i
+    | _ => pure #[]
+  let nm ← gpS feat "name"
+  let before ← gpS feat "__before__"
+  let after ← gpS feat "__after__"
+  let replace ← gpS feat "__replace__"
+  let mut out : Array Value := #[]
+  let mut placed := false
+  for f in items do
+    let fn ← gpS f "name"
+    if replace != "" && fn == replace then
+      out := out.push feat
+      placed := true
+    else if before != "" && fn == before then
+      out := out.push feat
+      out := out.push f
+      placed := true
+    else if after != "" && fn == after then
+      out := out.push f
+      out := out.push feat
+      placed := true
+    else if fn == nm then
+      out := out.push feat
+      placed := true
+    else
+      out := out.push f
+  if !placed then out := out.push feat
+  sp client "features" (← newList out)
+
+/-- Initialise every active feature (idempotent: marks `inited`). -/
+def featureInit (client : Value) (ctx : Value) : SIO Unit := do
+  let feats ← featureList client
+  match feats with
+  | .list i =>
+    for f in (← listItems i) do
+      if truthy (← gp f "active") && !(truthy (← gp f "inited")) then do
+        sp f "inited" (.bool true)
+        sp f "ctx" ctx
+  | _ => pure ()
+
+/-- Dispatch a pipeline stage to every active feature that defines the hook. -/
+def featureHook (client : Value) (stage : String) (ctx : Value) : SIO Unit := do
+  let feats ← featureList client
+  match feats with
+  | .list i =>
+    for f in (← listItems i) do
+      if truthy (← gp f "active") then do
+        let hooks ← gp f "hooks"
+        let h ← gp hooks stage
+        match h with
+        | .func fid => do
+          let inj ← getDummyInj
+          let _ ← callFunc fid inj ctx stage ctx
+          pure ()
+        | _ => pure ()
+  | _ => pure ()
+
 /-- Fold the transport response into the result (basic/headers/body/resform). -/
 def makeResponse (ctx : Value) : SIO (Value × Option Value) := do
   let specV ← gp ctx "spec"

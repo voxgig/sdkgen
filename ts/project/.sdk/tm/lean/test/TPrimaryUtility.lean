@@ -303,6 +303,42 @@ def main : IO UInt32 := do
     runset "transformResponse" (← getSpec primary #["transformResponse", "basic"]) fun entry => do
       pure ((← SdkUtility.transformResponse (← entryCtx entry opts config)), none)
 
+    -- The remaining corpus sections. They carry no cases in this project's
+    -- corpus, but are driven here so any future fixture runs against Lean too.
+
+    runset "clean" (← getSpec primary #["clean", "basic"]) fun entry => do
+      let ctx ← entryCtx entry opts config
+      pure ((← SdkUtility.clean ctx (← SdkUtility.gp entry "in")), none)
+
+    runset "makeResult" (← getSpec primary #["makeResult", "basic"]) fun entry => do
+      pure ((← SdkUtility.makeResult (← entryCtx entry opts config)), none)
+
+    runset "makePoint" (← getSpec primary #["makePoint", "basic"]) fun entry => do
+      pure ((← SdkUtility.makePoint (← entryCtx entry opts config)), none)
+
+    runset "makeFetchDef" (← getSpec primary #["makeFetchDef", "basic"]) fun entry => do
+      pure ((← SdkUtility.makeFetchDef (← entryCtx entry opts config)), none)
+
+    runset "fetcher" (← getSpec primary #["fetcher", "basic"]) fun entry => do
+      let ctx ← entryCtx entry opts config
+      let url ← SdkUtility.gpS entry "url"
+      pure ((← SdkUtility.fetcher ctx url (← SdkUtility.gp entry "fetchdef")), none)
+
+    runset "featureAdd" (← getSpec primary #["featureAdd", "basic"]) fun entry => do
+      let client ← emptyMap
+      SdkUtility.featureAdd client (← SdkUtility.gp entry "in")
+      pure ((← SdkUtility.gp client "features"), none)
+
+    runset "featureInit" (← getSpec primary #["featureInit", "basic"]) fun entry => do
+      let client ← emptyMap
+      SdkUtility.featureInit client (← entryCtx entry opts config)
+      pure ((← SdkUtility.gp client "features"), none)
+
+    runset "featureHook" (← getSpec primary #["featureHook", "basic"]) fun entry => do
+      let client ← emptyMap
+      SdkUtility.featureHook client (← SdkUtility.gpS entry "stage") (← entryCtx entry opts config)
+      pure ((← SdkUtility.gp client "features"), none)
+
   go.run sctx
   for f in (← failures.get) do
     IO.println ("FAIL - " ++ f)

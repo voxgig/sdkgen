@@ -98,8 +98,13 @@ def newSdk (options : Value) : SIO Value :=
 /-- No-argument convenience constructor. -/
 def newSdk0 : SIO Value := do newSdk (← emptyMap)
 
-/-- Construct a test-mode client (base override etc. via testopts). -/
-def testSdk (testopts : Value) : SIO Value := newSdk testopts
+/-- Construct a test-mode client: operations are answered from an in-memory
+    store seeded with the entity test data, so no server is needed. -/
+def testSdk (seed : Value) (options : Value) : SIO Value :=
+  SdkRuntime.mkTestClientV options SdkConfig.configJson seed
+
+/-- Test client with default options. -/
+def testSdk0 (seed : Value) : SIO Value := do testSdk seed (← emptyMap)
 
 end Sdk
 

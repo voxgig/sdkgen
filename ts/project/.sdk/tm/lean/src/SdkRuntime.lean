@@ -116,11 +116,81 @@ def resTransform (point body : Value) : SIO Value := do
   pure cur
 
 -- ---------------------------------------------------------------------------
+-- Test mode: an in-memory mock transport.
+--
+-- The `test` feature of the other targets seeds an entity store and answers
+-- operations from it, so entity behaviour is verifiable with no server. The
+-- store is `client.store.<entity>` : a map of id -> entity.
+-- ---------------------------------------------------------------------------
+
+/-- Every field of `matchV` must equal the entity's field. -/
+def entMatches (ent matchV : Value) : SIO Bool := do
+  match matchV with
+  | .map i => do
+    let mut ok := true
+    for k in (← keysof (.map i)) do
+      let want ← gp (.map i) k
+      if !(isNv want) then
+        if !((← gp ent k) == want) then ok := false
+    pure ok
+  | _ => pure true
+
+/-- Deterministic id for created entities (no clock/RNG in Lean). -/
+def nextTestId (store : Value) : SIO String := do
+  let n ← gp store "__seq__"
+  let i := (match n with | .num f => f | _ => 0.0) + 1.0
+  let _ ← setprop store (.str "__seq__") (.num i)
+  pure ("t" ++ numToString i)
+
+def mockOp (client : Value) (entityName opName : String)
+    (matchV dataV : Value) : SIO Value := do
+  let store ← gp client "store"
+  let entmap ← (match (← gp store entityName) with
+    | .map i => pure (Value.map i)
+    | _ => do let m ← emptyMap; let _ ← setprop store (.str entityName) m; pure m)
+  let idOf (v : Value) : SIO String := do pure (asStr (← gp v "id"))
+  match opName with
+  | "list" => do
+    let mut out : Array Value := #[]
+    for k in (← keysof entmap) do
+      let e ← gp entmap k
+      if (← entMatches e matchV) then out := out.push e
+    newList out
+  | "load" => do
+    let wid ← idOf matchV
+    pure ((← gp entmap wid))
+  | "remove" => do
+    let wid ← idOf matchV
+    let _ ← delprop entmap (.str wid)
+    emptyMap
+  | "create" => do
+    let ent ← clone dataV
+    let given ← idOf dataV
+    let eid ← if given != "" then pure given else nextTestId store
+    let _ ← setprop ent (.str "id") (.str eid)
+    let _ ← setprop entmap (.str eid) ent
+    pure ent
+  | "update" => do
+    let wid0 ← idOf dataV
+    let wid ← if wid0 != "" then pure wid0 else idOf matchV
+    let cur ← gp entmap wid
+    match cur with
+    | .map _ => do
+      for k in (← keysof dataV) do
+        let _ ← setprop cur (.str k) (← gp dataV k)
+      pure cur
+    | _ => emptyMap
+  | _ => emptyMap
+
+-- ---------------------------------------------------------------------------
 -- The generic operation.
 -- ---------------------------------------------------------------------------
 
 def runOp (client : Value) (entityName opName : String)
     (matchV dataV _callopts : Value) : SIO Value := do
+  if (← gpS client "mode") == "test" then
+    mockOp client entityName opName matchV dataV
+  else do
   let options ← gp client "options"
   let config  ← gp client "config"
   let userBase ← gpS options "base"
@@ -156,6 +226,19 @@ def mkClient (optionsJson configJson : String) : SIO Value := do
 def mkClientV (options : Value) (configJson : String) : SIO Value := do
   let opts ← (match options with | .map _ => pure options | _ => emptyMap)
   let config ← SdkJson.jsonRead configJson
-  newMap #[("options", opts), ("config", config)]
+  newMap #[("options", opts), ("config", config), ("mode", .str "live")]
+
+/-- A test-mode client: operations are answered from an in-memory store seeded
+    with `seed.existing` (the shape of the generated `<Entity>TestData.json`),
+    so entity behaviour is verifiable offline. -/
+def mkTestClientV (options : Value) (configJson : String) (seed : Value) : SIO Value := do
+  let opts ← (match options with | .map _ => pure options | _ => emptyMap)
+  let config ← SdkJson.jsonRead configJson
+  let existing ← gp seed "existing"
+  let store ← (match existing with
+    | .map _ => clone existing
+    | _ => emptyMap)
+  newMap #[("options", opts), ("config", config), ("mode", .str "test"),
+           ("store", store)]
 
 end SdkRuntime
