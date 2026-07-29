@@ -48,8 +48,8 @@ const NON_SDK_TARGETS = ['go-cli', 'go-mcp']
 
 // TIER 1 — drives the shared corpus for every section. This is the bar.
 const FULL = [
-  'cpp', 'csharp', 'dart', 'go', 'java', 'js', 'kotlin', 'lua', 'perl', 'php',
-  'py', 'rb', 'rust', 'swift', 'ts',
+  'cpp', 'csharp', 'dart', 'go', 'java', 'js', 'kotlin', 'lean', 'lua', 'perl',
+  'php', 'py', 'rb', 'rust', 'swift', 'ts',
 ]
 
 // TIER 2 — has a primary-utility suite, but it MIRRORS the corpus by hand
@@ -61,13 +61,7 @@ const MIRRORED = ['c', 'clojure', 'elixir', 'haskell', 'zig']
 
 // TIER 3 — no primary-utility suite at all. These targets' request-shaping
 // utilities are unverified in every language-neutral sense.
-//
-// `lean` is a special case: its generated SDK ships its OWN test lanes — an
-// offline `structcorpus` exe (the full shared struct corpus, 1360 assertions)
-// and a live `runner` exe (entity list + CRUD) — but it does not participate
-// in this in-harness parity mechanism (no per-language primary-utility file),
-// so by that definition it is UNCOVERED here.
-const UNCOVERED = ['lean', 'ocaml', 'scala']
+const UNCOVERED = ['ocaml', 'scala']
 
 
 function sdkTargets(): string[] {

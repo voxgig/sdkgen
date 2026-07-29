@@ -1,4 +1,6 @@
-/- Test runner for the shared JSON corpus (build/test/test.json).
+/- Struct corpus runner: drives the `struct` subtree of the shared
+   ../.sdk/test/test.json (the project's own compiled corpus, same file the
+   other targets read) against the vendored voxgig-struct port.
    Self-contained: an in-tree JSON reader builds the library's `Value` type
    directly, so the Lean port is exercised exactly as in production. -/
 
@@ -680,7 +682,7 @@ def runAll (spec : Value) : SIO Unit := do
 -- ---------------- main ----------------
 
 def main (argv : List String) : IO UInt32 := do
-  let testfile := argv.headD "test/test.json"
+  let testfile := argv.headD "../.sdk/test/test.json"
   let raw ← IO.FS.readFile testfile
   let ctx ← mkCtx
   let go : SIO Unit := do
