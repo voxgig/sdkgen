@@ -15,7 +15,7 @@ import { pkgName } from './utility_lean'
 // srcDir), matching the vendored struct project's layout. The runtime is
 // dependency-free (prelude + Std only); the HTTP transport shells to curl.
 const LIBS = [
-  'Vregex', 'VoxgigStruct', 'SdkJson', 'SdkUtility', 'SdkRuntime', 'SdkConfig',
+  'Vregex', 'VoxgigStruct', 'SdkJson', 'SdkUtility', 'SdkFeature', 'SdkFeatures', 'SdkRuntime', 'SdkConfig',
   'SdkClient',
 ]
 
@@ -48,6 +48,11 @@ root = "StructCorpus"
 name = "primary"
 srcDir = "test"
 root = "TPrimaryUtility"
+
+[[lean_exe]]
+name = "feature"
+srcDir = "test"
+root = "TFeature"
 `)
   })
 
