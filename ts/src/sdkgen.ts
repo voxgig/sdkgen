@@ -5,7 +5,7 @@ import Path from 'node:path'
 
 import { prettyPino, Pino } from '@voxgig/util'
 
-import { Jsonic } from 'jsonic'
+import { Jsonic } from '@tabnas/jsonic'
 import * as JostracaModule from 'jostraca'
 import { Aontu } from 'aontu'
 
