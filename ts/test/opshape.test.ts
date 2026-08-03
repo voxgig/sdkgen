@@ -142,8 +142,8 @@ describe('opRequestShape — multi-point param merging', () => {
             page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
           } } },
         ] },
-        // A real create route plus folded-in sub-resource action routes.
-        create: { points: [
+        // A real remove route plus folded-in sub-resource action routes.
+        remove: { points: [
           { select: { '$action': 'page_access_group' }, args: { params: {
             id: { name: 'id', type: '`$STRING`', reqd: true },
             page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
@@ -173,8 +173,11 @@ describe('opRequestShape — multi-point param merging', () => {
     }, 'shared parent id required; per-route siblings optional')
   })
 
+  // Vehicle is `remove`, a params-win op. It used to be `create`, but a body
+  // op no longer takes its shape from params (see the body-op suite below),
+  // which would make this assert nothing about $action filtering.
   test('$action points are excluded from the canonical shape', () => {
-    const { items } = opRequestShape(makeNestedEntity(), 'create')
+    const { items } = opRequestShape(makeNestedEntity(), 'remove')
     const opt = optionalByName(items)
     deepStrictEqual(opt, { page_id: false },
       'the action route neither adds params nor makes them required')
@@ -251,5 +254,70 @@ describe('pickExampleEntity', () => {
     const { entity, primaryOp } = pickExampleEntity(coll)
     strictEqual(entity.name, 'abort')
     strictEqual(primaryOp, null)
+  })
+})
+
+
+// A body op's declared params are path/query identifiers, not body fields.
+// `PUT /v1/todo/item/{id}` declares `id`; the SDK resolves it from the entity
+// match (`sdk.entity.todoitem({id}).update({...})`) while the request DATA
+// becomes the body verbatim via the `reqdata` transform.
+//
+// Letting params win there produced `<Name>UpdateData = { id }` — the one
+// field a closed server shape rejects in a PUT body, and none of the fields
+// the caller wants to change. Every update came back 400 against a strict
+// API, and the type gave no way to send anything else.
+describe('opRequestShape — body ops take fields, not path params', () => {
+
+  function makeItemEntity() {
+    return {
+      Name: 'Todoitem', name: 'todoitem',
+      fields: {
+        done: { name: 'done', type: '`$BOOLEAN`', req: false },
+        id: { name: 'id', type: '`$STRING`', req: false },
+        title: { name: 'title', type: '`$STRING`', req: true },
+      },
+      op: {
+        // PUT /v1/todo/item/{id} — id in the path, entity in the body.
+        update: { points: [
+          { args: { params: { id: { name: 'id', type: '`$STRING`', reqd: true } } } },
+        ] },
+        // POST /v1/proj/{project_id}/item — sub-resource create: the parent
+        // id is a path param too, so the same rule has to hold.
+        create: { points: [
+          { args: { params: {
+            project_id: { name: 'project_id', type: '`$STRING`', reqd: true },
+          } } },
+        ] },
+        // GET /v1/todo/item/{id} — params ARE the request here, unchanged.
+        load: { points: [
+          { args: { params: { id: { name: 'id', type: '`$STRING`', reqd: true } } } },
+        ] },
+      },
+    }
+  }
+
+  test('update takes the path param AND the entity fields', () => {
+    const { items, fromParams } = opRequestShape(makeItemEntity(), 'update')
+    strictEqual(fromParams, false, 'must not be shaped by params alone')
+    // `id` is the path param (required, and not duplicated by the field of
+    // the same name); the rest are the partial-update fields.
+    deepStrictEqual(optionalByName(items),
+      { id: false, done: true, title: true })
+  })
+
+  test('create takes the parent path param AND the entity fields', () => {
+    const { items, fromParams } = opRequestShape(makeItemEntity(), 'create')
+    strictEqual(fromParams, false)
+    const opt = optionalByName(items)
+    strictEqual(opt.project_id, false, 'the sub-resource path param is required')
+    strictEqual(opt.title, false, 'req:true field stays required')
+    strictEqual(opt.done, true)
+  })
+
+  test('load still takes its params — only body ops changed', () => {
+    const { items, fromParams } = opRequestShape(makeItemEntity(), 'load')
+    strictEqual(fromParams, true)
+    deepStrictEqual(optionalByName(items), { id: false })
   })
 })
