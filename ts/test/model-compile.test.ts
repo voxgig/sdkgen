@@ -9,7 +9,7 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
 
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import Path from 'node:path'
 
 import { Aontu } from 'aontu'
@@ -18,26 +18,129 @@ import { Aontu } from 'aontu'
 const REPO = Path.resolve(__dirname, '..', '..')
 const MODEL_FILES = ['sdkgen.aontu']
 
+const PROJECT_MODEL = Path.join(REPO, 'ts', 'project', '.sdk', 'model')
+const TARGET_DIR = Path.join(PROJECT_MODEL, 'target')
+
+
+// An Aontu configured the way @voxgig/model configures it, which is what
+// actually compiles these files. Aontu comments are `#` only, but the npm
+// engine's jsonic parser enables `//` and `/* */` by default; @voxgig/model
+// switches them off (`ts/src/build.ts: makeBuild`) so its output matches the Go
+// engine, which has no such extension. A plain `new Aontu()` would therefore
+// accept a `//` line these tests are here to reject.
+function makeAontu(): any {
+  const aontu: any = new Aontu()
+  aontu.lang.jsonic.options({ comment: { def: { slash: null, multi: null } } })
+  return aontu
+}
+
+
+// Compile `src`, or fail the test. Aontu reports resolution problems through
+// the `errs` collector but a PARSE problem is thrown instead — and a stray `//`
+// is a parse problem — so both routes have to be handled or the interesting
+// failure escapes as an opaque AontuError with no file name attached.
+function compile(label: string, path: string): any {
+  const src = readFileSync(path, 'utf8')
+  const errs: any[] = []
+
+  let model: any
+  try {
+    model = makeAontu().generate(src, { path, errs })
+  }
+  catch (e: any) {
+    assert.fail(`${label} failed to parse: ${e.message}`)
+  }
+
+  assert.strictEqual(
+    errs.length, 0,
+    `${label} generated ${errs.length} error(s): ` +
+    errs.map((e: any) => `[${e.why}] ${e.msg}`).join(' | '))
+
+  assert.ok(model, `${label} produced no model`)
+  return model
+}
+
+
+function aontuFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? aontuFiles(Path.join(dir, e.name)) :
+      e.name.endsWith('.aontu') ? [Path.join(dir, e.name)] : [])
+}
+
+
+// Blank out quoted spans before looking for comment markers, so a `//` inside
+// a string - a url, or the `comment: line: '//'` every C-family target model
+// legitimately declares - is not mistaken for a comment.
+function unquoted(line: string): string {
+  return line.replace(/'[^']*'|"[^"]*"|`[^`]*`/g, '')
+}
+
 
 describe('model-compile', () => {
 
   for (const file of MODEL_FILES) {
     test(`model/${file} generates without errors`, () => {
-      const path = Path.join(REPO, 'model', file)
-      const src = readFileSync(path, 'utf8')
-
-      const errs: any[] = []
-      const aontu = new Aontu()
-      const model = aontu.generate(src, { path, errs })
-
-      assert.strictEqual(
-        errs.length, 0,
-        `model/${file} generated ${errs.length} error(s): ` +
-        errs.map((e: any) => `[${e.why}] ${e.msg}`).join(' | '))
-
-      assert.ok(model, `model/${file} produced no model`)
+      compile(`model/${file}`, Path.join(REPO, 'model', file))
     })
   }
+
+})
+
+
+// The target models are copied verbatim into a consumer project by the
+// scaffold, so a syntax error in one of them only surfaces when someone runs
+// `voxgig-model` in that project — the model-compile test above covers
+// model/sdkgen.aontu alone. Compile every target here. Note aontu accepts `#`
+// comments ONLY: a `//` line is a parse error, and that is exactly how the
+// go/go-cli/go-mcp/java/kotlin/scala/cpp targets shipped broken.
+describe('target-compile', () => {
+
+  const targets = readdirSync(TARGET_DIR)
+    .filter((f: string) => f.endsWith('.aontu'))
+    .sort()
+
+  // A miswired path would make the loop below vacuously pass.
+  assert.ok(0 < targets.length, `no target models found in ${TARGET_DIR}`)
+
+  for (const file of targets) {
+    test(`target/${file} generates without errors`, () => {
+      compile(`target/${file}`, Path.join(TARGET_DIR, file))
+    })
+  }
+
+})
+
+
+// target-compile above proves the targets parse; the feature and flow models
+// beside them are fragments that only resolve once unified into a real project,
+// so they cannot be compiled here. Check them for the one syntax mistake that
+// costs a user their whole build: aontu takes `#` comments ONLY, and a `//`
+// line is a parse error under the parser @voxgig/model configures.
+describe('project-model-syntax', () => {
+
+  const files = aontuFiles(PROJECT_MODEL)
+
+  test('the scaffold has model files to check', () => {
+    assert.ok(0 < files.length, `no .aontu files under ${PROJECT_MODEL}`)
+  })
+
+  test('no scaffolded model uses a slash comment', () => {
+    const bad: string[] = []
+
+    for (const file of files) {
+      const rel = Path.relative(PROJECT_MODEL, file)
+      readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+        if (/(^|\s)(\/\/|\/\*)/.test(unquoted(line))) {
+          bad.push(`${rel}:${i + 1}: ${line.trim()}`)
+        }
+      })
+    }
+
+    assert.deepEqual(
+      bad, [],
+      'aontu accepts `#` comments only - these lines would fail to parse ' +
+      'in a scaffolded project:\n  ' + bad.join('\n  '))
+  })
 
 })
 
@@ -52,17 +155,8 @@ describe('cli-targets-disable-agentguide', () => {
 
   for (const target of ['go-cli', 'go-mcp']) {
     test(`${target} switches the agentguide phase off`, () => {
-      const path = Path.join(
-        REPO, 'ts', 'project', '.sdk', 'model', 'target', target + '.aontu')
-      const src = readFileSync(path, 'utf8')
-
-      const errs: any[] = []
-      const model: any = new Aontu().generate(src, { path, errs })
-
-      assert.strictEqual(
-        errs.length, 0,
-        `${target}.aontu generated ${errs.length} error(s): ` +
-        errs.map((e: any) => `[${e.why}] ${e.msg}`).join(' | '))
+      const model: any = compile(
+        `target/${target}.aontu`, Path.join(TARGET_DIR, target + '.aontu'))
 
       const phase = model?.main?.kit?.target?.[target]?.phase
       assert.strictEqual(

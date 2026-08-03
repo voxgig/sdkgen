@@ -10,10 +10,10 @@ main: kit: target: kotlin: {
     kind: *'prod' | string
   }
 
-  // struct is inlined under utility/struct — no external runtime dep.
-  // JSON parsing is the zero-dep utility/Json.kt; HTTP transport is
-  // java.net.http.HttpClient (JDK built-in). Tests need only JUnit,
-  // declared directly in the generated build.gradle.kts (test scope).
+  # struct is inlined under utility/struct — no external runtime dep.
+  # JSON parsing is the zero-dep utility/Json.kt; HTTP transport is
+  # java.net.http.HttpClient (JDK built-in). Tests need only JUnit,
+  # declared directly in the generated build.gradle.kts (test scope).
   deps: {}
 }
 

@@ -10,10 +10,10 @@ main: kit: target: java: {
     kind: *'prod' | string
   }
 
-  // struct is inlined under utility/struct — no external runtime dep.
-  // JSON parsing is the zero-dep utility/Json.java; HTTP transport is
-  // java.net.http.HttpClient (JDK built-in). Tests need only JUnit,
-  // declared directly in the generated pom.xml (test scope).
+  # struct is inlined under utility/struct — no external runtime dep.
+  # JSON parsing is the zero-dep utility/Json.java; HTTP transport is
+  # java.net.http.HttpClient (JDK built-in). Tests need only JUnit,
+  # declared directly in the generated pom.xml (test scope).
   deps: {}
 }
 

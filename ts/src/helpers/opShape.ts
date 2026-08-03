@@ -209,8 +209,21 @@ function opRequestShape(ent: any, opname: string):
     return { items: [], fromParams: false }
   }
 
+  // Ops that carry a BODY are the exception to "op-declared params win":
+  // their request payload is BOTH. `PUT /v1/todo/item/{id}` declares the path
+  // param `id`, which the SDK resolves out of reqdata (see the param
+  // utility's reqmatch -> match -> reqdata search), while the fields the
+  // caller wants to change come from the entity. Params alone produced
+  // `<Name>UpdateData = { id }` — no way to send anything to update.
+  //
+  // The param stays in the payload because the path needs it; keeping it out
+  // of the request BODY is the model's job, via the op's `transform.req`
+  // (@voxgig/apidef restricts the body to a closed request schema's declared
+  // properties).
+  const isbodyop = 'create' === opname || 'update' === opname || 'patch' === opname
+
   const params = opParams(op)
-  if (0 < params.length) {
+  if (0 < params.length && !isbodyop) {
     const items = params.map((p: any) => ({
       name: p.name,
       type: p.type,
@@ -219,15 +232,25 @@ function opRequestShape(ent: any, opname: string):
     return { items, fromParams: true }
   }
 
+  const paramItems = isbodyop ? params.map((p: any) => ({
+    name: p.name,
+    type: p.type,
+    optional: false === p.reqd,
+  })) : []
+  const paramNames = new Set(paramItems.map((p: any) => p.name))
+
   const fields = (ent.fields ? each(ent.fields) : [])
     .filter((f: any) => f.active !== false)
     .filter((f: any) => fieldInOp(f, opname))
 
-  const items = fields.map((f: any) => ({
-    name: f.name,
-    type: f.type,
-    optional: fieldOptional(f, opname),
-  }))
+  const items = paramItems.concat(
+    fields
+      .filter((f: any) => !paramNames.has(f.name))
+      .map((f: any) => ({
+        name: f.name,
+        type: f.type,
+        optional: fieldOptional(f, opname),
+      })))
 
   return { items, fromParams: false }
 }

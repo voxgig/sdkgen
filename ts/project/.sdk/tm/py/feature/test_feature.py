@@ -1,11 +1,17 @@
 # ProjectName SDK test feature
 
 from __future__ import annotations
+import re
 import random
 import time
 
 from utility.voxgig_struct import voxgig_struct as vs
 from feature.base_feature import ProjectNameBaseFeature
+
+
+# The `body.<key>` form of an op's response transform: the mock wraps its
+# payload in <key> so the transform can unwrap it again.
+ENVELOPE_RES_RE = re.compile(r"^`body\.([^`.]+)`$")
 
 
 class ProjectNameTestFeature(ProjectNameBaseFeature):
@@ -36,11 +42,32 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
         test_self = self
 
         def test_fetcher(fctx, _fullurl, _fetchdef):
+            # Shape the mock payload the way the real API would, so the op's
+            # response transform recovers the entity from it. A point carrying
+            # transform.res of `body.item` describes an API that answers
+            # {"item": {...}}; handing back the bare entity means the transform
+            # unwraps a property that is not there and the caller gets None.
+            # The mock has to agree with the model, or it only ever simulates
+            # APIs whose responses happen to be unwrapped. Mirrors the ts mock.
+            def envelope(data):
+                point = getattr(fctx, "point", None)
+                if data is None or not isinstance(point, dict):
+                    return data
+                transform = point.get("transform")
+                if not isinstance(transform, dict):
+                    return data
+                restf = transform.get("res")
+                if not isinstance(restf, str):
+                    return data
+                m = ENVELOPE_RES_RE.match(restf)
+                return data if m is None else {m.group(1): data}
+
             def respond(status, data, extra=None):
+                payload = envelope(data)
                 out = {
                     "status": status,
                     "statusText": "OK",
-                    "json": lambda: data,
+                    "json": lambda: payload,
                     "body": "not-used",
                 }
                 if isinstance(extra, dict):
