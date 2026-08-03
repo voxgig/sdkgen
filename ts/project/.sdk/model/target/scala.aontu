@@ -10,10 +10,10 @@ main: kit: target: scala: {
     kind: *'prod' | string
   }
 
-  // struct is inlined under utility/struct — no external runtime dep.
-  // JSON parsing is the zero-dep utility/Json.java; HTTP transport is
-  // java.net.http.HttpClient (JDK built-in). The corpus runner and pipeline
-  // tests are plain scala-cli mains (no test-framework dependency).
+  # struct is inlined under utility/struct — no external runtime dep.
+  # JSON parsing is the zero-dep utility/Json.java; HTTP transport is
+  # java.net.http.HttpClient (JDK built-in). The corpus runner and pipeline
+  # tests are plain scala-cli mains (no test-framework dependency).
   deps: {}
 }
 
