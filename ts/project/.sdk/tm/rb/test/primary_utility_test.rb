@@ -176,6 +176,9 @@ class PrimaryUtilityTest < Minitest::Test
   def test_fetcher_live
     calls = []
     live_client = ProjectNameSDK.new({
+      # Concrete base: a live construction must satisfy any server variables
+      # a templated base URL declares; a literal base sidesteps the requirement.
+      "base" => "http://localhost:8080",
       "system" => {
         "fetch" => ->(url, fetchdef) {
           calls << { "url" => url, "init" => fetchdef }
@@ -199,6 +202,7 @@ class PrimaryUtilityTest < Minitest::Test
 
   def test_fetcher_blocked_test_mode
     blocked_client = ProjectNameSDK.new({
+      "base" => "http://localhost:8080",
       "system" => {
         "fetch" => ->(url, fetchdef) {
           return {}, nil

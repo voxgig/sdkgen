@@ -9,6 +9,8 @@ import {
   safeVarName,
   isRbCoreConstant,
   rbSafeTypeName,
+  serverVariables,
+  hasServerVariables,
 } from '../dist/sdkgen.js'
 
 
@@ -260,6 +262,69 @@ describe('helpers', () => {
       // always carry a suffix, and no core constant ends with one.
       strictEqual(rbSafeTypeName('FileCreateData'), 'FileCreateData')
       strictEqual(rbSafeTypeName('FileLoadMatch'), 'FileLoadMatch')
+    })
+  })
+
+
+  describe('serverVariables', () => {
+
+    const model = (url: string, variables?: any) => ({
+      main: { kit: { info: { servers: [{ url, ...(variables ? { variables } : {}) }] } } }
+    })
+
+    test('a templated URL yields its variables in URL order', () => {
+      // The Hanko shape: one variable, empty default -> required.
+      const vars = serverVariables(model('https://{tenant_id}.hanko.io', {
+        tenant_id: { default: '', description: 'The tenant.' },
+      }))
+      deepStrictEqual(vars, [
+        { name: 'tenant_id', dflt: '', required: true, description: 'The tenant.' },
+      ])
+      strictEqual(hasServerVariables(model('https://{tenant_id}.hanko.io')), true)
+    })
+
+    test('a non-empty default makes the variable optional', () => {
+      const vars = serverVariables(model('https://{region}.api.example.com', {
+        region: { default: 'eu' },
+      }))
+      deepStrictEqual(vars, [
+        { name: 'region', dflt: 'eu', required: false, description: '' },
+      ])
+    })
+
+    test('a plain URL yields nothing', () => {
+      deepStrictEqual(serverVariables(model('https://api.example.com')), [])
+      strictEqual(hasServerVariables(model('https://api.example.com')), false)
+    })
+
+    test('an undeclared placeholder is still surfaced as required', () => {
+      // Specs sometimes template the URL without a variables block; the
+      // placeholder still cannot resolve, so it must still be required.
+      const vars = serverVariables(model('https://{tenant}.example.com'))
+      deepStrictEqual(vars, [
+        { name: 'tenant', dflt: '', required: true, description: '' },
+      ])
+    })
+
+    test('declared-but-unreferenced variables are appended, never required', () => {
+      const vars = serverVariables(model('https://{a}.example.com', {
+        a: { default: '' },
+        unused: { default: 'x', description: 'not in the URL' },
+      }))
+      deepStrictEqual(vars.map((v: any) => [v.name, v.required]),
+        [['a', true], ['unused', false]])
+    })
+
+    test('multiple and repeated placeholders dedupe in order', () => {
+      const vars = serverVariables(model('https://{region}.{env}.example.com/{region}', {
+        region: { default: 'eu' }, env: { default: '' },
+      }))
+      deepStrictEqual(vars.map((v: any) => v.name), ['region', 'env'])
+    })
+
+    test('a model with no servers at all yields nothing', () => {
+      deepStrictEqual(serverVariables({}), [])
+      strictEqual(hasServerVariables({}), false)
     })
   })
 
