@@ -69,6 +69,63 @@ const RESERVED: Record<string, Set<string>> = {
 }
 
 
+// Ruby CORE CONSTANTS — a different hazard from the keyword sets above.
+//
+// The keyword sets guard local-variable BINDINGS. This set guards generated
+// top-level CONSTANTS. Ruby constants share one namespace with the core
+// classes, and reassigning one is not an error — it silently replaces it:
+//
+//   File = Struct.new(:name)     # ::File is now a Struct
+//   File.join('a', 'b')          # NoMethodError — every later caller breaks
+//
+// The typed model emits `<Name> = Struct.new(...)` per entity, so an API with
+// a `/files` collection (entity `File`) used to clobber Ruby's File class and
+// take the whole SDK down with it — the generated test runner calls
+// `File.join` to locate `.env.local`, so `rb` failed at require time.
+//
+// Only names Ruby itself defines at top level are listed: reassigning any of
+// them breaks working code somewhere. Names that merely LOOK builtin but are
+// not core constants (e.g. `Response`, `Record`) are safe and stay untouched,
+// which keeps the rename off every SDK that does not actually collide.
+const RB_CORE_CONSTANTS = new Set<string>([
+  // classes an entity name plausibly lands on
+  'Array', 'Binding', 'Class', 'Comparable', 'Complex', 'Data', 'Dir',
+  'Encoding', 'Enumerator', 'Exception', 'Fiber', 'File', 'Float', 'Hash',
+  'IO', 'Integer', 'Method', 'Module', 'Mutex', 'Numeric', 'Object', 'Proc',
+  'Queue', 'Random', 'Range', 'Rational', 'Regexp', 'Set', 'Signal', 'String',
+  'Struct', 'Symbol', 'Thread', 'Time', 'UnboundMethod',
+  // modules / singletons
+  'Enumerable', 'GC', 'Kernel', 'Marshal', 'Math', 'ObjectSpace', 'Process',
+  'Warning',
+  // the rest of the exception hierarchy an API might name an entity after
+  'ArgumentError', 'IndexError', 'IOError', 'KeyError', 'NameError',
+  'NotImplementedError', 'RangeError', 'RuntimeError', 'StandardError',
+  'StopIteration', 'SystemExit', 'TypeError', 'ZeroDivisionError',
+  // literal singletons
+  'FalseClass', 'NilClass', 'TrueClass',
+])
+
+
+// Is `Name` a constant Ruby already defines at top level?
+function isRbCoreConstant(Name: string): boolean {
+  return RB_CORE_CONSTANTS.has(Name)
+}
+
+
+// A top-level-safe Ruby constant name for a generated type: the name
+// unchanged, unless Ruby core already owns it, in which case `Type` is
+// appended (`File` -> `FileType`). Applied ONLY to the bare entity data type
+// — the per-op type names always carry a suffix (`FileCreateData`,
+// `FileLoadMatch`), which no core constant matches.
+//
+// The entity ACCESSOR keeps its original name (`client.File(...)`): methods
+// and constants live in separate namespaces in Ruby, so the accessor never
+// collided and the public surface is unchanged.
+function rbSafeTypeName(Name: string): string {
+  return isRbCoreConstant(Name) ? Name + 'Type' : Name
+}
+
+
 // Is `name` a reserved word (an illegal identifier) in the target language?
 function isReservedName(name: string, lang: string): boolean {
   const set = RESERVED[lang]
@@ -130,6 +187,8 @@ export {
   isReservedName,
   safeVarName,
   exampleVarName,
+  isRbCoreConstant,
+  rbSafeTypeName,
   jsProp,
   jsOptProp,
   jsKey,

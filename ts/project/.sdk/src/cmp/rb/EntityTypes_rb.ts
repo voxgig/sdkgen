@@ -12,7 +12,10 @@
 //   $STRING -> String, $INTEGER -> Integer, $NUMBER -> Float, $BOOLEAN -> Boolean,
 //   $OBJECT -> Hash, $ARRAY -> Array, unknown -> Object.
 //
-// Type-name scheme (IDENTICAL to TS): data type = <Name>; per-op request
+// Type-name scheme (as TS, with one Ruby-only guard): data type = <Name>,
+// except where Ruby core already owns that constant — `File`, `Time`, `Data`,
+// … — which would be silently REPLACED by the assignment; those become
+// <Name>Type (see rbSafeTypeName). Per-op request
 // <Name>LoadMatch / <Name>ListMatch / <Name>RemoveMatch (query/id ops),
 // <Name>CreateData / <Name>UpdateData (body ops). An op WITH params -> a Struct of
 // those params (reqd:false -> annotated `[Type, nil]`). An op WITHOUT params -> a
@@ -27,7 +30,7 @@ import {
   File, Content,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, rbSafeTypeName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -115,12 +118,20 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
     entityList.forEach((ent: any) => {
       const Name = ent.Name
+      // Ruby constants share ONE namespace with the core classes, and
+      // assigning one silently replaces it — an entity named `File` emitting
+      // `File = Struct.new(...)` clobbers ::File and every later `File.join`
+      // raises NoMethodError. Only the bare data-type constant needs the
+      // guard; the per-op names below always carry a suffix that no core
+      // constant matches. The `client.File(...)` accessor is a METHOD, a
+      // separate namespace, so the public surface is unchanged.
+      const TypeName = rbSafeTypeName(Name)
       const fields = (ent.fields ? each(ent.fields) : [])
         .filter((f: any) => f.active !== false)
 
       // Entity data model: one member per field (`req:false` -> nilable).
       emitStruct(
-        Name,
+        TypeName,
         `${Name} entity data model.`,
         fields.map((f: any) => ({ name: f.name, type: f.type, optional: false === f.req })),
       )

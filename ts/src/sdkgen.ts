@@ -52,7 +52,7 @@ import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonKey } from './helpers/canonType'
 import { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape'
-import { isReservedName, safeVarName, exampleVarName, jsProp, jsOptProp, jsKey } from './helpers/naming'
+import { isReservedName, safeVarName, exampleVarName, isRbCoreConstant, rbSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming'
 import {
   packageName,
   installCommand,
@@ -478,6 +478,8 @@ export {
   isReservedName,
   safeVarName,
   exampleVarName,
+  isRbCoreConstant,
+  rbSafeTypeName,
   jsProp,
   jsOptProp,
   jsKey,
