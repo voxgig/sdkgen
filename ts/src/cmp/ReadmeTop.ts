@@ -549,28 +549,30 @@ Pass custom features via the \`extend\` option at construction time.
 `)
     }
 
-    // 13. Upstream API — contact/servers from the OpenAPI info block
+    // 13. Upstream API — always disclose the OpenAPI origin and where the
+    // spec(s) live; contact/servers links come from the OpenAPI info block.
     const upstreamUrl = (info.contact && info.contact.url)
       || (info.servers && info.servers[0] && info.servers[0].url)
       || homepage
-    if (upstreamUrl || docsUrl) {
-      Content(`## Upstream API
+    Content(`## Upstream API
 
 This SDK is generated from the upstream OpenAPI specification. It is an
 unofficial client and is not affiliated with the API provider.
 
+The OpenAPI spec(s) this SDK was generated from are kept in the
+[\`.sdk/def/\`](.sdk/def/) folder.
+
 `)
-      if (upstreamUrl) {
-        Content(`- Upstream API: [${upstreamUrl}](${upstreamUrl})
-`)
-      }
-      if (docsUrl && docsUrl !== upstreamUrl) {
-        Content(`- Documentation: [${docsUrl}](${docsUrl})
-`)
-      }
-      Content(`
+    if (upstreamUrl) {
+      Content(`- Upstream API: [${upstreamUrl}](${upstreamUrl})
 `)
     }
+    if (docsUrl && docsUrl !== upstreamUrl) {
+      Content(`- Documentation: [${docsUrl}](${docsUrl})
+`)
+    }
+    Content(`
+`)
 
     // 13b. Security
     Content(`## Security

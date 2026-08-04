@@ -22,14 +22,14 @@ clean:
 # the tag. set -e + tag-last: a failed upload never leaves a tag behind.
 VERSION := $(shell sed -nE 's/^version: *([0-9][^ ]*).*/\1/p' pubspec.yaml | head -1)
 TAG := dart/v$(VERSION)
-AQL_DRY_RUN_FILLER := AQL-DRY-RUN-FILLER-NOT-A-REAL-SECRET
+BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish: test
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
 	  echo "tag $(TAG) already exists — bump pubspec.yaml version first"; exit 1; fi
 	@set -e; \
 	token="$${GITHUB_TOKEN:-$$GH_TOKEN}"; \
-	if [ "$$token" = "$(AQL_DRY_RUN_FILLER)" ]; then \
-	  echo "[dry-run] aql filler token detected: would publish to pub.dev and tag $(TAG); nothing pushed."; \
+	if [ "$$token" = "$(BORU_DRY_RUN_FILLER)" ]; then \
+	  echo "[dry-run] boru filler token detected: would publish to pub.dev and tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
 	if [ -n "$$PUB_CREDENTIALS" ]; then \

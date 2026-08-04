@@ -16,20 +16,20 @@ clean:
 # --- Release: tag kotlin/vX.Y.Z ---------------------------------------------
 # Maven Central publication (Sonatype Central Portal) is pending for this
 # target; publishing a version currently means pushing the kotlin/vX.Y.Z git
-# tag. Run headless under the aql key vault, which injects the GitHub token
+# tag. Run headless under the boru key vault, which injects the GitHub token
 # so nothing lands on disk or argv:
-#   aql vault exec --for=github=<alias> -- make publish
-# aql `--dry-run` injects a filler token we detect to rehearse (no tag/push).
+#   boru vault exec --for=github=<alias> -- make publish
+# boru `--dry-run` injects a filler token we detect to rehearse (no tag/push).
 VERSION := $(shell cat VERSION)
 TAG := kotlin/v$(VERSION)
-AQL_DRY_RUN_FILLER := AQL-DRY-RUN-FILLER-NOT-A-REAL-SECRET
+BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish:
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
 	  echo "tag $(TAG) already exists — bump VERSION first"; exit 1; fi
 	@set -e; \
 	token="$${GITHUB_TOKEN:-$$GH_TOKEN}"; \
-	if [ "$$token" = "$(AQL_DRY_RUN_FILLER)" ]; then \
-	  echo "[dry-run] aql filler token detected: would tag $(TAG); nothing pushed."; \
+	if [ "$$token" = "$(BORU_DRY_RUN_FILLER)" ]; then \
+	  echo "[dry-run] boru filler token detected: would tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
 	git tag -a "$(TAG)" -m "kotlin v$(VERSION)"; \

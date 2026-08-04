@@ -20,10 +20,10 @@ clean:
 # Build a CPAN dist in a throwaway .release/ dir to validate the package,
 # then tag perl/vX.Y.Z (version from $VERSION in lib/*SDK.pm). The CPAN
 # registry entry for this port is declared but pending, so publish is
-# tag-only: no upload happens. Run headless under the aql key vault, which
+# tag-only: no upload happens. Run headless under the boru key vault, which
 # injects the GitHub token (never on disk or argv):
-#   aql vault exec --for=github=<alias> -- make publish
-# aql `--dry-run` injects a filler token we detect to rehearse (build only,
+#   boru vault exec --for=github=<alias> -- make publish
+# boru `--dry-run` injects a filler token we detect to rehearse (build only,
 # no tag). set -e + tag-last: a failed build never leaves a tag behind.
 #
 # NOTE: `perl Makefile.PL` (ExtUtils::MakeMaker) GENERATES a file named
@@ -31,7 +31,7 @@ clean:
 # dist build always happens inside .release/, never in place.
 VERSION := $(shell sed -nE "s/.*VERSION *= *'([^']+)'.*/\1/p" lib/*SDK.pm | head -1)
 TAG := perl/v$(VERSION)
-AQL_DRY_RUN_FILLER := AQL-DRY-RUN-FILLER-NOT-A-REAL-SECRET
+BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish: test
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
 	  echo "tag $(TAG) already exists — bump VERSION in lib/*SDK.pm first"; exit 1; fi
@@ -42,8 +42,8 @@ publish: test
 	{ [ -f README.md ] && cp README.md .release/ || true; }; \
 	(cd .release && $(PERL) Makefile.PL >/dev/null && echo "dist metadata OK"); \
 	rm -rf .release; \
-	if [ "$$token" = "$(AQL_DRY_RUN_FILLER)" ]; then \
-	  echo "[dry-run] aql filler token detected: would tag $(TAG); nothing pushed."; \
+	if [ "$$token" = "$(BORU_DRY_RUN_FILLER)" ]; then \
+	  echo "[dry-run] boru filler token detected: would tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
 	git tag -a "$(TAG)" -m "perl v$(VERSION)"; \
