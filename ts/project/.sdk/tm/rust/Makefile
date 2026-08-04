@@ -13,21 +13,21 @@ clean:
 # The crates.io registry entry is declared in the model with
 # state: 'pending' — a real deploy publishes the git tag rust/vX.Y.Z only;
 # `cargo publish` starts when the registry state flips to 'active'. Run
-# headless under the aql key vault, which injects the GitHub token so
+# headless under the boru key vault, which injects the GitHub token so
 # nothing lands on disk or argv:
-#   aql vault exec --for=github=<alias> -- make publish
-# aql `--dry-run` injects a filler token we detect to rehearse (no tag/push).
+#   boru vault exec --for=github=<alias> -- make publish
+# boru `--dry-run` injects a filler token we detect to rehearse (no tag/push).
 # set -e + tag-last: a failed push never leaves a tag behind.
 VERSION := $(shell cat VERSION)
 TAG := rust/v$(VERSION)
-AQL_DRY_RUN_FILLER := AQL-DRY-RUN-FILLER-NOT-A-REAL-SECRET
+BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish:
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
 	  echo "tag $(TAG) already exists — bump VERSION first"; exit 1; fi
 	@set -e; \
 	token="$${GITHUB_TOKEN:-$$GH_TOKEN}"; \
-	if [ "$$token" = "$(AQL_DRY_RUN_FILLER)" ]; then \
-	  echo "[dry-run] aql filler token detected: would tag $(TAG); nothing pushed."; \
+	if [ "$$token" = "$(BORU_DRY_RUN_FILLER)" ]; then \
+	  echo "[dry-run] boru filler token detected: would tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
 	git tag -a "$(TAG)" -m "rust v$(VERSION)"; \

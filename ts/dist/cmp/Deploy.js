@@ -7,7 +7,7 @@ const types_1 = require("../types");
 // `publish` sections (see model/sdkgen.aontu):
 //
 //   publish.tag       — git release tag `<prefix>/vX.Y.Z`; every port has
-//                       one, pushed with a token from the aql key vault
+//                       one, pushed with a token from the boru key vault
 //                       (--for recipe + alias, default github/github).
 //   publish.registry  — package registry details (name, url, vault
 //                       credential recipe or raw env mapping) plus a
@@ -22,7 +22,7 @@ const types_1 = require("../types");
 // Follows the voxgig/struct root Makefile conventions: per-target deploy
 // targets, deliberately no all-targets real deploy (each upload is
 // irreversible), and an everything-at-once DRY run leaning on
-// `aql vault exec --dry-run` filler-token cooperation in each target's
+// `boru vault exec --dry-run` filler-token cooperation in each target's
 // publish recipe.
 const Deploy = (0, jostraca_1.cmp)(function Deploy(props) {
     const { ctx$ } = props;
@@ -63,7 +63,7 @@ function regIsActive(reg) {
 function aliasVarName(name) {
     return name.toUpperCase().replace(/[^A-Z0-9]+/g, '_') + '_ALIAS';
 }
-// The aql vault exec argument string for a target: `--for=<recipe>=<alias>`
+// The boru vault exec argument string for a target: `--for=<recipe>=<alias>`
 // flags where a preset recipe exists, or a raw `'alias=ENV_VAR,...'`
 // mapping when any credential lacks a preset (e.g. luarocks). The github
 // token for the tag push is always included.
@@ -121,10 +121,10 @@ function makeDeployMakefile(model, targets) {
             return `
 deploy-${t.name}:
 \t@echo "deploy-${t.name}: tag-only port — publishing the git tag."
-\taql vault exec ${ghArgs} -- $(MAKE) tag-push-${t.name}
+\tboru vault exec ${ghArgs} -- $(MAKE) tag-push-${t.name}
 
 deploy-dry-${t.name}:
-\taql vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
+\tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
 ${tagPushRecipe(t.name, 'tag-only port')}
 `;
         }
@@ -135,19 +135,19 @@ ${tagPushRecipe(t.name, 'tag-only port')}
             return `
 deploy-${t.name}:
 \t@echo "deploy-${t.name}: ${reg.name} publication is pending — publishing the git tag only."
-\taql vault exec ${ghArgs} -- $(MAKE) tag-push-${t.name}
+\tboru vault exec ${ghArgs} -- $(MAKE) tag-push-${t.name}
 
 deploy-dry-${t.name}:
-\taql vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
+\tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
 ${tagPushRecipe(t.name, reg.name + ' publication pending — tag-only deploy')}
 `;
         }
         return `
 deploy-${t.name}:
-\taql vault exec ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec ${args} -- $(MAKE) -C ${t.name} publish
 
 deploy-dry-${t.name}:
-\taql vault exec --dry-run ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${t.name} publish
 `;
     }).join('');
     const varLines = Array.from(aliasVars.entries())
@@ -158,7 +158,7 @@ deploy-dry-${t.name}:
 #
 # Every port gets a git release tag <target>/vX.Y.Z. Ports with an ACTIVE
 # registry also publish a package there. Credentials are injected at exec
-# time by the aql key vault (https://github.com/aql-lang/aql) — never
+# time by the boru key vault (https://github.com/boru-lang/boru) — never
 # stored on disk or passed on the command line.
 #
 # Publication state (from the model):
@@ -169,7 +169,7 @@ ${summary}
 #                             registry upload is irreversible); while a
 #                             registry is pending this publishes the
 #                             port's git tag only
-#   make deploy-dry           rehearse EVERY target: aql --dry-run
+#   make deploy-dry           rehearse EVERY target: boru --dry-run
 #                             injects a filler token that each publish
 #                             recipe detects, so build + test run in full
 #                             but nothing is uploaded and no tag is cut
@@ -182,7 +182,7 @@ ${varLines}
 
 # Lockstep SDK version, read from the canonical ts manifest.
 VERSION := $(shell node -p "require('./ts/package.json').version" 2>/dev/null || echo 0.0.0)
-AQL_DRY_RUN_FILLER := AQL-DRY-RUN-FILLER-NOT-A-REAL-SECRET
+BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 
 TARGETS := ${targets.map((t) => t.name).join(' ')}
 
@@ -205,7 +205,7 @@ deploy-dry: $(addprefix deploy-dry-,$(TARGETS))
 \t@echo "deploy-dry: all targets rehearsed OK ($(TARGETS))"
 ${deployRules}`;
 }
-// The root-level tag creation + push recipe for a target: aql --dry-run
+// The root-level tag creation + push recipe for a target: boru --dry-run
 // filler cooperation, idempotent tag creation, token-authenticated https
 // push (works from an ssh-remote clone without ssh keys).
 function tagPushRecipe(name, note) {
@@ -213,9 +213,9 @@ function tagPushRecipe(name, note) {
 tag-push-${name}:
 \t@set -e; tag="${name}/v$(VERSION)"; \\
 \ttoken="\$\${GITHUB_TOKEN:-$$GH_TOKEN}"; \\
-\tif [ "$$token" = "$(AQL_DRY_RUN_FILLER)" ]; then \\
-\t  echo "[dry-run] aql filler token detected: would create (if missing) and push tag $$tag; nothing pushed."; exit 0; fi; \\
-\tif [ -z "$$token" ]; then echo "tag-push-${name}: no GITHUB_TOKEN in env — run via make deploy-${name} (aql vault exec)"; exit 1; fi; \\
+\tif [ "$$token" = "$(BORU_DRY_RUN_FILLER)" ]; then \\
+\t  echo "[dry-run] boru filler token detected: would create (if missing) and push tag $$tag; nothing pushed."; exit 0; fi; \\
+\tif [ -z "$$token" ]; then echo "tag-push-${name}: no GITHUB_TOKEN in env — run via make deploy-${name} (boru vault exec)"; exit 1; fi; \\
 \tif git rev-parse -q --verify "refs/tags/$$tag" >/dev/null; then \\
 \t  echo "tag $$tag already exists — pushing existing tag"; \\
 \telse git tag -a "$$tag" -m "Release $$tag"; fi; \\
