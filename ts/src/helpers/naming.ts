@@ -145,24 +145,33 @@ function rbSafeTypeName(Name: string): string {
 // whole swift target down. `Response` is merely the first collision to be
 // hit — every name below is equally exposed.
 //
-// Sourced by scanning `tm/swift/Sources/*/` for module-level public
-// declarations. Keep in sync when a swift template adds a public type; the
-// parity test asserts this list still matches the templates.
+// Sourced by scanning BOTH `tm/swift/Sources/*/` (templates) and
+// `src/cmp/swift/*.ts` (components) for top-level type declarations —
+// regardless of access level. `internal` is Swift's default and is still
+// module-wide, and `open class BaseFeature` is not `public` either, so an
+// access-level filter under-collects and silently reopens the bug.
+//
+// Nested types (a `typealias Element` inside a struct) and the separate Tests
+// module (`ReadmeExamplesTest`) do NOT share this namespace and are excluded.
+//
+// `swift-sdk-types.test.ts` re-derives this list from the templates and fails
+// on drift, so adding a public type to a swift template cannot silently
+// reopen the bug.
 const SWIFT_SDK_TYPES = new Set<string>([
   // core runtime
   'Context', 'Control', 'Entity', 'Operation', 'Point', 'Response', 'Result',
-  'Spec', 'Utility',
+  'SdkConfig', 'Spec', 'Utility',
   // struct library
   'Injection', 'Injector', 'JSON', 'JSONParseError', 'Modify',
-  'OrderedDictionary', 'Sentinel', 'VList', 'VMap', 'WalkApply',
+  'OrderedDictionary', 'Sentinel', 'Value', 'VList', 'VMap', 'WalkApply',
   // function/callback aliases
   'FetcherFunc', 'Formatter', 'NativeCall0', 'NativeRef', 'SystemFetch',
   // features
-  'AuditFeature', 'CacheFeature', 'ClienttrackFeature', 'DebugFeature',
-  'IdempotencyFeature', 'LogFeature', 'MetricsBucket', 'MetricsFeature',
-  'NetsimFeature', 'PagingFeature', 'ProxyFeature', 'RatelimitFeature',
-  'RbacFeature', 'RetryFeature', 'StreamingFeature', 'TelemetryFeature',
-  'TestFeature', 'TimeoutFeature',
+  'AuditFeature', 'BaseFeature', 'CacheFeature', 'ClienttrackFeature',
+  'DebugFeature', 'IdempotencyFeature', 'LogFeature', 'MetricsBucket',
+  'MetricsFeature', 'NetsimFeature', 'PagingFeature', 'ProxyFeature',
+  'RatelimitFeature', 'RbacFeature', 'RetryFeature', 'StreamingFeature',
+  'TelemetryFeature', 'TestFeature', 'TimeoutFeature',
 ])
 
 
