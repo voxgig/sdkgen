@@ -9,6 +9,8 @@ import {
   safeVarName,
   isRbCoreConstant,
   rbSafeTypeName,
+  isSwiftSdkType,
+  swiftSafeTypeName,
   serverVariables,
   hasServerVariables,
 } from '../dist/sdkgen.js'
@@ -262,6 +264,55 @@ describe('helpers', () => {
       // always carry a suffix, and no core constant ends with one.
       strictEqual(rbSafeTypeName('FileCreateData'), 'FileCreateData')
       strictEqual(rbSafeTypeName('FileLoadMatch'), 'FileLoadMatch')
+    })
+  })
+
+
+  describe('swiftSafeTypeName', () => {
+
+    test('suffixes names the swift SDK runtime already declares', () => {
+      // The Hook0 regression: their spec has a `Response` schema, so the
+      // generated `public struct Response` landed in the same module as
+      // core/Response.swift's `public final class Response` — Swift has no
+      // intra-module namespacing, so this was `invalid redeclaration of
+      // 'Response'` plus an ambiguous-lookup error in every core file.
+      strictEqual(swiftSafeTypeName('Response'), 'ResponseType')
+      strictEqual(swiftSafeTypeName('Context'), 'ContextType')
+      strictEqual(swiftSafeTypeName('Result'), 'ResultType')
+      strictEqual(swiftSafeTypeName('Entity'), 'EntityType')
+      strictEqual(swiftSafeTypeName('Operation'), 'OperationType')
+      strictEqual(swiftSafeTypeName('Spec'), 'SpecType')
+      strictEqual(swiftSafeTypeName('JSON'), 'JSONType')
+      strictEqual(swiftSafeTypeName('Utility'), 'UtilityType')
+    })
+
+    test('leaves every other entity name untouched', () => {
+      // Must not churn the existing fleet: only an actual collision renames.
+      strictEqual(swiftSafeTypeName('Application'), 'Application')
+      strictEqual(swiftSafeTypeName('Subscription'), 'Subscription')
+      strictEqual(swiftSafeTypeName('Event'), 'Event')
+      strictEqual(swiftSafeTypeName('Organization'), 'Organization')
+      // Ruby core constants are NOT swift SDK types, and vice versa — the two
+      // guards are deliberately independent.
+      strictEqual(swiftSafeTypeName('File'), 'File')
+      strictEqual(rbSafeTypeName('Response'), 'Response')
+    })
+
+    test('matches exactly — case-sensitive, no partial hits', () => {
+      strictEqual(swiftSafeTypeName('ResponseBody'), 'ResponseBody')
+      strictEqual(swiftSafeTypeName('HttpResponse'), 'HttpResponse')
+      strictEqual(swiftSafeTypeName('response'), 'response')
+      strictEqual(isSwiftSdkType('Response'), true)
+      strictEqual(isSwiftSdkType('response'), false)
+    })
+
+    test('per-op type names never need the guard', () => {
+      // EntityTypes_swift applies the guard to the bare data type only; op
+      // type names always carry a suffix, and the entity CLASS is separately
+      // suffixed (`ResponseEntity`), so neither ever collided.
+      strictEqual(swiftSafeTypeName('ResponseCreateData'), 'ResponseCreateData')
+      strictEqual(swiftSafeTypeName('ResponseLoadMatch'), 'ResponseLoadMatch')
+      strictEqual(swiftSafeTypeName('ResponseEntity'), 'ResponseEntity')
     })
   })
 

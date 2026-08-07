@@ -78,9 +78,28 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
-  const opsList = Array.from(new Set(
+  const opNames = Array.from(new Set(
     (allSteps as any[]).map((s: any) => s.op).filter(Boolean)))
-    .map(o => `"${o}"`).join(', ')
+  const opsList = opNames.map(o => `"${o}"`).join(', ')
+
+  // An entity whose basic flow has no ops must not emit the per-op skip
+  // loop. `new[] { }` is an empty implicitly-typed array and C# cannot infer
+  // its element type — CS0826, which fails the whole test project to build.
+  // The loop is dead code in that case anyway, and so is the `_mode` local
+  // that only it reads (CS0219 unused-variable otherwise).
+  const skipBlock = 0 === opNames.length ? '' : `        // Per-op sdk-test-control.json skip - basic test exercises a flow
+        // with multiple ops; skipping any op skips the whole flow.
+        var _mode = setup.Live ? "live" : "unit";
+        foreach (var _op in new[] { ${opsList} })
+        {
+            var (_shouldSkip, _) = TestRunner.IsControlSkipped(
+                "entityOp", "${entity.name}." + _op, _mode);
+            if (_shouldSkip)
+            {
+                return; // skipped via sdk-test-control.json
+            }
+        }
+`
 
   File({ name: entity.Name + 'EntityTest.' + target.ext }, () => {
 
@@ -107,19 +126,7 @@ public class ${entity.Name}EntityTest
     public void Basic()
     {
         var setup = ${entity.Name}BasicSetup(null);
-        // Per-op sdk-test-control.json skip - basic test exercises a flow
-        // with multiple ops; skipping any op skips the whole flow.
-        var _mode = setup.Live ? "live" : "unit";
-        foreach (var _op in new[] { ${opsList} })
-        {
-            var (_shouldSkip, _) = TestRunner.IsControlSkipped(
-                "entityOp", "${entity.name}." + _op, _mode);
-            if (_shouldSkip)
-            {
-                return; // skipped via sdk-test-control.json
-            }
-        }
-        // The basic flow consumes synthetic IDs from the fixture. In live
+${skipBlock}        // The basic flow consumes synthetic IDs from the fixture. In live
         // mode without an *_ENTID env override, those IDs hit the live API
         // and 4xx; set ${PROJUPPER}_TEST_${ENTUPPER}_ENTID JSON to run live.
         if (setup.SyntheticOnly)

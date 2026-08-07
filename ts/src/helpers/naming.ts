@@ -126,6 +126,66 @@ function rbSafeTypeName(Name: string): string {
 }
 
 
+// Swift SDK-OWNED TYPE NAMES — a third hazard, distinct from both sets above.
+//
+// The keyword sets guard local bindings; the Ruby set guards clobbering the
+// LANGUAGE's core. This set guards clobbering OUR OWN runtime, because Swift
+// has no namespacing WITHIN a module: every type the swift templates declare
+// and every generated entity type land in the same module. Two declarations
+// of one name is a hard error, not a silent override:
+//
+//   // core/Response.swift  (template)
+//   public final class Response { ... }      // transport wrapper
+//   // entity/<Prefix>Types.swift  (generated from a spec schema named Response)
+//   public struct Response { ... }
+//   -> error: invalid redeclaration of 'Response'
+//   -> error: 'Response' is ambiguous for type lookup   (every core file)
+//
+// Found 2026-08-07: the Hook0 spec has a `Response` schema, which took the
+// whole swift target down. `Response` is merely the first collision to be
+// hit — every name below is equally exposed.
+//
+// Sourced by scanning `tm/swift/Sources/*/` for module-level public
+// declarations. Keep in sync when a swift template adds a public type; the
+// parity test asserts this list still matches the templates.
+const SWIFT_SDK_TYPES = new Set<string>([
+  // core runtime
+  'Context', 'Control', 'Entity', 'Operation', 'Point', 'Response', 'Result',
+  'Spec', 'Utility',
+  // struct library
+  'Injection', 'Injector', 'JSON', 'JSONParseError', 'Modify',
+  'OrderedDictionary', 'Sentinel', 'VList', 'VMap', 'WalkApply',
+  // function/callback aliases
+  'FetcherFunc', 'Formatter', 'NativeCall0', 'NativeRef', 'SystemFetch',
+  // features
+  'AuditFeature', 'CacheFeature', 'ClienttrackFeature', 'DebugFeature',
+  'IdempotencyFeature', 'LogFeature', 'MetricsBucket', 'MetricsFeature',
+  'NetsimFeature', 'PagingFeature', 'ProxyFeature', 'RatelimitFeature',
+  'RbacFeature', 'RetryFeature', 'StreamingFeature', 'TelemetryFeature',
+  'TestFeature', 'TimeoutFeature',
+])
+
+
+// Does `Name` collide with a type the swift SDK runtime already declares?
+function isSwiftSdkType(Name: string): boolean {
+  return SWIFT_SDK_TYPES.has(Name)
+}
+
+
+// A module-safe Swift type name for a generated type: unchanged, unless the
+// swift runtime already declares it, in which case `Type` is appended
+// (`Response` -> `ResponseType`). Mirrors rbSafeTypeName deliberately — same
+// suffix, same "only rename on an actual collision" rule, so SDKs that do not
+// collide are byte-identical to before.
+//
+// Applied ONLY to the bare entity data type. Per-op type names already carry
+// their own suffix (`ResponseCreateData`, `ResponseLoadMatch`) and the entity
+// CLASS is separately suffixed (`ResponseEntity`), so neither ever collided.
+function swiftSafeTypeName(Name: string): string {
+  return isSwiftSdkType(Name) ? Name + 'Type' : Name
+}
+
+
 // Is `name` a reserved word (an illegal identifier) in the target language?
 function isReservedName(name: string, lang: string): boolean {
   const set = RESERVED[lang]
@@ -189,6 +249,8 @@ export {
   exampleVarName,
   isRbCoreConstant,
   rbSafeTypeName,
+  isSwiftSdkType,
+  swiftSafeTypeName,
   jsProp,
   jsOptProp,
   jsKey,
