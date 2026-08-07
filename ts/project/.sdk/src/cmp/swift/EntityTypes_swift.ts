@@ -25,7 +25,7 @@ import {
   File, Content, Folder,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, swiftSafeTypeName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -114,9 +114,16 @@ import Foundation
               .filter((f: any) => f.active !== false)
 
             // Entity data model: one property per field. req:false -> optional.
+            //
+            // Swift has no intra-module namespacing, so a spec schema named
+            // after one of our own runtime types (e.g. `Response`) would be a
+            // redeclaration and fail the build. swiftSafeTypeName appends
+            // `Type` on collision only — `Response` -> `ResponseType` — so
+            // non-colliding SDKs generate byte-identical output to before.
+            const TypeName = swiftSafeTypeName(Name)
             emitStruct(
-              `/// ${Name} is the typed data model for the ${ent.name} entity.`,
-              Name,
+              `/// ${TypeName} is the typed data model for the ${ent.name} entity.`,
+              TypeName,
               fields.map((f: any) => ({ name: f.name, type: f.type, optional: false === f.req }))
             )
 

@@ -75,8 +75,30 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, rustcrate, flow: basicflow, PROJUPPER }
 
-  const opsList = Array.from(new Set(allSteps.map((s: any) => s.op).filter(Boolean)))
-    .map(o => `"${o}"`).join(', ')
+  const opNames = Array.from(new Set(allSteps.map((s: any) => s.op).filter(Boolean)))
+  const opsList = opNames.map(o => `"${o}"`).join(', ')
+
+  // Same hazard as the csharp target: an entity whose basic flow has no ops
+  // would emit `for op in []`, and rustc cannot infer the element type of an
+  // empty array literal — E0282, type annotations needed. The loop is dead
+  // code in that case, and so is the `mode` binding only it reads (which
+  // would then warn as unused). Emit neither.
+  const skipBlock = 0 === opNames.length ? '' : `    // Per-op sdk-test-control.json skip — the basic test exercises a flow
+    // with multiple ops; skipping any op skips the whole flow.
+    let mode = if setup.live { "live" } else { "unit" };
+    for op in [${opsList}] {
+        let (skip, reason) = is_control_skipped("entityOp", &format!("${entity.name}.{}", op), mode);
+        if skip {
+            let reason = if reason.is_empty() {
+                "skipped via sdk-test-control.json".to_string()
+            } else {
+                reason
+            };
+            eprintln!("skip: {}", reason);
+            return;
+        }
+    }
+`
 
   const method = rustVarName(entity.name)
   const evar = rustVarName(entity.name)
@@ -158,22 +180,7 @@ fn ${evar}_entity_stream() {
 #[test]
 fn ${evar}_entity_basic() {
     let setup = ${evar}_basic_setup(Value::Noval);
-    // Per-op sdk-test-control.json skip — the basic test exercises a flow
-    // with multiple ops; skipping any op skips the whole flow.
-    let mode = if setup.live { "live" } else { "unit" };
-    for op in [${opsList}] {
-        let (skip, reason) = is_control_skipped("entityOp", &format!("${entity.name}.{}", op), mode);
-        if skip {
-            let reason = if reason.is_empty() {
-                "skipped via sdk-test-control.json".to_string()
-            } else {
-                reason
-            };
-            eprintln!("skip: {}", reason);
-            return;
-        }
-    }
-    // The basic flow consumes synthetic IDs from the fixture. In live mode
+${skipBlock}    // The basic flow consumes synthetic IDs from the fixture. In live mode
     // without an *_ENTID env override, those IDs hit the live API and 4xx.
     if setup.synthetic_only {
         eprintln!("skip: live entity test uses synthetic IDs from fixture — set ${PROJUPPER}_TEST_${ENTUPPER}_ENTID JSON to run live");
