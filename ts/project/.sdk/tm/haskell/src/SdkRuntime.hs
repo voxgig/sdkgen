@@ -13,6 +13,7 @@ module SdkRuntime where
 import Control.Exception (throwIO)
 import Control.Monad (forM_, when)
 import Data.Bits ((.&.))
+import Data.Char (toUpper)
 import Data.IORef
 import qualified Data.Map.Strict as Map
 import System.IO.Unsafe (unsafePerformIO)
@@ -318,12 +319,20 @@ featureInitUtil ctx f = do
 
 -- ----- prepare / param -----
 
+-- The API definition is authoritative: a POST-only or PATCH-based API
+-- exposes `update` as POST or PATCH, not the PUT the op name implies. Only
+-- fall back to the op-name convention when the point has no method.
 prepareMethodUtil :: Context -> IO String
 prepareMethodUtil ctx = do
-  op <- readIORef (cOp ctx)
-  pure $ case opName op of
-    "create" -> "POST"; "update" -> "PUT"; "load" -> "GET"
-    "list" -> "GET"; "remove" -> "DELETE"; "patch" -> "PATCH"; _ -> "GET"
+  point <- readIORef (cPoint ctx)
+  pm <- getp point "method"
+  case pm of
+    VStr m | not (null m) -> pure (map toUpper m)
+    _ -> do
+      op <- readIORef (cOp ctx)
+      pure $ case opName op of
+        "create" -> "POST"; "update" -> "PUT"; "load" -> "GET"
+        "list" -> "GET"; "remove" -> "DELETE"; "patch" -> "PATCH"; _ -> "GET"
 
 prepareHeadersUtil :: Context -> IO Value
 prepareHeadersUtil ctx = do

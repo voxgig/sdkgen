@@ -239,8 +239,13 @@ def preparePath (ctx : Value) : SIO String := do
     pure ("/" ++ String.intercalate "/" segs.toList)
   | _ => pure ""
 
+/-- The API definition is authoritative: a POST-only or PATCH-based API
+exposes `update` as POST or PATCH, not the PUT the op name implies. Only
+fall back to the op-name convention when the point has no method. -/
 def prepareMethod (ctx : Value) : SIO String := do
-  pure (opMethodOf (← opnameOf ctx))
+  let m ← gpS (← gp ctx "point") "method"
+  if m != "" then pure m.toUpper
+  else pure (opMethodOf (← opnameOf ctx))
 
 def prepareHeaders (ctx : Value) : SIO Value := do
   let options ← gp ctx "options"

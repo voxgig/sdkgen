@@ -654,6 +654,19 @@ inline ResultPtr makeResult(CtxPtr ctx) {
 
 inline std::string prepareMethod(CtxPtr ctx) {
   const std::string& opname = ctx->op->name;
+
+  // The API definition is authoritative: a POST-only or PATCH-based API
+  // exposes `update` as POST or PATCH, not the PUT the op name implies.
+  // Only fall back to the op-name convention when the point has no method.
+  Value pm = getp(ctx->point, "method");
+  if (pm.is_string()) {
+    std::string m = as_str(pm);
+    if (!m.empty()) {
+      for (auto& c : m) c = (char)std::toupper((unsigned char)c);
+      return m;
+    }
+  }
+
   if (opname == "create") return "POST";
   if (opname == "update") return "PUT";
   if (opname == "load") return "GET";
