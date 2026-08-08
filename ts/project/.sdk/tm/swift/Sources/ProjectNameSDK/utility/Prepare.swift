@@ -14,6 +14,14 @@ private let methodMap: [String: String] = [
 
 func prepareMethodUtil(_ ctx: Context) -> String {
   let opname = ctx.op!.name
+
+  // The API definition is authoritative: a POST-only or PATCH-based API
+  // exposes `update` as POST or PATCH, not the PUT the op name implies.
+  // Only fall back to the op-name convention when the point has no method.
+  if let pm = gp(ctx.point, "method").asString, !pm.isEmpty {
+    return pm.uppercased()
+  }
+
   return methodMap[opname] ?? "GET"
 }
 

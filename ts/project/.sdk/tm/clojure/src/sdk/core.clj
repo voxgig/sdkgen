@@ -389,7 +389,15 @@
 
 (defn u-clean [_ctx val] val)
 
-(defn u-prepare-method [ctx] (get METHOD-MAP (op-name (oget ctx :op)) "GET"))
+;; The API definition is authoritative: a POST-only or PATCH-based API
+;; exposes `update` as POST or PATCH, not the PUT the op name implies.
+;; Only fall back to the op-name convention when the point has no method.
+(defn u-prepare-method [ctx]
+  (let [point (oget ctx :point)
+        m (when point (vs/getprop point "method"))]
+    (if (and (string? m) (not= "" m))
+      (str/upper-case m)
+      (get METHOD-MAP (op-name (oget ctx :op)) "GET"))))
 
 (defn u-prepare-headers [ctx]
   (let [options (client-options-map (oget ctx :client))

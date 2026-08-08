@@ -14,14 +14,20 @@ object PreparePath {
 }
 
 object PrepareMethod {
-  def prepareMethod(ctx: Context): String = ctx.op.name match {
-    case "create" => "POST"
-    case "update" => "PUT"
-    case "load" => "GET"
-    case "list" => "GET"
-    case "remove" => "DELETE"
-    case "patch" => "PATCH"
-    case _ => "GET"
+  // The API definition is authoritative: a POST-only or PATCH-based API
+  // exposes `update` as POST or PATCH, not the PUT the op name implies.
+  // Only fall back to the op-name convention when the point has no method.
+  def prepareMethod(ctx: Context): String = Struct.getprop(ctx.point, "method") match {
+    case s: String if s.nonEmpty => s.toUpperCase
+    case _ => ctx.op.name match {
+      case "create" => "POST"
+      case "update" => "PUT"
+      case "load" => "GET"
+      case "list" => "GET"
+      case "remove" => "DELETE"
+      case "patch" => "PATCH"
+      case _ => "GET"
+    }
   }
 }
 

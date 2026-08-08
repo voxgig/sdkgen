@@ -143,6 +143,15 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
 
 fun prepareMethod(ctx: Context): String {
   val opname = ctx.op.name
+
+  // The API definition is authoritative: a POST-only or PATCH-based API
+  // exposes `update` as POST or PATCH, not the PUT the op name implies.
+  // Only fall back to the op-name convention when the point has no method.
+  val pm = Struct.getprop(ctx.point, "method")
+  if (pm is String && "" != pm) {
+    return pm.uppercase()
+  }
+
   val m = METHOD_MAP[opname]
   if (m != null) {
     return m

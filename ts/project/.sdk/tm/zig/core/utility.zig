@@ -825,6 +825,21 @@ pub fn param_util(ctx: *Context, paramdef: Value) Value {
 
 pub fn prepare_method_util(ctx: *Context) []const u8 {
     const opname = ctx.op.name;
+
+    // The API definition is authoritative: a POST-only or PATCH-based API
+    // exposes `update` as POST or PATCH, not the PUT the op name implies.
+    // Only fall back to the op-name convention when the point has no method.
+    switch (h.getp(ctx.point, "method")) {
+        .string => |m| {
+            if (0 < m.len) {
+                const upper = h.A().alloc(u8, m.len) catch return m;
+                for (m, 0..) |c, i| upper[i] = std.ascii.toUpper(c);
+                return upper;
+            }
+        },
+        else => {},
+    }
+
     if (std.mem.eql(u8, opname, "create")) return "POST";
     if (std.mem.eql(u8, opname, "update")) return "PUT";
     if (std.mem.eql(u8, opname, "load")) return "GET";

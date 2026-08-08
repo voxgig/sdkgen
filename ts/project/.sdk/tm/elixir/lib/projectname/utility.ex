@@ -888,7 +888,14 @@ defmodule ProjectName.Utility do
 
   def prepare_method_impl(ctx) do
     opname = S.getprop(S.getprop(ctx, "op"), "name")
-    Map.get(@method_map, opname, "GET")
+
+    # The API definition is authoritative: a POST-only or PATCH-based API
+    # exposes `update` as POST or PATCH, not the PUT the op name implies.
+    # Only fall back to the op-name convention when the point has no method.
+    case S.getprop(S.getprop(ctx, "point"), "method") do
+      m when is_binary(m) and m != "" -> String.upcase(m)
+      _ -> Map.get(@method_map, opname, "GET")
+    end
   end
 
   def prepare_headers_impl(ctx) do
