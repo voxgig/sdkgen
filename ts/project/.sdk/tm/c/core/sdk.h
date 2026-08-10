@@ -456,6 +456,10 @@ const char* prepare_method_util(Context* ctx); // static string
 voxgig_value* prepare_params_util(Context* ctx);
 char* prepare_path_util(Context* ctx); // malloc'd
 voxgig_value* prepare_query_util(Context* ctx);
+const char* graphql_error_code(voxgig_value* gqlerr);
+voxgig_value* graphql_body_util(Context* ctx);
+bool graphql_errors_util(Context* ctx);
+#define GRAPHQL_CONTENT_TYPE "application/json"
 SdkResult* result_basic_util(Context* ctx);
 SdkResult* result_body_util(Context* ctx);
 SdkResult* result_headers_util(Context* ctx);

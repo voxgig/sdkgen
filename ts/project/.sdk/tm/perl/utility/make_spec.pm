@@ -56,8 +56,26 @@ $REGISTRY{make_spec} = sub {
   $ctx->{spec}{params} = $utility->{prepare_params}->($ctx);
   $ctx->{spec}{query} = $utility->{prepare_query}->($ctx);
   $ctx->{spec}{headers} = $utility->{prepare_headers}->($ctx);
-  $ctx->{spec}{body} = $utility->{prepare_body}->($ctx);
-  $ctx->{spec}{path} = $utility->{prepare_path}->($ctx);
+
+  my $pkind = ProjectNameHelpers::gp($ctx->{point}, 'kind');
+  if (defined $pkind && 'graphql' eq $pkind) {
+    # GraphQL addresses one endpoint: no path parts, no query string, and
+    # the body carries the operation. prepare_body is skipped deliberately
+    # — it only emits a body for data-input ops, whereas every GraphQL op
+    # posts one, including load/list/remove.
+    $ctx->{spec}{body} = $utility->{graphql_body}->($ctx);
+    $ctx->{spec}{path} = '';
+    # prepare_query already copied the op's match arguments into the query
+    # string. Those same values are bound as operation variables, so
+    # leaving them would send /graphql?id=i1.
+    $ctx->{spec}{query} = {};
+    $ctx->{spec}{headers}{'content-type'} =
+      $ProjectNameUtilities::GRAPHQL_CONTENT_TYPE;
+  }
+  else {
+    $ctx->{spec}{body} = $utility->{prepare_body}->($ctx);
+    $ctx->{spec}{path} = $utility->{prepare_path}->($ctx);
+  }
 
   $ctx->{ctrl}{explain}{spec} = $ctx->{spec} if $ctx->{ctrl}{explain};
 
