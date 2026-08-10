@@ -37,8 +37,20 @@ function makeSpec(ctx) {
   ctx.spec.params = prepareParams(ctx)
   ctx.spec.query = prepareQuery(ctx)
   ctx.spec.headers = prepareHeaders(ctx)
-  ctx.spec.body = prepareBody(ctx)
-  ctx.spec.path = preparePath(ctx)
+
+  if ('graphql' === point.kind) {
+    // GraphQL addresses one endpoint: no path parts, no query string, and
+    // the body carries the operation. prepareBody is skipped deliberately —
+    // it only emits a body for data-input ops (create/update), whereas every
+    // GraphQL op posts one, including load/list/remove.
+    ctx.spec.body = utility.graphqlBody(ctx)
+    ctx.spec.path = ''
+    ctx.spec.headers['content-type'] = utility.GRAPHQL_CONTENT_TYPE
+  }
+  else {
+    ctx.spec.body = prepareBody(ctx)
+    ctx.spec.path = preparePath(ctx)
+  }
 
   if (ctx.ctrl.explain) {
     ctx.ctrl.explain.spec = ctx.spec
