@@ -156,4 +156,88 @@ describe('GraphQL API Integration', () => {
     strictEqual(res.statusCode, 400)
     ok(0 < (res.json() as any).errors.length)
   })
+
+
+  // REST answers a missing id with 404. A payload of { success: false } and
+  // no `errors` is invisible to a client reading the error array — which is
+  // exactly what the generated transport reads — so an SDK would report a
+  // failed update as successful. Both faces must fail the same way.
+  test('parity: missing id is an error, not a quiet false', async () => {
+    const cases: [string, any][] = [
+      ['mutation U($id: String!) { planetUpdate(id: $id, input: {name: "x"})' +
+        ' { success } }', { id: 'nope' }],
+      ['mutation D($id: String!) { planetDelete(id: $id) { success } }',
+        { id: 'nope' }],
+      ['mutation M($id: String!) { moonUpdate(id: $id, input: {name: "x"})' +
+        ' { success } }', { id: 'nope' }],
+    ]
+
+    for (const [q, v] of cases) {
+      const { body } = await gql(q, v)
+      ok(0 < (body.errors ?? []).length, q.slice(0, 24) + ' reports an error')
+      strictEqual(body.errors[0].extensions.code, 'NOT_FOUND')
+    }
+  })
+
+
+  // A dangling moon would break execution later: Moon.planet is non-null.
+  test('parity: moon create rejects an unknown planet', async () => {
+    const { body } = await gql(
+      'mutation C($input: MoonCreateInput!) { moonCreate(input: $input)' +
+      ' { success } }',
+      { input: { planetId: 'nope', name: 'M', kind: 'rock', diameter: 1 } })
+
+    ok(0 < (body.errors ?? []).length)
+    strictEqual(body.errors[0].extensions.code, 'NOT_FOUND')
+  })
+
+
+  // Neither flag set must leave the state alone, as the REST handler does —
+  // forcing 'idle' would stop an in-progress terraform.
+  test('parity: terraform without flags preserves state', async () => {
+    await gql('mutation { planetTerraform(id: "venus", start: true)' +
+      ' { state } }')
+
+    const { body } = await gql(
+      'mutation { planetTerraform(id: "venus") { state } }')
+
+    strictEqual(body.data.planetTerraform.state, 'terraforming')
+  })
+
+
+  // An explicit null would overwrite a required field, after which selecting
+  // the non-null Planet.name fails execution.
+  test('parity: explicit null in an update is ignored, not written', async () => {
+    const before = await gql('query { planet(id: "earth") { name } }')
+
+    const { body } = await gql(
+      'mutation U($input: PlanetUpdateInput!)' +
+      ' { planetUpdate(id: "earth", input: $input) { planet { name kind } } }',
+      { input: { name: null, kind: 'gas' } })
+
+    strictEqual(body.data.planetUpdate.planet.name,
+      before.body.data.planet.name)
+    strictEqual(body.data.planetUpdate.planet.kind, 'gas')
+  })
+
+
+  // A cursor whose row was deleted between pages must end the walk, not
+  // restart it and hand the client duplicates.
+  test('parity: a stale cursor ends the walk', async () => {
+    const created = await gql(
+      'mutation C($input: PlanetCreateInput!) { planetCreate(input: $input)' +
+      ' { planet { id } } }',
+      { input: { name: 'Ghost', kind: 'rock', diameter: 1 } })
+    const id = created.body.data.planetCreate.planet.id
+
+    await gql('mutation D($id: String!) { planetDelete(id: $id) { success } }',
+      { id })
+
+    const { body } = await gql(
+      'query P($after: String) { planets(after: $after)' +
+      ' { nodes { id } pageInfo { hasNextPage endCursor } } }', { after: id })
+
+    deepStrictEqual(body.data.planets.nodes, [])
+    strictEqual(body.data.planets.pageInfo.hasNextPage, false)
+  })
 })

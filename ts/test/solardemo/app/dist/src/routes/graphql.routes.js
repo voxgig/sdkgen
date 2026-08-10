@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildSchema, graphql } from 'graphql';
+import { buildSchema, graphql, GraphQLError } from 'graphql';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // The SERVED schema is the same file apidef ingests as the GraphQL def
 // (def/solardemo-1.0.0-graphql.graphql). Reading it here rather than
@@ -16,7 +16,13 @@ function connection(all, first, after) {
     let rows = all;
     if (null != after) {
         const at = rows.findIndex((r) => r.id === after);
-        rows = at < 0 ? rows : rows.slice(at + 1);
+        // An unknown cursor means the row it referenced is gone (deleted between
+        // pages). Restarting from the top would hand the client duplicates and a
+        // bogus continuation, so end the walk instead.
+        if (at < 0) {
+            return { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } };
+        }
+        rows = rows.slice(at + 1);
     }
     const limit = null == first ? rows.length : Math.max(0, first);
     const nodes = rows.slice(0, limit);
@@ -40,6 +46,23 @@ export default async function graphqlRoutes(fastify) {
     moonType.getFields().planet.resolve =
         (src) => planetStore.getById(src.planet_id);
     const nextId = (prefix) => prefix + '_' + Math.random().toString(36).slice(2, 10);
+    // REST answers a missing id with 404. GraphQL has no status to carry that,
+    // and a payload of { success: false } is invisible to a client reading
+    // `errors` — which is exactly what the generated transport reads. Raise a
+    // real GraphQL error so both faces report the same failure.
+    const notFound = (kind, id) => new GraphQLError(kind + ' not found: ' + id, { extensions: { code: 'NOT_FOUND' } });
+    // Partial update semantics: an omitted field is left alone. An explicit
+    // null would otherwise overwrite a required field, after which selecting
+    // the non-null field fails execution.
+    const defined = (input) => {
+        const out = {};
+        for (const k of Object.keys(input ?? {})) {
+            if (null != input[k]) {
+                out[k] = input[k];
+            }
+        }
+        return out;
+    };
     const root = {
         planet: ({ id }) => planetStore.getById(id) ?? null,
         planets: ({ filter, first, after }) => {
@@ -56,31 +79,51 @@ export default async function graphqlRoutes(fastify) {
             planet: planetStore.create({ id: nextId('planet'), ...input }),
         }),
         planetUpdate: ({ id, input }) => {
-            const planet = planetStore.update(id, input);
-            return { success: null != planet, planet: planet ?? null };
+            const planet = planetStore.update(id, defined(input));
+            if (null == planet) {
+                throw notFound('Planet', id);
+            }
+            return { success: true, planet };
         },
         planetDelete: ({ id }) => {
             const planet = planetStore.getById(id) ?? null;
+            if (null == planet) {
+                throw notFound('Planet', id);
+            }
             return { success: planetStore.delete(id), planet };
         },
         // The two command mutations, mirroring the REST action endpoints. Both
         // return the resulting state alongside the entity.
         planetTerraform: ({ id, start, stop }) => {
+            const current = planetStore.getById(id);
+            if (null == current) {
+                throw notFound('Planet', id);
+            }
+            // Neither flag set leaves the state as it was, as the REST handler
+            // does — forcing 'idle' would stop an in-progress terraform.
             const state = true === start ? 'terraforming' :
-                true === stop ? 'idle' : 'idle';
+                true === stop ? 'idle' : (current.terraformState || 'idle');
             const planet = planetStore.update(id, { terraformState: state });
-            return { success: null != planet, state, planet: planet ?? null };
+            return { success: true, state, planet: planet ?? null };
         },
         planetForbid: ({ id, forbid, why }) => {
+            if (null == planetStore.getById(id)) {
+                throw notFound('Planet', id);
+            }
             const state = false === forbid ? 'allowed' : 'forbidden';
             const planet = planetStore.update(id, {
                 forbidState: state,
                 forbidReason: why,
             });
-            return { success: null != planet, state, planet: planet ?? null };
+            return { success: true, state, planet: planet ?? null };
         },
         moonCreate: ({ input }) => {
             const { planetId, ...rest } = input;
+            // The REST create checks the parent first. Without this the store
+            // holds a dangling moon whose non-null Moon.planet fails execution.
+            if (null == planetStore.getById(planetId)) {
+                throw notFound('Planet', planetId);
+            }
             return {
                 success: true,
                 moon: moonStore.create({
@@ -89,11 +132,17 @@ export default async function graphqlRoutes(fastify) {
             };
         },
         moonUpdate: ({ id, input }) => {
-            const moon = moonStore.update(id, input);
-            return { success: null != moon, moon: moon ?? null };
+            const moon = moonStore.update(id, defined(input));
+            if (null == moon) {
+                throw notFound('Moon', id);
+            }
+            return { success: true, moon };
         },
         moonDelete: ({ id }) => {
             const moon = moonStore.getById(id) ?? null;
+            if (null == moon) {
+                throw notFound('Moon', id);
+            }
             return { success: moonStore.delete(id), moon };
         },
     };
