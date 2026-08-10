@@ -1081,16 +1081,22 @@ defmodule ProjectName.Utility do
     if not S.ismap(gql) do
       nil
     else
-      # reqmatch/reqdata hold the caller's arguments for this operation;
-      # which one depends on whether the op takes match or data input.
+      # reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+      # hold the entity's current state. Which pair depends on whether the op
+      # takes match or data input. A named variable falls back to the current
+      # state, so updating a loaded entity with just {title} still binds the
+      # stored id the mutation requires.
       op = S.getprop(ctx, "op")
+      datainput = S.getprop(op, "input") == "data"
 
       reqsrc =
-        if S.getprop(op, "input") == "data",
-          do: S.getprop(ctx, "reqdata"),
-          else: S.getprop(ctx, "reqmatch")
+        if datainput, do: S.getprop(ctx, "reqdata"), else: S.getprop(ctx, "reqmatch")
+
+      datasrc =
+        if datainput, do: S.getprop(ctx, "data"), else: S.getprop(ctx, "match")
 
       reqsrc = if S.ismap(reqsrc), do: reqsrc, else: S.jm([])
+      datasrc = if S.ismap(datasrc), do: datasrc, else: S.jm([])
 
       variables = S.jm([])
       varlist = S.getprop(gql, "vars")
@@ -1123,7 +1129,7 @@ defmodule ProjectName.Utility do
               true ->
                 # Only send variables the caller actually supplied: sending
                 # an explicit null would clear a field on many APIs.
-                val = S.getprop(reqsrc, from)
+                val = S.getprop(reqsrc, from) || S.getprop(datasrc, from)
                 if val != nil, do: S.setprop(variables, name, val)
             end
           end

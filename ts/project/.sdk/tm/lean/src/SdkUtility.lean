@@ -380,10 +380,14 @@ def graphqlBody (ctx : Value) : SIO Value := do
   let gql ← gp (← gp ctx "point") "graphql"
   match gql with
   | .map _ => do
-    -- reqmatch/reqdata hold the caller's arguments for this operation; which
-    -- one depends on whether the op takes match or data input.
-    let reqsrc ← asMap (← gp ctx
-      (if opInputOf (← opnameOf ctx) == "data" then "reqdata" else "reqmatch"))
+    -- reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+    -- hold the entity's current state. Which pair depends on whether the op
+    -- takes match or data input. A named variable falls back to the current
+    -- state, so updating a loaded entity with just {title} still binds the
+    -- stored id the mutation requires.
+    let datainput := opInputOf (← opnameOf ctx) == "data"
+    let reqsrc ← asMap (← gp ctx (if datainput then "reqdata" else "reqmatch"))
+    let datasrc ← asMap (← gp ctx (if datainput then "data" else "match"))
     let variables ← emptyMap
     let varlist ← match (← gp gql "vars") with
       | .list i => listItems i
@@ -405,8 +409,9 @@ def graphqlBody (ctx : Value) : SIO Value := do
           else do
             -- Only send variables the caller actually supplied: sending an
             -- explicit null would clear a field on many APIs.
-            let v ← gp reqsrc from
-            if !(isNov v) then sp variables name v
+            let v0 ← gp reqsrc from
+            let v ← if isNullish v0 then gp datasrc from else pure v0
+            if !(isNullish v) then sp variables name v
       | _ => pure ()
     newMap #[("query", ← gp gql "doc"), ("variables", variables)]
   | _ => pure .noval

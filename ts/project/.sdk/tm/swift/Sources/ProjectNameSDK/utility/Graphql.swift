@@ -57,11 +57,16 @@ func graphqlBodyUtil(_ ctx: Context) -> Value {
   let gql = gp(ctx.point, "graphql")
   guard nil != gql.asMap else { return .noval }
 
-  // reqmatch/reqdata hold the caller's arguments for this operation; which
-  // one depends on whether the op takes match or data input.
+  // reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+  // hold the entity's current state. Which pair depends on whether the op
+  // takes match or data input. A named variable falls back to the current
+  // state, so updating a loaded entity with just {title} still binds the
+  // stored id the mutation requires.
   var reqsrc = ctx.reqmatch
+  var datasrc = ctx.match
   if let op = ctx.op, "data" == op.input {
     reqsrc = ctx.reqdata
+    datasrc = ctx.data
   }
 
   let variables = VMap()
@@ -91,7 +96,10 @@ func graphqlBodyUtil(_ ctx: Context) -> Value {
 
       // Only send variables the caller actually supplied: sending an
       // explicit null would clear a field on many APIs.
-      let val = gp(.map(reqsrc), from)
+      var val = gp(.map(reqsrc), from)
+      if isNil(val) {
+        val = gp(.map(datasrc), from)
+      }
       if !isNil(val) {
         variables.entries[name] = val
       }

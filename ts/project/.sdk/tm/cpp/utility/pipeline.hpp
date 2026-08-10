@@ -430,8 +430,13 @@ inline Value graphqlBody(CtxPtr ctx) {
   // reqmatch/reqdata hold the caller's arguments for this operation; which
   // one depends on whether the op takes match or data input.
   Value reqsrc = ctx->reqmatch;
-  if (ctx->op && ctx->op->input == "data") reqsrc = ctx->reqdata;
+  Value datasrc = ctx->match;
+  if (ctx->op && ctx->op->input == "data") {
+    reqsrc = ctx->reqdata;
+    datasrc = ctx->data;
+  }
   if (!reqsrc.is_map()) reqsrc = vmap();
+  if (!datasrc.is_map()) datasrc = vmap();
 
   Value variables = vmap();
 
@@ -458,6 +463,7 @@ inline Value graphqlBody(CtxPtr ctx) {
       // Only send variables the caller actually supplied: sending an
       // explicit null would clear a field on many APIs.
       Value val = getp(reqsrc, from);
+      if (is_nullish(val)) val = getp(datasrc, from);
       if (!is_nullish(val)) map_put(variables, name, val);
     }
   }

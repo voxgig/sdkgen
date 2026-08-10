@@ -62,11 +62,16 @@ object Graphql {
     val gql = Helpers.toMapAny(Struct.getprop(ctx.point, "graphql"))
     if (gql == null) return null
 
-    // reqmatch/reqdata hold the caller's arguments for this operation;
-    // which one depends on whether the op takes match or data input.
-    var reqsrc = ctx.reqmatch
-    if (ctx.op != null && "data" == ctx.op.input) reqsrc = ctx.reqdata
+    // reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+    // hold the entity's current state. Which pair depends on whether the op
+    // takes match or data input. A named variable falls back to the current
+    // state, so updating a loaded entity with just {title} still binds the
+    // stored id the mutation requires.
+    val datainput = ctx.op != null && "data" == ctx.op.input
+    var reqsrc = if (datainput) ctx.reqdata else ctx.reqmatch
+    var datasrc = if (datainput) ctx.data else ctx.matchData
     if (reqsrc == null) reqsrc = new LinkedHashMap[String, Object]()
+    if (datasrc == null) datasrc = new LinkedHashMap[String, Object]()
 
     val variables = new LinkedHashMap[String, Object]()
 
@@ -103,7 +108,8 @@ object Graphql {
           } else {
             // Only send variables the caller actually supplied: sending an
             // explicit null would clear a field on many APIs.
-            val v = Struct.getprop(reqsrc, from)
+            var v = Struct.getprop(reqsrc, from)
+            if (v == null) v = Struct.getprop(datasrc, from)
             if (v != null) variables.put(name, v)
           }
         }

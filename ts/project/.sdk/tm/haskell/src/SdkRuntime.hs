@@ -473,13 +473,17 @@ graphqlBodyUtil ctx = do
   gql <- getp point "graphql"
   case gql of
     VMap _ -> do
-      -- reqmatch/reqdata hold the caller's arguments for this operation;
-      -- which one depends on whether the op takes match or data input.
+      -- reqmatch/reqdata hold the caller's arguments for THIS call;
+      -- data/match hold the entity's current state. Which pair depends on
+      -- whether the op takes match or data input. A named variable falls
+      -- back to the current state, so updating a loaded entity with just
+      -- {title} still binds the stored id the mutation requires.
       op <- readIORef (cOp ctx)
-      rsV <- if opInput op == "data"
-               then readIORef (cReqdata ctx)
-               else readIORef (cReqmatch ctx)
+      let datainput = opInput op == "data"
+      rsV <- readIORef (if datainput then cReqdata ctx else cReqmatch ctx)
+      dsV <- readIORef (if datainput then cData ctx else cMatch ctx)
       reqsrc <- case rsV of VMap _ -> pure rsV; _ -> emptyMap
+      datasrc <- case dsV of VMap _ -> pure dsV; _ -> emptyMap
       variables <- emptyMap
       vl <- getp gql "vars"
       varlist <- case vl of VList _ -> listItems vl; _ -> pure []
@@ -502,7 +506,8 @@ graphqlBodyUtil ctx = do
               else do
                 -- Only send variables the caller actually supplied: sending
                 -- an explicit null would clear a field on many APIs.
-                val <- getp reqsrc from
+                v0 <- getp reqsrc from
+                val <- if isNullish v0 then getp datasrc from else pure v0
                 when (not (isNullish val)) (setp variables name val)
         _ -> pure ()
       doc <- getp gql "doc"

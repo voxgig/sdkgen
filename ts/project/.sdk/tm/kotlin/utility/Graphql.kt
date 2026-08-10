@@ -65,13 +65,14 @@ fun graphqlBody(ctx: Context): Any? {
   val gql = Struct.getprop(ctx.point, "graphql") as? Map<String, Any?>
     ?: return null
 
-  // reqmatch/reqdata hold the caller's arguments for this operation; which
-  // one depends on whether the op takes match or data input.
-  var reqsrc = ctx.reqmatch
-  if (null != ctx.op && "data" == ctx.op!!.input) {
-    reqsrc = ctx.reqdata
-  }
-  val src = reqsrc ?: mutableMapOf()
+  // reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+  // hold the entity's current state. Which pair depends on whether the op
+  // takes match or data input. A named variable falls back to the current
+  // state, so updating a loaded entity with just {title} still binds the
+  // stored id the mutation requires.
+  val datainput = null != ctx.op && "data" == ctx.op!!.input
+  val src = (if (datainput) ctx.reqdata else ctx.reqmatch) ?: mutableMapOf()
+  val statesrc = (if (datainput) ctx.data else ctx.match) ?: mutableMapOf()
 
   val variables = mutableMapOf<String, Any?>()
 
@@ -98,7 +99,7 @@ fun graphqlBody(ctx: Context): Any? {
 
     // Only send variables the caller actually supplied: sending an explicit
     // null would clear a field on many APIs.
-    val value = Struct.getprop(src, from)
+    val value = Struct.getprop(src, from) ?: Struct.getprop(statesrc, from)
     if (null != value) {
       variables[name] = value
     }

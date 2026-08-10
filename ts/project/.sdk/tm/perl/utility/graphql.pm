@@ -68,12 +68,17 @@ $REGISTRY{graphql_body} = sub {
   my $gql = ProjectNameHelpers::gp($ctx->{point}, 'graphql');
   return undef unless ref($gql) eq 'HASH';
 
-  # reqmatch/reqdata hold the caller's arguments for this operation; which
-  # one depends on whether the op takes match or data input.
-  my $reqsrc = $ctx->{reqmatch};
-  $reqsrc = $ctx->{reqdata}
-    if $ctx->{op} && defined $ctx->{op}{input} && 'data' eq $ctx->{op}{input};
+  # reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+  # hold the entity's current state. Which pair depends on whether the op
+  # takes match or data input. A named variable falls back to the current
+  # state, so updating a loaded entity with just {title} still binds the
+  # stored id the mutation requires.
+  my $datainput =
+    $ctx->{op} && defined $ctx->{op}{input} && 'data' eq $ctx->{op}{input};
+  my $reqsrc = $datainput ? $ctx->{reqdata} : $ctx->{reqmatch};
+  my $datasrc = $datainput ? $ctx->{data} : $ctx->{match};
   $reqsrc = {} unless ref($reqsrc) eq 'HASH';
+  $datasrc = {} unless ref($datasrc) eq 'HASH';
 
   my %variables;
 
@@ -101,6 +106,7 @@ $REGISTRY{graphql_body} = sub {
     # Only send variables the caller actually supplied: sending an explicit
     # null would clear a field on many APIs.
     my $val = ProjectNameHelpers::gp($reqsrc, $from);
+    $val = ProjectNameHelpers::gp($datasrc, $from) unless defined $val;
     $variables{$name} = $val if defined $val;
   }
 

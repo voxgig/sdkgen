@@ -75,14 +75,20 @@ public static partial class SdkUtility
             return null;
         }
 
-        // reqmatch/reqdata hold the caller's arguments for this operation;
-        // which one depends on whether the op takes match or data input.
+        // reqmatch/reqdata hold the caller's arguments for THIS call;
+        // data/match hold the entity's current state. Which pair depends on
+        // whether the op takes match or data input. A named variable falls
+        // back to the current state, so updating a loaded entity with just
+        // {title} still binds the stored id the mutation requires.
         var reqsrc = ctx.Reqmatch;
+        var datasrc = ctx.Match;
         if (null != ctx.Op && "data" == ctx.Op.Input)
         {
             reqsrc = ctx.Reqdata;
+            datasrc = ctx.Data;
         }
         reqsrc ??= new Dictionary<string, object?>();
+        datasrc ??= new Dictionary<string, object?>();
 
         var variables = new Dictionary<string, object?>();
 
@@ -123,7 +129,8 @@ public static partial class SdkUtility
 
                 // Only send variables the caller actually supplied: sending
                 // an explicit null would clear a field on many APIs.
-                var val = Struct.GetProp(reqsrc, from);
+                var val = Struct.GetProp(reqsrc, from)
+                    ?? Struct.GetProp(datasrc, from);
                 if (null != val)
                 {
                     variables[name] = val;

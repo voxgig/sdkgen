@@ -74,14 +74,20 @@ voxgig_value* graphql_body_util(Context* ctx) {
   voxgig_value* gql = getp(ctx->point, "graphql");
   if (!voxgig_is_map(gql)) return voxgig_new_noval();
 
-  // reqmatch/reqdata hold the caller's arguments for this operation; which
-  // one depends on whether the op takes match or data input.
+  // reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+  // hold the entity's current state. Which pair depends on whether the op
+  // takes match or data input. A named variable falls back to the current
+  // state, so updating a loaded entity with just {title} still binds the
+  // stored id the mutation requires.
   voxgig_value* reqsrc = ctx->reqmatch;
+  voxgig_value* datasrc = ctx->mtch;
   if (ctx->op != NULL && ctx->op->input != NULL &&
       strcmp(ctx->op->input, "data") == 0) {
     reqsrc = ctx->reqdata;
+    datasrc = ctx->data;
   }
   if (!voxgig_is_map(reqsrc)) reqsrc = voxgig_new_map();
+  if (!voxgig_is_map(datasrc)) datasrc = voxgig_new_map();
 
   voxgig_value* variables = voxgig_new_map();
 
@@ -116,6 +122,9 @@ voxgig_value* graphql_body_util(Context* ctx) {
       // Only send variables the caller actually supplied: sending an
       // explicit null would clear a field on many APIs.
       voxgig_value* val = getp(reqsrc, from);
+      if (v_is_noval(val) || v_is_null(val)) {
+        val = getp(datasrc, from);
+      }
       if (!v_is_noval(val) && !v_is_null(val)) {
         setp(variables, name, v_share(val));
       }

@@ -76,15 +76,22 @@ pub fn graphql_body_util(ctx: &Rc<Context>) -> Value {
         return Value::Noval;
     }
 
-    // reqmatch/reqdata hold the caller's arguments for this operation;
-    // which one depends on whether the op takes match or data input.
+    // reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+    // hold the entity's current state. Which pair depends on whether the op
+    // takes match or data input. A named variable falls back to the current
+    // state, so updating a loaded entity with just {title} still binds the
+    // stored id the mutation requires.
     let op = ctx.op.borrow().clone();
-    let reqsrc = if op.input == "data" {
-        ctx.reqdata.borrow().clone()
+    let (reqsrc, datasrc) = if op.input == "data" {
+        (ctx.reqdata.borrow().clone(), ctx.data.borrow().clone())
     } else {
-        ctx.reqmatch.borrow().clone()
+        (ctx.reqmatch.borrow().clone(), ctx.mtch.borrow().clone())
     };
     let reqsrc = match reqsrc {
+        Value::Map(m) => Value::Map(m),
+        _ => Value::empty_map(),
+    };
+    let datasrc = match datasrc {
         Value::Map(m) => Value::Map(m),
         _ => Value::empty_map(),
     };
@@ -121,7 +128,10 @@ pub fn graphql_body_util(ctx: &Rc<Context>) -> Value {
 
             // Only send variables the caller actually supplied: sending an
             // explicit null would clear a field on many APIs.
-            let val = getp(&reqsrc, &from);
+            let mut val = getp(&reqsrc, &from);
+            if val.is_noval() || val.is_null() {
+                val = getp(&datasrc, &from);
+            }
             if !val.is_noval() && !val.is_null() {
                 setp(&variables, &name, val);
             }

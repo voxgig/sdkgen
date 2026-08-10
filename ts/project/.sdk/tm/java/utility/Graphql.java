@@ -80,14 +80,22 @@ final class Graphql {
       return null;
     }
 
-    // reqmatch/reqdata hold the caller's arguments for this operation;
-    // which one depends on whether the op takes match or data input.
+    // reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+    // hold the entity's current state. Which pair depends on whether the op
+    // takes match or data input. A named variable falls back to the current
+    // state, so updating a loaded entity with just {title} still binds the
+    // stored id the mutation requires.
     Map<String, Object> reqsrc = ctx.reqmatch;
+    Map<String, Object> datasrc = ctx.match;
     if (null != ctx.op && "data".equals(ctx.op.input)) {
       reqsrc = ctx.reqdata;
+      datasrc = ctx.data;
     }
     if (null == reqsrc) {
       reqsrc = new LinkedHashMap<>();
+    }
+    if (null == datasrc) {
+      datasrc = new LinkedHashMap<>();
     }
 
     Map<String, Object> variables = new LinkedHashMap<>();
@@ -123,6 +131,9 @@ final class Graphql {
       // Only send variables the caller actually supplied: sending an
       // explicit null would clear a field on many APIs.
       Object val = Struct.getprop(reqsrc, from, null);
+      if (null == val) {
+        val = Struct.getprop(datasrc, from, null);
+      }
       if (null != val) {
         variables.put(name, val);
       }

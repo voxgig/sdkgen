@@ -56,13 +56,18 @@ def graphql_body_util(ctx):
     if not isinstance(gql, dict):
         return None
 
-    # reqmatch/reqdata hold the caller's arguments for this operation;
-    # which one depends on whether the op takes match or data input.
-    reqsrc = ctx.reqmatch
+    # reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+    # hold the entity's current state. Which pair depends on whether the op
+    # takes match or data input. A named variable falls back to the current
+    # state, so updating a loaded entity with just {title} still binds the
+    # stored id the mutation requires.
+    reqsrc, datasrc = ctx.reqmatch, ctx.match
     if ctx.op is not None and getattr(ctx.op, "input", "match") == "data":
-        reqsrc = ctx.reqdata
+        reqsrc, datasrc = ctx.reqdata, ctx.data
     if not isinstance(reqsrc, dict):
         reqsrc = {}
+    if not isinstance(datasrc, dict):
+        datasrc = {}
 
     variables = {}
 
@@ -89,6 +94,8 @@ def graphql_body_util(ctx):
         # Only send variables the caller actually supplied: sending an
         # explicit null would clear a field on many APIs.
         val = vs.getprop(reqsrc, frm)
+        if val is None:
+            val = vs.getprop(datasrc, frm)
         if val is not None:
             variables[name] = val
 

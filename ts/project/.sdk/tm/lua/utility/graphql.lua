@@ -63,14 +63,22 @@ function M.body(ctx)
     return nil
   end
 
-  -- reqmatch/reqdata hold the caller's arguments for this operation; which
-  -- one depends on whether the op takes match or data input.
+  -- reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+  -- hold the entity's current state. Which pair depends on whether the op
+  -- takes match or data input. A named variable falls back to the current
+  -- state, so updating a loaded entity with just {title} still binds the
+  -- stored id the mutation requires.
   local reqsrc = ctx.reqmatch
+  local datasrc = ctx.match
   if ctx.op ~= nil and ctx.op.input == "data" then
     reqsrc = ctx.reqdata
+    datasrc = ctx.data
   end
   if type(reqsrc) ~= "table" then
     reqsrc = {}
+  end
+  if type(datasrc) ~= "table" then
+    datasrc = {}
   end
 
   local variables = {}
@@ -98,6 +106,9 @@ function M.body(ctx)
             -- Only send variables the caller actually supplied: sending an
             -- explicit null would clear a field on many APIs.
             local val = vs.getprop(reqsrc, from)
+            if val == nil then
+              val = vs.getprop(datasrc, from)
+            end
             if val ~= nil then
               variables[name] = val
             end

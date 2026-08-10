@@ -70,14 +70,22 @@ class ProjectNameGraphql
             return null;
         }
 
-        // reqmatch/reqdata hold the caller's arguments for this operation;
-        // which one depends on whether the op takes match or data input.
+        // reqmatch/reqdata hold the caller's arguments for THIS call;
+        // data/match hold the entity's current state. Which pair depends on
+        // whether the op takes match or data input. A named variable falls
+        // back to the current state, so updating a loaded entity with just
+        // {title} still binds the stored id the mutation requires.
         $reqsrc = $ctx->reqmatch;
+        $datasrc = $ctx->match;
         if (null !== $ctx->op && 'data' === $ctx->op->input) {
             $reqsrc = $ctx->reqdata;
+            $datasrc = $ctx->data;
         }
         if (!is_array($reqsrc)) {
             $reqsrc = [];
+        }
+        if (!is_array($datasrc)) {
+            $datasrc = [];
         }
 
         $variables = [];
@@ -112,6 +120,9 @@ class ProjectNameGraphql
             // Only send variables the caller actually supplied: sending an
             // explicit null would clear a field on many APIs.
             $val = \Voxgig\Struct\Struct::getprop($reqsrc, $from);
+            if (null === $val) {
+                $val = \Voxgig\Struct\Struct::getprop($datasrc, $from);
+            }
             if (null !== $val) {
                 $variables[$name] = $val;
             }

@@ -462,11 +462,16 @@ let graphql_error_code (gqlerr : value) : string =
 let graphql_body_util (ctx : ctx) : value =
   match getp ctx.c_point "graphql" with
   | Map _ as gql ->
-    (* reqmatch/reqdata hold the caller's arguments for this operation; which
-     * one depends on whether the op takes match or data input. *)
-    let reqsrc =
-      if ctx.c_op.op_input = "data" then ctx.c_reqdata else ctx.c_reqmatch in
+    (* reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+     * hold the entity's current state. Which pair depends on whether the op
+     * takes match or data input. A named variable falls back to the current
+     * state, so updating a loaded entity with just {title} still binds the
+     * stored id the mutation requires. *)
+    let datainput = ctx.c_op.op_input = "data" in
+    let reqsrc = if datainput then ctx.c_reqdata else ctx.c_reqmatch in
+    let datasrc = if datainput then ctx.c_data else ctx.c_match in
     let reqsrc = match reqsrc with Map _ as m -> m | _ -> empty_map () in
+    let datasrc = match datasrc with Map _ as m -> m | _ -> empty_map () in
     let variables = empty_map () in
     let varlist = match getp gql "vars" with List r -> !r | _ -> [] in
     List.iter (fun spec ->
@@ -489,6 +494,7 @@ let graphql_body_util (ctx : ctx) : value =
               (* Only send variables the caller actually supplied: sending an
                * explicit null would clear a field on many APIs. *)
               let v = getp reqsrc from in
+              let v = if is_nullish v then getp datasrc from else v in
               if not (is_nullish v) then setp variables name v
           end
         | _ -> ())

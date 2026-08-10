@@ -63,14 +63,22 @@ dynamic graphqlBody(dynamic ctx) {
     return null;
   }
 
-  // reqmatch/reqdata hold the caller's arguments for this operation; which
-  // one depends on whether the op takes match or data input.
+  // reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+  // hold the entity's current state. Which pair depends on whether the op
+  // takes match or data input. A named variable falls back to the current
+  // state, so updating a loaded entity with just {title} still binds the
+  // stored id the mutation requires.
   var reqsrc = ctx.reqmatch;
+  var datasrc = ctx.match;
   if (null != ctx.op && 'data' == ctx.op.input) {
     reqsrc = ctx.reqdata;
+    datasrc = ctx.data;
   }
   if (reqsrc is! Map) {
     reqsrc = <String, dynamic>{};
+  }
+  if (datasrc is! Map) {
+    datasrc = <String, dynamic>{};
   }
 
   final variables = <String, dynamic>{};
@@ -103,7 +111,7 @@ dynamic graphqlBody(dynamic ctx) {
 
       // Only send variables the caller actually supplied: sending an
       // explicit null would clear a field on many APIs.
-      final val = vs.getprop(reqsrc, from);
+      final val = vs.getprop(reqsrc, from) ?? vs.getprop(datasrc, from);
       if (null != val) {
         variables[name.toString()] = val;
       }

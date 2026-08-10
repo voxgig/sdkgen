@@ -1039,8 +1039,13 @@ pub fn graphql_body_util(ctx: *Context) Value {
     // reqmatch/reqdata hold the caller's arguments for this operation; which
     // one depends on whether the op takes match or data input.
     var reqsrc = ctx.reqmatch;
-    if (std.mem.eql(u8, ctx.op.input, "data")) reqsrc = ctx.reqdata;
+    var datasrc = ctx.mtch;
+    if (std.mem.eql(u8, ctx.op.input, "data")) {
+        reqsrc = ctx.reqdata;
+        datasrc = ctx.data;
+    }
     if (reqsrc != .object) reqsrc = h.omap();
+    if (datasrc != .object) datasrc = h.omap();
 
     const variables = h.omap();
 
@@ -1078,7 +1083,8 @@ pub fn graphql_body_util(ctx: *Context) Value {
 
             // Only send variables the caller actually supplied: sending an
             // explicit null would clear a field on many APIs.
-            const val = h.getp(reqsrc, from);
+            var val = h.getp(reqsrc, from);
+            if (h.is_noval(val) or h.is_null(val)) val = h.getp(datasrc, from);
             if (!h.is_noval(val) and !h.is_null(val)) {
                 h.setp(variables, name, val);
             }

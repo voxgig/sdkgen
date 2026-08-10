@@ -68,14 +68,20 @@ func graphqlBodyUtil(ctx *core.Context) any {
 		return nil
 	}
 
-	// reqmatch/reqdata hold the caller's arguments for this operation;
-	// which one depends on whether the op takes match or data input.
-	reqsrc := ctx.Reqmatch
+	// reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+	// hold the entity's current state. Which pair depends on whether the op
+	// takes match or data input. A named variable falls back to the current
+	// state, so updating a loaded entity with just {title} still binds the
+	// stored id the mutation requires.
+	reqsrc, datasrc := ctx.Reqmatch, ctx.Match
 	if ctx.Op != nil && ctx.Op.Input == "data" {
-		reqsrc = ctx.Reqdata
+		reqsrc, datasrc = ctx.Reqdata, ctx.Data
 	}
 	if reqsrc == nil {
 		reqsrc = map[string]any{}
+	}
+	if datasrc == nil {
+		datasrc = map[string]any{}
 	}
 
 	variables := map[string]any{}
@@ -106,7 +112,11 @@ func graphqlBodyUtil(ctx *core.Context) any {
 
 		// Only send variables the caller actually supplied: sending an
 		// explicit null would clear a field on many APIs.
-		if val := vs.GetProp(reqsrc, from); val != nil {
+		val := vs.GetProp(reqsrc, from)
+		if val == nil {
+			val = vs.GetProp(datasrc, from)
+		}
+		if val != nil {
 			variables[name] = val
 		}
 	}

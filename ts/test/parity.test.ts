@@ -67,8 +67,8 @@ const UNCOVERED = ['ocaml', 'scala']
 // Targets exposing the raw-access escape hatch (direct/graphql). See the
 // 'raw-access gate parity' suite below.
 const RAW_ACCESS = [
-  'c', 'clojure', 'cpp', 'csharp', 'dart', 'elixir', 'go', 'java', 'js',
-  'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala',
+  'c', 'clojure', 'cpp', 'csharp', 'dart', 'elixir', 'go', 'haskell', 'java',
+  'js', 'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala',
   'swift', 'ts', 'zig',
 ]
 
@@ -258,10 +258,9 @@ describe('graphql transport parity', () => {
 // hatch makes allow.op advisory, since a caller denied `remove` can still
 // DELETE through `direct`.
 //
-// Two targets ship no raw-access surface at all. They are listed rather than
-// inferred, so adding `direct()` to one of them fails here until its gate
-// lands with it.
-const NO_RAW_ACCESS = ['haskell', 'lean']
+// One target ships no raw-access surface at all. It is listed rather than
+// inferred, so adding `direct` to it fails here until its gate lands with it.
+const NO_RAW_ACCESS = ['lean']
 
 describe('raw-access gate parity', () => {
 
@@ -305,10 +304,38 @@ describe('raw-access gate parity', () => {
   })
 
   test('targets without raw access really have none', () => {
-    const nowRaw = NO_RAW_ACCESS.filter((lang) =>
-      clientLines(lang).some((l) => /\bdirect\s*\(/.test(l)))
+    // Search the TEMPLATE tree only: the component tree carries `direct(`
+    // inside README and test string literals, which are not a surface.
+    // Match a call OR an ML-style signature — haskell declares
+    // `direct :: Client -> Value -> IO Value` and no paren ever appears, so
+    // a call-syntax regex silently cleared a target whose escape hatch was
+    // wide open.
+    const nowRaw = NO_RAW_ACCESS.filter((lang) => {
+      const dir = Path.join(TM, lang)
+      const hits: string[] = []
+      const walk = (d: string) => {
+        if (!existsSync(d)) {
+          return
+        }
+        for (const e of readdirSync(d, { withFileTypes: true })) {
+          const p = Path.join(d, e.name)
+          if (e.isDirectory()) {
+            walk(p)
+          }
+          else {
+            for (const l of readFileSync(p, 'utf8').split('\n')) {
+              if (!COMMENT.test(l) && /(^|[^A-Za-z0-9_])(sdk_)?[Dd]irect\s*(\(|::)/.test(l)) {
+                hits.push(l)
+              }
+            }
+          }
+        }
+      }
+      walk(dir)
+      return 0 < hits.length
+    })
     deepStrictEqual(nowRaw, [],
-      'these targets gained a direct() surface — move them to RAW_ACCESS ' +
+      'these targets gained a direct surface — move them to RAW_ACCESS ' +
       'and gate it on allow.op, or the SDK option becomes advisory')
   })
 

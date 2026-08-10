@@ -520,10 +520,14 @@
     (when (vs/ismap gql)
       ;; reqmatch/reqdata hold the caller's arguments for this operation;
       ;; which one depends on whether the op takes match or data input.
-      (let [reqsrc (let [r (if (= "data" (op-input (oget ctx :op)))
-                             (oget ctx :reqdata)
-                             (oget ctx :reqmatch))]
+      (let [datainput (= "data" (op-input (oget ctx :op)))
+            reqsrc (let [r (if datainput (oget ctx :reqdata) (oget ctx :reqmatch))]
                      (if (vs/ismap r) r (vs/jm)))
+            ;; data/match hold the entity's current state; a named variable
+            ;; falls back to it, so updating a loaded entity with just
+            ;; {title} still binds the stored id the mutation requires.
+            datasrc (let [d (if datainput (oget ctx :data) (oget ctx :match))]
+                      (if (vs/ismap d) d (vs/jm)))
             variables (vs/jm)
             varlist (let [v (vs/getprop gql "vars")] (if (vs/islist v) v (vs/jt)))]
         (doseq [spec (vec varlist)]
@@ -542,7 +546,8 @@
                     (.put ^java.util.Map variables name body))
                   ;; Only send variables the caller actually supplied: sending
                   ;; an explicit null would clear a field on many APIs.
-                  (let [val (vs/getprop reqsrc from)]
+                  (let [val (let [v (vs/getprop reqsrc from)]
+                              (if (some? v) v (vs/getprop datasrc from)))]
                     (when (some? val) (.put ^java.util.Map variables name val))))))))
         (vs/jm "query" (vs/getprop gql "doc") "variables" variables)))))
 

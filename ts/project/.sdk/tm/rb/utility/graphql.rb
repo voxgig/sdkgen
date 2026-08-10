@@ -58,11 +58,16 @@ module ProjectNameUtilities
     gql = VoxgigStruct.getprop(ctx.point, 'graphql')
     next nil unless gql.is_a?(Hash)
 
-    # reqmatch/reqdata hold the caller's arguments for this operation;
-    # which one depends on whether the op takes match or data input.
-    reqsrc = ctx.reqmatch
-    reqsrc = ctx.reqdata if ctx.op && 'data' == ctx.op.input
+    # reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+    # hold the entity's current state. Which pair depends on whether the op
+    # takes match or data input. A named variable falls back to the current
+    # state, so updating a loaded entity with just {title} still binds the
+    # stored id the mutation requires.
+    datainput = ctx.op && 'data' == ctx.op.input
+    reqsrc = datainput ? ctx.reqdata : ctx.reqmatch
+    datasrc = datainput ? ctx.data : ctx.match
     reqsrc = {} unless reqsrc.is_a?(Hash)
+    datasrc = {} unless datasrc.is_a?(Hash)
 
     variables = {}
 
@@ -87,6 +92,7 @@ module ProjectNameUtilities
       # Only send variables the caller actually supplied: sending an
       # explicit null would clear a field on many APIs.
       val = VoxgigStruct.getprop(reqsrc, from)
+      val = VoxgigStruct.getprop(datasrc, from) if val.nil?
       variables[name] = val unless val.nil?
     end
 

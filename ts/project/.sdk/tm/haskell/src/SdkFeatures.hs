@@ -1074,8 +1074,76 @@ prepare client fetchargs = do
   (fd, merr2) <- makeFetchDefUtil ctx
   case merr2 of Just e -> throwIO (SdkException e); Nothing -> pure fd
 
+-- Is this raw-access op permitted by the SDK's allow.op option?
+opAllowed :: Client -> String -> IO Bool
+opAllowed client op = do
+  opts <- readIORef (clOptions client)
+  allow <- getpathS opts "allow.op"
+  pure (case allow of VStr s -> substrContains s op; _ -> False)
+
+opDenied :: Client -> String -> IO Value
+opDenied client op = do
+  opts <- readIORef (clOptions client)
+  allow <- getpathS opts "allow.op"
+  let a = case allow of VStr s -> s; _ -> ""
+  jo [ ("ok", VBool False)
+     , ("err", VStr ("ProjectNameSDK: " ++ op ++ ": operation not allowed by"
+                     ++ " SDK option allow.op value: \"" ++ a ++ "\"")) ]
+
+-- Raw endpoint access is operator-controllable, like every entity op.
+-- Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+-- either one reaches the same endpoint.
 direct :: Client -> Value -> IO Value
 direct client fetchargs = do
+  allowed <- opAllowed client "direct"
+  if not allowed then opDenied client "direct" else rawRequest client fetchargs
+
+-- Raw GraphQL access: the pressure valve that makes the generated surface's
+-- deliberate omissions (per-call selection sets, typed filter builders,
+-- batching, subscriptions) livable — the whole schema stays reachable.
+--
+-- Thin wrapper over the same prepare/fetch path direct uses, with the one
+-- thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP 200 as
+-- a top-level `errors` array, so status alone would report a failed query as
+-- ok.
+--
+-- NOTE: like direct, this bypasses the feature pipeline — no retry, ratelimit
+-- or paging features apply.
+graphql :: Client -> String -> Value -> Value -> IO Value
+graphql client query variables ctrl = do
+  allowed <- opAllowed client "graphql"
+  if not allowed then opDenied client "graphql" else do
+    vars <- case variables of VMap _ -> pure variables; _ -> emptyMap
+    ctl <- case ctrl of VMap _ -> pure ctrl; _ -> emptyMap
+    headers <- jo [("content-type", VStr "application/json")]
+    body <- jo [("query", VStr query), ("variables", vars)]
+    fa <- jo [ ("method", VStr "POST"), ("headers", headers)
+             , ("body", body), ("ctrl", ctl) ]
+    res <- rawRequest client fa
+
+    -- Errors are read BEFORE any status check: a GraphQL parse or validation
+    -- failure comes back as HTTP 400 carrying the standard { errors: [...] }
+    -- body, and the raw path represents a non-2xx as ok:False with no err —
+    -- so returning early on status would discard the server's own
+    -- diagnostics, which are the only useful part of that response.
+    ev <- getpathS res "data.errors"
+    errors <- case ev of VList _ -> listItems ev; _ -> pure []
+    case errors of
+      [] -> pure res
+      (firsterr : _) -> do
+        m0 <- getStrD firsterr "message" ""
+        let msg = if null m0 then "graphql error" else m0
+        setp res "ok" (VBool False)
+        setp res "err" (VStr ("ProjectNameSDK: graphql: " ++ msg))
+        setp res "graphql" ev
+        pure res
+
+-- Ungated request path shared by direct and graphql, each of which checks its
+-- own allow.op token first. Separate, rather than a flag on fetchargs: a
+-- caller-supplied marker would let anyone opt straight back out of the gate
+-- by passing it.
+rawRequest :: Client -> Value -> IO Value
+rawRequest client fetchargs = do
   let u = clUtility client
   fa <- case fetchargs of VNoval -> emptyMap; _ -> pure fetchargs
   res <- try (prepare client fa) :: IO (Either SdkException Value)
