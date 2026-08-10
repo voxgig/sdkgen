@@ -39,6 +39,14 @@ function loadTemplate(file: string): any {
     if (spec.endsWith('GraphqlUtility')) {
       return loadTemplate(Path.join(TM_JS, 'GraphqlUtility.js'))
     }
+    if (spec.endsWith('/types') || '../types' === spec) {
+      return loadTemplate(Path.join(TM_TS, '..', 'Spec.ts'))
+    }
+    if (spec.startsWith('.')) {
+      const rp = Path.resolve(Path.dirname(file), spec)
+      return loadTemplate(rp.endsWith('.ts') || rp.endsWith('.js') ? rp :
+        rp + (file.endsWith('.ts') ? '.ts' : '.js'))
+    }
     return require(spec)
   })
   return mod.exports
@@ -372,6 +380,108 @@ describe('graphql-paging', () => {
 
     assert.equal(spec.query.cursor, 'C')
     assert.equal(spec.query.limit, 10)
+  })
+
+})
+
+
+// The makeSpec integration: a GraphQL point must produce a POST to the
+// single endpoint carrying the operation, with no path or query — and must
+// leave the HTTP path completely unchanged.
+describe('graphql-makespec', () => {
+
+  const gql = loadTemplate(Path.join(TM_TS, 'GraphqlUtility.ts'))
+  const makeSpec = loadTemplate(Path.join(TM_TS, 'MakeSpecUtility.ts')).makeSpec
+
+  // Stand-ins for the prepare* steps makeSpec composes; each records that it
+  // ran so the test can assert the graphql branch still applies auth/headers.
+  function makeUtility(calls: string[]) {
+    return {
+      struct,
+      graphqlBody: gql.graphqlBody,
+      GRAPHQL_CONTENT_TYPE: gql.GRAPHQL_CONTENT_TYPE,
+      prepareMethod: (ctx: any) => (calls.push('method'), ctx.point.method || 'GET'),
+      prepareParams: () => (calls.push('params'), {}),
+      prepareQuery: () => (calls.push('query'), {}),
+      prepareHeaders: () => (calls.push('headers'), {}),
+      prepareBody: () => (calls.push('body'), { rest: true }),
+      preparePath: () => (calls.push('path'), '/rest/path'),
+      prepareAuth: (ctx: any) => (calls.push('auth'), ctx.spec),
+    }
+  }
+
+  function specCtx(point: any, utility: any, reqmatch?: any) {
+    return {
+      out: {},
+      point,
+      op: { name: 'load', input: 'match' },
+      reqmatch: reqmatch || {},
+      match: {},
+      ctrl: {},
+      utility,
+      options: {
+        base: 'https://api.example.test/graphql',
+        prefix: '', suffix: '',
+        allow: { method: 'GET,PUT,POST,PATCH,DELETE,OPTIONS' },
+      },
+      error: (code: string, msg: string) => Object.assign(new Error(msg), { code }),
+    }
+  }
+
+
+  test('graphql-point-posts-operation', () => {
+    const calls: string[] = []
+    const ctx: any = specCtx(LOAD_POINT, makeUtility(calls), { id: 'i1' })
+
+    const spec: any = makeSpec(ctx)
+
+    assert.ok(!(spec instanceof Error), String(spec && spec.message))
+    assert.equal(spec.method, 'POST')
+    assert.deepStrictEqual(spec.body, {
+      query: LOAD_POINT.graphql.doc,
+      variables: { id: 'i1' },
+    })
+    assert.equal(spec.path, '')
+    assert.equal(spec.headers['content-type'], 'application/json')
+
+    // Auth and headers still run on the graphql path...
+    assert.ok(calls.includes('auth'))
+    assert.ok(calls.includes('headers'))
+    // ...but prepareBody does NOT: it only emits a body for data-input ops,
+    // while a GraphQL load must still post one.
+    assert.ok(!calls.includes('body'))
+    assert.ok(!calls.includes('path'))
+  })
+
+
+  test('http-point-unchanged', () => {
+    const calls: string[] = []
+    const point = { kind: 'http', method: 'GET', parts: ['api', 'thing'] }
+    const ctx: any = specCtx(point, makeUtility(calls))
+
+    const spec: any = makeSpec(ctx)
+
+    assert.ok(!(spec instanceof Error))
+    assert.equal(spec.method, 'GET')
+    assert.deepStrictEqual(spec.body, { rest: true })
+    assert.equal(spec.path, '/rest/path')
+    assert.equal(spec.headers['content-type'], undefined)
+    assert.ok(calls.includes('body'))
+    assert.ok(calls.includes('path'))
+  })
+
+
+  // A point with no explicit kind is an ordinary HTTP point: every existing
+  // OpenAPI-derived model must keep working untouched.
+  test('missing-kind-defaults-http', () => {
+    const calls: string[] = []
+    const ctx: any = specCtx({ method: 'GET', parts: [] }, makeUtility(calls))
+
+    const spec: any = makeSpec(ctx)
+
+    assert.ok(!(spec instanceof Error))
+    assert.deepStrictEqual(spec.body, { rest: true })
+    assert.ok(calls.includes('body'))
   })
 
 })
