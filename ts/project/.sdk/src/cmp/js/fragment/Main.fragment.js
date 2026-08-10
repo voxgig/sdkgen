@@ -138,21 +138,29 @@ class ProjectNameSDK {
   }
 
 
+  // Raw endpoint access is operator-controllable, like every entity op.
+  // Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+  // either one reaches the same endpoint.
   async direct(fetchargs) {
-    const utility = this._utility
-
-    // Raw endpoint access is operator-controllable, like every entity op.
-    // (`graphql` calls through here with $internal set, having already
-    // checked its own token — blocking raw schema access therefore means
-    // denying BOTH tokens, since either one reaches the same endpoint.)
-    if (!(fetchargs || {}).$internal &&
-      !this._options.allow.op.includes('direct')) {
+    if (!this._options.allow.op.includes('direct')) {
       return {
         ok: false,
         err: new Error('ProjectNameSDK: direct: operation not allowed by' +
           ' SDK option allow.op value: "' + this._options.allow.op + '"'),
       }
     }
+
+    return this._rawRequest(fetchargs)
+  }
+
+
+  // Ungated request path shared by direct() and graphql(), each of which
+  // checks its own allow.op token first. Private, rather than a flag on
+  // fetchargs: a caller-supplied marker would let anyone opt straight back
+  // out of the gate by passing it.
+  async _rawRequest(fetchargs) {
+    const utility = this._utility
+
     const fetcher = utility.fetcher
     const makeContext = utility.makeContext
 
@@ -216,18 +224,22 @@ class ProjectNameSDK {
       }
     }
 
-    const res = await this.direct({
+    const res = await this._rawRequest({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: { query, variables: variables || {} },
       ctrl,
-      $internal: true,
     })
 
-    if (res instanceof Error || false === res.ok) {
+    if (res instanceof Error) {
       return res
     }
 
+    // Errors are read BEFORE any status check: a GraphQL parse or validation
+    // failure comes back as HTTP 400 carrying the standard { errors: [...] }
+    // body, and the raw path represents a non-2xx as { ok: false } with no
+    // err — so returning early on status would discard the server's own
+    // diagnostics, which are the only useful part of that response.
     const errors = null == res.data ? undefined : res.data.errors
 
     if (null != errors && Array.isArray(errors) && 0 < errors.length) {

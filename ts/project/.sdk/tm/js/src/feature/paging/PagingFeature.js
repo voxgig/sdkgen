@@ -79,6 +79,10 @@ class PagingFeature extends BaseFeature {
     const headers = result.headers || {}
     const body = result.body
 
+    // Set when the response states hasMore outright, rather than leaving it
+    // to be inferred from the presence of a cursor.
+    let explicitMore = false
+
     const paging = {
       page: this._num(this._header(headers, 'x-page')),
       totalCount: this._num(this._header(headers, 'x-total-count')),
@@ -114,7 +118,10 @@ class PagingFeature extends BaseFeature {
       const more = struct.getpath(conn, page.more)
 
       if (null != cursor) { paging.cursor = cursor }
-      if ('boolean' === typeof more) { paging.hasMore = more }
+      if ('boolean' === typeof more) {
+        paging.hasMore = more
+        explicitMore = true
+      }
     }
 
     // Body-level cursors.
@@ -122,11 +129,21 @@ class PagingFeature extends BaseFeature {
       if (null != body.next) { paging.next = paging.next || body.next }
       if (null != body.cursor) { paging.cursor = body.cursor }
       if (null != body.nextCursor) { paging.cursor = body.nextCursor }
-      if ('boolean' === typeof body.hasMore) { paging.hasMore = body.hasMore }
+      if ('boolean' === typeof body.hasMore) {
+        paging.hasMore = body.hasMore
+        explicitMore = true
+      }
     }
 
-    paging.hasMore = paging.hasMore ||
-      null != paging.next || null != paging.cursor || null != paging.nextPage
+    // Cursor presence only INFERS another page. When the server stated the
+    // answer outright — relay's `hasNextPage: false`, or a body `hasMore` —
+    // that wins: a final page normally carries both an end cursor and
+    // hasNextPage false, and inferring from the cursor there would send the
+    // caller back for a page that does not exist, forever.
+    if (!explicitMore) {
+      paging.hasMore = paging.hasMore ||
+        null != paging.next || null != paging.cursor || null != paging.nextPage
+    }
 
     result.paging = paging
 

@@ -45,6 +45,11 @@ function makeSpec(ctx) {
     // GraphQL op posts one, including load/list/remove.
     ctx.spec.body = utility.graphqlBody(ctx)
     ctx.spec.path = ''
+    // prepareQuery already copied the op's match arguments into the query
+    // string. Those same values are bound as operation variables, so leaving
+    // them would send /graphql?id=i1 — duplicating the argument, leaking it
+    // into the URL, and failing servers that reject unknown query params.
+    ctx.spec.query = {}
     ctx.spec.headers['content-type'] = utility.GRAPHQL_CONTENT_TYPE
   }
   else {

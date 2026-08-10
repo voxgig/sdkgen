@@ -353,6 +353,33 @@ describe('graphql-paging', () => {
   })
 
 
+  // The last Relay page normally carries BOTH an end cursor and
+  // hasNextPage: false. Inferring hasMore from the cursor there would send
+  // the caller back for a page that does not exist, forever.
+  test('inbound-explicit-false-beats-cursor', () => {
+    const f = makeFeature()
+    const result: any = {
+      body: {
+        data: {
+          issues: {
+            nodes: [{ id: 'i9' }],
+            pageInfo: { endCursor: 'LAST', hasNextPage: false },
+          },
+        },
+      },
+    }
+    const ctx = pagingCtx(
+      { ...LIST_POINT, graphql: { ...LIST_POINT.graphql,
+        page: { ...LIST_POINT.graphql.page, connpath: 'data.issues' } } },
+      { result })
+
+    f.PreResult(ctx)
+
+    assert.equal(result.paging.cursor, 'LAST')
+    assert.equal(result.paging.hasMore, false)
+  })
+
+
   test('inbound-last-page-has-no-more', () => {
     const f = makeFeature()
     const result: any = {
@@ -443,6 +470,11 @@ describe('graphql-makespec', () => {
     })
     assert.equal(spec.path, '')
     assert.equal(spec.headers['content-type'], 'application/json')
+
+    // prepareQuery ran and its output must be discarded: the same values are
+    // already bound as operation variables, so leaving them would send
+    // /graphql?id=i1 and duplicate the argument into the URL.
+    assert.deepStrictEqual(spec.query, {})
 
     // Auth and headers still run on the graphql path...
     assert.ok(calls.includes('auth'))
