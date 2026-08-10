@@ -164,6 +164,84 @@ describe('cross-language corpus coverage', () => {
 })
 
 
+// GraphQL is a second TRANSPORT, not a second SDK surface: apidef emits
+// `kind: 'graphql'` points carrying a precomputed document, and every target
+// must branch on that kind in makeSpec and lift the top-level `errors` array
+// in makeResponse. A target that ships the REST path only produces an SDK
+// that silently posts REST-shaped requests at a GraphQL endpoint and reports
+// server-side failures as success (GraphQL errors ride HTTP 200).
+//
+// Twelve of the twenty-three targets have no toolchain in CI, so a compile
+// cannot catch a target left behind — this manifest can. It is a DRIFT guard,
+// not a proof of correctness: it asserts each target still carries the four
+// pieces of the transport, in whatever the language's idiom names them.
+describe('graphql transport parity', () => {
+
+  // Comment lines are stripped before matching, so a target cannot satisfy
+  // the guard with the doc-comment every port copies from the reference.
+  const COMMENT = /^\s*(\/\/|#|--|\*|;|\/\*|\(\*|"""|''')/
+
+  function codeLines(lang: string): { file: string, lines: string[], src: string }[] {
+    const out: { file: string, lines: string[], src: string }[] = []
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = Path.join(dir, e.name)
+        if (e.isDirectory()) {
+          if ('node_modules' !== e.name) {
+            walk(p)
+          }
+        }
+        else {
+          const src = readFileSync(p, 'utf8')
+          out.push({
+            file: p,
+            src,
+            lines: src.split('\n').filter((l) => !COMMENT.test(l)),
+          })
+        }
+      }
+    }
+    walk(Path.join(TM, lang))
+    return out
+  }
+
+  for (const lang of sdkTargets()) {
+    test(`${lang}: carries the graphql transport`, () => {
+      const files = codeLines(lang)
+      const anyLine = (re: RegExp) =>
+        files.some((f) => f.lines.some((l) => re.test(l)))
+
+      // The document/variables builder, wired into the makeSpec kind branch.
+      ok(anyLine(/graphql[_.:-]?body/i),
+        `${lang}: no graphql body builder — makeSpec cannot post a document`)
+
+      // The failure lift, wired into makeResponse before transformResponse.
+      ok(anyLine(/graphql[_.:-]?errors/i),
+        `${lang}: no graphql error lift — a GraphQL failure under HTTP 200 ` +
+        `would be reported to the caller as success`)
+
+      // The transport's own error code, produced by the extensions mapping.
+      const mapping = files.filter((f) => /request_graphql/.test(f.src))
+      ok(0 < mapping.length,
+        `${lang}: no request_graphql code — GraphQL failures cannot be told ` +
+        `apart from HTTP ones by a caller switching on err.code`)
+
+      // Variable binding, and the SDK-side `$action` discriminator stripped
+      // before the input object is sent as a variable.
+      ok(mapping.some((f) => /variables/.test(f.src) && /\$action/.test(f.src)),
+        `${lang}: the graphql body builder does not bind variables and strip ` +
+        `$action — command mutations would send the point discriminator`)
+
+      // The kind branch overrides the content type on the same line it names
+      // the transport, which is only true when the branch exists.
+      ok(anyLine(/(?=.*content.?type)(?=.*graphql)/i),
+        `${lang}: makeSpec does not set the graphql content type — the kind ` +
+        `branch is missing`)
+    })
+  }
+})
+
+
 // The reference pair carries the behavioural feature suite and the typed-model
 // assertions; everything else is checked against it. Guard the invariants that
 // make "ts/js are the reference" true rather than aspirational.
