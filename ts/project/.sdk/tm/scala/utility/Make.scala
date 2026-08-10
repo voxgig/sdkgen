@@ -198,7 +198,7 @@ object MakeOptions {
         + "\"headers\": { \"`$CHILD`\": \"`$STRING`\" },"
         + "\"allow\": {"
         + "  \"method\": \"GET,PUT,POST,PATCH,DELETE,OPTIONS\","
-        + "  \"op\": \"create,update,load,list,remove,command,direct\""
+        + "  \"op\": \"create,update,load,list,remove,command,direct,graphql\""
         + "},"
         + "\"entity\": { \"`$CHILD`\": {"
         + "  \"`$OPEN`\": true, \"active\": false, \"alias\": {} } },"

@@ -763,7 +763,7 @@ let opt_spec_value () : value =
     ("auth", jo [("prefix", Str "")]);
     ("headers", jo [("`$CHILD`", Str "`$STRING`")]);
     ("allow", jo [("method", Str "GET,PUT,POST,PATCH,DELETE,OPTIONS");
-                  ("op", Str "create,update,load,list,remove,command,direct")]);
+                  ("op", Str "create,update,load,list,remove,command,direct,graphql")]);
     ("entity", jo [("`$CHILD`", jo [("`$OPEN`", Bool true); ("active", Bool false); ("alias", empty_map ())])]);
     ("feature", jo [("`$CHILD`", jo [("`$OPEN`", Bool true); ("active", Bool false)])]);
     ("utility", empty_map ());

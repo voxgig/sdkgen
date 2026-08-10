@@ -350,7 +350,7 @@ pub fn make_options_util(ctx: *Context) Value {
         .{ "headers", h.jo(&.{.{ "`$CHILD`", h.vstr("`$STRING`") }}) },
         .{ "allow", h.jo(&.{
             .{ "method", h.vstr("GET,PUT,POST,PATCH,DELETE,OPTIONS") },
-            .{ "op", h.vstr("create,update,load,list,remove,command,direct") },
+            .{ "op", h.vstr("create,update,load,list,remove,command,direct,graphql") },
         }) },
         .{ "entity", h.jo(&.{.{ "`$CHILD`", h.jo(&.{
             .{ "`$OPEN`", h.vbool(true) },

@@ -64,7 +64,7 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
             "allow",
             jo(vec![
                 ("method", Value::str("GET,PUT,POST,PATCH,DELETE,OPTIONS")),
-                ("op", Value::str("create,update,load,list,remove,command,direct")),
+                ("op", Value::str("create,update,load,list,remove,command,direct,graphql")),
             ]),
         ),
         (
