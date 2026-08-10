@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from fetch import drain, _next_ctrl, _last_paging, MAX_PAGES_DEFAULT
+from projectname_data.fetch import drain, _next_ctrl, _last_paging, MAX_PAGES_DEFAULT
 
 
 class FakeClient:

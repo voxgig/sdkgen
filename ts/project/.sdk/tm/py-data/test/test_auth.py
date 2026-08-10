@@ -6,8 +6,8 @@ import os
 
 import pytest
 
-import auth
-from auth import resolve, from_env, missing_token_message, missing_base_message, NOT_FOUND
+from projectname_data import auth
+from projectname_data.auth import resolve, from_env, missing_token_message, missing_base_message, NOT_FOUND
 
 
 class TestResolve:

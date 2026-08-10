@@ -22,6 +22,16 @@ Deltas from the original proposal, all found during implementation:
 - **Example columns are chosen, not taken first.** A groupby example on the
   alphabetically-first field lands on an object column (dicts/lists) often
   enough to matter; `exampleGroupField` prefers a required string/boolean.
+- **The runtime modules live inside the package, not at top level.** They were
+  first emitted flat as `auth.py` / `fetch.py` / `frames.py`. Every one of those
+  is both a real PyPI distribution *and* exactly the kind of scratch file an
+  analyst leaves beside a notebook — and in Colab the working directory is on
+  `sys.path`, so a stray `auth.py` shadowed ours and `data()` died with
+  `module 'auth' has no attribute 'resolve'`. Everything internal now sits
+  behind the distinctive `<name>_data.` prefix; the public import is unchanged.
+  (Note the base `py` target still ships flat `core`/`entity`/`utility`/
+  `feature` and remains vulnerable to exactly this — a single `utility.py` in
+  the cwd kills it. Tracked separately; it is not a py-data problem to fix.)
 - **`list()` and `load()` do not return the same shape.** `list()` yields
   ENTITY OBJECTS whose record is reachable only through the public
   `data_get()`; `load()` yields a plain dict. `to_record` must unwrap the

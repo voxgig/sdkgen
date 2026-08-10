@@ -11,7 +11,7 @@ import dataclasses
 import pandas as pd
 import pytest
 
-from frames import (
+from projectname_data.frames import (
     build_frame,
     to_record,
     to_records,
