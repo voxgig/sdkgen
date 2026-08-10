@@ -35,6 +35,12 @@ pub fn make_response_util(
     crate::utility::result_basic::result_basic_util(ctx);
     crate::utility::result_headers::result_headers_util(ctx);
     crate::utility::result_body::result_body_util(ctx);
+
+    // GraphQL reports failures as a top-level `errors` array under HTTP
+    // 200, so result_basic's status check never sees them. Lift them here,
+    // before the response transform tries to unwrap data that is not there.
+    crate::utility::graphql::graphql_errors_util(ctx);
+
     crate::utility::transform_response::transform_response_util(ctx);
 
     {

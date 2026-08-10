@@ -32,6 +32,8 @@ public final class Register {
     u.prepareParams = PrepareParams::prepareParams;
     u.preparePath = PreparePath::preparePath;
     u.prepareQuery = PrepareQuery::prepareQuery;
+    u.graphqlBody = Graphql::graphqlBody;
+    u.graphqlErrors = Graphql::graphqlErrors;
     u.resultBasic = ResultBasic::resultBasic;
     u.resultBody = ResultBody::resultBody;
     u.resultHeaders = ResultHeaders::resultHeaders;

@@ -28,6 +28,7 @@ pub mod prepare_headers;
 pub mod prepare_method;
 pub mod prepare_params;
 pub mod prepare_path;
+pub mod graphql;
 pub mod prepare_query;
 pub mod result_basic;
 pub mod result_body;
