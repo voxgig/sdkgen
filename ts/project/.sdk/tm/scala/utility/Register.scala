@@ -29,6 +29,8 @@ object Register {
     u.prepareParams = (ctx) => PrepareParams.prepareParams(ctx)
     u.preparePath = (ctx) => PreparePath.preparePath(ctx)
     u.prepareQuery = (ctx) => PrepareQuery.prepareQuery(ctx)
+    u.graphqlBody = (ctx) => Graphql.graphqlBody(ctx)
+    u.graphqlErrors = (ctx) => Graphql.graphqlErrors(ctx)
     u.resultBasic = (ctx) => ResultBasic.resultBasic(ctx)
     u.resultBody = (ctx) => ResultBody.resultBody(ctx)
     u.resultHeaders = (ctx) => ResultHeaders.resultHeaders(ctx)

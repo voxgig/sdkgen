@@ -32,6 +32,8 @@ public static partial class SdkUtility
         u.PrepareParams = PrepareParamsUtil;
         u.PreparePath = PreparePathUtil;
         u.PrepareQuery = PrepareQueryUtil;
+        u.GraphqlBody = GraphqlBodyUtil;
+        u.GraphqlErrors = GraphqlErrorsUtil;
         u.ResultBasic = ResultBasicUtil;
         u.ResultBody = ResultBodyUtil;
         u.ResultHeaders = ResultHeadersUtil;

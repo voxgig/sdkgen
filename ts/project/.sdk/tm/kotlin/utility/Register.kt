@@ -30,6 +30,8 @@ object Register {
     u.prepareParams = ::prepareParams
     u.preparePath = ::preparePath
     u.prepareQuery = ::prepareQuery
+    u.graphqlBody = ::graphqlBody
+    u.graphqlErrors = ::graphqlErrors
     u.resultBasic = ::resultBasic
     u.resultBody = ::resultBody
     u.resultHeaders = ::resultHeaders

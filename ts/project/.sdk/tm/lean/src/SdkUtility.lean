@@ -329,6 +329,117 @@ def prepareBody (ctx : Value) : SIO Value := do
   else pure .noval
 
 -- ---------------------------------------------------------------------------
+-- graphql (transport)
+--
+-- GraphQL transport. API-INDEPENDENT: every GraphQL SDK this generator
+-- produces uses this code unchanged. The API-specific part — which operations
+-- exist and what each one's document is — is model data, computed once by
+-- apidef and emitted into Config.
+--
+-- Two jobs:
+--
+--   graphqlBody   — build { query, variables } for a point, binding the op's
+--                   arguments to the document's declared variables.
+--
+--   graphqlErrors — lift a GraphQL failure into an SDK error. GraphQL reports
+--                   failures as a top-level `errors` array under HTTP 200, so
+--                   the status-driven path in resultBasic never sees them.
+-- ---------------------------------------------------------------------------
+
+/-- Content type every GraphQL-over-HTTP request uses. -/
+def graphqlContentType : String := "application/json"
+
+private def hasSub (hay needle : String) : Bool :=
+  1 < (hay.splitOn needle).length
+
+/-- Map a GraphQL error to the same error codes the HTTP path produces, so a
+caller handles auth or rate limiting identically on both transports. Servers
+put the machine-readable code in `extensions.code`; Linear-style APIs use
+`extensions.type`. -/
+def graphqlErrorCode (gqlerr : Value) : SIO String := do
+  let ext ← gp gqlerr "extensions"
+  let c ← gpS ext "code"
+  let code ← if c == "" then gpS ext "type" else pure c
+  let raw := code.toUpper
+  if hasSub raw "AUTH" || hasSub raw "FORBIDDEN" || hasSub raw "UNAUTHENTICATED" then
+    pure "request_auth"
+  else if hasSub raw "RATELIMIT" || hasSub raw "RATE_LIMIT" || hasSub raw "TOO_MANY" then
+    pure "request_ratelimit"
+  else if hasSub raw "BAD_USER_INPUT" || hasSub raw "VALIDATION" || hasSub raw "INVALID" then
+    pure "request_invalid"
+  else
+    pure "request_graphql"
+
+/-- Build the request body for a GraphQL point.
+
+Variables come from the op's own arguments: a named variable binds to the
+like-named argument (`from`), and the input-object variable (empty `from`)
+takes the request data as a whole — which is what makes a generated
+create/update call look exactly like its REST equivalent. -/
+def graphqlBody (ctx : Value) : SIO Value := do
+  let gql ← gp (← gp ctx "point") "graphql"
+  match gql with
+  | .map _ => do
+    -- reqmatch/reqdata hold the caller's arguments for this operation; which
+    -- one depends on whether the op takes match or data input.
+    let reqsrc ← asMap (← gp ctx
+      (if opInputOf (← opnameOf ctx) == "data" then "reqdata" else "reqmatch"))
+    let variables ← emptyMap
+    let varlist ← match (← gp gql "vars") with
+      | .list i => listItems i
+      | _ => pure #[]
+    for spec in varlist do
+      match spec with
+      | .map _ => do
+        let name ← gpS spec "name"
+        let from ← gpS spec "from"
+        if name != "" then
+          if from == "" then do
+            -- The input object IS the request body. Strip the action
+            -- selector, which is an SDK-side point discriminator, not an API
+            -- field.
+            let body ← emptyMap
+            for k in (← keysof reqsrc) do
+              if k != "$action" then sp body k (← gp reqsrc k)
+            sp variables name body
+          else do
+            -- Only send variables the caller actually supplied: sending an
+            -- explicit null would clear a field on many APIs.
+            let v ← gp reqsrc from
+            if !(isNov v) then sp variables name v
+      | _ => pure ()
+    newMap #[("query", ← gp gql "doc"), ("variables", variables)]
+  | _ => pure .noval
+
+/-- Inspect a decoded GraphQL response body and record a failure when the
+server reported one. Returns true when an error was recorded.
+
+Partial data (`data` alongside `errors`) is treated as failure: the REST
+surface has no partial-success concept, and silently returning half an object
+would be worse than failing. -/
+def graphqlErrors (ctx : Value) : SIO Bool := do
+  let resultV ← gp ctx "result"
+  match resultV with
+  | .map _ => do
+    if (← gpS (← gp ctx "point") "kind") != "graphql" then pure false
+    else
+      let errors ← match (← gp (← gp resultV "body") "errors") with
+        | .list i => listItems i
+        | _ => pure #[]
+      if errors.size == 0 then pure false
+      else do
+        let first := errors[0]!
+        let m0 ← gpS first "message"
+        let m1 := if m0 == "" then "graphql error" else m0
+        let msg := if 1 < errors.size then
+          m1 ++ " (+" ++ toString (errors.size - 1) ++ " more)" else m1
+        let e ← mkErr (← graphqlErrorCode first) ("graphql: " ++ msg)
+        sp resultV "err" e
+        sp resultV "ok" (.bool false)
+        pure true
+  | _ => pure false
+
+-- ---------------------------------------------------------------------------
 -- result assembly
 -- ---------------------------------------------------------------------------
 
@@ -404,7 +515,20 @@ def makeSpec (ctx : Value) : SIO (Value × Option Value) := do
   sp spec "path" (.str (← preparePath ctx))
   sp spec "params" (← prepareParams ctx)
   sp spec "query" (← prepareQuery ctx)
-  sp spec "headers" (← prepareHeaders ctx)
+  let headers ← prepareHeaders ctx
+  sp spec "headers" headers
+  if (← gpS point "kind") == "graphql" then do
+    -- GraphQL addresses one endpoint: no path parts, no query string, and the
+    -- body carries the operation. prepareBody is skipped deliberately — it
+    -- only emits a body for data-input ops, whereas every GraphQL op posts
+    -- one, including load/list/remove.
+    sp spec "body" (← graphqlBody ctx)
+    sp spec "path" (.str "")
+    -- prepareQuery already copied the op's match arguments into the query
+    -- string. Those same values are bound as operation variables, so leaving
+    -- them would send /graphql?id=i1.
+    sp spec "query" (← emptyMap)
+    sp headers "content-type" (.str graphqlContentType)
   pure (spec, none)
 
 /-- base/prefix/path/suffix joined, `{param}` substituted, query appended. -/
@@ -613,6 +737,10 @@ def makeResponse (ctx : Value) : SIO (Value × Option Value) := do
     resultBasic ctx
     resultHeaders ctx
     resultBody ctx
+    -- GraphQL reports failures as a top-level `errors` array under HTTP 200,
+    -- so resultBasic's status check never sees them. Lift them here, before
+    -- the response transform tries to unwrap data that is not there.
+    let _ ← graphqlErrors ctx
     let _ ← transformResponse ctx
     let errv ← gp resultV "err"
     if !(← isErrV errv) then sp resultV "ok" (.bool true)

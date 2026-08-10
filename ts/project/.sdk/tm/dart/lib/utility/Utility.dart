@@ -28,6 +28,7 @@ import 'ResultHeadersUtility.dart' as u;
 import 'TransformRequestUtility.dart' as u;
 import 'TransformResponseUtility.dart' as u;
 
+import 'GraphqlUtility.dart' as u;
 import 'StructUtility.dart';
 
 class Utility {
@@ -55,6 +56,8 @@ class Utility {
   dynamic prepareParams = u.prepareParams;
   dynamic preparePath = u.preparePath;
   dynamic prepareQuery = u.prepareQuery;
+  dynamic graphqlBody = u.graphqlBody;
+  dynamic graphqlErrors = u.graphqlErrors;
   dynamic resultBasic = u.resultBasic;
   dynamic resultBody = u.resultBody;
   dynamic resultHeaders = u.resultHeaders;
@@ -138,6 +141,12 @@ class Utility {
         break;
       case 'preparePath':
         preparePath = fn;
+        break;
+      case 'graphqlBody':
+        graphqlBody = fn;
+        break;
+      case 'graphqlErrors':
+        graphqlErrors = fn;
         break;
       case 'prepareQuery':
         prepareQuery = fn;

@@ -2,6 +2,11 @@ import 'utility/voxgig_struct.dart' as vs;
 
 class Point {
   dynamic args;
+  // Transport this point speaks: 'http' (default) or 'graphql'. GraphQL
+  // points carry their operation document in `graphql` and address the
+  // single endpoint, so method is always POST and parts is empty.
+  dynamic kind;
+  dynamic graphql;
   dynamic rename;
   dynamic method;
   dynamic orig;
@@ -15,6 +20,8 @@ class Point {
 
   Point(dynamic altmap) {
     args = vs.getprop(altmap, 'args', {'params': []});
+    kind = vs.getprop(altmap, 'kind', 'http');
+    graphql = vs.getprop(altmap, 'graphql');
     rename = vs.getprop(altmap, 'rename', {'params': {}});
     method = vs.getprop(altmap, 'method', '');
     orig = vs.getprop(altmap, 'orig', '');

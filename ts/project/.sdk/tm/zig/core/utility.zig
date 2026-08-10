@@ -565,8 +565,28 @@ pub fn make_spec_util(ctx: *Context) E!*Spec {
     spec.params = prepare_params_util(ctx);
     spec.query = prepare_query_util(ctx);
     spec.headers = prepare_headers_util(ctx);
-    spec.body = prepare_body_util(ctx);
-    spec.path = prepare_path_util(ctx);
+
+    const kind: []const u8 = switch (h.getp(point, "kind")) {
+        .string => |s| s,
+        else => "",
+    };
+
+    if (std.mem.eql(u8, kind, "graphql")) {
+        // GraphQL addresses one endpoint: no path parts, no query string,
+        // and the body carries the operation. prepare_body is skipped
+        // deliberately — it only emits a body for data-input ops, whereas
+        // every GraphQL op posts one, including load/list/remove.
+        spec.body = graphql_body_util(ctx);
+        spec.path = "";
+        // prepare_query already copied the op's match arguments into the
+        // query string. Those same values are bound as operation variables,
+        // so leaving them would send /graphql?id=i1.
+        spec.query = h.omap();
+        h.setp(spec.headers, "content-type", h.vstr(GRAPHQL_CONTENT_TYPE));
+    } else {
+        spec.body = prepare_body_util(ctx);
+        spec.path = prepare_path_util(ctx);
+    }
 
     const c = ctx.ctrl;
     if (c.has_explain()) h.setp(c.explain, "spec", spec.to_value());
@@ -721,6 +741,12 @@ pub fn make_response_util(ctx: *Context) E!*Response {
     _ = result_basic_util(ctx);
     _ = result_headers_util(ctx);
     _ = result_body_util(ctx);
+
+    // GraphQL reports failures as a top-level `errors` array under HTTP 200,
+    // so result_basic's status check never sees them. Lift them here, before
+    // the response transform tries to unwrap data that is not there.
+    _ = graphql_errors_util(ctx);
+
     _ = transform_response_util(ctx);
 
     if (result.err == null) result.ok = true;
@@ -934,6 +960,169 @@ pub fn prepare_query_util(ctx: *Context) Value {
         }
     }
     return out;
+}
+
+// ============================================================================
+// graphql (transport)
+//
+// GraphQL transport. API-INDEPENDENT: every GraphQL SDK this generator
+// produces uses this code unchanged. The API-specific part — which
+// operations exist and what each one's document is — is model data,
+// computed once by apidef and emitted into Config.
+//
+// Two jobs:
+//
+//   graphql_body   — build { query, variables } for a point, binding the
+//                    op's arguments to the document's declared variables.
+//
+//   graphql_errors — lift a GraphQL failure into an SDK error. GraphQL
+//                    reports failures as a top-level `errors` array under
+//                    HTTP 200, so the status-driven path in result_basic
+//                    never sees them.
+// ============================================================================
+
+// Content type every GraphQL-over-HTTP request uses.
+pub const GRAPHQL_CONTENT_TYPE = "application/json";
+
+// Map a GraphQL error to the same error codes the HTTP path produces, so a
+// caller handles auth or rate limiting identically on both transports.
+// Servers put the machine-readable code in `extensions.code`; Linear-style
+// APIs use `extensions.type`.
+pub fn graphql_error_code(gqlerr: Value) []const u8 {
+    const ext = h.getp(gqlerr, "extensions");
+
+    var code: []const u8 = switch (h.getp(ext, "code")) {
+        .string => |s| s,
+        else => "",
+    };
+    if (code.len == 0) {
+        code = switch (h.getp(ext, "type")) {
+            .string => |s| s,
+            else => "",
+        };
+    }
+
+    const raw: []const u8 = std.ascii.allocUpperString(h.A(), code) catch "";
+
+    if (std.mem.indexOf(u8, raw, "AUTH") != null or
+        std.mem.indexOf(u8, raw, "FORBIDDEN") != null or
+        std.mem.indexOf(u8, raw, "UNAUTHENTICATED") != null)
+    {
+        return "request_auth";
+    }
+    if (std.mem.indexOf(u8, raw, "RATELIMIT") != null or
+        std.mem.indexOf(u8, raw, "RATE_LIMIT") != null or
+        std.mem.indexOf(u8, raw, "TOO_MANY") != null)
+    {
+        return "request_ratelimit";
+    }
+    if (std.mem.indexOf(u8, raw, "BAD_USER_INPUT") != null or
+        std.mem.indexOf(u8, raw, "VALIDATION") != null or
+        std.mem.indexOf(u8, raw, "INVALID") != null)
+    {
+        return "request_invalid";
+    }
+
+    return "request_graphql";
+}
+
+// Build the request body for a GraphQL point.
+//
+// Variables come from the op's own arguments: a named variable binds to the
+// like-named argument (`from`), and the input-object variable (empty `from`)
+// takes the request data as a whole — which is what makes a generated
+// create/update call look exactly like its REST equivalent.
+pub fn graphql_body_util(ctx: *Context) Value {
+    const gql = h.getp(ctx.point, "graphql");
+    if (gql != .object) return h.vnull();
+
+    // reqmatch/reqdata hold the caller's arguments for this operation; which
+    // one depends on whether the op takes match or data input.
+    var reqsrc = ctx.reqmatch;
+    if (std.mem.eql(u8, ctx.op.input, "data")) reqsrc = ctx.reqdata;
+    if (reqsrc != .object) reqsrc = h.omap();
+
+    const variables = h.omap();
+
+    const varlist = h.getp(gql, "vars");
+    if (varlist == .array) {
+        for (varlist.array.data.items) |spec| {
+            if (spec != .object) continue;
+
+            const name: []const u8 = switch (h.getp(spec, "name")) {
+                .string => |s| s,
+                else => "",
+            };
+            if (name.len == 0) continue;
+
+            const from: []const u8 = switch (h.getp(spec, "from")) {
+                .string => |s| s,
+                else => "",
+            };
+
+            if (from.len == 0) {
+                // The input object IS the request body. Strip the action
+                // selector, which is an SDK-side point discriminator, not
+                // an API field.
+                const body = h.omap();
+                var it = reqsrc.object.iterator();
+                while (it.next()) |kv| {
+                    const key = kv.key_ptr.*;
+                    if (!std.mem.eql(u8, key, "$action")) {
+                        h.setp(body, key, kv.value_ptr.*);
+                    }
+                }
+                h.setp(variables, name, body);
+                continue;
+            }
+
+            // Only send variables the caller actually supplied: sending an
+            // explicit null would clear a field on many APIs.
+            const val = h.getp(reqsrc, from);
+            if (!h.is_noval(val) and !h.is_null(val)) {
+                h.setp(variables, name, val);
+            }
+        }
+    }
+
+    const out = h.omap();
+    h.setp(out, "query", h.getp(gql, "doc"));
+    h.setp(out, "variables", variables);
+    return out;
+}
+
+// Inspect a decoded GraphQL response body and record a failure when the
+// server reported one. Returns true when an error was recorded.
+//
+// Partial data (`data` alongside `errors`) is treated as failure: the REST
+// surface has no partial-success concept, and silently returning half an
+// object would be worse than failing.
+pub fn graphql_errors_util(ctx: *Context) bool {
+    const result = ctx.result orelse return false;
+
+    const kind: []const u8 = switch (h.getp(ctx.point, "kind")) {
+        .string => |s| s,
+        else => "",
+    };
+    if (!std.mem.eql(u8, kind, "graphql")) return false;
+
+    const errors = h.getp(result.body, "errors");
+    if (errors != .array or errors.array.data.items.len == 0) return false;
+
+    const count = errors.array.data.items.len;
+    const first = errors.array.data.items[0];
+
+    var msg: []const u8 = switch (h.getp(first, "message")) {
+        .string => |s| s,
+        else => "",
+    };
+    if (msg.len == 0) msg = "graphql error";
+    if (1 < count) msg = fmt("{s} (+{d} more)", .{ msg, count - 1 });
+
+    result.err = ctx.make_error(graphql_error_code(first), fmt("graphql: {s}", .{msg}));
+    result.ok = false;
+
+    return true;
 }
 
 const HEADER_AUTH = "authorization";

@@ -49,8 +49,23 @@ fun makeSpec(ctx: Context): Spec {
   spec.params = utility.prepareParams(ctx)
   spec.query = utility.prepareQuery(ctx)
   spec.headers = utility.prepareHeaders(ctx)
-  spec.body = utility.prepareBody(ctx)
-  spec.path = utility.preparePath(ctx)
+
+  if ("graphql" == Struct.getprop(ctx.point, "kind") as? String) {
+    // GraphQL addresses one endpoint: no path parts, no query string, and
+    // the body carries the operation. prepareBody is skipped deliberately
+    // — it only emits a body for data-input ops, whereas every GraphQL op
+    // posts one, including load/list/remove.
+    spec.body = utility.graphqlBody(ctx)
+    spec.path = ""
+    // prepareQuery already copied the op's match arguments into the query
+    // string. Those same values are bound as operation variables, so
+    // leaving them would send /graphql?id=i1.
+    spec.query = mutableMapOf()
+    spec.headers["content-type"] = GRAPHQL_CONTENT_TYPE
+  } else {
+    spec.body = utility.prepareBody(ctx)
+    spec.path = utility.preparePath(ctx)
+  }
 
   if (ctx.ctrl.explain != null) {
     ctx.ctrl.explain!!["spec"] = spec

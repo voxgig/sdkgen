@@ -415,6 +415,131 @@ prepareBodyUtil ctx = do
   op <- readIORef (cOp ctx)
   if opInput op == "data" then transformRequestUtil ctx else pure VNoval
 
+-- ------------------------------------------------------------------
+-- graphql (transport)
+--
+-- GraphQL transport. API-INDEPENDENT: every GraphQL SDK this generator
+-- produces uses this code unchanged. The API-specific part — which
+-- operations exist and what each one's document is — is model data, computed
+-- once by apidef and emitted into Config.
+--
+-- Two jobs:
+--
+--   graphqlBodyUtil   — build { query, variables } for a point, binding the
+--                       op's arguments to the document's declared variables.
+--
+--   graphqlErrorsUtil — lift a GraphQL failure into an SDK error. GraphQL
+--                       reports failures as a top-level `errors` array under
+--                       HTTP 200, so the status-driven path in resultBasic
+--                       never sees them.
+-- ------------------------------------------------------------------
+
+-- Content type every GraphQL-over-HTTP request uses.
+graphqlContentType :: String
+graphqlContentType = "application/json"
+
+-- Map a GraphQL error to the same error codes the HTTP path produces, so a
+-- caller handles auth or rate limiting identically on both transports.
+-- Servers put the machine-readable code in `extensions.code`; Linear-style
+-- APIs use `extensions.type`.
+graphqlErrorCode :: Value -> IO String
+graphqlErrorCode gqlerr = do
+  ext <- getp gqlerr "extensions"
+  c0 <- getStrD ext "code" ""
+  code <- if null c0 then getStrD ext "type" "" else pure c0
+  let raw = map toUpper code
+  pure $
+    if substrContains raw "AUTH" || substrContains raw "FORBIDDEN"
+         || substrContains raw "UNAUTHENTICATED"
+      then "request_auth"
+      else if substrContains raw "RATELIMIT" || substrContains raw "RATE_LIMIT"
+                || substrContains raw "TOO_MANY"
+        then "request_ratelimit"
+        else if substrContains raw "BAD_USER_INPUT"
+                  || substrContains raw "VALIDATION"
+                  || substrContains raw "INVALID"
+          then "request_invalid"
+          else "request_graphql"
+
+-- Build the request body for a GraphQL point.
+--
+-- Variables come from the op's own arguments: a named variable binds to the
+-- like-named argument (`from`), and the input-object variable (empty `from`)
+-- takes the request data as a whole — which is what makes a generated
+-- create/update call look exactly like its REST equivalent.
+graphqlBodyUtil :: Context -> IO Value
+graphqlBodyUtil ctx = do
+  point <- readIORef (cPoint ctx)
+  gql <- getp point "graphql"
+  case gql of
+    VMap _ -> do
+      -- reqmatch/reqdata hold the caller's arguments for this operation;
+      -- which one depends on whether the op takes match or data input.
+      op <- readIORef (cOp ctx)
+      rsV <- if opInput op == "data"
+               then readIORef (cReqdata ctx)
+               else readIORef (cReqmatch ctx)
+      reqsrc <- case rsV of VMap _ -> pure rsV; _ -> emptyMap
+      variables <- emptyMap
+      vl <- getp gql "vars"
+      varlist <- case vl of VList _ -> listItems vl; _ -> pure []
+      forM_ varlist $ \spec -> case spec of
+        VMap _ -> do
+          name <- getStrD spec "name" ""
+          from <- getStrD spec "from" ""
+          when (not (null name)) $
+            if null from
+              then do
+                -- The input object IS the request body. Strip the action
+                -- selector, which is an SDK-side point discriminator, not an
+                -- API field.
+                body <- emptyMap
+                ks <- keysof reqsrc
+                forM_ ks $ \k -> when (k /= "$action") $ do
+                  v <- getp reqsrc k
+                  setp body k v
+                setp variables name body
+              else do
+                -- Only send variables the caller actually supplied: sending
+                -- an explicit null would clear a field on many APIs.
+                val <- getp reqsrc from
+                when (not (isNullish val)) (setp variables name val)
+        _ -> pure ()
+      doc <- getp gql "doc"
+      jo [("query", doc), ("variables", variables)]
+    _ -> pure VNoval
+
+-- Inspect a decoded GraphQL response body and record a failure when the
+-- server reported one. Returns True when an error was recorded.
+--
+-- Partial data (`data` alongside `errors`) is treated as failure: the REST
+-- surface has no partial-success concept, and silently returning half an
+-- object would be worse than failing.
+graphqlErrorsUtil :: Context -> IO Bool
+graphqlErrorsUtil ctx = do
+  resultV <- readIORef (cResult ctx)
+  point <- readIORef (cPoint ctx)
+  kind <- getStrD point "kind" ""
+  case resultV of
+    VMap _ | kind == "graphql" -> do
+      body <- getp resultV "body"
+      ev <- getp body "errors"
+      errors <- case ev of VList _ -> listItems ev; _ -> pure []
+      if null errors
+        then pure False
+        else do
+          let firsterr = head errors
+              n = length errors
+          m0 <- getStrD firsterr "message" ""
+          let m1 = if null m0 then "graphql error" else m0
+              msg = if 1 < n then m1 ++ " (+" ++ show (n - 1) ++ " more)" else m1
+          code <- graphqlErrorCode firsterr
+          e <- mkErr code ("graphql: " ++ msg)
+          setp resultV "err" e
+          setp resultV "ok" (VBool False)
+          pure True
+    _ -> pure False
+
 prepareAuthUtil :: Context -> UResult
 prepareAuthUtil ctx = do
   specV <- readIORef (cSpec ctx)
@@ -642,8 +767,23 @@ makeSpecUtil ctx = do
           params <- prepareParamsUtil ctx; setp sp "params" params
           query <- prepareQueryUtil ctx; setp sp "query" query
           headers <- prepareHeadersUtil ctx; setp sp "headers" headers
-          body <- prepareBodyUtil ctx; setp sp "body" body
-          path <- preparePathUtil ctx; setp sp "path" (VStr path)
+          kind <- getStrD point "kind" ""
+          if kind == "graphql"
+            -- GraphQL addresses one endpoint: no path parts, no query string,
+            -- and the body carries the operation. prepareBody is skipped
+            -- deliberately — it only emits a body for data-input ops, whereas
+            -- every GraphQL op posts one, including load/list/remove.
+            then do
+              body <- graphqlBodyUtil ctx; setp sp "body" body
+              setp sp "path" (VStr "")
+              -- prepareQuery already copied the op's match arguments into the
+              -- query string. Those same values are bound as operation
+              -- variables, so leaving them would send /graphql?id=i1.
+              emptyq <- emptyMap; setp sp "query" emptyq
+              setp headers "content-type" (VStr graphqlContentType)
+            else do
+              body <- prepareBodyUtil ctx; setp sp "body" body
+              path <- preparePathUtil ctx; setp sp "path" (VStr path)
           ctrl <- readIORef (cCtrl ctx)
           explain <- getp ctrl "explain"
           case explain of { VMap _ -> do { snap <- specToValue sp; setp explain "spec" snap }; _ -> pure () }
@@ -780,6 +920,11 @@ makeResponseUtil ctx = do
             VMap _ -> do
               setp specV "step" (VStr "response")
               resultBasicUtil ctx; resultHeadersUtil ctx; resultBodyUtil ctx
+              -- GraphQL reports failures as a top-level `errors` array under
+              -- HTTP 200, so resultBasic's status check never sees them. Lift
+              -- them here, before the response transform tries to unwrap data
+              -- that is not there.
+              _ <- graphqlErrorsUtil ctx
               _ <- transformResponseUtil ctx
               errv <- getp resultV "err"
               isErrR <- isErr errv

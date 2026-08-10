@@ -28,6 +28,8 @@ func registerAll(_ u: Utility) {
   u.prepareParams = prepareParamsUtil
   u.preparePath = preparePathUtil
   u.prepareQuery = prepareQueryUtil
+  u.graphqlBody = graphqlBodyUtil
+  u.graphqlErrors = graphqlErrorsUtil
   u.resultBasic = resultBasicUtil
   u.resultBody = resultBodyUtil
   u.resultHeaders = resultHeadersUtil

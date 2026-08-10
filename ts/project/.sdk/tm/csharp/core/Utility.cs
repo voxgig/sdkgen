@@ -30,6 +30,8 @@ public class Utility
     public Func<Context, Dictionary<string, object?>> PrepareParams = null!;
     public Func<Context, string> PreparePath = null!;
     public Func<Context, Dictionary<string, object?>> PrepareQuery = null!;
+    public Func<Context, object?> GraphqlBody = null!;
+    public Func<Context, bool> GraphqlErrors = null!;
     public Func<Context, Result> ResultBasic = null!;
     public Func<Context, Result> ResultBody = null!;
     public Func<Context, Result> ResultHeaders = null!;
@@ -76,6 +78,8 @@ public class Utility
             PrepareParams = src.PrepareParams,
             PreparePath = src.PreparePath,
             PrepareQuery = src.PrepareQuery,
+            GraphqlBody = src.GraphqlBody,
+            GraphqlErrors = src.GraphqlErrors,
             ResultBasic = src.ResultBasic,
             ResultBody = src.ResultBody,
             ResultHeaders = src.ResultHeaders,

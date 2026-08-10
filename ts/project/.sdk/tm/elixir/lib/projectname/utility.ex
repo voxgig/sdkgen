@@ -13,6 +13,9 @@ defmodule ProjectName.Utility do
 
   @default_user_agent "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
 
+  # Content type every GraphQL-over-HTTP request uses.
+  @graphql_content_type "application/json"
+
   # ---- construction / registration ----------------------------------------
 
   def new do
@@ -45,6 +48,8 @@ defmodule ProjectName.Utility do
       {"prepare_params", &prepare_params_impl/1},
       {"prepare_path", &prepare_path_impl/1},
       {"prepare_query", &prepare_query_impl/1},
+      {"graphql_body", &graphql_body_impl/1},
+      {"graphql_errors", &graphql_errors_impl/1},
       {"result_basic", &result_basic_impl/1},
       {"result_body", &result_body_impl/1},
       {"result_headers", &result_headers_impl/1},
@@ -83,6 +88,8 @@ defmodule ProjectName.Utility do
   def prepare_params(ctx), do: u(ctx, "prepare_params").(ctx)
   def prepare_path(ctx), do: u(ctx, "prepare_path").(ctx)
   def prepare_query(ctx), do: u(ctx, "prepare_query").(ctx)
+  def graphql_body(ctx), do: u(ctx, "graphql_body").(ctx)
+  def graphql_errors(ctx), do: u(ctx, "graphql_errors").(ctx)
   def result_basic(ctx), do: u(ctx, "result_basic").(ctx)
   def result_body(ctx), do: u(ctx, "result_body").(ctx)
   def result_headers(ctx), do: u(ctx, "result_headers").(ctx)
@@ -474,8 +481,23 @@ defmodule ProjectName.Utility do
         S.setprop(spec, "params", prepare_params(ctx))
         S.setprop(spec, "query", prepare_query(ctx))
         S.setprop(spec, "headers", prepare_headers(ctx))
-        S.setprop(spec, "body", prepare_body(ctx))
-        S.setprop(spec, "path", prepare_path(ctx))
+
+        if S.getprop(point, "kind") == "graphql" do
+          # GraphQL addresses one endpoint: no path parts, no query string,
+          # and the body carries the operation. prepare_body is skipped
+          # deliberately — it only emits a body for data-input ops, whereas
+          # every GraphQL op posts one, including load/list/remove.
+          S.setprop(spec, "body", graphql_body(ctx))
+          S.setprop(spec, "path", "")
+          # prepare_query already copied the op's match arguments into the
+          # query string. Those same values are bound as operation
+          # variables, so leaving them would send /graphql?id=i1.
+          S.setprop(spec, "query", S.jm([]))
+          S.setprop(S.getprop(spec, "headers"), "content-type", @graphql_content_type)
+        else
+          S.setprop(spec, "body", prepare_body(ctx))
+          S.setprop(spec, "path", prepare_path(ctx))
+        end
 
         ctrl = S.getprop(ctx, "ctrl")
         explain = S.getprop(ctrl, "explain")
@@ -580,6 +602,13 @@ defmodule ProjectName.Utility do
           result_basic(ctx)
           result_headers(ctx)
           result_body(ctx)
+
+          # GraphQL reports failures as a top-level `errors` array under HTTP
+          # 200, so result_basic's status check never sees them. Lift them
+          # here, before the response transform tries to unwrap data that is
+          # not there.
+          graphql_errors(ctx)
+
           transform_response(ctx)
 
           if S.getprop(result, "err") == nil, do: S.setprop(result, "ok", true)
@@ -992,6 +1021,151 @@ defmodule ProjectName.Utility do
     end)
 
     out
+  end
+
+  # ---- graphql -------------------------------------------------------------
+  #
+  # GraphQL transport. API-INDEPENDENT: every GraphQL SDK this generator
+  # produces uses this code unchanged. The API-specific part — which
+  # operations exist and what each one's document is — is model data,
+  # computed once by apidef and emitted into Config.
+  #
+  # Two jobs:
+  #
+  #   graphql_body   — build %{query, variables} for a point, binding the
+  #                    op's arguments to the document's declared variables.
+  #
+  #   graphql_errors — lift a GraphQL failure into an SDK error. GraphQL
+  #                    reports failures as a top-level `errors` array under
+  #                    HTTP 200, so the status-driven path in result_basic
+  #                    never sees them.
+
+  # Map a GraphQL error to the same error codes the HTTP path produces, so a
+  # caller handles auth or rate limiting identically on both transports.
+  # Servers put the machine-readable code in `extensions.code`; Linear-style
+  # APIs use `extensions.type`.
+  def graphql_error_code(gqlerr) do
+    ext = S.getprop(gqlerr, "extensions")
+
+    code = strv(S.getprop(ext, "code"))
+    code = if code == "", do: strv(S.getprop(ext, "type")), else: code
+    raw = String.upcase(code)
+
+    cond do
+      String.contains?(raw, "AUTH") or String.contains?(raw, "FORBIDDEN") or
+          String.contains?(raw, "UNAUTHENTICATED") ->
+        "request_auth"
+
+      String.contains?(raw, "RATELIMIT") or String.contains?(raw, "RATE_LIMIT") or
+          String.contains?(raw, "TOO_MANY") ->
+        "request_ratelimit"
+
+      String.contains?(raw, "BAD_USER_INPUT") or String.contains?(raw, "VALIDATION") or
+          String.contains?(raw, "INVALID") ->
+        "request_invalid"
+
+      true ->
+        "request_graphql"
+    end
+  end
+
+  # Build the request body for a GraphQL point.
+  #
+  # Variables come from the op's own arguments: a named variable binds to the
+  # like-named argument (`from`), and the input-object variable (empty
+  # `from`) takes the request data as a whole — which is what makes a
+  # generated create/update call look exactly like its REST equivalent.
+  def graphql_body_impl(ctx) do
+    gql = S.getprop(S.getprop(ctx, "point"), "graphql")
+
+    if not S.ismap(gql) do
+      nil
+    else
+      # reqmatch/reqdata hold the caller's arguments for this operation;
+      # which one depends on whether the op takes match or data input.
+      op = S.getprop(ctx, "op")
+
+      reqsrc =
+        if S.getprop(op, "input") == "data",
+          do: S.getprop(ctx, "reqdata"),
+          else: S.getprop(ctx, "reqmatch")
+
+      reqsrc = if S.ismap(reqsrc), do: reqsrc, else: S.jm([])
+
+      variables = S.jm([])
+      varlist = S.getprop(gql, "vars")
+      n = if S.islist(varlist), do: S.size(varlist), else: 0
+
+      if n > 0 do
+        Enum.each(0..(n - 1), fn i ->
+          spec = S.getelem(varlist, i)
+
+          if S.ismap(spec) do
+            name = strv(S.getprop(spec, "name"))
+            from = strv(S.getprop(spec, "from"))
+
+            cond do
+              name == "" ->
+                nil
+
+              from == "" ->
+                # The input object IS the request body. Strip the action
+                # selector, which is an SDK-side point discriminator, not an
+                # API field.
+                body = S.jm([])
+
+                Enum.each(H.entries(reqsrc), fn {key, val} ->
+                  if key != "$action", do: S.setprop(body, key, val)
+                end)
+
+                S.setprop(variables, name, body)
+
+              true ->
+                # Only send variables the caller actually supplied: sending
+                # an explicit null would clear a field on many APIs.
+                val = S.getprop(reqsrc, from)
+                if val != nil, do: S.setprop(variables, name, val)
+            end
+          end
+        end)
+      end
+
+      S.jm(["query", S.getprop(gql, "doc"), "variables", variables])
+    end
+  end
+
+  # Inspect a decoded GraphQL response body and record a failure when the
+  # server reported one. Returns true when an error was recorded.
+  #
+  # Partial data (`data` alongside `errors`) is treated as failure: the REST
+  # surface has no partial-success concept, and silently returning half an
+  # object would be worse than failing.
+  def graphql_errors_impl(ctx) do
+    result = S.getprop(ctx, "result")
+    point = S.getprop(ctx, "point")
+
+    errors = if result == nil, do: nil, else: S.getprop(S.getprop(result, "body"), "errors")
+
+    count = if S.islist(errors), do: S.size(errors), else: 0
+
+    if result == nil or S.getprop(point, "kind") != "graphql" or count == 0 do
+      false
+    else
+      first = S.getelem(errors, 0)
+      msg = strv(S.getprop(first, "message"))
+      msg = if msg == "", do: "graphql error", else: msg
+      msg = if 1 < count, do: msg <> " (+" <> Integer.to_string(count - 1) <> " more)", else: msg
+
+      S.setprop(
+        result,
+        "err",
+        Context.make_error(ctx, graphql_error_code(first), "graphql: " <> msg)
+      )
+
+      S.setprop(result, "ok", false)
+
+      true
+    end
   end
 
   def prepare_auth_impl(ctx) do
