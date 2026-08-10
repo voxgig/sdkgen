@@ -480,6 +480,29 @@
       (or (try (Long/parseLong s) (catch Exception _ nil))
           (try (Double/parseDouble s) (catch Exception _ nil))))))
 
+;; Relay pagination: the cursor is the `after` variable (or whatever the model
+;; named it), and the page size is `first`.
+(defn- graphql-pre-request [fa spec point paging]
+  (let [body (core/oget spec :body)]
+    (when (vs/ismap body)
+      (let [variables (let [v (mget body "variables")]
+                        (if (vs/ismap v)
+                          v
+                          (let [nv (vs/jm)] (.put ^java.util.Map body "variables" nv) nv)))
+            after-var (opt fa "afterVar" "after")
+            first-var (opt fa "firstVar" "first")
+            ;; Only bind variables the operation actually declares, or the
+            ;; server rejects the document.
+            declared (let [vl (vs/getpath point "graphql.vars")]
+                       (if (vs/islist vl)
+                         (into #{} (keep #(vs/getprop % "name") (vec vl)))
+                         #{}))]
+        (when (and (some? (mget paging "cursor")) (declared after-var))
+          (.put ^java.util.Map variables after-var (mget paging "cursor")))
+        (when (and (some? (opt fa "limit")) (nil? (mget variables first-var))
+                   (declared first-var))
+          (.put ^java.util.Map variables first-var (opt fa "limit")))))))
+
 (defn paging-feature []
   (let [fa (new-feature "paging" false "0.0.1")
         list? (fn [ctx] (let [ops (or (opt fa "ops") (vs/jt "list"))
@@ -501,12 +524,19 @@
                          cursor-param (opt fa "cursorParam" "cursor")
                          ctrl (core/oget ctx :ctrl)
                          paging (let [p (when ctrl (core/oget ctrl :paging))] (if (vs/ismap p) p (vs/jm)))]
-                     (cond
-                       (some? (mget paging "cursor")) (.put ^java.util.Map q cursor-param (mget paging "cursor"))
-                       (nil? (mget q page-param))
-                       (.put ^java.util.Map q page-param (if (nil? (mget paging "page")) (opt fa "startPage" 1) (mget paging "page"))))
-                     (when (and (some? (opt fa "limit")) (nil? (mget q limit-param)))
-                       (.put ^java.util.Map q limit-param (opt fa "limit"))))))))
+                     ;; GraphQL paginates through operation VARIABLES, not
+                     ;; the query string. This hook runs after make-spec, so
+                     ;; spec.body already holds the { query, variables }
+                     ;; envelope, and before make-fetch-def serialises it.
+                     (if (= "graphql" (vs/getprop (core/oget ctx :point) "kind"))
+                       (graphql-pre-request fa spec (core/oget ctx :point) paging)
+                       (do
+                         (cond
+                           (some? (mget paging "cursor")) (.put ^java.util.Map q cursor-param (mget paging "cursor"))
+                           (nil? (mget q page-param))
+                           (.put ^java.util.Map q page-param (if (nil? (mget paging "page")) (opt fa "startPage" 1) (mget paging "page"))))
+                         (when (and (some? (opt fa "limit")) (nil? (mget q limit-param)))
+                           (.put ^java.util.Map q limit-param (opt fa "limit"))))))))))
            "PreResult"
            (fn [ctx]
              (when (and (active? fa) (list? ctx))
@@ -522,14 +552,50 @@
                      (when (some? link)
                        (when-let [m (re-find #"(?i)<([^>]+)>\s*;\s*rel=\"?next\"?" (str link))]
                          (.put ^java.util.Map paging "next" (nth m 1))))
-                     (when (vs/ismap body)
-                       (when (some? (mget body "next")) (when (nil? (mget paging "next")) (.put ^java.util.Map paging "next" (mget body "next"))))
-                       (when (some? (mget body "cursor")) (.put ^java.util.Map paging "cursor" (mget body "cursor")))
-                       (when (some? (mget body "nextCursor")) (.put ^java.util.Map paging "cursor" (mget body "nextCursor")))
-                       (let [hm (mget body "hasMore")] (when (or (= hm true) (= hm false)) (.put ^java.util.Map paging "hasMore" hm))))
-                     (.put ^java.util.Map paging "hasMore"
-                           (boolean (or (mget paging "hasMore") (some? (mget paging "next"))
-                                        (some? (mget paging "cursor")) (some? (mget paging "nextPage")))))
+                     ;; Set when the response states hasMore outright, rather
+                     ;; than leaving it to be inferred from a cursor.
+                     (let [explicit-more (atom false)
+                           point (core/oget ctx :point)
+                           page (vs/getpath point "graphql.page")]
+                       ;; Relay connections carry the cursor in pageInfo, at
+                       ;; the path the model recorded for this op.
+                       (when (and (vs/ismap page) (vs/ismap body))
+                         ;; `connpath` locates the connection object inside the
+                         ;; response envelope (data.<field>); the cursor/more
+                         ;; paths are relative to it.
+                         (let [connpath (mget page "connpath")
+                               conn (if (and (string? connpath) (seq connpath))
+                                      (or (vs/getpath body connpath) body)
+                                      body)
+                               cursorpath (mget page "cursor")
+                               morepath (mget page "more")]
+                           (when (and (string? cursorpath) (seq cursorpath))
+                             (when-let [c (vs/getpath conn cursorpath)]
+                               (.put ^java.util.Map paging "cursor" c)))
+                           (when (and (string? morepath) (seq morepath))
+                             (let [more (vs/getpath conn morepath)]
+                               (when (or (= more true) (= more false))
+                                 (.put ^java.util.Map paging "hasMore" more)
+                                 (reset! explicit-more true))))))
+                       (when (vs/ismap body)
+                         (when (some? (mget body "next")) (when (nil? (mget paging "next")) (.put ^java.util.Map paging "next" (mget body "next"))))
+                         (when (some? (mget body "cursor")) (.put ^java.util.Map paging "cursor" (mget body "cursor")))
+                         (when (some? (mget body "nextCursor")) (.put ^java.util.Map paging "cursor" (mget body "nextCursor")))
+                         (let [hm (mget body "hasMore")]
+                           (when (or (= hm true) (= hm false))
+                             (.put ^java.util.Map paging "hasMore" hm)
+                             (reset! explicit-more true))))
+                       ;; Cursor presence only INFERS another page. When the
+                       ;; server stated the answer outright — relay's
+                       ;; `hasNextPage: false`, or a body `hasMore` — that
+                       ;; wins: a final page normally carries both an end
+                       ;; cursor and hasNextPage false, and inferring from the
+                       ;; cursor there would send the caller back for a page
+                       ;; that does not exist, forever.
+                       (when-not @explicit-more
+                         (.put ^java.util.Map paging "hasMore"
+                               (boolean (or (mget paging "hasMore") (some? (mget paging "next"))
+                                            (some? (mget paging "cursor")) (some? (mget paging "nextPage")))))))
                      (core/oset! result :paging paging)
                      (track-set! fa "_paging" (vs/jm "last" paging)))))))
            )

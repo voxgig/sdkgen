@@ -672,8 +672,14 @@ pagingFeature = do
                 opts <- readIORef options
                 pageParam <- optStr opts "pageParam" "page"; limitParam <- optStr opts "limitParam" "limit"; cursorParam <- optStr opts "cursorParam" "cursor"
                 ctrl <- readIORef (cCtrl ctx); pgv <- getp ctrl "paging"; let paging = case pgv of { VMap _ -> pgv; _ -> VNoval }
+                -- GraphQL paginates through operation VARIABLES, not the
+                -- query string. This hook runs after makeSpec, so spec.body
+                -- already holds the { query, variables } envelope, and before
+                -- makeFetchDef serialises it.
+                point <- readIORef (cPoint ctx)
+                kind <- getStrD point "kind" ""
                 cur <- case paging of VMap _ -> getp paging "cursor"; _ -> pure VNoval
-                case cur of
+                if kind == "graphql" then graphqlPreRequest opts specV point paging else case cur of
                   VNoval -> do
                     pv <- getp q pageParam
                     case pv of
@@ -688,8 +694,9 @@ pagingFeature = do
                       VNoval -> do sp <- getp opts "startPage"; setp q pageParam (case sp of VNum n -> VNum n; _ -> VNum 1)
                       _ -> pure ()
                   c -> setp q cursorParam c
-                lim <- getp opts "limit"
-                case lim of VNoval -> pure (); VNull -> pure (); _ -> do lv <- getp q limitParam; case lv of VNoval -> setp q limitParam lim; _ -> pure ()
+                when (kind /= "graphql") $ do
+                  lim <- getp opts "limit"
+                  case lim of VNoval -> pure (); VNull -> pure (); _ -> do lv <- getp q limitParam; case lv of VNoval -> setp q limitParam lim; _ -> pure ()
               _ -> pure ()
           "PreResult" -> do
             rv <- readIORef (cResult ctx)
@@ -704,22 +711,86 @@ pagingFeature = do
                 paging <- jo [("page", xpage), ("totalCount", xtot), ("nextPage", xnext), ("next", VNoval), ("cursor", VNoval), ("hasMore", VBool False)]
                 lnk <- headerCI headersM "link"
                 case lnk of VNoval -> pure (); VNull -> pure (); _ -> case extractNext (vstring lnk) of Just nx -> setp paging "next" (VStr nx); Nothing -> pure ()
-                case body of
+                -- Relay connections carry the cursor in pageInfo, at the
+                -- path the model recorded for this op. `explicitMore` is set
+                -- when the server states hasMore outright, rather than
+                -- leaving it to be inferred from the presence of a cursor.
+                point <- readIORef (cPoint ctx)
+                gqlpage <- getpathS point "graphql.page"
+                relayMore <- case (gqlpage, body) of
+                  (VMap _, VMap _) -> do
+                    -- `connpath` locates the connection object inside the
+                    -- response envelope (data.<field>); the cursor/more paths
+                    -- are relative to it.
+                    connpath <- getStrD gqlpage "connpath" ""
+                    conn <- if null connpath then pure body else do
+                      sub <- getpathS body connpath
+                      pure (if isNullish sub then body else sub)
+                    cursorpath <- getStrD gqlpage "cursor" ""
+                    when (not (null cursorpath)) $ do
+                      c <- getpathS conn cursorpath
+                      when (not (isNullish c)) (setp paging "cursor" c)
+                    morepath <- getStrD gqlpage "more" ""
+                    if null morepath then pure False else do
+                      mv <- getpathS conn morepath
+                      case mv of
+                        VBool mb -> do setp paging "hasMore" (VBool mb); pure True
+                        _ -> pure False
+                  _ -> pure False
+                bodyMore <- case body of
                   VMap _ -> do
                     bn <- getp body "next"; case bn of VNoval -> pure (); VNull -> pure (); _ -> do cn <- getp paging "next"; when (isNullish cn) (setp paging "next" bn)
                     bc <- getp body "cursor"; case bc of VNoval -> pure (); VNull -> pure (); _ -> setp paging "cursor" bc
                     bnc <- getp body "nextCursor"; case bnc of VNoval -> pure (); VNull -> pure (); _ -> setp paging "cursor" bnc
-                    bhm <- getp body "hasMore"; case bhm of VBool bb -> setp paging "hasMore" (VBool bb); _ -> pure ()
-                  _ -> pure ()
+                    bhm <- getp body "hasMore"; case bhm of { VBool bb -> do { setp paging "hasMore" (VBool bb); pure True }; _ -> pure False }
+                  _ -> pure False
+                -- Cursor presence only INFERS another page. When the server
+                -- stated the answer outright — relay's `hasNextPage: false`,
+                -- or a body `hasMore` — that wins: a final page normally
+                -- carries both an end cursor and hasNextPage false, and
+                -- inferring from the cursor there would send the caller back
+                -- for a page that does not exist, forever.
+                let explicitMore = relayMore || bodyMore
                 hmV <- getp paging "hasMore"; nx <- getp paging "next"; cu2 <- getp paging "cursor"; np <- getp paging "nextPage"
                 let hm = isTrueV hmV || not (isNullish nx) || not (isNullish cu2) || not (isNullish np)
-                setp paging "hasMore" (VBool hm)
+                when (not explicitMore) (setp paging "hasMore" (VBool hm))
                 setp rv "paging" paging
                 cl <- cc ctx; lastM <- jo [("last", paging)]; trackSet cl "paging" lastM
               _ -> pure ()
           _ -> pure ()
       initFn _ opts = do om <- toOptsMap opts; writeIORef options om; a <- optActive opts; writeIORef active a
   pure Feature { fName = "paging", fVersion = "0.0.1", fActive = active, fOptions = fopts, fInit = initFn, fHook = hookFn }
+
+-- Relay pagination: the cursor is the `after` variable (or whatever the model
+-- named it), and the page size is `first`.
+graphqlPreRequest :: Value -> Value -> Value -> Value -> IO ()
+graphqlPreRequest opts specV point paging = do
+  body <- getp specV "body"
+  case body of
+    VMap _ -> do
+      vv <- getp body "variables"
+      variables <- case vv of
+        VMap _ -> pure vv
+        _ -> do m <- emptyMap; setp body "variables" m; pure m
+
+      afterVar <- optStr opts "afterVar" "after"
+      firstVar <- optStr opts "firstVar" "first"
+
+      -- Only bind variables the operation actually declares, or the server
+      -- rejects the document.
+      vl <- getpathS point "graphql.vars"
+      varlist <- case vl of VList _ -> listItems vl; _ -> pure []
+      declared <- mapM (\v -> getStrD v "name" "") varlist
+
+      cur <- case paging of VMap _ -> getp paging "cursor"; _ -> pure VNoval
+      when (not (isNullish cur) && afterVar `elem` declared) $
+        setp variables afterVar cur
+
+      lim <- getp opts "limit"
+      existing <- getp variables firstVar
+      when (not (isNullish lim) && isNullish existing && firstVar `elem` declared) $
+        setp variables firstVar lim
+    _ -> pure ()
 
 elemIndex :: Eq a => a -> [a] -> Maybe Int
 elemIndex x = go 0 where go _ [] = Nothing; go i (y : ys) = if x == y then Just i else go (i + 1) ys

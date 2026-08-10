@@ -30,12 +30,12 @@ public static partial class SdkUtility
     // `extensions.code`; Linear-style APIs use `extensions.type`.
     internal static string GraphqlErrorCode(object? gqlerr)
     {
-        var ext = Struct.GetProp(gqlerr, "extensions");
+        var ext = StructUtils.GetProp(gqlerr, "extensions");
 
-        var code = Struct.GetProp(ext, "code") as string;
+        var code = StructUtils.GetProp(ext, "code") as string;
         if (string.IsNullOrEmpty(code))
         {
-            code = Struct.GetProp(ext, "type") as string;
+            code = StructUtils.GetProp(ext, "type") as string;
         }
 
         var raw = (code ?? "").ToUpperInvariant();
@@ -68,7 +68,7 @@ public static partial class SdkUtility
     // equivalent.
     internal static object? GraphqlBodyUtil(Context ctx)
     {
-        var gql = Struct.GetProp(ctx.Point, "graphql")
+        var gql = StructUtils.GetProp(ctx.Point, "graphql")
             as Dictionary<string, object?>;
         if (null == gql)
         {
@@ -92,7 +92,7 @@ public static partial class SdkUtility
 
         var variables = new Dictionary<string, object?>();
 
-        var varlist = Struct.GetProp(gql, "vars") as List<object?>;
+        var varlist = StructUtils.GetProp(gql, "vars") as List<object?>;
         if (null != varlist)
         {
             foreach (var entry in varlist)
@@ -102,13 +102,13 @@ public static partial class SdkUtility
                     continue;
                 }
 
-                var name = Struct.GetProp(spec, "name") as string;
+                var name = StructUtils.GetProp(spec, "name") as string;
                 if (null == name)
                 {
                     continue;
                 }
 
-                var from = Struct.GetProp(spec, "from") as string;
+                var from = StructUtils.GetProp(spec, "from") as string;
 
                 if (string.IsNullOrEmpty(from))
                 {
@@ -129,8 +129,8 @@ public static partial class SdkUtility
 
                 // Only send variables the caller actually supplied: sending
                 // an explicit null would clear a field on many APIs.
-                var val = Struct.GetProp(reqsrc, from)
-                    ?? Struct.GetProp(datasrc, from);
+                var val = StructUtils.GetProp(reqsrc, from)
+                    ?? StructUtils.GetProp(datasrc, from);
                 if (null != val)
                 {
                     variables[name] = val;
@@ -140,7 +140,7 @@ public static partial class SdkUtility
 
         return new Dictionary<string, object?>
         {
-            ["query"] = Struct.GetProp(gql, "doc"),
+            ["query"] = StructUtils.GetProp(gql, "doc"),
             ["variables"] = variables,
         };
     }
@@ -160,19 +160,19 @@ public static partial class SdkUtility
             return false;
         }
 
-        if ("graphql" != Struct.GetProp(ctx.Point, "kind") as string)
+        if ("graphql" != StructUtils.GetProp(ctx.Point, "kind") as string)
         {
             return false;
         }
 
-        if (Struct.GetProp(result.Body, "errors") is not List<object?> errors
+        if (StructUtils.GetProp(result.Body, "errors") is not List<object?> errors
             || 0 == errors.Count)
         {
             return false;
         }
 
         var first = errors[0];
-        var msg = Struct.GetProp(first, "message") as string;
+        var msg = StructUtils.GetProp(first, "message") as string;
         if (string.IsNullOrEmpty(msg))
         {
             msg = "graphql error";

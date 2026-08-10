@@ -12,6 +12,7 @@
 
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 typedef struct {
@@ -106,6 +107,69 @@ static void paging_init(Feature* f, Context* ctx, voxgig_value* options) {
   pf->active = fopt_bool(options, "active", false);
 }
 
+// The model records connection/cursor/more as dot paths; getpath_c takes a
+// NULL-terminated segment array.
+static voxgig_value* getpath_dotted(voxgig_value* store, const char* path) {
+  if (!path || path[0] == '\0') return store;
+
+  char buf[256];
+  snprintf(buf, sizeof(buf), "%s", path);
+
+  const char* keys[16];
+  size_t n = 0;
+  char* save = NULL;
+  for (char* tok = strtok_r(buf, ".", &save); tok && n < 15;
+       tok = strtok_r(NULL, ".", &save)) {
+    keys[n++] = tok;
+  }
+  keys[n] = NULL;
+
+  return getpath_c(store, keys);
+}
+
+// Relay pagination: the cursor is the `after` variable (or whatever the
+// model named it), and the page size is `first`.
+static void paging_graphql_pre_request(PagingFeature* pf, Context* ctx,
+                                       voxgig_value* paging) {
+  voxgig_value* options = pf->options;
+  voxgig_value* body = ctx->spec->body;
+  if (!voxgig_is_map(body)) return;
+
+  voxgig_value* variables = getp(body, "variables");
+  if (!voxgig_is_map(variables)) {
+    variables = voxgig_new_map();
+    setp(body, "variables", variables);
+  }
+
+  const char* after_var = fopt_str(options, "afterVar", "after");
+  const char* first_var = fopt_str(options, "firstVar", "first");
+
+  // Only bind variables the operation actually declares, or the server
+  // rejects the document.
+  bool after_declared = false, first_declared = false;
+  voxgig_value* varlist = getpath2(ctx->point, "graphql", "vars");
+  if (voxgig_is_list(varlist)) {
+    voxgig_list* vl = voxgig_as_list(varlist);
+    for (size_t i = 0; i < vl->len; i++) {
+      voxgig_value* nv = getp(vl->items[i], "name");
+      if (!voxgig_is_string(nv)) continue;
+      const char* n = voxgig_as_string(nv);
+      if (strcmp(n, after_var) == 0) after_declared = true;
+      if (strcmp(n, first_var) == 0) first_declared = true;
+    }
+  }
+
+  voxgig_value* cursor = getp(paging, "cursor");
+  if (after_declared && !v_is_noval(cursor) && !v_is_null(cursor)) {
+    setp(variables, after_var, v_share(cursor));
+  }
+
+  if (first_declared && !v_is_noval(getp(options, "limit")) &&
+      v_is_noval(getp(variables, first_var))) {
+    setp(variables, first_var, v_num((double)fopt_int(options, "limit", 0)));
+  }
+}
+
 static void paging_pre_request(PagingFeature* pf, Context* ctx) {
   voxgig_value* options = pf->options;
   if (!pf->active || !is_list_op(options, ctx->op->name)) return;
@@ -123,6 +187,15 @@ static void paging_pre_request(PagingFeature* pf, Context* ctx) {
 
   // A per-call cursor/page from ctrl takes priority (auto-iteration).
   voxgig_value* paging = ctx->ctrl->paging;
+
+  // GraphQL paginates through operation VARIABLES, not the query string.
+  // This hook runs after make_spec, so spec->body already holds the
+  // { query, variables } envelope, and before make_fetch_def serialises it.
+  voxgig_value* kind = getp(ctx->point, "kind");
+  if (voxgig_is_string(kind) && strcmp(voxgig_as_string(kind), "graphql") == 0) {
+    paging_graphql_pre_request(pf, ctx, paging);
+    return;
+  }
 
   voxgig_value* cursor = getp(paging, "cursor");
   if (!v_is_noval(cursor) && !v_is_null(cursor)) {
@@ -165,6 +238,41 @@ static void paging_pre_result(PagingFeature* pf, Context* ctx) {
     }
   }
 
+  // Set when the response states hasMore outright, rather than leaving it to
+  // be inferred from the presence of a cursor.
+  bool explicit_more = false;
+
+  // Relay connections carry the cursor in pageInfo, at the path the model
+  // recorded for this op.
+  voxgig_value* page = getpath2(ctx->point, "graphql", "page");
+  if (voxgig_is_map(page) && voxgig_is_map(body)) {
+    // `connpath` locates the connection object inside the response envelope
+    // (data.<field>); the cursor/more paths are relative to it.
+    voxgig_value* conn = body;
+    voxgig_value* cpv = getp(page, "connpath");
+    if (voxgig_is_string(cpv) && voxgig_as_string(cpv)[0] != '\0') {
+      voxgig_value* sub = getpath_dotted(body, voxgig_as_string(cpv));
+      if (!v_is_noval(sub) && !v_is_null(sub)) conn = sub;
+    }
+
+    voxgig_value* curv = getp(page, "cursor");
+    if (voxgig_is_string(curv) && voxgig_as_string(curv)[0] != '\0') {
+      voxgig_value* cursor = getpath_dotted(conn, voxgig_as_string(curv));
+      if (!v_is_noval(cursor) && !v_is_null(cursor)) {
+        setp(paging, "cursor", v_share(cursor));
+      }
+    }
+
+    voxgig_value* morev = getp(page, "more");
+    if (voxgig_is_string(morev) && voxgig_as_string(morev)[0] != '\0') {
+      voxgig_value* mv = getpath_dotted(conn, voxgig_as_string(morev));
+      if (voxgig_is_bool(mv)) {
+        setp(paging, "hasMore", v_bool(voxgig_as_bool(mv)));
+        explicit_more = true;
+      }
+    }
+  }
+
   // Body-level cursors.
   if (voxgig_is_map(body)) {
     voxgig_value* next = getp(body, "next");
@@ -182,14 +290,21 @@ static void paging_pre_result(PagingFeature* pf, Context* ctx) {
     bool has_more;
     if (get_bool(body, "hasMore", &has_more)) {
       setp(paging, "hasMore", v_bool(has_more));
+      explicit_more = true;
     }
   }
 
+  // Cursor presence only INFERS another page. When the server stated the
+  // answer outright — relay's `hasNextPage: false`, or a body `hasMore` —
+  // that wins: a final page normally carries both an end cursor and
+  // hasNextPage false, and inferring from the cursor there would send the
+  // caller back for a page that does not exist, forever.
   bool hm = false;
   bool has = get_bool(paging, "hasMore", &hm);
   bool is_true = has && hm;
-  if (!is_true && (!v_is_noval(getp(paging, "next")) || !v_is_noval(getp(paging, "cursor")) ||
-                   !v_is_noval(getp(paging, "nextPage")))) {
+  if (!explicit_more && !is_true &&
+      (!v_is_noval(getp(paging, "next")) || !v_is_noval(getp(paging, "cursor")) ||
+       !v_is_noval(getp(paging, "nextPage")))) {
     setp(paging, "hasMore", v_bool(true));
   }
 

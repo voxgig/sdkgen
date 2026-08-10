@@ -13,6 +13,7 @@
 -- configurable.
 
 local BaseFeature = require("feature.base_feature")
+local vs = require("utility.struct.struct")
 
 local PagingFeature = {}
 PagingFeature.__index = PagingFeature
@@ -83,6 +84,14 @@ function PagingFeature:PreRequest(ctx)
     paging = ctx.ctrl.paging
   end
 
+  -- GraphQL paginates through operation VARIABLES, not the query string.
+  -- This hook runs after make_spec, so spec.body already holds the
+  -- { query, variables } envelope, and before make_fetch_def serialises it.
+  if vs.getprop(ctx.point, "kind") == "graphql" then
+    self:_graphql_pre_request(ctx, paging)
+    return
+  end
+
   if paging["cursor"] ~= nil then
     spec.query[cursor_param] = paging["cursor"]
   elseif spec.query[page_param] == nil then
@@ -95,6 +104,47 @@ function PagingFeature:PreRequest(ctx)
 
   if self.options["limit"] ~= nil and spec.query[limit_param] == nil then
     spec.query[limit_param] = self.options["limit"]
+  end
+end
+
+
+-- Relay pagination: the cursor is the `after` variable (or whatever the model
+-- named it), and the page size is `first`.
+function PagingFeature:_graphql_pre_request(ctx, paging)
+  local body = ctx.spec.body
+  if type(body) ~= "table" then
+    return
+  end
+
+  local variables = body["variables"]
+  if type(variables) ~= "table" then
+    variables = {}
+    body["variables"] = variables
+  end
+
+  local after_var = self.options["afterVar"] or "after"
+  local first_var = self.options["firstVar"] or "first"
+
+  -- Only bind variables the operation actually declares, or the server
+  -- rejects the document.
+  local declared = {}
+  local varlist = vs.getpath(ctx.point, "graphql.vars")
+  if type(varlist) == "table" then
+    for _, v in ipairs(varlist) do
+      local name = vs.getprop(v, "name")
+      if name ~= nil then
+        declared[name] = true
+      end
+    end
+  end
+
+  if paging["cursor"] ~= nil and declared[after_var] then
+    variables[after_var] = paging["cursor"]
+  end
+
+  if self.options["limit"] ~= nil and variables[first_var] == nil
+    and declared[first_var] then
+    variables[first_var] = self.options["limit"]
   end
 end
 
@@ -131,6 +181,43 @@ function PagingFeature:PreResult(ctx)
     end
   end
 
+  -- Set when the response states hasMore outright, rather than leaving it to
+  -- be inferred from the presence of a cursor.
+  local explicit_more = false
+
+  -- Relay connections carry the cursor in pageInfo, at the path the model
+  -- recorded for this op.
+  local page = vs.getpath(ctx.point, "graphql.page")
+  if type(page) == "table" and type(body) == "table" then
+    -- `connpath` locates the connection object inside the response envelope
+    -- (data.<field>); the cursor/more paths are relative to it.
+    local conn = body
+    local connpath = page["connpath"]
+    if type(connpath) == "string" and connpath ~= "" then
+      local sub = vs.getpath(body, connpath)
+      if sub ~= nil then
+        conn = sub
+      end
+    end
+
+    local cursorpath = page["cursor"]
+    if type(cursorpath) == "string" and cursorpath ~= "" then
+      local cursor = vs.getpath(conn, cursorpath)
+      if cursor ~= nil then
+        paging.cursor = cursor
+      end
+    end
+
+    local morepath = page["more"]
+    if type(morepath) == "string" and morepath ~= "" then
+      local more = vs.getpath(conn, morepath)
+      if type(more) == "boolean" then
+        paging.hasMore = more
+        explicit_more = true
+      end
+    end
+  end
+
   -- Body-level cursors.
   if type(body) == "table" then
     if body["next"] ~= nil and paging.next == nil then
@@ -144,11 +231,19 @@ function PagingFeature:PreResult(ctx)
     end
     if type(body["hasMore"]) == "boolean" then
       paging.hasMore = body["hasMore"]
+      explicit_more = true
     end
   end
 
-  paging.hasMore = paging.hasMore or
-    paging.next ~= nil or paging.cursor ~= nil or paging.nextPage ~= nil
+  -- Cursor presence only INFERS another page. When the server stated the
+  -- answer outright — relay's `hasNextPage: false`, or a body `hasMore` —
+  -- that wins: a final page normally carries both an end cursor and
+  -- hasNextPage false, and inferring from the cursor there would send the
+  -- caller back for a page that does not exist, forever.
+  if not explicit_more then
+    paging.hasMore = paging.hasMore or
+      paging.next ~= nil or paging.cursor ~= nil or paging.nextPage ~= nil
+  end
 
   result.paging = paging
 

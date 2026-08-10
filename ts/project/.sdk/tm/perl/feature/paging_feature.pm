@@ -64,6 +64,14 @@ sub PreRequest {
     $paging = $ctx->{ctrl}{paging};
   }
 
+  # GraphQL paginates through operation VARIABLES, not the query string.
+  # This hook runs after make_spec, so spec->{body} already holds the
+  # { query, variables } envelope, and before make_fetch_def serialises it.
+  if ('graphql' eq (ProjectNameHelpers::gp($ctx->{point}, 'kind') // '')) {
+    $self->_graphql_pre_request($ctx, $paging);
+    return;
+  }
+
   if (defined $paging->{cursor}) {
     $spec->{query}{$cursor_param} = $paging->{cursor};
   }
@@ -75,6 +83,45 @@ sub PreRequest {
 
   if (defined $self->{options}{limit} && !defined $spec->{query}{$limit_param}) {
     $spec->{query}{$limit_param} = $self->{options}{limit};
+  }
+  return;
+}
+
+# Relay pagination: the cursor is the `after` variable (or whatever the model
+# named it), and the page size is `first`.
+sub _graphql_pre_request {
+  my ($self, $ctx, $paging) = @_;
+
+  my $body = $ctx->{spec}{body};
+  return unless ref($body) eq 'HASH';
+
+  my $variables = $body->{variables};
+  unless (ref($variables) eq 'HASH') {
+    $variables = {};
+    $body->{variables} = $variables;
+  }
+
+  my $after_var = defined $self->{options}{afterVar} ? $self->{options}{afterVar} : 'after';
+  my $first_var = defined $self->{options}{firstVar} ? $self->{options}{firstVar} : 'first';
+
+  # Only bind variables the operation actually declares, or the server
+  # rejects the document.
+  my %declared;
+  my $varlist = ProjectNameHelpers::gpath($ctx->{point}, 'graphql.vars');
+  if (ref($varlist) eq 'ARRAY') {
+    for my $v (@$varlist) {
+      my $name = ProjectNameHelpers::gp($v, 'name');
+      $declared{$name} = 1 if defined $name;
+    }
+  }
+
+  if (defined $paging->{cursor} && $declared{$after_var}) {
+    $variables->{$after_var} = $paging->{cursor};
+  }
+
+  if (defined $self->{options}{limit} && !defined $variables->{$first_var}
+    && $declared{$first_var}) {
+    $variables->{$first_var} = $self->{options}{limit};
   }
   return;
 }
@@ -106,6 +153,39 @@ sub PreResult {
     }
   }
 
+  # Set when the response states hasMore outright, rather than leaving it to
+  # be inferred from the presence of a cursor.
+  my $explicit_more = 0;
+
+  # Relay connections carry the cursor in pageInfo, at the path the model
+  # recorded for this op.
+  my $page = ProjectNameHelpers::gpath($ctx->{point}, 'graphql.page');
+  if (ref($page) eq 'HASH' && Voxgig::Struct::ismap($body)) {
+    # `connpath` locates the connection object inside the response envelope
+    # (data.<field>); the cursor/more paths are relative to it.
+    my $conn = $body;
+    my $connpath = $page->{connpath};
+    if (defined $connpath && '' ne $connpath) {
+      my $sub = ProjectNameHelpers::gpath($body, $connpath);
+      $conn = $sub if defined $sub;
+    }
+
+    my $cursorpath = $page->{cursor};
+    if (defined $cursorpath && '' ne $cursorpath) {
+      my $cursor = ProjectNameHelpers::gpath($conn, $cursorpath);
+      $paging->{cursor} = $cursor if defined $cursor;
+    }
+
+    my $morepath = $page->{more};
+    if (defined $morepath && '' ne $morepath) {
+      my $more = ProjectNameHelpers::gpath($conn, $morepath);
+      if (ProjectNameHelpers::is_true($more) || ProjectNameHelpers::is_false($more)) {
+        $paging->{hasMore} = ProjectNameHelpers::is_true($more) ? 1 : 0;
+        $explicit_more = 1;
+      }
+    }
+  }
+
   # Body-level cursors.
   if (Voxgig::Struct::ismap($body)) {
     my $bnext = ProjectNameHelpers::gp($body, 'next');
@@ -118,12 +198,20 @@ sub PreResult {
     my $bhasmore = $body->{hasMore};
     if (ProjectNameHelpers::is_true($bhasmore) || ProjectNameHelpers::is_false($bhasmore)) {
       $paging->{hasMore} = ProjectNameHelpers::is_true($bhasmore) ? 1 : 0;
+      $explicit_more = 1;
     }
   }
 
-  $paging->{hasMore} = ($paging->{hasMore}
-    || defined $paging->{next} || defined $paging->{cursor}
-    || defined $paging->{nextPage}) ? 1 : 0;
+  # Cursor presence only INFERS another page. When the server stated the
+  # answer outright - relay's `hasNextPage: false`, or a body `hasMore` -
+  # that wins: a final page normally carries both an end cursor and
+  # hasNextPage false, and inferring from the cursor there would send the
+  # caller back for a page that does not exist, forever.
+  unless ($explicit_more) {
+    $paging->{hasMore} = ($paging->{hasMore}
+      || defined $paging->{next} || defined $paging->{cursor}
+      || defined $paging->{nextPage}) ? 1 : 0;
+  }
 
   $result->{paging} = $paging;
 

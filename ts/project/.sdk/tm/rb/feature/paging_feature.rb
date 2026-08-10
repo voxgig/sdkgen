@@ -45,6 +45,14 @@ class ProjectNamePagingFeature < ProjectNameBaseFeature
       paging = ctx.ctrl.paging
     end
 
+    # GraphQL paginates through operation VARIABLES, not the query string.
+    # This hook runs after make_spec, so spec.body already holds the
+    # { query, variables } envelope, and before make_fetch_def serialises it.
+    if "graphql" == VoxgigStruct.getprop(ctx.point, "kind")
+      _graphql_pre_request(ctx, paging)
+      return
+    end
+
     if !paging["cursor"].nil?
       spec.query[cursor_param] = paging["cursor"]
     elsif spec.query[page_param].nil?
@@ -54,6 +62,41 @@ class ProjectNamePagingFeature < ProjectNameBaseFeature
 
     if !@options["limit"].nil? && spec.query[limit_param].nil?
       spec.query[limit_param] = @options["limit"]
+    end
+  end
+
+  # Relay pagination: the cursor is the `after` variable (or whatever the
+  # model named it), and the page size is `first`.
+  def _graphql_pre_request(ctx, paging)
+    body = ctx.spec.body
+    return unless body.is_a?(Hash)
+
+    variables = body["variables"]
+    unless variables.is_a?(Hash)
+      variables = {}
+      body["variables"] = variables
+    end
+
+    after_var = @options["afterVar"] || "after"
+    first_var = @options["firstVar"] || "first"
+
+    # Only bind variables the operation actually declares, or the server
+    # rejects the document.
+    declared = {}
+    varlist = VoxgigStruct.getpath(ctx.point, "graphql.vars")
+    if varlist.is_a?(Array)
+      varlist.each do |v|
+        name = VoxgigStruct.getprop(v, "name")
+        declared[name] = true unless name.nil?
+      end
+    end
+
+    if !paging["cursor"].nil? && declared[after_var]
+      variables[after_var] = paging["cursor"]
+    end
+
+    if !@options["limit"].nil? && variables[first_var].nil? && declared[first_var]
+      variables[first_var] = @options["limit"]
     end
   end
 
@@ -75,6 +118,39 @@ class ProjectNamePagingFeature < ProjectNameBaseFeature
       "hasMore" => false,
     }
 
+    # Set when the response states hasMore outright, rather than leaving it
+    # to be inferred from the presence of a cursor.
+    explicit_more = false
+
+    # Relay connections carry the cursor in pageInfo, at the path the model
+    # recorded for this op.
+    page = VoxgigStruct.getpath(ctx.point, "graphql.page")
+    if page.is_a?(Hash) && body.is_a?(Hash)
+      # `connpath` locates the connection object inside the response envelope
+      # (data.<field>); the cursor/more paths are relative to it.
+      connpath = page["connpath"]
+      conn = body
+      if connpath.is_a?(String) && "" != connpath
+        sub = VoxgigStruct.getpath(body, connpath)
+        conn = sub unless sub.nil?
+      end
+
+      cursorpath = page["cursor"]
+      if cursorpath.is_a?(String) && "" != cursorpath
+        cursor = VoxgigStruct.getpath(conn, cursorpath)
+        paging["cursor"] = cursor unless cursor.nil?
+      end
+
+      morepath = page["more"]
+      if morepath.is_a?(String) && "" != morepath
+        more = VoxgigStruct.getpath(conn, morepath)
+        if more == true || more == false
+          paging["hasMore"] = more
+          explicit_more = true
+        end
+      end
+    end
+
     # Link: <...>; rel="next"
     link = _header(headers, "link")
     unless link.nil?
@@ -87,11 +163,21 @@ class ProjectNamePagingFeature < ProjectNameBaseFeature
       paging["next"] = paging["next"] || body["next"] unless body["next"].nil?
       paging["cursor"] = body["cursor"] unless body["cursor"].nil?
       paging["cursor"] = body["nextCursor"] unless body["nextCursor"].nil?
-      paging["hasMore"] = body["hasMore"] if body["hasMore"] == true || body["hasMore"] == false
+      if body["hasMore"] == true || body["hasMore"] == false
+        paging["hasMore"] = body["hasMore"]
+        explicit_more = true
+      end
     end
 
-    paging["hasMore"] = paging["hasMore"] ||
-      !paging["next"].nil? || !paging["cursor"].nil? || !paging["nextPage"].nil?
+    # Cursor presence only INFERS another page. When the server stated the
+    # answer outright — relay's `hasNextPage: false`, or a body `hasMore` —
+    # that wins: a final page normally carries both an end cursor and
+    # hasNextPage false, and inferring from the cursor there would send the
+    # caller back for a page that does not exist, forever.
+    unless explicit_more
+      paging["hasMore"] = paging["hasMore"] ||
+        !paging["next"].nil? || !paging["cursor"].nil? || !paging["nextPage"].nil?
+    end
 
     result.paging = paging
 

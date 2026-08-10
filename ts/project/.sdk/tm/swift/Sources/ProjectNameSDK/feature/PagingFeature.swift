@@ -48,6 +48,14 @@ public final class PagingFeature: BaseFeature {
     // A per-call cursor/page from ctrl takes priority (auto-iteration).
     let paging = ctx.ctrl.paging
 
+    // GraphQL paginates through operation VARIABLES, not the query string.
+    // This hook runs after makeSpec, so spec.body already holds the
+    // { query, variables } envelope, and before makeFetchDef serialises it.
+    if "graphql" == gp(ctx.point, "kind").asString {
+      graphqlPreRequest(ctx, paging)
+      return
+    }
+
     var cursor: Value = .noval
     var hasCursor = false
     if let paging = paging {
@@ -68,6 +76,49 @@ public final class PagingFeature: BaseFeature {
 
     if !isNil(fopt(options, "limit")) && isNil(gp(spec.query, limitParam)) {
       spec.query.entries[limitParam] = .int(Int64(foptInt(options, "limit", 0)))
+    }
+  }
+
+  // Relay pagination: the cursor is the `after` variable (or whatever the
+  // model named it), and the page size is `first`.
+  private func graphqlPreRequest(_ ctx: Context, _ paging: VMap?) {
+    guard let spec = ctx.spec, let body = spec.body.asMap else {
+      return
+    }
+
+    let variables: VMap
+    if let v = body.entries["variables"]?.asMap {
+      variables = v
+    }
+    else {
+      variables = VMap()
+      body.entries["variables"] = .map(variables)
+    }
+
+    let afterVar = foptStr(options, "afterVar", "after")
+    let firstVar = foptStr(options, "firstVar", "first")
+
+    // Only bind variables the operation actually declares, or the server
+    // rejects the document.
+    var declared: Set<String> = []
+    if let varlist = gpath(ctx.point, "graphql", "vars").asList {
+      for v in varlist.items {
+        if let name = gp(v, "name").asString {
+          declared.insert(name)
+        }
+      }
+    }
+
+    if let paging = paging {
+      let cursor = gp(paging, "cursor")
+      if !isNil(cursor) && declared.contains(afterVar) {
+        variables.entries[afterVar] = cursor
+      }
+    }
+
+    if !isNil(fopt(options, "limit")) && isNil(gp(variables, firstVar))
+      && declared.contains(firstVar) {
+      variables.entries[firstVar] = .int(Int64(foptInt(options, "limit", 0)))
     }
   }
 
@@ -98,6 +149,34 @@ public final class PagingFeature: BaseFeature {
       }
     }
 
+    // Set when the response states hasMore outright, rather than leaving it
+    // to be inferred from the presence of a cursor.
+    var explicitMore = false
+
+    // Relay connections carry the cursor in pageInfo, at the path the model
+    // recorded for this op.
+    if let page = gpath(ctx.point, "graphql", "page").asMap, nil != body.asMap {
+      // `connpath` locates the connection object inside the response
+      // envelope (data.<field>); the cursor/more paths are relative to it.
+      var conn = body
+      if let connpath = gp(page, "connpath").asString, !connpath.isEmpty {
+        let sub = getpath(body, jtpv(connpath.split(separator: ".").map(String.init)))
+        if !isNil(sub) { conn = sub }
+      }
+
+      if let cursorpath = gp(page, "cursor").asString, !cursorpath.isEmpty {
+        let c = getpath(conn, jtpv(cursorpath.split(separator: ".").map(String.init)))
+        if !isNil(c) { paging.entries["cursor"] = c }
+      }
+
+      if let morepath = gp(page, "more").asString, !morepath.isEmpty {
+        if let more = getpath(conn, jtpv(morepath.split(separator: ".").map(String.init))).asBool {
+          paging.entries["hasMore"] = .bool(more)
+          explicitMore = true
+        }
+      }
+    }
+
     // Body-level cursors.
     if let bm = body.asMap {
       let next = gp(bm, "next")
@@ -114,11 +193,17 @@ public final class PagingFeature: BaseFeature {
       }
       if let hmb = gp(bm, "hasMore").asBool {
         paging.entries["hasMore"] = .bool(hmb)
+        explicitMore = true
       }
     }
 
+    // Cursor presence only INFERS another page. When the server stated the
+    // answer outright - relay's `hasNextPage: false`, or a body `hasMore` -
+    // that wins: a final page normally carries both an end cursor and
+    // hasNextPage false, and inferring from the cursor there would send the
+    // caller back for a page that does not exist, forever.
     let hasMoreNow = gp(paging, "hasMore").asBool ?? false
-    if !hasMoreNow &&
+    if !explicitMore && !hasMoreNow &&
       (!isNil(gp(paging, "next")) || !isNil(gp(paging, "cursor")) || !isNil(gp(paging, "nextPage"))) {
       paging.entries["hasMore"] = .bool(true)
     }

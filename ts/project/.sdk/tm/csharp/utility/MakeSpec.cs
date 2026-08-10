@@ -49,7 +49,7 @@ public static partial class SdkUtility
         ctx.Spec.Query = utility.PrepareQuery(ctx);
         ctx.Spec.Headers = utility.PrepareHeaders(ctx);
 
-        if ("graphql" == Struct.GetProp(point, "kind") as string)
+        if ("graphql" == StructUtils.GetProp(point, "kind") as string)
         {
             // GraphQL addresses one endpoint: no path parts, no query
             // string, and the body carries the operation. PrepareBody is

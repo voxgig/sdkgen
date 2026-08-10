@@ -643,6 +643,37 @@ let clienttrack_feature () : feature =
 (* paging                                                              *)
 (* ------------------------------------------------------------------ *)
 
+(* Relay pagination: the cursor is the `after` variable (or whatever the model
+ * named it), and the page size is `first`. *)
+let graphql_pre_request (options : value) (spec : spec) (point : value)
+    (paging : value) : unit =
+  match spec.sp_body with
+  | Map _ as body ->
+    let variables = match getp body "variables" with
+      | Map _ as m -> m
+      | _ -> let m = empty_map () in setp body "variables" m; m in
+
+    let after_var = opt_str options "afterVar" ~default:"after" in
+    let first_var = opt_str options "firstVar" ~default:"first" in
+
+    (* Only bind variables the operation actually declares, or the server
+     * rejects the document. *)
+    let declared = match getpath_s point "graphql.vars" with
+      | List r -> List.filter_map (fun v -> match getp v "name" with
+          | Str n -> Some n | _ -> None) !r
+      | _ -> [] in
+
+    (match getp paging "cursor" with
+     | Noval | Null -> ()
+     | c -> if List.mem after_var declared then setp variables after_var c);
+
+    (match getp options "limit" with
+     | Noval | Null -> ()
+     | lim ->
+       if List.mem first_var declared && is_nullish (getp variables first_var)
+       then setp variables first_var lim)
+  | _ -> ()
+
 let paging_feature () : feature =
   let options = ref (empty_map ()) in
   let f = { f_name = "paging"; f_version = "0.0.1"; f_active = true; f_options = Noval;
@@ -676,19 +707,27 @@ let paging_feature () : feature =
              let limit_param = opt_str !options "limitParam" ~default:"limit" in
              let cursor_param = opt_str !options "cursorParam" ~default:"cursor" in
              let paging = match ctx.c_ctrl.ctrl_paging with Map _ as m -> m | _ -> empty_map () in
-             (match getp paging "cursor" with
-              | Noval | Null ->
-                (match getp q page_param with
-                 | Noval ->
-                   let page = (match getp paging "page" with
-                       | Noval | Null -> (match getp !options "startPage" with Num n -> Num n | _ -> Num 1.)
-                       | p -> p) in
-                   setp q page_param page
-                 | _ -> ())
-              | c -> setp q cursor_param c);
-             (match getp !options "limit" with
-              | Noval | Null -> ()
-              | lim -> (match getp q limit_param with Noval -> setp q limit_param lim | _ -> ())))
+             (* GraphQL paginates through operation VARIABLES, not the query
+              * string. This hook runs after make_spec, so spec.sp_body already
+              * holds the { query, variables } envelope, and before
+              * make_fetch_def serialises it. *)
+             if get_str_d ctx.c_point "kind" "" = "graphql" then
+               graphql_pre_request !options spec ctx.c_point paging
+             else begin
+               (match getp paging "cursor" with
+                | Noval | Null ->
+                  (match getp q page_param with
+                   | Noval ->
+                     let page = (match getp paging "page" with
+                         | Noval | Null -> (match getp !options "startPage" with Num n -> Num n | _ -> Num 1.)
+                         | p -> p) in
+                     setp q page_param page
+                   | _ -> ())
+                | c -> setp q cursor_param c);
+               (match getp !options "limit" with
+                | Noval | Null -> ()
+                | lim -> (match getp q limit_param with Noval -> setp q limit_param lim | _ -> ()))
+             end)
         | "PreResult" ->
           (match ctx.c_result with
            | None -> ()
@@ -703,18 +742,56 @@ let paging_feature () : feature =
              (match header_ci headers "link" with
               | Noval | Null -> ()
               | l -> (match extract_next (vstr_of l) with Some n -> setp paging "next" (Str n) | None -> ()));
+             (* Relay connections carry the cursor in pageInfo, at the path
+              * the model recorded for this op. `explicit_more` is set when
+              * the server states hasMore outright, rather than leaving it to
+              * be inferred from the presence of a cursor. *)
+             let explicit_more = ref false in
+             let gqlpage = getpath_s ctx.c_point "graphql.page" in
+             (match gqlpage, body with
+              | Map _, Map _ ->
+                (* `connpath` locates the connection object inside the
+                 * response envelope (data.<field>); the cursor/more paths are
+                 * relative to it. *)
+                let connpath = get_str_d gqlpage "connpath" "" in
+                let conn =
+                  if connpath = "" then body
+                  else (match getpath_s body connpath with
+                        | Noval | Null -> body
+                        | sub -> sub) in
+                let cursorpath = get_str_d gqlpage "cursor" "" in
+                if cursorpath <> "" then
+                  (match getpath_s conn cursorpath with
+                   | Noval | Null -> ()
+                   | c -> setp paging "cursor" c);
+                let morepath = get_str_d gqlpage "more" "" in
+                if morepath <> "" then
+                  (match getpath_s conn morepath with
+                   | Bool b -> setp paging "hasMore" (Bool b); explicit_more := true
+                   | _ -> ())
+              | _ -> ());
              (match body with
               | Map _ ->
                 (match getp body "next" with Noval | Null -> () | n -> if is_nullish (getp paging "next") then setp paging "next" n);
                 (match getp body "cursor" with Noval | Null -> () | c -> setp paging "cursor" c);
                 (match getp body "nextCursor" with Noval | Null -> () | c -> setp paging "cursor" c);
-                (match getp body "hasMore" with Bool b -> setp paging "hasMore" (Bool b) | _ -> ())
+                (match getp body "hasMore" with
+                 | Bool b -> setp paging "hasMore" (Bool b); explicit_more := true
+                 | _ -> ())
               | _ -> ());
-             let hm = (getp paging "hasMore" = Bool true)
-                      || not (is_nullish (getp paging "next"))
-                      || not (is_nullish (getp paging "cursor"))
-                      || not (is_nullish (getp paging "nextPage")) in
-             setp paging "hasMore" (Bool hm);
+             (* Cursor presence only INFERS another page. When the server
+              * stated the answer outright — relay's `hasNextPage: false`, or
+              * a body `hasMore` — that wins: a final page normally carries
+              * both an end cursor and hasNextPage false, and inferring from
+              * the cursor there would send the caller back for a page that
+              * does not exist, forever. *)
+             if not !explicit_more then begin
+               let hm = (getp paging "hasMore" = Bool true)
+                        || not (is_nullish (getp paging "next"))
+                        || not (is_nullish (getp paging "cursor"))
+                        || not (is_nullish (getp paging "nextPage")) in
+               setp paging "hasMore" (Bool hm)
+             end;
              result.rt_paging <- paging;
              track_set (cc ctx) "paging" (jo [("last", paging)]))
         | _ -> ());

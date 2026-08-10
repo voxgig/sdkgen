@@ -55,24 +55,93 @@ defmodule ProjectName.Feature.Paging do
         paging = if ctrl != nil, do: S.getprop(ctrl, "paging"), else: nil
         paging = if S.ismap(paging), do: paging, else: S.jm([])
 
-        cond do
-          S.getprop(paging, "cursor") != nil ->
-            S.setprop(query, cursor_param, S.getprop(paging, "cursor"))
+        # GraphQL paginates through operation VARIABLES, not the query
+        # string. This hook runs after make_spec, so spec.body already holds
+        # the { query, variables } envelope, and before make_fetch_def
+        # serialises it.
+        if "graphql" == S.getprop(S.getprop(ctx, "point"), "kind") do
+          graphql_pre_request(f, ctx, paging)
+        else
+          cond do
+            S.getprop(paging, "cursor") != nil ->
+              S.setprop(query, cursor_param, S.getprop(paging, "cursor"))
 
-          S.getprop(query, page_param) == nil ->
-            page = S.getprop(paging, "page")
-            page = if page == nil, do: por(S.getprop(opts, "startPage"), 1), else: page
-            S.setprop(query, page_param, page)
+            S.getprop(query, page_param) == nil ->
+              page = S.getprop(paging, "page")
+              page = if page == nil, do: por(S.getprop(opts, "startPage"), 1), else: page
+              S.setprop(query, page_param, page)
 
-          true ->
-            nil
+            true ->
+              nil
+          end
+
+          limit = S.getprop(opts, "limit")
+
+          if limit != nil and S.getprop(query, limit_param) == nil do
+            S.setprop(query, limit_param, limit)
+          end
+        end
+      end
+    end
+
+    nil
+  end
+
+  # Relay pagination: the cursor is the `after` variable (or whatever the model
+  # named it), and the page size is `first`.
+  defp graphql_pre_request(f, ctx, paging) do
+    opts = F.opts(f)
+    point = S.getprop(ctx, "point")
+    body = S.getprop(S.getprop(ctx, "spec"), "body")
+
+    if S.ismap(body) do
+      variables =
+        case S.getprop(body, "variables") do
+          v when not is_nil(v) ->
+            if S.ismap(v) do
+              v
+            else
+              nv = S.jm([])
+              S.setprop(body, "variables", nv)
+              nv
+            end
+
+          _ ->
+            nv = S.jm([])
+            S.setprop(body, "variables", nv)
+            nv
         end
 
-        limit = S.getprop(opts, "limit")
+      after_var = por(S.getprop(opts, "afterVar"), "after")
+      first_var = por(S.getprop(opts, "firstVar"), "first")
 
-        if limit != nil and S.getprop(query, limit_param) == nil do
-          S.setprop(query, limit_param, limit)
+      # Only bind variables the operation actually declares, or the server
+      # rejects the document.
+      varlist = S.getpath(point, "graphql.vars")
+
+      declared =
+        if S.islist(varlist) and S.size(varlist) > 0 do
+          Enum.reduce(0..(S.size(varlist) - 1), MapSet.new(), fn i, acc ->
+            case S.getprop(S.getelem(varlist, i), "name") do
+              nil -> acc
+              name -> MapSet.put(acc, name)
+            end
+          end)
+        else
+          MapSet.new()
         end
+
+      cursor = S.getprop(paging, "cursor")
+
+      if cursor != nil and MapSet.member?(declared, after_var) do
+        S.setprop(variables, after_var, cursor)
+      end
+
+      limit = S.getprop(opts, "limit")
+
+      if limit != nil and S.getprop(variables, first_var) == nil and
+           MapSet.member?(declared, first_var) do
+        S.setprop(variables, first_var, limit)
       end
     end
 
@@ -131,8 +200,56 @@ defmodule ProjectName.Feature.Paging do
             {next_from_link, nil, false}
           end
 
+        # Relay connections carry the cursor in pageInfo, at the path the
+        # model recorded for this op. `explicit_more` is set when the server
+        # states hasMore outright, rather than leaving it to be inferred from
+        # the presence of a cursor.
+        gqlpage = S.getpath(S.getprop(ctx, "point"), "graphql.page")
+
+        {cursor_val, has_more, explicit_more} =
+          if S.ismap(gqlpage) and S.ismap(body) do
+            # `connpath` locates the connection object inside the response
+            # envelope (data.<field>); the cursor/more paths are relative
+            # to it.
+            connpath = S.getprop(gqlpage, "connpath")
+
+            conn =
+              if is_binary(connpath) and connpath != "" do
+                por(S.getpath(body, connpath), body)
+              else
+                body
+              end
+
+            cursorpath = S.getprop(gqlpage, "cursor")
+
+            c =
+              if is_binary(cursorpath) and cursorpath != "" do
+                por(S.getpath(conn, cursorpath), cursor_val)
+              else
+                cursor_val
+              end
+
+            morepath = S.getprop(gqlpage, "more")
+
+            case (is_binary(morepath) and morepath != "" and S.getpath(conn, morepath)) do
+              v when is_boolean(v) -> {c, v, true}
+              _ -> {c, has_more, false}
+            end
+          else
+            {cursor_val, has_more, is_boolean(S.getprop(body, "hasMore"))}
+          end
+
+        # Cursor presence only INFERS another page. When the server stated the
+        # answer outright — relay's `hasNextPage: false`, or a body `hasMore`
+        # — that wins: a final page normally carries both an end cursor and
+        # hasNextPage false, and inferring from the cursor there would send
+        # the caller back for a page that does not exist, forever.
         has_more =
-          has_more or next_val != nil or cursor_val != nil or next_page != nil
+          if explicit_more do
+            has_more
+          else
+            has_more or next_val != nil or cursor_val != nil or next_page != nil
+          end
 
         paging =
           S.jm([

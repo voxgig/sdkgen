@@ -248,6 +248,51 @@ describe('graphql transport parity', () => {
         `branch is missing`)
     })
   }
+
+  // Paging is a separate hook and drifted separately: the kind branch clears
+  // spec.query, so a REST-only paging feature writes cursor/limit into a
+  // query string that is then discarded, and reads only top-level body
+  // cursors — so a Relay connection stops after page one.
+  //
+  // lean is exempt: its paging feature stamps size/page and counts pages,
+  // with no cursor pagination, Link header or hasMore for REST either, so
+  // there is no branch to mirror without first porting the REST feature.
+  const NO_CURSOR_PAGING = ['lean']
+
+  for (const lang of sdkTargets()) {
+    if (NO_CURSOR_PAGING.includes(lang)) {
+      continue
+    }
+
+    test(`${lang}: paginates graphql through operation variables`, () => {
+      const files = codeLines(lang)
+      const anyLine = (re: RegExp) =>
+        files.some((f) => f.lines.some((l) => re.test(l)))
+
+      ok(anyLine(/after[_-]?var/i) && anyLine(/first[_-]?var/i),
+        `${lang}: the paging hook does not bind the after/first operation ` +
+        `variables — the cursor goes into a query string the graphql kind ` +
+        `branch has already cleared, so auto-pagination never advances`)
+
+      ok(anyLine(/connpath/i),
+        `${lang}: the paging hook does not read the model's relay page ` +
+        `descriptor, so pageInfo.endCursor is never found and a connection ` +
+        `stops after the first page`)
+
+      ok(anyLine(/explicit[_-]?more/i),
+        `${lang}: hasMore is inferred from cursor presence alone — a final ` +
+        `relay page carries both an end cursor and hasNextPage false, so ` +
+        `the caller is sent back for a page that does not exist, forever`)
+    })
+  }
+
+  test('the cursor-paging exemption list is still accurate', () => {
+    const stillExempt = NO_CURSOR_PAGING.filter((lang) =>
+      !codeLines(lang).some((f) => f.lines.some((l) => /hasMore/.test(l))))
+    deepStrictEqual(stillExempt, NO_CURSOR_PAGING,
+      'a target listed as having no cursor paging gained a hasMore signal — ' +
+      'give it the graphql paging branches and drop it from NO_CURSOR_PAGING')
+  })
 })
 
 
