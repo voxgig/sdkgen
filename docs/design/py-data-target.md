@@ -1,6 +1,35 @@
 # Design: the `py-data` target
 
-Status: **proposal** (2026-08-10). Not implemented.
+Status: **implemented** (2026-08-10). Verified end-to-end on a freshly
+scaffolded `solar` SDK (the canonical apidef fixture spec) against the live
+solar test server in `ts/test/solardemo/app`.
+
+Deltas from the original proposal, all found during implementation:
+
+- **No `$DATE` dtype row.** apidef's sentinel vocabulary is STRING / INTEGER /
+  NUMBER / BOOLEAN / NULL / ARRAY / OBJECT / ANY — there is no date sentinel,
+  because the model carries no string formats. Date parsing is therefore an
+  explicit `parse_dates=` opt-in, never inferred. Inventing a DATE row would
+  have meant guessing from column names, and a wrong guess mangles data
+  silently.
+- **The numeric rescue is gated on being lossless.** The first cut fell back to
+  `pd.to_numeric(errors="coerce")` whenever an `astype` failed, which turns a
+  genuinely non-numeric column into all-NA while appearing to succeed — the
+  exact silent data loss this file claims to avoid. It now only accepts the
+  rescue when every previously non-null value survives. Caught by a test.
+- **`SdkGenError` is now exported** from `@voxgig/sdkgen` so a scaffold
+  component can fail a generation with an actionable message.
+- **Example columns are chosen, not taken first.** A groupby example on the
+  alphabetically-first field lands on an object column (dicts/lists) often
+  enough to matter; `exampleGroupField` prefers a required string/boolean.
+- **`list()` and `load()` do not return the same shape.** `list()` yields
+  ENTITY OBJECTS whose record is reachable only through the public
+  `data_get()`; `load()` yields a plain dict. `to_record` must unwrap the
+  entity first. The original version fell through to a `__dict__` scrape,
+  which filters underscore-prefixed attributes and so returned `{}` for every
+  row — producing a frame with the right row count and **zero columns**. Only
+  a live HTTP round-trip surfaced this; both mock/test-mode paths return
+  empty lists and looked fine.
 
 A generation target producing a Python package for **data analysts in notebooks**
 (Google Colab, Jupyter, VS Code notebooks), layered on the sibling `py` SDK. The

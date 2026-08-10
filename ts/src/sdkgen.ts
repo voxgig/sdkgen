@@ -50,7 +50,7 @@ import { buildIdNames } from './helpers/buildIdNames'
 import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
-import { canonToType, canonKey } from './helpers/canonType'
+import { canonToType, canonToDtype, canonKey } from './helpers/canonType'
 import { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape'
 import { isReservedName, safeVarName, exampleVarName, isRbCoreConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming'
 import { serverVariables, hasServerVariables } from './helpers/serverVars'
@@ -456,10 +456,15 @@ export {
   isAuthActive,
   resolveAuthPrefix,
 
+  // Scaffold components need this to fail a generation with an actionable
+  // message rather than a bare Error (py-data guards on its sibling `py`).
+  SdkGenError,
+
   buildIdNames,
   getMatchEntries,
   collectDeps,
   canonToType,
+  canonToDtype,
   canonKey,
 
   OP_SUFFIX,
