@@ -12,7 +12,7 @@ private func buildOptSpec() -> Value {
 
   let allow = VMap()
   allow.entries["method"] = .string("GET,PUT,POST,PATCH,DELETE,OPTIONS")
-  allow.entries["op"] = .string("create,update,load,list,remove,command,direct")
+  allow.entries["op"] = .string("create,update,load,list,remove,command,direct,graphql")
 
   let entityChild = VMap()
   entityChild.entries["`$OPEN`"] = .bool(true)

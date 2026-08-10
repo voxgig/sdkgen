@@ -866,7 +866,7 @@ optSpecValue :: IO Value
 optSpecValue = do
   auth <- jo [("prefix", VStr "")]
   hdrs <- jo [("`$CHILD`", VStr "`$STRING`")]
-  allow <- jo [("method", VStr "GET,PUT,POST,PATCH,DELETE,OPTIONS"), ("op", VStr "create,update,load,list,remove,command,direct")]
+  allow <- jo [("method", VStr "GET,PUT,POST,PATCH,DELETE,OPTIONS"), ("op", VStr "create,update,load,list,remove,command,direct,graphql")]
   entChild <- do a <- emptyMap; jo [("`$OPEN`", VBool True), ("active", VBool False), ("alias", a)]
   ent <- jo [("`$CHILD`", entChild)]
   featChild <- jo [("`$OPEN`", VBool True), ("active", VBool False)]

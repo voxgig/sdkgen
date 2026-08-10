@@ -800,7 +800,7 @@
                    "auth" (vs/jm "prefix" "")
                    "headers" (vs/jm "`$CHILD`" "`$STRING`")
                    "allow" (vs/jm "method" "GET,PUT,POST,PATCH,DELETE,OPTIONS"
-                                  "op" "create,update,load,list,remove,command,direct")
+                                  "op" "create,update,load,list,remove,command,direct,graphql")
                    "entity" (vs/jm "`$CHILD`" (vs/jm "`$OPEN`" true "active" false "alias" (vs/jm)))
                    "feature" (vs/jm "`$CHILD`" (vs/jm "`$OPEN`" true "active" false))
                    "utility" (vs/jm)

@@ -64,7 +64,7 @@ voxgig_value* make_options_util(Context* ctx) {
     "headers", cmap(1, "`$CHILD`", v_str("`$STRING`")),
     "allow", cmap(2,
       "method", v_str("GET,PUT,POST,PATCH,DELETE,OPTIONS"),
-      "op", v_str("create,update,load,list,remove,command,direct")),
+      "op", v_str("create,update,load,list,remove,command,direct,graphql")),
     "entity", cmap(1, "`$CHILD`", cmap(3,
       "`$OPEN`", v_bool(true),
       "active", v_bool(false),

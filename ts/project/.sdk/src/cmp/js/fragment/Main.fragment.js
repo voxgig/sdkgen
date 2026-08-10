@@ -140,6 +140,19 @@ class ProjectNameSDK {
 
   async direct(fetchargs) {
     const utility = this._utility
+
+    // Raw endpoint access is operator-controllable, like every entity op.
+    // (`graphql` calls through here with $internal set, having already
+    // checked its own token — blocking raw schema access therefore means
+    // denying BOTH tokens, since either one reaches the same endpoint.)
+    if (!(fetchargs || {}).$internal &&
+      !this._options.allow.op.includes('direct')) {
+      return {
+        ok: false,
+        err: new Error('ProjectNameSDK: direct: operation not allowed by' +
+          ' SDK option allow.op value: "' + this._options.allow.op + '"'),
+      }
+    }
     const fetcher = utility.fetcher
     const makeContext = utility.makeContext
 
@@ -176,6 +189,56 @@ class ProjectNameSDK {
     catch (err) {
       return { ok: false, err }
     }
+  }
+
+
+
+  // Raw GraphQL access: the pressure valve that makes the generated
+  // surface's deliberate omissions (per-call selection sets, typed filter
+  // builders, batching, subscriptions) livable — the whole schema stays
+  // reachable.
+  //
+  // Thin wrapper over the same prepare/fetch path `direct` uses, with the
+  // one thing raw `direct` cannot do for GraphQL: a GraphQL failure rides
+  // HTTP 200 as a top-level `errors` array, so status alone would report a
+  // failed query as ok.
+  //
+  // NOTE: like `direct`, this bypasses the feature pipeline — no retry,
+  // ratelimit or paging features apply.
+  async graphql(query, variables, ctrl) {
+    const options = this._options
+
+    if (!options.allow.op.includes('graphql')) {
+      return {
+        ok: false,
+        err: new Error('ProjectNameSDK: graphql: operation not allowed by' +
+          ' SDK option allow.op value: "' + options.allow.op + '"'),
+      }
+    }
+
+    const res = await this.direct({
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: { query, variables: variables || {} },
+      ctrl,
+      $internal: true,
+    })
+
+    if (res instanceof Error || false === res.ok) {
+      return res
+    }
+
+    const errors = null == res.data ? undefined : res.data.errors
+
+    if (null != errors && Array.isArray(errors) && 0 < errors.length) {
+      const first = errors[0] || {}
+      const err = new Error('ProjectNameSDK: graphql: ' +
+        (first.message || 'graphql error'))
+      err.graphql = errors
+      return { ok: false, status: res.status, headers: res.headers, err, data: res.data }
+    }
+
+    return res
   }
 
 

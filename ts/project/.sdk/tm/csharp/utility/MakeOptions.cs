@@ -76,7 +76,7 @@ public static partial class SdkUtility
             ["allow"] = new Dictionary<string, object?>
             {
                 ["method"] = "GET,PUT,POST,PATCH,DELETE,OPTIONS",
-                ["op"] = "create,update,load,list,remove,command,direct",
+                ["op"] = "create,update,load,list,remove,command,direct,graphql",
             },
             ["entity"] = new Dictionary<string, object?>
             {
