@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import planetRoutes from './planet.routes.js'
 import moonRoutes from './moon.routes.js'
+import graphqlRoutes from './graphql.routes.js'
 
 export default async function routes(fastify: FastifyInstance) {
   fastify.addSchema({
@@ -49,4 +50,5 @@ export default async function routes(fastify: FastifyInstance) {
 
   await fastify.register(planetRoutes)
   await fastify.register(moonRoutes)
+  await fastify.register(graphqlRoutes)
 }
