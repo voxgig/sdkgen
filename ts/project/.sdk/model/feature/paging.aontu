@@ -13,6 +13,13 @@ main: kit: feature: paging: {
       limitParam: 'limit'
       cursorParam: 'cursor'
       startPage: 1
+
+      # GraphQL (relay) list ops paginate through operation variables
+      # rather than query parameters. These name the variables to bind;
+      # the cursor/hasMore response paths come from the model's per-op
+      # page descriptor.
+      afterVar: 'after'
+      firstVar: 'first'
     }
   }
 

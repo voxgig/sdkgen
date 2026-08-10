@@ -17,6 +17,8 @@ import assert from 'node:assert'
 import { transform } from 'sucrase'
 import * as struct from '@voxgig/struct'
 
+import { loadFeature } from './featureharness'
+
 
 const TM_TS = Path.resolve(
   __dirname, '..', 'project', '.sdk', 'tm', 'ts', 'src', 'utility')
@@ -236,6 +238,140 @@ describe('graphql-transport', () => {
         jsgql.graphqlErrorCode({ extensions: ext }),
         gql.graphqlErrorCode({ extensions: ext }))
     }
+  })
+
+})
+
+
+// Relay pagination rides the SAME `list`-with-cursor surface REST uses: the
+// difference is only where the cursor goes out (an operation variable, not a
+// query parameter) and where it comes back (pageInfo, at the path the model
+// recorded for the op).
+describe('graphql-paging', () => {
+
+  const PagingFeature = loadFeature('paging')
+
+  const LIST_POINT: any = {
+    kind: 'graphql',
+    method: 'POST',
+    graphql: {
+      optype: 'query',
+      field: 'issues',
+      doc: 'query IssueList($first: Int, $after: String) { issues(first: $first, after: $after) { nodes { id } pageInfo { endCursor hasNextPage } } }',
+      vars: [
+        { name: 'first', from: 'first', gqltype: 'Int' },
+        { name: 'after', from: 'after', gqltype: 'String' },
+      ],
+      page: {
+        style: 'relay',
+        nodes: 'nodes',
+        cursor: 'pageInfo.endCursor',
+        more: 'pageInfo.hasNextPage',
+      },
+    },
+    transform: { res: '`body.data.issues.nodes`' },
+  }
+
+  function makeFeature(options?: any) {
+    const f = new PagingFeature()
+    f.init({ client: {} } as any, { active: true, ...(options || {}) })
+    return f
+  }
+
+  function pagingCtx(point: any, opts?: any) {
+    const o = opts || {}
+    return {
+      op: { name: 'list' },
+      point,
+      spec: o.spec,
+      ctrl: { paging: o.paging },
+      result: o.result,
+      utility: { struct },
+    }
+  }
+
+
+  test('outbound-cursor-into-variables', () => {
+    const f = makeFeature({ limit: 25 })
+    const spec: any = { body: { query: 'q', variables: {} }, query: {} }
+    const ctx = pagingCtx(LIST_POINT, { spec, paging: { cursor: 'CUR1' } })
+
+    f.PreRequest(ctx)
+
+    // Cursor and page size go into the operation's variables...
+    assert.deepStrictEqual(spec.body.variables, { after: 'CUR1', first: 25 })
+    // ...and never into the query string.
+    assert.deepStrictEqual(spec.query, {})
+  })
+
+
+  // Binding a variable the document does not declare makes the server reject
+  // the whole operation, so undeclared names must be skipped.
+  test('outbound-skips-undeclared-vars', () => {
+    const f = makeFeature({ limit: 25 })
+    const point = {
+      ...LIST_POINT,
+      graphql: { ...LIST_POINT.graphql, vars: [] },
+    }
+    const spec: any = { body: { query: 'q', variables: {} }, query: {} }
+
+    f.PreRequest(pagingCtx(point, { spec, paging: { cursor: 'CUR1' } }))
+
+    assert.deepStrictEqual(spec.body.variables, {})
+  })
+
+
+  test('inbound-pageinfo-into-result-paging', () => {
+    const f = makeFeature()
+    const result: any = {
+      body: {
+        data: {
+          issues: {
+            nodes: [{ id: 'i1' }],
+            pageInfo: { endCursor: 'CUR2', hasNextPage: true },
+          },
+        },
+      },
+    }
+    const ctx = pagingCtx(
+      { ...LIST_POINT, graphql: { ...LIST_POINT.graphql,
+        page: { ...LIST_POINT.graphql.page, connpath: 'data.issues' } } },
+      { result })
+
+    f.PreResult(ctx)
+
+    assert.equal(result.paging.cursor, 'CUR2')
+    assert.equal(result.paging.hasMore, true)
+  })
+
+
+  test('inbound-last-page-has-no-more', () => {
+    const f = makeFeature()
+    const result: any = {
+      body: { data: { issues: { nodes: [], pageInfo: { hasNextPage: false } } } },
+    }
+    const ctx = pagingCtx(
+      { ...LIST_POINT, graphql: { ...LIST_POINT.graphql,
+        page: { ...LIST_POINT.graphql.page, connpath: 'data.issues' } } },
+      { result })
+
+    f.PreResult(ctx)
+
+    assert.equal(result.paging.hasMore, false)
+    assert.equal(result.paging.cursor, undefined)
+  })
+
+
+  // REST list ops must be completely unaffected.
+  test('http-point-uses-query-params', () => {
+    const f = makeFeature({ limit: 10 })
+    const spec: any = { query: {} }
+    const ctx = pagingCtx({ kind: 'http' }, { spec, paging: { cursor: 'C' } })
+
+    f.PreRequest(ctx)
+
+    assert.equal(spec.query.cursor, 'C')
+    assert.equal(spec.query.limit, 10)
   })
 
 })
