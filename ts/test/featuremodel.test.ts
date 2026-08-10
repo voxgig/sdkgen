@@ -151,7 +151,10 @@ describe('feature-language-parity', () => {
     ts: (n) => Path.join('ts', 'src', 'feature', n, cap(n) + 'Feature.ts'),
     js: (n) => Path.join('js', 'src', 'feature', n, cap(n) + 'Feature.js'),
     go: (n) => Path.join('go', 'feature', n + '_feature.go'),
-    py: (n) => Path.join('py', 'feature', n + '_feature.py'),
+    // py nests its runtime packages under tm/py/pkg/ so the generated SDK
+    // can put them inside the <name>_sdk package rather than at the
+    // language root, where `feature`/`core`/`utility` are shadowable.
+    py: (n) => Path.join('py', 'pkg', 'feature', n + '_feature.py'),
     php: (n) => Path.join('php', 'feature', cap(n) + 'Feature.php'),
     rb: (n) => Path.join('rb', 'feature', n + '_feature.rb'),
     lua: (n) => Path.join('lua', 'feature', n + '_feature.lua'),

@@ -6,15 +6,15 @@ import re
 
 import pytest
 
-from utility.voxgig_struct import voxgig_struct as vs
+from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk import ProjectNameSDK
-from core.spec import ProjectNameSpec
-from core.result import ProjectNameResult
-from core.response import ProjectNameResponse
-from core.operation import ProjectNameOperation
-from core.error import ProjectNameError
-from core import helpers
-from feature.base_feature import ProjectNameBaseFeature
+from projectname_sdk.core.spec import ProjectNameSpec
+from projectname_sdk.core.result import ProjectNameResult
+from projectname_sdk.core.response import ProjectNameResponse
+from projectname_sdk.core.operation import ProjectNameOperation
+from projectname_sdk.core.error import ProjectNameError
+from projectname_sdk.core import helpers
+from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 

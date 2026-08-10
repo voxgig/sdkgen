@@ -137,9 +137,9 @@ const TestDirect = cmp(function TestDirect(props: any) {
 import json
 import pytest
 
-from utility.voxgig_struct import voxgig_struct as vs
+from ${model.const.Name.toLowerCase()}_sdk.utility.voxgig_struct import voxgig_struct as vs
 from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
-from core import helpers
+from ${model.const.Name.toLowerCase()}_sdk.core import helpers
 from test import runner
 
 

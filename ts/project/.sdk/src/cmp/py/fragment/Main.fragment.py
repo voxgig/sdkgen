@@ -1,16 +1,16 @@
 # ProjectName SDK
 
-from utility.voxgig_struct import voxgig_struct as vs
-from core.utility_type import ProjectNameUtility
-from core.spec import ProjectNameSpec
-from core import helpers
+from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
+from projectname_sdk.core.utility_type import ProjectNameUtility
+from projectname_sdk.core.spec import ProjectNameSpec
+from projectname_sdk.core import helpers
 
 # Load utility registration (populates Utility._registrar)
-from utility import register
+from projectname_sdk.utility import register
 
 # Load features
-from feature.base_feature import ProjectNameBaseFeature
-from features import _make_feature
+from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
+from projectname_sdk.features import _make_feature
 
 
 class ProjectNameSDK:
@@ -23,7 +23,7 @@ class ProjectNameSDK:
         utility = ProjectNameUtility()
         self._utility = utility
 
-        from config import make_config
+        from projectname_sdk.config import make_config
         config = make_config()
 
         self._rootctx = utility.make_context({
