@@ -162,7 +162,44 @@ public class ProjectNameSDK
         return utility.MakeFetchDef(ctx);
     }
 
+    // Raw endpoint access is operator-controllable, like every entity op.
+    // Blocking it means denying BOTH the 'direct' and 'graphql' tokens,
+    // since either one reaches the same endpoint.
     public Dictionary<string, object?> Direct(Dictionary<string, object?>? fetchargs)
+    {
+        if (!OpAllowed("direct"))
+        {
+            return OpDenied("direct");
+        }
+
+        return RawRequest(fetchargs);
+    }
+
+    // Is this raw-access op permitted by the SDK's allow.op option?
+    private bool OpAllowed(string op)
+    {
+        return StructUtils.GetPath(_options, StructUtils.Jt("allow", "op"))
+            is string allow && allow.Contains(op);
+    }
+
+    private Dictionary<string, object?> OpDenied(string op)
+    {
+        var allow = StructUtils.GetPath(_options, StructUtils.Jt("allow", "op"))
+            as string ?? "";
+        return new Dictionary<string, object?>
+        {
+            ["ok"] = false,
+            ["err"] = new Exception("ProjectNameSDK: " + op +
+                ": operation not allowed by SDK option allow.op value: \"" +
+                allow + "\""),
+        };
+    }
+
+    // Ungated request path shared by Direct and Graphql, each of which
+    // checks its own allow.op token first. Private, rather than a flag on
+    // fetchargs: a caller-supplied marker would let anyone opt straight back
+    // out of the gate by passing it.
+    private Dictionary<string, object?> RawRequest(Dictionary<string, object?>? fetchargs)
     {
         var utility = _utility;
 
@@ -252,6 +289,66 @@ public class ProjectNameSDK
             ["ok"] = false,
             ["err"] = ctx.MakeError("direct_invalid", "invalid response type"),
         };
+    }
+
+    // Raw GraphQL access: the pressure valve that makes the generated
+    // surface's deliberate omissions (per-call selection sets, typed filter
+    // builders, batching, subscriptions) livable — the whole schema stays
+    // reachable.
+    //
+    // Thin wrapper over the same prepare/fetch path Direct uses, with the
+    // one thing raw Direct cannot do for GraphQL: a GraphQL failure rides
+    // HTTP 200 as a top-level `errors` array, so status alone would report a
+    // failed query as ok.
+    //
+    // NOTE: like Direct, this bypasses the feature pipeline — no retry,
+    // ratelimit or paging features apply.
+    public Dictionary<string, object?> Graphql(string query,
+        Dictionary<string, object?>? variables = null,
+        Dictionary<string, object?>? ctrl = null)
+    {
+        if (!OpAllowed("graphql"))
+        {
+            return OpDenied("graphql");
+        }
+
+        var res = RawRequest(new Dictionary<string, object?>
+        {
+            ["method"] = "POST",
+            ["headers"] = new Dictionary<string, object?>
+            {
+                ["content-type"] = "application/json",
+            },
+            ["body"] = new Dictionary<string, object?>
+            {
+                ["query"] = query,
+                ["variables"] = variables ?? new Dictionary<string, object?>(),
+            },
+            ["ctrl"] = ctrl ?? new Dictionary<string, object?>(),
+        });
+
+        // Errors are read BEFORE any status check: a GraphQL parse or
+        // validation failure comes back as HTTP 400 carrying the standard
+        // { errors: [...] } body, and the raw path represents a non-2xx as
+        // ok:false with no err — so returning early on status would discard
+        // the server's own diagnostics, which are the only useful part of
+        // that response.
+        var errors = StructUtils.GetPath(res, StructUtils.Jt("data", "errors"))
+            as List<object?>;
+
+        if (null != errors && 0 < errors.Count)
+        {
+            var msg = StructUtils.GetProp(errors[0], "message") as string;
+            if (string.IsNullOrEmpty(msg))
+            {
+                msg = "graphql error";
+            }
+            res["ok"] = false;
+            res["err"] = new Exception("ProjectNameSDK: graphql: " + msg);
+            res["graphql"] = errors;
+        }
+
+        return res;
     }
 
     // <[SLOT]>

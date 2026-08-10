@@ -1090,7 +1090,24 @@ let prepare (client : sdk_client) (fetchargs : value) : value =
   (match u.u_prepare_auth ctx with (_, Some err) -> raise (Sdk_error_exc err) | _ -> ());
   (match u.u_make_fetch_def ctx with (_, Some err) -> raise (Sdk_error_exc err) | (fd, None) -> fd)
 
-let direct (client : sdk_client) (fetchargs : value) : value =
+(* Is this raw-access op permitted by the SDK's allow.op option? *)
+let op_allowed (client : sdk_client) (op : string) : bool =
+  match getpath_s client.cl_options "allow.op" with
+  | Str allow -> substr_contains allow op
+  | _ -> false
+
+let op_denied (client : sdk_client) (op : string) : value =
+  let allow = match getpath_s client.cl_options "allow.op" with
+    | Str s -> s | _ -> "" in
+  jo [("ok", Bool false);
+      ("err", Str ("ProjectNameSDK: " ^ op ^ ": operation not allowed by" ^
+                   " SDK option allow.op value: \"" ^ allow ^ "\""))]
+
+(* Ungated request path shared by direct and graphql, each of which checks its
+ * own allow.op token first. Separate, rather than a flag on fetchargs: a
+ * caller-supplied marker would let anyone opt straight back out of the gate
+ * by passing it. *)
+let raw_request (client : sdk_client) (fetchargs : value) : value =
   let u = client.cl_utility in
   let fetchargs = if is_noval fetchargs then empty_map () else fetchargs in
   match (try `Ok (prepare client fetchargs) with Sdk_error_exc e -> `Err e) with
@@ -1116,6 +1133,56 @@ let direct (client : sdk_client) (fetchargs : value) : value =
            jo [("ok", Bool (status >= 200 && status < 300)); ("status", vint_of status);
                ("headers", headers); ("data", json_data)]
          | _ -> jo [("ok", Bool false); ("err", err_to_value (ctx_make_error ctx "direct_invalid" "invalid response type"))]))
+
+(* Raw endpoint access is operator-controllable, like every entity op.
+ * Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+ * either one reaches the same endpoint. *)
+let direct (client : sdk_client) (fetchargs : value) : value =
+  if not (op_allowed client "direct") then op_denied client "direct"
+  else raw_request client fetchargs
+
+(* Raw GraphQL access: the pressure valve that makes the generated surface's
+ * deliberate omissions (per-call selection sets, typed filter builders,
+ * batching, subscriptions) livable — the whole schema stays reachable.
+ *
+ * Thin wrapper over the same prepare/fetch path direct uses, with the one
+ * thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP 200 as
+ * a top-level `errors` array, so status alone would report a failed query as
+ * ok.
+ *
+ * NOTE: like direct, this bypasses the feature pipeline — no retry, ratelimit
+ * or paging features apply. *)
+let graphql (client : sdk_client) (query : string) (variables : value)
+    (ctrl : value) : value =
+  if not (op_allowed client "graphql") then op_denied client "graphql"
+  else begin
+    let vars = match variables with Map _ as m -> m | _ -> empty_map () in
+    let ctl = match ctrl with Map _ as m -> m | _ -> empty_map () in
+    let res = raw_request client (jo [
+      ("method", Str "POST");
+      ("headers", jo [("content-type", Str "application/json")]);
+      ("body", jo [("query", Str query); ("variables", vars)]);
+      ("ctrl", ctl)]) in
+
+    (* Errors are read BEFORE any status check: a GraphQL parse or validation
+     * failure comes back as HTTP 400 carrying the standard { errors: [...] }
+     * body, and the raw path represents a non-2xx as ok:false with no err —
+     * so returning early on status would discard the server's own
+     * diagnostics, which are the only useful part of that response. *)
+    let errors = match getpath_s res "data.errors" with
+      | List r -> !r | _ -> [] in
+
+    (match errors with
+     | [] -> ()
+     | first :: _ ->
+       let msg = get_str_d first "message" "" in
+       let msg = if msg = "" then "graphql error" else msg in
+       setp res "ok" (Bool false);
+       setp res "err" (Str ("ProjectNameSDK: graphql: " ^ msg));
+       setp res "graphql" (lst errors));
+
+    res
+  end
 
 let sdk_test ~(config : value) ~(make_feature : string -> feature) (testopts : value) (sdkopts : value) : sdk_client =
   let sdkopts = match clone (if is_noval sdkopts then empty_map () else sdkopts) with Map _ as m -> m | _ -> empty_map () in

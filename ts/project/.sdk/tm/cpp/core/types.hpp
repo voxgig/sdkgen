@@ -560,6 +560,15 @@ public:
 
   Value prepare(const Value& fetchargs);
   Value direct(const Value& fetchargs);
+  Value graphql(const std::string& query, const Value& variables = Value::undef(),
+                const Value& ctrl = Value::undef());
+
+private:
+  bool opAllowed(const std::string& op);
+  Value opDenied(const std::string& op);
+  Value rawRequest(const Value& fetchargs);
+
+public:
 
   static Value testOptions(const Value& testopts, const Value& sdkopts);
 };
@@ -868,7 +877,81 @@ inline Value SdkClient::prepare(const Value& fetchargs_) {
   return u->makeFetchDef(ctx);
 }
 
+// Is this raw-access op permitted by the SDK's allow.op option?
+inline bool SdkClient::opAllowed(const std::string& op) {
+  Value allow = Struct::getpath(options, {"allow", "op"});
+  if (!allow.is_string()) return false;
+  return std::string::npos != allow.as_string().find(op);
+}
+
+inline Value SdkClient::opDenied(const std::string& op) {
+  Value allow = Struct::getpath(options, {"allow", "op"});
+  std::string a = allow.is_string() ? allow.as_string() : "";
+  Value out = vmap();
+  map_put(out, "ok", Value(false));
+  map_put(out, "err", vmap({{"message", Value(
+    "ProjectNameSDK: " + op + ": operation not allowed by"
+    " SDK option allow.op value: \"" + a + "\"")}}));
+  return out;
+}
+
+// Raw endpoint access is operator-controllable, like every entity op.
+// Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+// either one reaches the same endpoint.
 inline Value SdkClient::direct(const Value& fetchargs_) {
+  if (!opAllowed("direct")) return opDenied("direct");
+  return rawRequest(fetchargs_);
+}
+
+// Raw GraphQL access: the pressure valve that makes the generated surface's
+// deliberate omissions (per-call selection sets, typed filter builders,
+// batching, subscriptions) livable — the whole schema stays reachable.
+//
+// Thin wrapper over the same prepare/fetch path direct uses, with the one
+// thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP 200 as
+// a top-level `errors` array, so status alone would report a failed query as
+// ok.
+//
+// NOTE: like direct, this bypasses the feature pipeline — no retry, ratelimit
+// or paging features apply.
+inline Value SdkClient::graphql(const std::string& query, const Value& variables,
+                                const Value& ctrl) {
+  if (!opAllowed("graphql")) return opDenied("graphql");
+
+  Value res = rawRequest(vmap({
+    {"method", Value(std::string("POST"))},
+    {"headers", vmap({{"content-type", Value(std::string("application/json"))}})},
+    {"body", vmap({
+      {"query", Value(query)},
+      {"variables", variables.is_map() ? variables : vmap()}})},
+    {"ctrl", ctrl.is_map() ? ctrl : vmap()}}));
+
+  // Errors are read BEFORE any status check: a GraphQL parse or validation
+  // failure comes back as HTTP 400 carrying the standard { errors: [...] }
+  // body, and the raw path represents a non-2xx as ok:false with no err — so
+  // returning early on status would discard the server's own diagnostics,
+  // which are the only useful part of that response.
+  Value errors = getp(getp(res, "data"), "errors");
+
+  if (errors.is_list() && !errors.as_list()->empty()) {
+    Value first = (*errors.as_list())[0];
+    Value m = getp(first, "message");
+    std::string msg = m.is_string() && !m.as_string().empty()
+      ? m.as_string() : "graphql error";
+    map_put(res, "ok", Value(false));
+    map_put(res, "err", vmap({{"message",
+      Value("ProjectNameSDK: graphql: " + msg)}}));
+    map_put(res, "graphql", errors);
+  }
+
+  return res;
+}
+
+// Ungated request path shared by direct and graphql, each of which checks its
+// own allow.op token first. Private, rather than a flag on fetchargs: a
+// caller-supplied marker would let anyone opt straight back out of the gate
+// by passing it.
+inline Value SdkClient::rawRequest(const Value& fetchargs_) {
   UtilityPtr u = utility;
   Value fetchargs = fetchargs_.is_map() ? fetchargs_ : vmap();
 

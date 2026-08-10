@@ -423,6 +423,9 @@ ProjectNameSDK* projectname_sdk_new(voxgig_value* options);
 ProjectNameSDK* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts);
 voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err);
 voxgig_value* sdk_direct(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err);
+voxgig_value* sdk_graphql(ProjectNameSDK* sdk, const char* query,
+                          voxgig_value* variables, voxgig_value* ctrl,
+                          PNError** err);
 
 // Generated config (core/config.c).
 voxgig_value* make_config(void);

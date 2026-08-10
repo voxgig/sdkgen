@@ -139,7 +139,29 @@ static voxgig_value* err_map(const char* msg) {
   return cmap(2, "ok", v_bool(false), "err", v_str(msg));
 }
 
-voxgig_value* sdk_direct(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err) {
+// Is this raw-access op permitted by the SDK's allow.op option?
+static bool sdk_op_allowed(ProjectNameSDK* sdk, const char* op) {
+  voxgig_value* allow_op = getpath2(sdk->options, "allow", "op");
+  if (!voxgig_is_string(allow_op)) return false;
+  return NULL != strstr(voxgig_as_string(allow_op), op);
+}
+
+static voxgig_value* sdk_op_denied(ProjectNameSDK* sdk, const char* op) {
+  voxgig_value* allow_op = getpath2(sdk->options, "allow", "op");
+  const char* allow = voxgig_is_string(allow_op) ? voxgig_as_string(allow_op) : "";
+  char msg[512];
+  snprintf(msg, sizeof(msg),
+    "ProjectNameSDK: %s: operation not allowed by"
+    " SDK option allow.op value: \"%s\"", op, allow);
+  return err_map(msg);
+}
+
+// Ungated request path shared by sdk_direct and sdk_graphql, each of which
+// checks its own allow.op token first. Static, rather than a flag on
+// fetchargs: a caller-supplied marker would let anyone opt straight back out
+// of the gate by passing it.
+static voxgig_value* sdk_raw_request(
+  ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err) {
   *err = NULL;
   Utility* utility = sdk->utility;
 
@@ -200,6 +222,72 @@ voxgig_value* sdk_direct(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError**
   }
 
   return err_map("invalid response type");
+}
+
+// Raw endpoint access is operator-controllable, like every entity op.
+// Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+// either one reaches the same endpoint.
+voxgig_value* sdk_direct(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err) {
+  *err = NULL;
+
+  if (!sdk_op_allowed(sdk, "direct")) {
+    return sdk_op_denied(sdk, "direct");
+  }
+
+  return sdk_raw_request(sdk, fetchargs, err);
+}
+
+// Raw GraphQL access: the pressure valve that makes the generated surface's
+// deliberate omissions (per-call selection sets, typed filter builders,
+// batching, subscriptions) livable — the whole schema stays reachable.
+//
+// Thin wrapper over the same prepare/fetch path sdk_direct uses, with the one
+// thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP 200 as
+// a top-level `errors` array, so status alone would report a failed query as
+// ok.
+//
+// NOTE: like sdk_direct, this bypasses the feature pipeline — no retry,
+// ratelimit or paging features apply.
+voxgig_value* sdk_graphql(ProjectNameSDK* sdk, const char* query,
+                          voxgig_value* variables, voxgig_value* ctrl,
+                          PNError** err) {
+  *err = NULL;
+
+  if (!sdk_op_allowed(sdk, "graphql")) {
+    return sdk_op_denied(sdk, "graphql");
+  }
+
+  voxgig_value* vars = voxgig_is_map(variables) ? v_share(variables) : voxgig_new_map();
+  voxgig_value* ctl = voxgig_is_map(ctrl) ? v_share(ctrl) : voxgig_new_map();
+
+  voxgig_value* fetchargs = cmap(4,
+    "method", v_str("POST"),
+    "headers", cmap(1, "content-type", v_str(GRAPHQL_CONTENT_TYPE)),
+    "body", cmap(2, "query", v_str(query ? query : ""), "variables", vars),
+    "ctrl", ctl);
+
+  voxgig_value* res = sdk_raw_request(sdk, fetchargs, err);
+  if (*err || !voxgig_is_map(res)) return res;
+
+  // Errors are read BEFORE any status check: a GraphQL parse or validation
+  // failure comes back as HTTP 400 carrying the standard { errors: [...] }
+  // body, and the raw path represents a non-2xx as ok:false with no err — so
+  // returning early on status would discard the server's own diagnostics,
+  // which are the only useful part of that response.
+  voxgig_value* errors = getp(getp(res, "data"), "errors");
+
+  if (voxgig_is_list(errors) && 0 < voxgig_as_list(errors)->len) {
+    voxgig_value* first = voxgig_as_list(errors)->items[0];
+    const char* m = get_str(first, "message");
+    if (!m || '\0' == m[0]) m = "graphql error";
+    char msg[512];
+    snprintf(msg, sizeof(msg), "ProjectNameSDK: graphql: %s", m);
+    setp(res, "ok", v_bool(false));
+    setp(res, "err", v_str(msg));
+    setp(res, "graphql", v_share(errors));
+  }
+
+  return res;
 }
 
 // <[SLOT]>

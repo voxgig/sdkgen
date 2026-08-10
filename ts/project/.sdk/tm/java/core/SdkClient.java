@@ -176,7 +176,100 @@ public abstract class SdkClient {
     return utility.makeFetchDef.apply(ctx);
   }
 
+  /**
+   * Raw endpoint access is operator-controllable, like every entity op.
+   * Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+   * either one reaches the same endpoint.
+   */
   public Map<String, Object> direct(Map<String, Object> fetchargs) {
+    if (!opAllowed("direct")) {
+      return opDenied("direct");
+    }
+
+    return rawRequest(fetchargs);
+  }
+
+  /** Is this raw-access op permitted by the SDK's allow.op option? */
+  private boolean opAllowed(String op) {
+    Object allow = Struct.getpath(this.options, List.of("allow", "op"));
+    return allow instanceof String && ((String) allow).contains(op);
+  }
+
+  private Map<String, Object> opDenied(String op) {
+    Object allow = Struct.getpath(this.options, List.of("allow", "op"));
+    Map<String, Object> out = new LinkedHashMap<>();
+    out.put("ok", false);
+    out.put("err", new SdkError(op + "_allow",
+        "ProjectNameSDK: " + op + ": operation not allowed by"
+        + " SDK option allow.op value: \""
+        + (allow instanceof String ? allow : "") + "\"", null));
+    return out;
+  }
+
+  /**
+   * Raw GraphQL access: the pressure valve that makes the generated
+   * surface's deliberate omissions (per-call selection sets, typed filter
+   * builders, batching, subscriptions) livable — the whole schema stays
+   * reachable.
+   *
+   * <p>Thin wrapper over the same prepare/fetch path direct uses, with the
+   * one thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP
+   * 200 as a top-level {@code errors} array, so status alone would report a
+   * failed query as ok.
+   *
+   * <p>NOTE: like direct, this bypasses the feature pipeline — no retry,
+   * ratelimit or paging features apply.
+   */
+  public Map<String, Object> graphql(String query,
+      Map<String, Object> variables, Map<String, Object> ctrl) {
+
+    if (!opAllowed("graphql")) {
+      return opDenied("graphql");
+    }
+
+    Map<String, Object> headers = new LinkedHashMap<>();
+    headers.put("content-type", "application/json");
+
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("query", query);
+    body.put("variables", variables == null ? new LinkedHashMap<>() : variables);
+
+    Map<String, Object> fetchargs = new LinkedHashMap<>();
+    fetchargs.put("method", "POST");
+    fetchargs.put("headers", headers);
+    fetchargs.put("body", body);
+    fetchargs.put("ctrl", ctrl == null ? new LinkedHashMap<>() : ctrl);
+
+    Map<String, Object> res = rawRequest(fetchargs);
+
+    // Errors are read BEFORE any status check: a GraphQL parse or validation
+    // failure comes back as HTTP 400 carrying the standard { errors: [...] }
+    // body, and the raw path represents a non-2xx as ok:false with no err —
+    // so returning early on status would discard the server's own
+    // diagnostics, which are the only useful part of that response.
+    Object errors = Struct.getpath(res, List.of("data", "errors"));
+
+    if (errors instanceof List && !((List<Object>) errors).isEmpty()) {
+      Object first = ((List<Object>) errors).get(0);
+      Object m = Struct.getprop(first, "message");
+      String msg = m instanceof String && !((String) m).isEmpty()
+          ? (String) m : "graphql error";
+      res.put("ok", false);
+      res.put("err", new SdkError("graphql_error",
+          "ProjectNameSDK: graphql: " + msg, null));
+      res.put("graphql", errors);
+    }
+
+    return res;
+  }
+
+  /**
+   * Ungated request path shared by direct and graphql, each of which checks
+   * its own allow.op token first. Private, rather than a flag on fetchargs:
+   * a caller-supplied marker would let anyone opt straight back out of the
+   * gate by passing it.
+   */
+  private Map<String, Object> rawRequest(Map<String, Object> fetchargs) {
     Utility utility = this.utility;
 
     if (fetchargs == null) {

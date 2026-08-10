@@ -64,6 +64,15 @@ const MIRRORED = ['c', 'clojure', 'elixir', 'haskell', 'zig']
 const UNCOVERED = ['ocaml', 'scala']
 
 
+// Targets exposing the raw-access escape hatch (direct/graphql). See the
+// 'raw-access gate parity' suite below.
+const RAW_ACCESS = [
+  'c', 'clojure', 'cpp', 'csharp', 'dart', 'elixir', 'go', 'java', 'js',
+  'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala',
+  'swift', 'ts', 'zig',
+]
+
+
 function sdkTargets(): string[] {
   return readdirSync(TM, { withFileTypes: true })
     .filter((d) => d.isDirectory())
@@ -237,6 +246,93 @@ describe('graphql transport parity', () => {
       ok(anyLine(/(?=.*content.?type)(?=.*graphql)/i),
         `${lang}: makeSpec does not set the graphql content type — the kind ` +
         `branch is missing`)
+    })
+  }
+})
+
+
+// The raw-access escape hatch — `direct()` for arbitrary HTTP, `graphql()`
+// for arbitrary documents — reaches the API endpoint outside the operation
+// surface, so it is operator-controllable like every entity op: both tokens
+// are checked against allow.op before anything is sent. An ungated escape
+// hatch makes allow.op advisory, since a caller denied `remove` can still
+// DELETE through `direct`.
+//
+// Two targets ship no raw-access surface at all. They are listed rather than
+// inferred, so adding `direct()` to one of them fails here until its gate
+// lands with it.
+const NO_RAW_ACCESS = ['haskell', 'lean']
+
+describe('raw-access gate parity', () => {
+
+  const COMMENT = /^\s*(\/\/|#|--|\*|;|\/\*|\(\*|"""|''')/
+
+  // The gate spans both layers: the client method is a component fragment,
+  // but clojure and ocaml keep the implementation in the template tree and
+  // re-export it, so search the pair.
+  function clientLines(lang: string): string[] {
+    const out: string[] = []
+    const walk = (dir: string) => {
+      if (!existsSync(dir)) {
+        return
+      }
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = Path.join(dir, e.name)
+        if (e.isDirectory()) {
+          if ('node_modules' !== e.name) {
+            walk(p)
+          }
+        }
+        else {
+          for (const l of readFileSync(p, 'utf8').split('\n')) {
+            if (!COMMENT.test(l)) {
+              out.push(l)
+            }
+          }
+        }
+      }
+    }
+    walk(Path.join(SDK, 'src', 'cmp', lang))
+    walk(Path.join(TM, lang))
+    return out
+  }
+
+  test('every SDK target declares whether it has raw access', () => {
+    const declared = [...RAW_ACCESS, ...NO_RAW_ACCESS].sort()
+    deepStrictEqual(declared, sdkTargets(),
+      'a target was added or removed without deciding whether it exposes ' +
+      'raw access — add it to RAW_ACCESS (and gate it) or NO_RAW_ACCESS')
+  })
+
+  test('targets without raw access really have none', () => {
+    const nowRaw = NO_RAW_ACCESS.filter((lang) =>
+      clientLines(lang).some((l) => /\bdirect\s*\(/.test(l)))
+    deepStrictEqual(nowRaw, [],
+      'these targets gained a direct() surface — move them to RAW_ACCESS ' +
+      'and gate it on allow.op, or the SDK option becomes advisory')
+  })
+
+  for (const lang of RAW_ACCESS) {
+    test(`${lang}: gates raw access on allow.op`, () => {
+      const lines = clientLines(lang)
+      const anyLine = (re: RegExp) => lines.some((l) => re.test(l))
+
+      ok(anyLine(/operation not allowed by/),
+        `${lang}: no allow.op denial — raw access cannot be turned off`)
+
+      ok(anyLine(/(?=.*direct)(?=.*(allow|denied))/i),
+        `${lang}: direct() is not gated on allow.op, so a caller denied an ` +
+        `entity op can still reach the same endpoint through it`)
+
+      ok(anyLine(/(?=.*graphql)(?=.*(allow|denied))/i),
+        `${lang}: graphql() is not gated on allow.op`)
+
+      // Both entry points must share one ungated inner path. A flag on
+      // fetchargs instead would let a caller opt straight back out of the
+      // gate by passing it.
+      ok(anyLine(/raw[_-]?request/i),
+        `${lang}: no shared raw-request path — direct() and graphql() have ` +
+        `diverged, or one of them re-implements the gate`)
     })
   }
 })

@@ -163,7 +163,43 @@ pub const ProjectNameSDK = struct {
         return utility.make_fetch_def(ctx);
     }
 
+    // Raw endpoint access is operator-controllable, like every entity op.
+    // Blocking it means denying BOTH the 'direct' and 'graphql' tokens,
+    // since either one reaches the same endpoint.
     pub fn direct(self: *ProjectNameSDK, fetchargs_in: Value) Value {
+        if (!self.op_allowed("direct")) return self.op_denied("direct");
+
+        return self.raw_request(fetchargs_in);
+    }
+
+    // Is this raw-access op permitted by the SDK's allow.op option?
+    fn op_allowed(self: *ProjectNameSDK, op: []const u8) bool {
+        const allow: []const u8 = switch (h.getpath(&.{ "allow", "op" }, self.options)) {
+            .string => |s| s,
+            else => "",
+        };
+        return std.mem.indexOf(u8, allow, op) != null;
+    }
+
+    fn op_denied(self: *ProjectNameSDK, op: []const u8) Value {
+        const allow: []const u8 = switch (h.getpath(&.{ "allow", "op" }, self.options)) {
+            .string => |s| s,
+            else => "",
+        };
+        const msg = std.fmt.allocPrint(h.A(),
+            "ProjectNameSDK: {s}: operation not allowed by" ++
+            " SDK option allow.op value: \"{s}\"", .{ op, allow }) catch "";
+        return h.jo(&.{
+            .{ "ok", h.vbool(false) },
+            .{ "err", h.vstr(msg) },
+        });
+    }
+
+    // Ungated request path shared by direct and graphql, each of which checks
+    // its own allow.op token first. Private, rather than a flag on fetchargs:
+    // a caller-supplied marker would let anyone opt straight back out of the
+    // gate by passing it.
+    fn raw_request(self: *ProjectNameSDK, fetchargs_in: Value) Value {
         const utility = self.utility;
 
         const fetchdef = self.prepare(fetchargs_in) catch {
@@ -230,6 +266,65 @@ pub const ProjectNameSDK = struct {
             .{ "ok", h.vbool(false) },
             .{ "err", h.vstr("invalid response type") },
         });
+    }
+
+    // Raw GraphQL access: the pressure valve that makes the generated
+    // surface's deliberate omissions (per-call selection sets, typed filter
+    // builders, batching, subscriptions) livable — the whole schema stays
+    // reachable.
+    //
+    // Thin wrapper over the same prepare/fetch path direct uses, with the one
+    // thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP
+    // 200 as a top-level `errors` array, so status alone would report a
+    // failed query as ok.
+    //
+    // NOTE: like direct, this bypasses the feature pipeline — no retry,
+    // ratelimit or paging features apply.
+    pub fn graphql(
+        self: *ProjectNameSDK, query: []const u8, variables: Value, ctrl: Value,
+    ) Value {
+        if (!self.op_allowed("graphql")) return self.op_denied("graphql");
+
+        const vars: Value = switch (variables) {
+            .object => variables,
+            else => h.omap(),
+        };
+        const ctl: Value = switch (ctrl) {
+            .object => ctrl,
+            else => h.omap(),
+        };
+
+        const res = self.raw_request(h.jo(&.{
+            .{ "method", h.vstr("POST") },
+            .{ "headers", h.jo(&.{.{ "content-type", h.vstr(utility_mod.GRAPHQL_CONTENT_TYPE) }}) },
+            .{ "body", h.jo(&.{ .{ "query", h.vstr(query) }, .{ "variables", vars } }) },
+            .{ "ctrl", ctl },
+        }));
+
+        if (res != .object) return res;
+
+        // Errors are read BEFORE any status check: a GraphQL parse or
+        // validation failure comes back as HTTP 400 carrying the standard
+        // { errors: [...] } body, and the raw path represents a non-2xx as
+        // ok:false with no err — so returning early on status would discard
+        // the server's own diagnostics, which are the only useful part of
+        // that response.
+        const errors = h.getp(h.getp(res, "data"), "errors");
+
+        if (errors == .array and 0 < errors.array.data.items.len) {
+            const first = errors.array.data.items[0];
+            const m: []const u8 = switch (h.getp(first, "message")) {
+                .string => |x| if (x.len == 0) "graphql error" else x,
+                else => "graphql error",
+            };
+            const msg = std.fmt.allocPrint(h.A(),
+                "ProjectNameSDK: graphql: {s}", .{m}) catch "";
+            h.setp(res, "ok", h.vbool(false));
+            h.setp(res, "err", h.vstr(msg));
+            h.setp(res, "graphql", errors);
+        }
+
+        return res;
     }
 
     // <[SLOT]>

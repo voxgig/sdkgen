@@ -151,7 +151,41 @@ defmodule ProjectName do
     fetchdef
   end
 
+  # Raw endpoint access is operator-controllable, like every entity op.
+  # Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+  # either one reaches the same endpoint.
   def direct(client, fetchargs \\ nil) do
+    if op_allowed?(client, "direct") do
+      raw_request(client, fetchargs)
+    else
+      op_denied(client, "direct")
+    end
+  end
+
+  # Is this raw-access op permitted by the SDK's allow.op option?
+  defp op_allowed?(client, op) do
+    allow = S.getpath(S.getprop(client, "options"), "allow.op")
+    is_binary(allow) and String.contains?(allow, op)
+  end
+
+  defp op_denied(client, op) do
+    allow = S.getpath(S.getprop(client, "options"), "allow.op")
+    allow = if is_binary(allow), do: allow, else: ""
+
+    S.jm([
+      "ok",
+      false,
+      "err",
+      "ProjectNameSDK: " <> op <> ": operation not allowed by" <>
+        " SDK option allow.op value: \"" <> allow <> "\""
+    ])
+  end
+
+  # Ungated request path shared by direct and graphql, each of which checks
+  # its own allow.op token first. Private, rather than a flag on fetchargs: a
+  # caller-supplied marker would let anyone opt straight back out of the gate
+  # by passing it.
+  defp raw_request(client, fetchargs) do
     fetchdef =
       try do
         prepare(client, fetchargs)
@@ -209,6 +243,56 @@ defmodule ProjectName do
           true ->
             S.jm(["ok", false, "err", Context.make_error(ctx, "direct_invalid", "invalid response type")])
         end
+    end
+  end
+
+  # Raw GraphQL access: the pressure valve that makes the generated surface's
+  # deliberate omissions (per-call selection sets, typed filter builders,
+  # batching, subscriptions) livable — the whole schema stays reachable.
+  #
+  # Thin wrapper over the same prepare/fetch path direct uses, with the one
+  # thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP 200
+  # as a top-level `errors` array, so status alone would report a failed
+  # query as ok.
+  #
+  # NOTE: like direct, this bypasses the feature pipeline — no retry,
+  # ratelimit or paging features apply.
+  def graphql(client, query, variables \\ nil, ctrl \\ nil) do
+    if not op_allowed?(client, "graphql") do
+      op_denied(client, "graphql")
+    else
+      res =
+        raw_request(client, S.jm([
+          "method", "POST",
+          "headers", S.jm(["content-type", "application/json"]),
+          "body", S.jm([
+            "query", query,
+            "variables", if(S.ismap(variables), do: variables, else: S.jm([]))
+          ]),
+          "ctrl", if(S.ismap(ctrl), do: ctrl, else: S.jm([]))
+        ]))
+
+      # Errors are read BEFORE any status check: a GraphQL parse or
+      # validation failure comes back as HTTP 400 carrying the standard
+      # { errors: [...] } body, and the raw path represents a non-2xx as
+      # ok:false with no err — so returning early on status would discard the
+      # server's own diagnostics, which are the only useful part of that
+      # response.
+      errors = S.getpath(res, "data.errors")
+      count = if S.islist(errors), do: S.size(errors), else: 0
+
+      if count == 0 do
+        res
+      else
+        first = S.getelem(errors, 0)
+        msg = strp(S.getprop(first, "message"))
+        msg = if msg == "", do: "graphql error", else: msg
+
+        S.setprop(res, "ok", false)
+        S.setprop(res, "err", "ProjectNameSDK: graphql: " <> msg)
+        S.setprop(res, "graphql", errors)
+        res
+      end
     end
   end
 
