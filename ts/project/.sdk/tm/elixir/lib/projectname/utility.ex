@@ -1129,7 +1129,11 @@ defmodule ProjectName.Utility do
               true ->
                 # Only send variables the caller actually supplied: sending
                 # an explicit null would clear a field on many APIs.
-                val = S.getprop(reqsrc, from) || S.getprop(datasrc, from)
+                # Explicit nil check, not `||`: a caller-supplied `false` is a
+                # value, and `||` would treat it as absent and substitute the
+                # current state — sending the opposite of what was asked.
+                val = S.getprop(reqsrc, from)
+                val = if val == nil, do: S.getprop(datasrc, from), else: val
                 if val != nil, do: S.setprop(variables, name, val)
             end
           end

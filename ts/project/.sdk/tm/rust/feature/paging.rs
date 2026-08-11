@@ -89,7 +89,11 @@ impl PagingFeature {
             setp(&variables, &after_var, cursor);
         }
 
-        if !getp(&self.options, "limit").is_noval()
+        // `limit: null` reads as unset, matching the reference's `null !=
+        // limit`: fopt_int would otherwise coerce it to 0 and bind `first: 0`,
+        // which relay servers reject or answer with an empty page.
+        let limit = getp(&self.options, "limit");
+        if !limit.is_noval() && !limit.is_null()
             && getp(&variables, &first_var).is_noval()
             && declared.iter().any(|d| *d == first_var)
         {

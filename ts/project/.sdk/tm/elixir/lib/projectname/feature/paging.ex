@@ -232,8 +232,14 @@ defmodule ProjectName.Feature.Paging do
             morepath = S.getprop(gqlpage, "more")
 
             case (is_binary(morepath) and morepath != "" and S.getpath(conn, morepath)) do
-              v when is_boolean(v) -> {c, v, true}
-              _ -> {c, has_more, false}
+              v when is_boolean(v) ->
+                {c, v, true}
+
+              _ ->
+                # No usable relay `more` path, but a top-level body hasMore is
+                # still an outright statement — keep it explicit, or cursor
+                # inference below would flip an explicit false to true.
+                {c, has_more, is_boolean(S.getprop(body, "hasMore"))}
             end
           else
             {cursor_val, has_more, is_boolean(S.getprop(body, "hasMore"))}

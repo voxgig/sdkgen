@@ -108,23 +108,46 @@ static void paging_init(Feature* f, Context* ctx, voxgig_value* options) {
 }
 
 // The model records connection/cursor/more as dot paths; getpath_c takes a
-// NULL-terminated segment array.
+// NULL-terminated segment array. Both the copy and the segment array are
+// sized from the path itself: a fixed buffer would silently truncate a long
+// generated path and look up the wrong node, which reads as "no cursor" and
+// stops pagination after one page.
 static voxgig_value* getpath_dotted(voxgig_value* store, const char* path) {
   if (!path || path[0] == '\0') return store;
 
-  char buf[256];
-  snprintf(buf, sizeof(buf), "%s", path);
+  size_t len = strlen(path);
 
-  const char* keys[16];
+  // Segment count is bounded by dots + 1, so one allocation covers any path.
+  size_t maxseg = 2;
+  for (size_t i = 0; i < len; i++) {
+    if (path[i] == '.') maxseg++;
+  }
+
+  char* buf = (char*)malloc(len + 1);
+  const char** keys = (const char**)malloc(maxseg * sizeof(char*));
+  if (!buf || !keys) {
+    free(buf);
+    free(keys);
+    return voxgig_new_undef();
+  }
+  memcpy(buf, path, len + 1);
+
   size_t n = 0;
   char* save = NULL;
-  for (char* tok = strtok_r(buf, ".", &save); tok && n < 15;
+  for (char* tok = strtok_r(buf, ".", &save); tok;
        tok = strtok_r(NULL, ".", &save)) {
     keys[n++] = tok;
   }
   keys[n] = NULL;
 
-  return getpath_c(store, keys);
+  voxgig_value* out = getpath_c(store, keys);
+
+  // getpath_c does not retain the key strings, so both buffers are ours to
+  // release once the lookup has returned.
+  free(buf);
+  free(keys);
+
+  return out;
 }
 
 // Relay pagination: the cursor is the `after` variable (or whatever the
@@ -164,7 +187,8 @@ static void paging_graphql_pre_request(PagingFeature* pf, Context* ctx,
     setp(variables, after_var, v_share(cursor));
   }
 
-  if (first_declared && !v_is_noval(getp(options, "limit")) &&
+  voxgig_value* limit = getp(options, "limit");
+  if (first_declared && !v_is_noval(limit) && !v_is_null(limit) &&
       v_is_noval(getp(variables, first_var))) {
     setp(variables, first_var, v_num((double)fopt_int(options, "limit", 0)));
   }

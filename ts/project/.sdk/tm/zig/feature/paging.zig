@@ -165,7 +165,11 @@ pub const PagingFeature = struct {
             h.setp(variables, after_var, cursor);
         }
 
-        if (first_declared and !h.is_noval(h.getp(self.options, "limit")) and
+        // `limit: null` reads as unset, matching the reference's `null !=
+        // limit`: fopt_int would otherwise coerce it to 0 and bind `first: 0`,
+        // which relay servers reject or answer with an empty page.
+        const limit = h.getp(self.options, "limit");
+        if (first_declared and !h.is_noval(limit) and !h.is_null(limit) and
             h.is_noval(h.getp(variables, first_var)))
         {
             h.setp(variables, first_var, h.vnum(sup.fopt_int(self.options, "limit", 0)));
