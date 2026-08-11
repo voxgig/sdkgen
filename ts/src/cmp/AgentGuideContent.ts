@@ -33,6 +33,11 @@ const LANG_CMD: Record<string, LangCmd> = {
   lua: { install: 'luarocks make', viaMake: true },
   'go-cli': { build: 'go build ./...', note: 'A CLI surface, not an SDK client library.' },
   'go-mcp': { build: 'go build ./...', note: 'An MCP server surface for AI agents, not an SDK client library.' },
+  'py-data': {
+    install: 'make dev',
+    viaMake: true,
+    note: 'A pandas/notebook surface layered on the sibling Python SDK, not an SDK client library.',
+  },
 }
 
 

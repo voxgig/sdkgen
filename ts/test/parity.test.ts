@@ -40,10 +40,12 @@ const CORPUS_SECTIONS = [
 ]
 
 
-// Targets that are not language SDKs: they consume the sibling `go` SDK and
-// switch the standard generation phases off, so they have no primary-utility
-// surface of their own.
-const NON_SDK_TARGETS = ['go-cli', 'go-mcp']
+// Targets that are not language SDKs: they CONSUME a sibling SDK in the same
+// repo (go-cli/go-mcp consume `go`; py-data consumes `py`) and switch the
+// standard generation phases off, so they have no primary-utility surface of
+// their own. Their own behaviour is covered by their generated tests, not by
+// the cross-language corpus.
+const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data']
 
 
 // TIER 1 — drives the shared corpus for every section. This is the bar.

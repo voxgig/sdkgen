@@ -128,6 +128,50 @@ const CANON_UNION_JOIN: Partial<Record<CanonLang, string>> = {
 }
 
 
+// Canonical sentinel -> pandas dtype, for the `py-data` target's generated
+// DataFrame accessors. Deliberately NOT a CanonLang column: py-data is a
+// consumer target layered on `py`, not a language, and these are storage
+// dtypes rather than type-annotation names.
+//
+// NULLABLE dtypes throughout ('Int64' not 'int64', 'boolean' not 'bool').
+// The model carries no nullability beyond the `req` flag, and API payloads
+// omit optional fields freely, so a column that looks integral in one page
+// can arrive with nulls in the next. NumPy's int64/bool cannot hold NA and
+// would silently upcast to float64/object mid-fetch, changing a column's
+// dtype based on which rows came back — the pandas nullable extension types
+// keep it stable.
+//
+// There is no $DATE / $DATETIME sentinel in apidef's vocabulary (the model
+// carries no string formats), so date handling is NOT inferred here. It is
+// an explicit runtime opt-in via the accessor's `parse_dates=` kwarg. Do not
+// add a DATE row unless apidef starts emitting the sentinel.
+const PANDAS_DTYPE: Record<string, string> = {
+  STRING: 'string',
+  INTEGER: 'Int64',
+  NUMBER: 'Float64',
+  BOOLEAN: 'boolean',
+  // A null-typed column has no values to hold; object is the honest floor.
+  NULL: 'object',
+  // Arrays and objects stay boxed Python values in an object column. Frames
+  // flatten one level of OBJECT into dotted columns before dtypes are
+  // applied (see frames.py), so an OBJECT column reaching here is one that
+  // survived flattening — genuinely nested, genuinely object.
+  ARRAY: 'object',
+  OBJECT: 'object',
+  ANY: 'object',
+}
+
+// Map a field type sentinel to a pandas dtype string. Unknown / missing /
+// union ($ONE) sentinels fall back to 'object' — a union column can hold
+// members of different dtypes, so object is the only correct storage.
+function canonToDtype(sentinel: unknown): string {
+  if (Array.isArray(sentinel)) {
+    return 'object'
+  }
+  return PANDAS_DTYPE[canonKey(sentinel)] ?? 'object'
+}
+
+
 // Normalize a raw sentinel value to its bare upper-case key:
 // '`$STRING`' / '$STRING' / 'string' -> 'STRING'.
 function canonKey(sentinel: unknown): string {
@@ -174,10 +218,12 @@ function canonToType(sentinel: unknown, lang: string): string {
 
 export {
   canonToType,
+  canonToDtype,
   canonKey,
   CANON_TYPE,
   CANON_ANY,
   CANON_UNION_JOIN,
+  PANDAS_DTYPE,
 }
 
 export type {

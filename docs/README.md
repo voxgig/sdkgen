@@ -45,6 +45,10 @@ that matches what you are trying to do right now:
 - [Components vs templates: the two-layer generator](./explanation/components-and-templates.md)
 - [The operation pipeline and the feature model](./explanation/operation-pipeline.md)
 
+### Design proposals
+- [The `py-data` target](./design/py-data-target.md) — notebook/analyst-oriented
+  Python package layered on the `py` SDK (proposal, not implemented)
+
 ## For AI coding agents
 
 If you are an automated coding agent, start with

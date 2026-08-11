@@ -145,15 +145,17 @@ describe('project-model-syntax', () => {
 })
 
 
-// The go-cli / go-mcp scaffold targets consume the sibling Go SDK rather than
-// being SDKs themselves, so they switch every standard generation phase off and
-// emit only Main (see Root.ts). `agentguide` is one of those phases: if its
-// `active: false` entry is dropped from a target model, the Root's inclusive
-// default silently re-enables it and these targets get a stray AGENTS.md. Guard
-// the intent here so a missing phase key fails a test rather than shipping.
+// The consumer targets (go-cli / go-mcp consume the sibling Go SDK; py-data
+// consumes the sibling Python SDK) are not SDKs themselves, so they switch
+// every standard generation phase off and emit only Main (see Root.ts).
+// `agentguide` is one of those phases: if its `active: false` entry is dropped
+// from a target model, the Root's inclusive default silently re-enables it and
+// these targets get a stray AGENTS.md that overwrites the one Main emits.
+// Guard the intent here so a missing phase key fails a test rather than
+// shipping.
 describe('cli-targets-disable-agentguide', () => {
 
-  for (const target of ['go-cli', 'go-mcp']) {
+  for (const target of ['go-cli', 'go-mcp', 'py-data']) {
     test(`${target} switches the agentguide phase off`, () => {
       const model: any = compile(
         `target/${target}.aontu`, Path.join(TARGET_DIR, target + '.aontu'))

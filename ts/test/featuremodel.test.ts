@@ -185,9 +185,10 @@ describe('feature-language-parity', () => {
     'zig', 'perl', 'clojure', 'elixir', 'ocaml', 'haskell',
   ]
 
-  // Every SDK target plus the two non-SDK surfaces need a src/feature/<name>/
-  // dir for `feature add` to copy (flat-feature languages use .gitkeep).
-  const ADD_TARGETS = SDK_TARGETS.concat(['go-cli', 'go-mcp'])
+  // Every SDK target plus the non-SDK consumer surfaces need a
+  // src/feature/<name>/ dir for `feature add` to copy (flat-feature languages
+  // and the consumer targets use .gitkeep).
+  const ADD_TARGETS = SDK_TARGETS.concat(['go-cli', 'go-mcp', 'py-data'])
 
   for (const [lang, impl] of Object.entries(IMPL)) {
     test(`${lang}: every enterprise feature is implemented`, () => {

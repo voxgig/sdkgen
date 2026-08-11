@@ -48,6 +48,7 @@ const LANG_LABEL = {
     go: 'Go',
     'go-cli': 'Go CLI',
     'go-mcp': 'Go MCP server',
+    'py-data': 'Python Data',
 };
 exports.LANG_LABEL = LANG_LABEL;
 function langLabel(target) {
@@ -164,6 +165,10 @@ function packageName(model, eco) {
             return `github.com/${origin}/${slug}-sdk/go-cli`;
         case 'go-mcp':
             return `github.com/${origin}/${slug}-sdk/go-mcp`;
+        // The notebook/analyst package layered on `py`. Distinct PyPI name so it
+        // can version and publish independently of the SDK it wraps.
+        case 'py-data':
+            return `${origin}-${base}-data`;
         default:
             return `${origin}-${base}`;
     }
@@ -184,6 +189,8 @@ function installCommand(model, target) {
             return `npm install ${packageName(model, 'js')}`;
         case 'py':
             return `pip install ${packageName(model, 'pypi')}`;
+        case 'py-data':
+            return `pip install ${packageName(model, 'py-data')}`;
         case 'php':
             return `composer require ${packageName(model, 'composer')}`;
         case 'rb':
