@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "1.5.1",
+  "version": "2.0.0",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "engines": {
@@ -59,7 +59,7 @@
   },
   "peerDependencies": {
     "@tabnas/jsonic": "0.6.0",
-    "@voxgig/apidef": ">=6.5.1 <7",
+    "@voxgig/apidef": ">=7.0.0 <8",
     "@voxgig/struct": ">=0.2.1 <0.3",
     "@voxgig/util": ">=0.5.1 <0.6",
     "aontu": ">=0.50.1 <0.51",
