@@ -231,13 +231,13 @@ def prepareQuery (ctx : Value) : SIO Value := do
     if !(isNov v) && !(names.contains k) then sp out k v
   pure out
 
+/-- Assemble the path template from `point.parts`. This is `struct.join` with
+the url flag — NOT a plain intercalate: empty segments are dropped (a doubled
+slash changes the URL and 404s on strict routers) and there is no leading
+slash, because makeUrl joins base/prefix/path/suffix with `joinurl`. -/
 def preparePath (ctx : Value) : SIO String := do
   let point ← gp ctx "point"
-  match (← gp point "parts") with
-  | .list i => do
-    let segs := (← listItems i).map vs
-    pure ("/" ++ String.intercalate "/" segs.toList)
-  | _ => pure ""
+  join (← gp point "parts") (sep := .str "/") (url := true)
 
 /-- The API definition is authoritative: a POST-only or PATCH-based API
 exposes `update` as POST or PATCH, not the PUT the op name implies. Only
@@ -396,9 +396,11 @@ def graphqlBody (ctx : Value) : SIO Value := do
       match spec with
       | .map _ => do
         let name ← gpS spec "name"
-        let from ← gpS spec "from"
+        -- `from` is a Lean keyword, so the binding cannot take the field's
+        -- own name.
+        let varFrom ← gpS spec "from"
         if name != "" then
-          if from == "" then do
+          if varFrom == "" then do
             -- The input object IS the request body. Strip the action
             -- selector, which is an SDK-side point discriminator, not an API
             -- field.
@@ -409,8 +411,8 @@ def graphqlBody (ctx : Value) : SIO Value := do
           else do
             -- Only send variables the caller actually supplied: sending an
             -- explicit null would clear a field on many APIs.
-            let v0 ← gp reqsrc from
-            let v ← if isNullish v0 then gp datasrc from else pure v0
+            let v0 ← gp reqsrc varFrom
+            let v ← if isNullish v0 then gp datasrc varFrom else pure v0
             if !(isNullish v) then sp variables name v
       | _ => pure ()
     newMap #[("query", ← gp gql "doc"), ("variables", variables)]

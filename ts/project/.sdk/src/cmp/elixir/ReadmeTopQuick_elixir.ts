@@ -55,14 +55,17 @@ IO.inspect(records)
         .filter((it: any) => !it.optional || it.name === idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
-      const loadArg = 0 < loadItems.length
-        ? `H.deep(%{${loadItems.map((it: any) =>
+      // No required match keys (a singleton endpoint like /current) means no
+      // second argument at all — `load(ent, )` is a syntax error, and
+      // reqmatch defaults to nil, so load/1 is the correct call.
+      const loadArgs = 0 < loadItems.length
+        ? `${eVar}, H.deep(%{${loadItems.map((it: any) =>
           `"${it.name}" => ${elixirLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}})`
-        : ''
+        : eVar
       Content(`
 # Load a specific ${eName.toLowerCase()} (returns the record, raises on error)
-record = ${Name}.Entity.${eName}.load(${eVar}, ${loadArg})
+record = ${Name}.Entity.${eName}.load(${loadArgs})
 IO.inspect(record)
 `)
     }

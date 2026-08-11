@@ -148,6 +148,14 @@ static void ${evar}_entity_instance() {
   ASSERT_EQ(ent->getName(), std::string("${entity.name}"), "entity name");
 }
 
+`)
+
+    // The stream test drives the list op; only emit it when the entity has a
+    // list op (a create/load-only entity has no list endpoint, so
+    // stream("list") throws "Operation \"list\" has no endpoint definitions").
+    const flowHasList = allSteps.some((s: any) => 'list' === s.op)
+    if (flowHasList) {
+      Content(`
 static void ${evar}_entity_stream() {
   // stream() runs the list op through the full pipeline and returns the
   // result items. Seed two entities via test mode; with the streaming feature
@@ -169,7 +177,10 @@ static void ${evar}_entity_stream() {
   std::vector<Value> pitems = pe->stream("list", Value::undef(), Value::undef());
   ASSERT_EQ((int)pitems.size(), 2, "fallback stream yields both items");
 }
+`)
+    }
 
+    Content(`
 static void ${evar}_entity_basic() {
   auto setup = ${evar}_basic_setup(Value::undef());
   std::string mode = setup.live ? "live" : "unit";
@@ -212,8 +223,7 @@ static void ${evar}_entity_basic() {
 
 int main() {
   T_RUN(${evar}_entity_instance);
-  T_RUN(${evar}_entity_stream);
-  T_RUN(${evar}_entity_basic);
+${flowHasList ? `  T_RUN(${evar}_entity_stream);\n` : ''}  T_RUN(${evar}_entity_basic);
   return sdktest::summary("${entity.name}_entity_test");
 }
 `)
