@@ -70,7 +70,11 @@ component.* See [docs/explanation/components-and-templates](./docs/explanation/c
   `getModelPath(...)`, which is quadratic here and active-filtered.
 - `entity.op` is optional: `entity.op || {}`, `entity.op?.load`.
 - `npm run build` also type-checks `ts/project/.sdk/src/cmp/**`
-  (`check-scaffold`); that tree is invisible to `tsc --build src test`.
+  (`check-scaffold`); that tree is invisible to `tsc --build src test`. It then
+  `stage-scaffold`s a miniature consumer into `ts/dist-test-scaffold/` so
+  `ts/test/generate.test.ts` can generate a small SDK for every target into
+  memfs and assert on the output — the only suite that RUNS the per-language
+  components. See AGENTS.md.
 - Parity tiers and the zero-case corpus guard live in `ts/test/parity.test.ts`
   — see AGENTS.md "Language parity is CRITICAL".
 

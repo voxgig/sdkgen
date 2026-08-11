@@ -25,7 +25,7 @@
     "test": "node --enable-source-maps --test dist-test/**/*.test.js",
     "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test dist-test/**/*.test.js",
     "watch": "tsc --build src test -w",
-    "build": "tsc --build src test && npm run check-scaffold",
+    "build": "tsc --build src test && npm run check-scaffold && npm run stage-scaffold",
     "clean": "rm -rf dist dist-test node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test",
     "embed-version": "node build/version.js",
@@ -38,7 +38,8 @@
     "repo-publish-quick-dry": "npm run build && npm run test && ( npm stage publish --dry-run --registry https://registry.npmjs.org --access=public || echo \"[dry-run] npm stage publish refused (see npm error above) - usually the version is already published; bump package.json before a real release\" )",
     "repo-release": "npm run repo-publish && npm run repo-tag",
     "repo-release-dry": "npm run repo-publish-quick-dry && npm run repo-tag-dry",
-    "check-scaffold": "tsc -p tsconfig.scaffold.json"
+    "check-scaffold": "tsc -p tsconfig.scaffold.json",
+    "stage-scaffold": "node build/scaffold-stage.js && tsc -p tsconfig.scaffold-emit.json"
   },
   "license": "MIT",
   "files": [
