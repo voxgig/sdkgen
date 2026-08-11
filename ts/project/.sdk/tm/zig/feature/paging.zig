@@ -97,6 +97,19 @@ pub const PagingFeature = struct {
         // A per-call cursor/page from ctrl takes priority (auto-iteration).
         const paging = ctx.ctrl.paging;
 
+        // GraphQL paginates through operation VARIABLES, not the query
+        // string. This hook runs after make_spec, so spec.body already holds
+        // the { query, variables } envelope, and before make_fetch_def
+        // serialises it.
+        const kind: []const u8 = switch (h.getp(ctx.point, "kind")) {
+            .string => |k| k,
+            else => "",
+        };
+        if (std.mem.eql(u8, kind, "graphql")) {
+            self.graphql_pre_request(ctx, paging);
+            return;
+        }
+
         const cursor = h.getp(paging, "cursor");
         if (!h.is_noval(cursor)) {
             h.setp(query, cursor_param, cursor);
@@ -112,6 +125,80 @@ pub const PagingFeature = struct {
         if (!h.is_noval(h.getp(self.options, "limit")) and h.is_noval(h.getp(query, limit_param))) {
             h.setp(query, limit_param, h.vnum(sup.fopt_int(self.options, "limit", 0)));
         }
+    }
+
+    // Relay pagination: the cursor is the `after` variable (or whatever the
+    // model named it), and the page size is `first`.
+    fn graphql_pre_request(self: *PagingFeature, ctx: *Context, paging: Value) void {
+        const sp = ctx.spec orelse return;
+        if (sp.body != .object) return;
+
+        const variables: Value = if (h.getp(sp.body, "variables") == .object)
+            h.getp(sp.body, "variables")
+        else blk: {
+            const nv = h.omap();
+            h.setp(sp.body, "variables", nv);
+            break :blk nv;
+        };
+
+        const after_var = sup.fopt_str(self.options, "afterVar", "after");
+        const first_var = sup.fopt_str(self.options, "firstVar", "first");
+
+        // Only bind variables the operation actually declares, or the server
+        // rejects the document.
+        var after_declared = false;
+        var first_declared = false;
+        const varlist = h.getpath(&.{ "graphql", "vars" }, ctx.point);
+        if (varlist == .array) {
+            for (varlist.array.data.items) |v| {
+                const name: []const u8 = switch (h.getp(v, "name")) {
+                    .string => |n| n,
+                    else => continue,
+                };
+                if (std.mem.eql(u8, name, after_var)) after_declared = true;
+                if (std.mem.eql(u8, name, first_var)) first_declared = true;
+            }
+        }
+
+        const cursor = h.getp(paging, "cursor");
+        if (after_declared and !h.is_noval(cursor) and !h.is_null(cursor)) {
+            h.setp(variables, after_var, cursor);
+        }
+
+        // `limit: null` reads as unset, matching the reference's `null !=
+        // limit`: fopt_int would otherwise coerce it to 0 and bind `first: 0`,
+        // which relay servers reject or answer with an empty page.
+        const limit = h.getp(self.options, "limit");
+        if (first_declared and !h.is_noval(limit) and !h.is_null(limit) and
+            h.is_noval(h.getp(variables, first_var)))
+        {
+            h.setp(variables, first_var, h.vnum(sup.fopt_int(self.options, "limit", 0)));
+        }
+    }
+
+    // The model records connection/cursor/more as dot paths; core getpath
+    // takes pre-split segments.
+    fn getpath_dotted(path: []const u8, store: Value) Value {
+        // Segment count is bounded by dots + 1, so one pass sizes the slice
+        // exactly. A fixed array would silently stop splitting and look up a
+        // truncated path, which reads as "no cursor" — indistinguishable from
+        // a genuine end of pagination. splitScalar yields slices into `path`,
+        // so unlike the C port there is nothing to copy.
+        var nseg: usize = 1;
+        for (path) |c| {
+            if (c == '.') nseg += 1;
+        }
+
+        const segs = h.A().alloc([]const u8, nseg) catch return h.vnull();
+
+        var n: usize = 0;
+        var it = std.mem.splitScalar(u8, path, '.');
+        while (it.next()) |seg| {
+            segs[n] = seg;
+            n += 1;
+        }
+
+        return h.getpath(segs[0..n], store);
     }
 
     fn pre_result(self: *PagingFeature, ctx: *Context) void {
@@ -136,6 +223,40 @@ pub const PagingFeature = struct {
             }
         }
 
+        // Set when the response states hasMore outright, rather than leaving
+        // it to be inferred from the presence of a cursor.
+        var explicit_more = false;
+
+        // Relay connections carry the cursor in pageInfo, at the path the
+        // model recorded for this op.
+        const page = h.getpath(&.{ "graphql", "page" }, ctx.point);
+        if (page == .object and body == .object) {
+            // `connpath` locates the connection object inside the response
+            // envelope (data.<field>); the cursor/more paths are relative
+            // to it.
+            var conn = body;
+            const connpath = h.get_str(page, "connpath") orelse "";
+            if (connpath.len != 0) {
+                const sub = getpath_dotted(connpath, body);
+                if (!h.is_noval(sub) and !h.is_null(sub)) conn = sub;
+            }
+
+            const cursorpath = h.get_str(page, "cursor") orelse "";
+            if (cursorpath.len != 0) {
+                const c = getpath_dotted(cursorpath, conn);
+                if (!h.is_noval(c) and !h.is_null(c)) h.setp(paging, "cursor", c);
+            }
+
+            const morepath = h.get_str(page, "more") orelse "";
+            if (morepath.len != 0) {
+                const mv = getpath_dotted(morepath, conn);
+                if (mv == .bool) {
+                    h.setp(paging, "hasMore", h.vbool(mv.bool));
+                    explicit_more = true;
+                }
+            }
+        }
+
         // Body-level cursors.
         if (body == .object) {
             const next = h.getp(body, "next");
@@ -152,10 +273,16 @@ pub const PagingFeature = struct {
             }
             if (h.get_bool(body, "hasMore")) |has_more| {
                 h.setp(paging, "hasMore", h.vbool(has_more));
+                explicit_more = true;
             }
         }
 
-        if ((h.get_bool(paging, "hasMore") orelse false) != true and
+        // Cursor presence only INFERS another page. When the server stated
+        // the answer outright — relay's `hasNextPage: false`, or a body
+        // `hasMore` — that wins: a final page normally carries both an end
+        // cursor and hasNextPage false, and inferring from the cursor there
+        // would send the caller back for a page that does not exist, forever.
+        if (!explicit_more and (h.get_bool(paging, "hasMore") orelse false) != true and
             (!h.is_noval(h.getp(paging, "next")) or
             !h.is_noval(h.getp(paging, "cursor")) or
             !h.is_noval(h.getp(paging, "nextPage"))))

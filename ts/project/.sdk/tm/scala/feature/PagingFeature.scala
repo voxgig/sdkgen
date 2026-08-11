@@ -1,8 +1,9 @@
 package SCALAPACKAGE.feature
 
-import java.util.{LinkedHashMap, Map => JMap}
+import java.util.{LinkedHashMap, List => JList, Map => JMap}
 import java.util.regex.{Matcher, Pattern}
 import SCALAPACKAGE.core.{Context, SdkClient}
+import SCALAPACKAGE.utility.struct.Struct
 
 // Pagination support for list operations. On the way out (PreRequest) it
 // stamps page/limit (or a cursor) into the request query; on the way back
@@ -52,6 +53,14 @@ class PagingFeature extends BaseFeature("paging", "0.0.1", true) {
       paging = new LinkedHashMap[String, Object]()
     }
 
+    // GraphQL paginates through operation VARIABLES, not the query string.
+    // This hook runs after makeSpec, so spec.body already holds the
+    // { query, variables } envelope, and before makeFetchDef serialises it.
+    if ("graphql" == Struct.getprop(ctx.point, "kind")) {
+      graphqlPreRequest(ctx, paging)
+      return
+    }
+
     val cursor = paging.get("cursor")
     if (cursor != null) {
       spec.query.put(cursorParam, cursor)
@@ -66,6 +75,52 @@ class PagingFeature extends BaseFeature("paging", "0.0.1", true) {
 
     if (this.options.get("limit") != null && spec.query.get(limitParam) == null) {
       spec.query.put(limitParam, java.lang.Integer.valueOf(FeatureOptions.foptInt(this.options, "limit", 0)))
+    }
+  }
+
+  // Relay pagination: the cursor is the `after` variable (or whatever the
+  // model named it), and the page size is `first`.
+  private def graphqlPreRequest(ctx: Context, paging: JMap[String, Object]): Unit = {
+    val body = ctx.spec.body match {
+      case m: JMap[_, _] => m.asInstanceOf[JMap[String, Object]]
+      case _ => return
+    }
+
+    val variables = body.get("variables") match {
+      case m: JMap[_, _] => m.asInstanceOf[JMap[String, Object]]
+      case _ =>
+        val nv = new LinkedHashMap[String, Object]()
+        body.put("variables", nv)
+        nv
+    }
+
+    val afterVar = FeatureOptions.foptStr(this.options, "afterVar", "after")
+    val firstVar = FeatureOptions.foptStr(this.options, "firstVar", "first")
+
+    // Only bind variables the operation actually declares, or the server
+    // rejects the document.
+    val declared = new java.util.HashSet[String]()
+    Struct.getpath(ctx.point, java.util.List.of("graphql", "vars")) match {
+      case vl: JList[_] =>
+        val it = vl.iterator()
+        while (it.hasNext) {
+          Struct.getprop(it.next(), "name") match {
+            case n: String => declared.add(n)
+            case _ =>
+          }
+        }
+      case _ =>
+    }
+
+    val cursor = paging.get("cursor")
+    if (cursor != null && declared.contains(afterVar)) {
+      variables.put(afterVar, cursor)
+    }
+
+    if (this.options.get("limit") != null && variables.get(firstVar) == null &&
+      declared.contains(firstVar)) {
+      variables.put(firstVar,
+        java.lang.Integer.valueOf(FeatureOptions.foptInt(this.options, "limit", 0)))
     }
   }
 
@@ -98,6 +153,45 @@ class PagingFeature extends BaseFeature("paging", "0.0.1", true) {
       case _ =>
     }
 
+    // Set when the response states hasMore outright, rather than leaving it
+    // to be inferred from the presence of a cursor.
+    var explicitMore = false
+
+    // Relay connections carry the cursor in pageInfo, at the path the model
+    // recorded for this op.
+    (Struct.getpath(ctx.point, java.util.List.of("graphql", "page")), body) match {
+      case (pg: JMap[_, _], _: JMap[_, _]) =>
+        val page = pg.asInstanceOf[JMap[String, Object]]
+        // `connpath` locates the connection object inside the response
+        // envelope (data.<field>); the cursor/more paths are relative to it.
+        var conn: Object = body
+        page.get("connpath") match {
+          case cp: String if cp.nonEmpty =>
+            val sub = Struct.getpath(body, cp)
+            if (sub != null) conn = sub
+          case _ =>
+        }
+
+        page.get("cursor") match {
+          case cur: String if cur.nonEmpty =>
+            val c = Struct.getpath(conn, cur)
+            if (c != null) paging.put("cursor", c)
+          case _ =>
+        }
+
+        page.get("more") match {
+          case mp: String if mp.nonEmpty =>
+            Struct.getpath(conn, mp) match {
+              case b: java.lang.Boolean =>
+                paging.put("hasMore", b)
+                explicitMore = true
+              case _ =>
+            }
+          case _ =>
+        }
+      case _ =>
+    }
+
     // Body-level cursors.
     body match {
       case bm0: JMap[_, _] =>
@@ -112,13 +206,20 @@ class PagingFeature extends BaseFeature("paging", "0.0.1", true) {
           paging.put("cursor", bm.get("nextCursor"))
         }
         bm.get("hasMore") match {
-          case b: java.lang.Boolean => paging.put("hasMore", b)
+          case b: java.lang.Boolean =>
+            paging.put("hasMore", b)
+            explicitMore = true
           case _ =>
         }
       case _ =>
     }
 
-    if (!(java.lang.Boolean.TRUE == paging.get("hasMore"))
+    // Cursor presence only INFERS another page. When the server stated the
+    // answer outright — relay's `hasNextPage: false`, or a body `hasMore` —
+    // that wins: a final page normally carries both an end cursor and
+    // hasNextPage false, and inferring from the cursor there would send the
+    // caller back for a page that does not exist, forever.
+    if (!explicitMore && !(java.lang.Boolean.TRUE == paging.get("hasMore"))
         && (paging.get("next") != null || paging.get("cursor") != null
             || paging.get("nextPage") != null)) {
       paging.put("hasMore", java.lang.Boolean.TRUE)

@@ -3,6 +3,8 @@
 from __future__ import annotations
 import re
 
+from utility.voxgig_struct import voxgig_struct as vs
+
 from feature.base_feature import ProjectNameBaseFeature
 
 
@@ -53,6 +55,14 @@ class ProjectNamePagingFeature(ProjectNameBaseFeature):
         if not isinstance(paging, dict):
             paging = {}
 
+        # GraphQL paginates through operation VARIABLES, not the query
+        # string. This hook runs after make_spec, so spec.body already holds
+        # the { query, variables } envelope, and before make_fetch_def
+        # serialises it.
+        if "graphql" == vs.getprop(ctx.point, "kind"):
+            self._graphql_pre_request(ctx, paging)
+            return
+
         if paging.get("cursor") is not None:
             spec.query[cursor_param] = paging["cursor"]
         elif spec.query.get(page_param) is None:
@@ -63,6 +73,39 @@ class ProjectNamePagingFeature(ProjectNameBaseFeature):
 
         if self.options.get("limit") is not None and spec.query.get(limit_param) is None:
             spec.query[limit_param] = self.options.get("limit")
+
+    # Relay pagination: the cursor is the `after` variable (or whatever the
+    # model named it), and the page size is `first`.
+    def _graphql_pre_request(self, ctx, paging):
+        body = ctx.spec.body
+        if not isinstance(body, dict):
+            return
+
+        variables = body.get("variables")
+        if not isinstance(variables, dict):
+            variables = {}
+            body["variables"] = variables
+
+        after_var = self.options.get("afterVar") or "after"
+        first_var = self.options.get("firstVar") or "first"
+
+        # Only bind variables the operation actually declares, or the server
+        # rejects the document.
+        declared = set()
+        varlist = vs.getpath(ctx.point, "graphql.vars")
+        if isinstance(varlist, list):
+            for v in varlist:
+                name = vs.getprop(v, "name")
+                if name is not None:
+                    declared.add(name)
+
+        if paging.get("cursor") is not None and after_var in declared:
+            variables[after_var] = paging["cursor"]
+
+        limit = self.options.get("limit")
+        if (limit is not None and variables.get(first_var) is None
+                and first_var in declared):
+            variables[first_var] = limit
 
     def PreResult(self, ctx):
         if not self.active:
@@ -92,6 +135,37 @@ class ProjectNamePagingFeature(ProjectNameBaseFeature):
             if m:
                 paging["next"] = m.group(1)
 
+        # Set when the response states hasMore outright, rather than leaving
+        # it to be inferred from the presence of a cursor.
+        explicit_more = False
+
+        # Relay connections carry the cursor in pageInfo, at the path the
+        # model recorded for this op.
+        page = vs.getpath(ctx.point, "graphql.page")
+        if isinstance(page, dict) and isinstance(body, dict):
+            # `connpath` locates the connection object inside the response
+            # envelope (data.<field>); the cursor/more paths are relative
+            # to it.
+            connpath = page.get("connpath")
+            conn = body
+            if isinstance(connpath, str) and "" != connpath:
+                sub = vs.getpath(body, connpath)
+                if sub is not None:
+                    conn = sub
+
+            cursorpath = page.get("cursor")
+            if isinstance(cursorpath, str) and "" != cursorpath:
+                cursor = vs.getpath(conn, cursorpath)
+                if cursor is not None:
+                    paging["cursor"] = cursor
+
+            morepath = page.get("more")
+            if isinstance(morepath, str) and "" != morepath:
+                more = vs.getpath(conn, morepath)
+                if isinstance(more, bool):
+                    paging["hasMore"] = more
+                    explicit_more = True
+
         # Body-level cursors.
         if isinstance(body, dict):
             if body.get("next") is not None:
@@ -102,11 +176,18 @@ class ProjectNamePagingFeature(ProjectNameBaseFeature):
                 paging["cursor"] = body["nextCursor"]
             if isinstance(body.get("hasMore"), bool):
                 paging["hasMore"] = body["hasMore"]
+                explicit_more = True
 
-        paging["hasMore"] = (paging["hasMore"]
-                             or paging["next"] is not None
-                             or paging["cursor"] is not None
-                             or paging["nextPage"] is not None)
+        # Cursor presence only INFERS another page. When the server stated
+        # the answer outright — relay's `hasNextPage: false`, or a body
+        # `hasMore` — that wins: a final page normally carries both an end
+        # cursor and hasNextPage false, and inferring from the cursor there
+        # would send the caller back for a page that does not exist, forever.
+        if not explicit_more:
+            paging["hasMore"] = (paging["hasMore"]
+                                 or paging["next"] is not None
+                                 or paging["cursor"] is not None
+                                 or paging["nextPage"] is not None)
 
         result.paging = paging
 

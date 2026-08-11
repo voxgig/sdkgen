@@ -38,6 +38,13 @@ public static partial class SdkUtility
         utility.ResultBasic(ctx);
         utility.ResultHeaders(ctx);
         utility.ResultBody(ctx);
+
+        // GraphQL reports failures as a top-level `errors` array under HTTP
+        // 200, so ResultBasic's status check never sees them. Lift them
+        // here, before the response transform tries to unwrap data that is
+        // not there.
+        utility.GraphqlErrors(ctx);
+
         utility.TransformResponse(ctx);
 
         if (result.Err == null)

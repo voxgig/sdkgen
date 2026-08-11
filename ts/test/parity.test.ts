@@ -64,6 +64,15 @@ const MIRRORED = ['c', 'clojure', 'elixir', 'haskell', 'zig']
 const UNCOVERED = ['ocaml', 'scala']
 
 
+// Targets exposing the raw-access escape hatch (direct/graphql). See the
+// 'raw-access gate parity' suite below.
+const RAW_ACCESS = [
+  'c', 'clojure', 'cpp', 'csharp', 'dart', 'elixir', 'go', 'haskell', 'java',
+  'js', 'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala',
+  'swift', 'ts', 'zig',
+]
+
+
 function sdkTargets(): string[] {
   return readdirSync(TM, { withFileTypes: true })
     .filter((d) => d.isDirectory())
@@ -161,6 +170,243 @@ describe('cross-language corpus coverage', () => {
       'these targets gained a primary-utility suite — move them out of ' +
       'UNCOVERED in test/parity.test.ts (to FULL if it drives the corpus)')
   })
+})
+
+
+// GraphQL is a second TRANSPORT, not a second SDK surface: apidef emits
+// `kind: 'graphql'` points carrying a precomputed document, and every target
+// must branch on that kind in makeSpec and lift the top-level `errors` array
+// in makeResponse. A target that ships the REST path only produces an SDK
+// that silently posts REST-shaped requests at a GraphQL endpoint and reports
+// server-side failures as success (GraphQL errors ride HTTP 200).
+//
+// Twelve of the twenty-three targets have no toolchain in CI, so a compile
+// cannot catch a target left behind — this manifest can. It is a DRIFT guard,
+// not a proof of correctness: it asserts each target still carries the four
+// pieces of the transport, in whatever the language's idiom names them.
+describe('graphql transport parity', () => {
+
+  // Comment lines are stripped before matching, so a target cannot satisfy
+  // the guard with the doc-comment every port copies from the reference.
+  const COMMENT = /^\s*(\/\/|#|--|\*|;|\/\*|\(\*|"""|''')/
+
+  function codeLines(lang: string): { file: string, lines: string[], src: string }[] {
+    const out: { file: string, lines: string[], src: string }[] = []
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = Path.join(dir, e.name)
+        if (e.isDirectory()) {
+          if ('node_modules' !== e.name) {
+            walk(p)
+          }
+        }
+        else {
+          const src = readFileSync(p, 'utf8')
+          out.push({
+            file: p,
+            src,
+            lines: src.split('\n').filter((l) => !COMMENT.test(l)),
+          })
+        }
+      }
+    }
+    walk(Path.join(TM, lang))
+    return out
+  }
+
+  for (const lang of sdkTargets()) {
+    test(`${lang}: carries the graphql transport`, () => {
+      const files = codeLines(lang)
+      const anyLine = (re: RegExp) =>
+        files.some((f) => f.lines.some((l) => re.test(l)))
+
+      // The document/variables builder, wired into the makeSpec kind branch.
+      ok(anyLine(/graphql[_.:-]?body/i),
+        `${lang}: no graphql body builder — makeSpec cannot post a document`)
+
+      // The failure lift, wired into makeResponse before transformResponse.
+      ok(anyLine(/graphql[_.:-]?errors/i),
+        `${lang}: no graphql error lift — a GraphQL failure under HTTP 200 ` +
+        `would be reported to the caller as success`)
+
+      // The transport's own error code, produced by the extensions mapping.
+      const mapping = files.filter((f) => /request_graphql/.test(f.src))
+      ok(0 < mapping.length,
+        `${lang}: no request_graphql code — GraphQL failures cannot be told ` +
+        `apart from HTTP ones by a caller switching on err.code`)
+
+      // Variable binding, and the SDK-side `$action` discriminator stripped
+      // before the input object is sent as a variable.
+      ok(mapping.some((f) => /variables/.test(f.src) && /\$action/.test(f.src)),
+        `${lang}: the graphql body builder does not bind variables and strip ` +
+        `$action — command mutations would send the point discriminator`)
+
+      // The kind branch overrides the content type on the same line it names
+      // the transport, which is only true when the branch exists.
+      ok(anyLine(/(?=.*content.?type)(?=.*graphql)/i),
+        `${lang}: makeSpec does not set the graphql content type — the kind ` +
+        `branch is missing`)
+    })
+  }
+
+  // Paging is a separate hook and drifted separately: the kind branch clears
+  // spec.query, so a REST-only paging feature writes cursor/limit into a
+  // query string that is then discarded, and reads only top-level body
+  // cursors — so a Relay connection stops after page one.
+  //
+  // lean is exempt: its paging feature stamps size/page and counts pages,
+  // with no cursor pagination, Link header or hasMore for REST either, so
+  // there is no branch to mirror without first porting the REST feature.
+  const NO_CURSOR_PAGING = ['lean']
+
+  for (const lang of sdkTargets()) {
+    if (NO_CURSOR_PAGING.includes(lang)) {
+      continue
+    }
+
+    test(`${lang}: paginates graphql through operation variables`, () => {
+      const files = codeLines(lang)
+      const anyLine = (re: RegExp) =>
+        files.some((f) => f.lines.some((l) => re.test(l)))
+
+      ok(anyLine(/after[_-]?var/i) && anyLine(/first[_-]?var/i),
+        `${lang}: the paging hook does not bind the after/first operation ` +
+        `variables — the cursor goes into a query string the graphql kind ` +
+        `branch has already cleared, so auto-pagination never advances`)
+
+      ok(anyLine(/connpath/i),
+        `${lang}: the paging hook does not read the model's relay page ` +
+        `descriptor, so pageInfo.endCursor is never found and a connection ` +
+        `stops after the first page`)
+
+      ok(anyLine(/explicit[_-]?more/i),
+        `${lang}: hasMore is inferred from cursor presence alone — a final ` +
+        `relay page carries both an end cursor and hasNextPage false, so ` +
+        `the caller is sent back for a page that does not exist, forever`)
+    })
+  }
+
+  test('the cursor-paging exemption list is still accurate', () => {
+    const stillExempt = NO_CURSOR_PAGING.filter((lang) =>
+      !codeLines(lang).some((f) => f.lines.some((l) => /hasMore/.test(l))))
+    deepStrictEqual(stillExempt, NO_CURSOR_PAGING,
+      'a target listed as having no cursor paging gained a hasMore signal — ' +
+      'give it the graphql paging branches and drop it from NO_CURSOR_PAGING')
+  })
+})
+
+
+// The raw-access escape hatch — `direct()` for arbitrary HTTP, `graphql()`
+// for arbitrary documents — reaches the API endpoint outside the operation
+// surface, so it is operator-controllable like every entity op: both tokens
+// are checked against allow.op before anything is sent. An ungated escape
+// hatch makes allow.op advisory, since a caller denied `remove` can still
+// DELETE through `direct`.
+//
+// One target ships no raw-access surface at all. It is listed rather than
+// inferred, so adding `direct` to it fails here until its gate lands with it.
+const NO_RAW_ACCESS = ['lean']
+
+describe('raw-access gate parity', () => {
+
+  const COMMENT = /^\s*(\/\/|#|--|\*|;|\/\*|\(\*|"""|''')/
+
+  // The gate spans both layers: the client method is a component fragment,
+  // but clojure and ocaml keep the implementation in the template tree and
+  // re-export it, so search the pair.
+  function clientLines(lang: string): string[] {
+    const out: string[] = []
+    const walk = (dir: string) => {
+      if (!existsSync(dir)) {
+        return
+      }
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = Path.join(dir, e.name)
+        if (e.isDirectory()) {
+          if ('node_modules' !== e.name) {
+            walk(p)
+          }
+        }
+        else {
+          for (const l of readFileSync(p, 'utf8').split('\n')) {
+            if (!COMMENT.test(l)) {
+              out.push(l)
+            }
+          }
+        }
+      }
+    }
+    walk(Path.join(SDK, 'src', 'cmp', lang))
+    walk(Path.join(TM, lang))
+    return out
+  }
+
+  test('every SDK target declares whether it has raw access', () => {
+    const declared = [...RAW_ACCESS, ...NO_RAW_ACCESS].sort()
+    deepStrictEqual(declared, sdkTargets(),
+      'a target was added or removed without deciding whether it exposes ' +
+      'raw access — add it to RAW_ACCESS (and gate it) or NO_RAW_ACCESS')
+  })
+
+  test('targets without raw access really have none', () => {
+    // Search the TEMPLATE tree only: the component tree carries `direct(`
+    // inside README and test string literals, which are not a surface.
+    // Match a call OR an ML-style signature — haskell declares
+    // `direct :: Client -> Value -> IO Value` and no paren ever appears, so
+    // a call-syntax regex silently cleared a target whose escape hatch was
+    // wide open.
+    const nowRaw = NO_RAW_ACCESS.filter((lang) => {
+      const dir = Path.join(TM, lang)
+      const hits: string[] = []
+      const walk = (d: string) => {
+        if (!existsSync(d)) {
+          return
+        }
+        for (const e of readdirSync(d, { withFileTypes: true })) {
+          const p = Path.join(d, e.name)
+          if (e.isDirectory()) {
+            walk(p)
+          }
+          else {
+            for (const l of readFileSync(p, 'utf8').split('\n')) {
+              if (!COMMENT.test(l) && /(^|[^A-Za-z0-9_])(sdk_)?[Dd]irect\s*(\(|::)/.test(l)) {
+                hits.push(l)
+              }
+            }
+          }
+        }
+      }
+      walk(dir)
+      return 0 < hits.length
+    })
+    deepStrictEqual(nowRaw, [],
+      'these targets gained a direct surface — move them to RAW_ACCESS ' +
+      'and gate it on allow.op, or the SDK option becomes advisory')
+  })
+
+  for (const lang of RAW_ACCESS) {
+    test(`${lang}: gates raw access on allow.op`, () => {
+      const lines = clientLines(lang)
+      const anyLine = (re: RegExp) => lines.some((l) => re.test(l))
+
+      ok(anyLine(/operation not allowed by/),
+        `${lang}: no allow.op denial — raw access cannot be turned off`)
+
+      ok(anyLine(/(?=.*direct)(?=.*(allow|denied))/i),
+        `${lang}: direct() is not gated on allow.op, so a caller denied an ` +
+        `entity op can still reach the same endpoint through it`)
+
+      ok(anyLine(/(?=.*graphql)(?=.*(allow|denied))/i),
+        `${lang}: graphql() is not gated on allow.op`)
+
+      // Both entry points must share one ungated inner path. A flag on
+      // fetchargs instead would let a caller opt straight back out of the
+      // gate by passing it.
+      ok(anyLine(/raw[_-]?request/i),
+        `${lang}: no shared raw-request path — direct() and graphql() have ` +
+        `diverged, or one of them re-implements the gate`)
+    })
+  }
 })
 
 

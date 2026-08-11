@@ -172,7 +172,40 @@ sub prepare {
   return $fetchdef;
 }
 
+# Raw endpoint access is operator-controllable, like every entity op.
+# Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+# either one reaches the same endpoint.
 sub direct {
+  my ($self, $fetchargs) = @_;
+
+  return $self->_op_denied('direct') unless $self->_op_allowed('direct');
+
+  return $self->_raw_request($fetchargs);
+}
+
+# Is this raw-access op permitted by the SDK's allow.op option?
+sub _op_allowed {
+  my ($self, $op) = @_;
+  my $allow = ProjectNameHelpers::gpath($self->{options}, 'allow.op');
+  return (defined $allow && !ref $allow && index($allow, $op) >= 0) ? 1 : 0;
+}
+
+sub _op_denied {
+  my ($self, $op) = @_;
+  my $allow = ProjectNameHelpers::gpath($self->{options}, 'allow.op');
+  $allow = '' unless defined $allow && !ref $allow;
+  return {
+    'ok' => 0,
+    'err' => "ProjectNameSDK: $op: operation not allowed by" .
+      " SDK option allow.op value: \"$allow\"",
+  };
+}
+
+# Ungated request path shared by direct and graphql, each of which checks its
+# own allow.op token first. Private, rather than a flag on fetchargs: a
+# caller-supplied marker would let anyone opt straight back out of the gate
+# by passing it.
+sub _raw_request {
   my ($self, $fetchargs) = @_;
   my $utility = $self->{_utility};
 
@@ -238,6 +271,53 @@ sub direct {
     'ok' => 0,
     'err' => $ctx->make_error('direct_invalid', 'invalid response type'),
   };
+}
+
+# Raw GraphQL access: the pressure valve that makes the generated surface's
+# deliberate omissions (per-call selection sets, typed filter builders,
+# batching, subscriptions) livable — the whole schema stays reachable.
+#
+# Thin wrapper over the same prepare/fetch path direct uses, with the one
+# thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP 200 as
+# a top-level `errors` array, so status alone would report a failed query as
+# ok.
+#
+# NOTE: like direct, this bypasses the feature pipeline — no retry, ratelimit
+# or paging features apply.
+sub graphql {
+  my ($self, $query, $variables, $ctrl) = @_;
+
+  return $self->_op_denied('graphql') unless $self->_op_allowed('graphql');
+
+  my $res = $self->_raw_request({
+    'method' => 'POST',
+    'headers' => { 'content-type' => 'application/json' },
+    'body' => {
+      'query' => defined $query ? $query : '',
+      'variables' => (ref $variables eq 'HASH') ? $variables : {},
+    },
+    'ctrl' => (ref $ctrl eq 'HASH') ? $ctrl : {},
+  });
+
+  return $res unless ref $res eq 'HASH';
+
+  # Errors are read BEFORE any status check: a GraphQL parse or validation
+  # failure comes back as HTTP 400 carrying the standard { errors: [...] }
+  # body, and the raw path represents a non-2xx as ok:0 with no err — so
+  # returning early on status would discard the server's own diagnostics,
+  # which are the only useful part of that response.
+  my $errors = ProjectNameHelpers::gpath($res, 'data.errors');
+
+  if (ref $errors eq 'ARRAY' && 0 < scalar @$errors) {
+    my $first = $errors->[0];
+    my $msg = (ref $first eq 'HASH') ? $first->{'message'} : undef;
+    $msg = 'graphql error' unless defined $msg && $msg ne '';
+    $res->{'ok'} = 0;
+    $res->{'err'} = "ProjectNameSDK: graphql: $msg";
+    $res->{'graphql'} = $errors;
+  }
+
+  return $res;
 }
 
 # <[SLOT]>

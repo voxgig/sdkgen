@@ -94,6 +94,10 @@ let test_with (testopts : value) (sdkopts : value) : sdk_client =
 let direct (client : sdk_client) (fetchargs : value) : value =
   Sdk_features.direct client fetchargs
 
+let graphql (client : sdk_client) (query : string) (variables : value)
+    (ctrl : value) : value =
+  Sdk_features.graphql client query variables ctrl
+
 let prepare (client : sdk_client) (fetchargs : value) : value =
   Sdk_features.prepare client fetchargs
 `)

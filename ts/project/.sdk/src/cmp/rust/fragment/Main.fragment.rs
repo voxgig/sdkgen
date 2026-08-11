@@ -179,7 +179,43 @@ impl ProjectNameSDK {
         utility.make_fetch_def(&ctx)
     }
 
+    // Raw endpoint access is operator-controllable, like every entity op.
+    // Blocking it means denying BOTH the 'direct' and 'graphql' tokens,
+    // since either one reaches the same endpoint.
     pub fn direct(&self, fetchargs: Value) -> Result<Value, ProjectNameError> {
+        if !self.op_allowed("direct") {
+            return Ok(self.op_denied("direct"));
+        }
+
+        self.raw_request(fetchargs)
+    }
+
+    // Is this raw-access op permitted by the SDK's allow.op option?
+    fn op_allowed(&self, op: &str) -> bool {
+        match getpath(&["allow", "op"], &self.options_map()) {
+            Value::Str(s) => s.contains(op),
+            _ => false,
+        }
+    }
+
+    fn op_denied(&self, op: &str) -> Value {
+        let allow = match getpath(&["allow", "op"], &self.options_map()) {
+            Value::Str(s) => s,
+            _ => String::new(),
+        };
+        jo(vec![
+            ("ok", Value::Bool(false)),
+            ("err", Value::str(format!(
+                "ProjectNameSDK: {}: operation not allowed by SDK option \
+                 allow.op value: \"{}\"", op, allow))),
+        ])
+    }
+
+    // Ungated request path shared by direct and graphql, each of which checks
+    // its own allow.op token first. Private, rather than a flag on fetchargs:
+    // a caller-supplied marker would let anyone opt straight back out of the
+    // gate by passing it.
+    fn raw_request(&self, fetchargs: Value) -> Result<Value, ProjectNameError> {
         let utility = &self.utility;
 
         let fetchdef = match self.prepare(fetchargs.clone()) {
@@ -262,6 +298,65 @@ impl ProjectNameSDK {
             ("ok", Value::Bool(false)),
             ("err", Value::str("invalid response type")),
         ]))
+    }
+
+    // Raw GraphQL access: the pressure valve that makes the generated
+    // surface's deliberate omissions (per-call selection sets, typed filter
+    // builders, batching, subscriptions) livable — the whole schema stays
+    // reachable.
+    //
+    // Thin wrapper over the same prepare/fetch path direct uses, with the one
+    // thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP
+    // 200 as a top-level `errors` array, so status alone would report a
+    // failed query as ok.
+    //
+    // NOTE: like direct, this bypasses the feature pipeline — no retry,
+    // ratelimit or paging features apply.
+    pub fn graphql(
+        &self, query: &str, variables: Value, ctrl: Value,
+    ) -> Result<Value, ProjectNameError> {
+        if !self.op_allowed("graphql") {
+            return Ok(self.op_denied("graphql"));
+        }
+
+        let vars = match &variables {
+            Value::Map(_) => variables,
+            _ => Value::empty_map(),
+        };
+        let ctl = match &ctrl {
+            Value::Map(_) => ctrl,
+            _ => Value::empty_map(),
+        };
+
+        let res = self.raw_request(jo(vec![
+            ("method", Value::str("POST")),
+            ("headers", jo(vec![("content-type", Value::str("application/json"))])),
+            ("body", jo(vec![("query", Value::str(query)), ("variables", vars)])),
+            ("ctrl", ctl),
+        ]))?;
+
+        // Errors are read BEFORE any status check: a GraphQL parse or
+        // validation failure comes back as HTTP 400 carrying the standard
+        // { errors: [...] } body, and the raw path represents a non-2xx as
+        // ok:false with no err — so returning early on status would discard
+        // the server's own diagnostics, which are the only useful part of
+        // that response.
+        let errors = getpath(&["data", "errors"], &res);
+
+        if let Value::List(items) = &errors {
+            let first = items.borrow().first().cloned();
+            if let Some(first) = first {
+                let msg = get_str(&first, "message")
+                    .filter(|m| !m.is_empty())
+                    .unwrap_or_else(|| "graphql error".to_string());
+                setp(&res, "ok", Value::Bool(false));
+                setp(&res, "err",
+                     Value::str(format!("ProjectNameSDK: graphql: {}", msg)));
+                setp(&res, "graphql", errors.clone());
+            }
+        }
+
+        Ok(res)
     }
 
     // <[SLOT]>

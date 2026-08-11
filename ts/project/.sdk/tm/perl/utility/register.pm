@@ -35,6 +35,7 @@ require(Cwd::abs_path("$__dir/prepare_method.pm"));
 require(Cwd::abs_path("$__dir/prepare_params.pm"));
 require(Cwd::abs_path("$__dir/prepare_path.pm"));
 require(Cwd::abs_path("$__dir/prepare_query.pm"));
+require(Cwd::abs_path("$__dir/graphql.pm"));
 require(Cwd::abs_path("$__dir/result_basic.pm"));
 require(Cwd::abs_path("$__dir/result_body.pm"));
 require(Cwd::abs_path("$__dir/result_headers.pm"));

@@ -33,6 +33,8 @@ class ProjectNameUtility:
         self.prepare_method = None
         self.prepare_params = None
         self.prepare_path = None
+        self.graphql_body = None
+        self.graphql_errors = None
         self.prepare_query = None
         self.result_basic = None
         self.result_body = None

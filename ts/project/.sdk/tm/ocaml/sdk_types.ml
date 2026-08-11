@@ -152,6 +152,8 @@ and utility = {
   mutable u_prepare_params : ctx -> value;
   mutable u_prepare_path : ctx -> string;
   mutable u_prepare_query : ctx -> value;
+  mutable u_graphql_body : ctx -> value;
+  mutable u_graphql_errors : ctx -> bool;
   mutable u_result_basic : ctx -> unit;
   mutable u_result_body : ctx -> unit;
   mutable u_result_headers : ctx -> unit;

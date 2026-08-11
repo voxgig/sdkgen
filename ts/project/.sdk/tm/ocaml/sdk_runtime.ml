@@ -416,6 +416,120 @@ let prepare_query_util (ctx : ctx) : value =
 let prepare_body_util (ctx : ctx) : value =
   if ctx.c_op.op_input = "data" then (cu ctx).u_transform_request ctx else Noval
 
+(* ---- graphql (transport) -------------------------------------------------
+ *
+ * GraphQL transport. API-INDEPENDENT: every GraphQL SDK this generator
+ * produces uses this code unchanged. The API-specific part — which operations
+ * exist and what each one's document is — is model data, computed once by
+ * apidef and emitted into Config.
+ *
+ * Two jobs:
+ *
+ *   graphql_body_util   — build { query, variables } for a point, binding the
+ *                         op's arguments to the document's declared variables.
+ *
+ *   graphql_errors_util — lift a GraphQL failure into an SDK error. GraphQL
+ *                         reports failures as a top-level `errors` array under
+ *                         HTTP 200, so the status-driven path in result_basic
+ *                         never sees them. *)
+
+(* Content type every GraphQL-over-HTTP request uses. *)
+let graphql_content_type = "application/json"
+
+(* Map a GraphQL error to the same error codes the HTTP path produces, so a
+ * caller handles auth or rate limiting identically on both transports.
+ * Servers put the machine-readable code in `extensions.code`; Linear-style
+ * APIs use `extensions.type`. *)
+let graphql_error_code (gqlerr : value) : string =
+  let ext = getp gqlerr "extensions" in
+  let code = get_str_d ext "code" "" in
+  let code = if code = "" then get_str_d ext "type" "" else code in
+  let raw = String.uppercase_ascii code in
+  if substr_contains raw "AUTH" || substr_contains raw "FORBIDDEN"
+     || substr_contains raw "UNAUTHENTICATED" then "request_auth"
+  else if substr_contains raw "RATELIMIT" || substr_contains raw "RATE_LIMIT"
+          || substr_contains raw "TOO_MANY" then "request_ratelimit"
+  else if substr_contains raw "BAD_USER_INPUT" || substr_contains raw "VALIDATION"
+          || substr_contains raw "INVALID" then "request_invalid"
+  else "request_graphql"
+
+(* Build the request body for a GraphQL point.
+ *
+ * Variables come from the op's own arguments: a named variable binds to the
+ * like-named argument (`from`), and the input-object variable (empty `from`)
+ * takes the request data as a whole — which is what makes a generated
+ * create/update call look exactly like its REST equivalent. *)
+let graphql_body_util (ctx : ctx) : value =
+  match getp ctx.c_point "graphql" with
+  | Map _ as gql ->
+    (* reqmatch/reqdata hold the caller's arguments for THIS call; data/match
+     * hold the entity's current state. Which pair depends on whether the op
+     * takes match or data input. A named variable falls back to the current
+     * state, so updating a loaded entity with just {title} still binds the
+     * stored id the mutation requires. *)
+    let datainput = ctx.c_op.op_input = "data" in
+    let reqsrc = if datainput then ctx.c_reqdata else ctx.c_reqmatch in
+    let datasrc = if datainput then ctx.c_data else ctx.c_match in
+    let reqsrc = match reqsrc with Map _ as m -> m | _ -> empty_map () in
+    let datasrc = match datasrc with Map _ as m -> m | _ -> empty_map () in
+    let variables = empty_map () in
+    let varlist = match getp gql "vars" with List r -> !r | _ -> [] in
+    List.iter (fun spec ->
+        match spec with
+        | Map _ ->
+          let name = get_str_d spec "name" "" in
+          let from = get_str_d spec "from" "" in
+          if name <> "" then begin
+            if from = "" then begin
+              (* The input object IS the request body. Strip the action
+               * selector, which is an SDK-side point discriminator, not an
+               * API field. *)
+              let body = empty_map () in
+              List.iter (fun k ->
+                  if k <> "$action" then setp body k (getp reqsrc k))
+                (keysof reqsrc);
+              setp variables name body
+            end
+            else
+              (* Only send variables the caller actually supplied: sending an
+               * explicit null would clear a field on many APIs. *)
+              let v = getp reqsrc from in
+              let v = if is_nullish v then getp datasrc from else v in
+              if not (is_nullish v) then setp variables name v
+          end
+        | _ -> ())
+      varlist;
+    jo [("query", getp gql "doc"); ("variables", variables)]
+  | _ -> Noval
+
+(* Inspect a decoded GraphQL response body and record a failure when the
+ * server reported one. Returns true when an error was recorded.
+ *
+ * Partial data (`data` alongside `errors`) is treated as failure: the REST
+ * surface has no partial-success concept, and silently returning half an
+ * object would be worse than failing. *)
+let graphql_errors_util (ctx : ctx) : bool =
+  match ctx.c_result with
+  | None -> false
+  | Some result ->
+    if get_str_d ctx.c_point "kind" "" <> "graphql" then false
+    else
+      let errors = match getp result.rt_body "errors" with List r -> !r | _ -> [] in
+      let count = List.length errors in
+      if count = 0 then false
+      else begin
+        let first = List.hd errors in
+        let msg = get_str_d first "message" "" in
+        let msg = if msg = "" then "graphql error" else msg in
+        let msg =
+          if 1 < count then msg ^ " (+" ^ string_of_int (count - 1) ^ " more)"
+          else msg in
+        result.rt_err <-
+          Some (ctx_make_error ctx (graphql_error_code first) ("graphql: " ^ msg));
+        result.rt_ok <- false;
+        true
+      end
+
 let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
   match ctx.c_spec with
   | None -> (None, Some (ctx_make_error ctx "auth_no_spec" "Expected context spec property to be defined."))
@@ -584,8 +698,23 @@ let make_spec_util (ctx : ctx) : (spec option * sdk_error option) =
       sp.sp_params <- u.u_prepare_params ctx;
       sp.sp_query <- u.u_prepare_query ctx;
       sp.sp_headers <- u.u_prepare_headers ctx;
-      sp.sp_body <- u.u_prepare_body ctx;
-      sp.sp_path <- u.u_prepare_path ctx;
+      if get_str_d ctx.c_point "kind" "" = "graphql" then begin
+        (* GraphQL addresses one endpoint: no path parts, no query string, and
+         * the body carries the operation. prepare_body is skipped
+         * deliberately — it only emits a body for data-input ops, whereas
+         * every GraphQL op posts one, including load/list/remove. *)
+        sp.sp_body <- u.u_graphql_body ctx;
+        sp.sp_path <- "";
+        (* prepare_query already copied the op's match arguments into the query
+         * string. Those same values are bound as operation variables, so
+         * leaving them would send /graphql?id=i1. *)
+        sp.sp_query <- empty_map ();
+        setp sp.sp_headers "content-type" (Str graphql_content_type)
+      end
+      else begin
+        sp.sp_body <- u.u_prepare_body ctx;
+        sp.sp_path <- u.u_prepare_path ctx
+      end;
       (match ctx.c_ctrl.ctrl_explain with Map _ -> setp ctx.c_ctrl.ctrl_explain "spec" (spec_to_value sp) | _ -> ());
       match u.u_prepare_auth ctx with
       | (_, Some err) -> (None, Some err)
@@ -687,7 +816,13 @@ let make_response_util (ctx : ctx) : (response option * sdk_error option) =
            | None -> (None, Some (ctx_make_error ctx "response_no_result" "Expected context result property to be defined."))
            | Some result ->
              spec.sp_step <- "response";
-             u.u_result_basic ctx; u.u_result_headers ctx; u.u_result_body ctx; ignore (u.u_transform_response ctx);
+             u.u_result_basic ctx; u.u_result_headers ctx; u.u_result_body ctx;
+             (* GraphQL reports failures as a top-level `errors` array under
+              * HTTP 200, so result_basic's status check never sees them. Lift
+              * them here, before the response transform tries to unwrap data
+              * that is not there. *)
+             ignore (u.u_graphql_errors ctx);
+             ignore (u.u_transform_response ctx);
              if result.rt_err = None then result.rt_ok <- true;
              (match ctx.c_ctrl.ctrl_explain with Map _ -> setp ctx.c_ctrl.ctrl_explain "result" (result_to_value result) | _ -> ());
              (Some response, None))))
@@ -898,6 +1033,8 @@ let new_utility () : utility =
     u_prepare_params = prepare_params_util;
     u_prepare_path = prepare_path_util;
     u_prepare_query = prepare_query_util;
+    u_graphql_body = graphql_body_util;
+    u_graphql_errors = graphql_errors_util;
     u_result_basic = result_basic_util;
     u_result_body = result_body_util;
     u_result_headers = result_headers_util;
@@ -932,6 +1069,8 @@ let register (u : utility) : unit =
   u.u_prepare_params <- prepare_params_util;
   u.u_prepare_path <- prepare_path_util;
   u.u_prepare_query <- prepare_query_util;
+  u.u_graphql_body <- graphql_body_util;
+  u.u_graphql_errors <- graphql_errors_util;
   u.u_result_basic <- result_basic_util;
   u.u_result_body <- result_body_util;
   u.u_result_headers <- result_headers_util;

@@ -133,7 +133,97 @@ abstract class SdkClient(options0: JMap[String, Object]) {
     utility.makeFetchDef(ctx)
   }
 
+  // Raw endpoint access is operator-controllable, like every entity op.
+  // Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+  // either one reaches the same endpoint.
   def direct(fetchargs0: JMap[String, Object]): JMap[String, Object] = {
+    if (!opAllowed("direct")) opDenied("direct")
+    else rawRequest(fetchargs0)
+  }
+
+  // Is this raw-access op permitted by the SDK's allow.op option?
+  private def opAllowed(op: String): Boolean =
+    Struct.getpath(this.options, java.util.List.of("allow", "op")) match {
+      case s: String => s.contains(op)
+      case _ => false
+    }
+
+  private def opDenied(op: String): JMap[String, Object] = {
+    val allow = Struct.getpath(this.options, java.util.List.of("allow", "op")) match {
+      case s: String => s
+      case _ => ""
+    }
+    val out = new LinkedHashMap[String, Object]()
+    out.put("ok", java.lang.Boolean.FALSE)
+    out.put("err", new SdkError(op + "_allow",
+      "ProjectNameSDK: " + op + ": operation not allowed by" +
+        " SDK option allow.op value: \"" + allow + "\"", null))
+    out
+  }
+
+  // Raw GraphQL access: the pressure valve that makes the generated surface's
+  // deliberate omissions (per-call selection sets, typed filter builders,
+  // batching, subscriptions) livable — the whole schema stays reachable.
+  //
+  // Thin wrapper over the same prepare/fetch path direct uses, with the one
+  // thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP 200
+  // as a top-level `errors` array, so status alone would report a failed
+  // query as ok.
+  //
+  // NOTE: like direct, this bypasses the feature pipeline — no retry,
+  // ratelimit or paging features apply.
+  def graphql(
+    query: String,
+    variables: JMap[String, Object] = null,
+    ctrl: JMap[String, Object] = null,
+  ): JMap[String, Object] = {
+    if (!opAllowed("graphql")) opDenied("graphql")
+    else {
+      val headers = new LinkedHashMap[String, Object]()
+      headers.put("content-type", "application/json")
+
+      val body = new LinkedHashMap[String, Object]()
+      body.put("query", query)
+      body.put("variables",
+        if (variables == null) new LinkedHashMap[String, Object]() else variables)
+
+      val fetchargs = new LinkedHashMap[String, Object]()
+      fetchargs.put("method", "POST")
+      fetchargs.put("headers", headers)
+      fetchargs.put("body", body)
+      fetchargs.put("ctrl",
+        if (ctrl == null) new LinkedHashMap[String, Object]() else ctrl)
+
+      val res = rawRequest(fetchargs)
+
+      // Errors are read BEFORE any status check: a GraphQL parse or
+      // validation failure comes back as HTTP 400 carrying the standard
+      // { errors: [...] } body, and the raw path represents a non-2xx as
+      // ok:false with no err — so returning early on status would discard
+      // the server's own diagnostics, which are the only useful part of that
+      // response.
+      Struct.getpath(res, java.util.List.of("data", "errors")) match {
+        case errors: JList[_] if !errors.isEmpty =>
+          val msg = Struct.getprop(errors.get(0), "message") match {
+            case m: String if m.nonEmpty => m
+            case _ => "graphql error"
+          }
+          res.put("ok", java.lang.Boolean.FALSE)
+          res.put("err", new SdkError("graphql_error",
+            "ProjectNameSDK: graphql: " + msg, null))
+          res.put("graphql", errors.asInstanceOf[Object])
+        case _ =>
+      }
+
+      res
+    }
+  }
+
+  // Ungated request path shared by direct and graphql, each of which checks
+  // its own allow.op token first. Private, rather than a flag on fetchargs: a
+  // caller-supplied marker would let anyone opt straight back out of the gate
+  // by passing it.
+  private def rawRequest(fetchargs0: JMap[String, Object]): JMap[String, Object] = {
     val utility = this.utility
     val fetchargs = if (fetchargs0 == null) new LinkedHashMap[String, Object]() else fetchargs0
 

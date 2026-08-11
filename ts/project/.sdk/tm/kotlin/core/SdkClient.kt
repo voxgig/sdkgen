@@ -159,7 +159,91 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
     return utility.makeFetchDef(ctx)
   }
 
+  // Raw endpoint access is operator-controllable, like every entity op.
+  // Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+  // either one reaches the same endpoint.
   fun direct(fetchargsIn: MutableMap<String, Any?>?): MutableMap<String, Any?> {
+    if (!opAllowed("direct")) {
+      return opDenied("direct")
+    }
+
+    return rawRequest(fetchargsIn)
+  }
+
+  // Is this raw-access op permitted by the SDK's allow.op option?
+  private fun opAllowed(op: String): Boolean {
+    val allow = Struct.getpath(this.options, listOf("allow", "op"))
+    return allow is String && allow.contains(op)
+  }
+
+  private fun opDenied(op: String): MutableMap<String, Any?> {
+    val allow = Struct.getpath(this.options, listOf("allow", "op")) as? String
+    val out = linkedMapOf<String, Any?>()
+    out["ok"] = false
+    out["err"] = SdkError(op + "_allow",
+      "ProjectNameSDK: " + op + ": operation not allowed by" +
+        " SDK option allow.op value: \"" + (allow ?: "") + "\"", null)
+    return out
+  }
+
+  // Raw GraphQL access: the pressure valve that makes the generated
+  // surface's deliberate omissions (per-call selection sets, typed filter
+  // builders, batching, subscriptions) livable — the whole schema stays
+  // reachable.
+  //
+  // Thin wrapper over the same prepare/fetch path direct uses, with the one
+  // thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP 200
+  // as a top-level `errors` array, so status alone would report a failed
+  // query as ok.
+  //
+  // NOTE: like direct, this bypasses the feature pipeline — no retry,
+  // ratelimit or paging features apply.
+  @JvmOverloads
+  fun graphql(
+    query: String,
+    variables: MutableMap<String, Any?>? = null,
+    ctrl: MutableMap<String, Any?>? = null,
+  ): MutableMap<String, Any?> {
+    if (!opAllowed("graphql")) {
+      return opDenied("graphql")
+    }
+
+    val res = rawRequest(linkedMapOf<String, Any?>(
+      "method" to "POST",
+      "headers" to linkedMapOf<String, Any?>(
+        "content-type" to "application/json"),
+      "body" to linkedMapOf<String, Any?>(
+        "query" to query,
+        "variables" to (variables ?: linkedMapOf<String, Any?>())),
+      "ctrl" to (ctrl ?: linkedMapOf<String, Any?>()),
+    ))
+
+    // Errors are read BEFORE any status check: a GraphQL parse or validation
+    // failure comes back as HTTP 400 carrying the standard { errors: [...] }
+    // body, and the raw path represents a non-2xx as ok:false with no err —
+    // so returning early on status would discard the server's own
+    // diagnostics, which are the only useful part of that response.
+    val errors = Struct.getpath(res, listOf("data", "errors")) as? List<Any?>
+
+    if (null != errors && errors.isNotEmpty()) {
+      val m = Struct.getprop(errors[0], "message") as? String
+      val msg = if (m.isNullOrEmpty()) "graphql error" else m
+      res["ok"] = false
+      res["err"] = SdkError("graphql_error",
+        "ProjectNameSDK: graphql: " + msg, null)
+      res["graphql"] = errors
+    }
+
+    return res
+  }
+
+  // Ungated request path shared by direct and graphql, each of which checks
+  // its own allow.op token first. Private, rather than a flag on fetchargs: a
+  // caller-supplied marker would let anyone opt straight back out of the gate
+  // by passing it.
+  private fun rawRequest(
+    fetchargsIn: MutableMap<String, Any?>?,
+  ): MutableMap<String, Any?> {
     val utility = this.util
 
     val fetchargs = fetchargsIn ?: linkedMapOf()

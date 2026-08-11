@@ -74,6 +74,8 @@ public class Utility {
   public CtxFn<Map<String, Object>> prepareParams;
   public CtxFn<String> preparePath;
   public CtxFn<Map<String, Object>> prepareQuery;
+  public CtxFn<Object> graphqlBody;
+  public CtxFn<Result> graphqlErrors;
   public CtxFn<Result> resultBasic;
   public CtxFn<Result> resultBody;
   public CtxFn<Result> resultHeaders;
@@ -115,6 +117,8 @@ public class Utility {
     u.prepareParams = this.prepareParams;
     u.preparePath = this.preparePath;
     u.prepareQuery = this.prepareQuery;
+    u.graphqlBody = this.graphqlBody;
+    u.graphqlErrors = this.graphqlErrors;
     u.resultBasic = this.resultBasic;
     u.resultBody = this.resultBody;
     u.resultHeaders = this.resultHeaders;

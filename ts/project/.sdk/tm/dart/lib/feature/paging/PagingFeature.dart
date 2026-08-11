@@ -1,5 +1,7 @@
 // ignore_for_file: non_constant_identifier_names
 
+import '../../utility/voxgig_struct.dart' as vs;
+
 import '../base/BaseFeature.dart';
 
 // Pagination support for list operations. On the way out (PreRequest) it
@@ -45,6 +47,14 @@ class PagingFeature extends BaseFeature {
     // A per-call cursor/page from ctrl takes priority (used by auto-iteration).
     final paging = (ctx.ctrl is Map ? ctx.ctrl['paging'] : null) ?? {};
 
+    // GraphQL paginates through operation VARIABLES, not the query string.
+    // This hook runs after makeSpec, so spec.body already holds the
+    // { query, variables } envelope, and before makeFetchDef serialises it.
+    if ('graphql' == ctx.point?.kind) {
+      _graphqlPreRequest(ctx, paging);
+      return null;
+    }
+
     if (null != paging['cursor']) {
       spec.query[cursorParam] = paging['cursor'];
     } else if (null == spec.query[pageParam]) {
@@ -56,6 +66,46 @@ class PagingFeature extends BaseFeature {
       spec.query[limitParam] = options['limit'];
     }
     return null;
+  }
+
+  // Relay pagination: the cursor is the `after` variable (or whatever the
+  // model named it), and the page size is `first`.
+  void _graphqlPreRequest(dynamic ctx, dynamic paging) {
+    final body = ctx.spec.body;
+    if (body is! Map) {
+      return;
+    }
+
+    var variables = body['variables'];
+    if (variables is! Map) {
+      variables = <String, dynamic>{};
+      body['variables'] = variables;
+    }
+
+    final afterVar = options['afterVar'] ?? 'after';
+    final firstVar = options['firstVar'] ?? 'first';
+
+    // Only bind variables the operation actually declares, or the server
+    // rejects the document.
+    final declared = <String>{};
+    final varlist = vs.getprop(ctx.point?.graphql, 'vars');
+    if (varlist is List) {
+      for (final v in varlist) {
+        final name = vs.getprop(v, 'name');
+        if (null != name) {
+          declared.add(name.toString());
+        }
+      }
+    }
+
+    if (null != paging['cursor'] && declared.contains(afterVar)) {
+      variables[afterVar] = paging['cursor'];
+    }
+
+    if (null != options['limit'] && null == variables[firstVar] &&
+        declared.contains(firstVar)) {
+      variables[firstVar] = options['limit'];
+    }
   }
 
   @override
@@ -90,6 +140,43 @@ class PagingFeature extends BaseFeature {
       }
     }
 
+    // Set when the response states hasMore outright, rather than leaving it
+    // to be inferred from the presence of a cursor.
+    var explicitMore = false;
+
+    // Relay connections carry the cursor in pageInfo, at the path the model
+    // recorded for this op.
+    final page = vs.getprop(ctx.point?.graphql, 'page');
+    if (page is Map && body is Map) {
+      // `connpath` locates the connection object inside the response
+      // envelope (data.<field>); the cursor/more paths are relative to it.
+      var conn = body;
+      final connpath = page['connpath'];
+      if (connpath is String && '' != connpath) {
+        final sub = vs.getpath(body, connpath);
+        if (sub is Map) {
+          conn = sub;
+        }
+      }
+
+      final cursorpath = page['cursor'];
+      if (cursorpath is String && '' != cursorpath) {
+        final cursor = vs.getpath(conn, cursorpath);
+        if (null != cursor) {
+          paging['cursor'] = cursor;
+        }
+      }
+
+      final morepath = page['more'];
+      if (morepath is String && '' != morepath) {
+        final more = vs.getpath(conn, morepath);
+        if (more is bool) {
+          paging['hasMore'] = more;
+          explicitMore = true;
+        }
+      }
+    }
+
     // Body-level cursors.
     if (body is Map) {
       if (null != body['next']) {
@@ -103,13 +190,21 @@ class PagingFeature extends BaseFeature {
       }
       if (body['hasMore'] is bool) {
         paging['hasMore'] = body['hasMore'];
+        explicitMore = true;
       }
     }
 
-    paging['hasMore'] = true == paging['hasMore'] ||
-        null != paging['next'] ||
-        null != paging['cursor'] ||
-        null != paging['nextPage'];
+    // Cursor presence only INFERS another page. When the server stated the
+    // answer outright — relay's `hasNextPage: false`, or a body `hasMore` —
+    // that wins: a final page normally carries both an end cursor and
+    // hasNextPage false, and inferring from the cursor there would send the
+    // caller back for a page that does not exist, forever.
+    if (!explicitMore) {
+      paging['hasMore'] = true == paging['hasMore'] ||
+          null != paging['next'] ||
+          null != paging['cursor'] ||
+          null != paging['nextPage'];
+    }
 
     result.paging = paging;
 

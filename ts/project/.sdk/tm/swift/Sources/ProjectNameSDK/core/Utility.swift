@@ -29,6 +29,8 @@ public final class Utility {
   public var prepareParams: ((Context) -> VMap)!
   public var preparePath: ((Context) -> String)!
   public var prepareQuery: ((Context) -> VMap)!
+  public var graphqlBody: ((Context) -> Value)!
+  public var graphqlErrors: ((Context) -> Bool)!
   public var resultBasic: ((Context) -> Result)!
   public var resultBody: ((Context) -> Result)!
   public var resultHeaders: ((Context) -> Result)!
@@ -70,6 +72,8 @@ public final class Utility {
     u.prepareParams = src.prepareParams
     u.preparePath = src.preparePath
     u.prepareQuery = src.prepareQuery
+    u.graphqlBody = src.graphqlBody
+    u.graphqlErrors = src.graphqlErrors
     u.resultBasic = src.resultBasic
     u.resultBody = src.resultBody
     u.resultHeaders = src.resultHeaders

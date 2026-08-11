@@ -50,10 +50,38 @@ pub fn make_spec_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ProjectNam
     spec.borrow_mut().query = query;
     let headers = crate::utility::prepare_headers::prepare_headers_util(ctx);
     spec.borrow_mut().headers = headers;
-    let body = crate::utility::prepare_body::prepare_body_util(ctx);
-    spec.borrow_mut().body = body;
-    let path = crate::utility::prepare_path::prepare_path_util(ctx);
-    spec.borrow_mut().path = path;
+
+    let point = ctx.point.borrow().clone();
+    let kind = match getp(&point, "kind") {
+        Value::Str(s) => s,
+        _ => String::new(),
+    };
+
+    if "graphql" == kind {
+        // GraphQL addresses one endpoint: no path parts, no query string,
+        // and the body carries the operation. prepare_body is skipped
+        // deliberately — it only emits a body for data-input ops, whereas
+        // every GraphQL op posts one, including load/list/remove.
+        let body = crate::utility::graphql::graphql_body_util(ctx);
+        spec.borrow_mut().body = body;
+        spec.borrow_mut().path = String::new();
+        // prepare_query already copied the op's match arguments into the
+        // query string. Those same values are bound as operation
+        // variables, so leaving them would send /graphql?id=i1.
+        spec.borrow_mut().query = Value::empty_map();
+        let headers = spec.borrow().headers.clone();
+        setp(
+            &headers,
+            "content-type",
+            Value::Str(crate::utility::graphql::GRAPHQL_CONTENT_TYPE.to_string()),
+        );
+        spec.borrow_mut().headers = headers;
+    } else {
+        let body = crate::utility::prepare_body::prepare_body_util(ctx);
+        spec.borrow_mut().body = body;
+        let path = crate::utility::prepare_path::prepare_path_util(ctx);
+        spec.borrow_mut().path = path;
+    }
 
     {
         let ctrl = ctx.ctrl.borrow().clone();

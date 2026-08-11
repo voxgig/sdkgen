@@ -10,6 +10,8 @@
 
 using System.Text.RegularExpressions;
 
+using Voxgig.Struct;
+
 using static ProjectNameSdk.Feature.FeatureOptions;
 
 namespace ProjectNameSdk.Feature;
@@ -59,6 +61,16 @@ public class PagingFeature : BaseFeature
         // A per-call cursor/page from ctrl takes priority (auto-iteration).
         var paging = ctx.Ctrl?.Paging;
 
+        // GraphQL paginates through operation VARIABLES, not the query
+        // string. This hook runs after MakeSpec, so spec.Body already holds
+        // the { query, variables } envelope, and before MakeFetchDef
+        // serialises it.
+        if ("graphql" == StructUtils.GetProp(ctx.Point, "kind") as string)
+        {
+            GraphqlPreRequest(ctx, paging);
+            return;
+        }
+
         object? cursor = null;
         var hasCursor = paging != null && paging.TryGetValue("cursor", out cursor) && cursor != null;
         if (hasCursor)
@@ -76,6 +88,60 @@ public class PagingFeature : BaseFeature
             (!spec.Query.TryGetValue(limitParam, out var lv) || lv == null))
         {
             spec.Query[limitParam] = FoptInt(_options, "limit", 0);
+        }
+    }
+
+    // Relay pagination: the cursor is the `after` variable (or whatever the
+    // model named it), and the page size is `first`.
+    private void GraphqlPreRequest(Context ctx, Dictionary<string, object?>? paging)
+    {
+        if (ctx.Spec?.Body is not Dictionary<string, object?> body)
+        {
+            return;
+        }
+
+        if (body.TryGetValue("variables", out var vv) &&
+            vv is Dictionary<string, object?> existing)
+        {
+            // reuse
+            vv = existing;
+        }
+        else
+        {
+            vv = new Dictionary<string, object?>();
+            body["variables"] = vv;
+        }
+        var variables = (Dictionary<string, object?>)vv;
+
+        var afterVar = FoptStr(_options, "afterVar", "after");
+        var firstVar = FoptStr(_options, "firstVar", "first");
+
+        // Only bind variables the operation actually declares, or the server
+        // rejects the document.
+        var declared = new HashSet<string>();
+        if (StructUtils.GetPath(ctx.Point, StructUtils.Jt("graphql", "vars"))
+            is List<object?> varlist)
+        {
+            foreach (var v in varlist)
+            {
+                if (StructUtils.GetProp(v, "name") is string name)
+                {
+                    declared.Add(name);
+                }
+            }
+        }
+
+        object? cursor = null;
+        if (paging != null && paging.TryGetValue("cursor", out cursor) &&
+            cursor != null && declared.Contains(afterVar))
+        {
+            variables[afterVar] = cursor;
+        }
+
+        if (Opt(_options, "limit") != null && declared.Contains(firstVar) &&
+            (!variables.TryGetValue(firstVar, out var fv) || fv == null))
+        {
+            variables[firstVar] = FoptInt(_options, "limit", 0);
         }
     }
 
@@ -113,6 +179,51 @@ public class PagingFeature : BaseFeature
             }
         }
 
+        // Set when the response states hasMore outright, rather than leaving
+        // it to be inferred from the presence of a cursor.
+        var explicitMore = false;
+
+        // Relay connections carry the cursor in pageInfo, at the path the
+        // model recorded for this op.
+        if (StructUtils.GetPath(ctx.Point, StructUtils.Jt("graphql", "page"))
+                is Dictionary<string, object?> page
+            && body is Dictionary<string, object?>)
+        {
+            // `connpath` locates the connection object inside the response
+            // envelope (data.<field>); the cursor/more paths are relative
+            // to it.
+            object? conn = body;
+            if (page.TryGetValue("connpath", out var cpv) &&
+                cpv is string connpath && "" != connpath)
+            {
+                var sub = StructUtils.GetPath(body, connpath);
+                if (sub != null)
+                {
+                    conn = sub;
+                }
+            }
+
+            if (page.TryGetValue("cursor", out var curv) &&
+                curv is string cursorpath && "" != cursorpath)
+            {
+                var c = StructUtils.GetPath(conn, cursorpath);
+                if (c != null)
+                {
+                    paging["cursor"] = c;
+                }
+            }
+
+            if (page.TryGetValue("more", out var mv) &&
+                mv is string morepath && "" != morepath)
+            {
+                if (StructUtils.GetPath(conn, morepath) is bool more)
+                {
+                    paging["hasMore"] = more;
+                    explicitMore = true;
+                }
+            }
+        }
+
         // Body-level cursors.
         if (body is Dictionary<string, object?> bm)
         {
@@ -132,10 +243,16 @@ public class PagingFeature : BaseFeature
             if (bm.TryGetValue("hasMore", out var hasMore) && hasMore is bool hmb)
             {
                 paging["hasMore"] = hmb;
+                explicitMore = true;
             }
         }
 
-        if (!Equals(paging["hasMore"], true) &&
+        // Cursor presence only INFERS another page. When the server stated
+        // the answer outright - relay's `hasNextPage: false`, or a body
+        // `hasMore` - that wins: a final page normally carries both an end
+        // cursor and hasNextPage false, and inferring from the cursor there
+        // would send the caller back for a page that does not exist, forever.
+        if (!explicitMore && !Equals(paging["hasMore"], true) &&
             ((paging.TryGetValue("next", out var n2) && n2 != null) ||
              (paging.TryGetValue("cursor", out var c2) && c2 != null) ||
              (paging.TryGetValue("nextPage", out var np2) && np2 != null)))

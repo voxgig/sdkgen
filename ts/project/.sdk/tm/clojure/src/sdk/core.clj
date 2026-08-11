@@ -471,6 +471,108 @@
 (defn u-prepare-body [ctx]
   (if (= "data" (op-input (oget ctx :op))) (ucall ctx :transform-request) nil))
 
+;; ---- graphql ---------------------------------------------------------------
+;;
+;; GraphQL transport. API-INDEPENDENT: every GraphQL SDK this generator
+;; produces uses this code unchanged. The API-specific part — which
+;; operations exist and what each one's document is — is model data, computed
+;; once by apidef and emitted into Config.
+;;
+;; Two jobs:
+;;
+;;   u-graphql-body   — build {query, variables} for a point, binding the op's
+;;                      arguments to the document's declared variables.
+;;
+;;   u-graphql-errors — lift a GraphQL failure into an SDK error. GraphQL
+;;                      reports failures as a top-level `errors` array under
+;;                      HTTP 200, so the status-driven path in result-basic
+;;                      never sees them.
+
+;; Content type every GraphQL-over-HTTP request uses.
+(def GRAPHQL-CONTENT-TYPE "application/json")
+
+;; Map a GraphQL error to the same error codes the HTTP path produces, so a
+;; caller handles auth or rate limiting identically on both transports.
+;; Servers put the machine-readable code in `extensions.code`; Linear-style
+;; APIs use `extensions.type`.
+(defn graphql-error-code [gqlerr]
+  (let [ext (vs/getprop gqlerr "extensions")
+        code (let [c (vs/getprop ext "code")]
+               (if (and (string? c) (seq c)) c (vs/getprop ext "type")))
+        raw (str/upper-case (if (string? code) code ""))]
+    (cond
+      (or (str/includes? raw "AUTH") (str/includes? raw "FORBIDDEN")
+          (str/includes? raw "UNAUTHENTICATED")) "request_auth"
+      (or (str/includes? raw "RATELIMIT") (str/includes? raw "RATE_LIMIT")
+          (str/includes? raw "TOO_MANY")) "request_ratelimit"
+      (or (str/includes? raw "BAD_USER_INPUT") (str/includes? raw "VALIDATION")
+          (str/includes? raw "INVALID")) "request_invalid"
+      :else "request_graphql")))
+
+;; Build the request body for a GraphQL point.
+;;
+;; Variables come from the op's own arguments: a named variable binds to the
+;; like-named argument (`from`), and the input-object variable (empty `from`)
+;; takes the request data as a whole — which is what makes a generated
+;; create/update call look exactly like its REST equivalent.
+(defn u-graphql-body [ctx]
+  (let [gql (vs/getprop (oget ctx :point) "graphql")]
+    (when (vs/ismap gql)
+      ;; reqmatch/reqdata hold the caller's arguments for this operation;
+      ;; which one depends on whether the op takes match or data input.
+      (let [datainput (= "data" (op-input (oget ctx :op)))
+            reqsrc (let [r (if datainput (oget ctx :reqdata) (oget ctx :reqmatch))]
+                     (if (vs/ismap r) r (vs/jm)))
+            ;; data/match hold the entity's current state; a named variable
+            ;; falls back to it, so updating a loaded entity with just
+            ;; {title} still binds the stored id the mutation requires.
+            datasrc (let [d (if datainput (oget ctx :data) (oget ctx :match))]
+                      (if (vs/ismap d) d (vs/jm)))
+            variables (vs/jm)
+            varlist (let [v (vs/getprop gql "vars")] (if (vs/islist v) v (vs/jt)))]
+        (doseq [spec (vec varlist)]
+          (when (vs/ismap spec)
+            (let [name (vs/getprop spec "name")
+                  from (vs/getprop spec "from")]
+              (when (and (string? name) (seq name))
+                (if (or (nil? from) (not (string? from)) (empty? from))
+                  ;; The input object IS the request body. Strip the action
+                  ;; selector, which is an SDK-side point discriminator, not
+                  ;; an API field.
+                  (let [body (vs/jm)]
+                    (doseq [item (or (vs/items reqsrc) [])]
+                      (let [k (vs/getprop item 0) v (vs/getprop item 1)]
+                        (when (not= "$action" k) (.put ^java.util.Map body k v))))
+                    (.put ^java.util.Map variables name body))
+                  ;; Only send variables the caller actually supplied: sending
+                  ;; an explicit null would clear a field on many APIs.
+                  (let [val (let [v (vs/getprop reqsrc from)]
+                              (if (some? v) v (vs/getprop datasrc from)))]
+                    (when (some? val) (.put ^java.util.Map variables name val))))))))
+        (vs/jm "query" (vs/getprop gql "doc") "variables" variables)))))
+
+;; Inspect a decoded GraphQL response body and record a failure when the
+;; server reported one. Returns true when an error was recorded.
+;;
+;; Partial data (`data` alongside `errors`) is treated as failure: the REST
+;; surface has no partial-success concept, and silently returning half an
+;; object would be worse than failing.
+(defn u-graphql-errors [ctx]
+  (let [result (oget ctx :result)
+        errors (when result (vs/getprop (oget result :body) "errors"))
+        n (if (vs/islist errors) (vs/size errors) 0)]
+    (if (or (nil? result)
+            (not= "graphql" (vs/getprop (oget ctx :point) "kind"))
+            (zero? n))
+      false
+      (let [first-err (vs/getprop errors 0)
+            m (vs/getprop first-err "message")
+            m (if (and (string? m) (seq m)) m "graphql error")
+            m (if (< 1 n) (str m " (+" (dec n) " more)") m)]
+        (oset! result :err (ctx-error ctx (graphql-error-code first-err) (str "graphql: " m)))
+        (oset! result :ok false)
+        true))))
+
 (def HEADER-AUTH "authorization")
 (def OPTION-APIKEY "apikey")
 (def NOT-FOUND "__NOTFOUND__")
@@ -566,8 +668,23 @@
             (oset! spec :params (ucall ctx :prepare-params))
             (oset! spec :query (ucall ctx :prepare-query))
             (oset! spec :headers (ucall ctx :prepare-headers))
-            (oset! spec :body (ucall ctx :prepare-body))
-            (oset! spec :path (ucall ctx :prepare-path))
+            (if (= "graphql" (vs/getprop point "kind"))
+              ;; GraphQL addresses one endpoint: no path parts, no query
+              ;; string, and the body carries the operation. prepare-body is
+              ;; skipped deliberately — it only emits a body for data-input
+              ;; ops, whereas every GraphQL op posts one, including
+              ;; load/list/remove.
+              (do
+                (oset! spec :body (ucall ctx :graphql-body))
+                (oset! spec :path "")
+                ;; prepare-query already copied the op's match arguments into
+                ;; the query string. Those same values are bound as operation
+                ;; variables, so leaving them would send /graphql?id=i1.
+                (oset! spec :query (vs/jm))
+                (.put ^java.util.Map (oget spec :headers) "content-type" GRAPHQL-CONTENT-TYPE))
+              (do
+                (oset! spec :body (ucall ctx :prepare-body))
+                (oset! spec :path (ucall ctx :prepare-path))))
             (when-let [ex (oget (oget ctx :ctrl) :explain)] (.put ^java.util.Map ex "spec" spec))
             (let [[s err] (ucall ctx :prepare-auth)]
               (if err [nil err] (do (oset! ctx :spec s) [s nil])))))))))
@@ -696,6 +813,11 @@
             (ucall ctx :result-basic)
             (ucall ctx :result-headers)
             (ucall ctx :result-body)
+            ;; GraphQL reports failures as a top-level `errors` array under
+            ;; HTTP 200, so result-basic's status check never sees them. Lift
+            ;; them here, before the response transform tries to unwrap data
+            ;; that is not there.
+            (ucall ctx :graphql-errors)
             (ucall ctx :transform-response)
             (when (nil? (oget result :err)) (oset! result :ok true))
             (when-let [ex (oget (oget ctx :ctrl) :explain)] (.put ^java.util.Map ex "result" result))
@@ -901,6 +1023,7 @@
    :param u-param :prepare-auth u-prepare-auth :prepare-body u-prepare-body
    :prepare-headers u-prepare-headers :prepare-method u-prepare-method :prepare-params u-prepare-params
    :prepare-path u-prepare-path :prepare-query u-prepare-query
+   :graphql-body u-graphql-body :graphql-errors u-graphql-errors
    :result-basic u-result-basic :result-body u-result-body :result-headers u-result-headers
    :transform-request u-transform-request :transform-response u-transform-response})
 

@@ -3,6 +3,8 @@ package feature
 import (
 	"regexp"
 
+	vs "github.com/voxgig/struct"
+
 	"GOMODULE/core"
 )
 
@@ -64,6 +66,14 @@ func (f *PagingFeature) PreRequest(ctx *core.Context) {
 		paging = ctx.Ctrl.Paging
 	}
 
+	// GraphQL paginates through operation VARIABLES, not the query string.
+	// This hook runs after makeSpec, so spec.Body already holds the
+	// { query, variables } envelope, and before makeFetchDef serialises it.
+	if kind, _ := vs.GetProp(ctx.Point, "kind").(string); kind == "graphql" {
+		f.graphqlPreRequest(ctx, paging)
+		return
+	}
+
 	if cursor, has := paging["cursor"]; has && cursor != nil {
 		spec.Query[cursorParam] = cursor
 	} else if spec.Query[pageParam] == nil {
@@ -76,6 +86,43 @@ func (f *PagingFeature) PreRequest(ctx *core.Context) {
 
 	if f.options["limit"] != nil && spec.Query[limitParam] == nil {
 		spec.Query[limitParam] = foptInt(f.options, "limit", 0)
+	}
+}
+
+// Relay pagination: the cursor is the `after` variable (or whatever the
+// model named it), and the page size is `first`.
+func (f *PagingFeature) graphqlPreRequest(ctx *core.Context, paging map[string]any) {
+	body, ok := ctx.Spec.Body.(map[string]any)
+	if !ok {
+		return
+	}
+
+	vars, ok := body["variables"].(map[string]any)
+	if !ok {
+		vars = map[string]any{}
+		body["variables"] = vars
+	}
+
+	afterVar := foptStr(f.options, "afterVar", "after")
+	firstVar := foptStr(f.options, "firstVar", "first")
+
+	// Only bind variables the operation actually declares, or the server
+	// rejects the document.
+	declared := map[string]bool{}
+	if varlist, ok := vs.GetPath([]any{"graphql", "vars"}, ctx.Point).([]any); ok {
+		for _, v := range varlist {
+			if name, ok := vs.GetProp(v, "name").(string); ok {
+				declared[name] = true
+			}
+		}
+	}
+
+	if cursor, has := paging["cursor"]; has && cursor != nil && declared[afterVar] {
+		vars[afterVar] = cursor
+	}
+
+	if f.options["limit"] != nil && vars[firstVar] == nil && declared[firstVar] {
+		vars[firstVar] = foptInt(f.options, "limit", 0)
 	}
 }
 
@@ -107,6 +154,39 @@ func (f *PagingFeature) PreResult(ctx *core.Context) {
 		}
 	}
 
+	// Set when the response states hasMore outright, rather than leaving it
+	// to be inferred from the presence of a cursor.
+	explicitMore := false
+
+	// Relay connections carry the cursor in pageInfo, at the path the model
+	// recorded for this op.
+	page := vs.GetPath([]any{"graphql", "page"}, ctx.Point)
+	if pm, ok := page.(map[string]any); ok {
+		if _, isMap := body.(map[string]any); isMap {
+			// `connpath` locates the connection object inside the response
+			// envelope (data.<field>); the cursor/more paths are relative
+			// to it.
+			conn := body
+			if cp, ok := pm["connpath"].(string); ok && cp != "" {
+				if sub := vs.GetPath(cp, body); sub != nil {
+					conn = sub
+				}
+			}
+
+			if cp, ok := pm["cursor"].(string); ok && cp != "" {
+				if cursor := vs.GetPath(cp, conn); cursor != nil {
+					paging["cursor"] = cursor
+				}
+			}
+			if mp, ok := pm["more"].(string); ok && mp != "" {
+				if more, ok := vs.GetPath(mp, conn).(bool); ok {
+					paging["hasMore"] = more
+					explicitMore = true
+				}
+			}
+		}
+	}
+
 	// Body-level cursors.
 	if bm, ok := body.(map[string]any); ok {
 		if bm["next"] != nil && paging["next"] == nil {
@@ -120,10 +200,16 @@ func (f *PagingFeature) PreResult(ctx *core.Context) {
 		}
 		if hasMore, ok := bm["hasMore"].(bool); ok {
 			paging["hasMore"] = hasMore
+			explicitMore = true
 		}
 	}
 
-	if paging["hasMore"] != true &&
+	// Cursor presence only INFERS another page. When the server stated the
+	// answer outright — relay's `hasNextPage: false`, or a body `hasMore` —
+	// that wins: a final page normally carries both an end cursor and
+	// hasNextPage false, and inferring from the cursor there would send the
+	// caller back for a page that does not exist, forever.
+	if !explicitMore && paging["hasMore"] != true &&
 		(paging["next"] != nil || paging["cursor"] != nil || paging["nextPage"] != nil) {
 		paging["hasMore"] = true
 	}

@@ -83,7 +83,22 @@
       (when fd-err (core/sdk-throw fd-err))
       fetchdef)))
 
-(defn direct [client fetchargs]
+;; Is this raw-access op permitted by the SDK's allow.op option?
+(defn- op-allowed? [client op]
+  (let [allow (vs/getpath (core/client-options-map client) "allow.op")]
+    (and (string? allow) (str/includes? allow op))))
+
+(defn- op-denied [client op]
+  (let [allow (vs/getpath (core/client-options-map client) "allow.op")]
+    (vs/jm "ok" false
+           "err" (str "ProjectNameSDK: " op ": operation not allowed by"
+                      " SDK option allow.op value: \"" (or allow "") "\""))))
+
+;; Ungated request path shared by direct and graphql, each of which checks its
+;; own allow.op token first. Private, rather than a flag on fetchargs: a
+;; caller-supplied marker would let anyone opt straight back out of the gate
+;; by passing it.
+(defn- raw-request [client fetchargs]
   (let [utility (core/client-utility client)
         fetchargs (or fetchargs (vs/jm))
         pr (try {:fd (prepare client fetchargs)}
@@ -108,6 +123,54 @@
                               (when (fn? jf) (try (jf) (catch Throwable _ nil)))))]
             (vs/jm "ok" (and (>= status 200) (< status 300)) "status" status "headers" headers "data" json-data))
           :else (vs/jm "ok" false "err" (core/ctx-error ctx "direct_invalid" "invalid response type")))))))
+
+;; Raw endpoint access is operator-controllable, like every entity op.
+;; Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+;; either one reaches the same endpoint.
+(defn direct [client fetchargs]
+  (if (op-allowed? client "direct")
+    (raw-request client fetchargs)
+    (op-denied client "direct")))
+
+;; Raw GraphQL access: the pressure valve that makes the generated surface's
+;; deliberate omissions (per-call selection sets, typed filter builders,
+;; batching, subscriptions) livable — the whole schema stays reachable.
+;;
+;; Thin wrapper over the same prepare/fetch path direct uses, with the one
+;; thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP 200 as
+;; a top-level `errors` array, so status alone would report a failed query as
+;; ok.
+;;
+;; NOTE: like direct, this bypasses the feature pipeline — no retry, ratelimit
+;; or paging features apply.
+(defn graphql
+  ([client query] (graphql client query nil nil))
+  ([client query variables] (graphql client query variables nil))
+  ([client query variables ctrl]
+   (if-not (op-allowed? client "graphql")
+     (op-denied client "graphql")
+     (let [res (raw-request client
+                 (vs/jm "method" "POST"
+                        "headers" (vs/jm "content-type" "application/json")
+                        "body" (vs/jm "query" query
+                                      "variables" (or variables (vs/jm)))
+                        "ctrl" (or ctrl (vs/jm))))
+           ;; Errors are read BEFORE any status check: a GraphQL parse or
+           ;; validation failure comes back as HTTP 400 carrying the standard
+           ;; { errors: [...] } body, and the raw path represents a non-2xx as
+           ;; ok:false with no err — so returning early on status would
+           ;; discard the server's own diagnostics, which are the only useful
+           ;; part of that response.
+           errors (vs/getpath res "data.errors")
+           n (if (vs/islist errors) (vs/size errors) 0)]
+       (if (zero? n)
+         res
+         (let [m (vs/getprop (vs/getprop errors 0) "message")
+               m (if (and (string? m) (seq m)) m "graphql error")]
+           (.put ^java.util.Map res "ok" false)
+           (.put ^java.util.Map res "err" (str "ProjectNameSDK: graphql: " m))
+           (.put ^java.util.Map res "graphql" errors)
+           res))))))
 
 (defn test-sdk [testopts sdkopts]
   (let [sdkopts (let [c (vs/clone (or sdkopts (vs/jm)))] (if (vs/ismap c) c (vs/jm)))

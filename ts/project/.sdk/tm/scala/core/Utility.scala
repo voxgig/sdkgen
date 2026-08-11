@@ -31,6 +31,8 @@ class Utility private (noregister: Boolean) {
   var prepareParams: CtxFn[JMap[String, Object]] = null
   var preparePath: CtxFn[String] = null
   var prepareQuery: CtxFn[JMap[String, Object]] = null
+  var graphqlBody: CtxFn[Object] = null
+  var graphqlErrors: CtxFn[java.lang.Boolean] = null
   var resultBasic: CtxFn[Result] = null
   var resultBody: CtxFn[Result] = null
   var resultHeaders: CtxFn[Result] = null
@@ -74,6 +76,8 @@ class Utility private (noregister: Boolean) {
     u.prepareParams = this.prepareParams
     u.preparePath = this.preparePath
     u.prepareQuery = this.prepareQuery
+    u.graphqlBody = this.graphqlBody
+    u.graphqlErrors = this.graphqlErrors
     u.resultBasic = this.resultBasic
     u.resultBody = this.resultBody
     u.resultHeaders = this.resultHeaders

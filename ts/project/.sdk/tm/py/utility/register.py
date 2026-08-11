@@ -26,6 +26,7 @@ from utility.prepare_method import prepare_method_util
 from utility.prepare_params import prepare_params_util
 from utility.prepare_path import prepare_path_util
 from utility.prepare_query import prepare_query_util
+from utility.graphql import graphql_body_util, graphql_errors_util
 from utility.result_basic import result_basic_util
 from utility.result_body import result_body_util
 from utility.result_headers import result_headers_util
@@ -58,6 +59,8 @@ def register_all(u):
     u.prepare_params = prepare_params_util
     u.prepare_path = prepare_path_util
     u.prepare_query = prepare_query_util
+    u.graphql_body = graphql_body_util
+    u.graphql_errors = graphql_errors_util
     u.result_basic = result_basic_util
     u.result_body = result_body_util
     u.result_headers = result_headers_util

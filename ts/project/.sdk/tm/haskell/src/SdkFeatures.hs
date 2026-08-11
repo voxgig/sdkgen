@@ -672,8 +672,14 @@ pagingFeature = do
                 opts <- readIORef options
                 pageParam <- optStr opts "pageParam" "page"; limitParam <- optStr opts "limitParam" "limit"; cursorParam <- optStr opts "cursorParam" "cursor"
                 ctrl <- readIORef (cCtrl ctx); pgv <- getp ctrl "paging"; let paging = case pgv of { VMap _ -> pgv; _ -> VNoval }
+                -- GraphQL paginates through operation VARIABLES, not the
+                -- query string. This hook runs after makeSpec, so spec.body
+                -- already holds the { query, variables } envelope, and before
+                -- makeFetchDef serialises it.
+                point <- readIORef (cPoint ctx)
+                kind <- getStrD point "kind" ""
                 cur <- case paging of VMap _ -> getp paging "cursor"; _ -> pure VNoval
-                case cur of
+                if kind == "graphql" then graphqlPreRequest opts specV point paging else case cur of
                   VNoval -> do
                     pv <- getp q pageParam
                     case pv of
@@ -688,8 +694,9 @@ pagingFeature = do
                       VNoval -> do sp <- getp opts "startPage"; setp q pageParam (case sp of VNum n -> VNum n; _ -> VNum 1)
                       _ -> pure ()
                   c -> setp q cursorParam c
-                lim <- getp opts "limit"
-                case lim of VNoval -> pure (); VNull -> pure (); _ -> do lv <- getp q limitParam; case lv of VNoval -> setp q limitParam lim; _ -> pure ()
+                when (kind /= "graphql") $ do
+                  lim <- getp opts "limit"
+                  case lim of VNoval -> pure (); VNull -> pure (); _ -> do lv <- getp q limitParam; case lv of VNoval -> setp q limitParam lim; _ -> pure ()
               _ -> pure ()
           "PreResult" -> do
             rv <- readIORef (cResult ctx)
@@ -704,22 +711,86 @@ pagingFeature = do
                 paging <- jo [("page", xpage), ("totalCount", xtot), ("nextPage", xnext), ("next", VNoval), ("cursor", VNoval), ("hasMore", VBool False)]
                 lnk <- headerCI headersM "link"
                 case lnk of VNoval -> pure (); VNull -> pure (); _ -> case extractNext (vstring lnk) of Just nx -> setp paging "next" (VStr nx); Nothing -> pure ()
-                case body of
+                -- Relay connections carry the cursor in pageInfo, at the
+                -- path the model recorded for this op. `explicitMore` is set
+                -- when the server states hasMore outright, rather than
+                -- leaving it to be inferred from the presence of a cursor.
+                point <- readIORef (cPoint ctx)
+                gqlpage <- getpathS point "graphql.page"
+                relayMore <- case (gqlpage, body) of
+                  (VMap _, VMap _) -> do
+                    -- `connpath` locates the connection object inside the
+                    -- response envelope (data.<field>); the cursor/more paths
+                    -- are relative to it.
+                    connpath <- getStrD gqlpage "connpath" ""
+                    conn <- if null connpath then pure body else do
+                      sub <- getpathS body connpath
+                      pure (if isNullish sub then body else sub)
+                    cursorpath <- getStrD gqlpage "cursor" ""
+                    when (not (null cursorpath)) $ do
+                      c <- getpathS conn cursorpath
+                      when (not (isNullish c)) (setp paging "cursor" c)
+                    morepath <- getStrD gqlpage "more" ""
+                    if null morepath then pure False else do
+                      mv <- getpathS conn morepath
+                      case mv of
+                        VBool mb -> do setp paging "hasMore" (VBool mb); pure True
+                        _ -> pure False
+                  _ -> pure False
+                bodyMore <- case body of
                   VMap _ -> do
                     bn <- getp body "next"; case bn of VNoval -> pure (); VNull -> pure (); _ -> do cn <- getp paging "next"; when (isNullish cn) (setp paging "next" bn)
                     bc <- getp body "cursor"; case bc of VNoval -> pure (); VNull -> pure (); _ -> setp paging "cursor" bc
                     bnc <- getp body "nextCursor"; case bnc of VNoval -> pure (); VNull -> pure (); _ -> setp paging "cursor" bnc
-                    bhm <- getp body "hasMore"; case bhm of VBool bb -> setp paging "hasMore" (VBool bb); _ -> pure ()
-                  _ -> pure ()
+                    bhm <- getp body "hasMore"; case bhm of { VBool bb -> do { setp paging "hasMore" (VBool bb); pure True }; _ -> pure False }
+                  _ -> pure False
+                -- Cursor presence only INFERS another page. When the server
+                -- stated the answer outright — relay's `hasNextPage: false`,
+                -- or a body `hasMore` — that wins: a final page normally
+                -- carries both an end cursor and hasNextPage false, and
+                -- inferring from the cursor there would send the caller back
+                -- for a page that does not exist, forever.
+                let explicitMore = relayMore || bodyMore
                 hmV <- getp paging "hasMore"; nx <- getp paging "next"; cu2 <- getp paging "cursor"; np <- getp paging "nextPage"
                 let hm = isTrueV hmV || not (isNullish nx) || not (isNullish cu2) || not (isNullish np)
-                setp paging "hasMore" (VBool hm)
+                when (not explicitMore) (setp paging "hasMore" (VBool hm))
                 setp rv "paging" paging
                 cl <- cc ctx; lastM <- jo [("last", paging)]; trackSet cl "paging" lastM
               _ -> pure ()
           _ -> pure ()
       initFn _ opts = do om <- toOptsMap opts; writeIORef options om; a <- optActive opts; writeIORef active a
   pure Feature { fName = "paging", fVersion = "0.0.1", fActive = active, fOptions = fopts, fInit = initFn, fHook = hookFn }
+
+-- Relay pagination: the cursor is the `after` variable (or whatever the model
+-- named it), and the page size is `first`.
+graphqlPreRequest :: Value -> Value -> Value -> Value -> IO ()
+graphqlPreRequest opts specV point paging = do
+  body <- getp specV "body"
+  case body of
+    VMap _ -> do
+      vv <- getp body "variables"
+      variables <- case vv of
+        VMap _ -> pure vv
+        _ -> do m <- emptyMap; setp body "variables" m; pure m
+
+      afterVar <- optStr opts "afterVar" "after"
+      firstVar <- optStr opts "firstVar" "first"
+
+      -- Only bind variables the operation actually declares, or the server
+      -- rejects the document.
+      vl <- getpathS point "graphql.vars"
+      varlist <- case vl of VList _ -> listItems vl; _ -> pure []
+      declared <- mapM (\v -> getStrD v "name" "") varlist
+
+      cur <- case paging of VMap _ -> getp paging "cursor"; _ -> pure VNoval
+      when (not (isNullish cur) && afterVar `elem` declared) $
+        setp variables afterVar cur
+
+      lim <- getp opts "limit"
+      existing <- getp variables firstVar
+      when (not (isNullish lim) && isNullish existing && firstVar `elem` declared) $
+        setp variables firstVar lim
+    _ -> pure ()
 
 elemIndex :: Eq a => a -> [a] -> Maybe Int
 elemIndex x = go 0 where go _ [] = Nothing; go i (y : ys) = if x == y then Just i else go (i + 1) ys
@@ -1074,8 +1145,76 @@ prepare client fetchargs = do
   (fd, merr2) <- makeFetchDefUtil ctx
   case merr2 of Just e -> throwIO (SdkException e); Nothing -> pure fd
 
+-- Is this raw-access op permitted by the SDK's allow.op option?
+opAllowed :: Client -> String -> IO Bool
+opAllowed client op = do
+  opts <- readIORef (clOptions client)
+  allow <- getpathS opts "allow.op"
+  pure (case allow of VStr s -> substrContains s op; _ -> False)
+
+opDenied :: Client -> String -> IO Value
+opDenied client op = do
+  opts <- readIORef (clOptions client)
+  allow <- getpathS opts "allow.op"
+  let a = case allow of VStr s -> s; _ -> ""
+  jo [ ("ok", VBool False)
+     , ("err", VStr ("ProjectNameSDK: " ++ op ++ ": operation not allowed by"
+                     ++ " SDK option allow.op value: \"" ++ a ++ "\"")) ]
+
+-- Raw endpoint access is operator-controllable, like every entity op.
+-- Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
+-- either one reaches the same endpoint.
 direct :: Client -> Value -> IO Value
 direct client fetchargs = do
+  allowed <- opAllowed client "direct"
+  if not allowed then opDenied client "direct" else rawRequest client fetchargs
+
+-- Raw GraphQL access: the pressure valve that makes the generated surface's
+-- deliberate omissions (per-call selection sets, typed filter builders,
+-- batching, subscriptions) livable — the whole schema stays reachable.
+--
+-- Thin wrapper over the same prepare/fetch path direct uses, with the one
+-- thing raw direct cannot do for GraphQL: a GraphQL failure rides HTTP 200 as
+-- a top-level `errors` array, so status alone would report a failed query as
+-- ok.
+--
+-- NOTE: like direct, this bypasses the feature pipeline — no retry, ratelimit
+-- or paging features apply.
+graphql :: Client -> String -> Value -> Value -> IO Value
+graphql client query variables ctrl = do
+  allowed <- opAllowed client "graphql"
+  if not allowed then opDenied client "graphql" else do
+    vars <- case variables of VMap _ -> pure variables; _ -> emptyMap
+    ctl <- case ctrl of VMap _ -> pure ctrl; _ -> emptyMap
+    headers <- jo [("content-type", VStr "application/json")]
+    body <- jo [("query", VStr query), ("variables", vars)]
+    fa <- jo [ ("method", VStr "POST"), ("headers", headers)
+             , ("body", body), ("ctrl", ctl) ]
+    res <- rawRequest client fa
+
+    -- Errors are read BEFORE any status check: a GraphQL parse or validation
+    -- failure comes back as HTTP 400 carrying the standard { errors: [...] }
+    -- body, and the raw path represents a non-2xx as ok:False with no err —
+    -- so returning early on status would discard the server's own
+    -- diagnostics, which are the only useful part of that response.
+    ev <- getpathS res "data.errors"
+    errors <- case ev of VList _ -> listItems ev; _ -> pure []
+    case errors of
+      [] -> pure res
+      (firsterr : _) -> do
+        m0 <- getStrD firsterr "message" ""
+        let msg = if null m0 then "graphql error" else m0
+        setp res "ok" (VBool False)
+        setp res "err" (VStr ("ProjectNameSDK: graphql: " ++ msg))
+        setp res "graphql" ev
+        pure res
+
+-- Ungated request path shared by direct and graphql, each of which checks its
+-- own allow.op token first. Separate, rather than a flag on fetchargs: a
+-- caller-supplied marker would let anyone opt straight back out of the gate
+-- by passing it.
+rawRequest :: Client -> Value -> IO Value
+rawRequest client fetchargs = do
   let u = clUtility client
   fa <- case fetchargs of VNoval -> emptyMap; _ -> pure fetchargs
   res <- try (prepare client fa) :: IO (Either SdkException Value)

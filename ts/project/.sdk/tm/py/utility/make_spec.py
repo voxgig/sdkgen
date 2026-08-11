@@ -3,6 +3,7 @@
 from __future__ import annotations
 from utility.voxgig_struct import voxgig_struct as vs
 from core.spec import ProjectNameSpec
+from utility.graphql import GRAPHQL_CONTENT_TYPE
 
 
 def make_spec_util(ctx):
@@ -58,8 +59,22 @@ def make_spec_util(ctx):
     ctx.spec.params = utility.prepare_params(ctx)
     ctx.spec.query = utility.prepare_query(ctx)
     ctx.spec.headers = utility.prepare_headers(ctx)
-    ctx.spec.body = utility.prepare_body(ctx)
-    ctx.spec.path = utility.prepare_path(ctx)
+
+    if "graphql" == vs.getprop(point, "kind"):
+        # GraphQL addresses one endpoint: no path parts, no query string,
+        # and the body carries the operation. prepare_body is skipped
+        # deliberately — it only emits a body for data-input ops, whereas
+        # every GraphQL op posts one, including load/list/remove.
+        ctx.spec.body = utility.graphql_body(ctx)
+        ctx.spec.path = ""
+        # prepare_query already copied the op's match arguments into the
+        # query string. Those same values are bound as operation
+        # variables, so leaving them would send /graphql?id=i1.
+        ctx.spec.query = {}
+        ctx.spec.headers["content-type"] = GRAPHQL_CONTENT_TYPE
+    else:
+        ctx.spec.body = utility.prepare_body(ctx)
+        ctx.spec.path = utility.prepare_path(ctx)
 
     if ctx.ctrl.explain is not None:
         ctx.ctrl.explain["spec"] = ctx.spec

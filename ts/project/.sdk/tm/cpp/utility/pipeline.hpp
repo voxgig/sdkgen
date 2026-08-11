@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <cctype>
 #include <string>
 #include <vector>
 
@@ -376,6 +377,133 @@ inline Value makePoint(CtxPtr ctx) {
   return ctx->point;
 }
 
+// ---- graphql ----------------------------------------------------------
+//
+// GraphQL transport. API-INDEPENDENT: every GraphQL SDK this generator
+// produces uses this unchanged. The API-specific part — which operations
+// exist and what each one's document is — is model data, computed once by
+// apidef and emitted into Config.
+
+// Content type every GraphQL-over-HTTP request uses.
+inline const char* graphqlContentType() { return "application/json"; }
+
+// Map a GraphQL error to the same error codes the HTTP path produces, so a
+// caller handles auth or rate limiting identically on both transports.
+// Servers put the machine-readable code in `extensions.code`; Linear-style
+// APIs use `extensions.type`.
+inline std::string graphqlErrorCode(const Value& gqlerr) {
+  Value ext = getp(gqlerr, "extensions");
+
+  std::string raw = as_str(getp(ext, "code"));
+  if (raw.empty()) raw = as_str(getp(ext, "type"));
+  for (auto& ch : raw) ch = (char)std::toupper((unsigned char)ch);
+
+  if (raw.find("AUTH") != std::string::npos ||
+      raw.find("FORBIDDEN") != std::string::npos ||
+      raw.find("UNAUTHENTICATED") != std::string::npos) {
+    return "request_auth";
+  }
+  if (raw.find("RATELIMIT") != std::string::npos ||
+      raw.find("RATE_LIMIT") != std::string::npos ||
+      raw.find("TOO_MANY") != std::string::npos) {
+    return "request_ratelimit";
+  }
+  if (raw.find("BAD_USER_INPUT") != std::string::npos ||
+      raw.find("VALIDATION") != std::string::npos ||
+      raw.find("INVALID") != std::string::npos) {
+    return "request_invalid";
+  }
+
+  return "request_graphql";
+}
+
+// Build the request body for a GraphQL point.
+//
+// Variables come from the op's own arguments: a named variable binds to the
+// like-named argument (`from`), and the input-object variable (empty
+// `from`) takes the request data as a whole — which is what makes a
+// generated create/update call look exactly like its REST equivalent.
+inline Value graphqlBody(CtxPtr ctx) {
+  Value gql = getp(ctx->point, "graphql");
+  if (!gql.is_map()) return Value::undef();
+
+  // reqmatch/reqdata hold the caller's arguments for this operation; which
+  // one depends on whether the op takes match or data input.
+  Value reqsrc = ctx->reqmatch;
+  Value datasrc = ctx->match;
+  if (ctx->op && ctx->op->input == "data") {
+    reqsrc = ctx->reqdata;
+    datasrc = ctx->data;
+  }
+  if (!reqsrc.is_map()) reqsrc = vmap();
+  if (!datasrc.is_map()) datasrc = vmap();
+
+  Value variables = vmap();
+
+  Value varlist = getp(gql, "vars");
+  if (varlist.is_list()) {
+    for (const auto& spec : *varlist.as_list()) {
+      if (!spec.is_map()) continue;
+
+      std::string name = as_str(getp(spec, "name"));
+      std::string from = as_str(getp(spec, "from"));
+
+      if (from.empty()) {
+        // The input object IS the request body. Strip the action selector,
+        // which is an SDK-side point discriminator, not an API field.
+        Value body = vmap();
+        for (const auto& item : Struct::items(reqsrc)) {
+          std::string key = as_str(pair_key(item));
+          if ("$action" != key) map_put(body, key, pair_val(item));
+        }
+        map_put(variables, name, body);
+        continue;
+      }
+
+      // Only send variables the caller actually supplied: sending an
+      // explicit null would clear a field on many APIs.
+      Value val = getp(reqsrc, from);
+      if (is_nullish(val)) val = getp(datasrc, from);
+      if (!is_nullish(val)) map_put(variables, name, val);
+    }
+  }
+
+  Value out = vmap();
+  map_put(out, "query", getp(gql, "doc"));
+  map_put(out, "variables", variables);
+
+  return out;
+}
+
+// Inspect a decoded GraphQL response body and record a failure when the
+// server reported one. Returns true when an error was recorded.
+//
+// Partial data (`data` alongside `errors`) is treated as failure: the REST
+// surface has no partial-success concept, and silently returning half an
+// object would be worse than failing.
+inline bool graphqlErrors(CtxPtr ctx) {
+  if (!ctx->result) return false;
+  if ("graphql" != as_str(getp(ctx->point, "kind"))) return false;
+
+  Value errors = getp(ctx->result->body, "errors");
+  if (!errors.is_list()) return false;
+
+  const auto& el = *errors.as_list();
+  if (el.empty()) return false;
+
+  Value first = el[0];
+  std::string msg = as_str(getp(first, "message"));
+  if (msg.empty()) msg = "graphql error";
+  if (1 < el.size()) {
+    msg = msg + " (+" + std::to_string(el.size() - 1) + " more)";
+  }
+
+  ctx->result->err = ctx->makeError(graphqlErrorCode(first), "graphql: " + msg);
+  ctx->result->ok = false;
+
+  return true;
+}
+
 // ---- makeSpec ---------------------------------------------------------
 
 inline SpecPtr makeSpec(CtxPtr ctx) {
@@ -412,8 +540,23 @@ inline SpecPtr makeSpec(CtxPtr ctx) {
   ctx->spec->params = utility->prepareParams(ctx);
   ctx->spec->query = utility->prepareQuery(ctx);
   ctx->spec->headers = utility->prepareHeaders(ctx);
-  ctx->spec->body = utility->prepareBody(ctx);
-  ctx->spec->path = utility->preparePath(ctx);
+
+  if ("graphql" == as_str(getp(ctx->point, "kind"))) {
+    // GraphQL addresses one endpoint: no path parts, no query string, and
+    // the body carries the operation. prepareBody is skipped deliberately
+    // — it only emits a body for data-input ops, whereas every GraphQL op
+    // posts one, including load/list/remove.
+    ctx->spec->body = graphqlBody(ctx);
+    ctx->spec->path = "";
+    // prepareQuery already copied the op's match arguments into the query
+    // string. Those same values are bound as operation variables, so
+    // leaving them would send /graphql?id=i1.
+    ctx->spec->query = vmap();
+    map_put(ctx->spec->headers, "content-type", Value(graphqlContentType()));
+  } else {
+    ctx->spec->body = utility->prepareBody(ctx);
+    ctx->spec->path = utility->preparePath(ctx);
+  }
 
   if (ctx->ctrl->explain.is_map()) {
     map_put(ctx->ctrl->explain, "spec", ctx->spec->toValue());
@@ -591,6 +734,12 @@ inline ResponsePtr makeResponse(CtxPtr ctx) {
   utility->resultBasic(ctx);
   utility->resultHeaders(ctx);
   utility->resultBody(ctx);
+
+  // GraphQL reports failures as a top-level `errors` array under HTTP 200,
+  // so resultBasic's status check never sees them. Lift them here, before
+  // the response transform tries to unwrap data that is not there.
+  graphqlErrors(ctx);
+
   utility->transformResponse(ctx);
 
   if (!result->err) result->ok = true;

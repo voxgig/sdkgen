@@ -363,6 +363,12 @@ object MakeResponse {
     utility.resultBasic(ctx)
     utility.resultHeaders(ctx)
     utility.resultBody(ctx)
+
+    // GraphQL reports failures as a top-level `errors` array under HTTP
+    // 200, so resultBasic's status check never sees them. Lift them here,
+    // before the response transform tries to unwrap data that is not there.
+    utility.graphqlErrors(ctx)
+
     utility.transformResponse(ctx)
 
     if (result.err == null) result.ok = true

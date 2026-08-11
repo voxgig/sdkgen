@@ -423,6 +423,9 @@ ProjectNameSDK* projectname_sdk_new(voxgig_value* options);
 ProjectNameSDK* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts);
 voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err);
 voxgig_value* sdk_direct(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err);
+voxgig_value* sdk_graphql(ProjectNameSDK* sdk, const char* query,
+                          voxgig_value* variables, voxgig_value* ctrl,
+                          PNError** err);
 
 // Generated config (core/config.c).
 voxgig_value* make_config(void);
@@ -456,6 +459,10 @@ const char* prepare_method_util(Context* ctx); // static string
 voxgig_value* prepare_params_util(Context* ctx);
 char* prepare_path_util(Context* ctx); // malloc'd
 voxgig_value* prepare_query_util(Context* ctx);
+const char* graphql_error_code(voxgig_value* gqlerr);
+voxgig_value* graphql_body_util(Context* ctx);
+bool graphql_errors_util(Context* ctx);
+#define GRAPHQL_CONTENT_TYPE "application/json"
 SdkResult* result_basic_util(Context* ctx);
 SdkResult* result_body_util(Context* ctx);
 SdkResult* result_headers_util(Context* ctx);

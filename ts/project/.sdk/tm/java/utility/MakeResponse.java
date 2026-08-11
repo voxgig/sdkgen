@@ -39,6 +39,12 @@ final class MakeResponse {
     utility.resultBasic.apply(ctx);
     utility.resultHeaders.apply(ctx);
     utility.resultBody.apply(ctx);
+
+    // GraphQL reports failures as a top-level `errors` array under HTTP 200,
+    // so resultBasic's status check never sees them. Lift them here, before
+    // the response transform tries to unwrap data that is not there.
+    utility.graphqlErrors.apply(ctx);
+
     utility.transformResponse.apply(ctx);
 
     if (result.err == null) {

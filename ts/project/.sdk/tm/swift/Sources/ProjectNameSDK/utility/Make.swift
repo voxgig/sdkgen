@@ -114,8 +114,24 @@ func makeSpecUtil(_ ctx: Context) throws -> Spec {
   ctx.spec!.params = utility.prepareParams(ctx)
   ctx.spec!.query = utility.prepareQuery(ctx)
   ctx.spec!.headers = utility.prepareHeaders(ctx)
-  ctx.spec!.body = utility.prepareBody(ctx)
-  ctx.spec!.path = utility.preparePath(ctx)
+
+  if "graphql" == gp(ctx.point, "kind").asString {
+    // GraphQL addresses one endpoint: no path parts, no query string, and
+    // the body carries the operation. prepareBody is skipped deliberately —
+    // it only emits a body for data-input ops, whereas every GraphQL op
+    // posts one, including load/list/remove.
+    ctx.spec!.body = utility.graphqlBody(ctx)
+    ctx.spec!.path = ""
+    // prepareQuery already copied the op's match arguments into the query
+    // string. Those same values are bound as operation variables, so
+    // leaving them would send /graphql?id=i1.
+    ctx.spec!.query = VMap()
+    ctx.spec!.headers.entries["content-type"] = .string(graphqlContentType)
+  }
+  else {
+    ctx.spec!.body = utility.prepareBody(ctx)
+    ctx.spec!.path = utility.preparePath(ctx)
+  }
 
   if let explain = ctx.ctrl.explain {
     explain.entries["spec"] = .nat(ctx.spec!)
@@ -266,6 +282,12 @@ func makeResponseUtil(_ ctx: Context) throws -> Response {
   _ = utility.resultBasic(ctx)
   _ = utility.resultHeaders(ctx)
   _ = utility.resultBody(ctx)
+
+  // GraphQL reports failures as a top-level `errors` array under HTTP 200,
+  // so resultBasic's status check never sees them. Lift them here, before
+  // the response transform tries to unwrap data that is not there.
+  _ = utility.graphqlErrors(ctx)
+
   _ = utility.transformResponse(ctx)
 
   if result.err == nil {

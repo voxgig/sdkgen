@@ -24,6 +24,7 @@ require_relative 'prepare_method'
 require_relative 'prepare_params'
 require_relative 'prepare_path'
 require_relative 'prepare_query'
+require_relative 'graphql'
 require_relative 'result_basic'
 require_relative 'result_body'
 require_relative 'result_headers'
@@ -55,6 +56,8 @@ ProjectNameUtility.registrar = ->(u) {
   u.prepare_params = ProjectNameUtilities::PrepareParams
   u.prepare_path = ProjectNameUtilities::PreparePath
   u.prepare_query = ProjectNameUtilities::PrepareQuery
+  u.graphql_body = ProjectNameUtilities::GraphqlBody
+  u.graphql_errors = ProjectNameUtilities::GraphqlErrors
   u.result_basic = ProjectNameUtilities::ResultBasic
   u.result_body = ProjectNameUtilities::ResultBody
   u.result_headers = ProjectNameUtilities::ResultHeaders

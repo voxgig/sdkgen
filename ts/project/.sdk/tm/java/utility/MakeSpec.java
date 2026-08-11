@@ -54,8 +54,23 @@ final class MakeSpec {
     ctx.spec.params = utility.prepareParams.apply(ctx);
     ctx.spec.query = utility.prepareQuery.apply(ctx);
     ctx.spec.headers = utility.prepareHeaders.apply(ctx);
-    ctx.spec.body = utility.prepareBody.apply(ctx);
-    ctx.spec.path = utility.preparePath.apply(ctx);
+
+    if ("graphql".equals(Struct.getprop(point, "kind", null))) {
+      // GraphQL addresses one endpoint: no path parts, no query string, and
+      // the body carries the operation. prepareBody is skipped deliberately
+      // — it only emits a body for data-input ops, whereas every GraphQL op
+      // posts one, including load/list/remove.
+      ctx.spec.body = utility.graphqlBody.apply(ctx);
+      ctx.spec.path = "";
+      // prepareQuery already copied the op's match arguments into the query
+      // string. Those same values are bound as operation variables, so
+      // leaving them would send /graphql?id=i1.
+      ctx.spec.query = new LinkedHashMap<>();
+      ctx.spec.headers.put("content-type", Graphql.GRAPHQL_CONTENT_TYPE);
+    } else {
+      ctx.spec.body = utility.prepareBody.apply(ctx);
+      ctx.spec.path = utility.preparePath.apply(ctx);
+    }
 
     if (ctx.ctrl.explain != null) {
       ctx.ctrl.explain.put("spec", ctx.spec);

@@ -37,8 +37,28 @@ object MakeSpec {
     ctx.spec.params = utility.prepareParams(ctx)
     ctx.spec.query = utility.prepareQuery(ctx)
     ctx.spec.headers = utility.prepareHeaders(ctx)
-    ctx.spec.body = utility.prepareBody(ctx)
-    ctx.spec.path = utility.preparePath(ctx)
+
+    val pkind = Struct.getprop(ctx.point, "kind") match {
+      case s: String => s
+      case _ => ""
+    }
+
+    if ("graphql" == pkind) {
+      // GraphQL addresses one endpoint: no path parts, no query string, and
+      // the body carries the operation. prepareBody is skipped deliberately
+      // — it only emits a body for data-input ops, whereas every GraphQL op
+      // posts one, including load/list/remove.
+      ctx.spec.body = utility.graphqlBody(ctx)
+      ctx.spec.path = ""
+      // prepareQuery already copied the op's match arguments into the query
+      // string. Those same values are bound as operation variables, so
+      // leaving them would send /graphql?id=i1.
+      ctx.spec.query = new LinkedHashMap[String, Object]()
+      ctx.spec.headers.put("content-type", Graphql.ContentType)
+    } else {
+      ctx.spec.body = utility.prepareBody(ctx)
+      ctx.spec.path = utility.preparePath(ctx)
+    }
 
     if (ctx.ctrl.explain != null) ctx.ctrl.explain.put("spec", ctx.spec)
 
