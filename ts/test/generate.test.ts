@@ -412,22 +412,31 @@ async function generate(targetNames: string[]): Promise<Record<string, string>> 
   })
   strictEqual(res.ok, true, 'generation did not report ok')
 
-  return vol.toJSON() as Record<string, string>
+  // Normalise once: keys become STAGE-relative with forward slashes, so every
+  // assertion below matches the same way on Windows as on Linux/macOS (jostraca
+  // builds absolute paths with Path.join, i.e. backslashes on Windows).
+  const raw = vol.toJSON() as Record<string, string>
+  const out: Record<string, string> = {}
+  for (const [path, content] of Object.entries(raw)) {
+    const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+    if (rel.startsWith('.jostraca/') || rel.includes('/.jostraca/')) continue
+    out[rel] = content
+  }
+  return out
 }
 
 
-// Files generated for one target, keyed by path with the target prefix kept
-// (the components decide the layout, so matching on a suffix is the stable way
-// to find a file).
+// Files generated for one target. Keys are STAGE-relative, so a target's files
+// are exactly those under `<target>/`.
 function filesFor(out: Record<string, string>, target: string): [string, string][] {
-  const prefix = Path.join(STAGE, target) + Path.sep
-  return Object.entries(out)
-    .filter(([p]) => p.startsWith(prefix) && !p.includes('/.jostraca/'))
+  return Object.entries(out).filter(([p]) => p.startsWith(target + '/'))
 }
 
 
+// The components decide the layout, so matching on a path suffix is the stable
+// way to find one generated file.
 function findFile(out: Record<string, string>, suffix: string): string | undefined {
-  const hit = Object.entries(out).find(([p]) => p.endsWith(suffix) && !p.includes('/.jostraca/'))
+  const hit = Object.entries(out).find(([p]) => p.endsWith(suffix))
   return hit ? hit[1] : undefined
 }
 
@@ -479,10 +488,9 @@ describe('generate', () => {
         // map without the standard replacements — the generated SDK then names
         // itself "ProjectName" at runtime, or fails to compile outright. Every
         // offender is collected so one fix pass can clear them all.
-        const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
         if (content.includes('ProjectName') &&
-          !PLACEHOLDER_PINNED.some((re) => re.test(rel))) {
-          leaks.push(rel)
+          !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
+          leaks.push(path)
         }
       }
     }
@@ -521,7 +529,7 @@ describe('generate', () => {
 
     // The ROOT readme — the one ReadmeTop writes, directly under the output
     // folder rather than inside the target directory.
-    const quick = out[Path.join(STAGE, 'README.md')]
+    const quick = out['README.md']
     ok(null != quick, 'elixir: no root readme was generated')
 
     ok(/Entity\.Current\.load\(/.test(quick),
@@ -531,7 +539,6 @@ describe('generate', () => {
     // Scan every generated file, root readme included.
     let checked = 0
     for (const [path, content] of Object.entries(out)) {
-      if (path.includes('/.jostraca/')) continue
       if (!/\.(md|ex|exs)$/.test(path)) continue
       checked++
       const bad = content.match(/^.*\(\s*[^()]*,\s*\)/m)
