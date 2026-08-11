@@ -72,7 +72,7 @@ const char* graphql_error_code(voxgig_value* gqlerr) {
 // generated create/update call look exactly like its REST equivalent.
 voxgig_value* graphql_body_util(Context* ctx) {
   voxgig_value* gql = getp(ctx->point, "graphql");
-  if (!voxgig_is_map(gql)) return voxgig_new_noval();
+  if (!voxgig_is_map(gql)) return voxgig_new_undef();
 
   // reqmatch/reqdata hold the caller's arguments for THIS call; data/match
   // hold the entity's current state. Which pair depends on whether the op

@@ -235,6 +235,30 @@ cd ../<lang> && <lang-test-command>             # target builds + tests
 # re-run ts/js target tests too (reference parity)
 ```
 
+### `test/generate.test.ts` — the component layer, generated for real
+
+`make test` now generates a small SDK for EVERY target into memfs and asserts
+on the generated text. This is the only suite that runs
+`ts/project/.sdk/src/cmp/<lang>/**`; before it, a component that crashed or
+emitted broken source reached the fleet unchallenged.
+
+- **Fixture:** aontu source unified against the real `apidef`/`sdkgen` base
+  models and the real `project/.sdk/model/target|feature/` models, so target
+  defaults are inherited, not restated. Three deliberately awkward entities —
+  full-CRUD, singleton-load (no path params), list-only — plus the basic flow
+  each one would get from apidef.
+- **Covers:** components crashing, ops called on an entity that does not
+  declare them, leaked `ProjectName` placeholders, syntactically broken
+  emissions.
+- **Does NOT cover:** whether the generated source COMPILES. That still needs
+  a real toolchain, i.e. the fleet regeneration lane.
+- Entity NAMES and ordering in the fixture are load-bearing: several
+  `ReadmeTopQuick_<lang>` components render only the first active entity by
+  key, so the singleton is named to sort first. Guards in the suite fail
+  loudly if that stops holding.
+- Known-benign placeholder mentions are PINNED in `PLACEHOLDER_PINNED`, not
+  ignored — a new leak still fails.
+
 ---
 
 ## Sharp edges (already handled — don't reintroduce)
@@ -255,7 +279,10 @@ cd ../<lang> && <lang-test-command>             # target builds + tests
   It compiles only inside a consumer project, so a missing import is invisible
   here and breaks every generated SDK of that language. `npm run build` runs
   `check-scaffold` (`tsconfig.scaffold.json`) to type-check it — do not remove
-  that step.
+  that step. It then runs `stage-scaffold`, which EMITS the same tree into
+  `ts/dist-test-scaffold/` (a miniature consumer: compiled components under
+  `.sdk/dist/cmp/`, plus copies of `.sdk/src` and `.sdk/model`) so
+  `test/generate.test.ts` can run the components for real — see below.
 - **Resolve the entity collection with `entityCollection(model)`**, never
   `getModelPath(model, \`main.${KIT}.entity\`)` in a component. getModelPath
   rebuilds its container on every call when filtering, which defeats the

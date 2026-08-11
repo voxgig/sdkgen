@@ -58,6 +58,12 @@ const Config = cmp(async function Config(props: any) {
 
       replace: {
 
+        // Config.fragment.dart carries `'name': 'ProjectName'` — without the
+        // standard replacements the generated SDK reports "ProjectName" as its
+        // own name at runtime. Every sibling dart component already spreads
+        // these; this one did not.
+        ...ctx$.stdrep,
+
         "'AUTHBLOCK'": authBlock,
 
         "'HEADERS'": dartValue(headers, 2),

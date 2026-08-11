@@ -306,9 +306,12 @@ def main : IO UInt32 := do
     -- The remaining corpus sections. They carry no cases in this project's
     -- corpus, but are driven here so any future fixture runs against Lean too.
 
+    -- clean takes (ctx, val), so the fixture supplies `args`, not `in` —
+    -- same shape as param/makeError above.
     runset "clean" (← getSpec primary #["clean", "basic"]) fun entry => do
-      let ctx ← entryCtx entry opts config
-      pure ((← SdkUtility.clean ctx (← SdkUtility.gp entry "in")), none)
+      let args ← SdkUtility.gp entry "args"
+      let ctx ← mapCtx entry (← argAt args 0) opts config
+      pure ((← SdkUtility.clean ctx (← argAt args 1)), none)
 
     runset "makeResult" (← getSpec primary #["makeResult", "basic"]) fun entry => do
       pure ((← SdkUtility.makeResult (← entryCtx entry opts config)), none)
