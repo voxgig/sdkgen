@@ -8,7 +8,7 @@ const { Shape, One } = require('shape')
 
 const { SdkGen } = require('../dist/sdkgen.js')
 
-const VERSION = '1.3.18'
+const VERSION = '2.0.2'
 const KONSOLE = console
 
 
