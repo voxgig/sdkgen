@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import json
 
-from utility.voxgig_struct import voxgig_struct as vs
+from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 
 
 class ProjectNameTestRunner:
