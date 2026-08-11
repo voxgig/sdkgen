@@ -179,14 +179,25 @@ pub const PagingFeature = struct {
     // The model records connection/cursor/more as dot paths; core getpath
     // takes pre-split segments.
     fn getpath_dotted(path: []const u8, store: Value) Value {
-        var segs: [16][]const u8 = undefined;
+        // Segment count is bounded by dots + 1, so one pass sizes the slice
+        // exactly. A fixed array would silently stop splitting and look up a
+        // truncated path, which reads as "no cursor" — indistinguishable from
+        // a genuine end of pagination. splitScalar yields slices into `path`,
+        // so unlike the C port there is nothing to copy.
+        var nseg: usize = 1;
+        for (path) |c| {
+            if (c == '.') nseg += 1;
+        }
+
+        const segs = h.A().alloc([]const u8, nseg) catch return h.vnull();
+
         var n: usize = 0;
         var it = std.mem.splitScalar(u8, path, '.');
         while (it.next()) |seg| {
-            if (n == segs.len) break;
             segs[n] = seg;
             n += 1;
         }
+
         return h.getpath(segs[0..n], store);
     }
 
