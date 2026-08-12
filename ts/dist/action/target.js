@@ -233,6 +233,14 @@ function readTargetFeature(ctx$, tfolder, torigname, tname) {
         return { trim: false, fullset: [] };
     }
 }
+// Last path segment of a ref. A ref may be a bare target name ('go'), a
+// package-relative path ('@acme/kit/go'), or an ABSOLUTE path — and on Windows
+// an absolute path is separated by `\`, so splitting on '/' alone hands back
+// the whole path as the target name and every tree lookup below then misses.
+// On POSIX Path.sep IS '/', so this is the same split it always was.
+function lastSegment(ref) {
+    return (0, struct_1.getelem)(ref.split('/').flatMap((p) => p.split(node_path_1.default.sep)), -1);
+}
 function resolveTarget(tref, ctx$) {
     let tname = tref;
     let torigname = tref;
@@ -240,14 +248,14 @@ function resolveTarget(tref, ctx$) {
     const root = ctx$.folder;
     const fs = ctx$.fs();
     let fulltfolder = node_path_1.default.normalize(node_path_1.default.join(root, tfolder));
-    tname = (0, struct_1.getelem)(tref.split('/'), -1);
+    tname = lastSegment(tref);
     let aliasref = tref;
-    torigname = (0, struct_1.getelem)(aliasref.split('/'), -1);
+    torigname = lastSegment(aliasref);
     const aliasing = tref.split('~');
     if (1 < aliasing.length) {
         aliasref = aliasing[0];
         tname = aliasing.slice(1).join('~');
-        torigname = (0, struct_1.getelem)(aliasref.split('/'), -1);
+        torigname = lastSegment(aliasref);
     }
     const search = [];
     let found = false;
