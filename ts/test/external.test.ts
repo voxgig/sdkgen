@@ -50,7 +50,18 @@ const OUT2 = '/elsewhere/acme-cli'
 const REL = '../elsewhere/rel-provider'
 
 
-const norm = (path: string) => path.split(Path.sep).join('/')
+// A path as the in-memory VOLUME spells it. memfs is a POSIX volume: it
+// stores '/a/b', never 'D:/a/b'. So a path built with Path.resolve has to
+// lose its drive letter as well as its separators before it can be compared
+// with a volume key — without which every destination assertion in this file
+// passed on POSIX and failed on Windows, looking for 'D:/a/.../provider'
+// among keys that all began '/a/...'.
+//
+// NOT for comparing against an ERROR MESSAGE: those carry the real resolved
+// path, drive and backslashes included, because that is what an operator has
+// to recognise. Compare messages against the raw Path.resolve value.
+const norm = (path: string) =>
+  path.split(Path.sep).join('/').replace(/^[A-Za-z]:/, '')
 
 
 type GenOpts = {
@@ -489,7 +500,7 @@ describe('external target', () => {
       const { msg, files } = await refuse(['ts', 'seneca-provider'],
         { 'seneca-provider': '.' })
 
-      ok(msg.includes(norm(STAGE)),
+      ok(msg.includes(STAGE),
         'the message does not name the SDK project:\n' + msg)
       ok(msg.includes('seneca-provider'),
         'the message does not name the target:\n' + msg)
@@ -506,7 +517,7 @@ describe('external target', () => {
       const { msg } = await refuse(['ts', 'seneca-provider'],
         { 'seneca-provider': 'ts' })
 
-      ok(msg.includes(norm(Path.resolve(STAGE, 'ts'))),
+      ok(msg.includes(Path.resolve(STAGE, 'ts')),
         'the message does not name the destination:\n' + msg)
     })
 
