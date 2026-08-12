@@ -297,7 +297,7 @@ ${ent.Name} record — check the API definition for its shape.
 \`\`\`ts
 const result = await client.${ent.Name}().${actions[0].op}({
   $action: '${actions[0].action}',
-  // ...the action's own arguments
+  /* ...the action's own arguments */
 })
 \`\`\`
 

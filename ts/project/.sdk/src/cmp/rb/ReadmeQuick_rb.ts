@@ -193,7 +193,7 @@ end
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `created["${dataIdF}"]`
+      ? `created.data_get["${dataIdF}"]`
       : rbLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
@@ -210,7 +210,7 @@ created = client.${eName}.create({ ${examplePairs('create').join(', ')} })
       if (opnames.includes('update')) {
         const updatePairs = (idF ? [`"${idF}" => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
-        Content(`# Update${fromCreated ? ` — index the record via data_get (created["${dataIdF}"]).` : ''}
+        Content(`# Update${fromCreated ? ` — index the record via data_get (created.data_get["${dataIdF}"]).` : ''}
 client.${eName}.update({ ${updatePairs.join(', ')} })
 
 `)

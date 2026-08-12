@@ -178,7 +178,7 @@ try {
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `created['${dataIdF}']`
+      ? `created.data()['${dataIdF}']`
       : dartLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
