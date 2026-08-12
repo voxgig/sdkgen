@@ -1,6 +1,6 @@
 // EJECT-START
 
-pub fn load(self: *EntyClass, reqmatch: Value, ctrl: Value) OpResult {
+pub fn load(self: *EntyClass, reqmatch: Value, ctrl: Value) EntResult {
     const ctx = self.utility.make_context(CtxSpec{
         .opname = "load",
         .ctrl = ctrl,
@@ -8,7 +8,7 @@ pub fn load(self: *EntyClass, reqmatch: Value, ctrl: Value) OpResult {
         .data = self.data,
         .reqmatch = reqmatch,
     }, self.ent_ctx());
-    return self.run_op(ctx, load_post_done);
+    return self.run_op_ent(ctx, load_post_done);
 }
 
 fn load_post_done(self: *EntyClass, ctx: *Context) void {
