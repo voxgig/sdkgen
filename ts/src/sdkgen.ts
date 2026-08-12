@@ -246,7 +246,15 @@ function SdkGen(opts: SdkGenOptions) {
 
       const eres = await jostraca.generate(
         { ...jopts, folder: ext.folder },
-        () => ExternalTarget({ model, target: ext.target, cmpfolder: folder }))
+        () => ExternalTarget({
+          model, target: ext.target, cmpfolder: folder,
+          // How to walk BACK to the SDK project from the destination. A
+          // target generating out of tree usually sits beside the SDK in a
+          // known layout, and its own docs, scripts and live tests need to
+          // name that path. The relationship is already declared once, as
+          // `output: path`; deriving the inverse keeps it declared once.
+          sdkrelpath: Path.relative(ext.folder, folder).split(Path.sep).join('/'),
+        }))
 
       showChanges(jopts.log, 'generate-result', eres, Path.dirname(process.cwd()))
     }

@@ -2,7 +2,7 @@ import {
   cmp, each,
   File, Content, Copy, Folder,
   entityCollection, entityOps, entityIdField, entityClassName,
-  opRequestShape, opParams,
+  opRequestShape, opParams, entityPath,
   collectDeps, repoInfo, packageName, packageVersion, apiName, envName,
   SdkGenError,
 } from '@voxgig/sdkgen'
@@ -11,7 +11,7 @@ import {
   KIT,
 } from '@voxgig/apidef'
 
-import { Tests, Workflow, Readme } from './Extras_seneca-provider'
+import { Tests, Scripts, Workflow, Readme } from './Extras_seneca-provider'
 
 
 // The `seneca-provider` target: a Seneca plugin exposing this API's entities
@@ -186,6 +186,11 @@ const Main = cmp(function Main(props: any) {
         // "sdk.MoonEntity is not a function". MainEntity_ts is the authority
         // for this: it declares the method as `${entity.Name}()`.
         acc: ent.Name,
+        // The entity's canonical route, used to probe the live server for
+        // liveness. Path params are left in place only if the route has
+        // them — a collection route (the `list` op's) has none, which is why
+        // entityPath prefers it.
+        path: entityPath(ent),
         cls: entityClassName(ent, entityColl),
         ops: entityOps(ent),
         idf: entityIdField(ent),
@@ -222,6 +227,19 @@ const Main = cmp(function Main(props: any) {
 
   const repo = providerRepo(model, lower)
 
+  // The companion test server lives in the SDK repo's `app/` and is NOT
+  // published, so the only way to reach it is the local checkout. The path
+  // back to it is the inverse of this target's own `output: path`, computed
+  // once by the external pass — see cmp/ExternalTarget.
+  const sdkrel = ctx$.sdkrelpath || '..'
+
+  // Where a live run points by default: the first declared server, which for
+  // a project with a companion app is that app's own URL. Empty means the
+  // live tests are not generated at all — there is no honest default host for
+  // an arbitrary third-party API.
+  const servers = (model?.main?.[KIT]?.info?.servers || [])
+  const liveBase = 0 < servers.length ? String(servers[0].url || '') : ''
+
   const provider = {
     Name, lower, ENV, sdkClass, pluginName, fileBase,
     sdkPkg, sdkVersion, entities,
@@ -231,6 +249,13 @@ const Main = cmp(function Main(props: any) {
     sdkRepoUrl: repoInfo(model).repoUrl,
     api: apiName(model),
     version: packageVersion(model, target.name),
+    sdkrel,
+    liveBase,
+    // A route with NO path params, so the probe is a plain GET. An entity
+    // whose every route is parameterised gives none, and then the probe
+    // falls back to the base URL itself.
+    probePath: (entities.find((e: any) =>
+      '' !== e.path && !e.path.includes('{')) || { path: '' }).path,
     // The provider's OWN published name. Not derived from the SDK slug the
     // way a language target's is — a provider is `@seneca/<name>-provider` —
     // so read the project's pin directly and default to that shape.
@@ -248,6 +273,7 @@ const Main = cmp(function Main(props: any) {
   ProviderSource({ provider })
   ProviderDoc({ provider })
   Tests({ provider })
+  Scripts({ provider })
   Workflow({ provider })
   Readme({ provider })
 })

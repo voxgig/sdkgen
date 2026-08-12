@@ -39,13 +39,16 @@ const Readme_1 = require("./Readme");
 const Test_1 = require("./Test");
 const AgentGuide_1 = require("./AgentGuide");
 const ExternalTarget = (0, jostraca_1.cmp)(function ExternalTarget(props) {
-    const { model, target, cmpfolder } = props;
+    const { model, target, cmpfolder, sdkrelpath } = props;
     const ctx$ = props.ctx$;
     ctx$.model = model;
     // Components live in the PROJECT, not in the repo being written to. This
     // pass has retargeted jostraca's output folder, which is what requirePath
     // otherwise resolves against — see utility.resolvePath.
     ctx$.cmpfolder = cmpfolder;
+    // The path from the destination back to the SDK project, for a target whose
+    // output sits beside the SDK in a known layout.
+    ctx$.sdkrelpath = sdkrelpath;
     // The same model preamble the consumer's Root.ts performs before it renders
     // anything: the case-variant name constants (`Name`, `NAME`, ...) and the
     // ProjectName replacement map that every template substitution reads.
