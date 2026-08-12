@@ -68,6 +68,12 @@ impl Entity for PlEntity {
         }
         Value::Noval
     }
+    // Every operation resolves to the entity; `remove` marks it. The fake
+    // has to satisfy the same trait the real entities do.
+    fn mark_deleted(&self) {}
+    fn deleted(&self) -> bool {
+        false
+    }
     fn matchv(&self, _args: Option<&Value>) -> Value {
         Value::Noval
     }

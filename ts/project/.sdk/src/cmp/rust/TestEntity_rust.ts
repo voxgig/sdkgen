@@ -351,7 +351,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
     let ${datavar}_result = ${entvar}
         .create(${datavar}.clone(), Value::Noval)
         .expect("create failed");
-    let ${datavar} = to_map(&${datavar}_result);
+    let ${datavar} = to_map(&${datavar}_result.data(None));
     assert!(
         matches!(${datavar}, Value::Map(_)),
         "expected create result to be a map"
@@ -403,10 +403,9 @@ const generateList: OpGen = (ctx, step, index) => {
     let ${listvar} = ${entvar}
         .list(${matchvar}.clone(), Value::Noval)
         .expect("list failed");
-    assert!(
-        matches!(${listvar}, Value::List(_)),
-        "expected list result to be an array"
-    );
+    // list resolves to one ENTITY per record; the flow asserts on the
+    // records, so map each through data().
+    let ${listvar} = ja(${listvar}.iter().map(|e| e.data(None)).collect::<Vec<Value>>());
 `)
 
   // Validators from step.valid.
@@ -507,7 +506,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     let ${resdatavar}_result = ${entvar}
         .update(${datavar}_up.clone(), Value::Noval)
         .expect("update failed");
-    let ${resdatavar} = to_map(&${resdatavar}_result);
+    let ${resdatavar} = to_map(&${resdatavar}_result.data(None));
     assert!(
         matches!(${resdatavar}, Value::Map(_)),
         "expected update result to be a map"
@@ -586,7 +585,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     let ${datavar}_loaded = ${entvar}
         .load(${matchvar}.clone(), Value::Noval)
         .expect("load failed");
-    let ${datavar}_load_result = to_map(&${datavar}_loaded);
+    let ${datavar}_load_result = to_map(&${datavar}_loaded.data(None));
     assert!(
         matches!(${datavar}_load_result, Value::Map(_)),
         "expected load result to be a map"
@@ -603,9 +602,10 @@ const generateLoad: OpGen = (ctx, step, index) => {
     let ${datavar}_loaded = ${entvar}
         .load(${matchvar}.clone(), Value::Noval)
         .expect("load failed");
+    // load resolves to the ENTITY; the record is reached through data().
     assert!(
-        !${datavar}_loaded.is_noval(),
-        "expected load result to be non-nil"
+        !${datavar}_loaded.data(None).is_noval(),
+        "expected load result to carry data"
     );
 `)
   }
