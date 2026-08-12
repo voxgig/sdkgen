@@ -74,7 +74,7 @@ per-language decision:
 | Additive wrappers | go | Untyped `Load(map[string]any)` kept (go-cli/go-mcp dispatch through it); typed `LoadTyped`/`DataTyped` wrappers convert at the boundary. |
 | Annotations | js (JSDoc + shipped `jsconfig.json`), php (PHPDoc), rb (YARD), lua (LuaLS; the types module is `require`d by the main module), elixir (`@spec` on ops referencing the Types aliases) | Tooling-visible types; permissive native signatures. |
 | Documentary | csharp, java, kotlin, scala, swift, dart, rust, c, cpp | Compilable reference records/structs mirroring the shapes; ops stay on the loose runtime type. dart additionally generates `fromMap`/`toMap`. |
-| Dynamic (no typed model) | clojure, haskell, ocaml, perl, zig, go-cli, go-mcp | Single dynamic value type throughout; README type columns are documentary. |
+| Dynamic (no typed model) | clojure, haskell, ocaml, perl, zig, lean, plus the consumer targets go-cli, go-mcp, py-data, seneca-provider | Single dynamic value type throughout; README type columns are documentary. A consumer target has no typed model of its own — it reaches types, where they exist, through the SDK it wraps. |
 
 ## Known gaps
 

@@ -19,10 +19,16 @@ voxgig-sdkgen target add ts
 npm run add-target ts
 ```
 
-Built-in targets: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`, `csharp`,
-`java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`, `zig`,
-`perl`, `clojure`, `elixir`, `ocaml`, `haskell`, and the non-SDK surfaces
-`go-cli`, `go-mcp`.
+Built-in SDK targets: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
+`csharp`, `java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`,
+`zig`, `perl`, `clojure`, `elixir`, `ocaml`, `haskell`, `lean`.
+
+Plus four **consumer** targets, which wrap another target's SDK rather
+than being one: `go-cli` and `go-mcp` (wrap `go`), `py-data` (wraps
+`py`), and `seneca-provider` (wraps `ts`). Each needs the target it wraps
+to be present in the same project. `seneca-provider` also generates into
+a **separate repo** — see
+[out-of-tree targets](../explanation/out-of-tree-targets.md).
 
 This copies the target's model, components, and templates into `.sdk/`
 and ensures the `test` feature is present. Then generate:
@@ -49,6 +55,17 @@ voxgig-sdkgen target add go~go2
 
 This creates a `go2` target whose templates come from `go`. Edit
 `.sdk/model/target/go2.aontu` to differentiate it (module name, deps).
+
+An ALIAS is the one target model file a project is meant to edit: nothing
+in the scaffold is named `go2`, so `target add` never rewrites it. For a
+target added under its own name, the opposite holds — `target add`
+OVERWRITES `.sdk/model/target/<t>.aontu` along with `.sdk/src/cmp/<t>/`
+and `.sdk/tm/<t>/`, so an edit there is silently reverted on the next
+resync. Put project-specific values in the project's own model
+(`.sdk/model/sdk.aontu`) instead; see
+[what a project declares about itself](../reference/model.md#what-a-project-declares-about-itself).
+`voxgig-sdkgen doctor` reports the three trees, the target model file
+included.
 
 ## Use a target from another package
 

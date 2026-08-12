@@ -76,11 +76,18 @@ different options).
 If the source `.sdk` folder cannot be found, the CLI fails and lists the
 locations it searched.
 
-The built-in targets are: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
+The built-in SDK targets are: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
 `csharp`, `java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`,
-`zig`, `perl`, `clojure`, `elixir`, `ocaml`, `haskell`, and the two non-SDK
-surfaces `go-cli` and `go-mcp`. Every SDK target vendors a `@voxgig/struct`
-port and ships all enterprise features with a full offline test suite.
+`zig`, `perl`, `clojure`, `elixir`, `ocaml`, `haskell`, `lean`. Every one
+of them vendors a `@voxgig/struct` port and ships all enterprise features
+with a full offline test suite.
+
+Four further targets CONSUME another target's SDK rather than being one,
+and need it present in the same project: `go-cli` and `go-mcp` (wrap
+`go`), `py-data` (wraps `py`) and `seneca-provider` (wraps `ts`). They
+switch the standard generation phases off and emit their whole package
+from `Main`. `seneca-provider` generates into a separate repo — see
+[out-of-tree targets](../explanation/out-of-tree-targets.md).
 
 ### `doctor`
 
@@ -91,11 +98,14 @@ non-zero when it does not, so it can gate CI.
 voxgig-sdkgen doctor
 ```
 
-Five categories:
+It compares the three things `target add` owns and overwrites:
+`.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aontu`.
+
+Six categories:
 
 | Category | Meaning |
 | --- | --- |
-| **forked** | A file in `.sdk/src/cmp/**` differs from the scaffold. `target add` will silently revert it. |
+| **forked** | A file in `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aontu`, differs from the scaffold. `target add` will silently revert it. |
 | **edited** | A template master in `.sdk/tm/**` differs — compared *after* applying the same substitutions `target add` applied, so placeholder replacement is not reported as an edit. |
 | **stale** | Present in the project, but `target add` would no longer write it. Orphaned output. |
 | **missing** | `target add` would write it and the project does not have it. |
@@ -106,6 +116,10 @@ The first four fail the check. A plain `diff -r` against the scaffold cannot
 do this job: `target add` writes template masters with substitution partly
 applied and inconsistently, so most of what a naive diff reports is not an
 edit at all.
+
+An ALIASED target (`target add go~go2`) is exempt from the model-file
+comparison: the scaffold ships no `go2.aontu` to compare against, and
+editing that file is how an alias is differentiated in the first place.
 
 ### `feature add <name>[,<name>...]`
 

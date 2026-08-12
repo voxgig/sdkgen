@@ -56,8 +56,31 @@ type ModelTarget = NameCases & {
   active?: boolean
   title?: string
   base?: string
-  module?: { name?: string }
+  module?: { name?: string, path?: string, package?: string, goversion?: string }
   srcfeature?: boolean
+
+  // Where this target's files land. Present means OUT OF TREE: the target
+  // gets its own generate() pass rooted at `path` rather than a folder inside
+  // the SDK repo — see cmp/ExternalTarget and
+  // docs/explanation/out-of-tree-targets.
+  //
+  // Typed rather than left to the index signature because `externalTargets()`
+  // decides from these keys whether to write OUTSIDE the repo, and a
+  // destination path read off a bare `any` is one a rename can silently
+  // change to undefined.
+  output?: {
+    path?: string
+    repo?: string
+    adopt?: boolean
+    sdkrel?: string
+  }
+
+  // Per-generation-phase activation. A consumer target (go-cli, go-mcp,
+  // py-data, seneca-provider) switches every phase off and emits its whole
+  // package from Main. Absent — or present with no `active` — means the phase
+  // runs: the defaults are inclusive.
+  phase?: Record<string, { active?: boolean }>
+
   [extra: string]: any
 }
 

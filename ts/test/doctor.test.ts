@@ -191,4 +191,57 @@ const Top = () => {
     ok(!report.missing.some((f: string) => f.includes('retry')),
       'declared feature source reported missing: ' + report.missing.join(', '))
   })
+
+
+  // `model/target/<t>.aontu` is OWNED by `target add` — it is overwritten
+  // from the scaffold on every resync — and doctor did not look at it. So a
+  // project that put a decision there (a pinned npm package name, in the case
+  // that prompted this) had it silently reverted, with the only report of the
+  // fork being the regression itself, later.
+  test('a hand-edited target model reads as forked', async () => {
+    const project = await addedProject()
+
+    write(project, 'model/target/go.aontu',
+      'main: kit: target: go: publish: registry: package: "pinned"\n')
+
+    const report = await check(project)
+
+    ok(report.forked.includes('model/target/go.aontu'),
+      'edited target model not reported forked: ' + report.forked.join(', '))
+    strictEqual(report.ok, false)
+  })
+
+
+  test('a deleted target model reads as missing', async () => {
+    const project = await addedProject()
+
+    project.fs.unlinkSync(Path.join(ROOT, 'model/target/go.aontu'))
+
+    const report = await check(project)
+
+    ok(report.missing.includes('model/target/go.aontu'),
+      'deleted target model not reported missing: ' + report.missing.join(', '))
+    strictEqual(report.ok, false)
+  })
+
+
+  // The clean case for a target whose scaffold carries `$$ref$$`
+  // placeholders. `differs()` used to skip interpolation whenever the replace
+  // map was empty — which it is for the whole `src/cmp` tree — while
+  // jostraca's Copy ALWAYS interpolates. So
+  // `src/cmp/ts/fragment/Config.fragment.ts` (`$$const.Name$$`) read as
+  // FORKED straight out of `target add`, in every project with ts, js or
+  // dart. `go` cannot catch this: it has no such fragment.
+  test('a freshly added ts target reports no drift either', async () => {
+    const project = makeProject({})
+
+    await target_add([targetRef('ts')], project.actx)
+    project.actx.model.main[KIT].target.ts = { name: 'ts', base: SCAFFOLD }
+
+    const report = await check(project)
+
+    deepStrictEqual(report.forked, [], 'fresh ts project reports forked components')
+    deepStrictEqual(report.edited, [], 'fresh ts project reports edited masters')
+    strictEqual(report.ok, true, 'fresh ts project is not ok')
+  })
 })

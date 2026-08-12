@@ -33,8 +33,20 @@ type ModelTarget = NameCases & {
     base?: string;
     module?: {
         name?: string;
+        path?: string;
+        package?: string;
+        goversion?: string;
     };
     srcfeature?: boolean;
+    output?: {
+        path?: string;
+        repo?: string;
+        adopt?: boolean;
+        sdkrel?: string;
+    };
+    phase?: Record<string, {
+        active?: boolean;
+    }>;
     [extra: string]: any;
 };
 type ModelEntity = NameCases & {

@@ -14,6 +14,8 @@
 // Every value here is derived from the resolved model (model.name, model.origin,
 // main.kit.info.title) — no new inputs required.
 
+import { each } from 'jostraca'
+
 import { KIT, nom } from '@voxgig/apidef'
 
 const PUBLISHER = 'Voxgig'
@@ -348,6 +350,50 @@ function keywords(model: any): string[] {
   return ['voxgig', 'sdk', 'generated-sdk', 'openapi', 'api-client', model.name]
 }
 
+
+// WHO WROTE THE PACKAGE — `main: kit: author` / `main: kit: contributor`.
+//
+// Attribution cannot be derived: it is not a function of the slug, the repo or
+// the API. And because generated output is OVERWRITTEN, a name hand-edited
+// into a manifest is deleted by the next regeneration — silently, because no
+// build step can tell that a person is missing. The seneca-provider target
+// dropped a hand-written provider's author and both its named contributors
+// exactly that way. So attribution is declared in the model and read here.
+//
+// An unset author is the PUBLISHER, which is what every generated SDK manifest
+// has always carried (Package_ts hardcoded it); a project that has never
+// thought about authorship keeps the previous behaviour.
+function authorInfo(model: any): { name: string, url: string } {
+  const declared = model?.main?.[KIT]?.author || {}
+
+  const name = null != declared.name && '' !== declared.name ?
+    String(declared.name) : PUBLISHER
+
+  // A declared author with no url gets none — inventing PUBLISHER_URL for a
+  // named human would credit them to Voxgig's homepage.
+  const url = null != declared.url && '' !== declared.url ? String(declared.url) :
+    (PUBLISHER === name ? PUBLISHER_URL : '')
+
+  return { name, url }
+}
+
+
+// Contributors, in sorted-key order so the manifest is byte-stable. `each`
+// rather than Object.keys: the model is an aontu map and carries metadata
+// keys alongside its entries.
+//
+// An entry with no name is DROPPED rather than rendered as `{}` — the schema
+// makes `name` required, but a partially-unified model can still reach here
+// during a dry run.
+function contributorList(model: any): { name: string, url: string }[] {
+  return each(model?.main?.[KIT]?.contributor || {})
+    .filter((c: any) => null != c && null != c.name && '' !== c.name)
+    .map((c: any) => ({
+      name: String(c.name),
+      url: null != c.url && '' !== c.url ? String(c.url) : '',
+    }))
+}
+
 // A VALID uppercase env-var token: 'unsolicited-advice' -> 'UNSOLICITED_ADVICE'.
 //
 // THE ONLY WAY to build an env-var name segment. There used to be three
@@ -387,6 +433,8 @@ export {
   pkgDescription,
   nonAffiliation,
   keywords,
+  authorInfo,
+  contributorList,
   envName,
   envToken,
   goModule,

@@ -35,10 +35,21 @@ target language.
   │  (+ sdkgen)    │                          (Project → Folder → File → Content)
   └───────────────┘
         │
-        ▼   merge with what's already on disk (3-way), write changes
+        ▼   OVERWRITE what is on disk (never a 3-way merge — see
+        ▼   explanation/regeneration-overwrite.md)
    ts/ js/ go/ py/ php/ rb/ lua/ csharp/ java/ kotlin/ scala/ swift/ dart/
-   rust/ c/ cpp/ zig/ perl/ clojure/ elixir/ ocaml/ haskell/ go-cli/ go-mcp/
+   rust/ c/ cpp/ zig/ perl/ clojure/ elixir/ ocaml/ haskell/ lean/
+   go-cli/ go-mcp/ py-data/                      ── inside the SDK repo
+   seneca-provider                               ── into ITS OWN repo
 ```
+
+The last four are **consumer** targets: they wrap another target's SDK
+(`go`, `go`, `py`, `ts`) rather than being one, switch the standard
+generation phases off, and emit their whole package from `Main`.
+`seneca-provider` is also the one target that writes OUTSIDE the SDK
+repo, via `main: kit: target: <t>: output: path` — a second `generate()`
+pass rooted at that path. See
+[out-of-tree targets](./out-of-tree-targets.md).
 
 ## Who does what
 
