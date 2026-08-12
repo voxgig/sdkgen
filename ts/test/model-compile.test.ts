@@ -111,6 +111,77 @@ describe('target-compile', () => {
 })
 
 
+// A project OVERRIDES publication values from its own model — `target add <t>`
+// overwrites model/target/<t>.aontu, so anything set there is wiped on the
+// next resync, and voxgig-solardemo-sdk lost its pinned npm package name that
+// way. The override only works if the shipped target model leaves those keys
+// UNSET: aontu resolves default-then-concrete to the concrete value, but
+// concrete-then-concrete (and default-then-default) is a CONFLICT that fails
+// the whole model. So the schema holds the default and the target file must
+// not repeat it.
+describe('target-publish-overridable', () => {
+
+  // Every key the schema defaults, and what a consumer would set it to.
+  const OVERRIDES: [string, string][] = [
+    ['publish: tag: active', 'false'],
+    ['publish: registry: state', "'active'"],
+    ['publish: registry: active', 'true'],
+    ['publish: registry: package', "'@acme/pinned'"],
+  ]
+
+  const targets = readdirSync(TARGET_DIR)
+    .filter((f: string) => f.endsWith('.aontu'))
+    .sort()
+
+  for (const file of targets) {
+    const tname = file.replace(/\.aontu$/, '')
+    // A hyphenated key has to be quoted in aontu, the way the shipped model
+    // writes it (`main: kit: target: 'go-cli': ...`).
+    const tkey = /^[A-Za-z_$][\w$]*$/.test(tname) ? tname : `'${tname}'`
+    const path = Path.join(TARGET_DIR, file)
+    const src = readFileSync(path, 'utf8')
+
+    test(`target/${file} lets a project override its publish values`, () => {
+      const errs: any[] = []
+      const model: any = makeAontu().generate(
+        [src, ...OVERRIDES.map(([k, v]) => `main: kit: target: ${tkey}: ${k}: ${v}`)].join('\n'),
+        { path, errs })
+
+      assert.strictEqual(
+        errs.length, 0,
+        `${file}: a project override does not unify — the shipped target model ` +
+        'sets a key the schema already defaults, so the two concrete values ' +
+        'conflict. Remove it from the target model: ' +
+        errs.map((e: any) => `[${e.why}] ${e.msg}`).join(' | '))
+
+      const publish = model?.main?.kit?.target?.[tname]?.publish
+      assert.strictEqual(publish?.tag?.active, false,
+        `${file}: tag.active did not take the override`)
+      assert.strictEqual(publish?.registry?.state, 'active',
+        `${file}: registry.state did not take the override`)
+      assert.strictEqual(publish?.registry?.package, '@acme/pinned',
+        `${file}: registry.package did not take the override`)
+    })
+
+    // The other half: the target model must not re-declare a defaulted key,
+    // which is what makes the override above possible.
+    test(`target/${file} does not repeat a schema-defaulted publish key`, () => {
+      const block = /^main: kit: target: \S+ publish: \{\n([\s\S]*?)^\}/m.exec(src)
+      if (null == block) return
+
+      const bad = ['state', 'package']
+        .filter((k) => new RegExp(`^\\s*${k}\\s*:`, 'm').test(block[1]))
+        .concat(/^\s*active\s*:/m.test(block[1]) ? ['active'] : [])
+
+      assert.deepEqual(bad, [],
+        `${file}: publish sets ${bad.join(', ')}, which the schema already ` +
+        'defaults — a project can then no longer override it')
+    })
+  }
+
+})
+
+
 // target-compile above proves the targets parse; the feature and flow models
 // beside them are fragments that only resolve once unified into a real project,
 // so they cannot be compiled here. Check them for the one syntax mistake that

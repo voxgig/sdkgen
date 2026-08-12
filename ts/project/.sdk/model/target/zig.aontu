@@ -25,11 +25,24 @@ main: kit: feature: &: target: zig: deps: &: {
 # routes deploy-zig to the root tag-push recipe. WITHOUT it, Deploy.ts falls
 # through to `make -C zig publish` — but zig's Makefile has no `publish` target,
 # so the deploy fails. Mirror c.aontu exactly.
+# Publication.
+#
+# `target add <t>` OVERWRITES this file, so a project must never set its
+# publication values here — voxgig-solardemo-sdk lost its pinned npm package
+# name exactly that way. Set them in the project's own model
+# (`model/sdk.aontu`), where they survive a resync.
+#
+# For that to work this file must LEAVE THOSE KEYS UNSET: in aontu a concrete
+# value does not yield to another concrete value, it CONFLICTS, and two
+# defaults conflict too. The schema (@voxgig/sdkgen/model/sdkgen.aontu)
+# already defaults `tag.active`, `registry.state`, `registry.active` and
+# `registry.package`, so a project's concrete value wins over the default and
+# repeating them here would only take that away.
+#
+# What remains below is per-target registry IDENTITY, which is not a project
+# choice and stays concrete.
 main: kit: target: zig: publish: {
-  tag: { active: true }
   registry: {
-    state: 'pending'
-    active: false
     name: 'none'
     url: ''
     vault: { alias: 'none', env: 'NONE' }
