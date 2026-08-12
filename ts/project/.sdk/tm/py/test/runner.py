@@ -38,8 +38,8 @@ class ProjectNameTestRunner:
 
     @staticmethod
     def env_override(m):
-        live = ProjectNameTestRunner.getenv("PROJECTNAME_TEST_LIVE")
-        override = ProjectNameTestRunner.getenv("PROJECTNAME_TEST_OVERRIDE")
+        live = ProjectNameTestRunner.getenv("PROJECTENV_TEST_LIVE")
+        override = ProjectNameTestRunner.getenv("PROJECTENV_TEST_OVERRIDE")
 
         if live == "TRUE" or override == "TRUE":
             for key in list(m.keys()):
@@ -56,9 +56,9 @@ class ProjectNameTestRunner:
                             pass
                     m[key] = envval
 
-        explain = ProjectNameTestRunner.getenv("PROJECTNAME_TEST_EXPLAIN")
+        explain = ProjectNameTestRunner.getenv("PROJECTENV_TEST_EXPLAIN")
         if explain is not None and explain != "":
-            m["PROJECTNAME_TEST_EXPLAIN"] = explain
+            m["PROJECTENV_TEST_EXPLAIN"] = explain
 
         return m
 

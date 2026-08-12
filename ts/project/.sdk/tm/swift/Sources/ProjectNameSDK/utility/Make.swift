@@ -318,20 +318,17 @@ func makeResultUtil(_ ctx: Context) throws -> Result {
 
   _ = ctx.utility!.transformResponse(ctx)
 
+  // Every operation resolves to PLAIN records — load, create, update and
+  // list alike. `list` used to be the outlier: it wrapped each record in
+  // an entity instance, so the same record came back with a different
+  // type, a different key order and an extra marker depending on which
+  // call produced it. Any consumer touching both paths had to normalise
+  // defensively, and feeding a wrapped record into a host framework's own
+  // metadata silently produced wrong entities with no error at all. A
+  // missing or empty list still normalises to an empty list.
   if op.name == "list" {
-    let resdata = result.resdata
-    result.resdata = .list([])
-
-    if let list = resdata.asList, list.items.count > 0, let entity = entity {
-      let entities = VList()
-      for entry in list.items {
-        let ent = entity.make()
-        if let entryMap = entry.asMap {
-          ent.data(.map(entryMap))
-        }
-        entities.items.append(.nat(ent))
-      }
-      result.resdata = .list(entities)
+    if result.resdata.asList == nil {
+      result.resdata = .list([])
     }
   }
 

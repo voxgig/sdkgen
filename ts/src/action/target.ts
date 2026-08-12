@@ -12,7 +12,11 @@ import {
 
 import { showChanges } from '@voxgig/util'
 
+import { showDryrun } from '../helpers/dryrun'
+
 import { getelem } from '@voxgig/struct'
+
+import { Aontu } from 'aontu'
 
 import {
   KIT
@@ -24,6 +28,13 @@ import type {
 } from '../types'
 
 import { SdkGenError } from '../utility'
+
+import {
+  availableFeatures,
+  findFeatureSources,
+  featureExcludes,
+  fullsetExcludes,
+} from '../helpers/featureSource'
 
 import {
   feature_add
@@ -76,6 +87,16 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
       content: loadContent(actx, 'target')
     },
     model: actx.model,
+    // Dry run must be passed per-call, not left to the Jostraca instance.
+    // jostraca's `generate` runs its own options through OptionsShape FIRST,
+    // which fills in `control.dryrun: false`, and only then merges
+    // `deep({}, gOpts.control, opts.control)` — so the shape default silently
+    // OVERRIDES the instance-level flag. `-y target add ts` printed
+    // ** DRY RUN ** and wrote every file. (Same trap as the `existing` FIX
+    // note in jostraca.js.)
+    control: {
+      dryrun: !!actx.opts.dryrun
+    },
   }
 
   opts.log.info({
@@ -87,15 +108,26 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
   // The `test` feature is required by every generated target (SDK.test()
   // depends on it), so ensure it is added even if the model does not yet
   // declare it.
+  //
+  // Everything else has to be BOTH declared and active: `active` defaults to
+  // false in the schema, and a feature the model has switched off should not
+  // have its source land in the project. This used to be a plain
+  // Object.keys(), so `retry: { active: false }` still shipped every retry
+  // source file.
+  const featuremodel: any = actx.model.main[KIT]?.feature ?? {}
   const features = Array.from(new Set([
     'test',
-    ...Object.keys(actx.model.main[KIT]?.feature ?? {}),
+    ...Object.keys(featuremodel).filter((n: string) => false !== featuremodel[n]?.active),
   ]))
 
   const jres = await jostraca.generate(opts, () =>
     TargetRoot({ targets, features, actx }))
 
   showChanges(opts.log, 'target-result', jres)
+
+  if (actx.opts.dryrun) {
+    showDryrun(opts.log, 'target-result', jres, actx.folder)
+  }
 
   // feature_add copies feature templates for targets already registered in
   // the model. The targets added above are not in the in-memory model yet,
@@ -167,26 +199,21 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
         })
       })
 
+      // Copy the whole template tree MINUS the source of every feature the
+      // model did not ask for. Which files those are is discovered from the
+      // tree rather than assumed (see helpers/featureSource), because each
+      // language puts feature source somewhere different.
+      const trim = trimFeatures(ctx$, tfolder, torigname, tname, features)
+
       Folder({ name: 'tm/' + tname }, () => {
         Copy({
           from: tfolder + '/tm/' + torigname,
-          exclude: [/src\/feature/],
+          exclude: trim,
           replace: {
 
             // TODO: standard replacements
             ProjectName: model.const.Name,
           }
-        })
-
-        Folder({ name: 'src/feature' }, () => {
-          Copy({ from: tfolder + '/tm/' + torigname + '/src/feature/README.md' })
-
-          each(Array.from(new Set(['base', ...(features ?? [])])), (f: any) => {
-            const fname = f.val$
-            Folder({ name: fname }, () => {
-              Copy({ from: tfolder + '/tm/' + torigname + '/src/feature/' + fname })
-            })
-          })
         })
       })
 
@@ -197,6 +224,106 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
     })
   })
 })
+
+
+// Path patterns that keep a target's unwanted feature source out of the
+// project: the source of every AVAILABLE feature the model did not select,
+// plus the templates that only compile with the complete feature set.
+//
+// Returns an empty list — copy the whole tree, as before — when the target
+// opts out with `feature: { trim: false }`, or when its model cannot be
+// read. Trimming a target whose templates are not ready for it produces a
+// project that does not build, so an unreadable declaration must fail safe
+// rather than fail tidy.
+function trimFeatures(
+  ctx$: any,
+  tfolder: string,
+  torigname: string,
+  tname: string,
+  features: string[],
+): RegExp[] {
+  const { log } = ctx$
+  const fs = ctx$.fs()
+
+  const cfg = readTargetFeature(ctx$, tfolder, torigname, tname)
+
+  if (false === cfg.trim) {
+    log.info({
+      point: 'target-feature-trim', target: tname, trim: false,
+      note: tname + ': feature trim disabled, copying all feature source'
+    })
+    return []
+  }
+
+  // `base` is not a declared feature — it is the always-present foundation
+  // every other feature builds on — so it is never a trim candidate.
+  const selected = new Set(['base', ...(features ?? [])])
+
+  const available = availableFeatures(fs, tfolder)
+  const drop = findFeatureSources(fs, tfolder + '/tm/' + torigname, available)
+    .filter((s) => !selected.has(s.name))
+
+  const trimmed = 0 < drop.length
+
+  log.info({
+    point: 'target-feature-trim', target: tname, trim: true,
+    drop: drop.map((s) => s.name),
+    note: tname + ': ' + (trimmed ?
+      ('dropping ' + drop.length + ' unselected feature source entries') :
+      'all available features selected')
+  })
+
+  return [
+    ...featureExcludes(drop),
+    // The cross-feature test suite is only excluded when something WAS
+    // trimmed; a project carrying the full set keeps its feature tests.
+    ...(trimmed ? fullsetExcludes(cfg.fullset) : []),
+  ]
+}
+
+
+// Load a target's `feature` declaration from its own model file.
+//
+// The target being added is not in the in-memory model yet (that is what
+// `target add` is for), so this reads the very file that is about to be
+// copied into `model/target/`. Each shipped target model is self-contained,
+// so Aontu can resolve it on its own.
+function readTargetFeature(
+  ctx$: any,
+  tfolder: string,
+  torigname: string,
+  tname: string,
+): { trim: boolean, fullset: string[] } {
+  const { log } = ctx$
+  const fs = ctx$.fs()
+
+  const path = tfolder + '/model/target/' + torigname + '.aontu'
+
+  try {
+    const errs: any[] = []
+    const model = new Aontu().generate(fs.readFileSync(path, 'utf8'), { path, errs })
+
+    if (0 < errs.length) {
+      throw new Error(errs.map((e: any) => e.msg || String(e)).join('\n'))
+    }
+
+    const feature = model?.main?.[KIT]?.target?.[torigname]?.feature ?? {}
+
+    return {
+      trim: false !== feature.trim,
+      fullset: Array.isArray(feature.fullset) ? feature.fullset : [],
+    }
+  }
+  catch (err: any) {
+    log.warn({
+      point: 'target-feature-model', target: tname, path,
+      err: err.message,
+      note: tname + ': cannot read target model (' + err.message +
+        '); copying all feature source'
+    })
+    return { trim: false, fullset: [] }
+  }
+}
 
 
 function resolveTarget(tref: string, ctx$: any) {
@@ -267,4 +394,6 @@ export {
   action_target,
   target_add,
   resolveTarget,
+  trimFeatures,
+  readTargetFeature,
 }

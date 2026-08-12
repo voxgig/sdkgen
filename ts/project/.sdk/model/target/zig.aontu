@@ -35,3 +35,13 @@ main: kit: target: zig: publish: {
     vault: { alias: 'none', env: 'NONE' }
   }
 }
+
+
+# Feature source is NOT trimmed to the model's selection here: root.zig
+# re-exports every feature type with @import("feature/<name>.zig"), and
+# build.zig names test/feature_test.zig explicitly, so a trimmed tree
+# fails to build. Trimming stays off until root.zig's feature exports are
+# driven from the model.
+main: kit: target: zig: feature: {
+  trim: false
+}

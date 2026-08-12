@@ -32,6 +32,9 @@ exports.deriveEntityNames = deriveEntityNames;
 exports.entityCollection = entityCollection;
 exports.opTypeName = opTypeName;
 exports.opParams = opParams;
+exports.opActions = opActions;
+exports.entityActions = entityActions;
+exports.entityPath = entityPath;
 exports.opRequestShape = opRequestShape;
 exports.entityIdField = entityIdField;
 exports.entityDataIdField = entityDataIdField;
@@ -121,6 +124,54 @@ function opTypeName(Name, opname) {
 // list-by-parent-id call failing because sibling routes' ids are demanded —
 // and steers callers into passing keys that flip runtime point dispatch to
 // the wrong route.)
+// The action names an op multiplexes, from its points' `select.$action`.
+//
+// A custom POST route like `/api/planet/{id}/terraform` is folded into the
+// `create` op as an alternative point, discriminated at call time by
+// `$action` in the data argument. The mechanism worked and was documented
+// NOWHERE — not in the README, not in the reference — so for an API with two
+// such routes, two of its six endpoints were unreachable by anyone using the
+// documented interface. Generated docs list them via this helper.
+function opActions(op) {
+    const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
+    return points
+        .filter((pt) => null != (pt && pt.select && pt.select['$action']))
+        .map((pt) => ({
+        action: String(pt.select['$action']),
+        path: String(pt.orig || ''),
+    }))
+        .sort((a, b) => a.action < b.action ? -1 : a.action > b.action ? 1 : 0);
+}
+// True when any of the entity's ops multiplexes a custom action.
+function entityActions(entity) {
+    const out = [];
+    (0, jostraca_1.each)(entity && entity.op).forEach((op) => {
+        opActions(op).forEach((a) => out.push({ op: op.name, ...a }));
+    });
+    return out;
+}
+// The entity's own API path — the route a reader should recognise it by.
+//
+// NOT `points[0]` across every op flattened. Ops iterate in sorted-key order,
+// so `create` came first, and an entity whose create op folds in a custom
+// action (`/api/planet/{id}/forbid`) advertised THAT as its path. The
+// canonical route is the collection or record route, and never an action.
+function entityPath(entity) {
+    const ops = (entity && entity.op) || {};
+    for (const opname of ['list', 'load', 'create', 'update', 'remove']) {
+        const op = ops[opname];
+        if (null == op) {
+            continue;
+        }
+        const points = op.points ? (0, jostraca_1.each)(op.points) : [];
+        const canonical = points.filter((pt) => null == (pt && pt.select && pt.select['$action']));
+        const pick = (0 < canonical.length ? canonical : points)[0];
+        if (null != pick && null != pick.orig && '' !== pick.orig) {
+            return String(pick.orig);
+        }
+    }
+    return '';
+}
 function opParams(op) {
     let points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
     const canonical = points.filter((pt) => null == (pt && pt.select && pt.select['$action']));

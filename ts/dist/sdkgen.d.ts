@@ -25,15 +25,23 @@ import { ReadmeHowto } from './cmp/ReadmeHowto';
 import { ReadmeExplanation } from './cmp/ReadmeExplanation';
 import { ReadmeRef } from './cmp/ReadmeRef';
 import { FeatureHook } from './cmp/FeatureHook';
+import { registerComponent } from './cmp/Registered';
+import type { RegisterOptions } from './cmp/Registered';
 import { buildIdNames } from './helpers/buildIdNames';
 import { getMatchEntries } from './helpers/getMatchEntries';
 import { collectDeps } from './helpers/collectDeps';
 import type { DepEntry } from './helpers/collectDeps';
 import { canonToType, canonToDtype, canonKey } from './helpers/canonType';
-import { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape';
+import { OP_SUFFIX, opTypeName, opParams, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape';
 import { isReservedName, safeVarName, exampleVarName, isRbCoreConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming';
 import { serverVariables, hasServerVariables } from './helpers/serverVars';
-import { packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, envName, repoInfo, apiName, langLabel, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL } from './helpers/packageMeta';
+import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample';
+import type { ExampleLang } from './helpers/opExample';
+import { liveStrict } from './helpers/testPolicy';
+import { featureOf, availableFeatures, findFeatureSources, featureExcludes, fullsetExcludes, srcFeatureExcludes } from './helpers/featureSource';
+import type { FeatureSource } from './helpers/featureSource';
+import { packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, envName, envToken, goModule, goVersion, repoInfo, apiName, langLabel, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL } from './helpers/packageMeta';
+import type { DoctorReport } from './action/doctor';
 type SdkGenOptions = {
     folder: string;
     fs: any;
@@ -62,7 +70,8 @@ declare function SdkGen(opts: SdkGenOptions): {
         ok: boolean;
         name: string;
     }>;
-    action: (args: string[]) => Promise<void>;
+    action: (args: string[]) => Promise<any>;
+    check: () => Promise<ActionResult>;
     target: {
         add: (targets: string[]) => Promise<ActionResult>;
     };
@@ -73,7 +82,7 @@ declare function SdkGen(opts: SdkGenOptions): {
 declare namespace SdkGen {
     var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any, ctx: any) => Promise<any>>;
 }
-export type { SdkGenOptions, DepEntry, };
+export type { SdkGenOptions, ExampleLang, DepEntry, FeatureSource, DoctorReport, RegisterOptions, };
 export type { SdkModel, ModelKit, ModelTarget, ModelFeature, ModelEntity, ModelDep, ModelHook, } from './types';
 type Component = (props: any, children?: any) => void;
 export declare const cmp: (component: Function) => Component;
@@ -100,4 +109,4 @@ export declare const Inject: Component;
 export declare const Line: Component;
 export declare const Slot: Component;
 export declare const List: Component;
-export { Main, Deploy, License, Security, Changelog, Entity, Feature, Test, Readme, ReadmeTop, AgentGuideTop, AgentGuide, AgentGuideFeature, ReadmeInstall, ReadmeQuick, ReadmeErrors, ReadmeIntro, ReadmeModel, ReadmeOptions, ReadmeEntity, ReadmeHowto, ReadmeExplanation, ReadmeRef, FeatureHook, Jostraca, SdkGen, requirePath, isAuthActive, resolveAuthPrefix, SdkGenError, buildIdNames, getMatchEntries, collectDeps, canonToType, canonToDtype, canonKey, OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection, isReservedName, safeVarName, exampleVarName, isRbCoreConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, serverVariables, hasServerVariables, jsProp, jsOptProp, jsKey, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, envName, repoInfo, apiName, langLabel, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, };
+export { Main, Deploy, License, Security, Changelog, Entity, Feature, Test, Readme, ReadmeTop, AgentGuideTop, AgentGuide, AgentGuideFeature, ReadmeInstall, ReadmeQuick, ReadmeErrors, ReadmeIntro, ReadmeModel, ReadmeOptions, ReadmeEntity, ReadmeHowto, ReadmeExplanation, ReadmeRef, FeatureHook, registerComponent, Jostraca, SdkGen, requirePath, isAuthActive, resolveAuthPrefix, SdkGenError, buildIdNames, getMatchEntries, collectDeps, canonToType, canonToDtype, canonKey, OP_SUFFIX, opTypeName, opParams, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection, isReservedName, safeVarName, exampleVarName, isRbCoreConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, serverVariables, hasServerVariables, liveStrict, primaryOpCall, idLiteral, matchArg, dataArg, litFor, featureOf, availableFeatures, findFeatureSources, featureExcludes, fullsetExcludes, srcFeatureExcludes, jsProp, jsOptProp, jsKey, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, envName, envToken, goModule, goVersion, repoInfo, apiName, langLabel, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, };

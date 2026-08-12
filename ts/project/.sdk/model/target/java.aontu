@@ -35,3 +35,13 @@ main: kit: target: java: publish: {
     vault: { recipe: 'maven', alias: 'central' }
   }
 }
+
+
+# Feature source may be trimmed to the model's selection. The one template
+# needing the COMPLETE set is the cross-feature test suite, which
+# constructs every *Feature class — so it is dropped alongside the
+# features it exercises whenever the set is trimmed.
+main: kit: target: java: feature: {
+  trim: true
+  fullset: ['test/FeatureTest.java']
+}

@@ -17,7 +17,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive,
+  isAuthActive, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -51,8 +51,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = nom(model.const, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
-  const ENTUPPER = entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJUPPER = envName(model)
+  const ENTUPPER = envToken(entity.name)
 
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive

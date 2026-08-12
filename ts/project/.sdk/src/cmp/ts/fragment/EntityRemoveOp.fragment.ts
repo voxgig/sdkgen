@@ -10,7 +10,14 @@ class EntityOperation {
 
   // EJECT-START
 
-  async remove(this: any, reqmatch?: EntityNameRemoveMatch, ctrl?: Control): Promise<EntityName> {
+  // `EntityName | undefined`, not `EntityName`. A DELETE that answers 204 No
+  // Content resolves to nothing — which was the truth all along, while the
+  // declared type promised a record and let TypeScript consumers dereference
+  // it in good faith. APIs that DO return the removed record on DELETE are
+  // covered by the same union.
+  async remove(
+    this: any, reqmatch?: EntityNameRemoveMatch, ctrl?: Control,
+  ): Promise<EntityName | undefined> {
 
     const utility = this._utility
 
@@ -101,9 +108,9 @@ class EntityOperation {
         throw err
       }
       else {
-        // Off-happy-path (throw disabled): typed as any so the method's
-        // Promise<EntityName> return stays clean under strict null checks.
-        return undefined as any
+        // Off-happy-path (throw disabled): `undefined` is now within the
+        // declared return type, so no cast is needed.
+        return undefined
       }
     }
   }

@@ -64,6 +64,11 @@ const Package = cmp(async function Package(props: any) {
     bugs: { url: issuesUrl },
     main: `src/${SdkName}SDK.js`,
     type: 'commonjs',
+
+    // What actually ships. Without `files`, `npm publish` packs the test
+    // suite and the build scaffolding too. The js target runs from `src`
+    // directly (no build step), so that is the whole package.
+    files: ['src'],
     scripts: {
       'test': 'node --test \'test/**/*.test.js\'',
       'test-some': 'node --experimental-test-isolation=none ' +

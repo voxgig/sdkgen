@@ -16,7 +16,7 @@ import {
   cmp,
   each,
   buildIdNames,
-  getMatchEntries,
+  getMatchEntries, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -43,7 +43,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const entity: ModelEntity = props.entity
 
   const ProjectName = model.const.Name
-  const PROJUPPER = nom(model.const, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJUPPER = envName(model)
 
   const basicflow: ModelEntityFlow | undefined =
     getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)
@@ -111,12 +111,12 @@ static ${entity.Name}Setup ${evar}_basic_setup(const Value& extra) {
   if (!idmap.is_map()) idmap = vmap();
 
   Value env = env_override(vmap({
-    {"${PROJUPPER}_TEST_${nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')}_ENTID", idmap},
+    {"${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID", idmap},
     {"${PROJUPPER}_TEST_LIVE", Value("FALSE")},
     {"${PROJUPPER}_TEST_EXPLAIN", Value("FALSE")}
   }));
 
-  Value idmap_resolved = Helpers::toMapAny(getp(env, "${PROJUPPER}_TEST_${nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')}_ENTID"));
+  Value idmap_resolved = Helpers::toMapAny(getp(env, "${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"));
   if (!idmap_resolved.is_map()) idmap_resolved = idmap;
 `)
 

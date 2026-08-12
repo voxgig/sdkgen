@@ -253,17 +253,19 @@ defmodule ProjectName.PipelineTest do
     Context.new(S.jm(["opname", "list", "entity", entity, "ctrl", S.jm([])]), ProjectName.get_root_ctx(c))
   end
 
-  test "make_result list op wraps resdata into entities" do
+  # The list contract: PLAIN records, the same shape every other operation
+  # resolves to. It used to wrap each record in an entity instance.
+  test "make_result list op leaves resdata as plain records" do
     collector = S.jt([])
     ctx = list_ctx(client(), collector)
     S.setprop(ctx, "spec", spec_of())
     S.setprop(ctx, "result", Result.new(H.deep(%{"ok" => true, "resdata" => [%{"a" => 1}, %{"a" => 2}]})))
     {result, err} = Utility.make_result(ctx)
     assert err == nil
-    assert S.size(S.getprop(result, "resdata")) == 2
-    assert S.size(collector) == 2
-    assert S.getprop(S.getelem(collector, 0), "a") == 1
-    assert S.getprop(S.getelem(collector, 1), "a") == 2
+    resdata = S.getprop(result, "resdata")
+    assert S.size(resdata) == 2
+    assert S.getprop(S.getelem(resdata, 0), "a") == 1
+    assert S.size(collector) == 0
   end
 
   test "make_result empty list yields an empty resdata array" do

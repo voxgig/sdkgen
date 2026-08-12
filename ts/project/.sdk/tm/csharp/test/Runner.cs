@@ -71,8 +71,8 @@ public static class TestRunner
 
     public static Dictionary<string, object?> EnvOverride(Dictionary<string, object?> m)
     {
-        if (Environment.GetEnvironmentVariable("PROJECTNAME_TEST_LIVE") == "TRUE" ||
-            Environment.GetEnvironmentVariable("PROJECTNAME_TEST_OVERRIDE") == "TRUE")
+        if (Environment.GetEnvironmentVariable("PROJECTENV_TEST_LIVE") == "TRUE" ||
+            Environment.GetEnvironmentVariable("PROJECTENV_TEST_OVERRIDE") == "TRUE")
         {
             foreach (var key in m.Keys.ToList())
             {
@@ -98,10 +98,10 @@ public static class TestRunner
             }
         }
 
-        var explain = Environment.GetEnvironmentVariable("PROJECTNAME_TEST_EXPLAIN");
+        var explain = Environment.GetEnvironmentVariable("PROJECTENV_TEST_EXPLAIN");
         if (!string.IsNullOrEmpty(explain))
         {
-            m["PROJECTNAME_TEST_EXPLAIN"] = explain;
+            m["PROJECTENV_TEST_EXPLAIN"] = explain;
         }
 
         return m;

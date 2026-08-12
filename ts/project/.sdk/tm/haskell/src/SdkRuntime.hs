@@ -959,21 +959,17 @@ makeResultUtil ctx = do
           VMap _ -> do
             setp specV "step" (VStr "result")
             _ <- transformResponseUtil ctx
+            -- Every operation resolves to PLAIN records — load, create, update and
+            -- list alike. `list` used to be the outlier in the donor languages: it
+            -- wrapped each record in an entity instance, so the same record came
+            -- back with a different type, a different key order and an extra marker
+            -- depending on which call produced it. A missing or empty list still
+            -- normalises to an empty list.
             when (opName op == "list") $ do
               resdata <- getp resultV "resdata"
-              el <- emptyList
-              setp resultV "resdata" el
-              ment <- readIORef (cEntity ctx)
-              case (resdata, ment) of
-                (VList _, Just entity) -> do
-                  items0 <- listItems resdata
-                  entries <- mapM (\entry -> do
-                    ent <- eMake entity
-                    case entry of VMap _ -> eDataSet ent entry; _ -> pure ()
-                    pure entry) items0
-                  el2 <- mkList entries
-                  setp resultV "resdata" el2
-                _ -> pure ()
+              case resdata of
+                VList _ -> pure ()
+                _ -> do { el <- emptyList; setp resultV "resdata" el }
             ctrl <- readIORef (cCtrl ctx)
             explain <- getp ctrl "explain"
             case explain of { VMap _ -> do { snap <- resultToValue resultV; setp explain "result" snap }; _ -> pure () }

@@ -23,7 +23,7 @@ import {
   Slot,
   cmp,
   each,
-  isAuthActive,
+  isAuthActive, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -50,8 +50,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const entity: ModelEntity = props.entity
 
-  const PROJENVNAME = nom(model.const, 'NAME').replace(/[^A-Z_]/g, '_')
-  const ENTENVNAME = nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')
+  const PROJENVNAME = envName(model)
+  const ENTENVNAME = envToken(entity.name)
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive
     ? `\n    '${PROJENVNAME}_APIKEY': 'NONE',`

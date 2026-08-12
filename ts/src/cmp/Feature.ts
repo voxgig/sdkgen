@@ -1,6 +1,8 @@
 
 import { cmp, Copy, Folder } from 'jostraca'
 
+import { ensureStdrep } from '../helpers/stdrep'
+
 const Feature = cmp(function Feature(props: any) {
   const { target, feature, ctx$ } = props
   const { log } = ctx$
@@ -23,7 +25,7 @@ const Feature = cmp(function Feature(props: any) {
           // local Main_<lang> lost that Copy — got the raw placeholder.
           // voxgig-solardemo-sdk hit exactly that and could not build its
           // TypeScript at all.
-          ...ctx$.stdrep,
+          ...ensureStdrep(ctx$),
           FEATURE_VERSION: feature.version,
           FEATURE_Name: feature.Name,
         }

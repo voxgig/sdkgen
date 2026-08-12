@@ -11,7 +11,7 @@ import {
   File,
   cmp,
   snakify,
-  isAuthActive,
+  isAuthActive, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -67,7 +67,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const entity: ModelEntity = props.entity
   const kotlinpackage: string = props.kotlinpackage
 
-  const PROJECTNAME = nom(model, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJECTNAME = envName(model)
   const SDK = model.const.Name + 'SDK'
 
   const authActive = isAuthActive(model)
@@ -121,7 +121,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     ? loadParams.map((p: any) => `      params["${p.name}"] = ${kotlinLiteral(p.example)}`).join('\n')
     : ''
 
-  const entidEnvVar = `${PROJECTNAME}_TEST_${nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')}_ENTID`
+  const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
 
   File({ name: entity.Name + 'DirectTest.' + target.ext }, () => {
 

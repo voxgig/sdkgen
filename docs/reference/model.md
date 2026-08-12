@@ -59,6 +59,8 @@ files in `ts/project/.sdk/model/target/`:
 | `module.name` | string | `'$$name$$'` | Package/module name. |
 | `base` | string | — | Template base path (set to `'BASE'`, replaced at `target add`). |
 | `srcfeature` | boolean | `true` | Whether per-feature source is copied into `src/feature/`. |
+| `feature.trim` | boolean | `true` | Whether `target add` trims feature source to the model's selection. `false` keeps the complete set (see below). |
+| `feature.fullset` | string[] | `[]` | Templates that only compile with the COMPLETE feature set (the cross-feature test suite), as paths under the target template root. Dropped whenever the set is trimmed. |
 | `deps.<dep>.active` | boolean | `false` | Include this dependency. |
 | `deps.<dep>.version` | string | `'*'` | Version constraint. |
 | `deps.<dep>.kind` | string | `'prod'` | `prod` / `dev` / `peer` (target-defined). |

@@ -259,9 +259,11 @@ sub is_sdk_error {
   });
   my ($result, $err) = $utility->{make_result}->($ctx);
   ok(!defined $err, 'make_result list op: no error');
-  is(scalar @{ $result->{resdata} }, 2, 'make_result list op wraps resdata into entities');
-  is(scalar @$made, 2, 'make_result list op called data_set per entry');
-  is_deeply($made, [{ 'a' => 1 }, { 'a' => 2 }], 'make_result list op data_set payloads');
+  # The list contract: PLAIN records, the same shape every other operation
+  # resolves to. It used to wrap each record in an entity instance.
+  is(scalar @{ $result->{resdata} }, 2, 'make_result list op keeps every record');
+  is_deeply($result->{resdata}, [{ 'a' => 1 }, { 'a' => 2 }], 'make_result list op leaves resdata as plain records');
+  is(scalar @$made, 0, 'make_result list op made no entity instances');
 }
 
 {

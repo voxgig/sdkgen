@@ -253,7 +253,9 @@ void tests() {
           errcode(stdutil.makeResult(base({'spec': {}, 'result': null}))));
     });
 
-    test('list op wraps resdata into entity instances', (t) {
+    // The list contract: PLAIN records, the same shape every other operation
+    // resolves to. It used to wrap each record in an entity instance.
+    test('list op leaves resdata as plain records', (t) {
       final made = [];
       final ctx = base({
         'op': {'name': 'list', 'entity': 'x'},
@@ -268,7 +270,8 @@ void tests() {
       });
       final r = stdutil.makeResult(ctx);
       equal(2, r.resdata.length);
-      equal(2, made.length);
+      equal(1, r.resdata[0]['a']);
+      equal(0, made.length);
     });
 
     test('an empty list yields an empty resdata array', (t) {

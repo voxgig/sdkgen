@@ -7,6 +7,16 @@ type OpShapeItem = {
     type: any;
     optional: boolean;
 };
+declare function opActions(op: any): {
+    action: string;
+    path: string;
+}[];
+declare function entityActions(entity: any): {
+    op: string;
+    action: string;
+    path: string;
+}[];
+declare function entityPath(entity: any): string;
 declare function opParams(op: any): any[];
 declare function opRequestShape(ent: any, opname: string): {
     items: OpShapeItem[];
@@ -23,5 +33,5 @@ declare function pickExampleEntity(entity: any): {
     primaryOp: string | null;
 };
 declare function entityDataIdField(ent: any): string | null;
-export { OP_SUFFIX, deriveEntityNames, entityCollection, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, };
+export { OP_SUFFIX, deriveEntityNames, entityCollection, opTypeName, opParams, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, };
 export type { OpShapeItem, };

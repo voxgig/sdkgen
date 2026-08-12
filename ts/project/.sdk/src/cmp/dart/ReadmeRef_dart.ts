@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, matchArg, idLiteral } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -20,6 +20,17 @@ function dartLit(type: any, placeholder: string = 'example'): string {
   if ('ARRAY' === k) return '<dynamic>[]'
   if ('OBJECT' === k) return '<String, dynamic>{}'
   return `'${placeholder}'`
+}
+
+
+// A `list()` on a NESTED entity needs its parent path params. The
+// quickstart used to emit `client.Moon().list()` for an entity at
+// `/planet/{planet_id}/moon`, which 404s against a live server from a
+// half-built URL — indistinguishable from "no such record". The model
+// already marks those params `reqd: true`; matchArg renders exactly them.
+function listMatchArg(ent: any): string {
+  const idF = entityIdField(ent)
+  return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
 }
 
 
@@ -268,7 +279,7 @@ final result = await client.${ent.Name}().${opname}(${arg});
           }
           else if ('list' === opname) {
             Content(`\`\`\`dart
-final results = await client.${ent.Name}().list();
+final results = await client.${ent.Name}().list(${listMatchArg(ent)});
 for (final ${eVar} in results) {
   print(${eVar}.data());
 }

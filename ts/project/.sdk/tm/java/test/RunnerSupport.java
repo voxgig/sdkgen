@@ -72,8 +72,8 @@ public final class RunnerSupport {
   }
 
   public static Map<String, Object> envOverride(Map<String, Object> m) {
-    if ("TRUE".equals(getenv("PROJECTNAME_TEST_LIVE"))
-        || "TRUE".equals(getenv("PROJECTNAME_TEST_OVERRIDE"))) {
+    if ("TRUE".equals(getenv("PROJECTENV_TEST_LIVE"))
+        || "TRUE".equals(getenv("PROJECTENV_TEST_OVERRIDE"))) {
       for (String key : new ArrayList<>(m.keySet())) {
         String envval = getenv(key);
         if (envval != null && !envval.isEmpty()) {
@@ -90,9 +90,9 @@ public final class RunnerSupport {
       }
     }
 
-    String explain = getenv("PROJECTNAME_TEST_EXPLAIN");
+    String explain = getenv("PROJECTENV_TEST_EXPLAIN");
     if (explain != null && !explain.isEmpty()) {
-      m.put("PROJECTNAME_TEST_EXPLAIN", explain);
+      m.put("PROJECTENV_TEST_EXPLAIN", explain);
     }
 
     return m;

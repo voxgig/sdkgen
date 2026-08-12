@@ -127,6 +127,68 @@ type OpShapeItem = {
 // list-by-parent-id call failing because sibling routes' ids are demanded —
 // and steers callers into passing keys that flip runtime point dispatch to
 // the wrong route.)
+// The action names an op multiplexes, from its points' `select.$action`.
+//
+// A custom POST route like `/api/planet/{id}/terraform` is folded into the
+// `create` op as an alternative point, discriminated at call time by
+// `$action` in the data argument. The mechanism worked and was documented
+// NOWHERE — not in the README, not in the reference — so for an API with two
+// such routes, two of its six endpoints were unreachable by anyone using the
+// documented interface. Generated docs list them via this helper.
+function opActions(op: any): { action: string, path: string }[] {
+  const points: any[] = op && op.points ? each(op.points) : []
+
+  return points
+    .filter((pt: any) => null != (pt && pt.select && pt.select['$action']))
+    .map((pt: any) => ({
+      action: String(pt.select['$action']),
+      path: String(pt.orig || ''),
+    }))
+    .sort((a, b) => a.action < b.action ? -1 : a.action > b.action ? 1 : 0)
+}
+
+
+// True when any of the entity's ops multiplexes a custom action.
+function entityActions(entity: any): { op: string, action: string, path: string }[] {
+  const out: { op: string, action: string, path: string }[] = []
+
+  each(entity && entity.op).forEach((op: any) => {
+    opActions(op).forEach((a) => out.push({ op: op.name, ...a }))
+  })
+
+  return out
+}
+
+
+// The entity's own API path — the route a reader should recognise it by.
+//
+// NOT `points[0]` across every op flattened. Ops iterate in sorted-key order,
+// so `create` came first, and an entity whose create op folds in a custom
+// action (`/api/planet/{id}/forbid`) advertised THAT as its path. The
+// canonical route is the collection or record route, and never an action.
+function entityPath(entity: any): string {
+  const ops: any = (entity && entity.op) || {}
+
+  for (const opname of ['list', 'load', 'create', 'update', 'remove']) {
+    const op = ops[opname]
+    if (null == op) {
+      continue
+    }
+
+    const points: any[] = op.points ? each(op.points) : []
+    const canonical = points.filter((pt: any) =>
+      null == (pt && pt.select && pt.select['$action']))
+
+    const pick = (0 < canonical.length ? canonical : points)[0]
+    if (null != pick && null != pick.orig && '' !== pick.orig) {
+      return String(pick.orig)
+    }
+  }
+
+  return ''
+}
+
+
 function opParams(op: any): any[] {
   let points: any[] = op && op.points ? each(op.points) : []
 
@@ -533,6 +595,9 @@ export {
   entityCollection,
   opTypeName,
   opParams,
+  opActions,
+  entityActions,
+  entityPath,
   opRequestShape,
   entityIdField,
   entityDataIdField,

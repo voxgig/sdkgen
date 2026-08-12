@@ -45,8 +45,8 @@ func loadEnvLocal() {
 }
 
 func envOverride(m map[string]any) map[string]any {
-	if os.Getenv("PROJECTNAME_TEST_LIVE") == "TRUE" ||
-		os.Getenv("PROJECTNAME_TEST_OVERRIDE") == "TRUE" {
+	if os.Getenv("PROJECTENV_TEST_LIVE") == "TRUE" ||
+		os.Getenv("PROJECTENV_TEST_OVERRIDE") == "TRUE" {
 		for key := range m {
 			envval := os.Getenv(key)
 			if envval != "" {
@@ -63,8 +63,8 @@ func envOverride(m map[string]any) map[string]any {
 		}
 	}
 
-	if explain := os.Getenv("PROJECTNAME_TEST_EXPLAIN"); explain != "" {
-		m["PROJECTNAME_TEST_EXPLAIN"] = explain
+	if explain := os.Getenv("PROJECTENV_TEST_EXPLAIN"); explain != "" {
+		m["PROJECTENV_TEST_EXPLAIN"] = explain
 	}
 
 	return m

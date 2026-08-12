@@ -296,6 +296,71 @@ emitted broken source reached the fleet unchallenged.
 - **An entity need not declare `op`.** Read it as `entity.op || {}` /
   `entity.op?.load`; an unguarded `Object.keys(entity.op)` aborts generation
   for every target. `ts/test/entityname.test.ts` fails if one is reintroduced.
+- **Every entity operation resolves to PLAIN records.** `list` used to wrap
+  each record in an entity instance, so the same record came back with a
+  different type, key order and marker depending on which call produced it —
+  and the marker (`entity$`) collided with Seneca's own, silently producing
+  wrong entities. The wrap is gone from every language's `make_result`; the
+  marker on `toJSON()` is namespaced `voxgig$entity`. Pinned by
+  `ts/test/resultcontract.test.ts`, which transpiles and RUNS the shipped
+  template.
+- **The HTTP status is on the error, not just in `err.result`.** `err.status`
+  (-1 when there was no response) plus a `notFound` predicate, so a consumer
+  never couples itself to the internal shape of `result`.
+- **A generated doc example must RUN.** A `list()` on a nested entity needs
+  its parent path params (`matchArg`), the offline-test example must SEED the
+  mock (`SDK.test()` seeds nothing), and the entity table shows the entity's
+  own route — never a custom action folded into `create`. Custom actions are
+  reachable only through `$action`, so `ReadmeRef` documents them; an
+  undocumented action is an endpoint no reader can call.
+- **A project decision belongs in the MODEL, never in a forked component.**
+  `target add` overwrites `.sdk/src/cmp/**` and `.sdk/tm/**`, so any hand-edit
+  there is silently reverted on the next run — the SDK regresses with nobody
+  touching it. When a project needs to say something about itself, add a model
+  key and read it; do not make the project fork. The surfaces that exist for
+  this: `main.kit.repo.{path,host}` (repo identity — the repo is NOT always
+  `<origin>/<slug>-sdk`), `main.kit.target.<t>.module.{path,goversion}`,
+  `main.kit.target.<t>.publish.registry.package`, `main.kit.feature`
+  (which feature source ships), `main.kit.test.live.strict`. A project extends
+  a target with `registerComponent('X')` -> `cmp/<t>/X_<t>.ts`, which `doctor`
+  reports as ADDITIVE rather than drift.
+- **`voxgig-sdkgen doctor` is the check that keeps all of this true.** It
+  compares `.sdk/` against the scaffold *after* re-applying the substitutions
+  `target add` applied — a naive `diff -r` reports mostly placeholder
+  replacement. Non-zero exit on forked / edited / stale / missing.
+- **Derive an env-var name with `envToken`/`envName`, never from the camel
+  form.** `nom(model, 'Name').toUpperCase()` swallows a hyphen, so a slug like
+  `voxgig-solardemo` produced BOTH `VOXGIG_SOLARDEMO_TEST_LIVE` and
+  `VOXGIGSOLARDEMO_TEST_LIVE` in the same SDK — the template half read one and
+  the component half the other, so setting either sent part of the live suite
+  live and left the rest mocked, green either way. In templates the placeholder
+  is `PROJECTENV` (added by `ensureStdrep`), NOT `PROJECTNAME` — that one is
+  the class-name form.
+- **The go module path has ONE implementation: `goModule(model, target)`.**
+  Twelve components used to re-derive it inline, so fixing it in one place
+  fixed nothing — and `ReadmeTop` prints it from inside node_modules, where a
+  consumer cannot patch it at all.
+- **Feature source lives somewhere different in every language.** Only `ts`
+  and `js` use `src/feature/<name>/`; go uses `feature/<name>_feature.go`,
+  py `pkg/feature/`, dart `lib/feature/<name>/`, swift
+  `Sources/ProjectNameSDK/feature/`, and so on. Never hardcode one of those
+  paths — `helpers/featureSource.ts` DISCOVERS them (any directory named
+  `feature`, each entry mapped back to a feature name), and both `target add`
+  and `feature add` go through it. Hardcoding `src/feature` is what shipped
+  272 unrequested feature source files into every project. Pinned by
+  `ts/test/featuresource.test.ts`.
+- **Trimming the feature set can break a target's build.** `target add`
+  copies source only for features the model declares AND activates, so any
+  template that statically references every shipped feature stops compiling.
+  Dedicated cross-feature test suites are declared per target as
+  `feature: { fullset: [...] }` and dropped alongside the features they
+  exercise; a target that cannot be trimmed at all says
+  `feature: { trim: false }` (currently `clojure`, `haskell`, `lean`,
+  `ocaml`, `scala`, `zig` — see their model files for what has to change
+  first). Aggregate indexes must be GENERATED, not templated: that is why
+  `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
+  must not live in the file that gets dropped — go and csharp keep it in
+  `feature_harness_test.go` / `FeatureHarness.cs` for exactly that reason.
 
 ---
 

@@ -168,7 +168,9 @@ static void makeResult_listOpWrapsResdataIntoEntities() {
 
   ResultPtr result = utility->makeResult(ctx);
   ASSERT_TRUE(result->resdata.is_list(), "expected list resdata");
-  ASSERT_EQ((int)result->resdata.as_list()->size(), 2, "expected 2 wrapped entities");
+  // The list contract: PLAIN records, the same shape every other operation
+  // resolves to.
+  ASSERT_EQ((int)result->resdata.as_list()->size(), 2, "expected 2 plain records");
   ASSERT_EQ(*counter, 2, "expected 2 data() calls");
 }
 

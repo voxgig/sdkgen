@@ -37,9 +37,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.requirePath = exports.Jostraca = exports.FeatureHook = exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeErrors = exports.ReadmeQuick = exports.ReadmeInstall = exports.AgentGuideFeature = exports.AgentGuide = exports.AgentGuideTop = exports.ReadmeTop = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Changelog = exports.Security = exports.License = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
-exports.PUBLISHER_URL = exports.PUBLISHER = exports.langLabel = exports.apiName = exports.repoInfo = exports.envName = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = exports.jsKey = exports.jsOptProp = exports.jsProp = exports.hasServerVariables = exports.serverVariables = exports.swiftSafeTypeName = exports.isSwiftSdkType = exports.rbSafeTypeName = exports.isRbCoreConstant = exports.exampleVarName = exports.safeVarName = exports.isReservedName = exports.entityCollection = exports.deriveEntityNames = exports.warnEntityTypeCollisions = exports.entityTypeCollisions = exports.entityClassName = exports.pickExampleEntity = exports.entityPrimaryOp = exports.entityOps = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonKey = exports.canonToDtype = exports.canonToType = exports.collectDeps = exports.getMatchEntries = exports.buildIdNames = exports.SdkGenError = exports.resolveAuthPrefix = exports.isAuthActive = void 0;
-exports.GENERATOR_URL = exports.SECURITY_EMAIL = void 0;
+exports.Jostraca = exports.registerComponent = exports.FeatureHook = exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeErrors = exports.ReadmeQuick = exports.ReadmeInstall = exports.AgentGuideFeature = exports.AgentGuide = exports.AgentGuideTop = exports.ReadmeTop = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Changelog = exports.Security = exports.License = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
+exports.jsOptProp = exports.jsProp = exports.srcFeatureExcludes = exports.fullsetExcludes = exports.featureExcludes = exports.findFeatureSources = exports.availableFeatures = exports.featureOf = exports.litFor = exports.dataArg = exports.matchArg = exports.idLiteral = exports.primaryOpCall = exports.liveStrict = exports.hasServerVariables = exports.serverVariables = exports.swiftSafeTypeName = exports.isSwiftSdkType = exports.rbSafeTypeName = exports.isRbCoreConstant = exports.exampleVarName = exports.safeVarName = exports.isReservedName = exports.entityCollection = exports.deriveEntityNames = exports.warnEntityTypeCollisions = exports.entityTypeCollisions = exports.entityClassName = exports.pickExampleEntity = exports.entityPrimaryOp = exports.entityOps = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.entityPath = exports.entityActions = exports.opActions = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonKey = exports.canonToDtype = exports.canonToType = exports.collectDeps = exports.getMatchEntries = exports.buildIdNames = exports.SdkGenError = exports.resolveAuthPrefix = exports.isAuthActive = exports.requirePath = void 0;
+exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.langLabel = exports.apiName = exports.repoInfo = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = exports.jsKey = void 0;
 exports.SdkGen = SdkGen;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -101,6 +101,8 @@ const ReadmeRef_1 = require("./cmp/ReadmeRef");
 Object.defineProperty(exports, "ReadmeRef", { enumerable: true, get: function () { return ReadmeRef_1.ReadmeRef; } });
 const FeatureHook_1 = require("./cmp/FeatureHook");
 Object.defineProperty(exports, "FeatureHook", { enumerable: true, get: function () { return FeatureHook_1.FeatureHook; } });
+const Registered_1 = require("./cmp/Registered");
+Object.defineProperty(exports, "registerComponent", { enumerable: true, get: function () { return Registered_1.registerComponent; } });
 const buildIdNames_1 = require("./helpers/buildIdNames");
 Object.defineProperty(exports, "buildIdNames", { enumerable: true, get: function () { return buildIdNames_1.buildIdNames; } });
 const getMatchEntries_1 = require("./helpers/getMatchEntries");
@@ -115,6 +117,9 @@ const opShape_1 = require("./helpers/opShape");
 Object.defineProperty(exports, "OP_SUFFIX", { enumerable: true, get: function () { return opShape_1.OP_SUFFIX; } });
 Object.defineProperty(exports, "opTypeName", { enumerable: true, get: function () { return opShape_1.opTypeName; } });
 Object.defineProperty(exports, "opParams", { enumerable: true, get: function () { return opShape_1.opParams; } });
+Object.defineProperty(exports, "opActions", { enumerable: true, get: function () { return opShape_1.opActions; } });
+Object.defineProperty(exports, "entityActions", { enumerable: true, get: function () { return opShape_1.entityActions; } });
+Object.defineProperty(exports, "entityPath", { enumerable: true, get: function () { return opShape_1.entityPath; } });
 Object.defineProperty(exports, "opRequestShape", { enumerable: true, get: function () { return opShape_1.opRequestShape; } });
 Object.defineProperty(exports, "entityIdField", { enumerable: true, get: function () { return opShape_1.entityIdField; } });
 Object.defineProperty(exports, "entityDataIdField", { enumerable: true, get: function () { return opShape_1.entityDataIdField; } });
@@ -140,6 +145,21 @@ Object.defineProperty(exports, "jsKey", { enumerable: true, get: function () { r
 const serverVars_1 = require("./helpers/serverVars");
 Object.defineProperty(exports, "serverVariables", { enumerable: true, get: function () { return serverVars_1.serverVariables; } });
 Object.defineProperty(exports, "hasServerVariables", { enumerable: true, get: function () { return serverVars_1.hasServerVariables; } });
+const opExample_1 = require("./helpers/opExample");
+Object.defineProperty(exports, "primaryOpCall", { enumerable: true, get: function () { return opExample_1.primaryOpCall; } });
+Object.defineProperty(exports, "idLiteral", { enumerable: true, get: function () { return opExample_1.idLiteral; } });
+Object.defineProperty(exports, "matchArg", { enumerable: true, get: function () { return opExample_1.matchArg; } });
+Object.defineProperty(exports, "dataArg", { enumerable: true, get: function () { return opExample_1.dataArg; } });
+Object.defineProperty(exports, "litFor", { enumerable: true, get: function () { return opExample_1.litFor; } });
+const testPolicy_1 = require("./helpers/testPolicy");
+Object.defineProperty(exports, "liveStrict", { enumerable: true, get: function () { return testPolicy_1.liveStrict; } });
+const featureSource_1 = require("./helpers/featureSource");
+Object.defineProperty(exports, "featureOf", { enumerable: true, get: function () { return featureSource_1.featureOf; } });
+Object.defineProperty(exports, "availableFeatures", { enumerable: true, get: function () { return featureSource_1.availableFeatures; } });
+Object.defineProperty(exports, "findFeatureSources", { enumerable: true, get: function () { return featureSource_1.findFeatureSources; } });
+Object.defineProperty(exports, "featureExcludes", { enumerable: true, get: function () { return featureSource_1.featureExcludes; } });
+Object.defineProperty(exports, "fullsetExcludes", { enumerable: true, get: function () { return featureSource_1.fullsetExcludes; } });
+Object.defineProperty(exports, "srcFeatureExcludes", { enumerable: true, get: function () { return featureSource_1.srcFeatureExcludes; } });
 const packageMeta_1 = require("./helpers/packageMeta");
 Object.defineProperty(exports, "packageName", { enumerable: true, get: function () { return packageMeta_1.packageName; } });
 Object.defineProperty(exports, "installCommand", { enumerable: true, get: function () { return packageMeta_1.installCommand; } });
@@ -151,6 +171,9 @@ Object.defineProperty(exports, "pkgDescription", { enumerable: true, get: functi
 Object.defineProperty(exports, "nonAffiliation", { enumerable: true, get: function () { return packageMeta_1.nonAffiliation; } });
 Object.defineProperty(exports, "keywords", { enumerable: true, get: function () { return packageMeta_1.keywords; } });
 Object.defineProperty(exports, "envName", { enumerable: true, get: function () { return packageMeta_1.envName; } });
+Object.defineProperty(exports, "envToken", { enumerable: true, get: function () { return packageMeta_1.envToken; } });
+Object.defineProperty(exports, "goModule", { enumerable: true, get: function () { return packageMeta_1.goModule; } });
+Object.defineProperty(exports, "goVersion", { enumerable: true, get: function () { return packageMeta_1.goVersion; } });
 Object.defineProperty(exports, "repoInfo", { enumerable: true, get: function () { return packageMeta_1.repoInfo; } });
 Object.defineProperty(exports, "apiName", { enumerable: true, get: function () { return packageMeta_1.apiName; } });
 Object.defineProperty(exports, "langLabel", { enumerable: true, get: function () { return packageMeta_1.langLabel; } });
@@ -160,11 +183,13 @@ Object.defineProperty(exports, "SECURITY_EMAIL", { enumerable: true, get: functi
 Object.defineProperty(exports, "GENERATOR_URL", { enumerable: true, get: function () { return packageMeta_1.GENERATOR_URL; } });
 const target_1 = require("./action/target");
 const feature_1 = require("./action/feature");
+const doctor_1 = require("./action/doctor");
 const { Jostraca } = JostracaModule;
 exports.Jostraca = Jostraca;
 const ACTION_MAP = {
     target: target_1.action_target,
     feature: feature_1.action_feature,
+    doctor: doctor_1.action_doctor,
 };
 const dlog = (0, util_2.getdlog)('sdkgen', __filename);
 function SdkGen(opts) {
@@ -221,6 +246,12 @@ function SdkGen(opts) {
             // at the scaffold source (create-sdkgen build/sdkgen.js: existing.txt =
             // { write:true, merge:false }); see docs/explanation/regeneration-overwrite.md.
             existing: opts.existing,
+            // Per-call, for the same reason the actions pass it: jostraca applies
+            // OptionsShape to `generate`'s own options first, so its
+            // `control.dryrun: false` default wins over the instance-level flag.
+            control: {
+                dryrun: !!opts.dryrun
+            },
         };
         const jres = await jostraca.generate(jopts, () => Root({ model }));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
@@ -241,7 +272,7 @@ function SdkGen(opts) {
             throw new utility_1.SdkGenError('Unknown action: ' + actname);
         }
         const ctx = resolveActionContext();
-        await actionFunc(pargs, ctx);
+        return await actionFunc(pargs, ctx);
     }
     function resolveActionContext() {
         // TODO: use AsyncLocalStorage to avoid reloading model
@@ -296,10 +327,16 @@ function SdkGen(opts) {
             return (0, feature_1.feature_add)(features, ctx);
         }
     };
+    // Has this project's `.sdk/` drifted from the scaffold? See action/doctor.
+    const check = async () => {
+        const ctx = resolveActionContext();
+        return (0, doctor_1.doctor)(ctx);
+    };
     return {
         pino: pino,
         generate,
         action,
+        check,
         target,
         feature,
     };

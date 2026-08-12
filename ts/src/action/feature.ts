@@ -12,6 +12,8 @@ import {
 
 import { showChanges } from '@voxgig/util'
 
+import { showDryrun } from '../helpers/dryrun'
+
 import {
   KIT
 } from '../types'
@@ -22,6 +24,8 @@ import type {
 } from '../types'
 
 import { SdkGenError } from '../utility'
+
+import { findFeatureSources } from '../helpers/featureSource'
 
 
 import {
@@ -74,7 +78,17 @@ async function feature_add(features: string[], actx: ActionContext): Promise<Act
       url: actx.url,
       content: loadContent(actx, 'feature')
     },
-    model: actx.model
+    model: actx.model,
+    // Dry run must be passed per-call, not left to the Jostraca instance.
+    // jostraca's `generate` runs its own options through OptionsShape FIRST,
+    // which fills in `control.dryrun: false`, and only then merges
+    // `deep({}, gOpts.control, opts.control)` — so the shape default silently
+    // OVERRIDES the instance-level flag. `-y target add ts` printed
+    // ** DRY RUN ** and wrote every file. (Same trap as the `existing` FIX
+    // note in jostraca.js.)
+    control: {
+      dryrun: !!actx.opts.dryrun
+    },
   }
 
   opts.log.info({
@@ -85,6 +99,10 @@ async function feature_add(features: string[], actx: ActionContext): Promise<Act
   const jres = await jostraca.generate(opts, () => FeatureRoot({ features }))
 
   showChanges(opts.log, 'feature-result', jres)
+
+  if (actx.opts.dryrun) {
+    showDryrun(opts.log, 'feature-result', jres, actx.folder)
+  }
 
   opts.log.info({
     point: 'feature-end',
@@ -101,6 +119,7 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
   const { ctx$, features } = props
   const { model, log } = ctx$
 
+  const fs = ctx$.fs()
   const target = model.main[KIT].target
 
   Project({}, () => {
@@ -127,22 +146,41 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
         }))
       })
 
-      each(target, (t) =>
-        Folder({ name: 'tm/' + t.name + '/src/feature/' + fname }, () => {
-          const from = Path.join(
-            (t.base || Path.join(BASE, '/project/.sdk')),
-            'tm',
-            t.name,
-            '/src/feature/',
-            fname
-          )
+      // Bring in the feature's source for every target already in the model.
+      // Where that source lives is language-specific — `src/feature/<name>/`
+      // for ts and js, `feature/<name>_feature.go` for go,
+      // `lib/feature/<name>/` for dart, and so on — so discover it in the
+      // target's template tree instead of assuming one layout. Assuming
+      // `src/feature/<name>` meant `feature add` silently added nothing for
+      // every target that keeps feature source elsewhere.
+      each(target, (t) => {
+        const sdkfolder = t.base || Path.join(BASE, 'project/.sdk')
+        const tmfolder = Path.join(sdkfolder, 'tm', t.name)
 
-          Copy({
-            // from: BASE + '/project/.sdk/tm/' + target.name + '/src/feature/' + name,
-            from,
-            exclude: true
+        const sources = findFeatureSources(fs, tmfolder, [fname])
+
+        if (0 === sources.length) {
+          log.warn({
+            point: 'feature-source-missing', feature: fname, target: t.name,
+            folder: tmfolder,
+            note: 'no ' + fname + ' source found for target ' + t.name
           })
-        }))
+          return
+        }
+
+        for (const source of sources) {
+          // A folder source IS the destination folder; a file source goes
+          // into the folder that holds it.
+          const dest = source.folder ? source.path : Path.dirname(source.path)
+
+          Folder({ name: 'tm/' + t.name + '/' + dest }, () => {
+            Copy({
+              from: Path.join(tmfolder, source.path),
+              exclude: true
+            })
+          })
+        }
+      })
 
       log.info({
         point: 'feature-done', feature: fname,

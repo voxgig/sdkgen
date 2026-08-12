@@ -247,7 +247,9 @@ describe("pipeline", function()
       assert.are.equal("result_no_result", err.code)
     end)
 
-    it("list op wraps resdata into entity instances", function()
+    -- The list contract: PLAIN records, the same shape every other
+    -- operation resolves to. It used to wrap each record in an entity.
+    it("list op leaves resdata as plain records", function()
       local made = {}
       local entity = {}
       function entity:make()
@@ -266,7 +268,8 @@ describe("pipeline", function()
       local r, err = ctx.utility.make_result(ctx)
       assert.is_nil(err)
       assert.are.equal(2, #r.resdata)
-      assert.are.equal(2, #made)
+      assert.are.equal(1, r.resdata[1].a)
+      assert.are.equal(0, #made)
     end)
 
     it("an empty list yields an empty resdata table", function()

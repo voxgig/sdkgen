@@ -24,7 +24,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  entityDataIdField,
+  entityDataIdField, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -56,7 +56,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = nom(model.const, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJUPPER = envName(model)
 
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive
@@ -158,7 +158,7 @@ ${hasList ? `
         # without an *_ENTID env override, those IDs hit the live API and 4xx.
         if setup.get("synthetic_only"):
             pytest.skip("live entity test uses synthetic IDs from fixture — "
-                        "set ${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID JSON to run live")
+                        "set ${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID JSON to run live")
         client = setup["client"]
 
 `)
@@ -229,17 +229,17 @@ def _${entity.name}_basic_setup(extra):
     # mode is on without a real override, the basic test runs against synthetic
     # IDs from the fixture and 4xx's. We surface this so the test can skip.
     _entid_env_raw = os.environ.get(
-        "${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID")
+        "${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID")
     _idmap_overridden = _entid_env_raw is not None and _entid_env_raw.strip().startswith("{")
 
     env = runner.env_override({
-        "${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID": idmap,
+        "${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID": idmap,
         "${PROJUPPER}_TEST_LIVE": "FALSE",
         "${PROJUPPER}_TEST_EXPLAIN": "FALSE",${apikeyEnvEntry}
     })
 
     idmap_resolved = helpers.to_map(
-        env.get("${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID"))
+        env.get("${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"))
     if idmap_resolved is None:
         idmap_resolved = helpers.to_map(idmap)
 `)

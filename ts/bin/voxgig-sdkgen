@@ -59,7 +59,20 @@ async function operate(options) {
     dryrun: options.dryrun,
   })
 
-  await sdkgen.action(options.args)
+  const res = await sdkgen.action(options.args)
+
+  // `doctor` is a CHECK: it must fail the process so CI can gate on it.
+  // Everything else reports success by not throwing.
+  if (res && res.report && false === res.report.ok) {
+    const r = res.report
+    KONSOLE.log(
+      `\n.sdk has drifted from the scaffold: ` +
+      `${r.forked.length} forked, ${r.edited.length} edited, ` +
+      `${r.stale.length} stale, ${r.missing.length} missing. ` +
+      `Run \`voxgig-sdkgen target add <lang>\` to resync, ` +
+      `and move any project decision into .sdk/model/.`)
+    exit(new Error('sdk drift'))
+  }
 }
 
 
@@ -137,6 +150,13 @@ function version() { return VERSION }
 
 function help() {
   return `Usage: voxgig-sdkgen [options] <action> [args...]
+
+Actions:
+  target add <lang>     Add (or resync) a language target
+  feature add <name>    Add a feature
+  doctor                Report .sdk/ drift from the scaffold; exits non-zero
+                        when a component is forked, a template master edited,
+                        or a stale file left behind
 
 Options:
   -h, --help            Show this help message

@@ -6,7 +6,7 @@ import {
   collectDeps,
   pkgDescription,
   keywords,
-  repoInfo,
+  repoInfo, packageName
 } from '@voxgig/sdkgen'
 
 
@@ -32,7 +32,7 @@ const Package = cmp(async function Package(props: any) {
   // Generate composer.json
   File({ name: 'composer.json' }, () => {
     Content(`{
-  "name": "${ns}/${pkgBase}",
+  "name": "${packageName(model, 'php')}",
   "description": "${pkgDescription(model, 'php')}",
   "type": "library",
   "keywords": [${kw}],

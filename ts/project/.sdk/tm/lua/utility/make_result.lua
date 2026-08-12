@@ -24,21 +24,17 @@ local function make_result_util(ctx)
 
   utility.transform_response(ctx)
 
+  -- Every operation resolves to PLAIN records — load, create, update and
+  -- list alike. `list` used to be the outlier: it wrapped each record in
+  -- an entity instance, so the same record came back with a different
+  -- type, a different key order and an extra marker depending on which
+  -- call produced it. Any consumer touching both paths had to normalise
+  -- defensively, and feeding a wrapped record into a host framework's own
+  -- metadata silently produced wrong entities with no error at all. A
+  -- missing or empty list still normalises to an empty list.
   if op.name == "list" then
     local resdata = result.resdata
-    result.resdata = {}
-
-    if resdata ~= nil and type(resdata) == "table" and entity ~= nil then
-      local entities = {}
-      for _, entry in ipairs(resdata) do
-        local ent = entity:make()
-        if type(entry) == "table" then
-          ent:data_set(entry)
-        end
-        table.insert(entities, ent)
-      end
-      result.resdata = entities
-    end
+    result.resdata = (type(resdata) == "table") and resdata or {}
   end
 
   if ctx.ctrl.explain ~= nil then

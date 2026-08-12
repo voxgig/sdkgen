@@ -34,3 +34,12 @@ main: kit: target: ocaml: publish: {
     vault: { alias: 'opam', env: 'OPAM_PUBLISH_TOKEN' }
   }
 }
+
+
+# Feature source is NOT trimmed to the model's selection here: every
+# feature lives inside a single generated module (sdk_features.ml), not in
+# per-feature source files, so there is nothing per-feature to leave out.
+# Trimming waits on that module becoming model-driven.
+main: kit: target: ocaml: feature: {
+  trim: false
+}

@@ -35,3 +35,13 @@ main: kit: target: c: publish: {
     vault: { alias: 'none', env: 'NONE' }
   }
 }
+
+
+# Feature source may be trimmed to the model's selection. The one template
+# needing the COMPLETE set is the cross-feature test suite, which calls
+# every feature_*_new() — so it is dropped alongside the features it
+# exercises whenever the set is trimmed.
+main: kit: target: c: feature: {
+  trim: true
+  fullset: ['tests/feature_test.c']
+}

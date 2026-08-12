@@ -5,6 +5,7 @@ const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
 const opShape_1 = require("../helpers/opShape");
+const opExample_1 = require("../helpers/opExample");
 const canonType_1 = require("../helpers/canonType");
 const naming_1 = require("../helpers/naming");
 const packageMeta_1 = require("../helpers/packageMeta");
@@ -209,11 +210,19 @@ ${aboutMd.trim()}
             // only remove (or nothing), the op line is omitted entirely.
             const primaryOp = (0, opShape_1.entityPrimaryOp)(exEnt);
             let exCall = '';
+            // A `list()` on a NESTED entity needs its parent path params — the
+            // quickstart used to emit `client.Moon().list()` for an entity at
+            // `/planet/{planet_id}/moon`, which 404s against a live server from a
+            // half-built URL. The model knows which params are required; matchArg
+            // renders exactly those.
+            const exIdField = (0, opShape_1.entityIdField)(exEnt);
+            const exListArg = (0, opExample_1.matchArg)('ts', exEnt, 'list', exIdField, (0, opExample_1.idLiteral)(exEnt, 'list', exIdField));
+            const exLoadArg = (0, opExample_1.matchArg)('ts', exEnt, 'load', exIdField, (0, opExample_1.idLiteral)(exEnt, 'load', exIdField));
             if ('list' === primaryOp) {
-                exCall = `const items = await client.${ex}().list()`;
+                exCall = `const items = await client.${ex}().list(${exListArg})`;
             }
             else if ('load' === primaryOp) {
-                exCall = `const ${exLower} = await client.${ex}().load()`;
+                exCall = `const ${exLower} = await client.${ex}().load(${exLoadArg})`;
             }
             else if ('create' === primaryOp || 'update' === primaryOp) {
                 const exIdF = (0, opShape_1.entityIdField)(exEnt);
@@ -389,10 +398,11 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
                 // Never emit a blank description cell: fall back to an ops-derived line.
                 const entdesc = entityDesc[ent.name] || ent.short || ent.desc ||
                     `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`;
-                const points = (0, jostraca_1.each)(ops).map((op) => op.points ? (0, jostraca_1.each)(op.points) : []).flat();
-                const path = points.length > 0
-                    ? points[0].orig || ''
-                    : '';
+                // The entity's canonical route — never a folded-in custom action.
+                // Ops iterate in sorted-key order, so this used to take `create`'s
+                // first point, and an entity with a `/{id}/forbid` action route
+                // advertised THAT as its API path.
+                const path = (0, opShape_1.entityPath)(ent);
                 (0, jostraca_1.Content)(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
 `);
             });

@@ -47,6 +47,10 @@ dynamic makeError(dynamic ctx, [dynamic err]) {
   sdkerr.result = clean(ctx, result);
   sdkerr.spec = clean(ctx, spec);
 
+  // Promote the HTTP status to the top level, so a consumer can branch on
+  // `err.status` / `err.notFound` instead of reaching into `err.result`.
+  sdkerr.status = null == result.status ? -1 : result.status;
+
   ctx.ctrl['err'] = sdkerr;
 
   // Fire PreUnexpected so observability features (metrics, telemetry, audit,

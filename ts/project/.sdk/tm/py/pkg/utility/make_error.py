@@ -53,6 +53,10 @@ def make_error_util(ctx, err):
     sdk_err.result = ctx.utility.clean(ctx, result)
     sdk_err.spec = ctx.utility.clean(ctx, spec)
 
+    # Promote the HTTP status to the top level, so a consumer can branch on
+    # `err.status` / `err.not_found` instead of reaching into `err.result`.
+    sdk_err.status = -1 if result.status is None else result.status
+
     if isinstance(err, ProjectNameError):
         sdk_err.code = err.code
 

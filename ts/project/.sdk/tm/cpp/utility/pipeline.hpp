@@ -771,24 +771,15 @@ inline ResultPtr makeResult(CtxPtr ctx) {
 
   utility->transformResponse(ctx);
 
+  // Every operation resolves to PLAIN records — load, create, update and
+  // list alike. `list` used to be the outlier in the donor languages: it
+  // wrapped each record in an entity instance, so the same record came
+  // back with a different type, a different key order and an extra marker
+  // depending on which call produced it. A missing or empty list still
+  // normalises to an empty list.
   if (op->name == "list") {
-    Value resdata = result->resdata;
-    result->resdata = vlist();
-
-    if (resdata.is_list() && !resdata.as_list()->empty() && entity != nullptr) {
-      // The java donor wraps each item into an Entity object; C++ Value
-      // cannot hold entity instances, so the list result carries the item
-      // data maps (entityListToData treats a map item as its own data).
-      // Entities are still constructed + data()-loaded so hooks fire and
-      // per-item side effects match the donor.
-      Value entities = vlist();
-      for (const auto& entry : *resdata.as_list()) {
-        EntityPtr ent = entity->make();
-        if (entry.is_map()) ent->data(entry);
-        entities.as_list()->push_back(entry);
-        (void)ent;
-      }
-      result->resdata = entities;
+    if (!result->resdata.is_list()) {
+      result->resdata = vlist();
     }
   }
 

@@ -18,8 +18,39 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
   // `load` on an op-less entity like Cloudsmith's `Abort`.
   const { entity: exampleEntity, primaryOp } = pickExampleEntity(entity)
 
+  // The mock SEEDS NOTHING on its own.
+  //
+  // `SDK.test()` with no argument used to be shown alongside "populated with
+  // mock data" — and returned an empty array. The seed shape
+  // (`{ entity: { <name>: { <id>: {...} } } }`) was documented nowhere; the
+  // only way to find it was to read TestFeature.ts. Offline test mode is a
+  // headline feature of these SDKs, so its one worked example has to run.
+  const seedEntity = exampleEntity ? nom(exampleEntity, 'name') : ''
+  const seedFields = exampleEntity ?
+    opRequestShape(exampleEntity, 'create').items
+      .filter((it: any) => !it.optional)
+      .slice(0, 3) : []
+
+  const seedId = 'test01'
+  const seedBody = [
+    `${jsKey('id')}: '${seedId}'`,
+    ...seedFields
+      .filter((it: any) => 'id' !== it.name)
+      .map((it: any) => `${jsKey(it.name)}: ${exampleValue(
+        exampleEntity, exampleEntity.op && exampleEntity.op.create, it.name,
+        'example_' + it.name)}`),
+  ].join(', ')
+
   Content(`\`\`\`ts
-const client = ${model.const.Name}SDK.test()
+// The offline mock starts EMPTY — seed it with the records the test needs.
+// Shape: { entity: { <entity-name>: { <id>: <record> } } }
+const client = ${model.const.Name}SDK.test({
+  entity: {
+    ${seedEntity}: {
+      ${seedId}: { ${seedBody} },
+    },
+  },
+})
 `)
 
   if (exampleEntity && primaryOp) {

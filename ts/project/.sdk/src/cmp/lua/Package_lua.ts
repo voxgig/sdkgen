@@ -6,7 +6,7 @@ import {
   collectDeps,
   pkgDescription,
   keywords,
-  repoInfo,
+  repoInfo, packageName
 } from '@voxgig/sdkgen'
 
 
@@ -26,7 +26,7 @@ const Package = cmp(async function Package(props: any) {
   // (`${model.name}_sdk`) used by `require` is unchanged.
   const ns = model.origin || 'voxgig-sdk'
   const pkgBase = ns.endsWith('-sdk') ? model.name : `${model.name}-sdk`
-  const rockName = `${ns}-${pkgBase}`
+  const rockName = packageName(model, 'lua')
   const { repoUrl, issuesUrl } = repoInfo(model)
   const labels = keywords(model).map((k) => `"${k}"`).join(', ')
 
