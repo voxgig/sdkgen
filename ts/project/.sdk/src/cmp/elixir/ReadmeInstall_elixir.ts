@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -16,7 +16,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 \`\`\`elixir
 def deps do
   [
-    {:${app}, "~> 0.0.1"}
+    {:${app}, "~> ${packageVersion(model, target.name)}"}
   ]
 end
 \`\`\`

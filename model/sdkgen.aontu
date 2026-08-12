@@ -148,6 +148,22 @@ main: kit: target: &: {
   # tags) simply leave `registry` unset — they are implicitly pending
   # until their `<target>/vX.Y.Z` tag exists.
   publish: {
+    # The SDK's OWN release version — what the generated manifest declares
+    # and what the port's Makefile tags (`<target>/v<version>`).
+    #
+    # Generated output is overwritten, so a version hand-edited into
+    # package.json / pyproject.toml / VERSION is lost on the next
+    # regeneration. It was, repeatedly: every manifest emitter hardcoded
+    # '0.0.1', so a project that had published 0.0.2 got its manifest reset
+    # and only the 3-way merge (which sdkgen turns off, see
+    # docs/explanation/regeneration-overwrite.md) was hiding it. Declare the
+    # version here and every port reads the same value.
+    #
+    # Per TARGET, not per SDK: ports publish to different registries on
+    # different clocks, and a Python release should not have to move the
+    # npm version.
+    version: *'0.0.1' | string
+
     # Git release tag (all ports).
     tag: {
       active: *true | boolean

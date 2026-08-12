@@ -7,6 +7,7 @@ import {
   pkgDescription,
   keywords,
   repoInfo,
+  packageVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -39,7 +40,7 @@ const Package = cmp(async function Package(props: any) {
     Content(`name: ${dartPackageName(model)}
 description: >-
   ${pkgDescription(model, target.name)}
-version: 0.0.1
+version: ${packageVersion(model, target.name)}
 homepage: ${repoUrl}
 repository: ${repoUrl}
 issue_tracker: ${issuesUrl}

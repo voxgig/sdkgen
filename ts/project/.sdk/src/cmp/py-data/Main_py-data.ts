@@ -6,6 +6,7 @@ import {
   collectDeps, pkgDescription, keywords, repoInfo, envName, apiName,
   packageName, registryState, serverVariables,
   SdkGenError,
+  packageVersion,
 } from '@voxgig/sdkgen'
 
 import {
@@ -147,7 +148,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "${distName}"
-version = "0.0.1"
+version = "${packageVersion(model, target.name)}"
 description = "${pkgDescription(model, 'py-data')}"
 readme = "README.md"
 license = "MIT"

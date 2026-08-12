@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion } from '@voxgig/sdkgen'
 
 import { mavenGroupId } from './utility_scala'
 
@@ -15,13 +15,13 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
     Content(`Add the dependency with scala-cli:
 
 \`\`\`scala
-//> using dep "${groupId}:${artifactId}_3:0.0.1"
+//> using dep "${groupId}:${artifactId}_3:${packageVersion(model, target.name)}"
 \`\`\`
 
 Or, with sbt:
 
 \`\`\`scala
-libraryDependencies += "${groupId}" %% "${artifactId}" % "0.0.1"
+libraryDependencies += "${groupId}" %% "${artifactId}" % "${packageVersion(model, target.name)}"
 \`\`\`
 
 Or build from a source checkout — the SDK is a plain scala-cli project:

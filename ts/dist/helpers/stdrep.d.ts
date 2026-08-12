@@ -1,2 +1,3 @@
 declare function ensureStdrep(ctx$: any): any;
-export { ensureStdrep, };
+declare function templateReplacements(model: any, tname: string): Record<string, string>;
+export { ensureStdrep, templateReplacements, };

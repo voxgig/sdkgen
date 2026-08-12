@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion } from '@voxgig/sdkgen'
 
 import { gradleGroup } from './utility_kotlin'
 
@@ -16,7 +16,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
 \`\`\`kotlin
 dependencies {
-    implementation("${group}:${artifactId}:0.0.1")
+    implementation("${group}:${artifactId}:${packageVersion(model, target.name)}")
 }
 \`\`\`
 

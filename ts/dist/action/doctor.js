@@ -39,6 +39,7 @@ const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
+const stdrep_1 = require("../helpers/stdrep");
 const target_1 = require("./target");
 // jostraca's Copy walk skips these (IGNORED_RE in CopyOp) — editor backups and
 // deliberately-disabled templates never reach a project, so they are not drift.
@@ -190,7 +191,7 @@ function checkTarget(actx, resolved, report) {
         {
             project: node_path_1.default.join(root, 'tm', tname),
             scaffold: node_path_1.default.join(tfolder, 'tm', torigname),
-            replace: { ProjectName: model.const.Name },
+            replace: (0, stdrep_1.templateReplacements)(model, tname),
             kind: 'edited',
         },
     ];

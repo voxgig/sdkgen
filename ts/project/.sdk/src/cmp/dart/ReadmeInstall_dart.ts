@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion } from '@voxgig/sdkgen'
 
 import { dartPackageName } from './Package_dart'
 
@@ -19,7 +19,7 @@ Or add it to your \`pubspec.yaml\`:
 
 \`\`\`yaml
 dependencies:
-  ${pkg}: ^0.0.1
+  ${pkg}: ^${packageVersion(model, target.name)}
 \`\`\`
 
 `)
@@ -39,7 +39,7 @@ dependencies:
     git:
       url: ${repoUrl}
       path: ${target.name}
-      ref: ${target.name}/v0.0.1
+      ref: ${target.name}/v${packageVersion(model, target.name)}
 \`\`\`
 
 Or depend on a local source checkout:

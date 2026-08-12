@@ -5,7 +5,8 @@ import {
   cmp,
   collectDeps,
   pkgDescription,
-  repoInfo, packageName
+  repoInfo, packageName,
+  packageVersion
 } from '@voxgig/sdkgen'
 
 
@@ -56,7 +57,7 @@ gemspec
 
     Content(`Gem::Specification.new do |spec|
   spec.name          = "${gemName}"
-  spec.version       = "0.0.1"
+  spec.version       = "${packageVersion(model, target.name)}"
   spec.authors       = ["Voxgig"]
   spec.summary       = "${pkgDescription(model, 'rb')}"
   spec.description   = "${pkgDescription(model, 'rb')}"

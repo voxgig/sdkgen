@@ -5,6 +5,7 @@ import {
   cmp,
   pkgDescription,
   repoInfo,
+  packageVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -17,6 +18,7 @@ import type {
 // third-party runtime deps, so the SDK ships with none either.
 const Package = cmp(async function Package(props: any) {
   const ctx$ = props.ctx$
+  const target = props.target
   const model: Model = ctx$.model
 
   const Name = model.const.Name
@@ -32,7 +34,7 @@ const Package = cmp(async function Package(props: any) {
   def project do
     [
       app: :${app},
-      version: "0.0.1",
+      version: "${packageVersion(model, target.name)}",
       elixir: "~> 1.14",
       description: ${JSON.stringify(pkgDescription(model, 'elixir'))},
       elixirc_paths: elixirc_paths(Mix.env()),

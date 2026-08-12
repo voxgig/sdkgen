@@ -6,7 +6,8 @@ import {
   collectDeps,
   pkgDescription,
   keywords,
-  repoInfo, packageName
+  repoInfo, packageName,
+  packageVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -32,7 +33,7 @@ const Package = cmp(async function Package(props: any) {
 
   // Single source for the version so the rockspec version and the source.tag
   // (which `make publish` pushes as lua/v<rockVersion>) can never drift apart.
-  const rockVersion = '0.0.1'
+  const rockVersion = packageVersion(model, target.name)
 
   File({ name: model.name + '.rockspec' }, () => {
     Content(`package = "${rockName}"

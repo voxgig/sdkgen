@@ -4,6 +4,7 @@ import {
   File,
   cmp,
   collectDeps,
+  packageVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -53,7 +54,7 @@ const Package = cmp(async function Package(props: any) {
 }
 
 group = "${group}"
-version = "0.0.1"
+version = "${packageVersion(model, target.name)}"
 
 repositories {
     mavenCentral()

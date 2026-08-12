@@ -14,6 +14,8 @@ import { showChanges } from '@voxgig/util'
 
 import { showDryrun } from '../helpers/dryrun'
 
+import { templateReplacements } from '../helpers/stdrep'
+
 import { getelem } from '@voxgig/struct'
 
 import { Aontu } from 'aontu'
@@ -209,11 +211,8 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
         Copy({
           from: tfolder + '/tm/' + torigname,
           exclude: trim,
-          replace: {
-
-            // TODO: standard replacements
-            ProjectName: model.const.Name,
-          }
+          // Shared with doctor, which re-applies them before comparing.
+          replace: templateReplacements(model, tname),
         })
       })
 

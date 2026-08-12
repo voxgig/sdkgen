@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion } from '@voxgig/sdkgen'
 
 import { mavenGroupId } from './utility_java'
 
@@ -18,7 +18,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 <dependency>
   <groupId>${groupId}</groupId>
   <artifactId>${artifactId}</artifactId>
-  <version>0.0.1</version>
+  <version>${packageVersion(model, target.name)}</version>
 </dependency>
 \`\`\`
 

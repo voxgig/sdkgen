@@ -106,6 +106,22 @@ function goModule(model: any, target: string): string {
 }
 
 
+// The SDK's OWN release version, for this target's manifest and release tag.
+//
+//   main: kit: target: ts: publish: version: '0.0.2'
+//
+// Defaults to '0.0.1' (the schema default), which is what every manifest
+// emitter used to HARDCODE. That is why regeneration reset a published
+// version: the value lived only in the generated output, so overwriting the
+// output threw it away, and a project that had shipped 0.0.2 silently got a
+// 0.0.1 manifest back. Declaring it in the model makes the manifest, the
+// install docs and the port's VERSION file agree, and survive.
+function packageVersion(model: any, target: string): string {
+  const declared = model?.main?.[KIT]?.target?.[target]?.publish?.version
+  return null != declared && '' !== declared ? String(declared) : '0.0.1'
+}
+
+
 // The Go language version for a go-family target's go.mod.
 //
 //   main: kit: target: go: module: goversion: '1.23'
@@ -376,4 +392,5 @@ export {
   goModule,
   goVersion,
   goPackageIdent,
+  packageVersion,
 }

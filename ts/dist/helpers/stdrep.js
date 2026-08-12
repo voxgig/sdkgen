@@ -9,6 +9,7 @@
 // copied, so an old project gets them without touching its scaffold.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ensureStdrep = ensureStdrep;
+exports.templateReplacements = templateReplacements;
 const packageMeta_1 = require("./packageMeta");
 // PROJECTENV — the env-var base for this SDK's `<BASE>_TEST_LIVE`,
 // `<BASE>_APIKEY` and friends.
@@ -25,5 +26,22 @@ function ensureStdrep(ctx$) {
         stdrep.PROJECTENV = (0, packageMeta_1.envName)(ctx$.model);
     }
     return stdrep;
+}
+// The substitutions `target add` applies when it copies a target's TEMPLATE
+// tree (tm/<t>).
+//
+// ONE definition, because two consumers must agree exactly: `target add`
+// writes the files, and `doctor` re-applies these to the scaffold before
+// comparing, to tell a substitution artefact from a real hand-edit. When
+// PROJECTVERSION was added to the writer alone, every project's VERSION file
+// immediately read as an edited master.
+function templateReplacements(model, tname) {
+    return {
+        ProjectName: model?.const?.Name,
+        // The port's release version, read by its Makefile to build the
+        // `<target>/v<version>` tag. It comes from the same model field the
+        // generated manifest uses, so the tag and the package cannot disagree.
+        PROJECTVERSION: (0, packageMeta_1.packageVersion)(model, tname),
+    };
 }
 //# sourceMappingURL=stdrep.js.map

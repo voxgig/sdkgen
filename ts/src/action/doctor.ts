@@ -44,6 +44,8 @@ import type {
 
 import { SdkGenError } from '../utility'
 
+import { templateReplacements } from '../helpers/stdrep'
+
 import {
   resolveTarget,
   trimFeatures,
@@ -266,7 +268,7 @@ function checkTarget(actx: ActionContext, resolved: any, report: DoctorReport) {
       {
         project: Path.join(root, 'tm', tname),
         scaffold: Path.join(tfolder, 'tm', torigname),
-        replace: { ProjectName: (model as any).const.Name },
+        replace: templateReplacements(model, tname),
         kind: 'edited',
       },
     ]

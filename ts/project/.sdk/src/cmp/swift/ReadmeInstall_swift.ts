@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -11,7 +11,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
 \`\`\`swift
 dependencies: [
-    .package(url: "<repo-url>", from: "0.0.1"),
+    .package(url: "<repo-url>", from: "${packageVersion(model, target.name)}"),
 ],
 \`\`\`
 
@@ -39,7 +39,7 @@ your \`Package.swift\`:
 \`\`\`swift
 dependencies: [
     // From the git release tag:
-    .package(url: "<repo-url>", exact: "0.0.1"),
+    .package(url: "<repo-url>", exact: "${packageVersion(model, target.name)}"),
 ],
 \`\`\`
 

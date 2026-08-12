@@ -11,6 +11,7 @@ import {
   repoInfo,
   PUBLISHER,
   PUBLISHER_URL,
+  packageVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -54,7 +55,7 @@ const Package = cmp(async function Package(props: any) {
 
   const pkg = {
     name: packageName(model, 'npm'),
-    version: `0.0.1`,
+    version: packageVersion(model, target.name),
     description: pkgDescription(model, target.name),
     keywords: keywords(model),
     homepage: `${repoUrl}#readme`,

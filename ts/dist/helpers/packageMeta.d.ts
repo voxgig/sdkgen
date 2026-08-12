@@ -16,6 +16,7 @@ declare function repoInfo(model: any): {
     releasesUrl: string;
 };
 declare function goModule(model: any, target: string): string;
+declare function packageVersion(model: any, target: string): string;
 declare function goVersion(model: any, target: string, fallback?: string): string;
 declare function goPackageIdent(model: any, target: string): string;
 declare function registryState(model: any, target: string): 'tag' | 'pending' | 'active' | 'inactive';
@@ -30,4 +31,4 @@ declare function nonAffiliation(model: any): string;
 declare function keywords(model: any): string[];
 declare function envToken(name: any): string;
 declare function envName(model: any): string;
-export { PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, repoInfo, apiName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, envName, envToken, goModule, goVersion, goPackageIdent, };
+export { PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, repoInfo, apiName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, };

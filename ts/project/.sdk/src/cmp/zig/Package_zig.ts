@@ -3,6 +3,7 @@ import {
   Content,
   File,
   cmp,
+  packageVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -35,6 +36,7 @@ import { zigModuleName } from './utility_zig'
 // pin there.
 const Package = cmp(async function Package(props: any) {
   const ctx$ = props.ctx$
+  const target = props.target
   const model: Model = ctx$.model
 
   const name = zigModuleName(model)
@@ -42,7 +44,7 @@ const Package = cmp(async function Package(props: any) {
   File({ name: 'build.zig.zon' }, () => {
     Content(`.{
     .name = "${name}",
-    .version = "0.0.1",
+    .version = "${packageVersion(model, target.name)}",
     .dependencies = .{},
     .paths = .{
         "src",

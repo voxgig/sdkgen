@@ -12,6 +12,7 @@ const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const util_1 = require("@voxgig/util");
 const dryrun_1 = require("../helpers/dryrun");
+const stdrep_1 = require("../helpers/stdrep");
 const struct_1 = require("@voxgig/struct");
 const aontu_1 = require("aontu");
 const types_1 = require("../types");
@@ -148,10 +149,8 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 (0, jostraca_1.Copy)({
                     from: tfolder + '/tm/' + torigname,
                     exclude: trim,
-                    replace: {
-                        // TODO: standard replacements
-                        ProjectName: model.const.Name,
-                    }
+                    // Shared with doctor, which re-applies them before comparing.
+                    replace: (0, stdrep_1.templateReplacements)(model, tname),
                 });
             });
             log.info({

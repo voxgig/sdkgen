@@ -430,6 +430,49 @@ describe('generate', () => {
   //
   // Twelve go components re-derived that path inline, so this asserts on the
   // OUTPUT rather than on the helper: one wrong copy is still a wrong SDK.
+  // The SDK's OWN release version. Every manifest emitter used to hardcode
+  // '0.0.1', so the value lived only in generated output — and generation
+  // OVERWRITES, so a project that had published 0.0.2 got a 0.0.1 manifest
+  // back on its next regeneration. Only the 3-way merge (which sdkgen turns
+  // off) had been hiding it, by conflicting over that very line.
+  test('a declared version reaches every manifest', async () => {
+    const TARGETS = [
+      'csharp', 'dart', 'elixir', 'haskell', 'java', 'js', 'kotlin', 'lean',
+      'lua', 'ocaml', 'py', 'rb', 'rust', 'ts', 'zig',
+    ]
+    const declared = TARGETS
+      .map((t) => `main: kit: target: ${t}: publish: version: '4.5.6'`)
+      .join('\n')
+
+    const out = await generate(TARGETS, undefined, declared)
+
+    // The manifest each ecosystem actually publishes from.
+    const MANIFEST: Record<string, string> = {
+      csharp: 'DemoSDK.csproj', dart: 'pubspec.yaml', elixir: 'mix.exs',
+      haskell: 'voxgig-demo-sdk.cabal', java: 'pom.xml', js: 'package.json',
+      kotlin: 'build.gradle.kts', lean: 'lakefile.toml', lua: 'demo.rockspec',
+      ocaml: 'voxgig-demo-sdk.opam', py: 'pyproject.toml', rb: 'Demo_sdk.gemspec',
+      rust: 'Cargo.toml', ts: 'package.json', zig: 'build.zig.zon',
+    }
+
+    const missing: string[] = []
+    for (const t of TARGETS) {
+      const file = findFile(out, t + '/' + MANIFEST[t])
+      if (null == file) { missing.push(`${t}: no ${MANIFEST[t]} generated`); continue }
+      if (!file.includes('4.5.6')) {
+        missing.push(`${t}: ${MANIFEST[t]} does not carry the declared version`)
+      }
+      if (/(?:^|[^.\d])0\.0\.1(?![.\d])/.test(file)) {
+        missing.push(`${t}: ${MANIFEST[t]} still hardcodes 0.0.1`)
+      }
+    }
+
+    deepStrictEqual(missing, [],
+      'the declared publish version did not reach every manifest:\n  ' +
+      missing.join('\n  '))
+  })
+
+
   test('a declared repo path drives every published identity', async () => {
     const out = await generate(['go', 'ts'], undefined,
       "main: kit: repo: path: 'acme/legacy-client-sdk'")
