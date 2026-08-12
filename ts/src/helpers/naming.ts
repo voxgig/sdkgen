@@ -209,16 +209,76 @@ function safeVarName(name: string, lang: string): string {
 }
 
 
+// Members the generated PHP SDK class already declares (see the php target's
+// fragment/Main.fragment.php). An entity accessor or backing field reusing one
+// is a FATAL redeclare — PHP will not parse the file, so the SDK yields zero
+// working tests rather than a degraded one.
+//
+// PHP method names are CASE-INSENSITIVE at declaration time, hence the
+// lowercased comparison: an entity `graph_ql` derives the accessor `GraphQl()`,
+// the same declaration as the SDK's own `graphql()`.
+//
+// This lives here, not in the php component, because the ACCESSOR NAME has to
+// agree across the SDK class and every doc/example component that calls it.
+// It did not: MainEntity_php emitted `Test_()` for an entity named `test`
+// while eight readme components emitted `Test()`, so the generated examples
+// called the static test-mode constructor and died with
+// "Call to undefined method <Name>SDK::load()".
+const PHP_SDK_METHODS = new Set([
+  'construct', '__construct', 'direct', 'get_root_ctx', 'get_utility',
+  'graphql', 'op_allowed', 'op_denied', 'options_map', 'prepare',
+  'raw_request', 'test',
+])
+
+const PHP_SDK_FIELDS = new Set(['rootctx', 'utility', 'client', 'entctx'])
+
+
+/** The PHP accessor method for an entity: `$client-><Name>()`. */
+function phpEntityAccessor(Name: string): string {
+  return PHP_SDK_METHODS.has(String(Name).toLowerCase()) ? Name + '_' : Name
+}
+
+
+/** The PHP backing field for an entity accessor: `$this->_<name>`. */
+function phpEntityField(name: string): string {
+  return PHP_SDK_FIELDS.has(String(name).toLowerCase()) ? name + '_' : name
+}
+
+
+// Symbols a doc example CALLS, which a same-named example variable would
+// shadow. The variable is syntactically fine; the example then fails at
+// RUNTIME, which is far harder to read than a compile error:
+//
+//   const consoles = await client.Console().list()
+//   for (const console of consoles) { console.log(console) }
+//   -> "console.log is not a function"   (nexarda, an API with a Console entity)
+//
+// Only languages where a plain variable can capture the symbol are listed.
+// php is absent on purpose: its variables carry a `$` sigil, so `$echo` can
+// never shadow `echo`.
+const EXAMPLE_GLOBALS: Record<string, string[]> = {
+  ts: ['console', 'process', 'globalThis'],
+  js: ['console', 'process', 'globalThis'],
+  py: ['print'],
+  rb: ['puts'],
+  lua: ['print'],
+  go: ['fmt'],
+}
+
+
 // A variable name for a doc EXAMPLE entity. Doc examples bind the SDK instance
 // to `client` (e.g. `const client = ...SDK.test()`), so an entity whose
 // lowercased name is also `client` — an API with a `Client` entity — would
 // shadow it: `const client = client.Client()...` is self-referential (TS2448/
 // TS7022) and breaks the readme_examples type-check. Append `_` to keep the
-// example variable distinct from the SDK instance. Also applies the normal
+// example variable distinct from the SDK instance. The same applies to any
+// symbol the example itself calls (EXAMPLE_GLOBALS). Also applies the normal
 // language-reserved-word guard.
 function exampleVarName(name: string, lang: string): string {
   const v = safeVarName(name, lang)
-  return 'client' === v ? v + '_' : v
+  if ('client' === v) return v + '_'
+  if ((EXAMPLE_GLOBALS[lang] || []).includes(v)) return v + '_'
+  return v
 }
 
 
@@ -256,6 +316,8 @@ export {
   isReservedName,
   safeVarName,
   exampleVarName,
+  phpEntityAccessor,
+  phpEntityField,
   isRbCoreConstant,
   rbSafeTypeName,
   isSwiftSdkType,
