@@ -43,6 +43,11 @@ struct PlEntity : public Entity {
     return Value::undef();
   }
   Value match(const Value& arg = Value::undef()) override { return Value::undef(); }
+
+  // Every operation resolves to the entity; `remove` marks it. The fake has
+  // to satisfy the same interface the real entities do.
+  void markDeleted() override {}
+  bool deleted() override { return false; }
 };
 
 static std::string errCodeOf(const std::function<void()>& fn) {

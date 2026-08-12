@@ -347,6 +347,12 @@ public:
   virtual EntityPtr make() = 0;
   virtual Value data(const Value& arg = Value::undef()) = 0;
   virtual Value match(const Value& arg = Value::undef()) = 0;
+
+  // `remove` resolves to the entity, marked. The instance KEEPS the data it
+  // held - a caller can still read what was deleted - but it is no longer a
+  // live record.
+  virtual void markDeleted() = 0;
+  virtual bool deleted() = 0;
 };
 
 // ---- Feature contract -------------------------------------------------
@@ -575,22 +581,33 @@ public:
 
 // ---- SdkEntity contract -----------------------------------------------
 
+class SdkEntity;
+using SdkEntityPtr = std::shared_ptr<SdkEntity>;
+
+// Every operation resolves to the ENTITY, not the raw data - `list` to a
+// vector of them, one per record. The record is reached through `data()`.
+// See AGENTS.md "Entity operations return ENTITIES".
+//
+// `Value` cannot carry an entity: it is a closed data union, and adding a
+// variant to a general-purpose struct library to hold SDK objects would be
+// wrong. So the CONTRACT lives in these signatures instead.
 class SdkEntity : public Entity {
 public:
-  virtual Value load(const Value& reqmatch, const Value& ctrl) = 0;
-  virtual Value list(const Value& reqmatch, const Value& ctrl) = 0;
-  virtual Value create(const Value& reqdata, const Value& ctrl) = 0;
-  virtual Value update(const Value& reqdata, const Value& ctrl) = 0;
-  virtual Value remove(const Value& reqmatch, const Value& ctrl) = 0;
+  virtual SdkEntityPtr load(const Value& reqmatch, const Value& ctrl) = 0;
+  virtual std::vector<SdkEntityPtr> list(const Value& reqmatch, const Value& ctrl) = 0;
+  virtual SdkEntityPtr create(const Value& reqdata, const Value& ctrl) = 0;
+  virtual SdkEntityPtr update(const Value& reqdata, const Value& ctrl) = 0;
+  virtual SdkEntityPtr remove(const Value& reqmatch, const Value& ctrl) = 0;
 };
-
-using SdkEntityPtr = std::shared_ptr<SdkEntity>;
 
 // ---- EntityBase (shared entity runtime + runOp) -----------------------
 
-class EntityBase : public SdkEntity {
+class EntityBase : public SdkEntity,
+                   public std::enable_shared_from_this<EntityBase> {
 public:
   std::string name_ = "";
+  // Set once a successful `remove` resolves on this instance.
+  bool deleted_ = false;
   SdkClient* client = nullptr;
   UtilityPtr utility;
   Value entopts = Value::undef();
@@ -601,6 +618,14 @@ public:
   EntityBase(const std::string& name, SdkClient* client_, const Value& entopts_);
 
   std::string getName() override { return name_; }
+
+  void markDeleted() override { deleted_ = true; }
+  bool deleted() override { return deleted_; }
+
+  // The handle for this instance, as the ops return it.
+  SdkEntityPtr self() {
+    return std::static_pointer_cast<SdkEntity>(shared_from_this());
+  }
 
   Value data(const Value& arg = Value::undef()) override;
   Value match(const Value& arg = Value::undef()) override;
