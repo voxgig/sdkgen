@@ -381,7 +381,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 		if err != nil {
 			t.Fatalf("create failed: %v", err)
 		}
-		${datavar} = core.ToMapAny(${datavar}Result)
+		${datavar} = core.ToMapAny(entityData(${datavar}Result))
 		if ${datavar} == nil {
 			t.Fatal("expected create result to be a map")
 		}
@@ -546,7 +546,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 		if err != nil {
 			t.Fatalf("update failed: %v", err)
 		}
-		${resdatavar} := core.ToMapAny(${resdatavar}Result)
+		${resdatavar} := core.ToMapAny(entityData(${resdatavar}Result))
 		if ${resdatavar} == nil {
 			t.Fatal("expected update result to be a map")
 		}
@@ -621,7 +621,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 		if err != nil {
 			t.Fatalf("load failed: %v", err)
 		}
-		${datavar}LoadResult := core.ToMapAny(${datavar}Loaded)
+		${datavar}LoadResult := core.ToMapAny(entityData(${datavar}Loaded))
 		if ${datavar}LoadResult == nil {
 			t.Fatal("expected load result to be a map")
 		}

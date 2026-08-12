@@ -63,6 +63,11 @@ class ProjectNameEntityBase<D = any> {
   // True once `remove` has succeeded on this instance. `remove` resolves to
   // the entity like every other operation, so this is how a caller tells a
   // removed record from a live one.
+  markDeleted(this: any): void {
+    this._deleted = true
+  }
+
+
   deleted(this: any): boolean {
     return true === this._deleted
   }

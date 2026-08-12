@@ -18,27 +18,8 @@ public static partial class SdkUtility
             }
         }
 
-        // An operation resolves to the ENTITY, not the raw data. Entities are
-        // stateful: the op fragment has just absorbed resdata/resmatch into this
-        // instance, and the caller reaches the record through .data(). Two
-        // structural exceptions: `list` resolves to the ARRAY of entity
-        // instances makeResult built, and a context with no entity
-        // (direct/prepare, streaming) has nothing to return but the data. A
-        // removed entity keeps its data but is no longer live. See AGENTS.md.
         if (ctx.Result != null && ctx.Result.Ok)
         {
-            var entity = ctx.Entity;
-            var opname = ctx.Op?.Name;
-
-            if (entity != null && "list" != opname)
-            {
-                if ("remove" == opname)
-                {
-                    entity.MarkDeleted();
-                }
-                return entity;
-            }
-
             return ctx.Result.Resdata;
         }
 

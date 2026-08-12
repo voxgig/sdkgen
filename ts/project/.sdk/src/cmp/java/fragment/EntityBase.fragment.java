@@ -141,7 +141,26 @@ public abstract class EntityBase implements SdkEntity {
 
       postDone.run();
 
-      return utility.done.apply(ctx);
+      Object out = utility.done.apply(ctx);
+
+      // An operation resolves to the ENTITY, not the raw data. Entities are
+      // stateful: postDone has just absorbed resdata/resmatch into this
+      // instance, and the caller reaches the record through data(). Two
+      // structural exceptions: `list` resolves to the ARRAY of entity
+      // instances makeResult built, and a failed op with throwing disabled
+      // hands back the error payload unchanged. `remove` additionally marks
+      // the entity deleted; it KEEPS its data, so a caller can still read
+      // what was removed. See AGENTS.md "Entity operations return ENTITIES".
+      String opname = ctx.op == null ? null : ctx.op.name;
+
+      if (ctx.result != null && ctx.result.ok && !"list".equals(opname)) {
+        if ("remove".equals(opname)) {
+          this.markDeleted();
+        }
+        return this;
+      }
+
+      return out;
     }
     catch (RuntimeException err) {
       // An error already finalised by makeError (e.g. via done) must not

@@ -239,7 +239,25 @@ sub _run_op {
 
     $post_done->();
 
-    $utility->{done}->($ctx);
+    my $out = $utility->{done}->($ctx);
+
+    # An operation resolves to the ENTITY, not the raw data. Entities are
+    # stateful: post_done has just absorbed resdata/resmatch into this
+    # instance, and the caller reaches the record through data(). Two
+    # structural exceptions: `list` resolves to the ARRAY of entity
+    # instances make_result built, and a failed op with throwing disabled
+    # hands back the error payload unchanged. `remove` additionally marks
+    # the entity deleted; it KEEPS its data, so a caller can still read
+    # what was removed. See AGENTS.md "Entity operations return ENTITIES".
+    my $opname = $ctx->{op} ? $ctx->{op}{name} : undef;
+
+    if ($ctx->{result} && $ctx->{result}{ok}
+      && (!defined $opname || $opname ne 'list')) {
+      $self->mark_deleted if defined $opname && $opname eq 'remove';
+      return $self;
+    }
+
+    $out;
   };
   if (my $operr = $@) {
     # #PreUnexpected-Hook

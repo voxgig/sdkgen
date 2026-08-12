@@ -114,79 +114,31 @@ function makeCtx(opname: string, resdata: any, entity?: any) {
 }
 
 
-describe('entity operation return contract', () => {
+describe('list result shaping', () => {
 
-  const RECORD = { id: 'earth', name: 'Earth' }
-
-
-  // The defect, stated directly: these used to resolve to plain data.
-  test('load, create and update resolve to the entity', () => {
-    for (const opname of ['load', 'create', 'update']) {
-      const entity = makeEntity()
-      entity.data(RECORD)
-
-      const out: any = done(makeCtx(opname, RECORD, entity) as any)
-
-      strictEqual(out, entity, opname + ' did not resolve to the entity')
-      deepStrictEqual(out.data(), RECORD,
-        opname + ': the entity does not carry the record')
-    }
-  })
-
-
-  // `list` is the one op that resolves to a COLLECTION — of entities, one per
-  // record, which is what makeResult builds.
-  test('list resolves to an array of entity instances', () => {
+  // `list` is the one op whose result is a COLLECTION, and makeResult builds
+  // it: one entity instance per record. The op fragment then returns that
+  // array unchanged, which is why `list` is the single exception to
+  // "operations return this entity".
+  test('makeResult wraps each list record in an entity instance', () => {
+    const made: any[] = []
     const records = [{ id: 'mercury' }, { id: 'venus' }]
-    const ctx: any = makeCtx('list', records)
 
-    makeResult(ctx)
-    const out: any = done(ctx)
-
-    ok(Array.isArray(out), 'list did not resolve to an array')
-    strictEqual(out.length, 2, 'list lost records')
-
-    for (let i = 0; i < out.length; i++) {
-      ok('function' === typeof out[i].data,
-        'list element ' + i + ' is not an entity instance')
-      deepStrictEqual(out[i].data(), records[i],
-        'list element ' + i + ' does not carry its record')
+    const ctx: any = {
+      out: {}, ctrl: {},
+      op: { name: 'list', entity: 'planet' },
+      entity: { make: () => ({ data: (d: any) => made.push(d) }) },
+      spec: { step: '' },
+      result: { ok: true, resdata: records },
+      utility: { transformResponse: () => { } },
+      error: (code: string) => ({ code }),
     }
-  })
 
+    const out: any = makeResult(ctx)
 
-  // `remove` resolves to the entity too — marked as deleted, and still
-  // carrying what was removed.
-  test('remove resolves to the entity, marked as deleted', () => {
-    const entity = makeEntity()
-    entity.data(RECORD)
-
-    strictEqual(entity.deleted(), false, 'a fresh entity reports deleted')
-
-    const out: any = done(makeCtx('remove', undefined, entity) as any)
-
-    strictEqual(out, entity, 'remove did not resolve to the entity')
-    strictEqual(out.deleted(), true, 'remove did not mark the entity deleted')
-    deepStrictEqual(out.data(), RECORD,
-      'remove discarded the data — a caller can no longer see what was deleted')
-  })
-
-
-  // Only `remove` marks. A load must not leave the entity looking deleted.
-  test('no other operation marks the entity deleted', () => {
-    for (const opname of ['load', 'create', 'update']) {
-      const entity = makeEntity()
-      const out: any = done(makeCtx(opname, RECORD, entity) as any)
-      strictEqual(out.deleted(), false, opname + ' marked the entity deleted')
-    }
-  })
-
-
-  // `direct()` / `prepare()` build a context with no entity. There is nothing
-  // to return but the data, and that path must keep working.
-  test('a context with no entity resolves to the data', () => {
-    const out: any = done(makeCtx('load', RECORD, null) as any)
-    deepStrictEqual(out, RECORD)
+    strictEqual(out.resdata.length, 2, 'list lost records')
+    strictEqual(made.length, 2, 'list records were not wrapped as entities')
+    deepStrictEqual(made, records, 'the wrapped entities did not absorb the records')
   })
 
 
@@ -194,11 +146,53 @@ describe('entity operation return contract', () => {
   // must still be an array.
   test('an absent or empty list normalises to an empty array', () => {
     for (const resdata of [[], null, undefined]) {
-      const ctx: any = makeCtx('list', resdata)
-      makeResult(ctx)
-      deepStrictEqual(done(ctx), [],
+      const ctx: any = {
+        out: {}, ctrl: {},
+        op: { name: 'list', entity: 'planet' },
+        entity: { make: () => ({ data: () => { } }) },
+        spec: { step: '' },
+        result: { ok: true, resdata },
+        utility: { transformResponse: () => { } },
+        error: (code: string) => ({ code }),
+      }
+      deepStrictEqual((makeResult(ctx) as any).resdata, [],
         'list resdata ' + JSON.stringify(resdata) + ' did not normalise')
     }
+  })
+})
+
+
+// `done` is the pipeline's TERMINAL step, and it returns the result DATA.
+//
+// The entity contract lives one level up, in the op fragment: it runs `done`
+// to finish the pipeline (and to raise on failure), then returns the entity.
+// That is deliberate — `done` is also driven by `direct()`/`prepare()` and by
+// the streaming path, none of which have an entity to return, and the
+// closed-Value ports (rust, zig, c, cpp) cannot express an entity through the
+// pipeline's Value type at all.
+describe('done', () => {
+
+  function doneCtx(ok: boolean, resdata: any) {
+    return {
+      ctrl: {},
+      op: { name: 'load' },
+      result: { ok, resdata },
+      utility: {
+        makeError: () => 'ERROR',
+        struct: { delprop: (o: any, k: string) => { delete o[k] } },
+      },
+    }
+  }
+
+
+  test('returns the result data on the ok path', () => {
+    const record = { id: 'earth' }
+    deepStrictEqual(done(doneCtx(true, record) as any), record)
+  })
+
+
+  test('delegates to makeError when the result is not ok', () => {
+    strictEqual(done(doneCtx(false, undefined) as any), 'ERROR')
   })
 })
 
