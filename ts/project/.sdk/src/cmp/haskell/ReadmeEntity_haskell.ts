@@ -33,11 +33,11 @@ function hsType(type: any): string {
 
 
 const OP_DESC: Record<string, { method: string, desc: string }> = {
-  load:   { method: 'eLoad ent match ctrl',   desc: 'Load a single entity by match criteria.' },
-  list:   { method: 'eList ent match ctrl',   desc: 'List entities, optionally matching the given criteria.' },
-  create: { method: 'eCreate ent data ctrl',  desc: 'Create a new entity with the given data.' },
-  update: { method: 'eUpdate ent data ctrl',  desc: 'Update an existing entity.' },
-  remove: { method: 'eRemove ent match ctrl', desc: 'Remove the matching entity.' },
+  load:   { method: 'eLoad ent match ctrl',   desc: 'Load a single entity by match criteria. Resolves to the entity.' },
+  list:   { method: 'eList ent match ctrl',   desc: 'List entities, optionally matching the given criteria. Resolves to one entity per record.' },
+  create: { method: 'eCreate ent data ctrl',  desc: 'Create a new entity with the given data. Resolves to the entity.' },
+  update: { method: 'eUpdate ent data ctrl',  desc: 'Update an existing entity. Resolves to the entity.' },
+  remove: { method: 'eRemove ent match ctrl', desc: 'Remove the matching entity. Resolves to the entity, marked deleted.' },
 }
 
 
@@ -133,6 +133,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   match <- jo ${loadArg}
   ctrl <- emptyMap
   ${eFn} <- Sdk.eLoad ent match ctrl
+  -- The op resolves to the ENTITY; the record is inside it.
+  ${eFn}Data <- Sdk.eDataGet ${eFn}
 \`\`\`
 
 `)
@@ -145,7 +147,9 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   ent <- Sdk.${eFn} sdk VNoval
   match <- emptyMap
   ctrl <- emptyMap
+  -- One ENTITY per record.
   ${eFn}s <- Sdk.eList ent match ctrl
+  ${eFn}Datas <- mapM Sdk.eDataGet ${eFn}s
 \`\`\`
 
 `)
@@ -168,6 +172,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`]
   ctrl <- emptyMap
   ${eFn} <- Sdk.eCreate ent d ctrl
+  ${eFn}Data <- Sdk.eDataGet ${eFn}
 \`\`\`
 
 `)

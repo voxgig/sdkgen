@@ -111,11 +111,20 @@ data Entity = Entity
   , eMake    :: IO Entity
   , eDataSet :: Value -> IO ()
   , eDataGet :: IO Value
-  , eLoad    :: Value -> Value -> IO Value
-  , eList    :: Value -> Value -> IO Value
-  , eCreate  :: Value -> Value -> IO Value
-  , eUpdate  :: Value -> Value -> IO Value
-  , eRemove  :: Value -> Value -> IO Value
+  -- | Every operation resolves to the ENTITY, not the raw data — 'eList' to
+  -- one per record. The record is reached through 'eDataGet'. 'Value' cannot
+  -- carry an entity (it is a closed data union), so the CONTRACT lives in
+  -- these signatures. See AGENTS.md "Entity operations return ENTITIES".
+  , eLoad    :: Value -> Value -> IO Entity
+  , eList    :: Value -> Value -> IO [Entity]
+  , eCreate  :: Value -> Value -> IO Entity
+  , eUpdate  :: Value -> Value -> IO Entity
+  , eRemove  :: Value -> Value -> IO Entity
+  -- | 'eRemove' resolves to the entity, marked. The instance KEEPS the data
+  -- it held — a caller can still read what was deleted — but it is no longer
+  -- a live record.
+  , eDeleted     :: IORef Bool
+  , eMarkDeleted :: IO ()
   -- | stream action args callopts -> a lazy list of result items.
   , eStream  :: String -> Value -> Value -> IO [Value]
   }
