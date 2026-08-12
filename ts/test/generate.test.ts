@@ -157,7 +157,7 @@ const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data']
 // happy path a hand-written fixture reaches for:
 //
 //   planet   - full CRUD with an id: the ordinary case, and the control.
-//   current  - a SINGLETON load (`/current`): one point, no path params. It is
+//   ambient  - a SINGLETON load (`/ambient`): one point, no path params. It is
 //              named to sort FIRST by key, because several ReadmeTopQuick
 //              components take `Object.values(entity).find(active)` — the
 //              first active entity — as their one worked example. Put a
@@ -168,7 +168,7 @@ const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data']
 //   history  - LIST ONLY. No load, no create, no remove: any component that
 //              assumes an entity is loadable by id has to notice.
 //
-// planet is the only entity with BOTH list and load, so `current` and `history`
+// planet is the only entity with BOTH list and load, so `ambient` and `history`
 // between them also cover the cpp stream-test case (an entity without list).
 //
 // The Test components are FLOW-driven (`main.kit.flow.Basic<Name>Flow` tells
@@ -230,9 +230,9 @@ main: kit: entity: planet: {
 
 
 # Singleton: a load with no path params at all. There is nothing to pass it.
-main: kit: entity: current: {
+main: kit: entity: ambient: {
   alias: field: {}
-  name: "current"
+  name: "ambient"
   field: {
     temperature: { name: "temperature", kind: "field", type: "\`$NUMBER\`" }
     flow:        { name: "flow",        kind: "field", type: "\`$NUMBER\`" }
@@ -241,7 +241,7 @@ main: kit: entity: current: {
     load: {
       name: "load"
       points: [ {
-        args: {}, method: "GET", orig: "/current", parts: ["current"]
+        args: {}, method: "GET", orig: "/ambient", parts: ["ambient"]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -269,6 +269,96 @@ main: kit: entity: history: {
 }
 
 
+# RESERVED NAMES. These three entity names collide with something that
+# already exists in the generated code, and each one shipped a broken SDK:
+#
+#   utility  -> php private $_utility on the SDK class (fatal redeclare)
+#   graph_ql -> php graphql(), added by the 2.x GraphQL rollout. PHP method
+#               names are CASE-INSENSITIVE, so GraphQl() collides (fatal)
+#   console  -> the JS/TS global. A generated for (const console of ...)
+#               shadows it, and the example's own console.log then resolves
+#               to the entity: "console.log is not a function"
+#
+# The generator owns helpers for exactly this (safeVarName, isReservedName,
+# exampleVarName, entityClassName); these entities prove they are actually
+# applied, in the emitted source AND in the emitted documentation examples.
+main: kit: entity: utility: {
+  alias: field: {}
+  name: "utility"
+  field: {
+    id:   { name: "id",   kind: "field", type: "\`$STRING\`", required: true }
+    tool: { name: "tool", kind: "field", type: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        args: {}, method: "GET", orig: "/utility", parts: ["utility"]
+        transform: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: entity: graph_ql: {
+  alias: field: {}
+  name: "graph_ql"
+  field: {
+    id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
+    query: { name: "query", kind: "field", type: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        args: {}, method: "GET", orig: "/graphql", parts: ["graphql"]
+        transform: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: entity: console: {
+  alias: field: {}
+  name: "console"
+  field: {
+    id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
+    maker: { name: "maker", kind: "field", type: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        args: {}, method: "GET", orig: "/console", parts: ["console"]
+        transform: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+
+main: kit: flow: BasicUtilityFlow: {
+  entity: "utility", kind: "basic", name: "BasicUtilityFlow"
+  step: [
+    { op: "list", input: { ref: "utility_ref01", srcdatavar: "utility_ref01_data", suffix: "_dt0" } }
+  ]
+}
+
+main: kit: flow: BasicGraphQlFlow: {
+  entity: "graph_ql", kind: "basic", name: "BasicGraphQlFlow"
+  step: [
+    { op: "list", input: { ref: "graph_ql_ref01", srcdatavar: "graph_ql_ref01_data", suffix: "_dt0" } }
+  ]
+}
+
+main: kit: flow: BasicConsoleFlow: {
+  entity: "console", kind: "basic", name: "BasicConsoleFlow"
+  step: [
+    { op: "list", input: { ref: "console_ref01", srcdatavar: "console_ref01_data", suffix: "_dt0" } }
+  ]
+}
+
+
 main: kit: flow: BasicPlanetFlow: {
   entity: "planet", kind: "basic", name: "BasicPlanetFlow"
   step: [
@@ -279,10 +369,10 @@ main: kit: flow: BasicPlanetFlow: {
   ]
 }
 
-main: kit: flow: BasicCurrentFlow: {
-  entity: "current", kind: "basic", name: "BasicCurrentFlow"
+main: kit: flow: BasicAmbientFlow: {
+  entity: "ambient", kind: "basic", name: "BasicAmbientFlow"
   step: [
-    { op: "load", input: { ref: "current_ref01", srcdatavar: "current_ref01_data", suffix: "_dt0" } }
+    { op: "load", input: { ref: "ambient_ref01", srcdatavar: "ambient_ref01_data", suffix: "_dt0" } }
   ]
 }
 
@@ -520,7 +610,7 @@ describe('generate', () => {
   // `load(ent, )`, which does not parse.
   //
   // ReadmeTopQuick_elixir renders ONE worked example, for the first active
-  // entity by key — `current`, the singleton. That is load-bearing, not
+  // entity by key — `ambient`, the singleton. That is load-bearing, not
   // incidental: with any other entity first, this case is never generated, so
   // the guard below fails loudly rather than passing on an example that could
   // not have had the bug.
@@ -532,9 +622,9 @@ describe('generate', () => {
     const quick = out['README.md']
     ok(null != quick, 'elixir: no root readme was generated')
 
-    ok(/Entity\.Current\.load\(/.test(quick),
+    ok(/Entity\.Ambient\.load\(/.test(quick),
       'elixir: the root quickstart no longer shows the singleton load — rename ' +
-      'the fixture entities so `current` is again the first active entity by key')
+      'the fixture entities so `ambient` is again the first active entity by key')
 
     // Scan every generated file, root readme included.
     let checked = 0
@@ -555,14 +645,112 @@ describe('generate', () => {
 
     // planet HAS list; current and archive do not.
     const planet = findFile(out, 'planet_entity_test.cpp')
-    const current = findFile(out, 'current_entity_test.cpp')
+    const current = findFile(out, 'ambient_entity_test.cpp')
 
     ok(null != planet, 'cpp: no planet entity test generated')
     ok(planet!.includes('entity_stream'), 'cpp: planet has a list op but no stream test')
 
-    ok(null != current, 'cpp: no current entity test generated')
+    ok(null != current, 'cpp: no ambient entity test generated')
     ok(!current!.includes('entity_stream'),
-      'cpp: current has no list op but a stream test was emitted')
+      'cpp: ambient has no list op but a stream test was emitted')
+  })
+
+
+  // --- Reserved-name collisions ---------------------------------------------
+  //
+  // Every one of these shipped a broken SDK to the corpus. They are pinned per
+  // symptom rather than as one blanket "no collisions" check, so a regression
+  // names the exact clash.
+
+  // php: an entity named `utility` generated `private $_utility` on a class
+  // that already declares one — PHP refuses to parse the file at all, so the
+  // SDK produced ZERO working tests.
+  test('php: entity accessors do not collide with SDK class members', async () => {
+    const out = await generate(['php'])
+
+    const main = Object.entries(out)
+      .find(([p]) => p.startsWith('php/') && p.endsWith('_sdk.php'))
+    ok(null != main, 'php: no SDK class file generated')
+    const src = main![1]
+
+    // Declared property and method names, lowercased: PHP is case-insensitive
+    // for method names, so `GraphQl` and `graphql` are the SAME declaration.
+    const props = [...src.matchAll(/(?:private|public|protected)\s+\$(\w+)/g)]
+      .map(m => m[1].toLowerCase())
+    const methods = [...src.matchAll(/(?:public|private|protected)(?:\s+static)?\s+function\s+(\w+)/g)]
+      .map(m => m[1].toLowerCase())
+
+    for (const [what, names] of [['property', props], ['method', methods]] as const) {
+      const dupes = names.filter((n, i) => names.indexOf(n) !== i)
+      strictEqual(dupes.length, 0,
+        `php: duplicate ${what} declaration(s): ${[...new Set(dupes)].join(', ')} ` +
+        '— an entity name collided with an SDK class member')
+    }
+  })
+
+
+  // php: the SDK class mangles an accessor that would collide (an entity named
+  // `test` becomes `Test_()`, since `test()` is the static test-mode
+  // constructor). Eight readme components emitted the UNMANGLED `Test()`, so
+  // every generated php example called the constructor and then died with
+  // "Call to undefined method <Name>SDK::load()". The accessor name has to
+  // agree between the class and the docs — one helper, one answer.
+  test('php: doc examples call the accessor the SDK class actually declares', async () => {
+    const out = await generate(['php'])
+
+    const main = Object.entries(out)
+      .find(([p]) => p.startsWith('php/') && p.endsWith('_sdk.php'))
+    ok(null != main, 'php: no SDK class file generated')
+
+    // `static` included: the test-mode constructor is `public static function
+    // test()`, and PHP happily resolves a static method through `->`, which is
+    // how the generated StructRunner calls it.
+    const declared = new Set(
+      [...main![1].matchAll(/public (?:static )?function (\w+)\(/g)]
+        .map(m => m[1].toLowerCase()))
+
+    const bad: string[] = []
+    for (const [path, content] of Object.entries(out)) {
+      if (!/\.(md|php)$/.test(path)) continue
+      // Strip comments first: the components explain the accessor pattern in
+      // prose ("Entity accessor ($client->Name()) => fixture key"), which is
+      // documentation, not a call.
+      const code = content
+        .replace(/^\s*(?:\/\/|#).*$/gm, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+      for (const m of code.matchAll(/\$client->(\w+)\(/g)) {
+        if (!declared.has(m[1].toLowerCase())) {
+          bad.push(`${path}: calls $client->${m[1]}(...), not declared on the SDK class`)
+        }
+      }
+    }
+
+    strictEqual(bad.length, 0, 'php: example calls a nonexistent accessor:\n  ' +
+      [...new Set(bad)].join('\n  '))
+  })
+
+
+  // ts: an entity named `console` produced `for (const console of consoles)`,
+  // shadowing the global — the example's own console.log then resolved to the
+  // entity and threw "console.log is not a function".
+  test('ts: example variables do not shadow language globals', async () => {
+    const out = await generate(['ts'])
+
+    const GLOBALS = ['console', 'window', 'document', 'process', 'globalThis']
+    const offenders: string[] = []
+
+    for (const [path, content] of Object.entries(out)) {
+      if (!/\.(md|ts)$/.test(path)) continue
+      for (const g of GLOBALS) {
+        // `const console =` / `let console =` / `for (const console of` all
+        // rebind the global for the rest of the snippet.
+        const re = new RegExp(`(?:const|let|var)\\s+${g}\\b\\s*(?:=|of|in)`)
+        if (re.test(content)) offenders.push(`${path}: rebinds \`${g}\``)
+      }
+    }
+
+    strictEqual(offenders.length, 0,
+      'ts: generated code shadows a language global:\n  ' + offenders.join('\n  '))
   })
 
 
@@ -578,7 +766,7 @@ describe('generate', () => {
 
     // archive is list-only and current is load-only: neither may be created
     // or removed.
-    for (const ent of ['history', 'current']) {
+    for (const ent of ['history', 'ambient']) {
       for (const op of ['create', 'remove']) {
         const call = new RegExp('\\b' + ent[0].toUpperCase() + ent.slice(1) + '\\.' + op + '\\b')
         ok(!call.test(runner!),
