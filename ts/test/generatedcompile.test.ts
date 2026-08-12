@@ -187,4 +187,20 @@ describe('generated SDK compiles', () => {
     const vet = run(go, ['vet', './...'], sdkroot)
     ok(vet.ok, 'generated go does not vet clean:\n' + vet.out)
   })
+
+
+  // C# is the third compiler this machine can run offline: `dotnet build`
+  // type-checks the whole project, entity classes included.
+  test('csharp: the project builds', async () => {
+    const dotnet = toolchain('dotnet')
+    if (null == dotnet) {
+      return
+    }
+
+    const sdkroot = Path.join(tmp, 'csharp')
+    await generateTo('csharp', sdkroot)
+
+    const build = run(dotnet, ['build', '--nologo', '-v', 'quiet'], sdkroot)
+    ok(build.ok, 'generated csharp does not build:\n' + build.out)
+  })
 })

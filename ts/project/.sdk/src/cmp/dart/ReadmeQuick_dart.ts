@@ -119,7 +119,7 @@ try {
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`load()\` returns the bare record (a \`Map\`) and throws on error.
+\`load()\` returns the ENTITY — call data() for the record — and throws on error.
 
 \`\`\`dart
 try {
@@ -146,7 +146,7 @@ try {
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`load()\` returns the bare record (a \`Map\`) and throws on error.
+\`load()\` returns the ENTITY — call data() for the record — and throws on error.
 
 \`\`\`dart
 try {
@@ -187,7 +187,7 @@ try {
 \`\`\`dart
 `)
       if (opnames.includes('create')) {
-        Content(`// Create — returns the bare created record (a Map)
+        Content(`// Create — returns the ENTITY (call data() for the record)
 final created = await client.${eName}().create({${examplePairs('create').join(', ')}});
 
 `)

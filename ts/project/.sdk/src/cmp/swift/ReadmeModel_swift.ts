@@ -92,7 +92,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the bare result data (a \`Value\` map for
+Entity operations return the ENTITY (call data() for the record) (a \`Value\` map for
 single-entity ops, a \`Value\` list for \`list\`) and throw on error. Wrap
 calls in \`do\`/\`catch\` to handle failures.
 

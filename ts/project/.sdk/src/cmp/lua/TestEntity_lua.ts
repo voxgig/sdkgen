@@ -331,7 +331,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
   Content(`
     local ${datavar}_result, err = ${entvar}:create(${datavar}, nil)
     assert.is_nil(err)
-    ${datavar} = helpers.to_map(${datavar}_result)
+    ${datavar} = helpers.to_map(type(${datavar}_result) == 'table' and ${datavar}_result.data_get and ${datavar}_result:data_get() or ${datavar}_result)
     assert.is_not_nil(${datavar})
 `)
   if (null != ctx.entity.id) {
@@ -467,7 +467,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`
     local ${resdatavar}_result, err = ${entvar}:update(${datavar}_up, nil)
     assert.is_nil(err)
-    local ${resdatavar} = helpers.to_map(${resdatavar}_result)
+    local ${resdatavar} = helpers.to_map(type(${resdatavar}_result) == 'table' and ${resdatavar}_result.data_get and ${resdatavar}_result:data_get() or ${resdatavar}_result)
     assert.is_not_nil(${resdatavar})
 `)
   if (hasEntIdU) {
@@ -533,7 +533,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     }
     local ${datavar}_loaded, err = ${entvar}:load(${matchvar}, nil)
     assert.is_nil(err)
-    local ${datavar}_load_result = helpers.to_map(${datavar}_loaded)
+    local ${datavar}_load_result = helpers.to_map(type(${datavar}_loaded) == 'table' and ${datavar}_loaded.data_get and ${datavar}_loaded:data_get() or ${datavar}_loaded)
     assert.is_not_nil(${datavar}_load_result)
     assert.are.equal(${datavar}_load_result["id"], ${srcdatavar}["id"])
 `)

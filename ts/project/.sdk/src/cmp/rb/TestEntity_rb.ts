@@ -316,7 +316,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   Content(`
     ${datavar}_result = ${entvar}.create(${datavar}, nil)
-    ${datavar} = Helpers.to_map(${datavar}_result)
+    ${datavar} = Helpers.to_map(${datavar}_result.respond_to?(:data_get) ? ${datavar}_result.data_get : ${datavar}_result)
     assert !${datavar}.nil?
 `)
   if (null != ctx.entity.id) {
@@ -450,7 +450,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   Content(`
     ${resdatavar}_result = ${entvar}.update(${datavar}_up, nil)
-    ${resdatavar} = Helpers.to_map(${resdatavar}_result)
+    ${resdatavar} = Helpers.to_map(${resdatavar}_result.respond_to?(:data_get) ? ${resdatavar}_result.data_get : ${resdatavar}_result)
     assert !${resdatavar}.nil?
 `)
   if (hasEntIdU) {
@@ -515,7 +515,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
       "id" => ${srcdatavar}["id"],
     }
     ${datavar}_loaded = ${entvar}.load(${matchvar}, nil)
-    ${datavar}_load_result = Helpers.to_map(${datavar}_loaded)
+    ${datavar}_load_result = Helpers.to_map(${datavar}_loaded.respond_to?(:data_get) ? ${datavar}_loaded.data_get : ${datavar}_loaded)
     assert !${datavar}_load_result.nil?
     assert_equal ${datavar}_load_result["id"], ${srcdatavar}["id"]
 `)

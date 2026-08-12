@@ -106,7 +106,7 @@ else {
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`load()\` returns the bare record (a \`hashref\`) and dies on error.
+\`load()\` returns the ENTITY — call data_get for the record — and dies on error.
 
 \`\`\`perl
 my $${neVar} = eval { $client->${neName}->load({ ${neMatch.join(', ')} }) };
@@ -133,7 +133,7 @@ else {
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`load()\` returns the bare record (a \`hashref\`) and dies on error.
+\`load()\` returns the ENTITY — call data_get for the record — and dies on error.
 
 \`\`\`perl
 my $${eVar} = eval { $client->${eName}->load(${loadArg}) };
@@ -178,7 +178,7 @@ else {
 \`\`\`perl
 `)
       if (opnames.includes('create')) {
-        Content(`# Create — returns the bare created record (a hashref)
+        Content(`# Create — returns the ENTITY (call data_get for the record)
 my $created = $client->${eName}->create({ ${examplePairs('create').join(', ')} });
 
 `)

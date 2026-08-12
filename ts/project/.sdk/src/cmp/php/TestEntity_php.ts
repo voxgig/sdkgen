@@ -333,7 +333,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   Content(`
         $${datavar}_result = $${entvar}->create($${datavar}, null);
-        $${datavar} = Helpers::to_map($${datavar}_result);
+        $${datavar} = Helpers::to_map(is_object($${datavar}_result) && method_exists($${datavar}_result, 'data_get') ? $${datavar}_result->data_get() : $${datavar}_result);
         $this->assertNotNull($${datavar});
 `)
   if (null != ctx.entity.id) {
@@ -467,7 +467,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   Content(`
         $${resdatavar}_result = $${entvar}->update($${datavar}_up, null);
-        $${resdatavar} = Helpers::to_map($${resdatavar}_result);
+        $${resdatavar} = Helpers::to_map(is_object($${resdatavar}_result) && method_exists($${resdatavar}_result, 'data_get') ? $${resdatavar}_result->data_get() : $${resdatavar}_result);
         $this->assertNotNull($${resdatavar});
 `)
   if (hasEntIdU) {
@@ -532,7 +532,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
             "id" => $${srcdatavar}["id"],
         ];
         $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
-        $${datavar}_load_result = Helpers::to_map($${datavar}_loaded);
+        $${datavar}_load_result = Helpers::to_map(is_object($${datavar}_loaded) && method_exists($${datavar}_loaded, 'data_get') ? $${datavar}_loaded->data_get() : $${datavar}_loaded);
         $this->assertNotNull($${datavar}_load_result);
         $this->assertEquals($${datavar}_load_result["id"], $${srcdatavar}["id"]);
 `)

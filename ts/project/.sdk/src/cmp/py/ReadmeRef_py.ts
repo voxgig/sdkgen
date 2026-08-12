@@ -264,7 +264,7 @@ ${info.desc}
 
 `)
 
-          // Show example. Entity ops return the bare result and raise on
+          // Show example. Entity ops return the ENTITY and raise on
           // error; direct() is the only method that returns a result dict.
           if ('load' === opname || 'remove' === opname) {
             // The id key plus every REQUIRED match key (parent path params

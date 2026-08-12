@@ -256,7 +256,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
   const hasEntIdC = null != entity.id
 
   Content(`
-    ${datavar} = await ${entvar}.create(${datavar})
+    ${datavar} = (await ${entvar}.create(${datavar})).data()
 `)
   if (hasEntIdC) {
     Content(`    assert(null != ${datavar}.id)
@@ -297,7 +297,7 @@ const generateList: OpGen = (ctx, step, index) => {
   })
 
   Content(`
-    const ${listvar} = await ${entvar}.list(${matchvar})
+    const ${listvar} = (await ${entvar}.list(${matchvar})).map((e) => e.data())
 `)
   const allSteps = flow.step
   for (let vI = 0; vI < step.valid.length; vI++) {
@@ -370,7 +370,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-    const ${resdatavar} = await ${entvar}.update(${datavar})
+    const ${resdatavar} = (await ${entvar}.update(${datavar})).data()
 `)
   if (hasEntIdU) {
     Content(`    assert(${resdatavar}.id === ${datavar}.id)
@@ -435,13 +435,13 @@ const generateLoad: OpGen = (ctx, step, index) => {
   if (hasEntId) {
     Content(`    const ${matchvar} = {}
     ${matchvar}.id = ${srcdatavar}.id
-    const ${datavar} = await ${entvar}.load(${matchvar})
+    const ${datavar} = (await ${entvar}.load(${matchvar})).data()
     assert(${datavar}.id === ${srcdatavar}.id)
 `)
   }
   else {
     Content(`    const ${matchvar} = {}
-    const ${datavar} = await ${entvar}.load(${matchvar})
+    const ${datavar} = (await ${entvar}.load(${matchvar})).data()
     assert(null != ${datavar})
 `)
   }

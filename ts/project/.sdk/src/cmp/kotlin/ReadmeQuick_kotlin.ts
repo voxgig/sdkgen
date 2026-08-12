@@ -123,7 +123,7 @@ catch (err: RuntimeException) {
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`load()\` returns the bare record (as \`Any?\`) and raises on error.
+\`load()\` returns the ENTITY — call data() for the record — and raises on error.
 
 \`\`\`kotlin
 try {
@@ -151,7 +151,7 @@ catch (err: RuntimeException) {
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`load()\` returns the bare record (as \`Any?\`) and raises on error.
+\`load()\` returns the ENTITY — call data() for the record — and raises on error.
 
 \`\`\`kotlin
 try {
@@ -191,7 +191,7 @@ catch (err: RuntimeException) {
 \`\`\`kotlin
 `)
       if (opnames.includes('create')) {
-        Content(`// Create — returns the bare created record (as Any?)
+        Content(`// Create — returns the ENTITY (call data() for the record)
 val created = client.${accessor}(null).create(mutableMapOf<String, Any?>(${examplePairs('create').join(', ')}), null)
 
 `)

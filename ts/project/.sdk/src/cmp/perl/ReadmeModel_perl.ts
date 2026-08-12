@@ -93,7 +93,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the bare result data (a \`hashref\` for single-entity
+Entity operations return the ENTITY (call data_get for the record) (a \`hashref\` for single-entity
 ops, an \`arrayref\` for \`list\`) and die on error. Wrap calls in
 \`eval { ... }\` and inspect \`$@\` to handle failures.
 

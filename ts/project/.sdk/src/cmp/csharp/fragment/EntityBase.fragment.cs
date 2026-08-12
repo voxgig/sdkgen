@@ -183,7 +183,28 @@ public abstract class ProjectNameEntityBase : IEntity
 
         postDone();
 
-        return utility.Done(ctx);
+        var outv = utility.Done(ctx);
+
+        // An operation resolves to the ENTITY, not the raw data. Entities are
+        // stateful: postDone has just absorbed Resdata/Resmatch into this
+        // instance, and the caller reaches the record through Data(). Two
+        // structural exceptions: `list` resolves to the ARRAY of entity
+        // instances MakeResult built, and a failed op with throwing disabled
+        // hands back the error payload unchanged. `remove` additionally marks
+        // the entity deleted; it KEEPS its data, so a caller can still read
+        // what was removed. See AGENTS.md "Entity operations return ENTITIES".
+        var opname = ctx.Op?.Name;
+
+        if (ctx.Result != null && ctx.Result.Ok && "list" != opname)
+        {
+            if ("remove" == opname)
+            {
+                this.MarkDeleted();
+            }
+            return this;
+        }
+
+        return outv;
     }
 
     // Streaming operations. Runs `action` through the full pipeline and returns

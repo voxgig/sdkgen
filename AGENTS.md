@@ -112,6 +112,29 @@ It has been got wrong in both directions, so the rules are explicit:
   claiming a canon that does not exist. Non-enumerable so it cannot merge into
   a host framework's metadata at all.
 
+**Where it lives.** In the OP FRAGMENT (or the shared op runner a language
+has), never in `done()`. `done()` is the pipeline's terminal step and is also
+driven by `direct()`/`prepare()` and the streaming path, none of which have an
+entity — and the ports whose pipeline carries a closed `Value` union (rust,
+zig, c, cpp) cannot return an entity through it at all. The op runs `done()`
+to complete the pipeline and raise on failure, then returns the entity.
+
+**Coverage.** Honoured today by ts, js, dart, go, py, rb, lua, perl, php,
+java, kotlin, scala, swift and csharp. The remaining ports (rust, cpp, c, zig,
+elixir, clojure, haskell, ocaml, lean) still resolve to data. That is a
+SIGNATURE change, not a Value limitation: their op methods return the
+pipeline's `Value`, and honouring the contract means returning the entity
+handle (`Rc<EntyClass>`, `EntityPtr`, `*EntyClass`, ...) instead. Whoever does
+it must update that language's `TestEntity_<lang>` in the same change — the
+generated flow tests read the record off the op result.
+
+**And the generated TESTS move with it.** `TestEntity_<lang>` emits flow tests
+that assert on the RECORD, so every op call site takes the data hop
+(`.data()`, `data_get()`, `Data()`). Missing this is what broke every
+consumer's flow suite while sdkgen's own suite stayed green — see
+`ts/test/generatedcompile.test.ts`, which now compiles the generated test tree
+with a real compiler for exactly that reason.
+
 A consumer report once proposed resolving the inconsistency toward plain
 records, citing a generated README's "bare records" wording. That reading is
 wrong: converging on plain records INVERTS the design. The plain-data

@@ -122,7 +122,7 @@ except Exception as err:
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`load()\` returns the bare record (a \`dict\`) and raises on error.
+\`load()\` returns the ENTITY — call data_get() for the record — and raises on error.
 
 \`\`\`python
 try:
@@ -150,7 +150,7 @@ except Exception as err:
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`load()\` returns the bare record (a \`dict\`) and raises on error.
+\`load()\` returns the ENTITY — call data_get() for the record — and raises on error.
 
 \`\`\`python
 try:
@@ -200,7 +200,7 @@ except Exception as err:
 \`\`\`python
 `)
       if (opnames.includes('create')) {
-        Content(`# Create — returns the bare created record (a dict)
+        Content(`# Create — returns the ENTITY (call data_get() for the record)
 created = client.${eName}().create({${examplePairs('create').join(', ')}})
 
 `)

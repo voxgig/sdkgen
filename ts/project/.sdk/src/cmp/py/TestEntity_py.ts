@@ -321,7 +321,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
   const hasEntIdC = null != ctx.entity.id
 
   Content(`
-        ${datavar} = helpers.to_map(${entvar}.create(${datavar}, None))
+        ${datavar} = helpers.to_map(runner.entity_data(${entvar}.create(${datavar}, None)))
         assert ${datavar} is not None
 `)
   if (hasEntIdC) {
@@ -454,7 +454,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-        ${resdatavar} = helpers.to_map(${entvar}.update(${datavar}_up, None))
+        ${resdatavar} = helpers.to_map(runner.entity_data(${entvar}.update(${datavar}_up, None)))
         assert ${resdatavar} is not None
 `)
   if (hasEntIdU) {
@@ -518,7 +518,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
             "id": ${srcdatavar}["id"],
         }
         ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
-        ${datavar}_load_result = helpers.to_map(${datavar}_loaded)
+        ${datavar}_load_result = helpers.to_map(runner.entity_data(${datavar}_loaded))
         assert ${datavar}_load_result is not None
         assert ${datavar}_load_result["id"] == ${srcdatavar}["id"]
 `)
