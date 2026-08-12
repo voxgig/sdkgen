@@ -60,6 +60,16 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
   // runOp drives one operation through the pipeline: for each stage the
   // feature hook fires, then the stage runs; a failing stage routes through
   // makeError (which throws, or returns fallback data when ctrl.throw false).
+  // Every operation resolves to the entity; `remove` additionally marks
+  // it. The instance KEEPS the data it held — a caller can still read
+  // what was deleted — but it is no longer a live record. See AGENTS.md.
+  private var deletedFlag: Boolean = false
+
+  def markDeleted(): Unit = { deletedFlag = true }
+
+  def deleted(): Boolean = deletedFlag
+
+
   protected def runOp(ctx: Context, postDone: () => Unit): Object = {
     val utility = this.utility
 
@@ -93,7 +103,23 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
 
       postDone()
 
-      utility.done(ctx)
+      val out = utility.done(ctx)
+
+      // An operation resolves to the ENTITY, not the raw data. Entities are
+      // stateful: postDone has just absorbed resdata/resmatch into this
+      // instance, and the caller reaches the record through data(). Two
+      // structural exceptions: `list` resolves to the ARRAY of entity
+      // instances makeResult built, and a failed op with throwing disabled
+      // hands back the error payload unchanged. `remove` additionally marks
+      // the entity deleted; it KEEPS its data, so a caller can still read
+      // what was removed. See AGENTS.md "Entity operations return ENTITIES".
+      val opname = if (ctx.op == null) null else ctx.op.name
+
+      if (ctx.result != null && ctx.result.ok && "list" != opname) {
+        if ("remove" == opname) markDeleted()
+        this
+      }
+      else out
     } catch {
       case err: RuntimeException =>
         // An error already finalised by makeError must not be wrapped twice.

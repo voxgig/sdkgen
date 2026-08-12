@@ -84,6 +84,20 @@ open class ProjectNameEntityBase: Entity {
     throw unsupportedOp("remove", name)
   }
 
+  // Every operation resolves to the entity; `remove` additionally marks
+  // it. The instance KEEPS the data it held — a caller can still read
+  // what was deleted — but it is no longer a live record. See AGENTS.md.
+  private var deletedFlag: Bool = false
+
+  public func markDeleted() {
+    self.deletedFlag = true
+  }
+
+  public func deleted() -> Bool {
+    return self.deletedFlag
+  }
+
+
   func runOp(_ ctx: Context, _ postDone: () -> Void) throws -> Value {
     // #PrePoint-Hook
 
@@ -134,7 +148,26 @@ open class ProjectNameEntityBase: Entity {
 
     postDone()
 
-    return try utility.done(ctx)
+    let out = try utility.done(ctx)
+
+    // An operation resolves to the ENTITY, not the raw data. Entities are
+    // stateful: postDone has just absorbed resdata/resmatch into this
+    // instance, and the caller reaches the record through data(). Two
+    // structural exceptions: `list` resolves to the ARRAY of entity
+    // instances makeResult built, and a failed op with throwing disabled
+    // hands back the error payload unchanged. `remove` additionally marks
+    // the entity deleted; it KEEPS its data, so a caller can still read
+    // what was removed. See AGENTS.md "Entity operations return ENTITIES".
+    let opname = ctx.op?.name
+
+    if let result = ctx.result, result.ok, "list" != opname {
+      if "remove" == opname {
+        self.markDeleted()
+      }
+      return .native(NativeRef(self))
+    }
+
+    return out
   }
 
   // Streaming operations. Runs `action` through the full pipeline and returns

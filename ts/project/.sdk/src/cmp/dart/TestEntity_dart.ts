@@ -23,7 +23,7 @@ import {
   Slot,
   cmp,
   each,
-  isAuthActive,
+  isAuthActive, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -50,8 +50,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const entity: ModelEntity = props.entity
 
-  const PROJENVNAME = nom(model.const, 'NAME').replace(/[^A-Z_]/g, '_')
-  const ENTENVNAME = nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')
+  const PROJENVNAME = envName(model)
+  const ENTENVNAME = envToken(entity.name)
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive
     ? `\n    '${PROJENVNAME}_APIKEY': 'NONE',`
@@ -333,7 +333,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
   const hasEntIdC = null != entity.id
 
   Content(`
-      ${datavar} = await ${entvar}.create(${datavar});
+      ${datavar} = (await ${entvar}.create(${datavar})).data();
 `)
   if (hasEntIdC) {
     Content(`      ok(null != ${datavar}['id']);
@@ -373,7 +373,7 @@ const generateList: OpGen = (ctx, step, index) => {
   })
 
   Content(`
-      final ${listvar} = await ${entvar}.list(${matchvar});
+      final ${listvar} = (await ${entvar}.list(${matchvar})).map((e) => e.data()).toList();
 `)
   const allSteps = flow.step
   for (let vI = 0; vI < step.valid.length; vI++) {
@@ -460,7 +460,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-      final ${resdatavar} = await ${entvar}.update(${updvar});
+      final ${resdatavar} = (await ${entvar}.update(${updvar})).data();
 `)
   if (hasEntIdU) {
     Content(`      ok(${resdatavar}['id'] == ${updvar}['id']);
@@ -550,13 +550,13 @@ const generateLoad: OpGen = (ctx, step, index) => {
   if (hasEntId) {
     Content(`      final ${matchvar} = <String, dynamic>{};
       ${matchvar}['id'] = ${srcdatavar}['id'];
-      final ${datavar} = await ${entvar}.load(${matchvar});
+      final ${datavar} = (await ${entvar}.load(${matchvar})).data();
       ok(${datavar}['id'] == ${srcdatavar}['id']);
 `)
   }
   else {
     Content(`      final ${matchvar} = <String, dynamic>{};
-      final ${datavar} = await ${entvar}.load(${matchvar});
+      final ${datavar} = (await ${entvar}.load(${matchvar})).data();
       ok(null != ${datavar});
 `)
   }

@@ -124,12 +124,12 @@ pub fn load_env_local() {
     }
 }
 
-/// env_override (mirrors go): when PROJECTNAME_TEST_LIVE or
-/// PROJECTNAME_TEST_OVERRIDE is TRUE, environment variables replace the
+/// env_override (mirrors go): when PROJECTENV_TEST_LIVE or
+/// PROJECTENV_TEST_OVERRIDE is TRUE, environment variables replace the
 /// defaults in `m` (JSON-shaped values are parsed).
 pub fn env_override(m: Value) -> Value {
-    let live = std::env::var("PROJECTNAME_TEST_LIVE").unwrap_or_default() == "TRUE";
-    let over = std::env::var("PROJECTNAME_TEST_OVERRIDE").unwrap_or_default() == "TRUE";
+    let live = std::env::var("PROJECTENV_TEST_LIVE").unwrap_or_default() == "TRUE";
+    let over = std::env::var("PROJECTENV_TEST_OVERRIDE").unwrap_or_default() == "TRUE";
 
     if live || over {
         if let Value::Map(mm) = &m {
@@ -152,9 +152,9 @@ pub fn env_override(m: Value) -> Value {
         }
     }
 
-    if let Ok(explain) = std::env::var("PROJECTNAME_TEST_EXPLAIN") {
+    if let Ok(explain) = std::env::var("PROJECTENV_TEST_EXPLAIN") {
         if !explain.is_empty() {
-            setp(&m, "PROJECTNAME_TEST_EXPLAIN", Value::str(explain));
+            setp(&m, "PROJECTENV_TEST_EXPLAIN", Value::str(explain));
         }
     }
 

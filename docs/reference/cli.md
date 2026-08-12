@@ -82,6 +82,31 @@ The built-in targets are: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
 surfaces `go-cli` and `go-mcp`. Every SDK target vendors a `@voxgig/struct`
 port and ships all enterprise features with a full offline test suite.
 
+### `doctor`
+
+Reports whether this project's `.sdk/` still matches the scaffold. Exits
+non-zero when it does not, so it can gate CI.
+
+```bash
+voxgig-sdkgen doctor
+```
+
+Five categories:
+
+| Category | Meaning |
+| --- | --- |
+| **forked** | A file in `.sdk/src/cmp/**` differs from the scaffold. `target add` will silently revert it. |
+| **edited** | A template master in `.sdk/tm/**` differs — compared *after* applying the same substitutions `target add` applied, so placeholder replacement is not reported as an edit. |
+| **stale** | Present in the project, but `target add` would no longer write it. Orphaned output. |
+| **missing** | `target add` would write it and the project does not have it. |
+| **additive** | A project-owned component the scaffold never shipped. Reported, never a failure — this is the supported way to extend a target (see `registerComponent`). |
+| **unwired** | A root-level component this sdkgen provides that the project's `src/*.ts` wiring never calls. Informational: opting out is legitimate. |
+
+The first four fail the check. A plain `diff -r` against the scaffold cannot
+do this job: `target add` writes template masters with substitution partly
+applied and inconsistently, so most of what a naive diff reports is not an
+edit at all.
+
 ### `feature add <name>[,<name>...]`
 
 Scaffold one or more features into `.sdk/`. This copies the feature model

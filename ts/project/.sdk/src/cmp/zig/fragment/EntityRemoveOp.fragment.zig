@@ -1,6 +1,6 @@
 // EJECT-START
 
-pub fn remove(self: *EntyClass, reqmatch: Value, ctrl: Value) OpResult {
+pub fn remove(self: *EntyClass, reqmatch: Value, ctrl: Value) EntResult {
     const ctx = self.utility.make_context(CtxSpec{
         .opname = "remove",
         .ctrl = ctrl,
@@ -8,7 +8,10 @@ pub fn remove(self: *EntyClass, reqmatch: Value, ctrl: Value) OpResult {
         .data = self.data,
         .reqmatch = reqmatch,
     }, self.ent_ctx());
-    return self.run_op(ctx, remove_post_done);
+    const res = self.run_op_ent(ctx, remove_post_done);
+    // A removed entity keeps its data but is no longer a live record.
+    if (res == .ok) self.mark_deleted();
+    return res;
 }
 
 fn remove_post_done(self: *EntyClass, ctx: *Context) void {

@@ -17,6 +17,23 @@ const OpResult = types.OpResult;
 const OutVal = types.OutVal;
 const Entity = types.Entity;
 
+// Every operation resolves to the ENTITY, not the raw data — `list` to a
+// slice of them, one per record; the record is reached through `data()`.
+// See AGENTS.md "Entity operations return ENTITIES".
+//
+// `Value` cannot carry an entity (it is a closed data union) and the shared
+// `OpResult` cannot name a per-entity type, so each entity declares its own
+// result unions and the CONTRACT lives in those signatures.
+pub const EntResult = union(enum) {
+    ok: *EntyClass,
+    err: *errmod.ProjectNameError,
+};
+
+pub const EntListResult = union(enum) {
+    ok: []*EntyClass,
+    err: *errmod.ProjectNameError,
+};
+
 pub const EntyClass = struct {
     name: []const u8 = "entityname",
     client: *sdk.ProjectNameSDK,
@@ -25,6 +42,8 @@ pub const EntyClass = struct {
     data: Value,
     mtch: Value,
     entctx: ?*Context = null,
+    // Set once a successful `remove` resolves on this instance.
+    deleted: bool = false,
 
     pub fn new(client: *sdk.ProjectNameSDK, entopts_in: Value) *EntyClass {
         const entopts: Value = switch (entopts_in) {
@@ -71,6 +90,26 @@ pub const EntyClass = struct {
     fn doneResult(self: *EntyClass, ctx: *Context) OpResult {
         const v = self.utility.done(ctx) catch return .{ .err = ctx.pending_err.? };
         return .{ .ok = v };
+    }
+
+    // Runs the pipeline and hands back THIS entity: run_op has just absorbed
+    // the result into it. See AGENTS.md "Entity operations return ENTITIES".
+    fn run_op_ent(self: *EntyClass, ctx: *Context, post_done: *const fn (*EntyClass, *Context) void) EntResult {
+        return switch (self.run_op(ctx, post_done)) {
+            .err => |e| EntResult{ .err = e },
+            .ok => EntResult{ .ok = self },
+        };
+    }
+
+    // `remove` resolves to the entity, marked. The instance KEEPS the data it
+    // held — a caller can still read what was deleted — but it is no longer a
+    // live record.
+    pub fn mark_deleted(self: *EntyClass) void {
+        self.deleted = true;
+    }
+
+    pub fn is_deleted(self: *EntyClass) bool {
+        return self.deleted;
     }
 
     fn run_op(self: *EntyClass, ctx: *Context, post_done: *const fn (*EntyClass, *Context) void) OpResult {

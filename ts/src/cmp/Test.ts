@@ -5,6 +5,8 @@ import {
 
 import { requirePath } from '../utility'
 
+import { ensureStdrep } from '../helpers/stdrep'
+
 
 import {
   KIT,
@@ -14,7 +16,8 @@ import {
 
 const Test = cmp(function Test(props: any) {
   const { target, ctx$ } = props
-  const { model, stdrep, log } = ctx$
+  const { model, log } = ctx$
+  const stdrep = ensureStdrep(ctx$)
 
   const Test_sdk = requirePath(ctx$, `./cmp/${target.name}/Test_${target.name}`)
   Test_sdk['Test']({ model, target, stdrep })

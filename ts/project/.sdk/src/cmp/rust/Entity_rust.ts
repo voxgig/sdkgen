@@ -53,7 +53,11 @@ const Entity = cmp(function Entity(props: any) {
               ({ indent }: any) => {
                 const arg = ('create' === opname || 'update' === opname) ?
                   'reqdata' : 'reqmatch'
-                Content({ indent }, `fn ${opname}(&self, _${arg}: Value, _ctrl: Value) -> Result<Value, ${model.const.Name}Error> {
+                // The stub mirrors the real signature: ops resolve to the
+                // ENTITY (`list` to a vector of them), so an unsupported op
+                // has to declare the same return type to satisfy the trait.
+                const ret = 'list' === opname ? 'Vec<Rc<Self>>' : 'Rc<Self>'
+                Content({ indent }, `fn ${opname}(self: &Rc<Self>, _${arg}: Value, _ctrl: Value) -> Result<${ret}, ${model.const.Name}Error> {
     Err(crate::core::helpers::unsupported_op("${opname}", &self.name))
 }
 `)

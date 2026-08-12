@@ -90,14 +90,15 @@ to recover from failures.
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`eList ent match ctrl\` returns a list \`Value\` and raises on error.
+\`eList ent match ctrl\` resolves to one ENTITY per record and raises on
+error. Read a record with \`eDataGet\`.
 
 \`\`\`haskell
   ent <- Sdk.${eFn} sdk VNoval
   match <- emptyMap
   ctrl <- emptyMap
   ${eFn}s <- Sdk.eList ent match ctrl
-  print ${eFn}s
+  mapM_ (\\en -> print =<< Sdk.eDataGet en) ${eFn}s
 \`\`\`
 
 `)
@@ -123,14 +124,15 @@ to recover from failures.
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`eLoad\` returns the bare record and raises on error.
+\`eLoad\` resolves to the ENTITY and raises on error; \`eDataGet\` gives the
+record.
 
 \`\`\`haskell
   ${neFn}Ent <- Sdk.${neFn} sdk VNoval
   m <- jo [${neMatch.join(', ')}]
   ctrl2 <- emptyMap
   ${neFn} <- Sdk.eLoad ${neFn}Ent m ctrl2
-  print ${neFn}
+  print =<< Sdk.eDataGet ${neFn}
 \`\`\`
 
 `)
@@ -148,14 +150,15 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`eLoad ent match ctrl\` returns the bare record and raises on error.
+\`eLoad ent match ctrl\` resolves to the ENTITY and raises on error;
+\`eDataGet\` gives the record.
 
 \`\`\`haskell
   ent2 <- Sdk.${eFn} sdk VNoval
   m <- jo ${loadArg}
   ctrl2 <- emptyMap
   ${eFn} <- Sdk.eLoad ent2 m ctrl2
-  print ${eFn}
+  print =<< Sdk.eDataGet ${eFn}
 \`\`\`
 
 `)
@@ -192,7 +195,7 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
   d <- jo [${examplePairs('create').join(', ')}]
   cctrl <- emptyMap
   created <- Sdk.eCreate createEnt d cctrl
-  print created
+  print =<< Sdk.eDataGet created
 \`\`\`
 
 `)
@@ -204,7 +207,7 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
   upd <- jo [${updatePairs.join(', ')}]
   uctrl <- emptyMap
   updated <- Sdk.eUpdate updateEnt upd uctrl
-  print updated
+  print =<< Sdk.eDataGet updated
 \`\`\`
 
 `)
@@ -221,8 +224,9 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
   removeEnt <- Sdk.${eFn} sdk VNoval
   rm <- jo [${removePairs.length ? removePairs.join(', ') : ''}]
   rctrl <- emptyMap
-  _ <- Sdk.eRemove removeEnt rm rctrl
-  return ()
+  -- Resolves to the entity, marked deleted; it keeps the data it held.
+  removed <- Sdk.eRemove removeEnt rm rctrl
+  print =<< readIORef (Sdk.eDeleted removed)
 \`\`\`
 
 `)

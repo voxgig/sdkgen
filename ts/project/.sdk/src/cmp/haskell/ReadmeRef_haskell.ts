@@ -33,29 +33,29 @@ function hsType(type: any): string {
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
-    sig: 'eLoad ent match ctrl :: IO Value',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and raises on error.',
+    sig: 'eLoad ent match ctrl :: IO Entity',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Resolves to the ENTITY (read the record with `eDataGet`) and raises on error.',
   },
   list: {
-    sig: 'eList ent match ctrl :: IO Value',
-    returns: 'a list of entities',
-    desc: 'List entities matching the given criteria. The match is optional — pass an empty map to list all records. Returns a list `Value` and raises on error.',
+    sig: 'eList ent match ctrl :: IO [Entity]',
+    returns: 'one entity per record',
+    desc: 'List entities matching the given criteria. The match is optional \u2014 pass an empty map to list all records. Resolves to one ENTITY per record and raises on error.',
   },
   create: {
-    sig: 'eCreate ent data ctrl :: IO Value',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and raises on error.',
+    sig: 'eCreate ent data ctrl :: IO Entity',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Resolves to the ENTITY (read the record with `eDataGet`) and raises on error.',
   },
   update: {
-    sig: 'eUpdate ent data ctrl :: IO Value',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and raises on error.',
+    sig: 'eUpdate ent data ctrl :: IO Entity',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Resolves to the ENTITY (read the record with `eDataGet`) and raises on error.',
   },
   remove: {
-    sig: 'eRemove ent match ctrl :: IO Value',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    sig: 'eRemove ent match ctrl :: IO Entity',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Resolves to the ENTITY, marked deleted (`eDeleted`); it keeps the data it held. Raises on error.',
   },
 }
 
@@ -278,7 +278,8 @@ ${info.desc}
   ent <- Sdk.${eFn} sdk VNoval
   match <- emptyMap
   ctrl <- emptyMap
-  results <- Sdk.eList ent match ctrl
+  results <- Sdk.eList ent match ctrl   -- one ENTITY per record
+  datas <- mapM Sdk.eDataGet results
 \`\`\`
 
 `)
@@ -297,7 +298,8 @@ ${info.desc}
             })
             Content(`]
   ctrl <- emptyMap
-  result <- Sdk.eCreate ent d ctrl
+  result <- Sdk.eCreate ent d ctrl   -- the ENTITY
+  d2 <- Sdk.eDataGet result
 \`\`\`
 
 `)
@@ -318,7 +320,8 @@ ${info.desc}
     [${updateLines}
     ]  -- fields to update
   ctrl <- emptyMap
-  result <- Sdk.eUpdate ent d ctrl
+  result <- Sdk.eUpdate ent d ctrl   -- the ENTITY
+  d2 <- Sdk.eDataGet result
 \`\`\`
 
 `)

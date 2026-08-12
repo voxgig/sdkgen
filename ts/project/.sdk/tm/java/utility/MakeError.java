@@ -62,6 +62,10 @@ final class MakeError {
     sdkErr.result = Clean.clean(ctx, result);
     sdkErr.spec = Clean.clean(ctx, spec);
 
+    // Promote the HTTP status to the top level, so a consumer can branch on
+    // `err.status` / `err.notFound()` instead of reaching into `err.result`.
+    sdkErr.status = result.status;
+
     ctx.ctrl.err = sdkErr;
 
     // Fire PreUnexpected so observability features (metrics, telemetry, audit,

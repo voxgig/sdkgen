@@ -11,6 +11,11 @@ pub struct ProjectNameError {
     // Cleaned snapshots attached by makeError (Noval until then).
     pub result: Value,
     pub spec: Value,
+    // HTTP status of the response that caused this error, or -1 when the
+    // request never got one. PROMOTED to the top level: it used to be
+    // reachable only inside `result`, so every consumer coupled itself to
+    // the internal shape of that snapshot.
+    pub status: i64,
 }
 
 impl ProjectNameError {
@@ -21,7 +26,12 @@ impl ProjectNameError {
             msg: msg.to_string(),
             result: Value::Noval,
             spec: Value::Noval,
+            status: -1,
         }
+    }
+
+    pub fn not_found(&self) -> bool {
+        404 == self.status
     }
 }
 

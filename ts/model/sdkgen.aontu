@@ -13,6 +13,74 @@ main: def: {
 # `<sdk>/.sdk/model/config.aontu`.
 main: kit: config: docs_order: *['ts','py','php','go','rb','lua'] | [&: string]
 
+# How the generated test suites behave.
+main: kit: test: {
+
+  live: {
+    # Whether a live run ASSERTS or merely observes.
+    #
+    # false (the default, and the right answer for a fleet SDK generated
+    # against an arbitrary third-party API): a non-2xx in live mode is an
+    # early return, not a failure. Synthetic IDs 4xx constantly and list
+    # response shapes vary wildly, so asserting would mean permanent red.
+    #
+    # true: live assertions match the offline ones — a non-2xx FAILS, and a
+    # missing idmap entry fails rather than skipping. Set this when the
+    # project OWNS the server it tests against; otherwise a live suite passes
+    # with nothing listening on the port, which is what it did.
+    #
+    # Overridable per target:
+    #   main: kit: target: go: test: live: strict: true
+    strict: *false | boolean
+  }
+}
+
+
+# ---------------------------------------------------------------------------
+# SDK IDENTITY
+#
+# The root `name` slug is FOUR different things wearing one name. Each is
+# derived from the slug by default; each can differ, and in practice does:
+#
+#   1. IDENTIFIERS   class names (AcmeSDK, AcmeError), entity classes, the Go
+#                    root package identifier, the test env-var prefix.
+#                    Source: `name`. No override — this IS what the slug is.
+#
+#   2. SOURCE        where the code lives: the repo URL, and the base of the
+#                    Go module path.        -> main: kit: repo: path
+#
+#   3. PUBLISHED     what a consumer installs: the npm/PyPI/... package name.
+#                    -> main: kit: target: <t>: publish: registry: package
+#
+#   4. GO PACKAGE    the `package x` identifier in the generated Go root file.
+#                    -> main: kit: target: <t>: module: package
+#
+# Conflating them is not theoretical. A project whose repo was named
+# `<org>-<product>-sdk` rather than `<slug>-sdk` had only one lever — rename
+# the slug — and renaming it to fix (2) silently renamed (1), doubled the org
+# prefix in (4) (`package voxgigvoxgigsolardemosdk`), and would have orphaned
+# (3) had the package already been published. Each override below exists
+# because a real project needed those four values to differ.
+#
+# Set `name` to what the SDK IS. Override the other three when the world
+# disagrees with the derivation.
+# ---------------------------------------------------------------------------
+
+# Where this SDK's source repository lives.
+#
+# `<origin>/<name>-sdk` is only the DEFAULT. A project whose repo is named
+# anything else had no way to say so, and got a go module path that 404s on
+# `go get` plus homepage/repository/bugs URLs pointing at a repo that does
+# not exist. The only escape was renaming `name`, which also renames the SDK
+# classes — a public-API break, and no help to a project already published.
+main: kit: repo: {
+  # '<org>/<repo>' under the host. '' -> '<origin>/<name>-sdk'.
+  path: *'' | string
+
+  host: *'github.com' | string
+}
+
+
 main: kit: target: &: {
   name: key()
   active: *true | boolean
@@ -20,10 +88,51 @@ main: kit: target: &: {
   comment: line: string
   module: {
     name: string
+
+    # Go family only. Full module path, overriding
+    # '<repo.host>/<repo.path>/<target>'. Set this when the module path
+    # cannot be derived — e.g. a repo whose name is not '<slug>-sdk'.
+    path: *'' | string
+
+    # Go family only. The root package IDENTIFIER — `package acmesdk` — not
+    # an import path. Go requires a plain identifier here, so it is
+    # concatenated from the slug rather than taken from the repo.
+    #
+    # '' derives '<origin><slug>sdk', dropping a leading origin prefix the
+    # slug already carries: slug 'voxgig-solardemo' under origin 'voxgig-sdk'
+    # gives 'voxgigsolardemosdk', not 'voxgigvoxgigsolardemosdk'.
+    package: *'' | string
+
+    # Go family only. The `go` directive written into go.mod. Defaults to
+    # 1.21 — the release that introduced `log/slog`, which sdkgen's own
+    # `log` feature template imports. go-cli and go-mcp carry higher
+    # floors imposed by their dependencies.
+    goversion: *'' | string
   }
   deps: &: {
     active: *false | boolean
     version: *'*' | string
+  }
+
+  # How `target add` trims this target's feature source down to the
+  # features the model actually selects. Where that source LIVES is
+  # discovered by walking the template tree (helpers/featureSource), so
+  # nothing here describes layout — this is only about what a target can
+  # survive having removed.
+  feature: {
+    # Whether the feature set may be trimmed at all. A target whose
+    # templates statically reference every shipped feature from a file
+    # that cannot simply be dropped (zig's `root.zig`, scala's
+    # `SdkTestMain.scala`) must say false until those files are driven
+    # from the model — otherwise a trimmed project will not compile.
+    trim: *true | boolean
+
+    # Templates that only compile with the COMPLETE feature set, as paths
+    # relative to the target template root. These are the cross-feature
+    # test suites: they construct every shipped feature type by name, so a
+    # trimmed project drops them along with the features they exercise.
+    # A project carrying the full set keeps them.
+    fullset: *[] | [&: string]
   }
 
   # Publication: how (and whether) this port is released. Credentials are

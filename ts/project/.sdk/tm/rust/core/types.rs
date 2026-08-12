@@ -76,16 +76,32 @@ pub trait Entity {
     fn make(&self) -> Rc<dyn Entity>;
     fn data(&self, args: Option<&Value>) -> Value;
     fn matchv(&self, args: Option<&Value>) -> Value;
+
+    /// `remove` resolves to the entity, marked. The instance KEEPS the data
+    /// it held — a caller can still read what was deleted — but it is no
+    /// longer a live record.
+    fn mark_deleted(&self);
+    fn deleted(&self) -> bool;
 }
 
 /// ProjectNameEntity: the full CRUD contract every generated entity
 /// implements. Ops the API spec doesn't define are runtime-error stubs.
-pub trait ProjectNameEntity: Entity {
-    fn load(&self, reqmatch: Value, ctrl: Value) -> Result<Value, ProjectNameError>;
-    fn list(&self, reqmatch: Value, ctrl: Value) -> Result<Value, ProjectNameError>;
-    fn create(&self, reqdata: Value, ctrl: Value) -> Result<Value, ProjectNameError>;
-    fn update(&self, reqdata: Value, ctrl: Value) -> Result<Value, ProjectNameError>;
-    fn remove(&self, reqmatch: Value, ctrl: Value) -> Result<Value, ProjectNameError>;
+pub trait ProjectNameEntity: Entity + Sized {
+    /// Every operation resolves to the ENTITY, not the raw data — `list` to a
+    /// vector of them, one per record. The record is reached through
+    /// `.data(None)`. See AGENTS.md "Entity operations return ENTITIES".
+    ///
+    /// The receivers are `&Rc<Self>` because the result IS this entity: the
+    /// op absorbs `resdata`/`resmatch` into it and hands the handle back.
+    /// `Value` cannot carry an entity — it is a closed data union
+    /// (Noval|Null|Bool|Num|Str|List|Map|Func|Sentinel) and adding a variant
+    /// to a general-purpose struct library to carry SDK objects would be
+    /// wrong — so the CONTRACT lives in these signatures instead.
+    fn load(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;
+    fn list(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, ProjectNameError>;
+    fn create(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;
+    fn update(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;
+    fn remove(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;
 }
 
 /// Transport: `(ctx, url, fetchdef) -> transport-shaped response map`.

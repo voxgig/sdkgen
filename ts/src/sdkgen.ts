@@ -45,15 +45,29 @@ import { ReadmeHowto } from './cmp/ReadmeHowto'
 import { ReadmeExplanation } from './cmp/ReadmeExplanation'
 import { ReadmeRef } from './cmp/ReadmeRef'
 import { FeatureHook } from './cmp/FeatureHook'
+import { registerComponent } from './cmp/Registered'
+import type { RegisterOptions } from './cmp/Registered'
 
 import { buildIdNames } from './helpers/buildIdNames'
 import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey } from './helpers/canonType'
-import { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape'
+import { OP_SUFFIX, opTypeName, opParams, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape'
 import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming'
 import { serverVariables, hasServerVariables } from './helpers/serverVars'
+import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
+import type { ExampleLang } from './helpers/opExample'
+import { liveStrict } from './helpers/testPolicy'
+import {
+  featureOf,
+  availableFeatures,
+  findFeatureSources,
+  featureExcludes,
+  fullsetExcludes,
+  srcFeatureExcludes,
+} from './helpers/featureSource'
+import type { FeatureSource } from './helpers/featureSource'
 import {
   packageName,
   installCommand,
@@ -65,6 +79,10 @@ import {
   nonAffiliation,
   keywords,
   envName,
+  envToken,
+  goModule,
+  goVersion,
+  goPackageIdent,
   repoInfo,
   apiName,
   langLabel,
@@ -84,6 +102,12 @@ import {
   action_feature,
   feature_add,
 } from './action/feature'
+
+import {
+  action_doctor,
+  doctor,
+} from './action/doctor'
+import type { DoctorReport } from './action/doctor'
 
 
 
@@ -120,6 +144,7 @@ const { Jostraca } = JostracaModule
 const ACTION_MAP: any = {
   target: action_target,
   feature: action_feature,
+  doctor: action_doctor,
 }
 
 
@@ -190,6 +215,12 @@ function SdkGen(opts: SdkGenOptions) {
       // at the scaffold source (create-sdkgen build/sdkgen.js: existing.txt =
       // { write:true, merge:false }); see docs/explanation/regeneration-overwrite.md.
       existing: opts.existing,
+      // Per-call, for the same reason the actions pass it: jostraca applies
+      // OptionsShape to `generate`'s own options first, so its
+      // `control.dryrun: false` default wins over the instance-level flag.
+      control: {
+        dryrun: !!opts.dryrun
+      },
     }
 
     const jres = await jostraca.generate(jopts, () => Root({ model }))
@@ -209,7 +240,7 @@ function SdkGen(opts: SdkGenOptions) {
   }
 
 
-  async function action(args: string[]) {
+  async function action(args: string[]): Promise<any> {
     const pargs = args.map(arg => Jsonic(arg))
 
     const actname = args[0]
@@ -221,7 +252,7 @@ function SdkGen(opts: SdkGenOptions) {
 
     const ctx = resolveActionContext()
 
-    await actionFunc(pargs, ctx)
+    return await actionFunc(pargs, ctx)
   }
 
 
@@ -297,12 +328,19 @@ function SdkGen(opts: SdkGenOptions) {
     }
   }
 
+  // Has this project's `.sdk/` drifted from the scaffold? See action/doctor.
+  const check = async (): Promise<ActionResult> => {
+    const ctx = resolveActionContext()
+    return doctor(ctx)
+  }
+
 
 
   return {
     pino: pino as any,
     generate,
     action,
+    check,
     target,
     feature,
   }
@@ -375,7 +413,11 @@ function clear(path: string) {
 
 export type {
   SdkGenOptions,
+  ExampleLang,
   DepEntry,
+  FeatureSource,
+  DoctorReport,
+  RegisterOptions,
 }
 
 export type {
@@ -448,6 +490,7 @@ export {
   ReadmeExplanation,
   ReadmeRef,
   FeatureHook,
+  registerComponent,
 
   Jostraca,
   SdkGen,
@@ -470,6 +513,9 @@ export {
   OP_SUFFIX,
   opTypeName,
   opParams,
+  opActions,
+  entityActions,
+  entityPath,
   opRequestShape,
   entityIdField,
   entityDataIdField,
@@ -492,6 +538,18 @@ export {
   swiftSafeTypeName,
   serverVariables,
   hasServerVariables,
+  liveStrict,
+  primaryOpCall,
+  idLiteral,
+  matchArg,
+  dataArg,
+  litFor,
+  featureOf,
+  availableFeatures,
+  findFeatureSources,
+  featureExcludes,
+  fullsetExcludes,
+  srcFeatureExcludes,
   jsProp,
   jsOptProp,
   jsKey,
@@ -506,6 +564,10 @@ export {
   nonAffiliation,
   keywords,
   envName,
+  envToken,
+  goModule,
+  goVersion,
+  goPackageIdent,
   repoInfo,
   apiName,
   langLabel,

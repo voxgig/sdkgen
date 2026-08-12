@@ -1,6 +1,6 @@
 // EJECT-START
 
-pub fn create(self: *EntyClass, reqdata: Value, ctrl: Value) OpResult {
+pub fn create(self: *EntyClass, reqdata: Value, ctrl: Value) EntResult {
     const ctx = self.utility.make_context(CtxSpec{
         .opname = "create",
         .ctrl = ctrl,
@@ -8,7 +8,7 @@ pub fn create(self: *EntyClass, reqdata: Value, ctrl: Value) OpResult {
         .data = self.data,
         .reqdata = reqdata,
     }, self.ent_ctx());
-    return self.run_op(ctx, create_post_done);
+    return self.run_op_ent(ctx, create_post_done);
 }
 
 fn create_post_done(self: *EntyClass, ctx: *Context) void {

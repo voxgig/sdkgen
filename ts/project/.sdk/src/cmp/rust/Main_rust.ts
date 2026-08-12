@@ -35,6 +35,7 @@ const Main = cmp(async function Main(props: any) {
   const { model } = props.ctx$
 
   const entity: ModelEntity = getModelPath(model, `main.${KIT}.entity`)
+  const feature = getModelPath(model, `main.${KIT}.feature`)
 
   // The rust crate identifier (RUSTCRATE placeholder), e.g. solar_sdk —
   // used in every `use <crate>::...` path in the test templates.
@@ -83,6 +84,26 @@ const Main = cmp(async function Main(props: any) {
     Config({ target })
 
     SdkError({ target })
+  })
+
+  // feature/mod.rs — the feature module index.
+  //
+  // GENERATED, not templated: rust needs every module declared, and
+  // `target add` only copies source for the features the model selects. A
+  // static index listing all eighteen shipped features stops the crate from
+  // compiling the moment the set is trimmed.
+  Folder({ name: 'feature' }, () => {
+    File({ name: 'mod.' + target.ext }, () => {
+      Content(`// ${model.const.Name} SDK feature modules (mirrors tm/go/feature).
+// Each feature is a Feature trait object registered on the client;
+// \`support\` carries the shared option readers (go feature_options.go).
+
+pub mod support;
+
+pub mod base;
+`)
+      each(feature, (feat: any) => Content(`pub mod ${feat.name};\n`))
+    })
   })
 
   // entity/mod.rs — the entity module index.

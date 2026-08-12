@@ -181,7 +181,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
   }
 
   Content(`      val ${datavar}Result = ${entvar}.create(${datavar}, null)
-      ${datavar} = Helpers.toMapAny(${datavar}Result)
+      ${datavar} = Helpers.toMapAny(${datavar}Result match { case e: SdkEntity => e.data(); case o => o })
       rep.check("${ENTLOWER}.create.map", ${datavar} != null, "expected create result to be a map")
 `)
   if (null != entityDataIdField(entity)) {
@@ -312,7 +312,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`      val ${resdatavar}Result = ${entvar}.update(${datavar}Up, null)
-      val ${resdatavar} = Helpers.toMapAny(${resdatavar}Result)
+      val ${resdatavar} = Helpers.toMapAny(${resdatavar}Result match { case e: SdkEntity => e.data(); case o => o })
       rep.check("${ENTLOWER}.update.map", ${resdatavar} != null, "expected update result to be a map")
 `)
   if (hasDataId) {
@@ -369,7 +369,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   if (hasDataId) {
     Content(`      ${matchvar}.put("id", ${srcdatavar}.get("id"))
       val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
-      val ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded)
+      val ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded match { case e: SdkEntity => e.data(); case o => o })
       rep.check("${ENTLOWER}.load.map", ${datavar}LoadResult != null, "expected load result to be a map")
       rep.eq("${ENTLOWER}.load.id", ${srcdatavar}.get("id"), ${datavar}LoadResult.get("id"))
 `)

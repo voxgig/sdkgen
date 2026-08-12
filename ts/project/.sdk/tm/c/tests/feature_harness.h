@@ -15,6 +15,7 @@
 #include "ctest.h" // -> api.h -> sdk.h, plus voxgig_struct.h
 
 #include <ctype.h>
+#include <stdio.h>   // snprintf
 #include <stdlib.h>
 #include <string.h>
 

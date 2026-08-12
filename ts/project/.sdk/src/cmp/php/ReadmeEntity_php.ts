@@ -123,7 +123,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`#### Example: Load
 
 \`\`\`php
-// load() returns the bare ${entity.Name} record (throws on error).
+// load() returns the ENTITY — call data_get() for the ${entity.Name} record (throws on error).
 $${entity.name} = $client->${phpEntityAccessor(entity.Name)}()->load(${loadArg});
 \`\`\`
 

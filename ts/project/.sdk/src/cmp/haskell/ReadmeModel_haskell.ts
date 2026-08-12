@@ -21,11 +21,11 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `eLoad` | `Value -> Value -> IO Value` | Load a single entity by match criteria. Raises on error. |',
-    list: '| `eList` | `Value -> Value -> IO Value` | List entities matching the criteria. Raises on error. |',
-    create: '| `eCreate` | `Value -> Value -> IO Value` | Create a new entity. Raises on error. |',
-    update: '| `eUpdate` | `Value -> Value -> IO Value` | Update an existing entity. Raises on error. |',
-    remove: '| `eRemove` | `Value -> Value -> IO Value` | Remove an entity. Raises on error. |',
+    load: '| `eLoad` | `Value -> Value -> IO Entity` | Load a single entity by match criteria. Resolves to the entity. Raises on error. |',
+    list: '| `eList` | `Value -> Value -> IO [Entity]` | List entities matching the criteria. Resolves to one entity per record. Raises on error. |',
+    create: '| `eCreate` | `Value -> Value -> IO Entity` | Create a new entity. Resolves to the entity. Raises on error. |',
+    update: '| `eUpdate` | `Value -> Value -> IO Entity` | Update an existing entity. Resolves to the entity. Raises on error. |',
+    remove: '| `eRemove` | `Value -> Value -> IO Entity` | Remove an entity. Resolves to the entity, marked deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
@@ -103,9 +103,11 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the bare result \`Value\` (a map for single-entity
-ops, a list for \`eList\`) and raise on error. Wrap calls in
-\`Control.Exception.try\` to handle failures.
+Entity operations resolve to the ENTITY, not the raw record \u2014 \`eList\` to
+one entity per record \u2014 and raise on error. The record is reached through
+\`eDataGet\`, which returns the entity's data container. \`eRemove\` resolves to
+the entity marked deleted (\`eDeleted\`); it keeps the data it held. Wrap calls
+in \`Control.Exception.try\` to handle failures.
 
 The \`direct\` escape hatch never raises — it returns a result \`Value\`
 you branch on via its \`ok\` field (read with \`getp result "ok"\`):

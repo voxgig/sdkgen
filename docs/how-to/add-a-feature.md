@@ -86,15 +86,25 @@ If you created the model by hand, add the line yourself:
 
 ### 3. Provide the per-language implementation
 
-Each target copies feature source from
-`tm/<lang>/src/feature/<name>/`. Create the implementation for every
-target you support, modelled on the built-ins:
+Feature source lives wherever that language expects it. Put the
+implementation where the built-in features already are, and the
+generator finds it — it discovers feature source by walking the target's
+template tree for directories named `feature`, rather than assuming one
+layout:
 
 ```
 ts/project/.sdk/tm/ts/src/feature/retry/RetryFeature.ts
-ts/project/.sdk/tm/go/src/feature/retry/retry_feature.go
+ts/project/.sdk/tm/go/feature/retry_feature.go
+ts/project/.sdk/tm/py/pkg/feature/retry_feature.py
+ts/project/.sdk/tm/dart/lib/feature/retry/RetryFeature.dart
+ts/project/.sdk/tm/swift/Sources/ProjectNameSDK/feature/RetryFeature.swift
 # …one per target
 ```
+
+The file name maps back to the feature: `<name>`, `<name>_feature.<ext>`,
+`<Name>Feature.<ext>`, or a directory named `<name>`. Anything else in
+those directories (`feature_options.go`, `mod.rs`, `support.rs`,
+`__init__.py`) is shared machinery and is never treated as a feature.
 
 Implement the hooks you enabled. The template placeholders
 `FEATURE_Name` and `FEATURE_VERSION` are substituted at `feature add`.
@@ -110,11 +120,43 @@ npm run build && npm run generate
 
 ## How a feature reaches the runtime
 
-`feature add` copies the feature model and, for every active target, the
-`tm/<target>/src/feature/<name>/` source into the project. The generator
-then wires it into the per-stage dispatch via the `FeatureHook`
-component. At construction time, callers can also pass extra features
-through the `extend` option.
+`feature add` copies the feature model and, for every active target, that
+feature's source into the project. The generator then wires it into the
+per-stage dispatch via the `FeatureHook` component. At construction time,
+callers can also pass extra features through the `extend` option.
+
+Only features the model declares **and activates** get source. `target
+add` copies the rest of the template tree without them, so a project
+carries exactly the features it asked for — see
+[Trimming the feature set](#trimming-the-feature-set).
+
+## Trimming the feature set
+
+`target add` copies a target's template tree minus the source of every
+shipped feature the model did not select. Two things follow from that:
+
+- **A template that statically references every feature stops
+  compiling.** Each target declares those in its own model as
+  `feature: { fullset: [...] }` — in practice the cross-feature test
+  suite, which constructs every shipped feature type by name. They are
+  dropped along with the features they exercise, and kept when a project
+  selects the full set.
+- **Aggregate indexes must be generated, not templated.** `rust`'s
+  `feature/mod.rs` names every module in the crate, so it is emitted by
+  `Main_rust` from the model rather than shipped as a template.
+
+- **The shared test harness must survive the drop.** go and csharp keep
+  it in `feature_harness_test.go` / `FeatureHarness.cs`, because
+  `pipeline_test.*` uses the same helpers — leaving them inside the
+  cross-feature suite took the whole test package down with it.
+
+A target whose templates are not ready for any of that says
+`feature: { trim: false }` and keeps the complete feature set. Currently:
+`clojure`, `haskell`, `lean` and `ocaml` (every feature lives in one
+module, so there is no per-feature file to leave out), `scala` (the
+cross-feature tests share the single test entry point) and `zig`
+(`root.zig` imports every feature module, and `build.zig` names the
+feature test explicitly).
 
 ## See also
 

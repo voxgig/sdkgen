@@ -38,8 +38,8 @@ class ProjectNameTestRunner:
 
     @staticmethod
     def env_override(m):
-        live = ProjectNameTestRunner.getenv("PROJECTNAME_TEST_LIVE")
-        override = ProjectNameTestRunner.getenv("PROJECTNAME_TEST_OVERRIDE")
+        live = ProjectNameTestRunner.getenv("PROJECTENV_TEST_LIVE")
+        override = ProjectNameTestRunner.getenv("PROJECTENV_TEST_OVERRIDE")
 
         if live == "TRUE" or override == "TRUE":
             for key in list(m.keys()):
@@ -56,9 +56,9 @@ class ProjectNameTestRunner:
                             pass
                     m[key] = envval
 
-        explain = ProjectNameTestRunner.getenv("PROJECTNAME_TEST_EXPLAIN")
+        explain = ProjectNameTestRunner.getenv("PROJECTENV_TEST_EXPLAIN")
         if explain is not None and explain != "":
-            m["PROJECTNAME_TEST_EXPLAIN"] = explain
+            m["PROJECTENV_TEST_EXPLAIN"] = explain
 
         return m
 
@@ -111,6 +111,17 @@ class ProjectNameTestRunner:
         return 500
 
     @staticmethod
+    def entity_data(v):
+        """Extract the data map from an op result.
+
+        Every entity operation resolves to the ENTITY (see AGENTS.md), so a
+        flow test that wants the record takes this hop. A plain dict passes
+        through unchanged.
+        """
+        if hasattr(v, "data_get") and callable(v.data_get):
+            return v.data_get()
+        return v
+
     def entity_list_to_data(lst):
         out = []
         for item in lst:
@@ -132,6 +143,10 @@ def load_env_local():
 
 def env_override(m):
     return ProjectNameTestRunner.env_override(m)
+
+
+def entity_data(v):
+    return ProjectNameTestRunner.entity_data(v)
 
 
 def entity_list_to_data(lst):

@@ -17,7 +17,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive,
+  isAuthActive, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -58,8 +58,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = nom(model.const, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
-  const ENTUPPER = entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJUPPER = envName(model)
+  const ENTUPPER = envToken(entity.name)
   const entidEnvVar = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
 
   const SDK = model.const.Name + 'SDK'
@@ -339,7 +339,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   Content(`
     Object ${datavar}Result = ${entvar}.create(${datavar}, null);
-    ${datavar} = Helpers.toMapAny(${datavar}Result);
+    ${datavar} = Helpers.toMapAny(${datavar}Result instanceof SdkEntity ? ((SdkEntity) ${datavar}Result).data() : ${datavar}Result);
     assertNotNull(${datavar}, "expected create result to be a map");
 `)
   if (null != ctx.entity.id) {
@@ -479,7 +479,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   Content(`
     Object ${resdatavar}Result = ${entvar}.update(${datavar}Up, null);
-    Map<String, Object> ${resdatavar} = Helpers.toMapAny(${resdatavar}Result);
+    Map<String, Object> ${resdatavar} = Helpers.toMapAny(${resdatavar}Result instanceof SdkEntity ? ((SdkEntity) ${resdatavar}Result).data() : ${resdatavar}Result);
     assertNotNull(${resdatavar}, "expected update result to be a map");
 `)
   if (hasEntIdU) {
@@ -546,7 +546,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   if (hasEntId) {
     Content(`    ${matchvar}.put("id", ${srcdatavar}.get("id"));
     Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
-    Map<String, Object> ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded);
+    Map<String, Object> ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded instanceof SdkEntity ? ((SdkEntity) ${datavar}Loaded).data() : ${datavar}Loaded);
     assertNotNull(${datavar}LoadResult, "expected load result to be a map");
     assertEquals(${srcdatavar}.get("id"), ${datavar}LoadResult.get("id"),
         "expected load result id to match");

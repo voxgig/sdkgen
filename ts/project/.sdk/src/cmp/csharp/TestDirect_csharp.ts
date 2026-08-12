@@ -11,7 +11,7 @@ import {
   File,
   cmp,
   snakify,
-  isAuthActive,
+  isAuthActive, envName, envToken
 } from '@voxgig/sdkgen'
 
 import { formatCsValue } from './utility_csharp'
@@ -62,8 +62,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const entity: ModelEntity = props.entity
 
   const Name = model.const.Name
-  const PROJECTNAME = nom(model, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
-  const ENTUPPER = nom(entity, 'NAME').replace(/[^A-Z_]/g, '_')
+  const PROJECTNAME = envName(model)
+  const ENTUPPER = envToken(entity.name)
 
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive

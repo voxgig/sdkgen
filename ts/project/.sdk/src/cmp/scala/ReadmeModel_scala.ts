@@ -93,7 +93,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the bare result data (a \`Map\` for single-entity
+Entity operations return the ENTITY (call data() for the record) (a \`Map\` for single-entity
 ops, an aggregate \`List\` for \`list\`) as \`Object\` and raise on error. Wrap
 calls in \`try\`/\`catch\` to handle failures.
 

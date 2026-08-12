@@ -8,6 +8,15 @@ namespace ProjectNameSdk;
 
 public class ProjectNameSDK
 {
+    // NOTE: type references in EXPRESSION position are `global::`-qualified
+    // throughout this class. Entity accessors are PascalCase methods declared
+    // on it (see MainEntity_csharp), so an entity named `utility` declares
+    // `Utility(...)` here and C# then resolves the simple name `Utility` in an
+    // expression to the METHOD, not the type: "'X.Utility(...)' is a method,
+    // which is not valid in the given context". Qualifying makes the class
+    // immune to that whatever the API names its entities. Type POSITIONS
+    // (field and return types) are unaffected and stay unqualified.
+
     public string Mode = "live";
     private Dictionary<string, object?> _options;
     private readonly Utility _utility;
@@ -18,7 +27,7 @@ public class ProjectNameSDK
     {
         _utility = new Utility();
 
-        var config = SdkConfig.MakeConfig();
+        var config = global::ProjectNameSdk.SdkConfig.MakeConfig();
 
         _rootctx = _utility.MakeContext(new Dictionary<string, object?>
         {
@@ -31,8 +40,8 @@ public class ProjectNameSDK
 
         _options = _utility.MakeOptions(_rootctx);
 
-        if (Equals(StructUtils.GetPath(_options,
-            StructUtils.Jt("feature", "test", "active")), true))
+        if (Equals(global::Voxgig.Struct.StructUtils.GetPath(_options,
+            global::Voxgig.Struct.StructUtils.Jt("feature", "test", "active")), true))
         {
             Mode = "test";
         }
@@ -45,25 +54,25 @@ public class ProjectNameSDK
         // features (retry/cache/netsim/proxy/ratelimit) wrap whatever is
         // current, so `test` must be added before them to sit at the base of
         // the chain.
-        var featureOpts = Helpers.ToMapAny(StructUtils.GetProp(_options, "feature"))
+        var featureOpts = global::ProjectNameSdk.Helpers.ToMapAny(global::Voxgig.Struct.StructUtils.GetProp(_options, "feature"))
             ?? new Dictionary<string, object?>();
-        var featureOrder = StructUtils.GetPath(_options,
-            StructUtils.Jt("__derived__", "featureorder")) as List<object?>
+        var featureOrder = global::Voxgig.Struct.StructUtils.GetPath(_options,
+            global::Voxgig.Struct.StructUtils.Jt("__derived__", "featureorder")) as List<object?>
             ?? new List<object?>();
         foreach (var fnameObj in featureOrder)
         {
             var fname = fnameObj as string ?? "";
-            var fopts = Helpers.ToMapAny(StructUtils.GetProp(featureOpts, fname));
+            var fopts = global::ProjectNameSdk.Helpers.ToMapAny(global::Voxgig.Struct.StructUtils.GetProp(featureOpts, fname));
             if (fopts != null &&
                 fopts.TryGetValue("active", out var active) &&
                 active is bool ab && ab)
             {
-                _utility.FeatureAdd(_rootctx, SdkConfig.MakeFeature(fname));
+                _utility.FeatureAdd(_rootctx, global::ProjectNameSdk.SdkConfig.MakeFeature(fname));
             }
         }
 
         // Add extension features.
-        if (StructUtils.GetProp(_options, "extend") is List<object?> extList)
+        if (global::Voxgig.Struct.StructUtils.GetProp(_options, "extend") is List<object?> extList)
         {
             foreach (var f in extList)
             {
@@ -85,13 +94,13 @@ public class ProjectNameSDK
 
     public Dictionary<string, object?> OptionsMap()
     {
-        return StructUtils.Clone(_options) as Dictionary<string, object?>
+        return global::Voxgig.Struct.StructUtils.Clone(_options) as Dictionary<string, object?>
             ?? new Dictionary<string, object?>();
     }
 
     public Utility GetUtility()
     {
-        return Utility.Copy(_utility);
+        return global::ProjectNameSdk.Utility.Copy(_utility);
     }
 
     public Context GetRootCtx()
@@ -105,7 +114,7 @@ public class ProjectNameSDK
 
         fetchargs ??= new Dictionary<string, object?>();
 
-        var ctrl = Helpers.ToMapAny(StructUtils.GetProp(fetchargs, "ctrl"))
+        var ctrl = global::ProjectNameSdk.Helpers.ToMapAny(global::Voxgig.Struct.StructUtils.GetProp(fetchargs, "ctrl"))
             ?? new Dictionary<string, object?>();
 
         var ctx = utility.MakeContext(new Dictionary<string, object?>
@@ -116,23 +125,23 @@ public class ProjectNameSDK
 
         var options = _options;
 
-        var path = StructUtils.GetProp(fetchargs, "path") as string ?? "";
-        var method = StructUtils.GetProp(fetchargs, "method") as string ?? "";
+        var path = global::Voxgig.Struct.StructUtils.GetProp(fetchargs, "path") as string ?? "";
+        var method = global::Voxgig.Struct.StructUtils.GetProp(fetchargs, "method") as string ?? "";
         if (method == "")
         {
             method = "GET";
         }
 
-        var pathParams = Helpers.ToMapAny(StructUtils.GetProp(fetchargs, "params"))
+        var pathParams = global::ProjectNameSdk.Helpers.ToMapAny(global::Voxgig.Struct.StructUtils.GetProp(fetchargs, "params"))
             ?? new Dictionary<string, object?>();
-        var query = Helpers.ToMapAny(StructUtils.GetProp(fetchargs, "query"))
+        var query = global::ProjectNameSdk.Helpers.ToMapAny(global::Voxgig.Struct.StructUtils.GetProp(fetchargs, "query"))
             ?? new Dictionary<string, object?>();
 
         var headers = utility.PrepareHeaders(ctx);
 
-        var basev = StructUtils.GetProp(options, "base") as string ?? "";
-        var prefix = StructUtils.GetProp(options, "prefix") as string ?? "";
-        var suffix = StructUtils.GetProp(options, "suffix") as string ?? "";
+        var basev = global::Voxgig.Struct.StructUtils.GetProp(options, "base") as string ?? "";
+        var prefix = global::Voxgig.Struct.StructUtils.GetProp(options, "prefix") as string ?? "";
+        var suffix = global::Voxgig.Struct.StructUtils.GetProp(options, "suffix") as string ?? "";
 
         ctx.Spec = new Spec(new Dictionary<string, object?>
         {
@@ -144,12 +153,12 @@ public class ProjectNameSDK
             ["params"] = pathParams,
             ["query"] = query,
             ["headers"] = headers,
-            ["body"] = StructUtils.GetProp(fetchargs, "body"),
+            ["body"] = global::Voxgig.Struct.StructUtils.GetProp(fetchargs, "body"),
             ["step"] = "start",
         });
 
         // Merge user-provided headers.
-        if (StructUtils.GetProp(fetchargs, "headers") is Dictionary<string, object?> uhm)
+        if (global::Voxgig.Struct.StructUtils.GetProp(fetchargs, "headers") is Dictionary<string, object?> uhm)
         {
             foreach (var kv in uhm)
             {
@@ -178,13 +187,13 @@ public class ProjectNameSDK
     // Is this raw-access op permitted by the SDK's allow.op option?
     private bool OpAllowed(string op)
     {
-        return StructUtils.GetPath(_options, StructUtils.Jt("allow", "op"))
+        return global::Voxgig.Struct.StructUtils.GetPath(_options, global::Voxgig.Struct.StructUtils.Jt("allow", "op"))
             is string allow && allow.Contains(op);
     }
 
     private Dictionary<string, object?> OpDenied(string op)
     {
-        var allow = StructUtils.GetPath(_options, StructUtils.Jt("allow", "op"))
+        var allow = global::Voxgig.Struct.StructUtils.GetPath(_options, global::Voxgig.Struct.StructUtils.Jt("allow", "op"))
             as string ?? "";
         return new Dictionary<string, object?>
         {
@@ -219,7 +228,7 @@ public class ProjectNameSDK
 
         fetchargs ??= new Dictionary<string, object?>();
 
-        var ctrl = Helpers.ToMapAny(StructUtils.GetProp(fetchargs, "ctrl"))
+        var ctrl = global::ProjectNameSdk.Helpers.ToMapAny(global::Voxgig.Struct.StructUtils.GetProp(fetchargs, "ctrl"))
             ?? new Dictionary<string, object?>();
 
         var ctx = utility.MakeContext(new Dictionary<string, object?>
@@ -255,8 +264,8 @@ public class ProjectNameSDK
 
         if (fetched is Dictionary<string, object?> fm)
         {
-            var status = Helpers.ToInt(StructUtils.GetProp(fm, "status"));
-            var headers = StructUtils.GetProp(fm, "headers");
+            var status = global::ProjectNameSdk.Helpers.ToInt(global::Voxgig.Struct.StructUtils.GetProp(fm, "status"));
+            var headers = global::Voxgig.Struct.StructUtils.GetProp(fm, "headers");
 
             // No-body responses (204, 304) and explicit zero content-length
             // must skip JSON parsing - calling json() on an empty body errors.
@@ -264,12 +273,12 @@ public class ProjectNameSDK
             if (headers is Dictionary<string, object?> hm &&
                 hm.TryGetValue("content-length", out var cl) && cl != null)
             {
-                contentLength = StructUtils.Stringify(cl);
+                contentLength = global::Voxgig.Struct.StructUtils.Stringify(cl);
             }
             var noBody = status == 204 || status == 304 || contentLength == "0";
 
             object? jsonData = null;
-            if (!noBody && StructUtils.GetProp(fm, "json") is Func<object?> jf)
+            if (!noBody && global::Voxgig.Struct.StructUtils.GetProp(fm, "json") is Func<object?> jf)
             {
                 // jf() returns null on parse error in our fetcher.
                 jsonData = jf();
@@ -333,12 +342,12 @@ public class ProjectNameSDK
         // ok:false with no err — so returning early on status would discard
         // the server's own diagnostics, which are the only useful part of
         // that response.
-        var errors = StructUtils.GetPath(res, StructUtils.Jt("data", "errors"))
+        var errors = global::Voxgig.Struct.StructUtils.GetPath(res, global::Voxgig.Struct.StructUtils.Jt("data", "errors"))
             as List<object?>;
 
         if (null != errors && 0 < errors.Count)
         {
-            var msg = StructUtils.GetProp(errors[0], "message") as string;
+            var msg = global::Voxgig.Struct.StructUtils.GetProp(errors[0], "message") as string;
             if (string.IsNullOrEmpty(msg))
             {
                 msg = "graphql error";
@@ -356,14 +365,14 @@ public class ProjectNameSDK
     public static ProjectNameSDK TestSDK(Dictionary<string, object?>? testopts,
         Dictionary<string, object?>? sdkopts)
     {
-        sdkopts = StructUtils.Clone(sdkopts ?? new Dictionary<string, object?>())
+        sdkopts = global::Voxgig.Struct.StructUtils.Clone(sdkopts ?? new Dictionary<string, object?>())
             as Dictionary<string, object?> ?? new Dictionary<string, object?>();
 
-        testopts = StructUtils.Clone(testopts ?? new Dictionary<string, object?>())
+        testopts = global::Voxgig.Struct.StructUtils.Clone(testopts ?? new Dictionary<string, object?>())
             as Dictionary<string, object?> ?? new Dictionary<string, object?>();
         testopts["active"] = true;
 
-        StructUtils.SetPath(sdkopts, StructUtils.Jt("feature", "test"), testopts);
+        global::Voxgig.Struct.StructUtils.SetPath(sdkopts, global::Voxgig.Struct.StructUtils.Jt("feature", "test"), testopts);
 
         var sdk = new ProjectNameSDK(sdkopts)
         {

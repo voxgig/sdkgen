@@ -1,6 +1,6 @@
 // EJECT-START
 
-pub fn update(self: *EntyClass, reqdata: Value, ctrl: Value) OpResult {
+pub fn update(self: *EntyClass, reqdata: Value, ctrl: Value) EntResult {
     const ctx = self.utility.make_context(CtxSpec{
         .opname = "update",
         .ctrl = ctrl,
@@ -8,7 +8,7 @@ pub fn update(self: *EntyClass, reqdata: Value, ctrl: Value) OpResult {
         .data = self.data,
         .reqdata = reqdata,
     }, self.ent_ctx());
-    return self.run_op(ctx, update_post_done);
+    return self.run_op_ent(ctx, update_post_done);
 }
 
 fn update_post_done(self: *EntyClass, ctx: *Context) void {

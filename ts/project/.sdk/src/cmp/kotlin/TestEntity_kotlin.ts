@@ -17,7 +17,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive,
+  isAuthActive, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -56,8 +56,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = nom(model.const, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
-  const ENTUPPER = entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJUPPER = envName(model)
+  const ENTUPPER = envToken(entity.name)
   const entidEnvVar = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
 
   const SDK = model.const.Name + 'SDK'
@@ -317,7 +317,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   Content(`
     val ${datavar}Result = ${entvar}.create(${datavar}, null)
-    ${datavar} = Helpers.toMapAny(${datavar}Result) ?: linkedMapOf()
+    ${datavar} = Helpers.toMapAny(if (${datavar}Result is SdkEntity) ${datavar}Result.data() else ${datavar}Result) ?: linkedMapOf()
     assertNotNull(${datavar}, "expected create result to be a map")
 `)
   if (null != ctx.entity.id) {
@@ -451,7 +451,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   Content(`
     val ${resdatavar}Result = ${entvar}.update(${datavar}Up, null)
-    val ${resdatavar} = Helpers.toMapAny(${resdatavar}Result) ?: linkedMapOf()
+    val ${resdatavar} = Helpers.toMapAny(if (${resdatavar}Result is SdkEntity) ${resdatavar}Result.data() else ${resdatavar}Result) ?: linkedMapOf()
     assertNotNull(${resdatavar}, "expected update result to be a map")
 `)
   if (hasEntIdU) {
@@ -516,7 +516,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   if (hasEntId) {
     Content(`    ${matchvar}["id"] = ${srcdatavar}["id"]
     val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
-    val ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded) ?: linkedMapOf()
+    val ${datavar}LoadResult = Helpers.toMapAny(if (${datavar}Loaded is SdkEntity) ${datavar}Loaded.data() else ${datavar}Loaded) ?: linkedMapOf()
     assertNotNull(${datavar}LoadResult, "expected load result to be a map")
     assertEquals(${srcdatavar}["id"], ${datavar}LoadResult["id"],
         "expected load result id to match")

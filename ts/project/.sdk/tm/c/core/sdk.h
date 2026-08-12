@@ -303,17 +303,33 @@ voxgig_value* utility_fetch(Utility* u, Context* ctx, const char* url,
 // Entity (vtable; mirrors core/types.rs Entity + ProjectNameEntity)
 // ===========================================================================
 
+// Every operation resolves to the ENTITY, not the raw data. `list` resolves
+// to a NULL-terminated array of them, one per record; the record is reached
+// through `data`. See AGENTS.md "Entity operations return ENTITIES".
+//
+// `voxgig_value` cannot carry an entity - it is a closed data union
+// (UNDEF|NULL|BOOL|INT|DOUBLE|STRING|LIST|MAP|FUNC|SENTINEL), and adding a
+// variant to a general-purpose struct library to hold SDK objects would be
+// wrong - so the CONTRACT lives in these signatures instead.
 typedef struct EntityVT {
   const char* (*get_name)(Entity*);
   Entity* (*make)(Entity*);
   voxgig_value* (*data)(Entity*, voxgig_value* args);   // args NULL => none
   voxgig_value* (*matchv)(Entity*, voxgig_value* args); // args NULL => none
-  // CRUD ops (ProjectNameEntity). On error set *err.
-  voxgig_value* (*load)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
-  voxgig_value* (*list)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
-  voxgig_value* (*create)(Entity*, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
-  voxgig_value* (*update)(Entity*, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
-  voxgig_value* (*remove)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
+
+  // `remove` resolves to the entity, marked. The instance KEEPS the data it
+  // held - a caller can still read what was deleted - but it is no longer a
+  // live record.
+  void (*mark_deleted)(Entity*);
+  bool (*deleted)(Entity*);
+
+  // CRUD ops (ProjectNameEntity). On error set *err and return NULL.
+  Entity* (*load)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
+  // Returns a NULL-terminated Entity* array (never NULL on success).
+  Entity** (*list)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
+  Entity* (*create)(Entity*, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
+  Entity* (*update)(Entity*, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
+  Entity* (*remove)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
 } EntityVT;
 
 struct Entity {

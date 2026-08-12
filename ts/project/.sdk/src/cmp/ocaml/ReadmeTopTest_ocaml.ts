@@ -63,8 +63,14 @@ let () =
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `(jo [${chosen.map((it: any) => `("${it.name}", ${ocamlLit(it.type)})`).join('; ')}])`
     }
-    Content(`  let result = (Sdk_client.${fn} client Noval).${field} ${arg} Noval in
-  print_endline (stringify result)
+    // The op resolves to the ENTITY (list: one per record); the record is
+    // reached with e_data_get.
+    Content('list' === primaryOp
+      ? `  let results = (Sdk_client.${fn} client Noval).${field} ${arg} Noval in
+  List.iter (fun e -> print_endline (stringify (e.e_data_get ()))) results
+`
+      : `  let result = (Sdk_client.${fn} client Noval).${field} ${arg} Noval in
+  print_endline (stringify (result.e_data_get ()))
 `)
   }
 

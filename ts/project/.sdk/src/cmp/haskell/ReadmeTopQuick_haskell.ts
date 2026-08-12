@@ -63,12 +63,12 @@ main = do
 
     if (opnames.includes('list')) {
       Content(`
-  -- List all ${eName.toLowerCase()}s (returns a list Value, raises on error)
+  -- List all ${eName.toLowerCase()}s (one ENTITY per record, raises on error)
   ent <- Sdk.${eFn} sdk VNoval
   match <- emptyMap
   ctrl <- emptyMap
   ${eFn}s <- Sdk.eList ent match ctrl
-  print ${eFn}s
+  mapM_ (\\en -> print =<< Sdk.eDataGet en) ${eFn}s
 `)
     }
 
@@ -83,12 +83,12 @@ main = do
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}]`
         : '[]'
       Content(`
-  -- Load a specific ${eName.toLowerCase()} (returns the record, raises on error)
+  -- Load a specific ${eName.toLowerCase()} (returns the ENTITY, raises on error)
   ent2 <- Sdk.${eFn} sdk VNoval
   m <- jo ${loadArg}
   ctrl2 <- emptyMap
   ${eFn} <- Sdk.eLoad ent2 m ctrl2
-  print ${eFn}
+  print =<< Sdk.eDataGet ${eFn}
 `)
     }
   }

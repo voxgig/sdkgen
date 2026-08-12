@@ -17,7 +17,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive,
+  isAuthActive, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -54,8 +54,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
   }
 
   const Name = model.const.Name
-  const PROJUPPER = nom(model.const, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
-  const ENTUPPER = entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJUPPER = envName(model)
+  const ENTUPPER = envToken(entity.name)
 
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive
@@ -358,7 +358,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   Content(`
         var ${datavar}Result = ${entvar}.Create(${datavar}, null);
-        ${datavar} = Helpers.ToMapAny(${datavar}Result);
+        ${datavar} = Helpers.ToMapAny(${datavar}Result is IEntity ce ? ce.Data() : ${datavar}Result);
         Assert.True(${datavar} != null, "expected create result to be a map");
 `)
   if (null != ctx.entity.id) {
@@ -500,7 +500,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   Content(`
         var ${resdatavar}Result = ${entvar}.Update(${datavar}Up, null);
-        var ${resdatavar} = Helpers.ToMapAny(${resdatavar}Result);
+        var ${resdatavar} = Helpers.ToMapAny(${resdatavar}Result is IEntity ue ? ue.Data() : ${resdatavar}Result);
         Assert.True(${resdatavar} != null, "expected update result to be a map");
 `)
   if (hasEntIdU) {
@@ -569,7 +569,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
             ["id"] = ${srcdatavar}!["id"],
         };
         var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
-        var ${datavar}LoadResult = Helpers.ToMapAny(${datavar}Loaded);
+        var ${datavar}LoadResult = Helpers.ToMapAny(${datavar}Loaded is IEntity le ? le.Data() : ${datavar}Loaded);
         Assert.True(${datavar}LoadResult != null, "expected load result to be a map");
         Assert.True(StructRunner.DeepEqual(${datavar}LoadResult!["id"], ${srcdatavar}["id"]),
             "expected load result id to match");

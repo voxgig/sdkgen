@@ -34,8 +34,8 @@ String resolveTestPath(String rel) {
 Map<String, dynamic> envOverride(Map<String, dynamic> m) {
   final env = Platform.environment;
 
-  if ('TRUE' == env['PROJECTNAME_TEST_LIVE'] ||
-      'TRUE' == env['PROJECTNAME_TEST_OVERRIDE']) {
+  if ('TRUE' == env['PROJECTENV_TEST_LIVE'] ||
+      'TRUE' == env['PROJECTENV_TEST_OVERRIDE']) {
     for (final k in m.keys.toList()) {
       var envval = env[k];
       if (null != envval) {
@@ -45,8 +45,8 @@ Map<String, dynamic> envOverride(Map<String, dynamic> m) {
     }
   }
 
-  m['PROJECTNAME_TEST_EXPLAIN'] =
-      env['PROJECTNAME_TEST_EXPLAIN'] ?? m['PROJECTNAME_TEST_EXPLAIN'];
+  m['PROJECTENV_TEST_EXPLAIN'] =
+      env['PROJECTENV_TEST_EXPLAIN'] ?? m['PROJECTENV_TEST_EXPLAIN'];
 
   return m;
 }

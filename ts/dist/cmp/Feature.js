@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Feature = void 0;
 const jostraca_1 = require("jostraca");
+const stdrep_1 = require("../helpers/stdrep");
 const Feature = (0, jostraca_1.cmp)(function Feature(props) {
     const { target, feature, ctx$ } = props;
     const { log } = ctx$;
@@ -23,7 +24,7 @@ const Feature = (0, jostraca_1.cmp)(function Feature(props) {
                     // local Main_<lang> lost that Copy — got the raw placeholder.
                     // voxgig-solardemo-sdk hit exactly that and could not build its
                     // TypeScript at all.
-                    ...ctx$.stdrep,
+                    ...(0, stdrep_1.ensureStdrep)(ctx$),
                     FEATURE_VERSION: feature.version,
                     FEATURE_Name: feature.Name,
                 }

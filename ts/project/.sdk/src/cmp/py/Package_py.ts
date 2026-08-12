@@ -6,7 +6,7 @@ import {
   collectDeps,
   pkgDescription,
   keywords,
-  repoInfo,
+  repoInfo, packageName
 } from '@voxgig/sdkgen'
 
 
@@ -26,7 +26,7 @@ const Package = cmp(async function Package(props: any) {
   // package (the `${model.name}_sdk/` dir) is unchanged.
   const ns = model.origin || 'voxgig-sdk'
   const pkgBase = ns.endsWith('-sdk') ? model.name : `${model.name}-sdk`
-  const distName = `${ns}-${pkgBase}`
+  const distName = packageName(model, 'py')
   const { repoUrl, issuesUrl } = repoInfo(model)
   const kw = keywords(model).map((k) => `"${k}"`).join(', ')
 

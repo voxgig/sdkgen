@@ -45,7 +45,11 @@ const Entity = cmp(function Entity(props: any) {
               ({ indent }: any) => {
                 const arg = ('create' === opname || 'update' === opname) ?
                   'reqdata' : 'reqmatch'
-                Content({ indent }, `Value ${opname}(const Value& ${arg}, const Value& ctrl) override {
+                // The stub mirrors the real signature: ops resolve to the
+                // ENTITY (`list` to a vector of them), so an unsupported op
+                // has to declare the same return type to satisfy SdkEntity.
+                const ret = 'list' === opname ? 'std::vector<SdkEntityPtr>' : 'SdkEntityPtr'
+                Content({ indent }, `${ret} ${opname}(const Value& ${arg}, const Value& ctrl) override {
     (void)${arg}; (void)ctrl;
     throw Helpers::unsupportedOp("${opname}", this->name_);
   }

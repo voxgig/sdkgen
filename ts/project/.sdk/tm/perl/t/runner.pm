@@ -44,8 +44,8 @@ sub getenv {
 
 sub env_override {
   my ($m) = @_;
-  my $live = getenv('PROJECTNAME_TEST_LIVE');
-  my $override = getenv('PROJECTNAME_TEST_OVERRIDE');
+  my $live = getenv('PROJECTENV_TEST_LIVE');
+  my $override = getenv('PROJECTENV_TEST_OVERRIDE');
 
   if ((defined $live && 'TRUE' eq $live)
     || (defined $override && 'TRUE' eq $override)) {
@@ -65,8 +65,8 @@ sub env_override {
     }
   }
 
-  my $explain = getenv('PROJECTNAME_TEST_EXPLAIN');
-  $m->{'PROJECTNAME_TEST_EXPLAIN'} = $explain if defined $explain && '' ne $explain;
+  my $explain = getenv('PROJECTENV_TEST_EXPLAIN');
+  $m->{'PROJECTENV_TEST_EXPLAIN'} = $explain if defined $explain && '' ne $explain;
 
   return $m;
 }

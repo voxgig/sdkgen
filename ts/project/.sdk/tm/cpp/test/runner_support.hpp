@@ -74,8 +74,8 @@ inline std::string getenv_local(const std::string& key) {
 }
 
 inline Value env_override(Value m) {
-  std::string live = getenv_local("PROJECTNAME_TEST_LIVE");
-  std::string over = getenv_local("PROJECTNAME_TEST_OVERRIDE");
+  std::string live = getenv_local("PROJECTENV_TEST_LIVE");
+  std::string over = getenv_local("PROJECTENV_TEST_OVERRIDE");
   if (live == "TRUE" || over == "TRUE") {
     if (m.is_map()) {
       for (const auto& k : Struct::keysof(m)) {
@@ -92,8 +92,8 @@ inline Value env_override(Value m) {
       }
     }
   }
-  std::string explain = getenv_local("PROJECTNAME_TEST_EXPLAIN");
-  if (!explain.empty()) map_put(m, "PROJECTNAME_TEST_EXPLAIN", Value(explain));
+  std::string explain = getenv_local("PROJECTENV_TEST_EXPLAIN");
+  if (!explain.empty()) map_put(m, "PROJECTENV_TEST_EXPLAIN", Value(explain));
   return m;
 }
 

@@ -63,7 +63,7 @@ object RunnerSupport {
   }
 
   fun envOverride(m: MutableMap<String, Any?>): MutableMap<String, Any?> {
-    if ("TRUE" == getenv("PROJECTNAME_TEST_LIVE") || "TRUE" == getenv("PROJECTNAME_TEST_OVERRIDE")) {
+    if ("TRUE" == getenv("PROJECTENV_TEST_LIVE") || "TRUE" == getenv("PROJECTENV_TEST_OVERRIDE")) {
       for (key in ArrayList(m.keys)) {
         var envval = getenv(key)
         if (envval != null && envval.isNotEmpty()) {
@@ -80,9 +80,9 @@ object RunnerSupport {
       }
     }
 
-    val explain = getenv("PROJECTNAME_TEST_EXPLAIN")
+    val explain = getenv("PROJECTENV_TEST_EXPLAIN")
     if (explain != null && explain.isNotEmpty()) {
-      m["PROJECTNAME_TEST_EXPLAIN"] = explain
+      m["PROJECTENV_TEST_EXPLAIN"] = explain
     }
 
     return m

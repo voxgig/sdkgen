@@ -71,7 +71,7 @@ print_r($${eName.toLowerCase()}s);
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}]`
         : ''
       Content(`
-// Load a specific ${eName.toLowerCase()} (returns the bare record; throws on error)
+// Load a specific ${eName.toLowerCase()} (returns the ENTITY; call data_get() for the record; throws on error)
 $${eName.toLowerCase()} = $client->${phpEntityAccessor(eName)}()->load(${loadArg});
 print_r($${eName.toLowerCase()});
 `)

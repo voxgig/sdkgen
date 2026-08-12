@@ -17,7 +17,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive,
+  isAuthActive, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -48,8 +48,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
   }
 
   const N = model.const.Name
-  const PROJUPPER = nom(model.const, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
-  const ENTUPPER = entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJUPPER = envName(model)
+  const ENTUPPER = envToken(entity.name)
   const ENTIDVAR = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
 
   const authActive = isAuthActive(model)
@@ -263,7 +263,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   Content(`
   $V{${datavar}_result} = $V{${entvar}}->create($V{${datavar}}, undef);
-  $V{${datavar}} = ${N}Helpers::to_map($V{${datavar}_result});
+  $V{${datavar}} = ${N}Helpers::to_map(ref($V{${datavar}_result}) && $V{${datavar}_result}->can('data_get') ? $V{${datavar}_result}->data_get : $V{${datavar}_result});
   ok(defined $V{${datavar}}, '${entity.name} create: data');
 `)
   if (null != ctx.entity.id) {
@@ -395,7 +395,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   Content(`
   $V{${resdatavar}_result} = $V{${entvar}}->update($V{${datavar}_up}, undef);
-  $V{${resdatavar}} = ${N}Helpers::to_map($V{${resdatavar}_result});
+  $V{${resdatavar}} = ${N}Helpers::to_map(ref($V{${resdatavar}_result}) && $V{${resdatavar}_result}->can('data_get') ? $V{${resdatavar}_result}->data_get : $V{${resdatavar}_result});
   ok(defined $V{${resdatavar}}, '${entity.name} update: data');
 `)
   if (hasEntIdU) {
@@ -460,7 +460,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     'id' => $V{${srcdatavar}}{id},
   };
   $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
-  $V{${datavar}_load_result} = ${N}Helpers::to_map($V{${datavar}_loaded});
+  $V{${datavar}_load_result} = ${N}Helpers::to_map(ref($V{${datavar}_loaded}) && $V{${datavar}_loaded}->can('data_get') ? $V{${datavar}_loaded}->data_get : $V{${datavar}_loaded});
   ok(defined $V{${datavar}_load_result}, '${entity.name} load: data');
   is($V{${datavar}_load_result}{id}, $V{${srcdatavar}}{id}, '${entity.name} load: id');
 `)

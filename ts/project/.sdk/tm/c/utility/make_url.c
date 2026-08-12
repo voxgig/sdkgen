@@ -2,6 +2,7 @@
 
 #include "sdk.h"
 
+#include <stdio.h>   // snprintf
 #include <stdlib.h>
 #include <string.h>
 

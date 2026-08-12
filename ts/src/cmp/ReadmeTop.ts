@@ -8,7 +8,10 @@ import {
 
 import { requirePath } from '../utility'
 
-import { entityPrimaryOp, entityIdField, opRequestShape } from '../helpers/opShape'
+import {
+  entityPrimaryOp, entityIdField, opRequestShape, entityPath, entityActions,
+} from '../helpers/opShape'
+import { matchArg, idLiteral } from '../helpers/opExample'
 import { canonKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName } from '../helpers/naming'
 
@@ -241,10 +244,21 @@ ${aboutMd.trim()}
       // only remove (or nothing), the op line is omitted entirely.
       const primaryOp = entityPrimaryOp(exEnt)
       let exCall = ''
+      // A `list()` on a NESTED entity needs its parent path params — the
+      // quickstart used to emit `client.Moon().list()` for an entity at
+      // `/planet/{planet_id}/moon`, which 404s against a live server from a
+      // half-built URL. The model knows which params are required; matchArg
+      // renders exactly those.
+      const exIdField = entityIdField(exEnt)
+      const exListArg = matchArg('ts', exEnt, 'list', exIdField,
+        idLiteral(exEnt, 'list', exIdField))
+      const exLoadArg = matchArg('ts', exEnt, 'load', exIdField,
+        idLiteral(exEnt, 'load', exIdField))
+
       if ('list' === primaryOp) {
-        exCall = `const items = await client.${ex}().list()`
+        exCall = `const items = await client.${ex}().list(${exListArg})`
       } else if ('load' === primaryOp) {
-        exCall = `const ${exLower} = await client.${ex}().load()`
+        exCall = `const ${exLower} = await client.${ex}().load(${exLoadArg})`
       } else if ('create' === primaryOp || 'update' === primaryOp) {
         const exIdF = entityIdField(exEnt)
         const shapeItems = opRequestShape(exEnt, primaryOp).items
@@ -424,12 +438,11 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
         // Never emit a blank description cell: fall back to an ops-derived line.
         const entdesc = entityDesc[ent.name] || ent.short || ent.desc ||
           `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`
-        const points = each(ops).map((op: any) =>
-          op.points ? each(op.points) : []
-        ).flat()
-        const path = points.length > 0
-          ? (points[0] as any).orig || ''
-          : ''
+        // The entity's canonical route — never a folded-in custom action.
+        // Ops iterate in sorted-key order, so this used to take `create`'s
+        // first point, and an entity with a `/{id}/forbid` action route
+        // advertised THAT as its API path.
+        const path = entityPath(ent)
         Content(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
 `)
       })

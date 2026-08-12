@@ -41,6 +41,33 @@ function entityOp(opname: string, present: boolean, entityname: string): string 
     post = `            ()\n`
   }
 
+  // The op resolves to the ENTITY (see Sdk_types). `list` builds one entity
+  // per record here, since make_result works in `value` and cannot; `remove`
+  // marks the instance. With throwing disabled run_op returns the error
+  // payload, which an entity_obj return cannot carry, so that path resolves to
+  // the entity too and the caller reads ctrl.err - the mechanism no-throw mode
+  // documents anyway.
+  const tail =
+    'list' === opname
+      ? `      let out = run_op ctx post_done in
+      (match out with
+       | List items ->
+         List.map (fun entry ->
+             let e = ent.e_make () in
+             (match entry with Map _ -> e.e_data_set entry | _ -> ());
+             e)
+           !items
+       | _ -> []));
+`
+      : 'remove' === opname
+        ? `      ignore (run_op ctx post_done);
+      ent.e_mark_deleted ();
+      ent);
+`
+        : `      ignore (run_op ctx post_done);
+      ent);
+`
+
   return `  ent.${field} <- (fun ${arg} ctrl ->
       let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in
       let ctx = utility.u_make_context
@@ -50,11 +77,11 @@ function entityOp(opname: string, present: boolean, entityname: string): string 
             cs_match = Some ent.e_match; cs_data = Some ent.e_data;
             ${inputField} = Some ${arg} }
           (Some entctx) in
-      run_op ctx (fun () ->
+      let post_done () =
           match ctx.c_result with
           | Some result ->
-${post}          | None -> ()));
-`
+${post}          | None -> () in
+${tail}`
 }
 
 

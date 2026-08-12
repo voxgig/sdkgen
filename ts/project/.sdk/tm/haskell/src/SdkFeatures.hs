@@ -1313,6 +1313,7 @@ makeEntity client name entopts = do
   utility <- copyUtility (clUtility client)
   dataR <- newIORef =<< emptyMap
   matchR <- newIORef =<< emptyMap
+  deletedR <- newIORef False
   entctxR <- newIORef Nothing
   let entCtx = do m <- readIORef entctxR; case m of Just c -> pure c; Nothing -> error "entity context not initialised"
       setDataFrom rv = do
@@ -1339,11 +1340,33 @@ makeEntity client name entopts = do
         , eMake = do o <- clone entopts'; makeEntity client name o
         , eDataSet = \d -> writeIORef dataR d
         , eDataGet = readIORef dataR
-        , eLoad = \rm ctrl -> mkOp "load" "match" rm ctrl postLoad
-        , eList = \rm ctrl -> mkOp "list" "match" rm ctrl postList
-        , eCreate = \rd ctrl -> mkOp "create" "data" rd ctrl postCreate
-        , eUpdate = \rd ctrl -> mkOp "update" "data" rd ctrl postUpdate
-        , eRemove = \rm ctrl -> mkOp "remove" "match" rm ctrl postRemove
+        -- Ops resolve to the ENTITY (see SdkTypes). mkOp still runs the whole
+        -- pipeline and throws SdkException on failure; with throwing disabled
+        -- it returns the error payload, which an IO Entity cannot carry, so
+        -- that path resolves to the entity too and the caller reads ctrl.err
+        -- — the mechanism the no-throw mode documents anyway.
+        , eLoad = \rm ctrl -> mkOp "load" "match" rm ctrl postLoad >> pure ent
+        , eList = \rm ctrl -> do
+            out <- mkOp "list" "match" rm ctrl postList
+            -- `list` resolves to one ENTITY per record. makeResult cannot
+            -- build them — it works in Value — so this does.
+            case out of
+              VList _ -> do
+                items <- listItems out
+                mapM (\entry -> do
+                        e <- eMake ent
+                        case entry of VMap _ -> eDataSet e entry; _ -> pure ()
+                        pure e) items
+              _ -> pure []
+        , eCreate = \rd ctrl -> mkOp "create" "data" rd ctrl postCreate >> pure ent
+        , eUpdate = \rd ctrl -> mkOp "update" "data" rd ctrl postUpdate >> pure ent
+        , eRemove = \rm ctrl -> do
+            _ <- mkOp "remove" "match" rm ctrl postRemove
+            -- A removed entity keeps its data but is no longer a live record.
+            writeIORef deletedR True
+            pure ent
+        , eDeleted = deletedR
+        , eMarkDeleted = writeIORef deletedR True
         -- Streaming operation. Runs `action` through the full pipeline and
         -- returns a lazy list of result items, so the streaming feature's
         -- incremental output is reachable (a normal op call materialises the

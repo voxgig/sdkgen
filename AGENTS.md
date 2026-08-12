@@ -81,6 +81,79 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 
 ---
 
+## Entity operations return ENTITIES — a fundamental design
+
+**Every entity operation resolves to the Entity INSTANCE**, never to plain
+data: `load`, `list`, `create`, `update` and `remove` alike. `remove` returns
+the entity marked as deleted. `.data()` on an instance gives back the entity
+data container instance.
+
+This is a design decision, not a trade-off to be re-opened. Entities are
+stateful objects (see the "Entity instances are stateful" section every
+generated README carries); the operation RESULT is the entity, and the data
+is reached through it.
+
+It has been got wrong in both directions, so the rules are explicit:
+
+- **`done()` returns the entity.** It must not return `ctx.result.resdata` —
+  that is the data the entity has just absorbed, not the result.
+- **`make_result` keeps `list` results as entity instances.** One per record.
+- **Declared types name the CLASS, not the data interface.** `Promise<XEntity>`
+  and `Promise<XEntity[]>`, never `Promise<X>` where `X` is the generated data
+  interface. A signature that says `Promise<Planet>` while the call resolves to
+  a `PlanetEntity` is a lie the compiler cannot catch, and it is what broke the
+  first downstream integration.
+- **The typed layer takes a `.data()` hop.** Go's `LoadTyped`/`ListTyped` feed
+  `typedFrom` (a `json.Marshal`/`Unmarshal` into the struct), which needs the
+  DATA — hand it an entity and it marshals through the serialisation marker.
+- **The serialisation marker is namespaced and non-enumerable.** It is
+  `voxgig$entity`, not `entity$`: Seneca uses `entity$` on its own entities to
+  hold the canon, so an SDK record fed into `entize` silently produced entities
+  claiming a canon that does not exist. Non-enumerable so it cannot merge into
+  a host framework's metadata at all.
+
+**Where it lives.** In the OP FRAGMENT (or the shared op runner a language
+has), never in `done()`. `done()` is the pipeline's terminal step and is also
+driven by `direct()`/`prepare()` and the streaming path, none of which have an
+entity — and the ports whose pipeline carries a closed `Value` union (rust,
+zig, c, cpp) cannot return an entity through it at all. The op runs `done()`
+to complete the pipeline and raise on failure, then returns the entity.
+
+**Coverage.** Honoured by every target that HAS entity instances: ts, js,
+dart, go, py, rb, lua, perl, php, java, kotlin, scala, swift, csharp, rust,
+cpp, c, zig, elixir, clojure, haskell and ocaml. In the statically typed ports
+the contract lives in the SIGNATURES — their pipeline carries a closed `Value`
+union with no slot for an entity, so the op methods return the entity handle
+(`Rc<EntyClass>`, `SdkEntityPtr`, `Entity*`, `entity_obj`, ...) instead of a
+`Value`.
+
+**`lean` is the one exception, by construction.** It has no entity object at
+all: `Entity_lean` emits nothing, and ops are namespaced free functions over
+the client `Value` (`Planet.load c m co`), dispatched by the config-driven
+`SdkRuntime`. There is no instance to return, no per-entity data/match state,
+no `.data()`, `make()` or `stream()`. Honouring the contract there is not a
+signature change but a new entity layer for the target — a design decision in
+its own right, not a port of this one. Don't record it as a simple gap.
+
+Whoever changes a language must update its `TestEntity_<lang>` in the same
+change — the generated per-entity and flow tests read the record off the op
+result, and a text-only assertion will not catch the miss.
+
+**And the generated TESTS move with it.** `TestEntity_<lang>` emits flow tests
+that assert on the RECORD, so every op call site takes the data hop
+(`.data()`, `data_get()`, `Data()`). Missing this is what broke every
+consumer's flow suite while sdkgen's own suite stayed green — see
+`ts/test/generatedcompile.test.ts`, which now compiles the generated test tree
+with a real compiler for exactly that reason.
+
+A consumer report once proposed resolving the inconsistency toward plain
+records, citing a generated README's "bare records" wording. That reading is
+wrong: converging on plain records INVERTS the design. The plain-data
+signals — `done()`, the declared types, the README wording, `typedFrom` — were
+the parts that needed fixing.
+
+---
+
 ## Language parity is CRITICAL
 
 The whole value of sdkgen is that **every target language behaves identically**.
@@ -296,6 +369,78 @@ emitted broken source reached the fleet unchallenged.
 - **An entity need not declare `op`.** Read it as `entity.op || {}` /
   `entity.op?.load`; an unguarded `Object.keys(entity.op)` aborts generation
   for every target. `ts/test/entityname.test.ts` fails if one is reintroduced.
+- **Every entity operation resolves to PLAIN records.** `list` used to wrap
+  each record in an entity instance, so the same record came back with a
+  different type, key order and marker depending on which call produced it —
+  and the marker (`entity$`) collided with Seneca's own, silently producing
+  wrong entities. The wrap is gone from every language's `make_result`; the
+  marker on `toJSON()` is namespaced `voxgig$entity`. Pinned by
+  `ts/test/resultcontract.test.ts`, which transpiles and RUNS the shipped
+  template.
+- **The HTTP status is on the error, not just in `err.result`.** `err.status`
+  (-1 when there was no response) plus a `notFound` predicate, so a consumer
+  never couples itself to the internal shape of `result`.
+- **A generated doc example must RUN.** A `list()` on a nested entity needs
+  its parent path params (`matchArg`), the offline-test example must SEED the
+  mock (`SDK.test()` seeds nothing), and the entity table shows the entity's
+  own route — never a custom action folded into `create`. Custom actions are
+  reachable only through `$action`, so `ReadmeRef` documents them; an
+  undocumented action is an endpoint no reader can call.
+- **A project decision belongs in the MODEL, never in a forked component.**
+  `target add` overwrites `.sdk/src/cmp/**` and `.sdk/tm/**`, so any hand-edit
+  there is silently reverted on the next run — the SDK regresses with nobody
+  touching it. When a project needs to say something about itself, add a model
+  key and read it; do not make the project fork. The surfaces that exist for
+  this: `main.kit.repo.{path,host}` (repo identity — the repo is NOT always
+  `<origin>/<slug>-sdk`), `main.kit.target.<t>.module.{path,goversion}`,
+  `main.kit.target.<t>.publish.registry.package`, `main.kit.feature`
+  (which feature source ships), `main.kit.test.live.strict`. A project extends
+  a target with `registerComponent('X')` -> `cmp/<t>/X_<t>.ts`, which `doctor`
+  reports as ADDITIVE rather than drift.
+- **`voxgig-sdkgen doctor` is the check that keeps all of this true.** It
+  compares `.sdk/` against the scaffold *after* re-applying the substitutions
+  `target add` applied — a naive `diff -r` reports mostly placeholder
+  replacement. Non-zero exit on forked / edited / stale / missing.
+- **Derive an env-var name with `envToken`/`envName`, never from the camel
+  form.** `nom(model, 'Name').toUpperCase()` swallows a hyphen, so a slug like
+  `voxgig-solardemo` produced BOTH `VOXGIG_SOLARDEMO_TEST_LIVE` and
+  `VOXGIGSOLARDEMO_TEST_LIVE` in the same SDK — the template half read one and
+  the component half the other, so setting either sent part of the live suite
+  live and left the rest mocked, green either way. In templates the placeholder
+  is `PROJECTENV` (added by `ensureStdrep`), NOT `PROJECTNAME` — that one is
+  the class-name form.
+- **The go module path has ONE implementation: `goModule(model, target)`.**
+  Twelve components used to re-derive it inline, so fixing it in one place
+  fixed nothing — and `ReadmeTop` prints it from inside node_modules, where a
+  consumer cannot patch it at all.
+- **Feature source lives somewhere different in every language.** Only `ts`
+  and `js` use `src/feature/<name>/`; go uses `feature/<name>_feature.go`,
+  py `pkg/feature/`, dart `lib/feature/<name>/`, swift
+  `Sources/ProjectNameSDK/feature/`, and so on. Never hardcode one of those
+  paths — `helpers/featureSource.ts` DISCOVERS them (any directory named
+  `feature`, each entry mapped back to a feature name), and both `target add`
+  and `feature add` go through it. Hardcoding `src/feature` is what shipped
+  272 unrequested feature source files into every project. Pinned by
+  `ts/test/featuresource.test.ts`.
+- **Trimming the feature set can break a target's build.** `target add`
+  copies source only for features the model declares AND activates, so any
+  template that statically references every shipped feature stops compiling.
+  Dedicated cross-feature test suites are declared per target as
+  `feature: { fullset: [...] }` and dropped alongside the features they
+  exercise. A template can also depend on a feature WITHOUT naming its
+  symbol — `tm/c/tests/sdk_pipeline_test.c` drives retry entirely through the
+  options map (`"feature", cmap(1, "retry", ...)`), so it linked fine and
+  failed at runtime. No scan finds that reliably: the same quoted names
+  appear all over the corpus as ordering-test data and as ordinary concepts
+  (`"paging"` in a context type, `"proxy"` in a fetcher), so widening the
+  `featuresource.test.ts` guard to quoted names produces ~25 hits of which
+  one is real. Declare it in `fullset` instead; a target that cannot be trimmed at all says
+  `feature: { trim: false }` (currently `clojure`, `haskell`, `lean`,
+  `ocaml`, `scala`, `zig` — see their model files for what has to change
+  first). Aggregate indexes must be GENERATED, not templated: that is why
+  `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
+  must not live in the file that gets dropped — go and csharp keep it in
+  `feature_harness_test.go` / `FeatureHarness.cs` for exactly that reason.
 
 ---
 

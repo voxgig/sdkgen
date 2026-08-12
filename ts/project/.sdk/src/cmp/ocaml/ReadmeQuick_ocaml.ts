@@ -66,15 +66,13 @@ let client = ${ctor}
     if (opnames.includes('list')) {
       Content(`### 2. List ${fn} records
 
-\`e_list\` returns a \`List\` value of records (each a \`Map\`) and raises on
-error — iterate it directly.
+\`e_list\` resolves to one ENTITY per record and raises on error. Read a
+record with \`e_data_get\`.
 
 \`\`\`ocaml
 (try
    let ${fn}s = (Sdk_client.${fn} client Noval).e_list (empty_map ()) Noval in
-   (match ${fn}s with
-    | List items -> List.iter (fun r -> print_endline (stringify r)) !items
-    | _ -> ())
+   List.iter (fun e -> print_endline (stringify (e.e_data_get ()))) ${fn}s
  with Sdk_error.E err -> Printf.eprintf "list failed: %s\\n" (Sdk_error.message err))
 \`\`\`
 
@@ -103,12 +101,13 @@ error — iterate it directly.
       Content(`### 3. Load ${neArticle} ${neFn}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`e_load\` returns the bare record (a \`Map\`) and raises on error.
+\`e_load\` resolves to the ENTITY and raises on error; \`e_data_get\` gives the
+record.
 
 \`\`\`ocaml
 (try
    let ${neFn} = (Sdk_client.${neFn} client Noval).e_load (jo [${neMatch.join('; ')}]) Noval in
-   print_endline (stringify ${neFn})
+   print_endline (stringify (${neFn}.e_data_get ()))
  with Sdk_error.E err -> Printf.eprintf "load failed: %s\\n" (Sdk_error.message err))
 \`\`\`
 
@@ -127,12 +126,13 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
       Content(`### 3. Load ${article} ${fn}
 
-\`e_load\` returns the bare record (a \`Map\`) and raises on error.
+\`e_load\` resolves to the ENTITY and raises on error; \`e_data_get\` gives the
+record.
 
 \`\`\`ocaml
 (try
    let ${fn} = (Sdk_client.${fn} client Noval).e_load (${loadArg}) Noval in
-   print_endline (stringify ${fn})
+   print_endline (stringify (${fn}.e_data_get ()))
  with Sdk_error.E err -> Printf.eprintf "load failed: %s\\n" (Sdk_error.message err))
 \`\`\`
 
@@ -167,9 +167,9 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`\`\`ocaml
 `)
       if (opnames.includes('create')) {
-        Content(`(* Create — returns the bare created record (a Map) *)
+        Content(`(* Create — resolves to the ENTITY; e_data_get gives the record *)
 let created = (Sdk_client.${fn} client Noval).e_create (jo [${examplePairs('create').join('; ')}]) Noval in
-ignore created;
+print_endline (stringify (created.e_data_get ()));
 
 `)
       }
@@ -188,8 +188,9 @@ ignore ((Sdk_client.${fn} client Noval).e_update (jo [${updatePairs.join('; ')}]
           .map((it: any) => it.name === idF
             ? `("${it.name}", ${idValueFor('remove')})`
             : `("${it.name}", ${ocamlLit(it.type, 'example_' + it.name)})`)
-        Content(`(* Remove *)
-ignore ((Sdk_client.${fn} client Noval).e_remove (${removePairs.length ? `jo [${removePairs.join('; ')}]` : 'Noval'}) Noval)
+        Content(`(* Remove — resolves to the entity, marked deleted; it keeps its data *)
+let removed = (Sdk_client.${fn} client Noval).e_remove (${removePairs.length ? `jo [${removePairs.join('; ')}]` : 'Noval'}) Noval in
+Printf.printf "deleted: %b\\n" removed.e_deleted
 `)
       }
       Content(`\`\`\`

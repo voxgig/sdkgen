@@ -120,7 +120,7 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
 \`\`\`php
 try {
-    // load() returns the bare ${neName} record (throws on error).
+    // load() returns the ENTITY — call data_get() for the ${neName} record (throws on error).
     $${neVar} = $client->${phpEntityAccessor(neName)}()->load([${neMatch.join(', ')}]);
     print_r($${neVar});
 } catch (\\Throwable $err) {
@@ -148,7 +148,7 @@ try {
 
 \`\`\`php
 try {
-    // load() returns the bare ${eName} record (throws on error).
+    // load() returns the ENTITY — call data_get() for the ${eName} record (throws on error).
     $${eName.toLowerCase()} = $client->${phpEntityAccessor(eName)}()->load(${loadArg});
     print_r($${eName.toLowerCase()});
 } catch (\\Throwable $err) {
@@ -187,7 +187,7 @@ try {
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `$created["${dataIdF}"]`
+      ? `$created->data_get()["${dataIdF}"]`
       : phpLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
@@ -196,7 +196,7 @@ try {
 \`\`\`php
 `)
       if (opnames.includes('create')) {
-        Content(`// create() returns the bare created ${eName} record.
+        Content(`// create() returns the ENTITY — call data_get() for the created ${eName} record.
 $created = $client->${phpEntityAccessor(eName)}()->create([${examplePairs('create').join(', ')}]);
 
 `)
@@ -204,7 +204,7 @@ $created = $client->${phpEntityAccessor(eName)}()->create([${examplePairs('creat
       if (opnames.includes('update')) {
         const updatePairs = (idF ? [`"${idF}" => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
-        Content(`// Update${fromCreated ? ` — index the bare record directly ($created["${dataIdF}"]).` : ''}
+        Content(`// Update${fromCreated ? ` — index the record via data_get() ($created->data_get()["${dataIdF}"]).` : ''}
 $client->${phpEntityAccessor(eName)}()->update([${updatePairs.join(', ')}]);
 
 `)

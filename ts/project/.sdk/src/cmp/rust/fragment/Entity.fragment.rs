@@ -24,6 +24,8 @@ pub struct EntyClass {
     data: RefCell<Value>,
     mtch: RefCell<Value>,
     entctx: RefCell<Option<Rc<Context>>>,
+    // Set once a successful `remove` resolves on this instance.
+    deleted: RefCell<bool>,
 }
 
 impl EntyClass {
@@ -46,6 +48,7 @@ impl EntyClass {
             data: RefCell::new(Value::empty_map()),
             mtch: RefCell::new(Value::empty_map()),
             entctx: RefCell::new(None),
+            deleted: RefCell::new(false),
         });
 
         let entctx = e.utility.make_context(
@@ -71,6 +74,10 @@ impl EntyClass {
             .expect("entity context not initialised")
     }
 
+    // Runs the pipeline and returns the terminal result VALUE. The entity
+    // contract lives one level up, in the op methods below: they call this,
+    // then hand back the entity (see AGENTS.md). It is split that way because
+    // `Value` is a closed data union that cannot carry an entity.
     fn run_op(
         &self,
         ctx: &Rc<Context>,
@@ -230,6 +237,17 @@ impl EntyClass {
 impl Entity for EntyClass {
     fn get_name(&self) -> String {
         self.name.clone()
+    }
+
+    // `remove` resolves to the entity, marked. The instance KEEPS the data
+    // it held — a caller can still read what was deleted — but it is no
+    // longer a live record.
+    fn mark_deleted(&self) {
+        *self.deleted.borrow_mut() = true;
+    }
+
+    fn deleted(&self) -> bool {
+        *self.deleted.borrow()
     }
 
     fn make(&self) -> Rc<dyn Entity> {

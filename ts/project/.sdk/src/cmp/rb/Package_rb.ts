@@ -5,7 +5,7 @@ import {
   cmp,
   collectDeps,
   pkgDescription,
-  repoInfo,
+  repoInfo, packageName
 } from '@voxgig/sdkgen'
 
 
@@ -25,7 +25,7 @@ const Package = cmp(async function Package(props: any) {
   // path (`${model.name}_sdk`) is unchanged.
   const ns = model.origin || 'voxgig-sdk'
   const pkgBase = ns.endsWith('-sdk') ? model.name : `${model.name}-sdk`
-  const gemName = `${ns}-${pkgBase}`
+  const gemName = packageName(model, 'rb')
   const { repoUrl, issuesUrl, changelogUrl } = repoInfo(model)
 
   const versionOf = (d: { version: string; source: 'feature' | 'target' }) =>

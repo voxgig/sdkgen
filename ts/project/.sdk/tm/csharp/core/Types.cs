@@ -11,6 +11,12 @@ public interface IEntity
     IEntity Make();
     object? Data(object? data = null);
     object? Match(object? match = null);
+
+    // Every operation resolves to the entity; Remove additionally marks it.
+    // The instance keeps the data it held - a caller can still read what was
+    // deleted - but it is no longer a live record.
+    void MarkDeleted();
+    bool Deleted();
 }
 
 // Transport function: performs the HTTP (or mock) request. Returns a

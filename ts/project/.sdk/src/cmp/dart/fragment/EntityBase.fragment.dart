@@ -43,6 +43,18 @@ class ProjectNameEntityBase {
     featureHook(entctx, 'PostConstructEntity');
   }
 
+  // Every operation resolves to the entity; `remove` additionally marks
+  // it. The instance KEEPS the data it held — a caller can still read what
+  // was deleted — but it is no longer a live record. See AGENTS.md.
+  bool _deleted = false;
+
+  void markDeleted() {
+    _deleted = true;
+  }
+
+  bool deleted() => _deleted;
+
+
   dynamic entopts() {
     return utility.struct.merge([{}, entoptsMap]);
   }
@@ -235,7 +247,12 @@ class ProjectNameEntityBase {
     if (d is Map) {
       d.forEach((k, v) => out[k.toString()] = v);
     }
-    out[r'entity$'] = Name;
+  // The marker is NAMESPACED. It used to be `entity$` — a short, generic
+  // name, and the `$`-suffix convention is not unique to sdkgen. Seneca uses
+  // `entity$` on its own entities to hold the canon, so an SDK record fed
+  // into `entize` silently overwrote it and produced entities claiming a
+  // canon that does not exist: no error, just wrong entities.
+    out[r'voxgig$entity'] = Name;
     return out;
   }
 

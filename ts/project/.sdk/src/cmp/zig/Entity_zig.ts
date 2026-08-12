@@ -48,7 +48,11 @@ const Entity = cmp(function Entity(props: any) {
               ({ indent }: any) => {
                 const arg = ('create' === opname || 'update' === opname) ?
                   'reqdata' : 'reqmatch'
-                Content({ indent }, `pub fn ${opname}(self: *${cls}, _${arg}: Value, _ctrl: Value) OpResult {
+                // The stub mirrors the real signature: ops resolve to the
+                // ENTITY (`list` to a slice of them), so an unsupported op
+                // declares the same per-entity result union.
+                const ret = 'list' === opname ? 'EntListResult' : 'EntResult'
+                Content({ indent }, `pub fn ${opname}(self: *${cls}, _${arg}: Value, _ctrl: Value) ${ret} {
     _ = _${arg};
     _ = _ctrl;
     return .{ .err = h.unsupported_op("${opname}", self.name) };

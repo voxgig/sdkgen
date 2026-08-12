@@ -38,15 +38,42 @@ function langLabel(target: string): string {
   return LANG_LABEL[target] || target
 }
 
-// GitHub org (publisher slug), repo name, and the canonical repo URLs.
+// Git host, org/repo path, and the canonical repo URLs.
+//
+// `<origin>/<slug>-sdk` is a DERIVATION, not a law. A project whose repo is
+// named anything else — `voxgig-sdk/voxgig-solardemo-sdk`, say, where the slug
+// is `solardemo` — used to have no way to say so, and got a `go.mod` module
+// path that 404s on `go get` plus `homepage`/`repository`/`bugs` URLs pointing
+// at a repo that does not exist. The only escape was renaming the slug, which
+// also renames the SDK classes: a public-API break, and no help at all to a
+// project that has already published.
+//
+//   main: kit: repo: {
+//     path: 'voxgig-sdk/voxgig-solardemo-sdk'   # overrides <origin>/<slug>-sdk
+//     host: 'github.com'                        # default
+//   }
 function repoInfo(model: any) {
   const slug = model.name
   const origin = model.origin || 'voxgig-sdk'
-  const repo = `${slug}-sdk`
-  const repoUrl = `https://github.com/${origin}/${repo}`
+
+  const declared = (model && model.main && model.main[KIT] && model.main[KIT].repo) || {}
+
+  const host = '' === (declared.host || '') ? 'github.com' : (declared.host || 'github.com')
+  const path = '' === (declared.path || '') ? `${origin}/${slug}-sdk` : String(declared.path)
+
+  // Last segment is the repo; everything before it is the org (which may
+  // itself contain slashes on hosts that allow subgroups, e.g. GitLab).
+  const seg = path.split('/')
+  const repo = seg[seg.length - 1]
+
+  const repoUrl = `https://${host}/${path}`
+
   return {
     slug,
     origin,
+    host,
+    // 'org/repo' — the path under the host, and the base of a go module path.
+    path,
     repo,
     repoUrl,
     issuesUrl: `${repoUrl}/issues`,
@@ -55,6 +82,78 @@ function repoInfo(model: any) {
     // that a pending (not-yet-on-registry) package is installed from live.
     releasesUrl: `${repoUrl}/releases`,
   }
+}
+
+
+// The go module path for a go-family target: the declared override, else the
+// repo path plus the target's subdirectory.
+//
+//   main: kit: target: go: module: path: 'github.com/acme/legacy-sdk/go'
+//
+// THE ONLY implementation. Twelve go components used to re-derive
+// `github.com/${origin}/${name}-sdk/go` inline, so fixing the path in one
+// place fixed nothing — and `ReadmeTop`, which prints the module in the root
+// README's package table, lives inside node_modules where a consumer cannot
+// patch it at all.
+function goModule(model: any, target: string): string {
+  const declared = model?.main?.[KIT]?.target?.[target]?.module?.path
+  if (null != declared && '' !== declared) {
+    return String(declared)
+  }
+
+  const { host, path } = repoInfo(model)
+  return `${host}/${path}/${target}`
+}
+
+
+// The Go language version for a go-family target's go.mod.
+//
+//   main: kit: target: go: module: goversion: '1.23'
+//
+// Defaults to 1.21, the release that introduced `log/slog` — which sdkgen's
+// own `log` feature template imports. The previous hardcoded `go 1.20` meant a
+// generated SDK could not compile the feature source sdkgen had just written
+// into it.
+function goVersion(model: any, target: string, fallback?: string): string {
+  const declared = model?.main?.[KIT]?.target?.[target]?.module?.goversion
+  if (null != declared && '' !== declared) {
+    return String(declared)
+  }
+  return fallback || '1.21'
+}
+
+
+// The root Go package IDENTIFIER — `package voxgigsolardemosdk`. Go requires
+// a plain identifier here, so unlike the module path it must be concatenated
+// from the slug rather than taken from the repo.
+//
+//   main: kit: target: go: module: package: 'acmesdk'
+//
+// The default concatenates `<origin><slug>sdk`, which DOUBLES the org prefix
+// whenever the slug already carries it: slug `voxgig-solardemo` under origin
+// `voxgig-sdk` produced `package voxgigvoxgigsolardemosdk`. A slug repeating
+// its org is the natural shape for a repo named `<org>-<product>`, so the
+// default now drops a leading origin prefix instead of restating it.
+//
+// This was the last of the four things the slug derives that had no override,
+// and the only one that came out wrong — see the identity note at the top of
+// model/sdkgen.aontu.
+function goPackageIdent(model: any, target: string): string {
+  const declared = model?.main?.[KIT]?.target?.[target]?.module?.package
+  if (null != declared && '' !== declared) {
+    return String(declared)
+  }
+
+  const ident = (s: string) => String(s || '').replace(/[^a-z0-9]/gi, '').toLowerCase()
+
+  const org = ident((model.origin || 'voxgig-sdk').replace(/-sdk$/, ''))
+  let slug = ident(model.name)
+
+  if ('' !== org && slug.startsWith(org)) {
+    slug = slug.slice(org.length)
+  }
+
+  return org + slug + 'sdk'
 }
 
 
@@ -130,6 +229,25 @@ function packageName(model: any, eco: string): string {
   const origin = model.origin || 'voxgig-sdk'
   const base = origin.endsWith('-sdk') ? slug : `${slug}-sdk`
   const npmScoped = `@${origin}/${slug}${origin.endsWith('-sdk') ? '' : '-sdk'}`
+
+  // A target may name its published package outright — the escape hatch for a
+  // project whose registry name is not what the slug derives, and which cannot
+  // rename the slug without renaming its SDK classes:
+  //
+  //   main: kit: target: ts: publish: registry: package: '@acme/legacy-client'
+  //
+  // The key already existed in the schema ("registry package name ('' ->
+  // derived)") and was simply never read. Keyed by TARGET, so the ecosystem
+  // aliases ('npm', 'pypi', ...) resolve to the target that publishes to them.
+  const ECO_TARGET: Record<string, string> = {
+    npm: 'ts', pypi: 'py', gem: 'rb', luarocks: 'lua', composer: 'php',
+  }
+  const declared = model?.main?.[KIT]?.target?.[ECO_TARGET[eco] || eco]
+    ?.publish?.registry?.package
+  if (null != declared && '' !== declared) {
+    return String(declared)
+  }
+
   switch (eco) {
     case 'npm':
     case 'ts':
@@ -147,11 +265,11 @@ function packageName(model: any, eco: string): string {
     case 'php':
       return `${origin}/${base}`
     case 'go':
-      return `github.com/${origin}/${slug}-sdk/go`
+      return goModule(model, 'go')
     case 'go-cli':
-      return `github.com/${origin}/${slug}-sdk/go-cli`
+      return goModule(model, 'go-cli')
     case 'go-mcp':
-      return `github.com/${origin}/${slug}-sdk/go-mcp`
+      return goModule(model, 'go-mcp')
     // The notebook/analyst package layered on `py`. Distinct PyPI name so it
     // can version and publish independently of the SDK it wraps.
     case 'py-data':
@@ -214,11 +332,25 @@ function keywords(model: any): string[] {
   return ['voxgig', 'sdk', 'generated-sdk', 'openapi', 'api-client', model.name]
 }
 
-// A VALID uppercase env-var base derived from the slug: 'unsolicited-advice' ->
-// 'UNSOLICITED_ADVICE'. Use for <NAME>_APIKEY / <NAME>_TEST_LIVE so examples are
-// valid identifiers (model.NAME left a hyphen in, breaking process.env.X).
+// A VALID uppercase env-var token: 'unsolicited-advice' -> 'UNSOLICITED_ADVICE'.
+//
+// THE ONLY WAY to build an env-var name segment. There used to be three
+// spellings of this in the components — `envToken(name)`,
+// `nom(x, 'NAME')` (the camel form uppercased, which SWALLOWS the hyphen) and
+// `x.name.toUpperCase().replace(...)` — and they agree only while the name has
+// no hyphen in it. A slug like `voxgig-solardemo` produced both
+// `VOXGIG_SOLARDEMO_TEST_LIVE` and `VOXGIGSOLARDEMO_TEST_LIVE` in the SAME
+// generated SDK: `test/utility.ts` read one, `PlanetEntity.test.ts` the other,
+// so setting either sent half the suite live and left the rest mocked — with
+// the suite reporting green either way.
+function envToken(name: any): string {
+  return String(name || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+}
+
+
+// The env-var base for this SDK: <NAME>_APIKEY, <NAME>_TEST_LIVE, ...
 function envName(model: any): string {
-  return String(model.name || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+  return envToken(model.name)
 }
 
 export {
@@ -240,4 +372,8 @@ export {
   nonAffiliation,
   keywords,
   envName,
+  envToken,
+  goModule,
+  goVersion,
+  goPackageIdent,
 }
