@@ -5,6 +5,7 @@ import {
   opRequestShape, opParams, entityPath,
   collectDeps, repoInfo, packageName, packageVersion, apiName, envName,
   SdkGenError,
+  PUBLISHER, PUBLISHER_URL,
 } from '@voxgig/sdkgen'
 
 import {
@@ -251,6 +252,11 @@ const Main = cmp(function Main(props: any) {
     version: packageVersion(model, target.name),
     sdkrel,
     liveBase,
+    // The sponsor line. @seneca/maintain's `content_readme` check requires
+    // the publisher's name in the README, so this is load-bearing rather
+    // than decorative — the generated `maintain` test fails without it.
+    publisher: PUBLISHER,
+    publisherUrl: PUBLISHER_URL,
     // A route with NO path params, so the probe is a plain GET. An entity
     // whose every route is parameterised gives none, and then the probe
     // falls back to the base URL itself.
@@ -310,7 +316,8 @@ const PackageJson = cmp(function PackageJson(props: any) {
       `Seneca entity provider for the ${provider.api} API, using the ` +
       `${provider.sdkPkg} SDK.`,
     homepage: provider.repoUrl,
-    keywords: ['seneca', provider.lower, `${provider.lower}-provider`, 'sdk'],
+    keywords: ['seneca', provider.lower, `${provider.lower}-provider`,
+      provider.publisher.toLowerCase(), 'sdk'],
     license: 'MIT',
     repository: { type: 'git', url: `git+${provider.repoUrl}.git` },
     scripts: {
@@ -321,10 +328,25 @@ const PackageJson = cmp(function PackageJson(props: any) {
       'test-watch': 'node --test --watch test/**/*.test.js',
       watch: 'tsc --build src test -w',
       build: 'tsc --build src test',
+      'test-coverage':
+        'node --enable-source-maps --experimental-test-coverage --test ' +
+        'test/**/*.test.js',
       clean:
         'rm -rf node_modules dist dist-test .tsbuildinfo yarn.lock ' +
         'package-lock.json',
       reset: 'npm run clean && npm i && npm run build && npm test',
+      // The Seneca release convention: tag from package.json, push, publish.
+      // Generated because a provider is released like every other Seneca
+      // plugin, and a maintainer who has to remember the incantation will
+      // eventually publish an untested build.
+      'repo-tag':
+        'REPO_VERSION=`node -e "console.log(require(\'./package\').version)"` ' +
+        '&& echo TAG: v$REPO_VERSION && git commit -a -m v$REPO_VERSION ' +
+        '&& git push && git tag v$REPO_VERSION && git push --tags;',
+      'repo-publish': 'npm run clean && npm i && npm run repo-publish-quick',
+      'repo-publish-quick':
+        'npm run build && npm run test && npm run repo-tag && ' +
+        'npm publish --access public --registry https://registry.npmjs.org',
     },
     // What actually ships. Without `files`, `npm publish` packs the test
     // suite and build output into the tarball.
