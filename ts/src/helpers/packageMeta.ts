@@ -123,6 +123,40 @@ function goVersion(model: any, target: string, fallback?: string): string {
 }
 
 
+// The root Go package IDENTIFIER — `package voxgigsolardemosdk`. Go requires
+// a plain identifier here, so unlike the module path it must be concatenated
+// from the slug rather than taken from the repo.
+//
+//   main: kit: target: go: module: package: 'acmesdk'
+//
+// The default concatenates `<origin><slug>sdk`, which DOUBLES the org prefix
+// whenever the slug already carries it: slug `voxgig-solardemo` under origin
+// `voxgig-sdk` produced `package voxgigvoxgigsolardemosdk`. A slug repeating
+// its org is the natural shape for a repo named `<org>-<product>`, so the
+// default now drops a leading origin prefix instead of restating it.
+//
+// This was the last of the four things the slug derives that had no override,
+// and the only one that came out wrong — see the identity note at the top of
+// model/sdkgen.aontu.
+function goPackageIdent(model: any, target: string): string {
+  const declared = model?.main?.[KIT]?.target?.[target]?.module?.package
+  if (null != declared && '' !== declared) {
+    return String(declared)
+  }
+
+  const ident = (s: string) => String(s || '').replace(/[^a-z0-9]/gi, '').toLowerCase()
+
+  const org = ident((model.origin || 'voxgig-sdk').replace(/-sdk$/, ''))
+  let slug = ident(model.name)
+
+  if ('' !== org && slug.startsWith(org)) {
+    slug = slug.slice(org.length)
+  }
+
+  return org + slug + 'sdk'
+}
+
+
 // Publication state of a target's package registry, tri-state + tag-only:
 //   'tag'      — no registry (the go family); resolved from the git tag.
 //   'pending'  — registry declared but the package is not uploaded yet
@@ -341,4 +375,5 @@ export {
   envToken,
   goModule,
   goVersion,
+  goPackageIdent,
 }

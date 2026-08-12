@@ -39,11 +39,11 @@ function ocamlType(type: any): string {
 // The op accessor spelling on the entity_obj record, plus a language-agnostic
 // description.
 const OP_DESC: Record<string, { method: string, desc: string }> = {
-  load:   { method: 'e_load reqmatch ctrl',   desc: 'Load a single entity by match criteria.' },
-  list:   { method: 'e_list reqmatch ctrl',   desc: 'List entities, optionally matching the given criteria.' },
-  create: { method: 'e_create reqdata ctrl',  desc: 'Create a new entity with the given data.' },
-  update: { method: 'e_update reqdata ctrl',  desc: 'Update an existing entity.' },
-  remove: { method: 'e_remove reqmatch ctrl', desc: 'Remove the matching entity.' },
+  load:   { method: 'e_load reqmatch ctrl',   desc: 'Load a single entity by match criteria. Resolves to the entity.' },
+  list:   { method: 'e_list reqmatch ctrl',   desc: 'List entities, optionally matching the given criteria. Resolves to one entity per record.' },
+  create: { method: 'e_create reqdata ctrl',  desc: 'Create a new entity with the given data. Resolves to the entity.' },
+  update: { method: 'e_update reqdata ctrl',  desc: 'Update an existing entity. Resolves to the entity.' },
+  remove: { method: 'e_remove reqmatch ctrl', desc: 'Remove the matching entity. Resolves to the entity, marked deleted.' },
 }
 
 
@@ -138,7 +138,9 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`#### Example: Load
 
 \`\`\`ocaml
+(* The op resolves to the ENTITY; the record is inside it. *)
 let ${fn} = (Sdk_client.${fn} client Noval).e_load (${loadArg}) Noval
+let ${fn}_data = ${fn}.e_data_get ()
 \`\`\`
 
 `)
@@ -148,7 +150,9 @@ let ${fn} = (Sdk_client.${fn} client Noval).e_load (${loadArg}) Noval
       Content(`#### Example: List
 
 \`\`\`ocaml
+(* One ENTITY per record. *)
 let ${fn}s = (Sdk_client.${fn} client Noval).e_list (empty_map ()) Noval
+let ${fn}_datas = List.map (fun e -> e.e_data_get ()) ${fn}s
 \`\`\`
 
 `)
@@ -167,6 +171,7 @@ let ${fn} = (Sdk_client.${fn} client Noval).e_create (jo [
 `)
       })
       Content(`]) Noval
+let ${fn}_data = ${fn}.e_data_get ()
 \`\`\`
 
 `)

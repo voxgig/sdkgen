@@ -49,9 +49,9 @@ let () =
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`  (* List all ${fn} records (returns a List value; raises on error) *)
+      Content(`  (* List all ${fn} records (one ENTITY per record; raises on error) *)
   let ${fn}s = (Sdk_client.${fn} client Noval).e_list (empty_map ()) Noval in
-  (match ${fn}s with List items -> List.iter (fun r -> print_endline (stringify r)) !items | _ -> ());
+  List.iter (fun e -> print_endline (stringify (e.e_data_get ()))) ${fn}s;
 `)
     }
 
@@ -68,9 +68,9 @@ let () =
           `("${it.name}", ${ocamlLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join('; ')}]`
         : 'Noval'
-      Content(`  (* Load a specific ${fn} (returns the record; raises on error) *)
+      Content(`  (* Load a specific ${fn} (returns the ENTITY; raises on error) *)
   let ${fn} = (Sdk_client.${fn} client Noval).e_load (${loadArg}) Noval in
-  print_endline (stringify ${fn})
+  print_endline (stringify (${fn}.e_data_get ()))
 `)
     }
   }

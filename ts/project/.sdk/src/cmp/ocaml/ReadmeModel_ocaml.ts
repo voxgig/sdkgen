@@ -21,11 +21,11 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `e_load` | `value -> value -> value` | Load a single entity by match criteria. Raises on error. |',
-    list: '| `e_list` | `value -> value -> value` | List entities matching the criteria (returns a List). Raises on error. |',
-    create: '| `e_create` | `value -> value -> value` | Create a new entity. Raises on error. |',
-    update: '| `e_update` | `value -> value -> value` | Update an existing entity. Raises on error. |',
-    remove: '| `e_remove` | `value -> value -> value` | Remove an entity. Raises on error. |',
+    load: '| `e_load` | `value -> value -> entity_obj` | Load a single entity by match criteria. Resolves to the entity. Raises on error. |',
+    list: '| `e_list` | `value -> value -> entity_obj list` | List entities matching the criteria. Resolves to one entity per record. Raises on error. |',
+    create: '| `e_create` | `value -> value -> entity_obj` | Create a new entity. Resolves to the entity. Raises on error. |',
+    update: '| `e_update` | `value -> value -> entity_obj` | Update an existing entity. Resolves to the entity. Raises on error. |',
+    remove: '| `e_remove` | `value -> value -> entity_obj` | Remove an entity. Resolves to the entity, marked deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
@@ -98,9 +98,11 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the bare result value (a \`Map\` for single-entity
-ops, a \`List\` for \`e_list\`) and raise \`Sdk_error.E\` on error. Wrap calls
-in \`try\`/\`with\` to handle failures.
+Entity operations resolve to the ENTITY, not the raw record \u2014 \`e_list\` to
+one entity per record \u2014 and raise \`Sdk_error.E\` on error. The record is
+reached through \`e_data_get\`, which returns the entity's data container.
+\`e_remove\` resolves to the entity marked deleted (\`e_deleted\`); it keeps the
+data it held. Wrap calls in \`try\`/\`with\` to handle failures.
 
 The \`direct\` escape hatch never raises — it returns a result \`value\` map
 you branch on via \`getp result "ok"\`:

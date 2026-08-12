@@ -36,29 +36,29 @@ function ocamlType(type: any): string {
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
-    sig: 'e_load reqmatch ctrl : value',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and raises on error.',
+    sig: 'e_load reqmatch ctrl : entity_obj',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Resolves to the ENTITY (read the record with `e_data_get`) and raises on error.',
   },
   list: {
-    sig: 'e_list reqmatch ctrl : value',
-    returns: 'a List of entities',
-    desc: 'List entities matching the given criteria. The match is optional — pass `(empty_map ())` to list all records. Returns a List and raises on error.',
+    sig: 'e_list reqmatch ctrl : entity_obj list',
+    returns: 'one entity per record',
+    desc: 'List entities matching the given criteria. The match is optional \u2014 pass `(empty_map ())` to list all records. Resolves to one ENTITY per record and raises on error.',
   },
   create: {
-    sig: 'e_create reqdata ctrl : value',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and raises on error.',
+    sig: 'e_create reqdata ctrl : entity_obj',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Resolves to the ENTITY (read the record with `e_data_get`) and raises on error.',
   },
   update: {
-    sig: 'e_update reqdata ctrl : value',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and raises on error.',
+    sig: 'e_update reqdata ctrl : entity_obj',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Resolves to the ENTITY (read the record with `e_data_get`) and raises on error.',
   },
   remove: {
-    sig: 'e_remove reqmatch ctrl : value',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    sig: 'e_remove reqmatch ctrl : entity_obj',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Resolves to the ENTITY, marked deleted (`e_deleted`); it keeps the data it held. Raises on error.',
   },
 }
 
@@ -273,16 +273,16 @@ ${info.desc}
               : 'Noval'
             Content(`\`\`\`ocaml
 let result = (Sdk_client.${fn} client Noval).${'load' === opname ? 'e_load' : 'e_remove'} (${arg}) Noval
+let result_data = result.e_data_get ()
 \`\`\`
 
 `)
           }
           else if ('list' === opname) {
             Content(`\`\`\`ocaml
+(* One ENTITY per record; the record is reached with e_data_get. *)
 let results = (Sdk_client.${fn} client Noval).e_list (empty_map ()) Noval in
-(match results with
- | List items -> List.iter (fun r -> print_endline (stringify r)) !items
- | _ -> ())
+List.iter (fun e -> print_endline (stringify (e.e_data_get ()))) results
 \`\`\`
 
 `)
@@ -298,6 +298,7 @@ let result = (Sdk_client.${fn} client Noval).e_create (jo [
 `)
             })
             Content(`]) Noval
+let result_data = result.e_data_get ()
 \`\`\`
 
 `)
@@ -314,6 +315,7 @@ let result = (Sdk_client.${fn} client Noval).e_create (jo [
 let result = (Sdk_client.${fn} client Noval).e_update (jo [
 ${updateLines}    (* Fields to update *)
 ]) Noval
+let result_data = result.e_data_get ()
 \`\`\`
 
 `)

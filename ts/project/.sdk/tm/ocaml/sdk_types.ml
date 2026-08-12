@@ -199,11 +199,20 @@ and entity_obj = {
   mutable e_data_get : unit -> value;
   mutable e_match_set : value -> unit;
   mutable e_match_get : unit -> value;
-  mutable e_load : value -> value -> value;
-  mutable e_list : value -> value -> value;
-  mutable e_create : value -> value -> value;
-  mutable e_update : value -> value -> value;
-  mutable e_remove : value -> value -> value;
+  (* Every operation resolves to the ENTITY, not the raw record - e_list to
+   * one per record. The record is reached through e_data_get. `value` is a
+   * closed data union with no slot for an entity, so the CONTRACT lives in
+   * these signatures. See AGENTS.md "Entity operations return ENTITIES". *)
+  mutable e_load : value -> value -> entity_obj;
+  mutable e_list : value -> value -> entity_obj list;
+  mutable e_create : value -> value -> entity_obj;
+  mutable e_update : value -> value -> entity_obj;
+  mutable e_remove : value -> value -> entity_obj;
+  (* e_remove resolves to the entity, marked. The instance KEEPS the data it
+   * held - a caller can still read what was deleted - but it is no longer a
+   * live record. *)
+  mutable e_deleted : bool;
+  mutable e_mark_deleted : unit -> unit;
   (* stream action args callopts -> a lazy Seq over result items. *)
   mutable e_stream : string -> value -> value -> value Seq.t;
 }

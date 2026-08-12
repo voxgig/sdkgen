@@ -53,17 +53,20 @@ let () =
       ignore ent;
 `)
       if (hasList) {
-        Content(`      let listed = ent.e_list (empty_map ()) Noval in
-      check "list is a list" (islist listed);
-      check_int "list size" (size listed) 1;
+        Content(`      (* The op resolves to one ENTITY per record; the record is reached
+         with e_data_get. See AGENTS.md "Entity operations return ENTITIES". *)
+      let listed = ent.e_list (empty_map ()) Noval in
+      check_int "list size" (List.length listed) 1;
+      List.iter (fun en -> check "list entry data is a map" (ismap (en.e_data_get ()))) listed;
 `)
       }
       if (hasLoad) {
         Content(`      let loaded = ent.e_load (jo [("id", Str "${ocamlString(id)}")]) Noval in
-      check "load is a map" (ismap loaded);
+      let loaded_data = loaded.e_data_get () in
+      check "load data is a map" (ismap loaded_data);
 `)
         if (hasId) {
-          Content(`      check_vstr "load id" (getp loaded "id") "${ocamlString(id)}";
+          Content(`      check_vstr "load id" (getp loaded_data "id") "${ocamlString(id)}";
 `)
         }
       }
