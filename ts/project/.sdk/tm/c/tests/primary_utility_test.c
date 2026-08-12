@@ -241,7 +241,10 @@ static void test_primary_make_fetch_def_basic(void) {
 static void test_primary_make_fetch_def_with_body(void) {
   base_client();
   Context* ctx = full_ctx();
-  ctx->spec = spec_new(cmap(9, "base", v_str("http://localhost:8080"), "prefix", v_str(""),
+  // 8 pairs, not 9 - cmap is variadic and reads exactly npairs, so an
+  // overcount walks off the argument list and the trailing entry (method) is
+  // whatever the read finds.
+  ctx->spec = spec_new(cmap(8, "base", v_str("http://localhost:8080"), "prefix", v_str(""),
                             "path", v_str("items"), "suffix", v_str(""), "params", v_map(),
                             "query", v_map(), "headers", v_map(), "method", v_str("POST")));
   ctx->spec->body = cmap(1, "name", v_str("test"));

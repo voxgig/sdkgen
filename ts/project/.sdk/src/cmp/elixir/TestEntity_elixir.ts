@@ -70,8 +70,15 @@ defmodule ${Name}.${EName}EntityTest do
   test "should list records" do
     sdk = mk_sdk()
     ent = ${Name}.${ename}(sdk)
+    # The op resolves to one ENTITY per record; the record is reached with
+    # data_get. See AGENTS.md "Entity operations return ENTITIES".
     result = ${Name}.Entity.${EName}.list(ent, S.jm([]))
     assert S.islist(result)
+    if S.size(result) > 0 do
+      Enum.each(0..(S.size(result) - 1), fn i ->
+        assert S.ismap(${Name}.EntityBase.data_get(S.getelem(result, i)))
+      end)
+    end
   end
 `)
     }
@@ -84,7 +91,8 @@ defmodule ${Name}.${EName}EntityTest do
     if id != nil do
       sdk = mk_sdk()
       ent = ${Name}.${ename}(sdk)
-      rec = ${Name}.Entity.${EName}.load(ent, S.jm(["id", id]))
+      loaded = ${Name}.Entity.${EName}.load(ent, S.jm(["id", id]))
+      rec = ${Name}.EntityBase.data_get(loaded)
       assert S.ismap(rec)
       assert S.getprop(rec, "id") == id
     end
@@ -97,7 +105,8 @@ defmodule ${Name}.${EName}EntityTest do
   test "should create then read back" do
     sdk = ${Name}.test(S.jm(["entity", S.jm(["${ename}", S.jm([])])]))
     ent = ${Name}.${ename}(sdk)
-    made = ${Name}.Entity.${EName}.create(ent, S.jm(["name", "test-create"]))
+    created = ${Name}.Entity.${EName}.create(ent, S.jm(["name", "test-create"]))
+    made = ${Name}.EntityBase.data_get(created)
     assert S.ismap(made)
     assert S.getprop(made, "id") != nil
   end
