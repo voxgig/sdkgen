@@ -39,6 +39,32 @@ defmodule ProjectName.EntityBase do
 
   def get_name(ent), do: S.getprop(ent, "_name")
 
+  # Every operation resolves to the ENTITY, not the raw data — the record is
+  # reached through data_get/1. `run_op` returns the terminal result value, so
+  # the op hands that value back only when the pipeline FAILED (the error
+  # shape is utility-configurable); on success it hands back the entity.
+  # See AGENTS.md "Entity operations return ENTITIES".
+  def op_return(ent, ctx, out) do
+    result = S.getprop(ctx, "result")
+
+    if result != nil and S.getprop(result, "ok") == true do
+      ent
+    else
+      out
+    end
+  end
+
+  # `remove` resolves to the entity, marked. The instance KEEPS the data it
+  # held — a caller can still read what was deleted — but it is no longer a
+  # live record.
+  def mark_deleted(ent) do
+    S.setprop(ent, "_deleted", true)
+    ent
+  end
+
+  def deleted(ent), do: S.getprop(ent, "_deleted") == true
+
+
   def make(ent) do
     module = S.getprop(ent, "_module")
     client = S.getprop(ent, "_client")
