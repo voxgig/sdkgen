@@ -119,14 +119,25 @@ entity — and the ports whose pipeline carries a closed `Value` union (rust,
 zig, c, cpp) cannot return an entity through it at all. The op runs `done()`
 to complete the pipeline and raise on failure, then returns the entity.
 
-**Coverage.** Honoured today by ts, js, dart, go, py, rb, lua, perl, php,
-java, kotlin, scala, swift and csharp. The remaining ports (rust, cpp, c, zig,
-elixir, clojure, haskell, ocaml, lean) still resolve to data. That is a
-SIGNATURE change, not a Value limitation: their op methods return the
-pipeline's `Value`, and honouring the contract means returning the entity
-handle (`Rc<EntyClass>`, `EntityPtr`, `*EntyClass`, ...) instead. Whoever does
-it must update that language's `TestEntity_<lang>` in the same change — the
-generated flow tests read the record off the op result.
+**Coverage.** Honoured by every target that HAS entity instances: ts, js,
+dart, go, py, rb, lua, perl, php, java, kotlin, scala, swift, csharp, rust,
+cpp, c, zig, elixir, clojure, haskell and ocaml. In the statically typed ports
+the contract lives in the SIGNATURES — their pipeline carries a closed `Value`
+union with no slot for an entity, so the op methods return the entity handle
+(`Rc<EntyClass>`, `SdkEntityPtr`, `Entity*`, `entity_obj`, ...) instead of a
+`Value`.
+
+**`lean` is the one exception, by construction.** It has no entity object at
+all: `Entity_lean` emits nothing, and ops are namespaced free functions over
+the client `Value` (`Planet.load c m co`), dispatched by the config-driven
+`SdkRuntime`. There is no instance to return, no per-entity data/match state,
+no `.data()`, `make()` or `stream()`. Honouring the contract there is not a
+signature change but a new entity layer for the target — a design decision in
+its own right, not a port of this one. Don't record it as a simple gap.
+
+Whoever changes a language must update its `TestEntity_<lang>` in the same
+change — the generated per-entity and flow tests read the record off the op
+result, and a text-only assertion will not catch the miss.
 
 **And the generated TESTS move with it.** `TestEntity_<lang>` emits flow tests
 that assert on the RECORD, so every op call site takes the data hop

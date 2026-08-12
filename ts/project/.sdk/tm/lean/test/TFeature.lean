@@ -56,30 +56,42 @@ def onOpts (extra : Array (String × Value)) : SIO Value := do
 def bucketOf (client : Value) (name : String) : SIO Value := do
   gp (← gp client "track") name
 
+/-- Does the entity declare this op? -/
+def hasOp (e : Value) (opname : String) : SIO Bool := do
+  match (← gp (← gp e "op") opname) with
+  | .map _ => pure true
+  | _ => pure false
+
 /-- The first entity that has a `list` op AND generated seed data: the feature
-    suite is entity-agnostic, so it discovers its subject from the config. -/
-def findSubject : SIO (Option (String × Value)) := do
+    suite is entity-agnostic, so it discovers its subject from the config.
+    Returns whether the subject also has `create` — the idempotency check is
+    the one case that mutates, and a list-only entity (an API with a read-only
+    collection) has no create ENDPOINT, so calling it raises rather than
+    exercising the feature. Entities carrying both are preferred, so a model
+    that has one keeps the mutating coverage. -/
+def findSubject : SIO (Option (String × Value × Bool)) := do
   let config ← SdkJson.jsonRead SdkConfig.configJson
   let ents ← gp config "entity"
+  let mut fallback : Option (String × Value × Bool) := none
   for name in (← keysof ents) do
     let e ← gp ents name
-    let hasList ← (match (← gp (← gp e "op") "list") with
-      | .map _ => pure true
-      | _ => pure false)
-    if hasList then
+    if ← hasOp e "list" then
       let Name := name.capitalize
       let seedPath := "../.sdk/test/entity/" ++ name ++ "/" ++ Name ++ "TestData.json"
       if ← System.FilePath.pathExists seedPath then
         let seed ← SdkJson.jsonRead (← IO.FS.readFile seedPath)
-        return some (name, seed)
-  pure none
+        if ← hasOp e "create" then
+          return some (name, seed, true)
+        if fallback.isNone then
+          fallback := some (name, seed, false)
+  pure fallback
 
 def main : IO UInt32 := do
   let sctx ← mkCtx
   let go : SIO Unit := do
     match (← findSubject) with
     | none => IO.println "skip - no entity with list op and seed data"
-    | some (ent, seed) => do
+    | some (ent, seed, hasCreate) => do
     let mt ← emptyMap
 
     -- log: counts requests
@@ -141,11 +153,12 @@ def main : IO UInt32 := do
       let _ ← SdkRuntime.opList c ent mt mt
       let b0 ← bucketOf c "idempotency"
       check ((← numAt b0 "issued") == 0.0) "idempotency: no key for a read op"
-      let d ← newMap #[("name", .str "idem")]
-      let _ ← SdkRuntime.opCreate c ent d mt
-      let b ← bucketOf c "idempotency"
-      check ((← numAt b "issued") == 1.0) "idempotency: issues a key for create"
-      check ((← gpS b "last") != "") "idempotency: records the issued key")
+      if hasCreate then
+        let d ← newMap #[("name", .str "idem")]
+        let _ ← SdkRuntime.opCreate c ent d mt
+        let b ← bucketOf c "idempotency"
+        check ((← numAt b "issued") == 1.0) "idempotency: issues a key for create"
+        check ((← gpS b "last") != "") "idempotency: records the issued key")
 
     -- clienttrack: request/session headers and a request count
     (do
