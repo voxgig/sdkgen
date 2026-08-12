@@ -34,7 +34,12 @@ import { SdkGen } from '../dist/sdkgen.js'
 const PKG = Path.resolve(__dirname, '..')
 const STAGE = Path.resolve(PKG, 'dist-test-scaffold')
 const SCAFFOLD = Path.resolve(PKG, 'project', '.sdk')
-const TSC = Path.join(PKG, 'node_modules', '.bin', 'tsc')
+// typescript's own entry SCRIPT, run through this node. `node_modules/.bin/tsc`
+// is a shell script on POSIX and needs its `.cmd` shim on Windows, neither of
+// which execFileSync can spawn directly — on Windows it fails with ENOENT.
+// (`typescript/bin/tsc` is not in the package's `exports`, so resolve the
+// library entry and step up to the package root.)
+const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin', 'tsc')
 
 
 // The generator suite's own fixture and Root, reused so this compiles exactly
@@ -91,15 +96,21 @@ function run(cmd: string, args: string[], cwd: string): { ok: boolean, out: stri
 
 
 function tsc(cwd: string, project: string) {
-  return run(TSC, ['--build', project], cwd)
+  return run(process.execPath, [TSC, '--build', project], cwd)
 }
 
 
 // A toolchain this machine does not have is skipped, not failed: the check
-// is worth whatever compilers are present, and CI can install more.
+// is worth whatever compilers are present, and CI can install more. Windows
+// has `where` rather than `which`, and a lookup that cannot run at all counts
+// as absent, so the suite skips instead of failing on the probe.
 function toolchain(name: string): string | null {
-  const probe = run('/usr/bin/which', [name], process.cwd())
-  return probe.ok ? probe.out.trim().split('\n')[0] : null
+  const probe = 'win32' === process.platform
+    ? run('where', [name], process.cwd())
+    : run('/usr/bin/which', [name], process.cwd())
+  if (!probe.ok) return null
+  const first = probe.out.trim().split(/\r?\n/)[0]
+  return '' === first ? null : first
 }
 
 
@@ -153,7 +164,7 @@ describe('generated SDK compiles', () => {
   // The headline: src AND test. `--build src` first, because the test tree
   // imports the package root, which resolves through the emitted dist/.
   test('typescript: src and the generated test suite both type-check', async () => {
-    ok(Fs.existsSync(TSC), 'no local tsc — run `npm install`')
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
 
     const sdkroot = Path.join(tmp, 'ts')
     await generateTo('ts', sdkroot)

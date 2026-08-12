@@ -54,7 +54,7 @@ import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey } from './helpers/canonType'
 import { OP_SUFFIX, opTypeName, opParams, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape'
-import { isReservedName, safeVarName, exampleVarName, isRbCoreConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming'
+import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming'
 import { serverVariables, hasServerVariables } from './helpers/serverVars'
 import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
 import type { ExampleLang } from './helpers/opExample'
@@ -530,6 +530,8 @@ export {
   isReservedName,
   safeVarName,
   exampleVarName,
+  phpEntityAccessor,
+  entityCacheField,
   isRbCoreConstant,
   rbSafeTypeName,
   isSwiftSdkType,

@@ -24,7 +24,8 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  entityDataIdField, envName, envToken
+  entityDataIdField, envName, envToken,
+  phpEntityAccessor,
 } from '@voxgig/sdkgen'
 
 
@@ -61,13 +62,14 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  // PHP method names are case-insensitive — an entity literally named 'test'
-  // collides with the static `test()` test-mode constructor on the SDK class.
-  // Mirror the mangling done in MainEntity_php.ts.
+  // The accessor may be mangled to avoid colliding with an SDK class member.
+  // This used to carry its own copy of the rule, which only knew about `test`
+  // — so an entity named `graph_ql` emitted `$client->GraphQl(null)` here,
+  // which PHP resolves (case-insensitively) to the SDK's own
+  // `graphql(string $query)` and fails with "Argument #1 must be of type
+  // string, null given". One helper, one answer.
   const entName = nom(entity, 'Name')
-  const accessor = 'test' === entName.toLowerCase()
-    ? entName + '_'
-    : entName
+  const accessor = phpEntityAccessor(entName)
 
   const PROJUPPER = envName(model)
 

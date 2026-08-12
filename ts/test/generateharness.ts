@@ -179,9 +179,9 @@ main: kit: entity: planet: {
 
 
 # Singleton: a load with no path params at all. There is nothing to pass it.
-main: kit: entity: current: {
+main: kit: entity: ambient: {
   alias: field: {}
-  name: "current"
+  name: "ambient"
   field: {
     temperature: { name: "temperature", kind: "field", type: "\`$NUMBER\`" }
     flow:        { name: "flow",        kind: "field", type: "\`$NUMBER\`" }
@@ -194,7 +194,7 @@ main: kit: entity: current: {
     load: {
       name: "load"
       points: [ {
-        args: {}, method: "GET", orig: "/current", parts: ["current"]
+        args: {}, method: "GET", orig: "/ambient", parts: ["ambient"]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -226,6 +226,108 @@ main: kit: entity: history: {
 }
 
 
+# RESERVED NAMES. These three entity names collide with something that
+# already exists in the generated code, and each one shipped a broken SDK:
+#
+#   utility  -> php private $_utility on the SDK class (fatal redeclare)
+#   graph_ql -> php graphql(), added by the 2.x GraphQL rollout. PHP method
+#               names are CASE-INSENSITIVE, so GraphQl() collides (fatal)
+#   console  -> the JS/TS global. A generated for (const console of ...)
+#               shadows it, and the example's own console.log then resolves
+#               to the entity: "console.log is not a function"
+#
+# The generator owns helpers for exactly this (safeVarName, isReservedName,
+# exampleVarName, entityClassName); these entities prove they are actually
+# applied, in the emitted source AND in the emitted documentation examples.
+main: kit: entity: utility: {
+  alias: field: {}
+  name: "utility"
+  field: {
+    id:   { name: "id",   kind: "field", type: "\`$STRING\`", required: true }
+    tool: { name: "tool", kind: "field", type: "\`$STRING\`" }
+  }
+  fields: [
+    { name: "id",   req: true,  type: "\`$STRING\`" }
+    { name: "tool", req: false, type: "\`$STRING\`" }
+  ]
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        args: {}, method: "GET", orig: "/utility", parts: ["utility"]
+        transform: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: entity: graph_ql: {
+  alias: field: {}
+  name: "graph_ql"
+  field: {
+    id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
+    query: { name: "query", kind: "field", type: "\`$STRING\`" }
+  }
+  fields: [
+    { name: "id",    req: true,  type: "\`$STRING\`" }
+    { name: "query", req: false, type: "\`$STRING\`" }
+  ]
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        args: {}, method: "GET", orig: "/graphql", parts: ["graphql"]
+        transform: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: entity: console: {
+  alias: field: {}
+  name: "console"
+  field: {
+    id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
+    maker: { name: "maker", kind: "field", type: "\`$STRING\`" }
+  }
+  fields: [
+    { name: "id",    req: true,  type: "\`$STRING\`" }
+    { name: "maker", req: false, type: "\`$STRING\`" }
+  ]
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        args: {}, method: "GET", orig: "/console", parts: ["console"]
+        transform: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+
+main: kit: flow: BasicUtilityFlow: {
+  entity: "utility", kind: "basic", name: "BasicUtilityFlow"
+  step: [
+    { op: "list", input: { ref: "utility_ref01", srcdatavar: "utility_ref01_data", suffix: "_dt0" } }
+  ]
+}
+
+main: kit: flow: BasicGraphQlFlow: {
+  entity: "graph_ql", kind: "basic", name: "BasicGraphQlFlow"
+  step: [
+    { op: "list", input: { ref: "graph_ql_ref01", srcdatavar: "graph_ql_ref01_data", suffix: "_dt0" } }
+  ]
+}
+
+main: kit: flow: BasicConsoleFlow: {
+  entity: "console", kind: "basic", name: "BasicConsoleFlow"
+  step: [
+    { op: "list", input: { ref: "console_ref01", srcdatavar: "console_ref01_data", suffix: "_dt0" } }
+  ]
+}
+
+
 main: kit: flow: BasicPlanetFlow: {
   entity: "planet", kind: "basic", name: "BasicPlanetFlow"
   step: [
@@ -245,10 +347,10 @@ main: kit: flow: BasicPlanetFlow: {
   ]
 }
 
-main: kit: flow: BasicCurrentFlow: {
-  entity: "current", kind: "basic", name: "BasicCurrentFlow"
+main: kit: flow: BasicAmbientFlow: {
+  entity: "ambient", kind: "basic", name: "BasicAmbientFlow"
   step: [
-    { op: "load", input: { ref: "current_ref01", srcdatavar: "current_ref01_data", suffix: "_dt0" } }
+    { op: "load", input: { ref: "ambient_ref01", srcdatavar: "ambient_ref01_data", suffix: "_dt0" } }
   ]
 }
 

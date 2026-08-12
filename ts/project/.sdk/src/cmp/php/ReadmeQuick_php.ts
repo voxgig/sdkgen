@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityDataIdField, entityOps, phpEntityAccessor } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -82,7 +82,7 @@ $client = ${ctor};
 \`\`\`php
 try {
     // list() returns an array of ${eName} records — iterate directly.
-    $${eName.toLowerCase()}s = $client->${eName}()->list();
+    $${eName.toLowerCase()}s = $client->${phpEntityAccessor(eName)}()->list();
     foreach ($${eName.toLowerCase()}s as $item) {
         echo ${itemPrint} . "\\n";
     }
@@ -121,7 +121,7 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`\`\`php
 try {
     // load() returns the ENTITY — call data_get() for the ${neName} record (throws on error).
-    $${neVar} = $client->${neName}()->load([${neMatch.join(', ')}]);
+    $${neVar} = $client->${phpEntityAccessor(neName)}()->load([${neMatch.join(', ')}]);
     print_r($${neVar});
 } catch (\\Throwable $err) {
     echo "Error: " . $err->getMessage();
@@ -149,7 +149,7 @@ try {
 \`\`\`php
 try {
     // load() returns the ENTITY — call data_get() for the ${eName} record (throws on error).
-    $${eName.toLowerCase()} = $client->${eName}()->load(${loadArg});
+    $${eName.toLowerCase()} = $client->${phpEntityAccessor(eName)}()->load(${loadArg});
     print_r($${eName.toLowerCase()});
 } catch (\\Throwable $err) {
     echo "Error: " . $err->getMessage();
@@ -197,7 +197,7 @@ try {
 `)
       if (opnames.includes('create')) {
         Content(`// create() returns the ENTITY — call data_get() for the created ${eName} record.
-$created = $client->${eName}()->create([${examplePairs('create').join(', ')}]);
+$created = $client->${phpEntityAccessor(eName)}()->create([${examplePairs('create').join(', ')}]);
 
 `)
       }
@@ -205,7 +205,7 @@ $created = $client->${eName}()->create([${examplePairs('create').join(', ')}]);
         const updatePairs = (idF ? [`"${idF}" => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`// Update${fromCreated ? ` — index the record via data_get() ($created->data_get()["${dataIdF}"]).` : ''}
-$client->${eName}()->update([${updatePairs.join(', ')}]);
+$client->${phpEntityAccessor(eName)}()->update([${updatePairs.join(', ')}]);
 
 `)
       }
@@ -220,7 +220,7 @@ $client->${eName}()->update([${updatePairs.join(', ')}]);
             ? `"${it.name}" => ${idValueFor('remove')}`
             : `"${it.name}" => ${phpLit(it.type, 'example_' + it.name)}`)
         Content(`// Remove
-$client->${eName}()->remove(${removePairs.length ? `[${removePairs.join(', ')}]` : ''});
+$client->${phpEntityAccessor(eName)}()->remove(${removePairs.length ? `[${removePairs.join(', ')}]` : ''});
 `)
       }
       Content(`\`\`\`

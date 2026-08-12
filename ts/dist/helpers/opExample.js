@@ -24,6 +24,7 @@ exports.dataArg = dataArg;
 exports.litFor = litFor;
 const canonType_1 = require("./canonType");
 const opShape_1 = require("./opShape");
+const naming_1 = require("./naming");
 function cap(s) {
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
@@ -36,8 +37,24 @@ function litFor(lang, type) {
         return 'py' === lang ? 'True' : ('rb' === lang ? 'true' : 'true');
     if ('ARRAY' === k)
         return ('lua' === lang) ? '{}' : ('go' === lang ? '[]any{}' : '[]');
-    if ('OBJECT' === k)
-        return ('go' === lang) ? 'map[string]any{}' : '{}';
+    // PHP has no `{}` literal — `["data" => {}]` is a parse error, which took
+    // the whole generated README down for any entity with an object-typed
+    // writable field (dymo-api-introduction, html-creator). Arrays serve as both
+    // list and map, so `[]` is the empty object too. Ruby and Lua likewise want
+    // their own empty-hash/table spelling rather than JS's.
+    if ('OBJECT' === k) {
+        if ('go' === lang)
+            return 'map[string]any{}';
+        if ('php' === lang)
+            return '[]';
+        if ('rb' === lang)
+            return '{}';
+        if ('lua' === lang)
+            return '{}';
+        if ('py' === lang)
+            return '{}';
+        return '{}';
+    }
     return '"example"';
 }
 // The example id literal for an op's match key, typed from the op's declared
@@ -133,8 +150,11 @@ function primaryOpCall(lang, eName, eLower, op, idF, ent) {
         factory = `client.${eName}`;
         sep = '.';
     }
+    // php mangles an accessor that would collide with an SDK class member
+    // (see phpEntityAccessor); the example has to call the name that is
+    // actually declared, or it invokes the SDK's own method instead.
     else if ('php' === lang) {
-        factory = `$client->${eName}()`;
+        factory = `$client->${(0, naming_1.phpEntityAccessor)(eName)}()`;
         sep = '->';
     }
     else {

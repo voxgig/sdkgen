@@ -11,7 +11,7 @@ import { requirePath } from '../utility'
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
 import { idLiteral, matchArg, dataArg } from '../helpers/opExample'
 import type { ExampleLang } from '../helpers/opExample'
-import { safeVarName, exampleVarName } from '../helpers/naming'
+import { safeVarName, exampleVarName, phpEntityAccessor } from '../helpers/naming'
 
 
 function cap(s: string): string {
@@ -110,7 +110,7 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 stores the returned data and match criteria internally.
 
 \`\`\`php
-$${eLower} = $client->${eName}();
+$${eLower} = $client->${phpEntityAccessor(eName)}();
 $${eLower}->${op}(${arg});
 
 // $${eLower}->data_get() now returns the ${eLower} data from the last ${op}

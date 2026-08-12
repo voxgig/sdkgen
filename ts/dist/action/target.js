@@ -251,10 +251,14 @@ function resolveTarget(tref, ctx$) {
     }
     const search = [];
     let found = false;
-    if (aliasref.includes('/')) {
+    // Windows: an absolute ref is `D:\a\...` or `D:/a/...`, and a Path.join'd
+    // one carries backslashes, so neither `includes('/')` nor `startsWith('/')`
+    // recognises it. Path.isAbsolute and Path.sep are platform-correct and
+    // reduce to the same answers on POSIX.
+    if (aliasref.includes('/') || aliasref.includes(node_path_1.default.sep)) {
         // NOTE: the last path element of the ref is the target name, not a folder.
         const aliasbase = node_path_1.default.dirname(aliasref);
-        if (!aliasref.startsWith('/')) {
+        if (!node_path_1.default.isAbsolute(aliasref)) {
             fulltfolder = node_path_1.default.normalize(node_path_1.default.join(root, 'node_modules', aliasbase, '.sdk'));
             search.push(fulltfolder);
             found = fs.existsSync(fulltfolder);
@@ -277,12 +281,19 @@ function resolveTarget(tref, ctx$) {
     if (!found) {
         throw new Error('Target folder not found in:\n' + search.join('\n  '));
     }
-    const rootslash = root.endsWith('/') ? root : root + '/';
+    // `base` is the target folder relative to the project root. Compare with the
+    // PLATFORM separator: on Windows `root + '/'` never prefixes a normalised
+    // absolute path, so the root would not be stripped and `base` would stay
+    // absolute. Normalise both sides first for the same reason.
+    const nroot = node_path_1.default.normalize(root);
+    const rootslash = nroot.endsWith(node_path_1.default.sep) ? nroot : nroot + node_path_1.default.sep;
     const out = {
         tname,
         tfolder: fulltfolder,
         torigname,
-        base: fulltfolder.replace(rootslash, '')
+        base: fulltfolder.startsWith(rootslash)
+            ? fulltfolder.slice(rootslash.length)
+            : fulltfolder
     };
     return out;
 }

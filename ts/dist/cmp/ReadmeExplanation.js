@@ -78,7 +78,7 @@ with hook methods named after pipeline stages (e.g. \`PrePoint\`,
 stores the returned data and match criteria internally.
 
 \`\`\`php
-$${eLower} = $client->${eName}();
+$${eLower} = $client->${(0, naming_1.phpEntityAccessor)(eName)}();
 $${eLower}->${op}(${arg});
 
 // $${eLower}->data_get() now returns the ${eLower} data from the last ${op}
