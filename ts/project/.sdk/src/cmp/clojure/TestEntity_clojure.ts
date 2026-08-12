@@ -29,13 +29,16 @@ const TestEntity = cmp(function TestEntity(props: any) {
                  ent (api/${e.name} sdk nil)]
 `)
     if (hasCreate) {
-      Content(`             (let [res (e-${e.name}/create ent (vs/jm "name" "smoke") nil)]
-               (t/is-true (vs/ismap res) "create returns a record map")
-               (t/is-true (some? (vs/getprop res "id")) "created record has an id"))
+      Content(`             (let [res (e-${e.name}/create ent (vs/jm "name" "smoke") nil)
+                   rec (if (map? res) ((:data-get res)) res)]
+               ;; create resolves to the ENTITY; the record is data-get.
+               (t/is-true (vs/ismap rec) "create resolves to an entity carrying a record")
+               (t/is-true (some? (vs/getprop rec "id")) "created record has an id"))
 `)
     }
     if (hasList) {
       Content(`             (let [items (e-${e.name}/list ent (vs/jm) nil)]
+               ;; list resolves to one entity per record.
                (t/is-true (sequential? items) "list returns a sequential collection"))
 `)
     }
