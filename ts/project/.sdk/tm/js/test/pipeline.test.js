@@ -140,19 +140,16 @@ describe('pipeline:makeResult', () => {
     strictEqual(u.makeResult(base({ spec: {}, result: null })).code, 'result_no_result')
   })
 
-  // The list contract: PLAIN records, the same shape every other operation
-  // resolves to. It used to wrap each record in an entity instance.
-  test('list op leaves resdata as plain records', () => {
+  test('list op wraps resdata into entity instances', () => {
     const made = []
     const entity = { make: () => ({ data: (d) => made.push(d) }) }
-    const records = [{ a: 1 }, { a: 2 }]
     const ctx = base({
       op: { name: 'list', entity: 'x' }, entity,
-      spec: { step: 's' }, result: { resdata: records },
+      spec: { step: 's' }, result: { resdata: [{ a: 1 }, { a: 2 }] },
     })
     const r = stdutil.makeResult(ctx)
-    deepStrictEqual(r.resdata, records)
-    strictEqual(made.length, 0)
+    strictEqual(r.resdata.length, 2)
+    strictEqual(made.length, 2)
   })
 
   test('an empty list yields an empty resdata array', () => {

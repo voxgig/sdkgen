@@ -1,28 +1,35 @@
-// One return shape for every entity operation.
+// Entity operations return ENTITIES.
 //
-// WHAT WENT WRONG
+// THE CONTRACT
 //
-// The shape a generated SDK resolved to depended on WHICH operation you
-// called. `list()` returned entity INSTANCES; `load()`, `create()` and
-// `update()` returned plain objects. Same record, two types — and, because
-// an entity instance serialises through `toJSON()`, two different key sets:
-// the list form carried an `entity$` marker the load form did not.
+// Every entity operation resolves to the Entity INSTANCE — `load`, `list`,
+// `create`, `update` and `remove` alike. `remove` returns the entity marked
+// as deleted. `.data()` gives back the entity data container instance.
 //
-// Every consumer touching both paths had to normalise defensively:
+// This is a fundamental design of the SDK, not a trade-off: entities are
+// stateful (every generated README says so), the operation RESULT is the
+// entity, and the record is reached through it.
 //
-//   const plain = (res) => (res && 'function' === typeof res.data) ? res.data() : res
+// WHAT WAS WRONG
 //
-// And the marker was worse than inconsistent. Seneca uses `entity$` on its
-// own entities to hold the canon, so an SDK record fed straight into
-// `entize` overwrote it and produced entities claiming a canon that does not
-// exist — no error, just wrong entities.
+// The generated code half-implemented it, and the two halves disagreed:
+//
+//   - `done()` returned `ctx.result.resdata`, so `load`/`create`/`update`
+//     resolved to plain data.
+//   - `makeResult` re-wrapped `list` results into entity instances, so `list`
+//     resolved to entities — while its DECLARED type said `Promise<Planet[]>`,
+//     the data interface. The signature was a lie the compiler cannot catch,
+//     and it is what broke the first downstream integration.
+//
+// Converging on plain records would have INVERTED the design. The fix runs
+// the other way: `done()` returns the entity, and the declared types name the
+// CLASS (`Promise<PlanetEntity>`).
 //
 // WHAT THIS PINS
 //
-// `makeResult` is a TEMPLATE (`tm/ts/src/utility/MakeResultUtility.ts`): it
-// ships to users verbatim and is outside sdkgen's own tsconfig, so nothing
-// here compiled it. This suite transpiles the real shipped file and runs it,
-// the same trick featureharness.ts uses for the feature templates.
+// `done` and `makeResult` are TEMPLATES: they ship to users verbatim and are
+// outside sdkgen's own tsconfig, so nothing here compiled them, let alone ran
+// them. This suite transpiles the real shipped files and drives them.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -64,90 +71,134 @@ function loadTemplate(rel: string, shims: Record<string, any> = {}): any {
 
 const { makeResult } = loadTemplate('ts/src/utility/MakeResultUtility.ts')
 
+const { done } = loadTemplate('ts/src/utility/DoneUtility.ts', {
+  '../types': {},
+  './CleanUtility': { clean: (_c: any, v: any) => v },
+})
 
-// A context shaped the way the generated pipeline builds one. `entity`
-// records every make()/data() call so the test can prove nothing was
-// wrapped, rather than just that the count came out right.
-function makeCtx(opname: string, resdata: any) {
-  const made: any[] = []
 
-  return {
-    made,
-    ctx: {
-      out: {},
-      ctrl: {},
-      op: { name: opname, entity: 'planet' },
-      entity: { make: () => ({ data: (d: any) => made.push(d) }) },
-      spec: { step: '' },
-      result: { resdata },
-      utility: { transformResponse: () => { } },
-      error: (code: string) => ({ code }),
+// A stand-in for the generated entity class: stateful, with the `data()` and
+// `deleted()` surface the real EntityBase fragment emits.
+function makeEntity(name = 'planet') {
+  const ent: any = {
+    Name: name,
+    _data: {},
+    _deleted: false,
+    data(d?: any) {
+      if (null != d) { ent._data = d }
+      return ent._data
     },
+    deleted() { return true === ent._deleted },
+    make: () => makeEntity(name),
+  }
+  return ent
+}
+
+
+// A context shaped the way the generated pipeline builds one.
+function makeCtx(opname: string, resdata: any, entity?: any) {
+  return {
+    out: {},
+    ctrl: {},
+    op: { name: opname, entity: 'planet' },
+    entity: null === entity ? null : (entity || makeEntity()),
+    spec: { step: '' },
+    result: { ok: true, resdata },
+    utility: {
+      transformResponse: () => { },
+      makeError: () => { throw new Error('makeError must not run on the ok path') },
+      struct: { delprop: (o: any, k: string) => { delete o[k] } },
+    },
+    error: (code: string) => ({ code }),
   }
 }
 
 
-describe('entity operation result contract', () => {
+describe('entity operation return contract', () => {
 
-  const RECORDS = [{ id: 'mercury', name: 'Mercury' }, { id: 'venus', name: 'Venus' }]
+  const RECORD = { id: 'earth', name: 'Earth' }
 
 
-  // The defect, stated directly.
-  test('list resolves to plain records, not entity instances', () => {
-    const { ctx, made } = makeCtx('list', RECORDS)
+  // The defect, stated directly: these used to resolve to plain data.
+  test('load, create and update resolve to the entity', () => {
+    for (const opname of ['load', 'create', 'update']) {
+      const entity = makeEntity()
+      entity.data(RECORD)
 
-    const result: any = makeResult(ctx as any)
+      const out: any = done(makeCtx(opname, RECORD, entity) as any)
 
-    deepStrictEqual(result.resdata, RECORDS,
-      'list changed the records it was given')
-    strictEqual(made.length, 0,
-      'list still wraps records in entity instances')
-
-    for (const record of result.resdata) {
-      strictEqual(Object.getPrototypeOf(record), Object.prototype,
-        'a list record is not a plain object')
-      ok(!('data' in record), 'a list record exposes an entity method')
-      ok(!('entity$' in record), 'a list record carries the old entity$ marker')
-      ok(!('voxgig$entity' in record), 'a list record carries a marker at all')
+      strictEqual(out, entity, opname + ' did not resolve to the entity')
+      deepStrictEqual(out.data(), RECORD,
+        opname + ': the entity does not carry the record')
     }
   })
 
 
-  // The contract is that the shape does NOT depend on the operation.
-  test('every operation resolves to the same shape', () => {
-    const single = { id: 'earth', name: 'Earth' }
+  // `list` is the one op that resolves to a COLLECTION — of entities, one per
+  // record, which is what makeResult builds.
+  test('list resolves to an array of entity instances', () => {
+    const records = [{ id: 'mercury' }, { id: 'venus' }]
+    const ctx: any = makeCtx('list', records)
 
-    const shapes = ['load', 'create', 'update'].map((opname) => {
-      const { ctx } = makeCtx(opname, single)
-      return (makeResult(ctx as any) as any).resdata
-    })
+    makeResult(ctx)
+    const out: any = done(ctx)
 
-    for (const shape of shapes) {
-      deepStrictEqual(shape, single, 'an operation reshaped its record')
+    ok(Array.isArray(out), 'list did not resolve to an array')
+    strictEqual(out.length, 2, 'list lost records')
+
+    for (let i = 0; i < out.length; i++) {
+      ok('function' === typeof out[i].data,
+        'list element ' + i + ' is not an entity instance')
+      deepStrictEqual(out[i].data(), records[i],
+        'list element ' + i + ' does not carry its record')
     }
-
-    // ...and a list of one is that same record in an array.
-    const { ctx } = makeCtx('list', [single])
-    deepStrictEqual((makeResult(ctx as any) as any).resdata, [single])
   })
 
 
-  // Callers iterate a list result unconditionally, so an absent or empty
-  // list must still be an array.
+  // `remove` resolves to the entity too — marked as deleted, and still
+  // carrying what was removed.
+  test('remove resolves to the entity, marked as deleted', () => {
+    const entity = makeEntity()
+    entity.data(RECORD)
+
+    strictEqual(entity.deleted(), false, 'a fresh entity reports deleted')
+
+    const out: any = done(makeCtx('remove', undefined, entity) as any)
+
+    strictEqual(out, entity, 'remove did not resolve to the entity')
+    strictEqual(out.deleted(), true, 'remove did not mark the entity deleted')
+    deepStrictEqual(out.data(), RECORD,
+      'remove discarded the data — a caller can no longer see what was deleted')
+  })
+
+
+  // Only `remove` marks. A load must not leave the entity looking deleted.
+  test('no other operation marks the entity deleted', () => {
+    for (const opname of ['load', 'create', 'update']) {
+      const entity = makeEntity()
+      const out: any = done(makeCtx(opname, RECORD, entity) as any)
+      strictEqual(out.deleted(), false, opname + ' marked the entity deleted')
+    }
+  })
+
+
+  // `direct()` / `prepare()` build a context with no entity. There is nothing
+  // to return but the data, and that path must keep working.
+  test('a context with no entity resolves to the data', () => {
+    const out: any = done(makeCtx('load', RECORD, null) as any)
+    deepStrictEqual(out, RECORD)
+  })
+
+
+  // Callers iterate a list result unconditionally, so an absent or empty list
+  // must still be an array.
   test('an absent or empty list normalises to an empty array', () => {
     for (const resdata of [[], null, undefined]) {
-      const { ctx } = makeCtx('list', resdata)
-      deepStrictEqual((makeResult(ctx as any) as any).resdata, [],
+      const ctx: any = makeCtx('list', resdata)
+      makeResult(ctx)
+      deepStrictEqual(done(ctx), [],
         'list resdata ' + JSON.stringify(resdata) + ' did not normalise')
     }
-  })
-
-
-  // Non-list operations are not normalised — `remove` resolves to whatever
-  // the server sent, which for a 204 is nothing.
-  test('a non-list operation is left alone', () => {
-    const { ctx } = makeCtx('remove', undefined)
-    strictEqual((makeResult(ctx as any) as any).resdata, undefined)
   })
 })
 

@@ -182,9 +182,7 @@ test "pipeline make_result: guards missing spec/result" {
     try testing.expect(std.mem.eql(u8, ctx.pending_err.?.code, "result_no_result"));
 }
 
-// The list contract: PLAIN records, the same shape every other operation
-// resolves to. It used to wrap each record in an entity instance.
-test "pipeline make_result: list op leaves resdata as plain records" {
+test "pipeline make_result: list op wraps resdata into entities" {
     const client = sdk.test_sdk(vnull(), vnull());
     const utility = client.get_utility();
     var made: i64 = 0;
@@ -200,7 +198,7 @@ test "pipeline make_result: list op leaves resdata as plain records" {
 
     _ = utility.make_result(ctx) catch {};
     try testing.expect(h.sizeOf(ctx.result.?.resdata) == 2);
-    try testing.expect(made == 0);
+    try testing.expect(made == 2);
 }
 
 test "pipeline make_result: empty list yields empty resdata" {

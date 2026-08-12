@@ -28,18 +28,27 @@ SdkResult* make_result_util(Context* ctx, PNError** err) {
 
   transform_response_util(ctx);
 
-  // Every operation resolves to PLAIN records — load, create, update and
-  // list alike. `list` used to be the outlier: it wrapped each record in
-  // an entity instance, so the same record came back with a different
-  // type, a different key order and an extra marker depending on which
-  // call produced it. Any consumer touching both paths had to normalise
-  // defensively, and feeding a wrapped record into a host framework's own
-  // metadata silently produced wrong entities with no error at all. A
-  // missing or empty list still normalises to an empty list.
   if (strcmp(op->name, "list") == 0) {
     voxgig_value* resdata = result->resdata;
-    if (!voxgig_is_list(resdata)) {
-      result->resdata = voxgig_new_list();
+    result->resdata = voxgig_new_list();
+
+    if (voxgig_is_list(resdata) && entity) {
+      voxgig_list* list = voxgig_as_list(resdata);
+      if (list->len > 0) {
+        voxgig_value* entities = voxgig_new_list();
+        for (size_t i = 0; i < list->len; i++) {
+          voxgig_value* entry = list->items[i];
+          Entity* e = entity->vt->make(entity);
+          voxgig_value* out;
+          if (voxgig_is_map(entry)) {
+            out = e->vt->data(e, entry);
+          } else {
+            out = e->vt->data(e, NULL);
+          }
+          voxgig_list_push(voxgig_as_list(entities), voxgig_retain(out));
+        }
+        result->resdata = entities;
+      }
     }
   }
 

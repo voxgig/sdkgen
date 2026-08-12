@@ -23,6 +23,7 @@ function EntyClass.new(client, entopts)
   self._utility = client:get_utility()
   self._entopts = entopts
   self._data = {}
+  self._deleted = false
   self._match = {}
 
   self._entctx = self._utility.make_context({
@@ -47,6 +48,19 @@ function EntyClass:make()
     opts[k] = v
   end
   return EntyClass.new(self._client, opts)
+end
+
+
+-- Every operation resolves to the entity; `remove` additionally marks
+-- it. The instance KEEPS the data it held — a caller can still read what
+-- was deleted — but it is no longer a live record. See AGENTS.md.
+function EntyClass:mark_deleted()
+  self._deleted = true
+end
+
+
+function EntyClass:deleted()
+  return true == self._deleted
 end
 
 

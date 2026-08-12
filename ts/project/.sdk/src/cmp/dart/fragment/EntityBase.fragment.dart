@@ -43,6 +43,18 @@ class ProjectNameEntityBase {
     featureHook(entctx, 'PostConstructEntity');
   }
 
+  // Every operation resolves to the entity; `remove` additionally marks
+  // it. The instance KEEPS the data it held — a caller can still read what
+  // was deleted — but it is no longer a live record. See AGENTS.md.
+  bool _deleted = false;
+
+  void markDeleted() {
+    _deleted = true;
+  }
+
+  bool deleted() => _deleted;
+
+
   dynamic entopts() {
     return utility.struct.merge([{}, entoptsMap]);
   }

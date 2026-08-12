@@ -33,6 +33,7 @@ sub new {
     _utility => $client->get_utility,
     _entopts => $entopts,
     _data => {},
+    _deleted => 0,
     _match => {},
   }, $class;
 
@@ -56,6 +57,22 @@ sub make {
   my $opts = { %{ $self->{_entopts} } };
   return EntyClass->new($self->{_client}, $opts);
 }
+
+# Every operation resolves to the entity; `remove` additionally marks
+# it. The instance KEEPS the data it held — a caller can still read what
+# was deleted — but it is no longer a live record. See AGENTS.md.
+sub mark_deleted {
+  my ($self) = @_;
+  $self->{_deleted} = 1;
+  return $self;
+}
+
+
+sub deleted {
+  my ($self) = @_;
+  return $self->{_deleted} ? 1 : 0;
+}
+
 
 sub data_set {
   my ($self, $args) = @_;

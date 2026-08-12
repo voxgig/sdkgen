@@ -10,7 +10,7 @@ class EntityOperation {
 
   // EJECT-START
 
-  async load(this: any, reqmatch?: EntityNameLoadMatch, ctrl?: Control): Promise<EntityName> {
+  async load(this: any, reqmatch?: EntityNameLoadMatch, ctrl?: Control): Promise<EntyClass> {
 
     const utility = this._utility
 

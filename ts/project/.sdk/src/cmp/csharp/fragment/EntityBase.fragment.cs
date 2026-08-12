@@ -19,6 +19,22 @@ public abstract class ProjectNameEntityBase : IEntity
     protected Dictionary<string, object?> match = new();
     protected Context entctx;
 
+    // Every operation resolves to the entity; `remove` additionally marks
+    // it. The instance KEEPS the data it held — a caller can still read what
+    // was deleted — but it is no longer a live record. See AGENTS.md.
+    private bool _deleted = false;
+
+    public void MarkDeleted()
+    {
+        this._deleted = true;
+    }
+
+    public bool Deleted()
+    {
+        return this._deleted;
+    }
+
+
     protected ProjectNameEntityBase(ProjectNameSDK client,
         Dictionary<string, object?>? entopts, string name)
     {

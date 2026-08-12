@@ -24,6 +24,7 @@ class EntyClass:
         self._utility = client.get_utility()
         self._entopts = entopts
         self._data = {}
+        self._deleted = False
         self._match = {}
 
         self._entctx = self._utility.make_context({
@@ -35,6 +36,16 @@ class EntyClass:
 
     def get_name(self):
         return self._name
+
+    # Every operation resolves to the entity; `remove` additionally marks
+    # it. The instance KEEPS the data it held — a caller can still read what
+    # was deleted — but it is no longer a live record. See AGENTS.md.
+    def mark_deleted(self):
+        self._deleted = True
+
+    def deleted(self):
+        return True is self._deleted
+
 
     def make(self):
         opts = {}

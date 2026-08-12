@@ -1,5 +1,5 @@
-// ProjectName SDK utility: makeResult - final result shaping. Every
-// operation, list included, resolves to plain records.
+// ProjectName SDK utility: makeResult - final result shaping; list results
+// are wrapped into entity instances.
 
 namespace ProjectNameSdk.Util;
 
@@ -33,18 +33,25 @@ public static partial class SdkUtility
 
         utility.TransformResponse(ctx);
 
-        // Every operation resolves to PLAIN records — load, create, update and
-        // list alike. `list` used to be the outlier: it wrapped each record in
-        // an entity instance, so the same record came back with a different
-        // type, a different key order and an extra marker depending on which
-        // call produced it. Any consumer touching both paths had to normalise
-        // defensively, and feeding a wrapped record into a host framework's own
-        // metadata silently produced wrong entities with no error at all. A
-        // missing or empty list still normalises to an empty list.
         if (op.Name == "list")
         {
             var resdata = result.Resdata;
-            result.Resdata = resdata is List<object?> list ? list : new List<object?>();
+            result.Resdata = new List<object?>();
+
+            if (resdata is List<object?> list && list.Count > 0 && entity != null)
+            {
+                var entities = new List<object?>();
+                foreach (var entry in list)
+                {
+                    var ent = entity.Make();
+                    if (entry is Dictionary<string, object?> entryMap)
+                    {
+                        ent.Data(entryMap);
+                    }
+                    entities.Add(ent);
+                }
+                result.Resdata = entities;
+            }
         }
 
         if (ctx.Ctrl.Explain != null)

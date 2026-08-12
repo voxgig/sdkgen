@@ -133,17 +133,21 @@ fun makeResult(ctx: Context): Result {
 
   utility.transformResponse(ctx)
 
-  // Every operation resolves to PLAIN records — load, create, update and
-  // list alike. `list` used to be the outlier: it wrapped each record in
-  // an entity instance, so the same record came back with a different
-  // type, a different key order and an extra marker depending on which
-  // call produced it. Any consumer touching both paths had to normalise
-  // defensively, and feeding a wrapped record into a host framework's own
-  // metadata silently produced wrong entities with no error at all. A
-  // missing or empty list still normalises to an empty list.
   if ("list" == op.name) {
     val resdata = result.resdata
-    result.resdata = if (resdata is List<*>) resdata else mutableListOf<Any?>()
+    result.resdata = mutableListOf<Any?>()
+
+    if (resdata is List<*> && resdata.isNotEmpty() && entity != null) {
+      val entities = mutableListOf<Any?>()
+      for (entry in resdata) {
+        val ent = entity.make()
+        if (entry is MutableMap<*, *>) {
+          ent.data(entry)
+        }
+        entities.add(ent)
+      }
+      result.resdata = entities
+    }
   }
 
   if (ctx.ctrl.explain != null) {

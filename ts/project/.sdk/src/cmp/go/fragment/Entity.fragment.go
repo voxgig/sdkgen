@@ -14,6 +14,7 @@ type EntyClass struct {
 	data    map[string]any
 	match   map[string]any
 	entctx  *core.Context
+	deleted bool
 }
 
 func NewEntyClass(client *core.ProjectNameSDK, entopts map[string]any) *EntyClass {
@@ -48,6 +49,21 @@ func NewEntyClass(client *core.ProjectNameSDK, entopts map[string]any) *EntyClas
 }
 
 func (e *EntyClass) GetName() string { return e.name }
+
+// Deleted marks this instance as removed. `Remove` resolves to the entity
+// like every other operation, and the instance KEEPS the data it held — a
+// caller can still read what was deleted — but it is no longer a live
+// record. See AGENTS.md "Entity operations return ENTITIES".
+func (e *EntyClass) MarkDeleted() {
+	e.deleted = true
+}
+
+
+// Deleted reports whether a successful Remove has resolved on this instance.
+func (e *EntyClass) Deleted() bool {
+	return e.deleted
+}
+
 
 func (e *EntyClass) Make() core.Entity {
 	opts := map[string]any{}

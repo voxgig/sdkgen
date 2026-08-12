@@ -81,6 +81,45 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 
 ---
 
+## Entity operations return ENTITIES — a fundamental design
+
+**Every entity operation resolves to the Entity INSTANCE**, never to plain
+data: `load`, `list`, `create`, `update` and `remove` alike. `remove` returns
+the entity marked as deleted. `.data()` on an instance gives back the entity
+data container instance.
+
+This is a design decision, not a trade-off to be re-opened. Entities are
+stateful objects (see the "Entity instances are stateful" section every
+generated README carries); the operation RESULT is the entity, and the data
+is reached through it.
+
+It has been got wrong in both directions, so the rules are explicit:
+
+- **`done()` returns the entity.** It must not return `ctx.result.resdata` —
+  that is the data the entity has just absorbed, not the result.
+- **`make_result` keeps `list` results as entity instances.** One per record.
+- **Declared types name the CLASS, not the data interface.** `Promise<XEntity>`
+  and `Promise<XEntity[]>`, never `Promise<X>` where `X` is the generated data
+  interface. A signature that says `Promise<Planet>` while the call resolves to
+  a `PlanetEntity` is a lie the compiler cannot catch, and it is what broke the
+  first downstream integration.
+- **The typed layer takes a `.data()` hop.** Go's `LoadTyped`/`ListTyped` feed
+  `typedFrom` (a `json.Marshal`/`Unmarshal` into the struct), which needs the
+  DATA — hand it an entity and it marshals through the serialisation marker.
+- **The serialisation marker is namespaced and non-enumerable.** It is
+  `voxgig$entity`, not `entity$`: Seneca uses `entity$` on its own entities to
+  hold the canon, so an SDK record fed into `entize` silently produced entities
+  claiming a canon that does not exist. Non-enumerable so it cannot merge into
+  a host framework's metadata at all.
+
+A consumer report once proposed resolving the inconsistency toward plain
+records, citing a generated README's "bare records" wording. That reading is
+wrong: converging on plain records INVERTS the design. The plain-data
+signals — `done()`, the declared types, the README wording, `typedFrom` — were
+the parts that needed fixing.
+
+---
+
 ## Language parity is CRITICAL
 
 The whole value of sdkgen is that **every target language behaves identically**.

@@ -10,7 +10,7 @@ class EntityOperation {
 
   // EJECT-START
 
-  async create(this: any, reqdata?: EntityNameCreateData, ctrl?: Control): Promise<EntityName> {
+  async create(this: any, reqdata?: EntityNameCreateData, ctrl?: Control): Promise<EntyClass> {
 
     const utility = this._utility
     const {

@@ -10,7 +10,7 @@ class EntityOperation {
 
   // EJECT-START
 
-  async update(this: any, reqdata?: EntityNameUpdateData, ctrl?: Control): Promise<EntityName> {
+  async update(this: any, reqdata?: EntityNameUpdateData, ctrl?: Control): Promise<EntyClass> {
 
     const utility = this._utility
 

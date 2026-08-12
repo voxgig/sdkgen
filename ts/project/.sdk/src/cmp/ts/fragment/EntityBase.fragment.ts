@@ -32,6 +32,11 @@ class ProjectNameEntityBase<D = any> {
   _match: Partial<D>
   _entctx: Context
 
+  // Set once a successful `remove` resolves on this instance. The entity
+  // KEEPS the data it held — a caller can still read what was deleted — but
+  // it is no longer a live record.
+  _deleted: boolean
+
 
   constructor(client: ProjectNameSDK, entopts: any) {
     entopts = entopts || {}
@@ -42,6 +47,7 @@ class ProjectNameEntityBase<D = any> {
     this._utility = client.utility()
     this._data = {}
     this._match = {}
+    this._deleted = false
 
     const makeContext = this._utility.makeContext
 
@@ -53,6 +59,14 @@ class ProjectNameEntityBase<D = any> {
     const featureHook = this._utility.featureHook
     featureHook(this._entctx, 'PostConstructEntity')
   }
+
+  // True once `remove` has succeeded on this instance. `remove` resolves to
+  // the entity like every other operation, so this is how a caller tells a
+  // removed record from a live one.
+  deleted(this: any): boolean {
+    return true === this._deleted
+  }
+
 
   entopts() {
     return this._utility.struct.merge([{}, this._entopts])

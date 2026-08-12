@@ -20,7 +20,24 @@ final class Done {
       }
     }
 
+    // An operation resolves to the ENTITY, not the raw data. Entities are
+    // stateful: the op fragment has just absorbed resdata/resmatch into this
+    // instance, and the caller reaches the record through .data(). Two
+    // structural exceptions: `list` resolves to the ARRAY of entity
+    // instances makeResult built, and a context with no entity
+    // (direct/prepare, streaming) has nothing to return but the data. A
+    // removed entity keeps its data but is no longer live. See AGENTS.md.
     if (ctx.result != null && ctx.result.ok) {
+      Entity entity = ctx.entity;
+      String opname = ctx.op == null ? null : ctx.op.name;
+
+      if (entity != null && !"list".equals(opname)) {
+        if ("remove".equals(opname)) {
+          entity.markDeleted();
+        }
+        return entity;
+      }
+
       return ctx.result.resdata;
     }
 

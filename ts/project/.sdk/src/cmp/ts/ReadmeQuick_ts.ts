@@ -74,7 +74,9 @@ const client = ${ctor}
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list()\` resolves to an array of ${eName} objects — iterate it directly:
+\`list()\` resolves to an array of ${eName} ENTITIES — every operation
+resolves to entities, not raw records. Iterate them directly, and call
+\`.data()\` on one for the record it holds:
 
 \`\`\`ts
 const ${eVar}s = await client.${eName}().list(${listMatchArg(exampleEntity)})

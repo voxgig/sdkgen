@@ -47,7 +47,7 @@ const client = ${ctor}
     let hasCall = false
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eName.toLowerCase()}s (returns ${eName}[])
+      Content(`// List all ${eName.toLowerCase()}s (returns ${eName}Entity[] — .data() for the record)
 const ${eVar}s = await client.${eName}().list(${listMatchArg(exampleEntity)})
 for (const ${eVar} of ${eVar}s) {
   console.log(${eVar})

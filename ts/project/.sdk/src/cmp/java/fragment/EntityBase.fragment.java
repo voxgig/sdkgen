@@ -34,6 +34,20 @@ public abstract class EntityBase implements SdkEntity {
   protected Map<String, Object> match = new LinkedHashMap<>();
   protected Context entctx;
 
+  // Every operation resolves to the entity; `remove` additionally marks
+  // it. The instance KEEPS the data it held — a caller can still read what
+  // was deleted — but it is no longer a live record. See AGENTS.md.
+  private boolean deleted = false;
+
+  public void markDeleted() {
+    this.deleted = true;
+  }
+
+  public boolean deleted() {
+    return this.deleted;
+  }
+
+
   protected EntityBase(String name, SdkClient client, Map<String, Object> entopts) {
     if (entopts == null) {
       entopts = new LinkedHashMap<>();

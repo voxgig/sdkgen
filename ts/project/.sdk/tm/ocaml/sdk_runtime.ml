@@ -842,16 +842,17 @@ let make_result_util (ctx : ctx) : (result option * sdk_error option) =
         | Some result ->
           spec.sp_step <- "result";
           ignore (u.u_transform_response ctx);
-          (* Every operation resolves to PLAIN records — load, create, update and *)
-          (* list alike. `list` used to be the outlier in the donor languages: it *)
-          (* wrapped each record in an entity instance, so the same record came *)
-          (* back with a different type, a different key order and an extra marker *)
-          (* depending on which call produced it. A missing or empty list still *)
-          (* normalises to an empty list. *)
           if op.op_name = "list" then begin
-            (match result.rt_resdata with
-             | List _ -> ()
-             | _ -> result.rt_resdata <- empty_list ())
+            let resdata = result.rt_resdata in
+            result.rt_resdata <- empty_list ();
+            (match resdata, ctx.c_entity with
+             | List r, Some entity ->
+               let entries = List.map (fun entry ->
+                   let ent = entity.e_make () in
+                   (match entry with Map _ -> ent.e_data_set entry | _ -> ());
+                   entry) !r in
+               result.rt_resdata <- lst entries
+             | _ -> ())
           end;
           (match ctx.c_ctrl.ctrl_explain with Map _ -> setp ctx.c_ctrl.ctrl_explain "result" (result_to_value result) | _ -> ());
           (Some result, None)))

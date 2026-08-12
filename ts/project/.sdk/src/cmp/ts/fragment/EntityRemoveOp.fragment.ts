@@ -10,14 +10,17 @@ class EntityOperation {
 
   // EJECT-START
 
-  // `EntityName | undefined`, not `EntityName`. A DELETE that answers 204 No
-  // Content resolves to nothing — which was the truth all along, while the
-  // declared type promised a record and let TypeScript consumers dereference
-  // it in good faith. APIs that DO return the removed record on DELETE are
-  // covered by the same union.
+  // Resolves to THIS entity, marked as deleted — like every other operation,
+  // which resolve to the entity too (see AGENTS.md). The instance keeps the
+  // data it held, so a caller can still read what was removed; `deleted()`
+  // reports that it is no longer a live record.
+  //
+  // A DELETE that answers 204 No Content therefore still resolves to
+  // something useful, where returning the raw body resolved to `undefined`
+  // against a signature that promised a record.
   async remove(
     this: any, reqmatch?: EntityNameRemoveMatch, ctrl?: Control,
-  ): Promise<EntityName | undefined> {
+  ): Promise<EntyClass> {
 
     const utility = this._utility
 
@@ -108,9 +111,9 @@ class EntityOperation {
         throw err
       }
       else {
-        // Off-happy-path (throw disabled): `undefined` is now within the
-        // declared return type, so no cast is needed.
-        return undefined
+        // Off-happy-path (throw disabled): typed as any so the method's
+        // Promise<EntyClass> return stays clean under strict null checks.
+        return undefined as any
       }
     }
   }

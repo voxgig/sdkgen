@@ -19,6 +19,7 @@ class EntyClass
     @_utility = client.get_utility
     @_entopts = entopts
     @_data = {}
+    @_deleted = false
     @_match = {}
 
     @_entctx = @_utility.make_context.call({
@@ -32,6 +33,18 @@ class EntyClass
   def get_name
     @_name
   end
+
+  # Every operation resolves to the entity; `remove` additionally marks
+  # it. The instance KEEPS the data it held — a caller can still read what
+  # was deleted — but it is no longer a live record. See AGENTS.md.
+  def mark_deleted
+    @_deleted = true
+  end
+
+  def deleted
+    true == @_deleted
+  end
+
 
   def make
     opts = @_entopts.dup
