@@ -13,7 +13,7 @@ static void entyvar_remove_postdone(entyvar_entity* self, Context* ctx) {
   }
 }
 
-static voxgig_value* entyvar_remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err) {
+static Entity* entyvar_remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err) {
   entyvar_entity* self = (entyvar_entity*)e;
   CtxSpec cs;
   memset(&cs, 0, sizeof(cs));
@@ -23,7 +23,17 @@ static voxgig_value* entyvar_remove(Entity* e, voxgig_value* reqmatch, voxgig_va
   cs.data = self->data;
   cs.reqmatch = reqmatch;
   Context* ctx = make_context_util(cs, entyvar_ent_ctx(self));
-  return entyvar_run_op(self, ctx, entyvar_remove_postdone, err);
+  entyvar_run_op(self, ctx, entyvar_remove_postdone, err);
+  if (*err) return NULL;
+
+  // The operation resolves to THIS entity: run_op has just absorbed the
+  // result into it, and the caller reaches the record through vt->data.
+  // See AGENTS.md "Entity operations return ENTITIES".
+
+  // A removed entity keeps its data but is no longer a live record.
+  self->deleted = true;
+
+  return e;
 }
 
 // EJECT-END

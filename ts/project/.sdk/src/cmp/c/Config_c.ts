@@ -90,17 +90,16 @@ voxgig_value* make_config(void) {
 Feature* make_feature(const char* name) {
 `)
 
-    // The C target ships the full transport/observability feature set as
-    // fixed runtime templates (tm/c/feature/*.c, declared in core/sdk.h), so
-    // make_feature must dispatch to every shipped feature — not only those the
-    // current API model happens to configure. Merge the model's feature names
-    // with the standard shipped set; emit in sorted order for byte-stability.
-    const SHIPPED_FEATURES = [
-      'audit', 'cache', 'clienttrack', 'debug', 'idempotency', 'log',
-      'metrics', 'netsim', 'paging', 'proxy', 'ratelimit', 'rbac', 'retry',
-      'streaming', 'telemetry', 'test', 'timeout',
-    ]
-    const featureNames = new Set<string>(SHIPPED_FEATURES)
+    // Dispatch to the features the MODEL declares, and only those.
+    //
+    // This used to merge in a hardcoded list of every feature the C target
+    // ships, on the reasoning that the runtime templates
+    // (tm/c/feature/*.c) are always present. `target add` now trims feature
+    // source to the model's selection, so that reasoning is false: a
+    // reference to `feature_timeout_new` for an undeclared feature is an
+    // unresolved symbol at LINK time — the whole test suite fails to link,
+    // which is how this was found. Sorted for byte-stability.
+    const featureNames = new Set<string>()
     each(feature, (f: any) => {
       if (f.name && f.name !== 'base') featureNames.add(f.name)
     })

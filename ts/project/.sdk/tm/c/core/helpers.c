@@ -5,6 +5,7 @@
 #include "sdk.h"
 
 #include <stdarg.h>
+#include <stdio.h>   // snprintf
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>

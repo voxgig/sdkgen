@@ -416,7 +416,14 @@ emitted broken source reached the fleet unchallenged.
   template that statically references every shipped feature stops compiling.
   Dedicated cross-feature test suites are declared per target as
   `feature: { fullset: [...] }` and dropped alongside the features they
-  exercise; a target that cannot be trimmed at all says
+  exercise. A template can also depend on a feature WITHOUT naming its
+  symbol — `tm/c/tests/sdk_pipeline_test.c` drives retry entirely through the
+  options map (`"feature", cmap(1, "retry", ...)`), so it linked fine and
+  failed at runtime. No scan finds that reliably: the same quoted names
+  appear all over the corpus as ordering-test data and as ordinary concepts
+  (`"paging"` in a context type, `"proxy"` in a fetcher), so widening the
+  `featuresource.test.ts` guard to quoted names produces ~25 hits of which
+  one is real. Declare it in `fullset` instead; a target that cannot be trimmed at all says
   `feature: { trim: false }` (currently `clojure`, `haskell`, `lean`,
   `ocaml`, `scala`, `zig` — see their model files for what has to change
   first). Aggregate indexes must be GENERATED, not templated: that is why

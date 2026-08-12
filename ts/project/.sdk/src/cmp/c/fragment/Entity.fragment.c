@@ -14,6 +14,8 @@ typedef struct entyvar_entity {
   voxgig_value* data;     // Map
   voxgig_value* mtch;     // Map
   Context* entctx;
+  // Set once a successful `remove` resolves on this instance.
+  bool deleted;
 } entyvar_entity;
 
 typedef void (*entyvar_postdone_fn)(entyvar_entity* self, Context* ctx);
@@ -24,11 +26,14 @@ static const char* entyvar_get_name(Entity* e);
 static Entity* entyvar_make(Entity* e);
 static voxgig_value* entyvar_data(Entity* e, voxgig_value* args);
 static voxgig_value* entyvar_matchv(Entity* e, voxgig_value* args);
-static voxgig_value* entyvar_load(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
-static voxgig_value* entyvar_list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
-static voxgig_value* entyvar_create(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
-static voxgig_value* entyvar_update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
-static voxgig_value* entyvar_remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
+// Ops resolve to the ENTITY (`list` to a NULL-terminated array of them).
+static Entity* entyvar_load(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
+static Entity** entyvar_list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
+static Entity* entyvar_create(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
+static Entity* entyvar_update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
+static Entity* entyvar_remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
+static void entyvar_mark_deleted(Entity* e);
+static bool entyvar_deleted(Entity* e);
 
 static Context* entyvar_ent_ctx(entyvar_entity* self) {
   return self->entctx;
@@ -252,11 +257,24 @@ static voxgig_value* entyvar_matchv(Entity* e, voxgig_value* args) {
 
 // #RemoveOp
 
+// `remove` resolves to the entity, marked. The instance KEEPS the data it
+// held - a caller can still read what was deleted - but it is no longer a
+// live record.
+static void entyvar_mark_deleted(Entity* e) {
+  ((entyvar_entity*)e)->deleted = true;
+}
+
+static bool entyvar_deleted(Entity* e) {
+  return ((entyvar_entity*)e)->deleted;
+}
+
 static const EntityVT entyvar_VT = {
   entyvar_get_name,
   entyvar_make,
   entyvar_data,
   entyvar_matchv,
+  entyvar_mark_deleted,
+  entyvar_deleted,
   entyvar_load,
   entyvar_list,
   entyvar_create,

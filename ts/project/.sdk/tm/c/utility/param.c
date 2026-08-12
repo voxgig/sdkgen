@@ -2,6 +2,7 @@
 
 #include "sdk.h"
 
+#include <stdio.h>   // snprintf
 #include <string.h>
 
 voxgig_value* param_util(Context* ctx, voxgig_value* paramdef) {
