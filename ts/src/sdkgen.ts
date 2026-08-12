@@ -52,7 +52,7 @@ import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey } from './helpers/canonType'
 import { OP_SUFFIX, opTypeName, opParams, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape'
-import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, phpEntityField, isRbCoreConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming'
+import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming'
 import { serverVariables, hasServerVariables } from './helpers/serverVars'
 import {
   packageName,
@@ -485,7 +485,7 @@ export {
   safeVarName,
   exampleVarName,
   phpEntityAccessor,
-  phpEntityField,
+  entityCacheField,
   isRbCoreConstant,
   rbSafeTypeName,
   isSwiftSdkType,

@@ -702,8 +702,12 @@ describe('generate', () => {
       .find(([p]) => p.startsWith('php/') && p.endsWith('_sdk.php'))
     ok(null != main, 'php: no SDK class file generated')
 
+    // `static` included: the test-mode constructor is `public static function
+    // test()`, and PHP happily resolves a static method through `->`, which is
+    // how the generated StructRunner calls it.
     const declared = new Set(
-      [...main![1].matchAll(/public function (\w+)\(/g)].map(m => m[1].toLowerCase()))
+      [...main![1].matchAll(/public (?:static )?function (\w+)\(/g)]
+        .map(m => m[1].toLowerCase()))
 
     const bad: string[] = []
     for (const [path, content] of Object.entries(out)) {
@@ -714,9 +718,9 @@ describe('generate', () => {
       const code = content
         .replace(/^\s*(?:\/\/|#).*$/gm, '')
         .replace(/\/\*[\s\S]*?\*\//g, '')
-      for (const m of code.matchAll(/\$client->(\w+)\(\)/g)) {
+      for (const m of code.matchAll(/\$client->(\w+)\(/g)) {
         if (!declared.has(m[1].toLowerCase())) {
-          bad.push(`${path}: calls $client->${m[1]}(), not declared on the SDK class`)
+          bad.push(`${path}: calls $client->${m[1]}(...), not declared on the SDK class`)
         }
       }
     }

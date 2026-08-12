@@ -2,7 +2,7 @@
 
 import {
   cmp, Content, entityClassName, entityCollection,
-  phpEntityAccessor, phpEntityField,
+  phpEntityAccessor, entityCacheField,
 } from '@voxgig/sdkgen'
 
 import {
@@ -30,7 +30,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
   // The backing field is mangled independently of the accessor: the two are
   // compared against different member sets, and an entity can collide with
   // one without colliding with the other.
-  const field = phpEntityField(entity.name)
+  const field = entityCacheField(entity.name)
 
   Content(`
     private $_${field} = null;

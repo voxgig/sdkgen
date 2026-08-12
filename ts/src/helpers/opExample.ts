@@ -20,6 +20,8 @@ import { each } from 'jostraca'
 import { canonKey } from './canonType'
 import { opRequestShape, entityIdField } from './opShape'
 
+import { phpEntityAccessor } from './naming'
+
 
 type ExampleLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go'
 
@@ -35,7 +37,19 @@ function litFor(lang: ExampleLang, type: any): string {
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'py' === lang ? 'True' : ('rb' === lang ? 'true' : 'true')
   if ('ARRAY' === k) return ('lua' === lang) ? '{}' : ('go' === lang ? '[]any{}' : '[]')
-  if ('OBJECT' === k) return ('go' === lang) ? 'map[string]any{}' : '{}'
+  // PHP has no `{}` literal — `["data" => {}]` is a parse error, which took
+  // the whole generated README down for any entity with an object-typed
+  // writable field (dymo-api-introduction, html-creator). Arrays serve as both
+  // list and map, so `[]` is the empty object too. Ruby and Lua likewise want
+  // their own empty-hash/table spelling rather than JS's.
+  if ('OBJECT' === k) {
+    if ('go' === lang) return 'map[string]any{}'
+    if ('php' === lang) return '[]'
+    if ('rb' === lang) return '{}'
+    if ('lua' === lang) return '{}'
+    if ('py' === lang) return '{}'
+    return '{}'
+  }
   return '"example"'
 }
 
@@ -154,7 +168,10 @@ function primaryOpCall(
   if ('go' === lang) { factory = `client.${eName}(nil)`; sep = '.' }
   else if ('lua' === lang) { factory = `client:${eName}()`; sep = ':' }
   else if ('rb' === lang) { factory = `client.${eName}`; sep = '.' }
-  else if ('php' === lang) { factory = `$client->${eName}()`; sep = '->' }
+  // php mangles an accessor that would collide with an SDK class member
+  // (see phpEntityAccessor); the example has to call the name that is
+  // actually declared, or it invokes the SDK's own method instead.
+  else if ('php' === lang) { factory = `$client->${phpEntityAccessor(eName)}()`; sep = '->' }
   else { factory = `client.${eName}()`; sep = '.' }
 
   // Argument string per op + language.

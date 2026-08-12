@@ -230,7 +230,12 @@ const PHP_SDK_METHODS = new Set([
   'raw_request', 'test',
 ])
 
-const PHP_SDK_FIELDS = new Set(['rootctx', 'utility', 'client', 'entctx'])
+// Backing fields the generated SDK object already holds, in EVERY target that
+// caches its entity accessors in `_<name>`. php spells it `$this->_utility`
+// and lua `self._utility`, but it is one hazard: the accessor's cache slot
+// silently aliases the SDK's own field, so `client:Utility()` hands back the
+// internal utility object and every entity method on it is nil.
+const SDK_FIELDS = new Set(['rootctx', 'utility', 'client', 'entctx'])
 
 
 /** The PHP accessor method for an entity: `$client-><Name>()`. */
@@ -239,9 +244,13 @@ function phpEntityAccessor(Name: string): string {
 }
 
 
-/** The PHP backing field for an entity accessor: `$this->_<name>`. */
-function phpEntityField(name: string): string {
-  return PHP_SDK_FIELDS.has(String(name).toLowerCase()) ? name + '_' : name
+/**
+ * The backing field for an entity accessor's cache slot (`$this->_<name>`,
+ * `self._<name>`). Target-neutral: the colliding names are the SDK's own
+ * fields, which the targets share.
+ */
+function entityCacheField(name: string): string {
+  return SDK_FIELDS.has(String(name).toLowerCase()) ? name + '_' : name
 }
 
 
@@ -317,7 +326,7 @@ export {
   safeVarName,
   exampleVarName,
   phpEntityAccessor,
-  phpEntityField,
+  entityCacheField,
   isRbCoreConstant,
   rbSafeTypeName,
   isSwiftSdkType,
