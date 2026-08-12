@@ -37,7 +37,6 @@ main: kit: feature: &: target: 'go-mcp': deps: &: {
 
 # Publication: tag-only — the Go module proxy resolves versions from the
 # go-mcp/vX.Y.Z GitHub tag; there is no package registry to upload to.
-# Publication.
 #
 # `target add <t>` OVERWRITES this file, so a project must never set its
 # publication values here — voxgig-solardemo-sdk lost its pinned npm package

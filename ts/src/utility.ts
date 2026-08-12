@@ -6,8 +6,17 @@ import { JostracaResult } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
 
+// Where a per-target component is loaded from: `<project>/.sdk/dist/<path>`.
+//
+// `ctx$.folder` is jostraca's OUTPUT folder, which is the project for an
+// ordinary target but the destination repo for one generating out of tree
+// (`output: path`). Components always live in the project that owns the
+// model, never in the place its files land, so an external pass sets
+// `ctx$.cmpfolder` and this prefers it. Without that, generating out of tree
+// looks for `<destination>/.sdk/dist/cmp/...` and fails to resolve.
 function resolvePath(ctx$: any, path: string): any {
-  const fullpath = Path.join(ctx$.folder, '.sdk', 'dist', path)
+  const base = null == ctx$.cmpfolder ? ctx$.folder : ctx$.cmpfolder
+  const fullpath = Path.join(base, '.sdk', 'dist', path)
   return fullpath
 }
 

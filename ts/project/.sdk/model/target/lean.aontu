@@ -39,7 +39,6 @@ main: kit: feature: &: target: lean: deps: &: {
 
 # Publication: Reservoir (Lean package index) — declared, publish pending
 # (git-tag only for now).
-# Publication.
 #
 # `target add <t>` OVERWRITES this file, so a project must never set its
 # publication values here — voxgig-solardemo-sdk lost its pinned npm package

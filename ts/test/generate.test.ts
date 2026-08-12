@@ -81,11 +81,13 @@ const PLACEHOLDER_PINNED = [
 ]
 
 
-// Targets that consume a SIBLING target's output in the same repo rather than
-// generating an SDK of their own (go-cli/go-mcp wrap `go`, py-data wraps `py`).
-// They switch the standard phases off and are driven by the sibling's model, so
-// generating them standalone proves nothing. Mirrors parity.test.ts.
-const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data']
+// Targets that consume ANOTHER target's output rather than generating an SDK
+// of their own: go-cli/go-mcp wrap `go`, py-data wraps `py`, and
+// seneca-provider wraps `ts`. They switch the standard phases off and are
+// driven by the wrapped target's model, so generating them standalone proves
+// nothing — and each fails outright without its sibling, deliberately.
+// Mirrors parity.test.ts.
+const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider']
 
 
 // A small but DELIBERATELY AWKWARD API, written the way a consumer writes it:

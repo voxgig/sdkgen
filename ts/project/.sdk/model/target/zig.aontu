@@ -25,7 +25,6 @@ main: kit: feature: &: target: zig: deps: &: {
 # routes deploy-zig to the root tag-push recipe. WITHOUT it, Deploy.ts falls
 # through to `make -C zig publish` — but zig's Makefile has no `publish` target,
 # so the deploy fails. Mirror c.aontu exactly.
-# Publication.
 #
 # `target add <t>` OVERWRITES this file, so a project must never set its
 # publication values here — voxgig-solardemo-sdk lost its pinned npm package

@@ -52,7 +52,6 @@ main: kit: feature: &: target: 'py-data': deps: &: {
 
 # Publication: pypi registry (declared, publish pending — git-tag only),
 # same posture as the `py` target.
-# Publication.
 #
 # `target add <t>` OVERWRITES this file, so a project must never set its
 # publication values here — voxgig-solardemo-sdk lost its pinned npm package

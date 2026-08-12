@@ -22,6 +22,9 @@ import type {
 import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix } from './utility'
 
 import { Main } from './cmp/Main'
+import { ExternalTarget } from './cmp/ExternalTarget'
+
+import { KIT } from '@voxgig/apidef'
 import { Deploy } from './cmp/Deploy'
 import { Entity } from './cmp/Entity'
 import { Feature } from './cmp/Feature'
@@ -224,9 +227,29 @@ function SdkGen(opts: SdkGenOptions) {
       },
     }
 
-    const jres = await jostraca.generate(jopts, () => Root({ model }))
+    // Targets that write OUTSIDE the SDK repo (`output: path`) are generated
+    // by their own pass, rooted at that path — see cmp/ExternalTarget for why
+    // a folder name cannot do this. The in-tree pass must not see them, or
+    // the consumer Root would also emit them into `<sdk-repo>/<target>/`.
+    const external = externalTargets(model, folder)
+
+    const jres = await jostraca.generate(
+      jopts, () => Root({ model: 0 === external.length ? model : withoutTargets(model, external) }))
 
     showChanges(jopts.log, 'generate-result', jres, Path.dirname(process.cwd()))
+
+    for (const ext of external) {
+      log.info({
+        point: 'generate-external', target: ext.name, folder: ext.folder,
+        note: ext.name + ' -> ' + ext.folder
+      })
+
+      const eres = await jostraca.generate(
+        { ...jopts, folder: ext.folder },
+        () => ExternalTarget({ model, target: ext.target, cmpfolder: folder }))
+
+      showChanges(jopts.log, 'generate-result', eres, Path.dirname(process.cwd()))
+    }
 
     const dlogs = dlog.log()
     if (0 < dlogs.length) {
@@ -375,6 +398,57 @@ SdkGen.makeBuild = async function(opts: SdkGenOptions) {
   }
 }
 
+
+
+// Targets declaring `output: path` — generated into their own repo rather
+// than into `<sdk-repo>/<target>/`.
+//
+// A relative path resolves against the SDK repo root, so a sibling checkout
+// is '../<repo>'. That is deliberately the SAME base the generator writes
+// everything else against: a path in the model should not depend on the
+// directory the command happened to be run from.
+function externalTargets(model: any, folder: string):
+  { name: string, target: any, folder: string }[] {
+  const targets = model?.main?.[KIT]?.target || {}
+
+  return Object.keys(targets).sort()
+    .map((name: string) => ({ name, target: targets[name] }))
+    .filter((t: any) => {
+      const path = t.target?.output?.path
+      return null != path && '' !== path
+    })
+    .map((t: any) => ({
+      ...t,
+      folder: Path.resolve(folder, String(t.target.output.path)),
+    }))
+}
+
+
+// The model the IN-TREE pass sees: the same model with the out-of-tree
+// targets taken out.
+//
+// A shallow clone down to `target` only — the model is large, entities and
+// features are shared with the external pass, and a deep copy would both
+// cost and quietly break identity comparisons.
+function withoutTargets(model: any, external: { name: string }[]): any {
+  const drop = new Set(external.map((e) => e.name))
+  const targets = model?.main?.[KIT]?.target || {}
+
+  const kept: any = {}
+  for (const name of Object.keys(targets)) {
+    if (!drop.has(name)) {
+      kept[name] = targets[name]
+    }
+  }
+
+  return {
+    ...model,
+    main: {
+      ...model.main,
+      [KIT]: { ...model.main[KIT], target: kept },
+    },
+  }
+}
 
 
 // Adapted from https://github.com/sindresorhus/import-fresh - Thanks!

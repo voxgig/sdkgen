@@ -147,6 +147,42 @@ main: kit: target: &: {
   # Tag-only ports (the go family: the Go proxy resolves from GitHub
   # tags) simply leave `registry` unset — they are implicitly pending
   # until their `<target>/vX.Y.Z` tag exists.
+  # WHERE this target's files are written.
+  #
+  # Empty (the default) means the ordinary place: `<sdk-repo>/<target>/`,
+  # a folder inside the SDK repo, which is what every language target wants.
+  #
+  # A target that generates a SEPARATE, independently released package needs
+  # somewhere else. The Seneca provider is the case: it is its own npm
+  # package in its own repo (`@seneca/<name>-provider`), depends on the ts
+  # SDK as a normal published dependency, and carries a repo's worth of
+  # furniture — LICENSE, CI workflow, doc/ — that must not land inside the
+  # SDK repo.
+  #
+  # Relative paths resolve against the SDK repo root, so a sibling checkout
+  # is `'../<repo>'`. Absolute paths are taken as given.
+  #
+  # Files are written at the ROOT of that path, NOT under a `<target>/`
+  # subfolder: the destination IS the package.
+  #
+  # Generation into it is a SEPARATE pass, so the repo receives only what
+  # this target emits — none of the SDK repo's own root files (README,
+  # AGENTS.md, the build scaffold) follow it out.
+  output: {
+    path: *'' | string
+
+    # '<org>/<repo>' for the repo the files land in, under `main: kit: repo:
+    # host`. A target generating out of tree is usually released from that
+    # repo too, so its manifest's homepage/repository/bugs must point there
+    # and NOT at the SDK's own repo, which is what they would otherwise
+    # derive from.
+    #
+    # '' lets the target decide: a target that knows its convention (the
+    # Seneca provider's is `senecajs/seneca-<name>-provider`) supplies its
+    # own default, and falls back to the SDK's repo when it has none.
+    repo: *'' | string
+  }
+
   publish: {
     # The SDK's OWN release version — what the generated manifest declares
     # and what the port's Makefile tags (`<target>/v<version>`).

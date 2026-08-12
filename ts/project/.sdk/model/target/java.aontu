@@ -25,7 +25,6 @@ main: kit: feature: &: target: java: deps: &: {
 
 # Publication: tag-only for now (tag java/vX.Y.Z) — Maven Central
 # publication via the Sonatype Central Portal is declared but pending.
-# Publication.
 #
 # `target add <t>` OVERWRITES this file, so a project must never set its
 # publication values here — voxgig-solardemo-sdk lost its pinned npm package

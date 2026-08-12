@@ -55,6 +55,8 @@ Object.defineProperty(exports, "isAuthActive", { enumerable: true, get: function
 Object.defineProperty(exports, "resolveAuthPrefix", { enumerable: true, get: function () { return utility_1.resolveAuthPrefix; } });
 const Main_1 = require("./cmp/Main");
 Object.defineProperty(exports, "Main", { enumerable: true, get: function () { return Main_1.Main; } });
+const ExternalTarget_1 = require("./cmp/ExternalTarget");
+const apidef_1 = require("@voxgig/apidef");
 const Deploy_1 = require("./cmp/Deploy");
 Object.defineProperty(exports, "Deploy", { enumerable: true, get: function () { return Deploy_1.Deploy; } });
 const Entity_1 = require("./cmp/Entity");
@@ -257,8 +259,21 @@ function SdkGen(opts) {
                 dryrun: !!opts.dryrun
             },
         };
-        const jres = await jostraca.generate(jopts, () => Root({ model }));
+        // Targets that write OUTSIDE the SDK repo (`output: path`) are generated
+        // by their own pass, rooted at that path — see cmp/ExternalTarget for why
+        // a folder name cannot do this. The in-tree pass must not see them, or
+        // the consumer Root would also emit them into `<sdk-repo>/<target>/`.
+        const external = externalTargets(model, folder);
+        const jres = await jostraca.generate(jopts, () => Root({ model: 0 === external.length ? model : withoutTargets(model, external) }));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
+        for (const ext of external) {
+            log.info({
+                point: 'generate-external', target: ext.name, folder: ext.folder,
+                note: ext.name + ' -> ' + ext.folder
+            });
+            const eres = await jostraca.generate({ ...jopts, folder: ext.folder }, () => (0, ExternalTarget_1.ExternalTarget)({ model, target: ext.target, cmpfolder: folder }));
+            (0, util_2.showChanges)(jopts.log, 'generate-result', eres, node_path_1.default.dirname(process.cwd()));
+        }
         const dlogs = dlog.log();
         if (0 < dlogs.length) {
             for (let dlogentry of dlogs) {
@@ -367,6 +382,49 @@ SdkGen.makeBuild = async function (opts) {
         return await sdkgen.generate({ model, build, config });
     };
 };
+// Targets declaring `output: path` — generated into their own repo rather
+// than into `<sdk-repo>/<target>/`.
+//
+// A relative path resolves against the SDK repo root, so a sibling checkout
+// is '../<repo>'. That is deliberately the SAME base the generator writes
+// everything else against: a path in the model should not depend on the
+// directory the command happened to be run from.
+function externalTargets(model, folder) {
+    const targets = model?.main?.[apidef_1.KIT]?.target || {};
+    return Object.keys(targets).sort()
+        .map((name) => ({ name, target: targets[name] }))
+        .filter((t) => {
+        const path = t.target?.output?.path;
+        return null != path && '' !== path;
+    })
+        .map((t) => ({
+        ...t,
+        folder: node_path_1.default.resolve(folder, String(t.target.output.path)),
+    }));
+}
+// The model the IN-TREE pass sees: the same model with the out-of-tree
+// targets taken out.
+//
+// A shallow clone down to `target` only — the model is large, entities and
+// features are shared with the external pass, and a deep copy would both
+// cost and quietly break identity comparisons.
+function withoutTargets(model, external) {
+    const drop = new Set(external.map((e) => e.name));
+    const targets = model?.main?.[apidef_1.KIT]?.target || {};
+    const kept = {};
+    for (const name of Object.keys(targets)) {
+        if (!drop.has(name)) {
+            kept[name] = targets[name];
+        }
+    }
+    return {
+        ...model,
+        main: {
+            ...model.main,
+            [apidef_1.KIT]: { ...model.main[apidef_1.KIT], target: kept },
+        },
+    };
+}
 // Adapted from https://github.com/sindresorhus/import-fresh - Thanks!
 function clear(path) {
     if (null == path) {
