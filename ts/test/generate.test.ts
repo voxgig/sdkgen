@@ -518,6 +518,56 @@ describe('generate', () => {
   // OVERWRITES, so a project that had published 0.0.2 got a 0.0.1 manifest
   // back on its next regeneration. Only the 3-way merge (which sdkgen turns
   // off) had been hiding it, by conflicting over that very line.
+  // Attribution reaches the manifests that carry it, and a target can differ
+  // from the rest.
+  //
+  // The five manifests with an author field used to HARDCODE the publisher —
+  // two via the PUBLISHER constant, three as bare "Voxgig" / "voxgig"
+  // literals — so a model naming someone else was simply not read. The
+  // solardemo model named a person, the seneca-provider target credited them,
+  // and the SDK's own package.json went on saying Voxgig.
+  //
+  // The per-target override is what makes the model-wide value safe to set: a
+  // generated SDK is an artefact of the publisher, while a provider is
+  // independently released by named people, and one model produces both.
+  test('a declared author reaches every manifest, and a target may override', async () => {
+    const TARGETS = ['ts', 'js', 'rb', 'php', 'ocaml']
+
+    const declared = [
+      "main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }",
+      "main: kit: target: ts: author: { name: 'Someone Else', url: 'https://elsewhere.example' }",
+    ].join('\n')
+
+    const out = await generate(TARGETS, undefined, declared)
+
+    const MANIFEST: Record<string, string> = {
+      ts: 'package.json', js: 'package.json', rb: 'Demo_sdk.gemspec',
+      php: 'composer.json', ocaml: 'voxgig-demo-sdk.opam',
+    }
+
+    const bad: string[] = []
+    for (const t of TARGETS) {
+      const file = findFile(out, t + '/' + MANIFEST[t])
+      if (null == file) { bad.push(`${t}: no ${MANIFEST[t]} generated`); continue }
+
+      // ts is pinned to a different author; every other target inherits.
+      const expected = 'ts' === t ? 'Someone Else' : 'Ada Lovelace'
+      if (!file.includes(expected)) {
+        bad.push(`${t}: ${MANIFEST[t]} does not carry "${expected}"`)
+      }
+
+      // The hardcoded publisher must be gone from the author position. It is
+      // still legitimate elsewhere in a manifest (keywords, the npm scope),
+      // so only an author-shaped occurrence counts.
+      if (/(?:"name"\s*:\s*"Voxgig"|authors\s*[:=]\s*\[?"?[Vv]oxgig)/.test(file)) {
+        bad.push(`${t}: ${MANIFEST[t]} still hardcodes the publisher as author`)
+      }
+    }
+
+    deepStrictEqual(bad, [])
+  })
+
+
   test('a declared version reaches every manifest', async () => {
     const TARGETS = [
       'csharp', 'dart', 'elixir', 'haskell', 'java', 'js', 'kotlin', 'lean',

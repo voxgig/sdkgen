@@ -29,7 +29,7 @@ declare function installCommand(model: any, target: string): string;
 declare function pkgDescription(model: any, target: string): string;
 declare function nonAffiliation(model: any): string;
 declare function keywords(model: any): string[];
-declare function authorInfo(model: any): {
+declare function authorInfo(model: any, target?: string): {
     name: string;
     url: string;
 };

@@ -363,8 +363,23 @@ function keywords(model: any): string[] {
 // An unset author is the PUBLISHER, which is what every generated SDK manifest
 // has always carried (Package_ts hardcoded it); a project that has never
 // thought about authorship keeps the previous behaviour.
-function authorInfo(model: any): { name: string, url: string } {
-  const declared = model?.main?.[KIT]?.author || {}
+//
+// PER TARGET, falling back to the model-wide value. One model can produce
+// packages with different authors: the SDK is a generated artefact of the
+// publisher, while a Seneca provider is an independently released package with
+// its own human maintainers. A single model-wide name cannot be right for
+// both — and it was not: the solardemo model named a person, the target that
+// read it credited them, and the SDK's own manifest went on saying Voxgig
+// because it read nothing at all.
+//
+//   main: kit: author: { ... }                    # every package from this model
+//   main: kit: target: ts: author: { ... }        # ...except this one
+function authorInfo(model: any, target?: string): { name: string, url: string } {
+  const perTarget = null == target ? null :
+    model?.main?.[KIT]?.target?.[target]?.author
+
+  const declared = (null != perTarget && '' !== (perTarget.name || '')) ?
+    perTarget : (model?.main?.[KIT]?.author || {})
 
   const name = null != declared.name && '' !== declared.name ?
     String(declared.name) : PUBLISHER

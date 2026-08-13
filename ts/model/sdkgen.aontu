@@ -159,6 +159,16 @@ main: kit: target: &: {
     # floors imposed by their dependencies.
     goversion: *'' | string
   }
+  # WHO WROTE THIS PACKAGE, when it differs from the model-wide
+  # `main: kit: author`. One model can produce packages with different
+  # authors: an SDK is a generated artefact of the publisher, while a Seneca
+  # provider is independently released and has its own maintainers. Unset
+  # inherits the model-wide value, which itself defaults to the publisher.
+  author: {
+    name: *'' | string
+    url: *'' | string
+  }
+
   deps: &: {
     active: *false | boolean
     version: *'*' | string
