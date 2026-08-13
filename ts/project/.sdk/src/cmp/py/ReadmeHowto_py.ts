@@ -55,7 +55,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
   const testModeExample = primaryOp
     ? `# Entity ops return the ENTITY and raises on error;
-// call data_get() for the record.
+# call data_get() for the record.
 ${eVar} = client.${eName}().${primaryOp}(${testArg})
 # ${eVar} contains the mock response record`
     : `result = client.direct({"path": "/api/resource", "method": "GET"})
