@@ -1,15 +1,24 @@
 # @voxgig/sdkgen
 
 **Voxgig SDK Generator** — generate idiomatic, multi-language client SDKs
-(plus a CLI and an MCP server) from a single API definition.
+(plus a CLI, an MCP server, an analyst-oriented data package and a Seneca
+plugin) from a single API definition.
 
-Point it at an OpenAPI spec and it produces consistent SDKs across
-TypeScript, JavaScript, Go, Python, PHP, Ruby, and Lua — each with the
-same operation pipeline, the same feature model, generated docs, and an
-offline test suite.
+Point it at an OpenAPI spec and it produces consistent SDKs across 23
+languages — TypeScript, JavaScript, Go, Python, PHP, Ruby, Lua and the
+rest — each with the same operation pipeline, the same feature model,
+generated docs, and an offline test suite.
 
 ```
-OpenAPI spec ──▶ model ──▶ [ ts  js  go  py  php  rb  lua  go-cli  go-mcp ]
+OpenAPI spec ──▶ model ──┬─▶ 23 language SDKs
+                         │     ts  js  go  py  php  rb  lua  csharp  java
+                         │     kotlin  scala  swift  dart  rust  c  cpp
+                         │     zig  perl  clojure  elixir  ocaml  haskell
+                         │     lean
+                         │
+                         └─▶ 4 consumer targets, each wrapping one of them
+                               go-cli, go-mcp (go)   py-data (py)
+                               seneca-provider (ts — into its own repo)
 ```
 
 > **Just want to build an SDK for your API?** Start with

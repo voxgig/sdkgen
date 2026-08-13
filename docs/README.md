@@ -44,10 +44,14 @@ that matches what you are trying to do right now:
 - [Architecture and how the pieces fit](./explanation/architecture.md)
 - [Components vs templates: the two-layer generator](./explanation/components-and-templates.md)
 - [The operation pipeline and the feature model](./explanation/operation-pipeline.md)
+- [Regeneration is overwrite, not merge](./explanation/regeneration-overwrite.md)
+- [Out-of-tree targets: generating into another repo](./explanation/out-of-tree-targets.md)
+  — the mechanism behind `seneca-provider`
 
-### Design proposals
+### Design notes
 - [The `py-data` target](./design/py-data-target.md) — notebook/analyst-oriented
-  Python package layered on the `py` SDK (proposal, not implemented)
+  Python package layered on the `py` SDK. The design note that preceded the
+  target; `py-data` now ships.
 
 ## For AI coding agents
 

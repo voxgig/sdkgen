@@ -39,7 +39,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Jostraca = exports.registerComponent = exports.FeatureHook = exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeErrors = exports.ReadmeQuick = exports.ReadmeInstall = exports.AgentGuideFeature = exports.AgentGuide = exports.AgentGuideTop = exports.ReadmeTop = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Changelog = exports.Security = exports.License = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.srcFeatureExcludes = exports.fullsetExcludes = exports.featureExcludes = exports.findFeatureSources = exports.availableFeatures = exports.featureOf = exports.litFor = exports.dataArg = exports.matchArg = exports.idLiteral = exports.primaryOpCall = exports.liveStrict = exports.hasServerVariables = exports.serverVariables = exports.swiftSafeTypeName = exports.isSwiftSdkType = exports.rbSafeTypeName = exports.isRbCoreConstant = exports.entityCacheField = exports.phpEntityAccessor = exports.exampleVarName = exports.safeVarName = exports.isReservedName = exports.entityCollection = exports.deriveEntityNames = exports.warnEntityTypeCollisions = exports.entityTypeCollisions = exports.entityClassName = exports.pickExampleEntity = exports.entityPrimaryOp = exports.entityOps = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.entityPath = exports.entityActions = exports.opActions = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonKey = exports.canonToDtype = exports.canonToType = exports.collectDeps = exports.getMatchEntries = exports.buildIdNames = exports.SdkGenError = exports.resolveAuthPrefix = exports.isAuthActive = exports.requirePath = void 0;
-exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = exports.jsKey = exports.jsOptProp = exports.jsProp = void 0;
+exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.contributorList = exports.authorInfo = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = exports.jsKey = exports.jsOptProp = exports.jsProp = void 0;
 exports.SdkGen = SdkGen;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -174,6 +174,8 @@ Object.defineProperty(exports, "vendorCommand", { enumerable: true, get: functio
 Object.defineProperty(exports, "pkgDescription", { enumerable: true, get: function () { return packageMeta_1.pkgDescription; } });
 Object.defineProperty(exports, "nonAffiliation", { enumerable: true, get: function () { return packageMeta_1.nonAffiliation; } });
 Object.defineProperty(exports, "keywords", { enumerable: true, get: function () { return packageMeta_1.keywords; } });
+Object.defineProperty(exports, "authorInfo", { enumerable: true, get: function () { return packageMeta_1.authorInfo; } });
+Object.defineProperty(exports, "contributorList", { enumerable: true, get: function () { return packageMeta_1.contributorList; } });
 Object.defineProperty(exports, "envName", { enumerable: true, get: function () { return packageMeta_1.envName; } });
 Object.defineProperty(exports, "envToken", { enumerable: true, get: function () { return packageMeta_1.envToken; } });
 Object.defineProperty(exports, "goModule", { enumerable: true, get: function () { return packageMeta_1.goModule; } });
@@ -263,10 +265,33 @@ function SdkGen(opts) {
         // by their own pass, rooted at that path — see cmp/ExternalTarget for why
         // a folder name cannot do this. The in-tree pass must not see them, or
         // the consumer Root would also emit them into `<sdk-repo>/<target>/`.
-        const external = externalTargets(model, folder);
+        //
+        // `folder` may be relative (a consumer's build passes '..' from `.sdk`),
+        // so resolve it ONCE: every destination is compared against it, and a
+        // comparison between a relative and an absolute path is meaningless.
+        const root = node_path_1.default.resolve(folder);
+        const external = externalTargets(model, root);
+        // Before ANY file is written, in-tree included: a destination that turns
+        // out to be wrong must abort the whole generation, not leave half of it
+        // done. See checkExternalFolders.
+        checkExternalFolders(external, root, fs);
         const jres = await jostraca.generate(jopts, () => Root({ model: 0 === external.length ? model : withoutTargets(model, external) }));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
         for (const ext of external) {
+            // `active: false` is the project's only lever to stop the generator
+            // writing into a repo it does not own, so it has to be honoured HERE —
+            // the consumer Root iterates targets raw and does not check it. The
+            // target is still removed from the in-tree model above (withoutTargets
+            // takes every `output: path` target, active or not), so switching one
+            // off generates it nowhere rather than relocating it into
+            // `<sdk-repo>/<target>/`.
+            if (!ext.active) {
+                log.info({
+                    point: 'generate-external-skip', target: ext.name, folder: ext.folder,
+                    note: ext.name + ' inactive, not generated'
+                });
+                continue;
+            }
             log.info({
                 point: 'generate-external', target: ext.name, folder: ext.folder,
                 note: ext.name + ' -> ' + ext.folder
@@ -276,9 +301,8 @@ function SdkGen(opts) {
                 // How to walk BACK to the SDK project from the destination. A
                 // target generating out of tree usually sits beside the SDK in a
                 // known layout, and its own docs, scripts and live tests need to
-                // name that path. The relationship is already declared once, as
-                // `output: path`; deriving the inverse keeps it declared once.
-                sdkrelpath: node_path_1.default.relative(ext.folder, folder).split(node_path_1.default.sep).join('/'),
+                // name that path.
+                sdkrelpath: externalSdkRel(ext, root, log),
             }));
             (0, util_2.showChanges)(jopts.log, 'generate-result', eres, node_path_1.default.dirname(process.cwd()));
         }
@@ -397,6 +421,10 @@ SdkGen.makeBuild = async function (opts) {
 // is '../<repo>'. That is deliberately the SAME base the generator writes
 // everything else against: a path in the model should not depend on the
 // directory the command happened to be run from.
+//
+// An INACTIVE target is still listed: it must be taken out of the in-tree
+// model (see withoutTargets) so that switching it off does not silently
+// relocate it into `<sdk-repo>/<target>/`. The generate loop skips it.
 function externalTargets(model, folder) {
     const targets = model?.main?.[apidef_1.KIT]?.target || {};
     return Object.keys(targets).sort()
@@ -408,7 +436,140 @@ function externalTargets(model, folder) {
         .map((t) => ({
         ...t,
         folder: node_path_1.default.resolve(folder, String(t.target.output.path)),
+        active: false !== t.target.active,
     }));
+}
+// The `.jostraca` bookkeeping tree (meta log + a duplicate of the last
+// generated output) that jostraca leaves at an output root. It is the only
+// on-disk evidence that this toolchain has generated into a directory
+// before, so it doubles as the OWNERSHIP MARKER: a destination carrying one
+// has been generated into already, whoever set it up.
+const EXTERNAL_MARKER = '.jostraca';
+// Entries that do not count as content when deciding whether a destination
+// is empty. A `git init` (or a clone of an empty repo) leaves only `.git`,
+// and that is exactly the destination a FIRST generation is aimed at.
+const EXTERNAL_EMPTY = ['.git', '.DS_Store'];
+// Refuse a destination the project cannot have meant.
+//
+// The external pass is the one code path that writes outside the repo it was
+// pointed at, at a filesystem path taken verbatim from the model — and
+// generation is overwrite, not merge, while jostraca's ensureDir creates
+// missing parents. So a mistyped `output: path` does not fail: it fabricates
+// a package tree at an arbitrary location, or overwrites an unrelated repo's
+// package.json, README.md, LICENSE and CI workflow in place. The only trace
+// was one INFO line naming the resolved folder.
+//
+// A destination must therefore be:
+//   - outside the SDK project, in BOTH directions — inside it is what a
+//     typo like '.' or 'ts' produces (and the external pass runs SECOND, so
+//     it wins over what the in-tree pass just wrote), while a destination
+//     that CONTAINS the project is what '..' produces;
+//   - claimed by no other target;
+//   - and either absent, empty, or carrying the marker a previous
+//     generation left there.
+//
+// Anything else is refused with both paths named. NOT skipped: a project
+// generating somewhere other than it believes must be told. A destination
+// that legitimately holds other content first (a repo seeded with a README
+// and LICENCE) says so once in the model, with `output: adopt: true`.
+function checkExternalFolders(external, root, fs) {
+    const claimed = {};
+    for (const ext of external) {
+        // An inactive target writes nothing, so its destination is not a hazard —
+        // and switching a target off must not require keeping its now-unused
+        // path valid.
+        if (!ext.active)
+            continue;
+        const where = 'Target "' + ext.name + '" has output path "' +
+            ext.target.output.path + '", which resolves to: ' + ext.folder +
+            '\n  (SDK project: ' + root + ')';
+        if (ext.folder === root || folderContains(root, ext.folder)) {
+            throw new utility_1.SdkGenError('External target output path is inside the SDK project.\n  ' + where +
+                '\n  A target generating into the SDK project must leave `output: ' +
+                'path` unset — it is then generated in-tree, as <sdk-project>/' +
+                ext.name + '/.');
+        }
+        if (folderContains(ext.folder, root)) {
+            throw new utility_1.SdkGenError('External target output path contains the SDK project.\n  ' + where +
+                '\n  Generation would write this package over the directory holding ' +
+                'the SDK project itself.');
+        }
+        if (null != claimed[ext.folder]) {
+            throw new utility_1.SdkGenError('External target output path is already claimed by target "' +
+                claimed[ext.folder] + '".\n  ' + where +
+                '\n  Two targets generating into the same folder overwrite each ' +
+                'other, in target-name order.');
+        }
+        claimed[ext.folder] = ext.name;
+        if (!fs.existsSync(ext.folder))
+            continue;
+        if (!fs.statSync(ext.folder).isDirectory()) {
+            throw new utility_1.SdkGenError('External target output path is not a folder.\n  ' + where);
+        }
+        if (true === ext.target.output.adopt)
+            continue;
+        const entries = fs.readdirSync(ext.folder)
+            .map((entry) => String(entry));
+        if (entries.includes(EXTERNAL_MARKER))
+            continue;
+        const content = entries.filter((entry) => !EXTERNAL_EMPTY.includes(entry));
+        if (0 < content.length) {
+            throw new utility_1.SdkGenError('External target output folder already holds content this generator ' +
+                'did not write.\n  ' + where +
+                '\n  Found: ' + content.slice(0, 8).join(', ') +
+                (8 < content.length ? ', ...' : '') +
+                '\n  Generation OVERWRITES, so this would replace that content. ' +
+                'Check the path;\n  if the folder is right, declare it: `main: kit: ' +
+                'target: \'' + ext.name + '\': output: adopt: true`.');
+        }
+    }
+}
+// Is `path` inside `folder`? Both must already be resolved. Path.relative
+// rather than a string prefix, so that a sibling whose name merely STARTS
+// with the folder's ('/x/sdk' vs '/x/sdk-provider') is not read as nested.
+function folderContains(folder, path) {
+    const rel = node_path_1.default.relative(folder, path);
+    return '' !== rel && !rel.startsWith('..' + node_path_1.default.sep) && '..' !== rel &&
+        !node_path_1.default.isAbsolute(rel);
+}
+// The path from the destination back to the SDK project, which the target's
+// own docs, scripts and live tests name (the companion test server lives in
+// the SDK repo and is not published).
+//
+// It is DERIVED from the two resolved folders by default, which is only
+// honest while the walk back crosses nothing the model does not name. It
+// does not for `output: path: '../<repo>'`; it does for anything ascending
+// further. voxgig-solardemo-sdk declares '../../seneca/solardemo-provider'
+// and the derived inverse came out as '../../voxgig-sdk/voxgig-solardemo-sdk'
+// — where `voxgig-sdk` is the name of the WORKSPACE DIRECTORY holding the SDK
+// checkout on one machine, no part of the model. That string is committed
+// into the destination's README.md and three test files, so a second
+// developer with the same two repos under a differently named parent
+// regenerates a spurious diff in tracked files and an instruction path that
+// is wrong on the first machine.
+//
+// So a project that ascends further declares the walk back explicitly, as
+// `output: sdkrel`, and is warned until it does.
+function externalSdkRel(ext, root, log) {
+    const declared = String(ext.target.output?.sdkrel || '');
+    if ('' !== declared)
+        return declared;
+    const derived = node_path_1.default.relative(ext.folder, root).split(node_path_1.default.sep).join('/');
+    // Every segment that is not '..' is a real directory name on the way back
+    // down to the SDK project. The LAST is the project's own folder; any
+    // earlier one is a directory ABOVE it, which nothing in the model declares.
+    const named = derived.split('/').filter((seg) => '..' !== seg);
+    if (1 < named.length) {
+        log.warn({
+            point: 'external-sdkrel-derived', target: ext.name, sdkrel: derived,
+            note: ext.name + ': path back to the SDK project derived as \'' +
+                derived + '\', which names ' + (named.length - 1) +
+                ' directory(s) above the SDK project that the model does not ' +
+                'declare — this machine\'s layout will be committed to the ' +
+                'generated files. Declare `output: sdkrel` instead.'
+        });
+    }
+    return derived;
 }
 // The model the IN-TREE pass sees: the same model with the out-of-tree
 // targets taken out.

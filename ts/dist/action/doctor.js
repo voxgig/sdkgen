@@ -5,13 +5,13 @@
 // WHY THIS EXISTS
 //
 // Nothing told a project that its `.sdk/` had drifted. `target add`
-// OVERWRITES the vendored components and template masters, so any hand-edit
-// there is silently reverted on the next run — and any file the scaffold has
-// since stopped shipping just stays, compiling into the output forever. In
-// voxgig-solardemo-sdk two such orphans broke the Go build in a single
-// session: `utility/make_target.go` (replaced upstream by `make_point.go`,
-// leaving a duplicate symbol) and `utility/struct/go.mod` (a nested module
-// that made `utility/struct` unimportable).
+// OVERWRITES the vendored components, the template masters AND the per-target
+// model file, so any hand-edit there is silently reverted on the next run —
+// and any file the scaffold has since stopped shipping just stays, compiling
+// into the output forever. In voxgig-solardemo-sdk two such orphans broke the
+// Go build in a single session: `utility/make_target.go` (replaced upstream by
+// `make_point.go`, leaving a duplicate symbol) and `utility/struct/go.mod` (a
+// nested module that made `utility/struct` unimportable).
 //
 // Every divergence in that repo was found by hand-diffing. Without a check,
 // fixing it once guarantees nothing about next month.
@@ -177,7 +177,8 @@ function checkTarget(actx, resolved, report) {
     const fs = actx.fs();
     const model = actx.model;
     const root = actx.folder;
-    // The two trees `target add` owns, and the substitution it applies to each.
+    // The two TREES `target add` owns, and the substitution it applies to each.
+    // (It owns one FILE as well — see checkTargetModel, below.)
     //
     //   src/cmp — copied verbatim, so a byte compare is the truth.
     //   tm      — copied through jostraca's template(), with ProjectName.
@@ -240,6 +241,52 @@ function checkTarget(actx, resolved, report) {
             }
         }
     }
+    checkTargetModel(actx, resolved, report);
+}
+// The THIRD thing `target add` writes for a target, and the one nothing
+// compared: `model/target/<t>.aontu` (src/action/target.ts, the Copy with the
+// `'BASE'` replacement).
+//
+// It is not scaffolding trivia. That file carries the target's dependency
+// set, its `phase` gates, `srcfeature`, `feature.trim` / `feature.fullset`
+// and its publish-registry identity — and `target add` OVERWRITES it exactly
+// as it overwrites src/cmp and tm. So a maintainer who fixes a dep version
+// there loses the fix on the next resync with nothing said (the SDK regresses
+// with nobody touching it, which is the failure the "a project decision
+// belongs in the MODEL" rule exists to prevent), and a project whose copy
+// predates a scaffold change carries the old declaration forever while doctor
+// reported the target in sync. Both are the drift this command exists to
+// name; the file was simply in neither tree it walked.
+function checkTargetModel(actx, resolved, report) {
+    const { tname, tfolder, torigname, base } = resolved;
+    const fs = actx.fs();
+    const scaffold = node_path_1.default.join(tfolder, 'model', 'target', torigname + '.aontu');
+    // No scaffold file means nothing to compare against, which is the ALIASED
+    // target: `target add go~go2` copies go.aontu to model/target/go2.aontu and
+    // docs/how-to/add-a-target.md then tells the project to EDIT it (a second Go
+    // module needs its own module name and deps). doctor resolves a target by
+    // its INSTALLED name — the model records `base`, not the ref it came from —
+    // so the origin is not recoverable here, and reporting that documented edit
+    // as drift on every run is worse than saying nothing.
+    if (!fs.existsSync(scaffold)) {
+        return;
+    }
+    const project = node_path_1.default.join(actx.folder, 'model', 'target', tname + '.aontu');
+    const label = 'model/target/' + tname + '.aontu';
+    if (!fs.existsSync(project)) {
+        report.missing.push(label);
+        return;
+    }
+    // The substitution `target add` applied on the way in: jostraca's template()
+    // against the model (so `module: name: '$$name$$'` arrives as the project
+    // slug) plus the `'BASE'` replacement recording where the scaffold was.
+    //
+    // NOT templateReplacements() — that is the tm/ tree's map. The two writers
+    // pass different maps, so doctor has to as well, or every csharp/swift/ts
+    // project reads as forked on the `base:` line alone.
+    if (differs(fs, scaffold, project, actx.model, { "'BASE'": "'" + base + "'" })) {
+        report.forked.push(label);
+    }
 }
 // Every file under `dir`, as forward-slash paths relative to it, sorted.
 // Missing directory -> no files (a target that was never added).
@@ -282,8 +329,16 @@ function differs(fs, scaffoldPath, projectPath, model, replace) {
         return !fs.readFileSync(scaffoldPath).equals(fs.readFileSync(projectPath));
     }
     const src = fs.readFileSync(scaffoldPath, 'utf8');
-    const expected = 0 === Object.keys(replace).length ? src :
-        (0, jostraca_1.template)(src, model, { replace });
+    // template() runs even when there is nothing to REPLACE, because jostraca's
+    // Copy always interpolates `$$ref$$` against the model as well — the replace
+    // map is an extra, not the whole substitution. Skipping it for the src/cmp
+    // tree (whose Copy passes no replace map) meant the three Config fragments
+    // that carry `$$const.Name$$` / `$$main.kit.info.servers.0.url$$` arrived
+    // substituted and compared as bytes: every project with ts, js or dart
+    // reported `src/cmp/<t>/fragment/Config.fragment.<ext>` as FORKED straight
+    // out of `target add`, which is precisely the noise this function exists to
+    // remove. With no `$$` refs and no replace keys, template() is the identity.
+    const expected = (0, jostraca_1.template)(src, model, { replace });
     return expected !== fs.readFileSync(projectPath, 'utf8');
 }
 // trimFeatures logs its decisions; doctor is a report, not a run.

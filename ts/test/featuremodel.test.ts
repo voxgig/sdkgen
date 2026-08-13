@@ -159,9 +159,9 @@ describe('feature-language-parity', () => {
     rb: (n) => Path.join('rb', 'feature', n + '_feature.rb'),
     lua: (n) => Path.join('lua', 'feature', n + '_feature.lua'),
     // Added language targets. Per-feature source files; naming follows each
-    // language's convention (clojure/ocaml/haskell keep all features in a
-    // single module, so they are covered by the copy-dir + model checks
-    // below rather than a per-feature file).
+    // language's convention (clojure/ocaml/haskell/lean keep all features in
+    // a single module — lean's is src/SdkFeatures.lean — so they are covered
+    // by the copy-dir + model checks below rather than a per-feature file).
     csharp: (n) => Path.join('csharp', 'feature', cap(n) + 'Feature.cs'),
     java: (n) => Path.join('java', 'feature', cap(n) + 'Feature.java'),
     kotlin: (n) => Path.join('kotlin', 'feature', cap(n) + 'Feature.kt'),
@@ -182,13 +182,42 @@ describe('feature-language-parity', () => {
   const SDK_TARGETS = [
     'ts', 'js', 'go', 'py', 'php', 'rb', 'lua',
     'csharp', 'java', 'kotlin', 'scala', 'swift', 'dart', 'rust', 'c', 'cpp',
-    'zig', 'perl', 'clojure', 'elixir', 'ocaml', 'haskell',
+    'zig', 'perl', 'clojure', 'elixir', 'ocaml', 'haskell', 'lean',
   ]
+
+  // Targets that CONSUME another target's SDK rather than being one
+  // (go-cli/go-mcp wrap `go`, py-data wraps `py`, seneca-provider wraps `ts`).
+  // Same list as parity.test.ts's NON_SDK_TARGETS.
+  const CONSUMER_TARGETS = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider']
+
+  // Targets that ship NO tm/<t>/src/feature/<name>/ dirs, and why.
+  //
+  // seneca-provider is the only one: `feature add` copies per-target feature
+  // source, and this target has none to copy — Main emits the whole package
+  // and every standard phase, `feature` included, is switched off in its
+  // model. Note that `srcfeature: false` is NOT the reason: 23 targets set
+  // that (go, py, rb, lua, perl, lean, …) and all of them ship the dirs —
+  // srcfeature gates the GENERATED layout (src/cmp/Feature.ts), not the
+  // template tree. Declared rather than inferred, so a target that gains
+  // feature source fails the accuracy test below until it is moved.
+  const NO_FEATURE_DIRS = ['seneca-provider']
 
   // Every SDK target plus the non-SDK consumer surfaces need a
   // src/feature/<name>/ dir for `feature add` to copy (flat-feature languages
   // and the consumer targets use .gitkeep).
-  const ADD_TARGETS = SDK_TARGETS.concat(['go-cli', 'go-mcp', 'py-data'])
+  const ADD_TARGETS = SDK_TARGETS
+    .concat(CONSUMER_TARGETS)
+    .filter((t) => !NO_FEATURE_DIRS.includes(t))
+
+  const TARGET_MODEL = Path.join(SDK, 'model', 'target')
+
+  // Every target the scaffold actually ships, discovered rather than listed.
+  function shippedTargets(): string[] {
+    return readdirSync(TARGET_MODEL)
+      .filter((f) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
+      .map((f) => f.replace(/\.aontu$/, ''))
+      .sort()
+  }
 
   for (const [lang, impl] of Object.entries(IMPL)) {
     test(`${lang}: every enterprise feature is implemented`, () => {
@@ -199,6 +228,25 @@ describe('feature-language-parity', () => {
     })
   }
 
+  // The lists above are HAND-WRITTEN, so until this test existed a new target
+  // was simply absent from all of them and every check in this file quietly
+  // skipped it — which is how `lean` (an SDK target with a full set of
+  // src/feature dirs) and `seneca-provider` both came to be exempt without
+  // anyone deciding they should be. Mirrors parity.test.ts's tier manifest:
+  // the list is the stated policy, and a target added without a decision
+  // fails here.
+  test('the target lists cover every shipped target exactly once', () => {
+    const declared = SDK_TARGETS.concat(CONSUMER_TARGETS).sort()
+
+    deepStrictEqual(declared, shippedTargets(),
+      'a target was added or removed without classifying it — add it to ' +
+      'SDK_TARGETS (a language SDK) or CONSUMER_TARGETS (wraps another ' +
+      'target) in test/featuremodel.test.ts')
+
+    deepStrictEqual(declared, Array.from(new Set(declared)),
+      'a target appears in both SDK_TARGETS and CONSUMER_TARGETS')
+  })
+
   test('every target has a feature-add copy dir per feature', () => {
     for (const t of ADD_TARGETS) {
       for (const name of ENTERPRISE) {
@@ -208,8 +256,24 @@ describe('feature-language-parity', () => {
     }
   })
 
+  // The exemption has to stay TRUE, or it silently becomes a mute button: a
+  // target that gains feature source while sitting on this list would never
+  // have those dirs checked again.
+  test('targets exempt from feature-add dirs really have none', () => {
+    const nowHasSource = NO_FEATURE_DIRS.filter((t) =>
+      ENTERPRISE.some((name) =>
+        existsSync(Path.join(TM, t, 'src', 'feature', name))))
+
+    deepStrictEqual(nowHasSource, [],
+      'these targets gained feature-add copy dirs — drop them from ' +
+      'NO_FEATURE_DIRS so the per-feature check covers them')
+
+    // ...and every name on it is a target that exists.
+    deepStrictEqual(NO_FEATURE_DIRS.filter((t) => !shippedTargets().includes(t)), [],
+      'NO_FEATURE_DIRS names a target the scaffold does not ship')
+  })
+
   test('every SDK target has a target definition', () => {
-    const TARGET_MODEL = Path.join(SDK, 'model', 'target')
     for (const t of SDK_TARGETS) {
       const p = Path.join(TARGET_MODEL, t + '.aontu')
       ok(existsSync(p), `missing target definition: model/target/${t}.aontu`)

@@ -32,6 +32,25 @@ main: kit: test: {
     # Overridable per target:
     #   main: kit: target: go: test: live: strict: true
     strict: *false | boolean
+
+    # The base URL a live run points at. '' derives it from the spec's first
+    # declared server, but ONLY when that is a loopback address.
+    #
+    # For an OpenAPI-derived model `servers[0].url` is the PRODUCTION host of
+    # a third-party API, and a generated live suite runs under `npm test` on
+    # every CI push. Inferring the base from the spec therefore pointed CI at
+    # a stranger's API — unauthenticated, on three operating systems, on every
+    # push — and pointed the generated write scripts there too. A live target
+    # is now taken only when it is unambiguously ours: declared here, or
+    # loopback, which nobody else can be behind.
+    base: *'' | string
+
+    # Whether the SDK's own repo ships a runnable companion server under
+    # `app/`. NOTHING in an API definition says so — it is a property of the
+    # sibling project — so it cannot be inferred, and inferring it put an
+    # unconditional `git clone && cd app && npm install && npm run build` into
+    # a generated provider's CI, which fails the job for any repo without one.
+    app: *false | boolean
   }
 }
 
@@ -78,6 +97,37 @@ main: kit: repo: {
   path: *'' | string
 
   host: *'github.com' | string
+}
+
+
+# WHO WROTE THIS PACKAGE — the manifest's `author` and `contributors`.
+#
+# Generated output is overwritten, so attribution hand-edited into a
+# package.json is silently DELETED on the next regeneration. That is exactly
+# what happened the first time the seneca-provider target regenerated a
+# hand-written provider repo: the manifest's author and its two named
+# contributors were dropped, and nothing failed to warn about it — credit is
+# not something a build can miss.
+#
+# So it is declared here, like every other value a project owns about itself.
+# Unset means the PUBLISHER (Voxgig), which is what a generated SDK carries
+# and what a project that has never thought about it should get.
+#
+#   main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }
+#   main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: '...' }
+#
+# `contributor` is a MAP, not a list, because aontu unifies maps by key: a
+# project can add one contributor without restating the others, and a
+# duplicate key is a conflict rather than a silent second entry. Emitters
+# render it in sorted-key order, so the manifest is byte-stable.
+main: kit: author: {
+  name: *'' | string
+  url: *'' | string
+}
+
+main: kit: contributor: &: {
+  name: string
+  url: *'' | string
 }
 
 
@@ -170,6 +220,40 @@ main: kit: target: &: {
   # AGENTS.md, the build scaffold) follow it out.
   output: {
     path: *'' | string
+
+    # Write into a destination that already holds content this generator did
+    # not write.
+    #
+    # Generation OVERWRITES, jostraca creates missing parent directories, and
+    # the path is taken verbatim from the model — so a typo ('.', '..', a
+    # target name) fabricates a package tree somewhere arbitrary, or replaces
+    # an unrelated repo's package.json, README, LICENSE and CI workflow in
+    # place. Generation therefore refuses a destination that is neither
+    # absent, nor empty, nor carrying the `.jostraca` bookkeeping a previous
+    # generation left there.
+    #
+    # A repo seeded with its own README/LICENCE before the first generation
+    # is the legitimate case that trips the guard. Say so here, once: the
+    # point is that the destination is a DECISION, not a typo.
+    adopt: *false | boolean
+
+    # The path from the destination BACK to the SDK project — what the
+    # target's own docs, scripts and live tests name when they reach for
+    # something the SDK repo distributes only in source (the companion test
+    # server in `app/`).
+    #
+    # '' derives it by inverting the resolved `path`, which is exact only
+    # while the walk back crosses nothing this model names — true for
+    # '../<repo>', false for anything ascending further. A project declaring
+    # '../../seneca/solardemo-provider' derived
+    # '../../voxgig-sdk/voxgig-solardemo-sdk', where `voxgig-sdk` is the name
+    # of the WORKSPACE DIRECTORY holding the checkout on ONE machine — and
+    # that string is committed into the destination's README and test files,
+    # so the next developer's layout regenerates a spurious diff and an
+    # instruction path that is wrong for everyone else. Declare it here when
+    # the destination is more than one level away; generation warns until you
+    # do.
+    sdkrel: *'' | string
 
     # '<org>/<repo>' for the repo the files land in, under `main: kit: repo:
     # host`. A target generating out of tree is usually released from that

@@ -4,6 +4,7 @@ import {
   entityCollection, entityOps, entityIdField, entityClassName,
   opRequestShape, opParams, entityPath,
   collectDeps, repoInfo, packageName, packageVersion, apiName, envName,
+  authorInfo, contributorList, isAuthActive, jsKey, jsProp,
   SdkGenError,
   PUBLISHER, PUBLISHER_URL,
 } from '@voxgig/sdkgen'
@@ -12,7 +13,7 @@ import {
   KIT,
 } from '@voxgig/apidef'
 
-import { Tests, Scripts, Workflow, Readme } from './Extras_seneca-provider'
+import { Tests, Scripts, Workflow, Readme, Docs } from './Extras_seneca-provider'
 
 
 // The `seneca-provider` target: a Seneca plugin exposing this API's entities
@@ -65,24 +66,94 @@ function requiredKeys(ent: any, opname: string): string[] {
 }
 
 
-// A nested entity's parent PATH params: `moon` under
-// `/planet/{planet_id}/moon` yields ['planet_id']. These are the keys a
+// The key that addresses ONE record.
+//
+// `entityIdField` answers whenever the model declares one, which apidef does
+// for any entity carrying a field literally named `id` — and it renames an
+// `<entity>_id` path param to `id` besides, which is why most APIs never reach
+// the fallback.
+//
+// When it does NOT answer, the record key is the LAST required path param of a
+// single-item op: a route addresses parents first and the record last, by
+// construction. Without this the key was simply unknown, so a param named
+// `code` failed the `!== idf` test in opParentKeys and was classified as a
+// PARENT — `load$('SAVE20')` threw "coupon load: code is required" instead of
+// loading anything, and the entity was treated as nested throughout.
+function recordKey(ent: any): string {
+  const idf = entityIdField(ent)
+  if (null != idf && '' !== idf) {
+    return String(idf)
+  }
+
+  for (const opname of ['load', 'remove', 'update']) {
+    const op = (ent.op || {})[opname]
+    if (null == op) {
+      continue
+    }
+
+    const params = opParams(op).filter((p: any) => false !== p.reqd)
+    if (0 < params.length) {
+      return String((params[params.length - 1] as any).name)
+    }
+  }
+
+  return 'id'
+}
+
+
+// The guard function's name. Spec-derived param names are not constrained to
+// identifiers — Evervault's `/payments/3ds-sessions/{3ds_session_id}` is the
+// standing example — and a name is a DECLARATION here, so it cannot be
+// bracket-quoted the way a property access can. Non-identifier characters are
+// replaced rather than dropped, so `a-b` and `a_b` cannot collide.
+function guardName(e: any, key: string): string {
+  return `need_${e.name}_${String(key).replace(/[^A-Za-z0-9_$]/g, '_')}`
+    .replace(/^need_(\d)/, 'need__$1')
+}
+
+
+// The parent PATH params of ONE op: `moon`'s load under
+// `/planet/{planet_id}/moon/{id}` yields ['planet_id']. These are the keys a
 // caller can forget, so each gets a guard.
 //
 // From opParams — the op's declared path params — NOT from opRequestShape.
 // For create/update the latter also returns the request BODY fields, so
 // reading it here generated a "planet name is required" guard for every
 // writable field on every entity.
-function parentKeys(ent: any): string[] {
-  const idf = entityIdField(ent)
+function opParentKeys(ent: any, opname: string): string[] {
+  const rk = recordKey(ent)
+  const op = (ent.op || {})[opname]
+
+  if (null == op) {
+    return []
+  }
+
   const seen = new Set<string>()
 
-  for (const opname of Object.keys(ent.op || {})) {
-    for (const p of opParams((ent.op || {})[opname])) {
-      const name = (p as any).name
-      if (false !== (p as any).reqd && name !== idf && name !== 'id') {
-        seen.add(name)
-      }
+  for (const p of opParams(op)) {
+    const name = String((p as any).name)
+    if (false !== (p as any).reqd && name !== rk && name !== 'id') {
+      seen.add(name)
+    }
+  }
+
+  return [...seen].sort()
+}
+
+
+// Every parent key the entity has, across its ACTIVE ops — for the seed data
+// and the docs, which describe the entity rather than one call.
+//
+// `entityOps` and not `Object.keys(ent.op)`: an op the model marks
+// `active: false` generates no SDK method, so letting it contribute a key
+// here put a mandatory guard for a parameter of a call that does not exist
+// onto every cmd that does.
+function parentKeys(ent: any): string[] {
+  const seen = new Set<string>()
+
+  for (const opname of entityOps(ent)) {
+    for (const key of opParentKeys(ent, opname)) {
+      seen.add(key)
     }
   }
 
@@ -92,10 +163,30 @@ function parentKeys(ent: any): string[] {
 
 // A model field's broad shape, for generating seed data that reads as data.
 // The model carries canon strings (`\`$STRING\``), not JS types.
+//
+// ORDER MATTERS and the tests are substring tests, so the container kinds are
+// checked FIRST: a multi-type field's sentinel is the ARRAY
+// `['`$ONE`', [members...]]`, and String() flattens it to a comma-joined
+// string — so a `$ONE` of string|number matched `includes('NUMBER')` and was
+// seeded as a bare number. A union is not a number; it is whatever its first
+// member is, and falling back to a string is the safe answer.
+//
+// `$ARRAY` and `$OBJECT` are in the sentinel vocabulary (see
+// helpers/canonType.ts) and used to fall through to 'string', which put
+// `tags: 'quick-tags'` into test/quick.js — a type-incorrect body that a
+// validating server rejects.
 function fieldKind(type: any): string {
+  if (Array.isArray(type)) {
+    return 'string'
+  }
+
   const t = String(type || '').toUpperCase()
-  if (t.includes('NUMBER') || t.includes('INTEGER')) return 'number'
+
+  if (t.includes('ARRAY') || t.includes('LIST')) return 'array'
+  if (t.includes('OBJECT') || t.includes('MAP')) return 'object'
   if (t.includes('BOOLEAN')) return 'boolean'
+  if (t.includes('NUMBER') || t.includes('INTEGER')) return 'number'
+
   return 'string'
 }
 
@@ -165,18 +256,50 @@ const Main = cmp(function Main(props: any) {
   const sdkPkg = packageName(model, 'npm')
   const sdkVersion = packageVersion(model, 'ts')
 
+  // UNFILTERED by design — see the AGENTS.md sharp edge: entityCollection is
+  // the resolver every component must use (getModelPath rebuilds its container
+  // per call, defeating the class-name memo), and it deliberately includes
+  // inactive entities because the typed-model emitters need them.
+  //
+  // Which makes filtering `active` the CALLER's job, and this component was
+  // the one consumer target that skipped it — go-cli, go-mcp and py-data all
+  // re-filter. The cost: MainEntity_ts emits an accessor only for an ACTIVE
+  // entity, so an inactive one produced `this.shared.sdk.Ghost()` in the
+  // provider and an `assert.equal(typeof sdk.Ghost, 'function')` in its tests,
+  // against a method the SDK does not have.
   const entityColl = entityCollection(model)
+
+  const activeEntities = Object.keys(entityColl).sort()
+    .map((key: string) => entityColl[key])
+    .filter((ent: any) => false !== ent.active)
 
   // Entities this provider can serve: those with at least one op that maps to
   // a Seneca store cmd. An entity with no such op would produce an empty cmd
   // map, which seneca-entity treats as a store that answers nothing.
-  const entityNames = Object.keys(entityColl).sort()
-    .map((key: string) => entityColl[key].name)
+  const entityNames = activeEntities.map((ent: any) => ent.name)
 
-  const entities = Object.keys(entityColl).sort()
-    .map((key: string) => entityColl[key])
+  const entities = activeEntities
     .map((ent: any) => {
       const parents = parentKeys(ent)
+
+      // The parent entity PER KEY. Deriving it from `parents[0]` alone left an
+      // entity nested two levels deep with no cross-reference for its outer
+      // parents, so their seed values came out as the literal '0'.
+      const parentOf: Record<string, string> = {}
+      for (const key of parents) {
+        parentOf[key] = parentEntityOf(key, entityNames)
+      }
+
+      // The parent keys of each op SEPARATELY. The guards used to be the union
+      // across all ops, applied to every cmd alike, while the argument handed
+      // to the SDK was computed per op — so an entity whose routes are not
+      // uniformly nested (a flat `load`, a nested `create`) demanded a
+      // parameter its own call would never use.
+      const opParents: Record<string, string[]> = {}
+      for (const opname of entityOps(ent)) {
+        opParents[opname] = opParentKeys(ent, opname)
+      }
+
       return {
         ent,
         name: ent.name,
@@ -196,20 +319,45 @@ const Main = cmp(function Main(props: any) {
         ops: entityOps(ent),
         idf: entityIdField(ent),
         parents,
-        // The entity each parent key points at, so seeded child records
-        // reference a parent record that exists.
-        parentEntity: 0 < parents.length ?
-          parentEntityOf(parents[0], entityNames) : '',
+        parentOf,
+        opParents,
+        // The entity the FIRST parent key points at. Kept because the docs and
+        // the scripts speak about "the parent" in the singular; anything that
+        // must be right per key reads parentOf.
+        parentEntity: 0 < parents.length ? parentOf[parents[0]] : '',
         // Required fields only: a seed record has to satisfy the shape the
         // SDK will hand back, and optional noise makes the assertions
         // harder to read.
-        fields: (ent.fields || [])
-          .filter((f: any) => false !== f.req)
-          .map((f: any) => ({
-            name: f.name,
-            kind: fieldKind(f.type),
-            parentEntity: parentEntityOf(f.name, entityNames),
-          })),
+        //
+        // A parent path param is then FORCED IN even when the entity's own
+        // schema omits it or marks it optional. A path param is a routing key,
+        // not necessarily a response field: when the child's schema left it
+        // out the seeded record had no link back to its parent, and the mock's
+        // match found nothing — which the nested `load` test reported as a
+        // TypeError and the nested `list` test reported as a pass.
+        fields: (() => {
+          const req = (ent.fields || [])
+            .filter((f: any) => false !== f.req)
+            .map((f: any) => ({
+              name: f.name,
+              kind: fieldKind(f.type),
+              parentEntity: parentEntityOf(f.name, entityNames),
+            }))
+
+          const have = new Set(req.map((f: any) => f.name))
+
+          for (const key of parents) {
+            if (!have.has(key)) {
+              req.push({
+                name: key,
+                kind: 'string',
+                parentEntity: parentOf[key],
+              })
+            }
+          }
+
+          return req
+        })(),
       }
     })
     .map((e: any) => ({
@@ -234,12 +382,38 @@ const Main = cmp(function Main(props: any) {
   // once by the external pass — see cmp/ExternalTarget.
   const sdkrel = ctx$.sdkrelpath || '..'
 
-  // Where a live run points by default: the first declared server, which for
-  // a project with a companion app is that app's own URL. Empty means the
-  // live tests are not generated at all — there is no honest default host for
-  // an arbitrary third-party API.
+  // Where a live run points — and whether there is anything honest to point
+  // it at.
+  //
+  // NOT simply `servers[0].url`. For an OpenAPI-derived model that is the
+  // PRODUCTION host of a third-party API, and everything gated on it aims
+  // there: the `describe('live')` block, which `npm test` runs on every CI
+  // push on three operating systems; the `serverUp` probe in front of it; and
+  // test/quick.js, whose header says "start the companion server first" while
+  // BASE silently defaults to production and whose body is a create / update /
+  // remove cycle. A live suite that reaches a stranger's API from CI is not a
+  // live suite, it is traffic — and unauthenticated traffic at that.
+  //
+  // So a live base is taken only when it is unambiguously OURS: declared
+  // outright by the project, or a loopback address, which no third party can
+  // be behind. Anything else leaves live testing ungenerated, which is the
+  // honest answer for an API nobody here runs.
+  const live = model?.main?.[KIT]?.test?.live || {}
   const servers = (model?.main?.[KIT]?.info?.servers || [])
-  const liveBase = 0 < servers.length ? String(servers[0].url || '') : ''
+  const specBase = 0 < servers.length ? String(servers[0].url || '') : ''
+
+  const loopback = (url: string) =>
+    /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])([:/]|$)/i.test(url)
+
+  const liveBase = null != live.base && '' !== live.base ? String(live.base) :
+    (loopback(specBase) ? specBase : '')
+
+  // Whether the SDK's own repo ships a runnable companion server under
+  // `app/`. NOTHING in an API definition says so — it is a property of the
+  // sibling project — so it cannot be inferred, and inferring it is what put
+  // an unconditional `git clone && cd app && npm install && npm run build`
+  // into every generated provider's CI.
+  const liveApp = true === live.app || (loopback(specBase) && '' === (live.base || ''))
 
   const provider = {
     Name, lower, ENV, sdkClass, pluginName, fileBase,
@@ -252,6 +426,7 @@ const Main = cmp(function Main(props: any) {
     version: packageVersion(model, target.name),
     sdkrel,
     liveBase,
+    liveApp,
     // The sponsor line. @seneca/maintain's `content_readme` check requires
     // the publisher's name in the README, so this is load-bearing rather
     // than decorative — the generated `maintain` test fails without it.
@@ -266,6 +441,11 @@ const Main = cmp(function Main(props: any) {
     // way a language target's is — a provider is `@seneca/<name>-provider` —
     // so read the project's pin directly and default to that shape.
     pkgName: providerPackage(model, lower),
+    // Whether this API authenticates at all. Decides if the plugin plumbs a
+    // credential: the SDK's auth stage emits nothing for an auth-inactive
+    // model and strips the authorization header regardless of options, so
+    // plumbing one anyway produces a credential path that cannot work.
+    authActive: isAuthActive(model),
   }
 
   // Static furniture: LICENSE, CODE_OF_CONDUCT, Makefile, .gitignore,
@@ -282,6 +462,7 @@ const Main = cmp(function Main(props: any) {
   Scripts({ provider })
   Workflow({ provider })
   Readme({ provider })
+  Docs({ provider })
 })
 
 
@@ -298,13 +479,32 @@ const PackageJson = cmp(function PackageJson(props: any) {
   // (prod/peer/dev) is on `raw`, not hoisted. Reading `d.kind` instead
   // silently yields an empty manifest section, which is how the first cut of
   // this component shipped a package.json with no seneca peers at all.
+  //
+  // `kind` is a COMMA-SEPARATED LIST, so one dependency can land in more than
+  // one manifest section. That is the Seneca plugin convention and not an
+  // embellishment: `seneca` is a PEER (the plugin must run inside the host's
+  // instance, never its own bundled copy) and also a DEV dependency (the test
+  // suite does `require('seneca')` directly, so a bare `npm install` in a
+  // clean checkout has to produce it). collectDeps deduplicates by package
+  // name and the model's dep map is keyed by name, so the same package cannot
+  // be declared twice — the kind has to carry the list instead.
   const dep = (kind: string) => {
     const out: Record<string, string> = {}
-    for (const d of deps.filter((d: any) => kind === (d.raw && d.raw.kind))) {
+    const kinds = (d: any) => String((d.raw && d.raw.kind) || '')
+      .split(',').map((s: string) => s.trim()).filter((s: string) => '' !== s)
+
+    for (const d of deps.filter((d: any) => kinds(d).includes(kind))) {
       out[d.name] = d.version
     }
     return out
   }
+
+  // Attribution. Model-driven, because it cannot be derived and because
+  // regeneration OVERWRITES the manifest: the hand-written provider this
+  // target was modelled on lost its author and both named contributors on the
+  // first regeneration, and nothing failed. Unset falls back to the publisher.
+  const author = authorInfo(model)
+  const contributors = contributorList(model)
 
   const pkg = {
     name: provider.pkgName,
@@ -318,6 +518,11 @@ const PackageJson = cmp(function PackageJson(props: any) {
     homepage: provider.repoUrl,
     keywords: ['seneca', provider.lower, `${provider.lower}-provider`,
       provider.publisher.toLowerCase(), 'sdk'],
+    author,
+    // Omitted entirely when the project names none, rather than emitted as an
+    // empty array — npm treats `"contributors": []` as a declaration that
+    // there are none, which is a different claim from not having said.
+    ...(0 < contributors.length ? { contributors } : {}),
     license: 'MIT',
     repository: { type: 'git', url: `git+${provider.repoUrl}.git` },
     scripts: {
@@ -469,7 +674,7 @@ function ${provider.pluginName}(this: any, options: ${provider.pluginName}Option
         each(guarded, (e: any) => {
           each(e.parents, (key: any) => {
             const k = String(key.val$ ?? key)
-            Content(`  function need_${e.name}_${k}(value: any, cmd: string) {
+            Content(`  function ${guardName(e, k)}(value: any, cmd: string) {
     if (null == value || '' === value) {
       throw new Error(
         '${provider.pkgName}: ${e.name} ' + cmd + ': ${k} is required'
@@ -483,6 +688,28 @@ function ${provider.pluginName}(this: any, options: ${provider.pluginName}Option
           })
         })
       }
+
+      // Seneca's own entity key is ALWAYS literally `id` — `load$('x')` sets
+      // `q = { id: 'x' }`, and the id of the entity it builds comes off
+      // `data.id`. An API that addresses a record by anything else therefore
+      // needs translating in both directions, or `load$` requests a record
+      // keyed `undefined` and every entity handed back has no id at all — one
+      // that cannot then be saved or removed.
+      const aliased = provider.entities.filter((e: any) => 'id' !== recordKey(e.ent))
+      each(aliased, (e: any) => {
+        const rk = recordKey(e.ent)
+        Content(`  // This API keys a ${e.name} by \`${rk}\`, Seneca by \`id\`. Carry the
+  // API's key across so the Seneca entity has one.
+  function id_${e.name}(data: any) {
+    if (null != data && null == data.id) {
+      data.id = ${jsProp('data', rk)}
+    }
+    return data
+  }
+
+
+`)
+      })
 
       // The cmd map, declared up front so every action is attached to a
       // shape seneca-entity can read before the actions are defined.
@@ -506,9 +733,41 @@ function ${provider.pluginName}(this: any, options: ${provider.pluginName}Option
 `)
 
       each(provider.entities, (e: any) => {
-        const guard = (cmd: string, src: string) => e.parents
-          .map((k: string) => `      need_${e.name}_${k}(${src}.${k}, '${cmd}')\n`)
-          .join('')
+        // The guard set is PER OP, not the union across the entity's ops. An
+        // entity whose routes are not uniformly nested — a flat `load`, a
+        // nested `create` — used to demand the parent id on the flat call too,
+        // an argument its own SDK request would then never use.
+        //
+        // `save` guards the union of create's and update's keys: one action
+        // serves both and dispatches at runtime, so it cannot know which set
+        // applies until it has the data.
+        const guard = (cmd: string, src: string) => {
+          const keys = 'save' === cmd ?
+            [...new Set([...(e.opParents.create || []), ...(e.opParents.update || [])])].sort() :
+            (e.opParents[cmd] || [])
+
+          return keys
+            .map((k: string) =>
+              `      ${guardName(e, k)}(${jsProp(src, k)}, '${cmd}')\n`)
+            .join('')
+        }
+
+        // Reading the record's own key off the Seneca query, which always
+        // spells it `id`, and every other required key off its own name.
+        const rk = recordKey(e.ent)
+        const sdkArg = (opname: string) => {
+          const keys = requiredKeys(e.ent, opname)
+          if (0 === keys.length) {
+            return '{}'
+          }
+          return `{ ${keys.map((k: string) =>
+            `${jsKey(k)}: ${jsProp('q', k === rk ? 'id' : k)}`).join(', ')} }`
+        }
+
+        // The data hop, plus the id alias when the API keys the record by
+        // something other than `id`.
+        const out = (expr: string) =>
+          'id' === rk ? `plain(${expr})` : `id_${e.name}(plain(${expr}))`
 
         if (e.cmds.includes('list')) {
           Content(`
@@ -516,22 +775,19 @@ function ${provider.pluginName}(this: any, options: ${provider.pluginName}Option
     async function list_${e.name}(this: any, entize: any, msg: any) {
       const q = cleanq(msg.q)
 ${guard('list', 'q')}      const list = await this.shared.sdk.${e.acc}().list(q)
-      return list.map((data: any) => entize(plain(data)))
+      return list.map((data: any) => entize(${out('data')}))
     }
 
 `)
         }
 
         if (e.cmds.includes('load')) {
-          const keys = requiredKeys(e.ent, 'load')
-          const arg = 0 === keys.length ? '{}' :
-            `{ ${keys.map((k: string) => `${k}: q.${k}`).join(', ')} }`
           Content(`
   entity.${e.name}.cmd.load.action =
     async function load_${e.name}(this: any, entize: any, msg: any) {
       const q = cleanq(msg.q)
-${guard('load', 'q')}      const res = await ornull(() => this.shared.sdk.${e.acc}().load(${arg}))
-      return null == res ? null : entize(plain(res))
+${guard('load', 'q')}      const res = await ornull(() => this.shared.sdk.${e.acc}().load(${sdkArg('load')}))
+      return null == res ? null : entize(${out('res')})
     }
 
 `)
@@ -540,42 +796,49 @@ ${guard('load', 'q')}      const res = await ornull(() => this.shared.sdk.${e.ac
         if (e.cmds.includes('save')) {
           const hasCreate = e.ops.includes('create')
           const hasUpdate = e.ops.includes('update')
-          const idf = e.idf || 'id'
 
-          // Seneca's convention: an entity with an id is an update, without
-          // is a create. When the API offers only one of the two, there is
-          // nothing to dispatch on.
+          // Dispatch on the SENECA key. The record arriving here is a Seneca
+          // entity's data, so its id lives at `id` whatever the API calls it —
+          // dispatching on the API's key sent every save to `create`, leaving
+          // update unreachable.
           const body = hasCreate && hasUpdate
-            ? `      const res = null == data.${idf}
+            ? `      const res = null == data.id
         ? await sdk.${e.acc}().create(data)
         : await sdk.${e.acc}().update(data)`
             : hasCreate
               ? `      const res = await sdk.${e.acc}().create(data)`
               : `      const res = await sdk.${e.acc}().update(data)`
 
+          // ... and hand the API back its own key, which Seneca does not know
+          // to send.
+          const alias = 'id' === rk ? '' :
+            `
+      // This API keys a ${e.name} by \`${rk}\`; Seneca carries it as \`id\`.
+      if (null == ${jsProp('data', rk)} && null != data.id) {
+        ${jsProp('data', rk)} = data.id
+      }
+`
+
           Content(`
   entity.${e.name}.cmd.save.action =
     async function save_${e.name}(this: any, entize: any, msg: any) {
       const data = msg.ent.data$(false)
-${guard('save', 'data')}      const sdk = this.shared.sdk
+${guard('save', 'data')}${alias}      const sdk = this.shared.sdk
 
 ${body}
 
-      return entize(plain(res))
+      return entize(${out('res')})
     }
 
 `)
         }
 
         if (e.cmds.includes('remove')) {
-          const keys = requiredKeys(e.ent, 'remove')
-          const arg = 0 === keys.length ? '{}' :
-            `{ ${keys.map((k: string) => `${k}: q.${k}`).join(', ')} }`
           Content(`
   entity.${e.name}.cmd.remove.action =
     async function remove_${e.name}(this: any, _entize: any, msg: any) {
       const q = cleanq(msg.q)
-${guard('remove', 'q')}      await ornull(() => this.shared.sdk.${e.acc}().remove(${arg}))
+${guard('remove', 'q')}      await ornull(() => this.shared.sdk.${e.acc}().remove(${sdkArg('remove')}))
       return null
     }
 
@@ -594,20 +857,30 @@ ${guard('remove', 'q')}      await ornull(() => this.shared.sdk.${e.acc}().remov
 
   seneca.prepare(async function(this: any) {
     const sdkopts: any = Object.assign({}, options.sdk)
-
+${provider.authActive ? `
     // The provider convention carries credentials, so honour an \`apikey\`
-    // when one is configured and stay quiet when it is not — an API that
-    // needs none still exercises the same path.
+    // when one is configured and stay quiet when it is not.
     const res = await this.post('sys:provider,get:keymap,provider:${provider.lower}')
     const apikey = res?.keymap?.apikey?.value
 
+    // Hand the credential to the SDK as \`apikey\`, NOT as an authorization
+    // HEADER. The SDK's own auth stage owns that header: it reads
+    // \`options.apikey\`, and on every path where it finds none it DELETES
+    // \`authorization\` before the request goes out. A provider that set the
+    // header itself was therefore never authenticated — the SDK stripped the
+    // very thing it had just written, on every call, silently. The SDK also
+    // owns the scheme prefix, which is resolved from the API definition
+    // rather than assumed to be \`Bearer\`.
     if (null != apikey && '' !== apikey) {
-      sdkopts.headers = Object.assign(
-        { authorization: 'Bearer ' + apikey },
-        sdkopts.headers
-      )
+      sdkopts.apikey = apikey
     }
-
+` : `
+    // This API declares no authentication, so no credential is plumbed. The
+    // SDK's auth stage emits nothing for an auth-inactive model and deletes
+    // any \`authorization\` header regardless of options, so a keymap lookup
+    // here would read a key that could not reach the wire — which is what the
+    // first version of this target did.
+`}
     this.shared.sdk = options.test
       ? ${provider.sdkClass}.test(options.testopts || {}, sdkopts)
       : new ${provider.sdkClass}(sdkopts)

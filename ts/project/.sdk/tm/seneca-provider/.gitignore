@@ -112,3 +112,11 @@ test/local-env.js
 # TypeScript build info
 *.tsbuildinfo
 .tsbuildinfo/
+
+# Generator bookkeeping. This package is GENERATED into this repo by
+# @voxgig/sdkgen from the SDK project, and jostraca drops its meta log plus a
+# full duplicate of the last generated output here on every run. The SDK repo
+# commits its own copy; this repo has no reason to, and without this line
+# every regeneration leaves the provider repo dirty with hundreds of
+# untracked files.
+.jostraca/

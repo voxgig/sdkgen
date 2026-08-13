@@ -331,6 +331,12 @@ emitted broken source reached the fleet unchallenged.
   loudly if that stops holding.
 - Known-benign placeholder mentions are PINNED in `PLACEHOLDER_PINNED`, not
   ignored — a new leak still fails.
+- The CONSUMER targets are out of the two broad loops (standalone they throw,
+  by design) and so were out of the leak scan as well — the suite's only
+  content guard. They get their own case, generated against the sibling each
+  one wraps (`NON_SDK_SIBLING`), scanned for `ProjectName` / `PROJECTENV` /
+  `PROJECTVERSION` and a surviving `$$model.path$$`. Note `$$` in a Makefile
+  is a literal `$`, so the ref pattern matches a model path, not any `$$` pair.
 
 ---
 
@@ -387,20 +393,34 @@ emitted broken source reached the fleet unchallenged.
   reachable only through `$action`, so `ReadmeRef` documents them; an
   undocumented action is an endpoint no reader can call.
 - **A project decision belongs in the MODEL, never in a forked component.**
-  `target add` overwrites `.sdk/src/cmp/**` and `.sdk/tm/**`, so any hand-edit
-  there is silently reverted on the next run — the SDK regresses with nobody
-  touching it. When a project needs to say something about itself, add a model
-  key and read it; do not make the project fork. The surfaces that exist for
-  this: `main.kit.repo.{path,host}` (repo identity — the repo is NOT always
-  `<origin>/<slug>-sdk`), `main.kit.target.<t>.module.{path,goversion}`,
-  `main.kit.target.<t>.publish.registry.package`, `main.kit.feature`
-  (which feature source ships), `main.kit.test.live.strict`. A project extends
-  a target with `registerComponent('X')` -> `cmp/<t>/X_<t>.ts`, which `doctor`
-  reports as ADDITIVE rather than drift.
+  `target add` overwrites `.sdk/src/cmp/**`, `.sdk/tm/**` AND
+  `.sdk/model/target/<t>.aontu`, so any hand-edit in those three is silently
+  reverted on the next run — the SDK regresses with nobody touching it. When a
+  project needs to say something about itself, add a model key and read it; do
+  not make the project fork. The surfaces that exist for this:
+  `main.kit.repo.{path,host}` (repo identity — the repo is NOT always
+  `<origin>/<slug>-sdk`), `main.kit.author` / `main.kit.contributor.<key>`
+  (manifest attribution — hand-edited credit is DELETED by the next
+  regeneration), `main.kit.test.live.strict`, `main.kit.feature` (which feature
+  source ships), and per target `module.{path,package,goversion}`,
+  `publish.{version,registry.package}`, `output.{path,repo,adopt,sdkrel}`
+  (generate into another repo). All of them are catalogued in
+  [reference/model](./docs/reference/model.md#what-a-project-declares-about-itself).
+  A project extends a target with `registerComponent('X')` ->
+  `cmp/<t>/X_<t>.ts`, which `doctor` reports as ADDITIVE rather than drift.
 - **`voxgig-sdkgen doctor` is the check that keeps all of this true.** It
-  compares `.sdk/` against the scaffold *after* re-applying the substitutions
-  `target add` applied — a naive `diff -r` reports mostly placeholder
-  replacement. Non-zero exit on forked / edited / stale / missing.
+  compares all THREE things `target add` owns — `src/cmp/<t>/`, `tm/<t>/` and
+  `model/target/<t>.aontu` — against the scaffold *after* re-applying the
+  substitutions `target add` applied (jostraca's Copy always interpolates
+  `$$ref$$` against the model, and passes a DIFFERENT replace map per tree:
+  `templateReplacements` for `tm`, `'BASE'` for the model file, none for
+  `src/cmp`). A naive `diff -r` reports mostly placeholder replacement; so did
+  doctor itself, for the three `Config.fragment.<ext>` files carrying
+  `$$const.Name$$`, until it templated with an empty replace map too. Non-zero
+  exit on forked / edited / stale / missing. An ALIASED target
+  (`target add go~go2`) is exempt from the model-file comparison — the
+  scaffold ships nothing to compare it against, and editing it is how an alias
+  is differentiated.
 - **Derive an env-var name with `envToken`/`envName`, never from the camel
   form.** `nom(model, 'Name').toUpperCase()` swallows a hyphen, so a slug like
   `voxgig-solardemo` produced BOTH `VOXGIG_SOLARDEMO_TEST_LIVE` and
@@ -470,8 +490,24 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
     tm/<lang>/         per-language TEMPLATES
 ```
 
-Targets: `ts js go py php rb lua csharp java kotlin scala swift dart rust c
-cpp zig perl clojure elixir ocaml haskell` + `go-cli go-mcp`.
+SDK targets (23): `ts js go py php rb lua csharp java kotlin scala swift dart
+rust c cpp zig perl clojure elixir ocaml haskell lean`.
+
+CONSUMER targets (4): `go-cli go-mcp` (wrap `go`), `py-data` (wraps `py`),
+`seneca-provider` (wraps `ts`). Each switches every standard generation phase
+off (`phase.<name>.active: false`) and emits its whole package from `Main`,
+and each FAILS without the target it wraps — deliberately. `seneca-provider`
+is also the one target that generates into ANOTHER REPO, via
+`main: kit: target: <t>: output: path` (`cmp/ExternalTarget.ts` +
+`externalTargets()`): see
+[out-of-tree-targets](./docs/explanation/out-of-tree-targets.md).
+
+Both lists are enforced, not decorative: `ts/test/parity.test.ts` fails until
+a new target declares its parity tier, and `ts/test/featuremodel.test.ts`
+fails until it is classified as SDK or consumer. Adding a target means
+updating both, plus the lists in this file, `README.md`,
+`docs/reference/cli.md`, `docs/reference/project-layout.md`,
+`docs/how-to/add-a-target.md` and `docs/explanation/architecture.md`.
 
 Features (all inactive by default — opt in per SDK via
 `options.feature.<name>.active`):
@@ -526,7 +562,8 @@ Every generated ts SDK ships its own coverage-oriented tests:
 ## Pointers
 
 - Concepts: [architecture](./docs/explanation/architecture.md) ·
-  [pipeline](./docs/explanation/operation-pipeline.md)
+  [pipeline](./docs/explanation/operation-pipeline.md) ·
+  [out-of-tree targets](./docs/explanation/out-of-tree-targets.md)
 - Reference: [CLI](./docs/reference/cli.md) ·
   [API](./docs/reference/api.md) · [model](./docs/reference/model.md) ·
   [layout](./docs/reference/project-layout.md) ·
