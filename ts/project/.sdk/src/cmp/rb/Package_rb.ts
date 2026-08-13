@@ -6,7 +6,8 @@ import {
   collectDeps,
   pkgDescription,
   repoInfo, packageName,
-  packageVersion
+  packageVersion,
+  authorInfo,
 } from '@voxgig/sdkgen'
 
 
@@ -20,6 +21,12 @@ const Package = cmp(async function Package(props: any) {
   const target = props.target
 
   const model: Model = ctx$.model
+
+  // WHO WROTE THIS PACKAGE. Per target, falling back to the model-wide value
+  // and then to the publisher — so a manifest cannot go on naming Voxgig
+  // while the model names someone else, which is exactly what the hardcoded
+  // constant here did.
+  const author = authorInfo(model, target.name)
 
   // Gem name is namespaced to model.origin (e.g. "voxgig-sdk"). RubyGems
   // names can't contain "/", so the parts are hyphen-joined. The require
@@ -58,7 +65,7 @@ gemspec
     Content(`Gem::Specification.new do |spec|
   spec.name          = "${gemName}"
   spec.version       = "${packageVersion(model, target.name)}"
-  spec.authors       = ["Voxgig"]
+  spec.authors       = ["${author.name}"]
   spec.summary       = "${pkgDescription(model, 'rb')}"
   spec.description   = "${pkgDescription(model, 'rb')}"
   spec.license       = "MIT"

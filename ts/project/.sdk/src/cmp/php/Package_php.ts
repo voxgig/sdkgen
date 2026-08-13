@@ -6,7 +6,8 @@ import {
   collectDeps,
   pkgDescription,
   keywords,
-  repoInfo, packageName
+  repoInfo, packageName,
+  authorInfo,
 } from '@voxgig/sdkgen'
 
 
@@ -20,6 +21,12 @@ const Package = cmp(async function Package(props: any) {
   const target = props.target
 
   const model: Model = ctx$.model
+
+  // WHO WROTE THIS PACKAGE. Per target, falling back to the model-wide value
+  // and then to the publisher — so a manifest cannot go on naming Voxgig
+  // while the model names someone else, which is exactly what the hardcoded
+  // constant here did.
+  const author = authorInfo(model, target.name)
 
   // Package namespace mirrors the npm scope (model.origin, e.g. "voxgig-sdk").
   // If origin already ends in "-sdk" the slug stands alone; otherwise append
@@ -39,7 +46,7 @@ const Package = cmp(async function Package(props: any) {
   "homepage": "${repoUrl}",
   "license": "MIT",
   "authors": [
-    { "name": "Voxgig", "homepage": "https://voxgig.com" }
+    { "name": "${author.name}"${'' === author.url ? '' : `, "homepage": "${author.url}"`} }
   ],
   "support": {
     "issues": "${issuesUrl}",

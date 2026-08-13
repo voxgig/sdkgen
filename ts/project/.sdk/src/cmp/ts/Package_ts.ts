@@ -12,6 +12,7 @@ import {
   PUBLISHER,
   PUBLISHER_URL,
   packageVersion,
+  authorInfo,
 } from '@voxgig/sdkgen'
 
 
@@ -28,6 +29,12 @@ const Package = cmp(async function Package(props: any) {
   const target = props.target
 
   const model: Model = ctx$.model
+
+  // WHO WROTE THIS PACKAGE. Per target, falling back to the model-wide value
+  // and then to the publisher — so a manifest cannot go on naming Voxgig
+  // while the model names someone else, which is exactly what the hardcoded
+  // constant here did.
+  const author = authorInfo(model, target.name)
 
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
@@ -106,7 +113,7 @@ const Package = cmp(async function Package(props: any) {
       "clean": "rm -rf node_modules yarn.lock package-lock.json dist dist-test",
       "reset": "npm run clean && npm i && npm run build && npm test",
     },
-    author: { name: PUBLISHER, url: PUBLISHER_URL },
+    author,
 
     // TODO: needs to be config
     license: 'MIT',
