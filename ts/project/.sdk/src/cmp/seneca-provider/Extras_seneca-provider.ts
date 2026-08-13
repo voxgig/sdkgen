@@ -1026,7 +1026,13 @@ ${!provider.liveApp ? '' : `
           echo "server did not start; live tests will skip"
 `}
       - run: npm install
-      - run: npm i seneca seneca-entity seneca-promisify @seneca/provider @seneca/env
+
+      # The Seneca host framework is a PEER dependency, so the test suite needs
+      # it installed explicitly. --no-save keeps npm from rewriting the peer
+      # ranges in package.json to carets on what it happened to resolve, which
+      # would have the build testing a manifest the repo never authored.
+      - run: npm i --no-save seneca seneca-entity seneca-promisify @seneca/provider @seneca/env
+
       - run: npm run build --if-present
       - run: npm test
 `)
@@ -1107,7 +1113,14 @@ jobs:
 
       # The Seneca host framework is a PEER dependency, so the test suite
       # needs it installed explicitly.
-      - run: npm i seneca seneca-entity seneca-promisify @seneca/provider @seneca/env
+      #
+      # --no-save IS LOAD-BEARING. Without it npm rewrites the peer ranges in
+      # package.json to carets on whatever it resolved, and \`npm publish\`
+      # below then ships that rewritten manifest — so an authored \`>=26\`
+      # reaches consumers as \`^28.1.0\` and the package refuses to install for
+      # anyone on a newer major. The repo looks fine; only the artifact is
+      # narrowed. Install into node_modules, leave the manifest alone.
+      - run: npm i --no-save seneca seneca-entity seneca-promisify @seneca/provider @seneca/env
 
       - run: npm run build
       - run: npm test
