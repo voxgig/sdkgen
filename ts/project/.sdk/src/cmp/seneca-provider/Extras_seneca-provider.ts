@@ -623,15 +623,18 @@ describe('${provider.fileBase}', () => {
       // Repository hygiene, from the @seneca/maintain dependency this package
       // declares. Two of its checks report a fault that is not there, because
       // of WHERE they run rather than what they find, so each is excluded
-      // only in the environment that breaks it.
+      // only in the environments that break it.
       Content(`
   it('maintain', async () => {
     const exclude = []
 
     // check_default proves the default branch is main by looking for
-    // [branch "main"] in .git/config. A pull_request build checks out the
-    // merge ref, which records no such section.
-    if ('pull_request' === process.env.GITHUB_EVENT_NAME) {
+    // [branch "main"] in .git/config. Only a branch checkout records that
+    // section: a pull_request build checks out the merge ref, and the
+    // publish build checks out a tag as a detached HEAD. Neither says
+    // anything about what the default branch is, so skip rather than fail.
+    if ('pull_request' === process.env.GITHUB_EVENT_NAME ||
+        'tag' === process.env.GITHUB_REF_TYPE) {
       exclude.push('check_default')
     }
 
