@@ -13,7 +13,8 @@ class Point(pointmap: JMap[String, Object]) {
   var parts: JList[Object] = new ArrayList[Object]()
   var params: JList[Object] = null
   var select: JMap[String, Object] = null
-  var active: Boolean = false
+  // Absent in config means ACTIVE: emission drops `active: true` as a default (sdkgen L0), so only an explicit `active: false` turns a point off.
+  var active: Boolean = true
   var relations: JList[Object] = null
   var alias: JMap[String, Object] = new LinkedHashMap[String, Object]()
   var transform: JMap[String, Object] = new LinkedHashMap[String, Object]()

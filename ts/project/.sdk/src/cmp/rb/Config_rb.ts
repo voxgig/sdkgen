@@ -116,7 +116,7 @@ ${serverBlock}${authBlock}        "headers" => ${formatRubyHash(headers, 4)},
         name: n.name,
         op: n.op,
         relations: n.relations,
-      }), a), {}), 3)},
+      }, true), a), {}), 3)},
     }
   end
 

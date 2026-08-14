@@ -61,7 +61,7 @@ const Config = cmp(async function Config(props: any) {
       name: ent.name,
       op: ent.op,
       relations: ent.relations,
-    })
+    }, true)
   })
 
   const options: any = {

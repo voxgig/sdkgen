@@ -12,7 +12,8 @@ pub const Point = struct {
     parts: Value,
     params: Value,
     select: Value,
-    active: bool = false,
+    // Absent in config means ACTIVE: emission drops `active: true` as a default (sdkgen L0), so only an explicit `active: false` turns a point off.
+    active: bool = true,
     relations: Value,
     alias: Value,
     transform: Value,

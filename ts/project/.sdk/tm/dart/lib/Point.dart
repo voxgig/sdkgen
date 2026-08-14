@@ -28,7 +28,8 @@ class Point {
     parts = vs.getprop(altmap, 'parts', []);
     params = vs.getprop(altmap, 'params', []);
     select = vs.getprop(altmap, 'select');
-    active = vs.getprop(altmap, 'active', false);
+    // Absent in config means ACTIVE: emission drops `active: true` as a default (sdkgen L0), so only an explicit `active: false` turns a point off.
+    active = vs.getprop(altmap, 'active', true);
     relations = vs.getprop(altmap, 'relations', []);
     alias = vs.getprop(altmap, 'alias', {});
     transform = vs.getprop(altmap, 'transform', {'req': null, 'res': null});

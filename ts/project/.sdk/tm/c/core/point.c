@@ -40,7 +40,8 @@ Point* point_new(voxgig_value* altmap) {
   p->orig = dup_str(orig ? orig : "");
 
   p->select = to_map(getp(altmap, "select"));
-  bool active = false;
+  // Absent in config means ACTIVE: emission drops `active: true` as a default (sdkgen L0), so only an explicit `active: false` turns a point off.
+  bool active = true;
   get_bool(altmap, "active", &active);
   p->active = active;
   p->relations = getp(altmap, "relations");
