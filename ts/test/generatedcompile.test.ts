@@ -115,7 +115,9 @@ function toolchain(name: string): string | null {
 
 
 // Generate one target into a fresh directory and hand back its root.
-async function generateTo(target: string, root: string): Promise<Record<string, string>> {
+async function generateTo(
+  target: string, root: string, extra?: string,
+): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
   const sdkgen = SdkGen({
@@ -127,7 +129,8 @@ async function generateTo(target: string, root: string): Promise<Record<string, 
 
   const cwd = process.cwd()
   process.chdir(SCAFFOLD)
-  const res = await sdkgen.generate({ model: makeModel([target]), root: makeRoot() })
+  const res = await sdkgen.generate({
+    model: makeModel([target], undefined, extra), root: makeRoot() })
   process.chdir(cwd)
   strictEqual(res.ok, true, target + ': generation did not report ok')
 
@@ -197,6 +200,38 @@ describe('generated SDK compiles', () => {
 
     const vet = run(go, ['vet', './...'], sdkroot)
     ok(vet.ok, 'generated go does not vet clean:\n' + vet.out)
+  })
+
+
+  // THE SAME BUILD, ON THE DATA PATH (design rung L1).
+  //
+  // Above a size threshold the config is emitted as a parsed JSON constant
+  // rather than a composite literal. No fixture is anywhere near that
+  // threshold, so without pinning `main.kit.config.repr` the branch every
+  // large SDK depends on is compiled by nothing — the config could be
+  // syntactically broken, or the embedded JSON mangled, and every suite would
+  // stay green.
+  //
+  // This compiles it. `go vet` parses and type-checks the module AND its
+  // generated tests, so a badly escaped string constant fails here.
+  test('go: the module vets clean with the config emitted as DATA', async () => {
+    const go = toolchain('go')
+    if (null == go) {
+      return
+    }
+
+    const sdkroot = Path.join(tmp, 'go-data')
+    const out = await generateTo('go', sdkroot, "main: kit: config: repr: 'data'")
+
+    // Prove the data path was actually taken, so this cannot quietly become a
+    // duplicate of the literal test if the setting stops being honoured.
+    const cfg = Object.entries(out).find(([n]) => /core\/config\.go$/.test(n))
+    ok(cfg, 'no core/config.go generated')
+    ok(/const configJSON = "/.test(String(cfg![1])),
+      'repr:data did not emit the data representation')
+
+    const vet = run(go, ['vet', './...'], sdkroot)
+    ok(vet.ok, 'generated go on the DATA path does not vet clean:\n' + vet.out)
   })
 
 

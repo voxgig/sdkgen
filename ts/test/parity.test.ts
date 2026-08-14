@@ -788,3 +788,33 @@ function loadGoUtility(): any {
     mod.exports, req, mod, Path.dirname(file), file)
   return mod.exports
 }
+
+
+// The config representation is chosen by size (design rung L1, threshold from
+// design Q7). Both branches must exist and the choice must be by the MODEL,
+// not by the emitted source - which varies per language while the model does
+// not.
+describe('config representation is chosen by size', () => {
+
+  test('the threshold is the decided 256 KB', () => {
+    const { CONFIG_DATA_THRESHOLD, isConfigData, configRepr } =
+      require('../dist/sdkgen.js')
+    strictEqual(CONFIG_DATA_THRESHOLD, 256 * 1024)
+    // Boundary: at the threshold it is still a literal; one byte over is data.
+    strictEqual(isConfigData('x'.repeat(CONFIG_DATA_THRESHOLD)), false)
+    strictEqual(isConfigData('x'.repeat(CONFIG_DATA_THRESHOLD + 1)), true)
+    strictEqual(configRepr('x'), 'literal')
+    strictEqual(configRepr('x'.repeat(CONFIG_DATA_THRESHOLD + 1)), 'data')
+  })
+
+  test('a target emitting data still emits the literal branch', () => {
+    // Both paths have to stay in the component: a target that lost its
+    // literal branch would silently switch every small SDK to data, and a
+    // target that lost its data branch would silently keep the compile cost.
+    const src = readFileSync(
+      Path.join(TM, '..', 'src', 'cmp', 'go', 'Config_go.ts'), 'utf8')
+    ok(/isConfigData\(/.test(src), 'go: no threshold check')
+    ok(/const configJSON = /.test(src), 'go: no data branch')
+    ok(/map\[string\]any\{/.test(src), 'go: no literal branch')
+  })
+})

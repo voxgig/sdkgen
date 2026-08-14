@@ -19,7 +19,8 @@ import type {
   ActionResult,
 } from './types'
 
-import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix } from './utility'
+import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix,
+  CONFIG_DATA_THRESHOLD, isConfigData, configRepr } from './utility'
 
 import { Main } from './cmp/Main'
 import { ExternalTarget } from './cmp/ExternalTarget'
@@ -776,6 +777,9 @@ export {
   requirePath,
   isAuthActive,
   resolveAuthPrefix,
+  CONFIG_DATA_THRESHOLD,
+  isConfigData,
+  configRepr,
 
   // Scaffold components need this to fail a generation with an actionable
   // message rather than a bare Error (py-data guards on its sibling `py`).
