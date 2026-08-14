@@ -495,7 +495,10 @@ describe('scaffold components are type-checked', () => {
 // ts/js carried this guard from the day their config became a module
 // singleton. go/py/rb/lua only became singletons when L2 landed, and the
 // omission was a silent cross-client data leak until then.
-const CLONES_CFGOPTS = ['go', 'js', 'lua', 'py', 'rb', 'ts']
+const CLONES_CFGOPTS = [
+  'c', 'cpp', 'csharp', 'elixir', 'go', 'java', 'js', 'kotlin', 'lua', 'perl',
+  'py', 'rb', 'rust', 'scala', 'swift', 'ts', 'zig',
+]
 
 // php needs no clone: its arrays are copy-on-write value types, so merge
 // cannot reach the shared config through them.
@@ -505,6 +508,7 @@ const CFGOPTS_VALUE_SEMANTICS = ['php']
 // The target's make_options template, whatever the language calls it.
 function makeOptionsFile(lang: string): string | undefined {
   const found: string[] = []
+  const byContent: string[] = []
   const walk = (dir: string) => {
     if (!existsSync(dir)) {
       return
@@ -517,10 +521,19 @@ function makeOptionsFile(lang: string): string | undefined {
       else if (/make_?options/i.test(e.name)) {
         found.push(p)
       }
+      // Not every target names the file for the function: cpp keeps
+      // make_options in utility/pipeline.hpp, scala in utility/Make.scala and
+      // elixir in lib/<name>/utility.ex. A name match alone silently reported
+      // "no make_options template" and skipped the clone check entirely, so
+      // fall back to whichever file actually mentions cfgopts.
+      else if (/\.(hpp|scala|ex|zig|rs|ml|hs|clj)$/.test(e.name) &&
+        /cfgopts/.test(readFileSync(p, 'utf8'))) {
+        byContent.push(p)
+      }
     }
   }
   walk(Path.join(TM, lang))
-  return found.sort()[0]
+  return found.sort()[0] ?? byContent.sort()[0]
 }
 
 
@@ -535,7 +548,10 @@ function sharesConfig(lang: string): boolean {
       continue
     }
     const src = readFileSync(Path.join(cmp, e), 'utf8')
-    if (/shared_config|SharedConfig|config_shared/.test(src)) {
+    // Three spellings across the fleet: shared_config (go/py/rb/lua/rust/zig/
+    // elixir/c/perl), SharedConfig (csharp), sharedConfig (cpp/java/kotlin/
+    // scala/swift).
+    if (/shared_config|SharedConfig|sharedConfig|config_shared/.test(src)) {
       return true
     }
   }
@@ -562,16 +578,25 @@ describe('shared config cannot leak across clients', () => {
       ok(undefined !== file, `${lang}: no make_options template found`)
       const src = readFileSync(file as string, 'utf8')
 
-      // The merge statement itself must clone — a clone anywhere else in the
-      // file (opts, mergeOptions) does not protect the config side.
-      const merge = src.split('\n').find(
-        (l) => /merge/i.test(l) && /cfgopts/i.test(l))
-      ok(undefined !== merge,
-        `${lang}: no line merges cfgopts — did make_options change shape?`)
-      ok(/clone\s*\(\s*\$?cfgopts/i.test(merge as string),
-        `${lang}: make_options merges the SHARED config without cloning it:\n` +
-        `  ${(merge as string).trim()}\n` +
+      // cfgopts must reach the merge THROUGH a clone. Matched across the
+      // whole file rather than on one line: csharp, java, kotlin and scala
+      // build the merge list over several lines, so a single-line match
+      // reported "no line merges cfgopts" and silently checked nothing.
+      //
+      // The window is deliberately tight, so `clone` and `cfgopts` have to be
+      // part of one expression - Clone(cfgopts), clone(&cfgopts),
+      // voxgig_clone(cfgopts), clone(.map(cfgopts)), clone($cfgopts).
+      ok(/clone[^\n]{0,24}cfgopts/i.test(src),
+        `${lang}: make_options merges the SHARED config without cloning it. ` +
         'One client\'s options will contaminate every client built after it.')
+
+      // ...and no single-line merge may pass it bare, which is the shape the
+      // original guard caught and must keep catching.
+      const bare = src.split('\n').find(
+        (l) => /merge/i.test(l) && /cfgopts/i.test(l) && !/clone/i.test(l))
+      ok(undefined === bare,
+        `${lang}: this line merges the SHARED config without cloning it:\n` +
+        `  ${(bare as string || '').trim()}`)
     }
   })
 })

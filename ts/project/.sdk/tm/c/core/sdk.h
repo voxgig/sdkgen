@@ -445,6 +445,7 @@ voxgig_value* sdk_graphql(ProjectNameSDK* sdk, const char* query,
 
 // Generated config (core/config.c).
 voxgig_value* make_config(void);
+voxgig_value* shared_config(void);
 Feature* make_feature(const char* name);
 
 // ===========================================================================

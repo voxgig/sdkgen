@@ -116,6 +116,28 @@ voxgig_value* make_config(void) {
   return json_parse(CONFIG_DATA);
 }
 
+// SHARED CONFIG (sdkgen rung L2).
+//
+// The SDK reads the config on every request and never writes to it, so one
+// instance is shared by every client rather than rebuilt per client. Above the
+// size threshold make_config re-parses the whole embedded JSON, so this is the
+// difference between parsing the model once and once per client.
+//
+// Deliberately never freed: it lives for the life of the process, like any
+// other program-lifetime singleton.
+static voxgig_value* shared_config_val = NULL;
+
+// The process-wide config, built once on first use.
+//
+// The returned value is SHARED: treat it as read-only. Callers that need to
+// mutate should use make_config, which always returns a fresh copy.
+voxgig_value* shared_config(void) {
+  if (NULL == shared_config_val) {
+    shared_config_val = make_config();
+  }
+  return shared_config_val;
+}
+
 Feature* make_feature(const char* name) {
 `)
     }
@@ -129,6 +151,28 @@ Feature* make_feature(const char* name) {
 
 voxgig_value* make_config(void) {
   return ${formatCValue(config, 1)};
+}
+
+// SHARED CONFIG (sdkgen rung L2).
+//
+// The SDK reads the config on every request and never writes to it, so one
+// instance is shared by every client rather than rebuilt per client. Above the
+// size threshold make_config re-parses the whole embedded JSON, so this is the
+// difference between parsing the model once and once per client.
+//
+// Deliberately never freed: it lives for the life of the process, like any
+// other program-lifetime singleton.
+static voxgig_value* shared_config_val = NULL;
+
+// The process-wide config, built once on first use.
+//
+// The returned value is SHARED: treat it as read-only. Callers that need to
+// mutate should use make_config, which always returns a fresh copy.
+voxgig_value* shared_config(void) {
+  if (NULL == shared_config_val) {
+    shared_config_val = make_config();
+  }
+  return shared_config_val;
 }
 
 Feature* make_feature(const char* name) {

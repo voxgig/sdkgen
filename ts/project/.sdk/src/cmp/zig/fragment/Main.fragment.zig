@@ -49,7 +49,9 @@ pub const ProjectNameSDK = struct {
             .rootctx = null,
         };
 
-        const cfg = config.make_config();
+        // The process-wide config (sdkgen rung L2): read-only on the request
+        // path, so every client shares one rather than rebuilding it.
+        const cfg = config.shared_config();
 
         const rootctx = sdk.sdkUtility.make_context(CtxSpec{
             .client = sdk,

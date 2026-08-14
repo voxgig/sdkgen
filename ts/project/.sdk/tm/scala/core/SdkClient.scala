@@ -16,7 +16,9 @@ abstract class SdkClient(options0: JMap[String, Object]) {
   protected var rootctx: Context = null
 
   locally {
-    val config = Config.makeConfig()
+    // The process-wide config (sdkgen rung L2): read-only on the request path,
+    // so every client shares one rather than rebuilding it.
+    val config = Config.sharedConfig()
 
     val ctxmap = new LinkedHashMap[String, Object]()
     ctxmap.put("client", this)

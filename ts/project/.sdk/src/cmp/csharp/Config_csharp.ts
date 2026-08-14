@@ -152,6 +152,30 @@ public static class SdkConfig
 `)
     }
 
+    // SHARED CONFIG (sdkgen rung L2).
+    //
+    // The SDK reads the config on every request and never writes to it, so one
+    // instance is shared by every client rather than rebuilt per client. Above
+    // the size threshold MakeConfig re-parses the whole embedded JSON, so this
+    // is the difference between parsing the model once per process and once
+    // per client.
+    //
+    // Lazy<T> defaults to ExecutionAndPublication, so concurrent first calls
+    // build it exactly once - the C# twin of go's sync.Once.
+    Content(`
+    private static readonly Lazy<Dictionary<string, object?>> SharedConfigVal =
+        new(MakeConfig);
+
+    // The process-wide config, built once on first use.
+    //
+    // The returned dictionary is SHARED: treat it as read-only. Callers that
+    // need to mutate should use MakeConfig, which always returns a fresh copy.
+    public static Dictionary<string, object?> SharedConfig()
+    {
+        return SharedConfigVal.Value;
+    }
+`)
+
     Content(`
     public static Feature.BaseFeature MakeFeature(string name)
     {

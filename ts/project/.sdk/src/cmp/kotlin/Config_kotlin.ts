@@ -93,6 +93,21 @@ object Config {
     return Json.parse(configJson()) as MutableMap<String, Any?>
   }
 
+  // SHARED CONFIG (sdkgen rung L2).
+  //
+  // The SDK reads the config on every request and never writes to it, so one
+  // instance is shared by every client rather than rebuilt per client - the
+  // difference between parsing the embedded JSON once and once per client.
+  //
+  // 'by lazy' defaults to LazyThreadSafetyMode.SYNCHRONIZED, so concurrent
+  // first calls build it exactly once.
+  //
+  // The returned map is SHARED: treat it as read-only. Callers that need to
+  // mutate should use makeConfig, which always parses a fresh copy.
+  private val sharedConfigVal: MutableMap<String, Any?> by lazy { makeConfig() }
+
+  fun sharedConfig(): MutableMap<String, Any?> = sharedConfigVal
+
   fun makeFeature(name: String): Feature {
     return when (name) {
 `)

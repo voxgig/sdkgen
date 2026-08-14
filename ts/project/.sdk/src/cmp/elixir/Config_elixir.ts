@@ -90,6 +90,62 @@ defmodule ${Name}.Config do
   def make_config do
     ${Name}.Json.parse(@config_data)
   end
+
+  # SHARED CONFIG (sdkgen rung L2).
+  #
+  # The SDK reads the config on every request and never writes to it, so one
+  # instance is shared by every client rather than rebuilt per client. Above the
+  # size threshold make_config re-parses the whole embedded JSON, so this is the
+  # difference between parsing the model once and once per client.
+  #
+  # :persistent_term because struct nodes are ETS-backed handles: the stored
+  # value is the handle, so every caller gets the same nodes. A concurrent first
+  # call may build twice and the last write wins - both results are valid
+  # configs, so the race is benign.
+  @shared_key {__MODULE__, :shared_config}
+
+  # The process-wide config, built once on first use.
+  #
+  # The returned node is SHARED: treat it as read-only. Callers that need to
+  # mutate should use make_config, which always returns a fresh copy.
+  #
+  # VALIDATED ON READ, and this is not belt-and-braces. The struct heap is a
+  # named ETS table created with no heir, so it is owned by whichever process
+  # first touched struct. If that was a short-lived one - a Task, a request, an
+  # ExUnit case - the table dies with it and every handle allocated in it goes
+  # stale. Caching a handle in :persistent_term makes that permanent: without
+  # this check the SDK hands out the dead handle for the life of the VM and
+  # every getprop raises ArgumentError. Reproduced:
+  #
+  #     cached inside a task: {:vmap, 144}
+  #     heap alive after task exit: :undefined
+  #     getprop RAISED: ArgumentError
+  #
+  # Rebuilding on a dead handle costs one parse and restores exactly the
+  # pre-L2 behaviour, so the failure degrades to "no sharing" rather than to a
+  # broken SDK. The real fix is a durable owner for the heap, which belongs in
+  # the struct port rather than here.
+  def shared_config do
+    cached = :persistent_term.get(@shared_key, nil)
+
+    if cached != nil and usable?(cached) do
+      cached
+    else
+      cfg = make_config()
+      :persistent_term.put(@shared_key, cfg)
+      cfg
+    end
+  end
+
+  # Is this handle still backed by a live heap? Asked through the public API
+  # rather than by inspecting the table, so it stays correct if struct changes
+  # how nodes are stored.
+  defp usable?(cfg) do
+    Voxgig.Struct.getprop(cfg, "main")
+    true
+  rescue
+    ArgumentError -> false
+  end
 end
 `)
         return
@@ -121,6 +177,32 @@ defmodule ${Name}.Config do
       "options" => ${formatElixir(configDef.options, 3)},
       "entity" => ${formatElixir(entityClean, 3)}
     })
+  end
+
+  # SHARED CONFIG (sdkgen rung L2). See the data branch for the rationale, and
+  # for why the cached handle is validated on read.
+  @shared_key {__MODULE__, :shared_config}
+
+  # The process-wide config, built once on first use. The returned node is
+  # SHARED: treat it as read-only. Callers that need to mutate should use
+  # make_config, which always returns a fresh copy.
+  def shared_config do
+    cached = :persistent_term.get(@shared_key, nil)
+
+    if cached != nil and usable?(cached) do
+      cached
+    else
+      cfg = make_config()
+      :persistent_term.put(@shared_key, cfg)
+      cfg
+    end
+  end
+
+  defp usable?(cfg) do
+    Voxgig.Struct.getprop(cfg, "main")
+    true
+  rescue
+    ArgumentError -> false
   end
 end
 `)

@@ -109,6 +109,24 @@ ${cppConfigLiterals(config)};
 
 inline Value makeConfig() { return vs::parse_json(config_json()); }
 
+// SHARED CONFIG (sdkgen rung L2).
+//
+// The SDK reads the config on every request and never writes to it, so one
+// instance is shared by every client rather than rebuilt per client - this is
+// the difference between parsing the embedded JSON once and once per client.
+//
+// A function-local static in an inline function is one object across every
+// translation unit, and its initialisation is thread-safe by the standard.
+// Value holds shared_ptr nodes, so copying the returned Value shares the
+// structure rather than duplicating it.
+//
+// The result is SHARED: treat it as read-only. Callers that need to mutate
+// should use makeConfig, which always parses a fresh copy.
+inline const Value& sharedConfig() {
+  static const Value shared = makeConfig();
+  return shared;
+}
+
 inline FeaturePtr makeFeature(const std::string& name) {
 `)
 

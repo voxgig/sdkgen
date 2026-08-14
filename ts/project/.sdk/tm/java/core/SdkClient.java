@@ -27,7 +27,9 @@ public abstract class SdkClient {
   protected SdkClient(Map<String, Object> options) {
     this.utility = new Utility();
 
-    Map<String, Object> config = Config.makeConfig();
+    // The process-wide config (sdkgen rung L2): read-only on the request path,
+    // so every client shares one rather than rebuilding it.
+    Map<String, Object> config = Config.sharedConfig();
 
     Map<String, Object> ctxmap = new LinkedHashMap<>();
     ctxmap.put("client", this);

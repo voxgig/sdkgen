@@ -93,6 +93,21 @@ object Config {
   def makeConfig(): JMap[String, Object] =
     Json.parse(configJson()).asInstanceOf[JMap[String, Object]]
 
+  // SHARED CONFIG (sdkgen rung L2).
+  //
+  // The SDK reads the config on every request and never writes to it, so one
+  // instance is shared by every client rather than rebuilt per client - the
+  // difference between parsing the embedded JSON once and once per client.
+  //
+  // A lazy val is initialised once, on first use, under a lock, so
+  // concurrent first calls build it exactly once.
+  //
+  // The returned map is SHARED: treat it as read-only. Callers that need to
+  // mutate should use makeConfig, which always parses a fresh copy.
+  private lazy val sharedConfigVal: JMap[String, Object] = makeConfig()
+
+  def sharedConfig(): JMap[String, Object] = sharedConfigVal
+
   def makeFeature(name: String): Feature = name match {
 `)
 

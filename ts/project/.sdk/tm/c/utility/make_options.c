@@ -82,7 +82,11 @@ voxgig_value* make_options_util(Context* ctx) {
   // Preserve system.fetch before merge/validate (validation strips it).
   voxgig_value* sys_fetch = getpath2(opts, "system", "fetch");
 
-  voxgig_value* mergelist = clist(3, v_map(), v_share(cfgopts), v_share(opts));
+  /* CLONE the config side, do not v_share it: `config` is a process-wide
+   * singleton (shared_config) and merge uses its nested maps as merge TARGETS,
+   * so sharing lets one client's options (headers, server, ...) be written into
+   * the shared config and inherited by every client built afterwards. */
+  voxgig_value* mergelist = clist(3, v_map(), voxgig_clone(cfgopts), v_share(opts));
   voxgig_value* merged = voxgig_merge(mergelist, VOXGIG_MAXDEPTH);
   voxgig_value* validated = voxgig_validate(merged, optspec, NULL);
   if (voxgig_is_map(validated)) {
