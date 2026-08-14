@@ -90,6 +90,35 @@ defmodule ${Name}.Config do
   def make_config do
     ${Name}.Json.parse(@config_data)
   end
+
+  # SHARED CONFIG (sdkgen rung L2).
+  #
+  # The SDK reads the config on every request and never writes to it, so one
+  # instance is shared by every client rather than rebuilt per client. Above the
+  # size threshold make_config re-parses the whole embedded JSON, so this is the
+  # difference between parsing the model once and once per client.
+  #
+  # :persistent_term because struct nodes are ETS-backed handles: the stored
+  # value is the handle, so every caller gets the same nodes. A concurrent first
+  # call may build twice and the last write wins - both results are valid
+  # configs, so the race is benign.
+  @shared_key {__MODULE__, :shared_config}
+
+  # The process-wide config, built once on first use.
+  #
+  # The returned node is SHARED: treat it as read-only. Callers that need to
+  # mutate should use make_config, which always returns a fresh copy.
+  def shared_config do
+    case :persistent_term.get(@shared_key, nil) do
+      nil ->
+        cfg = make_config()
+        :persistent_term.put(@shared_key, cfg)
+        cfg
+
+      cfg ->
+        cfg
+    end
+  end
 end
 `)
         return
@@ -121,6 +150,25 @@ defmodule ${Name}.Config do
       "options" => ${formatElixir(configDef.options, 3)},
       "entity" => ${formatElixir(entityClean, 3)}
     })
+  end
+
+  # SHARED CONFIG (sdkgen rung L2). See the data branch for the rationale;
+  # emitted in both so the accessor exists whichever representation is chosen.
+  @shared_key {__MODULE__, :shared_config}
+
+  # The process-wide config, built once on first use. The returned node is
+  # SHARED: treat it as read-only. Callers that need to mutate should use
+  # make_config, which always returns a fresh copy.
+  def shared_config do
+    case :persistent_term.get(@shared_key, nil) do
+      nil ->
+        cfg = make_config()
+        :persistent_term.put(@shared_key, cfg)
+        cfg
+
+      cfg ->
+        cfg
+    end
   end
 end
 `)

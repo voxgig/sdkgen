@@ -134,7 +134,12 @@ public static partial class SdkUtility
         var merged = StructUtils.Merge(new List<object?>
         {
             new Dictionary<string, object?>(),
-            cfgopts,
+            // CLONE the config side. `config` is a process-wide singleton
+            // (SdkConfig.SharedConfig), and Merge uses its nested maps as
+            // merge TARGETS - without this, one client's options (headers,
+            // server, ...) are written into the shared config and inherited by
+            // every client constructed afterwards.
+            StructUtils.Clone(cfgopts),
             opts,
         });
         var validated = StructUtils.Validate(merged, optspec);

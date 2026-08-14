@@ -12,7 +12,9 @@ public final class ProjectNameSDK {
   public init(_ optionsIn: VMap? = nil) {
     utility = Utility()
 
-    let config = SdkConfig.makeConfig()
+    // The process-wide config (sdkgen rung L2): read-only on the request path,
+    // so every client shares one rather than rebuilding it.
+    let config = SdkConfig.sharedConfig()
 
     var ctxmap: [String: Any?] = [
       "client": self,

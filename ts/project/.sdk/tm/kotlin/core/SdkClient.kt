@@ -21,7 +21,9 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
   protected val rootctx: Context
 
   init {
-    val config = Config.makeConfig()
+    // The process-wide config (sdkgen rung L2): read-only on the request path,
+    // so every client shares one rather than rebuilding it.
+    val config = Config.sharedConfig()
 
     val ctxmap = linkedMapOf<String, Any?>()
     ctxmap["client"] = this

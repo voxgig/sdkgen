@@ -110,6 +110,21 @@ sub make_config {
   return Voxgig::Struct::parse_json($CONFIG_JSON);
 }
 
+# SHARED CONFIG (sdkgen rung L2).
+#
+# The SDK reads the config on every request and never writes to it, so one
+# instance is shared by every client rather than rebuilt per client - the
+# difference between parsing the embedded JSON once and once per client.
+#
+# The returned structure is SHARED: treat it as read-only. Callers that need to
+# mutate should use make_config, which always parses a fresh copy.
+my $SHARED_CONFIG;
+
+sub shared_config {
+  $SHARED_CONFIG = make_config() unless defined $SHARED_CONFIG;
+  return $SHARED_CONFIG;
+}
+
 sub make_feature {
   my ($name) = @_;
   require(Cwd::abs_path("$__dir/features.pm"));

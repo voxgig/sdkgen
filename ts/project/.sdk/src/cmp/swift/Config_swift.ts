@@ -101,6 +101,23 @@ ${configJson}
     return (try? JSON.parse(json))?.asMap ?? VMap()
   }
 
+  // SHARED CONFIG (sdkgen rung L2).
+  //
+  // The SDK reads the config on every request and never writes to it, so one
+  // instance is shared by every client rather than rebuilt per client - the
+  // difference between parsing the embedded JSON once and once per client.
+  //
+  // A static let in an enum is lazy and initialised exactly once, thread-safe
+  // via swift_once.
+  //
+  // The result is SHARED: treat it as read-only. Callers that need to mutate
+  // should use makeConfig, which always parses a fresh copy.
+  private static let sharedConfigVal: VMap = makeConfig()
+
+  public static func sharedConfig() -> VMap {
+    return sharedConfigVal
+  }
+
   public static func makeFeature(_ name: String) -> BaseFeature {
     switch name {
 `)

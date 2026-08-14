@@ -16,7 +16,9 @@ ProjectNameSDK* projectname_sdk_new(voxgig_value* options) {
   sdk->features_cap = 0;
   sdk->rootctx = NULL;
 
-  voxgig_value* config = make_config();
+  /* The process-wide config (sdkgen rung L2): read-only on the request path,
+   * so every client shares one rather than rebuilding it. */
+  voxgig_value* config = shared_config();
 
   CtxSpec cs;
   memset(&cs, 0, sizeof(cs));

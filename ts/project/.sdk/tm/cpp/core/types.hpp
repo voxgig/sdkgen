@@ -53,6 +53,7 @@ using OpMapPtr = std::shared_ptr<OpMap>;
 
 // Generated (core/config.hpp) — the embedded API config + feature factory.
 inline Value makeConfig();
+inline const Value& sharedConfig();
 inline FeaturePtr makeFeature(const std::string& name);
 
 // Defined in utility/pipeline.hpp; wires the Utility function fields.
@@ -781,7 +782,9 @@ inline SdkErrorPtr Context::makeError(const std::string& code, const std::string
 inline SdkClient::SdkClient(const Value& options_) {
   utility = std::make_shared<Utility>();
 
-  Value config = makeConfig();
+  // The process-wide config (sdkgen rung L2): read-only on the request path,
+  // so every client shares one rather than rebuilding it.
+  Value config = sharedConfig();
 
   CtxSpec cs;
   cs.client = this;

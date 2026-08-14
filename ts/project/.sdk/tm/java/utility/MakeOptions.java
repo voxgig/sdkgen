@@ -93,7 +93,11 @@ final class MakeOptions {
 
     List<Object> mergeList = new ArrayList<>();
     mergeList.add(new LinkedHashMap<String, Object>());
-    mergeList.add(cfgopts);
+    // CLONE the config side: `config` is a process-wide singleton
+    // (Config.sharedConfig) and merge uses its nested maps as merge TARGETS, so
+    // without this one client's options (headers, server, ...) are written into
+    // the shared config and inherited by every client constructed afterwards.
+    mergeList.add(Struct.clone(cfgopts));
     mergeList.add(opts);
     Object merged = Struct.merge(mergeList);
 

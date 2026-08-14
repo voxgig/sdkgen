@@ -275,7 +275,12 @@ defmodule ProjectName.Utility do
 
     sys_fetch = S.getpath(opts0, "system.fetch")
 
-    merged = S.merge(S.jt([S.jm([]), cfgopts, opts0]))
+    # CLONE the config side: `config` is a process-wide singleton
+    # (ProjectName.Config.shared_config) and merge uses its nested nodes as
+    # merge TARGETS, so without this one client's options (headers, server,
+    # ...) are written into the shared config and inherited by every client
+    # constructed afterwards.
+    merged = S.merge(S.jt([S.jm([]), S.clone(cfgopts), opts0]))
     validated = S.validate(merged, optspec)
     opts = if S.ismap(validated), do: validated, else: S.jm([])
 

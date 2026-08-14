@@ -108,7 +108,12 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
     // Preserve system.fetch before merge/validate (validation strips it).
     let sys_fetch = getpath(&["system", "fetch"], &opts);
 
-    let merged = vs::merge(&ja(vec![Value::empty_map(), cfgopts, opts.clone()]), None);
+    // CLONE the config side: `config` is a per-thread singleton
+    // (core::config::shared_config) and merge uses its nested maps as merge
+    // TARGETS, so without this one client's options (headers, server, ...) are
+    // written into the shared config and inherited by every client after it.
+    let merged = vs::merge(
+        &ja(vec![Value::empty_map(), vs::clone(&cfgopts), opts.clone()]), None);
     if let Ok(validated) = vs::validate(&merged, &optspec, None) {
         if let Value::Map(_) = validated {
             opts = validated;

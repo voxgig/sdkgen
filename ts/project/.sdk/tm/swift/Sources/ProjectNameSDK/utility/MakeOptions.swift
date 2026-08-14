@@ -98,7 +98,11 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   // validation reshapes the system block).
   let sysFetch = gpath(opts, "system", "fetch")
 
-  let merged = merge(.list([.map(VMap()), .map(cfgopts), .map(opts)]))
+  // CLONE the config side: `config` is a process-wide singleton
+  // (SdkConfig.sharedConfig) and merge uses its nested maps as merge TARGETS,
+  // so without this one client's options (headers, server, ...) are written
+  // into the shared config and inherited by every client built afterwards.
+  let merged = merge(.list([.map(VMap()), clone(.map(cfgopts)), .map(opts)]))
   let validated = validate(merged, optspec)
   let result = validated.asMap ?? VMap()
 

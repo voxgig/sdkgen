@@ -1095,7 +1095,11 @@ inline Value makeOptions(CtxPtr ctx) {
   // dropped by validate).
   Value sysFetch = Struct::getpath(opts, {"system", "fetch"});
 
-  Value mergeList = vlist({vmap(), cfgopts, opts});
+  // CLONE the config side: `config` is a process-wide singleton (sharedConfig)
+  // and merge uses its nested maps as merge TARGETS, so without this one
+  // client's options (headers, server, ...) are written into the shared config
+  // and inherited by every client constructed afterwards.
+  Value mergeList = vlist({vmap(), Struct::clone(cfgopts), opts});
   Value merged = Struct::merge(mergeList);
 
   Value vopts = vmap();

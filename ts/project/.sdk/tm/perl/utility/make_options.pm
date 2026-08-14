@@ -82,7 +82,11 @@ $REGISTRY{make_options} = sub {
 
   my $sys_fetch = ProjectNameHelpers::gpath($opts, 'system.fetch');
 
-  my $merged = Voxgig::Struct::merge([{}, $cfgopts, $opts]);
+  # CLONE the config side: `config` is a process-wide singleton
+  # (ProjectNameConfig::shared_config) and merge uses its nested hashes as merge
+  # TARGETS, so without this one client's options (headers, server, ...) are
+  # written into the shared config and inherited by every client after it.
+  my $merged = Voxgig::Struct::merge([{}, Voxgig::Struct::clone($cfgopts), $opts]);
   my $validated = Voxgig::Struct::validate($merged, $optspec);
   $opts = Voxgig::Struct::ismap($validated) ? $validated : {};
 

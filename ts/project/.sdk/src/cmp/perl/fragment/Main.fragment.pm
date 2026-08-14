@@ -41,7 +41,9 @@ sub new {
   my $utility = ProjectNameUtility->new;
   $self->{_utility} = $utility;
 
-  my $config = ProjectNameConfig::make_config();
+  # The process-wide config (sdkgen rung L2): read-only on the request path,
+  # so every client shares one rather than rebuilding it.
+  my $config = ProjectNameConfig::shared_config();
 
   $self->{_rootctx} = $utility->{make_context}->({
     'client' => $self,

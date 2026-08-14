@@ -3,7 +3,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::core::config::{make_config, make_feature};
+use crate::core::config::{make_feature, shared_config};
 use crate::core::context::{Context, CtxSpec};
 use crate::core::error::ProjectNameError;
 use crate::core::helpers::{call_json, get_bool, get_str, getp, getpath, jo, setp, to_int, to_map};
@@ -31,7 +31,9 @@ impl ProjectNameSDK {
             rootctx: RefCell::new(None),
         });
 
-        let config = make_config();
+        // The per-thread config (sdkgen rung L2): read-only on the request
+        // path, so every client shares one rather than rebuilding it.
+        let config = shared_config();
 
         let rootctx = sdk.utility.make_context(
             CtxSpec {

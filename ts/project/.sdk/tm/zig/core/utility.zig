@@ -386,7 +386,11 @@ pub fn make_options_util(ctx: *Context) Value {
     // Preserve system.fetch before merge/validate (validation strips it).
     const sys_fetch = h.getpath(&.{ "system", "fetch" }, opts);
 
-    const merged = vs.merge(h.A(), h.ja(&.{ h.omap(), cfgopts, opts }), vs.MAXDEPTH) catch opts;
+    // CLONE the config side: `config` is a process-wide singleton
+    // (config.shared_config) and merge uses its nested maps as merge TARGETS,
+    // so without this one client's options (headers, server, ...) are written
+    // into the shared config and inherited by every client built after it.
+    const merged = vs.merge(h.A(), h.ja(&.{ h.omap(), h.clone(cfgopts), opts }), vs.MAXDEPTH) catch opts;
     const vres = vs.validate(h.A(), merged, optspec) catch null;
     if (vres) |vr| {
         if (vr.err == null and vr.out == .object) opts = vr.out;
