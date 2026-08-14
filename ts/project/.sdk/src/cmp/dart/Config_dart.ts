@@ -51,6 +51,19 @@ const Config = cmp(async function Config(props: any) {
     `
     : ''
 
+  // Read the base URL here rather than leaving it to a `$$...$$` stdrep
+  // placeholder in the fragment. stdrep can only substitute a path the model
+  // actually has: a model with no `info.servers` left the placeholder itself in
+  // the generated source, so `options.base` came out as the literal string
+  // '$main.kit.info.servers.0.url$'. Reading it explicitly yields '' in that
+  // case, which is what every other target already emits, and is identical to
+  // the old output whenever the model does define a server. Same defect, and
+  // same fix, as ts and js.
+  let baseUrl = ''
+  try {
+    baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`)
+  } catch (_e) { }
+
   File({ name: 'Config.' + target.ext }, () => {
 
     Fragment({
@@ -63,6 +76,8 @@ const Config = cmp(async function Config(props: any) {
         // own name at runtime. Every sibling dart component already spreads
         // these; this one did not.
         ...ctx$.stdrep,
+
+        "'BASEURL'": JSON.stringify(baseUrl),
 
         "'AUTHBLOCK'": authBlock,
 

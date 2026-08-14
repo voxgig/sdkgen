@@ -100,7 +100,7 @@ test "gotcha8: custom utility callable survives" {
     const fn_val = h.callable(@ptrCast(&probe_dummy), probeCall);
     const opts = h.jo(&.{.{ "utility", h.jo(&.{.{ "probe", fn_val }}) }});
     const client = sdk.SDK.new(opts);
-    const stored = h.getp(client.utility.custom, "probe");
+    const stored = h.getp(client.sdkUtility.custom, "probe");
     try testing.expect(stored == .function);
     const r = h.call_vfn(stored, h.vstr("x"));
     try testing.expect(r == .string and std.mem.eql(u8, r.string, "x"));
@@ -139,10 +139,10 @@ test "gotcha3: many features" {
 
 test "gotcha2: make_point surfaces out.point error" {
     const client = sdk.new();
-    const ctx = client.utility.make_context(.{ .opname = "list" }, client.get_root_ctx());
+    const ctx = client.sdkUtility.make_context(.{ .opname = "list" }, client.get_root_ctx());
     const e = ctx.make_error("rbac_denied", "denied");
     ctx.out_set("point", sdk.OutVal{ .err = e });
-    try testing.expectError(error.Sdk, client.utility.make_point(ctx));
+    try testing.expectError(error.Sdk, client.sdkUtility.make_point(ctx));
     try testing.expect(ctx.pending_err != null);
     try testing.expect(std.mem.eql(u8, ctx.pending_err.?.code, "rbac_denied"));
 }
@@ -152,8 +152,8 @@ test "gotcha2: make_point surfaces out.point error" {
 test "gotcha4: featureAdd before ordering" {
     const client = sdk.new();
     const ctx = client.get_root_ctx();
-    client.utility.feature_add(ctx, OrderFeat.make("aaa", vnull()));
-    client.utility.feature_add(ctx, OrderFeat.make("bbb", h.jo(&.{.{ "__before__", h.vstr("aaa") }})));
+    client.sdkUtility.feature_add(ctx, OrderFeat.make("aaa", vnull()));
+    client.sdkUtility.feature_add(ctx, OrderFeat.make("bbb", h.jo(&.{.{ "__before__", h.vstr("aaa") }})));
     var ai: usize = 999;
     var bi: usize = 999;
     for (client.features.items, 0..) |f, i| {
@@ -176,7 +176,7 @@ test "gotcha6: netsim offline error code" {
     });
     const client = sdk.SDK.new(opts);
     const ctx = client.get_root_ctx();
-    const r = client.utility.fetch(ctx, "http://x", h.jo(&.{.{ "url", h.vstr("http://x") }}));
+    const r = client.sdkUtility.fetch(ctx, "http://x", h.jo(&.{.{ "url", h.vstr("http://x") }}));
     try testing.expectError(error.Sdk, r);
     try testing.expect(std.mem.eql(u8, ctx.pending_err.?.code, "netsim_offline"));
 }
@@ -192,7 +192,7 @@ test "gotcha6: netsim conn error code" {
     });
     const client = sdk.SDK.new(opts);
     const ctx = client.get_root_ctx();
-    const r = client.utility.fetch(ctx, "http://x", h.jo(&.{.{ "url", h.vstr("http://x") }}));
+    const r = client.sdkUtility.fetch(ctx, "http://x", h.jo(&.{.{ "url", h.vstr("http://x") }}));
     try testing.expectError(error.Sdk, r);
     try testing.expect(std.mem.eql(u8, ctx.pending_err.?.code, "netsim_conn"));
 }
@@ -215,7 +215,7 @@ test "gotcha6: netsim seeded latency is deterministic" {
             const ctx = client.get_root_ctx();
             var i: usize = 0;
             while (i < 4) : (i += 1) {
-                _ = client.utility.fetch(ctx, "http://x", h.jo(&.{.{ "url", h.vstr("http://x") }})) catch {};
+                _ = client.sdkUtility.fetch(ctx, "http://x", h.jo(&.{.{ "url", h.vstr("http://x") }})) catch {};
             }
             return sleep_log.toOwnedSlice() catch &.{};
         }
