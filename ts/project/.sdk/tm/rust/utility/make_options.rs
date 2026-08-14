@@ -115,6 +115,74 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         }
     }
 
+    // Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
+    // Every placeholder must resolve to a non-empty value: from options.server
+    // (user), else the Config default. A placeholder that resolves to "" is a
+    // construction ERROR in live mode - the URL cannot work - but in test mode
+    // substitutes the deterministic value "test-<name>" so offline tests need
+    // no configuration. The SDK constructor has no error return, so a missing
+    // required variable PANICS: construction-time misconfiguration.
+    //
+    // Scanned by hand rather than with vs::re_replace, whose replacement is a
+    // fixed string and cannot vary per placeholder.
+    if let Value::Str(base) = getp(&opts, "base") {
+        if base.contains('{') {
+            let testmode = matches!(getpath(&["test", "active"], &opts), Value::Bool(true))
+                || matches!(
+                    getpath(&["feature", "test", "active"], &opts),
+                    Value::Bool(true)
+                );
+            let server = getp(&opts, "server");
+            let sdkname = match getpath(&["main", "name"], &config) {
+                Value::Str(s) if !s.is_empty() => s,
+                _ => "SDK".to_string(),
+            };
+
+            let mut resolved = String::with_capacity(base.len());
+            let bytes: Vec<char> = base.chars().collect();
+            let mut i = 0usize;
+            while i < bytes.len() {
+                if '{' != bytes[i] {
+                    resolved.push(bytes[i]);
+                    i += 1;
+                    continue;
+                }
+                // A placeholder only when it closes and the name is
+                // [A-Za-z0-9_]+; anything else is literal text.
+                let mut j = i + 1;
+                while j < bytes.len() && (bytes[j].is_ascii_alphanumeric() || '_' == bytes[j]) {
+                    j += 1;
+                }
+                if j >= bytes.len() || '}' != bytes[j] || j == i + 1 {
+                    resolved.push(bytes[i]);
+                    i += 1;
+                    continue;
+                }
+                let name: String = bytes[i + 1..j].iter().collect();
+                let val = match getp(&server, &name) {
+                    Value::Str(s) => s,
+                    _ => String::new(),
+                };
+                if val.is_empty() {
+                    if testmode {
+                        resolved.push_str(&format!("test-{}", name));
+                    } else {
+                        panic!(
+                            "{}: the server variable '{}' is required: the API base \
+                             URL is '{}' - pass server: {{ \"{}\": \"...\" }} in the \
+                             SDK options",
+                            sdkname, name, base, name
+                        );
+                    }
+                } else {
+                    resolved.push_str(&val);
+                }
+                i = j + 1;
+            }
+            setp(&opts, "base", Value::str(&resolved));
+        }
+    }
+
     // Restore system.fetch.
     if !sys_fetch.is_noval() {
         let sys = getp(&opts, "system");

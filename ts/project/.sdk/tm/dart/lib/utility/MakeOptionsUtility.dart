@@ -1,3 +1,5 @@
+import '../ProjectNameError.dart';
+
 import 'voxgig_struct.dart' as vs;
 
 import 'FetcherUtility.dart';
@@ -99,6 +101,42 @@ dynamic makeOptions(dynamic ctx) {
   dynamic opts = vs.merge([{}, cfgopts, vs.clone(mergeOptions)]);
 
   opts = vs.validate(opts, optspec);
+
+  // Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
+  // Every placeholder must resolve to a non-empty value: from options.server
+  // (user), else the Config default. A placeholder that resolves to '' is a
+  // construction ERROR in live mode — the URL cannot work — but in test mode
+  // substitutes the deterministic value `test-<name>` so offline tests need no
+  // configuration. The SDK constructor has no error return, so a missing
+  // required variable THROWS: construction-time misconfiguration.
+  final baseVal = vs.getprop(opts, 'base');
+  if (baseVal is String && baseVal.contains('{')) {
+    final testmode = true == vs.getpath(opts, 'test.active') ||
+        true == vs.getpath(opts, 'feature.test.active');
+    final server = vs.getprop(opts, 'server') ?? {};
+    final sdkname = (vs.getpath(config, 'main.name') ?? 'SDK').toString();
+
+    opts['base'] = baseVal.replaceAllMapped(
+      RegExp(r'\{([A-Za-z0-9_]+)\}'),
+      (m) {
+        final name = m.group(1) as String;
+        final raw = vs.getprop(server, name);
+        final val = raw is String ? raw : '';
+        if ('' == val) {
+          if (testmode) {
+            return 'test-' + name;
+          }
+          throw ProjectNameError(
+            'server_var_required',
+            "$sdkname: the server variable '$name' is required: the API base "
+            "URL is '$baseVal' — pass { 'server': { '$name': '...' } } in the "
+            'SDK options',
+          );
+        }
+        return val;
+      },
+    );
+  }
 
   final sys = vs.getprop(opts, 'system');
   if (sys is Map) {

@@ -951,6 +951,57 @@ let make_options_util (ctx : ctx) : value =
   let merged = merge (ja [empty_map (); cfgopts; opts]) in
   let validated = validate merged optspec in
   let opts = match validated with Map _ as m -> m | _ -> empty_map () in
+  (* Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
+     Every placeholder must resolve to a non-empty value: from options.server
+     (user), else the Config default. A placeholder that resolves to "" is a
+     construction ERROR in live mode - the URL cannot work - but in test mode
+     substitutes the deterministic value "test-<name>" so offline tests need no
+     configuration. The SDK constructor has no error return, so a missing
+     required variable RAISES: construction-time misconfiguration.
+
+     Scanned by hand: a placeholder is `{` followed by [A-Za-z0-9_]+ and `}`;
+     anything else is literal text, so a stray brace is left alone. *)
+  (match getp opts "base" with
+   | Str base when String.contains base '{' ->
+     let is_true v = match v with Bool b -> b | _ -> false in
+     let testmode =
+       is_true (getpath_s opts "test.active")
+       || is_true (getpath_s opts "feature.test.active") in
+     let server = match getp opts "server" with Map _ as m -> m | _ -> empty_map () in
+     let sdkname =
+       match getpath_s config "main.name" with Str s when s <> "" -> s | _ -> "SDK" in
+     let namechar c =
+       (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+       || (c >= '0' && c <= '9') || c = '_' in
+     let buf = Buffer.create (String.length base) in
+     let n = String.length base in
+     let i = ref 0 in
+     while !i < n do
+       if base.[!i] <> '{' then begin
+         Buffer.add_char buf base.[!i];
+         incr i
+       end else begin
+         let j = ref (!i + 1) in
+         while !j < n && namechar base.[!j] do incr j done;
+         if !j >= n || base.[!j] <> '}' || !j = !i + 1 then begin
+           Buffer.add_char buf base.[!i];
+           incr i
+         end else begin
+           let name = String.sub base (!i + 1) (!j - !i - 1) in
+           let value = match getp server name with Str s -> s | _ -> "" in
+           if value <> "" then Buffer.add_string buf value
+           else if testmode then Buffer.add_string buf ("test-" ^ name)
+           else
+             raise (Sdk_error_exc (ctx_make_error ctx "server_var_required"
+               (sdkname ^ ": the server variable '" ^ name ^ "' is required: the API "
+                ^ "base URL is '" ^ base ^ "' - pass ~server:[(\"" ^ name
+                ^ "\", \"...\")] in the SDK options")));
+           i := !j + 1
+         end
+       end
+     done;
+     setp opts "base" (Str (Buffer.contents buf))
+   | _ -> ());
   (if not (is_noval sys_fetch) then
      match getp opts "system" with
      | Map _ as sys -> setp sys "fetch" sys_fetch

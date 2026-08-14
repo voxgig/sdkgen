@@ -279,6 +279,50 @@ defmodule ProjectName.Utility do
     validated = S.validate(merged, optspec)
     opts = if S.ismap(validated), do: validated, else: S.jm([])
 
+    # Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
+    # Every placeholder must resolve to a non-empty value: from options.server
+    # (user), else the Config default. A placeholder that resolves to "" is a
+    # construction ERROR in live mode - the URL cannot work - but in test mode
+    # substitutes the deterministic value "test-<name>" so offline tests need
+    # no configuration. The SDK constructor has no error return, so a missing
+    # required variable RAISES: construction-time misconfiguration.
+    base = S.getprop(opts, "base")
+
+    if is_binary(base) and String.contains?(base, "{") do
+      testmode =
+        true == S.getpath(opts, "test.active") or
+          true == S.getpath(opts, "feature.test.active")
+
+      server = H.or_(S.getprop(opts, "server"), S.jm([]))
+      mn = S.getpath(config, "main.name")
+      sdkname = if is_binary(mn) and mn != "", do: mn, else: "SDK"
+
+      resolved =
+        Regex.replace(~r/\{([A-Za-z0-9_]+)\}/, base, fn _match, name ->
+          val = S.getprop(server, name)
+          val = if is_binary(val), do: val, else: ""
+
+          cond do
+            val != "" ->
+              val
+
+            testmode ->
+              "test-" <> name
+
+            true ->
+              raise ProjectName.Error,
+                code: "server_var_required",
+                sdk: "ProjectName",
+                msg:
+                  "#{sdkname}: the server variable '#{name}' is required: the API " <>
+                    "base URL is '#{base}' - pass %{\"server\" => %{\"#{name}\" => " <>
+                    "\"...\"}} in the SDK options"
+          end
+        end)
+
+      S.setprop(opts, "base", resolved)
+    end
+
     if sys_fetch != nil do
       sysnode = S.getprop(opts, "system")
 

@@ -35,6 +35,14 @@ fn fmt(comptime f: []const u8, args: anytype) []const u8 {
     return std.fmt.allocPrint(h.A(), f, args) catch "";
 }
 
+// Boolean-or-absent: an option that is unset, null or a non-boolean is false.
+fn is_true(v: Value) bool {
+    return switch (v) {
+        .bool => |b| b,
+        else => false,
+    };
+}
+
 // ============================================================================
 // Utility bundle
 // ============================================================================
@@ -382,6 +390,73 @@ pub fn make_options_util(ctx: *Context) Value {
     const vres = vs.validate(h.A(), merged, optspec) catch null;
     if (vres) |vr| {
         if (vr.err == null and vr.out == .object) opts = vr.out;
+    }
+
+    // Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
+    // Every placeholder must resolve to a non-empty value: from options.server
+    // (user), else the Config default. A placeholder that resolves to "" is a
+    // construction ERROR in live mode - the URL cannot work - but in test mode
+    // substitutes the deterministic value "test-<name>" so offline tests need
+    // no configuration. The SDK constructor has no error return, so a missing
+    // required variable PANICS: construction-time misconfiguration.
+    //
+    // Scanned by hand: a placeholder is `{` followed by [A-Za-z0-9_]+ and `}`;
+    // anything else is literal text, so a stray brace in a URL is left alone.
+    switch (h.getp(opts, "base")) {
+        .string => |base| {
+            if (null != std.mem.indexOfScalar(u8, base, '{')) {
+                const testmode =
+                    is_true(h.getpath(&.{ "test", "active" }, opts)) or
+                    is_true(h.getpath(&.{ "feature", "test", "active" }, opts));
+                const server = h.getp(opts, "server");
+                const sdkname: []const u8 = switch (h.getpath(&.{ "main", "name" }, config)) {
+                    .string => |s| if (0 < s.len) s else "SDK",
+                    else => "SDK",
+                };
+
+                var out = std.ArrayList(u8).init(h.A());
+                var i: usize = 0;
+                while (i < base.len) {
+                    if ('{' != base[i]) {
+                        out.append(base[i]) catch {};
+                        i += 1;
+                        continue;
+                    }
+                    var j = i + 1;
+                    while (j < base.len and (std.ascii.isAlphanumeric(base[j]) or '_' == base[j])) {
+                        j += 1;
+                    }
+                    if (j >= base.len or '}' != base[j] or j == i + 1) {
+                        out.append(base[i]) catch {};
+                        i += 1;
+                        continue;
+                    }
+                    const name = base[i + 1 .. j];
+                    const val: []const u8 = switch (h.getp(server, name)) {
+                        .string => |s| s,
+                        else => "",
+                    };
+                    if (0 == val.len) {
+                        if (testmode) {
+                            out.appendSlice("test-") catch {};
+                            out.appendSlice(name) catch {};
+                        } else {
+                            std.debug.panic(
+                                "{s}: the server variable '{s}' is required: the API " ++
+                                    "base URL is '{s}' - pass .server = .{{ .{s} = \"...\" }} " ++
+                                    "in the SDK options",
+                                .{ sdkname, name, base, name },
+                            );
+                        }
+                    } else {
+                        out.appendSlice(val) catch {};
+                    }
+                    i = j + 1;
+                }
+                h.setp(opts, "base", h.vstr(out.toOwnedSlice() catch base));
+            }
+        },
+        else => {},
     }
 
     // Restore system.fetch.

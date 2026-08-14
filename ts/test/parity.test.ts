@@ -1041,6 +1041,9 @@ describe('config representation is chosen by size', () => {
   // `Unexpected keys at field <root>: server` - and the same gap is open in a
   // dozen targets that do not emit `server` yet.
   const SERVER_OPTSPEC: [string, string][] = [
+    ['ts', 'src/utility/MakeOptionsUtility.ts'],
+    ['js', 'src/utility/MakeOptionsUtility.js'],
+    ['lua', 'utility/make_options.lua'],
     ['go', 'utility/make_options.go'],
     ['py', 'pkg/utility/make_options.py'],
     ['rb', 'utility/make_options.rb'],
@@ -1059,9 +1062,35 @@ describe('config representation is chosen by size', () => {
       const path = Path.join(TM, target, file)
       ok(existsSync(path), target + ': no ' + file)
       const src = readFileSync(path, 'utf8')
-      ok(/["'`]server["'`]/.test(src),
+      // Quoted ("server" / 'server' / :server) or a bare object/table key
+      // (`server:` in ts/js, `server =` in lua) — the optspec is written in
+      // each language's own literal syntax.
+      ok(/["'`:]server["'`]|(^|[\s{,])server\s*[:=]/m.test(src),
         target + ': make_options does not accept `server`, so a spec with a ' +
         'templated server URL fails validation at client construction')
+    })
+
+    // ACCEPTING the option is not the same as HONOURING it, and the weaker
+    // check above is what let the two drift apart: seven targets took a
+    // `server` map and then sent every request to a URL still containing a
+    // literal `{tenant}`. Accepting an option the runtime ignores is worse
+    // than rejecting it — the SDK looks configured and silently misbehaves.
+    //
+    // The `test-<name>` fallback is the marker: it exists only inside the
+    // substitution itself, so a target cannot pass this by declaring the
+    // option and stopping there.
+    test(target + ': make_options RESOLVES {name} into base', () => {
+      const src = readFileSync(Path.join(TM, target, file), 'utf8')
+      // The QUOTED literal, not the bare word: every one of these files says
+      // "test-first" and "test-<name>" in prose, so a bare /test-/ passes
+      // everywhere and proves nothing. This matches the opening quote and the
+      // character that closes or interpolates it - "test-", 'test-',
+      // "test-{}" (rust format), "test-#{name}" (ruby) - which only the
+      // substitution itself produces.
+      ok(/["']test-["'{#]/.test(src),
+        target + ': make_options accepts `server` but never substitutes it ' +
+        'into `base`, so a templated server URL reaches the wire with the ' +
+        'placeholder still in it')
     })
   }
 

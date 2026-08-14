@@ -13,7 +13,7 @@ module SdkRuntime where
 import Control.Exception (throwIO)
 import Control.Monad (forM_, when)
 import Data.Bits ((.&.))
-import Data.Char (toUpper)
+import Data.Char (isAlphaNum, toUpper)
 import Data.IORef
 import qualified Data.Map.Strict as Map
 import System.IO.Unsafe (unsafePerformIO)
@@ -1084,6 +1084,54 @@ makeOptionsUtil ctx = do
   merged <- merge mlist
   validated <- validate INone merged optspec
   opts <- case validated of VMap _ -> pure validated; _ -> emptyMap
+  -- Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
+  -- Every placeholder must resolve to a non-empty value: from options.server
+  -- (user), else the Config default. A placeholder that resolves to "" is a
+  -- construction ERROR in live mode - the URL cannot work - but in test mode
+  -- substitutes the deterministic value "test-<name>" so offline tests need no
+  -- configuration. The SDK constructor has no error return, so a missing
+  -- required variable THROWS: construction-time misconfiguration.
+  baseV <- getp opts "base"
+  case baseV of
+    VStr base | '{' `elem` base -> do
+      taV <- getpathS opts "test.active"
+      faV <- getpathS opts "feature.test.active"
+      -- Value has no Eq instance: match the constructor.
+      let isTrue v = case v of VBool b -> b; _ -> False
+          testmode = isTrue taV || isTrue faV
+      server <- getp opts "server"
+      mnV <- getpathS config "main.name"
+      let sdkname = case mnV of VStr s | not (null s) -> s; _ -> "SDK"
+
+      -- Scanned by hand: a placeholder is `{` followed by [A-Za-z0-9_]+ and
+      -- `}`; anything else is literal text, so a stray brace is left alone.
+      let resolve [] = pure []
+          resolve ('{' : rest) =
+            let (name, tail') = span (\c -> isAlphaNum c || '_' == c) rest
+            in case tail' of
+                 ('}' : more) | not (null name) -> do
+                   valV <- case server of VMap _ -> getp server name; _ -> pure VNoval
+                   let val = case valV of VStr s -> s; _ -> ""
+                   sub <- if not (null val)
+                     then pure val
+                     else if testmode
+                       then pure ("test-" ++ name)
+                       else do
+                         e <- jo [ ("code", VStr "server_var_required")
+                                 , ("msg", VStr (sdkname ++ ": the server variable '" ++
+                                     name ++ "' is required: the API base URL is '" ++
+                                     base ++ "' - pass server = { \"" ++ name ++
+                                     "\": \"...\" } in the SDK options"))
+                                 , ("sdk", VStr "ProjectName") ]
+                         throwIO (SdkException e)
+                   more' <- resolve more
+                   pure (sub ++ more')
+                 _ -> do r <- resolve rest; pure ('{' : r)
+          resolve (c : rest) = do r <- resolve rest; pure (c : r)
+      resolved <- resolve base
+      setp opts "base" (VStr resolved)
+    _ -> pure ()
+
   when (not (isNoval sysFetch)) $ do
     sys <- getp opts "system"
     case sys of
