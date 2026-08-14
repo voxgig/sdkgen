@@ -111,8 +111,17 @@ function matchArg(lang, ent, op, idF, idLit) {
 // `key: value` pairs (capped) in the target language's object syntax. Ensures
 // the body satisfies a typed CreateData/UpdateData (required fields present).
 function dataArg(lang, ent, op, idF) {
+    // The id is normally server-assigned on create, so it is dropped from the
+    // example body. But it is only safe to drop when the request shape says it is
+    // OPTIONAL: an op whose id comes from a PATH PARAMETER requires it, and a
+    // typed CreateData then rejects a body without it.
+    //
+    // Conecto's `/integrations/{slug}/actions/{action}/run/` is the case — the
+    // guide renames the `action` param to `id`, so ActionCreateData is
+    // `{id, slug, ok}` and the generated snippet emitted only `{slug, ok}`,
+    // failing to compile with "Property 'id' is missing".
     const items = (0, opShape_1.opRequestShape)(ent, op).items
-        .filter((it) => it.name !== idF && it.name !== 'id');
+        .filter((it) => (it.name !== idF && it.name !== 'id') || !it.optional);
     const required = items.filter((it) => !it.optional);
     // ALL required fields must appear (a typed CreateData rejects a partial); cap
     // only the optional fallback used when the op declares no required field.
