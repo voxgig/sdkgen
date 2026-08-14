@@ -1,11 +1,15 @@
 -- Self-contained JSON reader building struct `Value` nodes directly (no
--- third-party dependency beyond the `array` boot library). Shared by the
--- struct corpus runner and the entity-fixture tests. Uses O(1) array indexing
--- so large corpora parse in linear time.
+-- third-party dependency beyond the `array` boot library). Uses O(1) array
+-- indexing so large corpora parse in linear time.
+--
+-- Lives in src/ rather than test/ because SdkConfig needs it: above a size
+-- threshold the API model is embedded as a JSON string constant and parsed
+-- once at load (sdkgen rung L1) instead of being built as a CV literal. It is
+-- still what the struct corpus runner and the entity-fixture tests use.
 
 {-# LANGUAGE LambdaCase #-}
 
-module TestJson (jsonRead) where
+module SdkJson (jsonRead) where
 
 import Data.Array (Array, listArray, (!))
 import Data.Char (chr)

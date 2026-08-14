@@ -54,9 +54,20 @@ function hsString(s: string): string {
 
 
 // Render a JSON-shaped value as a Haskell `CV` literal (the generated
-// SdkConfig realises it with buildCV). Keys sorted for byte-stable output;
-// empty map/list render as (CVMap []) / (CVList []) — valid for 0, 1 or N
-// entries (N-feature-safe).
+// SdkConfig realises it with buildCV). Empty map/list render as
+// (CVMap []) / (CVList []) — valid for 0, 1 or N entries (N-feature-safe).
+//
+// KEY ORDER IS INSERTION ORDER, not sorted. struct's Haskell `Value` holds a
+// map as an ORDERED assoc list, so key order is observable — it survives into
+// keysof, iteration and stringify. This used to sort, which was fine while
+// this was the only representation, but above the size threshold the same
+// config arrives via jsonRead in the JSON text's order. Sorting here would
+// have made the two representations describe the same config in a different
+// order, which is exactly what rung L1 promises cannot happen.
+//
+// Insertion order is still byte-stable: every nested level of the config comes
+// from `each`, which iterates sorted, and the two levels built by hand
+// (the root, and `options`) have a fixed order every target's literal follows.
 function formatHsValue(val: any): string {
   if (val === null || val === undefined) {
     return 'CVNull'
@@ -75,8 +86,7 @@ function formatHsValue(val: any): string {
     return '(CVList [' + items + '])'
   }
   if (typeof val === 'object') {
-    const keys = Object.keys(val).sort()
-    const items = keys
+    const items = Object.keys(val)
       .map((k) => '(' + hsString(k) + ', ' + formatHsValue(val[k]) + ')')
       .join(', ')
     return '(CVMap [' + items + '])'

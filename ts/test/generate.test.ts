@@ -479,6 +479,8 @@ describe('generate', () => {
     ['elixir', /lib\/config\.ex$/, /@config_data "/, /Helpers\.deep\(%\{/],
     ['clojure', /src\/sdk\/config\.clj$/, /def \^:private config-data/, /formatCljValue|vs\/jm/],
     ['ocaml', /sdk_config\.ml$/, /let config_data = "/, /^\s*\(jo \[/m],
+    ['csharp', /core\/Config\.cs$/, /private const string ConfigData = "/, /^\s*return new Dictionary<string, object\?>$/m],
+    ['haskell', /src\/SdkConfig\.hs$/, /^configData = "/m, /buildCV \(CVMap \[/],
   ]
 
   for (const [target, file, dataMark, litMark] of L1_DATA) {

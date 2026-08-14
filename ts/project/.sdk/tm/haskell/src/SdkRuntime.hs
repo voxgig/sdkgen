@@ -1016,6 +1016,11 @@ optSpecValue :: IO Value
 optSpecValue = do
   auth <- jo [("prefix", VStr "")]
   hdrs <- jo [("`$CHILD`", VStr "`$STRING`")]
+  -- OpenAPI server-variable defaults, carried by the generated config whenever
+  -- the spec's server URL is templated. Accepted here so validation does not
+  -- reject the SDK's own config; the {name} substitution into base is a
+  -- separate concern.
+  srv <- jo [("`$CHILD`", VStr "")]
   allow <- jo [("method", VStr "GET,PUT,POST,PATCH,DELETE,OPTIONS"), ("op", VStr "create,update,load,list,remove,command,direct,graphql")]
   entChild <- do a <- emptyMap; jo [("`$OPEN`", VBool True), ("active", VBool False), ("alias", a)]
   ent <- jo [("`$CHILD`", entChild)]
@@ -1027,7 +1032,7 @@ optSpecValue = do
   test <- jo [("active", VBool False), ("entity", testEnt)]
   clean <- jo [("keys", VStr "key,token,id")]
   jo [ ("apikey", VStr ""), ("base", VStr "http://localhost:8000"), ("prefix", VStr ""), ("suffix", VStr "")
-     , ("auth", auth), ("headers", hdrs), ("allow", allow), ("entity", ent), ("feature", feat)
+     , ("auth", auth), ("headers", hdrs), ("server", srv), ("allow", allow), ("entity", ent), ("feature", feat)
      , ("utility", utilm), ("system", sysm), ("test", test), ("clean", clean) ]
 
 makeOptionsUtil :: Context -> IO Value

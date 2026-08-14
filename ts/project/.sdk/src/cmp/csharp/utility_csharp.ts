@@ -96,6 +96,59 @@ function formatCsString(val: string): string {
 }
 
 
+// A number as a C# literal whose BOXED TYPE is predictable.
+//
+// C# gives an unsuffixed integer literal the first type of int/uint/long/ulong
+// that fits it, so `3000000000` boxes as uint while `5` boxes as int and
+// `5000000000` as long. Boxed numerics compare by exact type - (object)5L does
+// not Equals (object)5 - so the type a config number lands with is observable
+// to every consumer, and the L1 data branch has to be able to reproduce it.
+// Reproducing a uint band nothing else in the SDK ever produces is not worth
+// it, so the suffix is made explicit instead and the ladder is just int -> long
+// -> double, which SdkConfig.ConfigValue mirrors exactly.
+//
+// int.MinValue and long.MinValue are written by name: `-2147483648` parses as
+// unary minus applied to a literal that does not itself fit in an int, and
+// relying on the special case for that is needless subtlety.
+//
+// The upper bound is EXCLUSIVE and expressed as 2^63, not as long.MaxValue,
+// because long.MaxValue is not representable as a JS number - it rounds up to
+// 2^63, so `val <= 9223372036854775807` is true for a value the C# compiler
+// rejects as too large for a long and that TryGetInt64 also refuses. Both
+// branches have to fall to double at the same place.
+//
+// A non-finite value emits `null`, because that is what JSON.stringify does
+// with it - so the two representations still agree.
+const CS_INT_MIN = -2147483648
+const CS_INT_MAX = 2147483647
+const CS_LONG_MIN = -9223372036854775808
+const CS_LONG_LIMIT = 9223372036854775808
+
+function formatCsNumber(val: number): string {
+  if (!Number.isFinite(val)) {
+    return 'null'
+  }
+  if (Number.isInteger(val)) {
+    if (CS_INT_MIN === val) {
+      return 'int.MinValue'
+    }
+    if (CS_INT_MIN < val && val <= CS_INT_MAX) {
+      return String(val)
+    }
+    if (CS_LONG_MIN === val) {
+      return 'long.MinValue'
+    }
+    if (CS_LONG_MIN < val && val < CS_LONG_LIMIT) {
+      return String(val) + 'L'
+    }
+  }
+  // Fractional, or too large for a long: a double literal. The `D` suffix is
+  // required for the whole-valued case, where the digits alone would be read
+  // as an integer literal (and rejected as too large).
+  return String(val) + 'D'
+}
+
+
 function formatCsValue(val: any, indent: number = 0): string {
   if (val === null || val === undefined) {
     return 'null'
@@ -104,10 +157,7 @@ function formatCsValue(val: any, indent: number = 0): string {
     return formatCsString(val)
   }
   if (typeof val === 'number') {
-    if (Number.isInteger(val)) {
-      return String(val)
-    }
-    return String(val)
+    return formatCsNumber(val)
   }
   if (typeof val === 'boolean') {
     return val ? 'true' : 'false'

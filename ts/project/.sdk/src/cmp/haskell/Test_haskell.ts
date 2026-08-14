@@ -257,7 +257,7 @@ import qualified SdkFeatures as F
 import qualified SdkClient as C
 import qualified TReadmeExamples
 import Testutil
-import TestJson (jsonRead)
+import SdkJson (jsonRead)
 
 -- Load an entity fixture (../.sdk/test/entity/<name>/<Name>TestData.json).
 loadFixture :: String -> IO Value

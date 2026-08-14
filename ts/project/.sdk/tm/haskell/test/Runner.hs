@@ -10,7 +10,7 @@ import Data.IORef
 import System.Exit (exitFailure)
 
 import Testutil
-import TestJson (jsonRead)
+import SdkJson (jsonRead)
 import StructCorpus (runStructCorpus)
 import qualified TPipeline
 import qualified TFeature

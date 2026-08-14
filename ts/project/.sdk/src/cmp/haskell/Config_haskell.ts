@@ -2,22 +2,20 @@ import {
   Content,
   File,
   cmp,
-  each,
-  isAuthActive,
-  resolveAuthPrefix,
+  configDefinition,
+  configReprSetting,
+  isConfigData,
 } from '@voxgig/sdkgen'
 
 
 import {
-  KIT,
   Model,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
 import {
-  clean,
   formatHsValue,
+  hsString,
 } from './utility_haskell'
 
 
@@ -38,50 +36,36 @@ const Config = cmp(async function Config(props: any) {
 
   const model: Model = ctx$.model
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = getModelPath(model, `main.${KIT}.feature`)
+  // The same config as an OBJECT, built by the shared helper so this target's
+  // literal and the data that replaces it above the threshold are the same
+  // config by construction. The JSON is what the threshold is measured on -
+  // emitted source size varies by language, the model does not.
+  const { def: configDef, json: configJson } = configDefinition(model)
+  const asData = isConfigData(configJson, configReprSetting(model))
 
-  const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
+  // ABOVE THE THRESHOLD: emit the model as DATA.
+  //
+  // The literal representation is one enormous CV expression. GHC type-checks
+  // and desugars every constructor application in it, and buildCV then walks
+  // the whole tree allocating an IORef per node. A string constant is one
+  // token, and jsonRead builds the same Value from it directly.
+  //
+  // Both branches return a FRESH Value per call - buildCV allocates new
+  // IORefs, jsonRead re-parses - so a caller that mutates one config cannot
+  // reach another's, exactly as before.
+  const configBody = asData
+    ? `-- THE API MODEL, EMBEDDED AS DATA (sdkgen rung L1).
+--
+-- Emitted only above a size threshold, or when \`main.kit.config.repr\` pins
+-- it: for a small model the CV literal is smaller and far easier to read when
+-- debugging.
+configData :: String
+configData = ${hsString(configJson)}
 
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
-
-  const featureConfig: any = {}
-  each(feature, (f: any) => {
-    featureConfig[f.name] = f.config || {}
-  })
-
-  const entityOptions: any = {}
-  each(entity, (ent: any) => {
-    entityOptions[ent.name] = {}
-  })
-
-  const options: any = {
-    base: baseUrl,
-    headers,
-    entity: entityOptions,
-  }
-  if (authActive) {
-    options.auth = { prefix: authPrefix }
-  }
-
-  const entityConfig = Object.values(entity || {}).reduce((a: any, n: any) => (
-    a[n.name] = clean({
-      fields: n.fields,
-      name: n.name,
-      op: n.op,
-      relations: n.relations,
-    }, true), a), {})
-
-  const config = {
-    main: { name: model.const.Name },
-    feature: featureConfig,
-    options,
-    entity: entityConfig,
-  }
+makeConfig :: IO Value
+makeConfig = jsonRead configData`
+    : `makeConfig :: IO Value
+makeConfig = buildCV ${formatHsValue(configDef)}`
 
   File({ name: 'SdkConfig.' + target.ext }, () => {
 
@@ -90,12 +74,11 @@ const Config = cmp(async function Config(props: any) {
 module SdkConfig (makeConfig, makeFeature) where
 
 import VoxgigStruct (Value)
-import SdkHelpers (CV (..), buildCV)
+import ${asData ? 'SdkJson (jsonRead)' : 'SdkHelpers (CV (..), buildCV)'}
 import SdkTypes (Feature)
 import qualified SdkFeatures as F
 
-makeConfig :: IO Value
-makeConfig = buildCV ${formatHsValue(config)}
+${configBody}
 
 makeFeature :: String -> IO Feature
 makeFeature name = case name of

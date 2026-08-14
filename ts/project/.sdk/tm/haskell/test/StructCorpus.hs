@@ -14,7 +14,7 @@ import Data.List (intercalate, isPrefixOf)
 
 import VoxgigStruct
 import qualified Vregex
-import TestJson (jsonRead)
+import SdkJson (jsonRead)
 
 nullmark, undefmark, existsmark :: String
 nullmark = "__NULL__"

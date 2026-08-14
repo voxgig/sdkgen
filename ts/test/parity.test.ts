@@ -875,6 +875,8 @@ describe('config representation is chosen by size', () => {
     ['elixir', 'Config_elixir.ts', '@config_data', 'Helpers\\.deep'],
     ['clojure', 'Config_clojure.ts', 'core/json-parse', 'formatCljValue'],
     ['ocaml', 'Config_ocaml.ts', 'Sdk_json\\.json_read', 'formatOcamlValue'],
+    ['csharp', 'Config_csharp.ts', 'JsonSerializer\\.Deserialize', 'formatCsMap'],
+    ['haskell', 'Config_haskell.ts', 'jsonRead configData', 'formatHsValue'],
   ]
 
   // The clojure data constant must be CHUNKED under the JVM limit.
@@ -916,6 +918,76 @@ describe('config representation is chosen by size', () => {
   })
 
 
+  // The csharp literal's BOXED NUMERIC TYPE must match what parsing the JSON
+  // produces, because boxed numerics compare by exact type - (object)5L does
+  // not Equals (object)5 - and MakeConfig is public API consumers read numbers
+  // out of.
+  //
+  // Unsuffixed C# integer literals take the first of int/uint/long/ulong that
+  // fits, so `3000000000` used to box as a uint nothing else in the SDK ever
+  // produces, while the JSON side gave a long. Verified by compiling both
+  // forms under .NET 8: before this, every whole number disagreed.
+  test('csharp: the literal number ladder matches the JSON parser', () => {
+    const { formatCsMap } = require(
+      Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
+        'cmp', 'csharp', 'utility_csharp.js'))
+
+    // [value, expected C# literal] - the ladder ConfigValue mirrors with
+    // TryGetInt32 / TryGetInt64 / GetDouble.
+    const cases: [number, string][] = [
+      [0, '0'],
+      [5, '5'],
+      [-5, '-5'],
+      [2147483647, '2147483647'],
+      [-2147483648, 'int.MinValue'],
+      [2147483648, '2147483648L'],
+      [3000000000, '3000000000L'],
+      [5000000000, '5000000000L'],
+      [1e20, '100000000000000000000D'],
+      [1e21, '1e+21D'],
+      [1.5, '1.5D'],
+      [-0.25, '-0.25D'],
+    ]
+    for (const [val, expected] of cases) {
+      strictEqual(formatCsMap({ n: val }, 0).replace(/[\s\S]*\["n"\] = /, '')
+        .replace(/,[\s\S]*/, ''), expected, 'csharp literal for ' + val)
+    }
+
+    // long.MaxValue is not representable as a JS number - it rounds up to
+    // 2^63, which the C# compiler rejects as a long and TryGetInt64 also
+    // refuses - so both sides must fall to double there. (JS renders that
+    // value as 9223372036854776000; the point is the D, not the digits.)
+    strictEqual(formatCsMap({ n: 9223372036854775808 }, 0)
+      .replace(/[\s\S]*\["n"\] = /, '').replace(/,[\s\S]*/, ''),
+      '9223372036854776000D',
+      'a value at 2^63 must be a double, not an out-of-range long literal')
+  })
+
+
+  // struct's Haskell `Value` holds a map as an ORDERED assoc list, so key
+  // order is observable - it survives into keysof, iteration and stringify.
+  //
+  // formatHsValue used to sort, which was invisible while the literal was the
+  // only representation. Above the threshold the same config arrives via
+  // jsonRead in the JSON text's order, and the two would have described the
+  // same config in a different order. Confirmed by dumping the materialised
+  // config from both branches under GHC 9.4.7: with sorting the two disagreed
+  // from the very first key, and only match with insertion order preserved.
+  test('haskell: the config literal preserves key order, and does not sort', () => {
+    const { formatHsValue } = require(
+      Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
+        'cmp', 'haskell', 'utility_haskell.js'))
+
+    // The canonical config's own top-level order: NOT alphabetical.
+    const def = { main: {}, feature: {}, options: {}, entity: {} }
+    const keys = (formatHsValue(def).match(/"(main|feature|options|entity)"/g) || [])
+      .map((s: string) => s.replace(/"/g, ''))
+    strictEqual(keys.join(','), 'main,feature,options,entity',
+      'formatHsValue reordered the config keys, so the literal would disagree ' +
+      'with jsonRead of the same config')
+  })
+
+
   // Every target whose generated config can carry `options.server` must also
   // ACCEPT it in the option spec `make_options` validates against.
   //
@@ -935,6 +1007,8 @@ describe('config representation is chosen by size', () => {
     ['elixir', 'lib/projectname/utility.ex'],
     ['clojure', 'src/sdk/core.clj'],
     ['ocaml', 'sdk_runtime.ml'],
+    ['csharp', 'utility/MakeOptions.cs'],
+    ['haskell', 'src/SdkRuntime.hs'],
   ]
 
   for (const [target, file] of SERVER_OPTSPEC) {
