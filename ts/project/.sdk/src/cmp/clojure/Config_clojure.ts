@@ -20,6 +20,7 @@ import {
 
 
 import {
+  cljStringChunks,
   formatCljValue,
 } from './utility_clojure'
 
@@ -64,7 +65,7 @@ const Config = cmp(async function Config(props: any) {
   (:require [sdk.core :as core]))
 
 (def ^:private config-data
-  ${JSON.stringify(configJson)})
+  (str ${cljStringChunks(configJson).map((c: string) => JSON.stringify(c)).join('\n       ')}))
 
 (defn make-config []
   (core/json-parse config-data))

@@ -125,7 +125,49 @@ function clean(o: any, dropDefaults?: boolean): any {
 }
 
 
+
+// The JSON as Clojure string literals, CHUNKED, joined at load.
+//
+// A Clojure string literal becomes a JVM constant-pool UTF-8 entry, and those
+// are capped at 65,535 bytes. One constant therefore cannot hold a config
+// large enough to select the data representation at all - the threshold is
+// 256 KB, so every model that reaches this branch would exceed the limit.
+//
+// The failure is AOT-only and so is easy to miss: loading from source is fine,
+// and `clojure -M:test-compile` only `require`s. It appears the moment anyone
+// compiles the SDK, which is the normal path for distribution:
+//
+//   Execution error (IllegalArgumentException)
+//     at clojure.asm.ByteVector/putUTF8 (ByteVector.java:245)
+//
+// java/kotlin/scala already chunk for exactly this reason (see Config_java's
+// jsonAppendLines). Chunks are measured in UTF-8 BYTES, not characters, with
+// a wide margin: modified UTF-8 encodes a supplementary character as six
+// bytes, so a character count is not a byte count. Surrogate pairs are kept
+// whole, or a cut would emit a lone surrogate.
+function cljStringChunks(json: string, maxBytes: number = 20000): string[] {
+  const chunks: string[] = []
+  let start = 0
+  let bytes = 0
+  for (let i = 0; i < json.length; i++) {
+    const code = json.charCodeAt(i)
+    // Worst case per UTF-16 unit under modified UTF-8.
+    bytes += code < 0x80 ? 1 : code < 0x800 ? 2 : 3
+    const high = 0xd800 <= code && code <= 0xdbff
+    if (maxBytes <= bytes && !high) {
+      chunks.push(json.slice(start, i + 1))
+      start = i + 1
+      bytes = 0
+    }
+  }
+  if (start < json.length) {
+    chunks.push(json.slice(start))
+  }
+  return 0 === chunks.length ? [''] : chunks
+}
+
 export {
+  cljStringChunks,
   clean,
   formatCljValue,
   cljString,

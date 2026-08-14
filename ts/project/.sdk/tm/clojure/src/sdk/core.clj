@@ -80,7 +80,16 @@
                   (aset pos 0 (inc (aget pos 0))))
                 (let [tok (subs s start (aget pos 0))]
                   (if (or (.contains tok ".") (.contains tok "e") (.contains tok "E"))
-                    (Double/parseDouble tok) (Long/parseLong tok)))))]
+                    (Double/parseDouble tok)
+                    ;; A JSON integer may exceed the signed 64-bit range - an
+                    ;; OpenAPI `default`/`example` can carry any integer. The
+                    ;; Clojure reader gives the literal branch a BigInt for
+                    ;; such a token, so parseLong alone would make the two
+                    ;; representations disagree by throwing on input the
+                    ;; literal accepts.
+                    (try (Long/parseLong tok)
+                         (catch NumberFormatException _
+                           (bigint (java.math.BigInteger. tok))))))))]
       (parse-val))))
 
 ;; ---------------------------------------------------------------------------
@@ -938,7 +947,40 @@
           sys-fetch (vs/getpath opts0 "system.fetch")
           merged (vs/merge (vs/jt (vs/jm) cfgopts opts0))
           validated (vs/validate merged optspec)
-          opts (if (vs/ismap validated) validated (vs/jm))]
+          opts (if (vs/ismap validated) validated (vs/jm))
+          ;; Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
+          ;; Every placeholder must resolve to a non-empty value: from
+          ;; options["server"] (user), else the config default. A placeholder
+          ;; that resolves to "" is a construction ERROR in live mode - the URL
+          ;; cannot work - but in test mode substitutes the deterministic value
+          ;; "test-<name>" so offline tests need no configuration.
+          ;;
+          ;; Accepting `server` in the option spec without this is a trap: the
+          ;; option validates and is then ignored, so a templated URL still
+          ;; reaches the wire with a literal {name} in it.
+          base (vs/getprop opts "base")
+          _ (when (and (string? base) (.contains ^String base "{"))
+              (let [testmode (or (true? (vs/getpath opts "test.active"))
+                                 (true? (vs/getpath opts "feature.test.active")))
+                    server (let [s (vs/getprop opts "server")]
+                             (if (vs/ismap s) s (vs/jm)))
+                    sdkname (let [n (vs/getpath config "main.name")]
+                              (if (and (string? n) (seq n)) n "SDK"))
+                    resolved (clojure.string/replace
+                               base #"\{([A-Za-z0-9_]+)\}"
+                               (fn [[_ name]]
+                                 (let [v (vs/getprop server name)
+                                       v (if (string? v) v "")]
+                                   (cond
+                                     (seq v) v
+                                     testmode (str "test-" name)
+                                     :else
+                                     (throw (IllegalArgumentException.
+                                              (str sdkname ": the server variable '" name
+                                                   "' is required: the API base URL is '" base
+                                                   "' - pass {\"server\" {\"" name "\" \"...\"}}"
+                                                   " in the SDK options")))))))]
+                (vs/setprop opts "base" resolved)))]
       (when sys-fetch
         (when (not (vs/ismap (vs/getprop opts "system"))) (.put ^java.util.Map opts "system" (vs/jm)))
         (.put ^java.util.Map (vs/getprop opts "system") "fetch" sys-fetch))

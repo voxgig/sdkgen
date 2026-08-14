@@ -876,6 +876,45 @@ describe('config representation is chosen by size', () => {
     ['clojure', 'Config_clojure.ts', 'core/json-parse', 'formatCljValue'],
   ]
 
+  // The clojure data constant must be CHUNKED under the JVM limit.
+  //
+  // A Clojure string literal becomes a constant-pool UTF-8 entry, capped at
+  // 65,535 bytes — so one constant cannot hold a config large enough to select
+  // the data representation at all (the threshold is 256 KB). The failure is
+  // AOT-only, which is why nothing here caught it: loading from source is fine
+  // and `clojure -M:test-compile` only requires. Compiling a 70,000-character
+  // literal gives:
+  //
+  //   Execution error (IllegalArgumentException)
+  //     at clojure.asm.ByteVector/putUTF8 (ByteVector.java:245)
+  //
+  // java/kotlin/scala already chunk for the same reason.
+  test('clojure: the data constant is chunked under the JVM 64KB limit', () => {
+    const { cljStringChunks } = require(
+      Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
+        'cmp', 'clojure', 'utility_clojure.js'))
+
+    const big = 'y'.repeat(200000)
+    const chunks = cljStringChunks(big)
+    ok(1 < chunks.length, 'a 200 KB payload was not chunked at all')
+    for (const c of chunks) {
+      ok(Buffer.byteLength(c, 'utf8') < 65535,
+        'a chunk exceeds the JVM constant-pool limit')
+    }
+    strictEqual(chunks.join(''), big, 'chunking lost or reordered content')
+
+    // Multi-byte characters are measured in BYTES, and a surrogate pair is
+    // never cut in half - a lone surrogate would be invalid UTF-8.
+    const astral = '\u{1F600}'.repeat(20000)
+    const acs = cljStringChunks(astral)
+    strictEqual(acs.join(''), astral, 'chunking corrupted astral characters')
+    for (const c of acs) {
+      ok(Buffer.byteLength(c, 'utf8') < 65535, 'an astral chunk is over the limit')
+      ok(!/[\uD800-\uDBFF]$/.test(c), 'a chunk ends on a lone high surrogate')
+    }
+  })
+
+
   // Every target whose generated config can carry `options.server` must also
   // ACCEPT it in the option spec `make_options` validates against.
   //
