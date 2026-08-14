@@ -31,7 +31,14 @@ const Test = cmp(function Test(props: any) {
     ReadmeExamplesTest({ target })
 
     Folder({ name: 'entity' }, () => {
-      each(model.main[KIT].entity, (entity: ModelEntity) => {
+      // getModelPath, unlike a raw model read, applies the model's default
+      // active-only filtering (see entityCollection in helpers/opShape.ts for
+      // why that resolver deliberately opts OUT of it instead). Reading
+      // model.main[KIT].entity directly emitted a test file for every entity
+      // regardless of `active`, even when Main_ts.ts had already left the
+      // inactive ones out of the generated source.
+      const entity = getModelPath(model, `main.${KIT}.entity`)
+      each(entity, (entity: ModelEntity) => {
         TestEntity({ target, entity })
         TestDirect({ target, entity })
       })

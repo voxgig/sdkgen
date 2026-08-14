@@ -75,7 +75,7 @@ const ExternalTarget = (0, jostraca_1.cmp)(function ExternalTarget(props) {
     (0, jostraca_2.Project)({}, () => {
         (0, jostraca_1.names)(target, target.name);
         if (phaseActive('entity')) {
-            (0, jostraca_1.each)(entity, (entity) => {
+            (0, jostraca_1.each)(entity).filter((entity) => entity.active).map((entity) => {
                 (0, jostraca_1.names)(entity, entity.name);
                 (0, Entity_1.Entity)({ target, entity });
             });
