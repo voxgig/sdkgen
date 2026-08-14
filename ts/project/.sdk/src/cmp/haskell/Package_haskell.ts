@@ -39,6 +39,7 @@ library
     hs-source-dirs:   src
     exposed-modules:  VoxgigStruct
                       Vregex
+                      SdkJson
                       SdkTypes
                       SdkHelpers
                       SdkRuntime

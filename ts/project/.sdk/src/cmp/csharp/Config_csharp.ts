@@ -18,6 +18,7 @@ import {
 
 
 import {
+  csStringLiteral,
   formatCsMap,
 } from './utility_csharp'
 
@@ -59,16 +60,18 @@ public static class SdkConfig
     // JIT executes on first call. A string constant is one token, and
     // System.Text.Json builds the same dictionary from it far faster.
     //
-    // JSON.stringify output is a valid C# string literal: every escape it
-    // emits (\\", \\\\, \\b, \\f, \\n, \\r, \\t, \\uXXXX) means the same thing in C#,
-    // and it never emits \\/ or \\0, neither of which C# would accept.
+    // JSON.stringify output is ALMOST a valid C# string literal: every escape
+    // it emits (\\", \\\\, \\b, \\f, \\n, \\r, \\t, \\uXXXX) means the same thing in C#,
+    // and it never emits \\/ or \\0, neither of which C# would accept. What it
+    // does leave raw is U+0085/U+2028/U+2029, which C# counts as line
+    // terminators and forbids inside a quoted literal - hence csStringLiteral.
     if (asData) {
       Content(`    // THE API MODEL, EMBEDDED AS DATA (sdkgen rung L1).
     //
     // Emitted only above a size threshold, or when \`main.kit.config.repr\`
     // pins it: for a small model the literal is smaller and far easier to
     // read when debugging.
-    private const string ConfigData = ${JSON.stringify(configJson)};
+    private const string ConfigData = ${csStringLiteral(configJson)};
 
     // Boxed numerics compare by exact type - (object)5L does not Equals
     // (object)5 - and MakeConfig is public API consumers read numbers out of,

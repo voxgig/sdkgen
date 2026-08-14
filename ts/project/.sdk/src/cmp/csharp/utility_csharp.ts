@@ -86,13 +86,45 @@ function formatCsMap(obj: any, indent: number = 0): string {
 }
 
 
+// C# NEW-LINE CHARACTERS, which a regular quoted string literal may not
+// contain: U+000D, U+000A, U+0085 (NEL), U+2028 (LINE SEPARATOR) and U+2029
+// (PARAGRAPH SEPARATOR) - C# language spec, "Line terminators".
+//
+// The first two everyone escapes. The other three are the trap: they are
+// ordinary characters in JSON, in every other target language, and to the eye,
+// so a model string carrying one (an OpenAPI description, default or example
+// pasted from a word processor) emits a C# source file that fails to compile
+// with `error CS1010: Newline in constant`. Verified against .NET 8.
+//
+// Written as ESCAPES, not as the characters themselves: U+2028 and U+2029
+// are line terminators in JavaScript too, so a regex literal containing them
+// verbatim does not parse ("Invalid regular expression: missing /") and this
+// module fails to load. The same trap, one language up.
+const CS_NEWLINE = /[\u0085\u2028\u2029]/g
+
+function csEscapeNewlines(s: string): string {
+  return s.replace(CS_NEWLINE,
+    (c) => '\\u' + (c.codePointAt(0) as number).toString(16).padStart(4, '0'))
+}
+
+
 function formatCsString(val: string): string {
-  return '"' + val
+  return '"' + csEscapeNewlines(val
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t') + '"'
+    .replace(/\t/g, '\\t')) + '"'
+}
+
+
+// The whole config JSON as a C# string literal.
+//
+// JSON.stringify output is otherwise a valid C# literal - every escape it
+// emits means the same thing in C#, and it never emits \/ or \0 - but it
+// leaves U+0085/U+2028/U+2029 RAW, and those three end a C# string literal.
+function csStringLiteral(s: string): string {
+  return csEscapeNewlines(JSON.stringify(s))
 }
 
 
@@ -107,45 +139,50 @@ function formatCsString(val: string): string {
 // it, so the suffix is made explicit instead and the ladder is just int -> long
 // -> double, which SdkConfig.ConfigValue mirrors exactly.
 //
-// int.MinValue and long.MinValue are written by name: `-2147483648` parses as
-// unary minus applied to a literal that does not itself fit in an int, and
-// relying on the special case for that is needless subtlety.
+// THE RANGE TEST IS ON THE EMITTED TEXT, not on the JS number.
 //
-// The upper bound is EXCLUSIVE and expressed as 2^63, not as long.MaxValue,
-// because long.MaxValue is not representable as a JS number - it rounds up to
-// 2^63, so `val <= 9223372036854775807` is true for a value the C# compiler
-// rejects as too large for a long and that TryGetInt64 also refuses. Both
-// branches have to fall to double at the same place.
+// `String(val)` is exactly what JSON.stringify puts in the data branch, and it
+// prints a double as the SHORTEST decimal that round-trips - which for a value
+// near the 64-bit boundary is not the value's exact decimal expansion. The
+// clearest case is long.MinValue: `String(-9223372036854775808)` is
+// "-9223372036854776000", which is BELOW long.MinValue, so TryGetInt64 refuses
+// it and the data branch yields a double. Deciding from the JS value instead
+// emitted `long.MinValue` and the two branches disagreed at exactly that
+// boundary. Comparing the text as a BigInt makes both sides ask the same
+// question of the same digits.
+//
+// int.MinValue is written by name: `-2147483648` parses as unary minus applied
+// to a literal that does not itself fit in an int, and relying on the special
+// case for that is needless subtlety. There is deliberately no long.MinValue
+// twin - no JS number prints as that text, so it is unreachable.
 //
 // A non-finite value emits `null`, because that is what JSON.stringify does
 // with it - so the two representations still agree.
-const CS_INT_MIN = -2147483648
-const CS_INT_MAX = 2147483647
-const CS_LONG_MIN = -9223372036854775808
-const CS_LONG_LIMIT = 9223372036854775808
+const CS_INT_MIN = -2147483648n
+const CS_INT_MAX = 2147483647n
+const CS_LONG_MIN = -9223372036854775808n
+const CS_LONG_MAX = 9223372036854775807n
 
 function formatCsNumber(val: number): string {
   if (!Number.isFinite(val)) {
     return 'null'
   }
-  if (Number.isInteger(val)) {
-    if (CS_INT_MIN === val) {
-      return 'int.MinValue'
+  const text = String(val)
+  // An integer TOKEN, not merely an integral value: `String` switches to
+  // exponential form at 1e21, which is not an integer literal on either side.
+  if (Number.isInteger(val) && /^-?\d+$/.test(text)) {
+    const n = BigInt(text)
+    if (CS_INT_MIN <= n && n <= CS_INT_MAX) {
+      return CS_INT_MIN === n ? 'int.MinValue' : text
     }
-    if (CS_INT_MIN < val && val <= CS_INT_MAX) {
-      return String(val)
-    }
-    if (CS_LONG_MIN === val) {
-      return 'long.MinValue'
-    }
-    if (CS_LONG_MIN < val && val < CS_LONG_LIMIT) {
-      return String(val) + 'L'
+    if (CS_LONG_MIN <= n && n <= CS_LONG_MAX) {
+      return text + 'L'
     }
   }
-  // Fractional, or too large for a long: a double literal. The `D` suffix is
+  // Fractional, or outside the long range: a double literal. The `D` suffix is
   // required for the whole-valued case, where the digits alone would be read
   // as an integer literal (and rejected as too large).
-  return String(val) + 'D'
+  return text + 'D'
 }
 
 
@@ -236,6 +273,7 @@ function clean(o: any, dropDefaults?: boolean): any {
 export {
   clean,
   csPascalName,
+  csStringLiteral,
   csVarName,
   formatCsMap,
   formatCsValue,

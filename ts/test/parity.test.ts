@@ -947,6 +947,13 @@ describe('config representation is chosen by size', () => {
       [1e21, '1e+21D'],
       [1.5, '1.5D'],
       [-0.25, '-0.25D'],
+      // THE LOWER BOUNDARY, and the reason the range test is on the emitted
+      // text rather than the JS value. `String(-9223372036854775808)` is
+      // "-9223372036854776000", which is BELOW long.MinValue - TryGetInt64
+      // refuses it, so the data branch gives a double and the literal has to
+      // as well. Emitting `long.MinValue` here made the two disagree at
+      // exactly this value (verified: literal=Int64 data=Double).
+      [-9223372036854775808, '-9223372036854776000D'],
     ]
     for (const [val, expected] of cases) {
       strictEqual(formatCsMap({ n: val }, 0).replace(/[\s\S]*\["n"\] = /, '')
@@ -961,6 +968,42 @@ describe('config representation is chosen by size', () => {
       .replace(/[\s\S]*\["n"\] = /, '').replace(/,[\s\S]*/, ''),
       '9223372036854776000D',
       'a value at 2^63 must be a double, not an out-of-range long literal')
+  })
+
+
+  // C# forbids its NEW-LINE CHARACTERS inside a regular quoted string, and
+  // that set is wider than the two everyone escapes: U+000D, U+000A, U+0085
+  // (NEL), U+2028 (LINE SEPARATOR), U+2029 (PARAGRAPH SEPARATOR).
+  //
+  // JSON.stringify leaves the last three RAW - they are ordinary characters in
+  // JSON and in every other target language - so a model string carrying one
+  // (an OpenAPI description or example pasted from a word processor) emitted a
+  // C# file that would not compile. Confirmed against .NET 8:
+  // `error CS1010: Newline in constant`. Both the data blob and the literal's
+  // own strings go through the escape.
+  test('csharp: C# line terminators are escaped in both branches', () => {
+    const { csStringLiteral, formatCsString, formatCsMap } = require(
+      Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
+        'cmp', 'csharp', 'utility_csharp.js'))
+
+    // Built from char codes rather than written literally: U+2028/U+2029 end
+    // a line in JavaScript too, so having them verbatim in this source is the
+    // very hazard under test.
+    const raw = String.fromCharCode(0x85, 0x2028, 0x2029)
+    for (const [what, out] of [
+      ['csStringLiteral', csStringLiteral(JSON.stringify({ d: raw }))],
+      ['formatCsString', formatCsString(raw)],
+      ['formatCsMap', formatCsMap({ d: raw }, 0)],
+    ] as [string, string][]) {
+      for (const ch of raw) {
+        ok(!out.includes(ch),
+          what + ' emitted a raw U+' +
+          (ch.codePointAt(0) as number).toString(16).toUpperCase().padStart(4, '0') +
+          ', which ends a C# string literal')
+      }
+      ok(/\\u0085/.test(out) && /\\u2028/.test(out) && /\\u2029/.test(out),
+        what + ' did not escape all three C# line terminators')
+    }
   })
 
 
