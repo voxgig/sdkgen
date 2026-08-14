@@ -392,6 +392,9 @@ describe('generate', () => {
     ['rb', /config\.rb$/, /CONFIG_DATA = '/, /"main" => \{/],
     ['php', /config\.php$/, /const CONFIG_DATA = '/, /"main" => \[/],
     ['lua', /config\.lua$/, /local CONFIG_DATA = \[=*\[/, /^\s*main = \{$/m],
+    ['c', /core\/config\.c$/, /static const char CONFIG_DATA\[\] =/, /return cmap\(/],
+    ['rust', /core\/config\.rs$/, /const CONFIG_DATA: &str = r/, /Value::map_of\(\[/],
+    ['zig', /core\/config\.zig$/, /const CONFIG_DATA: \[\]const u8 =/, /return h\.jo\(&\./],
   ]
 
   for (const [target, file, dataMark, litMark] of L1_DATA) {

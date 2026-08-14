@@ -195,6 +195,17 @@ function clean(o, dropDefaults) {
             for (const k of Object.keys(node)) {
                 if (MODEL_META.includes(k))
                     continue;
+                // An ABSENT optional member, dropped rather than carried as undefined.
+                //
+                // Callers build `{fields, name, op, relations}` from an entity, and
+                // `op` and `relations` are optional - so the key exists with value
+                // undefined. JSON.stringify silently omits such a key, while the
+                // literal formatters emit it as None/nil/null, and the two
+                // representations would describe different configs for any entity
+                // without an `op`. Dropping it here fixes both branches at once,
+                // because both reach the emitter through this function.
+                if (undefined === node[k])
+                    continue;
                 if (defaults && k in CONFIG_DEFAULT && CONFIG_DEFAULT[k] === node[k])
                     continue;
                 out[k] = prune(node[k], defaults && !PAYLOAD_KEYS.includes(k));

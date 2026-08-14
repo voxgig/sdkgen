@@ -146,7 +146,24 @@ function clean(o: any, dropDefaults?: boolean): any {
 }
 
 
+
+// The JSON as a Rust RAW string literal.
+//
+// A raw string processes no escapes, so the JSON's own `\n` and `\uXXXX`
+// survive byte for byte and reach the JSON parser as written - which a normal
+// Rust string would not, having consumed them itself. The hash level is raised
+// until its terminator does not occur in the text.
+function rustRawString(s: string): string {
+  let level = 0
+  while (s.includes('"' + '#'.repeat(level))) {
+    level++
+  }
+  const hashes = '#'.repeat(level)
+  return 'r' + hashes + '"' + s + '"' + hashes
+}
+
 export {
+  rustRawString,
   clean,
   crateIdent,
   crateName,

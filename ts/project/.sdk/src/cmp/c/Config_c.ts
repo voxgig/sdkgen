@@ -3,8 +3,11 @@ import {
   Content,
   File,
   cmp,
+  configDefinition,
+  configReprSetting,
   each,
   isAuthActive,
+  isConfigData,
   resolveAuthPrefix,
 } from '@voxgig/sdkgen'
 
@@ -17,6 +20,7 @@ import {
 
 
 import {
+  cStringLiteral,
   clean,
   formatCValue,
 } from './utility_c'
@@ -75,7 +79,47 @@ const Config = cmp(async function Config(props: any) {
     entity: entityConfig,
   }
 
+  // The same config as an OBJECT, built by the shared helper so this target's
+  // literal and the data that replaces it above the threshold are the same
+  // config by construction. The JSON is what the threshold is measured on -
+  // emitted source size varies by language, the model does not.
+  const { json: configJson } = configDefinition(model)
+  const asData = isConfigData(configJson, configReprSetting(model))
+
   File({ name: 'config.c' }, () => {
+
+    // ABOVE THE THRESHOLD: emit the model as DATA.
+    //
+    // The literal is a single nested `cmap(...)`/`clist(...)` expression. For a
+    // real model that is one function whose expression nests hundreds of
+    // thousands of calls deep - the shape that makes a C compiler's parser and
+    // register allocator quadratic, and the reason gcc can be seen taking
+    // minutes on a generated config. A string constant is one token, and
+    // `json_parse` (declared in sdk.h, reached through api.h) builds the same
+    // voxgig_value tree at runtime.
+    if (asData) {
+      Content(`// Generated API configuration (mirrors core/config.go).
+
+#include "api.h"
+
+#include <string.h>
+
+// THE API MODEL, EMBEDDED AS DATA (sdkgen rung L1).
+//
+// Emitted only above a size threshold, or when \`main.kit.config.repr\` pins
+// it: for a small model the cmap() literal is smaller and far easier to read
+// when debugging.
+static const char CONFIG_DATA[] =
+${cStringLiteral(configJson)};
+
+voxgig_value* make_config(void) {
+  return json_parse(CONFIG_DATA);
+}
+
+Feature* make_feature(const char* name) {
+`)
+    }
+    else {
 
     Content(`// Generated API configuration (mirrors core/config.go).
 
@@ -89,6 +133,7 @@ voxgig_value* make_config(void) {
 
 Feature* make_feature(const char* name) {
 `)
+    }
 
     // Dispatch to the features the MODEL declares, and only those.
     //

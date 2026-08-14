@@ -150,7 +150,43 @@ function clean(o: any, dropDefaults?: boolean): any {
 }
 
 
+
+// The JSON as a C string literal, split into ADJACENT literals.
+//
+// C99 only guarantees 4095 characters in a single string literal, and a real
+// model runs to hundreds of kilobytes. Adjacent literals are concatenated by
+// the translation phase before that limit applies, so this stays portable
+// rather than relying on gcc/clang having no practical limit.
+//
+// Only `\` and `"` need escaping: JSON.stringify output contains no raw
+// control characters (it writes them as the six TEXT characters \u00XX), and
+// C string literals take UTF-8 bytes verbatim. Escaping the backslash also
+// means no `\uXXXX` ever reaches the C lexer, which matters - a universal
+// character name below 0xA0 is ill-formed C, so the JSON's own escapes would
+// have been rejected if they had been passed through.
+//
+// Chunks are cut from the RAW text and escaped afterwards, so a cut can never
+// land inside an escape sequence. Surrogate pairs are kept whole, or the cut
+// would emit a lone surrogate as invalid UTF-8.
+function cStringLiteral(json: string, chunkSize: number = 2000): string {
+  const parts: string[] = []
+  let i = 0
+  while (i < json.length) {
+    let end = Math.min(i + chunkSize, json.length)
+    const code = json.charCodeAt(end - 1)
+    if (end < json.length && 0xd800 <= code && code <= 0xdbff) {
+      end++
+    }
+    parts.push(json.slice(i, end))
+    i = end
+  }
+  return parts
+    .map((p) => '  "' + p.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"')
+    .join('\n')
+}
+
 export {
+  cStringLiteral,
   clean,
   cIdent,
   cName,

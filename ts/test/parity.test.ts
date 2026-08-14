@@ -817,6 +817,29 @@ describe('config representation is chosen by size', () => {
     strictEqual(isConfigData(cjk), true, 'threshold measured in code units')
   })
 
+  // An ABSENT optional member must not become a key in either representation.
+  //
+  // Callers build `{fields, name, op, relations}` from an entity, and `op` is
+  // optional - so the key exists with value undefined. JSON.stringify omits
+  // such a key while the py/rb/php literal formatters emit None/nil/null, so
+  // an entity with no `op` would describe a DIFFERENT config depending on
+  // which side of the threshold it fell. The equivalence tests missed it
+  // because every entity in the fixture has an `op`.
+  test('clean drops an absent optional member rather than carrying undefined', () => {
+    const { clean } = require('../dist/sdkgen.js')
+    const out = clean({ fields: [{ name: 'a' }], name: 'x', op: undefined }, true)
+    deepStrictEqual(Object.keys(out), ['fields', 'name'],
+      'an undefined-valued key survived clean, so the literal and the data ' +
+      'representations disagree about whether it exists')
+    strictEqual(Object.prototype.hasOwnProperty.call(out, 'op'), false)
+
+    // A real null is DATA, not absence, and must survive.
+    const kept = clean({ name: 'x', note: null }, true)
+    strictEqual(Object.prototype.hasOwnProperty.call(kept, 'note'), true)
+    strictEqual(kept.note, null)
+  })
+
+
   test('an unknown repr is rejected, not silently treated as auto', () => {
     const { isConfigData, CONFIG_REPR_VALUES } = require('../dist/sdkgen.js')
     deepStrictEqual(CONFIG_REPR_VALUES, ['auto', 'data', 'literal'])
@@ -845,6 +868,9 @@ describe('config representation is chosen by size', () => {
     ['rb', 'Config_rb.ts', 'JSON\\.parse\\(CONFIG_DATA\\)', 'formatRubyHash'],
     ['php', 'Config_php.ts', 'json_decode\\(self::CONFIG_DATA\\)', 'formatPhpArray'],
     ['lua', 'Config_lua.ts', 'json\\.decode\\(CONFIG_DATA\\)', 'formatLuaTable'],
+    ['c', 'Config_c.ts', 'cStringLiteral\\(configJson\\)', 'formatCValue'],
+    ['rust', 'Config_rust.ts', 'rustRawString\\(configJson\\)', 'formatRustValue'],
+    ['zig', 'Config_zig.ts', 'CONFIG_DATA: \\[\\]const u8', 'formatZigValue'],
   ]
 
   // Targets whose config has ALWAYS been emitted as data, at every size, from
