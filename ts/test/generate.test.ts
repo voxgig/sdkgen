@@ -254,6 +254,38 @@ describe('generate', () => {
   })
 
 
+  // The rendered-output check for L0 normalisation.
+  //
+  // parity.test.ts asserts the clean() helper behaves and that every Config
+  // calls it. Neither reads what is actually EMITTED, and this is exactly the
+  // kind of defect that hides between the two: clean() was a no-op for years —
+  // it deleted keys during a walk that assigned them straight back — and every
+  // suite stayed green while jostraca's iteration metadata shipped inside the
+  // config of every generated SDK (5,231 index$ in gitlab alone).
+  //
+  // So assert on the text: no generated config may carry index$/key$/val$.
+  test('no generated config ships jostraca iteration metadata', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets)
+
+    const leaks: string[] = []
+    for (const target of targets) {
+      for (const [name, content] of filesFor(out, target)) {
+        if (!/(^|\/)config[^/]*$/i.test(name) && !/Config\.[a-z]+$/i.test(name)) {
+          continue
+        }
+        for (const meta of ['index$', 'key$', 'val$']) {
+          if (String(content).includes('"' + meta + '"') ||
+            String(content).includes("'" + meta + "'")) {
+            leaks.push(`${target}:${name} carries ${meta}`)
+          }
+        }
+      }
+    }
+    deepStrictEqual(leaks, [], 'emitted config still carries model metadata')
+  })
+
+
   // The CONSUMER targets, each generated against the target it wraps.
   //
   // They are out of the two loops above for a good reason — standalone they

@@ -656,6 +656,66 @@ describe('clean() removes what it claims to remove', () => {
       'these emit the entity subtree without dropping default-valued keys')
   })
 
+  test('no typed Point reader defaults active to false', () => {
+    // Emission drops `active: true` as a default, so a reader that defaults a
+    // missing `active` to FALSE reports every active point as inactive. Eight
+    // targets model a Point this way — java, kotlin, swift and csharp were the
+    // obvious ones; dart, c, scala and zig were missed on the first pass and
+    // caught in review. Scan rather than list, so target nine is caught too.
+    const wrong: string[] = []
+    for (const lang of sdkTargets()) {
+      const root = Path.join(TM, lang)
+      if (!existsSync(root)) continue
+      const walk = (d: string) => {
+        for (const e of readdirSync(d, { withFileTypes: true })) {
+          const p = Path.join(d, e.name)
+          if (e.isDirectory()) {
+            walk(p)
+          }
+          else if (/point/i.test(e.name)) {
+            const src = readFileSync(p, 'utf8')
+            // `active` given an explicit false default, in any of the shapes
+            // the ports use: a field initialiser or a getprop fallback.
+            if (/active[^A-Za-z0-9_\n]{0,24}=\s*false/i.test(src) ||
+              /["']active["']\s*,\s*false/i.test(src) ||
+              /get_bool\([^)]*"active"[^)]*\)[\s\S]{0,40}=\s*false/i.test(src)) {
+              wrong.push(`${lang}/${e.name}`)
+            }
+          }
+        }
+      }
+      walk(root)
+    }
+    deepStrictEqual(wrong, [],
+      'these read a missing `active` as INACTIVE, but emission drops active:true')
+  })
+
+  test('metadata removal is by known key, not by $ suffix', () => {
+    // A trailing `$` is not exclusive to jostraca — Seneca uses `entity$` as
+    // real data — so a blanket suffix match would silently drop a legitimate
+    // API field from the emitted config.
+    const { clean } = loadGoUtility()
+    const out = clean({ 'index$': 1, 'key$': 'k', 'val$': 'v', 'entity$': 'zed', keep: 1 })
+    ok(!('index$' in out) && !('key$' in out) && !('val$' in out))
+    strictEqual(out['entity$'], 'zed', 'a real $-suffixed API field must survive')
+  })
+
+  test('default pruning stops at payload subtrees', () => {
+    // `active: true` inside an OpenAPI example is DATA, not a default.
+    const { clean } = loadGoUtility()
+    const out = clean({
+      active: true,
+      example: { active: true, req: false, nested: { reqd: false } },
+      fields: [{ active: true, example: { active: true } }],
+    }, true)
+    ok(!('active' in out), 'the schema flag is still pruned')
+    strictEqual(out.example.active, true, 'payload active must survive')
+    strictEqual(out.example.req, false, 'payload req must survive')
+    strictEqual(out.example.nested.reqd, false, 'payload reqd must survive at depth')
+    ok(!('active' in out.fields[0]), 'flags inside fields are still pruned')
+    strictEqual(out.fields[0].example.active, true, 'payload under a field survives')
+  })
+
   test('every target strips $-keys, so no config ships jostraca metadata', () => {
     // Cheap structural check across the other 22: the helper must not be the
     // old delete-during-walk shape.

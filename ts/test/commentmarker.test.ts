@@ -63,6 +63,36 @@ function emittedCommentLines(src: string): string[] {
     if ('code' === top()) {
       if ('//' === c2) { while (i < src.length && '\n' !== src[i]) i++; continue }
       if ('/*' === c2) { i = src.indexOf('*/', i + 2); i = -1 === i ? src.length : i + 2; continue }
+
+      // A REGEX LITERAL. Without this the scanner reads the quote inside
+      // /"/g as opening a string, swallows the rest of the interpolation, and
+      // never returns to depth 1 — after which the next `}` at module scope
+      // pops it into `template` and every following `//` comment is reported
+      // as emitted. utility_py/rb/lua all contain such a regex, so the bug was
+      // latent until a module-scope object literal was added below one.
+      //
+      // Regex vs division is decided by the previous significant character:
+      // a regex can only start where a value is expected.
+      if ('/' === c) {
+        let j = i - 1
+        while (0 <= j && /\s/.test(src[j])) j--
+        const prev = 0 > j ? '' : src[j]
+        if ('' === prev || '(,=:[!&|?{};+-*%~^'.includes(prev)) {
+          i++
+          let inClass = false
+          while (i < src.length) {
+            const rc = src[i]
+            if ('\\' === rc) { i += 2; continue }
+            if ('[' === rc) { inClass = true }
+            else if (']' === rc) { inClass = false }
+            else if ('/' === rc && !inClass) { i++; break }
+            else if ('\n' === rc) { break }
+            i++
+          }
+          continue
+        }
+      }
+
       if ("'" === c || '"' === c) {
         const q = c
         i++
