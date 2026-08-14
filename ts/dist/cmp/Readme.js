@@ -9,6 +9,7 @@ const ReadmeErrors_1 = require("./ReadmeErrors");
 const ReadmeModel_1 = require("./ReadmeModel");
 const ReadmeOptions_1 = require("./ReadmeOptions");
 const ReadmeEntity_1 = require("./ReadmeEntity");
+const ReadmeUnions_1 = require("./ReadmeUnions");
 const ReadmeHowto_1 = require("./ReadmeHowto");
 const ReadmeExplanation_1 = require("./ReadmeExplanation");
 const ReadmeRef_1 = require("./ReadmeRef");
@@ -24,6 +25,7 @@ const Readme = (0, jostraca_1.cmp)(function Readme(props) {
         (0, ReadmeModel_1.ReadmeModel)({ target });
         (0, ReadmeOptions_1.ReadmeOptions)({ target });
         (0, ReadmeEntity_1.ReadmeEntity)({ target });
+        (0, ReadmeUnions_1.ReadmeUnions)({ target });
         (0, ReadmeExplanation_1.ReadmeExplanation)({ target });
         (0, jostraca_1.Content)(`
 ## Full Reference
