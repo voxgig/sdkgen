@@ -834,14 +834,24 @@ describe('config representation is chosen by size', () => {
       'a typo falls through to auto, quietly restoring the compile cost')
   })
 
-  test('a target emitting data still emits the literal branch', () => {
-    // Both paths have to stay in the component: a target that lost its
-    // literal branch would silently switch every small SDK to data, and a
-    // target that lost its data branch would silently keep the compile cost.
-    const src = readFileSync(
-      Path.join(TM, '..', 'src', 'cmp', 'go', 'Config_go.ts'), 'utf8')
-    ok(/isConfigData\(/.test(src), 'go: no threshold check')
-    ok(/const configJSON = /.test(src), 'go: no data branch')
-    ok(/map\[string\]any\{/.test(src), 'go: no literal branch')
-  })
+  // Targets that have been through rung L1, and the marker of each branch in
+  // their Config component. Adding a target here is how L1 rollout is tracked:
+  // the remaining Config-emitting targets are literal-only and are NOT listed.
+  const L1_TARGETS: [string, string, string, string][] = [
+    ['go', 'Config_go.ts', 'const configJSON = ', 'map\\[string\\]any\\{'],
+    ['ts', 'Config_ts.ts', 'Config\\.data\\.fragment\\.ts', 'Config\\.fragment\\.ts'],
+  ]
+
+  for (const [target, file, dataMark, litMark] of L1_TARGETS) {
+    test(target + ': emitting data still emits the literal branch', () => {
+      // Both paths have to stay in the component: a target that lost its
+      // literal branch would silently switch every small SDK to data, and a
+      // target that lost its data branch would silently keep the compile cost.
+      const src = readFileSync(
+        Path.join(TM, '..', 'src', 'cmp', target, file), 'utf8')
+      ok(/isConfigData\(/.test(src), target + ': no threshold check')
+      ok(new RegExp(dataMark).test(src), target + ': no data branch')
+      ok(new RegExp(litMark).test(src), target + ': no literal branch')
+    })
+  }
 })

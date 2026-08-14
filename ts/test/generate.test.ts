@@ -43,6 +43,7 @@ import Path from 'node:path'
 import { Aontu } from 'aontu'
 import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
+import * as sucrase from 'sucrase'
 
 import { SdkGen } from '../dist/sdkgen.js'
 
@@ -171,6 +172,43 @@ async function generate(
 // are exactly those under `<target>/`.
 function filesFor(out: Record<string, string>, target: string): [string, string][] {
   return Object.entries(out).filter(([p]) => p.startsWith(target + '/'))
+}
+
+
+// The generated ts config, as source.
+function tsConfigSrc(files: [string, string][]): string {
+  const config = files.find(([name]) => /(^|\/)src\/Config\.ts$/.test(name))
+  ok(config, 'no src/Config.ts generated')
+  return String(config![1])
+}
+
+
+// The model carried by the data representation, as an object. The constant is
+// a ts string literal holding JSON, so it unwraps in two steps - and doing it
+// this way proves the literal really is well formed, which a mangled escape
+// would not be even though it still compiles.
+function parseTsConfigData(src: string): any {
+  const m = src.match(/const CONFIG_DATA = ("(?:[^"\\]|\\.)*")/)
+  ok(m, 'could not extract the embedded config constant')
+  return JSON.parse(JSON.parse(m![1]))
+}
+
+
+// A generated ts config, as the RUNTIME OBJECT a consumer would import.
+//
+// sucrase strips the types and rewrites the imports to `require`; the require
+// shim hands back a class for every feature import, because nothing here calls
+// makeFeature and the config never constructs one at module load.
+function loadTsConfig(src: string): any {
+  const { code } = sucrase.transform(src, {
+    transforms: ['typescript', 'imports'],
+    filePath: 'Config.ts',
+  })
+  const mod: any = { exports: {} }
+  const req = () => new Proxy({}, { get: () => class Stub { } })
+  new Function('require', 'module', 'exports', code)(req, mod, mod.exports)
+  ok(null != mod.exports.config, 'generated Config.ts exported no config')
+  return mod.exports.config
 }
 
 
@@ -307,6 +345,95 @@ describe('generate', () => {
     ok(/return map\[string\]any\{/.test(src), 'literal branch not emitted')
     ok(!/const configJSON = /.test(src), 'literal path emitted data as well')
   })
+
+
+  // The same pair for the ts target, which is the reference implementation.
+  test('a full ts SDK generates on the data path when repr is pinned', async () => {
+    const out = await generate(['ts'], undefined, "main: kit: config: repr: 'data'")
+
+    const files = filesFor(out, 'ts')
+    ok(0 < files.length, 'generated no files on the data path')
+
+    const src = tsConfigSrc(files)
+
+    ok(/const CONFIG_DATA = "/.test(src), 'config was not emitted as data')
+    ok(/JSON\.parse\(CONFIG_DATA\)/.test(src), 'data path does not parse the data')
+    ok(!/^\s*entity = \{/m.test(src), 'data path still emitted a class literal')
+
+    const parsed = parseTsConfigData(src)
+    ok(null != parsed.entity, 'embedded config has no entity block')
+    ok(0 < Object.keys(parsed.entity).length, 'embedded config has no entities')
+    strictEqual(parsed.main.name, 'Demo')
+
+    ok(files.some(([n]) => /\.ts$/.test(n)), 'data path produced no ts sources')
+    ok(20 < files.length, 'data path produced a suspiciously small SDK')
+  })
+
+
+  test('the same ts model pinned to literal emits a literal', async () => {
+    const out = await generate(['ts'], undefined, "main: kit: config: repr: 'literal'")
+    const src = tsConfigSrc(filesFor(out, 'ts'))
+    ok(/^\s*entity = \{/m.test(src), 'literal branch not emitted')
+    ok(!/const CONFIG_DATA = /.test(src), 'literal path emitted data as well')
+  })
+
+
+  // THE POINT OF L1: the representation is an emission detail, and nothing
+  // downstream may be able to tell which one it got.
+  //
+  // Asserting that both branches merely GENERATE proves nothing about that —
+  // they can each be internally consistent and still describe different
+  // configs. So build the object both ways and compare it. This is the check
+  // that found the ts `options.base` defect: the literal fragment left the
+  // base URL to a `$$...$$` stdrep placeholder, which for a model with no
+  // `info.servers` cannot resolve, so the literal shipped the placeholder text
+  // as the base URL while the data path shipped ''.
+  // Run over BOTH server shapes. With no `info.servers` the two sides agree at
+  // '', which is the degenerate case and on its own would let a base URL that
+  // never arrives pass; the second fixture is a real SDK's shape and pins that
+  // reading the URL explicitly still delivers it.
+  for (const [shape, servers] of [
+    ['no server URL', ''],
+    ['a server URL', "main: kit: info: servers: [ { url: 'https://api.example.com' } ]"],
+  ]) {
+    test('the ts config is the same whichever representation is emitted, with ' +
+      shape, async () => {
+        const of = (repr: string) =>
+          generate(['ts'], undefined, `main: kit: config: repr: '${repr}'\n${servers}`)
+        const [lit, dat] = await Promise.all([of('literal'), of('data')])
+
+        const litcfg = loadTsConfig(tsConfigSrc(filesFor(lit, 'ts')))
+        const datcfg = loadTsConfig(tsConfigSrc(filesFor(dat, 'ts')))
+
+        // Sanity: the fixture must actually populate these, or an equality over
+        // two empty objects would pass while proving nothing.
+        ok(0 < Object.keys(litcfg.entity || {}).length, 'literal config has no entities')
+        ok(0 < Object.keys(datcfg.entity || {}).length, 'data config has no entities')
+
+        // Plain snapshots, not the instances: both are `Config` instances, but
+        // of two separately evaluated classes, so deepStrictEqual would fail on
+        // prototype identity alone and say nothing about the data.
+        const snap = (c: any) => ({
+          main: c.main, feature: c.feature, options: c.options, entity: c.entity,
+        })
+        deepStrictEqual(snap(datcfg), snap(litcfg),
+          'the two config representations describe different configs')
+
+        strictEqual(litcfg.options.base, '' === servers ? '' : 'https://api.example.com',
+          'the base URL did not survive into the config')
+
+        // `makeFeature` lives on the prototype in both, so assigning the parsed
+        // data over an instance must not have shadowed it.
+        strictEqual(typeof litcfg.makeFeature, 'function', 'literal lost makeFeature')
+        strictEqual(typeof datcfg.makeFeature, 'function', 'data lost makeFeature')
+
+        // And no placeholder survived into either.
+        for (const [what, cfg] of [['literal', litcfg], ['data', datcfg]] as any[]) {
+          ok(!/\$[\w.]*\$/.test(JSON.stringify(snap(cfg))),
+            what + ' config carries an unresolved stdrep placeholder')
+        }
+      })
+  }
 
 
   // The rendered-output check for L0 normalisation.

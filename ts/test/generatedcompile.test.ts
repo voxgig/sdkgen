@@ -185,6 +185,52 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // THE SAME TYPE-CHECK, ON THE DATA PATH (design rung L1).
+  //
+  // The TypeScript config is a class with object-literal fields, so its data
+  // form is a different shape from Go's: the model becomes one string
+  // constant and is parsed onto the instance at module load. That changes
+  // what `config` is typed as, which only a compiler can check — the literal
+  // form gives `config.entity` a precisely inferred type, the parsed form
+  // gives it `any`, and anything downstream that depended on the narrow type
+  // fails here rather than in a consumer's repo.
+  //
+  // The generated TEST suite is compiled too, for the same reason as above.
+  test('typescript: src and tests type-check with the config as DATA', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-data')
+    const out = await generateTo('ts', sdkroot, "main: kit: config: repr: 'data'")
+    linkDeps(sdkroot)
+
+    // Prove the data path was taken, so this cannot silently become a
+    // duplicate of the literal test if the setting stops being honoured.
+    const cfg = Object.entries(out).find(([n]) => /src\/Config\.ts$/.test(n))
+    ok(cfg, 'no src/Config.ts generated')
+    const cfgsrc = String(cfg![1])
+    ok(/const CONFIG_DATA = "/.test(cfgsrc),
+      'repr:data did not emit the data representation')
+    ok(!/^\s*entity = \{/m.test(cfgsrc),
+      'data path still emitted the entity field as a literal')
+
+    // The embedded constant must be valid JSON carrying the real model: a
+    // mangled string literal would still type-check and fail at import.
+    const m = cfgsrc.match(/const CONFIG_DATA = ("(?:[^"\\]|\\.)*")/)
+    ok(m, 'could not extract the embedded config constant')
+    const parsed = JSON.parse(JSON.parse(m![1]))
+    ok(0 < Object.keys(parsed.entity || {}).length, 'no entities in the data')
+    strictEqual(parsed.main.name, 'Demo')
+
+    const src = tsc(sdkroot, 'src')
+    ok(src.ok, 'generated src does not compile on the DATA path:\n' + src.out)
+
+    const suite = tsc(sdkroot, 'test')
+    ok(suite.ok,
+      'the GENERATED TEST SUITE does not compile on the DATA path:\n' +
+      suite.out)
+  })
+
+
   // Go type-checks its test files too (`go vet` compiles them), so the same
   // class of defect is caught for the second reference target — including a
   // fake entity in a shipped test template that stops satisfying the entity
