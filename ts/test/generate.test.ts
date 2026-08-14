@@ -477,6 +477,7 @@ describe('generate', () => {
     ['zig', /core\/config\.zig$/, /const CONFIG_DATA: \[\]const u8 =/, /return h\.jo\(&\./],
     ['dart', /lib\/Config\.dart$/, /const String _CONFIG_DATA = "/, /^\s*final Map<String, dynamic> main = <String, dynamic>\{/m],
     ['elixir', /lib\/config\.ex$/, /@config_data "/, /Helpers\.deep\(%\{/],
+    ['clojure', /src\/sdk\/config\.clj$/, /def \^:private config-data/, /formatCljValue|vs\/jm/],
   ]
 
   for (const [target, file, dataMark, litMark] of L1_DATA) {

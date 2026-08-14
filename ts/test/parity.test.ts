@@ -873,6 +873,7 @@ describe('config representation is chosen by size', () => {
     ['zig', 'Config_zig.ts', 'CONFIG_DATA: \\[\\]const u8', 'formatZigValue'],
     ['dart', 'Config_dart.ts', 'Config\\.data\\.fragment\\.dart', 'Config\\.fragment\\.dart'],
     ['elixir', 'Config_elixir.ts', '@config_data', 'Helpers\\.deep'],
+    ['clojure', 'Config_clojure.ts', 'core/json-parse', 'formatCljValue'],
   ]
 
   // Every target whose generated config can carry `options.server` must also
@@ -892,6 +893,7 @@ describe('config representation is chosen by size', () => {
     ['rust', 'utility/make_options.rs'],
     ['zig', 'core/utility.zig'],
     ['elixir', 'lib/projectname/utility.ex'],
+    ['clojure', 'src/sdk/core.clj'],
   ]
 
   for (const [target, file] of SERVER_OPTSPEC) {

@@ -928,7 +928,13 @@
                    "utility" (vs/jm)
                    "system" (vs/jm)
                    "test" (vs/jm "active" false "entity" (vs/jm "`$OPEN`" true))
-                   "clean" (vs/jm "keys" "key,token,id"))
+                   "clean" (vs/jm "keys" "key,token,id")
+                   ;; Server-variable values for a templated base URL (OpenAPI
+                   ;; server variables): {name} placeholders in "base" are
+                   ;; substituted from this map at construction. Spec defaults
+                   ;; arrive via the generated config; user values override
+                   ;; them. Mirrors go's make_options optspec.
+                   "server" (vs/jm "`$CHILD`" ""))
           sys-fetch (vs/getpath opts0 "system.fetch")
           merged (vs/merge (vs/jt (vs/jm) cfgopts opts0))
           validated (vs/validate merged optspec)
