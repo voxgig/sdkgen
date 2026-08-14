@@ -13,6 +13,17 @@ main: def: {
 # `<sdk>/.sdk/model/config.aontu`.
 main: kit: config: docs_order: *['ts','py','php','go','rb','lua'] | [&: string]
 
+# How the API model is embedded in a generated SDK (design rung L1).
+#
+#   auto     by size - data above the threshold, literal below (the default)
+#   literal  always a composite literal, whatever the size
+#   data     always a parsed JSON constant, whatever the size
+#
+# Declared as a closed set so a typo is REJECTED at model-compile time rather
+# than silently falling through to `auto`, which would quietly restore the
+# compile cost this exists to remove.
+main: kit: config: repr: *'auto' | 'literal' | 'data'
+
 # How the generated test suites behave.
 main: kit: test: {
 

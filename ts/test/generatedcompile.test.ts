@@ -115,7 +115,9 @@ function toolchain(name: string): string | null {
 
 
 // Generate one target into a fresh directory and hand back its root.
-async function generateTo(target: string, root: string): Promise<Record<string, string>> {
+async function generateTo(
+  target: string, root: string, extra?: string,
+): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
   const sdkgen = SdkGen({
@@ -127,7 +129,8 @@ async function generateTo(target: string, root: string): Promise<Record<string, 
 
   const cwd = process.cwd()
   process.chdir(SCAFFOLD)
-  const res = await sdkgen.generate({ model: makeModel([target]), root: makeRoot() })
+  const res = await sdkgen.generate({
+    model: makeModel([target], undefined, extra), root: makeRoot() })
   process.chdir(cwd)
   strictEqual(res.ok, true, target + ': generation did not report ok')
 
@@ -182,6 +185,52 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // THE SAME TYPE-CHECK, ON THE DATA PATH (design rung L1).
+  //
+  // The TypeScript config is a class with object-literal fields, so its data
+  // form is a different shape from Go's: the model becomes one string
+  // constant and is parsed onto the instance at module load. That changes
+  // what `config` is typed as, which only a compiler can check — the literal
+  // form gives `config.entity` a precisely inferred type, the parsed form
+  // gives it `any`, and anything downstream that depended on the narrow type
+  // fails here rather than in a consumer's repo.
+  //
+  // The generated TEST suite is compiled too, for the same reason as above.
+  test('typescript: src and tests type-check with the config as DATA', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-data')
+    const out = await generateTo('ts', sdkroot, "main: kit: config: repr: 'data'")
+    linkDeps(sdkroot)
+
+    // Prove the data path was taken, so this cannot silently become a
+    // duplicate of the literal test if the setting stops being honoured.
+    const cfg = Object.entries(out).find(([n]) => /src\/Config\.ts$/.test(n))
+    ok(cfg, 'no src/Config.ts generated')
+    const cfgsrc = String(cfg![1])
+    ok(/const CONFIG_DATA = "/.test(cfgsrc),
+      'repr:data did not emit the data representation')
+    ok(!/^\s*entity = \{/m.test(cfgsrc),
+      'data path still emitted the entity field as a literal')
+
+    // The embedded constant must be valid JSON carrying the real model: a
+    // mangled string literal would still type-check and fail at import.
+    const m = cfgsrc.match(/const CONFIG_DATA = ("(?:[^"\\]|\\.)*")/)
+    ok(m, 'could not extract the embedded config constant')
+    const parsed = JSON.parse(JSON.parse(m![1]))
+    ok(0 < Object.keys(parsed.entity || {}).length, 'no entities in the data')
+    strictEqual(parsed.main.name, 'Demo')
+
+    const src = tsc(sdkroot, 'src')
+    ok(src.ok, 'generated src does not compile on the DATA path:\n' + src.out)
+
+    const suite = tsc(sdkroot, 'test')
+    ok(suite.ok,
+      'the GENERATED TEST SUITE does not compile on the DATA path:\n' +
+      suite.out)
+  })
+
+
   // Go type-checks its test files too (`go vet` compiles them), so the same
   // class of defect is caught for the second reference target — including a
   // fake entity in a shipped test template that stops satisfying the entity
@@ -197,6 +246,111 @@ describe('generated SDK compiles', () => {
 
     const vet = run(go, ['vet', './...'], sdkroot)
     ok(vet.ok, 'generated go does not vet clean:\n' + vet.out)
+  })
+
+
+  // THE SAME BUILD, ON THE DATA PATH (design rung L1).
+  //
+  // Above a size threshold the config is emitted as a parsed JSON constant
+  // rather than a composite literal. No fixture is anywhere near that
+  // threshold, so without pinning `main.kit.config.repr` the branch every
+  // large SDK depends on is compiled by nothing — the config could be
+  // syntactically broken, or the embedded JSON mangled, and every suite would
+  // stay green.
+  //
+  // This compiles it. `go vet` parses and type-checks the module AND its
+  // generated tests, so a badly escaped string constant fails here.
+  test('go: the module vets clean with the config emitted as DATA', async () => {
+    const go = toolchain('go')
+    if (null == go) {
+      return
+    }
+
+    const sdkroot = Path.join(tmp, 'go-data')
+    const out = await generateTo('go', sdkroot, "main: kit: config: repr: 'data'")
+
+    // Prove the data path was actually taken, so this cannot quietly become a
+    // duplicate of the literal test if the setting stops being honoured.
+    const cfg = Object.entries(out).find(([n]) => /core\/config\.go$/.test(n))
+    ok(cfg, 'no core/config.go generated')
+    ok(/const configJSON = "/.test(String(cfg![1])),
+      'repr:data did not emit the data representation')
+
+    const vet = run(go, ['vet', './...'], sdkroot)
+    ok(vet.ok, 'generated go on the DATA path does not vet clean:\n' + vet.out)
+  })
+
+
+  // The two representations must agree on VALUE TYPES, not just on content.
+  //
+  // json.Unmarshal decodes every JSON number as float64, while a composite
+  // literal puts an integer token into map[string]any as an int. MakeConfig is
+  // public API and consumers type-assert against it, so crossing a size
+  // threshold silently changing int to float64 is a breaking change disguised
+  // as an optimisation.
+  //
+  // This is the check the earlier equivalence test could not make: the demo
+  // fixture contains no numbers at all, so both paths trivially agreed.
+  test('go: data and literal paths agree on number types', async () => {
+    const go = toolchain('go')
+    if (null == go) {
+      return
+    }
+
+    // A model carrying an integer AND a fractional value, so both branches of
+    // the normaliser are exercised.
+    const extra = "main: kit: config: headers: 'x-int': 7\n" +
+      "main: kit: config: headers: 'x-frac': 1.5\n"
+
+    const roots: Record<string, string> = {}
+    for (const repr of ['data', 'literal']) {
+      const root = Path.join(tmp, 'go-types-' + repr)
+      await generateTo('go', root, extra + `main: kit: config: repr: '${repr}'`)
+      roots[repr] = root
+
+      Fs.writeFileSync(Path.join(root, 'core', 'types_probe_test.go'), `package core
+
+import (
+	"fmt"
+	"os"
+	"sort"
+	"testing"
+)
+
+func TestTypesProbe(t *testing.T) {
+	var out []string
+	var walk func(any, string)
+	walk = func(n any, p string) {
+		switch v := n.(type) {
+		case map[string]any:
+			for k, c := range v {
+				walk(c, p+"."+k)
+			}
+		case []any:
+			for i, c := range v {
+				walk(c, fmt.Sprintf("%s[%d]", p, i))
+			}
+		default:
+			out = append(out, fmt.Sprintf("%s=%T", p, n))
+		}
+	}
+	walk(MakeConfig(), "")
+	sort.Strings(out)
+	os.WriteFile("types.txt", []byte(fmt.Sprint(out)), 0644)
+}
+`)
+      const t = run(go, ['test', './core/', '-run', 'TestTypesProbe'], root)
+      ok(t.ok, repr + ': type probe did not run:\n' + t.out)
+    }
+
+    const dataTypes = Fs.readFileSync(Path.join(roots.data, 'core', 'types.txt'), 'utf8')
+    const litTypes = Fs.readFileSync(Path.join(roots.literal, 'core', 'types.txt'), 'utf8')
+
+    // The probe must actually have seen the integer, else this passes vacuously.
+    ok(/x-int=int\b/.test(litTypes),
+      'literal path did not carry an int - the fixture proves nothing: ' + litTypes)
+    strictEqual(dataTypes, litTypes,
+      'data and literal paths disagree on value types')
   })
 
 

@@ -788,3 +788,70 @@ function loadGoUtility(): any {
     mod.exports, req, mod, Path.dirname(file), file)
   return mod.exports
 }
+
+
+// The config representation is chosen by size (design rung L1, threshold from
+// design Q7). Both branches must exist and the choice must be by the MODEL,
+// not by the emitted source - which varies per language while the model does
+// not.
+describe('config representation is chosen by size', () => {
+
+  test('the threshold is the decided 256 KB', () => {
+    const { CONFIG_DATA_THRESHOLD, isConfigData, configRepr } =
+      require('../dist/sdkgen.js')
+    strictEqual(CONFIG_DATA_THRESHOLD, 256 * 1024)
+    // Boundary: at the threshold it is still a literal; one byte over is data.
+    strictEqual(isConfigData('x'.repeat(CONFIG_DATA_THRESHOLD)), false)
+    strictEqual(isConfigData('x'.repeat(CONFIG_DATA_THRESHOLD + 1)), true)
+    strictEqual(configRepr('x'), 'literal')
+    strictEqual(configRepr('x'.repeat(CONFIG_DATA_THRESHOLD + 1)), 'data')
+  })
+
+  test('the threshold counts UTF-8 bytes, not UTF-16 code units', () => {
+    const { CONFIG_DATA_THRESHOLD, isConfigData } = require('../dist/sdkgen.js')
+    // A CJK character is 3 bytes but ONE UTF-16 code unit, so a `.length`
+    // comparison reads a multilingual model as a third of its real size and
+    // keeps it on the expensive literal path well past the point it hurts.
+    const cjk = '\u4e16'.repeat(Math.ceil((CONFIG_DATA_THRESHOLD + 3) / 3))
+    strictEqual(cjk.length < CONFIG_DATA_THRESHOLD, true, 'fixture proves nothing')
+    strictEqual(isConfigData(cjk), true, 'threshold measured in code units')
+  })
+
+  test('an unknown repr is rejected, not silently treated as auto', () => {
+    const { isConfigData, CONFIG_REPR_VALUES } = require('../dist/sdkgen.js')
+    deepStrictEqual(CONFIG_REPR_VALUES, ['auto', 'data', 'literal'])
+    for (const good of CONFIG_REPR_VALUES) {
+      isConfigData('x', good)
+    }
+    let threw = false
+    try {
+      isConfigData('x', 'date')
+    }
+    catch (e: any) {
+      threw = /must be one of/.test(String(e.message))
+    }
+    strictEqual(threw, true,
+      'a typo falls through to auto, quietly restoring the compile cost')
+  })
+
+  // Targets that have been through rung L1, and the marker of each branch in
+  // their Config component. Adding a target here is how L1 rollout is tracked:
+  // the remaining Config-emitting targets are literal-only and are NOT listed.
+  const L1_TARGETS: [string, string, string, string][] = [
+    ['go', 'Config_go.ts', 'const configJSON = ', 'map\\[string\\]any\\{'],
+    ['ts', 'Config_ts.ts', 'Config\\.data\\.fragment\\.ts', 'Config\\.fragment\\.ts'],
+  ]
+
+  for (const [target, file, dataMark, litMark] of L1_TARGETS) {
+    test(target + ': emitting data still emits the literal branch', () => {
+      // Both paths have to stay in the component: a target that lost its
+      // literal branch would silently switch every small SDK to data, and a
+      // target that lost its data branch would silently keep the compile cost.
+      const src = readFileSync(
+        Path.join(TM, '..', 'src', 'cmp', target, file), 'utf8')
+      ok(/isConfigData\(/.test(src), target + ': no threshold check')
+      ok(new RegExp(dataMark).test(src), target + ': no data branch')
+      ok(new RegExp(litMark).test(src), target + ': no literal branch')
+    })
+  }
+})
