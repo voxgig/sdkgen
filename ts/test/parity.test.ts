@@ -807,6 +807,33 @@ describe('config representation is chosen by size', () => {
     strictEqual(configRepr('x'.repeat(CONFIG_DATA_THRESHOLD + 1)), 'data')
   })
 
+  test('the threshold counts UTF-8 bytes, not UTF-16 code units', () => {
+    const { CONFIG_DATA_THRESHOLD, isConfigData } = require('../dist/sdkgen.js')
+    // A CJK character is 3 bytes but ONE UTF-16 code unit, so a `.length`
+    // comparison reads a multilingual model as a third of its real size and
+    // keeps it on the expensive literal path well past the point it hurts.
+    const cjk = '\u4e16'.repeat(Math.ceil((CONFIG_DATA_THRESHOLD + 3) / 3))
+    strictEqual(cjk.length < CONFIG_DATA_THRESHOLD, true, 'fixture proves nothing')
+    strictEqual(isConfigData(cjk), true, 'threshold measured in code units')
+  })
+
+  test('an unknown repr is rejected, not silently treated as auto', () => {
+    const { isConfigData, CONFIG_REPR_VALUES } = require('../dist/sdkgen.js')
+    deepStrictEqual(CONFIG_REPR_VALUES, ['auto', 'data', 'literal'])
+    for (const good of CONFIG_REPR_VALUES) {
+      isConfigData('x', good)
+    }
+    let threw = false
+    try {
+      isConfigData('x', 'date')
+    }
+    catch (e: any) {
+      threw = /must be one of/.test(String(e.message))
+    }
+    strictEqual(threw, true,
+      'a typo falls through to auto, quietly restoring the compile cost')
+  })
+
   test('a target emitting data still emits the literal branch', () => {
     // Both paths have to stay in the component: a target that lost its
     // literal branch would silently switch every small SDK to data, and a

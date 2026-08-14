@@ -235,6 +235,79 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // The two representations must agree on VALUE TYPES, not just on content.
+  //
+  // json.Unmarshal decodes every JSON number as float64, while a composite
+  // literal puts an integer token into map[string]any as an int. MakeConfig is
+  // public API and consumers type-assert against it, so crossing a size
+  // threshold silently changing int to float64 is a breaking change disguised
+  // as an optimisation.
+  //
+  // This is the check the earlier equivalence test could not make: the demo
+  // fixture contains no numbers at all, so both paths trivially agreed.
+  test('go: data and literal paths agree on number types', async () => {
+    const go = toolchain('go')
+    if (null == go) {
+      return
+    }
+
+    // A model carrying an integer AND a fractional value, so both branches of
+    // the normaliser are exercised.
+    const extra = "main: kit: config: headers: 'x-int': 7\n" +
+      "main: kit: config: headers: 'x-frac': 1.5\n"
+
+    const roots: Record<string, string> = {}
+    for (const repr of ['data', 'literal']) {
+      const root = Path.join(tmp, 'go-types-' + repr)
+      await generateTo('go', root, extra + `main: kit: config: repr: '${repr}'`)
+      roots[repr] = root
+
+      Fs.writeFileSync(Path.join(root, 'core', 'types_probe_test.go'), `package core
+
+import (
+	"fmt"
+	"os"
+	"sort"
+	"testing"
+)
+
+func TestTypesProbe(t *testing.T) {
+	var out []string
+	var walk func(any, string)
+	walk = func(n any, p string) {
+		switch v := n.(type) {
+		case map[string]any:
+			for k, c := range v {
+				walk(c, p+"."+k)
+			}
+		case []any:
+			for i, c := range v {
+				walk(c, fmt.Sprintf("%s[%d]", p, i))
+			}
+		default:
+			out = append(out, fmt.Sprintf("%s=%T", p, n))
+		}
+	}
+	walk(MakeConfig(), "")
+	sort.Strings(out)
+	os.WriteFile("types.txt", []byte(fmt.Sprint(out)), 0644)
+}
+`)
+      const t = run(go, ['test', './core/', '-run', 'TestTypesProbe'], root)
+      ok(t.ok, repr + ': type probe did not run:\n' + t.out)
+    }
+
+    const dataTypes = Fs.readFileSync(Path.join(roots.data, 'core', 'types.txt'), 'utf8')
+    const litTypes = Fs.readFileSync(Path.join(roots.literal, 'core', 'types.txt'), 'utf8')
+
+    // The probe must actually have seen the integer, else this passes vacuously.
+    ok(/x-int=int\b/.test(litTypes),
+      'literal path did not carry an int - the fixture proves nothing: ' + litTypes)
+    strictEqual(dataTypes, litTypes,
+      'data and literal paths disagree on value types')
+  })
+
+
   // C# is the third compiler this machine can run offline: `dotnet build`
   // type-checks the whole project, entity classes included.
   test('csharp: the project builds', async () => {

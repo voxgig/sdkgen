@@ -134,12 +134,42 @@ const Config = cmp(async function Config(props: any) {
 
 import (
 	"encoding/json"
+	"math"
 	"sync"
 )
 
 // The API model, emitted as data rather than as a composite literal: see
 // sdkgen rung L1. Parsed by MakeConfig, and parsed once by SharedConfig.
 const configJSON = ${JSON.stringify(configJson)}
+
+// json.Unmarshal decodes EVERY JSON number as float64, but the literal
+// representation emits an integer token as an untyped constant that lands in
+// map[string]any as an int. MakeConfig is public API and consumers type-assert
+// against it, so the two representations must not disagree about the type of
+// a whole number just because the model crossed a size threshold.
+//
+// Whole values become int; anything fractional, or too large to be exact in a
+// float64, stays float64 - which is what the literal branch does too.
+func configNormalise(val any) any {
+	switch v := val.(type) {
+	case map[string]any:
+		for k, c := range v {
+			v[k] = configNormalise(c)
+		}
+		return v
+	case []any:
+		for i, c := range v {
+			v[i] = configNormalise(c)
+		}
+		return v
+	case float64:
+		if v == math.Trunc(v) && math.Abs(v) <= 1<<53 {
+			return int(v)
+		}
+		return v
+	}
+	return val
+}
 
 // MakeConfig parses a fresh, fully materialised config map. Every call
 // re-parses, so prefer SharedConfig unless you need a private copy you
@@ -152,6 +182,7 @@ func MakeConfig() map[string]any {
 		// silently empty config, which would fail far from the cause.
 		panic("${model.const.Name}: embedded config is not valid JSON: " + err.Error())
 	}
+	out, _ = configNormalise(out).(map[string]any)
 	return out
 }
 `)

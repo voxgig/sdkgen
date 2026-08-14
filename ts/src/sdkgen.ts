@@ -20,7 +20,7 @@ import type {
 } from './types'
 
 import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix,
-  CONFIG_DATA_THRESHOLD, isConfigData, configRepr } from './utility'
+  CONFIG_DATA_THRESHOLD, CONFIG_REPR_VALUES, isConfigData, configRepr } from './utility'
 
 import { Main } from './cmp/Main'
 import { ExternalTarget } from './cmp/ExternalTarget'
@@ -778,6 +778,7 @@ export {
   isAuthActive,
   resolveAuthPrefix,
   CONFIG_DATA_THRESHOLD,
+  CONFIG_REPR_VALUES,
   isConfigData,
   configRepr,
 

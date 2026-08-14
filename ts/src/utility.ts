@@ -97,6 +97,7 @@ export {
   resolveAuthPrefix,
   SdkGenError,
   CONFIG_DATA_THRESHOLD,
+  CONFIG_REPR_VALUES,
   isConfigData,
   configRepr,
 }
@@ -111,7 +112,10 @@ export {
 // complexity.
 //
 // The threshold is on the JSON, not the emitted source, because the emitted
-// source size varies by language while the model does not.
+// source size varies by language while the model does not. It is measured in
+// UTF-8 BYTES rather than string length: `.length` counts UTF-16 code units,
+// so a CJK-heavy model would read as roughly a third of its real size and
+// stay on the expensive literal path well past the point where it hurts.
 //
 // Measured on the real gitlab model (923.5 KB of JSON), Go, cold cache,
 // recompiling only the config package:
@@ -133,14 +137,26 @@ const CONFIG_DATA_THRESHOLD = 256 * 1024
 // lets a small fixture exercise the data path - by size alone no test model
 // comes near the threshold, so the branch every large SDK depends on would
 // never be generated, compiled or run in CI.
+const CONFIG_REPR_VALUES = ['auto', 'data', 'literal']
+
 function isConfigData(configJson: string, repr?: string): boolean {
+  // An unknown value is REJECTED, not ignored. The aontu declaration
+  // documents the closed set but does not enforce it here, and silently
+  // treating `repr: 'date'` as `auto` would quietly restore the compile cost
+  // this exists to remove - the failure mode being a slow build nobody
+  // connects to a typo.
+  if (null != repr && '' !== repr && !CONFIG_REPR_VALUES.includes(repr)) {
+    throw new SdkGenError(
+      'sdkgen: main.kit.config.repr must be one of ' +
+      CONFIG_REPR_VALUES.join(', ') + ' (got: ' + repr + ')', {})
+  }
   if ('data' === repr) {
     return true
   }
   if ('literal' === repr) {
     return false
   }
-  return CONFIG_DATA_THRESHOLD < configJson.length
+  return CONFIG_DATA_THRESHOLD < Buffer.byteLength(configJson, 'utf8')
 }
 
 
