@@ -66,7 +66,7 @@ const Config = cmp(async function Config(props: any) {
     Content(`-- ${model.const.Name} SDK configuration
 
 -- Build a fresh, fully materialised config table. Every call rebuilds the
--- whole structure, so prefer the shared accessor below unless you need a
+-- whole structure, so prefer require("config_shared") unless you need a
 -- private copy you intend to mutate.
 local function make_config()
   return {
@@ -107,23 +107,6 @@ ${serverBlock}${authBlock}      headers = ${formatLuaTable(headers, 3)},
 end
 
 
-local shared_config_value = nil
-
-
--- Return the process-wide config, built once on first use. The SDK reads the
--- config on every request and never writes to it, so one instance is shared by
--- every client rather than rebuilt per client.
---
--- The returned table is shared: treat it as read-only. Callers that need to
--- mutate should use make_config, which always returns a fresh copy.
-local function shared_config()
-  if shared_config_value == nil then
-    shared_config_value = make_config()
-  end
-  return shared_config_value
-end
-
-
 local function make_feature(name)
   local features = require("features")
   local factory = features[name]
@@ -140,17 +123,33 @@ local function setup_sdk(SDK)
 end
 
 
--- The module is a callable table, so the historical \`require("config")()\`
--- form still builds a fresh config, while \`require("config").shared()\`
--- reuses the one already built for this Lua state.
-return setmetatable({
-  make_config = make_config,
-  shared = shared_config,
-}, {
-  __call = function(_, ...)
-    return make_config(...)
-  end,
-})
+return make_config
+`)
+  })
+
+  // A sibling module rather than a member of `config`: `config` returns a
+  // bare function (`require("config")()`), and turning it into a table would
+  // change its observable type for any consumer holding it as a factory.
+  File({ name: 'config_shared.' + target.ext }, () => {
+    Content(`-- ${model.const.Name} SDK shared configuration
+
+local make_config = require("config")
+
+local value = nil
+
+
+-- Return the config for this Lua state, built once on first use. The SDK
+-- reads the config on every request and never writes to it, so one instance
+-- is shared by every client rather than rebuilt per client.
+--
+-- The returned table is shared: treat it as read-only. Callers that need to
+-- mutate should use require("config")(), which always returns a fresh copy.
+return function()
+  if value == nil then
+    value = make_config()
+  end
+  return value
+end
 `)
   })
 })
