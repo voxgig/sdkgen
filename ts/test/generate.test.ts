@@ -422,6 +422,39 @@ describe('generate', () => {
     deepStrictEqual(clashes, [],
       'zig entity accessors collide with SDK members — the generated SDK will ' +
       'not compile, or the accessor cannot be called')
+
+    // The invariant behind the fix, asserted rather than assumed.
+    //
+    // `zigVarName` LOWERCASES every name it is given, so a field spelled with
+    // an uppercase letter is one no entity name can ever reach. That is the
+    // only real guarantee available here — the scan above only covers entity
+    // names THIS fixture happens to use, so a field named `util_rt` would pass
+    // it while still colliding with an API that has a `util-rt` entity.
+    //
+    // The remaining lowercase fields are a KNOWN collision surface, listed
+    // rather than ignored: an API with an entity named `mode`, `options`,
+    // `features` or `rootctx` still breaks the zig target the same way. They
+    // predate this guard and renaming them is its own change; listing them
+    // means a NEW lowercase field fails here instead of joining them silently.
+    const KNOWN_LOWERCASE_FIELDS = ['mode', 'options', 'features', 'rootctx']
+
+    const sdkStruct = src.slice(src.indexOf('SDK = struct {'))
+    const fields = Array.from(
+      sdkStruct.slice(0, sdkStruct.indexOf('\n    pub fn '))
+        .matchAll(/^    (\w+): /gm)).map((m) => m[1])
+    ok(0 < fields.length, 'no SDK struct fields found — the check would be vacuous')
+
+    const reachable = fields
+      .filter((f) => f === f.toLowerCase())
+      .filter((f) => !KNOWN_LOWERCASE_FIELDS.includes(f))
+    deepStrictEqual(reachable, [],
+      'these zig SDK fields are spelled in a way zigVarName CAN produce, so an ' +
+      'entity of that name collides with them — give the field an uppercase ' +
+      'letter, or add it to KNOWN_LOWERCASE_FIELDS with a reason')
+
+    ok(fields.some((f) => f !== f.toLowerCase()),
+      'the utility field lost its uppercase spelling, so an entity name can ' +
+      'reach it again')
   })
 
 

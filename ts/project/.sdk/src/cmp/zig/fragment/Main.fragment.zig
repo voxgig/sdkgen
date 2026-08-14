@@ -22,13 +22,20 @@ const Spec = spec_mod.Spec;
 pub const ProjectNameSDK = struct {
     mode: []const u8 = "live",
     options: Value = .{ .null = {} },
-    // NOT named `utility`. Entity accessors are generated as methods on this
-    // same struct (MainEntity_zig), so an API with an entity called `utility`
-    // would collide: Zig rejects a local binding that shadows the declaration,
-    // and `sdk.utility` resolves to the FIELD, which makes the generated
-    // accessor unreachable. The public reader is `get_utility()`, so this name
-    // is internal and free to be one an entity name cannot produce.
-    util_rt: *Utility,
+    // NOT named `utility`, and NOT a name `zigVarName` can produce.
+    //
+    // Entity accessors are generated as methods on this same struct
+    // (MainEntity_zig), so an API with an entity called `utility` collided
+    // twice: Zig rejects a local binding that shadows the declaration, and
+    // `sdk.utility` resolves to the FIELD, which made the generated accessor
+    // unreachable.
+    //
+    // `zigVarName` lowercases every name it is given, so a field spelling with
+    // an uppercase letter is one no entity name can ever reach - which is why
+    // this is `sdkUtility` and not, say, `util_rt`, a name an entity called
+    // `util-rt` would map straight onto. The public reader is `get_utility()`,
+    // so this field is internal and free to be spelled this way.
+    sdkUtility: *Utility,
     features: std.ArrayList(Feature),
     rootctx: ?*Context = null,
 
@@ -37,22 +44,22 @@ pub const ProjectNameSDK = struct {
         sdk.* = .{
             .mode = "live",
             .options = h.vnull(),
-            .util_rt = Utility.new(),
+            .sdkUtility = Utility.new(),
             .features = std.ArrayList(Feature).init(h.A()),
             .rootctx = null,
         };
 
         const cfg = config.make_config();
 
-        const rootctx = sdk.util_rt.make_context(CtxSpec{
+        const rootctx = sdk.sdkUtility.make_context(CtxSpec{
             .client = sdk,
-            .utility = sdk.util_rt,
+            .utility = sdk.sdkUtility,
             .config = cfg,
             .options = options,
             .shared = h.omap(),
         }, null);
 
-        const opts = sdk.util_rt.make_options(rootctx);
+        const opts = sdk.sdkUtility.make_options(rootctx);
         sdk.options = opts;
 
         if (h.veq(h.getpath(&.{ "feature", "test", "active" }, opts), h.vbool(true))) {
@@ -77,7 +84,7 @@ pub const ProjectNameSDK = struct {
                 const fopts = h.getp(feature_opts, fname);
                 if (fopts == .object) {
                     if (h.get_bool(fopts, "active") orelse false) {
-                        sdk.util_rt.feature_add(rootctx, config.make_feature(fname));
+                        sdk.sdkUtility.feature_add(rootctx, config.make_feature(fname));
                     }
                 }
             }
@@ -86,9 +93,9 @@ pub const ProjectNameSDK = struct {
         // Initialize features.
         var snap = std.ArrayList(Feature).init(h.A());
         for (sdk.features.items) |f| snap.append(f) catch {};
-        for (snap.items) |f| sdk.util_rt.feature_init(rootctx, f);
+        for (snap.items) |f| sdk.sdkUtility.feature_init(rootctx, f);
 
-        sdk.util_rt.feature_hook(rootctx, "PostConstruct");
+        sdk.sdkUtility.feature_hook(rootctx, "PostConstruct");
 
         return sdk;
     }
@@ -98,7 +105,7 @@ pub const ProjectNameSDK = struct {
     }
 
     pub fn get_utility(self: *ProjectNameSDK) *Utility {
-        return Utility.copy(self.util_rt);
+        return Utility.copy(self.sdkUtility);
     }
 
     pub fn get_root_ctx(self: *ProjectNameSDK) *Context {
@@ -117,7 +124,7 @@ pub const ProjectNameSDK = struct {
             else => h.omap(),
         };
 
-        const ctx = self.util_rt.make_context(CtxSpec{
+        const ctx = self.sdkUtility.make_context(CtxSpec{
             .opname = "prepare",
             .ctrl = ctrl,
         }, self.get_root_ctx());
@@ -139,7 +146,7 @@ pub const ProjectNameSDK = struct {
             else => h.omap(),
         };
 
-        const headers = self.util_rt.prepare_headers(ctx);
+        const headers = self.sdkUtility.prepare_headers(ctx);
 
         const specmap = h.jo(&.{
             .{ "base", h.getp(options, "base") },
@@ -163,9 +170,9 @@ pub const ProjectNameSDK = struct {
             while (it.next()) |kv| h.setp(spec.headers, kv.key_ptr.*, kv.value_ptr.*);
         }
 
-        _ = try self.util_rt.prepare_auth(ctx);
+        _ = try self.sdkUtility.prepare_auth(ctx);
 
-        return self.util_rt.make_fetch_def(ctx);
+        return self.sdkUtility.make_fetch_def(ctx);
     }
 
     // Raw endpoint access is operator-controllable, like every entity op.
@@ -222,13 +229,13 @@ pub const ProjectNameSDK = struct {
             else => h.omap(),
         };
 
-        const ctx = self.util_rt.make_context(CtxSpec{
+        const ctx = self.sdkUtility.make_context(CtxSpec{
             .opname = "direct",
             .ctrl = ctrl,
         }, self.get_root_ctx());
 
         const url = h.get_str(fetchdef, "url") orelse "";
-        const fetched = self.util_rt.fetch(ctx, url, fetchdef) catch {
+        const fetched = self.sdkUtility.fetch(ctx, url, fetchdef) catch {
             return h.jo(&.{
                 .{ "ok", h.vbool(false) },
                 .{ "err", h.vstr(if (ctx.pending_err) |e| e.msg else "fetch failed") },
