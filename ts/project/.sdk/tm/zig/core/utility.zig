@@ -368,6 +368,11 @@ pub fn make_options_util(ctx: *Context) Value {
             .{ "entity", h.jo(&.{.{ "`$OPEN`", h.vbool(true) }}) },
         }) },
         .{ "clean", h.jo(&.{.{ "keys", h.vstr("key,token,id") }}) },
+        // Server-variable values for a templated base URL (OpenAPI server
+        // variables): {name} placeholders in "base" are substituted from this
+        // map at construction. Spec defaults arrive via the generated config;
+        // user values override them. Mirrors go's make_options optspec.
+        .{ "server", h.jo(&.{.{ "`$CHILD`", h.vstr("") }}) },
     });
 
     // Preserve system.fetch before merge/validate (validation strips it).

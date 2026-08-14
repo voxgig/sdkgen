@@ -91,6 +91,12 @@ function elixirString(s: string): string {
   return '"' + String(s)
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
+    // `#` escaped because Elixir INTERPOLATES `\#{...}` inside a double-quoted
+    // string. Without this a model value containing `#{` is evaluated as code
+    // at compile time rather than emitted as text - which is both a wrong
+    // value and an arbitrary-expression hole. Escaping every `#` is simpler to
+    // reason about than escaping only `#{`, and `\#` is just `#` in Elixir.
+    .replace(/#/g, '\\#')
     .replace(/\n/g, '\\n')
     .replace(/\t/g, '\\t')
     + '"'

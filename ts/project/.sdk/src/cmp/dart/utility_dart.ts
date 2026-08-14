@@ -129,7 +129,25 @@ function clean(o: any, dropDefaults?: boolean): any {
 }
 
 
+
+// The JSON as a Dart string literal.
+//
+// Dart's ordinary string literals INTERPOLATE: `$name` and `${...}` are
+// substitution, and the model is full of `$` - `$STRING`, `$NUMBER`,
+// `$action`. A raw string (`r'...'`) would avoid that but cannot contain its
+// own quote character and has no escape for it, and the JSON contains both
+// quote characters in quantity.
+//
+// So: JSON.stringify's escaping, which already handles `"` and `\` and emits
+// no raw control characters, plus `$` -> `\$`. That last step is unambiguous
+// precisely because JSON.stringify has already escaped every backslash, so a
+// `\$` here can only have come from this rule.
+function dartStringLiteral(json: string): string {
+  return JSON.stringify(json).replace(/\$/g, '\\$')
+}
+
 export {
+  dartStringLiteral,
   clean,
   dartString,
   dartValue,

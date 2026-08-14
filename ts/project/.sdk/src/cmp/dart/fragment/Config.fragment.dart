@@ -24,15 +24,12 @@ class Config {
     // #FeatureConfigs
   };
 
-  final Map<String, dynamic> options = <String, dynamic>{
-    'base': 'BASEURL',
-
-    'AUTHBLOCK''headers': 'HEADERS',
-
-    'entity': <String, dynamic>{
-      // #EntityConfigs
-    }
-  };
+  // Rendered whole from the canonical config definition rather than assembled
+  // slot by slot. Assembling it here meant `options.server` - the OpenAPI
+  // server-variable defaults - was simply absent from this branch, so a
+  // templated server URL produced a different config either side of the
+  // threshold.
+  final Map<String, dynamic> options = 'OPTIONSMAP';
 
   final Map<String, dynamic> entity = 'ENTITYMAP';
 
