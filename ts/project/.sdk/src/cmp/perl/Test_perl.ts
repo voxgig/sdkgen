@@ -42,7 +42,9 @@ done_testing();
 `)
     })
 
-    each(model.main[KIT].entity, (entity: ModelEntity) => {
+    const entity = getModelPath(model, `main.${KIT}.entity`)
+
+    each(entity, (entity: ModelEntity) => {
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })

@@ -538,6 +538,30 @@ describe('generate', () => {
 
   // --- Regressions: the three defects this suite was written for ------------
 
+  // Root.ts (shipped by create-sdkgen, replicated here by makeRoot — sdkgen
+  // itself carries no copy) read the raw entity map and looped over every
+  // entity regardless of `active`, ignoring the flag the model reference
+  // documents as "whether the entity is generated". Test_ts.ts (and every
+  // other language's Test_<lang>.ts) had the same defect independently: its
+  // own raw `model.main[KIT].entity` read, not fed through the already-fixed
+  // list Main/Root iterate. An inactive entity therefore still got a full
+  // source file AND a full test suite.
+  test('an inactive entity generates no source file and no test file', async () => {
+    const extra = "main: kit: entity: history: active: false\n"
+    const out = await generate(['ts'], undefined, extra)
+    const files = filesFor(out, 'ts').map(([p]) => p)
+
+    ok(files.some((p) => p.endsWith('PlanetEntity.ts')),
+      'control failed: active entity Planet missing from ts output')
+    ok(!files.some((p) => p.endsWith('HistoryEntity.ts')),
+      'inactive entity History still generated a source file: ' +
+      files.filter((p) => p.includes('History')).join(', '))
+    ok(!files.some((p) => p.includes('/entity/history/')),
+      'inactive entity History still generated test files: ' +
+      files.filter((p) => p.includes('/entity/history/')).join(', '))
+  })
+
+
   // elixir: a singleton endpoint has no required match keys, so the load
   // example took no second argument. Emitting one anyway produced
   // `load(ent, )`, which does not parse.

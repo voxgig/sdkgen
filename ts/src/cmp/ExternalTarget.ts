@@ -88,7 +88,7 @@ const ExternalTarget = cmp(function ExternalTarget(props: any) {
     names(target, target.name)
 
     if (phaseActive('entity')) {
-      each(entity, (entity: any) => {
+      each(entity).filter((entity: any) => entity.active).map((entity: any) => {
         names(entity, entity.name)
         Entity({ target, entity })
       })

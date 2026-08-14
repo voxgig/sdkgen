@@ -33,7 +33,9 @@ const Test = cmp(function Test(props: any) {
 
     const entities: { Name: string; entity: boolean; direct: boolean }[] = []
 
-    each(model.main[KIT].entity, (entity: ModelEntity) => {
+    const entity = getModelPath(model, `main.${KIT}.entity`)
+
+    each(entity, (entity: ModelEntity) => {
       const EntityName = nom(entity, 'Name')
 
       const basicflow: any =

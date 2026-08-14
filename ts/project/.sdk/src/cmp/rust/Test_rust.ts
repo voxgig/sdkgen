@@ -39,7 +39,9 @@ fn exists_test_mode() {
 `)
     })
 
-    each(model.main[KIT].entity, (entity: ModelEntity) => {
+    const entity = getModelPath(model, `main.${KIT}.entity`)
+
+    each(entity, (entity: ModelEntity) => {
       TestEntity({ target, entity, rustcrate })
       TestDirect({ target, entity, rustcrate })
     })
