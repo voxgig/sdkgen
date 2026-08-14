@@ -874,6 +874,7 @@ describe('config representation is chosen by size', () => {
     ['dart', 'Config_dart.ts', 'Config\\.data\\.fragment\\.dart', 'Config\\.fragment\\.dart'],
     ['elixir', 'Config_elixir.ts', '@config_data', 'Helpers\\.deep'],
     ['clojure', 'Config_clojure.ts', 'core/json-parse', 'formatCljValue'],
+    ['ocaml', 'Config_ocaml.ts', 'Sdk_json\\.json_read', 'formatOcamlValue'],
   ]
 
   // The clojure data constant must be CHUNKED under the JVM limit.
@@ -933,6 +934,7 @@ describe('config representation is chosen by size', () => {
     ['zig', 'core/utility.zig'],
     ['elixir', 'lib/projectname/utility.ex'],
     ['clojure', 'src/sdk/core.clj'],
+    ['ocaml', 'sdk_runtime.ml'],
   ]
 
   for (const [target, file] of SERVER_OPTSPEC) {
