@@ -872,7 +872,38 @@ describe('config representation is chosen by size', () => {
     ['rust', 'Config_rust.ts', 'rustRawString\\(configJson\\)', 'formatRustValue'],
     ['zig', 'Config_zig.ts', 'CONFIG_DATA: \\[\\]const u8', 'formatZigValue'],
     ['dart', 'Config_dart.ts', 'Config\\.data\\.fragment\\.dart', 'Config\\.fragment\\.dart'],
+    ['elixir', 'Config_elixir.ts', '@config_data', 'Helpers\\.deep'],
   ]
+
+  // Every target whose generated config can carry `options.server` must also
+  // ACCEPT it in the option spec `make_options` validates against.
+  //
+  // These are not independent: rendering options from the canonical definition
+  // is what put `server` into the config, and a target that emits a key its own
+  // validator rejects fails at client construction. elixir demonstrated it -
+  // 75 of its 151 generated tests failed with
+  // `Unexpected keys at field <root>: server` - and the same gap is open in a
+  // dozen targets that do not emit `server` yet.
+  const SERVER_OPTSPEC: [string, string][] = [
+    ['go', 'utility/make_options.go'],
+    ['py', 'pkg/utility/make_options.py'],
+    ['rb', 'utility/make_options.rb'],
+    ['dart', 'lib/utility/MakeOptionsUtility.dart'],
+    ['rust', 'utility/make_options.rs'],
+    ['zig', 'core/utility.zig'],
+    ['elixir', 'lib/projectname/utility.ex'],
+  ]
+
+  for (const [target, file] of SERVER_OPTSPEC) {
+    test(target + ': the option spec accepts options.server', () => {
+      const path = Path.join(TM, target, file)
+      ok(existsSync(path), target + ': no ' + file)
+      const src = readFileSync(path, 'utf8')
+      ok(/["'`]server["'`]/.test(src),
+        target + ': make_options does not accept `server`, so a spec with a ' +
+        'templated server URL fails validation at client construction')
+    })
+  }
 
   // Targets whose config has ALWAYS been emitted as data, at every size, from
   // before rung L1 existed. They are past L1 rather than exempt from it: there

@@ -4,8 +4,11 @@ import {
   File,
   Folder,
   cmp,
+  configDefinition,
+  configReprSetting,
   each,
   isAuthActive,
+  isConfigData,
   resolveAuthPrefix,
 } from '@voxgig/sdkgen'
 
@@ -53,7 +56,44 @@ const Config = cmp(async function Config(props: any) {
   }, true), a), {})
 
   Folder({ name: 'lib' }, () => {
+    // The same config as an OBJECT, built by the shared helper so this
+    // target's literal and the data that replaces it above the threshold are
+    // the same config by construction. The JSON is what the threshold is
+    // measured on - emitted source size varies by language, the model does not.
+    const { def: configDef, json: configJson } = configDefinition(model)
+    const asData = isConfigData(configJson, configReprSetting(model))
+
     File({ name: 'config.ex' }, () => {
+
+      // ABOVE THE THRESHOLD: emit the model as DATA.
+      //
+      // The literal is one nested `%{}` the Elixir compiler expands and holds
+      // in the module's constant pool; a binary is one token. `Json.parse`
+      // builds the vendored struct's heap nodes DIRECTLY - the same nodes
+      // `Helpers.deep/1` produces from a plain map - so make_config returns
+      // exactly what it returned before.
+      //
+      // `ProjectName.Json` is already the SDK's response decoder (see
+      // `safe_json` in utility.ex), so this adds no dependency.
+      if (asData) {
+        Content(`# ${Name} SDK configuration
+#
+# THE API MODEL, EMBEDDED AS DATA (sdkgen rung L1).
+#
+# Emitted only above a size threshold, or when \`main.kit.config.repr\` pins
+# it: for a small model the literal is smaller and far easier to read when
+# debugging. Do not edit by hand.
+
+defmodule ${Name}.Config do
+  @config_data ${elixirString(configJson)}
+
+  def make_config do
+    ${Name}.Json.parse(@config_data)
+  end
+end
+`)
+        return
+      }
 
       Content(`# ${Name} SDK configuration
 #
@@ -72,20 +112,13 @@ defmodule ${Name}.Config do
 `)
       })
 
+      // `options` rendered WHOLE from the canonical definition rather than
+      // assembled slot by slot. Assembling it meant `options.server` - the
+      // OpenAPI server-variable defaults - was simply absent from this branch,
+      // so a templated server URL described a different config either side of
+      // the threshold. Same fix as dart, rust and zig.
       Content(`      },
-      "options" => %{
-        "base" => ${elixirString(baseUrl)},
-${authBlock}        "headers" => ${formatElixir(headers, 4)},
-        "entity" => %{
-`)
-
-      each(entity, (e: any) => {
-        Content(`          ${elixirString(e.name)} => %{},
-`)
-      })
-
-      Content(`        }
-      },
+      "options" => ${formatElixir(configDef.options, 3)},
       "entity" => ${formatElixir(entityClean, 3)}
     })
   end

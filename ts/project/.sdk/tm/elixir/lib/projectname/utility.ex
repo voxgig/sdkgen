@@ -263,7 +263,14 @@ defmodule ProjectName.Utility do
         "utility" => %{},
         "system" => %{},
         "test" => %{"active" => false, "entity" => %{"`$OPEN`" => true}},
-        "clean" => %{"keys" => "key,token,id"}
+        "clean" => %{"keys" => "key,token,id"},
+        # Server-variable values for a templated base URL (OpenAPI server
+        # variables): {name} placeholders in "base" are substituted from this
+        # map at construction. Spec defaults arrive via the generated config;
+        # user values override them. Mirrors go's make_options optspec - elixir
+        # was the only target validating options that did not accept it, so a
+        # spec with a templated server URL failed validation outright.
+        "server" => %{"`$CHILD`" => ""}
       })
 
     sys_fetch = S.getpath(opts0, "system.fetch")
