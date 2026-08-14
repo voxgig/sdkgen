@@ -10,8 +10,14 @@ exports.isAuthActive = isAuthActive;
 exports.resolveAuthPrefix = resolveAuthPrefix;
 exports.isConfigData = isConfigData;
 exports.configRepr = configRepr;
+exports.configReprSetting = configReprSetting;
+exports.configDefinition = configDefinition;
+exports.clean = clean;
+exports.rawStringLiteral = rawStringLiteral;
 const node_path_1 = __importDefault(require("node:path"));
+const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
+const serverVars_1 = require("./helpers/serverVars");
 // Where a per-target component is loaded from: `<project>/.sdk/dist/<path>`.
 //
 // `ctx$.folder` is jostraca's OUTPUT folder, which is the project for an
@@ -139,5 +145,143 @@ function isConfigData(configJson, repr) {
 // is visible rather than showing up as an unexplained whole-file diff.
 function configRepr(configJson, repr) {
     return isConfigData(configJson, repr) ? 'data' : 'literal';
+}
+// The per-SDK override, or 'auto'. `main.kit.config.repr` is optional, and
+// getModelPath throws rather than returning undefined for an absent path.
+function configReprSetting(model) {
+    try {
+        return (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.repr`) || 'auto';
+    }
+    catch (_e) {
+        return 'auto';
+    }
+}
+// L0 NORMALISATION: strip what the emitted config must not carry.
+//
+// Three kinds of noise, and the distinction between them matters:
+//
+//   MODEL_META      jostraca's `each` injects index$/key$/val$ into every node
+//                   it iterates. Pure bookkeeping, and it leaked into every
+//                   generated SDK for years (5,231 occurrences in gitlab
+//                   alone) because this helper deleted keys during a walk that
+//                   assigned them straight back.
+//
+//   CONFIG_DEFAULT  a key whose value equals the default the reader already
+//                   applies. Emitting it is pure bulk. Only these three names
+//                   are dropped, and only at their default value - `entity$`
+//                   is real Seneca data, so no blanket suffix rule.
+//
+//   PAYLOAD_KEYS    the boundary. Under `default`/`example`/`examples` the
+//                   value is API DATA, not config, and an example that happens
+//                   to contain `active: true` must survive intact. Below one of
+//                   these keys default-dropping stops; metadata stripping does
+//                   not, because jostraca's bookkeeping is never payload.
+const MODEL_META = ['index$', 'key$', 'val$'];
+const CONFIG_DEFAULT = {
+    active: true,
+    req: false,
+    reqd: false,
+};
+const PAYLOAD_KEYS = ['default', 'example', 'examples'];
+function clean(o, dropDefaults) {
+    // Rebuild rather than delete in place: the caller's model is shared with
+    // every other component, and mutating it here would strip metadata a later
+    // target still needs.
+    const prune = (node, defaults) => {
+        if (Array.isArray(node))
+            return node.map((n) => prune(n, defaults));
+        if (null != node && 'object' === typeof node) {
+            const out = {};
+            for (const k of Object.keys(node)) {
+                if (MODEL_META.includes(k))
+                    continue;
+                // An ABSENT optional member, dropped rather than carried as undefined.
+                //
+                // Callers build `{fields, name, op, relations}` from an entity, and
+                // `op` and `relations` are optional - so the key exists with value
+                // undefined. JSON.stringify silently omits such a key, while the
+                // literal formatters emit it as None/nil/null, and the two
+                // representations would describe different configs for any entity
+                // without an `op`. Dropping it here fixes both branches at once,
+                // because both reach the emitter through this function.
+                if (undefined === node[k])
+                    continue;
+                if (defaults && k in CONFIG_DEFAULT && CONFIG_DEFAULT[k] === node[k])
+                    continue;
+                out[k] = prune(node[k], defaults && !PAYLOAD_KEYS.includes(k));
+            }
+            return out;
+        }
+        return node;
+    };
+    return prune(o, true === dropDefaults);
+}
+// The JSON as a source-level string literal, for a language whose SINGLE
+// quoted literal neither interpolates nor processes escapes beyond the quote
+// and the backslash - Ruby, PHP, Perl, Lua.
+//
+// Reproducing the JSON text VERBATIM is all that is needed, because the JSON
+// already encodes control characters and non-ASCII itself. That is why this is
+// preferred over the double-quoted form in those languages: Ruby and PHP
+// interpolate (`#{...}`, `$var`) and Lua does not understand `\uXXXX` at all,
+// so a double-quoted literal would need a language-specific escape table and
+// would get it wrong for exactly the inputs nobody tests.
+function rawStringLiteral(s) {
+    return "'" + s.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+}
+// THE CANONICAL CONFIG OBJECT, and the JSON the threshold is measured on.
+//
+// Every target builds its config from this one function, so the literal a
+// target emits and the data that replaces it above the threshold cannot
+// describe different configs - which is the entire promise of rung L1. Before
+// this existed each target assembled its own, and they had already drifted:
+// `feature.<name>` came out as `{}` in Go and as nothing at all in ts when a
+// feature declared no config.
+//
+// Key order is `each`'s order, which is sorted, so the JSON is byte-stable
+// across runs exactly like the literal it replaces.
+function configDefinition(model) {
+    const entity = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.entity`);
+    const feature = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature`);
+    const headers = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.headers`) || {};
+    const authActive = isAuthActive(model);
+    const authPrefix = resolveAuthPrefix(model);
+    let baseUrl = '';
+    try {
+        baseUrl = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.info.servers.0.url`);
+    }
+    catch (_e) { }
+    const svars = (0, serverVars_1.serverVariables)(model);
+    const entityDefs = {};
+    const entityStubs = {};
+    (0, jostraca_1.each)(entity, (e) => {
+        entityDefs[e.name] = clean({
+            fields: e.fields,
+            name: e.name,
+            op: e.op,
+            relations: e.relations,
+        }, true);
+        entityStubs[e.name] = {};
+    });
+    const featureDefs = {};
+    (0, jostraca_1.each)(feature, (f) => {
+        featureDefs[f.name] = f.config || {};
+    });
+    const options = { base: baseUrl };
+    if (0 < svars.length) {
+        options.server = svars.reduce((a, v) => (a[v.name] = v.dflt, a), {});
+    }
+    if (authActive) {
+        options.auth = { prefix: authPrefix };
+    }
+    options.headers = headers;
+    options.entity = entityStubs;
+    const def = {
+        main: { name: model.const.Name },
+        feature: featureDefs,
+        options,
+        entity: entityDefs,
+    };
+    return { def, json: JSON.stringify(def) };
 }
 //# sourceMappingURL=utility.js.map

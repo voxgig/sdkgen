@@ -378,6 +378,67 @@ describe('generate', () => {
   })
 
 
+  // EVERY L1 TARGET, on the data path.
+  //
+  // `main.kit.config.repr` pins it, so a fixture that is nowhere near the
+  // 256 KB threshold still generates the branch every large SDK depends on.
+  // Each entry names the generated config file, the marker that proves the
+  // DATA branch ran, and the marker that proves the LITERAL branch did not.
+  const L1_DATA: [string, RegExp, RegExp, RegExp][] = [
+    ['go', /core\/config\.go$/, /const configJSON = "/, /return map\[string\]any\{/],
+    ['ts', /src\/Config\.ts$/, /const CONFIG_DATA = "/, /^\s*entity = \{/m],
+    ['js', /src\/Config\.js$/, /const CONFIG_DATA = "/, /^\s*entity = \{/m],
+    ['py', /config\.py$/, /_CONFIG_DATA = "/, /^\s+return \{$/m],
+    ['rb', /config\.rb$/, /CONFIG_DATA = '/, /"main" => \{/],
+    ['php', /config\.php$/, /const CONFIG_DATA = '/, /"main" => \[/],
+    ['lua', /config\.lua$/, /local CONFIG_DATA = \[=*\[/, /^\s*main = \{$/m],
+    ['c', /core\/config\.c$/, /static const char CONFIG_DATA\[\] =/, /return cmap\(/],
+    ['rust', /core\/config\.rs$/, /const CONFIG_DATA: &str = r/, /Value::map_of\(\[/],
+    ['zig', /core\/config\.zig$/, /const CONFIG_DATA: \[\]const u8 =/, /return h\.jo\(&\./],
+  ]
+
+  for (const [target, file, dataMark, litMark] of L1_DATA) {
+    test(target + ': a full SDK generates on the data path', async () => {
+      const out = await generate([target], undefined, "main: kit: config: repr: 'data'")
+      const files = filesFor(out, target)
+      ok(20 < files.length, target + ': data path produced a suspiciously small SDK')
+
+      const config = files.find(([n]) => file.test(n))
+      ok(config, target + ': no config file matching ' + file)
+      const src = String(config![1])
+
+      ok(dataMark.test(src), target + ': config was not emitted as data')
+      ok(!litMark.test(src), target + ': data path still emitted a literal')
+
+      // The REAL model has to be in there, not an empty shell that happens to
+      // carry the marker. Every entity the fixture declares, and the main
+      // block, must appear inside the embedded JSON.
+      //
+      // Unescape first: a target embedding the JSON in a double-quoted literal
+      // (go, ts, js, py) has every `"` backslashed in the SOURCE, while one
+      // using a raw literal (rb, php, lua) carries the JSON verbatim. The model
+      // is the same either way, so compare against the same text either way.
+      const plain = src.replace(/\\"/g, '"')
+      ok(plain.includes('"main":{"name":"Demo"}'),
+        target + ': embedded config is missing the main block')
+      for (const entity of ['planet', 'ambient', 'history', 'console']) {
+        ok(plain.includes('"' + entity + '"'),
+          target + ': embedded config is missing entity ' + entity)
+      }
+    })
+
+
+    test(target + ': the same model pinned to literal emits a literal', async () => {
+      const out = await generate([target], undefined, "main: kit: config: repr: 'literal'")
+      const config = filesFor(out, target).find(([n]) => file.test(n))
+      ok(config, target + ': no config file matching ' + file)
+      const src = String(config![1])
+      ok(litMark.test(src), target + ': literal branch not emitted')
+      ok(!dataMark.test(src), target + ': literal path emitted data as well')
+    })
+  }
+
+
   // THE POINT OF L1: the representation is an emission detail, and nothing
   // downstream may be able to tell which one it got.
   //
