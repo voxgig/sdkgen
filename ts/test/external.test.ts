@@ -398,13 +398,8 @@ describe('external target', () => {
   })
 
 
-  // A DIFFERENT off switch from the one above: an entity inactive within a
-  // target that IS generated. ExternalTarget.ts's phase-based entity loop
-  // (the out-of-tree counterpart of Root.ts's, exercised here by pointing the
-  // plain `ts` target itself out-of-tree rather than the seneca-provider
-  // consumer, which disables this phase and filters independently in its own
-  // Main) read the raw entity map with no `active` check, so an inactive
-  // entity still got a full source file at the destination.
+  // ExternalTarget.ts's own entity loop (unlike seneca-provider, which
+  // disables this phase) had no `active` check at all.
   test('an inactive entity is excluded from a plain target generated out-of-tree', async () => {
     const { outside } = await generate(['ts'], 'ts',
       'main: kit: entity: history: active: false\n')

@@ -776,14 +776,8 @@ describe('generate', () => {
 
   // --- Regressions: the three defects this suite was written for ------------
 
-  // Root.ts (shipped by create-sdkgen, replicated here by makeRoot — sdkgen
-  // itself carries no copy) read the raw entity map and looped over every
-  // entity regardless of `active`, ignoring the flag the model reference
-  // documents as "whether the entity is generated". Test_ts.ts (and every
-  // other language's Test_<lang>.ts) had the same defect independently: its
-  // own raw `model.main[KIT].entity` read, not fed through the already-fixed
-  // list Main/Root iterate. An inactive entity therefore still got a full
-  // source file AND a full test suite.
+  // Root.ts (via makeRoot) and every Test_<lang>.ts each read the raw,
+  // unfiltered entity map independently, ignoring `active`.
   test('an inactive entity generates no source file and no test file', async () => {
     const extra = "main: kit: entity: history: active: false\n"
     const out = await generate(['ts'], undefined, extra)
