@@ -7,8 +7,15 @@ declare function requirePath(ctx$: any, path: string, flags?: {
 declare class SdkGenError extends Error {
     constructor(...args: any[]);
 }
-export { resolvePath, requirePath, isAuthActive, resolveAuthPrefix, SdkGenError, CONFIG_DATA_THRESHOLD, CONFIG_REPR_VALUES, isConfigData, configRepr, };
+export { resolvePath, requirePath, isAuthActive, resolveAuthPrefix, SdkGenError, CONFIG_DATA_THRESHOLD, CONFIG_REPR_VALUES, isConfigData, configRepr, configReprSetting, configDefinition, clean, rawStringLiteral, };
 declare const CONFIG_DATA_THRESHOLD: number;
 declare const CONFIG_REPR_VALUES: string[];
 declare function isConfigData(configJson: string, repr?: string): boolean;
 declare function configRepr(configJson: string, repr?: string): string;
+declare function configReprSetting(model: any): string;
+declare function clean(o: any, dropDefaults?: boolean): any;
+declare function rawStringLiteral(s: string): string;
+declare function configDefinition(model: any): {
+    def: any;
+    json: string;
+};

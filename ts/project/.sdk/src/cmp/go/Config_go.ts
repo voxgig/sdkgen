@@ -9,6 +9,9 @@ import {
   Line,
   cmp,
   each,
+  clean,
+  configDefinition,
+  configReprSetting,
   isAuthActive,
   isConfigData,
   resolveAuthPrefix,
@@ -25,7 +28,6 @@ import {
 
 
 import {
-  clean,
   formatGoMap,
   goFeatureName,
 } from './utility_go'
@@ -63,57 +65,12 @@ const Config = cmp(async function Config(props: any) {
 			},\n`
     : ''
 
-  // Config is now in core/ package
-  // The same config as an OBJECT. Built regardless of which representation
-  // wins, because the JSON is what the threshold is measured on - the emitted
-  // source size varies by language, the model does not.
-  const entityDefs: any = {}
-  each(entity, (e: any) => {
-    entityDefs[e.name] = clean({
-      fields: e.fields,
-      name: e.name,
-      op: e.op,
-      relations: e.relations,
-    }, true)
-  })
-
-  const featureDefs: any = {}
-  each(feature, (f: any) => {
-    featureDefs[f.name] = f.config || {}
-  })
-
-  const entityStubs: any = {}
-  each(entity, (e: any) => {
-    entityStubs[e.name] = {}
-  })
-
-  const optionsDef: any = { base: baseUrl }
-  if (0 < svars.length) {
-    optionsDef.server = svars.reduce(
-      (a: any, v: any) => (a[v.name] = v.dflt, a), {})
-  }
-  if (authActive) {
-    optionsDef.auth = { prefix: authPrefix }
-  }
-  optionsDef.headers = headers
-  optionsDef.entity = entityStubs
-
-  // Key order here is the order `each` produced, which is sorted, so the
-  // emitted JSON is byte-stable across runs like the literal it replaces.
-  const configDef = {
-    main: { name: model.const.Name },
-    feature: featureDefs,
-    options: optionsDef,
-    entity: entityDefs,
-  }
-  const configJson = JSON.stringify(configDef)
-
-  // `auto` decides by size; 'data'/'literal' pin it for this SDK.
-  let configReprSetting = 'auto'
-  try {
-    configReprSetting = getModelPath(model, `main.${KIT}.config.repr`) || 'auto'
-  } catch (_e) { }
-  const asData = isConfigData(configJson, configReprSetting)
+  // The same config as an OBJECT, built by the shared helper so this target's
+  // literal and the data that replaces it above the threshold are the same
+  // config by construction. The JSON is what the threshold is measured on -
+  // emitted source size varies by language, the model does not.
+  const { json: configJson } = configDefinition(model)
+  const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'config.' + target.ext }, () => {
 

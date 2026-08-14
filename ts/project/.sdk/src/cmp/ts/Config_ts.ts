@@ -8,6 +8,9 @@ import {
   Fragment,
   Line,
   cmp,
+  clean,
+  configDefinition,
+  configReprSetting,
   each,
   indent,
   isAuthActive,
@@ -26,7 +29,6 @@ import {
 
 
 import {
-  clean,
   formatJson,
 } from './utility_ts'
 
@@ -75,58 +77,16 @@ const Config = cmp(async function Config(props: any) {
     baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`)
   } catch (_e) { }
 
-  // The same config as an OBJECT, so it can be measured and, above the
-  // threshold, emitted as data instead of as class field literals. Mirrors the
-  // literal branch below exactly - feature config is NOT cleaned here, because
-  // it is not cleaned there either.
-  const entityDefs: any = {}
-  each(entity, (e: any) => {
-    entityDefs[e.name] = clean({
-      fields: e.fields,
-      name: e.name,
-      op: e.op,
-      relations: e.relations,
-    }, true)
-  })
-
-  const featureDefs: any = {}
-  each(feature, (f: any) => {
-    featureDefs[f.name] = f.config
-  })
-
-  const entityStubs: any = {}
-  each(entity, (e: any) => {
-    entityStubs[e.name] = {}
-  })
-
-  const optionsDef: any = { base: baseUrl }
-  if (0 < svars.length) {
-    optionsDef.server = svars.reduce(
-      (a: any, v: any) => (a[v.name] = v.dflt, a), {})
-  }
-  if (authActive) {
-    optionsDef.auth = { prefix: authPrefix }
-  }
-  optionsDef.headers = headers
-  optionsDef.entity = entityStubs
-
-  const configDef = {
-    main: { name: model.const.Name },
-    feature: featureDefs,
-    options: optionsDef,
-    entity: entityDefs,
-  }
-  const configJson = JSON.stringify(configDef)
-
-  // `auto` decides by size; 'data'/'literal' pin it for this SDK.
-  let configReprSetting = 'auto'
-  try {
-    configReprSetting = getModelPath(model, `main.${KIT}.config.repr`) || 'auto'
-  } catch (_e) { }
+  // The same config as an OBJECT, built by the shared helper so this target's
+  // literal and the data that replaces it above the threshold are the same
+  // config by construction. The JSON is what the threshold is measured on -
+  // emitted source size varies by language, the model does not.
+  const { json: configJson } = configDefinition(model)
+  const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'Config.' + target.ext }, () => {
 
-    if (isConfigData(configJson, configReprSetting)) {
+    if (asData) {
       Fragment({
         from: ff + 'Config.data.fragment.ts',
 
