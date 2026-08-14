@@ -226,8 +226,12 @@ ${aboutMd.trim()}
             }
             else if ('create' === primaryOp || 'update' === primaryOp) {
                 const exIdF = (0, opShape_1.entityIdField)(exEnt);
+                // Drop the id only when the request shape says it is OPTIONAL. It is
+                // server-assigned on a normal create, but an op whose id comes from a
+                // PATH PARAMETER requires it, and the typed CreateData then rejects a
+                // body without it. Same rule as dataArg in helpers/opExample.
                 const shapeItems = (0, opShape_1.opRequestShape)(exEnt, primaryOp).items
-                    .filter((it) => it.name !== exIdF && it.name !== 'id');
+                    .filter((it) => (it.name !== exIdF && it.name !== 'id') || !it.optional);
                 const required = shapeItems.filter((it) => !it.optional);
                 // ALL required fields must appear or the literal is not assignable to
                 // the typed CreateData/UpdateData; cap only the optional fallback.
