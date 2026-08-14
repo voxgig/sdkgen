@@ -52,6 +52,9 @@ that matches what you are trying to do right now:
 - [The `py-data` target](./design/py-data-target.md) — notebook/analyst-oriented
   Python package layered on the `py` SDK. The design note that preceded the
   target; `py-data` now ships.
+- [sdkgen packages](./design/sdkgen-packages.md) — externally-defined
+  targets, features and other kinds, added from a local folder, a git
+  checkout, or an npm package installed in `.sdk/`. Proposal.
 
 ## For AI coding agents
 
