@@ -145,6 +145,21 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
             // tree rather than assumed (see helpers/featureSource), because each
             // language puts feature source somewhere different.
             const trim = trimFeatures(ctx$, tfolder, torigname, tname, features);
+            // Copy only ADDS and overwrites — it never removes, and it never even
+            // looks at a file the trim excludes. So a template that this SDK should
+            // NOT have lived on at whatever revision it was first copied at, and
+            // kept being generated from.
+            //
+            // That is how 30 cedar repos ended up with tm/go/test/feature_test.go
+            // still declaring the nine fh* harness helpers after upstream moved them
+            // into feature_harness_test.go: feature_test.go is feature-source, so it
+            // is trimmed for an SDK without those features, so Copy skipped it, so
+            // the pre-move revision survived every `target add go` those repos ever
+            // ran. Generation then emitted it alongside the new harness and the go
+            // package failed to compile — "fhHasFeature redeclared in this block".
+            //
+            // The invariant this restores: tm/<target> == source tree MINUS trim.
+            pruneStaleTemplates(ctx$, tfolder + '/tm/' + torigname, 'tm/' + tname, trim);
             (0, jostraca_1.Folder)({ name: 'tm/' + tname }, () => {
                 (0, jostraca_1.Copy)({
                     from: tfolder + '/tm/' + torigname,
@@ -168,6 +183,91 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
 // read. Trimming a target whose templates are not ready for it produces a
 // project that does not build, so an unreadable declaration must fail safe
 // rather than fail tidy.
+// Bring the consumer's `tm/<target>` back to the invariant that Copy alone
+// cannot maintain: it must contain EXACTLY the source tree minus the files
+// this SDK's feature set trims away.
+//
+// Copy adds and overwrites. It does not remove, and it does not touch an
+// excluded file at all — so both of these persist silently forever:
+//
+//   - a template the toolchain has RETIRED (absent from the source tree);
+//   - a template this SDK should not have (present in source, but trimmed),
+//     frozen at whatever revision it was first copied at.
+//
+// The second is the one that bit: tm/go/test/feature_test.go is feature
+// source, so it is trimmed for an SDK without those features, so it was never
+// refreshed after upstream moved the fh* harness helpers out of it.
+//
+// tm/ is toolchain-owned — the scaffold rewrites it on every add-target, and
+// model/guide/guide.aontu is the one file a user owns (merged separately by
+// create-sdkgen) — so removing what the toolchain says should not be there is
+// consistent with how the rest of that tree is already treated.
+function pruneStaleTemplates(ctx$, fromDir, toRel, trim) {
+    const { log } = ctx$;
+    const fs = ctx$.fs();
+    const folder = ctx$.folder ?? '.';
+    const destDir = node_path_1.default.join(folder, toRel);
+    const listRel = (root) => {
+        const out = [];
+        const walk = (dir, rel) => {
+            let entries;
+            try {
+                entries = fs.readdirSync(dir, { withFileTypes: true });
+            }
+            catch (e) {
+                return;
+            }
+            for (const ent of entries) {
+                const child = node_path_1.default.join(dir, ent.name);
+                const childRel = '' === rel ? ent.name : rel + '/' + ent.name;
+                if (ent.isDirectory()) {
+                    walk(child, childRel);
+                }
+                else {
+                    out.push(childRel);
+                }
+            }
+        };
+        walk(root, '');
+        return out;
+    };
+    const sourceFiles = listRel(fromDir);
+    // An unreadable source tree must not be read as "everything is stale" — that
+    // would empty the destination.
+    if (0 === sourceFiles.length) {
+        return;
+    }
+    // What SHOULD be present: source, minus anything the trim excludes. The trim
+    // patterns are matched against the source-relative path, the same way Copy
+    // applies them.
+    const trimmed = (rel) => trim.some((re) => re.test(rel));
+    const want = new Set(sourceFiles.filter((rel) => !trimmed(rel)));
+    const stale = listRel(destDir).filter((rel) => !want.has(rel));
+    if (0 === stale.length) {
+        return;
+    }
+    const removed = [];
+    for (const rel of stale) {
+        try {
+            fs.unlinkSync(node_path_1.default.join(destDir, rel));
+            removed.push(rel);
+        }
+        catch (e) {
+            log.warn({
+                point: 'target-template-prune', target: toRel, file: rel,
+                note: 'could not remove stale template ' + rel + ': ' + e.message
+            });
+        }
+    }
+    if (0 < removed.length) {
+        log.info({
+            point: 'target-template-prune', target: toRel, count: removed.length,
+            files: removed,
+            note: toRel + ': removed ' + removed.length +
+                ' stale template(s) the toolchain no longer provides for this SDK'
+        });
+    }
+}
 function trimFeatures(ctx$, tfolder, torigname, tname, features) {
     const { log } = ctx$;
     const fs = ctx$.fs();
