@@ -145,7 +145,7 @@ ${serverBlock}${authBlock}                "headers" => ${formatPhpArray(headers,
         name: n.name,
         op: n.op,
         relations: n.relations,
-      }), a), {}), 3)},
+      }, true), a), {}), 3)},
         ];
 `)
     }

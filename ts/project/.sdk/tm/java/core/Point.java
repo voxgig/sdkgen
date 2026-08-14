@@ -18,7 +18,9 @@ public class Point {
   public List<Object> parts = new ArrayList<>();
   public List<Object> params;
   public Map<String, Object> select;
-  public boolean active = false;
+  // Absent in config means ACTIVE: emission drops `active: true` as a
+  // default (sdkgen L0), so only an explicit `active: false` turns a point off.
+  public boolean active = true;
   public List<Object> relations;
   public Map<String, Object> alias = new LinkedHashMap<>();
   public Map<String, Object> transform = new LinkedHashMap<>();

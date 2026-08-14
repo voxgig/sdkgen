@@ -13,7 +13,9 @@ class Point(pointmap: Map<String, Any?>?) {
   var parts: MutableList<Any?> = mutableListOf()
   var params: MutableList<Any?>? = null
   var select: MutableMap<String, Any?>? = null
-  var active: Boolean = false
+  // Absent in config means ACTIVE: emission drops `active: true` as a
+  // default (sdkgen L0), so only an explicit `active: false` turns a point off.
+  var active: Boolean = true
   var relations: MutableList<Any?>? = null
   var alias: MutableMap<String, Any?> = linkedMapOf()
   var transform: MutableMap<String, Any?> = linkedMapOf()

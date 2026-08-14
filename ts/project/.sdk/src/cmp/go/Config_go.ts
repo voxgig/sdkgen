@@ -110,7 +110,7 @@ ${serverBlock}${authBlock}			"headers": ${formatGoMap(headers, 3)},
         name: n.name,
         op: n.op,
         relations: n.relations,
-      }), a), {}), 2)},
+      }, true), a), {}), 2)},
 	}
 }
 

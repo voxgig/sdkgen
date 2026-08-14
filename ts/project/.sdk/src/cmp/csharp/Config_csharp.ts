@@ -100,7 +100,7 @@ ${authBlock}                ["headers"] = ${formatCsMap(headers, 4)},
         name: n.name,
         op: n.op,
         relations: n.relations,
-      }), a), {}), 3)},
+      }, true), a), {}), 3)},
         };
     }
 

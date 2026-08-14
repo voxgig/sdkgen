@@ -50,7 +50,7 @@ const Config = cmp(async function Config(props: any) {
     name: n.name,
     op: n.op,
     relations: n.relations,
-  }), a), {})
+  }, true), a), {})
 
   Folder({ name: 'lib' }, () => {
     File({ name: 'config.ex' }, () => {

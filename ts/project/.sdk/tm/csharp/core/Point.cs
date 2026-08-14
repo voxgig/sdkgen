@@ -13,7 +13,9 @@ public class Point
     public List<object?> Parts = new();
     public List<object?>? Params;
     public Dictionary<string, object?>? Select;
-    public bool Active;
+    // Absent in config means ACTIVE: emission drops `active: true` as a
+    // default (sdkgen L0), so only an explicit `active: false` turns a point off.
+    public bool Active = true;
     public List<object?>? Relations;
     public Dictionary<string, object?> Alias = new();
     public Dictionary<string, object?> Transform = new();

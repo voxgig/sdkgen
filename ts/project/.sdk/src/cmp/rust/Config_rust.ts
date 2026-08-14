@@ -70,7 +70,7 @@ const Config = cmp(async function Config(props: any) {
       name: n.name,
       op: n.op,
       relations: n.relations,
-    }), a), {})
+    }, true), a), {})
 
   const config = {
     main: { name: model.const.Name },

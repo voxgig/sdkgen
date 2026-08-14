@@ -10,7 +10,9 @@ public final class Point {
   public var parts: VList = VList()
   public var params: VList? = nil
   public var select: VMap? = nil
-  public var active: Bool = false
+  // Absent in config means ACTIVE: emission drops `active: true` as a
+  // default (sdkgen L0), so only an explicit `active: false` turns a point off.
+  public var active: Bool = true
   public var relations: VList? = nil
   public var alias: VMap = VMap()
   public var transform: VMap = VMap()

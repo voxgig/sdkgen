@@ -577,6 +577,106 @@ describe('shared config cannot leak across clients', () => {
 })
 
 
+// clean() strips emission-only noise from the model before it is written into
+// a generated config. It was broken from the day it was written and nothing
+// noticed: it walked a clone calling `delete p[k]`, but walk() assigns its
+// callback's result back over the child, so every delete was undone on the way
+// out. Returning `undefined` instead is NOT the fix either — setprop stores
+// undefined rather than removing the key, and it emits as a null.
+//
+// These assert the OUTPUT, not the mechanism, so any future rewrite is free as
+// long as the keys actually go away.
+describe('clean() removes what it claims to remove', () => {
+
+  const subject = () => ({
+    keep: 'yes',
+    'index$': 0,
+    'key$': 'k',
+    'val$': 'v',
+    active: true,
+    req: false,
+    reqd: false,
+    inactive: { active: false, reqd: true, req: '`reqdata`' },
+    list: [{ name: 'a', 'index$': 0, active: true }, { name: 'b', 'index$': 1 }],
+  })
+
+  test('$-suffixed keys are gone, not nulled', () => {
+    const { clean } = loadGoUtility()
+    const out = clean(subject())
+
+    for (const k of ['index$', 'key$', 'val$']) {
+      ok(!(k in out), `${k} survived clean()`)
+    }
+    ok(!('index$' in out.list[0]), 'index$ survived inside a list element')
+    // The failure mode that looks like success: key present, value undefined.
+    // JSON.stringify hides it, so assert on the keys themselves.
+    for (const k of Object.keys(out)) {
+      ok(undefined !== out[k], `${k} was left undefined rather than removed`)
+    }
+    strictEqual(out.keep, 'yes')
+  })
+
+  test('defaults are dropped only when asked, and only on their own value', () => {
+    const { clean } = loadGoUtility()
+
+    const asis = clean(subject())
+    strictEqual(asis.active, true, 'active:true must survive without dropDefaults')
+    strictEqual(asis.req, false, 'req:false must survive without dropDefaults')
+
+    const dropped = clean(subject(), true)
+    ok(!('active' in dropped), 'active:true should be dropped')
+    ok(!('req' in dropped), 'req:false should be dropped')
+    ok(!('reqd' in dropped), 'reqd:false should be dropped')
+
+    // Only the DEFAULT value goes. The opposite value is meaningful and stays.
+    strictEqual(dropped.inactive.active, false, 'active:false is meaningful')
+    strictEqual(dropped.inactive.reqd, true, 'reqd:true is load-bearing (Select)')
+    // `req` is also a transform spec, not only a boolean flag.
+    strictEqual(dropped.inactive.req, '`reqdata`', 'req as a string must survive')
+  })
+
+  test('every target asks for default-dropping on its entity subtree', () => {
+    // The helper doing the right thing is only half of it — each Config
+    // component has to PASS dropDefaults at the entity call site. Two targets
+    // (perl, swift) name the entity `ent` rather than `n` and were silently
+    // missed by a sweep that assumed one spelling.
+    const CMP = Path.join(TM, '..', 'src', 'cmp')
+    const missing: string[] = []
+    for (const lang of sdkTargets()) {
+      const file = Path.join(CMP, lang, `Config_${lang}.ts`)
+      if (!existsSync(file)) continue
+      const src = readFileSync(file, 'utf8')
+      // The entity subtree is the call that carries fields/op/relations.
+      if (!/relations:\s*\w+\.relations/.test(src)) continue
+      if (!/relations:\s*\w+\.relations,\s*\n\s*\},\s*true\)/.test(src)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [],
+      'these emit the entity subtree without dropping default-valued keys')
+  })
+
+  test('every target strips $-keys, so no config ships jostraca metadata', () => {
+    // Cheap structural check across the other 22: the helper must not be the
+    // old delete-during-walk shape.
+    const CMP = Path.join(TM, '..', 'src', 'cmp')
+    const stale: string[] = []
+    for (const lang of sdkTargets()) {
+      const dir = Path.join(CMP, lang)
+      if (!existsSync(dir)) continue
+      for (const e of readdirSync(dir)) {
+        if (!/^utility_|^Main_/.test(e)) continue
+        const src = readFileSync(Path.join(dir, e), 'utf8')
+        if (/function (clean|cleanModel)\b/.test(src) && /delete p\[k\]\s*$/m.test(src)) {
+          stale.push(`${lang}/${e}`)
+        }
+      }
+    }
+    deepStrictEqual(stale, [], 'these still delete-during-walk, which does nothing')
+  })
+})
+
+
 describe('go feature identifiers are derived once', () => {
 
   const GO = Path.join(TM, '..', 'src', 'cmp', 'go')
