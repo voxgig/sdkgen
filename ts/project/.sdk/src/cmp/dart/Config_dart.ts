@@ -72,7 +72,7 @@ const Config = cmp(async function Config(props: any) {
   // literal and the data that replaces it above the threshold are the same
   // config by construction. The JSON is what the threshold is measured on -
   // emitted source size varies by language, the model does not.
-  const { json: configJson } = configDefinition(model)
+  const { def: configDef, json: configJson } = configDefinition(model)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'Config.' + target.ext }, () => {
@@ -115,11 +115,11 @@ const Config = cmp(async function Config(props: any) {
         // these; this one did not.
         ...ctx$.stdrep,
 
-        "'BASEURL'": JSON.stringify(baseUrl),
-
-        "'AUTHBLOCK'": authBlock,
-
-        "'HEADERS'": dartValue(headers, 2),
+        // The whole options map from the canonical definition. Assembling it
+        // slot by slot lost `options.server` entirely, so a spec with a
+        // templated server URL described a different config either side of the
+        // threshold.
+        "'OPTIONSMAP'": dartValue(configDef.options, 1),
 
         '// #ImportFeatures': () => each(feature, (f: any) => {
           Line(`import 'feature/${f.name}/${nom(f, 'Name')}Feature.dart';`)

@@ -520,6 +520,58 @@ describe('generate', () => {
   }
 
 
+  // Both dart branches must carry `options.server` — the OpenAPI
+  // server-variable defaults — for a spec with a templated server URL.
+  //
+  // The literal branch assembled `options` slot by slot and simply had no slot
+  // for `server`, so it was absent there and present in the data, and the same
+  // API described a different config either side of the threshold. It is now
+  // rendered whole from the canonical definition. The fixture has no server
+  // variables, which is why this test supplies its own.
+  test('dart: both representations carry the server-variable defaults', async () => {
+    const servers = "main: kit: info: servers: [ { url: 'https://{tenant}.example.com'," +
+      ' variables: { tenant: { default: %27acme%27 } } } ]'.replace(/%27/g, "'")
+
+    for (const repr of ['literal', 'data']) {
+      const out = await generate(['dart'], undefined,
+        `main: kit: config: repr: '${repr}'\n${servers}`)
+      const config = filesFor(out, 'dart').find(([n]) => /lib\/Config\.dart$/.test(n))
+      ok(config, repr + ': no dart Config.dart generated')
+      const plain = String(config![1]).replace(/\\"/g, '"')
+
+      ok(/server/.test(plain), repr + ': dart config lost options.server')
+      ok(/acme/.test(plain), repr + ': dart config lost the server-variable default')
+    }
+  })
+
+
+  // The dart DATA branch must give every constructed Config its own maps.
+  //
+  // The literal builds fresh maps in each field initialiser, so `Config()` is
+  // independent per instance — and `Config` is exported by Main.fragment.dart,
+  // so callers can construct one. A first version of the data branch bound the
+  // fields to a single top-level parsed map, which made
+  // `Config().options['x'] = 1` mutate the `config` singleton every SDK client
+  // reads. Verified by running it:
+  //
+  //   literal: b sees probe = false      data: b sees probe = true
+  //
+  // This is the structural guard for that: the decode must happen in the
+  // CONSTRUCTOR, not in a top-level final the fields alias.
+  test('dart: the data branch decodes per Config instance', async () => {
+    const out = await generate(['dart'], undefined, "main: kit: config: repr: 'data'")
+    const config = filesFor(out, 'dart').find(([n]) => /lib\/Config\.dart$/.test(n))
+    ok(config, 'no dart Config.dart generated')
+    const src = String(config![1])
+
+    ok(/Config\(\) : this\._\(jsonDecode\(_CONFIG_DATA\)/.test(src),
+      'dart data config does not decode in the constructor, so every ' +
+      'constructed Config would share one parsed map with the singleton')
+    ok(!/^final Map<String, dynamic> _CONFIG =/m.test(src),
+      'dart data config still binds its fields to a shared top-level map')
+  })
+
+
   // THE POINT OF L1: the representation is an emission detail, and nothing
   // downstream may be able to tell which one it got.
   //

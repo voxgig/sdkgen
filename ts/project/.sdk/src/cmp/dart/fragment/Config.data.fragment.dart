@@ -23,12 +23,26 @@ final Map<String, BaseFeature Function()> FEATURE_CLASS = {
 // to read when debugging.
 const String _CONFIG_DATA = 'CONFIGJSON';
 
-// Parsed ONCE, at first use, exactly like the literal form was built once:
-// a top-level `final` is lazily initialised and then cached by the runtime.
-final Map<String, dynamic> _CONFIG =
-    jsonDecode(_CONFIG_DATA) as Map<String, dynamic>;
-
 class Config {
+  // ONE decode per constructed Config, and each instance owns the maps it
+  // decoded. The literal representation builds fresh maps in every field
+  // initialiser, so a caller that constructs a second Config and mutates it
+  // does not touch the first - and `Config` is exported by Main.fragment.dart,
+  // so callers really can construct one.
+  //
+  // Sharing a single top-level parsed map would have been cheaper and was the
+  // first attempt; it made `Config().options['x'] = 1` mutate the `config`
+  // singleton every SDK client reads. Decoding per instance costs about what
+  // building the literal per instance cost, and the rung's win is untouched:
+  // L1 is about what the COMPILER has to walk, not what happens at load.
+  Config() : this._(jsonDecode(_CONFIG_DATA) as Map<String, dynamic>);
+
+  Config._(Map<String, dynamic> data)
+      : main = data['main'] as Map<String, dynamic>,
+        feature = data['feature'] as Map<String, dynamic>,
+        options = data['options'] as Map<String, dynamic>,
+        entity = data['entity'] as Map<String, dynamic>;
+
   BaseFeature makeFeature(String fn) {
     final fc = FEATURE_CLASS[fn];
     if (null == fc) {
@@ -38,16 +52,15 @@ class Config {
     return fc();
   }
 
-  // Read from the parsed model rather than declared as literals. The fields
-  // keep their names, types and `final`ness, so callers cannot tell which
-  // representation they were given.
-  final Map<String, dynamic> main = _CONFIG['main'] as Map<String, dynamic>;
+  // The same fields the literal declares - same names, same types, same
+  // finalness - so callers cannot tell which representation they were given.
+  final Map<String, dynamic> main;
 
-  final Map<String, dynamic> feature = _CONFIG['feature'] as Map<String, dynamic>;
+  final Map<String, dynamic> feature;
 
-  final Map<String, dynamic> options = _CONFIG['options'] as Map<String, dynamic>;
+  final Map<String, dynamic> options;
 
-  final Map<String, dynamic> entity = _CONFIG['entity'] as Map<String, dynamic>;
+  final Map<String, dynamic> entity;
 
   // The pipeline context carries the config as a plain map.
   Map<String, dynamic> toMap() => <String, dynamic>{
