@@ -25,7 +25,7 @@ class Config {
   };
 
   final Map<String, dynamic> options = <String, dynamic>{
-    'base': '$$main.kit.info.servers.0.url$$',
+    'base': 'BASEURL',
 
     'AUTHBLOCK''headers': 'HEADERS',
 

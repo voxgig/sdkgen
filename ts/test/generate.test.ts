@@ -378,6 +378,53 @@ describe('generate', () => {
   })
 
 
+  // ZIG: no entity accessor may collide with a field or local in the SDK type.
+  //
+  // Entity accessors are generated as methods on the SDK struct, so an API with
+  // an entity named after one of that struct's own members breaks the target
+  // twice over: Zig rejects a local binding that shadows a declaration, and
+  // `sdk.<name>` resolves to the FIELD, which makes the accessor unreachable.
+  //
+  // Both happened for real. The fixture has an entity called `utility` and the
+  // SDK struct had a `utility` field plus `const utility = self.utility;` in two
+  // methods, so the generated zig SDK did not compile AT ALL, and once it did,
+  // `sdk.utility(...)` still could not be called. The field is now `util_rt`
+  // and the locals are gone.
+  //
+  // This scan is the guard: it catches the next entity name to collide (an API
+  // with an entity called `options` or `headers` would do it) rather than
+  // leaving it to whoever compiles that SDK.
+  test('zig: no entity accessor collides with an SDK member', async () => {
+    const out = await generate(['zig'])
+    const sdkFile = filesFor(out, 'zig').find(([n]) => /core\/sdk\.zig$/.test(n))
+    ok(sdkFile, 'no zig core/sdk.zig generated')
+    const src = String(sdkFile![1])
+
+    // The accessors this model generated, from the emitted source itself.
+    const accessors = Array.from(src.matchAll(/pub fn (\w+)\(self: \*@This\(\), entopts: Value\)/g))
+      .map((m) => m[1])
+    ok(0 < accessors.length, 'no entity accessors found — the scan would be vacuous')
+    ok(accessors.includes('utility'),
+      'the fixture entity named `utility` is what makes this test bite')
+
+    const clashes: string[] = []
+    for (const name of accessors) {
+      // A local binding that shadows the accessor declaration.
+      if (new RegExp('^\\s+(const|var) ' + name + '\\s*[=:]', 'm').test(src)) {
+        clashes.push(name + ': local binding shadows the accessor')
+      }
+      // A struct FIELD of the same name, which wins over the method on `.`
+      // and makes the accessor unreachable.
+      if (new RegExp('^\\s+' + name + ': \\*?\\w', 'm').test(src)) {
+        clashes.push(name + ': struct field hides the accessor')
+      }
+    }
+    deepStrictEqual(clashes, [],
+      'zig entity accessors collide with SDK members — the generated SDK will ' +
+      'not compile, or the accessor cannot be called')
+  })
+
+
   // EVERY L1 TARGET, on the data path.
   //
   // `main.kit.config.repr` pins it, so a fixture that is nowhere near the
