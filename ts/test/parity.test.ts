@@ -486,6 +486,97 @@ describe('scaffold components are type-checked', () => {
 
 // Identifiers that one component DECLARES and another REFERENCES must be
 // derived in exactly one place. Two copies agree until one is fixed alone.
+// A target whose config is a process-wide singleton MUST clone the config
+// side before merging client options into it. `merge([{}, cfgopts, opts])`
+// uses cfgopts' nested maps as merge TARGETS, so without the clone the first
+// client's options (headers, server, ...) are written into the shared config
+// and inherited by every client constructed afterwards.
+//
+// ts/js carried this guard from the day their config became a module
+// singleton. go/py/rb/lua only became singletons when L2 landed, and the
+// omission was a silent cross-client data leak until then.
+const CLONES_CFGOPTS = ['go', 'js', 'lua', 'py', 'rb', 'ts']
+
+// php needs no clone: its arrays are copy-on-write value types, so merge
+// cannot reach the shared config through them.
+const CFGOPTS_VALUE_SEMANTICS = ['php']
+
+
+// The target's make_options template, whatever the language calls it.
+function makeOptionsFile(lang: string): string | undefined {
+  const found: string[] = []
+  const walk = (dir: string) => {
+    if (!existsSync(dir)) {
+      return
+    }
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = Path.join(dir, e.name)
+      if (e.isDirectory()) {
+        walk(p)
+      }
+      else if (/make_?options/i.test(e.name)) {
+        found.push(p)
+      }
+    }
+  }
+  walk(Path.join(TM, lang))
+  return found.sort()[0]
+}
+
+
+// Does this target emit a shared/singleton config accessor?
+function sharesConfig(lang: string): boolean {
+  const cmp = Path.join(TM, '..', 'src', 'cmp', lang)
+  if (!existsSync(cmp)) {
+    return false
+  }
+  for (const e of readdirSync(cmp)) {
+    if (!/^Config_/.test(e)) {
+      continue
+    }
+    const src = readFileSync(Path.join(cmp, e), 'utf8')
+    if (/shared_config|SharedConfig|config_shared/.test(src)) {
+      return true
+    }
+  }
+  // ts/js hold the singleton in a fragment, not the Config component.
+  const frag = Path.join(cmp, 'fragment', 'Config.fragment.' + ('ts' === lang ? 'ts' : 'js'))
+  return existsSync(frag) && /const config = new Config\(\)/.test(readFileSync(frag, 'utf8'))
+}
+
+
+describe('shared config cannot leak across clients', () => {
+
+  test('every target that shares its config has declared how it stays safe', () => {
+    const declared = [...CLONES_CFGOPTS, ...CFGOPTS_VALUE_SEMANTICS].sort()
+    const sharing = sdkTargets().filter(sharesConfig).sort()
+    deepStrictEqual(sharing, declared,
+      'a target started (or stopped) sharing its config without deciding how ' +
+      'client options stay isolated — add it to CLONES_CFGOPTS (and clone ' +
+      'cfgopts before the merge) or to CFGOPTS_VALUE_SEMANTICS')
+  })
+
+  test('targets that share a config clone cfgopts before merging', () => {
+    for (const lang of CLONES_CFGOPTS) {
+      const file = makeOptionsFile(lang)
+      ok(undefined !== file, `${lang}: no make_options template found`)
+      const src = readFileSync(file as string, 'utf8')
+
+      // The merge statement itself must clone — a clone anywhere else in the
+      // file (opts, mergeOptions) does not protect the config side.
+      const merge = src.split('\n').find(
+        (l) => /merge/i.test(l) && /cfgopts/i.test(l))
+      ok(undefined !== merge,
+        `${lang}: no line merges cfgopts — did make_options change shape?`)
+      ok(/clone\s*\(\s*\$?cfgopts/i.test(merge as string),
+        `${lang}: make_options merges the SHARED config without cloning it:\n` +
+        `  ${(merge as string).trim()}\n` +
+        'One client\'s options will contaminate every client built after it.')
+    }
+  })
+})
+
+
 describe('go feature identifiers are derived once', () => {
 
   const GO = Path.join(TM, '..', 'src', 'cmp', 'go')

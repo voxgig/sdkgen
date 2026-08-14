@@ -15,7 +15,7 @@ require_relative "../ProjectName_sdk"
 module ProjectNameFeatureHarness
   # True when this SDK was generated with the named feature.
   def self.has_feature?(name)
-    f = ProjectNameConfig.make_config["feature"]
+    f = ProjectNameConfig.shared_config["feature"]
     f.is_a?(Hash) && !f[name].nil?
   end
 
