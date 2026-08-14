@@ -477,6 +477,10 @@ describe('generate', () => {
     ['zig', /core\/config\.zig$/, /const CONFIG_DATA: \[\]const u8 =/, /return h\.jo\(&\./],
     ['dart', /lib\/Config\.dart$/, /const String _CONFIG_DATA = "/, /^\s*final Map<String, dynamic> main = <String, dynamic>\{/m],
     ['elixir', /lib\/config\.ex$/, /@config_data "/, /Helpers\.deep\(%\{/],
+    ['clojure', /src\/sdk\/config\.clj$/, /def \^:private config-data/, /formatCljValue|vs\/jm/],
+    ['ocaml', /sdk_config\.ml$/, /let config_data = "/, /^\s*\(jo \[/m],
+    ['csharp', /core\/Config\.cs$/, /private const string ConfigData = "/, /^\s*return new Dictionary<string, object\?>$/m],
+    ['haskell', /src\/SdkConfig\.hs$/, /^configData = "/m, /buildCV \(CVMap \[/],
   ]
 
   for (const [target, file, dataMark, litMark] of L1_DATA) {
@@ -518,6 +522,45 @@ describe('generate', () => {
       ok(litMark.test(src), target + ': literal branch not emitted')
       ok(!dataMark.test(src), target + ': literal path emitted data as well')
     })
+  }
+
+
+  // The generated .cabal must DECLARE every module it ships.
+  //
+  // `make test` drives ghc directly with `-isrc`, so it compiles whatever is
+  // on disk and never notices an undeclared module — but `cabal build` needs
+  // the declaration and `cabal sdist` does not reliably package a module the
+  // library does not list. Promoting the JSON reader to `src/SdkJson.hs` for
+  // the data path added a module and left it undeclared: `make test` stayed
+  // green while a published data-path SDK could not compile its own
+  // `SdkConfig` import.
+  //
+  // Checked on BOTH representations, because the data branch is what pulls
+  // SdkJson in, and generically rather than by name, so the next promoted
+  // module cannot repeat this.
+  for (const repr of ['literal', 'data']) {
+    test('haskell: the cabal library declares every src module (' + repr + ')',
+      async () => {
+        const out = await generate(['haskell'], undefined,
+          "main: kit: config: repr: '" + repr + "'")
+        const files = filesFor(out, 'haskell')
+
+        const cabal = files.find(([n]) => /\.cabal$/.test(String(n)))
+        ok(cabal, 'haskell: no .cabal generated')
+        const declared = String(cabal![1])
+
+        const mods = files
+          .map(([n]) => String(n).match(/\/src\/([^/]+)\.hs$/))
+          .filter(Boolean)
+          .map((m) => (m as RegExpMatchArray)[1])
+        ok(0 < mods.length, 'haskell: no src modules in the generated output')
+
+        for (const mod of mods) {
+          ok(new RegExp('\\b' + mod + '\\b').test(declared),
+            'haskell/' + repr + ': src/' + mod + '.hs is not declared in the ' +
+            '.cabal, so cabal build/sdist would not package it')
+        }
+      })
   }
 
 

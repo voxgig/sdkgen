@@ -3,9 +3,10 @@ import {
   Content,
   File,
   cmp,
+  configDefinition,
+  configReprSetting,
   each,
-  isAuthActive,
-  resolveAuthPrefix,
+  isConfigData,
 } from '@voxgig/sdkgen'
 
 
@@ -17,7 +18,7 @@ import {
 
 
 import {
-  clean,
+  csStringLiteral,
   formatCsMap,
 } from './utility_csharp'
 
@@ -32,78 +33,126 @@ const Config = cmp(async function Config(props: any) {
 
   const model: Model = ctx$.model
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
-  const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
-
-  const authActive = isAuthActive(model)
-  // config.auth.prefix override -> spec-derived info.security.prefix -> 'Bearer'
-  const authPrefix = resolveAuthPrefix(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
-
-  const authBlock = authActive
-    ? `                ["auth"] = new Dictionary<string, object?>
-                {
-                    ["prefix"] = "${authPrefix}",
-                },\n`
-    : ''
+  // The same config as an OBJECT, built by the shared helper so this target's
+  // literal and the data that replaces it above the threshold are the same
+  // config by construction. The JSON is what the threshold is measured on -
+  // emitted source size varies by language, the model does not.
+  const { def: configDef, json: configJson } = configDefinition(model)
+  const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'Config.' + target.ext }, () => {
 
     Content(`// ${model.const.Name} SDK - generated model configuration and feature
 // factory. GENERATED from the API model - do not edit by hand.
-
+${asData ? '\nusing System.Text.Json;\n' : ''}
 namespace ${model.const.Name}Sdk;
 
 public static class SdkConfig
 {
-    public static Dictionary<string, object?> MakeConfig()
+`)
+
+    // ABOVE THE THRESHOLD: emit the model as DATA.
+    //
+    // A composite Dictionary literal is a single expression the C# compiler
+    // must bind, type and lower node by node, and every entry becomes IL the
+    // JIT executes on first call. A string constant is one token, and
+    // System.Text.Json builds the same dictionary from it far faster.
+    //
+    // JSON.stringify output is ALMOST a valid C# string literal: every escape
+    // it emits (\\", \\\\, \\b, \\f, \\n, \\r, \\t, \\uXXXX) means the same thing in C#,
+    // and it never emits \\/ or \\0, neither of which C# would accept. What it
+    // does leave raw is U+0085/U+2028/U+2029, which C# counts as line
+    // terminators and forbids inside a quoted literal - hence csStringLiteral.
+    if (asData) {
+      Content(`    // THE API MODEL, EMBEDDED AS DATA (sdkgen rung L1).
+    //
+    // Emitted only above a size threshold, or when \`main.kit.config.repr\`
+    // pins it: for a small model the literal is smaller and far easier to
+    // read when debugging.
+    private const string ConfigData = ${csStringLiteral(configJson)};
+
+    // Boxed numerics compare by exact type - (object)5L does not Equals
+    // (object)5 - and MakeConfig is public API consumers read numbers out of,
+    // so the two representations must not disagree about the type of a whole
+    // number just because the model crossed a size threshold. This ladder
+    // (int, else long, else double) is exactly what the literal branch emits;
+    // see formatCsNumber in the generator.
+    //
+    // Deliberately NOT SdkUtility.JsonToNative: that helper's conditional
+    // operator gives \`TryGetInt64(out var l) ? l : el.GetDouble()\` the common
+    // type double, so it boxes every whole number as a double regardless of
+    // its own doc comment. Reusing it here would make the data branch
+    // disagree with the literal on every integer in the model.
+    private static object? ConfigValue(JsonElement el)
     {
-        return new Dictionary<string, object?>
+        switch (el.ValueKind)
         {
-            ["main"] = new Dictionary<string, object?>
+            case JsonValueKind.Object:
             {
-                ["name"] = "${model.const.Name}",
-            },
-            ["feature"] = new Dictionary<string, object?>
-            {
-`)
-
-    each(feature, (f: any) => {
-      const fconfig = f.config || {}
-      Content(`                ["${f.name}"] = ${formatCsMap(fconfig, 4)},
-`)
-    })
-
-    Content(`            },
-            ["options"] = new Dictionary<string, object?>
-            {
-                ["base"] = "${baseUrl}",
-${authBlock}                ["headers"] = ${formatCsMap(headers, 4)},
-                ["entity"] = new Dictionary<string, object?>
+                var map = new Dictionary<string, object?>();
+                foreach (var prop in el.EnumerateObject())
                 {
-`)
+                    map[prop.Name] = ConfigValue(prop.Value);
+                }
+                return map;
+            }
 
-    each(entity, (ent: any) => {
-      Content(`                    ["${ent.name}"] = new Dictionary<string, object?>(),
-`)
-    })
+            case JsonValueKind.Array:
+            {
+                var list = new List<object?>();
+                foreach (var item in el.EnumerateArray())
+                {
+                    list.Add(ConfigValue(item));
+                }
+                return list;
+            }
 
-    Content(`                },
-            },
-            ["entity"] = ${formatCsMap(
-      Object.values(entity).reduce((a: any, n: any) => (a[n.name] = clean({
-        fields: n.fields,
-        name: n.name,
-        op: n.op,
-        relations: n.relations,
-      }, true), a), {}), 3)},
-        };
+            case JsonValueKind.String:
+                return el.GetString();
+
+            case JsonValueKind.Number:
+                if (el.TryGetInt32(out var i))
+                {
+                    return i;
+                }
+                if (el.TryGetInt64(out var l))
+                {
+                    return l;
+                }
+                return el.GetDouble();
+
+            case JsonValueKind.True:
+                return true;
+
+            case JsonValueKind.False:
+                return false;
+
+            default:
+                return null;
+        }
     }
 
+    // Parses a fresh, fully materialised config dictionary. Every call
+    // re-parses, so hold the result if you need it more than once.
+    public static Dictionary<string, object?> MakeConfig()
+    {
+        return ConfigValue(JsonSerializer.Deserialize<JsonElement>(ConfigData))
+            as Dictionary<string, object?>
+            ?? new Dictionary<string, object?>();
+    }
+`)
+    }
+    else {
+      Content(`    public static Dictionary<string, object?> MakeConfig()
+    {
+        return ${formatCsMap(configDef, 2)};
+    }
+`)
+    }
+
+    Content(`
     public static Feature.BaseFeature MakeFeature(string name)
     {
         switch (name)

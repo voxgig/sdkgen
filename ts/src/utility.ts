@@ -133,6 +133,23 @@ export {
 //
 // The reader side is unchanged either way: make_config returns the same map,
 // so nothing downstream can tell which representation it got.
+//
+// For two targets the literal is not merely expensive but IMPOSSIBLE past a
+// point, which is what fixes the threshold rather than leaving it a taste
+// question:
+//
+//   haskell  GHC 9.4.7 refuses a large static structure outright -
+//            "sorry! (unimplemented feature or known bug) ... Trying to
+//            allocate more than 129024 bytes ... Suggestion: read data from a
+//            file instead of having large static data structures in code"
+//            (GHC issue 4505). Measured: the CV literal compiles at 828 KB of
+//            model and fails at 1.4 MB, so 256 KB clears it by more than 3x.
+//
+//   clojure  a string literal is a constant-pool UTF-8 entry capped at 65,535
+//            bytes, so the DATA constant has to be chunked - see cljStringChunks.
+//
+// Anything above the threshold therefore takes the data path in every target,
+// and the languages with a hard ceiling are the ones with the most margin.
 const CONFIG_DATA_THRESHOLD = 256 * 1024
 
 

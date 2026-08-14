@@ -873,7 +873,163 @@ describe('config representation is chosen by size', () => {
     ['zig', 'Config_zig.ts', 'CONFIG_DATA: \\[\\]const u8', 'formatZigValue'],
     ['dart', 'Config_dart.ts', 'Config\\.data\\.fragment\\.dart', 'Config\\.fragment\\.dart'],
     ['elixir', 'Config_elixir.ts', '@config_data', 'Helpers\\.deep'],
+    ['clojure', 'Config_clojure.ts', 'core/json-parse', 'formatCljValue'],
+    ['ocaml', 'Config_ocaml.ts', 'Sdk_json\\.json_read', 'formatOcamlValue'],
+    ['csharp', 'Config_csharp.ts', 'JsonSerializer\\.Deserialize', 'formatCsMap'],
+    ['haskell', 'Config_haskell.ts', 'jsonRead configData', 'formatHsValue'],
   ]
+
+  // The clojure data constant must be CHUNKED under the JVM limit.
+  //
+  // A Clojure string literal becomes a constant-pool UTF-8 entry, capped at
+  // 65,535 bytes — so one constant cannot hold a config large enough to select
+  // the data representation at all (the threshold is 256 KB). The failure is
+  // AOT-only, which is why nothing here caught it: loading from source is fine
+  // and `clojure -M:test-compile` only requires. Compiling a 70,000-character
+  // literal gives:
+  //
+  //   Execution error (IllegalArgumentException)
+  //     at clojure.asm.ByteVector/putUTF8 (ByteVector.java:245)
+  //
+  // java/kotlin/scala already chunk for the same reason.
+  test('clojure: the data constant is chunked under the JVM 64KB limit', () => {
+    const { cljStringChunks } = require(
+      Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
+        'cmp', 'clojure', 'utility_clojure.js'))
+
+    const big = 'y'.repeat(200000)
+    const chunks = cljStringChunks(big)
+    ok(1 < chunks.length, 'a 200 KB payload was not chunked at all')
+    for (const c of chunks) {
+      ok(Buffer.byteLength(c, 'utf8') < 65535,
+        'a chunk exceeds the JVM constant-pool limit')
+    }
+    strictEqual(chunks.join(''), big, 'chunking lost or reordered content')
+
+    // Multi-byte characters are measured in BYTES, and a surrogate pair is
+    // never cut in half - a lone surrogate would be invalid UTF-8.
+    const astral = '\u{1F600}'.repeat(20000)
+    const acs = cljStringChunks(astral)
+    strictEqual(acs.join(''), astral, 'chunking corrupted astral characters')
+    for (const c of acs) {
+      ok(Buffer.byteLength(c, 'utf8') < 65535, 'an astral chunk is over the limit')
+      ok(!/[\uD800-\uDBFF]$/.test(c), 'a chunk ends on a lone high surrogate')
+    }
+  })
+
+
+  // The csharp literal's BOXED NUMERIC TYPE must match what parsing the JSON
+  // produces, because boxed numerics compare by exact type - (object)5L does
+  // not Equals (object)5 - and MakeConfig is public API consumers read numbers
+  // out of.
+  //
+  // Unsuffixed C# integer literals take the first of int/uint/long/ulong that
+  // fits, so `3000000000` used to box as a uint nothing else in the SDK ever
+  // produces, while the JSON side gave a long. Verified by compiling both
+  // forms under .NET 8: before this, every whole number disagreed.
+  test('csharp: the literal number ladder matches the JSON parser', () => {
+    const { formatCsMap } = require(
+      Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
+        'cmp', 'csharp', 'utility_csharp.js'))
+
+    // [value, expected C# literal] - the ladder ConfigValue mirrors with
+    // TryGetInt32 / TryGetInt64 / GetDouble.
+    const cases: [number, string][] = [
+      [0, '0'],
+      [5, '5'],
+      [-5, '-5'],
+      [2147483647, '2147483647'],
+      [-2147483648, 'int.MinValue'],
+      [2147483648, '2147483648L'],
+      [3000000000, '3000000000L'],
+      [5000000000, '5000000000L'],
+      [1e20, '100000000000000000000D'],
+      [1e21, '1e+21D'],
+      [1.5, '1.5D'],
+      [-0.25, '-0.25D'],
+      // THE LOWER BOUNDARY, and the reason the range test is on the emitted
+      // text rather than the JS value. `String(-9223372036854775808)` is
+      // "-9223372036854776000", which is BELOW long.MinValue - TryGetInt64
+      // refuses it, so the data branch gives a double and the literal has to
+      // as well. Emitting `long.MinValue` here made the two disagree at
+      // exactly this value (verified: literal=Int64 data=Double).
+      [-9223372036854775808, '-9223372036854776000D'],
+    ]
+    for (const [val, expected] of cases) {
+      strictEqual(formatCsMap({ n: val }, 0).replace(/[\s\S]*\["n"\] = /, '')
+        .replace(/,[\s\S]*/, ''), expected, 'csharp literal for ' + val)
+    }
+
+    // long.MaxValue is not representable as a JS number - it rounds up to
+    // 2^63, which the C# compiler rejects as a long and TryGetInt64 also
+    // refuses - so both sides must fall to double there. (JS renders that
+    // value as 9223372036854776000; the point is the D, not the digits.)
+    strictEqual(formatCsMap({ n: 9223372036854775808 }, 0)
+      .replace(/[\s\S]*\["n"\] = /, '').replace(/,[\s\S]*/, ''),
+      '9223372036854776000D',
+      'a value at 2^63 must be a double, not an out-of-range long literal')
+  })
+
+
+  // C# forbids its NEW-LINE CHARACTERS inside a regular quoted string, and
+  // that set is wider than the two everyone escapes: U+000D, U+000A, U+0085
+  // (NEL), U+2028 (LINE SEPARATOR), U+2029 (PARAGRAPH SEPARATOR).
+  //
+  // JSON.stringify leaves the last three RAW - they are ordinary characters in
+  // JSON and in every other target language - so a model string carrying one
+  // (an OpenAPI description or example pasted from a word processor) emitted a
+  // C# file that would not compile. Confirmed against .NET 8:
+  // `error CS1010: Newline in constant`. Both the data blob and the literal's
+  // own strings go through the escape.
+  test('csharp: C# line terminators are escaped in both branches', () => {
+    const { csStringLiteral, formatCsString, formatCsMap } = require(
+      Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
+        'cmp', 'csharp', 'utility_csharp.js'))
+
+    // Built from char codes rather than written literally: U+2028/U+2029 end
+    // a line in JavaScript too, so having them verbatim in this source is the
+    // very hazard under test.
+    const raw = String.fromCharCode(0x85, 0x2028, 0x2029)
+    for (const [what, out] of [
+      ['csStringLiteral', csStringLiteral(JSON.stringify({ d: raw }))],
+      ['formatCsString', formatCsString(raw)],
+      ['formatCsMap', formatCsMap({ d: raw }, 0)],
+    ] as [string, string][]) {
+      for (const ch of raw) {
+        ok(!out.includes(ch),
+          what + ' emitted a raw U+' +
+          (ch.codePointAt(0) as number).toString(16).toUpperCase().padStart(4, '0') +
+          ', which ends a C# string literal')
+      }
+      ok(/\\u0085/.test(out) && /\\u2028/.test(out) && /\\u2029/.test(out),
+        what + ' did not escape all three C# line terminators')
+    }
+  })
+
+
+  // struct's Haskell `Value` holds a map as an ORDERED assoc list, so key
+  // order is observable - it survives into keysof, iteration and stringify.
+  //
+  // formatHsValue used to sort, which was invisible while the literal was the
+  // only representation. Above the threshold the same config arrives via
+  // jsonRead in the JSON text's order, and the two would have described the
+  // same config in a different order. Confirmed by dumping the materialised
+  // config from both branches under GHC 9.4.7: with sorting the two disagreed
+  // from the very first key, and only match with insertion order preserved.
+  test('haskell: the config literal preserves key order, and does not sort', () => {
+    const { formatHsValue } = require(
+      Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
+        'cmp', 'haskell', 'utility_haskell.js'))
+
+    // The canonical config's own top-level order: NOT alphabetical.
+    const def = { main: {}, feature: {}, options: {}, entity: {} }
+    const keys = (formatHsValue(def).match(/"(main|feature|options|entity)"/g) || [])
+      .map((s: string) => s.replace(/"/g, ''))
+    strictEqual(keys.join(','), 'main,feature,options,entity',
+      'formatHsValue reordered the config keys, so the literal would disagree ' +
+      'with jsonRead of the same config')
+  })
+
 
   // Every target whose generated config can carry `options.server` must also
   // ACCEPT it in the option spec `make_options` validates against.
@@ -892,6 +1048,10 @@ describe('config representation is chosen by size', () => {
     ['rust', 'utility/make_options.rs'],
     ['zig', 'core/utility.zig'],
     ['elixir', 'lib/projectname/utility.ex'],
+    ['clojure', 'src/sdk/core.clj'],
+    ['ocaml', 'sdk_runtime.ml'],
+    ['csharp', 'utility/MakeOptions.cs'],
+    ['haskell', 'src/SdkRuntime.hs'],
   ]
 
   for (const [target, file] of SERVER_OPTSPEC) {

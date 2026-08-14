@@ -3,8 +3,11 @@ import {
   Content,
   File,
   cmp,
+  configDefinition,
+  configReprSetting,
   each,
   isAuthActive,
+  isConfigData,
   resolveAuthPrefix,
 } from '@voxgig/sdkgen'
 
@@ -17,7 +20,6 @@ import {
 
 
 import {
-  clean,
   formatOcamlValue,
   ocamlString,
 } from './utility_ocaml'
@@ -32,52 +34,52 @@ const Config = cmp(async function Config(props: any) {
 
   const model: Model = ctx$.model
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
-  const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
-
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
-
-  const featureConfig: any = {}
-  each(feature, (f: any) => {
-    featureConfig[f.name] = f.config || {}
-  })
-
-  const entityOptions: any = {}
-  each(entity, (ent: any) => {
-    entityOptions[ent.name] = {}
-  })
-
-  const options: any = {
-    base: baseUrl,
-    headers,
-    entity: entityOptions,
-  }
-  if (authActive) {
-    options.auth = { prefix: authPrefix }
-  }
-
-  const entityConfig = Object.values(entity || {}).reduce((a: any, n: any) => (
-    a[n.name] = clean({
-      fields: n.fields,
-      name: n.name,
-      op: n.op,
-      relations: n.relations,
-    }, true), a), {})
-
-  const config = {
-    main: { name: model.const.Name },
-    feature: featureConfig,
-    options,
-    entity: entityConfig,
-  }
+  // The canonical config OBJECT and its JSON, from the shared helper. Both
+  // representations render from the same `def`, so they cannot describe
+  // different configs - and this target picks up `options.server` (the OpenAPI
+  // server-variable defaults), which the hand-rolled build here omitted.
+  const { def: config, json: configJson } = configDefinition(model)
+  const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'sdk_config.' + target.ext }, () => {
+
+    // ABOVE THE THRESHOLD: emit the model as DATA.
+    //
+    // The literal is one nested expression the compiler type-checks as a
+    // single item; a string is one token, and `Sdk_json.json_read` builds the
+    // same value tree at runtime. That reader used to live only in the corpus
+    // test harness - this rung is why it now lives in the runtime, and the
+    // harness uses it from there rather than keeping a second copy.
+    //
+    // No number-type question: `json_read` yields `Num (float)` and
+    // `formatOcamlValue` emits `(Num (5.))`, so both branches agree.
+    if (asData) {
+      Content(`(* Generated API configuration (mirrors go core/config.go).
+ *
+ * THE API MODEL, EMBEDDED AS DATA (sdkgen rung L1). Emitted only above a size
+ * threshold, or when main.kit.config.repr pins it: for a small model the
+ * literal is smaller and far easier to read when debugging.
+ *
+ * make_config () — the embedded API model as a voxgig struct value.
+ * make_feature name — the N-feature-safe factory the client uses. *)
+
+open Voxgig_struct
+open Sdk_types
+open Sdk_helpers
+open Sdk_features
+
+let config_data = "${ocamlString(configJson)}"
+
+let make_config () : value =
+  Sdk_json.json_read config_data
+
+let make_feature (name : string) : feature =
+  match name with
+`)
+    }
+    else {
 
     Content(`(* Generated API configuration (mirrors go core/config.go).
  *
@@ -95,6 +97,7 @@ let make_config () : value =
 let make_feature (name : string) : feature =
   match name with
 `)
+    }
 
     each(feature, (f: any) => {
       if (f.name !== 'base') {

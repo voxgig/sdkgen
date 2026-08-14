@@ -150,6 +150,21 @@ public class PipelineTest
         }
 
         public object? Match(object? match = null) => null;
+
+        // The deletion half of the entity contract, mirroring
+        // ProjectNameEntityBase: `remove` marks the instance, which keeps the
+        // data it held but is no longer a live record.
+        private bool _deleted = false;
+
+        public void MarkDeleted()
+        {
+            this._deleted = true;
+        }
+
+        public bool Deleted()
+        {
+            return this._deleted;
+        }
     }
 
     // --- MakeResponse -------------------------------------------------------

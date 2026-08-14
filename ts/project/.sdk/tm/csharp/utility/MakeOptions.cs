@@ -73,6 +73,14 @@ public static partial class SdkUtility
             {
                 ["`$CHILD`"] = "`$STRING`",
             },
+            // OpenAPI server-variable defaults, carried by the generated
+            // config whenever the spec's server URL is templated. Accepted
+            // here so validation does not reject the SDK's own config; the
+            // {name} substitution into base is a separate concern.
+            ["server"] = new Dictionary<string, object?>
+            {
+                ["`$CHILD`"] = "",
+            },
             ["allow"] = new Dictionary<string, object?>
             {
                 ["method"] = "GET,PUT,POST,PATCH,DELETE,OPTIONS",

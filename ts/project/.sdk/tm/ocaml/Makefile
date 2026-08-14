@@ -14,7 +14,7 @@ INC = -I utility -I . -I test
 # The shared JSON corpus lives in the sibling .sdk workspace.
 CORPUS = ../.sdk/test/test.json
 
-RUNTIME = utility/vregex.ml utility/voxgig_struct.ml \
+RUNTIME = utility/vregex.ml utility/voxgig_struct.ml sdk_json.ml \
   sdk_types.ml sdk_helpers.ml sdk_runtime.ml sdk_features.ml
 
 ENTITIES = $(sort $(wildcard sdk_entity_*.ml))
@@ -33,7 +33,8 @@ SDK_TEST = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml \
   test/t_pipeline.ml test/t_feature.ml test/custom_utility.ml \
   $(ENTITY_TESTS) $(DOC_TESTS) test/t_main.ml
 
-CORPUS_SRC = utility/vregex.ml utility/voxgig_struct.ml test/struct_corpus.ml
+CORPUS_SRC = utility/vregex.ml utility/voxgig_struct.ml sdk_json.ml \
+  test/struct_corpus.ml
 
 .PHONY: test test-sdk test-corpus build lint clean
 
