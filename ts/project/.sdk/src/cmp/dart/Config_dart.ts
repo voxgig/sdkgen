@@ -7,7 +7,10 @@ import {
   Fragment,
   Line,
   cmp,
+  configDefinition,
+  configReprSetting,
   each,
+  isConfigData,
   isAuthActive,
   resolveAuthPrefix,
 } from '@voxgig/sdkgen'
@@ -23,6 +26,7 @@ import {
 
 import {
   clean,
+  dartStringLiteral,
   dartValue,
 } from './utility_dart'
 
@@ -64,7 +68,41 @@ const Config = cmp(async function Config(props: any) {
     baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`)
   } catch (_e) { }
 
+  // The same config as an OBJECT, built by the shared helper so this target's
+  // literal and the data that replaces it above the threshold are the same
+  // config by construction. The JSON is what the threshold is measured on -
+  // emitted source size varies by language, the model does not.
+  const { json: configJson } = configDefinition(model)
+  const asData = isConfigData(configJson, configReprSetting(model))
+
   File({ name: 'Config.' + target.ext }, () => {
+
+    // ABOVE THE THRESHOLD: emit the model as DATA.
+    //
+    // `jsonDecode` yields exactly what the literal declared - Map<String,
+    // dynamic> for objects, List<dynamic> for arrays, and int for a whole
+    // number where Dart source would also have written an int - so the fields
+    // keep their types and callers cannot tell the representations apart.
+    if (asData) {
+      Fragment({
+        from: ff + 'Config.data.fragment.dart',
+
+        replace: {
+          ...ctx$.stdrep,
+
+          '// #ImportFeatures': () => each(feature, (f: any) => {
+            Line(`import 'feature/${f.name}/${nom(f, 'Name')}Feature.dart';`)
+          }),
+
+          '// #FeatureClasses': () => each(feature, (f: any) => {
+            Line(`  '${f.name}': () => ${nom(f, 'Name')}Feature(),`)
+          }),
+
+          "'CONFIGJSON'": dartStringLiteral(configJson),
+        }
+      })
+      return
+    }
 
     Fragment({
       from: ff + 'Config.fragment.dart',

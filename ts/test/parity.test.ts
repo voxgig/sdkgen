@@ -871,6 +871,7 @@ describe('config representation is chosen by size', () => {
     ['c', 'Config_c.ts', 'cStringLiteral\\(configJson\\)', 'formatCValue'],
     ['rust', 'Config_rust.ts', 'rustRawString\\(configJson\\)', 'formatRustValue'],
     ['zig', 'Config_zig.ts', 'CONFIG_DATA: \\[\\]const u8', 'formatZigValue'],
+    ['dart', 'Config_dart.ts', 'Config\\.data\\.fragment\\.dart', 'Config\\.fragment\\.dart'],
   ]
 
   // Targets whose config has ALWAYS been emitted as data, at every size, from

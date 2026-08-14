@@ -475,6 +475,7 @@ describe('generate', () => {
     ['c', /core\/config\.c$/, /static const char CONFIG_DATA\[\] =/, /return cmap\(/],
     ['rust', /core\/config\.rs$/, /const CONFIG_DATA: &str = r/, /Value::map_of\(\[/],
     ['zig', /core\/config\.zig$/, /const CONFIG_DATA: \[\]const u8 =/, /return h\.jo\(&\./],
+    ['dart', /lib\/Config\.dart$/, /const String _CONFIG_DATA = "/, /^\s*final Map<String, dynamic> main = <String, dynamic>\{/m],
   ]
 
   for (const [target, file, dataMark, litMark] of L1_DATA) {
