@@ -527,7 +527,16 @@ The OpenAPI spec(s) this SDK was generated from are kept in the
 
 `);
         if (upstreamUrl) {
-            (0, jostraca_1.Content)(`- Upstream API: [${upstreamUrl}](${upstreamUrl})
+            // A per-tenant server URL carries an OpenAPI server variable —
+            // `https://{instance}.dreamapply.com/api` — and is the right thing to
+            // SHOW, because it tells the reader the host is theirs to fill in. It is
+            // not a thing to LINK: the braces are not a resolvable address, so a
+            // markdown link renders as clickable and dead. Show it as code instead.
+            const templated = /[{}]/.test(upstreamUrl);
+            (0, jostraca_1.Content)(templated
+                ? `- Upstream API: \`${upstreamUrl}\`
+`
+                : `- Upstream API: [${upstreamUrl}](${upstreamUrl})
 `);
         }
         if (docsUrl && docsUrl !== upstreamUrl) {
