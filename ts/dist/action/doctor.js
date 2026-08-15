@@ -89,7 +89,7 @@ async function cmd_doctor_check(_args, actx) {
 }
 // Code API. Returns the report; the CLI turns a non-ok report into a
 // non-zero exit so this can gate CI.
-async function doctor(actx) {
+async function doctor(actx, scope) {
     const log = actx.log;
     const fs = actx.fs();
     const model = actx.model;
@@ -121,6 +121,9 @@ async function doctor(actx) {
     for (const kind of kinds) {
         const items = Object.keys(model?.main?.[types_1.KIT]?.[kind] ?? {}).sort();
         for (const name of items) {
+            if (null != scope && !scope(kind, name)) {
+                continue;
+            }
             const source = resolveDeclared(kind, name, actx);
             if (null == source) {
                 continue;
@@ -135,7 +138,13 @@ async function doctor(actx) {
             checkItemModel(actx, kind, source, report);
         }
     }
-    checkWiring(actx, report);
+    // Root-component wiring is a property of the PROJECT, not of any item, so a
+    // scoped run has no business reporting on it — `package update` asking "is
+    // this package's copy clean" should not also say the project never wired in
+    // `ReadmeTop`.
+    if (null == scope) {
+        checkWiring(actx, report);
+    }
     report.ok = 0 === report.forked.length + report.edited.length +
         report.stale.length + report.missing.length;
     for (const [kind, note] of [

@@ -86,6 +86,7 @@ type ActionContext = {
     opts: any;
     jostraca: any;
     flags?: Record<string, any>;
+    fetchPackage?: (pkgname: string, actx: ActionContext) => Promise<void>;
 };
 type ActionResult = {
     jres: JostracaResult;

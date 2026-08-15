@@ -201,6 +201,64 @@ voxgig-sdkgen package list
 The version shown is the one **on disk** in the source today, not one
 recorded at add time.
 
+### `package update <pkg>[,<pkg>...]`
+
+Fetch a newer version of a package and refresh everything it supplied.
+
+```bash
+voxgig-sdkgen package update @acme/sdkgen-iot
+voxgig-sdkgen package update @acme/sdkgen-iot --force
+voxgig-sdkgen package update @acme/sdkgen-iot --no-fetch
+```
+
+**The order is the safety property**, and it is why this command owns the
+fetch rather than telling you to run `npm update` first:
+
+1. **check** the project's copies against the source *as currently
+   installed*;
+2. **fetch** the new version;
+3. **re-add** each item.
+
+Measured at step 1, a copy that differs from its source means the project
+changed it. Run the other way round — fetch, then check — every item
+legitimately differs from the new source, the gate fires on all of them,
+and you learn to pass `--force` every time. That makes the gate worse
+than not having one, because the same signal (copy differs from source)
+carries both meanings and only sequence separates them.
+
+What it refreshes is what the **project installed**, read from recorded
+provenance — which may be a subset (`--only`) or carry aliases the
+package never mentions.
+
+`--force` overwrites locally-changed files, listing what it discarded.
+Without it, the refusal states both readings, because nothing recorded in
+the project distinguishes them:
+
+```
+@acme/sdkgen-iot: 1 file(s) differ from the installed source, so updating
+would overwrite them:
+  model/target/iot-go.aontu
+
+  This means one of two things, and nothing recorded in the project tells
+  them apart:
+    - they are LOCAL EDITS, and `--force` will discard them;
+    - or @acme/sdkgen-iot was already updated out of band (an `npm update`
+      in another shell), in which case they are merely STALE and nothing
+      is at risk.
+```
+
+An **aliased item's model file is never rewritten** — that file is where
+an alias is differentiated, so `update` refreshes its `src/cmp` and `tm`
+trees from the new origin and reports the skip, so upstream model changes
+can be ported by hand rather than silently never applied.
+
+`--no-fetch` uses the source already installed. It is not the default,
+because then the command would only re-apply the source it already has,
+which is `package add`.
+
+A failed fetch leaves the project untouched: nothing is overwritten
+before step 3.
+
 ## Typical sequence (in a scaffolded project)
 
 ```bash
