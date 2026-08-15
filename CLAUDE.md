@@ -37,16 +37,49 @@ The top-level holds only the shared, non-npm pieces: the canonical
   - `sdkgen.ts` — main entry point (`SdkGen`, `makeBuild`, public exports)
   - `types.ts` — `ActionContext` + model interfaces (`SdkModel`, `ModelTarget`, …)
   - `utility.ts` — `requirePath`, `resolvePath`, `isAuthActive`, `SdkGenError`
-  - `action/` — action handlers (`action`, `feature`, `target`; includes `resolveTarget`)
+  - `action/` — the verbs: `dispatch` (ACTION_MAP from the kind registry),
+    `kind` (KINDS + the shared add spine), `resolve` (ref → source,
+    provenance, name collisions), `target`, `feature`, `package`, `doctor`
   - `cmp/` — language-neutral components (Entity, Feature, Main, Readme*, Test, FeatureHook)
-  - `helpers/` — `collectDeps`, `buildIdNames`, `getMatchEntries`
+  - `helpers/` — `collectDeps`, `buildIdNames`, `getMatchEntries`,
+    `definition` (where a kind's model files live), `manifest`
+    (`sdkgen-package.json`), `semver` (the engines subset), `stdrep`
+    (the replace maps add writes and doctor re-applies)
 - `ts/test/` — tests (`*.test.ts`)
 - `ts/dist/` — compiled output (committed); `ts/dist-test/` — compiled tests (gitignored)
 - `model/sdkgen.aontu` — canonical base model schema. npm can only ship
   files under the package root, so it is mirrored to `ts/model/sdkgen.aontu`
   (shipped as `@voxgig/sdkgen/model/sdkgen.aontu`). Edit `model/`, then
   `make sync-model`; a `ts/test/model-mirror.test.ts` guard fails on drift.
-- `ts/project/.sdk/` — the scaffold: per-language `tm/` (templates) and `src/cmp/` (components) + `model/`
+- `ts/project/` — an sdkgen package like any other: `sdkgen-package.json`
+  (its manifest, pinned to the directory listings by a guard test) beside
+  `.sdk/` — the scaffold: per-language `tm/` (templates) and `src/cmp/`
+  (components) + `model/`
+
+## Content can come from OUTSIDE this package
+An **sdkgen package** is any folder with a `sdkgen-package.json` manifest
+beside a `.sdk/` shaped like `ts/project/.sdk` — from npm, a checkout, or
+a local path. `ts/project/` is itself one, which keeps the bundled and
+external paths on the same code.
+
+```bash
+voxgig-sdkgen package add @acme/sdkgen-iot    # everything it provides
+voxgig-sdkgen package list                    # what is installed, from where
+voxgig-sdkgen package update @acme/sdkgen-iot # fetch newer + refresh
+```
+
+Three things to hold when touching `ts/src/action/`:
+- **Never assume the bundled scaffold.** Each copied model file records
+  `base` / `origname` / `package`, and resolution reads that.
+- **`add` is overwrite** — that is how a resync works. `doctor` is the
+  safety net, so anything an add writes, doctor must compare, or the next
+  add silently reverts a project's edit.
+- **One rule, one place.** Path conventions, name grammars and provenance
+  reconstruction each live in exactly one function. This subsystem has
+  produced the same-rule-written-twice defect five times.
+
+See [`docs/design/sdkgen-packages.md`](./docs/design/sdkgen-packages.md)
+and AGENTS.md's "Sharp edges".
 
 ## Two-layer generation (the key idea)
 Each target = **templates** (`ts/project/.sdk/tm/<lang>/`, copied verbatim

@@ -60,6 +60,55 @@ tests run against compiled `ts/dist-test/`.
 Environment note: a transitive dep (`shape`) declares `engines.node >=24`.
 Builds/tests pass on Node 22 with an `EBADENGINE` warning; ignore it.
 
+The CLI a consumer runs, from its own `.sdk/` directory:
+
+```bash
+voxgig-sdkgen target add <ref>       # add or resync a language target
+voxgig-sdkgen feature add <ref>      # add a feature
+voxgig-sdkgen package add <pkg>      # everything an sdkgen package provides
+voxgig-sdkgen package list           # what is installed, and who supplied it
+voxgig-sdkgen package update <pkg>   # fetch a newer version and refresh
+voxgig-sdkgen doctor                 # report .sdk/ drift; non-zero on drift
+```
+
+A `<ref>` is a bare name (`go`), a package-relative path
+(`@acme/sdkgen-iot/iot-go`), or an absolute path — optionally suffixed
+`~<alias>` to install it under a different name. See
+[reference/cli](./docs/reference/cli.md).
+
+---
+
+## Content can come from OUTSIDE this package
+
+Targets and features are no longer only the ones bundled here. An
+**sdkgen package** is any folder holding a `sdkgen-package.json` manifest
+beside a `.sdk/` directory shaped exactly like `ts/project/.sdk` —
+installed from npm, a checkout, or a local path. `ts/project/` is itself
+one, manifest and all, which is what keeps the bundled path and the
+external path the same code.
+
+Three consequences you must hold when changing anything in `ts/src/action/`:
+
+1. **Never assume the bundled scaffold.** Where an item came from is
+   recorded in its own copied model file as `base` / `origname` /
+   `package`, and resolution reads that. Code that falls back to
+   `node_modules/@voxgig/sdkgen/project/.sdk` for a bare name is right
+   only for items that came from there.
+2. **`add` is overwrite, and that is the contract** — it is how a resync
+   works. The safety net is `doctor`, which compares every tree and every
+   copied model file against the source it records. If you write
+   something new during an add, doctor must learn to compare it, or the
+   next add silently reverts a project's edit.
+3. **One rule, one place.** Path conventions, name grammars and provenance
+   reconstruction each live in exactly one function
+   (`helpers/definition`, `helpers/manifest`, `action/kind`,
+   `action/resolve`). This subsystem has produced the same-rule-written-
+   twice defect five separate times; if you find yourself spelling out
+   `model/<kind>/<name>.aontu` or "what a valid name looks like", there is
+   already a function for it.
+
+Design and rationale: [docs/design/sdkgen-packages.md](./docs/design/sdkgen-packages.md).
+
 ---
 
 ## The one mental model you must hold
@@ -217,6 +266,9 @@ Rules:
 | Change a feature's hooks / deps | `ts/project/.sdk/model/feature/<name>.aontu` | propagate |
 | Change the **generator core** (CLI, actions, neutral components, helpers) | `ts/src/…` | `cd ts && npm run build && npm test` |
 | Change the base model schema | `model/sdkgen.aontu` (canonical) | `make sync-model` then `make build test` |
+| Add/remove a bundled target or feature | the trees above **and** `ts/project/sdkgen-package.json` | a guard test fails if the manifest and the directories disagree |
+| Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts |
+| Change a CLI flag | `ts/bin/voxgig-sdkgen` — parse entry, the closed `Shape`, **and** the help text | plus a row in [reference/cli](./docs/reference/cli.md); the shape is closed, so missing one of the three is a runtime rejection |
 
 ### Never edit generated output
 
@@ -354,6 +406,39 @@ emitted broken source reached the fleet unchallenged.
   and will write during a `-y` run.
 - **Index updates** (`feature-index` / `target-index`) must be idempotent
   — adding a name already present must not duplicate it.
+- **An ALIAS is a name, never a path.** It becomes the directory an item
+  is installed into (`src/cmp/<alias>`, `tm/<alias>`) and `add`
+  overwrites what it writes, so `go~..` would redirect the copy out of
+  the target's own tree. Validated against `ITEM_NAME_RE` in both
+  `parseAliases` and `resolveSource`, because those catch different
+  inputs — the second sees only what survives ref parsing.
+- **Provenance is matched by EXACT LINE, never by pattern.** `base`,
+  `origname` and `package` are not reserved words: `module: package` (the
+  Go root package identifier) and `publish: registry: package` are
+  declared model slots a target may write in block form. A regex for "a
+  line that looks like provenance" got both directions wrong — it read a
+  target's own `module: package:` as a stamp (false fork on an untouched
+  file) *and* stripped it from the comparison (a real deletion passing
+  the check). Compare against what `provenanceReplace` emits.
+- **`package update` must check BEFORE it fetches.** Measured before the
+  source moves, a differing copy means the project changed it; measured
+  after, every item legitimately differs, the gate fires on all of them,
+  and the operator learns to pass `--force`. Reordering those two steps
+  makes the gate worse than not having one.
+- **A gate must cover what the re-add WRITES**, which is more than it is
+  asked to: `target_add` re-runs `feature_add` for every active feature,
+  whoever supplied it. Scope `doctor` to the blast radius, not to the
+  package's own items.
+- **Dry run reaches outside the project too.** `package update`'s fetch
+  runs `npm install`; skipping the file writes and still fetching mutates
+  `package.json`, the lockfile and `node_modules` in the one mode that
+  promises nothing changes.
+- **Registration by import side effect is not a capability.** The
+  per-kind adders `package add` loops over are registered by
+  `action/dispatch`; anything importing `action/package` without it got
+  an empty table and *silently installed nothing while reporting
+  success*. `adderFor` loads them lazily — do not replace it with a
+  top-level import (that is a require cycle) or with a bare lookup.
 - **`ts/project/.sdk/src/cmp/**` is NOT compiled by `tsc --build src test`.**
   It compiles only inside a consumer project, so a missing import is invisible
   here and breaks every generated SDK of that language. `npm run build` runs
@@ -479,15 +564,30 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
     sdkgen.ts          SdkGen, makeBuild, public exports
     types.ts           ActionContext + model interfaces
     utility.ts         requirePath, resolvePath, isAuthActive
-    action/            target add / feature add / index updates
+    action/            the verbs
+      dispatch.ts      ACTION_MAP, built from the kind registry
+      kind.ts          KINDS — what an `add` can install, and the shared spine
+      resolve.ts       ref -> source; provenance recording; name collisions
+      target.ts        target add (+ trees, trim, stale prune)
+      feature.ts       feature add (+ the per-target fan-out)
+      package.ts       package add / list / update
+      doctor.ts        the drift check every other action is guarded by
+      action.ts        index maintenance
     cmp/               language-neutral components (delegate per-language)
     helpers/           collectDeps, buildIdNames, getMatchEntries
+      definition.ts    where a kind's `model/<kind>/<name>.aontu` lives
+      manifest.ts      sdkgen-package.json: read + validate
+      semver.ts        the engines.sdkgen subset (true/false/UNDEFINED)
+      stdrep.ts        the replace maps add writes with and doctor re-applies
+      featureSource.ts per-feature source discovery in a target's tm tree
   test/                Node test runner suites (+ model-mirror guard)
   dist/ (committed)    dist-test/ (gitignored)
-  project/.sdk/        the scaffold copied into consumer projects
-    model/{target,feature}/   target & feature definitions
-    src/cmp/<lang>/    per-language COMPONENTS
-    tm/<lang>/         per-language TEMPLATES
+  project/             an sdkgen package, like any other
+    sdkgen-package.json   its manifest (pinned to the listings by a guard)
+    .sdk/              the scaffold copied into consumer projects
+      model/{target,feature}/   target & feature definitions
+      src/cmp/<lang>/  per-language COMPONENTS
+      tm/<lang>/       per-language TEMPLATES
 ```
 
 SDK targets (23): `ts js go py php rb lua csharp java kotlin scala swift dart

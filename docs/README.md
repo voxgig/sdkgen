@@ -26,6 +26,8 @@ that matches what you are trying to do right now:
 ### How-to guides
 - [Add a language target](./how-to/add-a-target.md)
 - [Add a feature](./how-to/add-a-feature.md)
+- [Use an sdkgen package](./how-to/use-an-sdkgen-package.md)
+- [Author an sdkgen package](./how-to/author-an-sdkgen-package.md)
 - [Simulate network conditions in offline tests](./how-to/simulate-network.md)
 - [Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md)
 - [Author a brand-new language target](./how-to/author-a-new-language.md)

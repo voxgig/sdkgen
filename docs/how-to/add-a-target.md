@@ -81,6 +81,26 @@ voxgig-sdkgen target add /abs/path/go         # /abs/path/.sdk
 If the source `.sdk` cannot be found, the command lists every location it
 searched.
 
+If that package declares an [`sdkgen-package.json`](../reference/project-layout.md#an-sdkgen-package)
+manifest, prefer `package add` — it installs everything the package
+provides, validates the manifest first so a bad claim cannot leave you
+half-installed, and checks the package's `engines.sdkgen` against your
+generator:
+
+```bash
+npm install --save-dev @acme/sdkgen-iot
+voxgig-sdkgen package add @acme/sdkgen-iot
+voxgig-sdkgen package add @acme/sdkgen-iot --only target:iot-go
+voxgig-sdkgen package add @acme/sdkgen-iot --alias iot-go=acme-go
+```
+
+Either way, the copied model file records where the item came from, so
+`voxgig-sdkgen package list` can tell you later, and
+`voxgig-sdkgen package update` can refresh it.
+
+A name already installed from a **different** source is refused rather
+than silently replaced — install it under an alias, or by its own ref.
+
 ## Preview without writing
 
 ```bash
