@@ -41,7 +41,12 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const stdrep_1 = require("../helpers/stdrep");
 const target_1 = require("./target");
+// `aliasModelText` is no longer named here: the model-file comparison asks
+// the registry for the kind's own `rename`, so a kind that renames
+// differently is handled without this file knowing how.
 const kind_1 = require("./kind");
+const resolve_1 = require("./resolve");
+const definition_1 = require("../helpers/definition");
 // jostraca's Copy walk skips these (IGNORED_RE in CopyOp) — editor backups and
 // deliberately-disabled templates never reach a project, so they are not drift.
 const IGNORED_RE = /(~|-jostraca-off)$/;
@@ -93,44 +98,41 @@ async function doctor(actx) {
         forked: [], edited: [], stale: [], missing: [], additive: [],
         unwired: [], resyncPending: [], aliasedDiff: [], ok: true,
     };
-    const targets = Object.keys(model?.main?.[types_1.KIT]?.target ?? {});
-    log.info({ point: 'doctor-start', targets: targets.length });
-    for (const tname of targets) {
-        const declared = model?.main?.[types_1.KIT]?.target?.[tname];
-        // The target model records where it came from and what it was called
-        // there (`base` / `origname`, written by `target add`). Fall back to the
-        // bundled scaffold for a copy that predates provenance.
-        //
-        // `origname` is what makes an ALIAS checkable. The ref used to be rebuilt
-        // as `<base>/../<tname>`, which names the INSTALLED target — so
-        // `target add ts~ts2` sent doctor looking for a `ts2` scaffold that does
-        // not exist, both trees walked empty, and every component read as
-        // `additive` while every template read as `stale` (a FAILING category).
-        // Real edits were undetectable and doctor went red on noise. With the
-        // origin name recorded, the alias compares against the tree it actually
-        // came from.
-        const torigname = (declared && declared.origname) || tname;
-        const tref = (0, kind_1.recordedRef)(declared, tname) || tname;
-        let resolved;
-        try {
-            // WITH THE LOG. Resolution reads the source's package manifest, and an
-            // unusable one is reported only through `ctx$.log`. Without it doctor
-            // silently lost the package name — and then reported every target from
-            // that package as FORKED, because the expected text no longer carries
-            // the `package:` line the copy has, with nothing anywhere saying why.
-            // That is accurate (the next `target add` really would strip the line)
-            // but unactionable, which is the same defect as being wrong.
-            resolved = (0, target_1.resolveTarget)(tref, { folder: root, fs: () => fs, log });
-        }
-        catch (err) {
-            log.warn({
-                point: 'doctor-target-unresolved', target: tname, err: err.message,
-                note: tname + ': cannot find its scaffold (' + err.message + ')'
-            });
-            continue;
-        }
-        if (null != resolved) {
-            checkTarget(actx, resolved, report);
+    // EVERY KIND, not just targets.
+    //
+    // `add` writes a copied model file for each kind — `model/target/<t>.aontu`
+    // and `model/feature/<f>.aontu` alike — and overwrites it on every resync.
+    // Only the target one was ever compared, so a hand-edit to an installed
+    // FEATURE definition read as perfectly in sync and was silently reverted by
+    // the next `target add` (which re-runs `feature add` for every active
+    // feature). That is exactly the failure `checkTargetModel` was added for,
+    // left open for the other half of what add owns.
+    //
+    // Driven off the registry, so a kind added later is checked without
+    // anything here changing. The per-kind EXTRAS — a target's `src/cmp` and
+    // `tm` trees — stay in that kind's own check, because they are genuinely
+    // different work rather than the same work with different strings.
+    const kinds = Object.keys(kind_1.KINDS).sort();
+    const counts = {};
+    for (const kind of kinds) {
+        counts[kind] = Object.keys(model?.main?.[types_1.KIT]?.[kind] ?? {}).length;
+    }
+    log.info({ point: 'doctor-start', targets: counts.target ?? 0, ...counts });
+    for (const kind of kinds) {
+        const items = Object.keys(model?.main?.[types_1.KIT]?.[kind] ?? {}).sort();
+        for (const name of items) {
+            const source = resolveDeclared(kind, name, actx);
+            if (null == source) {
+                continue;
+            }
+            if ('target' === kind) {
+                checkTarget(actx, {
+                    tname: source.name,
+                    tfolder: source.folder,
+                    torigname: source.origname,
+                }, report);
+            }
+            checkItemModel(actx, kind, source, report);
         }
     }
     checkWiring(actx, report);
@@ -192,6 +194,41 @@ function checkWiring(actx, report) {
         if (!new RegExp('\\b' + name + '\\b').test(wiring)) {
             report.unwired.push(name + ' — ' + what);
         }
+    }
+}
+// Where one declared item came from, or undefined with the reason said out
+// loud.
+//
+// The model records `base` and `origname` (written by add), and `origname` is
+// what makes an ALIAS checkable: the ref used to be rebuilt as
+// `<base>/../<name>`, which names the INSTALLED item — so `target add ts~ts2`
+// sent doctor looking for a `ts2` scaffold that does not exist, both trees
+// walked empty, and every component read as `additive` while every template
+// read as `stale` (a FAILING category). Real edits were undetectable and
+// doctor went red on noise.
+//
+// A bare name falls back to the bundled scaffold, for a copy predating
+// provenance.
+function resolveDeclared(kind, name, actx) {
+    const declared = actx.model?.main?.[types_1.KIT]?.[kind]?.[name];
+    const ref = (0, kind_1.recordedRef)(declared, name) || name;
+    try {
+        // WITH THE LOG. Resolution reads the source's package manifest, and an
+        // unusable one is reported only through `ctx$.log`. Without it doctor
+        // silently lost the package name — and then reported every item from that
+        // package as FORKED, because the expected text no longer carries the
+        // `package:` line the copy has, with nothing anywhere saying why. That is
+        // accurate (the next add really would strip the line) but unactionable,
+        // which is the same defect as being wrong.
+        return (0, resolve_1.resolveSource)(ref, kind, { folder: actx.folder, fs: actx.fs, log: actx.log });
+    }
+    catch (err) {
+        actx.log.warn({
+            point: 'doctor-source-unresolved', kind, [kind]: name, err: err.message,
+            note: name + ': cannot find its ' + kind + ' source (' +
+                err.message + ')'
+        });
+        return undefined;
     }
 }
 function checkTarget(actx, resolved, report) {
@@ -286,27 +323,32 @@ function checkTarget(actx, resolved, report) {
             }
         }
     }
-    checkTargetModel(actx, resolved, report);
 }
-// The THIRD thing `target add` writes for a target, and the one nothing
-// compared: `model/target/<t>.aontu` (src/action/target.ts, the Copy with the
-// `'BASE'` replacement).
+// The copied MODEL FILE — `model/<kind>/<name>.aontu`, written by add with
+// the `'BASE'` replacement, and overwritten on every resync exactly as
+// `src/cmp` and `tm` are.
 //
-// It is not scaffolding trivia. That file carries the target's dependency
-// set, its `phase` gates, `srcfeature`, `feature.trim` / `feature.fullset`
-// and its publish-registry identity — and `target add` OVERWRITES it exactly
-// as it overwrites src/cmp and tm. So a maintainer who fixes a dep version
-// there loses the fix on the next resync with nothing said (the SDK regresses
-// with nobody touching it, which is the failure the "a project decision
-// belongs in the MODEL" rule exists to prevent), and a project whose copy
-// predates a scaffold change carries the old declaration forever while doctor
-// reported the target in sync. Both are the drift this command exists to
-// name; the file was simply in neither tree it walked.
-function checkTargetModel(actx, resolved, report) {
-    const { tname, tfolder, torigname, base } = resolved;
+// It is not scaffolding trivia. A target's carries its dependency set, its
+// `phase` gates, `srcfeature`, `feature.trim` / `feature.fullset` and its
+// publish-registry identity; a feature's carries its version, `active`
+// default, `config` defaults and hook wiring. So a maintainer who fixes a dep
+// version there loses the fix on the next resync with nothing said (the SDK
+// regresses with nobody touching it, which is the failure the "a project
+// decision belongs in the MODEL" rule exists to prevent), and a project whose
+// copy predates a scaffold change carries the old declaration forever while
+// doctor reports it in sync.
+//
+// KIND-NEUTRAL, because the file is the same kind of thing for every kind:
+// one definition, copied, stamped with provenance, optionally renamed for an
+// alias. Only the alias rewrite is kind-specific, and the registry already
+// says which kinds can be aliased at all.
+function checkItemModel(actx, kind, source, report) {
+    const name = source.name;
+    const origname = source.origname;
+    const base = source.base;
     const fs = actx.fs();
-    const scaffold = node_path_1.default.join(tfolder, 'model', 'target', torigname + '.aontu');
-    // Nothing to compare against — a source that no longer ships this target.
+    const scaffold = (0, definition_1.definitionPath)(source.folder, kind, origname);
+    // Nothing to compare against — a source that no longer ships this item.
     if (!fs.existsSync(scaffold)) {
         return;
     }
@@ -320,16 +362,21 @@ function checkTargetModel(actx, resolved, report) {
     // unrecoverable, so doctor skipped the file entirely and an alias that had
     // drifted far from a moved-on upstream said nothing. With `origname`
     // recorded the comparison is possible, so it runs, with the same key
-    // rewrite `target add` applied — and anything left over is the project's
-    // own differentiation, reported as informational.
-    const aliased = tname !== torigname;
-    const project = node_path_1.default.join(actx.folder, 'model', 'target', tname + '.aontu');
-    const label = 'model/target/' + tname + '.aontu';
+    // rewrite the add applied — and anything left over is the project's own
+    // differentiation, reported as informational.
+    //
+    // Only for a kind that CAN be aliased. A feature cannot, so for features
+    // this is always false and the ownership argument never applies — the
+    // registry says which, rather than this inferring it from the names
+    // happening to match.
+    const aliased = (0, kind_1.kindDef)(kind).alias && name !== origname;
+    const project = (0, definition_1.definitionPath)(actx.folder, kind, name);
+    const label = 'model/' + kind + '/' + name + '.aontu';
     if (!fs.existsSync(project)) {
         report.missing.push(label);
         return;
     }
-    // The substitution `target add` applied on the way in: jostraca's template()
+    // The substitution the add applied on the way in: jostraca's template()
     // against the model (so `module: name: '$$name$$'` arrives as the project
     // slug) plus the provenance block recording where the scaffold was.
     //
@@ -339,14 +386,15 @@ function checkTargetModel(actx, resolved, report) {
     // writer (helpers/stdrep) so the two cannot drift.
     //
     // `package` comes from the SOURCE's manifest, not from what the copy
-    // records, for the same reason `base` does: what this compares is what
-    // `target add` would write NOW. A package that renamed itself therefore
-    // reads as forked, which is accurate — the next add would rewrite the line.
-    const provenance = (0, stdrep_1.provenanceReplace)({ base, origname: torigname, name: tname, package: resolved.package });
+    // records, for the same reason `base` does: what this compares is what the
+    // add would write NOW. A package that renamed itself therefore reads as
+    // forked, which is accurate — the next add would rewrite the line.
+    const provenance = (0, stdrep_1.provenanceReplace)({ base, origname, name, package: source.package });
     // For an alias, compare against what the origin WOULD produce under the new
     // name, so the rename itself is not the difference.
-    const rewrite = aliased ?
-        (src) => (0, kind_1.aliasModelText)(src, torigname, tname) : undefined;
+    const rename = (0, kind_1.kindDef)(kind).rename;
+    const rewrite = (aliased && null != rename) ?
+        (src) => rename(src, origname, name) : undefined;
     if (!differs(fs, scaffold, project, actx.model, provenance, undefined, rewrite)) {
         return;
     }
