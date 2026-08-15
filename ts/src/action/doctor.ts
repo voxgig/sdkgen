@@ -49,10 +49,11 @@ import { templateReplacements, provenanceReplace } from '../helpers/stdrep'
 import {
   resolveTarget,
   trimFeatures,
-  aliasModelText,
   aliasCmpText,
   aliasCmpName,
 } from './target'
+
+import { aliasModelText } from './kind'
 
 
 // jostraca's Copy walk skips these (IGNORED_RE in CopyOp) — editor backups and

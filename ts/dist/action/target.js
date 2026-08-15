@@ -8,7 +8,6 @@ exports.target_add = target_add;
 exports.resolveTarget = resolveTarget;
 exports.trimFeatures = trimFeatures;
 exports.readTargetFeature = readTargetFeature;
-exports.aliasModelText = aliasModelText;
 exports.aliasCmpText = aliasCmpText;
 exports.aliasCmpName = aliasCmpName;
 const node_path_1 = __importDefault(require("node:path"));
@@ -22,6 +21,7 @@ const utility_1 = require("../utility");
 const featureSource_1 = require("../helpers/featureSource");
 const feature_1 = require("./feature");
 const action_1 = require("./action");
+const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
 const CMD_MAP = {
     add: cmd_target_add
@@ -119,7 +119,13 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 target: tref,
                 note: tref
             });
-            const { tname, tfolder, torigname, base } = resolveTarget(tref, ctx$);
+            // Resolved through the shared kind spine, so a BARE name follows what
+            // the model records exactly as a feature's does. Without that, a target
+            // installed from an external package resolved back to the bundled
+            // scaffold on its next `target add` — the same write-only-provenance
+            // trap features had.
+            const source = (0, kind_1.resolveKind)(tref, 'target', ctx$);
+            const { name: tname, folder: tfolder, origname: torigname, base } = source;
             tnames.push(tname);
             const targetNote = tname + (tname != tref ? ' ref:' + tref : '');
             log.info({
@@ -130,54 +136,13 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
             });
             // An ALIASED add (`target add go~go2`) installs the target under a new
             // name, and every one of the three trees has to agree about that name.
-            // Only the two FOLDER names used to change; see aliasRename below for
-            // what that left broken.
             const aliased = tname !== torigname;
-            const modelFrom = tfolder + '/model/target/' + torigname + '.aontu';
-            const baseReplace = (0, stdrep_1.provenanceReplace)({ base, origname: torigname, name: tname });
-            (0, jostraca_1.Folder)({ name: 'model/target' }, () => {
-                if (aliased) {
-                    // The copy has to land under the INSTALLED name AND declare it.
-                    // Left alone it kept the origin basename (jostraca defaults a
-                    // single-file Copy's destination to the source's), so
-                    // `target add go~go2` wrote model/target/go.aontu while
-                    // target-index.aontu gained `@"go2.aontu"` — an include of a file
-                    // that does not exist, which fails the whole model compile, not
-                    // just the alias. The declaration inside stayed `target: go:` too,
-                    // so the alias either collided with its origin or named a target
-                    // nothing referenced.
-                    //
-                    // `exclude: true` — CREATE, never overwrite. This is the one target
-                    // model a project OWNS: an alias exists to be differentiated (a
-                    // second Go module needs its own module name and deps), which is
-                    // why doctor exempts it from the model comparison and why
-                    // add-a-target tells the project to edit it. Overwriting it on
-                    // every resync would silently revert exactly the edits the alias
-                    // was created to hold. The origin's own model file is unaffected
-                    // and stays overwrite, as for every other target.
-                    const dest = node_path_1.default.join(ctx$.folder ?? '.', 'model', 'target', tname + '.aontu');
-                    if (fs.existsSync(dest)) {
-                        log.info({
-                            point: 'target-alias-model-kept', target: tname, file: dest,
-                            note: tname + ': keeping the existing aliased target model ' +
-                                '(project-owned — an alias is differentiated by editing it)'
-                        });
-                    }
-                    const src = fs.readFileSync(modelFrom, 'utf8');
-                    (0, jostraca_1.File)({ name: tname + '.aontu', exclude: true }, () => (0, jostraca_1.Content)((0, jostraca_1.template)(aliasModelText(src, torigname, tname), ctx$.model, { replace: baseReplace })));
-                }
-                else {
-                    (0, jostraca_1.Copy)({
-                        from: modelFrom,
-                        // exclude: true
-                        replace: baseReplace,
-                    });
-                }
-                (0, jostraca_1.File)({ name: 'target-index.aontu' }, () => (0, action_1.UpdateIndex)({
-                    content: ctx$.meta.content.target_index,
-                    names: tnames,
-                }));
-            });
+            // The definition file and the index entry: the same for every kind, so
+            // they are emitted once, in action/kind.
+            (0, jostraca_1.Folder)({ name: 'model/target' }, () => (0, kind_1.kindModel)({
+                ctx$, kind: 'target', source, names: tnames,
+                content: ctx$.meta.content.target_index,
+            }));
             if (aliased) {
                 // Components are dispatched by CONVENTION — `cmp/<t>/Main_<t>` — so
                 // an aliased tree whose files keep the origin suffix resolves
@@ -228,35 +193,6 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
         });
     });
 });
-// Rewrite the target KEY in a copied model file, for an aliased install.
-//
-// Two forms are in use across the shipped models — bare (`target: go:`) and
-// quoted (`target: 'go-cli':`) — and two paths carry the key: the target
-// block itself (`main: kit: target: <t>:`) and the per-target feature-deps
-// slot every model declares (`main: kit: feature: &: target: <t>: deps: &:`).
-// Both belong to the installed target, so both move. Matching on `target: `
-// rather than on the bare name is what keeps the rewrite off the target's
-// own values — `ext: go` and `module: name: '$$name$$'` must not change.
-//
-// ONE regex, with the quote optional and captured, rather than two entries in
-// jostraca's `replace` map: that map canonicalises each key into a regex
-// group NAME, and the bare and quoted spellings of the same key reduce to the
-// same name — so one silently overwrote the other and `go-cli~cli2` came out
-// as the BARE `target: cli2:`, losing the quoting a hyphenated key needs.
-//
-// The alias may also NEED quoting when the origin did not: aontu rejects a
-// bare key containing a hyphen (`unexpected character(s): -`), so
-// `target add go~go-alt` emitting the origin's unquoted style produced a
-// model that could not compile at all. Quote when the origin was quoted OR
-// the alias is not a bare identifier.
-const BARE_KEY_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
-function aliasModelText(src, torigname, tname) {
-    const mustQuote = !BARE_KEY_RE.test(tname);
-    return src.replace(new RegExp("target:(\\s*)('?)" + escapeRe(torigname) + "\\2:", 'g'), (_m, gap, quote) => {
-        const q = ('' !== quote || mustQuote) ? "'" : '';
-        return 'target:' + gap + q + tname + q + ':';
-    });
-}
 // `<Cmp>_<origname>.<ext>` -> `<Cmp>_<tname>.<ext>`, for an aliased install.
 // Anything not carrying the suffix (tsconfig.json, the fragment sources)
 // keeps its name — the `.<ext>` anchor is what keeps this off
@@ -267,7 +203,7 @@ function aliasModelText(src, torigname, tname) {
 // under the same name the writer gave it, or it reports the whole tree as
 // missing.
 function aliasCmpName(name, torigname, tname) {
-    return name.replace(new RegExp('_' + escapeRe(torigname) + '(\\.[^.]+)$'), '_' + tname + '$1');
+    return name.replace(new RegExp('_' + (0, kind_1.escapeRe)(torigname) + '(\\.[^.]+)$'), '_' + tname + '$1');
 }
 // The origin name a component carries INSIDE its source, rewritten for an
 // aliased install. Shared with doctor, which re-applies it before comparing —
@@ -280,7 +216,7 @@ function aliasCmpName(name, torigname, tname) {
 // single-quoted import came out as `from './Package_go2"`. One explicit regex
 // keeps the quote it matched.
 function aliasCmpText(src, torigname, tname) {
-    const orig = escapeRe(torigname);
+    const orig = (0, kind_1.escapeRe)(torigname);
     return src
         // The fragment directory, read relative to __dirname. The fragments are
         // copied into the ALIAS's folder, so leaving the origin path would miss —
@@ -335,9 +271,6 @@ function aliasCmpTree(ctx$, fromDir, toRel, torigname, tname) {
         }
     };
     (0, jostraca_1.Folder)({ name: toRel }, () => emit(fromDir, toRel));
-}
-function escapeRe(s) {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 // Path patterns that keep a target's unwanted feature source out of the
 // project: the source of every AVAILABLE feature the model did not select,

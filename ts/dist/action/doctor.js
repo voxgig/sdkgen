@@ -41,6 +41,7 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const stdrep_1 = require("../helpers/stdrep");
 const target_1 = require("./target");
+const kind_1 = require("./kind");
 // jostraca's Copy walk skips these (IGNORED_RE in CopyOp) — editor backups and
 // deliberately-disabled templates never reach a project, so they are not drift.
 const IGNORED_RE = /(~|-jostraca-off)$/;
@@ -331,7 +332,7 @@ function checkTargetModel(actx, resolved, report) {
     // For an alias, compare against what the origin WOULD produce under the new
     // name, so the rename itself is not the difference.
     const rewrite = aliased ?
-        (src) => (0, target_1.aliasModelText)(src, torigname, tname) : undefined;
+        (src) => (0, kind_1.aliasModelText)(src, torigname, tname) : undefined;
     if (!differs(fs, scaffold, project, actx.model, provenance, undefined, rewrite)) {
         return;
     }

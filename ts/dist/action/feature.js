@@ -13,7 +13,7 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const featureSource_1 = require("../helpers/featureSource");
 const stdrep_1 = require("../helpers/stdrep");
-const resolve_1 = require("./resolve");
+const kind_1 = require("./kind");
 const action_1 = require("./action");
 const CMD_MAP = {
     add: cmd_feature_add
@@ -24,10 +24,6 @@ const BASE = 'node_modules/@voxgig/sdkgen';
 // ref grammar `target add` already has is the next step, and this becomes
 // whatever the ref resolved to.
 const SDKFOLDER = BASE + '/project/.sdk';
-// A bare NAME, as opposed to a ref that locates a source.
-function isBare(ref) {
-    return !ref.includes('/') && !ref.includes(node_path_1.default.sep);
-}
 async function action_feature(args, actx) {
     const cmdname = args[1];
     const cmd = CMD_MAP[cmdname];
@@ -97,59 +93,29 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
         (0, jostraca_1.each)(features, (n) => {
             const fref = n.val$;
             // TODO: validate feature is a-z0-9-_. only
-            // A feature can now come from anywhere a target can — the same ref
-            // grammar, resolved by the same resolver.
+            // Resolution, the alias policy, and the bare-name fallback to what the
+            // model records are the same for every kind — see action/kind.
             //
-            // A BARE name is resolved against what the model already records. That
-            // is what feature provenance is FOR, and without this reading it would
-            // be inert: `target add` re-runs this action with the model's own keys
-            // (`circuitbreaker`, not the ref it was installed from), and a bare
-            // name falls back to the bundled scaffold — whose `.sdk` folder EXISTS,
-            // so resolution succeeds and the copy then throws on a feature model
-            // that is not there. One externally-installed feature would break every
-            // subsequent `target add` in the project.
-            //
-            // An explicit ref always wins: that is how a feature is moved to a new
-            // source.
-            const declared = model.main[types_1.KIT].feature?.[fref];
-            const recorded = isBare(fref) && declared?.base ?
-                node_path_1.default.join(declared.base, '..', declared.origname || fref) : fref;
+            // A name that no longer resolves must not abort the RUN: `target add`
+            // re-runs this action for every active feature, so one feature whose
+            // source has moved (package uninstalled, checkout relocated) would
+            // otherwise stop every other feature — including `test`, which every
+            // generated target needs — from being copied at all.
             let source;
             try {
-                source = (0, resolve_1.resolveSource)(recorded, 'feature', ctx$);
+                source = (0, kind_1.resolveKind)(fref, 'feature', ctx$);
             }
             catch (err) {
-                // A name that no longer resolves must not abort the RUN. `target add`
-                // re-runs this action for every active feature, so one feature whose
-                // source has moved (package uninstalled, checkout relocated) would
-                // otherwise stop every other feature — including `test`, which every
-                // generated target needs — from being copied at all.
+                if (err instanceof utility_1.SdkGenError) {
+                    throw err;
+                }
                 log.warn({
-                    point: 'feature-source-unresolved', feature: fref, ref: recorded,
+                    point: 'feature-source-unresolved', feature: fref,
                     err: err.message,
                     note: fref + ': cannot find its source (' + err.message +
                         '); skipping, the already-copied files are left alone'
                 });
                 return;
-            }
-            // Feature aliasing is REFUSED, not half-supported: a feature's name is
-            // part of the generated `options.feature.<name>` config key and of the
-            // hook wiring in every target, and the copied model would still declare
-            // the ORIGIN name — so the index would point at a file defining a
-            // feature nobody asked for, while source discovery looked for the alias
-            // and found nothing.
-            //
-            // Asked of the RESOLVER rather than by re-reading the ref. A `~` is only
-            // an alias separator in the last segment, and a check that looked for
-            // one anywhere rejected every ref whose PATH contains a tilde —
-            // including a Windows 8.3 temp path like `C:\Users\RUNNER~1\...`. That
-            // is the same defect the resolver had; parsing the ref in two places is
-            // what let it come straight back.
-            if (source.name !== source.origname) {
-                throw new utility_1.SdkGenError('Feature aliasing is not supported: ' + fref +
-                    '\n  A feature name is part of the generated config ' +
-                    '(options.feature.<name>) and of the hook wiring in every target, ' +
-                    'so it cannot be renamed at install time.');
             }
             const fname = source.name;
             fnames.push(fname);
@@ -158,24 +124,10 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 feature: fname,
                 note: fname + (fname === fref ? '' : ' ref:' + fref)
             });
-            (0, jostraca_1.Folder)({ name: 'model/feature' }, () => {
-                (0, jostraca_1.Copy)({
-                    from: source.model,
-                    to: fname + '.aontu',
-                    // Where this feature came from, stamped over the `base: 'BASE'`
-                    // anchor the shipped model carries — the same mechanism, and the
-                    // same shared map, `target add` uses. A feature model recorded
-                    // nothing at all before, so `feature add` could only ever mean the
-                    // bundled scaffold; recording it is what lets a bare name keep
-                    // resolving to an external source on the next `target add` (which
-                    // re-runs this action for every active feature).
-                    replace: (0, stdrep_1.provenanceReplace)({ base: source.base }),
-                });
-                (0, jostraca_1.File)({ name: 'feature-index.aontu' }, () => (0, action_1.UpdateIndex)({
-                    content: ctx$.meta.content.feature_index,
-                    names: fnames,
-                }));
-            });
+            (0, jostraca_1.Folder)({ name: 'model/feature' }, () => (0, kind_1.kindModel)({
+                ctx$, kind: 'feature', source, names: fnames,
+                content: ctx$.meta.content.feature_index,
+            }));
             // Bring in the feature's source for every target already in the model.
             // Where that source lives is language-specific — `src/feature/<name>/`
             // for ts and js, `feature/<name>_feature.go` for go,
