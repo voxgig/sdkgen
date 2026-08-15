@@ -24,6 +24,7 @@ import Path from 'node:path'
 import { doctor } from '../dist/action/doctor.js'
 import {
   SCAFFOLD, SCAFFOLD_BASE, ROOT, KIT, makeProject, targetRef, target_add,
+  feature_add,
 } from './actionharness'
 
 
@@ -454,6 +455,187 @@ describe('doctor: feature model files', () => {
     deepStrictEqual(report.forked, [])
     ok(report.resyncPending.includes('model/feature/retry.aontu'))
     strictEqual(report.ok, true)
+  })
+})
+
+
+// A FEATURE PACKAGE'S PER-TARGET SOURCE — design §12.3.
+//
+// A feature supplied by a different package than the target ships its
+// per-target source in its OWN `tm/<target>/` overlay, and `feature add`
+// copies that into the project. Compared against the target's scaffold alone,
+// those files are present in the project and absent upstream — so every one
+// of them was reported STALE, a FAILING category. Any project using an
+// external feature had a red `doctor` and nothing wrong with it.
+describe('doctor: a feature package\'s overlay for someone else\'s target', () => {
+
+  const FEATURE = `
+main: kit: feature: circuitbreaker: {
+  name: key()
+  title: "cb"
+  version: '0.0.1'
+  active: true
+  base: 'BASE'
+  config: options: active: false
+  hook: {}
+}
+`
+
+  // Provides `circuitbreaker` plus an overlay for `go` — a target this
+  // project got from the bundled scaffold, not from here.
+  function featurePackage(): string {
+    const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-foreign-'))
+    const sdk = Path.join(dir, '.sdk')
+
+    Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
+    Fs.writeFileSync(
+      Path.join(sdk, 'model', 'feature', 'circuitbreaker.aontu'), FEATURE)
+
+    Fs.mkdirSync(Path.join(sdk, 'tm', 'go', 'feature'), { recursive: true })
+    Fs.writeFileSync(
+      Path.join(sdk, 'tm', 'go', 'feature', 'circuitbreaker_feature.go'),
+      'package feature\n')
+
+    return dir
+  }
+
+
+  async function withForeignFeature(pkg: string) {
+    const project = makeProject({
+      feature: { circuitbreaker: { name: 'circuitbreaker', active: true } },
+    })
+
+    await target_add([targetRef('go')], project.actx)
+    project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
+
+    await feature_add([Path.join(pkg, 'circuitbreaker')], project.actx)
+
+    const src = String(project.fs.readFileSync(
+      ROOT + '/model/feature/circuitbreaker.aontu', 'utf8'))
+
+    project.actx.model.main[KIT].feature.circuitbreaker = {
+      name: 'circuitbreaker', active: true,
+      base: (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1],
+    }
+
+    return project
+  }
+
+
+  test('its source is EXPECTED, not stale', async () => {
+    const pkg = featurePackage()
+    try {
+      const project = await withForeignFeature(pkg)
+
+      ok(project.files().includes('tm/go/feature/circuitbreaker_feature.go'),
+        'the overlay was never installed — this test measures nothing')
+
+      const report = await check(project)
+
+      deepStrictEqual(report.stale, [],
+        'a foreign feature\'s source was reported as stale, so doctor goes ' +
+        'red for any project using an external feature')
+      strictEqual(report.ok, true)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('...but it is still COMPARED, so an edit is caught', async () => {
+    // Expected is not the same as ignored. Suppressing these would have
+    // fixed the false stale and left a hole: `feature add` overwrites the
+    // file, and `package update`'s gate needs to know before it does.
+    const pkg = featurePackage()
+    try {
+      const project = await withForeignFeature(pkg)
+
+      const path = Path.join(ROOT, 'tm/go/feature/circuitbreaker_feature.go')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n// hand edit\n')
+
+      const report = await check(project)
+
+      ok(report.edited.includes('tm/go/feature/circuitbreaker_feature.go'),
+        'an edit to a foreign feature\'s source was invisible: ' +
+        JSON.stringify(report))
+      strictEqual(report.ok, false)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('it is compared when SCOPED to the feature alone', async () => {
+    // The case the whole thing is for. `package update` on a FEATURE package
+    // scopes doctor to that feature — no target is walked — and `feature add`
+    // is about to rewrite exactly these files. Leaving the comparison in the
+    // target walk left the gate open in the one scenario it was built for.
+    const pkg = featurePackage()
+    try {
+      const project = await withForeignFeature(pkg)
+
+      const path = Path.join(ROOT, 'tm/go/feature/circuitbreaker_feature.go')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n// hand edit\n')
+
+      const res: any = await doctor(project.actx,
+        (kind: string, name: string) =>
+          'feature' === kind && 'circuitbreaker' === name)
+
+      ok(res.report.edited.includes('tm/go/feature/circuitbreaker_feature.go'),
+        'scoped to the feature, its own source was not compared: ' +
+        JSON.stringify(res.report))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('it is compared ONCE, not once per side', async () => {
+    // The target walk marks these expected; the feature check compares them.
+    // If both compared, a full run would report the same file twice.
+    const pkg = featurePackage()
+    try {
+      const project = await withForeignFeature(pkg)
+
+      const path = Path.join(ROOT, 'tm/go/feature/circuitbreaker_feature.go')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n// hand edit\n')
+
+      const report = await check(project)
+      const hits = report.edited.filter(
+        (f: string) => f === 'tm/go/feature/circuitbreaker_feature.go')
+
+      strictEqual(hits.length, 1, 'reported ' + hits.length + ' times')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a DEACTIVATED feature\'s source is stale again', async () => {
+    // `feature add` copies only active features, so what a switched-off
+    // feature leaves behind really is orphaned output — which is the
+    // category this whole check exists for.
+    const pkg = featurePackage()
+    try {
+      const project = await withForeignFeature(pkg)
+
+      project.actx.model.main[KIT].feature.circuitbreaker.active = false
+
+      const report = await check(project)
+
+      ok(report.stale.includes('tm/go/feature/circuitbreaker_feature.go'),
+        'source for a switched-off feature was still treated as expected')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
   })
 })
 

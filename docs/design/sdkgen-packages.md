@@ -170,12 +170,31 @@ Deltas found while implementing `package update` (§18.6b):
   project demonstrably installed from it once, and refusing to refresh it
   would strand a project whose package predates the manifest.
 
-Known gap in the gate, NOT closed here: a feature's per-target SOURCE
-(`tm/<target>/…`) supplied by a feature package's overlay is not attributed
-to that feature, so a local edit to it is invisible to the pre-check. Closing
-it needs §12.3's foreign-feature expected set, which also fixes a
-pre-existing false `stale` in plain `doctor` for any project using an
-external feature — the same piece of work, and its own change (§18.6d).
+Deltas found while implementing §12.3 (the foreign-feature expected set,
+§18.6d):
+
+- **This was a live bug, not only a gap in the new gate.** A feature
+  package's overlay files are present in the project and absent from the
+  TARGET's scaffold tree, so `checkTarget` reported every one of them as
+  `stale` — a FAILING category. Any project using an external feature had
+  a red `doctor` and nothing wrong with it. That arrived with §18.5a,
+  when foreign features became installable, and nobody had run the
+  combination since. Reproduced before fixing: `ok: false`, one `stale`
+  entry, on a project that had done nothing.
+- **Expected is not the same as ignored.** Suppressing those paths would
+  have cleared the false `stale` and left a hole: `feature add`
+  overwrites the file, so `package update`'s gate has to know before it
+  does. They are added to the expected set with their real source, so
+  they are still COMPARED — which is what closes the hole scoped out of
+  §18.6b.
+- **The seam was already there.** `checkTarget` built a map of "the name
+  a file lands under" → "where it came from", holding tree-relative
+  paths. Making the value an absolute path let a foreign entry point at
+  another package entirely, with no second comparison path.
+- **Only ACTIVE features.** `feature add` copies only those, so a feature
+  switched off later really does leave orphaned output — reporting it as
+  stale is the category doing its job, and there is a test pinning that
+  the fix did not swallow it.
 
 Deltas found while implementing §12.5 (the per-kind model-file
 comparison, §18.6a):

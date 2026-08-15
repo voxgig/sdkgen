@@ -62,6 +62,8 @@ import type { Source } from './resolve'
 
 import { definitionPath } from '../helpers/definition'
 
+import { findFeatureSources } from '../helpers/featureSource'
+
 
 // jostraca's Copy walk skips these (IGNORED_RE in CopyOp) — editor backups and
 // deliberately-disabled templates never reach a project, so they are not drift.
@@ -205,6 +207,27 @@ async function doctor(
 
   log.info({ point: 'doctor-start', targets: counts.target ?? 0, ...counts })
 
+  // Targets resolved ONCE, before the kind loop, because the feature checks
+  // need them too: a feature's per-target source lives under the name the
+  // target has in its own source, so finding it means knowing where each
+  // target came from. Resolving per (feature, target) pair would re-read
+  // every package manifest dozens of times and warn repeatedly about the
+  // same unresolvable target.
+  //
+  // Resolved even when the run is SCOPED past them — a scoped check of one
+  // feature still has to look in every target's tree for that feature's
+  // files.
+  const targets = new Map<string, Source>()
+
+  for (const tname of
+    Object.keys((model as any)?.main?.[KIT]?.target ?? {}).sort()) {
+    const source = resolveDeclared('target', tname, actx)
+
+    if (null != source) {
+      targets.set(tname, source)
+    }
+  }
+
   for (const kind of kinds) {
     const items = Object.keys((model as any)?.main?.[KIT]?.[kind] ?? {}).sort()
 
@@ -213,18 +236,22 @@ async function doctor(
         continue
       }
 
-      const source = resolveDeclared(kind, name, actx)
+      const source = 'target' === kind ?
+        targets.get(name) : resolveDeclared(kind, name, actx)
 
       if (null == source) {
         continue
       }
 
       if ('target' === kind) {
-        checkTarget(actx, {
-          tname: source.name,
-          tfolder: source.folder,
-          torigname: source.origname,
-        }, report)
+        checkTarget(actx, source, report)
+      }
+
+      // Only an ACTIVE feature has source copied out; what an inactive one
+      // left behind is stale, and the target walk reports it as such.
+      if ('feature' === kind &&
+        false !== (model as any)?.main?.[KIT]?.feature?.[name]?.active) {
+        checkFeatureSource(actx, source, targets, report)
       }
 
       checkItemModel(actx, kind, source, report)
@@ -351,8 +378,12 @@ function resolveDeclared(
 }
 
 
-function checkTarget(actx: ActionContext, resolved: any, report: DoctorReport) {
-  const { tname, tfolder, torigname } = resolved
+function checkTarget(
+  actx: ActionContext, resolved: Source, report: DoctorReport,
+) {
+  const tname = resolved.name
+  const tfolder = resolved.folder
+  const torigname = resolved.origname
   const fs = actx.fs()
   const model = actx.model
   const root = actx.folder
@@ -425,9 +456,40 @@ function checkTarget(actx: ActionContext, resolved: any, report: DoctorReport) {
       walk(fs, tree.scaffold).filter((rel) => !excluded(rel, excludes)) :
       walk(fs, tree.scaffold)
 
-    // Scaffold path -> the name it lands under in the project.
+    // Where each file the project should have COMES FROM: the name it lands
+    // under, mapped to the absolute path of the file it was copied from.
+    //
+    // An absolute path rather than a tree-relative one, because not every
+    // expected file comes from THIS tree — see the foreign-feature union
+    // below.
     const landed = new Map<string, string>(scaffoldFiles.map(
-      (rel: string) => [null == tree.rename ? rel : tree.rename(rel), rel]))
+      (rel: string) => [
+        null == tree.rename ? rel : tree.rename(rel),
+        Path.join(tree.scaffold, rel),
+      ]))
+
+    // FOREIGN FEATURE SOURCE.
+    //
+    // A feature supplied by a different package than the target ships its
+    // per-target source in ITS OWN `tm/<target>/` overlay, and `feature add`
+    // copies that into the project. Compared against the target's scaffold
+    // alone, those files are present in the project and absent upstream — so
+    // every one of them was reported STALE, a FAILING category. Any project
+    // using an external feature had a red `doctor` and nothing wrong with it.
+    //
+    // They are not stale, they are expected — just expected from somewhere
+    // else. Adding them here rather than suppressing them keeps them
+    // CHECKED: a hand-edit to a foreign feature's source is still reported,
+    // which is what `package update`'s gate needs in order to cover
+    // everything the re-add writes.
+    const foreign = new Set<string>()
+
+    if ('edited' === tree.kind) {
+      for (const [rel, from] of foreignFeatureSource(actx, resolved)) {
+        landed.set(rel, from)
+        foreign.add(rel)
+      }
+    }
 
     const expected = Array.from(landed.keys()).sort()
     const actual = walk(fs, tree.project)
@@ -441,9 +503,18 @@ function checkTarget(actx: ActionContext, resolved: any, report: DoctorReport) {
         continue
       }
 
+      // A foreign feature's file is EXPECTED here (so it is not stale) but
+      // compared by `checkFeatureSource`, from the feature's side. Comparing
+      // it here too would report it twice on a full run — and, worse, would
+      // leave it uncompared on a run scoped to the feature alone, which is
+      // exactly when `feature add` is about to rewrite it.
+      if (foreign.has(rel)) {
+        continue
+      }
+
       const from = landed.get(rel) as string
 
-      if (differs(fs, Path.join(tree.scaffold, from), Path.join(tree.project, rel),
+      if (differs(fs, from, Path.join(tree.project, rel),
         model, tree.replace, undefined, tree.rewrite)) {
         report[tree.kind].push(label + rel)
       }
@@ -468,6 +539,135 @@ function checkTarget(actx: ActionContext, resolved: any, report: DoctorReport) {
     }
   }
 
+}
+
+
+// Per-target source that a FEATURE package supplies for this target, as
+// `project-relative path -> the file it was copied from`.
+//
+// Only for features whose source folder is not the target's own: everything
+// the target ships for itself is already in the tree being walked, and
+// listing it twice would compare it against itself.
+//
+// Only for ACTIVE features, because that is what `feature add` copies. A
+// feature switched off later leaves its files behind, and those really are
+// stale — reporting them is the point.
+//
+// Discovered with `findFeatureSources`, the same function the fan-out and the
+// trim use, so doctor's idea of which files belong to a feature cannot drift
+// from the one that put them there.
+function foreignFeatureSource(
+  actx: ActionContext, target: Source,
+): Map<string, string> {
+  const out = new Map<string, string>()
+
+  const features: any = (actx.model as any)?.main?.[KIT]?.feature ?? {}
+
+  for (const fname of Object.keys(features).sort()) {
+    if (false === features[fname]?.active) {
+      continue
+    }
+
+    const source = resolveDeclared('feature', fname, actx)
+
+    if (null == source) {
+      continue
+    }
+
+    for (const [rel, from] of overlayFiles(actx, source, target)) {
+      out.set(rel, from)
+    }
+  }
+
+  return out
+}
+
+
+// One feature's per-target source, as `tm-relative path -> the file it was
+// copied from`, for source the FEATURE package supplies rather than the
+// target.
+//
+// ONE enumerator, used from both directions: the target walk needs these to
+// know they are expected, and the feature check needs them to compare. Two
+// enumerations would be two ideas of which files a feature owns, and the
+// pair would drift — which is the failure this codebase keeps producing.
+//
+// Empty when the feature's source IS the target's own tree: those files are
+// already in the tree being walked, and listing them would compare them
+// against themselves.
+function overlayFiles(
+  actx: ActionContext, feature: Source, target: Source,
+): Map<string, string> {
+  const fs = actx.fs()
+  const out = new Map<string, string>()
+
+  if (feature.folder === target.folder) {
+    return out
+  }
+
+  // The feature package's overlay for THIS target, under the name the target
+  // has in its own source — an aliased target's templates live at
+  // `tm/<origname>`.
+  const overlay = Path.join(feature.folder, 'tm', target.origname)
+
+  for (const found of findFeatureSources(fs, overlay, [feature.name])) {
+    const from = Path.join(overlay, found.path)
+
+    // A folder source is the whole feature directory; expand it, because the
+    // comparison is per file.
+    if (found.folder) {
+      for (const rel of walk(fs, from)) {
+        out.set(found.path + '/' + rel, Path.join(from, rel))
+      }
+    }
+    else {
+      out.set(found.path, from)
+    }
+  }
+
+  return out
+}
+
+
+// A FEATURE's per-target source, checked from the feature's side.
+//
+// This is where those files are COMPARED. The target walk only marks them
+// expected, so that each is compared exactly once — by the feature that owns
+// it, which is also the only scope in which `feature add` will rewrite it.
+//
+// Doing it the other way round — leaving the comparison in the target walk —
+// left the gate open in the case it was built for: `package update` on a
+// FEATURE package scopes doctor to that feature, no target is walked, and so
+// nothing compared the very overlay the feature package supplies. Verified
+// before fixing: the update succeeded without asking, and the local edit was
+// destroyed.
+function checkFeatureSource(
+  actx: ActionContext,
+  feature: Source,
+  targets: Map<string, Source>,
+  report: DoctorReport,
+) {
+  const fs = actx.fs()
+  const root = actx.folder
+  const model = actx.model
+
+  for (const [tname, target] of targets) {
+    for (const [rel, from] of overlayFiles(actx, feature, target)) {
+      const project = Path.join(root, 'tm', tname, rel)
+      const label = 'tm/' + tname + '/' + rel
+
+      if (!fs.existsSync(project)) {
+        report.missing.push(label)
+        continue
+      }
+
+      // The same map `feature add` copies with — see helpers/stdrep. A
+      // different one here would report every substituted file as edited.
+      if (differs(fs, from, project, model, templateReplacements(model, tname))) {
+        report.edited.push(label)
+      }
+    }
+  }
 }
 
 
