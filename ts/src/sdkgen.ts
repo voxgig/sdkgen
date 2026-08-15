@@ -128,6 +128,14 @@ import {
 } from './action/doctor'
 import type { DoctorReport } from './action/doctor'
 
+import {
+  action_package,
+  package_add,
+} from './action/package'
+
+// The verbs, built from the kind registry — see action/dispatch.
+import { ACTION_MAP, actionNames } from './action/dispatch'
+
 
 
 // TODO: use shape
@@ -158,17 +166,6 @@ type SdkGenOptions = {
 
 
 const { Jostraca } = JostracaModule
-
-
-// Null-prototype: a plain object literal inherits Object.prototype, so
-// `voxgig-sdkgen toString` (or `constructor`, `valueOf`, ...) resolves to an
-// inherited function, passes the `null == actionFunc` guard below, and gets
-// CALLED with the action arguments instead of reporting an unknown action.
-const ACTION_MAP: any = Object.assign(Object.create(null), {
-  target: action_target,
-  feature: action_feature,
-  doctor: action_doctor,
-})
 
 
 const dlog = getdlog('sdkgen', __filename)
@@ -327,21 +324,30 @@ function SdkGen(opts: SdkGenOptions) {
   //
   // Nothing here wants structured arguments: every action takes names and
   // refs. Parsing them was pure loss.
-  async function action(args: string[]): Promise<any> {
+  //
+  // `flags` is the second parameter because `--only` and `--alias` are
+  // arguments to ONE command, not generator configuration: passing them
+  // through `SdkGen({…})` like `debug`/`dryrun` would make a later
+  // `action()` call on the same instance silently inherit them.
+  async function action(
+    args: string[], flags?: Record<string, any>,
+  ): Promise<any> {
     const actname = args[0]
     const actionFunc = ACTION_MAP[actname]
 
     if (null == actionFunc) {
-      throw new SdkGenError('Unknown action: ' + actname)
+      throw new SdkGenError(
+        'Unknown action: ' + actname +
+        ' (expected: ' + actionNames().join(', ') + ')')
     }
 
-    const ctx = resolveActionContext()
+    const ctx = resolveActionContext(flags)
 
     return await actionFunc(args, ctx)
   }
 
 
-  function resolveActionContext(): ActionContext {
+  function resolveActionContext(flags?: Record<string, any>): ActionContext {
 
     // TODO: use AsyncLocalStorage to avoid reloading model
     const { model, url } = resolveModel()
@@ -354,6 +360,7 @@ function SdkGen(opts: SdkGenOptions) {
       url,
       jostraca,
       opts,
+      flags: flags ?? {},
     }
 
     return ctx
@@ -413,6 +420,23 @@ function SdkGen(opts: SdkGenOptions) {
     }
   }
 
+  // The whole-package verbs. `flags` mirrors the CLI's `--only` / `--alias`,
+  // for the same reason they are `action`'s second parameter rather than
+  // constructor options: they are arguments to one call.
+  const packages = {
+    add: async (
+      refs: string[], flags?: Record<string, any>,
+    ): Promise<ActionResult> => {
+      const ctx = resolveActionContext(flags)
+      return package_add(refs, ctx)
+    },
+
+    list: async (): Promise<ActionResult> => {
+      const ctx = resolveActionContext()
+      return action_package(['package', 'list'], ctx)
+    },
+  }
+
   // Has this project's `.sdk/` drifted from the scaffold? See action/doctor.
   const check = async (): Promise<ActionResult> => {
     const ctx = resolveActionContext()
@@ -428,6 +452,10 @@ function SdkGen(opts: SdkGenOptions) {
     check,
     target,
     feature,
+
+    // `package` is a reserved word in a strict-mode object shorthand, so the
+    // local binding is `packages` and the PUBLIC name matches the CLI verb.
+    package: packages,
   }
 
 }

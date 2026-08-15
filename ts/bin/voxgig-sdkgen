@@ -59,7 +59,10 @@ async function operate(options) {
     dryrun: options.dryrun,
   })
 
-  const res = await sdkgen.action(options.args)
+  const res = await sdkgen.action(options.args, {
+    only: options.only,
+    alias: options.alias,
+  })
 
   // `doctor` is a CHECK: it must fail the process so CI can gate on it.
   // Everything else reports success by not throwing.
@@ -103,6 +106,17 @@ function resolveOptions() {
         short: 'y',
       },
 
+      // PER-INVOCATION action arguments, not generator config — see the
+      // `flags` note in src/types.ts. They are routed through
+      // `sdkgen.action(args, flags)` rather than `SdkGen({…})`.
+      only: {
+        type: 'string',
+      },
+
+      alias: {
+        type: 'string',
+      },
+
     }
   })
 
@@ -111,6 +125,8 @@ function resolveOptions() {
     help: !!args.values.help,
     version: !!args.values.version,
     dryrun: !!args.values.dryrun,
+    only: args.values.only,
+    alias: args.values.alias,
     args: args.positionals,
   }
 
@@ -119,11 +135,16 @@ function resolveOptions() {
 
 
 function validateOptions(rawOptions) {
+  // A CLOSED shape: a key not listed here is rejected, which is why every
+  // flag needs an entry in all three places (parse entry, this shape, the
+  // help text) rather than only the first.
   const optShape = Shape({
     debug: One(String, Boolean),
     help: Boolean,
     version: Boolean,
     dryrun: Boolean,
+    only: One(String, undefined),
+    alias: One(String, undefined),
     args: [String]
   })
 
@@ -152,17 +173,27 @@ function help() {
   return `Usage: voxgig-sdkgen [options] <action> [args...]
 
 Actions:
-  target add <lang>     Add (or resync) a language target
-  feature add <name>    Add a feature
+  target add <ref>      Add (or resync) a language target
+  feature add <ref>     Add a feature
+  package add <pkg>     Add everything an sdkgen package provides
+  package list          List installed items and the package each came from
   doctor                Report .sdk/ drift from the scaffold; exits non-zero
                         when a component is forked, a template master edited,
                         or a stale file left behind
+
+A <ref> is a name (\`go\`), a package-relative path
+(\`@acme/sdkgen-iot/iot-go\`) or an absolute path, optionally suffixed
+\`~<alias>\` to install it under a different name.
 
 Options:
   -h, --help            Show this help message
   -v, --version         Show version
   -g, --debug <level>   Debug level (default: info)
   -y, --dryrun          Dry run (no changes written)
+      --only <items>    package add: install only these, as
+                        <kind>:<name>,... (default: everything provided)
+      --alias <map>     package add: install under different names, as
+                        <name>=<alias>,...
 `
 }
 

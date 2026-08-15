@@ -73,13 +73,17 @@ declare function SdkGen(opts: SdkGenOptions): {
         ok: boolean;
         name: string;
     }>;
-    action: (args: string[]) => Promise<any>;
+    action: (args: string[], flags?: Record<string, any>) => Promise<any>;
     check: () => Promise<ActionResult>;
     target: {
         add: (targets: string[]) => Promise<ActionResult>;
     };
     feature: {
         add: (features: string[]) => Promise<ActionResult>;
+    };
+    package: {
+        add: (refs: string[], flags?: Record<string, any>) => Promise<ActionResult>;
+        list: () => Promise<ActionResult>;
     };
 };
 declare namespace SdkGen {

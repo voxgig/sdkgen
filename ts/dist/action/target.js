@@ -87,9 +87,20 @@ async function target_add(targets, actx) {
     if (actx.opts.dryrun) {
         (0, dryrun_1.showDryrun)(opts.log, 'target-result', jres, actx.folder);
     }
-    // feature_add copies feature templates for targets already registered in
-    // the model. The targets added above are not in the in-memory model yet,
-    // so TargetRoot copies their feature templates itself.
+    // The targets just written are not in the in-memory model — nothing
+    // recompiles `model/sdk.aontu` mid-process — so put them there before the
+    // fan-out below.
+    //
+    // TargetRoot copies each new target's feature source from ITS OWN TREE,
+    // which is the whole story only while every feature ships in the same
+    // package as every target. For a feature supplied by a DIFFERENT package,
+    // the source lives in that package's overlay, and only `feature_add`'s
+    // two-tree lookup consults it — for targets in the model. So a target added
+    // while such a feature was already active got no source for it at all:
+    // TargetRoot could not find it, and the fan-out could not see the target.
+    (0, resolve_1.registerInstalled)('target', targets, actx);
+    // feature_add copies feature templates for every target in the model,
+    // which now includes the ones just added.
     await (0, feature_1.feature_add)(features, actx);
     opts.log.info({
         point: 'target-end',

@@ -85,6 +85,7 @@ type ActionContext = {
     url: string;
     opts: any;
     jostraca: any;
+    flags?: Record<string, any>;
 };
 type ActionResult = {
     jres: JostracaResult;

@@ -1,12 +1,48 @@
 # Design: sdkgen packages — external targets, features, and other kinds
 
 Status: **proposal** (2026-08-14), **partly implemented** (2026-08-15).
-Landed so far: **§18.1** (live bugs + characterization goldens), **§18.3**
-(provenance), **§18.2** (the kind registry), **§18.5** (features from
-packages, external-target trim), and the **manifest half of §18.4** — the
-file, its validation, the bundled scaffold's own manifest, and `package:`
-provenance. Still proposal: the rest of §18.4 (`package add` / `list` and
-their CLI plumbing), §18.6 and §18.7.
+Landed so far: **§18.1** (live bugs + characterization goldens), **§18.2**
+(the kind registry), **§18.3** (provenance), **§18.4** (the manifest, then
+`package add` / `list` with their CLI plumbing) and **§18.5** (features
+from packages, external-target trim). Still proposal: **§18.6** and
+**§18.7**.
+
+Deltas found while implementing `package add` / `list` (§18.4b):
+
+- **Ordering alone does not make the fan-out work.** `package add`
+  installs targets before features because `feature add` copies a
+  feature's source into every target *in the model* — but an action reads
+  `actx.model`, compiled from `model/sdk.aontu` before the run, and
+  writing `model/target/iotgo.aontu` does not change it. Nothing
+  recompiles mid-process, so the feature saw none of the targets just
+  installed and shipped no source for them, reporting success with one
+  `feature-source-missing` warning per target. `package add` now teaches
+  the in-memory model about each kind's items before moving to the next,
+  resolving them through `resolveSource` so the recorded `base` and
+  `origname` are by construction the ones the add stamped.
+- **The engine gate is a bounded semver subset, and its third answer is
+  the important one.** `helpers/semver` returns `true` / `false` /
+  `undefined`, where `undefined` means "outside the subset I understand".
+  A caller must let the install proceed on `undefined` and say so:
+  refusing on an unparsed range blocks a package that works, which is a
+  worse failure than the incompatibility being guarded against. Hyphen
+  ranges are rejected *explicitly* rather than falling through, because
+  read as a conjunction of two bare versions they would be unsatisfiable
+  — a false refusal. A partially-understood conjunction or alternation is
+  likewise `undefined`, never `false`.
+- **`--only` / `--alias` needed `action(args, flags)`**, not constructor
+  options: they are arguments to one command, so passing them through
+  `SdkGen({…})` would make a later `action()` call on the same instance
+  inherit them silently.
+- **`ACTION_MAP` moved to `action/dispatch.ts`.** Building it from the
+  kind registry means importing the per-kind actions, and `target.ts`
+  imports `feature.ts` which imports `kind.ts` — wiring them together
+  anywhere in that chain is a require cycle. The same module registers
+  the per-kind adders that `package add` loops over, for the same reason.
+- **`package add` is refused for a folder with no manifest**, and says
+  which command to use instead. A bare `.sdk`-shaped folder stays a valid
+  *direct-ref* source; it is this verb, the one that acts on a manifest,
+  that requires one.
 
 Deltas found while implementing the manifest (§18.4a):
 
