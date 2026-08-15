@@ -50,7 +50,7 @@ import {
 
 import { kindModel, resolveKind, escapeRe } from './kind'
 
-import { resolveSource } from './resolve'
+import { BUNDLED, resolveSource } from './resolve'
 
 
 const CMD_MAP: any = {
@@ -504,6 +504,47 @@ function pruneStaleTemplates(
 }
 
 
+// WHICH NAMES COUNT AS FEATURE SOURCE, when deciding what to trim.
+//
+// This used to be the SOURCE folder's own `model/feature/` listing, which is
+// right only while every target ships in the same package as every feature.
+// An external target package declares no feature models of its own — it has
+// no reason to — so nothing was discovered, nothing was trimmed, and the
+// consumer received the target's source for EVERY feature regardless of what
+// its model selected. Measured on a target copied from the bundled `go`: the
+// bundled one keeps 2 feature source files, the external one kept all 18.
+//
+// That is the failure `helpers/featureSource` was written to end (272 stray
+// files in one repo), arriving again by the one route it did not cover.
+//
+// The catalogue is therefore the union of every place a feature this project
+// could select can come from:
+//
+//   - the bundled scaffold, which is what a bare `feature add <name>` means;
+//   - the source package's own declarations, for a package shipping both;
+//   - whatever the consumer's model already has, whoever provided it — which
+//     is how an EXTERNAL feature's source becomes trimmable at all.
+//
+// For a bundled add this is `bundled ∪ bundled ∪ (⊆ bundled)`, so the trim is
+// byte-identical to what it always was — the goldens hold it to that.
+function featureCatalogue(ctx$: any, tfolder: string): string[] {
+  const fs = ctx$.fs()
+  const root = ctx$.folder ?? '.'
+
+  const names = new Set<string>([
+    ...availableFeatures(fs, Path.join(root, BUNDLED)),
+    ...availableFeatures(fs, tfolder),
+  ])
+
+  const declared: any = ctx$.model?.main?.[KIT]?.feature ?? {}
+  for (const name of Object.keys(declared)) {
+    names.add(name.toLowerCase())
+  }
+
+  return Array.from(names).sort()
+}
+
+
 function trimFeatures(
   ctx$: any,
   tfolder: string,
@@ -528,7 +569,7 @@ function trimFeatures(
   // every other feature builds on — so it is never a trim candidate.
   const selected = new Set(['base', ...(features ?? [])])
 
-  const available = availableFeatures(fs, tfolder)
+  const available = featureCatalogue(ctx$, tfolder)
   const drop = findFeatureSources(fs, tfolder + '/tm/' + torigname, available)
     .filter((s) => !selected.has(s.name))
 
@@ -613,6 +654,7 @@ function resolveTarget(tref: string, ctx$: any) {
 
 export {
   action_target,
+  featureCatalogue,
   target_add,
   resolveTarget,
   trimFeatures,
