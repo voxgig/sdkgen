@@ -41,6 +41,55 @@ Deltas found while implementing the manifest (§18.4a):
   in each target section) and nothing else. Doctor had to be given the same
   value or every stamped copy would have read as forked — the writer/reader
   symmetry `helpers/stdrep` exists to hold.
+- **§12's resync tolerance had to become PER KEY, and stop using a
+  pattern.** The provenance keys arrive in stages, so a project that
+  resynced between two of them holds a copy that *is* stamped and is still
+  missing a later key; an all-or-nothing "is it stamped at all" test called
+  every one of those a fork. On released 3.4.8 only `ts`, `csharp` and
+  `swift` carried the `'BASE'` anchor, and `ts` is in essentially every
+  consumer SDK, so that was close to the whole installed base going red on
+  a file nobody touched.
+
+  Fixing it per key with a regex for "a line that looks like provenance"
+  was worse, and in both directions: `base`, `origname` and `package` are
+  **not reserved words** — `main: kit: target: <t>: module: package` (the
+  Go root package identifier) and `publish: registry: package` are declared
+  model slots that a target model may write in block form. A key-only match
+  read such a line as proof the copy was already stamped (false fork on an
+  untouched file) *and* stripped it from the comparison (deleting it — a
+  real fork, silently reverted by the next `target add` — passed the
+  check). The tolerance now compares against the exact lines
+  `provenanceReplace` emits, which is the only spelling that keeps the
+  reader tied to the writer.
+- **A source whose manifest stops yielding a name turns its targets
+  forked.** That is accurate — the next `target add` really would strip the
+  `package:` line — but it was silent, because doctor built its resolver
+  context without a `log`. It now passes one. Tolerating it instead was
+  rejected: the project's copies genuinely disagree with what the source
+  would write, and the author needs to fix the manifest.
+- **Validation must use ONE oracle for both directions.** Asking the
+  filesystem forward and a directory listing backward disagrees on a
+  case-insensitive filesystem (APFS, NTFS — most package authors), so a
+  manifest claiming `IoTGo` beside `model/target/iotgo.aontu` validated
+  clean for the author and failed for every Linux consumer.
+- **`engines.sdkgen` is declarative only until §18.4b.** Nothing compares
+  the range: the gate belongs with `package add`, and there is no semver
+  implementation available here (this package has no runtime dependencies).
+  Said in the type so it does not read as enforced.
+
+Known gaps this phase does NOT close, both now more acute because feature
+model files carry provenance too:
+
+- **Doctor compares no `model/feature/<f>.aontu` at all.** It iterates
+  targets only, so a hand-edit to an installed feature definition reads as
+  perfectly in sync and is silently reverted by the next `target add` —
+  the same failure `checkTargetModel` was added for. §12's per-kind
+  model-file comparison (§18.6) is what closes it.
+- **`requires` checks that `src/cmp/<t>` is a directory, not that
+  `Main_<t>` is in it.** An empty component directory validates clean and
+  fails later at `requirePath`. Left alone deliberately: `requirePath`
+  resolves without an extension, so pinning `.ts` here would reject a
+  package shipping compiled components.
 
 Deltas found while implementing phase 1:
 

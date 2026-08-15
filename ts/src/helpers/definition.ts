@@ -44,14 +44,24 @@ function indexName(kind: string): string {
 // no `model/target/`, and that is the normal shape of a feature package.
 function definitionNames(fs: any, sdkfolder: string, kind: string): string[] {
   const dir = definitionFolder(sdkfolder, kind)
+  const index = indexName(kind)
 
-  if (!fs.existsSync(dir)) {
+  // `existsSync` is true for a REGULAR FILE and for a directory this process
+  // cannot read, so guarding on it and then calling `readdirSync` let a bare
+  // `ENOTDIR`/`EACCES` escape to callers that have no catch — including
+  // `featureCatalogue`, which runs on every ordinary `target add`, so the
+  // whole add aborted with an errno instead of a diagnostic. Not-a-readable-
+  // directory is the same answer as not-there: this kind defines nothing
+  // here.
+  let entries: string[]
+  try {
+    entries = fs.readdirSync(dir)
+  }
+  catch (err: any) {
     return []
   }
 
-  const index = indexName(kind)
-
-  return fs.readdirSync(dir)
+  return entries
     .filter((n: string) => n.endsWith('.aontu') && index !== n)
     .map((n: string) => n.replace(/\.aontu$/, ''))
     .sort()

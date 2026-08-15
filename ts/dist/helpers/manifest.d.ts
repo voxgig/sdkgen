@@ -29,8 +29,9 @@ type Finding = {
 declare function manifestPath(sdkfolder: string): string;
 declare function readManifest(fs: any, sdkfolder: string): ManifestRead;
 declare function checkShape(manifest: Manifest, file: string): Finding[];
+declare const ITEM_NAME_RE: RegExp;
 declare function validateManifest(fs: any, sdkfolder: string, manifest: Manifest, kinds: Record<string, {
     requires?: string[];
 }>): Finding[];
 export type { Manifest, ManifestRead, Finding, };
-export { MANIFEST, SCHEMA, manifestPath, readManifest, validateManifest, checkShape, };
+export { MANIFEST, SCHEMA, ITEM_NAME_RE, manifestPath, readManifest, validateManifest, checkShape, };

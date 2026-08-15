@@ -17,6 +17,8 @@
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
+import Fs from 'node:fs'
+import Os from 'node:os'
 import Path from 'node:path'
 
 import { doctor } from '../dist/action/doctor.js'
@@ -320,6 +322,176 @@ const Top = () => {
 
     ok(report.forked.includes('model/target/go.aontu'),
       'a hand-edited target model was not reported as forked')
+    strictEqual(report.ok, false)
+  })
+
+
+  test('a copy missing only a LATER provenance key is resync-pending', async () => {
+    // The keys arrived in stages — `base`/`origname` first, `package` with
+    // the manifest — so a project that resynced between two of them holds a
+    // copy that IS stamped and is still missing a later key. Treating
+    // "stamped at all" as the test made every one of those a fork: on the
+    // released 3.4.8 scaffold only ts, csharp and swift carried the anchor,
+    // and `ts` is in essentially every consumer SDK.
+    const project = makeProject({})
+    await target_add([targetRef('go')], project.actx)
+    project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
+
+    const path = Path.join(ROOT, 'model/target/go.aontu')
+    project.fs.writeFileSync(path,
+      String(project.fs.readFileSync(path, 'utf8'))
+        .split('\n').filter((l: string) => !/^\s*package:/.test(l)).join('\n'))
+
+    const report = await check(project)
+
+    deepStrictEqual(report.forked, [],
+      'a copy predating the `package` stamp was reported as a fork')
+    ok(report.resyncPending.includes('model/target/go.aontu'))
+    strictEqual(report.ok, true)
+  })
+
+
+  test('a CHANGED provenance value is still a fork', async () => {
+    // The narrowness the previous rollout's review required: the copy keeps
+    // the old line, so it is unmatched and the tolerance does not apply.
+    const project = makeProject({})
+    await target_add([targetRef('go')], project.actx)
+    project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
+
+    const path = Path.join(ROOT, 'model/target/go.aontu')
+    project.fs.writeFileSync(path,
+      String(project.fs.readFileSync(path, 'utf8'))
+        .replace(/package: '[^']*'/, "package: '@evil/other'"))
+
+    const report = await check(project)
+
+    ok(report.forked.includes('model/target/go.aontu'),
+      'a rewritten `package:` value was not reported as forked')
+    strictEqual(report.ok, false)
+  })
+})
+
+
+// `base`, `origname` and `package` ARE NOT RESERVED WORDS.
+//
+// `main: kit: target: <t>: module: package` (the Go root package identifier)
+// and `publish: registry: package` (the published package name) are declared
+// model slots — see model/sdkgen.aontu — and a target model may write either
+// in block form, on its own line, indistinguishable from a provenance line to
+// any regex that matches on the key alone.
+//
+// Such a regex got BOTH directions wrong, which is why the tolerance now
+// compares against the exact lines `provenanceReplace` emits.
+describe('doctor: a model key that merely LOOKS like provenance', () => {
+
+  // A third-party target whose model sets `module: package` as a BLOCK — a
+  // declared schema slot (`main: kit: target: &: module: package`), holding
+  // the Go root package identifier. Shipped from a package with a manifest,
+  // so the provenance stamp carries a `package:` line of its own and the two
+  // are genuinely ambiguous to a key-only match.
+  const MODEL = `
+main: kit: target: 'acme-go': {
+
+  title: 'Acme Go'
+  ext: go
+  comment: line: "//"
+  module: {
+    name: '$$name$$'
+    package: 'acmesdk'
+  }
+  base: 'BASE'
+  srcfeature: false
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+  deps: {}
+}
+`
+
+  function acmePackage(): string {
+    const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-acme-'))
+    const sdk = Path.join(dir, '.sdk')
+
+    Fs.mkdirSync(Path.join(sdk, 'model', 'target'), { recursive: true })
+    Fs.writeFileSync(
+      Path.join(sdk, 'model', 'target', 'acme-go.aontu'), MODEL)
+    Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'acme-go'), { recursive: true })
+    Fs.writeFileSync(
+      Path.join(sdk, 'src', 'cmp', 'acme-go', 'Main_acme-go.ts'), 'export {}\n')
+    Fs.mkdirSync(Path.join(sdk, 'tm', 'acme-go'), { recursive: true })
+    Fs.writeFileSync(Path.join(sdk, 'tm', 'acme-go', 'x.txt'), 'x\n')
+    Fs.writeFileSync(Path.join(dir, 'sdkgen-package.json'), JSON.stringify({
+      sdkgen: { package: 1 }, name: '@acme/sdkgen-go', version: '1.0.0',
+      provides: { target: ['acme-go'] },
+    }))
+
+    return dir
+  }
+
+
+  async function acmeReport(mutate: (src: string) => string) {
+    const pkg = acmePackage()
+    try {
+      const project = makeProject({
+        target: { 'acme-go': { name: 'acme-go' } },
+      })
+      await target_add([Path.join(pkg, 'acme-go')], project.actx)
+
+      const path = Path.join(ROOT, 'model/target/acme-go.aontu')
+      const src = mutate(String(project.fs.readFileSync(path, 'utf8')))
+      project.fs.writeFileSync(path, src)
+
+      project.actx.model.main[KIT].target['acme-go'] = {
+        name: 'acme-go',
+        base: (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1],
+      }
+
+      return await check(project)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  }
+
+
+  const dropProvenancePackage = (src: string) =>
+    src.split('\n')
+      .filter((l: string) => !/^ {2}package: '@acme/.test(l))
+      .join('\n')
+
+
+  test('the lookalike is not mistaken for a stamp', async () => {
+    // The copy predates the `package` stamp and is otherwise untouched. Read
+    // by a key-only match, its `module: package:` line said "already
+    // stamped", the tolerance did not apply, and doctor reported a fork on a
+    // file nobody had edited — the exact false-red the tolerance exists to
+    // prevent.
+    const report = await acmeReport(dropProvenancePackage)
+
+    deepStrictEqual(report.forked, [],
+      "a target model's own `module: package:` line was read as provenance")
+    ok(report.resyncPending.includes('model/target/acme-go.aontu'),
+      'no resync-pending finding: ' + JSON.stringify(report.resyncPending))
+    strictEqual(report.ok, true)
+  })
+
+
+  test('the lookalike is still COMPARED, so deleting it is a fork', async () => {
+    // The mirror, and the worse half: a key-only match stripped the real
+    // `module: package:` line from both sides, so deleting it — a genuine
+    // fork, silently reverted by the next `target add` — passed the check.
+    // That is precisely the class of hidden fork the previous review round
+    // required be caught.
+    const report = await acmeReport((src: string) =>
+      dropProvenancePackage(src)
+        .split('\n')
+        .filter((l: string) => !/^\s*package: 'acmesdk'/.test(l))
+        .join('\n'))
+
+    ok(report.forked.includes('model/target/acme-go.aontu'),
+      'deleting a real `module: package:` line was not reported as a fork: ' +
+      JSON.stringify(report))
     strictEqual(report.ok, false)
   })
 })

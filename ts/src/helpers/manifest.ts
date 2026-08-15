@@ -53,6 +53,14 @@ type Manifest = {
   sdkgen: { package: number }
   name: string
   version?: string
+
+  // DECLARATIVE ONLY, so far. Nothing reads this range yet: the engine gate
+  // belongs with `package add` (design §9), which is the next phase, and
+  // there is no semver implementation here to compare with — this package has
+  // no runtime dependencies. Until then a package declaring an incompatible
+  // range installs anyway. Stated here rather than left to be discovered,
+  // because a field that looks enforced and is not is worse than an absent
+  // one.
   engines?: { sdkgen?: string }
 
   // Keyed BY KIND, so a new kind (docs, …) needs no schema change.
@@ -146,6 +154,18 @@ function checkShape(manifest: Manifest, file: string): Finding[] {
         'that says the file is an sdkgen package manifest at all'
     })
   }
+  else if (!Number.isInteger(version) || version < 1) {
+    // A NON-NUMBER passes `version > SCHEMA` silently — `'banana' > 1` and
+    // `({}) > 1` are both false — so the gate that decides whether this
+    // generator may interpret the rest of the file would have been skipped by
+    // anything that is not a number at all. The version is the one field that
+    // must be checked before anything version-specific is read.
+    found.push({
+      level: 'error', point: 'manifest-schema-invalid', file,
+      note: file + ': `sdkgen.package` must be a positive integer schema ' +
+        'version, not ' + JSON.stringify(version)
+    })
+  }
   else if (version > SCHEMA) {
     // FORWARD, not backward: a manifest written for a later schema may use
     // fields this generator would misread. Say both numbers — "too new" is
@@ -185,12 +205,54 @@ function checkShape(manifest: Manifest, file: string): Finding[] {
           note: file + ': `provides.' + kind +
             '` is not a list of names'
         })
+        continue
+      }
+
+      // A NAME, not a path. `missingPaths` joins these onto the package root,
+      // so `../../outside` would send every existence check out of the
+      // package entirely and let a manifest validate clean against unrelated
+      // files. `~` is excluded for a different reason: it is the alias
+      // separator, so a name containing one could never be resolved back to
+      // this item.
+      for (const name of names as string[]) {
+        if (!ITEM_NAME_RE.test(name)) {
+          found.push({
+            level: 'error', point: 'manifest-item-name-invalid', file, kind,
+            name,
+            note: file + ': `provides.' + kind + '` lists ' +
+              JSON.stringify(name) + ' — an item name must match ' +
+              ITEM_NAME_RE.source + ' (a name, not a path)'
+          })
+        }
+      }
+
+      const seen = new Set<string>()
+      for (const name of names as string[]) {
+        if (seen.has(name)) {
+          found.push({
+            level: 'error', point: 'manifest-item-duplicated', file, kind,
+            name,
+            note: file + ': `provides.' + kind + '` lists ' +
+              JSON.stringify(name) + ' more than once'
+          })
+        }
+        seen.add(name)
       }
     }
   }
 
   return found
 }
+
+
+// What may name a target, feature, or any other item.
+//
+// Deliberately narrow: these become directory names, aontu model keys,
+// generated config keys (`options.feature.<name>`) and component filename
+// suffixes, so the intersection of what all of those accept is the real
+// constraint. The shipped names — `go-cli`, `py-data`, `seneca-provider`,
+// `clienttrack` — all fit.
+const ITEM_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 
 
 // Does the package's disk match its claim?
@@ -239,8 +301,21 @@ function validateManifest(
       continue
     }
 
+    // ONE ORACLE FOR BOTH DIRECTIONS. The unclaimed-extras loop below reads
+    // the directory listing; if this loop asked the filesystem instead
+    // (`existsSync`/`statSync`), the two would disagree on a case-insensitive
+    // filesystem — APFS and NTFS by default, which is most package authors'
+    // machines. A manifest claiming `IoTGo` beside a `model/target/iotgo.aontu`
+    // then validated CLEAN for the author and failed for every Linux consumer,
+    // which is precisely the "validated package that cannot install" this
+    // function exists to prevent. It also makes the duplicate check above
+    // meaningful: `['retry','Retry']` are two names to a Set and one file to
+    // the filesystem.
+    const defined = new Set(definitionNames(fs, sdkfolder, kind))
+
     for (const name of names) {
-      for (const missing of missingPaths(fs, sdkfolder, kind, name, def)) {
+      for (const missing of
+        missingPaths(fs, sdkfolder, kind, name, def, defined)) {
         found.push({
           level: 'error', point: 'manifest-item-missing', file, kind, name,
           note: file + ': claims ' + kind + ' `' + name +
@@ -273,27 +348,61 @@ function validateManifest(
 }
 
 
-// Every path an item of this kind needs, that is not there.
+// Every path an item of this kind needs, that is not there AS THE RIGHT KIND
+// OF THING.
 //
 // The definition file is implied for every kind; `requires` adds whatever
-// else the kind needs (a target's component and template trees). Returned as
-// package-relative strings because that is what an error message should say —
-// the absolute path is this machine's business, not the author's.
+// else the kind needs (a target's component and template trees).
+//
+// FILE vs DIRECTORY is checked, not merely existence. A regular file at
+// `src/cmp/<t>` satisfies `existsSync` and satisfies nothing else: `target
+// add` walks both of those paths as trees, so a package validated on
+// existence alone could still be incapable of installing a usable target —
+// which is the one thing validation is supposed to rule out.
+//
+// Returned as package-relative strings, because that is what an error message
+// should say: the absolute path is this machine's business, not the author's.
 function missingPaths(
   fs: any,
   sdkfolder: string,
   kind: string,
   name: string,
   def: { requires?: string[] },
+  defined: Set<string>,
 ): string[] {
-  const rels = ['model/' + kind + '/' + name + '.aontu']
+  const missing: string[] = []
 
-  for (const req of def.requires ?? []) {
-    rels.push(req.split('{name}').join(name))
+  // The definition, by EXACT NAME from the directory listing — see the note
+  // at the call site about the two directions needing one oracle.
+  if (!defined.has(name)) {
+    missing.push('model/' + kind + '/' + name + '.aontu')
   }
 
-  return rels.filter(
-    (rel: string) => !fs.existsSync(Path.join(sdkfolder, ...rel.split('/'))))
+  for (const req of def.requires ?? []) {
+    const rel = req.split('{name}').join(name)
+    const got = entryKind(fs, Path.join(sdkfolder, ...rel.split('/')))
+
+    if ('dir' !== got) {
+      missing.push(rel +
+        ('none' === got ? '' : ' (a file where a directory is required)'))
+    }
+  }
+
+  return missing
+}
+
+
+// What is at a path: a file, a directory, or nothing. `statSync` FOLLOWS
+// symlinks, deliberately — a package may legitimately symlink a shared tree,
+// and what matters is what `target add` will find when it walks it.
+function entryKind(fs: any, path: string): 'file' | 'dir' | 'none' {
+  try {
+    const stat = fs.statSync(path)
+    return stat.isDirectory() ? 'dir' : 'file'
+  }
+  catch (err: any) {
+    return 'none'
+  }
 }
 
 
@@ -306,6 +415,7 @@ export type {
 export {
   MANIFEST,
   SCHEMA,
+  ITEM_NAME_RE,
   manifestPath,
   readManifest,
   validateManifest,

@@ -16,9 +16,10 @@ import Os from 'node:os'
 import Path from 'node:path'
 
 import {
-  MANIFEST, SCHEMA, manifestPath, readManifest, validateManifest,
+  MANIFEST, SCHEMA, ITEM_NAME_RE, manifestPath, readManifest, validateManifest,
 } from '../dist/helpers/manifest.js'
 import { definitionNames } from '../dist/helpers/definition.js'
+import { lastSegment } from '../dist/action/resolve.js'
 import { KINDS } from '../dist/action/kind.js'
 
 import { SCAFFOLD, PROJECT } from './actionharness'
@@ -61,6 +62,40 @@ function tree(sdk: string, ...rel: string[]) {
 // failure message about the wrong thing.
 function errors(found: any[]): string[] {
   return found.filter((f: any) => 'error' === f.level).map((f: any) => f.point)
+}
+
+
+// An fs that resolves paths case-INSENSITIVELY, the way APFS and NTFS do by
+// default — so the platform this suite happens to run on stops deciding what
+// it measures. Only the lookups the validator makes are folded; `readdirSync`
+// still returns the real on-disk names, which is exactly the asymmetry that
+// made the two validation directions disagree.
+function caseFoldingFs(root: string): any {
+  const resolve = (p: string): string => {
+    if (Fs.existsSync(p)) return p
+
+    const dir = Path.dirname(p)
+    const base = Path.basename(p)
+
+    if (dir === p || !p.startsWith(root)) return p
+
+    const real = resolve(dir)
+    if (!Fs.existsSync(real) || !Fs.statSync(real).isDirectory()) return p
+
+    const hit = Fs.readdirSync(real).find(
+      (n: string) => n.toLowerCase() === base.toLowerCase())
+
+    return null == hit ? p : Path.join(real, hit)
+  }
+
+  return {
+    ...Fs,
+    existsSync: (p: string) => Fs.existsSync(resolve(p)),
+    statSync: (p: string) => Fs.statSync(resolve(p)),
+    readdirSync: (p: string) => Fs.readdirSync(resolve(p)),
+    readFileSync: (p: string, ...rest: any[]) =>
+      (Fs as any).readFileSync(resolve(p), ...rest),
+  }
 }
 
 
@@ -111,6 +146,24 @@ describe('readManifest', () => {
       const read = readManifest(Fs, Path.join(dir, '.sdk'))
       strictEqual(read.manifest, undefined)
       ok(null != read.err, 'a malformed manifest read as simply absent')
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a model/<kind> that is not a readable directory reads as empty', () => {
+    // `existsSync` is true for a regular file, so guarding on it and then
+    // calling `readdirSync` let a bare ENOTDIR escape to callers with no
+    // catch — including `featureCatalogue`, which runs on every ordinary
+    // `target add`, so the whole add aborted with an errno.
+    const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-notdir-'))
+    try {
+      Fs.mkdirSync(Path.join(dir, 'model'), { recursive: true })
+      Fs.writeFileSync(Path.join(dir, 'model', 'feature'), 'not a directory\n')
+
+      deepStrictEqual(definitionNames(Fs, dir, 'feature'), [])
     }
     finally {
       Fs.rmSync(dir, { recursive: true, force: true })
@@ -332,6 +385,151 @@ describe('validateManifest', () => {
   })
 
 
+  test('a NON-NUMBER schema version is refused, not coerced', () => {
+    // `'banana' > 1` and `({}) > 1` are both false, so a version that is not
+    // a number at all slipped past the forward-compatibility gate and the
+    // rest of the file was then interpreted as schema 1. The version is the
+    // one field that has to be checked before anything version-specific is
+    // read.
+    for (const version of ['banana', 'v2', {}, [], true, '', 0, -1, 1.5]) {
+      const dir = makePackage({
+        sdkgen: { package: version }, name: '@acme/x', provides: {},
+      })
+      try {
+        const sdk = Path.join(dir, '.sdk')
+        deepStrictEqual(
+          errors(validateManifest(Fs, sdk, manifestOf(sdk), KINDS)),
+          ['manifest-schema-invalid'],
+          JSON.stringify(version) + ' was accepted as a schema version')
+      }
+      finally {
+        Fs.rmSync(dir, { recursive: true, force: true })
+      }
+    }
+  })
+
+
+  test('a FILE where a tree is required does not satisfy it', () => {
+    // `existsSync` is satisfied by a regular file, and `target add` walks
+    // both of these as trees — so a package validated on existence alone
+    // could still be incapable of installing a usable target, which is the
+    // one thing validation is supposed to rule out.
+    const dir = makePackage(
+      {
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        provides: { target: ['iotgo'] },
+      },
+      (sdk) => {
+        def(sdk, 'target', 'iotgo')
+        Fs.mkdirSync(Path.join(sdk, 'src', 'cmp'), { recursive: true })
+        Fs.writeFileSync(Path.join(sdk, 'src', 'cmp', 'iotgo'), 'not a tree\n')
+        tree(sdk, 'tm', 'iotgo')
+      })
+
+    try {
+      const sdk = Path.join(dir, '.sdk')
+      const found = validateManifest(Fs, sdk, manifestOf(sdk), KINDS)
+
+      deepStrictEqual(errors(found), ['manifest-item-missing'])
+      ok(found[0].note.includes('a file where a directory is required'),
+        'the finding did not say WHAT is wrong: ' + found[0].note)
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
+  test('an item NAME must be a name, not a path', () => {
+    // `missingPaths` joins these onto the package root, so a traversal name
+    // sends every probe outside the package. It also could not be installed
+    // under that name: `~` is the alias separator and a separator is stripped
+    // by the resolver.
+    for (const name of ['../../outside', 'a/b', '.', '..', 'go~alt', '-x']) {
+      const dir = makePackage({
+        sdkgen: { package: 1 }, name: '@acme/x',
+        provides: { target: [name] },
+      })
+      try {
+        const sdk = Path.join(dir, '.sdk')
+        ok(errors(validateManifest(Fs, sdk, manifestOf(sdk), KINDS))
+          .includes('manifest-item-name-invalid'),
+          JSON.stringify(name) + ' was accepted as an item name')
+      }
+      finally {
+        Fs.rmSync(dir, { recursive: true, force: true })
+      }
+    }
+  })
+
+
+  test('the name grammar agrees with the RESOLVER', () => {
+    // Two notions of "a name" that can drift is the defect this workstream
+    // keeps removing. Anything the grammar admits must survive the resolver's
+    // own parse unchanged, or the manifest would validate a name that cannot
+    // be installed under that name.
+    for (const name of [
+      'go', 'go-cli', 'py-data', 'seneca-provider', 'clienttrack', 'x9', 'a.b',
+    ]) {
+      ok(ITEM_NAME_RE.test(name), name + ' is a real shipped name but the ' +
+        'grammar rejects it')
+      strictEqual(lastSegment(name), name,
+        name + ': the resolver would not read this back as the same name')
+      ok(!name.includes('~'), name + ' would be split as an alias')
+    }
+  })
+
+
+  test('the same name twice is refused', () => {
+    const dir = makePackage({
+      sdkgen: { package: 1 }, name: '@acme/x',
+      provides: { target: ['go', 'go'] },
+    })
+    try {
+      const sdk = Path.join(dir, '.sdk')
+      ok(errors(validateManifest(Fs, sdk, manifestOf(sdk), KINDS))
+        .includes('manifest-item-duplicated'))
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a MIS-CASED claim fails on the author machine too', () => {
+    // The two directions must use ONE oracle. The forward direction used to
+    // ask the filesystem and the reverse a directory listing, and on a
+    // case-insensitive filesystem — APFS and NTFS by default, so most package
+    // authors — those disagree: `IoTGo` beside `model/target/iotgo.aontu`
+    // validated clean for the author and failed for every Linux consumer.
+    //
+    // Simulated rather than assumed, so the test means the same thing on
+    // every CI platform.
+    const dir = makePackage(
+      {
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        provides: { target: ['IoTGo'] },
+      },
+      (sdk) => {
+        def(sdk, 'target', 'iotgo')
+        tree(sdk, 'src', 'cmp', 'iotgo')
+        tree(sdk, 'tm', 'iotgo')
+      })
+
+    try {
+      const sdk = Path.join(dir, '.sdk')
+      const found = validateManifest(
+        caseFoldingFs(dir), sdk, manifestOf(sdk), KINDS)
+
+      ok(errors(found).includes('manifest-item-missing'),
+        'a mis-cased claim validated clean on a case-insensitive filesystem')
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
   test('`provides: {}` is a deliberate, valid claim', () => {
     const dir = makePackage({
       sdkgen: { package: 1 }, name: '@acme/sdkgen-empty', provides: {},
@@ -393,6 +591,28 @@ describe('the bundled manifest', () => {
     strictEqual(manifest.version, pkg.version,
       'run `npm run embed-version` (or bump both) — the scaffold and the ' +
       'npm package ship together and must not claim different versions')
+  })
+
+
+  test('it is in the npm tarball, not just the checkout', () => {
+    // The design rests on a CONSUMER finding this file at
+    // node_modules/@voxgig/sdkgen/project/. Asserting it exists in the working
+    // tree does not check that. Narrowing package.json `files` from "project"
+    // to "project/.sdk" — a plausible slimming change, since `.sdk` is what
+    // resolveSource probes — would keep every test green, ship a package with
+    // no bundled manifest, and silently stop every consumer recording
+    // `package:` provenance.
+    const pkg = JSON.parse(Fs.readFileSync(
+      Path.resolve(__dirname, '..', 'package.json'), 'utf8'))
+
+    const covered = (pkg.files ?? []).some((entry: string) => {
+      const e = entry.replace(/^\.\//, '').replace(/\/$/, '')
+      return 'project' === e || 'project/' + MANIFEST === e
+    })
+
+    ok(covered,
+      'package.json `files` no longer carries project/' + MANIFEST +
+      ' into the tarball: ' + JSON.stringify(pkg.files))
   })
 
 

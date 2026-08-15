@@ -120,6 +120,80 @@ describe('provenance', () => {
   })
 
 
+  test('a STRUCTURALLY invalid manifest records no package', async () => {
+    // It parses and it has a name, so the name was believed — even though
+    // `validateManifest` would reject the same file for declaring no schema
+    // version and no `provides`. `package:` provenance is what
+    // `package update` later acts on, so recording a project as belonging to
+    // a package that cannot be added at all points a future update at
+    // nothing. Tolerant is not the same as credulous.
+    const pkg = externalGoPackage({ name: '@acme/sdkgen-iot' })
+    try {
+      const log = recordLog()
+      const project = makeProject({ log })
+      await target_add([Path.join(pkg, 'go')], project.actx)
+
+      strictEqual(provenanceOf(project, 'target', 'go').keys.package, undefined,
+        'a name was taken from a manifest that would fail validation')
+      ok(log.lines.some((l: any) => 'package-manifest-unreadable' === l.point),
+        'nothing was said about the unusable manifest')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('an item the manifest does not CLAIM records no package', async () => {
+    // A package may carry a definition it deliberately does not list — that
+    // is what `manifest-item-unclaimed` is about, "nothing will install it".
+    // Stamping the package name onto one anyway would record that the package
+    // supplied something `package add <pkg>` would never install, breaking
+    // the very equivalence that justifies reading the manifest here at all.
+    const pkg = externalGoPackage({
+      sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+      provides: { target: ['somethingelse'] },
+    })
+    try {
+      const log = recordLog()
+      const project = makeProject({ log })
+      await target_add([Path.join(pkg, 'go')], project.actx)
+
+      const { keys } = provenanceOf(project, 'target', 'go')
+
+      ok(null != keys.base, 'the add did not happen at all')
+      strictEqual(keys.package, undefined,
+        'provenance claims a package that does not provide this target')
+      ok(log.lines.some((l: any) => 'package-item-unclaimed' === l.point),
+        'nothing was said about the unclaimed item')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a CLAIMED item records the package', async () => {
+    // The control for the two above: the same fixture with an honest
+    // manifest must record the name, or those tests would pass for the wrong
+    // reason.
+    const pkg = externalGoPackage({
+      sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+      provides: { target: ['go'] },
+    })
+    try {
+      const project = makeProject({})
+      await target_add([Path.join(pkg, 'go')], project.actx)
+
+      strictEqual(provenanceOf(project, 'target', 'go').keys.package,
+        '@acme/sdkgen-iot')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
   test('a MALFORMED manifest does not break the add', async () => {
     // The definition, the components and the templates are all present and
     // correct; refusing to install them because a JSON file beside them has a
@@ -247,6 +321,27 @@ describe('provenanceReplace', () => {
       { "base: 'BASE'": "base: 'b/.sdk'\n  package: '@acme/sdkgen-iot'" })
   })
 })
+
+
+// A package shipping the bundled `go` target, with whatever manifest the
+// caller wants beside it (or none, for `null`).
+function externalGoPackage(manifest: any): string {
+  const pkg = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-extgo-'))
+  const sdk = Path.join(pkg, '.sdk')
+
+  Fs.mkdirSync(Path.join(sdk, 'model', 'target'), { recursive: true })
+  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'),
+    Path.join(sdk, 'model', 'target', 'go.aontu'))
+  Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'go'), { recursive: true })
+  Fs.mkdirSync(Path.join(sdk, 'tm', 'go'), { recursive: true })
+
+  if (null != manifest) {
+    Fs.writeFileSync(Path.join(pkg, 'sdkgen-package.json'),
+      'string' === typeof manifest ? manifest : JSON.stringify(manifest))
+  }
+
+  return pkg
+}
 
 
 // Review findings on #49, each pinned.

@@ -123,7 +123,7 @@ function resolveSource(ref, kind, ctx$) {
         // finding here: a bare `.sdk`-shaped folder is still a valid source, and
         // every consumer's existing fixtures are exactly that. It is `package
         // add` that requires one.
-        package: sourcePackage(fs, folder, ctx$),
+        package: sourcePackage(fs, folder, kind, origname, ctx$),
     };
 }
 // The manifest's package name, or undefined.
@@ -134,18 +134,53 @@ function resolveSource(ref, kind, ctx$) {
 // beside them has a trailing comma would be a worse outcome than installing
 // them with one provenance line missing. `package add` validates properly and
 // refuses; this only reads a name.
-function sourcePackage(fs, folder, ctx$) {
+//
+// Tolerant is not the same as credulous. The SHAPE is checked before the name
+// is believed, because `package:` provenance is what `package update` later
+// acts on: recording a project as belonging to `@acme/sdkgen-iot` on the
+// strength of a file that declares no schema version and no `provides` would
+// point a future update at a package that cannot be added at all. A manifest
+// that would fail validation is treated exactly like one that would not
+// parse — warn, and record nothing.
+function sourcePackage(fs, folder, kind, origname, ctx$) {
     const read = (0, manifest_1.readManifest)(fs, folder);
     if (null != read.err) {
-        ctx$.log?.warn({
-            point: 'package-manifest-unreadable', file: read.file, err: read.err,
-            note: read.file + ': ignoring an unreadable package manifest (' +
-                read.err + '); the copy records no `package` provenance'
+        warnManifest(ctx$, read.file, read.err);
+        return undefined;
+    }
+    if (null == read.manifest) {
+        return undefined;
+    }
+    const shape = (0, manifest_1.checkShape)(read.manifest, read.file);
+    if (0 < shape.length) {
+        warnManifest(ctx$, read.file, shape.map((f) => f.note).join('; '));
+        return undefined;
+    }
+    // The manifest must actually CLAIM this item. A package may carry a
+    // definition it deliberately does not list — that is what the
+    // `manifest-item-unclaimed` warning is about, "nothing will install it" —
+    // and stamping the package name onto one anyway would record that
+    // `@acme/sdkgen-iot` supplied something `package add @acme/sdkgen-iot`
+    // would never install, which is exactly the equivalence the comment at the
+    // call site rests on. `package update` would then act on it.
+    const claimed = read.manifest.provides?.[kind];
+    if (!Array.isArray(claimed) || !claimed.includes(origname)) {
+        ctx$.log?.info({
+            point: 'package-item-unclaimed', file: read.file, kind, name: origname,
+            note: read.file + ': ' + kind + ' `' + origname + '` is not listed in ' +
+                '`provides.' + kind + '`, so the copy records no `package` ' +
+                'provenance — add it to the manifest if the package supplies it'
         });
         return undefined;
     }
-    const name = read.manifest?.name;
-    return 'string' === typeof name && '' !== name ? name : undefined;
+    return read.manifest.name;
+}
+function warnManifest(ctx$, file, err) {
+    ctx$.log?.warn({
+        point: 'package-manifest-unreadable', file, err,
+        note: file + ': ignoring an unusable package manifest (' + err +
+            '); the copy records no `package` provenance'
+    });
 }
 function capitalise(s) {
     return s.charAt(0).toUpperCase() + s.slice(1);
