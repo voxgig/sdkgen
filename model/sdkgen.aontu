@@ -142,11 +142,39 @@ main: kit: contributor: &: {
 }
 
 
+# PROVENANCE: where a copied target or feature came from.
+#
+# `target add` / `feature add` copy a shipped definition into a project and
+# stamp these three keys into the copy, by rewriting the `base: 'BASE'` line
+# the shipped file carries as an anchor:
+#
+#   base      the `.sdk` folder the copy came from, relative to the project
+#             (absolute only for an out-of-tree source). '/'-normalised, so a
+#             project resynced on Windows and on Linux records the same value.
+#   origname  the name in the SOURCE, when installed under a different one
+#             (`target add go~go2` -> origname 'go'). Empty when they match.
+#   package   the sdkgen package that provided it, when the source declared
+#             one. Empty otherwise.
+#
+# Read by `feature add` (to find each target's template tree) and by `doctor`
+# (to re-resolve the scaffold a copy should be compared against). Without
+# them both fall back to the bundled scaffold, which is right only while
+# everything ships inside @voxgig/sdkgen.
+#
+# DEFAULTED, deliberately. A bare `string` inside a `&:` spread makes the key
+# REQUIRED, which would fail the model compile of every project whose copies
+# predate this — and `origname`/`package` are stamped only when they apply,
+# so it would fail every ordinary install too. `*''` also keeps them FALSY
+# when unset, which is what the two readers already test for.
 main: kit: target: &: {
   name: key()
   active: *true | boolean
   ext: string
   comment: line: string
+
+  base:     *'' | string
+  origname: *'' | string
+  package:  *'' | string
   module: {
     name: string
 
@@ -360,6 +388,11 @@ main: kit: feature: &: {
   name: key()
   active: *false | boolean
   title: string
+
+  # Provenance — see the note on `main: kit: target: &:` above.
+  base:     *'' | string
+  origname: *'' | string
+  package:  *'' | string
 
   # TODO: version '0.0.1' | semver # where semver is a string format type as per semver.org
   version: *'0.0.1' | string

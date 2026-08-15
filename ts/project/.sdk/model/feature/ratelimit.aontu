@@ -5,6 +5,7 @@ main: kit: feature: ratelimit: {
   title: "Client-side rate limiting via a token bucket"
   version: '0.0.1'
   active: true
+  base: 'BASE'
 
   config: {
     options: {

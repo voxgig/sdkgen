@@ -4,6 +4,7 @@ main: kit: target: scala: {
   ext: scala
   comment: line: "//"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   deps: &: {

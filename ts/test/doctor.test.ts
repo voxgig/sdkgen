@@ -244,4 +244,77 @@ const Top = () => {
     deepStrictEqual(report.edited, [], 'fresh ts project reports edited masters')
     strictEqual(report.ok, true, 'fresh ts project is not ok')
   })
+
+  // ALIASED TARGETS. Before `origname` was recorded, doctor rebuilt the ref
+  // as `<base>/../<installed name>` — so `ts~ts2` sent it looking for a `ts2`
+  // scaffold that does not exist. Both trees walked empty, so every component
+  // read as `additive` and every template as `stale` (a FAILING category):
+  // real edits were undetectable AND doctor went red on pure noise, for every
+  // project carrying an alias.
+  test('an aliased target is CHECKED, against the tree it came from', async () => {
+    const project = makeProject({})
+
+    await target_add([targetRef('go') + '~go2'], project.actx)
+    project.actx.model.main[KIT].target.go2 =
+      { name: 'go2', base: SCAFFOLD_BASE, origname: 'go' }
+
+    const report = await check(project)
+
+    deepStrictEqual(report.stale, [], 'aliased target reports stale templates')
+    deepStrictEqual(report.forked, [], 'aliased target reports forked components')
+    deepStrictEqual(report.edited, [], 'aliased target reports edited masters')
+    strictEqual(report.ok, true, 'a freshly aliased project is not ok')
+
+    // And it is really comparing, not skipping: a hand-edit is still caught.
+    write(project, 'tm/go2/Makefile', '# clobbered\n')
+    const after = await check(project)
+    ok(after.edited.includes('tm/go2/Makefile'),
+      'an edit to an aliased template was not detected: ' +
+      JSON.stringify(after.edited))
+  })
+
+
+  // A project whose copies predate the provenance rollout differs from the
+  // scaffold by exactly the anchor line. The project changed nothing, so
+  // calling that a fork would turn every existing consumer's CI red at once.
+  test('a pre-provenance copy is resync-pending, not forked', async () => {
+    const project = makeProject({})
+
+    await target_add([targetRef('go')], project.actx)
+    project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
+
+    // Roll the model file back to what an older sdkgen wrote: no base line.
+    const path = Path.join(ROOT, 'model/target/go.aontu')
+    const old = String(project.fs.readFileSync(path, 'utf8'))
+      .split('\n').filter((l: string) => !/^\s*base:/.test(l)).join('\n')
+    project.fs.writeFileSync(path, old)
+
+    const report = await check(project)
+
+    deepStrictEqual(report.forked, [],
+      'a copy predating provenance was reported as a fork')
+    ok(report.resyncPending.includes('model/target/go.aontu'),
+      'no resync-pending finding: ' + JSON.stringify(report.resyncPending))
+    strictEqual(report.ok, true, 'resync-pending must not fail the check')
+  })
+
+
+  // ...but the tolerance is narrow: a real edit alongside the missing anchor
+  // is still a fork.
+  test('a real edit is still forked, anchor or not', async () => {
+    const project = makeProject({})
+
+    await target_add([targetRef('go')], project.actx)
+    project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
+
+    const path = Path.join(ROOT, 'model/target/go.aontu')
+    project.fs.writeFileSync(path,
+      String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
+
+    const report = await check(project)
+
+    ok(report.forked.includes('model/target/go.aontu'),
+      'a hand-edited target model was not reported as forked')
+    strictEqual(report.ok, false)
+  })
 })

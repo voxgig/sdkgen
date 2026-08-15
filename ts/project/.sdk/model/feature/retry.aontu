@@ -5,6 +5,7 @@ main: kit: feature: retry: {
   title: "Automatic retry of transient failures with exponential backoff"
   version: '0.0.1'
   active: true
+  base: 'BASE'
 
   config: {
     # Opt-in: enable per SDK via options.feature.retry.active = true

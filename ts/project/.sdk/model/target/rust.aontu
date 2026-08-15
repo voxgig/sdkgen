@@ -5,6 +5,7 @@ main: kit: target: rust: {
   ext: rs
   comment: line: "//"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   deps: &: {

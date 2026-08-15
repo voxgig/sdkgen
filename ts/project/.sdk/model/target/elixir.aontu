@@ -5,6 +5,7 @@ main: kit: target: elixir: {
   ext: ex
   comment: line: "#"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   deps: &: {

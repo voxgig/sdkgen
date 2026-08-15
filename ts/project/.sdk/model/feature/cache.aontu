@@ -5,6 +5,7 @@ main: kit: feature: cache: {
   title: "Response caching for safe read requests"
   version: '0.0.1'
   active: true
+  base: 'BASE'
 
   config: {
     options: {

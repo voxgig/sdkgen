@@ -5,6 +5,7 @@ main: kit: target: lua: {
   ext: lua
   comment: line: "--"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   deps: &: {

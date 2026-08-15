@@ -5,6 +5,7 @@ main: kit: target: lean: {
   ext: lean
   comment: line: "--"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   # Entities are generic (config-driven F.makeEntity), so no per-entity or

@@ -5,6 +5,7 @@ main: kit: target: php: {
   ext: php
   comment: line: "//"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   deps: &: {

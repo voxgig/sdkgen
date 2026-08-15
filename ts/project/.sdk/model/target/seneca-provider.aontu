@@ -27,6 +27,7 @@ main: kit: target: 'seneca-provider': {
   ext: ts
   comment: line: "//"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   # Per-generation-phase activation. Mirrors py-data: every standard phase is

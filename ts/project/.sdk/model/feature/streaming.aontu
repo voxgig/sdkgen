@@ -5,6 +5,7 @@ main: kit: feature: streaming: {
   title: "Incremental streaming of list results via async iteration"
   version: '0.0.1'
   active: true
+  base: 'BASE'
 
   config: {
     options: {

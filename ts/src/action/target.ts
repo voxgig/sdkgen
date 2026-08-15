@@ -16,9 +16,7 @@ import { showChanges } from '@voxgig/util'
 
 import { showDryrun } from '../helpers/dryrun'
 
-import { templateReplacements } from '../helpers/stdrep'
-
-import { getelem } from '@voxgig/struct'
+import { templateReplacements, provenanceReplace } from '../helpers/stdrep'
 
 import { Aontu } from 'aontu'
 
@@ -49,6 +47,8 @@ import {
   parseAddNames,
   loadContent,
 } from './action'
+
+import { resolveSource } from './resolve'
 
 
 const CMD_MAP: any = {
@@ -195,7 +195,8 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       const aliased = tname !== torigname
 
       const modelFrom = tfolder + '/model/target/' + torigname + '.aontu'
-      const baseReplace = { "'BASE'": "'" + base + "'" }
+      const baseReplace = provenanceReplace(
+        { base, origname: torigname, name: tname })
 
       Folder({ name: 'model/target' }, () => {
         if (aliased) {
@@ -340,6 +341,46 @@ function aliasModelText(src: string, torigname: string, tname: string): string {
 }
 
 
+// `<Cmp>_<origname>.<ext>` -> `<Cmp>_<tname>.<ext>`, for an aliased install.
+// Anything not carrying the suffix (tsconfig.json, the fragment sources)
+// keeps its name — the `.<ext>` anchor is what keeps this off
+// `Main.fragment.go`, whose `go` is a file extension.
+//
+// Shared with doctor for the same reason as aliasCmpText: doctor walks the
+// ORIGIN tree to decide what should be present, so it has to land each file
+// under the same name the writer gave it, or it reports the whole tree as
+// missing.
+function aliasCmpName(name: string, torigname: string, tname: string): string {
+  return name.replace(
+    new RegExp('_' + escapeRe(torigname) + '(\\.[^.]+)$'), '_' + tname + '$1')
+}
+
+
+// The origin name a component carries INSIDE its source, rewritten for an
+// aliased install. Shared with doctor, which re-applies it before comparing —
+// same discipline as templateReplacements: a writer and a reader that
+// disagree by a character make every file read as a fork.
+//
+// Rewritten here rather than through jostraca's `replace` map, because that
+// map canonicalises each key into a regex group NAME — `_go'` and `_go"` both
+// reduce to the same name, so the later entry silently won and every
+// single-quoted import came out as `from './Package_go2"`. One explicit regex
+// keeps the quote it matched.
+function aliasCmpText(src: string, torigname: string, tname: string): string {
+  const orig = escapeRe(torigname)
+
+  return src
+    // The fragment directory, read relative to __dirname. The fragments are
+    // copied into the ALIAS's folder, so leaving the origin path would miss —
+    // or, if the origin target is also installed, silently read ITS fragments.
+    .replace(new RegExp('src/cmp/' + orig + '/', 'g'), 'src/cmp/' + tname + '/')
+    // Sibling imports: `'./Package_go'` -> `'./Package_go2'`. Anchored on the
+    // closing quote (captured, so the style is preserved) to keep it off file
+    // EXTENSIONS — `Main.fragment.go` must not become `Main.fragment.go2`.
+    .replace(new RegExp('_' + orig + '([\'"])', 'g'), '_' + tname + '$1')
+}
+
+
 // Emit an aliased `src/cmp` tree: every file renamed from the origin suffix
 // to the installed one, and its CONTENT rewritten to match.
 //
@@ -363,22 +404,7 @@ function aliasCmpTree(
 ) {
   const fs = ctx$.fs()
 
-  const orig = escapeRe(torigname)
-
-  // Rewritten HERE rather than through jostraca's `replace` map, because that
-  // map canonicalises each key into a regex group NAME — `_go'` and `_go"`
-  // both reduce to the same name, so the later entry silently won and every
-  // single-quoted import came out as `from './Package_go2"`. One explicit
-  // regex keeps the quote it matched.
-  const aliasText = (src: string): string => src
-    // The fragment directory, read relative to __dirname. The fragments are
-    // copied into the ALIAS's folder, so leaving the origin path would miss —
-    // or, if the origin target is also installed, silently read ITS fragments.
-    .replace(new RegExp('src/cmp/' + orig + '/', 'g'), 'src/cmp/' + tname + '/')
-    // Sibling imports: `'./Package_go'` -> `'./Package_go2'`. Anchored on the
-    // closing quote (captured, so the style is preserved) to keep it off file
-    // EXTENSIONS — `Main.fragment.go` must not become `Main.fragment.go2`.
-    .replace(new RegExp('_' + orig + '([\'"])', 'g'), '_' + tname + '$1')
+  const aliasText = (src: string) => aliasCmpText(src, torigname, tname)
 
   const emit = (dir: string, rel: string) => {
     let entries: any[]
@@ -402,11 +428,7 @@ function aliasCmpTree(
         continue
       }
 
-      // `<Cmp>_<origname>.<ext>` -> `<Cmp>_<tname>.<ext>`. Anything not
-      // carrying the suffix (tsconfig.json, the fragment sources) keeps its
-      // name.
-      const renamed = name.replace(
-        new RegExp('_' + escapeRe(torigname) + '(\\.[^.]+)$'), '_' + tname + '$1')
+      const renamed = aliasCmpName(name, torigname, tname)
 
       // `template` against the model with no replace map, matching what Copy
       // does for the unaliased tree — jostraca's Copy always interpolates
@@ -649,97 +671,19 @@ function readTargetFeature(
 }
 
 
-// Last path segment of a ref. A ref may be a bare target name ('go'), a
-// package-relative path ('@acme/kit/go'), or an ABSOLUTE path — and on Windows
-// an absolute path is separated by `\`, so splitting on '/' alone hands back
-// the whole path as the target name and every tree lookup below then misses.
-// On POSIX Path.sep IS '/', so this is the same split it always was.
-function lastSegment(ref: string): string {
-  return getelem(ref.split('/').flatMap((p: string) => p.split(Path.sep)), -1)
-}
-
-
+// `target add`'s view of the shared resolver: the same resolution every kind
+// uses, with this action's historical field names. Kept as a wrapper so its
+// callers (TargetRoot, doctor) and their tests do not have to move with the
+// extraction.
 function resolveTarget(tref: string, ctx$: any) {
-  let tname = tref
-  let torigname = tref
-  let tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
+  const src = resolveSource(tref, 'target', ctx$)
 
-  const root = ctx$.folder
-  const fs = ctx$.fs()
-
-  let fulltfolder = Path.normalize(Path.join(root, tfolder))
-  tname = lastSegment(tref)
-
-  let aliasref = tref
-  torigname = lastSegment(aliasref)
-  const aliasing = tref.split('~')
-  if (1 < aliasing.length) {
-    aliasref = aliasing[0]
-    tname = aliasing.slice(1).join('~')
-    torigname = lastSegment(aliasref)
+  return {
+    tname: src.name,
+    tfolder: src.folder,
+    torigname: src.origname,
+    base: src.base,
   }
-
-  const search: string[] = []
-  let found = false
-  // Windows: an absolute ref is `D:\a\...` or `D:/a/...`, and a Path.join'd
-  // one carries backslashes, so neither `includes('/')` nor `startsWith('/')`
-  // recognises it. Path.isAbsolute and Path.sep are platform-correct and
-  // reduce to the same answers on POSIX.
-  if (aliasref.includes('/') || aliasref.includes(Path.sep)) {
-    // NOTE: the last path element of the ref is the target name, not a folder.
-    const aliasbase = Path.dirname(aliasref)
-
-    if (!Path.isAbsolute(aliasref)) {
-      fulltfolder = Path.normalize(Path.join(root, 'node_modules', aliasbase, '.sdk'))
-      search.push(fulltfolder)
-      found = fs.existsSync(fulltfolder)
-
-      if (!found) {
-        fulltfolder = Path.normalize(Path.join(root, aliasbase, '.sdk'))
-        search.push(fulltfolder)
-        found = fs.existsSync(fulltfolder)
-      }
-    }
-    else {
-      fulltfolder = Path.normalize(Path.join(aliasbase, '.sdk'))
-      search.push(fulltfolder)
-      found = fs.existsSync(fulltfolder)
-    }
-  }
-  else {
-    search.push(fulltfolder)
-    found = fs.existsSync(fulltfolder)
-  }
-
-  if (!found) {
-    throw new Error('Target folder not found in:\n' + search.join('\n  '))
-  }
-
-  // `base` is the target folder relative to the project root. Compare with the
-  // PLATFORM separator: on Windows `root + '/'` never prefixes a normalised
-  // absolute path, so the root would not be stripped and `base` would stay
-  // absolute. Normalise both sides first for the same reason.
-  const nroot = Path.normalize(root)
-  const rootslash = nroot.endsWith(Path.sep) ? nroot : nroot + Path.sep
-  const out = {
-    tname,
-    tfolder: fulltfolder,
-    torigname,
-    // `/`-normalised, unlike `tfolder`. `base` is the one value here that
-    // gets WRITTEN INTO A COMMITTED FILE (the `'BASE'` substitution in the
-    // copied target model), so it must not depend on the OS that ran the
-    // add: on Windows Path.join yields
-    // `node_modules\@voxgig\sdkgen\project\.sdk`, so the same project
-    // resynced on Linux and on Windows produced two different model files
-    // and each churned the other's. Forward slashes are accepted by every
-    // Node path API on Windows, so the readers (feature_add's fan-out,
-    // doctor's re-resolution) are unaffected.
-    base: (fulltfolder.startsWith(rootslash)
-      ? fulltfolder.slice(rootslash.length)
-      : fulltfolder).split(Path.sep).join('/')
-  }
-
-  return out
 }
 
 
@@ -749,4 +693,7 @@ export {
   resolveTarget,
   trimFeatures,
   readTargetFeature,
+  aliasModelText,
+  aliasCmpText,
+  aliasCmpName,
 }

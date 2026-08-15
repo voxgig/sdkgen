@@ -5,6 +5,7 @@ main: kit: target: zig: {
   ext: zig
   comment: line: "//"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   # The vendored voxgig struct port is in-tree (utility/voxgigstruct) — Zig

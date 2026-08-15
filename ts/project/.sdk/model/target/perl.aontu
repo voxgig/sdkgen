@@ -5,6 +5,7 @@ main: kit: target: perl: {
   ext: pl
   comment: line: "#"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   deps: &: {

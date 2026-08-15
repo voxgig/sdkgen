@@ -5,6 +5,7 @@ main: kit: target: cpp: {
   ext: hpp
   comment: line: "//"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   deps: &: {

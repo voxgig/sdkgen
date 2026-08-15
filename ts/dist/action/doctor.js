@@ -90,16 +90,28 @@ async function doctor(actx) {
     const root = actx.folder;
     const report = {
         forked: [], edited: [], stale: [], missing: [], additive: [],
-        unwired: [], ok: true,
+        unwired: [], resyncPending: [], aliasedDiff: [], ok: true,
     };
     const targets = Object.keys(model?.main?.[types_1.KIT]?.target ?? {});
     log.info({ point: 'doctor-start', targets: targets.length });
     for (const tname of targets) {
         const declared = model?.main?.[types_1.KIT]?.target?.[tname];
-        // The target model records where it came from (`base`, written by
-        // `target add`). Fall back to the bundled scaffold.
+        // The target model records where it came from and what it was called
+        // there (`base` / `origname`, written by `target add`). Fall back to the
+        // bundled scaffold for a copy that predates provenance.
+        //
+        // `origname` is what makes an ALIAS checkable. The ref used to be rebuilt
+        // as `<base>/../<tname>`, which names the INSTALLED target — so
+        // `target add ts~ts2` sent doctor looking for a `ts2` scaffold that does
+        // not exist, both trees walked empty, and every component read as
+        // `additive` while every template read as `stale` (a FAILING category).
+        // Real edits were undetectable and doctor went red on noise. With the
+        // origin name recorded, the alias compares against the tree it actually
+        // came from.
+        const torigname = (declared && declared.origname) || tname;
         const tref = (declared && declared.base) ?
-            node_path_1.default.join(declared.base, '..', tname) : tname;
+            node_path_1.default.join(declared.base, '..', torigname) +
+                (torigname === tname ? '' : '~' + tname) : tname;
         let resolved;
         try {
             resolved = (0, target_1.resolveTarget)(tref, { folder: root, fs: () => fs });
@@ -125,6 +137,8 @@ async function doctor(actx) {
         ['missing', 'MISSING (would be written by `target add`)'],
         ['additive', 'additive (project-owned, not drift)'],
         ['unwired', 'NOT WIRED IN (root capability this project is missing)'],
+        ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
+        ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
     ]) {
         for (const file of report[kind]) {
             log.info({ point: 'doctor-finding', kind, file, note: note + ': ' + file });
@@ -139,6 +153,8 @@ async function doctor(actx) {
         missing: report.missing.length,
         additive: report.additive.length,
         unwired: report.unwired.length,
+        resyncPending: report.resyncPending.length,
+        aliasedDiff: report.aliasedDiff.length,
         note: report.ok ?
             ('.sdk matches the scaffold (' + report.additive.length + ' additive)') :
             ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
@@ -182,12 +198,26 @@ function checkTarget(actx, resolved, report) {
     //
     //   src/cmp — copied verbatim, so a byte compare is the truth.
     //   tm      — copied through jostraca's template(), with ProjectName.
+    // An ALIASED install renames every `<Cmp>_<origname>` component to
+    // `<Cmp>_<alias>` and rewrites the origin name inside the file (sibling
+    // imports, the __dirname-relative fragment path), because components are
+    // dispatched by the convention `cmp/<t>/Main_<t>`. doctor has to apply the
+    // same two transforms or it expects the ORIGIN names in the alias's folder
+    // and reports the entire tree as missing — 25 files for `go~go2`, none of
+    // them a real finding.
+    const aliased = tname !== torigname;
+    const renameCmp = aliased ?
+        (rel) => (0, target_1.aliasCmpName)(rel, torigname, tname) : undefined;
+    const rewriteCmp = aliased ?
+        (src) => (0, target_1.aliasCmpText)(src, torigname, tname) : undefined;
     const trees = [
         {
             project: node_path_1.default.join(root, 'src', 'cmp', tname),
             scaffold: node_path_1.default.join(tfolder, 'src', 'cmp', torigname),
             replace: {},
             kind: 'forked',
+            rename: renameCmp,
+            rewrite: rewriteCmp,
         },
         {
             project: node_path_1.default.join(root, 'tm', tname),
@@ -210,9 +240,12 @@ function checkTarget(actx, resolved, report) {
         // Findings are reported at project-relative paths, the way a maintainer
         // would type them.
         const label = node_path_1.default.relative(root, tree.project).split(node_path_1.default.sep).join('/') + '/';
-        const expected = 'edited' === tree.kind ?
+        const scaffoldFiles = 'edited' === tree.kind ?
             walk(fs, tree.scaffold).filter((rel) => !excluded(rel, excludes)) :
             walk(fs, tree.scaffold);
+        // Scaffold path -> the name it lands under in the project.
+        const landed = new Map(scaffoldFiles.map((rel) => [null == tree.rename ? rel : tree.rename(rel), rel]));
+        const expected = Array.from(landed.keys()).sort();
         const actual = walk(fs, tree.project);
         const expectedSet = new Set(expected);
         const actualSet = new Set(actual);
@@ -221,7 +254,8 @@ function checkTarget(actx, resolved, report) {
                 report.missing.push(label + rel);
                 continue;
             }
-            if (differs(fs, node_path_1.default.join(tree.scaffold, rel), node_path_1.default.join(tree.project, rel), model, tree.replace)) {
+            const from = landed.get(rel);
+            if (differs(fs, node_path_1.default.join(tree.scaffold, from), node_path_1.default.join(tree.project, rel), model, tree.replace, undefined, tree.rewrite)) {
                 report[tree.kind].push(label + rel);
             }
         }
@@ -232,7 +266,8 @@ function checkTarget(actx, resolved, report) {
             // A component the scaffold has NEVER shipped is the project's own —
             // the supported way to add a per-target component. Anything else under
             // a tree `target add` owns is stale output.
-            const known = fs.existsSync(node_path_1.default.join(tree.scaffold, rel));
+            const known = fs.existsSync(node_path_1.default.join(tree.scaffold, rel)) ||
+                landed.has(rel);
             if ('forked' === tree.kind && !known) {
                 report.additive.push(label + rel);
             }
@@ -261,16 +296,23 @@ function checkTargetModel(actx, resolved, report) {
     const { tname, tfolder, torigname, base } = resolved;
     const fs = actx.fs();
     const scaffold = node_path_1.default.join(tfolder, 'model', 'target', torigname + '.aontu');
-    // No scaffold file means nothing to compare against, which is the ALIASED
-    // target: `target add go~go2` copies go.aontu to model/target/go2.aontu and
-    // docs/how-to/add-a-target.md then tells the project to EDIT it (a second Go
-    // module needs its own module name and deps). doctor resolves a target by
-    // its INSTALLED name — the model records `base`, not the ref it came from —
-    // so the origin is not recoverable here, and reporting that documented edit
-    // as drift on every run is worse than saying nothing.
+    // Nothing to compare against — a source that no longer ships this target.
     if (!fs.existsSync(scaffold)) {
         return;
     }
+    // An ALIAS's model file is PROJECT-OWNED: `target add go~go2` creates it and
+    // never overwrites it again, because differentiating it is the whole point
+    // of an alias (a second Go module needs its own module name and deps), and
+    // add-a-target tells the project to edit it. So a difference here is not a
+    // fork — `target add` will not revert it — and must not fail the check.
+    //
+    // It is still worth REPORTING, which it never was before: the origin was
+    // unrecoverable, so doctor skipped the file entirely and an alias that had
+    // drifted far from a moved-on upstream said nothing. With `origname`
+    // recorded the comparison is possible, so it runs, with the same key
+    // rewrite `target add` applied — and anything left over is the project's
+    // own differentiation, reported as informational.
+    const aliased = tname !== torigname;
     const project = node_path_1.default.join(actx.folder, 'model', 'target', tname + '.aontu');
     const label = 'model/target/' + tname + '.aontu';
     if (!fs.existsSync(project)) {
@@ -279,15 +321,45 @@ function checkTargetModel(actx, resolved, report) {
     }
     // The substitution `target add` applied on the way in: jostraca's template()
     // against the model (so `module: name: '$$name$$'` arrives as the project
-    // slug) plus the `'BASE'` replacement recording where the scaffold was.
+    // slug) plus the provenance block recording where the scaffold was.
     //
     // NOT templateReplacements() — that is the tm/ tree's map. The two writers
-    // pass different maps, so doctor has to as well, or every csharp/swift/ts
-    // project reads as forked on the `base:` line alone.
-    if (differs(fs, scaffold, project, actx.model, { "'BASE'": "'" + base + "'" })) {
-        report.forked.push(label);
+    // pass different maps, so doctor has to as well, or every project reads as
+    // forked on the `base:` line alone. The map itself is shared with the
+    // writer (helpers/stdrep) so the two cannot drift.
+    const provenance = (0, stdrep_1.provenanceReplace)({ base, origname: torigname, name: tname });
+    // For an alias, compare against what the origin WOULD produce under the new
+    // name, so the rename itself is not the difference.
+    const rewrite = aliased ?
+        (src) => (0, target_1.aliasModelText)(src, torigname, tname) : undefined;
+    if (!differs(fs, scaffold, project, actx.model, provenance, undefined, rewrite)) {
+        return;
     }
+    if (aliased) {
+        report.aliasedDiff.push(label);
+        return;
+    }
+    // A copy that predates the provenance rollout differs from the scaffold by
+    // exactly the anchor line, because the scaffold now carries keys the copy
+    // was written before. That is not a fork — the project changed nothing —
+    // and reporting it as one would turn every existing consumer's CI red on
+    // upgrade. Say what it is, and what fixes it.
+    //
+    // ONLY for a copy that is genuinely UNSTAMPED. Applying the tolerance to
+    // any provenance-confined difference would hide a real edit: a project that
+    // changed or deleted a `package:` line on a stamped copy would be reported
+    // as resync-pending and pass the check, while the next `target add` quietly
+    // reverted it — which is the whole class of thing doctor exists to catch.
+    const unstamped = !String(fs.readFileSync(project, 'utf8'))
+        .split('\n').some((line) => PROVENANCE_LINE_RE.test(line));
+    if (unstamped && !differs(fs, scaffold, project, actx.model, provenance, (line) => PROVENANCE_LINE_RE.test(line), rewrite)) {
+        report.resyncPending.push(label);
+        return;
+    }
+    report.forked.push(label);
 }
+// A provenance line, in either the scaffold's anchor form or a stamped one.
+const PROVENANCE_LINE_RE = /^\s*(base|origname|package):\s*'[^']*'\s*$/;
 // Every file under `dir`, as forward-slash paths relative to it, sorted.
 // Missing directory -> no files (a target that was never added).
 function walk(fs, dir) {
@@ -324,11 +396,17 @@ function excluded(rel, excludes) {
 // Compare a scaffold file with a project file, applying the SAME substitution
 // `target add` applied on the way in. Without this the comparison reports
 // every substituted placeholder as an edit.
-function differs(fs, scaffoldPath, projectPath, model, replace) {
+// `ignore` drops matching lines from BOTH sides before comparing, for a
+// difference that is known not to be a fork (see the provenance rollout in
+// checkTargetModel). It is deliberately a second, narrower question asked
+// only after a plain comparison has already found a difference — so a file
+// that matches exactly never depends on it.
+function differs(fs, scaffoldPath, projectPath, model, replace, ignore, rewrite) {
     if (BINARY_RE.test(scaffoldPath)) {
         return !fs.readFileSync(scaffoldPath).equals(fs.readFileSync(projectPath));
     }
-    const src = fs.readFileSync(scaffoldPath, 'utf8');
+    const rawsrc = fs.readFileSync(scaffoldPath, 'utf8');
+    const src = null == rewrite ? rawsrc : rewrite(rawsrc);
     // template() runs even when there is nothing to REPLACE, because jostraca's
     // Copy always interpolates `$$ref$$` against the model as well — the replace
     // map is an extra, not the whole substitution. Skipping it for the src/cmp
@@ -339,7 +417,12 @@ function differs(fs, scaffoldPath, projectPath, model, replace) {
     // out of `target add`, which is precisely the noise this function exists to
     // remove. With no `$$` refs and no replace keys, template() is the identity.
     const expected = (0, jostraca_1.template)(src, model, { replace });
-    return expected !== fs.readFileSync(projectPath, 'utf8');
+    const actual = fs.readFileSync(projectPath, 'utf8');
+    if (null == ignore) {
+        return expected !== actual;
+    }
+    const strip = (s) => s.split('\n').filter((line) => !ignore(line)).join('\n');
+    return strip(expected) !== strip(actual);
 }
 // trimFeatures logs its decisions; doctor is a report, not a run.
 function quietLog(log) {
