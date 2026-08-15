@@ -234,7 +234,11 @@ function checkTarget(actx, resolved, report) {
         'test',
         ...Object.keys(featuremodel).filter((n) => false !== featuremodel[n]?.active),
     ]));
-    const excludes = (0, target_1.trimFeatures)({ log: quietLog(actx.log), fs: () => fs }, tfolder, torigname, tname, features);
+    // `folder` and `model` matter: the trim catalogue is resolved consumer-side
+    // (see featureCatalogue), so a doctor that withheld them would compute a
+    // different trim from the one `target add` applied and report correctly
+    // trimmed files as missing.
+    const excludes = (0, target_1.trimFeatures)({ log: quietLog(actx.log), fs: () => fs, folder: root, model }, tfolder, torigname, tname, features);
     for (const tree of trees) {
         // Findings are reported at project-relative paths, the way a maintainer
         // would type them.

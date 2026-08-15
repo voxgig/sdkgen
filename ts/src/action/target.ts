@@ -50,7 +50,7 @@ import {
 
 import { kindModel, resolveKind, escapeRe } from './kind'
 
-import { resolveSource } from './resolve'
+import { BUNDLED, resolveSource } from './resolve'
 
 
 const CMD_MAP: any = {
@@ -504,6 +504,52 @@ function pruneStaleTemplates(
 }
 
 
+// WHICH NAMES COUNT AS FEATURE SOURCE, when deciding what to trim.
+//
+// This used to be the SOURCE folder's own `model/feature/` listing, which is
+// right only while every target ships in the same package as every feature.
+// An external target package declares no feature models of its own — it has
+// no reason to — so nothing was discovered, nothing was trimmed, and the
+// consumer received the target's source for EVERY feature regardless of what
+// its model selected. Measured on a target copied from the bundled `go`: the
+// bundled one keeps 2 feature source files, the external one kept all 18.
+//
+// That is the failure `helpers/featureSource` was written to end (272 stray
+// files in one repo), arriving again by the one route it did not cover.
+//
+// The catalogue is therefore the union of every place a feature this project
+// could select can come from:
+//
+//   - the bundled scaffold, which is what a bare `feature add <name>` means;
+//   - the source package's own declarations, for a package shipping both;
+//   - the consumer's OWN installed feature models, which is how an EXTERNAL
+//     feature's source becomes trimmable at all.
+//
+// Every term is a place feature DEFINITIONS live, deliberately. Taking the
+// third from the model's feature KEYS instead would make any name a project
+// happens to declare a trim candidate — and a file in a `feature/` directory
+// is not necessarily a feature. `tm/rust/feature/support.rs` and its siblings
+// are shared machinery that `Main_rust` emits unconditionally (`pub mod
+// support`), so a project that declared a feature called `support` would have
+// had that file pruned and produced a crate that cannot compile. A definition
+// file is evidence that the name really denotes a feature; a model key is not.
+//
+// For a bundled add this is `bundled ∪ bundled ∪ (⊆ bundled)`, so the trim is
+// byte-identical to what it always was — the goldens hold it to that.
+function featureCatalogue(ctx$: any, tfolder: string): string[] {
+  const fs = ctx$.fs()
+  const root = ctx$.folder ?? '.'
+
+  const names = new Set<string>([
+    ...availableFeatures(fs, Path.join(root, BUNDLED)),
+    ...availableFeatures(fs, tfolder),
+    ...availableFeatures(fs, root),
+  ])
+
+  return Array.from(names).sort()
+}
+
+
 function trimFeatures(
   ctx$: any,
   tfolder: string,
@@ -528,7 +574,7 @@ function trimFeatures(
   // every other feature builds on — so it is never a trim candidate.
   const selected = new Set(['base', ...(features ?? [])])
 
-  const available = availableFeatures(fs, tfolder)
+  const available = featureCatalogue(ctx$, tfolder)
   const drop = findFeatureSources(fs, tfolder + '/tm/' + torigname, available)
     .filter((s) => !selected.has(s.name))
 
@@ -613,6 +659,7 @@ function resolveTarget(tref: string, ctx$: any) {
 
 export {
   action_target,
+  featureCatalogue,
   target_add,
   resolveTarget,
   trimFeatures,

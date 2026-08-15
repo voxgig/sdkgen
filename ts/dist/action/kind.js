@@ -112,6 +112,24 @@ function resolveKind(ref, kind, ctx$) {
             '(options.' + kind + '.<name>) and of the hook wiring in every target, ' +
             'so it cannot be renamed at install time.');
     }
+    // The DEFINITION has to be there, not just the folder that would hold it.
+    //
+    // Resolution stops at the `.sdk` folder, and a bare name resolves to the
+    // bundled scaffold — whose folder always exists — so a name with no
+    // definition anywhere resolved "successfully" and then failed much later
+    // inside jostraca's Copy, as a shape validation error naming a path the
+    // caller never wrote.
+    //
+    // Where that bites is the fan-out: `target add` re-runs `feature add` for
+    // every feature key in the model, and a key with no definition installed
+    // aborted the ENTIRE target add — no templates, no components, nothing —
+    // over one feature. A plain Error, not an SdkGenError, so the fan-out's
+    // per-item guard skips it with a warning; the add path for an explicit ref
+    // does not catch, so `feature add nosuch` still fails, now saying what is
+    // actually missing.
+    if (!ctx$.fs().existsSync(source.model)) {
+        throw new Error(capitalise(kind) + ' definition not found: ' + source.model);
+    }
     return source;
 }
 // Emit the kind's definition file and its index entry.
