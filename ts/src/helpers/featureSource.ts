@@ -37,6 +37,8 @@ import Path from 'node:path'
 
 import { KIT, getModelPath } from '@voxgig/apidef'
 
+import { definitionNames } from './definition'
+
 
 // One feature's source within a target template tree.
 type FeatureSource = {
@@ -88,16 +90,14 @@ function featureOf(entry: string, folder: boolean): string {
 // Feature names this generator can supply, read from the scaffold's
 // `model/feature/*.aontu`. This is the authoritative catalogue: a name not in
 // it is not a feature, so nothing outside it is ever excluded.
+//
+// LOWERCASED, unlike `definitionNames`, because these are matched against
+// names DERIVED FROM FILENAMES (`RetryFeature.swift` -> `retry`), and the
+// languages disagree about case. The manifest compares definition names as
+// written, so the two callers cannot share the lowercasing.
 function availableFeatures(fs: any, sdkfolder: string): string[] {
-  const dir = Path.join(sdkfolder, 'model', 'feature')
-
-  if (!fs.existsSync(dir)) {
-    return []
-  }
-
-  return fs.readdirSync(dir)
-    .filter((n: string) => n.endsWith('.aontu') && 'feature-index.aontu' !== n)
-    .map((n: string) => n.replace(/\.aontu$/, '').toLowerCase())
+  return definitionNames(fs, sdkfolder, 'feature')
+    .map((n: string) => n.toLowerCase())
     .sort()
 }
 

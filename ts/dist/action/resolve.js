@@ -20,6 +20,8 @@ exports.resolveSource = resolveSource;
 exports.lastSegment = lastSegment;
 const node_path_1 = __importDefault(require("node:path"));
 const struct_1 = require("@voxgig/struct");
+const definition_1 = require("../helpers/definition");
+const manifest_1 = require("../helpers/manifest");
 // The bundled scaffold: what a bare name resolves to.
 const BUNDLED = 'node_modules/@voxgig/sdkgen/project/.sdk';
 exports.BUNDLED = BUNDLED;
@@ -110,8 +112,75 @@ function resolveSource(ref, kind, ctx$) {
         // Path.join, not concatenation: an absolute Windows ref makes `folder`
         // backslash-separated, and appending '/model/...' produced a mixed-
         // separator path that some readers handle and others do not.
-        model: node_path_1.default.join(folder, 'model', kind, origname + '.aontu'),
+        model: (0, definition_1.definitionPath)(folder, kind, origname),
+        // The package that provided it, when the source declares a manifest.
+        // Read here rather than by the callers so a DIRECT ref
+        // (`target add ../pkg/iot-go`) records the same provenance
+        // `package add @acme/sdkgen-iot` would — the two spellings install the
+        // same thing, so they must record the same thing.
+        //
+        // A manifest is OPTIONAL for a direct ref and its absence is not a
+        // finding here: a bare `.sdk`-shaped folder is still a valid source, and
+        // every consumer's existing fixtures are exactly that. It is `package
+        // add` that requires one.
+        package: sourcePackage(fs, folder, kind, origname, ctx$),
     };
+}
+// The manifest's package name, or undefined.
+//
+// TOLERANT BY DESIGN, on this path. A malformed manifest must not break
+// `target add` — the definition, the components and the templates are all
+// present and correct, and refusing to install them because a JSON file
+// beside them has a trailing comma would be a worse outcome than installing
+// them with one provenance line missing. `package add` validates properly and
+// refuses; this only reads a name.
+//
+// Tolerant is not the same as credulous. The SHAPE is checked before the name
+// is believed, because `package:` provenance is what `package update` later
+// acts on: recording a project as belonging to `@acme/sdkgen-iot` on the
+// strength of a file that declares no schema version and no `provides` would
+// point a future update at a package that cannot be added at all. A manifest
+// that would fail validation is treated exactly like one that would not
+// parse — warn, and record nothing.
+function sourcePackage(fs, folder, kind, origname, ctx$) {
+    const read = (0, manifest_1.readManifest)(fs, folder);
+    if (null != read.err) {
+        warnManifest(ctx$, read.file, read.err);
+        return undefined;
+    }
+    if (null == read.manifest) {
+        return undefined;
+    }
+    const shape = (0, manifest_1.checkShape)(read.manifest, read.file);
+    if (0 < shape.length) {
+        warnManifest(ctx$, read.file, shape.map((f) => f.note).join('; '));
+        return undefined;
+    }
+    // The manifest must actually CLAIM this item. A package may carry a
+    // definition it deliberately does not list — that is what the
+    // `manifest-item-unclaimed` warning is about, "nothing will install it" —
+    // and stamping the package name onto one anyway would record that
+    // `@acme/sdkgen-iot` supplied something `package add @acme/sdkgen-iot`
+    // would never install, which is exactly the equivalence the comment at the
+    // call site rests on. `package update` would then act on it.
+    const claimed = read.manifest.provides?.[kind];
+    if (!Array.isArray(claimed) || !claimed.includes(origname)) {
+        ctx$.log?.info({
+            point: 'package-item-unclaimed', file: read.file, kind, name: origname,
+            note: read.file + ': ' + kind + ' `' + origname + '` is not listed in ' +
+                '`provides.' + kind + '`, so the copy records no `package` ' +
+                'provenance — add it to the manifest if the package supplies it'
+        });
+        return undefined;
+    }
+    return read.manifest.name;
+}
+function warnManifest(ctx$, file, err) {
+    ctx$.log?.warn({
+        point: 'package-manifest-unreadable', file, err,
+        note: file + ': ignoring an unusable package manifest (' + err +
+            '); the copy records no `package` provenance'
+    });
 }
 function capitalise(s) {
     return s.charAt(0).toUpperCase() + s.slice(1);

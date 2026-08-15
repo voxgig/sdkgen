@@ -57,6 +57,18 @@ type KindDef = {
   // be differentiated, so its model file is created and then never
   // overwritten; everything else is toolchain-owned and resyncs.
   ownedWhenAliased?: boolean
+
+  // Everything BESIDES the definition file that an item of this kind must
+  // have in its package, `{name}`-templated and relative to the `.sdk`
+  // folder. `validateManifest` checks these, which is how a manifest claiming
+  // a target it does not ship fails at `package add` rather than partway
+  // through installing it.
+  //
+  // A feature has none: its definition is the whole of it. Its per-target
+  // SOURCE is deliberately not required — a feature package ships overlays
+  // only for the targets it supports, and `targetsSupported` is where that
+  // coverage is declared (design §7).
+  requires?: string[]
 }
 
 
@@ -104,6 +116,10 @@ const KINDS: Record<string, KindDef> = Object.assign(Object.create(null), {
   target: {
     name: 'target', alias: true, ownedWhenAliased: true,
     rename: aliasModelText,
+    // Components are dispatched by the convention `cmp/<t>/Main_<t>`, and the
+    // template tree is what `target add` copies — a target missing either is
+    // not installable, however complete its model file looks.
+    requires: ['src/cmp/{name}', 'tm/{name}'],
   },
   feature: { name: 'feature', alias: false },
 })
@@ -197,6 +213,7 @@ function kindModel(props: {
     base: source.base,
     origname: source.origname,
     name: source.name,
+    package: source.package,
   })
 
   if (aliased) {

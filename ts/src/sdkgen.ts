@@ -73,6 +73,18 @@ import {
 } from './helpers/featureSource'
 import type { FeatureSource } from './helpers/featureSource'
 import {
+  definitionPath,
+  definitionFolder,
+  definitionNames,
+} from './helpers/definition'
+import {
+  MANIFEST,
+  manifestPath,
+  readManifest,
+  validateManifest,
+} from './helpers/manifest'
+import type { Manifest, ManifestRead } from './helpers/manifest'
+import {
   packageName,
   installCommand,
   registryState,
@@ -711,6 +723,8 @@ export type {
   FeatureSource,
   DoctorReport,
   RegisterOptions,
+  Manifest,
+  ManifestRead,
 }
 
 export type {
@@ -851,6 +865,16 @@ export {
   featureExcludes,
   fullsetExcludes,
   srcFeatureExcludes,
+
+  definitionPath,
+  definitionFolder,
+  definitionNames,
+
+  MANIFEST,
+  manifestPath,
+  readManifest,
+  validateManifest,
+
   jsProp,
   jsOptProp,
   jsKey,

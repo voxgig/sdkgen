@@ -653,6 +653,7 @@ function resolveTarget(tref: string, ctx$: any) {
     tfolder: src.folder,
     torigname: src.origname,
     base: src.base,
+    package: src.package,
   }
 }
 

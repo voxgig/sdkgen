@@ -4,6 +4,7 @@ type KindDef = {
     alias: boolean;
     rename?: (src: string, origname: string, name: string) => string;
     ownedWhenAliased?: boolean;
+    requires?: string[];
 };
 declare function aliasModelText(src: string, torigname: string, tname: string): string;
 declare function escapeRe(s: string): string;

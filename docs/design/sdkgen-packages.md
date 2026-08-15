@@ -1,8 +1,95 @@
 # Design: sdkgen packages — external targets, features, and other kinds
 
-Status: **proposal** (2026-08-14). **Phase 1 (§18.1) implemented**
-(2026-08-15) — the live bugs of §16 and the characterization goldens that
-gate phase 2. Everything from §18.2 onward is still proposal.
+Status: **proposal** (2026-08-14), **partly implemented** (2026-08-15).
+Landed so far: **§18.1** (live bugs + characterization goldens), **§18.3**
+(provenance), **§18.2** (the kind registry), **§18.5** (features from
+packages, external-target trim), and the **manifest half of §18.4** — the
+file, its validation, the bundled scaffold's own manifest, and `package:`
+provenance. Still proposal: the rest of §18.4 (`package add` / `list` and
+their CLI plumbing), §18.6 and §18.7.
+
+Deltas found while implementing the manifest (§18.4a):
+
+- **The manifest is read on every add, not only by `package add`.**
+  `resolveSource` reads it so a DIRECT ref (`target add ../pkg/iot-go`)
+  records the same `package` provenance `package add @acme/sdkgen-iot`
+  would — the two spellings install the same thing, so they must record
+  the same thing. That read is deliberately TOLERANT: a malformed manifest
+  warns and the add proceeds without the provenance line, because refusing
+  to install a correct definition, component tree and template tree over a
+  trailing comma in a sibling JSON file is the worse outcome. `package
+  add` is where a manifest is required and validated properly.
+- **Validation needs the kind registry, which cannot be imported.** The
+  registry lives in `action/` and the manifest reader is a helper, so
+  `validateManifest` takes the kinds as a parameter rather than importing
+  them. `KindDef` gained `requires` (a `{name}`-templated list of the
+  trees an item of that kind must ship) to carry the per-kind half.
+- **`parity` and `targetsSupported` are deferred to §18.7.** Both are
+  optional, and neither has a reader yet — `package check` and the test
+  kit are what consume them. Writing the bundled scaffold's parity map now
+  would duplicate `ts/test/parity.test.ts`'s tier declaration, creating
+  exactly the two-sources-of-truth drift this workstream has spent four
+  fixes removing. When it lands, the manifest should become the source and
+  the parity suite should read it, not the reverse.
+- **The `model/<kind>/<name>.aontu` convention was spelled out in three
+  places** (the resolver, the feature catalogue, doctor), each with its own
+  idea of which files in that directory count. The manifest would have been
+  a fourth, so it became `helpers/definition.ts` first.
+- **The transition diff is one line per copied model file.** Every bundled
+  add now stamps `package: '@voxgig/sdkgen'`, which moved 54 golden
+  entries (27 target models, plus `model/feature/test.aontu` as it appears
+  in each target section) and nothing else. Doctor had to be given the same
+  value or every stamped copy would have read as forked — the writer/reader
+  symmetry `helpers/stdrep` exists to hold.
+- **§12's resync tolerance had to become PER KEY, and stop using a
+  pattern.** The provenance keys arrive in stages, so a project that
+  resynced between two of them holds a copy that *is* stamped and is still
+  missing a later key; an all-or-nothing "is it stamped at all" test called
+  every one of those a fork. On released 3.4.8 only `ts`, `csharp` and
+  `swift` carried the `'BASE'` anchor, and `ts` is in essentially every
+  consumer SDK, so that was close to the whole installed base going red on
+  a file nobody touched.
+
+  Fixing it per key with a regex for "a line that looks like provenance"
+  was worse, and in both directions: `base`, `origname` and `package` are
+  **not reserved words** — `main: kit: target: <t>: module: package` (the
+  Go root package identifier) and `publish: registry: package` are declared
+  model slots that a target model may write in block form. A key-only match
+  read such a line as proof the copy was already stamped (false fork on an
+  untouched file) *and* stripped it from the comparison (deleting it — a
+  real fork, silently reverted by the next `target add` — passed the
+  check). The tolerance now compares against the exact lines
+  `provenanceReplace` emits, which is the only spelling that keeps the
+  reader tied to the writer.
+- **A source whose manifest stops yielding a name turns its targets
+  forked.** That is accurate — the next `target add` really would strip the
+  `package:` line — but it was silent, because doctor built its resolver
+  context without a `log`. It now passes one. Tolerating it instead was
+  rejected: the project's copies genuinely disagree with what the source
+  would write, and the author needs to fix the manifest.
+- **Validation must use ONE oracle for both directions.** Asking the
+  filesystem forward and a directory listing backward disagrees on a
+  case-insensitive filesystem (APFS, NTFS — most package authors), so a
+  manifest claiming `IoTGo` beside `model/target/iotgo.aontu` validated
+  clean for the author and failed for every Linux consumer.
+- **`engines.sdkgen` is declarative only until §18.4b.** Nothing compares
+  the range: the gate belongs with `package add`, and there is no semver
+  implementation available here (this package has no runtime dependencies).
+  Said in the type so it does not read as enforced.
+
+Known gaps this phase does NOT close, both now more acute because feature
+model files carry provenance too:
+
+- **Doctor compares no `model/feature/<f>.aontu` at all.** It iterates
+  targets only, so a hand-edit to an installed feature definition reads as
+  perfectly in sync and is silently reverted by the next `target add` —
+  the same failure `checkTargetModel` was added for. §12's per-kind
+  model-file comparison (§18.6) is what closes it.
+- **`requires` checks that `src/cmp/<t>` is a directory, not that
+  `Main_<t>` is in it.** An empty component directory validates clean and
+  fails later at `requirePath`. Left alone deliberately: `requirePath`
+  resolves without an extension, so pinning `.ts` here would reject a
+  package shipping compiled components.
 
 Deltas found while implementing phase 1:
 

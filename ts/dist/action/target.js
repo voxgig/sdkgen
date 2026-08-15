@@ -506,6 +506,7 @@ function resolveTarget(tref, ctx$) {
         tfolder: src.folder,
         torigname: src.origname,
         base: src.base,
+        package: src.package,
     };
 }
 //# sourceMappingURL=target.js.map

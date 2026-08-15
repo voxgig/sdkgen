@@ -5,6 +5,7 @@ type Source = {
     folder: string;
     base: string;
     model: string;
+    package?: string;
 };
 declare function lastSegment(ref: string): string;
 declare function resolveSource(ref: string, kind: string, ctx$: any): Source;

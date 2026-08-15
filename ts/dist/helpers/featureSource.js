@@ -45,6 +45,7 @@ exports.fullsetExcludes = fullsetExcludes;
 exports.srcFeatureExcludes = srcFeatureExcludes;
 const node_path_1 = __importDefault(require("node:path"));
 const apidef_1 = require("@voxgig/apidef");
+const definition_1 = require("./definition");
 // Directory name that marks a feature container. Kept exact (not a substring
 // match) so `utility/feature_add.go` and `test/feature_test.go` — which are
 // shared machinery, not per-feature source — are never treated as features.
@@ -75,14 +76,14 @@ function featureOf(entry, folder) {
 // Feature names this generator can supply, read from the scaffold's
 // `model/feature/*.aontu`. This is the authoritative catalogue: a name not in
 // it is not a feature, so nothing outside it is ever excluded.
+//
+// LOWERCASED, unlike `definitionNames`, because these are matched against
+// names DERIVED FROM FILENAMES (`RetryFeature.swift` -> `retry`), and the
+// languages disagree about case. The manifest compares definition names as
+// written, so the two callers cannot share the lowercasing.
 function availableFeatures(fs, sdkfolder) {
-    const dir = node_path_1.default.join(sdkfolder, 'model', 'feature');
-    if (!fs.existsSync(dir)) {
-        return [];
-    }
-    return fs.readdirSync(dir)
-        .filter((n) => n.endsWith('.aontu') && 'feature-index.aontu' !== n)
-        .map((n) => n.replace(/\.aontu$/, '').toLowerCase())
+    return (0, definition_1.definitionNames)(fs, sdkfolder, 'feature')
+        .map((n) => n.toLowerCase())
         .sort();
 }
 // Walk a target's template tree and return every per-feature source entry.

@@ -113,7 +113,14 @@ async function doctor(actx) {
         const tref = (0, kind_1.recordedRef)(declared, tname) || tname;
         let resolved;
         try {
-            resolved = (0, target_1.resolveTarget)(tref, { folder: root, fs: () => fs });
+            // WITH THE LOG. Resolution reads the source's package manifest, and an
+            // unusable one is reported only through `ctx$.log`. Without it doctor
+            // silently lost the package name — and then reported every target from
+            // that package as FORKED, because the expected text no longer carries
+            // the `package:` line the copy has, with nothing anywhere saying why.
+            // That is accurate (the next `target add` really would strip the line)
+            // but unactionable, which is the same defect as being wrong.
+            resolved = (0, target_1.resolveTarget)(tref, { folder: root, fs: () => fs, log });
         }
         catch (err) {
             log.warn({
@@ -330,7 +337,12 @@ function checkTargetModel(actx, resolved, report) {
     // pass different maps, so doctor has to as well, or every project reads as
     // forked on the `base:` line alone. The map itself is shared with the
     // writer (helpers/stdrep) so the two cannot drift.
-    const provenance = (0, stdrep_1.provenanceReplace)({ base, origname: torigname, name: tname });
+    //
+    // `package` comes from the SOURCE's manifest, not from what the copy
+    // records, for the same reason `base` does: what this compares is what
+    // `target add` would write NOW. A package that renamed itself therefore
+    // reads as forked, which is accurate — the next add would rewrite the line.
+    const provenance = (0, stdrep_1.provenanceReplace)({ base, origname: torigname, name: tname, package: resolved.package });
     // For an alias, compare against what the origin WOULD produce under the new
     // name, so the rename itself is not the difference.
     const rewrite = aliased ?
@@ -342,27 +354,83 @@ function checkTargetModel(actx, resolved, report) {
         report.aliasedDiff.push(label);
         return;
     }
-    // A copy that predates the provenance rollout differs from the scaffold by
-    // exactly the anchor line, because the scaffold now carries keys the copy
-    // was written before. That is not a fork — the project changed nothing —
-    // and reporting it as one would turn every existing consumer's CI red on
-    // upgrade. Say what it is, and what fixes it.
+    // A copy written before the toolchain stamped some provenance key differs
+    // from the scaffold by exactly the lines carrying that key. That is not a
+    // fork — the project changed nothing — and reporting it as one would turn
+    // every existing consumer's CI red on upgrade.
     //
-    // ONLY for a copy that is genuinely UNSTAMPED. Applying the tolerance to
-    // any provenance-confined difference would hide a real edit: a project that
-    // changed or deleted a `package:` line on a stamped copy would be reported
-    // as resync-pending and pass the check, while the next `target add` quietly
-    // reverted it — which is the whole class of thing doctor exists to catch.
-    const unstamped = !String(fs.readFileSync(project, 'utf8'))
-        .split('\n').some((line) => PROVENANCE_LINE_RE.test(line));
-    if (unstamped && !differs(fs, scaffold, project, actx.model, provenance, (line) => PROVENANCE_LINE_RE.test(line), rewrite)) {
+    // PER KEY, not all-or-nothing. The keys arrived in stages — `base` and
+    // `origname` first, `package` with the manifest — so a project that
+    // resynced between two of them holds a copy that IS stamped (it has `base`)
+    // and is still missing a later key. An all-or-nothing "is it stamped at
+    // all" test called every one of those a fork: on the released 3.4.8
+    // scaffold only ts, csharp and swift carried the anchor, and `ts` is in
+    // essentially every consumer SDK, so that was close to the whole installed
+    // base going red on a file nobody touched.
+    if (stampOnly(fs, scaffold, project, actx.model, provenance, rewrite)) {
         report.resyncPending.push(label);
         return;
     }
     report.forked.push(label);
 }
-// A provenance line, in either the scaffold's anchor form or a stamped one.
-const PROVENANCE_LINE_RE = /^\s*(base|origname|package):\s*'[^']*'\s*$/;
+// Is the ONLY difference a provenance line the copy has not been given yet?
+//
+// MATCHED AGAINST THE EXACT LINES THE STAMP PRODUCES, never against a pattern
+// for "a line that looks like provenance". `base`, `origname` and `package`
+// are not reserved words: `main: kit: target: <t>: module: package` (the Go
+// root package identifier) and `publish: registry: package` (the published
+// package name) are declared model slots that a target model may write in
+// block form, on their own line, looking exactly like a provenance line to
+// any regex. A generic pattern got BOTH directions wrong on such a model —
+// it read the copy's `module: package:` as proof the copy was already
+// stamped, so an untouched pre-manifest file was reported as forked; and it
+// stripped that same real line from the comparison, so DELETING it — an
+// actual fork, silently reverted by the next `target add` — was reported as
+// a pending resync and passed the check.
+//
+// Comparing against `provenanceReplace`'s own output has no such ambiguity,
+// and keeps the reader tied to the writer, which is the whole point of
+// helpers/stdrep.
+//
+// The rule, once the two are known to differ:
+//
+//   - every line the EXPECTED has and the copy lacks must be a stamp line;
+//   - the copy must have NO line the expected lacks.
+//
+// The second half is what keeps the tolerance narrow, as the previous
+// rollout's review required: a changed `package:` value leaves the old line
+// in the copy and unmatched, so it is a fork and is reported as one.
+function stampOnly(fs, scaffoldPath, projectPath, model, provenance, rewrite) {
+    const { expected, actual } = renderPair(fs, scaffoldPath, projectPath, model, provenance, rewrite);
+    // The rendered block, as lines: `base: '...'` plus whichever of
+    // `origname:` / `package:` applied. Trimmed on both sides of the
+    // comparison, because the anchor's own indentation belongs to the scaffold.
+    const stamp = new Set(Object.values(provenance).join('\n').split('\n')
+        .map((s) => s.trim()));
+    const onlyExpected = lineDiff(expected, actual);
+    const onlyActual = lineDiff(actual, expected);
+    return 0 === onlyActual.length &&
+        0 < onlyExpected.length &&
+        onlyExpected.every((line) => stamp.has(line.trim()));
+}
+// Lines of `a` that `b` does not have, counting duplicates.
+function lineDiff(a, b) {
+    const pool = new Map();
+    for (const line of b.split('\n')) {
+        pool.set(line, (pool.get(line) ?? 0) + 1);
+    }
+    const out = [];
+    for (const line of a.split('\n')) {
+        const n = pool.get(line) ?? 0;
+        if (0 < n) {
+            pool.set(line, n - 1);
+        }
+        else {
+            out.push(line);
+        }
+    }
+    return out;
+}
 // Every file under `dir`, as forward-slash paths relative to it, sorted.
 // Missing directory -> no files (a target that was never added).
 function walk(fs, dir) {
@@ -408,24 +476,34 @@ function differs(fs, scaffoldPath, projectPath, model, replace, ignore, rewrite)
     if (BINARY_RE.test(scaffoldPath)) {
         return !fs.readFileSync(scaffoldPath).equals(fs.readFileSync(projectPath));
     }
-    const rawsrc = fs.readFileSync(scaffoldPath, 'utf8');
-    const src = null == rewrite ? rawsrc : rewrite(rawsrc);
-    // template() runs even when there is nothing to REPLACE, because jostraca's
-    // Copy always interpolates `$$ref$$` against the model as well — the replace
-    // map is an extra, not the whole substitution. Skipping it for the src/cmp
-    // tree (whose Copy passes no replace map) meant the three Config fragments
-    // that carry `$$const.Name$$` / `$$main.kit.info.servers.0.url$$` arrived
-    // substituted and compared as bytes: every project with ts, js or dart
-    // reported `src/cmp/<t>/fragment/Config.fragment.<ext>` as FORKED straight
-    // out of `target add`, which is precisely the noise this function exists to
-    // remove. With no `$$` refs and no replace keys, template() is the identity.
-    const expected = (0, jostraca_1.template)(src, model, { replace });
-    const actual = fs.readFileSync(projectPath, 'utf8');
+    const { expected, actual } = renderPair(fs, scaffoldPath, projectPath, model, replace, rewrite);
     if (null == ignore) {
         return expected !== actual;
     }
     const strip = (s) => s.split('\n').filter((line) => !ignore(line)).join('\n');
     return strip(expected) !== strip(actual);
+}
+// What `target add` WOULD write, beside what the project actually has.
+//
+// One definition, shared by the byte comparison and the stamp-only tolerance,
+// so the two can never disagree about what the expected text is.
+//
+// template() runs even when there is nothing to REPLACE, because jostraca's
+// Copy always interpolates `$$ref$$` against the model as well — the replace
+// map is an extra, not the whole substitution. Skipping it for the src/cmp
+// tree (whose Copy passes no replace map) meant the three Config fragments
+// that carry `$$const.Name$$` / `$$main.kit.info.servers.0.url$$` arrived
+// substituted and compared as bytes: every project with ts, js or dart
+// reported `src/cmp/<t>/fragment/Config.fragment.<ext>` as FORKED straight
+// out of `target add`, which is precisely the noise this exists to remove.
+// With no `$$` refs and no replace keys, template() is the identity.
+function renderPair(fs, scaffoldPath, projectPath, model, replace, rewrite) {
+    const rawsrc = fs.readFileSync(scaffoldPath, 'utf8');
+    const src = null == rewrite ? rawsrc : rewrite(rawsrc);
+    return {
+        expected: (0, jostraca_1.template)(src, model, { replace }),
+        actual: fs.readFileSync(projectPath, 'utf8'),
+    };
 }
 // trimFeatures logs its decisions; doctor is a report, not a run.
 function quietLog(log) {
