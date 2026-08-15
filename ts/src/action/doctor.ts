@@ -49,10 +49,11 @@ import { templateReplacements, provenanceReplace } from '../helpers/stdrep'
 import {
   resolveTarget,
   trimFeatures,
-  aliasModelText,
   aliasCmpText,
   aliasCmpName,
 } from './target'
+
+import { aliasModelText, recordedRef } from './kind'
 
 
 // jostraca's Copy walk skips these (IGNORED_RE in CopyOp) — editor backups and
@@ -184,9 +185,7 @@ async function doctor(actx: ActionContext): Promise<ActionResult> {
     // origin name recorded, the alias compares against the tree it actually
     // came from.
     const torigname = (declared && declared.origname) || tname
-    const tref = (declared && declared.base) ?
-      Path.join(declared.base, '..', torigname) +
-      (torigname === tname ? '' : '~' + tname) : tname
+    const tref = recordedRef(declared, tname) || tname
 
     let resolved: any
     try {
