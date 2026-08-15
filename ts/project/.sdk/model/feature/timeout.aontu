@@ -5,6 +5,7 @@ main: kit: feature: timeout: {
   title: "Per-request timeout with transport abort"
   version: '0.0.1'
   active: true
+  base: 'BASE'
 
   config: {
     options: {

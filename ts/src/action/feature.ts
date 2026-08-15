@@ -27,7 +27,7 @@ import { SdkGenError } from '../utility'
 
 import { findFeatureSources } from '../helpers/featureSource'
 
-import { templateReplacements } from '../helpers/stdrep'
+import { templateReplacements, provenanceReplace } from '../helpers/stdrep'
 
 
 import {
@@ -42,6 +42,12 @@ const CMD_MAP: any = {
 }
 
 const BASE = 'node_modules/@voxgig/sdkgen'
+
+// The `.sdk` folder a bundled feature comes from — the value recorded as its
+// provenance. Still hardcoded, like the path above: giving `feature add` the
+// ref grammar `target add` already has is the next step, and this becomes
+// whatever the ref resolved to.
+const SDKFOLDER = BASE + '/project/.sdk'
 
 
 async function action_feature(args: string[], actx: ActionContext): Promise<ActionResult> {
@@ -140,6 +146,14 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
         Copy({
           // TODO: these paths needs to be parameterised
           from: BASE + '/project/.sdk/model/feature/' + fname + '.aontu',
+          // Where this feature came from, stamped over the `base: 'BASE'`
+          // anchor the shipped model carries — the same mechanism, and the
+          // same shared map, `target add` uses. A feature model recorded
+          // nothing at all before, so `feature add` could only ever mean the
+          // bundled scaffold; recording it is what lets a bare name keep
+          // resolving to an external source on the next `target add` (which
+          // re-runs this action for every active feature).
+          replace: provenanceReplace({ base: SDKFOLDER }),
         })
         File({ name: 'feature-index.aontu' }, () => UpdateIndex({
           content: ctx$.meta.content.feature_index,

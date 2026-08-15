@@ -6,6 +6,8 @@ type DoctorReport = {
     missing: string[];
     additive: string[];
     unwired: string[];
+    resyncPending: string[];
+    aliasedDiff: string[];
     ok: boolean;
 };
 declare function action_doctor(args: string[], actx: ActionContext): Promise<ActionResult>;

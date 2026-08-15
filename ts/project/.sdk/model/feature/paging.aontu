@@ -5,6 +5,7 @@ main: kit: feature: paging: {
   title: "Pagination signals for list operations"
   version: '0.0.1'
   active: true
+  base: 'BASE'
 
   config: {
     options: {

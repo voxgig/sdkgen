@@ -10,6 +10,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ensureStdrep = ensureStdrep;
 exports.templateReplacements = templateReplacements;
+exports.provenanceReplace = provenanceReplace;
 const packageMeta_1 = require("./packageMeta");
 // PROJECTENV — the env-var base for this SDK's `<BASE>_TEST_LIVE`,
 // `<BASE>_APIKEY` and friends.
@@ -43,5 +44,18 @@ function templateReplacements(model, tname) {
         // generated manifest uses, so the tag and the package cannot disagree.
         PROJECTVERSION: (0, packageMeta_1.packageVersion)(model, tname),
     };
+}
+// Two spaces, matching every shipped model file's indentation for these keys.
+const PROVENANCE_INDENT = '  ';
+function provenanceReplace(prov) {
+    const lines = ["base: '" + prov.base + "'"];
+    if (null != prov.origname && null != prov.name &&
+        prov.origname !== prov.name) {
+        lines.push("origname: '" + prov.origname + "'");
+    }
+    if (null != prov.package && '' !== prov.package) {
+        lines.push("package: '" + prov.package + "'");
+    }
+    return { "base: 'BASE'": lines.join('\n' + PROVENANCE_INDENT) };
 }
 //# sourceMappingURL=stdrep.js.map

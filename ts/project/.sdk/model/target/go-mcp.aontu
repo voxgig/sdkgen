@@ -11,6 +11,7 @@ main: kit: target: 'go-mcp': {
   ext: go
   comment: line: "//"
   module: name: '$$name$$'
+  base: 'BASE'
 
   # Per-generation-phase activation. Mirrors go-cli — only Main runs.
   phase: {

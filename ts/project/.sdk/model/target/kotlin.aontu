@@ -4,6 +4,7 @@ main: kit: target: kotlin: {
   ext: kt
   comment: line: "//"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   deps: &: {

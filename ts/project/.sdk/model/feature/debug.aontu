@@ -5,6 +5,7 @@ main: kit: feature: debug: {
   title: "Request/response capture ring buffer for debugging"
   version: '0.0.1'
   active: true
+  base: 'BASE'
 
   config: {
     options: {

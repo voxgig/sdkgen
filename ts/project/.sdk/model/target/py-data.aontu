@@ -14,6 +14,7 @@ main: kit: target: 'py-data': {
   ext: py
   comment: line: "#"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   # Per-generation-phase activation. Mirrors go-cli/go-mcp: every standard

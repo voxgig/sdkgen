@@ -18,6 +18,11 @@ const CMD_MAP = {
     add: cmd_feature_add
 };
 const BASE = 'node_modules/@voxgig/sdkgen';
+// The `.sdk` folder a bundled feature comes from — the value recorded as its
+// provenance. Still hardcoded, like the path above: giving `feature add` the
+// ref grammar `target add` already has is the next step, and this becomes
+// whatever the ref resolved to.
+const SDKFOLDER = BASE + '/project/.sdk';
 async function action_feature(args, actx) {
     const cmdname = args[1];
     const cmd = CMD_MAP[cmdname];
@@ -91,6 +96,14 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 (0, jostraca_1.Copy)({
                     // TODO: these paths needs to be parameterised
                     from: BASE + '/project/.sdk/model/feature/' + fname + '.aontu',
+                    // Where this feature came from, stamped over the `base: 'BASE'`
+                    // anchor the shipped model carries — the same mechanism, and the
+                    // same shared map, `target add` uses. A feature model recorded
+                    // nothing at all before, so `feature add` could only ever mean the
+                    // bundled scaffold; recording it is what lets a bare name keep
+                    // resolving to an external source on the next `target add` (which
+                    // re-runs this action for every active feature).
+                    replace: (0, stdrep_1.provenanceReplace)({ base: SDKFOLDER }),
                 });
                 (0, jostraca_1.File)({ name: 'feature-index.aontu' }, () => (0, action_1.UpdateIndex)({
                     content: ctx$.meta.content.feature_index,

@@ -5,6 +5,7 @@ main: kit: feature: clienttrack: {
   title: "Client identity and per-request correlation headers"
   version: '0.0.1'
   active: true
+  base: 'BASE'
 
   config: {
     options: {

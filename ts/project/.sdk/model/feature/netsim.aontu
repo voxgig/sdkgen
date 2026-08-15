@@ -5,6 +5,7 @@ main: kit: feature: netsim: {
   title: "Network behaviour simulation for offline testing (latency, failures, outages)"
   version: '0.0.1'
   active: true
+  base: 'BASE'
 
   config: {
     # Test-support feature: enable per test via

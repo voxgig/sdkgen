@@ -5,6 +5,7 @@ main: kit: feature: proxy: {
   title: "Outbound HTTP(S) proxy routing"
   version: '0.0.1'
   active: true
+  base: 'BASE'
 
   config: {
     options: {

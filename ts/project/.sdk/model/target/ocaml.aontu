@@ -5,6 +5,7 @@ main: kit: target: ocaml: {
   ext: ml
   comment: line: "//"
   module: name: '$$name$$'
+  base: 'BASE'
   srcfeature: false
 
   deps: &: {

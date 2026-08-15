@@ -8,6 +8,9 @@ exports.target_add = target_add;
 exports.resolveTarget = resolveTarget;
 exports.trimFeatures = trimFeatures;
 exports.readTargetFeature = readTargetFeature;
+exports.aliasModelText = aliasModelText;
+exports.aliasCmpText = aliasCmpText;
+exports.aliasCmpName = aliasCmpName;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const util_1 = require("@voxgig/util");
@@ -131,7 +134,7 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
             // what that left broken.
             const aliased = tname !== torigname;
             const modelFrom = tfolder + '/model/target/' + torigname + '.aontu';
-            const baseReplace = { "'BASE'": "'" + base + "'" };
+            const baseReplace = (0, stdrep_1.provenanceReplace)({ base, origname: torigname, name: tname });
             (0, jostraca_1.Folder)({ name: 'model/target' }, () => {
                 if (aliased) {
                     // The copy has to land under the INSTALLED name AND declare it.
@@ -254,6 +257,40 @@ function aliasModelText(src, torigname, tname) {
         return 'target:' + gap + q + tname + q + ':';
     });
 }
+// `<Cmp>_<origname>.<ext>` -> `<Cmp>_<tname>.<ext>`, for an aliased install.
+// Anything not carrying the suffix (tsconfig.json, the fragment sources)
+// keeps its name — the `.<ext>` anchor is what keeps this off
+// `Main.fragment.go`, whose `go` is a file extension.
+//
+// Shared with doctor for the same reason as aliasCmpText: doctor walks the
+// ORIGIN tree to decide what should be present, so it has to land each file
+// under the same name the writer gave it, or it reports the whole tree as
+// missing.
+function aliasCmpName(name, torigname, tname) {
+    return name.replace(new RegExp('_' + escapeRe(torigname) + '(\\.[^.]+)$'), '_' + tname + '$1');
+}
+// The origin name a component carries INSIDE its source, rewritten for an
+// aliased install. Shared with doctor, which re-applies it before comparing —
+// same discipline as templateReplacements: a writer and a reader that
+// disagree by a character make every file read as a fork.
+//
+// Rewritten here rather than through jostraca's `replace` map, because that
+// map canonicalises each key into a regex group NAME — `_go'` and `_go"` both
+// reduce to the same name, so the later entry silently won and every
+// single-quoted import came out as `from './Package_go2"`. One explicit regex
+// keeps the quote it matched.
+function aliasCmpText(src, torigname, tname) {
+    const orig = escapeRe(torigname);
+    return src
+        // The fragment directory, read relative to __dirname. The fragments are
+        // copied into the ALIAS's folder, so leaving the origin path would miss —
+        // or, if the origin target is also installed, silently read ITS fragments.
+        .replace(new RegExp('src/cmp/' + orig + '/', 'g'), 'src/cmp/' + tname + '/')
+        // Sibling imports: `'./Package_go'` -> `'./Package_go2'`. Anchored on the
+        // closing quote (captured, so the style is preserved) to keep it off file
+        // EXTENSIONS — `Main.fragment.go` must not become `Main.fragment.go2`.
+        .replace(new RegExp('_' + orig + '([\'"])', 'g'), '_' + tname + '$1');
+}
 // Emit an aliased `src/cmp` tree: every file renamed from the origin suffix
 // to the installed one, and its CONTENT rewritten to match.
 //
@@ -270,21 +307,7 @@ function aliasModelText(src, torigname, tname) {
 // tree Copy on the unaliased path does.
 function aliasCmpTree(ctx$, fromDir, toRel, torigname, tname) {
     const fs = ctx$.fs();
-    const orig = escapeRe(torigname);
-    // Rewritten HERE rather than through jostraca's `replace` map, because that
-    // map canonicalises each key into a regex group NAME — `_go'` and `_go"`
-    // both reduce to the same name, so the later entry silently won and every
-    // single-quoted import came out as `from './Package_go2"`. One explicit
-    // regex keeps the quote it matched.
-    const aliasText = (src) => src
-        // The fragment directory, read relative to __dirname. The fragments are
-        // copied into the ALIAS's folder, so leaving the origin path would miss —
-        // or, if the origin target is also installed, silently read ITS fragments.
-        .replace(new RegExp('src/cmp/' + orig + '/', 'g'), 'src/cmp/' + tname + '/')
-        // Sibling imports: `'./Package_go'` -> `'./Package_go2'`. Anchored on the
-        // closing quote (captured, so the style is preserved) to keep it off file
-        // EXTENSIONS — `Main.fragment.go` must not become `Main.fragment.go2`.
-        .replace(new RegExp('_' + orig + '([\'"])', 'g'), '_' + tname + '$1');
+    const aliasText = (src) => aliasCmpText(src, torigname, tname);
     const emit = (dir, rel) => {
         let entries;
         try {
@@ -303,10 +326,7 @@ function aliasCmpTree(ctx$, fromDir, toRel, torigname, tname) {
                 (0, jostraca_1.Folder)({ name }, () => emit(child, rel + '/' + name));
                 continue;
             }
-            // `<Cmp>_<origname>.<ext>` -> `<Cmp>_<tname>.<ext>`. Anything not
-            // carrying the suffix (tsconfig.json, the fragment sources) keeps its
-            // name.
-            const renamed = name.replace(new RegExp('_' + escapeRe(torigname) + '(\\.[^.]+)$'), '_' + tname + '$1');
+            const renamed = aliasCmpName(name, torigname, tname);
             // `template` against the model with no replace map, matching what Copy
             // does for the unaliased tree — jostraca's Copy always interpolates
             // `$$ref$$` against the model, so an aliased tree must too.
