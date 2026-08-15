@@ -81,6 +81,10 @@ declare function SdkGen(opts: SdkGenOptions): {
     feature: {
         add: (features: string[]) => Promise<ActionResult>;
     };
+    package: {
+        add: (refs: string[], flags?: Record<string, any>) => Promise<ActionResult>;
+        list: () => Promise<ActionResult>;
+    };
 };
 declare namespace SdkGen {
     var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any, ctx: any) => Promise<any>>;

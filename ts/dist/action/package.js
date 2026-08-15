@@ -161,12 +161,23 @@ exports.SDKGEN_VERSION = SDKGEN_VERSION;
 // success is the failure this whole verb exists to remove.
 function selectItems(src, only, log) {
     const provides = src.manifest.provides ?? {};
-    if (null == only || '' === only) {
+    // ABSENT means "everything"; EXPLICITLY EMPTY does not.
+    //
+    // `--only=` and `{ only: '' }` are what a script gets when it builds the
+    // flag from an empty variable, and treating that as absent installs the
+    // whole package — the opposite of what the operator asked for, at the one
+    // moment nobody is watching.
+    if (null == only) {
         return provides;
     }
-    const wanted = {};
+    const wanted = Object.create(null);
     const missing = [];
-    for (const spec of only.split(',').map((s) => s.trim()).filter(Boolean)) {
+    const specs = only.split(',').map((s) => s.trim()).filter(Boolean);
+    if (0 === specs.length) {
+        throw new utility_1.SdkGenError('--only was given but selects nothing: ' + JSON.stringify(only) +
+            '\n  omit the flag to install everything the package provides');
+    }
+    for (const spec of specs) {
         const colon = spec.indexOf(':');
         if (colon < 0) {
             throw new utility_1.SdkGenError('--only expects <kind>:<name> entries, got: ' + spec +
@@ -200,7 +211,12 @@ function describeProvides(provides) {
 // refused here with the same explanation `feature add` gives, so the two
 // entry points cannot disagree about what is allowed.
 function parseAliases(alias, wanted) {
-    const out = {};
+    // NULL-PROTOTYPE. A manifest may legally provide an item called
+    // `constructor` or `toString` — the name grammar admits them — and on a
+    // plain object `aliases['constructor']` is Object.prototype.constructor,
+    // which is truthy, so an unaliased item got `~function Object() { … }`
+    // appended and installed under that as a name.
+    const out = Object.create(null);
     if (null == alias || '' === alias) {
         return out;
     }
@@ -212,6 +228,19 @@ function parseAliases(alias, wanted) {
         }
         const from = spec.slice(0, eq);
         const to = spec.slice(eq + 1);
+        // Checked HERE as well as in the resolver, because the two catch
+        // different things. The resolver sees whatever survives ref parsing, so
+        // it catches `iotgo=..`; but `iotgo=../../elsewhere` is concatenated into
+        // `<root>/iotgo~../../elsewhere`, whose last segment is `elsewhere` and
+        // which therefore stops looking like an alias at all — it resolves as a
+        // ref to a different item and fails confusingly instead. Same grammar in
+        // both places, so they cannot disagree about what a name is.
+        if (!manifest_1.ITEM_NAME_RE.test(to)) {
+            throw new utility_1.SdkGenError('Invalid alias in --alias ' + JSON.stringify(spec) + ': ' +
+                JSON.stringify(to) + ' is not a name (matching ' +
+                manifest_1.ITEM_NAME_RE.source + ')' +
+                '\n  an alias becomes the directory the item is installed into');
+        }
         const kind = Object.keys(wanted)
             .find((k) => (wanted[k] ?? []).includes(from));
         if (null == kind) {
@@ -247,22 +276,31 @@ async function package_add(refs, actx) {
         throw new utility_1.SdkGenError('--only and --alias apply to a single package; ' + refs.length +
             ' were given: ' + refs.join(', '));
     }
+    // PREFLIGHT EVERY PACKAGE BEFORE INSTALLING ANY OF THEM.
+    //
+    // The same argument that makes this verb validate a manifest in full before
+    // writing anything applies across refs: `package add good,bad` that
+    // installed `good` and then failed would leave exactly the half-completed
+    // command the guarantee is about. Resolution, the engine gate, manifest
+    // validation, `--only` selection and the name-collision check all happen
+    // here, for all of them, before the first file is written.
+    const plan = refs.map((ref) => plan_one(ref, flags, actx));
+    checkCollisions(plan, actx);
     const results = [];
-    for (const ref of refs) {
-        const src = resolvePackage(ref, actx);
+    for (const { src, wanted, items } of plan) {
         log.info({
-            point: 'package-add-start', package: src.manifest.name, ref,
+            point: 'package-add-start', package: src.manifest.name, ref: src.ref,
             version: src.manifest.version, root: src.root,
             note: src.manifest.name +
                 (null == src.manifest.version ? '' : '@' + src.manifest.version) +
                 ' <- ' + src.root
         });
-        checkEngine(src, actx);
-        refuse(src, (0, manifest_1.validateManifest)(actx.fs(), src.sdk, src.manifest, kind_1.KINDS), log);
-        const wanted = selectItems(src, flags.only, log);
-        const aliases = parseAliases(flags.alias, wanted);
         for (const kind of orderedKinds(wanted)) {
             const add = ADDERS[kind];
+            const itemrefs = items[kind] ?? [];
+            if (0 === itemrefs.length) {
+                continue;
+            }
             if (null == add) {
                 // Validation already rejected an unknown kind, so this is a kind the
                 // registry knows and nothing can install yet — a `docs` entry before
@@ -275,20 +313,11 @@ async function package_add(refs, actx) {
                 });
                 continue;
             }
-            // One ref per item, in the grammar the per-kind add already takes:
-            // `<package-root>/<name>` with `~alias` appended when renamed. Building
-            // a ref rather than calling an internal entry point is what keeps
-            // `package add` and a hand-typed `target add` on exactly the same path.
-            const itemrefs = (wanted[kind] ?? []).map((name) => node_path_1.default.join(src.root, name) +
-                (null == aliases[name] ? '' : '~' + aliases[name]));
-            if (0 === itemrefs.length) {
-                continue;
-            }
             results.push(await add(itemrefs, actx));
-            registerInstalled(kind, itemrefs, actx);
+            (0, resolve_1.registerInstalled)(kind, itemrefs, actx);
         }
         log.info({
-            point: 'package-add-end', package: src.manifest.name, ref,
+            point: 'package-add-end', package: src.manifest.name, ref: src.ref,
             note: src.manifest.name + ': added ' + describeProvides(wanted)
         });
     }
@@ -296,54 +325,70 @@ async function package_add(refs, actx) {
     // already reported its own changes as it ran.
     return { jres: results[results.length - 1]?.jres };
 }
-// Teach the IN-MEMORY model about what was just installed.
+function plan_one(ref, flags, actx) {
+    const src = resolvePackage(ref, actx);
+    checkEngine(src, actx);
+    refuse(src, (0, manifest_1.validateManifest)(actx.fs(), src.sdk, src.manifest, kind_1.KINDS), actx.log);
+    const wanted = selectItems(src, flags.only, actx.log);
+    const aliases = parseAliases(flags.alias, wanted);
+    const items = Object.create(null);
+    for (const kind of Object.keys(wanted)) {
+        items[kind] = (wanted[kind] ?? []).map((name) => node_path_1.default.join(src.root, name) +
+            (Object.prototype.hasOwnProperty.call(aliases, name) ?
+                '~' + aliases[name] : ''));
+    }
+    return { src, wanted, items };
+}
+// Would any of this REPLACE something the project got from elsewhere?
 //
-// ORDERING ALONE IS NOT ENOUGH, which is the whole reason this exists. An
-// action reads `actx.model`, which was compiled from `model/sdk.aontu` before
-// the run; writing `model/target/iotgo.aontu` does not change it, and nothing
-// recompiles mid-process. So `feature add` — which copies a feature's source
-// into every target IN THE MODEL — saw none of the targets `package add` had
-// just written, and installed a feature with no source for them. Silently:
-// the per-target warning is `feature-source-missing`, once each, in a run
-// that otherwise reports success.
+// `add` is overwrite, deliberately — that is how a resync works. But
+// overwriting one package's `go` with a different package's `go` is not a
+// resync: it silently replaces a working target's model, components and
+// templates. The project asked for a package, not for that.
 //
-// Resolved through `resolveSource`, not reconstructed here, so the `base` and
-// `origname` this records are by construction the ones the add itself
-// stamped. Deriving them a second way is how the two would drift.
-function registerInstalled(kind, itemrefs, actx) {
-    const kit = actx.model?.main?.[types_1.KIT];
-    if (null == kit) {
+// Checked across the WHOLE plan, so two packages in one command claiming the
+// same name are caught too — the second would otherwise conflict with nothing,
+// because the first is not installed yet either.
+function checkCollisions(plan, actx) {
+    const claimed = new Map();
+    const clashes = [];
+    for (const { src, items } of plan) {
+        for (const kind of Object.keys(items)) {
+            for (const ref of items[kind]) {
+                let source;
+                try {
+                    source = (0, resolve_1.resolveSource)(ref, kind, actx);
+                }
+                catch (err) {
+                    // Unresolvable here means the add will fail too, with a better
+                    // message than this check could give. Let it.
+                    continue;
+                }
+                const key = kind + ':' + source.name;
+                const earlier = claimed.get(key);
+                if (null != earlier && earlier !== src.manifest.name) {
+                    clashes.push(kind + ' `' + source.name + '`: both ' + earlier +
+                        ' and ' + src.manifest.name + ' provide it');
+                    continue;
+                }
+                claimed.set(key, src.manifest.name);
+                const conflict = (0, resolve_1.nameConflict)(kind, source, actx);
+                if (null != conflict) {
+                    clashes.push(kind + ' `' + source.name + '`: already installed from ' +
+                        (conflict.package || conflict.base) +
+                        ', and ' + src.manifest.name + ' provides it too');
+                }
+            }
+        }
+    }
+    if (0 === clashes.length) {
         return;
     }
-    const items = kit[kind] = kit[kind] ?? {};
-    for (const ref of itemrefs) {
-        let source;
-        try {
-            source = (0, resolve_1.resolveSource)(ref, kind, actx);
-        }
-        catch (err) {
-            // The add itself just succeeded for this ref, so a failure here is not
-            // something the caller can act on — but a later kind will behave as if
-            // the item is not installed, so say why.
-            actx.log.warn({
-                point: 'package-register-failed', kind, ref, err: err.message,
-                note: ref + ': installed, but could not be added to the in-memory ' +
-                    'model (' + err.message + '); later items in this run will not ' +
-                    'see it'
-            });
-            continue;
-        }
-        // Do not overwrite what the model already declares: a project may have
-        // configured an item it is now resyncing, and that configuration is the
-        // project's, not the package's.
-        items[source.name] = {
-            ...(items[source.name] ?? {}),
-            name: source.name,
-            base: source.base,
-            origname: source.origname,
-            ...(null == source.package ? {} : { package: source.package }),
-        };
-    }
+    throw new utility_1.SdkGenError('Name collision, nothing installed:\n  ' + clashes.join('\n  ') +
+        '\n\n  Either install the one you want by its own ref:' +
+        '\n    voxgig-sdkgen target add <package>/<name>' +
+        '\n  or install this package\'s under a different name:' +
+        '\n    voxgig-sdkgen package add <package> --alias <name>=<alias>');
 }
 // `ADD_ORDER` first, then anything else the registry knows, so a kind added
 // later installs without editing this list.

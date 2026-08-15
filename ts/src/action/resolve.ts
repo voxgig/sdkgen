@@ -15,8 +15,10 @@ import Path from 'node:path'
 
 import { getelem } from '@voxgig/struct'
 
+import { KIT } from '../types'
+
 import { definitionPath } from '../helpers/definition'
-import { readManifest, checkShape } from '../helpers/manifest'
+import { readManifest, checkShape, ITEM_NAME_RE } from '../helpers/manifest'
 
 
 // The bundled scaffold: what a bare name resolves to.
@@ -83,6 +85,20 @@ function resolveSource(ref: string, kind: string, ctx$: any): Source {
   let origname = origlast
   if (1 < aliasing.length) {
     name = aliasing.slice(1).join('~')
+
+    // The alias becomes a DESTINATION: `model/<kind>/<name>.aontu`,
+    // `src/cmp/<name>/`, `tm/<name>/` — all written, and `target add`
+    // overwrites what it writes. `go~..` therefore redirects the copy out of
+    // the target-specific directory and over unrelated scaffold. Checked
+    // against the same grammar the manifest applies to a name, because it is
+    // the same thing: what the item is called once installed.
+    if (!ITEM_NAME_RE.test(name)) {
+      throw new Error(
+        'Invalid ' + kind + ' alias: ' + JSON.stringify(name) +
+        ' in ' + ref + '\n  an alias is a NAME (matching ' +
+        ITEM_NAME_RE.source + '), not a path — it becomes the directory the ' +
+        kind + ' is installed into')
+    }
   }
 
   const search: string[] = []
@@ -234,6 +250,100 @@ function warnManifest(ctx$: any, file: string, err: string) {
 }
 
 
+// Teach the IN-MEMORY model about items that have just been installed.
+//
+// An action reads `actx.model`, compiled from `model/sdk.aontu` before the
+// run. Writing `model/target/iotgo.aontu` does not change it and nothing
+// recompiles mid-process, so anything later in the SAME command behaves as if
+// the item is not installed.
+//
+// That is not cosmetic. `feature add` copies a feature's source into every
+// target IN THE MODEL, using the two-tree lookup that reaches a feature
+// package's overlay — so a target missing from the model gets source only
+// from its own tree. For a target and an active feature that come from
+// DIFFERENT packages, that means no source at all: the overlay is never
+// consulted for it, and the target's own tree does not have it. Silent, bar
+// one `feature-source-missing` warning.
+//
+// ONE definition, called by `target_add` before its own fan-out and by
+// `package add` after each kind, because two places computing what to record
+// is how the recorded values drift from the stamped ones.
+function registerInstalled(kind: string, refs: string[], ctx$: any) {
+  const kit: any = ctx$.model?.main?.[KIT]
+
+  if (null == kit) {
+    return
+  }
+
+  const items = kit[kind] = kit[kind] ?? {}
+
+  for (const ref of refs) {
+    let source: Source
+    try {
+      source = resolveSource(ref, kind, ctx$)
+    }
+    catch (err: any) {
+      ctx$.log?.warn({
+        point: 'model-register-failed', kind, ref, err: err.message,
+        note: ref + ': could not be added to the in-memory model (' +
+          err.message + '); anything later in this command will behave as ' +
+          'if it is not installed'
+      })
+      continue
+    }
+
+    // Merge, never replace: the model may already carry the project's own
+    // configuration for this item, which is the project's, not the source's.
+    items[source.name] = {
+      ...(items[source.name] ?? {}),
+      name: source.name,
+      base: source.base,
+      origname: source.origname,
+      ...(null == source.package ? {} : { package: source.package }),
+    }
+  }
+}
+
+
+// Is this name already installed FROM SOMEWHERE ELSE?
+//
+// `add` is overwrite, deliberately — that is how a resync works. But
+// overwriting one package's target with a different package's target of the
+// same name is not a resync, it is a collision, and doing it silently
+// replaces a working target's model, components and templates with another's.
+//
+// Returns the conflicting record, or undefined when the name is free or is
+// the SAME source (which is a resync and must keep working).
+function nameConflict(
+  kind: string, source: Source, ctx$: any,
+): { package?: string, base?: string } | undefined {
+  const declared: any = ctx$.model?.main?.[KIT]?.[kind]?.[source.name]
+
+  if (null == declared || 'object' !== typeof declared) {
+    return undefined
+  }
+
+  // Nothing recorded — a copy predating provenance. It cannot be shown to be
+  // a different source, and refusing on a suspicion would block every
+  // pre-provenance project from adopting a package.
+  if (null == declared.base || '' === declared.base) {
+    return undefined
+  }
+
+  const samePackage = null != source.package && '' !== source.package &&
+    declared.package === source.package
+
+  const sameBase = normaliseBase(declared.base) === normaliseBase(source.base)
+
+  return (samePackage || sameBase) ? undefined : declared
+}
+
+
+function normaliseBase(base: string): string {
+  return Path.normalize(String(base ?? '')).split(Path.sep).join('/')
+}
+
+
 function capitalise(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
@@ -245,6 +355,8 @@ export type {
 
 export {
   resolveSource,
+  registerInstalled,
+  nameConflict,
   lastSegment,
   BUNDLED,
 }

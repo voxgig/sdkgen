@@ -493,6 +493,187 @@ describe('package list', () => {
 })
 
 
+// Review findings on #53, each pinned.
+describe('package add: collisions and hostile inputs', () => {
+
+  test('it REFUSES to overwrite a name from another source', async () => {
+    // `add` is overwrite — that is how a resync works — but overwriting one
+    // package's target with a different package's target of the same name is
+    // not a resync. Done silently it replaces a working target's model,
+    // components and templates with another's.
+    const a = makePackage({
+      sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+      provides: { target: ['iotgo'] },
+    })
+    const b = makePackage({
+      sdkgen: { package: 1 }, name: '@other/sdkgen-b',
+      provides: { target: ['iotgo'] },
+    })
+    try {
+      const project = await addPackage(a)
+      project.actx.flags = {}
+
+      const before = project.files().length
+
+      await rejects(() => package_add([b], project.actx),
+        /Name collision, nothing installed[\s\S]*@acme\/sdkgen-a[\s\S]*--alias/,
+        'the collision was not reported with both sources and a way out')
+
+      strictEqual(project.files().length, before,
+        'files were written despite the refusal')
+    }
+    finally {
+      Fs.rmSync(a, { recursive: true, force: true })
+      Fs.rmSync(b, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a RESYNC from the same source is not a collision', async () => {
+    // The other half. If this failed, no project could ever update.
+    const pkg = makePackage()
+    try {
+      const project = await addPackage(pkg)
+      project.actx.flags = {}
+
+      await package_add([pkg], project.actx)
+
+      ok(project.files().includes('model/target/iotgo.aontu'))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('two packages claiming one name in ONE command are caught', async () => {
+    // Neither is installed yet, so each would conflict with nothing.
+    const a = makePackage({
+      sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+      provides: { target: ['iotgo'] },
+    })
+    const b = makePackage({
+      sdkgen: { package: 1 }, name: '@other/sdkgen-b',
+      provides: { target: ['iotgo'] },
+    })
+    try {
+      const project = makeProject({})
+      project.actx.flags = {}
+
+      await rejects(() => package_add([a, b], project.actx),
+        /both @acme\/sdkgen-a and @other\/sdkgen-b provide it/)
+    }
+    finally {
+      Fs.rmSync(a, { recursive: true, force: true })
+      Fs.rmSync(b, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a LATER bad package stops the earlier good one', async () => {
+    // The verb's guarantee is validation before writing. Applied per ref, it
+    // would install the good package and then fail — the half-completed
+    // command it exists to prevent.
+    const good = makePackage()
+    const bad = makePackage({
+      sdkgen: { package: 1 }, name: '@other/sdkgen-bad',
+      provides: { target: ['ghost'] },
+    })
+    try {
+      const project = makeProject({})
+      project.actx.flags = {}
+
+      await rejects(() => package_add([good, bad], project.actx),
+        /does not match the package/)
+
+      deepStrictEqual(
+        project.files().filter((f: string) => f.includes('iotgo')), [],
+        'the first package was installed before the second was checked')
+    }
+    finally {
+      Fs.rmSync(good, { recursive: true, force: true })
+      Fs.rmSync(bad, { recursive: true, force: true })
+    }
+  })
+
+
+  test('an alias that is not a NAME is refused', async () => {
+    // The alias becomes a destination — `src/cmp/<alias>`, `tm/<alias>` —
+    // and add overwrites what it writes, so `..` redirects the copy out of
+    // the target's own directory and over unrelated scaffold.
+    const pkg = makePackage()
+    try {
+      for (const bad of ['..', '../../elsewhere', 'a/b', '']) {
+        const project = makeProject({})
+        project.actx.flags = { only: 'target:iotgo', alias: 'iotgo=' + bad }
+
+        await rejects(() => package_add([pkg], project.actx),
+          /Invalid (target )?alias|--alias expects/,
+          JSON.stringify(bad) + ' was accepted as an alias')
+      }
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a path-like alias is refused on the DIRECT path too', async () => {
+    // Same hole, reached by `target add <ref>~<alias>`. Checked in the
+    // resolver so the two entry points cannot disagree.
+    const project = makeProject({})
+
+    await rejects(
+      () => target_add([targetRef('go') + '~..'], project.actx),
+      /Invalid target alias/)
+  })
+
+
+  test('an item named like an Object property gets no phantom alias', async () => {
+    // The name grammar admits `constructor`. On a plain object
+    // `aliases['constructor']` is Object.prototype.constructor — truthy — so
+    // an unaliased item had `~function Object() { … }` appended to its ref.
+    const pkg = makePackage({
+      sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+      provides: { target: ['iotgo'] },
+    })
+    try {
+      const project = makeProject({})
+      project.actx.flags = { alias: 'iotgo=acmego' }
+      await package_add([pkg], project.actx)
+
+      const stray = project.files().filter((f: string) => f.includes('function'))
+      deepStrictEqual(stray, [], 'an inherited property leaked into a path')
+      ok(project.files().includes('model/target/acmego.aontu'))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('an explicitly EMPTY --only is refused, not read as "everything"', async () => {
+    // What a script gets from `--only=$ITEMS` with an empty variable.
+    // Installing the whole package there is the opposite of what was asked,
+    // at the one moment nobody is watching.
+    const pkg = makePackage()
+    try {
+      for (const only of ['', '  ', ',', ' , ']) {
+        const project = makeProject({})
+        project.actx.flags = { only }
+
+        await rejects(() => package_add([pkg], project.actx),
+          /--only was given but selects nothing/,
+          JSON.stringify(only) + ' installed everything')
+      }
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+})
+
+
 describe('the action map', () => {
 
   test('is built from the kind registry, plus package and doctor', () => {

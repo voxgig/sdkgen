@@ -50,7 +50,7 @@ import {
 
 import { kindModel, resolveKind, escapeRe } from './kind'
 
-import { BUNDLED, resolveSource } from './resolve'
+import { BUNDLED, resolveSource, registerInstalled } from './resolve'
 
 
 const CMD_MAP: any = {
@@ -135,9 +135,21 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
     showDryrun(opts.log, 'target-result', jres, actx.folder)
   }
 
-  // feature_add copies feature templates for targets already registered in
-  // the model. The targets added above are not in the in-memory model yet,
-  // so TargetRoot copies their feature templates itself.
+  // The targets just written are not in the in-memory model — nothing
+  // recompiles `model/sdk.aontu` mid-process — so put them there before the
+  // fan-out below.
+  //
+  // TargetRoot copies each new target's feature source from ITS OWN TREE,
+  // which is the whole story only while every feature ships in the same
+  // package as every target. For a feature supplied by a DIFFERENT package,
+  // the source lives in that package's overlay, and only `feature_add`'s
+  // two-tree lookup consults it — for targets in the model. So a target added
+  // while such a feature was already active got no source for it at all:
+  // TargetRoot could not find it, and the fan-out could not see the target.
+  registerInstalled('target', targets, actx)
+
+  // feature_add copies feature templates for every target in the model,
+  // which now includes the ones just added.
   await feature_add(features, actx)
 
   opts.log.info({

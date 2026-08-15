@@ -208,6 +208,7 @@ Object.defineProperty(exports, "GENERATOR_URL", { enumerable: true, get: functio
 const target_1 = require("./action/target");
 const feature_1 = require("./action/feature");
 const doctor_1 = require("./action/doctor");
+const package_1 = require("./action/package");
 // The verbs, built from the kind registry — see action/dispatch.
 const dispatch_1 = require("./action/dispatch");
 const { Jostraca } = JostracaModule;
@@ -409,6 +410,19 @@ function SdkGen(opts) {
             return (0, feature_1.feature_add)(features, ctx);
         }
     };
+    // The whole-package verbs. `flags` mirrors the CLI's `--only` / `--alias`,
+    // for the same reason they are `action`'s second parameter rather than
+    // constructor options: they are arguments to one call.
+    const packages = {
+        add: async (refs, flags) => {
+            const ctx = resolveActionContext(flags);
+            return (0, package_1.package_add)(refs, ctx);
+        },
+        list: async () => {
+            const ctx = resolveActionContext();
+            return (0, package_1.action_package)(['package', 'list'], ctx);
+        },
+    };
     // Has this project's `.sdk/` drifted from the scaffold? See action/doctor.
     const check = async () => {
         const ctx = resolveActionContext();
@@ -421,6 +435,9 @@ function SdkGen(opts) {
         check,
         target,
         feature,
+        // `package` is a reserved word in a strict-mode object shorthand, so the
+        // local binding is `packages` and the PUBLIC name matches the CLI verb.
+        package: packages,
     };
 }
 SdkGen.makeBuild = async function (opts) {

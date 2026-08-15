@@ -62,6 +62,35 @@ describe('satisfies', () => {
   })
 
 
+  test('a PARTIAL version is a range, not zeroes', () => {
+    // `>3.4` means "past all of 3.4.x", i.e. >=3.5.0 — read as `>3.4.0` it
+    // admitted 3.4.8, letting an incompatible package through. `<=3.4` means
+    // "within 3.4.x", i.e. <3.5.0 — read as `<=3.4.0` it refused 3.4.8, a
+    // compatible package rejected. Both failures, one comparator.
+    strictEqual(satisfies('3.4.8', '>3.4'), false)
+    strictEqual(satisfies('3.5.0', '>3.4'), true)
+    strictEqual(satisfies('3.4.8', '<=3.4'), true)
+    strictEqual(satisfies('3.5.0', '<=3.4'), false)
+
+    strictEqual(satisfies('3.9.9', '>3'), false)
+    strictEqual(satisfies('4.0.0', '>3'), true)
+    strictEqual(satisfies('3.9.9', '<=3'), true)
+    strictEqual(satisfies('4.0.0', '<=3'), false)
+
+    // The other two need no adjustment, and must not gain one.
+    strictEqual(satisfies('3.4.0', '>=3.4'), true)
+    strictEqual(satisfies('3.4.8', '>=3.4'), true)
+    strictEqual(satisfies('3.3.9', '>=3.4'), false)
+    strictEqual(satisfies('3.4.0', '<3.4'), false)
+    strictEqual(satisfies('3.3.9', '<3.4'), true)
+
+    // A FULL version keeps exact-comparison semantics.
+    strictEqual(satisfies('3.4.8', '>3.4.0'), true)
+    strictEqual(satisfies('3.4.8', '<=3.4.8'), true)
+    strictEqual(satisfies('3.4.9', '<=3.4.8'), false)
+  })
+
+
   test('caret narrows to the first NON-ZERO component', () => {
     // npm treats a leading zero as unstable. Getting this wrong would admit
     // 0.3.0 for ^0.2.3 — a breaking change by that convention.

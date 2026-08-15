@@ -74,6 +74,15 @@ function caretBound(p: Parts): Parts {
 
 
 function tildeBound(p: Parts, given: number): Parts {
+  return nextBound(p, given)
+}
+
+
+// The version just past everything a PARTIAL version covers: `3.4` covers all
+// of 3.4.x, so the next bound is 3.5.0; `3` covers all of 3.x, so 4.0.0.
+// Shared by `~` and by the two strict comparators that need it, so they
+// cannot disagree about where a partial version ends.
+function nextBound(p: Parts, given: number): Parts {
   return 1 === given ? [p[0] + 1, 0, 0] : [p[0], p[1] + 1, 0]
 }
 
@@ -102,10 +111,22 @@ function satisfiesOne(version: Parts, comparator: string): boolean | undefined {
 
   const cmp = compare(version, p)
 
+  // A PARTIAL version is a RANGE, not a version with zeroes in it, and two of
+  // the four strict comparators have to move their bound to say so:
+  //
+  //   >3.4   means ">= all of 3.4.x"  ->  >=3.5.0    (not >3.4.0)
+  //   <=3.4  means "<= all of 3.4.x"  ->  <3.5.0     (not <=3.4.0)
+  //   >=3.4  ->  >=3.4.0     <3.4  ->  <3.4.0        (already right)
+  //
+  // Read as literal zeroes, `>3.4` admitted 3.4.8 (an incompatible package
+  // let through) and `<=3.4` rejected it (a compatible one refused) — the two
+  // failures this module's whole shape is meant to avoid, in one comparator.
+  const bound = 3 === given ? p : nextBound(p, given)
+
   if ('>=' === op) return 0 <= cmp
-  if ('>' === op) return 0 < cmp
-  if ('<=' === op) return 0 >= cmp
   if ('<' === op) return 0 > cmp
+  if ('>' === op) return 3 === given ? 0 < cmp : 0 <= compare(version, bound)
+  if ('<=' === op) return 3 === given ? 0 >= cmp : 0 > compare(version, bound)
 
   if ('^' === op) {
     return 0 <= cmp && 0 > compare(version, caretBound(p))

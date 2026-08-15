@@ -420,6 +420,23 @@ function SdkGen(opts: SdkGenOptions) {
     }
   }
 
+  // The whole-package verbs. `flags` mirrors the CLI's `--only` / `--alias`,
+  // for the same reason they are `action`'s second parameter rather than
+  // constructor options: they are arguments to one call.
+  const packages = {
+    add: async (
+      refs: string[], flags?: Record<string, any>,
+    ): Promise<ActionResult> => {
+      const ctx = resolveActionContext(flags)
+      return package_add(refs, ctx)
+    },
+
+    list: async (): Promise<ActionResult> => {
+      const ctx = resolveActionContext()
+      return action_package(['package', 'list'], ctx)
+    },
+  }
+
   // Has this project's `.sdk/` drifted from the scaffold? See action/doctor.
   const check = async (): Promise<ActionResult> => {
     const ctx = resolveActionContext()
@@ -435,6 +452,10 @@ function SdkGen(opts: SdkGenOptions) {
     check,
     target,
     feature,
+
+    // `package` is a reserved word in a strict-mode object shorthand, so the
+    // local binding is `packages` and the PUBLIC name matches the CLI verb.
+    package: packages,
   }
 
 }
