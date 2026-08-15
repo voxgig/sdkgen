@@ -568,6 +568,56 @@ main: kit: feature: circuitbreaker: {
   })
 
 
+  test('it is compared when SCOPED to the feature alone', async () => {
+    // The case the whole thing is for. `package update` on a FEATURE package
+    // scopes doctor to that feature — no target is walked — and `feature add`
+    // is about to rewrite exactly these files. Leaving the comparison in the
+    // target walk left the gate open in the one scenario it was built for.
+    const pkg = featurePackage()
+    try {
+      const project = await withForeignFeature(pkg)
+
+      const path = Path.join(ROOT, 'tm/go/feature/circuitbreaker_feature.go')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n// hand edit\n')
+
+      const res: any = await doctor(project.actx,
+        (kind: string, name: string) =>
+          'feature' === kind && 'circuitbreaker' === name)
+
+      ok(res.report.edited.includes('tm/go/feature/circuitbreaker_feature.go'),
+        'scoped to the feature, its own source was not compared: ' +
+        JSON.stringify(res.report))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('it is compared ONCE, not once per side', async () => {
+    // The target walk marks these expected; the feature check compares them.
+    // If both compared, a full run would report the same file twice.
+    const pkg = featurePackage()
+    try {
+      const project = await withForeignFeature(pkg)
+
+      const path = Path.join(ROOT, 'tm/go/feature/circuitbreaker_feature.go')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n// hand edit\n')
+
+      const report = await check(project)
+      const hits = report.edited.filter(
+        (f: string) => f === 'tm/go/feature/circuitbreaker_feature.go')
+
+      strictEqual(hits.length, 1, 'reported ' + hits.length + ' times')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
   test('a DEACTIVATED feature\'s source is stale again', async () => {
     // `feature add` copies only active features, so what a switched-off
     // feature leaves behind really is orphaned output — which is the

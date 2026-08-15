@@ -26,7 +26,8 @@ import {
 } from '../dist/action/package.js'
 import { ACTION_MAP, actionNames } from '../dist/action/dispatch.js'
 import {
-  SCAFFOLD, ROOT, makeProject, recordLog, targetRef, target_add, feature_add,
+  SCAFFOLD, SCAFFOLD_BASE, ROOT, makeProject, recordLog, targetRef,
+  target_add, feature_add,
 } from './actionharness'
 
 
@@ -1043,6 +1044,64 @@ describe('package update', () => {
       await rejects(() => package_update(['@acme/sdkgen-iot'], project.actx),
         /model\/feature\/retry\.aontu/,
         'a feature the re-add will rewrite was outside the gate')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a feature package cannot overwrite its own overlay unasked', async () => {
+    // The gate must cover a feature's PER-TARGET SOURCE, not only its model
+    // file: `feature_add` rewrites `tm/<target>/…` from the package's
+    // overlay, and scoping doctor to the feature means no target is walked.
+    // Verified before the fix: the update succeeded and the edit was gone.
+    // A FEATURE package with an overlay for `go` — a target this project got
+    // from the bundled scaffold, not from here. `makePackage` ships
+    // `tm/iotgo` for its own target and so has nothing to overlay onto `go`.
+    const pkg = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cbpkg-'))
+    try {
+      const sdk = Path.join(pkg, '.sdk')
+      Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
+      Fs.cpSync(Path.join(SCAFFOLD, 'model', 'feature', 'retry.aontu'),
+        Path.join(sdk, 'model', 'feature', 'retry.aontu'))
+      Fs.mkdirSync(Path.join(sdk, 'tm', 'go', 'feature'), { recursive: true })
+      Fs.writeFileSync(
+        Path.join(sdk, 'tm', 'go', 'feature', 'retry_feature.go'),
+        'package feature\n')
+      Fs.writeFileSync(Path.join(pkg, 'sdkgen-package.json'), JSON.stringify({
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-cb', version: '1.0.0',
+        provides: { feature: ['retry'] },
+      }))
+
+      const project = makeProject({
+        feature: { retry: { name: 'retry', active: true } },
+      })
+      project.actx.flags = {}
+      await target_add([targetRef('go')], project.actx)
+      project.actx.model.main.kit.target.go = { name: 'go', base: SCAFFOLD_BASE }
+
+      await package_add([pkg], project.actx)
+
+      const src = String(project.fs.readFileSync(
+        ROOT + '/model/feature/retry.aontu', 'utf8'))
+      project.actx.model.main.kit.feature.retry = {
+        name: 'retry', active: true,
+        base: (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1],
+        package: '@acme/sdkgen-cb',
+      }
+
+      const path = Path.join(ROOT, 'tm/go/feature/retry_feature.go')
+      project.fs.writeFileSync(path, '// MY EDIT\npackage feature\n')
+
+      project.actx.fetchPackage = async () => { }
+
+      await rejects(() => package_update(['@acme/sdkgen-cb'], project.actx),
+        /differ from the installed source/,
+        'a feature package overwrote its own overlay without asking')
+
+      ok(String(project.fs.readFileSync(path, 'utf8')).includes('MY EDIT'),
+        'the edit was destroyed')
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })

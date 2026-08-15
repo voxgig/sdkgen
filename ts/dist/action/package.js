@@ -300,7 +300,7 @@ async function package_add(refs, actx) {
                 ' <- ' + src.root
         });
         for (const kind of orderedKinds(wanted)) {
-            const add = ADDERS[kind];
+            const add = adderFor(kind);
             const itemrefs = items[kind] ?? [];
             if (0 === itemrefs.length) {
                 continue;
@@ -406,6 +406,28 @@ function orderedKinds(wanted) {
 const ADDERS = Object.create(null);
 function registerAdder(kind, add) {
     ADDERS[kind] = add;
+}
+// The adder for a kind, LOADING THE REGISTRATIONS IF NOBODY HAS YET.
+//
+// `dispatch` is what calls `registerAdder`, and until this, whether it had
+// been loaded depended on the importer: `sdkgen.ts` pulls it in, so the CLI
+// worked, but anything importing this module directly got an empty table —
+// and `package add` / `package update` then skipped every item with a
+// `package-kind-unsupported` warning and reported success. It silently did
+// nothing.
+//
+// Found the hard way: a throwaway script written to reproduce a review
+// finding imported this module alone, and the "update" it performed was a
+// no-op that looked like a passing result. A capability that depends on some
+// other module having been imported first is not a capability.
+//
+// Required lazily rather than at the top, because `dispatch` imports THIS
+// module; by call time the cycle has resolved.
+function adderFor(kind) {
+    if (0 === Object.keys(ADDERS).length) {
+        require('./dispatch');
+    }
+    return ADDERS[kind];
 }
 // `package update <pkg>` — refresh everything a package supplied.
 //
@@ -750,7 +772,7 @@ async function reAdd(pkgname, installed, actx) {
         (byKind[item.kind] = byKind[item.kind] ?? []).push(ref);
     }
     for (const kind of orderedKinds(byKind)) {
-        const add = ADDERS[kind];
+        const add = adderFor(kind);
         if (null == add) {
             log.warn({
                 point: 'package-kind-unsupported', package: pkgname, kind,

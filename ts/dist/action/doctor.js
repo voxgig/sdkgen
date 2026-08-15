@@ -119,18 +119,42 @@ async function doctor(actx, scope) {
         counts[kind] = Object.keys(model?.main?.[types_1.KIT]?.[kind] ?? {}).length;
     }
     log.info({ point: 'doctor-start', targets: counts.target ?? 0, ...counts });
+    // Targets resolved ONCE, before the kind loop, because the feature checks
+    // need them too: a feature's per-target source lives under the name the
+    // target has in its own source, so finding it means knowing where each
+    // target came from. Resolving per (feature, target) pair would re-read
+    // every package manifest dozens of times and warn repeatedly about the
+    // same unresolvable target.
+    //
+    // Resolved even when the run is SCOPED past them — a scoped check of one
+    // feature still has to look in every target's tree for that feature's
+    // files.
+    const targets = new Map();
+    for (const tname of Object.keys(model?.main?.[types_1.KIT]?.target ?? {}).sort()) {
+        const source = resolveDeclared('target', tname, actx);
+        if (null != source) {
+            targets.set(tname, source);
+        }
+    }
     for (const kind of kinds) {
         const items = Object.keys(model?.main?.[types_1.KIT]?.[kind] ?? {}).sort();
         for (const name of items) {
             if (null != scope && !scope(kind, name)) {
                 continue;
             }
-            const source = resolveDeclared(kind, name, actx);
+            const source = 'target' === kind ?
+                targets.get(name) : resolveDeclared(kind, name, actx);
             if (null == source) {
                 continue;
             }
             if ('target' === kind) {
                 checkTarget(actx, source, report);
+            }
+            // Only an ACTIVE feature has source copied out; what an inactive one
+            // left behind is stale, and the target walk reports it as such.
+            if ('feature' === kind &&
+                false !== model?.main?.[types_1.KIT]?.feature?.[name]?.active) {
+                checkFeatureSource(actx, source, targets, report);
             }
             checkItemModel(actx, kind, source, report);
         }
@@ -322,9 +346,11 @@ function checkTarget(actx, resolved, report) {
         // CHECKED: a hand-edit to a foreign feature's source is still reported,
         // which is what `package update`'s gate needs in order to cover
         // everything the re-add writes.
+        const foreign = new Set();
         if ('edited' === tree.kind) {
             for (const [rel, from] of foreignFeatureSource(actx, resolved)) {
                 landed.set(rel, from);
+                foreign.add(rel);
             }
         }
         const expected = Array.from(landed.keys()).sort();
@@ -334,6 +360,14 @@ function checkTarget(actx, resolved, report) {
         for (const rel of expected) {
             if (!actualSet.has(rel)) {
                 report.missing.push(label + rel);
+                continue;
+            }
+            // A foreign feature's file is EXPECTED here (so it is not stale) but
+            // compared by `checkFeatureSource`, from the feature's side. Comparing
+            // it here too would report it twice on a full run — and, worse, would
+            // leave it uncompared on a run scoped to the feature alone, which is
+            // exactly when `feature add` is about to rewrite it.
+            if (foreign.has(rel)) {
                 continue;
             }
             const from = landed.get(rel);
@@ -374,7 +408,6 @@ function checkTarget(actx, resolved, report) {
 // trim use, so doctor's idea of which files belong to a feature cannot drift
 // from the one that put them there.
 function foreignFeatureSource(actx, target) {
-    const fs = actx.fs();
     const out = new Map();
     const features = actx.model?.main?.[types_1.KIT]?.feature ?? {};
     for (const fname of Object.keys(features).sort()) {
@@ -382,28 +415,83 @@ function foreignFeatureSource(actx, target) {
             continue;
         }
         const source = resolveDeclared('feature', fname, actx);
-        if (null == source || source.folder === target.folder) {
+        if (null == source) {
             continue;
         }
-        // The feature package's overlay for THIS target, under the name the
-        // target has in its own source — an aliased target's templates live at
-        // `tm/<origname>`.
-        const overlay = node_path_1.default.join(source.folder, 'tm', target.origname);
-        for (const found of (0, featureSource_1.findFeatureSources)(fs, overlay, [fname])) {
-            const from = node_path_1.default.join(overlay, found.path);
-            // A folder source is the whole feature directory; expand it, because
-            // the comparison is per file.
-            if (found.folder) {
-                for (const rel of walk(fs, from)) {
-                    out.set(found.path + '/' + rel, node_path_1.default.join(from, rel));
-                }
-            }
-            else {
-                out.set(found.path, from);
-            }
+        for (const [rel, from] of overlayFiles(actx, source, target)) {
+            out.set(rel, from);
         }
     }
     return out;
+}
+// One feature's per-target source, as `tm-relative path -> the file it was
+// copied from`, for source the FEATURE package supplies rather than the
+// target.
+//
+// ONE enumerator, used from both directions: the target walk needs these to
+// know they are expected, and the feature check needs them to compare. Two
+// enumerations would be two ideas of which files a feature owns, and the
+// pair would drift — which is the failure this codebase keeps producing.
+//
+// Empty when the feature's source IS the target's own tree: those files are
+// already in the tree being walked, and listing them would compare them
+// against themselves.
+function overlayFiles(actx, feature, target) {
+    const fs = actx.fs();
+    const out = new Map();
+    if (feature.folder === target.folder) {
+        return out;
+    }
+    // The feature package's overlay for THIS target, under the name the target
+    // has in its own source — an aliased target's templates live at
+    // `tm/<origname>`.
+    const overlay = node_path_1.default.join(feature.folder, 'tm', target.origname);
+    for (const found of (0, featureSource_1.findFeatureSources)(fs, overlay, [feature.name])) {
+        const from = node_path_1.default.join(overlay, found.path);
+        // A folder source is the whole feature directory; expand it, because the
+        // comparison is per file.
+        if (found.folder) {
+            for (const rel of walk(fs, from)) {
+                out.set(found.path + '/' + rel, node_path_1.default.join(from, rel));
+            }
+        }
+        else {
+            out.set(found.path, from);
+        }
+    }
+    return out;
+}
+// A FEATURE's per-target source, checked from the feature's side.
+//
+// This is where those files are COMPARED. The target walk only marks them
+// expected, so that each is compared exactly once — by the feature that owns
+// it, which is also the only scope in which `feature add` will rewrite it.
+//
+// Doing it the other way round — leaving the comparison in the target walk —
+// left the gate open in the case it was built for: `package update` on a
+// FEATURE package scopes doctor to that feature, no target is walked, and so
+// nothing compared the very overlay the feature package supplies. Verified
+// before fixing: the update succeeded without asking, and the local edit was
+// destroyed.
+function checkFeatureSource(actx, feature, targets, report) {
+    const fs = actx.fs();
+    const root = actx.folder;
+    const model = actx.model;
+    for (const [tname, target] of targets) {
+        for (const [rel, from] of overlayFiles(actx, feature, target)) {
+            const project = node_path_1.default.join(root, 'tm', tname, rel);
+            const label = 'tm/' + tname + '/' + rel;
+            if (!fs.existsSync(project)) {
+                report.missing.push(label);
+                continue;
+            }
+            // The same map `feature add` copies with — see helpers/stdrep. A
+            // different one here would report every substituted file as edited.
+            if (differs(fs, from, project, model, (0, stdrep_1.templateReplacements)(model, tname))) {
+                report.edited.push(label);
+            }
+        }
+    }
 }
 // The copied MODEL FILE — `model/<kind>/<name>.aontu`, written by add with
 // the `'BASE'` replacement, and overwritten on every resync exactly as
