@@ -522,8 +522,17 @@ function pruneStaleTemplates(
 //
 //   - the bundled scaffold, which is what a bare `feature add <name>` means;
 //   - the source package's own declarations, for a package shipping both;
-//   - whatever the consumer's model already has, whoever provided it — which
-//     is how an EXTERNAL feature's source becomes trimmable at all.
+//   - the consumer's OWN installed feature models, which is how an EXTERNAL
+//     feature's source becomes trimmable at all.
+//
+// Every term is a place feature DEFINITIONS live, deliberately. Taking the
+// third from the model's feature KEYS instead would make any name a project
+// happens to declare a trim candidate — and a file in a `feature/` directory
+// is not necessarily a feature. `tm/rust/feature/support.rs` and its siblings
+// are shared machinery that `Main_rust` emits unconditionally (`pub mod
+// support`), so a project that declared a feature called `support` would have
+// had that file pruned and produced a crate that cannot compile. A definition
+// file is evidence that the name really denotes a feature; a model key is not.
 //
 // For a bundled add this is `bundled ∪ bundled ∪ (⊆ bundled)`, so the trim is
 // byte-identical to what it always was — the goldens hold it to that.
@@ -534,12 +543,8 @@ function featureCatalogue(ctx$: any, tfolder: string): string[] {
   const names = new Set<string>([
     ...availableFeatures(fs, Path.join(root, BUNDLED)),
     ...availableFeatures(fs, tfolder),
+    ...availableFeatures(fs, root),
   ])
-
-  const declared: any = ctx$.model?.main?.[KIT]?.feature ?? {}
-  for (const name of Object.keys(declared)) {
-    names.add(name.toLowerCase())
-  }
 
   return Array.from(names).sort()
 }

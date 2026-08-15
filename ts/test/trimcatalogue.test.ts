@@ -116,18 +116,74 @@ describe('feature trim catalogue', () => {
   })
 
 
-  test('the catalogue unions bundled, source and model features', () => {
+  test('the catalogue unions DEFINITIONS from every source', () => {
+    // Three terms, each a place feature definition files live: the bundled
+    // scaffold, the target package being added, and the consumer's own
+    // `model/feature/` — the last is how an EXTERNAL feature's source becomes
+    // trimmable at all, since neither of the other two has ever heard of it.
+    const consumer = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cat-'))
+    try {
+      Fs.mkdirSync(Path.join(consumer, 'model', 'feature'), { recursive: true })
+      Fs.writeFileSync(
+        Path.join(consumer, 'model', 'feature', 'homegrown.aontu'), '\n')
+
+      const ctx = {
+        fs: () => Fs,
+        folder: consumer,
+        model: { main: { kit: { feature: {} } } },
+      }
+
+      const names = featureCatalogue(ctx, SCAFFOLD)
+
+      ok(names.includes('retry'), "the source package's own features are missing")
+      ok(names.includes('homegrown'),
+        "a feature the consumer has INSTALLED is missing — an external " +
+        "feature's source could never become trimmable")
+    }
+    finally {
+      Fs.rmSync(consumer, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a model KEY alone is not a feature', () => {
+    // The third term was once the model's feature KEYS, which is a wider claim
+    // than it looks: it says any name the project happens to declare denotes a
+    // feature, and therefore that any file named after it in a `feature/`
+    // directory is that feature's source and may be trimmed. A file in a
+    // `feature/` directory is not necessarily a feature — see the next test.
     const ctx = {
       fs: () => Fs,
       folder: Path.resolve(__dirname, '..'),
-      model: { main: { kit: { feature: { homegrown: { name: 'homegrown' } } } } },
+      model: { main: { kit: { feature: { support: { name: 'support' } } } } },
     }
 
-    const names = featureCatalogue(ctx, SCAFFOLD)
+    ok(!featureCatalogue(ctx, SCAFFOLD).includes('support'),
+      'an undeclared name entered the catalogue on the strength of a model ' +
+      'key, making shared machinery a trim candidate')
+  })
 
-    ok(names.includes('retry'), "the source package's own features are missing")
-    ok(names.includes('homegrown'),
-      'a feature the consumer model already has is missing — an EXTERNAL ' +
-      "feature's source could never become trimmable")
+
+  test('shared machinery named like a feature is NOT trimmed', async () => {
+    // `tm/rust/feature/support.rs` is not a feature — no
+    // `model/feature/support.aontu` declares one — it is shared machinery that
+    // `Main_rust` emits unconditionally (`pub mod support;`). If a project
+    // declaring a feature called `support` could put that name in the
+    // catalogue, the file would be discovered as that feature's source, found
+    // unselected (the project's own `support` has no rust source), and pruned
+    // — leaving a crate that names a module it does not have.
+    const project = makeProject({
+      feature: { support: { name: 'support', active: true } },
+    })
+    await target_add([targetRef('rust')], project.actx)
+
+    const files = project.files()
+
+    ok(files.some((f: string) => f.endsWith('/feature/support.rs')),
+      'shared machinery was trimmed as if it were a feature: ' +
+      files.filter((f: string) => f.includes('/feature/')).join(', '))
+    ok(files.some((f: string) => f.endsWith('/feature/base.rs')),
+      'the rust feature scaffolding is missing entirely — this test is no ' +
+      'longer measuring what it thinks it is')
   })
 })
