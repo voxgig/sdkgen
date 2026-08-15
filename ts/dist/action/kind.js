@@ -75,6 +75,10 @@ const KINDS = Object.assign(Object.create(null), {
     target: {
         name: 'target', alias: true, ownedWhenAliased: true,
         rename: aliasModelText,
+        // Components are dispatched by the convention `cmp/<t>/Main_<t>`, and the
+        // template tree is what `target add` copies — a target missing either is
+        // not installable, however complete its model file looks.
+        requires: ['src/cmp/{name}', 'tm/{name}'],
     },
     feature: { name: 'feature', alias: false },
 });
@@ -148,6 +152,7 @@ function kindModel(props) {
         base: source.base,
         origname: source.origname,
         name: source.name,
+        package: source.package,
     });
     if (aliased) {
         // The copy lands under the INSTALLED name AND declares it. Left alone it

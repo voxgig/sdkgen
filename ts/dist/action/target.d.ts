@@ -14,5 +14,6 @@ declare function resolveTarget(tref: string, ctx$: any): {
     tfolder: string;
     torigname: string;
     base: string;
+    package: string | undefined;
 };
 export { action_target, featureCatalogue, target_add, resolveTarget, trimFeatures, readTargetFeature, aliasCmpText, aliasCmpName, };

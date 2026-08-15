@@ -29,7 +29,7 @@ import { Aontu } from 'aontu'
 import { provenanceReplace } from '../dist/helpers/stdrep.js'
 import {
   SCAFFOLD, SCAFFOLD_BASE, ROOT, makeProject, targetRef, absoluteTargetRef,
-  target_add, feature_add,
+  recordLog, target_add, feature_add,
 } from './actionharness'
 
 
@@ -81,10 +81,74 @@ describe('provenance', () => {
     strictEqual(keys.base, SCAFFOLD_BASE, 'wrong or missing base')
     ok(!src.includes("'BASE'"), 'the raw anchor shipped into the project')
 
-    // Not stamped when they do not apply, so an ordinary install records
-    // exactly one line and reads as it always did.
+    // Not stamped when it does not apply.
     strictEqual(keys.origname, undefined, 'origname stamped for a plain add')
-    strictEqual(keys.package, undefined, 'package stamped with no manifest')
+
+    // The bundled scaffold is itself an sdkgen package now, so every bundled
+    // add records who provided it — which is what makes
+    // `package update @voxgig/sdkgen` a meaningful operation rather than a
+    // special case (design §2).
+    strictEqual(keys.package, '@voxgig/sdkgen',
+      'a bundled add did not record its package')
+  })
+
+
+  test('a source with NO manifest records no package', async () => {
+    // A bare `.sdk`-shaped folder stays a legal source — it is what every
+    // consumer fixture predating the manifest is — and simply records one
+    // provenance line, exactly as it always did.
+    const pkg = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-nomanifest-'))
+    try {
+      const sdk = Path.join(pkg, '.sdk')
+      Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'),
+        Path.join(sdk, 'model', 'target', 'go.aontu'))
+      Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'go'), { recursive: true })
+      Fs.mkdirSync(Path.join(sdk, 'tm', 'go'), { recursive: true })
+
+      const project = makeProject({})
+      await target_add([Path.join(pkg, 'go')], project.actx)
+
+      const { keys } = provenanceOf(project, 'target', 'go')
+
+      ok(null != keys.base, 'no base recorded')
+      strictEqual(keys.package, undefined,
+        'a package name was invented for a source that declares none')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a MALFORMED manifest does not break the add', async () => {
+    // The definition, the components and the templates are all present and
+    // correct; refusing to install them because a JSON file beside them has a
+    // trailing comma would be a worse outcome than installing them with one
+    // provenance line missing. `package add` is where a manifest is required
+    // and validated.
+    const pkg = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-badmanifest-'))
+    try {
+      const sdk = Path.join(pkg, '.sdk')
+      Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'),
+        Path.join(sdk, 'model', 'target', 'go.aontu'))
+      Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'go'), { recursive: true })
+      Fs.mkdirSync(Path.join(sdk, 'tm', 'go'), { recursive: true })
+      Fs.writeFileSync(
+        Path.join(pkg, 'sdkgen-package.json'), '{ "name": "@acme/x", }')
+
+      const log = recordLog()
+      const project = makeProject({ log })
+      await target_add([Path.join(pkg, 'go')], project.actx)
+
+      const { keys } = provenanceOf(project, 'target', 'go')
+      strictEqual(keys.package, undefined)
+
+      ok(log.lines.some((l: any) => 'package-manifest-unreadable' === l.point),
+        'a broken manifest was ignored SILENTLY — the author gets no signal')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
   })
 
 

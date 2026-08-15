@@ -26,3 +26,16 @@ binContent = binContent.replace(versionRegex, replacement)
 
 // Write back the updated content
 fs.writeFileSync(binFilePath, binContent, 'utf8')
+
+// The bundled scaffold is itself an sdkgen package (docs/design/sdkgen-packages.md
+// §2), so its manifest carries a version too — and it is the SAME version as
+// the npm package, because they ship as one artifact. Stamped here rather than
+// hand-edited so a release cannot leave the two disagreeing, which is exactly
+// what `package update @voxgig/sdkgen` would then act on.
+const manifestPath = path.join(__dirname, '..', 'project', 'sdkgen-package.json')
+const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+
+if (manifest.version !== version) {
+  manifest.version = version
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8')
+}

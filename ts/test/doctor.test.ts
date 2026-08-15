@@ -283,10 +283,15 @@ const Top = () => {
     await target_add([targetRef('go')], project.actx)
     project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
 
-    // Roll the model file back to what an older sdkgen wrote: no base line.
+    // Roll the model file back to what an older sdkgen wrote: NO provenance
+    // at all. Stripping only `base:` does not model that — a copy left
+    // carrying `package:` is stamped, just inconsistently, and doctor is
+    // right to call that a fork rather than a pending resync.
     const path = Path.join(ROOT, 'model/target/go.aontu')
     const old = String(project.fs.readFileSync(path, 'utf8'))
-      .split('\n').filter((l: string) => !/^\s*base:/.test(l)).join('\n')
+      .split('\n')
+      .filter((l: string) => !/^\s*(base|origname|package):/.test(l))
+      .join('\n')
     project.fs.writeFileSync(path, old)
 
     const report = await check(project)

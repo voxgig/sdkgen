@@ -330,7 +330,12 @@ function checkTargetModel(actx, resolved, report) {
     // pass different maps, so doctor has to as well, or every project reads as
     // forked on the `base:` line alone. The map itself is shared with the
     // writer (helpers/stdrep) so the two cannot drift.
-    const provenance = (0, stdrep_1.provenanceReplace)({ base, origname: torigname, name: tname });
+    //
+    // `package` comes from the SOURCE's manifest, not from what the copy
+    // records, for the same reason `base` does: what this compares is what
+    // `target add` would write NOW. A package that renamed itself therefore
+    // reads as forked, which is accurate — the next add would rewrite the line.
+    const provenance = (0, stdrep_1.provenanceReplace)({ base, origname: torigname, name: tname, package: resolved.package });
     // For an alias, compare against what the origin WOULD produce under the new
     // name, so the rename itself is not the difference.
     const rewrite = aliased ?

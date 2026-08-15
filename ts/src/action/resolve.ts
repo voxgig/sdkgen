@@ -15,6 +15,9 @@ import Path from 'node:path'
 
 import { getelem } from '@voxgig/struct'
 
+import { definitionPath } from '../helpers/definition'
+import { readManifest } from '../helpers/manifest'
+
 
 // The bundled scaffold: what a bare name resolves to.
 const BUNDLED = 'node_modules/@voxgig/sdkgen/project/.sdk'
@@ -36,6 +39,10 @@ type Source = {
 
   // The definition file inside that folder, for this kind.
   model: string
+
+  // The sdkgen package that provided it, when the source has a manifest.
+  // Undefined for a bare `.sdk`-shaped folder, which stays legal.
+  package?: string
 }
 
 
@@ -140,8 +147,46 @@ function resolveSource(ref: string, kind: string, ctx$: any): Source {
     // Path.join, not concatenation: an absolute Windows ref makes `folder`
     // backslash-separated, and appending '/model/...' produced a mixed-
     // separator path that some readers handle and others do not.
-    model: Path.join(folder, 'model', kind, origname + '.aontu'),
+    model: definitionPath(folder, kind, origname),
+
+    // The package that provided it, when the source declares a manifest.
+    // Read here rather than by the callers so a DIRECT ref
+    // (`target add ../pkg/iot-go`) records the same provenance
+    // `package add @acme/sdkgen-iot` would — the two spellings install the
+    // same thing, so they must record the same thing.
+    //
+    // A manifest is OPTIONAL for a direct ref and its absence is not a
+    // finding here: a bare `.sdk`-shaped folder is still a valid source, and
+    // every consumer's existing fixtures are exactly that. It is `package
+    // add` that requires one.
+    package: sourcePackage(fs, folder, ctx$),
   }
+}
+
+
+// The manifest's package name, or undefined.
+//
+// TOLERANT BY DESIGN, on this path. A malformed manifest must not break
+// `target add` — the definition, the components and the templates are all
+// present and correct, and refusing to install them because a JSON file
+// beside them has a trailing comma would be a worse outcome than installing
+// them with one provenance line missing. `package add` validates properly and
+// refuses; this only reads a name.
+function sourcePackage(fs: any, folder: string, ctx$: any): string | undefined {
+  const read = readManifest(fs, folder)
+
+  if (null != read.err) {
+    ctx$.log?.warn({
+      point: 'package-manifest-unreadable', file: read.file, err: read.err,
+      note: read.file + ': ignoring an unreadable package manifest (' +
+        read.err + '); the copy records no `package` provenance'
+    })
+    return undefined
+  }
+
+  const name = read.manifest?.name
+
+  return 'string' === typeof name && '' !== name ? name : undefined
 }
 
 

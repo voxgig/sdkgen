@@ -1,8 +1,46 @@
 # Design: sdkgen packages — external targets, features, and other kinds
 
-Status: **proposal** (2026-08-14). **Phase 1 (§18.1) implemented**
-(2026-08-15) — the live bugs of §16 and the characterization goldens that
-gate phase 2. Everything from §18.2 onward is still proposal.
+Status: **proposal** (2026-08-14), **partly implemented** (2026-08-15).
+Landed so far: **§18.1** (live bugs + characterization goldens), **§18.3**
+(provenance), **§18.2** (the kind registry), **§18.5** (features from
+packages, external-target trim), and the **manifest half of §18.4** — the
+file, its validation, the bundled scaffold's own manifest, and `package:`
+provenance. Still proposal: the rest of §18.4 (`package add` / `list` and
+their CLI plumbing), §18.6 and §18.7.
+
+Deltas found while implementing the manifest (§18.4a):
+
+- **The manifest is read on every add, not only by `package add`.**
+  `resolveSource` reads it so a DIRECT ref (`target add ../pkg/iot-go`)
+  records the same `package` provenance `package add @acme/sdkgen-iot`
+  would — the two spellings install the same thing, so they must record
+  the same thing. That read is deliberately TOLERANT: a malformed manifest
+  warns and the add proceeds without the provenance line, because refusing
+  to install a correct definition, component tree and template tree over a
+  trailing comma in a sibling JSON file is the worse outcome. `package
+  add` is where a manifest is required and validated properly.
+- **Validation needs the kind registry, which cannot be imported.** The
+  registry lives in `action/` and the manifest reader is a helper, so
+  `validateManifest` takes the kinds as a parameter rather than importing
+  them. `KindDef` gained `requires` (a `{name}`-templated list of the
+  trees an item of that kind must ship) to carry the per-kind half.
+- **`parity` and `targetsSupported` are deferred to §18.7.** Both are
+  optional, and neither has a reader yet — `package check` and the test
+  kit are what consume them. Writing the bundled scaffold's parity map now
+  would duplicate `ts/test/parity.test.ts`'s tier declaration, creating
+  exactly the two-sources-of-truth drift this workstream has spent four
+  fixes removing. When it lands, the manifest should become the source and
+  the parity suite should read it, not the reverse.
+- **The `model/<kind>/<name>.aontu` convention was spelled out in three
+  places** (the resolver, the feature catalogue, doctor), each with its own
+  idea of which files in that directory count. The manifest would have been
+  a fourth, so it became `helpers/definition.ts` first.
+- **The transition diff is one line per copied model file.** Every bundled
+  add now stamps `package: '@voxgig/sdkgen'`, which moved 54 golden
+  entries (27 target models, plus `model/feature/test.aontu` as it appears
+  in each target section) and nothing else. Doctor had to be given the same
+  value or every stamped copy would have read as forked — the writer/reader
+  symmetry `helpers/stdrep` exists to hold.
 
 Deltas found while implementing phase 1:
 
