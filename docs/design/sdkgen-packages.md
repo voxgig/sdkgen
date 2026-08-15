@@ -113,19 +113,36 @@ Deltas found while implementing the manifest (§18.4a):
   implementation available here (this package has no runtime dependencies).
   Said in the type so it does not read as enforced.
 
-Known gaps this phase does NOT close, both now more acute because feature
-model files carry provenance too:
+Known gap this phase does NOT close:
 
-- **Doctor compares no `model/feature/<f>.aontu` at all.** It iterates
-  targets only, so a hand-edit to an installed feature definition reads as
-  perfectly in sync and is silently reverted by the next `target add` —
-  the same failure `checkTargetModel` was added for. §12's per-kind
-  model-file comparison (§18.6) is what closes it.
 - **`requires` checks that `src/cmp/<t>` is a directory, not that
   `Main_<t>` is in it.** An empty component directory validates clean and
   fails later at `requirePath`. Left alone deliberately: `requirePath`
   resolves without an extension, so pinning `.ts` here would reject a
   package shipping compiled components.
+
+Deltas found while implementing §12.5 (the per-kind model-file
+comparison, §18.6a):
+
+- **`checkTargetModel` was already almost kind-neutral.** It took what is
+  structurally a `Source` and did scaffold-path → project-path →
+  aliased/resync/forked. Generalising it meant building both paths with
+  `definitionPath`, asking the registry for the kind's `rename` instead of
+  naming `aliasModelText`, and gating the alias branch on
+  `kindDef(kind).alias` — so for features, which cannot be aliased, the
+  project-owned argument correctly never applies. The `renderPair` /
+  `stampOnly` pair from §18.4a is kind-neutral already, so the resync
+  tolerance came along unchanged.
+- **`unreachable` (§12.4) is NOT implemented, deliberately.** An item file
+  present in `model/<kind>/` but absent from `main.kit.<kind>` is
+  indistinguishable, from the filesystem alone, between "never appended to
+  its index" (the failure) and "deliberately commented out of the index"
+  (a legitimate state that `INDEX_ENTRY_RE` in `action/action.ts` exists
+  to recognise). Reporting it as a failure would go red on the second.
+  Telling them apart needs the index parse, which is its own change.
+- The rest of §12.4's findings — `missing-source`, `unlisted`,
+  `package-unmanifested` — are reporting additions that belong with
+  `package update` (§18.6b), where a project acts on them.
 
 Deltas found while implementing phase 1:
 

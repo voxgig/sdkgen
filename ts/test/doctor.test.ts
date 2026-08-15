@@ -372,6 +372,92 @@ const Top = () => {
 })
 
 
+// EVERY KIND'S COPIED MODEL FILE, not just targets'.
+//
+// `add` writes `model/feature/<f>.aontu` exactly as it writes
+// `model/target/<t>.aontu`, and overwrites it on every resync — `target add`
+// re-runs `feature add` for every active feature. Only the target one was
+// compared, so a hand-edit to an installed feature definition read as
+// perfectly in sync and was reverted with nothing said.
+describe('doctor: feature model files', () => {
+
+  async function withFeature() {
+    const project = makeProject({
+      feature: { retry: { name: 'retry', active: true } },
+    })
+
+    await target_add([targetRef('go')], project.actx)
+
+    project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
+    project.actx.model.main[KIT].feature.retry = {
+      name: 'retry', active: true, base: SCAFFOLD_BASE,
+    }
+
+    return project
+  }
+
+
+  test('a freshly added feature reports no drift', async () => {
+    // The clean case first: if this is noisy, nothing else here is usable.
+    const report = await check(await withFeature())
+
+    deepStrictEqual(report.forked, [])
+    deepStrictEqual(report.missing, [])
+    strictEqual(report.ok, true)
+  })
+
+
+  test('a hand-edited feature model reads as FORKED', async () => {
+    // It carries the feature's version, `active` default, config defaults and
+    // hook wiring — and the next `target add` silently reverts an edit to any
+    // of them.
+    const project = await withFeature()
+
+    const path = Path.join(ROOT, 'model/feature/retry.aontu')
+    project.fs.writeFileSync(path,
+      String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
+
+    const report = await check(project)
+
+    ok(report.forked.includes('model/feature/retry.aontu'),
+      'an edited feature model was not reported: ' +
+      JSON.stringify(report.forked))
+    strictEqual(report.ok, false)
+  })
+
+
+  test('a deleted feature model reads as MISSING', async () => {
+    const project = await withFeature()
+
+    project.fs.unlinkSync(Path.join(ROOT, 'model/feature/retry.aontu'))
+
+    const report = await check(project)
+
+    ok(report.missing.includes('model/feature/retry.aontu'))
+    strictEqual(report.ok, false)
+  })
+
+
+  test('the resync tolerance applies to features too', async () => {
+    // Feature models carry provenance as of the manifest work, so a copy
+    // predating a key must not read as a fork here either — same rule, and it
+    // comes along free because the comparison is kind-neutral.
+    const project = await withFeature()
+
+    const path = Path.join(ROOT, 'model/feature/retry.aontu')
+    project.fs.writeFileSync(path,
+      String(project.fs.readFileSync(path, 'utf8'))
+        .split('\n').filter((l: string) => !/^\s*package:/.test(l)).join('\n'))
+
+    const report = await check(project)
+
+    deepStrictEqual(report.forked, [])
+    ok(report.resyncPending.includes('model/feature/retry.aontu'))
+    strictEqual(report.ok, true)
+  })
+})
+
+
 // `base`, `origname` and `package` ARE NOT RESERVED WORDS.
 //
 // `main: kit: target: <t>: module: package` (the Go root package identifier)
