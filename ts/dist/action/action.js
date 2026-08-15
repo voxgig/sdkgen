@@ -12,21 +12,31 @@ exports.loadContent = loadContent;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const indexEntry = (name) => `@"${name}.aontu"`;
+// An index line that is an ACTIVE include, and the name it includes — or
+// undefined for a blank line, a comment, or anything else.
+//
+// Parsed rather than compared as a string, because both spellings around an
+// include are legal aontu and mean opposite things:
+//
+//   @"go.aontu"                 -> active, name 'go'
+//   @"go.aontu"  # pinned       -> active, name 'go'  (trailing comment)
+//     @"go.aontu"               -> active, name 'go'  (indented)
+//   # @"go.aontu"               -> NOT active
+//
+// A substring test (what this used to be) reads the commented-out form as
+// present, so `target add go` on a project that had switched the target off
+// by hand appended nothing and reported success while the target stayed
+// absent from the model. A whole-line equality test fixes that but then
+// misses the trailing-comment form, and appends a SECOND active include.
+const INDEX_ENTRY_RE = /^\s*@"([^"]+)\.aontu"\s*(?:#.*)?$/;
+function indexEntryName(line) {
+    const m = line.match(INDEX_ENTRY_RE);
+    return null == m ? undefined : m[1];
+}
 // Is this name already included by the index?
-//
-// LINE-EXACT, not substring. A substring test reads a COMMENTED-OUT entry as
-// present — `# @"go.aontu"` contains `@"go.aontu"` — so `target add go` on a
-// project that had commented the include out silently appended nothing, and
-// the target stayed absent from the model with no error anywhere. Aontu's
-// comment marker is `#`, and commenting an include out is the obvious way to
-// switch a target off by hand, so this is a state projects really reach.
-//
-// The line is trimmed first: the indexes are written with no indentation, but
-// a hand-edited one may carry some, and indentation does not change what
-// aontu includes.
 function hasIndexEntry(content, name) {
-    const entry = indexEntry(name);
-    return content.split('\n').some((line) => line.trim() === entry);
+    return content.split('\n')
+        .some((line) => indexEntryName(line) === name);
 }
 // Append `@"<name>.aontu"` import lines for each name not already present in
 // the index content. Checking against the accumulating result (not the
@@ -47,10 +57,13 @@ function appendIndexEntries(content, names) {
 // for (see docs/design/sdkgen-packages.md), and it is written here beside its
 // inverse so the two cannot drift on how an entry is recognised.
 function removeIndexEntries(content, names) {
-    const drop = new Set(names.map(indexEntry));
+    const drop = new Set(names);
     return content
         .split('\n')
-        .filter((line) => !drop.has(line.trim()))
+        .filter((line) => {
+        const name = indexEntryName(line);
+        return undefined === name || !drop.has(name);
+    })
         .join('\n');
 }
 const UpdateIndex = (0, jostraca_1.cmp)(function UpdateIndex(props) {

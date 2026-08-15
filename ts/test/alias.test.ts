@@ -134,6 +134,74 @@ describe('aliased target add', () => {
   })
 
 
+  test('an alias needing QUOTES gets them, whatever the origin used', async () => {
+    // aontu rejects a bare key containing a hyphen ("unexpected
+    // character(s): -"), so preserving the origin's unquoted style for
+    // `go~go-alt` produced a model that could not compile at all — the
+    // failure the alias repair exists to remove, reintroduced from the other
+    // side.
+    const project = await addAlias('go', 'go-alt')
+    const src = project.fs.readFileSync(
+      ROOT + '/model/target/go-alt.aontu', 'utf8')
+
+    ok(/target:\s*'go-alt':/.test(src),
+      'hyphenated alias key was not quoted: ' +
+      String(src).split('\n').filter((l) => l.includes('target:')).slice(0, 3).join(' | '))
+
+    const errs: any[] = []
+    new Aontu().generate(src, {
+      path: Path.join(SCAFFOLD, 'model', 'target', 'go-alt.aontu'), errs,
+    })
+    strictEqual(errs.length, 0, 'hyphenated alias model did not compile: ' +
+      errs.map((e: any) => e.msg || String(e)).join(' | '))
+  })
+
+
+  test('an existing aliased model is PRESERVED on resync', async () => {
+    // The alias model is the one target model a project owns: an alias
+    // exists to be differentiated (a second Go module needs its own module
+    // name and deps), which is why doctor exempts it from the model
+    // comparison and add-a-target tells the project to edit it. Overwriting
+    // it on the next `target add` would silently revert exactly those edits.
+    const project = makeProject({})
+    await target_add([targetRef('go') + '~go2'], project.actx)
+
+    const edited = project.fs.readFileSync(
+      ROOT + '/model/target/go2.aontu', 'utf8') +
+      "\nmain: kit: target: go2: module: path: 'example.com/second/go2'\n"
+    project.fs.writeFileSync(ROOT + '/model/target/go2.aontu', edited)
+
+    // Resync.
+    await target_add([targetRef('go') + '~go2'], project.actx)
+
+    const after = project.fs.readFileSync(
+      ROOT + '/model/target/go2.aontu', 'utf8')
+    strictEqual(after, edited,
+      'the resync reverted the project\'s edits to its aliased target model')
+  })
+
+
+  test('the components and templates DO resync for an alias', async () => {
+    // Only the model file is project-owned. The vendored component and
+    // template trees are toolchain-owned for an alias exactly as for any
+    // other target, so a resync must still refresh them.
+    const project = makeProject({})
+    await target_add([targetRef('go') + '~go2'], project.actx)
+
+    project.fs.writeFileSync(
+      ROOT + '/src/cmp/go2/Main_go2.ts', '// clobbered\n')
+
+    await target_add([targetRef('go') + '~go2'], project.actx)
+
+    const after = project.fs.readFileSync(
+      ROOT + '/src/cmp/go2/Main_go2.ts', 'utf8')
+    ok('// clobbered\n' !== after,
+      'a resync did not refresh the aliased component tree')
+    ok(after.includes("from './Package_go2'"),
+      'the refreshed component lost its alias rewrites')
+  })
+
+
   test('the target keeps its own VALUES', async () => {
     // The rewrite matches on `target: <name>:` rather than on the bare name,
     // so a value that happens to equal the target name (`ext: go`) survives.

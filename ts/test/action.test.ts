@@ -50,6 +50,15 @@ describe('appendIndexEntries', () => {
     strictEqual(out, '# @"go.aontu"\n@"go.aontu"')
   })
 
+  test('an entry with a TRAILING COMMENT counts as present', () => {
+    // The other half of the line-exact fix: `@"go.aontu" # pinned` is an
+    // ACTIVE include with a comment after it. A whole-line equality test
+    // reads it as absent and appends a second active include of the same
+    // file — breaking the idempotence AGENTS.md pins as an invariant.
+    const content = '@"go.aontu" # pinned target'
+    strictEqual(appendIndexEntries(content, ['go']), content)
+  })
+
   test('an indented entry does count as present', () => {
     // Indentation does not change what aontu includes, so it must not change
     // what this sees.
@@ -61,9 +70,14 @@ describe('appendIndexEntries', () => {
 
 describe('hasIndexEntry', () => {
 
-  test('line-exact, not substring', () => {
+  test('recognises active includes, and only those', () => {
     strictEqual(hasIndexEntry('@"go.aontu"', 'go'), true)
+    strictEqual(hasIndexEntry('  @"go.aontu"', 'go'), true)
+    strictEqual(hasIndexEntry('@"go.aontu" # pinned', 'go'), true)
+    strictEqual(hasIndexEntry('@"go.aontu"\t#pinned', 'go'), true)
+
     strictEqual(hasIndexEntry('# @"go.aontu"', 'go'), false)
+    strictEqual(hasIndexEntry('  #@"go.aontu"', 'go'), false)
     strictEqual(hasIndexEntry('@"gogo.aontu"', 'go'), false)
     strictEqual(hasIndexEntry('', 'go'), false)
   })

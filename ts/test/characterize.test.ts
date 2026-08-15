@@ -160,7 +160,12 @@ describe('characterize add output', () => {
     ok(Fs.existsSync(GOLDEN),
       'no golden manifest at ' + GOLDEN + ' — generate it with: npm run golden')
 
-    const want = Fs.readFileSync(GOLDEN, 'utf8').split('\n')
+    // Split on CRLF *or* LF. Without `\r?` the golden read on a Windows
+    // checkout keeps a trailing carriage return on every line, so every
+    // comparison fails while the two sides print identically — the same path
+    // and the same hash listed as both added and removed, which is what this
+    // looked like before the `\r` was the answer.
+    const want = Fs.readFileSync(GOLDEN, 'utf8').split(/\r?\n/)
       .filter((l: string) => '' !== l.trim())
     const have = got.filter((l: string) => '' !== l.trim())
 

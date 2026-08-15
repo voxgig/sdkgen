@@ -1140,6 +1140,21 @@ top:
 11. **`ACTION_MAP` dispatches into `Object.prototype`** — a plain object
     literal, so `voxgig-sdkgen toString` passes the `null == actionFunc`
     guard (§9).
+12. **An aliased target reads its ORIGIN's config at generate time.**
+    *(Found during phase-1 review; NOT fixed in phase 1 — see below.)* Ten
+    `cmp/go/*` components call `goModule(model, 'go')` with the target name
+    hardcoded, while their neighbours correctly use `target.name`
+    (`goVersion(model, target.name)`, `collectDeps(model, target.name, …)`).
+    `goModule` looks up `main.kit.target.<t>.module.path`, so `go~go2`
+    silently takes the origin's module path — defeating the one use the
+    alias is documented for, "a second Go module with different options"
+    ([reference/cli](../reference/cli.md#target-references)). Phase 1
+    repairs the ADD side of aliasing; this is the GENERATE side, it predates
+    that work, and fixing it means auditing every target for which `'<lang>'`
+    literals are TARGET names (config lookups, which must follow the alias)
+    versus LANGUAGE identifiers (format selectors like `matchArg('go', …)`,
+    which must not) — and the wrapping targets legitimately name the target
+    they wrap (`seneca-provider` reads `'ts'`). That audit is its own change.
 
 ---
 

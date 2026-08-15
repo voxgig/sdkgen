@@ -153,6 +153,8 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
   const { ctx$, targets, features, actx } = props
   const { model, log } = ctx$
 
+  const fs = ctx$.fs()
+
   // The prune below writes through `fs` directly rather than through
   // jostraca, so it has to be told about the dry run itself.
   const dryrun = !!actx?.opts?.dryrun
@@ -206,8 +208,28 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
           // just the alias. The declaration inside stayed `target: go:` too,
           // so the alias either collided with its origin or named a target
           // nothing referenced.
-          const src = ctx$.fs().readFileSync(modelFrom, 'utf8')
-          File({ name: tname + '.aontu' }, () => Content(
+          //
+          // `exclude: true` — CREATE, never overwrite. This is the one target
+          // model a project OWNS: an alias exists to be differentiated (a
+          // second Go module needs its own module name and deps), which is
+          // why doctor exempts it from the model comparison and why
+          // add-a-target tells the project to edit it. Overwriting it on
+          // every resync would silently revert exactly the edits the alias
+          // was created to hold. The origin's own model file is unaffected
+          // and stays overwrite, as for every other target.
+          const dest = Path.join(
+            ctx$.folder ?? '.', 'model', 'target', tname + '.aontu')
+
+          if (fs.existsSync(dest)) {
+            log.info({
+              point: 'target-alias-model-kept', target: tname, file: dest,
+              note: tname + ': keeping the existing aliased target model ' +
+                '(project-owned — an alias is differentiated by editing it)'
+            })
+          }
+
+          const src = fs.readFileSync(modelFrom, 'utf8')
+          File({ name: tname + '.aontu', exclude: true }, () => Content(
             template(aliasModelText(src, torigname, tname),
               ctx$.model, { replace: baseReplace })))
         }
@@ -298,10 +320,23 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
 // group NAME, and the bare and quoted spellings of the same key reduce to the
 // same name — so one silently overwrote the other and `go-cli~cli2` came out
 // as the BARE `target: cli2:`, losing the quoting a hyphenated key needs.
+//
+// The alias may also NEED quoting when the origin did not: aontu rejects a
+// bare key containing a hyphen (`unexpected character(s): -`), so
+// `target add go~go-alt` emitting the origin's unquoted style produced a
+// model that could not compile at all. Quote when the origin was quoted OR
+// the alias is not a bare identifier.
+const BARE_KEY_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/
+
 function aliasModelText(src: string, torigname: string, tname: string): string {
+  const mustQuote = !BARE_KEY_RE.test(tname)
+
   return src.replace(
     new RegExp("target:(\\s*)('?)" + escapeRe(torigname) + "\\2:", 'g'),
-    'target:$1$2' + tname + '$2:')
+    (_m: string, gap: string, quote: string) => {
+      const q = ('' !== quote || mustQuote) ? "'" : ''
+      return 'target:' + gap + q + tname + q + ':'
+    })
 }
 
 
