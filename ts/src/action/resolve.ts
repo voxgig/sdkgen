@@ -125,7 +125,10 @@ function resolveSource(ref: string, kind: string, ctx$: any): Source {
     base: (folder.startsWith(rootslash)
       ? folder.slice(rootslash.length)
       : folder).split(Path.sep).join('/'),
-    model: folder + '/model/' + kind + '/' + origname + '.aontu',
+    // Path.join, not concatenation: an absolute Windows ref makes `folder`
+    // backslash-separated, and appending '/model/...' produced a mixed-
+    // separator path that some readers handle and others do not.
+    model: Path.join(folder, 'model', kind, origname + '.aontu'),
   }
 }
 

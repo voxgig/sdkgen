@@ -97,7 +97,10 @@ function resolveSource(ref, kind, ctx$) {
         base: (folder.startsWith(rootslash)
             ? folder.slice(rootslash.length)
             : folder).split(node_path_1.default.sep).join('/'),
-        model: folder + '/model/' + kind + '/' + origname + '.aontu',
+        // Path.join, not concatenation: an absolute Windows ref makes `folder`
+        // backslash-separated, and appending '/model/...' produced a mixed-
+        // separator path that some readers handle and others do not.
+        model: node_path_1.default.join(folder, 'model', kind, origname + '.aontu'),
     };
 }
 function capitalise(s) {

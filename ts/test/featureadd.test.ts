@@ -133,14 +133,25 @@ describe('feature add from an external package', () => {
   test('installs a feature defined outside sdkgen', async () => {
     const pkg = externalFeaturePackage('circuitbreaker')
     try {
-      const project = makeProject({ target: { ts: { name: 'ts' } } })
+      const log = recordLog()
+      const project = makeProject({ target: { ts: { name: 'ts' } }, log })
       await target_add([targetRef('ts')], project.actx)
-      await feature_add([pkg + '/circuitbreaker'], project.actx)
+      await feature_add([Path.join(pkg, 'circuitbreaker')], project.actx)
+
+      // Surface WHY, rather than reporting a missing file: the action skips a
+      // feature it cannot resolve, so a silent skip would otherwise show up
+      // here as an unexplained absence.
+      const skipped = log.lines.filter(
+        (l: any) => 'feature-source-unresolved' === l.point)
+      deepStrictEqual(skipped.map((l: any) => l.err), [],
+        'the external feature was skipped: ' +
+        skipped.map((l: any) => l.note).join(' | '))
 
       const files = project.files()
 
       ok(files.includes('model/feature/circuitbreaker.aontu'),
-        'the feature model was not copied')
+        'the feature model was not copied; wrote: ' +
+        files.filter((f: string) => f.startsWith('model/feature/')).join(', '))
       ok(files.includes('tm/ts/src/feature/circuitbreaker/Ext.ts'),
         'the feature source was not copied: ' +
         files.filter((f) => f.includes('circuit')).join(', '))
@@ -159,7 +170,7 @@ describe('feature add from an external package', () => {
     try {
       const project = makeProject({ target: { ts: { name: 'ts' } } })
       await target_add([targetRef('ts')], project.actx)
-      await feature_add([pkg + '/circuitbreaker'], project.actx)
+      await feature_add([Path.join(pkg, 'circuitbreaker')], project.actx)
 
       const index = String(project.fs.readFileSync(
         ROOT + '/model/feature/feature-index.aontu', 'utf8'))
@@ -183,7 +194,7 @@ describe('feature add from an external package', () => {
     try {
       const project = makeProject({ target: { ts: { name: 'ts' } } })
       await target_add([targetRef('ts')], project.actx)
-      await feature_add([pkg + '/circuitbreaker'], project.actx)
+      await feature_add([Path.join(pkg, 'circuitbreaker')], project.actx)
 
       const src = String(project.fs.readFileSync(
         ROOT + '/model/feature/circuitbreaker.aontu', 'utf8'))
@@ -204,7 +215,7 @@ describe('feature add from an external package', () => {
     try {
       const project = makeProject({ target: { ts: { name: 'ts' } } })
       await target_add([targetRef('ts')], project.actx)
-      await feature_add([pkg + '/circuitbreaker'], project.actx)
+      await feature_add([Path.join(pkg, 'circuitbreaker')], project.actx)
 
       const src = String(project.fs.readFileSync(
         ROOT + '/tm/ts/src/feature/circuitbreaker/Ext.ts', 'utf8'))
