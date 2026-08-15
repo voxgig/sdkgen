@@ -24,6 +24,7 @@
   "scripts": {
     "test": "node --enable-source-maps --test dist-test/**/*.test.js",
     "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test dist-test/**/*.test.js",
+    "golden": "npm run build && SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js",
     "watch": "tsc --build src test -w",
     "build": "tsc --build src test && npm run check-scaffold && npm run stage-scaffold",
     "clean": "rm -rf dist dist-test node_modules yarn.lock package-lock.json",

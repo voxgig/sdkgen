@@ -21,7 +21,7 @@ import Path from 'node:path'
 
 import { doctor } from '../dist/action/doctor.js'
 import {
-  SCAFFOLD, ROOT, KIT, makeProject, targetRef, target_add,
+  SCAFFOLD, SCAFFOLD_BASE, ROOT, KIT, makeProject, targetRef, target_add,
 } from './actionharness'
 
 
@@ -35,7 +35,7 @@ async function addedProject(feature: Record<string, any> = {}) {
 
   // `base` is what `target add` writes into the target's own model, and what
   // doctor uses to find the scaffold a target came from.
-  project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD }
+  project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
 
   return project
 }
@@ -236,7 +236,7 @@ const Top = () => {
     const project = makeProject({})
 
     await target_add([targetRef('ts')], project.actx)
-    project.actx.model.main[KIT].target.ts = { name: 'ts', base: SCAFFOLD }
+    project.actx.model.main[KIT].target.ts = { name: 'ts', base: SCAFFOLD_BASE }
 
     const report = await check(project)
 

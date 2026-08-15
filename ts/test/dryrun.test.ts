@@ -22,7 +22,7 @@ import { test, describe } from 'node:test'
 import { ok, deepStrictEqual } from 'node:assert'
 
 import {
-  makeProject, targetRef, recordLog, target_add, feature_add,
+  makeProject, targetRef, recordLog, target_add, feature_add, ROOT,
 } from './actionharness'
 
 
@@ -68,6 +68,62 @@ describe('dry run', () => {
     // And it says so in words, not just by listing.
     ok(log.lines.some((l: any) => String(l.note || '').includes('nothing was written')),
       'dry run never stated that nothing was written')
+  })
+
+
+  test('target add DELETES nothing', async () => {
+    // Regression: the stale-template prune calls fs.unlinkSync directly, and
+    // jostraca enforces control.dryrun only inside its own write layer — so
+    // `-y target add <t>` previewed the copies and really removed every stale
+    // template. The earlier "writes nothing" test could not catch it: a fresh
+    // project has no stale templates to remove.
+    //
+    // Deletion is the worst case for this flag. A dry run is how a maintainer
+    // inspects the blast radius of an add BEFORE it touches a vendored tree.
+    const project = makeProject({ dryrun: true, log: recordLog() })
+    const stale = 'tm/lua/STALE_MARKER.lua'
+
+    project.fs.mkdirSync(ROOT + '/tm/lua', { recursive: true })
+    project.fs.writeFileSync(ROOT + '/' + stale, '-- stale\n')
+
+    await target_add([targetRef('lua')], project.actx)
+
+    ok(project.fs.existsSync(ROOT + '/' + stale),
+      'a dry run deleted a stale template')
+  })
+
+
+  test('target add reports the deletions it would make', async () => {
+    const log = recordLog()
+    const project = makeProject({ dryrun: true, log })
+    const stale = 'tm/lua/STALE_MARKER.lua'
+
+    project.fs.mkdirSync(ROOT + '/tm/lua', { recursive: true })
+    project.fs.writeFileSync(ROOT + '/' + stale, '-- stale\n')
+
+    await target_add([targetRef('lua')], project.actx)
+
+    // A preview that silently omits the removals is as misleading as one that
+    // omits the writes.
+    ok(log.lines.some((l: any) =>
+      String(l.note || '').includes('would remove') &&
+      String(l.note || '').includes('STALE_MARKER.lua')),
+      'dry run never reported the stale template it would remove')
+  })
+
+
+  // The control: with the flag off, the prune really does remove it.
+  test('without the flag, target add prunes the stale template', async () => {
+    const project = makeProject({})
+    const stale = 'tm/lua/STALE_MARKER.lua'
+
+    project.fs.mkdirSync(ROOT + '/tm/lua', { recursive: true })
+    project.fs.writeFileSync(ROOT + '/' + stale, '-- stale\n')
+
+    await target_add([targetRef('lua')], project.actx)
+
+    ok(!project.fs.existsSync(ROOT + '/' + stale),
+      'the prune stopped removing stale templates')
   })
 
 

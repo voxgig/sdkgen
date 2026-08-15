@@ -12,6 +12,7 @@ const dryrun_1 = require("../helpers/dryrun");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
 const featureSource_1 = require("../helpers/featureSource");
+const stdrep_1 = require("../helpers/stdrep");
 const action_1 = require("./action");
 const CMD_MAP = {
     add: cmd_feature_add
@@ -90,7 +91,6 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 (0, jostraca_1.Copy)({
                     // TODO: these paths needs to be parameterised
                     from: BASE + '/project/.sdk/model/feature/' + fname + '.aontu',
-                    exclude: true
                 });
                 (0, jostraca_1.File)({ name: 'feature-index.aontu' }, () => (0, action_1.UpdateIndex)({
                     content: ctx$.meta.content.feature_index,
@@ -123,7 +123,14 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                     (0, jostraca_1.Folder)({ name: 'tm/' + t.name + '/' + dest }, () => {
                         (0, jostraca_1.Copy)({
                             from: node_path_1.default.join(tmfolder, source.path),
-                            exclude: true
+                            // The SAME map `target add` writes `tm/<t>` with. Without it
+                            // this copy laid RAW template text over files the target add
+                            // had already substituted, so `ProjectName` / `PROJECTVERSION`
+                            // survived into the project depending only on which action
+                            // wrote the file last — the writer/writer disagreement
+                            // helpers/stdrep.ts exists to prevent, in the one place that
+                            // did not share the map.
+                            replace: (0, stdrep_1.templateReplacements)(model, t.name),
                         });
                     });
                 }
