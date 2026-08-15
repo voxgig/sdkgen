@@ -137,6 +137,36 @@ describe('bare names follow recorded provenance', () => {
   })
 
 
+  test('an ALIAS resyncs as itself, not as its origin', async () => {
+    // `target add go2`, after installing `go~go2`, must refresh go2.
+    // Rebuilding only `<base>/../go` resolves to the ORIGIN name, so the run
+    // would install a fresh `go` target, index it, and leave `go2` stale —
+    // losing the differentiated identity the alias exists for, and the
+    // project-owned model file with it.
+    const project = makeProject({})
+    await target_add([targetRef('go') + '~go2'], project.actx)
+
+    const src = String(project.fs.readFileSync(
+      ROOT + '/model/target/go2.aontu', 'utf8'))
+    const base = (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1]
+    const origname = (src.match(/^\s*origname:\s*'([^']*)'/m) || [])[1]
+
+    const resolved = resolveKind('go2', 'target', {
+      ...project.actx,
+      model: {
+        main: { kit: { target: { go2: { name: 'go2', base, origname } } } },
+      },
+      fs: project.actx.fs,
+      folder: ROOT,
+    })
+
+    strictEqual(resolved.name, 'go2',
+      'the alias resolved back to its origin name')
+    strictEqual(resolved.origname, 'go',
+      'the origin name was lost')
+  })
+
+
   test('an explicit ref still wins over the record', async () => {
     // That is how something is moved to a new source.
     const project = makeProject({})

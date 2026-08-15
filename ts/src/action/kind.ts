@@ -132,8 +132,7 @@ function resolveKind(ref: string, kind: string, ctx$: any): Source {
   const model = ctx$.model
 
   const declared: any = model?.main?.[KIT]?.[kind]?.[ref]
-  const recorded = isBare(ref) && declared?.base ?
-    Path.join(declared.base, '..', declared.origname || ref) : ref
+  const recorded = (isBare(ref) && recordedRef(declared, ref)) || ref
 
   const source = resolveSource(recorded, kind, ctx$)
 
@@ -223,6 +222,30 @@ function kindModel(props: {
 }
 
 
+// The ref that reinstalls what the model already records — `base` says which
+// `.sdk` folder, `origname` says what it is called there.
+//
+// The ALIAS has to be carried back through. Rebuilding only `<base>/../<orig>`
+// resolves to the ORIGIN name, so `target add go2` (after installing
+// `go~go2`) would refresh and index a new `go` target and leave `go2` stale —
+// losing the differentiated identity the alias exists for, and the
+// project-owned model file with it.
+//
+// ONE definition, used by the add actions and by doctor. This reconstruction
+// was written twice and the two copies had already diverged on exactly this
+// point, which is the drift the kind spine exists to end.
+function recordedRef(declared: any, name: string): string | undefined {
+  if (null == declared?.base || '' === declared.base) {
+    return undefined
+  }
+
+  const origname = declared.origname || name
+
+  return Path.join(declared.base, '..', origname) +
+    (origname === name ? '' : '~' + name)
+}
+
+
 // A bare NAME, as opposed to a ref that locates a source.
 function isBare(ref: string): boolean {
   return !ref.includes('/') && !ref.includes(Path.sep)
@@ -240,6 +263,7 @@ export type {
 
 export {
   KINDS,
+  recordedRef,
   aliasModelText,
   escapeRe,
   kindDef,

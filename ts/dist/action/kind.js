@@ -25,6 +25,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KINDS = void 0;
+exports.recordedRef = recordedRef;
 exports.aliasModelText = aliasModelText;
 exports.escapeRe = escapeRe;
 exports.kindDef = kindDef;
@@ -98,8 +99,7 @@ function resolveKind(ref, kind, ctx$) {
     const def = kindDef(kind);
     const model = ctx$.model;
     const declared = model?.main?.[types_1.KIT]?.[kind]?.[ref];
-    const recorded = isBare(ref) && declared?.base ?
-        node_path_1.default.join(declared.base, '..', declared.origname || ref) : ref;
+    const recorded = (isBare(ref) && recordedRef(declared, ref)) || ref;
     const source = (0, resolve_1.resolveSource)(recorded, kind, ctx$);
     // Asked of the RESOLVER rather than by re-reading the ref. `~` separates an
     // alias only in the last segment, and a check that looked for one anywhere
@@ -164,6 +164,26 @@ function kindModel(props) {
         content,
         names,
     }));
+}
+// The ref that reinstalls what the model already records — `base` says which
+// `.sdk` folder, `origname` says what it is called there.
+//
+// The ALIAS has to be carried back through. Rebuilding only `<base>/../<orig>`
+// resolves to the ORIGIN name, so `target add go2` (after installing
+// `go~go2`) would refresh and index a new `go` target and leave `go2` stale —
+// losing the differentiated identity the alias exists for, and the
+// project-owned model file with it.
+//
+// ONE definition, used by the add actions and by doctor. This reconstruction
+// was written twice and the two copies had already diverged on exactly this
+// point, which is the drift the kind spine exists to end.
+function recordedRef(declared, name) {
+    if (null == declared?.base || '' === declared.base) {
+        return undefined;
+    }
+    const origname = declared.origname || name;
+    return node_path_1.default.join(declared.base, '..', origname) +
+        (origname === name ? '' : '~' + name);
 }
 // A bare NAME, as opposed to a ref that locates a source.
 function isBare(ref) {

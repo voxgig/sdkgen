@@ -17,6 +17,7 @@ declare function kindModel(props: {
     names: string[];
     content: string;
 }): void;
+declare function recordedRef(declared: any, name: string): string | undefined;
 declare function isBare(ref: string): boolean;
 export type { KindDef, };
-export { KINDS, aliasModelText, escapeRe, kindDef, resolveKind, kindModel, isBare, };
+export { KINDS, recordedRef, aliasModelText, escapeRe, kindDef, resolveKind, kindModel, isBare, };

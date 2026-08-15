@@ -110,9 +110,7 @@ async function doctor(actx) {
         // origin name recorded, the alias compares against the tree it actually
         // came from.
         const torigname = (declared && declared.origname) || tname;
-        const tref = (declared && declared.base) ?
-            node_path_1.default.join(declared.base, '..', torigname) +
-                (torigname === tname ? '' : '~' + tname) : tname;
+        const tref = (0, kind_1.recordedRef)(declared, tname) || tname;
         let resolved;
         try {
             resolved = (0, target_1.resolveTarget)(tref, { folder: root, fs: () => fs });
