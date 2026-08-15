@@ -40,6 +40,42 @@ npm run build && npm run generate
 > `test` is added automatically by `target add` — every target's
 > generated test suite depends on it.
 
+## Use a feature from another package
+
+A feature reference takes the same forms as a target reference — a bare
+name, a package-relative path, or an absolute path. The **last** path
+element is the feature name; the rest locates its `.sdk`:
+
+```bash
+voxgig-sdkgen feature add @acme/sdkgen-iot/circuitbreaker
+voxgig-sdkgen feature add ../my-features/circuitbreaker
+```
+
+Or, if the package declares a
+[manifest](../reference/project-layout.md#an-sdkgen-package):
+
+```bash
+voxgig-sdkgen package add @acme/sdkgen-iot
+```
+
+**Aliasing is refused for features**, unlike targets: a feature's name is
+part of the generated `options.feature.<name>` config key and of the hook
+wiring in every target, so it cannot be renamed at install time.
+
+An external feature may ship its own per-target source as an *overlay* —
+`tm/<target>/…` inside the feature's package, for targets it supports but
+does not provide. That overlay wins over the target's own copy of the same
+feature. If both exist, `feature add` warns
+(`point: feature-source-shadowed`) and carries on: the overlay is what
+runs, but the files already copied from the target's tree are not
+removed, so the project is left holding a mix. Do not reuse a built-in
+feature's name.
+
+Ordering matters if you are installing both: add **targets first**. A
+feature's source is copied into the targets present at the time, so a
+feature added before a target ships no source for it. `package add` does
+this for you.
+
 ## Author a new feature
 
 A feature is defined by a model file plus per-language template code.

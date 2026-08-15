@@ -107,6 +107,39 @@ main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com
 | --- | --- | --- | --- |
 | `test.live.strict` | boolean | `false` | `false`: a non-2xx in a live run is an early return, not a failure (right for an SDK generated against an arbitrary third-party API). `true`: live assertions match the offline ones. Set it when the project OWNS the server it tests against — otherwise the live suite passes with nothing listening on the port. Overridable per target (`main.kit.target.<t>.test.live.strict`). |
 
+## Provenance: where a copied item came from
+
+Every copied `model/<kind>/<name>.aontu` records its own origin. There is
+no lockfile and no second record — the model **is** the record, which is
+why nothing can disagree with it.
+
+```
+main: kit: target: iot-go: {
+  …
+  base: 'node_modules/@acme/sdkgen-iot/.sdk'
+  origname: 'iotgo'            # only when installed under a different name
+  package: '@acme/sdkgen-iot'  # only when the source declares a manifest
+}
+```
+
+The shipped files carry `base: 'BASE'` as an **anchor**: a replace map can
+only rewrite text that is already there, so a definition without the
+anchor records nothing, silently. A guard test fails if any shipped model
+loses it.
+
+These are written by `add` and read by `doctor`, `package list` and
+`package update`. Do not hand-edit them: `add` rewrites the block, and
+`doctor` reports a changed value as a fork (accurately — the next add
+reverts it).
+
+The one exception is an **aliased** item (`target add go~go2`), whose
+model file `add` CREATES and then never overwrites — differentiating it
+is the point of an alias. Editing that file is expected; editing its
+provenance block is still not, because `package update` and `doctor`
+locate the source through it.
+
+The same three keys exist on `main.kit.feature.<name>`.
+
 ## `main.kit.target.<name>`
 
 From [`model/sdkgen.aontu`](../../model/sdkgen.aontu) and the per-target
@@ -123,7 +156,9 @@ files in `ts/project/.sdk/model/target/`:
 | `module.path` | string | `''` | Go family. Full module path, overriding `'<repo.host>/<repo.path>/<target>'`. |
 | `module.package` | string | `''` | Go family. The root package IDENTIFIER (`package acmesdk`), not an import path. |
 | `module.goversion` | string | `''` | Go family. The `go` directive in `go.mod`. `''` defaults to 1.21 — the release that introduced `log/slog`, which the `log` feature imports. |
-| `base` | string | — | Template base path (set to `'BASE'`, replaced at `target add`). |
+| `base` | string | — | **Provenance.** The `.sdk` folder this copy came from, always `/`-normalised. Project-relative when the source is inside the project (`node_modules/@acme/sdkgen-iot/.sdk`); a source outside it records what the ref resolved to — `../acme-sdkgen-iot/.sdk` for a relative ref, an absolute path for an absolute one, which is then specific to the machine that ran the add. Ships as the literal `'BASE'`; `add` replaces that one line with the block above. |
+| `origname` | string | `''` | **Provenance.** The name in the SOURCE, when it differs — i.e. this was installed as `<origname>~<name>`. What makes an alias checkable. |
+| `package` | string | `''` | **Provenance.** The sdkgen package that supplied it, when the source declares a manifest. What `package update` and `package list` act on. |
 | `srcfeature` | boolean | `true` | Whether per-feature source is copied into `src/feature/`. |
 | `phase.<name>.active` | boolean | `true` | Switch a standard generation phase off (see below). |
 | `feature.trim` | boolean | `true` | Whether `target add` trims feature source to the model's selection. `false` keeps the complete set (see below). |

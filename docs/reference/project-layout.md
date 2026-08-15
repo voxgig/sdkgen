@@ -71,6 +71,63 @@ features `retry`, `timeout`, `ratelimit`, `cache`, `idempotency`,
 `paging`, `streaming`, `proxy`, `telemetry`, `metrics`, `debug`, `audit`,
 `clienttrack`, `rbac`, and `netsim` (all inactive by default).
 
+## An sdkgen package
+
+Targets and features are not only the built-in ones. An **sdkgen
+package** is any folder with this shape, installed from npm, a git
+checkout, or a plain local directory:
+
+```
+<package-root>/
+├── package.json            # npm packages only; files: [".sdk", "sdkgen-package.json"]
+├── sdkgen-package.json     # THE manifest — see below
+└── .sdk/                   # shaped byte-for-byte like ts/project/.sdk
+    ├── model/
+    │   ├── target/<t>.aontu     # one per provided target
+    │   └── feature/<f>.aontu    # one per provided feature
+    ├── src/cmp/<t>/             # per-target components
+    └── tm/
+        ├── <t>/                 # per-target templates
+        └── <other-target>/      # a feature's source for a target this
+                                 # package does NOT provide (an overlay)
+```
+
+The `.sdk` subfolder is the load-bearing convention: it is what
+resolution probes for, and it means the whole copy pipeline works on a
+package tree unchanged, because it cannot tell one apart from the bundled
+scaffold.
+
+```json
+{
+  "sdkgen": { "package": 1 },
+  "name": "@acme/sdkgen-iot",
+  "version": "1.4.0",
+  "engines": { "sdkgen": ">=3.5" },
+  "provides": {
+    "target": ["iot-go"],
+    "feature": ["circuitbreaker"]
+  }
+}
+```
+
+`provides` is keyed **by kind**, and is validated against the trees on
+disk in both directions at `package add`: a claim with nothing behind it
+is an error, something on disk that nobody claims is a warning. A target's
+claim needs `model/target/<t>.aontu`, `src/cmp/<t>/` **and** `tm/<t>/`; a
+feature's definition is the whole of it.
+
+The manifest is **required** for `package add` and **optional** for a
+direct ref (`target add <path>/<name>`) — a bare `.sdk`-shaped folder
+stays a valid source, and simply records no `package` provenance.
+
+**`ts/project/` is itself one of these**, manifest and all, which is what
+keeps the bundled path and the external path on the same code. Its
+`provides` is pinned to the actual directory listings by a guard test, so
+it cannot drift from the scaffold.
+
+See [the design note](../design/sdkgen-packages.md) and the
+[CLI reference](./cli.md).
+
 ## A scaffolded SDK project
 
 After `npm create @voxgig/sdkgen` and `target add` / `feature add`, a

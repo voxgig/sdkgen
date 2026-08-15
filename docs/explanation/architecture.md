@@ -68,6 +68,28 @@ pass rooted at that path. See
 | --- | --- |
 | **`create-sdkgen`** | Scaffolds a new SDK project (`npm create @voxgig/sdkgen`). Owns the build tooling (`.sdk/` scripts like `add-target`, `generate`) and the test `.aontu` data. |
 | **`@voxgig/model`** | Orchestrates a build. It calls `SdkGen.makeBuild(...)` to run the generation step as part of a larger model build. |
+| **an sdkgen package** (anyone's) | Supplies targets and/or features of its own. Shaped like this repo's `ts/project/` and installed with `package add`. |
+
+### Content is not only this package's
+
+`ts/project/` is itself an sdkgen package — a `sdkgen-package.json`
+manifest beside a `.sdk/` directory — so "the bundled scaffold" and "a
+third-party package" are the same thing to every code path that installs,
+compares or updates them. That is the point: the bundled path is the
+external path, so the external one cannot rot from disuse.
+
+What holds it together is **provenance in the model**. Each copied
+`model/<kind>/<name>.aontu` records the `.sdk` folder it came from, the
+name it had there, and the package that supplied it. There is no lockfile
+and no side record — so nothing can disagree with it, and a single
+`target add @acme/pkg/iot-go` remains a complete, coherent operation that
+says nothing false about its siblings.
+
+That record is what lets `doctor` compare a project against sources it
+has never heard of, and `package update` refresh exactly what a package
+supplied.
+
+See [the design note](../design/sdkgen-packages.md).
 
 ## Where this package sits at runtime
 
