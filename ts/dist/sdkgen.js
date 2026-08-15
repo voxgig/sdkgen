@@ -208,17 +208,10 @@ Object.defineProperty(exports, "GENERATOR_URL", { enumerable: true, get: functio
 const target_1 = require("./action/target");
 const feature_1 = require("./action/feature");
 const doctor_1 = require("./action/doctor");
+// The verbs, built from the kind registry — see action/dispatch.
+const dispatch_1 = require("./action/dispatch");
 const { Jostraca } = JostracaModule;
 exports.Jostraca = Jostraca;
-// Null-prototype: a plain object literal inherits Object.prototype, so
-// `voxgig-sdkgen toString` (or `constructor`, `valueOf`, ...) resolves to an
-// inherited function, passes the `null == actionFunc` guard below, and gets
-// CALLED with the action arguments instead of reporting an unknown action.
-const ACTION_MAP = Object.assign(Object.create(null), {
-    target: target_1.action_target,
-    feature: feature_1.action_feature,
-    doctor: doctor_1.action_doctor,
-});
 const dlog = (0, util_2.getdlog)('sdkgen', __filename);
 function SdkGen(opts) {
     const fs = opts.fs || node_fs_1.default;
@@ -347,16 +340,22 @@ function SdkGen(opts) {
     //
     // Nothing here wants structured arguments: every action takes names and
     // refs. Parsing them was pure loss.
-    async function action(args) {
+    //
+    // `flags` is the second parameter because `--only` and `--alias` are
+    // arguments to ONE command, not generator configuration: passing them
+    // through `SdkGen({…})` like `debug`/`dryrun` would make a later
+    // `action()` call on the same instance silently inherit them.
+    async function action(args, flags) {
         const actname = args[0];
-        const actionFunc = ACTION_MAP[actname];
+        const actionFunc = dispatch_1.ACTION_MAP[actname];
         if (null == actionFunc) {
-            throw new utility_1.SdkGenError('Unknown action: ' + actname);
+            throw new utility_1.SdkGenError('Unknown action: ' + actname +
+                ' (expected: ' + (0, dispatch_1.actionNames)().join(', ') + ')');
         }
-        const ctx = resolveActionContext();
+        const ctx = resolveActionContext(flags);
         return await actionFunc(args, ctx);
     }
-    function resolveActionContext() {
+    function resolveActionContext(flags) {
         // TODO: use AsyncLocalStorage to avoid reloading model
         const { model, url } = resolveModel();
         const ctx = {
@@ -367,6 +366,7 @@ function SdkGen(opts) {
             url,
             jostraca,
             opts,
+            flags: flags ?? {},
         };
         return ctx;
     }

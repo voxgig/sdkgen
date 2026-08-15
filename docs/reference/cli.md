@@ -26,6 +26,13 @@ generated SDK project's `.sdk/` directory).
 | `--version` | `-v` | flag | — | Print the version and exit. |
 | `--debug <level>` | `-g` | string | `info` | Log level / debug verbosity (`trace`, `debug`, `info`, `warn`, `error`, `fatal`). |
 | `--dryrun` | `-y` | flag | off | Plan the work and log it, but write no files. |
+| `--only <items>` | — | string | everything | `package add` only: install a subset, as `<kind>:<name>` entries. |
+| `--alias <map>` | — | string | — | `package add` only: install under different names, as `<name>=<alias>` entries. |
+
+`--only` and `--alias` are arguments to one *command*, not generator
+configuration — unlike `--debug` and `--dryrun`, which describe the
+generator itself. In the code API they are the second argument to
+`sdkgen.action(args, flags)` rather than options on `SdkGen({…})`.
 
 Exit code is `0` on success and `1` on error. Errors raised as
 `SdkGenError` are printed as a clean message; other errors print with
@@ -33,8 +40,10 @@ detail.
 
 ## Actions
 
-Two actions are available, each with a single `add` command. Names may be
-comma-separated to add several at once.
+The verbs are built from the kind registry (`target`, `feature`) plus
+`package` and `doctor`, so registering a new kind adds its `add` command
+with no dispatch code. Names may be comma-separated to add several at
+once.
 
 ### `target add <ref>[,<ref>...]`
 
@@ -134,6 +143,63 @@ voxgig-sdkgen feature add log,test
 ```
 
 The built-in features are `log` and `test`.
+
+A feature reference takes the same forms as a target reference, except
+that **aliasing is refused**: a feature's name is part of the generated
+`options.feature.<name>` config key and of the hook wiring in every
+target, so it cannot be renamed at install time.
+
+### `package add <pkg>[,<pkg>...]`
+
+Install everything an [sdkgen package](../design/sdkgen-packages.md)
+provides. A package is a folder holding a `sdkgen-package.json` manifest
+beside a `.sdk/` directory shaped exactly like the bundled scaffold.
+
+```bash
+npm install --save-dev @acme/sdkgen-iot
+voxgig-sdkgen package add @acme/sdkgen-iot
+voxgig-sdkgen package add @acme/sdkgen-iot --only target:iot-go
+voxgig-sdkgen package add @acme/sdkgen-iot --alias iot-go=acme-go
+```
+
+The package reference resolves the same way an item reference does, one
+level up: `node_modules/<pkg>`, then `<pkg>` relative to the project,
+then an absolute path.
+
+This is not a separate copy pipeline. It validates the manifest, then
+runs the *same* per-kind `add` once per provided item — so provenance,
+index handling, the feature fan-out and `--dryrun` all behave
+identically to typing the adds by hand.
+
+Three things it does that the individual commands cannot:
+
+- **The manifest is required and validated first, in full.** Items are
+  installed in a loop, so a claim that turns out to be false partway
+  through would leave a half-installed project with a partial index.
+- **`engines.sdkgen` is checked** against the running generator. A range
+  the checker cannot parse is reported and *allowed* — refusing on an
+  unparsed range would block a package that works.
+- **Targets are installed before features**, because `feature add`
+  copies a feature's source into every target already present, and the
+  in-memory model is updated between kinds so the feature sees the
+  targets this same command just installed.
+
+A typo in `--only` is an error listing what the package does provide,
+never a silent no-op.
+
+### `package list`
+
+List what is installed and which package supplied each item, read
+entirely from the provenance recorded in the project's own model files —
+there is no lockfile. Items installed before provenance existed are
+listed under `(unrecorded)`.
+
+```bash
+voxgig-sdkgen package list
+```
+
+The version shown is the one **on disk** in the source today, not one
+recorded at add time.
 
 ## Typical sequence (in a scaffolded project)
 

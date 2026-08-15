@@ -121,7 +121,14 @@ type ActionContext = {
   model: SdkModel,
   url: string,
   opts: any,
-  jostraca: any
+  jostraca: any,
+
+  // PER-INVOCATION action arguments — `--only`, `--alias` — as opposed to
+  // generator configuration. `debug` and `dryrun` reach actions through the
+  // `SdkGen({…})` constructor because they describe the generator; these
+  // describe one command, so smuggling them through the constructor would
+  // make a second `action()` call on the same instance inherit them.
+  flags?: Record<string, any>
 }
 
 
