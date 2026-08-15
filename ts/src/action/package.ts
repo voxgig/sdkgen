@@ -905,8 +905,22 @@ async function npmFetch(pkgname: string, actx: ActionContext) {
   })
 
   try {
+    // `npm.cmd` ON WINDOWS. `execFile` does no PATHEXT resolution, so plain
+    // `npm` — which is a `.cmd` shim there — fails with ENOENT. Not caught by
+    // CI, because every test injects its own fetcher and this function never
+    // runs; found by reading it rather than by it breaking.
+    //
+    // Arguments as an ARRAY and no `shell: true`, so a package name is never
+    // interpreted by a shell.
+    //
+    // maxBuffer raised well past execFile's 1MB default: `npm install` output
+    // for a large tree exceeds it, and the resulting ENOBUFS would be caught
+    // below and reported as a failed fetch — after npm had in fact SUCCEEDED,
+    // leaving the project's dependencies updated and its `.sdk` not.
     const out = await run(
-      'npm', ['install', '--save-dev', pkgname + '@latest'], { cwd })
+      'win32' === process.platform ? 'npm.cmd' : 'npm',
+      ['install', '--save-dev', pkgname + '@latest'],
+      { cwd, maxBuffer: 64 * 1024 * 1024 })
 
     actx.log.debug({
       point: 'package-update-fetched', package: pkgname,
