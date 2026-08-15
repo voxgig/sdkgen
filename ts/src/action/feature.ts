@@ -29,6 +29,8 @@ import { findFeatureSources } from '../helpers/featureSource'
 
 import { templateReplacements, provenanceReplace } from '../helpers/stdrep'
 
+import { resolveSource } from './resolve'
+
 
 import {
   UpdateIndex,
@@ -131,21 +133,52 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
   const target = model.main[KIT].target
 
   Project({}, () => {
+    // The names as INSTALLED, which is what the index must list. A ref is
+    // not a name: `feature add @acme/sdkgen-iot/circuitbreaker` installs
+    // `circuitbreaker`, and writing the raw ref into feature-index.aontu
+    // would produce an include of a file that does not exist.
+    const fnames: string[] = []
+
     each(features, (n) => {
-      const fname = n.val$
+      const fref = n.val$
       // TODO: validate feature is a-z0-9-_. only
+
+      // A feature can now come from anywhere a target can — the same ref
+      // grammar, resolved by the same resolver. A bare name still means the
+      // bundled scaffold.
+      let source: any
+      try {
+        source = resolveSource(fref, 'feature', ctx$)
+      }
+      catch (err: any) {
+        // A name that no longer resolves must not abort the RUN. `target add`
+        // re-runs this action for every active feature, so one feature whose
+        // source has moved (package uninstalled, checkout relocated) would
+        // otherwise stop every other feature — including `test`, which every
+        // generated target needs — from being copied at all.
+        log.warn({
+          point: 'feature-source-unresolved', feature: fref,
+          err: err.message,
+          note: fref + ': cannot find its source (' + err.message +
+            '); skipping, the already-copied files are left alone'
+        })
+        return
+      }
+
+      const fname = source.name
+      fnames.push(fname)
 
       log.info({
         point: 'feature-build',
         feature: fname,
-        note: fname
+        note: fname + (fname === fref ? '' : ' ref:' + fref)
       })
 
 
       Folder({ name: 'model/feature' }, () => {
         Copy({
-          // TODO: these paths needs to be parameterised
-          from: BASE + '/project/.sdk/model/feature/' + fname + '.aontu',
+          from: source.model,
+          to: fname + '.aontu',
           // Where this feature came from, stamped over the `base: 'BASE'`
           // anchor the shipped model carries — the same mechanism, and the
           // same shared map, `target add` uses. A feature model recorded
@@ -153,11 +186,11 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
           // bundled scaffold; recording it is what lets a bare name keep
           // resolving to an external source on the next `target add` (which
           // re-runs this action for every active feature).
-          replace: provenanceReplace({ base: SDKFOLDER }),
+          replace: provenanceReplace({ base: source.base }),
         })
         File({ name: 'feature-index.aontu' }, () => UpdateIndex({
           content: ctx$.meta.content.feature_index,
-          names: features,
+          names: fnames,
         }))
       })
 
@@ -169,10 +202,29 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
       // `src/feature/<name>` meant `feature add` silently added nothing for
       // every target that keeps feature source elsewhere.
       each(target, (t) => {
-        const sdkfolder = t.base || Path.join(BASE, 'project/.sdk')
-        const tmfolder = Path.join(sdkfolder, 'tm', t.name)
+        // The target's OWN tree, under the name it has in ITS source — an
+        // aliased target's templates live at `tm/<origname>`, so searching
+        // `tm/<t.name>` missed them entirely.
+        const sdkfolder = t.base || SDKFOLDER
+        const torigname = t.origname || t.name
+        const owntm = Path.join(sdkfolder, 'tm', torigname)
 
-        const sources = findFeatureSources(fs, tmfolder, [fname])
+        // Two places a feature's per-target source can live, in order:
+        // the FEATURE package's own overlay for this target, then the
+        // target's own tree. A feature shipped by one package for a target
+        // shipped by another has nowhere else to put it.
+        //
+        // First hit wins at DISCOVERY rather than by copy order: jostraca
+        // writes last-write-wins, so copying both would silently invert the
+        // precedence.
+        const featuretm = Path.join(source.folder, 'tm', torigname)
+        const overlay = featuretm === owntm ? [] :
+          findFeatureSources(fs, featuretm, [fname])
+
+        const sources = 0 < overlay.length ? overlay :
+          findFeatureSources(fs, owntm, [fname])
+
+        const tmfolder = 0 < overlay.length ? featuretm : owntm
 
         if (0 === sources.length) {
           log.warn({

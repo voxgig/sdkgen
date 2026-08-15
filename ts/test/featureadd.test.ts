@@ -19,11 +19,46 @@
 // fan-out was the one writer that did not share the map.
 
 import { test, describe } from 'node:test'
-import { ok } from 'node:assert'
+import { ok, strictEqual, deepStrictEqual } from 'node:assert'
+
+import Fs from 'node:fs'
+import Os from 'node:os'
+import Path from 'node:path'
 
 import {
-  makeProject, targetRef, target_add, feature_add, ROOT,
+  makeProject, targetRef, target_add, feature_add, recordLog, ROOT,
 } from './actionharness'
+
+
+// An sdkgen package on disk providing one feature, with per-target source for
+// a target it does NOT provide — the overlay case, which is the whole reason
+// a feature has to be able to come from somewhere other than its target.
+function externalFeaturePackage(name: string): string {
+  const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-feat-'))
+  const sdk = Path.join(dir, '.sdk')
+
+  Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
+  Fs.mkdirSync(Path.join(sdk, 'tm', 'ts', 'src', 'feature', name),
+    { recursive: true })
+
+  Fs.writeFileSync(Path.join(sdk, 'model', 'feature', name + '.aontu'),
+    '\nmain: kit: feature: ' + name + ': {\n' +
+    '  name: key()\n' +
+    '  title: "An externally defined feature"\n' +
+    "  version: '0.0.1'\n" +
+    '  active: true\n' +
+    "  base: 'BASE'\n" +
+    '  config: options: active: false\n' +
+    '  hook: {}\n' +
+    '}\n')
+
+  Fs.writeFileSync(
+    Path.join(sdk, 'tm', 'ts', 'src', 'feature', name, 'Ext.ts'),
+    "import type { ProjectNameSDK } from '../../ProjectNameSDK'\n" +
+    'export class Ext { _client?: ProjectNameSDK }\n')
+
+  return dir
+}
 
 
 // A ts feature whose source names the SDK class, so substitution is visible.
@@ -85,5 +120,122 @@ describe('feature add fan-out', () => {
     const twice = project.fs.readFileSync(ROOT + '/' + SOURCE, 'utf8')
 
     ok(once === twice, 'a second feature add changed the file')
+  })
+})
+
+
+// A feature could not come from anywhere but the bundled scaffold: the model
+// path was hardcoded to `node_modules/@voxgig/sdkgen`, and `feature add` took
+// bare names with no ref grammar at all — while `target add` had accepted
+// path refs and aliases for as long as it has existed.
+describe('feature add from an external package', () => {
+
+  test('installs a feature defined outside sdkgen', async () => {
+    const pkg = externalFeaturePackage('circuitbreaker')
+    try {
+      const project = makeProject({ target: { ts: { name: 'ts' } } })
+      await target_add([targetRef('ts')], project.actx)
+      await feature_add([pkg + '/circuitbreaker'], project.actx)
+
+      const files = project.files()
+
+      ok(files.includes('model/feature/circuitbreaker.aontu'),
+        'the feature model was not copied')
+      ok(files.includes('tm/ts/src/feature/circuitbreaker/Ext.ts'),
+        'the feature source was not copied: ' +
+        files.filter((f) => f.includes('circuit')).join(', '))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('the index lists the NAME, not the ref', async () => {
+    // A ref is not a name. Writing `@"<abs path>/circuitbreaker.aontu"` into
+    // the index is an include of a file that does not exist, which fails the
+    // whole model compile rather than just the feature.
+    const pkg = externalFeaturePackage('circuitbreaker')
+    try {
+      const project = makeProject({ target: { ts: { name: 'ts' } } })
+      await target_add([targetRef('ts')], project.actx)
+      await feature_add([pkg + '/circuitbreaker'], project.actx)
+
+      const index = String(project.fs.readFileSync(
+        ROOT + '/model/feature/feature-index.aontu', 'utf8'))
+
+      ok(index.includes('@"circuitbreaker.aontu"'),
+        'index does not name the installed feature: ' + JSON.stringify(index))
+
+      for (const m of index.matchAll(/@"([^"]+)"/g)) {
+        ok(project.files().includes('model/feature/' + m[1]),
+          'feature-index.aontu includes ' + m[1] + ', which was never written')
+      }
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('the feature records where IT came from, not its target', async () => {
+    const pkg = externalFeaturePackage('circuitbreaker')
+    try {
+      const project = makeProject({ target: { ts: { name: 'ts' } } })
+      await target_add([targetRef('ts')], project.actx)
+      await feature_add([pkg + '/circuitbreaker'], project.actx)
+
+      const src = String(project.fs.readFileSync(
+        ROOT + '/model/feature/circuitbreaker.aontu', 'utf8'))
+      const base = (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1]
+
+      ok(null != base && base.includes('sdkgen-feat'),
+        'the feature recorded the wrong source: ' + base)
+      ok(!src.includes("'BASE'"), 'the raw anchor shipped into the project')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('external feature source is substituted like any other', async () => {
+    const pkg = externalFeaturePackage('circuitbreaker')
+    try {
+      const project = makeProject({ target: { ts: { name: 'ts' } } })
+      await target_add([targetRef('ts')], project.actx)
+      await feature_add([pkg + '/circuitbreaker'], project.actx)
+
+      const src = String(project.fs.readFileSync(
+        ROOT + '/tm/ts/src/feature/circuitbreaker/Ext.ts', 'utf8'))
+
+      ok(src.includes('DemoSDK'), 'external feature source was not substituted')
+      ok(!src.includes('ProjectName'), 'raw ProjectName survived')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('an unresolvable feature does not abort the whole run', async () => {
+    // `target add` re-runs this action for EVERY active feature, so a feature
+    // whose source has moved (package uninstalled, checkout relocated) must
+    // not stop the others — including `test`, which every generated target
+    // needs — from being copied. The already-copied files are left alone and
+    // the run continues.
+    const log = recordLog()
+    const project = makeProject({ target: { ts: { name: 'ts' } }, log })
+    await target_add([targetRef('ts')], project.actx)
+
+    await feature_add(['/no/such/package/ghost', 'retry'], project.actx)
+
+    ok(project.files().includes('model/feature/retry.aontu'),
+      'a healthy feature was skipped because another one could not resolve')
+    ok(!project.files().some((f) => f.includes('ghost')),
+      'the unresolvable feature was somehow written')
+    ok(log.lines.some((l: any) =>
+      'feature-source-unresolved' === l.point && String(l.feature).includes('ghost')),
+      'the skip was not reported')
   })
 })

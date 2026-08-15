@@ -13,6 +13,7 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const featureSource_1 = require("../helpers/featureSource");
 const stdrep_1 = require("../helpers/stdrep");
+const resolve_1 = require("./resolve");
 const action_1 = require("./action");
 const CMD_MAP = {
     add: cmd_feature_add
@@ -84,18 +85,46 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
     const fs = ctx$.fs();
     const target = model.main[types_1.KIT].target;
     (0, jostraca_1.Project)({}, () => {
+        // The names as INSTALLED, which is what the index must list. A ref is
+        // not a name: `feature add @acme/sdkgen-iot/circuitbreaker` installs
+        // `circuitbreaker`, and writing the raw ref into feature-index.aontu
+        // would produce an include of a file that does not exist.
+        const fnames = [];
         (0, jostraca_1.each)(features, (n) => {
-            const fname = n.val$;
+            const fref = n.val$;
             // TODO: validate feature is a-z0-9-_. only
+            // A feature can now come from anywhere a target can — the same ref
+            // grammar, resolved by the same resolver. A bare name still means the
+            // bundled scaffold.
+            let source;
+            try {
+                source = (0, resolve_1.resolveSource)(fref, 'feature', ctx$);
+            }
+            catch (err) {
+                // A name that no longer resolves must not abort the RUN. `target add`
+                // re-runs this action for every active feature, so one feature whose
+                // source has moved (package uninstalled, checkout relocated) would
+                // otherwise stop every other feature — including `test`, which every
+                // generated target needs — from being copied at all.
+                log.warn({
+                    point: 'feature-source-unresolved', feature: fref,
+                    err: err.message,
+                    note: fref + ': cannot find its source (' + err.message +
+                        '); skipping, the already-copied files are left alone'
+                });
+                return;
+            }
+            const fname = source.name;
+            fnames.push(fname);
             log.info({
                 point: 'feature-build',
                 feature: fname,
-                note: fname
+                note: fname + (fname === fref ? '' : ' ref:' + fref)
             });
             (0, jostraca_1.Folder)({ name: 'model/feature' }, () => {
                 (0, jostraca_1.Copy)({
-                    // TODO: these paths needs to be parameterised
-                    from: BASE + '/project/.sdk/model/feature/' + fname + '.aontu',
+                    from: source.model,
+                    to: fname + '.aontu',
                     // Where this feature came from, stamped over the `base: 'BASE'`
                     // anchor the shipped model carries — the same mechanism, and the
                     // same shared map, `target add` uses. A feature model recorded
@@ -103,11 +132,11 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                     // bundled scaffold; recording it is what lets a bare name keep
                     // resolving to an external source on the next `target add` (which
                     // re-runs this action for every active feature).
-                    replace: (0, stdrep_1.provenanceReplace)({ base: SDKFOLDER }),
+                    replace: (0, stdrep_1.provenanceReplace)({ base: source.base }),
                 });
                 (0, jostraca_1.File)({ name: 'feature-index.aontu' }, () => (0, action_1.UpdateIndex)({
                     content: ctx$.meta.content.feature_index,
-                    names: features,
+                    names: fnames,
                 }));
             });
             // Bring in the feature's source for every target already in the model.
@@ -118,9 +147,26 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
             // `src/feature/<name>` meant `feature add` silently added nothing for
             // every target that keeps feature source elsewhere.
             (0, jostraca_1.each)(target, (t) => {
-                const sdkfolder = t.base || node_path_1.default.join(BASE, 'project/.sdk');
-                const tmfolder = node_path_1.default.join(sdkfolder, 'tm', t.name);
-                const sources = (0, featureSource_1.findFeatureSources)(fs, tmfolder, [fname]);
+                // The target's OWN tree, under the name it has in ITS source — an
+                // aliased target's templates live at `tm/<origname>`, so searching
+                // `tm/<t.name>` missed them entirely.
+                const sdkfolder = t.base || SDKFOLDER;
+                const torigname = t.origname || t.name;
+                const owntm = node_path_1.default.join(sdkfolder, 'tm', torigname);
+                // Two places a feature's per-target source can live, in order:
+                // the FEATURE package's own overlay for this target, then the
+                // target's own tree. A feature shipped by one package for a target
+                // shipped by another has nowhere else to put it.
+                //
+                // First hit wins at DISCOVERY rather than by copy order: jostraca
+                // writes last-write-wins, so copying both would silently invert the
+                // precedence.
+                const featuretm = node_path_1.default.join(source.folder, 'tm', torigname);
+                const overlay = featuretm === owntm ? [] :
+                    (0, featureSource_1.findFeatureSources)(fs, featuretm, [fname]);
+                const sources = 0 < overlay.length ? overlay :
+                    (0, featureSource_1.findFeatureSources)(fs, owntm, [fname]);
+                const tmfolder = 0 < overlay.length ? featuretm : owntm;
                 if (0 === sources.length) {
                     log.warn({
                         point: 'feature-source-missing', feature: fname, target: t.name,

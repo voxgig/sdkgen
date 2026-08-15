@@ -18,8 +18,6 @@ import { showDryrun } from '../helpers/dryrun'
 
 import { templateReplacements, provenanceReplace } from '../helpers/stdrep'
 
-import { getelem } from '@voxgig/struct'
-
 import { Aontu } from 'aontu'
 
 import {
@@ -49,6 +47,8 @@ import {
   parseAddNames,
   loadContent,
 } from './action'
+
+import { resolveSource } from './resolve'
 
 
 const CMD_MAP: any = {
@@ -671,97 +671,19 @@ function readTargetFeature(
 }
 
 
-// Last path segment of a ref. A ref may be a bare target name ('go'), a
-// package-relative path ('@acme/kit/go'), or an ABSOLUTE path — and on Windows
-// an absolute path is separated by `\`, so splitting on '/' alone hands back
-// the whole path as the target name and every tree lookup below then misses.
-// On POSIX Path.sep IS '/', so this is the same split it always was.
-function lastSegment(ref: string): string {
-  return getelem(ref.split('/').flatMap((p: string) => p.split(Path.sep)), -1)
-}
-
-
+// `target add`'s view of the shared resolver: the same resolution every kind
+// uses, with this action's historical field names. Kept as a wrapper so its
+// callers (TargetRoot, doctor) and their tests do not have to move with the
+// extraction.
 function resolveTarget(tref: string, ctx$: any) {
-  let tname = tref
-  let torigname = tref
-  let tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
+  const src = resolveSource(tref, 'target', ctx$)
 
-  const root = ctx$.folder
-  const fs = ctx$.fs()
-
-  let fulltfolder = Path.normalize(Path.join(root, tfolder))
-  tname = lastSegment(tref)
-
-  let aliasref = tref
-  torigname = lastSegment(aliasref)
-  const aliasing = tref.split('~')
-  if (1 < aliasing.length) {
-    aliasref = aliasing[0]
-    tname = aliasing.slice(1).join('~')
-    torigname = lastSegment(aliasref)
+  return {
+    tname: src.name,
+    tfolder: src.folder,
+    torigname: src.origname,
+    base: src.base,
   }
-
-  const search: string[] = []
-  let found = false
-  // Windows: an absolute ref is `D:\a\...` or `D:/a/...`, and a Path.join'd
-  // one carries backslashes, so neither `includes('/')` nor `startsWith('/')`
-  // recognises it. Path.isAbsolute and Path.sep are platform-correct and
-  // reduce to the same answers on POSIX.
-  if (aliasref.includes('/') || aliasref.includes(Path.sep)) {
-    // NOTE: the last path element of the ref is the target name, not a folder.
-    const aliasbase = Path.dirname(aliasref)
-
-    if (!Path.isAbsolute(aliasref)) {
-      fulltfolder = Path.normalize(Path.join(root, 'node_modules', aliasbase, '.sdk'))
-      search.push(fulltfolder)
-      found = fs.existsSync(fulltfolder)
-
-      if (!found) {
-        fulltfolder = Path.normalize(Path.join(root, aliasbase, '.sdk'))
-        search.push(fulltfolder)
-        found = fs.existsSync(fulltfolder)
-      }
-    }
-    else {
-      fulltfolder = Path.normalize(Path.join(aliasbase, '.sdk'))
-      search.push(fulltfolder)
-      found = fs.existsSync(fulltfolder)
-    }
-  }
-  else {
-    search.push(fulltfolder)
-    found = fs.existsSync(fulltfolder)
-  }
-
-  if (!found) {
-    throw new Error('Target folder not found in:\n' + search.join('\n  '))
-  }
-
-  // `base` is the target folder relative to the project root. Compare with the
-  // PLATFORM separator: on Windows `root + '/'` never prefixes a normalised
-  // absolute path, so the root would not be stripped and `base` would stay
-  // absolute. Normalise both sides first for the same reason.
-  const nroot = Path.normalize(root)
-  const rootslash = nroot.endsWith(Path.sep) ? nroot : nroot + Path.sep
-  const out = {
-    tname,
-    tfolder: fulltfolder,
-    torigname,
-    // `/`-normalised, unlike `tfolder`. `base` is the one value here that
-    // gets WRITTEN INTO A COMMITTED FILE (the `'BASE'` substitution in the
-    // copied target model), so it must not depend on the OS that ran the
-    // add: on Windows Path.join yields
-    // `node_modules\@voxgig\sdkgen\project\.sdk`, so the same project
-    // resynced on Linux and on Windows produced two different model files
-    // and each churned the other's. Forward slashes are accepted by every
-    // Node path API on Windows, so the readers (feature_add's fan-out,
-    // doctor's re-resolution) are unaffected.
-    base: (fulltfolder.startsWith(rootslash)
-      ? fulltfolder.slice(rootslash.length)
-      : fulltfolder).split(Path.sep).join('/')
-  }
-
-  return out
 }
 
 
