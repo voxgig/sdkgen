@@ -62,6 +62,8 @@ import type { Source } from './resolve'
 
 import { definitionPath } from '../helpers/definition'
 
+import { findFeatureSources } from '../helpers/featureSource'
+
 
 // jostraca's Copy walk skips these (IGNORED_RE in CopyOp) — editor backups and
 // deliberately-disabled templates never reach a project, so they are not drift.
@@ -220,11 +222,7 @@ async function doctor(
       }
 
       if ('target' === kind) {
-        checkTarget(actx, {
-          tname: source.name,
-          tfolder: source.folder,
-          torigname: source.origname,
-        }, report)
+        checkTarget(actx, source, report)
       }
 
       checkItemModel(actx, kind, source, report)
@@ -351,8 +349,12 @@ function resolveDeclared(
 }
 
 
-function checkTarget(actx: ActionContext, resolved: any, report: DoctorReport) {
-  const { tname, tfolder, torigname } = resolved
+function checkTarget(
+  actx: ActionContext, resolved: Source, report: DoctorReport,
+) {
+  const tname = resolved.name
+  const tfolder = resolved.folder
+  const torigname = resolved.origname
   const fs = actx.fs()
   const model = actx.model
   const root = actx.folder
@@ -425,9 +427,37 @@ function checkTarget(actx: ActionContext, resolved: any, report: DoctorReport) {
       walk(fs, tree.scaffold).filter((rel) => !excluded(rel, excludes)) :
       walk(fs, tree.scaffold)
 
-    // Scaffold path -> the name it lands under in the project.
+    // Where each file the project should have COMES FROM: the name it lands
+    // under, mapped to the absolute path of the file it was copied from.
+    //
+    // An absolute path rather than a tree-relative one, because not every
+    // expected file comes from THIS tree — see the foreign-feature union
+    // below.
     const landed = new Map<string, string>(scaffoldFiles.map(
-      (rel: string) => [null == tree.rename ? rel : tree.rename(rel), rel]))
+      (rel: string) => [
+        null == tree.rename ? rel : tree.rename(rel),
+        Path.join(tree.scaffold, rel),
+      ]))
+
+    // FOREIGN FEATURE SOURCE.
+    //
+    // A feature supplied by a different package than the target ships its
+    // per-target source in ITS OWN `tm/<target>/` overlay, and `feature add`
+    // copies that into the project. Compared against the target's scaffold
+    // alone, those files are present in the project and absent upstream — so
+    // every one of them was reported STALE, a FAILING category. Any project
+    // using an external feature had a red `doctor` and nothing wrong with it.
+    //
+    // They are not stale, they are expected — just expected from somewhere
+    // else. Adding them here rather than suppressing them keeps them
+    // CHECKED: a hand-edit to a foreign feature's source is still reported,
+    // which is what `package update`'s gate needs in order to cover
+    // everything the re-add writes.
+    if ('edited' === tree.kind) {
+      for (const [rel, from] of foreignFeatureSource(actx, resolved)) {
+        landed.set(rel, from)
+      }
+    }
 
     const expected = Array.from(landed.keys()).sort()
     const actual = walk(fs, tree.project)
@@ -443,7 +473,7 @@ function checkTarget(actx: ActionContext, resolved: any, report: DoctorReport) {
 
       const from = landed.get(rel) as string
 
-      if (differs(fs, Path.join(tree.scaffold, from), Path.join(tree.project, rel),
+      if (differs(fs, from, Path.join(tree.project, rel),
         model, tree.replace, undefined, tree.rewrite)) {
         report[tree.kind].push(label + rel)
       }
@@ -468,6 +498,64 @@ function checkTarget(actx: ActionContext, resolved: any, report: DoctorReport) {
     }
   }
 
+}
+
+
+// Per-target source that a FEATURE package supplies for this target, as
+// `project-relative path -> the file it was copied from`.
+//
+// Only for features whose source folder is not the target's own: everything
+// the target ships for itself is already in the tree being walked, and
+// listing it twice would compare it against itself.
+//
+// Only for ACTIVE features, because that is what `feature add` copies. A
+// feature switched off later leaves its files behind, and those really are
+// stale — reporting them is the point.
+//
+// Discovered with `findFeatureSources`, the same function the fan-out and the
+// trim use, so doctor's idea of which files belong to a feature cannot drift
+// from the one that put them there.
+function foreignFeatureSource(
+  actx: ActionContext, target: Source,
+): Map<string, string> {
+  const fs = actx.fs()
+  const out = new Map<string, string>()
+
+  const features: any = (actx.model as any)?.main?.[KIT]?.feature ?? {}
+
+  for (const fname of Object.keys(features).sort()) {
+    if (false === features[fname]?.active) {
+      continue
+    }
+
+    const source = resolveDeclared('feature', fname, actx)
+
+    if (null == source || source.folder === target.folder) {
+      continue
+    }
+
+    // The feature package's overlay for THIS target, under the name the
+    // target has in its own source — an aliased target's templates live at
+    // `tm/<origname>`.
+    const overlay = Path.join(source.folder, 'tm', target.origname)
+
+    for (const found of findFeatureSources(fs, overlay, [fname])) {
+      const from = Path.join(overlay, found.path)
+
+      // A folder source is the whole feature directory; expand it, because
+      // the comparison is per file.
+      if (found.folder) {
+        for (const rel of walk(fs, from)) {
+          out.set(found.path + '/' + rel, Path.join(from, rel))
+        }
+      }
+      else {
+        out.set(found.path, from)
+      }
+    }
+  }
+
+  return out
 }
 
 
