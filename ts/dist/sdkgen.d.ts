@@ -84,6 +84,7 @@ declare function SdkGen(opts: SdkGenOptions): {
     package: {
         add: (refs: string[], flags?: Record<string, any>) => Promise<ActionResult>;
         list: () => Promise<ActionResult>;
+        update: (names: string[], flags?: Record<string, any>) => Promise<ActionResult>;
     };
 };
 declare namespace SdkGen {

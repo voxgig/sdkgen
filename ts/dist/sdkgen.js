@@ -422,6 +422,10 @@ function SdkGen(opts) {
             const ctx = resolveActionContext();
             return (0, package_1.action_package)(['package', 'list'], ctx);
         },
+        update: async (names, flags) => {
+            const ctx = resolveActionContext(flags);
+            return (0, package_1.package_update)(names, ctx);
+        },
     };
     // Has this project's `.sdk/` drifted from the scaffold? See action/doctor.
     const check = async () => {

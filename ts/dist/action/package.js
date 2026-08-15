@@ -476,22 +476,38 @@ async function package_update(names, actx) {
     const log = actx.log;
     const flags = actx.flags ?? {};
     const results = [];
-    for (const pkgname of names) {
+    // EVERY package's items resolved and CHECKED before any of them is
+    // fetched. `package update A,B` that finished A and then refused B would
+    // exit as failed having already changed A's dependencies and `.sdk` — the
+    // partial command the gate exists to prevent, one level up from where it
+    // was already prevented.
+    const plan = names.map((pkgname) => {
         const installed = installedFrom(pkgname, actx);
         if (0 === installed.length) {
             throw new utility_1.SdkGenError('Nothing installed from ' + pkgname +
                 '\n  `voxgig-sdkgen package list` shows which packages this project ' +
                 'has, and what each supplied');
         }
+        return { pkgname, installed };
+    });
+    // STEP 1 — before anything moves, for all of them.
+    for (const { pkgname, installed } of plan) {
+        await preCheck(pkgname, installed, actx);
+    }
+    for (const { pkgname, installed } of plan) {
         log.info({
             point: 'package-update-start', package: pkgname,
             items: installed.length,
             note: pkgname + ': updating ' + installed.length + ' item(s)'
         });
-        // STEP 1 — before anything moves.
-        await preCheck(pkgname, installed, actx);
         // STEP 2 — now the source may change.
-        await fetchPackage(pkgname, actx);
+        await fetchPackage(pkgname, installed, actx);
+        // STEP 2b — the fetched version is a DIFFERENT package from the one
+        // step 1 measured, and nothing has validated it. `package add` refuses a
+        // package whose manifest lies or whose `engines.sdkgen` is beyond this
+        // generator; an update that skipped those checks would overwrite `.sdk`
+        // with components written for a generator this is not.
+        validateFetched(pkgname, installed, actx);
         // STEP 3.
         results.push(...await reAdd(pkgname, installed, actx));
         log.info({
@@ -501,6 +517,34 @@ async function package_update(names, actx) {
     }
     return { jres: results[results.length - 1]?.jres };
 }
+// EVERYTHING THE RE-ADD WILL WRITE, not just the package's own items.
+//
+// The gate is only worth having if it covers what step 3 actually touches,
+// and step 3 touches more than it is asked to: `target_add` re-runs
+// `feature_add` for EVERY active feature in the model, whoever supplied it.
+// So updating a target package rewrites the model file of a feature that came
+// from somewhere else — and a scope of "this package's items" never looked at
+// it, so a local edit there was overwritten without `--force`, by the command
+// whose whole promise is that it asks first.
+//
+// The features are added to the scope, not the fan-out narrowed: what the
+// re-add does is `target add`'s long-standing behaviour, and changing it here
+// would make `package update` write something different from what a
+// hand-typed add writes — the equivalence every other part of this verb is
+// built on.
+function blastRadius(installed, actx) {
+    const wanted = new Set(installed.map((i) => i.kind + ':' + i.name));
+    if (!installed.some((i) => 'target' === i.kind)) {
+        return wanted;
+    }
+    const features = actx.model?.main?.[types_1.KIT]?.feature ?? {};
+    for (const name of Object.keys(features)) {
+        if (false !== features[name]?.active) {
+            wanted.add('feature:' + name);
+        }
+    }
+    return wanted;
+}
 // STEP 1: is the project's copy of this package's items unmodified?
 //
 // Runs the SAME comparison `doctor` runs, scoped to these items — a gate that
@@ -508,7 +552,7 @@ async function package_update(names, actx) {
 // of what counts as a difference.
 async function preCheck(pkgname, installed, actx) {
     const flags = actx.flags ?? {};
-    const wanted = new Set(installed.map((i) => i.kind + ':' + i.name));
+    const wanted = blastRadius(installed, actx);
     const res = await (0, doctor_1.doctor)(actx, (kind, name) => wanted.has(kind + ':' + name));
     const report = res.report;
     // `forked` and `edited` only. `missing` means the project is short of what
@@ -547,7 +591,7 @@ async function preCheck(pkgname, installed, actx) {
 // accepts that step 1 measured against the new source. It is not the default
 // because then this command would only ever re-apply the source it already
 // has, which is `package add`.
-async function fetchPackage(pkgname, actx) {
+async function fetchPackage(pkgname, installed, actx) {
     const flags = actx.flags ?? {};
     if (true === flags.nofetch) {
         actx.log.info({
@@ -556,8 +600,47 @@ async function fetchPackage(pkgname, actx) {
         });
         return;
     }
+    // A DRY RUN MUST NOT FETCH. The adders honour `actx.opts.dryrun` and write
+    // nothing, but an unconditional `npm install --save-dev` rewrites
+    // package.json, the lockfile and node_modules — mutating dependency state
+    // in the one mode whose entire promise is that nothing changes. This
+    // workstream has already fixed one dry-run defect (pruneStaleTemplates
+    // deleting files during a dry run); the fetch is the same failure in a
+    // louder place, because it reaches outside the project.
+    if (true === actx.opts?.dryrun) {
+        actx.log.info({
+            point: 'package-update-dryrun-fetch', package: pkgname,
+            note: pkgname + ': ** DRY RUN ** not fetching; the check and the ' +
+                're-add below run against the source already installed'
+        });
+        return;
+    }
     const fetch = actx.fetchPackage ?? npmFetch;
+    // npm CAN ONLY UPDATE WHAT NPM INSTALLED. A package added by a local path
+    // or an absolute checkout records that base, and the re-add reads from it —
+    // so an `npm install` would write a fresh copy into `node_modules`, leave
+    // the recorded source untouched, and the command would then recopy the OLD
+    // content while reporting success and having changed the project's
+    // dependencies. Refused rather than half-done, naming the way to do it.
+    if (null == actx.fetchPackage) {
+        const local = installed.find((i) => '' !== i.base && !isNodeModules(i.base));
+        if (null != local) {
+            throw new utility_1.SdkGenError(pkgname + ': installed from ' + local.base + ', which npm does not ' +
+                'manage, so fetching would update a different copy and change ' +
+                'nothing here.' +
+                '\n  Update that source yourself (git pull, rebuild, …) and re-run ' +
+                'with --no-fetch.');
+        }
+    }
     await fetch(pkgname, actx);
+}
+// Is this base inside a `node_modules` directory — i.e. is it npm's to
+// update? Checked on the '/'-normalised recorded value, which is how `base`
+// is written (see helpers/stdrep), plus the platform separator for an
+// absolute base recorded on Windows.
+function isNodeModules(base) {
+    const norm = base.split(node_path_1.default.sep).join('/');
+    return norm.startsWith('node_modules/') || norm.includes('/node_modules/');
 }
 // The default fetch: hand it to npm, in the project's own directory.
 //
@@ -587,6 +670,38 @@ async function npmFetch(pkgname, actx) {
             '--no-fetch, or fix the install and try again.' +
             (null == err.stderr ? '' : '\n\n' + err.stderr));
     }
+}
+// STEP 2b: the fetched package is a DIFFERENT package from the one checked.
+//
+// Resolved from a recorded base rather than by name, because that is where
+// the re-add will read from — validating some other copy of the package would
+// be validating the wrong thing.
+//
+// A source with no manifest is not an error here, unlike in `package add`:
+// the project demonstrably installed from it once, and refusing to refresh it
+// now would strand a project whose package predates the manifest. Nothing is
+// validated in that case, which is the same amount as before this command
+// existed.
+function validateFetched(pkgname, installed, actx) {
+    const base = installed.find((i) => '' !== i.base)?.base;
+    if (null == base) {
+        return;
+    }
+    const root = node_path_1.default.join(node_path_1.default.isAbsolute(base) ? base : node_path_1.default.join(actx.folder ?? '.', base), '..');
+    const read = (0, manifest_1.readManifest)(actx.fs(), node_path_1.default.join(root, '.sdk'));
+    if (null == read.manifest) {
+        actx.log.info({
+            point: 'package-update-unmanifested', package: pkgname, file: read.file,
+            note: pkgname + ': the source declares no manifest, so the fetched ' +
+                'version could not be validated'
+        });
+        return;
+    }
+    const src = {
+        ref: pkgname, root, sdk: node_path_1.default.join(root, '.sdk'), manifest: read.manifest,
+    };
+    checkEngine(src, actx);
+    refuse(src, (0, manifest_1.validateManifest)(actx.fs(), src.sdk, src.manifest, kind_1.KINDS), actx.log);
 }
 // STEP 3: re-add each item from its recorded base.
 //

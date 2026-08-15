@@ -147,7 +147,35 @@ Deltas found while implementing `package update` (§18.6b):
   place this generator runs another tool, and deliberate, because handing
   the fetch to the operator is exactly what makes the pre-check unable to
   tell a fork from a stale copy. Injectable so tests do not shell out and
-  a caller with its own dependency management can supply one.
+  a caller with its own dependency management can supply one. It is
+  skipped on a dry run (it reaches outside the project, so an
+  unconditional fetch would mutate dependency state in the one mode that
+  promises nothing changes) and REFUSED for a source npm does not manage
+  (a local checkout: npm would write a fresh copy into `node_modules`,
+  leave the recorded base untouched, and the re-add would then recopy the
+  old content while reporting success).
+- **The gate must cover what step 3 WRITES, which is more than it is
+  asked to.** `target_add` re-runs `feature_add` for every active feature,
+  whoever supplied it, so updating a target package rewrites the model file
+  of a feature that came from elsewhere. The pre-check scope is therefore
+  the blast radius, not the package's own items. The features are added to
+  the scope rather than the fan-out narrowed, because what the re-add does
+  is `target add`'s long-standing behaviour and changing it would make
+  `package update` write something different from a hand-typed add — the
+  equivalence the rest of the verb rests on.
+- **The FETCHED package is validated, separately from the checked one.**
+  Step 1 measures a different package from the one step 3 installs, so
+  `checkEngine` and `validateManifest` run again after the fetch. A source
+  with no manifest is not an error there, unlike in `package add`: the
+  project demonstrably installed from it once, and refusing to refresh it
+  would strand a project whose package predates the manifest.
+
+Known gap in the gate, NOT closed here: a feature's per-target SOURCE
+(`tm/<target>/…`) supplied by a feature package's overlay is not attributed
+to that feature, so a local edit to it is invisible to the pre-check. Closing
+it needs §12.3's foreign-feature expected set, which also fixes a
+pre-existing false `stale` in plain `doctor` for any project using an
+external feature — the same piece of work, and its own change (§18.6d).
 
 Deltas found while implementing §12.5 (the per-kind model-file
 comparison, §18.6a):

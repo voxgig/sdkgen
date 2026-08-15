@@ -131,6 +131,7 @@ import type { DoctorReport } from './action/doctor'
 import {
   action_package,
   package_add,
+  package_update,
 } from './action/package'
 
 // The verbs, built from the kind registry — see action/dispatch.
@@ -434,6 +435,13 @@ function SdkGen(opts: SdkGenOptions) {
     list: async (): Promise<ActionResult> => {
       const ctx = resolveActionContext()
       return action_package(['package', 'list'], ctx)
+    },
+
+    update: async (
+      names: string[], flags?: Record<string, any>,
+    ): Promise<ActionResult> => {
+      const ctx = resolveActionContext(flags)
+      return package_update(names, ctx)
     },
   }
 
