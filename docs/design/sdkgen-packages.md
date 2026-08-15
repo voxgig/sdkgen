@@ -1,6 +1,40 @@
 # Design: sdkgen packages — external targets, features, and other kinds
 
-Status: **proposal** (2026-08-14).
+Status: **proposal** (2026-08-14). **Phase 1 (§18.1) implemented**
+(2026-08-15) — the live bugs of §16 and the characterization goldens that
+gate phase 2. Everything from §18.2 onward is still proposal.
+
+Deltas found while implementing phase 1:
+
+- **jostraca's `replace` map cannot express the alias rewrites.** Each key
+  is canonicalised into a regex GROUP NAME (`idenstr(k)` with underscores
+  collapsed), so two keys differing only in punctuation collide and one
+  silently overwrites the other. Both alias rewrites hit this: `_go'` /
+  `_go"` reduced to the same name, so every single-quoted sibling import
+  came out as `from './Package_go2"`; and `target: go-cli:` /
+  `target: 'go-cli':` likewise, so the quoted key a hyphenated target needs
+  was rewritten to the bare form. Both now use one explicit regex with the
+  quote captured. **This constrains §8**: a `TreeDef.replace` mode is a
+  named rewrite the registry owns, not necessarily a jostraca replace map —
+  `alias` mode in particular must not be implemented as one.
+- **The `to` prop works as designed** — an explicit destination name on a
+  single-file `Copy` is honoured, so the model file lands under the alias
+  with no post-copy pass.
+- **The aliased `src/cmp` tree is emitted file by file** (`File`/`Content`)
+  rather than copied, because jostraca's tree walk has no per-entry rename
+  hook. The unaliased path keeps its plain tree `Copy` untouched, which is
+  what keeps all 27 golden trees byte-identical.
+- **The goldens are 2,226 entries / ~100 KB** (`ts/test/golden/add-output.txt`),
+  built in ~5 s. Per-file hashes rather than an aggregate digest, so a
+  failure names the files that moved.
+- **`base` is recorded for only 3 targets today** (ts, csharp, swift — the
+  ones carrying the `'BASE'` anchor), so the machine-independence guard
+  currently bites only there. Universalising the anchor is §18.3, and the
+  guard is already general.
+- **The dry-run prune fix needed the flag threaded explicitly.**
+  `pruneStaleTemplates` writes through `fs` rather than jostraca, so it
+  takes `dryrun` as an argument from `TargetRoot`'s `actx` rather than
+  reading anything jostraca knows.
 
 Requirement: it should be possible to add targets and features that are
 defined *outside* the `@voxgig/sdkgen` package. Define a folder structure
@@ -1106,6 +1140,21 @@ top:
 11. **`ACTION_MAP` dispatches into `Object.prototype`** — a plain object
     literal, so `voxgig-sdkgen toString` passes the `null == actionFunc`
     guard (§9).
+12. **An aliased target reads its ORIGIN's config at generate time.**
+    *(Found during phase-1 review; NOT fixed in phase 1 — see below.)* Ten
+    `cmp/go/*` components call `goModule(model, 'go')` with the target name
+    hardcoded, while their neighbours correctly use `target.name`
+    (`goVersion(model, target.name)`, `collectDeps(model, target.name, …)`).
+    `goModule` looks up `main.kit.target.<t>.module.path`, so `go~go2`
+    silently takes the origin's module path — defeating the one use the
+    alias is documented for, "a second Go module with different options"
+    ([reference/cli](../reference/cli.md#target-references)). Phase 1
+    repairs the ADD side of aliasing; this is the GENERATE side, it predates
+    that work, and fixing it means auditing every target for which `'<lang>'`
+    literals are TARGET names (config lookups, which must follow the alias)
+    versus LANGUAGE identifiers (format selectors like `matchArg('go', …)`,
+    which must not) — and the wrapping targets legitimately name the target
+    they wrap (`seneca-provider` reads `'ts'`). That audit is its own change.
 
 ---
 

@@ -12,6 +12,40 @@ import type {
 } from '../types'
 
 
+const indexEntry = (name: string) => `@"${name}.aontu"`
+
+
+// An index line that is an ACTIVE include, and the name it includes — or
+// undefined for a blank line, a comment, or anything else.
+//
+// Parsed rather than compared as a string, because both spellings around an
+// include are legal aontu and mean opposite things:
+//
+//   @"go.aontu"                 -> active, name 'go'
+//   @"go.aontu"  # pinned       -> active, name 'go'  (trailing comment)
+//     @"go.aontu"               -> active, name 'go'  (indented)
+//   # @"go.aontu"               -> NOT active
+//
+// A substring test (what this used to be) reads the commented-out form as
+// present, so `target add go` on a project that had switched the target off
+// by hand appended nothing and reported success while the target stayed
+// absent from the model. A whole-line equality test fixes that but then
+// misses the trailing-comment form, and appends a SECOND active include.
+const INDEX_ENTRY_RE = /^\s*@"([^"]+)\.aontu"\s*(?:#.*)?$/
+
+function indexEntryName(line: string): string | undefined {
+  const m = line.match(INDEX_ENTRY_RE)
+  return null == m ? undefined : m[1]
+}
+
+
+// Is this name already included by the index?
+function hasIndexEntry(content: string, name: string): boolean {
+  return content.split('\n')
+    .some((line: string) => indexEntryName(line) === name)
+}
+
+
 // Append `@"<name>.aontu"` import lines for each name not already present in
 // the index content. Checking against the accumulating result (not the
 // original) means duplicate names in the same call are added at most once.
@@ -19,13 +53,31 @@ function appendIndexEntries(content: string, names: string[]): string {
   let out = content
 
   for (const n of names) {
-    const entry = `@"${n}.aontu"`
-    if (!out.includes(entry)) {
-      out += '\n' + entry
+    if (!hasIndexEntry(out, n)) {
+      out += '\n' + indexEntry(n)
     }
   }
 
   return out
+}
+
+
+// Drop the `@"<name>.aontu"` line for each name — the inverse of
+// appendIndexEntries, matching line-exact for the same reasons.
+//
+// Nothing calls this yet: a `remove` action is the fast-follow this exists
+// for (see docs/design/sdkgen-packages.md), and it is written here beside its
+// inverse so the two cannot drift on how an entry is recognised.
+function removeIndexEntries(content: string, names: string[]): string {
+  const drop = new Set(names)
+
+  return content
+    .split('\n')
+    .filter((line: string) => {
+      const name = indexEntryName(line)
+      return undefined === name || !drop.has(name)
+    })
+    .join('\n')
 }
 
 
@@ -67,6 +119,8 @@ function loadContent(actx: ActionContext, which: string | string[]) {
 export {
   UpdateIndex,
   appendIndexEntries,
+  removeIndexEntries,
+  hasIndexEntry,
   parseAddNames,
   loadContent
 }

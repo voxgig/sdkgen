@@ -6,8 +6,10 @@ import {
   Folder,
   Copy,
   File,
+  Content,
   cmp,
   each,
+  template,
 } from 'jostraca'
 
 import { showChanges } from '@voxgig/util'
@@ -148,8 +150,14 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
 
 
 const TargetRoot = cmp(function TargetRoot(props: any) {
-  const { ctx$, targets, features } = props
+  const { ctx$, targets, features, actx } = props
   const { model, log } = ctx$
+
+  const fs = ctx$.fs()
+
+  // The prune below writes through `fs` directly rather than through
+  // jostraca, so it has to be told about the dry run itself.
+  const dryrun = !!actx?.opts?.dryrun
 
   // TODO: jostraca - make from value easier to specify 
   // const tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
@@ -180,26 +188,81 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
         note: tname + (tname != torigname ? 'original' + torigname : '') + ' from:' + tfolder
       })
 
+      // An ALIASED add (`target add go~go2`) installs the target under a new
+      // name, and every one of the three trees has to agree about that name.
+      // Only the two FOLDER names used to change; see aliasRename below for
+      // what that left broken.
+      const aliased = tname !== torigname
+
+      const modelFrom = tfolder + '/model/target/' + torigname + '.aontu'
+      const baseReplace = { "'BASE'": "'" + base + "'" }
+
       Folder({ name: 'model/target' }, () => {
-        Copy({
-          from: tfolder + '/model/target/' + torigname + '.aontu',
-          // exclude: true
-          replace: {
-            "'BASE'": "'" + base + "'"
+        if (aliased) {
+          // The copy has to land under the INSTALLED name AND declare it.
+          // Left alone it kept the origin basename (jostraca defaults a
+          // single-file Copy's destination to the source's), so
+          // `target add go~go2` wrote model/target/go.aontu while
+          // target-index.aontu gained `@"go2.aontu"` — an include of a file
+          // that does not exist, which fails the whole model compile, not
+          // just the alias. The declaration inside stayed `target: go:` too,
+          // so the alias either collided with its origin or named a target
+          // nothing referenced.
+          //
+          // `exclude: true` — CREATE, never overwrite. This is the one target
+          // model a project OWNS: an alias exists to be differentiated (a
+          // second Go module needs its own module name and deps), which is
+          // why doctor exempts it from the model comparison and why
+          // add-a-target tells the project to edit it. Overwriting it on
+          // every resync would silently revert exactly the edits the alias
+          // was created to hold. The origin's own model file is unaffected
+          // and stays overwrite, as for every other target.
+          const dest = Path.join(
+            ctx$.folder ?? '.', 'model', 'target', tname + '.aontu')
+
+          if (fs.existsSync(dest)) {
+            log.info({
+              point: 'target-alias-model-kept', target: tname, file: dest,
+              note: tname + ': keeping the existing aliased target model ' +
+                '(project-owned — an alias is differentiated by editing it)'
+            })
           }
-        })
+
+          const src = fs.readFileSync(modelFrom, 'utf8')
+          File({ name: tname + '.aontu', exclude: true }, () => Content(
+            template(aliasModelText(src, torigname, tname),
+              ctx$.model, { replace: baseReplace })))
+        }
+        else {
+          Copy({
+            from: modelFrom,
+            // exclude: true
+            replace: baseReplace,
+          })
+        }
         File({ name: 'target-index.aontu' }, () => UpdateIndex({
           content: ctx$.meta.content.target_index,
           names: tnames,
         }))
       })
 
-      Folder({ name: 'src/cmp/' + tname }, () => {
-        Copy({
-          from: tfolder + '/src/cmp/' + torigname,
-          // exclude: true
+      if (aliased) {
+        // Components are dispatched by CONVENTION — `cmp/<t>/Main_<t>` — so
+        // an aliased tree whose files keep the origin suffix resolves
+        // nothing: `src/cmp/go2/Main_go.ts` is invisible to a lookup for
+        // `cmp/go2/Main_go2`. jostraca's tree Copy has no per-entry rename
+        // hook, so an aliased tree is emitted file by file instead.
+        aliasCmpTree(ctx$, tfolder + '/src/cmp/' + torigname,
+          'src/cmp/' + tname, torigname, tname)
+      }
+      else {
+        Folder({ name: 'src/cmp/' + tname }, () => {
+          Copy({
+            from: tfolder + '/src/cmp/' + torigname,
+            // exclude: true
+          })
         })
-      })
+      }
 
       // Copy the whole template tree MINUS the source of every feature the
       // model did not ask for. Which files those are is discovered from the
@@ -221,7 +284,8 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       // package failed to compile — "fhHasFeature redeclared in this block".
       //
       // The invariant this restores: tm/<target> == source tree MINUS trim.
-      pruneStaleTemplates(ctx$, tfolder + '/tm/' + torigname, 'tm/' + tname, trim)
+      pruneStaleTemplates(
+        ctx$, tfolder + '/tm/' + torigname, 'tm/' + tname, trim, dryrun)
 
       Folder({ name: 'tm/' + tname }, () => {
         Copy({
@@ -239,6 +303,127 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
     })
   })
 })
+
+
+// Rewrite the target KEY in a copied model file, for an aliased install.
+//
+// Two forms are in use across the shipped models — bare (`target: go:`) and
+// quoted (`target: 'go-cli':`) — and two paths carry the key: the target
+// block itself (`main: kit: target: <t>:`) and the per-target feature-deps
+// slot every model declares (`main: kit: feature: &: target: <t>: deps: &:`).
+// Both belong to the installed target, so both move. Matching on `target: `
+// rather than on the bare name is what keeps the rewrite off the target's
+// own values — `ext: go` and `module: name: '$$name$$'` must not change.
+//
+// ONE regex, with the quote optional and captured, rather than two entries in
+// jostraca's `replace` map: that map canonicalises each key into a regex
+// group NAME, and the bare and quoted spellings of the same key reduce to the
+// same name — so one silently overwrote the other and `go-cli~cli2` came out
+// as the BARE `target: cli2:`, losing the quoting a hyphenated key needs.
+//
+// The alias may also NEED quoting when the origin did not: aontu rejects a
+// bare key containing a hyphen (`unexpected character(s): -`), so
+// `target add go~go-alt` emitting the origin's unquoted style produced a
+// model that could not compile at all. Quote when the origin was quoted OR
+// the alias is not a bare identifier.
+const BARE_KEY_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/
+
+function aliasModelText(src: string, torigname: string, tname: string): string {
+  const mustQuote = !BARE_KEY_RE.test(tname)
+
+  return src.replace(
+    new RegExp("target:(\\s*)('?)" + escapeRe(torigname) + "\\2:", 'g'),
+    (_m: string, gap: string, quote: string) => {
+      const q = ('' !== quote || mustQuote) ? "'" : ''
+      return 'target:' + gap + q + tname + q + ':'
+    })
+}
+
+
+// Emit an aliased `src/cmp` tree: every file renamed from the origin suffix
+// to the installed one, and its CONTENT rewritten to match.
+//
+// Renaming alone would break the tree, because a component names its origin
+// twice over: sibling imports (`from './Package_go'`) and the fragment
+// directory it reads through `__dirname` (`/../../../src/cmp/go/fragment/`,
+// in 67 of the shipped components). Both are rewritten here — the fragment
+// path because the fragments are copied to the ALIAS's folder, so the origin
+// path would either miss or, worse, silently read the origin target's
+// fragments if that target is also installed.
+//
+// Files are emitted through jostraca (`File`/`Content`) rather than copied
+// with `fs`, so a dry run reports them and writes nothing, exactly as the
+// tree Copy on the unaliased path does.
+function aliasCmpTree(
+  ctx$: any,
+  fromDir: string,
+  toRel: string,
+  torigname: string,
+  tname: string,
+) {
+  const fs = ctx$.fs()
+
+  const orig = escapeRe(torigname)
+
+  // Rewritten HERE rather than through jostraca's `replace` map, because that
+  // map canonicalises each key into a regex group NAME — `_go'` and `_go"`
+  // both reduce to the same name, so the later entry silently won and every
+  // single-quoted import came out as `from './Package_go2"`. One explicit
+  // regex keeps the quote it matched.
+  const aliasText = (src: string): string => src
+    // The fragment directory, read relative to __dirname. The fragments are
+    // copied into the ALIAS's folder, so leaving the origin path would miss —
+    // or, if the origin target is also installed, silently read ITS fragments.
+    .replace(new RegExp('src/cmp/' + orig + '/', 'g'), 'src/cmp/' + tname + '/')
+    // Sibling imports: `'./Package_go'` -> `'./Package_go2'`. Anchored on the
+    // closing quote (captured, so the style is preserved) to keep it off file
+    // EXTENSIONS — `Main.fragment.go` must not become `Main.fragment.go2`.
+    .replace(new RegExp('_' + orig + '([\'"])', 'g'), '_' + tname + '$1')
+
+  const emit = (dir: string, rel: string) => {
+    let entries: any[]
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    }
+    catch (e: any) {
+      return
+    }
+
+    // Sorted, so an aliased tree is emitted in the same byte-stable order
+    // everything else in this toolchain is.
+    const names = entries.map((ent: any) => ent.name).sort()
+
+    for (const name of names) {
+      const child = Path.join(dir, name)
+      const ent = entries.find((e: any) => e.name === name)
+
+      if (ent.isDirectory()) {
+        Folder({ name }, () => emit(child, rel + '/' + name))
+        continue
+      }
+
+      // `<Cmp>_<origname>.<ext>` -> `<Cmp>_<tname>.<ext>`. Anything not
+      // carrying the suffix (tsconfig.json, the fragment sources) keeps its
+      // name.
+      const renamed = name.replace(
+        new RegExp('_' + escapeRe(torigname) + '(\\.[^.]+)$'), '_' + tname + '$1')
+
+      // `template` against the model with no replace map, matching what Copy
+      // does for the unaliased tree — jostraca's Copy always interpolates
+      // `$$ref$$` against the model, so an aliased tree must too.
+      const src = fs.readFileSync(child, 'utf8')
+
+      File({ name: renamed }, () => Content(template(aliasText(src), ctx$.model)))
+    }
+  }
+
+  Folder({ name: toRel }, () => emit(fromDir, toRel))
+}
+
+
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
 
 // Path patterns that keep a target's unwanted feature source out of the
@@ -274,6 +459,7 @@ function pruneStaleTemplates(
   fromDir: string,
   toRel: string,
   trim: RegExp[],
+  dryrun?: boolean,
 ) {
   const { log } = ctx$
   const fs = ctx$.fs()
@@ -321,6 +507,29 @@ function pruneStaleTemplates(
 
   const stale = listRel(destDir).filter((rel) => !want.has(rel))
   if (0 === stale.length) {
+    return
+  }
+
+  // A DRY RUN must not delete. This prune calls `fs.unlinkSync` directly, and
+  // jostraca enforces `control.dryrun` only inside its own write layer — so
+  // `-y target add <t>` previewed the copies and then really removed every
+  // stale template, which is the opposite of what the flag promises and
+  // exactly the blast radius a maintainer runs `-y` to inspect. Report the
+  // deletions instead, in the same shape the copies are reported.
+  if (dryrun) {
+    log.info({
+      point: 'target-template-prune', target: toRel, count: stale.length,
+      files: stale, dryrun: true,
+      note: toRel + ': would remove ' + stale.length +
+        ' stale template(s) — ** DRY RUN **, nothing was written'
+    })
+    for (const rel of stale) {
+      log.info({
+        point: 'target-template-prune-file', target: toRel,
+        file: toRel + '/' + rel, dryrun: true,
+        note: 'would remove ' + toRel + '/' + rel
+      })
+    }
     return
   }
 
@@ -516,9 +725,18 @@ function resolveTarget(tref: string, ctx$: any) {
     tname,
     tfolder: fulltfolder,
     torigname,
-    base: fulltfolder.startsWith(rootslash)
+    // `/`-normalised, unlike `tfolder`. `base` is the one value here that
+    // gets WRITTEN INTO A COMMITTED FILE (the `'BASE'` substitution in the
+    // copied target model), so it must not depend on the OS that ran the
+    // add: on Windows Path.join yields
+    // `node_modules\@voxgig\sdkgen\project\.sdk`, so the same project
+    // resynced on Linux and on Windows produced two different model files
+    // and each churned the other's. Forward slashes are accepted by every
+    // Node path API on Windows, so the readers (feature_add's fan-out,
+    // doctor's re-resolution) are unaffected.
+    base: (fulltfolder.startsWith(rootslash)
       ? fulltfolder.slice(rootslash.length)
-      : fulltfolder
+      : fulltfolder).split(Path.sep).join('/')
   }
 
   return out

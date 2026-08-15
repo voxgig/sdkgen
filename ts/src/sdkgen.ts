@@ -5,7 +5,6 @@ import Path from 'node:path'
 
 import { prettyPino, Pino } from '@voxgig/util'
 
-import { Jsonic } from '@tabnas/jsonic'
 import * as JostracaModule from 'jostraca'
 import { Aontu } from 'aontu'
 
@@ -149,11 +148,15 @@ type SdkGenOptions = {
 const { Jostraca } = JostracaModule
 
 
-const ACTION_MAP: any = {
+// Null-prototype: a plain object literal inherits Object.prototype, so
+// `voxgig-sdkgen toString` (or `constructor`, `valueOf`, ...) resolves to an
+// inherited function, passes the `null == actionFunc` guard below, and gets
+// CALLED with the action arguments instead of reporting an unknown action.
+const ACTION_MAP: any = Object.assign(Object.create(null), {
   target: action_target,
   feature: action_feature,
   doctor: action_doctor,
-}
+})
 
 
 const dlog = getdlog('sdkgen', __filename)
@@ -300,9 +303,19 @@ function SdkGen(opts: SdkGenOptions) {
   }
 
 
+  // Action arguments are PATHS AND NAMES, and they reach the actions as the
+  // raw strings the shell gave us.
+  //
+  // They used to be mapped through `Jsonic(arg)` first, which parses each one
+  // as relaxed JSON — so a Windows absolute ref arrived as an OBJECT:
+  // `Jsonic('C:\\pkg\\go')` is `{ C: '\\pkg\\go' }`, and every downstream path
+  // join then missed. (`ts,py` also became `['ts','py']`, which is why
+  // parseAddNames still carries a non-string branch; it splits on commas
+  // itself, so nothing is lost by handing it strings.)
+  //
+  // Nothing here wants structured arguments: every action takes names and
+  // refs. Parsing them was pure loss.
   async function action(args: string[]): Promise<any> {
-    const pargs = args.map(arg => Jsonic(arg))
-
     const actname = args[0]
     const actionFunc = ACTION_MAP[actname]
 
@@ -312,7 +325,7 @@ function SdkGen(opts: SdkGenOptions) {
 
     const ctx = resolveActionContext()
 
-    return await actionFunc(pargs, ctx)
+    return await actionFunc(args, ctx)
   }
 
 

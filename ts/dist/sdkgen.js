@@ -44,7 +44,6 @@ exports.SdkGen = SdkGen;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const util_1 = require("@voxgig/util");
-const jsonic_1 = require("@tabnas/jsonic");
 const JostracaModule = __importStar(require("jostraca"));
 const aontu_1 = require("aontu");
 const util_2 = require("@voxgig/util");
@@ -202,11 +201,15 @@ const feature_1 = require("./action/feature");
 const doctor_1 = require("./action/doctor");
 const { Jostraca } = JostracaModule;
 exports.Jostraca = Jostraca;
-const ACTION_MAP = {
+// Null-prototype: a plain object literal inherits Object.prototype, so
+// `voxgig-sdkgen toString` (or `constructor`, `valueOf`, ...) resolves to an
+// inherited function, passes the `null == actionFunc` guard below, and gets
+// CALLED with the action arguments instead of reporting an unknown action.
+const ACTION_MAP = Object.assign(Object.create(null), {
     target: target_1.action_target,
     feature: feature_1.action_feature,
     doctor: doctor_1.action_doctor,
-};
+});
 const dlog = (0, util_2.getdlog)('sdkgen', __filename);
 function SdkGen(opts) {
     const fs = opts.fs || node_fs_1.default;
@@ -323,15 +326,26 @@ function SdkGen(opts) {
         log.info({ point: 'generate-end' });
         return { ok: true, name: 'sdkgen' };
     }
+    // Action arguments are PATHS AND NAMES, and they reach the actions as the
+    // raw strings the shell gave us.
+    //
+    // They used to be mapped through `Jsonic(arg)` first, which parses each one
+    // as relaxed JSON — so a Windows absolute ref arrived as an OBJECT:
+    // `Jsonic('C:\\pkg\\go')` is `{ C: '\\pkg\\go' }`, and every downstream path
+    // join then missed. (`ts,py` also became `['ts','py']`, which is why
+    // parseAddNames still carries a non-string branch; it splits on commas
+    // itself, so nothing is lost by handing it strings.)
+    //
+    // Nothing here wants structured arguments: every action takes names and
+    // refs. Parsing them was pure loss.
     async function action(args) {
-        const pargs = args.map(arg => (0, jsonic_1.Jsonic)(arg));
         const actname = args[0];
         const actionFunc = ACTION_MAP[actname];
         if (null == actionFunc) {
             throw new utility_1.SdkGenError('Unknown action: ' + actname);
         }
         const ctx = resolveActionContext();
-        return await actionFunc(pargs, ctx);
+        return await actionFunc(args, ctx);
     }
     function resolveActionContext() {
         // TODO: use AsyncLocalStorage to avoid reloading model

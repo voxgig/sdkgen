@@ -27,6 +27,8 @@ import { SdkGenError } from '../utility'
 
 import { findFeatureSources } from '../helpers/featureSource'
 
+import { templateReplacements } from '../helpers/stdrep'
+
 
 import {
   UpdateIndex,
@@ -138,7 +140,6 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
         Copy({
           // TODO: these paths needs to be parameterised
           from: BASE + '/project/.sdk/model/feature/' + fname + '.aontu',
-          exclude: true
         })
         File({ name: 'feature-index.aontu' }, () => UpdateIndex({
           content: ctx$.meta.content.feature_index,
@@ -176,7 +177,14 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
           Folder({ name: 'tm/' + t.name + '/' + dest }, () => {
             Copy({
               from: Path.join(tmfolder, source.path),
-              exclude: true
+              // The SAME map `target add` writes `tm/<t>` with. Without it
+              // this copy laid RAW template text over files the target add
+              // had already substituted, so `ProjectName` / `PROJECTVERSION`
+              // survived into the project depending only on which action
+              // wrote the file last — the writer/writer disagreement
+              // helpers/stdrep.ts exists to prevent, in the one place that
+              // did not share the map.
+              replace: templateReplacements(model, t.name),
             })
           })
         }
