@@ -121,6 +121,62 @@ Known gap this phase does NOT close:
   resolves without an extension, so pinning `.ts` here would reject a
   package shipping compiled components.
 
+Deltas found while implementing `package update` (§18.6b):
+
+- **The pre-check reuses `doctor`, scoped.** A gate that decides whether
+  to overwrite a project's files must not have its own idea of what
+  counts as a difference, so `doctor(actx, scope)` takes an item filter
+  rather than `package update` reimplementing the comparison. A scoped run
+  skips `checkWiring`, which is a property of the project rather than of
+  any item.
+- **The ambiguity cannot be DETECTED, only stated.** §13 says the
+  pre-check must say so when it cannot separate stale from forked — but
+  nothing recorded distinguishes them, so there is no state in which it
+  *knows* it is in that case. The honest implementation states both
+  readings in every refusal, with a runnable out for each, rather than
+  asserting a fork it cannot diagnose. Recording a version or digest at
+  add time would make it exact (§17.9); until then the message carries the
+  uncertainty instead of hiding it.
+- **The alias-model skip came free.** `kindModel` already writes an
+  aliased definition `exclude: true` for a kind whose aliased model is
+  project-owned, so a re-add refreshes `src/cmp` and `tm` and leaves the
+  file alone. What had to be added was the REPORT: silence there means
+  upstream model changes are never applied and nobody finds out.
+- **The fetch is injectable.** `actx.fetchPackage` defaults to
+  `npm install --save-dev <pkg>@latest` in the project directory — the one
+  place this generator runs another tool, and deliberate, because handing
+  the fetch to the operator is exactly what makes the pre-check unable to
+  tell a fork from a stale copy. Injectable so tests do not shell out and
+  a caller with its own dependency management can supply one. It is
+  skipped on a dry run (it reaches outside the project, so an
+  unconditional fetch would mutate dependency state in the one mode that
+  promises nothing changes) and REFUSED for a source npm does not manage
+  (a local checkout: npm would write a fresh copy into `node_modules`,
+  leave the recorded base untouched, and the re-add would then recopy the
+  old content while reporting success).
+- **The gate must cover what step 3 WRITES, which is more than it is
+  asked to.** `target_add` re-runs `feature_add` for every active feature,
+  whoever supplied it, so updating a target package rewrites the model file
+  of a feature that came from elsewhere. The pre-check scope is therefore
+  the blast radius, not the package's own items. The features are added to
+  the scope rather than the fan-out narrowed, because what the re-add does
+  is `target add`'s long-standing behaviour and changing it would make
+  `package update` write something different from a hand-typed add — the
+  equivalence the rest of the verb rests on.
+- **The FETCHED package is validated, separately from the checked one.**
+  Step 1 measures a different package from the one step 3 installs, so
+  `checkEngine` and `validateManifest` run again after the fetch. A source
+  with no manifest is not an error there, unlike in `package add`: the
+  project demonstrably installed from it once, and refusing to refresh it
+  would strand a project whose package predates the manifest.
+
+Known gap in the gate, NOT closed here: a feature's per-target SOURCE
+(`tm/<target>/…`) supplied by a feature package's overlay is not attributed
+to that feature, so a local edit to it is invisible to the pre-check. Closing
+it needs §12.3's foreign-feature expected set, which also fixes a
+pre-existing false `stale` in plain `doctor` for any project using an
+external feature — the same piece of work, and its own change (§18.6d).
+
 Deltas found while implementing §12.5 (the per-kind model-file
 comparison, §18.6a):
 

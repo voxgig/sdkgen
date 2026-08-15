@@ -11,6 +11,7 @@ type DoctorReport = {
     ok: boolean;
 };
 declare function action_doctor(args: string[], actx: ActionContext): Promise<ActionResult>;
-declare function doctor(actx: ActionContext): Promise<ActionResult>;
-export type { DoctorReport, };
+type DoctorScope = (kind: string, name: string) => boolean;
+declare function doctor(actx: ActionContext, scope?: DoctorScope): Promise<ActionResult>;
+export type { DoctorReport, DoctorScope, };
 export { action_doctor, doctor, };

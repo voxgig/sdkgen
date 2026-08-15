@@ -159,9 +159,19 @@ async function cmd_doctor_check(_args: string[], actx: ActionContext): Promise<A
 }
 
 
+// Narrows the check to particular items — `package update` runs doctor as
+// its pre-check and needs the verdict for ONE package's items, not the
+// project's. Reusing the real comparison rather than writing a second one is
+// the point: a gate that decides whether to overwrite a project's files must
+// not have its own idea of what counts as a difference.
+type DoctorScope = (kind: string, name: string) => boolean
+
+
 // Code API. Returns the report; the CLI turns a non-ok report into a
 // non-zero exit so this can gate CI.
-async function doctor(actx: ActionContext): Promise<ActionResult> {
+async function doctor(
+  actx: ActionContext, scope?: DoctorScope,
+): Promise<ActionResult> {
   const log = actx.log
   const fs = actx.fs()
   const model = actx.model
@@ -199,6 +209,10 @@ async function doctor(actx: ActionContext): Promise<ActionResult> {
     const items = Object.keys((model as any)?.main?.[KIT]?.[kind] ?? {}).sort()
 
     for (const name of items) {
+      if (null != scope && !scope(kind, name)) {
+        continue
+      }
+
       const source = resolveDeclared(kind, name, actx)
 
       if (null == source) {
@@ -217,7 +231,13 @@ async function doctor(actx: ActionContext): Promise<ActionResult> {
     }
   }
 
-  checkWiring(actx, report)
+  // Root-component wiring is a property of the PROJECT, not of any item, so a
+  // scoped run has no business reporting on it — `package update` asking "is
+  // this package's copy clean" should not also say the project never wired in
+  // `ReadmeTop`.
+  if (null == scope) {
+    checkWiring(actx, report)
+  }
 
   report.ok = 0 === report.forked.length + report.edited.length +
     report.stale.length + report.missing.length
@@ -751,6 +771,7 @@ function quietLog(log: any): any {
 
 export type {
   DoctorReport,
+  DoctorScope,
 }
 
 export {

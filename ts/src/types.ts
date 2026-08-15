@@ -129,6 +129,11 @@ type ActionContext = {
   // describe one command, so smuggling them through the constructor would
   // make a second `action()` call on the same instance inherit them.
   flags?: Record<string, any>
+
+  // How `package update` fetches a new version. Injectable so tests do not
+  // shell out, and so a caller with its own dependency management (a
+  // monorepo, a vendored checkout) can supply one. Defaults to npm.
+  fetchPackage?: (pkgname: string, actx: ActionContext) => Promise<void>
 }
 
 

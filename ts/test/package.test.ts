@@ -21,7 +21,9 @@ import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
 
-import { package_add, action_package } from '../dist/action/package.js'
+import {
+  package_add, package_update, action_package,
+} from '../dist/action/package.js'
 import { ACTION_MAP, actionNames } from '../dist/action/dispatch.js'
 import {
   SCAFFOLD, ROOT, makeProject, recordLog, targetRef, target_add, feature_add,
@@ -674,6 +676,416 @@ describe('package add: collisions and hostile inputs', () => {
 })
 
 
+// `package update` — see design §13.
+//
+// THE ORDER IS THE SAFETY PROPERTY: check, then fetch, then re-add. Measured
+// before the source moves, a copy that differs means the project changed it.
+// Fetch first and every item legitimately differs, the gate fires on all of
+// them, and the operator learns to pass --force every time — which would make
+// the gate worse than not having one.
+describe('package update', () => {
+
+  // A project with the fixture package installed, and its model carrying the
+  // provenance a reloaded project would have.
+  async function installed(pkg: string) {
+    const project = await addPackage(pkg)
+
+    const kit: any = project.actx.model.main.kit
+    for (const [kind, name] of [
+      ['target', 'iotgo'], ['feature', 'retry'],
+    ] as [string, string][]) {
+      const src = String(project.fs.readFileSync(
+        ROOT + '/model/' + kind + '/' + name + '.aontu', 'utf8'))
+      kit[kind] = kit[kind] ?? {}
+      kit[kind][name] = {
+        name, active: true,
+        base: (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1],
+        package: (src.match(/^\s*package:\s*'([^']*)'/m) || [])[1],
+      }
+    }
+
+    return project
+  }
+
+
+  test('checks BEFORE it fetches', async () => {
+    // The ordering, asserted directly rather than inferred from behaviour.
+    const pkg = makePackage()
+    try {
+      const project = await installed(pkg)
+      const order: string[] = []
+
+      project.actx.fetchPackage = async () => { order.push('fetch') }
+
+      // A local edit, so the pre-check has something to find.
+      const path = Path.join(ROOT, 'model/target/iotgo.aontu')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
+
+      project.actx.flags = {}
+
+      await rejects(() => package_update(['@acme/sdkgen-iot'], project.actx),
+        /differ from the installed source/)
+
+      deepStrictEqual(order, [],
+        'it fetched before checking — every item would then differ from the ' +
+        'new source and the gate would fire on all of them')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('the refusal states BOTH readings, with an out for each', async () => {
+    // It cannot prove which applies: nothing recorded distinguishes a local
+    // edit from a copy that is merely stale because the source was updated
+    // out of band. Asserting a fork it cannot diagnose would be worse than
+    // saying so.
+    const pkg = makePackage()
+    try {
+      const project = await installed(pkg)
+      project.actx.fetchPackage = async () => { }
+      project.actx.flags = {}
+
+      const path = Path.join(ROOT, 'model/target/iotgo.aontu')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
+
+      await rejects(() => package_update(['@acme/sdkgen-iot'], project.actx),
+        /LOCAL EDITS[\s\S]*out of band[\s\S]*STALE[\s\S]*--force/)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('--force overwrites, and says what it discarded', async () => {
+    const pkg = makePackage()
+    try {
+      const log = recordLog()
+      const project = await installed(pkg)
+      project.actx.log = log
+      project.actx.fetchPackage = async () => { }
+      project.actx.flags = { force: true }
+
+      const path = Path.join(ROOT, 'model/target/iotgo.aontu')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
+
+      await package_update(['@acme/sdkgen-iot'], project.actx)
+
+      ok(!String(project.fs.readFileSync(path, 'utf8')).includes('# hand edit'),
+        '--force did not actually re-add')
+      ok(log.lines.some((l: any) => 'package-update-forced' === l.point),
+        'it discarded a local edit SILENTLY')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a clean project updates with no --force needed', async () => {
+    const pkg = makePackage()
+    try {
+      const project = await installed(pkg)
+      let fetched = 0
+      project.actx.fetchPackage = async () => { fetched++ }
+      project.actx.flags = {}
+
+      await package_update(['@acme/sdkgen-iot'], project.actx)
+
+      strictEqual(fetched, 1, 'it did not fetch')
+      ok(project.files().includes('model/target/iotgo.aontu'))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('--no-fetch skips the fetch and still re-adds', async () => {
+    const pkg = makePackage()
+    try {
+      const project = await installed(pkg)
+      let fetched = 0
+      project.actx.fetchPackage = async () => { fetched++ }
+      project.actx.flags = { nofetch: true }
+
+      await package_update(['@acme/sdkgen-iot'], project.actx)
+
+      strictEqual(fetched, 0)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a FAILED fetch leaves the project untouched', async () => {
+    const pkg = makePackage()
+    try {
+      const project = await installed(pkg)
+      const before = project.files().length
+
+      project.actx.fetchPackage = async () => {
+        throw new Error('network is down')
+      }
+      project.actx.flags = {}
+
+      await rejects(() => package_update(['@acme/sdkgen-iot'], project.actx),
+        /network is down/)
+
+      strictEqual(project.files().length, before,
+        'a failed fetch left a partial re-add behind')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('it updates what the PROJECT installed, not what the package lists',
+    async () => {
+      // A project may hold a subset (`--only`) or an alias the package never
+      // mentions. Asking the package would refresh things the project does
+      // not have and miss the ones it renamed.
+      const pkg = makePackage()
+      try {
+        const project = makeProject({})
+        project.actx.flags = { only: 'target:iotgo' }
+        await package_add([pkg], project.actx)
+
+        const src = String(project.fs.readFileSync(
+          ROOT + '/model/target/iotgo.aontu', 'utf8'))
+        project.actx.model.main.kit.target = {
+          iotgo: {
+            name: 'iotgo',
+            base: (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1],
+            package: '@acme/sdkgen-iot',
+          },
+        }
+
+        project.actx.fetchPackage = async () => { }
+        project.actx.flags = {}
+
+        await package_update(['@acme/sdkgen-iot'], project.actx)
+
+        ok(!project.files().includes('model/feature/retry.aontu'),
+          'update installed a feature the project had chosen not to have')
+      }
+      finally {
+        Fs.rmSync(pkg, { recursive: true, force: true })
+      }
+    })
+
+
+  test("an ALIASED item's model file is kept, and the skip is reported",
+    async () => {
+      // That file is the one a project is MEANT to edit — it is how an alias
+      // is differentiated — so an update must not rewrite it. Saying so is
+      // what stops upstream model changes being silently never applied.
+      const pkg = makePackage()
+      try {
+        const project = makeProject({})
+        project.actx.flags = { only: 'target:iotgo', alias: 'iotgo=acmego' }
+        await package_add([pkg], project.actx)
+
+        const path = Path.join(ROOT, 'model/target/acmego.aontu')
+        project.fs.writeFileSync(path,
+          String(project.fs.readFileSync(path, 'utf8')) +
+          '\n# my differentiation\n')
+
+        const src = String(project.fs.readFileSync(path, 'utf8'))
+        project.actx.model.main.kit.target = {
+          acmego: {
+            name: 'acmego', origname: 'iotgo',
+            base: (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1],
+            package: '@acme/sdkgen-iot',
+          },
+        }
+
+        const log = recordLog()
+        project.actx.log = log
+        project.actx.fetchPackage = async () => { }
+        project.actx.flags = {}
+
+        await package_update(['@acme/sdkgen-iot'], project.actx)
+
+        ok(String(project.fs.readFileSync(path, 'utf8'))
+          .includes('# my differentiation'),
+          "the alias's own model file was overwritten")
+        ok(log.lines.some(
+          (l: any) => 'package-update-alias-model-kept' === l.point),
+          'the skip was not reported, so upstream model changes would be ' +
+          'silently never applied')
+      }
+      finally {
+        Fs.rmSync(pkg, { recursive: true, force: true })
+      }
+    })
+
+
+  test('a package this project does not have says so', async () => {
+    const project = makeProject({})
+    project.actx.flags = {}
+
+    await rejects(() => package_update(['@acme/nope'], project.actx),
+      /Nothing installed from @acme\/nope[\s\S]*package list/)
+  })
+
+
+  test('a DRY RUN does not fetch', async () => {
+    // The adders honour dryrun and write nothing, but an unconditional
+    // `npm install --save-dev` rewrites package.json, the lockfile and
+    // node_modules — mutating dependency state in the one mode whose whole
+    // promise is that nothing changes, and reaching outside the project to
+    // do it.
+    const pkg = makePackage()
+    try {
+      const log = recordLog()
+      const project = await installed(pkg)
+      project.actx.log = log
+      project.actx.opts = { dryrun: true }
+
+      let fetched = 0
+      project.actx.fetchPackage = async () => { fetched++ }
+      project.actx.flags = {}
+
+      await package_update(['@acme/sdkgen-iot'], project.actx)
+
+      strictEqual(fetched, 0, 'a dry run fetched')
+      ok(log.lines.some(
+        (l: any) => 'package-update-dryrun-fetch' === l.point),
+        'it skipped the fetch silently')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('the FETCHED version is validated before it is installed', async () => {
+    // Step 1 measured a different package from the one step 3 installs. If
+    // the new release raises `engines.sdkgen` beyond this generator,
+    // `package add` would refuse it — an update that skipped the check would
+    // overwrite `.sdk` with components written for a generator this is not.
+    const pkg = makePackage()
+    try {
+      const project = await installed(pkg)
+
+      // The fetch "brings in" an incompatible release.
+      project.actx.fetchPackage = async () => {
+        Fs.writeFileSync(Path.join(pkg, 'sdkgen-package.json'),
+          JSON.stringify({
+            sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+            version: '9.0.0', engines: { sdkgen: '>=99' },
+            provides: { target: ['iotgo'], feature: ['retry'] },
+          }))
+      }
+      project.actx.flags = {}
+
+      await rejects(() => package_update(['@acme/sdkgen-iot'], project.actx),
+        /needs @voxgig\/sdkgen >=99/)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a LOCAL source is not fetched with npm', async () => {
+    // npm can only update what npm installed. A package added from a
+    // checkout records that base, and the re-add reads from it — so an
+    // `npm install` would write a fresh copy into node_modules, leave the
+    // recorded source untouched, and the command would recopy the OLD
+    // content while reporting success and having changed the project's
+    // dependencies.
+    const pkg = makePackage()
+    try {
+      const project = await installed(pkg)
+      project.actx.flags = {}
+      // No injected fetcher: this is the real default path's decision.
+      delete (project.actx as any).fetchPackage
+
+      await rejects(() => package_update(['@acme/sdkgen-iot'], project.actx),
+        /which npm does not manage[\s\S]*--no-fetch/)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a feature the TARGET fan-out will rewrite is in the gate', async () => {
+    // `target_add` re-runs `feature_add` for every active feature, whoever
+    // supplied it. So updating a TARGET package rewrites the model file of a
+    // feature that came from somewhere else — and a scope of "this package's
+    // items" never looked at it, so a local edit there was overwritten
+    // without --force, by the command whose whole promise is that it asks.
+    const pkg = makePackage()
+    try {
+      const project = await installed(pkg)
+
+      // The feature now belongs to a DIFFERENT package, so it is outside the
+      // updated package's own item set.
+      project.actx.model.main.kit.feature.retry.package = '@other/sdkgen-feat'
+
+      const path = Path.join(ROOT, 'model/feature/retry.aontu')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
+
+      project.actx.fetchPackage = async () => { }
+      project.actx.flags = {}
+
+      await rejects(() => package_update(['@acme/sdkgen-iot'], project.actx),
+        /model\/feature\/retry\.aontu/,
+        'a feature the re-add will rewrite was outside the gate')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('every package is checked before ANY is fetched', async () => {
+    // `package update A,B` that finished A and then refused B would exit as
+    // failed having already changed A's dependencies and .sdk.
+    const pkg = makePackage()
+    try {
+      const project = await installed(pkg)
+
+      // Two packages: A supplied the FEATURE, B the target. A has no target,
+      // so its scope does not pull the features in and it checks clean.
+      project.actx.model.main.kit.feature.retry.package = '@acme/sdkgen-a'
+      project.actx.model.main.kit.target.iotgo.package = '@other/sdkgen-b'
+
+      // B's item is the edited one.
+      const path = Path.join(ROOT, 'model/target/iotgo.aontu')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
+
+      let fetched = 0
+      project.actx.fetchPackage = async () => { fetched++ }
+      project.actx.flags = {}
+
+      await rejects(
+        () => package_update(
+          ['@acme/sdkgen-a', '@other/sdkgen-b'], project.actx),
+        /differ from the installed source/)
+
+      strictEqual(fetched, 0,
+        'the first package was fetched before the second was checked')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+})
+
+
 describe('the action map', () => {
 
   test('is built from the kind registry, plus package and doctor', () => {
@@ -700,7 +1112,7 @@ describe('the action map', () => {
       const project = makeProject({})
       await rejects(
         () => action_package(['package', 'frobnicate'], project.actx),
-        /Unknown package cmd: frobnicate \(expected: add, list\)/)
+        /Unknown package cmd: frobnicate \(expected: add, list, update\)/)
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
