@@ -68,15 +68,27 @@ function shipped(kind: string): string[] {
 
 // Short but ample: a 12-hex-char prefix over ~3,000 files leaves collision
 // odds negligible, and keeps the manifest readable in a diff.
-function hash(content: any): string {
-  return createHash('sha256').update(content).digest('hex').slice(0, 12)
+//
+// LINE ENDINGS ARE NORMALISED FIRST. This repo has no `.gitattributes`, so a
+// Windows checkout may materialise the scaffold with CRLF — which would flip
+// every hash in the manifest and fail this suite on the Windows CI job for a
+// reason that has nothing to do with the add pipeline. What the goldens are
+// for is detecting output changes caused by a REFACTOR, so the checkout's
+// line-ending policy is noise here.
+function hash(content: Buffer): string {
+  const lf = Buffer.from(content.toString('binary').replace(/\r\n/g, '\n'), 'binary')
+  return createHash('sha256').update(lf).digest('hex').slice(0, 12)
 }
 
 
 // `<path> <hash>` for every file in the project, sorted by path.
+//
+// Paths are joined with '/' rather than Path.join: these are memfs paths, and
+// on Windows Path.join would hand the layered fs a backslash path it does not
+// resolve.
 function manifest(project: any): string[] {
   return project.files().map((rel: string) => {
-    const content = project.fs.readFileSync(Path.join(ROOT, rel))
+    const content = project.fs.readFileSync(ROOT + '/' + rel)
     return rel + ' ' + hash(content)
   })
 }
@@ -182,10 +194,15 @@ describe('characterize add output', () => {
     const project = makeProject({})
     await target_add([targetRef('ts')], project.actx)
 
+    // Both separator spellings: on Windows the constants carry backslashes,
+    // but a leaked value may have been normalised on the way in.
+    const fwd = (p: string) => p.split(Path.sep).join('/')
+    const needles = [PROJECT, SCAFFOLD, fwd(PROJECT), fwd(SCAFFOLD)]
+
     const leaks: string[] = []
     for (const rel of project.files()) {
-      const content = String(project.fs.readFileSync(Path.join(ROOT, rel)))
-      if (content.includes(PROJECT) || content.includes(SCAFFOLD)) {
+      const content = String(project.fs.readFileSync(ROOT + '/' + rel))
+      if (needles.some((n) => content.includes(n))) {
         leaks.push(rel)
       }
     }

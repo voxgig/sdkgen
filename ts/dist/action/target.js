@@ -536,9 +536,18 @@ function resolveTarget(tref, ctx$) {
         tname,
         tfolder: fulltfolder,
         torigname,
-        base: fulltfolder.startsWith(rootslash)
+        // `/`-normalised, unlike `tfolder`. `base` is the one value here that
+        // gets WRITTEN INTO A COMMITTED FILE (the `'BASE'` substitution in the
+        // copied target model), so it must not depend on the OS that ran the
+        // add: on Windows Path.join yields
+        // `node_modules\@voxgig\sdkgen\project\.sdk`, so the same project
+        // resynced on Linux and on Windows produced two different model files
+        // and each churned the other's. Forward slashes are accepted by every
+        // Node path API on Windows, so the readers (feature_add's fan-out,
+        // doctor's re-resolution) are unaffected.
+        base: (fulltfolder.startsWith(rootslash)
             ? fulltfolder.slice(rootslash.length)
-            : fulltfolder
+            : fulltfolder).split(node_path_1.default.sep).join('/')
     };
     return out;
 }
