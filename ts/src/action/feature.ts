@@ -163,22 +163,6 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
       //
       // An explicit ref always wins: that is how a feature is moved to a new
       // source.
-      // Feature aliasing is REFUSED, not half-supported. The resolver
-      // understands `~` for any kind, but a feature's name reaches into the
-      // generated `options.feature.<name>` config key and into hook wiring in
-      // every language — and the copied model would still declare the ORIGIN
-      // name, so the index would point at a file defining a feature nobody
-      // asked for, while source discovery looked for the alias and found
-      // nothing. Doing it properly is real work with no customer; doing it
-      // silently is worse than refusing.
-      if (fref.includes('~')) {
-        throw new SdkGenError(
-          'Feature aliasing is not supported: ' + fref +
-          '\n  A feature name is part of the generated config ' +
-          '(options.feature.<name>) and of the hook wiring in every target, ' +
-          'so it cannot be renamed at install time.')
-      }
-
       const declared: any = model.main[KIT].feature?.[fref]
       const recorded = isBare(fref) && declared?.base ?
         Path.join(declared.base, '..', declared.origname || fref) : fref
@@ -200,6 +184,27 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
             '); skipping, the already-copied files are left alone'
         })
         return
+      }
+
+      // Feature aliasing is REFUSED, not half-supported: a feature's name is
+      // part of the generated `options.feature.<name>` config key and of the
+      // hook wiring in every target, and the copied model would still declare
+      // the ORIGIN name — so the index would point at a file defining a
+      // feature nobody asked for, while source discovery looked for the alias
+      // and found nothing.
+      //
+      // Asked of the RESOLVER rather than by re-reading the ref. A `~` is only
+      // an alias separator in the last segment, and a check that looked for
+      // one anywhere rejected every ref whose PATH contains a tilde —
+      // including a Windows 8.3 temp path like `C:\Users\RUNNER~1\...`. That
+      // is the same defect the resolver had; parsing the ref in two places is
+      // what let it come straight back.
+      if (source.name !== source.origname) {
+        throw new SdkGenError(
+          'Feature aliasing is not supported: ' + fref +
+          '\n  A feature name is part of the generated config ' +
+          '(options.feature.<name>) and of the hook wiring in every target, ' +
+          'so it cannot be renamed at install time.')
       }
 
       const fname = source.name

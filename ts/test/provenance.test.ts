@@ -251,6 +251,41 @@ describe('provenance edge cases', () => {
   })
 
 
+  test('a tilde in the package PATH is not an alias', async () => {
+    // The Windows runner's temp directory is an 8.3 short name
+    // (`C:\Users\RUNNER~1\...`), so every external-feature test ran with a
+    // tilde in the path. A check that looked for `~` anywhere in the ref
+    // rejected all of them as aliases — the same defect the resolver had,
+    // reintroduced in the same commit that fixed it, because the ref was
+    // being parsed in two places.
+    const parent = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-tilde-'))
+    try {
+      const pkg = Path.join(parent, 'RUNNER~1', 'pkg')
+      const sdk = Path.join(pkg, '.sdk')
+      Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
+      Fs.mkdirSync(Path.join(sdk, 'tm', 'ts', 'src', 'feature', 'ext'),
+        { recursive: true })
+      Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'ext.aontu'),
+        '\nmain: kit: feature: ext: {\n  name: key()\n' +
+        '  title: "x"\n  version: \'0.0.1\'\n  active: true\n' +
+        "  base: 'BASE'\n  config: options: active: false\n  hook: {}\n}\n")
+      Fs.writeFileSync(
+        Path.join(sdk, 'tm', 'ts', 'src', 'feature', 'ext', 'E.ts'),
+        'export {}\n')
+
+      const project = makeProject({ target: { ts: { name: 'ts' } } })
+      await target_add([targetRef('ts')], project.actx)
+      await feature_add([Path.join(pkg, 'ext')], project.actx)
+
+      ok(project.files().includes('model/feature/ext.aontu'),
+        'a package path containing a tilde was rejected as an alias')
+    }
+    finally {
+      Fs.rmSync(parent, { recursive: true, force: true })
+    }
+  })
+
+
   test('feature aliasing is refused, not half-done', async () => {
     // The resolver understands `~` for any kind, but a feature's name is part
     // of the generated config key and the hook wiring in every target — and
