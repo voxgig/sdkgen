@@ -132,6 +132,12 @@ These are written by `add` and read by `doctor`, `package list` and
 `doctor` reports a changed value as a fork (accurately — the next add
 reverts it).
 
+The one exception is an **aliased** item (`target add go~go2`), whose
+model file `add` CREATES and then never overwrites — differentiating it
+is the point of an alias. Editing that file is expected; editing its
+provenance block is still not, because `package update` and `doctor`
+locate the source through it.
+
 The same three keys exist on `main.kit.feature.<name>`.
 
 ## `main.kit.target.<name>`
@@ -150,7 +156,7 @@ files in `ts/project/.sdk/model/target/`:
 | `module.path` | string | `''` | Go family. Full module path, overriding `'<repo.host>/<repo.path>/<target>'`. |
 | `module.package` | string | `''` | Go family. The root package IDENTIFIER (`package acmesdk`), not an import path. |
 | `module.goversion` | string | `''` | Go family. The `go` directive in `go.mod`. `''` defaults to 1.21 — the release that introduced `log/slog`, which the `log` feature imports. |
-| `base` | string | — | **Provenance.** The `.sdk` folder this copy came from, project-relative and `/`-normalised. Ships as the literal `'BASE'`; `add` replaces that one line with the block below. |
+| `base` | string | — | **Provenance.** The `.sdk` folder this copy came from, always `/`-normalised. Project-relative when the source is inside the project (`node_modules/@acme/sdkgen-iot/.sdk`); a source outside it records what the ref resolved to — `../acme-sdkgen-iot/.sdk` for a relative ref, an absolute path for an absolute one, which is then specific to the machine that ran the add. Ships as the literal `'BASE'`; `add` replaces that one line with the block above. |
 | `origname` | string | `''` | **Provenance.** The name in the SOURCE, when it differs — i.e. this was installed as `<origname>~<name>`. What makes an alias checkable. |
 | `package` | string | `''` | **Provenance.** The sdkgen package that supplied it, when the source declares a manifest. What `package update` and `package list` act on. |
 | `srcfeature` | boolean | `true` | Whether per-feature source is copied into `src/feature/`. |

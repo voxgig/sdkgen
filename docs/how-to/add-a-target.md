@@ -98,8 +98,11 @@ Either way, the copied model file records where the item came from, so
 `voxgig-sdkgen package list` can tell you later, and
 `voxgig-sdkgen package update` can refresh it.
 
-A name already installed from a **different** source is refused rather
-than silently replaced — install it under an alias, or by its own ref.
+`package add` refuses a name already installed from a **different**
+source rather than replacing it — install that one under an alias, or by
+its own ref. A direct `target add` does not check: it OVERWRITES whatever
+is there of that name, which is the same behaviour that makes a resync
+work.
 
 ## Preview without writing
 

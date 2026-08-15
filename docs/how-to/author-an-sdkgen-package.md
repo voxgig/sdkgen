@@ -29,8 +29,9 @@ For an npm package, ship both:
 ```json
 {
   "name": "@acme/sdkgen-iot",
+  "version": "1.4.0",
   "files": [".sdk", "sdkgen-package.json"],
-  "peerDependencies": { "@voxgig/sdkgen": ">=3.5" }
+  "peerDependencies": { "@voxgig/sdkgen": ">=3.4" }
 }
 ```
 
@@ -41,7 +42,7 @@ For an npm package, ship both:
   "sdkgen": { "package": 1 },
   "name": "@acme/sdkgen-iot",
   "version": "1.4.0",
-  "engines": { "sdkgen": ">=3.5" },
+  "engines": { "sdkgen": ">=3.4" },
   "provides": {
     "target": ["iot-go"],
     "feature": ["circuitbreaker"]
@@ -55,8 +56,11 @@ For an npm package, ship both:
   provenance, and what `package update` is given.
 - `provides` is keyed **by kind**, so a future kind needs no schema
   change.
-- `engines.sdkgen` is checked at `package add`. A range the checker
-  cannot parse is reported and *allowed* — see the
+- `engines.sdkgen` is checked at `package add`, so declare the floor you
+  actually need and check it against the generator you develop against
+  (`voxgig-sdkgen --version`) — a range this generator does not satisfy
+  is a refusal, including in your own test loop below. A range the
+  checker cannot parse is reported and *allowed* — see the
   [supported subset](../reference/cli.md).
 
 `provides` is validated against your disk in both directions. A claim
@@ -87,12 +91,26 @@ cp node_modules/@voxgig/sdkgen/project/.sdk/model/target/go.aontu \
 Then, and this is the step that is easy to miss: **components are
 dispatched by convention**, `cmp/<t>/Main_<t>`. Rename every
 `<Cmp>_go.ts` to `<Cmp>_iot-go.ts` and fix the sibling imports inside
-them, or nothing will load. Update the target key in the model file too
-(`main: kit: target: 'iot-go':`) — a hyphenated key must be quoted, or
-aontu will not parse it.
+them, or nothing will load.
 
-Keep the `base: 'BASE'` line. It is the **anchor** the provenance stamp
-replaces; a definition without it records nothing, silently.
+Three more things carry the origin's name, and none of them moves itself:
+
+- **Every target key in the model file** — `go.aontu` has three: the
+  target block, the per-target feature-deps slot
+  (`main: kit: feature: &: target: go:`) and the feature-trim block. A
+  key that is not a bare identifier must be **quoted**
+  (`main: kit: target: 'iot-go':`), or aontu will not parse it.
+- **The target name the components pass to model lookups.** The go
+  components read their config with `goModule(model, 'go')`,
+  `goPackageIdent(model, 'go')` and `packageName(model, 'go')` — that
+  string is the target whose model block is read, not the language. Left
+  alone, your `iot-go` target generates with the `go` target's module
+  path and package identifier, and only if `go` is installed at all.
+  Change it in every component; `grep -rn "'go'" .sdk/src/cmp/iot-go`
+  shows what is left.
+- **`base: 'BASE'`** — keep the line. It is the **anchor** the
+  provenance stamp replaces; a definition without it records nothing,
+  silently.
 
 ## Authoring a feature
 
@@ -155,11 +173,15 @@ compares against the source on disk.
 
 ## Things that will bite you
 
-- **A hyphenated key must be quoted** in aontu (`target: 'iot-go':`).
+- **A key that is not a bare identifier must be quoted** in aontu.
+  The name grammar above admits more than aontu's bare keys do — a
+  hyphen (`iot-go`), a dot (`go.v2`) or a leading digit (`2go`) all need
+  `target: 'iot-go':`.
 - **Keep `base: 'BASE'`** in every definition, or the copy records no
   provenance and `package update` cannot find it later.
 - **Rename the components** to match the target name, including the
-  imports inside them.
+  imports inside them and the target name they pass to model lookups
+  (`goModule(model, 'go')`).
 - **Do not reuse a built-in name** unless you mean to replace it —
   consumers get a name-collision refusal and must alias.
 - **`sdkgen-package.json` must be in `files`**, or npm ships a package

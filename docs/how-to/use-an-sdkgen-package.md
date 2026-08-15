@@ -130,7 +130,24 @@ to a copied file.
 | `package manifest does not match the package` | The package claims something it does not ship. An author bug — nothing was installed. |
 | `needs @voxgig/sdkgen >=X` | The package requires a newer generator. Upgrade, or install an earlier version of the package. |
 | `Name collision, nothing installed` | Something of that name is already installed from a *different* source. Install this one under an alias, or install the one you want by its own ref. |
-| `which npm does not manage` | The package was installed from a local path, so `npm install` would update a different copy. Update that source yourself and re-run with `--no-fetch`. |
+| `which npm does not manage` | The package was installed from a local path, so `npm install` would update a different copy. Update that source yourself, then re-run with `--no-fetch` (see below). |
+
+### Updating from a local checkout
+
+`--no-fetch` skips step 2 only — the check in step 1 still runs, and it
+runs against the source **as it now is**. So updating the checkout first
+is exactly the out-of-band case the check cannot tell from a local edit,
+and it will stop:
+
+```bash
+voxgig-sdkgen doctor                  # BEFORE you pull: clean == no local edits
+git -C ../acme-sdkgen-iot pull
+voxgig-sdkgen package update @acme/sdkgen-iot --no-fetch --force
+```
+
+The clean `doctor` is what makes `--force` safe here: it is measured
+against the source you still have, so it distinguishes the two cases the
+update itself no longer can.
 
 ## See also
 

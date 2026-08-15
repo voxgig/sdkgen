@@ -65,8 +65,11 @@ wiring in every target, so it cannot be renamed at install time.
 An external feature may ship its own per-target source as an *overlay* —
 `tm/<target>/…` inside the feature's package, for targets it supports but
 does not provide. That overlay wins over the target's own copy of the same
-feature, and `doctor` reports a conflict if both exist, because the files
-already copied from the target's tree are not removed.
+feature. If both exist, `feature add` warns
+(`point: feature-source-shadowed`) and carries on: the overlay is what
+runs, but the files already copied from the target's tree are not
+removed, so the project is left holding a mix. Do not reuse a built-in
+feature's name.
 
 Ordering matters if you are installing both: add **targets first**. A
 feature's source is copied into the targets present at the time, so a
