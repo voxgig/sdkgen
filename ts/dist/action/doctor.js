@@ -344,7 +344,15 @@ function checkTargetModel(actx, resolved, report) {
     // was written before. That is not a fork — the project changed nothing —
     // and reporting it as one would turn every existing consumer's CI red on
     // upgrade. Say what it is, and what fixes it.
-    if (!differs(fs, scaffold, project, actx.model, provenance, (line) => PROVENANCE_LINE_RE.test(line), rewrite)) {
+    //
+    // ONLY for a copy that is genuinely UNSTAMPED. Applying the tolerance to
+    // any provenance-confined difference would hide a real edit: a project that
+    // changed or deleted a `package:` line on a stamped copy would be reported
+    // as resync-pending and pass the check, while the next `target add` quietly
+    // reverted it — which is the whole class of thing doctor exists to catch.
+    const unstamped = !String(fs.readFileSync(project, 'utf8'))
+        .split('\n').some((line) => PROVENANCE_LINE_RE.test(line));
+    if (unstamped && !differs(fs, scaffold, project, actx.model, provenance, (line) => PROVENANCE_LINE_RE.test(line), rewrite)) {
         report.resyncPending.push(label);
         return;
     }

@@ -24,6 +24,10 @@ const BASE = 'node_modules/@voxgig/sdkgen';
 // ref grammar `target add` already has is the next step, and this becomes
 // whatever the ref resolved to.
 const SDKFOLDER = BASE + '/project/.sdk';
+// A bare NAME, as opposed to a ref that locates a source.
+function isBare(ref) {
+    return !ref.includes('/') && !ref.includes(node_path_1.default.sep);
+}
 async function action_feature(args, actx) {
     const cmdname = args[1];
     const cmd = CMD_MAP[cmdname];
@@ -94,11 +98,39 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
             const fref = n.val$;
             // TODO: validate feature is a-z0-9-_. only
             // A feature can now come from anywhere a target can — the same ref
-            // grammar, resolved by the same resolver. A bare name still means the
-            // bundled scaffold.
+            // grammar, resolved by the same resolver.
+            //
+            // A BARE name is resolved against what the model already records. That
+            // is what feature provenance is FOR, and without this reading it would
+            // be inert: `target add` re-runs this action with the model's own keys
+            // (`circuitbreaker`, not the ref it was installed from), and a bare
+            // name falls back to the bundled scaffold — whose `.sdk` folder EXISTS,
+            // so resolution succeeds and the copy then throws on a feature model
+            // that is not there. One externally-installed feature would break every
+            // subsequent `target add` in the project.
+            //
+            // An explicit ref always wins: that is how a feature is moved to a new
+            // source.
+            // Feature aliasing is REFUSED, not half-supported. The resolver
+            // understands `~` for any kind, but a feature's name reaches into the
+            // generated `options.feature.<name>` config key and into hook wiring in
+            // every language — and the copied model would still declare the ORIGIN
+            // name, so the index would point at a file defining a feature nobody
+            // asked for, while source discovery looked for the alias and found
+            // nothing. Doing it properly is real work with no customer; doing it
+            // silently is worse than refusing.
+            if (fref.includes('~')) {
+                throw new utility_1.SdkGenError('Feature aliasing is not supported: ' + fref +
+                    '\n  A feature name is part of the generated config ' +
+                    '(options.feature.<name>) and of the hook wiring in every target, ' +
+                    'so it cannot be renamed at install time.');
+            }
+            const declared = model.main[types_1.KIT].feature?.[fref];
+            const recorded = isBare(fref) && declared?.base ?
+                node_path_1.default.join(declared.base, '..', declared.origname || fref) : fref;
             let source;
             try {
-                source = (0, resolve_1.resolveSource)(fref, 'feature', ctx$);
+                source = (0, resolve_1.resolveSource)(recorded, 'feature', ctx$);
             }
             catch (err) {
                 // A name that no longer resolves must not abort the RUN. `target add`
@@ -107,7 +139,7 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 // otherwise stop every other feature — including `test`, which every
                 // generated target needs — from being copied at all.
                 log.warn({
-                    point: 'feature-source-unresolved', feature: fref,
+                    point: 'feature-source-unresolved', feature: fref, ref: recorded,
                     err: err.message,
                     note: fref + ': cannot find its source (' + err.message +
                         '); skipping, the already-copied files are left alone'
@@ -164,6 +196,26 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 const featuretm = node_path_1.default.join(source.folder, 'tm', torigname);
                 const overlay = featuretm === owntm ? [] :
                     (0, featureSource_1.findFeatureSources)(fs, featuretm, [fname]);
+                const own = 0 < overlay.length ?
+                    (0, featureSource_1.findFeatureSources)(fs, owntm, [fname]) : [];
+                // Both trees carrying source for one feature means two packages claim
+                // the same name. The overlay wins, but the target's own files were
+                // already copied by `target add` and Copy never removes, so the
+                // project is left holding BOTH — duplicate symbols, or stale feature
+                // code that still runs. Detecting the name collision at add time is
+                // what actually fixes this (it belongs with manifest validation); say
+                // so loudly until then, rather than leaving a silent hybrid.
+                if (0 < own.length) {
+                    log.warn({
+                        point: 'feature-source-shadowed', feature: fname, target: t.name,
+                        overlay: featuretm, own: owntm,
+                        note: fname + ': both ' + featuretm + ' and ' + owntm +
+                            ' provide source for target ' + t.name +
+                            '; the overlay is used, but the files already copied from the ' +
+                            "target's own tree are NOT removed — check tm/" + t.name +
+                            ' for a mix of the two'
+                    });
+                }
                 const sources = 0 < overlay.length ? overlay :
                     (0, featureSource_1.findFeatureSources)(fs, owntm, [fname]);
                 const tmfolder = 0 < overlay.length ? featuretm : owntm;

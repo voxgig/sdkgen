@@ -47,14 +47,22 @@ function templateReplacements(model, tname) {
 }
 // Two spaces, matching every shipped model file's indentation for these keys.
 const PROVENANCE_INDENT = '  ';
+// A value as a single-quoted aontu string. These are PATHS and NAMES from the
+// filesystem, so they can legally contain a quote — `/home/o'connor/pkg` is a
+// valid directory — and concatenating one between quotes closes the string
+// early and leaves the copied model unparsable. Aontu accepts a backslash
+// escape, which keeps the quoting style every shipped model already uses.
+function aontuString(value) {
+    return "'" + String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+}
 function provenanceReplace(prov) {
-    const lines = ["base: '" + prov.base + "'"];
+    const lines = ['base: ' + aontuString(prov.base)];
     if (null != prov.origname && null != prov.name &&
         prov.origname !== prov.name) {
-        lines.push("origname: '" + prov.origname + "'");
+        lines.push('origname: ' + aontuString(prov.origname));
     }
     if (null != prov.package && '' !== prov.package) {
-        lines.push("package: '" + prov.package + "'");
+        lines.push('package: ' + aontuString(prov.package));
     }
     return { "base: 'BASE'": lines.join('\n' + PROVENANCE_INDENT) };
 }

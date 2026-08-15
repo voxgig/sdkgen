@@ -57,13 +57,25 @@ function resolveSource(ref: string, kind: string, ctx$: any): Source {
   let name = lastSegment(ref)
 
   // `<ref>~<alias>` installs the ref's definition under a different name.
-  let aliasref = ref
-  let origname = lastSegment(aliasref)
-  const aliasing = ref.split('~')
+  //
+  // The `~` is only an alias separator in the LAST SEGMENT, which is where a
+  // name can appear. Splitting the whole ref on it broke any ref whose PATH
+  // contains a tilde — and on Windows that is routine: an 8.3 short name like
+  // `C:\Users\RUNNER~1\AppData\Local\Temp\pkg\circuitbreaker` was read as
+  // "install `C:\Users\RUNNER` under the alias `1\AppData\...`", which then
+  // looked for `C:\Users\.sdk`. Legal on POSIX too — a directory may simply
+  // be called `foo~bar`.
+  const sep = Math.max(ref.lastIndexOf('/'), ref.lastIndexOf(Path.sep))
+  const dir = sep < 0 ? '' : ref.slice(0, sep + 1)
+  const last = sep < 0 ? ref : ref.slice(sep + 1)
+
+  const aliasing = last.split('~')
+  const origlast = aliasing[0]
+
+  let aliasref = dir + origlast
+  let origname = origlast
   if (1 < aliasing.length) {
-    aliasref = aliasing[0]
     name = aliasing.slice(1).join('~')
-    origname = lastSegment(aliasref)
   }
 
   const search: string[] = []

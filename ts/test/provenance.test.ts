@@ -18,9 +18,10 @@
 // recorded beside it — see alias.test.ts.
 
 import { test, describe } from 'node:test'
-import { ok, strictEqual, deepStrictEqual } from 'node:assert'
+import { ok, strictEqual, deepStrictEqual, rejects } from 'node:assert'
 
 import Fs from 'node:fs'
+import Os from 'node:os'
 import Path from 'node:path'
 
 import { Aontu } from 'aontu'
@@ -180,5 +181,86 @@ describe('provenanceReplace', () => {
     deepStrictEqual(
       provenanceReplace({ base: 'b/.sdk', package: '@acme/sdkgen-iot' }),
       { "base: 'BASE'": "base: 'b/.sdk'\n  package: '@acme/sdkgen-iot'" })
+  })
+})
+
+
+// Review findings on #49, each pinned.
+describe('provenance edge cases', () => {
+
+  test('a quote in a path does not break the model', async () => {
+    // A path may legally contain an apostrophe — `/home/o'connor/pkg` — and
+    // concatenating one between single quotes closes the aontu string early,
+    // leaving the copied model unparsable.
+    const rep = provenanceReplace({ base: "/home/o'connor/pkg/.sdk" })
+    const line = rep["base: 'BASE'"]
+
+    const errs: any[] = []
+    const model = new Aontu().generate(
+      'main: kit: target: x: {\n  ' + line + '\n}\n',
+      { path: '/t.aontu', errs })
+
+    strictEqual(errs.length, 0,
+      'a quoted path did not compile: ' +
+      errs.map((e: any) => e.msg || String(e)).join(' | '))
+    strictEqual(model?.main?.kit?.target?.x?.base, "/home/o'connor/pkg/.sdk",
+      'the escaped value did not round-trip')
+  })
+
+
+  test('a bare feature name resolves against RECORDED provenance', async () => {
+    // `target add` re-runs `feature add` with the model's own keys, not the
+    // ref a feature was installed from. Without reading the recorded base, a
+    // bare name falls back to the bundled scaffold — whose .sdk folder EXISTS,
+    // so resolution succeeds and the copy then throws on a feature model that
+    // is not there, breaking every subsequent `target add` in the project.
+    const pkg = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-prov-'))
+    try {
+      const sdk = Path.join(pkg, '.sdk')
+      Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
+      Fs.mkdirSync(Path.join(sdk, 'tm', 'ts', 'src', 'feature', 'ext'),
+        { recursive: true })
+      Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'ext.aontu'),
+        '\nmain: kit: feature: ext: {\n  name: key()\n' +
+        '  title: "x"\n  version: \'0.0.1\'\n  active: true\n' +
+        "  base: 'BASE'\n  config: options: active: false\n  hook: {}\n}\n")
+      Fs.writeFileSync(
+        Path.join(sdk, 'tm', 'ts', 'src', 'feature', 'ext', 'E.ts'), 'export {}\n')
+
+      const project = makeProject({ target: { ts: { name: 'ts' } } })
+      await target_add([targetRef('ts')], project.actx)
+      await feature_add([Path.join(pkg, 'ext')], project.actx)
+
+      // Now the model knows about it, the way a reloaded project would.
+      const base = (String(project.fs.readFileSync(
+        ROOT + '/model/feature/ext.aontu', 'utf8'))
+        .match(/^\s*base:\s*'([^']*)'/m) || [])[1]
+      project.actx.model.main.kit.feature = {
+        ext: { name: 'ext', active: true, base },
+      }
+
+      // The BARE name, as target_add would pass it.
+      await feature_add(['ext'], project.actx)
+
+      ok(project.files().includes('model/feature/ext.aontu'),
+        'the bare name did not resolve to the recorded source')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('feature aliasing is refused, not half-done', async () => {
+    // The resolver understands `~` for any kind, but a feature's name is part
+    // of the generated config key and the hook wiring in every target — and
+    // the copied model would still declare the ORIGIN name.
+    const project = makeProject({ target: { ts: { name: 'ts' } } })
+    await target_add([targetRef('ts')], project.actx)
+
+    await rejects(
+      () => feature_add(['retry~breaker'], project.actx),
+      /Feature aliasing is not supported/,
+      'an aliased feature was accepted')
   })
 })

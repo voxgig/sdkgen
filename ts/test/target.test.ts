@@ -85,3 +85,42 @@ describe('resolveTarget', () => {
     throws(() => resolveTarget('go', makeCtx([])), /Target folder not found/)
   })
 })
+
+
+// A `~` in the PATH is not an alias separator.
+//
+// Windows 8.3 short names contain one routinely — the CI runner's temp
+// directory is `C:\Users\RUNNER~1\AppData\Local\Temp` — and splitting the
+// whole ref on `~` read that as "install `C:\Users\RUNNER` under the alias
+// `1\AppData\...`", which then searched for `C:\Users\.sdk`. Legal on POSIX
+// too: a directory may simply be called `foo~bar`.
+describe('resolveTarget with a tilde in the path', () => {
+
+  test('a tilde in a directory name is part of the path', () => {
+    const folder = 'pkgs/RUNNER~1/widgets/.sdk'
+    const out = resolveTarget('pkgs/RUNNER~1/widgets/go', makeCtx([folder]))
+
+    strictEqual(out.tname, 'go')
+    strictEqual(out.torigname, 'go')
+    strictEqual(posix(out.tfolder), folder)
+  })
+
+
+  test('an alias still works when the path also has a tilde', () => {
+    const folder = 'pkgs/RUNNER~1/widgets/.sdk'
+    const out = resolveTarget('pkgs/RUNNER~1/widgets/go~go2', makeCtx([folder]))
+
+    strictEqual(out.tname, 'go2', 'the alias was lost')
+    strictEqual(out.torigname, 'go', 'the origin name was lost')
+    strictEqual(posix(out.tfolder), folder)
+  })
+
+
+  test('an absolute path with a tilde resolves', () => {
+    const folder = '/tmp/RUNNER~1/pkg/.sdk'
+    const out = resolveTarget('/tmp/RUNNER~1/pkg/go', makeCtx([folder]))
+
+    strictEqual(out.tname, 'go')
+    strictEqual(posix(out.tfolder), folder)
+  })
+})
