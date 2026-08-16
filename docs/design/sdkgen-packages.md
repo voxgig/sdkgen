@@ -1582,11 +1582,15 @@ story. (An earlier note in this workstream stated the no-scaffold-change
 property unconditionally; it holds for out-of-tree items by construction,
 and in-tree only if the second-pass option is taken.)
 
-### 20.4 The four destinations, and what sdkgen should bundle
+### 20.4 The four destinations, assessed
+
+Written before the home was decided (§20.5), so read the first row as
+"which item comes first", not "what sdkgen bundles" — sdkgen bundles none
+of them.
 
 | Destination | Verdict | Why |
 | --- | --- | --- |
-| **Static site** (mkdocs / Docusaurus / Starlight) | the reference item, if sdkgen bundles one | The only candidate whose entire output is text files — no credentials, no network, no format that can only be validated against a live account — so it is the only one `ts/test/generate.test.ts` can verify against memfs. It exercises every mechanism the kind needs and is useful to sdkgen's own users on day one. |
+| **Static site** (mkdocs / Docusaurus / Starlight) | the FIRST item, in docgen | The only candidate whose entire output is text files — no credentials, no network, no format that can only be validated against a live account — so it is the only one a memfs generate test can verify. It exercises every mechanism the kind needs and is useful to sdkgen's own users on day one. |
 | **Backstage** | external package | Its required fields (`spec.owner`, `lifecycle`, `system`, namespace, annotations) are ORG IDENTITY sdkgen cannot default and should not guess, and correctness is only observable inside a portal install. A strong second package — and it inherits the emitter if the bundled site is mkdocs, since TechDocs is mkdocs. |
 | **Hosted** (Mintlify / ReadMe / GitBook / Redocly) | external package, v2 capability | These render the API reference from the spec alone, so a docs item that ships the spec plus a config file is barely an item. Its real value is `x-codeSamples` injection, which needs the RAW spec at generate time — reachable only through `ctx$.meta.spec.config.def`, whose base directory is a create-sdkgen convention — plus credentials and a publish vocabulary that is not registry-shaped. |
 | **LMS / Moodle** | external package, and honestly assessed | **The regeneration contract is incompatible.** sdkgen generates by overwrite because the output is code; a course holds learner state — attempts, grades, completion — and there is no import path that updates in place keyed on generated ids. A model field meaning "this output is not safe to re-apply" would be a new concept; the honest alternative is not to have the destination built in. The only artefact that is truly a course (`.mbz`) is an internal, version-gated format with no published schema and nothing in CI that could check it. |
@@ -1600,16 +1604,73 @@ components already import `cmp`, `each`, `File`. A shared
 update` cannot refresh it. One content model, several emitters, through
 the package boundary that already exists.
 
-### 20.5 Open questions for whoever builds it
+### 20.5 The home: `voxgig/docgen`
 
-1. **Which static-site engine**, if one is bundled. The MDX objection —
-   that shipped prose contains `/planet/{id}` and `Promise<object[]>`,
-   which MDX v3 parses as expression and JSX — is **unproven**: the
-   sampled occurrences are inside fenced code blocks, which MDX handles.
-   A scan of the 23 targets' prose components for UNFENCED `{` and `<`
-   settles it. mkdocs-material's independent argument stands regardless:
-   plain CommonMark, a single generated config file, and TechDocs reuse.
-2. **Orphan pruning.** A docs item emits a page per entity and per
+**Decided.** `@voxgig/docgen` becomes an sdkgen PACKAGE: it grows a
+`sdkgen-package.json` beside a `.sdk/` holding `model/docs/<n>.aontu` and
+`src/cmp/docs/<n>/`, and a project installs it with
+`voxgig-sdkgen package add @voxgig/docgen`. So the split is:
+
+- **sdkgen ships the KIND** — registry entry, model schema, `docs add`,
+  provenance, index, doctor and `package check` coverage, and the
+  out-of-tree generalisation. It bundles NO docs item, which retires
+  §20.4's "which one should sdkgen bundle" entirely.
+- **docgen ships the ITEMS** — starting with the static site, rewritten
+  from the prototype now in `src/static/`.
+
+docgen is therefore the first real external sdkgen package, which is the
+dogfooding §14 asks for: the authoring loop, `package check`, provenance
+and `package update` all get exercised by a real consumer rather than by a
+fixture.
+
+Note what docgen already is, because it makes a second architecture look
+tempting: it implements `DocGen.makeBuild(opts)` — the same contract
+`SdkGen.makeBuild` implements — so `@voxgig/model` can already call it as
+a PEER generator, and it re-exports jostraca's component API exactly as
+sdkgen does. That path stays available for standalone use (a site from a
+spec with no SDK project); what it cannot supply is per-item install,
+aliasing, provenance, drift gating or refresh, which is the whole reason
+the kind exists.
+
+### 20.6 The engine question, settled by measurement
+
+The MDX objection stated earlier in this workstream — that shipped prose
+carries `/planet/{id}` and `Promise<object[]>`, which MDX v3 parses as
+expression and JSX — **was wrong, and the measurement that disproves it
+also produces the real argument.**
+
+Generating every target's documentation into memfs and scanning the
+result for `{` or `<` outside fenced blocks and inline code:
+
+- **224 markdown files, 23 targets, ZERO hazards.** The one hit was a
+  false positive in the scanner: a line-wrapped inline code span
+  (`` `(url,
+fetchdef)` ``), which MDX handles.
+
+So sdkgen's own prose is MDX-clean. The hazard is elsewhere, and it is
+not fixable by writing better prose:
+
+- **Spec-derived text reaches prose unescaped.** Injecting a hostile
+  `info.summary` puts `A demo API. Uses {braces} and <tags> in its
+  summary.` into `README.md:5`, unfenced. Entity descriptions and
+  operation summaries travel the same way. That text belongs to whoever
+  wrote the OpenAPI document.
+
+Under MDX, a docs item must therefore escape every spec-derived string at
+every interpolation site, forever, and the failure mode is *a consumer's
+site build breaking because of their own API description*. Under
+CommonMark the same text is inert. **That is the argument for
+mkdocs-material** — not the one about our own prose — and it comes with
+two independent benefits: `mkdocs.yml` is a single generated file the
+emitter owns entirely, and TechDocs is mkdocs, so a later Backstage item
+inherits the emitter.
+
+If MDX is chosen anyway for its tabs and versioning, the escaping rule is
+the thing to design first, not last.
+
+### 20.7 Open questions for whoever builds it
+
+1. **Orphan pruning.** A docs item emits a page per entity and per
    operation; an entity removed from the spec leaves a stale page.
    `pruneStaleTemplates` prunes the `tm` tree at add time, not generated
    output at generate time. Either the emitter keeps a ledger of what it
@@ -1623,14 +1684,17 @@ the package boundary that already exists.
    copy-if-present, and `package check` should warn when components
    reference a template tree the package does not ship.
 
-### 20.6 Phasing
+### 20.8 Phasing
 
-1. **The kind, with no bundled item** — registry entry, model schema,
-   `docs add`, provenance, index, doctor and `package check` coverage,
-   and the out-of-tree generalisation. Proven by a fixture docs package in
-   `ts/test`, which is what an external author's package looks like.
-2. **The bundled reference item**, if one is wanted — engine chosen by
-   §20.5.1, verified in `generate.test.ts` against memfs.
-3. **Backstage as the first external docs package**, which is also the
-   first real test of §14's authoring loop for a kind that is not
-   `target`.
+1. **The kind in sdkgen, with no bundled item** — registry entry, model
+   schema, `docs add`, provenance, index, doctor and `package check`
+   coverage, and the out-of-tree generalisation. Proven by a fixture docs
+   package in `ts/test`, which is what an external author's package looks
+   like.
+2. **docgen becomes a package** — `sdkgen-package.json` + `.sdk/`, with
+   the static site rewritten as its first item (§20.5). A clean
+   `package check` and a clean `doctor` immediately after
+   `package add @voxgig/docgen` is the bar, per §14.
+3. **Backstage as a second item or a second package**, which is the first
+   real test of the authoring loop for a destination sdkgen knows nothing
+   about.
