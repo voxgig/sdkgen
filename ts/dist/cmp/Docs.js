@@ -53,10 +53,20 @@ const DocsItem = (0, jostraca_1.cmp)(function DocsItem(props) {
     const log = ctx$.log;
     const model = props.model ?? ctx$.model;
     const stdrep = (0, stdrep_1.ensureStdrep)(ctx$);
-    const Main_docs = (0, utility_1.requirePath)(ctx$, `cmp/docs/${item.name}/Main_${item.name}`);
+    // The MODEL KEY is the fallback, and it is not paranoia: `name` comes from
+    // the base schema's `name: key()`, so an item whose project has not
+    // included that schema — or whose own definition omits it — reached
+    // `require('cmp/docs/undefined/Main_undefined')`, a message naming nothing
+    // the author wrote. Seen in the first real install of a docs package.
+    const name = item.name ?? item.key$;
+    if (null == name || '' === name) {
+        throw new Error('Docs item has no name and no model key, so its component cannot be ' +
+            'located: ' + JSON.stringify(Object.keys(item ?? {})));
+    }
+    const Main_docs = (0, utility_1.requirePath)(ctx$, `cmp/docs/${name}/Main_${name}`);
     Main_docs['Main']({ model, docs: item, stdrep });
     log.info({
-        point: 'generate-docs', docs: item.name, note: 'docs:' + item.name
+        point: 'generate-docs', docs: name, note: 'docs:' + name
     });
 });
 exports.DocsItem = DocsItem;
@@ -79,8 +89,9 @@ const Docs = (0, jostraca_1.cmp)(function Docs(props) {
         if (null != path && '' !== path) {
             return;
         }
-        (0, jostraca_1.names)(item, item.name);
-        (0, jostraca_1.Folder)({ name: item.name }, () => DocsItem({ item }));
+        const name = item.name ?? item.key$;
+        (0, jostraca_1.names)(item, name);
+        (0, jostraca_1.Folder)({ name }, () => DocsItem({ item }));
     });
 });
 exports.Docs = Docs;

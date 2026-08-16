@@ -61,12 +61,25 @@ const DocsItem = cmp(function DocsItem(props: any) {
 
   const stdrep = ensureStdrep(ctx$)
 
-  const Main_docs = requirePath(ctx$, `cmp/docs/${item.name}/Main_${item.name}`)
+  // The MODEL KEY is the fallback, and it is not paranoia: `name` comes from
+  // the base schema's `name: key()`, so an item whose project has not
+  // included that schema — or whose own definition omits it — reached
+  // `require('cmp/docs/undefined/Main_undefined')`, a message naming nothing
+  // the author wrote. Seen in the first real install of a docs package.
+  const name = item.name ?? item.key$
+
+  if (null == name || '' === name) {
+    throw new Error(
+      'Docs item has no name and no model key, so its component cannot be ' +
+      'located: ' + JSON.stringify(Object.keys(item ?? {})))
+  }
+
+  const Main_docs = requirePath(ctx$, `cmp/docs/${name}/Main_${name}`)
 
   Main_docs['Main']({ model, docs: item, stdrep })
 
   log.info({
-    point: 'generate-docs', docs: item.name, note: 'docs:' + item.name
+    point: 'generate-docs', docs: name, note: 'docs:' + name
   })
 })
 
@@ -96,9 +109,11 @@ const Docs = cmp(function Docs(props: any) {
       return
     }
 
-    names(item, item.name)
+    const name = item.name ?? item.key$
 
-    Folder({ name: item.name }, () => DocsItem({ item }))
+    names(item, name)
+
+    Folder({ name }, () => DocsItem({ item }))
   })
 })
 

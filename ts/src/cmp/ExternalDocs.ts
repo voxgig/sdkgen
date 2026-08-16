@@ -42,7 +42,7 @@ const ExternalDocs = cmp(function ExternalDocs(props: any) {
   prepareModel(model, ctx$)
 
   Project({}, () => {
-    names(item, item.name)
+    names(item, item.name ?? item.key$)
 
     DocsItem({ item })
   })

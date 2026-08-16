@@ -35,7 +35,7 @@ const ExternalDocs = (0, jostraca_1.cmp)(function ExternalDocs(props) {
     // generate exactly as one with both.
     (0, Docs_1.prepareModel)(model, ctx$);
     (0, jostraca_1.Project)({}, () => {
-        (0, jostraca_1.names)(item, item.name);
+        (0, jostraca_1.names)(item, item.name ?? item.key$);
         (0, Docs_1.DocsItem)({ item });
     });
 });

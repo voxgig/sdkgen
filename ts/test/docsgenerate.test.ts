@@ -117,6 +117,18 @@ const ConsumerRoot = cmp(function Root(_props: any) {
 })
 
 
+// memfs keys with forward slashes; `Path.join` on Windows produces
+// backslashes, and the runner's temp dir arrives as an 8.3 short name
+// (`RUNNER~1`) that does not match the long form either. So paths are
+// compared NORMALISED and by TAIL — the same rule the in-tree assertions
+// already followed, and the second time in this workstream a test has been
+// written as though `Path.join` and a filesystem key were the same string.
+function ends(out: Record<string, string>, tail: string): boolean {
+  return Object.keys(out).some(
+    (p: string) => p.split('\\').join('/').endsWith(tail))
+}
+
+
 async function generate(model: any): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -225,11 +237,10 @@ describe('docs generation — out of tree', () => {
       site: { name: 'site', active: true, output: { path: dest } },
     }))
 
-    const inside = Object.keys(out).filter(
-      (p) => p === Path.join(proj, 'site', 'index.md'))
-    deepStrictEqual(inside, [], 'the item also generated in-tree')
+    ok(!ends(out, '/project/site/index.md'),
+      'the item also generated in-tree: ' + Object.keys(out).join(','))
 
-    ok(Object.keys(out).some((p) => p === Path.join(dest, 'index.md')),
+    ok(ends(out, '/sibling-site/index.md'),
       'nothing at the destination: ' + Object.keys(out).join(','))
   })
 
@@ -282,7 +293,7 @@ describe('docs generation — out of tree', () => {
       },
     }))
 
-    ok(!Object.keys(out).some((p) => p.includes('would-be-illegal')),
+    ok(!ends(out, 'would-be-illegal/index.md'),
       Object.keys(out).join(','))
   })
 
