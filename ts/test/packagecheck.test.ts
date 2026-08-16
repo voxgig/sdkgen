@@ -420,20 +420,30 @@ describe('package check — feature source', () => {
   })
 
 
-  test("source for a feature the package does NOT provide is not a stray", () => {
+  test('source for a feature the package does NOT provide is not a stray', () => {
     // A package shipping a copy of a bundled target ships source for every
     // bundled feature. Those are known to the CONSUMER's catalogue, not to
     // the package's own — reading only the package's would fire on all of
     // them.
-    const report = check()
+    const dir = makePackage()
+    try {
+      // The fixture provides `retry` and nothing else...
+      ok(!Fs.existsSync(Path.join(dir, '.sdk', 'model', 'feature', 'log.aontu')),
+        'fixture assumption: the package does not provide log')
 
-    ok(Fs.existsSync(Path.join(SCAFFOLD, 'tm', 'go', 'feature', 'log_feature.go')),
-      'fixture assumption: go ships log source')
-    ok(!Fs.existsSync(
-      Path.join(SCAFFOLD, 'model', 'feature', 'log.aontu').replace(
-        'project/.sdk', 'nowhere')), 'fixture assumption')
+      // ...and its copied `go` tree ships log source regardless.
+      ok(Fs.existsSync(
+        Path.join(SCAFFOLD, 'tm', 'go', 'feature', 'log_feature.go')),
+        'fixture assumption: go ships log source')
 
-    ok(!points(report).includes('feature-source-unrecognised'))
+      const report = checkPackage(dir, actx())
+
+      ok(!points(report).includes('feature-source-unrecognised'),
+        noted(report, 'feature-source-unrecognised'))
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
   })
 
 })
