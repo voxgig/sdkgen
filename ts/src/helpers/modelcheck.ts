@@ -43,6 +43,18 @@ import { schemaFile } from './shipped'
 const ANCHOR = "base: 'BASE'"
 
 
+// Matched as a WHOLE LINE, never as a substring — the same rule doctor
+// learned the hard way (see AGENTS.md, "Provenance is matched by EXACT LINE").
+//
+// `database: 'BASE'` contains the anchor text, and so does a comment
+// mentioning it. Either would satisfy a substring test while leaving the
+// definition with no anchor of its own: the stamp then rewrites that
+// unrelated occurrence, the item records no usable `base`, and `doctor` and
+// `package update` can never locate its source — with `package check` having
+// reported the file as fine.
+const ANCHOR_RE = /^[ \t]*base: 'BASE'[ \t]*$/m
+
+
 // An aontu map key that is safe unquoted. Everything else — a hyphen
 // (`go-cli`), a dot (`go.v2`), a leading digit (`2go`) — has to be quoted or
 // the file does not parse, and the ITEM name grammar admits all three.
@@ -63,13 +75,26 @@ function unquoted(line: string): string {
 }
 
 
+// What the PARSER sees on this line: quoted spans blanked, then everything
+// from the first `#` dropped.
+//
+// Both steps, in that order. Without the second, a perfectly valid comment
+// that happens to mention the token — `# some languages use // comments` —
+// is reported as a parse error and the CLI exits non-zero on a correct
+// package. Without the first, a `#` inside a string would truncate the line
+// early and hide a real `//` after it.
+function code(line: string): string {
+  return unquoted(line).split('#')[0]
+}
+
+
 // Every line carrying a slash comment, 1-based, as a consumer's parser would
 // see it.
 function slashComments(text: string): { line: number, text: string }[] {
   const found: { line: number, text: string }[] = []
 
   String(text).split('\n').forEach((line: string, i: number) => {
-    if (/(^|\s)(\/\/|\/\*)/.test(unquoted(line))) {
+    if (/(^|\s)(\/\/|\/\*)/.test(code(line))) {
       found.push({ line: i + 1, text: line.trim() })
     }
   })
@@ -177,28 +202,45 @@ function compileModel(
 
 
 // Every key the schema DEFAULTS and a project therefore expects to set, with
-// a value to set it to. A target model that declares any of them makes the
-// project's own declaration a concrete-vs-concrete conflict — which fails the
-// consumer's entire model compile, naming the consumer's file.
-const PUBLISH_OVERRIDES: [string, string][] = [
-  ['publish: version', "'9.9.9'"],
-  ['publish: tag: active', 'false'],
-  ['publish: registry: state', "'active'"],
-  ['publish: registry: active', 'true'],
-  ['publish: registry: package', "'@acme/pinned'"],
+// TWO values to try setting it to. A target model that declares any of them
+// makes the project's own declaration a concrete-vs-concrete conflict — which
+// fails the consumer's entire model compile, naming the consumer's file.
+//
+// Two values because aontu unifies two EQUAL concrete scalars happily: a
+// target pinning `publish: tag: active: false` — which is one of only two
+// values that key can take — passed a single-sentinel probe while still
+// making `true` impossible for the consumer. One alternative value per key is
+// enough: a pin can equal one sentinel or the other, never both.
+const PUBLISH_OVERRIDES: [string, string, string][] = [
+  ['publish: version', "'9.9.9'", "'8.8.8'"],
+  ['publish: tag: active', 'false', 'true'],
+  ['publish: registry: state', "'active'", "'inactive'"],
+  ['publish: registry: active', 'true', 'false'],
+  ['publish: registry: package', "'@acme/pinned'", "'@acme/other'"],
 ]
 
 
-// The probe: unify the target model with a project that sets each of them.
+// The probe: unify the target model with a project that sets each of them,
+// once per sentinel set. EITHER conflicting means the key is pinned.
 function publishOverrideProbe(
   src: string, path: string, tname: string,
 ): CompileResult {
   const key = aontuKey(tname)
 
-  return compileModel(
-    [src, ...PUBLISH_OVERRIDES.map(
-      ([k, v]) => 'main: kit: target: ' + key + ': ' + k + ': ' + v)].join('\n'),
-    path)
+  const run = (pick: (o: [string, string, string]) => string): CompileResult =>
+    compileModel(
+      [src, ...PUBLISH_OVERRIDES.map(
+        (o) => 'main: kit: target: ' + key + ': ' + o[0] + ': ' + pick(o))]
+        .join('\n'),
+      path)
+
+  const first = run((o) => o[1])
+  const second = run((o) => o[2])
+
+  return {
+    model: first.model ?? second.model,
+    errors: [...first.errors, ...second.errors],
+  }
 }
 
 
@@ -208,6 +250,7 @@ export type {
 
 export {
   ANCHOR,
+  ANCHOR_RE,
   PUBLISH_OVERRIDES,
   aontuKey,
   compileModel,

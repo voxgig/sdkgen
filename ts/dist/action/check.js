@@ -51,6 +51,22 @@ const kind_1 = require("./kind");
 // saying "and N more". A file with a hundred `//` lines is one mistake, and
 // printing a hundred findings buries the other nine checks.
 const SAME_FILE_LIMIT = 5;
+// A LIST OF NAMES from a manifest map, or nothing.
+//
+// The manifest is the one input here that is neither this generator's nor
+// validated before it is read: `provides: { target: 42 }` is a manifest a
+// person can write, `checkShape` already reports it, and spreading it then
+// threw `TypeError: claimed is not iterable` — turning an actionable finding
+// into a stack trace, from the verb whose entire job is actionable findings.
+//
+// Malformed reads as EMPTY rather than as its own finding: the shape checks
+// have already said what is wrong with it, and saying so twice in different
+// words helps nobody.
+function claims(map, key) {
+    const value = map?.[key];
+    return Array.isArray(value) ?
+        value.filter((n) => 'string' === typeof n && '' !== n) : [];
+}
 async function cmd_package_check(args, actx) {
     const refs = args.slice(2).flatMap((a) => 'string' === typeof a ? a.split(',') : a)
         .filter((r) => null != r && '' !== r);
@@ -137,7 +153,7 @@ function checkManifest(fs, sdk, read) {
 function checkItems(fs, sdk, manifest) {
     const found = [];
     for (const kind of Object.keys(kind_1.KINDS).sort()) {
-        const claimed = manifest?.provides?.[kind] ?? [];
+        const claimed = claims(manifest?.provides, kind);
         const ondisk = (0, definition_1.definitionNames)(fs, sdk, kind);
         const names = Array.from(new Set([...claimed, ...ondisk])).sort();
         for (const name of names) {
@@ -157,7 +173,7 @@ function checkDefinition(fs, kind, name, file) {
     // 1. The provenance anchor. Its absence costs nothing at add time and
     //    everything afterwards: the copy records no source, so `doctor` and
     //    `package update` cannot find where it came from.
-    if (!src.includes(modelcheck_1.ANCHOR)) {
+    if (!modelcheck_1.ANCHOR_RE.test(src)) {
         found.push(at('error', 'model-anchor-missing', 'no `' + modelcheck_1.ANCHOR + '` line — the copy would record no provenance, so ' +
             '`package update` and `doctor` could never locate its source'));
     }
@@ -278,9 +294,9 @@ function checkFeatureSource(fs, sdk, manifest) {
     // Declared coverage. `targetsSupported: { <feature>: [<target>, …] }` is
     // the author's statement about which targets a feature ships source for, so
     // it is checkable — unlike its absence, which means nothing either way.
-    const supported = manifest?.targetsSupported ?? {};
-    for (const fname of Object.keys(supported).sort()) {
-        for (const tname of (supported[fname] ?? [])) {
+    const supported = manifest?.targetsSupported;
+    for (const fname of Object.keys(supported ?? {}).sort()) {
+        for (const tname of claims(supported, fname)) {
             const tm = node_path_1.default.join(sdk, 'tm', tname);
             if (0 === (0, featureSource_1.findFeatureSources)(fs, tm, [fname.toLowerCase()]).length) {
                 found.push({
@@ -306,7 +322,7 @@ function checkFeatureSource(fs, sdk, manifest) {
         return found;
     }
     const targets = new Set([
-        ...(manifest?.provides?.target ?? []),
+        ...claims(manifest?.provides, 'target'),
         ...(0, definition_1.definitionNames)(fs, sdk, 'target'),
     ]);
     for (const tname of Array.from(targets).sort()) {

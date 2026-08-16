@@ -1,4 +1,5 @@
 declare const ANCHOR = "base: 'BASE'";
+declare const ANCHOR_RE: RegExp;
 declare function aontuKey(name: string): string;
 declare function unquoted(line: string): string;
 declare function slashComments(text: string): {
@@ -15,7 +16,7 @@ declare function compileModel(src: string, path: string, opts?: {
     strict?: boolean;
     schema?: boolean;
 }): CompileResult;
-declare const PUBLISH_OVERRIDES: [string, string][];
+declare const PUBLISH_OVERRIDES: [string, string, string][];
 declare function publishOverrideProbe(src: string, path: string, tname: string): CompileResult;
 export type { CompileResult, };
-export { ANCHOR, PUBLISH_OVERRIDES, aontuKey, compileModel, includeLine, publishOverrideProbe, slashComments, strictAontu, unquoted, };
+export { ANCHOR, ANCHOR_RE, PUBLISH_OVERRIDES, aontuKey, compileModel, includeLine, publishOverrideProbe, slashComments, strictAontu, unquoted, };

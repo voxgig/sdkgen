@@ -242,6 +242,22 @@ describe('package check — the model rules', () => {
   })
 
 
+  test('the anchor must be a LINE, not a substring somewhere', () => {
+    // `database: 'BASE'` contains the anchor text. A substring test passes,
+    // the stamp then rewrites THAT line, and the installed item records no
+    // usable `base` — with the check having called the file fine. The same
+    // exact-line rule doctor already enforces.
+    for (const decoy of ["database: 'BASE'", "  # keep base: 'BASE' here"]) {
+      const report = check((dir) =>
+        editModel(dir, 'feature', 'retry', (src) =>
+          src.replace("base: 'BASE'", decoy)))
+
+      ok(points(report).includes('model-anchor-missing'),
+        decoy + ' satisfied the anchor check: ' + points(report).join(','))
+    }
+  })
+
+
   test('a key the base schema requires and the file omits', () => {
     // `ext` compiles fine on its own — it only fails once the consumer
     // unifies the whole model, which is the failure this moves forward.
@@ -288,6 +304,55 @@ describe('package check — the model rules', () => {
 
     ok(points(report).includes('target-publish-pinned'), points(report).join(','))
     ok(/cannot override/.test(noted(report, 'target-publish-pinned')))
+  })
+
+
+  test('a pin that EQUALS the probe value is still caught', () => {
+    // aontu unifies two equal concrete scalars happily, so a single sentinel
+    // misses any key whose pinned value happens to be the one probed —
+    // `tag.active: false` is one of only two values that key can take. Two
+    // sentinels per key: a pin can equal one or the other, never both.
+    for (const [key, value] of [
+      ['publish: tag: active', 'false'],
+      ['publish: tag: active', 'true'],
+      ['publish: registry: package', "'@acme/pinned'"],
+    ]) {
+      const report = check((dir) =>
+        editModel(dir, 'target', 'iotgo', (src) =>
+          src.replace('main: kit: target: iotgo: {',
+            'main: kit: target: iotgo: {\n  ' + key + ': ' + value)))
+
+      ok(points(report).includes('target-publish-pinned'),
+        key + ': ' + value + ' passed: ' + points(report).join(','))
+    }
+  })
+
+
+  test('a valid `#` comment that MENTIONS a slash comment is fine', () => {
+    // The strict parser ignores everything after `#`, so a comment saying
+    // `// comments` is not a slash comment — and reporting it would exit
+    // non-zero on a correct package.
+    const report = check((dir) =>
+      editModel(dir, 'target', 'iotgo', (src) =>
+        '# some generated languages use // and /* */ comments\n' + src))
+
+    ok(!points(report).includes('model-slash-comment'),
+      noted(report, 'model-slash-comment'))
+    ok(!points(report).includes('model-parse'), noted(report, 'model-parse'))
+    strictEqual(report.ok, true)
+  })
+
+
+  test('a `#` inside a STRING does not hide a real slash comment', () => {
+    // The other direction: blanking quoted spans has to happen before the
+    // `#` cut, or `'#'` in a value would truncate the line and hide what
+    // follows it.
+    const report = check((dir) =>
+      editModel(dir, 'target', 'iotgo', (src) =>
+        src.replace('main: kit: target: iotgo: {',
+          "main: kit: target: iotgo: {\n  title: 'a # in a string' // real")))
+
+    ok(points(report).includes('model-slash-comment'), points(report).join(','))
   })
 
 
@@ -370,6 +435,41 @@ describe('package check — the manifest', () => {
 
     deepStrictEqual(points(report), ['manifest-unreadable'])
     strictEqual(report.ok, false)
+  })
+
+
+  test('a malformed `provides` REPORTS, and does not throw', () => {
+    // The manifest is the one input here nobody validated first, and
+    // `provides: { target: 42 }` is a manifest a person can write. Spreading
+    // it threw `claimed is not iterable` — a stack trace out of the verb
+    // whose whole job is actionable findings.
+    for (const provides of [
+      { target: 42 },
+      { target: 'iotgo' },
+      { target: null },
+      { target: [1, 2] },
+    ]) {
+      const report = check((dir) => writeManifest(dir, {
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot', provides,
+      }))
+
+      ok(points(report, 'error').some((p: string) => p.startsWith('manifest-')),
+        JSON.stringify(provides) + ' produced ' + points(report).join(','))
+      strictEqual(report.ok, false)
+    }
+  })
+
+
+  test('a malformed `targetsSupported` does not throw either', () => {
+    const report = check((dir) => writeManifest(dir, {
+      sdkgen: { package: 1 },
+      name: '@acme/sdkgen-iot',
+      provides: { target: ['iotgo'], feature: ['retry'] },
+      targetsSupported: { retry: 'iotgo' },
+    }))
+
+    ok(!points(report).includes('feature-source-undelivered'),
+      points(report).join(','))
   })
 
 })
