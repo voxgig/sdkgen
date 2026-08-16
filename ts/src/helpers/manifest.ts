@@ -274,7 +274,7 @@ function validateManifest(
   fs: any,
   sdkfolder: string,
   manifest: Manifest,
-  kinds: Record<string, { requires?: string[] }>,
+  kinds: Record<string, { trees?: { path: string, required: boolean }[] }>,
 ): Finding[] {
   const file = manifestPath(sdkfolder)
 
@@ -351,8 +351,10 @@ function validateManifest(
 // Every path an item of this kind needs, that is not there AS THE RIGHT KIND
 // OF THING.
 //
-// The definition file is implied for every kind; `requires` adds whatever
-// else the kind needs (a target's component and template trees).
+// The definition file is implied for every kind; the kind's REQUIRED trees
+// add whatever else it needs (a target's component and template trees, a docs
+// item's components). An optional tree — a docs item's templates — is not
+// checked here, because a package that legitimately ships none must validate.
 //
 // FILE vs DIRECTORY is checked, not merely existence. A regular file at
 // `src/cmp/<t>` satisfies `existsSync` and satisfies nothing else: `target
@@ -367,7 +369,7 @@ function missingPaths(
   sdkfolder: string,
   kind: string,
   name: string,
-  def: { requires?: string[] },
+  def: { trees?: { path: string, required: boolean }[] },
   defined: Set<string>,
 ): string[] {
   const missing: string[] = []
@@ -378,8 +380,8 @@ function missingPaths(
     missing.push('model/' + kind + '/' + name + '.aontu')
   }
 
-  for (const req of def.requires ?? []) {
-    const rel = req.split('{name}').join(name)
+  for (const tree of (def.trees ?? []).filter((t) => t.required)) {
+    const rel = tree.path.split('{name}').join(name)
     const got = entryKind(fs, Path.join(sdkfolder, ...rel.split('/')))
 
     if ('dir' !== got) {

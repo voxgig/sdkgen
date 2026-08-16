@@ -11,6 +11,7 @@ exports.trimFeatures = trimFeatures;
 exports.readTargetFeature = readTargetFeature;
 exports.aliasCmpText = aliasCmpText;
 exports.aliasCmpName = aliasCmpName;
+exports.aliasCmpTree = aliasCmpTree;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const util_1 = require("@voxgig/util");

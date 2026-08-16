@@ -680,4 +680,5 @@ export {
   readTargetFeature,
   aliasCmpText,
   aliasCmpName,
+  aliasCmpTree,
 }

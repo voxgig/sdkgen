@@ -68,19 +68,42 @@ type KindDef = {
   // SOURCE is deliberately not required — a feature package ships overlays
   // only for the targets it supports, and `targetsSupported` is where that
   // coverage is declared (design §7).
-  requires?: string[]
+  trees?: TreeDef[]
 }
 
 
-// Rewrite the target KEY in a copied model file, for an aliased install.
+// One tree an item of this kind owns, `{name}`-templated and relative to the
+// `.sdk` folder.
+type TreeDef = {
+  path: string
+
+  // What the copy substitutes on the way in — and therefore what doctor must
+  // re-apply before comparing, or every templated file reads as edited.
+  //   none     — copied verbatim, so a byte compare is the truth
+  //   template — through jostraca's template() with ProjectName et al
+  replace: 'none' | 'template'
+
+  // Must it be there for the item to be installable? A missing REQUIRED tree
+  // fails manifest validation before anything is written; a missing optional
+  // one is simply not copied.
+  required: boolean
+}
+
+
+// Rewrite the ITEM KEY in a copied model file, for an aliased install.
+//
+// Parameterised by kind because `main: kit: docs: <n>:` is the same rewrite
+// with a different word, and a second copy of this regex is exactly the
+// same-rule-written-twice defect the registry exists to prevent.
 //
 // Two forms are in use across the shipped models — bare (`target: go:`) and
-// quoted (`target: 'go-cli':`) — and two paths carry the key: the target
+// quoted (`target: 'go-cli':`) — and two paths carry the key: the item
 // block itself (`main: kit: target: <t>:`) and the per-target feature-deps
-// slot every model declares (`main: kit: feature: &: target: <t>: deps: &:`).
-// Both belong to the installed target, so both move. Matching on `target: `
-// rather than on the bare name is what keeps the rewrite off the target's
-// own values — `ext: go` and `module: name: '$$name$$'` must not change.
+// slot every target model declares
+// (`main: kit: feature: &: target: <t>: deps: &:`). Both belong to the
+// installed item, so both move. Matching on `<kind>: ` rather than on the
+// bare name is what keeps the rewrite off the item's own values — `ext: go`
+// and `module: name: '$$name$$'` must not change.
 //
 // ONE regex, with the quote optional and captured, rather than two entries in
 // jostraca's `replace` map: that map canonicalises each key into a regex
@@ -95,15 +118,19 @@ type KindDef = {
 // the alias is not a bare identifier.
 const BARE_KEY_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/
 
-function aliasModelText(src: string, torigname: string, tname: string): string {
-  const mustQuote = !BARE_KEY_RE.test(tname)
+function aliasModelKey(kind: string) {
+  return function aliasModelText(
+    src: string, origname: string, name: string,
+  ): string {
+    const mustQuote = !BARE_KEY_RE.test(name)
 
-  return src.replace(
-    new RegExp("target:(\\s*)('?)" + escapeRe(torigname) + "\\2:", 'g'),
-    (_m: string, gap: string, quote: string) => {
-      const q = ('' !== quote || mustQuote) ? "'" : ''
-      return 'target:' + gap + q + tname + q + ':'
-    })
+    return src.replace(
+      new RegExp(kind + ":(\\s*)('?)" + escapeRe(origname) + "\\2:", 'g'),
+      (_m: string, gap: string, quote: string) => {
+        const q = ('' !== quote || mustQuote) ? "'" : ''
+        return kind + ':' + gap + q + name + q + ':'
+      })
+  }
 }
 
 
@@ -115,14 +142,50 @@ function escapeRe(s: string): string {
 const KINDS: Record<string, KindDef> = Object.assign(Object.create(null), {
   target: {
     name: 'target', alias: true, ownedWhenAliased: true,
-    rename: aliasModelText,
+    rename: aliasModelKey('target'),
     // Components are dispatched by the convention `cmp/<t>/Main_<t>`, and the
     // template tree is what `target add` copies — a target missing either is
     // not installable, however complete its model file looks.
-    requires: ['src/cmp/{name}', 'tm/{name}'],
+    trees: [
+      { path: 'src/cmp/{name}', replace: 'none', required: true },
+      { path: 'tm/{name}', replace: 'template', required: true },
+    ],
   },
+
   feature: { name: 'feature', alias: false },
+
+  // DOCS — the third kind. See docs/design/sdkgen-packages.md §20.
+  //
+  // Its trees are NESTED under the kind name (`src/cmp/docs/<n>`, not
+  // `src/cmp/<n>`) so a docs item and a target may share a name without
+  // sharing a directory. Everything that composes those paths takes them
+  // from here.
+  //
+  // `tm/docs/{name}` is NOT required: a docs item whose every emitted byte
+  // depends on the API — a catalogue entry, a config file — legitimately
+  // ships no template tree, while a static site needs one. So it is
+  // copy-if-present, and `package check` does not demand it.
+  docs: {
+    name: 'docs', alias: true, ownedWhenAliased: true,
+    rename: aliasModelKey('docs'),
+    trees: [
+      { path: 'src/cmp/docs/{name}', replace: 'none', required: true },
+      { path: 'tm/docs/{name}', replace: 'template', required: false },
+    ],
+  },
 })
+
+
+// The trees a kind's add copies, with `{name}` resolved. ONE composition of
+// these paths, read by the add, by doctor's drift walk and (through
+// `requires`) by manifest validation — three readers that must agree about
+// where an item's content lives, and previously would each have spelled it.
+function kindTrees(kind: string, name: string): TreeDef[] {
+  return (kindDef(kind).trees ?? []).map((t: TreeDef) => ({
+    ...t,
+    path: t.path.split('{name}').join(name),
+  }))
+}
 
 
 function kindDef(kind: string): KindDef {
@@ -296,12 +359,14 @@ function capitalise(s: string): string {
 
 export type {
   KindDef,
+  TreeDef,
 }
 
 export {
   KINDS,
   recordedRef,
-  aliasModelText,
+  aliasModelKey,
+  kindTrees,
   escapeRe,
   kindDef,
   resolveKind,

@@ -55,7 +55,8 @@ import {
 // `aliasModelText` is no longer named here: the model-file comparison asks
 // the registry for the kind's own `rename`, so a kind that renames
 // differently is handled without this file knowing how.
-import { recordedRef, KINDS, kindDef } from './kind'
+import { recordedRef, KINDS, kindDef, kindTrees } from './kind'
+import type { TreeDef } from './kind'
 
 import { resolveSource } from './resolve'
 import type { Source } from './resolve'
@@ -247,6 +248,10 @@ async function doctor(
         checkTarget(actx, source, report)
       }
 
+      if ('docs' === kind) {
+        checkDocs(actx, source, report)
+      }
+
       // Only an ACTIVE feature has source copied out; what an inactive one
       // left behind is stale, and the target walk reports it as such.
       if ('feature' === kind &&
@@ -408,11 +413,7 @@ function checkTarget(
   const rewriteCmp = aliased ?
     (src: string) => aliasCmpText(src, torigname, tname) : undefined
 
-  const trees: {
-    project: string, scaffold: string, replace: any, kind: 'forked' | 'edited',
-    rename?: (rel: string) => string,
-    rewrite?: (src: string) => string,
-  }[] = [
+  const trees: TreeCompare[] = [
       {
         project: Path.join(root, 'src', 'cmp', tname),
         scaffold: Path.join(tfolder, 'src', 'cmp', torigname),
@@ -446,6 +447,40 @@ function checkTarget(
   const excludes: RegExp[] = trimFeatures(
     { log: quietLog(actx.log), fs: () => fs, folder: root, model },
     tfolder, torigname, tname, features)
+
+  compareTrees(actx, report, trees, {
+    excludes,
+    // Only a TARGET has foreign feature source landing in its tree.
+    foreign: (kind: string) => 'edited' === kind ?
+      foreignFeatureSource(actx, resolved) : [],
+  })
+}
+
+
+// COMPARE A SET OF TREES against the sources they were copied from.
+//
+// Extracted from `checkTarget` unchanged, because the docs kind needs exactly
+// this and a second copy of it is the defect this workstream keeps producing.
+// What differs per kind stays in the caller: which trees, what the copy
+// substituted, whether a trim excludes part of the source, and whether
+// anything foreign is expected to land in the tree.
+//
+// This is the mechanism behind the rule in CLAUDE.md — anything an add
+// writes, doctor must compare, or the next add silently reverts a project's
+// edit. A kind that declares trees and is not walked here would break it.
+function compareTrees(
+  actx: ActionContext,
+  report: DoctorReport,
+  trees: TreeCompare[],
+  opts?: {
+    excludes?: RegExp[],
+    foreign?: (kind: string) => Iterable<[string, string]>,
+  },
+) {
+  const fs = actx.fs()
+  const model = actx.model
+  const root = actx.folder
+  const excludes = opts?.excludes ?? []
 
   for (const tree of trees) {
     // Findings are reported at project-relative paths, the way a maintainer
@@ -484,11 +519,9 @@ function checkTarget(
     // everything the re-add writes.
     const foreign = new Set<string>()
 
-    if ('edited' === tree.kind) {
-      for (const [rel, from] of foreignFeatureSource(actx, resolved)) {
-        landed.set(rel, from)
-        foreign.add(rel)
-      }
+    for (const [rel, from] of (opts?.foreign?.(tree.kind) ?? [])) {
+      landed.set(rel, from)
+      foreign.add(rel)
     }
 
     const expected = Array.from(landed.keys()).sort()
@@ -538,7 +571,69 @@ function checkTarget(
       }
     }
   }
+}
 
+
+// A DOCS item's trees.
+//
+// Simpler than a target's in every way that matters here: no trim (a docs
+// item has no per-feature source to leave out), and nothing foreign lands in
+// them (a feature package's overlay targets a TARGET's tree). What is the
+// same is the alias handling — docs components are dispatched by the same
+// `Main_<n>` convention — and the tree paths, which come from the registry
+// rather than being spelled a second time.
+//
+// The optional template tree is skipped when the SOURCE does not ship one:
+// `docs add` did not copy it, so the project is right not to have it.
+function checkDocs(
+  actx: ActionContext, resolved: Source, report: DoctorReport,
+) {
+  const fs = actx.fs()
+  const root = actx.folder
+  const name = resolved.name
+  const origname = resolved.origname
+  const aliased = name !== origname
+
+  const dest = kindTrees('docs', name)
+  const from = kindTrees('docs', origname)
+
+  const trees: TreeCompare[] = dest.flatMap((tree: TreeDef, i: number) => {
+    const scaffold = Path.join(resolved.folder, ...from[i].path.split('/'))
+
+    if (!fs.existsSync(scaffold)) {
+      return []
+    }
+
+    const templated = 'template' === tree.replace
+
+    return [{
+      project: Path.join(root, ...tree.path.split('/')),
+      scaffold,
+      replace: templated ? templateReplacements(actx.model, name) : {},
+      kind: templated ? 'edited' : 'forked',
+      rename: aliased && !templated ?
+        (rel: string) => aliasCmpName(rel, origname, name) : undefined,
+      rewrite: aliased && !templated ?
+        (src: string) => aliasCmpText(src, origname, name) : undefined,
+    } as TreeCompare]
+  })
+
+  compareTrees(actx, report, trees)
+}
+
+
+// One tree to compare: where it landed, where it came from, what the copy
+// substituted, and how a finding about it is categorised.
+//
+//   forked — a verbatim copy, so any difference is a fork of the source
+//   edited — a templated copy, so a difference is an edit to the master
+type TreeCompare = {
+  project: string
+  scaffold: string
+  replace: any
+  kind: 'forked' | 'edited'
+  rename?: (rel: string) => string
+  rewrite?: (src: string) => string
 }
 
 

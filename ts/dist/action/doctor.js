@@ -150,6 +150,9 @@ async function doctor(actx, scope) {
             if ('target' === kind) {
                 checkTarget(actx, source, report);
             }
+            if ('docs' === kind) {
+                checkDocs(actx, source, report);
+            }
             // Only an ACTIVE feature has source copied out; what an inactive one
             // left behind is stale, and the target walk reports it as such.
             if ('feature' === kind &&
@@ -315,6 +318,29 @@ function checkTarget(actx, resolved, report) {
     // different trim from the one `target add` applied and report correctly
     // trimmed files as missing.
     const excludes = (0, target_1.trimFeatures)({ log: quietLog(actx.log), fs: () => fs, folder: root, model }, tfolder, torigname, tname, features);
+    compareTrees(actx, report, trees, {
+        excludes,
+        // Only a TARGET has foreign feature source landing in its tree.
+        foreign: (kind) => 'edited' === kind ?
+            foreignFeatureSource(actx, resolved) : [],
+    });
+}
+// COMPARE A SET OF TREES against the sources they were copied from.
+//
+// Extracted from `checkTarget` unchanged, because the docs kind needs exactly
+// this and a second copy of it is the defect this workstream keeps producing.
+// What differs per kind stays in the caller: which trees, what the copy
+// substituted, whether a trim excludes part of the source, and whether
+// anything foreign is expected to land in the tree.
+//
+// This is the mechanism behind the rule in CLAUDE.md — anything an add
+// writes, doctor must compare, or the next add silently reverts a project's
+// edit. A kind that declares trees and is not walked here would break it.
+function compareTrees(actx, report, trees, opts) {
+    const fs = actx.fs();
+    const model = actx.model;
+    const root = actx.folder;
+    const excludes = opts?.excludes ?? [];
     for (const tree of trees) {
         // Findings are reported at project-relative paths, the way a maintainer
         // would type them.
@@ -347,11 +373,9 @@ function checkTarget(actx, resolved, report) {
         // which is what `package update`'s gate needs in order to cover
         // everything the re-add writes.
         const foreign = new Set();
-        if ('edited' === tree.kind) {
-            for (const [rel, from] of foreignFeatureSource(actx, resolved)) {
-                landed.set(rel, from);
-                foreign.add(rel);
-            }
+        for (const [rel, from] of (opts?.foreign?.(tree.kind) ?? [])) {
+            landed.set(rel, from);
+            foreign.add(rel);
         }
         const expected = Array.from(landed.keys()).sort();
         const actual = walk(fs, tree.project);
@@ -392,6 +416,44 @@ function checkTarget(actx, resolved, report) {
             }
         }
     }
+}
+// A DOCS item's trees.
+//
+// Simpler than a target's in every way that matters here: no trim (a docs
+// item has no per-feature source to leave out), and nothing foreign lands in
+// them (a feature package's overlay targets a TARGET's tree). What is the
+// same is the alias handling — docs components are dispatched by the same
+// `Main_<n>` convention — and the tree paths, which come from the registry
+// rather than being spelled a second time.
+//
+// The optional template tree is skipped when the SOURCE does not ship one:
+// `docs add` did not copy it, so the project is right not to have it.
+function checkDocs(actx, resolved, report) {
+    const fs = actx.fs();
+    const root = actx.folder;
+    const name = resolved.name;
+    const origname = resolved.origname;
+    const aliased = name !== origname;
+    const dest = (0, kind_1.kindTrees)('docs', name);
+    const from = (0, kind_1.kindTrees)('docs', origname);
+    const trees = dest.flatMap((tree, i) => {
+        const scaffold = node_path_1.default.join(resolved.folder, ...from[i].path.split('/'));
+        if (!fs.existsSync(scaffold)) {
+            return [];
+        }
+        const templated = 'template' === tree.replace;
+        return [{
+                project: node_path_1.default.join(root, ...tree.path.split('/')),
+                scaffold,
+                replace: templated ? (0, stdrep_1.templateReplacements)(actx.model, name) : {},
+                kind: templated ? 'edited' : 'forked',
+                rename: aliased && !templated ?
+                    (rel) => (0, target_1.aliasCmpName)(rel, origname, name) : undefined,
+                rewrite: aliased && !templated ?
+                    (src) => (0, target_1.aliasCmpText)(src, origname, name) : undefined,
+            }];
+    });
+    compareTrees(actx, report, trees);
 }
 // Per-target source that a FEATURE package supplies for this target, as
 // `project-relative path -> the file it was copied from`.

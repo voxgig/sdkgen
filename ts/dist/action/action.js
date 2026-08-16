@@ -79,15 +79,26 @@ function parseAddNames(args) {
         .flatMap((a) => 'string' === typeof a ? a.split(',') : a)
         .filter((n) => null != n && '' !== n);
 }
-function loadContent(actx, which) {
+// The current index file for each kind, which `UpdateIndex` appends to.
+//
+// `seed` IS THE UPGRADE PATH. A project scaffolded before a kind existed has
+// no `model/<kind>/<kind>-index.aontu` — every project alive today is in
+// exactly that position for `docs` — and reading it unguarded made the FIRST
+// `docs add` in any existing project fail on ENOENT before it wrote anything.
+//
+// Seeded per call rather than defaulted for every kind: a missing
+// `target-index.aontu` in a scaffolded project is a broken project, and
+// quietly recreating it would hide that. A kind the project has never used is
+// a different thing, and only its own action knows which case it is in.
+function loadContent(actx, which, seed) {
     which = Array.isArray(which) ? which : [which];
     const content = {};
     const fs = actx.fs();
     const modelfolder = node_path_1.default.dirname(actx.url);
     which.map((w) => {
         const indexfile = node_path_1.default.join(modelfolder, w, w + '-index.aontu');
-        const indexcontent = fs.readFileSync(indexfile, 'utf8');
-        content[`${w}_index`] = indexcontent;
+        content[`${w}_index`] = (null != seed?.[w] && !fs.existsSync(indexfile)) ?
+            seed[w] : fs.readFileSync(indexfile, 'utf8');
     });
     return content;
 }

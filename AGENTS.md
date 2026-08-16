@@ -65,6 +65,7 @@ The CLI a consumer runs, from its own `.sdk/` directory:
 ```bash
 voxgig-sdkgen target add <ref>       # add or resync a language target
 voxgig-sdkgen feature add <ref>      # add a feature
+voxgig-sdkgen docs add <ref>         # add a docs item (from a package)
 voxgig-sdkgen package add <pkg>      # everything an sdkgen package provides
 voxgig-sdkgen package list           # what is installed, and who supplied it
 voxgig-sdkgen package update <pkg>   # fetch a newer version and refresh
@@ -587,6 +588,7 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       resolve.ts       ref -> source; provenance recording; name collisions
       target.ts        target add (+ trees, trim, stale prune)
       feature.ts       feature add (+ the per-target fan-out)
+      docs.ts          docs add — the third kind (items live in packages)
       package.ts       package add / list / update
       check.ts         package check — the author-side battery
       doctor.ts        the drift check every other action is guarded by
