@@ -1387,10 +1387,11 @@ top:
    strict parser (rejecting `//` in third-party files at add time, not
    just in `package check`)? It currently fails *safe* (copy everything
    on any parse error), which strictness would change.
-4. **How much does `docs` as a built-in kind actually generate?** The
-   registry gives it a home; the `Docs` root component's scope (per-target
-   reference pages? a whole site? mkdocs/docusaurus scaffolding?) is a
-   design of its own, and the first docs package should drive it.
+4. **How much does `docs` as a built-in kind actually generate?**
+   ANSWERED — see §20. Docs is a family of destinations (static site,
+   hosted service, Backstage, an LMS), so the kind's job is to make each
+   expressible rather than to know what documentation looks like. What
+   remains open is narrower and listed in §20.5.
 5. **Root-wiring upgrade path.** Existing projects must add one `Kinds()`
    call to render a new kind. Is `unwired` reporting enough, or does
    create-sdkgen need a `resync-root` command? (The frozen-Root problem
@@ -1474,3 +1475,162 @@ source, per repo convention.
   code; collisions error instead (§10.5).
 - **Central package registry/discovery** — npm keywords and docs suffice
   until there is an ecosystem to index.
+
+---
+
+## 20. The `docs` kind — what a docs item actually is
+
+§8 gave the kind a home in the registry and §17.4 recorded what it did not
+answer: *what does a docs item generate?* That question is now answered.
+Asked what docs meant, the owner's answer was:
+
+> an independent static documentation site, or for a hosted solution, or
+> for the backstage project, or config and data for an lms like moodle, etc
+
+The shape of the answer matters more than the list. **Docs is not one
+output; it is a family of destinations.** So the kind's job is not to know
+what documentation looks like — it is to make each destination expressible
+by whoever cares about it, exactly as `target` makes each language
+expressible.
+
+### 20.1 A docs item is a generation target for a documentation destination
+
+Concretely, `docs add <ref>` installs the same three things a target does
+— a definition, components, and (optionally) templates — and at generate
+time the item emits a tree derived from the model. The difference is
+where that tree goes and what it is made of: MDX pages and a nav config,
+a `catalog-info.yaml` and an mkdocs tree, a spec plus a service config.
+
+### 20.2 Why it is a KIND, and not just another target
+
+sdkgen already ships targets that are not SDKs (`go-cli`, `go-mcp` and
+`py-data` wrap a sibling target; `seneca-provider` generates into its own
+repo with every standard phase off), so "not an SDK" is not the argument.
+Three things are:
+
+1. **A docs item's input is the target collection, so it cannot be a
+   member of it.** Its output is a function of `main.kit.target` as a
+   whole — a page per SDK, per-language tabs, the package table. Put it
+   in that collection and it enumerates itself, and every existing reader
+   of `main.kit.target` (`externalTargets`, `ReadmeTop`'s package table,
+   `config.docs_order`) needs a discriminator it does not have today.
+   Every one of the four destination analyses independently reached for a
+   `targets:` include/exclude list to escape this.
+
+2. **The namespace collision is mechanical, not hypothetical.**
+   `action/feature.ts`'s fan-out is `each(target, …)` and warns
+   `feature-source-missing` for every (feature × target) pair with no
+   source. A docs item parked in `main.kit.target` therefore collects one
+   warning per feature on every `feature add`, forever. `srcfeature:
+   false` does not save it — that flag is read at GENERATE time
+   (`cmp/Feature.ts`, `cmp/AgentGuideContent.ts`) and never by the
+   add-time fan-out. Verified.
+
+3. **The schemas are disjoint.** `main: kit: target: &:` makes `ext`,
+   `comment: line` and `module: name` required, non-defaulted strings.
+   `go-cli` pays that with three honest lines because it *is* a Go
+   program. A docs site emits `.md`, `.yml`, `.css` and `.svg` at once;
+   there is no true value for `comment.line`. Of the target spread, only
+   `name`/`active`, the provenance triple, `output.*` and `publish.tag`
+   transfer.
+
+**The counterweight, stated plainly:** the target road works today with
+no new wiring, and most of the docs kind's cost is mechanism whose only
+user is docs. What decides it is that promoting a docs item from target
+to kind later is a breaking model change for every project that installed
+it — while developing the CONTENT as a phase-gated target on a branch,
+and shipping it as a kind, costs nothing.
+
+### 20.3 What generation requires
+
+**Component convention:** `src/cmp/docs/<n>/Main_<n>`, resolved through
+`requirePath` exactly as `cmp/<t>/Main_<t>` is. The `docs/` segment comes
+from the registry's tree path and is composed nowhere else — the same
+one-rule-one-place invariant the alias rewrite and doctor's tree walk
+depend on.
+
+**Out of tree needs its own pass, and this is structural.** Three of the
+four destinations naturally live outside the SDK repo. Two facts in
+`cmp/ExternalTarget.ts` decide the mechanism: jostraca's
+`FileHandler.validName` refuses a `..` segment in a folder name (the
+guard that keeps generation inside the tree it was pointed at), and the
+output root is `jopts.folder` *per `generate()` call*. Writing elsewhere
+means another call. So the docs kind reuses the shipped, tested
+out-of-tree machinery — `externalTargets` / `checkExternalFolders` /
+`withoutTargets` / `externalSdkRel` — generalised to be keyed by kind,
+with the destination-claim map spanning kinds so a docs item and a target
+cannot claim the same folder. The load-bearing line to carry over is
+`ctx$.cmpfolder = cmpfolder`: without it a retargeted pass looks for
+components under the destination repo.
+
+**In tree, there is a choice, and it is open.** A consumer's `Root.ts`
+comes from create-sdkgen at init and is never touched again — the frozen-
+Root problem (§17.5). Either:
+
+- the consumer Root gains one `Kinds()` call, with `'Kinds'` added to
+  doctor's `ROOT_COMPONENTS` so a project that never wired it is TOLD
+  rather than silently generating nothing; or
+- sdkgen runs in-tree docs in a **second pass rooted at the same folder**,
+  the way it already does for out-of-tree items. Nothing prevents a second
+  `generate()` at the same root, and it keeps the promise that installing
+  a docs item needs no scaffold change — at the cost of two passes over
+  one root and a split changes report.
+
+The second is worth preferring precisely because it makes docs work in
+projects scaffolded before docs existed, which is the whole packages
+story. (An earlier note in this workstream stated the no-scaffold-change
+property unconditionally; it holds for out-of-tree items by construction,
+and in-tree only if the second-pass option is taken.)
+
+### 20.4 The four destinations, and what sdkgen should bundle
+
+| Destination | Verdict | Why |
+| --- | --- | --- |
+| **Static site** (mkdocs / Docusaurus / Starlight) | the reference item, if sdkgen bundles one | The only candidate whose entire output is text files — no credentials, no network, no format that can only be validated against a live account — so it is the only one `ts/test/generate.test.ts` can verify against memfs. It exercises every mechanism the kind needs and is useful to sdkgen's own users on day one. |
+| **Backstage** | external package | Its required fields (`spec.owner`, `lifecycle`, `system`, namespace, annotations) are ORG IDENTITY sdkgen cannot default and should not guess, and correctness is only observable inside a portal install. A strong second package — and it inherits the emitter if the bundled site is mkdocs, since TechDocs is mkdocs. |
+| **Hosted** (Mintlify / ReadMe / GitBook / Redocly) | external package, v2 capability | These render the API reference from the spec alone, so a docs item that ships the spec plus a config file is barely an item. Its real value is `x-codeSamples` injection, which needs the RAW spec at generate time — reachable only through `ctx$.meta.spec.config.def`, whose base directory is a create-sdkgen convention — plus credentials and a publish vocabulary that is not registry-shaped. |
+| **LMS / Moodle** | external package, and honestly assessed | **The regeneration contract is incompatible.** sdkgen generates by overwrite because the output is code; a course holds learner state — attempts, grades, completion — and there is no import path that updates in place keyed on generated ids. A model field meaning "this output is not safe to re-apply" would be a new concept; the honest alternative is not to have the destination built in. The only artefact that is truly a course (`.mbz`) is an internal, version-gated format with no published schema and nothing in CI that could check it. |
+
+**The shared content layer is library API, not a copied tree.** The
+neutral `cmp/Readme*` components already *are* the content model; a docs
+emitter should import them from `@voxgig/sdkgen` the way per-language
+components already import `cmp`, `each`, `File`. A shared
+`src/cmp/docs/_common/` tree would be orphaned — doctor classifies it
+`additive`, `pruneStaleTemplates` cannot maintain it, and `package
+update` cannot refresh it. One content model, several emitters, through
+the package boundary that already exists.
+
+### 20.5 Open questions for whoever builds it
+
+1. **Which static-site engine**, if one is bundled. The MDX objection —
+   that shipped prose contains `/planet/{id}` and `Promise<object[]>`,
+   which MDX v3 parses as expression and JSX — is **unproven**: the
+   sampled occurrences are inside fenced code blocks, which MDX handles.
+   A scan of the 23 targets' prose components for UNFENCED `{` and `<`
+   settles it. mkdocs-material's independent argument stands regardless:
+   plain CommonMark, a single generated config file, and TechDocs reuse.
+2. **Orphan pruning.** A docs item emits a page per entity and per
+   operation; an entity removed from the spec leaves a stale page.
+   `pruneStaleTemplates` prunes the `tm` tree at add time, not generated
+   output at generate time. Either the emitter keeps a ledger of what it
+   wrote, or stale pages accumulate silently.
+3. **In-tree collisions.** A site's own `README.md` and
+   `.github/workflows/` collide head-on with the SDK repo's when the item
+   generates in-tree. Out-of-tree has no such problem, which is another
+   argument for making `output.path` the normal case for docs.
+4. **`tm/docs/<n>` is optional.** A Backstage-shaped item is all
+   component; a static site needs templates. So the tree is
+   copy-if-present, and `package check` should warn when components
+   reference a template tree the package does not ship.
+
+### 20.6 Phasing
+
+1. **The kind, with no bundled item** — registry entry, model schema,
+   `docs add`, provenance, index, doctor and `package check` coverage,
+   and the out-of-tree generalisation. Proven by a fixture docs package in
+   `ts/test`, which is what an external author's package looks like.
+2. **The bundled reference item**, if one is wanted — engine chosen by
+   §20.5.1, verified in `generate.test.ts` against memfs.
+3. **Backstage as the first external docs package**, which is also the
+   first real test of §14's authoring loop for a kind that is not
+   `target`.
