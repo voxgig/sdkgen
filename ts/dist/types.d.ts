@@ -89,7 +89,13 @@ type ActionContext = {
     fetchPackage?: (pkgname: string, actx: ActionContext) => Promise<void>;
 };
 type ActionResult = {
-    jres: JostracaResult;
+    jres?: JostracaResult;
+    report?: ActionReport;
+};
+type ActionReport = {
+    ok: boolean;
+    summary?: string;
+    [key: string]: any;
 };
 export { KIT, getModelPath, };
-export type { ActionContext, ActionResult, SdkModel, ModelKit, ModelTarget, ModelFeature, ModelEntity, ModelDep, ModelHook, };
+export type { ActionContext, ActionResult, ActionReport, SdkModel, ModelKit, ModelTarget, ModelFeature, ModelEntity, ModelDep, ModelHook, };

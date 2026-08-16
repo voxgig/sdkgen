@@ -66,6 +66,7 @@ external paths on the same code.
 voxgig-sdkgen package add @acme/sdkgen-iot    # everything it provides
 voxgig-sdkgen package list                    # what is installed, from where
 voxgig-sdkgen package update @acme/sdkgen-iot # fetch newer + refresh
+voxgig-sdkgen package check                   # AUTHORING: validate a package
 ```
 
 Three things to hold when touching `ts/src/action/`:

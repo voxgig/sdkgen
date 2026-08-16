@@ -4,8 +4,9 @@
 // exercised by nothing (target.test.ts calls the resolver directly).
 
 import { test, describe, before, after } from 'node:test'
-import { ok, match, doesNotMatch } from 'node:assert'
+import { ok, match, doesNotMatch, strictEqual } from 'node:assert'
 
+import { spawnSync } from 'node:child_process'
 import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
@@ -105,4 +106,63 @@ describe('cli dispatch', () => {
     const msg = await actionError(['nosuchaction'])
     match(msg, /Unknown action: nosuchaction/)
   })
+})
+
+
+// THE BINARY ITSELF, spawned.
+//
+// Everything above enters at `SdkGen().action(...)`, which is one layer
+// inside `bin/voxgig-sdkgen` — and the layer it skips is where the CLI's own
+// option validation lives. That validation rejected EVERY invocation that did
+// not pass both `--only` and `--alias`: the optional flags were spelled
+// `One(String, undefined)` in a closed shape, which makes a property
+// required, so `voxgig-sdkgen target add ts` failed before dispatch. Nothing
+// caught it because nothing ran the file.
+//
+// `package check` is the invocation used here because it is the one verb that
+// needs no project model, so a failure is the binary's and nothing else's.
+describe('the binary', () => {
+
+  const BIN = Path.resolve(__dirname, '..', 'bin', 'voxgig-sdkgen')
+  const PACKAGE_ROOT = Path.resolve(__dirname, '..')
+
+  function run(args: string[], cwd: string) {
+    return spawnSync(process.execPath, [BIN, ...args], {
+      cwd, encoding: 'utf8',
+    })
+  }
+
+  test('runs with no flags at all', () => {
+    const res = run(['package', 'check', 'project'], PACKAGE_ROOT)
+
+    doesNotMatch(String(res.stderr), /Validation failed/,
+      'the CLI rejected its own options: ' + res.stderr)
+    strictEqual(res.status, 0,
+      'exit ' + res.status + '\n' + res.stdout + '\n' + res.stderr)
+  })
+
+
+  test('exits non-zero on an error finding, and says why', () => {
+    // The CI gate: a checking verb has to fail the process, and print the
+    // verb's own summary rather than doctor's drift wording.
+    const pkg = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-bin-'))
+    try {
+      Fs.mkdirSync(Path.join(pkg, '.sdk', 'model', 'feature'), { recursive: true })
+      Fs.writeFileSync(
+        Path.join(pkg, '.sdk', 'model', 'feature', 'broken.aontu'),
+        '// a consumer cannot parse this\nmain: kit: feature: broken: {}\n')
+
+      const res = run(['package', 'check', pkg], PACKAGE_ROOT)
+
+      strictEqual(res.status, 1, 'expected a non-zero exit: ' + res.stdout)
+      match(String(res.stdout), /error\(s\)/,
+        'no summary printed: ' + res.stdout)
+      doesNotMatch(String(res.stdout), /drifted from the scaffold/,
+        "printed doctor's summary for a check: " + res.stdout)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
 })

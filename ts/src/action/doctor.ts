@@ -302,7 +302,7 @@ async function doctor(
         report.missing.length + ' missing')
   })
 
-  return { report } as any
+  return { report }
 }
 
 

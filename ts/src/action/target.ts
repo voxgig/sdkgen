@@ -32,6 +32,7 @@ import type {
 import { SdkGenError } from '../utility'
 
 import {
+  BASE_FEATURE,
   availableFeatures,
   findFeatureSources,
   featureExcludes,
@@ -584,7 +585,7 @@ function trimFeatures(
 
   // `base` is not a declared feature — it is the always-present foundation
   // every other feature builds on — so it is never a trim candidate.
-  const selected = new Set(['base', ...(features ?? [])])
+  const selected = new Set([BASE_FEATURE, ...(features ?? [])])
 
   const available = featureCatalogue(ctx$, tfolder)
   const drop = findFeatureSources(fs, tfolder + '/tm/' + torigname, available)

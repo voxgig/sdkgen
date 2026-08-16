@@ -71,6 +71,13 @@ voxgig-sdkgen package update <pkg>   # fetch a newer version and refresh
 voxgig-sdkgen doctor                 # report .sdk/ drift; non-zero on drift
 ```
 
+And one an AUTHOR runs, from a package root rather than a project — the
+only verb that runs where there is no `model/sdk.aontu`:
+
+```bash
+voxgig-sdkgen package check [path]   # validate a package; non-zero on error
+```
+
 A `<ref>` is a bare name (`go`), a package-relative path
 (`@acme/sdkgen-iot/iot-go`), or an absolute path — optionally suffixed
 `~<alias>` to install it under a different name. See
@@ -268,7 +275,8 @@ Rules:
 | Change the base model schema | `model/sdkgen.aontu` (canonical) | `make sync-model` then `make build test` |
 | Add/remove a bundled target or feature | the trees above **and** `ts/project/sdkgen-package.json` | a guard test fails if the manifest and the directories disagree |
 | Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts |
-| Change a CLI flag | `ts/bin/voxgig-sdkgen` — parse entry, the closed `Shape`, **and** the help text | plus a row in [reference/cli](./docs/reference/cli.md); the shape is closed, so missing one of the three is a runtime rejection |
+| Change a CLI flag | `ts/bin/voxgig-sdkgen` — parse entry, the closed `Shape`, **and** the help text | plus a row in [reference/cli](./docs/reference/cli.md); the shape is closed, so missing one of the three is a runtime rejection, and an optional flag is `Skip(String)` (see Sharp edges) |
+| Add a rule about a package's `.aontu` files | `ts/src/helpers/modelcheck.ts` | `package check` and `ts/test/model-compile.test.ts` are both callers — the bundled scaffold is checked by the same battery an author runs |
 
 ### Never edit generated output
 
@@ -420,6 +428,15 @@ emitted broken source reached the fleet unchallenged.
   target's own `module: package:` as a stamp (false fork on an untouched
   file) *and* stripped it from the comparison (a real deletion passing
   the check). Compare against what `provenanceReplace` emits.
+- **An OPTIONAL CLI flag is `Skip(...)`, not `One(..., undefined)`.** The
+  shape is closed AND every listed key is required: spelling the optional
+  flags as an alternative with `undefined` made them mandatory, so every
+  invocation that did not pass both `--only` and `--alias` — i.e. every
+  ordinary `target add` — was rejected before dispatch. `Optional(String)`
+  is the other trap: it substitutes `''` for a missing value, and an empty
+  `--only` means "install nothing", which is deliberately not the same as
+  passing no flag. Nothing caught this because nothing RAN the binary;
+  `cli.test.ts` now spawns it.
 - **`package update` must check BEFORE it fetches.** Measured before the
   source moves, a differing copy means the project changed it; measured
   after, every item legitimately differs, the gate fires on all of them,
@@ -571,6 +588,7 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       target.ts        target add (+ trees, trim, stale prune)
       feature.ts       feature add (+ the per-target fan-out)
       package.ts       package add / list / update
+      check.ts         package check — the author-side battery
       doctor.ts        the drift check every other action is guarded by
       action.ts        index maintenance
     cmp/               language-neutral components (delegate per-language)
@@ -580,6 +598,8 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       semver.ts        the engines.sdkgen subset (true/false/UNDEFINED)
       stdrep.ts        the replace maps add writes with and doctor re-applies
       featureSource.ts per-feature source discovery in a target's tm tree
+      modelcheck.ts    the .aontu rules: strict parse, schema unify, probes
+      shipped.ts       where THIS generator's own model/ and project/ are
   test/                Node test runner suites (+ model-mirror guard)
   dist/ (committed)    dist-test/ (gitignored)
   project/             an sdkgen package, like any other

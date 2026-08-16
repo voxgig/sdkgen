@@ -129,10 +129,29 @@ Your overlay takes precedence over the target's own copy of a feature
 with the same name — but the target's files are not removed, so avoid
 reusing a built-in feature's name.
 
+## Check it
+
+```bash
+voxgig-sdkgen package check          # the package you are standing in
+```
+
+The static battery, run from your package root — the one command that
+needs no project, because it acts on the package. It reads the manifest
+against your disk in both directions, compiles every model file the way a
+consumer's build does, unifies each against the base schema, and looks
+for the mistakes that only surface in somebody else's project: a
+definition still declaring the name it was copied from, a missing
+`base: 'BASE'`, a `//` comment, a pinned publication value, per-target
+deps under the slot nothing reads, feature source no trim can recognise.
+
+It exits non-zero on any error, so it belongs in your `prepublishOnly`.
+Every finding is listed in the [CLI reference](../reference/cli.md#package-check-path).
+
 ## Test it before publishing
 
-The loop is the same one used on sdkgen's own scaffold: install into a
-real project and generate.
+A clean check is necessary and not sufficient — it is static. The loop
+that proves the package works is the same one used on sdkgen's own
+scaffold: install into a real project and generate.
 
 ```bash
 cd path/to/an-sdk-project/.sdk

@@ -20,6 +20,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ACTION_MAP = void 0;
 exports.actionMap = actionMap;
 exports.actionNames = actionNames;
+exports.needsModel = needsModel;
 const kind_1 = require("./kind");
 const target_1 = require("./target");
 const feature_1 = require("./feature");
@@ -53,5 +54,18 @@ exports.ACTION_MAP = ACTION_MAP;
 // IS available rather than only what is not.
 function actionNames() {
     return Object.keys(ACTION_MAP).sort();
+}
+// Does this invocation need the PROJECT's model?
+//
+// Every verb but one operates on a project, and compiling `model/sdk.aontu`
+// before dispatch is what makes them fail early and clearly when run from the
+// wrong directory. `package check` is the exception on purpose: it operates
+// on a PACKAGE, and an author runs it in their package root, where there is
+// no project model to compile and nothing is wrong with that.
+//
+// Stated here, with the verb table, rather than in the CLI or in `sdkgen.ts`:
+// it is a fact about the verb.
+function needsModel(args) {
+    return !('package' === args[0] && 'check' === args[1]);
 }
 //# sourceMappingURL=dispatch.js.map

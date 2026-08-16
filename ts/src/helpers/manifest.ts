@@ -406,9 +406,57 @@ function entryKind(fs: any, path: string): 'file' | 'dir' | 'none' {
 }
 
 
+// WHERE A PACKAGE ROOT IS, given a ref.
+//
+// The same probe chain `resolveSource` uses for an ITEM, one level up: an
+// installed npm package first, then a path relative to the project, then an
+// absolute path. A package root is the folder HOLDING `.sdk`, which is what
+// makes `<root>/<item>` the item ref — so the two resolvers agree by
+// construction about what a package is.
+//
+// It reports rather than throws, and it does not require a manifest, because
+// its two callers want different things from the same probe: `package add`
+// refuses a folder with no manifest (that is the verb's whole subject), while
+// `package check` reports the absence as its first finding and carries on
+// checking the `.sdk` — an author who has not written the manifest yet is
+// exactly who needs the rest of the battery.
+type PackageProbe = {
+  ref: string
+  root: string
+  sdk: string
+  read: ManifestRead
+}
+
+
+function probePackage(
+  fs: any, project: string, ref: string,
+): { found?: PackageProbe, search: string[] } {
+  const search: string[] = []
+
+  const candidates = Path.isAbsolute(ref) ? [ref] : [
+    Path.join(project, 'node_modules', ref),
+    Path.join(project, ref),
+  ]
+
+  for (const root of candidates) {
+    const sdk = Path.normalize(Path.join(root, '.sdk'))
+    search.push(sdk)
+
+    if (!fs.existsSync(sdk)) {
+      continue
+    }
+
+    return { found: { ref, root, sdk, read: readManifest(fs, sdk) }, search }
+  }
+
+  return { search }
+}
+
+
 export type {
   Manifest,
   ManifestRead,
+  PackageProbe,
   Finding,
 }
 
@@ -417,6 +465,7 @@ export {
   SCHEMA,
   ITEM_NAME_RE,
   manifestPath,
+  probePackage,
   readManifest,
   validateManifest,
   checkShape,
