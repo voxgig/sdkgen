@@ -180,6 +180,13 @@ ships none, and neither `package check` nor `doctor` asks for it.
 Aliasing works as it does for targets (`ref~alias`), including renaming
 `Main_<n>` so the component still dispatches.
 
+**Generation.** An installed item is emitted by `npm run generate`,
+through its package's `cmp/docs/<n>/Main_<n>` component. In-tree it lands
+in `<sdk-repo>/<n>/`; with `output: path` set it gets its own pass rooted
+there, which is the normal case for a documentation site. Neither needs
+any change to a project's `Root.ts` — sdkgen runs the docs pass itself,
+so `docs add` works in a project scaffolded before the kind existed.
+
 ### `package add <pkg>[,<pkg>...]`
 
 Install everything an [sdkgen package](../design/sdkgen-packages.md)
