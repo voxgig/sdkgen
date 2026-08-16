@@ -312,6 +312,39 @@ function SdkGen(opts) {
             const path = item?.output?.path;
             return false !== item?.active && (null == path || '' === path);
         });
+        // AN IN-TREE DOCS ITEM AND A TARGET CANNOT SHARE A NAME.
+        //
+        // `docs` and `target` are separate namespaces — deliberately, so an item
+        // of each may be called `api` — and their `.sdk` trees are nested apart
+        // (`src/cmp/docs/<n>` vs `src/cmp/<n>`), so installing both is fine.
+        //
+        // Their GENERATED destinations are not separate. Both render into
+        // `<sdk-repo>/<name>/`, the docs pass runs second, and jostraca is
+        // last-write-wins — so a docs item named `go` would quietly overwrite the
+        // Go SDK's README, and whatever else the two have in common, leaving a
+        // corrupt SDK and a green run.
+        //
+        // Refused rather than reordered, and refused BEFORE the docs pass writes
+        // anything: this is the in-tree half of the rule `checkExternalFolders`
+        // enforces for out-of-tree destinations, and the fix is the same either
+        // way — give one of them `output: path`, or rename it.
+        const targets = model?.main?.[apidef_1.KIT]?.target ?? {};
+        for (const name of intreedocs) {
+            const target = targets[name];
+            if (null == target || false === target.active) {
+                continue;
+            }
+            const tpath = target.output?.path;
+            if (null != tpath && '' !== tpath) {
+                continue;
+            }
+            throw new utility_1.SdkGenError('Docs item "' + name + '" and target "' + name + '" would both ' +
+                'generate into <sdk-project>/' + name + '/.\n' +
+                '  They are separate kinds, so sharing a name is legal — but they ' +
+                'share one output folder, and the docs pass runs second, so it ' +
+                'would overwrite the SDK.\n' +
+                '  Give one of them `output: path`, or rename it.');
+        }
         if (0 < intreedocs.length) {
             log.info({
                 point: 'generate-docs-start', docs: intreedocs,

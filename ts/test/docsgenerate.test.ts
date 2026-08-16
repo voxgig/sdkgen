@@ -298,3 +298,48 @@ describe('docs generation — out of tree', () => {
   })
 
 })
+
+
+describe('docs and targets share a namespace, not a folder', () => {
+
+  test('an in-tree docs item named like a target is refused', async () => {
+    // Installing both is legal — separate kinds, separate `.sdk` trees
+    // (`src/cmp/docs/go` vs `src/cmp/go`), which docs.test.ts pins. Their
+    // GENERATED destinations are not separate: both render into
+    // `<sdk-repo>/go/`, the docs pass runs second, and jostraca is
+    // last-write-wins — so the docs emitter would quietly overwrite the Go
+    // SDK's README and leave a corrupt SDK behind a green run.
+    writeEmitter('go')
+
+    await rejects(
+      () => generate(makeModel(
+        { go: { name: 'go', active: true } },
+        ['go'])),
+      /would both generate into/)
+  })
+
+
+  test('the collision is about the FOLDER, so out-of-tree is fine', async () => {
+    // The refusal is not about the name — it is about two items claiming one
+    // destination. Move either one and there is nothing to refuse.
+    writeEmitter('go')
+
+    const out = await generate(makeModel(
+      { go: { name: 'go', active: true, output: { path: Path.join(dir, 'go-docs') } } },
+      ['go']))
+
+    ok(ends(out, '/go-docs/index.md'), Object.keys(out).join(','))
+  })
+
+
+  test('an INACTIVE target does not block a docs item', async () => {
+    writeEmitter('go')
+
+    const out = await generate(makeModel(
+      { go: { name: 'go', active: true } },
+      []))
+
+    ok(ends(out, '/go/index.md'), Object.keys(out).join(','))
+  })
+
+})
