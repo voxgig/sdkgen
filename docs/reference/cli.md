@@ -44,9 +44,9 @@ detail.
 
 ## Actions
 
-The verbs are built from the kind registry (`target`, `feature`) plus
-`package` and `doctor`, so registering a new kind adds its `add` command
-with no dispatch code. Names may be comma-separated to add several at
+The verbs are built from the kind registry (`target`, `feature`, `docs`)
+plus `package` and `doctor`, so registering a new kind adds its `add`
+command with no dispatch code. Names may be comma-separated to add several at
 once.
 
 ### `target add <ref>[,<ref>...]`
@@ -152,6 +152,33 @@ A feature reference takes the same forms as a target reference, except
 that **aliasing is refused**: a feature's name is part of the generated
 `options.feature.<name>` config key and of the hook wiring in every
 target, so it cannot be renamed at install time.
+
+### `docs add <ref>[,<ref>...]`
+
+Install a **docs item** — a generation target whose destination is a
+documentation system rather than a language: a static site, a
+developer-portal catalogue, a hosted service's config. See
+[the design note](../design/sdkgen-packages.md) §20.
+
+```bash
+voxgig-sdkgen docs add @voxgig/docgen/apidocs
+voxgig-sdkgen docs add ../my-docs/apidocs~portal
+```
+
+sdkgen ships the **kind** and no items; the items live in packages, so
+every ref is a package-relative or absolute path (or a bare name once one
+is installed, which resolves against the provenance already recorded).
+
+It copies `model/docs/<n>.aontu`, `src/cmp/docs/<n>/` and — if the source
+ships one — `tm/docs/<n>/`. The trees are **nested under the kind**, so a
+docs item and a target may share a name without sharing a directory.
+
+A docs item's template tree is **optional**: an item whose every emitted
+byte depends on the API (a catalogue entry, a config file) legitimately
+ships none, and neither `package check` nor `doctor` asks for it.
+
+Aliasing works as it does for targets (`ref~alias`), including renaming
+`Main_<n>` so the component still dispatches.
 
 ### `package add <pkg>[,<pkg>...]`
 

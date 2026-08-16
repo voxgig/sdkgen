@@ -129,6 +129,15 @@ function makeProject(
   fs.writeFileSync(ROOT + '/model/target/target-index.aontu', '# Targets\n')
   fs.writeFileSync(ROOT + '/model/feature/feature-index.aontu', '# Features\n')
 
+  // The project's OWN model, which create-sdkgen writes once at init and
+  // which includes the indexes of the kinds that existed then. A fixture
+  // without it cannot show what an existing project does when a NEW kind
+  // arrives — which is the whole upgrade path for `docs`.
+  fs.writeFileSync(ROOT + '/model/sdk.aontu',
+    "name: 'demo'\n" +
+    '@"target/target-index.aontu"\n' +
+    '@"feature/feature-index.aontu"\n')
+
   const actx: any = {
     fs: () => layeredFs(fs),
     log: opts.log || makeLog(),

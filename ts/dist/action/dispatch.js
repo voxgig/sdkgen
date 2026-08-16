@@ -24,6 +24,7 @@ exports.needsModel = needsModel;
 const kind_1 = require("./kind");
 const target_1 = require("./target");
 const feature_1 = require("./feature");
+const docs_1 = require("./docs");
 const doctor_1 = require("./doctor");
 const package_1 = require("./package");
 // The per-kind entry points, by kind name. A kind in the registry with no
@@ -32,11 +33,13 @@ const package_1 = require("./package");
 const KIND_ACTIONS = Object.assign(Object.create(null), {
     target: target_1.action_target,
     feature: feature_1.action_feature,
+    docs: docs_1.action_docs,
 });
 // The same functions, as the direct `(refs, actx)` calls `package add` loops
 // over. Registered rather than imported by `package.ts`, for the cycle above.
 (0, package_1.registerAdder)('target', target_1.target_add);
 (0, package_1.registerAdder)('feature', feature_1.feature_add);
+(0, package_1.registerAdder)('docs', docs_1.docs_add);
 function actionMap() {
     const map = Object.create(null);
     for (const kind of Object.keys(kind_1.KINDS)) {

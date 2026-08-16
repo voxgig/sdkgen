@@ -59,7 +59,13 @@ const CMD_MAP = Object.assign(Object.create(null), {
 // target already in the model, so a feature installed before the package's own
 // targets would silently ship no source for them — the `feature-source-missing`
 // warning, once per target, and a feature that does nothing.
-const ADD_ORDER = ['target', 'feature'];
+//
+// Docs LAST, for the mirror-image reason: a docs item is ABOUT the targets and
+// features a project has (a page per SDK, a page per feature), and while it
+// reads them at generate time rather than at add time, installing it last
+// keeps the add log in the order a reader would expect and leaves the model
+// complete before anything reads it.
+const ADD_ORDER = ['target', 'feature', 'docs'];
 async function action_package(args, actx) {
     const cmdname = args[1];
     const cmd = CMD_MAP[cmdname];

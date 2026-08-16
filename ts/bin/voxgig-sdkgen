@@ -205,6 +205,7 @@ function help() {
 Actions:
   target add <ref>      Add (or resync) a language target
   feature add <ref>     Add a feature
+  docs add <ref>        Add a docs item (a documentation destination)
   package add <pkg>     Add everything an sdkgen package provides
   package check [path]  Validate a package you are AUTHORING (default: .);
                         exits non-zero on any error finding

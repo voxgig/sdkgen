@@ -31,7 +31,10 @@ declare function readManifest(fs: any, sdkfolder: string): ManifestRead;
 declare function checkShape(manifest: Manifest, file: string): Finding[];
 declare const ITEM_NAME_RE: RegExp;
 declare function validateManifest(fs: any, sdkfolder: string, manifest: Manifest, kinds: Record<string, {
-    requires?: string[];
+    trees?: {
+        path: string;
+        required: boolean;
+    }[];
 }>): Finding[];
 type PackageProbe = {
     ref: string;

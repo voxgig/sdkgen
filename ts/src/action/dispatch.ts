@@ -25,6 +25,7 @@ import { KINDS } from './kind'
 
 import { action_target, target_add } from './target'
 import { action_feature, feature_add } from './feature'
+import { action_docs, docs_add } from './docs'
 import { action_doctor } from './doctor'
 import { action_package, registerAdder } from './package'
 
@@ -40,6 +41,7 @@ const KIND_ACTIONS: Record<string, ActionFunc> = Object.assign(
   Object.create(null), {
   target: action_target,
   feature: action_feature,
+  docs: action_docs,
 })
 
 
@@ -47,6 +49,7 @@ const KIND_ACTIONS: Record<string, ActionFunc> = Object.assign(
 // over. Registered rather than imported by `package.ts`, for the cycle above.
 registerAdder('target', target_add)
 registerAdder('feature', feature_add)
+registerAdder('docs', docs_add)
 
 
 function actionMap(): Record<string, ActionFunc> {

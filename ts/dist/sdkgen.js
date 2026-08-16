@@ -210,6 +210,7 @@ const feature_1 = require("./action/feature");
 const doctor_1 = require("./action/doctor");
 const package_1 = require("./action/package");
 const check_1 = require("./action/check");
+const docs_1 = require("./action/docs");
 // The verbs, built from the kind registry — see action/dispatch.
 const dispatch_1 = require("./action/dispatch");
 const { Jostraca } = JostracaModule;
@@ -418,6 +419,14 @@ function SdkGen(opts) {
             return (0, feature_1.feature_add)(features, ctx);
         }
     };
+    // The third kind. sdkgen ships no docs items, so every ref here is a path
+    // into a package — see action/docs.
+    const docs = {
+        add: async (items) => {
+            const ctx = resolveActionContext();
+            return (0, docs_1.docs_add)(items, ctx);
+        }
+    };
     // The whole-package verbs. `flags` mirrors the CLI's `--only` / `--alias`,
     // for the same reason they are `action`'s second parameter rather than
     // constructor options: they are arguments to one call.
@@ -452,6 +461,7 @@ function SdkGen(opts) {
         generate,
         action,
         check,
+        docs,
         target,
         feature,
         // `package` is a reserved word in a strict-mode object shorthand, so the

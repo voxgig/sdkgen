@@ -1149,7 +1149,7 @@ describe('the action map', () => {
 
   test('is built from the kind registry, plus package and doctor', () => {
     deepStrictEqual(actionNames(),
-      ['doctor', 'feature', 'package', 'target'],
+      ['docs', 'doctor', 'feature', 'package', 'target'],
       'a verb appeared or vanished — a new KIND should add one here with no ' +
       'dispatch code, but anything else is a deliberate change')
   })

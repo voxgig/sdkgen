@@ -4,11 +4,17 @@ type KindDef = {
     alias: boolean;
     rename?: (src: string, origname: string, name: string) => string;
     ownedWhenAliased?: boolean;
-    requires?: string[];
+    trees?: TreeDef[];
 };
-declare function aliasModelText(src: string, torigname: string, tname: string): string;
+type TreeDef = {
+    path: string;
+    replace: 'none' | 'template';
+    required: boolean;
+};
+declare function aliasModelKey(kind: string): (src: string, origname: string, name: string) => string;
 declare function escapeRe(s: string): string;
 declare const KINDS: Record<string, KindDef>;
+declare function kindTrees(kind: string, name: string): TreeDef[];
 declare function kindDef(kind: string): KindDef;
 declare function resolveKind(ref: string, kind: string, ctx$: any): Source;
 declare function kindModel(props: {
@@ -20,5 +26,5 @@ declare function kindModel(props: {
 }): void;
 declare function recordedRef(declared: any, name: string): string | undefined;
 declare function isBare(ref: string): boolean;
-export type { KindDef, };
-export { KINDS, recordedRef, aliasModelText, escapeRe, kindDef, resolveKind, kindModel, isBare, };
+export type { KindDef, TreeDef, };
+export { KINDS, recordedRef, aliasModelKey, kindTrees, escapeRe, kindDef, resolveKind, kindModel, isBare, };
