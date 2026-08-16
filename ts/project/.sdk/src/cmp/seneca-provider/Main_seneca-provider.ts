@@ -14,6 +14,7 @@ import {
 } from '@voxgig/apidef'
 
 import { Tests, Scripts, Workflow, Readme, Docs } from './Extras_seneca-provider'
+import { Gitignore } from './Gitignore_seneca-provider'
 
 
 // The `seneca-provider` target: a Seneca plugin exposing this API's entities
@@ -448,8 +449,14 @@ const Main = cmp(function Main(props: any) {
     authActive: isAuthActive(model),
   }
 
-  // Static furniture: LICENSE, CODE_OF_CONDUCT, Makefile, .gitignore,
-  // tsfmt.json and both tsconfigs. Same for every provider.
+  // `.gitignore` is EMITTED rather than copied — npm strips that filename
+  // from the tarball, so as a template it reached only checkout users. See
+  // Gitignore_seneca-provider. Called before the Copy, as every language
+  // target calls its own.
+  Gitignore({})
+
+  // Static furniture: LICENSE, CODE_OF_CONDUCT, Makefile, tsfmt.json and
+  // both tsconfigs. Same for every provider.
   Copy({
     from: 'tm/' + target.name,
     replace: { ...ctx$.stdrep },

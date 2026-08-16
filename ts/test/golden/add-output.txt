@@ -1900,8 +1900,8 @@ model/sdk.aontu a1022013e262
 model/target/seneca-provider.aontu a273f888e4c8
 model/target/target-index.aontu 5bd671e614df
 src/cmp/seneca-provider/Extras_seneca-provider.ts 68924545a645
-src/cmp/seneca-provider/Main_seneca-provider.ts 1da14a4be43c
-tm/seneca-provider/.gitignore c45dab86e569
+src/cmp/seneca-provider/Gitignore_seneca-provider.ts 188e88524e59
+src/cmp/seneca-provider/Main_seneca-provider.ts 092ec8673185
 tm/seneca-provider/CODE_OF_CONDUCT.md ae654991bd5f
 tm/seneca-provider/LICENSE 5466e344bee1
 tm/seneca-provider/Makefile 6856c7df3e08

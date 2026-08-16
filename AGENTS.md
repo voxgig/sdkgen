@@ -450,6 +450,17 @@ emitted broken source reached the fleet unchallenged.
   `--only` means "install nothing", which is deliberately not the same as
   passing no flag. Nothing caught this because nothing RAN the binary;
   `cli.test.ts` now spawns it.
+- **A scaffold dotfile npm refuses to publish must be EMITTED, not
+  templated.** `.gitignore` (and `.npmignore`) sit on npm's own
+  always-excluded list, which naming the parent directory in
+  `package.json` `files` does not override. So
+  `tm/seneca-provider/.gitignore` was present for every checkout — this
+  repo's whole test suite, every local `add-target` — and absent for
+  everyone who installed sdkgen from the registry, whose generated
+  provider had no ignore file at all. The 23 language targets escaped it
+  only because they emit theirs from `Gitignore_<lang>.ts`, which is now
+  the rule for all 24. `ts/test/packaging.test.ts` asks `npm pack`
+  directly rather than restating npm's exclusion list.
 - **`package update` must check BEFORE it fetches.** Measured before the
   source moves, a differing copy means the project changed it; measured
   after, every item legitimately differs, the gate fires on all of them,
