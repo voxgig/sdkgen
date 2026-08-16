@@ -37,8 +37,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.BASE_FEATURE = void 0;
 exports.featureOf = featureOf;
+exports.featureShaped = featureShaped;
 exports.availableFeatures = availableFeatures;
+exports.findFeatureEntries = findFeatureEntries;
 exports.findFeatureSources = findFeatureSources;
 exports.featureExcludes = featureExcludes;
 exports.fullsetExcludes = fullsetExcludes;
@@ -50,6 +53,11 @@ const definition_1 = require("./definition");
 // match) so `utility/feature_add.go` and `test/feature_test.go` — which are
 // shared machinery, not per-feature source — are never treated as features.
 const FEATURE_DIR = 'feature';
+// The always-present foundation every other feature builds on. It has no
+// model file, so it is in no catalogue, and it must never be trimmed or
+// reported as an unrecognised stray — every target ships one.
+const BASE_FEATURE = 'base';
+exports.BASE_FEATURE = BASE_FEATURE;
 // Derive the feature name an entry inside a feature directory belongs to.
 // Returns the lowercased name, which the caller then checks against the
 // available set.
@@ -86,10 +94,32 @@ function availableFeatures(fs, sdkfolder) {
         .map((n) => n.toLowerCase())
         .sort();
 }
-// Walk a target's template tree and return every per-feature source entry.
-// `tmfolder` is the target template root (`<sdk>/tm/<lang>`).
-function findFeatureSources(fs, tmfolder, available) {
-    const known = new Set(available);
+// Does the entry LOOK like per-feature source, whatever it is called?
+//
+// The naming conventions carry the intent: `<name>_feature.<ext>`,
+// `<Name>Feature.<ext>`, and a directory named for the feature. A bare
+// `<name>.<ext>` does NOT — `retry.rs` and `support.rs` are written the same
+// way, so shape cannot separate rust's feature source from rust's shared
+// machinery, and only the catalogue can. That is the deliberate blind spot of
+// `package check`'s unrecognised-source finding: it reports what it can prove
+// looks like a feature, and stays quiet where it would have to guess.
+function featureShaped(entry, folder) {
+    if (folder) {
+        return true;
+    }
+    const stem = entry.replace(/\.[^.]+$/, '');
+    return /_feature$/i.test(stem) || /Feature$/.test(stem);
+}
+// Every entry inside a feature container of a target's template tree —
+// whether or not its derived name is a feature this generator knows.
+//
+// `known` decides DESCENT, not membership: a directory that names a known
+// feature is the whole feature, so the walk stops there, and one that does
+// not is walked through (`src/feature/base/` holds `BaseFeature.ts`, and the
+// container rule below then ignores it because its parent is not `feature`).
+// The unknown entries are what `package check` reports and what
+// `findFeatureSources` drops; both need the same walk, so there is one.
+function findFeatureEntries(fs, tmfolder, known) {
     const found = [];
     if (!fs.existsSync(tmfolder)) {
         return found;
@@ -106,8 +136,10 @@ function findFeatureSources(fs, tmfolder, available) {
             // looking for more.
             if (FEATURE_DIR === node_path_1.default.basename(rel)) {
                 const name = featureOf(entry, folder);
+                found.push({
+                    name, path: entryrel, folder, shaped: featureShaped(entry, folder),
+                });
                 if (known.has(name)) {
-                    found.push({ name, path: entryrel, folder });
                     continue;
                 }
             }
@@ -118,6 +150,14 @@ function findFeatureSources(fs, tmfolder, available) {
     };
     walk('');
     return found;
+}
+// Walk a target's template tree and return every per-feature source entry.
+// `tmfolder` is the target template root (`<sdk>/tm/<lang>`).
+function findFeatureSources(fs, tmfolder, available) {
+    const known = new Set(available);
+    return findFeatureEntries(fs, tmfolder, known)
+        .filter((e) => known.has(e.name))
+        .map(({ name, path, folder }) => ({ name, path, folder }));
 }
 // Turn discovered sources into path patterns for a jostraca `Copy` exclude.
 //

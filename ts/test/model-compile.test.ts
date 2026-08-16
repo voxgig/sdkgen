@@ -12,7 +12,18 @@ import assert from 'node:assert'
 import { readdirSync, readFileSync } from 'node:fs'
 import Path from 'node:path'
 
-import { Aontu } from 'aontu'
+// THE RULES LIVE IN `src`, NOT HERE.
+//
+// This suite enforces them on the BUNDLED scaffold; `package check` enforces
+// the same ones on anybody's package (see packagecheck.test.ts). They were
+// written here first, and a second copy in `src` would have drifted from this
+// one — so there is one copy and two callers.
+import {
+  PUBLISH_OVERRIDES,
+  aontuKey,
+  compileModel,
+  slashComments,
+} from '../dist/helpers/modelcheck.js'
 
 
 const REPO = Path.resolve(__dirname, '..', '..')
@@ -22,41 +33,16 @@ const PROJECT_MODEL = Path.join(REPO, 'ts', 'project', '.sdk', 'model')
 const TARGET_DIR = Path.join(PROJECT_MODEL, 'target')
 
 
-// An Aontu configured the way @voxgig/model configures it, which is what
-// actually compiles these files. Aontu comments are `#` only, but the npm
-// engine's jsonic parser enables `//` and `/* */` by default; @voxgig/model
-// switches them off (`ts/src/build.ts: makeBuild`) so its output matches the Go
-// engine, which has no such extension. A plain `new Aontu()` would therefore
-// accept a `//` line these tests are here to reject.
-function makeAontu(): any {
-  const aontu: any = new Aontu()
-  aontu.lang.jsonic.options({ comment: { def: { slash: null, multi: null } } })
-  return aontu
-}
-
-
-// Compile `src`, or fail the test. Aontu reports resolution problems through
-// the `errs` collector but a PARSE problem is thrown instead — and a stray `//`
-// is a parse problem — so both routes have to be handled or the interesting
-// failure escapes as an opaque AontuError with no file name attached.
+// Compile `src` under the parser a consumer actually uses, or fail the test.
+// `compileModel` turns aontu's throw into a message with this file's name
+// attached — which is what keeps a stray `//` from escaping as an opaque
+// AontuError naming nothing.
 function compile(label: string, path: string): any {
-  const src = readFileSync(path, 'utf8')
-  const errs: any[] = []
+  const { model, errors } = compileModel(readFileSync(path, 'utf8'), path)
 
-  let model: any
-  try {
-    model = makeAontu().generate(src, { path, errs })
-  }
-  catch (e: any) {
-    assert.fail(`${label} failed to parse: ${e.message}`)
-  }
-
-  assert.strictEqual(
-    errs.length, 0,
-    `${label} generated ${errs.length} error(s): ` +
-    errs.map((e: any) => `[${e.why}] ${e.msg}`).join(' | '))
-
+  assert.deepEqual(errors, [], `${label}: ${errors.join(' | ')}`)
   assert.ok(model, `${label} produced no model`)
+
   return model
 }
 
@@ -68,12 +54,6 @@ function aontuFiles(dir: string): string[] {
 }
 
 
-// Blank out quoted spans before looking for comment markers, so a `//` inside
-// a string - a url, or the `comment: line: '//'` every C-family target model
-// legitimately declares - is not mistaken for a comment.
-function unquoted(line: string): string {
-  return line.replace(/'[^']*'|"[^"]*"|`[^`]*`/g, '')
-}
 
 
 describe('model-compile', () => {
@@ -121,14 +101,6 @@ describe('target-compile', () => {
 // not repeat it.
 describe('target-publish-overridable', () => {
 
-  // Every key the schema defaults, and what a consumer would set it to.
-  const OVERRIDES: [string, string][] = [
-    ['publish: tag: active', 'false'],
-    ['publish: registry: state', "'active'"],
-    ['publish: registry: active', 'true'],
-    ['publish: registry: package', "'@acme/pinned'"],
-  ]
-
   const targets = readdirSync(TARGET_DIR)
     .filter((f: string) => f.endsWith('.aontu'))
     .sort()
@@ -137,22 +109,22 @@ describe('target-publish-overridable', () => {
     const tname = file.replace(/\.aontu$/, '')
     // A hyphenated key has to be quoted in aontu, the way the shipped model
     // writes it (`main: kit: target: 'go-cli': ...`).
-    const tkey = /^[A-Za-z_$][\w$]*$/.test(tname) ? tname : `'${tname}'`
+    const tkey = aontuKey(tname)
     const path = Path.join(TARGET_DIR, file)
     const src = readFileSync(path, 'utf8')
 
     test(`target/${file} lets a project override its publish values`, () => {
-      const errs: any[] = []
-      const model: any = makeAontu().generate(
-        [src, ...OVERRIDES.map(([k, v]) => `main: kit: target: ${tkey}: ${k}: ${v}`)].join('\n'),
-        { path, errs })
+      // The same probe `package check` runs on anybody's target model.
+      const { model, errors } = compileModel(
+        [src, ...PUBLISH_OVERRIDES.map(
+          ([k, v]) => `main: kit: target: ${tkey}: ${k}: ${v}`)].join('\n'),
+        path)
 
-      assert.strictEqual(
-        errs.length, 0,
+      assert.deepEqual(
+        errors, [],
         `${file}: a project override does not unify — the shipped target model ` +
         'sets a key the schema already defaults, so the two concrete values ' +
-        'conflict. Remove it from the target model: ' +
-        errs.map((e: any) => `[${e.why}] ${e.msg}`).join(' | '))
+        'conflict. Remove it from the target model: ' + errors.join(' | '))
 
       const publish = model?.main?.kit?.target?.[tname]?.publish
       assert.strictEqual(publish?.tag?.active, false,
@@ -200,11 +172,10 @@ describe('project-model-syntax', () => {
 
     for (const file of files) {
       const rel = Path.relative(PROJECT_MODEL, file)
-      readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
-        if (/(^|\s)(\/\/|\/\*)/.test(unquoted(line))) {
-          bad.push(`${rel}:${i + 1}: ${line.trim()}`)
-        }
-      })
+
+      for (const found of slashComments(readFileSync(file, 'utf8'))) {
+        bad.push(`${rel}:${found.line}: ${found.text}`)
+      }
     }
 
     assert.deepEqual(

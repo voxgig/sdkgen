@@ -209,6 +209,7 @@ const target_1 = require("./action/target");
 const feature_1 = require("./action/feature");
 const doctor_1 = require("./action/doctor");
 const package_1 = require("./action/package");
+const check_1 = require("./action/check");
 // The verbs, built from the kind registry — see action/dispatch.
 const dispatch_1 = require("./action/dispatch");
 const { Jostraca } = JostracaModule;
@@ -353,12 +354,12 @@ function SdkGen(opts) {
             throw new utility_1.SdkGenError('Unknown action: ' + actname +
                 ' (expected: ' + (0, dispatch_1.actionNames)().join(', ') + ')');
         }
-        const ctx = resolveActionContext(flags);
+        const ctx = resolveActionContext(flags, (0, dispatch_1.needsModel)(args));
         return await actionFunc(args, ctx);
     }
-    function resolveActionContext(flags) {
+    function resolveActionContext(flags, wantmodel) {
         // TODO: use AsyncLocalStorage to avoid reloading model
-        const { model, url } = resolveModel();
+        const { model, url } = resolveModel(false !== wantmodel);
         const ctx = {
             fs: () => fs,
             log,
@@ -371,9 +372,16 @@ function SdkGen(opts) {
         };
         return ctx;
     }
-    function resolveModel() {
+    function resolveModel(wanted) {
         const path = './model/sdk.aontu';
         const errs = [];
+        // A verb that does not act on a project (see `needsModel`) is run where
+        // there is no project model, so its absence is not an error there. Its
+        // PRESENCE still is compiled — an author checking a package from inside a
+        // project should get the same model every other verb gets.
+        if (!wanted && !fs.existsSync(path)) {
+            return { model: { main: {} }, url: path };
+        }
         if (null == aontu) {
             aontu = new aontu_1.Aontu();
         }
@@ -425,6 +433,13 @@ function SdkGen(opts) {
         update: async (names, flags) => {
             const ctx = resolveActionContext(flags);
             return (0, package_1.package_update)(names, ctx);
+        },
+        // Validate a package being AUTHORED — see action/check. The only verb
+        // here that does not need a project model, because it does not act on a
+        // project; `false` says so to `resolveActionContext`.
+        check: async (refs) => {
+            const ctx = resolveActionContext(undefined, false);
+            return (0, check_1.cmd_package_check)(['package', 'check', ...(refs ?? [])], ctx);
         },
     };
     // Has this project's `.sdk/` drifted from the scaffold? See action/doctor.

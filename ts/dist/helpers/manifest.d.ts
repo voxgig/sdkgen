@@ -33,5 +33,15 @@ declare const ITEM_NAME_RE: RegExp;
 declare function validateManifest(fs: any, sdkfolder: string, manifest: Manifest, kinds: Record<string, {
     requires?: string[];
 }>): Finding[];
-export type { Manifest, ManifestRead, Finding, };
-export { MANIFEST, SCHEMA, ITEM_NAME_RE, manifestPath, readManifest, validateManifest, checkShape, };
+type PackageProbe = {
+    ref: string;
+    root: string;
+    sdk: string;
+    read: ManifestRead;
+};
+declare function probePackage(fs: any, project: string, ref: string): {
+    found?: PackageProbe;
+    search: string[];
+};
+export type { Manifest, ManifestRead, PackageProbe, Finding, };
+export { MANIFEST, SCHEMA, ITEM_NAME_RE, manifestPath, probePackage, readManifest, validateManifest, checkShape, };

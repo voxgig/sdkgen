@@ -4,7 +4,7 @@ const Path = require('node:path')
 const { statSync } = require('node:fs')
 const { parseArgs } = require('node:util')
 
-const { Shape, One } = require('shape')
+const { Shape, One, Skip } = require('shape')
 
 const { SdkGen } = require('../dist/sdkgen.js')
 
@@ -66,16 +66,22 @@ async function operate(options) {
     nofetch: options.nofetch,
   })
 
-  // `doctor` is a CHECK: it must fail the process so CI can gate on it.
-  // Everything else reports success by not throwing.
+  // A CHECKING verb (`doctor`, `package check`) must fail the process so CI
+  // can gate on it. Everything else reports success by not throwing.
+  //
+  // The verb supplies its own `summary` where it has one, because only the
+  // verb knows what its findings mean; `doctor` predates that field and its
+  // wording is kept here rather than moved for the sake of moving it.
   if (res && res.report && false === res.report.ok) {
     const r = res.report
-    KONSOLE.log(
-      `\n.sdk has drifted from the scaffold: ` +
+
+    KONSOLE.log('\n' + (null == r.summary ?
+      `.sdk has drifted from the scaffold: ` +
       `${r.forked.length} forked, ${r.edited.length} edited, ` +
       `${r.stale.length} stale, ${r.missing.length} missing. ` +
       `Run \`voxgig-sdkgen target add <lang>\` to resync, ` +
-      `and move any project decision into .sdk/model/.`)
+      `and move any project decision into .sdk/model/.` : r.summary))
+
     exit(new Error('sdk drift'))
   }
 }
@@ -157,8 +163,16 @@ function validateOptions(rawOptions) {
     help: Boolean,
     version: Boolean,
     dryrun: Boolean,
-    only: One(String, undefined),
-    alias: One(String, undefined),
+    // `Skip`, not `One(String, undefined)`. An unlisted alternative is not
+    // how `shape` spells "may be absent": `One(String, undefined)` made the
+    // property REQUIRED, so every invocation without BOTH `--only` and
+    // `--alias` was rejected before it reached an action — which is every
+    // ordinary `target add`. `Optional(String)` is the other spelling and is
+    // wrong here for a subtler reason: it substitutes `''` for a missing
+    // value, and an EMPTY `--only` means "install nothing", which is
+    // deliberately not the same as not passing one.
+    only: Skip(String),
+    alias: Skip(String),
     force: Boolean,
     nofetch: Boolean,
     args: [String]
@@ -192,6 +206,8 @@ Actions:
   target add <ref>      Add (or resync) a language target
   feature add <ref>     Add a feature
   package add <pkg>     Add everything an sdkgen package provides
+  package check [path]  Validate a package you are AUTHORING (default: .);
+                        exits non-zero on any error finding
   package list          List installed items and the package each came from
   package update <pkg>  Fetch a newer version and refresh what it supplied
   doctor                Report .sdk/ drift from the scaffold; exits non-zero

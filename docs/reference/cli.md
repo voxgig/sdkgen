@@ -16,7 +16,9 @@ voxgig-sdkgen [options] <action> <command> <args...>
 ```
 
 Run from the directory that contains the `.sdk/` folder (typically a
-generated SDK project's `.sdk/` directory).
+generated SDK project's `.sdk/` directory). The one exception is
+[`package check`](#package-check-path), which validates a package rather
+than acting on a project, and so runs where there is no project model.
 
 ## Options
 
@@ -28,6 +30,8 @@ generated SDK project's `.sdk/` directory).
 | `--dryrun` | `-y` | flag | off | Plan the work and log it, but write no files. |
 | `--only <items>` | — | string | everything | `package add` only: install a subset, as `<kind>:<name>` entries. |
 | `--alias <map>` | — | string | — | `package add` only: install under different names, as `<name>=<alias>` entries. |
+| `--force` | — | flag | off | `package update` only: overwrite locally-changed files, listing what it discarded. |
+| `--no-fetch` | — | flag | off | `package update` only: skip the fetch and use the source already installed. |
 
 `--only` and `--alias` are arguments to one *command*, not generator
 configuration — unlike `--debug` and `--dryrun`, which describe the
@@ -186,6 +190,46 @@ Three things it does that the individual commands cannot:
 
 A typo in `--only` is an error listing what the package does provide,
 never a silent no-op.
+
+### `package check [path]`
+
+Validate a package you are **authoring**, before anyone installs it.
+Every other verb acts on a project; this one acts on a package, so it is
+the one command that runs where there is no `model/sdk.aontu` — an
+author's package root, which is the default `path`.
+
+```bash
+voxgig-sdkgen package check              # the package you are standing in
+voxgig-sdkgen package check ../acme-sdkgen-iot
+```
+
+It exits non-zero on any **error** finding, so it works as a publish
+gate. What it checks:
+
+| Finding | Level | What it means |
+| --- | --- | --- |
+| `manifest-absent` | warn | No `sdkgen-package.json`, so `package add` cannot install this — the items can still be added directly by path. Everything below is still checked. |
+| `manifest-unreadable` | error | The manifest is not JSON, or not an object. |
+| `manifest-item-missing` | error | The manifest claims something the package does not ship — the definition, or (for a target) its `src/cmp/<t>` or `tm/<t>` tree. |
+| `manifest-item-unclaimed` | warn | Something on disk the manifest does not list, so nothing can install it. Usually a forgotten manifest edit. |
+| `model-anchor-missing` | error | A definition with no `base: 'BASE'` line. The copy would record no provenance, so `package update` and `doctor` could never find its source. |
+| `model-slash-comment` | error | A `//` or `/* */` line, named by line number. Aontu takes `#` comments only, and a consumer's parser is configured strictly even though a bare `Aontu()` accepts them. |
+| `model-parse` | error | The definition does not compile. Says so explicitly when it compiles under a bare `Aontu()` and not the strict one. |
+| `model-key-missing` | error | `model/<kind>/<name>.aontu` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
+| `model-schema` | error | It does not unify with the base schema: a non-defaulted key is missing (`ext`, `comment.line`, `module.name`, a feature's `title`). This is what a consumer compiles. |
+| `target-publish-pinned` | error | The target model sets a publication value the *project* owns, so the project can no longer set it (concrete-vs-concrete is a conflict) — and the failure would name the project's file. |
+| `feature-deps-misplaced` | warn | Dependencies under `feature.<f>.target.<t>.deps`, which nothing reads. They go directly under the feature: `deps: <target>: {…}`. |
+| `feature-source-undelivered` | warn | `targetsSupported` claims a target for which no feature source can be found. |
+| `feature-source-unrecognised` | warn | A file named like feature source (`<name>_feature.<ext>`, `<Name>Feature.<ext>`, a directory) that no `model/feature/<name>.aontu` declares — so the trim cannot recognise it and every project receives it whatever its model selects. |
+
+The blind spot is deliberate: a bare `<name>.<ext>` inside a `feature`
+directory (rust's `retry.rs`) is written exactly like shared machinery
+(`support.rs`), so shape alone cannot tell them apart and nothing is
+reported where it would have to guess.
+
+The bundled scaffold — `ts/project`, itself an sdkgen package — passes
+this battery with no findings, which is what keeps the checks honest
+about false positives across 27 targets and 17 features.
 
 ### `package list`
 

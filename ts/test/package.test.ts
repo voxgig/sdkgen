@@ -1171,7 +1171,7 @@ describe('the action map', () => {
       const project = makeProject({})
       await rejects(
         () => action_package(['package', 'frobnicate'], project.actx),
-        /Unknown package cmd: frobnicate \(expected: add, list, update\)/)
+        /Unknown package cmd: frobnicate \(expected: add, check, list, update\)/)
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })

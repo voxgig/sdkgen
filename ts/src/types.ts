@@ -137,8 +137,25 @@ type ActionContext = {
 }
 
 
+// An action either WROTE something or REPORTED something, and the two kinds
+// of verb return different things: `target add` returns jostraca's result,
+// while `doctor` and `package check` return a report the CLI turns into an
+// exit code. Both optional, because neither verb has anything to say about
+// the other's field — a check that invented an empty `jres` would be lying
+// about having generated nothing.
 type ActionResult = {
-  jres: JostracaResult
+  jres?: JostracaResult
+  report?: ActionReport
+}
+
+
+// What a CHECKING verb returns. `ok` is the contract — `bin/voxgig-sdkgen`
+// exits non-zero on `false` — and `summary` is the one line it prints, so the
+// binary never has to know what any particular verb's findings look like.
+type ActionReport = {
+  ok: boolean
+  summary?: string
+  [key: string]: any
 }
 
 
@@ -150,6 +167,7 @@ export {
 export type {
   ActionContext,
   ActionResult,
+  ActionReport,
   SdkModel,
   ModelKit,
   ModelTarget,

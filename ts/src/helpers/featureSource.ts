@@ -54,10 +54,23 @@ type FeatureSource = {
 }
 
 
+// One entry inside a feature container, before the catalogue has had its say.
+type FeatureEntry = FeatureSource & {
+  // Does it follow a per-feature NAMING convention? See `featureShaped`.
+  shaped: boolean
+}
+
+
 // Directory name that marks a feature container. Kept exact (not a substring
 // match) so `utility/feature_add.go` and `test/feature_test.go` — which are
 // shared machinery, not per-feature source — are never treated as features.
 const FEATURE_DIR = 'feature'
+
+
+// The always-present foundation every other feature builds on. It has no
+// model file, so it is in no catalogue, and it must never be trimmed or
+// reported as an unrecognised stray — every target ships one.
+const BASE_FEATURE = 'base'
 
 
 // Derive the feature name an entry inside a feature directory belongs to.
@@ -102,11 +115,39 @@ function availableFeatures(fs: any, sdkfolder: string): string[] {
 }
 
 
-// Walk a target's template tree and return every per-feature source entry.
-// `tmfolder` is the target template root (`<sdk>/tm/<lang>`).
-function findFeatureSources(fs: any, tmfolder: string, available: string[]): FeatureSource[] {
-  const known = new Set(available)
-  const found: FeatureSource[] = []
+// Does the entry LOOK like per-feature source, whatever it is called?
+//
+// The naming conventions carry the intent: `<name>_feature.<ext>`,
+// `<Name>Feature.<ext>`, and a directory named for the feature. A bare
+// `<name>.<ext>` does NOT — `retry.rs` and `support.rs` are written the same
+// way, so shape cannot separate rust's feature source from rust's shared
+// machinery, and only the catalogue can. That is the deliberate blind spot of
+// `package check`'s unrecognised-source finding: it reports what it can prove
+// looks like a feature, and stays quiet where it would have to guess.
+function featureShaped(entry: string, folder: boolean): boolean {
+  if (folder) {
+    return true
+  }
+
+  const stem = entry.replace(/\.[^.]+$/, '')
+
+  return /_feature$/i.test(stem) || /Feature$/.test(stem)
+}
+
+
+// Every entry inside a feature container of a target's template tree —
+// whether or not its derived name is a feature this generator knows.
+//
+// `known` decides DESCENT, not membership: a directory that names a known
+// feature is the whole feature, so the walk stops there, and one that does
+// not is walked through (`src/feature/base/` holds `BaseFeature.ts`, and the
+// container rule below then ignores it because its parent is not `feature`).
+// The unknown entries are what `package check` reports and what
+// `findFeatureSources` drops; both need the same walk, so there is one.
+function findFeatureEntries(
+  fs: any, tmfolder: string, known: Set<string>,
+): FeatureEntry[] {
+  const found: FeatureEntry[] = []
 
   if (!fs.existsSync(tmfolder)) {
     return found
@@ -126,8 +167,12 @@ function findFeatureSources(fs: any, tmfolder: string, available: string[]): Fea
       // looking for more.
       if (FEATURE_DIR === Path.basename(rel)) {
         const name = featureOf(entry, folder)
+
+        found.push({
+          name, path: entryrel, folder, shaped: featureShaped(entry, folder),
+        })
+
         if (known.has(name)) {
-          found.push({ name, path: entryrel, folder })
           continue
         }
       }
@@ -141,6 +186,17 @@ function findFeatureSources(fs: any, tmfolder: string, available: string[]): Fea
   walk('')
 
   return found
+}
+
+
+// Walk a target's template tree and return every per-feature source entry.
+// `tmfolder` is the target template root (`<sdk>/tm/<lang>`).
+function findFeatureSources(fs: any, tmfolder: string, available: string[]): FeatureSource[] {
+  const known = new Set(available)
+
+  return findFeatureEntries(fs, tmfolder, known)
+    .filter((e: FeatureEntry) => known.has(e.name))
+    .map(({ name, path, folder }: FeatureEntry) => ({ name, path, folder }))
 }
 
 
@@ -196,11 +252,15 @@ function srcFeatureExcludes(model: any): RegExp[] {
 
 export type {
   FeatureSource,
+  FeatureEntry,
 }
 
 export {
+  BASE_FEATURE,
   featureOf,
+  featureShaped,
   availableFeatures,
+  findFeatureEntries,
   findFeatureSources,
   featureExcludes,
   fullsetExcludes,

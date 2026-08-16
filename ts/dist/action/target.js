@@ -455,7 +455,7 @@ function trimFeatures(ctx$, tfolder, torigname, tname, features) {
     }
     // `base` is not a declared feature — it is the always-present foundation
     // every other feature builds on — so it is never a trim candidate.
-    const selected = new Set(['base', ...(features ?? [])]);
+    const selected = new Set([featureSource_1.BASE_FEATURE, ...(features ?? [])]);
     const available = featureCatalogue(ctx$, tfolder);
     const drop = (0, featureSource_1.findFeatureSources)(fs, tfolder + '/tm/' + torigname, available)
         .filter((s) => !selected.has(s.name));

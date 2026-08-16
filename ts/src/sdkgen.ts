@@ -134,8 +134,10 @@ import {
   package_update,
 } from './action/package'
 
+import { cmd_package_check } from './action/check'
+
 // The verbs, built from the kind registry — see action/dispatch.
-import { ACTION_MAP, actionNames } from './action/dispatch'
+import { ACTION_MAP, actionNames, needsModel } from './action/dispatch'
 
 
 
@@ -342,16 +344,18 @@ function SdkGen(opts: SdkGenOptions) {
         ' (expected: ' + actionNames().join(', ') + ')')
     }
 
-    const ctx = resolveActionContext(flags)
+    const ctx = resolveActionContext(flags, needsModel(args))
 
     return await actionFunc(args, ctx)
   }
 
 
-  function resolveActionContext(flags?: Record<string, any>): ActionContext {
+  function resolveActionContext(
+    flags?: Record<string, any>, wantmodel?: boolean,
+  ): ActionContext {
 
     // TODO: use AsyncLocalStorage to avoid reloading model
-    const { model, url } = resolveModel()
+    const { model, url } = resolveModel(false !== wantmodel)
 
     const ctx: ActionContext = {
       fs: () => fs,
@@ -368,9 +372,17 @@ function SdkGen(opts: SdkGenOptions) {
   }
 
 
-  function resolveModel() {
+  function resolveModel(wanted: boolean) {
     const path = './model/sdk.aontu'
     const errs: any[] = []
+
+    // A verb that does not act on a project (see `needsModel`) is run where
+    // there is no project model, so its absence is not an error there. Its
+    // PRESENCE still is compiled — an author checking a package from inside a
+    // project should get the same model every other verb gets.
+    if (!wanted && !fs.existsSync(path)) {
+      return { model: { main: {} } as any, url: path }
+    }
 
     if (null == aontu) {
       aontu = new Aontu()
@@ -442,6 +454,14 @@ function SdkGen(opts: SdkGenOptions) {
     ): Promise<ActionResult> => {
       const ctx = resolveActionContext(flags)
       return package_update(names, ctx)
+    },
+
+    // Validate a package being AUTHORED — see action/check. The only verb
+    // here that does not need a project model, because it does not act on a
+    // project; `false` says so to `resolveActionContext`.
+    check: async (refs?: string[]): Promise<ActionResult> => {
+      const ctx = resolveActionContext(undefined, false)
+      return cmd_package_check(['package', 'check', ...(refs ?? [])], ctx)
     },
   }
 

@@ -75,6 +75,21 @@ function actionNames(): string[] {
 }
 
 
+// Does this invocation need the PROJECT's model?
+//
+// Every verb but one operates on a project, and compiling `model/sdk.aontu`
+// before dispatch is what makes them fail early and clearly when run from the
+// wrong directory. `package check` is the exception on purpose: it operates
+// on a PACKAGE, and an author runs it in their package root, where there is
+// no project model to compile and nothing is wrong with that.
+//
+// Stated here, with the verb table, rather than in the CLI or in `sdkgen.ts`:
+// it is a fact about the verb.
+function needsModel(args: string[]): boolean {
+  return !('package' === args[0] && 'check' === args[1])
+}
+
+
 export type {
   ActionFunc,
 }
@@ -83,4 +98,5 @@ export {
   ACTION_MAP,
   actionMap,
   actionNames,
+  needsModel,
 }

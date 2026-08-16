@@ -44,10 +44,12 @@ const utility_1 = require("../utility");
 const manifest_1 = require("../helpers/manifest");
 const semver_1 = require("../helpers/semver");
 const kind_1 = require("./kind");
+const check_1 = require("./check");
 const doctor_1 = require("./doctor");
 const resolve_1 = require("./resolve");
 const CMD_MAP = Object.assign(Object.create(null), {
     add: cmd_package_add,
+    check: check_1.cmd_package_check,
     list: cmd_package_list,
     update: cmd_package_update,
 });
@@ -68,35 +70,24 @@ async function action_package(args, actx) {
     return await cmd(args, actx);
 }
 function resolvePackage(ref, actx) {
-    const fs = actx.fs();
-    const project = actx.folder ?? '.';
-    const search = [];
-    const candidates = node_path_1.default.isAbsolute(ref) ? [ref] : [
-        node_path_1.default.join(project, 'node_modules', ref),
-        node_path_1.default.join(project, ref),
-    ];
-    for (const root of candidates) {
-        const sdk = node_path_1.default.normalize(node_path_1.default.join(root, '.sdk'));
-        search.push(sdk);
-        if (!fs.existsSync(sdk)) {
-            continue;
-        }
-        const read = (0, manifest_1.readManifest)(fs, sdk);
-        // A `.sdk` folder with no manifest is a legal source for a DIRECT ref and
-        // is what every pre-manifest fixture is — but `package add` is the verb
-        // that acts on a manifest, so here its absence is the error, and it says
-        // which of the two commands the user wants.
-        if (null == read.manifest) {
-            throw new utility_1.SdkGenError('No package manifest: ' + read.file +
-                (null == read.err ? '' : '\n  ' + read.err) +
-                '\n  `package add` installs what a manifest declares. For a folder' +
-                ' without one, add its items directly:' +
-                '\n    voxgig-sdkgen target add ' + ref + '/<name>');
-        }
-        return { ref, root, sdk, manifest: read.manifest };
+    const { found, search } = (0, manifest_1.probePackage)(actx.fs(), actx.folder ?? '.', ref);
+    if (null == found) {
+        throw new utility_1.SdkGenError('Package not found: ' + ref + '\n  looked for a `.sdk` folder in:\n    ' +
+            search.join('\n    '));
     }
-    throw new utility_1.SdkGenError('Package not found: ' + ref + '\n  looked for a `.sdk` folder in:\n    ' +
-        search.join('\n    '));
+    const { root, sdk, read } = found;
+    // A `.sdk` folder with no manifest is a legal source for a DIRECT ref and
+    // is what every pre-manifest fixture is — but `package add` is the verb
+    // that acts on a manifest, so here its absence is the error, and it says
+    // which of the two commands the user wants.
+    if (null == read.manifest) {
+        throw new utility_1.SdkGenError('No package manifest: ' + read.file +
+            (null == read.err ? '' : '\n  ' + read.err) +
+            '\n  `package add` installs what a manifest declares. For a folder' +
+            ' without one, add its items directly:' +
+            '\n    voxgig-sdkgen target add ' + ref + '/<name>');
+    }
+    return { ref, root, sdk, manifest: read.manifest };
 }
 // Everything wrong with the package, or nothing. Reported as ONE message
 // rather than one-per-throw, because an author fixing a manifest wants the

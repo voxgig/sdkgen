@@ -41,6 +41,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ITEM_NAME_RE = exports.SCHEMA = exports.MANIFEST = void 0;
 exports.manifestPath = manifestPath;
+exports.probePackage = probePackage;
 exports.readManifest = readManifest;
 exports.validateManifest = validateManifest;
 exports.checkShape = checkShape;
@@ -305,5 +306,21 @@ function entryKind(fs, path) {
     catch (err) {
         return 'none';
     }
+}
+function probePackage(fs, project, ref) {
+    const search = [];
+    const candidates = node_path_1.default.isAbsolute(ref) ? [ref] : [
+        node_path_1.default.join(project, 'node_modules', ref),
+        node_path_1.default.join(project, ref),
+    ];
+    for (const root of candidates) {
+        const sdk = node_path_1.default.normalize(node_path_1.default.join(root, '.sdk'));
+        search.push(sdk);
+        if (!fs.existsSync(sdk)) {
+            continue;
+        }
+        return { found: { ref, root, sdk, read: readManifest(fs, sdk) }, search };
+    }
+    return { search };
 }
 //# sourceMappingURL=manifest.js.map
