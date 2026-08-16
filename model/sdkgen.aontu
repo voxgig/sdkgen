@@ -434,3 +434,39 @@ main: kit: option: &: {
 
 
 
+# DOCS ITEMS — the third kind. See docs/design/sdkgen-packages.md §20.
+#
+# A docs item is a generation target whose destination is a DOCUMENTATION
+# SYSTEM rather than a language: a static site, a developer-portal catalogue,
+# a hosted service's config. sdkgen ships the kind; the items live in
+# packages, so this spread declares only what EVERY destination needs and
+# leaves the rest to the item's own model file (an unknown key unifies fine).
+#
+# Deliberately NOT copied from the target spread: `ext`, `comment.line` and
+# `module.name` are required there and have no honest value for a site
+# emitting .md, .yml, .css and .svg at once. `title` is defaulted rather than
+# required, so an author is never forced to invent one to make the model
+# compile — the `module.name` trap of §10.1.
+main: kit: docs: &: {
+  name: key()
+  active: *true | boolean
+  title: *'' | string
+
+  # Provenance — see the note on `main: kit: target: &:` above. Written by
+  # `docs add`, read by doctor, `package list` and `package update`.
+  base:     *'' | string
+  origname: *'' | string
+  package:  *'' | string
+
+  # Where the item generates. '' is in-tree, at `<sdk-repo>/<name>/`;
+  # anything else is its own generate() pass rooted there, exactly as for a
+  # target (see explanation/out-of-tree-targets). Out of tree is the normal
+  # case for a docs item: a documentation site usually has its own repo, and
+  # in-tree it would collide with the SDK repo's own README and workflows.
+  output: {
+    path: *'' | string
+    repo: *'' | string
+    adopt: *false | boolean
+    sdkrel: *'' | string
+  }
+}

@@ -75,6 +75,9 @@ declare function SdkGen(opts: SdkGenOptions): {
     }>;
     action: (args: string[], flags?: Record<string, any>) => Promise<any>;
     check: () => Promise<ActionResult>;
+    docs: {
+        add: (items: string[]) => Promise<ActionResult>;
+    };
     target: {
         add: (targets: string[]) => Promise<ActionResult>;
     };

@@ -306,14 +306,21 @@ function aliasCmpName(name: string, torigname: string, tname: string): string {
 // reduce to the same name, so the later entry silently won and every
 // single-quoted import came out as `from './Package_go2"`. One explicit regex
 // keeps the quote it matched.
-function aliasCmpText(src: string, torigname: string, tname: string): string {
+// `cmpbase` is the component tree's PREFIX — `src/cmp/` for a target,
+// `src/cmp/docs/` for a docs item. Taken from the caller rather than fixed
+// here: a docs item's components live one level deeper, and a rewrite that
+// looked for `src/cmp/<orig>/` left an aliased docs component pointing at the
+// ORIGIN's fragments — reading them silently when both are installed.
+function aliasCmpText(
+  src: string, torigname: string, tname: string, cmpbase = 'src/cmp/',
+): string {
   const orig = escapeRe(torigname)
 
   return src
     // The fragment directory, read relative to __dirname. The fragments are
     // copied into the ALIAS's folder, so leaving the origin path would miss —
     // or, if the origin target is also installed, silently read ITS fragments.
-    .replace(new RegExp('src/cmp/' + orig + '/', 'g'), 'src/cmp/' + tname + '/')
+    .replace(new RegExp(escapeRe(cmpbase) + orig + '/', 'g'), cmpbase + tname + '/')
     // Sibling imports: `'./Package_go'` -> `'./Package_go2'`. Anchored on the
     // closing quote (captured, so the style is preserved) to keep it off file
     // EXTENSIONS — `Main.fragment.go` must not become `Main.fragment.go2`.
@@ -341,10 +348,12 @@ function aliasCmpTree(
   toRel: string,
   torigname: string,
   tname: string,
+  cmpbase = 'src/cmp/',
 ) {
   const fs = ctx$.fs()
 
-  const aliasText = (src: string) => aliasCmpText(src, torigname, tname)
+  const aliasText = (src: string) =>
+    aliasCmpText(src, torigname, tname, cmpbase)
 
   const emit = (dir: string, rel: string) => {
     let entries: any[]
@@ -681,4 +690,5 @@ export {
   aliasCmpText,
   aliasCmpName,
   aliasCmpTree,
+  pruneStaleTemplates,
 }

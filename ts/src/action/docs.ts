@@ -51,9 +51,23 @@ import type { TreeDef } from './kind'
 
 import { registerInstalled } from './resolve'
 
-import { aliasCmpTree } from './target'
+import { aliasCmpTree, pruneStaleTemplates } from './target'
 
-import { parseAddNames, loadContent } from './action'
+import { parseAddNames, loadContent, ensureModelInclude } from './action'
+
+
+// The PREFIX of a docs item's component tree (`src/cmp/docs/`), for the
+// alias rewrite. Derived from the registry's declaration rather than written
+// out a second time, so the two cannot disagree about where docs components
+// live.
+const NAME_MARK = '\u0001name\u0001'
+
+function cmpBase(): string {
+  const cmp = kindTrees('docs', NAME_MARK)
+    .find((t: TreeDef) => 'none' === t.replace)
+
+  return null == cmp ? 'src/cmp/docs/' : cmp.path.split(NAME_MARK)[0]
+}
 
 
 const CMD_MAP: any = Object.assign(Object.create(null), {
@@ -115,6 +129,21 @@ async function docs_add(
     note: (actx.opts.dryrun ? '** DRY RUN **' : '')
   })
 
+  // PREFLIGHT, before a single file is written.
+  //
+  // The write pass emits the definition and its index entry before it copies
+  // the trees, so a ref whose definition exists but whose required components
+  // do not left the command failed AND the project carrying a docs item with
+  // no implementation — which the next model compile then reads as real.
+  // `package add` already validates a whole package up front for exactly this
+  // reason; a direct `docs add` needs the same guarantee.
+  preflight(docs, actx)
+
+  // The project's own model must INCLUDE the docs index, or everything below
+  // is invisible: no project scaffolded before this kind existed includes it,
+  // and `main.kit.docs` would simply be absent from the next compile.
+  ensureModelInclude(actx, 'docs')
+
   // Into the IN-MEMORY model before anything reads it. Nothing recompiles
   // `model/sdk.aontu` mid-process, so without this a second docs item in the
   // same command — and anything else later in it — behaves as if the first
@@ -126,6 +155,33 @@ async function docs_add(
     DocsRoot({ docs, actx }))
 
   return { jres }
+}
+
+
+// Resolve every ref and check every REQUIRED tree, throwing before anything
+// is written. Resolution itself is the other half: a ref that names no
+// definition fails here rather than partway through the pass.
+function preflight(docs: string[], actx: ActionContext) {
+  const fs = actx.fs()
+
+  for (const ref of docs) {
+    const source = resolveKind(ref, 'docs', actx as any)
+
+    for (const tree of kindTrees('docs', source.origname)) {
+      if (!tree.required) {
+        continue
+      }
+
+      const from = source.folder + '/' + tree.path
+
+      if (!fs.existsSync(from)) {
+        throw new SdkGenError(
+          'Docs ' + source.name + ': required tree not found: ' + from +
+          '\n  a docs item needs its components (' + tree.path +
+          '); nothing has been written')
+      }
+    }
+  }
 }
 
 
@@ -173,6 +229,21 @@ const DocsRoot = cmp(function DocsRoot(props: any) {
       const from = kindTrees('docs', source.origname)
 
       dest.forEach((tree: TreeDef, i: number) => {
+        // Copy only ADDS and overwrites. A newer version of the package that
+        // RETIRED a template would leave the old one behind, generating from
+        // it forever — the failure `pruneStaleTemplates` exists for, and the
+        // reason 30 repos once carried a superseded harness file.
+        //
+        // Templates only, exactly as `target add` prunes only `tm`: extra
+        // files under a component tree are the project's own (doctor calls
+        // them `additive`, and adding a component is the supported way to
+        // extend an item), so pruning there would delete supported work.
+        if ('template' === tree.replace) {
+          pruneStaleTemplates(
+            ctx$, source.folder + '/' + from[i].path, tree.path, [],
+            !!props.actx?.opts?.dryrun)
+        }
+
         copyTree(ctx$, source, tree, from[i].path)
       })
 
@@ -212,7 +283,8 @@ function copyTree(ctx$: any, source: any, tree: TreeDef, frompath: string) {
   // does it; jostraca's tree Copy has no per-entry rename hook, which is why
   // an aliased tree is emitted file by file.
   if (source.name !== source.origname && 'none' === tree.replace) {
-    aliasCmpTree(ctx$, from, tree.path, source.origname, source.name)
+    aliasCmpTree(ctx$, from, tree.path, source.origname, source.name,
+      cmpBase())
     return
   }
 

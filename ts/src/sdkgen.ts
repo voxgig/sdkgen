@@ -136,6 +136,8 @@ import {
 
 import { cmd_package_check } from './action/check'
 
+import { docs_add } from './action/docs'
+
 // The verbs, built from the kind registry — see action/dispatch.
 import { ACTION_MAP, actionNames, needsModel } from './action/dispatch'
 
@@ -433,6 +435,15 @@ function SdkGen(opts: SdkGenOptions) {
     }
   }
 
+  // The third kind. sdkgen ships no docs items, so every ref here is a path
+  // into a package — see action/docs.
+  const docs = {
+    add: async (items: string[]): Promise<ActionResult> => {
+      const ctx = resolveActionContext()
+      return docs_add(items, ctx)
+    }
+  }
+
   // The whole-package verbs. `flags` mirrors the CLI's `--only` / `--alias`,
   // for the same reason they are `action`'s second parameter rather than
   // constructor options: they are arguments to one call.
@@ -478,6 +489,7 @@ function SdkGen(opts: SdkGenOptions) {
     generate,
     action,
     check,
+    docs,
     target,
     feature,
 

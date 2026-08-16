@@ -12,6 +12,7 @@ exports.readTargetFeature = readTargetFeature;
 exports.aliasCmpText = aliasCmpText;
 exports.aliasCmpName = aliasCmpName;
 exports.aliasCmpTree = aliasCmpTree;
+exports.pruneStaleTemplates = pruneStaleTemplates;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const util_1 = require("@voxgig/util");
@@ -228,13 +229,18 @@ function aliasCmpName(name, torigname, tname) {
 // reduce to the same name, so the later entry silently won and every
 // single-quoted import came out as `from './Package_go2"`. One explicit regex
 // keeps the quote it matched.
-function aliasCmpText(src, torigname, tname) {
+// `cmpbase` is the component tree's PREFIX — `src/cmp/` for a target,
+// `src/cmp/docs/` for a docs item. Taken from the caller rather than fixed
+// here: a docs item's components live one level deeper, and a rewrite that
+// looked for `src/cmp/<orig>/` left an aliased docs component pointing at the
+// ORIGIN's fragments — reading them silently when both are installed.
+function aliasCmpText(src, torigname, tname, cmpbase = 'src/cmp/') {
     const orig = (0, kind_1.escapeRe)(torigname);
     return src
         // The fragment directory, read relative to __dirname. The fragments are
         // copied into the ALIAS's folder, so leaving the origin path would miss —
         // or, if the origin target is also installed, silently read ITS fragments.
-        .replace(new RegExp('src/cmp/' + orig + '/', 'g'), 'src/cmp/' + tname + '/')
+        .replace(new RegExp((0, kind_1.escapeRe)(cmpbase) + orig + '/', 'g'), cmpbase + tname + '/')
         // Sibling imports: `'./Package_go'` -> `'./Package_go2'`. Anchored on the
         // closing quote (captured, so the style is preserved) to keep it off file
         // EXTENSIONS — `Main.fragment.go` must not become `Main.fragment.go2`.
@@ -254,9 +260,9 @@ function aliasCmpText(src, torigname, tname) {
 // Files are emitted through jostraca (`File`/`Content`) rather than copied
 // with `fs`, so a dry run reports them and writes nothing, exactly as the
 // tree Copy on the unaliased path does.
-function aliasCmpTree(ctx$, fromDir, toRel, torigname, tname) {
+function aliasCmpTree(ctx$, fromDir, toRel, torigname, tname, cmpbase = 'src/cmp/') {
     const fs = ctx$.fs();
-    const aliasText = (src) => aliasCmpText(src, torigname, tname);
+    const aliasText = (src) => aliasCmpText(src, torigname, tname, cmpbase);
     const emit = (dir, rel) => {
         let entries;
         try {

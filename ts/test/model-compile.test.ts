@@ -18,6 +18,8 @@ import Path from 'node:path'
 // the same ones on anybody's package (see packagecheck.test.ts). They were
 // written here first, and a second copy in `src` would have drifted from this
 // one — so there is one copy and two callers.
+import { KINDS } from '../dist/action/kind.js'
+
 import {
   PUBLISH_OVERRIDES,
   aontuKey,
@@ -206,6 +208,59 @@ describe('cli-targets-disable-agentguide', () => {
       assert.strictEqual(
         phase?.agentguide?.active, false,
         `${target}.aontu must set phase.agentguide.active = false`)
+    })
+  }
+
+})
+
+
+// EVERY REGISTERED KIND HAS A SCHEMA SPREAD.
+//
+// The registry and the base schema are edited in different files, and a kind
+// registered without a `main: kit: <kind>: &:` spread fails SILENTLY: aontu
+// accepts unknown keys, so a definition of that kind unifies against nothing,
+// `package check`'s schema step imposes no constraints, and every author-side
+// guarantee for that kind is vacuous. Exactly that happened to `docs` — the
+// spread was written to the mirror instead of the canonical file and then
+// overwritten by `make sync-model`, and every test still passed.
+//
+// The probe is a WRONG-TYPED value: a spread that is being enforced rejects
+// it, and one that does not exist accepts it.
+describe('schema covers every kind', () => {
+
+  const KIND_PROBE: Record<string, string> = {
+    target: "ext: 1\n  comment: line: '#'\n  module: name: 'x'",
+    feature: "title: 1",
+    docs: "active: 'not a boolean'",
+  }
+
+  for (const kind of Object.keys(KINDS)) {
+    test(`main: kit: ${kind}: & constrains its items`, () => {
+      const probe = KIND_PROBE[kind]
+
+      assert.ok(null != probe,
+        `no probe for the '${kind}' kind — a new kind needs one here, ` +
+        'or this guard passes vacuously for it')
+
+      const src = [
+        `@'${Path.join(REPO, 'model', 'sdkgen.aontu')}'`,
+        `main: kit: ${kind}: probe: {`,
+        '  ' + probe,
+        '}',
+      ].join('\n')
+
+      // The `path` has to EXIST and be a DIFFERENT file from the schema.
+      // Both mistakes make this guard pass for the wrong reason, and both
+      // were made writing it: a made-up filename throws ENOENT, and naming
+      // the schema itself throws `source includes itself` — either way
+      // "compiling failed" is true no matter what the schema says.
+      const { errors } = compileModel(
+        src, Path.join(TARGET_DIR, 'go.aontu'))
+
+      assert.ok(0 < errors.length,
+        `the base schema does not constrain main.kit.${kind} — a definition ` +
+        'with a wrong-typed field unified cleanly, so nothing in ' +
+        '`package check` is checking this kind')
     })
   }
 

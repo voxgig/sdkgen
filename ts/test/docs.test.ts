@@ -385,3 +385,108 @@ describe('doctor sees docs', () => {
   })
 
 })
+
+
+describe('docs and the project model', () => {
+
+  // THE ITEM HAS TO REACH THE COMPILED MODEL.
+  //
+  // `model/sdk.aontu` is written once, by create-sdkgen, and includes the
+  // indexes of the kinds that existed then — so no project alive today
+  // includes `docs/docs-index.aontu`. Without that line the definition is an
+  // orphan: on disk, included by its index, and that index included by
+  // nothing. `main.kit.docs` is absent from the next compile, and `package
+  // list`, `package update` and `doctor` cannot see the item at all.
+
+  test('the project model gains the docs include', async () => {
+    const pkg = makePackage()
+    try {
+      const project = makeProject()
+      await docs_add([docsRef(pkg)], project.actx)
+
+      const sdk = String(project.fs.readFileSync(
+        ROOT + '/model/sdk.aontu', 'utf8'))
+
+      ok(sdk.includes('@"docs/docs-index.aontu"'),
+        'the docs index is included by nothing:\n' + sdk)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('the include is added ONCE', async () => {
+    const pkg = makePackage()
+    try {
+      const project = makeProject()
+      await docs_add([docsRef(pkg)], project.actx)
+      await docs_add([docsRef(pkg)], project.actx)
+
+      const sdk = String(project.fs.readFileSync(
+        ROOT + '/model/sdk.aontu', 'utf8'))
+
+      strictEqual(
+        sdk.split('@"docs/docs-index.aontu"').length - 1, 1,
+        'the include was appended twice:\n' + sdk)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a required tree that is missing installs NOTHING', async () => {
+    // The write pass emits the definition and its index entry before it
+    // copies the trees, so a failure partway left the project carrying a docs
+    // item with no implementation — which the next model compile reads as
+    // real.
+    const pkg = makePackage()
+    try {
+      Fs.rmSync(Path.join(pkg, '.sdk', 'src', 'cmp', 'docs', 'apidocs'),
+        { recursive: true, force: true })
+
+      const project = makeProject()
+
+      await rejects(() => docs_add([docsRef(pkg)], project.actx),
+        /required tree not found/)
+
+      deepStrictEqual(
+        project.files().filter((f: string) => f.startsWith('model/docs/')),
+        [],
+        'a failed add left a docs item in the model')
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a template retired upstream is pruned on resync', async () => {
+    // Copy only adds and overwrites. A newer package version that removed a
+    // template would otherwise leave the old one behind, generating from it
+    // forever.
+    const pkg = makePackage()
+    try {
+      const project = makeProject()
+      await docs_add([docsRef(pkg)], project.actx)
+
+      ok(project.files().includes('tm/docs/apidocs/site.md'))
+
+      Fs.unlinkSync(Path.join(pkg, '.sdk', 'tm', 'docs', 'apidocs', 'site.md'))
+      Fs.writeFileSync(
+        Path.join(pkg, '.sdk', 'tm', 'docs', 'apidocs', 'index.md'), '# new\n')
+
+      await docs_add([docsRef(pkg)], project.actx)
+
+      const files = project.files()
+      ok(files.includes('tm/docs/apidocs/index.md'), files.join(','))
+      ok(!files.includes('tm/docs/apidocs/site.md'),
+        'the retired template survived the resync: ' + files.join(','))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+})
