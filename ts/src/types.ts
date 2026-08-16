@@ -64,7 +64,7 @@ type ModelTarget = NameCases & {
   // the SDK repo — see cmp/ExternalTarget and
   // docs/explanation/out-of-tree-targets.
   //
-  // Typed rather than left to the index signature because `externalTargets()`
+  // Typed rather than left to the index signature because `externalItems()`
   // decides from these keys whether to write OUTSIDE the repo, and a
   // destination path read off a bare `any` is one a rename can silently
   // change to undefined.

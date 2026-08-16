@@ -594,6 +594,8 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       doctor.ts        the drift check every other action is guarded by
       action.ts        index maintenance
     cmp/               language-neutral components (delegate per-language)
+      Docs.ts          the in-tree docs pass + the per-item dispatch
+      ExternalDocs.ts  the out-of-tree docs Root (own generate() pass)
     helpers/           collectDeps, buildIdNames, getMatchEntries
       definition.ts    where a kind's `model/<kind>/<name>.aontu` lives
       manifest.ts      sdkgen-package.json: read + validate
