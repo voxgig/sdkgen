@@ -273,10 +273,8 @@ function checkFeatureSource(fs, sdk, manifest) {
     // The catalogue a CONSUMER will have: this generator's own features, plus
     // the package's. A package shipping a copy of a bundled target ships source
     // for features it does not provide, and those are not strays.
-    const known = new Set([
-        ...(0, featureSource_1.availableFeatures)(fs, (0, shipped_1.scaffoldFolder)()),
-        ...(0, featureSource_1.availableFeatures)(fs, sdk),
-    ]);
+    const bundled = (0, featureSource_1.availableFeatures)(fs, (0, shipped_1.scaffoldFolder)());
+    const known = new Set([...bundled, ...(0, featureSource_1.availableFeatures)(fs, sdk)]);
     // Declared coverage. `targetsSupported: { <feature>: [<target>, …] }` is
     // the author's statement about which targets a feature ships source for, so
     // it is checkable — unlike its absence, which means nothing either way.
@@ -299,7 +297,19 @@ function checkFeatureSource(fs, sdk, manifest) {
     // Strays: feature-shaped entries in a provided TARGET's tree whose name is
     // in no catalogue. They are copied into every project regardless of what
     // its model selects, because trim only drops what it can recognise.
-    for (const tname of (manifest?.provides?.target ?? [])) {
+    //
+    // NOT REPORTED AT ALL if this generator's own feature definitions cannot be
+    // read: every bundled feature's source would then look like a stray, and a
+    // check that fires on a correct package because of a problem at ITS end is
+    // worse than one that stays quiet.
+    if (0 === bundled.length) {
+        return found;
+    }
+    const targets = new Set([
+        ...(manifest?.provides?.target ?? []),
+        ...(0, definition_1.definitionNames)(fs, sdk, 'target'),
+    ]);
+    for (const tname of Array.from(targets).sort()) {
         const tm = node_path_1.default.join(sdk, 'tm', tname);
         const strays = (0, featureSource_1.findFeatureEntries)(fs, tm, known)
             .filter((e) => e.shaped && !known.has(e.name) && featureSource_1.BASE_FEATURE !== e.name);

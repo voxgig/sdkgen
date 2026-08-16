@@ -397,10 +397,9 @@ function checkFeatureSource(
   // The catalogue a CONSUMER will have: this generator's own features, plus
   // the package's. A package shipping a copy of a bundled target ships source
   // for features it does not provide, and those are not strays.
-  const known = new Set([
-    ...availableFeatures(fs, scaffoldFolder()),
-    ...availableFeatures(fs, sdk),
-  ])
+  const bundled = availableFeatures(fs, scaffoldFolder())
+
+  const known = new Set([...bundled, ...availableFeatures(fs, sdk)])
 
   // Declared coverage. `targetsSupported: { <feature>: [<target>, …] }` is
   // the author's statement about which targets a feature ships source for, so
@@ -427,7 +426,21 @@ function checkFeatureSource(
   // Strays: feature-shaped entries in a provided TARGET's tree whose name is
   // in no catalogue. They are copied into every project regardless of what
   // its model selects, because trim only drops what it can recognise.
-  for (const tname of (manifest?.provides?.target ?? [])) {
+  //
+  // NOT REPORTED AT ALL if this generator's own feature definitions cannot be
+  // read: every bundled feature's source would then look like a stray, and a
+  // check that fires on a correct package because of a problem at ITS end is
+  // worse than one that stays quiet.
+  if (0 === bundled.length) {
+    return found
+  }
+
+  const targets = new Set([
+    ...(manifest?.provides?.target ?? []),
+    ...definitionNames(fs, sdk, 'target'),
+  ])
+
+  for (const tname of Array.from(targets).sort()) {
     const tm = Path.join(sdk, 'tm', tname)
 
     const strays = findFeatureEntries(fs, tm, known)
