@@ -28,9 +28,10 @@ function makePoint(ctx) {
     const selector = getprop(ctx, op.input)
 
     let point
+    let matched = false
     for (let i = 0; i < op.points.length; i++) {
-      point = op.points[i]
-      const select = point.select
+      const cand = op.points[i]
+      const select = cand.select
       let found = true
 
       if (selector && select.exist) {
@@ -53,7 +54,28 @@ function makePoint(ctx) {
       }
 
       if (found) {
+        point = cand
+        matched = true
         break
+      }
+    }
+
+    // select.exist can list more than the params needed to pick a point (for
+    // /boards/{id} it is Trello's 17 optional query-includes), so a plain
+    // {id} call matches NOTHING. Fall back to the fewest path segments — the
+    // entity's own route, not a cross-reference from another resource that
+    // also returns it — instead of whichever point came last.
+    //
+    // A call carrying $action lands here only when its own point failed the
+    // exist test; the shortest point then almost certainly has no $action, so
+    // the guard below refuses it. That is the intended outcome: an unbuildable
+    // action request is an error, not a silent request to the wrong endpoint.
+    if (!matched) {
+      point = op.points[0]
+      for (const cand of op.points) {
+        if (cand.parts.length < point.parts.length) {
+          point = cand
+        }
       }
     }
 

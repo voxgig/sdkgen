@@ -8,6 +8,15 @@ import (
 	"GOMODULE/core"
 )
 
+// How many path segments a point has — its depth, which is what tells the
+// entity's own route from a cross-reference that also returns it.
+func partsLen(point map[string]any) int {
+	if parts, ok := vs.GetProp(point, "parts").([]any); ok {
+		return len(parts)
+	}
+	return 0
+}
+
 func makePointUtil(ctx *core.Context) (map[string]any, error) {
 	if ctx.Out["point"] != nil {
 		// A PrePoint feature hook (e.g. rbac) may short-circuit the
@@ -52,9 +61,10 @@ func makePointUtil(ctx *core.Context) (map[string]any, error) {
 		}
 
 		var point map[string]any
+		matched := false
 		for i := 0; i < len(op.Points); i++ {
-			point = op.Points[i]
-			selectDef := core.ToMapAny(vs.GetProp(point, "select"))
+			cand := op.Points[i]
+			selectDef := core.ToMapAny(vs.GetProp(cand, "select"))
 			found := true
 
 			if selector != nil && selectDef != nil {
@@ -82,7 +92,21 @@ func makePointUtil(ctx *core.Context) (map[string]any, error) {
 			}
 
 			if found {
+				point = cand
+				matched = true
 				break
+			}
+		}
+
+		// select.exist can list more than the params needed to pick a point,
+		// so nothing matches — fall back to the fewest path segments, the
+		// entity's own route rather than whichever point came last.
+		if !matched {
+			point = op.Points[0]
+			for _, cand := range op.Points {
+				if partsLen(cand) < partsLen(point) {
+					point = cand
+				}
 			}
 		}
 

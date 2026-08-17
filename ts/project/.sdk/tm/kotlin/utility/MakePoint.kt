@@ -4,6 +4,13 @@ import KOTLINPACKAGE.core.Context
 import KOTLINPACKAGE.core.Helpers
 import KOTLINPACKAGE.utility.struct.Struct
 
+// How many path segments a point has — its depth, which is what tells the
+// entity's own route from a cross-reference that also returns it.
+private fun partsLen(point: Map<String, Any?>?): Int {
+  val parts = Struct.getprop(point, "parts")
+  return if (parts is List<*>) parts.size else 0
+}
+
 @Suppress("UNCHECKED_CAST")
 fun makePoint(ctx: Context): Map<String, Any?> {
   val outPoint = ctx.out["point"]
@@ -55,9 +62,10 @@ fun makePoint(ctx: Context): Map<String, Any?> {
     }
 
     var point: MutableMap<String, Any?>? = null
+    var matched = false
     for (i in op.points.indices) {
-      point = op.points[i]
-      val selectDef = Helpers.toMapAny(Struct.getprop(point, "select"))
+      val cand = op.points[i]
+      val selectDef = Helpers.toMapAny(Struct.getprop(cand, "select"))
       var found = true
 
       if (selectDef != null) {
@@ -84,7 +92,21 @@ fun makePoint(ctx: Context): Map<String, Any?> {
       }
 
       if (found) {
+        point = cand
+        matched = true
         break
+      }
+    }
+
+    // select.exist can list more than the params needed to pick a point, so
+    // nothing matches — fall back to the fewest path segments, the entity's
+    // own route rather than whichever point came last.
+    if (!matched) {
+      point = op.points[0]
+      for (cand in op.points) {
+        if (partsLen(cand) < partsLen(point)) {
+          point = cand
+        }
       }
     }
 

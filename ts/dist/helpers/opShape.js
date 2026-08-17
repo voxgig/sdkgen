@@ -172,6 +172,33 @@ function entityPath(entity) {
     }
     return '';
 }
+// The entity's OWN endpoint among an op's points: the one with the fewest
+// path segments.
+//
+// The other notion of canonical above — "not a `$action` route" — separates a
+// folded-in custom action from the real op. This one separates the entity's
+// own route from a CROSS-REFERENCE: another resource's route that happens to
+// return this entity (`/notifications/{id}/board` for a board). Both are
+// plain GETs with no `$action`, so only depth tells them apart, and the
+// shallower one is the route the entity is named for.
+//
+// Ties keep the earlier point, so the sorted-key order of the model decides
+// and the output stays byte-stable.
+//
+// The same rule runs at RUNTIME, in each language's makePoint template, when
+// no point's `select.exist` matches. It cannot be shared with them — a
+// template ships standalone, outside this package — so it is written twice on
+// purpose, and both sides must move together.
+function shortestPoint(points) {
+    let shortest = points[0];
+    for (const pt of points) {
+        if (pt && pt.parts && shortest && shortest.parts &&
+            pt.parts.length < shortest.parts.length) {
+            shortest = pt;
+        }
+    }
+    return shortest;
+}
 function opParams(op) {
     let points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
     const canonical = points.filter((pt) => null == (pt && pt.select && pt.select['$action']));
@@ -204,16 +231,15 @@ function opParams(op) {
     out.forEach((p) => {
         p.reqd = true === requiredOnAll[p.name];
     });
-    // Unrelated cross-references share no param, so nothing came out
-    // required — use the shortest point's own params instead of a union.
+    // Unrelated cross-references share no param, so the intersection came out
+    // empty and NOTHING is required — which generates a `load({})` that drops
+    // the id. Fall back to the entity's own point and take its params whole.
+    //
+    // Only when the intersection produced nothing: a genuine set of alternative
+    // routes with a shared param still merges (a `page_id` on every route stays
+    // required, per-route siblings stay optional).
     if (1 < points.length && !out.some((p) => p.reqd)) {
-        let shortest = points[0];
-        for (const pt of points) {
-            if (pt && pt.parts && shortest.parts && pt.parts.length < shortest.parts.length) {
-                shortest = pt;
-            }
-        }
-        return opParams({ points: [shortest] });
+        return opParams({ points: [shortestPoint(points)] });
     }
     return out;
 }

@@ -42,8 +42,8 @@ class ProjectNameMakePoint
             $selector = $op->input === 'data' ? $ctx->data : $ctx->match;
 
             $point = null;
+            $matched = false;
             foreach ($op->points as $p) {
-                $point = $p;
                 $select_def = ProjectNameHelpers::to_map(\Voxgig\Struct\Struct::getprop($p, 'select'));
                 $found = true;
 
@@ -70,7 +70,25 @@ class ProjectNameMakePoint
                 }
 
                 if ($found) {
+                    $point = $p;
+                    $matched = true;
                     break;
+                }
+            }
+
+            // select.exist can list more than the params needed to pick a
+            // point, so nothing matches — fall back to the fewest path
+            // segments, the entity's own route rather than the last point.
+            if (!$matched) {
+                $parts_len = function ($p) {
+                    $parts = \Voxgig\Struct\Struct::getprop($p, 'parts');
+                    return is_array($parts) ? count($parts) : 0;
+                };
+                $point = $op->points[0];
+                foreach ($op->points as $p) {
+                    if ($parts_len($p) < $parts_len($point)) {
+                        $point = $p;
+                    }
                 }
             }
 

@@ -79,7 +79,7 @@ tm/c/utility/make_context.c 615156796cbb
 tm/c/utility/make_error.c bb1799d1c4a9
 tm/c/utility/make_fetch_def.c 08c73a9454ed
 tm/c/utility/make_options.c d461fa1e53e0
-tm/c/utility/make_point.c f488e4b48686
+tm/c/utility/make_point.c 66e3f1786f5e
 tm/c/utility/make_request.c b5887e3fd94c
 tm/c/utility/make_response.c 5cb2535aec54
 tm/c/utility/make_result.c 1a912f59bee6
@@ -332,7 +332,7 @@ tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs aa8db59afcdb
 tm/csharp/utility/MakeFetchDef.cs 89aca56837ef
 tm/csharp/utility/MakeOptions.cs 32a575570e84
-tm/csharp/utility/MakePoint.cs 85acf78d5c68
+tm/csharp/utility/MakePoint.cs a7db5ba31237
 tm/csharp/utility/MakeRequest.cs 32657a32522e
 tm/csharp/utility/MakeResponse.cs 8aa004eeaeb1
 tm/csharp/utility/MakeResult.cs c8c17a3334d3
@@ -424,7 +424,7 @@ tm/dart/lib/utility/MakeContextUtility.dart 896273f1e3c3
 tm/dart/lib/utility/MakeErrorUtility.dart 34d415651bee
 tm/dart/lib/utility/MakeFetchDefUtility.dart b5f13893e02d
 tm/dart/lib/utility/MakeOptionsUtility.dart 95bc9ab53ec5
-tm/dart/lib/utility/MakePointUtility.dart 99b65843fe43
+tm/dart/lib/utility/MakePointUtility.dart 7312939580aa
 tm/dart/lib/utility/MakeRequestUtility.dart 3c335acdd7e1
 tm/dart/lib/utility/MakeResponseUtility.dart 074cc0b0eeb3
 tm/dart/lib/utility/MakeResultUtility.dart 18fcc59b2ce8
@@ -609,7 +609,7 @@ tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go acc76429c4ee
 tm/go/utility/make_fetch_def.go 1b2ecd1822cf
 tm/go/utility/make_options.go 4c20dc5d0747
-tm/go/utility/make_point.go 7a64d036ffb2
+tm/go/utility/make_point.go a4c3011b896b
 tm/go/utility/make_request.go cf4d4f55e911
 tm/go/utility/make_response.go 57ad84a7b3be
 tm/go/utility/make_result.go a9ddaa230b15
@@ -811,7 +811,7 @@ tm/java/utility/MakeContext.java c7789b287936
 tm/java/utility/MakeError.java 16bb2d80d562
 tm/java/utility/MakeFetchDef.java b83d2aed69b6
 tm/java/utility/MakeOptions.java ed6e58062bdf
-tm/java/utility/MakePoint.java 3ae981c22a4a
+tm/java/utility/MakePoint.java 8a5f36c04f50
 tm/java/utility/MakeRequest.java b326d47c077d
 tm/java/utility/MakeResponse.java bce6807c2f70
 tm/java/utility/MakeResult.java cb3522d54432
@@ -892,7 +892,7 @@ tm/js/src/Result.js f5ca4fe99283
 tm/js/src/Spec.js 3479116d0990
 tm/js/src/feature/README.md 630422c5567f
 tm/js/src/feature/base/BaseFeature.js 29d380a635f6
-tm/js/src/feature/test/TestFeature.js d0b89ca02225
+tm/js/src/feature/test/TestFeature.js eeb2befd87c6
 tm/js/src/types.js f49c15c403b4
 tm/js/src/utility/CleanUtility.js d19a9fd4a0eb
 tm/js/src/utility/DoneUtility.js d1457eb69ac8
@@ -905,7 +905,7 @@ tm/js/src/utility/MakeContextUtility.js bbc1c9839da2
 tm/js/src/utility/MakeErrorUtility.js bc97ae72a43c
 tm/js/src/utility/MakeFetchDefUtility.js 624a772dedfa
 tm/js/src/utility/MakeOptionsUtility.js e8ee91c00338
-tm/js/src/utility/MakePointUtility.js 70b16cea8548
+tm/js/src/utility/MakePointUtility.js b9ac2d8bbf3e
 tm/js/src/utility/MakeRequestUtility.js c586819bd2e6
 tm/js/src/utility/MakeResponseUtility.js 8e24747b5152
 tm/js/src/utility/MakeResultUtility.js 762de0f9d1b7
@@ -1019,7 +1019,7 @@ tm/kotlin/utility/Fetcher.kt 4dcaf48dea50
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
 tm/kotlin/utility/MakeOptions.kt 3616f9a204df
-tm/kotlin/utility/MakePoint.kt fc52d1b65a0e
+tm/kotlin/utility/MakePoint.kt 97839faac69f
 tm/kotlin/utility/MakeReqRes.kt a745863aa7aa
 tm/kotlin/utility/MakeSpecUrl.kt 1b1facf0ad64
 tm/kotlin/utility/Prepare.kt 3f418d9a74bc
@@ -1160,7 +1160,7 @@ tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua 3234bc5e9564
 tm/lua/utility/make_fetch_def.lua f7057db76504
 tm/lua/utility/make_options.lua cf5863dd9809
-tm/lua/utility/make_point.lua adabac2b6b47
+tm/lua/utility/make_point.lua 065b88db17c3
 tm/lua/utility/make_request.lua 4ba90ee83ff3
 tm/lua/utility/make_response.lua 6255f621011a
 tm/lua/utility/make_result.lua d9eae1b6119e
@@ -1328,7 +1328,7 @@ tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm b48207779329
 tm/perl/utility/make_fetch_def.pm ebb77b54060c
 tm/perl/utility/make_options.pm 6cf6a28a270d
-tm/perl/utility/make_point.pm 9281198b608f
+tm/perl/utility/make_point.pm 2b0c9aec707d
 tm/perl/utility/make_request.pm d4b1ec8cf30d
 tm/perl/utility/make_response.pm 51a842fc584b
 tm/perl/utility/make_result.pm 1665a30e56a4
@@ -1425,7 +1425,7 @@ tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 5bbbbecfc3d7
 tm/php/utility/MakeFetchDef.php c76cc8f6f00e
 tm/php/utility/MakeOptions.php b9b04878e3fe
-tm/php/utility/MakePoint.php 49c3b1c5a24f
+tm/php/utility/MakePoint.php 15d307c13fff
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
 tm/php/utility/MakeResult.php f30434dbc6ba
@@ -1515,7 +1515,7 @@ tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py d68358f50bc8
 tm/py/pkg/utility/make_fetch_def.py 0ad63d779a4e
 tm/py/pkg/utility/make_options.py 63de156de04f
-tm/py/pkg/utility/make_point.py 8caf90ecd8e5
+tm/py/pkg/utility/make_point.py 2adbabe85fd7
 tm/py/pkg/utility/make_request.py 9835b18e665b
 tm/py/pkg/utility/make_response.py 2be9c7ffdfb6
 tm/py/pkg/utility/make_result.py cc36137e3e1d
@@ -1647,7 +1647,7 @@ tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb abe971c81e08
 tm/rb/utility/make_fetch_def.rb b0cbc0f3b381
 tm/rb/utility/make_options.rb 4a4bfb4855cb
-tm/rb/utility/make_point.rb c384246096dd
+tm/rb/utility/make_point.rb 8244d745ac75
 tm/rb/utility/make_request.rb a4ef373194d8
 tm/rb/utility/make_response.rb 0ca41a876f23
 tm/rb/utility/make_result.rb 144c21f62388
@@ -1751,7 +1751,7 @@ tm/rust/utility/make_context.rs 04f34b592c9c
 tm/rust/utility/make_error.rs 6a60ab3f2ab8
 tm/rust/utility/make_fetch_def.rs 6656dd09052b
 tm/rust/utility/make_options.rs e0674b891194
-tm/rust/utility/make_point.rs dc49ff17415d
+tm/rust/utility/make_point.rs 2c79938c9b03
 tm/rust/utility/make_request.rs fa9eeee6d176
 tm/rust/utility/make_response.rs 87ae886eda3b
 tm/rust/utility/make_result.rs 0a9846aa446c
@@ -2076,7 +2076,7 @@ tm/ts/src/utility/MakeContextUtility.ts 50caf1a75850
 tm/ts/src/utility/MakeErrorUtility.ts ac21ee4f2052
 tm/ts/src/utility/MakeFetchDefUtility.ts 940b95f0d2b0
 tm/ts/src/utility/MakeOptionsUtility.ts 8d2c2a24308d
-tm/ts/src/utility/MakePointUtility.ts d8bb9a093ac4
+tm/ts/src/utility/MakePointUtility.ts d1688f2ac983
 tm/ts/src/utility/MakeRequestUtility.ts 03c4c8e1380a
 tm/ts/src/utility/MakeResponseUtility.ts a294cf7183ee
 tm/ts/src/utility/MakeResultUtility.ts 35a8c1404935

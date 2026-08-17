@@ -6,6 +6,13 @@ namespace ProjectNameSdk.Util;
 
 public static partial class SdkUtility
 {
+    // How many path segments a point has — its depth, which is what tells the
+    // entity's own route from a cross-reference that also returns it.
+    private static int PartsLen(Dictionary<string, object?>? point)
+    {
+        return StructUtils.GetProp(point, "parts") is List<object?> parts ? parts.Count : 0;
+    }
+
     internal static Dictionary<string, object?>? MakePointUtil(Context ctx)
     {
         if (ctx.Out.TryGetValue("point", out var outPoint) && outPoint != null)
@@ -62,10 +69,10 @@ public static partial class SdkUtility
             }
 
             Dictionary<string, object?>? point = null;
+            var matched = false;
             foreach (var candidate in op.Points)
             {
-                point = candidate;
-                var selectDef = Helpers.ToMapAny(StructUtils.GetProp(point, "select"));
+                var selectDef = Helpers.ToMapAny(StructUtils.GetProp(candidate, "select"));
                 var found = true;
 
                 if (selector != null && selectDef != null)
@@ -98,7 +105,24 @@ public static partial class SdkUtility
 
                 if (found)
                 {
+                    point = candidate;
+                    matched = true;
                     break;
+                }
+            }
+
+            // select.exist can list more than the params needed to pick a
+            // point, so nothing matches — fall back to the fewest path
+            // segments, the entity's own route rather than the last point.
+            if (!matched)
+            {
+                point = op.Points[0];
+                foreach (var candidate in op.Points)
+                {
+                    if (PartsLen(candidate) < PartsLen(point))
+                    {
+                        point = candidate;
+                    }
                 }
             }
 

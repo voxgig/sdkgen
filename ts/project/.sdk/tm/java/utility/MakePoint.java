@@ -14,6 +14,13 @@ final class MakePoint {
 
   private MakePoint() {}
 
+  // How many path segments a point has — its depth, which is what tells the
+  // entity's own route from a cross-reference that also returns it.
+  private static int partsLen(Map<String, Object> point) {
+    Object parts = Struct.getprop(point, "parts");
+    return parts instanceof List ? ((List<Object>) parts).size() : 0;
+  }
+
   static Map<String, Object> makePoint(Context ctx) {
     Object outPoint = ctx.out.get("point");
     if (outPoint != null) {
@@ -62,10 +69,11 @@ final class MakePoint {
       }
 
       Map<String, Object> point = null;
+      boolean matched = false;
       for (int i = 0; i < op.points.size(); i++) {
-        point = op.points.get(i);
+        Map<String, Object> cand = op.points.get(i);
         Map<String, Object> selectDef =
-            Helpers.toMapAny(Struct.getprop(point, "select"));
+            Helpers.toMapAny(Struct.getprop(cand, "select"));
         boolean found = true;
 
         if (selector != null && selectDef != null) {
@@ -92,7 +100,21 @@ final class MakePoint {
         }
 
         if (found) {
+          point = cand;
+          matched = true;
           break;
+        }
+      }
+
+      // select.exist can list more than the params needed to pick a point, so
+      // nothing matches — fall back to the fewest path segments, the entity's
+      // own route rather than whichever point came last.
+      if (!matched) {
+        point = op.points.get(0);
+        for (Map<String, Object> cand : op.points) {
+          if (partsLen(cand) < partsLen(point)) {
+            point = cand;
+          }
         }
       }
 

@@ -34,9 +34,10 @@ dynamic makePoint(dynamic ctx) {
     final selector = 'data' == op.input ? ctx.data : ctx.match;
 
     dynamic point;
+    var matched = false;
     for (var i = 0; i < op.points.length; i++) {
-      point = op.points[i];
-      final select = point.select;
+      final cand = op.points[i];
+      final select = cand.select;
       var found = true;
 
       final exist = vs.getprop(select, 'exist');
@@ -60,7 +61,21 @@ dynamic makePoint(dynamic ctx) {
       }
 
       if (found) {
+        point = cand;
+        matched = true;
         break;
+      }
+    }
+
+    // select.exist can list more than the params needed to pick a point, so
+    // nothing matches — fall back to the fewest path segments, the entity's
+    // own route rather than whichever point came last.
+    if (!matched) {
+      point = op.points[0];
+      for (final cand in op.points) {
+        if (cand.parts.length < point.parts.length) {
+          point = cand;
+        }
       }
     }
 

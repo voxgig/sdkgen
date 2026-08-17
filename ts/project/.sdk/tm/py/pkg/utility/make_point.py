@@ -5,6 +5,11 @@ from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.core.helpers import to_map
 
 
+def _parts_len(point):
+    parts = vs.getprop(point, "parts")
+    return len(parts) if isinstance(parts, list) else 0
+
+
 def make_point_util(ctx):
     pre = ctx.out.get("point")
     if pre is not None:
@@ -40,9 +45,10 @@ def make_point_util(ctx):
             selector = ctx.match
 
         point = None
+        matched = False
         for i in range(len(op.points)):
-            point = op.points[i]
-            select_def = to_map(vs.getprop(point, "select"))
+            cand = op.points[i]
+            select_def = to_map(vs.getprop(cand, "select"))
             found = True
 
             if selector is not None and select_def is not None:
@@ -63,7 +69,18 @@ def make_point_util(ctx):
                     found = False
 
             if found:
+                point = cand
+                matched = True
                 break
+
+        # select.exist can list more than the params needed to pick a point,
+        # so nothing matches — fall back to the fewest path segments, the
+        # entity's own route rather than whichever point came last.
+        if not matched:
+            point = op.points[0]
+            for cand in op.points:
+                if _parts_len(cand) < _parts_len(point):
+                    point = cand
 
         if reqselector is not None:
             req_action = vs.getprop(reqselector, "$action")

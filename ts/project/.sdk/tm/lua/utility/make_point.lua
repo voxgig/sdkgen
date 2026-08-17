@@ -3,6 +3,17 @@
 local vs = require("utility.struct.struct")
 local helpers = require("core.helpers")
 
+-- How many path segments a point has — its depth, which is what tells the
+-- entity's own route from a cross-reference that also returns it.
+local function parts_len(point)
+  local parts = vs.getprop(point, "parts")
+  if type(parts) == "table" then
+    return #parts
+  end
+  return 0
+end
+
+
 local function make_point_util(ctx)
   if ctx.out["point"] ~= nil then
     local preset = ctx.out["point"]
@@ -44,9 +55,10 @@ local function make_point_util(ctx)
     end
 
     local point = nil
+    local matched = false
     for i = 1, #op.points do
-      point = op.points[i]
-      local select_def = helpers.to_map(vs.getprop(point, "select"))
+      local cand = op.points[i]
+      local select_def = helpers.to_map(vs.getprop(cand, "select"))
       local found = true
 
       if selector ~= nil and select_def ~= nil then
@@ -73,7 +85,22 @@ local function make_point_util(ctx)
       end
 
       if found then
+        point = cand
+        matched = true
         break
+      end
+    end
+
+    -- select.exist can list more than the params needed to pick a point, so
+    -- nothing matches — fall back to the fewest path segments, the entity's
+    -- own route rather than whichever point came last.
+    if not matched then
+      point = op.points[1]
+      for i = 1, #op.points do
+        local cand = op.points[i]
+        if parts_len(cand) < parts_len(point) then
+          point = cand
+        end
       end
     end
 

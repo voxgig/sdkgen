@@ -251,9 +251,18 @@ class TestFeature extends BaseFeature {
     const isempty = struct.isempty
 
     const opname = getprop(op, 'name')
-    const point =
-      getelem(getpath(ctx.config, [
-        'entity', getprop(ctx.entity, 'name'), 'op', opname, 'points']), -1)
+    const points = getpath(ctx.config, [
+      'entity', getprop(ctx.entity, 'name'), 'op', opname, 'points']) || []
+
+    // Prefer the shortest path: the entity's own endpoint, not a
+    // cross-reference from another resource that also returns it.
+    let point = getelem(points, 0)
+    for (let i = 1; i < points.length; i++) {
+      const cand = getelem(points, i)
+      if (cand.parts.length < point.parts.length) {
+        point = cand
+      }
+    }
 
     const reqd = transform(
       select(getpath(point, ['args', 'params']), { reqd: true }),

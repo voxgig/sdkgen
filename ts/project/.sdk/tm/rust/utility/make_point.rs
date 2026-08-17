@@ -7,6 +7,15 @@ use crate::core::types::OutVal;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
+// How many path segments a point has — its depth, which is what tells the
+// entity's own route from a cross-reference that also returns it.
+fn parts_len(point: &Value) -> usize {
+    match getp(point, "parts") {
+        Value::List(l) => l.borrow().len(),
+        _ => 0,
+    }
+}
+
 pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
     match ctx.out_get("point") {
         // A PrePoint feature hook (e.g. rbac) may short-circuit the
@@ -60,9 +69,10 @@ pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
         };
 
         let mut point = Value::Noval;
+        let mut matched = false;
         for i in 0..plen {
-            point = vs::get_elem(&points, &Value::Num(i as f64), Value::Noval);
-            let select_def = to_map(&getp(&point, "select"));
+            let cand = vs::get_elem(&points, &Value::Num(i as f64), Value::Noval);
+            let select_def = to_map(&getp(&cand, "select"));
             let mut found = true;
 
             if !selector.is_noval() && !select_def.is_noval() {
@@ -89,7 +99,22 @@ pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
             }
 
             if found {
+                point = cand;
+                matched = true;
                 break;
+            }
+        }
+
+        // select.exist can list more than the params needed to pick a point,
+        // so nothing matches — fall back to the fewest path segments, the
+        // entity's own route rather than whichever point came last.
+        if !matched {
+            point = vs::get_elem(&points, &Value::Num(0.0), Value::Noval);
+            for i in 0..plen {
+                let cand = vs::get_elem(&points, &Value::Num(i as f64), Value::Noval);
+                if parts_len(&cand) < parts_len(&point) {
+                    point = cand;
+                }
             }
         }
 

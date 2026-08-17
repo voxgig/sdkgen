@@ -17,6 +17,14 @@ package ProjectNameUtilities;
 
 our %REGISTRY;
 
+# How many path segments a point has — its depth, which is what tells the
+# entity's own route from a cross-reference that also returns it.
+sub _parts_len {
+  my ($point) = @_;
+  my $parts = ProjectNameHelpers::gp($point, 'parts');
+  return Voxgig::Struct::islist($parts) ? scalar(@$parts) : 0;
+}
+
 $REGISTRY{make_point} = sub {
   my ($ctx) = @_;
 
@@ -54,8 +62,8 @@ $REGISTRY{make_point} = sub {
     my $selector = ('data' eq $op->{input}) ? $ctx->{data} : $ctx->{match};
 
     my $point;
+    my $matched = 0;
     for my $p (@{ $op->{points} }) {
-      $point = $p;
       my $select_def = ProjectNameHelpers::to_map(ProjectNameHelpers::gp($p, 'select'));
       my $found = 1;
 
@@ -79,7 +87,21 @@ $REGISTRY{make_point} = sub {
         $found = 0 unless ProjectNameHelpers::eqv($req_action, $select_action);
       }
 
-      last if $found;
+      if ($found) {
+        $point = $p;
+        $matched = 1;
+        last;
+      }
+    }
+
+    # select.exist can list more than the params needed to pick a point, so
+    # nothing matches — fall back to the fewest path segments, the entity's
+    # own route rather than whichever point came last.
+    unless ($matched) {
+      $point = $op->{points}[0];
+      for my $p (@{ $op->{points} }) {
+        $point = $p if _parts_len($p) < _parts_len($point);
+      }
     }
 
     if ($reqselector) {
