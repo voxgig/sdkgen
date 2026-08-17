@@ -31,9 +31,10 @@ function makePoint(ctx: Context): Point | Error {
     const selector = getprop(ctx, op.input)
 
     let point
+    let matched = false
     for (let i = 0; i < op.points.length; i++) {
-      point = op.points[i]
-      const select = point.select
+      const cand = op.points[i]
+      const select = cand.select
       let found = true
 
       if (selector && select.exist) {
@@ -56,7 +57,20 @@ function makePoint(ctx: Context): Point | Error {
       }
 
       if (found) {
+        point = cand
+        matched = true
         break
+      }
+    }
+
+    // select.exist can match nothing (it lists more than required
+    // params) — fall back to the shortest path, not an arbitrary one.
+    if (!matched) {
+      point = op.points[0]
+      for (const cand of op.points) {
+        if (cand.parts.length < point.parts.length) {
+          point = cand
+        }
       }
     }
 
