@@ -40,8 +40,8 @@ func makePointUtil(_ ctx: Context) throws -> VMap? {
     }
 
     var point: VMap? = nil
+    var matched = false
     for candidate in op.points {
-      point = candidate
       let selectDef = gp(candidate, "select").asMap
       var found = true
 
@@ -62,7 +62,56 @@ func makePointUtil(_ ctx: Context) throws -> VMap? {
         if reqAction != selectAction { found = false }
       }
 
-      if found { break }
+      if found {
+        point = candidate
+        matched = true
+        break
+      }
+    }
+
+    // select.exist can list more than the params needed to pick a point (for
+    // /boards/{id} it is Trello's 17 optional query-includes), so a plain
+    // {id} call matches NOTHING. Fall back to the entity's own route rather
+    // than whichever point came last.
+    if !matched {
+      // A request naming an action reaches here only because that action's
+      // own point failed its exist test, so it is unbuildable whatever we
+      // pick. Refuse it BEFORE choosing a fallback: the guard below compares
+      // the chosen point's $action and would wave the request through
+      // whenever the fallback lands on the action point itself.
+      let unmatchedAction = gp(reqselector, "$action")
+      if !isNil(unmatchedAction) {
+        throw ctx.makeError("point_action_invalid",
+          "Operation \"\(op.name)\" action \"\(stringify(unmatchedAction))\" is not valid.")
+      }
+
+      // A terminal parameter marks a record route (/boards/{id}); a
+      // cross-reference ends in the relationship's name (/posts/{id}/author).
+      // Failing that, the shallower path wins. The same rule runs at
+      // generation time, in helpers/opShape.ts — both sides must move
+      // together.
+      func partsLen(_ p: VMap) -> Int {
+        return gp(p, "parts").asList?.items.count ?? 0
+      }
+      func terminalParam(_ p: VMap) -> Bool {
+        guard let items = gp(p, "parts").asList?.items, let last = items.last else {
+          return false
+        }
+        return (last.asString ?? "").hasPrefix("{")
+      }
+
+      point = op.points.first
+      for candidate in op.points {
+        guard let best = point else { break }
+        let candTerm = terminalParam(candidate)
+        let bestTerm = terminalParam(best)
+        if candTerm != bestTerm {
+          if candTerm { point = candidate }
+        }
+        else if partsLen(candidate) < partsLen(best) {
+          point = candidate
+        }
+      }
     }
 
     let reqAction = gp(reqselector, "$action")

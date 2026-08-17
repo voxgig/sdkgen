@@ -13,6 +13,29 @@ static voxgig_value* get_elem_i(voxgig_value* list, int64_t i) {
   return r ? r : voxgig_new_undef();
 }
 
+// How many path segments a point has.
+static size_t parts_len(voxgig_value* point) {
+  voxgig_value* parts = getp(point, "parts");
+  return voxgig_is_list(parts) ? voxgig_as_list(parts)->len : 0;
+}
+
+// Does this point's path end in a parameter? A record route ends in the
+// record's identifier (/boards/{id}); a cross-reference that also returns
+// the entity ends in the relationship's name (/posts/{id}/author). That,
+// then fewest segments, is what tells the entity's own route from a
+// cross-reference. The same rule runs at generation time, in
+// helpers/opShape.ts — both sides must move together.
+static bool terminal_param(voxgig_value* point) {
+  voxgig_value* parts = getp(point, "parts");
+  if (!voxgig_is_list(parts)) return false;
+  voxgig_list* pl = voxgig_as_list(parts);
+  if (0 == pl->len) return false;
+  voxgig_value* last = pl->items[pl->len - 1];
+  if (!voxgig_is_string(last)) return false;
+  const char* s = voxgig_as_string(last);
+  return NULL != s && '{' == s[0];
+}
+
 voxgig_value* make_point_util(Context* ctx, PNError** err) {
   *err = NULL;
 
@@ -58,9 +81,10 @@ voxgig_value* make_point_util(Context* ctx, PNError** err) {
     voxgig_value* selector = is_data ? ctx->data : ctx->mtch;
 
     voxgig_value* point = voxgig_new_undef();
+    bool matched = false;
     for (int64_t i = 0; i < plen; i++) {
-      point = get_elem_i(points, i);
-      voxgig_value* select_def = to_map(getp(point, "select"));
+      voxgig_value* cand = get_elem_i(points, i);
+      voxgig_value* select_def = to_map(getp(cand, "select"));
       bool found = true;
 
       if (!v_is_noval(selector) && !v_is_noval(select_def)) {
@@ -85,7 +109,44 @@ voxgig_value* make_point_util(Context* ctx, PNError** err) {
         if (!v_eq(req_action, select_action)) found = false;
       }
 
-      if (found) break;
+      if (found) {
+        point = cand;
+        matched = true;
+        break;
+      }
+    }
+
+    // select.exist can list more than the params needed to pick a point, so
+    // nothing matches — fall back to the entity's own route rather than
+    // whichever point came last.
+    if (!matched) {
+      // A request naming an action reaches here only because that action's
+      // own point failed its exist test, so it is unbuildable whatever we
+      // pick. Refuse it BEFORE choosing a fallback: the guard below compares
+      // the chosen point's $action and would wave the request through
+      // whenever the fallback lands on the action point itself.
+      voxgig_value* unmatched_action = getp(reqselector, "$action");
+      if (!v_is_noval(unmatched_action)) {
+        char* actstr = voxgig_stringify(unmatched_action, -1);
+        char buf[512];
+        snprintf(buf, sizeof(buf), "Operation \"%s\" action \"%s\" is not valid.",
+                 op->name, actstr ? actstr : "");
+        *err = context_make_error(ctx, "point_action_invalid", buf);
+        return NULL;
+      }
+
+      point = get_elem_i(points, 0);
+      for (int64_t i = 0; i < plen; i++) {
+        voxgig_value* cand = get_elem_i(points, i);
+        bool cand_term = terminal_param(cand);
+        bool best_term = terminal_param(point);
+        if (cand_term != best_term) {
+          if (cand_term) point = cand;
+        }
+        else if (parts_len(cand) < parts_len(point)) {
+          point = cand;
+        }
+      }
     }
 
     voxgig_value* req_action = getp(reqselector, "$action");

@@ -16,6 +16,7 @@ import Data.Bits ((.&.))
 import Data.Char (isAlphaNum, toUpper)
 import Data.IORef
 import qualified Data.Map.Strict as Map
+import Data.Maybe (isNothing)
 import System.IO.Unsafe (unsafePerformIO)
 import Text.Printf (printf)
 
@@ -725,12 +726,63 @@ makePointUtil ctx = do
                       reqAction <- getp reqsel "$action"
                       selectAction <- getp selectDef "$action"
                       pure (valEqScalar reqAction selectAction)
-                  choose [] = pure VNoval
-                  choose [pt] = pure pt
-                  choose (pt : rest) = do f <- isFound pt; if f then pure pt else choose rest
-              chosen <- choose pts
+                  findMatch [] = pure Nothing
+                  findMatch (pt : rest) = do
+                    f <- isFound pt
+                    if f then pure (Just pt) else findMatch rest
+                  -- A record route ends in the record's identifier
+                  -- (/boards/{id}); a cross-reference that also returns the
+                  -- entity ends in the relationship's name
+                  -- (/posts/{id}/author). That, then fewest segments, tells
+                  -- the entity's own route from a cross-reference. The same
+                  -- rule runs at generation time, in helpers/opShape.ts —
+                  -- both sides must move together.
+                  ptsLen pt = do
+                    parts <- getp pt "parts"
+                    case parts of
+                      VList _ -> length <$> listItems parts
+                      _ -> pure (0 :: Int)
+                  terminalParam pt = do
+                    parts <- getp pt "parts"
+                    case parts of
+                      VList _ -> do
+                        items <- listItems parts
+                        pure (case reverse items of
+                                (lastp : _) -> case vstring lastp of
+                                                 ('{' : _) -> True
+                                                 _ -> False
+                                [] -> False)
+                      _ -> pure False
+                  betterOwn cand best = do
+                    ct <- terminalParam cand
+                    bt <- terminalParam best
+                    if ct /= bt
+                      then pure ct
+                      else do
+                        cl <- ptsLen cand
+                        bl <- ptsLen best
+                        pure (cl < bl)
+                  ownPoint [] = pure VNoval
+                  ownPoint (p0 : rest0) = go p0 rest0
+                    where go best [] = pure best
+                          go best (c : cs) = do
+                            b <- betterOwn c best
+                            go (if b then c else best) cs
+              matched <- findMatch pts
               reqAction <- getp reqsel "$action"
-              if not (isNoval reqAction) && not (isNoval chosen)
+              chosen <- maybe (ownPoint pts) pure matched
+              -- select.exist can list more than the params needed to pick a
+              -- point, so nothing matched. A request naming an action gets
+              -- here only because that action's own point failed its exist
+              -- test, so it is unbuildable whatever we pick — refuse it
+              -- BEFORE the guard below, which compares the chosen point's
+              -- $action and would wave the request through whenever the
+              -- fallback lands on the action point itself.
+              if isNothing matched && not (isNoval reqAction)
+                then do
+                  e <- mkErr "point_action_invalid" ("Operation \"" ++ opName op ++ "\" action \"" ++ vstring reqAction ++ "\" is not valid.")
+                  pure (VNoval, Just e)
+                else if not (isNoval reqAction) && not (isNoval chosen)
                 then do
                   pointSelect <- toMap <$> getp chosen "select"
                   pointAction <- getp pointSelect "$action"

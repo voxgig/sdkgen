@@ -94,11 +94,12 @@ object MakePoint {
       val selector: JMap[String, Object] = if ("data" == op.input) ctx.data else ctx.matchData
 
       var point: JMap[String, Object] = null
+      var matched = false
       var i = 0
       var break = false
       while (i < op.points.size() && !break) {
-        point = op.points.get(i)
-        val selectDef = Helpers.toMapAny(Struct.getprop(point, "select"))
+        val cand = op.points.get(i)
+        val selectDef = Helpers.toMapAny(Struct.getprop(cand, "select"))
         var found = true
 
         if (selector != null && selectDef != null) {
@@ -122,7 +123,60 @@ object MakePoint {
           if (!Objects.equals(reqAction, selectAction)) found = false
         }
 
-        if (found) break = true else i += 1
+        if (found) { point = cand; matched = true; break = true } else i += 1
+      }
+
+      // select.exist can list more than the params needed to pick a point
+      // (for /boards/{id} it is Trello's 17 optional query-includes), so a
+      // plain {id} call matches NOTHING. Fall back to the entity's own route
+      // rather than whichever point came last.
+      if (!matched) {
+        // A request naming an action reaches here only because that action's
+        // own point failed its exist test, so it is unbuildable whatever we
+        // pick. Refuse it BEFORE choosing a fallback: the guard below
+        // compares the chosen point's $action and would wave the request
+        // through whenever the fallback lands on the action point itself.
+        val unmatchedAction =
+          if (reqselector != null) Struct.getprop(reqselector, "$action", null) else null
+        if (unmatchedAction != null) {
+          throw ctx.makeError("point_action_invalid",
+            "Operation \"" + op.name + "\" action \"" +
+              Struct.stringify(unmatchedAction) + "\" is not valid.")
+        }
+
+        // A terminal parameter marks a record route (/boards/{id}); a
+        // cross-reference ends in the relationship's name
+        // (/posts/{id}/author). Failing that, the shallower path wins. The
+        // same rule runs at generation time, in helpers/opShape.ts — both
+        // sides must move together.
+        def partsLen(p: JMap[String, Object]): Int =
+          Struct.getprop(p, "parts") match {
+            case parts: JList[_] => parts.size()
+            case _ => 0
+          }
+        def terminalParam(p: JMap[String, Object]): Boolean =
+          Struct.getprop(p, "parts") match {
+            case parts: JList[_] if parts.size() > 0 =>
+              parts.get(parts.size() - 1) match {
+                case s: String => s.startsWith("{")
+                case _ => false
+              }
+            case _ => false
+          }
+
+        point = op.points.get(0)
+        var j = 0
+        while (j < op.points.size()) {
+          val cand = op.points.get(j)
+          val candTerm = terminalParam(cand)
+          val bestTerm = terminalParam(point)
+          if (candTerm != bestTerm) {
+            if (candTerm) point = cand
+          } else if (partsLen(cand) < partsLen(point)) {
+            point = cand
+          }
+          j += 1
+        }
       }
 
       if (reqselector != null) {

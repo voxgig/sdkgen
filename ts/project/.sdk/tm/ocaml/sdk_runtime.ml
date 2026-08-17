@@ -636,12 +636,12 @@ let make_point_util (ctx : ctx) : (value * sdk_error option) =
           if op.op_input = "data" then ctx.c_reqdata, ctx.c_data
           else ctx.c_reqmatch, ctx.c_match in
         let chosen = ref Noval in
+        let matched = ref false in
         let n = List.length points in
         let arr = Array.of_list points in
         let i = ref 0 and stop = ref false in
         while not !stop && !i < n do
           let point = arr.(!i) in
-          chosen := point;
           let select_def = to_map (getp point "select") in
           let found = ref true in
           (match select_def with
@@ -661,8 +661,46 @@ let make_point_util (ctx : ctx) : (value * sdk_error option) =
             let select_action = getp select_def "$action" in
             if req_action <> select_action then found := false
           end;
-          if !found then stop := true else incr i
+          if !found then begin chosen := point; matched := true; stop := true end
+          else incr i
         done;
+        (* select.exist can list more than the params needed to pick a point
+           (for /boards/{id} it is Trello's 17 optional query-includes), so a
+           plain {id} call matches NOTHING. Fall back to the entity's own
+           route rather than whichever point came last. *)
+        if not !matched then begin
+          (* A request naming an action reaches here only because that
+             action's own point failed its exist test, so it is unbuildable
+             whatever we pick. Refuse it BEFORE choosing a fallback: the guard
+             below compares the chosen point's $action and would wave the
+             request through whenever the fallback lands on the action point
+             itself. *)
+          let unmatched_action = getp reqselector "$action" in
+          if not (is_noval unmatched_action) then
+            raise (Sdk_error_exc (ctx_make_error ctx "point_action_invalid"
+              ("Operation \"" ^ op.op_name ^ "\" action \"" ^ (stringify unmatched_action) ^ "\" is not valid.")));
+          (* A terminal parameter marks a record route (/boards/{id}); a
+             cross-reference ends in the relationship's name
+             (/posts/{id}/author). Failing that, the shallower path wins. The
+             same rule runs at generation time, in helpers/opShape.ts — both
+             sides must move together. *)
+          let parts_len p =
+            match getp p "parts" with List r -> List.length !r | _ -> 0 in
+          let terminal_param p =
+            match getp p "parts" with
+            | List r ->
+              (match List.rev !r with
+               | last :: _ ->
+                 let s = vstring last in
+                 String.length s > 0 && s.[0] = '{'
+               | [] -> false)
+            | _ -> false in
+          chosen := arr.(0);
+          Array.iter (fun cand ->
+              let ct = terminal_param cand and bt = terminal_param !chosen in
+              if ct <> bt then (if ct then chosen := cand)
+              else if parts_len cand < parts_len !chosen then chosen := cand) arr
+        end;
         let req_action = getp reqselector "$action" in
         if not (is_noval req_action) && not (is_noval !chosen) then begin
           let point_select = to_map (getp !chosen "select") in

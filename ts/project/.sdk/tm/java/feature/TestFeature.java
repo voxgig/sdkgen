@@ -26,6 +26,29 @@ public class TestFeature extends BaseFeature {
   private Map<String, Object> options;
   private int netcalls = 0;
 
+  // How many path segments a point has, and whether its path ends in a
+  // parameter — the rule makePoint uses to tell the entity's own route from a
+  // cross-reference that also returns it.
+  @SuppressWarnings("unchecked")
+  private static int pointPartsLen(Object point) {
+    Object parts = Struct.getprop(point, "parts");
+    return parts instanceof List ? ((List<Object>) parts).size() : 0;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static boolean pointTerminalParam(Object point) {
+    Object parts = Struct.getprop(point, "parts");
+    if (!(parts instanceof List)) {
+      return false;
+    }
+    List<Object> list = (List<Object>) parts;
+    if (list.isEmpty()) {
+      return false;
+    }
+    Object last = list.get(list.size() - 1);
+    return last instanceof String && ((String) last).startsWith("{");
+  }
+
   public TestFeature() {
     super("test", "0.0.1", true);
   }
@@ -289,11 +312,28 @@ public class TestFeature extends BaseFeature {
   private Object buildArgs(Context ctx, Operation op, Map<String, Object> args) {
     String opname = op.name;
 
-    // Get last point from config.
+    // Pick the entity's own endpoint from config, not a cross-reference from
+    // another resource that also returns it — the same rule makePoint falls
+    // back to, so the seed-data query is built from the endpoint the request
+    // will actually be sent to: a terminal `{id}` marks a record route, and
+    // failing that the shallower path wins.
     Object points = Struct.getpath(ctx.config,
         List.of("entity", ctx.entity == null ? "" : ctx.entity.getName(),
             "op", opname, "points"));
-    Object point = Struct.getelem(points, -1);
+    Object point = Struct.getelem(points, 0);
+    if (points instanceof List) {
+      for (Object cand : (List<Object>) points) {
+        boolean candTerm = pointTerminalParam(cand);
+        boolean bestTerm = pointTerminalParam(point);
+        if (candTerm != bestTerm) {
+          if (candTerm) {
+            point = cand;
+          }
+        } else if (pointPartsLen(cand) < pointPartsLen(point)) {
+          point = cand;
+        }
+      }
+    }
 
     // Get required params.
     Object paramsPath = Struct.getpath(point, List.of("args", "params"));

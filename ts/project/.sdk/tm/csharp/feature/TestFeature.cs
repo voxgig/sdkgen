@@ -313,10 +313,44 @@ public class TestFeature : BaseFeature
     {
         var opname = op.Name;
 
-        // Get last point from config.
+        // Pick the entity's own endpoint from config, not a cross-reference
+        // from another resource that also returns it — the same rule
+        // MakePoint falls back to, so the seed-data query is built from the
+        // endpoint the request will actually be sent to: a terminal `{id}`
+        // marks a record route, and failing that the shallower path wins.
         var points = StructUtils.GetPath(ctx.Config,
             StructUtils.Jt("entity", ctx.Entity!.GetName(), "op", opname, "points"));
-        var point = StructUtils.GetElem(points, -1);
+        var point = StructUtils.GetElem(points, 0);
+        if (points is List<object?> pointList)
+        {
+            static int PointPartsLen(object? p) =>
+                StructUtils.GetProp(p, "parts") is List<object?> parts ? parts.Count : 0;
+            static bool PointTerminalParam(object? p)
+            {
+                if (StructUtils.GetProp(p, "parts") is not List<object?> parts || parts.Count == 0)
+                {
+                    return false;
+                }
+                return parts[parts.Count - 1] is string last && last.StartsWith("{");
+            }
+
+            foreach (var candidate in pointList)
+            {
+                var candTerm = PointTerminalParam(candidate);
+                var bestTerm = PointTerminalParam(point);
+                if (candTerm != bestTerm)
+                {
+                    if (candTerm)
+                    {
+                        point = candidate;
+                    }
+                }
+                else if (PointPartsLen(candidate) < PointPartsLen(point))
+                {
+                    point = candidate;
+                }
+            }
+        }
 
         // Get required params.
         var paramsPath = StructUtils.GetPath(point, StructUtils.Jt("args", "params"));
