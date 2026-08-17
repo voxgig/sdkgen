@@ -215,9 +215,44 @@ class TestFeature extends BaseFeature("test", "0.0.1", true) {
   private def buildArgs(ctx: Context, op: Operation, args: JMap[String, Object]): Object = {
     val opname = op.name
 
+    // Pick the entity's own endpoint from config, not a cross-reference from
+    // another resource that also returns it — the same rule makePoint falls
+    // back to, so the seed-data query is built from the endpoint the request
+    // will actually be sent to: a terminal `{id}` marks a record route, and
+    // failing that the shallower path wins.
     val points = Struct.getpath(ctx.config,
       java.util.List.of("entity", if (ctx.entity == null) "" else ctx.entity.getName(), "op", opname, "points"))
-    val point = Struct.getelem(points, java.lang.Integer.valueOf(-1))
+    var point = Struct.getelem(points, java.lang.Integer.valueOf(0))
+    points match {
+      case plist: java.util.List[_] =>
+        def pointPartsLen(p: Object): Int =
+          Struct.getprop(p, "parts") match {
+            case parts: java.util.List[_] => parts.size()
+            case _ => 0
+          }
+        def pointTerminalParam(p: Object): Boolean =
+          Struct.getprop(p, "parts") match {
+            case parts: java.util.List[_] if parts.size() > 0 =>
+              parts.get(parts.size() - 1) match {
+                case s: String => s.startsWith("{")
+                case _ => false
+              }
+            case _ => false
+          }
+        var k = 0
+        while (k < plist.size()) {
+          val cand = plist.get(k).asInstanceOf[Object]
+          val candTerm = pointTerminalParam(cand)
+          val bestTerm = pointTerminalParam(point)
+          if (candTerm != bestTerm) {
+            if (candTerm) point = cand
+          } else if (pointPartsLen(cand) < pointPartsLen(point)) {
+            point = cand
+          }
+          k += 1
+        }
+      case _ =>
+    }
 
     val paramsPath = Struct.getpath(point, java.util.List.of("args", "params"))
     val reqdParams = Struct.select(paramsPath, Struct.jm("reqd", java.lang.Boolean.TRUE))

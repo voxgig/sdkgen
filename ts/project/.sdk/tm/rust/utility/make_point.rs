@@ -7,12 +7,30 @@ use crate::core::types::OutVal;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
-// How many path segments a point has — its depth, which is what tells the
-// entity's own route from a cross-reference that also returns it.
+// How many path segments a point has.
 fn parts_len(point: &Value) -> usize {
     match getp(point, "parts") {
         Value::List(l) => l.borrow().len(),
         _ => 0,
+    }
+}
+
+// Does this point's path end in a parameter? A record route ends in the
+// record's identifier (/boards/{id}); a cross-reference that also returns
+// the entity ends in the relationship's name (/posts/{id}/author). That,
+// then fewest segments, is what tells the entity's own route from a
+// cross-reference. The same rule runs at generation time, in
+// helpers/opShape.ts — both sides must move together.
+fn terminal_param(point: &Value) -> bool {
+    match getp(point, "parts") {
+        Value::List(l) => {
+            let parts = l.borrow();
+            match parts.last() {
+                Some(Value::Str(s)) => s.starts_with('{'),
+                _ => false,
+            }
+        }
+        _ => false,
     }
 }
 
@@ -106,13 +124,37 @@ pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
         }
 
         // select.exist can list more than the params needed to pick a point,
-        // so nothing matches — fall back to the fewest path segments, the
-        // entity's own route rather than whichever point came last.
+        // so nothing matches — fall back to the entity's own route rather
+        // than whichever point came last.
         if !matched {
+            // A request naming an action reaches here only because that
+            // action's own point failed its exist test, so it is unbuildable
+            // whatever we pick. Refuse it BEFORE choosing a fallback: the
+            // guard below compares the chosen point's $action and would wave
+            // the request through whenever the fallback lands on the action
+            // point itself.
+            let unmatched_action = getp(&reqselector, "$action");
+            if !unmatched_action.is_noval() {
+                return Err(ctx.make_error(
+                    "point_action_invalid",
+                    &format!(
+                        "Operation \"{}\" action \"{}\" is not valid.",
+                        op.name,
+                        vs::stringify(&unmatched_action, None, false)
+                    ),
+                ));
+            }
+
             point = vs::get_elem(&points, &Value::Num(0.0), Value::Noval);
             for i in 0..plen {
                 let cand = vs::get_elem(&points, &Value::Num(i as f64), Value::Noval);
-                if parts_len(&cand) < parts_len(&point) {
+                let cand_term = terminal_param(&cand);
+                let best_term = terminal_param(&point);
+                if cand_term != best_term {
+                    if cand_term {
+                        point = cand;
+                    }
+                } else if parts_len(&cand) < parts_len(&point) {
                     point = cand;
                 }
             }

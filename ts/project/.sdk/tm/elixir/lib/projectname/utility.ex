@@ -465,21 +465,81 @@ defmodule ProjectName.Utility do
 
                 if found, do: {:halt, point}, else: {:cont, point}
             end)
-            |> elem(1)
 
-          err =
-            if reqselector != nil do
-              req_action = S.getprop(reqselector, "$action")
+          matched? = match?({:halt, _}, point)
 
-              if req_action != nil and point != nil do
-                point_select = H.to_map(S.getprop(point, "select"))
-                point_action = S.getprop(point_select, "$action")
+          point =
+            if matched? do
+              elem(point, 1)
+            else
+              # select.exist can list more than the params needed to pick a
+              # point, so nothing matched. Fall back to the entity's own
+              # route: a terminal parameter marks a record route
+              # (/boards/{id}) where a cross-reference ends in the
+              # relationship's name (/posts/{id}/author), and failing that
+              # the shallower path wins. The same rule runs at generation
+              # time, in helpers/opShape.ts — both sides must move together.
+              parts_len = fn p ->
+                parts = S.getprop(p, "parts")
+                if S.islist(parts), do: S.size(parts), else: 0
+              end
 
-                if req_action != point_action do
-                  Context.make_error(ctx, "point_action_invalid",
-                    "Operation \"" <> opname <> "\" action \"" <> S.stringify(req_action) <> "\" is not valid.")
+              terminal_param? = fn p ->
+                parts = S.getprop(p, "parts")
+
+                if S.islist(parts) and S.size(parts) > 0 do
+                  last = S.getelem(parts, S.size(parts) - 1)
+                  is_binary(last) and String.starts_with?(last, "{")
+                else
+                  false
                 end
               end
+
+              Enum.reduce(0..(npoints - 1), S.getelem(points, 0), fn i, best ->
+                cand = S.getelem(points, i)
+                ct = terminal_param?.(cand)
+                bt = terminal_param?.(best)
+
+                cond do
+                  ct != bt -> if ct, do: cand, else: best
+                  parts_len.(cand) < parts_len.(best) -> cand
+                  true -> best
+                end
+              end)
+            end
+
+          unmatched_action =
+            if not matched? and reqselector != nil,
+              do: S.getprop(reqselector, "$action"),
+              else: nil
+
+          err =
+            cond do
+              # A request naming an action reaches the fallback only because
+              # that action's own point failed its exist test, so it is
+              # unbuildable whatever we pick. Refuse it BEFORE the guard
+              # below, which compares the chosen point's $action and would
+              # wave the request through whenever the fallback lands on the
+              # action point itself.
+              unmatched_action != nil ->
+                Context.make_error(ctx, "point_action_invalid",
+                  "Operation \"" <> opname <> "\" action \"" <> S.stringify(unmatched_action) <> "\" is not valid.")
+
+              reqselector != nil ->
+                req_action = S.getprop(reqselector, "$action")
+
+                if req_action != nil and point != nil do
+                  point_select = H.to_map(S.getprop(point, "select"))
+                  point_action = S.getprop(point_select, "$action")
+
+                  if req_action != point_action do
+                    Context.make_error(ctx, "point_action_invalid",
+                      "Operation \"" <> opname <> "\" action \"" <> S.stringify(req_action) <> "\" is not valid.")
+                  end
+                end
+
+              true ->
+                nil
             end
 
           if err != nil do

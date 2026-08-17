@@ -256,12 +256,22 @@ class TestFeature extends BaseFeature {
     const points = getpath(ctx.config, [
       'entity', getprop(ctx.entity, 'name'), 'op', opname, 'points']) || []
 
-    // Prefer the shortest path: the entity's own endpoint, not a
-    // cross-reference from another resource that also returns it.
+    // Pick the entity's own endpoint, not a cross-reference from another
+    // resource that also returns it — the same rule makePoint falls back to,
+    // so the seed-data query is built from the endpoint the request will
+    // actually be sent to: a terminal `{id}` marks a record route, and
+    // failing that the shallower path wins.
+    const isterm = (pt: any) => {
+      const parts = pt.parts
+      const last = 0 < parts.length ? parts[parts.length - 1] : ''
+      return 'string' === typeof last && 0 === last.indexOf('{')
+    }
+
     let point = getelem(points, 0)
     for (let i = 1; i < points.length; i++) {
       const cand = getelem(points, i)
-      if (cand.parts.length < point.parts.length) {
+      if (isterm(cand) !== isterm(point) ? isterm(cand) :
+        cand.parts.length < point.parts.length) {
         point = cand
       }
     }

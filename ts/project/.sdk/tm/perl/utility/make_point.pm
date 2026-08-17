@@ -17,12 +17,25 @@ package ProjectNameUtilities;
 
 our %REGISTRY;
 
-# How many path segments a point has — its depth, which is what tells the
-# entity's own route from a cross-reference that also returns it.
+# How many path segments a point has.
 sub _parts_len {
   my ($point) = @_;
   my $parts = ProjectNameHelpers::gp($point, 'parts');
   return Voxgig::Struct::islist($parts) ? scalar(@$parts) : 0;
+}
+
+# Does this point's path end in a parameter? A record route ends in the
+# record's identifier (/boards/{id}); a cross-reference that also returns the
+# entity ends in the relationship's name (/posts/{id}/author). That, then
+# fewest segments, is what tells the entity's own route from a
+# cross-reference. The same rule runs at generation time, in
+# helpers/opShape.ts — both sides must move together.
+sub _terminal_param {
+  my ($point) = @_;
+  my $parts = ProjectNameHelpers::gp($point, 'parts');
+  return 0 unless Voxgig::Struct::islist($parts) && 0 < scalar(@$parts);
+  my $last = $parts->[-1];
+  return (defined $last && !ref $last && $last =~ /^\{/) ? 1 : 0;
 }
 
 $REGISTRY{make_point} = sub {
@@ -95,12 +108,30 @@ $REGISTRY{make_point} = sub {
     }
 
     # select.exist can list more than the params needed to pick a point, so
-    # nothing matches — fall back to the fewest path segments, the entity's
-    # own route rather than whichever point came last.
+    # nothing matches — fall back to the entity's own route rather than
+    # whichever point came last.
     unless ($matched) {
+      # A request naming an action reaches here only because that action's
+      # own point failed its exist test, so it is unbuildable whatever we
+      # pick. Refuse it BEFORE choosing a fallback: the guard below compares
+      # the chosen point's $action and would wave the request through
+      # whenever the fallback lands on the action point itself.
+      my $unmatched_action = $reqselector
+        ? ProjectNameHelpers::gp($reqselector, '$action') : undef;
+      if (defined $unmatched_action) {
+        return (undef, $ctx->make_error('point_action_invalid',
+          'Operation "' . $op->{name} . '" action "' .
+          Voxgig::Struct::stringify($unmatched_action) . '" is not valid.'));
+      }
+
       $point = $op->{points}[0];
       for my $p (@{ $op->{points} }) {
-        $point = $p if _parts_len($p) < _parts_len($point);
+        if (_terminal_param($p) != _terminal_param($point)) {
+          $point = $p if _terminal_param($p);
+        }
+        elsif (_parts_len($p) < _parts_len($point)) {
+          $point = $p;
+        }
       }
     }
 

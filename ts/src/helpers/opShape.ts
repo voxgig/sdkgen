@@ -189,15 +189,26 @@ function entityPath(entity: any): string {
 }
 
 
-// The entity's OWN endpoint among an op's points: the one with the fewest
-// path segments.
+// The entity's OWN endpoint among an op's points.
 //
 // The other notion of canonical above — "not a `$action` route" — separates a
 // folded-in custom action from the real op. This one separates the entity's
 // own route from a CROSS-REFERENCE: another resource's route that happens to
 // return this entity (`/notifications/{id}/board` for a board). Both are
-// plain GETs with no `$action`, so only depth tells them apart, and the
-// shallower one is the route the entity is named for.
+// plain GETs with no `$action`, so the path itself is all there is to go on.
+//
+// Two signals, in order:
+//
+//   1. A record route ends in the record's identifier (`/boards/{id}`,
+//      `/accounts/{account_id}/users/{id}`); a cross-reference ends in the
+//      relationship's name (`/posts/{id}/author`). A terminal parameter is
+//      the stronger signal, and unlike depth alone it survives an entity
+//      nested more deeply than the route that points at it — depth by itself
+//      picked `/posts/{id}/author` over `/accounts/{account_id}/users/{id}`
+//      and then generated that op's required params from the wrong route.
+//   2. Failing that, fewest path segments — the shallower route is the one
+//      the entity is named for, which is what settles a `list` op where
+//      neither route ends in an id (`/boards` over `/members/{id}/boards`).
 //
 // Ties keep the earlier point, so the sorted-key order of the model decides
 // and the output stays byte-stable.
@@ -206,17 +217,41 @@ function entityPath(entity: any): string {
 // no point's `select.exist` matches. It cannot be shared with them — a
 // template ships standalone, outside this package — so it is written twice on
 // purpose, and both sides must move together.
-function shortestPoint(points: any[]): any {
-  let shortest = points[0]
+function terminalParam(point: any): boolean {
+  const parts: any[] = (point && point.parts) || []
+  const last = 0 < parts.length ? parts[parts.length - 1] : ''
+  return 'string' === typeof last && last.startsWith('{')
+}
+
+
+function ownPoint(points: any[]): any {
+  let best = points[0]
 
   for (const pt of points) {
-    if (pt && pt.parts && shortest && shortest.parts &&
-      pt.parts.length < shortest.parts.length) {
-      shortest = pt
+    if (null == pt || null == pt.parts || null == best || null == best.parts) {
+      continue
+    }
+
+    const ptterm = terminalParam(pt)
+    const bestterm = terminalParam(best)
+
+    if (ptterm !== bestterm ? ptterm : pt.parts.length < best.parts.length) {
+      best = pt
     }
   }
 
-  return shortest
+  return best
+}
+
+
+// Do all these points describe the same route? Then they are alternative
+// selectors on one endpoint (the same path, chosen by different query
+// params), not cross-references to different resources.
+function samePath(points: any[]): boolean {
+  const first = ((points[0] && points[0].parts) || []).join('/')
+
+  return points.every((pt: any) =>
+    first === ((pt && pt.parts) || []).join('/'))
 }
 
 
@@ -262,11 +297,19 @@ function opParams(op: any): any[] {
   // empty and NOTHING is required — which generates a `load({})` that drops
   // the id. Fall back to the entity's own point and take its params whole.
   //
-  // Only when the intersection produced nothing: a genuine set of alternative
-  // routes with a shared param still merges (a `page_id` on every route stays
-  // required, per-route siblings stay optional).
-  if (1 < points.length && !out.some((p: any) => p.reqd)) {
-    return opParams({ points: [shortestPoint(points)] })
+  // Two guards, and both are load-bearing:
+  //
+  //   - only when the intersection produced nothing, so a genuine set of
+  //     alternative routes with a shared param still merges (a `page_id` on
+  //     every route stays required, per-route siblings stay optional);
+  //   - only when the points describe DIFFERENT routes. Points on one path
+  //     that differ solely by optional query params (`/users?email=` and
+  //     `/users?name=`) legitimately require nothing, and are not
+  //     cross-references — collapsing them to one point would drop the
+  //     other's fields from the generated request type, so a caller could
+  //     not express them at all.
+  if (1 < points.length && !out.some((p: any) => p.reqd) && !samePath(points)) {
+    return opParams({ points: [ownPoint(points)] })
   }
 
   return out

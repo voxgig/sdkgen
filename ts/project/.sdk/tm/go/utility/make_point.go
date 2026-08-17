@@ -8,13 +8,45 @@ import (
 	"GOMODULE/core"
 )
 
-// How many path segments a point has — its depth, which is what tells the
-// entity's own route from a cross-reference that also returns it.
+// How many path segments a point has.
 func partsLen(point map[string]any) int {
 	if parts, ok := vs.GetProp(point, "parts").([]any); ok {
 		return len(parts)
 	}
 	return 0
+}
+
+// Does this point's path end in a parameter? A record route ends in the
+// record's identifier (`/boards/{id}`); a cross-reference that also returns
+// the entity ends in the relationship's name (`/posts/{id}/author`).
+func terminalParam(point map[string]any) bool {
+	parts, ok := vs.GetProp(point, "parts").([]any)
+	if !ok || 0 == len(parts) {
+		return false
+	}
+	last, _ := parts[len(parts)-1].(string)
+	return strings.HasPrefix(last, "{")
+}
+
+// The entity's OWN route among an op's points: a terminal parameter first,
+// then the fewest path segments. Ties keep the earlier point, so the model's
+// sorted-key order decides. The same rule runs at generation time, in
+// helpers/opShape.ts — a template ships standalone, so both sides must move
+// together.
+func ownPoint(points []map[string]any) map[string]any {
+	best := points[0]
+	for _, cand := range points {
+		candTerm := terminalParam(cand)
+		bestTerm := terminalParam(best)
+		if candTerm != bestTerm {
+			if candTerm {
+				best = cand
+			}
+		} else if partsLen(cand) < partsLen(best) {
+			best = cand
+		}
+	}
+	return best
 }
 
 func makePointUtil(ctx *core.Context) (map[string]any, error) {
@@ -99,15 +131,23 @@ func makePointUtil(ctx *core.Context) (map[string]any, error) {
 		}
 
 		// select.exist can list more than the params needed to pick a point,
-		// so nothing matches — fall back to the fewest path segments, the
-		// entity's own route rather than whichever point came last.
+		// so nothing matches — fall back to the entity's own route rather
+		// than whichever point came last.
 		if !matched {
-			point = op.Points[0]
-			for _, cand := range op.Points {
-				if partsLen(cand) < partsLen(point) {
-					point = cand
-				}
+			// A request naming an action reaches here only because that
+			// action's own point failed its exist test, so it is unbuildable
+			// whatever we pick. Refuse it BEFORE choosing a fallback: the
+			// guard below compares the chosen point's $action and would wave
+			// the request through whenever the fallback lands on the action
+			// point itself.
+			if reqselector != nil && vs.GetProp(reqselector, "$action") != nil {
+				return nil, ctx.MakeError("point_action_invalid",
+					"Operation \""+op.Name+
+						"\" action \""+vs.Stringify(vs.GetProp(reqselector, "$action"))+
+						"\" is not valid.")
 			}
+
+			point = ownPoint(op.Points)
 		}
 
 		if reqselector != nil {

@@ -597,6 +597,20 @@ def makeResult (ctx : Value) : SIO Value := do
 
 /-- Select the endpoint for this operation: the single point, else the first
     whose `select.exist` keys are all present and whose `$action` agrees. -/
+/-- How many path segments a point has, and whether its path ends in a
+    parameter. A record route ends in the record's identifier (/boards/{id});
+    a cross-reference that also returns the entity ends in the relationship's
+    name (/posts/{id}/author). That, then fewest segments, is what tells the
+    entity's own route from a cross-reference. The same rule runs at
+    generation time, in helpers/opShape.ts — both sides must move together. -/
+def pointShape (pt : Value) : SIO (Nat × Bool) := do
+  match (← gp pt "parts") with
+  | .list i =>
+    let items ← listItems i
+    if items.size == 0 then pure (0, false)
+    else pure (items.size, (vs items[items.size - 1]!).startsWith "{")
+  | _ => pure (0, false)
+
 def makePoint (ctx : Value) : SIO Value := do
   let op ← gp ctx "op"
   let matchV ← gp ctx "reqmatch"
@@ -622,6 +636,20 @@ def makePoint (ctx : Value) : SIO Value := do
         | _ => pure ()
         if ok && ((← gp sel "$action") == (← gp matchV "$action")) then
           chosen := pt
+    -- select.exist can list more than the params needed to pick a point (for
+    -- /boards/{id} it is Trello's 17 optional query-includes), so a plain
+    -- {id} call matches NOTHING and this loop chose no point at all. Fall
+    -- back to the entity's own route rather than sending nowhere.
+    if isNov chosen then
+      let mut best := pts[0]!
+      for cand in pts do
+        let (candLen, candTerm) ← pointShape cand
+        let (bestLen, bestTerm) ← pointShape best
+        if candTerm && !bestTerm then
+          best := cand
+        else if candTerm == bestTerm && candLen < bestLen then
+          best := cand
+      chosen := best
     if !(isNov chosen) then sp ctx "point" chosen
     pure chosen
 

@@ -6,11 +6,25 @@ namespace ProjectNameSdk.Util;
 
 public static partial class SdkUtility
 {
-    // How many path segments a point has — its depth, which is what tells the
-    // entity's own route from a cross-reference that also returns it.
+    // How many path segments a point has.
     private static int PartsLen(Dictionary<string, object?>? point)
     {
         return StructUtils.GetProp(point, "parts") is List<object?> parts ? parts.Count : 0;
+    }
+
+    // Does this point's path end in a parameter? A record route ends in the
+    // record's identifier (/boards/{id}); a cross-reference that also returns
+    // the entity ends in the relationship's name (/posts/{id}/author). That,
+    // then fewest segments, is what tells the entity's own route from a
+    // cross-reference. The same rule runs at generation time, in
+    // helpers/opShape.ts — both sides must move together.
+    private static bool TerminalParam(Dictionary<string, object?>? point)
+    {
+        if (StructUtils.GetProp(point, "parts") is not List<object?> parts || parts.Count == 0)
+        {
+            return false;
+        }
+        return parts[parts.Count - 1] is string last && last.StartsWith("{");
     }
 
     internal static Dictionary<string, object?>? MakePointUtil(Context ctx)
@@ -112,14 +126,39 @@ public static partial class SdkUtility
             }
 
             // select.exist can list more than the params needed to pick a
-            // point, so nothing matches — fall back to the fewest path
-            // segments, the entity's own route rather than the last point.
+            // point, so nothing matches — fall back to the entity's own
+            // route rather than the last point.
             if (!matched)
             {
+                // A request naming an action reaches here only because that
+                // action's own point failed its exist test, so it is
+                // unbuildable whatever we pick. Refuse it BEFORE choosing a
+                // fallback: the guard below compares the chosen point's
+                // $action and would wave the request through whenever the
+                // fallback lands on the action point itself.
+                var unmatchedAction = reqselector != null
+                    ? StructUtils.GetProp(reqselector, "$action") : null;
+                if (unmatchedAction != null)
+                {
+                    throw ctx.MakeError("point_action_invalid",
+                        "Operation \"" + op.Name +
+                        "\" action \"" + StructUtils.Stringify(unmatchedAction) +
+                        "\" is not valid.");
+                }
+
                 point = op.Points[0];
                 foreach (var candidate in op.Points)
                 {
-                    if (PartsLen(candidate) < PartsLen(point))
+                    var candTerm = TerminalParam(candidate);
+                    var bestTerm = TerminalParam(point);
+                    if (candTerm != bestTerm)
+                    {
+                        if (candTerm)
+                        {
+                            point = candidate;
+                        }
+                    }
+                    else if (PartsLen(candidate) < PartsLen(point))
                     {
                         point = candidate;
                     }

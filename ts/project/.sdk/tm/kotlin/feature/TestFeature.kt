@@ -262,12 +262,41 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
   private fun buildArgs(ctx: Context, op: Operation, args: MutableMap<String, Any?>?): Any? {
     val opname = op.name
 
-    // Get last point from config.
+    // Pick the entity's own endpoint from config, not a cross-reference from
+    // another resource that also returns it — the same rule makePoint falls
+    // back to, so the seed-data query is built from the endpoint the request
+    // will actually be sent to: a terminal `{id}` marks a record route, and
+    // failing that the shallower path wins.
     val points = Struct.getpath(
       ctx.config,
       listOf("entity", if (ctx.entity == null) "" else ctx.entity!!.name, "op", opname, "points"),
     )
-    val point = Struct.getelem(points, -1)
+    var point = Struct.getelem(points, 0)
+    if (points is List<*>) {
+      fun pointPartsLen(p: Any?): Int {
+        val parts = Struct.getprop(p, "parts")
+        return if (parts is List<*>) parts.size else 0
+      }
+      fun pointTerminalParam(p: Any?): Boolean {
+        val parts = Struct.getprop(p, "parts")
+        if (parts !is List<*> || parts.isEmpty()) {
+          return false
+        }
+        val last = parts[parts.size - 1]
+        return last is String && last.startsWith("{")
+      }
+      for (cand in points) {
+        val candTerm = pointTerminalParam(cand)
+        val bestTerm = pointTerminalParam(point)
+        if (candTerm != bestTerm) {
+          if (candTerm) {
+            point = cand
+          }
+        } else if (pointPartsLen(cand) < pointPartsLen(point)) {
+          point = cand
+        }
+      }
+    }
 
     // Get required params.
     val paramsPath = Struct.getpath(point, listOf("args", "params"))

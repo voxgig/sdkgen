@@ -127,6 +127,52 @@ describe('makePoint', () => {
         'a $action that cannot be built must error, not fall through to a point')
     })
 
+
+    // The same refusal when the action point is ALSO the one the fallback
+    // would pick — a short action route folded into an entity whose own
+    // route is longer. Refusing only after the fallback let this through,
+    // because the chosen point's $action then matched the request's.
+    test(lang + ': a short $action route is refused too, not selected by the fallback', () => {
+      const nested = {
+        parts: ['systems', '{system_id}', 'planets', '{id}'],
+        select: { exist: ['not_a_real_key'] },
+      }
+      const action = {
+        parts: ['terraform'],
+        select: { exist: ['not_a_real_key'], $action: 'terraform' },
+      }
+
+      const out = makePoint(makeCtx([nested, action], { id: 'x', $action: 'terraform' }))
+
+      strictEqual(out.code, 'point_action_invalid',
+        'the fallback selected the unbuildable action point and waved it through')
+    })
+
+
+    // Depth alone picked the cross-reference whenever the entity's own route
+    // was nested more deeply than the route pointing at it. A record route
+    // ends in the record's id; a cross-reference ends in a relationship name.
+    test(lang + ': a deeply nested own route beats a shallower cross-reference', () => {
+      const own = {
+        parts: ['accounts', '{account_id}', 'users', '{id}'],
+        select: { exist: ['not_a_real_key'] },
+      }
+      const xref = { parts: ['posts', '{id}', 'author'], select: { exist: ['nope'] } }
+
+      strictEqual(makePoint(makeCtx([own, xref])), own, 'own route first')
+      strictEqual(makePoint(makeCtx([xref, own])), own, 'own route last')
+    })
+
+
+    // ...and where neither route ends in an id — a `list` op — depth still
+    // decides, which is what the Trello case needs.
+    test(lang + ': with no terminal id anywhere, the shallowest path wins', () => {
+      const own = { parts: ['boards'], select: { exist: ['not_a_real_key'] } }
+      const xref = { parts: ['members', '{id}', 'boards'], select: { exist: ['nope'] } }
+
+      strictEqual(makePoint(makeCtx([xref, own])), own, 'did not prefer the shallowest path')
+    })
+
   }
 
 })
