@@ -218,7 +218,6 @@ const docs_1 = require("./action/docs");
 const dispatch_1 = require("./action/dispatch");
 const { Jostraca } = JostracaModule;
 exports.Jostraca = Jostraca;
-const dlog = (0, util_2.getdlog)('sdkgen', __filename);
 function SdkGen(opts) {
     const fs = opts.fs || node_fs_1.default;
     const folder = opts.folder || '../';
@@ -395,12 +394,6 @@ function SdkGen(opts) {
                     sdkrelpath,
                 }));
             (0, util_2.showChanges)(jopts.log, 'generate-result', eres, node_path_1.default.dirname(process.cwd()));
-        }
-        const dlogs = dlog.log();
-        if (0 < dlogs.length) {
-            for (let dlogentry of dlogs) {
-                log.debug({ point: 'generate-warning', dlogentry, note: String(dlogentry) });
-            }
         }
         log.info({ point: 'generate-end' });
         return { ok: true, name: 'sdkgen' };

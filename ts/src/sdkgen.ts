@@ -10,7 +10,6 @@ import { Aontu } from 'aontu'
 
 import {
   showChanges,
-  getdlog,
 } from '@voxgig/util'
 
 import type {
@@ -174,9 +173,6 @@ type SdkGenOptions = {
 
 
 const { Jostraca } = JostracaModule
-
-
-const dlog = getdlog('sdkgen', __filename)
 
 
 function SdkGen(opts: SdkGenOptions) {
@@ -391,13 +387,6 @@ function SdkGen(opts: SdkGenOptions) {
         }))
 
       showChanges(jopts.log, 'generate-result', eres, Path.dirname(process.cwd()))
-    }
-
-    const dlogs = dlog.log()
-    if (0 < dlogs.length) {
-      for (let dlogentry of dlogs) {
-        log.debug({ point: 'generate-warning', dlogentry, note: String(dlogentry) })
-      }
     }
 
     log.info({ point: 'generate-end' })

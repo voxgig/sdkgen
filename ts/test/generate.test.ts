@@ -1321,6 +1321,36 @@ describe('generate', () => {
   })
 
 
+  // The provider gets one too — and from a COMPONENT.
+  //
+  // It used to come from `tm/seneca-provider/.gitignore`, which meant it
+  // reached only people working from a checkout: npm never publishes a file
+  // by that name, whatever package.json `files` says, so every consumer who
+  // installed sdkgen from the registry generated a provider repo with no
+  // ignore file at all. packaging.test.ts guards the tarball; this guards the
+  // OUTPUT, because the two failed independently — the template was present
+  // in this repo the whole time, so nothing here noticed.
+  //
+  // `.jostraca/` is the line that matters most: jostraca drops its meta log
+  // and a full duplicate of the last generated output into the provider repo
+  // on every run, so without it the first regeneration leaves hundreds of
+  // untracked files behind.
+  test('the seneca-provider gitignore is generated, not copied', async () => {
+    const out = await generate(['ts', 'seneca-provider'])
+
+    const ignore = findFile(out, 'seneca-provider/.gitignore')
+    ok(null != ignore, 'seneca-provider: no .gitignore generated')
+
+    const lines = ignore!.split('\n').map((l: string) => l.trim())
+      .filter((l: string) => '' !== l && !l.startsWith('#'))
+
+    for (const needed of ['node_modules/', '.jostraca/', '*.tsbuildinfo']) {
+      ok(lines.includes(needed),
+        'seneca-provider/.gitignore stopped ignoring ' + needed)
+    }
+  })
+
+
   // What `npm publish` actually ships.
   //
   // With no `files` entry npm packs everything not gitignored — the whole
