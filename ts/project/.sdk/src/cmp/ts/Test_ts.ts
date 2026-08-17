@@ -1,14 +1,9 @@
 
-import {
-  KIT,
-  getModelPath
-} from '@voxgig/apidef'
-
 import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, Folder } from '@voxgig/sdkgen'
+import { cmp, each, Folder, entityCollection } from '@voxgig/sdkgen'
 
 
 // import { Quick } from './Quick_ts'
@@ -31,9 +26,12 @@ const Test = cmp(function Test(props: any) {
     ReadmeExamplesTest({ target })
 
     Folder({ name: 'entity' }, () => {
-      // getModelPath applies the model's default active-only filtering,
-      // unlike the raw model read this replaced.
-      const entity = getModelPath(model, `main.${KIT}.entity`)
+      // entityCollection is the cached, UNFILTERED collection (AGENTS.md), so
+      // the active filter the raw model read this replaced never applied is
+      // written out here. Tests follow Main: an inactive entity has no source.
+      const entity = each(entityCollection(model))
+        .filter((e: any) => false !== e.active)
+
       each(entity, (entity: ModelEntity) => {
         TestEntity({ target, entity })
         TestDirect({ target, entity })

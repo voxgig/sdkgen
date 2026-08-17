@@ -1,14 +1,9 @@
 
-import {
-  KIT,
-  getModelPath
-} from '@voxgig/apidef'
-
 import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, Folder, File, Content, goModule } from '@voxgig/sdkgen'
+import { cmp, each, Folder, File, Content, goModule, entityCollection } from '@voxgig/sdkgen'
 
 
 import { TestEntity } from './TestEntity_go'
@@ -48,7 +43,8 @@ func TestExists(t *testing.T) {
 `)
     })
 
-    const entity = getModelPath(model, `main.${KIT}.entity`)
+    const entity = each(entityCollection(model))
+      .filter((e: any) => false !== e.active)
 
     each(entity, (entity: ModelEntity) => {
       TestEntity({ target, entity, gomodule })

@@ -4,12 +4,11 @@ import {
   Folder,
   cmp,
   each,
+  entityCollection,
 } from '@voxgig/sdkgen'
 
 import {
-  KIT,
   Model,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
@@ -70,7 +69,8 @@ const Test = cmp(async function Test(props: any) {
   const target = props.target
   const model: Model = ctx$.model
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
+  const entity = each(entityCollection(model))
+    .filter((e: any) => false !== e.active)
 
   // Per-entity OFFLINE (test-mode) blocks: seeded store, no server.
   let offline = ''
