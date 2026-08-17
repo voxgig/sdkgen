@@ -99,7 +99,21 @@ function makeLog(lines) {
 // can exercise the add pipeline (sdkgen's own action suites do) but can never
 // RUN what it installed, which is the half a package author most needs.
 function stageConsumer(opts = {}) {
-    const root = opts.dir ?? node_fs_1.default.mkdtempSync(node_path_1.default.join(node_os_1.default.tmpdir(), 'sdkgen-consumer-'));
+    // CANONICALISED, because the generator realpaths and this one does not.
+    //
+    // On macOS `Os.tmpdir()` is `/var/folders/…` and `/var` is a symlink to
+    // `/private/var`. jostraca's CopyOp resolves a copy's source through
+    // `fs.realpathSync` and compares the result, so on that platform the
+    // resolved path (`/private/var/…`) and this root (`/var/…`) describe the
+    // same directory with different strings — and `Path.relative(root, …)`,
+    // which is how generated paths are keyed, then produces
+    // `../../private/var/…` instead of a project-relative path.
+    //
+    // Resolving once here makes every later realpath a no-op. It is done for a
+    // caller-supplied `dir` too: the divergence is a property of the path, not
+    // of who chose it.
+    const raw = opts.dir ?? node_fs_1.default.mkdtempSync(node_path_1.default.join(node_os_1.default.tmpdir(), 'sdkgen-consumer-'));
+    const root = canonical(raw);
     const sdk = node_path_1.default.join(root, '.sdk');
     node_fs_1.default.mkdirSync(node_path_1.default.join(sdk, 'model', 'target'), { recursive: true });
     node_fs_1.default.mkdirSync(node_path_1.default.join(sdk, 'model', 'feature'), { recursive: true });
@@ -232,15 +246,65 @@ function stageConsumer(opts = {}) {
                 // checkout (or a real node_modules tree), and the cost of being wrong
                 // about that once is unbounded.
                 for (const link of links) {
-                    try {
-                        node_fs_1.default.unlinkSync(link);
-                    }
-                    catch (err) { /* a shim dir, not a link */ }
+                    unlink(link);
                 }
                 node_fs_1.default.rmSync(root, { recursive: true, force: true });
             }
         },
     };
+}
+// A path with every symlink resolved, or the path itself if it cannot be.
+// `mkdtemp` returns a directory that exists, so the fallback is for a
+// caller-supplied `dir` that does not yet.
+function canonical(p) {
+    try {
+        return node_fs_1.default.realpathSync(p);
+    }
+    catch (err) {
+        return p;
+    }
+}
+// REMOVE A LINK, WHICHEVER KIND IT TURNED OUT TO BE.
+//
+// `linkModule` makes a symlink on POSIX and a directory JUNCTION on Windows,
+// and falls back to a real directory holding a re-export shim. `unlinkSync`
+// removes the first, fails with EPERM on the second, and cannot remove the
+// third — and getting this wrong is not a leaked temp directory. The thing on
+// the other end is the sdkgen checkout, so the recursive remove that follows
+// must never be handed a live link into it.
+function unlink(link) {
+    let stat;
+    try {
+        stat = node_fs_1.default.lstatSync(link);
+    }
+    catch (err) {
+        return;
+    }
+    // A LINK OF SOME KIND — never recurse. `lstat` reports a Windows junction as
+    // a symbolic link, which is exactly the case a recursive remove must not
+    // reach: it would delete the sdkgen checkout on the other side.
+    //
+    // `unlink` removes a POSIX symlink and refuses a junction (EPERM); `rmdir`
+    // removes a junction and refuses a symlink. Try both rather than branch on
+    // the platform.
+    if (stat.isSymbolicLink()) {
+        try {
+            node_fs_1.default.unlinkSync(link);
+            return;
+        }
+        catch (err) { /* junction */ }
+        try {
+            node_fs_1.default.rmdirSync(link);
+        }
+        catch (err) { /* already gone */ }
+        return;
+    }
+    // Not a link: the re-export shim `linkModule` writes when symlinking is
+    // refused. A real directory we created, so removing its contents is safe.
+    try {
+        node_fs_1.default.rmSync(link, { recursive: true, force: true });
+    }
+    catch (err) { /* already gone */ }
 }
 // The peer packages a consumer necessarily has installed alongside sdkgen.
 // Read from the manifest rather than listed here, so a peer added later is
