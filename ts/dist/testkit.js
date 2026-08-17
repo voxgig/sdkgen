@@ -59,8 +59,24 @@ exports.SDKGEN_ROOT = SDKGEN_ROOT;
 // surviving into generated output means a replace map did not reach a file —
 // the failure mode `generate.test.ts` scans the bundled targets for, made
 // available to packages that ship template trees of their own.
-const PLACEHOLDERS = ['ProjectName', 'PROJECTNAME', 'GOMODULE', 'PROJECTENV'];
+//
+// KEPT IN STEP WITH `generate.test.ts` DELIBERATELY. `PROJECTENV` and
+// `PROJECTVERSION` are added by `ensureStdrep` / `templateReplacements`, not
+// by the name map, and a kit that scanned only for the name tokens would let a
+// package ship an unsubstituted version string and still report `leaks: []`.
+const PLACEHOLDERS = [
+    'ProjectName', 'PROJECTNAME', 'PROJECTENV', 'PROJECTVERSION', 'GOMODULE',
+];
 exports.PLACEHOLDERS = PLACEHOLDERS;
+// A MODEL PATH between the delimiters — identifiers and dots — not any `$$`
+// pair. A surviving `$$model.path$$` means a Fragment or Copy whose model
+// interpolation never ran, which the token list above cannot see.
+//
+// Constrained on purpose, and this is the same pattern `generate.test.ts`
+// settled on: in a Makefile `$$` is how you write a literal `$`, so a loose
+// pattern reported py-data's `$${GITHUB_TOKEN:-$$(gh auth token)}` — a correct
+// recipe — as a leak.
+const PLACEHOLDER_REF = /\$\$[A-Za-z_][A-Za-z0-9_.]*\$\$/;
 const noop = () => { };
 function makeLog(lines) {
     const push = (level) => (entry) => {
@@ -126,8 +142,8 @@ function stageConsumer(opts = {}) {
     // given them, or every model compile here fails on an include that resolves
     // fine everywhere else.
     for (const dep of peerNames()) {
-        const from = node_path_1.default.join(SDKGEN_ROOT, 'node_modules', dep);
-        if (node_fs_1.default.existsSync(from)) {
+        const from = peerRoot(dep);
+        if (null != from) {
             links.push(linkModule(modules, dep, from));
         }
     }
@@ -181,15 +197,31 @@ function stageConsumer(opts = {}) {
         // paths for the same tree, which it reports as a shadowing overlay. Both
         // disappear when the ref is spelled the way a consumer spells it.
         bundledRef: (kind, name) => 'target' === kind ? 'node_modules/@voxgig/sdkgen/project/' + name : name,
+        setModel: (model) => { actx.model = model; },
+        // AWAITS A PROMISE-RETURNING CALLBACK before restoring the directory.
+        //
+        // A synchronous `finally` would put the cwd back the moment `fn` RETURNS,
+        // which for an async callback is its first `await` — so the generation it
+        // was wrapping would do most of its work, including every CWD-relative
+        // template copy and the later docs and out-of-tree passes, from the
+        // caller's directory. The wrapper would look correct and protect almost
+        // nothing.
         inSdk: (fn) => {
             const prev = process.cwd();
             process.chdir(sdk);
+            let out;
             try {
-                return fn();
+                out = fn();
             }
-            finally {
+            catch (err) {
                 process.chdir(prev);
+                throw err;
             }
+            if (null != out && 'function' === typeof out.then) {
+                return out.then((v) => { process.chdir(prev); return v; }, (err) => { process.chdir(prev); throw err; });
+            }
+            process.chdir(prev);
+            return out;
         },
         compile: (copts = {}) => compileComponents(sdk, copts.transform),
         files,
@@ -220,6 +252,41 @@ function peerNames() {
     }
     catch (err) {
         return [];
+    }
+}
+// WHERE A PEER ACTUALLY LIVES — asked of Node, not guessed from a path.
+//
+// The tempting version is `<SDKGEN_ROOT>/node_modules/<dep>`, and it is right
+// only in this checkout. npm HOISTS: in a real installation sdkgen's peers are
+// siblings of `@voxgig/sdkgen` under the host project's `node_modules`, not
+// children of it. So the guessed path exists here, misses everywhere else, and
+// the failure is silent — the peer is skipped, the staged consumer has no
+// `@voxgig/apidef`, and the model compile fails on an include that resolves
+// fine in every other context.
+//
+// `require.resolve` with `paths` walks the real chain, hoisted or not. The
+// package.json is resolved rather than the entry point because a peer may not
+// export one, and its directory is what has to be linked.
+function peerRoot(dep) {
+    try {
+        return node_path_1.default.dirname(require.resolve(dep + '/package.json', { paths: [SDKGEN_ROOT] }));
+    }
+    catch (err) {
+        // Some packages restrict `exports` and refuse the package.json subpath.
+        // Fall back to the entry point and climb to the directory that holds one.
+        try {
+            let dir = node_path_1.default.dirname(require.resolve(dep, { paths: [SDKGEN_ROOT] }));
+            for (let up = 0; up < 8; up++) {
+                if (node_fs_1.default.existsSync(node_path_1.default.join(dir, 'package.json')))
+                    return dir;
+                const parent = node_path_1.default.dirname(dir);
+                if (parent === dir)
+                    break;
+                dir = parent;
+            }
+        }
+        catch (err2) { /* genuinely not installed */ }
+        return undefined;
     }
 }
 // One `node_modules/<name>` entry pointing at an existing package directory.
@@ -387,6 +454,10 @@ async function generateInto(consumer, opts) {
             if (content.includes(token) && !allow(path, token)) {
                 leaks.push(path + ': ' + token);
             }
+        }
+        const ref = content.match(PLACEHOLDER_REF);
+        if (null != ref && !allow(path, ref[0])) {
+            leaks.push(path + ': ' + ref[0]);
         }
     }
     return { files, leaks: leaks.sort() };

@@ -7,27 +7,27 @@
     "node": ">=24"
   },
   "types": "dist/sdkgen.d.ts",
-  "_exports_comment": [
-    "The './*' catch-all is LOAD-BEARING and must not be tidied away. An",
-    "exports map otherwise REPLACES the deep-import freedom a package has",
-    "without one, and consumers depend on that freedom: every generated",
-    "model file includes '@voxgig/sdkgen/model/sdkgen.aontu', and the",
-    "scaffold is reached as '@voxgig/sdkgen/project/<lang>'. Introducing",
-    "'./testkit' as a named entry point without './*' would break both, in",
-    "every installed SDK, at model-compile time."
+  "_no_exports_comment": [
+    "THERE IS DELIBERATELY NO `exports` MAP, and adding one is not a tidy-up.",
+    "",
+    "`@voxgig/sdkgen/testkit` is served by the stub `testkit.js` beside this",
+    "file, resolved by ordinary CommonJS probing — the way subpath entry",
+    "points worked before `exports` existed.",
+    "",
+    "The obvious alternative, an `exports` map naming './testkit', REPLACES",
+    "the deep-import freedom a package has without one. Consumers depend on",
+    "that freedom in places nothing here would notice: every generated model",
+    "file includes '@voxgig/sdkgen/model/sdkgen.aontu', and the scaffold is",
+    "reached as '@voxgig/sdkgen/project/<lang>'.",
+    "",
+    "A './*' catch-all looks like it restores that, and does not: exports",
+    "resolution never falls back to CommonJS extension probing, so",
+    "require('@voxgig/sdkgen/dist/helpers/manifest') maps to an",
+    "extensionless path that does not exist and fails with MODULE_NOT_FOUND.",
+    "An array of probes ('./*', './*.js', ...) does not fix it either —",
+    "measured, not assumed. test/packaging.test.ts resolves the real",
+    "subpaths through a real node_modules to keep this honest."
   ],
-  "exports": {
-    ".": {
-      "types": "./dist/sdkgen.d.ts",
-      "default": "./dist/sdkgen.js"
-    },
-    "./testkit": {
-      "types": "./dist/testkit.d.ts",
-      "default": "./dist/testkit.js"
-    },
-    "./package.json": "./package.json",
-    "./*": "./*"
-  },
   "description": "Voxgig SDK Generator.",
   "homepage": "https://github.com/voxgig/voxgig-sdkgen",
   "keywords": [
@@ -71,6 +71,8 @@
     "model",
     "src",
     "dist",
+    "testkit.js",
+    "testkit.d.ts",
     "LICENSE"
   ],
   "devDependencies": {

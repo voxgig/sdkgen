@@ -29,6 +29,8 @@ import { test, describe } from 'node:test'
 import { ok, equal, deepStrictEqual } from 'node:assert'
 
 import { spawnSync } from 'node:child_process'
+import { mkdtempSync, mkdirSync, symlinkSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import Path from 'node:path'
 
 import Pkg from '../package.json'
@@ -116,61 +118,69 @@ describe('npm packaging', () => {
   })
 
 
-  // THE `exports` MAP MUST NOT NARROW WHAT CONSUMERS ALREADY IMPORT.
+  // DEEP IMPORTS MUST KEEP RESOLVING — VERIFIED BY RESOLVING THEM.
   //
-  // A package with no `exports` field lets anything under its root be
-  // imported by path. Adding one REPLACES that with an allow-list — and this
-  // package's consumers depend on the old freedom in a place no test of ours
-  // would notice: every generated model file includes
+  // This package intentionally has no `exports` map: `@voxgig/sdkgen/testkit`
+  // is a stub file resolved by ordinary CommonJS probing. The reason is
+  // recorded in package.json, and it is worth restating where the test lives,
+  // because the mistake is so easy to make twice.
+  //
+  // A map naming `./testkit` REPLACES the deep-import freedom a package has
+  // without one, and consumers depend on that freedom where nothing here would
+  // notice: every generated model file includes
   // `@voxgig/sdkgen/model/sdkgen.aontu`, and the scaffold is reached as
-  // `@voxgig/sdkgen/project/<lang>`. Break those and nothing here fails; every
-  // installed SDK fails to compile its model.
+  // `@voxgig/sdkgen/project/<lang>`. A `./*` catch-all looks like it restores
+  // that and does not — exports resolution never falls back to CommonJS
+  // extension probing, so `require('.../dist/helpers/manifest')` maps to an
+  // extensionless path that does not exist.
   //
-  // So the `./*` catch-all in package.json is load-bearing, and this is the
-  // test that says so out loud. It resolves through the map exactly as a
-  // consumer would rather than reading the field, because the question is
-  // what Node does with it, not what it says.
-  test('the exports map still admits the deep paths consumers use', () => {
-    const admits = (subpath: string): boolean => {
-      const target = resolveExports(subpath)
-      return null != target
-    }
+  // THIS TEST RESOLVES FOR REAL, in a child process, through a real
+  // `node_modules` entry. An earlier version emulated the resolution rules in
+  // TypeScript and passed while extensionless requires were broken — which is
+  // exactly the failure mode a hand-written model of someone else's resolver
+  // has. Ask Node, like the pack test above asks npm.
+  test('every deep import consumers use still resolves', () => {
+    const dir = mkdtempSync(Path.join(tmpdir(), 'sdkgen-resolve-'))
 
-    for (const subpath of [
-      '.',
-      './testkit',
-      './package.json',
-      './model/sdkgen.aontu',
-      './project/.sdk/model/target/ts.aontu',
-      './dist/helpers/manifest.js',
-      './bin/voxgig-sdkgen',
-    ]) {
-      ok(admits(subpath),
-        subpath + ' is no longer importable — the `exports` map narrowed. ' +
-        'Restore the "./*" entry in package.json.')
+    try {
+      const scope = Path.join(dir, 'node_modules', '@voxgig')
+      mkdirSync(scope, { recursive: true })
+      symlinkSync(ROOT, Path.join(scope, 'sdkgen'), 'junction')
+
+      // Extensionless and directory forms are listed DELIBERATELY: they are
+      // the ones an `exports` map silently drops.
+      const subpaths = [
+        '@voxgig/sdkgen',
+        '@voxgig/sdkgen/testkit',
+        '@voxgig/sdkgen/package.json',
+        '@voxgig/sdkgen/model/sdkgen.aontu',
+        '@voxgig/sdkgen/project/.sdk/model/target/ts.aontu',
+        '@voxgig/sdkgen/bin/voxgig-sdkgen',
+        '@voxgig/sdkgen/dist/sdkgen.js',
+        '@voxgig/sdkgen/dist/sdkgen',
+        '@voxgig/sdkgen/dist/helpers/manifest',
+      ]
+
+      const script =
+        'const out = [];' +
+        'for (const p of ' + JSON.stringify(subpaths) + ') {' +
+        '  try { require.resolve(p) } catch (e) { out.push(p) }' +
+        '}' +
+        'process.stdout.write(JSON.stringify(out))'
+
+      const res = spawnSync(process.execPath, ['-e', script], {
+        cwd: dir, encoding: 'utf8',
+      })
+
+      equal(res.status, 0, 'resolution probe failed: ' + res.stderr)
+
+      deepStrictEqual(JSON.parse(res.stdout), [],
+        'these deep imports no longer resolve. If an `exports` map was ' +
+        'added, that is why — see the _no_exports_comment in package.json.')
+    }
+    finally {
+      rmSync(dir, { recursive: true, force: true })
     }
   })
 
 })
-
-
-// The subset of Node's exports resolution this repo needs: an exact key, or
-// the `./*` pattern. Deliberately not a general implementation — it answers
-// one question (is this subpath admitted at all?) and would be misleading if
-// it looked like it answered more.
-function resolveExports(subpath: string): string | undefined {
-  const exports: any = (Pkg as any).exports
-  if (null == exports) return subpath
-
-  const entry = exports[subpath]
-  if (null != entry) {
-    return 'string' === typeof entry ? entry : (entry.default ?? entry.types)
-  }
-
-  const star = exports['./*']
-  if (null != star && subpath.startsWith('./')) {
-    return String(star).replace('*', subpath.slice(2))
-  }
-
-  return undefined
-}

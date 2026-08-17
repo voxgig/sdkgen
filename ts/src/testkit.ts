@@ -59,7 +59,25 @@ const SDKGEN_ROOT = Path.resolve(__dirname, '..')
 // surviving into generated output means a replace map did not reach a file —
 // the failure mode `generate.test.ts` scans the bundled targets for, made
 // available to packages that ship template trees of their own.
-const PLACEHOLDERS = ['ProjectName', 'PROJECTNAME', 'GOMODULE', 'PROJECTENV']
+//
+// KEPT IN STEP WITH `generate.test.ts` DELIBERATELY. `PROJECTENV` and
+// `PROJECTVERSION` are added by `ensureStdrep` / `templateReplacements`, not
+// by the name map, and a kit that scanned only for the name tokens would let a
+// package ship an unsubstituted version string and still report `leaks: []`.
+const PLACEHOLDERS = [
+  'ProjectName', 'PROJECTNAME', 'PROJECTENV', 'PROJECTVERSION', 'GOMODULE',
+]
+
+
+// A MODEL PATH between the delimiters — identifiers and dots — not any `$$`
+// pair. A surviving `$$model.path$$` means a Fragment or Copy whose model
+// interpolation never ran, which the token list above cannot see.
+//
+// Constrained on purpose, and this is the same pattern `generate.test.ts`
+// settled on: in a Makefile `$$` is how you write a literal `$`, so a loose
+// pattern reported py-data's `$${GITHUB_TOKEN:-$$(gh auth token)}` — a correct
+// recipe — as a leak.
+const PLACEHOLDER_REF = /\$\$[A-Za-z_][A-Za-z0-9_.]*\$\$/
 
 
 type StageOptions = {
@@ -70,6 +88,13 @@ type StageOptions = {
   name?: string
 
   // Extra aontu appended to the consumer's `model/sdk.aontu`.
+  // The project's OWN model text, appended to `model/sdk.aontu`.
+  //
+  // THIS WRITES A FILE. It does NOT reach the action context — see
+  // `setModel` on the consumer, and use that if an add needs to SEE what is
+  // declared here. The two are separate on purpose rather than by oversight:
+  // nothing recompiles a model mid-process, so there is no honest way to make
+  // a string written here appear in an action's `actx.model` automatically.
   extra?: string
 
   // Record log lines instead of discarding them, for assertions about what an
@@ -98,10 +123,26 @@ type Consumer = {
   // package's own content — `wfeat`'s overlay for `ts` needs `ts` present.
   bundledRef: (kind: string, name: string) => string
 
+  // Install a compiled model as the one the ADD ACTIONS see.
+  //
+  // Needed because an action reads `actx.model`, which is compiled from
+  // `model/sdk.aontu` BEFORE the run — nothing recompiles mid-process. The
+  // CLI does that compile per invocation; a kit staging several adds in one
+  // process does not, so a feature declared in the project's model is
+  // invisible to a later `target add` unless it is installed here. That
+  // matters: `target add` TRIMS feature source down to what the model
+  // selects, so a target added against an empty model ships none of it.
+  //
+  // `package add` handles its own within-run sequencing (it teaches the
+  // in-memory model about each kind's items as it installs them), so this is
+  // for adds the caller sequences itself.
+  setModel: (model: any) => void
+
   // Run `fn` with the working directory set to `.sdk`, which is where a
   // consumer runs generation from. Exposed because a caller doing its own
-  // generate() needs the same contract.
-  inSdk: <T>(fn: () => T) => T
+  // generate() needs the same contract. A promise-returning `fn` is awaited
+  // before the directory is restored.
+  inSdk: (<T>(fn: () => Promise<T>) => Promise<T>) & (<T>(fn: () => T) => T)
 
   // Compile `.sdk/src/cmp/**` to `.sdk/dist/cmp/**`, which is what a
   // consumer's own `npm run build` does and what `requirePath` reads.
@@ -190,8 +231,8 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
   // given them, or every model compile here fails on an include that resolves
   // fine everywhere else.
   for (const dep of peerNames()) {
-    const from = Path.join(SDKGEN_ROOT, 'node_modules', dep)
-    if (Fs.existsSync(from)) {
+    const from = peerRoot(dep)
+    if (null != from) {
       links.push(linkModule(modules, dep, from))
     }
   }
@@ -254,11 +295,37 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
     bundledRef: (kind: string, name: string) =>
       'target' === kind ? 'node_modules/@voxgig/sdkgen/project/' + name : name,
 
-    inSdk: <T>(fn: () => T): T => {
+    setModel: (model: any) => { actx.model = model },
+
+    // AWAITS A PROMISE-RETURNING CALLBACK before restoring the directory.
+    //
+    // A synchronous `finally` would put the cwd back the moment `fn` RETURNS,
+    // which for an async callback is its first `await` — so the generation it
+    // was wrapping would do most of its work, including every CWD-relative
+    // template copy and the later docs and out-of-tree passes, from the
+    // caller's directory. The wrapper would look correct and protect almost
+    // nothing.
+    inSdk: (fn: any): any => {
       const prev = process.cwd()
       process.chdir(sdk)
-      try { return fn() }
-      finally { process.chdir(prev) }
+
+      let out: any
+      try {
+        out = fn()
+      }
+      catch (err) {
+        process.chdir(prev)
+        throw err
+      }
+
+      if (null != out && 'function' === typeof out.then) {
+        return out.then(
+          (v: any) => { process.chdir(prev); return v },
+          (err: any) => { process.chdir(prev); throw err })
+      }
+
+      process.chdir(prev)
+      return out
     },
 
     compile: (copts = {}) => compileComponents(sdk, copts.transform),
@@ -292,6 +359,43 @@ function peerNames(): string[] {
   }
   catch (err) {
     return []
+  }
+}
+
+
+// WHERE A PEER ACTUALLY LIVES — asked of Node, not guessed from a path.
+//
+// The tempting version is `<SDKGEN_ROOT>/node_modules/<dep>`, and it is right
+// only in this checkout. npm HOISTS: in a real installation sdkgen's peers are
+// siblings of `@voxgig/sdkgen` under the host project's `node_modules`, not
+// children of it. So the guessed path exists here, misses everywhere else, and
+// the failure is silent — the peer is skipped, the staged consumer has no
+// `@voxgig/apidef`, and the model compile fails on an include that resolves
+// fine in every other context.
+//
+// `require.resolve` with `paths` walks the real chain, hoisted or not. The
+// package.json is resolved rather than the entry point because a peer may not
+// export one, and its directory is what has to be linked.
+function peerRoot(dep: string): string | undefined {
+  try {
+    return Path.dirname(
+      require.resolve(dep + '/package.json', { paths: [SDKGEN_ROOT] }))
+  }
+  catch (err) {
+    // Some packages restrict `exports` and refuse the package.json subpath.
+    // Fall back to the entry point and climb to the directory that holds one.
+    try {
+      let dir = Path.dirname(require.resolve(dep, { paths: [SDKGEN_ROOT] }))
+      for (let up = 0; up < 8; up++) {
+        if (Fs.existsSync(Path.join(dir, 'package.json'))) return dir
+        const parent = Path.dirname(dir)
+        if (parent === dir) break
+        dir = parent
+      }
+    }
+    catch (err2) { /* genuinely not installed */ }
+
+    return undefined
   }
 }
 
@@ -510,10 +614,16 @@ async function generateInto(
   const leaks: string[] = []
   for (const [path, content] of Object.entries(files)) {
     if ('string' !== typeof content) continue
+
     for (const token of PLACEHOLDERS) {
       if (content.includes(token) && !allow(path, token)) {
         leaks.push(path + ': ' + token)
       }
+    }
+
+    const ref = content.match(PLACEHOLDER_REF)
+    if (null != ref && !allow(path, ref[0])) {
+      leaks.push(path + ': ' + ref[0])
     }
   }
 

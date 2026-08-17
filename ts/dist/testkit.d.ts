@@ -14,7 +14,8 @@ type Consumer = {
     addPackage: (ref: string, flags?: any) => Promise<any>;
     add: (kind: string, ref: string, flags?: any) => Promise<any>;
     bundledRef: (kind: string, name: string) => string;
-    inSdk: <T>(fn: () => T) => T;
+    setModel: (model: any) => void;
+    inSdk: (<T>(fn: () => Promise<T>) => Promise<T>) & (<T>(fn: () => T) => T);
     compile: (opts?: {
         transform?: (src: string, file: string) => string;
     }) => number;
