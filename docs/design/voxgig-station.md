@@ -265,16 +265,24 @@ csharp — which covers nine of tier A outright, plus rust in tier B;
 the JVM targets (kotlin, scala, clojure) reach the Java port through
 ordinary interop. That leaves swift, dart and elixir in tier A, lua,
 haskell and ocaml in tier B, and all of tier C with no sekreto port
-today. Those targets are not cut off from vaults, because **the
-resolution that matters can happen proxy-side**: in attached mode with
-`resolve: proxy`, the proxy's Go sekreto runs the chain and the
-application language never resolves anything, so a Dart or Zig app
-gets Vault, AWS and 1Password without a Dart or Zig sekreto existing.
-The gap is precisely *solo mode with a non-env store*, where a
-port-less language falls back to reading the environment directly —
-the one provider that needs no library — and says so rather than
-pretending. The permanent fix is a sekreto port, contributed to
-sekreto; the tier table records who has one.
+today. For the tier A and B members of that list, being port-less is
+not being cut off from vaults, because **the resolution that matters
+can happen proxy-side**: attached, with `resolve: proxy`, the proxy's
+Go sekreto runs the chain and the application language resolves
+nothing, so a Dart or Lua app reaches Vault, AWS and 1Password
+without a Dart or Lua sekreto existing. Their gap is precisely *solo
+mode with a non-env store*, where the library reads the environment
+directly — the one provider that needs no library — and says so
+rather than pretending.
+
+**Tier C is the exception, and it compounds.** c, cpp, zig and lean
+have no sekreto port *and* no wire client in v1, so proxy-side
+resolution is not available to them either: they are env-only, full
+stop, until they gain one or the other. Whichever arrives first
+closes it — a sekreto port unlocks solo, a wire client unlocks
+everything through the proxy — and a target with neither should not
+be sold as covered. The permanent fix everywhere is a sekreto port,
+contributed to sekreto; the tier table records who has one.
 
 Two honesty notes the tiers force. In **c and zig** the SDKs' default
 fetcher returns "live transport unavailable" unless the application
@@ -454,7 +462,8 @@ library and pinned by the `profile` corpus section:
 2. station feature options passed at SDK construction (in-code
    defaults),
 3. `station.json` base (`profiles.default`),
-4. `station.json` selected profile overlay (deep-merge per plugin),
+4. `station.json` selected profile overlay (deep-merge per plugin —
+   **except `secrets.providers`, which replaces wholesale**),
 5. `VOXGIG_STATION_*` env vars,
 6. `Station.open(opts)`,
 7. `connect`/`adopt` per-plugin opts.
@@ -503,10 +512,12 @@ embedded config is built):
   an env token from the camel form *swallows hyphens* — the exact
   defect `packageMeta.ts` documents (`voxgig-solardemo` yielding
   `VOXGIGSOLARDEMO_…` instead of `VOXGIG_SOLARDEMO_…`). The slug is
-  carried, `envtoken = envToken(slug)`, and the default secret ref
-  `env:<envtoken>_APIKEY` is thereby correct for hyphenated names —
-  without this field the "a project that does nothing gets current
-  behavior" promise in §5 silently breaks.
+  carried, `envtoken = envToken(slug)`, and `secretname-default` is
+  then the **sekreto name** `<envToken(slug) lowercased>.apikey` —
+  `voxgig_solardemo.apikey`, never an `env:`-prefixed reference,
+  since §5 deleted that grammar and sekreto would reject the string
+  as a malformed name. Without this field the "a project that does
+  nothing gets current behavior" promise in §5 silently breaks.
 
 For SDKs generated before these fields existed (`adopt()` targets),
 the normalizer emits fixed sentinels — `version: "0.0.0"`, `target:
@@ -569,14 +580,28 @@ kind, not in station. That is what having a subcomponent means.
 
 A sekreto name is dot-separated lowercase segments matching
 `[a-z0-9_]+` (`api.token`, `db.pass.main`). Station's default name for
-a plugin is `<slug>.apikey`, with the slug's hyphens written as
-underscores, since sekreto segments have no hyphens.
+a plugin is **`envToken(slug)` lowercased, plus `.apikey`** —
+`voxgig_solardemo.apikey`.
 
-That is not a compromise — it lands character-for-character on the
-convention generated SDKs already document. sekreto's `envkey()` joins
-segments with `_` and upper-cases, so `voxgig_solardemo.apikey` →
-`VOXGIG_SOLARDEMO_APIKEY`, which is exactly what sdkgen's
-`envName()`/`envToken()` emits for the slug `voxgig-solardemo`. A
+Deriving it from `envToken` rather than by replacing hyphens is the
+load-bearing part. The model's `name` is an unrestricted string, so a
+slug may carry uppercase or punctuation that is not a hyphen; a
+narrow hyphen swap would then produce either an invalid sekreto name
+or a valid one whose `envkey()` no longer equals the SDK's
+`envName()`, which is the whole promise. `envToken` already
+normalizes every non-alphanumeric and the case, in one place, and
+this rule must call that same helper rather than restate it — the
+"one rule, one place" discipline this repo has spent several fixes
+enforcing.
+
+The result is not a compromise but a coincidence worth keeping: it
+lands character-for-character on the convention generated SDKs
+already document. sekreto's `envkey()` joins segments with `_` and
+upper-cases, so `voxgig_solardemo.apikey` → `VOXGIG_SOLARDEMO_APIKEY`,
+which is exactly what sdkgen's `envName()` emits for the slug
+`voxgig-solardemo`. The `secretname` corpus section (§13) pins the
+round-trip in both directions, precisely because two independently
+maintained grammars meet here. A
 project that installs station and configures nothing keeps reading the
 same environment variable it reads today, now through sekreto's `env`
 provider: §11's "a project that does nothing gets current behavior"
@@ -900,7 +925,10 @@ Data:
 
 - `POST /v1/forward` — an explicit request **envelope**: `{ url,
   method, headers, body }` plus `Station-Session` /
-  `Station-Plugin` / `Station-Corr` headers. The proxy applies
+  `Station-Plugin` / `Station-Corr` headers, and `Station-Redact`
+  naming which envelope headers carry credentials the library itself
+  resolved, so the proxy can scrub them from its own capture of the
+  exchange without ever storing them (§15). The proxy applies
   policy, injects credentials (R2), sends upstream, and captures.
   The response is deliberately *not* a JSON wrapper — a JSON `body`
   field can neither stream nor carry binary without escaping — so
@@ -1117,13 +1145,17 @@ design *forbids* them from growing. The rule:
 
 sekreto is the one dependency a station library takes, and it is
 taken rather than reimplemented for the same reason this rule exists.
-It costs nothing against the budget: every sekreto port carries zero
-third-party dependencies of its own (bar rustls in Rust, for TLS —
-the one place hand-rolling would be worse than depending), so
-`station → sekreto` adds one well-tested library and no transitive
-tree. Where sekreto has no port, the library falls back to reading
-the environment and says so (§2.2); it does not grow a second
-provider.
+In nine of the ten ports it costs nothing against the budget: sekreto
+carries zero third-party dependencies of its own, so `station →
+sekreto` adds one well-tested library and no transitive tree at all.
+Rust is the stated exception — sekreto there takes `rustls` (plus
+`webpki-roots` for trust anchors) for TLS, which brings its own crate
+graph, and hand-rolling TLS in a secrets library would be far worse
+than depending on an audited one. So the Rust station library, alone,
+inherits a real dependency tree, and its generated `Cargo.toml` and
+tier budget must account for it rather than treat sekreto as free.
+Where sekreto has no port, the library falls back to reading the
+environment and says so (§2.2); it does not grow a second provider.
 
 ### 10.1 Budgets, honestly
 
@@ -1250,6 +1282,16 @@ here the day it lands, and sekreto's documentation is the reference.
 Omit the block entirely and the chain is `[{kind:'env'}]`, which is
 today's behavior.
 
+**A profile's `secrets.providers` replaces the base array outright;
+it never concatenates or merges by position** (§3.5). Chain order
+decides which store wins, so a deep merge would be actively
+dangerous: a `default` profile's `env` entry surviving in front of
+`prod`'s Vault entry means a stale developer environment variable
+quietly out-ranks the production secret, on some ports and not
+others depending on how each merged. Replacement is the only rule
+that reads the same in ten languages, and the `profile` corpus
+section pins the resulting order.
+
 The `plugin` map is keyed by **descriptor slug** (= the model's
 hyphenated `name`), discoverable via `station.plugins()` /
 `voxgig-station status` / `station_integrations`; a key matching no
@@ -1353,10 +1395,13 @@ placed correctly.
   placeholder after an op), `order` (station sees N retry attempts;
   cache hits produce no http event; `station_wrap_order` guard),
   `redact` (headers and body fields, including a credential echoed
-  in a response body), `envelope` (forward serialization),
+  in a response body, and the R1-attached `Station-Redact` case where
+  the redacting instance is not the resolving one — §15),
+  `envelope` (forward serialization, `Station-Redact` included),
   `event` (StationEvent shapes), `errors` (the §14 catalog: exact
   code strings and trigger conditions), `profile` (the §3.5 merge
-  order), `degrade` (solo/attached transitions, non-blocking open).
+  order, including wholesale `secrets.providers` replacement),
+  `degrade` (solo/attached transitions, non-blocking open).
   Section applicability is **tier-scoped**: wire-dependent sections
   (`envelope`, the attached half of `degrade`) apply to tiers A/B
   only. A library declares its tier; an *applicable* section that is
@@ -1448,9 +1493,27 @@ well-behaved:
   sekreto instance resolved, wherever it appears in a body, with a
   four-character floor so short values do not shred the logs. Station
   runs it over `headers|full` captures and over live `station_call`
-  results (§7). Note the honest limit: a proxy-side sekreto can only
-  redact what it resolved, so under R1 the library's instance is the
-  one that must do the scrubbing before an event leaves the process.
+  results (§7).
+- **The R1-attached capture, spelled out**, because a sekreto instance
+  can only redact what *it* resolved and that leaves a real hole
+  otherwise. Under R1 the **library** resolved the credential, so the
+  **proxy's** sekreto has never seen it — yet the proxy is the one
+  capturing the `/v1/forward` exchange, and an upstream that echoes
+  the credential in a 401 body would land it, unredactable, in the
+  capture store and in `station_traffic`. What closes it is that in
+  this mode the credential is already crossing to the proxy by
+  necessity: the library injected it into the envelope headers so the
+  proxy can forward it upstream. So the envelope names its own
+  secret-bearing headers in `Station-Redact`, and the proxy holds
+  those values **transiently, for the duration of that one exchange**
+  — redacting them from the captured request and response, then
+  discarding them unwritten and unlogged. No new exposure (the proxy
+  handled the value anyway), and no unredactable capture. If the
+  marker is absent — an older library against a newer proxy — the
+  proxy degrades that plugin's capture to `headers` rather than
+  storing a body it cannot scrub, and says so in `status`. The
+  `redact` corpus section carries the case: R1 attached, credential
+  echoed in the response body, capture must not contain it.
 - **"By construction", scoped truthfully:** §5's placement makes the
   *injected credential* absent from request headers in captures,
   events, `options()`, `prepare()`, MCP tools, and CLI output
@@ -1564,8 +1627,9 @@ and never blocks the core.
   haskell, ocaml, and tier C). Contributed to sekreto, not worked
   around in station — but who writes them, and in what order,
   is a sekreto roadmap question this design should not pre-empt.
-  Until then those languages are env-only in solo mode and fully
-  covered in attached mode (§2.2).
+  Until then the tier A/B ones are env-only in solo mode and fully
+  covered attached; tier C, having no wire client either, is env-only
+  outright and is the case worth prioritizing (§2.2).
 - **An OS-keychain provider**, wanted by the original draft and absent
   from sekreto today. It belongs in sekreto if it is wanted.
 - **Whether the publish-time `aql` vault and sekreto's `boru`
