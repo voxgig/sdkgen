@@ -332,6 +332,40 @@ describe('external target', () => {
     })
 
 
+  // THE ENTITY PHASE FILTERS ON `active`, OUT OF TREE TOO.
+  //
+  // ExternalTarget's entity loop read the raw entity map while its feature
+  // loop right below it filtered — so `active: false`, which scopes an in-tree
+  // SDK correctly, was ignored once a target was pointed at another repo.
+  //
+  // Every other test in this suite uses seneca-provider, a consumer target
+  // that switches EVERY phase off and emits from its own Main. That is why
+  // the defect survived: the phase loop is only reachable by a plain language
+  // target pointed out of tree, which nothing here exercised. This test does
+  // exactly that, so the phase gate itself is covered from now on.
+  test('an inactive entity is filtered out of the out-of-tree entity phase',
+    async () => {
+      const withEntity = await generate(['ts'], 'ts')
+      const without = await generate(['ts'], 'ts',
+        'main: kit: entity: history: active: false')
+
+      const named = (out: Record<string, string>) =>
+        Object.keys(out).filter((p) => /history/i.test(p)).sort()
+
+      // The phase really did run and really did emit for this entity.
+      ok(0 < named(withEntity.outside).length,
+        'the out-of-tree pass emitted nothing for the entity — the phase did ' +
+        'not run, so its absence below would prove nothing')
+
+      deepStrictEqual(named(without.outside), [],
+        'an entity marked `active: false` still generated out of tree')
+
+      // The rest of the package is untouched: only the entity's files go.
+      ok(0 < Object.keys(without.outside).length,
+        'deactivating one entity emptied the destination')
+    })
+
+
   // An unset path is the ordinary in-tree case. This is the default every
   // existing target has, so it is the regression that would hurt most.
   test('an unset output path generates in-tree as before', async () => {

@@ -46,7 +46,7 @@ class TestExists:
 `)
     })
 
-    each(model.main[KIT].entity, (entity: ModelEntity) => {
+    each(getModelPath(model, `main.${KIT}.entity`), (entity: ModelEntity) => {
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })

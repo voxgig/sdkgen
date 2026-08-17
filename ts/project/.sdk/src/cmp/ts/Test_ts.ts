@@ -31,7 +31,7 @@ const Test = cmp(function Test(props: any) {
     ReadmeExamplesTest({ target })
 
     Folder({ name: 'entity' }, () => {
-      each(model.main[KIT].entity, (entity: ModelEntity) => {
+      each(getModelPath(model, `main.${KIT}.entity`), (entity: ModelEntity) => {
         TestEntity({ target, entity })
         TestDirect({ target, entity })
       })

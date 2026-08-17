@@ -24,7 +24,7 @@ const Test = cmp(function Test(props: any) {
   // netsim / struct corpus) ships as tm/cpp/test templates (copied verbatim).
   // Here we generate the per-entity model-driven tests into test/.
   Folder({ name: 'test' }, () => {
-    each(model.main[KIT].entity, (entity: ModelEntity) => {
+    each(getModelPath(model, `main.${KIT}.entity`), (entity: ModelEntity) => {
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })

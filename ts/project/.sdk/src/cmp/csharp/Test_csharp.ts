@@ -26,7 +26,7 @@ const Test = cmp(function Test(props: any) {
   // tests are generated here.
   Folder({ name: 'test' }, () => {
 
-    each(model.main[KIT].entity, (entity: ModelEntity) => {
+    each(getModelPath(model, `main.${KIT}.entity`), (entity: ModelEntity) => {
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })

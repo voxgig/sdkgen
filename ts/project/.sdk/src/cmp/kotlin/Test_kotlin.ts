@@ -30,7 +30,7 @@ const Test = cmp(function Test(props: any) {
     // CustomUtilityTest, StructRunner/StructCorpusTest, ExistsTest and
     // sdk-test-control.json) ships as templates in tm/kotlin/test/ and is
     // copied by Main_kotlin. Here we generate only the API-specific tests.
-    each(model.main[KIT].entity, (entity: ModelEntity) => {
+    each(getModelPath(model, `main.${KIT}.entity`), (entity: ModelEntity) => {
       TestEntity({ target, entity, kotlinpackage })
       TestDirect({ target, entity, kotlinpackage })
     })
