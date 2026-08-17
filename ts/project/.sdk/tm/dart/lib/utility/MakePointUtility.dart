@@ -34,9 +34,10 @@ dynamic makePoint(dynamic ctx) {
     final selector = 'data' == op.input ? ctx.data : ctx.match;
 
     dynamic point;
+    var matched = false;
     for (var i = 0; i < op.points.length; i++) {
-      point = op.points[i];
-      final select = point.select;
+      final cand = op.points[i];
+      final select = cand.select;
       var found = true;
 
       final exist = vs.getprop(select, 'exist');
@@ -60,7 +61,52 @@ dynamic makePoint(dynamic ctx) {
       }
 
       if (found) {
+        point = cand;
+        matched = true;
         break;
+      }
+    }
+
+    // select.exist can list more than the params needed to pick a point, so
+    // nothing matches — fall back to the entity's own route rather than
+    // whichever point came last.
+    if (!matched) {
+      // A request naming an action reaches here only because that action's
+      // own point failed its exist test, so it is unbuildable whatever we
+      // pick. Refuse it BEFORE choosing a fallback: the guard below compares
+      // the chosen point's $action and would wave the request through
+      // whenever the fallback lands on the action point itself.
+      if (null != vs.getprop(reqselector, r'$action')) {
+        return ctx.error(
+            'point_action_invalid',
+            'Operation "' +
+                op.name.toString() +
+                '" action "' +
+                vs.getprop(reqselector, r'$action').toString() +
+                '" is not valid.');
+      }
+
+      // A terminal parameter marks a record route (/boards/{id}); a
+      // cross-reference ends in the relationship's name
+      // (/posts/{id}/author). Failing that, the shallower path wins.
+      bool terminalParam(dynamic p) {
+        final parts = p.parts;
+        if (parts.isEmpty) {
+          return false;
+        }
+        final last = parts[parts.length - 1];
+        return last is String && last.startsWith('{');
+      }
+
+      point = op.points[0];
+      for (final cand in op.points) {
+        if (terminalParam(cand) != terminalParam(point)) {
+          if (terminalParam(cand)) {
+            point = cand;
+          }
+        } else if (cand.parts.length < point.parts.length) {
+          point = cand;
+        }
       }
     }
 

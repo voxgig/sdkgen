@@ -38,7 +38,35 @@ private func testBuildArgs(_ ctx: Context, _ op: Operation, _ args: VMap?) -> Va
 
   let cfg: Value = ctx.config == nil ? .noval : .map(ctx.config!)
   let points = getpath(cfg, jtp("entity", ctx.entity!.getName(), "op", opname, "points"))
-  let point = getelem(points, .int(-1))
+
+  // Pick the entity's own endpoint from config, not a cross-reference from
+  // another resource that also returns it — the same rule makePoint falls
+  // back to, so the seed-data query is built from the endpoint the request
+  // will actually be sent to: a terminal `{id}` marks a record route, and
+  // failing that the shallower path wins.
+  func pointPartsLen(_ p: Value) -> Int {
+    return getprop(p, .string("parts")).asList?.items.count ?? 0
+  }
+  func pointTerminalParam(_ p: Value) -> Bool {
+    guard let items = getprop(p, .string("parts")).asList?.items, let last = items.last else {
+      return false
+    }
+    return (last.asString ?? "").hasPrefix("{")
+  }
+
+  var point = getelem(points, .int(0))
+  if let candidates = points.asList?.items {
+    for cand in candidates {
+      let candTerm = pointTerminalParam(cand)
+      let bestTerm = pointTerminalParam(point)
+      if candTerm != bestTerm {
+        if candTerm { point = cand }
+      }
+      else if pointPartsLen(cand) < pointPartsLen(point) {
+        point = cand
+      }
+    }
+  }
 
   let paramsPath = getpath(point, jtp("args", "params"))
   let reqdParams = select(paramsPath, .map(vm(("reqd", .bool(true)))))

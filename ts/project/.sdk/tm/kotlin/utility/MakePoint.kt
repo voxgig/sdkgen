@@ -4,6 +4,27 @@ import KOTLINPACKAGE.core.Context
 import KOTLINPACKAGE.core.Helpers
 import KOTLINPACKAGE.utility.struct.Struct
 
+// How many path segments a point has.
+private fun partsLen(point: Map<String, Any?>?): Int {
+  val parts = Struct.getprop(point, "parts")
+  return if (parts is List<*>) parts.size else 0
+}
+
+// Does this point's path end in a parameter? A record route ends in the
+// record's identifier (/boards/{id}); a cross-reference that also returns the
+// entity ends in the relationship's name (/posts/{id}/author). That, then
+// fewest segments, is what tells the entity's own route from a
+// cross-reference. The same rule runs at generation time, in
+// helpers/opShape.ts — both sides must move together.
+private fun terminalParam(point: Map<String, Any?>?): Boolean {
+  val parts = Struct.getprop(point, "parts")
+  if (parts !is List<*> || parts.isEmpty()) {
+    return false
+  }
+  val last = parts[parts.size - 1]
+  return last is String && last.startsWith("{")
+}
+
 @Suppress("UNCHECKED_CAST")
 fun makePoint(ctx: Context): Map<String, Any?> {
   val outPoint = ctx.out["point"]
@@ -55,9 +76,10 @@ fun makePoint(ctx: Context): Map<String, Any?> {
     }
 
     var point: MutableMap<String, Any?>? = null
+    var matched = false
     for (i in op.points.indices) {
-      point = op.points[i]
-      val selectDef = Helpers.toMapAny(Struct.getprop(point, "select"))
+      val cand = op.points[i]
+      val selectDef = Helpers.toMapAny(Struct.getprop(cand, "select"))
       var found = true
 
       if (selectDef != null) {
@@ -84,7 +106,41 @@ fun makePoint(ctx: Context): Map<String, Any?> {
       }
 
       if (found) {
+        point = cand
+        matched = true
         break
+      }
+    }
+
+    // select.exist can list more than the params needed to pick a point, so
+    // nothing matches — fall back to the entity's own route rather than
+    // whichever point came last.
+    if (!matched) {
+      // A request naming an action reaches here only because that action's
+      // own point failed its exist test, so it is unbuildable whatever we
+      // pick. Refuse it BEFORE choosing a fallback: the guard below compares
+      // the chosen point's $action and would wave the request through
+      // whenever the fallback lands on the action point itself.
+      val unmatchedAction = Struct.getprop(reqselector, "\$action", null)
+      if (unmatchedAction != null) {
+        throw ctx.makeError(
+          "point_action_invalid",
+          "Operation \"" + op.name +
+            "\" action \"" + Struct.stringify(unmatchedAction) + "\" is not valid.",
+        )
+      }
+
+      point = op.points[0]
+      for (cand in op.points) {
+        val candTerm = terminalParam(cand)
+        val bestTerm = terminalParam(point)
+        if (candTerm != bestTerm) {
+          if (candTerm) {
+            point = cand
+          }
+        } else if (partsLen(cand) < partsLen(point)) {
+          point = cand
+        }
       }
     }
 

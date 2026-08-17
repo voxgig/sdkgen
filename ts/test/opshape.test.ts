@@ -173,6 +173,102 @@ describe('opRequestShape — multi-point param merging', () => {
     }, 'shared parent id required; per-route siblings optional')
   })
 
+  // Genuinely unrelated cross-references (Trello's board load via
+  // /boards/{id} vs /notifications/{id}/board) share no param at all —
+  // fall back to the shortest, canonical path rather than nothing required.
+  test('an empty intersection falls back to the shortest path', () => {
+    const entity = {
+      Name: 'Board', name: 'board',
+      fields: {},
+      op: {
+        load: { points: [
+          {
+            parts: ['notifications', '{id}', 'board'],
+            args: { params: {
+              notification_id: { name: 'notification_id', type: '`$STRING`', reqd: true },
+            } },
+          },
+          {
+            parts: ['boards', '{id}'],
+            args: { params: { id: { name: 'id', type: '`$STRING`', reqd: true } } },
+          },
+        ] },
+      },
+    }
+
+    const { items } = opRequestShape(entity, 'load')
+    const opt = optionalByName(items)
+    deepStrictEqual(opt, { id: false },
+      'did not fall back to the shortest, canonical path')
+  })
+
+
+  // Alternative selectors on ONE route — /users?email= and /users?name= —
+  // legitimately require nothing, and are not cross-references. Collapsing
+  // them to a single point would drop the other's field from the generated
+  // type, leaving a caller unable to express that call at all.
+  test('all-optional points on one path keep every field', () => {
+    const entity = {
+      Name: 'User', name: 'user',
+      fields: {},
+      op: {
+        load: { points: [
+          {
+            parts: ['users'],
+            args: { params: {
+              email: { name: 'email', type: '`$STRING`', reqd: false },
+            } },
+          },
+          {
+            parts: ['users'],
+            args: { params: {
+              name: { name: 'name', type: '`$STRING`', reqd: false },
+            } },
+          },
+        ] },
+      },
+    }
+
+    const { items } = opRequestShape(entity, 'load')
+    const opt = optionalByName(items)
+    deepStrictEqual(opt, { email: true, name: true },
+      'the all-optional fallback dropped a sibling route\'s field')
+  })
+
+
+  // The cross-reference fallback picks the entity's OWN route even when that
+  // route is nested more deeply than the one pointing at it — depth alone
+  // generated this op's required params from /posts/{id}/author.
+  test('a deeply nested own route wins over a shallower cross-reference', () => {
+    const entity = {
+      Name: 'User', name: 'user',
+      fields: {},
+      op: {
+        load: { points: [
+          {
+            parts: ['posts', '{id}', 'author'],
+            args: { params: {
+              post_id: { name: 'post_id', type: '`$STRING`', reqd: false },
+            } },
+          },
+          {
+            parts: ['accounts', '{account_id}', 'users', '{id}'],
+            args: { params: {
+              account_id: { name: 'account_id', type: '`$STRING`', reqd: true },
+              id: { name: 'id', type: '`$STRING`', reqd: true },
+            } },
+          },
+        ] },
+      },
+    }
+
+    const { items } = opRequestShape(entity, 'load')
+    const opt = optionalByName(items)
+    deepStrictEqual(opt, { account_id: false, id: false },
+      'took the required params from the cross-reference, not the own route')
+  })
+
+
   // Vehicle is `remove`, a params-win op. It used to be `create`, but a body
   // op no longer takes its shape from params (see the body-op suite below),
   // which would make this assert nothing about $action filtering.

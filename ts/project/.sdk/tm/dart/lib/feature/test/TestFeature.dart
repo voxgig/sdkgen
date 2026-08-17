@@ -214,10 +214,40 @@ class TestFeature extends BaseFeature {
     final param = ctx.utility.param;
 
     final opname = op.name;
-    final point = vs.getelem(
-        vs.getpath(ctx.config,
-            ['entity', _entname(ctx.entity), 'op', opname, 'points']),
-        -1);
+
+    // Pick the entity's own endpoint from config, not a cross-reference from
+    // another resource that also returns it — the same rule makePoint falls
+    // back to, so the seed-data query is built from the endpoint the request
+    // will actually be sent to: a terminal `{id}` marks a record route, and
+    // failing that the shallower path wins.
+    final points = vs.getpath(
+        ctx.config, ['entity', _entname(ctx.entity), 'op', opname, 'points']);
+    var point = vs.getelem(points, 0);
+    if (points is List) {
+      int pointPartsLen(dynamic p) {
+        final parts = vs.getprop(p, 'parts');
+        return parts is List ? parts.length : 0;
+      }
+
+      bool pointTerminalParam(dynamic p) {
+        final parts = vs.getprop(p, 'parts');
+        if (parts is! List || parts.isEmpty) {
+          return false;
+        }
+        final last = parts[parts.length - 1];
+        return last is String && last.startsWith('{');
+      }
+
+      for (final cand in points) {
+        if (pointTerminalParam(cand) != pointTerminalParam(point)) {
+          if (pointTerminalParam(cand)) {
+            point = cand;
+          }
+        } else if (pointPartsLen(cand) < pointPartsLen(point)) {
+          point = cand;
+        }
+      }
+    }
 
     final reqd = vs.transform(
       vs.select(vs.getpath(point, ['args', 'params']), {'reqd': true}),

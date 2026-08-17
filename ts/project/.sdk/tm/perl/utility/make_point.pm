@@ -17,6 +17,27 @@ package ProjectNameUtilities;
 
 our %REGISTRY;
 
+# How many path segments a point has.
+sub _parts_len {
+  my ($point) = @_;
+  my $parts = ProjectNameHelpers::gp($point, 'parts');
+  return Voxgig::Struct::islist($parts) ? scalar(@$parts) : 0;
+}
+
+# Does this point's path end in a parameter? A record route ends in the
+# record's identifier (/boards/{id}); a cross-reference that also returns the
+# entity ends in the relationship's name (/posts/{id}/author). That, then
+# fewest segments, is what tells the entity's own route from a
+# cross-reference. The same rule runs at generation time, in
+# helpers/opShape.ts — both sides must move together.
+sub _terminal_param {
+  my ($point) = @_;
+  my $parts = ProjectNameHelpers::gp($point, 'parts');
+  return 0 unless Voxgig::Struct::islist($parts) && 0 < scalar(@$parts);
+  my $last = $parts->[-1];
+  return (defined $last && !ref $last && $last =~ /^\{/) ? 1 : 0;
+}
+
 $REGISTRY{make_point} = sub {
   my ($ctx) = @_;
 
@@ -54,8 +75,8 @@ $REGISTRY{make_point} = sub {
     my $selector = ('data' eq $op->{input}) ? $ctx->{data} : $ctx->{match};
 
     my $point;
+    my $matched = 0;
     for my $p (@{ $op->{points} }) {
-      $point = $p;
       my $select_def = ProjectNameHelpers::to_map(ProjectNameHelpers::gp($p, 'select'));
       my $found = 1;
 
@@ -79,7 +100,39 @@ $REGISTRY{make_point} = sub {
         $found = 0 unless ProjectNameHelpers::eqv($req_action, $select_action);
       }
 
-      last if $found;
+      if ($found) {
+        $point = $p;
+        $matched = 1;
+        last;
+      }
+    }
+
+    # select.exist can list more than the params needed to pick a point, so
+    # nothing matches — fall back to the entity's own route rather than
+    # whichever point came last.
+    unless ($matched) {
+      # A request naming an action reaches here only because that action's
+      # own point failed its exist test, so it is unbuildable whatever we
+      # pick. Refuse it BEFORE choosing a fallback: the guard below compares
+      # the chosen point's $action and would wave the request through
+      # whenever the fallback lands on the action point itself.
+      my $unmatched_action = $reqselector
+        ? ProjectNameHelpers::gp($reqselector, '$action') : undef;
+      if (defined $unmatched_action) {
+        return (undef, $ctx->make_error('point_action_invalid',
+          'Operation "' . $op->{name} . '" action "' .
+          Voxgig::Struct::stringify($unmatched_action) . '" is not valid.'));
+      }
+
+      $point = $op->{points}[0];
+      for my $p (@{ $op->{points} }) {
+        if (_terminal_param($p) != _terminal_param($point)) {
+          $point = $p if _terminal_param($p);
+        }
+        elsif (_parts_len($p) < _parts_len($point)) {
+          $point = $p;
+        }
+      }
     }
 
     if ($reqselector) {

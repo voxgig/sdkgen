@@ -521,6 +521,29 @@ pub fn make_options_util(ctx: *Context) Value {
 // make_point (gotcha #2: rbac PrePoint short-circuit)
 // ============================================================================
 
+// How many path segments a point has.
+fn point_parts_len(point: Value) i64 {
+    const parts = h.getp(point, "parts");
+    if (parts != .array) return 0;
+    return @intCast(parts.array.data.items.len);
+}
+
+// Does this point's path end in a parameter? A record route ends in the
+// record's identifier (/boards/{id}); a cross-reference that also returns the
+// entity ends in the relationship's name (/posts/{id}/author). That, then
+// fewest segments, is what tells the entity's own route from a
+// cross-reference. The same rule runs at generation time, in
+// helpers/opShape.ts — both sides must move together.
+fn point_terminal_param(point: Value) bool {
+    const parts = h.getp(point, "parts");
+    if (parts != .array) return false;
+    const items = parts.array.data.items;
+    if (0 == items.len) return false;
+    const last = items[items.len - 1];
+    if (last != .string) return false;
+    return 0 < last.string.len and '{' == last.string[0];
+}
+
 pub fn make_point_util(ctx: *Context) E!Value {
     if (ctx.out_get("point")) |ov| {
         switch (ov) {
@@ -560,10 +583,11 @@ pub fn make_point_util(ctx: *Context) E!Value {
         const selector: Value = if (std.mem.eql(u8, op.input, "data")) ctx.data else ctx.mtch;
 
         var point: Value = h.vnull();
+        var matched = false;
         var i: i64 = 0;
         while (i < plen) : (i += 1) {
-            point = h.get_elem(points, h.vnum(i), h.vnull());
-            const select_def = h.to_map(h.getp(point, "select"));
+            const cand = h.get_elem(points, h.vnum(i), h.vnull());
+            const select_def = h.to_map(h.getp(cand, "select"));
             var found = true;
 
             if (!h.is_noval(selector) and !h.is_noval(select_def)) {
@@ -589,7 +613,46 @@ pub fn make_point_util(ctx: *Context) E!Value {
                 if (!h.veq(req_action, select_action)) found = false;
             }
 
-            if (found) break;
+            if (found) {
+                point = cand;
+                matched = true;
+                break;
+            }
+        }
+
+        // select.exist can list more than the params needed to pick a point
+        // (for /boards/{id} it is Trello's 17 optional query-includes), so a
+        // plain {id} call matches NOTHING. Fall back to the entity's own
+        // route rather than whichever point came last.
+        if (!matched) {
+            // A request naming an action reaches here only because that
+            // action's own point failed its exist test, so it is unbuildable
+            // whatever we pick. Refuse it BEFORE choosing a fallback: the
+            // guard below compares the chosen point's $action and would wave
+            // the request through whenever the fallback lands on the action
+            // point itself.
+            const unmatched_action = h.getp(reqselector, "$action");
+            if (!h.is_noval(unmatched_action)) {
+                return ctx.fail("point_action_invalid", fmt("Operation \"{s}\" action \"{s}\" is not valid.", .{ op.name, h.stringify(unmatched_action) }));
+            }
+
+            // A terminal parameter marks a record route (/boards/{id}); a
+            // cross-reference ends in the relationship's name
+            // (/posts/{id}/author). Failing that, the shallower path wins.
+            // The same rule runs at generation time, in helpers/opShape.ts —
+            // both sides must move together.
+            point = h.get_elem(points, h.vnum(0), h.vnull());
+            var j: i64 = 0;
+            while (j < plen) : (j += 1) {
+                const cand = h.get_elem(points, h.vnum(j), h.vnull());
+                const cand_term = point_terminal_param(cand);
+                const best_term = point_terminal_param(point);
+                if (cand_term != best_term) {
+                    if (cand_term) point = cand;
+                } else if (point_parts_len(cand) < point_parts_len(point)) {
+                    point = cand;
+                }
+            }
         }
 
         const req_action = h.getp(reqselector, "$action");

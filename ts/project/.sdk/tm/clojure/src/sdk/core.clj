@@ -641,21 +641,56 @@
                             sa (vs/getprop select-def "$action")]
                         (when (not= ra sa) (reset! found false))))
                     @found))
-                ;; "first matching point, else the last point" (mirrors the
-                ;; reference loop that keeps the last-visited point).
-                chosen (loop [ps (vec (op-points op)) last nil]
-                         (if (empty? ps) last
-                             (let [p (first ps)]
-                               (if (point-matches? p) p (recur (rest ps) p)))))
+                ;; How many path segments a point has, and whether its path
+                ;; ends in a parameter. A record route ends in the record's
+                ;; identifier (/boards/{id}); a cross-reference that also
+                ;; returns the entity ends in the relationship's name
+                ;; (/posts/{id}/author). That, then fewest segments, is what
+                ;; tells the entity's own route from a cross-reference. The
+                ;; same rule runs at generation time, in helpers/opShape.ts —
+                ;; both sides must move together.
+                parts-len (fn [p]
+                            (let [parts (vs/getprop p "parts")]
+                              (if (vs/islist parts) (vs/size parts) 0)))
+                terminal-param? (fn [p]
+                                  (let [parts (vs/getprop p "parts")]
+                                    (and (vs/islist parts)
+                                         (pos? (vs/size parts))
+                                         (let [last-part (vs/getelem parts (dec (vs/size parts)))]
+                                           (and (string? last-part)
+                                                (str/starts-with? last-part "{"))))))
+                own-point (fn [ps]
+                            (reduce (fn [best cand]
+                                      (let [ct (terminal-param? cand)
+                                            bt (terminal-param? best)]
+                                        (if (not= ct bt)
+                                          (if ct cand best)
+                                          (if (< (parts-len cand) (parts-len best)) cand best))))
+                                    (first ps) ps))
+                matched (first (filter point-matches? (vec (op-points op))))
                 req-action (vs/getprop reqselector "$action")]
-            (if (and reqselector req-action chosen)
-              (let [point-select (to-map (vs/getprop chosen "select"))
-                    point-action (vs/getprop point-select "$action")]
-                (if (not= req-action point-action)
-                  [nil (ctx-error ctx "point_action_invalid"
-                                  (str "Operation \"" (op-name op) "\" action \"" (vs/stringify req-action) "\" is not valid."))]
-                  (do (oset! ctx :point chosen) [(oget ctx :point) nil])))
-              (do (oset! ctx :point chosen) [(oget ctx :point) nil]))))))))
+            (cond
+              ;; select.exist can list more than the params needed to pick a
+              ;; point, so nothing matches. A request naming an action reaches
+              ;; here only because that action's own point failed its exist
+              ;; test, so it is unbuildable whatever we pick — refuse it
+              ;; BEFORE falling back, since the guard below compares the
+              ;; chosen point's $action and would wave the request through
+              ;; whenever the fallback lands on the action point itself.
+              (and (nil? matched) reqselector req-action)
+              [nil (ctx-error ctx "point_action_invalid"
+                              (str "Operation \"" (op-name op) "\" action \"" (vs/stringify req-action) "\" is not valid."))]
+
+              :else
+              (let [chosen (or matched (own-point (vec (op-points op))))]
+                (if (and reqselector req-action chosen)
+                  (let [point-select (to-map (vs/getprop chosen "select"))
+                        point-action (vs/getprop point-select "$action")]
+                    (if (not= req-action point-action)
+                      [nil (ctx-error ctx "point_action_invalid"
+                                      (str "Operation \"" (op-name op) "\" action \"" (vs/stringify req-action) "\" is not valid."))]
+                      (do (oset! ctx :point chosen) [(oget ctx :point) nil])))
+                  (do (oset! ctx :point chosen) [(oget ctx :point) nil]))))))))))
 
 (defn u-make-spec [ctx]
   (if (some? (out-get ctx "spec"))
