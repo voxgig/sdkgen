@@ -49,8 +49,22 @@ function npmPacked(): Set<string> {
 
   equal(res.status, 0, 'npm pack failed: ' + res.stderr)
 
-  return new Set<string>(
-    JSON.parse(res.stdout)[0].files.map((f: any) => f.path))
+  // npm changed this payload's shape at 12: up to 11 it is an array of
+  // per-package results, from 12 it is an object keyed by package name. The
+  // per-package entry is identical either way, so take the first one and let
+  // both npms answer the same question. Indexing [0] unconditionally is what
+  // broke here — on npm 12 it yields undefined, and the failure reads as
+  // "cannot read properties of undefined", which says nothing about npm.
+  const packed = JSON.parse(res.stdout)
+  const entry = Array.isArray(packed) ? packed[0] : Object.values(packed)[0]
+
+  ok(entry && Array.isArray((entry as any).files),
+    'unrecognised `npm pack --dry-run --json` shape from npm ' +
+    process.env.npm_config_user_agent + ' — expected an array of package ' +
+    'results (npm <= 11) or an object keyed by package name (npm >= 12), ' +
+    'each entry carrying `files`. Got: ' + res.stdout.slice(0, 200))
+
+  return new Set<string>((entry as any).files.map((f: any) => f.path))
 }
 
 
