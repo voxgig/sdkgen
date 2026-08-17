@@ -165,4 +165,60 @@ describe('the binary', () => {
     }
   })
 
+
+  // A BROKEN PROJECT MODEL IS THE USER'S FILE, NOT AN SDKGEN CRASH.
+  //
+  // `resolveModel` hands aontu an `errs` array and used to report only from
+  // that. aontu never fills it — every failure throws instead — so the
+  // reporting branch was unreachable and the raw AontuError travelled all the
+  // way out. `handleError` prints the whole error object for anything that is
+  // not an SdkGenError, so the user saw aontu's (good) diagnostic followed by
+  // a stack trace through sdkgen's `dist/` and a dump of the error's own
+  // fields, which reads as a bug in the tool rather than a typo in their file.
+  //
+  // Spawned rather than called in-process, because the defect was entirely in
+  // what reached the TERMINAL: the throw was always correct, its presentation
+  // was not.
+  describe('a broken project model', () => {
+
+    // The three ways aontu fails, which are three different code paths inside
+    // it and were all equally raw before.
+    const BROKEN: [string, string, RegExp][] = [
+      ['a syntax error', 'main: kit: {\n  broken\n', /unexpected character/],
+      ['an unresolved path', 'main: x: $.nope.missing\n', /Cannot resolve value/],
+      ['a unify conflict', 'main: a: string\nmain: a: 1\n', /Cannot unify/],
+    ]
+
+    for (const [label, model, detail] of BROKEN) {
+
+      test(label + ' is reported, not dumped', () => {
+        const proj = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-badmodel-'))
+        try {
+          Fs.mkdirSync(Path.join(proj, 'model'), { recursive: true })
+          Fs.writeFileSync(Path.join(proj, 'model', 'sdk.aontu'), model)
+
+          const res = run(['doctor'], proj)
+          const out = String(res.stdout) + String(res.stderr)
+
+          strictEqual(res.status, 1, 'expected a non-zero exit: ' + out)
+
+          // Named as a model problem, and WHOSE model.
+          match(out, /Model Error: \.\/model\/sdk\.aontu/, out)
+
+          // aontu's own diagnostic is the useful half and is passed through
+          // untouched — wrapping it must not swallow it.
+          match(out, detail, out)
+
+          // The regression itself: no stack, no error-object dump.
+          doesNotMatch(out, /at resolveModel/, 'printed a stack trace: ' + out)
+          doesNotMatch(out, /AontuError/, 'leaked the raw error: ' + out)
+        }
+        finally {
+          Fs.rmSync(proj, { recursive: true, force: true })
+        }
+      })
+    }
+
+  })
+
 })

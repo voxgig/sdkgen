@@ -175,6 +175,40 @@ type SdkGenOptions = {
 const { Jostraca } = JostracaModule
 
 
+// A BROKEN PROJECT MODEL IS THE USER'S FILE, NOT A CRASH.
+//
+// One constructor for both routes out of `resolveModel` — the throw aontu
+// actually takes, and the `errs` array it documents but never fills — because
+// two spellings of the same error is how this repo keeps reintroducing the
+// same defect.
+//
+// aontu's own diagnostic is the valuable part and is passed through
+// UNTOUCHED: it carries the source excerpt, a caret under the offending
+// token, and an explanation. What it lacks is any statement of WHOSE file
+// this is, so the path leads. Wrapping it in an SdkGenError is what makes the
+// CLI print it as a message instead of dumping the error object and a stack
+// trace through sdkgen's internals — `handleError` reserves clean output for
+// that name.
+function modelError(path: string, cause: any, rooterrs: any[]): any {
+  const detail = String(cause?.msg ?? cause?.message ?? cause ?? '').trim()
+
+  const err: any = new SdkGenError(
+    'Model Error: ' + path + '\n' + detail)
+
+  err.cause$ = [cause]
+  err.rooterrs$ = rooterrs
+
+  // A syntax error is the user's typo, and there is nothing for them to do
+  // with a stack. `why` lives on the structured entries rather than the
+  // thrown wrapper, so it is read from the first of them.
+  if ('syntax' === (cause?.why ?? rooterrs?.[0]?.why)) {
+    err.uxmsg$ = true
+  }
+
+  return err
+}
+
+
 function SdkGen(opts: SdkGenOptions) {
   const fs = opts.fs || Fs
   const folder = opts.folder || '../'
@@ -471,19 +505,39 @@ function SdkGen(opts: SdkGenOptions) {
     const aopts = { path, errs }
     const src = fs.readFileSync(path, 'utf8')
 
-    const model = aontu.generate(src, aopts)
+    // AONTU THROWS; IT DOES NOT FILL `errs`.
+    //
+    // The `errs` array is handed to `generate` and stays empty on every
+    // failure — syntax, unresolved path and unify conflict alike all raise an
+    // AontuError instead (verified against 0.52 by running each). So the
+    // `0 < errs.length` branch this used to have could never fire, and every
+    // broken project model reached the CLI as a bare AontuError: `handleError`
+    // prints the raw object for anything that is not an SdkGenError, so the
+    // user got aontu's diagnostic followed by a stack trace into sdkgen's
+    // `dist/` and a dump of the error's own fields. It read as an sdkgen
+    // crash rather than a problem in their own file.
+    //
+    // The array is still passed, and still checked below, because that is
+    // aontu's documented option and a later version may start using it. Both
+    // routes build the error the same way, so they cannot drift.
+    let model: any
 
-    if (0 < errs.length) {
-      const serr = errs[0]
-      const err: any = new SdkGenError('Model Error: ' + serr.msg)
-      err.cause$ = [serr]
-
-      if ('syntax' === serr.why) {
-        err.uxmsg$ = true
+    try {
+      model = aontu.generate(src, aopts)
+    }
+    catch (aerr: any) {
+      if (true !== aerr?.aontu) {
+        throw aerr
       }
 
-      err.rooterrs$ = errs
-      throw err
+      // The structured errors are reachable after all — the thrown error
+      // carries the accessor the empty array was standing in for.
+      throw modelError(path, aerr,
+        'function' === typeof aerr.errs ? aerr.errs() : [])
+    }
+
+    if (0 < errs.length) {
+      throw modelError(path, errs[0], errs)
     }
 
     model.const = { name: model.name }
