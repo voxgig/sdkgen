@@ -19,7 +19,7 @@
 // until now nothing compiled them at all.
 
 import { test, describe, before, after } from 'node:test'
-import { ok, strictEqual } from 'node:assert'
+import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
 import Fs from 'node:fs'
 import Os from 'node:os'
@@ -368,4 +368,97 @@ func TestTypesProbe(t *testing.T) {
     const build = run(dotnet, ['build', '--nologo', '-v', 'quiet'], sdkroot)
     ok(build.ok, 'generated csharp does not build:\n' + build.out)
   })
+
+
+  // PHP HAS NO BUILD STEP, WHICH IS WHY IT NEEDED THIS.
+  //
+  // `php -l` parses a file without running it — the cheapest possible check,
+  // and until now nothing ran it, so a php target that did not PARSE could
+  // ship. That is not hypothetical: an entity named `Namespace` emitted
+  // `class Namespace`, a syntax error, and the php lane stayed green for as
+  // long as the target has existed (issue #64).
+  //
+  // It stayed hidden because `types/` is on composer's classmap and nothing
+  // references it, so PHP never loaded the file. A lane that only RUNS code
+  // cannot see a file nothing requires; linting every file can.
+  //
+  // The fixture is extended with a reserved-word entity for this check
+  // specifically, rather than added to the shared model — every target
+  // generates from that model, and this is a php question.
+  test('php: every generated file parses, reserved-word entities included',
+    async () => {
+      const php = toolchain('php')
+      if (null == php) {
+        return
+      }
+
+      const sdkroot = Path.join(tmp, 'php')
+
+      // `namespace` is a PHP keyword AND, because class names are
+      // case-insensitive, so are `Namespace` and `NAMESPACE`. A guard that
+      // compares case-sensitively passes its own unit tests and still emits
+      // an undeclarable class here.
+      const files = await generateTo('php', sdkroot, RESERVED_ENTITY)
+
+      const phpfiles = Object.keys(files).filter((p) => p.endsWith('.php'))
+      ok(5 < phpfiles.length,
+        'only ' + phpfiles.length + ' php files generated — the lint would ' +
+        'pass vacuously')
+
+      const bad: string[] = []
+      for (const rel of phpfiles) {
+        const lint = run(php, ['-l', Path.join(sdkroot, rel)], sdkroot)
+        if (!lint.ok) {
+          bad.push(rel + ':\n' + lint.out)
+        }
+      }
+
+      deepStrictEqual(bad, [],
+        'generated php does not parse:\n' + bad.join('\n'))
+
+      // ...and the rename actually happened, so this cannot pass by the
+      // entity having been dropped from the output altogether.
+      const types = Object.entries(files)
+        .find(([p]) => /^types\/.*Types\.php$/.test(p))
+      ok(null != types, 'no types file generated')
+      ok(/^class NamespaceType$/m.test(String(types![1])),
+        'the reserved-word entity was not renamed:\n' +
+        (String(types![1]).match(/^class \w*Namespace\w*$/gm) || []).join('\n'))
+    })
 })
+
+
+// An entity whose name PHP reserves, plus the flow entry the fixture model
+// requires for every entity. Declared here rather than inline so the reason
+// it exists stays next to the test that needs it.
+const RESERVED_ENTITY = `
+main: kit: entity: namespace: {
+  alias: field: {}
+  name: "namespace"
+  id: { field: "id", name: "id" }
+  field: {
+    id:   { name: "id",   kind: "field", type: "\`$STRING\`", required: true }
+    path: { name: "path", kind: "field", type: "\`$STRING\`", required: true }
+  }
+  fields: [
+    { name: "id",   req: true, type: "\`$STRING\`" }
+    { name: "path", req: true, type: "\`$STRING\`" }
+  ]
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        args: {}, method: "GET", orig: "/namespace", parts: ["namespace"]
+        transform: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: BasicNamespaceFlow: {
+  entity: "namespace", kind: "basic", name: "BasicNamespaceFlow"
+  step: [
+    { op: "list" }
+  ]
+}
+`

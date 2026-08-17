@@ -11,6 +11,8 @@ import {
   rbSafeTypeName,
   isSwiftSdkType,
   swiftSafeTypeName,
+  isPhpReservedType,
+  phpSafeTypeName,
   serverVariables,
   hasServerVariables,
   originName,
@@ -272,6 +274,59 @@ describe('helpers', () => {
       // always carry a suffix, and no core constant ends with one.
       strictEqual(rbSafeTypeName('FileCreateData'), 'FileCreateData')
       strictEqual(rbSafeTypeName('FileLoadMatch'), 'FileLoadMatch')
+    })
+  })
+
+
+  describe('phpSafeTypeName', () => {
+
+    // THE CASE THAT MATTERS MOST, because it is the one a case-sensitive
+    // implementation gets wrong while looking correct.
+    //
+    // PHP class names are case-insensitive, so `Namespace` IS `namespace` —
+    // and the generated name is PascalCase while the reserved word is
+    // lowercase. A `Set.has('Namespace')` against a lowercase list matches
+    // nothing, and `class Namespace` ships again.
+    test('folds case, as PHP does', () => {
+      strictEqual(phpSafeTypeName('Namespace'), 'NamespaceType')
+      strictEqual(phpSafeTypeName('namespace'), 'namespaceType')
+      strictEqual(phpSafeTypeName('NAMESPACE'), 'NAMESPACEType')
+
+      strictEqual(isPhpReservedType('Namespace'), true)
+      strictEqual(isPhpReservedType('NaMeSpAcE'), true)
+    })
+
+    test('suffixes words PHP will not accept as a class name', () => {
+      // The gitlab-sdk regression (#64): a `Namespace` entity emitted
+      // `class Namespace`, which is a parse error, so types/<Sdk>Types.php
+      // could never be loaded.
+      strictEqual(phpSafeTypeName('List'), 'ListType')
+      strictEqual(phpSafeTypeName('Array'), 'ArrayType')
+      strictEqual(phpSafeTypeName('Class'), 'ClassType')
+      strictEqual(phpSafeTypeName('Function'), 'FunctionType')
+      strictEqual(phpSafeTypeName('Match'), 'MatchType')
+      strictEqual(phpSafeTypeName('Enum'), 'EnumType')
+      strictEqual(phpSafeTypeName('Object'), 'ObjectType')
+      strictEqual(phpSafeTypeName('String'), 'StringType')
+      strictEqual(phpSafeTypeName('Static'), 'StaticType')
+      strictEqual(phpSafeTypeName('Default'), 'DefaultType')
+    })
+
+    test('leaves every other entity name untouched', () => {
+      // The guard must not churn the existing fleet — an SDK with no
+      // collision generates byte-identically to before.
+      strictEqual(phpSafeTypeName('Response'), 'Response')
+      strictEqual(phpSafeTypeName('Project'), 'Project')
+      strictEqual(phpSafeTypeName('Namespaces'), 'Namespaces')
+      strictEqual(phpSafeTypeName('ListItem'), 'ListItem')
+      strictEqual(phpSafeTypeName('ClassRoom'), 'ClassRoom')
+    })
+
+    test('per-op type names never need the guard', () => {
+      // EntityTypes_php applies it to the bare data class only; op names
+      // already carry a suffix, and no reserved word ends with one.
+      strictEqual(phpSafeTypeName('NamespaceCreateData'), 'NamespaceCreateData')
+      strictEqual(phpSafeTypeName('NamespaceLoadMatch'), 'NamespaceLoadMatch')
     })
   })
 

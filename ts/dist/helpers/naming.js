@@ -27,6 +27,8 @@ exports.isRbCoreConstant = isRbCoreConstant;
 exports.rbSafeTypeName = rbSafeTypeName;
 exports.isSwiftSdkType = isSwiftSdkType;
 exports.swiftSafeTypeName = swiftSafeTypeName;
+exports.isPhpReservedType = isPhpReservedType;
+exports.phpSafeTypeName = phpSafeTypeName;
 exports.jsProp = jsProp;
 exports.jsOptProp = jsOptProp;
 exports.jsKey = jsKey;
@@ -188,6 +190,71 @@ function isSwiftSdkType(Name) {
 // CLASS is separately suffixed (`ResponseEntity`), so neither ever collided.
 function swiftSafeTypeName(Name) {
     return isSwiftSdkType(Name) ? Name + 'Type' : Name;
+}
+// PHP RESERVED WORDS THAT CANNOT BE A CLASS NAME — a fourth hazard, and the
+// only one of the four where the check must be CASE-INSENSITIVE.
+//
+// PHP's grammar refuses a reserved word where a class name is expected, so a
+// spec with a `Namespace` entity emitted a file that does not parse at all:
+//
+//   /** Namespace entity data model. */
+//   class Namespace
+//   {
+//   }
+//   -> PHP Parse error: syntax error, unexpected token "namespace",
+//                       expecting identifier
+//
+// Found on gitlab-sdk (issue #64), and LATENT in the worst way: `types/` is on
+// the composer classmap but nothing references the file, so PHP never loads it
+// and the php lane passed for as long as the target has existed. It would
+// fatal the moment anything required it, and the documented type is unusable
+// either way.
+//
+// CASE-INSENSITIVITY IS THE WHOLE TRICK. Class and function names in PHP are
+// case-insensitive, so `Namespace`, `NAMESPACE` and `namespace` are one
+// identifier — and the generated name is PascalCase while the reserved word is
+// lowercase. A case-sensitive `Set.has('Namespace')` against a lowercase list
+// therefore matches NOTHING and reopens the bug silently. Entries are stored
+// folded, and the lookup folds too.
+//
+// Taken from the PHP manual's reserved-words tables wholesale rather than
+// grown one collision at a time: the list is fixed by the language, and
+// picking from it by hand is how the second `Namespace` gets shipped.
+const PHP_RESERVED_TYPES = new Set([
+    // keywords
+    'abstract', 'and', 'array', 'as', 'break', 'callable', 'case', 'catch',
+    'class', 'clone', 'const', 'continue', 'declare', 'default', 'do', 'echo',
+    'else', 'elseif', 'empty', 'enddeclare', 'endfor', 'endforeach', 'endif',
+    'endswitch', 'endwhile', 'enum', 'eval', 'exit', 'extends', 'final',
+    'finally', 'fn', 'for', 'foreach', 'function', 'global', 'goto', 'if',
+    'implements', 'include', 'include_once', 'instanceof', 'insteadof',
+    'interface', 'isset', 'list', 'match', 'namespace', 'new', 'or', 'print',
+    'private', 'protected', 'public', 'readonly', 'require', 'require_once',
+    'return', 'static', 'switch', 'throw', 'trait', 'try', 'unset', 'use',
+    'var', 'while', 'xor', 'yield',
+    // compile-time constants
+    '__class__', '__dir__', '__file__', '__function__', '__line__',
+    '__method__', '__namespace__', '__trait__',
+    // reserved as type names / cannot be declared as a class
+    'bool', 'false', 'float', 'int', 'iterable', 'mixed', 'never', 'null',
+    'numeric', 'object', 'parent', 'resource', 'self', 'string', 'true', 'void',
+]);
+// Does `Name` collide with a word PHP reserves, ignoring case as PHP does?
+function isPhpReservedType(Name) {
+    return PHP_RESERVED_TYPES.has(String(Name).toLowerCase());
+}
+// A declarable PHP class name for a generated type: unchanged, unless PHP
+// reserves the word, in which case `Type` is appended (`Namespace` ->
+// `NamespaceType`). Mirrors rbSafeTypeName and swiftSafeTypeName deliberately
+// — same suffix, same "only rename on an actual collision" rule, so every SDK
+// that does not collide is byte-identical to before.
+//
+// Applied ONLY to the bare entity data class. Per-op type names already carry
+// their own suffix (`NamespaceLoadData`, `NamespaceCreateData`), which no
+// reserved word matches, and the entity ACCESSOR is a method rather than a
+// class — PHP resolves those separately — so the public surface is unchanged.
+function phpSafeTypeName(Name) {
+    return isPhpReservedType(Name) ? Name + 'Type' : Name;
 }
 // Is `name` a reserved word (an illegal identifier) in the target language?
 function isReservedName(name, lang) {
