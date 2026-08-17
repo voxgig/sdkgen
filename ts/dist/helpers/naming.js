@@ -24,6 +24,7 @@ exports.exampleVarName = exampleVarName;
 exports.phpEntityAccessor = phpEntityAccessor;
 exports.entityCacheField = entityCacheField;
 exports.isRbCoreConstant = isRbCoreConstant;
+exports.isRbSdkConstant = isRbSdkConstant;
 exports.rbSafeTypeName = rbSafeTypeName;
 exports.isSwiftSdkType = isSwiftSdkType;
 exports.swiftSafeTypeName = swiftSafeTypeName;
@@ -116,17 +117,63 @@ const RB_CORE_CONSTANTS = new Set([
 function isRbCoreConstant(Name) {
     return RB_CORE_CONSTANTS.has(Name);
 }
+// RUBY SDK-OWNED CONSTANTS — the OTHER half of "already taken".
+//
+// `RB_CORE_CONSTANTS` guards names the LANGUAGE owns. This guards names the
+// GENERATED SCAFFOLDING claims for itself, which is a distinct hazard and the
+// one that stayed open: an entity named `Runner` produced `class Runner` in
+// `<Sdk>_types.rb`, and the generated harness then does
+//
+//   Runner = ProjectNameTestRunner        # tm/rb/test/runner.rb
+//
+// so inside the test process the entity TYPE silently *is* the test runner.
+// Ruby warns (`already initialized constant Runner`) and carries on, which is
+// why it survived: nothing in the suite exercises the type, so `rb` passed.
+// Reported on gitlab-sdk, which has a `Runner` entity (issue #64).
+//
+// EVERYTHING SHARES ONE NAMESPACE HERE, unlike swift. Swift's Tests module is
+// separate from the SDK module, so `SWIFT_SDK_TYPES` can exclude test-only
+// declarations. Ruby has no such split — the types file and the test files are
+// all required into one process when the suite runs, which is exactly the
+// reported symptom — so test-declared names belong in this set.
+//
+// PREFIXED DECLARATIONS ARE DELIBERATELY ABSENT. `ProjectNameUtility` and
+// friends substitute to `<Sdk>Utility`, and a generated entity type is the
+// bare entity name, so those cannot collide. Only the UNPREFIXED declarations
+// are reachable.
+//
+// `rb-sdk-constants.test.ts` re-derives this list from the templates AND the
+// components and fails on drift — the same discipline as
+// `swift-sdk-types.test.ts`, and for the same reason: the first cut of that
+// list was collected by hand and missed three names, one of them declared by
+// a component rather than a template.
+const RB_SDK_CONSTANTS = new Set([
+    // module-level aliases the test harness defines for convenience
+    'Helpers', 'Runner', 'Vs',
+    // vendored struct library and its test scaffolding
+    'StructRunner', 'StructTestClient', 'StructUtilityTest', 'VoxgigStruct',
+    'STRUCT_TEST_JSON_FILE',
+    // the generated/templated test classes
+    'ExistsTest', 'FeatureTest', 'NetsimTest', 'PipelineTest',
+    'PrimaryUtilityTest', 'ReadmeExamplesTest', 'TestHookFeature',
+    'TestInitFeature',
+]);
+// Does `Name` collide with a constant the generated Ruby SDK already declares?
+function isRbSdkConstant(Name) {
+    return RB_SDK_CONSTANTS.has(Name);
+}
 // A top-level-safe Ruby constant name for a generated type: the name
-// unchanged, unless Ruby core already owns it, in which case `Type` is
-// appended (`File` -> `FileType`). Applied ONLY to the bare entity data type
-// — the per-op type names always carry a suffix (`FileCreateData`,
-// `FileLoadMatch`), which no core constant matches.
+// unchanged, unless it is ALREADY TAKEN — by Ruby core, or by the SDK's own
+// scaffolding — in which case `Type` is appended (`File` -> `FileType`,
+// `Runner` -> `RunnerType`). Applied ONLY to the bare entity data type: the
+// per-op type names always carry a suffix (`FileCreateData`,
+// `FileLoadMatch`), which nothing in either set matches.
 //
 // The entity ACCESSOR keeps its original name (`client.File(...)`): methods
 // and constants live in separate namespaces in Ruby, so the accessor never
 // collided and the public surface is unchanged.
 function rbSafeTypeName(Name) {
-    return isRbCoreConstant(Name) ? Name + 'Type' : Name;
+    return isRbCoreConstant(Name) || isRbSdkConstant(Name) ? Name + 'Type' : Name;
 }
 // Swift SDK-OWNED TYPE NAMES — a third hazard, distinct from both sets above.
 //

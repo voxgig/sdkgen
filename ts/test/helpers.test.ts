@@ -8,6 +8,7 @@ import {
   getMatchEntries,
   safeVarName,
   isRbCoreConstant,
+  isRbSdkConstant,
   rbSafeTypeName,
   isSwiftSdkType,
   swiftSafeTypeName,
@@ -274,6 +275,38 @@ describe('helpers', () => {
       // always carry a suffix, and no core constant ends with one.
       strictEqual(rbSafeTypeName('FileCreateData'), 'FileCreateData')
       strictEqual(rbSafeTypeName('FileLoadMatch'), 'FileLoadMatch')
+    })
+
+    // THE SECOND HALF OF "ALREADY TAKEN": names the SDK'S OWN SCAFFOLDING
+    // claims, which a language-keyword list can never catch.
+    test('suffixes constants the generated SDK itself declares', () => {
+      // gitlab-sdk has a `Runner` entity. `<Sdk>_types.rb` declared
+      // `class Runner`, and tm/rb/test/runner.rb then does
+      // `Runner = ProjectNameTestRunner` — so in the test process the entity
+      // type silently BECAME the test runner. Ruby warns and carries on,
+      // which is why `rb` stayed green (issue #64).
+      strictEqual(rbSafeTypeName('Runner'), 'RunnerType')
+      strictEqual(rbSafeTypeName('Helpers'), 'HelpersType')
+      strictEqual(rbSafeTypeName('Vs'), 'VsType')
+
+      // The vendored struct library and the templated test classes share the
+      // same global namespace at require time.
+      strictEqual(rbSafeTypeName('VoxgigStruct'), 'VoxgigStructType')
+      strictEqual(rbSafeTypeName('FeatureTest'), 'FeatureTestType')
+      strictEqual(rbSafeTypeName('ReadmeExamplesTest'), 'ReadmeExamplesTestType')
+
+      strictEqual(isRbSdkConstant('Runner'), true)
+      strictEqual(isRbSdkConstant('File'), false)
+    })
+
+    test('does not claim names that are merely PREFIXED', () => {
+      // `ProjectNameUtility` substitutes to `<Sdk>Utility`, which a bare
+      // entity type cannot equal — guarding it would rename entities that
+      // never collided. The fleet must not churn.
+      strictEqual(rbSafeTypeName('Utility'), 'Utility')
+      strictEqual(rbSafeTypeName('Context'), 'Context')
+      strictEqual(rbSafeTypeName('Response'), 'Response')
+      strictEqual(rbSafeTypeName('Operation'), 'Operation')
     })
   })
 
