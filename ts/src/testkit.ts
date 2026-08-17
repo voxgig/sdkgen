@@ -87,7 +87,6 @@ type StageOptions = {
   // The project's API name, which every derived name comes from.
   name?: string
 
-  // Extra aontu appended to the consumer's `model/sdk.aontu`.
   // The project's OWN model text, appended to `model/sdk.aontu`.
   //
   // THIS WRITES A FILE. It does NOT reach the action context — see
@@ -179,21 +178,25 @@ function makeLog(lines?: any[]): any {
 // can exercise the add pipeline (sdkgen's own action suites do) but can never
 // RUN what it installed, which is the half a package author most needs.
 function stageConsumer(opts: StageOptions = {}): Consumer {
-  // CANONICALISED, because the generator realpaths and this one does not.
+  // THE ROOT IS USED VERBATIM. Do not "canonicalise" it — that was tried and
+  // it broke Windows.
   //
-  // On macOS `Os.tmpdir()` is `/var/folders/…` and `/var` is a symlink to
-  // `/private/var`. jostraca's CopyOp resolves a copy's source through
-  // `fs.realpathSync` and compares the result, so on that platform the
-  // resolved path (`/private/var/…`) and this root (`/var/…`) describe the
-  // same directory with different strings — and `Path.relative(root, …)`,
-  // which is how generated paths are keyed, then produces
-  // `../../private/var/…` instead of a project-relative path.
+  // This exact string is handed to `generate()` as its output folder, and it
+  // is also what `generateInto` strips back off to key the result. Those two
+  // uses only agree while it is ONE string, so any transformation here has to
+  // be a transformation jostraca performs too — and `realpathSync` is not.
   //
-  // Resolving once here makes every later realpath a no-op. It is done for a
-  // caller-supplied `dir` too: the divergence is a property of the path, not
-  // of who chose it.
-  const raw = opts.dir ?? Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-consumer-'))
-  const root = canonical(raw)
+  // On the Windows runner `Os.tmpdir()` carries an 8.3 short name
+  // (`D:\Users\RUNNER~1\…`). Resolving it moved `root` to the long form while
+  // the generated paths kept the short one, so nothing relativised and every
+  // key came back absolute — for a test asserting on `wtest/src/client.wt`,
+  // that reads as "the component did not run".
+  //
+  // The macOS case it was added for (`/var/folders` vs `/private/var/folders`)
+  // was measured BEFORE the change and does not arise: jostraca realpaths a
+  // copy's SOURCE, not the output folder. Hardening against a hazard that was
+  // not there cost a real platform.
+  const root = opts.dir ?? Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-consumer-'))
   const sdk = Path.join(root, '.sdk')
 
   Fs.mkdirSync(Path.join(sdk, 'model', 'target'), { recursive: true })
@@ -359,19 +362,6 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
         Fs.rmSync(root, { recursive: true, force: true })
       }
     },
-  }
-}
-
-
-// A path with every symlink resolved, or the path itself if it cannot be.
-// `mkdtemp` returns a directory that exists, so the fallback is for a
-// caller-supplied `dir` that does not yet.
-function canonical(p: string): string {
-  try {
-    return Fs.realpathSync(p)
-  }
-  catch (err) {
-    return p
   }
 }
 
@@ -680,6 +670,24 @@ async function generateInto(
   const files: Record<string, string> = {}
   for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
     const rel = Path.relative(consumer.root, path).split(Path.sep).join('/')
+
+    // A KEY THAT DID NOT RELATIVISE IS A BUG HERE, NOT A RESULT.
+    //
+    // It means the string generation wrote under and the string being
+    // stripped off have diverged, and the caller then sees a file map keyed by
+    // absolute path — which reads as "my component never ran" rather than as a
+    // path problem. That is exactly how a Windows short-name mismatch
+    // (`D:\Users\RUNNER~1\…`) presented, so it fails loudly and names both
+    // sides instead of returning a map nobody can match against.
+    if (Path.isAbsolute(rel) || rel.startsWith('..')) {
+      throw new Error(
+        'testkit: generated path is not under the consumer root, so the ' +
+        'result cannot be keyed.\n  root: ' + consumer.root +
+        '\n  path: ' + path +
+        '\nThese must be the SAME string modulo separators — the root is ' +
+        'handed to generate() verbatim and stripped back off here.')
+    }
+
     if (rel.startsWith('.jostraca/') || rel.includes('/.jostraca/')) continue
     files[rel] = content
   }
