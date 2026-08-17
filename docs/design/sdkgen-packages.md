@@ -31,10 +31,19 @@ Still open in **§18.7**:
 1. **The corpus package** (`@voxgig/sdkgen-corpus`). Until it exists,
    FULL-tier parity is reachable only from inside voxgig's own repos, so
    any migrated FULL-tier target is silently capped.
-2. **The migration checklist and a first subject** (§14, §17.8). A
-   MIRRORED-tier target is the low-risk choice precisely because it does
-   not need 1. Which target goes first is a PRODUCT decision — it leaves
-   the bundled package — so §17.8 stays open on purpose.
+2. **A first migration subject** (§17.8). The CHECKLIST is now written and
+   verified — [how-to/migrate-a-bundled-target](../how-to/migrate-a-bundled-target.md)
+   — and the mechanism is proven: all five MIRRORED-tier targets (`c`,
+   `clojure`, `elixir`, `haskell`, `zig`) installed from a package generate
+   BYTE-IDENTICALLY to the same target installed from the bundled scaffold,
+   with no placeholder leaks. What remains is choosing one, and that is a
+   PRODUCT decision — a migrated target is no longer in the box — so §17.8
+   stays open on purpose rather than for want of a recipe.
+
+   The dry run also settled how the move must be done: it is a `git mv`, not
+   a copy. A surviving scaffold tree makes the bundled `test` feature's
+   fan-out treat it as an overlay over the package's, and every consumer gets
+   a `feature-source-shadowed` warning plus a project holding both copies.
 
 `parity` and `targetsSupported` are declared in `helpers/manifest.ts`. The
 kit now reads `parity` for an EXTERNAL package (`manifestParity`), where

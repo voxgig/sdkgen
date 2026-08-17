@@ -28,6 +28,7 @@ that matches what you are trying to do right now:
 - [Add a feature](./how-to/add-a-feature.md)
 - [Use an sdkgen package](./how-to/use-an-sdkgen-package.md)
 - [Author an sdkgen package](./how-to/author-an-sdkgen-package.md)
+- [Migrate a bundled target into a package](./how-to/migrate-a-bundled-target.md)
 - [Simulate network conditions in offline tests](./how-to/simulate-network.md)
 - [Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md)
 - [Author a brand-new language target](./how-to/author-a-new-language.md)
