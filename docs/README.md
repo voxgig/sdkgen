@@ -63,12 +63,14 @@ that matches what you are trying to do right now:
   feature can actually apply to, so `feature-source-missing` means "this
   is a mistake" rather than "this target was never going to take it".
   Proposal.
-- [voxgig/station](./design/voxgig-station.md) — the runtime companion:
-  generated SDKs register as plugins with a per-language station
-  library, giving one control surface for outbound integrations —
-  secrets (through [voxgig/sekreto](https://github.com/voxgig/sekreto)),
-  policy, observability, debugging — plus an optional consolidated
-  proxy hosting the MCP agent surface. Proposal.
+- [voxgig/station](https://github.com/voxgig/station) — the runtime
+  companion: generated SDKs register as plugins with a per-language
+  station library, giving one control surface for outbound integrations
+  — secrets (through
+  [voxgig/sekreto](https://github.com/voxgig/sekreto)), policy,
+  observability, debugging — plus an optional consolidated proxy hosting
+  the MCP agent surface. Proposal; the design doc now lives in the
+  station repo, as [`docs/design/station.md`][station-design].
 
 ## For AI coding agents
 
@@ -77,3 +79,5 @@ If you are an automated coding agent, start with
 commands, where to make each kind of change, the template-propagation
 pipeline, conventions, and the gotchas that will otherwise cost you a
 build.
+
+[station-design]: https://github.com/voxgig/station/blob/main/docs/design/station.md
