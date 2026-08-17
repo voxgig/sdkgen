@@ -173,6 +173,57 @@ should have been written.
 Iterate by re-running `package add` — it overwrites, which is how a
 resync works.
 
+## Automate that loop: the test kit
+
+Doing the above by hand proves the package once. `@voxgig/sdkgen/testkit`
+does the same thing in your own suite, on every commit:
+
+```js
+const { stageConsumer, generateInto } = require('@voxgig/sdkgen/testkit')
+
+const consumer = stageConsumer()
+try {
+  await consumer.addPackage(__dirname + '/..')   // the package under test
+  consumer.compile()                             // as a consumer's build does
+  const { files, leaks } = await generateInto(consumer, { model })
+
+  assert.deepEqual(leaks, [])                    // no placeholder survived
+  assert.ok(files['iot-go/main.go'])
+}
+finally {
+  consumer.cleanup()
+}
+```
+
+`stageConsumer()` builds a real project on disk — real because
+`requirePath` does an actual Node `require` against
+`<project>/.sdk/dist/cmp/…`, so a package installed into an in-memory
+project can never be *run*. It links `@voxgig/sdkgen` and its peers into
+the staged `.sdk/node_modules`, so model includes and component requires
+resolve exactly as they would for a consumer who installed you.
+
+Everything it calls is the real thing: `addPackage` is `package add`,
+`add(kind, ref)` goes through the same dispatch table as the CLI, and
+`generateInto` is a real generation run. That is the point — a kit that
+reimplemented any of it would pass while the shipped path was broken.
+
+Two details worth knowing:
+
+- **`compile()` transpiles; it does not type-check.** Type-checking your
+  components is your build's job (`tsc --noEmit` over `src/cmp/**`), and
+  repeating it per staged consumer would add seconds to every test for an
+  answer you already have. It looks for `sucrase`, then `typescript`, and
+  names both if it finds neither — neither is a dependency of sdkgen,
+  which has none.
+- **`generateInto` runs from `.sdk`.** Components copy their template tree
+  with a CWD-relative path, because that is where a consumer runs
+  `generate`. The kit sets and restores the working directory for you; if
+  you call `generate()` yourself, use `consumer.inSdk(...)`.
+
+A worked example ships with sdkgen: `ts/test/fixture/acme-widgets/` is a
+complete package — a target, a feature with an overlay, and a docs item —
+and `ts/test/testkit.test.ts` is the suite over it.
+
 ## Publishing
 
 ```bash

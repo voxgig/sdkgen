@@ -14,7 +14,8 @@ depth.
 Voxgig SDK Generator (`@voxgig/sdkgen`) — generates idiomatic
 multi-language client SDKs (ts, js, go, py, php, rb, lua, csharp, java,
 kotlin, scala, swift, dart, rust, c, cpp, zig, perl, clojure, elixir, ocaml,
-haskell, plus go-cli and go-mcp) from an OpenAPI-derived model.
+plus go-cli and go-mcp) from an OpenAPI-derived model. `haskell` ships
+separately, in `packages/sdkgen-haskell`.
 
 ## Build & Test
 The npm package root is **`ts/`** — run npm commands there, or use the
@@ -100,11 +101,17 @@ component.* See [docs/explanation/components-and-templates](./docs/explanation/c
 - `each(...)` iterates in sorted-key order — output is byte-stable; don't rely on insertion order.
 - The `ts`/`js` targets are the reference implementation; keep other languages in parity.
 - Commit `ts/dist/` changes with the `ts/src/` change that produced them.
-- In components, get entities via `entityCollection(model)` — not
-  `getModelPath(...)`, which is quadratic here and active-filtered.
+- Two entity views, picked by the question you are asking. To decide WHAT TO
+  EMIT, use `getModelPath(model, \`main.${KIT}.entity\`)` — active-filtered,
+  which is what `active: false` exists for. To get the whole NAME-SPACE (class
+  names, type collisions), use `entityCollection(model)` — unfiltered and
+  memoised, because `EntityTypes` emits types for inactive entities too.
+  Never read the raw `model.main[KIT].entity` map. See AGENTS.md.
 - `entity.op` is optional: `entity.op || {}`, `entity.op?.load`.
 - `npm run build` also type-checks `ts/project/.sdk/src/cmp/**`
-  (`check-scaffold`); that tree is invisible to `tsc --build src test`. It then
+  (`check-scaffold`) and the fixture package's components
+  (`check-fixture`, `ts/test/fixture/**`); neither tree is visible to
+  `tsc --build src test`. It then
   `stage-scaffold`s a miniature consumer into `ts/dist-test-scaffold/` so
   `ts/test/generate.test.ts` can generate a small SDK for every target into
   memfs and assert on the output — the only suite that RUNS the per-language

@@ -7,6 +7,27 @@
     "node": ">=24"
   },
   "types": "dist/sdkgen.d.ts",
+  "_no_exports_comment": [
+    "THERE IS DELIBERATELY NO `exports` MAP, and adding one is not a tidy-up.",
+    "",
+    "`@voxgig/sdkgen/testkit` is served by the stub `testkit.js` beside this",
+    "file, resolved by ordinary CommonJS probing — the way subpath entry",
+    "points worked before `exports` existed.",
+    "",
+    "The obvious alternative, an `exports` map naming './testkit', REPLACES",
+    "the deep-import freedom a package has without one. Consumers depend on",
+    "that freedom in places nothing here would notice: every generated model",
+    "file includes '@voxgig/sdkgen/model/sdkgen.aontu', and the scaffold is",
+    "reached as '@voxgig/sdkgen/project/<lang>'.",
+    "",
+    "A './*' catch-all looks like it restores that, and does not: exports",
+    "resolution never falls back to CommonJS extension probing, so",
+    "require('@voxgig/sdkgen/dist/helpers/manifest') maps to an",
+    "extensionless path that does not exist and fails with MODULE_NOT_FOUND.",
+    "An array of probes ('./*', './*.js', ...) does not fix it either —",
+    "measured, not assumed. test/packaging.test.ts resolves the real",
+    "subpaths through a real node_modules to keep this honest."
+  ],
   "description": "Voxgig SDK Generator.",
   "homepage": "https://github.com/voxgig/voxgig-sdkgen",
   "keywords": [
@@ -26,7 +47,7 @@
     "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test dist-test/**/*.test.js",
     "golden": "npm run build && SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js",
     "watch": "tsc --build src test -w",
-    "build": "tsc --build src test && npm run check-scaffold && npm run stage-scaffold",
+    "build": "tsc --build src test && npm run check-scaffold && npm run check-fixture && npm run stage-scaffold",
     "clean": "rm -rf dist dist-test node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test",
     "embed-version": "node build/version.js",
@@ -40,6 +61,7 @@
     "repo-release": "npm run repo-publish && npm run repo-tag",
     "repo-release-dry": "npm run repo-publish-quick-dry && npm run repo-tag-dry",
     "check-scaffold": "tsc -p tsconfig.scaffold.json",
+    "check-fixture": "tsc -p tsconfig.fixture.json",
     "stage-scaffold": "node build/scaffold-stage.js && tsc -p tsconfig.scaffold-emit.json"
   },
   "license": "MIT",
@@ -49,6 +71,8 @@
     "model",
     "src",
     "dist",
+    "testkit.js",
+    "testkit.d.ts",
     "LICENSE"
   ],
   "devDependencies": {

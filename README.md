@@ -10,11 +10,13 @@ rest — each with the same operation pipeline, the same feature model,
 generated docs, and an offline test suite.
 
 ```
-OpenAPI spec ──▶ model ──┬─▶ 23 language SDKs
+OpenAPI spec ──▶ model ──┬─▶ 22 bundled language SDKs
                          │     ts  js  go  py  php  rb  lua  csharp  java
                          │     kotlin  scala  swift  dart  rust  c  cpp
-                         │     zig  perl  clojure  elixir  ocaml  haskell
-                         │     lean
+                         │     zig  perl  clojure  elixir  ocaml  lean
+                         │
+                         ├─▶ more from packages
+                         │     haskell (@voxgig/sdkgen-haskell)
                          │
                          └─▶ 4 consumer targets, each wrapping one of them
                                go-cli, go-mcp (go)   py-data (py)

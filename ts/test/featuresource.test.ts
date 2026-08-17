@@ -210,16 +210,17 @@ describe('target add feature trimming', () => {
 
     // Pinned, not muted: this is the remaining work, and a target joining
     // or leaving the list is a decision that should be reviewed.
-    //   clojure, haskell, lean, ocaml — every feature lives in ONE module
-    //           (features.clj / SdkFeatures.hs / SdkFeatures.lean /
-    //           sdk_features.ml); there is no per-feature file to leave out
-    //           until that module is generated from the model.
+    //   clojure, lean, ocaml — every feature lives in ONE module
+    //           (features.clj / SdkFeatures.lean / sdk_features.ml); there
+    //           is no per-feature file to leave out until that module is
+    //           generated from the model. (haskell was the fourth, until it
+    //           moved to @voxgig/sdkgen-haskell.)
     //   scala — the cross-feature tests live inside the single test entry
     //           point, sdktest/SdkTestMain.scala.
     //   zig   — root.zig @imports every feature module, and build.zig names
     //           test/feature_test.zig explicitly.
     deepStrictEqual(untrimmable,
-      ['clojure', 'haskell', 'lean', 'ocaml', 'scala', 'zig'],
+      ['clojure', 'lean', 'ocaml', 'scala', 'zig'],
       'the set of targets that cannot trim feature source changed')
   })
 

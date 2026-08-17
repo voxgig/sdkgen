@@ -29,6 +29,8 @@ import { test, describe } from 'node:test'
 import { ok, equal, deepStrictEqual } from 'node:assert'
 
 import { spawnSync } from 'node:child_process'
+import { mkdtempSync, mkdirSync, symlinkSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import Path from 'node:path'
 
 import Pkg from '../package.json'
@@ -113,6 +115,72 @@ describe('npm packaging', () => {
     deepStrictEqual(risky, [],
       'npm will not publish these names, whatever `files` says — emit the ' +
       'content from a component instead: ' + risky.join(', '))
+  })
+
+
+  // DEEP IMPORTS MUST KEEP RESOLVING — VERIFIED BY RESOLVING THEM.
+  //
+  // This package intentionally has no `exports` map: `@voxgig/sdkgen/testkit`
+  // is a stub file resolved by ordinary CommonJS probing. The reason is
+  // recorded in package.json, and it is worth restating where the test lives,
+  // because the mistake is so easy to make twice.
+  //
+  // A map naming `./testkit` REPLACES the deep-import freedom a package has
+  // without one, and consumers depend on that freedom where nothing here would
+  // notice: every generated model file includes
+  // `@voxgig/sdkgen/model/sdkgen.aontu`, and the scaffold is reached as
+  // `@voxgig/sdkgen/project/<lang>`. A `./*` catch-all looks like it restores
+  // that and does not — exports resolution never falls back to CommonJS
+  // extension probing, so `require('.../dist/helpers/manifest')` maps to an
+  // extensionless path that does not exist.
+  //
+  // THIS TEST RESOLVES FOR REAL, in a child process, through a real
+  // `node_modules` entry. An earlier version emulated the resolution rules in
+  // TypeScript and passed while extensionless requires were broken — which is
+  // exactly the failure mode a hand-written model of someone else's resolver
+  // has. Ask Node, like the pack test above asks npm.
+  test('every deep import consumers use still resolves', () => {
+    const dir = mkdtempSync(Path.join(tmpdir(), 'sdkgen-resolve-'))
+
+    try {
+      const scope = Path.join(dir, 'node_modules', '@voxgig')
+      mkdirSync(scope, { recursive: true })
+      symlinkSync(ROOT, Path.join(scope, 'sdkgen'), 'junction')
+
+      // Extensionless and directory forms are listed DELIBERATELY: they are
+      // the ones an `exports` map silently drops.
+      const subpaths = [
+        '@voxgig/sdkgen',
+        '@voxgig/sdkgen/testkit',
+        '@voxgig/sdkgen/package.json',
+        '@voxgig/sdkgen/model/sdkgen.aontu',
+        '@voxgig/sdkgen/project/.sdk/model/target/ts.aontu',
+        '@voxgig/sdkgen/bin/voxgig-sdkgen',
+        '@voxgig/sdkgen/dist/sdkgen.js',
+        '@voxgig/sdkgen/dist/sdkgen',
+        '@voxgig/sdkgen/dist/helpers/manifest',
+      ]
+
+      const script =
+        'const out = [];' +
+        'for (const p of ' + JSON.stringify(subpaths) + ') {' +
+        '  try { require.resolve(p) } catch (e) { out.push(p) }' +
+        '}' +
+        'process.stdout.write(JSON.stringify(out))'
+
+      const res = spawnSync(process.execPath, ['-e', script], {
+        cwd: dir, encoding: 'utf8',
+      })
+
+      equal(res.status, 0, 'resolution probe failed: ' + res.stderr)
+
+      deepStrictEqual(JSON.parse(res.stdout), [],
+        'these deep imports no longer resolve. If an `exports` map was ' +
+        'added, that is why — see the _no_exports_comment in package.json.')
+    }
+    finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 
 })

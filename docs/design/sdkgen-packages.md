@@ -1,11 +1,70 @@
 # Design: sdkgen packages — external targets, features, and other kinds
 
-Status: **proposal** (2026-08-14), **partly implemented** (2026-08-15).
-Landed so far: **§18.1** (live bugs + characterization goldens), **§18.2**
-(the kind registry), **§18.3** (provenance), **§18.4** (the manifest, then
-`package add` / `list` with their CLI plumbing) and **§18.5** (features
-from packages, external-target trim). Still proposal: **§18.6** and
-**§18.7**.
+Status: **proposal** (2026-08-14), **mostly implemented** (2026-08-17).
+
+Landed: **§18.1** (live bugs + characterization goldens), **§18.2** (the
+kind registry), **§18.3** (provenance), **§18.4** (the manifest, then
+`package add` / `list` with their CLI plumbing), **§18.5** (features from
+packages, external-target trim), **§18.6** (`package update`, doctor's new
+findings, the `docs` kind and its generation — §20.8 phase 1), and the
+first half of **§18.7** (`package check`, the docs sweep).
+
+All twelve **§16** live bugs are now closed: §16.12, deferred out of phase
+1 because it needed a per-target audit of language-literal versus
+target-name, landed with the `originName` split.
+
+Also landed, closing the first half of §18.7's ecosystem work:
+
+- **The fixture package** — `ts/test/fixture/acme-widgets/`, a hand-written
+  tree rather than a synthesized one (a target, a feature reaching two
+  targets by both fan-out branches, and a docs item), with its own
+  type-check lane (`check-fixture`) because `check-scaffold` covers the
+  shipped scaffold and nothing else.
+- **The test kit** — `@voxgig/sdkgen/testkit`: `stageConsumer()` builds a
+  consumer on REAL disk (memfs cannot run what it installed —
+  `requirePath` does a genuine Node require), `compile()` does what a
+  consumer's build does, `generateInto()` generates and scans for
+  placeholder leaks.
+
+Still open in **§18.7**:
+
+1. **The corpus package** (`@voxgig/sdkgen-corpus`). Until it exists,
+   FULL-tier parity is reachable only from inside voxgig's own repos, so
+   any migrated FULL-tier target is silently capped.
+**§17.8 is ANSWERED: `haskell` migrated first**, to
+`packages/sdkgen-haskell`. The checklist is
+[how-to/migrate-a-bundled-target](../how-to/migrate-a-bundled-target.md), and
+it is written from the move rather than from reading the code. Before the
+move, all five MIRRORED-tier candidates were shown to generate
+BYTE-IDENTICALLY from a package and from the bundled scaffold; doing it for
+real added three things the dry run could not:
+
+- **A migrated target inherits sdkgen's PEERS as its own.** Its components
+  import `@voxgig/apidef` and `@voxgig/struct` by name, which resolved
+  silently beside sdkgen's `node_modules` and stopped the moment it moved.
+  This is §11's scaffold-relative-utilities concern in a form nobody had
+  written down.
+- **It is a `git mv`, not a copy.** A surviving scaffold tree makes the
+  bundled `test` feature's fan-out treat it as an overlay over the
+  package's — a `feature-source-shadowed` warning for every consumer, and a
+  project holding both copies.
+- **The enumeration surface is bigger than §14 implies**, because a mature
+  target accumulates BEHAVIOURAL tests, not just membership in closed sets.
+  `haskell` had two, which moved to the package's suite with their rationale
+  intact. There is also no `target-index.aontu` in the bundled scaffold to
+  edit — that index is created per consumer project.
+
+`parity` and `targetsSupported` are declared in `helpers/manifest.ts`. The
+kit now reads `parity` for an EXTERNAL package (`manifestParity`), where
+the manifest is the only place a tier can live. For BUNDLED targets
+`ts/test/parity.test.ts` still owns the declaration, and should keep
+owning it until a migration actually needs the other direction — §18.4a's
+worry was two sources of truth, and adding a second reader before there is
+a second subject would create exactly that.
+
+Note also that §17.7 defers `package remove` on "needs `removeIndexEntries`".
+That function now exists (`action/action.ts`), so the stated blocker is
+gone and the question is scope, not mechanism.
 
 Deltas found while implementing `package add` / `list` (§18.4b):
 
@@ -1356,7 +1415,12 @@ top:
     literal, so `voxgig-sdkgen toString` passes the `null == actionFunc`
     guard (§9).
 12. **An aliased target reads its ORIGIN's config at generate time.**
-    *(Found during phase-1 review; NOT fixed in phase 1 — see below.)* Ten
+    *(Found during phase-1 review; deferred out of phase 1, FIXED 2026-08-17.
+    The audit below is what it took: the string these helpers take both keys
+    the config lookup and selects the output format, so the repair was to
+    separate those two roles once — config by the target's own name,
+    behaviour by `origname` — rather than to pass `target.name` everywhere,
+    which fixes the first role and breaks the second.)* Ten
     `cmp/go/*` components call `goModule(model, 'go')` with the target name
     hardcoded, while their neighbours correctly use `target.name`
     (`goVersion(model, target.name)`, `collectDeps(model, target.name, …)`).
@@ -1404,9 +1468,14 @@ top:
    concrete entries under it (§14).
 7. **`package remove` / `target remove` scope** — fast-follow once
    `removeIndexEntries` exists; needs its own blast-radius note.
-8. **Which bundled target migrates first?** The migration checklist
-   (§14) needs a first subject; a MIRRORED-tier target with few
-   scaffold-relative dependencies is the low-risk choice.
+8. **Which bundled target migrates first?** ANSWERED — `haskell`, to
+   `packages/sdkgen-haskell`, on the reasoning this question already
+   contained: MIRRORED tier (so it does not need the corpus package), few
+   scaffold-relative dependencies, and the joint-smallest generated output
+   of the candidates. See the status note at the top of this file for what
+   doing it taught, and
+   [how-to/migrate-a-bundled-target](../how-to/migrate-a-bundled-target.md)
+   for the checklist it produced.
 9. **A source digest, to tell "upstream moved" from "locally edited"?**
    §13 solves the ambiguity by owning the fetch ordering, which is enough
    for the supported path. Stamping a per-file digest of each source file
@@ -1418,6 +1487,10 @@ top:
 ---
 
 ## 18. Delivery phasing
+
+Phases 1–6 have landed, and phase 7 is half-landed; the status note at the
+top of this file carries the current line. The phases are kept as written
+because each one's SCOPE is what the deltas above are deltas from.
 
 1. **Live bugs & characterization** (no new user surface): the §16 list —
    alias repair, dry-run prune fix, fan-out replace map, Jsonic bypass,
@@ -1690,7 +1763,10 @@ the thing to design first, not last.
    schema, `docs add`, provenance, index, doctor and `package check`
    coverage, and the out-of-tree generalisation. Proven by a fixture docs
    package in `ts/test`, which is what an external author's package looks
-   like.
+   like. **LANDED** (2026-08-17): the mechanism, then generation. §20.7.1
+   (orphan pruning) is NOT covered by it and is tracked as issue #71 —
+   a docs item that emits a page per entity leaves a stale page behind when
+   an entity leaves the spec, and nothing prunes generated output.
 2. **docgen becomes a package** — `sdkgen-package.json` + `.sdk/`, with
    the static site rewritten as its first item (§20.5). A clean
    `package check` and a clean `doctor` immediately after

@@ -1,0 +1,10 @@
+# wfeat — this package's own feature, for this package's own target.
+#
+# Reached through the TARGET'S OWN TREE rather than through an overlay,
+# because the same package ships both. `action/feature.ts` computes the
+# overlay path as `<source>/tm/<origname>`; when that equals the target's own
+# tm folder there is no overlay and the walk falls back to this file.
+
+feature wfeat
+hook PostConstruct
+label ProjectName

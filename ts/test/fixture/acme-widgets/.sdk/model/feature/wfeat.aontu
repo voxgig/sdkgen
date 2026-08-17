@@ -1,0 +1,37 @@
+# The fixture package's own feature.
+#
+# It reaches TWO targets by two different routes, which is the point:
+#
+#   ts     — through an OVERLAY (`.sdk/tm/ts/src/feature/wfeat/`), because
+#            the bundled `ts` target's own tree knows nothing about this
+#            feature and must not be edited to learn.
+#   wtest  — through the target's OWN tree (`.sdk/tm/wtest/feature/wfeat.wt`),
+#            because this package ships that target too.
+#
+# `action/feature.ts` takes a different branch for each. A fixture that
+# exercised only one would leave the other unproven.
+
+main: kit: feature: wfeat: {
+
+  name: key()
+  title: "Widget annotation — the fixture package's own feature"
+  version: '1.0.0'
+  active: true
+  base: 'BASE'
+
+  config: {
+    # Off by default, like every optional shipped feature. A consumer turns
+    # it on with options.feature.wfeat.active = true.
+    options: {
+      active: false
+      label: 'widget'
+    }
+  }
+
+  # One hook, so the feature is not inert: a feature declaring no hooks and
+  # wrapping no transport cannot be observed in generated output at all,
+  # which would make "did the fan-out reach this target?" untestable.
+  hook: {
+    PostConstruct: { active: true }
+  }
+}

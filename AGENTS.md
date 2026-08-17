@@ -488,12 +488,33 @@ emitted broken source reached the fleet unchallenged.
   `ts/dist-test-scaffold/` (a miniature consumer: compiled components under
   `.sdk/dist/cmp/`, plus copies of `.sdk/src` and `.sdk/model`) so
   `test/generate.test.ts` can run the components for real — see below.
-- **Resolve the entity collection with `entityCollection(model)`**, never
-  `getModelPath(model, \`main.${KIT}.entity\`)` in a component. getModelPath
-  rebuilds its container on every call when filtering, which defeats the
-  class-name memo (quadratic: ~15s at 500 entities x 22 targets) and hands you
-  an ACTIVE-filtered view that cannot see the inactive entities whose data
-  types EntityTypes still emits.
+- **Two entity views, two different questions. Pick by the question.**
+  - *"Which entities do I EMIT for?"* — `getModelPath(model,
+    \`main.${KIT}.entity\`)`, which is ACTIVE-filtered by default. Every
+    `Main_<lang>` and every `Test_<lang>` iterates this. Reading the raw
+    `model.main[KIT].entity` map instead is a defect: sixteen `Test_<lang>`
+    components did, and generated a full test suite for entities the SDK
+    deliberately excluded (`active: false`, which is how a consumer scopes a
+    70-entity spec down to one).
+  - *"What is the whole name-space of entities?"* — `entityCollection(model)`,
+    which is deliberately UNFILTERED and memoised. Class-name assignment and
+    type-collision work need it: `EntityTypes_<lang>` emits data types with
+    `only_active: false`, so a name assigned against a filtered view cannot
+    see the inactive entities it must avoid colliding with. Calling
+    getModelPath for THIS is also quadratic — it rebuilds its container on
+    every call when filtering, defeating the memo (~15s at 500 entities x 22
+    targets).
+
+  The two are not interchangeable and neither is "the right one". Using the
+  unfiltered collection to decide what to emit ships excluded entities; using
+  the filtered one to assign class names produces collisions.
+- **`ts/test/fixture/**` has its OWN compile lane.** `check-scaffold` covers
+  `ts/project/.sdk/src/cmp/**` and nothing else, so the fixture PACKAGE's
+  components — which are what an external author's components look like — had
+  no type-check at all. `npm run build` now also runs `check-fixture`
+  (`tsconfig.fixture.json`); keep it, or a broken fixture component fails deep
+  inside a generation run as a require error naming a path instead of a type
+  error naming a line.
 - **`Name` is derived lazily.** Do not assume a component ran before you.
   `entityClassName` / `entityTypeCollisions` derive it themselves; if you add
   a helper that reads `e.Name`, call `deriveEntityNames()` first — and never
@@ -581,9 +602,9 @@ emitted broken source reached the fleet unchallenged.
   (`"paging"` in a context type, `"proxy"` in a fetcher), so widening the
   `featuresource.test.ts` guard to quoted names produces ~25 hits of which
   one is real. Declare it in `fullset` instead; a target that cannot be trimmed at all says
-  `feature: { trim: false }` (currently `clojure`, `haskell`, `lean`,
-  `ocaml`, `scala`, `zig` — see their model files for what has to change
-  first). Aggregate indexes must be GENERATED, not templated: that is why
+  `feature: { trim: false }` (currently `clojure`, `lean`, `ocaml`,
+  `scala`, `zig` bundled, plus `haskell` in its own package — see their
+  model files for what has to change first). Aggregate indexes must be GENERATED, not templated: that is why
   `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
   must not live in the file that gets dropped — go and csharp keep it in
   `feature_harness_test.go` / `FeatureHarness.cs` for exactly that reason.
@@ -637,8 +658,13 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       tm/<lang>/       per-language TEMPLATES
 ```
 
-SDK targets (23): `ts js go py php rb lua csharp java kotlin scala swift dart
-rust c cpp zig perl clojure elixir ocaml haskell lean`.
+SDK targets, BUNDLED (22): `ts js go py php rb lua csharp java kotlin scala
+swift dart rust c cpp zig perl clojure elixir ocaml lean`.
+
+SDK targets, PACKAGED (1): `haskell`, in `packages/sdkgen-haskell` — the
+first migration out of the scaffold. It is NOT in any of this repo's closed
+guard sets and has its own suite; see
+[docs/how-to/migrate-a-bundled-target](./docs/how-to/migrate-a-bundled-target.md).
 
 CONSUMER targets (4): `go-cli go-mcp` (wrap `go`), `py-data` (wraps `py`),
 `seneca-provider` (wraps `ts`). Each switches every standard generation phase

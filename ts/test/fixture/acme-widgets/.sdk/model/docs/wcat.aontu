@@ -1,0 +1,19 @@
+# The fixture package's docs item — the third kind.
+#
+# See §20 of docs/design/sdkgen-packages.md. A docs item installs the same
+# three things a target does (a definition, components, optionally
+# templates) and emits a tree derived from the model; what differs is that
+# its destination is a documentation system rather than a language.
+#
+# `output.path` is left unset, so this item generates IN TREE at
+# `<sdk-repo>/wcat/`. The design argues out-of-tree is the normal case for
+# real docs items (§20.7.3 — a site's own README collides with the SDK
+# repo's); in-tree is used here because it keeps the fixture's assertions
+# about generated paths in one volume.
+
+main: kit: docs: wcat: {
+  name: key()
+  title: 'Widget Catalogue'
+  active: true
+  base: 'BASE'
+}

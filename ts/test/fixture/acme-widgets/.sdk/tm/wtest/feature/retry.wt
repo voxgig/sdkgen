@@ -1,0 +1,10 @@
+# retry — a BUNDLED feature, implemented by this package for its own target.
+#
+# This is what a real language package does: it implements the standard
+# feature set rather than redefining it. It is also what makes the consumer
+# side trim catalogue testable — for a consumer that does not select `retry`,
+# `target add wtest` must remove this file; for one that does, it must
+# survive; and doctor must stay clean either way.
+
+feature retry
+backoff exponential

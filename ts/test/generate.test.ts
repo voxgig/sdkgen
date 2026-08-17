@@ -480,7 +480,6 @@ describe('generate', () => {
     ['clojure', /src\/sdk\/config\.clj$/, /def \^:private config-data/, /formatCljValue|vs\/jm/],
     ['ocaml', /sdk_config\.ml$/, /let config_data = "/, /^\s*\(jo \[/m],
     ['csharp', /core\/Config\.cs$/, /private const string ConfigData = "/, /^\s*return new Dictionary<string, object\?>$/m],
-    ['haskell', /src\/SdkConfig\.hs$/, /^configData = "/m, /buildCV \(CVMap \[/],
   ]
 
   for (const [target, file, dataMark, litMark] of L1_DATA) {
@@ -522,45 +521,6 @@ describe('generate', () => {
       ok(litMark.test(src), target + ': literal branch not emitted')
       ok(!dataMark.test(src), target + ': literal path emitted data as well')
     })
-  }
-
-
-  // The generated .cabal must DECLARE every module it ships.
-  //
-  // `make test` drives ghc directly with `-isrc`, so it compiles whatever is
-  // on disk and never notices an undeclared module — but `cabal build` needs
-  // the declaration and `cabal sdist` does not reliably package a module the
-  // library does not list. Promoting the JSON reader to `src/SdkJson.hs` for
-  // the data path added a module and left it undeclared: `make test` stayed
-  // green while a published data-path SDK could not compile its own
-  // `SdkConfig` import.
-  //
-  // Checked on BOTH representations, because the data branch is what pulls
-  // SdkJson in, and generically rather than by name, so the next promoted
-  // module cannot repeat this.
-  for (const repr of ['literal', 'data']) {
-    test('haskell: the cabal library declares every src module (' + repr + ')',
-      async () => {
-        const out = await generate(['haskell'], undefined,
-          "main: kit: config: repr: '" + repr + "'")
-        const files = filesFor(out, 'haskell')
-
-        const cabal = files.find(([n]) => /\.cabal$/.test(String(n)))
-        ok(cabal, 'haskell: no .cabal generated')
-        const declared = String(cabal![1])
-
-        const mods = files
-          .map(([n]) => String(n).match(/\/src\/([^/]+)\.hs$/))
-          .filter(Boolean)
-          .map((m) => (m as RegExpMatchArray)[1])
-        ok(0 < mods.length, 'haskell: no src modules in the generated output')
-
-        for (const mod of mods) {
-          ok(new RegExp('\\b' + mod + '\\b').test(declared),
-            'haskell/' + repr + ': src/' + mod + '.hs is not declared in the ' +
-            '.cabal, so cabal build/sdist would not package it')
-        }
-      })
   }
 
 
@@ -1040,7 +1000,7 @@ describe('generate', () => {
 
   test('a declared version reaches every manifest', async () => {
     const TARGETS = [
-      'csharp', 'dart', 'elixir', 'haskell', 'java', 'js', 'kotlin', 'lean',
+      'csharp', 'dart', 'elixir', 'java', 'js', 'kotlin', 'lean',
       'lua', 'ocaml', 'py', 'rb', 'rust', 'ts', 'zig',
     ]
     const declared = TARGETS
@@ -1052,7 +1012,7 @@ describe('generate', () => {
     // The manifest each ecosystem actually publishes from.
     const MANIFEST: Record<string, string> = {
       csharp: 'DemoSDK.csproj', dart: 'pubspec.yaml', elixir: 'mix.exs',
-      haskell: 'voxgig-demo-sdk.cabal', java: 'pom.xml', js: 'package.json',
+      java: 'pom.xml', js: 'package.json',
       kotlin: 'build.gradle.kts', lean: 'lakefile.toml', lua: 'demo.rockspec',
       ocaml: 'voxgig-demo-sdk.opam', py: 'pyproject.toml', rb: 'Demo_sdk.gemspec',
       rust: 'Cargo.toml', ts: 'package.json', zig: 'build.zig.zon',

@@ -159,7 +159,7 @@ describe('feature-language-parity', () => {
     rb: (n) => Path.join('rb', 'feature', n + '_feature.rb'),
     lua: (n) => Path.join('lua', 'feature', n + '_feature.lua'),
     // Added language targets. Per-feature source files; naming follows each
-    // language's convention (clojure/ocaml/haskell/lean keep all features in
+    // language's convention (clojure/ocaml/lean keep all features in
     // a single module — lean's is src/SdkFeatures.lean — so they are covered
     // by the copy-dir + model checks below rather than a per-feature file).
     csharp: (n) => Path.join('csharp', 'feature', cap(n) + 'Feature.cs'),
@@ -182,7 +182,7 @@ describe('feature-language-parity', () => {
   const SDK_TARGETS = [
     'ts', 'js', 'go', 'py', 'php', 'rb', 'lua',
     'csharp', 'java', 'kotlin', 'scala', 'swift', 'dart', 'rust', 'c', 'cpp',
-    'zig', 'perl', 'clojure', 'elixir', 'ocaml', 'haskell', 'lean',
+    'zig', 'perl', 'clojure', 'elixir', 'ocaml', 'lean',
   ]
 
   // Targets that CONSUME another target's SDK rather than being one

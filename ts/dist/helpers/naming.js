@@ -24,9 +24,12 @@ exports.exampleVarName = exampleVarName;
 exports.phpEntityAccessor = phpEntityAccessor;
 exports.entityCacheField = entityCacheField;
 exports.isRbCoreConstant = isRbCoreConstant;
+exports.isRbSdkConstant = isRbSdkConstant;
 exports.rbSafeTypeName = rbSafeTypeName;
 exports.isSwiftSdkType = isSwiftSdkType;
 exports.swiftSafeTypeName = swiftSafeTypeName;
+exports.isPhpReservedType = isPhpReservedType;
+exports.phpSafeTypeName = phpSafeTypeName;
 exports.jsProp = jsProp;
 exports.jsOptProp = jsOptProp;
 exports.jsKey = jsKey;
@@ -114,17 +117,63 @@ const RB_CORE_CONSTANTS = new Set([
 function isRbCoreConstant(Name) {
     return RB_CORE_CONSTANTS.has(Name);
 }
+// RUBY SDK-OWNED CONSTANTS — the OTHER half of "already taken".
+//
+// `RB_CORE_CONSTANTS` guards names the LANGUAGE owns. This guards names the
+// GENERATED SCAFFOLDING claims for itself, which is a distinct hazard and the
+// one that stayed open: an entity named `Runner` produced `class Runner` in
+// `<Sdk>_types.rb`, and the generated harness then does
+//
+//   Runner = ProjectNameTestRunner        # tm/rb/test/runner.rb
+//
+// so inside the test process the entity TYPE silently *is* the test runner.
+// Ruby warns (`already initialized constant Runner`) and carries on, which is
+// why it survived: nothing in the suite exercises the type, so `rb` passed.
+// Reported on gitlab-sdk, which has a `Runner` entity (issue #64).
+//
+// EVERYTHING SHARES ONE NAMESPACE HERE, unlike swift. Swift's Tests module is
+// separate from the SDK module, so `SWIFT_SDK_TYPES` can exclude test-only
+// declarations. Ruby has no such split — the types file and the test files are
+// all required into one process when the suite runs, which is exactly the
+// reported symptom — so test-declared names belong in this set.
+//
+// PREFIXED DECLARATIONS ARE DELIBERATELY ABSENT. `ProjectNameUtility` and
+// friends substitute to `<Sdk>Utility`, and a generated entity type is the
+// bare entity name, so those cannot collide. Only the UNPREFIXED declarations
+// are reachable.
+//
+// `rb-sdk-constants.test.ts` re-derives this list from the templates AND the
+// components and fails on drift — the same discipline as
+// `swift-sdk-types.test.ts`, and for the same reason: the first cut of that
+// list was collected by hand and missed three names, one of them declared by
+// a component rather than a template.
+const RB_SDK_CONSTANTS = new Set([
+    // module-level aliases the test harness defines for convenience
+    'Helpers', 'Runner', 'Vs',
+    // vendored struct library and its test scaffolding
+    'StructRunner', 'StructTestClient', 'StructUtilityTest', 'VoxgigStruct',
+    'STRUCT_TEST_JSON_FILE',
+    // the generated/templated test classes
+    'ExistsTest', 'FeatureTest', 'NetsimTest', 'PipelineTest',
+    'PrimaryUtilityTest', 'ReadmeExamplesTest', 'TestHookFeature',
+    'TestInitFeature',
+]);
+// Does `Name` collide with a constant the generated Ruby SDK already declares?
+function isRbSdkConstant(Name) {
+    return RB_SDK_CONSTANTS.has(Name);
+}
 // A top-level-safe Ruby constant name for a generated type: the name
-// unchanged, unless Ruby core already owns it, in which case `Type` is
-// appended (`File` -> `FileType`). Applied ONLY to the bare entity data type
-// — the per-op type names always carry a suffix (`FileCreateData`,
-// `FileLoadMatch`), which no core constant matches.
+// unchanged, unless it is ALREADY TAKEN — by Ruby core, or by the SDK's own
+// scaffolding — in which case `Type` is appended (`File` -> `FileType`,
+// `Runner` -> `RunnerType`). Applied ONLY to the bare entity data type: the
+// per-op type names always carry a suffix (`FileCreateData`,
+// `FileLoadMatch`), which nothing in either set matches.
 //
 // The entity ACCESSOR keeps its original name (`client.File(...)`): methods
 // and constants live in separate namespaces in Ruby, so the accessor never
 // collided and the public surface is unchanged.
 function rbSafeTypeName(Name) {
-    return isRbCoreConstant(Name) ? Name + 'Type' : Name;
+    return isRbCoreConstant(Name) || isRbSdkConstant(Name) ? Name + 'Type' : Name;
 }
 // Swift SDK-OWNED TYPE NAMES — a third hazard, distinct from both sets above.
 //
@@ -188,6 +237,71 @@ function isSwiftSdkType(Name) {
 // CLASS is separately suffixed (`ResponseEntity`), so neither ever collided.
 function swiftSafeTypeName(Name) {
     return isSwiftSdkType(Name) ? Name + 'Type' : Name;
+}
+// PHP RESERVED WORDS THAT CANNOT BE A CLASS NAME — a fourth hazard, and the
+// only one of the four where the check must be CASE-INSENSITIVE.
+//
+// PHP's grammar refuses a reserved word where a class name is expected, so a
+// spec with a `Namespace` entity emitted a file that does not parse at all:
+//
+//   /** Namespace entity data model. */
+//   class Namespace
+//   {
+//   }
+//   -> PHP Parse error: syntax error, unexpected token "namespace",
+//                       expecting identifier
+//
+// Found on gitlab-sdk (issue #64), and LATENT in the worst way: `types/` is on
+// the composer classmap but nothing references the file, so PHP never loads it
+// and the php lane passed for as long as the target has existed. It would
+// fatal the moment anything required it, and the documented type is unusable
+// either way.
+//
+// CASE-INSENSITIVITY IS THE WHOLE TRICK. Class and function names in PHP are
+// case-insensitive, so `Namespace`, `NAMESPACE` and `namespace` are one
+// identifier — and the generated name is PascalCase while the reserved word is
+// lowercase. A case-sensitive `Set.has('Namespace')` against a lowercase list
+// therefore matches NOTHING and reopens the bug silently. Entries are stored
+// folded, and the lookup folds too.
+//
+// Taken from the PHP manual's reserved-words tables wholesale rather than
+// grown one collision at a time: the list is fixed by the language, and
+// picking from it by hand is how the second `Namespace` gets shipped.
+const PHP_RESERVED_TYPES = new Set([
+    // keywords
+    'abstract', 'and', 'array', 'as', 'break', 'callable', 'case', 'catch',
+    'class', 'clone', 'const', 'continue', 'declare', 'default', 'do', 'echo',
+    'else', 'elseif', 'empty', 'enddeclare', 'endfor', 'endforeach', 'endif',
+    'endswitch', 'endwhile', 'enum', 'eval', 'exit', 'extends', 'final',
+    'finally', 'fn', 'for', 'foreach', 'function', 'global', 'goto', 'if',
+    'implements', 'include', 'include_once', 'instanceof', 'insteadof',
+    'interface', 'isset', 'list', 'match', 'namespace', 'new', 'or', 'print',
+    'private', 'protected', 'public', 'readonly', 'require', 'require_once',
+    'return', 'static', 'switch', 'throw', 'trait', 'try', 'unset', 'use',
+    'var', 'while', 'xor', 'yield',
+    // compile-time constants
+    '__class__', '__dir__', '__file__', '__function__', '__line__',
+    '__method__', '__namespace__', '__trait__',
+    // reserved as type names / cannot be declared as a class
+    'bool', 'false', 'float', 'int', 'iterable', 'mixed', 'never', 'null',
+    'numeric', 'object', 'parent', 'resource', 'self', 'string', 'true', 'void',
+]);
+// Does `Name` collide with a word PHP reserves, ignoring case as PHP does?
+function isPhpReservedType(Name) {
+    return PHP_RESERVED_TYPES.has(String(Name).toLowerCase());
+}
+// A declarable PHP class name for a generated type: unchanged, unless PHP
+// reserves the word, in which case `Type` is appended (`Namespace` ->
+// `NamespaceType`). Mirrors rbSafeTypeName and swiftSafeTypeName deliberately
+// — same suffix, same "only rename on an actual collision" rule, so every SDK
+// that does not collide is byte-identical to before.
+//
+// Applied ONLY to the bare entity data class. Per-op type names already carry
+// their own suffix (`NamespaceLoadData`, `NamespaceCreateData`), which no
+// reserved word matches, and the entity ACCESSOR is a method rather than a
+// class — PHP resolves those separately — so the public surface is unchanged.
+function phpSafeTypeName(Name) {
+    return isPhpReservedType(Name) ? Name + 'Type' : Name;
 }
 // Is `name` a reserved word (an illegal identifier) in the target language?
 function isReservedName(name, lang) {

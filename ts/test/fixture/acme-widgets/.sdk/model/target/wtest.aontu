@@ -1,0 +1,56 @@
+# The fixture package's language target.
+#
+# Deliberately the SMALLEST thing that is still a real target: it declares
+# only what the base schema requires of one, so that a schema change which
+# would break a third-party target breaks this file too.
+#
+# The provenance anchor below is what `target add` rewrites to the source the
+# item was installed from.
+#
+# NOTE FOR ANYONE COPYING THIS FILE: do not write the anchor's literal text
+# into a comment. The replace map is a plain substitution over the whole file,
+# so a comment quoting it gets rewritten too — and the result is a model file
+# that no longer parses. Found writing this fixture.
+
+main: kit: target: wtest: {
+
+  title: 'Widget Script'
+  ext: wt
+  comment: line: "#"
+  module: name: '$$name$$'
+  base: 'BASE'
+
+  # Feature source lives in the template tree under `feature/`, discovered by
+  # the walk rather than declared here (helpers/featureSource).
+  srcfeature: false
+
+  # Only the phases this target actually implements. `readme` and
+  # `agentguide` are off because there is no `Readme_wtest` / `AgentGuide_wtest`
+  # to dispatch to — a target that leaves them on gets a tolerated
+  # `require-missing` warning per generation, which is the right behaviour for
+  # a target still being written and the wrong thing for a fixture to model.
+  phase: {
+    readme:     { active: false }
+    agentguide: { active: false }
+  }
+
+  deps: &: {
+    kind: *'prod' | string
+  }
+
+  deps: {}
+}
+
+
+main: kit: feature: &: target: wtest: deps: &: {
+  kind: *'prod' | string
+}
+
+
+# Trimmable: every feature is one self-contained file in `feature/`, and
+# nothing else references it, so dropping the files a project did not select
+# leaves a tree that still works.
+main: kit: target: wtest: feature: {
+  trim: true
+  fullset: []
+}

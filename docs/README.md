@@ -28,6 +28,7 @@ that matches what you are trying to do right now:
 - [Add a feature](./how-to/add-a-feature.md)
 - [Use an sdkgen package](./how-to/use-an-sdkgen-package.md)
 - [Author an sdkgen package](./how-to/author-an-sdkgen-package.md)
+- [Migrate a bundled target into a package](./how-to/migrate-a-bundled-target.md)
 - [Simulate network conditions in offline tests](./how-to/simulate-network.md)
 - [Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md)
 - [Author a brand-new language target](./how-to/author-a-new-language.md)
@@ -56,7 +57,12 @@ that matches what you are trying to do right now:
   target; `py-data` now ships.
 - [sdkgen packages](./design/sdkgen-packages.md) — externally-defined
   targets, features and other kinds, added from a local folder, a git
-  checkout, or an npm package installed in `.sdk/`. Proposal.
+  checkout, or an npm package installed in `.sdk/`. Mostly implemented;
+  the status note at the top of the file carries the current line.
+- [Feature tags](./design/feature-tags.md) — declaring which targets a
+  feature can actually apply to, so `feature-source-missing` means "this
+  is a mistake" rather than "this target was never going to take it".
+  Proposal.
 - [voxgig/station](./design/voxgig-station.md) — the runtime companion:
   generated SDKs register as plugins with a per-language station
   library, giving one control surface for outbound integrations —
