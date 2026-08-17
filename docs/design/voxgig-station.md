@@ -194,11 +194,16 @@ secrets.
 
 `open()` is **non-blocking** in every language (JS cannot do
 synchronous network I/O, so no language gets to depend on it): probe
-and registration run in the background; operations that need only
-library-resolved secrets proceed immediately in the meantime; the
-first operation that needs a proxy-issued grant awaits registration
-with a bounded timeout and then fails per §14. The `degrade`
-conformance-corpus section pins these transitions.
+and registration run in the background. Under `auto`, operations that
+need only library-resolved secrets proceed immediately in the
+meantime; the first operation that needs a proxy-issued grant awaits
+registration with a bounded timeout and then fails per §14. Under
+`require`, fail-closed means *traffic*, not just construction: every
+operation — whatever its secret provider — awaits successful
+attachment with the same bounded timeout, so no request leaves the
+process unproxied while the probe is pending; timeout or refusal is
+`station_no_proxy`. The `degrade` conformance-corpus section pins
+these transitions.
 
 ### 2.2 Support tiers
 
@@ -280,12 +285,19 @@ at construction in each), because one shape does not fit 20 languages:
   activates the station feature with explicit ordering (§3.3), plants
   the placeholder, returns the client.
 - **Inverted binding** — where it is not (go, java, csharp, swift,
-  c, zig): the app constructs the SDK its normal way and hands it the
-  station — `solardemo.New(station.With(st))` in go, builder-style
-  `.station(st)` in java/csharp. The generated feature reads the
+  c, zig): the app constructs the SDK through its **existing
+  generated constructor** and hands it station-built options —
+  `solardemo.NewSolardemoSDK(st.Options())` in go, `new
+  SolardemoSDK(st.options())` in java — where `Options()` is the
+  station library merging the handle, the activation entry, and the
+  §3.3 feature order into the plain options map every generated
+  constructor already accepts. The generated feature reads the
   handle from its feature options and performs the same registration
   and placement during construction. This is the *primary* binding
-  form for static languages, not a fallback.
+  form for static languages, not a fallback. (Sweeter per-language
+  sugar — functional options in go, a builder in java — would be
+  generator changes to the SDK targets themselves; deliberately not
+  required for v1.)
 - **`station.adopt(SDK, opts?)`** — the retrofit path for projects
   whose generated SDK predates the station feature. This is
   **construction-time sugar, not post-hoc attachment**: the first
@@ -297,11 +309,21 @@ at construction in each), because one shape does not fit 20 languages:
   `adopt(SDK, opts)` therefore constructs the client itself with
   `extend: [station.adapterFeature()]` plus the activation entry and
   `__after__: 'test'` positioning, using the library's carried copy of
-  the adapter. There is no supported late-attach of a live client in
-  v1; a public `client.extend(feature)` runtime seam is noted in §9 as
-  a possible future sdkgen change. In the five targets with no
-  `extend` seam at all (c, zig, haskell, ocaml, lean), regeneration
-  with the feature is the only retrofit.
+  the adapter. One core prerequisite makes this work: today the
+  constructor's featureorder loop would see the activation entry and
+  call `Config.makeFeature('station')` — which fails in an SDK whose
+  generated `FEATURE_CLASS` has no station — *before* `extend` is
+  processed. The generated constructor therefore learns to skip a
+  featureorder name with no registered class when an extend-supplied
+  instance carries that name (§9.3). The tolerance ships in the base
+  templates, so `adopt()` works on any SDK regenerated after it
+  lands, with or without the station feature installed; for SDKs
+  older than that, regeneration is the retrofit. There is no
+  supported late-attach of a live client in v1; a public
+  `client.extend(feature)` runtime seam is noted in §9 as a possible
+  future sdkgen change. In the five targets with no `extend` seam at
+  all (c, zig, haskell, ocaml, lean), regeneration with the feature
+  is the only retrofit either way.
 
 If `adopt()` finds a real credential already resident in the options,
 it hoists the value into the broker, overwrites `options.apikey` with
@@ -339,8 +361,14 @@ config-constructed features (`makeFeature` builds instances without
 `_options`). So the mechanism is explicit:
 
 - `connect()`/`adopt()` pass the **ordered-array feature form** that
-  `makeOptions` already supports, placing `station` immediately after
-  `test`;
+  `makeOptions` already supports — built from the *complete merged*
+  feature set (the generated config's active features plus the
+  caller's), with `station` placed immediately after `test`. A
+  partial `[test, station]` array would do the opposite of its
+  intent: `makeOptions` derives `featureorder` from the array names
+  alone, so config-activated features (`log` is active by default)
+  would silently drop out of init. The library computes the full
+  order; it never hands `makeOptions` a subset;
 - for the plain map-form activation (inverted binding, hand-written
   options), the generated `makeOptions` gains a station special case
   mirroring test's — a required sdkgen change listed in §9.3;
@@ -669,11 +697,18 @@ threat model (§15) names prompt injection through that channel
 explicitly — the MCP server labels tool results as external data and
 never embeds instructions in them.
 
-Secrets are structurally invisible on this surface: there is no tool
-whose output contains a value, so an agent given full station access
-can operate every integration without ever being *able* to read a
-credential — the §5 caveats about in-process code do not apply to an
-agent on the MCP side of the proxy.
+Secrets are structurally invisible on this surface — with one caveat
+handled rather than hand-waved: no tool *emits* a value by design,
+but an upstream can echo an injected credential back (a 401
+diagnostic, a token exchange), and `station_call`'s live result is
+not the capture store, so capture-time redaction alone would not
+cover it. Tool responses therefore pass the same credential-aware
+scrub as captures — redact-list headers plus any body substring
+equal to an injected credential — before entering the agent's
+context. With that in place, an agent given full station access can
+operate every integration without being *able* to read a credential
+— the §5 caveats about in-process code do not apply on the MCP side
+of the proxy.
 
 
 ## 8. The wire protocol and the proxy
@@ -728,10 +763,14 @@ Data:
 - `POST /v1/forward` — an explicit request **envelope**: `{ url,
   method, headers, body }` plus `Station-Session` /
   `Station-Plugin` / `Station-Corr` headers. The proxy applies
-  policy, injects credentials (R2), sends upstream, captures, and
-  returns `{ status, headers, body }`. Streaming responses pass
-  through chunked; request bodies are buffered in v1 with a size
-  limit (below); streaming uploads are an open question (§18).
+  policy, injects credentials (R2), sends upstream, and captures.
+  The response is deliberately *not* a JSON wrapper — a JSON `body`
+  field can neither stream nor carry binary without escaping — so
+  the upstream status and headers ride back as response metadata
+  (`Station-Status`; `Station-Headers`, base64-encoded JSON) and the
+  raw upstream body is the response body itself, passed through
+  chunked and binary-safe. Request bodies are buffered in v1 with a
+  size limit (below); streaming uploads are an open question (§18).
 
 A transparent HTTP forward proxy (the existing `proxy` feature's
 `fetchdef.proxy` seam) was considered and **rejected** for the data
@@ -758,11 +797,16 @@ attacker's host.
 So, as policy: for proxy-held refs (`keychain:`/`vault:`/`proxy:`),
 the plugin→ref mapping and the `hosts` egress allowlist come from
 **proxy-side configuration** — the proxy loads `station.json`
-profiles itself, or pins the first-seen descriptor and requires
-explicit approval (`voxgig-station approve <plugin>`) for any change
-to `base`, `hosts`, or the ref. A registered descriptor can only
-*narrow* what proxy-side policy allows, never widen it, and never
-selects which secret is injected. Library-resolved refs (`env:`,
+profiles itself. Where no proxy-side profile covers a plugin, there
+is no first-seen shortcut (trusting the first registration would
+just move the race to whoever registers the slug first): the plugin
+parks in a **pending** state — registered, visible in `status`,
+capture and library-resolved traffic working — but proxy-held secret
+injection and its hosts default stay unusable until `voxgig-station
+approve <plugin>` explicitly blesses the base/hosts/ref triple, and
+any later change to that triple re-enters pending. A registered
+descriptor can only *narrow* what approved proxy-side policy allows,
+never widen it, and never selects which secret is injected. Library-resolved refs (`env:`,
 `file:`) don't route secrets through the proxy, so registration for
 them is lower-stakes — capture and policy still apply.
 
@@ -851,10 +895,14 @@ generator-side half:
    couples to `package add`. (Their tier-C solo-only scope keeps that
    vendored surface small.)
 3. **Three additive `configDefinition()` fields** (§4:
-   `main.version`, `main.target`, `main.slug`) and **one ordering
-   change**: the generated `makeOptions` gains a station featureorder
-   special case mirroring test's, so map-form activation gets the
-   §3.3 placement without the ordered-array form.
+   `main.version`, `main.target`, `main.slug`) and **two
+   base-template changes**: the generated `makeOptions` gains a
+   station featureorder special case mirroring test's (inserting
+   station after test in the *merged* order, so map-form activation
+   gets the §3.3 placement without the ordered-array form), and the
+   constructor's featureorder loop learns to skip a name with no
+   registered feature class when an `extend`-supplied instance
+   carries it — the `adopt()` prerequisite (§3.1).
 4. **README, agent-guide, and repo docs.** A `ReadmeStation` section
    (composed by `Readme.ts`, gated on the feature) documenting the
    binding forms, refs, and the proxy quickstart; a station paragraph
@@ -981,7 +1029,7 @@ demo. The same two lines in the first-wave languages:
 
 ```go
 st := station.Open()                                  // go
-solar := solardemo.New(station.With(st))
+solar := solardemo.NewSolardemoSDK(st.Options())
 ```
 ```py
 station = Station.open()                              # py
@@ -989,11 +1037,12 @@ solar = station.connect(SolardemoSDK)
 ```
 ```java
 var st = Station.open();                              // java
-var solar = new SolardemoSDK.Builder().station(st).build();
+var solar = new SolardemoSDK(st.options());
 ```
 
-Inverted binding (§3.1) is what keeps these idiomatic; the isolation
-guarantees are identical in all forms.
+Inverted binding (§3.1) keeps these on the constructors the SDKs
+already generate — no new SDK API is required for the quickstart —
+and the isolation guarantees are identical in all forms.
 
 **Add the proxy when you want eyes:**
 
@@ -1032,9 +1081,13 @@ selects. This is where the ecosystem finally gets named environments
 — the model has none, deliberately; environments are a deployment
 concern and station is the deployment-facing component.
 
-**New SDK project:** `voxgig-sdkgen package add
-@voxgig/sdkgen-station && npm run add-feature station && npm run
-generate` — the generated README now carries the "Use with Station"
+**New SDK project:** `npm install --save-dev @voxgig/sdkgen-station
+&& voxgig-sdkgen package add @voxgig/sdkgen-station && npm run
+generate` — the npm install comes first because `package add`
+resolves from `.sdk/node_modules` and deliberately does not fetch
+(only `package update` shells out to npm), and the add itself
+installs the declared station feature, so no separate `add-feature`
+step. The generated README now carries the "Use with Station"
 section, and the generated `AGENTS.md` tells agents the station
 story. The full recipe is `docs/how-to/use-station.md` (§9.4).
 
@@ -1102,8 +1155,14 @@ with a zero-case guard — proven by the 22-section parity corpus and
   `event` (StationEvent shapes), `errors` (the §14 catalog: exact
   code strings and trigger conditions), `profile` (the §3.5 merge
   order), `degrade` (solo/attached transitions, non-blocking open).
-  Every library runs every section; an empty or missing section
-  fails loudly (the zero-case guard, copied deliberately).
+  Section applicability is **tier-scoped**: wire-dependent sections
+  (`envelope`, the attached half of `degrade`) apply to tiers A/B
+  only. A library declares its tier; an *applicable* section that is
+  empty or missing fails loudly, and out-of-tier sections sit in an
+  explicit pinned pending list — the go corpus runner's
+  `pendingSections` precedent, adopted so tier-C libraries neither
+  fake a wire client nor run permanently red. (The zero-case guard,
+  copied deliberately, declared-pending escape hatch included.)
   Concurrency is the one contract the JSON corpus cannot express —
   per-language stress tests against the testkit cover it (§10.2).
 - **Proxy contract tests** in Go, plus `voxgig-station testkit` —
@@ -1113,10 +1172,13 @@ with a zero-case guard — proven by the 22-section parity corpus and
   network.
 - **Generator-side:** pre-graduation, from the package side — the
   sdkgen-station CI fixture-consumer flow of §9.5, plus `package
-  check`; post-graduation, the bundled `generate.test.ts` memfs
-  suite (adapter source compiles in all targets) and
-  `feature.test.ts` harness (ts template against the miniature
-  pipeline) take over.
+  check`. Post-graduation the bundled suites add coverage but do
+  **not** replace that flow: `generate.test.ts` renders components
+  into memfs and asserts on generated *text* — it never invokes a
+  target compiler — so the fixture-consumer lane that actually
+  compiles the generated SDK + adapter per language stays in CI
+  permanently; `feature.test.ts` exercises the ts template against
+  the miniature pipeline.
 - **End-to-end:** the solardemo validation flow (the repo's
   existing `validate-solardemo` loop) extended with station:
   generate with the feature, run apps in the shipped-library
@@ -1165,6 +1227,9 @@ well-behaved:
 | `station_grant_expired` | grant TTL passed and re-registration failed |
 | `station_wrap_order` | the §3.3 position guard tripped |
 | `station_protocol` | wire/descriptor version rejected by the proxy |
+| `station_no_plugin` / `station_no_entity` / `station_no_op` | unknown lookup in `station_call`/`station_describe`; the payload lists the valid candidates (§7) |
+| `station_agent_allow` | `agent.write`/`agent.read` policy denial, on call or replay |
+| `station_body_limit` | `/v1/forward` request body over the configured limit |
 
 ## 15. Security posture
 
@@ -1249,18 +1314,21 @@ Obeying §9.6's rule — an adapter never precedes its library:
 - **Phase 2 — breadth and depth:** go library then go adapter
   (unblocking go-heavy consumers and dogfooding next to the proxy);
   py, then the rest of tier A in demand order (java, csharp, kotlin,
-  swift, dart, rb, php, scala/clojure on the JVM stack); keychain +
+  swift, dart, rb, php — scala and clojure wait for Phase 3 behind
+  their §9.1 adapter prerequisites, JVM transport notwithstanding);
+  keychain +
   vault (aql recipe) backends; replay/mock/record with the §6
   per-class semantics; OTLP export; grants hardening + revocation
   UX; `station.json` schema; ReadmeStation + AgentGuide +
   `docs/how-to/use-station.md`; conformance corpus enforced in CI
   for every shipped library.
 - **Phase 3 — long tail and remote:** tier B (rust, lua, haskell,
-  ocaml — the latter two gated on §9.1's single-module work), tier C
-  scope decisions (c/cpp/zig/lean solo-only or vendored-core), zig/
-  scala static-reference work; remote proxy mode against the §8.4
-  tenancy answer; policy long-poll; `station_call` write-scopes in
-  anger.
+  ocaml — the latter two gated on §9.1's single-module work), the
+  scala and clojure adapters after the zig/scala static-reference
+  and single-module prerequisites, tier C scope decisions
+  (c/cpp/zig/lean solo-only or vendored-core); remote proxy mode
+  against the §8.4 tenancy answer; policy long-poll; `station_call`
+  write-scopes in anger.
 
 Each language library is a bounded, independent deliverable (modem
 principle + tier budgets + corpus), so the long tail parallelizes
