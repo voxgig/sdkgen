@@ -1,10 +1,10 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "3.4.8",
+  "version": "3.5.0",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "types": "dist/sdkgen.d.ts",
   "description": "Voxgig SDK Generator.",
