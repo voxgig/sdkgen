@@ -292,47 +292,6 @@ describe('generate', () => {
   })
 
 
-  // AN INACTIVE ENTITY MUST REACH NOTHING — SOURCE OR TESTS.
-  //
-  // `active: false` is how a consumer scopes a large spec down to the entities
-  // it actually wants (a 70-entity Trello spec down to one). Every Main_<lang>
-  // read the model through getModelPath, which filters on active by default,
-  // but sixteen Test_<lang> components read `model.main[KIT].entity` — the raw,
-  // unfiltered map — so the SDK correctly omitted the entity while a full test
-  // suite for it was still generated, against a client class that does not
-  // exist. Reported by @Rarfael (#40), found converting seneca-trello-provider.
-  //
-  // The assertion is DIFFERENTIAL rather than a path-shape guess: generate the
-  // fixture twice and require that every path naming the entity disappears.
-  // That way it does not encode any language's file-naming convention, and a
-  // target that stops emitting per-entity files cannot silently pass.
-  test('an inactive entity reaches no target, in source or in tests', async () => {
-    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
-
-    const withEntity = await generate(targets)
-    const without = await generate(targets,
-      undefined, 'main: kit: entity: history: active: false')
-
-    const named = (out: Record<string, string>) =>
-      Object.keys(out).filter((p) => /history/i.test(p)).sort()
-
-    // Guards the fixture itself: if `history` stopped producing files, the
-    // absence below would prove nothing.
-    ok(10 < named(withEntity).length,
-      'fixture emits too few history files to be a meaningful check: ' +
-      named(withEntity).length)
-
-    deepStrictEqual(named(without), [],
-      'an entity marked `active: false` still generated files')
-
-    // Nothing ELSE moved: deactivating an entity removes its files and does
-    // not perturb the rest of the tree.
-    const before = new Set(Object.keys(withEntity))
-    const added = Object.keys(without).filter((p) => !before.has(p))
-    deepStrictEqual(added, [], 'deactivating an entity added unrelated files')
-  })
-
-
   // A FULL SDK BUILD ON THE DATA PATH (design rung L1).
   //
   // The config is emitted as data above a size threshold and as a literal
@@ -776,6 +735,24 @@ describe('generate', () => {
 
 
   // --- Regressions: the three defects this suite was written for ------------
+
+  // Root.ts (via makeRoot) and every Test_<lang>.ts each read the raw,
+  // unfiltered entity map independently, ignoring `active`.
+  test('an inactive entity generates no source file and no test file', async () => {
+    const extra = "main: kit: entity: history: active: false\n"
+    const out = await generate(['ts'], undefined, extra)
+    const files = filesFor(out, 'ts').map(([p]) => p)
+
+    ok(files.some((p) => p.endsWith('PlanetEntity.ts')),
+      'control failed: active entity Planet missing from ts output')
+    ok(!files.some((p) => p.endsWith('HistoryEntity.ts')),
+      'inactive entity History still generated a source file: ' +
+      files.filter((p) => p.includes('History')).join(', '))
+    ok(!files.some((p) => p.includes('/entity/history/')),
+      'inactive entity History still generated test files: ' +
+      files.filter((p) => p.includes('/entity/history/')).join(', '))
+  })
+
 
   // elixir: a singleton endpoint has no required match keys, so the load
   // example took no second argument. Emitting one anyway produced

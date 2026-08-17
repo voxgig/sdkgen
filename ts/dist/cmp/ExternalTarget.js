@@ -65,11 +65,7 @@ const ExternalTarget = (0, jostraca_1.cmp)(function ExternalTarget(props) {
     (0, jostraca_1.names)(model, model.name);
     ctx$.stdrep = ctx$.stdrep || {};
     (0, jostraca_1.names)(ctx$.stdrep, model.Name, 'Project' + 'Name');
-    // ACTIVE-FILTERED, like the consumer Root and every Main_<lang>: an entity
-    // switched off in the model must not reach the SDK through the out-of-tree
-    // pass either. The feature loop below has always filtered; entities did not,
-    // so `active: false` scoped an in-tree SDK and was ignored out-of-tree.
-    const entity = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.entity`, { required: false }) || {};
+    const entity = model.main[apidef_1.KIT].entity || {};
     const feature = model.main[apidef_1.KIT].feature || {};
     // Defaults are inclusive: a phase runs unless the target's model turns it
     // off. Consumer targets (go-cli, go-mcp, py-data, seneca-provider) switch
@@ -79,7 +75,7 @@ const ExternalTarget = (0, jostraca_1.cmp)(function ExternalTarget(props) {
     (0, jostraca_2.Project)({}, () => {
         (0, jostraca_1.names)(target, target.name);
         if (phaseActive('entity')) {
-            (0, jostraca_1.each)(entity, (entity) => {
+            (0, jostraca_1.each)(entity).filter((entity) => entity.active).map((entity) => {
                 (0, jostraca_1.names)(entity, entity.name);
                 (0, Entity_1.Entity)({ target, entity });
             });

@@ -31,7 +31,7 @@ import { cmp, each, names } from 'jostraca'
 
 import { Project } from 'jostraca'
 
-import { KIT, getModelPath } from '@voxgig/apidef'
+import { KIT } from '@voxgig/apidef'
 
 import { Main } from './Main'
 import { Entity } from './Entity'
@@ -74,12 +74,7 @@ const ExternalTarget = cmp(function ExternalTarget(props: any) {
   ctx$.stdrep = ctx$.stdrep || {}
   names(ctx$.stdrep, model.Name, 'Project' + 'Name')
 
-  // ACTIVE-FILTERED, like the consumer Root and every Main_<lang>: an entity
-  // switched off in the model must not reach the SDK through the out-of-tree
-  // pass either. The feature loop below has always filtered; entities did not,
-  // so `active: false` scoped an in-tree SDK and was ignored out-of-tree.
-  const entity = getModelPath(model, `main.${KIT}.entity`,
-    { required: false }) || {}
+  const entity = model.main[KIT].entity || {}
   const feature = model.main[KIT].feature || {}
 
   // Defaults are inclusive: a phase runs unless the target's model turns it
@@ -93,7 +88,7 @@ const ExternalTarget = cmp(function ExternalTarget(props: any) {
     names(target, target.name)
 
     if (phaseActive('entity')) {
-      each(entity, (entity: any) => {
+      each(entity).filter((entity: any) => entity.active).map((entity: any) => {
         names(entity, entity.name)
         Entity({ target, entity })
       })

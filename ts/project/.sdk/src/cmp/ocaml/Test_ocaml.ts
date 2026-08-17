@@ -1,14 +1,9 @@
 
-import {
-  KIT,
-  getModelPath,
-} from '@voxgig/apidef'
-
 import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, Folder } from '@voxgig/sdkgen'
+import { cmp, each, Folder, entityCollection } from '@voxgig/sdkgen'
 
 
 import { TestEntity } from './TestEntity_ocaml'
@@ -20,7 +15,8 @@ const Test = cmp(function Test(props: any) {
   const { model } = props.ctx$
   const { target } = props
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
+  const entity = each(entityCollection(model))
+    .filter((e: any) => false !== e.active)
 
   Folder({ name: 'test' }, () => {
     each(entity, (entity: ModelEntity) => {

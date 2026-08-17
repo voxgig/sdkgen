@@ -14,8 +14,6 @@ import { strictEqual } from 'node:assert'
 import { Aontu } from 'aontu'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 
-import { getModelPath } from '@voxgig/apidef'
-
 import {
   Main, Entity, Feature, Readme, Test as TestCmp, AgentGuide,
   ReadmeTop, AgentGuideTop, License, Security, Changelog, Deploy,
@@ -429,11 +427,7 @@ function makeRoot(): any {
 
     const target = model.main[KIT].target || {}
     const feature = model.main[KIT].feature || {}
-
-    // Active-filtered, matching the real Root. A replica that saw inactive
-    // entities the real one hides would prove the wrong thing.
-    const entity = getModelPath(model, `main.${KIT}.entity`,
-      { required: false }) || {}
+    const entity = model.main[KIT].entity || {}
 
     Project({}, () => {
 
@@ -455,7 +449,7 @@ function makeRoot(): any {
           const on = (name: string) => false !== (phase[name] && phase[name].active)
 
           if (on('entity')) {
-            each(entity, (entity: any) => {
+            each(entity).filter((entity: any) => entity.active).map((entity: any) => {
               names(entity, entity.name)
               Entity({ target, entity })
             })

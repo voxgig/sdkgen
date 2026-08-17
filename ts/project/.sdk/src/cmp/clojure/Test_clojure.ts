@@ -1,14 +1,9 @@
 
-import {
-  KIT,
-  getModelPath
-} from '@voxgig/apidef'
-
 import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, File, Content, Folder } from '@voxgig/sdkgen'
+import { cmp, each, File, Content, Folder, entityCollection } from '@voxgig/sdkgen'
 
 import { TestEntity } from './TestEntity_clojure'
 import { TestDirect } from './TestDirect_clojure'
@@ -27,7 +22,8 @@ const Test = cmp(function Test(props: any) {
   const { model } = props.ctx$
   const { target } = props
 
-  const entity: ModelEntity = getModelPath(model, `main.${KIT}.entity`)
+  const entity: ModelEntity[] = each(entityCollection(model))
+    .filter((e: any) => false !== e.active)
 
   Folder({ name: 'test' }, () => {
     Folder({ name: 'sdk' }, () => {
