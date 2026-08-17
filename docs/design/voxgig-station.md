@@ -3,7 +3,10 @@
 Status: **proposal** (2026-08-17). Revised same-day after an adversarial
 design review against the codebase; the review's corrections are folded
 in throughout (wrap ordering, adopt semantics, identity fields, support
-tiers, proxy-side policy authority).
+tiers, proxy-side policy authority). Revised again to make
+[voxgig/sekreto](https://github.com/voxgig/sekreto) the secrets
+subcomponent: station no longer defines a secret-reference grammar or
+any store client of its own (§5).
 
 Station is the component that sits between an application and all of its
 generated SDKs. Every sdkgen SDK an application uses registers with a
@@ -27,11 +30,14 @@ from them:
   sdkgen **feature**: generated per-target adapter source plus a
   machine-readable descriptor derived from the config every SDK already
   embeds. Deep integration, not transport-sniffing.
-- **D4 — Secrets are brokered with isolation.** Application code holds
-  secret *references*, never values. Station resolves references
-  through pluggable providers and injects credentials at the last
-  possible boundary — the transport seam in-process, the proxy hop when
-  attached.
+- **D4 — Secrets are brokered with isolation, over sekreto.**
+  Application code names a secret, never a value.
+  [voxgig/sekreto](https://github.com/voxgig/sekreto) — the sibling
+  component that already speaks env, dotenv, mounted files, Vault,
+  boru, AWS, GCP, Azure, 1Password, Doppler and Infisical in ten
+  languages — does the resolving; station decides which plugin gets
+  which secret and injects at the last possible boundary: the
+  transport seam in-process, the proxy hop when attached (§5).
 - **D5 — Hand-written libraries.** The per-language station libraries
   are hand-written idiomatic code, *not* generated. What makes that
   sustainable is a deliberate design constraint (§10) and a shared
@@ -93,14 +99,19 @@ seams — a consolidated consumer. The inventory, with receipts:
   currently disabled in the reference implementation
   (`CleanUtility.ts`'s redaction body is commented out) — reviving it
   is a station prerequisite (§15).
-- **A vault shape.** Runtime secret management does not exist — the
-  entire consumer secret story is one env var, `<NAME>_APIKEY`. But
-  publish-time credentials already have a modeled shape:
-  `publish.registry.vault` `{recipe, alias, env}` and
-  `publish.tag.vault` `{recipe, alias}`, with the stated principle
-  "credentials are always injected by the aql key vault (never on disk
-  or argv)" (`model/sdkgen.aontu`). Station's secret references reuse
-  the recipe/alias shape (§5).
+- **A vault shape, and a sibling that fills it.** Runtime secret
+  management does not exist *in sdkgen* — the entire consumer secret
+  story is one env var, `<NAME>_APIKEY`. Publish-time credentials do
+  have a modeled shape: `publish.registry.vault` `{recipe, alias,
+  env}` and `publish.tag.vault` `{recipe, alias}`, with the stated
+  principle "credentials are always injected by the aql key vault
+  (never on disk or argv)" (`model/sdkgen.aontu`). The runtime half is
+  where [voxgig/sekreto](https://github.com/voxgig/sekreto) comes in
+  (§5) — and since sekreto ships a `boru` provider reading a boru
+  vault, runtime and publish-time credentials can eventually come from
+  one vault story rather than two. (Exactly how the `aql` recipe/alias
+  mechanism and boru's vault relate is a wiring question for whoever
+  lands that, not an assumption this design makes.)
 - **An agent surface precedent.** `go-mcp` is a consumer target that
   turns one generated Go SDK into an MCP server: slug-prefixed tools,
   generic tools with an `entity` argument rather than per-entity tool
@@ -120,12 +131,15 @@ seams — a consolidated consumer. The inventory, with receipts:
   `HTTPS_PROXY`/`HTTP_PROXY`/`NO_PROXY` handling define the naming
   conventions station's own env surface composes with (§8).
 
-What does **not** exist anywhere today: named environments
-(dev/staging/prod), any runtime secret provider besides a raw env var,
+What does **not** exist in *sdkgen* today: named environments
+(dev/staging/prod), any runtime secret provider beyond a raw env var,
 any consolidated or remote collection point for the observability
 features, any cross-SDK control surface, and any way for an agent to
 see what an application's integrations are *doing*. That is station's
-job description.
+job description — minus the secrets half, which is sekreto's and is
+already built (§5). Station's job there is narrower and more
+interesting: deciding which plugin gets which secret, and making sure
+the value never turns up anywhere it shouldn't.
 
 
 ## 2. The shape
@@ -140,15 +154,20 @@ Three parts, one contract:
 │   app code ──► PaymentsSDK ──┤                                          │
 │                               ▼                                         │
 │                        Station (library)                                │
-│                • plugin registry   • secret broker                      │
-│                • profiles/policy   • event buffer                       │
-│                • in-process credential injection                        │
+│                • plugin registry   • profiles/policy                    │
+│                • event buffer      • in-process injection               │
+│                          │                                              │
+│                          ▼                                              │
+│                   sekreto (library)  ── env / dotenv / file /           │
+│                   names → values        Vault / boru / AWS / GCP /      │
+│                                         Azure / 1Password / Doppler     │
 └───────────────────────────────┼─────────────────────────────────────────┘
                                 │ station wire protocol v1 (optional)
                                 ▼
                  voxgig-station proxy (one Go binary)
           • consolidated capture across processes/languages
           • proxy-boundary credential injection (grants)
+          •   └─ sekreto (go) — the chain, proxy-side, R2
           • proxy-side policy authority   • replay / mock / record
           • MCP server (stdio + HTTP)     • OTLP export
           • tap/status/secrets/approve/revoke CLI
@@ -169,9 +188,12 @@ Three parts, one contract:
 - **The proxy** (`voxgig-station`, one Go binary): everything that
   benefits from living outside the application process or being shared
   across processes and languages. Also the *only* place heavyweight
-  integrations (OTLP, OS keychain, vault backends, capture storage,
-  TLS termination for remote mode) are implemented — so the libraries
-  never grow N copies of them.
+  integrations (OTLP, capture storage, TLS termination for remote
+  mode) are implemented — so the libraries never grow N copies of
+  them. It runs sekreto too (the Go port), which is what lets a
+  language with no sekreto port still reach a vault (§2.2), and what
+  keeps provider credentials out of every app's deployment config
+  (§5.3, R2).
 
 ### 2.1 Attachment modes
 
@@ -209,15 +231,16 @@ these transitions.
 
 "~23 languages" is not one capability level, and pretending otherwise
 was the biggest defect of this doc's first draft. The template trees
-disagree per target on four axes: whether the platform/stdlib provides
+disagree per target on five axes: whether the platform/stdlib provides
 an HTTP client (C has none at all — the C SDK ships no HTTP and
 requires an app-supplied `system.fetch`; Lua's fetcher pcall-requires
 optional luasocket; Haskell's target prides itself on zero non-boot
 dependencies), whether a package manifest exists to declare the
 library dependency in (`Package_c` is an explicit no-op; zig hardcodes
 empty dependencies), whether the `options.extend` seam exists (absent
-in c, zig, haskell, ocaml, lean), and whether feature source is
-per-feature files or one monolithic module (§9.1).
+in c, zig, haskell, ocaml, lean), whether feature source is
+per-feature files or one monolithic module (§9.1), and whether
+**sekreto has a port** for the language (§5).
 
 Station therefore ships with an explicit tier table, referenced
 wherever this doc says "every language", maintained in the station
@@ -235,6 +258,31 @@ Remote-proxy attachment (TLS) is a stricter cut of the same table:
 targets without platform TLS (perl's core HTTP::Tiny, lua) attach
 locally only, or reach a remote proxy through a local `voxgig-station`
 forwarding to it — a supported topology.
+
+**Secrets coverage is its own cut, and it is mostly good news.**
+sekreto ships ten ports — ts, js, py, rb, php, perl, go, rust, java,
+csharp — which covers nine of tier A outright, plus rust in tier B;
+the JVM targets (kotlin, scala, clojure) reach the Java port through
+ordinary interop. That leaves swift, dart and elixir in tier A, lua,
+haskell and ocaml in tier B, and all of tier C with no sekreto port
+today. For the tier A and B members of that list, being port-less is
+not being cut off from vaults, because **the resolution that matters
+can happen proxy-side**: attached, with `resolve: proxy`, the proxy's
+Go sekreto runs the chain and the application language resolves
+nothing, so a Dart or Lua app reaches Vault, AWS and 1Password
+without a Dart or Lua sekreto existing. Their gap is precisely *solo
+mode with a non-env store*, where the library reads the environment
+directly — the one provider that needs no library — and says so
+rather than pretending.
+
+**Tier C is the exception, and it compounds.** c, cpp, zig and lean
+have no sekreto port *and* no wire client in v1, so proxy-side
+resolution is not available to them either: they are env-only, full
+stop, until they gain one or the other. Whichever arrives first
+closes it — a sekreto port unlocks solo, a wire client unlocks
+everything through the proxy — and a target with neither should not
+be sold as covered. The permanent fix everywhere is a sekreto port,
+contributed to sekreto; the tier table records who has one.
 
 Two honesty notes the tiers force. In **c and zig** the SDKs' default
 fetcher returns "live transport unavailable" unless the application
@@ -414,7 +462,8 @@ library and pinned by the `profile` corpus section:
 2. station feature options passed at SDK construction (in-code
    defaults),
 3. `station.json` base (`profiles.default`),
-4. `station.json` selected profile overlay (deep-merge per plugin),
+4. `station.json` selected profile overlay (deep-merge per plugin —
+   **except `secrets.providers`, which replaces wholesale**),
 5. `VOXGIG_STATION_*` env vars,
 6. `Station.open(opts)`,
 7. `connect`/`adopt` per-plugin opts.
@@ -444,7 +493,7 @@ descriptor v1
 ├─ version                       (SDK package version)
 ├─ target                        (language target id, e.g. 'ts', 'go')
 ├─ base, server[]                (base URL + server-variable spec)
-├─ auth: { active, prefix, secretref-default }
+├─ auth: { active, prefix, secretname-default }
 ├─ entities: { <name>: { fields, ops: { <op>:
 │      { points: [{ method, path, params, select? }] } } } }
 └─ features: [ present features + active state ]
@@ -463,10 +512,12 @@ embedded config is built):
   an env token from the camel form *swallows hyphens* — the exact
   defect `packageMeta.ts` documents (`voxgig-solardemo` yielding
   `VOXGIGSOLARDEMO_…` instead of `VOXGIG_SOLARDEMO_…`). The slug is
-  carried, `envtoken = envToken(slug)`, and the default secret ref
-  `env:<envtoken>_APIKEY` is thereby correct for hyphenated names —
-  without this field the "a project that does nothing gets current
-  behavior" promise in §5 silently breaks.
+  carried, `envtoken = envToken(slug)`, and `secretname-default` is
+  then the **sekreto name** `<envToken(slug) lowercased>.apikey` —
+  `voxgig_solardemo.apikey`, never an `env:`-prefixed reference,
+  since §5 deleted that grammar and sekreto would reject the string
+  as a malformed name. Without this field the "a project that does
+  nothing gets current behavior" promise in §5 silently breaks.
 
 For SDKs generated before these fields existed (`adopt()` targets),
 the normalizer emits fixed sentinels — `version: "0.0.0"`, `target:
@@ -492,67 +543,175 @@ on this when it synthesizes requests (§7) and when it dedupes
 re-registrations by descriptor hash (§3.4).
 
 
-## 5. Secrets: broker + isolation
+## 5. Secrets: sekreto resolves, station places
 
-The design principle: **application code configures references; only
-station resolves values; values live in the narrowest scope the
-deployment allows.**
+The design principle: **application code names a secret; sekreto
+resolves it; station places the value where the application cannot
+reach it and the wire still gets it.**
 
-### 5.1 Secret references
+Station does not implement secret access, because
+[voxgig/sekreto](https://github.com/voxgig/sekreto) already does — one
+interface over environment variables, `.env` files, mounted-secret
+directories (Kubernetes, Docker, systemd credentials), HashiCorp Vault
+and OpenBao, boru vaults, AWS Secrets Manager and SSM Parameter Store,
+GCP Secret Manager, Azure Key Vault, 1Password Connect, Doppler and
+Infisical. Ten language ports, all pinned to one shared conformance
+spec (`spec/sekreto.json`, run by every port through voxgig/omni), all
+with zero third-party dependencies except Rust's rustls for TLS. That
+is precisely the discipline §10 and §13 ask of station's own
+libraries, already done — for the half of the problem with the most
+surface area and the worst failure modes. Rebuilding it inside station
+would be the same code, less tested, in more languages.
 
-A reference is a string with a tiny grammar,
-`provider:selector[#field]`:
+The division of labour:
 
-| ref | resolved by | where the value lives |
-|---|---|---|
-| `env:SOLARDEMO_APIKEY` | library | process env (as today) |
-| `file:.env.local#SOLARDEMO_APIKEY` | library | local file |
-| `keychain:voxgig/solardemo` | proxy | OS keychain |
-| `vault:npm/acme#apikey` | proxy | aql key vault (`recipe/alias#field`, the `publish.registry.vault` shape) |
-| `proxy:solardemo` | proxy | proxy memory; the process never sees it |
+| concern | owner |
+|---|---|
+| what a secret is called, where it lives, how it is fetched | **sekreto** |
+| which plugin needs which secret, in which profile | **station** (§5.2, §11) |
+| keeping the value out of app code, captures, and agent context | **station** (§5.3) |
+| resolving without the process ever holding the value | **station's proxy**, resolving through sekreto (R2) |
 
-The default for every plugin is `env:<envtoken>_APIKEY` — exactly
-today's documented convention, so a project that does nothing gets
-current behavior with hygiene added, not a migration.
+A want that is really a *store* want — an OS keychain provider, say,
+which sekreto does not have today — belongs in sekreto as a provider
+kind, not in station. That is what having a subcomponent means.
 
-The library implements only `env:` and `file:` (§10 — the modem
-principle). Everything heavier is a proxy capability; in `solo` mode a
-`keychain:`/`vault:`/`proxy:` ref is a clear, immediate configuration
-error (`station_ref_no_proxy`), not a silent fallback.
+### 5.1 Naming — the mapping is already the SDK's
 
-### 5.2 Isolation rungs — what each one actually is
+A sekreto name is dot-separated lowercase segments matching
+`[a-z0-9_]+` (`api.token`, `db.pass.main`). Station's default name for
+a plugin is **`envToken(slug)` lowercased, plus `.apikey`** —
+`voxgig_solardemo.apikey`.
+
+Deriving it from `envToken` rather than by replacing hyphens is the
+load-bearing part. The model's `name` is an unrestricted string, so a
+slug may carry uppercase or punctuation that is not a hyphen; a
+narrow hyphen swap would then produce either an invalid sekreto name
+or a valid one whose `envkey()` no longer equals the SDK's
+`envName()`, which is the whole promise. `envToken` already
+normalizes every non-alphanumeric and the case, in one place, and
+this rule must call that same helper rather than restate it — the
+"one rule, one place" discipline this repo has spent several fixes
+enforcing.
+
+The result is not a compromise but a coincidence worth keeping: it
+lands character-for-character on the convention generated SDKs
+already document. sekreto's `envkey()` joins segments with `_` and
+upper-cases, so `voxgig_solardemo.apikey` → `VOXGIG_SOLARDEMO_APIKEY`,
+which is exactly what sdkgen's `envName()` emits for the slug
+`voxgig-solardemo`. The `secretname` corpus section (§13) pins the
+round-trip in both directions, precisely because two independently
+maintained grammars meet here. A
+project that installs station and configures nothing keeps reading the
+same environment variable it reads today, now through sekreto's `env`
+provider: §11's "a project that does nothing gets current behavior"
+with a named mechanism behind it rather than a promise.
+
+Every other store follows from the same name by sekreto's own
+mappings, with no station involvement: `vaultref()` → path
+`voxgig_solardemo`, field `apikey`; `awsparam()` →
+`/voxgig_solardemo/apikey`; `flatname()` → `voxgig_solardemo_apikey`
+for GCP and, because Azure Key Vault's alphabet is letters, digits and
+hyphens only, `voxgig-solardemo-apikey` for Azure — which lands back
+on the project's own hyphenated slug. Station writes no store mapping
+of its own, and the descriptor's `secretname-default` (§4) carries the
+name, not a location.
+
+### 5.2 The provider chain lives in station.json
+
+A profile carries a sekreto **provider chain** verbatim — the
+declarative `ProviderSpec` form sekreto already accepts in config —
+plus the per-plugin secret name:
+
+```json
+{ "station": 1,
+  "profiles": {
+    "dev": {
+      "secrets": { "providers": [
+        { "kind": "env" },
+        { "kind": "dotenv", "file": ".env.local" } ] } },
+    "prod": {
+      "secrets": { "providers": [
+        { "kind": "env" },
+        { "kind": "hashicorp", "addr": "https://vault.example.com",
+          "auth": { "method": "kubernetes", "role": "solar" } } ] },
+      "plugin": { "solardemo": {
+        "secret": "voxgig_solardemo.apikey",
+        "resolve": "proxy" } } } } }
+```
+
+Transparent resolution is the default and the reason sekreto exists:
+the first store that has it wins, and moving a secret from `.env` to a
+vault is a config change, not a code change. Station adds nothing to
+that. Where *which* store answers is part of the meaning — promoting a
+value between environments, or checking that a secret really landed in
+the vault — a plugin may name a store and station calls `getfrom`
+instead of `get`.
+
+Two sekreto semantics station must not paper over, both load-bearing:
+
+- **A miss is not an error.** A store that does not hold the secret is
+  a miss and the chain carries on; a store that *could not answer* — a
+  locked vault, a refused login, an unreachable host — raises, because
+  falling through there would quietly reach for a weaker store.
+  Station surfaces the first as `station_secret_no_value` and the
+  second as `station_secret_error` with sekreto's message intact, and
+  never retries an error against a lower-trust provider.
+- **Plaintext refusal.** sekreto raises before a socket is opened if a
+  token would ride `http://` to anything but loopback. Station does
+  not soften that for local-dev convenience; the profile is wrong, not
+  the guard.
+
+### 5.3 Isolation rungs — what each one actually is
 
 - **R0 (legacy, no station):** `options.apikey` as today. Unchanged.
-- **R1 (solo): hygiene, not a security boundary.** Station resolves
-  the ref and holds the value privately; the SDK's `options.apikey`
-  is an inert placeholder; `prepareAuth` runs normally and produces
-  an `authorization` header containing the placeholder; the
-  middleware swaps in the real value at send time. What R1 buys, by
-  construction: `client.options()` never exposes the value;
-  `client.prepare()` output is safe to log or hand to an agent (today
-  it carries the real key); captures, events, and `ctrl.explain`
-  never contain it. What R1 does **not** buy — stated plainly because
-  the first draft overclaimed it: protection against hostile
-  in-process code. In dynamic runtimes closures are introspectable
-  (`__closure__`, `debug.getupvalue`), transport slots are
-  reassignable, and the default `env:` ref's value sits in process
-  env regardless. R1 keeps secrets out of the places they *leak by
-  accident* — logs, captures, diffs, agent context windows. R2 is the
-  rung that removes the value from the process.
-- **R2 (attached, proxy-held ref):** the process never resolves the
-  value at all. Registration yields a **grant** — a token bound to
-  the registration session, plugin-scoped, TTL'd (default 15m,
-  renewed by re-registration, §3.4), revocable (`voxgig-station
-  revoke <plugin>` / `DELETE /v1/grants/{plugin}`; `mode: block` is
-  the hammer). The middleware sends the envelope with the grant; the
-  proxy swaps in the real credential on the outbound hop. On a
-  single-user local machine, the register token file is the true
-  boundary — a process that can read it can mint grants — so R2's
-  honest local value is that **the secret value never enters or
-  persists in the application process**; containment of a live local
-  attacker is not claimed. Plugin-scoping becomes a real boundary on
-  a remote proxy, where registration is authenticated per app
-  identity (§8.4).
+- **R1 (solo): hygiene, not a security boundary.** Station asks
+  sekreto for the plugin's secret and holds the returned value
+  privately; the SDK's `options.apikey` is an inert placeholder;
+  `prepareAuth` runs normally and produces an `authorization` header
+  containing the placeholder; the middleware swaps in the real value
+  at send time. What R1 buys, by construction: `client.options()`
+  never exposes the value; `client.prepare()` output is safe to log or
+  hand to an agent (today it carries the real key); captures, events,
+  and `ctrl.explain` never contain it. What R1 does **not** buy —
+  stated plainly because an earlier draft overclaimed it: protection
+  against hostile in-process code. In dynamic runtimes closures are
+  introspectable (`__closure__`, `debug.getupvalue`), transport slots
+  are reassignable, and with the default `env` provider the value sits
+  in process environment regardless. R1 keeps secrets out of the
+  places they *leak by accident* — logs, captures, diffs, agent
+  context windows. R2 is the rung that removes the value from the
+  process.
+- **R2 (attached, `resolve: proxy`):** the application process never
+  runs the chain at all — the **proxy** holds the sekreto instance and
+  the provider credentials (the Vault token, the AWS keys), which is
+  also why those credentials stop being per-app deployment config.
+  Registration yields a **grant**: a token bound to the registration
+  session, plugin-scoped, TTL'd (default 15m, renewed by
+  re-registration, §3.4), revocable (`voxgig-station revoke <plugin>`
+  / `DELETE /v1/grants/{plugin}`; `mode: block` is the hammer). The
+  middleware sends the envelope with the grant; the proxy swaps in the
+  real credential on the outbound hop. On a single-user local machine
+  the register token file is the true boundary — a process that can
+  read it can mint grants — so R2's honest local value is that **the
+  secret value never enters or persists in the application process**;
+  containment of a live local attacker is not claimed. Plugin-scoping
+  becomes a real boundary on a remote proxy, where registration is
+  authenticated per app identity (§8.4).
+
+sekreto draws the same R1/R2 line from the other side, and says so in
+its own README: "an app calling `secrets.get()` necessarily *holds*
+the secret. If the caller is untrusted, boru's broker is the better
+tool and sekreto is the wrong layer." R1 is sekreto used exactly as
+intended, with station keeping the returned value out of the
+accident-prone surfaces. R2 is the broker case, and station's proxy is
+that broker for SDK-shaped traffic — using sekreto as its provision
+layer rather than replacing it. Where an agent only needs to call an
+HTTP API with a credential it must never hold, and no SDK semantics,
+capture, policy or cross-language plugin registry are wanted, boru's
+own `vault proxy` / `vault mcp` is the smaller correct tool and
+station is over-specified. A design that cannot say when not to use it
+is not finished.
 
 **Copy-on-inject is mandatory.** The generated request machinery
 shares object references — `fetchdef.headers` *is* `spec.headers`,
@@ -574,8 +733,11 @@ app-supplied function — R1 there is conditional, and the tier table
 SDKs whose model opted out of auth (`isAuthActive` false) skip
 credential planning entirely but get everything else. The model's
 single-credential reality (one `apikey`, no OAuth flows, no rotation)
-keeps v1 honest: one ref per plugin; the `Binding` reserves a keyed
-ref map for when the model grows multi-scheme auth (§18).
+keeps v1 honest: one secret name per plugin; the `Binding` reserves a
+keyed name map for when the model grows multi-scheme auth, where
+sekreto's `all(names)` fetches the set in one call (§18). Rotation,
+when it comes, has a mechanism waiting too — sekreto's `refresh()`
+drops the cache so the next resolve asks the stores again.
 
 
 ## 6. Observability and debugging
@@ -669,7 +831,7 @@ registration would blow MCP hosts' tool budgets by the second SDK.
 | `station_call {plugin, entity, op, query?, data?}` | execute an operation (canonical point, §4) |
 | `station_traffic {plugin?, since?, grep?, cursor?}` | query recent redacted captures (cursor-based; the MCP skin of tap) |
 | `station_replay {id, mutate?}` | replay a capture, under §6's per-class semantics and §16's gates |
-| `station_secrets {plugin?}` | resolution *status* per ref — provider that answered, never values — plus secret-free remediation per unresolved ref ("set env var SOLARDEMO_APIKEY"; "requires proxy: start voxgig-station") |
+| `station_secrets {plugin?}` | resolution *status* per plugin — which store answered, never values, straight from sekreto's `sources()`/`stores()`/`has` (`describe()` returns `env:<prefix>`, `dotenv:<file>`, `hashicorp`, … — safe by construction) — plus secret-free remediation for anything unresolved ("set env var `VOXGIG_SOLARDEMO_APIKEY`"; "`hashicorp` is in the chain but returned a miss") |
 | `station_policy {plugin?}` | effective policy view |
 
 Agent-facing affordances are specified, not hoped for: entity/op
@@ -703,9 +865,10 @@ but an upstream can echo an injected credential back (a 401
 diagnostic, a token exchange), and `station_call`'s live result is
 not the capture store, so capture-time redaction alone would not
 cover it. Tool responses therefore pass the same credential-aware
-scrub as captures — redact-list headers plus any body substring
-equal to an injected credential — before entering the agent's
-context. With that in place, an agent given full station access can
+scrub as captures — redact-list headers, plus sekreto's own
+`redact(text)`, which replaces every value *that* sekreto instance
+resolved (and only values of four characters or more, so logs stay
+readable) — before entering the agent's context. With that in place, an agent given full station access can
 operate every integration without being *able* to read a credential
 — the §5 caveats about in-process code do not apply on the MCP side
 of the proxy.
@@ -762,7 +925,10 @@ Data:
 
 - `POST /v1/forward` — an explicit request **envelope**: `{ url,
   method, headers, body }` plus `Station-Session` /
-  `Station-Plugin` / `Station-Corr` headers. The proxy applies
+  `Station-Plugin` / `Station-Corr` headers, and `Station-Redact`
+  naming which envelope headers carry credentials the library itself
+  resolved, so the proxy can scrub them from its own capture of the
+  exchange without ever storing them (§15). The proxy applies
   policy, injects credentials (R2), sends upstream, and captures.
   The response is deliberately *not* a JSON wrapper — a JSON `body`
   field can neither stream nor carry binary without escaping — so
@@ -785,30 +951,34 @@ station proxy's own upstream calls honor `HTTPS_PROXY`.)
 ### 8.3 Proxy-side policy authority
 
 The review's most important finding: **everything a client registers
-is untrusted input.** The descriptor is built client-side; the ref
-selection comes from client-side profile loading; process identity is
+is untrusted input.** The descriptor is built client-side; the secret
+name comes from client-side profile loading; process identity is
 self-reported. If the proxy derived the egress allowlist and the
 plugin→secret binding from registration, a compromised (or merely
 local, token-holding) process could register `slug: solardemo, base:
-https://evil.example, secret: vault:npm/solar#apikey` and have the
-proxy inject the real vault credential into a request to the
-attacker's host.
+https://evil.example, secret: voxgig_solardemo.apikey` and have the
+proxy resolve that name through its Vault-backed chain and inject the
+real credential into a request to the attacker's host. Note what is
+*not* the flaw: sekreto resolved exactly the name it was asked for,
+correctly. Choosing the name and the destination is station's half,
+and station must not take either from the client.
 
-So, as policy: for proxy-held refs (`keychain:`/`vault:`/`proxy:`),
-the plugin→ref mapping and the `hosts` egress allowlist come from
-**proxy-side configuration** — the proxy loads `station.json`
-profiles itself. Where no proxy-side profile covers a plugin, there
-is no first-seen shortcut (trusting the first registration would
-just move the race to whoever registers the slug first): the plugin
-parks in a **pending** state — registered, visible in `status`,
-capture and library-resolved traffic working — but proxy-held secret
-injection and its hosts default stay unusable until `voxgig-station
-approve <plugin>` explicitly blesses the base/hosts/ref triple, and
-any later change to that triple re-enters pending. A registered
-descriptor can only *narrow* what approved proxy-side policy allows,
-never widen it, and never selects which secret is injected. Library-resolved refs (`env:`,
-`file:`) don't route secrets through the proxy, so registration for
-them is lower-stakes — capture and policy still apply.
+So, as policy: under `resolve: proxy`, the plugin→secret-name mapping,
+the provider chain, and the `hosts` egress allowlist all come from
+**proxy-side configuration** — the proxy loads `station.json` profiles
+itself and builds its own sekreto instance from them. Where no
+proxy-side profile covers a plugin, there is no first-seen shortcut
+(trusting the first registration would just move the race to whoever
+registers the slug first): the plugin parks in a **pending** state —
+registered, visible in `status`, capture and library-resolved traffic
+working — but proxy-side resolution and its hosts default stay
+unusable until `voxgig-station approve <plugin>` explicitly blesses
+the base/hosts/name triple, and any later change to that triple
+re-enters pending. A registered descriptor can only *narrow* what
+approved proxy-side policy allows, never widen it, and never selects
+which secret is resolved. Plugins resolving in-process (R1) don't
+route secrets through the proxy, so registration for them is
+lower-stakes — capture and policy still apply.
 
 ### 8.4 Remote mode
 
@@ -816,7 +986,7 @@ Remote is the same binary behind TLS with per-app bearer tokens, and
 in v1 it is **explicitly single-team and fully mutually trusting**:
 every attached app can see every capture, and `agent.read` defaults
 off (§7). Grants bind to the authenticated app identity, which is
-where plugin-scoping becomes a real boundary (§5.2). Visibility
+where plugin-scoping becomes a real boundary (§5.3). Visibility
 partitioning, per-principal authz on call/replay/secrets, and tenant
 isolation are the open question that gates any shared deployment
 (§18) — the `identity` field in `/v1/register` and per-app tokens are
@@ -830,8 +1000,11 @@ ring 1k events; proxy capture store 10k entries / 256 MB LRU;
 `/v1/forward` request-body limit 32 MB with a structured error.
 In-memory by default; the optional SQLite capture store (for
 replay/record across restarts) carries age/size retention config;
-secret values live in memory only — keychain and vault backends are
-readers, not stores. Encryption at rest for the SQLite store: §18.
+secret values live in memory only — every sekreto provider is a
+*reader*, and station adds no store of its own, so there is no
+station-written copy of a credential anywhere on disk. sekreto's own
+cache is per-instance and in-memory, dropped by `refresh()`.
+Encryption at rest for the SQLite store: §18.
 
 ### 8.6 Compatibility
 
@@ -881,8 +1054,14 @@ generator-side half:
    station graduates into the bundled scaffold where the module has
    one owner — consistent with their tier-B/C placement and Phase 3
    (§17).
-2. **A per-language dependency on the station library.** For the ~14
-   targets whose `Package_<lang>` components consume `collectDeps`,
+2. **A per-language dependency on the station library.** The
+   generated SDK depends on the station library only; sekreto is the
+   station library's own dependency, declared there
+   (`@voxgig/sekreto`, `@voxgig/sekreto-js`, `voxgig-sekreto`,
+   `github.com/voxgig/sekreto/go`, `voxgig_sekreto`, …) and never
+   named in a generated manifest — one edge per language, not two,
+   and sdkgen learns nothing about secret stores. For the ~14 targets
+   whose `Package_<lang>` components consume `collectDeps`,
    the feature model's `deps.<lang>` blocks flow the dependency into
    generated manifests (peer for ts/js — the `log` feature's pino
    precedent — prod elsewhere). Targets whose manifests are hardcoded
@@ -905,7 +1084,9 @@ generator-side half:
    carries it — the `adopt()` prerequisite (§3.1).
 4. **README, agent-guide, and repo docs.** A `ReadmeStation` section
    (composed by `Readme.ts`, gated on the feature) documenting the
-   binding forms, refs, and the proxy quickstart; a station paragraph
+   binding forms, secret names, and the proxy quickstart (pointing at
+   sekreto's own docs for stores rather than restating them); a
+   station paragraph
    in generated `AGENTS.md` via `AgentGuide`/`AgentGuideFeature`; and
    in this repo's own docs map: `docs/how-to/use-station.md` (the
    §11 install flow is a textbook how-to), the station feature's
@@ -955,13 +1136,26 @@ sustainable only if they are small, and they stay small only if the
 design *forbids* them from growing. The rule:
 
 > **The library is a modem, the proxy is the machine.** A station
-> library implements exactly: config/profile loading, the ref grammar
-> with `env:` + `file:` providers, the credential placeholder +
-> copy-on-inject middleware, the event buffer/batcher, the descriptor
-> normalizer + canonical serializer, the wire-protocol client (tier
-> A/B only), and the ambient instance. Nothing else — no OTel, no
-> keychain, no vault clients, no storage, no TLS configuration beyond
-> the platform default.
+> library implements exactly: config/profile loading, the credential
+> placeholder + copy-on-inject middleware, the event buffer/batcher,
+> the descriptor normalizer + canonical serializer, the wire-protocol
+> client (tier A/B only), and the ambient instance. Nothing else — no
+> OTel, no storage, no TLS configuration beyond the platform default,
+> and **no secret store clients**, because that is sekreto's job.
+
+sekreto is the one dependency a station library takes, and it is
+taken rather than reimplemented for the same reason this rule exists.
+In nine of the ten ports it costs nothing against the budget: sekreto
+carries zero third-party dependencies of its own, so `station →
+sekreto` adds one well-tested library and no transitive tree at all.
+Rust is the stated exception — sekreto there takes `rustls` (plus
+`webpki-roots` for trust anchors) for TLS, which brings its own crate
+graph, and hand-rolling TLS in a secrets library would be far worse
+than depending on an audited one. So the Rust station library, alone,
+inherits a real dependency tree, and its generated `Cargo.toml` and
+tier budget must account for it rather than treat sekreto as free.
+Where sekreto has no port, the library falls back to reading the
+environment and says so (§2.2); it does not grow a second provider.
 
 ### 10.1 Budgets, honestly
 
@@ -1018,11 +1212,14 @@ const planets = await solar.Planet().list()
 ```
 
 No proxy running, no config file: `open()` finds no `station.json`,
-uses profile defaults, resolves `env:SOLARDEMO_APIKEY` (the ref
-default — today's env var, unchanged), runs solo. Strictly better
-than before: the key is out of app code's way — no longer in
-`options()`, `prepare()` output, captures, or logs (§5.2's honest
-scope) — and `station.tap(console.log)` shows live traffic.
+uses profile defaults, and asks sekreto's default one-provider chain
+for `voxgig_solardemo.apikey` — which is `VOXGIG_SOLARDEMO_APIKEY`,
+the env var this SDK's README already documents, unchanged. Runs solo.
+Strictly better than before: the key is out of app code's way — no
+longer in `options()`, `prepare()` output, captures, or logs (§5.3's
+honest scope) — and `station.tap(console.log)` shows live traffic.
+Point the `prod` profile at a vault later and this code does not
+change, which is sekreto's whole thesis and now station's too.
 
 **Quickstart parity** is part of the accountability, not a ts-only
 demo. The same two lines in the first-wave languages:
@@ -1057,16 +1254,43 @@ modes, isolation rungs, secret resolution status, drop counters. The
 CLI also carries `call` and `describe` — the human skins of the §7
 tools.
 
-**Profiles (`station.json`, committable — refs, never values):**
+**Profiles (`station.json`, committable — names and stores, never
+values):**
 
 ```json
 { "station": 1,
   "profiles": {
-    "dev":  { "plugin": { "solardemo": { "base": "http://localhost:8000" } } },
-    "prod": { "plugin": { "solardemo": {
-      "secret": "vault:npm/solar#apikey",
-      "policy": { "hosts": ["api.solar.example.com"] } } } } } }
+    "dev": {
+      "secrets": { "providers": [ { "kind": "env" },
+                                  { "kind": "dotenv", "file": ".env.local" } ] },
+      "plugin": { "solardemo": { "base": "http://localhost:8000" } } },
+    "prod": {
+      "secrets": { "providers": [
+        { "kind": "env" },
+        { "kind": "hashicorp", "addr": "https://vault.example.com",
+          "auth": { "method": "kubernetes", "role": "solar" } } ] },
+      "plugin": { "solardemo": {
+        "secret": "voxgig_solardemo.apikey",
+        "resolve": "proxy",
+        "policy": { "hosts": ["api.solar.example.com"] } } } } } }
 ```
+
+The `secrets.providers` array is sekreto's own declarative
+`ProviderSpec` form, passed through untouched — station neither
+extends nor validates it, so every provider sekreto gains is available
+here the day it lands, and sekreto's documentation is the reference.
+Omit the block entirely and the chain is `[{kind:'env'}]`, which is
+today's behavior.
+
+**A profile's `secrets.providers` replaces the base array outright;
+it never concatenates or merges by position** (§3.5). Chain order
+decides which store wins, so a deep merge would be actively
+dangerous: a `default` profile's `env` entry surviving in front of
+`prod`'s Vault entry means a stale developer environment variable
+quietly out-ranks the production secret, on some ports and not
+others depending on how each merged. Replacement is the only rule
+that reads the same in ten languages, and the `profile` corpus
+section pins the resulting order.
 
 The `plugin` map is keyed by **descriptor slug** (= the model's
 hyphenated `name`), discoverable via `station.plugins()` /
@@ -1093,10 +1317,14 @@ story. The full recipe is `docs/how-to/use-station.md` (§9.4).
 
 **Debug a failing integration:** `tap` → spot the 401 →
 `voxgig-station traffic --plugin solardemo --grep 401` →
-`station_secrets` says the `prod` ref fell through to nothing, and
-its remediation line says which env var or provider to fix → fix the
-ref → `replay` the captured request → green. No print statements, no
-code changes, same loop in every language.
+`station_secrets` shows the chain as sekreto reports it — `env` miss,
+`hashicorp` miss — so the name resolved nowhere and the remediation
+line names the env var and the vault path that *would* have answered
+→ fix the profile → `replay` the captured request → green. No print
+statements, no code changes, same loop in every language. The
+distinction §5.2 preserves earns its keep here: "the vault said no"
+and "the vault could not be reached" are different lines, and only the
+first is a missing secret.
 
 **CI:** `voxgig-station mock --record` against a live run once,
 commit the transcript, `--replay` in CI — deterministic integration
@@ -1141,20 +1369,39 @@ server and should be by the agent's harness too (§7, §15).
 
 The discipline that keeps N of anything honest is a shared corpus
 with a zero-case guard — proven by the 22-section parity corpus and
-`ts/test/parity.test.ts`. Station adopts it wholesale:
+`ts/test/parity.test.ts`. Station adopts it wholesale — and sekreto
+independently arrived at the same answer (`spec/sekreto.json`, one
+JSON file every port runs through voxgig/omni, with the byte-identical
+error messages pinned), which is a good sign for both.
+
+The boundary matters as much as the corpus: **station's spec does not
+re-test secret resolution.** Name validity, `envkey`/`vaultref`/
+`flatname`/`awsparam` mappings, `.env` parsing, chain order, miss vs
+error, SigV4, redaction of resolved values — all of that is
+sekreto's spec, already green in ten languages, and restating any of
+it here would be the two-sources-of-truth defect this repo has spent
+several fixes removing. Station's corpus tests only the station half:
+that the right *name* was asked for, and that what came back was
+placed correctly.
 
 - **`spec/` conformance corpus** (JSON, language-neutral), sections:
-  `refparse`, `descriptor` (config-in → descriptor-out, including
+  `secretname` (slug → sekreto name, hyphens to underscores, and the
+  `envkey` round-trip that must equal sdkgen's `envName()` — the one
+  place station's and sekreto's grammars meet), `descriptor`
+  (config-in → descriptor-out, including
   the legacy-config sentinel case), `canonical-serialize`
   (adversarial: non-ASCII names, large ints), `inject`
   (placeholder/copy-on-inject: `ctrl.explain` still holds the
   placeholder after an op), `order` (station sees N retry attempts;
   cache hits produce no http event; `station_wrap_order` guard),
   `redact` (headers and body fields, including a credential echoed
-  in a response body), `envelope` (forward serialization),
+  in a response body, and the R1-attached `Station-Redact` case where
+  the redacting instance is not the resolving one — §15),
+  `envelope` (forward serialization, `Station-Redact` included),
   `event` (StationEvent shapes), `errors` (the §14 catalog: exact
   code strings and trigger conditions), `profile` (the §3.5 merge
-  order), `degrade` (solo/attached transitions, non-blocking open).
+  order, including wholesale `secrets.providers` replacement),
+  `degrade` (solo/attached transitions, non-blocking open).
   Section applicability is **tier-scoped**: wire-dependent sections
   (`envelope`, the attached half of `degrade`) apply to tiers A/B
   only. A library declares its tier; an *applicable* section that is
@@ -1194,13 +1441,14 @@ well-behaved:
   `station`-kind warning event naming the cause (not found, auth
   failed, proof-of-token failed — an imposter reads as absence).
   `require` → constructor-time `station_no_proxy`.
-- **Proxy dies mid-flight** → the next envelope fails; refs the
-  library can resolve (`env:`/`file:`) degrade to solo seamlessly
-  (events buffer, capture gap noted); proxy-held refs fail closed
-  with `station_no_proxy` — there is no secret to fall back to, and
-  inventing a fallback would quietly downgrade the isolation the
-  deployment chose. Reattachment is automatic with backoff and is
-  always a full re-register (§3.4).
+- **Proxy dies mid-flight** → the next envelope fails; a plugin whose
+  chain the library can run itself degrades to solo seamlessly (events
+  buffer, capture gap noted); a `resolve: proxy` plugin fails closed
+  with `station_no_proxy` — the process never held the secret and must
+  not now go looking, and a silent fall back to an `env` provider
+  would quietly downgrade the isolation the deployment chose.
+  Reattachment is automatic with backoff and is always a full
+  re-register (§3.4).
 - **Events never block.** Fire-and-forget within each execution
   model's delivery semantics (§6), bounded buffers, drop-oldest,
   drop counts in `status`. An observability outage must not become
@@ -1220,9 +1468,10 @@ well-behaved:
 
 | code | when |
 |---|---|
-| `station_no_proxy` | `require` unmet at open, or proxy lost with proxy-held refs |
-| `station_ref_no_proxy` | a `keychain:`/`vault:`/`proxy:` ref in solo mode |
-| `station_ref_no_value` | a ref that resolved to nothing |
+| `station_no_proxy` | `require` unmet at open, or proxy lost for a `resolve: proxy` plugin |
+| `station_secret_no_value` | the chain ran and no store had the name (sekreto's `unknown secret`) |
+| `station_secret_error` | a store could not answer — locked vault, refused login, unreachable host; carries sekreto's message verbatim and is never retried against a weaker store (§5.2) |
+| `station_secret_name` | a configured secret name sekreto rejects as malformed, caught at profile load rather than first request |
 | `station_host_allow` | egress denied by the hosts policy |
 | `station_grant_expired` | grant TTL passed and re-registration failed |
 | `station_wrap_order` | the §3.3 position guard tripped |
@@ -1239,8 +1488,32 @@ well-behaved:
   honestly that the `clean()` body-redaction in the reference SDK is
   currently disabled and must be revived and corpus-pinned before
   `capture: full` ships. Redaction is applied at capture time, never
-  retroactively. Defense in depth: any body substring equal to an
-  injected credential is scrubbed as well.
+  retroactively. Defense in depth comes from sekreto rather than a
+  station reimplementation: `redact(text)` hides every value *that*
+  sekreto instance resolved, wherever it appears in a body, with a
+  four-character floor so short values do not shred the logs. Station
+  runs it over `headers|full` captures and over live `station_call`
+  results (§7).
+- **The R1-attached capture, spelled out**, because a sekreto instance
+  can only redact what *it* resolved and that leaves a real hole
+  otherwise. Under R1 the **library** resolved the credential, so the
+  **proxy's** sekreto has never seen it — yet the proxy is the one
+  capturing the `/v1/forward` exchange, and an upstream that echoes
+  the credential in a 401 body would land it, unredactable, in the
+  capture store and in `station_traffic`. What closes it is that in
+  this mode the credential is already crossing to the proxy by
+  necessity: the library injected it into the envelope headers so the
+  proxy can forward it upstream. So the envelope names its own
+  secret-bearing headers in `Station-Redact`, and the proxy holds
+  those values **transiently, for the duration of that one exchange**
+  — redacting them from the captured request and response, then
+  discarding them unwritten and unlogged. No new exposure (the proxy
+  handled the value anyway), and no unredactable capture. If the
+  marker is absent — an older library against a newer proxy — the
+  proxy degrades that plugin's capture to `headers` rather than
+  storing a body it cannot scrub, and says so in `status`. The
+  `redact` corpus section carries the case: R1 attached, credential
+  echoed in the response body, capture must not contain it.
 - **"By construction", scoped truthfully:** §5's placement makes the
   *injected credential* absent from request headers in captures,
   events, `options()`, `prepare()`, MCP tools, and CLI output
@@ -1262,7 +1535,7 @@ well-behaved:
   `agent.read` gates + prompt injection via upstream response
   content named and mitigated (tool results labeled external, never
   instruction-bearing); hostile in-process code → *not* an R1 claim
-  (§5.2); R2 bounds what a compromised process holds to a
+  (§5.3); R2 bounds what a compromised process holds to a
   session-bound revocable grant, with the token file as the honest
   local boundary; imposter local proxy → proof-of-token before
   disclosure; DNS rebinding → Host/Origin checks; leaked capture
@@ -1301,9 +1574,9 @@ authoritative copy is proxy-side (§8.3).
 Obeying §9.6's rule — an adapter never precedes its library:
 
 - **Phase 1 — prove the loop (narrow and deep):** ts library
-  (browser-safe entry points included, §2.2) + proxy core (register
-  with proof-of-token, envelope forward, R1+R2 with
-  `env:`/`file:`/`proxy:` refs, proxy-side policy authority,
+  (browser-safe entry points included, §2.2) over `@voxgig/sekreto` +
+  proxy core (register with proof-of-token, envelope forward, R1 and
+  R2 with the Go sekreto proxy-side, proxy-side policy authority,
   capture, tap, status) + MCP
   (`station_status`/`integrations`/`describe`/`call`/`traffic`) +
   `@voxgig/sdkgen-station` with adapters for **ts/js only** + the
@@ -1315,9 +1588,10 @@ Obeying §9.6's rule — an adapter never precedes its library:
   (unblocking go-heavy consumers and dogfooding next to the proxy);
   py, then the rest of tier A in demand order (java, csharp, kotlin,
   swift, dart, rb, php — scala and clojure wait for Phase 3 behind
-  their §9.1 adapter prerequisites, JVM transport notwithstanding);
-  keychain +
-  vault (aql recipe) backends; replay/mock/record with the §6
+  their §9.1 adapter prerequisites, JVM transport notwithstanding),
+  each over its own sekreto port where one exists and env-only where
+  it does not (swift, dart, elixir — §2.2); replay/mock/record with
+  the §6
   per-class semantics; OTLP export; grants hardening + revocation
   UX; `station.json` schema; ReadmeStation + AgentGuide +
   `docs/how-to/use-station.md`; conformance corpus enforced in CI
@@ -1347,7 +1621,20 @@ and never blocks the core.
   keeps the points array (§4); v1 calls the canonical point only.
   Expose action routes generically or require per-op annotation?
 - **Multi-credential plugins.** Blocked on the model growing
-  multi-scheme auth; the `Binding` reserves a keyed ref map.
+  multi-scheme auth; the `Binding` reserves a keyed name map, and
+  sekreto's `all(names)` already fetches a set at once when it lands.
+- **sekreto ports for the gap languages** (swift, dart, elixir, lua,
+  haskell, ocaml, and tier C). Contributed to sekreto, not worked
+  around in station — but who writes them, and in what order,
+  is a sekreto roadmap question this design should not pre-empt.
+  Until then the tier A/B ones are env-only in solo mode and fully
+  covered attached; tier C, having no wire client either, is env-only
+  outright and is the case worth prioritizing (§2.2).
+- **An OS-keychain provider**, wanted by the original draft and absent
+  from sekreto today. It belongs in sekreto if it is wanted.
+- **Whether the publish-time `aql` vault and sekreto's `boru`
+  provider are one vault or two** (§1) — if one, a project could
+  declare a credential once for CI and runtime alike.
 - **Non-sdkgen outbound traffic.** A `station.fetch` for arbitrary
   HTTP would extend the control surface beyond SDKs; deliberately
   out of v1 to keep the descriptor story crisp.
@@ -1367,11 +1654,16 @@ and never blocks the core.
 - A general-purpose secret manager. Station brokers and isolates; it
   does not aspire to be Vault. (`Full secret manager` was explicitly
   considered and declined.)
+- **Any secret-store client code in station at all.** sekreto owns
+  resolution, its store mappings, and its conformance spec (§5, §13).
+  A new store is a sekreto provider; a new mapping is a sekreto
+  function; a resolution bug is a sekreto test. Station's secrets
+  code is the placement, and nothing else.
 - Generating the station libraries with sdkgen (D5 decided
   hand-written; the *adapter* is generated, the *library* is not).
 - An OTel SDK dependency in every language library (proxy-only,
   §10).
 - Replacing go-mcp / go-cli as standalone single-SDK tools (§9).
-- Claiming R1 as an in-process security boundary (§5.2 — it is
+- Claiming R1 as an in-process security boundary (§5.3 — it is
   hygiene; R2 is the boundary, and only against value exposure, not
   a live local attacker holding the token file).

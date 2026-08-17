@@ -60,8 +60,9 @@ that matches what you are trying to do right now:
 - [voxgig/station](./design/voxgig-station.md) — the runtime companion:
   generated SDKs register as plugins with a per-language station
   library, giving one control surface for outbound integrations —
-  secrets, policy, observability, debugging — plus an optional
-  consolidated proxy hosting the MCP agent surface. Proposal.
+  secrets (through [voxgig/sekreto](https://github.com/voxgig/sekreto)),
+  policy, observability, debugging — plus an optional consolidated
+  proxy hosting the MCP agent surface. Proposal.
 
 ## For AI coding agents
 
