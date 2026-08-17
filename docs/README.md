@@ -57,6 +57,11 @@ that matches what you are trying to do right now:
 - [sdkgen packages](./design/sdkgen-packages.md) — externally-defined
   targets, features and other kinds, added from a local folder, a git
   checkout, or an npm package installed in `.sdk/`. Proposal.
+- [voxgig/station](./design/voxgig-station.md) — the runtime companion:
+  generated SDKs register as plugins with a per-language station
+  library, giving one control surface for outbound integrations —
+  secrets, policy, observability, debugging — plus an optional
+  consolidated proxy hosting the MCP agent surface. Proposal.
 
 ## For AI coding agents
 
