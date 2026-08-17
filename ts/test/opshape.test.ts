@@ -173,6 +173,36 @@ describe('opRequestShape — multi-point param merging', () => {
     }, 'shared parent id required; per-route siblings optional')
   })
 
+  // Genuinely unrelated cross-references (Trello's board load via
+  // /boards/{id} vs /notifications/{id}/board) share no param at all —
+  // fall back to the shortest, canonical path rather than nothing required.
+  test('an empty intersection falls back to the shortest path', () => {
+    const entity = {
+      Name: 'Board', name: 'board',
+      fields: {},
+      op: {
+        load: { points: [
+          {
+            parts: ['notifications', '{id}', 'board'],
+            args: { params: {
+              notification_id: { name: 'notification_id', type: '`$STRING`', reqd: true },
+            } },
+          },
+          {
+            parts: ['boards', '{id}'],
+            args: { params: { id: { name: 'id', type: '`$STRING`', reqd: true } } },
+          },
+        ] },
+      },
+    }
+
+    const { items } = opRequestShape(entity, 'load')
+    const opt = optionalByName(items)
+    deepStrictEqual(opt, { id: false },
+      'did not fall back to the shortest, canonical path')
+  })
+
+
   // Vehicle is `remove`, a params-win op. It used to be `create`, but a body
   // op no longer takes its shape from params (see the body-op suite below),
   // which would make this assert nothing about $action filtering.
