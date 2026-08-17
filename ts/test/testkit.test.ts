@@ -27,7 +27,7 @@ import Path from 'node:path'
 import { Aontu } from 'aontu'
 
 import {
-  stageConsumer, generateInto, manifestParity, PLACEHOLDERS,
+  stageConsumer, generateInto, manifestParity, PLACEHOLDERS, volumeKey,
 } from '../dist/testkit.js'
 
 import { checkPackage } from '../dist/action/check.js'
@@ -231,6 +231,52 @@ describe('testkit over the fixture package', () => {
 
   test('the manifest\'s declared parity tier is readable', () => {
     deepStrictEqual(manifestParity(FIXTURE), { wtest: 'UNCOVERED' })
+  })
+})
+
+
+// THE VOLUME-KEY RULE, TESTED WITH WINDOWS SHAPES ON EVERY PLATFORM.
+//
+// memfs stores `/a/b`, never `C:/a/b`. Keying a generation result therefore
+// means comparing a drive-less, forward-slashed volume key against a real
+// filesystem root — and getting that wrong does not fail loudly by itself:
+// `Path.relative` between the two resolves the drive-less path against the CWD
+// and returns a confidently wrong answer. That cost two Windows CI runs.
+//
+// These inputs are Windows-shaped strings, which is the point: the rule is
+// written to be the same function on every platform (it replaces backslashes
+// unconditionally rather than consulting `Path.sep`) precisely so a Linux
+// machine can prove it.
+describe('testkit: volume keys', () => {
+
+  test('drops the drive letter and normalises separators', () => {
+    strictEqual(
+      volumeKey('C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\sdkgen-consumer-x'),
+      '/Users/RUNNER~1/AppData/Local/Temp/sdkgen-consumer-x')
+
+    strictEqual(volumeKey('D:\\a\\b'), '/a/b')
+    strictEqual(volumeKey('d:/a/b'), '/a/b')
+  })
+
+  test('leaves a POSIX path untouched', () => {
+    // The no-op case has to stay a no-op, or the platforms that were green
+    // become the ones that break.
+    strictEqual(volumeKey('/tmp/sdkgen-consumer-x'), '/tmp/sdkgen-consumer-x')
+    strictEqual(volumeKey('/var/folders/ab/cd/T/x'), '/var/folders/ab/cd/T/x')
+  })
+
+  test('a root and a volume key for the same place now agree', () => {
+    // The exact comparison that failed: root as Windows spells it, path as
+    // memfs stored it.
+    const root = 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\sdkgen-consumer-UsnHPV'
+    const path = '/Users/RUNNER~1/AppData/Local/Temp/sdkgen-consumer-UsnHPV/wtest/entity/planet.wt'
+
+    ok(volumeKey(path).startsWith(volumeKey(root) + '/'),
+      'the volume key is not under the root key:\n  ' +
+      volumeKey(root) + '\n  ' + volumeKey(path))
+
+    strictEqual(volumeKey(path).slice(volumeKey(root).length + 1),
+      'wtest/entity/planet.wt')
   })
 })
 

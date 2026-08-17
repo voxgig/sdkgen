@@ -178,24 +178,23 @@ function makeLog(lines?: any[]): any {
 // can exercise the add pipeline (sdkgen's own action suites do) but can never
 // RUN what it installed, which is the half a package author most needs.
 function stageConsumer(opts: StageOptions = {}): Consumer {
-  // THE ROOT IS USED VERBATIM. Do not "canonicalise" it — that was tried and
-  // it broke Windows.
+  // THE ROOT IS USED VERBATIM. Do not "canonicalise" it.
   //
-  // This exact string is handed to `generate()` as its output folder, and it
-  // is also what `generateInto` strips back off to key the result. Those two
-  // uses only agree while it is ONE string, so any transformation here has to
-  // be a transformation jostraca performs too — and `realpathSync` is not.
+  // This exact string is handed to `generate()` as its output folder, and
+  // `generateInto` strips it back off to key the result. Those two uses only
+  // agree while it is ONE string, so any transformation here would have to be
+  // one jostraca performs too — and `realpathSync` is not.
   //
-  // On the Windows runner `Os.tmpdir()` carries an 8.3 short name
-  // (`D:\Users\RUNNER~1\…`). Resolving it moved `root` to the long form while
-  // the generated paths kept the short one, so nothing relativised and every
-  // key came back absolute — for a test asserting on `wtest/src/client.wt`,
-  // that reads as "the component did not run".
+  // It WAS resolved here briefly, added as hardening for a macOS case
+  // (`/var/folders` vs `/private/var/folders`) that was measured beforehand
+  // and does not arise: jostraca realpaths a copy's SOURCE, not the output
+  // folder. Hardening against a hazard that was not there is its own reason
+  // to revert.
   //
-  // The macOS case it was added for (`/var/folders` vs `/private/var/folders`)
-  // was measured BEFORE the change and does not arise: jostraca realpaths a
-  // copy's SOURCE, not the output folder. Hardening against a hazard that was
-  // not there cost a real platform.
+  // (It was also blamed, wrongly, for the Windows failure that followed. That
+  // was the drive letter — see `volkey` in generateInto — and the short name
+  // in `C:\Users\RUNNER~1\…` was a coincidence of the runner's paths, present
+  // on both sides of the comparison and never the difference.)
   const root = opts.dir ?? Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-consumer-'))
   const sdk = Path.join(root, '.sdk')
 
@@ -409,6 +408,22 @@ function unlink(link: string): void {
     Fs.rmSync(link, { recursive: true, force: true })
   }
   catch (err) { /* already gone */ }
+}
+
+
+// A path as an in-memory VOLUME spells it: forward slashes, no drive letter.
+//
+// memfs stores `/a/b`, never `C:/a/b`, so a Windows path has to lose both its
+// separators and its drive before it can be compared with a volume key. This
+// has now caused two Windows failures — the second one silently, because
+// `Path.relative` between a drive-less key and a real root does not fail, it
+// resolves the key against the CWD and returns a confidently wrong answer.
+//
+// Backslashes are replaced unconditionally rather than via `Path.sep`, so the
+// rule is the same function on every platform and can be tested anywhere. A
+// Windows filename cannot contain a backslash, so nothing legitimate is lost.
+function volumeKey(p: string): string {
+  return p.replace(/\\/g, '/').replace(/^[A-Za-z]:/, '')
 }
 
 
@@ -667,26 +682,43 @@ async function generateInto(
     throw new Error('testkit: generation failed: ' + JSON.stringify(res))
   }
 
+  // KEYS ARE COMPARED AS THE VOLUME SPELLS THEM, NOT AS THE OS DOES.
+  //
+  // memfs is a POSIX volume: it stores `/a/b`, never `C:/a/b`. So a generated
+  // path comes back with its DRIVE LETTER DROPPED, while `consumer.root` — a
+  // real Windows path — still has one. `Path.relative` between the two does
+  // not merely fail; it resolves the drive-less path against the CWD and
+  // returns something confidently wrong (`D:\Users\…` for a root on `C:`).
+  //
+  // `external.test.ts` hit this first and its `norm` is the rule being reused
+  // here: lose the separators AND the drive letter before comparing. Prefix
+  // arithmetic rather than `Path.relative`, because the whole problem is that
+  // these are volume keys and not OS paths.
+  //
+  // On POSIX both transformations are identity, so this changes nothing there.
+  const rootkey = volumeKey(consumer.root)
+
   const files: Record<string, string> = {}
   for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
-    const rel = Path.relative(consumer.root, path).split(Path.sep).join('/')
+    const key = volumeKey(path)
 
-    // A KEY THAT DID NOT RELATIVISE IS A BUG HERE, NOT A RESULT.
+    // A KEY OUTSIDE THE ROOT IS A BUG HERE, NOT A RESULT.
     //
-    // It means the string generation wrote under and the string being
-    // stripped off have diverged, and the caller then sees a file map keyed by
-    // absolute path — which reads as "my component never ran" rather than as a
-    // path problem. That is exactly how a Windows short-name mismatch
-    // (`D:\Users\RUNNER~1\…`) presented, so it fails loudly and names both
-    // sides instead of returning a map nobody can match against.
-    if (Path.isAbsolute(rel) || rel.startsWith('..')) {
+    // It means the string generation wrote under and the string being stripped
+    // off have diverged, and the caller would otherwise get a file map keyed
+    // by absolute path — which reads as "my component never ran" rather than
+    // as a path problem, and is exactly how this presented on Windows.
+    if (key !== rootkey && !key.startsWith(rootkey + '/')) {
       throw new Error(
         'testkit: generated path is not under the consumer root, so the ' +
         'result cannot be keyed.\n  root: ' + consumer.root +
         '\n  path: ' + path +
-        '\nThese must be the SAME string modulo separators — the root is ' +
-        'handed to generate() verbatim and stripped back off here.')
+        '\n  compared as: ' + rootkey + '  vs  ' + key +
+        '\nThese must agree once separators and any drive letter are ' +
+        'normalised — memfs stores volume keys, not OS paths.')
     }
+
+    const rel = key === rootkey ? '' : key.slice(rootkey.length + 1)
 
     if (rel.startsWith('.jostraca/') || rel.includes('/.jostraca/')) continue
     files[rel] = content
@@ -824,6 +856,7 @@ export type {
 export {
   PLACEHOLDERS,
   SDKGEN_ROOT,
+  volumeKey,
   stageConsumer,
   generateInto,
   manifestParity,

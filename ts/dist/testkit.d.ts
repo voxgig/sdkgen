@@ -23,6 +23,7 @@ type Consumer = {
     cleanup: () => void;
 };
 declare function stageConsumer(opts?: StageOptions): Consumer;
+declare function volumeKey(p: string): string;
 type GenerateOptions = {
     model: any;
     root?: any;
@@ -35,4 +36,4 @@ type GenerateResult = {
 declare function generateInto(consumer: Consumer, opts: GenerateOptions): Promise<GenerateResult>;
 declare function manifestParity(pkgRoot: string): Record<string, string>;
 export type { Consumer, StageOptions, GenerateOptions, GenerateResult, };
-export { PLACEHOLDERS, SDKGEN_ROOT, stageConsumer, generateInto, manifestParity, };
+export { PLACEHOLDERS, SDKGEN_ROOT, volumeKey, stageConsumer, generateInto, manifestParity, };
