@@ -539,12 +539,12 @@ src/cmp/go/Config_go.ts 89abaebe7e3a
 src/cmp/go/EntityOperation_go.ts 466b87860b69
 src/cmp/go/EntityTypes_go.ts df7075a939eb
 src/cmp/go/Entity_go.ts c7f1aa0328a9
-src/cmp/go/Gitignore_go.ts 07941ca79a26
+src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts 01154abb3c65
 src/cmp/go/Main_go.ts d96a2773e279
 src/cmp/go/Package_go.ts 5d1847bc4f8f
 src/cmp/go/ReadmeEntity_go.ts 2b9c3ca1da44
-src/cmp/go/ReadmeExamplesTest_go.ts dbb88ef63dfb
+src/cmp/go/ReadmeExamplesTest_go.ts 98a1ad664298
 src/cmp/go/ReadmeExplanation_go.ts 43e179a3b078
 src/cmp/go/ReadmeHowto_go.ts e3c3f2db1e7b
 src/cmp/go/ReadmeInstall_go.ts ceccb2c2c7de
