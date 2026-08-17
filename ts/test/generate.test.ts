@@ -776,6 +776,24 @@ describe('generate', () => {
 
   // --- Regressions: the three defects this suite was written for ------------
 
+  // Root.ts (via makeRoot) and every Test_<lang>.ts each read the raw,
+  // unfiltered entity map independently, ignoring `active`.
+  test('an inactive entity generates no source file and no test file', async () => {
+    const extra = "main: kit: entity: history: active: false\n"
+    const out = await generate(['ts'], undefined, extra)
+    const files = filesFor(out, 'ts').map(([p]) => p)
+
+    ok(files.some((p) => p.endsWith('PlanetEntity.ts')),
+      'control failed: active entity Planet missing from ts output')
+    ok(!files.some((p) => p.endsWith('HistoryEntity.ts')),
+      'inactive entity History still generated a source file: ' +
+      files.filter((p) => p.includes('History')).join(', '))
+    ok(!files.some((p) => p.includes('/entity/history/')),
+      'inactive entity History still generated test files: ' +
+      files.filter((p) => p.includes('/entity/history/')).join(', '))
+  })
+
+
   // elixir: a singleton endpoint has no required match keys, so the load
   // example took no second argument. Emitting one anyway produced
   // `load(ent, )`, which does not parse.

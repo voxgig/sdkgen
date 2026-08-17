@@ -398,6 +398,21 @@ describe('external target', () => {
   })
 
 
+  // ExternalTarget.ts's own entity loop (unlike seneca-provider, which
+  // disables this phase) had no `active` check at all.
+  test('an inactive entity is excluded from a plain target generated out-of-tree', async () => {
+    const { outside } = await generate(['ts'], 'ts',
+      'main: kit: entity: history: active: false\n')
+    const files = Object.keys(outside)
+
+    ok(files.some((p) => p.endsWith('PlanetEntity.ts')),
+      'control failed: active entity Planet missing from the destination')
+    ok(!files.some((p) => p.endsWith('HistoryEntity.ts')),
+      'inactive entity History still generated a source file out-of-tree: ' +
+      files.filter((p) => p.includes('History')).join(', '))
+  })
+
+
   // The bookkeeping jostraca leaves at an output root: a meta log and a full
   // duplicate of the generated output. The SDK repo commits its own; the
   // destination is a DIFFERENT repo, which nothing here puts under version

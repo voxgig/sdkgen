@@ -1,14 +1,9 @@
 
-import {
-  KIT,
-  getModelPath
-} from '@voxgig/apidef'
-
 import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, Folder } from '@voxgig/sdkgen'
+import { cmp, each, Folder, entityCollection } from '@voxgig/sdkgen'
 
 
 import { TestEntity } from './TestEntity_java'
@@ -30,7 +25,9 @@ const Test = cmp(function Test(props: any) {
     // CustomUtilityTest, StructRunner/StructCorpusTest, ExistsTest and
     // sdk-test-control.json) ships as templates in tm/java/test/ and is
     // copied by Main_java. Here we generate only the API-specific tests.
-    each(model.main[KIT].entity, (entity: ModelEntity) => {
+    const entity = each(entityCollection(model))
+      .filter((e: any) => false !== e.active)
+    each(entity, (entity: ModelEntity) => {
       TestEntity({ target, entity, javapackage })
       TestDirect({ target, entity, javapackage })
     })

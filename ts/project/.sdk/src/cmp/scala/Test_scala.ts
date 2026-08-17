@@ -9,7 +9,7 @@ import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, Folder, File, Content } from '@voxgig/sdkgen'
+import { cmp, each, Folder, File, Content, entityCollection } from '@voxgig/sdkgen'
 
 
 import { TestEntity } from './TestEntity_scala'
@@ -33,7 +33,10 @@ const Test = cmp(function Test(props: any) {
 
     const entities: { Name: string; entity: boolean; direct: boolean }[] = []
 
-    each(model.main[KIT].entity, (entity: ModelEntity) => {
+    const entity = each(entityCollection(model))
+      .filter((e: any) => false !== e.active)
+
+    each(entity, (entity: ModelEntity) => {
       const EntityName = nom(entity, 'Name')
 
       const basicflow: any =

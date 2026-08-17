@@ -1,14 +1,9 @@
 
-import {
-  KIT,
-  getModelPath
-} from '@voxgig/apidef'
-
 import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, Folder } from '@voxgig/sdkgen'
+import { cmp, each, Folder, entityCollection } from '@voxgig/sdkgen'
 
 
 import { TestEntity } from './TestEntity_swift'
@@ -26,7 +21,10 @@ const Test = cmp(function Test(props: any) {
   // are generated here.
   Folder({ name: 'Tests' }, () => {
     Folder({ name: 'ProjectNameSDKTests' }, () => {
-      each(getModelPath(model, `main.${KIT}.entity`), (entity: ModelEntity) => {
+      const entity = each(entityCollection(model))
+        .filter((e: any) => false !== e.active)
+
+      each(entity, (entity: ModelEntity) => {
         TestEntity({ target, entity })
         TestDirect({ target, entity })
       })

@@ -1,7 +1,5 @@
 
 import {
-  KIT,
-  getModelPath,
   nom,
 } from '@voxgig/apidef'
 
@@ -9,7 +7,7 @@ import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, snakify, Folder, File, Content } from '@voxgig/sdkgen'
+import { cmp, each, snakify, Folder, File, Content, entityCollection } from '@voxgig/sdkgen'
 
 
 import { TestDirect } from './TestDirect_dart'
@@ -21,7 +19,8 @@ const Test = cmp(function Test(props: any) {
   const { model } = props.ctx$
   const { target } = props
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
+  const entity = each(entityCollection(model))
+    .filter((e: any) => false !== e.active)
 
   Folder({ name: 'test' }, () => {
 

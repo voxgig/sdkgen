@@ -449,7 +449,7 @@ function makeRoot(): any {
           const on = (name: string) => false !== (phase[name] && phase[name].active)
 
           if (on('entity')) {
-            each(entity, (entity: any) => {
+            each(entity).filter((entity: any) => entity.active).map((entity: any) => {
               names(entity, entity.name)
               Entity({ target, entity })
             })
