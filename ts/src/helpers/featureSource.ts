@@ -39,6 +39,8 @@ import { KIT, getModelPath } from '@voxgig/apidef'
 
 import { definitionNames } from './definition'
 
+import { isJunk } from './junk'
+
 
 // One feature's source within a target template tree.
 type FeatureSource = {
@@ -159,6 +161,14 @@ function findFeatureEntries(
     const entries = fs.readdirSync(abs).sort()
 
     for (const entry of entries) {
+      // A `__pycache__` inside `src/feature/` is not a feature — but every
+      // rule here derives a feature NAME from an entry name, so without this
+      // it becomes one: reported by `package check` as an unknown feature, and
+      // trimmed (or not) as if it were source. See helpers/junk.
+      if (isJunk(entry)) {
+        continue
+      }
+
       const entryrel = '' === rel ? entry : rel + '/' + entry
       const folder = fs.statSync(Path.join(tmfolder, entryrel)).isDirectory()
 

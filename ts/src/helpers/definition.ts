@@ -16,6 +16,8 @@
 
 import Path from 'node:path'
 
+import { isJunk } from './junk'
+
 
 // The definition file for one item.
 function definitionPath(sdkfolder: string, kind: string, name: string): string {
@@ -61,8 +63,12 @@ function definitionNames(fs: any, sdkfolder: string, kind: string): string[] {
     return []
   }
 
+  // The `.aontu` suffix is not enough on its own: an emacs lock link is named
+  // `.#target.aontu` and a merge leaves `target.aontu.orig`, so an editor open
+  // in the wrong window invents an item called `.#target`, which then fails to
+  // resolve everywhere it is named. See helpers/junk.
   return entries
-    .filter((n: string) => n.endsWith('.aontu') && index !== n)
+    .filter((n: string) => n.endsWith('.aontu') && index !== n && !isJunk(n))
     .map((n: string) => n.replace(/\.aontu$/, ''))
     .sort()
 }

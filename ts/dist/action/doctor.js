@@ -48,9 +48,18 @@ const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
 const definition_1 = require("../helpers/definition");
 const featureSource_1 = require("../helpers/featureSource");
+const junk_1 = require("../helpers/junk");
 // jostraca's Copy walk skips these (IGNORED_RE in CopyOp) — editor backups and
 // deliberately-disabled templates never reach a project, so they are not drift.
+//
+// `isJunk` is the other half of the same statement: what the WRITER refuses to
+// copy, this reader must refuse to miss. A `__pycache__` in the scaffold would
+// otherwise be reported as missing from every project on earth, and one in a
+// project as an unexplained extra file. See helpers/junk.
 const IGNORED_RE = /(~|-jostraca-off)$/;
+function ignoredEntry(name) {
+    return IGNORED_RE.test(name) || (0, junk_1.isJunk)(name);
+}
 // Extensions jostraca copies byte-for-byte. Comparing them as text would
 // report spurious differences, so they are compared by raw bytes.
 const BINARY_RE = /\.(png|jpg|jpeg|gif|ico|pdf|zip|gz|woff2?|ttf|eot|wasm)$/i;
@@ -720,7 +729,7 @@ function walk(fs, dir) {
     const descend = (rel) => {
         const abs = '' === rel ? dir : node_path_1.default.join(dir, rel);
         for (const entry of fs.readdirSync(abs).sort()) {
-            if (IGNORED_RE.test(entry)) {
+            if (ignoredEntry(entry)) {
                 continue;
             }
             const entryrel = '' === rel ? entry : rel + '/' + entry;

@@ -49,6 +49,7 @@ exports.srcFeatureExcludes = srcFeatureExcludes;
 const node_path_1 = __importDefault(require("node:path"));
 const apidef_1 = require("@voxgig/apidef");
 const definition_1 = require("./definition");
+const junk_1 = require("./junk");
 // Directory name that marks a feature container. Kept exact (not a substring
 // match) so `utility/feature_add.go` and `test/feature_test.go` — which are
 // shared machinery, not per-feature source — are never treated as features.
@@ -129,6 +130,13 @@ function findFeatureEntries(fs, tmfolder, known) {
         const abs = '' === rel ? tmfolder : node_path_1.default.join(tmfolder, rel);
         const entries = fs.readdirSync(abs).sort();
         for (const entry of entries) {
+            // A `__pycache__` inside `src/feature/` is not a feature — but every
+            // rule here derives a feature NAME from an entry name, so without this
+            // it becomes one: reported by `package check` as an unknown feature, and
+            // trimmed (or not) as if it were source. See helpers/junk.
+            if ((0, junk_1.isJunk)(entry)) {
+                continue;
+            }
             const entryrel = '' === rel ? entry : rel + '/' + entry;
             const folder = fs.statSync(node_path_1.default.join(tmfolder, entryrel)).isDirectory();
             // Inside a feature container every entry is a candidate, and a

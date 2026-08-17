@@ -29,6 +29,8 @@ import { findFeatureSources } from '../helpers/featureSource'
 
 import { templateReplacements } from '../helpers/stdrep'
 
+import { copyOpts } from '../helpers/junk'
+
 import { resolveKind, kindModel } from './kind'
 
 
@@ -100,6 +102,9 @@ async function feature_add(features: string[], actx: ActionContext): Promise<Act
     control: {
       dryrun: !!actx.opts.dryrun
     },
+    // Per-call for the same reason, and covering the same accident: see
+    // helpers/junk.
+    cmp: copyOpts(),
   }
 
   opts.log.info({

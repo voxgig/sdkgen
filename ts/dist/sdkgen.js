@@ -177,6 +177,7 @@ const definition_1 = require("./helpers/definition");
 Object.defineProperty(exports, "definitionPath", { enumerable: true, get: function () { return definition_1.definitionPath; } });
 Object.defineProperty(exports, "definitionFolder", { enumerable: true, get: function () { return definition_1.definitionFolder; } });
 Object.defineProperty(exports, "definitionNames", { enumerable: true, get: function () { return definition_1.definitionNames; } });
+const junk_1 = require("./helpers/junk");
 const manifest_1 = require("./helpers/manifest");
 Object.defineProperty(exports, "MANIFEST", { enumerable: true, get: function () { return manifest_1.MANIFEST; } });
 Object.defineProperty(exports, "manifestPath", { enumerable: true, get: function () { return manifest_1.manifestPath; } });
@@ -245,7 +246,12 @@ function SdkGen(opts) {
                 write: true,
                 merge: false
             }
-        }
+        },
+        // No copied tree carries a maintainer's `.DS_Store` or `__pycache__` into
+        // an SDK. Set here AND per call (see helpers/junk) — the actions run on
+        // whatever instance their caller supplies, so neither placement covers
+        // every path on its own.
+        cmp: (0, junk_1.copyOpts)()
     };
     const jostraca = Jostraca(jopts);
     const pino = (0, util_1.prettyPino)('sdkgen', opts);
@@ -278,6 +284,9 @@ function SdkGen(opts) {
             control: {
                 dryrun: !!opts.dryrun
             },
+            // Per-call for the same reason as `control` above: an option the
+            // instance carries is not reliably the one a generate sees.
+            cmp: (0, junk_1.copyOpts)(),
         };
         // Targets that write OUTSIDE the SDK repo (`output: path`) are generated
         // by their own pass, rooted at that path — see cmp/ExternalTarget for why
@@ -600,9 +609,12 @@ function externalItems(model, folder, kinds) {
 // has been generated into already, whoever set it up.
 const EXTERNAL_MARKER = '.jostraca';
 // Entries that do not count as content when deciding whether a destination
-// is empty. A `git init` (or a clone of an empty repo) leaves only `.git`,
-// and that is exactly the destination a FIRST generation is aimed at.
-const EXTERNAL_EMPTY = ['.git', '.DS_Store'];
+// is empty. A `git init` (or a clone of an empty repo) leaves only `.git`, and
+// that is exactly the destination a FIRST generation is aimed at — as is one
+// the maintainer opened in the Finder on the way to declaring it.
+//
+// `isNoise`, not `isJunk`: a destination holding build output is not empty,
+// whether or not sdkgen would ever copy such a thing. See helpers/junk.
 // Refuse a destination the project cannot have meant.
 //
 // The external pass is the one code path that writes outside the repo it was
@@ -670,7 +682,7 @@ function checkExternalFolders(external, root, fs) {
             .map((entry) => String(entry));
         if (entries.includes(EXTERNAL_MARKER))
             continue;
-        const content = entries.filter((entry) => !EXTERNAL_EMPTY.includes(entry));
+        const content = entries.filter((entry) => !(0, junk_1.isNoise)(entry));
         if (0 < content.length) {
             throw new utility_1.SdkGenError('External target output folder already holds content this generator ' +
                 'did not write.\n  ' + where +

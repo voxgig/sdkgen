@@ -13,6 +13,7 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const featureSource_1 = require("../helpers/featureSource");
 const stdrep_1 = require("../helpers/stdrep");
+const junk_1 = require("../helpers/junk");
 const kind_1 = require("./kind");
 const action_1 = require("./action");
 const CMD_MAP = {
@@ -61,6 +62,9 @@ async function feature_add(features, actx) {
         control: {
             dryrun: !!actx.opts.dryrun
         },
+        // Per-call for the same reason, and covering the same accident: see
+        // helpers/junk.
+        cmp: (0, junk_1.copyOpts)(),
     };
     opts.log.info({
         point: 'feature-start',

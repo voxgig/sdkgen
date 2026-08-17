@@ -41,6 +41,7 @@ exports.docs_add = docs_add;
 const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
 const stdrep_1 = require("../helpers/stdrep");
+const junk_1 = require("../helpers/junk");
 const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
 const target_1 = require("./target");
@@ -91,6 +92,9 @@ async function docs_add(docs, actx) {
         control: {
             dryrun: !!actx.opts.dryrun
         },
+        // Per-call for the same reason, and covering the same accident: see
+        // helpers/junk.
+        cmp: (0, junk_1.copyOpts)(),
     };
     opts.log.info({
         point: 'docs-start',

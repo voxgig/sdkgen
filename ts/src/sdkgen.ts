@@ -79,6 +79,7 @@ import {
   definitionFolder,
   definitionNames,
 } from './helpers/definition'
+import { isNoise, copyOpts } from './helpers/junk'
 import {
   MANIFEST,
   manifestPath,
@@ -207,7 +208,12 @@ function SdkGen(opts: SdkGenOptions) {
         write: true,
         merge: false
       }
-    }
+    },
+    // No copied tree carries a maintainer's `.DS_Store` or `__pycache__` into
+    // an SDK. Set here AND per call (see helpers/junk) — the actions run on
+    // whatever instance their caller supplies, so neither placement covers
+    // every path on its own.
+    cmp: copyOpts()
   }
 
   const jostraca = Jostraca(jopts)
@@ -248,6 +254,9 @@ function SdkGen(opts: SdkGenOptions) {
       control: {
         dryrun: !!opts.dryrun
       },
+      // Per-call for the same reason as `control` above: an option the
+      // instance carries is not reliably the one a generate sees.
+      cmp: copyOpts(),
     }
 
     // Targets that write OUTSIDE the SDK repo (`output: path`) are generated
@@ -670,9 +679,12 @@ function externalItems(
 const EXTERNAL_MARKER = '.jostraca'
 
 // Entries that do not count as content when deciding whether a destination
-// is empty. A `git init` (or a clone of an empty repo) leaves only `.git`,
-// and that is exactly the destination a FIRST generation is aimed at.
-const EXTERNAL_EMPTY = ['.git', '.DS_Store']
+// is empty. A `git init` (or a clone of an empty repo) leaves only `.git`, and
+// that is exactly the destination a FIRST generation is aimed at — as is one
+// the maintainer opened in the Finder on the way to declaring it.
+//
+// `isNoise`, not `isJunk`: a destination holding build output is not empty,
+// whether or not sdkgen would ever copy such a thing. See helpers/junk.
 
 
 // Refuse a destination the project cannot have meant.
@@ -754,7 +766,7 @@ function checkExternalFolders(external: ExternalSpec[], root: string, fs: any) {
 
     if (entries.includes(EXTERNAL_MARKER)) continue
 
-    const content = entries.filter((entry) => !EXTERNAL_EMPTY.includes(entry))
+    const content = entries.filter((entry) => !isNoise(entry))
 
     if (0 < content.length) {
       throw new SdkGenError(

@@ -46,6 +46,8 @@ import { SdkGenError } from '../utility'
 
 import { templateReplacements } from '../helpers/stdrep'
 
+import { copyOpts } from '../helpers/junk'
+
 import { resolveKind, kindModel, kindTrees } from './kind'
 import type { TreeDef } from './kind'
 
@@ -122,6 +124,9 @@ async function docs_add(
     control: {
       dryrun: !!actx.opts.dryrun
     },
+    // Per-call for the same reason, and covering the same accident: see
+    // helpers/junk.
+    cmp: copyOpts(),
   }
 
   opts.log.info({

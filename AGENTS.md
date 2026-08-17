@@ -278,6 +278,7 @@ Rules:
 | Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts |
 | Change a CLI flag | `ts/bin/voxgig-sdkgen` — parse entry, the closed `Shape`, **and** the help text | plus a row in [reference/cli](./docs/reference/cli.md); the shape is closed, so missing one of the three is a runtime rejection, and an optional flag is `Skip(String)` (see Sharp edges) |
 | Add a rule about a package's `.aontu` files | `ts/src/helpers/modelcheck.ts` | `package check` and `ts/test/model-compile.test.ts` are both callers — the bundled scaffold is checked by the same battery an author runs |
+| Ignore another build/editor dropping (`__pycache__`, `.DS_Store`, …) | `ts/src/helpers/junk.ts` | every walk already consults it — copy, prune, doctor, feature scan; `ts/test/junk.test.ts` guards the list against the shipped scaffold |
 
 ### Never edit generated output
 
@@ -415,6 +416,17 @@ emitted broken source reached the fleet unchallenged.
   and will write during a `-y` run.
 - **Index updates** (`feature-index` / `target-index`) must be idempotent
   — adding a name already present must not duplicate it.
+- **Junk is filtered in ONE place: `helpers/junk`.** Everything that walks
+  a tree consults it — the tree `Copy` (through `cmp.Copy.ignore`, passed
+  *per call* for the same reason `control.dryrun` is), `aliasCmpTree`,
+  `pruneStaleTemplates`, doctor's drift walk, `findFeatureEntries`,
+  `definitionNames` — and a new walk must too. Half a filter is worse than
+  none: the writer and the reader then disagree about what a tree
+  contains, which is precisely what doctor reports as drift. A stray
+  `tm/py/utility/__pycache__/*.pyc` was copied into the add output for
+  months. Membership is a promise that no template is ever named that, so
+  `build`/`dist`/`bin` are NOT junk and `target` emphatically is not;
+  `test/junk.test.ts` checks the list against every shipped name.
 - **An ALIAS is a name, never a path.** It becomes the directory an item
   is installed into (`src/cmp/<alias>`, `tm/<alias>`) and `add`
   overwrites what it writes, so `go~..` would redirect the copy out of

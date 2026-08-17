@@ -18,6 +18,7 @@ const jostraca_1 = require("jostraca");
 const util_1 = require("@voxgig/util");
 const dryrun_1 = require("../helpers/dryrun");
 const stdrep_1 = require("../helpers/stdrep");
+const junk_1 = require("../helpers/junk");
 const aontu_1 = require("aontu");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
@@ -65,6 +66,10 @@ async function target_add(targets, actx) {
         control: {
             dryrun: !!actx.opts.dryrun
         },
+        // Per-call for the same reason `control` is: this action runs on whatever
+        // Jostraca instance the caller handed it, and a template tree must not
+        // carry a maintainer's build droppings into a project. See helpers/junk.
+        cmp: (0, junk_1.copyOpts)(),
     };
     opts.log.info({
         point: 'target-start',
@@ -272,8 +277,14 @@ function aliasCmpTree(ctx$, fromDir, toRel, torigname, tname, cmpbase = 'src/cmp
             return;
         }
         // Sorted, so an aliased tree is emitted in the same byte-stable order
-        // everything else in this toolchain is.
-        const names = entries.map((ent) => ent.name).sort();
+        // everything else in this toolchain is. Junk is dropped here because this
+        // walk stands in for a tree Copy, which drops it through
+        // `cmp.Copy.ignore` — an aliased install must not be the one path that
+        // ships a maintainer's `__pycache__`. See helpers/junk.
+        const names = entries
+            .map((ent) => ent.name)
+            .filter((name) => !(0, junk_1.isJunk)(name))
+            .sort();
         for (const name of names) {
             const child = node_path_1.default.join(dir, name);
             const ent = entries.find((e) => e.name === name);
@@ -335,6 +346,15 @@ function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun) {
                 return;
             }
             for (const ent of entries) {
+                // Junk is invisible to this listing on BOTH sides, and it has to be
+                // both. In the source it is never copied, so counting it would want a
+                // file that can never arrive. In the destination it was never written
+                // by this toolchain, so counting it as stale would have `target add`
+                // delete a maintainer's own `__pycache__` out of their SDK repo —
+                // this prune's remit is the tree it writes, not the tree it finds.
+                if ((0, junk_1.isJunk)(ent.name)) {
+                    continue;
+                }
                 const child = node_path_1.default.join(dir, ent.name);
                 const childRel = '' === rel ? ent.name : rel + '/' + ent.name;
                 if (ent.isDirectory()) {

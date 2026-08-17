@@ -18,6 +18,8 @@ import { showDryrun } from '../helpers/dryrun'
 
 import { templateReplacements, provenanceReplace } from '../helpers/stdrep'
 
+import { isJunk, copyOpts } from '../helpers/junk'
+
 import { Aontu } from 'aontu'
 
 import {
@@ -104,6 +106,10 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
     control: {
       dryrun: !!actx.opts.dryrun
     },
+    // Per-call for the same reason `control` is: this action runs on whatever
+    // Jostraca instance the caller handed it, and a template tree must not
+    // carry a maintainer's build droppings into a project. See helpers/junk.
+    cmp: copyOpts(),
   }
 
   opts.log.info({
@@ -365,8 +371,14 @@ function aliasCmpTree(
     }
 
     // Sorted, so an aliased tree is emitted in the same byte-stable order
-    // everything else in this toolchain is.
-    const names = entries.map((ent: any) => ent.name).sort()
+    // everything else in this toolchain is. Junk is dropped here because this
+    // walk stands in for a tree Copy, which drops it through
+    // `cmp.Copy.ignore` — an aliased install must not be the one path that
+    // ships a maintainer's `__pycache__`. See helpers/junk.
+    const names = entries
+      .map((ent: any) => ent.name)
+      .filter((name: string) => !isJunk(name))
+      .sort()
 
     for (const name of names) {
       const child = Path.join(dir, name)
@@ -445,6 +457,16 @@ function pruneStaleTemplates(
         return
       }
       for (const ent of entries) {
+        // Junk is invisible to this listing on BOTH sides, and it has to be
+        // both. In the source it is never copied, so counting it would want a
+        // file that can never arrive. In the destination it was never written
+        // by this toolchain, so counting it as stale would have `target add`
+        // delete a maintainer's own `__pycache__` out of their SDK repo —
+        // this prune's remit is the tree it writes, not the tree it finds.
+        if (isJunk(ent.name)) {
+          continue
+        }
+
         const child = Path.join(dir, ent.name)
         const childRel = '' === rel ? ent.name : rel + '/' + ent.name
         if (ent.isDirectory()) {
