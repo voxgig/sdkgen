@@ -4,6 +4,7 @@ declare const SECURITY_EMAIL = "security@voxgig.com";
 declare const GENERATOR_URL = "https://github.com/voxgig/sdkgen";
 declare const LANG_LABEL: Record<string, string>;
 declare function langLabel(target: string): string;
+declare function originName(model: any, target: string): string;
 declare function repoInfo(model: any): {
     slug: any;
     origin: any;
@@ -39,4 +40,4 @@ declare function contributorList(model: any): {
 }[];
 declare function envToken(name: any): string;
 declare function envName(model: any): string;
-export { PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, repoInfo, apiName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, };
+export { PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, apiName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, };

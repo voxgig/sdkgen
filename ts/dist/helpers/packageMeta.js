@@ -17,6 +17,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LANG_LABEL = exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = void 0;
 exports.langLabel = langLabel;
+exports.originName = originName;
 exports.repoInfo = repoInfo;
 exports.apiName = apiName;
 exports.packageName = packageName;
@@ -61,6 +62,25 @@ const LANG_LABEL = {
 exports.LANG_LABEL = LANG_LABEL;
 function langLabel(target) {
     return LANG_LABEL[target] || target;
+}
+// THE NAME WHOSE LANGUAGE RULES APPLY.
+//
+// A target name does two unrelated jobs in this file, and conflating them is
+// the defect this exists to end. `go~go2` installs a SECOND Go SDK: its
+// CONFIG lives under `main.kit.target.go2` (its own module path, its own
+// registry state), but it is still Go — the same go.mod shape, the same
+// `go get` install line, the same "Go" label.
+//
+// So: look config up by the target's OWN name, and select behaviour by this.
+// `origname` is stamped at add time precisely for aliased installs and is
+// empty when a target was installed under its own name, which makes the
+// unaliased case identical to what it was.
+//
+// Ecosystem keys ('npm', 'gem', 'composer') pass through untouched: there is
+// no target node under those names, so they answer for themselves.
+function originName(model, target) {
+    const orig = model?.main?.[apidef_1.KIT]?.target?.[target]?.origname;
+    return (null != orig && '' !== orig) ? String(orig) : target;
 }
 // Git host, org/repo path, and the canonical repo URLs.
 //
@@ -187,7 +207,10 @@ function goPackageIdent(model, target) {
 // The legacy boolean `registry.active: true` is honoured as a back-compat
 // alias for state === 'active'.
 function registryState(model, target) {
-    if ('go' === target || 'go-cli' === target || 'go-mcp' === target)
+    // Tag-only is a property of the Go toolchain, not of one target name, so
+    // an aliased `go~go2` must be tag-only too.
+    const eco = originName(model, target);
+    if ('go' === eco || 'go-cli' === eco || 'go-mcp' === eco)
         return 'tag';
     const reg = model?.main?.[apidef_1.KIT]?.target?.[target]?.publish?.registry;
     if (null == reg || '' === (reg.name || ''))
@@ -218,13 +241,16 @@ function registryName(model, target) {
 // pointer carrying the releases URL.
 function vendorCommand(model, target) {
     const { releasesUrl } = repoInfo(model);
-    switch (target) {
+    switch (originName(model, target)) {
+        // `target`, not the literal — the case says WHICH command, the argument
+        // says whose module. Writing the literal here reintroduces the same bug
+        // the switch above exists to fix, one level down, which is exactly what
+        // the first cut of this change did.
         case 'go':
-            return `go get ${packageName(model, 'go')}@latest`;
         case 'go-mcp':
-            return `go get ${packageName(model, 'go-mcp')}@latest`;
+            return `go get ${packageName(model, target)}@latest`;
         case 'go-cli':
-            return `go install ${packageName(model, 'go-cli')}/cmd/${model.name}@latest`;
+            return `go install ${packageName(model, target)}/cmd/${model.name}@latest`;
         default: {
             const reg = registryName(model, target);
             return `not yet on ${reg || 'the registry'} — install from the git tag: ${releasesUrl}`;
@@ -265,7 +291,12 @@ function packageName(model, eco) {
     if (null != declared && '' !== declared) {
         return String(declared);
     }
-    switch (eco) {
+    // The lookup above is keyed by the target's OWN name, so an alias reads its
+    // own declared package. The switch below is about FORM — npm scoping,
+    // slash-separated composer names — which belongs to the language, so it
+    // follows the origin. Passing `ts2` here without this would miss every case
+    // and fall to `default`, silently publishing under a non-npm name.
+    switch (originName(model, eco)) {
         case 'npm':
         case 'ts':
             return npmScoped;
@@ -281,12 +312,13 @@ function packageName(model, eco) {
         case 'composer':
         case 'php':
             return `${origin}/${base}`;
+        // `eco`, not the literal: the case is chosen by the LANGUAGE but the
+        // module belongs to the target that asked. `packageName(model, 'go2')`
+        // returning go's module was the same conflation one level down.
         case 'go':
-            return goModule(model, 'go');
         case 'go-cli':
-            return goModule(model, 'go-cli');
         case 'go-mcp':
-            return goModule(model, 'go-mcp');
+            return goModule(model, eco);
         // The notebook/analyst package layered on `py`. Distinct PyPI name so it
         // can version and publish independently of the SDK it wraps.
         case 'py-data':
@@ -304,25 +336,29 @@ function installCommand(model, target) {
     if (!isPublished(model, target)) {
         return vendorCommand(model, target);
     }
-    switch (target) {
+    // WHICH package manager is the language's business, so the switch follows
+    // the origin; WHICH package name is this target's own, so every arm passes
+    // `target` rather than a hardcoded ecosystem key. Before, an aliased
+    // `ts~ts2` matched no case and returned '' — a README with an empty install
+    // line — and even had it matched, `packageName(model, 'npm')` would have
+    // printed the ORIGIN's package.
+    switch (originName(model, target)) {
         case 'ts':
-            return `npm install ${packageName(model, 'npm')}`;
         case 'js':
-            return `npm install ${packageName(model, 'js')}`;
+            return `npm install ${packageName(model, target)}`;
         case 'py':
-            return `pip install ${packageName(model, 'pypi')}`;
         case 'py-data':
-            return `pip install ${packageName(model, 'py-data')}`;
+            return `pip install ${packageName(model, target)}`;
         case 'php':
-            return `composer require ${packageName(model, 'composer')}`;
+            return `composer require ${packageName(model, target)}`;
         case 'rb':
-            return `gem install ${packageName(model, 'gem')}`;
+            return `gem install ${packageName(model, target)}`;
         case 'lua':
-            return `luarocks install ${packageName(model, 'luarocks')}`;
+            return `luarocks install ${packageName(model, target)}`;
         case 'go':
-            return `go get ${packageName(model, 'go')}`;
+            return `go get ${packageName(model, target)}`;
         case 'go-cli':
-            return `go install ${packageName(model, 'go-cli')}/cmd/${model.name}@latest`;
+            return `go install ${packageName(model, target)}/cmd/${model.name}@latest`;
         default:
             return '';
     }
@@ -330,7 +366,8 @@ function installCommand(model, target) {
 // The standard one-line package description (with the generic non-affiliation
 // statement inline) used in every manifest.
 function pkgDescription(model, target) {
-    return `Unofficial generated ${langLabel(target)} SDK for the ${apiName(model)} public API.` +
+    return `Unofficial generated ${langLabel(originName(model, target))} SDK` +
+        ` for the ${apiName(model)} public API.` +
         ` Not affiliated with or endorsed by the upstream API provider.`;
 }
 // Longer non-affiliation / generated-code disclosure for READMEs, LICENSE and
