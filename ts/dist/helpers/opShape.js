@@ -207,12 +207,7 @@ function opParams(op) {
     // Unrelated cross-references share no param, so nothing came out
     // required — use the shortest point's own params instead of a union.
     if (1 < points.length && !out.some((p) => p.reqd)) {
-        let shortest = points[0];
-        for (const pt of points) {
-            if (pt && pt.parts && shortest.parts && pt.parts.length < shortest.parts.length) {
-                shortest = pt;
-            }
-        }
+        const shortest = points.reduce((short, pt) => (pt && pt.parts && short.parts && pt.parts.length < short.parts.length) ? pt : short);
         return opParams({ points: [shortest] });
     }
     return out;

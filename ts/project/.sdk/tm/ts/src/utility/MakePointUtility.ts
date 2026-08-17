@@ -66,12 +66,8 @@ function makePoint(ctx: Context): Point | Error {
     // select.exist can match nothing (it lists more than required
     // params) — fall back to the shortest path, not an arbitrary one.
     if (!matched) {
-      point = op.points[0]
-      for (const cand of op.points) {
-        if (cand.parts.length < point.parts.length) {
-          point = cand
-        }
-      }
+      point = op.points.reduce((shortest: any, cand: any) =>
+        cand.parts.length < shortest.parts.length ? cand : shortest)
     }
 
     if (

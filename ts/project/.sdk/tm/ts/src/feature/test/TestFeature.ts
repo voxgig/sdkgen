@@ -258,13 +258,8 @@ class TestFeature extends BaseFeature {
 
     // Prefer the shortest path: the entity's own endpoint, not a
     // cross-reference from another resource that also returns it.
-    let point = getelem(points, 0)
-    for (let i = 1; i < points.length; i++) {
-      const cand = getelem(points, i)
-      if (cand.parts.length < point.parts.length) {
-        point = cand
-      }
-    }
+    const point = points.reduce((shortest: any, cand: any) =>
+      cand.parts.length < shortest.parts.length ? cand : shortest)
 
     const reqd = transform(
       select(getpath(point, ['args', 'params']), { reqd: true }),

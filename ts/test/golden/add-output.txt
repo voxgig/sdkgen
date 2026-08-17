@@ -2062,7 +2062,7 @@ tm/ts/src/Result.ts 45a656e9d5df
 tm/ts/src/Spec.ts 318854e8cb05
 tm/ts/src/feature/README.md 630422c5567f
 tm/ts/src/feature/base/BaseFeature.ts 4c0e468f5313
-tm/ts/src/feature/test/TestFeature.ts c45db8409820
+tm/ts/src/feature/test/TestFeature.ts 8693978a00d1
 tm/ts/src/tsconfig.json c1b52cc621fb
 tm/ts/src/types.ts 5e1f5518bba6
 tm/ts/src/utility/CleanUtility.ts 2bdbcdce5d3f
@@ -2076,7 +2076,7 @@ tm/ts/src/utility/MakeContextUtility.ts 50caf1a75850
 tm/ts/src/utility/MakeErrorUtility.ts ac21ee4f2052
 tm/ts/src/utility/MakeFetchDefUtility.ts 940b95f0d2b0
 tm/ts/src/utility/MakeOptionsUtility.ts 8d2c2a24308d
-tm/ts/src/utility/MakePointUtility.ts d8bb9a093ac4
+tm/ts/src/utility/MakePointUtility.ts c75fb8b7ddec
 tm/ts/src/utility/MakeRequestUtility.ts 03c4c8e1380a
 tm/ts/src/utility/MakeResponseUtility.ts a294cf7183ee
 tm/ts/src/utility/MakeResultUtility.ts 35a8c1404935
