@@ -35,3 +35,18 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - run: npm test
+
+    # THE MIGRATED TARGETS' OWN SUITES.
+    #
+    # A target that moved into a package left sdkgen's guard suites — that is
+    # what migrating means, and it is also how a migrated target quietly
+    # stops being tested. These run the package's suite against the working
+    # checkout (its devDependency on @voxgig/sdkgen is `file:../../ts`), so a
+    # change to sdkgen that breaks a packaged target fails here rather than
+    # in someone's install.
+    #
+    # `npm install`, not `npm ci`: the file: dependency resolves against the
+    # checkout, so there is no lockfile to honour.
+    - name: haskell package
+      working-directory: packages/sdkgen-haskell
+      run: npm install --no-audit --no-fund && npm test

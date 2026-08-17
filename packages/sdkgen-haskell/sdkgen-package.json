@@ -1,0 +1,18 @@
+{
+  "sdkgen": {
+    "package": 1
+  },
+  "name": "@voxgig/sdkgen-haskell",
+  "version": "1.0.0",
+  "engines": {
+    "sdkgen": ">=3.5.0"
+  },
+  "provides": {
+    "target": [
+      "haskell"
+    ]
+  },
+  "parity": {
+    "haskell": "MIRRORED"
+  }
+}

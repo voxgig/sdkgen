@@ -3,6 +3,10 @@
 The §14 deliverable from [the packages design](../design/sdkgen-packages.md):
 the checklist that makes the first move safe.
 
+**This has been done once**, for `haskell` →
+[`packages/sdkgen-haskell`](https://github.com/voxgig/sdkgen/tree/main/packages/sdkgen-haskell).
+Everything below is written from that, not from reading the code.
+
 A bundled target and a package target are the *same shape* — `ts/project/`
 is itself an sdkgen package, which is exactly why. So migrating one is a
 move, not a rewrite. What makes it worth a checklist is that a target's
@@ -12,18 +16,31 @@ in the right order.
 
 ## Before you start: is this target a good candidate?
 
-**Check what its components import.** Anything beyond siblings and
-`@voxgig/sdkgen` is a scaffold-relative dependency that has to be promoted
-to the public API first (§11 of the design) — otherwise the package
+**Check what its components import.** A relative import of anything outside
+the target's own directory is a scaffold-relative dependency that has to be
+promoted to the public API first (§11 of the design) — otherwise the package
 compiles here and fails for everyone else.
 
 ```bash
-grep -h "^import\|require(" ts/project/.sdk/src/cmp/<t>/*.ts \
-  | sed "s/.*from //;s/.*require(//" | sort -u
+grep -rh "from '@\|require('@" ts/project/.sdk/src/cmp/<t>/*.ts \
+  | sed "s/.*from '//;s/.*require('//;s/'.*//" | sort -u
 ```
 
-All five MIRRORED-tier targets (`c`, `clojure`, `elixir`, `haskell`,
-`zig`) pass this today: siblings, `@voxgig/sdkgen`, and `node:path`.
+All five MIRRORED-tier targets pass that test. What the run found instead is
+the case nobody had written down:
+
+> **A migrated target inherits sdkgen's peer dependencies as its own.**
+
+`haskell`'s components import `@voxgig/apidef` and `@voxgig/struct` by name.
+That resolved silently while the target lived beside sdkgen's own
+`node_modules`, and stopped the moment it moved — fifteen `TS2307` errors
+the first time its new type-check lane ran. So the package declares them,
+as **peers** (a consumer necessarily has them via sdkgen, and a second copy
+at a different version is the outcome worth preventing) **and** as devDeps,
+so its own type-check resolves.
+
+Run the grep above and declare whatever it prints, minus `@voxgig/sdkgen`
+itself.
 
 **Check its parity tier.** A FULL-tier target drives the shared `.aontu`
 corpus, which today lives in create-sdkgen and is reachable only from
@@ -61,24 +78,52 @@ copied from the target's own tree are NOT removed
 That warning is the migration's own smoke alarm. If you see it after the
 move, a tree did not actually leave.
 
-### 2. The four enumeration points
+### 2. The enumeration points
 
-Everything else in the repo derives the target set from the model
-directory listing and needs no edit. These four do not:
+Most of the repo derives the target set from the model directory listing
+and needs no edit. These do not — and there are more of them than the
+design implies, because a target accumulates *behavioural* tests as well as
+membership in closed sets:
 
 | Where | What to do |
 |---|---|
-| `ts/project/.sdk/model/target/target-index.aontu` | remove the `@"<t>.aontu"` line |
-| `ts/project/sdkgen-package.json` | remove `<t>` from `provides.target` — a guard test pins this to the directory listing, so it fails until you do |
-| `ts/test/parity.test.ts` | remove `<t>` from `FULL` / `MIRRORED` / `UNCOVERED` **and** from `RAW_ACCESS` if present; the tier declaration moves to the package manifest's `parity` field |
+| `ts/project/sdkgen-package.json` | remove `<t>` from `provides.target`. A guard test pins this to the directory listing, so it fails until you do |
+| `ts/test/parity.test.ts` | remove from `FULL` / `MIRRORED` / `UNCOVERED`, and from `RAW_ACCESS` / `NO_RAW_ACCESS`. The tier moves to the package manifest's `parity` field |
+| `ts/test/featuremodel.test.ts` | remove from `SDK_TARGETS` |
+| `ts/test/featuresource.test.ts` | remove from the pinned `untrimmable` list, if it is on it |
+| `ts/test/generate.test.ts` | remove its rows from the data-representation and manifest-name tables |
 | `ts/test/golden/add-output.txt` | regenerate with `npm run golden` |
 
-The parity suite asserts that every SDK target appears in exactly one
-tier, derived from the directory listing — so it fails loudly if you
-remove the tree and forget the tier, and equally if you remove the tier
-and forget the tree. Let it.
+There is **no `target-index.aontu` in the bundled scaffold** — the index is
+created per consumer project by the `loadContent` bootstrap, so there is
+nothing to edit there. (An earlier draft of this page said otherwise.)
 
-### 3. The package's own manifest
+The closed-set guards are your safety net, not an obstacle: parity asserts
+that every SDK target appears in exactly one tier, derived from the
+directory listing, so it fails loudly if you remove the tree and forget the
+tier, and equally if you remove the tier and forget the tree. Let it.
+
+### 2a. The target's own tests move with it
+
+This is the step with real content in it. A mature target has tests that
+are *about that language* — `haskell` had two, on the `.cabal` module
+declaration and on `formatHsValue` key ordering, each with several
+paragraphs of hard-won rationale.
+
+Deleting them is not an option: that is coverage the target still needs.
+Port them to the package's suite on the test kit, comments and all. The
+mechanical differences are small — `generateInto()` returns a path→content
+map instead of the in-repo harness's tuples, and a component is required
+from the staged consumer's `dist/cmp/<t>/` rather than from
+`dist-test-scaffold`.
+
+The package also needs its own **fixture API model**, because the in-repo
+one (`ts/test/generateharness.ts`) is not published. Keep it small; it only
+has to exercise the shapes that have historically broken this target.
+
+### 3. The package's own manifests
+
+`sdkgen-package.json` — what sdkgen reads:
 
 ```json
 {
@@ -91,19 +136,42 @@ and forget the tree. Let it.
 }
 ```
 
-`parity` is where the tier now lives. It travels with the target, which
-is the point of moving it.
+`parity` is where the tier now lives. It travels with the target, which is
+the point of moving it.
 
-### 4. Its own suite, on the test kit
+`package.json` — what npm reads. Beyond the usual, it needs `files`
+covering `.sdk` and `sdkgen-package.json`, the peers from the screen
+above, and a devDependency on `@voxgig/sdkgen` as `file:../../ts` if the
+package lives in this repo, so its suite runs against the working
+checkout.
 
-The in-repo suites no longer cover this target — that is what migrating
-means. Replace them from the package side:
+### 4. The type-check lane it just lost
+
+`check-scaffold` type-checked these components while they were bundled.
+Nothing does now, and a component tree with no compile gate fails deep
+inside someone's generation run as a require error naming a path rather
+than a type error naming a line.
+
+Give the package a `tsconfig.json` over `.sdk/src/cmp/**` (excluding
+`fragment/**`, which is template source, not modules) and wire it into its
+`test` script. This is the step that caught the peer-dependency problem
+above — the first thing it did was fail.
+
+### 5. Its own suite, on the test kit
 
 ```js
 const { stageConsumer, generateInto } = require('@voxgig/sdkgen/testkit')
 ```
 
 See [author-an-sdkgen-package](./author-an-sdkgen-package.md#automate-that-loop-the-test-kit).
+
+### 6. CI
+
+A migrated target leaves sdkgen's suites, which is also how it quietly
+stops being tested. Add a step to `.github/workflows/build.yml` that
+installs and tests the package against the checkout, so a change to sdkgen
+that breaks a packaged target fails in this repo rather than in someone's
+install.
 
 ## Verify
 

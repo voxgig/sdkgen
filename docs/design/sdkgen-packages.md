@@ -31,19 +31,28 @@ Still open in **§18.7**:
 1. **The corpus package** (`@voxgig/sdkgen-corpus`). Until it exists,
    FULL-tier parity is reachable only from inside voxgig's own repos, so
    any migrated FULL-tier target is silently capped.
-2. **A first migration subject** (§17.8). The CHECKLIST is now written and
-   verified — [how-to/migrate-a-bundled-target](../how-to/migrate-a-bundled-target.md)
-   — and the mechanism is proven: all five MIRRORED-tier targets (`c`,
-   `clojure`, `elixir`, `haskell`, `zig`) installed from a package generate
-   BYTE-IDENTICALLY to the same target installed from the bundled scaffold,
-   with no placeholder leaks. What remains is choosing one, and that is a
-   PRODUCT decision — a migrated target is no longer in the box — so §17.8
-   stays open on purpose rather than for want of a recipe.
+**§17.8 is ANSWERED: `haskell` migrated first**, to
+`packages/sdkgen-haskell`. The checklist is
+[how-to/migrate-a-bundled-target](../how-to/migrate-a-bundled-target.md), and
+it is written from the move rather than from reading the code. Before the
+move, all five MIRRORED-tier candidates were shown to generate
+BYTE-IDENTICALLY from a package and from the bundled scaffold; doing it for
+real added three things the dry run could not:
 
-   The dry run also settled how the move must be done: it is a `git mv`, not
-   a copy. A surviving scaffold tree makes the bundled `test` feature's
-   fan-out treat it as an overlay over the package's, and every consumer gets
-   a `feature-source-shadowed` warning plus a project holding both copies.
+- **A migrated target inherits sdkgen's PEERS as its own.** Its components
+  import `@voxgig/apidef` and `@voxgig/struct` by name, which resolved
+  silently beside sdkgen's `node_modules` and stopped the moment it moved.
+  This is §11's scaffold-relative-utilities concern in a form nobody had
+  written down.
+- **It is a `git mv`, not a copy.** A surviving scaffold tree makes the
+  bundled `test` feature's fan-out treat it as an overlay over the
+  package's — a `feature-source-shadowed` warning for every consumer, and a
+  project holding both copies.
+- **The enumeration surface is bigger than §14 implies**, because a mature
+  target accumulates BEHAVIOURAL tests, not just membership in closed sets.
+  `haskell` had two, which moved to the package's suite with their rationale
+  intact. There is also no `target-index.aontu` in the bundled scaffold to
+  edit — that index is created per consumer project.
 
 `parity` and `targetsSupported` are declared in `helpers/manifest.ts`. The
 kit now reads `parity` for an EXTERNAL package (`manifestParity`), where
@@ -1459,9 +1468,14 @@ top:
    concrete entries under it (§14).
 7. **`package remove` / `target remove` scope** — fast-follow once
    `removeIndexEntries` exists; needs its own blast-radius note.
-8. **Which bundled target migrates first?** The migration checklist
-   (§14) needs a first subject; a MIRRORED-tier target with few
-   scaffold-relative dependencies is the low-risk choice.
+8. **Which bundled target migrates first?** ANSWERED — `haskell`, to
+   `packages/sdkgen-haskell`, on the reasoning this question already
+   contained: MIRRORED tier (so it does not need the corpus package), few
+   scaffold-relative dependencies, and the joint-smallest generated output
+   of the candidates. See the status note at the top of this file for what
+   doing it taught, and
+   [how-to/migrate-a-bundled-target](../how-to/migrate-a-bundled-target.md)
+   for the checklist it produced.
 9. **A source digest, to tell "upstream moved" from "locally edited"?**
    §13 solves the ambiguity by owning the fetch ordering, which is enough
    for the supported path. Stamping a per-file digest of each source file

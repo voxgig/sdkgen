@@ -14,7 +14,8 @@ depth.
 Voxgig SDK Generator (`@voxgig/sdkgen`) — generates idiomatic
 multi-language client SDKs (ts, js, go, py, php, rb, lua, csharp, java,
 kotlin, scala, swift, dart, rust, c, cpp, zig, perl, clojure, elixir, ocaml,
-haskell, plus go-cli and go-mcp) from an OpenAPI-derived model.
+plus go-cli and go-mcp) from an OpenAPI-derived model. `haskell` ships
+separately, in `packages/sdkgen-haskell`.
 
 ## Build & Test
 The npm package root is **`ts/`** — run npm commands there, or use the

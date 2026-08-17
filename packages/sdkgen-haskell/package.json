@@ -1,0 +1,55 @@
+{
+  "name": "@voxgig/sdkgen-haskell",
+  "version": "1.0.0",
+  "description": "Haskell target for the Voxgig SDK Generator.",
+  "type": "commonjs",
+  "license": "MIT",
+  "keywords": [
+    "voxgig",
+    "sdkgen",
+    "sdkgen-package",
+    "haskell"
+  ],
+  "author": "Richard Rodger (http://richardrodger.com)",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/voxgig/sdkgen.git",
+    "directory": "packages/sdkgen-haskell"
+  },
+  "files": [
+    ".sdk",
+    "sdkgen-package.json"
+  ],
+  "scripts": {
+    "check-cmp": "tsc -p tsconfig.json",
+    "check-package": "voxgig-sdkgen package check .",
+    "test": "npm run check-cmp && node --test test/*.test.js",
+    "build": "npm run check-cmp"
+  },
+  "_peer_comment": [
+    "A MIGRATED TARGET INHERITS SDKGEN'S PEERS AS ITS OWN. Its components",
+    "import @voxgig/apidef and @voxgig/struct BY NAME, which resolved silently",
+    "while the target lived in the bundled scaffold beside sdkgen's own",
+    "node_modules. Out here they have to be declared, or the components fail",
+    "to type-check for the author and fail to resolve for anyone who installs",
+    "this package without sdkgen's peers present.",
+    "",
+    "Peers rather than dependencies: a consumer necessarily has these already,",
+    "via sdkgen, and a second copy at a different version is the one outcome",
+    "worth preventing."
+  ],
+  "peerDependencies": {
+    "@voxgig/apidef": ">=7.1",
+    "@voxgig/sdkgen": ">=3.5.0",
+    "@voxgig/struct": ">=0.2"
+  },
+  "devDependencies": {
+    "@voxgig/apidef": ">=7.1",
+    "@voxgig/sdkgen": "file:../../ts",
+    "@voxgig/struct": ">=0.2",
+    "aontu": ">=0.52",
+    "memfs": "4.68.1",
+    "sucrase": "3.35.1",
+    "typescript": "7.0.2"
+  }
+}

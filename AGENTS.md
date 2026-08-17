@@ -602,9 +602,9 @@ emitted broken source reached the fleet unchallenged.
   (`"paging"` in a context type, `"proxy"` in a fetcher), so widening the
   `featuresource.test.ts` guard to quoted names produces ~25 hits of which
   one is real. Declare it in `fullset` instead; a target that cannot be trimmed at all says
-  `feature: { trim: false }` (currently `clojure`, `haskell`, `lean`,
-  `ocaml`, `scala`, `zig` — see their model files for what has to change
-  first). Aggregate indexes must be GENERATED, not templated: that is why
+  `feature: { trim: false }` (currently `clojure`, `lean`, `ocaml`,
+  `scala`, `zig` bundled, plus `haskell` in its own package — see their
+  model files for what has to change first). Aggregate indexes must be GENERATED, not templated: that is why
   `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
   must not live in the file that gets dropped — go and csharp keep it in
   `feature_harness_test.go` / `FeatureHarness.cs` for exactly that reason.
@@ -658,8 +658,13 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       tm/<lang>/       per-language TEMPLATES
 ```
 
-SDK targets (23): `ts js go py php rb lua csharp java kotlin scala swift dart
-rust c cpp zig perl clojure elixir ocaml haskell lean`.
+SDK targets, BUNDLED (22): `ts js go py php rb lua csharp java kotlin scala
+swift dart rust c cpp zig perl clojure elixir ocaml lean`.
+
+SDK targets, PACKAGED (1): `haskell`, in `packages/sdkgen-haskell` — the
+first migration out of the scaffold. It is NOT in any of this repo's closed
+guard sets and has its own suite; see
+[docs/how-to/migrate-a-bundled-target](./docs/how-to/migrate-a-bundled-target.md).
 
 CONSUMER targets (4): `go-cli go-mcp` (wrap `go`), `py-data` (wraps `py`),
 `seneca-provider` (wraps `ts`). Each switches every standard generation phase

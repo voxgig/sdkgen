@@ -60,7 +60,7 @@ const FULL = [
 // suite says so outright: "keeps the suite hermetic — no external fixture
 // parsing".) Moving one of these to FULL is the highest-value parity work
 // available.
-const MIRRORED = ['c', 'clojure', 'elixir', 'haskell', 'zig']
+const MIRRORED = ['c', 'clojure', 'elixir', 'zig']
 
 // TIER 3 — no primary-utility suite at all. These targets' request-shaping
 // utilities are unverified in every language-neutral sense.
@@ -70,7 +70,7 @@ const UNCOVERED = ['ocaml', 'scala']
 // Targets exposing the raw-access escape hatch (direct/graphql). See the
 // 'raw-access gate parity' suite below.
 const RAW_ACCESS = [
-  'c', 'clojure', 'cpp', 'csharp', 'dart', 'elixir', 'go', 'haskell', 'java',
+  'c', 'clojure', 'cpp', 'csharp', 'dart', 'elixir', 'go', 'java',
   'js', 'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala',
   'swift', 'ts', 'zig',
 ]
@@ -354,10 +354,11 @@ describe('raw-access gate parity', () => {
   test('targets without raw access really have none', () => {
     // Search the TEMPLATE tree only: the component tree carries `direct(`
     // inside README and test string literals, which are not a surface.
-    // Match a call OR an ML-style signature — haskell declares
-    // `direct :: Client -> Value -> IO Value` and no paren ever appears, so
-    // a call-syntax regex silently cleared a target whose escape hatch was
-    // wide open.
+    // Match a call OR an ML-style signature. Found on haskell (now
+    // @voxgig/sdkgen-haskell), which declares
+    // `direct :: Client -> Value -> IO Value` with no paren anywhere, so a
+    // call-syntax regex silently cleared a target whose escape hatch was wide
+    // open. The shape still matters here: ocaml is ML-style too.
     const nowRaw = NO_RAW_ACCESS.filter((lang) => {
       const dir = Path.join(TM, lang)
       const hits: string[] = []
@@ -901,7 +902,6 @@ describe('config representation is chosen by size', () => {
     ['clojure', 'Config_clojure.ts', 'core/json-parse', 'formatCljValue'],
     ['ocaml', 'Config_ocaml.ts', 'Sdk_json\\.json_read', 'formatOcamlValue'],
     ['csharp', 'Config_csharp.ts', 'JsonSerializer\\.Deserialize', 'formatCsMap'],
-    ['haskell', 'Config_haskell.ts', 'jsonRead configData', 'formatHsValue'],
   ]
 
   // The clojure data constant must be CHUNKED under the JVM limit.
@@ -1032,29 +1032,6 @@ describe('config representation is chosen by size', () => {
   })
 
 
-  // struct's Haskell `Value` holds a map as an ORDERED assoc list, so key
-  // order is observable - it survives into keysof, iteration and stringify.
-  //
-  // formatHsValue used to sort, which was invisible while the literal was the
-  // only representation. Above the threshold the same config arrives via
-  // jsonRead in the JSON text's order, and the two would have described the
-  // same config in a different order. Confirmed by dumping the materialised
-  // config from both branches under GHC 9.4.7: with sorting the two disagreed
-  // from the very first key, and only match with insertion order preserved.
-  test('haskell: the config literal preserves key order, and does not sort', () => {
-    const { formatHsValue } = require(
-      Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
-        'cmp', 'haskell', 'utility_haskell.js'))
-
-    // The canonical config's own top-level order: NOT alphabetical.
-    const def = { main: {}, feature: {}, options: {}, entity: {} }
-    const keys = (formatHsValue(def).match(/"(main|feature|options|entity)"/g) || [])
-      .map((s: string) => s.replace(/"/g, ''))
-    strictEqual(keys.join(','), 'main,feature,options,entity',
-      'formatHsValue reordered the config keys, so the literal would disagree ' +
-      'with jsonRead of the same config')
-  })
-
 
   // Every target whose generated config can carry `options.server` must also
   // ACCEPT it in the option spec `make_options` validates against.
@@ -1079,7 +1056,6 @@ describe('config representation is chosen by size', () => {
     ['clojure', 'src/sdk/core.clj'],
     ['ocaml', 'sdk_runtime.ml'],
     ['csharp', 'utility/MakeOptions.cs'],
-    ['haskell', 'src/SdkRuntime.hs'],
   ]
 
   for (const [target, file] of SERVER_OPTSPEC) {
