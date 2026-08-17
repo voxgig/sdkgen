@@ -31,7 +31,7 @@ Deltas from the original proposal, all found during implementation:
   behind the distinctive `<name>_data.` prefix; the public import is unchanged.
   (Note the base `py` target still ships flat `core`/`entity`/`utility`/
   `feature` and remains vulnerable to exactly this — a single `utility.py` in
-  the cwd kills it. Tracked separately; it is not a py-data problem to fix.)
+  the cwd kills it. Tracked as issue #70; it is not a py-data problem to fix.)
 - **`list()` and `load()` do not return the same shape.** `list()` yields
   ENTITY OBJECTS whose record is reachable only through the public
   `data_get()`; `load()` yields a plain dict. `to_record` must unwrap the

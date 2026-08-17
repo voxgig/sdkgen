@@ -1,11 +1,43 @@
 # Design: sdkgen packages — external targets, features, and other kinds
 
-Status: **proposal** (2026-08-14), **partly implemented** (2026-08-15).
-Landed so far: **§18.1** (live bugs + characterization goldens), **§18.2**
-(the kind registry), **§18.3** (provenance), **§18.4** (the manifest, then
-`package add` / `list` with their CLI plumbing) and **§18.5** (features
-from packages, external-target trim). Still proposal: **§18.6** and
-**§18.7**.
+Status: **proposal** (2026-08-14), **mostly implemented** (2026-08-17).
+
+Landed: **§18.1** (live bugs + characterization goldens), **§18.2** (the
+kind registry), **§18.3** (provenance), **§18.4** (the manifest, then
+`package add` / `list` with their CLI plumbing), **§18.5** (features from
+packages, external-target trim), **§18.6** (`package update`, doctor's new
+findings, the `docs` kind and its generation — §20.8 phase 1), and the
+first half of **§18.7** (`package check`, the docs sweep).
+
+All twelve **§16** live bugs are now closed: §16.12, deferred out of phase
+1 because it needed a per-target audit of language-literal versus
+target-name, landed with the `originName` split.
+
+Still open, all in **§18.7** — and coupled, in this order:
+
+1. **The fixture package.** §15 specified a checked-in
+   `ts/test/fixture/…` tree; `package.test.ts` synthesizes `@acme/sdkgen-iot`
+   inline instead. That covers add / update / collision, but the fixture's
+   COMPONENTS never reach a compile lane — which §15 itself named as the
+   prerequisite the test kit shares.
+2. **The test kit** (`@voxgig/sdkgen/testkit`). Nothing is exported yet;
+   `ts/package.json` has no `exports` field at all. Blocked on 1, because
+   the kit is the parameterised form of the staging the fixture needs.
+3. **The corpus package** (`@voxgig/sdkgen-corpus`). Until it exists,
+   FULL-tier parity is reachable only from inside voxgig's own repos, so
+   any migrated FULL-tier target is silently capped.
+4. **The migration checklist and a first subject** (§14, §17.8). A
+   MIRRORED-tier target is the low-risk choice precisely because it does
+   not need 3.
+
+`parity` and `targetsSupported` are declared in `helpers/manifest.ts` and
+read by nothing; `ts/test/parity.test.ts` still owns the tier declaration.
+That is the two-sources-of-truth risk §18.4a flagged, and it closes when
+the test kit reads the manifest — not before.
+
+Note also that §17.7 defers `package remove` on "needs `removeIndexEntries`".
+That function now exists (`action/action.ts`), so the stated blocker is
+gone and the question is scope, not mechanism.
 
 Deltas found while implementing `package add` / `list` (§18.4b):
 
@@ -1356,7 +1388,12 @@ top:
     literal, so `voxgig-sdkgen toString` passes the `null == actionFunc`
     guard (§9).
 12. **An aliased target reads its ORIGIN's config at generate time.**
-    *(Found during phase-1 review; NOT fixed in phase 1 — see below.)* Ten
+    *(Found during phase-1 review; deferred out of phase 1, FIXED 2026-08-17.
+    The audit below is what it took: the string these helpers take both keys
+    the config lookup and selects the output format, so the repair was to
+    separate those two roles once — config by the target's own name,
+    behaviour by `origname` — rather than to pass `target.name` everywhere,
+    which fixes the first role and breaks the second.)* Ten
     `cmp/go/*` components call `goModule(model, 'go')` with the target name
     hardcoded, while their neighbours correctly use `target.name`
     (`goVersion(model, target.name)`, `collectDeps(model, target.name, …)`).
@@ -1418,6 +1455,10 @@ top:
 ---
 
 ## 18. Delivery phasing
+
+Phases 1–6 have landed, and phase 7 is half-landed; the status note at the
+top of this file carries the current line. The phases are kept as written
+because each one's SCOPE is what the deltas above are deltas from.
 
 1. **Live bugs & characterization** (no new user surface): the §16 list —
    alias repair, dry-run prune fix, fan-out replace map, Jsonic bypass,
@@ -1690,7 +1731,10 @@ the thing to design first, not last.
    schema, `docs add`, provenance, index, doctor and `package check`
    coverage, and the out-of-tree generalisation. Proven by a fixture docs
    package in `ts/test`, which is what an external author's package looks
-   like.
+   like. **LANDED** (2026-08-17): the mechanism, then generation. §20.7.1
+   (orphan pruning) is NOT covered by it and is tracked as issue #71 —
+   a docs item that emits a page per entity leaves a stale page behind when
+   an entity leaves the spec, and nothing prunes generated output.
 2. **docgen becomes a package** — `sdkgen-package.json` + `.sdk/`, with
    the static site rewritten as its first item (§20.5). A clean
    `package check` and a clean `doctor` immediately after
