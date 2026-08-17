@@ -39,6 +39,10 @@ import { checkPackage } from '../dist/action/check.js'
 const FIXTURE = Path.resolve(__dirname, '..', 'test', 'fixture', 'acme-widgets')
 const PKGNAME = '@acme/sdkgen-widgets'
 
+// This package's own root — what a staged consumer links `@voxgig/sdkgen` to,
+// and therefore what teardown must never delete.
+const SDKGEN = Path.resolve(__dirname, '..')
+
 
 // A small API, and deliberately one with an INACTIVE entity in it: `active`
 // filtering is a whole-pipeline property, and a package's own components are
@@ -227,6 +231,59 @@ describe('testkit over the fixture package', () => {
 
   test('the manifest\'s declared parity tier is readable', () => {
     deepStrictEqual(manifestParity(FIXTURE), { wtest: 'UNCOVERED' })
+  })
+})
+
+
+// CLEANUP MUST NOT REACH THROUGH ITS OWN LINKS.
+//
+// A staged consumer holds `node_modules/@voxgig/*` entries pointing at this
+// checkout — a symlink on POSIX, a directory JUNCTION on Windows — and
+// teardown then runs a recursive remove over the staged tree.
+//
+// Node's recursive `rmSync` does not follow such a link (measured: it removes
+// the link itself), so this is not the repo-deleting hazard it first looks
+// like. It is pinned anyway, because the property is one line of someone
+// else's implementation away from changing and the blast radius is a
+// developer's working tree.
+//
+// Only the POSIX half runs here. `unlinkSync` removes a symlink and refuses a
+// junction with EPERM; `rmdirSync` is the reverse, which is why the
+// implementation tries both — but the junction branch has never executed on
+// Windows, and this comment says so rather than implying otherwise.
+describe('testkit: staging teardown', () => {
+
+  test('removes the staged tree and leaves the checkout untouched', () => {
+    const canary = Path.join(SDKGEN, 'package.json')
+    const before = {
+      entries: Fs.readdirSync(SDKGEN).length,
+      canary: Fs.statSync(canary).size,
+      trees: Fs.readdirSync(Path.join(SDKGEN, 'project', '.sdk', 'tm')).length,
+    }
+
+    const staged = stageConsumer()
+    const link = Path.join(
+      staged.sdk, 'node_modules', '@voxgig', 'sdkgen')
+
+    // The precondition that makes this test mean anything: teardown really is
+    // about to recurse over a tree containing a live link into the checkout.
+    ok(Fs.lstatSync(link).isSymbolicLink(),
+      'the sdkgen entry is not a link, so this proves nothing about following one')
+    strictEqual(Fs.realpathSync(link), Fs.realpathSync(SDKGEN),
+      'the link does not point at this checkout')
+
+    staged.cleanup()
+
+    ok(!Fs.existsSync(staged.root), 'the staged tree was not removed')
+
+    strictEqual(Fs.readdirSync(SDKGEN).length, before.entries,
+      'entries disappeared from the package root — cleanup followed a link')
+    strictEqual(Fs.statSync(canary).size, before.canary,
+      'package.json changed size — cleanup reached into the checkout')
+    strictEqual(
+      Fs.readdirSync(Path.join(SDKGEN, 'project', '.sdk', 'tm')).length,
+      before.trees,
+      'template trees disappeared — cleanup followed a link')
   })
 })
 

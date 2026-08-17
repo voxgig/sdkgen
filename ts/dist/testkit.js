@@ -241,10 +241,11 @@ function stageConsumer(opts = {}) {
         files,
         cleanup: () => {
             if (null == opts.dir) {
-                // The symlinks go FIRST. `rmSync` does not follow them, so this is
-                // belt and braces — but the thing on the other end is the sdkgen
-                // checkout (or a real node_modules tree), and the cost of being wrong
-                // about that once is unbounded.
+                // The links go FIRST, explicitly. `rmSync` would remove them without
+                // following (measured), so this is belt and braces for the walk — but
+                // it is NOT redundant on Windows, where a junction refuses `unlink`
+                // and `force: true` forgives only ENOENT, so leaving it to the walk
+                // can throw.
                 for (const link of links) {
                     unlink(link);
                 }
@@ -269,9 +270,16 @@ function canonical(p) {
 // `linkModule` makes a symlink on POSIX and a directory JUNCTION on Windows,
 // and falls back to a real directory holding a re-export shim. `unlinkSync`
 // removes the first, fails with EPERM on the second, and cannot remove the
-// third — and getting this wrong is not a leaked temp directory. The thing on
-// the other end is the sdkgen checkout, so the recursive remove that follows
-// must never be handed a live link into it.
+// third.
+//
+// WHAT THIS IS AND IS NOT FOR. Node's recursive `rmSync` does NOT follow a
+// symlink or a junction — it removes the link itself — so the tree walk that
+// follows is not going to reach through into the sdkgen checkout. That was
+// measured, not assumed. What this function buys is narrower and still worth
+// having: cleanup that does not throw on Windows (a junction refuses
+// `unlink`, and `force: true` forgives only ENOENT), and not depending on
+// that `rmSync` behaviour holding forever for an operation whose blast radius
+// would be a developer's checkout.
 function unlink(link) {
     let stat;
     try {
