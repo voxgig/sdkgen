@@ -22,7 +22,7 @@ const Test = cmp(function Test(props: any) {
 
   // Module name: concatenated lowercase
   // Go module path == repo path on GitHub (org from model.origin).
-  const gomodule = goModule(model, 'go')
+  const gomodule = goModule(model, target.name)
 
   Folder({ name: 'test' }, () => {
 

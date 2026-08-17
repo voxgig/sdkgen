@@ -13,6 +13,12 @@ import {
   swiftSafeTypeName,
   serverVariables,
   hasServerVariables,
+  originName,
+  goModule,
+  packageName,
+  registryState,
+  isPublished,
+  installCommand,
 } from '../dist/sdkgen.js'
 
 
@@ -377,6 +383,125 @@ describe('helpers', () => {
       deepStrictEqual(serverVariables({}), [])
       strictEqual(hasServerVariables({}), false)
     })
+  })
+
+
+  // AN ALIASED TARGET IS ITS OWN TARGET, IN ITS ORIGIN'S LANGUAGE.
+  //
+  // `target add go~go2` installs a SECOND Go SDK. Its CONFIG is its own — its
+  // module path, its registry state, its published name — but the LANGUAGE
+  // rules are still Go's: the same go.mod shape, the same `go get` line.
+  //
+  // These helpers took one string for both jobs, so a component that wrote
+  // `goModule(model, 'go')` silently rendered the ORIGIN's module path into
+  // the alias's output, defeating the one use aliasing is documented for
+  // (design doc section 16.12). The naive repair — passing `target.name`
+  // everywhere — swaps the defect rather than fixing it: `packageName` would
+  // stop matching its own switch and fall to `default`, so `ts~ts2` would
+  // publish under a non-npm name. Hence `originName`, and hence this suite
+  // asserting BOTH halves for every helper that had a switch.
+  describe('an aliased target', () => {
+
+    // `origname` is what `target add` stamps for an alias, and '' when the
+    // target was installed under its own name.
+    function makeModel() {
+      return {
+        name: 'demo',
+        origin: 'acme',
+        main: {
+          kit: {
+            target: {
+              go: {
+                name: 'go', origname: '',
+                module: { path: 'github.com/acme/demo-sdk/go' },
+              },
+              go2: {
+                name: 'go2', origname: 'go',
+                module: { path: 'github.com/acme/demo-sdk/go2' },
+              },
+              ts: { name: 'ts', origname: '' },
+              ts2: { name: 'ts2', origname: 'ts' },
+              // An alias that declares nothing of its own: the fallbacks have
+              // to follow the alias too, not just the declared overrides.
+              bare: { name: 'bare', origname: 'go' },
+            },
+          },
+        },
+      }
+    }
+
+
+    test('originName answers the LANGUAGE, not the install name', () => {
+      const model = makeModel()
+
+      strictEqual(originName(model, 'go2'), 'go')
+      strictEqual(originName(model, 'go'), 'go', 'unaliased must be itself')
+
+      // Ecosystem keys name no target, so they answer for themselves — which
+      // is what keeps `packageName(model, 'npm')` working.
+      strictEqual(originName(model, 'npm'), 'npm')
+    })
+
+
+    test('goModule follows the ALIAS, both declared and derived', () => {
+      const model = makeModel()
+
+      strictEqual(goModule(model, 'go2'), 'github.com/acme/demo-sdk/go2',
+        'an alias read its origin declared module path')
+
+      // No declaration: the derived path must still carry the alias, because
+      // that is the subdirectory it generates into.
+      strictEqual(goModule(model, 'bare'), 'github.com/acme/demo-sdk/bare')
+    })
+
+
+    test('packageName keeps the origin FORMAT under the alias name', () => {
+      const model = makeModel()
+
+      // The trap: 'ts2' matches no case, so a naive fix would fall to
+      // `default` and drop the npm scope.
+      strictEqual(packageName(model, 'ts2'), packageName(model, 'ts'),
+        'an aliased ts must still publish an npm-scoped name')
+
+      // ...and a per-target override is still the alias's own.
+      const declared: any = makeModel()
+      declared.main.kit.target.ts2.publish = {
+        registry: { package: '@acme/second' },
+      }
+      strictEqual(packageName(declared, 'ts2'), '@acme/second')
+      strictEqual(packageName(declared, 'ts'), packageName(model, 'ts'),
+        "the alias's override leaked onto its origin")
+    })
+
+
+    test('registryState applies the go family rule to a go alias', () => {
+      // The alias DECLARES a live registry, and that is the point of the
+      // fixture: with no registry declared, `registryState` returns 'tag'
+      // through the "no registry configured" path and the assertion passes
+      // whether or not the family rule ran. Only a declared-active registry
+      // isolates the rule — go is tag-only whatever the model says, because
+      // the Go toolchain installs from a tag.
+      const model: any = makeModel()
+      model.main.kit.target.go2.publish = {
+        registry: { name: 'npm', state: 'active' },
+      }
+
+      strictEqual(registryState(model, 'go2'), 'tag',
+        'an aliased go target escaped the go-family tag-only rule')
+      strictEqual(isPublished(model, 'go2'), false)
+    })
+
+
+    test('installCommand names the alias, in the origin package manager', () => {
+      const model: any = makeModel()
+      model.main.kit.target.ts2.publish = {
+        registry: { name: 'npm', state: 'active', package: '@acme/second' },
+      }
+
+      strictEqual(installCommand(model, 'ts2'), 'npm install @acme/second',
+        'an aliased ts returned an empty install line')
+    })
+
   })
 
 })

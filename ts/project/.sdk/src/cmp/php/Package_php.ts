@@ -39,7 +39,7 @@ const Package = cmp(async function Package(props: any) {
   // Generate composer.json
   File({ name: 'composer.json' }, () => {
     Content(`{
-  "name": "${packageName(model, 'php')}",
+  "name": "${packageName(model, target.name)}",
   "description": "${pkgDescription(model, 'php')}",
   "type": "library",
   "keywords": [${kw}],

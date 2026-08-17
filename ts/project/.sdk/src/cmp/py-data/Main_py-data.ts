@@ -111,9 +111,9 @@ const Main = cmp(function Main(props: any) {
   Gitignore({})
   Package({ target, model, lower, dataModule })
   EntityFramesTest({ frameEnts, seriesEnts, lower, sdkModule, sdkClass, dataModule })
-  Readme({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, svars })
+  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, svars })
   AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase })
-  Quickstart({ model, name, lower, ENV, dataModule, frameEnts, needsBase })
+  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase })
 })
 
 
@@ -136,6 +136,8 @@ const Package = cmp(function Package(props: any) {
   const ns = model.origin || 'voxgig-sdk'
   const pkgBase = ns.endsWith('-sdk') ? model.name : `${model.name}-sdk`
   const distName = `${ns}-${pkgBase}-data`
+  // The `py` SDK this package WRAPS — a different target, so it keeps its
+  // own name and does not follow this target's alias.
   const sdkDist = packageName(model, 'py')
   const { repoUrl, issuesUrl } = repoInfo(model)
   const kw = keywords(model).concat(['pandas', 'dataframe', 'notebook', 'colab'])
@@ -599,12 +601,12 @@ class TestFramesAgainstTestMode:
 // ---------------------------------------------------------------------------
 
 const Readme = cmp(function Readme(props: any) {
-  const { model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase } = props
+  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase } = props
   const ctx$ = props.ctx$
 
   const distName = pyDistName(model)
   const sdkDist = packageName(model, 'py')
-  const pending = 'active' !== registryState(model, 'py-data')
+  const pending = 'active' !== registryState(model, target.name)
   const { repoUrl, releasesUrl } = repoInfo(model)
 
   const install = pending
@@ -841,10 +843,10 @@ are overwritten. Change the model and regenerate.
 // A runnable Colab notebook. .ipynb is just JSON; keeping outputs empty means
 // the file is diffable and CI can execute it as a smoke test.
 const Quickstart = cmp(function Quickstart(props: any) {
-  const { model, name, ENV, dataModule, frameEnts, needsBase } = props
+  const { target, model, name, ENV, dataModule, frameEnts, needsBase } = props
 
   const { repoUrl } = repoInfo(model)
-  const pending = 'active' !== registryState(model, 'py-data')
+  const pending = 'active' !== registryState(model, target.name)
   const distName = pyDistName(model)
 
   const installCode = pending

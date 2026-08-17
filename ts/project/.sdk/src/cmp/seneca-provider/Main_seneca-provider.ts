@@ -254,6 +254,8 @@ const Main = cmp(function Main(props: any) {
   // The SDK is a PUBLISHED dependency, not a path: this package lives in its
   // own repo. Its name is whatever the ts target publishes under, pin
   // included, so the two can never disagree.
+  // The TypeScript SDK this provider WRAPS — a different target, so it
+  // keeps its own name and does not follow this provider's alias.
   const sdkPkg = packageName(model, 'npm')
   const sdkVersion = packageVersion(model, 'ts')
 
