@@ -151,7 +151,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "${distName}"
 version = "${packageVersion(model, target.name)}"
-description = "${pkgDescription(model, 'py-data')}"
+description = "${pkgDescription(model, target.name)}"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
@@ -604,7 +604,7 @@ const Readme = cmp(function Readme(props: any) {
   const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase } = props
   const ctx$ = props.ctx$
 
-  const distName = pyDistName(model)
+  const distName = packageName(model, target.name)
   const sdkDist = packageName(model, 'py')
   const pending = 'active' !== registryState(model, target.name)
   const { repoUrl, releasesUrl } = repoInfo(model)
@@ -612,7 +612,7 @@ const Readme = cmp(function Readme(props: any) {
   const install = pending
     ? `# Not yet on PyPI — install both packages from this repo:
 !pip install "git+${repoUrl}#subdirectory=py" \\
-             "git+${repoUrl}#subdirectory=py-data"`
+             "git+${repoUrl}#subdirectory=${target.name}"`
     : `!pip install ${distName}`
 
   const first = frameEnts[0]
@@ -668,7 +668,7 @@ from the repo — in a notebook, prefix with \`!\`:
 
 \`\`\`sh
 pip install "git+${repoUrl}#subdirectory=py" \\
-            "git+${repoUrl}#subdirectory=py-data"
+            "git+${repoUrl}#subdirectory=${target.name}"
 \`\`\`
 
 Released versions are tagged at ${releasesUrl}.`
@@ -847,11 +847,11 @@ const Quickstart = cmp(function Quickstart(props: any) {
 
   const { repoUrl } = repoInfo(model)
   const pending = 'active' !== registryState(model, target.name)
-  const distName = pyDistName(model)
+  const distName = packageName(model, target.name)
 
   const installCode = pending
     ? [`!pip install -q "git+${repoUrl}#subdirectory=py" \\`,
-    `                "git+${repoUrl}#subdirectory=py-data"`]
+    `                "git+${repoUrl}#subdirectory=${target.name}"`]
     : [`!pip install -q ${distName}`]
 
   const first = frameEnts[0]
@@ -975,13 +975,6 @@ function exampleGroupField(fields: { name: string, dtype: string, req: boolean }
   const groupable = fields.filter((f) => 'string' === f.dtype || 'boolean' === f.dtype)
   const required = groupable.find((f) => f.req)
   return (required || groupable[0] || fields[0] || { name: 'id' }).name
-}
-
-
-function pyDistName(model: any): string {
-  const ns = model.origin || 'voxgig-sdk'
-  const pkgBase = ns.endsWith('-sdk') ? model.name : `${model.name}-sdk`
-  return `${ns}-${pkgBase}-data`
 }
 
 

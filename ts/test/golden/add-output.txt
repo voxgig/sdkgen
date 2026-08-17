@@ -263,7 +263,7 @@ src/cmp/csharp/Entity_csharp.ts d30ff96c3073
 src/cmp/csharp/Gitignore_csharp.ts bd603cc2c5c7
 src/cmp/csharp/MainEntity_csharp.ts 1c24807ab2fe
 src/cmp/csharp/Main_csharp.ts a9fee5d71715
-src/cmp/csharp/Package_csharp.ts fd62047d193e
+src/cmp/csharp/Package_csharp.ts 90d27846e73e
 src/cmp/csharp/ReadmeEntity_csharp.ts 8dc4c825936a
 src/cmp/csharp/ReadmeExamplesTest_csharp.ts 12a0e16e6c4a
 src/cmp/csharp/ReadmeExplanation_csharp.ts 007d1a894315
@@ -476,7 +476,7 @@ src/cmp/elixir/Entity_elixir.ts c30a8cfd1fee
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
 src/cmp/elixir/MainEntity_elixir.ts 8f2d02c0bb9f
 src/cmp/elixir/Main_elixir.ts 260f90af09de
-src/cmp/elixir/Package_elixir.ts 3ddee3564d0f
+src/cmp/elixir/Package_elixir.ts 1aecaae5a129
 src/cmp/elixir/ReadmeEntity_elixir.ts ad6e744998b9
 src/cmp/elixir/ReadmeExamplesTest_elixir.ts ecf3160a7ca4
 src/cmp/elixir/ReadmeExplanation_elixir.ts 04a0c276ec59
@@ -541,7 +541,7 @@ src/cmp/go/EntityTypes_go.ts 79d3a2c638db
 src/cmp/go/Entity_go.ts eda6f8bedfca
 src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts 01154abb3c65
-src/cmp/go/Main_go.ts 6bf4ec85fa57
+src/cmp/go/Main_go.ts b002c50501a7
 src/cmp/go/Package_go.ts 39d459e6b867
 src/cmp/go/ReadmeEntity_go.ts 2b9c3ca1da44
 src/cmp/go/ReadmeExamplesTest_go.ts 98a1ad664298
@@ -1098,7 +1098,7 @@ src/cmp/lua/Entity_lua.ts e3e43269850c
 src/cmp/lua/Gitignore_lua.ts a86735a421ba
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
 src/cmp/lua/Main_lua.ts 32cbba675919
-src/cmp/lua/Package_lua.ts 9750175a5460
+src/cmp/lua/Package_lua.ts 4bd7c7b20400
 src/cmp/lua/ReadmeEntity_lua.ts 32cb74dd16dd
 src/cmp/lua/ReadmeExamplesTest_lua.ts 5f104cb87813
 src/cmp/lua/ReadmeExplanation_lua.ts a78888656e53
@@ -1264,7 +1264,7 @@ src/cmp/perl/Entity_perl.ts afe325ce99f5
 src/cmp/perl/Gitignore_perl.ts cef200d91d8f
 src/cmp/perl/MainEntity_perl.ts 49d50e77add8
 src/cmp/perl/Main_perl.ts a6479a50a1b4
-src/cmp/perl/Package_perl.ts 8b6b674069d9
+src/cmp/perl/Package_perl.ts a1ce8d5e5c4a
 src/cmp/perl/ReadmeEntity_perl.ts 02f609749a95
 src/cmp/perl/ReadmeExamplesTest_perl.ts 1a2fb7a3486f
 src/cmp/perl/ReadmeExplanation_perl.ts 3eb072f47880
@@ -1362,7 +1362,7 @@ src/cmp/php/Entity_php.ts 44b5f53db2e9
 src/cmp/php/Gitignore_php.ts 42906d17eb74
 src/cmp/php/MainEntity_php.ts 29efa6a7dcd7
 src/cmp/php/Main_php.ts 1fb7d41436f8
-src/cmp/php/Package_php.ts d7ae91202c1b
+src/cmp/php/Package_php.ts 36b8fa854584
 src/cmp/php/ReadmeEntity_php.ts c4a0eb9e115a
 src/cmp/php/ReadmeExamplesTest_php.ts 7f0132034be3
 src/cmp/php/ReadmeExplanation_php.ts a7dc536552d1
@@ -1460,7 +1460,7 @@ src/cmp/py/Entity_py.ts 8106dc666873
 src/cmp/py/Gitignore_py.ts 07f7135b0381
 src/cmp/py/MainEntity_py.ts 853d7533f8fb
 src/cmp/py/Main_py.ts 3d1a5ea03e25
-src/cmp/py/Package_py.ts 7bc4eda7faeb
+src/cmp/py/Package_py.ts f2b8917726e8
 src/cmp/py/ReadmeEntity_py.ts a8a038db6ef3
 src/cmp/py/ReadmeExamplesTest_py.ts 56c33b34a08f
 src/cmp/py/ReadmeExplanation_py.ts 1d1bb302dbfd
@@ -1557,7 +1557,7 @@ model/feature/test.aontu 22e52652f8e4
 model/sdk.aontu a1022013e262
 model/target/py-data.aontu e59433401b29
 model/target/target-index.aontu 83ff2a84dacd
-src/cmp/py-data/Main_py-data.ts 24b13bf20d9e
+src/cmp/py-data/Main_py-data.ts 056c2e11b255
 tm/py-data/LICENSE ed2f88b0aab8
 tm/py-data/Makefile ad5e5089b15e
 tm/py-data/pkg/auth.py a84c020b8eb1
@@ -1584,7 +1584,7 @@ src/cmp/rb/Entity_rb.ts 099deec849d9
 src/cmp/rb/Gitignore_rb.ts d6ab9def4134
 src/cmp/rb/MainEntity_rb.ts a88eedc19290
 src/cmp/rb/Main_rb.ts a81c0395a58d
-src/cmp/rb/Package_rb.ts 073e2b62ba1a
+src/cmp/rb/Package_rb.ts ce128d510e7c
 src/cmp/rb/ReadmeEntity_rb.ts 8291b294a2b0
 src/cmp/rb/ReadmeExamplesTest_rb.ts b7cd5de1a57c
 src/cmp/rb/ReadmeExplanation_rb.ts 772c6cf3ce0c
@@ -1901,7 +1901,7 @@ model/target/seneca-provider.aontu a273f888e4c8
 model/target/target-index.aontu 5bd671e614df
 src/cmp/seneca-provider/Extras_seneca-provider.ts 68924545a645
 src/cmp/seneca-provider/Gitignore_seneca-provider.ts 188e88524e59
-src/cmp/seneca-provider/Main_seneca-provider.ts f089fd8ed8a6
+src/cmp/seneca-provider/Main_seneca-provider.ts 79332b019952
 tm/seneca-provider/CODE_OF_CONDUCT.md ae654991bd5f
 tm/seneca-provider/LICENSE 5466e344bee1
 tm/seneca-provider/Makefile 6856c7df3e08

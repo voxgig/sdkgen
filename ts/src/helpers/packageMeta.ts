@@ -239,13 +239,16 @@ function registryName(model: any, target: string): string {
 // pointer carrying the releases URL.
 function vendorCommand(model: any, target: string): string {
   const { releasesUrl } = repoInfo(model)
-  switch (target) {
+  switch (originName(model, target)) {
+    // `target`, not the literal — the case says WHICH command, the argument
+    // says whose module. Writing the literal here reintroduces the same bug
+    // the switch above exists to fix, one level down, which is exactly what
+    // the first cut of this change did.
     case 'go':
-      return `go get ${packageName(model, 'go')}@latest`
     case 'go-mcp':
-      return `go get ${packageName(model, 'go-mcp')}@latest`
+      return `go get ${packageName(model, target)}@latest`
     case 'go-cli':
-      return `go install ${packageName(model, 'go-cli')}/cmd/${model.name}@latest`
+      return `go install ${packageName(model, target)}/cmd/${model.name}@latest`
     default: {
       const reg = registryName(model, target)
       return `not yet on ${reg || 'the registry'} — install from the git tag: ${releasesUrl}`
@@ -311,12 +314,13 @@ function packageName(model: any, eco: string): string {
     case 'composer':
     case 'php':
       return `${origin}/${base}`
+    // `eco`, not the literal: the case is chosen by the LANGUAGE but the
+    // module belongs to the target that asked. `packageName(model, 'go2')`
+    // returning go's module was the same conflation one level down.
     case 'go':
-      return goModule(model, 'go')
     case 'go-cli':
-      return goModule(model, 'go-cli')
     case 'go-mcp':
-      return goModule(model, 'go-mcp')
+      return goModule(model, eco)
     // The notebook/analyst package layered on `py`. Distinct PyPI name so it
     // can version and publish independently of the SDK it wraps.
     case 'py-data':

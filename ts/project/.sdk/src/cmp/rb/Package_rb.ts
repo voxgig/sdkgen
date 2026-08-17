@@ -66,8 +66,8 @@ gemspec
   spec.name          = "${gemName}"
   spec.version       = "${packageVersion(model, target.name)}"
   spec.authors       = ["${author.name}"]
-  spec.summary       = "${pkgDescription(model, 'rb')}"
-  spec.description   = "${pkgDescription(model, 'rb')}"
+  spec.summary       = "${pkgDescription(model, target.name)}"
+  spec.description   = "${pkgDescription(model, target.name)}"
   spec.license       = "MIT"
   spec.homepage      = "${repoUrl}"
   spec.metadata      = {

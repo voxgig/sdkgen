@@ -207,9 +207,10 @@ function parentEntityOf(key: string, names: string[]): string {
 // published package to the SDK instead.
 //
 // Order: the project's `output: repo`, else the Seneca convention.
-function providerRepo(model: any, lower: string): { url: string, path: string } {
+function providerRepo(model: any, lower: string, tname: string):
+  { url: string, path: string } {
   const host = model?.main?.[KIT]?.repo?.host || 'github.com'
-  const declared = model?.main?.[KIT]?.target?.['seneca-provider']?.output?.repo
+  const declared = model?.main?.[KIT]?.target?.[tname]?.output?.repo
   const path = null != declared && '' !== declared ?
     String(declared) : `senecajs/seneca-${lower}-provider`
 
@@ -220,8 +221,8 @@ function providerRepo(model: any, lower: string): { url: string, path: string } 
 // The provider's published package name: the project's pin when it has one,
 // else `@seneca/<name>-provider`. packageName() cannot answer this — its
 // derivations are all SDK-shaped (`@<origin>/<slug>-sdk`).
-function providerPackage(model: any, lower: string): string {
-  const declared = model?.main?.[KIT]?.target?.['seneca-provider']
+function providerPackage(model: any, lower: string, tname: string): string {
+  const declared = model?.main?.[KIT]?.target?.[tname]
     ?.publish?.registry?.package
   return null != declared && '' !== declared ?
     String(declared) : `@seneca/${lower}-provider`
@@ -377,7 +378,7 @@ const Main = cmp(function Main(props: any) {
       'all. Remove the target, or add an entity with CRUD ops.')
   }
 
-  const repo = providerRepo(model, lower)
+  const repo = providerRepo(model, lower, target.name)
 
   // The companion test server lives in the SDK repo's `app/` and is NOT
   // published, so the only way to reach it is the local checkout. The path
@@ -443,7 +444,7 @@ const Main = cmp(function Main(props: any) {
     // The provider's OWN published name. Not derived from the SDK slug the
     // way a language target's is — a provider is `@seneca/<name>-provider` —
     // so read the project's pin directly and default to that shape.
-    pkgName: providerPackage(model, lower),
+    pkgName: providerPackage(model, lower, target.name),
     // Whether this API authenticates at all. Decides if the plugin plumbs a
     // credential: the SDK's auth stage emits nothing for an auth-inactive
     // model and strips the authorization header regardless of options, so
@@ -464,7 +465,7 @@ const Main = cmp(function Main(props: any) {
     replace: { ...ctx$.stdrep },
   })
 
-  PackageJson({ provider })
+  PackageJson({ provider, target })
   ProviderSource({ provider })
   ProviderDoc({ provider })
   Tests({ provider })
@@ -478,9 +479,8 @@ const Main = cmp(function Main(props: any) {
 // --- package.json -----------------------------------------------------------
 
 const PackageJson = cmp(function PackageJson(props: any) {
-  const { provider } = props
+  const { provider, target } = props
   const { model } = props.ctx$
-  const target = model.main[KIT].target['seneca-provider']
 
   const deps = collectDeps(model, target.name, target.deps, props.ctx$.log)
 

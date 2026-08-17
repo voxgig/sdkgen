@@ -36,7 +36,7 @@ const Package = cmp(async function Package(props: any) {
       app: :${app},
       version: "${packageVersion(model, target.name)}",
       elixir: "~> 1.14",
-      description: ${JSON.stringify(pkgDescription(model, 'elixir'))},
+      description: ${JSON.stringify(pkgDescription(model, target.name))},
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),

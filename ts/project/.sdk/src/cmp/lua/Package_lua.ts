@@ -46,7 +46,7 @@ source = {
   dir = "${model.name}-sdk/lua"
 }
 description = {
-  summary = "${pkgDescription(model, 'lua')}",
+  summary = "${pkgDescription(model, target.name)}",
   homepage = "${repoUrl}",
   issues_url = "${issuesUrl}",
   license = "MIT",

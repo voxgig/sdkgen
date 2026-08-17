@@ -39,7 +39,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "${distName}"
 version = "${packageVersion(model, target.name)}"
-description = "${pkgDescription(model, 'py')}"
+description = "${pkgDescription(model, target.name)}"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"

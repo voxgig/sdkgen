@@ -19,6 +19,8 @@ import {
   registryState,
   isPublished,
   installCommand,
+  vendorCommand,
+  goPackageIdent,
 } from '../dist/sdkgen.js'
 
 
@@ -489,6 +491,41 @@ describe('helpers', () => {
       strictEqual(registryState(model, 'go2'), 'tag',
         'an aliased go target escaped the go-family tag-only rule')
       strictEqual(isPublished(model, 'go2'), false)
+    })
+
+
+    test('packageName resolves the ALIAS module for the go family', () => {
+      // Selecting the case by origin was necessary but not sufficient: the go
+      // arms then called `goModule(model, 'go')` with the language literal, so
+      // `packageName(model, 'go2')` still answered with the origin's module.
+      // The same conflation, one level further down.
+      const model = makeModel()
+
+      strictEqual(packageName(model, 'go2'), 'github.com/acme/demo-sdk/go2')
+      strictEqual(packageName(model, 'go'), 'github.com/acme/demo-sdk/go')
+    })
+
+
+    test('vendorCommand gives a go alias its own go get line', () => {
+      // This is the path a normal `go~go2` actually takes: `registryState`
+      // calls the whole go family tag-only, so READMEs reach vendorCommand
+      // rather than installCommand. Switching it on the raw name meant the
+      // alias fell to `default` and printed "not yet on the registry" instead
+      // of an install command that works.
+      const model = makeModel()
+
+      strictEqual(vendorCommand(model, 'go2'),
+        'go get github.com/acme/demo-sdk/go2@latest')
+    })
+
+
+    test('goPackageIdent follows the alias', () => {
+      // Missed by the first sweep because that sweep listed the helpers by
+      // hand. The list now comes from the module's exports.
+      const model: any = makeModel()
+      model.main.kit.target.go2.module.package = 'acmesecond'
+
+      strictEqual(goPackageIdent(model, 'go2'), 'acmesecond')
     })
 
 

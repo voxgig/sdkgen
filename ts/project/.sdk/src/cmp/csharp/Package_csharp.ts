@@ -60,7 +60,7 @@ const Package = cmp(async function Package(props: any) {
     <Version>${packageVersion(model, target.name)}</Version>
     <PackageId>${Name}.Sdk</PackageId>
     <Authors>Voxgig</Authors>
-    <Description>${pkgDescription(model, 'csharp')}</Description>
+    <Description>${pkgDescription(model, target.name)}</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>${repoUrl}</RepositoryUrl>
   </PropertyGroup>
