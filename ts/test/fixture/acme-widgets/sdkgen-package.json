@@ -1,0 +1,30 @@
+{
+  "sdkgen": {
+    "package": 1
+  },
+  "name": "@acme/sdkgen-widgets",
+  "version": "1.0.0",
+  "engines": {
+    "sdkgen": ">=3.0.0"
+  },
+  "provides": {
+    "target": [
+      "wtest"
+    ],
+    "feature": [
+      "wfeat"
+    ],
+    "docs": [
+      "wcat"
+    ]
+  },
+  "targetsSupported": {
+    "wfeat": [
+      "ts",
+      "wtest"
+    ]
+  },
+  "parity": {
+    "wtest": "UNCOVERED"
+  }
+}

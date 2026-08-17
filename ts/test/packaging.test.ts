@@ -115,4 +115,62 @@ describe('npm packaging', () => {
       'content from a component instead: ' + risky.join(', '))
   })
 
+
+  // THE `exports` MAP MUST NOT NARROW WHAT CONSUMERS ALREADY IMPORT.
+  //
+  // A package with no `exports` field lets anything under its root be
+  // imported by path. Adding one REPLACES that with an allow-list — and this
+  // package's consumers depend on the old freedom in a place no test of ours
+  // would notice: every generated model file includes
+  // `@voxgig/sdkgen/model/sdkgen.aontu`, and the scaffold is reached as
+  // `@voxgig/sdkgen/project/<lang>`. Break those and nothing here fails; every
+  // installed SDK fails to compile its model.
+  //
+  // So the `./*` catch-all in package.json is load-bearing, and this is the
+  // test that says so out loud. It resolves through the map exactly as a
+  // consumer would rather than reading the field, because the question is
+  // what Node does with it, not what it says.
+  test('the exports map still admits the deep paths consumers use', () => {
+    const admits = (subpath: string): boolean => {
+      const target = resolveExports(subpath)
+      return null != target
+    }
+
+    for (const subpath of [
+      '.',
+      './testkit',
+      './package.json',
+      './model/sdkgen.aontu',
+      './project/.sdk/model/target/ts.aontu',
+      './dist/helpers/manifest.js',
+      './bin/voxgig-sdkgen',
+    ]) {
+      ok(admits(subpath),
+        subpath + ' is no longer importable — the `exports` map narrowed. ' +
+        'Restore the "./*" entry in package.json.')
+    }
+  })
+
 })
+
+
+// The subset of Node's exports resolution this repo needs: an exact key, or
+// the `./*` pattern. Deliberately not a general implementation — it answers
+// one question (is this subpath admitted at all?) and would be misleading if
+// it looked like it answered more.
+function resolveExports(subpath: string): string | undefined {
+  const exports: any = (Pkg as any).exports
+  if (null == exports) return subpath
+
+  const entry = exports[subpath]
+  if (null != entry) {
+    return 'string' === typeof entry ? entry : (entry.default ?? entry.types)
+  }
+
+  const star = exports['./*']
+  if (null != star && subpath.startsWith('./')) {
+    return String(star).replace('*', subpath.slice(2))
+  }
+
+  return undefined
+}

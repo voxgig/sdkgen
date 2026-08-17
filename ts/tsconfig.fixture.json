@@ -1,0 +1,40 @@
+{
+  "_comment": [
+    "Type-check ONLY — the FIXTURE PACKAGE's components",
+    "(test/fixture/*/.sdk/src/cmp/**).",
+    "",
+    "Why this is a lane of its own, and not a line added to",
+    "tsconfig.scaffold.json: that config type-checks the SHIPPED scaffold,",
+    "which is published; this one checks a test fixture, which is not. Same",
+    "mechanism, different subject, and mixing them would make the published",
+    "package's gate depend on test content.",
+    "",
+    "Why it exists at all: `check-scaffold` compiles project/.sdk/src/cmp/**",
+    "and nothing else, so a package-shaped component tree had NO compile lane",
+    "— exactly the gap §15 of docs/design/sdkgen-packages.md names. A fixture",
+    "package whose components do not compile would fail deep inside a",
+    "generation run, as a require error naming a path rather than a type",
+    "error naming a line.",
+    "",
+    "tm/ is excluded: a template tree is copied verbatim with placeholder",
+    "substitution, so its .ts files are template SOURCE, not modules — the",
+    "same reason tsconfig.scaffold.json excludes fragment/."
+  ],
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "strict": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "paths": {
+      "@voxgig/sdkgen": [
+        "./src/sdkgen.ts"
+      ]
+    }
+  },
+  "include": [
+    "test/fixture/*/.sdk/src/cmp/**/*.ts"
+  ]
+}

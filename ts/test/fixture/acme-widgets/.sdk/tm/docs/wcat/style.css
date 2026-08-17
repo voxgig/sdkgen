@@ -1,0 +1,12 @@
+/* The docs item's template tree — copied verbatim, same for every API.
+ *
+ * `tm/docs/<name>` is OPTIONAL (see the `docs` KindDef in action/kind.ts): an
+ * item whose every emitted byte depends on the API ships none. This one ships
+ * a single file precisely so the copy-if-present branch has something to
+ * copy, and so `package check` has a template tree to reconcile against the
+ * manifest.
+ */
+
+body {
+  font-family: system-ui, sans-serif;
+}

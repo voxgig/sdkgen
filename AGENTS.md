@@ -488,12 +488,33 @@ emitted broken source reached the fleet unchallenged.
   `ts/dist-test-scaffold/` (a miniature consumer: compiled components under
   `.sdk/dist/cmp/`, plus copies of `.sdk/src` and `.sdk/model`) so
   `test/generate.test.ts` can run the components for real — see below.
-- **Resolve the entity collection with `entityCollection(model)`**, never
-  `getModelPath(model, \`main.${KIT}.entity\`)` in a component. getModelPath
-  rebuilds its container on every call when filtering, which defeats the
-  class-name memo (quadratic: ~15s at 500 entities x 22 targets) and hands you
-  an ACTIVE-filtered view that cannot see the inactive entities whose data
-  types EntityTypes still emits.
+- **Two entity views, two different questions. Pick by the question.**
+  - *"Which entities do I EMIT for?"* — `getModelPath(model,
+    \`main.${KIT}.entity\`)`, which is ACTIVE-filtered by default. Every
+    `Main_<lang>` and every `Test_<lang>` iterates this. Reading the raw
+    `model.main[KIT].entity` map instead is a defect: sixteen `Test_<lang>`
+    components did, and generated a full test suite for entities the SDK
+    deliberately excluded (`active: false`, which is how a consumer scopes a
+    70-entity spec down to one).
+  - *"What is the whole name-space of entities?"* — `entityCollection(model)`,
+    which is deliberately UNFILTERED and memoised. Class-name assignment and
+    type-collision work need it: `EntityTypes_<lang>` emits data types with
+    `only_active: false`, so a name assigned against a filtered view cannot
+    see the inactive entities it must avoid colliding with. Calling
+    getModelPath for THIS is also quadratic — it rebuilds its container on
+    every call when filtering, defeating the memo (~15s at 500 entities x 22
+    targets).
+
+  The two are not interchangeable and neither is "the right one". Using the
+  unfiltered collection to decide what to emit ships excluded entities; using
+  the filtered one to assign class names produces collisions.
+- **`ts/test/fixture/**` has its OWN compile lane.** `check-scaffold` covers
+  `ts/project/.sdk/src/cmp/**` and nothing else, so the fixture PACKAGE's
+  components — which are what an external author's components look like — had
+  no type-check at all. `npm run build` now also runs `check-fixture`
+  (`tsconfig.fixture.json`); keep it, or a broken fixture component fails deep
+  inside a generation run as a require error naming a path instead of a type
+  error naming a line.
 - **`Name` is derived lazily.** Do not assume a component ran before you.
   `entityClassName` / `entityTypeCollisions` derive it themselves; if you add
   a helper that reads `e.Name`, call `deriveEntityNames()` first — and never

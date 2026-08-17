@@ -13,27 +13,36 @@ All twelve **§16** live bugs are now closed: §16.12, deferred out of phase
 1 because it needed a per-target audit of language-literal versus
 target-name, landed with the `originName` split.
 
-Still open, all in **§18.7** — and coupled, in this order:
+Also landed, closing the first half of §18.7's ecosystem work:
 
-1. **The fixture package.** §15 specified a checked-in
-   `ts/test/fixture/…` tree; `package.test.ts` synthesizes `@acme/sdkgen-iot`
-   inline instead. That covers add / update / collision, but the fixture's
-   COMPONENTS never reach a compile lane — which §15 itself named as the
-   prerequisite the test kit shares.
-2. **The test kit** (`@voxgig/sdkgen/testkit`). Nothing is exported yet;
-   `ts/package.json` has no `exports` field at all. Blocked on 1, because
-   the kit is the parameterised form of the staging the fixture needs.
-3. **The corpus package** (`@voxgig/sdkgen-corpus`). Until it exists,
+- **The fixture package** — `ts/test/fixture/acme-widgets/`, a hand-written
+  tree rather than a synthesized one (a target, a feature reaching two
+  targets by both fan-out branches, and a docs item), with its own
+  type-check lane (`check-fixture`) because `check-scaffold` covers the
+  shipped scaffold and nothing else.
+- **The test kit** — `@voxgig/sdkgen/testkit`: `stageConsumer()` builds a
+  consumer on REAL disk (memfs cannot run what it installed —
+  `requirePath` does a genuine Node require), `compile()` does what a
+  consumer's build does, `generateInto()` generates and scans for
+  placeholder leaks.
+
+Still open in **§18.7**:
+
+1. **The corpus package** (`@voxgig/sdkgen-corpus`). Until it exists,
    FULL-tier parity is reachable only from inside voxgig's own repos, so
    any migrated FULL-tier target is silently capped.
-4. **The migration checklist and a first subject** (§14, §17.8). A
+2. **The migration checklist and a first subject** (§14, §17.8). A
    MIRRORED-tier target is the low-risk choice precisely because it does
-   not need 3.
+   not need 1. Which target goes first is a PRODUCT decision — it leaves
+   the bundled package — so §17.8 stays open on purpose.
 
-`parity` and `targetsSupported` are declared in `helpers/manifest.ts` and
-read by nothing; `ts/test/parity.test.ts` still owns the tier declaration.
-That is the two-sources-of-truth risk §18.4a flagged, and it closes when
-the test kit reads the manifest — not before.
+`parity` and `targetsSupported` are declared in `helpers/manifest.ts`. The
+kit now reads `parity` for an EXTERNAL package (`manifestParity`), where
+the manifest is the only place a tier can live. For BUNDLED targets
+`ts/test/parity.test.ts` still owns the declaration, and should keep
+owning it until a migration actually needs the other direction — §18.4a's
+worry was two sources of truth, and adding a second reader before there is
+a second subject would create exactly that.
 
 Note also that §17.7 defers `package remove` on "needs `removeIndexEntries`".
 That function now exists (`action/action.ts`), so the stated blocker is
