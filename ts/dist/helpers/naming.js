@@ -215,6 +215,8 @@ const SWIFT_SDK_TYPES = new Set([
     'OrderedDictionary', 'Sentinel', 'Value', 'VList', 'VMap', 'WalkApply',
     // function/callback aliases
     'FetcherFunc', 'Formatter', 'NativeCall0', 'NativeRef', 'SystemFetch',
+    // transport plumbing
+    'ManualRedirectDelegate',
     // features
     'AuditFeature', 'BaseFeature', 'CacheFeature', 'ClienttrackFeature',
     'DebugFeature', 'IdempotencyFeature', 'LogFeature', 'MetricsBucket',

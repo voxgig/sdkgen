@@ -1211,8 +1211,16 @@ inline Value makeOptions(CtxPtr ctx) {
       std::sort(names.begin(), names.end());
       bool hasTest = std::find(names.begin(), names.end(), "test") != names.end();
       if (hasTest) featureOrder.push_back("test");
+      // Station special case, mirroring test's: its transport wrap must
+      // sit immediately outside the base transport (inside retry/cache/
+      // netsim), so map-form activation hoists it to just after test -
+      // or first, when no test entry exists. Without this the sorted
+      // default would init station last and wrap OUTSIDE the recording
+      // features, turning its wire-truth events into fiction.
+      bool hasStation = std::find(names.begin(), names.end(), "station") != names.end();
+      if (hasStation) featureOrder.push_back("station");
       for (const auto& n : names) {
-        if (n != "test") featureOrder.push_back(n);
+        if (n != "test" && n != "station") featureOrder.push_back(n);
       }
     }
   }

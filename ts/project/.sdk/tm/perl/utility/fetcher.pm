@@ -39,7 +39,16 @@ our $DefaultHttpFetch = sub {
   my $opts = { headers => \%hdrs };
   $opts->{content} = "$body" if defined $body && !ref $body;
 
-  my $res = eval { HTTP::Tiny->new->request($method, $fullurl, $opts) };
+  # fetchdef.redirect 'manual' (the ts fetch vocabulary): return a 3xx
+  # as-is instead of following it. HTTP::Tiny follows redirects by
+  # default; the station feature's hosts policy sets this so a Location
+  # off the allowlist can never pull an automatic credentialed follow-up.
+  my %new_args;
+  $new_args{max_redirect} = 0
+    if defined $fetchdef->{redirect} && !ref $fetchdef->{redirect}
+      && 'manual' eq $fetchdef->{redirect};
+
+  my $res = eval { HTTP::Tiny->new(%new_args)->request($method, $fullurl, $opts) };
   if (!$res) {
     my $e = defined $@ ? "$@" : 'request failed';
     $e =~ s/\s+\z//;

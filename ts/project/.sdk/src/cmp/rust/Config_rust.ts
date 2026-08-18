@@ -50,8 +50,11 @@ const Config = cmp(async function Config(props: any) {
   // representations render from the same `def`, so they cannot describe
   // different configs - and this target picks up `options.server` (the
   // OpenAPI server-variable defaults), which the hand-rolled build here
-  // omitted entirely.
-  const { def: config, json: configJson } = configDefinition(model)
+  // omitted entirely. Passing target.name opts into the main
+  // slug/version/target identity fields (station descriptor input, mirrors
+  // Config_ts) - both reps below render from this same def, so the data
+  // and literal branches pick the fields up together.
+  const { def: config, json: configJson } = configDefinition(model, target.name)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'config.' + target.ext }, () => {

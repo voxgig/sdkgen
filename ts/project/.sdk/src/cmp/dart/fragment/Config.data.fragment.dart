@@ -52,6 +52,11 @@ class Config {
     return fc();
   }
 
+  // False for a feature added at runtime via options.extend (station's
+  // adopt path) - the constructor uses this to skip makeFeature for names
+  // no generated class backs.
+  bool hasFeature(String fn) => null != FEATURE_CLASS[fn];
+
   // The same fields the literal declares - same names, same types, same
   // finalness - so callers cannot tell which representation they were given.
   final Map<String, dynamic> main;

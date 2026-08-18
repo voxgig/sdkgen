@@ -13,30 +13,48 @@ public static partial class SdkUtility
 {
     private static readonly HttpClient DefaultHttpClient = new();
 
-    // Proxy-routed clients, cached per proxy URL (see the proxy feature's
-    // fetchdef annotation).
+    // Non-following twin of DefaultHttpClient. The station feature's
+    // middleware sets `redirect: manual` on the fetch definition under a
+    // hosts egress policy: a 3xx must come back as a response like any
+    // other, because an automatic follow would carry injected credentials
+    // to a Location no policy approved (the ts donor's fetch honours the
+    // same key natively; redirect policy is per-handler in .NET, hence a
+    // second client).
+    private static readonly HttpClient ManualRedirectHttpClient = new(
+        new HttpClientHandler
+        {
+            AllowAutoRedirect = false,
+        });
+
+    // Proxy-routed clients, cached per proxy URL and redirect policy (see
+    // the proxy feature's fetchdef annotation).
     private static readonly Dictionary<string, HttpClient> ProxyClients = new();
     private static readonly object ProxyClientsLock = new();
 
     private static HttpClient ClientFor(Dictionary<string, object?> fetchdef)
     {
+        var manual = fetchdef.TryGetValue("redirect", out var rraw) &&
+            rraw is string redirect && redirect == "manual";
+
         if (fetchdef.TryGetValue("proxy", out var raw) && raw is string proxy && proxy != "")
         {
             lock (ProxyClientsLock)
             {
-                if (!ProxyClients.TryGetValue(proxy, out var client))
+                var key = (manual ? "manual|" : "auto|") + proxy;
+                if (!ProxyClients.TryGetValue(key, out var client))
                 {
                     client = new HttpClient(new HttpClientHandler
                     {
                         Proxy = new System.Net.WebProxy(proxy),
                         UseProxy = true,
+                        AllowAutoRedirect = !manual,
                     });
-                    ProxyClients[proxy] = client;
+                    ProxyClients[key] = client;
                 }
                 return client;
             }
         }
-        return DefaultHttpClient;
+        return manual ? ManualRedirectHttpClient : DefaultHttpClient;
     }
 
     internal static Dictionary<string, object?> DefaultHttpFetch(

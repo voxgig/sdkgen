@@ -6,6 +6,27 @@ import Foundation
 import FoundationNetworking
 #endif
 
+// Non-following twin of URLSession.shared. The station feature's
+// middleware sets `redirect: manual` on the fetch definition under a
+// hosts egress policy: a 3xx must come back as a response like any
+// other, because an automatic follow would carry injected credentials
+// to a Location no policy approved (the ts donor's fetch honours the
+// same key natively; redirect policy is per-delegate in URLSession,
+// hence a second session).
+private final class ManualRedirectDelegate: NSObject, URLSessionTaskDelegate {
+  func urlSession(
+    _ session: URLSession, task: URLSessionTask,
+    willPerformHTTPRedirection response: HTTPURLResponse,
+    newRequest request: URLRequest,
+    completionHandler: @escaping (URLRequest?) -> Void
+  ) {
+    completionHandler(nil)
+  }
+}
+
+private let manualRedirectSession = URLSession(
+  configuration: .default, delegate: ManualRedirectDelegate(), delegateQueue: nil)
+
 func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   guard let url = URL(string: fullurl) else {
     let m = VMap()
@@ -45,7 +66,9 @@ func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   }
   let box = FetchBox()
   let sem = DispatchSemaphore(value: 0)
-  let task = URLSession.shared.dataTask(with: req) { d, r, e in
+  let session = gp(fetchdef, "redirect").asString == "manual"
+    ? manualRedirectSession : URLSession.shared
+  let task = session.dataTask(with: req) { d, r, e in
     box.data = d; box.resp = r; box.err = e; sem.signal()
   }
   task.resume()

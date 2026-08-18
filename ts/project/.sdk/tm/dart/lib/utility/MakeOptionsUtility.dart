@@ -47,6 +47,12 @@ dynamic makeOptions(dynamic ctx) {
       },
     },
     'utility': {},
+    // Feature INSTANCES supplied at construction (the station adopt
+    // path): consumed by the constructor's featureAdd loop, so they are
+    // class instances, not data - `$ANY` accepts them verbatim. Without
+    // this entry the seam is dead: the constructor reads
+    // options.extend, but validate rejected the key.
+    'extend': '`\$ANY`',
     'system': {},
     'test': {
       'active': false,
@@ -176,6 +182,17 @@ dynamic makeOptions(dynamic ctx) {
       }
     } else {
       featureorder.addAll(names);
+    }
+    // Station special case, mirroring test's: its transport wrap must
+    // sit immediately outside the base transport (inside retry/cache/
+    // netsim), so map-form activation hoists it to just after test -
+    // or first, when no test entry exists. Without this the sorted
+    // default would init station last and wrap OUTSIDE the recording
+    // features, turning its wire-truth events into fiction.
+    if (featureorder.contains('station')) {
+      featureorder.remove('station');
+      final ti = featureorder.indexOf('test');
+      featureorder.insert(-1 == ti ? 0 : ti + 1, 'station');
     }
   }
 

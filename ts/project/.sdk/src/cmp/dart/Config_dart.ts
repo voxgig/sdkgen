@@ -71,8 +71,10 @@ const Config = cmp(async function Config(props: any) {
   // The same config as an OBJECT, built by the shared helper so this target's
   // literal and the data that replaces it above the threshold are the same
   // config by construction. The JSON is what the threshold is measured on -
-  // emitted source size varies by language, the model does not.
-  const { def: configDef, json: configJson } = configDefinition(model)
+  // emitted source size varies by language, the model does not. Passing
+  // target.name opts this target into the main slug/version/target identity
+  // fields (read by station's descriptor - see configDefinition).
+  const { def: configDef, json: configJson } = configDefinition(model, target.name)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'Config.' + target.ext }, () => {
@@ -114,6 +116,16 @@ const Config = cmp(async function Config(props: any) {
         // own name at runtime. Every sibling dart component already spreads
         // these; this one did not.
         ...ctx$.stdrep,
+
+        // Identity beyond the camel Name: slug/version/target (station
+        // descriptor inputs). Values from configDefinition's def, not
+        // re-derived here, so the literal rep and the data rep cannot
+        // disagree (the Config_ts #MainMeta discipline).
+        '// #MainMeta': () => {
+          Line(`    'slug': ${dartValue(configDef.main.slug)},`)
+          Line(`    'version': ${dartValue(configDef.main.version)},`)
+          Line(`    'target': ${dartValue(configDef.main.target)},`)
+        },
 
         // The whole options map from the canonical definition. Assembling it
         // slot by slot lost `options.server` entirely, so a spec with a
