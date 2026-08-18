@@ -7,7 +7,12 @@ CFLAGS ?= -std=c11 -Wall -Wextra -Wno-unused-parameter -D_GNU_SOURCE -O0 -g
 INC := -I core -I utility/struct
 LDLIBS := -lm
 
-LIB_SRCS := $(wildcard core/*.c utility/*.c utility/struct/*.c feature/*.c entity/*.c)
+# feature/*/*.c: a feature may carry a vendored library payload in its own
+# subdirectory (the station feature vendors voxgig_station there - C has no
+# package registry, so tier-C libraries ride the feature source; see
+# utility/struct/ for the same precedent at the utility level). Empty when
+# no feature ships one.
+LIB_SRCS := $(wildcard core/*.c utility/*.c utility/struct/*.c feature/*.c feature/*/*.c entity/*.c)
 LIB_OBJS := $(LIB_SRCS:.c=.o)
 
 TEST_SRCS := $(wildcard tests/*.c)

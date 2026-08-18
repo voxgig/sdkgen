@@ -39,7 +39,13 @@ const Config = cmp(async function Config(props: any) {
   // literal and the data that replaces it above the threshold are the same
   // config by construction. The JSON is what the threshold is measured on -
   // emitted source size varies by language, the model does not.
-  const { def: configDef, json: configJson } = configDefinition(model)
+  //
+  // Passing target.name opts this target into main.slug / main.version /
+  // main.target (the three station descriptor fields, station design §4):
+  // both reps flow from this one call - the literal via formatCsMap(configDef)
+  // and the data rep via csStringLiteral(configJson) - so they cannot
+  // disagree on identity (mirrors Config_ts's #MainMeta block).
+  const { def: configDef, json: configJson } = configDefinition(model, target.name)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'Config.' + target.ext }, () => {

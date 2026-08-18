@@ -18,6 +18,7 @@ const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
 const serverVars_1 = require("./helpers/serverVars");
+const packageMeta_1 = require("./helpers/packageMeta");
 // Where a per-target component is loaded from: `<project>/.sdk/dist/<path>`.
 //
 // `ctx$.folder` is jostraca's OUTPUT folder, which is the project for an
@@ -257,7 +258,7 @@ function rawStringLiteral(s) {
 //
 // Key order is `each`'s order, which is sorted, so the JSON is byte-stable
 // across runs exactly like the literal it replaces.
-function configDefinition(model) {
+function configDefinition(model, targetname) {
     const entity = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.entity`);
     const feature = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature`);
     const headers = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.headers`) || {};
@@ -293,8 +294,21 @@ function configDefinition(model) {
     }
     options.headers = headers;
     options.entity = entityStubs;
+    // Identity beyond the camel Name: the hyphenated slug is CARRIED, never
+    // derived from the camel form downstream (deriving swallows hyphens - the
+    // packageMeta envToken defect), and version/target let a running SDK say
+    // what it is. Station's descriptor (voxgig/station) reads all three.
+    // Gated on targetname so a target that does not pass its name emits the
+    // exact config it always has - each target opts in when its literal
+    // emitter learns the fields too, keeping data and literal reps in step.
+    const main = { name: model.const.Name };
+    if (null != targetname) {
+        main.slug = model.name;
+        main.version = (0, packageMeta_1.packageVersion)(model, targetname);
+        main.target = targetname;
+    }
     const def = {
-        main: { name: model.const.Name },
+        main,
         feature: featureDefs,
         options,
         entity: entityDefs,

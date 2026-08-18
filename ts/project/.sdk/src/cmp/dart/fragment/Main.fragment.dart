@@ -69,19 +69,28 @@ class ProjectNameSDK {
     // `test` feature installs the base mock transport and the transport
     // features (retry/cache/netsim/proxy/ratelimit) wrap whatever is current,
     // so `test` must be added before them to sit at the base of the chain.
+    final List extendList =
+        _options['extend'] is List ? _options['extend'] : [];
+
     final featureorder =
         struct.getpath(_options, '__derived__.featureorder') ?? [];
     for (final fname in featureorder) {
       final fopts = _options['feature'][fname];
       if (fopts is Map && true == fopts['active']) {
+        // An active name with no generated class is legal when an
+        // extend-supplied instance carries that name (station's adopt
+        // path): the instance is added below, positioned by its own
+        // __after__ entry, so skip it here rather than fail construction.
+        if (!config.hasFeature(fname.toString()) &&
+            extendList.any((f) => fname.toString() == f.name.toString())) {
+          continue;
+        }
         featureAdd(rootctx, config.makeFeature(fname.toString()));
       }
     }
 
-    if (null != _options['extend']) {
-      for (final f in _options['extend']) {
-        featureAdd(rootctx, f);
-      }
+    for (final f in extendList) {
+      featureAdd(rootctx, f);
     }
 
     for (final f in features) {

@@ -228,6 +228,21 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
             } else {
                 feature_order = names;
             }
+            // Station special case, mirroring test's: its transport wrap must
+            // sit immediately outside the base transport (inside retry/cache/
+            // netsim), so map-form activation hoists it to just after test -
+            // or first, when no test entry exists. Without this the sorted
+            // default would init station last and wrap OUTSIDE the recording
+            // features, turning its wire-truth events into fiction.
+            if let Some(si) = feature_order.iter().position(|n| n == "station") {
+                feature_order.remove(si);
+                let at = feature_order
+                    .iter()
+                    .position(|n| n == "test")
+                    .map(|ti| ti + 1)
+                    .unwrap_or(0);
+                feature_order.insert(at, "station".to_string());
+            }
         }
     }
     let order_list =

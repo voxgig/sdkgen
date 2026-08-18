@@ -248,6 +248,19 @@ public static partial class SdkUtility
                     featureorder.Add(n);
                 }
             }
+
+            // Station special case, mirroring test's: its transport wrap must
+            // sit immediately outside the base transport (inside retry/cache/
+            // netsim), so map-form activation hoists it to just after test -
+            // or first, when no test entry exists. Without this the sorted
+            // default would init station last and wrap OUTSIDE the recording
+            // features, turning its wire-truth events into fiction.
+            var si = featureorder.IndexOf("station");
+            if (si >= 0)
+            {
+                featureorder.RemoveAt(si);
+                featureorder.Insert(featureorder.IndexOf("test") + 1, "station");
+            }
         }
 
         var derived = new Dictionary<string, object?>

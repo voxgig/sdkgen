@@ -29,6 +29,7 @@ import {
 
 const Config = cmp(async function Config(props: any) {
   const ctx$ = props.ctx$
+  const target = props.target
   const model: Model = ctx$.model
 
   const Name = model.const.Name
@@ -60,7 +61,11 @@ const Config = cmp(async function Config(props: any) {
     // target's literal and the data that replaces it above the threshold are
     // the same config by construction. The JSON is what the threshold is
     // measured on - emitted source size varies by language, the model does not.
-    const { def: configDef, json: configJson } = configDefinition(model)
+    // Passing target.name opts in to the main slug/version/target identity
+    // fields (station descriptor input, mirrors Config_ts) - both reps below
+    // render from this same def, so the data and literal branches pick the
+    // fields up together.
+    const { def: configDef, json: configJson } = configDefinition(model, target.name)
     const asData = isConfigData(configJson, configReprSetting(model))
 
     File({ name: 'config.ex' }, () => {
@@ -159,7 +164,12 @@ end
 defmodule ${Name}.Config do
   def make_config do
     ${Name}.Helpers.deep(%{
-      "main" => %{"name" => ${elixirString(Name)}},
+      "main" => %{
+        "name" => ${elixirString(Name)},
+        "slug" => ${elixirString(String(configDef.main.slug))},
+        "version" => ${elixirString(String(configDef.main.version))},
+        "target" => ${elixirString(String(configDef.main.target))}
+      },
       "feature" => %{
 `)
 

@@ -50,6 +50,25 @@ defmodule ProjectName.FeatureTest do
     assert has?("test")
   end
 
+  # === station ===
+
+  # The station adapter (installed by @voxgig/sdkgen-station) with NO open
+  # station must be an inert no-op that emits nothing and fails nothing
+  # (station design 3.1). Driven through the generated factory - never a
+  # compile-time module reference - so this file stays green both with and
+  # without the feature installed (absent, the harness simply adds no
+  # feature). Bound behaviour (registration, injection, wire events) is
+  # exercised by the station library's own suite and the consumer-side
+  # station validation, not here.
+  test "station adapter with no open station is an inert no-op" do
+    h = harness([fspec("station")])
+    res = FH.op(h, %{})
+    assert res.ok == true
+
+    # Inert: the transport is neither wrapped nor marked.
+    assert S.getprop(h.utility, "__station_wrap__") == nil
+  end
+
   # === netsim ===
 
   test "netsim fixed latency then delegate" do

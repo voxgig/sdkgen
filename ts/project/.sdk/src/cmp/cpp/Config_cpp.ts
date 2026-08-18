@@ -3,9 +3,8 @@ import {
   Content,
   File,
   cmp,
+  configDefinition,
   each,
-  isAuthActive,
-  resolveAuthPrefix,
 } from '@voxgig/sdkgen'
 
 
@@ -17,7 +16,6 @@ import {
 
 
 import {
-  cleanModel,
   cppConfigLiterals,
 } from './utility_cpp'
 
@@ -32,50 +30,15 @@ const Config = cmp(async function Config(props: any) {
 
   const model: Model = ctx$.model
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
-  const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
-
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
-
-  const featureConfig: Record<string, any> = {}
-  each(feature, (f: any) => {
-    featureConfig[f.name] = cleanModel(f.config || {})
-  })
-
-  const optionsEntity: Record<string, any> = {}
-  each(entity, (ent: any) => {
-    optionsEntity[ent.name] = {}
-  })
-
-  const options: Record<string, any> = {
-    base: baseUrl,
-  }
-  if (authActive) {
-    options.auth = { prefix: authPrefix }
-  }
-  options.headers = headers
-  options.entity = optionsEntity
-
-  const entityConfig = Object.values(entity || {}).reduce((a: any, n: any) => (
-    a[n.name] = cleanModel({
-      fields: n.fields,
-      name: n.name,
-      op: n.op,
-      relations: n.relations,
-    }, true), a), {})
-
-  const config = {
-    main: { name: model.const.Name },
-    feature: featureConfig,
-    options,
-    entity: entityConfig,
-  }
+  // The embedded config, built by the shared helper so this target's shapes
+  // and identity fields stay in step with the ts reference by construction.
+  // Passing target.name opts cpp into main.slug/version/target (the station
+  // descriptor identity, ts/src/utility.ts configDefinition) - cpp has only
+  // the data rep (one chunked JSON literal), so this is the whole #MainMeta
+  // story for this target.
+  const { def: configDef } = configDefinition(model, target.name)
 
   File({ name: 'config.' + target.ext }, () => {
 
@@ -104,7 +67,7 @@ namespace sdk {
 
 inline const char* config_json() {
   return
-${cppConfigLiterals(config)};
+${cppConfigLiterals(configDef)};
 }
 
 inline Value makeConfig() { return vs::parse_json(config_json()); }

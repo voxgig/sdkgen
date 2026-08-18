@@ -1826,6 +1826,33 @@ fn feature_proxy_inactive_does_not_wrap() {
     );
 }
 
+// --- station --------------------------------------------------------------------
+
+// The station adapter (installed by @voxgig/sdkgen-station) with NO open
+// station must be an inert no-op that emits nothing and fails nothing
+// (station design 3.1). Constructed through the generated make_feature
+// factory - never a compile-time module reference - so this file stays
+// compilable both with and without the station feature installed: absent,
+// the factory answers with the inert BaseFeature and fh_present skips the
+// assertions. Bound behaviour (registration, injection, wire events) is
+// exercised by the station library's own suite and the consumer-side
+// station validation, not here.
+#[test]
+fn feature_station_inert_without_open_station() {
+    if !fh_present(&["station"]) {
+        return;
+    }
+    let f = RUSTCRATE::make_feature("station");
+    assert_eq!(
+        "station",
+        f.borrow().name(),
+        "generated factory has a station arm"
+    );
+    let h = fh_make(None, vec![(f, Value::Noval)]);
+    let res = h.op(opspec("load"));
+    assert!(res.ok, "expected inert station to pass the op through");
+}
+
 // --- composition ----------------------------------------------------------------
 
 #[test]
