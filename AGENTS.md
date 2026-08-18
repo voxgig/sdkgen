@@ -620,7 +620,8 @@ docs/                  human-oriented documentation
 ts/                    the self-contained npm package root (@voxgig/sdkgen)
   package.json         the npm manifest (main: dist/sdkgen.js)
   bin/voxgig-sdkgen    CLI entry
-  build/version.js     stamps the version into bin/ at publish time
+  build/version.js     stamps the version into bin/ and the scaffold
+                       manifest — run it BY HAND on a release, see Releasing
   model/sdkgen.aontu   npm-shipped mirror of the canonical model/
   src/                 generator core
     sdkgen.ts          SdkGen, makeBuild, public exports
@@ -723,6 +724,40 @@ Every generated ts SDK ships its own coverage-oriented tests:
   coverage — the gate omits it deliberately.
 
 ---
+
+## Releasing
+
+Publishing is **tag-driven and runs in CI**: pushing a `v*` tag fires
+`.github/workflows/publish.yml`, which publishes to npm over GitHub OIDC
+trusted publishing (no token, provenance attached). That workflow's own header
+says it — do NOT run `npm run repo-publish` locally, because it publishes over
+a token and bypasses OIDC entirely.
+
+**The publish workflow does not run `embed-version`.** It runs `npm ci`,
+`npm run build`, `npm test`, `npm publish` — nothing else. So the version must
+already be stamped into the tree *before* you tag, or the release ships a CLI
+that reports the previous version and a scaffold manifest that disagrees with
+`package.json` (which is exactly what `package update @voxgig/sdkgen` acts on).
+
+The release sequence, in order:
+
+```bash
+cd ts
+npm version minor --no-git-tag-version   # or patch; see below
+npm run embed-version                    # REQUIRED — nothing else runs this
+npm run build && npm test
+cd .. && git add -A && git commit -m "vX.Y.Z" && git push
+git tag vX.Y.Z && git push origin vX.Y.Z # publish.yml takes it from here
+```
+
+`embed-version` (`ts/build/version.js`) writes **two** places, both of which
+must be committed with the bump: `const VERSION` in `ts/bin/voxgig-sdkgen`,
+and `version` in `ts/project/sdkgen-package.json` (the bundled scaffold ships
+as one artifact with the npm package, so the two versions must agree).
+
+Choosing the bump: patch for fixes, **minor when the release carries a
+`feat:`** — the log between the last `v*` tag and `main` is the input to that
+decision, not the size of the diff.
 
 ## Git / workflow
 
