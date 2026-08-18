@@ -65,6 +65,12 @@ that matches what you are trying to do right now:
   feature can actually apply to, so `feature-source-missing` means "this
   is a mistake" rather than "this target was never going to take it".
   Proposal.
+- [API versioning](./design/api-versioning.md) — compatibility across
+  apidef, sdkgen, and aontu: matching SDK versions to API/app versions,
+  breaking-change tooling (`apidef breaking`, the aontu G3 subsumption
+  route and what it still needs), runtime robustness in generated SDKs,
+  and the verified-pairs compatibility matrix. Discussion draft; the
+  open questions in §12 gate the plan.
 - [voxgig/station](https://github.com/voxgig/station) — the runtime
   companion: generated SDKs register as plugins with a per-language
   station library, giving one control surface for outbound integrations
