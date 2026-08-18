@@ -504,7 +504,9 @@ describe('generate', () => {
       // using a raw literal (rb, php, lua) carries the JSON verbatim. The model
       // is the same either way, so compare against the same text either way.
       const plain = src.replace(/\\"/g, '"')
-      ok(plain.includes('"main":{"name":"Demo"}'),
+      // Prefix match: main gained additive identity fields (slug, and
+      // version/target where the emitter passes its target name).
+      ok(plain.includes('"main":{"name":"Demo"'),
         target + ': embedded config is missing the main block')
       for (const entity of ['planet', 'ambient', 'history', 'console']) {
         ok(plain.includes('"' + entity + '"'),

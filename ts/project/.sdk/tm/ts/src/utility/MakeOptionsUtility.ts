@@ -71,6 +71,12 @@ function makeOptions(ctx: Context) {
       }
     },
     utility: {},
+    // Feature INSTANCES supplied at construction (the station adopt
+    // path): consumed by the constructor's featureAdd loop, so they are
+    // class instances, not data - `$ANY` accepts them verbatim. Without
+    // this entry the seam is dead: the constructor reads
+    // options.extend, but validate rejected the key.
+    extend: '`$ANY`' as any,
     system: {
       fetch: undefined as any
     },
