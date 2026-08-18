@@ -27,6 +27,7 @@ that matches what you are trying to do right now:
 - [Add a language target](./how-to/add-a-target.md)
 - [Add a feature](./how-to/add-a-feature.md)
 - [Use an sdkgen package](./how-to/use-an-sdkgen-package.md)
+- [Use voxgig/station with a generated SDK](./how-to/use-station.md)
 - [Author an sdkgen package](./how-to/author-an-sdkgen-package.md)
 - [Migrate a bundled target into a package](./how-to/migrate-a-bundled-target.md)
 - [Simulate network conditions in offline tests](./how-to/simulate-network.md)
@@ -40,6 +41,7 @@ that matches what you are trying to do right now:
 - [Typed models (entity data typing)](./reference/typed-models.md)
 - [Programmatic API](./reference/api.md)
 - [Model schema (`.aontu`)](./reference/model.md)
+- [Station error codes](./reference/station-errors.md)
 - [Project layout](./reference/project-layout.md)
 - [Operation pipeline and feature hooks](./reference/hooks.md)
 
@@ -69,12 +71,14 @@ that matches what you are trying to do right now:
   route and what it still needs), runtime robustness in generated SDKs,
   and the verified-pairs compatibility matrix. Discussion draft; the
   open questions in §12 gate the plan.
-- [voxgig/station](./design/voxgig-station.md) — the runtime companion:
-  generated SDKs register as plugins with a per-language station
-  library, giving one control surface for outbound integrations —
-  secrets (through [voxgig/sekreto](https://github.com/voxgig/sekreto)),
-  policy, observability, debugging — plus an optional consolidated
-  proxy hosting the MCP agent surface. Proposal.
+- [voxgig/station](https://github.com/voxgig/station) — the runtime
+  companion: generated SDKs register as plugins with a per-language
+  station library, giving one control surface for outbound integrations
+  — secrets (through
+  [voxgig/sekreto](https://github.com/voxgig/sekreto)), policy,
+  observability, debugging — plus an optional consolidated proxy hosting
+  the MCP agent surface. Proposal; the design doc now lives in the
+  station repo, as [`docs/design/station.md`][station-design].
 
 ## For AI coding agents
 
@@ -83,3 +87,5 @@ If you are an automated coding agent, start with
 commands, where to make each kind of change, the template-propagation
 pipeline, conventions, and the gotchas that will otherwise cost you a
 build.
+
+[station-design]: https://github.com/voxgig/station/blob/main/docs/design/station.md

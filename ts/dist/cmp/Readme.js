@@ -6,6 +6,7 @@ const ReadmeIntro_1 = require("./ReadmeIntro");
 const ReadmeInstall_1 = require("./ReadmeInstall");
 const ReadmeQuick_1 = require("./ReadmeQuick");
 const ReadmeErrors_1 = require("./ReadmeErrors");
+const ReadmeStation_1 = require("./ReadmeStation");
 const ReadmeModel_1 = require("./ReadmeModel");
 const ReadmeOptions_1 = require("./ReadmeOptions");
 const ReadmeEntity_1 = require("./ReadmeEntity");
@@ -20,6 +21,7 @@ const Readme = (0, jostraca_1.cmp)(function Readme(props) {
         (0, ReadmeIntro_1.ReadmeIntro)({ target });
         (0, ReadmeInstall_1.ReadmeInstall)({ target });
         (0, ReadmeQuick_1.ReadmeQuick)({ target });
+        (0, ReadmeStation_1.ReadmeStation)({ target });
         (0, ReadmeErrors_1.ReadmeErrors)({ target });
         (0, ReadmeHowto_1.ReadmeHowto)({ target });
         (0, ReadmeModel_1.ReadmeModel)({ target });

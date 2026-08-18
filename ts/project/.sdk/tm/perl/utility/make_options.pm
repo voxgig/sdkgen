@@ -26,8 +26,20 @@ $REGISTRY{make_options} = sub {
     }
   }
 
+  # Feature INSTANCES supplied at construction (the station adopt path):
+  # consumed by the constructor's extend loop, so they are blessed class
+  # instances, not data. This is the perl form of the ts/rb targets'
+  # `extend => $ANY` optspec entry: this port deep-clones its options, and
+  # Voxgig::Struct::clone would flatten a blessed feature to a plain
+  # unblessed hash (and validate rejects the key outright), so the RAW
+  # list is captured here and re-attached after validation - the
+  # system.fetch idiom. Without this the seam is dead: the constructor
+  # reads options.extend, but clone/validate dropped the instances.
+  my $extend_raw = ProjectNameHelpers::gp($options, 'extend');
+
   my $opts = Voxgig::Struct::clone($options);
   $opts = {} unless Voxgig::Struct::ismap($opts);
+  delete $opts->{extend};
 
   # Feature add-order. options.feature may be given as an ordered ARRAY of
   # { name, active, ...opts } entries (the array position IS the order in
@@ -78,6 +90,12 @@ $REGISTRY{make_options} = sub {
     'system' => {},
     'test' => { 'active' => $JF, 'entity' => { '`$OPEN`' => $JT } },
     'clean' => { 'keys' => 'key,token,id' },
+    # Server-variable values for a templated base URL (OpenAPI server
+    # variables). The embedded config (configDefinition) carries the
+    # spec defaults; user values override them. This port does not yet
+    # substitute {name} placeholders into base - the entry keeps the
+    # config's server block valid under this optspec.
+    'server' => { '`$CHILD`' => '' },
   };
 
   my $sys_fetch = ProjectNameHelpers::gpath($opts, 'system.fetch');
@@ -93,6 +111,11 @@ $REGISTRY{make_options} = sub {
   if ($sys_fetch) {
     $opts->{system} = {} unless Voxgig::Struct::ismap($opts->{system});
     $opts->{system}{fetch} = $sys_fetch;
+  }
+
+  # Re-attach the raw extend instances captured above.
+  if (Voxgig::Struct::islist($extend_raw)) {
+    $opts->{extend} = $extend_raw;
   }
 
   my $clean_keys = ProjectNameHelpers::gpath($opts, 'clean.keys');
@@ -114,6 +137,19 @@ $REGISTRY{make_options} = sub {
     @featureorder = (grep { 'test' eq $_ } @names)
       ? ('test', grep { 'test' ne $_ } @names)
       : @names;
+
+    # Station special case, mirroring test's: its transport wrap must
+    # sit immediately outside the base transport (inside retry/cache/
+    # netsim), so map-form activation hoists it to just after test -
+    # or first, when no test entry exists. Without this the sorted
+    # default would init station last and wrap OUTSIDE the recording
+    # features, turning its wire-truth events into fiction.
+    my ($si) = grep { 'station' eq $featureorder[$_] } 0 .. $#featureorder;
+    if (defined $si) {
+      splice @featureorder, $si, 1;
+      my ($ti) = grep { 'test' eq $featureorder[$_] } 0 .. $#featureorder;
+      splice @featureorder, (defined $ti ? $ti + 1 : 0), 0, 'station';
+    }
   }
 
   $opts->{__derived__} = {

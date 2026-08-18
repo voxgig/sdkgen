@@ -10,7 +10,7 @@ From `NOTES.md`, in full:
 This note works out what that costs and what it buys, because the idea is
 about to stop being optional: the package system made "a feature that does
 not fit every target" the normal case, and
-[station](./voxgig-station.md) is the first real package to hit it.
+[station][station-design] is the first real package to hit it.
 
 ---
 
@@ -68,7 +68,7 @@ tell apart and currently cannot:
 2. **Deliberate and temporary.** Station defers adapters for haskell,
    clojure, ocaml and lean because those four hold all feature code in one
    monolithic module that an external package cannot safely overlay
-   ([station §9.1](./voxgig-station.md)). That is a decision with a
+   ([station §9.1][station-design]). That is a decision with a
    documented reason and an exit condition.
 3. **An authoring mistake.** The package meant to ship source for this
    target and the file is misnamed, or in a container the walk does not
@@ -256,3 +256,5 @@ the mechanism and not for the tier.
   cannot be checked, and an unchecked tag is a comment.
 - **Retiring `feature-source-missing`.** The point is to make it mean
   something, not to remove it.
+
+[station-design]: https://github.com/voxgig/station/blob/main/docs/design/station.md

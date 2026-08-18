@@ -46,6 +46,15 @@ Future<dynamic> httpFetch(dynamic fullurl, dynamic fetchdef) async {
 
     final req = await client.openUrl(method, uri);
 
+    // Manual redirects: fetchdef['redirect'] == 'manual' surfaces a 3xx as
+    // an ordinary response instead of auto-following it — HttpClient would
+    // otherwise replay the request, headers included, against whatever host
+    // Location names. Set by the station feature's transport middleware
+    // under an egress hosts policy (mirrors the ts fetch option).
+    if ('manual' == vs.getprop(fetchdef, 'redirect')) {
+      req.followRedirects = false;
+    }
+
     final headers = vs.getprop(fetchdef, 'headers');
     if (headers is Map) {
       headers.forEach((k, v) {

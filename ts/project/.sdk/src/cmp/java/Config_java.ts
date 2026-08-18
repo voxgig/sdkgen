@@ -3,6 +3,7 @@ import {
   Content,
   File,
   cmp,
+  configDefinition,
   each,
   isAuthActive,
   resolveAuthPrefix,
@@ -75,8 +76,14 @@ const Config = cmp(async function Config(props: any) {
       relations: n.relations,
     }, true), a), {})
 
+  // Identity comes from configDefinition's def, not re-derived here, so
+  // this target cannot disagree with the shared emitter on main.slug /
+  // main.version / main.target (the three station descriptor fields,
+  // station design §4) — passing target.name is what opts this target in.
+  const { def: configDef } = configDefinition(model, target.name)
+
   const config = {
-    main: { name: model.const.Name },
+    main: configDef.main,
     feature: featureConfig,
     options,
     entity: entityConfig,

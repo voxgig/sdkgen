@@ -112,6 +112,78 @@ defmodule ProjectName.PrimaryUtilityTest do
     assert S.getpath(opts, "__derived__.clean.keyre") == "key|token|id"
   end
 
+  # --- feature add-order ----------------------------------------------------
+  # options.feature accepts an ordered LIST (developer add-order) or a map
+  # (defaults test-first); make_options records the resolved order in
+  # __derived__.featureorder. Driven with a synthetic ctx (empty config
+  # options) so the assertions do not depend on this SDK's own features.
+
+  defp resolve_order(feature) do
+    ctx =
+      S.jm([
+        "utility", Utility.new(),
+        "options", H.deep(%{"feature" => feature}),
+        "config", H.deep(%{"options" => %{}})
+      ])
+
+    fo = S.getpath(Utility.make_options(ctx), "__derived__.featureorder")
+    n = S.size(fo)
+    order = if n == 0, do: [], else: Enum.map(0..(n - 1), fn i -> S.getelem(fo, i) end)
+    Enum.join(order, ",")
+  end
+
+  test "feature order: map form is test-first" do
+    assert "test,metrics" ==
+             resolve_order(%{"metrics" => %{"active" => true}, "test" => %{"active" => true}})
+  end
+
+  test "feature order: an explicit list preserves its order" do
+    assert "metrics,test" ==
+             resolve_order([
+               %{"name" => "metrics", "active" => true},
+               %{"name" => "test", "active" => true}
+             ])
+  end
+
+  # Station special case, mirroring test's: its transport wrap must sit
+  # immediately outside the base transport, so map-form activation hoists
+  # it to just after test - or first, when no test entry exists.
+  test "feature order: map form hoists station after test" do
+    assert "test,station,metrics" ==
+             resolve_order(%{
+               "metrics" => %{"active" => true},
+               "station" => %{"active" => true},
+               "test" => %{"active" => true}
+             })
+  end
+
+  test "feature order: station first when no test entry exists" do
+    assert "station,metrics" ==
+             resolve_order(%{
+               "metrics" => %{"active" => true},
+               "station" => %{"active" => true}
+             })
+  end
+
+  # The extend seam (feature INSTANCES supplied at construction - the
+  # station adopt path): validate must accept the key verbatim, or the
+  # constructor's extend loop reads a stripped option and the seam is dead.
+  test "make_options preserves options.extend through validation" do
+    marker = S.jm(["name", "station"])
+
+    ctx =
+      S.jm([
+        "utility", Utility.new(),
+        "options", S.jm(["extend", S.jt([marker])]),
+        "config", H.deep(%{"options" => %{}})
+      ])
+
+    extend = S.getprop(Utility.make_options(ctx), "extend")
+    assert S.islist(extend)
+    assert S.size(extend) == 1
+    assert S.getprop(S.getelem(extend, 0), "name") == "station"
+  end
+
   test "make_error formats a namespaced message and raises by default" do
     c = client()
     ctx = ctx(c, "load")

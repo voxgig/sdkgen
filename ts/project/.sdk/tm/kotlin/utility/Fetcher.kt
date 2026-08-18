@@ -50,9 +50,18 @@ fun defaultHttpFetch(fullurl: String, fetchdef: MutableMap<String, Any?>): Mutab
     reqb.setHeader("User-Agent", "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)")
   }
 
+  // Honour a redirect annotation on the fetch definition (set by the
+  // station feature's middleware under a hosts policy): "manual" returns
+  // a 3xx like any other response instead of following it — the ts
+  // donor's fetch honours the same key natively, and an automatic follow
+  // would carry injected credentials to a host no policy approved.
+  val redirectPolicy =
+    if ("manual" == fetchdef["redirect"]) HttpClient.Redirect.NEVER
+    else HttpClient.Redirect.NORMAL
+
   // Honour a proxy annotation on the fetch definition (set by the proxy
   // feature): route the request through a proxied HttpClient.
-  val clientb = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL)
+  val clientb = HttpClient.newBuilder().followRedirects(redirectPolicy)
   val proxy = fetchdef["proxy"]
   if (proxy is String && "" != proxy) {
     try {

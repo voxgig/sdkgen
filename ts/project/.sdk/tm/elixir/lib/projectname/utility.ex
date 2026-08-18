@@ -261,6 +261,12 @@ defmodule ProjectName.Utility do
         "entity" => %{"`$CHILD`" => %{"`$OPEN`" => true, "active" => false, "alias" => %{}}},
         "feature" => %{"`$CHILD`" => %{"`$OPEN`" => true, "active" => false}},
         "utility" => %{},
+        # Feature INSTANCES supplied at construction (the station adopt
+        # path): consumed by the constructor's extend loop, so they are
+        # struct feature nodes, not data - `$ANY` accepts them verbatim.
+        # Without this entry the seam is dead: the constructor reads
+        # options.extend, but validate rejected the key.
+        "extend" => "`$ANY`",
         "system" => %{},
         "test" => %{"active" => false, "entity" => %{"`$OPEN`" => true}},
         "clean" => %{"keys" => "key,token,id"},
@@ -359,8 +365,29 @@ defmodule ProjectName.Utility do
           fmap = if S.ismap(fmap), do: fmap, else: S.jm([])
           names = S.keysof(fmap)
 
-          if Enum.member?(names, "test") do
-            ["test" | Enum.reject(names, &(&1 == "test"))]
+          names =
+            if Enum.member?(names, "test") do
+              ["test" | Enum.reject(names, &(&1 == "test"))]
+            else
+              names
+            end
+
+          # Station special case, mirroring test's: its transport wrap must
+          # sit immediately outside the base transport (inside retry/cache/
+          # netsim), so map-form activation hoists it to just after test -
+          # or first, when no test entry exists. Without this the sorted
+          # default would init station last and wrap OUTSIDE the recording
+          # features, turning its wire-truth events into fiction.
+          if Enum.member?(names, "station") do
+            rest = Enum.reject(names, &(&1 == "station"))
+
+            at =
+              case Enum.find_index(rest, &(&1 == "test")) do
+                nil -> 0
+                ti -> ti + 1
+              end
+
+            List.insert_at(rest, at, "station")
           else
             names
           end
@@ -1518,7 +1545,16 @@ defmodule ProjectName.Utility do
         {url, hlist}
       end
 
-    case :httpc.request(method, request, [], body_format: :binary) do
+    # A `redirect: "manual"` annotation (set by the station feature when a
+    # hosts egress policy is active - the same in-band channel go and rust
+    # use) disables :httpc's automatic redirect following, so a 3xx rides
+    # back as a normal response: a Location pointing off an egress
+    # allowlist must never pull an automatic credentialed follow-up
+    # request.
+    http_opts =
+      if S.getprop(fetchdef, "redirect") == "manual", do: [autoredirect: false], else: []
+
+    case :httpc.request(method, request, http_opts, body_format: :binary) do
       {:ok, {{_v, status, _reason}, resp_headers, resp_body}} ->
         rh =
           Enum.reduce(resp_headers, S.jm([]), fn {k, v}, acc ->

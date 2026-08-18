@@ -19,6 +19,14 @@ fn default_http_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectN
             builder = builder.proxy(p);
         }
     }
+    // A `redirect: "manual"` annotation (set by the station feature when a
+    // hosts policy is active - the same in-band channel as `proxy` above)
+    // disables automatic redirect following, so a 3xx rides back as a normal
+    // response: a Location pointing off an egress allowlist must never pull
+    // an automatic credentialed follow-up request.
+    if get_str(fetchdef, "redirect").as_deref() == Some("manual") {
+        builder = builder.redirects(0);
+    }
     let agent = builder.build();
 
     let mut req = agent.request(&method, fullurl);

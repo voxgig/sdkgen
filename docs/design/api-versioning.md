@@ -34,7 +34,9 @@ that follow from that:
 - Who is told, and how, when part of an API is deprecated?
 
 The station design already states the ground truth for the whole domain
-([voxgig-station.md](./voxgig-station.md) §8.6):
+([station design doc](https://github.com/voxgig/station/blob/main/docs/design/station.md),
+"Compatibility" — §8.6 at the time of writing; the doc moved from this
+repo to voxgig/station):
 
 > Skew is the steady state — `add` is overwrite and adapters live for
 > years in consumer diffs — so compatibility is designed, not hoped.
@@ -1437,7 +1439,8 @@ Ecosystem-internal: apidef `transform/top.ts`, `transform/field.ts`,
 sdkgen `model/sdkgen.aontu`, `helpers/semver.ts`, `helpers/stdrep.ts`,
 `helpers/manifest.ts`, `action/package.ts`, `action/doctor.ts`,
 `cmp/Deploy.ts`, `cmp/Changelog.ts`, clienttrack templates,
-`docs/design/sdkgen-packages.md`, `docs/design/voxgig-station.md` §8.6,
+`docs/design/sdkgen-packages.md`, the station design doc §8.6 (now
+`docs/design/station.md` in voxgig/station),
 `docs/design/feature-tags.md`; aontu `docs/capability-review/index.md`,
 `g3-subsumption-evolution.md`, `g6-distribution.md`, `progress.md`,
 `docs/reference-language.md` (constraint algebra & subsumption tables).

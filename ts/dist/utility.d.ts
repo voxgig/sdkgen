@@ -15,7 +15,7 @@ declare function configRepr(configJson: string, repr?: string): string;
 declare function configReprSetting(model: any): string;
 declare function clean(o: any, dropDefaults?: boolean): any;
 declare function rawStringLiteral(s: string): string;
-declare function configDefinition(model: any): {
+declare function configDefinition(model: any, targetname?: string): {
     def: any;
     json: string;
 };

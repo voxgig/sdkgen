@@ -6,6 +6,7 @@ import { JostracaResult, each } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
 import { serverVariables } from './helpers/serverVars'
+import { packageVersion } from './helpers/packageMeta'
 
 
 // Where a per-target component is loaded from: `<project>/.sdk/dist/<path>`.
@@ -290,7 +291,7 @@ function rawStringLiteral(s: string): string {
 //
 // Key order is `each`'s order, which is sorted, so the JSON is byte-stable
 // across runs exactly like the literal it replaces.
-function configDefinition(model: any): { def: any, json: string } {
+function configDefinition(model: any, targetname?: string): { def: any, json: string } {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const feature = getModelPath(model, `main.${KIT}.feature`)
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
@@ -330,8 +331,22 @@ function configDefinition(model: any): { def: any, json: string } {
   options.headers = headers
   options.entity = entityStubs
 
+  // Identity beyond the camel Name: the hyphenated slug is CARRIED, never
+  // derived from the camel form downstream (deriving swallows hyphens - the
+  // packageMeta envToken defect), and version/target let a running SDK say
+  // what it is. Station's descriptor (voxgig/station) reads all three.
+  // Gated on targetname so a target that does not pass its name emits the
+  // exact config it always has - each target opts in when its literal
+  // emitter learns the fields too, keeping data and literal reps in step.
+  const main: any = { name: model.const.Name }
+  if (null != targetname) {
+    main.slug = model.name
+    main.version = packageVersion(model, targetname)
+    main.target = targetname
+  }
+
   const def = {
-    main: { name: model.const.Name },
+    main,
     feature: featureDefs,
     options,
     entity: entityDefs,
