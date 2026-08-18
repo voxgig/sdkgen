@@ -226,7 +226,7 @@ main: kit: entity: history: {
 }
 
 
-# RESERVED NAMES. These three entity names collide with something that
+# RESERVED NAMES. These four entity names collide with something that
 # already exists in the generated code, and each one shipped a broken SDK:
 #
 #   utility  -> php private $_utility on the SDK class (fatal redeclare)
@@ -235,6 +235,12 @@ main: kit: entity: history: {
 #   console  -> the JS/TS global. A generated for (const console of ...)
 #               shadows it, and the example's own console.log then resolves
 #               to the entity: "console.log is not a function"
+#   record   -> the TS builtin generic Record<K,V>. export interface
+#               Record {...} shadows it for the rest of the file, so
+#               canonToType's own Record<string, any> (a generic-object
+#               field) breaks: "Type 'Record' is not generic" — found
+#               converting Airtable, whose record entity has exactly
+#               this shape.
 #
 # The generator owns helpers for exactly this (safeVarName, isReservedName,
 # exampleVarName, entityClassName); these entities prove they are actually
@@ -305,6 +311,30 @@ main: kit: entity: console: {
   }
 }
 
+# fields carries an OBJECT-typed field, canonToType's own "Record<string,
+# any>" — the self-shadowing half of the collision, not just the name.
+main: kit: entity: record: {
+  alias: field: {}
+  name: "record"
+  field: {
+    id:     { name: "id",     kind: "field", type: "\`$STRING\`", required: true }
+    fields: { name: "fields", kind: "field", type: "\`$OBJECT\`" }
+  }
+  fields: [
+    { name: "id",     req: true,  type: "\`$STRING\`" }
+    { name: "fields", req: false, type: "\`$OBJECT\`" }
+  ]
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        args: {}, method: "GET", orig: "/record", parts: ["record"]
+        transform: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
 
 main: kit: flow: BasicUtilityFlow: {
   entity: "utility", kind: "basic", name: "BasicUtilityFlow"
@@ -324,6 +354,13 @@ main: kit: flow: BasicConsoleFlow: {
   entity: "console", kind: "basic", name: "BasicConsoleFlow"
   step: [
     { op: "list", input: { ref: "console_ref01", srcdatavar: "console_ref01_data", suffix: "_dt0" } }
+  ]
+}
+
+main: kit: flow: BasicRecordFlow: {
+  entity: "record", kind: "basic", name: "BasicRecordFlow"
+  step: [
+    { op: "list", input: { ref: "record_ref01", srcdatavar: "record_ref01_data", suffix: "_dt0" } }
   ]
 }
 
