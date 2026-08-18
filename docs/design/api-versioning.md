@@ -599,8 +599,9 @@ One helper computing, from the model plus the environment:
 
 ```
 { sdkVersion,        // publish.version for this target
-  apiVersion,        // info.version, verbatim, unvalidated
-  modelHash,         // §6.4 normalized projection hash
+  apiVersion,        // info.version, verbatim in the ledger;
+                     // token-sanitized wherever it enters a header
+  modelHash,         // §6.4 projection hash (API identity)
   sdkgenVersion,     // generator version (SDKGEN_VERSION)
   targetLang }
 ```
@@ -612,6 +613,13 @@ Consumed by — and only via the helper, per principle 10:
   so the format itself can evolve:
   `{ProjectName}-sdk-{lang}/{sdkVersion} ua/1.0 api/{apiVersion}
   model/{hash8} gen/{sdkgenVersion} lang/{lang}#{runtimeVersion}`.
+  `info.version` is arbitrary text, and RFC 9110's User-Agent
+  product/product-version components are token-syntax — a version
+  like `2026-01 beta` or `v1/foo` would make the string malformed or
+  shift its product boundaries. The stamp helper therefore emits a
+  sanitized token form into the UA (and any header), keeping the
+  verbatim value in the ledger and constants; sanitization is one
+  rule, in the helper, per principle 10.
   The `clientVersion` runtime option remains as an app-level override,
   but the default stops being a lie. This is the observability
   substrate for every sunset decision an API operator will ever make,
@@ -627,17 +635,35 @@ Consumed by — and only via the helper, per principle 10:
 ### 6.3 The generation ledger
 
 A recorded manifest per generated SDK (gen.lock / kiota-lock
-precedent): model hash, apidef version, sdkgen version, per-package
-versions (from `package list`'s installed set), target, computed
-`sdkVersion`, timestamp. This is doctor's provenance discipline
-extended to the API axis, and it is the prerequisite for ever
-**regenerating an old SDK major** to security-patch it — today old
-majors are unreproducible because nothing pins generator versions per
-published line (§11.6). It also answers where the computed version
-*lives* under add-is-overwrite: in the ledger and the model, never
-only in generated output (the defect `model/sdkgen.aontu:320-334`
-documents — every manifest emitter hardcoding `'0.0.1'` — must not
-recur one level up).
+precedent): model hash, apidef version, sdkgen version, the installed
+package set, target, computed `sdkVersion`. Two constraints that
+declared versions alone do not meet:
+
+- **Content digests, not only version strings.** A target or feature
+  can come from a checkout or a local path (no meaningful version),
+  and package content or transitive resolutions can differ under the
+  same declared version. To make an old SDK major *regenerable*, the
+  ledger records a content digest and source identity for every
+  supplied tree (bundled scaffold included) plus the resolved
+  dependency lock — doctor's content-over-versions doctrine applied
+  to the ledger's own claims. `modelHash` covers the API model;
+  these digests cover the generator inputs.
+- **Deterministic.** The ledger is (or feeds) generated output, and
+  the repo's byte-stability rule applies: identical inputs must
+  produce identical bytes, or every regeneration is a dirty diff and
+  §7.5's output-diff classification fires on nothing. No wall-clock
+  timestamp inside the generated tree — the release time lives in
+  release metadata (git tag, registry) outside it.
+
+This is doctor's provenance discipline extended to the API axis, and
+it is the prerequisite for ever **regenerating an old SDK major** to
+security-patch it — today old majors are unreproducible because
+nothing pins generator versions (let alone content) per published
+line (§11.6). It also answers where the computed version *lives*
+under add-is-overwrite: in the ledger and the model, never only in
+generated output (the defect `model/sdkgen.aontu:320-334` documents —
+every manifest emitter hardcoding `'0.0.1'` — must not recur one
+level up).
 
 ### 6.4 The hash, corrected
 
@@ -655,9 +681,21 @@ with zero API change. Corrections:
   no `why_*` traces, no titles, no provenance comments). This
   projection is also §10.1's constraint form — one artifact serves
   both.
-- Record the hash **alongside** `info.version` (untrusted but the only
-  human-meaningful ordering signal) and the toolchain versions, never
-  instead of them.
+- **Two hashes, two identities.** The edits-excluded hash approximates
+  the *API* (spec) identity — but human model edits are a supported
+  workflow and can change operations, fields, and types, i.e. the
+  generated SDK's actual wire contract, while leaving the
+  edits-excluded hash unchanged; and the merged model cannot say which
+  semantic values came from the spec versus an edit. So record BOTH:
+  the edits-excluded projection hash (spec identity, for cross-project
+  comparison and drift detection) and an **effective-model hash** over
+  the same projection *including* edits (artifact identity — what
+  this SDK actually speaks). Stamps and matrix keys (§9.1) use the
+  effective hash; conflating the two can mark incompatible SDKs
+  identical.
+- Record the hashes **alongside** `info.version` (untrusted but the
+  only human-meaningful ordering signal) and the toolchain versions,
+  never instead of them.
 - Note for aontu G6: this is the same normalization problem semantic
   canon hashing has (`number|integer` vs `number`); when G6's
   `canonHash` exists it replaces the interim sha256-of-projection with
@@ -719,7 +757,14 @@ scheme changed. Three imported design rules:
   is safe in a request field, dangerous in a response field (it may
   widen a flow's status alphabet — §9.2); `req: false → true` is
   breaking on requests, safe on responses; field REMOVED is breaking
-  on responses, safe on requests (Avro's rules, §3.2).
+  on responses — and only **conditionally** safe on requests: Avro's
+  writer-fields-are-ignored rule (§3.2) holds only when the server
+  actually ignores unknown request fields. A server that validates a
+  closed request object rejects the old SDK still sending the removed
+  field — the accepted-request set *narrowed*, violating §3.1. The
+  classifier therefore incorporates the server's unknown-field policy
+  / closedness where the model knows it, and downgrades to WARN
+  (undecided-shaped, not safe) where it does not.
 - **\*Rename detection is honest about its limits:** without stable
   identity, rename is formally indistinguishable from remove+add
   (breaking). The model's canonical-vs-orig dual naming and
@@ -773,8 +818,14 @@ full-output classification):
 
 Cheapest first increment (Stainless/Google shape): don't build a
 bespoke version calculator — emit a **classified changelog entry**
-(`feat`/`fix`/`breaking`, from the verdict) on each regeneration into
-the seeded `CHANGELOG.md`, and let release tooling do the arithmetic.
+(`feat`/`fix`/`breaking`, from the verdict) on each regeneration, and
+let release tooling do the arithmetic. The entries persist in the
+ledger/model, NOT in the generated `CHANGELOG.md` alone: the seeded
+changelog is generated output and regeneration overwrites it, so
+history written only there cannot accumulate — the changelog is
+*rendered* from the persisted entries (or maintained by release
+tooling outside the overwrite scope), the same
+never-only-in-generated-output rule as §6.3.
 If consumers regenerate continuously, don't promise strict semver you
 can't keep (AWS's honest posture): G3-gated semver for deliberate
 releases, machine-readable risk classification for HEAD-trackers.
@@ -782,9 +833,22 @@ releases, machine-readable risk classification for HEAD-trackers.
 ### 7.6 Publish-time teeth
 
 Advise in CI, enforce at the moment content reaches consumers
-(Confluent's 409, Buf's push→Pending→review): sdkgen's publish moment
-is `package add` / regeneration into a project, and doctor is already
-the comparison engine. Missing pieces: a verdict that can block or
+(Confluent's 409, Buf's push→Pending→review). There are **two**
+publish moments, and both need the gate:
+
+1. **Package content reaching a project** — `package add` /
+   `package update` / regeneration; doctor is already the comparison
+   engine there.
+2. **A generated SDK reaching application consumers** — the
+   registry-publish path driven by the generated release recipes
+   (`cmp/Deploy.ts`). A project that regenerates and then publishes
+   through those recipes never passes through `package add`, so a gate
+   only on (1) is bypassable by the path that actually ships breaking
+   changes to app developers. The release recipes must check the
+   recorded verdict (or refuse when none exists) before tagging and
+   publishing.
+
+Missing pieces beyond placement: a verdict that can block or
 quarantine, and a **recorded approved-breaking-change artifact**
 (Buf's review flow, Azure's suppression files, smithy's
 suppressions-in-the-new-model) so an intentional break is not
@@ -800,10 +864,14 @@ goal, false negatives openly documented, undecidables to WARN.
 
 A feature-system citizen (clienttrack is the precedent): model-
 configurable, template-tier where language-independent, component-tier
-where shape-dependent, **parity-tested** (§8.8). The current accidental
-posture is tolerance-by-omission (generated response validation is
-largely commented out — `PrepareParamsUtility.ts`); this phase makes
-the posture chosen, stated, and tested — noting that any future
+where shape-dependent, **parity-tested** (§8.8). The working
+hypothesis is that the current posture is tolerance-by-omission — but
+the cited evidence (`PrepareParamsUtility.ts`'s commented-out
+`validate(...)`) is *request-parameter* code, not response handling,
+so the response-side posture is an unverified premise: **phase 2
+starts by auditing the response/deserialization path of every target**
+and recording each one's actual behavior on unknown fields and enum
+values, before designing the switch. Either way, any future
 *strictness* (validation on, version asserted) is itself the breaking
 change to running apps, and ships behind flags.
 
@@ -830,19 +898,32 @@ rule.
 
 ### 8.3 Strict writers
 
-Send only modeled fields; fail loudly on locally-invalid known content
-(RFC 9413's other half). No client-side echo of unknown *request*
-fields.
+Fail loudly on locally-invalid known content (RFC 9413's other half),
+and reject **caller-invented** unknown request fields. But "send only
+modeled fields" taken literally would contradict §8.2: in a
+load-modify-update flow, discarding the preserved response extras at
+write time erases server data and fails §8.8's round-trip row. The
+rule is therefore: request payloads consist of modeled fields **plus
+the separately-tracked preserved extras of the entity being written
+back** — the app cannot inject arbitrary fields, and the SDK never
+destroys fields it merely didn't understand.
 
 ### 8.4 The wire beacon and the skew error
 
 - Send the version header (`X-{Project}-Api-Version: {apiVersion}`,
-  from the stamp) on every request, behind a model flag defaulting on.
-  Define absent-server behavior first: no existing backend in this
-  ecosystem sends or checks any version header, so assertion is theater
-  until servers participate — the generated README carries the
-  server-side recommendation (Azure's typed 400 listing supported
-  versions; GitHub's meta endpoint; echo header on responses).
+  sanitized, from the stamp) on every request — behind a model flag
+  **defaulting OFF**, enabled per API when server support is declared.
+  Two reasons it cannot default on: (a) for browser-executed targets
+  (ts/js) a custom non-safelisted header is included in the CORS
+  preflight, and a server whose `Access-Control-Allow-Headers` does
+  not list it rejects *every* request — and, per the next sentence,
+  no existing backend does; (b) no existing backend in this ecosystem
+  sends or checks any version header, so assertion is theater until
+  servers participate. The generated README carries the server-side
+  recommendation (Azure's typed 400 listing supported versions;
+  GitHub's meta endpoint; echo header on responses; CORS allow-list
+  entry for the header). The user-agent remains the always-on beacon
+  meanwhile — it is safelisted and costs nothing.
 - A generated **probe helper** (hello/version endpoint call if the
   model declares one; parse version/deprecation response headers when
   present). Full negotiation (Kafka/MCP style) only if self-hosted
@@ -876,9 +957,14 @@ Two channels, disjoint populations:
 
 Deprecation needs the retirement half or surface accretes forever:
 machine-readable removal dates (`x-sunset` in the spec, Sunset at
-runtime), and the differ's downgrade rule — removing an
-already-deprecated element warns instead of breaking (G3 designed
-`--allow-deprecated-removal`; the apidef verb mirrors it).
+runtime), and the differ's downgrade rule — with the default kept
+honest: deprecation does not stop deployed SDKs from calling the
+operation, so **removing an already-deprecated element is still
+breaking by default**; it downgrades to a warning only under an
+explicit `--allow-deprecated-removal` (G3's flag, mirrored by the
+apidef verb) or a declared document policy — i.e. a human or policy
+asserting the support window has elapsed, never the differ assuming
+it.
 
 ### 8.6 Escape hatches
 
@@ -924,15 +1010,26 @@ Every SDK **stamps what it was built against** (§6.2/6.3). The matrix
 is then a table of rows
 
 ```
-(target, sdkVersion, modelHash, apiVersion/appVersion, verifiedBy, when)
+(artifactDigest, apiVersion/appVersion, verifiedOps, verifiedBy, when)
 ```
 
-marked verified only by an **executed verification** — a matrix
-without executed verifications is a database of unverified claims
-(Pact's own design point). `can-i-use` queries gate: "does a verified
-row exist between this SDK version and every backend version currently
-deployed" — with the fleet reality that many old SDK versions stay
-live (`record-release` semantics, not just `record-deployment`).
+where `artifactDigest` is the §6.3 ledger digest of the exact
+generated artifact — covering project identity, target, effective
+model hash, generator and package content digests, and feature
+configuration — with `(target, sdkVersion, modelHash, …)` carried as
+display attributes, **not as the key**. The coarser tuple is not
+sound as a key: §5.6 says compat depends on the generated feature set,
+so two TS SDKs built from the same model with the same hand-declared
+`sdkVersion` but different tolerance/validation configuration would
+collide, and a verification of one would silently authorize the
+other. Rows are marked verified only by an **executed verification**
+— a matrix without executed verifications is a database of unverified
+claims (Pact's own design point) — and `verifiedOps` records *which*
+operations the verification exercised (§9.2). `can-i-use` queries
+gate: "does a verified row exist between this artifact and every
+backend version currently deployed" — with the fleet reality that
+many old SDK versions stay live (`record-release` semantics, not just
+`record-deployment`).
 
 ### 9.2 Flows are the verification engine — the ecosystem's native Pact
 
@@ -941,37 +1038,62 @@ ecosystem already owns: apidef emits **flows** — executable behavioral
 expectations per entity (create → list → update → load → remove with
 assertions) that generate into every SDK's test suite. Running the
 **old** SDK's flow suite against the **new** server IS the
-verification step, and it is the *only* mechanism in this design that
-catches same-schema-different-semantics breaks — which subsumption
-structurally cannot see (§3.5; G3's boundary says so itself). Flow
-diffing also gets the session-type rule (§3.2): operations old clients
-may call must keep existing and accepting old inputs (external choice
-widens); server-emitted states per step must stay within the old
-alphabet (internal choice narrows) — a new status enum value that
-drives a generated polling loop is a breaking change no schema check
-will flag. Flows exist today, making this the cheapest cold-start
-deliverable of the whole matrix.
+verification step, and it is the only mechanism in this design that
+catches genuinely schema-invisible breaks — semantics of an existing
+value changing, ordering or pagination behavior shifting, a bug-fix
+that alters what a field means — which subsumption structurally
+cannot see (§3.5; G3's boundary says so itself). Flow diffing also
+gets the session-type rule (§3.2): operations old clients may call
+must keep existing and accepting old inputs (external choice widens);
+server-emitted states per step must stay within the old alphabet
+(internal choice narrows). (A new *modeled* status enum value is
+flagged by §7.2's schema classifier once Phase 0 models enums; flows
+confirm the behavioral consequence and catch the unmodeled cases.)
+
+**Coverage is part of the verdict.** The generated CRUD flow does not
+exercise custom `$action` routes, so a passing run must never mark
+the whole SDK/server pair verified: generate flow assertions for
+every emitted custom action, and record the tested operation set in
+the matrix row (`verifiedOps`, §9.1) so a partial flow verifies
+exactly what it ran and `can-i-use` can refuse to treat partial
+coverage as pair-wide proof. Flows exist today, making this the
+cheapest cold-start deliverable of the whole matrix.
 
 ### 9.3 The consumer contract artifact
 
 Emit the generated SDK's exact used subset (operations emitted, fields
 bound) as a machine-readable generation artifact (§3.4). The differ
 then reports two tiers: "breaking in principle" (full-model) vs
-"breaks these SDKs" (used-subset) — the second gates releases.
-Usage-aware narrowing beyond that (Apollo-style "no live client reads
-this field") requires telemetry (§8's UA) and is only ever a
-*relaxation* of the static verdict, never the gate, because public
-SDKs have unobserved consumers.
+"breaks these SDKs' generated bindings" (used-subset). One honesty
+constraint on the second tier: the generator knows what the SDK
+*exposes*, not what applications *use* — and §8.6's escape hatches
+(raw response access, undocumented-endpoint calls) let an app depend
+on surface outside the generated bindings entirely. So the used-subset
+verdict may gate only what it can see: it is authoritative for the
+bindings, and a change outside them is downgraded to WARN, not
+approved — full-model remains the default gate, relaxed further only
+by telemetry (Apollo-style "no live client reads this field", which
+needs §8's UA) or an explicit application-level contract. Relaxation
+is always one-directional: evidence can soften the static verdict,
+never harden a pass, because public SDKs have unobserved consumers.
 
 ### 9.4 Station, if it runs attached in production
 
 Station sees wire truth across every SDK and language (transport-wrap
 events, capture store). If it runs in production (open question
-§12.2), it is the third verification engine and the runtime half of
-this design: observed (sdkVersion, apiVersion) pairs feeding the
-matrix (cheaper and truer than pre-verification), drift alarms
-(unknown-field observations, post-deploy 4xx spikes), Sunset-header
-surfacing, and — furthest out — the mediation point where
+§12.2), it is the runtime half of this design — but as an
+**observation source, not a verification engine**: seeing an
+(artifact, apiVersion) pair in traffic proves only that some request
+occurred — it may have failed, and it exercised some operations while
+incompatible paths went untouched. Treating observations as cheaper
+substitutes for executed verification would break §9.1's own
+invariant and let `can-i-use` approve untested pairs. So the matrix
+stores observations as a distinct evidence class (with the observed
+operation coverage), useful for drift alarms (unknown-field
+observations, post-deploy 4xx spikes), Sunset-header surfacing, and
+prioritising which pairs to *actually* verify; a row is promoted to
+verified only when contract assertions (§9.2) pass. Further out,
+station is the natural mediation point where
 transform-shaped breaking findings (§5.9) compile to adapter config
 (Stripe's version-change-module chain; Kong/APIM transformers are the
 commodity form). The station descriptor should carry the model hash
