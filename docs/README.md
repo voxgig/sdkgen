@@ -27,6 +27,7 @@ that matches what you are trying to do right now:
 - [Add a language target](./how-to/add-a-target.md)
 - [Add a feature](./how-to/add-a-feature.md)
 - [Use an sdkgen package](./how-to/use-an-sdkgen-package.md)
+- [Use voxgig/station with a generated SDK](./how-to/use-station.md)
 - [Author an sdkgen package](./how-to/author-an-sdkgen-package.md)
 - [Migrate a bundled target into a package](./how-to/migrate-a-bundled-target.md)
 - [Simulate network conditions in offline tests](./how-to/simulate-network.md)
@@ -40,6 +41,7 @@ that matches what you are trying to do right now:
 - [Typed models (entity data typing)](./reference/typed-models.md)
 - [Programmatic API](./reference/api.md)
 - [Model schema (`.aontu`)](./reference/model.md)
+- [Station error codes](./reference/station-errors.md)
 - [Project layout](./reference/project-layout.md)
 - [Operation pipeline and feature hooks](./reference/hooks.md)
 
