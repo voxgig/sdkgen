@@ -2,7 +2,7 @@ import {
   cmp, each,
   File, Content, Copy, Folder,
   entityCollection, entityOps, entityIdField, entityClassName,
-  opRequestShape, opParams, entityPath,
+  opRequestShape, opParams, ownPoint, entityPath,
   collectDeps, repoInfo, packageName, packageVersion, apiName, envName,
   authorInfo, contributorList, isAuthActive, jsKey, jsProp,
   SdkGenError,
@@ -74,12 +74,19 @@ function requiredKeys(ent: any, opname: string): string[] {
 // `<entity>_id` path param to `id` besides, which is why most APIs never reach
 // the fallback.
 //
-// When it does NOT answer, the record key is the LAST required path param of a
-// single-item op: a route addresses parents first and the record last, by
-// construction. Without this the key was simply unknown, so a param named
-// `code` failed the `!== idf` test in opParentKeys and was classified as a
-// PARENT — `load$('SAVE20')` threw "coupon load: code is required" instead of
-// loading anything, and the entity was treated as nested throughout.
+// When it does NOT answer, the record key is the LAST path param of the
+// op's own point, in PATH order — a route addresses parents first and the
+// record last, by construction. Without this the key was simply unknown,
+// so a param named `code` failed the `!== idf` test in opParentKeys and
+// was classified as a PARENT — `load$('SAVE20')` threw "coupon load: code
+// is required" instead of loading anything, and the entity was treated as
+// nested throughout.
+//
+// opParams(op) is NOT the source here: it alphabetizes params for output
+// stability, which loses path order on a 3+-param route — Airtable's
+// record (base_id, table_id, record_id) alphabetizes with table_id last,
+// so the old `params[params.length - 1]` picked the wrong parent as the
+// record's own key. The point's own `parts` still has the true order.
 function recordKey(ent: any): string {
   const idf = entityIdField(ent)
   if (null != idf && '' !== idf) {
@@ -88,13 +95,18 @@ function recordKey(ent: any): string {
 
   for (const opname of ['load', 'remove', 'update']) {
     const op = (ent.op || {})[opname]
-    if (null == op) {
+    if (null == op || 0 === (op.points || []).length) {
       continue
     }
 
-    const params = opParams(op).filter((p: any) => false !== p.reqd)
-    if (0 < params.length) {
-      return String((params[params.length - 1] as any).name)
+    const canonical = op.points.filter((pt: any) =>
+      null == (pt && pt.select && pt.select['$action']))
+    const point = ownPoint(0 < canonical.length ? canonical : op.points)
+    const parts: string[] = (point && point.parts) || []
+    const lastParam = [...parts].reverse().find((p: string) => p.startsWith('{'))
+
+    if (null != lastParam) {
+      return lastParam.slice(1, -1)
     }
   }
 
@@ -966,4 +978,5 @@ if ('undefined' !== typeof module) {
 
 export {
   Main,
+  recordKey,
 }

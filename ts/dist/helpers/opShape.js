@@ -32,6 +32,7 @@ exports.deriveEntityNames = deriveEntityNames;
 exports.entityCollection = entityCollection;
 exports.opTypeName = opTypeName;
 exports.opParams = opParams;
+exports.ownPoint = ownPoint;
 exports.opActions = opActions;
 exports.entityActions = entityActions;
 exports.entityPath = entityPath;
