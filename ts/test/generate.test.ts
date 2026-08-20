@@ -905,6 +905,29 @@ describe('generate', () => {
   })
 
 
+  // ts: an entity named `record` (Airtable's real shape) produced `export
+  // interface Record {...}` with a field typed `Record<string, any>` —
+  // canonToType's own generic-object mapping — in the SAME interface,
+  // shadowing the TS builtin: "Type 'Record' is not generic".
+  test('ts: an entity named record does not shadow the builtin Record<K,V>', async () => {
+    const out = await generate(['ts'])
+
+    const types = findFile(out, 'DemoTypes.ts')
+    ok(null != types, 'ts: no DemoTypes.ts generated')
+    ok(types!.includes('export interface RecordType {'),
+      'the record entity data type was not renamed off the builtin')
+    ok(!/export interface Record\s*\{/.test(types!),
+      'the record entity still shadows the builtin Record<K,V>')
+
+    const entity = findFile(out, 'RecordEntity.ts')
+    ok(null != entity, 'ts: no RecordEntity.ts generated')
+    ok(entity!.includes('extends DemoEntityBase<RecordType>'),
+      'the entity class does not use the renamed data type')
+    ok(entity!.includes(`this.Name = 'Record'`),
+      'the runtime Name string was wrongly renamed along with the type')
+  })
+
+
   // lean: the runner drives ops the entity declares. `X.create` is not
   // generated for a load-only entity, so emitting the create block breaks the
   // build with "Unknown identifier"; and a `do` block with no statements does

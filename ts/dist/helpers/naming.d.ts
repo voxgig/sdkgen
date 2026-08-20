@@ -5,6 +5,8 @@ declare function isSwiftSdkType(Name: string): boolean;
 declare function swiftSafeTypeName(Name: string): string;
 declare function isPhpReservedType(Name: string): boolean;
 declare function phpSafeTypeName(Name: string): string;
+declare function isTsReservedType(Name: string): boolean;
+declare function tsSafeTypeName(Name: string): string;
 declare function isReservedName(name: string, lang: string): boolean;
 declare function safeVarName(name: string, lang: string): string;
 /** The PHP accessor method for an entity: `$client-><Name>()`. */
@@ -19,4 +21,4 @@ declare function exampleVarName(name: string, lang: string): string;
 declare function jsProp(obj: string, name: string): string;
 declare function jsKey(name: string): string;
 declare function jsOptProp(obj: string, name: string): string;
-export { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, phpSafeTypeName, jsProp, jsOptProp, jsKey, };
+export { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, phpSafeTypeName, isTsReservedType, tsSafeTypeName, jsProp, jsOptProp, jsKey, };
