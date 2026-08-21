@@ -1965,7 +1965,7 @@ src/cmp/ts/ReadmeTopHowto_ts.ts cb6e656a9bf5
 src/cmp/ts/ReadmeTopQuick_ts.ts b6d2f5f16387
 src/cmp/ts/ReadmeTopTest_ts.ts 171136366bd2
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
-src/cmp/ts/TestDirect_ts.ts d3f9e37981cb
+src/cmp/ts/TestDirect_ts.ts 40c548cf516d
 src/cmp/ts/TestEntity_ts.ts 260e18c00f75
 src/cmp/ts/TestMain_ts.ts 8b45d4d8db1a
 src/cmp/ts/Test_ts.ts 97c22b071d10
