@@ -152,15 +152,18 @@ Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
         if (sdkTargets.length > 1) {
             const surfaces = [];
             surfaces.push(`${langList} SDKs`);
-            // Only surfaces a target actually GENERATES. hasCli/hasMcp gate on the
-            // go-cli/go-mcp targets being active, which is right. There was also an
-            // 'an interactive REPL' entry gated on a ts/js target merely existing —
-            // but no target generates a REPL: no repl target, no repl module, no bin
-            // in the generated package. So every project with a ts or js SDK
-            // advertised a surface that does not exist, in the one line at the top of
-            // its README, while the Surfaces table further down listed the truth.
+            // Only surfaces a target actually GENERATES, each gated on the target
+            // that generates it.
+            //
+            // The REPL entry used to be gated on hasJsLike — a ts or js target merely
+            // EXISTING — which is wrong twice over: a ts/js SDK is a library and
+            // ships no REPL, so every project with one advertised a surface it did
+            // not have; and the target that really does emit a REPL is go-cli
+            // (cmp/go-cli/fragment/main.fragment.go: `func repl(...)`, a prompt, and
+            // /help and /quit), so a project WITH a REPL and without ts/js was not
+            // credited for it. Gating it on hasCli fixes both directions.
             if (hasCli)
-                surfaces.push('a CLI');
+                surfaces.push('a CLI with an interactive REPL');
             if (hasMcp)
                 surfaces.push('an MCP server for AI agents');
             const surfaceList = surfaces.length > 1

@@ -548,7 +548,7 @@ src/cmp/go/ReadmeExamplesTest_go.ts 98a1ad664298
 src/cmp/go/ReadmeExplanation_go.ts 702c211cf5bb
 src/cmp/go/ReadmeHowto_go.ts 807646a8112e
 src/cmp/go/ReadmeInstall_go.ts 5d12316078af
-src/cmp/go/ReadmeIntro_go.ts 1fa3c62b86cb
+src/cmp/go/ReadmeIntro_go.ts 757f0cba035a
 src/cmp/go/ReadmeModel_go.ts 1c32850537fb
 src/cmp/go/ReadmeOptions_go.ts 47c8f1e458b1
 src/cmp/go/ReadmeQuick_go.ts 70eedea21ceb
@@ -1956,7 +1956,7 @@ src/cmp/ts/ReadmeExamplesTest_ts.ts 27fc7e1ca552
 src/cmp/ts/ReadmeExplanation_ts.ts adae2c36cfde
 src/cmp/ts/ReadmeHowto_ts.ts c0fe141d36a9
 src/cmp/ts/ReadmeInstall_ts.ts a2f0bfbe6fd2
-src/cmp/ts/ReadmeIntro_ts.ts 9dfe2a331370
+src/cmp/ts/ReadmeIntro_ts.ts d61781251a39
 src/cmp/ts/ReadmeModel_ts.ts 2ff13bd83bce
 src/cmp/ts/ReadmeOptions_ts.ts 30073e38a603
 src/cmp/ts/ReadmeQuick_ts.ts 5d136d08f323
@@ -2033,7 +2033,7 @@ tm/ts/src/utility/TransformRequestUtility.ts 48b8762bd838
 tm/ts/src/utility/TransformResponseUtility.ts 7aeded320abe
 tm/ts/src/utility/Utility.ts c1f6d3ed23dd
 tm/ts/test/README.md 087d364e7b4f
-tm/ts/test/exists.test.ts 183e82463bcf
+tm/ts/test/exists.test.ts 522c1f453513
 tm/ts/test/feature.test.ts 90d67f513913
 tm/ts/test/feature/harness.ts bfc382438dbc
 tm/ts/test/netsim.test.ts 350539c6a30b
