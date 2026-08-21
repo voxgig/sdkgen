@@ -680,6 +680,7 @@ export {
   entityCollection,
   opTypeName,
   opParams,
+  ownPoint,
   opActions,
   entityActions,
   entityPath,

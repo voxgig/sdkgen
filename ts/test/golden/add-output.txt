@@ -1835,7 +1835,7 @@ model/target/seneca-provider.aontu a273f888e4c8
 model/target/target-index.aontu 5bd671e614df
 src/cmp/seneca-provider/Extras_seneca-provider.ts 68924545a645
 src/cmp/seneca-provider/Gitignore_seneca-provider.ts 188e88524e59
-src/cmp/seneca-provider/Main_seneca-provider.ts 79332b019952
+src/cmp/seneca-provider/Main_seneca-provider.ts 0f481ee43fc7
 tm/seneca-provider/CODE_OF_CONDUCT.md ae654991bd5f
 tm/seneca-provider/LICENSE 5466e344bee1
 tm/seneca-provider/Makefile 6856c7df3e08
@@ -1996,7 +1996,7 @@ tm/ts/src/Result.ts 45a656e9d5df
 tm/ts/src/Spec.ts 318854e8cb05
 tm/ts/src/feature/README.md 630422c5567f
 tm/ts/src/feature/base/BaseFeature.ts 4c0e468f5313
-tm/ts/src/feature/test/TestFeature.ts e50cfe09495a
+tm/ts/src/feature/test/TestFeature.ts fcdedda237f1
 tm/ts/src/tsconfig.json c1b52cc621fb
 tm/ts/src/types.ts 5e1f5518bba6
 tm/ts/src/utility/CleanUtility.ts 2bdbcdce5d3f
