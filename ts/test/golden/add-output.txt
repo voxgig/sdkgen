@@ -1949,7 +1949,7 @@ src/cmp/ts/Entity_ts.ts 616f4613ee7a
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
 src/cmp/ts/Main_ts.ts 1cbfd535047a
-src/cmp/ts/Package_ts.ts 349f95fc56e6
+src/cmp/ts/Package_ts.ts 8db9ddb35912
 src/cmp/ts/ReadmeEntity_ts.ts a8d946b1b786
 src/cmp/ts/ReadmeExampleTest_ts.ts 271424a8ec78
 src/cmp/ts/ReadmeExamplesTest_ts.ts 27fc7e1ca552

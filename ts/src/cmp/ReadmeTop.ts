@@ -123,7 +123,7 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
 
   const hasCli = activeTargets.some((t: any) => t.name === 'go-cli')
   const hasMcp = activeTargets.some((t: any) => t.name === 'go-mcp')
-  const hasJsLike = activeTargets.some((t: any) => t.name === 'ts' || t.name === 'js')
+
 
   // Canonical docs order from main.kit.config.docs_order (with a
   // schema-supplied default of ['ts','py','php','go','rb','lua']).
@@ -189,8 +189,14 @@ Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
     if (sdkTargets.length > 1) {
       const surfaces = []
       surfaces.push(`${langList} SDKs`)
+      // Only surfaces a target actually GENERATES. hasCli/hasMcp gate on the
+      // go-cli/go-mcp targets being active, which is right. There was also an
+      // 'an interactive REPL' entry gated on a ts/js target merely existing —
+      // but no target generates a REPL: no repl target, no repl module, no bin
+      // in the generated package. So every project with a ts or js SDK
+      // advertised a surface that does not exist, in the one line at the top of
+      // its README, while the Surfaces table further down listed the truth.
       if (hasCli) surfaces.push('a CLI')
-      if (hasJsLike) surfaces.push('an interactive REPL')
       if (hasMcp) surfaces.push('an MCP server for AI agents')
       const surfaceList = surfaces.length > 1
         ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
