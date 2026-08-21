@@ -593,8 +593,8 @@ tm/go/test/custom_utility_test.go ce85a84fcd2a
 tm/go/test/feature_harness_test.go c66475cecadb
 tm/go/test/netsim_test.go 30f992e9d5c0
 tm/go/test/pipeline_test.go 20ba5603708e
-tm/go/test/primary_utility_test.go ff01a5b59d0b
-tm/go/test/runner_test.go 21a3ef372d29
+tm/go/test/primary_utility_test.go d2cfaca83f24
+tm/go/test/runner_test.go d17616a9166b
 tm/go/test/sdk-test-control.json acadc87764f6
 tm/go/test/struct_runner_test.go 7a5fc9884a09
 tm/go/test/struct_utility_test.go f33efb981ec5
@@ -1017,7 +1017,7 @@ tm/lean/src/feature/test/.gitkeep e3b0c44298fc
 tm/lean/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/lean/test/StructCorpus.lean 9f47a713c244
 tm/lean/test/TFeature.lean 0b9484a60155
-tm/lean/test/TPrimaryUtility.lean d9faeab42de7
+tm/lean/test/TPrimaryUtility.lean fe95f5d26bd3
 
 ## target lua
 model/feature/feature-index.aontu c7dc89f9b25b
@@ -1665,7 +1665,7 @@ tm/rust/feature/test.rs 6de68cc7f2ca
 tm/rust/src/feature/README.md f623e5e15340
 tm/rust/src/feature/base/.gitkeep e3b0c44298fc
 tm/rust/src/feature/test/.gitkeep e3b0c44298fc
-tm/rust/tests/common/mod.rs 4f7f43f38045
+tm/rust/tests/common/mod.rs 359442455f10
 tm/rust/tests/custom_utility_test.rs b78994ed4c89
 tm/rust/tests/netsim_test.rs e610e1039298
 tm/rust/tests/pipeline_test.rs ac227fad4915
@@ -2042,8 +2042,9 @@ tm/ts/test/runner.ts 255ac19c84c2
 tm/ts/test/sdk-test-control.json 47bf9b08d0cf
 tm/ts/test/tsconfig.json 0da68e0cde47
 tm/ts/test/utility.ts 23e03c6d0a02
+tm/ts/test/utility/Corpus.test.ts f129e2eb4bd4
 tm/ts/test/utility/Custom.test.ts a8780a38b0ea
-tm/ts/test/utility/PrimaryUtility.test.ts 24c1c09beb76
+tm/ts/test/utility/PrimaryUtility.test.ts ed42043df327
 tm/ts/test/utility/StructUtility.test.ts 400bbedbe457
 tm/ts/test/utility/index.ts 477889c43d3e
 

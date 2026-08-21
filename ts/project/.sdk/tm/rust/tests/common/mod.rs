@@ -295,7 +295,7 @@ pub fn match_deep(check: &Value, base: &Value) -> Option<String> {
 // (.sdk/test/primary/<name>.aontu carries a PENDING header). Everything else
 // MUST contribute cases.
 pub const PENDING_SECTIONS: &[&str] = &[
-    "fetcher", "makeFetchDef", "makePoint", "makeResult", "featureAdd",
+    "fetcher", "makeFetchDef", "makeResult", "featureAdd",
     "featureHook", "featureInit",
 ];
 
