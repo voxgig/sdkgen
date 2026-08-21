@@ -207,6 +207,16 @@ class TestFeature extends BaseFeature {
 
         const ent = clone(ctx.reqdata)
         setprop(ent, 'id', id)
+
+        // A record created during the run needs the same real-key seeding
+        // the initial walk gives seed data (see ownIdField above) — without
+        // it, only `id` is set, and a load by the entity's own key right
+        // after create (recordKey !== 'id') finds nothing.
+        const idField = ownIdField(ctx.config, struct.getpath, getprop(op, 'entity'))
+        if ('id' !== idField && null == getprop(ent, idField)) {
+          setprop(ent, idField, id)
+        }
+
         setprop(entmap, id, ent)
         delprop(ent, '$KEY')
         const out = clone(ent)
