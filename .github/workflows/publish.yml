@@ -9,7 +9,20 @@
 #
 # The npm package lives in ts/, so all steps run there.
 #
-# Release flow: bump ts/package.json, merge to main, then push a v* tag.
+# Release flow:
+#
+#   1. bump ts/package.json
+#   2. cd ts && npm run embed-version   <-- NOT optional, and NOT run here
+#   3. npm install --package-lock-only  (npm ci below fails on a stale lock)
+#   4. commit all four files, merge to main
+#   5. push the v* tag
+#
+# Step 2 stamps the version into ts/bin/voxgig-sdkgen and into the bundled
+# scaffold's manifest, ts/project/sdkgen-package.json — both COMMITTED files
+# this workflow only reads. `npm test` catches a missed step (manifest.test.ts,
+# "its version tracks the npm package"), so a stale stamp fails the release
+# rather than shipping; step 3 is caught by `npm ci` refusing a lock that
+# disagrees with package.json.
 
 name: publish
 
