@@ -414,18 +414,20 @@ describe('${provider.fileBase}', () => {
 
 `)
 
-      // Only when the subject needs no parent context at all: a bare
-      // `list$()`/`load$(id)` call has no way to carry one. A subject that
-      // DOES have parent keys (the best-available entity still needed one —
-      // there was no zero-parent entity to prefer) is also in `nested`
-      // below, which calls it correctly with the parent keys filled in;
-      // emitting a second, bare version here duplicated the test under the
-      // same name and failed on the guard it forgot to satisfy.
-      if (0 === subject.parents.length && subject.cmds.includes('list')) {
-        Content(`
-  it('${subject.name}-list', async () => {
+      // Every flat entity (no parent keys), not just one "subject" — a
+      // provider with two or more flat siblings used to leave every one
+      // but the busiest untested beyond the accessor check above. A bare
+      // `list$()`/`load$(id)` call has no way to carry a parent key, so
+      // entities that need one are covered by the `nested` block below
+      // instead, with their keys filled in.
+      const flat = provider.entities.filter((e: any) => 0 === e.parents.length)
+
+      each(flat, (e: any) => {
+        if (e.cmds.includes('list')) {
+          Content(`
+  it('${e.name}-list', async () => {
     const seneca = await makeSeneca()
-    const list = await seneca.entity('provider/${provider.lower}/${subject.name}').list$()
+    const list = await seneca.entity('provider/${provider.lower}/${e.name}').list$()
 
     assert.equal(list.length, 2)
 
@@ -434,25 +436,25 @@ describe('${provider.fileBase}', () => {
     // survive into the Seneca entity.
     assert.equal(
       list[0].canon$({ string: true }),
-      'provider/${provider.lower}/${subject.name}',
+      'provider/${provider.lower}/${e.name}',
     )
   })
 
 `)
-      }
+        }
 
-      if (0 === subject.parents.length && subject.cmds.includes('load')) {
-        Content(`
-  it('${subject.name}-load', async () => {
+        if (e.cmds.includes('load')) {
+          Content(`
+  it('${e.name}-load', async () => {
     const seneca = await makeSeneca()
     const found = await seneca
-      .entity('provider/${provider.lower}/${subject.name}')
-      .load$('${subject.name}0')
+      .entity('provider/${provider.lower}/${e.name}')
+      .load$('${e.name}0')
 
-    assert.equal(found.${subject.idf || 'id'}, '${subject.name}0')
+    assert.equal(found.${e.idf || 'id'}, '${e.name}0')
     assert.equal(
       found.canon$({ string: true }),
-      'provider/${provider.lower}/${subject.name}',
+      'provider/${provider.lower}/${e.name}',
     )
   })
 
@@ -460,17 +462,18 @@ describe('${provider.fileBase}', () => {
   // A 404 from a single-item read is an ordinary "not found" answer, not a
   // failure: the provider turns it into null rather than letting the SDK
   // throw.
-  it('${subject.name}-load-missing', async () => {
+  it('${e.name}-load-missing', async () => {
     const seneca = await makeSeneca()
     const missing = await seneca
-      .entity('provider/${provider.lower}/${subject.name}')
-      .load$('nosuch${subject.name}')
+      .entity('provider/${provider.lower}/${e.name}')
+      .load$('nosuch${e.name}')
 
     assert.equal(missing, null)
   })
 
 `)
-      }
+        }
+      })
 
       // A nested entity cannot build its path without the parent id. That is
       // the mistake this target exists to make impossible, so pin it.
