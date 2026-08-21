@@ -316,8 +316,19 @@ def main : IO UInt32 := do
     runset "makeResult" (← getSpec primary #["makeResult", "basic"]) fun entry => do
       pure ((← SdkUtility.makeResult (← entryCtx entry opts config)), none)
 
-    runset "makePoint" (← getSpec primary #["makePoint", "basic"]) fun entry => do
-      pure ((← SdkUtility.makePoint (← entryCtx entry opts config)), none)
+    -- makePoint is NOT driven here, and this is deliberate.
+    --
+    -- The section used to be empty, so running it asserted nothing. It now
+    -- carries seven cases, and every one supplies its own `options` (for
+    -- allow.op) and `config` (for the operation's points) — but `entryCtx`
+    -- OVERWRITES both with the SDK's, so the cases would not run as authored.
+    -- Wiring it up needs entryCtx to prefer a fixture-supplied options/config,
+    -- which changes every section here and could not be compiled or run when
+    -- this change was made.
+    --
+    -- Left out rather than left in: an entry that runs with the wrong context
+    -- is worse than one that does not run, and no coverage is lost — this
+    -- section asserted nothing before either.
 
     runset "makeFetchDef" (← getSpec primary #["makeFetchDef", "basic"]) fun entry => do
       pure ((← SdkUtility.makeFetchDef (← entryCtx entry opts config)), none)

@@ -28,9 +28,17 @@ const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
 const TM = Path.join(SDK, 'tm')
 
 
-// The 21 corpus sections every FULL-tier target must execute. Kept explicit
+// The 22 corpus sections every FULL-tier target must execute. Kept explicit
 // (rather than read from the sibling create-sdkgen checkout, which is not
 // guaranteed to be present) so this suite is self-contained.
+//
+// NOT the whole corpus. `clean` and the deferred sections are excluded, and
+// so is `makePoint` — it was promoted from deferred to seven real cases, but
+// only ts and go drive it so far. Adding it here makes it mandatory for all
+// 16 FULL targets at once, which is the work to do next, one target at a
+// time: each needs its context builder to honour a fixture-supplied
+// `options` and `config` (lean's overwrites both, which is why lean does not
+// drive this section yet).
 const CORPUS_SECTIONS = [
   'done', 'makeContext', 'makeError', 'makeOptions', 'makeRequest',
   'makeResponse', 'makeSpec', 'makeUrl', 'operator', 'param', 'prepareAuth',
