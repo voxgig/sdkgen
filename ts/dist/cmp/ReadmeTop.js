@@ -93,7 +93,6 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const activeTargets = (0, jostraca_1.each)(target).filter((t) => t.active !== false);
     const hasCli = activeTargets.some((t) => t.name === 'go-cli');
     const hasMcp = activeTargets.some((t) => t.name === 'go-mcp');
-    const hasJsLike = activeTargets.some((t) => t.name === 'ts' || t.name === 'js');
     // Canonical docs order from main.kit.config.docs_order (with a
     // schema-supplied default of ['ts','py','php','go','rb','lua']).
     // Targets present but not listed get appended in spec-defined order,
@@ -153,10 +152,18 @@ Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
         if (sdkTargets.length > 1) {
             const surfaces = [];
             surfaces.push(`${langList} SDKs`);
+            // Only surfaces a target actually GENERATES, each gated on the target
+            // that generates it.
+            //
+            // The REPL entry used to be gated on hasJsLike — a ts or js target merely
+            // EXISTING — which is wrong twice over: a ts/js SDK is a library and
+            // ships no REPL, so every project with one advertised a surface it did
+            // not have; and the target that really does emit a REPL is go-cli
+            // (cmp/go-cli/fragment/main.fragment.go: `func repl(...)`, a prompt, and
+            // /help and /quit), so a project WITH a REPL and without ts/js was not
+            // credited for it. Gating it on hasCli fixes both directions.
             if (hasCli)
-                surfaces.push('a CLI');
-            if (hasJsLike)
-                surfaces.push('an interactive REPL');
+                surfaces.push('a CLI with an interactive REPL');
             if (hasMcp)
                 surfaces.push('an MCP server for AI agents');
             const surfaceList = surfaces.length > 1
