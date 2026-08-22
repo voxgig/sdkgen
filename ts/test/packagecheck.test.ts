@@ -69,12 +69,12 @@ function makePackage(edit?: (dir: string) => void): string {
 
   // The target model, renamed the way an author must rename it: EVERY
   // `target: go:` key, not only the first.
-  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'iotgo.aontu'),
-    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'), 'utf8')
+  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'iotgo.aon'),
+    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aon'), 'utf8')
       .replace(/target: go:/g, 'target: iotgo:'))
 
-  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'feature', 'retry.aontu'),
-    Path.join(sdk, 'model', 'feature', 'retry.aontu'))
+  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'feature', 'retry.aon'),
+    Path.join(sdk, 'model', 'feature', 'retry.aon'))
 
   Fs.writeFileSync(Path.join(dir, 'sdkgen-package.json'),
     JSON.stringify({
@@ -119,7 +119,7 @@ function noted(report: any, point: string): string {
 
 
 function modelFile(dir: string, kind: string, name: string): string {
-  return Path.join(dir, '.sdk', 'model', kind, name + '.aontu')
+  return Path.join(dir, '.sdk', 'model', kind, name + '.aon')
 }
 
 
@@ -225,7 +225,7 @@ describe('package check — the model rules', () => {
     const report = check()
 
     ok(/comment: line: ["']\/\/["']/.test(String(Fs.readFileSync(
-      Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'), 'utf8'))),
+      Path.join(SCAFFOLD, 'model', 'target', 'go.aon'), 'utf8'))),
       'fixture assumption: go declares a // line-comment token')
 
     ok(!points(report).includes('model-slash-comment'))
@@ -528,7 +528,7 @@ describe('package check — feature source', () => {
     const dir = makePackage()
     try {
       // The fixture provides `retry` and nothing else...
-      ok(!Fs.existsSync(Path.join(dir, '.sdk', 'model', 'feature', 'log.aontu')),
+      ok(!Fs.existsSync(Path.join(dir, '.sdk', 'model', 'feature', 'log.aon')),
         'fixture assumption: the package does not provide log')
 
       // ...and its copied `go` tree ships log source regardless.

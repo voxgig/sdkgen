@@ -475,7 +475,7 @@ function SdkGen(opts) {
         return ctx;
     }
     function resolveModel(wanted) {
-        const path = './model/sdk.aontu';
+        const path = './model/sdk.aon';
         const errs = [];
         // A verb that does not act on a project (see `needsModel`) is run where
         // there is no project model, so its absence is not an error there. Its
@@ -596,7 +596,7 @@ SdkGen.makeBuild = async function (opts) {
         root: opts.root,
         def: opts.def || 'no-def',
         kind: 'openapi-3',
-        model: opts.model ? (opts.model.folder + '/api.aontu') : 'no-model',
+        model: opts.model ? (opts.model.folder + '/api.aon') : 'no-model',
         meta: opts.meta || {},
     };
     return async function build(model, build, ctx) {

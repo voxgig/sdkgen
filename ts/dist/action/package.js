@@ -755,7 +755,7 @@ async function reAdd(pkgname, installed, actx) {
                 'so upstream model changes to ' +
                 skipped.map((i) => i.origname).join(', ') +
                 ' must be ported by hand: ' +
-                skipped.map((i) => 'model/' + i.kind + '/' + i.name + '.aontu').join(', ')
+                skipped.map((i) => 'model/' + i.kind + '/' + i.name + '.aon').join(', ')
         });
     }
     // Same order as `package add`, for the same reason: `feature add` fans a

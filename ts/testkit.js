@@ -5,7 +5,7 @@
 // A stub rather than an `exports` map entry, on purpose. A map would name
 // this subpath and, in doing so, replace the deep-import freedom this package
 // has without one — and consumers depend on that freedom invisibly (generated
-// model files include `@voxgig/sdkgen/model/sdkgen.aontu`; the scaffold is
+// model files include `@voxgig/sdkgen/model/sdkgen.aon`; the scaffold is
 // reached as `@voxgig/sdkgen/project/<lang>`). See the `_no_exports_comment`
 // in package.json for what was measured.
 

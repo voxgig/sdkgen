@@ -142,7 +142,7 @@ describe('npm packaging', () => {
   // A map naming `./testkit` REPLACES the deep-import freedom a package has
   // without one, and consumers depend on that freedom where nothing here would
   // notice: every generated model file includes
-  // `@voxgig/sdkgen/model/sdkgen.aontu`, and the scaffold is reached as
+  // `@voxgig/sdkgen/model/sdkgen.aon`, and the scaffold is reached as
   // `@voxgig/sdkgen/project/<lang>`. A `./*` catch-all looks like it restores
   // that and does not — exports resolution never falls back to CommonJS
   // extension probing, so `require('.../dist/helpers/manifest')` maps to an
@@ -167,8 +167,8 @@ describe('npm packaging', () => {
         '@voxgig/sdkgen',
         '@voxgig/sdkgen/testkit',
         '@voxgig/sdkgen/package.json',
-        '@voxgig/sdkgen/model/sdkgen.aontu',
-        '@voxgig/sdkgen/project/.sdk/model/target/ts.aontu',
+        '@voxgig/sdkgen/model/sdkgen.aon',
+        '@voxgig/sdkgen/project/.sdk/model/target/ts.aon',
         '@voxgig/sdkgen/bin/voxgig-sdkgen',
         '@voxgig/sdkgen/dist/sdkgen.js',
         '@voxgig/sdkgen/dist/sdkgen',

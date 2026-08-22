@@ -11,9 +11,9 @@
 //   - the ref grammar and resolution, including the fallback to what the
 //     model already records for a bare name;
 //   - whether the kind may be installed under a different name (`~alias`);
-//   - the definition file: `model/<kind>/<name>.aontu`, stamped with
+//   - the definition file: `model/<kind>/<name>.aon`, stamped with
 //     provenance and landing under the INSTALLED name;
-//   - the include list: `model/<kind>/<kind>-index.aontu`.
+//   - the include list: `model/<kind>/<kind>-index.aon`.
 //
 // What a kind adds on top — a target's component and template trees, a
 // feature's per-target source fan-out — stays in that kind's own action. Those
@@ -293,7 +293,7 @@ function kindModel(props: {
 
     if (owned) {
       const dest = Path.join(
-        ctx$.folder ?? '.', 'model', kind, source.name + '.aontu')
+        ctx$.folder ?? '.', 'model', kind, source.name + '.aon')
 
       if (fs.existsSync(dest)) {
         log.info({
@@ -308,14 +308,14 @@ function kindModel(props: {
     const text = null == def.rename ? src :
       def.rename(src, source.origname, source.name)
 
-    File({ name: source.name + '.aontu', exclude: owned }, () =>
+    File({ name: source.name + '.aon', exclude: owned }, () =>
       Content(template(text, ctx$.model, { replace })))
   }
   else {
     Copy({ from: source.model, replace })
   }
 
-  File({ name: def.name + '-index.aontu' }, () => UpdateIndex({
+  File({ name: def.name + '-index.aon' }, () => UpdateIndex({
     content,
     names,
   }))

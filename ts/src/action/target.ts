@@ -431,7 +431,7 @@ function aliasCmpTree(
 // refreshed after upstream moved the fh* harness helpers out of it.
 //
 // tm/ is toolchain-owned — the scaffold rewrites it on every add-target, and
-// model/guide/guide.aontu is the one file a user owns (merged separately by
+// model/guide/guide.aon is the one file a user owns (merged separately by
 // create-sdkgen) — so removing what the toolchain says should not be there is
 // consistent with how the rest of that tree is already treated.
 function pruneStaleTemplates(
@@ -656,7 +656,7 @@ function readTargetFeature(
   const { log } = ctx$
   const fs = ctx$.fs()
 
-  const path = tfolder + '/model/target/' + torigname + '.aontu'
+  const path = tfolder + '/model/target/' + torigname + '.aon'
 
   try {
     const errs: any[] = []

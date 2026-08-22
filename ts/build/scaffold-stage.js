@@ -13,7 +13,7 @@
 //   dist-test-scaffold/
 //     node_modules/@voxgig/sdkgen   -> re-export of this package's own dist
 //     .sdk/src/cmp/<lang>/...       -> copy (fragments + docs read at runtime)
-//     .sdk/model/target|feature/... -> copy (the test writes its own sdk.aontu
+//     .sdk/model/target|feature/... -> copy (the test writes its own sdk.aon
 //                                     alongside and unifies against these, so
 //                                     the fixture inherits REAL target defaults
 //                                     instead of restating them)

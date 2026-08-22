@@ -59,8 +59,8 @@ function makePackage(): string {
     Path.join(sdk, 'src', 'cmp', 'go'), { recursive: true })
   Fs.cpSync(Path.join(SCAFFOLD, 'tm', 'go'),
     Path.join(sdk, 'tm', 'go'), { recursive: true })
-  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'),
-    Path.join(sdk, 'model', 'target', 'go.aontu'))
+  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aon'),
+    Path.join(sdk, 'model', 'target', 'go.aon'))
 
   for (const [rel, content] of Object.entries(PLANTED)) {
     const path = Path.join(sdk, rel)
@@ -122,7 +122,7 @@ describe('junk filter', () => {
   test('it recognises what a machine leaves behind', () => {
     for (const name of [
       '__pycache__', 'make_options.cpython-314.pyc', '.DS_Store', 'node_modules',
-      '.git', 'Main_go.ts~', '.#target.aontu', '#target.aontu#', '.error.go.swp',
+      '.git', 'Main_go.ts~', '.#target.aon', '#target.aon#', '.error.go.swp',
       'error.go.orig', 'error.go.rej', 'Thumbs.db', '.venv', 'zig-out',
       '.pytest_cache', 'SDK.class', '_build', '.stack-work',
     ]) {
@@ -300,10 +300,10 @@ describe('junk filter', () => {
     try {
       const kind = Path.join(dir, 'model', 'target')
       Fs.mkdirSync(kind, { recursive: true })
-      Fs.writeFileSync(Path.join(kind, 'target-index.aontu'), '# Targets\n')
-      Fs.writeFileSync(Path.join(kind, 'go.aontu'), '\n')
+      Fs.writeFileSync(Path.join(kind, 'target-index.aon'), '# Targets\n')
+      Fs.writeFileSync(Path.join(kind, 'go.aon'), '\n')
       // What emacs leaves while the file is open.
-      Fs.writeFileSync(Path.join(kind, '.#go.aontu'), 'lock\n')
+      Fs.writeFileSync(Path.join(kind, '.#go.aon'), 'lock\n')
 
       deepStrictEqual(definitionNames(Fs, dir, 'target'), ['go'])
     }

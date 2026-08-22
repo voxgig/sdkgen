@@ -12,7 +12,7 @@ import type {
 } from '../types'
 
 
-const indexEntry = (name: string) => `@"${name}.aontu"`
+const indexEntry = (name: string) => `@"${name}.aon"`
 
 
 // An index line that is an ACTIVE include, and the name it includes — or
@@ -21,17 +21,17 @@ const indexEntry = (name: string) => `@"${name}.aontu"`
 // Parsed rather than compared as a string, because both spellings around an
 // include are legal aontu and mean opposite things:
 //
-//   @"go.aontu"                 -> active, name 'go'
-//   @"go.aontu"  # pinned       -> active, name 'go'  (trailing comment)
-//     @"go.aontu"               -> active, name 'go'  (indented)
-//   # @"go.aontu"               -> NOT active
+//   @"go.aon"                 -> active, name 'go'
+//   @"go.aon"  # pinned       -> active, name 'go'  (trailing comment)
+//     @"go.aon"               -> active, name 'go'  (indented)
+//   # @"go.aon"               -> NOT active
 //
 // A substring test (what this used to be) reads the commented-out form as
 // present, so `target add go` on a project that had switched the target off
 // by hand appended nothing and reported success while the target stayed
 // absent from the model. A whole-line equality test fixes that but then
 // misses the trailing-comment form, and appends a SECOND active include.
-const INDEX_ENTRY_RE = /^\s*@"([^"]+)\.aontu"\s*(?:#.*)?$/
+const INDEX_ENTRY_RE = /^\s*@"([^"]+)\.aon"\s*(?:#.*)?$/
 
 function indexEntryName(line: string): string | undefined {
   const m = line.match(INDEX_ENTRY_RE)
@@ -46,7 +46,7 @@ function hasIndexEntry(content: string, name: string): boolean {
 }
 
 
-// Append `@"<name>.aontu"` import lines for each name not already present in
+// Append `@"<name>.aon"` import lines for each name not already present in
 // the index content. Checking against the accumulating result (not the
 // original) means duplicate names in the same call are added at most once.
 function appendIndexEntries(content: string, names: string[]): string {
@@ -62,7 +62,7 @@ function appendIndexEntries(content: string, names: string[]): string {
 }
 
 
-// Drop the `@"<name>.aontu"` line for each name — the inverse of
+// Drop the `@"<name>.aon"` line for each name — the inverse of
 // appendIndexEntries, matching line-exact for the same reasons.
 //
 // Nothing calls this yet: a `remove` action is the fast-follow this exists
@@ -100,12 +100,12 @@ function parseAddNames(args: any[]): string[] {
 // The current index file for each kind, which `UpdateIndex` appends to.
 //
 // `seed` IS THE UPGRADE PATH. A project scaffolded before a kind existed has
-// no `model/<kind>/<kind>-index.aontu` — every project alive today is in
+// no `model/<kind>/<kind>-index.aon` — every project alive today is in
 // exactly that position for `docs` — and reading it unguarded made the FIRST
 // `docs add` in any existing project fail on ENOENT before it wrote anything.
 //
 // Seeded per call rather than defaulted for every kind: a missing
-// `target-index.aontu` in a scaffolded project is a broken project, and
+// `target-index.aon` in a scaffolded project is a broken project, and
 // quietly recreating it would hide that. A kind the project has never used is
 // a different thing, and only its own action knows which case it is in.
 function loadContent(
@@ -119,7 +119,7 @@ function loadContent(
   const modelfolder = Path.dirname(actx.url)
 
   which.map((w: string) => {
-    const indexfile = Path.join(modelfolder, w, w + '-index.aontu')
+    const indexfile = Path.join(modelfolder, w, w + '-index.aon')
 
     content[`${w}_index`] = (null != seed?.[w] && !fs.existsSync(indexfile)) ?
       seed[w] : fs.readFileSync(indexfile, 'utf8')
@@ -136,7 +136,7 @@ function loadContent(
 // indexes of the kinds that existed then. So a project scaffolded before a
 // kind existed — which is every project alive today, for `docs` — never
 // includes its index, and the item's model file is an orphan: it is on disk,
-// `<kind>-index.aontu` includes it, and NOTHING includes that. `main.kit.docs`
+// `<kind>-index.aon` includes it, and NOTHING includes that. `main.kit.docs`
 // is then absent from the compiled model, so `package list`, `package update`
 // and `doctor` cannot see the item at all.
 //

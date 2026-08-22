@@ -183,7 +183,7 @@ function goVersion(model, target, fallback) {
 //
 // This was the last of the four things the slug derives that had no override,
 // and the only one that came out wrong — see the identity note at the top of
-// model/sdkgen.aontu.
+// model/sdkgen.aon.
 function goPackageIdent(model, target) {
     const declared = model?.main?.[apidef_1.KIT]?.target?.[target]?.module?.package;
     if (null != declared && '' !== declared) {

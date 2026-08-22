@@ -13,7 +13,7 @@ import Path from 'node:path'
 
 
 const REPO = Path.resolve(__dirname, '..', '..')
-const MODEL_FILES = ['sdkgen.aontu']
+const MODEL_FILES = ['sdkgen.aon']
 
 
 describe('model-mirror', () => {

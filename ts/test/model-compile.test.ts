@@ -3,7 +3,7 @@
 // The mirror test guards that model/ and ts/model/ are byte-identical; it
 // does NOT check that the model is valid. This test compiles the canonical
 // top-level aontu model through Aontu and fails if generation reports any
-// errors — so a broken edit to model/sdkgen.aontu is caught here rather than
+// errors — so a broken edit to model/sdkgen.aon is caught here rather than
 // downstream when a consumer SDK tries to generate.
 
 import { test, describe } from 'node:test'
@@ -29,7 +29,7 @@ import {
 
 
 const REPO = Path.resolve(__dirname, '..', '..')
-const MODEL_FILES = ['sdkgen.aontu']
+const MODEL_FILES = ['sdkgen.aon']
 
 const PROJECT_MODEL = Path.join(REPO, 'ts', 'project', '.sdk', 'model')
 const TARGET_DIR = Path.join(PROJECT_MODEL, 'target')
@@ -52,7 +52,7 @@ function compile(label: string, path: string): any {
 function aontuFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
     e.isDirectory() ? aontuFiles(Path.join(dir, e.name)) :
-      e.name.endsWith('.aontu') ? [Path.join(dir, e.name)] : [])
+      e.name.endsWith('.aon') ? [Path.join(dir, e.name)] : [])
 }
 
 
@@ -72,13 +72,13 @@ describe('model-compile', () => {
 // The target models are copied verbatim into a consumer project by the
 // scaffold, so a syntax error in one of them only surfaces when someone runs
 // `voxgig-model` in that project — the model-compile test above covers
-// model/sdkgen.aontu alone. Compile every target here. Note aontu accepts `#`
+// model/sdkgen.aon alone. Compile every target here. Note aontu accepts `#`
 // comments ONLY: a `//` line is a parse error, and that is exactly how the
 // go/go-cli/go-mcp/java/kotlin/scala/cpp targets shipped broken.
 describe('target-compile', () => {
 
   const targets = readdirSync(TARGET_DIR)
-    .filter((f: string) => f.endsWith('.aontu'))
+    .filter((f: string) => f.endsWith('.aon'))
     .sort()
 
   // A miswired path would make the loop below vacuously pass.
@@ -94,7 +94,7 @@ describe('target-compile', () => {
 
 
 // A project OVERRIDES publication values from its own model — `target add <t>`
-// overwrites model/target/<t>.aontu, so anything set there is wiped on the
+// overwrites model/target/<t>.aon, so anything set there is wiped on the
 // next resync, and voxgig-solardemo-sdk lost its pinned npm package name that
 // way. The override only works if the shipped target model leaves those keys
 // UNSET: aontu resolves default-then-concrete to the concrete value, but
@@ -104,11 +104,11 @@ describe('target-compile', () => {
 describe('target-publish-overridable', () => {
 
   const targets = readdirSync(TARGET_DIR)
-    .filter((f: string) => f.endsWith('.aontu'))
+    .filter((f: string) => f.endsWith('.aon'))
     .sort()
 
   for (const file of targets) {
-    const tname = file.replace(/\.aontu$/, '')
+    const tname = file.replace(/\.aon$/, '')
     // A hyphenated key has to be quoted in aontu, the way the shipped model
     // writes it (`main: kit: target: 'go-cli': ...`).
     const tkey = aontuKey(tname)
@@ -166,7 +166,7 @@ describe('project-model-syntax', () => {
   const files = aontuFiles(PROJECT_MODEL)
 
   test('the scaffold has model files to check', () => {
-    assert.ok(0 < files.length, `no .aontu files under ${PROJECT_MODEL}`)
+    assert.ok(0 < files.length, `no .aon files under ${PROJECT_MODEL}`)
   })
 
   test('no scaffolded model uses a slash comment', () => {
@@ -202,12 +202,12 @@ describe('cli-targets-disable-agentguide', () => {
   for (const target of ['go-cli', 'go-mcp', 'py-data']) {
     test(`${target} switches the agentguide phase off`, () => {
       const model: any = compile(
-        `target/${target}.aontu`, Path.join(TARGET_DIR, target + '.aontu'))
+        `target/${target}.aon`, Path.join(TARGET_DIR, target + '.aon'))
 
       const phase = model?.main?.kit?.target?.[target]?.phase
       assert.strictEqual(
         phase?.agentguide?.active, false,
-        `${target}.aontu must set phase.agentguide.active = false`)
+        `${target}.aon must set phase.agentguide.active = false`)
     })
   }
 
@@ -243,7 +243,7 @@ describe('schema covers every kind', () => {
         'or this guard passes vacuously for it')
 
       const src = [
-        `@'${Path.join(REPO, 'model', 'sdkgen.aontu')}'`,
+        `@'${Path.join(REPO, 'model', 'sdkgen.aon')}'`,
         `main: kit: ${kind}: probe: {`,
         '  ' + probe,
         '}',
@@ -255,7 +255,7 @@ describe('schema covers every kind', () => {
       // the schema itself throws `source includes itself` — either way
       // "compiling failed" is true no matter what the schema says.
       const { errors } = compileModel(
-        src, Path.join(TARGET_DIR, 'go.aontu'))
+        src, Path.join(TARGET_DIR, 'go.aon'))
 
       assert.ok(0 < errors.length,
         `the base schema does not constrain main.kit.${kind} — a definition ` +

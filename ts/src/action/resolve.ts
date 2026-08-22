@@ -86,7 +86,7 @@ function resolveSource(ref: string, kind: string, ctx$: any): Source {
   if (1 < aliasing.length) {
     name = aliasing.slice(1).join('~')
 
-    // The alias becomes a DESTINATION: `model/<kind>/<name>.aontu`,
+    // The alias becomes a DESTINATION: `model/<kind>/<name>.aon`,
     // `src/cmp/<name>/`, `tm/<name>/` — all written, and `target add`
     // overwrites what it writes. `go~..` therefore redirects the copy out of
     // the target-specific directory and over unrelated scaffold. Checked
@@ -253,7 +253,7 @@ function warnManifest(ctx$: any, file: string, err: string) {
 // Teach the IN-MEMORY model about items that have just been installed.
 //
 // An action reads `actx.model`, compiled from `model/sdk.aontu` before the
-// run. Writing `model/target/iotgo.aontu` does not change it and nothing
+// run. Writing `model/target/iotgo.aon` does not change it and nothing
 // recompiles mid-process, so anything later in the SAME command behaves as if
 // the item is not installed.
 //

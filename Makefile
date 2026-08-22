@@ -11,7 +11,7 @@ clean: clean-ts
 # The aontu model. The canonical copy lives at model/; npm can only ship
 # files under the package root (ts/), so it is mirrored into ts/model/.
 # Edit model/, then `make sync-model`.
-MODEL_FILES = sdkgen.aontu
+MODEL_FILES = sdkgen.aon
 
 sync-model:
 	@for f in $(MODEL_FILES); do \

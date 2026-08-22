@@ -1,4 +1,4 @@
-// THE MODEL RULES A PACKAGE'S `.aontu` FILES MUST SATISFY.
+// THE MODEL RULES A PACKAGE'S `.aon` FILES MUST SATISFY.
 //
 // See docs/design/sdkgen-packages.md §10 (the rules) and §14 (the battery).
 //

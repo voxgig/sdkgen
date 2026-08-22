@@ -2,7 +2,7 @@
 //
 // The value of sdkgen is that every target behaves identically, and the
 // mechanism for proving that is the shared test corpus: language-neutral
-// `.aontu` fixtures (create-sdkgen project/standard/.sdk/test/primary/) that
+// `.aon` fixtures (create-sdkgen project/standard/.sdk/test/primary/) that
 // compile to a test.json each target's own suite executes. A target whose
 // suite does NOT drive that corpus is only ever checked against
 // hand-written cases it wrote for itself, so it can drift from the reference

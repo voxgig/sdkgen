@@ -126,17 +126,17 @@ function makeProject(
 
   fs.mkdirSync(ROOT + '/model/target', { recursive: true })
   fs.mkdirSync(ROOT + '/model/feature', { recursive: true })
-  fs.writeFileSync(ROOT + '/model/target/target-index.aontu', '# Targets\n')
-  fs.writeFileSync(ROOT + '/model/feature/feature-index.aontu', '# Features\n')
+  fs.writeFileSync(ROOT + '/model/target/target-index.aon', '# Targets\n')
+  fs.writeFileSync(ROOT + '/model/feature/feature-index.aon', '# Features\n')
 
   // The project's OWN model, which create-sdkgen writes once at init and
   // which includes the indexes of the kinds that existed then. A fixture
   // without it cannot show what an existing project does when a NEW kind
   // arrives — which is the whole upgrade path for `docs`.
-  fs.writeFileSync(ROOT + '/model/sdk.aontu',
+  fs.writeFileSync(ROOT + '/model/sdk.aon',
     "name: 'demo'\n" +
-    '@"target/target-index.aontu"\n' +
-    '@"feature/feature-index.aontu"\n')
+    '@"target/target-index.aon"\n' +
+    '@"feature/feature-index.aon"\n')
 
   const actx: any = {
     fs: () => layeredFs(fs),
@@ -152,7 +152,7 @@ function makeProject(
         },
       },
     },
-    url: ROOT + '/model/sdk.aontu',
+    url: ROOT + '/model/sdk.aon',
     jostraca: Jostraca({ existing: { txt: { write: true, merge: false } } }),
     opts: { dryrun: !!opts.dryrun },
   }

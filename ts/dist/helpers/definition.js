@@ -1,7 +1,7 @@
 "use strict";
 // WHERE A KIND'S DEFINITION FILES LIVE.
 //
-// `model/<kind>/<name>.aontu`, with `model/<kind>/<kind>-index.aontu` as the
+// `model/<kind>/<name>.aon`, with `model/<kind>/<kind>-index.aon` as the
 // include list beside them. One line of path-building — and it was written out
 // longhand in three places (the resolver, the feature catalogue, doctor), each
 // with its own idea of which files in that directory count.
@@ -26,7 +26,7 @@ const node_path_1 = __importDefault(require("node:path"));
 const junk_1 = require("./junk");
 // The definition file for one item.
 function definitionPath(sdkfolder, kind, name) {
-    return node_path_1.default.join(sdkfolder, 'model', kind, name + '.aontu');
+    return node_path_1.default.join(sdkfolder, 'model', kind, name + '.aon');
 }
 // The directory holding a kind's definitions.
 function definitionFolder(sdkfolder, kind) {
@@ -34,7 +34,7 @@ function definitionFolder(sdkfolder, kind) {
 }
 // The include list beside them.
 function indexName(kind) {
-    return kind + '-index.aontu';
+    return kind + '-index.aon';
 }
 // Every item of `kind` a `.sdk` folder DEFINES, sorted. Sorted because it
 // feeds an exact-set comparison against a manifest and, through
@@ -60,13 +60,13 @@ function definitionNames(fs, sdkfolder, kind) {
     catch (err) {
         return [];
     }
-    // The `.aontu` suffix is not enough on its own: an emacs lock link is named
-    // `.#target.aontu` and a merge leaves `target.aontu.orig`, so an editor open
+    // The `.aon` suffix is not enough on its own: an emacs lock link is named
+    // `.#target.aon` and a merge leaves `target.aon.orig`, so an editor open
     // in the wrong window invents an item called `.#target`, which then fails to
     // resolve everywhere it is named. See helpers/junk.
     return entries
-        .filter((n) => n.endsWith('.aontu') && index !== n && !(0, junk_1.isJunk)(n))
-        .map((n) => n.replace(/\.aontu$/, ''))
+        .filter((n) => n.endsWith('.aon') && index !== n && !(0, junk_1.isJunk)(n))
+        .map((n) => n.replace(/\.aon$/, ''))
         .sort();
 }
 //# sourceMappingURL=definition.js.map

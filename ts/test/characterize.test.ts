@@ -60,8 +60,8 @@ const UPDATE = '1' === process.env.SDKGEN_GOLDEN_UPDATE
 // so a new one is characterized without anyone remembering to add it here.
 function shipped(kind: string): string[] {
   return Fs.readdirSync(Path.join(SCAFFOLD, 'model', kind))
-    .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
-    .map((f: string) => f.replace(/\.aontu$/, ''))
+    .filter((f: string) => f.endsWith('.aon') && !f.includes('-index'))
+    .map((f: string) => f.replace(/\.aon$/, ''))
     .sort()
 }
 

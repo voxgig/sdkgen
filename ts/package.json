@@ -17,7 +17,7 @@
     "The obvious alternative, an `exports` map naming './testkit', REPLACES",
     "the deep-import freedom a package has without one. Consumers depend on",
     "that freedom in places nothing here would notice: every generated model",
-    "file includes '@voxgig/sdkgen/model/sdkgen.aontu', and the scaffold is",
+    "file includes '@voxgig/sdkgen/model/sdkgen.aon', and the scaffold is",
     "reached as '@voxgig/sdkgen/project/<lang>'.",
     "",
     "A './*' catch-all looks like it restores that, and does not: exports",
@@ -88,7 +88,7 @@
   "peerDependencies": {
     "@tabnas/jsonic": "0.6.0",
     "@tabnas/parser": "0.8.0",
-    "@voxgig/apidef": ">=7.1",
+    "@voxgig/apidef": ">=8.0",
     "@voxgig/struct": ">=0.2",
     "@voxgig/util": ">=0.5",
     "aontu": ">=0.52",

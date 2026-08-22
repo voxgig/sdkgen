@@ -49,7 +49,7 @@ function makePackage(
 function def(sdk: string, kind: string, name: string) {
   const dir = Path.join(sdk, 'model', kind)
   Fs.mkdirSync(dir, { recursive: true })
-  Fs.writeFileSync(Path.join(dir, name + '.aontu'), '\n')
+  Fs.writeFileSync(Path.join(dir, name + '.aon'), '\n')
 }
 
 
@@ -500,7 +500,7 @@ describe('validateManifest', () => {
     // The two directions must use ONE oracle. The forward direction used to
     // ask the filesystem and the reverse a directory listing, and on a
     // case-insensitive filesystem — APFS and NTFS by default, so most package
-    // authors — those disagree: `IoTGo` beside `model/target/iotgo.aontu`
+    // authors — those disagree: `IoTGo` beside `model/target/iotgo.aon`
     // validated clean for the author and failed for every Linux consumer.
     //
     // Simulated rather than assumed, so the test means the same thing on

@@ -47,12 +47,12 @@ function makePackage(manifest?: any): string {
   Fs.cpSync(Path.join(SCAFFOLD, 'tm', 'go'),
     Path.join(sdk, 'tm', 'iotgo'), { recursive: true })
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'iotgo.aontu'),
-    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'), 'utf8')
+  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'iotgo.aon'),
+    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aon'), 'utf8')
       .replace(/target: go:/g, 'target: iotgo:'))
 
-  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'feature', 'retry.aontu'),
-    Path.join(sdk, 'model', 'feature', 'retry.aontu'))
+  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'feature', 'retry.aon'),
+    Path.join(sdk, 'model', 'feature', 'retry.aon'))
 
   // Components are dispatched by convention, so their names follow the target.
   const cmpdir = Path.join(sdk, 'src', 'cmp', 'iotgo')
@@ -93,8 +93,8 @@ describe('package add', () => {
       const project = await addPackage(pkg)
       const files = project.files()
 
-      ok(files.includes('model/target/iotgo.aontu'), 'the target is missing')
-      ok(files.includes('model/feature/retry.aontu'), 'the feature is missing')
+      ok(files.includes('model/target/iotgo.aon'), 'the target is missing')
+      ok(files.includes('model/feature/retry.aon'), 'the feature is missing')
       ok(files.some((f: string) => f.startsWith('src/cmp/iotgo/')),
         'no components were copied')
       ok(files.some((f: string) => f.startsWith('tm/iotgo/')),
@@ -103,12 +103,12 @@ describe('package add', () => {
       // Both index files list what was installed, or the model will not
       // compile the new items in at all.
       const tindex = String(project.fs.readFileSync(
-        ROOT + '/model/target/target-index.aontu', 'utf8'))
-      ok(tindex.includes('@"iotgo.aontu"'), 'target index: ' + tindex)
+        ROOT + '/model/target/target-index.aon', 'utf8'))
+      ok(tindex.includes('@"iotgo.aon"'), 'target index: ' + tindex)
 
       const findex = String(project.fs.readFileSync(
-        ROOT + '/model/feature/feature-index.aontu', 'utf8'))
-      ok(findex.includes('@"retry.aontu"'), 'feature index: ' + findex)
+        ROOT + '/model/feature/feature-index.aon', 'utf8'))
+      ok(findex.includes('@"retry.aon"'), 'feature index: ' + findex)
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -124,7 +124,7 @@ describe('package add', () => {
       const project = await addPackage(pkg)
 
       const src = String(project.fs.readFileSync(
-        ROOT + '/model/target/iotgo.aontu', 'utf8'))
+        ROOT + '/model/target/iotgo.aon', 'utf8'))
 
       ok(src.includes("package: '@acme/sdkgen-iot'"),
         'no package provenance recorded:\n' + src.split('\n').slice(0, 12).join('\n'))
@@ -272,7 +272,7 @@ describe('package add: refusing before writing', () => {
       const log = recordLog()
       const project = await addPackage(pkg, {}, { log })
 
-      ok(project.files().includes('model/target/iotgo.aontu'),
+      ok(project.files().includes('model/target/iotgo.aon'),
         'an unparseable range blocked the install')
       ok(log.lines.some((l: any) => 'package-engine-unparsed' === l.point),
         'it proceeded SILENTLY')
@@ -293,7 +293,7 @@ describe('package add: refusing before writing', () => {
       const log = recordLog()
       const project = await addPackage(pkg, {}, { log })
 
-      ok(project.files().includes('model/target/iotgo.aontu'))
+      ok(project.files().includes('model/target/iotgo.aon'))
       ok(!log.lines.some((l: any) => 'package-engine-unparsed' === l.point),
         'a range it understands was reported as unparseable')
     }
@@ -312,8 +312,8 @@ describe('package add --only / --alias', () => {
       const project = await addPackage(pkg, { only: 'target:iotgo' })
       const files = project.files()
 
-      ok(files.includes('model/target/iotgo.aontu'))
-      ok(!files.includes('model/feature/retry.aontu'),
+      ok(files.includes('model/target/iotgo.aon'))
+      ok(!files.includes('model/feature/retry.aon'),
         '--only installed something it was not asked for')
     }
     finally {
@@ -361,14 +361,14 @@ describe('package add --only / --alias', () => {
         { only: 'target:iotgo', alias: 'iotgo=acmego' })
       const files = project.files()
 
-      ok(files.includes('model/target/acmego.aontu'),
+      ok(files.includes('model/target/acmego.aon'),
         'the alias was not installed: ' +
         files.filter((f: string) => f.startsWith('model/target/')).join(', '))
       ok(files.some((f: string) => f.startsWith('src/cmp/acmego/')),
         'components did not follow the alias')
 
       const src = String(project.fs.readFileSync(
-        ROOT + '/model/target/acmego.aontu', 'utf8'))
+        ROOT + '/model/target/acmego.aon', 'utf8'))
       ok(src.includes("origname: 'iotgo'"),
         'the alias did not record where it came from')
     }
@@ -436,7 +436,7 @@ describe('package list', () => {
         ['target', 'iotgo'], ['feature', 'retry'],
       ] as [string, string][]) {
         const src = String(project.fs.readFileSync(
-          ROOT + '/model/' + kind + '/' + name + '.aontu', 'utf8'))
+          ROOT + '/model/' + kind + '/' + name + '.aon', 'utf8'))
         declared[kind] = declared[kind] ?? {}
         declared[kind][name] = {
           name,
@@ -541,7 +541,7 @@ describe('package add: collisions and hostile inputs', () => {
 
       await package_add([pkg], project.actx)
 
-      ok(project.files().includes('model/target/iotgo.aontu'))
+      ok(project.files().includes('model/target/iotgo.aon'))
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -647,7 +647,7 @@ describe('package add: collisions and hostile inputs', () => {
 
       const stray = project.files().filter((f: string) => f.includes('function'))
       deepStrictEqual(stray, [], 'an inherited property leaked into a path')
-      ok(project.files().includes('model/target/acmego.aontu'))
+      ok(project.files().includes('model/target/acmego.aon'))
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -696,7 +696,7 @@ describe('package update', () => {
       ['target', 'iotgo'], ['feature', 'retry'],
     ] as [string, string][]) {
       const src = String(project.fs.readFileSync(
-        ROOT + '/model/' + kind + '/' + name + '.aontu', 'utf8'))
+        ROOT + '/model/' + kind + '/' + name + '.aon', 'utf8'))
       kit[kind] = kit[kind] ?? {}
       kit[kind][name] = {
         name, active: true,
@@ -719,7 +719,7 @@ describe('package update', () => {
       project.actx.fetchPackage = async () => { order.push('fetch') }
 
       // A local edit, so the pre-check has something to find.
-      const path = Path.join(ROOT, 'model/target/iotgo.aontu')
+      const path = Path.join(ROOT, 'model/target/iotgo.aon')
       project.fs.writeFileSync(path,
         String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
 
@@ -749,7 +749,7 @@ describe('package update', () => {
       project.actx.fetchPackage = async () => { }
       project.actx.flags = {}
 
-      const path = Path.join(ROOT, 'model/target/iotgo.aontu')
+      const path = Path.join(ROOT, 'model/target/iotgo.aon')
       project.fs.writeFileSync(path,
         String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
 
@@ -771,7 +771,7 @@ describe('package update', () => {
       project.actx.fetchPackage = async () => { }
       project.actx.flags = { force: true }
 
-      const path = Path.join(ROOT, 'model/target/iotgo.aontu')
+      const path = Path.join(ROOT, 'model/target/iotgo.aon')
       project.fs.writeFileSync(path,
         String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
 
@@ -799,7 +799,7 @@ describe('package update', () => {
       await package_update(['@acme/sdkgen-iot'], project.actx)
 
       strictEqual(fetched, 1, 'it did not fetch')
-      ok(project.files().includes('model/target/iotgo.aontu'))
+      ok(project.files().includes('model/target/iotgo.aon'))
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -860,7 +860,7 @@ describe('package update', () => {
         await package_add([pkg], project.actx)
 
         const src = String(project.fs.readFileSync(
-          ROOT + '/model/target/iotgo.aontu', 'utf8'))
+          ROOT + '/model/target/iotgo.aon', 'utf8'))
         project.actx.model.main.kit.target = {
           iotgo: {
             name: 'iotgo',
@@ -874,7 +874,7 @@ describe('package update', () => {
 
         await package_update(['@acme/sdkgen-iot'], project.actx)
 
-        ok(!project.files().includes('model/feature/retry.aontu'),
+        ok(!project.files().includes('model/feature/retry.aon'),
           'update installed a feature the project had chosen not to have')
       }
       finally {
@@ -894,7 +894,7 @@ describe('package update', () => {
         project.actx.flags = { only: 'target:iotgo', alias: 'iotgo=acmego' }
         await package_add([pkg], project.actx)
 
-        const path = Path.join(ROOT, 'model/target/acmego.aontu')
+        const path = Path.join(ROOT, 'model/target/acmego.aon')
         project.fs.writeFileSync(path,
           String(project.fs.readFileSync(path, 'utf8')) +
           '\n# my differentiation\n')
@@ -1034,7 +1034,7 @@ describe('package update', () => {
       // updated package's own item set.
       project.actx.model.main.kit.feature.retry.package = '@other/sdkgen-feat'
 
-      const path = Path.join(ROOT, 'model/feature/retry.aontu')
+      const path = Path.join(ROOT, 'model/feature/retry.aon')
       project.fs.writeFileSync(path,
         String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
 
@@ -1042,7 +1042,7 @@ describe('package update', () => {
       project.actx.flags = {}
 
       await rejects(() => package_update(['@acme/sdkgen-iot'], project.actx),
-        /model\/feature\/retry\.aontu/,
+        /model\/feature\/retry\.aon/,
         'a feature the re-add will rewrite was outside the gate')
     }
     finally {
@@ -1063,8 +1063,8 @@ describe('package update', () => {
     try {
       const sdk = Path.join(pkg, '.sdk')
       Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
-      Fs.cpSync(Path.join(SCAFFOLD, 'model', 'feature', 'retry.aontu'),
-        Path.join(sdk, 'model', 'feature', 'retry.aontu'))
+      Fs.cpSync(Path.join(SCAFFOLD, 'model', 'feature', 'retry.aon'),
+        Path.join(sdk, 'model', 'feature', 'retry.aon'))
       Fs.mkdirSync(Path.join(sdk, 'tm', 'go', 'feature'), { recursive: true })
       Fs.writeFileSync(
         Path.join(sdk, 'tm', 'go', 'feature', 'retry_feature.go'),
@@ -1084,7 +1084,7 @@ describe('package update', () => {
       await package_add([pkg], project.actx)
 
       const src = String(project.fs.readFileSync(
-        ROOT + '/model/feature/retry.aontu', 'utf8'))
+        ROOT + '/model/feature/retry.aon', 'utf8'))
       project.actx.model.main.kit.feature.retry = {
         name: 'retry', active: true,
         base: (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1],
@@ -1122,7 +1122,7 @@ describe('package update', () => {
       project.actx.model.main.kit.target.iotgo.package = '@other/sdkgen-b'
 
       // B's item is the edited one.
-      const path = Path.join(ROOT, 'model/target/iotgo.aontu')
+      const path = Path.join(ROOT, 'model/target/iotgo.aon')
       project.fs.writeFileSync(path,
         String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
 

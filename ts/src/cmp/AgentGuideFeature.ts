@@ -65,8 +65,8 @@ later feature can override an earlier one.
 
 | Part | Path |
 | --- | --- |
-| Model definition | \`.sdk/model/feature/${name}.aontu\` (name, title, version, \`config.options.active\`, the \`hook\` map, per-language \`deps\`) |
-| Registered in | \`.sdk/model/feature/feature-index.aontu\` (\`@"${name}.aontu"\`) |
+| Model definition | \`.sdk/model/feature/${name}.aon\` (name, title, version, \`config.options.active\`, the \`hook\` map, per-language \`deps\`) |
+| Registered in | \`.sdk/model/feature/feature-index.aon\` (\`@"${name}.aon"\`) |
 | Runtime template | \`.sdk/tm/${lang}/src/feature/${name}/\` (copied here on \`generate\`; \`FEATURE_Name\`/\`FEATURE_VERSION\` substituted) |
 
 (Paths are relative to the **project root** — four levels up from here.)
@@ -74,7 +74,7 @@ later feature can override an earlier one.
 ## Customising this feature
 
 - **Turn hooks on/off**: edit the \`hook\` map in
-  \`.sdk/model/feature/${name}.aontu\` (\`<Stage>: active: true|false\`).
+  \`.sdk/model/feature/${name}.aon\` (\`<Stage>: active: true|false\`).
 - **Change default activation**: set \`config.options.active\` in the same file.
 - **Dependencies**: edit \`deps.<lang>\` in the same file.
 - **Behaviour**: edit the runtime template under

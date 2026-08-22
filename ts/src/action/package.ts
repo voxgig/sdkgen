@@ -1029,7 +1029,7 @@ async function reAdd(
         skipped.map((i: Installed) => i.origname).join(', ') +
         ' must be ported by hand: ' +
         skipped.map((i: Installed) =>
-          'model/' + i.kind + '/' + i.name + '.aontu').join(', ')
+          'model/' + i.kind + '/' + i.name + '.aon').join(', ')
     })
   }
 

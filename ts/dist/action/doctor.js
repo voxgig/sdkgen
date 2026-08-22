@@ -110,8 +110,8 @@ async function doctor(actx, scope) {
     };
     // EVERY KIND, not just targets.
     //
-    // `add` writes a copied model file for each kind — `model/target/<t>.aontu`
-    // and `model/feature/<f>.aontu` alike — and overwrites it on every resync.
+    // `add` writes a copied model file for each kind — `model/target/<t>.aon`
+    // and `model/feature/<f>.aon` alike — and overwrites it on every resync.
     // Only the target one was ever compared, so a hand-edit to an installed
     // FEATURE definition read as perfectly in sync and was silently reverted by
     // the next `target add` (which re-runs `feature add` for every active
@@ -564,7 +564,7 @@ function checkFeatureSource(actx, feature, targets, report) {
         }
     }
 }
-// The copied MODEL FILE — `model/<kind>/<name>.aontu`, written by add with
+// The copied MODEL FILE — `model/<kind>/<name>.aon`, written by add with
 // the `'BASE'` replacement, and overwritten on every resync exactly as
 // `src/cmp` and `tm` are.
 //
@@ -611,7 +611,7 @@ function checkItemModel(actx, kind, source, report) {
     // happening to match.
     const aliased = (0, kind_1.kindDef)(kind).alias && name !== origname;
     const project = (0, definition_1.definitionPath)(actx.folder, kind, name);
-    const label = 'model/' + kind + '/' + name + '.aontu';
+    const label = 'model/' + kind + '/' + name + '.aon';
     if (!fs.existsSync(project)) {
         report.missing.push(label);
         return;

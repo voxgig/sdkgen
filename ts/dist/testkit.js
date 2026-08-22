@@ -121,16 +121,16 @@ function stageConsumer(opts = {}) {
     const sdk = node_path_1.default.join(root, '.sdk');
     node_fs_1.default.mkdirSync(node_path_1.default.join(sdk, 'model', 'target'), { recursive: true });
     node_fs_1.default.mkdirSync(node_path_1.default.join(sdk, 'model', 'feature'), { recursive: true });
-    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'target', 'target-index.aontu'), '# Targets\n');
-    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'feature', 'feature-index.aontu'), '# Features\n');
+    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'target', 'target-index.aon'), '# Targets\n');
+    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'feature', 'feature-index.aon'), '# Features\n');
     const name = opts.name ?? 'demo';
     // The project's OWN model, written once by create-sdkgen at init. It
     // includes the indexes of the kinds that existed THEN — which is why a
     // consumer staged here can show what an existing project does when a new
     // kind arrives, rather than assuming every index is already wired.
-    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'sdk.aontu'), "name: '" + name + "'\n" +
-        '@"target/target-index.aontu"\n' +
-        '@"feature/feature-index.aontu"\n' +
+    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'sdk.aon'), "name: '" + name + "'\n" +
+        '@"target/target-index.aon"\n' +
+        '@"feature/feature-index.aon"\n' +
         (opts.extra ? opts.extra + '\n' : ''));
     // `@voxgig/sdkgen` has to be resolvable FROM THE CONSUMER, because the
     // feature fan-out reads the bundled feature models through the path a
@@ -155,7 +155,7 @@ function stageConsumer(opts = {}) {
     const modules = node_path_1.default.join(sdk, 'node_modules');
     const links = [linkModule(modules, '@voxgig/sdkgen', SDKGEN_ROOT)];
     // ...and sdkgen's PEERS, because the base model schema a consumer compiles
-    // against pulls in `@voxgig/apidef/model/apidef.aontu` by package name. A
+    // against pulls in `@voxgig/apidef/model/apidef.aon` by package name. A
     // consumer that really installed sdkgen has these; a staged one has to be
     // given them, or every model compile here fails on an include that resolves
     // fine everywhere else.
@@ -177,7 +177,7 @@ function stageConsumer(opts = {}) {
                 [types_1.KIT]: { feature: {}, entity: {}, target: {} },
             },
         },
-        url: node_path_1.default.join(sdk, 'model', 'sdk.aontu'),
+        url: node_path_1.default.join(sdk, 'model', 'sdk.aon'),
         jostraca: (0, jostraca_1.Jostraca)({ existing: { txt: { write: true, merge: false } } }),
         opts: { dryrun: false },
     };

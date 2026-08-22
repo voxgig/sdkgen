@@ -27,7 +27,7 @@
 //
 // The mapping is deliberately conservative. An entry only counts as feature
 // source when its derived name is one the generator can actually supply
-// (`availableFeatures`, read from `model/feature/*.aontu`). Everything else
+// (`availableFeatures`, read from `model/feature/*.aon`). Everything else
 // inside a feature directory — `feature_options.go`, `FeatureOptions.cs`,
 // `mod.rs`, `support.rs`, `options.hpp`, `__init__.py`, `README.md`, and the
 // `harness.ts` under `test/feature/` — derives a name no feature has, so it
@@ -103,7 +103,7 @@ function featureOf(entry: string, folder: boolean): string {
 
 
 // Feature names this generator can supply, read from the scaffold's
-// `model/feature/*.aontu`. This is the authoritative catalogue: a name not in
+// `model/feature/*.aon`. This is the authoritative catalogue: a name not in
 // it is not a feature, so nothing outside it is ever excluded.
 //
 // LOWERCASED, unlike `definitionNames`, because these are matched against

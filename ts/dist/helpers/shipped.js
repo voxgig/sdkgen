@@ -24,9 +24,9 @@ const node_path_1 = __importDefault(require("node:path"));
 function packageRoot() {
     return node_path_1.default.resolve(__dirname, '..', '..');
 }
-// The base model schema — `@voxgig/sdkgen/model/sdkgen.aontu`.
+// The base model schema — `@voxgig/sdkgen/model/sdkgen.aon`.
 function schemaFile() {
-    return node_path_1.default.join(packageRoot(), 'model', 'sdkgen.aontu');
+    return node_path_1.default.join(packageRoot(), 'model', 'sdkgen.aon');
 }
 // The bundled scaffold — the `.sdk` of `ts/project`, which is itself an
 // sdkgen package.

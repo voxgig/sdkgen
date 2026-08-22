@@ -38,7 +38,7 @@ const HOOK_NAMES = [
 
 
 function compileFeatureModel(): any {
-  const p = Path.join(FEATURE_MODEL, 'feature-index.aontu')
+  const p = Path.join(FEATURE_MODEL, 'feature-index.aon')
   const src = readFileSync(p, 'utf8')
   const errs: any[] = []
   const model: any = new Aontu().generate(src, { path: p, errs })
@@ -79,13 +79,13 @@ describe('feature-model', () => {
       '#FeatureConfigs must emit a trailing comma per entry')
   })
 
-  test('feature-index.aontu includes every model file', () => {
-    const indexSrc = readFileSync(Path.join(FEATURE_MODEL, 'feature-index.aontu'), 'utf8')
+  test('feature-index.aon includes every model file', () => {
+    const indexSrc = readFileSync(Path.join(FEATURE_MODEL, 'feature-index.aon'), 'utf8')
     const files = readdirSync(FEATURE_MODEL)
-      .filter((f) => f.endsWith('.aontu') && 'feature-index.aontu' !== f)
-      .map((f) => f.replace(/\.aontu$/, ''))
+      .filter((f) => f.endsWith('.aon') && 'feature-index.aon' !== f)
+      .map((f) => f.replace(/\.aon$/, ''))
     for (const name of files) {
-      ok(indexSrc.includes(`"${name}.aontu"`), `feature-index missing @"${name}.aontu"`)
+      ok(indexSrc.includes(`"${name}.aon"`), `feature-index missing @"${name}.aon"`)
     }
   })
 })
@@ -214,8 +214,8 @@ describe('feature-language-parity', () => {
   // Every target the scaffold actually ships, discovered rather than listed.
   function shippedTargets(): string[] {
     return readdirSync(TARGET_MODEL)
-      .filter((f) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
-      .map((f) => f.replace(/\.aontu$/, ''))
+      .filter((f) => f.endsWith('.aon') && 'target-index.aon' !== f)
+      .map((f) => f.replace(/\.aon$/, ''))
       .sort()
   }
 
@@ -275,8 +275,8 @@ describe('feature-language-parity', () => {
 
   test('every SDK target has a target definition', () => {
     for (const t of SDK_TARGETS) {
-      const p = Path.join(TARGET_MODEL, t + '.aontu')
-      ok(existsSync(p), `missing target definition: model/target/${t}.aontu`)
+      const p = Path.join(TARGET_MODEL, t + '.aon')
+      ok(existsSync(p), `missing target definition: model/target/${t}.aon`)
     }
   })
 })

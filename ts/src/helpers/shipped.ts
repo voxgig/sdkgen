@@ -21,9 +21,9 @@ function packageRoot(): string {
 }
 
 
-// The base model schema — `@voxgig/sdkgen/model/sdkgen.aontu`.
+// The base model schema — `@voxgig/sdkgen/model/sdkgen.aon`.
 function schemaFile(): string {
-  return Path.join(packageRoot(), 'model', 'sdkgen.aontu')
+  return Path.join(packageRoot(), 'model', 'sdkgen.aon')
 }
 
 

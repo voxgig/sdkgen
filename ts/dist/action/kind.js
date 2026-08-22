@@ -12,9 +12,9 @@
 //   - the ref grammar and resolution, including the fallback to what the
 //     model already records for a bare name;
 //   - whether the kind may be installed under a different name (`~alias`);
-//   - the definition file: `model/<kind>/<name>.aontu`, stamped with
+//   - the definition file: `model/<kind>/<name>.aon`, stamped with
 //     provenance and landing under the INSTALLED name;
-//   - the include list: `model/<kind>/<kind>-index.aontu`.
+//   - the include list: `model/<kind>/<kind>-index.aon`.
 //
 // What a kind adds on top — a target's component and template trees, a
 // feature's per-target source fan-out — stays in that kind's own action. Those
@@ -206,7 +206,7 @@ function kindModel(props) {
         // add-a-target tells the project to edit it.
         const owned = true === def.ownedWhenAliased;
         if (owned) {
-            const dest = node_path_1.default.join(ctx$.folder ?? '.', 'model', kind, source.name + '.aontu');
+            const dest = node_path_1.default.join(ctx$.folder ?? '.', 'model', kind, source.name + '.aon');
             if (fs.existsSync(dest)) {
                 log.info({
                     point: kind + '-alias-model-kept', [kind]: source.name, file: dest,
@@ -218,12 +218,12 @@ function kindModel(props) {
         const src = fs.readFileSync(source.model, 'utf8');
         const text = null == def.rename ? src :
             def.rename(src, source.origname, source.name);
-        (0, jostraca_1.File)({ name: source.name + '.aontu', exclude: owned }, () => (0, jostraca_1.Content)((0, jostraca_1.template)(text, ctx$.model, { replace })));
+        (0, jostraca_1.File)({ name: source.name + '.aon', exclude: owned }, () => (0, jostraca_1.Content)((0, jostraca_1.template)(text, ctx$.model, { replace })));
     }
     else {
         (0, jostraca_1.Copy)({ from: source.model, replace });
     }
-    (0, jostraca_1.File)({ name: def.name + '-index.aontu' }, () => (0, action_1.UpdateIndex)({
+    (0, jostraca_1.File)({ name: def.name + '-index.aon' }, () => (0, action_1.UpdateIndex)({
         content,
         names,
     }));

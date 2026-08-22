@@ -87,7 +87,7 @@ type StageOptions = {
   // The project's API name, which every derived name comes from.
   name?: string
 
-  // The project's OWN model text, appended to `model/sdk.aontu`.
+  // The project's OWN model text, appended to `model/sdk.aon`.
   //
   // THIS WRITES A FILE. It does NOT reach the action context — see
   // `setModel` on the consumer, and use that if an add needs to SEE what is
@@ -125,7 +125,7 @@ type Consumer = {
   // Install a compiled model as the one the ADD ACTIONS see.
   //
   // Needed because an action reads `actx.model`, which is compiled from
-  // `model/sdk.aontu` BEFORE the run — nothing recompiles mid-process. The
+  // `model/sdk.aon` BEFORE the run — nothing recompiles mid-process. The
   // CLI does that compile per invocation; a kit staging several adds in one
   // process does not, so a feature declared in the project's model is
   // invisible to a later `target add` unless it is installed here. That
@@ -201,9 +201,9 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
   Fs.mkdirSync(Path.join(sdk, 'model', 'target'), { recursive: true })
   Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'target-index.aontu'),
+  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'target-index.aon'),
     '# Targets\n')
-  Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'feature-index.aontu'),
+  Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'feature-index.aon'),
     '# Features\n')
 
   const name = opts.name ?? 'demo'
@@ -212,10 +212,10 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
   // includes the indexes of the kinds that existed THEN — which is why a
   // consumer staged here can show what an existing project does when a new
   // kind arrives, rather than assuming every index is already wired.
-  Fs.writeFileSync(Path.join(sdk, 'model', 'sdk.aontu'),
+  Fs.writeFileSync(Path.join(sdk, 'model', 'sdk.aon'),
     "name: '" + name + "'\n" +
-    '@"target/target-index.aontu"\n' +
-    '@"feature/feature-index.aontu"\n' +
+    '@"target/target-index.aon"\n' +
+    '@"feature/feature-index.aon"\n' +
     (opts.extra ? opts.extra + '\n' : ''))
 
   // `@voxgig/sdkgen` has to be resolvable FROM THE CONSUMER, because the
@@ -242,7 +242,7 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
   const links = [linkModule(modules, '@voxgig/sdkgen', SDKGEN_ROOT)]
 
   // ...and sdkgen's PEERS, because the base model schema a consumer compiles
-  // against pulls in `@voxgig/apidef/model/apidef.aontu` by package name. A
+  // against pulls in `@voxgig/apidef/model/apidef.aon` by package name. A
   // consumer that really installed sdkgen has these; a staged one has to be
   // given them, or every model compile here fails on an include that resolves
   // fine everywhere else.
@@ -266,7 +266,7 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
         [KIT]: { feature: {}, entity: {}, target: {} },
       },
     },
-    url: Path.join(sdk, 'model', 'sdk.aontu'),
+    url: Path.join(sdk, 'model', 'sdk.aon'),
     jostraca: Jostraca({ existing: { txt: { write: true, merge: false } } }),
     opts: { dryrun: false },
   }

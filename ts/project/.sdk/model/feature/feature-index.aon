@@ -1,0 +1,24 @@
+# Features
+
+# Core
+@"test.aon"
+@"log.aon"
+
+# Enterprise capabilities
+@"retry.aon"
+@"timeout.aon"
+@"ratelimit.aon"
+@"cache.aon"
+@"idempotency.aon"
+@"paging.aon"
+@"streaming.aon"
+@"proxy.aon"
+@"telemetry.aon"
+@"metrics.aon"
+@"debug.aon"
+@"audit.aon"
+@"clienttrack.aon"
+@"rbac.aon"
+
+# Test support: network behaviour simulation
+@"netsim.aon"

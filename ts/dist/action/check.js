@@ -209,7 +209,7 @@ function checkDefinition(fs, kind, name, file) {
         // Nothing below can run on a file that does not compile.
         return found;
     }
-    // 4. Does it declare the key its FILENAME promises? `model/target/iot-go.aontu`
+    // 4. Does it declare the key its FILENAME promises? `model/target/iot-go.aon`
     //    is copied to that name and included by it, so a file still declaring
     //    `main: kit: target: go:` installs an item the consumer's model never
     //    sees — the exact mistake a package author makes copying a bundled
@@ -336,7 +336,7 @@ function checkFeatureSource(fs, sdk, manifest) {
             level: 'warn', point: 'feature-source-unrecognised', file,
             kind: 'target', name: tname,
             note: 'tm/' + tname + ': ' + strays.map((e) => e.path).join(', ') +
-                ' — named like feature source, but no `model/feature/<name>.aontu` ' +
+                ' — named like feature source, but no `model/feature/<name>.aon` ' +
                 'declares ' + strays.map((e) => e.name).join(', ') +
                 ', so the trim cannot recognise them and every project gets them ' +
                 'whatever its model selects'

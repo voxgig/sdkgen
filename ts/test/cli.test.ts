@@ -15,7 +15,7 @@ import { SdkGen } from '../dist/sdkgen.js'
 
 
 // A minimal project to run the action from: `resolveActionContext` loads
-// `./model/sdk.aontu` relative to the CWD before any action runs, so an
+// `./model/sdk.aon` relative to the CWD before any action runs, so an
 // action can only be reached from inside one.
 let dir = ''
 let cwd = ''
@@ -28,12 +28,12 @@ before(() => {
   // Enough model for an action to get as far as resolving its ref: the name
   // every derived value hangs off, and the three kit collections target_add
   // reads before it looks at the filesystem.
-  Fs.writeFileSync(Path.join(dir, 'model', 'sdk.aontu'),
+  Fs.writeFileSync(Path.join(dir, 'model', 'sdk.aon'),
     "name: 'demo'\nmain: kit: { target: {}, feature: {}, entity: {} }\n")
   Fs.writeFileSync(
-    Path.join(dir, 'model', 'target', 'target-index.aontu'), '# Targets\n')
+    Path.join(dir, 'model', 'target', 'target-index.aon'), '# Targets\n')
   Fs.writeFileSync(
-    Path.join(dir, 'model', 'feature', 'feature-index.aontu'), '# Features\n')
+    Path.join(dir, 'model', 'feature', 'feature-index.aon'), '# Features\n')
   process.chdir(dir)
 })
 
@@ -149,7 +149,7 @@ describe('the binary', () => {
     try {
       Fs.mkdirSync(Path.join(pkg, '.sdk', 'model', 'feature'), { recursive: true })
       Fs.writeFileSync(
-        Path.join(pkg, '.sdk', 'model', 'feature', 'broken.aontu'),
+        Path.join(pkg, '.sdk', 'model', 'feature', 'broken.aon'),
         '// a consumer cannot parse this\nmain: kit: feature: broken: {}\n')
 
       const res = run(['package', 'check', pkg], PACKAGE_ROOT)
@@ -195,7 +195,7 @@ describe('the binary', () => {
         const proj = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-badmodel-'))
         try {
           Fs.mkdirSync(Path.join(proj, 'model'), { recursive: true })
-          Fs.writeFileSync(Path.join(proj, 'model', 'sdk.aontu'), model)
+          Fs.writeFileSync(Path.join(proj, 'model', 'sdk.aon'), model)
 
           const res = run(['doctor'], proj)
           const out = String(res.stdout) + String(res.stderr)
@@ -203,7 +203,7 @@ describe('the binary', () => {
           strictEqual(res.status, 1, 'expected a non-zero exit: ' + out)
 
           // Named as a model problem, and WHOSE model.
-          match(out, /Model Error: \.\/model\/sdk\.aontu/, out)
+          match(out, /Model Error: \.\/model\/sdk\.aon/, out)
 
           // aontu's own diagnostic is the useful half and is passed through
           // untouched — wrapping it must not swallow it.

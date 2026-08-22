@@ -90,7 +90,7 @@ target's feature container) for the generated adapter.
 
 \`\`\`
 .sdk/
-  model/          the model: target/, feature/, and index .aontu files
+  model/          the model: target/, feature/, and index .aon files
   src/cmp/<lang>/  components — TypeScript that generates API-specific source
   tm/<lang>/       templates — verbatim source copied with placeholders
   dist/            compiled components (npm run build)

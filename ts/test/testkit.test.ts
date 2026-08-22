@@ -86,15 +86,15 @@ main: kit: entity: hidden: {
 // exist for), then the indexes the adds have been writing into.
 function consumerModel(sdk: string): any {
   const src = [
-    '@"@voxgig/apidef/model/apidef.aontu"',
-    '@"@voxgig/sdkgen/model/sdkgen.aontu"',
-    '@"target/target-index.aontu"',
-    '@"feature/feature-index.aontu"',
+    '@"@voxgig/apidef/model/apidef.aon"',
+    '@"@voxgig/sdkgen/model/sdkgen.aon"',
+    '@"target/target-index.aon"',
+    '@"feature/feature-index.aon"',
     "name: 'demo'",
     API,
   ].join('\n')
 
-  const path = Path.join(sdk, 'model', 'generate-test.aontu')
+  const path = Path.join(sdk, 'model', 'generate-test.aon')
   Fs.writeFileSync(path, src)
 
   const errs: any[] = []
@@ -136,9 +136,9 @@ describe('testkit over the fixture package', () => {
     const installed = consumer.files()
 
     for (const path of [
-      'model/target/wtest.aontu',
-      'model/feature/wfeat.aontu',
-      'model/docs/wcat.aontu',
+      'model/target/wtest.aon',
+      'model/feature/wfeat.aon',
+      'model/docs/wcat.aon',
       'src/cmp/wtest/Main_wtest.ts',
       'src/cmp/docs/wcat/Main_wcat.ts',
       'tm/wtest/README.md',
@@ -154,20 +154,20 @@ describe('testkit over the fixture package', () => {
   // project scaffolded before `docs` existed. Installing a docs item has to
   // create that kind's index rather than assume it.
   test('a kind the project predates gets its index created', () => {
-    ok(consumer.files().includes('model/docs/docs-index.aontu'),
+    ok(consumer.files().includes('model/docs/docs-index.aon'),
       'no docs index was created')
 
     const index = Fs.readFileSync(
-      Path.join(consumer.sdk, 'model', 'docs', 'docs-index.aontu'), 'utf8')
-    ok(index.includes('@"wcat.aontu"'), 'docs index: ' + index)
+      Path.join(consumer.sdk, 'model', 'docs', 'docs-index.aon'), 'utf8')
+    ok(index.includes('@"wcat.aon"'), 'docs index: ' + index)
   })
 
 
   test('every installed item records the package as provenance', () => {
     for (const rel of [
-      'model/target/wtest.aontu',
-      'model/feature/wfeat.aontu',
-      'model/docs/wcat.aontu',
+      'model/target/wtest.aon',
+      'model/feature/wfeat.aon',
+      'model/docs/wcat.aon',
     ]) {
       const src = Fs.readFileSync(Path.join(consumer.sdk, rel), 'utf8')
       ok(src.includes("package: '" + PKGNAME + "'"),

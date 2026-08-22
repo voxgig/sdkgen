@@ -2,11 +2,11 @@
 # Regenerate with: npm run golden
 
 ## target c
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/c.aontu 9b1ad18fb01f
-model/target/target-index.aontu 831ccbaa93ef
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/c.aon 9b1ad18fb01f
+model/target/target-index.aon a1ddf98d9368
 src/cmp/c/Config_c.ts 2708a1eb3b05
 src/cmp/c/EntityBase_c.ts 70f610b1220f
 src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
@@ -111,11 +111,11 @@ tm/c/utility/transform_request.c 207096069b02
 tm/c/utility/transform_response.c 51ac106169eb
 
 ## target clojure
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/clojure.aontu 5aba37b82975
-model/target/target-index.aontu 7fc1f4807285
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/clojure.aon 5aba37b82975
+model/target/target-index.aon 77cd4ae8a0fb
 src/cmp/clojure/Config_clojure.ts 48015eb627c2
 src/cmp/clojure/EntityOperation_clojure.ts 89f82bc53713
 src/cmp/clojure/Entity_clojure.ts 75f6ea90670b
@@ -182,11 +182,11 @@ tm/clojure/test/sdk/test_runner.clj f6f08d7e613f
 tm/clojure/test/sdk/testutil.clj 389d40fa6cbc
 
 ## target cpp
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/cpp.aontu d7f0672a30f1
-model/target/target-index.aontu ed1038a58b6d
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/cpp.aon d7f0672a30f1
+model/target/target-index.aon c6799adcc977
 src/cmp/cpp/Config_cpp.ts 73afdc68f659
 src/cmp/cpp/EntityBase_cpp.ts 8218701f0ef9
 src/cmp/cpp/EntityOperation_cpp.ts 805c7dfa4fdf
@@ -250,11 +250,11 @@ tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
 
 ## target csharp
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/csharp.aontu 54a27088491a
-model/target/target-index.aontu c108c0257450
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/csharp.aon 54a27088491a
+model/target/target-index.aon 3ca4bfd57589
 src/cmp/csharp/Config_csharp.ts 63b977fa0abe
 src/cmp/csharp/EntityBase_csharp.ts 89ab732c9c91
 src/cmp/csharp/EntityOperation_csharp.ts 47a53f1c1e7d
@@ -293,7 +293,7 @@ src/cmp/csharp/fragment/SdkError.fragment.cs 18176833ab4d
 src/cmp/csharp/tsconfig.json 720a3f229019
 src/cmp/csharp/utility_csharp.ts 0b861bc4cc39
 tm/csharp/LICENSE ed2f88b0aab8
-tm/csharp/Makefile 9e4110d7eafd
+tm/csharp/Makefile a45af645d7c0
 tm/csharp/VERSION e6635045e1d2
 tm/csharp/core/Context.cs 213a52bbcd23
 tm/csharp/core/Control.cs eac6511c1bd1
@@ -355,11 +355,11 @@ tm/csharp/utility/TransformResponse.cs 01583a33873e
 tm/csharp/utility/struct/Struct.cs f98baf873338
 
 ## target dart
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/dart.aontu 1a291bfb8482
-model/target/target-index.aontu 1cd1fb462fe5
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/dart.aon 1a291bfb8482
+model/target/target-index.aon 4125cafa4969
 src/cmp/dart/Config_dart.ts 7c9dcf4293a9
 src/cmp/dart/EntityBase_dart.ts a08877768561
 src/cmp/dart/EntityOperation_dart.ts 943876175932
@@ -464,11 +464,11 @@ tm/dart/test/struct_test.dart e56b9dd996e6
 tm/dart/test/utility.dart 4a1a9e01590a
 
 ## target elixir
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/elixir.aontu 258782bb5753
-model/target/target-index.aontu a4f96a3bc97b
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/elixir.aon 258782bb5753
+model/target/target-index.aon c9b09d715b14
 src/cmp/elixir/Config_elixir.ts 16d0ae301b6a
 src/cmp/elixir/EntityOperation_elixir.ts 69ddad39f404
 src/cmp/elixir/EntityTypes_elixir.ts b30edbe49d6b
@@ -530,11 +530,11 @@ tm/elixir/test/support/struct_corpus.ex a6597e3e53d8
 tm/elixir/test/test_helper.exs b086ec47f0c6
 
 ## target go
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/go.aontu 38ab5439cde0
-model/target/target-index.aontu 26984b06635f
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/go.aon 38ab5439cde0
+model/target/target-index.aon 626b8fa31e53
 src/cmp/go/Config_go.ts 9eaa94e83607
 src/cmp/go/EntityOperation_go.ts 466b87860b69
 src/cmp/go/EntityTypes_go.ts 79d3a2c638db
@@ -632,11 +632,11 @@ tm/go/utility/transform_request.go 7d4cc724d72f
 tm/go/utility/transform_response.go 5f62799d001e
 
 ## target go-cli
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/go-cli.aontu 1a14e51b4a39
-model/target/target-index.aontu e957ca0ac851
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/go-cli.aon 1a14e51b4a39
+model/target/target-index.aon 1c02e69904e8
 src/cmp/go-cli/Main_go-cli.ts f210f89d203a
 src/cmp/go-cli/fragment/main.fragment.go edad9cbfb479
 src/cmp/go-cli/fragment/words.fragment.go 7901dd676a27
@@ -645,11 +645,11 @@ tm/go-cli/src/feature/base/.gitkeep e3b0c44298fc
 tm/go-cli/src/feature/test/.gitkeep e3b0c44298fc
 
 ## target go-mcp
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/go-mcp.aontu e8e0b45d2b8d
-model/target/target-index.aontu 53d54ec16ee8
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/go-mcp.aon e8e0b45d2b8d
+model/target/target-index.aon c94665487f8c
 src/cmp/go-mcp/Main_go-mcp.ts bb5dd502696e
 src/cmp/go-mcp/fragment/main.fragment.go 1034da023b94
 src/cmp/go-mcp/fragment/tools.fragment.go d87fa6256abc
@@ -658,11 +658,11 @@ tm/go-mcp/src/feature/base/.gitkeep e3b0c44298fc
 tm/go-mcp/src/feature/test/.gitkeep e3b0c44298fc
 
 ## target java
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/java.aontu 30b5d8f891ba
-model/target/target-index.aontu 26cd1b5e7ff0
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/java.aon 30b5d8f891ba
+model/target/target-index.aon cd7f19307030
 src/cmp/java/Config_java.ts c317786861a6
 src/cmp/java/EntityBase_java.ts ac3da23ea6f8
 src/cmp/java/EntityOperation_java.ts e66863d4a002
@@ -768,11 +768,11 @@ tm/java/utility/TransformResponse.java 1cd65d69d927
 tm/java/utility/struct/Struct.java a54133ade1a4
 
 ## target js
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/js.aontu 8cb6e7c2b2c3
-model/target/target-index.aontu cd3e05305e50
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/js.aon 8cb6e7c2b2c3
+model/target/target-index.aon 66e6d039373f
 src/cmp/js/Config_js.ts 4af1a70ab232
 src/cmp/js/EntityBase_js.ts 69622212f72b
 src/cmp/js/EntityOperation_js.ts 6d165a88201a
@@ -875,11 +875,11 @@ tm/js/test/utility/StructUtility.test.js a9bb43eadcc2
 tm/js/test/utility/index.js 18fa1acfe694
 
 ## target kotlin
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/kotlin.aontu df262798ca00
-model/target/target-index.aontu dc196681fe2c
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/kotlin.aon df262798ca00
+model/target/target-index.aon 28086b55b8bd
 src/cmp/kotlin/Config_kotlin.ts 015d7493b4c0
 src/cmp/kotlin/EntityBase_kotlin.ts afa36713ef4c
 src/cmp/kotlin/EntityOperation_kotlin.ts b39b1c9d620a
@@ -962,11 +962,11 @@ tm/kotlin/utility/ResultTransform.kt d73a9258aced
 tm/kotlin/utility/struct/Struct.kt af56eb17b536
 
 ## target lean
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/lean.aontu 04da93e45d2c
-model/target/target-index.aontu ae58daa2f4ea
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/lean.aon 04da93e45d2c
+model/target/target-index.aon 0380baac2f34
 src/cmp/lean/Config_lean.ts 5baaa45065c7
 src/cmp/lean/Entity_lean.ts 8f1a57a3ed36
 src/cmp/lean/Gitignore_lean.ts b5631e71c626
@@ -1020,11 +1020,11 @@ tm/lean/test/TFeature.lean 0b9484a60155
 tm/lean/test/TPrimaryUtility.lean fe95f5d26bd3
 
 ## target lua
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/lua.aontu c5eda61939fc
-model/target/target-index.aontu cc612a1e91c4
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/lua.aon c5eda61939fc
+model/target/target-index.aon ea75509be8db
 src/cmp/lua/Config_lua.ts 27d4d6a1655c
 src/cmp/lua/EntityOperation_lua.ts daa4641b002e
 src/cmp/lua/EntityTypes_lua.ts 77fba0685c63
@@ -1117,11 +1117,11 @@ tm/lua/utility/transform_request.lua ada006d60f94
 tm/lua/utility/transform_response.lua 37d0bb1f1d1f
 
 ## target ocaml
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/ocaml.aontu 3fbe05d639c7
-model/target/target-index.aontu 62555dbf9b3b
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/ocaml.aon 3fbe05d639c7
+model/target/target-index.aon cfb53e5794d8
 src/cmp/ocaml/Config_ocaml.ts b5f5f1df0d49
 src/cmp/ocaml/EntityOperation_ocaml.ts 66ee562a3531
 src/cmp/ocaml/Entity_ocaml.ts 11ce11c6299a
@@ -1187,11 +1187,11 @@ tm/ocaml/utility/voxgig_struct.ml ff6cc38a45cc
 tm/ocaml/utility/vregex.ml 8720dd560814
 
 ## target perl
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/perl.aontu d8593c698ed5
-model/target/target-index.aontu cdd64cd226e5
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/perl.aon d8593c698ed5
+model/target/target-index.aon 2ae1994a1bb7
 src/cmp/perl/Config_perl.ts 7c49291113a3
 src/cmp/perl/EntityOperation_perl.ts 8d50a8beeb42
 src/cmp/perl/Entity_perl.ts afe325ce99f5
@@ -1284,11 +1284,11 @@ tm/perl/utility/transform_request.pm cbe7fc991309
 tm/perl/utility/transform_response.pm 035accca42c2
 
 ## target php
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/php.aontu 0362d5ec1eaa
-model/target/target-index.aontu 0a490f140807
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/php.aon 0362d5ec1eaa
+model/target/target-index.aon 4bd43db1bef1
 src/cmp/php/Config_php.ts eb834569b37d
 src/cmp/php/EntityOperation_php.ts 65b4daf2dff8
 src/cmp/php/EntityTypes_php.ts 92945dd564fe
@@ -1382,11 +1382,11 @@ tm/php/utility/TransformResponse.php 4dc432711490
 tm/php/utility/struct/Struct.php 1a9a54f00c8e
 
 ## target py
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/py.aontu c474df1453fa
-model/target/target-index.aontu 1a2fdcc77dbf
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/py.aon c474df1453fa
+model/target/target-index.aon 9424f27eb776
 src/cmp/py/Config_py.ts 9061d44a439f
 src/cmp/py/EntityOperation_py.ts 8b1b1cf28054
 src/cmp/py/EntityTypes_py.ts eef793247b33
@@ -1486,11 +1486,11 @@ tm/py/test/test_primary_utility.py 329f7aaa8620
 tm/py/test/test_struct_utility.py 5dc3b314c4b8
 
 ## target py-data
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/py-data.aontu e59433401b29
-model/target/target-index.aontu 83ff2a84dacd
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/py-data.aon e59433401b29
+model/target/target-index.aon 848fb24adfe2
 src/cmp/py-data/Main_py-data.ts 056c2e11b255
 tm/py-data/LICENSE ed2f88b0aab8
 tm/py-data/Makefile ad5e5089b15e
@@ -1506,11 +1506,11 @@ tm/py-data/test/test_fetch.py 2141fd295c08
 tm/py-data/test/test_frames.py 1ca04ad46a4b
 
 ## target rb
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/rb.aontu 7ac71cca2d78
-model/target/target-index.aontu bd36c65f7952
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/rb.aon 7ac71cca2d78
+model/target/target-index.aon ac0bc237c44c
 src/cmp/rb/Config_rb.ts dc061e0bf832
 src/cmp/rb/EntityOperation_rb.ts 43ad5a64b0c9
 src/cmp/rb/EntityTypes_rb.ts 89606bbf992c
@@ -1604,11 +1604,11 @@ tm/rb/utility/transform_request.rb 03eca2dddb49
 tm/rb/utility/transform_response.rb 13e4100890d3
 
 ## target rust
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/rust.aontu 316dcadf2509
-model/target/target-index.aontu be7a1b55ae10
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/rust.aon 316dcadf2509
+model/target/target-index.aon 8a2cd44591d3
 src/cmp/rust/Config_rust.ts ccd8b2b8da35
 src/cmp/rust/EntityBase_rust.ts 252bec7e6beb
 src/cmp/rust/EntityOperation_rust.ts 9845bcd74bd4
@@ -1714,11 +1714,11 @@ tm/rust/utility/voxgigstruct/re.rs 85adb1300365
 tm/rust/utility/voxgigstruct/value.rs 7cafa6404cbe
 
 ## target scala
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/scala.aontu 08c9c781ebb8
-model/target/target-index.aontu 10865c733b9c
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/scala.aon 08c9c781ebb8
+model/target/target-index.aon 0da3132ebe91
 src/cmp/scala/Config_scala.ts d1c31bc1fcbd
 src/cmp/scala/EntityBase_scala.ts 95d5e61aa06f
 src/cmp/scala/EntityOperation_scala.ts 5de61f269ee2
@@ -1828,11 +1828,11 @@ tm/scala/utility/struct/Struct.java 5e1cee8646e5
 tm/scala/utility/struct/voxgig_struct.scala 8fc853fd8f03
 
 ## target seneca-provider
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/seneca-provider.aontu a273f888e4c8
-model/target/target-index.aontu 5bd671e614df
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/seneca-provider.aon a273f888e4c8
+model/target/target-index.aon 7fa724b7bda4
 src/cmp/seneca-provider/Extras_seneca-provider.ts 9f8cc6602cf7
 src/cmp/seneca-provider/Gitignore_seneca-provider.ts 188e88524e59
 src/cmp/seneca-provider/Main_seneca-provider.ts 0f481ee43fc7
@@ -1844,11 +1844,11 @@ tm/seneca-provider/test/tsconfig.json bbb2c0062d48
 tm/seneca-provider/tsfmt.json 30507e31f8ba
 
 ## target swift
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/swift.aontu 3136f98e03a7
-model/target/target-index.aontu d501fa3700f4
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/swift.aon 3136f98e03a7
+model/target/target-index.aon 19a9aa80f566
 src/cmp/swift/Config_swift.ts 21468f9750c9
 src/cmp/swift/EntityBase_swift.ts 0e11e207fb56
 src/cmp/swift/EntityOperation_swift.ts 2e9e71c40f4b
@@ -1887,7 +1887,7 @@ src/cmp/swift/fragment/SdkError.fragment.swift 09db66f5b121
 src/cmp/swift/tsconfig.json 720a3f229019
 src/cmp/swift/utility_swift.ts 5bcf55e93904
 tm/swift/LICENSE ed2f88b0aab8
-tm/swift/Makefile ecf6dd47f95f
+tm/swift/Makefile 3e982a3a7eb6
 tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift 8a563f9b7b82
 tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift 12d97767329d
 tm/swift/Sources/ProjectNameSDK/Struct/Injection.swift 36cdeaab59c1
@@ -1936,11 +1936,11 @@ tm/swift/src/feature/base/.gitkeep e3b0c44298fc
 tm/swift/src/feature/test/.gitkeep e3b0c44298fc
 
 ## target ts
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/target-index.aontu bef1b520be99
-model/target/ts.aontu 671382e13828
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/target-index.aon 6d6ce1a6c7d8
+model/target/ts.aon 671382e13828
 src/cmp/ts/Config_ts.ts c645c5034c13
 src/cmp/ts/EntityBase_ts.ts 901c1c6f2730
 src/cmp/ts/EntityOperation_ts.ts 8e35c5f506d0
@@ -2049,11 +2049,11 @@ tm/ts/test/utility/StructUtility.test.ts 400bbedbe457
 tm/ts/test/utility/index.ts 477889c43d3e
 
 ## target zig
-model/feature/feature-index.aontu c7dc89f9b25b
-model/feature/test.aontu 22e52652f8e4
-model/sdk.aontu a1022013e262
-model/target/target-index.aontu fd38dd3f371f
-model/target/zig.aontu 52fff3eae485
+model/feature/feature-index.aon 5f0737d1060e
+model/feature/test.aon 22e52652f8e4
+model/sdk.aon c57422e2c737
+model/target/target-index.aon d785f5b4bbe7
+model/target/zig.aon 52fff3eae485
 src/cmp/zig/Config_zig.ts 51681296bb74
 src/cmp/zig/EntityOperation_zig.ts 04bd390df007
 src/cmp/zig/Entity_zig.ts 03329f926393

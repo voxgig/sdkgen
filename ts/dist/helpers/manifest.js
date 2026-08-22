@@ -228,7 +228,7 @@ function validateManifest(fs, sdkfolder, manifest, kinds) {
         // the directory listing; if this loop asked the filesystem instead
         // (`existsSync`/`statSync`), the two would disagree on a case-insensitive
         // filesystem — APFS and NTFS by default, which is most package authors'
-        // machines. A manifest claiming `IoTGo` beside a `model/target/iotgo.aontu`
+        // machines. A manifest claiming `IoTGo` beside a `model/target/iotgo.aon`
         // then validated CLEAN for the author and failed for every Linux consumer,
         // which is precisely the "validated package that cannot install" this
         // function exists to prevent. It also makes the duplicate check above
@@ -256,7 +256,7 @@ function validateManifest(fs, sdkfolder, manifest, kinds) {
                 found.push({
                     level: 'warn', point: 'manifest-item-unclaimed', file, kind, name,
                     note: file + ': model/' + kind + '/' + name +
-                        '.aontu is in the package but not listed in `provides.' + kind +
+                        '.aon is in the package but not listed in `provides.' + kind +
                         '` — nothing will install it'
                 });
             }
@@ -285,7 +285,7 @@ function missingPaths(fs, sdkfolder, kind, name, def, defined) {
     // The definition, by EXACT NAME from the directory listing — see the note
     // at the call site about the two directions needing one oracle.
     if (!defined.has(name)) {
-        missing.push('model/' + kind + '/' + name + '.aontu');
+        missing.push('model/' + kind + '/' + name + '.aon');
     }
     for (const tree of (def.trees ?? []).filter((t) => t.required)) {
         const rel = tree.path.split('{name}').join(name);

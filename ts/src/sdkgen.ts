@@ -488,7 +488,7 @@ function SdkGen(opts: SdkGenOptions) {
 
 
   function resolveModel(wanted: boolean) {
-    const path = './model/sdk.aontu'
+    const path = './model/sdk.aon'
     const errs: any[] = []
 
     // A verb that does not act on a project (see `needsModel`) is run where
@@ -642,7 +642,7 @@ SdkGen.makeBuild = async function(opts: SdkGenOptions) {
     root: opts.root,
     def: opts.def || 'no-def',
     kind: 'openapi-3',
-    model: opts.model ? (opts.model.folder + '/api.aontu') : 'no-model',
+    model: opts.model ? (opts.model.folder + '/api.aon') : 'no-model',
     meta: opts.meta || {},
   }
 

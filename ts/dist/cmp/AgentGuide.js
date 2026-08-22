@@ -47,7 +47,7 @@ ${(0, AgentGuideContent_1.langCommandsBlock)(lang)}
 
 | Source | Path | Edit when… |
 | --- | --- | --- |
-| Target definition | \`.sdk/model/target/${lang}.aontu\` | deps, module, extension, phases change |
+| Target definition | \`.sdk/model/target/${lang}.aon\` | deps, module, extension, phases change |
 | Templates | \`.sdk/tm/${lang}/\` | the file is the **same for every API** (runtime, transport, base classes) — copied verbatim with placeholder substitution |
 | Components | \`.sdk/src/cmp/${lang}/\` | the file's shape **depends on the API** (entities, constructor, README, tests) — TypeScript that walks the model |
 
@@ -76,7 +76,7 @@ Each feature's runtime and its own guide live in \`src/feature/<name>/\`.
                 // go/py/php/rb/lua: flat files in the shared \`feature/\` package — no
                 // per-feature directory, so features are documented inline here.
                 (0, jostraca_1.Content)(`Each feature is a flat file in the \`feature/\` package. Its hooks and
-default activation come from \`.sdk/model/feature/<name>.aontu\`; customise
+default activation come from \`.sdk/model/feature/<name>.aon\`; customise
 the runtime under \`.sdk/tm/${lang}/feature/\` and regenerate.
 
 | Feature | Runtime file | Active hooks |

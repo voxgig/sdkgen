@@ -70,16 +70,16 @@ main: kit: entity: planet: {
 
 function consumerModel(sdk, extra) {
   const src = [
-    '@"@voxgig/apidef/model/apidef.aontu"',
-    '@"@voxgig/sdkgen/model/sdkgen.aontu"',
-    '@"target/target-index.aontu"',
-    '@"feature/feature-index.aontu"',
+    '@"@voxgig/apidef/model/apidef.aon"',
+    '@"@voxgig/sdkgen/model/sdkgen.aon"',
+    '@"target/target-index.aon"',
+    '@"feature/feature-index.aon"',
     "name: 'demo'",
     API,
     extra || '',
   ].join('\n')
 
-  const path = Path.join(sdk, 'model', 'generate-test.aontu')
+  const path = Path.join(sdk, 'model', 'generate-test.aon')
   Fs.writeFileSync(path, src)
 
   const errs = []
@@ -109,7 +109,7 @@ describe('haskell target, from its package', () => {
   test('package add installs the target', () => {
     const files = consumer.files()
 
-    ok(files.includes('model/target/haskell.aontu'), 'no target model')
+    ok(files.includes('model/target/haskell.aon'), 'no target model')
     ok(files.some((f) => f.startsWith('src/cmp/haskell/')), 'no components')
     ok(files.some((f) => f.startsWith('tm/haskell/')), 'no templates')
   })

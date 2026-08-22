@@ -109,7 +109,7 @@ const ROOT_COMPONENTS: [string, string][] = [
 // What the check found, by category. Categories 1-3 are drift; `additive` is
 // the project's own work and is reported separately, never as a problem.
 type DoctorReport = {
-  // `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aontu`, that
+  // `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aon`, that
   // differs from the scaffold. `target add` will silently revert every one of
   // these.
   forked: string[]
@@ -198,8 +198,8 @@ async function doctor(
 
   // EVERY KIND, not just targets.
   //
-  // `add` writes a copied model file for each kind — `model/target/<t>.aontu`
-  // and `model/feature/<f>.aontu` alike — and overwrites it on every resync.
+  // `add` writes a copied model file for each kind — `model/target/<t>.aon`
+  // and `model/feature/<f>.aon` alike — and overwrites it on every resync.
   // Only the target one was ever compared, so a hand-edit to an installed
   // FEATURE definition read as perfectly in sync and was silently reverted by
   // the next `target add` (which re-runs `feature add` for every active
@@ -777,7 +777,7 @@ function checkFeatureSource(
 }
 
 
-// The copied MODEL FILE — `model/<kind>/<name>.aontu`, written by add with
+// The copied MODEL FILE — `model/<kind>/<name>.aon`, written by add with
 // the `'BASE'` replacement, and overwritten on every resync exactly as
 // `src/cmp` and `tm` are.
 //
@@ -830,7 +830,7 @@ function checkItemModel(
   const aliased = kindDef(kind).alias && name !== origname
 
   const project = definitionPath(actx.folder, kind, name)
-  const label = 'model/' + kind + '/' + name + '.aontu'
+  const label = 'model/' + kind + '/' + name + '.aon'
 
   if (!fs.existsSync(project)) {
     report.missing.push(label)

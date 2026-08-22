@@ -39,7 +39,7 @@ function makePackage(opts: {
   Fs.mkdirSync(Path.join(sdk, 'model', 'docs'), { recursive: true })
   Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'docs', name), { recursive: true })
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'docs', name + '.aontu'),
+  Fs.writeFileSync(Path.join(sdk, 'model', 'docs', name + '.aon'),
     `main: kit: docs: ${name}: {\n` +
     `  title: 'API docs'\n` +
     `  base: 'BASE'\n` +
@@ -91,12 +91,12 @@ describe('docs add', () => {
 
       const files = project.files()
 
-      ok(files.includes('model/docs/apidocs.aontu'), files.join(','))
+      ok(files.includes('model/docs/apidocs.aon'), files.join(','))
       ok(files.includes('src/cmp/docs/apidocs/Main_apidocs.ts'), files.join(','))
       ok(files.includes('tm/docs/apidocs/site.md'), files.join(','))
 
       // The index, or the model never compiles the new item in at all.
-      ok(read(project, 'model/docs/docs-index.aontu').includes('@"apidocs.aontu"'))
+      ok(read(project, 'model/docs/docs-index.aon').includes('@"apidocs.aon"'))
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -131,7 +131,7 @@ describe('docs add', () => {
       const project = makeProject()
       await docs_add([docsRef(pkg)], project.actx)
 
-      const src = read(project, 'model/docs/apidocs.aontu')
+      const src = read(project, 'model/docs/apidocs.aon')
 
       ok(src.includes("base: '"), 'no provenance stamp:\n' + src)
       ok(!src.includes("base: 'BASE'"), 'the anchor was not replaced:\n' + src)
@@ -175,13 +175,13 @@ describe('docs add', () => {
 
       const files = project.files()
 
-      ok(files.includes('model/docs/portal.aontu'), files.join(','))
+      ok(files.includes('model/docs/portal.aon'), files.join(','))
       // Dispatch is by convention, so the component file has to move with the
       // name or nothing loads it.
       ok(files.includes('src/cmp/docs/portal/Main_portal.ts'), files.join(','))
       ok(files.includes('tm/docs/portal/site.md'), files.join(','))
 
-      const src = read(project, 'model/docs/portal.aontu')
+      const src = read(project, 'model/docs/portal.aon')
       ok(src.includes('docs: portal:'), 'the model key was not rewritten:\n' + src)
       ok(src.includes("origname: 'apidocs'"), 'no origname recorded:\n' + src)
     }
@@ -210,10 +210,10 @@ describe('docs and the whole-package verbs', () => {
       await package_add([pkg], project.actx)
 
       const files = project.files()
-      ok(files.includes('model/docs/apidocs.aontu'), files.join(','))
+      ok(files.includes('model/docs/apidocs.aon'), files.join(','))
       ok(files.includes('src/cmp/docs/apidocs/Main_apidocs.ts'), files.join(','))
 
-      const src = read(project, 'model/docs/apidocs.aontu')
+      const src = read(project, 'model/docs/apidocs.aon')
       ok(src.includes("package: '@acme/sdkgen-docs'"),
         'no package provenance:\n' + src)
     }
@@ -264,7 +264,7 @@ describe('docs and the whole-package verbs', () => {
   test('a docs definition with no anchor is an error', async () => {
     const pkg = makePackage()
     try {
-      const file = Path.join(pkg, '.sdk', 'model', 'docs', 'apidocs.aontu')
+      const file = Path.join(pkg, '.sdk', 'model', 'docs', 'apidocs.aon')
       Fs.writeFileSync(file,
         String(Fs.readFileSync(file, 'utf8')).replace("  base: 'BASE'\n", ''))
 
@@ -391,9 +391,9 @@ describe('docs and the project model', () => {
 
   // THE ITEM HAS TO REACH THE COMPILED MODEL.
   //
-  // `model/sdk.aontu` is written once, by create-sdkgen, and includes the
+  // `model/sdk.aon` is written once, by create-sdkgen, and includes the
   // indexes of the kinds that existed then — so no project alive today
-  // includes `docs/docs-index.aontu`. Without that line the definition is an
+  // includes `docs/docs-index.aon`. Without that line the definition is an
   // orphan: on disk, included by its index, and that index included by
   // nothing. `main.kit.docs` is absent from the next compile, and `package
   // list`, `package update` and `doctor` cannot see the item at all.
@@ -405,9 +405,9 @@ describe('docs and the project model', () => {
       await docs_add([docsRef(pkg)], project.actx)
 
       const sdk = String(project.fs.readFileSync(
-        ROOT + '/model/sdk.aontu', 'utf8'))
+        ROOT + '/model/sdk.aon', 'utf8'))
 
-      ok(sdk.includes('@"docs/docs-index.aontu"'),
+      ok(sdk.includes('@"docs/docs-index.aon"'),
         'the docs index is included by nothing:\n' + sdk)
     }
     finally {
@@ -424,10 +424,10 @@ describe('docs and the project model', () => {
       await docs_add([docsRef(pkg)], project.actx)
 
       const sdk = String(project.fs.readFileSync(
-        ROOT + '/model/sdk.aontu', 'utf8'))
+        ROOT + '/model/sdk.aon', 'utf8'))
 
       strictEqual(
-        sdk.split('@"docs/docs-index.aontu"').length - 1, 1,
+        sdk.split('@"docs/docs-index.aon"').length - 1, 1,
         'the include was appended twice:\n' + sdk)
     }
     finally {

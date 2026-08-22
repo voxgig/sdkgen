@@ -93,8 +93,8 @@ describe('AgentGuideTop', () => {
     // templating (a resolvable token like $$name$$ would get clobbered).
     ok(agents!.includes('$$path$$'), 'aontu interpolation token survives templating')
     ok(!agents!.includes("'Demo'"), 'no accidental name substitution in the primer')
-    // Model files are .aontu, not .jsonic.
-    ok(agents!.includes('feature-index.aontu'), 'uses .aontu model extension')
+    // Model files are .aon, not .jsonic.
+    ok(agents!.includes('feature-index.aon'), 'uses .aon model extension')
     ok(!agents!.includes('.jsonic'), 'no stale .jsonic references')
     // Real, active targets/features (inactive `old` excluded).
     ok(agents!.includes('`ts`') && agents!.includes('`go`'), 'lists targets')
@@ -121,7 +121,7 @@ describe('AgentGuide — dir layout (ts/js)', () => {
     const agents = find(files, 'ts/AGENTS.md')
     ok(agents, 'ts/AGENTS.md exists')
     ok(agents!.includes('# Demo TypeScript — Agent Guide'), 'title')
-    ok(agents!.includes('.sdk/model/target/ts.aontu'), 'target model path (.aontu)')
+    ok(agents!.includes('.sdk/model/target/ts.aon'), 'target model path (.aon)')
     ok(!agents!.includes('.jsonic'), 'no stale .jsonic')
     // Commands are relative to the guide's directory (comment 3).
     ok(agents!.includes('cd ../.sdk'), 'regenerate from ../.sdk, not .sdk')
@@ -174,7 +174,7 @@ describe('AgentGuide — feature phase disabled (go-cli/go-mcp)', () => {
 
 
 describe('AgentGuideFeature (dir layout)', () => {
-  test('feature guide has active hooks, .aontu paths, root-relative regenerate', async () => {
+  test('feature guide has active hooks, .aon paths, root-relative regenerate', async () => {
     const files = await render(
       AgentGuideFeature,
       { target: T_TS, feature: makeModel().main.kit.feature.log },
@@ -186,7 +186,7 @@ describe('AgentGuideFeature (dir layout)', () => {
     ok(agents!.includes('# LogFeature — Agent Guide'), 'feature title')
     ok(agents!.includes('`PreRequest`') && agents!.includes('`PreResponse`'), 'active hooks')
     ok(!agents!.includes('`SetData`'), 'omits inactive hook')
-    ok(agents!.includes('.sdk/model/feature/log.aontu'), 'model def path (.aontu)')
+    ok(agents!.includes('.sdk/model/feature/log.aon'), 'model def path (.aon)')
     ok(!agents!.includes('.jsonic'), 'no stale .jsonic')
     ok(agents!.includes('.sdk/tm/ts/src/feature/log/'), 'runtime template path')
     ok(agents!.includes('cd ../../../../.sdk'), 'regenerate path relative to feature dir depth')

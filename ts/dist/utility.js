@@ -35,7 +35,7 @@ function resolvePath(ctx$, path) {
 // True unless the model declares auth off. Templates use this to gate
 // apikey-related code, docs, and examples for public APIs that need no
 // authentication. Two opt-outs, in priority order:
-//   1. main.kit.info.auth: false        (user-facing, set in api-info.aontu)
+//   1. main.kit.info.auth: false        (user-facing, set in api-info.aon)
 //   2. main.kit.config.auth.active: false
 function isAuthActive(model) {
     const info = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.info`, { only_active: false, required: false });

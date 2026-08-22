@@ -8,8 +8,8 @@
 //
 //   - the model file kept the ORIGIN basename (jostraca defaults a
 //     single-file Copy's destination to the source's, and target add passed
-//     no `to`), so `target add go~go2` wrote model/target/go.aontu while
-//     target-index.aontu gained `@"go2.aontu"` — an include of a file that
+//     no `to`), so `target add go~go2` wrote model/target/go.aon while
+//     target-index.aon gained `@"go2.aon"` — an include of a file that
 //     does not exist, which fails the whole model compile, not just the
 //     alias;
 //   - the copied model still declared `main: kit: target: go:`, so the alias
@@ -73,10 +73,10 @@ describe('aliased target add', () => {
     const project = await addAlias('go', 'go2')
     const files = project.files()
 
-    ok(files.includes('model/target/go2.aontu'),
-      'no model/target/go2.aontu; got: ' +
+    ok(files.includes('model/target/go2.aon'),
+      'no model/target/go2.aon; got: ' +
       files.filter((f) => f.startsWith('model/target/')).join(', '))
-    ok(!files.includes('model/target/go.aontu'),
+    ok(!files.includes('model/target/go.aon'),
       'the origin-named model file was written as well')
   })
 
@@ -86,20 +86,20 @@ describe('aliased target add', () => {
     // entry with no file behind it.
     const project = await addAlias('go', 'go2')
     const index = project.fs.readFileSync(
-      ROOT + '/model/target/target-index.aontu', 'utf8')
+      ROOT + '/model/target/target-index.aon', 'utf8')
 
-    ok(index.includes('@"go2.aontu"'), 'index does not name the alias')
+    ok(index.includes('@"go2.aon"'), 'index does not name the alias')
 
     for (const m of String(index).matchAll(/@"([^"]+)"/g)) {
       ok(project.files().includes('model/target/' + m[1]),
-        'target-index.aontu includes ' + m[1] + ', which was never written')
+        'target-index.aon includes ' + m[1] + ', which was never written')
     }
   })
 
 
   test('the copied model DECLARES the alias', async () => {
     const project = await addAlias('go', 'go2')
-    const src = project.fs.readFileSync(ROOT + '/model/target/go2.aontu', 'utf8')
+    const src = project.fs.readFileSync(ROOT + '/model/target/go2.aon', 'utf8')
 
     ok(/main:\s*kit:\s*target:\s*go2:/.test(src),
       'model does not declare `main: kit: target: go2:`')
@@ -113,7 +113,7 @@ describe('aliased target add', () => {
     // `main: kit: feature: &: target: <t>: deps: &: { kind: ... }`. It
     // belongs to the installed target, so it has to be keyed by the alias.
     const project = await addAlias('go', 'go2')
-    const src = project.fs.readFileSync(ROOT + '/model/target/go2.aontu', 'utf8')
+    const src = project.fs.readFileSync(ROOT + '/model/target/go2.aon', 'utf8')
 
     ok(/feature:\s*&:\s*target:\s*go2:/.test(src),
       'the feature-deps slot still names the origin target')
@@ -124,7 +124,7 @@ describe('aliased target add', () => {
     // go-cli declares `main: kit: target: 'go-cli': {`. A rewrite that only
     // handled the bare form would leave a hyphenated target undeclared.
     const project = await addAlias('go-cli', 'cli2')
-    const src = project.fs.readFileSync(ROOT + '/model/target/cli2.aontu', 'utf8')
+    const src = project.fs.readFileSync(ROOT + '/model/target/cli2.aon', 'utf8')
 
     ok(/target:\s*'cli2':/.test(src),
       'quoted target key not rewritten: ' +
@@ -142,7 +142,7 @@ describe('aliased target add', () => {
     // side.
     const project = await addAlias('go', 'go-alt')
     const src = project.fs.readFileSync(
-      ROOT + '/model/target/go-alt.aontu', 'utf8')
+      ROOT + '/model/target/go-alt.aon', 'utf8')
 
     ok(/target:\s*'go-alt':/.test(src),
       'hyphenated alias key was not quoted: ' +
@@ -150,7 +150,7 @@ describe('aliased target add', () => {
 
     const errs: any[] = []
     new Aontu().generate(src, {
-      path: Path.join(SCAFFOLD, 'model', 'target', 'go-alt.aontu'), errs,
+      path: Path.join(SCAFFOLD, 'model', 'target', 'go-alt.aon'), errs,
     })
     strictEqual(errs.length, 0, 'hyphenated alias model did not compile: ' +
       errs.map((e: any) => e.msg || String(e)).join(' | '))
@@ -167,15 +167,15 @@ describe('aliased target add', () => {
     await target_add([targetRef('go') + '~go2'], project.actx)
 
     const edited = project.fs.readFileSync(
-      ROOT + '/model/target/go2.aontu', 'utf8') +
+      ROOT + '/model/target/go2.aon', 'utf8') +
       "\nmain: kit: target: go2: module: path: 'example.com/second/go2'\n"
-    project.fs.writeFileSync(ROOT + '/model/target/go2.aontu', edited)
+    project.fs.writeFileSync(ROOT + '/model/target/go2.aon', edited)
 
     // Resync.
     await target_add([targetRef('go') + '~go2'], project.actx)
 
     const after = project.fs.readFileSync(
-      ROOT + '/model/target/go2.aontu', 'utf8')
+      ROOT + '/model/target/go2.aon', 'utf8')
     strictEqual(after, edited,
       'the resync reverted the project\'s edits to its aliased target model')
   })
@@ -206,7 +206,7 @@ describe('aliased target add', () => {
     // The rewrite matches on `target: <name>:` rather than on the bare name,
     // so a value that happens to equal the target name (`ext: go`) survives.
     const project = await addAlias('go', 'go2')
-    const src = project.fs.readFileSync(ROOT + '/model/target/go2.aontu', 'utf8')
+    const src = project.fs.readFileSync(ROOT + '/model/target/go2.aon', 'utf8')
 
     ok(/ext:\s*go\b/.test(src) && !/ext:\s*go2\b/.test(src),
       'the alias rewrite corrupted `ext`')
@@ -317,11 +317,11 @@ describe('aliased target add', () => {
     // aliased copy must still compile and must define main.kit.target.<alias>
     // and nothing under the origin name.
     const project = await addAlias('go', 'go2')
-    const src = project.fs.readFileSync(ROOT + '/model/target/go2.aontu', 'utf8')
+    const src = project.fs.readFileSync(ROOT + '/model/target/go2.aon', 'utf8')
 
     const errs: any[] = []
     const model = new Aontu().generate(src, {
-      path: Path.join(SCAFFOLD, 'model', 'target', 'go2.aontu'), errs,
+      path: Path.join(SCAFFOLD, 'model', 'target', 'go2.aon'), errs,
     })
 
     strictEqual(errs.length, 0, 'aliased model did not compile: ' +
@@ -343,7 +343,7 @@ describe('aliased target add', () => {
     await target_add([targetRef('go')], project.actx)
     const files = project.files()
 
-    ok(files.includes('model/target/go.aontu'), 'no model/target/go.aontu')
+    ok(files.includes('model/target/go.aon'), 'no model/target/go.aon')
     ok(files.includes('src/cmp/go/Main_go.ts'), 'no src/cmp/go/Main_go.ts')
   })
 })

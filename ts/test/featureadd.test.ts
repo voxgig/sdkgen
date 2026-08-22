@@ -41,7 +41,7 @@ function externalFeaturePackage(name: string): string {
   Fs.mkdirSync(Path.join(sdk, 'tm', 'ts', 'src', 'feature', name),
     { recursive: true })
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'feature', name + '.aontu'),
+  Fs.writeFileSync(Path.join(sdk, 'model', 'feature', name + '.aon'),
     '\nmain: kit: feature: ' + name + ': {\n' +
     '  name: key()\n' +
     '  title: "An externally defined feature"\n' +
@@ -149,7 +149,7 @@ describe('feature add from an external package', () => {
 
       const files = project.files()
 
-      ok(files.includes('model/feature/circuitbreaker.aontu'),
+      ok(files.includes('model/feature/circuitbreaker.aon'),
         'the feature model was not copied; wrote: ' +
         files.filter((f: string) => f.startsWith('model/feature/')).join(', '))
       ok(files.includes('tm/ts/src/feature/circuitbreaker/Ext.ts'),
@@ -163,7 +163,7 @@ describe('feature add from an external package', () => {
 
 
   test('the index lists the NAME, not the ref', async () => {
-    // A ref is not a name. Writing `@"<abs path>/circuitbreaker.aontu"` into
+    // A ref is not a name. Writing `@"<abs path>/circuitbreaker.aon"` into
     // the index is an include of a file that does not exist, which fails the
     // whole model compile rather than just the feature.
     const pkg = externalFeaturePackage('circuitbreaker')
@@ -173,14 +173,14 @@ describe('feature add from an external package', () => {
       await feature_add([Path.join(pkg, 'circuitbreaker')], project.actx)
 
       const index = String(project.fs.readFileSync(
-        ROOT + '/model/feature/feature-index.aontu', 'utf8'))
+        ROOT + '/model/feature/feature-index.aon', 'utf8'))
 
-      ok(index.includes('@"circuitbreaker.aontu"'),
+      ok(index.includes('@"circuitbreaker.aon"'),
         'index does not name the installed feature: ' + JSON.stringify(index))
 
       for (const m of index.matchAll(/@"([^"]+)"/g)) {
         ok(project.files().includes('model/feature/' + m[1]),
-          'feature-index.aontu includes ' + m[1] + ', which was never written')
+          'feature-index.aon includes ' + m[1] + ', which was never written')
       }
     }
     finally {
@@ -197,7 +197,7 @@ describe('feature add from an external package', () => {
       await feature_add([Path.join(pkg, 'circuitbreaker')], project.actx)
 
       const src = String(project.fs.readFileSync(
-        ROOT + '/model/feature/circuitbreaker.aontu', 'utf8'))
+        ROOT + '/model/feature/circuitbreaker.aon', 'utf8'))
       const base = (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1]
 
       ok(null != base && base.includes('sdkgen-feat'),
@@ -241,7 +241,7 @@ describe('feature add from an external package', () => {
 
     await feature_add(['/no/such/package/ghost', 'retry'], project.actx)
 
-    ok(project.files().includes('model/feature/retry.aontu'),
+    ok(project.files().includes('model/feature/retry.aon'),
       'a healthy feature was skipped because another one could not resolve')
     ok(!project.files().some((f) => f.includes('ghost')),
       'the unresolvable feature was somehow written')

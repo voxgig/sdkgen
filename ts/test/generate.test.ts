@@ -57,8 +57,8 @@ import {
 function allTargets(): string[] {
   const dir = Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'target')
   return readdirSync(dir)
-    .filter((f: string) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
-    .map((f: string) => f.replace(/\.aontu$/, ''))
+    .filter((f: string) => f.endsWith('.aon') && 'target-index.aon' !== f)
+    .map((f: string) => f.replace(/\.aon$/, ''))
     .sort()
 }
 
@@ -108,7 +108,7 @@ const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
 // aontu source unified against the REAL base models (apidef + sdkgen) and the
 // REAL per-target and per-feature models shipped in the scaffold. That is what
 // keeps this fixture honest — target defaults (ext, comment, srcfeature,
-// phase, publish) come from project/.sdk/model/target/<lang>.aontu, so a
+// phase, publish) come from project/.sdk/model/target/<lang>.aon, so a
 // target that changes its own defaults changes this test's input too, instead
 // of being shadowed by a restated copy here.
 //
@@ -1106,7 +1106,7 @@ describe('generate', () => {
   // mechanism was implemented and documented nowhere — not in the README,
   // not in the reference — so for an API with two such routes, two of its six
   // endpoints were unreachable by anyone using the documented interface. The
-  // only way to find it was to read MakePointUtility.ts and the .aontu model.
+  // only way to find it was to read MakePointUtility.ts and the .aon model.
   test('a custom action is documented, not just implemented', async () => {
     const out = await generate(['ts'])
 

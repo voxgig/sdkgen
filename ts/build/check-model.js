@@ -11,7 +11,7 @@ const path = require('path')
 
 const { Aontu } = require('aontu')
 
-const MODEL_FILES = ['sdkgen.aontu']
+const MODEL_FILES = ['sdkgen.aon']
 
 let failed = false
 

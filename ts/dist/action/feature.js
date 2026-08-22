@@ -91,7 +91,7 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
     (0, jostraca_1.Project)({}, () => {
         // The names as INSTALLED, which is what the index must list. A ref is
         // not a name: `feature add @acme/sdkgen-iot/circuitbreaker` installs
-        // `circuitbreaker`, and writing the raw ref into feature-index.aontu
+        // `circuitbreaker`, and writing the raw ref into feature-index.aon
         // would produce an include of a file that does not exist.
         const fnames = [];
         (0, jostraca_1.each)(features, (n) => {
