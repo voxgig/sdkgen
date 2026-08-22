@@ -292,7 +292,7 @@ pub fn match_deep(check: &Value, base: &Value) -> Option<String> {
 // ---- runset (mirrors go runner_test.go runset) -----------------------------------
 
 // Sections deliberately left empty in the shared corpus
-// (.sdk/test/primary/<name>.aontu carries a PENDING header). Everything else
+// (.sdk/test/primary/<name>.aon carries a PENDING header). Everything else
 // MUST contribute cases.
 pub const PENDING_SECTIONS: &[&str] = &[
     "fetcher", "makeFetchDef", "makeResult", "featureAdd",

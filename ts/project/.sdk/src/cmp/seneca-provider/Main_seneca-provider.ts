@@ -22,7 +22,7 @@ import { Gitignore } from './Gitignore_seneca-provider'
 // `ts` SDK.
 //
 // A consumer target in the go-cli / py-data mould — every standard phase is
-// off in model/target/seneca-provider.aontu and this component emits the
+// off in model/target/seneca-provider.aon and this component emits the
 // whole package. It differs from those in one way that shapes everything
 // here: it generates into ITS OWN REPO (`output: path`), depends on the SDK
 // as a PUBLISHED npm package rather than by path, and therefore carries a

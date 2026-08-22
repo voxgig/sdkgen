@@ -17,7 +17,7 @@ import {
 // The `py-data` target: a Python package for DATA ANALYSTS working in
 // notebooks (Colab, Jupyter), layered on the sibling `py` SDK generated into
 // the same repo. It is a consumer target in the go-cli / go-mcp mould — every
-// standard generation phase is switched off in model/target/py-data.aontu and
+// standard generation phase is switched off in model/target/py-data.aon and
 // this component emits the whole package.
 //
 // The deliverable an analyst wants is not "a client", it is TABLES: one line
