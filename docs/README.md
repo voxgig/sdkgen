@@ -35,6 +35,7 @@ that matches what you are trying to do right now:
 - [Author a brand-new language target](./how-to/author-a-new-language.md)
 - [Debug a failing generated target](./how-to/debug-generation.md)
 - [Drive generation from code (the API)](./how-to/use-the-api.md)
+- [Release and tag](./how-to/release-and-tag.md)
 
 ### Reference
 - [CLI: `voxgig-sdkgen`](./reference/cli.md)
