@@ -285,7 +285,7 @@ defmodule ProjectName.Feature.Test do
           netsleep.(pick_latency(net))
           status = H.or_(S.getprop(net, "failStatus"), 503)
 
-          respond(status, nil,
+          respond(fctx, status, nil,
             S.jm(["statusText", "Simulated Failure", "headers", S.jm([])]))
 
         true ->

@@ -171,7 +171,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
 tm/clojure/src/sdk/core.clj 6dd9d3bd9e76
-tm/clojure/src/sdk/features.clj 37d2b8ce94f9
+tm/clojure/src/sdk/features.clj becdf18686c4
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
@@ -222,7 +222,7 @@ src/cmp/cpp/fragment/Main.fragment.cpp 202d212074c2
 src/cmp/cpp/tsconfig.json 720a3f229019
 src/cmp/cpp/utility_cpp.ts a1b8cae7e4c3
 tm/cpp/LICENSE ed2f88b0aab8
-tm/cpp/Makefile 6c6fda2c50d9
+tm/cpp/Makefile 6f2adb09db31
 tm/cpp/VERSION e6635045e1d2
 tm/cpp/core/sdk.hpp 29180a8846ed
 tm/cpp/core/struct.hpp 0be0006d1389
@@ -411,7 +411,7 @@ tm/dart/lib/Response.dart 44834013845a
 tm/dart/lib/Result.dart d8d177eb594f
 tm/dart/lib/Spec.dart 3f7b75492a8f
 tm/dart/lib/feature/base/BaseFeature.dart 44f751b27e3e
-tm/dart/lib/feature/test/TestFeature.dart 484902ac56bd
+tm/dart/lib/feature/test/TestFeature.dart ab4840858e09
 tm/dart/lib/utility/CleanUtility.dart 84ade0055d3b
 tm/dart/lib/utility/DoneUtility.dart bccb69bf0008
 tm/dart/lib/utility/ErrUtility.dart 080bc979c9e7
@@ -511,7 +511,7 @@ tm/elixir/lib/projectname/core.ex 54ae320f3c39
 tm/elixir/lib/projectname/entity_base.ex a1bebbb71a2b
 tm/elixir/lib/projectname/error.ex 163684739447
 tm/elixir/lib/projectname/feature.ex a9f2c2609648
-tm/elixir/lib/projectname/feature/test.ex b1a057463e3d
+tm/elixir/lib/projectname/feature/test.ex 072467e5d97f
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
 tm/elixir/lib/projectname/utility.ex be7274bfbcbf
@@ -992,8 +992,8 @@ tm/lean/VERSION e6635045e1d2
 tm/lean/src/SdkFeature.lean 5be60a4885a3
 tm/lean/src/SdkFeatures.lean 6fbf3505803c
 tm/lean/src/SdkJson.lean c325e2d5d135
-tm/lean/src/SdkRuntime.lean 561f26e02e82
-tm/lean/src/SdkUtility.lean c0f86502d191
+tm/lean/src/SdkRuntime.lean d3dc42c7dfc3
+tm/lean/src/SdkUtility.lean 0510f9a2d448
 tm/lean/src/VoxgigStruct.lean 88e6440fdc48
 tm/lean/src/Vregex.lean 40a34c219a91
 tm/lean/src/feature/README.md f2b039e67b3c
@@ -1152,7 +1152,7 @@ src/cmp/ocaml/utility_ocaml.ts 010faa650f9e
 tm/ocaml/LICENSE c92ad97f8812
 tm/ocaml/Makefile 5907059b3e02
 tm/ocaml/VERSION e6635045e1d2
-tm/ocaml/sdk_features.ml 088e129d1087
+tm/ocaml/sdk_features.ml 7a3fea3b8abb
 tm/ocaml/sdk_helpers.ml deadcfd0d1f8
 tm/ocaml/sdk_json.ml 7514a4177ebb
 tm/ocaml/sdk_runtime.ml efb1df0ff92a
@@ -1501,6 +1501,7 @@ tm/py-data/src/feature/README.md bb687edfc361
 tm/py-data/src/feature/base/.gitkeep e3b0c44298fc
 tm/py-data/src/feature/test/.gitkeep e3b0c44298fc
 tm/py-data/test/__init__.py e3b0c44298fc
+tm/py-data/test/conftest.py 04226bc9d5eb
 tm/py-data/test/test_auth.py c77f79f502d7
 tm/py-data/test/test_fetch.py 2141fd295c08
 tm/py-data/test/test_frames.py 1ca04ad46a4b
@@ -1741,8 +1742,8 @@ src/cmp/scala/ReadmeRef_scala.ts c5d66a3d4ae4
 src/cmp/scala/ReadmeTopHowto_scala.ts 1169e3db1008
 src/cmp/scala/ReadmeTopQuick_scala.ts 53f20e490e70
 src/cmp/scala/ReadmeTopTest_scala.ts fcd9323b6246
-src/cmp/scala/TestDirect_scala.ts ff37fc37059a
-src/cmp/scala/TestEntity_scala.ts e187a81fc85d
+src/cmp/scala/TestDirect_scala.ts 848e69d6bd5a
+src/cmp/scala/TestEntity_scala.ts e6bd86ddf84d
 src/cmp/scala/Test_scala.ts 970be716f57e
 src/cmp/scala/fragment/Entity.fragment.scala 84b22d8892fa
 src/cmp/scala/fragment/EntityBase.fragment.scala c71ea901f88d
@@ -1913,7 +1914,7 @@ tm/swift/Sources/ProjectNameSDK/core/Types.swift b9ccbf883682
 tm/swift/Sources/ProjectNameSDK/core/Utility.swift b1174e305cae
 tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
 tm/swift/Sources/ProjectNameSDK/feature/FeatureOptions.swift 38f8fd8fc149
-tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 745c85fd8be9
+tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 99e41163cfe8
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
 tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 9bc134d98639
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05

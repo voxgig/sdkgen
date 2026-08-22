@@ -172,22 +172,22 @@ public final class TestFeature: BaseFeature {
         if isNil(ent) {
           let extra = VMap()
           extra.entries["statusText"] = .string("Not found")
-          return testRespond(ctx, 404, .noval, extra)
+          return testRespond(ctx2, 404, .noval, extra)
         }
         delprop(ent, .string("$KEY"))
-        return testRespond(ctx, 200, clone(ent), nil)
+        return testRespond(ctx2, 200, clone(ent), nil)
       } else if op.name == "list" {
         let args = testBuildArgs(ctx2, op, ctx2.reqmatch)
         let found = select(.map(entmap), args)
         if isNil(found) {
           let extra = VMap()
           extra.entries["statusText"] = .string("Not found")
-          return testRespond(ctx, 404, .noval, extra)
+          return testRespond(ctx2, 404, .noval, extra)
         }
         if let fl = found.asList {
           for item in fl.items { delprop(item, .string("$KEY")) }
         }
-        return testRespond(ctx, 200, clone(found), nil)
+        return testRespond(ctx2, 200, clone(found), nil)
       } else if op.name == "update" {
         var updateMatch = VMap()
         if let idv = ctx2.reqdata.entries["id"] {
@@ -209,13 +209,13 @@ public final class TestFeature: BaseFeature {
         if isNil(ent) {
           let extra = VMap()
           extra.entries["statusText"] = .string("Not found")
-          return testRespond(ctx, 404, .noval, extra)
+          return testRespond(ctx2, 404, .noval, extra)
         }
         if let entm = ent.asMap {
           for (k, v) in ctx2.reqdata.entries { entm.entries[k] = v }
         }
         delprop(ent, .string("$KEY"))
-        return testRespond(ctx, 200, clone(ent), nil)
+        return testRespond(ctx2, 200, clone(ent), nil)
       } else if op.name == "remove" {
         let args = testBuildArgs(ctx2, op, testResolveMatch(ctx2, ctx2.reqmatch))
         let found = select(.map(entmap), args)
@@ -224,7 +224,7 @@ public final class TestFeature: BaseFeature {
           let id = gp(entm2, "id")
           delprop(.map(entmap), id)
         }
-        return testRespond(ctx, 200, .noval, nil)
+        return testRespond(ctx2, 200, .noval, nil)
       } else if op.name == "create" {
         _ = testBuildArgs(ctx2, op, ctx2.reqdata)
         var id = ctx2.utility!.param(ctx2, .string("id"))
@@ -239,14 +239,14 @@ public final class TestFeature: BaseFeature {
           entm.entries["id"] = id
           if let idStr = id.asString { entmap.entries[idStr] = .map(entm) }
           delprop(.map(entm), .string("$KEY"))
-          return testRespond(ctx, 200, clone(.map(entm)), nil)
+          return testRespond(ctx2, 200, clone(.map(entm)), nil)
         }
-        return testRespond(ctx, 200, ent, nil)
+        return testRespond(ctx2, 200, ent, nil)
       }
 
       let extra = VMap()
       extra.entries["statusText"] = .string("Unknown operation")
-      return testRespond(ctx, 404, .noval, extra)
+      return testRespond(ctx2, 404, .noval, extra)
     }
 
     // Optional network behaviour simulation over the mock transport.
