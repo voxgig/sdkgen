@@ -156,13 +156,21 @@ jobs:
           fi
           if [ -n "$AT" ]; then echo "$TAG already points here; nothing to create"; fi
 
+      # `npm ci` FIRST. The pre-flight below runs `node build/check-model.js`,
+      # which requires aontu — so with the install after it, the pre-flight
+      # died on "Cannot find module 'aontu'" and no release using this
+      # workflow could ever reach the publish step. Fail-fast ordering is only
+      # worth having when the fast step can actually run.
+      - name: Install dependencies
+        working-directory: ts
+        run: npm ci
+
       - name: Pre-flight check
         run: make check-model
 
       - name: Build and test
         working-directory: ts
         run: |
-          npm ci
           npm run build
           npm test
 
