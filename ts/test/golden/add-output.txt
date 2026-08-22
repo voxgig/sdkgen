@@ -1599,7 +1599,7 @@ tm/rb/utility/register.rb 17360423b3c4
 tm/rb/utility/result_basic.rb 90d9f4bfb77a
 tm/rb/utility/result_body.rb 3f5453c189c1
 tm/rb/utility/result_headers.rb ee4460e396f5
-tm/rb/utility/struct/voxgig_struct.rb 7f1f91f03a80
+tm/rb/utility/struct/voxgig_struct.rb c06ede138ed1
 tm/rb/utility/transform_request.rb 03eca2dddb49
 tm/rb/utility/transform_response.rb 13e4100890d3
 
