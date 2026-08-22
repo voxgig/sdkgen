@@ -328,6 +328,20 @@ main: kit: target: &: {
     # docs/explanation/regeneration-overwrite.md) was hiding it. Declare the
     # version here and every port reads the same value.
     #
+    # DECLARE IT IN `model/project.aontu`, the project overlay that
+    # create-sdkgen creates once and never overwrites.
+    #
+    # NOT in `model/sdk.aontu`: create-sdkgen rewrites that file from its
+    # template on every scaffold, and cedar-regen.sh re-scaffolds on every
+    # regen, so a version declared there is erased before the model is built
+    # and the manifest silently keeps the default below. That is not a
+    # hypothetical either — a 33-repo fleet shipped every manifest at 0.0.1
+    # while its git tags climbed past 0.1.1, and no error was ever reported.
+    # Guidance here previously said the project's own model survived a resync;
+    # `project.aontu` is what makes that true (create-sdkgen >= 0.18.1).
+    #
+    # NOT in `model/target/<t>.aontu` either: `target add` overwrites those.
+    #
     # Per TARGET, not per SDK: ports publish to different registries on
     # different clocks, and a Python release should not have to move the
     # npm version.
