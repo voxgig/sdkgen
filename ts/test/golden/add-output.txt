@@ -384,7 +384,7 @@ src/cmp/dart/ReadmeTopQuick_dart.ts 2182e1533a24
 src/cmp/dart/ReadmeTopTest_dart.ts 7b630874fbc3
 src/cmp/dart/SdkError_dart.ts 6411a73a5460
 src/cmp/dart/TestDirect_dart.ts c52cfae915c8
-src/cmp/dart/TestEntity_dart.ts 7e4d281f3641
+src/cmp/dart/TestEntity_dart.ts e8058f30087f
 src/cmp/dart/Test_dart.ts d2b40f0b917a
 src/cmp/dart/fragment/Config.data.fragment.dart f48f9ad4df82
 src/cmp/dart/fragment/Config.fragment.dart cfe7a0cf0295
@@ -515,7 +515,7 @@ tm/elixir/lib/projectname/feature/test.ex 072467e5d97f
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
 tm/elixir/lib/projectname/utility.ex be7274bfbcbf
-tm/elixir/lib/utility/struct/voxgig_struct.ex 8fe816d2a615
+tm/elixir/lib/utility/struct/voxgig_struct.ex 16587a91f82e
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
 tm/elixir/src/feature/test/.gitkeep e3b0c44298fc
@@ -686,7 +686,7 @@ src/cmp/java/ReadmeTopHowto_java.ts c3befccf0daa
 src/cmp/java/ReadmeTopQuick_java.ts a28fc611cf68
 src/cmp/java/ReadmeTopTest_java.ts 798f5114294c
 src/cmp/java/SdkError_java.ts 2957202451b0
-src/cmp/java/TestDirect_java.ts c22e4f47d834
+src/cmp/java/TestDirect_java.ts 3b652d7df9cd
 src/cmp/java/TestEntity_java.ts 8295d1d0de6d
 src/cmp/java/Test_java.ts a41c0858475b
 src/cmp/java/fragment/Entity.fragment.java 8615d49ba6a6
@@ -903,8 +903,8 @@ src/cmp/kotlin/ReadmeTopHowto_kotlin.ts 5f8193767df5
 src/cmp/kotlin/ReadmeTopQuick_kotlin.ts b722e70958f2
 src/cmp/kotlin/ReadmeTopTest_kotlin.ts 15706807d852
 src/cmp/kotlin/SdkError_kotlin.ts dc0cd7ddcc31
-src/cmp/kotlin/TestDirect_kotlin.ts 610bf9d0a7ee
-src/cmp/kotlin/TestEntity_kotlin.ts badac675049f
+src/cmp/kotlin/TestDirect_kotlin.ts 366ec17d62ee
+src/cmp/kotlin/TestEntity_kotlin.ts aeb207fe7a63
 src/cmp/kotlin/Test_kotlin.ts ebcbfce87aba
 src/cmp/kotlin/fragment/Entity.fragment.kt 71737b03ef7d
 src/cmp/kotlin/fragment/EntityBase.fragment.kt 051fc627d14d
@@ -1213,7 +1213,7 @@ src/cmp/perl/ReadmeTopHowto_perl.ts 287f685ca3bf
 src/cmp/perl/ReadmeTopQuick_perl.ts 292e04935a5a
 src/cmp/perl/ReadmeTopTest_perl.ts fd5247ab7792
 src/cmp/perl/TestDirect_perl.ts 9234e274ed79
-src/cmp/perl/TestEntity_perl.ts 338e29e1fb02
+src/cmp/perl/TestEntity_perl.ts 124a704d5627
 src/cmp/perl/Test_perl.ts 96ebf517c61e
 src/cmp/perl/fragment/Entity.fragment.pm b0c23633312a
 src/cmp/perl/fragment/EntityCreateOp.fragment.pm a38d4961de57
@@ -1645,7 +1645,7 @@ src/cmp/rust/fragment/EntityUpdateOp.fragment.rs 50e37dff8075
 src/cmp/rust/fragment/Main.fragment.rs e25bdfa444bc
 src/cmp/rust/fragment/SdkError.fragment.rs cf5c12e19bb3
 src/cmp/rust/tsconfig.json 720a3f229019
-src/cmp/rust/utility_rust.ts 4c24402d4d96
+src/cmp/rust/utility_rust.ts 10b05a5e98ef
 tm/rust/LICENSE ed2f88b0aab8
 tm/rust/Makefile 9c20bdb47565
 tm/rust/VERSION e6635045e1d2
@@ -1886,7 +1886,7 @@ src/cmp/swift/fragment/EntityUpdateOp.fragment.swift 1aa90240964b
 src/cmp/swift/fragment/Main.fragment.swift 3aabf33ff7f8
 src/cmp/swift/fragment/SdkError.fragment.swift 09db66f5b121
 src/cmp/swift/tsconfig.json 720a3f229019
-src/cmp/swift/utility_swift.ts 5bcf55e93904
+src/cmp/swift/utility_swift.ts cca843922144
 tm/swift/LICENSE ed2f88b0aab8
 tm/swift/Makefile 3e982a3a7eb6
 tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift 8a563f9b7b82
