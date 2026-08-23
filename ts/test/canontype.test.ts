@@ -2,7 +2,7 @@
 import { test, describe } from 'node:test'
 import { strictEqual, deepStrictEqual, ok } from 'node:assert'
 
-import { canonToType, canonKey } from '../dist/sdkgen.js'
+import { canonToType, canonKey, canonScalarKey } from '../dist/sdkgen.js'
 
 const { CANON_TYPE, CANON_ANY } = require('../dist/helpers/canonType.js')
 
@@ -175,5 +175,45 @@ describe('canonToType — $ONE unions', () => {
     strictEqual(canonToType(['`$ONE`'], 'ts'), 'any')
     strictEqual(canonToType(['nope', []], 'ts'), 'any')
     strictEqual(canonToType(UNION(), 'ts'), 'any')
+  })
+})
+
+
+describe('canonScalarKey', () => {
+
+  test('a plain sentinel is just its bare key', () => {
+    strictEqual(canonScalarKey('`$STRING`'), 'STRING')
+    strictEqual(canonScalarKey('$INTEGER'), 'INTEGER')
+    strictEqual(canonScalarKey('number'), 'NUMBER')
+    strictEqual(canonScalarKey(undefined), '')
+    strictEqual(canonScalarKey(null), '')
+  })
+
+  // The regression this exists for: a nullable id is a union, and canonKey
+  // stringifies the array into nothing recognizable, so the doc example fell
+  // through to a quoted placeholder while canonToType rendered the field
+  // `number | null` -> TS2322 in the SDK's own README.
+  test('a nullable field resolves to its non-NULL member', () => {
+    strictEqual(canonScalarKey(UNION('`$NUMBER`', '`$NULL`')), 'NUMBER')
+    strictEqual(canonScalarKey(UNION('`$NULL`', '`$NUMBER`')), 'NUMBER')
+    strictEqual(canonScalarKey(UNION('`$NULL`', '`$STRING`')), 'STRING')
+    strictEqual(canonToType(UNION('`$NUMBER`', '`$NULL`'), 'ts'), 'number | null')
+  })
+
+  test('the first non-NULL member wins, nested unions included', () => {
+    strictEqual(canonScalarKey(UNION('`$STRING`', '`$INTEGER`')), 'STRING')
+    strictEqual(canonScalarKey(UNION('`$NULL`', UNION('`$NULL`', '`$BOOLEAN`'))), 'BOOLEAN')
+  })
+
+  test('a union of nothing but NULL is NULL', () => {
+    strictEqual(canonScalarKey(UNION('`$NULL`')), 'NULL')
+    strictEqual(canonScalarKey(UNION('`$NULL`', '`$NULL`')), 'NULL')
+  })
+
+  test('degenerate arrays are unknown, like a missing sentinel', () => {
+    strictEqual(canonScalarKey([]), '')
+    strictEqual(canonScalarKey(['`$ONE`']), '')
+    strictEqual(canonScalarKey(['nope', []]), '')
+    strictEqual(canonScalarKey(UNION()), '')
   })
 })

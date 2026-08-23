@@ -37,6 +37,7 @@ exports.PANDAS_DTYPE = exports.CANON_UNION_JOIN = exports.CANON_ANY = exports.CA
 exports.canonToType = canonToType;
 exports.canonToDtype = canonToDtype;
 exports.canonKey = canonKey;
+exports.canonScalarKey = canonScalarKey;
 // Bare sentinel key (backticks + leading `$` stripped, upper-cased)
 // -> per-language primitive type name.
 //
@@ -172,6 +173,41 @@ function canonKey(sentinel) {
         return '';
     }
     return String(sentinel).replace(/[`$]/g, '').trim().toUpperCase();
+}
+// The bare key of the sentinel a VALUE of this type must satisfy, resolving
+// the union sentinel `['`$ONE`', [member, ...]]` to its first non-NULL member
+// (recursively — a member may itself be a union).
+//
+// canonKey alone cannot do this: given an array it stringifies it, so a
+// nullable `['`$ONE`', ['`$NUMBER`','`$NULL`']]` field yields neither NUMBER
+// nor anything else recognizable and every caller falls through to its
+// "unknown, use a string" branch. canonToType meanwhile renders that same
+// sentinel as `number | null`, so the doc example said `'..._id'` while the
+// generated type said `number` — a TS2322 in the SDK's own README, which is
+// exactly the disagreement the example helpers exist to prevent.
+//
+// A union of nothing but NULL resolves to NULL; an unrecognized array shape,
+// or an empty member list, resolves to '' (unknown) like any missing
+// sentinel.
+function canonScalarKey(sentinel) {
+    if (Array.isArray(sentinel)) {
+        if ('ONE' !== canonKey(sentinel[0]) || !Array.isArray(sentinel[1])) {
+            return '';
+        }
+        let sawNull = false;
+        for (const member of sentinel[1]) {
+            const key = canonScalarKey(member);
+            if ('NULL' === key) {
+                sawNull = true;
+                continue;
+            }
+            if ('' !== key) {
+                return key;
+            }
+        }
+        return sawNull ? 'NULL' : '';
+    }
+    return canonKey(sentinel);
 }
 // Map a field/param type sentinel to a target-language primitive type.
 // Unknown or missing sentinel -> that language's "any" (never throws).
