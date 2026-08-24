@@ -41,7 +41,8 @@ holds names and stores, never values.
 ```json
 { "station": 1,
   "profiles": { "default": {
-    "sdk": { "voxgig-solardemo": {} } } } }
+    "sdk": { "voxgig-solardemo": {
+      "package": "@voxgig/voxgig-solardemo-sdk" } } } } }
 ```
 
 ```ts
@@ -50,6 +51,17 @@ import { Station } from '@voxgig/station'
 const station = Station.open()                 // reads + validates station.json
 const solar = station.sdk('voxgig-solardemo')  // built on first ask, cached
 ```
+
+**`package` is what makes this zero-import form work.** Self-registration
+happens when the SDK's own main module executes, and nothing here has
+executed it: Node does not load a package just because something else
+declares it. `package` names the module for station's loader to import,
+which runs the main module, which registers the factory — so the
+application imports station and nothing else. (It is honoured only from
+repo-scoped config, since it names code to import.) An application that
+imports the SDK for its types anyway can drop the key: that import is
+itself the bootstrap. Without either, `sdk()` raises
+`station_no_factory`, naming the remedy.
 
 `open()` validates the whole file at once — a typo'd key fails there,
 with every error reported — and constructs nothing. The instance is

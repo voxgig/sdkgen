@@ -14,7 +14,14 @@
 // process is not a thing to pick between quietly.
 let stationInstalled = true
 try { require.resolve('STATIONPKG') }
-catch (err: any) { stationInstalled = false }
+catch (err: any) {
+  // MODULE_NOT_FOUND is the absent case. Anything else - an invalid
+  // package config, a root entry the package does not export - is a
+  // real failure to load a station that IS installed, and swallowing
+  // it would leave an empty factory table with no visible cause.
+  if ('MODULE_NOT_FOUND' !== err?.code) { throw err }
+  stationInstalled = false
+}
 
 if (stationInstalled) {
   const { provide } = require('STATIONPKG')

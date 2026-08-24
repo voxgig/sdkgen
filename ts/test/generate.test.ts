@@ -475,8 +475,16 @@ main: kit: target: js: phase: feature: active: false
 
       // The declarative quickstart: the station.json block keyed by the
       // descriptor slug, and the sdk() call beside the connect() form.
-      ok(src.includes('"sdk": { "demo": {} }'),
+      // Keyed by the descriptor slug, and carrying `package` — without
+      // it the quickstart is a zero-import example that cannot work:
+      // self-registration runs when the SDK's main module executes, and
+      // nothing in the example would execute it, so `sdk()` would raise
+      // station_no_factory. ts and js are both self-registering targets.
+      ok(src.includes('"sdk": { "demo": {'),
         target + ': README has no station.json block keyed by the slug')
+      ok(src.includes('"package": "' + ('ts' === target ?
+        '@voxgig-sdk/demo' : '@voxgig-sdk/demo-js') + '"'),
+        target + ': README quickstart declares no package for station to load')
       ok(src.includes("station.sdk('demo')"),
         target + ': README has no station.sdk() quickstart')
       ok(src.includes('station.connect('),

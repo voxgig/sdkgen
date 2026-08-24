@@ -26,6 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.stationLibrary = stationLibrary;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
+const utility_1 = require("../utility");
 function stationLibrary(model, targetName) {
     // Active-filtered on purpose: an inactive feature ships no source, no
     // embedded config entry and no manifest dep, so it must emit no
@@ -40,14 +41,27 @@ function stationLibrary(model, targetName) {
         return undefined;
     }
     // Feature deps count only when explicitly active — collectDeps semantics,
-    // so the require target is exactly the set the manifest carries. each()
-    // iterates in sorted-key order, so if a second active dep ever appears
-    // beside the station library the pick is at least deterministic; the
-    // station feature model declares exactly one per target.
+    // so the require target is exactly the set the manifest carries.
     const names = (0, jostraca_1.each)(deps)
         .filter((dep) => true === dep?.active)
         .map((dep) => dep?.key$)
         .filter((name) => null != name && '' !== name);
-    return 0 < names.length ? String(names[0]) : undefined;
+    if (0 === names.length) {
+        return undefined;
+    }
+    // EXACTLY ONE, or say so. Picking the first of several — each() sorts,
+    // so it would be the alphabetically first — means the generated main
+    // can `require` an unrelated helper package, find no `provide`, and
+    // leave the factory table silently empty. The station feature model
+    // declares one library per target; a second active dep is a model
+    // question only its author can answer.
+    if (1 < names.length) {
+        throw new utility_1.SdkGenError('station: feature `station` declares ' + names.length + ' active ' +
+            'dependencies for target `' + targetName + '` (' +
+            names.map(String).sort().join(', ') + '), so the station library to ' +
+            'register with is ambiguous. Declare exactly one active dep per ' +
+            'target in the feature model, or mark which one is the library.');
+    }
+    return String(names[0]);
 }
 //# sourceMappingURL=station.js.map

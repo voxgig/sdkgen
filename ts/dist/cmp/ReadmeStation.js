@@ -62,7 +62,8 @@ names and stores, never values):
 \`\`\`json
 { "station": 1,
   "profiles": { "default": {
-    "sdk": { "${slug}": {} } } } }
+    "sdk": { "${slug}": {${selfreg ?
+        `\n      "package": "${(0, packageMeta_1.packageName)(model, target.name)}"` : ''} } } } } }
 \`\`\`
 
 Then get the client where you need it:
@@ -76,7 +77,10 @@ ${selfreg
         ? `Loading this package is the whole bootstrap: it registers its own
 factory (constructor plus embedded config) with the station library at
 module init, so \`station.sdk()\` needs no SDK import in application
-code.`
+code. That is what the \`package\` key above is for — it names the module
+for station to load, since nothing else in this example would execute
+it. An application that imports this SDK for its types anyway can drop
+the key: that import is itself the bootstrap.`
         : `In this language an import runs no code, so register the factory
 once at startup — \`Station.provide('${slug}', ...)\`, one line — and
 every other line of configuration stays in \`station.json\`.`}
