@@ -76,6 +76,7 @@ type ModelTarget = NameCases & {
   output?: {
     path?: string
     repo?: string
+    create?: boolean
     adopt?: boolean
     sdkrel?: string
   }

@@ -78,9 +78,17 @@ declares `output: adopt: true`.
 main: kit: target: 'seneca-provider': output: {
   path: '../../seneca/seneca-acme-provider'
   repo: 'senecajs/seneca-acme-provider'
+  create: false
   sdkrel: '../../voxgig-sdk/acme-sdk'
 }
 ```
+
+`create: false` says that the other repo is an optional checkout. The target
+remains active and remains excluded from the in-tree pass, but sdkgen skips
+its external pass while the destination folder is absent. Once that folder
+exists, generation proceeds without another model change and all ordinary
+destination-safety checks still apply. The default is `true`, which preserves
+the original behaviour of creating a missing destination and its parents.
 
 In the project's OWN model — never in
 `.sdk/model/target/seneca-provider.aontu`, which `target add` overwrites

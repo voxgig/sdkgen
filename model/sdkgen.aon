@@ -270,6 +270,15 @@ main: kit: target: &: {
   output: {
     path: *'' | string
 
+    # Whether generation may create a destination folder that does not yet
+    # exist. true preserves the ordinary behaviour: jostraca creates it and
+    # any missing parents. false keeps the target active but skips its
+    # out-of-tree generation pass until the destination folder exists — for
+    # example when a separate provider fleet is only checked out on some
+    # machines. An existing destination still goes through every ownership
+    # and overwrite-safety check below.
+    create: *true | boolean
+
     # Write into a destination that already holds content this generator did
     # not write.
     #
@@ -490,6 +499,7 @@ main: kit: docs: &: {
   output: {
     path: *'' | string
     repo: *'' | string
+    create: *true | boolean
     adopt: *false | boolean
     sdkrel: *'' | string
   }
