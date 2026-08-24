@@ -283,7 +283,21 @@ function configDefinition(model, targetname) {
     });
     const featureDefs = {};
     (0, jostraca_1.each)(feature, (f) => {
-        featureDefs[f.name] = f.config || {};
+        // The feature's declared config (its `options` key set with typed
+        // defaults) PLUS its transport role (station design §8.4): 'base'
+        // replaces the transport slot, 'wrap' wraps it, 'none' is hook-only.
+        // Station's descriptor (normalizeDescriptor in voxgig/station) reads
+        // `transport` beside `options` to validate the resolved feature order.
+        // The role is DECLARED in the feature model, never inferred - an empty
+        // `hook: {}` is wrong for station, which both wraps and dispatches
+        // hooks. Additive: a model unified without the schema's `transport`
+        // default simply omits the key, which station tolerates by degrading
+        // its role checks to nothing.
+        const fdef = { ...(f.config || {}) };
+        if (null != f.transport && '' !== f.transport) {
+            fdef.transport = String(f.transport);
+        }
+        featureDefs[f.name] = fdef;
     });
     const options = { base: baseUrl };
     if (0 < svars.length) {

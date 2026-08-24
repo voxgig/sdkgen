@@ -16,6 +16,7 @@ import {
   phpSafeTypeName,
   serverVariables,
   hasServerVariables,
+  stationLibrary,
   originName,
   goModule,
   packageName,
@@ -144,6 +145,71 @@ describe('helpers', () => {
       const out = collectDeps(makeModel(), 'go', targetDeps)
       const a = out.find((d) => d.name === 'github.com/t/a')
       strictEqual(a?.raw.replace, './local')
+    })
+  })
+
+
+  describe('stationLibrary', () => {
+
+    // The station self-registration seam (station design §6.2 path 1):
+    // which library package the generated MAIN soft-requires, read from
+    // the station feature model's own deps block — the same entry
+    // collectDeps flows into the manifest — never hardcoded per language.
+    function makeStationModel(station?: any) {
+      return {
+        main: {
+          kit: {
+            feature: {
+              test: { active: true },
+              ...(undefined === station ? {} : { station }),
+            },
+          },
+        },
+      } as any
+    }
+
+    test('active station feature with an active dep names the library', () => {
+      const model = makeStationModel({
+        active: true,
+        deps: {
+          ts: { '@voxgig/station': { active: true, version: '>=0.0.1' } },
+          js: { '@voxgig/station-js': { active: true, version: '>=0.0.1' } },
+        },
+      })
+      strictEqual(stationLibrary(model, 'ts'), '@voxgig/station')
+      strictEqual(stationLibrary(model, 'js'), '@voxgig/station-js')
+    })
+
+    test('no station feature, no library', () => {
+      strictEqual(stationLibrary(makeStationModel(), 'ts'), undefined)
+    })
+
+    test('an INACTIVE station feature emits nothing', () => {
+      // Inactive means not shipped: no source, no config entry, no
+      // manifest dep — so no registration either.
+      const model = makeStationModel({
+        active: false,
+        deps: { ts: { '@voxgig/station': { active: true, version: '*' } } },
+      })
+      strictEqual(stationLibrary(model, 'ts'), undefined)
+    })
+
+    test('a target with no station dep emits nothing (vendored targets)', () => {
+      const model = makeStationModel({
+        active: true,
+        deps: { ts: { '@voxgig/station': { active: true, version: '*' } } },
+      })
+      strictEqual(stationLibrary(model, 'c'), undefined)
+    })
+
+    test('inactive dep entries are not the library', () => {
+      // collectDeps semantics: feature deps count only when explicitly
+      // active, so the require target is exactly what the manifest carries.
+      const model = makeStationModel({
+        active: true,
+        deps: { ts: { '@voxgig/station': { version: '*' } } },
+      })
+      strictEqual(stationLibrary(model, 'ts'), undefined)
     })
   })
 

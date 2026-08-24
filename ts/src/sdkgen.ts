@@ -73,6 +73,7 @@ import {
   srcFeatureExcludes,
 } from './helpers/featureSource'
 import type { FeatureSource } from './helpers/featureSource'
+import { stationLibrary } from './helpers/station'
 import {
   definitionPath,
   definitionFolder,
@@ -1107,6 +1108,7 @@ export {
   featureExcludes,
   fullsetExcludes,
   srcFeatureExcludes,
+  stationLibrary,
 
   definitionPath,
   definitionFolder,
