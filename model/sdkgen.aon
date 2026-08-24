@@ -411,6 +411,16 @@ main: kit: feature: &: {
   # TODO: version '0.0.1' | semver # where semver is a string format type as per semver.org
   version: *'0.0.1' | string
 
+  # Transport role (station design §8.4): how the feature relates to the
+  # transport slot. 'base' REPLACES ctx.utility.fetcher outright (only the
+  # `test` feature); 'wrap' wraps it in init() (netsim, retry, cache,
+  # ratelimit, timeout, proxy - and station's own feature); 'none' is
+  # hook-only. Carried into the embedded config by configDefinition so
+  # station can validate the resolved feature order. Declared, never
+  # inferred: the obvious signal, an empty `hook: {}`, is wrong for a
+  # feature that both wraps AND dispatches hooks (station does).
+  transport: *'none' | 'base' | 'wrap'
+
   hook: &: {
    active: *false | boolean
    await: *false | boolean
