@@ -359,6 +359,50 @@ describe('external target', () => {
   })
 
 
+  // An out-of-tree target may belong to a separate fleet whose repos are not
+  // checked out on every machine. It must stay active in the model — so it is
+  // available whenever its repo IS present — without generation fabricating
+  // a new checkout when it is absent.
+  test('`output.create: false` skips an absent destination without deactivating the target',
+    async () => {
+      const sink: any[] = []
+      const { inside, outside } = await generate(
+        ['ts', 'seneca-provider'], 'seneca-provider',
+        "main: kit: target: 'seneca-provider': output: create: false",
+        { sink })
+
+      deepStrictEqual(Object.keys(outside), [],
+        'an absent optional destination was created and generated into')
+
+      const strays = Object.keys(inside)
+        .filter((p) => p.startsWith('seneca-provider/'))
+      deepStrictEqual(strays, [],
+        'the skipped external target fell back to generating in-tree')
+
+      ok(Object.keys(inside).some((p) => p.startsWith('ts/')),
+        'the rest of the SDK stopped generating')
+
+      const skip = sink.find((e: any) =>
+        'generate-external-skip' === e.point &&
+        'seneca-provider' === e.target)
+      ok(null != skip, 'the skipped target was not reported')
+      ok(String(skip.note).includes('output.create=false'),
+        'the skip report does not name the controlling setting: ' + skip.note)
+    })
+
+
+  test('`output.create: false` still generates when the destination exists',
+    async () => {
+      const { outside } = await generate(
+        ['ts', 'seneca-provider'], 'seneca-provider',
+        "main: kit: target: 'seneca-provider': output: create: false",
+        { seed: { [OUT + '/.git/HEAD']: 'ref: refs/heads/main\n' } })
+
+      ok(null != outside['package.json'],
+        'an existing destination was skipped')
+    })
+
+
   // Dry run is a hard rule for every write path (AGENTS.md), and the external
   // pass is the one that writes outside the repo — the place where "let me
   // see what this would do first" matters most.
@@ -582,6 +626,20 @@ describe('external target', () => {
       strictEqual(files[OUT + '/package.json'], '{"name":"someone-elses-repo"}',
         'the unrelated repo was overwritten anyway')
     })
+
+
+    test('`output.create: false` does not bypass guards for an existing destination',
+      async () => {
+        const { msg } = await refuse(['ts', 'seneca-provider'],
+          { 'seneca-provider': OUT },
+          {
+            extra: "main: kit: target: 'seneca-provider': output: create: false",
+            seed: { [OUT + '/README.md']: '# Existing repository\n' },
+          })
+
+        ok(msg.includes('adopt'),
+          'an existing optional checkout bypassed the ownership guard:\n' + msg)
+      })
 
 
     // ...and the escape hatch, which is a model DECLARATION rather than a

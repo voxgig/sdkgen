@@ -550,7 +550,7 @@ emitted broken source reached the fleet unchallenged.
   (manifest attribution — hand-edited credit is DELETED by the next
   regeneration), `main.kit.test.live.strict`, `main.kit.feature` (which feature
   source ships), and per target `module.{path,package,goversion}`,
-  `publish.{version,registry.package}`, `output.{path,repo,adopt,sdkrel}`
+  `publish.{version,registry.package}`, `output.{path,repo,create,adopt,sdkrel}`
   (generate into another repo). All of them are catalogued in
   [reference/model](./docs/reference/model.md#what-a-project-declares-about-itself).
   A project extends a target with `registerComponent('X')` ->

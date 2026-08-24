@@ -331,7 +331,12 @@ function SdkGen(opts) {
         // so resolve it ONCE: every destination is compared against it, and a
         // comparison between a relative and an absolute path is meaningless.
         const root = node_path_1.default.resolve(folder);
-        const external = externalItems(model, root, ['target', 'docs']);
+        // Snapshot the decision before preflight. In particular, do not check a
+        // missing optional destination once for safety and AGAIN before writing:
+        // if it appeared between those checks, the pass could write into content
+        // that was never ownership-validated.
+        const external = externalItems(model, root, ['target', 'docs'])
+            .map((ext) => ({ ...ext, skip: externalSkipReason(ext, fs) }));
         // Before ANY file is written, in-tree included: a destination that turns
         // out to be wrong must abort the whole generation, not leave half of it
         // done. See checkExternalFolders.
@@ -397,17 +402,13 @@ function SdkGen(opts) {
             (0, util_2.showChanges)(jopts.log, 'generate-docs-result', dres, node_path_1.default.dirname(process.cwd()));
         }
         for (const ext of external) {
-            // `active: false` is the project's only lever to stop the generator
-            // writing into a repo it does not own, so it has to be honoured HERE —
-            // the consumer Root iterates targets raw and does not check it. The
-            // target is still removed from the in-tree model above (withoutExternal
-            // takes every `output: path` target, active or not), so switching one
-            // off generates it nowhere rather than relocating it into
-            // `<sdk-repo>/<target>/`.
-            if (!ext.active) {
+            // A skipped external target is still removed from the in-tree model
+            // above: neither `active: false` nor a missing `output.create: false`
+            // destination may relocate it into `<sdk-repo>/<target>/`.
+            if (null != ext.skip) {
                 log.info({
                     point: 'generate-external-skip', target: ext.name, folder: ext.folder,
-                    note: ext.name + ' inactive, not generated'
+                    note: ext.skip
                 });
                 continue;
             }
@@ -649,6 +650,28 @@ function externalItems(model, folder, kinds) {
         }));
     });
 }
+// Why this external item should not get a generation pass RIGHT NOW.
+//
+// `active: false` disables the target itself. `output.create: false` does
+// something deliberately narrower: the target stays active in the model but
+// an absent destination is treated as an optional checkout rather than a
+// folder sdkgen should fabricate. If that repo is checked out later, the same
+// unchanged model generates it normally.
+//
+// Snapshotted into ExternalPlan because both the pre-write destination guard
+// and the actual pass must make the identical decision. If the guard skipped
+// an item that the pass did not, generation could write outside the project
+// without any of the ownership checks below.
+function externalSkipReason(ext, fs) {
+    if (!ext.active) {
+        return ext.name + ' inactive, not generated';
+    }
+    if (false === ext.target.output?.create && !fs.existsSync(ext.folder)) {
+        return ext.name + ' output folder does not exist and ' +
+            'output.create=false, not generated';
+    }
+    return null;
+}
 // The `.jostraca` bookkeeping tree (meta log + a duplicate of the last
 // generated output) that jostraca leaves at an output root. It is the only
 // on-disk evidence that this toolchain has generated into a directory
@@ -688,10 +711,10 @@ const EXTERNAL_MARKER = '.jostraca';
 function checkExternalFolders(external, root, fs) {
     const claimed = {};
     for (const ext of external) {
-        // An inactive target writes nothing, so its destination is not a hazard —
-        // and switching a target off must not require keeping its now-unused
-        // path valid.
-        if (!ext.active)
+        // A skipped item writes nothing, so its destination is not a hazard. The
+        // snapshotted decision gates the actual pass too; keeping it identical is
+        // what makes the pre-write check complete.
+        if (null != ext.skip)
             continue;
         const label = ext.kind.charAt(0).toUpperCase() + ext.kind.slice(1);
         const where = label + ' "' + ext.name + '" has output path "' +
