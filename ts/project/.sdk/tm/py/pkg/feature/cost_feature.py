@@ -89,6 +89,15 @@ class ProjectNameCostFeature(ProjectNameBaseFeature):
     def PrePoint(self, ctx):
         if not self.active:
             return
+
+        # Mark the context as running through the pipeline, so _charge knows a
+        # PreDone is coming and does not commit the spend itself.
+        pending = getattr(ctx, "_cost_pending", None)
+        if pending is None:
+            pending = self._new_pending()
+            ctx._cost_pending = pending
+        pending["piped"] = True
+
         limit = self._limit()
         if limit <= 0:
             return
@@ -111,13 +120,22 @@ class ProjectNameCostFeature(ProjectNameBaseFeature):
         return err
 
     def _charge(self, ctx, url, fetchdef, inner):
-        res, err = inner(ctx, url, fetchdef)
+        # A rejecting transport still costs an attempt. Without this, a run of
+        # connection-level failures under `retry` (which catches and tries
+        # again) would be charged nothing at all, and an onBudget "deny"
+        # ceiling could never stop it.
+        threw = None
+        try:
+            res, err = inner(ctx, url, fetchdef)
+        except Exception as ex:  # noqa: BLE001 - re-raised below
+            threw = ex
+            res, err = None, ex
 
         amount, source = self._price(ctx, res)
 
         pending = getattr(ctx, "_cost_pending", None)
         if pending is None:
-            pending = {"attempts": 0, "amount": 0, "source": "none"}
+            pending = self._new_pending()
             ctx._cost_pending = pending
 
         pending["attempts"] += 1
@@ -125,15 +143,51 @@ class ProjectNameCostFeature(ProjectNameBaseFeature):
         # Accumulated here, committed once at PreDone. Adding each attempt to
         # the running total and then subtracting it again when a body figure
         # supersedes it loses precision to catastrophic cancellation.
+        #
+        # Reported and estimated are kept apart per ATTEMPT: a 503 priced from
+        # the rate table followed by a 200 carrying the cost header is part
+        # estimate, part reported, and collapsing both into the final
+        # attempt's category would corrupt the split.
         pending["amount"] += amount
+        key = "reported" if source in ("header", "body") else "estimated"
+        pending[key] += amount
         pending["source"] = source
 
         self.client._cost["total"]["attempts"] += 1
 
+        # direct() and graphql() reach the transport without dispatching any
+        # pipeline hooks, so there is no PrePoint to gate on and no PreDone to
+        # commit. Their spend is committed here, or it would never be counted.
+        # `piped` is set by PrePoint, so its absence is the signal.
+        if not pending["piped"]:
+            self._commit(ctx, pending, "_", "direct")
+            del ctx._cost_pending
+
+        if threw is not None:
+            raise threw
+
         return res, err
+
+    def _new_pending(self):
+        return {
+            "attempts": 0, "amount": 0,
+            "reported": 0, "estimated": 0,
+            "source": "none", "piped": False,
+        }
 
     # Attribute the operation's spend once the call is finished.
     def PreDone(self, ctx):
+        self._finish(ctx)
+
+    # A failed operation still spent the money. When the pipeline raises,
+    # PreDone never runs, so without this the attempts are counted and the
+    # spend is not, and a budget could never see the cost of a failed call.
+    # Whichever hook fires first consumes the pending entry, so it commits
+    # exactly once.
+    def PreUnexpected(self, ctx):
+        self._finish(ctx)
+
+    def _finish(self, ctx):
         if not self.active:
             return
         pending = getattr(ctx, "_cost_pending", None)
@@ -141,25 +195,36 @@ class ProjectNameCostFeature(ProjectNameBaseFeature):
             return
         del ctx._cost_pending
 
-        cost = self.client._cost
-
-        amount = pending["amount"]
-        source = pending["source"]
-
-        # A body figure prices the whole call, so it replaces the per-attempt
-        # estimate rather than adding to it.
-        body = self._body(ctx)
-        if body is not None:
-            amount = body
-            source = "body"
-
-        self._spend(cost, amount, source)
-
         entity = "_"
         opname = "_"
         if ctx.op is not None:
             entity = ctx.op.entity or "_"
             opname = ctx.op.name or "_"
+
+        self._commit(ctx, pending, entity, opname)
+
+    # Commit one operation's spend: totals, budget, per-op and per-actor
+    # attribution, and the record. Shared by _finish and the raw-request path
+    # in _charge, which has no PreDone to reach.
+    def _commit(self, ctx, pending, entity, opname):
+        cost = self.client._cost
+
+        amount = pending["amount"]
+        reported = pending["reported"]
+        estimated = pending["estimated"]
+        source = pending["source"]
+
+        # A body figure prices the whole call, so it replaces the per-attempt
+        # estimate rather than adding to it, and being server-stated the whole
+        # amount counts as reported.
+        body = self._body(ctx)
+        if body is not None:
+            amount = body
+            reported = body
+            estimated = 0
+            source = "body"
+
+        self._spend(cost, amount, reported, estimated)
 
         actor = getattr(ctx.ctrl, "actor", None) if ctx.ctrl is not None else None
         if actor is None:
@@ -245,12 +310,10 @@ class ProjectNameCostFeature(ProjectNameBaseFeature):
             return None
         return num * self._per_unit()
 
-    def _spend(self, cost, amount, source):
+    def _spend(self, cost, amount, reported, estimated):
         cost["total"]["amount"] += amount
-        if source in ("header", "body"):
-            cost["total"]["reported"] += amount
-        else:
-            cost["total"]["estimated"] += amount
+        cost["total"]["reported"] += reported
+        cost["total"]["estimated"] += estimated
 
         limit = cost["budget"]["limit"]
         cost["budget"]["spent"] = cost["total"]["amount"]

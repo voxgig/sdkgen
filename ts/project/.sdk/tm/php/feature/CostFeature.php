@@ -93,6 +93,15 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
         if (!$this->active) {
             return;
         }
+
+        // Mark the context as running through the pipeline, so _charge knows a
+        // PreDone is coming and does not commit the spend itself.
+        if ($this->pending !== null) {
+            $entry = isset($this->pending[$ctx]) ? $this->pending[$ctx] : $this->_newPending();
+            $entry['piped'] = true;
+            $this->pending[$ctx] = $entry;
+        }
+
         $limit = $this->_limit();
         if ($limit <= 0.0) {
             return;
@@ -122,20 +131,37 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
 
     private function _charge(ProjectNameContext $ctx, string $url, array $fetchdef, callable $inner): array
     {
-        [$res, $err] = $inner($ctx, $url, $fetchdef);
+        // A rejecting transport still costs an attempt. Without this, a run of
+        // connection-level failures under `retry` (which catches and tries
+        // again) would be charged nothing at all, and an onBudget 'deny'
+        // ceiling could never stop it.
+        $threw = null;
+        try {
+            [$res, $err] = $inner($ctx, $url, $fetchdef);
+        } catch (\Throwable $ex) {
+            $threw = $ex;
+            $res = null;
+            $err = $ex;
+        }
 
         [$amount, $source] = $this->_price($ctx, $res);
 
         $entry = ($this->pending !== null && isset($this->pending[$ctx]))
             ? $this->pending[$ctx]
-            : ['attempts' => 0, 'amount' => 0.0, 'source' => 'none'];
+            : $this->_newPending();
 
         $entry['attempts']++;
 
         // Accumulated here, committed once at PreDone. Adding each attempt to
         // the running total and then subtracting it again when a body figure
         // supersedes it loses precision to catastrophic cancellation.
+        //
+        // Reported and estimated are kept apart per ATTEMPT: a 503 priced from
+        // the rate table followed by a 200 carrying the cost header is part
+        // estimate, part reported, and collapsing both into the final
+        // attempt's category would corrupt the split.
         $entry['amount'] += $amount;
+        $entry[('header' === $source || 'body' === $source) ? 'reported' : 'estimated'] += $amount;
         $entry['source'] = $source;
 
         if ($this->pending !== null) {
@@ -147,11 +173,50 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
         $cost['total']['attempts']++;
         $client->_cost = $cost;
 
+        // direct() and graphql() reach the transport without dispatching any
+        // pipeline hooks, so there is no PrePoint to gate on and no PreDone to
+        // commit. Their spend is committed here, or it would never be counted.
+        // `piped` is set by PrePoint, so its absence is the signal.
+        if (!$entry['piped']) {
+            $this->_commit($ctx, $entry, '_', 'direct');
+            if ($this->pending !== null) {
+                unset($this->pending[$ctx]);
+            }
+        }
+
+        if ($threw !== null) {
+            throw $threw;
+        }
+
         return [$res, $err];
+    }
+
+    private function _newPending(): array
+    {
+        return [
+            'attempts' => 0, 'amount' => 0.0,
+            'reported' => 0.0, 'estimated' => 0.0,
+            'source' => 'none', 'piped' => false,
+        ];
     }
 
     // Attribute the operation's spend once the call is finished.
     public function PreDone(ProjectNameContext $ctx): void
+    {
+        $this->_finish($ctx);
+    }
+
+    // A failed operation still spent the money. When the pipeline throws,
+    // PreDone never runs, so without this the attempts are counted and the
+    // spend is not, and a budget could never see the cost of a failed call.
+    // Whichever hook fires first consumes the pending entry, so it commits
+    // exactly once.
+    public function PreUnexpected(ProjectNameContext $ctx): void
+    {
+        $this->_finish($ctx);
+    }
+
+    private function _finish(ProjectNameContext $ctx): void
     {
         if (!$this->active || $this->pending === null || !isset($this->pending[$ctx])) {
             return;
@@ -159,24 +224,37 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
         $entry = $this->pending[$ctx];
         unset($this->pending[$ctx]);
 
+        $entity = ($ctx->op !== null && $ctx->op->entity !== '') ? $ctx->op->entity : '_';
+        $opname = ($ctx->op !== null && $ctx->op->name !== '') ? $ctx->op->name : '_';
+
+        $this->_commit($ctx, $entry, $entity, $opname);
+    }
+
+    // Commit one operation's spend: totals, budget, per-op and per-actor
+    // attribution, and the record. Shared by _finish and the raw-request path
+    // in _charge, which has no PreDone to reach.
+    private function _commit(ProjectNameContext $ctx, array $entry, string $entity, string $opname): void
+    {
         $client = $this->client;
         $cost = $client->_cost;
 
         $amount = (float)$entry['amount'];
+        $reported = (float)$entry['reported'];
+        $estimated = (float)$entry['estimated'];
         $source = (string)$entry['source'];
 
         // A body figure prices the whole call, so it replaces the per-attempt
-        // estimate rather than adding to it.
+        // estimate rather than adding to it, and being server-stated the whole
+        // amount counts as reported.
         $body = $this->_body($ctx);
         if ($body !== null) {
             $amount = $body;
+            $reported = $body;
+            $estimated = 0.0;
             $source = 'body';
         }
 
-        $cost = $this->_spend($cost, $amount, $source);
-
-        $entity = ($ctx->op !== null && $ctx->op->entity !== '') ? $ctx->op->entity : '_';
-        $opname = ($ctx->op !== null && $ctx->op->name !== '') ? $ctx->op->name : '_';
+        $cost = $this->_spend($cost, $amount, $reported, $estimated);
 
         // ctrl->actor is an optional extension property on the control
         // object, same as the audit feature reads.
@@ -281,14 +359,11 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
         return (float)$val * $this->_perUnit();
     }
 
-    private function _spend(array $cost, float $amount, string $source): array
+    private function _spend(array $cost, float $amount, float $reported, float $estimated): array
     {
         $cost['total']['amount'] += $amount;
-        if ('header' === $source || 'body' === $source) {
-            $cost['total']['reported'] += $amount;
-        } else {
-            $cost['total']['estimated'] += $amount;
-        }
+        $cost['total']['reported'] += $reported;
+        $cost['total']['estimated'] += $estimated;
 
         $limit = (float)$cost['budget']['limit'];
         $cost['budget']['spent'] = $cost['total']['amount'];
