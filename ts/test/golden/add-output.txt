@@ -1299,7 +1299,7 @@ src/cmp/php/MainEntity_php.ts 29efa6a7dcd7
 src/cmp/php/Main_php.ts 86f97ac59ce6
 src/cmp/php/Package_php.ts 36b8fa854584
 src/cmp/php/ReadmeEntity_php.ts a4d920ba0798
-src/cmp/php/ReadmeExamplesTest_php.ts 7f0132034be3
+src/cmp/php/ReadmeExamplesTest_php.ts 0902cc71694d
 src/cmp/php/ReadmeExplanation_php.ts a7dc536552d1
 src/cmp/php/ReadmeHowto_php.ts bc958ce27d2a
 src/cmp/php/ReadmeInstall_php.ts 5f410370b03a
@@ -1397,7 +1397,7 @@ src/cmp/py/MainEntity_py.ts 853d7533f8fb
 src/cmp/py/Main_py.ts 6bc62f559d27
 src/cmp/py/Package_py.ts f2b8917726e8
 src/cmp/py/ReadmeEntity_py.ts 02b2a32c0043
-src/cmp/py/ReadmeExamplesTest_py.ts 56c33b34a08f
+src/cmp/py/ReadmeExamplesTest_py.ts 6f128f0c662b
 src/cmp/py/ReadmeExplanation_py.ts 1d1bb302dbfd
 src/cmp/py/ReadmeHowto_py.ts 994ac64c90e2
 src/cmp/py/ReadmeInstall_py.ts aa3941eb8a77
@@ -1522,7 +1522,7 @@ src/cmp/rb/MainEntity_rb.ts a88eedc19290
 src/cmp/rb/Main_rb.ts a81c0395a58d
 src/cmp/rb/Package_rb.ts ce128d510e7c
 src/cmp/rb/ReadmeEntity_rb.ts 03a52257bfc5
-src/cmp/rb/ReadmeExamplesTest_rb.ts b7cd5de1a57c
+src/cmp/rb/ReadmeExamplesTest_rb.ts b7d2352a4cc5
 src/cmp/rb/ReadmeExplanation_rb.ts 772c6cf3ce0c
 src/cmp/rb/ReadmeHowto_rb.ts e49dc5172db0
 src/cmp/rb/ReadmeInstall_rb.ts 0b486b07f788
