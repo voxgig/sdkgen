@@ -15,12 +15,61 @@ public static partial class SdkUtility
         new(@"\{([A-Za-z0-9_]+)\}", RegexOptions.Compiled);
 
 
+    /// <summary>
+    /// Replaces one utility member from <c>options.utility</c>, matching the
+    /// ts reference: a key naming a real member REPLACES it, and any other
+    /// key is attached as a custom extra. Returns false when the key names no
+    /// member or the value is not that member's delegate type, so the caller
+    /// keeps it in Custom.
+    /// </summary>
+    /// <remarks>
+    /// REFLECTION, NOT A KEYED SWITCH. The go and java ports list every member
+    /// by hand and carry a "keep this in step with registerAll" warning,
+    /// because a utility added to one list and not the other is overridable
+    /// there and not here. C# can read the field set off the type itself, so
+    /// the list cannot drift, and FieldType.IsInstanceOfType is a real check
+    /// rather than an unchecked cast - a wrongly-shaped value falls through to
+    /// Custom instead of throwing later in the pipeline.
+    ///
+    /// Only a PUBLIC name may replace a member. Option keys are camelCase, as
+    /// ts spells them, and fields here are PascalCase; public names carry no
+    /// underscore, so an underscore means the caller named something of their
+    /// own rather than a member.
+    /// </remarks>
+    internal static bool OverrideUtil(Utility utility, string key, object? val)
+    {
+        if (string.IsNullOrEmpty(key) || key.Contains('_'))
+        {
+            return false;
+        }
+
+        var name = char.ToUpperInvariant(key[0]) + key.Substring(1);
+        if ("Custom" == name)
+        {
+            return false;
+        }
+
+        var field = typeof(Utility).GetField(name);
+        if (null == field || null == val || !field.FieldType.IsInstanceOfType(val))
+        {
+            return false;
+        }
+
+        field.SetValue(utility, val);
+        return true;
+    }
+
     internal static Dictionary<string, object?> MakeOptionsUtil(Context ctx)
     {
         var options = ctx.Options ?? new Dictionary<string, object?>();
 
-        // Merge custom utility overrides onto the utility object.
+        // Merge utility overrides from options onto the utility object.
         // Read from original options before clone for safety.
+        //
+        // A key naming a real utility member REPLACES it; anything else is
+        // attached as a custom extra. Shelving everything in Custom - a map
+        // nothing reads - made `utility: { fetcher = ... }`, the documented
+        // transport seam, a silent no-op here while ts honoured it.
         if (Helpers.ToMapAny(options.TryGetValue("utility", out var cu) ? cu : null)
             is Dictionary<string, object?> customUtils)
         {
@@ -29,7 +78,10 @@ public static partial class SdkUtility
             {
                 foreach (var kv in customUtils)
                 {
-                    utility.Custom[kv.Key] = kv.Value;
+                    if (!OverrideUtil(utility, kv.Key, kv.Value))
+                    {
+                        utility.Custom[kv.Key] = kv.Value;
+                    }
                 }
             }
         }

@@ -171,7 +171,7 @@ tm/clojure/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
-tm/clojure/src/sdk/core.clj 6dd9d3bd9e76
+tm/clojure/src/sdk/core.clj c5a2331750b7
 tm/clojure/src/sdk/features.clj becdf18686c4
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
@@ -312,7 +312,7 @@ tm/csharp/feature/TestFeature.cs 3a085eb504ac
 tm/csharp/src/feature/README.md ddb1daf8f8fe
 tm/csharp/src/feature/base/.gitkeep e3b0c44298fc
 tm/csharp/src/feature/test/.gitkeep e3b0c44298fc
-tm/csharp/test/CustomUtilityTest.cs 38939acdfff2
+tm/csharp/test/CustomUtilityTest.cs e770f2289092
 tm/csharp/test/ExistsTest.cs 3d458c790b7c
 tm/csharp/test/FeatureHarness.cs 740ed27e3234
 tm/csharp/test/NetsimTest.cs 3c36d55e1540
@@ -332,7 +332,7 @@ tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs aa8db59afcdb
 tm/csharp/utility/MakeFetchDef.cs 89aca56837ef
-tm/csharp/utility/MakeOptions.cs edc3ee7c70a9
+tm/csharp/utility/MakeOptions.cs 8adb173abfa9
 tm/csharp/utility/MakePoint.cs c0182b4343c0
 tm/csharp/utility/MakeRequest.cs 32657a32522e
 tm/csharp/utility/MakeResponse.cs 8aa004eeaeb1
@@ -515,7 +515,7 @@ tm/elixir/lib/projectname/feature.ex a9f2c2609648
 tm/elixir/lib/projectname/feature/test.ex 072467e5d97f
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex be7274bfbcbf
+tm/elixir/lib/projectname/utility.ex d326abbed947
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -957,7 +957,7 @@ tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
 tm/kotlin/utility/Fetcher.kt 206114285747
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
-tm/kotlin/utility/MakeOptions.kt e3a1912f149d
+tm/kotlin/utility/MakeOptions.kt ab6a66e57b4b
 tm/kotlin/utility/MakePoint.kt e21c75b47c95
 tm/kotlin/utility/MakeReqRes.kt a745863aa7aa
 tm/kotlin/utility/MakeSpecUrl.kt 1b1facf0ad64
@@ -1099,7 +1099,7 @@ tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua 3234bc5e9564
 tm/lua/utility/make_fetch_def.lua f7057db76504
-tm/lua/utility/make_options.lua ea7849c5b5fd
+tm/lua/utility/make_options.lua 5a8d35fb3db4
 tm/lua/utility/make_point.lua 392961fd8351
 tm/lua/utility/make_request.lua 4ba90ee83ff3
 tm/lua/utility/make_response.lua 6255f621011a
@@ -1830,7 +1830,7 @@ tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
 tm/scala/utility/Fetcher.scala a3a1073307be
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
-tm/scala/utility/Make.scala c32b6e2b7b37
+tm/scala/utility/Make.scala 96e7fe9a934d
 tm/scala/utility/MakeSpec.scala 321cd9348d4e
 tm/scala/utility/Misc.scala bf44fcc37724
 tm/scala/utility/Prepare.scala e9c46c3ea45e
@@ -1933,7 +1933,7 @@ tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 9bc134d98639
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 667becbbc443
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 5139e01f2b4e
-tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift fa24da50c179
+tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 9d2acd96c639
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 746b4fd26f3d
 tm/swift/Sources/ProjectNameSDK/utility/Register.swift ce2198a186aa
 tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 0bb89feddaa3

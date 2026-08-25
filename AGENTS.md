@@ -274,8 +274,20 @@ Rules:
   target but `ts`/`js`, invisibly, because each `custom_utility` test asserted
   the side map rather than the behaviour. The eight targets above now map the
   option key onto the real member and replace it, keeping unknown names in
-  `custom`; the rest still shelve everything, so port that before adding a
-  runner. `ts/test/generatedcompile.test.ts` proves each lane end to end:
+  `custom`; lua, elixir, clojure, csharp, kotlin and scala now do too, swift
+  honours `fetcher` alone, and dart always did (`Utility.setUtility` is a
+  keyed switch falling through to `custom`).
+
+  **Five targets CANNOT have this seam, and that is a boundary rather than a
+  gap.** rust, c, zig, ocaml and cpp carry options in a CLOSED value union -
+  `Value::Func` is the struct library's own `(Inj, Value, str, Value) ->
+  Value` shape in rust, `Injector`/`Modify` in cpp, and c's header says
+  outright that "adding a variant to a general-purpose struct library to hold
+  SDK objects would be wrong". No caller can put a transport function into
+  those options at all, so there is nothing to remap: the seam for them is
+  `system.fetch` or a transport feature. The seam exists exactly where the
+  options container is dynamically typed, and that is the rule to reason from
+  rather than a per-target list. `ts/test/generatedcompile.test.ts` proves each lane end to end:
   generate an SDK WITH the feature, build it, run the shipped runner, and read
   the `feature.<name>: ran N of M case(s)` line every runner prints. Exit zero
   is not enough — every framework reports a fully-skipped suite as a pass. A
