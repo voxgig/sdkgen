@@ -100,6 +100,17 @@ sub init {
 sub PrePoint {
   my ($self, $ctx) = @_;
   return unless $self->{active};
+
+  # Mark the context as running through the pipeline, so charge knows a
+  # PreDone is coming and does not commit the spend itself.
+  my $addr = Scalar::Util::refaddr($ctx);
+  my $entry = $self->{pending}{$addr};
+  if (!$entry) {
+    $entry = $self->_new_pending;
+    $self->{pending}{$addr} = $entry;
+  }
+  $entry->{piped} = 1;
+
   my $limit = $self->_limit;
   return if $limit <= 0;
 
@@ -125,14 +136,31 @@ sub PrePoint {
 sub charge {
   my ($self, $ctx, $url, $fetchdef, $inner) = @_;
 
-  my ($res, $err) = $inner->($ctx, $url, $fetchdef);
+  # A dying transport still costs an attempt. Without this, a run of
+  # connection-level failures under "retry" (which traps and tries again)
+  # would be charged nothing at all, and an onBudget "deny" ceiling could
+  # never stop it.
+  my ($res, $err);
+  my $threw;
+  {
+    local $@;
+    my $ok = eval {
+      ($res, $err) = $inner->($ctx, $url, $fetchdef);
+      1;
+    };
+    if (!$ok) {
+      $threw = $@ || "cost: transport died";
+      $res = undef;
+      $err = $threw;
+    }
+  }
 
   my ($amount, $source) = $self->_price($ctx, $res);
 
   my $addr = Scalar::Util::refaddr($ctx);
   my $entry = $self->{pending}{$addr};
   if (!$entry) {
-    $entry = { 'attempts' => 0, 'amount' => 0, 'source' => 'none' };
+    $entry = $self->_new_pending;
     $self->{pending}{$addr} = $entry;
   }
 
@@ -141,43 +169,102 @@ sub charge {
   # Accumulated here, committed once at PreDone. Adding each attempt to the
   # running total and then subtracting it again when a body figure
   # supersedes it loses precision to catastrophic cancellation.
+  #
+  # Reported and estimated are kept apart per ATTEMPT: a 503 priced from the
+  # rate table followed by a 200 carrying the cost header is part estimate,
+  # part reported, and collapsing both into the final attempt's category
+  # would corrupt the split.
   $entry->{amount} += $amount;
+  my $bucket = ('header' eq $source || 'body' eq $source) ? 'reported' : 'estimated';
+  $entry->{$bucket} += $amount;
   $entry->{source} = $source;
 
   my $cost = $self->{client}{_cost};
   $cost->{total}{attempts} += 1 if $cost;
 
+  # direct() and graphql() reach the transport without dispatching any
+  # pipeline hooks, so there is no PrePoint to gate on and no PreDone to
+  # commit. Their spend is committed here, or it would never be counted.
+  # "piped" is set by PrePoint, so its absence is the signal.
+  if (!$entry->{piped}) {
+    $self->_commit($ctx, $entry, '_', 'direct');
+    delete $self->{pending}{$addr};
+  }
+
+  die $threw if defined $threw;
+
   return ($res, $err);
+}
+
+sub _new_pending {
+  my ($self) = @_;
+  return {
+    'attempts' => 0, 'amount' => 0,
+    'reported' => 0, 'estimated' => 0,
+    'source' => 'none', 'piped' => 0,
+  };
 }
 
 # Attribute the operation's spend once the call is finished.
 sub PreDone {
+  my ($self, $ctx) = @_;
+  $self->_finish($ctx);
+  return;
+}
+
+# A failed operation still spent the money. When the pipeline dies, PreDone
+# never runs, so without this the attempts are counted and the spend is not,
+# and a budget could never see the cost of a failed call. Whichever hook fires
+# first consumes the pending entry, so it commits exactly once.
+sub PreUnexpected {
+  my ($self, $ctx) = @_;
+  $self->_finish($ctx);
+  return;
+}
+
+sub _finish {
   my ($self, $ctx) = @_;
   return unless $self->{active};
   my $addr = Scalar::Util::refaddr($ctx);
   return unless exists $self->{pending}{$addr};
   my $entry = delete $self->{pending}{$addr};
 
-  my $cost = $self->{client}{_cost};
-  return unless $cost;
-
-  my $amount = $entry->{amount};
-  my $source = $entry->{source};
-
-  # A body figure prices the whole call, so it replaces the per-attempt
-  # estimate rather than adding to it.
-  my $body = $self->_body($ctx);
-  if (defined $body) {
-    $amount = $body;
-    $source = 'body';
-  }
-
-  $self->_spend($cost, $amount, $source);
-
   my $entity = ($ctx->{op} && defined $ctx->{op}{entity} && '' ne $ctx->{op}{entity})
     ? $ctx->{op}{entity} : '_';
   my $opname = ($ctx->{op} && defined $ctx->{op}{name} && '' ne $ctx->{op}{name})
     ? $ctx->{op}{name} : '_';
+
+  $self->_commit($ctx, $entry, $entity, $opname);
+  return;
+}
+
+# Commit one operation's spend: totals, budget, per-op and per-actor
+# attribution, and the record. Shared by _finish and the raw-request path in
+# charge, which has no PreDone to reach.
+sub _commit {
+  my ($self, $ctx, $entry, $entity, $opname) = @_;
+
+  my $cost = $self->{client}{_cost};
+  return unless $cost;
+
+  my $amount = $entry->{amount};
+  my $reported = $entry->{reported};
+  my $estimated = $entry->{estimated};
+  my $source = $entry->{source};
+
+  # A body figure prices the whole call, so it replaces the per-attempt
+  # estimate rather than adding to it, and being server-stated the whole
+  # amount counts as reported.
+  my $body = $self->_body($ctx);
+  if (defined $body) {
+    $amount = $body;
+    $reported = $body;
+    $estimated = 0;
+    $source = 'body';
+  }
+
+  $self->_spend($cost, $amount, $reported, $estimated);
+
   my $actor = $self->_actor($ctx);
 
   $cost->{total}{calls} += 1;
@@ -265,14 +352,10 @@ sub _body {
 }
 
 sub _spend {
-  my ($self, $cost, $amount, $source) = @_;
+  my ($self, $cost, $amount, $reported, $estimated) = @_;
   $cost->{total}{amount} += $amount;
-  if ('header' eq $source || 'body' eq $source) {
-    $cost->{total}{reported} += $amount;
-  }
-  else {
-    $cost->{total}{estimated} += $amount;
-  }
+  $cost->{total}{reported} += $reported;
+  $cost->{total}{estimated} += $estimated;
 
   my $limit = $cost->{budget}{limit};
   $cost->{budget}{spent} = $cost->{total}{amount};

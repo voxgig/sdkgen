@@ -72,7 +72,12 @@ public class CostFeature extends BaseFeature {
   private static class CostPending {
     int attempts = 0;
     double amount = 0.0;
+    double reported = 0.0;
+    double estimated = 0.0;
     String source = "none";
+    // Set by prePoint. Its absence means the call never entered the pipeline
+    // (direct/graphql), so charge commits the spend itself.
+    boolean piped = false;
   }
 
   private static final String COST_PENDING_KEY = "cost_pending";
@@ -115,6 +120,14 @@ public class CostFeature extends BaseFeature {
     if (!this.active) {
       return;
     }
+
+    // Mark the context as running through the pipeline, so charge knows a
+    // preDone is coming and does not commit the spend itself.
+    Object raw = ctx.out.get(COST_PENDING_KEY);
+    CostPending pending = (raw instanceof CostPending) ? (CostPending) raw : new CostPending();
+    pending.piped = true;
+    ctx.out.put(COST_PENDING_KEY, pending);
+
     double limit = this.budget.limit;
     if (limit <= 0.0 || this.total.amount < limit) {
       return;
@@ -138,7 +151,17 @@ public class CostFeature extends BaseFeature {
   private Object charge(Context ctx, String url, Map<String, Object> fetchdef,
       Utility.FetcherFn inner) {
 
-    Object res = inner.fetch(ctx, url, fetchdef);
+    // A throwing transport still costs an attempt. Without this, a run of
+    // connection-level failures under `retry` (which catches and tries
+    // again) would be charged nothing at all, and an onBudget "deny" ceiling
+    // could never stop it.
+    Object res = null;
+    RuntimeException threw = null;
+    try {
+      res = inner.fetch(ctx, url, fetchdef);
+    } catch (RuntimeException ex) {
+      threw = ex;
+    }
 
     double[] priced = new double[1];
     String source = price(ctx, res, priced);
@@ -152,18 +175,53 @@ public class CostFeature extends BaseFeature {
     // Accumulated here, committed once at preDone. Adding each attempt to
     // the running total and then subtracting it again when a body figure
     // supersedes it loses precision to catastrophic cancellation.
+    //
+    // Reported and estimated are kept apart per ATTEMPT: a 503 priced from
+    // the rate table followed by a 200 carrying the cost header is part
+    // estimate, part reported, and collapsing both into the final attempt's
+    // category would corrupt the split.
     pending.amount += priced[0];
+    if ("header".equals(source) || "body".equals(source)) {
+      pending.reported += priced[0];
+    } else {
+      pending.estimated += priced[0];
+    }
     pending.source = source;
 
     this.total.attempts++;
+
+    // direct() and graphql() reach the transport without dispatching any
+    // pipeline hooks, so there is no prePoint to gate on and no preDone to
+    // commit. Their spend is committed here, or it would never be counted.
+    if (!pending.piped) {
+      commit(ctx, pending, "_", "direct");
+      ctx.out.remove(COST_PENDING_KEY);
+    }
+
+    if (threw != null) {
+      throw threw;
+    }
 
     return res;
   }
 
   // Attribute the operation's spend once the call is finished.
   @Override
-  @SuppressWarnings("unchecked")
   public void preDone(Context ctx) {
+    finish(ctx);
+  }
+
+  // A failed operation still spent the money. When the pipeline errors,
+  // preDone never runs, so without this the attempts are counted and the
+  // spend is not, and a budget could never see the cost of a failed call.
+  // Whichever hook fires first consumes the pending entry, so it commits
+  // exactly once.
+  @Override
+  public void preUnexpected(Context ctx) {
+    finish(ctx);
+  }
+
+  private void finish(Context ctx) {
     if (!this.active) {
       return;
     }
@@ -174,23 +232,36 @@ public class CostFeature extends BaseFeature {
     ctx.out.remove(COST_PENDING_KEY);
     CostPending pending = (CostPending) raw;
 
-    double amount = pending.amount;
-    String source = pending.source;
-
-    // A body figure prices the whole call, so it replaces the per-attempt
-    // estimate rather than adding to it.
-    Double body = bodyAmount(ctx);
-    if (body != null) {
-      amount = body;
-      source = "body";
-    }
-
-    spend(amount, source);
-
     String entity = (ctx.op != null && ctx.op.entity != null && !"".equals(ctx.op.entity))
         ? ctx.op.entity : "_";
     String opname = (ctx.op != null && ctx.op.name != null && !"".equals(ctx.op.name))
         ? ctx.op.name : "_";
+
+    commit(ctx, pending, entity, opname);
+  }
+
+  // Commit one operation's spend: totals, budget, per-op and per-actor
+  // attribution, and the record. Shared by finish and the raw-request path in
+  // charge, which has no preDone to reach.
+  @SuppressWarnings("unchecked")
+  private void commit(Context ctx, CostPending pending, String entity, String opname) {
+    double amount = pending.amount;
+    double reported = pending.reported;
+    double estimated = pending.estimated;
+    String source = pending.source;
+
+    // A body figure prices the whole call, so it replaces the per-attempt
+    // estimate rather than adding to it, and being server-stated the whole
+    // amount counts as reported.
+    Double body = bodyAmount(ctx);
+    if (body != null) {
+      amount = body;
+      reported = body;
+      estimated = 0.0;
+      source = "body";
+    }
+
+    spend(amount, reported, estimated);
 
     String actor = "anonymous";
     String optActor = FeatureOptions.foptStr(this.options, "actor", "");
@@ -293,13 +364,10 @@ public class CostFeature extends BaseFeature {
     return n * perUnit();
   }
 
-  private void spend(double amount, String source) {
+  private void spend(double amount, double reported, double estimated) {
     this.total.amount += amount;
-    if ("header".equals(source) || "body".equals(source)) {
-      this.total.reported += amount;
-    } else {
-      this.total.estimated += amount;
-    }
+    this.total.reported += reported;
+    this.total.estimated += estimated;
 
     double limit = this.budget.limit;
     this.budget.spent = this.total.amount;

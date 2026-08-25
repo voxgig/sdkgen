@@ -70,9 +70,14 @@ type CostBudget struct {
 // Per-operation accumulator, carried on ctx.Out between the transport wrap
 // and PreDone.
 type costPending struct {
-	attempts int
-	amount   float64
-	source   string
+	attempts  int
+	amount    float64
+	reported  float64
+	estimated float64
+	source    string
+	// Set by PrePoint. Its absence means the call never entered the pipeline
+	// (direct/graphql), so charge commits the spend itself.
+	piped bool
 }
 
 const costPendingKey = "cost_pending"
@@ -118,6 +123,16 @@ func (f *CostFeature) PrePoint(ctx *core.Context) {
 	if !f.Active {
 		return
 	}
+
+	// Mark the context as running through the pipeline, so charge knows a
+	// PreDone is coming and does not commit the spend itself.
+	pending, ok := ctx.Out[costPendingKey].(*costPending)
+	if !ok || pending == nil {
+		pending = &costPending{source: "none"}
+		ctx.Out[costPendingKey] = pending
+	}
+	pending.piped = true
+
 	limit := f.Budget.Limit
 	if limit <= 0 {
 		return
@@ -159,16 +174,50 @@ func (f *CostFeature) charge(ctx *core.Context, url string, fetchdef map[string]
 	// Accumulated here, committed once at PreDone. Adding each attempt to
 	// the running total and then subtracting it again when a body figure
 	// supersedes it loses precision to catastrophic cancellation.
+	//
+	// Reported and estimated are kept apart per ATTEMPT: a 503 priced from
+	// the rate table followed by a 200 carrying the cost header is part
+	// estimate, part reported, and collapsing both into the final attempt's
+	// category would corrupt the split.
+	//
+	// A failed transport is an error VALUE here, not a panic, so it already
+	// reaches this point and is priced from the table or unit — no separate
+	// rescue is needed, unlike the ts/js ports.
 	pending.amount += amount
+	if source == "header" || source == "body" {
+		pending.reported += amount
+	} else {
+		pending.estimated += amount
+	}
 	pending.source = source
 
 	f.Total.Attempts++
+
+	// direct() and graphql() reach the transport without dispatching any
+	// pipeline hooks, so there is no PrePoint to gate on and no PreDone to
+	// commit. Their spend is committed here, or it would never be counted.
+	if !pending.piped {
+		f.commit(ctx, pending, "_", "direct")
+		delete(ctx.Out, costPendingKey)
+	}
 
 	return res, err
 }
 
 // PreDone attributes the operation's spend once the call is finished.
 func (f *CostFeature) PreDone(ctx *core.Context) {
+	f.finish(ctx)
+}
+
+// PreUnexpected commits a FAILED operation's spend. When the pipeline errors,
+// PreDone never runs, so without this the attempts are counted and the spend
+// is not, and a budget could never see the cost of a failed call. Whichever
+// hook fires first consumes the pending entry, so it commits exactly once.
+func (f *CostFeature) PreUnexpected(ctx *core.Context) {
+	f.finish(ctx)
+}
+
+func (f *CostFeature) finish(ctx *core.Context) {
 	if !f.Active {
 		return
 	}
@@ -178,24 +227,36 @@ func (f *CostFeature) PreDone(ctx *core.Context) {
 	}
 	delete(ctx.Out, costPendingKey)
 
-	amount := pending.amount
-	source := pending.source
-
-	// A body figure prices the whole call, so it replaces the per-attempt
-	// estimate rather than adding to it.
-	if body, has := f.body(ctx); has {
-		amount = body
-		source = "body"
-	}
-
-	f.spend(amount, source)
-
 	entity := "_"
 	opname := "_"
 	if ctx.Op != nil {
 		entity = ctx.Op.Entity
 		opname = ctx.Op.Name
 	}
+
+	f.commit(ctx, pending, entity, opname)
+}
+
+// commit records one operation's spend: totals, budget, per-op and per-actor
+// attribution, and the record. Shared by finish and the raw-request path in
+// charge, which has no PreDone to reach.
+func (f *CostFeature) commit(ctx *core.Context, pending *costPending, entity, opname string) {
+	amount := pending.amount
+	reported := pending.reported
+	estimated := pending.estimated
+	source := pending.source
+
+	// A body figure prices the whole call, so it replaces the per-attempt
+	// estimate rather than adding to it, and being server-stated the whole
+	// amount counts as reported.
+	if body, has := f.body(ctx); has {
+		amount = body
+		reported = body
+		estimated = 0
+		source = "body"
+	}
+
+	f.spend(amount, reported, estimated)
 
 	actor := "anonymous"
 	if a := foptStr(f.options, "actor", ""); a != "" {
@@ -310,13 +371,10 @@ func (f *CostFeature) body(ctx *core.Context) (float64, bool) {
 	return 0, false
 }
 
-func (f *CostFeature) spend(amount float64, source string) {
+func (f *CostFeature) spend(amount, reported, estimated float64) {
 	f.Total.Amount += amount
-	if source == "header" || source == "body" {
-		f.Total.Reported += amount
-	} else {
-		f.Total.Estimated += amount
-	}
+	f.Total.Reported += reported
+	f.Total.Estimated += estimated
 
 	limit := f.Budget.Limit
 	f.Budget.Spent = f.Total.Amount
