@@ -24,7 +24,7 @@ import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
-import { execFileSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 
 import { memfs } from 'memfs'
 
@@ -83,18 +83,28 @@ function linkDeps(sdkroot: string) {
 }
 
 
+// BOTH STREAMS, on success as well as on failure.
+//
+// execFileSync hands back stdout alone when a command succeeds, and the
+// runners this drives report through stderr - perl's `diag`, phpunit's
+// fwrite(STDERR), java's System.err - because that is where a test framework
+// puts a diagnostic. A lane that read stdout only would see a passing suite
+// and none of what it said, which is how a fully-SKIPPED run looks.
 function run(
   cmd: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv,
 ): { ok: boolean, out: string } {
-  try {
-    const out = execFileSync(cmd, args,
-      { cwd, encoding: 'utf8', stdio: 'pipe', ...(env ? { env } : {}) })
-    return { ok: true, out: String(out || '') }
+  const res = spawnSync(cmd, args,
+    { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...(env ? { env } : {}) })
+
+  const out = String(res.stdout || '') + String(res.stderr || '')
+
+  // A command that could not be spawned at all (ENOENT) has no output to
+  // report, so fall back to the spawn error.
+  if (null != res.error) {
+    return { ok: false, out: '' === out.trim() ? String(res.error.message) : out }
   }
-  catch (err: any) {
-    const out = String(err.stdout || '') + String(err.stderr || '')
-    return { ok: false, out: '' === out.trim() ? String(err.message || err) : out }
-  }
+
+  return { ok: 0 === res.status, out }
 }
 
 
@@ -134,7 +144,7 @@ function toolchain(name: string): string | null {
 
 // Generate one target into a fresh directory and hand back its root.
 async function generateTo(
-  target: string, root: string, extra?: string,
+  target: string, root: string, extra?: string, features?: string[],
 ): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -148,7 +158,7 @@ async function generateTo(
   const cwd = process.cwd()
   process.chdir(SCAFFOLD)
   const res = await sdkgen.generate({
-    model: makeModel([target], undefined, extra), root: makeRoot() })
+    model: makeModel([target], undefined, extra, features), root: makeRoot() })
   process.chdir(cwd)
   strictEqual(res.ok, true, target + ': generation did not report ok')
 
@@ -470,6 +480,207 @@ func TestTypesProbe(t *testing.T) {
 // driven, and cases execute rather than skip. It does not pin the shared
 // cases; create-sdkgen's own suite guards those, and a consumer project runs
 // them against every target.
+// The features every corpus lane generates with. `test` and `log` are the
+// fixture model's own defaults and stay; the rest are what the cases below
+// compose.
+const CORPUS_FEATURES = ['test', 'log', 'cost', 'netsim', 'retry', 'cache']
+
+
+// The one line every runner prints, in every language, when a section runs:
+// "feature.cost: ran 15 of 15 case(s) against 2 operation(s)". Reading it is
+// how a lane tells a section that RAN from one that skipped - which each
+// framework reports as a pass.
+const RAN_LINE = /feature\.\w+: ran (\d+) of (\d+) case/
+
+
+// Output that means the toolchain cannot run here, rather than the generated
+// SDK being wrong: a missing test framework, an unresolvable dependency. That
+// is an environment gap, so the lane skips - visibly, and not as a pass.
+const UNUSABLE = [
+  /No module named pytest/,
+  /cannot load such file -- minitest/,
+  /Could not resolve dependencies/,
+  /Non-resolvable/,
+  /Cannot access central/,
+  /Could not find artifact/,
+  /Can't locate Test\/More\.pm/,
+]
+
+
+// Long compiler output buried in an assertion message is unreadable; the end
+// is where the error is.
+function tail(out: string, lines = 40): string {
+  const all = out.split(/\r?\n/)
+  return all.length <= lines ? out : all.slice(-lines).join('\n')
+}
+
+
+// Where a project keeps the compiled corpus. Every runner resolves
+// `.sdk/test/test.json` relative to its own directory, and with each SDK
+// generated into `<tmp>/<target>` they all land here.
+function writeCorpus(tmp: string) {
+  const testdir = Path.join(tmp, '.sdk', 'test')
+  Fs.mkdirSync(testdir, { recursive: true })
+  Fs.writeFileSync(Path.join(testdir, 'test.json'),
+    JSON.stringify(CORPUS_FIXTURE, null, 2))
+}
+
+
+// Run a module through a language's own interpreter, when the check is
+// whether that language can load a library at all.
+function probeOk(bin: string, args: string[]): boolean {
+  return run(bin, args, process.cwd()).ok
+}
+
+
+type CorpusLane = {
+  target: string,
+  // The runner file the target must generate - asserted even when the
+  // toolchain is absent, so a lane that cannot run still proves that much.
+  runner: string,
+  // What a machine needs for this lane, quoted back in the skip message.
+  needs: string,
+  // A build step, for targets that have one. Returns a message when the lane
+  // cannot get as far as running, or null when it is ready.
+  prepare?: (sdkroot: string) => string | null,
+  // The command that runs JUST the corpus runner, or null when the toolchain
+  // is not here.
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+}
+
+
+// Every target with a feature corpus runner, and how to run it.
+//
+// Each command runs the CORPUS RUNNER ALONE, not the target's whole suite: a
+// generated SDK's entity tests need seed data a project supplies, and this is
+// a question about the feature pipeline.
+const CORPUS_LANES: CorpusLane[] = [
+  {
+    target: 'ts',
+    runner: 'test/feature/Corpus.test.ts',
+    needs: 'the local typescript (run `npm install`)',
+    prepare: (sdkroot) => {
+      linkDeps(sdkroot)
+      const src = tsc(sdkroot, 'src')
+      if (!src.ok) return 'generated src does not compile:\n' + tail(src.out)
+      const suite = tsc(sdkroot, 'test')
+      if (!suite.ok) {
+        return 'the generated test suite does not compile:\n' + tail(suite.out)
+      }
+      // `node --test` on a path that does not exist is not an error, so make
+      // sure the compiled runner is really there before reading its output.
+      const compiled = Path.join(sdkroot, 'dist-test', 'feature', 'Corpus.test.js')
+      return Fs.existsSync(compiled)
+        ? null
+        : 'the corpus runner did not compile to ' + compiled + ':\n' + tail(suite.out)
+    },
+    command: () => Fs.existsSync(TSC)
+      ? {
+        bin: process.execPath,
+        args: ['--test', '--test-reporter=tap',
+          Path.join('dist-test', 'feature', 'Corpus.test.js')],
+        env: nestedTestEnv(),
+      }
+      : null,
+  },
+  {
+    target: 'js',
+    runner: 'test/feature/Corpus.test.js',
+    needs: 'node',
+    prepare: (sdkroot) => {
+      linkDeps(sdkroot)
+      return null
+    },
+    command: () => ({
+      bin: process.execPath,
+      args: ['--test', '--test-reporter=tap',
+        Path.join('test', 'feature', 'Corpus.test.js')],
+      env: nestedTestEnv(),
+    }),
+  },
+  {
+    target: 'go',
+    runner: 'test/feature_corpus_test.go',
+    needs: 'go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go
+        ? null
+        : { bin: go, args: ['test', './test/', '-run', 'TestFeatureCorpus', '-v'] }
+    },
+  },
+  {
+    target: 'py',
+    runner: 'test/test_feature_corpus.py',
+    needs: 'python3 with pytest',
+    command: () => {
+      const py = toolchain('python3') || toolchain('python')
+      if (null == py) return null
+      // pytest is a dev dependency, not part of python: a lane that assumed
+      // it would fail on a machine that simply does not have it.
+      if (!probeOk(py, ['-m', 'pytest', '--version'])) return null
+      // `-s` so the runner's own count reaches this process; pytest captures
+      // stdout by default and the line this lane reads would vanish.
+      return { bin: py, args: ['-m', 'pytest', 'test/test_feature_corpus.py', '-q', '-s'] }
+    },
+  },
+  {
+    target: 'rb',
+    runner: 'test/feature_corpus_test.rb',
+    needs: 'ruby with minitest',
+    command: () => {
+      const rb = toolchain('ruby')
+      if (null == rb) return null
+      if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
+      return { bin: rb, args: ['test/feature_corpus_test.rb'] }
+    },
+  },
+  {
+    target: 'php',
+    runner: 'test/FeatureCorpusTest.php',
+    needs: 'php with phpunit (on PATH, or PHPUNIT=<path to phpunit.phar>)',
+    command: () => {
+      const php = toolchain('php')
+      if (null == php) return null
+      // A phar is a file, not something `which` finds, so honour an explicit
+      // path as well as an installed binary.
+      const phar = process.env.PHPUNIT
+      if (null != phar && '' !== phar && Fs.existsSync(phar)) {
+        return { bin: php, args: [phar, '--no-configuration', 'test/FeatureCorpusTest.php'] }
+      }
+      const phpunit = toolchain('phpunit')
+      return null == phpunit
+        ? null
+        : { bin: phpunit, args: ['--no-configuration', 'test/FeatureCorpusTest.php'] }
+    },
+  },
+  {
+    target: 'perl',
+    runner: 't/feature_corpus.t',
+    needs: 'perl',
+    command: () => {
+      const perl = toolchain('perl')
+      return null == perl ? null : { bin: perl, args: ['-Ilib', 't/feature_corpus.t'] }
+    },
+  },
+  {
+    target: 'java',
+    runner: 'test/FeatureCorpusTest.java',
+    needs: 'java and maven',
+    command: () => {
+      const mvn = toolchain('mvn')
+      if (null == mvn || null == toolchain('java')) return null
+      return {
+        bin: mvn,
+        args: ['-q', '-B', 'test', '-Dtest=FeatureCorpusTest',
+          '-DfailIfNoSpecifiedTests=false'],
+      }
+    },
+  },
+]
+
+
+
 describe('the feature corpus runs from a generated SDK', () => {
 
   let tmp = ''
@@ -486,81 +697,64 @@ describe('the feature corpus runs from a generated SDK', () => {
   })
 
 
-  test('ts: cost cases execute against the generated client', async () => {
-    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+  // One lane per target that ships a feature corpus runner, driven by the
+  // same table so a new target is a row rather than a new test.
+  for (const lane of CORPUS_LANES) {
 
-    // The features the cases below compose. `test` and `log` are the fixture
-    // model's own defaults and stay, so this differs from the other ts
-    // generations only by the features under test.
-    const sdkroot = Path.join(tmp, 'ts')
-    const { fs, vol } = memfs({})
-    const sdkgen = SdkGen({
-      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+    test(lane.target + ': cost cases execute against the generated client',
+      async (t) => {
+        const sdkroot = Path.join(tmp, lane.target)
+        const files = await generateTo(
+          lane.target, sdkroot, undefined, CORPUS_FEATURES)
 
-    const before = process.cwd()
-    process.chdir(SCAFFOLD)
-    const res = await sdkgen.generate({
-      model: makeModel(['ts'], undefined, undefined,
-        ['test', 'log', 'cost', 'netsim', 'retry', 'cache']),
-      root: makeRoot(),
-    })
-    process.chdir(before)
-    strictEqual(res.ok, true, 'generation did not report ok')
+        ok(null != files[lane.runner],
+          'the corpus runner was not generated into the SDK: expected ' +
+          lane.runner + ' among ' + Object.keys(files).length + ' files')
 
-    const out: Record<string, string> = {}
-    for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
-      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
-      if (rel.startsWith('.jostraca/') || rel.includes('/.jostraca/')) continue
-      if (!rel.startsWith('ts/')) continue
-      out[rel.slice(3)] = content
-    }
-    materialise(out, sdkroot)
+        writeCorpus(tmp)
 
-    ok(null != out['src/feature/cost/CostFeature.ts'],
-      'the cost feature was not generated into the SDK')
-    ok(null != out['test/feature/Corpus.test.ts'],
-      'the corpus runner was not generated into the SDK')
+        // Probed AFTER generating, so a machine without the toolchain still
+        // proves the runner is emitted - the half of this check that needs
+        // no compiler.
+        const cmd = lane.command()
+        if (null == cmd) {
+          return t.skip(
+            'no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+        }
 
-    // Where a project keeps the compiled corpus: the runner resolves
-    // `../../.sdk/test/test.json` from its own dist-test/ directory.
-    const testdir = Path.join(tmp, '.sdk', 'test')
-    Fs.mkdirSync(testdir, { recursive: true })
-    Fs.writeFileSync(Path.join(testdir, 'test.json'),
-      JSON.stringify(CORPUS_FIXTURE, null, 2))
+        const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+        ok(null == notready, lane.target + ': ' + notready)
 
-    linkDeps(sdkroot)
+        const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
 
-    const src = tsc(sdkroot, 'src')
-    ok(src.ok, 'generated src does not compile:\n' + src.out)
-    const suite = tsc(sdkroot, 'test')
-    ok(suite.ok, 'the generated test suite does not compile:\n' + suite.out)
+        // An environment gap reads like a failure - a missing test framework,
+        // an unresolvable dependency - and must not be reported as one. It
+        // must not be reported as a PASS either, which is why it skips.
+        const gap = UNUSABLE.find((re) => re.test(ran.out))
+        if (null != gap && !ran.ok) {
+          return t.skip(lane.target + ': toolchain present but not usable (' +
+            gap.source + '):\n' + tail(ran.out))
+        }
 
-    // `node --test` on a path that does not exist is not an error, so check
-    // the compiled runner is really there before reading its output.
-    const compiled = Path.join(sdkroot, 'dist-test', 'feature', 'Corpus.test.js')
-    ok(Fs.existsSync(compiled),
-      'the corpus runner did not compile to ' + compiled + ':\n' + suite.out)
+        ok(ran.ok, 'the feature corpus FAILED against the generated ' +
+          lane.target + ' SDK:\n' + tail(ran.out))
 
-    const ran = run(process.execPath,
-      ['--test', '--test-reporter=tap',
-        Path.join('dist-test', 'feature', 'Corpus.test.js')],
-      sdkroot, nestedTestEnv())
+        // Exit zero is not enough: every runner skips a feature the SDK was
+        // not generated with, and a fully-skipped suite exits zero in every
+        // one of these frameworks. Each runner prints how many cases it ran,
+        // in the same wording, precisely so this can read it.
+        const counted = ran.out.match(RAN_LINE)
+        ok(null != counted,
+          'the ' + lane.target + ' corpus runner did not report running any ' +
+          'case - it SKIPPED the section, so the generated client is missing ' +
+          'the feature or has no operation the cases can drive:\n' +
+          tail(ran.out))
+        ok(0 < Number(counted![1]),
+          'the ' + lane.target + ' corpus ran zero cases:\n' + tail(ran.out))
+      })
+  }
 
-    ok(ran.ok,
-      'the feature corpus FAILED against the generated SDK:\n' + ran.out)
 
-    // A skip is the failure this test exists to catch, so read the counts
-    // rather than trusting the exit code: node reports a fully-skipped suite
-    // as a pass.
-    const skipped = Number((ran.out.match(/^# skipped (\d+)$/m) || [])[1] || 0)
-    strictEqual(skipped, 0,
-      'the corpus SKIPPED rather than ran — the generated client is missing ' +
-      'the feature, or has no operation the cases can drive:\n' + ran.out)
-
-    const passed = Number((ran.out.match(/^# pass (\d+)$/m) || [])[1] || 0)
-    ok(2 < passed, 'expected the corpus runner\'s own tests plus the cost ' +
-      'section to pass, got ' + passed + ':\n' + ran.out)
-  })
 })
 
 

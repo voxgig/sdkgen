@@ -251,8 +251,22 @@ Rules:
   of `options.feature` (position is add-order, and add-order is nesting order),
   and the tokens `#OP1`/`#OP2` for two operations the runner discovers from
   the client — no case may name an entity. A section that runs but defers part
-  of its subject says so with `partial:`, not `basic: pending:`. `ts` and `js`
-  have runners; the other targets do not yet.
+  of its subject says so with `partial:`, not `basic: pending:`. `ts`, `js`,
+  `go`, `py`, `rb`, `php`, `perl` and `java` have runners; the other targets
+  do not yet.
+- **`options.utility` must be REAL, or the corpus cannot run.** The cases
+  script the transport through `utility: { fetcher }` — the documented seam —
+  and a target whose `makeOptions` shelves every passed slot in a `custom` map
+  nothing reads honours nothing while `ts` honours it. That was true of every
+  target but `ts`/`js`, invisibly, because each `custom_utility` test asserted
+  the side map rather than the behaviour. The eight targets above now map the
+  option key onto the real member and replace it, keeping unknown names in
+  `custom`; the rest still shelve everything, so port that before adding a
+  runner. `ts/test/generatedcompile.test.ts` proves each lane end to end:
+  generate an SDK WITH the feature, build it, run the shipped runner, and read
+  the `feature.<name>: ran N of M case(s)` line every runner prints. Exit zero
+  is not enough — every framework reports a fully-skipped suite as a pass. A
+  toolchain this machine lacks SKIPS, visibly; it never silently passes.
 - **A per-language divergence must be deliberate and commented.** If one
   language genuinely must differ (e.g. go additionally emits `LoadTyped`
   wrappers because go-cli/go-mcp dispatch entities through the untyped
@@ -728,6 +742,16 @@ data; it is what caught `error is not a function` on every ts/js pipeline
 short-circuit, which both simulations had passed for as long as they
 existed. Reach for the harness only when the subject is a function (a
 `sink` callback) or a language idiom.
+
+Eight targets run it today — `ts`, `js`, `go`, `py`, `rb`, `php`, `perl`,
+`java` — and `ts/test/generatedcompile.test.ts` drives one lane per target:
+generate an SDK carrying the feature, build it, run the shipped runner, and
+require the `feature.<name>: ran N of M case(s)` line it prints. Adding a
+target is a row in `CORPUS_LANES`, not a new test. Two things the lane
+exists to catch: a runner that SKIPS (every framework reports that as a
+pass), and a `makeOptions` that ignores `options.utility` (see "Language
+parity is CRITICAL") — without that seam the cases cannot script the
+transport at all.
 
 Per-feature options, defaults, recorded state and ordering semantics are
 documented in [reference/features](./docs/reference/features.md) — keep it

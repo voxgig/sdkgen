@@ -259,6 +259,13 @@ describe('FeatureCorpus', () => {
       }
 
       ok(0 < ran, `every feature.${name} case was skipped`)
+      // Say how many ran. A partial run is legitimate (an SDK with one
+      // operation skips the cases needing two) but it should be visible
+      // rather than inferred from a green tick - and it is the one line
+      // sdkgen's end-to-end lane reads, in the same wording, from every
+      // language's runner.
+      t.diagnostic(`feature.${name}: ran ${ran} of ${cases.length} ` +
+        `case(s) against ${ops.length} operation(s)`)
     })
   }
 })
