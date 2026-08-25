@@ -38,8 +38,8 @@ that matches what you are trying to do right now:
 - [Release and tag](./how-to/release-and-tag.md)
 
 ### Reference
-- [The feature catalogue](./reference/features.md) — all 17 shipped
-  features (retry, timeout, ratelimit, cache, idempotency, paging,
+- [The feature catalogue](./reference/features.md) — all 18 shipped
+  features (retry, timeout, ratelimit, cache, cost, idempotency, paging,
   streaming, proxy, telemetry, metrics, debug, audit, clienttrack, rbac,
   log, test, netsim): what each does, every option and default, and how
   they compose

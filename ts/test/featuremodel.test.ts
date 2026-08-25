@@ -25,7 +25,7 @@ const FEATURE_TM = Path.join(SDK, 'tm', 'ts', 'src', 'feature')
 
 // The enterprise features added on top of the core log/test pair.
 const ENTERPRISE = [
-  'retry', 'timeout', 'ratelimit', 'cache', 'idempotency', 'paging',
+  'retry', 'timeout', 'ratelimit', 'cache', 'cost', 'idempotency', 'paging',
   'streaming', 'proxy', 'telemetry', 'metrics', 'debug', 'audit',
   'clienttrack', 'rbac', 'netsim',
 ]
@@ -96,6 +96,11 @@ describe('feature-model', () => {
     test: 'base',
     cache: 'wrap', netsim: 'wrap', proxy: 'wrap', ratelimit: 'wrap',
     retry: 'wrap', timeout: 'wrap',
+    // Both seams: wraps the transport to price each attempt AND dispatches
+    // hooks to gate on budget and attribute the spend. The first bundled
+    // feature to need both, which is why the role is declared, not inferred
+    // from an empty hook block.
+    cost: 'wrap',
     audit: 'none', clienttrack: 'none', debug: 'none', idempotency: 'none',
     log: 'none', metrics: 'none', paging: 'none', rbac: 'none',
     streaming: 'none', telemetry: 'none',

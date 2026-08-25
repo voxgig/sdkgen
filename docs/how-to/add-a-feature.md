@@ -14,7 +14,7 @@ voxgig-sdkgen feature add log
 npm run add-feature log
 ```
 
-Seventeen features ship with the generator, and every one of them is
+Eighteen features ship with the generator, and every one of them is
 implemented for **every** bundled language target:
 
 | | |
@@ -23,7 +23,7 @@ implemented for **every** bundled language target:
 | **Correct writes** | `idempotency` |
 | **Large result sets** | `paging`, `streaming` |
 | **Observability** | `telemetry`, `metrics`, `audit`, `debug`, `log`, `clienttrack` |
-| **Governance** | `rbac`, `proxy` |
+| **Governance** | `rbac`, `proxy`, `cost` |
 | **Testing** | `test`, `netsim` |
 
 Each one's options, defaults, recorded state and gotchas are in

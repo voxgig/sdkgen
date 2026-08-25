@@ -701,7 +701,11 @@ suite at parity). Two mechanisms: *transport
 wrappers* replace `ctx.utility.fetcher` in `init()` (retry, timeout,
 ratelimit, cache, proxy, netsim); *pipeline hooks* implement the stages in
 [hooks.md](./docs/reference/hooks.md) (idempotency, rbac, metrics,
-telemetry, debug, audit, clienttrack, paging, streaming). Behaviour is
+telemetry, debug, audit, clienttrack, paging, streaming). `cost` does BOTH
+— it wraps the transport to price each HTTP attempt and hooks
+PrePoint/PreDone to enforce a budget and attribute spend to one operation —
+so never infer a feature's transport role from an empty `hook` block; the
+role is DECLARED in the feature model. Behaviour is
 covered by `ts/test/feature.test.ts`, which drives the **real template
 source** through a simulated pipeline+network offline (see
 `ts/test/featureharness.ts`); `ts/test/featuremodel.test.ts` guards
