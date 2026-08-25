@@ -69,10 +69,16 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                 if (!is_string($restf)) {
                     return $data;
                 }
-                if (!preg_match('/^`body\.([^`.]+)`$/', $restf, $m)) {
+                if (!preg_match('/^`body\.(.+)`$/', $restf, $m)) {
                     return $data;
                 }
-                return [$m[1] => $data];
+                // Multi-segment on purpose: GraphQL ops unwrap body.data.<field>
+                // (and body.data.<field>.<entity> for mutations), not just one level.
+                $out = $data;
+                foreach (array_reverse(explode('.', $m[1])) as $seg) {
+                    $out = [$seg => $out];
+                }
+                return $out;
             };
 
             $respond = function (int $status, mixed $data, ?array $extra = null) use ($envelope): array {
