@@ -52,7 +52,7 @@ tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
 tm/c/core/response.c 4b4096708714
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h d740c3eef8d1
+tm/c/core/sdk.h 0406c8072f33
 tm/c/core/spec.c b7e5d9119652
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
@@ -155,6 +155,7 @@ tm/clojure/src/feature/audit/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/base/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/cache/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/clienttrack/.gitkeep e3b0c44298fc
+tm/clojure/src/feature/cost/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/debug/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/idempotency/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/log/.gitkeep e3b0c44298fc
@@ -1002,6 +1003,7 @@ tm/lean/src/feature/audit/.gitkeep e3b0c44298fc
 tm/lean/src/feature/base/.gitkeep e3b0c44298fc
 tm/lean/src/feature/cache/.gitkeep e3b0c44298fc
 tm/lean/src/feature/clienttrack/.gitkeep e3b0c44298fc
+tm/lean/src/feature/cost/.gitkeep e3b0c44298fc
 tm/lean/src/feature/debug/.gitkeep e3b0c44298fc
 tm/lean/src/feature/idempotency/.gitkeep e3b0c44298fc
 tm/lean/src/feature/log/.gitkeep e3b0c44298fc
@@ -1163,6 +1165,7 @@ tm/ocaml/src/feature/audit/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/cache/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/clienttrack/.gitkeep e3b0c44298fc
+tm/ocaml/src/feature/cost/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/debug/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/idempotency/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/log/.gitkeep e3b0c44298fc
@@ -1800,6 +1803,7 @@ tm/scala/src/feature/audit/.gitkeep e3b0c44298fc
 tm/scala/src/feature/base/.gitkeep e3b0c44298fc
 tm/scala/src/feature/cache/.gitkeep e3b0c44298fc
 tm/scala/src/feature/clienttrack/.gitkeep e3b0c44298fc
+tm/scala/src/feature/cost/.gitkeep e3b0c44298fc
 tm/scala/src/feature/debug/.gitkeep e3b0c44298fc
 tm/scala/src/feature/idempotency/.gitkeep e3b0c44298fc
 tm/scala/src/feature/log/.gitkeep e3b0c44298fc
@@ -2130,6 +2134,7 @@ tm/zig/src/feature/audit/.gitkeep e3b0c44298fc
 tm/zig/src/feature/base/.gitkeep e3b0c44298fc
 tm/zig/src/feature/cache/.gitkeep e3b0c44298fc
 tm/zig/src/feature/clienttrack/.gitkeep e3b0c44298fc
+tm/zig/src/feature/cost/.gitkeep e3b0c44298fc
 tm/zig/src/feature/debug/.gitkeep e3b0c44298fc
 tm/zig/src/feature/idempotency/.gitkeep e3b0c44298fc
 tm/zig/src/feature/log/.gitkeep e3b0c44298fc
@@ -2160,6 +2165,8 @@ tm/zig/utility/voxgigstruct/struct.zig 37fb3adca8da
 ## feature cache
 
 ## feature clienttrack
+
+## feature cost
 
 ## feature debug
 
