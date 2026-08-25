@@ -66,7 +66,7 @@ An empty row means the feature works at the transport seam instead.
 | `streaming` | `PreResult` |
 | `debug` | `PreRequest`, `PreResponse`, `PreDone`, `PreUnexpected` |
 | `audit` | `PreDone`, `PreUnexpected` |
-| `cost` | `PrePoint`, `PreDone` (**and** wraps the transport) |
+| `cost` | `PrePoint`, `PreDone`, `PreUnexpected` (**and** wraps the transport) |
 | `log` | every lifecycle, entity-state and pipeline hook |
 | `test` | every lifecycle and pipeline hook (plus the base transport) |
 | `retry`, `timeout`, `ratelimit`, `cache`, `proxy`, `netsim` | none — transport seam |

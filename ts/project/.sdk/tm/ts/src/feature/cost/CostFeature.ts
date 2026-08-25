@@ -80,6 +80,16 @@ class CostFeature extends BaseFeature {
     if (!this.active) {
       return
     }
+
+    // Mark the context as running through the pipeline, so _charge knows a
+    // PreDone is coming and does not commit the spend itself.
+    let pending = this._pending.get(ctx)
+    if (null == pending) {
+      pending = this._newPending()
+      this._pending.set(ctx, pending)
+    }
+    pending.piped = true
+
     const limit = this._limit()
     if (0 >= limit) {
       return
@@ -107,7 +117,20 @@ class CostFeature extends BaseFeature {
 
 
   async _charge(this: any, ctx: any, url: string, fetchdef: any, inner: any): Promise<any> {
-    const res = await inner(ctx, url, fetchdef)
+    let res: any
+    let threw = false
+
+    // A rejecting transport still costs an attempt. Without this, a run of
+    // connection-level failures under `retry` (which catches the throw and
+    // tries again) would be charged nothing at all, and an onBudget: 'deny'
+    // ceiling could never stop it.
+    try {
+      res = await inner(ctx, url, fetchdef)
+    }
+    catch (err: any) {
+      threw = true
+      res = err
+    }
 
     const priced = this._price(ctx, res)
     const client: any = this._client
@@ -115,7 +138,7 @@ class CostFeature extends BaseFeature {
 
     let pending = this._pending.get(ctx)
     if (null == pending) {
-      pending = { attempts: 0, amount: 0, source: 'none' }
+      pending = this._newPending()
       this._pending.set(ctx, pending)
     }
 
@@ -125,17 +148,58 @@ class CostFeature extends BaseFeature {
     // the running total and then subtracting it again when a body figure
     // supersedes it loses precision to catastrophic cancellation
     // (5 + (0.01 - 5) is not 0.01 in binary floating point).
+    //
+    // Reported and estimated are kept apart per ATTEMPT, not per operation:
+    // a 503 priced from the rate table followed by a 200 carrying the cost
+    // header is part estimate, part reported, and collapsing both into the
+    // final attempt's category would corrupt the split.
     pending.amount += priced.amount
+    pending[('header' === priced.source || 'body' === priced.source) ?
+      'reported' : 'estimated'] += priced.amount
     pending.source = priced.source
 
     cost.total.attempts++
+
+    // direct() and graphql() call the transport through _rawRequest, which
+    // dispatches no pipeline hooks at all — no PrePoint to gate on, and no
+    // PreDone to commit. Their spend is committed here instead, or it would
+    // never be counted and could run past an onBudget: 'deny' ceiling
+    // indefinitely. `piped` is set by PrePoint, so its absence is the signal.
+    if (!pending.piped) {
+      this._commit(ctx, pending, '_', 'direct')
+      this._pending.delete(ctx)
+    }
+
+    if (threw) {
+      throw res
+    }
 
     return res
   }
 
 
+  _newPending(this: any): any {
+    return { attempts: 0, amount: 0, reported: 0, estimated: 0, source: 'none', piped: false }
+  }
+
+
   // Attribute the operation's spend once the call is finished.
   PreDone(this: any, ctx: any) {
+    this._finish(ctx)
+  }
+
+
+  // A failed operation still spent the money. When the pipeline throws,
+  // PreDone never runs, so without this the attempts are counted and the
+  // spend is not — and a budget could never see the cost of a call that
+  // failed. Committing is once-per-operation either way: whichever hook
+  // fires first consumes the pending entry.
+  PreUnexpected(this: any, ctx: any) {
+    this._finish(ctx)
+  }
+
+
+  _finish(this: any, ctx: any) {
     if (!this.active) {
       return
     }
@@ -145,24 +209,37 @@ class CostFeature extends BaseFeature {
     }
     this._pending.delete(ctx)
 
+    const entity = (ctx.op && ctx.op.entity) || '_'
+    const opname = (ctx.op && ctx.op.name) || '_'
+
+    this._commit(ctx, pending, entity, opname)
+  }
+
+
+  // Commit one operation's spend: totals, budget, per-op and per-actor
+  // attribution, and the record. Shared by PreDone and the raw-request path
+  // in _charge, which has no PreDone to reach.
+  _commit(this: any, ctx: any, pending: any, entity: string, opname: string) {
     const client: any = this._client
     const cost = client._cost
 
-    // A body figure prices the whole call, so it replaces the per-attempt
-    // estimate rather than adding to it.
-    const body = this._body(ctx)
     let amount = pending.amount
+    let reported = pending.reported
+    let estimated = pending.estimated
     let source = pending.source
 
+    // A body figure prices the whole call, so it replaces the per-attempt
+    // estimate rather than adding to it — and, being server-stated, the
+    // whole amount counts as reported.
+    const body = this._body(ctx)
     if (null != body) {
       amount = body
+      reported = body
+      estimated = 0
       source = 'body'
     }
 
-    this._spend(cost, amount, source)
-
-    const entity = (ctx.op && ctx.op.entity) || '_'
-    const opname = (ctx.op && ctx.op.name) || '_'
+    this._spend(cost, amount, reported, estimated)
     const actor = (ctx.ctrl && ctx.ctrl.actor) || this._options.actor || 'anonymous'
 
     cost.total.calls++
@@ -254,9 +331,10 @@ class CostFeature extends BaseFeature {
   }
 
 
-  _spend(this: any, cost: any, amount: number, source: string) {
+  _spend(this: any, cost: any, amount: number, reported: number, estimated: number) {
     cost.total.amount += amount
-    cost.total[('header' === source || 'body' === source) ? 'reported' : 'estimated'] += amount
+    cost.total.reported += reported
+    cost.total.estimated += estimated
 
     const limit = cost.budget.limit
     cost.budget.spent = cost.total.amount
@@ -286,7 +364,17 @@ class CostFeature extends BaseFeature {
       v = res.headers.get(name.toLowerCase())
     }
     else {
-      v = res.headers[name.toLowerCase()]
+      // A plain header map from a custom system.fetch keeps conventional
+      // casing ('X-Request-Cost'), and HTTP header names are
+      // case-insensitive, so scan rather than index. The go, perl and php
+      // ports already do this.
+      const lower = name.toLowerCase()
+      for (const k of Object.keys(res.headers)) {
+        if (k.toLowerCase() === lower) {
+          v = res.headers[k]
+          break
+        }
+      }
     }
     if (null == v) {
       return null

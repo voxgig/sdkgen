@@ -353,6 +353,86 @@ describe('feature:cost', () => {
     strictEqual(h.client._cost.total.amount, 5)
   })
 
+  // --- regressions from the Codex review on PR #95 -------------------------
+
+  test('charges attempts when the transport throws, so retry cannot spend free', async () => {
+    const clock = makeClock()
+    let calls = 0
+    const server = () => { calls++; throw new Error('ECONNRESET') }
+    const h = makeClient({
+      features: [
+        { name: 'cost', options: { unit: 1 } },
+        { name: 'retry', options: { retries: 2, minDelay: 1, jitter: false, sleep: clock.sleep } },
+      ],
+      server,
+    })
+    await h.op({ op: 'load' })
+
+    strictEqual(calls, 3, 'the transport rejected three times')
+    strictEqual(h.client._cost.total.attempts, 3, 'every rejected attempt is charged')
+    strictEqual(h.client._cost.total.amount, 3, 'and a failed operation still commits')
+    strictEqual(h.client._cost.total.calls, 1, 'committed once, via PreUnexpected')
+  })
+
+  test('a denied budget stops a run of connection failures', async () => {
+    const clock = makeClock()
+    let calls = 0
+    const server = () => { calls++; throw new Error('ECONNRESET') }
+    const h = makeClient({
+      features: [
+        { name: 'cost', options: { unit: 1, budget: 2, onBudget: 'deny' } },
+        { name: 'retry', options: { retries: 5, minDelay: 1, jitter: false, sleep: clock.sleep } },
+      ],
+      server,
+    })
+    await h.op({ op: 'load' })
+    const after = await h.op({ op: 'load' })
+
+    strictEqual(after.ok, false)
+    strictEqual(after.error.code, 'cost_budget', 'the ceiling held against thrown failures')
+  })
+
+  test('keeps reported and estimated apart per attempt, not per operation', async () => {
+    const clock = makeClock()
+    // Attempt 1: 503 with no cost header -> priced from the table (estimated).
+    // Attempt 2: 200 carrying the header  -> reported.
+    const rec = recordingServer((n) =>
+      1 === n ? makeResponse(503) : makeResponse(200, { ok: true }, { 'x-cost': '2' }))
+    const h = makeClient({
+      features: [
+        { name: 'cost', options: { header: 'x-cost', perUnit: 1, rates: { '*': 5 } } },
+        { name: 'retry', options: { retries: 2, minDelay: 1, jitter: false, sleep: clock.sleep } },
+      ],
+      server: rec.server,
+    })
+    await h.op({ op: 'load' })
+
+    const total = h.client._cost.total
+    strictEqual(total.amount, 7, '5 from the table plus 2 from the header')
+    strictEqual(total.estimated, 5, 'the table-priced attempt stays estimated')
+    strictEqual(total.reported, 2, 'the header-priced attempt stays reported')
+  })
+
+  test('matches a plain response header map case-insensitively', async () => {
+    // A custom system.fetch may return conventional casing; HTTP header
+    // names are case-insensitive.
+    const rec = recordingServer(() => ({
+      status: 200,
+      statusText: 'OK',
+      body: 'not-used',
+      json: async () => ({ ok: true }),
+      headers: { 'X-Request-Cost': '4' },
+    }))
+    const h = makeClient({
+      features: [{ name: 'cost', options: { header: 'x-request-cost', perUnit: 0.5, unit: 99 } }],
+      server: rec.server,
+    })
+    await h.op({ op: 'load' })
+
+    strictEqual(h.client._cost.total.amount, 2, 'the mixed-case header was found')
+    strictEqual(h.client._cost.last.source, 'header')
+  })
+
   test('sink receives one record per operation', async () => {
     const seen: any[] = []
     const h = makeClient({

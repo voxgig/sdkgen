@@ -37,5 +37,7 @@ main: kit: feature: cost: {
   hook: {
     PrePoint: active: true
     PreDone: active: true
+    # A failed operation still spent the money, so it is committed here too.
+    PreUnexpected: active: true
   }
 }

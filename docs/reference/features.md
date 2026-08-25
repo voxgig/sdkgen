@@ -563,7 +563,7 @@ Every record carries its `source`, and the totals keep `reported` and
 `estimated` apart: "the server told us" and "we guessed from a price list"
 are different claims and should not be silently summed.
 
-**Seam:** transport wrapper **and** `PrePoint`, `PreDone`.
+**Seam:** transport wrapper **and** `PrePoint`, `PreDone`, `PreUnexpected`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -637,6 +637,16 @@ finding out from the invoice.
 - **Spend is known after the fact** unless the API reports a pre-flight
   price, so `deny` enforces against spend-so-far, not against the call you
   are about to make.
+- **A failed call still costs.** A rejecting transport is charged per
+  attempt, and an operation that throws commits its spend through
+  `PreUnexpected` rather than being lost. Otherwise a run of
+  connection-level failures under `retry` would spend real money and record
+  nothing, and no budget could stop it.
+- **`direct()` and `graphql()` are counted too.** Those call the transport
+  without dispatching pipeline hooks, so their spend is committed at the
+  transport seam and attributed to `_.direct`. They are counted, but they
+  cannot be gated before the fact, because there is no `PrePoint` to refuse
+  at.
 - No currency conversion. `currency` is a label.
 
 ## `idempotency`
