@@ -15,7 +15,7 @@ that matches what you are trying to do right now:
 | --- | --- | --- |
 | **Learn the tool** by building something end-to-end | [Tutorial](./tutorial.md) | Follow the steps; no decisions required |
 | **Get a specific job done** (add a language, a feature, debug a build) | [How-to guides](./how-to/) | Goal-oriented recipes |
-| **Look something up** (CLI flags, API, model schema, hooks) | [Reference](./reference/) | Dry, complete, accurate |
+| **Look something up** (features, CLI flags, API, model schema, hooks) | [Reference](./reference/) | Dry, complete, accurate |
 | **Understand how and why it works** | [Explanation](./explanation/) | Background and design |
 
 ## Map
@@ -38,6 +38,11 @@ that matches what you are trying to do right now:
 - [Release and tag](./how-to/release-and-tag.md)
 
 ### Reference
+- [The feature catalogue](./reference/features.md) — all 17 shipped
+  features (retry, timeout, ratelimit, cache, idempotency, paging,
+  streaming, proxy, telemetry, metrics, debug, audit, clienttrack, rbac,
+  log, test, netsim): what each does, every option and default, and how
+  they compose
 - [CLI: `voxgig-sdkgen`](./reference/cli.md)
 - [Typed models (entity data typing)](./reference/typed-models.md)
 - [Programmatic API](./reference/api.md)

@@ -707,6 +707,10 @@ source** through a simulated pipeline+network offline (see
 `ts/test/featureharness.ts`); `ts/test/featuremodel.test.ts` guards
 model↔template consistency.
 
+Per-feature options, defaults, recorded state and ordering semantics are
+documented in [reference/features](./docs/reference/features.md) — keep it
+in step when a feature's model or template changes.
+
 ### Generated-SDK test surfaces (ts templates)
 
 Every generated ts SDK ships its own coverage-oriented tests:
@@ -772,7 +776,8 @@ decision, not the size of the diff.
 - Concepts: [architecture](./docs/explanation/architecture.md) ·
   [pipeline](./docs/explanation/operation-pipeline.md) ·
   [out-of-tree targets](./docs/explanation/out-of-tree-targets.md)
-- Reference: [CLI](./docs/reference/cli.md) ·
+- Reference: [features](./docs/reference/features.md) ·
+  [CLI](./docs/reference/cli.md) ·
   [API](./docs/reference/api.md) · [model](./docs/reference/model.md) ·
   [layout](./docs/reference/project-layout.md) ·
   [hooks](./docs/reference/hooks.md)
