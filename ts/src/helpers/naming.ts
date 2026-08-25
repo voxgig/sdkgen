@@ -220,10 +220,11 @@ const SWIFT_SDK_TYPES = new Set<string>([
   'ManualRedirectDelegate',
   // features
   'AuditFeature', 'BaseFeature', 'CacheFeature', 'ClienttrackFeature',
-  'DebugFeature', 'IdempotencyFeature', 'LogFeature', 'MetricsBucket',
-  'MetricsFeature', 'NetsimFeature', 'PagingFeature', 'ProxyFeature',
-  'RatelimitFeature', 'RbacFeature', 'RetryFeature', 'StreamingFeature',
-  'TelemetryFeature', 'TestFeature', 'TimeoutFeature',
+  'CostBucket', 'CostBudget', 'CostFeature', 'CostPending', 'CostRecord',
+  'CostTotal', 'DebugFeature', 'IdempotencyFeature', 'LogFeature',
+  'MetricsBucket', 'MetricsFeature', 'NetsimFeature', 'PagingFeature',
+  'ProxyFeature', 'RatelimitFeature', 'RbacFeature', 'RetryFeature',
+  'StreamingFeature', 'TelemetryFeature', 'TestFeature', 'TimeoutFeature',
 ])
 
 

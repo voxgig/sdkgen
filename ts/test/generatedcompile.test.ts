@@ -83,15 +83,33 @@ function linkDeps(sdkroot: string) {
 }
 
 
-function run(cmd: string, args: string[], cwd: string): { ok: boolean, out: string } {
+function run(
+  cmd: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv,
+): { ok: boolean, out: string } {
   try {
-    const out = execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: 'pipe' })
+    const out = execFileSync(cmd, args,
+      { cwd, encoding: 'utf8', stdio: 'pipe', ...(env ? { env } : {}) })
     return { ok: true, out: String(out || '') }
   }
   catch (err: any) {
     const out = String(err.stdout || '') + String(err.stderr || '')
     return { ok: false, out: '' === out.trim() ? String(err.message || err) : out }
   }
+}
+
+
+// The environment for a NESTED `node --test`.
+//
+// Node's test runner exports NODE_TEST_CONTEXT=child-v8 to everything it
+// spawns, and a nested runner that sees it switches to the v8-serialiser
+// reporter — which writes a binary stream, not TAP. The nested run then looks
+// like a silent success: exit code 0, no counts to read, and a suite that
+// skipped every case is indistinguishable from one that passed. Strip it, and
+// ask for TAP explicitly rather than relying on the default.
+function nestedTestEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env }
+  delete env.NODE_TEST_CONTEXT
+  return env
 }
 
 
@@ -426,6 +444,175 @@ func TestTypesProbe(t *testing.T) {
         (String(types![1]).match(/^class \w*Namespace\w*$/gm) || []).join('\n'))
     })
 })
+
+
+// The FEATURE CORPUS, end to end: generate an SDK that has the feature,
+// build it, and RUN the corpus runner it ships.
+//
+// WHY THIS EXISTS
+//
+// The runner skips a feature the SDK was not generated with, which is correct
+// — a client without `cost` has nothing to run. But it makes the whole
+// section skippable, and a skipped section is silent. `feature add` is what
+// puts a feature in a project, so nothing in either repo failed if no project
+// ever added `cost`: the corpus guards ("a section with zero cases is a
+// FAILURE") only fire for a section some test actually reaches. That is the
+// same false-green the corpus exists to prevent, one level up.
+//
+// So this generates a client WITH the feature, compiles it, runs the shipped
+// runner against a corpus placed where a project keeps it, and asserts that
+// cases ran. A skip here is a failure.
+//
+// WHAT IT DOES AND DOES NOT PROVE. The fixture below is written here, not
+// read from create-sdkgen — sdkgen cannot depend on the package that depends
+// on it. So this proves the MECHANISM end to end: the runner is generated,
+// it compiles, the feature is in the client, an operation is discovered and
+// driven, and cases execute rather than skip. It does not pin the shared
+// cases; create-sdkgen's own suite guards those, and a consumer project runs
+// them against every target.
+describe('the feature corpus runs from a generated SDK', () => {
+
+  let tmp = ''
+  let cwd = ''
+
+  before(() => {
+    cwd = process.cwd()
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-corpus-'))
+  })
+
+  after(() => {
+    if ('' !== cwd) process.chdir(cwd)
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+
+  test('ts: cost cases execute against the generated client', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    // The features the cases below compose. `test` and `log` are the fixture
+    // model's own defaults and stay, so this differs from the other ts
+    // generations only by the features under test.
+    const sdkroot = Path.join(tmp, 'ts')
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+
+    const before = process.cwd()
+    process.chdir(SCAFFOLD)
+    const res = await sdkgen.generate({
+      model: makeModel(['ts'], undefined, undefined,
+        ['test', 'log', 'cost', 'netsim', 'retry', 'cache']),
+      root: makeRoot(),
+    })
+    process.chdir(before)
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.startsWith('.jostraca/') || rel.includes('/.jostraca/')) continue
+      if (!rel.startsWith('ts/')) continue
+      out[rel.slice(3)] = content
+    }
+    materialise(out, sdkroot)
+
+    ok(null != out['src/feature/cost/CostFeature.ts'],
+      'the cost feature was not generated into the SDK')
+    ok(null != out['test/feature/Corpus.test.ts'],
+      'the corpus runner was not generated into the SDK')
+
+    // Where a project keeps the compiled corpus: the runner resolves
+    // `../../.sdk/test/test.json` from its own dist-test/ directory.
+    const testdir = Path.join(tmp, '.sdk', 'test')
+    Fs.mkdirSync(testdir, { recursive: true })
+    Fs.writeFileSync(Path.join(testdir, 'test.json'),
+      JSON.stringify(CORPUS_FIXTURE, null, 2))
+
+    linkDeps(sdkroot)
+
+    const src = tsc(sdkroot, 'src')
+    ok(src.ok, 'generated src does not compile:\n' + src.out)
+    const suite = tsc(sdkroot, 'test')
+    ok(suite.ok, 'the generated test suite does not compile:\n' + suite.out)
+
+    // `node --test` on a path that does not exist is not an error, so check
+    // the compiled runner is really there before reading its output.
+    const compiled = Path.join(sdkroot, 'dist-test', 'feature', 'Corpus.test.js')
+    ok(Fs.existsSync(compiled),
+      'the corpus runner did not compile to ' + compiled + ':\n' + suite.out)
+
+    const ran = run(process.execPath,
+      ['--test', '--test-reporter=tap',
+        Path.join('dist-test', 'feature', 'Corpus.test.js')],
+      sdkroot, nestedTestEnv())
+
+    ok(ran.ok,
+      'the feature corpus FAILED against the generated SDK:\n' + ran.out)
+
+    // A skip is the failure this test exists to catch, so read the counts
+    // rather than trusting the exit code: node reports a fully-skipped suite
+    // as a pass.
+    const skipped = Number((ran.out.match(/^# skipped (\d+)$/m) || [])[1] || 0)
+    strictEqual(skipped, 0,
+      'the corpus SKIPPED rather than ran — the generated client is missing ' +
+      'the feature, or has no operation the cases can drive:\n' + ran.out)
+
+    const passed = Number((ran.out.match(/^# pass (\d+)$/m) || [])[1] || 0)
+    ok(2 < passed, 'expected the corpus runner\'s own tests plus the cost ' +
+      'section to pass, got ' + passed + ':\n' + ran.out)
+  })
+})
+
+
+// A corpus in the shape create-sdkgen compiles, cut down to the cases that
+// exercise both of cost's seams: pricing at the transport, and attributing
+// once per operation at PreDone. `#OP1` is substituted by the runner with an
+// operation it found on the generated client.
+const CORPUS_FIXTURE = {
+  feature: {
+    cost: {
+      basic: {
+        set: [
+          {
+            name: 'flat unit is charged per call',
+            feature: [{ name: 'cost', active: true, unit: 0.002 }],
+            op: [{ op: '#OP1' }],
+            out: { total: { calls: 1, amount: 0.002 }, last: { source: 'unit' } },
+          },
+          {
+            name: 'every retry attempt is charged, but attributed as one operation',
+            feature: [
+              { name: 'netsim', active: true, failTimes: 2, failStatus: 503 },
+              { name: 'cost', active: true, unit: 1 },
+              { name: 'retry', active: true, retries: 3, minDelay: 1 },
+            ],
+            op: [{ op: '#OP1' }],
+            out: { total: { calls: 1, attempts: 3, amount: 3 } },
+          },
+          {
+            name: 'ordered inside the cache, a hit served from cache costs nothing',
+            feature: [
+              { name: 'cost', active: true, unit: 2 },
+              { name: 'cache', active: true, ttl: 10000 },
+            ],
+            op: [{ op: '#OP1' }, { op: '#OP1' }],
+            out: { total: { calls: 2, attempts: 1, amount: 2 } },
+          },
+          {
+            name: 'deny refuses the call once the budget is spent',
+            feature: [
+              { name: 'cost', active: true, unit: 1, budget: 2, onBudget: 'deny' },
+            ],
+            op: [
+              { op: '#OP1' }, { op: '#OP1' }, { op: '#OP1', err: 'cost_budget' },
+            ],
+            out: { total: { calls: 2, attempts: 2, amount: 2 }, budget: { exceeded: true } },
+          },
+        ],
+      },
+    },
+  },
+}
 
 
 // An entity whose name PHP reserves, plus the flow entry the fixture model

@@ -37,6 +37,7 @@
       "audit",
       "cache",
       "clienttrack",
+      "cost",
       "debug",
       "idempotency",
       "log",

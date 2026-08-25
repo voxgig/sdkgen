@@ -52,7 +52,7 @@ tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
 tm/c/core/response.c 4b4096708714
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h d740c3eef8d1
+tm/c/core/sdk.h 0406c8072f33
 tm/c/core/spec.c b7e5d9119652
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
@@ -155,6 +155,7 @@ tm/clojure/src/feature/audit/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/base/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/cache/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/clienttrack/.gitkeep e3b0c44298fc
+tm/clojure/src/feature/cost/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/debug/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/idempotency/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/log/.gitkeep e3b0c44298fc
@@ -805,11 +806,11 @@ src/cmp/js/fragment/Direct.test.fragment.js a316c22a2184
 src/cmp/js/fragment/Entity.fragment.js 1e5293f7748a
 src/cmp/js/fragment/Entity.test.fragment.js c432091a73d0
 src/cmp/js/fragment/EntityBase.fragment.js 98de4eed516e
-src/cmp/js/fragment/EntityCreateOp.fragment.js 081ada60c30c
-src/cmp/js/fragment/EntityListOp.fragment.js b88a6f756dc0
-src/cmp/js/fragment/EntityLoadOp.fragment.js 33f820ff70c7
-src/cmp/js/fragment/EntityRemoveOp.fragment.js 9224d141de0c
-src/cmp/js/fragment/EntityUpdateOp.fragment.js bdf84de28e58
+src/cmp/js/fragment/EntityCreateOp.fragment.js d799a8210e25
+src/cmp/js/fragment/EntityListOp.fragment.js cc70e8d3b453
+src/cmp/js/fragment/EntityLoadOp.fragment.js ebc1d957e035
+src/cmp/js/fragment/EntityRemoveOp.fragment.js 180a40bb09d4
+src/cmp/js/fragment/EntityUpdateOp.fragment.js 1c4d21b0a55c
 src/cmp/js/fragment/Main.fragment.js 0b744844393c
 src/cmp/js/fragment/MainStation.fragment.js c19757d85e46
 src/cmp/js/fragment/SdkError.fragment.js 37a7cd2d9d6d
@@ -865,6 +866,7 @@ tm/js/src/utility/Utility.js 63c0e87a03bb
 tm/js/test/README.md e621bcce9282
 tm/js/test/exists.test.js ba7655664d5c
 tm/js/test/feature.test.js ad244c4213a1
+tm/js/test/feature/Corpus.test.js 081f2f33d160
 tm/js/test/feature/harness.js ec64607a8bb4
 tm/js/test/netsim.test.js 11a4e4a385fa
 tm/js/test/pipeline.test.js f2d3d543f1f3
@@ -1002,6 +1004,7 @@ tm/lean/src/feature/audit/.gitkeep e3b0c44298fc
 tm/lean/src/feature/base/.gitkeep e3b0c44298fc
 tm/lean/src/feature/cache/.gitkeep e3b0c44298fc
 tm/lean/src/feature/clienttrack/.gitkeep e3b0c44298fc
+tm/lean/src/feature/cost/.gitkeep e3b0c44298fc
 tm/lean/src/feature/debug/.gitkeep e3b0c44298fc
 tm/lean/src/feature/idempotency/.gitkeep e3b0c44298fc
 tm/lean/src/feature/log/.gitkeep e3b0c44298fc
@@ -1163,6 +1166,7 @@ tm/ocaml/src/feature/audit/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/cache/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/clienttrack/.gitkeep e3b0c44298fc
+tm/ocaml/src/feature/cost/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/debug/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/idempotency/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/log/.gitkeep e3b0c44298fc
@@ -1776,6 +1780,7 @@ tm/scala/feature/AuditFeature.scala baea18b6471d
 tm/scala/feature/BaseFeature.scala 0c6439fca620
 tm/scala/feature/CacheFeature.scala dde3197ebb96
 tm/scala/feature/ClienttrackFeature.scala a25ea3610993
+tm/scala/feature/CostFeature.scala 1610e554aaed
 tm/scala/feature/DebugFeature.scala 39b7d57993c9
 tm/scala/feature/FeatureOptions.scala 5151555aa53a
 tm/scala/feature/IdempotencyFeature.scala 02a3f77337cd
@@ -1800,6 +1805,7 @@ tm/scala/src/feature/audit/.gitkeep e3b0c44298fc
 tm/scala/src/feature/base/.gitkeep e3b0c44298fc
 tm/scala/src/feature/cache/.gitkeep e3b0c44298fc
 tm/scala/src/feature/clienttrack/.gitkeep e3b0c44298fc
+tm/scala/src/feature/cost/.gitkeep e3b0c44298fc
 tm/scala/src/feature/debug/.gitkeep e3b0c44298fc
 tm/scala/src/feature/idempotency/.gitkeep e3b0c44298fc
 tm/scala/src/feature/log/.gitkeep e3b0c44298fc
@@ -1977,11 +1983,11 @@ src/cmp/ts/fragment/Direct.test.fragment.ts fe35ddb36f16
 src/cmp/ts/fragment/Entity.fragment.ts 678426e2469a
 src/cmp/ts/fragment/Entity.test.fragment.ts a11524ca5d4b
 src/cmp/ts/fragment/EntityBase.fragment.ts 3d54b06ed2de
-src/cmp/ts/fragment/EntityCreateOp.fragment.ts 883f9b5f2386
-src/cmp/ts/fragment/EntityListOp.fragment.ts 5daafd423f0a
-src/cmp/ts/fragment/EntityLoadOp.fragment.ts ffec4bb6ccaa
-src/cmp/ts/fragment/EntityRemoveOp.fragment.ts d9a9fbddfd86
-src/cmp/ts/fragment/EntityUpdateOp.fragment.ts ea0dbf15ed1f
+src/cmp/ts/fragment/EntityCreateOp.fragment.ts ab300a03f6b6
+src/cmp/ts/fragment/EntityListOp.fragment.ts 2de26d41752c
+src/cmp/ts/fragment/EntityLoadOp.fragment.ts 927793291305
+src/cmp/ts/fragment/EntityRemoveOp.fragment.ts b4a325f131ed
+src/cmp/ts/fragment/EntityUpdateOp.fragment.ts 09fe7da456a9
 src/cmp/ts/fragment/Main.fragment.ts f95d02599edb
 src/cmp/ts/fragment/MainStation.fragment.ts fd38ca23960b
 src/cmp/ts/fragment/SdkError.fragment.ts 146555fd1684
@@ -2038,6 +2044,7 @@ tm/ts/src/utility/Utility.ts c1f6d3ed23dd
 tm/ts/test/README.md 087d364e7b4f
 tm/ts/test/exists.test.ts 522c1f453513
 tm/ts/test/feature.test.ts 90d67f513913
+tm/ts/test/feature/Corpus.test.ts 43b2498e8a25
 tm/ts/test/feature/harness.ts bfc382438dbc
 tm/ts/test/netsim.test.ts 350539c6a30b
 tm/ts/test/pipeline.test.ts 7329fb39d310
@@ -2109,6 +2116,7 @@ tm/zig/feature/audit.zig bd9ec0baec3e
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig 4a8f27f50abe
 tm/zig/feature/clienttrack.zig c83ed2b08d81
+tm/zig/feature/cost.zig 94226b6e6b45
 tm/zig/feature/debug.zig 42477ef0fb7a
 tm/zig/feature/idempotency.zig 73f7630ca257
 tm/zig/feature/log.zig 15db6f7b1bf0
@@ -2130,6 +2138,7 @@ tm/zig/src/feature/audit/.gitkeep e3b0c44298fc
 tm/zig/src/feature/base/.gitkeep e3b0c44298fc
 tm/zig/src/feature/cache/.gitkeep e3b0c44298fc
 tm/zig/src/feature/clienttrack/.gitkeep e3b0c44298fc
+tm/zig/src/feature/cost/.gitkeep e3b0c44298fc
 tm/zig/src/feature/debug/.gitkeep e3b0c44298fc
 tm/zig/src/feature/idempotency/.gitkeep e3b0c44298fc
 tm/zig/src/feature/log/.gitkeep e3b0c44298fc
@@ -2160,6 +2169,8 @@ tm/zig/utility/voxgigstruct/struct.zig 37fb3adca8da
 ## feature cache
 
 ## feature clienttrack
+
+## feature cost
 
 ## feature debug
 
