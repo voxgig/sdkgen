@@ -44,8 +44,18 @@ my $CORPUS = do {
   Voxgig::Struct::parse_json($raw);
 };
 
-ok(defined $CORPUS->{feature},
-  'the corpus carries a feature section (recompile it if not)');
+# A corpus with no `feature` section is a SKIP, not a failure. Each
+# project carries its OWN materialised copy of .sdk/test/test.json, so a
+# project scaffolded before the section existed legitimately has no cases
+# to run - and a hard assertion here turned that into a red suite in every
+# SDK on the fleet, for a corpus the project had simply not re-pulled yet.
+# The strict check belongs where the corpus is CONTROLLED: sdkgen's own
+# end-to-end lane supplies one and requires the cases to actually run.
+unless (defined $CORPUS->{feature}) {
+  plan skip_all => "this project's test.json has no `feature` section - "
+    . 'recompile the corpus (create-sdkgen .sdk/test/feature/) to run these cases';
+}
+ok(defined $CORPUS->{feature}, 'the corpus carries a feature section');
 
 
 # A scripted transport built from a case's `res` list. Responses are consumed

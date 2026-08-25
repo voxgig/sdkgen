@@ -254,6 +254,19 @@ Rules:
   of its subject says so with `partial:`, not `basic: pending:`. `ts`, `js`,
   `go`, `py`, `rb`, `php`, `perl` and `java` have runners; the other targets
   do not yet.
+- **A corpus section the project does not have is a SKIP; one sdkgen supplies
+  is a FAILURE.** Every project carries its own materialised
+  `.sdk/test/test.json`, so one scaffolded before a section existed
+  legitimately has no cases to run. The first cut asserted the `feature`
+  section outright and took the fleet red on every ts and js SDK for a corpus
+  those projects had simply not re-pulled yet — a deployment-ordering break,
+  not a defect in any SDK. The generated runners therefore SKIP a missing
+  section, and the strict check lives where the corpus is CONTROLLED:
+  `generatedcompile.test.ts` writes its own fixture and requires the
+  `feature.<name>: ran N of M case(s)` line, so a section that goes missing
+  there still fails loudly. Both directions are pinned — strip the section
+  from the lane's fixture and all eight lanes fail; strip it from a project's
+  corpus and all eight runners skip green.
 - **`options.utility` must be REAL, or the corpus cannot run.** The cases
   script the transport through `utility: { fetcher }` — the documented seam —
   and a target whose `makeOptions` shelves every passed slot in a `custom` map

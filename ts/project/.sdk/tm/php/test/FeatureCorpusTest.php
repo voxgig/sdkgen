@@ -254,8 +254,19 @@ class FeatureCorpusTest extends TestCase
 
     public function testCorpusCarriesAFeatureSection(): void
     {
-        $this->assertNotNull(self::corpus()['feature'] ?? null,
-            'no `feature` section in test.json - recompile the corpus');
+        // A corpus with no `feature` section is a SKIP, not a failure. Each
+        // project carries its OWN materialised copy of .sdk/test/test.json, so a
+        // project scaffolded before the section existed legitimately has no cases
+        // to run - and a hard assertion here turned that into a red suite in every
+        // SDK on the fleet, for a corpus the project had simply not re-pulled yet.
+        // The strict check belongs where the corpus is CONTROLLED: sdkgen's own
+        // end-to-end lane supplies one and requires the cases to actually run.
+        if (null === (self::corpus()['feature'] ?? null)) {
+            $this->markTestSkipped(
+                "this project's test.json has no `feature` section - recompile "
+                . 'the corpus (create-sdkgen .sdk/test/feature/) to run these cases');
+        }
+        $this->assertNotNull(self::corpus()['feature']);
     }
 
     // At least one operation, or every case would skip and this suite would
@@ -269,6 +280,15 @@ class FeatureCorpusTest extends TestCase
 
     public function testFeatureCorpus(): void
     {
+        // Skip rather than run vacuously: with no section this asserts
+        // nothing, which PHPUnit reports as RISKY - a third state that reads
+        // like neither a pass nor a skip.
+        if (null === (self::corpus()['feature'] ?? null)) {
+            $this->markTestSkipped(
+                "this project's test.json has no `feature` section - recompile "
+                . 'the corpus (create-sdkgen .sdk/test/feature/) to run these cases');
+        }
+
         foreach (self::FEATURE_CORPUS_NAMES as $name) {
             $section = self::corpus()['feature'][$name] ?? null;
             if (null === $section) {
