@@ -92,19 +92,35 @@ function linkDeps(sdkroot: string) {
 // and none of what it said, which is how a fully-SKIPPED run looks.
 function run(
   cmd: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv,
-): { ok: boolean, out: string } {
-  const res = spawnSync(cmd, args,
-    { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...(env ? { env } : {}) })
+): { ok: boolean, out: string, unlaunchable: boolean } {
+  // A windows toolchain shim is a BATCH FILE - `mvn.cmd`, `phpunit.bat` - and
+  // node refuses to spawn one without a shell (CVE-2024-27980). Quote the
+  // path rather than pass it bare: `shell: true` builds one command line, so
+  // an unquoted `C:\Program Files\...` would split at the space. Everything
+  // else spawns directly, which needs no quoting and cannot be shell-injected.
+  const shim = 'win32' === process.platform && /\.(cmd|bat)$/i.test(cmd)
+
+  const res = spawnSync(shim ? '"' + cmd + '"' : cmd, args,
+    {
+      cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+      ...(shim ? { shell: true } : {}),
+      ...(env ? { env } : {}),
+    })
 
   const out = String(res.stdout || '') + String(res.stderr || '')
 
-  // A command that could not be spawned at all (ENOENT) has no output to
-  // report, so fall back to the spawn error.
+  // A command that could not be LAUNCHED (ENOENT, EINVAL) has no output to
+  // report, and says nothing about what it would have run: that is an
+  // environment gap, which callers report as a skip rather than a failure.
   if (null != res.error) {
-    return { ok: false, out: '' === out.trim() ? String(res.error.message) : out }
+    return {
+      ok: false,
+      out: '' === out.trim() ? String(res.error.message) : out,
+      unlaunchable: true,
+    }
   }
 
-  return { ok: 0 === res.status, out }
+  return { ok: 0 === res.status, out, unlaunchable: false }
 }
 
 
@@ -137,8 +153,22 @@ function toolchain(name: string): string | null {
     ? run('where', [name], process.cwd())
     : run('/usr/bin/which', [name], process.cwd())
   if (!probe.ok) return null
-  const first = probe.out.trim().split(/\r?\n/)[0]
-  return '' === first ? null : first
+
+  const found = probe.out.trim().split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => '' !== line)
+  if (0 === found.length) return null
+
+  if ('win32' !== process.platform) return found[0]
+
+  // `where` lists EVERY match, and a tool packaged from a unix-shaped
+  // distribution puts its extensionless shell script first: maven ships
+  // `bin\mvn` beside `bin\mvn.cmd`, and windows cannot execute the former
+  // (spawnSync ... ENOENT), so taking the first line picked the one thing
+  // that could not run. Prefer a match windows can actually launch, and
+  // report none as absent - a lane then SKIPS rather than failing on a
+  // toolchain this machine cannot start.
+  return found.find((path) => /\.(exe|com|cmd|bat)$/i.test(path)) || null
 }
 
 
@@ -503,6 +533,10 @@ const UNUSABLE = [
   /Non-resolvable/,
   /Cannot access central/,
   /Could not find artifact/,
+  /Could not transfer artifact/,
+  /Network is unreachable/,
+  /Connection (refused|timed out)/,
+  /Read timed out/,
   /Can't locate Test\/More\.pm/,
 ]
 
@@ -730,6 +764,11 @@ describe('the feature corpus runs from a generated SDK', () => {
         // An environment gap reads like a failure - a missing test framework,
         // an unresolvable dependency - and must not be reported as one. It
         // must not be reported as a PASS either, which is why it skips.
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started ' +
+            'here: ' + tail(ran.out, 3))
+        }
+
         const gap = UNUSABLE.find((re) => re.test(ran.out))
         if (null != gap && !ran.ok) {
           return t.skip(lane.target + ': toolchain present but not usable (' +
