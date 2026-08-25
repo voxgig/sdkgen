@@ -1780,6 +1780,7 @@ tm/scala/feature/AuditFeature.scala baea18b6471d
 tm/scala/feature/BaseFeature.scala 0c6439fca620
 tm/scala/feature/CacheFeature.scala dde3197ebb96
 tm/scala/feature/ClienttrackFeature.scala a25ea3610993
+tm/scala/feature/CostFeature.scala 1610e554aaed
 tm/scala/feature/DebugFeature.scala 39b7d57993c9
 tm/scala/feature/FeatureOptions.scala 5151555aa53a
 tm/scala/feature/IdempotencyFeature.scala 02a3f77337cd
@@ -2115,6 +2116,7 @@ tm/zig/feature/audit.zig bd9ec0baec3e
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig 4a8f27f50abe
 tm/zig/feature/clienttrack.zig c83ed2b08d81
+tm/zig/feature/cost.zig 94226b6e6b45
 tm/zig/feature/debug.zig 42477ef0fb7a
 tm/zig/feature/idempotency.zig 73f7630ca257
 tm/zig/feature/log.zig 15db6f7b1bf0
