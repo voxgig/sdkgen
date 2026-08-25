@@ -725,8 +725,9 @@ tm/java/feature/TestFeature.java c466d0ee0e9d
 tm/java/src/feature/README.md fe95b0698ffe
 tm/java/src/feature/base/.gitkeep e3b0c44298fc
 tm/java/src/feature/test/.gitkeep e3b0c44298fc
-tm/java/test/CustomUtilityTest.java 52b85a8da816
+tm/java/test/CustomUtilityTest.java 5575cd33406d
 tm/java/test/ExistsTest.java 6b1f749bac90
+tm/java/test/FeatureCorpusTest.java 487422c4e9e2
 tm/java/test/FeatureHarness.java 31048303f744
 tm/java/test/NetsimTest.java 9969f77c3cb3
 tm/java/test/PipelineTest.java 326cc24d6e65
@@ -746,7 +747,7 @@ tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
 tm/java/utility/MakeError.java 16bb2d80d562
 tm/java/utility/MakeFetchDef.java b83d2aed69b6
-tm/java/utility/MakeOptions.java b3f34daeb0d9
+tm/java/utility/MakeOptions.java a2d5bc07ff08
 tm/java/utility/MakePoint.java fdef9e9657ab
 tm/java/utility/MakeRequest.java b326d47c077d
 tm/java/utility/MakeResponse.java bce6807c2f70
@@ -761,7 +762,7 @@ tm/java/utility/PrepareMethod.java 69b947a7a4bc
 tm/java/utility/PrepareParams.java d69032e840df
 tm/java/utility/PreparePath.java 023b8a22f18e
 tm/java/utility/PrepareQuery.java a813f3a94aac
-tm/java/utility/Register.java 156966e74032
+tm/java/utility/Register.java 8e0a61724333
 tm/java/utility/ResultBasic.java ef96b4823075
 tm/java/utility/ResultBody.java d462ac5d1c65
 tm/java/utility/ResultHeaders.java 9fab31e3503b
