@@ -14,18 +14,25 @@ voxgig-sdkgen feature add log
 npm run add-feature log
 ```
 
-Built-in features:
+Seventeen features ship with the generator, and every one of them is
+implemented for **every** bundled language target:
 
-- **Core:** `log`, `test`.
-- **Enterprise (ts):** `retry`, `timeout`, `ratelimit`, `cache`,
-  `idempotency`, `paging`, `streaming`, `proxy`, `telemetry`, `metrics`,
-  `debug`, `audit`, `clienttrack`, `rbac`.
-- **Test support:** `netsim` (network-condition simulation — see
-  [Simulate network conditions](./simulate-network.md)).
+| | |
+| --- | --- |
+| **Resilience** | `retry`, `timeout`, `ratelimit`, `cache` |
+| **Correct writes** | `idempotency` |
+| **Large result sets** | `paging`, `streaming` |
+| **Observability** | `telemetry`, `metrics`, `audit`, `debug`, `log`, `clienttrack` |
+| **Governance** | `rbac`, `proxy` |
+| **Testing** | `test`, `netsim` |
+
+Each one's options, defaults, recorded state and gotchas are in
+**[the feature catalogue](../reference/features.md)** — read that to pick
+the ones you want.
 
 All features are **inactive by default**; enable one per SDK with
-`options.feature.<name>.active = true` (and its tuning options). Several at
-once:
+`feature: { <name>: { active: true } }` in the constructor options (plus
+its tuning options). Several at once:
 
 ```bash
 voxgig-sdkgen feature add retry,timeout,cache
@@ -196,6 +203,8 @@ feature test explicitly).
 
 ## See also
 
+- [The feature catalogue](../reference/features.md) — what each shipped
+  feature does, in detail
 - [Operation pipeline and feature hooks](../reference/hooks.md)
 - [The operation pipeline (concepts)](../explanation/operation-pipeline.md)
 - [Customize templates and propagate the change](./customize-and-propagate-templates.md)

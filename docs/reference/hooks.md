@@ -4,7 +4,14 @@ This is the authoritative list of hooks a feature can implement. The
 runtime source of truth is the base feature class shipped with each
 target (TypeScript: `ts/project/.sdk/tm/ts/src/feature/base/BaseFeature.ts`).
 For the concepts behind it, see
-[The operation pipeline](../explanation/operation-pipeline.md).
+[The operation pipeline](../explanation/operation-pipeline.md), and for
+what the shipped features actually do with these hooks, see
+[the feature catalogue](./features.md).
+
+> Hooks are only **one** of the two seams a feature can attach to. A
+> feature that declares `transport: 'wrap'` replaces the transport in
+> `init()` instead, and dispatches no hooks at all. See
+> [The transport seam](#the-transport-seam) below.
 
 ## Hook groups
 
@@ -42,6 +49,56 @@ PrePoint → PreSpec → PreRequest → PreResponse → PreResult → PreDone
                                                               │
                                             (exception) → PreUnexpected
 ```
+
+## Which shipped feature uses which hook
+
+The features that ship with the generator, and the hooks each one declares.
+An empty row means the feature works at the transport seam instead.
+
+| Feature | Hooks |
+| --- | --- |
+| `rbac` | `PrePoint` |
+| `metrics` | `PrePoint`, `PreDone`, `PreUnexpected` |
+| `telemetry` | `PrePoint`, `PreRequest`, `PreDone`, `PreUnexpected` |
+| `idempotency` | `PreRequest` |
+| `clienttrack` | `PostConstruct`, `PreRequest` |
+| `paging` | `PreRequest`, `PreResult` |
+| `streaming` | `PreResult` |
+| `debug` | `PreRequest`, `PreResponse`, `PreDone`, `PreUnexpected` |
+| `audit` | `PreDone`, `PreUnexpected` |
+| `log` | every lifecycle, entity-state and pipeline hook |
+| `test` | every lifecycle and pipeline hook (plus the base transport) |
+| `retry`, `timeout`, `ratelimit`, `cache`, `proxy`, `netsim` | none — transport seam |
+
+## The transport seam
+
+A feature whose model says `transport: 'wrap'` takes over
+`utility.fetcher` in `init()`, calling the previous one:
+
+```ts
+init(ctx: Context, options: FeatureOptions) {
+  const inner = ctx.utility.fetcher
+  ctx.utility.fetcher = async (ctx2, url, fetchdef) =>
+    this._wrap(ctx2, url, fetchdef, inner)
+}
+```
+
+That seam sees **every HTTP attempt**, where a hook sees one operation.
+It is the right place for anything that suppresses, delays, repeats or
+answers a request: a single operation call can make three HTTP attempts
+and still fire exactly one `PreDone`.
+
+| `transport` | Meaning |
+| --- | --- |
+| `'none'` | Uses pipeline hooks only. The default. |
+| `'wrap'` | Wraps the current transport. Dispatches no hooks. |
+| `'base'` | *Replaces* the transport (the `test` feature's mock). |
+
+Because each wrapper wraps whatever is already installed, **init order is
+nesting order**: the feature initialised last is outermost. Order is
+deterministic (`test` first, then names sorted) and can be set explicitly
+by passing `feature` as an array. See
+[Ordering](./features.md#ordering-and-why-it-matters).
 
 ## Enabling a hook
 
@@ -85,6 +142,8 @@ reaches the caller is language-idiomatic:
 
 ## See also
 
+- [The feature catalogue](./features.md) — every shipped feature, its
+  options and what it records.
 - [The operation pipeline](../explanation/operation-pipeline.md) — concepts.
 - [Add a feature](../how-to/add-a-feature.md) — apply this in practice.
 - [Model schema → features](./model.md#mainkitfeaturename) — the feature fields.

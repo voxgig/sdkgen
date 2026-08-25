@@ -87,7 +87,7 @@ Comprehensive docs live in [`docs/`](./docs/README.md):
 | --- | --- |
 | **[Tutorial](./docs/tutorial.md)** | Generate your first SDK, end to end. |
 | **[How-to guides](./docs/how-to/)** | Add a target/feature, customize templates, author a language, debug, use the API. |
-| **[Reference](./docs/reference/)** | [CLI](./docs/reference/cli.md) · [API](./docs/reference/api.md) · [Model schema](./docs/reference/model.md) · [Layout](./docs/reference/project-layout.md) · [Hooks](./docs/reference/hooks.md). |
+| **[Reference](./docs/reference/)** | [Features](./docs/reference/features.md) · [CLI](./docs/reference/cli.md) · [API](./docs/reference/api.md) · [Model schema](./docs/reference/model.md) · [Layout](./docs/reference/project-layout.md) · [Hooks](./docs/reference/hooks.md). |
 | **[Explanation](./docs/explanation/)** | [Architecture](./docs/explanation/architecture.md) · [Components vs templates](./docs/explanation/components-and-templates.md) · [Operation pipeline](./docs/explanation/operation-pipeline.md). |
 
 **Automated coding agents:** start with [`AGENTS.md`](./AGENTS.md).
@@ -97,11 +97,52 @@ Comprehensive docs live in [`docs/`](./docs/README.md):
 - One entity class per API entity, with `load` / `list` / `create` /
   `update` / `remove` where supported.
 - A staged operation pipeline (`PrePoint → PreSpec → PreRequest →
-  PreResponse → PreResult → PreDone`) that **features** hook into for
-  logging, auth, retries, or a mock transport — without forking the SDK.
+  PreResponse → PreResult → PreDone`) that **features** plug into —
+  without forking the SDK.
+- **Seventeen features**, in every language (see below).
 - `direct()` / `prepare()` escape hatches for endpoints outside the
   entity model.
 - Generated `README.md` and `REFERENCE.md`, and an offline test suite.
+
+## Features: the production behaviour, generated in
+
+The parts of a client library that take the longest to get right are not
+the endpoint wrappers. They are retries that back off properly, a cache
+that does not serve a consumed response body, idempotency keys that stay
+stable across a retry, pagination that stops at the last page. sdkgen
+ships those as **features**: opt-in, configurable, and implemented once
+per language rather than once per API.
+
+| | |
+| --- | --- |
+| **Resilience** | `retry` `timeout` `ratelimit` `cache` |
+| **Correct writes** | `idempotency` |
+| **Large result sets** | `paging` `streaming` |
+| **Observability** | `telemetry` `metrics` `audit` `debug` `log` `clienttrack` |
+| **Governance** | `rbac` `proxy` |
+| **Testing** | `test` `netsim` |
+
+```bash
+voxgig-sdkgen feature add retry,timeout,idempotency
+```
+
+```ts
+const client = new MyapiSDK({
+  feature: {
+    retry:       { active: true, retries: 4, maxDelay: 5000 },
+    timeout:     { active: true, ms: 10000 },
+    idempotency: { active: true },
+  },
+})
+```
+
+Every feature is off until you switch it on, and every one of them is
+implemented for **every bundled language target** — so `retry` means the
+same thing in Go as it does in TypeScript.
+
+**→ [The feature catalogue](./docs/reference/features.md)** documents each
+one in full: options, defaults, hooks, what it records, and how they
+compose.
 
 ## Develop this package
 
