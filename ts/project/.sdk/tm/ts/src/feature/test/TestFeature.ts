@@ -32,6 +32,12 @@ function ownIdField(config: any, getpath: any, entityName: string): string {
     const parts: string[] = (best && best.parts) || []
     const last = [...parts].reverse().find((p: string) => p.startsWith('{'))
     if (null != last) return last.slice(1, -1)
+
+    // No path param at all: a single required QUERY param can still be
+    // the record's own key (e.g. GET /result?trace_id=).
+    const query = (best && best.args && best.args.query) || []
+    const reqdQuery = query.filter((q: any) => false !== q.reqd)
+    if (1 === reqdQuery.length) return String(reqdQuery[0].name)
   }
   return 'id'
 }
@@ -321,10 +327,17 @@ class TestFeature extends BaseFeature {
       }
     }
 
-    const reqd = transform(
+    // Path AND query: a path-only read misses a query-addressed record
+    // (e.g. GET /result?trace_id=), which has no path param at all.
+    const reqdParams = transform(
       select(getpath(point, ['args', 'params']), { reqd: true }),
       ['`$EACH`', '', '`$KEY.name`']
     )
+    const reqdQuery = transform(
+      select(getpath(point, ['args', 'query']), { reqd: true }),
+      ['`$EACH`', '', '`$KEY.name`']
+    )
+    const reqd = [...(reqdParams || []), ...(reqdQuery || [])]
 
     const qand: any[] = []
     const q = { '`$AND`': qand }
