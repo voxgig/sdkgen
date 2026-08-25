@@ -20,6 +20,8 @@
 // ORDER MATTERS. Cost must sit INSIDE the cache, or a response served from
 // cache is charged for money that was never spent.
 
+using Voxgig.Struct;
+
 using static ProjectNameSdk.Feature.FeatureOptions;
 
 namespace ProjectNameSdk.Feature;
