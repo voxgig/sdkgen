@@ -245,6 +245,14 @@ Rules:
   test-model` in a scaffolded project) and copy back only the changed
   sections — create-sdkgen's `test/corpus.test.ts` fails on drift between the
   two.
+- **The corpus has two families.** `primary/` pins the utility functions;
+  `feature/` pins FEATURE behaviour, driven through a real generated SDK by
+  each target's `test/feature/Corpus.test.*`. Feature cases use the ARRAY form
+  of `options.feature` (position is add-order, and add-order is nesting order),
+  and the tokens `#OP1`/`#OP2` for two operations the runner discovers from
+  the client — no case may name an entity. A section that runs but defers part
+  of its subject says so with `partial:`, not `basic: pending:`. `ts` and `js`
+  have runners; the other targets do not yet.
 - **A per-language divergence must be deliberate and commented.** If one
   language genuinely must differ (e.g. go additionally emits `LoadTyped`
   wrappers because go-cli/go-mcp dispatch entities through the untyped
@@ -711,6 +719,16 @@ source** through a simulated pipeline+network offline (see
 `ts/test/featureharness.ts`); `ts/test/featuremodel.test.ts` guards
 model↔template consistency.
 
+Both of those simulate. The check that does not is the shared **feature
+corpus** — language-neutral cases in create-sdkgen's
+`.sdk/test/feature/<name>.aon`, run by a generated SDK's own
+`test/feature/Corpus.test.*` against the compiled feature, the generated
+config and a real entity operation. Prefer it for anything expressible as
+data; it is what caught `error is not a function` on every ts/js pipeline
+short-circuit, which both simulations had passed for as long as they
+existed. Reach for the harness only when the subject is a function (a
+`sink` callback) or a language idiom.
+
 Per-feature options, defaults, recorded state and ordering semantics are
 documented in [reference/features](./docs/reference/features.md) — keep it
 in step when a feature's model or template changes.
@@ -722,6 +740,10 @@ Every generated ts SDK ships its own coverage-oriented tests:
 - `test/feature.test.ts` + `test/feature/harness.ts` — drive each present
   feature (discovered via `config.makeFeature`) through a mock pipeline;
   `test/netsim.test.ts` covers the `test` feature's `net` simulation.
+- `test/feature/Corpus.test.ts` — runs the shared feature corpus against
+  THIS client: features built by the generated config, installed by the
+  generated constructor, driven by a real entity operation. No mock
+  pipeline. `test/utility/Corpus.test.ts` guards the corpus file itself.
 - `test/pipeline.test.ts` — direct unit tests of the operation-pipeline
   utilities' error/edge branches (missing spec/response, 4xx, transport
   failure, feature ordering, auth shaping) reached via `stdutil`.

@@ -1024,8 +1024,36 @@ Each target also ships a cross-feature test suite exercising the features
 its project selected, so parity is enforced by tests rather than asserted
 in prose. `target add` copies source only for features the model selected,
 so a project that asked for `retry` alone does not carry the other
-sixteen. See
+seventeen. See
 [Trimming the feature set](../how-to/add-a-feature.md#trimming-the-feature-set).
+
+### How parity is proved
+
+A cross-feature suite written per language proves each language against
+itself. What proves them against *each other* is the **shared corpus**:
+language-neutral cases in create-sdkgen's
+`project/standard/.sdk/test/feature/<name>.aon`, compiled into the
+`test.json` that ships with every project, and executed by each target's
+own runner against a real generated SDK.
+
+That is the same route the primary utilities take, and it is deliberately
+not a harness: the feature is an ordinary class in ordinary compiled
+source, built through the generated config, installed by the generated
+constructor, and driven by a real entity operation. What is asserted is
+what ships.
+
+A case is entirely data — the ordered feature list, the options, the
+scripted transport responses, the operations to run, and the expected
+subset of `client._<name>`. The one thing each language writes for itself
+is the few lines that turn scripted responses into a fetcher. Two things
+are therefore out of reach and are covered per-language instead: anything
+whose subject is a function (a `sink` callback), and anything about a
+language's own idiom.
+
+Running the corpus against a generated TypeScript SDK immediately found
+two defects that every prior test had passed over: a `TypeError` in place
+of the SDK error on **every** pipeline short-circuit in ts and js, and a
+refused operation being counted as a call by `cost`. Both are fixed.
 
 ## See also
 

@@ -153,13 +153,58 @@ Implement the hooks you enabled. The template placeholders
 `FEATURE_Name` and `FEATURE_VERSION` are substituted at `feature add`.
 Use the `log` feature's files as the closest reference.
 
-### 4. Add and generate
+### 4. Add corpus cases
+
+Feature behaviour is pinned by the **shared corpus**, the same mechanism
+the primary utilities use: language-neutral cases that every target runs
+against a real generated SDK. Add a section for the new feature in
+create-sdkgen, at `project/standard/.sdk/test/feature/<name>.aon`, and
+register it in `feature-test-index.aon`:
+
+```
+basic: set: [
+  {
+    name: 'retries a 503 and succeeds'
+    feature: [
+      { name: 'netsim', active: true, failTimes: 1, failStatus: 503 }
+      { name: 'retry', active: true, retries: 2, minDelay: 1 }
+    ]
+    op: [ { op: '#OP1' } ]
+    out: { attempts: 2 }
+  }
+]
+```
+
+Everything in a case is data. Features are activated by name through the
+generated config, options are plain JSON, `res` scripts the transport,
+and `out` is asserted as a SUBSET of the client's own record
+(`client._<name>`), so a case states only what it is about. `#OP1` and
+`#OP2` stand for two distinct operations; the runner discovers them from
+the generated client, because no case may name an entity that only some
+SDKs have.
+
+Two conventions matter:
+
+- **The feature list is ordered.** Array position is add-order, and
+  add-order is nesting order for anything that wraps the transport. A
+  case that depends on ordering (cost inside cache) must state it.
+- **A subject that needs a function cannot go here.** A `sink` callback,
+  or `featureInit` itself, does not survive compilation to JSON. Say so
+  in the fixture with a `partial:` note and cover it per-language.
+
+Recompile the corpus so `test.json` matches, or the guards in
+create-sdkgen's `test/corpus.test.ts` will say so.
+
+### 5. Add and generate
 
 ```bash
 cd <project>/.sdk
 voxgig-sdkgen feature add retry
 npm run build && npm run generate
 ```
+
+The generated suite runs the corpus section for every feature the SDK was
+generated with, and skips the rest.
 
 ## How a feature reaches the runtime
 
