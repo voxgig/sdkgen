@@ -590,7 +590,8 @@ tm/go/feature/test_feature.go 7dfeb1b52fde
 tm/go/src/feature/README.md efebfaa50be0
 tm/go/src/feature/base/.gitkeep e3b0c44298fc
 tm/go/src/feature/test/.gitkeep e3b0c44298fc
-tm/go/test/custom_utility_test.go ce85a84fcd2a
+tm/go/test/custom_utility_test.go bc5eb5a15ff3
+tm/go/test/feature_corpus_test.go 6187e0beba9d
 tm/go/test/feature_harness_test.go c66475cecadb
 tm/go/test/netsim_test.go 30f992e9d5c0
 tm/go/test/pipeline_test.go 20ba5603708e
@@ -609,7 +610,7 @@ tm/go/utility/graphql.go 213aca4b03f4
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go acc76429c4ee
 tm/go/utility/make_fetch_def.go 1b2ecd1822cf
-tm/go/utility/make_options.go 2486969c7cac
+tm/go/utility/make_options.go fc8c9e604a85
 tm/go/utility/make_point.go 81a5eedeba0e
 tm/go/utility/make_request.go cf4d4f55e911
 tm/go/utility/make_response.go 57ad84a7b3be
@@ -624,7 +625,7 @@ tm/go/utility/prepare_method.go 9474bd59cef6
 tm/go/utility/prepare_params.go cc1327507f18
 tm/go/utility/prepare_path.go 9abb91c60ce8
 tm/go/utility/prepare_query.go 9d2341258061
-tm/go/utility/register.go f051904998d1
+tm/go/utility/register.go 9524f20259fd
 tm/go/utility/result_basic.go 6621fff8681d
 tm/go/utility/result_body.go 26a11991a96c
 tm/go/utility/result_headers.go 1bf8bf65b390
