@@ -50,13 +50,41 @@ public static partial class SdkUtility
         }
 
         var field = typeof(Utility).GetField(name);
-        if (null == field || null == val || !field.FieldType.IsInstanceOfType(val))
+        if (null == field || null == val)
         {
             return false;
         }
 
-        field.SetValue(utility, val);
-        return true;
+        if (field.FieldType.IsInstanceOfType(val))
+        {
+            field.SetValue(utility, val);
+            return true;
+        }
+
+        // SAME SHAPE, DIFFERENT NAMED TYPE. Every member is a NAMED delegate
+        // (FetcherFunc) or a constructed Func/Action, and C# delegate types are
+        // nominal: a naturally-typed lambda gets Func`4, and
+        // `Func<Context, string, Dictionary<string, object?>, object?>` written
+        // out longhand is a third type again. None is an instance of
+        // FetcherFunc despite an identical signature, so IsInstanceOfType alone
+        // honoured only a caller who knew to declare the named type - which is
+        // to say, almost nobody.
+        //
+        // CreateDelegate rebinds the same target and method onto the field's
+        // type, and with throwOnBindFailure: false it returns null rather than
+        // throwing when the signature genuinely does not match - so a wrongly
+        // shaped delegate still falls through to `custom`.
+        if (val is Delegate d && typeof(Delegate).IsAssignableFrom(field.FieldType))
+        {
+            var converted = Delegate.CreateDelegate(field.FieldType, d.Target, d.Method, false);
+            if (null != converted)
+            {
+                field.SetValue(utility, converted);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     internal static Dictionary<string, object?> MakeOptionsUtil(Context ctx)

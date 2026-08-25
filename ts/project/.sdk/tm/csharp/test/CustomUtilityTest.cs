@@ -62,10 +62,17 @@ public class CustomUtilityTest
     public void ARealUtilityMemberIsReplacedNotShelved()
     {
         var reached = 0;
-        FetcherFunc scripted = (ctx, fullurl, fetchdef) =>
+
+        // A NATURAL lambda, as a caller writes it - NOT declared as
+        // FetcherFunc. C# delegate types are nominal, so this is a `Func`4`
+        // and not an instance of FetcherFunc at all; declaring it as the named
+        // type here would test only the one form that already worked and hide
+        // every ordinary caller. It captures `reached`, so the conversion has
+        // to carry the closure target too.
+        var scripted = (Context ctx, string fullurl, Dictionary<string, object?> fetchdef) =>
         {
             reached++;
-            return new Dictionary<string, object?>
+            return (object?)new Dictionary<string, object?>
             {
                 ["status"] = 200,
                 ["statusText"] = "OK",
@@ -90,6 +97,40 @@ public class CustomUtilityTest
             "fetcher was shelved in Custom instead of replacing the member");
 
         // Behaviour, not identity: drive it.
+        var ctx = u.MakeContext(new Dictionary<string, object?>(), client.GetRootCtx());
+        u.Fetcher(ctx, "http://example.test/probe", new Dictionary<string, object?>());
+        Assert.Equal(1, reached);
+    }
+
+    // The other spelling of the same value. A caller who names the exported
+    // delegate gets a FetcherFunc, which IS an instance of the field type and
+    // needs no conversion - the mirror image of the test above, and broken by
+    // any fix that swaps one path for the other.
+    [Fact]
+    public void ANamedDelegateIsAcceptedToo()
+    {
+        var reached = 0;
+        FetcherFunc scripted = (ctx, fullurl, fetchdef) =>
+        {
+            reached++;
+            return new Dictionary<string, object?>
+            {
+                ["status"] = 200,
+                ["statusText"] = "OK",
+                ["headers"] = new Dictionary<string, object?>(),
+                ["body"] = "{}",
+            };
+        };
+
+        var client = new ProjectNameSDK(new Dictionary<string, object?>
+        {
+            ["utility"] = new Dictionary<string, object?> { ["fetcher"] = scripted },
+        });
+
+        var u = client.GetUtility();
+        Assert.False(u.Custom.ContainsKey("fetcher"),
+            "a named-delegate fetcher was shelved in Custom");
+
         var ctx = u.MakeContext(new Dictionary<string, object?>(), client.GetRootCtx());
         u.Fetcher(ctx, "http://example.test/probe", new Dictionary<string, object?>());
         Assert.Equal(1, reached);

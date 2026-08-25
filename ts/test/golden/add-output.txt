@@ -312,7 +312,7 @@ tm/csharp/feature/TestFeature.cs 3a085eb504ac
 tm/csharp/src/feature/README.md ddb1daf8f8fe
 tm/csharp/src/feature/base/.gitkeep e3b0c44298fc
 tm/csharp/src/feature/test/.gitkeep e3b0c44298fc
-tm/csharp/test/CustomUtilityTest.cs e770f2289092
+tm/csharp/test/CustomUtilityTest.cs 0bfc2fe36124
 tm/csharp/test/ExistsTest.cs 3d458c790b7c
 tm/csharp/test/FeatureHarness.cs 740ed27e3234
 tm/csharp/test/NetsimTest.cs 3c36d55e1540
@@ -332,7 +332,7 @@ tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs aa8db59afcdb
 tm/csharp/utility/MakeFetchDef.cs 89aca56837ef
-tm/csharp/utility/MakeOptions.cs 8adb173abfa9
+tm/csharp/utility/MakeOptions.cs a7a41d6111a7
 tm/csharp/utility/MakePoint.cs c0182b4343c0
 tm/csharp/utility/MakeRequest.cs 32657a32522e
 tm/csharp/utility/MakeResponse.cs 8aa004eeaeb1
