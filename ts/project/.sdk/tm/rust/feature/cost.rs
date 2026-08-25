@@ -415,7 +415,7 @@ impl Feature for CostFeature {
 
     // Attribute the operation's spend once the call is finished.
     fn pre_done(&mut self, ctx: &Rc<Context>) {
-        self.finish(ctx);
+        self.finish(ctx, true);
     }
 
     // A failed operation still spent the money. When the pipeline errors,
@@ -424,12 +424,12 @@ impl Feature for CostFeature {
     // Whichever hook fires first consumes the pending entry, so it commits
     // exactly once.
     fn pre_unexpected(&mut self, ctx: &Rc<Context>) {
-        self.finish(ctx);
+        self.finish(ctx, false);
     }
 }
 
 impl CostFeature {
-    fn finish(&mut self, ctx: &Rc<Context>) {
+    fn finish(&mut self, ctx: &Rc<Context>, done: bool) {
         if !self.active {
             return;
         }
@@ -443,6 +443,19 @@ impl CostFeature {
                 return;
             }
         };
+
+        // A FAILED operation that made no attempt never reached the network:
+        // PrePoint creates the pending entry to mark the context as piped, and
+        // then the budget gate refuses the call (rbac, or an unresolvable
+        // endpoint, short-circuits just as early). Committing it would count a
+        // call that never happened and file a zero-amount record as `last`.
+        //
+        // A SUCCEEDED operation that made no attempt is the opposite case: it was
+        // served from the cache. That is a real call, and the fact that it cost
+        // nothing is the whole point of ordering cost inside the cache.
+        if !done && 0.0 == get_f64(&pending, "attempts").unwrap_or(0.0) {
+            return;
+        }
 
         let (entity, opname) = {
             let op = ctx.op.borrow();

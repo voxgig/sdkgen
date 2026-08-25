@@ -208,7 +208,7 @@ sub _new_pending {
 # Attribute the operation's spend once the call is finished.
 sub PreDone {
   my ($self, $ctx) = @_;
-  $self->_finish($ctx);
+  $self->_finish($ctx, 1);
   return;
 }
 
@@ -218,16 +218,27 @@ sub PreDone {
 # first consumes the pending entry, so it commits exactly once.
 sub PreUnexpected {
   my ($self, $ctx) = @_;
-  $self->_finish($ctx);
+  $self->_finish($ctx, 0);
   return;
 }
 
 sub _finish {
-  my ($self, $ctx) = @_;
+  my ($self, $ctx, $done) = @_;
   return unless $self->{active};
   my $addr = Scalar::Util::refaddr($ctx);
   return unless exists $self->{pending}{$addr};
   my $entry = delete $self->{pending}{$addr};
+
+  # A FAILED operation that made no attempt never reached the network:
+  # PrePoint creates the pending entry to mark the context as piped, and
+  # then the budget gate refuses the call (rbac, or an unresolvable
+  # endpoint, short-circuits just as early). Committing it would count a
+  # call that never happened and file a zero-amount record as `last`.
+  #
+  # A SUCCEEDED operation that made no attempt is the opposite case: it was
+  # served from the cache. That is a real call, and the fact that it cost
+  # nothing is the whole point of ordering cost inside the cache.
+  return if !$done && 0 == $entry->{attempts};
 
   my $entity = ($ctx->{op} && defined $ctx->{op}{entity} && '' ne $ctx->{op}{entity})
     ? $ctx->{op}{entity} : '_';

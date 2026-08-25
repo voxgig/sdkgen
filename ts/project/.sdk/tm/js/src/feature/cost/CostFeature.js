@@ -183,7 +183,7 @@ class CostFeature extends BaseFeature {
 
   // Attribute the operation's spend once the call is finished.
   PreDone(ctx) {
-    this._finish(ctx)
+    this._finish(ctx, true)
   }
 
 
@@ -193,11 +193,11 @@ class CostFeature extends BaseFeature {
   // failed. Committing is once-per-operation either way: whichever hook
   // fires first consumes the pending entry.
   PreUnexpected(ctx) {
-    this._finish(ctx)
+    this._finish(ctx, false)
   }
 
 
-  _finish(ctx) {
+  _finish(ctx, done) {
     if (!this.active) {
       return
     }
@@ -206,6 +206,19 @@ class CostFeature extends BaseFeature {
       return
     }
     this._pending.delete(ctx)
+
+    // A FAILED operation that made no attempt never reached the network:
+    // PrePoint creates the pending entry to mark the context as piped, and
+    // then the budget gate refuses the call (rbac, or an unresolvable
+    // endpoint, short-circuits just as early). Committing it would count a
+    // call that never happened and file a zero-amount record as `last`.
+    //
+    // A SUCCEEDED operation that made no attempt is the opposite case: it was
+    // served from the cache. That is a real call, and the fact that it cost
+    // nothing is the whole point of ordering cost inside the cache.
+    if (!done && 0 === pending.attempts) {
+      return
+    }
 
     const entity = (ctx.op && ctx.op.entity) || '_'
     const opname = (ctx.op && ctx.op.name) || '_'

@@ -124,7 +124,7 @@ public:
 
   // Attribute the operation's spend once the call is finished.
   void preDone(CtxPtr ctx) override {
-    finish(ctx);
+    finish(ctx, true);
   }
 
   // A failed operation still spent the money. When the pipeline throws,
@@ -132,7 +132,7 @@ public:
   // is not, and a budget could never see the cost of a failed call. Whichever
   // hook fires first consumes the pending entry, so it commits exactly once.
   void preUnexpected(CtxPtr ctx) override {
-    finish(ctx);
+    finish(ctx, false);
   }
 
 private:
@@ -152,13 +152,24 @@ private:
   std::map<std::string, Pending> pending;
   int seq = 0;
 
-  void finish(CtxPtr ctx) {
+  void finish(CtxPtr ctx, bool done) {
     if (!active) return;
 
     auto it = pending.find(ctx->id);
     if (it == pending.end()) return;
     Pending p = it->second;
     pending.erase(it);
+
+    // A FAILED operation that made no attempt never reached the network:
+    // prePoint creates the pending entry to mark the context as piped, and
+    // then the budget gate refuses the call (rbac, or an unresolvable
+    // endpoint, short-circuits just as early). Committing it would count a
+    // call that never happened and file a zero-amount record as `last`.
+    //
+    // A SUCCEEDED operation that made no attempt is the opposite case: it was
+    // served from the cache. That is a real call, and the fact that it cost
+    // nothing is the whole point of ordering cost inside the cache.
+    if (!done && 0 == p.attempts) return;
 
     std::string entity = "_";
     std::string opname = "_";

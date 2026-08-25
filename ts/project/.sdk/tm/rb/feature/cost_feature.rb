@@ -172,7 +172,7 @@ class ProjectNameCostFeature < ProjectNameBaseFeature
 
   # Attribute the operation's spend once the call is finished.
   def PreDone(ctx)
-    _finish(ctx)
+    _finish(ctx, true)
   end
 
   # A failed operation still spent the money. When the pipeline raises,
@@ -180,13 +180,24 @@ class ProjectNameCostFeature < ProjectNameBaseFeature
   # is not, and a budget could never see the cost of a failed call. Whichever
   # hook fires first consumes the pending entry, so it commits exactly once.
   def PreUnexpected(ctx)
-    _finish(ctx)
+    _finish(ctx, false)
   end
 
-  def _finish(ctx)
+  def _finish(ctx, done)
     return unless @active
     return unless @pending.key?(ctx)
     entry = @pending.delete(ctx)
+
+    # A FAILED operation that made no attempt never reached the network:
+    # PrePoint creates the pending entry to mark the context as piped, and
+    # then the budget gate refuses the call (rbac, or an unresolvable
+    # endpoint, short-circuits just as early). Committing it would count a
+    # call that never happened and file a zero-amount record as `last`.
+    #
+    # A SUCCEEDED operation that made no attempt is the opposite case: it was
+    # served from the cache. That is a real call, and the fact that it cost
+    # nothing is the whole point of ordering cost inside the cache.
+    return if !done && 0 == entry["attempts"]
 
     entity = ctx.op && ctx.op.entity ? ctx.op.entity : "_"
     opname = ctx.op && ctx.op.name ? ctx.op.name : "_"

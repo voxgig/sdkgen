@@ -203,7 +203,7 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
     // Attribute the operation's spend once the call is finished.
     public function PreDone(ProjectNameContext $ctx): void
     {
-        $this->_finish($ctx);
+        $this->_finish($ctx, true);
     }
 
     // A failed operation still spent the money. When the pipeline throws,
@@ -213,16 +213,29 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
     // exactly once.
     public function PreUnexpected(ProjectNameContext $ctx): void
     {
-        $this->_finish($ctx);
+        $this->_finish($ctx, false);
     }
 
-    private function _finish(ProjectNameContext $ctx): void
+    private function _finish(ProjectNameContext $ctx, bool $done): void
     {
         if (!$this->active || $this->pending === null || !isset($this->pending[$ctx])) {
             return;
         }
         $entry = $this->pending[$ctx];
         unset($this->pending[$ctx]);
+
+        // A FAILED operation that made no attempt never reached the network:
+        // PrePoint creates the pending entry to mark the context as piped, and
+        // then the budget gate refuses the call (rbac, or an unresolvable
+        // endpoint, short-circuits just as early). Committing it would count a
+        // call that never happened and file a zero-amount record as `last`.
+        //
+        // A SUCCEEDED operation that made no attempt is the opposite case: it was
+        // served from the cache. That is a real call, and the fact that it cost
+        // nothing is the whole point of ordering cost inside the cache.
+        if (!$done && 0 === $entry['attempts']) {
+            return;
+        }
 
         $entity = ($ctx->op !== null && $ctx->op->entity !== '') ? $ctx->op->entity : '_';
         $opname = ($ctx->op !== null && $ctx->op->name !== '') ? $ctx->op->name : '_';

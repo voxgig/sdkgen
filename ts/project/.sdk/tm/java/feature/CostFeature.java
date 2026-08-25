@@ -208,7 +208,7 @@ public class CostFeature extends BaseFeature {
   // Attribute the operation's spend once the call is finished.
   @Override
   public void preDone(Context ctx) {
-    finish(ctx);
+    finish(ctx, true);
   }
 
   // A failed operation still spent the money. When the pipeline errors,
@@ -218,10 +218,10 @@ public class CostFeature extends BaseFeature {
   // exactly once.
   @Override
   public void preUnexpected(Context ctx) {
-    finish(ctx);
+    finish(ctx, false);
   }
 
-  private void finish(Context ctx) {
+  private void finish(Context ctx, boolean done) {
     if (!this.active) {
       return;
     }
@@ -231,6 +231,19 @@ public class CostFeature extends BaseFeature {
     }
     ctx.out.remove(COST_PENDING_KEY);
     CostPending pending = (CostPending) raw;
+
+    // A FAILED operation that made no attempt never reached the network:
+    // prePoint creates the pending entry to mark the context as piped, and
+    // then the budget gate refuses the call (rbac, or an unresolvable
+    // endpoint, short-circuits just as early). Committing it would count a
+    // call that never happened and file a zero-amount record as `last`.
+    //
+    // A SUCCEEDED operation that made no attempt is the opposite case: it was
+    // served from the cache. That is a real call, and the fact that it cost
+    // nothing is the whole point of ordering cost inside the cache.
+    if (!done && 0 == pending.attempts) {
+      return;
+    }
 
     String entity = (ctx.op != null && ctx.op.entity != null && !"".equals(ctx.op.entity))
         ? ctx.op.entity : "_";

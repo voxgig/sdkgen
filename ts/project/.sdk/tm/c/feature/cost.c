@@ -427,12 +427,26 @@ static void cost_commit(CostTrack* t, voxgig_value* options, Context* ctx,
 // PreUnexpected share this: a FAILED operation still spent the money, and when
 // the pipeline errors PreDone never runs. Whichever hook fires first consumes
 // the pending entry, so it commits exactly once.
-static void cost_finish(CostFeature* cf, Context* ctx) {
+static void cost_finish(CostFeature* cf, Context* ctx, bool done) {
   if (!cf->active) return;
 
   voxgig_value* pending = ctx_out_extra_get(ctx, COST_PENDING_KEY);
   if (!v_is_map(pending)) return;
   ctx_out_extra_set(ctx, COST_PENDING_KEY, v_undef());
+
+  // A FAILED operation that made no attempt never reached the network:
+  // PrePoint creates the pending entry to mark the context as piped, and
+  // then the budget gate refuses the call (rbac, or an unresolvable
+  // endpoint, short-circuits just as early). Committing it would count a
+  // call that never happened and file a zero-amount record as `last`.
+  //
+  // A SUCCEEDED operation that made no attempt is the opposite case: it was
+  // served from the cache. That is a real call, and the fact that it cost
+  // nothing is the whole point of ordering cost inside the cache.
+  if (!done) {
+    voxgig_value* an = getp(pending, "attempts");
+    if (!voxgig_is_number(an) || 0 == (int64_t)voxgig_as_double(an)) return;
+  }
 
   const char* entity = (ctx->op && ctx->op->entity[0] != '\0') ? ctx->op->entity : "_";
   const char* opname = (ctx->op && ctx->op->name[0] != '\0') ? ctx->op->name : "_";
@@ -486,8 +500,10 @@ static void cost_hook(Feature* f, const char* name, Context* ctx) {
   CostFeature* cf = (CostFeature*)f;
   if (strcmp(name, "PrePoint") == 0) {
     cost_pre_point(cf, ctx);
-  } else if (strcmp(name, "PreDone") == 0 || strcmp(name, "PreUnexpected") == 0) {
-    cost_finish(cf, ctx);
+  } else if (strcmp(name, "PreDone") == 0) {
+    cost_finish(cf, ctx, true);
+  } else if (strcmp(name, "PreUnexpected") == 0) {
+    cost_finish(cf, ctx, false);
   }
 }
 
