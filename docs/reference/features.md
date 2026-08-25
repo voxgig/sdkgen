@@ -1072,9 +1072,20 @@ whose subject is a function (a `sink` callback), and anything about a
 language's own idiom.
 
 Eight targets run the corpus today: `ts`, `js`, `go`, `py`, `rb`, `php`,
-`perl` and `java`. The rest are on the way, and the blocker is the same in
-each: the cases script the transport through `options.utility.fetcher`, the
-documented seam, so a target that ignores it cannot run a case at all.
+`perl` and `java`. The cases script the transport through
+`options.utility.fetcher`, the documented seam, so a target that ignores it
+cannot run a case at all.
+
+That seam exists exactly where the options container is dynamically typed.
+`lua`, `elixir`, `clojure`, `csharp`, `kotlin`, `scala` and `dart` carry
+options in a map that holds any value, so a key naming a real utility member
+replaces it there (`swift` honours `fetcher`, whose type it can name). In
+`rust`, `c`, `zig`, `ocaml` and `cpp` the options are a CLOSED value union
+whose only function shape is the struct library's own, so no caller can put a
+transport into them at all - c's header says plainly that widening a
+general-purpose struct library to hold SDK objects would be wrong. For those
+five the transport seam is `system.fetch` or a transport feature, and it is a
+design boundary rather than an omission.
 
 Running the corpus found defects every prior test had passed over, and it
 found them in each language it reached. In ts and js, a `TypeError` in

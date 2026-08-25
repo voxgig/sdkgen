@@ -932,12 +932,40 @@
         (oget result :resdata)
         (ucall ctx :make-error nil)))))
 
+;; Public camelCase option key -> the kebab-case keyword naming a utility
+;; member, or nil when the key is not a public name.
+;;
+;; Public utility names are camelCase and carry neither a hyphen nor an
+;; underscore, so either means the caller named something of their own -
+;; possibly the INTERNAL spelling of a real member. `make-error` must stay an
+;; extension in :custom; replacing the pipeline function with a non-callable
+;; would break the error path on the next request, silently.
+;; `str` is the clojure.string ALIAS in this namespace, so core's str is
+;; qualified here rather than shadowed.
+(defn- util-member [k]
+  (let [n (name k)]
+    (when-not (or (str/includes? n "-") (str/includes? n "_"))
+      (keyword (str/replace n #"([A-Z])"
+                            (fn [[_ c]]
+                              (clojure.core/str "-" (str/lower-case c))))))))
+
 (defn u-make-options [ctx]
   (let [options (or (oget ctx :options) (vs/jm))
         custom-utils (vs/getprop options "utility")]
+    ;; A key naming a real utility member REPLACES it; anything else is
+    ;; attached as a custom extra. Shelving everything in :custom - a map
+    ;; nothing reads - made `{"utility" {"fetcher" ...}}`, the documented
+    ;; transport seam, a silent no-op here while ts honoured it.
     (when (and (vs/ismap custom-utils) (oget ctx :utility))
-      (doseq [item (or (vs/items custom-utils) [])]
-        (.put ^java.util.Map (oget (oget ctx :utility) :custom) (vs/getprop item 0) (vs/getprop item 1))))
+      (let [util (oget ctx :utility)
+            members (deref util)]
+        (doseq [item (or (vs/items custom-utils) [])]
+          (let [k (vs/getprop item 0)
+                v (vs/getprop item 1)
+                member (util-member k)]
+            (if (and member (not= member :custom) (contains? members member))
+              (oset! util member v)
+              (.put ^java.util.Map (oget util :custom) k v))))))
     (let [opts0 (let [c (vs/clone options)] (if (vs/ismap c) c (vs/jm)))
           ;; Feature add-order. options.feature may be given as an ordered
           ;; ARRAY of {name active ...opts} entries (array position = add
@@ -1001,7 +1029,7 @@
                              (if (vs/ismap s) s (vs/jm)))
                     sdkname (let [n (vs/getpath config "main.name")]
                               (if (and (string? n) (seq n)) n "SDK"))
-                    resolved (clojure.string/replace
+                    resolved (str/replace
                                base #"\{([A-Za-z0-9_]+)\}"
                                (fn [[_ name]]
                                  (let [v (vs/getprop server name)
