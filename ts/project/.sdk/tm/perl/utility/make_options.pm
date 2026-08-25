@@ -19,10 +19,35 @@ $REGISTRY{make_options} = sub {
   my ($ctx) = @_;
   my $options = $ctx->{options} || {};
 
+  # Merge custom utility overrides.
+  #
+  # A key naming a real utility member REPLACES it; anything else is attached
+  # as a custom extra. This mirrors ts, where the utility is an open object
+  # and one setprop does both.
+  #
+  # Without the replace half this was a no-op: every entry went to
+  # `{utility}{custom}`, which nothing reads, so a caller passing
+  # `utility => { fetcher => $my_transport }` - the documented way to script
+  # the transport, and the seam the shared feature corpus runs on - was
+  # silently ignored while ts and js honoured it.
+  #
+  # Option keys are camelCase, as ts spells them; members here are
+  # snake_case. Converting rather than listing keeps the mapping to one rule,
+  # so a utility added later is overridable without touching this. The
+  # registrar has already populated every member, so `exists` is the test for
+  # "is this a real one".
   my $custom_utils = ProjectNameHelpers::gp($options, 'utility');
   if (Voxgig::Struct::ismap($custom_utils) && $ctx->{utility}) {
+    my $utility = $ctx->{utility};
     for my $k (keys %$custom_utils) {
-      $ctx->{utility}{custom}{$k} = $custom_utils->{$k};
+      my $member = $k;
+      $member =~ s/([A-Z])/'_' . lc($1)/ge;
+      if ('custom' ne $member && exists $utility->{$member}) {
+        $utility->{$member} = $custom_utils->{$k};
+      }
+      else {
+        $utility->{custom}{$k} = $custom_utils->{$k};
+      }
     }
   }
 

@@ -1249,6 +1249,7 @@ tm/perl/src/feature/README.md 74fc01b8a34f
 tm/perl/src/feature/base/.gitkeep e3b0c44298fc
 tm/perl/src/feature/test/.gitkeep e3b0c44298fc
 tm/perl/t/feature.t e6a0b4e0e51e
+tm/perl/t/feature_corpus.t fb4bc062190e
 tm/perl/t/netsim.t e5829249c5e9
 tm/perl/t/pipeline.t c90e6e87fa14
 tm/perl/t/primary_utility.t 9e9638b6cdf7
@@ -1267,7 +1268,7 @@ tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm b48207779329
 tm/perl/utility/make_fetch_def.pm ebb77b54060c
-tm/perl/utility/make_options.pm a4d253ddb244
+tm/perl/utility/make_options.pm 06430838d718
 tm/perl/utility/make_point.pm 584666550bc1
 tm/perl/utility/make_request.pm d4b1ec8cf30d
 tm/perl/utility/make_response.pm 51a842fc584b
