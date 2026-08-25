@@ -34,7 +34,7 @@ is no runtime to install and no service to call.
 | [`cache`](#cache) | Serves safe reads from a bounded TTL cache | transport |
 | [`proxy`](#proxy) | Routes outbound calls through an HTTP(S) proxy | transport |
 | [`netsim`](#netsim) | Injects latency, failures and outages for offline tests | transport |
-| [`cost`](#cost) | Prices every call, attributes the spend, and enforces a budget | transport + hooks |
+| [`cost`](#cost) | Prices every call, attributes the spend, and stops on a budget | transport + hooks |
 | [`test`](#test) | An in-memory mock API served from seed data | transport (base) |
 | [`idempotency`](#idempotency) | Stamps `Idempotency-Key` on mutating calls | `PreRequest` |
 | [`paging`](#paging) | Reads and writes pagination signals for list operations | `PreRequest`, `PreResult` |
@@ -534,8 +534,8 @@ because every target's generated test suite depends on it. The inline
 
 > Cost tracking and spend budget for API calls
 
-Prices every call, attributes the spend, and refuses to keep spending past
-a ceiling you set.
+Prices every call, attributes the spend, and stops spending once a budget
+you set is gone.
 
 This is the one bundled feature that uses **both seams**, and it has to.
 Money is spent per HTTP **attempt** (a retried call is charged again,
@@ -574,7 +574,7 @@ are different claims and should not be silently summed.
 | `header` | `''` | Response header carrying a reported usage figure. |
 | `path` | `''` | Dot path into the response body carrying a usage figure. |
 | `perUnit` | `0` | Price per reported unit. Multiplies a header or body figure. |
-| `budget` | `0` | Spend ceiling. `0` means no ceiling. |
+| `budget` | `0` | Spend limit, checked against spend SO FAR. `0` means no limit. |
 | `onBudget` | `'warn'` | `'warn'` records the overrun, `'deny'` refuses the call. |
 | `actor` | `'anonymous'` | Default actor for attribution. |
 | `sink(record)` | none | Called with each finished record. |
@@ -608,9 +608,29 @@ a refused call costs nothing and never touches the network. With
 `onBudget: 'deny'` it raises `cost_budget`; with the default `'warn'` it
 sets `budget.exceeded` and lets the call through.
 
-That is the useful shape for agent traffic, which is bursty, repetitive and
-prone to tight retry loops: a ceiling in the client is a better answer than
-finding out from the invoice.
+**It is a cutoff, not a hard cap, and the difference matters.** The check
+asks *have I already spent the budget*, not *will this call exceed it*.
+What a call costs is generally not known until after it has been made — a
+reported header or body figure arrives with the response, and a retried
+call is charged per attempt — so the last admitted call can carry total
+spend well past the limit:
+
+```ts
+// budget 2, but one call prices at 5
+feature: [{ name: 'cost', active: true, unit: 5, budget: 2, onBudget: 'deny' }]
+
+await client.Report().generate({ id: 'r1' })   // admitted: nothing spent yet
+client._cost.total.amount                      // 5 — the limit is already passed
+await client.Report().generate({ id: 'r2' })   // refused: cost_budget
+```
+
+So `budget` bounds a run; it does not guarantee a maximum. Size it with
+that overshoot in mind — one call's worth, or one retried call's worth,
+below the number you actually cannot exceed.
+
+That shape is still the useful one for agent traffic, which is bursty,
+repetitive and prone to tight retry loops: a cutoff in the client stops a
+loop that would otherwise run until the invoice arrives.
 
 **Notes and limits.**
 
@@ -636,7 +656,8 @@ finding out from the invoice.
   stops this client, not your account.
 - **Spend is known after the fact** unless the API reports a pre-flight
   price, so `deny` enforces against spend-so-far, not against the call you
-  are about to make.
+  are about to make. See [The budget](#the-budget) for what that costs you
+  in overshoot.
 - **A failed call still costs.** A rejecting transport is charged per
   attempt, and an operation that throws commits its spend through
   `PreUnexpected` rather than being lost. Otherwise a run of
@@ -1008,7 +1029,7 @@ naming.
 | Test resilience offline | `test` + `netsim` + `retry` | Scripted failures over a mock API, with injectable clocks. |
 | Enterprise deployment | `proxy` + `clienttrack` + `rbac` | Egress through the corporate proxy, identifiable traffic, local policy. |
 | Know what it costs | `cost` + `audit` | Spend per operation and per actor, with an audit record beside it. |
-| Stop a runaway agent | `cost` + `retry` + `timeout` | A hard spend ceiling around bounded, bounded-wait attempts. |
+| Stop a runaway agent | `cost` + `retry` + `timeout` | A spend cutoff around bounded, bounded-wait attempts. |
 
 Two ordering rules cover most of it: `test` first, because it is the base
 transport, and the wrapping features in the order you want them to nest.
