@@ -346,10 +346,14 @@ func (f *TestFeature) buildArgs(ctx *core.Context, op *core.Operation, args map[
 		}
 	}
 
-	// Get required params.
+	// Path AND query: a path-only read misses a query-addressed record
+	// (e.g. GET /result?trace_id=), which has no path param at all.
 	paramsPath := vs.GetPath([]any{"args", "params"}, point)
 	reqdParams := vs.Select(paramsPath, map[string]any{"reqd": true})
-	reqd := vs.Transform(reqdParams, []any{"`$EACH`", "", "`$KEY.name`"})
+	reqdFromParams := vs.Transform(reqdParams, []any{"`$EACH`", "", "`$KEY.name`"})
+	queryPath := vs.GetPath([]any{"args", "query"}, point)
+	reqdQuery := vs.Select(queryPath, map[string]any{"reqd": true})
+	reqdFromQuery := vs.Transform(reqdQuery, []any{"`$EACH`", "", "`$KEY.name`"})
 
 	qand := []any{}
 	q := map[string]any{"`$AND`": &qand}
@@ -357,8 +361,8 @@ func (f *TestFeature) buildArgs(ctx *core.Context, op *core.Operation, args map[
 	if args != nil {
 		for _, key := range vs.KeysOf(args) {
 			isId := key == "id"
-			selected := vs.Select(reqd, key)
-			isReqd := !vs.IsEmpty(selected)
+			isReqd := !vs.IsEmpty(vs.Select(reqdFromParams, key)) ||
+				!vs.IsEmpty(vs.Select(reqdFromQuery, key))
 
 			if isId || isReqd {
 				v := ctx.Utility.Param(ctx, key)
