@@ -251,8 +251,35 @@ Rules:
   of `options.feature` (position is add-order, and add-order is nesting order),
   and the tokens `#OP1`/`#OP2` for two operations the runner discovers from
   the client — no case may name an entity. A section that runs but defers part
-  of its subject says so with `partial:`, not `basic: pending:`. `ts` and `js`
-  have runners; the other targets do not yet.
+  of its subject says so with `partial:`, not `basic: pending:`. `ts`, `js`,
+  `go`, `py`, `rb`, `php`, `perl` and `java` have runners; the other targets
+  do not yet.
+- **A corpus section the project does not have is a SKIP; one sdkgen supplies
+  is a FAILURE.** Every project carries its own materialised
+  `.sdk/test/test.json`, so one scaffolded before a section existed
+  legitimately has no cases to run. The first cut asserted the `feature`
+  section outright and took the fleet red on every ts and js SDK for a corpus
+  those projects had simply not re-pulled yet — a deployment-ordering break,
+  not a defect in any SDK. The generated runners therefore SKIP a missing
+  section, and the strict check lives where the corpus is CONTROLLED:
+  `generatedcompile.test.ts` writes its own fixture and requires the
+  `feature.<name>: ran N of M case(s)` line, so a section that goes missing
+  there still fails loudly. Both directions are pinned — strip the section
+  from the lane's fixture and all eight lanes fail; strip it from a project's
+  corpus and all eight runners skip green.
+- **`options.utility` must be REAL, or the corpus cannot run.** The cases
+  script the transport through `utility: { fetcher }` — the documented seam —
+  and a target whose `makeOptions` shelves every passed slot in a `custom` map
+  nothing reads honours nothing while `ts` honours it. That was true of every
+  target but `ts`/`js`, invisibly, because each `custom_utility` test asserted
+  the side map rather than the behaviour. The eight targets above now map the
+  option key onto the real member and replace it, keeping unknown names in
+  `custom`; the rest still shelve everything, so port that before adding a
+  runner. `ts/test/generatedcompile.test.ts` proves each lane end to end:
+  generate an SDK WITH the feature, build it, run the shipped runner, and read
+  the `feature.<name>: ran N of M case(s)` line every runner prints. Exit zero
+  is not enough — every framework reports a fully-skipped suite as a pass. A
+  toolchain this machine lacks SKIPS, visibly; it never silently passes.
 - **A per-language divergence must be deliberate and commented.** If one
   language genuinely must differ (e.g. go additionally emits `LoadTyped`
   wrappers because go-cli/go-mcp dispatch entities through the untyped
@@ -516,6 +543,20 @@ emitted broken source reached the fleet unchallenged.
   The two are not interchangeable and neither is "the right one". Using the
   unfiltered collection to decide what to emit ships excluded entities; using
   the filtered one to assign class names produces collisions.
+- **An entity type can collide with the SDK'S OWN scaffolding, not just with a
+  language keyword.** Where a target has one flat namespace, a generated type
+  meets every unprefixed name the templates and components declare — the test
+  tree included, because the suite loads both into one process. `naming.ts`
+  carries a set per exposed language (`RB_SDK_CONSTANTS`, `SWIFT_SDK_TYPES`,
+  `PHP_SDK_CLASSES`), each with a test that RE-DERIVES the list from
+  `tm/<lang>/**` and `src/cmp/<lang>/*.ts` and fails on drift. These are the
+  second half of "already taken"; the `*_RESERVED_*` sets beside them cover
+  what the LANGUAGE owns, which is the half a scaffolding list cannot see. Add a
+  top-level declaration to one of those trees and the guard test tells you to
+  register it. Do not hand-maintain the list: the swift one missed three names
+  on its first cut, one declared by a component rather than a template. Ruby
+  only warns on a collision and carries on (issue #64, gitlab-sdk's `Runner`);
+  PHP fatals on redeclaration, so the same hazard is worse there.
 - **`ts/test/fixture/**` has its OWN compile lane.** `check-scaffold` covers
   `ts/project/.sdk/src/cmp/**` and nothing else, so the fixture PACKAGE's
   components — which are what an external author's components look like — had
@@ -728,6 +769,16 @@ data; it is what caught `error is not a function` on every ts/js pipeline
 short-circuit, which both simulations had passed for as long as they
 existed. Reach for the harness only when the subject is a function (a
 `sink` callback) or a language idiom.
+
+Eight targets run it today — `ts`, `js`, `go`, `py`, `rb`, `php`, `perl`,
+`java` — and `ts/test/generatedcompile.test.ts` drives one lane per target:
+generate an SDK carrying the feature, build it, run the shipped runner, and
+require the `feature.<name>: ran N of M case(s)` line it prints. Adding a
+target is a row in `CORPUS_LANES`, not a new test. Two things the lane
+exists to catch: a runner that SKIPS (every framework reports that as a
+pass), and a `makeOptions` that ignores `options.utility` (see "Language
+parity is CRITICAL") — without that seam the cases cannot script the
+transport at all.
 
 Per-feature options, defaults, recorded state and ordering semantics are
 documented in [reference/features](./docs/reference/features.md) — keep it

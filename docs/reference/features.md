@@ -1071,10 +1071,20 @@ are therefore out of reach and are covered per-language instead: anything
 whose subject is a function (a `sink` callback), and anything about a
 language's own idiom.
 
-Running the corpus against a generated TypeScript SDK immediately found
-two defects that every prior test had passed over: a `TypeError` in place
-of the SDK error on **every** pipeline short-circuit in ts and js, and a
-refused operation being counted as a call by `cost`. Both are fixed.
+Eight targets run the corpus today: `ts`, `js`, `go`, `py`, `rb`, `php`,
+`perl` and `java`. The rest are on the way, and the blocker is the same in
+each: the cases script the transport through `options.utility.fetcher`, the
+documented seam, so a target that ignores it cannot run a case at all.
+
+Running the corpus found defects every prior test had passed over, and it
+found them in each language it reached. In ts and js, a `TypeError` in
+place of the SDK error on **every** pipeline short-circuit, and a refused
+operation counted as a call by `cost`. In php, an `actor` the control
+object never carried, so per-actor attribution silently read
+`anonymous` for both `cost` and `audit`, and an error `status` assigned as
+a dynamic property, deprecated in PHP 8 and fatal in PHP 9, on every error
+path. In seven targets, an `options.utility` override that was shelved in a
+map nothing read. All are fixed.
 
 ## See also
 
