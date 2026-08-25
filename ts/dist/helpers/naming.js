@@ -156,9 +156,9 @@ const RB_SDK_CONSTANTS = new Set([
     'StructRunner', 'StructTestClient', 'StructUtilityTest', 'VoxgigStruct',
     'STRUCT_TEST_JSON_FILE',
     // the generated/templated test classes
-    'ExistsTest', 'FeatureTest', 'NetsimTest', 'PipelineTest',
-    'PrimaryUtilityTest', 'ReadmeExamplesTest', 'TestHookFeature',
-    'TestInitFeature',
+    'ExistsTest', 'FeatureCorpusTest', 'FeatureTest', 'NetsimTest',
+    'PipelineTest', 'PrimaryUtilityTest', 'ReadmeExamplesTest',
+    'TestHookFeature', 'TestInitFeature',
 ]);
 // Does `Name` collide with a constant the generated Ruby SDK already declares?
 function isRbSdkConstant(Name) {

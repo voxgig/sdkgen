@@ -1332,9 +1332,9 @@ src/cmp/php/utility_php.ts f5357e22b27a
 tm/php/LICENSE ed2f88b0aab8
 tm/php/Makefile 1df8eadc6f78
 tm/php/VERSION e6635045e1d2
-tm/php/core/Context.php 24b55eb2dfa0
-tm/php/core/Control.php 56a106d7b34d
-tm/php/core/Error.php 73c842c12b33
+tm/php/core/Context.php 6ba465e83593
+tm/php/core/Control.php 4805a4f31b9c
+tm/php/core/Error.php 632c49dd3cb4
 tm/php/core/Helpers.php 75cc7fb2f06c
 tm/php/core/Operation.php dde7df1447a3
 tm/php/core/Response.php 4bd0e492f940
@@ -1346,6 +1346,7 @@ tm/php/feature/TestFeature.php 365760e51eb5
 tm/php/src/feature/README.md 74fc01b8a34f
 tm/php/src/feature/base/.gitkeep e3b0c44298fc
 tm/php/src/feature/test/.gitkeep e3b0c44298fc
+tm/php/test/FeatureCorpusTest.php 2eea3f16bd09
 tm/php/test/FeatureTest.php 1317c160eeb7
 tm/php/test/NetsimTest.php fac241d6b75a
 tm/php/test/PipelineTest.php bfaaabc2e8e9
@@ -1364,7 +1365,7 @@ tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 5bbbbecfc3d7
 tm/php/utility/MakeFetchDef.php c76cc8f6f00e
-tm/php/utility/MakeOptions.php bbf16c92d26f
+tm/php/utility/MakeOptions.php d575d8c37be1
 tm/php/utility/MakePoint.php b17607873309
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
@@ -1454,7 +1455,7 @@ tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py d68358f50bc8
 tm/py/pkg/utility/make_fetch_def.py 0ad63d779a4e
-tm/py/pkg/utility/make_options.py d5d3d154c35e
+tm/py/pkg/utility/make_options.py b94769933da8
 tm/py/pkg/utility/make_point.py 72db740ca620
 tm/py/pkg/utility/make_request.py 9835b18e665b
 tm/py/pkg/utility/make_response.py 2be9c7ffdfb6
@@ -1486,6 +1487,7 @@ tm/py/test/runner.py b7ad58a04db3
 tm/py/test/sdk-test-control.json ea9bf9046c8a
 tm/py/test/struct_runner.py fd01d1b02b00
 tm/py/test/test_feature.py c41d624ea8da
+tm/py/test/test_feature_corpus.py 1d1595f605d9
 tm/py/test/test_netsim.py 1583f97d2c84
 tm/py/test/test_pipeline.py 682034aad244
 tm/py/test/test_primary_utility.py 329f7aaa8620
@@ -1569,6 +1571,7 @@ tm/rb/feature/test_feature.rb ad5f05068afd
 tm/rb/src/feature/README.md 74fc01b8a34f
 tm/rb/src/feature/base/.gitkeep e3b0c44298fc
 tm/rb/src/feature/test/.gitkeep e3b0c44298fc
+tm/rb/test/feature_corpus_test.rb e7d6039f21b8
 tm/rb/test/feature_test.rb 0a9e28cb82e2
 tm/rb/test/netsim_test.rb bc7d9265bec9
 tm/rb/test/pipeline_test.rb 4797d13d0f0b
@@ -1587,7 +1590,7 @@ tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb abe971c81e08
 tm/rb/utility/make_fetch_def.rb b0cbc0f3b381
-tm/rb/utility/make_options.rb bf324df74d77
+tm/rb/utility/make_options.rb 5f8dc1c4aba4
 tm/rb/utility/make_point.rb d5831921adcc
 tm/rb/utility/make_request.rb a4ef373194d8
 tm/rb/utility/make_response.rb 0ca41a876f23

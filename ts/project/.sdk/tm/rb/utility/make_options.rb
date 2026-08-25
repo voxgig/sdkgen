@@ -4,9 +4,33 @@ module ProjectNameUtilities
   MakeOptions = ->(ctx) {
     options = ctx.options || {}
 
+    # Merge custom utility overrides.
+    #
+    # A key naming a real utility member REPLACES it; anything else is
+    # attached as a custom extra. This mirrors ts, where the utility is an
+    # open object and one setprop does both.
+    #
+    # Without the replace half this was a no-op: every entry went to
+    # `utility.custom`, which nothing reads, so a caller passing
+    # `"utility" => {"fetcher" => my_transport}` - the documented way to
+    # script the transport, and the seam the shared feature corpus runs on -
+    # was silently ignored while ts and js honoured it.
+    #
+    # Option keys are camelCase, as ts spells them; members here are
+    # snake_case. Converting rather than listing keeps the mapping to one
+    # rule, so a utility added later is overridable without touching this.
     custom_utils = VoxgigStruct.getprop(options, "utility")
     if custom_utils.is_a?(Hash) && ctx.utility
-      custom_utils.each { |k, v| ctx.utility.custom[k] = v }
+      utility = ctx.utility
+      custom_utils.each do |k, v|
+        member = k.to_s.gsub(/([A-Z])/) { "_#{$1.downcase}" }
+        setter = "#{member}="
+        if member != "custom" && utility.respond_to?(setter)
+          utility.public_send(setter, v)
+        else
+          utility.custom[k] = v
+        end
+      end
     end
 
     opts = VoxgigStruct.clone(options)
