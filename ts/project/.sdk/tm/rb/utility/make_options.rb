@@ -23,9 +23,16 @@ module ProjectNameUtilities
     if custom_utils.is_a?(Hash) && ctx.utility
       utility = ctx.utility
       custom_utils.each do |k, v|
+        # Public utility names are camelCase and carry no underscore, so an
+        # underscore means the caller named something of their own - possibly
+        # the INTERNAL spelling of a real member. `make_error` must stay an
+        # extension in `custom`; replacing the pipeline function with it (ts,
+        # js and go all keep it) would break the error path on the next
+        # request, silently.
+        public_name = !k.to_s.include?("_")
         member = k.to_s.gsub(/([A-Z])/) { "_#{$1.downcase}" }
         setter = "#{member}="
-        if member != "custom" && utility.respond_to?(setter)
+        if public_name && member != "custom" && utility.respond_to?(setter)
           utility.public_send(setter, v)
         else
           utility.custom[k] = v

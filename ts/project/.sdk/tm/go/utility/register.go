@@ -92,7 +92,21 @@ func overrideUtil(u *core.Utility, key string, val any) bool {
 			return true
 		}
 	case "fetcher":
+		// BOTH SPELLINGS. Fetcher is the one member declared as a NAMED type,
+		// and a type assertion to a defined type matches only that exact
+		// dynamic type. A plain function literal in a map[string]any - the
+		// ordinary way to write this - carries the UNNAMED signature and
+		// asserts to `func(...)` but not to `core.FetcherFunc`; a value the
+		// caller converted asserts to `core.FetcherFunc` but not to the
+		// unnamed one. Accepting only the named type shelved every ordinary
+		// caller's transport in Custom, which is the exact defect this
+		// function exists to remove.
 		if fn, ok := val.(core.FetcherFunc); ok {
+			u.Fetcher = fn
+			return true
+		}
+		if fn, ok := val.(func(ctx *core.Context, fullurl string,
+			fetchdef map[string]any) (any, error)); ok {
 			u.Fetcher = fn
 			return true
 		}

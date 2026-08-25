@@ -6,7 +6,17 @@ from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 
 
 def _util_member(key):
-    """camelCase option key -> snake_case utility member name."""
+    """Public camelCase option key -> snake_case utility member name.
+
+    Returns None for a key that is NOT a public name. Public utility names are
+    camelCase and contain no underscore, so an underscore means the caller
+    named something of their own - possibly the INTERNAL spelling of a real
+    member. `make_error` must stay an extension in `custom`; replacing the
+    pipeline function with it (ts, js and go all keep it) would break the
+    error path on the next request, silently.
+    """
+    if "_" in key:
+        return None
     out = []
     for ch in key:
         if ch.isupper():
@@ -41,7 +51,7 @@ def make_options_util(ctx):
         if utility is not None:
             for key, val in custom_utils.items():
                 member = _util_member(key)
-                if member != "custom" and hasattr(utility, member):
+                if member is not None and member != "custom" and hasattr(utility, member):
                     setattr(utility, member, val)
                 else:
                     utility.custom[key] = val

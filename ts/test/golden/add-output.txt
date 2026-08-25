@@ -590,7 +590,7 @@ tm/go/feature/test_feature.go 7dfeb1b52fde
 tm/go/src/feature/README.md efebfaa50be0
 tm/go/src/feature/base/.gitkeep e3b0c44298fc
 tm/go/src/feature/test/.gitkeep e3b0c44298fc
-tm/go/test/custom_utility_test.go bc5eb5a15ff3
+tm/go/test/custom_utility_test.go 41eb5c813b6b
 tm/go/test/feature_corpus_test.go 6187e0beba9d
 tm/go/test/feature_harness_test.go c66475cecadb
 tm/go/test/netsim_test.go 30f992e9d5c0
@@ -625,7 +625,7 @@ tm/go/utility/prepare_method.go 9474bd59cef6
 tm/go/utility/prepare_params.go cc1327507f18
 tm/go/utility/prepare_path.go 9abb91c60ce8
 tm/go/utility/prepare_query.go 9d2341258061
-tm/go/utility/register.go 9524f20259fd
+tm/go/utility/register.go 9e23d34141e6
 tm/go/utility/result_basic.go 6621fff8681d
 tm/go/utility/result_body.go 26a11991a96c
 tm/go/utility/result_headers.go 1bf8bf65b390
@@ -1269,7 +1269,7 @@ tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm b48207779329
 tm/perl/utility/make_fetch_def.pm ebb77b54060c
-tm/perl/utility/make_options.pm 06430838d718
+tm/perl/utility/make_options.pm b8736fbd978f
 tm/perl/utility/make_point.pm 584666550bc1
 tm/perl/utility/make_request.pm d4b1ec8cf30d
 tm/perl/utility/make_response.pm 51a842fc584b
@@ -1367,7 +1367,7 @@ tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 5bbbbecfc3d7
 tm/php/utility/MakeFetchDef.php c76cc8f6f00e
-tm/php/utility/MakeOptions.php d575d8c37be1
+tm/php/utility/MakeOptions.php 48ff739bd4c3
 tm/php/utility/MakePoint.php b17607873309
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
@@ -1457,7 +1457,7 @@ tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py d68358f50bc8
 tm/py/pkg/utility/make_fetch_def.py 0ad63d779a4e
-tm/py/pkg/utility/make_options.py b94769933da8
+tm/py/pkg/utility/make_options.py 329405244149
 tm/py/pkg/utility/make_point.py 72db740ca620
 tm/py/pkg/utility/make_request.py 9835b18e665b
 tm/py/pkg/utility/make_response.py 2be9c7ffdfb6
@@ -1592,7 +1592,7 @@ tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb abe971c81e08
 tm/rb/utility/make_fetch_def.rb b0cbc0f3b381
-tm/rb/utility/make_options.rb 5f8dc1c4aba4
+tm/rb/utility/make_options.rb 9d4df380f982
 tm/rb/utility/make_point.rb d5831921adcc
 tm/rb/utility/make_request.rb a4ef373194d8
 tm/rb/utility/make_response.rb 0ca41a876f23

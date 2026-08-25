@@ -46,8 +46,16 @@ class ProjectNameMakeOptions
         if ((is_array($custom_utils) || is_object($custom_utils)) && $ctx->utility) {
             $utility = $ctx->utility;
             foreach ((array)$custom_utils as $k => $v) {
+                // Public utility names are camelCase and carry no underscore,
+                // so an underscore means the caller named something of their
+                // own - possibly the INTERNAL spelling of a real member.
+                // `make_error` must stay an extension in `custom`; replacing
+                // the pipeline function with it (ts, js and go all keep it)
+                // would break the error path on the next request, silently.
+                $public_name = false === strpos((string)$k, '_');
                 $member = strtolower(preg_replace('/([A-Z])/', '_$1', (string)$k));
-                if ('custom' !== $member && property_exists($utility, $member)) {
+                if ($public_name && 'custom' !== $member
+                    && property_exists($utility, $member)) {
                     $utility->$member = $v;
                 } else {
                     $utility->custom[$k] = $v;

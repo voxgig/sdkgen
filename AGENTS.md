@@ -530,6 +530,20 @@ emitted broken source reached the fleet unchallenged.
   The two are not interchangeable and neither is "the right one". Using the
   unfiltered collection to decide what to emit ships excluded entities; using
   the filtered one to assign class names produces collisions.
+- **An entity type can collide with the SDK'S OWN scaffolding, not just with a
+  language keyword.** Where a target has one flat namespace, a generated type
+  meets every unprefixed name the templates and components declare — the test
+  tree included, because the suite loads both into one process. `naming.ts`
+  carries a set per exposed language (`RB_SDK_CONSTANTS`, `SWIFT_SDK_TYPES`,
+  `PHP_SDK_CLASSES`), each with a test that RE-DERIVES the list from
+  `tm/<lang>/**` and `src/cmp/<lang>/*.ts` and fails on drift. These are the
+  second half of "already taken"; the `*_RESERVED_*` sets beside them cover
+  what the LANGUAGE owns, which is the half a scaffolding list cannot see. Add a
+  top-level declaration to one of those trees and the guard test tells you to
+  register it. Do not hand-maintain the list: the swift one missed three names
+  on its first cut, one declared by a component rather than a template. Ruby
+  only warns on a collision and carries on (issue #64, gitlab-sdk's `Runner`);
+  PHP fatals on redeclaration, so the same hazard is worse there.
 - **`ts/test/fixture/**` has its OWN compile lane.** `check-scaffold` covers
   `ts/project/.sdk/src/cmp/**` and nothing else, so the fixture PACKAGE's
   components — which are what an external author's components look like — had
