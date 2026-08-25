@@ -25,6 +25,7 @@
 #ifndef SDK_FEATURE_COST_HPP
 #define SDK_FEATURE_COST_HPP
 
+#include <exception>
 #include <functional>
 #include <map>
 #include <string>
@@ -102,6 +103,11 @@ public:
   // nothing at all.
   void prePoint(CtxPtr ctx) override {
     if (!active) return;
+
+    // Mark the context as running through the pipeline, so charge knows a
+    // preDone is coming and does not commit the spend itself.
+    pending[ctx->id].piped = true;
+
     if (budget.limit <= 0.0 || total.amount < budget.limit) return;
 
     budget.exceeded = true;
@@ -118,6 +124,35 @@ public:
 
   // Attribute the operation's spend once the call is finished.
   void preDone(CtxPtr ctx) override {
+    finish(ctx);
+  }
+
+  // A failed operation still spent the money. When the pipeline throws,
+  // preDone never runs, so without this the attempts are counted and the spend
+  // is not, and a budget could never see the cost of a failed call. Whichever
+  // hook fires first consumes the pending entry, so it commits exactly once.
+  void preUnexpected(CtxPtr ctx) override {
+    finish(ctx);
+  }
+
+private:
+  // Per-operation accumulator, keyed by ctx id (the same shape metrics uses
+  // for its start markers).
+  struct Pending {
+    int attempts = 0;
+    double amount = 0.0;
+    double reported = 0.0;
+    double estimated = 0.0;
+    std::string source = "none";
+    // Set by prePoint. Its absence means the call never entered the pipeline
+    // (direct/graphql), so charge commits the spend itself.
+    bool piped = false;
+  };
+
+  std::map<std::string, Pending> pending;
+  int seq = 0;
+
+  void finish(CtxPtr ctx) {
     if (!active) return;
 
     auto it = pending.find(ctx->id);
@@ -125,25 +160,38 @@ public:
     Pending p = it->second;
     pending.erase(it);
 
-    double amount = p.amount;
-    std::string source = p.source;
-
-    // A body figure prices the whole call, so it replaces the per-attempt
-    // estimate rather than adding to it.
-    double body = 0.0;
-    if (bodyAmount(ctx, body)) {
-      amount = body;
-      source = "body";
-    }
-
-    spend(amount, source);
-
     std::string entity = "_";
     std::string opname = "_";
     if (ctx->op) {
       if (!ctx->op->entity.empty()) entity = ctx->op->entity;
       if (!ctx->op->name.empty()) opname = ctx->op->name;
     }
+
+    commit(ctx, p, entity, opname);
+  }
+
+  // Commit one operation's spend: totals, budget, per-op and per-actor
+  // attribution, and the record. Shared by finish and the raw-request path in
+  // charge, which has no preDone to reach.
+  void commit(CtxPtr ctx, const Pending& p, const std::string& entity,
+              const std::string& opname) {
+    double amount = p.amount;
+    double reported = p.reported;
+    double estimated = p.estimated;
+    std::string source = p.source;
+
+    // A body figure prices the whole call, so it replaces the per-attempt
+    // estimate rather than adding to it, and being server-stated the whole
+    // amount counts as reported.
+    double body = 0.0;
+    if (bodyAmount(ctx, body)) {
+      amount = body;
+      reported = body;
+      estimated = 0.0;
+      source = "body";
+    }
+
+    spend(amount, reported, estimated);
 
     std::string actor = "anonymous";
     std::string optActor = fopt::foptStr(options, "actor", "");
@@ -173,21 +221,21 @@ public:
     }
   }
 
-private:
-  // Per-operation accumulator, keyed by ctx id (the same shape metrics uses
-  // for its start markers).
-  struct Pending {
-    int attempts = 0;
-    double amount = 0.0;
-    std::string source = "none";
-  };
-
-  std::map<std::string, Pending> pending;
-  int seq = 0;
-
   Value charge(CtxPtr ctx, const std::string& url, const Value& fetchdef,
                const std::function<Value(CtxPtr, const std::string&, const Value&)>& inner) {
-    Value res = inner(ctx, url, fetchdef);
+    // A throwing transport still costs an attempt. Without this, a run of
+    // connection-level failures under `retry` (which catches and tries again)
+    // would be charged nothing at all, and an onBudget "deny" ceiling could
+    // never stop it.
+    Value res = Value::undef();
+    bool threw = false;
+    std::exception_ptr caught;
+    try {
+      res = inner(ctx, url, fetchdef);
+    } catch (...) {
+      threw = true;
+      caught = std::current_exception();
+    }
 
     std::string source = "none";
     double amount = price(ctx, res, source);
@@ -195,12 +243,32 @@ private:
     // Accumulated here, committed once at preDone. Adding each attempt to the
     // running total and then subtracting it again when a body figure
     // supersedes it loses precision to catastrophic cancellation.
+    //
+    // Reported and estimated are kept apart per ATTEMPT: a 503 priced from the
+    // rate table followed by a 200 carrying the cost header is part estimate,
+    // part reported, and collapsing both into the final attempt's category
+    // would corrupt the split.
     Pending& p = pending[ctx->id];
     p.attempts++;
     p.amount += amount;
+    if ("header" == source || "body" == source) p.reported += amount;
+    else p.estimated += amount;
     p.source = source;
 
     total.attempts++;
+
+    // direct() and graphql() reach the transport without dispatching any
+    // pipeline hooks, so there is no prePoint to gate on and no preDone to
+    // commit. Their spend is committed here, or it would never be counted.
+    if (!p.piped) {
+      Pending copy = p;
+      pending.erase(ctx->id);
+      commit(ctx, copy, "_", "direct");
+    }
+
+    if (threw) {
+      std::rethrow_exception(caught);
+    }
 
     return res;
   }
@@ -284,10 +352,10 @@ private:
     return false;
   }
 
-  void spend(double amount, const std::string& source) {
+  void spend(double amount, double reported, double estimated) {
     total.amount += amount;
-    if (source == "header" || source == "body") total.reported += amount;
-    else total.estimated += amount;
+    total.reported += reported;
+    total.estimated += estimated;
 
     budget.spent = total.amount;
     if (budget.limit > 0.0) {

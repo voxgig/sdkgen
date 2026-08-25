@@ -114,6 +114,16 @@ static char* cost_dot_join(const char* a, const char* b) {
 // never silently truncated. (paging.c carries its own copy for the same
 // reason: feature source is trimmed per project, so a shared static helper
 // would vanish with whichever feature happened to own it.)
+// Defined below; `through` commits raw (unpipelined) calls through it.
+static void cost_commit(CostTrack* t, voxgig_value* options, Context* ctx,
+                        voxgig_value* pending, const char* entity, const char* opname);
+
+// A fresh per-operation accumulator.
+static voxgig_value* cost_new_pending(void) {
+  return cmap(6, "attempts", v_num(0), "amount", v_num(0), "reported", v_num(0),
+              "estimated", v_num(0), "source", v_str("none"), "piped", v_num(0));
+}
+
 static voxgig_value* cost_getpath_dotted(voxgig_value* store, const char* path) {
   if (!path || path[0] == '\0') return store;
 
@@ -242,13 +252,10 @@ static bool cost_body_amount(voxgig_value* options, Context* ctx, double* out) {
   return false;
 }
 
-static void cost_spend(CostTrack* t, double amount, const char* source) {
+static void cost_spend(CostTrack* t, double amount, double reported, double estimated) {
   t->amount += amount;
-  if (strcmp(source, "header") == 0 || strcmp(source, "body") == 0) {
-    t->reported += amount;
-  } else {
-    t->estimated += amount;
-  }
+  t->reported += reported;
+  t->estimated += estimated;
 
   t->spent = t->amount;
   if (t->limit > 0.0) {
@@ -275,20 +282,50 @@ static voxgig_value* through(Fetcher* self, Context* ctx, const char* url,
   // attempt to the running total and then subtracting it again when a body
   // figure supersedes it loses precision to catastrophic cancellation.
   voxgig_value* pending = ctx_out_extra_get(ctx, COST_PENDING_KEY);
-  double prev_amount = 0.0;
-  int64_t prev_attempts = 0;
-  if (v_is_map(pending)) {
-    voxgig_value* pa = getp(pending, "amount");
-    if (voxgig_is_number(pa)) prev_amount = voxgig_as_double(pa);
-    voxgig_value* pn = getp(pending, "attempts");
-    if (voxgig_is_number(pn)) prev_attempts = (int64_t)voxgig_as_double(pn);
+  if (!v_is_map(pending)) {
+    pending = cost_new_pending();
   }
 
-  ctx_out_extra_set(ctx, COST_PENDING_KEY,
-                    cmap(3, "attempts", v_num((double)(prev_attempts + 1)), "amount",
-                         v_num(prev_amount + amount), "source", v_str(source)));
+  double prev_amount = 0.0;
+  int64_t prev_attempts = 0;
+  bool piped = false;
+  voxgig_value* pa = getp(pending, "amount");
+  if (voxgig_is_number(pa)) prev_amount = voxgig_as_double(pa);
+  voxgig_value* pn = getp(pending, "attempts");
+  if (voxgig_is_number(pn)) prev_attempts = (int64_t)voxgig_as_double(pn);
+  voxgig_value* pp = getp(pending, "piped");
+  if (voxgig_is_number(pp)) piped = voxgig_as_double(pp) != 0.0;
+
+  // Reported and estimated are kept apart per ATTEMPT: a 503 priced from the
+  // rate table followed by a 200 carrying the cost header is part estimate,
+  // part reported, and collapsing both into the final attempt's category
+  // would corrupt the split.
+  //
+  // A failed transport arrives through the err out-param here, not as a
+  // longjmp, so it already reaches this point and is priced from the table or
+  // unit - no separate catch is needed, unlike the ts/js ports.
+  const char* bucket =
+      (strcmp(source, "header") == 0 || strcmp(source, "body") == 0) ? "reported" : "estimated";
+  double prev_bucket = 0.0;
+  voxgig_value* pb = getp(pending, bucket);
+  if (voxgig_is_number(pb)) prev_bucket = voxgig_as_double(pb);
+
+  setp(pending, "attempts", v_num((double)(prev_attempts + 1)));
+  setp(pending, "amount", v_num(prev_amount + amount));
+  setp(pending, bucket, v_num(prev_bucket + amount));
+  setp(pending, "source", v_str(source));
 
   track->attempts += 1;
+
+  // direct() and graphql() reach the transport without dispatching any
+  // pipeline hooks, so there is no PrePoint to gate on and no PreDone to
+  // commit. Their spend is committed here, or it would never be counted.
+  if (!piped) {
+    cost_commit(track, options, ctx, pending, "_", "direct");
+    ctx_out_extra_set(ctx, COST_PENDING_KEY, v_undef());
+  } else {
+    ctx_out_extra_set(ctx, COST_PENDING_KEY, pending);
+  }
 
   return out;
 }
@@ -297,6 +334,15 @@ static voxgig_value* through(Fetcher* self, Context* ctx, const char* url,
 // nothing at all.
 static void cost_pre_point(CostFeature* cf, Context* ctx) {
   if (!cf->active) return;
+
+  // Mark the context as running through the pipeline, so `through` knows a
+  // PreDone is coming and does not commit the spend itself.
+  voxgig_value* pending = ctx_out_extra_get(ctx, COST_PENDING_KEY);
+  if (!v_is_map(pending)) {
+    pending = cost_new_pending();
+  }
+  setp(pending, "piped", v_num(1));
+  ctx_out_extra_set(ctx, COST_PENDING_KEY, pending);
 
   CostTrack* t = cf->track;
   if (t->limit <= 0.0 || t->amount < t->limit) return;
@@ -315,45 +361,46 @@ static void cost_pre_point(CostFeature* cf, Context* ctx) {
   ctx_out_set_point_err(ctx, err);
 }
 
-// Attribute the operation's spend once the call is finished.
-static void cost_pre_done(CostFeature* cf, Context* ctx) {
-  if (!cf->active) return;
-
-  voxgig_value* pending = ctx_out_extra_get(ctx, COST_PENDING_KEY);
-  if (!v_is_map(pending)) return;
-  ctx_out_extra_set(ctx, COST_PENDING_KEY, v_undef());
-
-  CostTrack* t = cf->track;
-
+// Commit one operation's spend: totals, budget, per-op and per-actor
+// attribution, and the record. Shared by cost_finish and the raw-request path
+// in through, which has no PreDone to reach.
+static void cost_commit(CostTrack* t, voxgig_value* options, Context* ctx,
+                        voxgig_value* pending, const char* entity, const char* opname) {
   double amount = 0.0;
+  double reported = 0.0;
+  double estimated = 0.0;
   int64_t attempts = 0;
   const char* source = "none";
 
   voxgig_value* pa = getp(pending, "amount");
   if (voxgig_is_number(pa)) amount = voxgig_as_double(pa);
+  voxgig_value* pr = getp(pending, "reported");
+  if (voxgig_is_number(pr)) reported = voxgig_as_double(pr);
+  voxgig_value* pe = getp(pending, "estimated");
+  if (voxgig_is_number(pe)) estimated = voxgig_as_double(pe);
   voxgig_value* pn = getp(pending, "attempts");
   if (voxgig_is_number(pn)) attempts = (int64_t)voxgig_as_double(pn);
   voxgig_value* ps = getp(pending, "source");
   if (v_is_str(ps)) {
-    const char* s = voxgig_as_string(ps);
-    if (s) source = s;
+    const char* sv = voxgig_as_string(ps);
+    if (sv) source = sv;
   }
 
   // A body figure prices the whole call, so it replaces the per-attempt
-  // estimate rather than adding to it.
+  // estimate rather than adding to it, and being server-stated the whole
+  // amount counts as reported.
   double body = 0.0;
-  if (cost_body_amount(cf->options, ctx, &body)) {
+  if (cost_body_amount(options, ctx, &body)) {
     amount = body;
+    reported = body;
+    estimated = 0.0;
     source = "body";
   }
 
-  cost_spend(t, amount, source);
-
-  const char* entity = (ctx->op && ctx->op->entity[0] != '\0') ? ctx->op->entity : "_";
-  const char* opname = (ctx->op && ctx->op->name[0] != '\0') ? ctx->op->name : "_";
+  cost_spend(t, amount, reported, estimated);
 
   const char* actor = "anonymous";
-  const char* opt_actor = fopt_str(cf->options, "actor", "");
+  const char* opt_actor = fopt_str(options, "actor", "");
   if (opt_actor[0] != '\0') actor = opt_actor;
   if (ctx->ctrl && ctx->ctrl->actor && ctx->ctrl->actor[0] != '\0') actor = ctx->ctrl->actor;
 
@@ -370,10 +417,27 @@ static void cost_pre_done(CostFeature* cf, Context* ctx) {
            "source", v_str(source), "attempts", v_num((double)attempts));
   t->last = record;
 
-  voxgig_value* sink = getp(cf->options, "sink");
+  voxgig_value* sink = getp(options, "sink");
   if (voxgig_is_func(sink)) {
     call_vfn(sink, record);
   }
+}
+
+// Attribute the operation's spend once the call is finished. PreDone and
+// PreUnexpected share this: a FAILED operation still spent the money, and when
+// the pipeline errors PreDone never runs. Whichever hook fires first consumes
+// the pending entry, so it commits exactly once.
+static void cost_finish(CostFeature* cf, Context* ctx) {
+  if (!cf->active) return;
+
+  voxgig_value* pending = ctx_out_extra_get(ctx, COST_PENDING_KEY);
+  if (!v_is_map(pending)) return;
+  ctx_out_extra_set(ctx, COST_PENDING_KEY, v_undef());
+
+  const char* entity = (ctx->op && ctx->op->entity[0] != '\0') ? ctx->op->entity : "_";
+  const char* opname = (ctx->op && ctx->op->name[0] != '\0') ? ctx->op->name : "_";
+
+  cost_commit(cf->track, cf->options, ctx, pending, entity, opname);
 }
 
 static const char* cost_name(Feature* f) { return ((CostFeature*)f)->name; }
@@ -422,8 +486,8 @@ static void cost_hook(Feature* f, const char* name, Context* ctx) {
   CostFeature* cf = (CostFeature*)f;
   if (strcmp(name, "PrePoint") == 0) {
     cost_pre_point(cf, ctx);
-  } else if (strcmp(name, "PreDone") == 0) {
-    cost_pre_done(cf, ctx);
+  } else if (strcmp(name, "PreDone") == 0 || strcmp(name, "PreUnexpected") == 0) {
+    cost_finish(cf, ctx);
   }
 }
 

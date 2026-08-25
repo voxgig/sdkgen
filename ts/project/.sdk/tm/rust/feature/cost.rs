@@ -153,13 +153,10 @@ fn body_amount(options: &Value, ctx: &Rc<Context>) -> Option<f64> {
     Some(n * fopt_num(options, "perUnit", 0.0))
 }
 
-fn spend(t: &mut CostTrack, amount: f64, source: &str) {
+fn spend(t: &mut CostTrack, amount: f64, reported: f64, estimated: f64) {
     t.amount += amount;
-    if "header" == source || "body" == source {
-        t.reported += amount;
-    } else {
-        t.estimated += amount;
-    }
+    t.reported += reported;
+    t.estimated += estimated;
 
     t.spent = t.amount;
     if t.limit > 0.0 {
@@ -204,26 +201,128 @@ fn charge(
             if let Some(o) = other {
                 ctx.out_set(COST_PENDING_KEY, o);
             }
-            jo(vec![
-                ("attempts", Value::Num(0.0)),
-                ("amount", Value::Num(0.0)),
-                ("source", Value::str("none".to_string())),
-            ])
+            new_pending()
         }
     };
 
     let attempts = get_f64(&pending, "attempts").unwrap_or(0.0) + 1.0;
     let total = get_f64(&pending, "amount").unwrap_or(0.0) + amount;
 
+    // Reported and estimated are kept apart per ATTEMPT: a 503 priced from the
+    // rate table followed by a 200 carrying the cost header is part estimate,
+    // part reported, and collapsing both into the final attempt's category
+    // would corrupt the split.
+    //
+    // A failed transport is an Err VALUE here, not a panic, so it already
+    // reaches this point and is priced from the table or unit - no separate
+    // catch is needed, unlike the ts/js ports.
+    let bucket = if "header" == source || "body" == source { "reported" } else { "estimated" };
+    let prev = get_f64(&pending, bucket).unwrap_or(0.0);
+    setp(&pending, bucket, Value::Num(prev + amount));
+
     setp(&pending, "attempts", Value::Num(attempts));
     setp(&pending, "amount", Value::Num(total));
     setp(&pending, "source", Value::str(source));
 
-    ctx.out_set(COST_PENDING_KEY, OutVal::Val(pending));
+    let piped = matches!(getp(&pending, "piped"), Value::Bool(true));
 
     track.borrow_mut().attempts += 1;
 
+    // direct() and graphql() reach the transport without dispatching any
+    // pipeline hooks, so there is no pre_point to gate on and no pre_done to
+    // commit. Their spend is committed here, or it would never be counted.
+    if !piped {
+        commit(track, options, ctx, &pending, "_", "direct");
+        ctx.out_take(COST_PENDING_KEY);
+    } else {
+        ctx.out_set(COST_PENDING_KEY, OutVal::Val(pending));
+    }
+
     out
+}
+
+
+fn new_pending() -> Value {
+    jo(vec![
+        ("attempts", Value::Num(0.0)),
+        ("amount", Value::Num(0.0)),
+        ("reported", Value::Num(0.0)),
+        ("estimated", Value::Num(0.0)),
+        ("source", Value::str("none".to_string())),
+        ("piped", Value::Bool(false)),
+    ])
+}
+
+
+// Commit one operation's spend: totals, budget, per-op and per-actor
+// attribution, and the record. Shared by finish and the raw-request path in
+// charge, which has no pre_done to reach.
+fn commit(
+    track: &Rc<RefCell<CostTrack>>,
+    options: &Value,
+    ctx: &Rc<Context>,
+    pending: &Value,
+    entity: &str,
+    opname: &str,
+) {
+    let attempts = get_f64(pending, "attempts").unwrap_or(0.0);
+    let mut amount = get_f64(pending, "amount").unwrap_or(0.0);
+    let mut reported = get_f64(pending, "reported").unwrap_or(0.0);
+    let mut estimated = get_f64(pending, "estimated").unwrap_or(0.0);
+    let mut source = match getp(pending, "source") {
+        Value::Str(s) => s,
+        _ => "none".to_string(),
+    };
+
+    // A body figure prices the whole call, so it replaces the per-attempt
+    // estimate rather than adding to it, and being server-stated the whole
+    // amount counts as reported.
+    if let Some(b) = body_amount(options, ctx) {
+        amount = b;
+        reported = b;
+        estimated = 0.0;
+        source = "body".to_string();
+    }
+
+    let mut actor = "anonymous".to_string();
+    let opt_actor = fopt_str(options, "actor", "");
+    if !opt_actor.is_empty() {
+        actor = opt_actor;
+    }
+    {
+        let ctrl = ctx.ctrl.borrow().clone();
+        let c = ctrl.borrow();
+        if !c.actor.is_empty() {
+            actor = c.actor.clone();
+        }
+    }
+
+    let record = jo(vec![]);
+    {
+        let mut t = track.borrow_mut();
+        spend(&mut t, amount, reported, estimated);
+        t.calls += 1;
+        t.seq += 1;
+
+        bump(&mut t.ops, format!("{}.{}", entity, opname), amount);
+        bump(&mut t.actors, actor.clone(), amount);
+
+        setp(&record, "seq", Value::Num(t.seq as f64));
+        setp(&record, "entity", Value::str(entity.to_string()));
+        setp(&record, "op", Value::str(opname.to_string()));
+        setp(&record, "actor", Value::str(actor));
+        setp(&record, "amount", Value::Num(amount));
+        setp(&record, "currency", Value::str(t.currency.clone()));
+        setp(&record, "source", Value::str(source));
+        setp(&record, "attempts", Value::Num(attempts));
+
+        t.last = record.clone();
+    }
+
+    let sink = getp(options, "sink");
+    if let Value::Func(_) = sink {
+        call_vfn(&sink, &record);
+    }
 }
 
 impl Feature for CostFeature {
@@ -277,6 +376,20 @@ impl Feature for CostFeature {
             (t.limit, t.amount, t.currency.clone())
         };
 
+        // Mark the context as running through the pipeline, so charge knows a
+        // pre_done is coming and does not commit the spend itself.
+        let pending = match ctx.out_take(COST_PENDING_KEY) {
+            Some(OutVal::Val(v)) if matches!(v, Value::Map(_)) => v,
+            other => {
+                if let Some(o) = other {
+                    ctx.out_set(COST_PENDING_KEY, o);
+                }
+                new_pending()
+            }
+        };
+        setp(&pending, "piped", Value::Bool(true));
+        ctx.out_set(COST_PENDING_KEY, OutVal::Val(pending));
+
         if limit <= 0.0 || amount < limit {
             return;
         }
@@ -302,6 +415,21 @@ impl Feature for CostFeature {
 
     // Attribute the operation's spend once the call is finished.
     fn pre_done(&mut self, ctx: &Rc<Context>) {
+        self.finish(ctx);
+    }
+
+    // A failed operation still spent the money. When the pipeline errors,
+    // pre_done never runs, so without this the attempts are counted and the
+    // spend is not, and a budget could never see the cost of a failed call.
+    // Whichever hook fires first consumes the pending entry, so it commits
+    // exactly once.
+    fn pre_unexpected(&mut self, ctx: &Rc<Context>) {
+        self.finish(ctx);
+    }
+}
+
+impl CostFeature {
+    fn finish(&mut self, ctx: &Rc<Context>) {
         if !self.active {
             return;
         }
@@ -316,63 +444,11 @@ impl Feature for CostFeature {
             }
         };
 
-        let attempts = get_f64(&pending, "attempts").unwrap_or(0.0);
-        let mut amount = get_f64(&pending, "amount").unwrap_or(0.0);
-        let mut source = match getp(&pending, "source") {
-            Value::Str(s) => s,
-            _ => "none".to_string(),
-        };
-
-        // A body figure prices the whole call, so it replaces the per-attempt
-        // estimate rather than adding to it.
-        if let Some(b) = body_amount(&self.options, ctx) {
-            amount = b;
-            source = "body".to_string();
-        }
-
         let (entity, opname) = {
             let op = ctx.op.borrow();
             (op.entity.clone(), op.name.clone())
         };
 
-        let mut actor = "anonymous".to_string();
-        let opt_actor = fopt_str(&self.options, "actor", "");
-        if !opt_actor.is_empty() {
-            actor = opt_actor;
-        }
-        {
-            let ctrl = ctx.ctrl.borrow().clone();
-            let c = ctrl.borrow();
-            if !c.actor.is_empty() {
-                actor = c.actor.clone();
-            }
-        }
-
-        let record = jo(vec![]);
-        {
-            let mut t = self.track.borrow_mut();
-            spend(&mut t, amount, &source);
-            t.calls += 1;
-            t.seq += 1;
-
-            bump(&mut t.ops, format!("{}.{}", entity, opname), amount);
-            bump(&mut t.actors, actor.clone(), amount);
-
-            setp(&record, "seq", Value::Num(t.seq as f64));
-            setp(&record, "entity", Value::str(entity));
-            setp(&record, "op", Value::str(opname));
-            setp(&record, "actor", Value::str(actor));
-            setp(&record, "amount", Value::Num(amount));
-            setp(&record, "currency", Value::str(t.currency.clone()));
-            setp(&record, "source", Value::str(source));
-            setp(&record, "attempts", Value::Num(attempts));
-
-            t.last = record.clone();
-        }
-
-        let sink = getp(&self.options, "sink");
-        if let Value::Func(_) = sink {
-            call_vfn(&sink, &record);
-        }
+        commit(&self.track, &self.options, ctx, &pending, &entity, &opname);
     }
 }
