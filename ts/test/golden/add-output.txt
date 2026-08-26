@@ -585,7 +585,7 @@ tm/go/core/types.go 434955d3f8a1
 tm/go/core/utility_type.go bd2f3498448f
 tm/go/feature/base_feature.go d0afce22fc61
 tm/go/feature/feature_options.go c7c47863ae28
-tm/go/feature/test_feature.go 7dfeb1b52fde
+tm/go/feature/test_feature.go b40b5a3c0168
 tm/go/src/feature/README.md efebfaa50be0
 tm/go/src/feature/base/.gitkeep e3b0c44298fc
 tm/go/src/feature/test/.gitkeep e3b0c44298fc
@@ -827,7 +827,7 @@ tm/js/src/Result.js f5ca4fe99283
 tm/js/src/Spec.js 3479116d0990
 tm/js/src/feature/README.md 630422c5567f
 tm/js/src/feature/base/BaseFeature.js 29d380a635f6
-tm/js/src/feature/test/TestFeature.js c3a7a642483a
+tm/js/src/feature/test/TestFeature.js 015412fe1563
 tm/js/src/types.js f49c15c403b4
 tm/js/src/utility/CleanUtility.js d19a9fd4a0eb
 tm/js/src/utility/DoneUtility.js d1457eb69ac8
@@ -1072,7 +1072,7 @@ tm/lua/core/result.lua 62e6251e1970
 tm/lua/core/spec.lua 36d7249c24db
 tm/lua/core/utility_type.lua 61cec681f945
 tm/lua/feature/base_feature.lua 324bcbfd0836
-tm/lua/feature/test_feature.lua 0510a5d5c3e4
+tm/lua/feature/test_feature.lua 5430359b93d8
 tm/lua/src/feature/README.md 74fc01b8a34f
 tm/lua/src/feature/base/.gitkeep e3b0c44298fc
 tm/lua/src/feature/test/.gitkeep e3b0c44298fc
@@ -1337,7 +1337,7 @@ tm/php/core/Result.php b64c27a0b2ea
 tm/php/core/Spec.php 52af8a2308aa
 tm/php/core/UtilityType.php 69ccbf6da0a0
 tm/php/feature/BaseFeature.php 19116b364fc2
-tm/php/feature/TestFeature.php 365760e51eb5
+tm/php/feature/TestFeature.php 48e3335f94b6
 tm/php/src/feature/README.md 74fc01b8a34f
 tm/php/src/feature/base/.gitkeep e3b0c44298fc
 tm/php/src/feature/test/.gitkeep e3b0c44298fc
@@ -1437,7 +1437,7 @@ tm/py/pkg/core/utility_type.py 04bf25ffebe7
 tm/py/pkg/entity/__init__.py e3b0c44298fc
 tm/py/pkg/feature/__init__.py e3b0c44298fc
 tm/py/pkg/feature/base_feature.py a2f222f0d8c3
-tm/py/pkg/feature/test_feature.py d4a2d586a410
+tm/py/pkg/feature/test_feature.py 854641370905
 tm/py/pkg/utility/__init__.py e3b0c44298fc
 tm/py/pkg/utility/clean.py 7ee83fa80aaf
 tm/py/pkg/utility/done.py 6066fb832758
@@ -1835,9 +1835,9 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/seneca-provider.aon df62646e352f
 model/target/target-index.aon 7fa724b7bda4
-src/cmp/seneca-provider/Extras_seneca-provider.ts 9f8cc6602cf7
+src/cmp/seneca-provider/Extras_seneca-provider.ts 5515abe8e3ed
 src/cmp/seneca-provider/Gitignore_seneca-provider.ts 188e88524e59
-src/cmp/seneca-provider/Main_seneca-provider.ts 7cc233b8ac74
+src/cmp/seneca-provider/Main_seneca-provider.ts 72bff6364960
 tm/seneca-provider/CODE_OF_CONDUCT.md ae654991bd5f
 tm/seneca-provider/LICENSE 5466e344bee1
 tm/seneca-provider/Makefile 6856c7df3e08
@@ -1999,7 +1999,7 @@ tm/ts/src/Result.ts 45a656e9d5df
 tm/ts/src/Spec.ts 318854e8cb05
 tm/ts/src/feature/README.md 630422c5567f
 tm/ts/src/feature/base/BaseFeature.ts 4c0e468f5313
-tm/ts/src/feature/test/TestFeature.ts 94ffddda5dc9
+tm/ts/src/feature/test/TestFeature.ts 7159eec17d97
 tm/ts/src/tsconfig.json c1b52cc621fb
 tm/ts/src/types.ts 5e1f5518bba6
 tm/ts/src/utility/CleanUtility.ts 2bdbcdce5d3f
