@@ -59,8 +59,8 @@ const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider']
 
 // TIER 1 — drives the shared corpus for every section. This is the bar.
 const FULL = [
-  'cpp', 'csharp', 'dart', 'go', 'java', 'js', 'kotlin', 'lean', 'lua', 'perl',
-  'php', 'py', 'rb', 'rust', 'swift', 'ts',
+  'cpp', 'csharp', 'dart', 'go', 'java', 'js', 'kotlin', 'lean', 'lua', 'ocaml',
+  'perl', 'php', 'py', 'rb', 'rust', 'swift', 'ts',
 ]
 
 // TIER 2 — has a primary-utility suite, but it MIRRORS the corpus by hand
@@ -72,7 +72,7 @@ const MIRRORED = ['c', 'clojure', 'elixir', 'zig']
 
 // TIER 3 — no primary-utility suite at all. These targets' request-shaping
 // utilities are unverified in every language-neutral sense.
-const UNCOVERED = ['ocaml', 'scala']
+const UNCOVERED = ['scala']
 
 
 // Targets exposing the raw-access escape hatch (direct/graphql). See the

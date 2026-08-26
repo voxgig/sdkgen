@@ -515,7 +515,7 @@ tm/elixir/lib/projectname/feature.ex a9f2c2609648
 tm/elixir/lib/projectname/feature/test.ex 072467e5d97f
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex d326abbed947
+tm/elixir/lib/projectname/utility.ex 81268b0060c7
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -523,11 +523,11 @@ tm/elixir/src/feature/test/.gitkeep e3b0c44298fc
 tm/elixir/test/feature_test.exs 9f343d5232c3
 tm/elixir/test/netsim_test.exs d9459f10a6c7
 tm/elixir/test/pipeline_test.exs 876a4cd347fe
-tm/elixir/test/primary_utility_test.exs 1ea76ffc9a48
+tm/elixir/test/primary_utility_test.exs 2eeffe9acda8
 tm/elixir/test/stream_test.exs adcaa6598d60
 tm/elixir/test/struct_corpus_test.exs 977fdfc8e4f7
 tm/elixir/test/support/feature_harness.ex f492e6667188
-tm/elixir/test/support/struct_corpus.ex a6597e3e53d8
+tm/elixir/test/support/struct_corpus.ex fad9a7fc9351
 tm/elixir/test/test_helper.exs b086ec47f0c6
 
 ## target go
@@ -1156,12 +1156,12 @@ src/cmp/ocaml/fragment/RunOp.fragment.ml b4ede130f1ef
 src/cmp/ocaml/tsconfig.json 720a3f229019
 src/cmp/ocaml/utility_ocaml.ts 010faa650f9e
 tm/ocaml/LICENSE c92ad97f8812
-tm/ocaml/Makefile 5907059b3e02
+tm/ocaml/Makefile f0f2c5404062
 tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml 7a3fea3b8abb
 tm/ocaml/sdk_helpers.ml deadcfd0d1f8
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml efb1df0ff92a
+tm/ocaml/sdk_runtime.ml 7255f9f44bce
 tm/ocaml/sdk_types.ml 85ee25259c3a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/audit/.gitkeep e3b0c44298fc
@@ -1183,9 +1183,11 @@ tm/ocaml/src/feature/streaming/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/test/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/timeout/.gitkeep e3b0c44298fc
+tm/ocaml/test/corpus_runner.ml 2d394e9b4ddf
 tm/ocaml/test/custom_utility.ml 1fe63d9d65af
 tm/ocaml/test/harness.ml f59a28e1b3c5
-tm/ocaml/test/struct_corpus.ml bbd95439b8d8
+tm/ocaml/test/primary_utility_test.ml 7e12287858d4
+tm/ocaml/test/struct_corpus.ml db4c7b5c6d25
 tm/ocaml/test/t_feature.ml 3f7c9dfdfc4f
 tm/ocaml/test/t_main.ml a468eae08da5
 tm/ocaml/test/t_pipeline.ml 996c1b71c018
@@ -2165,7 +2167,7 @@ tm/zig/test/gotcha_test.zig 2bb91ba7ceb9
 tm/zig/test/pipeline_test.zig dff8531ee2da
 tm/zig/test/primary_utility_test.zig abdc5719124e
 tm/zig/test/struct_corpus.zig b4a327ea6738
-tm/zig/test/struct_runner.zig 8a7945d1c5bc
+tm/zig/test/struct_runner.zig 80c47ed91b5b
 tm/zig/utility/jsonparse.zig 3bf825b60025
 tm/zig/utility/voxgigstruct/regex.zig c298936fbb0e
 tm/zig/utility/voxgigstruct/struct.zig 37fb3adca8da
