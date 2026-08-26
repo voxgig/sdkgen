@@ -2,6 +2,7 @@
 // against subject functions, mirroring the TS/Go runner pattern.
 
 const std = @import("std");
+const regex = @import("../utility/voxgigstruct/regex.zig");
 const voxgig_struct = @import("voxgig-struct");
 
 const Allocator = std.mem.Allocator;
@@ -19,6 +20,9 @@ pub const Subject = *const fn (StdJsonValue) StdJsonValue;
 
 // Subject that takes an allocator and our JsonValue type.
 pub const AllocSubject = *const fn (Allocator, JsonValue) JsonValue;
+
+/// A subject that receives the whole corpus ENTRY and returns std.json.
+pub const EntrySubject = *const fn (Allocator, StdJsonValue) anyerror!StdJsonValue;
 
 pub const Spec = struct {
     data: StdJsonValue,
@@ -125,6 +129,87 @@ pub const RunPack = struct {
         }
     }
 
+    /// Drive a section whose entries carry ctx/args/match/err.
+    ///
+    /// The subject receives the whole ENTRY, not the resolved args, because an
+    /// args-style section has to publish the context it builds back onto the
+    /// entry — a `match: ctx.*` assertion reads it from there.
+    pub fn runsetEntry(self: RunPack, testspec: StdJsonValue, subject: EntrySubject) !void {
+        const set_val = switch (testspec) {
+            .object => |obj| obj.get("set") orelse return,
+            else => return,
+        };
+        if (set_val != .array) return;
+
+        var failures: usize = 0;
+
+        for (set_val.array.items, 0..) |entry_val, entry_idx| {
+            if (entry_val != .object) continue;
+            const entry = entry_val.object;
+
+            var arena = std.heap.ArenaAllocator.init(self.allocator);
+            defer arena.deinit();
+            const alloc = arena.allocator();
+
+            const err_field = entry.get("err");
+
+            const res = subject(alloc, entry_val) catch |e| {
+                // An expected error: match its text, then any `match` block.
+                if (err_field) |ef| {
+                    const msg = @errorName(e);
+                    if (ef == .bool and ef.bool) continue;
+                    if (matchval(alloc, ef, StdJsonValue{ .string = msg })) continue;
+                    std.debug.print("\n  ERROR MATCH [entry {d}]: [{s}] <=> [{s}]\n", .{
+                        entry_idx, fmtJson(ef), msg,
+                    });
+                }
+                failures += 1;
+                continue;
+            };
+
+            if (err_field != null) {
+                std.debug.print("\n  expected an error [entry {d}]\n", .{entry_idx});
+                failures += 1;
+                continue;
+            }
+
+            var matched = false;
+
+            if (entry.get("match")) |m| {
+                var subj = std.json.ObjectMap.init(alloc);
+                subj.put("out", res) catch {};
+                if (entry.get("in")) |v| subj.put("in", v) catch {};
+                if (entry.get("ctx")) |v| subj.put("ctx", v) catch {};
+                const subjval = StdJsonValue{ .object = subj };
+
+                var path = std.ArrayList([]const u8).init(alloc);
+                doMatch(alloc, m, subjval, &path) catch {
+                    std.debug.print("  [entry {d}]\n", .{entry_idx});
+                    failures += 1;
+                    continue;
+                };
+                matched = true;
+            }
+
+            const raw_out = entry.get("out");
+
+            if (raw_out) |o| {
+                if (jsonEqual(o, res)) continue;
+                if (o == .string and std.mem.eql(u8, o.string, NULLMARK) and res == .null) continue;
+                std.debug.print("\n  FAIL [entry {d}]: expected {s} got {s}\n", .{
+                    entry_idx, fmtJson(o), fmtJson(res),
+                });
+                failures += 1;
+            } else if (!matched) {
+                // No `out` and no `match` asserts nothing at all.
+                std.debug.print("\n  entry {d} asserts nothing\n", .{entry_idx});
+                failures += 1;
+            }
+        }
+
+        if (0 < failures) return error.SectionFailed;
+    }
+
     pub fn deinit(self: *RunPack) void {
         self.parsed.deinit();
         self.allocator.free(self.file_data);
@@ -177,6 +262,107 @@ pub fn makeRunner(allocator: Allocator) !RunPack {
         .file_data = data,
         .parsed = parsed,
     };
+}
+
+// ---- Corpus matching: matchval / doMatch ----
+//
+// The primary corpus asserts with `match` as often as with `out`, and its
+// error expectations are regexes. runsetAlloc resolved only `in`, had no
+// match support and silently skipped any entry carrying `err` — so it could
+// drive the struct corpus but not this one. Semantics are the reference's:
+// exact equality first, then __UNDEF__/__EXISTS__ markers, then a /regex/, and
+// finally a case-insensitive substring.
+
+fn stringifyAlloc(alloc: Allocator, v: StdJsonValue) []const u8 {
+    var buf = std.ArrayList(u8).init(alloc);
+    if (v == .string) return v.string;
+    std.json.stringify(v, .{}, buf.writer()) catch return "";
+    return buf.items;
+}
+
+pub fn matchval(alloc: Allocator, check: StdJsonValue, base: StdJsonValue) bool {
+    if (jsonEqual(check, base)) return true;
+
+    if (check == .string) {
+        const c = check.string;
+        if (std.mem.eql(u8, c, UNDEFMARK)) return base == .null;
+        if (std.mem.eql(u8, c, EXISTSMARK)) return base != .null;
+
+        const basestr = stringifyAlloc(alloc, base);
+
+        // A /pattern/ is a regex over the stringified base.
+        if (2 <= c.len and c[0] == '/' and c[c.len - 1] == '/') {
+            const pat = c[1 .. c.len - 1];
+            var re = regex.compile(alloc, pat) catch return false;
+            defer re.deinit();
+            return re.isMatch(basestr);
+        }
+
+        // Otherwise a case-insensitive substring, as the reference does.
+        const lc_base = std.ascii.allocLowerString(alloc, basestr) catch return false;
+        const lc_check = std.ascii.allocLowerString(alloc, c) catch return false;
+        return std.mem.indexOf(u8, lc_base, lc_check) != null;
+    }
+
+    return false;
+}
+
+fn getPath(base: StdJsonValue, path: []const []const u8) StdJsonValue {
+    var cur = base;
+    for (path) |seg| {
+        switch (cur) {
+            .object => |o| cur = o.get(seg) orelse return StdJsonValue{ .null = {} },
+            .array => |a| {
+                const idx = std.fmt.parseInt(usize, seg, 10) catch return StdJsonValue{ .null = {} };
+                if (idx >= a.items.len) return StdJsonValue{ .null = {} };
+                cur = a.items[idx];
+            },
+            else => return StdJsonValue{ .null = {} },
+        }
+    }
+    return cur;
+}
+
+/// Walk `check`; every LEAF must matchval against the same path in `base`.
+pub fn doMatch(
+    alloc: Allocator,
+    check: StdJsonValue,
+    base: StdJsonValue,
+    path: *std.ArrayList([]const u8),
+) !void {
+    switch (check) {
+        .object => |o| {
+            var it = o.iterator();
+            while (it.next()) |kv| {
+                try path.append(kv.key_ptr.*);
+                try doMatch(alloc, kv.value_ptr.*, base, path);
+                _ = path.pop();
+            }
+        },
+        .array => |a| {
+            for (a.items, 0..) |item, i| {
+                const seg = try std.fmt.allocPrint(alloc, "{d}", .{i});
+                try path.append(seg);
+                try doMatch(alloc, item, base, path);
+                _ = path.pop();
+            }
+        },
+        else => {
+            const baseval = getPath(base, path.items);
+            if (!matchval(alloc, check, baseval)) {
+                std.debug.print("\n  MATCH: {s}: [{s}] <=> [{s}]\n", .{
+                    joinPath(alloc, path.items),
+                    fmtJson(check),
+                    fmtJson(baseval),
+                });
+                return error.MatchMismatch;
+            }
+        },
+    }
+}
+
+fn joinPath(alloc: Allocator, parts: []const []const u8) []const u8 {
+    return std.mem.join(alloc, ".", parts) catch "?";
 }
 
 // ---- Result comparison (operates on std.json.Value) ----
