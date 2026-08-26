@@ -106,7 +106,17 @@ let default_injdef_pub () =
 
 let resolve_args entry =
   if entry_has entry "ctx" then [entry_get entry "ctx"]
-  else if entry_has entry "args" then (match entry_get entry "args" with List r -> !r | _ -> [])
+  else if entry_has entry "args" then (
+    match entry_get entry "args" with
+    | List r ->
+      (* ts's resolveArgs writes the live first arg back as entry.ctx, so a
+         `match: {ctx: ...}` resolves for args-style entries too. Without it
+         every such assertion reads null and asserts nothing. *)
+      (match !r with
+       | (Map _ as first) :: _ -> ignore (setprop entry (Str "ctx") first)
+       | _ -> ());
+      !r
+    | _ -> [])
   else if entry_has entry "in" then [clone (entry_get entry "in")]
   else [Noval]
 
@@ -131,7 +141,11 @@ let handle_error entry err =
       if entry_has entry "match" then
         do_match (entry_get entry "match")
           (omap_v ["in", entry_get entry "in"; "out", entry_get entry "res";
-                   "ctx", entry_get entry "ctx"; "err", Str msg])
+                   (* ts hands do_match the ERROR OBJECT, so a corpus
+                      `match: {err: {message: ...}}` resolves; a bare string
+                      leaves err.message reading null. *)
+                   "ctx", entry_get entry "ctx";
+                   "err", omap_v ["message", Str msg]])
     end else
       raise (Struct_error (Printf.sprintf "ERROR MATCH: [%s] <=> [%s]" (stringify entry_err) msg))
   end else raise err

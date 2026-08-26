@@ -171,15 +171,15 @@ tm/clojure/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
-tm/clojure/src/sdk/core.clj c5a2331750b7
+tm/clojure/src/sdk/core.clj 2de5b994bed1
 tm/clojure/src/sdk/features.clj becdf18686c4
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/pipeline.clj c4410bff5076
-tm/clojure/test/sdk/test/primary.clj 42207f1ed9f8
-tm/clojure/test/sdk/test/struct_corpus.clj 0c3ba67b9183
-tm/clojure/test/sdk/test_runner.clj f6f08d7e613f
+tm/clojure/test/sdk/test/primary.clj 65d585a65b83
+tm/clojure/test/sdk/test/struct_corpus.clj 9e79b8beaa41
+tm/clojure/test/sdk/test_runner.clj 8f4f32819068
 tm/clojure/test/sdk/testutil.clj 389d40fa6cbc
 
 ## target cpp
@@ -515,7 +515,7 @@ tm/elixir/lib/projectname/feature.ex a9f2c2609648
 tm/elixir/lib/projectname/feature/test.ex 072467e5d97f
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 81268b0060c7
+tm/elixir/lib/projectname/utility.ex 81087663c243
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -527,7 +527,7 @@ tm/elixir/test/primary_utility_test.exs 2eeffe9acda8
 tm/elixir/test/stream_test.exs adcaa6598d60
 tm/elixir/test/struct_corpus_test.exs 977fdfc8e4f7
 tm/elixir/test/support/feature_harness.ex f492e6667188
-tm/elixir/test/support/struct_corpus.ex fad9a7fc9351
+tm/elixir/test/support/struct_corpus.ex 10769226f628
 tm/elixir/test/test_helper.exs b086ec47f0c6
 
 ## target go
@@ -1183,7 +1183,7 @@ tm/ocaml/src/feature/streaming/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/test/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/timeout/.gitkeep e3b0c44298fc
-tm/ocaml/test/corpus_runner.ml 2d394e9b4ddf
+tm/ocaml/test/corpus_runner.ml cc18431f0f19
 tm/ocaml/test/custom_utility.ml 1fe63d9d65af
 tm/ocaml/test/harness.ml f59a28e1b3c5
 tm/ocaml/test/primary_utility_test.ml b9fc7cd21686

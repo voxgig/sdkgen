@@ -125,7 +125,23 @@
     :ctx ctx :result nil :spec nil}))
 
 (defn sdk-error? [x] (and (map? x) (true? (:sdk-error x))))
-(defn err-msg [e] (cond (sdk-error? e) (:msg e) (instance? Throwable e) (.getMessage ^Throwable e) :else (str e)))
+(defn err-msg [e]
+  (cond
+    (sdk-error? e) (:msg e)
+    (instance? Throwable e) (.getMessage ^Throwable e)
+    ;; A plain error map carrying a message — what a response body or a
+    ;; caller-supplied err looks like. The neutral contract spells it
+    ;; "message"; without this it fell to (str e) and result-basic reported
+    ;; "{message=Foo}: request: 400: BAD" where ts reports "Foo: request: ...".
+    ;; java.util.Map, not just clojure's — a struct map is a LinkedHashMap, so
+    ;; `map?` is false for exactly the values the corpus supplies.
+    (instance? java.util.Map e)
+    (let [m (or (.get ^java.util.Map e "message") (.get ^java.util.Map e "msg")
+                (get e :message) (get e :msg))]
+      ;; An error map with no message IS an unknown error; stringifying it gave
+      ;; "{}" where every other target reports "unknown error".
+      (if (and (some? m) (not= "" (str m))) (str m) "unknown error"))
+    :else (str e)))
 (defn err-code [e] (when (sdk-error? e) (:code e)))
 (defn sdk-throw [e] (throw (ex-info (err-msg e) {::sdk-error (if (sdk-error? e) e (make-error-obj "" (str e)))})))
 (defn ex->sdk [t] (::sdk-error (ex-data t)))
@@ -406,7 +422,13 @@
         m (when point (vs/getprop point "method"))]
     (if (and (string? m) (not= "" m))
       (str/upper-case m)
-      (get METHOD-MAP (op-name (oget ctx :op)) "GET"))))
+      ;; NO CATCH-ALL "GET". The ts reference returns methodMap[key], which is
+      ;; undefined for an op the map does not name, so the request is refused
+      ;; rather than issued. Defaulting to GET made every unrecognised op — a
+      ;; typo, an unsupported operation — a quiet fetch, and the method feeds
+      ;; the allow.method gate. ocaml and zig had the identical fallback; the
+      ;; shared corpus caught all three.
+      (get METHOD-MAP (op-name (oget ctx :op))))))
 
 (defn u-prepare-headers [ctx]
   (let [options (client-options-map (oget ctx :client))

@@ -1112,7 +1112,9 @@ defmodule ProjectName.Utility do
     # Only fall back to the op-name convention when the point has no method.
     case S.getprop(S.getprop(ctx, "point"), "method") do
       m when is_binary(m) and m != "" -> String.upcase(m)
-      _ -> Map.get(@method_map, opname, "GET")
+      # No GET catch-all: an unrecognised op must fall through to the
+      # allow.method gate, not be silently issued as a GET.
+      _ -> Map.get(@method_map, opname)
     end
   end
 

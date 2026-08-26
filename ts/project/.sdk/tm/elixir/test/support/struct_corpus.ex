@@ -264,7 +264,23 @@ defmodule ProjectName.StructCorpus do
   defp resolve_args(entry) do
     cond do
       ehas(entry, "ctx") -> [eget(entry, "ctx")]
-      ehas(entry, "args") -> (a = eget(entry, "args")); if(S.islist(a), do: velems(a), else: [])
+      ehas(entry, "args") ->
+        a = eget(entry, "args")
+
+        if S.islist(a) do
+          args = velems(a)
+          # ts's resolveArgs writes the live first arg back as entry.ctx, so a
+          # `match: {ctx: ...}` resolves for args-style entries too. Without it
+          # every such assertion reads null and asserts nothing.
+          case args do
+            [first | _] -> if S.ismap(first), do: S.setprop(entry, "ctx", first)
+            _ -> :ok
+          end
+
+          args
+        else
+          []
+        end
       ehas(entry, "in") -> [S.clone(eget(entry, "in"))]
       true -> []
     end
@@ -302,7 +318,13 @@ defmodule ProjectName.StructCorpus do
         if ehas(entry, "match") do
           do_match(
             eget(entry, "match"),
-            S.jm(["in", eget(entry, "in"), "out", eget(entry, "res"), "ctx", eget(entry, "ctx"), "err", msg])
+            # ts hands do_match the ERROR OBJECT, so a corpus
+            # `match: {err: {message: ...}}` resolves; a bare string leaves
+            # err.message reading null.
+            S.jm([
+              "in", eget(entry, "in"), "out", eget(entry, "res"),
+              "ctx", eget(entry, "ctx"), "err", S.jm(["message", msg])
+            ])
           )
         end
 
