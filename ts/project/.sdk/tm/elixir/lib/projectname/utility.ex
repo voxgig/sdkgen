@@ -899,6 +899,16 @@ defmodule ProjectName.Utility do
       cond do
         match?(%ProjectName.Error{}, err) -> err.msg
         is_exception(err) -> Exception.message(err)
+        # S.ismap, not is_map: a struct value is a {:vmap, id} TUPLE, so
+        # is_map/1 is false for every heap map and this branch could never
+        # fire for one. And the neutral contract spells it "message" — "msg"
+        # is this port's own internal name. Between them, an error map reached
+        # the stringify fallback and the SDK reported
+        # "foo: {message:zed}" where every other target reports "foo: zed".
+        S.ismap(err) ->
+          m = S.getprop(err, "message") || S.getprop(err, "msg")
+          if is_binary(m) and m != "", do: m, else: "unknown error"
+
         is_map(err) and not is_struct(err) and S.getprop(err, "msg") != nil -> S.getprop(err, "msg")
         is_binary(err) -> err
         true -> S.stringify(err)
