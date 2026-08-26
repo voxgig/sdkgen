@@ -64,6 +64,7 @@ tm/c/src/feature/test/.gitkeep e3b0c44298fc
 tm/c/tests/ctest.h d2111a0ede61
 tm/c/tests/feature_harness.h 68c6da0d0de6
 tm/c/tests/pipeline_test.c 11b2fb00152b
+tm/c/tests/primary_corpus_test.c 8355ddfdeebb
 tm/c/tests/primary_utility_test.c d2287e397f76
 tm/c/tests/runner.h 3b919610bee6
 tm/c/tests/struct_corpus_test.c 85bb804e5ad0
@@ -89,7 +90,7 @@ tm/c/utility/param.c 7bbd56d87243
 tm/c/utility/prepare_auth.c 2a1378422d31
 tm/c/utility/prepare_body.c 722b1b98ddcb
 tm/c/utility/prepare_headers.c 2e520316e7b9
-tm/c/utility/prepare_method.c cf4da23cf808
+tm/c/utility/prepare_method.c 27871feb22c1
 tm/c/utility/prepare_params.c 0f1d76eee944
 tm/c/utility/prepare_path.c e9d7ffaa4851
 tm/c/utility/prepare_query.c 7b2ca7919d8d
@@ -107,7 +108,7 @@ tm/c/utility/struct/value.h b38fb4ce4dfb
 tm/c/utility/struct/value_io.c ad154dab653a
 tm/c/utility/struct/value_io.h d322b6e9d6d8
 tm/c/utility/struct/voxgig_struct.h 71de4f01ea7b
-tm/c/utility/transform_request.c 207096069b02
+tm/c/utility/transform_request.c d330249351ad
 tm/c/utility/transform_response.c 51ac106169eb
 
 ## target clojure

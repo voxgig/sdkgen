@@ -61,7 +61,7 @@ const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider']
 const FULL = [
   'cpp', 'csharp', 'dart', 'go', 'java', 'js', 'kotlin', 'lean', 'lua', 'ocaml',
   'perl', 'php', 'py', 'rb', 'rust', 'swift', 'ts', 'zig', 'clojure',
-  'elixir',
+  'elixir', 'c',
 ]
 
 // TIER 2 — has a primary-utility suite, but it MIRRORS the corpus by hand
@@ -69,7 +69,7 @@ const FULL = [
 // suite says so outright: "keeps the suite hermetic — no external fixture
 // parsing".) Moving one of these to FULL is the highest-value parity work
 // available.
-const MIRRORED = ['c']
+const MIRRORED: string[] = []
 
 // TIER 3 — no primary-utility suite at all. These targets' request-shaping
 // utilities are unverified in every language-neutral sense.
