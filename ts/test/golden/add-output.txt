@@ -7,7 +7,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/c.aon 1a783bba9eba
 model/target/target-index.aon a1ddf98d9368
-src/cmp/c/Config_c.ts 75150fcb616e
+src/cmp/c/Config_c.ts 5675157a8e78
 src/cmp/c/EntityBase_c.ts 70f610b1220f
 src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
 src/cmp/c/EntityTypes_c.ts d0c20304f410
@@ -2072,7 +2072,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/target-index.aon d785f5b4bbe7
 model/target/zig.aon 8b5242437d52
-src/cmp/zig/Config_zig.ts 5c3d6ae3ac12
+src/cmp/zig/Config_zig.ts 4d8d13d6c1d4
 src/cmp/zig/EntityOperation_zig.ts 04bd390df007
 src/cmp/zig/Entity_zig.ts 03329f926393
 src/cmp/zig/Gitignore_zig.ts ec49760abeae

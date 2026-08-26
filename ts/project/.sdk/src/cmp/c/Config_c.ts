@@ -193,7 +193,21 @@ voxgig_value* shared_config(void) {
     // reference to `feature_timeout_new` for an undeclared feature is an
     // unresolved symbol at LINK time — the whole test suite fails to link,
     // which is how this was found. Sorted for byte-stability.
-    const featureNames = new Set<string>()
+    // The factory must be able to instantiate any BUILT-IN feature by name,
+    // not just the ones the current API model configures — a caller can enable
+    // a shipped feature (e.g. retry) purely through runtime options even when
+    // the API def does not list it. Every one of these compiles into the
+    // binary regardless (tm/c/feature/*.c is copied whole and the Makefile
+    // builds it), so without this the code was linked in but unreachable:
+    // `feature: {retry: {active: true}}` silently got the inert base feature
+    // and the request was issued once, unretried. Mirrors Config_zig.ts.
+    const builtinFeatures = [
+      'audit', 'cache', 'clienttrack', 'cost', 'debug', 'idempotency', 'log',
+      'metrics', 'netsim', 'paging', 'proxy', 'ratelimit', 'rbac',
+      'retry', 'streaming', 'telemetry', 'test', 'timeout',
+    ]
+
+    const featureNames = new Set<string>(builtinFeatures)
     each(feature, (f: any) => {
       if (f.name && f.name !== 'base') featureNames.add(f.name)
     })
