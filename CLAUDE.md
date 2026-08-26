@@ -5,7 +5,7 @@
   agents (mental model, where-to-edit table, propagation pipeline,
   conventions, sharp edges). Read it first.
 - **[`docs/`](./docs/README.md)** — full documentation: tutorial, how-to
-  guides, reference (CLI/API/model/layout/hooks), and explanation.
+  guides, reference (features/CLI/API/model/layout/hooks), and explanation.
 
 This file is the quick inline reference; `AGENTS.md` and `docs/` have the
 depth.

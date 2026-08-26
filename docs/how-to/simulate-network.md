@@ -96,5 +96,7 @@ regression in a template is caught without generating a full SDK.
 
 ## See also
 
+- [The feature catalogue](../reference/features.md) — every `netsim` and
+  `test` option, and the resilience features they exercise
 - [Add a feature](./add-a-feature.md)
 - [Operation pipeline and feature hooks](../reference/hooks.md)

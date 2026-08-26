@@ -214,6 +214,241 @@ describe('feature:cache', () => {
 })
 
 
+describe('feature:cost', () => {
+
+  test('prices each call from the rate table and attributes it to the op', async () => {
+    const h = makeClient({
+      features: [{ name: 'cost', options: { rates: { 'widget.load': 0.25, '*': 0.01 } } }],
+    })
+    await h.op({ op: 'load' })
+    await h.op({ op: 'load' })
+    await h.op({ op: 'list' })
+
+    const cost = h.client._cost
+    strictEqual(cost.total.calls, 3)
+    strictEqual(Math.round(cost.total.amount * 100) / 100, 0.51)
+    strictEqual(cost.ops['widget.load'].amount, 0.5)
+    strictEqual(cost.ops['widget.list'].amount, 0.01)
+    strictEqual(cost.currency, 'USD')
+  })
+
+  test('falls back to the flat unit when no rate matches', async () => {
+    const h = makeClient({ features: [{ name: 'cost', options: { unit: 0.002 } }] })
+    await h.op({ op: 'load' })
+    strictEqual(h.client._cost.total.amount, 0.002)
+    strictEqual(h.client._cost.last.source, 'unit')
+  })
+
+  test('reads a reported cost header and counts it as reported, not estimated', async () => {
+    const rec = recordingServer(() => makeResponse(200, { ok: true }, { 'x-request-cost': '4' }))
+    const h = makeClient({
+      features: [{ name: 'cost', options: { header: 'x-request-cost', perUnit: 0.5, unit: 99 } }],
+      server: rec.server,
+    })
+    await h.op({ op: 'load' })
+    const cost = h.client._cost
+    strictEqual(cost.total.amount, 2, 'header figure x perUnit wins over unit')
+    strictEqual(cost.total.reported, 2)
+    strictEqual(cost.total.estimated, 0)
+    strictEqual(cost.last.source, 'header')
+  })
+
+  test('a body usage figure prices the whole call, replacing the per-attempt estimate', async () => {
+    const rec = recordingServer(() => makeResponse(200, { usage: { total_tokens: 1000 } }))
+    const h = makeClient({
+      features: [{ name: 'cost', options: { path: 'usage.total_tokens', perUnit: 0.00001, unit: 5 } }],
+      server: rec.server,
+    })
+    await h.op({ op: 'load' })
+    const cost = h.client._cost
+    strictEqual(cost.total.amount, 0.01, 'body figure replaced the 5.0 unit estimate')
+    strictEqual(cost.last.source, 'body')
+    strictEqual(cost.total.reported, 0.01)
+  })
+
+  test('charges every retry attempt, and reports the multiplier', async () => {
+    const clock = makeClock()
+    const h = makeClient({
+      features: [
+        { name: 'netsim', options: { failTimes: 2, failStatus: 503 } },
+        { name: 'cost', options: { unit: 1 } },
+        { name: 'retry', options: { retries: 3, minDelay: 1, jitter: false, sleep: clock.sleep } },
+      ],
+    })
+    const res = await h.op({ op: 'load' })
+    strictEqual(res.ok, true)
+    const cost = h.client._cost
+    strictEqual(cost.total.attempts, 3, 'two failures plus the success')
+    strictEqual(cost.total.amount, 3, 'a retried call is charged per attempt')
+    strictEqual(cost.total.calls, 1, 'but attributed as one operation')
+    strictEqual(cost.last.attempts, 3)
+  })
+
+  test('ordered inside the cache, a cache hit costs nothing', async () => {
+    const rec = recordingServer()
+    // cost first => cost is INNER, so a hit served by cache never reaches it.
+    const h = makeClient({
+      features: [
+        { name: 'cost', options: { unit: 2 } },
+        { name: 'cache', options: { ttl: 10000 } },
+      ],
+      server: rec.server,
+    })
+    await h.op({ op: 'load', path: '/widget/1' })
+    await h.op({ op: 'load', path: '/widget/1' })
+
+    strictEqual(rec.calls.length, 1, 'second read served from cache')
+    strictEqual(h.client._cost.total.amount, 2, 'only the real call was charged')
+    strictEqual(h.client._cost.total.attempts, 1)
+  })
+
+  test('attributes spend to the per-call actor', async () => {
+    const h = makeClient({ features: [{ name: 'cost', options: { unit: 1 } }] })
+    await h.op({ op: 'load', ctrl: { actor: 'user:42' } })
+    await h.op({ op: 'load', ctrl: { actor: 'user:42' } })
+    await h.op({ op: 'load', ctrl: { actor: 'svc:sync' } })
+
+    const actors = h.client._cost.actors
+    strictEqual(actors['user:42'].amount, 2)
+    strictEqual(actors['user:42'].calls, 2)
+    strictEqual(actors['svc:sync'].amount, 1)
+  })
+
+  test('warns but continues once the budget is spent', async () => {
+    const rec = recordingServer()
+    const h = makeClient({
+      features: [{ name: 'cost', options: { unit: 1, budget: 2 } }],
+      server: rec.server,
+    })
+    await h.op({ op: 'load' })
+    await h.op({ op: 'load' })
+    const third = await h.op({ op: 'load' })
+
+    strictEqual(third.ok, true, 'warn does not block')
+    strictEqual(rec.calls.length, 3)
+    strictEqual(h.client._cost.budget.exceeded, true)
+    strictEqual(h.client._cost.budget.remaining, 0)
+  })
+
+  test('denies a call once the budget is spent, before it reaches the network', async () => {
+    const rec = recordingServer()
+    const h = makeClient({
+      features: [{ name: 'cost', options: { unit: 1, budget: 2, onBudget: 'deny' } }],
+      server: rec.server,
+    })
+    await h.op({ op: 'load' })
+    await h.op({ op: 'load' })
+    const third = await h.op({ op: 'load' })
+
+    strictEqual(third.ok, false)
+    strictEqual(third.error.code, 'cost_budget')
+    strictEqual(rec.calls.length, 2, 'the denied call never reached the transport')
+  })
+
+  test('a budget of zero means no ceiling', async () => {
+    const h = makeClient({ features: [{ name: 'cost', options: { unit: 1, onBudget: 'deny' } }] })
+    for (let i = 0; i < 5; i++) {
+      strictEqual((await h.op({ op: 'load' })).ok, true)
+    }
+    strictEqual(h.client._cost.total.amount, 5)
+  })
+
+  // --- regressions from the Codex review on PR #95 -------------------------
+
+  test('charges attempts when the transport throws, so retry cannot spend free', async () => {
+    const clock = makeClock()
+    let calls = 0
+    const server = () => { calls++; throw new Error('ECONNRESET') }
+    const h = makeClient({
+      features: [
+        { name: 'cost', options: { unit: 1 } },
+        { name: 'retry', options: { retries: 2, minDelay: 1, jitter: false, sleep: clock.sleep } },
+      ],
+      server,
+    })
+    await h.op({ op: 'load' })
+
+    strictEqual(calls, 3, 'the transport rejected three times')
+    strictEqual(h.client._cost.total.attempts, 3, 'every rejected attempt is charged')
+    strictEqual(h.client._cost.total.amount, 3, 'and a failed operation still commits')
+    strictEqual(h.client._cost.total.calls, 1, 'committed once, via PreUnexpected')
+  })
+
+  test('a denied budget stops a run of connection failures', async () => {
+    const clock = makeClock()
+    let calls = 0
+    const server = () => { calls++; throw new Error('ECONNRESET') }
+    const h = makeClient({
+      features: [
+        { name: 'cost', options: { unit: 1, budget: 2, onBudget: 'deny' } },
+        { name: 'retry', options: { retries: 5, minDelay: 1, jitter: false, sleep: clock.sleep } },
+      ],
+      server,
+    })
+    await h.op({ op: 'load' })
+    const after = await h.op({ op: 'load' })
+
+    strictEqual(after.ok, false)
+    strictEqual(after.error.code, 'cost_budget', 'the ceiling held against thrown failures')
+  })
+
+  test('keeps reported and estimated apart per attempt, not per operation', async () => {
+    const clock = makeClock()
+    // Attempt 1: 503 with no cost header -> priced from the table (estimated).
+    // Attempt 2: 200 carrying the header  -> reported.
+    const rec = recordingServer((n) =>
+      1 === n ? makeResponse(503) : makeResponse(200, { ok: true }, { 'x-cost': '2' }))
+    const h = makeClient({
+      features: [
+        { name: 'cost', options: { header: 'x-cost', perUnit: 1, rates: { '*': 5 } } },
+        { name: 'retry', options: { retries: 2, minDelay: 1, jitter: false, sleep: clock.sleep } },
+      ],
+      server: rec.server,
+    })
+    await h.op({ op: 'load' })
+
+    const total = h.client._cost.total
+    strictEqual(total.amount, 7, '5 from the table plus 2 from the header')
+    strictEqual(total.estimated, 5, 'the table-priced attempt stays estimated')
+    strictEqual(total.reported, 2, 'the header-priced attempt stays reported')
+  })
+
+  test('matches a plain response header map case-insensitively', async () => {
+    // A custom system.fetch may return conventional casing; HTTP header
+    // names are case-insensitive.
+    const rec = recordingServer(() => ({
+      status: 200,
+      statusText: 'OK',
+      body: 'not-used',
+      json: async () => ({ ok: true }),
+      headers: { 'X-Request-Cost': '4' },
+    }))
+    const h = makeClient({
+      features: [{ name: 'cost', options: { header: 'x-request-cost', perUnit: 0.5, unit: 99 } }],
+      server: rec.server,
+    })
+    await h.op({ op: 'load' })
+
+    strictEqual(h.client._cost.total.amount, 2, 'the mixed-case header was found')
+    strictEqual(h.client._cost.last.source, 'header')
+  })
+
+  test('sink receives one record per operation', async () => {
+    const seen: any[] = []
+    const h = makeClient({
+      features: [{ name: 'cost', options: { unit: 0.5, sink: (r: any) => seen.push(r) } }],
+    })
+    await h.op({ op: 'load' })
+    await h.op({ op: 'list' })
+    strictEqual(seen.length, 2)
+    strictEqual(seen[0].op, 'load')
+    strictEqual(seen[0].amount, 0.5)
+    strictEqual(seen[1].op, 'list')
+    strictEqual(seen[0].currency, 'USD')
+  })
+})
+
+
 describe('feature:idempotency', () => {
 
   test('adds an Idempotency-Key to mutating requests', async () => {

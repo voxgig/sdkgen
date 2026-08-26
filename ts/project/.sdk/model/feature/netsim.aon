@@ -6,6 +6,7 @@ main: kit: feature: netsim: {
   version: '0.0.1'
   active: true
   base: 'BASE'
+  transport: 'wrap'
 
   config: {
     # Test-support feature: enable per test via

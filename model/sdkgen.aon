@@ -270,6 +270,15 @@ main: kit: target: &: {
   output: {
     path: *'' | string
 
+    # Whether generation may create a destination folder that does not yet
+    # exist. true preserves the ordinary behaviour: jostraca creates it and
+    # any missing parents. false keeps the target active but skips its
+    # out-of-tree generation pass until the destination folder exists — for
+    # example when a separate provider fleet is only checked out on some
+    # machines. An existing destination still goes through every ownership
+    # and overwrite-safety check below.
+    create: *true | boolean
+
     # Write into a destination that already holds content this generator did
     # not write.
     #
@@ -411,6 +420,16 @@ main: kit: feature: &: {
   # TODO: version '0.0.1' | semver # where semver is a string format type as per semver.org
   version: *'0.0.1' | string
 
+  # Transport role (station design §8.4): how the feature relates to the
+  # transport slot. 'base' REPLACES ctx.utility.fetcher outright (only the
+  # `test` feature); 'wrap' wraps it in init() (netsim, retry, cache,
+  # ratelimit, timeout, proxy - and station's own feature); 'none' is
+  # hook-only. Carried into the embedded config by configDefinition so
+  # station can validate the resolved feature order. Declared, never
+  # inferred: the obvious signal, an empty `hook: {}`, is wrong for a
+  # feature that both wraps AND dispatches hooks (station does).
+  transport: *'none' | 'base' | 'wrap'
+
   hook: &: {
    active: *false | boolean
    await: *false | boolean
@@ -480,6 +499,7 @@ main: kit: docs: &: {
   output: {
     path: *'' | string
     repo: *'' | string
+    create: *true | boolean
     adopt: *false | boolean
     sdkrel: *'' | string
   }

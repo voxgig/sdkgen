@@ -38,8 +38,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Jostraca = exports.registerComponent = exports.FeatureHook = exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeErrors = exports.ReadmeQuick = exports.ReadmeInstall = exports.AgentGuideFeature = exports.AgentGuide = exports.AgentGuideTop = exports.ReadmeTop = exports.Readme = exports.Test = exports.Feature = exports.Entity = exports.Changelog = exports.Security = exports.License = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
-exports.isTsReservedType = exports.phpSafeTypeName = exports.isPhpReservedType = exports.swiftSafeTypeName = exports.isSwiftSdkType = exports.rbSafeTypeName = exports.isRbSdkConstant = exports.isRbCoreConstant = exports.entityCacheField = exports.phpEntityAccessor = exports.exampleVarName = exports.safeVarName = exports.isReservedName = exports.entityCollection = exports.deriveEntityNames = exports.warnEntityTypeCollisions = exports.entityTypeCollisions = exports.entityClassName = exports.pickExampleEntity = exports.entityPrimaryOp = exports.entityOps = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.entityPath = exports.entityActions = exports.opActions = exports.ownPoint = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonScalarKey = exports.canonKey = exports.canonToDtype = exports.canonToType = exports.collectDeps = exports.getMatchEntries = exports.buildIdNames = exports.SdkGenError = exports.rawStringLiteral = exports.clean = exports.configDefinition = exports.configReprSetting = exports.configRepr = exports.isConfigData = exports.CONFIG_REPR_VALUES = exports.CONFIG_DATA_THRESHOLD = exports.resolveAuthPrefix = exports.isAuthActive = exports.requirePath = void 0;
-exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.originName = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.contributorList = exports.authorInfo = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = exports.jsKey = exports.jsOptProp = exports.jsProp = exports.validateManifest = exports.readManifest = exports.manifestPath = exports.MANIFEST = exports.definitionNames = exports.definitionFolder = exports.definitionPath = exports.srcFeatureExcludes = exports.fullsetExcludes = exports.featureExcludes = exports.findFeatureSources = exports.availableFeatures = exports.featureOf = exports.litFor = exports.dataArg = exports.matchArg = exports.idLiteral = exports.primaryOpCall = exports.liveStrict = exports.hasServerVariables = exports.serverVariables = exports.tsSafeTypeName = void 0;
+exports.phpSafeTypeName = exports.isPhpSdkClass = exports.isPhpReservedType = exports.swiftSafeTypeName = exports.isSwiftSdkType = exports.rbSafeTypeName = exports.isRbSdkConstant = exports.isRbCoreConstant = exports.entityCacheField = exports.phpEntityAccessor = exports.exampleVarName = exports.safeVarName = exports.isReservedName = exports.entityCollection = exports.deriveEntityNames = exports.warnEntityTypeCollisions = exports.entityTypeCollisions = exports.entityClassName = exports.pickExampleEntity = exports.entityPrimaryOp = exports.entityOps = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.entityPath = exports.entityActions = exports.opActions = exports.ownPoint = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonScalarKey = exports.canonKey = exports.canonToDtype = exports.canonToType = exports.collectDeps = exports.getMatchEntries = exports.buildIdNames = exports.SdkGenError = exports.rawStringLiteral = exports.clean = exports.configDefinition = exports.configReprSetting = exports.configRepr = exports.isConfigData = exports.CONFIG_REPR_VALUES = exports.CONFIG_DATA_THRESHOLD = exports.resolveAuthPrefix = exports.isAuthActive = exports.requirePath = void 0;
+exports.PUBLISHER_URL = exports.PUBLISHER = exports.originName = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.contributorList = exports.authorInfo = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = exports.jsKey = exports.jsOptProp = exports.jsProp = exports.validateManifest = exports.readManifest = exports.manifestPath = exports.MANIFEST = exports.definitionNames = exports.definitionFolder = exports.definitionPath = exports.stationLibrary = exports.srcFeatureExcludes = exports.fullsetExcludes = exports.featureExcludes = exports.findFeatureSources = exports.availableFeatures = exports.featureOf = exports.litFor = exports.dataArg = exports.matchArg = exports.idLiteral = exports.primaryOpCall = exports.liveStrict = exports.hasServerVariables = exports.serverVariables = exports.tsSafeTypeName = exports.isTsReservedType = void 0;
+exports.GENERATOR_URL = exports.SECURITY_EMAIL = void 0;
 exports.SdkGen = SdkGen;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -156,6 +157,7 @@ Object.defineProperty(exports, "rbSafeTypeName", { enumerable: true, get: functi
 Object.defineProperty(exports, "isSwiftSdkType", { enumerable: true, get: function () { return naming_1.isSwiftSdkType; } });
 Object.defineProperty(exports, "swiftSafeTypeName", { enumerable: true, get: function () { return naming_1.swiftSafeTypeName; } });
 Object.defineProperty(exports, "isPhpReservedType", { enumerable: true, get: function () { return naming_1.isPhpReservedType; } });
+Object.defineProperty(exports, "isPhpSdkClass", { enumerable: true, get: function () { return naming_1.isPhpSdkClass; } });
 Object.defineProperty(exports, "phpSafeTypeName", { enumerable: true, get: function () { return naming_1.phpSafeTypeName; } });
 Object.defineProperty(exports, "isTsReservedType", { enumerable: true, get: function () { return naming_1.isTsReservedType; } });
 Object.defineProperty(exports, "tsSafeTypeName", { enumerable: true, get: function () { return naming_1.tsSafeTypeName; } });
@@ -180,6 +182,8 @@ Object.defineProperty(exports, "findFeatureSources", { enumerable: true, get: fu
 Object.defineProperty(exports, "featureExcludes", { enumerable: true, get: function () { return featureSource_1.featureExcludes; } });
 Object.defineProperty(exports, "fullsetExcludes", { enumerable: true, get: function () { return featureSource_1.fullsetExcludes; } });
 Object.defineProperty(exports, "srcFeatureExcludes", { enumerable: true, get: function () { return featureSource_1.srcFeatureExcludes; } });
+const station_1 = require("./helpers/station");
+Object.defineProperty(exports, "stationLibrary", { enumerable: true, get: function () { return station_1.stationLibrary; } });
 const definition_1 = require("./helpers/definition");
 Object.defineProperty(exports, "definitionPath", { enumerable: true, get: function () { return definition_1.definitionPath; } });
 Object.defineProperty(exports, "definitionFolder", { enumerable: true, get: function () { return definition_1.definitionFolder; } });
@@ -331,7 +335,12 @@ function SdkGen(opts) {
         // so resolve it ONCE: every destination is compared against it, and a
         // comparison between a relative and an absolute path is meaningless.
         const root = node_path_1.default.resolve(folder);
-        const external = externalItems(model, root, ['target', 'docs']);
+        // Snapshot the decision before preflight. In particular, do not check a
+        // missing optional destination once for safety and AGAIN before writing:
+        // if it appeared between those checks, the pass could write into content
+        // that was never ownership-validated.
+        const external = externalItems(model, root, ['target', 'docs'])
+            .map((ext) => ({ ...ext, skip: externalSkipReason(ext, fs) }));
         // Before ANY file is written, in-tree included: a destination that turns
         // out to be wrong must abort the whole generation, not leave half of it
         // done. See checkExternalFolders.
@@ -397,17 +406,13 @@ function SdkGen(opts) {
             (0, util_2.showChanges)(jopts.log, 'generate-docs-result', dres, node_path_1.default.dirname(process.cwd()));
         }
         for (const ext of external) {
-            // `active: false` is the project's only lever to stop the generator
-            // writing into a repo it does not own, so it has to be honoured HERE —
-            // the consumer Root iterates targets raw and does not check it. The
-            // target is still removed from the in-tree model above (withoutExternal
-            // takes every `output: path` target, active or not), so switching one
-            // off generates it nowhere rather than relocating it into
-            // `<sdk-repo>/<target>/`.
-            if (!ext.active) {
+            // A skipped external target is still removed from the in-tree model
+            // above: neither `active: false` nor a missing `output.create: false`
+            // destination may relocate it into `<sdk-repo>/<target>/`.
+            if (null != ext.skip) {
                 log.info({
                     point: 'generate-external-skip', target: ext.name, folder: ext.folder,
-                    note: ext.name + ' inactive, not generated'
+                    note: ext.skip
                 });
                 continue;
             }
@@ -649,6 +654,28 @@ function externalItems(model, folder, kinds) {
         }));
     });
 }
+// Why this external item should not get a generation pass RIGHT NOW.
+//
+// `active: false` disables the target itself. `output.create: false` does
+// something deliberately narrower: the target stays active in the model but
+// an absent destination is treated as an optional checkout rather than a
+// folder sdkgen should fabricate. If that repo is checked out later, the same
+// unchanged model generates it normally.
+//
+// Snapshotted into ExternalPlan because both the pre-write destination guard
+// and the actual pass must make the identical decision. If the guard skipped
+// an item that the pass did not, generation could write outside the project
+// without any of the ownership checks below.
+function externalSkipReason(ext, fs) {
+    if (!ext.active) {
+        return ext.name + ' inactive, not generated';
+    }
+    if (false === ext.target.output?.create && !fs.existsSync(ext.folder)) {
+        return ext.name + ' output folder does not exist and ' +
+            'output.create=false, not generated';
+    }
+    return null;
+}
 // The `.jostraca` bookkeeping tree (meta log + a duplicate of the last
 // generated output) that jostraca leaves at an output root. It is the only
 // on-disk evidence that this toolchain has generated into a directory
@@ -688,10 +715,10 @@ const EXTERNAL_MARKER = '.jostraca';
 function checkExternalFolders(external, root, fs) {
     const claimed = {};
     for (const ext of external) {
-        // An inactive target writes nothing, so its destination is not a hazard —
-        // and switching a target off must not require keeping its now-unused
-        // path valid.
-        if (!ext.active)
+        // A skipped item writes nothing, so its destination is not a hazard. The
+        // snapshotted decision gates the actual pass too; keeping it identical is
+        // what makes the pre-write check complete.
+        if (null != ext.skip)
             continue;
         const label = ext.kind.charAt(0).toUpperCase() + ext.kind.slice(1);
         const where = label + ' "' + ext.name + '" has output path "' +

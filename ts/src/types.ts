@@ -47,6 +47,11 @@ type ModelFeature = NameCases & {
   active?: boolean
   title?: string
   version?: string
+  // Transport role (station design §8.4): 'base' replaces the transport
+  // slot (only `test`), 'wrap' wraps it, 'none' is hook-only. Schema
+  // default is 'none'; configDefinition carries it into the embedded
+  // config beside the feature's `config.options`.
+  transport?: string
   hook?: Record<string, ModelHook>
   deps?: Record<string, Record<string, ModelDep>>
   [extra: string]: any
@@ -71,6 +76,7 @@ type ModelTarget = NameCases & {
   output?: {
     path?: string
     repo?: string
+    create?: boolean
     adopt?: boolean
     sdkrel?: string
   }

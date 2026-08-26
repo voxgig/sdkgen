@@ -64,7 +64,7 @@ for that purpose:
 | `main.kit.target.<t>.author` | Attribution for ONE target, overriding the model-wide value. A generated SDK is an artefact of the publisher; a Seneca provider is independently released by named people. One model produces both. |
 | `main.kit.test.live.strict` | Whether a live test run asserts or merely observes. |
 | `main.kit.target.<t>.module.path` / `.package` / `.goversion` | Go-family module identity and the `go` directive. |
-| `main.kit.target.<t>.output.path` / `.repo` | Generate this target into ANOTHER repo (see [below](#generating-outside-the-sdk-repo-output)). |
+| `main.kit.target.<t>.output.path` / `.repo` / `.create` | Generate this target into ANOTHER repo and optionally require that repo to exist already (see [below](#generating-outside-the-sdk-repo-output)). |
 | `main.kit.target.<t>.publish.version` | The port's own release version. Every manifest emitter used to hardcode `0.0.1`, so a project that had published `0.0.2` got its manifest reset on the next run. |
 | `main.kit.target.<t>.publish.registry.package` | The published package name, when it is not the derived one. |
 | `main.kit.feature.<name>.active` | Which features ship. |
@@ -165,6 +165,7 @@ files in `ts/project/.sdk/model/target/`:
 | `feature.fullset` | string[] | `[]` | Templates that only compile with the COMPLETE feature set (the cross-feature test suite), as paths under the target template root. Dropped whenever the set is trimmed. |
 | `output.path` | string | `''` | Generate this target into ANOTHER repo (see below). `''` is the ordinary `<sdk-repo>/<target>/`. |
 | `output.repo` | string | `''` | `'<org>/<repo>'` for that other repo, so its manifest's homepage/repository/bugs point there and not at the SDK's own repo. |
+| `output.create` | boolean | `true` | Whether sdkgen may create a missing out-of-tree destination. `false` keeps the target active but skips it until the destination folder exists. |
 | `output.adopt` | boolean | `false` | Allow a destination that already holds content this generator did not write. Generation refuses one otherwise — it overwrites, and the path is taken verbatim from the model. |
 | `output.sdkrel` | string | `''` | The path from the destination BACK to the SDK project, which the target's docs, scripts and live tests name. `''` derives it by inverting `path`; declare it when the destination is more than one level away. |
 | `publish.version` | string | `'0.0.1'` | The port's own release version — what the generated manifest declares and what its Makefile tags. Per TARGET: ports publish to different registries on different clocks. |
@@ -218,6 +219,7 @@ SDK repo. Point it at that repo from the project's own model:
 main: kit: target: 'seneca-provider': output: {
   path: '../../seneca/seneca-acme-provider'
   repo: 'senecajs/seneca-acme-provider'
+  create: false
 }
 ```
 
@@ -232,6 +234,10 @@ main: kit: target: 'seneca-provider': output: {
   URLs point at. Left unset, a target may supply its own convention, and
   otherwise falls back to the SDK's own repo — which would be wrong for a
   package released from somewhere else.
+- `create: false` keeps the target active but skips its external pass when
+  the destination folder is absent. This is useful when the separate target
+  fleet is an optional set of checkouts: creating or cloning the folder later
+  makes the unchanged model generate it normally. The default is `true`.
 - The destination is checked **before any file is written**, in-tree
   output included: it may not be inside (or contain) the SDK project, two
   targets may not claim the same folder, and a folder already holding
@@ -308,7 +314,8 @@ Its `config.options`, all overridable per project:
 | `url` | string | `''` | Explicit proxy URL (`''` = discover per station's config). |
 | `fromEnv` | boolean | `true` | Let `VOXGIG_STATION_*` env vars participate in resolution. |
 | `profile` | string | `''` | Pin a `station.json` profile (`''` = the station's own selection). |
-| `secret` | string | `''` | Override the plugin's sekreto secret name (`''` = the descriptor default, `<envtoken(slug) lowercased>.apikey`). |
+| `secret` | string | `''` | Override the plugin's sekreto secret name (`''` = the descriptor default, `<envtoken(instance) lowercased>.apikey`). |
+| `instance` | string | `''` | The instance name this client registers under — station passes it when it constructs the client (`station.sdk()`); `''` falls back to the descriptor slug, which is what a bare `connect(SDK)` does. |
 | `register` | boolean | `true` | Register the descriptor with the bound station. |
 | `capture` | string | `'meta'` | Capture depth: `meta` \| `headers` \| `full`. |
 

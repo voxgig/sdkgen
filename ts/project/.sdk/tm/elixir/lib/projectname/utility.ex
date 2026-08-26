@@ -193,17 +193,53 @@ defmodule ProjectName.Utility do
 
   # ---- make_options --------------------------------------------------------
 
+  # Public camelCase option key -> snake_case utility member name, or nil
+  # when the key is not a public name (see make_options_impl).
+  defp util_member(key) when is_binary(key) do
+    if String.contains?(key, "_") do
+      nil
+    else
+      String.replace(key, ~r/([A-Z])/, "_\\1") |> String.downcase()
+    end
+  end
+
+  defp util_member(_key), do: nil
+
   def make_options_impl(ctx) do
     options = H.or_(S.getprop(ctx, "options"), S.jm([]))
 
     custom_utils = S.getprop(options, "utility")
 
+    # Utility overrides from options.
+    #
+    # A key naming a real utility member REPLACES it; anything else is
+    # attached as a custom extra. Shelving everything in `custom` - a map
+    # nothing reads - made `utility: %{"fetcher" => ...}`, the documented
+    # transport seam, a silent no-op here while ts honoured it.
+    #
+    # Only a PUBLIC name may replace. Option keys are camelCase, as ts spells
+    # them, and members here are snake_case; public names carry no underscore,
+    # so an underscore means the caller named something of their own -
+    # possibly the internal spelling of a real member. `make_error` must stay
+    # an extension, or a non-callable would break the error path on the next
+    # request.
     if S.ismap(custom_utils) do
       utility = S.getprop(ctx, "utility")
 
       if utility != nil do
         custom = S.getprop(utility, "custom")
-        Enum.each(S.keysof(custom_utils), fn k -> S.setprop(custom, k, S.getprop(custom_utils, k)) end)
+
+        Enum.each(S.keysof(custom_utils), fn k ->
+          val = S.getprop(custom_utils, k)
+          member = util_member(k)
+
+          if member != nil and member != "custom" and
+               S.getprop(utility, member) != nil do
+            S.setprop(utility, member, val)
+          else
+            S.setprop(custom, k, val)
+          end
+        end)
       end
     end
 

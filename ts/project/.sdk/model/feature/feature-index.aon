@@ -9,6 +9,7 @@
 @"timeout.aon"
 @"ratelimit.aon"
 @"cache.aon"
+@"cost.aon"
 @"idempotency.aon"
 @"paging.aon"
 @"streaming.aon"
