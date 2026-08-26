@@ -10,12 +10,16 @@
 //
 // Before this file, the only cross-language test asserted file EXISTENCE
 // (featuremodel.test.ts), so the coverage tiers below were invisible: you had
-// to grep the template tree to discover that five targets mirror the corpus
-// by hand and four have no primary-utility suite at all.
+// to grep the template tree to discover that five targets mirrored the corpus
+// by hand and four had no primary-utility suite at all.
 //
-// This test does not close those gaps — it PINS them. The manifest is the
-// stated policy; a target that loses its corpus-driven suite, or a new target
-// added without a decision about its tier, fails here.
+// Those gaps are now CLOSED: every target drives the corpus, and MIRRORED and
+// UNCOVERED are empty. Driving it is what found the defects — the same
+// prepare_method "GET" catch-all in six independent ports, among others.
+// The manifest stays as the stated policy: a target that loses its
+// corpus-driven suite, or a new target added without a decision about its
+// tier, fails here. Adding a name to MIRRORED or UNCOVERED is a deliberate
+// regression and should be argued for in the commit that does it.
 
 import { test, describe } from 'node:test'
 import { ok, deepStrictEqual, strictEqual } from 'node:assert'
@@ -61,19 +65,19 @@ const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider']
 const FULL = [
   'cpp', 'csharp', 'dart', 'go', 'java', 'js', 'kotlin', 'lean', 'lua', 'ocaml',
   'perl', 'php', 'py', 'rb', 'rust', 'swift', 'ts', 'zig', 'clojure',
-  'elixir', 'c',
+  'elixir', 'c', 'scala',
 ]
 
 // TIER 2 — has a primary-utility suite, but it MIRRORS the corpus by hand
-// instead of executing it, so the cases can drift from the reference. (zig's
-// suite says so outright: "keeps the suite hermetic — no external fixture
-// parsing".) Moving one of these to FULL is the highest-value parity work
-// available.
+// instead of executing it, so the cases can drift from the reference. EMPTY:
+// c and elixir were the last two and both now execute the corpus. A target
+// here is checked only against cases it wrote for itself.
 const MIRRORED: string[] = []
 
-// TIER 3 — no primary-utility suite at all. These targets' request-shaping
-// utilities are unverified in every language-neutral sense.
-const UNCOVERED = ['scala']
+// TIER 3 — no primary-utility suite at all, leaving the request-shaping
+// utilities unverified in every language-neutral sense. EMPTY: scala was the
+// last one.
+const UNCOVERED: string[] = []
 
 
 // Targets exposing the raw-access escape hatch (direct/graphql). See the

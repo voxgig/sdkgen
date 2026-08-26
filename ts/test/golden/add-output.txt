@@ -1770,7 +1770,7 @@ src/cmp/scala/fragment/Main.fragment.scala 48af9dfdab50
 src/cmp/scala/tsconfig.json 720a3f229019
 src/cmp/scala/utility_scala.ts 1128375d5948
 tm/scala/LICENSE ed2f88b0aab8
-tm/scala/Makefile 12642b2061eb
+tm/scala/Makefile a72245d3a95c
 tm/scala/VERSION e6635045e1d2
 tm/scala/core/Context.scala 548bd774a9ed
 tm/scala/core/Contracts.scala caa9f20bf5be
@@ -1805,9 +1805,10 @@ tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala 19f19505f177
 tm/scala/feature/TestFeature.scala f6c90650e517
 tm/scala/feature/TimeoutFeature.scala 1241410229ac
+tm/scala/sdktest/PrimaryCorpus.scala ca9fd17a63f9
 tm/scala/sdktest/SdkTestMain.scala 204bb4c0509f
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
-tm/scala/sdktest/StructCorpus.scala 150b59dff266
+tm/scala/sdktest/StructCorpus.scala bf7d42f98301
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
 tm/scala/src/feature/README.md fe95b0698ffe
 tm/scala/src/feature/audit/.gitkeep e3b0c44298fc
@@ -1836,7 +1837,7 @@ tm/scala/utility/Json.java d39717264d80
 tm/scala/utility/Make.scala 96e7fe9a934d
 tm/scala/utility/MakeSpec.scala 321cd9348d4e
 tm/scala/utility/Misc.scala bf44fcc37724
-tm/scala/utility/Prepare.scala e9c46c3ea45e
+tm/scala/utility/Prepare.scala 8c0bc0c5c841
 tm/scala/utility/Register.scala 730b661b9faf
 tm/scala/utility/Results.scala eaf1c9bb3189
 tm/scala/utility/StructUtility.scala 2dc27377f838
