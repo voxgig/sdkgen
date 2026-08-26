@@ -136,6 +136,29 @@ pub const Flags = struct {
     undef_as_null: bool = true,
 };
 
+/// Load test.json and return a named top-level spec section.
+///
+/// makeRunner is this with "struct" baked in. The primary-utility suite needs
+/// "primary" from the same file, and duplicating the load would give the two
+/// suites separate copies of a corpus that is meant to be shared.
+pub fn makeRunnerFor(allocator: Allocator, section: []const u8) !RunPack {
+    const data = try std.fs.cwd().readFileAlloc(allocator, TEST_JSON_FILE, 10 * 1024 * 1024);
+    const parsed = try std.json.parseFromSlice(StdJsonValue, allocator, data, .{});
+    const root = parsed.value;
+
+    const spec_val = switch (root) {
+        .object => |obj| obj.get(section) orelse return error.NoSectionInTestJson,
+        else => return error.TestJsonNotObject,
+    };
+
+    return RunPack{
+        .spec = Spec{ .data = spec_val },
+        .allocator = allocator,
+        .file_data = data,
+        .parsed = parsed,
+    };
+}
+
 /// Load test.json and return the "struct" spec.
 pub fn makeRunner(allocator: Allocator) !RunPack {
     const path = TEST_JSON_FILE;
