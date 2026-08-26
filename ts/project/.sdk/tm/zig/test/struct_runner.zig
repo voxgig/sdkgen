@@ -27,7 +27,15 @@ pub const AllocSubject = *const fn (Allocator, JsonValue) JsonValue;
 /// maps cannot be mutated in place safely from here — a put may reallocate the
 /// backing store and the caller would never see it — so a section that needs a
 /// `match: ctx.*` assertion hands its ctx back through this instead.
-pub const EntrySubject = *const fn (Allocator, StdJsonValue, *?StdJsonValue) anyerror!StdJsonValue;
+pub const EntrySubject = *const fn (
+    Allocator,
+    StdJsonValue,
+    *?StdJsonValue,
+    /// The SDK's own error message. Zig errors carry no payload, so
+    /// @errorName gives the tag ("Sdk") and never the text the corpus matches
+    /// on. A subject that fails writes ctx.pending_err's message here.
+    *?[]const u8,
+) anyerror!StdJsonValue;
 
 pub const Spec = struct {
     data: StdJsonValue,
@@ -162,11 +170,12 @@ pub const RunPack = struct {
 
             self.ran += 1;
             var published: ?StdJsonValue = null;
+            var errmsg: ?[]const u8 = null;
 
-            const res = subject(alloc, entry_val, &published) catch |e| {
+            const res = subject(alloc, entry_val, &published, &errmsg) catch |e| {
                 // An expected error: match its text, then any `match` block.
                 if (err_field) |ef| {
-                    const msg = @errorName(e);
+                    const msg = errmsg orelse @errorName(e);
                     if (ef == .bool and ef.bool) continue;
                     if (matchval(alloc, ef, StdJsonValue{ .string = msg })) continue;
                     std.debug.print("\n  ERROR MATCH [entry {d}]: [{s}] <=> [{s}]\n", .{
