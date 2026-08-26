@@ -3,7 +3,7 @@
     "package": 1
   },
   "name": "@voxgig/sdkgen",
-  "version": "4.2.5",
+  "version": "4.3.0",
   "provides": {
     "target": [
       "c",
@@ -37,6 +37,7 @@
       "audit",
       "cache",
       "clienttrack",
+      "cost",
       "debug",
       "idempotency",
       "log",

@@ -9,9 +9,9 @@ what the shipped features actually do with these hooks, see
 [the feature catalogue](./features.md).
 
 > Hooks are only **one** of the two seams a feature can attach to. A
-> feature that declares `transport: 'wrap'` replaces the transport in
-> `init()` instead, and dispatches no hooks at all. See
-> [The transport seam](#the-transport-seam) below.
+> feature that declares `transport: 'wrap'` also replaces the transport in
+> `init()`. Most wrapping features dispatch no hooks at all; `cost` does
+> both. See [The transport seam](#the-transport-seam) below.
 
 ## Hook groups
 
@@ -66,9 +66,14 @@ An empty row means the feature works at the transport seam instead.
 | `streaming` | `PreResult` |
 | `debug` | `PreRequest`, `PreResponse`, `PreDone`, `PreUnexpected` |
 | `audit` | `PreDone`, `PreUnexpected` |
+| `cost` | `PrePoint`, `PreDone`, `PreUnexpected` (**and** wraps the transport) |
 | `log` | every lifecycle, entity-state and pipeline hook |
 | `test` | every lifecycle and pipeline hook (plus the base transport) |
 | `retry`, `timeout`, `ratelimit`, `cache`, `proxy`, `netsim` | none — transport seam |
+
+`cost` is the one bundled feature that uses both seams: it wraps the
+transport to price every HTTP attempt, and hooks the pipeline to enforce a
+budget before the call and attribute the spend after it.
 
 ## The transport seam
 
@@ -91,7 +96,7 @@ and still fire exactly one `PreDone`.
 | `transport` | Meaning |
 | --- | --- |
 | `'none'` | Uses pipeline hooks only. The default. |
-| `'wrap'` | Wraps the current transport. Dispatches no hooks. |
+| `'wrap'` | Wraps the current transport. May also dispatch hooks (`cost` does). |
 | `'base'` | *Replaces* the transport (the `test` feature's mock). |
 
 Because each wrapper wraps whatever is already installed, **init order is

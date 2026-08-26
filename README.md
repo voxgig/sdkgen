@@ -99,7 +99,7 @@ Comprehensive docs live in [`docs/`](./docs/README.md):
 - A staged operation pipeline (`PrePoint → PreSpec → PreRequest →
   PreResponse → PreResult → PreDone`) that **features** plug into —
   without forking the SDK.
-- **Seventeen features**, in every language (see below).
+- **Eighteen features**, in every language (see below).
 - `direct()` / `prepare()` escape hatches for endpoints outside the
   entity model.
 - Generated `README.md` and `REFERENCE.md`, and an offline test suite.
@@ -109,7 +109,8 @@ Comprehensive docs live in [`docs/`](./docs/README.md):
 The parts of a client library that take the longest to get right are not
 the endpoint wrappers. They are retries that back off properly, a cache
 that does not serve a consumed response body, idempotency keys that stay
-stable across a retry, pagination that stops at the last page. sdkgen
+stable across a retry, pagination that stops at the last page, a spend
+ceiling an agent cannot blow through. sdkgen
 ships those as **features**: opt-in, configurable, and implemented once
 per language rather than once per API.
 
@@ -119,7 +120,7 @@ per language rather than once per API.
 | **Correct writes** | `idempotency` |
 | **Large result sets** | `paging` `streaming` |
 | **Observability** | `telemetry` `metrics` `audit` `debug` `log` `clienttrack` |
-| **Governance** | `rbac` `proxy` |
+| **Governance** | `rbac` `proxy` `cost` |
 | **Testing** | `test` `netsim` |
 
 ```bash

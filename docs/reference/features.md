@@ -6,7 +6,7 @@ tracing, an offline mock transport, and so on. Features are the answer to
 "my SDK needs to do X on every call" that does not involve forking
 generated code.
 
-Seventeen features ship with `@voxgig/sdkgen`. Every one of them is
+Eighteen features ship with `@voxgig/sdkgen`. Every one of them is
 implemented for **every bundled language target** (the only exception is
 `seneca-provider`, which delegates to the `ts` SDK it wraps rather than
 implementing features itself), so `retry` means the same thing in Go as it
@@ -34,6 +34,7 @@ is no runtime to install and no service to call.
 | [`cache`](#cache) | Serves safe reads from a bounded TTL cache | transport |
 | [`proxy`](#proxy) | Routes outbound calls through an HTTP(S) proxy | transport |
 | [`netsim`](#netsim) | Injects latency, failures and outages for offline tests | transport |
+| [`cost`](#cost) | Prices every call, attributes the spend, and stops on a budget | transport + hooks |
 | [`test`](#test) | An in-memory mock API served from seed data | transport (base) |
 | [`idempotency`](#idempotency) | Stamps `Idempotency-Key` on mutating calls | `PreRequest` |
 | [`paging`](#paging) | Reads and writes pagination signals for list operations | `PreRequest`, `PreResult` |
@@ -49,7 +50,7 @@ is no runtime to install and no service to call.
 Loosely, they group as **resilience** (`retry`, `timeout`, `ratelimit`,
 `cache`), **correctness under retry** (`idempotency`), **large result sets**
 (`paging`, `streaming`), **observability** (`telemetry`, `metrics`, `audit`,
-`debug`, `log`, `clienttrack`), **governance** (`rbac`, `proxy`), and
+`debug`, `log`, `clienttrack`), **governance** (`rbac`, `proxy`, `cost`), and
 **testing** (`test`, `netsim`).
 
 ---
@@ -163,9 +164,15 @@ made by another wrapper, and it can suppress, delay, repeat or answer a
 request without the pipeline knowing.
 
 `retry`, `timeout`, `ratelimit`, `cache`, `proxy` and `netsim` work this
-way. They dispatch **no pipeline hooks at all** (their model's `hook` block
-is empty), which is why a single operation call can produce three HTTP
+way, and none of them dispatches a pipeline hook: their model's `hook` block
+is empty. That is why a single operation call can produce three HTTP
 requests but exactly one `PreDone`.
+
+Wrapping and hooking are **not** mutually exclusive, though, and the model
+says which a feature does rather than inferring it from an empty `hook`
+block. [`cost`](#cost) is the bundled feature that needs both: it wraps the
+transport to price every attempt, and hooks `PrePoint`/`PreDone` to enforce
+a budget and attribute the spend to one operation.
 
 `test` is the special case, `transport: 'base'`: it *replaces* the
 transport rather than wrapping one, so it belongs at the bottom of the
@@ -217,6 +224,7 @@ of the way of your API's own surface.
 | `audit` | `client._audit` | `{ records: [...] }` |
 | `debug` | `client._debug` | `{ entries: [...] }` |
 | `clienttrack` | `client._clienttrack` | `{ session, requests, clientName, lastRequestId }` |
+| `cost` | `client._cost` | `{ currency, total, ops, actors, budget, last }` |
 
 `audit`, `debug` and `telemetry` also take a callback (`sink`, `onEntry`,
 `exporter`) so records can be forwarded as they happen instead of polled.
@@ -521,6 +529,146 @@ because every target's generated test suite depends on it. The inline
 `net` block covers the common simulation cases; reach for
 [`netsim`](#netsim) when you need `failEvery`, `failRate`,
 `rateLimitTimes` or per-call inspection.
+
+## `cost`
+
+> Cost tracking and spend budget for API calls
+
+Prices every call, attributes the spend, and stops spending once a budget
+you set is gone.
+
+This is the one bundled feature that uses **both seams**, and it has to.
+Money is spent per HTTP **attempt** (a retried call is charged again,
+because the upstream API charges it again), but it is owed by an
+**operation**. So the transport wrap prices each attempt, and `PreDone`
+attributes the running total to `<entity>.<op>` and to the caller.
+
+The price of an attempt comes from the first source that answers:
+
+1. **A response header** — `header` names it, `perUnit` converts the
+   reported figure to money. Read per attempt.
+2. **The rate table** — `rates`, keyed `'<entity>.<op>'`, then `'<op>'`,
+   then `'*'`. The same lookup grammar [`rbac`](#rbac) uses for its rules.
+3. **The flat `unit`** — a single price for any call.
+
+A **body** figure is different, and is read at `PreDone` from the parsed
+result rather than at the transport seam: response bodies are one-shot
+streams, and consuming one in the wrapper would leave the pipeline with
+nothing. `path` is a dot path into the body (`usage.total_tokens` for an
+LLM API, `extensions.cost.actualQueryCost` for Shopify GraphQL), priced by
+`perUnit`. Because such a figure describes the whole call, it **replaces**
+the per-attempt estimate rather than adding to it.
+
+Every record carries its `source`, and the totals keep `reported` and
+`estimated` apart: "the server told us" and "we guessed from a price list"
+are different claims and should not be silently summed.
+
+**Seam:** transport wrapper **and** `PrePoint`, `PreDone`, `PreUnexpected`.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `active` | `false` | Enable the feature. |
+| `currency` | `'USD'` | Label for the amounts. No conversion is done. |
+| `unit` | `0` | Flat cost per attempt, when nothing else applies. |
+| `rates` | `{}` | Cost per attempt, keyed `'<entity>.<op>'` / `'<op>'` / `'*'`. |
+| `header` | `''` | Response header carrying a reported usage figure. |
+| `path` | `''` | Dot path into the response body carrying a usage figure. |
+| `perUnit` | `0` | Price per reported unit. Multiplies a header or body figure. |
+| `budget` | `0` | Spend limit, checked against spend SO FAR. `0` means no limit. |
+| `onBudget` | `'warn'` | `'warn'` records the overrun, `'deny'` refuses the call. |
+| `actor` | `'anonymous'` | Default actor for attribution. |
+| `sink(record)` | none | Called with each finished record. |
+
+```ts
+feature: {
+  cost: {
+    active: true,
+    rates: { 'report.generate': 0.05, '*': 0.001 },
+    budget: 25,
+    onBudget: 'deny',
+  },
+}
+```
+
+Per-call attribution uses the same control key as [`audit`](#audit):
+
+```ts
+await client.Report().generate({ id: 'r1' }, { actor: 'user:42' })
+
+client._cost.total          // { calls, attempts, amount, reported, estimated }
+client._cost.ops['report.generate']
+client._cost.actors['user:42']
+client._cost.budget         // { limit, spent, remaining, exceeded }
+```
+
+### The budget
+
+`budget` is checked at `PrePoint`, before an endpoint is even resolved, so
+a refused call costs nothing and never touches the network. With
+`onBudget: 'deny'` it raises `cost_budget`; with the default `'warn'` it
+sets `budget.exceeded` and lets the call through.
+
+**It is a cutoff, not a hard cap, and the difference matters.** The check
+asks *have I already spent the budget*, not *will this call exceed it*.
+What a call costs is generally not known until after it has been made — a
+reported header or body figure arrives with the response, and a retried
+call is charged per attempt — so the last admitted call can carry total
+spend well past the limit:
+
+```ts
+// budget 2, but one call prices at 5
+feature: [{ name: 'cost', active: true, unit: 5, budget: 2, onBudget: 'deny' }]
+
+await client.Report().generate({ id: 'r1' })   // admitted: nothing spent yet
+client._cost.total.amount                      // 5 — the limit is already passed
+await client.Report().generate({ id: 'r2' })   // refused: cost_budget
+```
+
+So `budget` bounds a run; it does not guarantee a maximum. Size it with
+that overshoot in mind — one call's worth, or one retried call's worth,
+below the number you actually cannot exceed.
+
+That shape is still the useful one for agent traffic, which is bursty,
+repetitive and prone to tight retry loops: a cutoff in the client stops a
+loop that would otherwise run until the invoice arrives.
+
+**Notes and limits.**
+
+- **Order matters, and the default gets it wrong.** `cost` must sit
+  **inside** the cache, or a response served from cache is charged for
+  money that was never spent. Alphabetical map ordering puts `cache`
+  innermost and `cost` outside it, so use the array form:
+
+  ```ts
+  feature: [
+    { name: 'cost',  active: true, unit: 0.002 },   // inner: real calls only
+    { name: 'cache', active: true, ttl: 30000 },
+  ]
+  ```
+
+  Being *inside* `retry` is already correct under the default order, which
+  is what makes the retry multiplier visible: `total.attempts` against
+  `total.calls` is what your retry policy actually costs you.
+- **It is an estimate, not an invoice.** What you think you spent; the
+  bill is authoritative.
+- **The budget is per client instance**, like [`ratelimit`](#ratelimit).
+  Two processes get two budgets and neither knows about the other. It
+  stops this client, not your account.
+- **Spend is known after the fact** unless the API reports a pre-flight
+  price, so `deny` enforces against spend-so-far, not against the call you
+  are about to make. See [The budget](#the-budget) for what that costs you
+  in overshoot.
+- **A failed call still costs.** A rejecting transport is charged per
+  attempt, and an operation that throws commits its spend through
+  `PreUnexpected` rather than being lost. Otherwise a run of
+  connection-level failures under `retry` would spend real money and record
+  nothing, and no budget could stop it.
+- **`direct()` and `graphql()` are counted too.** Those call the transport
+  without dispatching pipeline hooks, so their spend is committed at the
+  transport seam and attributed to `_.direct`. They are counted, but they
+  cannot be gated before the fact, because there is no `PrePoint` to refuse
+  at.
+- No currency conversion. `currency` is a label.
 
 ## `idempotency`
 
@@ -880,6 +1028,8 @@ naming.
 | Diagnose an integration | `debug` + `log` | A redacted trace buffer, and full detail while you are looking. |
 | Test resilience offline | `test` + `netsim` + `retry` | Scripted failures over a mock API, with injectable clocks. |
 | Enterprise deployment | `proxy` + `clienttrack` + `rbac` | Egress through the corporate proxy, identifiable traffic, local policy. |
+| Know what it costs | `cost` + `audit` | Spend per operation and per actor, with an audit record beside it. |
+| Stop a runaway agent | `cost` + `retry` + `timeout` | A spend cutoff around bounded, bounded-wait attempts. |
 
 Two ordering rules cover most of it: `test` first, because it is the base
 transport, and the wrapping features in the order you want them to nest.
@@ -895,8 +1045,57 @@ Each target also ships a cross-feature test suite exercising the features
 its project selected, so parity is enforced by tests rather than asserted
 in prose. `target add` copies source only for features the model selected,
 so a project that asked for `retry` alone does not carry the other
-sixteen. See
+seventeen. See
 [Trimming the feature set](../how-to/add-a-feature.md#trimming-the-feature-set).
+
+### How parity is proved
+
+A cross-feature suite written per language proves each language against
+itself. What proves them against *each other* is the **shared corpus**:
+language-neutral cases in create-sdkgen's
+`project/standard/.sdk/test/feature/<name>.aon`, compiled into the
+`test.json` that ships with every project, and executed by each target's
+own runner against a real generated SDK.
+
+That is the same route the primary utilities take, and it is deliberately
+not a harness: the feature is an ordinary class in ordinary compiled
+source, built through the generated config, installed by the generated
+constructor, and driven by a real entity operation. What is asserted is
+what ships.
+
+A case is entirely data — the ordered feature list, the options, the
+scripted transport responses, the operations to run, and the expected
+subset of `client._<name>`. The one thing each language writes for itself
+is the few lines that turn scripted responses into a fetcher. Two things
+are therefore out of reach and are covered per-language instead: anything
+whose subject is a function (a `sink` callback), and anything about a
+language's own idiom.
+
+Eight targets run the corpus today: `ts`, `js`, `go`, `py`, `rb`, `php`,
+`perl` and `java`. The cases script the transport through
+`options.utility.fetcher`, the documented seam, so a target that ignores it
+cannot run a case at all.
+
+That seam exists exactly where the options container is dynamically typed.
+`lua`, `elixir`, `clojure`, `csharp`, `kotlin`, `scala` and `dart` carry
+options in a map that holds any value, so a key naming a real utility member
+replaces it there (`swift` honours `fetcher`, whose type it can name). In
+`rust`, `c`, `zig`, `ocaml` and `cpp` the options are a CLOSED value union
+whose only function shape is the struct library's own, so no caller can put a
+transport into them at all - c's header says plainly that widening a
+general-purpose struct library to hold SDK objects would be wrong. For those
+five the transport seam is `system.fetch` or a transport feature, and it is a
+design boundary rather than an omission.
+
+Running the corpus found defects every prior test had passed over, and it
+found them in each language it reached. In ts and js, a `TypeError` in
+place of the SDK error on **every** pipeline short-circuit, and a refused
+operation counted as a call by `cost`. In php, an `actor` the control
+object never carried, so per-actor attribution silently read
+`anonymous` for both `cost` and `audit`, and an error `status` assigned as
+a dynamic property, deprecated in PHP 8 and fatal in PHP 9, on every error
+path. In seven targets, an `options.utility` override that was shelved in a
+map nothing read. All are fixed.
 
 ## See also
 
