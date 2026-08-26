@@ -22,7 +22,12 @@ pub const Subject = *const fn (StdJsonValue) StdJsonValue;
 pub const AllocSubject = *const fn (Allocator, JsonValue) JsonValue;
 
 /// A subject that receives the whole corpus ENTRY and returns std.json.
-pub const EntrySubject = *const fn (Allocator, StdJsonValue) anyerror!StdJsonValue;
+///
+/// `published` is an out-parameter for the context the subject built. std.json
+/// maps cannot be mutated in place safely from here — a put may reallocate the
+/// backing store and the caller would never see it — so a section that needs a
+/// `match: ctx.*` assertion hands its ctx back through this instead.
+pub const EntrySubject = *const fn (Allocator, StdJsonValue, *?StdJsonValue) anyerror!StdJsonValue;
 
 pub const Spec = struct {
     data: StdJsonValue,
@@ -39,6 +44,8 @@ pub const RunPack = struct {
     spec: Spec,
     allocator: Allocator,
     file_data: []const u8,
+    /// Cases actually executed, so a suite can assert it ran something.
+    ran: usize = 0,
     parsed: std.json.Parsed(StdJsonValue),
 
     /// Run all entries in testspec.set against the subject function (no alloc, std types).
@@ -134,7 +141,7 @@ pub const RunPack = struct {
     /// The subject receives the whole ENTRY, not the resolved args, because an
     /// args-style section has to publish the context it builds back onto the
     /// entry — a `match: ctx.*` assertion reads it from there.
-    pub fn runsetEntry(self: RunPack, testspec: StdJsonValue, subject: EntrySubject) !void {
+    pub fn runsetEntry(self: *RunPack, testspec: StdJsonValue, subject: EntrySubject) !void {
         const set_val = switch (testspec) {
             .object => |obj| obj.get("set") orelse return,
             else => return,
@@ -153,7 +160,10 @@ pub const RunPack = struct {
 
             const err_field = entry.get("err");
 
-            const res = subject(alloc, entry_val) catch |e| {
+            self.ran += 1;
+            var published: ?StdJsonValue = null;
+
+            const res = subject(alloc, entry_val, &published) catch |e| {
                 // An expected error: match its text, then any `match` block.
                 if (err_field) |ef| {
                     const msg = @errorName(e);
@@ -179,7 +189,11 @@ pub const RunPack = struct {
                 var subj = std.json.ObjectMap.init(alloc);
                 subj.put("out", res) catch {};
                 if (entry.get("in")) |v| subj.put("in", v) catch {};
-                if (entry.get("ctx")) |v| subj.put("ctx", v) catch {};
+                if (published) |p| {
+                    subj.put("ctx", p) catch {};
+                } else if (entry.get("ctx")) |v| {
+                    subj.put("ctx", v) catch {};
+                }
                 const subjval = StdJsonValue{ .object = subj };
 
                 var path = std.ArrayList([]const u8).init(alloc);
@@ -201,8 +215,14 @@ pub const RunPack = struct {
                 });
                 failures += 1;
             } else if (!matched) {
-                // No `out` and no `match` asserts nothing at all.
-                std.debug.print("\n  entry {d} asserts nothing\n", .{entry_idx});
+                // NO `out` MEANS EXPECT NULL, not "assert nothing". The
+                // reference sets a missing out to the null marker before
+                // running, so an entry like {"ctx": {"opname": "bad"}} asserts
+                // that the utility yields nothing.
+                if (res == .null) continue;
+                std.debug.print("\n  FAIL [entry {d}]: expected null got {s}\n", .{
+                    entry_idx, fmtJson(res),
+                });
                 failures += 1;
             }
         }
@@ -293,7 +313,7 @@ pub fn matchval(alloc: Allocator, check: StdJsonValue, base: StdJsonValue) bool 
         // A /pattern/ is a regex over the stringified base.
         if (2 <= c.len and c[0] == '/' and c[c.len - 1] == '/') {
             const pat = c[1 .. c.len - 1];
-            var re = regex.compile(alloc, pat) catch return false;
+            var re = regex.compile(alloc, pat) orelse return false;
             defer re.deinit();
             return re.isMatch(basestr);
         }

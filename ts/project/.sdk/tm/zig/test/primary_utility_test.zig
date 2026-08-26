@@ -344,3 +344,126 @@ test "primary new sdk smoke" {
     const client = sdk.new();
     try testing.expect(std.mem.eql(u8, client.mode, "live"));
 }
+
+// ---------------------------------------------------------------------------
+// THE SHARED CORPUS.
+//
+// Everything above asserts against inputs written here; this drives
+// .sdk/test/test.json -> "primary" through the same utilities, so the cases
+// cannot drift from the reference implementation. That is what moves zig from
+// the MIRRORED parity tier to FULL: a mirrored suite cannot notice a corpus
+// case that changed, or one that was added.
+// ---------------------------------------------------------------------------
+
+const runner = @import("struct_runner.zig");
+const vs = @import("../utility/voxgigstruct/struct.zig");
+
+const StdJson = std.json.Value;
+
+/// A LIVE context from a corpus map: the utilities read and MUTATE spec,
+/// result and response through their types, so a bare value leaves them
+/// nothing to work on and every match reads null.
+fn corpusCtx(alloc: std.mem.Allocator, ctxstd: StdJson) !*sdk.Context {
+    const client = baseClient();
+    const utility = client.get_utility();
+
+    const opname: []const u8 = blk: {
+        if (ctxstd == .object) {
+            if (ctxstd.object.get("opname")) |o| {
+                if (o == .string) break :blk o.string;
+            }
+        }
+        break :blk "load";
+    };
+
+    const ctx = utility.make_context(sdk.CtxSpec{
+        .opname = opname,
+        .client = client,
+        .utility = utility,
+    }, client.get_root_ctx());
+
+    if (ctxstd != .object) return ctx;
+
+    if (ctxstd.object.get("spec")) |v| {
+        ctx.spec = sdk.Spec.make(try vs.fromStdJson(alloc, v));
+    }
+    if (ctxstd.object.get("result")) |v| {
+        ctx.result = sdk.SdkResult.make(try vs.fromStdJson(alloc, v));
+    }
+    if (ctxstd.object.get("response")) |v| {
+        ctx.response = sdk.Response.make(try vs.fromStdJson(alloc, v));
+    }
+    if (ctxstd.object.get("point")) |v| {
+        ctx.point = try vs.fromStdJson(alloc, v);
+    }
+    if (ctxstd.object.get("reqdata")) |v| {
+        ctx.reqdata = try vs.fromStdJson(alloc, v);
+    }
+    if (ctxstd.object.get("reqmatch")) |v| {
+        ctx.reqmatch = try vs.fromStdJson(alloc, v);
+    }
+    return ctx;
+}
+
+/// Publish a neutral-named view of the mutated ctx, for `match: ctx.*`.
+fn publishCtx(alloc: std.mem.Allocator, ctx: *sdk.Context) !StdJson {
+    var out = std.json.ObjectMap.init(alloc);
+    if (ctx.spec) |sp| try out.put("spec", try vs.toStdJson(alloc, sp.to_value()));
+    if (ctx.result) |rt| try out.put("result", try vs.toStdJson(alloc, rt.to_value()));
+    return StdJson{ .object = out };
+}
+
+/// A section's `basic` set. The corpus nests one level — {"basic": {"set": []}}
+/// — and passing the section node itself found no `set`, so every case was
+/// skipped and the suite passed having run nothing.
+fn section(spec: runner.Spec, name: []const u8) !StdJson {
+    const sec = spec.get(name) orelse return error.NoSection;
+    if (sec != .object) return error.NoSection;
+    return sec.object.get("basic") orelse error.NoSection;
+}
+
+fn entryCtx(entry: StdJson) StdJson {
+    if (entry == .object) {
+        if (entry.object.get("ctx")) |c| return c;
+    }
+    return StdJson{ .null = {} };
+}
+
+test "primary corpus: the shared cases drive this SDK's utilities" {
+    const alloc = testing.allocator;
+    var pack = try runner.makeRunnerFor(alloc, "primary");
+    defer pack.deinit();
+
+    const S = struct {
+        fn method(a: std.mem.Allocator, entry: StdJson, pub_out: *?StdJson) anyerror!StdJson {
+            const ctx = try corpusCtx(a, entryCtx(entry));
+            const m = util.prepare_method_util(ctx);
+            pub_out.* = try publishCtx(a, ctx);
+            if (m.len == 0) return StdJson{ .null = {} };
+            return StdJson{ .string = m };
+        }
+
+        fn url(a: std.mem.Allocator, entry: StdJson, pub_out: *?StdJson) anyerror!StdJson {
+            const ctx = try corpusCtx(a, entryCtx(entry));
+            const u = try util.make_url_util(ctx);
+            pub_out.* = try publishCtx(a, ctx);
+            return StdJson{ .string = u };
+        }
+
+        fn headers(a: std.mem.Allocator, entry: StdJson, pub_out: *?StdJson) anyerror!StdJson {
+            const ctx = try corpusCtx(a, entryCtx(entry));
+            const h2 = util.prepare_headers_util(ctx);
+            pub_out.* = try publishCtx(a, ctx);
+            return try vs.toStdJson(a, h2);
+        }
+    };
+
+    // A MISSING SECTION IS A FAILURE, NOT A SKIP. `orelse return` here would
+    // make this test green on a corpus that has no primary sections at all —
+    // the same false-green the corpus exists to prevent.
+    try pack.runsetEntry(try section(pack.spec, "prepareMethod"), S.method);
+    try pack.runsetEntry(try section(pack.spec, "makeUrl"), S.url);
+    try pack.runsetEntry(try section(pack.spec, "prepareHeaders"), S.headers);
+
+    try testing.expect(0 < pack.ran);
+}
