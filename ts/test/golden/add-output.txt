@@ -843,7 +843,7 @@ tm/js/src/utility/GraphqlUtility.js e8aed31713c4
 tm/js/src/utility/MakeContextUtility.js bbc1c9839da2
 tm/js/src/utility/MakeErrorUtility.js bc97ae72a43c
 tm/js/src/utility/MakeFetchDefUtility.js 624a772dedfa
-tm/js/src/utility/MakeOptionsUtility.js e1e91ca2337b
+tm/js/src/utility/MakeOptionsUtility.js 3670a04f0680
 tm/js/src/utility/MakePointUtility.js 2f9abfa751fd
 tm/js/src/utility/MakeRequestUtility.js c586819bd2e6
 tm/js/src/utility/MakeResponseUtility.js 8e24747b5152
@@ -1100,7 +1100,7 @@ tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua 3234bc5e9564
 tm/lua/utility/make_fetch_def.lua f7057db76504
-tm/lua/utility/make_options.lua 5a8d35fb3db4
+tm/lua/utility/make_options.lua bba378880a54
 tm/lua/utility/make_point.lua 392961fd8351
 tm/lua/utility/make_request.lua 4ba90ee83ff3
 tm/lua/utility/make_response.lua 6255f621011a
@@ -1370,7 +1370,7 @@ tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 5bbbbecfc3d7
 tm/php/utility/MakeFetchDef.php c76cc8f6f00e
-tm/php/utility/MakeOptions.php 48ff739bd4c3
+tm/php/utility/MakeOptions.php be14c6754df9
 tm/php/utility/MakePoint.php b17607873309
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
@@ -1460,7 +1460,7 @@ tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py d68358f50bc8
 tm/py/pkg/utility/make_fetch_def.py 0ad63d779a4e
-tm/py/pkg/utility/make_options.py 329405244149
+tm/py/pkg/utility/make_options.py 6536fd7ed2c8
 tm/py/pkg/utility/make_point.py 72db740ca620
 tm/py/pkg/utility/make_request.py 9835b18e665b
 tm/py/pkg/utility/make_response.py 2be9c7ffdfb6
