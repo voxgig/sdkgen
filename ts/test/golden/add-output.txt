@@ -1119,7 +1119,7 @@ tm/lua/utility/register.lua 20146815cb3f
 tm/lua/utility/result_basic.lua 891e11848ea9
 tm/lua/utility/result_body.lua 53d05debf9f2
 tm/lua/utility/result_headers.lua 33df8d29e12f
-tm/lua/utility/struct/struct.lua bce01b1d16a9
+tm/lua/utility/struct/struct.lua 75940771d1ad
 tm/lua/utility/transform_request.lua ada006d60f94
 tm/lua/utility/transform_response.lua 37d0bb1f1d1f
 
