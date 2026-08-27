@@ -267,10 +267,14 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
         points = vs.getpath(ctx.config, "entity." + ctx.entity.get_name() + ".op." + opname + ".points")
         point = vs.getelem(points, -1)
 
-        # Get required params.
+        # Path AND query: a path-only read misses a query-addressed record
+        # (e.g. GET /result?trace_id=), which has no path param at all.
         params_path = vs.getpath(point, "args.params")
         reqd_params = vs.select(params_path, {"reqd": True})
-        reqd = vs.transform(reqd_params, ["`$EACH`", "", "`$KEY.name`"])
+        query_path = vs.getpath(point, "args.query")
+        reqd_query = vs.select(query_path, {"reqd": True})
+        reqd = (vs.transform(reqd_params, ["`$EACH`", "", "`$KEY.name`"]) or []) + \
+            (vs.transform(reqd_query, ["`$EACH`", "", "`$KEY.name`"]) or [])
 
         qand = []
         q = {"`$AND`": qand}

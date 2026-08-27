@@ -439,13 +439,18 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                     }
                 }
             }
+            // Path AND query: a path-only read misses a query-addressed
+            // record (e.g. GET /result?trace_id=), which has no path param.
             $params = is_array($point) ? ($point['args']['params'] ?? null) : null;
-            if (is_array($params)) {
-                foreach ($params as $p) {
-                    if (is_array($p) && (($p['reqd'] ?? false) === true)) {
-                        $n = $p['name'] ?? null;
-                        if ($n !== null) {
-                            $reqd_names[] = $n;
+            $query = is_array($point) ? ($point['args']['query'] ?? null) : null;
+            foreach ([$params, $query] as $arglist) {
+                if (is_array($arglist)) {
+                    foreach ($arglist as $p) {
+                        if (is_array($p) && (($p['reqd'] ?? false) === true)) {
+                            $n = $p['name'] ?? null;
+                            if ($n !== null) {
+                                $reqd_names[] = $n;
+                            }
                         }
                     }
                 }

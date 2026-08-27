@@ -101,8 +101,20 @@ let make_feature (name : string) : feature =
 `)
     }
 
+    // ONLY THE FEATURES THIS PORT ACTUALLY IMPLEMENTS. Emitting an arm for a
+    // name with no `<name>_feature` in tm/ocaml/sdk_features.ml is an
+    // "Unbound value" at COMPILE time — the whole SDK fails to build, not
+    // just the feature. That is how the missing `cost` was found, when an SDK
+    // first activated every feature; cost is implemented now, and this list
+    // is the guard against the next one.
+    const OCAML_FEATURES = [
+      'audit', 'cache', 'clienttrack', 'cost', 'debug', 'idempotency', 'log',
+      'metrics', 'netsim', 'paging', 'proxy', 'ratelimit', 'rbac',
+      'retry', 'streaming', 'telemetry', 'test', 'timeout',
+    ]
+
     each(feature, (f: any) => {
-      if (f.name !== 'base') {
+      if (f.name !== 'base' && OCAML_FEATURES.includes(f.name)) {
         Content(`  | "${ocamlString(f.name)}" -> ${f.name}_feature ()
 `)
       }

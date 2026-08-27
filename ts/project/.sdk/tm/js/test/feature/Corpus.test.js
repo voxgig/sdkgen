@@ -27,9 +27,19 @@ const { join } = require('node:path')
 const { SDK, TEST_JSON_FILE } = require('../utility/index')
 
 
-// Features with a corpus section. A name here with no section is a skip, not
-// a failure: an SDK generated without the feature has nothing to run.
-const FEATURES = ['cost']
+// Features with a corpus section — read from the corpus itself, so a
+// project-authored section (a custom feature added under
+// .sdk/test/feature/) runs without editing this file. Read eagerly: the
+// node test runner collects the per-feature tests at describe time,
+// before any `before` hook fires. An SDK generated without a listed
+// feature still skips, not fails.
+const FEATURES = Object.keys((() => {
+  try {
+    return JSON.parse(readFileSync(
+      join(__dirname, '..', TEST_JSON_FILE), 'utf8')).feature || {}
+  }
+  catch (e) { return {} }
+})()).sort()
 
 
 // One operation this SDK can actually perform is described by
@@ -109,7 +119,12 @@ function candidates(client) {
       out.push({ key: entity + '.' + op, accessor: accessor[entity], entity, op })
     }
   }
-  return out
+  // SAFE OPS FIRST — see the ts harness for the reasoning: the cache stores
+  // only successful GETs, so an SDK whose first usable op is a `create`
+  // (POST) can never satisfy "a hit served from cache costs nothing".
+  const SAFE = { list: 0, load: 1 }
+  return out.sort((a, b) =>
+    ((SAFE[a.op] ?? 2) - (SAFE[b.op] ?? 2)) || a.key.localeCompare(b.key))
 }
 
 

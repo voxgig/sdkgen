@@ -19,6 +19,13 @@ template; if its shape depends on the entities/operations, it's a
 component. See
 [Components vs templates](../explanation/components-and-templates.md).
 
+For project-side customization (as opposed to fixing sdkgen itself), the
+worked example is
+[voxgig-elementdemo-sdk](https://github.com/voxgig-sdk/voxgig-elementdemo-sdk):
+its `ext/` folder is a project-local sdkgen package providing an entirely
+custom `bash` target and a custom `elementcard` feature, resynced with
+`package add` so nothing lives in files `target add` overwrites.
+
 ## Step 2 — make the fix in this repo
 
 Edit the template or component under `ts/project/.sdk/`. Then confirm sdkgen

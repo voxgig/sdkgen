@@ -43,9 +43,10 @@ import JAVAPACKAGE.core.Utility;
 @SuppressWarnings({"unchecked"})
 public class FeatureCorpusTest {
 
-  // Features with a corpus section. A name here with no section is a skip,
-  // not a failure: an SDK generated without the feature has nothing to run.
-  private static final List<String> FEATURE_CORPUS_NAMES = List.of("cost");
+  // Features with a corpus section are read from the corpus itself (see
+  // featureCorpus), so a project-authored section - a custom feature added
+  // under .sdk/test/feature/ - runs without editing this file. An SDK
+  // generated without a listed feature still skips, not fails.
 
   // The standard operation names, in the order the runner prefers them.
   private static final List<String> FEATURE_CORPUS_OPS =
@@ -182,6 +183,14 @@ public class FeatureCorpusTest {
         out.add(new Op(e.getKey() + "." + opname, accessor, call));
       }
     }
+
+    // SAFE OPS FIRST — see the ts harness for the reasoning: the cache stores
+    // only successful GETs, so an SDK whose first usable op is a `create`
+    // (POST) can never satisfy "a hit served from cache costs nothing".
+    java.util.Map<String, Integer> safe = java.util.Map.of("list", 0, "load", 1);
+    out.sort(java.util.Comparator
+        .<Op>comparingInt(o -> safe.getOrDefault(o.key.substring(o.key.indexOf('.') + 1), 2))
+        .thenComparing(o -> o.key));
     return out;
   }
 
@@ -369,7 +378,7 @@ public class FeatureCorpusTest {
         "this project's test.json has no `feature` section - recompile the "
             + "corpus (create-sdkgen .sdk/test/feature/) to run these cases");
 
-    for (String name : FEATURE_CORPUS_NAMES) {
+    for (String name : new TreeMap<>(features).keySet()) {
       Object sectionRaw = features.get(name);
       if (!(sectionRaw instanceof Map)) {
         continue;
