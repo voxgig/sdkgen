@@ -46,11 +46,15 @@ wraps whatever is already installed${(0, FeatureDocs_1.honoursActivationOrder)(t
             ', so **activation order is nesting order**:\na feature activated later sits OUTSIDE one activated earlier, and sees the call\nfirst.' :
             '. This SDK fixes that order in its own\ncatalog rather than taking it from the caller.'}
 
-That decides behaviour, not just sequence. \`cost\` activated before \`cache\`
-sits inside it, so a response served from the cache never reaches \`cost\` and is
+${(features.some((f) => 'cost' === f.name) && features.some((f) => 'cache' === f.name)) ?
+            `That decides behaviour, not just sequence. \\\`cost\\\` activated before \\\`cache\\\`
+sits inside it, so a response served from the cache never reaches \\\`cost\\\` and is
 correctly charged nothing; reverse them and every cache hit is billed for money
 that was never spent.
-
+` : `That decides behaviour, not just sequence: a feature that short-circuits the
+call, such as a cache serving a hit, stops every feature nested inside it from
+ever seeing that call.
+`}
 ${hooked.map((f) => '`' + f.name + '`').join(', ')} attach to pipeline hooks
 rather than the transport, so their order does not affect what they observe.
 
@@ -65,6 +69,13 @@ ${f.title}.
         (0, jostraca_1.Content)(`**Configuration**
 
 `);
+        // THE TABLE IS THE MODEL'S OPTIONS, AND THE MODEL IS INCOMPLETE. Several
+        // features accept runtime-only options the model never declares — cost
+        // reads `actor` and `sink`, audit reads `sink` — so a table derived from
+        // `config.options` cannot list them. Deriving from a second hand-written
+        // list would reintroduce exactly the drift this module exists to avoid,
+        // so the honest fix is upstream: declare them in the feature model. Until
+        // then, say so rather than imply the table is exhaustive.
         if (0 < f.options.length) {
             (0, jostraca_1.Content)(`| Option | Default |
 |---|---|
@@ -81,7 +92,12 @@ ${f.title}.
 
 `);
         }
-        (0, jostraca_1.Content)(`**Usage**
+        (0, jostraca_1.Content)(`Options above are those the model carries a default for. A feature may
+also accept callback options — a \`sink\` to receive each record, for
+instance — which have no default and are covered in the full feature
+reference.
+
+**Usage**
 
 Set \`feature.${f.name}.active\` to true in the client options${0 < f.options.length ?
             ', and override any option above in the same entry' : ''}. Every option keeps
