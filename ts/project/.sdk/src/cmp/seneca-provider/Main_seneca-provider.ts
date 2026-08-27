@@ -108,6 +108,14 @@ function recordKey(ent: any): string {
     if (null != lastParam) {
       return lastParam.slice(1, -1)
     }
+
+    // No path param at all (e.g. GET /scan/async/result?trace_id=...): the
+    // record's own key can still be a single required QUERY param.
+    const query = (point && point.args && point.args.query) || []
+    const reqdQuery = query.filter((q: any) => false !== q.reqd)
+    if (1 === reqdQuery.length) {
+      return String(reqdQuery[0].name)
+    }
   }
 
   return 'id'

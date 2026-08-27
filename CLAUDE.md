@@ -123,6 +123,7 @@ component.* See [docs/explanation/components-and-templates](./docs/explanation/c
 - **apidef** (`~/Projects/voxgig/apidef`) — parses OpenAPI definitions into the model used by sdkgen
 - **create-sdkgen** (`~/Projects/voxgig/create-sdkgen`) — scaffolds new SDK projects; owns test `.aontu` data in `project/standard/.sdk/test/`
 - **Generated SDK** (`~/Projects/voxgig-sdk/voxgig-solardemo-sdk`) — the solardemo reference SDK; `ts/` has the TypeScript SDK, `.sdk/` has the build tooling
+- **Customization demo** (`~/Projects/voxgig-sdk/voxgig-elementdemo-sdk`) — the elementdemo reference SDK for CUSTOMIZATION: its `ext/` sdkgen package adds an entirely custom `bash` target and a custom `elementcard` feature (ts, go, py, java, bash), with project-owned corpus cases driving all five
 
 ## Debugging generated targets (summary)
 Fix bugs in the sdkgen **template/component**, never in generated output

@@ -15,6 +15,10 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
     requirePath(ctx$, `./cmp/${target.name}/ReadmeRef_${target.name}`, { ignore: true })
 
   if (ReadmeRef_sdk) {
+    // The per-language component owns the REFERENCE.md File, so anything
+    // appended out here lands outside it and silently vanishes. The shared
+    // feature reference is therefore called from INSIDE each
+    // ReadmeRef_<lang>.ts, at the end of its own features section.
     ReadmeRef_sdk['ReadmeRef']({ target })
   }
 })
