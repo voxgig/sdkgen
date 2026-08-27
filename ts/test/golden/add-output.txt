@@ -558,7 +558,7 @@ src/cmp/go/ReadmeRef_go.ts a9f499266c28
 src/cmp/go/ReadmeTopHowto_go.ts 2d7332aca33c
 src/cmp/go/ReadmeTopQuick_go.ts e3c6afe27b63
 src/cmp/go/ReadmeTopTest_go.ts 747e3b9fc1c5
-src/cmp/go/TestDirect_go.ts b4676d0b4ec1
+src/cmp/go/TestDirect_go.ts d075f87bafa7
 src/cmp/go/TestEntity_go.ts 27c52147edd4
 src/cmp/go/Test_go.ts b8a741cf17ae
 src/cmp/go/fragment/Entity.fragment.go e00728a52f1d
@@ -587,7 +587,7 @@ tm/go/core/types.go 434955d3f8a1
 tm/go/core/utility_type.go bd2f3498448f
 tm/go/feature/base_feature.go d0afce22fc61
 tm/go/feature/feature_options.go c7c47863ae28
-tm/go/feature/test_feature.go b40b5a3c0168
+tm/go/feature/test_feature.go 24c3a90ec963
 tm/go/src/feature/README.md efebfaa50be0
 tm/go/src/feature/base/.gitkeep e3b0c44298fc
 tm/go/src/feature/test/.gitkeep e3b0c44298fc
@@ -799,7 +799,7 @@ src/cmp/js/ReadmeTopHowto_js.ts 7580c1d8ef9c
 src/cmp/js/ReadmeTopQuick_js.ts 279f98ea3310
 src/cmp/js/ReadmeTopTest_js.ts 1fa9a087871f
 src/cmp/js/SdkError_js.ts c3c526f2b624
-src/cmp/js/TestDirect_js.ts 2c2b2c470c37
+src/cmp/js/TestDirect_js.ts a3221dc78f78
 src/cmp/js/TestEntity_js.ts 185ae3a6293c
 src/cmp/js/TestMain_js.ts 8b45d4d8db1a
 src/cmp/js/Test_js.ts a8439bbd626b
@@ -1078,7 +1078,7 @@ tm/lua/core/result.lua 62e6251e1970
 tm/lua/core/spec.lua 36d7249c24db
 tm/lua/core/utility_type.lua 61cec681f945
 tm/lua/feature/base_feature.lua 324bcbfd0836
-tm/lua/feature/test_feature.lua 5430359b93d8
+tm/lua/feature/test_feature.lua b41d3ffe0c7f
 tm/lua/src/feature/README.md 74fc01b8a34f
 tm/lua/src/feature/base/.gitkeep e3b0c44298fc
 tm/lua/src/feature/test/.gitkeep e3b0c44298fc
@@ -1347,7 +1347,7 @@ tm/php/core/Result.php b64c27a0b2ea
 tm/php/core/Spec.php 52af8a2308aa
 tm/php/core/UtilityType.php 69ccbf6da0a0
 tm/php/feature/BaseFeature.php 19116b364fc2
-tm/php/feature/TestFeature.php bdd729ac4c25
+tm/php/feature/TestFeature.php ae8988fa248a
 tm/php/src/feature/README.md 74fc01b8a34f
 tm/php/src/feature/base/.gitkeep e3b0c44298fc
 tm/php/src/feature/test/.gitkeep e3b0c44298fc
@@ -1448,7 +1448,7 @@ tm/py/pkg/core/utility_type.py 04bf25ffebe7
 tm/py/pkg/entity/__init__.py e3b0c44298fc
 tm/py/pkg/feature/__init__.py e3b0c44298fc
 tm/py/pkg/feature/base_feature.py a2f222f0d8c3
-tm/py/pkg/feature/test_feature.py 854641370905
+tm/py/pkg/feature/test_feature.py 4b4decf8d276
 tm/py/pkg/utility/__init__.py e3b0c44298fc
 tm/py/pkg/utility/clean.py 7ee83fa80aaf
 tm/py/pkg/utility/done.py 6066fb832758

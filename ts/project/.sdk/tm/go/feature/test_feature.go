@@ -13,7 +13,7 @@ import (
 
 // The `body.<key>` form of an op's response transform: the mock wraps its
 // payload in <key> so the transform can unwrap it again.
-var envelopeResRe = regexp.MustCompile("^`body\\.([^`.]+)`$")
+var envelopeResRe = regexp.MustCompile("^`body\\.(.+)`$")
 
 type TestFeature struct {
 	BaseFeature
@@ -78,7 +78,14 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			if m == nil {
 				return data
 			}
-			return map[string]any{m[1]: data}
+			// Multi-segment on purpose: GraphQL ops unwrap body.data.<field>
+			// (and body.data.<field>.<entity> for mutations), not just one level.
+			segs := strings.Split(m[1], ".")
+			out := data
+			for i := len(segs) - 1; 0 <= i; i-- {
+				out = map[string]any{segs[i]: out}
+			}
+			return out
 		}
 
 		respond := func(status int, data any, extra map[string]any) map[string]any {
