@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "4.4.0",
+  "version": "4.4.1",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "engines": {
