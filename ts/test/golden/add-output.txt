@@ -172,7 +172,7 @@ tm/clojure/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
-tm/clojure/src/sdk/core.clj 2de5b994bed1
+tm/clojure/src/sdk/core.clj da41bd6fef34
 tm/clojure/src/sdk/features.clj 16a802374023
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
@@ -333,7 +333,7 @@ tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs aa8db59afcdb
 tm/csharp/utility/MakeFetchDef.cs 89aca56837ef
-tm/csharp/utility/MakeOptions.cs a7a41d6111a7
+tm/csharp/utility/MakeOptions.cs e182b933209b
 tm/csharp/utility/MakePoint.cs c0182b4343c0
 tm/csharp/utility/MakeRequest.cs 32657a32522e
 tm/csharp/utility/MakeResponse.cs 8aa004eeaeb1
@@ -425,7 +425,7 @@ tm/dart/lib/utility/GraphqlUtility.dart dcfc615013d5
 tm/dart/lib/utility/MakeContextUtility.dart 896273f1e3c3
 tm/dart/lib/utility/MakeErrorUtility.dart 34d415651bee
 tm/dart/lib/utility/MakeFetchDefUtility.dart b5f13893e02d
-tm/dart/lib/utility/MakeOptionsUtility.dart af2143c0c026
+tm/dart/lib/utility/MakeOptionsUtility.dart b7a0b4901ad5
 tm/dart/lib/utility/MakePointUtility.dart 63549de5ee14
 tm/dart/lib/utility/MakeRequestUtility.dart 3c335acdd7e1
 tm/dart/lib/utility/MakeResponseUtility.dart 074cc0b0eeb3
@@ -516,7 +516,7 @@ tm/elixir/lib/projectname/feature.ex a9f2c2609648
 tm/elixir/lib/projectname/feature/test.ex 072467e5d97f
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 81087663c243
+tm/elixir/lib/projectname/utility.ex 48f0f17898ff
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -1162,7 +1162,7 @@ tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml 1ea1bbd4b375
 tm/ocaml/sdk_helpers.ml deadcfd0d1f8
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml 7255f9f44bce
+tm/ocaml/sdk_runtime.ml 30a075c97c8a
 tm/ocaml/sdk_types.ml 85ee25259c3a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/audit/.gitkeep e3b0c44298fc
@@ -1272,7 +1272,7 @@ tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm b48207779329
 tm/perl/utility/make_fetch_def.pm ebb77b54060c
-tm/perl/utility/make_options.pm b8736fbd978f
+tm/perl/utility/make_options.pm dfcb5a13bc1e
 tm/perl/utility/make_point.pm 584666550bc1
 tm/perl/utility/make_request.pm d4b1ec8cf30d
 tm/perl/utility/make_response.pm 51a842fc584b
@@ -1595,7 +1595,7 @@ tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb abe971c81e08
 tm/rb/utility/make_fetch_def.rb b0cbc0f3b381
-tm/rb/utility/make_options.rb 9d4df380f982
+tm/rb/utility/make_options.rb 8d315bc7c442
 tm/rb/utility/make_point.rb d5831921adcc
 tm/rb/utility/make_request.rb a4ef373194d8
 tm/rb/utility/make_response.rb 0ca41a876f23
