@@ -7,6 +7,7 @@ import {
 } from '../types'
 
 import { requirePath } from '../utility'
+import { featureDocs } from './FeatureDocs'
 
 import {
   entityPrimaryOp, entityIdField, opRequestShape, entityPath, entityActions,
@@ -205,6 +206,20 @@ Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
         ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
         : surfaces[0]
       Content(`> ${surfaceList} — all generated from one OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+
+`)
+    }
+
+    // FEATURES BELONG BESIDE THE TARGETS. What an SDK can do is as much a
+    // reason to choose it as which language it is in, and a reader who has to
+    // scroll past every language section to discover that retries, caching and
+    // tracing are built in has already decided it is a thin HTTP wrapper.
+    // Named here, in one line, with the detail left to each target's README.
+    const features = featureDocs(model)
+    if (0 < features.length) {
+      Content(`> **Features:** ${features.map((f: any) => '`' + f.name + '`').join(', ')} — opt-in,
+> inactive until switched on, and configured per client. See the Features
+> section of any SDK README below for what each one does.
 
 `)
     }

@@ -2,6 +2,7 @@
 import { cmp } from 'jostraca'
 
 import { requirePath } from '../utility'
+import { ReadmeRefFeatures } from './ReadmeRefFeatures'
 
 
 // Per-language REFERENCE.md generator lives in
@@ -16,6 +17,10 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
 
   if (ReadmeRef_sdk) {
     ReadmeRef_sdk['ReadmeRef']({ target })
+
+    // Appended to the per-language reference: feature configuration is a
+    // model fact, identical in every target, so it is written once here.
+    ReadmeRefFeatures({ target })
   }
 })
 
