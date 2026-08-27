@@ -21,21 +21,24 @@ const ReadmeRefFeatures = (0, jostraca_1.cmp)(function ReadmeRefFeatures(props) 
     if (0 === features.length) {
         return;
     }
+    // Emitted INSIDE the per-language `## Features` section, after its summary
+    // table and activation snippet, so these are subsections of it rather than
+    // a competing heading.
     (0, jostraca_1.Content)(`
-## Features
+### Configuring features
 
-Features are opt-in behaviour attached to the client. Each is inactive until
-switched on, and an SDK with no feature configured does no feature work at all.
+Each feature is inactive until switched on, and an SDK with no feature
+configured does no feature work at all. Every option below keeps its default
+unless you name it.
 
-Activate them in the client options. The array form is significant: several
-features wrap the transport, and the order you list them in is the order they
-nest.
+The array form of \`feature\` is significant: several features wrap the
+transport, and the order you list them in is the order they nest.
 
 `);
     const wrapping = features.filter((f) => f.wraps);
     const hooked = features.filter((f) => !f.wraps);
     if (0 < wrapping.length) {
-        (0, jostraca_1.Content)(`### Ordering
+        (0, jostraca_1.Content)(`#### Ordering
 
 ${wrapping.map((f) => '`' + f.name + '`').join(', ')} wrap the transport. Each
 wraps whatever is already installed, so **activation order is nesting order**:
@@ -53,7 +56,7 @@ rather than the transport, so their order does not affect what they observe.
 `);
     }
     for (const f of features) {
-        (0, jostraca_1.Content)(`### \`${f.name}\`
+        (0, jostraca_1.Content)(`#### \`${f.name}\`
 
 ${f.title}.
 

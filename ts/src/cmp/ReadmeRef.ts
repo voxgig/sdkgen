@@ -2,7 +2,6 @@
 import { cmp } from 'jostraca'
 
 import { requirePath } from '../utility'
-import { ReadmeRefFeatures } from './ReadmeRefFeatures'
 
 
 // Per-language REFERENCE.md generator lives in
@@ -16,11 +15,11 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
     requirePath(ctx$, `./cmp/${target.name}/ReadmeRef_${target.name}`, { ignore: true })
 
   if (ReadmeRef_sdk) {
+    // The per-language component owns the REFERENCE.md File, so anything
+    // appended out here lands outside it and silently vanishes. The shared
+    // feature reference is therefore called from INSIDE each
+    // ReadmeRef_<lang>.ts, at the end of its own features section.
     ReadmeRef_sdk['ReadmeRef']({ target })
-
-    // Appended to the per-language reference: feature configuration is a
-    // model fact, identical in every target, so it is written once here.
-    ReadmeRefFeatures({ target })
   }
 })
 
