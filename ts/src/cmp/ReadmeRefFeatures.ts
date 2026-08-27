@@ -1,6 +1,6 @@
 import { cmp, Content } from 'jostraca'
 
-import { featureDocs } from './FeatureDocs'
+import { featureDocs, honoursActivationOrder } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
 
@@ -16,7 +16,7 @@ import type { FeatureDoc } from './FeatureDocs'
 // with its default, what the feature does at runtime, and the considerations
 // — ordering, interaction, and cost — that decide whether to switch it on.
 const ReadmeRefFeatures = cmp(function ReadmeRefFeatures(props: any) {
-  const { ctx$ } = props
+  const { target, ctx$ } = props
   const { model } = ctx$
 
   const features: FeatureDoc[] = featureDocs(model)
@@ -35,8 +35,9 @@ Each feature is inactive until switched on, and an SDK with no feature
 configured does no feature work at all. Every option below keeps its default
 unless you name it.
 
-The array form of \`feature\` is significant: several features wrap the
-transport, and the order you list them in is the order they nest.
+${honoursActivationOrder(target) ?
+  'The array form of \\`feature\\` is significant: several features wrap the\ntransport, and the order you list them in is the order they nest.' :
+  'This SDK takes \\`feature\\` as a map and composes the transport-wrapping\nfeatures in a fixed catalog order, so activation order does not change\nnesting here.'}
 
 `)
 
@@ -47,9 +48,9 @@ transport, and the order you list them in is the order they nest.
     Content(`#### Ordering
 
 ${wrapping.map((f) => '`' + f.name + '`').join(', ')} wrap the transport. Each
-wraps whatever is already installed, so **activation order is nesting order**:
-a feature activated later sits OUTSIDE one activated earlier, and sees the call
-first.
+wraps whatever is already installed${honoursActivationOrder(target) ?
+  ', so **activation order is nesting order**:\na feature activated later sits OUTSIDE one activated earlier, and sees the call\nfirst.' :
+  '. This SDK fixes that order in its own\ncatalog rather than taking it from the caller.'}
 
 That decides behaviour, not just sequence. \`cost\` activated before \`cache\`
 sits inside it, so a response served from the cache never reaches \`cost\` and is

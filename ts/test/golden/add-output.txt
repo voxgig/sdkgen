@@ -173,7 +173,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
 tm/clojure/src/sdk/core.clj 2de5b994bed1
-tm/clojure/src/sdk/features.clj bf31f3ce4a65
+tm/clojure/src/sdk/features.clj 16a802374023
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
@@ -986,7 +986,7 @@ src/cmp/lean/ReadmeIntro_lean.ts 485542486639
 src/cmp/lean/ReadmeModel_lean.ts 1e61400f4c1d
 src/cmp/lean/ReadmeOptions_lean.ts 074f824635ce
 src/cmp/lean/ReadmeQuick_lean.ts fb9bba0fd6c9
-src/cmp/lean/ReadmeRef_lean.ts 3bb251a8fb8f
+src/cmp/lean/ReadmeRef_lean.ts 76b17817a01e
 src/cmp/lean/ReadmeTopHowto_lean.ts c07b68e3c3ab
 src/cmp/lean/ReadmeTopQuick_lean.ts a6a574833e67
 src/cmp/lean/ReadmeTopTest_lean.ts 5fb0334e355a
@@ -996,7 +996,7 @@ tm/lean/LICENSE c92ad97f8812
 tm/lean/Makefile 3a8374900b71
 tm/lean/VERSION e6635045e1d2
 tm/lean/src/SdkFeature.lean 5be60a4885a3
-tm/lean/src/SdkFeatures.lean dcc22efccc0d
+tm/lean/src/SdkFeatures.lean 56f4ec858b18
 tm/lean/src/SdkJson.lean c325e2d5d135
 tm/lean/src/SdkRuntime.lean d3dc42c7dfc3
 tm/lean/src/SdkUtility.lean 0510f9a2d448
@@ -1159,7 +1159,7 @@ src/cmp/ocaml/utility_ocaml.ts 010faa650f9e
 tm/ocaml/LICENSE c92ad97f8812
 tm/ocaml/Makefile f0f2c5404062
 tm/ocaml/VERSION e6635045e1d2
-tm/ocaml/sdk_features.ml 44612b49ee9e
+tm/ocaml/sdk_features.ml 1ea1bbd4b375
 tm/ocaml/sdk_helpers.ml deadcfd0d1f8
 tm/ocaml/sdk_json.ml 7514a4177ebb
 tm/ocaml/sdk_runtime.ml 7255f9f44bce

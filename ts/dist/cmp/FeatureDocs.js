@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.featureDocs = featureDocs;
 exports.renderValue = renderValue;
+exports.honoursActivationOrder = honoursActivationOrder;
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 // `transport` says how a feature attaches, and that is the whole of the
@@ -51,5 +52,21 @@ function featureDocs(model) {
         };
     })
         .sort((a, b) => a.name.localeCompare(b.name));
+}
+// Targets that compose transport features in a FIXED catalog order rather
+// than the order the caller activates them in.
+//
+// Every other target derives `__derived__.featureorder` from the options and
+// adds features in that order, so an ordered activation list is what fixes
+// nesting. lean has no featureorder at all — SdkFeatures.featureNames is a
+// fixed array — and its resolveFeatureOpts accepts only a map, silently
+// replacing a list with an empty one. Telling a lean reader to activate
+// features as an ordered list would therefore disable every feature they
+// asked for.
+//
+// Verify with: grep -rl featureorder tm/<target>
+const FIXED_ORDER_TARGETS = ['lean'];
+function honoursActivationOrder(target) {
+    return !FIXED_ORDER_TARGETS.includes(target?.name);
 }
 //# sourceMappingURL=FeatureDocs.js.map

@@ -1,7 +1,7 @@
 import { cmp, Content } from 'jostraca'
 
 import { requirePath } from '../utility'
-import { featureDocs } from './FeatureDocs'
+import { featureDocs, honoursActivationOrder } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
 
@@ -56,12 +56,21 @@ above:
 
   const wrapping = features.filter((f) => f.wraps).map((f) => '`' + f.name + '`')
   if (1 < wrapping.length) {
-    Content(`> **Order matters for ${wrapping.join(', ')}.** These wrap the
+    if (honoursActivationOrder(target)) {
+      Content(`> **Order matters for ${wrapping.join(', ')}.** These wrap the
 > transport, so each one wraps whatever is already installed: the order you
 > activate them in IS the nesting order. Activating them as an ordered list
 > rather than a map is what fixes that order.
 
 `)
+    }
+    else {
+      Content(`> **${wrapping.join(', ')} wrap the transport**, so each one wraps
+> whatever is already installed. This SDK composes them in a fixed catalog
+> order, not the order you activate them in, and takes \`feature\` as a map.
+
+`)
+    }
   }
 
   for (const f of features) {

@@ -46,12 +46,21 @@ above:
 `);
     const wrapping = features.filter((f) => f.wraps).map((f) => '`' + f.name + '`');
     if (1 < wrapping.length) {
-        (0, jostraca_1.Content)(`> **Order matters for ${wrapping.join(', ')}.** These wrap the
+        if ((0, FeatureDocs_1.honoursActivationOrder)(target)) {
+            (0, jostraca_1.Content)(`> **Order matters for ${wrapping.join(', ')}.** These wrap the
 > transport, so each one wraps whatever is already installed: the order you
 > activate them in IS the nesting order. Activating them as an ordered list
 > rather than a map is what fixes that order.
 
 `);
+        }
+        else {
+            (0, jostraca_1.Content)(`> **${wrapping.join(', ')} wrap the transport**, so each one wraps
+> whatever is already installed. This SDK composes them in a fixed catalog
+> order, not the order you activate them in, and takes \`feature\` as a map.
+
+`);
+        }
     }
     for (const f of features) {
         (0, jostraca_1.Content)(`### ${f.name}

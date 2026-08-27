@@ -70,9 +70,31 @@ function featureDocs(model: any): FeatureDoc[] {
 }
 
 
+
+
+// Targets that compose transport features in a FIXED catalog order rather
+// than the order the caller activates them in.
+//
+// Every other target derives `__derived__.featureorder` from the options and
+// adds features in that order, so an ordered activation list is what fixes
+// nesting. lean has no featureorder at all — SdkFeatures.featureNames is a
+// fixed array — and its resolveFeatureOpts accepts only a map, silently
+// replacing a list with an empty one. Telling a lean reader to activate
+// features as an ordered list would therefore disable every feature they
+// asked for.
+//
+// Verify with: grep -rl featureorder tm/<target>
+const FIXED_ORDER_TARGETS = ['lean']
+
+function honoursActivationOrder(target: any): boolean {
+  return !FIXED_ORDER_TARGETS.includes(target?.name)
+}
+
+
 export {
   featureDocs,
   renderValue,
+  honoursActivationOrder,
 }
 
 export type { FeatureDoc }
