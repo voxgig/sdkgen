@@ -412,10 +412,19 @@ function SdkGen(opts) {
             // A skipped external target is still removed from the in-tree model
             // above: neither `active: false` nor a missing `output.create: false`
             // destination may relocate it into `<sdk-repo>/<target>/`.
-            if (null != ext.skip) {
+            // The snapshot is deliberately not re-taken to ADMIT an item: a
+            // destination that appeared since would be written without ever having
+            // been ownership-validated. Re-taking it to SKIP one is the opposite
+            // direction and cannot open that hole. Without this, an optional
+            // destination deleted or moved between the snapshot and this pass is
+            // recreated by jostraca's ensureDir — exactly what `output.create:
+            // false` promises not to do.
+            const gone = false === ext.target.output?.create && !fs.existsSync(ext.folder);
+            if (null != ext.skip || gone) {
                 log.info({
                     point: 'generate-external-skip', target: ext.name, folder: ext.folder,
-                    note: ext.skip
+                    note: ext.skip ?? (ext.name + ' output folder disappeared after ' +
+                        'preflight and output.create=false, not generated')
                 });
                 continue;
             }
@@ -718,10 +727,18 @@ const EXTERNAL_MARKER = '.jostraca';
 function checkExternalFolders(external, root, fs) {
     const claimed = {};
     for (const ext of external) {
-        // A skipped item writes nothing, so its destination is not a hazard. The
-        // snapshotted decision gates the actual pass too; keeping it identical is
-        // what makes the pre-write check complete.
-        if (null != ext.skip)
+        // An INACTIVE item writes nothing and claims nothing: it is out of the
+        // model for this run.
+        //
+        // An item skipped only because its optional destination is absent is a
+        // different case. Path containment and the duplicate claim are model
+        // invariants — they do not depend on folder contents — so skipping them
+        // here let two items claim one absent path: the ordinary one generated
+        // there, and the NEXT identical run then saw the folder, detected the
+        // duplicate, and refused everything. The failure appeared one run after
+        // the mistake. Validate the path; the `existsSync` guard below still
+        // skips every check that reads the folder.
+        if (!ext.active)
             continue;
         const label = ext.kind.charAt(0).toUpperCase() + ext.kind.slice(1);
         const where = label + ' "' + ext.name + '" has output path "' +
