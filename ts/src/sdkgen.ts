@@ -49,6 +49,7 @@ import { ReadmeEntity } from './cmp/ReadmeEntity'
 import { ReadmeHowto } from './cmp/ReadmeHowto'
 import { ReadmeExplanation } from './cmp/ReadmeExplanation'
 import { ReadmeRef } from './cmp/ReadmeRef'
+import { ReadmeRefFeatures } from './cmp/ReadmeRefFeatures'
 import { FeatureHook } from './cmp/FeatureHook'
 import { registerComponent } from './cmp/Registered'
 import type { RegisterOptions } from './cmp/Registered'
@@ -1067,6 +1068,7 @@ export {
   ReadmeHowto,
   ReadmeExplanation,
   ReadmeRef,
+  ReadmeRefFeatures,
   FeatureHook,
   registerComponent,
 

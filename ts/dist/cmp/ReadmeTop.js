@@ -4,6 +4,7 @@ exports.ReadmeTop = void 0;
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
+const FeatureDocs_1 = require("./FeatureDocs");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
 const canonType_1 = require("../helpers/canonType");
@@ -170,6 +171,19 @@ Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
                 ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
                 : surfaces[0];
             (0, jostraca_1.Content)(`> ${surfaceList} — all generated from one OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+
+`);
+        }
+        // FEATURES BELONG BESIDE THE TARGETS. What an SDK can do is as much a
+        // reason to choose it as which language it is in, and a reader who has to
+        // scroll past every language section to discover that retries, caching and
+        // tracing are built in has already decided it is a thin HTTP wrapper.
+        // Named here, in one line, with the detail left to each target's README.
+        const features = (0, FeatureDocs_1.featureDocs)(model);
+        if (0 < features.length) {
+            (0, jostraca_1.Content)(`> **Features:** ${features.map((f) => '`' + f.name + '`').join(', ')} — opt-in,
+> inactive until switched on, and configured per client. See the Features
+> section of any SDK README below for what each one does.
 
 `);
         }
