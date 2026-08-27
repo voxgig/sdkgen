@@ -62,6 +62,24 @@ function resolveAuthPrefix(model: any): string {
 }
 
 
+// True when the spec's security scheme is genuine HTTP Basic Auth (two
+// credentials, base64-joined) rather than a single bearer-style token with
+// a prefix. Priority order mirrors resolveAuthPrefix:
+//   1. main.kit.config.auth.basic     (per-SDK user override)
+//   2. main.kit.info.security, spec-derived: type 'http' + a 'basic' prefix
+//      (apidef sets prefix from the OpenAPI `scheme: basic` value, title-cased)
+function isHttpBasicAuth(model: any): boolean {
+  const auth = getModelPath(model, `main.${KIT}.config.auth`,
+    { only_active: false, required: false })
+  if (null != auth && null != auth.basic) return Boolean(auth.basic)
+
+  const security = getModelPath(model, `main.${KIT}.info.security`,
+    { only_active: false, required: false })
+  return null != security && 'http' === security.type &&
+    'basic' === String(security.prefix || '').toLowerCase()
+}
+
+
 function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any {
   const fullpath = resolvePath(ctx$, path)
   const ignore = null == flags?.ignore ? false : flags.ignore
@@ -98,6 +116,7 @@ export {
   requirePath,
   isAuthActive,
   resolveAuthPrefix,
+  isHttpBasicAuth,
   SdkGenError,
   CONFIG_DATA_THRESHOLD,
   CONFIG_REPR_VALUES,
@@ -298,6 +317,7 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
 
   const authActive = isAuthActive(model)
   const authPrefix = resolveAuthPrefix(model)
+  const authBasic = isHttpBasicAuth(model)
 
   let baseUrl = ''
   try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
@@ -340,7 +360,7 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
     options.server = svars.reduce((a: any, v: any) => (a[v.name] = v.dflt, a), {})
   }
   if (authActive) {
-    options.auth = { prefix: authPrefix }
+    options.auth = authBasic ? { prefix: authPrefix, basic: true } : { prefix: authPrefix }
   }
   options.headers = headers
   options.entity = entityStubs
