@@ -19,9 +19,10 @@ require_relative "../ProjectName_sdk"
 
 class FeatureCorpusTest < Minitest::Test
 
-  # Features with a corpus section. A name here with no section is a skip,
-  # not a failure: an SDK generated without the feature has nothing to run.
-  FEATURE_CORPUS_NAMES = ["cost"].freeze
+  # Features with a corpus section are read from the corpus itself (see
+  # test_feature_corpus), so a project-authored section - a custom feature
+  # added under .sdk/test/feature/ - runs without editing this file. An SDK
+  # generated without a listed feature still skips, not fails.
 
   # The standard operation names, in the order the runner prefers them.
   FEATURE_CORPUS_OPS = %w[load list create update remove].freeze
@@ -218,7 +219,7 @@ class FeatureCorpusTest < Minitest::Test
   end
 
   def test_feature_corpus
-    FEATURE_CORPUS_NAMES.each do |name|
+    (corpus["feature"] || {}).keys.sort.each do |name|
       section = (corpus["feature"] || {})[name]
       next if section.nil?
 
