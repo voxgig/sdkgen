@@ -173,7 +173,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
 tm/clojure/src/sdk/core.clj 2de5b994bed1
-tm/clojure/src/sdk/features.clj becdf18686c4
+tm/clojure/src/sdk/features.clj bf31f3ce4a65
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
@@ -996,7 +996,7 @@ tm/lean/LICENSE c92ad97f8812
 tm/lean/Makefile 3a8374900b71
 tm/lean/VERSION e6635045e1d2
 tm/lean/src/SdkFeature.lean 5be60a4885a3
-tm/lean/src/SdkFeatures.lean 6fbf3505803c
+tm/lean/src/SdkFeatures.lean dcc22efccc0d
 tm/lean/src/SdkJson.lean c325e2d5d135
 tm/lean/src/SdkRuntime.lean d3dc42c7dfc3
 tm/lean/src/SdkUtility.lean 0510f9a2d448
