@@ -269,7 +269,11 @@ function opParams(op: any): any[] {
   const out: any[] = []
 
   points.forEach((pt: any, pointIndex: number) => {
-    const params = pt && pt.args && pt.args.params ? each(pt.args.params) : []
+    // Path AND query: a path-param-only read misses e.g. GET /result?trace_id=,
+    // which has no path param at all but still addresses one record.
+    const pathParams = pt && pt.args && pt.args.params ? each(pt.args.params) : []
+    const queryParams = pt && pt.args && pt.args.query ? each(pt.args.query) : []
+    const params = [...pathParams, ...queryParams]
     const requiredHere: Record<string, boolean> = {}
     params.forEach((p: any) => {
       if (p && null != p.name) {

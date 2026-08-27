@@ -237,7 +237,11 @@ function opParams(op) {
     const requiredOnAll = {};
     const out = [];
     points.forEach((pt, pointIndex) => {
-        const params = pt && pt.args && pt.args.params ? (0, jostraca_1.each)(pt.args.params) : [];
+        // Path AND query: a path-param-only read misses e.g. GET /result?trace_id=,
+        // which has no path param at all but still addresses one record.
+        const pathParams = pt && pt.args && pt.args.params ? (0, jostraca_1.each)(pt.args.params) : [];
+        const queryParams = pt && pt.args && pt.args.query ? (0, jostraca_1.each)(pt.args.query) : [];
+        const params = [...pathParams, ...queryParams];
         const requiredHere = {};
         params.forEach((p) => {
             if (p && null != p.name) {
