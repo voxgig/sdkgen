@@ -64,6 +64,7 @@ tm/c/src/feature/test/.gitkeep e3b0c44298fc
 tm/c/tests/ctest.h d2111a0ede61
 tm/c/tests/feature_harness.h 68c6da0d0de6
 tm/c/tests/pipeline_test.c 11b2fb00152b
+tm/c/tests/primary_corpus_test.c 8355ddfdeebb
 tm/c/tests/primary_utility_test.c d2287e397f76
 tm/c/tests/runner.h 3b919610bee6
 tm/c/tests/struct_corpus_test.c 85bb804e5ad0
@@ -89,7 +90,7 @@ tm/c/utility/param.c 7bbd56d87243
 tm/c/utility/prepare_auth.c 2a1378422d31
 tm/c/utility/prepare_body.c 722b1b98ddcb
 tm/c/utility/prepare_headers.c 2e520316e7b9
-tm/c/utility/prepare_method.c cf4da23cf808
+tm/c/utility/prepare_method.c 27871feb22c1
 tm/c/utility/prepare_params.c 0f1d76eee944
 tm/c/utility/prepare_path.c e9d7ffaa4851
 tm/c/utility/prepare_query.c 7b2ca7919d8d
@@ -107,7 +108,7 @@ tm/c/utility/struct/value.h b38fb4ce4dfb
 tm/c/utility/struct/value_io.c ad154dab653a
 tm/c/utility/struct/value_io.h d322b6e9d6d8
 tm/c/utility/struct/voxgig_struct.h 71de4f01ea7b
-tm/c/utility/transform_request.c 207096069b02
+tm/c/utility/transform_request.c d330249351ad
 tm/c/utility/transform_response.c 51ac106169eb
 
 ## target clojure
@@ -171,15 +172,15 @@ tm/clojure/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
-tm/clojure/src/sdk/core.clj c5a2331750b7
+tm/clojure/src/sdk/core.clj 2de5b994bed1
 tm/clojure/src/sdk/features.clj becdf18686c4
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/pipeline.clj c4410bff5076
-tm/clojure/test/sdk/test/primary.clj 42207f1ed9f8
-tm/clojure/test/sdk/test/struct_corpus.clj 0c3ba67b9183
-tm/clojure/test/sdk/test_runner.clj f6f08d7e613f
+tm/clojure/test/sdk/test/primary.clj 65d585a65b83
+tm/clojure/test/sdk/test/struct_corpus.clj 9e79b8beaa41
+tm/clojure/test/sdk/test_runner.clj 8f4f32819068
 tm/clojure/test/sdk/testutil.clj 389d40fa6cbc
 
 ## target cpp
@@ -515,7 +516,7 @@ tm/elixir/lib/projectname/feature.ex a9f2c2609648
 tm/elixir/lib/projectname/feature/test.ex 072467e5d97f
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex d326abbed947
+tm/elixir/lib/projectname/utility.ex 81087663c243
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -523,11 +524,11 @@ tm/elixir/src/feature/test/.gitkeep e3b0c44298fc
 tm/elixir/test/feature_test.exs 9f343d5232c3
 tm/elixir/test/netsim_test.exs d9459f10a6c7
 tm/elixir/test/pipeline_test.exs 876a4cd347fe
-tm/elixir/test/primary_utility_test.exs 1ea76ffc9a48
+tm/elixir/test/primary_utility_test.exs 2eeffe9acda8
 tm/elixir/test/stream_test.exs adcaa6598d60
 tm/elixir/test/struct_corpus_test.exs 977fdfc8e4f7
 tm/elixir/test/support/feature_harness.ex f492e6667188
-tm/elixir/test/support/struct_corpus.ex a6597e3e53d8
+tm/elixir/test/support/struct_corpus.ex 10769226f628
 tm/elixir/test/test_helper.exs b086ec47f0c6
 
 ## target go
@@ -1156,12 +1157,12 @@ src/cmp/ocaml/fragment/RunOp.fragment.ml b4ede130f1ef
 src/cmp/ocaml/tsconfig.json 720a3f229019
 src/cmp/ocaml/utility_ocaml.ts 010faa650f9e
 tm/ocaml/LICENSE c92ad97f8812
-tm/ocaml/Makefile 5907059b3e02
+tm/ocaml/Makefile f0f2c5404062
 tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml 7a3fea3b8abb
 tm/ocaml/sdk_helpers.ml deadcfd0d1f8
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml efb1df0ff92a
+tm/ocaml/sdk_runtime.ml 7255f9f44bce
 tm/ocaml/sdk_types.ml 85ee25259c3a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/audit/.gitkeep e3b0c44298fc
@@ -1183,9 +1184,11 @@ tm/ocaml/src/feature/streaming/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/test/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/timeout/.gitkeep e3b0c44298fc
+tm/ocaml/test/corpus_runner.ml cc18431f0f19
 tm/ocaml/test/custom_utility.ml 1fe63d9d65af
 tm/ocaml/test/harness.ml f59a28e1b3c5
-tm/ocaml/test/struct_corpus.ml bbd95439b8d8
+tm/ocaml/test/primary_utility_test.ml b9fc7cd21686
+tm/ocaml/test/struct_corpus.ml db4c7b5c6d25
 tm/ocaml/test/t_feature.ml 3f7c9dfdfc4f
 tm/ocaml/test/t_main.ml a468eae08da5
 tm/ocaml/test/t_pipeline.ml 996c1b71c018
@@ -1767,7 +1770,7 @@ src/cmp/scala/fragment/Main.fragment.scala 48af9dfdab50
 src/cmp/scala/tsconfig.json 720a3f229019
 src/cmp/scala/utility_scala.ts 1128375d5948
 tm/scala/LICENSE ed2f88b0aab8
-tm/scala/Makefile 12642b2061eb
+tm/scala/Makefile a72245d3a95c
 tm/scala/VERSION e6635045e1d2
 tm/scala/core/Context.scala 548bd774a9ed
 tm/scala/core/Contracts.scala caa9f20bf5be
@@ -1802,9 +1805,10 @@ tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala 19f19505f177
 tm/scala/feature/TestFeature.scala f6c90650e517
 tm/scala/feature/TimeoutFeature.scala 1241410229ac
+tm/scala/sdktest/PrimaryCorpus.scala ca9fd17a63f9
 tm/scala/sdktest/SdkTestMain.scala 204bb4c0509f
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
-tm/scala/sdktest/StructCorpus.scala 150b59dff266
+tm/scala/sdktest/StructCorpus.scala bf7d42f98301
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
 tm/scala/src/feature/README.md fe95b0698ffe
 tm/scala/src/feature/audit/.gitkeep e3b0c44298fc
@@ -1833,7 +1837,7 @@ tm/scala/utility/Json.java d39717264d80
 tm/scala/utility/Make.scala 96e7fe9a934d
 tm/scala/utility/MakeSpec.scala 321cd9348d4e
 tm/scala/utility/Misc.scala bf44fcc37724
-tm/scala/utility/Prepare.scala e9c46c3ea45e
+tm/scala/utility/Prepare.scala 8c0bc0c5c841
 tm/scala/utility/Register.scala 730b661b9faf
 tm/scala/utility/Results.scala eaf1c9bb3189
 tm/scala/utility/StructUtility.scala 2dc27377f838
@@ -2070,7 +2074,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/target-index.aon d785f5b4bbe7
 model/target/zig.aon 8b5242437d52
-src/cmp/zig/Config_zig.ts 5c3d6ae3ac12
+src/cmp/zig/Config_zig.ts 4d8d13d6c1d4
 src/cmp/zig/EntityOperation_zig.ts 04bd390df007
 src/cmp/zig/Entity_zig.ts 03329f926393
 src/cmp/zig/Gitignore_zig.ts ec49760abeae
@@ -2117,7 +2121,7 @@ tm/zig/core/response.zig 4df235df5674
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 76f0cf3fd406
 tm/zig/core/types.zig ed211da482aa
-tm/zig/core/utility.zig 57ca40507af3
+tm/zig/core/utility.zig 933120bf9f26
 tm/zig/feature/audit.zig bd9ec0baec3e
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig 4a8f27f50abe
@@ -2163,9 +2167,9 @@ tm/zig/test/feature_test.zig 0edc2054bb9d
 tm/zig/test/fh.zig 45d3b4e8919a
 tm/zig/test/gotcha_test.zig 2bb91ba7ceb9
 tm/zig/test/pipeline_test.zig dff8531ee2da
-tm/zig/test/primary_utility_test.zig abdc5719124e
+tm/zig/test/primary_utility_test.zig 096345851047
 tm/zig/test/struct_corpus.zig b4a327ea6738
-tm/zig/test/struct_runner.zig 8a7945d1c5bc
+tm/zig/test/struct_runner.zig bc949f12a121
 tm/zig/utility/jsonparse.zig 3bf825b60025
 tm/zig/utility/voxgigstruct/regex.zig c298936fbb0e
 tm/zig/utility/voxgigstruct/struct.zig 37fb3adca8da
