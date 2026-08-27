@@ -378,6 +378,160 @@ describe('generate', () => {
   })
 
 
+  // STATION SELF-REGISTRATION (station design §6.2 path 1; declarative
+  // design §11 item 2). When the model carries an ACTIVE station feature —
+  // a project installs it via `package add @voxgig/sdkgen-station` — the
+  // generated MAIN module registers the SDK's {construct, config} pair with
+  // the station library at module init, keyed by the descriptor slug
+  // (config.main.slug), so `station.sdk('<name>')` needs no imports in
+  // application code. With the feature absent — every other test in this
+  // file — the main must carry none of it.
+  //
+  // The feature model is stated inline because the real one ships in the
+  // EXTERNAL sdkgen-station package; this mirrors its shape (transport
+  // role, options, per-target deps with the real library package names).
+  // The feature PHASE is switched off for the run because the adapter
+  // source also lives in that external package's tm overlay: the Feature
+  // component would `Copy` tm/<t>/src/feature/station, which the bundled
+  // scaffold does not ship. Main — the component under test — runs
+  // unconditionally in makeRoot.
+  const STATION_FEATURE = `
+main: kit: feature: station: {
+  name: key()
+  title: "Station control surface binding"
+  active: true
+  transport: 'wrap'
+  config: options: { active: false, url: '', instance: '', register: true }
+  hook: PostConstruct: active: true
+  deps: ts: { '@voxgig/station': { active: true, version: '>=0.0.1', kind: peer } }
+  deps: js: { '@voxgig/station-js': { active: true, version: '>=0.0.1', kind: peer } }
+}
+main: kit: target: ts: phase: feature: active: false
+main: kit: target: js: phase: feature: active: false
+`
+
+  test('ts/js main self-registers with station when the feature is active', async () => {
+    const out = await generate(['ts', 'js'], undefined, STATION_FEATURE)
+
+    for (const [target, pkg] of [
+      ['ts', '@voxgig/station'], ['js', '@voxgig/station-js'],
+    ] as [string, string][]) {
+      const main = filesFor(out, target)
+        .find(([n]) => n.endsWith('src/DemoSDK.' + target))
+      ok(main, target + ': no src/DemoSDK.' + target + ' generated')
+      const src = String(main![1])
+
+      // The soft probe: only genuine module-not-found is swallowed, so the
+      // require is guarded by require.resolve — the requirePath discipline,
+      // in the generated code. The package name is the JSON-stringified
+      // model dep (per-target: js requires @voxgig/station-js, not the ts
+      // library), proving the name is read from the feature model's deps
+      // block rather than hardcoded once.
+      ok(src.includes(`require.resolve(${JSON.stringify(pkg)})`),
+        target + ': main does not probe for the station library')
+      ok(src.includes(`require(${JSON.stringify(pkg)})`),
+        target + ': main does not require the station library')
+
+      // The §6.2 pair, keyed by the descriptor slug the embedded config
+      // already carries.
+      ok(src.includes('provide(config.main.slug'),
+        target + ': main does not provide under config.main.slug')
+      ok(src.includes('new DemoSDK(options)'),
+        target + ': factory construct does not build the SDK class')
+      ok(/construct:/.test(src) && /config,/.test(src),
+        target + ': factory is not the {construct, config} pair')
+
+      // Nothing leaked from the fragment substitution.
+      ok(!src.includes('STATIONPKG'),
+        target + ': STATIONPKG placeholder leaked')
+      ok(!src.includes('ProjectName'),
+        target + ': ProjectName placeholder leaked')
+    }
+  })
+
+
+  // Declarative design §11 items 3-4: with the station feature active,
+  // the generated README's "Use with Station" section LEADS with the
+  // declarative flow (a station.json block + station.sdk()) and derives
+  // the secret/env-var name from the INSTANCE name (untagged = the slug,
+  // so the documented env var is unchanged; tagged derives its own), and
+  // the generated AGENTS.md tells an agent that integrations are
+  // declared in station.json and to read that file. Without the feature
+  // — the other suites — neither says a word about station.
+  test('ts/js readme and agent guide lead with the declarative station flow', async () => {
+    const out = await generate(['ts', 'js'], undefined, STATION_FEATURE)
+
+    const agents = out['AGENTS.md']
+    ok(null != agents, 'no root AGENTS.md generated')
+    ok(String(agents).includes('declared in `station.json`'),
+      'AGENTS.md does not say integrations are declared in station.json')
+    ok(String(agents).includes('read that file'),
+      'AGENTS.md does not tell an agent to read station.json')
+
+    for (const target of ['ts', 'js']) {
+      const readme = out[target + '/README.md']
+      ok(null != readme, target + ': no README.md generated')
+      const src = String(readme)
+
+      // The declarative quickstart: the station.json block keyed by the
+      // descriptor slug, and the sdk() call beside the connect() form.
+      // Keyed by the descriptor slug, and carrying `package` — without
+      // it the quickstart is a zero-import example that cannot work:
+      // self-registration runs when the SDK's main module executes, and
+      // nothing in the example would execute it, so `sdk()` would raise
+      // station_no_factory. ts and js are both self-registering targets.
+      ok(src.includes('"sdk": { "demo": {'),
+        target + ': README has no station.json block keyed by the slug')
+      ok(src.includes('"package": "' + ('ts' === target ?
+        '@voxgig-sdk/demo' : '@voxgig-sdk/demo-js') + '"'),
+        target + ': README quickstart declares no package for station to load')
+      ok(src.includes("station.sdk('demo')"),
+        target + ': README has no station.sdk() quickstart')
+      ok(src.includes('station.connect('),
+        target + ': README dropped the imperative connect() form')
+
+      // The instance-derived names: the untagged instance keeps the env
+      // var the README already documents; a tagged one derives its own
+      // (envtoken maps `$` and `-` alike to `_`, declarative §3.4/§5.1).
+      ok(src.includes('`demo.apikey`') && src.includes('`DEMO_APIKEY`'),
+        target + ': README does not derive the untagged instance name')
+      ok(src.includes('`demo_test.apikey`') && src.includes('`DEMO_TEST_APIKEY`'),
+        target + ': README does not derive the tagged instance name')
+
+      // One canonical error catalog, linked rather than restated
+      // (station design §9.4).
+      ok(src.includes('docs/reference/station-errors.md'),
+        target + ': README does not link the station error catalog')
+    }
+
+    // And with no station feature, no station story anywhere.
+    const bare = await generate(['ts'])
+    ok(!String(bare['ts/README.md']).includes('Use with Station'),
+      'README carries the station section without the feature')
+    ok(!String(bare['AGENTS.md']).includes('station.json'),
+      'AGENTS.md carries the station paragraph without the feature')
+  })
+
+
+  test('ts/js main emits no station registration when the feature is absent', async () => {
+    const out = await generate(['ts', 'js'])
+
+    for (const target of ['ts', 'js']) {
+      const main = filesFor(out, target)
+        .find(([n]) => n.endsWith('src/DemoSDK.' + target))
+      ok(main, target + ': no src/DemoSDK.' + target + ' generated')
+      const src = String(main![1])
+
+      ok(!src.includes('@voxgig/station'),
+        target + ': main references the station library without the feature')
+      ok(!src.includes('require.resolve'),
+        target + ': main carries the station probe without the feature')
+      ok(!src.includes('provide('),
+        target + ': main registers a factory without the feature')
+    }
+  })
+
+
   // ZIG: no entity accessor may collide with a field or local in the SDK type.
   //
   // Entity accessors are generated as methods on the SDK struct, so an API with
@@ -512,6 +666,19 @@ describe('generate', () => {
         ok(plain.includes('"' + entity + '"'),
           target + ': embedded config is missing entity ' + entity)
       }
+
+      // Each feature's transport ROLE rides beside its config (station
+      // design §8.4, sdkgen tranche §11 items 6-7): the fixture's `test`
+      // feature is the one 'base' (it REPLACES the transport slot) and
+      // `log` is hook-only 'none'. Station's descriptor reads the role to
+      // validate the resolved feature order, so a config without it
+      // silently switches those checks off.
+      ok(plain.includes('"transport":"base"'),
+        target + ': embedded config is missing the test feature\'s ' +
+        "transport role 'base'")
+      ok(plain.includes('"transport":"none"'),
+        target + ': embedded config is missing the log feature\'s ' +
+        "transport role 'none'")
     })
 
 
@@ -522,6 +689,13 @@ describe('generate', () => {
       const src = String(config![1])
       ok(litMark.test(src), target + ': literal branch not emitted')
       ok(!dataMark.test(src), target + ': literal path emitted data as well')
+
+      // The literal rep must carry the feature transport role too - it is
+      // rendered from configDefinition's def, so the same API cannot
+      // describe a different config either side of the size threshold
+      // (the rung L1 promise; same shape as the dart options.server fix).
+      ok(/transport/.test(src),
+        target + ': literal config lost the feature transport role')
     })
   }
 
@@ -549,6 +723,29 @@ describe('generate', () => {
       ok(/acme/.test(plain), repr + ': dart config lost the server-variable default')
     }
   })
+
+
+  // java and kotlin emit config as DATA ONLY, assembling the JSON with their
+  // own StringBuilder chunking rather than embedding configDefinition's json
+  // string - which is exactly how their feature block could silently drop
+  // what the shared def carries. Their featureConfig now renders from
+  // configDefinition's def, so the transport role (station design §8.4)
+  // must reach the emitted source. (cpp/perl/swift embed the shared json
+  // verbatim and are covered by construction; scala and lean do not consume
+  // configDefinition at all yet - a known gap, station.md §9 defers them.)
+  for (const [target, file] of [
+    ['java', /Config\.java$/],
+    ['kotlin', /Config\.kt$/],
+  ] as [string, RegExp][]) {
+    test(target + ': the assembled config JSON carries the transport role', async () => {
+      const out = await generate([target])
+      const config = filesFor(out, target).find(([n]) => file.test(n))
+      ok(config, target + ': no config file matching ' + file)
+      const src = String(config![1])
+      ok(/transport/.test(src),
+        target + ': assembled config lost the feature transport role')
+    })
+  }
 
 
   // The dart DATA branch must give every constructed Config its own maps.

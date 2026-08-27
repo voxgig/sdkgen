@@ -17,6 +17,18 @@ import {
 // generated provider is verified without a server.
 
 
+// Does this entity's load op have a real identifying param (path or
+// required query), e.g. GET /result?trace_id=? A paramless GET has none.
+function loadHasKey(ent: any): boolean {
+  const point = (ent.op && ent.op.load && ent.op.load.points || [])[0]
+  if (null == point) return false
+  const hasPathParam = (point.parts || []).some((p: string) => p.startsWith('{'))
+  const hasQueryParam = (point.args && point.args.query || [])
+    .some((q: any) => false !== q.reqd)
+  return hasPathParam || hasQueryParam
+}
+
+
 // The name of the entity a parent path param addresses, or '' when the model
 // has none of that name.
 //
@@ -458,7 +470,12 @@ describe('${provider.fileBase}', () => {
     )
   })
 
-
+`)
+          // Paramless read (e.g. GET /usage): every id "misses" the same
+          // way a hit does -- the mock has nothing to filter by -- so a
+          // load-missing test would just assert the happy path again.
+          if (loadHasKey(e.ent)) {
+            Content(`
   // A 404 from a single-item read is an ordinary "not found" answer, not a
   // failure: the provider turns it into null rather than letting the SDK
   // throw.
@@ -472,6 +489,7 @@ describe('${provider.fileBase}', () => {
   })
 
 `)
+          }
         }
       })
 

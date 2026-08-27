@@ -314,7 +314,8 @@ Its `config.options`, all overridable per project:
 | `url` | string | `''` | Explicit proxy URL (`''` = discover per station's config). |
 | `fromEnv` | boolean | `true` | Let `VOXGIG_STATION_*` env vars participate in resolution. |
 | `profile` | string | `''` | Pin a `station.json` profile (`''` = the station's own selection). |
-| `secret` | string | `''` | Override the plugin's sekreto secret name (`''` = the descriptor default, `<envtoken(slug) lowercased>.apikey`). |
+| `secret` | string | `''` | Override the plugin's sekreto secret name (`''` = the descriptor default, `<envtoken(instance) lowercased>.apikey`). |
+| `instance` | string | `''` | The instance name this client registers under — station passes it when it constructs the client (`station.sdk()`); `''` falls back to the descriptor slug, which is what a bare `connect(SDK)` does. |
 | `register` | boolean | `true` | Register the descriptor with the bound station. |
 | `capture` | string | `'meta'` | Capture depth: `meta` \| `headers` \| `full`. |
 

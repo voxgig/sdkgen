@@ -4,7 +4,7 @@ import {
   entityCollection, entityOps, entityIdField, entityClassName,
   opRequestShape, opParams, ownPoint, entityPath,
   collectDeps, repoInfo, packageName, packageVersion, apiName, envName,
-  authorInfo, contributorList, isAuthActive, jsKey, jsProp,
+  authorInfo, contributorList, isAuthActive, isHttpBasicAuth, jsKey, jsProp,
   SdkGenError,
   PUBLISHER, PUBLISHER_URL,
 } from '@voxgig/sdkgen'
@@ -107,6 +107,14 @@ function recordKey(ent: any): string {
 
     if (null != lastParam) {
       return lastParam.slice(1, -1)
+    }
+
+    // No path param at all (e.g. GET /scan/async/result?trace_id=...): the
+    // record's own key can still be a single required QUERY param.
+    const query = (point && point.args && point.args.query) || []
+    const reqdQuery = query.filter((q: any) => false !== q.reqd)
+    if (1 === reqdQuery.length) {
+      return String(reqdQuery[0].name)
     }
   }
 
@@ -462,6 +470,13 @@ const Main = cmp(function Main(props: any) {
     // model and strips the authorization header regardless of options, so
     // plumbing one anyway produces a credential path that cannot work.
     authActive: isAuthActive(model),
+    // Whether this API's scheme is genuine HTTP Basic Auth (two credentials,
+    // base64-joined), matching the SDK's own auth.basic signal. Decides
+    // whether the plugin also plumbs a `secret` alongside `apikey` — a
+    // Basic-Auth SDK's own auth stage deletes the header when either is
+    // missing, so a provider forwarding apikey alone could never
+    // authenticate, the same class of gap `apikey`-only forwarding was.
+    authBasic: isAuthActive(model) && isHttpBasicAuth(model),
   }
 
   // `.gitignore` is EMITTED rather than copied — npm strips that filename
@@ -895,7 +910,17 @@ ${provider.authActive ? `
     if (null != apikey && '' !== apikey) {
       sdkopts.apikey = apikey
     }
-` : `
+${provider.authBasic ? `
+    // Genuine HTTP Basic Auth needs a SECOND credential (the SDK sends
+    // \`Authorization: Basic base64(apikey:secret)\`) — without it the SDK's
+    // auth stage treats the pair as incomplete and deletes the header, same
+    // as a missing apikey.
+    const secret = res?.keymap?.secret?.value
+
+    if (null != secret && '' !== secret) {
+      sdkopts.secret = secret
+    }
+` : ''}` : `
     // This API declares no authentication, so no credential is plumbed. The
     // SDK's auth stage emits nothing for an auth-inactive model and deletes
     // any \`authorization\` header regardless of options, so a keymap lookup

@@ -29,6 +29,7 @@ exports.rbSafeTypeName = rbSafeTypeName;
 exports.isSwiftSdkType = isSwiftSdkType;
 exports.swiftSafeTypeName = swiftSafeTypeName;
 exports.isPhpReservedType = isPhpReservedType;
+exports.isPhpSdkClass = isPhpSdkClass;
 exports.phpSafeTypeName = phpSafeTypeName;
 exports.isTsReservedType = isTsReservedType;
 exports.tsSafeTypeName = tsSafeTypeName;
@@ -156,9 +157,9 @@ const RB_SDK_CONSTANTS = new Set([
     'StructRunner', 'StructTestClient', 'StructUtilityTest', 'VoxgigStruct',
     'STRUCT_TEST_JSON_FILE',
     // the generated/templated test classes
-    'ExistsTest', 'FeatureTest', 'NetsimTest', 'PipelineTest',
-    'PrimaryUtilityTest', 'ReadmeExamplesTest', 'TestHookFeature',
-    'TestInitFeature',
+    'ExistsTest', 'FeatureCorpusTest', 'FeatureTest', 'NetsimTest',
+    'PipelineTest', 'PrimaryUtilityTest', 'ReadmeExamplesTest',
+    'TestHookFeature', 'TestInitFeature',
 ]);
 // Does `Name` collide with a constant the generated Ruby SDK already declares?
 function isRbSdkConstant(Name) {
@@ -221,10 +222,11 @@ const SWIFT_SDK_TYPES = new Set([
     'ManualRedirectDelegate',
     // features
     'AuditFeature', 'BaseFeature', 'CacheFeature', 'ClienttrackFeature',
-    'DebugFeature', 'IdempotencyFeature', 'LogFeature', 'MetricsBucket',
-    'MetricsFeature', 'NetsimFeature', 'PagingFeature', 'ProxyFeature',
-    'RatelimitFeature', 'RbacFeature', 'RetryFeature', 'StreamingFeature',
-    'TelemetryFeature', 'TestFeature', 'TimeoutFeature',
+    'CostBucket', 'CostBudget', 'CostFeature', 'CostPending', 'CostRecord',
+    'CostTotal', 'DebugFeature', 'IdempotencyFeature', 'LogFeature',
+    'MetricsBucket', 'MetricsFeature', 'NetsimFeature', 'PagingFeature',
+    'ProxyFeature', 'RatelimitFeature', 'RbacFeature', 'RetryFeature',
+    'StreamingFeature', 'TelemetryFeature', 'TestFeature', 'TimeoutFeature',
 ]);
 // Does `Name` collide with a type the swift SDK runtime already declares?
 function isSwiftSdkType(Name) {
@@ -294,18 +296,55 @@ const PHP_RESERVED_TYPES = new Set([
 function isPhpReservedType(Name) {
     return PHP_RESERVED_TYPES.has(String(Name).toLowerCase());
 }
-// A declarable PHP class name for a generated type: unchanged, unless PHP
-// reserves the word, in which case `Type` is appended (`Namespace` ->
-// `NamespaceType`). Mirrors rbSafeTypeName and swiftSafeTypeName deliberately
-// — same suffix, same "only rename on an actual collision" rule, so every SDK
-// that does not collide is byte-identical to before.
+// CLASSES THE GENERATED PHP SDK ITSELF DECLARES — the second half of "already
+// taken", exactly as RB_SDK_CONSTANTS is for ruby. `PHP_RESERVED_TYPES` covers
+// what the LANGUAGE owns; this covers what OUR OWN scaffolding claims, which a
+// keyword list can never catch.
+//
+// The generated PHP SDK uses NO NAMESPACES, and composer classmaps both the
+// runtime (`types/`) and the tests (`autoload-dev`: `test/`). An entity named
+// `feature_test` emits `class FeatureTest` in `<Sdk>Types.php` while
+// `tm/php/test/FeatureTest.php` declares one too: composer maps one name to
+// two files, and loading both fatals on redeclaration. Ruby's equivalent only
+// warns; PHP does not.
+//
+// Only UNPREFIXED, UNNAMESPACED declarations are listed. `ProjectNameUtility`
+// substitutes to `<Sdk>Utility`, which no bare entity type can equal, and
+// `utility/struct/Struct.php` and `test/StructRunner.php` declare inside a
+// namespace — neither is reachable from the global name an entity type takes.
+//
+// `php-sdk-classes.test.ts` re-derives this from the templates AND the
+// components and fails on drift, the same discipline as the rb and swift
+// guards, and for the same reason: a hand-collected list rots.
+//
+// Folded, and matched folded: PHP class names are case-insensitive, so
+// `FeatureTest` and `featuretest` are one identifier.
+const PHP_SDK_CLASSES = new Set([
+    // the generated/templated test classes
+    'existstest', 'featurecorpustest', 'featuretest', 'netsimtest',
+    'pipelinetest', 'primaryutilitytest', 'readmeexamplestest',
+    'structutilitytest',
+    // helper classes those suites declare beside them
+    'ftclient', 'ftclock', 'ftctrl', 'ftentity', 'ftharness', 'ftrecorder',
+    'plclient', 'plentity', 'plentityitem',
+]);
+// Does `Name` collide with a class the generated PHP SDK already declares?
+function isPhpSdkClass(Name) {
+    return PHP_SDK_CLASSES.has(String(Name).toLowerCase());
+}
+// A declarable PHP class name for a generated type: unchanged, unless the name
+// is ALREADY TAKEN — by PHP itself, or by the SDK's own scaffolding — in which
+// case `Type` is appended (`Namespace` -> `NamespaceType`). Mirrors
+// rbSafeTypeName and swiftSafeTypeName deliberately — same suffix, same "only
+// rename on an actual collision" rule, so every SDK that does not collide is
+// byte-identical to before.
 //
 // Applied ONLY to the bare entity data class. Per-op type names already carry
-// their own suffix (`NamespaceLoadData`, `NamespaceCreateData`), which no
-// reserved word matches, and the entity ACCESSOR is a method rather than a
-// class — PHP resolves those separately — so the public surface is unchanged.
+// their own suffix (`NamespaceLoadData`, `NamespaceCreateData`), which neither
+// set matches, and the entity ACCESSOR is a method rather than a class — PHP
+// resolves those separately — so the public surface is unchanged.
 function phpSafeTypeName(Name) {
-    return isPhpReservedType(Name) ? Name + 'Type' : Name;
+    return isPhpReservedType(Name) || isPhpSdkClass(Name) ? Name + 'Type' : Name;
 }
 // TypeScript GLOBAL TYPE NAMES — a fourth hazard, same shape as the Ruby and
 // Swift ones above but for TS/JS builtins, which are in scope everywhere

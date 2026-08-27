@@ -23,6 +23,7 @@ type ModelFeature = NameCases & {
     active?: boolean;
     title?: string;
     version?: string;
+    transport?: string;
     hook?: Record<string, ModelHook>;
     deps?: Record<string, Record<string, ModelDep>>;
     [extra: string]: any;

@@ -8,6 +8,7 @@ exports.resolvePath = resolvePath;
 exports.requirePath = requirePath;
 exports.isAuthActive = isAuthActive;
 exports.resolveAuthPrefix = resolveAuthPrefix;
+exports.isHttpBasicAuth = isHttpBasicAuth;
 exports.isConfigData = isConfigData;
 exports.configRepr = configRepr;
 exports.configReprSetting = configReprSetting;
@@ -61,6 +62,20 @@ function resolveAuthPrefix(model) {
     if (null != security && null != security.prefix)
         return String(security.prefix);
     return 'Bearer';
+}
+// True when the spec's security scheme is genuine HTTP Basic Auth (two
+// credentials, base64-joined) rather than a single bearer-style token with
+// a prefix. Priority order mirrors resolveAuthPrefix:
+//   1. main.kit.config.auth.basic     (per-SDK user override)
+//   2. main.kit.info.security, spec-derived: type 'http' + a 'basic' prefix
+//      (apidef sets prefix from the OpenAPI `scheme: basic` value, title-cased)
+function isHttpBasicAuth(model) {
+    const auth = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.auth`, { only_active: false, required: false });
+    if (null != auth && null != auth.basic)
+        return Boolean(auth.basic);
+    const security = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.info.security`, { only_active: false, required: false });
+    return null != security && 'http' === security.type &&
+        'basic' === String(security.prefix || '').toLowerCase();
 }
 function requirePath(ctx$, path, flags) {
     const fullpath = resolvePath(ctx$, path);
@@ -264,6 +279,7 @@ function configDefinition(model, targetname) {
     const headers = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.headers`) || {};
     const authActive = isAuthActive(model);
     const authPrefix = resolveAuthPrefix(model);
+    const authBasic = isHttpBasicAuth(model);
     let baseUrl = '';
     try {
         baseUrl = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.info.servers.0.url`);
@@ -283,14 +299,28 @@ function configDefinition(model, targetname) {
     });
     const featureDefs = {};
     (0, jostraca_1.each)(feature, (f) => {
-        featureDefs[f.name] = f.config || {};
+        // The feature's declared config (its `options` key set with typed
+        // defaults) PLUS its transport role (station design §8.4): 'base'
+        // replaces the transport slot, 'wrap' wraps it, 'none' is hook-only.
+        // Station's descriptor (normalizeDescriptor in voxgig/station) reads
+        // `transport` beside `options` to validate the resolved feature order.
+        // The role is DECLARED in the feature model, never inferred - an empty
+        // `hook: {}` is wrong for station, which both wraps and dispatches
+        // hooks. Additive: a model unified without the schema's `transport`
+        // default simply omits the key, which station tolerates by degrading
+        // its role checks to nothing.
+        const fdef = { ...(f.config || {}) };
+        if (null != f.transport && '' !== f.transport) {
+            fdef.transport = String(f.transport);
+        }
+        featureDefs[f.name] = fdef;
     });
     const options = { base: baseUrl };
     if (0 < svars.length) {
         options.server = svars.reduce((a, v) => (a[v.name] = v.dflt, a), {});
     }
     if (authActive) {
-        options.auth = { prefix: authPrefix };
+        options.auth = authBasic ? { prefix: authPrefix, basic: true } : { prefix: authPrefix };
     }
     options.headers = headers;
     options.entity = entityStubs;

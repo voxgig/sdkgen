@@ -17,7 +17,7 @@ import type {
   ActionResult,
 } from './types'
 
-import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix,
+import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, isHttpBasicAuth,
   CONFIG_DATA_THRESHOLD, CONFIG_REPR_VALUES, isConfigData, configRepr,
   configReprSetting, configDefinition, clean, rawStringLiteral } from './utility'
 
@@ -49,6 +49,7 @@ import { ReadmeEntity } from './cmp/ReadmeEntity'
 import { ReadmeHowto } from './cmp/ReadmeHowto'
 import { ReadmeExplanation } from './cmp/ReadmeExplanation'
 import { ReadmeRef } from './cmp/ReadmeRef'
+import { ReadmeRefFeatures } from './cmp/ReadmeRefFeatures'
 import { FeatureHook } from './cmp/FeatureHook'
 import { registerComponent } from './cmp/Registered'
 import type { RegisterOptions } from './cmp/Registered'
@@ -59,7 +60,7 @@ import { collectDeps } from './helpers/collectDeps'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey, canonScalarKey } from './helpers/canonType'
 import { OP_SUFFIX, opTypeName, opParams, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape'
-import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, phpSafeTypeName, isTsReservedType, tsSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming'
+import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, tsSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming'
 import { serverVariables, hasServerVariables } from './helpers/serverVars'
 import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
 import type { ExampleLang } from './helpers/opExample'
@@ -73,6 +74,7 @@ import {
   srcFeatureExcludes,
 } from './helpers/featureSource'
 import type { FeatureSource } from './helpers/featureSource'
+import { stationLibrary } from './helpers/station'
 import {
   definitionPath,
   definitionFolder,
@@ -1066,6 +1068,7 @@ export {
   ReadmeHowto,
   ReadmeExplanation,
   ReadmeRef,
+  ReadmeRefFeatures,
   FeatureHook,
   registerComponent,
 
@@ -1075,6 +1078,7 @@ export {
   requirePath,
   isAuthActive,
   resolveAuthPrefix,
+  isHttpBasicAuth,
   CONFIG_DATA_THRESHOLD,
   CONFIG_REPR_VALUES,
   isConfigData,
@@ -1125,6 +1129,7 @@ export {
   isSwiftSdkType,
   swiftSafeTypeName,
   isPhpReservedType,
+  isPhpSdkClass,
   phpSafeTypeName,
   isTsReservedType,
   tsSafeTypeName,
@@ -1142,6 +1147,7 @@ export {
   featureExcludes,
   fullsetExcludes,
   srcFeatureExcludes,
+  stationLibrary,
 
   definitionPath,
   definitionFolder,

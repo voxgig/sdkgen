@@ -69,10 +69,16 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                 if (!is_string($restf)) {
                     return $data;
                 }
-                if (!preg_match('/^`body\.([^`.]+)`$/', $restf, $m)) {
+                if (!preg_match('/^`body\.(.+)`$/', $restf, $m)) {
                     return $data;
                 }
-                return [$m[1] => $data];
+                // Multi-segment on purpose: GraphQL ops unwrap body.data.<field>
+                // (and body.data.<field>.<entity> for mutations), not just one level.
+                $out = $data;
+                foreach (array_reverse(explode('.', $m[1])) as $seg) {
+                    $out = [$seg => $out];
+                }
+                return $out;
             };
 
             $respond = function (int $status, mixed $data, ?array $extra = null) use ($envelope): array {
@@ -179,7 +185,37 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                 return $respond(200, $out);
 
             } elseif ($op->name === 'list') {
-                $found = $find_all($entmap, $fctx->reqmatch, $alias);
+                // FILTER THE MATCH THE WAY THE TS MOCK DOES.
+                //
+                // This branch used the whole of reqmatch, while load goes
+                // through resolve_match and the TS mock runs every op through
+                // buildArgs — which keeps `id` and the point's REQUIRED params
+                // and drops the rest. buildArgs is right here in this file and
+                // its docblock says it mirrors the TS one; list simply did not
+                // call it.
+                //
+                // So a match key that is neither `id` nor a required route
+                // param matched NOTHING in php and was IGNORED in ts. trello's
+                // board_star lists on `board_id`, which is not a field of that
+                // entity (id, pos, member_id, id_board) and not a route param:
+                // php returned an empty list and BoardStarEntityTest failed on
+                // an assertion that ts, js and every other port passed.
+                //
+                // buildArgs returns a struct query; find_all takes a flat map,
+                // so take the primary key of each $OR clause. find_all already
+                // does its own alias fallback, which is what the second $OR
+                // element carries.
+                $listargs = $this->buildArgs($fctx, $op, $fctx->reqmatch);
+                $listmatch = [];
+                foreach (($listargs['$AND'] ?? []) as $clause) {
+                    $ors = $clause['$OR'] ?? [];
+                    if (is_array($ors) && count($ors) > 0 && is_array($ors[0])) {
+                        foreach ($ors[0] as $lk => $lv) {
+                            $listmatch[$lk] = $lv;
+                        }
+                    }
+                }
+                $found = $find_all($entmap, $listmatch, $alias);
                 $cleaned = [];
                 foreach ($found as $e) {
                     if (is_array($e)) unset($e['$KEY']);
@@ -403,13 +439,18 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                     }
                 }
             }
+            // Path AND query: a path-only read misses a query-addressed
+            // record (e.g. GET /result?trace_id=), which has no path param.
             $params = is_array($point) ? ($point['args']['params'] ?? null) : null;
-            if (is_array($params)) {
-                foreach ($params as $p) {
-                    if (is_array($p) && (($p['reqd'] ?? false) === true)) {
-                        $n = $p['name'] ?? null;
-                        if ($n !== null) {
-                            $reqd_names[] = $n;
+            $query = is_array($point) ? ($point['args']['query'] ?? null) : null;
+            foreach ([$params, $query] as $arglist) {
+                if (is_array($arglist)) {
+                    foreach ($arglist as $p) {
+                        if (is_array($p) && (($p['reqd'] ?? false) === true)) {
+                            $n = $p['name'] ?? null;
+                            if ($n !== null) {
+                                $reqd_names[] = $n;
+                            }
                         }
                     }
                 }

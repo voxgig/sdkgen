@@ -62,6 +62,24 @@ function resolveAuthPrefix(model: any): string {
 }
 
 
+// True when the spec's security scheme is genuine HTTP Basic Auth (two
+// credentials, base64-joined) rather than a single bearer-style token with
+// a prefix. Priority order mirrors resolveAuthPrefix:
+//   1. main.kit.config.auth.basic     (per-SDK user override)
+//   2. main.kit.info.security, spec-derived: type 'http' + a 'basic' prefix
+//      (apidef sets prefix from the OpenAPI `scheme: basic` value, title-cased)
+function isHttpBasicAuth(model: any): boolean {
+  const auth = getModelPath(model, `main.${KIT}.config.auth`,
+    { only_active: false, required: false })
+  if (null != auth && null != auth.basic) return Boolean(auth.basic)
+
+  const security = getModelPath(model, `main.${KIT}.info.security`,
+    { only_active: false, required: false })
+  return null != security && 'http' === security.type &&
+    'basic' === String(security.prefix || '').toLowerCase()
+}
+
+
 function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any {
   const fullpath = resolvePath(ctx$, path)
   const ignore = null == flags?.ignore ? false : flags.ignore
@@ -98,6 +116,7 @@ export {
   requirePath,
   isAuthActive,
   resolveAuthPrefix,
+  isHttpBasicAuth,
   SdkGenError,
   CONFIG_DATA_THRESHOLD,
   CONFIG_REPR_VALUES,
@@ -298,6 +317,7 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
 
   const authActive = isAuthActive(model)
   const authPrefix = resolveAuthPrefix(model)
+  const authBasic = isHttpBasicAuth(model)
 
   let baseUrl = ''
   try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
@@ -318,7 +338,21 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
 
   const featureDefs: any = {}
   each(feature, (f: any) => {
-    featureDefs[f.name] = f.config || {}
+    // The feature's declared config (its `options` key set with typed
+    // defaults) PLUS its transport role (station design §8.4): 'base'
+    // replaces the transport slot, 'wrap' wraps it, 'none' is hook-only.
+    // Station's descriptor (normalizeDescriptor in voxgig/station) reads
+    // `transport` beside `options` to validate the resolved feature order.
+    // The role is DECLARED in the feature model, never inferred - an empty
+    // `hook: {}` is wrong for station, which both wraps and dispatches
+    // hooks. Additive: a model unified without the schema's `transport`
+    // default simply omits the key, which station tolerates by degrading
+    // its role checks to nothing.
+    const fdef: any = { ...(f.config || {}) }
+    if (null != f.transport && '' !== f.transport) {
+      fdef.transport = String(f.transport)
+    }
+    featureDefs[f.name] = fdef
   })
 
   const options: any = { base: baseUrl }
@@ -326,7 +360,7 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
     options.server = svars.reduce((a: any, v: any) => (a[v.name] = v.dflt, a), {})
   }
   if (authActive) {
-    options.auth = { prefix: authPrefix }
+    options.auth = authBasic ? { prefix: authPrefix, basic: true } : { prefix: authPrefix }
   }
   options.headers = headers
   options.entity = entityStubs

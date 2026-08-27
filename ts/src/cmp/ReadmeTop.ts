@@ -7,6 +7,7 @@ import {
 } from '../types'
 
 import { requirePath } from '../utility'
+import { featureDocs } from './FeatureDocs'
 
 import {
   entityPrimaryOp, entityIdField, opRequestShape, entityPath, entityActions,
@@ -205,6 +206,20 @@ Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
         ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
         : surfaces[0]
       Content(`> ${surfaceList} — all generated from one OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+
+`)
+    }
+
+    // FEATURES BELONG BESIDE THE TARGETS. What an SDK can do is as much a
+    // reason to choose it as which language it is in, and a reader who has to
+    // scroll past every language section to discover that retries, caching and
+    // tracing are built in has already decided it is a thin HTTP wrapper.
+    // Named here, in one line, with the detail left to each target's README.
+    const features = featureDocs(model)
+    if (0 < features.length) {
+      Content(`> **Features:** ${features.map((f: any) => '`' + f.name + '`').join(', ')} — opt-in,
+> inactive until switched on, and configured per client. See the Features
+> section of any SDK README below for what each one does.
 
 `)
     }
@@ -560,6 +575,39 @@ forking the SDK.
 
     Content(`
 Pass custom features via the \`extend\` option at construction time.
+
+`)
+
+    // 11c. Customization — the generator's whole story for "the output is
+    // not quite right": model-driven declarations, in-repo templates and
+    // components, merge-aware regeneration, and packages for custom targets
+    // and features. Every SDK repo carries its own generator, so this
+    // belongs in every README.
+    Content(`## Customizing this SDK
+
+This repository contains its own generator (\`.sdk/\`), so the SDK is
+customizable without forking any upstream tool:
+
+- **The model** (\`.sdk/model/\`) declares everything this project owns:
+  package names, versions, active features, per-target settings. It is
+  written in [aontu](https://github.com/aontu-lang/aontu), a JSON-based
+  specification language designed for building ontologies: easy to edit
+  by hand, and files unify rather than override, so small declarations
+  compose into one model. Regeneration re-reads it every time.
+- **Templates** (\`.sdk/tm/\`) and **components** (\`.sdk/src/cmp/\`) are
+  the two layers of generation, copied into this repo: templates are the
+  literal per-language source, components generate the API-shaped parts.
+- **Regeneration merges.** By default, newly generated content is
+  three-way merged into existing files, so generator updates and local
+  edits usually converge without manual conflict handling. A project can
+  opt for plain overwrite instead.
+- **Custom features and entire custom targets** arrive through sdkgen
+  packages (\`voxgig-sdkgen package add\`), on the same rails as the
+  bundled languages, and \`voxgig-sdkgen doctor\` reports any drift from
+  what a resync would write.
+
+How-to: [customize and propagate templates](https://github.com/voxgig/sdkgen/blob/main/docs/how-to/customize-and-propagate-templates.md).
+The full story: [voxgig.com/sdk/custom](https://voxgig.com/sdk/custom).
 
 `)
 

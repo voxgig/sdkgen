@@ -65,19 +65,27 @@ package (other languages). Each target's guide documents its features.
 
 `);
         }
-        // Station paragraph (station design §9.4), only when the model
-        // carries the feature: an agent working on this repo should know
-        // the runtime story without leaving AGENTS.md.
+        // Station paragraph (station design §9.4; declarative design §11
+        // item 4), only when the model carries the feature: an agent working
+        // on this repo should know the runtime story without leaving
+        // AGENTS.md — and, first, that the application's integrations are
+        // DECLARED in station.json, so that file is where to look.
         if (features.some((f) => 'station' === f.name)) {
             (0, jostraca_1.Content)(`**Station**: this SDK is a
 [voxgig/station](https://github.com/voxgig/station) plugin (the
-\`station\` feature, off by default). Bound to an open \`Station\`,
-the credential is resolved by sekreto under the plugin's secret name
+\`station\` feature, off by default). An application's outbound
+integrations are **declared in \`station.json\`** at its repo root —
+to learn what the application talks to, read that file: every SDK
+instance (\`sdk\`), per-api default (\`api\`), feature setting, and
+egress policy is declared there, and never a credential value.
+\`station.sdk('<name>')\` builds a declared instance on first ask;
+\`station.instances()\` lists them. Bound to an open \`Station\`,
+the credential is resolved by sekreto under the instance's secret name
 and injected at the transport seam — \`options()\` and
 \`prepare()\` output hold only a placeholder, so both are safe to
 inspect and log. \`station.tap(...)\`/\`station.events()\` show live
-traffic; \`station.plugins()\` lists descriptors. See the "Use with
-Station" README section and \`src/feature/station/\` (or the
+traffic; \`station.plugins()\` lists live descriptors. See the "Use
+with Station" README section and \`src/feature/station/\` (or the
 target's feature container) for the generated adapter.
 
 `);

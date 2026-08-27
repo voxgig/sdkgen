@@ -15,6 +15,7 @@ import {
   indent,
   isAuthActive,
   isConfigData,
+  isHttpBasicAuth,
   resolveAuthPrefix,
   serverVariables,
 } from '@voxgig/sdkgen'
@@ -49,9 +50,11 @@ const Config = cmp(async function Config(props: any) {
   const authActive = isAuthActive(model)
   // config.auth.prefix override -> spec-derived info.security.prefix -> 'Bearer'
   const authPrefix = resolveAuthPrefix(model)
+  const authBasic = isHttpBasicAuth(model)
   const authBlock = authActive
     ? `auth: {
-      prefix: '${authPrefix}',
+      prefix: '${authPrefix}',${authBasic ? `
+      basic: true,` : ''}
     },
 
     `
@@ -142,8 +145,11 @@ const Config = cmp(async function Config(props: any) {
           Line(` ${f.name}: ${nom(f, 'Name')}Feature,`)
         }),
 
+        // Rendered from configDefinition's def, not from f.config, so the
+        // literal carries the feature's `transport` role (station design
+        // §8.4) beside its options and cannot drift from the data rep.
         '// #FeatureConfigs': () => each(feature, (f: any) => {
-          Line(` ${f.name}: ${formatJson(f.config, { margin: 4 })},`)
+          Line(` ${f.name}: ${formatJson(configDef.feature[f.name], { margin: 4 })},`)
         }),
 
 

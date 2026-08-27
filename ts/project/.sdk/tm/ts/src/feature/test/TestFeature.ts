@@ -30,8 +30,26 @@ function ownIdField(config: any, getpath: any, entityName: string): string {
       if (ptterm !== bestterm ? ptterm : pt.parts.length < best.parts.length) best = pt
     }
     const parts: string[] = (best && best.parts) || []
-    const last = [...parts].reverse().find((p: string) => p.startsWith('{'))
-    if (null != last) return last.slice(1, -1)
+    // THE LAST PART, not the last param anywhere in the path. A record route
+    // ENDS in its key: /orgs/{org}/private-registries/{secret_name} does,
+    // /orgs/{org}/private-registries/public-key does not. Reading the last
+    // param wherever it fell returned `{org}` for that second path — a PARENT
+    // reference — and the seeding walk then stamped the record's own key over
+    // org_id, destroying the ORG01 the fixture set and the test looks up from
+    // idmap. github's private_registry failed its update with a 404 that named
+    // nothing to do with orgs.
+    //
+    // A point that does not end in a param says nothing about this entity's
+    // key, so move on to the next op rather than guess from it.
+    const lastPart = 0 < parts.length ? String(parts[parts.length - 1]) : ''
+    if (lastPart.startsWith('{')) return lastPart.slice(1, -1)
+
+    // No path param at all (or the route ends in a literal, e.g.
+    // /orgs/{org}/private-registries/public-key): a single required QUERY
+    // param can still be the record's own key (e.g. GET /result?trace_id=).
+    const query = (best && best.args && best.args.query) || []
+    const reqdQuery = query.filter((q: any) => false !== q.reqd)
+    if (1 === reqdQuery.length) return String(reqdQuery[0].name)
   }
   return 'id'
 }
@@ -321,10 +339,17 @@ class TestFeature extends BaseFeature {
       }
     }
 
-    const reqd = transform(
+    // Path AND query: a path-only read misses a query-addressed record
+    // (e.g. GET /result?trace_id=), which has no path param at all.
+    const reqdParams = transform(
       select(getpath(point, ['args', 'params']), { reqd: true }),
       ['`$EACH`', '', '`$KEY.name`']
     )
+    const reqdQuery = transform(
+      select(getpath(point, ['args', 'query']), { reqd: true }),
+      ['`$EACH`', '', '`$KEY.name`']
+    )
+    const reqd = [...(reqdParams || []), ...(reqdQuery || [])]
 
     const qand: any[] = []
     const q = { '`$AND`': qand }

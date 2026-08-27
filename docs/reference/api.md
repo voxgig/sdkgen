@@ -170,6 +170,17 @@ type DepEntry = {
 }
 ```
 
+### `stationLibrary(model, targetName) → string | undefined`
+
+The station library package the generated main module soft-requires for
+self-registration with [voxgig/station](https://github.com/voxgig/station)
+(station design §6.2 path 1). Defined only when the model carries an
+**active** `station` feature (installed via
+`package add @voxgig/sdkgen-station`) that declares an **active** dep for
+`targetName` in its `deps.<target>` block — the same entry `collectDeps`
+flows into the generated manifest, so the manifest dependency and the
+emitted require cannot disagree. `undefined` means: emit no registration.
+
 ### `buildIdNames(entity, flow) → string[]`
 
 Build the placeholder id names a test populates into `setup.idmap`: the

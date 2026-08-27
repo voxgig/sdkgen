@@ -25,7 +25,7 @@ const FEATURE_TM = Path.join(SDK, 'tm', 'ts', 'src', 'feature')
 
 // The enterprise features added on top of the core log/test pair.
 const ENTERPRISE = [
-  'retry', 'timeout', 'ratelimit', 'cache', 'idempotency', 'paging',
+  'retry', 'timeout', 'ratelimit', 'cache', 'cost', 'idempotency', 'paging',
   'streaming', 'proxy', 'telemetry', 'metrics', 'debug', 'audit',
   'clienttrack', 'rbac', 'netsim',
 ]
@@ -75,8 +75,52 @@ describe('feature-model', () => {
       Path.resolve(SDK, 'src', 'cmp', 'ts', 'Config_ts.ts'), 'utf8')
     ok(/Feature,`/.test(cfg),
       '#FeatureClasses must emit a trailing comma per entry')
-    ok(/formatJson\(f\.config[^`]*\},`/.test(cfg),
-      '#FeatureConfigs must emit a trailing comma per entry')
+    ok(/formatJson\(configDef\.feature\[f\.name\][^`]*\},`/.test(cfg),
+      '#FeatureConfigs must emit a trailing comma per entry, rendered from ' +
+      'configDefinition\'s def (which carries the transport role)')
+  })
+
+  // Every shipped feature model declares its transport ROLE explicitly
+  // (station design §8.4, sdkgen tranche §11 item 6). `test` alone is
+  // 'base' - it REPLACES ctx.utility.fetcher - the transport wrappers are
+  // 'wrap', and the hook-only features are 'none'. The role is DECLARED,
+  // never inferred: the obvious signal, an empty `hook: {}`, is wrong for
+  // a feature that both wraps and dispatches hooks (station's own, in
+  // sdkgen-station, is exactly that). configDefinition carries the role
+  // into every generated SDK's embedded config, where station's
+  // descriptor reads it to validate the resolved feature order.
+  //
+  // The map is exhaustive on purpose: a NEW feature model fails here until
+  // its role is decided, rather than silently defaulting.
+  const TRANSPORT_ROLE: Record<string, string> = {
+    test: 'base',
+    cache: 'wrap', netsim: 'wrap', proxy: 'wrap', ratelimit: 'wrap',
+    retry: 'wrap', timeout: 'wrap',
+    // Both seams: wraps the transport to price each attempt AND dispatches
+    // hooks to gate on budget and attribute the spend. The first bundled
+    // feature to need both, which is why the role is declared, not inferred
+    // from an empty hook block.
+    cost: 'wrap',
+    audit: 'none', clienttrack: 'none', debug: 'none', idempotency: 'none',
+    log: 'none', metrics: 'none', paging: 'none', rbac: 'none',
+    streaming: 'none', telemetry: 'none',
+  }
+
+  test('every feature model declares its transport role', () => {
+    // Compiled WITHOUT the base schema (compileFeatureModel unifies only the
+    // feature index), so a passing role here is the model file's own explicit
+    // line, not the schema's *'none' default leaking in.
+    const { model } = compileFeatureModel()
+    const feature = model.main.kit.feature
+
+    deepStrictEqual(Object.keys(feature).sort(), Object.keys(TRANSPORT_ROLE).sort(),
+      'a feature was added or removed without deciding its transport role - ' +
+      'update TRANSPORT_ROLE in test/featuremodel.test.ts')
+
+    for (const [name, role] of Object.entries(TRANSPORT_ROLE)) {
+      strictEqual(feature[name].transport, role,
+        `feature ${name} must declare transport: '${role}'`)
+    }
   })
 
   test('feature-index.aon includes every model file', () => {

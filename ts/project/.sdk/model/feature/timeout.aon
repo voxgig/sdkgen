@@ -6,6 +6,7 @@ main: kit: feature: timeout: {
   version: '0.0.1'
   active: true
   base: 'BASE'
+  transport: 'wrap'
 
   config: {
     options: {

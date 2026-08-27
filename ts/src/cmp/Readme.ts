@@ -13,6 +13,7 @@ import { ReadmeEntity } from './ReadmeEntity'
 import { ReadmeUnions } from './ReadmeUnions'
 import { ReadmeHowto } from './ReadmeHowto'
 import { ReadmeExplanation } from './ReadmeExplanation'
+import { ReadmeFeatures } from './ReadmeFeatures'
 import { ReadmeRef } from './ReadmeRef'
 
 
@@ -31,6 +32,7 @@ const Readme = cmp(function Readme(props: any) {
     ReadmeModel({ target })
     ReadmeOptions({ target })
     ReadmeEntity({ target })
+    ReadmeFeatures({ target })
     ReadmeUnions({ target })
     ReadmeExplanation({ target })
 
