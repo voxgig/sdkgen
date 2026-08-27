@@ -193,6 +193,13 @@ class FeatureCorpusTest < Minitest::Test
   end
 
   def record(client, name)
+    # A corpus key is any manifest item name, so it may carry characters
+    # (foo-bar, foo.2) that cannot form a Ruby instance-variable name. The
+    # probe uses this lookup to SKIP such a section, so answer nil rather
+    # than letting instance_variable_get raise NameError for a feature this
+    # SDK could never have stored under that name anyway.
+    return nil unless name.match?(/\A[A-Za-z0-9_]+\z/)
+
     client.instance_variable_get(:"@_#{name}")
   end
 
