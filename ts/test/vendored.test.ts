@@ -46,8 +46,14 @@ const VENDOR_DIRS = [
 ]
 
 
+// Line endings are NORMALISED before hashing, exactly as
+// characterize.test.ts does for the golden manifest. The repo ships no
+// .gitattributes, so a Windows checkout can convert these files to CRLF —
+// and a hash over raw bytes would then fail on windows-latest alone, for a
+// file nobody touched.
 function sha256(path: string): string {
-  return createHash('sha256').update(readFileSync(path)).digest('hex')
+  const raw = readFileSync(path).toString('binary').replace(/\r\n/g, '\n')
+  return createHash('sha256').update(Buffer.from(raw, 'binary')).digest('hex')
 }
 
 
@@ -57,7 +63,10 @@ function sha256(path: string): string {
 //   // Source: <repo> @ <commit>
 //   // License: MIT ... Do not edit: resync from upstream.
 function provenance(path: string): any {
-  const head = readFileSync(path, 'utf8').split('\n').slice(0, 3)
+  // Same reason as sha256 above: a CRLF checkout would leave a trailing
+  // '\r' on every line, which the anchored patterns below would still
+  // match but the licence/resync checks would read oddly.
+  const head = readFileSync(path, 'utf8').split(/\r?\n/).slice(0, 3)
 
   const vendored = /^\/\/ VENDORED: @voxgig\/(\S+) (\S+) \((.+?)\)/.exec(head[0])
   const source = /^\/\/ Source: (\S+) @ ([0-9a-f]{40})/.exec(head[1] || '')
