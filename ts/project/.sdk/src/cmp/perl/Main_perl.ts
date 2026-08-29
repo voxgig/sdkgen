@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, names,
   File, Content, Copy, Folder, Fragment,
+  targetFeatures,
 } from '@voxgig/sdkgen'
 
 
@@ -36,7 +37,10 @@ const Main = cmp(async function Main(props: any) {
   const { model } = props.ctx$
 
   const entity: ModelEntity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = getModelPath(model, `main.${KIT}.feature`)
+  // Gated by the applicability tags, so this target never imports or
+  // registers a feature it has no source for. One rule, one place:
+  // helpers/applicability.
+  const feature = targetFeatures(model, target)
 
   Package({ target })
 

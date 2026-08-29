@@ -9,6 +9,7 @@ import {
   keywords,
   repoInfo, packageName,
   packageVersion,
+  targetFeatures,
 } from '@voxgig/sdkgen'
 
 
@@ -78,7 +79,9 @@ dependencies = {
     // factory falls back to. The station feature additionally carries the
     // VENDORED voxgig_station library beside its adapter (no voxgig-station
     // rock exists to depend on - station design 9.2's registry-less tier).
-    const feature = getModelPath(model, `main.${KIT}.feature`)
+    // Gated: a feature that does not apply to lua must not be listed
+    // as a rockspec module — the require would not resolve.
+    const feature = targetFeatures(model, target)
     let featureModules = `    ["feature.base_feature"] = "feature/base_feature.lua",\n`
     each(feature, (f: any) => {
       featureModules +=

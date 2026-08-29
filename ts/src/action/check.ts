@@ -32,6 +32,7 @@
 // is the first finding and the rest of the battery still runs, because an
 // author who has not written it yet is precisely who needs the rest.
 
+import { unknownTags, TAGS } from '../helpers/applicability'
 import Path from 'node:path'
 
 import { KIT } from '../types'
@@ -324,6 +325,23 @@ function checkDefinition(
   for (const err of unified.errors.slice(0, SAME_FILE_LIMIT)) {
     found.push(at('error', 'model-schema',
       err + '  (unified with the base schema — this is what a consumer compiles)'))
+  }
+
+  // 5b. APPLICABILITY TAGS come from a CLOSED vocabulary (see
+  //     helpers/applicability). `provides: &: boolean` accepts any key, so
+  //     without this a typo — `sekrreto` for `sekreto` — compiles cleanly
+  //     and silently makes the feature apply to NO target at all. That is
+  //     the worst shape a mistake can take here: the feature simply
+  //     vanishes from every generated SDK with no diagnostic anywhere.
+  const tagkey = 'feature' === kind ? 'needs' : 'provides'
+  const unknown = null == declared ? [] : unknownTags((declared as any)[tagkey])
+
+  if (0 < unknown.length) {
+    found.push(at('error', 'model-tag-unknown',
+      'declares unknown applicability tag(s) in `' + tagkey + '`: ' +
+      unknown.join(', ') + ' — the vocabulary is CLOSED (' + TAGS.join(', ') +
+      '), so an unrecognised tag makes this ' + kind +
+      ' match nothing rather than failing loudly'))
   }
 
   if ('target' === kind) {

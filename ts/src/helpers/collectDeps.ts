@@ -11,6 +11,8 @@
 // need extra fields like `dep.replace` (go module replace directives) or
 // `dep.kind` (prod/dev/peer).
 
+import { targetFeatures } from './applicability'
+
 import { each } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
@@ -30,7 +32,9 @@ function collectDeps(
   log?: any,
 ): DepEntry[] {
   const out: DepEntry[] = []
-  const feature = getModelPath(model, `main.${KIT}.feature`)
+  // Gated: a feature that does not apply to this target must not flow a
+  // dependency into its generated manifest.
+  const feature = targetFeatures(model, targetName)
 
   // Deduplicate by package name. Two features can require the same package
   // (or a feature and the target itself can), and every Package_<lang>.ts

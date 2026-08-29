@@ -3,6 +3,7 @@
 # Core
 @"test.aon"
 @"log.aon"
+@"secrets.aon"
 
 # Enterprise capabilities
 @"retry.aon"

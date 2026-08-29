@@ -13,11 +13,13 @@
 // `dep.kind` (prod/dev/peer).
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.collectDeps = collectDeps;
+const applicability_1 = require("./applicability");
 const jostraca_1 = require("jostraca");
-const apidef_1 = require("@voxgig/apidef");
 function collectDeps(model, targetName, targetDeps, log) {
     const out = [];
-    const feature = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature`);
+    // Gated: a feature that does not apply to this target must not flow a
+    // dependency into its generated manifest.
+    const feature = (0, applicability_1.targetFeatures)(model, targetName);
     // Deduplicate by package name. Two features can require the same package
     // (or a feature and the target itself can), and every Package_<lang>.ts
     // renders one manifest line per entry — a duplicate key is a hard parse

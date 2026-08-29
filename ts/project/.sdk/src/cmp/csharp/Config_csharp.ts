@@ -7,6 +7,7 @@ import {
   configReprSetting,
   each,
   isConfigData,
+  targetFeatures,
 } from '@voxgig/sdkgen'
 
 
@@ -33,7 +34,10 @@ const Config = cmp(async function Config(props: any) {
 
   const model: Model = ctx$.model
 
-  const feature = getModelPath(model, `main.${KIT}.feature`)
+  // Gated by the applicability tags, so this target never imports or
+  // registers a feature it has no source for. One rule, one place:
+  // helpers/applicability.
+  const feature = targetFeatures(model, target)
 
   // The same config as an OBJECT, built by the shared helper so this target's
   // literal and the data that replaces it above the threshold are the same

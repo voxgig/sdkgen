@@ -27,7 +27,7 @@ const ReadmeFeatures = cmp(function ReadmeFeatures(props: any) {
     return
   }
 
-  const features: FeatureDoc[] = featureDocs(model)
+  const features: FeatureDoc[] = featureDocs(model, target)
 
   if (0 === features.length) {
     return

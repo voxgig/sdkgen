@@ -438,3 +438,106 @@ consumers through regeneration rather than an npm install.
 - **sekreto in browsers** stays broken until the upstream split lands;
   until then the secrets feature is Node-only, which the feature tag
   should say.
+
+---
+
+## Implementation notes: what the ts pass actually found
+
+Phases 1–4 are landed for **ts only**, with the applicability gate as its
+own change ahead of Phase 3. Validated by regenerating solardemo from a
+local checkout and running its suite: **209 tests, 208 pass, 0 fail** with
+the feature active; **197/196/0** with it inactive; sdkgen's own suite
+**1039/1037/0** (from 1025/1023). The full 1179-entry struct corpus runs
+through vendored omni as 83 sections, all green.
+
+Nine things the plan did not predict. Most were invisible to sdkgen's own
+suite and only appeared against a real project.
+
+**1. The struct null risk is real, and it bit.** The register called this
+the one change that can alter live behaviour with nothing going red.
+Isolated, on the exact shape `makeOptions` uses:
+
+| | `validate({auth: null}, {auth: {prefix: ''}})` | `getprop({a: null}, 'a', 'ALT')` |
+|---|---|---|
+| 0.0.10 | throws `Expected field auth to be map` | `null` |
+| 0.3.2 | returns `{auth: {prefix: ''}}` | `'ALT'` |
+
+So `auth: null` — the documented way to disable auth — silently becomes
+the DEFAULT auth config instead of erroring. The shared corpus is blind to
+it by construction (nulls travel as `'__NULL__'` strings); what caught it
+was a hand-written project test. The generated secrets suite now pins the
+new semantics explicitly.
+
+**2. Applicability tags must be MAPS, not lists.** `needs: *[] | [&: string]`
+under `main: kit: feature: &:` HANGS aontu outright on a real model — no
+output, no error. The same shape under `target: &:` is fine, which is what
+made it bisectable, and `feature.fullset` already uses it. sdkgen's own
+fixtures are too small to reach it. Both keys are maps keyed by tag, the
+shape the schema already recommends for `contributor`.
+
+**3. A feature catalogue entry must not set `active`.** In aontu a concrete
+value does not yield to another concrete value — it conflicts. A shipped
+`active: false` makes a project's `active: true` fail to unify, naming two
+files and offering no way to reconcile them. Leave the key unset and let
+the schema default it. This is the defect `model/target/ts.aon` already
+warns about for publication keys.
+
+**4. Activation belongs in the project overlay.** `target add` re-runs
+`feature add` for every selected feature, and add is overwrite — so an
+activation written into `model/feature/<name>.aon` silently reverts on the
+next target resync. It goes in `model/project.aon`.
+
+**5. Deleting a template does not delete generated output.** jostraca
+writes; it never removes. `test/runner.ts` survived Phase 2 in the consumer
+and had to be deleted by hand, and DEACTIVATING a feature leaves its
+generated source and tests behind — where the orphaned tests then fail (11
+of them), because the SDK no longer has the feature. "Generates
+byte-identically when inactive" holds for a project that never switched it
+on; deselecting needs an explicit delete of `src/feature/<name>/` and
+`test/feature/<name>/`. Worth a `doctor` check.
+
+**6. The gate makes every consumer resync every target.** `Config_<lang>`
+and `Main_<lang>` are PROJECT-OWNED copies under `.sdk/src/cmp/`. Until a
+consumer re-runs `target add` for each language, its stale ungated
+components still emit the feature — which is a hard crash, not a warning
+(`formatJson` on an undefined config). This is a migration cost the guide
+should state: one `target add` per target, not just per changed target.
+
+**7. `loadEnvLocal` cannot use sekreto's `parsedotenv`.** The guide asks for
+both "sekreto lives inside the feature container so the trim removes it"
+and "the entity tests need the loader whether or not secrets is active".
+Those are incompatible: the loader would import a module that is trimmed
+away. Resolved with a small independent parser in the test support module;
+the coupling is the thing worth avoiding, not the duplication.
+
+**8. `secrets()` returns the Sekreto instance, not the feature.** Callers
+use `getfrom`/`get`/`redact`, which are sekreto's. The feature gained a
+public `sekreto()` accessor rather than the prototype's reach into a
+private field.
+
+**9. The docs components and `collectDeps` needed gating too.** The guide
+names Feature and the Config components; AgentGuide was also writing
+`AGENTS.md`/`CLAUDE.md` for `secrets` into the js target — documenting a
+feature that target has no implementation for — and `collectDeps` would
+flow a non-applicable feature's dependency into a target's manifest.
+
+### Still outstanding
+
+- **Phase 0 upstream filings.** The three omni patches are captured as
+  marked `PATCH` blocks and pinned by a guard test, but the upstream
+  issues/PRs (omni's three bugs plus the compat shim, struct's go-port
+  drift, sekreto's browser-safety split) are not filed.
+- **Corpus entries pinning the null semantics**, which belong in the
+  corpus create-sdkgen owns, plus upstream 0.3.2's new sections.
+- **sekreto's `checkaddr` rejects IPv6 loopback.** `http://[::1]:8200`
+  parses to host `'['`, so the `'::1'` and `'[::1]'` entries in its own
+  allowlist are unreachable and a legitimate local vault is refused. Found
+  by review on this PR; vendored verbatim, so it goes on the same sekreto
+  issue as the browser-safety split rather than being patched here.
+- **`jsonstr`'s cycle guard has a DAG false positive**: `seen` is added to
+  but never removed, so the same object appearing twice as siblings prints
+  `[Circular]`. Only affects failure-message rendering. Fix it when
+  upstreaming rather than diverging further here.
+- The other 21 language targets, which the rollout lists in
+  `parity.test.ts` (`OMNI_RUNNER`, `SECRETS`) and `featuremodel.test.ts`
+  (`GATED`) now gate explicitly rather than silently.

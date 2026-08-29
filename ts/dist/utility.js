@@ -18,6 +18,7 @@ exports.rawStringLiteral = rawStringLiteral;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
+const applicability_1 = require("./helpers/applicability");
 const serverVars_1 = require("./helpers/serverVars");
 const packageMeta_1 = require("./helpers/packageMeta");
 // Where a per-target component is loaded from: `<project>/.sdk/dist/<path>`.
@@ -275,7 +276,12 @@ function rawStringLiteral(s) {
 // across runs exactly like the literal it replaces.
 function configDefinition(model, targetname) {
     const entity = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.entity`);
-    const feature = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature`);
+    // Gated by the target when one is named, so the embedded config cannot
+    // advertise a feature this target has no implementation for — the exact
+    // hybrid state the applicability gate exists to prevent. With no
+    // targetname (a caller that cannot say which target it is building) the
+    // helper returns every active feature, i.e. the old behaviour.
+    const feature = (0, applicability_1.targetFeatures)(model, targetname);
     const headers = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.headers`) || {};
     const authActive = isAuthActive(model);
     const authPrefix = resolveAuthPrefix(model);

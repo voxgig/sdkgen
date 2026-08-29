@@ -1,4 +1,4 @@
-// VERSION: @voxgig/struct 0.0.10
+// VERSION: @voxgig/struct 0.3.2 (vendored via omni compat; see ../omni.ts)
 // RUN: npm test
 // RUN-SOME: npm run test-some --pattern=getpath
 
@@ -9,7 +9,7 @@ import {
   makeRunner,
   nullModifier,
   NULLMARK,
-} from '../runner'
+} from '../omni'
 
 
 import {

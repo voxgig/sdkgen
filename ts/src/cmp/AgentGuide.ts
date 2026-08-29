@@ -31,7 +31,7 @@ const AgentGuide = cmp(function AgentGuide(props: any) {
   const title = target.title || lang
   const surface = langCmd(lang).note
 
-  const features = activeFeatures(model)
+  const features = activeFeatures(model, target)
   // go-cli/go-mcp disable the feature phase; ts/js lay features out as
   // per-feature directories, the other SDK targets as flat files.
   const featuresOn = featuresEnabled(target)

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeExplanation = void 0;
+const applicability_1 = require("../helpers/applicability");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
@@ -184,7 +185,8 @@ for debugging or custom transport.
 const ReadmeExplanation = (0, jostraca_1.cmp)(function ReadmeExplanation(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
-    const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`);
+    // Gated: this section describes a TARGET's features.
+    const feature = (0, applicability_1.targetFeatures)(model, target);
     const lang = LANGS[target.name] || DEFAULT_LANG;
     // Pick a real example entity WITH a real op (prefer a read op) so the
     // entity-state example never references a phantom entity or fabricates a

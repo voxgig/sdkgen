@@ -17,7 +17,7 @@ const FeatureDocs_1 = require("./FeatureDocs");
 const ReadmeRefFeatures = (0, jostraca_1.cmp)(function ReadmeRefFeatures(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
-    const features = (0, FeatureDocs_1.featureDocs)(model);
+    const features = (0, FeatureDocs_1.featureDocs)(model, target);
     if (0 === features.length) {
         return;
     }

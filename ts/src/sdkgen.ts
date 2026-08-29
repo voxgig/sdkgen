@@ -22,6 +22,7 @@ import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, isHttpBasicA
   configReprSetting, configDefinition, clean, rawStringLiteral } from './utility'
 
 import { Main } from './cmp/Main'
+import { featureApplies, targetFeatures, featureTags, unknownTags, TAGS } from './helpers/applicability'
 import { ExternalTarget } from './cmp/ExternalTarget'
 import { Docs, DocsItem } from './cmp/Docs'
 import { ExternalDocs } from './cmp/ExternalDocs'
@@ -1166,6 +1167,12 @@ export {
   fullsetExcludes,
   srcFeatureExcludes,
   stationLibrary,
+
+  featureApplies,
+  targetFeatures,
+  featureTags,
+  unknownTags,
+  TAGS,
 
   definitionPath,
   definitionFolder,

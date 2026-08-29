@@ -48,6 +48,7 @@
       "ratelimit",
       "rbac",
       "retry",
+      "secrets",
       "streaming",
       "telemetry",
       "test",

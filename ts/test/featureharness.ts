@@ -79,6 +79,20 @@ function loadFeature(name: string): any {
     '../base/BaseFeature': { BaseFeature: Base },
     '../../types': {},
     '../../ProjectNameSDK': {},
+
+    // The vendored sekreto barrel, which the secrets feature imports from
+    // its own container. It is TypeScript that this sandbox would have to
+    // transpile along with the whole vendored tree; the structural checks
+    // here only CONSTRUCT the class and read its hooks, so stubbing the two
+    // symbols the template names is enough. A test that exercised
+    // resolution would load the real thing instead.
+    './sekreto': {
+      Sekreto: class {
+        constructor(_options?: any) { }
+        async try(_name: string): Promise<any> { return undefined }
+      },
+      envkey: (name: string) => String(name).toUpperCase(),
+    },
   })
   return exp[cap(name) + 'Feature']
 }

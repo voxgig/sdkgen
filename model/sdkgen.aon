@@ -172,6 +172,27 @@ main: kit: target: &: {
   ext: string
   comment: line: string
 
+  # APPLICABILITY (docs/design/feature-tags.md). What this target can offer
+  # a feature; a feature applies here when its `needs` is a subset of this.
+  # Empty is the default, so a target says nothing until it has a reason to.
+  #
+  # THE VOCABULARY IS CLOSED — extended by editing this comment and the
+  # schema, never by a package inventing a string. Two authors spelling the
+  # same capability differently is the whole failure mode a free-form tag
+  # would reintroduce.
+  #
+  #   sekreto   a vendored sekreto port lives in this target's feature
+  #             container, so a feature can resolve secrets through it
+  #
+  # Tags named in the design note but not yet load-bearing
+  # (`per-feature-file`, `deps`, `transport-wrap`, `hooks`, `delegates`)
+  # are deliberately absent until a feature actually gates on one: a tag
+  # whose answer is currently "everyone" buys nothing and has to be kept
+  # true across 27 targets.
+  #
+  # A map keyed by tag, matching `needs` — see the note there.
+  provides: &: boolean
+
   base:     *'' | string
   origname: *'' | string
   package:  *'' | string
@@ -419,6 +440,24 @@ main: kit: feature: &: {
 
   # TODO: version '0.0.1' | semver # where semver is a string format type as per semver.org
   version: *'0.0.1' | string
+
+  # APPLICABILITY (docs/design/feature-tags.md). What this feature requires
+  # of a target; it applies where `needs` is a subset of the target's
+  # `provides`. Empty means "applies anywhere", so every feature that
+  # predates the gate is unaffected — the gate is additive by construction.
+  #
+  # A tag, not a target list: a list has to be edited for targets the
+  # feature's author has never heard of, so a published package would
+  # starve every target added after its release.
+  #
+  # The vocabulary is closed and lives in `main: kit: target: &: provides`.
+  #
+  # A MAP keyed by tag, not a list, for the reason `contributor` is a map:
+  # aontu unifies maps by key, so a package can add one tag without
+  # restating the others. A list here also hangs the unifier outright on a
+  # real project's model (a defaulted list disjunction under this spread),
+  # which is what settled the shape.
+  needs: &: boolean
 
   # Transport role (station design §8.4): how the feature relates to the
   # transport slot. 'base' REPLACES ctx.utility.fetcher outright (only the

@@ -5,6 +5,7 @@ import {
   cmp, each,
   File, Content, Copy, Folder, Fragment,
   entityClassName,
+  targetFeatures,
 } from '@voxgig/sdkgen'
 
 
@@ -35,7 +36,10 @@ const Main = cmp(async function Main(props: any) {
   const { model } = props.ctx$
 
   const entity: ModelEntity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = getModelPath(model, `main.${KIT}.feature`)
+  // Gated by the applicability tags, so this target never imports or
+  // registers a feature it has no source for. One rule, one place:
+  // helpers/applicability.
+  const feature = targetFeatures(model, target)
 
   // The rust crate identifier (RUSTCRATE placeholder), e.g. solar_sdk —
   // used in every `use <crate>::...` path in the test templates.

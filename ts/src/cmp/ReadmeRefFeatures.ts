@@ -19,7 +19,7 @@ const ReadmeRefFeatures = cmp(function ReadmeRefFeatures(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  const features: FeatureDoc[] = featureDocs(model)
+  const features: FeatureDoc[] = featureDocs(model, target)
 
   if (0 === features.length) {
     return
