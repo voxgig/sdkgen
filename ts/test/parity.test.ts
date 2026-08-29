@@ -1172,3 +1172,123 @@ describe('config representation is chosen by size', () => {
     })
   }
 })
+
+
+// Vendored-library rollout parity (migration guide Phases 2 and 3).
+//
+// Both rollouts are PER-LANGUAGE, so for a while some targets have migrated
+// and some have not. The failure worth catching is the half-migrated one:
+// a resolver with no vendored tree behind it, a feature class with no
+// vendored library, or the superseded runner left in place as a second,
+// stale copy of the same thing. Each is individually plausible and none of
+// them shows up as a missing file at the language's own build.
+//
+// The lists are DECLARED and then checked in both directions, the pattern
+// the tier manifest above already uses: a target that is migrated but not
+// listed fails just as loudly as a listed one that is incomplete.
+
+// Targets running the vendored omni corpus runner instead of the
+// hand-vendored per-target one.
+const OMNI_RUNNER: Record<string, {
+  resolver: string,
+  vendor: string,
+  vendorfiles: string[],
+  smoke: string,
+  superseded: string,
+}> = {
+  ts: {
+    resolver: 'ts/test/omni.ts',
+    vendor: 'ts/test/vendor/omni',
+    vendorfiles: ['Runner.ts', 'Util.ts', 'compat.ts', 'index.ts'],
+    smoke: 'ts/test/omni.test.ts',
+    superseded: 'ts/test/runner.ts',
+  },
+}
+
+
+// Targets shipping the secrets feature, which is a thin layer over a
+// vendored sekreto port and is worthless without it.
+const SECRETS: Record<string, {
+  feature: string,
+  vendor: string,
+  vendorfiles: string[],
+  tests: string,
+}> = {
+  ts: {
+    feature: 'ts/src/feature/secrets/SecretsFeature.ts',
+    vendor: 'ts/src/feature/secrets/sekreto',
+    vendorfiles: ['Providers.ts', 'Sekreto.ts', 'Sigv4.ts', 'index.ts'],
+    tests: 'ts/test/feature/secrets',
+  },
+}
+
+
+describe('vendored-library rollout parity', () => {
+
+  test('every target on the omni runner carries the whole runner', () => {
+    for (const [target, spec] of Object.entries(OMNI_RUNNER)) {
+      ok(existsSync(Path.join(TM, spec.resolver)),
+        target + ': missing the omni resolver ' + spec.resolver)
+
+      for (const f of spec.vendorfiles) {
+        ok(existsSync(Path.join(TM, spec.vendor, f)),
+          target + ': missing vendored omni file ' + spec.vendor + '/' + f)
+      }
+
+      // Without this the generated suite can go vacuously green: a broken
+      // runner that reports nothing looks exactly like a passing one.
+      ok(existsSync(Path.join(TM, spec.smoke)),
+        target + ': missing the runner-must-fail smoke test ' + spec.smoke)
+
+      ok(!existsSync(Path.join(TM, spec.superseded)),
+        target + ': the superseded runner ' + spec.superseded + ' is still ' +
+        'present alongside vendored omni — two copies of the same runner, ' +
+        'one of them stale')
+    }
+  })
+
+
+  test('no target is half-migrated to omni without being listed', () => {
+    const unlisted = sdkTargets()
+      .filter((t) => null == OMNI_RUNNER[t])
+      .filter((t) => existsSync(Path.join(TM, t, 'test', 'vendor', 'omni')))
+
+    deepStrictEqual(unlisted, [],
+      'these targets have a vendored omni tree but are not in OMNI_RUNNER — ' +
+      'add them so the rest of the runner is checked too')
+  })
+
+
+  test('every target shipping secrets ships the vendored sekreto with it', () => {
+    for (const [target, spec] of Object.entries(SECRETS)) {
+      ok(existsSync(Path.join(TM, spec.feature)),
+        target + ': missing ' + spec.feature)
+
+      for (const f of spec.vendorfiles) {
+        ok(existsSync(Path.join(TM, spec.vendor, f)),
+          target + ': missing vendored sekreto file ' + spec.vendor + '/' + f)
+      }
+
+      // In the feature container, so the trim removes it with the feature.
+      ok(existsSync(Path.join(TM, spec.tests)),
+        target + ': missing the trimmable feature tests ' + spec.tests)
+    }
+  })
+
+
+  test('no target ships secrets source without being listed', () => {
+    const unlisted = sdkTargets()
+      .filter((t) => null == SECRETS[t])
+      .filter((t) => {
+        const dir = Path.join(TM, t, 'src', 'feature', 'secrets')
+        if (!existsSync(dir)) return false
+        // A bare copy-target dir (.gitkeep only) is what `feature add`
+        // needs and is not an implementation.
+        return readdirSync(dir).some((f) => !f.startsWith('.'))
+      })
+
+    deepStrictEqual(unlisted, [],
+      'these targets carry secrets source but are not in SECRETS — add them ' +
+      'so the vendored library and the tests are checked too')
+  })
+})

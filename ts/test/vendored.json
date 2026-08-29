@@ -1,0 +1,62 @@
+{
+  "library": {
+    "omni": {
+      "commit": "bc9535d655564c0833f6eff003b0b13dad8b350f",
+      "file": {
+        "tm/ts/test/vendor/omni/Runner.ts": {
+          "sha256": "a133321fb47c28df36b79729524ee1796fae70905cf2458a5d2f6557f96e6c7d",
+          "upstream": "typescript/src/Runner.ts"
+        },
+        "tm/ts/test/vendor/omni/Util.ts": {
+          "sha256": "0479ec199aa362bad665a7cc139f83e798ce79e8bca50185c972cd6e9fff0851",
+          "upstream": "typescript/src/Util.ts"
+        },
+        "tm/ts/test/vendor/omni/compat.ts": {
+          "sha256": "a78e2d8a95b395638a22533c46b0eb72da13ae7201223cf55092f6cbf57e2b26",
+          "upstream": "typescript/compat/struct.ts"
+        },
+        "tm/ts/test/vendor/omni/index.ts": {
+          "sha256": "a719a2509d669d7c6c2bbf3810df0c214e0beac173852ad3ab071262182da1f6",
+          "upstream": "typescript/src/index.ts"
+        }
+      },
+      "repo": "https://github.com/voxgig/omni",
+      "version": "0.1.2"
+    },
+    "sekreto": {
+      "commit": "a8c293be1b6c33d65223b2b2275797c241b1a1f1",
+      "file": {
+        "tm/ts/src/feature/secrets/sekreto/Providers.ts": {
+          "sha256": "b5b30111f4c20fd806dc9a6425228cc5dbb62c6b9a2af63a6cc75500a3ce4c36",
+          "upstream": "typescript/src/Providers.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/Sekreto.ts": {
+          "sha256": "c743866fdaab034e421a291442dfbc8c0c973fe357685a1a154fa0de2cedcdc8",
+          "upstream": "typescript/src/Sekreto.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/Sigv4.ts": {
+          "sha256": "504d8856a4eae071c6e0f5a059610e9cb775a3123b44afc5929b2055c1b52aa6",
+          "upstream": "typescript/src/Sigv4.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/index.ts": {
+          "sha256": "6c2143cbeca4d74a6f3eec1c2311c223f6769c42e0c953cf28307ef65b1241e2",
+          "upstream": "typescript/src/index.ts"
+        }
+      },
+      "repo": "https://github.com/voxgig/sekreto",
+      "version": "0.1.2"
+    },
+    "struct": {
+      "commit": "94409354d0a60fda8098c83e290583b7dee76c84",
+      "file": {
+        "tm/ts/src/utility/StructUtility.ts": {
+          "sha256": "35739a9975088bc555b2c24ca5e490f323b9ff3364ef635a6131256dfb16cc44",
+          "upstream": "typescript/src/StructUtility.ts"
+        }
+      },
+      "repo": "https://github.com/voxgig/struct",
+      "version": "0.3.2"
+    }
+  },
+  "note": "Generated data, hand-maintained on resync. See test/vendored.test.ts."
+}
