@@ -1958,7 +1958,7 @@ model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/target-index.aon 6d6ce1a6c7d8
-model/target/ts.aon af962950b950
+model/target/ts.aon c5143af866de
 src/cmp/ts/Config_ts.ts 9bfcb0b78b77
 src/cmp/ts/EntityBase_ts.ts 901c1c6f2730
 src/cmp/ts/EntityOperation_ts.ts 8e35c5f506d0
@@ -1966,7 +1966,7 @@ src/cmp/ts/EntityTypes_ts.ts 7114b6e9f274
 src/cmp/ts/Entity_ts.ts 616f4613ee7a
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
-src/cmp/ts/Main_ts.ts 530ffba22a28
+src/cmp/ts/Main_ts.ts 6d054d9b9bb8
 src/cmp/ts/Package_ts.ts 8db9ddb35912
 src/cmp/ts/ReadmeEntity_ts.ts a8d946b1b786
 src/cmp/ts/ReadmeExampleTest_ts.ts 271424a8ec78

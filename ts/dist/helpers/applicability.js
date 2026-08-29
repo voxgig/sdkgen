@@ -23,11 +23,25 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.featureApplies = featureApplies;
 exports.targetFeatures = targetFeatures;
+exports.featureTags = tags;
 const apidef_1 = require("@voxgig/apidef");
-// Model list fields arrive as real arrays (see `feature.fullset` in
-// action/target.ts); anything else is treated as "declared nothing".
+// Tags are a MAP keyed by tag name, `{ sekreto: true }` — see the schema
+// note on `needs`. A map because aontu unifies maps by key, so a package
+// can add one tag without restating the others; and because a defaulted
+// list disjunction in this position hangs the unifier on a real project's
+// model. A tag counts only when its value is true, so a tag can be turned
+// off by overriding it rather than by deleting the key.
+//
+// A list is still accepted, for a hand-written model that used the shape
+// docs/design/feature-tags.md first proposed.
 function tags(val) {
-    return Array.isArray(val) ? val.filter((t) => 'string' === typeof t) : [];
+    if (Array.isArray(val)) {
+        return val.filter((t) => 'string' === typeof t);
+    }
+    if (null == val || 'object' !== typeof val) {
+        return [];
+    }
+    return Object.keys(val).filter((name) => true === val[name]);
 }
 // Does this feature apply to this target?
 function featureApplies(feature, target) {

@@ -189,7 +189,9 @@ main: kit: target: &: {
   # are deliberately absent until a feature actually gates on one: a tag
   # whose answer is currently "everyone" buys nothing and has to be kept
   # true across 27 targets.
-  provides: *[] | [string]
+  #
+  # A map keyed by tag, matching `needs` — see the note there.
+  provides: &: boolean
 
   base:     *'' | string
   origname: *'' | string
@@ -449,7 +451,13 @@ main: kit: feature: &: {
   # starve every target added after its release.
   #
   # The vocabulary is closed and lives in `main: kit: target: &: provides`.
-  needs: *[] | [string]
+  #
+  # A MAP keyed by tag, not a list, for the reason `contributor` is a map:
+  # aontu unifies maps by key, so a package can add one tag without
+  # restating the others. A list here also hangs the unifier outright on a
+  # real project's model (a defaulted list disjunction under this spread),
+  # which is what settled the shape.
+  needs: &: boolean
 
   # Transport role (station design §8.4): how the feature relates to the
   # transport slot. 'base' REPLACES ctx.utility.fetcher outright (only the

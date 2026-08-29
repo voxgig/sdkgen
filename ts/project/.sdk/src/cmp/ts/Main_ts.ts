@@ -102,7 +102,7 @@ const Main = cmp(async function Main(props: any) {
             '// #SecretsAccessor': ({ indent }: any) => secrets ?
               Content({ indent }, `
 secrets() {
-  return this._secrets
+  return this._secrets && this._secrets.sekreto()
 }
 `) : undefined,
 

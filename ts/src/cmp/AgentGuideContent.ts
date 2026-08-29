@@ -9,6 +9,8 @@
 // `.sdk/model/...`) — NOT the `project/.sdk/...` form used by the sdkgen repo's
 // own developer docs.
 
+import { featureApplies } from '../helpers/applicability'
+
 import { each } from 'jostraca'
 
 import {
@@ -114,9 +116,14 @@ function activeTargets(model: any): any[] {
   return each(target).filter((t: any) => t && t.active !== false)
 }
 
-function activeFeatures(model: any): any[] {
+// With a target, also drops features that do not APPLY to it — a guide
+// must not document a feature the target has no implementation for.
+// Without one (the repo-level guide) every active feature is listed.
+function activeFeatures(model: any, target?: any): any[] {
   const feature = getModelPath(model, `main.${KIT}.feature`) || {}
-  return each(feature).filter((f: any) => f && f.active !== false)
+  return each(feature)
+    .filter((f: any) => f && f.active !== false)
+    .filter((f: any) => null == target || featureApplies(f, target))
 }
 
 function activeEntities(model: any): any[] {

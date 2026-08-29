@@ -76,6 +76,20 @@ class SecretsFeature extends BaseFeature {
   }
 
 
+  // The LIVE Sekreto instance, for the SDK's secrets() accessor and for
+  // callers who want arbitrary secrets or redaction:
+  //
+  //   await sdk.secrets().get('db.password')
+  //   sdk.secrets().redact(logline)
+  //
+  // Public, so the accessor does not have to reach into a private field.
+  // Never a clone: sekreto holds provider state (caches, vault leases)
+  // that has to stay live to be worth anything.
+  sekreto(): any {
+    return this._sekreto
+  }
+
+
   PreSpec(_ctx: Context) {
     return this.resolve()
   }

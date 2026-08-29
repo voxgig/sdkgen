@@ -27,6 +27,7 @@ exports.featureSection = featureSection;
 exports.customiseSection = customiseSection;
 exports.aontuSection = aontuSection;
 exports.claudePointer = claudePointer;
+const applicability_1 = require("../helpers/applicability");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const LANG_CMD = {
@@ -109,9 +110,14 @@ function activeTargets(model) {
     const target = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`) || {};
     return (0, jostraca_1.each)(target).filter((t) => t && t.active !== false);
 }
-function activeFeatures(model) {
+// With a target, also drops features that do not APPLY to it — a guide
+// must not document a feature the target has no implementation for.
+// Without one (the repo-level guide) every active feature is listed.
+function activeFeatures(model, target) {
     const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`) || {};
-    return (0, jostraca_1.each)(feature).filter((f) => f && f.active !== false);
+    return (0, jostraca_1.each)(feature)
+        .filter((f) => f && f.active !== false)
+        .filter((f) => null == target || (0, applicability_1.featureApplies)(f, target));
 }
 function activeEntities(model) {
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`) || {};

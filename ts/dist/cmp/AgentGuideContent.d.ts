@@ -14,7 +14,7 @@ declare function featureBase(target: any): string;
 declare function featureRuntimeFile(target: any, feature: any): string;
 declare function featureHooks(feature: any): string[];
 declare function activeTargets(model: any): any[];
-declare function activeFeatures(model: any): any[];
+declare function activeFeatures(model: any, target?: any): any[];
 declare function activeEntities(model: any): any[];
 declare function projectName(model: any): string;
 declare function workflowSection(): string;

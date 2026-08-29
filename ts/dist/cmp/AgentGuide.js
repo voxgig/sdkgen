@@ -16,7 +16,7 @@ const AgentGuide = (0, jostraca_1.cmp)(function AgentGuide(props) {
     const lang = target.name;
     const title = target.title || lang;
     const surface = (0, AgentGuideContent_1.langCmd)(lang).note;
-    const features = (0, AgentGuideContent_1.activeFeatures)(model);
+    const features = (0, AgentGuideContent_1.activeFeatures)(model, target);
     // go-cli/go-mcp disable the feature phase; ts/js lay features out as
     // per-feature directories, the other SDK targets as flat files.
     const featuresOn = (0, AgentGuideContent_1.featuresEnabled)(target);
