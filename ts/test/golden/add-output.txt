@@ -7,7 +7,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/c.aon 1a783bba9eba
 model/target/target-index.aon a1ddf98d9368
-src/cmp/c/Config_c.ts 75150fcb616e
+src/cmp/c/Config_c.ts 42702749057b
 src/cmp/c/EntityBase_c.ts 70f610b1220f
 src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
 src/cmp/c/EntityTypes_c.ts d0c20304f410
@@ -189,7 +189,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/cpp.aon a0f4980cfdeb
 model/target/target-index.aon c6799adcc977
-src/cmp/cpp/Config_cpp.ts 73afdc68f659
+src/cmp/cpp/Config_cpp.ts 5b0c92f98e6a
 src/cmp/cpp/EntityBase_cpp.ts 8218701f0ef9
 src/cmp/cpp/EntityOperation_cpp.ts 805c7dfa4fdf
 src/cmp/cpp/EntityTypes_cpp.ts 690fbf7bb9f7
@@ -257,7 +257,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/csharp.aon b3b583edd1b3
 model/target/target-index.aon 3ca4bfd57589
-src/cmp/csharp/Config_csharp.ts 63b977fa0abe
+src/cmp/csharp/Config_csharp.ts af672ce1708b
 src/cmp/csharp/EntityBase_csharp.ts 89ab732c9c91
 src/cmp/csharp/EntityOperation_csharp.ts 47a53f1c1e7d
 src/cmp/csharp/EntityTypes_csharp.ts 1ee64f94df14
@@ -362,7 +362,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/dart.aon 2faa4432cb82
 model/target/target-index.aon 4125cafa4969
-src/cmp/dart/Config_dart.ts 237717e19e6d
+src/cmp/dart/Config_dart.ts b72a6ed4f236
 src/cmp/dart/EntityBase_dart.ts a08877768561
 src/cmp/dart/EntityOperation_dart.ts 943876175932
 src/cmp/dart/EntityTypes_dart.ts 73e3ad824eaf
@@ -471,13 +471,13 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/elixir.aon 878deb7c36ea
 model/target/target-index.aon c9b09d715b14
-src/cmp/elixir/Config_elixir.ts f882f95c2f5b
+src/cmp/elixir/Config_elixir.ts 5f739fec1666
 src/cmp/elixir/EntityOperation_elixir.ts 69ddad39f404
 src/cmp/elixir/EntityTypes_elixir.ts b30edbe49d6b
 src/cmp/elixir/Entity_elixir.ts c30a8cfd1fee
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
 src/cmp/elixir/MainEntity_elixir.ts 8f2d02c0bb9f
-src/cmp/elixir/Main_elixir.ts 573cbf846104
+src/cmp/elixir/Main_elixir.ts b862ebb13157
 src/cmp/elixir/Package_elixir.ts c1ba31010f73
 src/cmp/elixir/ReadmeEntity_elixir.ts ad6e744998b9
 src/cmp/elixir/ReadmeExamplesTest_elixir.ts ecf3160a7ca4
@@ -537,13 +537,13 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/go.aon cb1efe3c5a7e
 model/target/target-index.aon 626b8fa31e53
-src/cmp/go/Config_go.ts cd1108bc47cf
+src/cmp/go/Config_go.ts c886687c8786
 src/cmp/go/EntityOperation_go.ts 466b87860b69
 src/cmp/go/EntityTypes_go.ts 79d3a2c638db
 src/cmp/go/Entity_go.ts eda6f8bedfca
 src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts 01154abb3c65
-src/cmp/go/Main_go.ts b002c50501a7
+src/cmp/go/Main_go.ts d0a419149f09
 src/cmp/go/Package_go.ts 39d459e6b867
 src/cmp/go/ReadmeEntity_go.ts 2b9c3ca1da44
 src/cmp/go/ReadmeExamplesTest_go.ts 98a1ad664298
@@ -666,14 +666,14 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/java.aon 10cccb455dbb
 model/target/target-index.aon cd7f19307030
-src/cmp/java/Config_java.ts 5d94f821dbd6
+src/cmp/java/Config_java.ts 3016058dddcc
 src/cmp/java/EntityBase_java.ts ac3da23ea6f8
 src/cmp/java/EntityOperation_java.ts e66863d4a002
 src/cmp/java/EntityTypes_java.ts f700de632a57
 src/cmp/java/Entity_java.ts 271c269aed92
 src/cmp/java/Gitignore_java.ts 549792550319
 src/cmp/java/MainEntity_java.ts 3f146ec80ca7
-src/cmp/java/Main_java.ts eb62c7c5deec
+src/cmp/java/Main_java.ts ad846138b645
 src/cmp/java/Package_java.ts 8b6a6c2f4a0f
 src/cmp/java/ReadmeEntity_java.ts 91738cbdc727
 src/cmp/java/ReadmeExamplesTest_java.ts 54169df59e49
@@ -777,14 +777,14 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/js.aon fe9b11f8de9e
 model/target/target-index.aon 66e6d039373f
-src/cmp/js/Config_js.ts 62977915695a
+src/cmp/js/Config_js.ts 3af51c8e0928
 src/cmp/js/EntityBase_js.ts 69622212f72b
 src/cmp/js/EntityOperation_js.ts 6d165a88201a
 src/cmp/js/EntityTypes_js.ts 83ce997ce401
 src/cmp/js/Entity_js.ts 9993def32681
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
-src/cmp/js/Main_js.ts 579cd6ec5384
+src/cmp/js/Main_js.ts b6de4ec6ee81
 src/cmp/js/Package_js.ts 764092df3ed0
 src/cmp/js/ReadmeEntity_js.ts ae43abf1da32
 src/cmp/js/ReadmeExplanation_js.ts e35423942ff1
@@ -886,7 +886,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/kotlin.aon 3e0813d415fe
 model/target/target-index.aon 28086b55b8bd
-src/cmp/kotlin/Config_kotlin.ts d005c25b68ec
+src/cmp/kotlin/Config_kotlin.ts 62ac57ee4ce5
 src/cmp/kotlin/EntityBase_kotlin.ts afa36713ef4c
 src/cmp/kotlin/EntityOperation_kotlin.ts b39b1c9d620a
 src/cmp/kotlin/EntityTypes_kotlin.ts 2cc19adcce0c
@@ -973,7 +973,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/lean.aon 024cdb46ad2e
 model/target/target-index.aon 0380baac2f34
-src/cmp/lean/Config_lean.ts 5baaa45065c7
+src/cmp/lean/Config_lean.ts d131c927b204
 src/cmp/lean/Entity_lean.ts 8f1a57a3ed36
 src/cmp/lean/Gitignore_lean.ts b5631e71c626
 src/cmp/lean/Main_lean.ts 2a7a4e82aad6
@@ -1032,13 +1032,13 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/lua.aon 5d3abe24ad8a
 model/target/target-index.aon ea75509be8db
-src/cmp/lua/Config_lua.ts b682a1fd7352
+src/cmp/lua/Config_lua.ts 5b4557669428
 src/cmp/lua/EntityOperation_lua.ts daa4641b002e
 src/cmp/lua/EntityTypes_lua.ts 77fba0685c63
 src/cmp/lua/Entity_lua.ts e3e43269850c
 src/cmp/lua/Gitignore_lua.ts a86735a421ba
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
-src/cmp/lua/Main_lua.ts 32cbba675919
+src/cmp/lua/Main_lua.ts 705b93e1edca
 src/cmp/lua/Package_lua.ts e294d0dff1d3
 src/cmp/lua/ReadmeEntity_lua.ts 652a277f842f
 src/cmp/lua/ReadmeExamplesTest_lua.ts 5f104cb87813
@@ -1129,7 +1129,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/ocaml.aon 3b5f06df8ad7
 model/target/target-index.aon cfb53e5794d8
-src/cmp/ocaml/Config_ocaml.ts a6e525f2b6f4
+src/cmp/ocaml/Config_ocaml.ts 4c48948c1723
 src/cmp/ocaml/EntityOperation_ocaml.ts 66ee562a3531
 src/cmp/ocaml/Entity_ocaml.ts 11ce11c6299a
 src/cmp/ocaml/Gitignore_ocaml.ts 3745eb5ebdc3
@@ -1207,7 +1207,7 @@ src/cmp/perl/EntityOperation_perl.ts 8d50a8beeb42
 src/cmp/perl/Entity_perl.ts afe325ce99f5
 src/cmp/perl/Gitignore_perl.ts cef200d91d8f
 src/cmp/perl/MainEntity_perl.ts 49d50e77add8
-src/cmp/perl/Main_perl.ts a6479a50a1b4
+src/cmp/perl/Main_perl.ts f46d0ee50e29
 src/cmp/perl/Package_perl.ts a1ce8d5e5c4a
 src/cmp/perl/ReadmeEntity_perl.ts 51d499382d84
 src/cmp/perl/ReadmeExamplesTest_perl.ts 1a2fb7a3486f
@@ -1300,13 +1300,13 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/php.aon adbcd3850c15
 model/target/target-index.aon 4bd43db1bef1
-src/cmp/php/Config_php.ts 65936a122901
+src/cmp/php/Config_php.ts 7b2d3e6498be
 src/cmp/php/EntityOperation_php.ts 65b4daf2dff8
 src/cmp/php/EntityTypes_php.ts 92945dd564fe
 src/cmp/php/Entity_php.ts 44b5f53db2e9
 src/cmp/php/Gitignore_php.ts 42906d17eb74
 src/cmp/php/MainEntity_php.ts 29efa6a7dcd7
-src/cmp/php/Main_php.ts 86f97ac59ce6
+src/cmp/php/Main_php.ts bfda5aee3aae
 src/cmp/php/Package_php.ts 36b8fa854584
 src/cmp/php/ReadmeEntity_php.ts a4d920ba0798
 src/cmp/php/ReadmeExamplesTest_php.ts 0902cc71694d
@@ -1399,13 +1399,13 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/py.aon 8eda693200e7
 model/target/target-index.aon 9424f27eb776
-src/cmp/py/Config_py.ts 05b30669aeef
+src/cmp/py/Config_py.ts b61486c3c892
 src/cmp/py/EntityOperation_py.ts 8b1b1cf28054
 src/cmp/py/EntityTypes_py.ts eef793247b33
 src/cmp/py/Entity_py.ts 8106dc666873
 src/cmp/py/Gitignore_py.ts 07f7135b0381
 src/cmp/py/MainEntity_py.ts 853d7533f8fb
-src/cmp/py/Main_py.ts 6bc62f559d27
+src/cmp/py/Main_py.ts 393a2fa672b0
 src/cmp/py/Package_py.ts f2b8917726e8
 src/cmp/py/ReadmeEntity_py.ts 02b2a32c0043
 src/cmp/py/ReadmeExamplesTest_py.ts abf1a0782c7d
@@ -1525,13 +1525,13 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/rb.aon 942b3d63ea19
 model/target/target-index.aon ac0bc237c44c
-src/cmp/rb/Config_rb.ts 499f22fbe7c3
+src/cmp/rb/Config_rb.ts b6ac19413046
 src/cmp/rb/EntityOperation_rb.ts 43ad5a64b0c9
 src/cmp/rb/EntityTypes_rb.ts 89606bbf992c
 src/cmp/rb/Entity_rb.ts 099deec849d9
 src/cmp/rb/Gitignore_rb.ts d6ab9def4134
 src/cmp/rb/MainEntity_rb.ts a88eedc19290
-src/cmp/rb/Main_rb.ts a81c0395a58d
+src/cmp/rb/Main_rb.ts 55f002b5bd21
 src/cmp/rb/Package_rb.ts ce128d510e7c
 src/cmp/rb/ReadmeEntity_rb.ts 03a52257bfc5
 src/cmp/rb/ReadmeExamplesTest_rb.ts b7d2352a4cc5
@@ -1624,14 +1624,14 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/rust.aon 55a8a7aea948
 model/target/target-index.aon 8a2cd44591d3
-src/cmp/rust/Config_rust.ts ccd8b2b8da35
+src/cmp/rust/Config_rust.ts 9a930e8021f2
 src/cmp/rust/EntityBase_rust.ts 252bec7e6beb
 src/cmp/rust/EntityOperation_rust.ts 9845bcd74bd4
 src/cmp/rust/EntityTypes_rust.ts 94cdba1aaeb3
 src/cmp/rust/Entity_rust.ts 1b071d02f17f
 src/cmp/rust/Gitignore_rust.ts 285a6decc9dd
 src/cmp/rust/MainEntity_rust.ts cfab71599f0a
-src/cmp/rust/Main_rust.ts 497f17360a33
+src/cmp/rust/Main_rust.ts e8af386a88e3
 src/cmp/rust/Package_rust.ts 9955cdc8cbfe
 src/cmp/rust/ReadmeEntity_rust.ts 469b51440586
 src/cmp/rust/ReadmeExamplesTest_rust.ts 4da19e28b7b4
@@ -1734,14 +1734,14 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/scala.aon 5992621f44e1
 model/target/target-index.aon 0da3132ebe91
-src/cmp/scala/Config_scala.ts d1c31bc1fcbd
+src/cmp/scala/Config_scala.ts b35299ca7b52
 src/cmp/scala/EntityBase_scala.ts 95d5e61aa06f
 src/cmp/scala/EntityOperation_scala.ts 5de61f269ee2
 src/cmp/scala/EntityTypes_scala.ts 8ba0e8ef8f2e
 src/cmp/scala/Entity_scala.ts 8f2825f036c8
 src/cmp/scala/Gitignore_scala.ts 4c75b5801ca5
 src/cmp/scala/MainEntity_scala.ts 911328e9d2ca
-src/cmp/scala/Main_scala.ts d39cd9aac72e
+src/cmp/scala/Main_scala.ts a782faeb1069
 src/cmp/scala/Package_scala.ts 8ae04e6b348b
 src/cmp/scala/ReadmeEntity_scala.ts 7a460619a1ce
 src/cmp/scala/ReadmeExamplesTest_scala.ts 1931c25f1bc8
@@ -1867,7 +1867,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/swift.aon 6b1a1ba054d2
 model/target/target-index.aon 19a9aa80f566
-src/cmp/swift/Config_swift.ts 21468f9750c9
+src/cmp/swift/Config_swift.ts 784ec13647e9
 src/cmp/swift/EntityBase_swift.ts 0e11e207fb56
 src/cmp/swift/EntityOperation_swift.ts 2e9e71c40f4b
 src/cmp/swift/EntityTypes_swift.ts 87a8a87844b8
@@ -1958,15 +1958,15 @@ model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/target-index.aon 6d6ce1a6c7d8
-model/target/ts.aon 0e2a7ef7cf80
-src/cmp/ts/Config_ts.ts fcd2dc449f4c
+model/target/ts.aon af962950b950
+src/cmp/ts/Config_ts.ts 9bfcb0b78b77
 src/cmp/ts/EntityBase_ts.ts 901c1c6f2730
 src/cmp/ts/EntityOperation_ts.ts 8e35c5f506d0
 src/cmp/ts/EntityTypes_ts.ts 7114b6e9f274
 src/cmp/ts/Entity_ts.ts 616f4613ee7a
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
-src/cmp/ts/Main_ts.ts 314a5fc1ebfa
+src/cmp/ts/Main_ts.ts 530ffba22a28
 src/cmp/ts/Package_ts.ts 8db9ddb35912
 src/cmp/ts/ReadmeEntity_ts.ts a8d946b1b786
 src/cmp/ts/ReadmeExampleTest_ts.ts 271424a8ec78
@@ -1989,16 +1989,16 @@ src/cmp/ts/TestMain_ts.ts 8b45d4d8db1a
 src/cmp/ts/Test_ts.ts 97c22b071d10
 src/cmp/ts/fragment/Config.data.fragment.ts 75ba75216010
 src/cmp/ts/fragment/Config.fragment.ts 1137ce18ae22
-src/cmp/ts/fragment/Direct.test.fragment.ts fe35ddb36f16
+src/cmp/ts/fragment/Direct.test.fragment.ts 121ec920fdb7
 src/cmp/ts/fragment/Entity.fragment.ts 678426e2469a
-src/cmp/ts/fragment/Entity.test.fragment.ts a11524ca5d4b
+src/cmp/ts/fragment/Entity.test.fragment.ts 18806b0a0512
 src/cmp/ts/fragment/EntityBase.fragment.ts 3d54b06ed2de
 src/cmp/ts/fragment/EntityCreateOp.fragment.ts ab300a03f6b6
 src/cmp/ts/fragment/EntityListOp.fragment.ts 2de26d41752c
 src/cmp/ts/fragment/EntityLoadOp.fragment.ts 927793291305
 src/cmp/ts/fragment/EntityRemoveOp.fragment.ts b4a325f131ed
 src/cmp/ts/fragment/EntityUpdateOp.fragment.ts 09fe7da456a9
-src/cmp/ts/fragment/Main.fragment.ts f95d02599edb
+src/cmp/ts/fragment/Main.fragment.ts f7aaf944a840
 src/cmp/ts/fragment/MainStation.fragment.ts fd38ca23960b
 src/cmp/ts/fragment/SdkError.fragment.ts 146555fd1684
 src/cmp/ts/tsconfig.json 720a3f229019
@@ -2062,7 +2062,7 @@ tm/ts/test/omni.ts 5ac43af96b3a
 tm/ts/test/pipeline.test.ts 7329fb39d310
 tm/ts/test/sdk-test-control.json 47bf9b08d0cf
 tm/ts/test/tsconfig.json 0da68e0cde47
-tm/ts/test/utility.ts 23e03c6d0a02
+tm/ts/test/utility.ts 208249bbf6e2
 tm/ts/test/utility/Corpus.test.ts fea805411aa1
 tm/ts/test/utility/Custom.test.ts a8780a38b0ea
 tm/ts/test/utility/PrimaryUtility.test.ts e7005370dadc
@@ -2079,7 +2079,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/target-index.aon d785f5b4bbe7
 model/target/zig.aon 8b5242437d52
-src/cmp/zig/Config_zig.ts 4d8d13d6c1d4
+src/cmp/zig/Config_zig.ts e22ac87cfe49
 src/cmp/zig/EntityOperation_zig.ts 04bd390df007
 src/cmp/zig/Entity_zig.ts 03329f926393
 src/cmp/zig/Gitignore_zig.ts ec49760abeae
@@ -2206,6 +2206,8 @@ tm/zig/utility/voxgigstruct/struct.zig 37fb3adca8da
 ## feature rbac
 
 ## feature retry
+
+## feature secrets
 
 ## feature streaming
 

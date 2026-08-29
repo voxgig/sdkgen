@@ -28,6 +28,10 @@ const ENTERPRISE = [
   'retry', 'timeout', 'ratelimit', 'cache', 'cost', 'idempotency', 'paging',
   'streaming', 'proxy', 'telemetry', 'metrics', 'debug', 'audit',
   'clienttrack', 'rbac', 'netsim',
+  // Gated by applicability (`needs: ['sekreto']`), so unlike every feature
+  // above it, this one is NOT expected in every target — see the
+  // feature-language-parity exemption below.
+  'secrets',
 ]
 
 const HOOK_NAMES = [
@@ -103,6 +107,10 @@ describe('feature-model', () => {
     cost: 'wrap',
     audit: 'none', clienttrack: 'none', debug: 'none', idempotency: 'none',
     log: 'none', metrics: 'none', paging: 'none', rbac: 'none',
+    // Hook-only: it writes the resolved credential into the live options
+    // where the synchronous prepareAuth already reads it, and never touches
+    // the transport.
+    secrets: 'none',
     streaming: 'none', telemetry: 'none',
   }
 
@@ -253,6 +261,28 @@ describe('feature-language-parity', () => {
     .concat(CONSUMER_TARGETS)
     .filter((t) => !NO_FEATURE_DIRS.includes(t))
 
+  // Features gated by applicability tags (docs/design/feature-tags.md) are
+  // NOT expected in every target — only in those whose model declares what
+  // the feature needs. Every other feature stays universal, so the parity
+  // rule below is unchanged for all sixteen of them.
+  //
+  // Declared rather than inferred, and kept honest by the accuracy test
+  // below, exactly like NO_FEATURE_DIRS: a list that can silently grow
+  // stale is a mute button.
+  const GATED: Record<string, string[]> = {
+    // needs: ['sekreto'] — only ts vendors a sekreto port today. go, py,
+    // java, rb, php and rust follow in the language rollout, each adding
+    // its port and `provides: ['sekreto']` together.
+    secrets: ['ts'],
+  }
+
+  // Which targets must carry this feature: all of them, or just the ones
+  // the gate names.
+  function expectedTargets(name: string, all: string[]): string[] {
+    const gated = GATED[name]
+    return null == gated ? all : all.filter((t) => gated.includes(t))
+  }
+
   const TARGET_MODEL = Path.join(SDK, 'model', 'target')
 
   // Every target the scaffold actually ships, discovered rather than listed.
@@ -266,6 +296,9 @@ describe('feature-language-parity', () => {
   for (const [lang, impl] of Object.entries(IMPL)) {
     test(`${lang}: every enterprise feature is implemented`, () => {
       for (const name of ENTERPRISE) {
+        if (!expectedTargets(name, [lang]).includes(lang)) {
+          continue
+        }
         const p = Path.join(TM, impl(name))
         ok(existsSync(p), `missing ${lang} implementation: ${p}`)
       }
@@ -294,9 +327,41 @@ describe('feature-language-parity', () => {
   test('every target has a feature-add copy dir per feature', () => {
     for (const t of ADD_TARGETS) {
       for (const name of ENTERPRISE) {
+        if (!expectedTargets(name, [t]).includes(t)) {
+          continue
+        }
         const dir = Path.join(TM, t, 'src', 'feature', name)
         ok(existsSync(dir), `missing feature-add dir: tm/${t}/src/feature/${name}`)
       }
+    }
+  })
+
+
+  // The gate must stay TRUE in both directions, or it becomes the same mute
+  // button NO_FEATURE_DIRS guards against.
+  test('gated features match the targets that declare the tags they need', () => {
+    for (const [name, targets] of Object.entries(GATED)) {
+      // (a) every target NOT named must really lack the source, otherwise
+      // the exemption is hiding a target that already has it.
+      const unexpected = ADD_TARGETS
+        .filter((t) => !targets.includes(t))
+        .filter((t) => existsSync(Path.join(TM, t, 'src', 'feature', name)))
+
+      deepStrictEqual(unexpected, [],
+        `these targets gained ${name} source — add them to GATED.${name} ` +
+        'in test/featuremodel.test.ts (and give their model the tags it needs)')
+
+      // (b) every target named must declare the tags in its own model, so
+      // the test list and the model cannot drift apart. The model is the
+      // source of truth; this list only says what we expect it to say.
+      const undeclared = targets.filter((t) => {
+        const mp = Path.join(TARGET_MODEL, t + '.aon')
+        return !existsSync(mp) || !/\bprovides\s*:/.test(readFileSync(mp, 'utf8'))
+      })
+
+      deepStrictEqual(undeclared, [],
+        `GATED.${name} names targets whose model declares no \`provides\` — ` +
+        'the gate would drop the feature for them at generate time')
     }
   })
 
