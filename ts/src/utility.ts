@@ -5,6 +5,8 @@ import { JostracaResult, each } from 'jostraca'
 
 import { KIT, getModelPath } from '@voxgig/apidef'
 
+import { targetFeatures } from './helpers/applicability'
+
 import { serverVariables } from './helpers/serverVars'
 import { packageVersion } from './helpers/packageMeta'
 
@@ -312,7 +314,14 @@ function rawStringLiteral(s: string): string {
 // across runs exactly like the literal it replaces.
 function configDefinition(model: any, targetname?: string): { def: any, json: string } {
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = getModelPath(model, `main.${KIT}.feature`)
+
+  // Gated by the target when one is named, so the embedded config cannot
+  // advertise a feature this target has no implementation for — the exact
+  // hybrid state the applicability gate exists to prevent. With no
+  // targetname (a caller that cannot say which target it is building) the
+  // helper returns every active feature, i.e. the old behaviour.
+  const feature = targetFeatures(model, targetname)
+
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
   const authActive = isAuthActive(model)

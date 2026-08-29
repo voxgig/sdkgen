@@ -4,7 +4,8 @@ import * as Path from 'node:path'
 import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
-  entityClassName, entityCollection, goModule, goPackageIdent
+  entityClassName, entityCollection, goModule, goPackageIdent,
+  targetFeatures,
 } from '@voxgig/sdkgen'
 
 
@@ -33,7 +34,10 @@ const Main = cmp(async function Main(props: any) {
   const { model } = props.ctx$
 
   const entity: ModelEntity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = getModelPath(model, `main.${KIT}.feature`)
+  // Gated by the applicability tags, so this target never imports or
+  // registers a feature it has no source for. One rule, one place:
+  // helpers/applicability.
+  const feature = targetFeatures(model, target)
 
   // Go module path == the repo path on GitHub (org from model.origin),
   // e.g. github.com/voxgig-sdk/<slug>-sdk. Used in go.mod and every import.
