@@ -71,6 +71,13 @@ that matches what you are trying to do right now:
   feature can actually apply to, so `feature-source-missing` means "this
   is a mistake" rather than "this target was never going to take it".
   Proposal.
+- [Vendoring upgrade migration](./design/vendoring-upgrade-migration.md) —
+  phased plan to vendor omni 0.1.2 (test runner), struct 0.3.2 (utils)
+  and sekreto 0.1.2 (secrets, with the apikey option layered as the
+  first provider) into every target, with the upstream bug-fix
+  backports. Grounded in the solardemo vendoring prototype
+  (voxgig-sdk/voxgig-solardemo-sdk#29), which is also its acceptance
+  test. Plan.
 - [API versioning](./design/api-versioning.md) — compatibility across
   apidef, sdkgen, and aontu: matching SDK versions to API/app versions,
   breaking-change tooling (`apidef breaking`, the aontu G3 subsumption
