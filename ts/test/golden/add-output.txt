@@ -2047,7 +2047,7 @@ tm/ts/src/utility/README.md b5e4e3a70bcd
 tm/ts/src/utility/ResultBasicUtility.ts 1910dd2805d4
 tm/ts/src/utility/ResultBodyUtility.ts d43174454495
 tm/ts/src/utility/ResultHeadersUtility.ts 974461285293
-tm/ts/src/utility/StructUtility.ts 3d52531eda2d
+tm/ts/src/utility/StructUtility.ts 35739a997508
 tm/ts/src/utility/TransformRequestUtility.ts 48b8762bd838
 tm/ts/src/utility/TransformResponseUtility.ts 7aeded320abe
 tm/ts/src/utility/Utility.ts c1f6d3ed23dd
@@ -2057,16 +2057,21 @@ tm/ts/test/feature.test.ts b7cbad866e0d
 tm/ts/test/feature/Corpus.test.ts 9816e8e3db4e
 tm/ts/test/feature/harness.ts bfc382438dbc
 tm/ts/test/netsim.test.ts 350539c6a30b
+tm/ts/test/omni.test.ts 3a59ba8a1d8c
+tm/ts/test/omni.ts 5ac43af96b3a
 tm/ts/test/pipeline.test.ts 7329fb39d310
-tm/ts/test/runner.ts 255ac19c84c2
 tm/ts/test/sdk-test-control.json 47bf9b08d0cf
 tm/ts/test/tsconfig.json 0da68e0cde47
 tm/ts/test/utility.ts 23e03c6d0a02
 tm/ts/test/utility/Corpus.test.ts fea805411aa1
 tm/ts/test/utility/Custom.test.ts a8780a38b0ea
-tm/ts/test/utility/PrimaryUtility.test.ts 4a9584cabdf2
-tm/ts/test/utility/StructUtility.test.ts 400bbedbe457
+tm/ts/test/utility/PrimaryUtility.test.ts e7005370dadc
+tm/ts/test/utility/StructUtility.test.ts 4ae7352bbae5
 tm/ts/test/utility/index.ts 477889c43d3e
+tm/ts/test/vendor/omni/Runner.ts a133321fb47c
+tm/ts/test/vendor/omni/Util.ts 0479ec199aa3
+tm/ts/test/vendor/omni/compat.ts a78e2d8a95b3
+tm/ts/test/vendor/omni/index.ts a719a2509d66
 
 ## target zig
 model/feature/feature-index.aon 5f0737d1060e
