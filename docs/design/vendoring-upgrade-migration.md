@@ -40,13 +40,14 @@ two-layer rule decides every placement: same for every API → template
 | Prototype content (solardemo `ts/`) | sdkgen home |
 |---|---|
 | `src/utility/StructUtility.ts` (0.3.2) | `tm/ts/src/utility/StructUtility.ts`, and each language's vendored struct (all 22 targets carry one, e.g. `tm/py/pkg/utility/voxgig_struct/`, `tm/go/utility/struct/`) |
-| `test/vendor/omni/` + `test/omni.ts` resolver | new `tm/ts/test/vendor/omni/` + `tm/ts/test/omni.ts`, REPLACING `tm/ts/test/runner.ts`; same per language for the other runner templates (`tm/py/test/runner.py`, `tm/lua/test/runner.lua`, `tm/go/test/runner_test.go`, ...), vendoring omni's own port for that language |
+| `test/vendor/omni/` + `test/omni.ts` resolver | new `tm/ts/test/vendor/omni/` + `tm/ts/test/omni.ts`, REPLACING `tm/ts/test/runner.ts`; same per language for the other runner templates (`tm/py/test/runner.py`, `tm/lua/test/runner.lua`, `tm/go/test/runner_test.go`, ...), vendoring omni's own port for that language. NOT wholesale: several runners fuse SDK support helpers into the same file — see the Phase 2 carve-out |
 | consumer import changes in `test/utility/{PrimaryUtility,StructUtility}.test.ts` | the same files under `tm/ts/test/utility/` |
-| `src/utility/sekreto/` | new `tm/ts/src/utility/sekreto/`; other languages from sekreto's ports (`go/`, `python/`, `java/`, `ruby/`, `php/`, `rust/`, ...) |
+| `src/utility/sekreto/` | new `tm/ts/src/feature/secrets/sekreto/` — INSIDE the feature container, not under `src/utility/`, so the feature trim removes the vendored library when `secrets` is inactive; other languages from sekreto's ports (`go/`, `python/`, `java/`, `ruby/`, `php/`, `rust/`, ...) |
 | `src/feature/secrets/SecretsFeature.ts` | new `tm/ts/src/feature/secrets/` (beside the 19 existing feature template dirs) |
-| `Config.ts` registry + metadata edits | `ts/project/.sdk/src/cmp/<lang>/fragment/Config.fragment.*` / `Config.data.fragment.*` — emit the `secrets` FEATURE_CLASS entry and `config.feature.secrets` metadata when the model enables the feature |
-| `SolardemoSDK.ts` (`_secrets` field, `secrets()` accessor, `prepare()` await) | the Main template/fragment for each language |
-| `test/secrets.test.ts`, `test/omni.test.ts` | `tm/ts/test/` (trimmed by the feature-tag machinery when secrets is off — see Phase 3) |
+| `Config.ts` registry + metadata edits | no bespoke fragment edits: `Config_ts.ts` (and its per-language peers) already emit feature imports, FEATURE_CLASS entries, and `config.feature` metadata GENERICALLY from the model's feature collection (`#ImportFeatures` / `#FeatureClasses` via `configDefinition`) — registering the feature in the catalogue (Phase 3) is sufficient |
+| `SolardemoSDK.ts` (`_secrets` field, `secrets()` accessor, `prepare()` await) | the Main template/fragment for each language, emitted CONDITIONALLY on the feature being active (an unconditional template edit would change every generated SDK and break the inactive-output gate) |
+| `test/secrets.test.ts` | `tm/ts/test/feature/secrets/` — feature-source discovery (`findFeatureSources`) recognizes feature-owned entries only inside a directory whose basename is `feature`, so a top-level `test/secrets.test.ts` would be copied and compiled even with the feature inactive |
+| `test/omni.test.ts` | `tm/ts/test/` (feature-independent: the runner ships with every target) |
 | dotenv removal (`loadEnvLocal` via sekreto `parsedotenv`) | `tm/ts/test/utility.ts` + the entity-test component that emits the `.env.local` preamble + `tm/ts/package.json` devDeps |
 
 ## Phase 0 — upstream backports (before any template work)
@@ -164,10 +165,19 @@ entries pass on ts and js.
    (wrong result and missing expected error both reject with
    `OmniError`), so a broken vendored runner cannot produce a
    vacuously green generated suite.
-4. Repeat per language using omni's own ports
-   (`/home/user/voxgig/omni/<lang>/`), replacing
-   `tm/<lang>/test/runner.*`. Where a language's omni port lacks a
-   compat shim, the resolver template supplies the same adapter shape.
+4. Repeat per language using omni's own ports — but NOT as a wholesale
+   file replacement. In several targets (`py`, `rb`, `php`, `lua`,
+   `perl`) the runner template FUSES sdkgen-specific support helpers
+   into the same file: `load_env_local`, `env_override`, the
+   `sdk-test-control.json` skip machinery, live pacing, entity-data
+   conversion — and the generated entity/direct tests (emitted by the
+   TestEntity components) call them on the runner. The ts target
+   already keeps these in a separate `test/utility.ts`; do the same
+   split everywhere FIRST: move the support helpers into a retained
+   per-language support module, update the TestEntity components'
+   emitted call sites, and only then swap the corpus-runner half for
+   the vendored omni port. Where a language's omni port lacks a compat
+   shim, the resolver template supplies the same adapter shape.
 5. Corpus versioning, deliberately LAST in this phase: the shared
    corpus has no `OMNI` block, so omni runs it lenient (v0) — exactly
    today's behavior, typo'd assertion fields and all. Upgrading to
@@ -182,18 +192,41 @@ solardemo regen reproduces the prototype's `test/` tree.
 
 ## Phase 3 — sekreto and the secrets feature
 
-1. Vendor sekreto verbatim into `tm/ts/src/utility/sekreto/`
-   (Sekreto, Providers, Sigv4, trimmed barrel) and re-export it from
-   the Main template (`export { ..., sekreto }`), as the prototype
-   does — SDK users need the provider factories to configure chains.
+**Prerequisite: an implemented applicability gate.** Feature tags
+(`docs/design/feature-tags.md`) are a PROPOSAL today — nothing gates a
+feature by target, and `ts/src/action/feature.ts` fans out to every
+target and merely WARNS on `feature-source-missing`. A project with any
+target lacking a sekreto port would otherwise carry an active `secrets`
+model/config with no implementation behind it. Either implement the
+feature-tag gate first, or ship an equivalent applicability check as
+part of this phase; do not rely on the warning.
+
+1. Vendor sekreto verbatim into `tm/ts/src/feature/secrets/sekreto/`
+   (Sekreto, Providers, Sigv4, trimmed barrel) — INSIDE the feature
+   container, so `target add`'s feature trim removes the vendored
+   library when the model does not enable `secrets`, keeping the
+   inactive-output gate below honest.
 2. Add the `secrets` feature template `tm/ts/src/feature/secrets/`,
    copied from the prototype's `SecretsFeature.ts`. The design that
    survived contact, and must survive porting:
-   - The `apikey` option keeps its exact old meaning and ALWAYS wins:
-     `init` places it first in the chain as a `memory` provider named
-     `options`, so explicit-beats-lookup is sekreto's own first-hit
-     rule, not special-case logic. `prepareAuth` is untouched;
-     behavior with the feature inactive is bit-identical.
+   - The `apikey` option keeps its exact old meaning and ALWAYS wins
+     when set: `init` places a non-empty option first in the chain as
+     a `memory` provider named `options`, so explicit-beats-lookup is
+     sekreto's own first-hit rule, not special-case logic.
+     `prepareAuth` is untouched; behavior with the feature inactive is
+     bit-identical.
+   - **Empty vs omitted, decided explicitly:** `makeOptions`
+     normalizes an omitted `apikey` to `''` before features
+     initialize, so by init time the two are indistinguishable, and
+     the prototype treats both as "unset — defer to the chain". Keep
+     that as the documented contract: with `secrets` active, an empty
+     `apikey` (omitted or explicit) defers to the provider chain, and
+     DISABLING auth outright remains what it already is today —
+     `auth: null`, which `prepareAuth` honors before ever reading the
+     apikey. If a product later needs "explicit empty suppresses the
+     chain", the constructor must capture pre-merge suppliedness;
+     until then, tests must pin all three cases (omitted + chain hit,
+     explicit `''` + chain hit, `auth: null` + chain configured).
    - `init` is synchronous by feature contract: it builds the chain,
      never looks anything up. Resolution happens once in the awaited
      `PreSpec` hook and writes into the live options where the sync
@@ -201,46 +234,68 @@ solardemo regen reproduces the prototype's `test/` tree.
      promise.
    - A provider ERROR fails the op; only a MISS falls through
      (sekreto's invariant: a broken vault never yields an
-     unauthenticated request). The secret name defaults to `apikey`,
-     configurable via `feature.secrets.name`.
-3. Component work (this is what the prototype had to hand-edit in
-   three places):
-   - Config fragments (`ts/project/.sdk/src/cmp/<lang>/fragment/
-     Config*.fragment.*`) emit the `secrets` FEATURE_CLASS entry and
-     `config.feature.secrets` metadata when the model enables it.
-   - The Main template gains the `_secrets` field, the `secrets()`
-     accessor (returning the LIVE instance — sekreto holds provider
-     state, so never a clone), and the explicit
-     `await client._secrets.resolve()` in `prepare()`, which bypasses
-     the feature hook pipeline.
-   - Model: a `feature.secrets` block beside `feature.test` in
-     `model/sdkgen.aon`'s feature machinery, plus the feature-tag
-     declaration so `target add` trims it for targets without a
-     sekreto port (see `docs/design/feature-tags.md`).
-4. Tests: port the prototype's `secrets.test.ts` (option-wins,
+     unauthenticated request). On the ENTITY path that error flows
+     through the normal pipeline error handling. On the DIRECT path it
+     must NOT throw: `_rawRequest` awaits `prepare()` outside its
+     `try`, and `direct()`/`graphql()` are documented to return a
+     value or an `Error`, never reject — the prototype got this wrong
+     (its `prepare()` rejects on a provider error). The migration
+     version of `prepare()` catches resolver failures and RETURNS the
+     `Error`, matching its existing error-return convention; each
+     language port follows its target's direct-call convention.
+   - The secret name defaults to `apikey`, configurable via
+     `feature.secrets.name`.
+3. Registration — in the bundled feature CATALOGUE, not the base
+   schema: add `ts/project/.sdk/model/feature/secrets.aon`, include it
+   from `feature-index.aon`, and advertise it in
+   `ts/project/sdkgen-package.json`'s `feature` list (the manifest is
+   pinned to the directory listings by a guard test, so it fails
+   loudly if forgotten). `model/sdkgen.aon` changes only if the
+   feature needs new schema keys. With the catalogue entry in place,
+   the generic Config emission (`#ImportFeatures` /
+   `#FeatureClasses` / `configDefinition`) produces the registry and
+   metadata with NO per-feature fragment edits — the three places the
+   prototype hand-edited in `Config.ts` are exactly what the generic
+   slots emit for an active feature.
+4. Main template/fragment: the `_secrets` field, the `secrets()`
+   accessor (returning the LIVE instance — sekreto holds provider
+   state, so never a clone), the `sekreto` re-export (SDK users need
+   the provider factories), and the `prepare()` resolver call — all
+   emitted CONDITIONALLY on the feature being active, since an
+   unconditional template edit lands in every generated SDK and
+   breaks the inactive-output gate.
+5. Tests: port the prototype's `secrets.test.ts` (option-wins,
    env/custom provider, miss-vs-error, PreSpec resolution through a
-   real entity op) as a feature-gated test template. Replace the
-   entity-test `dotenv` preamble with `loadEnvLocal` over the vendored
-   `parsedotenv` (same semantics: missing file fine, existing env vars
-   win) and drop `dotenv` from `tm/ts/package.json` — the last
-   non-tooling devDependency. Watch the emit order: the loader call
-   must sit AFTER the import block (the prototype hit the
-   emitted-require-before-import TDZ failure).
-5. Follow-on candidates, kept out of the first pass: wire `clean()`
+   real entity op, plus the empty/omitted/`auth: null` triple and the
+   direct-path error-return behavior from step 2) into
+   `tm/ts/test/feature/secrets/` — the `feature` container is what
+   makes it trimmable. Replace the entity-test `dotenv` preamble with
+   `loadEnvLocal` over the vendored `parsedotenv` (same semantics:
+   missing file fine, existing env vars win) and drop `dotenv` from
+   `tm/ts/package.json` — the last non-tooling devDependency. Watch
+   the emit order: the loader call must sit AFTER the import block
+   (the prototype hit the emitted-require-before-import TDZ failure).
+   Note `loadEnvLocal` lives with the retained support helpers
+   (Phase 2's split), not in the feature container — the entity tests
+   need it whether or not `secrets` is active.
+6. Follow-on candidates, kept out of the first pass: wire `clean()`
    (currently an identity function with its redaction body commented
    out) to `sekreto.redact()`, which already tracks every resolved
    value even with caching off; and decide ONCE, in sdkgen, whether
    `prepare()`/`direct()`/`graphql()` should run a reduced hook
    pipeline instead of accreting per-feature awaits.
-6. Language rollout follows sekreto's ports (go, py, java, rb, php,
-   rust first); targets without a port simply do not enable the
-   feature — the trim machinery already handles feature-absent
-   targets.
+7. Language rollout follows sekreto's ports (go, py, java, rb, php,
+   rust first); targets without a port are excluded by the
+   applicability gate above.
 
 **Done when:** a model with `feature.secrets` active generates an SDK
 whose suite includes the secrets tests and passes; one with it
 inactive generates byte-identically to pre-migration output (modulo
-Phases 1–2); solardemo regen reproduces the prototype's `src/` tree.
+Phases 1–2) — which is achievable precisely because the vendored
+library, the feature class, the tests, and the Main additions are all
+feature-owned or conditionally emitted; solardemo regen reproduces the
+prototype's `src/` tree (minus the prototype's `prepare()` rejection
+bug, corrected per step 2).
 
 ## Phase 4 — conventions and guards
 
@@ -252,11 +307,17 @@ Phases 1–2); solardemo regen reproduces the prototype's `src/` tree.
 2. **Stamps move together**: the runner, StructUtility, and the struct
    corpus test carried matching `0.0.10` stamps that all had to change
    in step. Add a per-target vendored-versions manifest (or extend
-   `sdkgen-package.json`) naming each vendored library's version and
-   commit, and a `doctor` check that (a) verifies stamps agree with
-   the manifest and (b) flags unmarked local edits to vendored files
-   — the drift gate already catches post-generation edits in consumer
-   repos; this catches drift inside the templates themselves.
+   `sdkgen-package.json`) naming each vendored library's version,
+   commit, AND a per-file content hash. The hash is what makes
+   template-side drift detectable: `doctor` compares a consumer's
+   copies against sdkgen's templates, so an edit made INSIDE the
+   templates is invisible to it — after the next `add`, source and
+   project agree again. Split the enforcement accordingly: a test in
+   sdkgen's own suite verifies each vendored template file against the
+   manifest hashes (an intentional resync updates both together, and
+   the marked `PATCH` blocks are part of the hashed content); `doctor`
+   keeps its existing job of consumer-side comparison, plus verifying
+   the stamps agree with the manifest.
 3. Parity: extend `ts/test/parity.test.ts` coverage so a target
    claiming the secrets feature or the omni runner carries the
    corresponding template files, per the existing tier rules.
@@ -277,9 +338,12 @@ cd ../<lang> && <lang-test-command>
 
 **The acceptance test for the whole migration is the prototype
 branch itself:** after Phase 3, regenerating solardemo from main-line
-sdkgen must reproduce the prototype's `ts/` content — at which point
-the prototype's red `Generate and check for drift` gate would be
-green, and the branch can be closed as absorbed. Elementdemo is the
+sdkgen must reproduce the prototype's `ts/` content — modulo the
+deliberate corrections this guide makes to it (the `prepare()`
+error-return fix and the feature-container placements) — at which
+point the prototype's red `Generate and check for drift` gate would be
+green on the corrected equivalent, and the branch can be closed as
+absorbed. Elementdemo is the
 second gate: its `ext/` package's custom `bash` target and
 `elementcard` feature must regenerate unchanged, proving the migration
 does not break external sdkgen packages.
@@ -305,6 +369,13 @@ consumers through regeneration rather than an npm install.
 - **create-sdkgen** owns the standard project's test corpus; corpus
   changes (null entries, v1 block, upstream 0.3.2 sections) need a
   paired PR there.
+- **Feature gating is a prerequisite, not a given**: feature tags are
+  a proposal, and today `feature-source-missing` only warns. Phase 3
+  does not start until an applicability gate is implemented.
+- **The runner split** (Phase 2.4) touches TestEntity components and
+  every fused-runner language at once; the retained-support-module
+  refactor should land and go green BEFORE any omni swap, so runner
+  replacement diffs stay reviewable.
 - **sekreto in browsers** stays broken until the upstream split lands;
   until then the secrets feature is Node-only, which the feature tag
   should say.
