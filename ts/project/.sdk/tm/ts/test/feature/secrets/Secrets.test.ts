@@ -105,27 +105,38 @@ describe('secrets', () => {
   // `auth: null` — the documented way to disable auth outright, which
   // prepareAuth honours before it ever reads the apikey.
   //
-  // STRUCT 0.3.2 CHANGED THIS, silently. Under 0.0.10, getprop returned a
-  // stored null as null, so validate saw `auth: null` as a non-map and
-  // REJECTED it ("Expected field auth to be map, but found no value") for
-  // any SDK whose optspec supplies an `auth` default. Under 0.3.2 getprop
-  // treats a stored null as "no value", so the optspec default fires
-  // instead and `auth: null` quietly becomes `auth: { prefix: '' }` — auth
-  // stays ON, and the chain is still consulted.
+  // This needs an explicit guard because struct 0.3.2 nearly removed it in
+  // silence. Under 0.0.10, getprop returned a stored null as null, so
+  // validate saw `auth: null` as a non-map and REJECTED it for any SDK
+  // whose optspec supplies an `auth` default. Under 0.3.2 getprop treats a
+  // stored null as "no value", so the default fires instead and the
+  // suppression became "use default auth" — transmitting a credential the
+  // caller explicitly asked not to send. makeOptions now captures
+  // suppliedness BEFORE validate and restores the null after it.
   //
-  // Pinned here because no corpus entry can catch it: corpus nulls travel
-  // as the '__NULL__' string, so real-JSON-null semantics are invisible to
-  // every port's shared fixtures.
-  test('active: auth null is absorbed by the optspec default (struct 0.3.2)',
+  // No corpus entry could catch this: corpus nulls travel as the
+  // '__NULL__' string, so real-JSON-null semantics are invisible to every
+  // port's shared fixtures.
+  test('active: auth null suppresses the credential, chain or no chain',
     async () => {
       process.env[ENVPREFIX + 'APIKEY'] = 'ENVKEY01'
       const { sdk, fetchdef } = await prepared(
         Object.assign({ auth: null }, envchain()))
 
-      // Not a throw, and not a suppression: the default auth config applies.
-      assert.equal(fetchdef.headers['authorization'], 'ENVKEY01')
-      assert.equal(sdk.options().apikey, 'ENVKEY01')
+      // Nothing on the wire, even though the chain would have resolved.
+      assert.equal(fetchdef.headers['authorization'], undefined)
+
+      // The suppression survives option validation rather than being
+      // replaced by the optspec's default auth map.
+      assert.equal(sdk.options().auth, null)
     })
+
+
+  test('active: auth null suppresses an EXPLICIT apikey too', async () => {
+    const { fetchdef } = await prepared(
+      Object.assign({ apikey: 'OPTKEY01', auth: null }, envchain()))
+    assert.equal(fetchdef.headers['authorization'], undefined)
+  })
 
 
   test('active: custom provider objects are accepted verbatim', async () => {
@@ -179,6 +190,61 @@ describe('secrets', () => {
       assert.ok(out instanceof Error, 'expected an Error value, got ' + String(out))
       assert.match(String(out.message), /vault unreachable/)
     })
+
+
+  // A settled promise must not be held forever. Holding a REJECTED one
+  // meant a transient vault outage poisoned the client permanently: every
+  // later operation kept failing with the original error long after the
+  // vault recovered.
+  test('active: a provider recovers after a transient failure', async () => {
+    let calls = 0
+    const sdk = (SDK as any).test({}, {
+      feature: {
+        secrets: {
+          active: true,
+          providers: [{
+            lookup(_name: string): string {
+              calls++
+              if (1 === calls) throw new Error('vault unreachable')
+              return 'RECOVERED01'
+            },
+            describe() { return 'flaky:test' },
+          }],
+        },
+      },
+    })
+
+    const first = await sdk.prepare({ path: '/' })
+    assert.ok(first instanceof Error, 'first attempt should surface the outage')
+
+    const second = await sdk.prepare({ path: '/' })
+    assert.ok(!(second instanceof Error), 'second attempt should recover, got ' + String(second))
+    assert.equal(second.headers['authorization'], 'RECOVERED01')
+  })
+
+
+  // `cache: false` is documented as "every resolve() asks the chain again".
+  // Caching the settled promise made that a lie.
+  test('active: cache false asks the chain on every resolve', async () => {
+    let calls = 0
+    const sdk = (SDK as any).test({}, {
+      feature: {
+        secrets: {
+          active: true,
+          cache: false,
+          providers: [{
+            lookup(_name: string): string { calls++; return 'KEY' + calls },
+            describe() { return 'counting:test' },
+          }],
+        },
+      },
+    })
+
+    await sdk.prepare({ path: '/' })
+    await sdk.prepare({ path: '/' })
+
+    assert.ok(1 < calls, 'the chain was asked once and cached, despite cache: false')
+  })
 
 
   test('active: secret name is configurable', async () => {

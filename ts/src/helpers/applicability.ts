@@ -95,8 +95,29 @@ function targetFeatures(model: any, target: any): Record<string, any> {
 }
 
 
+// THE CLOSED VOCABULARY. The schema comment says applicability tags are a
+// closed set; without this, `provides: &: boolean` accepts any key, so a
+// typo (`sekrreto`) compiles cleanly and silently makes the feature apply
+// NOWHERE — the worst failure shape, because the feature simply vanishes
+// with no diagnostic.
+//
+// Extended by adding a tag here AND documenting it in model/sdkgen.aon.
+const TAGS = [
+  // A vendored sekreto port lives in this target's feature container.
+  'sekreto',
+]
+
+
+// The tags named by `needs`/`provides` that are not in the vocabulary.
+function unknownTags(val: any): string[] {
+  return tags(val).filter((t: string) => !TAGS.includes(t))
+}
+
+
 export {
   featureApplies,
   targetFeatures,
   tags as featureTags,
+  unknownTags,
+  TAGS,
 }

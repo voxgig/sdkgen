@@ -22,7 +22,7 @@ const ReadmeFeatures = (0, jostraca_1.cmp)(function ReadmeFeatures(props) {
         override['ReadmeFeatures']({ target });
         return;
     }
-    const features = (0, FeatureDocs_1.featureDocs)(model);
+    const features = (0, FeatureDocs_1.featureDocs)(model, target);
     if (0 === features.length) {
         return;
     }

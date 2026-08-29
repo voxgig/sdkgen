@@ -230,12 +230,25 @@ function loadEnvLocal(file: string): void {
     const key = line.slice(0, eq).trim().replace(/^export\s+/, '')
     let val = line.slice(eq + 1).trim()
 
-    // Strip one matching pair of surrounding quotes, and only then: an
-    // unquoted value keeps whatever it has.
-    if (2 <= val.length &&
-      (("'" === val[0] && "'" === val[val.length - 1]) ||
-        ('"' === val[0] && '"' === val[val.length - 1]))) {
-      val = val.slice(1, -1)
+    const quote = ("'" === val[0] || '"' === val[0]) ? val[0] : ''
+
+    if ('' !== quote) {
+      // Quoted: the value runs to the CLOSING quote, and a '#' inside it is
+      // part of the value. Anything after the closing quote is a comment.
+      const close = val.indexOf(quote, 1)
+      val = 0 < close ? val.slice(1, close) : val.slice(1)
+    }
+    else {
+      // Unquoted: the first '#' starts an inline comment, with or without
+      // preceding whitespace — `A=a#b` is `a` to dotenv, not `a#b`.
+      // Dropping this made `KEY=secret # note` resolve to the whole string
+      // including the note, and a generated live test would then send that
+      // as the credential. Verified against dotenv's own parse().
+      const hash = val.indexOf('#')
+      if (0 <= hash) {
+        val = val.slice(0, hash)
+      }
+      val = val.trim()
     }
 
     if (undefined === process.env[key]) {

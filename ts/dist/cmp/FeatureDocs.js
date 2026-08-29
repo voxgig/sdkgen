@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.featureDocs = featureDocs;
 exports.renderValue = renderValue;
 exports.honoursActivationOrder = honoursActivationOrder;
+const applicability_1 = require("../helpers/applicability");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 // `transport` says how a feature attaches, and that is the whole of the
@@ -32,10 +33,14 @@ function renderValue(v) {
 }
 // Every feature the model declares active, in a stable order, with its
 // options and their defaults.
-function featureDocs(model) {
+// With a target, also drops features that do not APPLY to it: a target
+// README must not document a feature that target has no implementation
+// for. Without one (the repo-level README) every active feature is listed.
+function featureDocs(model, target) {
     const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`);
     return (0, jostraca_1.each)(feature)
         .filter((f) => false !== f.active && 'base' !== f.name)
+        .filter((f) => null == target || (0, applicability_1.featureApplies)(f, target))
         .map((f) => {
         const opts = (f.config && f.config.options) || {};
         const options = Object.keys(opts).sort().map((k) => ({

@@ -785,7 +785,7 @@ src/cmp/js/Entity_js.ts 9993def32681
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
 src/cmp/js/Main_js.ts b6de4ec6ee81
-src/cmp/js/Package_js.ts 764092df3ed0
+src/cmp/js/Package_js.ts 754bec1e4a4b
 src/cmp/js/ReadmeEntity_js.ts ae43abf1da32
 src/cmp/js/ReadmeExplanation_js.ts e35423942ff1
 src/cmp/js/ReadmeHowto_js.ts f960b893250d
@@ -1039,7 +1039,7 @@ src/cmp/lua/Entity_lua.ts e3e43269850c
 src/cmp/lua/Gitignore_lua.ts a86735a421ba
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
 src/cmp/lua/Main_lua.ts 705b93e1edca
-src/cmp/lua/Package_lua.ts e294d0dff1d3
+src/cmp/lua/Package_lua.ts 8e1fcf911d76
 src/cmp/lua/ReadmeEntity_lua.ts 652a277f842f
 src/cmp/lua/ReadmeExamplesTest_lua.ts 5f104cb87813
 src/cmp/lua/ReadmeExplanation_lua.ts a78888656e53
@@ -1967,7 +1967,7 @@ src/cmp/ts/Entity_ts.ts 616f4613ee7a
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
 src/cmp/ts/Main_ts.ts 6d054d9b9bb8
-src/cmp/ts/Package_ts.ts 8db9ddb35912
+src/cmp/ts/Package_ts.ts 19bb2c3f5d81
 src/cmp/ts/ReadmeEntity_ts.ts a8d946b1b786
 src/cmp/ts/ReadmeExampleTest_ts.ts 271424a8ec78
 src/cmp/ts/ReadmeExamplesTest_ts.ts 27fc7e1ca552
@@ -2028,7 +2028,7 @@ tm/ts/src/utility/GraphqlUtility.ts 1ad81edf1c06
 tm/ts/src/utility/MakeContextUtility.ts 50caf1a75850
 tm/ts/src/utility/MakeErrorUtility.ts ac21ee4f2052
 tm/ts/src/utility/MakeFetchDefUtility.ts 940b95f0d2b0
-tm/ts/src/utility/MakeOptionsUtility.ts 6e0ec912c0d2
+tm/ts/src/utility/MakeOptionsUtility.ts ddc9cba22d35
 tm/ts/src/utility/MakePointUtility.ts 1279b9bfce56
 tm/ts/src/utility/MakeRequestUtility.ts 03c4c8e1380a
 tm/ts/src/utility/MakeResponseUtility.ts a294cf7183ee
@@ -2062,7 +2062,7 @@ tm/ts/test/omni.ts 5ac43af96b3a
 tm/ts/test/pipeline.test.ts 7329fb39d310
 tm/ts/test/sdk-test-control.json 47bf9b08d0cf
 tm/ts/test/tsconfig.json 0da68e0cde47
-tm/ts/test/utility.ts 208249bbf6e2
+tm/ts/test/utility.ts 3a200b68de58
 tm/ts/test/utility/Corpus.test.ts fea805411aa1
 tm/ts/test/utility/Custom.test.ts a8780a38b0ea
 tm/ts/test/utility/PrimaryUtility.test.ts e7005370dadc

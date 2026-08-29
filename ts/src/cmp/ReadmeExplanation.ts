@@ -1,4 +1,6 @@
 
+import { targetFeatures } from '../helpers/applicability'
+
 import { cmp, each, names, Content } from 'jostraca'
 
 import {
@@ -222,7 +224,8 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  const feature = getModelPath(model, `main.${KIT}.feature`)
+  // Gated: this section describes a TARGET's features.
+  const feature = targetFeatures(model, target)
   const lang = LANGS[target.name] || DEFAULT_LANG
 
   // Pick a real example entity WITH a real op (prefer a read op) so the

@@ -31,6 +31,7 @@ class SecretsFeature extends BaseFeature {
   _sekreto?: Sekreto
   _secretname: string = 'apikey'
   _resolving?: Promise<void>
+  _cache: boolean = true
 
 
   // Sync by contract (the constructor cannot await): build the chain only,
@@ -59,9 +60,11 @@ class SecretsFeature extends BaseFeature {
       providers.push(p)
     }
 
+    this._cache = false !== (fopts as any).cache
+
     this._sekreto = new Sekreto({
       providers,
-      cache: false !== (fopts as any).cache,
+      cache: this._cache,
     })
 
     // Seam for ProjectNameSDK.prepare() (no feature hooks on that path)
@@ -95,14 +98,35 @@ class SecretsFeature extends BaseFeature {
   }
 
 
-  // Resolve the apikey once, before the first request. Concurrent ops share
-  // the same in-flight promise. A provider ERROR (unreachable vault, bad
-  // creds) rejects and fails the op — sekreto's miss-vs-error rule: never
-  // fall through to an unauthenticated request because a store was broken.
+  // Resolve the apikey before the first request. Concurrent ops share the
+  // one IN-FLIGHT promise; a settled one is not reused unless caching is
+  // on. A provider ERROR (unreachable vault, bad creds) rejects and fails
+  // the op — sekreto's miss-vs-error rule: never fall through to an
+  // unauthenticated request because a store was broken.
+  //
+  // The promise is cleared on REJECTION, and after success when caching is
+  // off. Holding a settled promise forever would mean a transient vault
+  // outage poisoned the client permanently — every later operation failing
+  // with the original error long after the vault recovered — and it would
+  // make the documented `cache: false` a lie, since the chain would never
+  // be asked a second time.
   resolve(): Promise<void> {
     if (null == this._resolving) {
-      this._resolving = this._resolveonce()
+      const inflight = this._resolveonce()
+        .then(
+          () => {
+            if (!this._cache) {
+              this._resolving = undefined
+            }
+          },
+          (err: any) => {
+            this._resolving = undefined
+            throw err
+          })
+
+      this._resolving = inflight
     }
+
     return this._resolving
   }
 

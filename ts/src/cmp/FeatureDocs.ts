@@ -1,3 +1,5 @@
+import { featureApplies } from '../helpers/applicability'
+
 import { each } from 'jostraca'
 
 import { KIT, getModelPath } from '../types'
@@ -46,11 +48,15 @@ function renderValue(v: any): string {
 
 // Every feature the model declares active, in a stable order, with its
 // options and their defaults.
-function featureDocs(model: any): FeatureDoc[] {
+// With a target, also drops features that do not APPLY to it: a target
+// README must not document a feature that target has no implementation
+// for. Without one (the repo-level README) every active feature is listed.
+function featureDocs(model: any, target?: any): FeatureDoc[] {
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
   return each(feature)
     .filter((f: any) => false !== f.active && 'base' !== f.name)
+    .filter((f: any) => null == target || featureApplies(f, target))
     .map((f: any) => {
       const opts = (f.config && f.config.options) || {}
       const options = Object.keys(opts).sort().map((k) => ({

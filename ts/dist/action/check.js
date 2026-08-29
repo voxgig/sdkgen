@@ -38,6 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cmd_package_check = cmd_package_check;
 exports.checkPackage = checkPackage;
+const applicability_1 = require("../helpers/applicability");
 const node_path_1 = __importDefault(require("node:path"));
 const types_1 = require("../types");
 const utility_1 = require("../utility");
@@ -226,6 +227,20 @@ function checkDefinition(fs, kind, name, file) {
     const unified = (0, modelcheck_1.compileModel)(src, file, { schema: true });
     for (const err of unified.errors.slice(0, SAME_FILE_LIMIT)) {
         found.push(at('error', 'model-schema', err + '  (unified with the base schema — this is what a consumer compiles)'));
+    }
+    // 5b. APPLICABILITY TAGS come from a CLOSED vocabulary (see
+    //     helpers/applicability). `provides: &: boolean` accepts any key, so
+    //     without this a typo — `sekrreto` for `sekreto` — compiles cleanly
+    //     and silently makes the feature apply to NO target at all. That is
+    //     the worst shape a mistake can take here: the feature simply
+    //     vanishes from every generated SDK with no diagnostic anywhere.
+    const tagkey = 'feature' === kind ? 'needs' : 'provides';
+    const unknown = null == declared ? [] : (0, applicability_1.unknownTags)(declared[tagkey]);
+    if (0 < unknown.length) {
+        found.push(at('error', 'model-tag-unknown', 'declares unknown applicability tag(s) in `' + tagkey + '`: ' +
+            unknown.join(', ') + ' — the vocabulary is CLOSED (' + applicability_1.TAGS.join(', ') +
+            '), so an unrecognised tag makes this ' + kind +
+            ' match nothing rather than failing loudly'));
     }
     if ('target' === kind) {
         found.push(...checkTargetModel(src, name, file, at));

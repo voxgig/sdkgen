@@ -21,9 +21,11 @@
 // published package starves every target added after its release. A tag is
 // a claim about the feature that stays true as the target set grows.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TAGS = void 0;
 exports.featureApplies = featureApplies;
 exports.targetFeatures = targetFeatures;
 exports.featureTags = tags;
+exports.unknownTags = unknownTags;
 const apidef_1 = require("@voxgig/apidef");
 // Tags are a MAP keyed by tag name, `{ sekreto: true }` — see the schema
 // note on `needs`. A map because aontu unifies maps by key, so a package
@@ -81,5 +83,21 @@ function targetFeatures(model, target) {
         }
     }
     return applies;
+}
+// THE CLOSED VOCABULARY. The schema comment says applicability tags are a
+// closed set; without this, `provides: &: boolean` accepts any key, so a
+// typo (`sekrreto`) compiles cleanly and silently makes the feature apply
+// NOWHERE — the worst failure shape, because the feature simply vanishes
+// with no diagnostic.
+//
+// Extended by adding a tag here AND documenting it in model/sdkgen.aon.
+const TAGS = [
+    // A vendored sekreto port lives in this target's feature container.
+    'sekreto',
+];
+exports.TAGS = TAGS;
+// The tags named by `needs`/`provides` that are not in the vocabulary.
+function unknownTags(val) {
+    return tags(val).filter((t) => !TAGS.includes(t));
 }
 //# sourceMappingURL=applicability.js.map

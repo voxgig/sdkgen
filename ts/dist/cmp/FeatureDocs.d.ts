@@ -10,7 +10,7 @@ type FeatureDoc = {
     }>;
 };
 declare function renderValue(v: any): string;
-declare function featureDocs(model: any): FeatureDoc[];
+declare function featureDocs(model: any, target?: any): FeatureDoc[];
 declare function honoursActivationOrder(target: any): boolean;
 export { featureDocs, renderValue, honoursActivationOrder, };
 export type { FeatureDoc };
