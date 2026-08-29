@@ -7,8 +7,12 @@ A phased plan to upgrade sdkgen so generated SDKs vendor the current
 keeping the "SDKs have no dependencies" rule — including the upstream
 bug-fix backports the prototype surfaced.
 
-**Source of truth.** Everything here was proven on the solardemo
-prototype branch
+**Source of truth.** Everything here was proven against solardemo. The
+sekreto half now runs on its main, project-owned, via `options.extend`
+([`ts/src/ext/secrets/`](https://github.com/voxgig-sdk/voxgig-solardemo-sdk/tree/main/ts/src/ext/secrets)
+— see **Staging** for why that route exists and what it is waiting on).
+The struct and omni halves, and the full hand-refactor they came from,
+are on the prototype branch
 [`claude/vendor-omni-struct-sekreto-prototype`](https://github.com/voxgig-sdk/voxgig-solardemo-sdk/tree/claude/vendor-omni-struct-sekreto-prototype)
 ([PR #29](https://github.com/voxgig-sdk/voxgig-solardemo-sdk/pull/29),
 deliberately unmergeable), whose
@@ -195,11 +199,12 @@ solardemo regen reproduces the prototype's `test/` tree.
 **Prerequisite: an implemented applicability gate.** Feature tags
 (`docs/design/feature-tags.md`) are a PROPOSAL today — nothing gates a
 feature by target, and `ts/src/action/feature.ts` fans out to every
-target and merely WARNS on `feature-source-missing`. A project with any
-target lacking a sekreto port would otherwise carry an active `secrets`
-model/config with no implementation behind it. Either implement the
-feature-tag gate first, or ship an equivalent applicability check as
-part of this phase; do not rely on the warning.
+target and merely WARNS on `feature-source-missing`. This is not a
+theoretical gap: attempting it aborts generation outright and would
+dangle Config imports in the targets that did generate — see
+**Staging** below for the exact failure and why resolving the
+`Feature.ts` TODO is not sufficient on its own. Implement the gate
+first, as its own design and PR; do not rely on the warning.
 
 1. Vendor sekreto verbatim into `tm/ts/src/feature/secrets/sekreto/`
    (Sekreto, Providers, Sigv4, trimmed barrel) — INSIDE the feature
@@ -322,11 +327,62 @@ bug, corrected per step 2).
    claiming the secrets feature or the omni runner carries the
    corresponding template files, per the existing tier rules.
 
+## Staging: what can be proven before a phase lands
+
+Two constraints were established by trying them, and together they
+decide how this migration is staged.
+
+**There is no prerelease shortcut.** The tempting way to prove a phase
+against a real consumer without touching main is to publish a
+prerelease from a prototype branch and pin the consumer's `.sdk` to it.
+`publish.yml` refuses: *"dispatch ref is `<branch>`; releases must come
+from main"*. The only other entry, a hand-pushed `v*` tag, has no such
+guard — but taking it would circumvent a control installed deliberately
+against exactly that, for an action that cannot be undone. So a phase
+reaches a consumer only by landing on main and releasing normally, and
+the pre-merge proof is sdkgen's own suite plus a local
+`add-target`/`generate` against a checkout.
+
+**A feature cannot be generated for a subset of targets.** This is the
+applicability gate, and it is a hard prerequisite for Phase 3 rather
+than a nicety. Building the secrets feature as a project-owned sdkgen
+package (manifest + `model/feature/secrets.aon` +
+`tm/ts/src/feature/secrets/`, modelled on elementdemo's `elementcard`)
+passes `package check` cleanly and wires in correctly with `package
+add` + `feature add` — and then generation aborts:
+
+```
+Copy: from: check: string: tm/js/src/feature/secrets
+```
+
+`feature add` warns `feature-source-missing` for every target with no
+source and only warns; `Copy` then stat-fails on the first of them and
+exits 1, so no target generates. Resolving the `Feature.ts` TODO
+(*"Copy should just warn if from not found"*) is necessary but NOT
+sufficient: the Config components emit feature imports and registry
+entries generically from the model's ACTIVE features, so each target
+that did generate would carry a dangling import for a feature it has no
+source for. The gate therefore has to filter the per-target model view —
+in ONE place, so `Feature`, the Config components and the docs
+components all see the same answer — which is a design of its own
+(`docs/design/feature-tags.md`) and its own PR.
+
+**Meanwhile, `options.extend` is the honest staging route.** It is the
+documented seam for handing a generated client a feature INSTANCE at
+construction, it needs no sdkgen change, and it puts a feature's design
+under test in a real consumer before the templates exist. solardemo runs
+the secrets feature this way today
+([`ts/src/ext/secrets/`](https://github.com/voxgig-sdk/voxgig-solardemo-sdk/tree/main/ts/src/ext/secrets)):
+project-owned, untouched by `generate`, drift gate green. Phase 3 moves
+it into a feature template and deletes it there. Any future feature can
+be staged the same way.
+
 ## Rollout and acceptance
 
 Order: Phase 0 → 1 → 2 → 3, each as its own reviewed PR (Phase 4 rides
-along with whichever phase first needs the guard). Between phases, run
-the standard validation sequence from `CLAUDE.md`:
+along with whichever phase first needs the guard), with the
+applicability gate landing before Phase 3. Between phases, run the
+standard validation sequence from `CLAUDE.md`:
 
 ```
 cd sdkgen && make build test          # includes generate.test.ts, all targets
@@ -343,7 +399,10 @@ deliberate corrections this guide makes to it (the `prepare()`
 error-return fix and the feature-container placements) — at which
 point the prototype's red `Generate and check for drift` gate would be
 green on the corrected equivalent, and the branch can be closed as
-absorbed. Elementdemo is the
+absorbed. For the secrets half specifically, the acceptance test is
+sharper and already in place: solardemo's `ts/src/ext/secrets/` and its
+14 tests must keep passing when the feature becomes generated, with the
+directory deleted and nothing else in the suite changing. Elementdemo is the
 second gate: its `ext/` package's custom `bash` target and
 `elementcard` feature must regenerate unchanged, proving the migration
 does not break external sdkgen packages.
