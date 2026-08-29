@@ -529,6 +529,11 @@ flow a non-applicable feature's dependency into a target's manifest.
   drift, sekreto's browser-safety split) are not filed.
 - **Corpus entries pinning the null semantics**, which belong in the
   corpus create-sdkgen owns, plus upstream 0.3.2's new sections.
+- **sekreto's `checkaddr` rejects IPv6 loopback.** `http://[::1]:8200`
+  parses to host `'['`, so the `'::1'` and `'[::1]'` entries in its own
+  allowlist are unreachable and a legitimate local vault is refused. Found
+  by review on this PR; vendored verbatim, so it goes on the same sekreto
+  issue as the browser-safety split rather than being patched here.
 - **`jsonstr`'s cycle guard has a DAG false positive**: `seen` is added to
   but never removed, so the same object appearing twice as siblings prints
   `[Circular]`. Only affects failure-message rendering. Fix it when
