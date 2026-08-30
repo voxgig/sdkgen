@@ -611,7 +611,7 @@ tm/go/utility/graphql.go 213aca4b03f4
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go acc76429c4ee
 tm/go/utility/make_fetch_def.go 1b2ecd1822cf
-tm/go/utility/make_options.go 5cebce053605
+tm/go/utility/make_options.go b746a669a3f0
 tm/go/utility/make_point.go 1ff96089fd15
 tm/go/utility/make_request.go cf4d4f55e911
 tm/go/utility/make_response.go 57ad84a7b3be

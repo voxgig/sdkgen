@@ -36,6 +36,20 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
+	// `auth: nil` is the documented way to disable auth outright, and
+	// prepareAuth honours it before it ever reads the apikey. But validate
+	// treats a stored nil as "no value", so the optspec's `auth` default
+	// fires and the suppression silently becomes "use default auth" —
+	// transmitting a credential the caller explicitly asked not to send.
+	//
+	// Suppliedness cannot be recovered after validate, hence here. The
+	// two-value form is required: options["auth"] reads nil both when the
+	// key is ABSENT and when it is present and nil, and only the second is
+	// a suppression. (ts gets this for free — `null === options.auth` is
+	// false for an omitted key, since that reads undefined.)
+	authval, authgiven := options["auth"]
+	authsuppressed := authgiven && authval == nil
+
 	opts := vs.Clone(options).(map[string]any)
 
 	// Feature add-order (feature #2). options.feature may be given as an ordered
@@ -140,6 +154,11 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 	merged := vs.Merge([]any{map[string]any{}, vs.Clone(cfgopts), opts})
 	validated, _ := vs.Validate(merged, optspec)
 	opts = validated.(map[string]any)
+
+	// Restore the suppression the optspec default would otherwise erase.
+	if authsuppressed {
+		opts["auth"] = nil
+	}
 
 	// Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
 	// Every placeholder must resolve to a non-empty value: from

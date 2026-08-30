@@ -510,6 +510,97 @@ func TestResformProbe(t *testing.T) {
   })
 
 
+  // `auth: null` - the documented way to disable auth outright - must beat an
+  // explicit apikey.
+  //
+  // struct's validate treats a STORED NULL as "no value", so the optspec's
+  // `auth` default fires and the suppression silently becomes "use default
+  // auth", putting on the wire the very credential the caller asked to
+  // withhold. ts hit this on its own migration and fixed it in makeOptions;
+  // go had the same defect independently.
+  //
+  // No corpus entry can catch this: corpus nulls travel as the '__NULL__'
+  // STRING, so real-JSON-null semantics are invisible to every port's shared
+  // fixtures. It has to be a target-level test like this one.
+  test('go: auth null suppresses the credential', async () => {
+    const go = toolchain('go')
+    if (null == go) {
+      return
+    }
+
+    const sdkroot = Path.join(tmp, 'go-authnull')
+    await generateTo('go', sdkroot)
+
+    Fs.writeFileSync(
+      Path.join(sdkroot, 'test', 'authnull_probe_test.go'),
+      `package sdktest
+
+import (
+	"testing"
+
+	sdk "github.com/voxgig-sdk/demo-sdk/go"
+)
+
+// \`auth: nil\` is the documented way to disable auth outright. It must beat an
+// explicit apikey, because that is the only case that DISCRIMINATES: with no
+// apikey nothing goes on the wire anyway, so "auth nil alone" passes whether
+// the suppression works or not.
+func TestAuthNullProbe(t *testing.T) {
+	// Captures what the transport would actually send.
+	wire := func(opts map[string]any) (string, bool) {
+		var seen any
+		var had bool
+
+		full := map[string]any{}
+		for k, v := range opts {
+			full[k] = v
+		}
+		full["utility"] = map[string]any{
+			"fetcher": sdk.FetcherFunc(func(
+				ctx *sdk.Context, fullurl string, fetchdef map[string]any,
+			) (any, error) {
+				if h, ok := fetchdef["headers"].(map[string]any); ok {
+					seen, had = h["authorization"]
+				}
+				return map[string]any{
+					"status": 200, "ok": true,
+					"json": func() (any, error) { return map[string]any{}, nil },
+				}, nil
+			}),
+		}
+
+		client := sdk.NewDemoSDK(full)
+		_, _ = client.Planet(nil).Create(map[string]any{"name": "p1"}, map[string]any{})
+
+		str, _ := seen.(string)
+		return str, had
+	}
+
+	// Baseline: an apikey with no suppression must still be sent, else the
+	// test below would pass for the wrong reason.
+	if got, had := wire(map[string]any{"apikey": "OPTKEY01"}); !had || got != "OPTKEY01" {
+		t.Fatalf("baseline broken: an ordinary apikey was not sent (had=%v got=%q)", had, got)
+	}
+
+	// The suppression, against an explicit credential.
+	if got, had := wire(map[string]any{"apikey": "OPTKEY01", "auth": nil}); had {
+		t.Errorf("FAIL: auth nil did not suppress the credential - sent authorization %q", got)
+	}
+
+	// And the option survives validation rather than being replaced by the
+	// optspec's default auth map.
+	client := sdk.NewDemoSDK(map[string]any{"apikey": "OPTKEY01", "auth": nil})
+	if av, ok := client.OptionsMap()["auth"]; !ok || av != nil {
+		t.Errorf("FAIL: options.auth is %#v, not nil - validate replaced the suppression", av)
+	}
+}
+`)
+
+    const probe = run(go, ['test', './test/', '-run', 'TestAuthNullProbe', '-v'], sdkroot)
+    ok(probe.ok, 'auth null did not suppress the credential:\n' + tail(probe.out))
+  })
+
+
   test('go: data and literal paths agree on number types', async () => {
     const go = toolchain('go')
     if (null == go) {

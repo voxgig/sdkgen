@@ -529,7 +529,8 @@ flow a non-applicable feature's dependency into a target's manifest.
   browser-safety split) are not filed. struct's go-port drift is now
   RESOLVED — see below.
 - **Corpus entries pinning the null semantics**, which belong in the
-  corpus create-sdkgen owns, plus upstream 0.3.2's new sections.
+  corpus create-sdkgen owns, plus upstream 0.3.2's new sections. Now
+  demonstrated to be a PER-TARGET defect, not a ts one — see below.
 - **sekreto's `checkaddr` rejects IPv6 loopback.** `http://[::1]:8200`
   parses to host `'['`, so the `'::1'` and `'[::1]'` entries in its own
   allowlist are unreachable and a legitimate local vault is refused. Found
@@ -585,6 +586,20 @@ Two things follow for the other targets:
   every exported signature from both copies and compare them
   mechanically; the table above took seconds to produce that way and
   nothing else surfaced `GetPath` at all.
+- **Check `auth: null` on every target you touch.** go had the same
+  credential leak ts did, independently and already present before the
+  resync: `validate` treats a stored null as "no value", the optspec's
+  `auth` default fires, and the documented way to disable auth silently
+  becomes "use default auth" — putting the withheld credential on the
+  wire. It is invisible unless the caller ALSO supplies an apikey: with
+  none, nothing is sent either way, so the obvious test passes while the
+  defect is live. Fixed the same way as ts (capture suppliedness before
+  validate, restore the null after), but go needs the two-value map read
+  `authval, authgiven := options["auth"]` — a plain read is nil for an
+  absent key too, and only a present nil is a suppression. Every target
+  whose struct has these null semantics needs the check and its own test;
+  the corpus cannot supply one, because corpus nulls travel as the
+  `'__NULL__'` string.
 - **A silent signature is now pinned.** `ts/test/vendored.test.ts` grew a
   `vendored signature drift` block listing the exact `func` lines the
   templates' call sites assume — currently `GetPath` and `SetPath`, the
