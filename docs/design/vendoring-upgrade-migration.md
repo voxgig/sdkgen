@@ -708,6 +708,61 @@ Two things follow for the other targets:
   ordinary apikey is still sent, because the suppression alone cannot fail
   visibly — with no apikey nothing goes on the wire either way, so a probe
   without the baseline passes with the defect live.
+- **What a struct resync actually costs, measured on two targets.** The
+  rollout's per-target step 1 is "vendor that language's struct 0.3.2". Two
+  were attempted, and they came out at opposite ends, so do not price the
+  remaining ones off either alone.
+
+  **Read behaviour, not the stamp.** The upstream repo's per-port
+  `// VERSION:` lines are STALE: at commit `9440935` — the commit `ts@0.3.2`
+  and `go@0.1.3` were both taken from — `javascript/src/struct.js` still says
+  0.0.10 and most ports say nothing at all. Scanning those stamps says only
+  TypeScript has 0.3.2, and that is wrong: upstream python and javascript at
+  that commit both already answer the 0.3.2 way on every null question. The
+  stamps are the same trap as auditing by filename. Run the code.
+
+  **js was a one-file drop-in, and worth doing on its own.** 65 exports in
+  common, 6 new regex helpers, none dropped; header, manifest entry, golden
+  regen, done, whole suite green. It also closed a live parity hole: js was
+  on 0.0.10 while ts was on 0.3.2, so the two targets *every other language
+  is held in parity with* sat in different auth-null failure classes.
+
+  **php is NOT, and the reasons are concrete.** Two hard blockers, both
+  found by trying it:
+
+  1. **PHP's `[]` is both an empty list and an empty map**, and upstream
+     0.3.2's validate now rejects what the older vendored copy tolerated.
+     The generated SDK dies at construction with `Expected field
+     entity.ambient to be map, but found list: []` for every entity. Fixing
+     that is a php TEMPLATE change — the option/optspec construction has to
+     mark an empty map as a map — not a vendoring change.
+  2. **The provenance header cannot go first.** `vendored.test.ts` reads the
+     `// VENDORED:` line as line 1; php requires `<?php` there. Either the
+     guard learns a per-language prologue or php gets a different provenance
+     mechanism.
+
+  And a resync would NOT fix php's auth-null failure mode anyway. Upstream
+  php's validate still diverges from canonical on a stored null: with
+  `{auth: null}` against a spec whose `auth` carries a default, canonical
+  substitutes the default and php raises `Expected field auth to be map, but
+  found no value`. Both agree when `auth` is ABSENT — so this is specifically
+  the stored-null path, and it is why php is fail-CLOSED. That one is an
+  upstream php fix, not a resync.
+
+  **A third upstream-side item, already fixed there.** py's vendored getprop
+  is right for a map and wrong for a list — canonical tests `isnode(val)`
+  (map and list) then applies the null rule once, while py's copy branches
+  ismap/islist and its list branch does `return val[key]`, an early return
+  that skips it. Upstream python at `9440935` already returns `'ALT'` there,
+  so py needs a resync, not an upstream fix. Whether py's resync is
+  js-shaped or php-shaped is untested.
+
+  **rb is likely to be neither.** Its vendored copy carries a local
+  performance fix (lazy `log`, an O(n²) removal with measurements in the
+  comment) that upstream took with a DIFFERENT signature — block-only
+  upstream, block-or-string in the vendored copy — so a resync has call
+  sites to reconcile. 1249 differing lines.
+
 - **A silent BEHAVIOUR is now pinned too.** `ts/test/structnull.test.ts`
   runs each vendored struct through the one question that started all of
   this — when a key is PRESENT and holds a JSON null, is that "no value"? —
