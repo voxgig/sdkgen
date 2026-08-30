@@ -11,7 +11,9 @@ import {
   File,
   cmp,
   snakify,
-  isAuthActive, envName, envToken, liveStrict
+  isAuthActive,
+  serverVarEnv,
+  serverVariables, envName, envToken, liveStrict
 } from '@voxgig/sdkgen'
 
 
@@ -78,6 +80,20 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const apikeyLiveField = authActive
     ? `\n\t\t\t"apikey": env["${PROJECTNAME}_APIKEY"],`
     : ''
+
+  // A templated server URL (OpenAPI server variables) makes a LIVE client
+  // impossible to construct without values: makeOptions refuses rather than
+  // request a URL with a literal `{account_id}` in it. Taken from the
+  // environment, the same way the apikey is.
+  const svars = serverVariables(model)
+  const serverEnvEntry = svars
+    .map((v: any) => `\n\t\t"${serverVarEnv(PROJECTNAME, v.name)}": "",`).join('')
+  const serverLiveField = 0 === svars.length ? '' :
+    `\n\t\t"server": map[string]any{` +
+    svars.map((v: any) =>
+      `\n\t\t\t"${v.name}": env["${serverVarEnv(PROJECTNAME, v.name)}"],`).join('') +
+    `\n\t\t},`
+
 
   const opnames = Object.keys(entity.op || {})
   const hasLoad = opnames.includes('load')
@@ -559,13 +575,21 @@ func ${entity.name}DirectSetup(mockres any) *${entity.name}DirectSetupResult {
 
 	env := envOverride(map[string]any{
 		"${entidEnvVar}": map[string]any{},
-		"${PROJECTNAME}_TEST_LIVE":    "FALSE",${apikeyEnvEntry}
+		"${PROJECTNAME}_TEST_LIVE":    "FALSE",${apikeyEnvEntry}${serverEnvEntry}
 	})
 
 	live := env["${PROJECTNAME}_TEST_LIVE"] == "TRUE"
 
 	if live {
-		mergedOpts := map[string]any{${apikeyLiveField}
+		// sdk-test-control.json's test.client.options seeds the live
+		// client; the generated fields below overwrite anything they name.
+		mergedOpts := map[string]any{}
+		for k, v := range liveClientOptions() {
+			mergedOpts[k] = v
+		}
+		for k, v := range map[string]any{${apikeyLiveField}${serverLiveField}
+		} {
+			mergedOpts[k] = v
 		}
 		client := sdk.New${model.const.Name}SDK(mergedOpts)
 

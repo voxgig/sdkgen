@@ -5,6 +5,7 @@ type ServerVar = {
     description: string;
 };
 declare function serverVariables(model: any): ServerVar[];
+declare function serverVarEnv(projenvname: string, name: string): string;
 declare function hasServerVariables(model: any): boolean;
-export { serverVariables, hasServerVariables, };
+export { serverVariables, hasServerVariables, serverVarEnv, };
 export type { ServerVar };

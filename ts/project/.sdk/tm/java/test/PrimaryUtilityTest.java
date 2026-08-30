@@ -271,7 +271,10 @@ public class PrimaryUtilityTest {
   @Test
   public void fetcherLive() {
     final List<Map<String, Object>> calls = new ArrayList<>();
+    // Concrete base: a live construction must satisfy any server variables a
+    // templated base URL declares; a literal base sidesteps the requirement.
     ProjectNameSDK liveClient = new ProjectNameSDK(fhMap(
+        "base", "http://localhost:8080",
         "system", fhMap(
             "fetch", (BiFunction<String, Map<String, Object>, Map<String, Object>>)
                 (url, fetchdef) -> {
@@ -296,7 +299,10 @@ public class PrimaryUtilityTest {
   public void fetcherBlockedTestMode() {
     // Create a live SDK then set mode to test (not using testSDK, which
     // installs the test feature).
+    // Concrete base: a live construction must satisfy any server variables a
+    // templated base URL declares; a literal base sidesteps the requirement.
     ProjectNameSDK blockedClient = new ProjectNameSDK(fhMap(
+        "base", "http://localhost:8080",
         "system", fhMap(
             "fetch", (BiFunction<String, Map<String, Object>, Map<String, Object>>)
                 (url, fetchdef) -> new LinkedHashMap<>())));

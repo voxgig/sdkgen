@@ -27,6 +27,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.serverVariables = serverVariables;
 exports.hasServerVariables = hasServerVariables;
+exports.serverVarEnv = serverVarEnv;
 // Match {name} placeholders in a server URL template. OpenAPI variable
 // names are restricted to word characters in practice; a brace group that
 // is not a well-formed name is left untouched rather than guessed at.
@@ -76,6 +77,22 @@ function serverVariables(model) {
         });
     }
     return out;
+}
+// The environment variable a generated LIVE test reads one server variable
+// from: `<PROJ>_SERVER_<NAME>`, e.g. ELEMENTDEMO_SERVER_ACCOUNT_ID.
+//
+// A live client CANNOT BE CONSTRUCTED without every required server
+// variable — makeOptions raises rather than issue requests to a URL with a
+// literal `{account_id}` in it — so an SDK whose spec templates its server
+// URL had no runnable live suite at all until the generated tests could be
+// told the values. The apikey has had `<PROJ>_APIKEY` since the beginning;
+// this is the same idea for the other half of "where do I point".
+//
+// One variable per NAME rather than one JSON blob: the names come from the
+// spec, they are few, and a shell export per name is what a CI secret store
+// and a .env file both hold naturally.
+function serverVarEnv(projenvname, name) {
+    return projenvname + '_SERVER_' + String(name).toUpperCase();
 }
 // Does the model's server URL contain any {name} placeholders at all?
 function hasServerVariables(model) {

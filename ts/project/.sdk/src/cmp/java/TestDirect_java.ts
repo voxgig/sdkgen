@@ -11,7 +11,9 @@ import {
   File,
   cmp,
   snakify,
-  isAuthActive, envName, envToken
+  isAuthActive,
+  serverVarEnv,
+  serverVariables, envName, envToken
 } from '@voxgig/sdkgen'
 
 
@@ -86,6 +88,20 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const SDK = model.const.Name + 'SDK'
 
   const authActive = isAuthActive(model)
+
+
+  // A templated server URL (OpenAPI server variables) makes a LIVE client
+  // impossible to construct without values: MakeOptions throws rather than
+  // request a URL with a literal `{account_id}` in it. Taken from the
+  // environment, the same way the apikey is.
+  const svars = serverVariables(model)
+  const serverEnvEntry = svars
+    .map((v: any) => `    envm.put("${serverVarEnv(PROJECTNAME, v.name)}", "");\n`).join('')
+  const serverLiveField = 0 === svars.length ? '' :
+    `      Map<String, Object> serveropt = new LinkedHashMap<>();\n` +
+    svars.map((v: any) =>
+      `      serveropt.put("${v.name}", env.get("${serverVarEnv(PROJECTNAME, v.name)}"));\n`).join('') +
+    `      mergedOpts.put("server", serveropt);\n`
 
   const opnames = Object.keys(entity.op || {})
   const hasLoad = opnames.includes('load')
@@ -465,7 +481,7 @@ ${loadSkipBlock}    ${SDK} client = setup.client;
     Map<String, Object> envm = new LinkedHashMap<>();
     envm.put("${entidEnvVar}", new LinkedHashMap<>());
     envm.put("${PROJECTNAME}_TEST_LIVE", "FALSE");
-${authActive ? `    envm.put("${PROJECTNAME}_APIKEY", "NONE");\n` : ''}    Map<String, Object> env = RunnerSupport.envOverride(envm);
+${authActive ? `    envm.put("${PROJECTNAME}_APIKEY", "NONE");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
 
     boolean live = "TRUE".equals(env.get("${PROJECTNAME}_TEST_LIVE"));
 
@@ -473,8 +489,11 @@ ${authActive ? `    envm.put("${PROJECTNAME}_APIKEY", "NONE");\n` : ''}    Map<S
     setup.calls = calls;
 
     if (live) {
-      Map<String, Object> mergedOpts = new LinkedHashMap<>();
-${authActive ? `      mergedOpts.put("apikey", env.get("${PROJECTNAME}_APIKEY"));\n` : ''}      setup.client = new ${SDK}(mergedOpts);
+      // sdk-test-control.json's test.client.options seeds the live
+      // client; the generated fields below overwrite anything they name.
+      Map<String, Object> mergedOpts =
+          new LinkedHashMap<>(RunnerSupport.liveClientOptions());
+${authActive ? `      mergedOpts.put("apikey", env.get("${PROJECTNAME}_APIKEY"));\n` : ''}${serverLiveField}      setup.client = new ${SDK}(mergedOpts);
       setup.live = true;
 
       Map<String, Object> idmap = new LinkedHashMap<>();

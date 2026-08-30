@@ -102,6 +102,25 @@ class ProjectNameTestRunner:
         return False, None
 
     @staticmethod
+    def live_client_options():
+        """Extra SDK options every LIVE client is constructed with, from
+        sdk-test-control.json `test.client.options`.
+
+        The generated live client knows two things: the base URL (from the
+        spec) and the credential (from the environment). Everything else
+        about how a particular API wants to be talked to - which features to
+        switch on, and with what settings - is a property of THAT API, known
+        to the project and to nothing in the toolchain.
+
+        Merged UNDER the generated fields, so the suite's own
+        base/apikey/server values win: this ADDS to the live client, it does
+        not redirect it.
+        """
+        ctrl = ProjectNameTestRunner.load_test_control()
+        opts = ctrl.get("test", {}).get("client", {}).get("options")
+        return opts if isinstance(opts, dict) else {}
+
+    @staticmethod
     def live_delay_ms():
         """Per-test live pacing delay (ms); default 500."""
         ctrl = ProjectNameTestRunner.load_test_control()
@@ -159,6 +178,10 @@ def is_control_skipped(kind, name, mode):
 
 def load_test_control():
     return ProjectNameTestRunner.load_test_control()
+
+
+def live_client_options():
+    return ProjectNameTestRunner.live_client_options()
 
 
 def live_delay_ms():

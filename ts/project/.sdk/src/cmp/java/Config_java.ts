@@ -12,6 +12,11 @@ import {
 
 
 import {
+  serverVariables,
+} from '@voxgig/sdkgen'
+
+
+import {
   KIT,
   Model,
   getModelPath,
@@ -75,6 +80,18 @@ const Config = cmp(async function Config(props: any) {
   const options: Record<string, any> = {
     base: baseUrl,
   }
+
+  // Templated server URL: emit the spec's server-variable defaults so the
+  // runtime can substitute {name} placeholders in base (see MakeOptions).
+  // Without this block the placeholder reaches the wire verbatim — java
+  // shipped `http://host/api/{account_id}/element` as a real URL, which is
+  // worse than the construction error every other target raises.
+  const svars = serverVariables(model)
+  if (0 < svars.length) {
+    options.server = svars.reduce(
+      (a: any, v: any) => (a[v.name] = v.dflt, a), {} as Record<string, string>)
+  }
+
   if (authActive) {
     options.auth = { prefix: authPrefix }
   }

@@ -46,12 +46,13 @@ is no runtime to install and no service to call.
 | [`debug`](#debug) | Captures a ring buffer of traces with redacted headers | `PreRequest`, `PreResponse`, `PreDone`, `PreUnexpected` |
 | [`clienttrack`](#clienttrack) | Stamps `User-Agent`, client-session and per-request ids | `PostConstruct`, `PreRequest` |
 | [`log`](#log) | Structured logging at every pipeline stage | every stage |
+| [`secrets`](#secrets) | Resolves the API credential through a provider chain, and exchanges a refresh token for short-lived access tokens | `PreSpec` + transport |
 
 Loosely, they group as **resilience** (`retry`, `timeout`, `ratelimit`,
 `cache`), **correctness under retry** (`idempotency`), **large result sets**
 (`paging`, `streaming`), **observability** (`telemetry`, `metrics`, `audit`,
 `debug`, `log`, `clienttrack`), **governance** (`rbac`, `proxy`, `cost`), and
-**testing** (`test`, `netsim`).
+**testing** (`test`, `netsim`), and **credentials** (`secrets`).
 
 ---
 
@@ -1014,6 +1015,80 @@ production logger; for production, prefer [`telemetry`](#telemetry),
 at a rate you control.
 
 ---
+
+## `secrets`
+
+> Secret access: resolve the API credential through a provider chain, and
+> exchange a refresh token for short-lived access tokens
+
+Two jobs, one concern — *obtain the credential the transport sends*.
+
+**Resolution.** The SDK's `apikey` option keeps exactly its old meaning, but
+becomes ONE SOURCE among several: when the feature is active the credential
+is resolved through a [sekreto](https://github.com/voxgig/sekreto) provider
+chain in which an explicit `apikey` is the FIRST provider, so it still wins —
+by sekreto's own first-hit rule rather than by special-case logic. With the
+option unset, the remaining providers (env, a `.env` file, a vault) are asked
+in order, and moving a credential out of code becomes a configuration change.
+
+**Exchange.** Some APIs will not take a long-lived credential at all: what
+the chain resolves is a REFRESH token, which buys a short-lived ACCESS token
+from a token endpoint, and the access token expires. With
+`exchange.active`, the resolved secret is POSTed to `exchange.path` (relative
+to `base` — so a templated server URL's account or tenant segment is already
+in it), the access token is written into the live options where the
+synchronous `prepareAuth` reads it, and a response in `exchange.statuses`
+buys another and retries the request once.
+
+Set `name` to the refresh secret when exchanging — `name` is what the chain
+is asked for.
+
+**Seam:** `PreSpec` (awaited), plus a transport wrapper installed only when
+`exchange.active`. Resolution is async and the auth header is built
+synchronously inside `makeSpec`, so `PreSpec` is the one place a lookup can
+happen and still land in time. Expiry, by contrast, is only ever discovered
+from a RESPONSE, which is why the exchange needs the transport seam as well.
+
+**Applicability:** `needs: { sekreto: true }` — the feature is a thin layer
+over a vendored sekreto port, so it reaches only targets whose feature
+container carries one (`ts` today). See
+[feature tags](../design/feature-tags.md).
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `active` | `false` | Enable the feature. |
+| `providers` | `[]` | The chain, in first-hit order. Each entry is a sekreto `ProviderSpec` (`{ kind, name, ... }`) or a provider object. |
+| `name` | `'apikey'` | The secret to resolve. Set to the refresh secret when exchanging. |
+| `cache` | `true` | Off means every `resolve()` asks the chain again. |
+| `exchange.active` | `false` | Turn the access-token exchange on. Inert when off: the feature then behaves exactly as it always did. |
+| `exchange.path` | `'auth/token'` | Token endpoint, RELATIVE to `base`. |
+| `exchange.method` | `'POST'` | |
+| `exchange.request` | `'refresh_token'` | JSON field the refresh credential is sent in. |
+| `exchange.response` | `'access_token'` | JSON field the access token comes back in. |
+| `exchange.refresh` | `''` | An explicit refresh token, given in code. First in the chain, so it wins. `apikey` cannot serve here: with an exchange configured it means "an access token I already hold". |
+| `exchange.statuses` | `[401]` | Statuses meaning "your access token is spent". |
+| `exchange.retries` | `1` | Purchases-and-retries per request. One: a second refusal on a token bought moments ago is a real failure. |
+
+```ts
+feature: {
+  secrets: {
+    active: true,
+    name: 'refresh_token',
+    providers: [{ kind: 'dotenv', file: '.env' }, { kind: 'env' }],
+    exchange: { active: true, path: 'auth/token' },
+  },
+}
+```
+
+**Notes.** A provider ERROR (an unreachable vault, bad credentials) fails the
+operation rather than falling through to an unauthenticated request —
+sekreto's miss-vs-error rule. Concurrent operations share the single
+in-flight lookup and the single in-flight token purchase, so four calls at
+once do not open four token requests. In TEST MODE nothing is bought: the
+credential becomes the deterministic `test-<response-field>`, the same answer
+`makeOptions` gives a required server variable, so offline suites need no
+token endpoint. `sdk.secrets()` returns the live `Sekreto` for arbitrary
+lookups and redaction.
 
 ## Combining features
 
