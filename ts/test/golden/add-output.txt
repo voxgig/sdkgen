@@ -172,7 +172,7 @@ tm/clojure/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
-tm/clojure/src/sdk/core.clj da41bd6fef34
+tm/clojure/src/sdk/core.clj 3ba0cea2835a
 tm/clojure/src/sdk/features.clj 16a802374023
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
@@ -516,7 +516,7 @@ tm/elixir/lib/projectname/feature.ex a9f2c2609648
 tm/elixir/lib/projectname/feature/test.ex 072467e5d97f
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 48f0f17898ff
+tm/elixir/lib/projectname/utility.ex b6b69d1f1fb1
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -862,7 +862,7 @@ tm/js/src/utility/README.md 443e45445e95
 tm/js/src/utility/ResultBasicUtility.js 5cbbeb7567d8
 tm/js/src/utility/ResultBodyUtility.js 0a7226de89f0
 tm/js/src/utility/ResultHeadersUtility.js 152bcfc7ac7b
-tm/js/src/utility/StructUtility.js 2600d418f085
+tm/js/src/utility/StructUtility.js e81925183b1b
 tm/js/src/utility/TransformRequestUtility.js 98c45d5104fb
 tm/js/src/utility/TransformResponseUtility.js 36fb184e55c9
 tm/js/src/utility/Utility.js 63c0e87a03bb
@@ -999,7 +999,7 @@ tm/lean/src/SdkFeature.lean 5be60a4885a3
 tm/lean/src/SdkFeatures.lean 56f4ec858b18
 tm/lean/src/SdkJson.lean c325e2d5d135
 tm/lean/src/SdkRuntime.lean d3dc42c7dfc3
-tm/lean/src/SdkUtility.lean 0510f9a2d448
+tm/lean/src/SdkUtility.lean d4921bac67f8
 tm/lean/src/VoxgigStruct.lean 88e6440fdc48
 tm/lean/src/Vregex.lean 40a34c219a91
 tm/lean/src/feature/README.md f2b039e67b3c
@@ -1162,7 +1162,7 @@ tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml 1ea1bbd4b375
 tm/ocaml/sdk_helpers.ml deadcfd0d1f8
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml 30a075c97c8a
+tm/ocaml/sdk_runtime.ml d46d06559c11
 tm/ocaml/sdk_types.ml 85ee25259c3a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/audit/.gitkeep e3b0c44298fc
@@ -1834,7 +1834,7 @@ tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
 tm/scala/utility/Fetcher.scala a3a1073307be
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
-tm/scala/utility/Make.scala 96e7fe9a934d
+tm/scala/utility/Make.scala 47e2dd2e2bf3
 tm/scala/utility/MakeSpec.scala 321cd9348d4e
 tm/scala/utility/Misc.scala bf44fcc37724
 tm/scala/utility/Prepare.scala 8c0bc0c5c841
@@ -2126,7 +2126,7 @@ tm/zig/core/response.zig 4df235df5674
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 76f0cf3fd406
 tm/zig/core/types.zig ed211da482aa
-tm/zig/core/utility.zig 933120bf9f26
+tm/zig/core/utility.zig efe735aa8345
 tm/zig/feature/audit.zig bd9ec0baec3e
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig 4a8f27f50abe

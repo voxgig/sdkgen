@@ -260,8 +260,19 @@ def prepareAuth (ctx : Value) : SIO (Value × Option Value) := do
   | .map _ => do
     let headers ← gpMap specV "headers"
     let options ← gp ctx "options"
+    -- `auth: null` is the documented way to suppress auth outright: NO
+    -- authorization header, whatever the apikey says. Without this the
+    -- withheld credential goes on the wire.
+    --
+    -- The ports that run options through validate against an optspec carrying
+    -- an `auth` default can use absence as the signal (validate guarantees the
+    -- key is present otherwise). lean's makeOptions has no optspec, so `auth`
+    -- is ABSENT in the ordinary case and absence must stay the ordinary case.
+    -- getpropRaw is the only reader that tells a STORED null from an absent
+    -- key - gp collapses both to .noval - so the stored null alone suppresses.
+    let authRaw ← getpropRaw options "auth"
     let apikey ← gpS options "apikey"
-    if apikey == "" then do
+    if authRaw == .null || apikey == "" then do
       dp headers "authorization"
       pure (specV, none)
     else do

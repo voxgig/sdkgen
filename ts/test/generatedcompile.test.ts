@@ -90,9 +90,26 @@ function linkDeps(sdkroot: string) {
 // fwrite(STDERR), java's System.err - because that is where a test framework
 // puts a diagnostic. A lane that read stdout only would see a passing suite
 // and none of what it said, which is how a fully-SKIPPED run looks.
+//
+// AND A TIMEOUT, because spawnSync without one cannot be interrupted.
+//
+// Every lane here shells out to a real toolchain, and a toolchain that hangs
+// hangs the whole job: spawnSync blocks the single node thread until the
+// child exits, so nothing - not node's per-test timeout, not the reporter -
+// can step in. The job then runs to the runner's own limit, six hours, with
+// no output to say where it stopped. That is not hypothetical: the gradle
+// lane sat for over half an hour on windows-latest while ubuntu and macos
+// finished the ENTIRE suite in 3m46s and 2m20s.
+//
+// So every child is bounded. The budget is per-command and deliberately far
+// above anything observed - the whole ubuntu job is under four minutes - so
+// it can only fire on something genuinely stuck.
+const RUN_TIMEOUT_MS = 5 * 60 * 1000
+
 function run(
   cmd: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv,
-): { ok: boolean, out: string, unlaunchable: boolean } {
+  timeoutMs: number = RUN_TIMEOUT_MS,
+): { ok: boolean, out: string, unlaunchable: boolean, timedOut: boolean } {
   // A windows toolchain shim is a BATCH FILE - `mvn.cmd`, `phpunit.bat` - and
   // node refuses to spawn one without a shell (CVE-2024-27980). Quote the
   // path rather than pass it bare: `shell: true` builds one command line, so
@@ -103,11 +120,32 @@ function run(
   const res = spawnSync(shim ? '"' + cmd + '"' : cmd, args,
     {
       cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+      timeout: timeoutMs,
+      // SIGTERM leaves a JVM daemon and its children running, and spawnSync
+      // returns while they hold the runner. Kill the process outright.
+      killSignal: 'SIGKILL',
       ...(shim ? { shell: true } : {}),
       ...(env ? { env } : {}),
     })
 
   const out = String(res.stdout || '') + String(res.stderr || '')
+
+  // A TIMEOUT is neither a pass nor a lane failure: it says this machine
+  // could not finish the command, not that the behaviour under test is
+  // wrong. spawnSync signals it two ways depending on platform and node
+  // version - a killed child, or an ETIMEDOUT error - so check both.
+  const timedOut = 'SIGKILL' === res.signal
+    || 'ETIMEDOUT' === (res.error as any)?.code
+
+  if (timedOut) {
+    return {
+      ok: false,
+      out: cmd + ' did not finish within ' + Math.round(timeoutMs / 1000) +
+        's on this machine' + ('' === out.trim() ? '' : ':\n' + out),
+      unlaunchable: false,
+      timedOut: true,
+    }
+  }
 
   // A command that could not be LAUNCHED (ENOENT, EINVAL) has no output to
   // report, and says nothing about what it would have run: that is an
@@ -117,10 +155,11 @@ function run(
       ok: false,
       out: '' === out.trim() ? String(res.error.message) : out,
       unlaunchable: true,
+      timedOut: false,
     }
   }
 
-  return { ok: 0 === res.status, out, unlaunchable: false }
+  return { ok: 0 === res.status, out, unlaunchable: false, timedOut: false }
 }
 
 
@@ -1078,14 +1117,20 @@ function listFiles(root: string, ext: string): string[] {
 // would pass with the defect live.
 //
 // COVERAGE IS NOT COMPLETE, and AUTHNULL_UNCOVERED below says so in code
-// rather than in a comment nobody re-reads: csharp, dart, kotlin and swift
-// carry the fix but have no lane. The reason is not that they do not deserve
-// one - it is that a lane which has never been executed even once is a
-// liability. It fails on someone else's machine, in a language whose build
-// invocation was guessed at, and reads as a regression in the fix rather than
-// a broken probe. Adding those four is real work for whoever has dotnet,
-// dart, kotlin or swift to hand; the test below makes sure the gap cannot
-// widen in silence while they wait.
+// rather than in a comment nobody re-reads. What is left there is what no
+// runner in the CI matrix can execute: dart, which none of ubuntu, macos or
+// windows ships; swift, which only the macos leg has and which needs a
+// Package.swift target the template does not emit; and the six ports whose
+// fix was written blind. kotlin and csharp used to sit in that list and now
+// have lanes below.
+//
+// The bar a lane has to clear is that it RUNS somewhere. One that has never
+// been executed is a liability: it fails on someone else's machine, in a
+// language whose build invocation was guessed at, and reads as a regression
+// in the fix rather than a broken probe. The kotlin lane was written against
+// a real gradle and checked BOTH ways - green with the fix, red with the
+// capture stubbed back out - because a probe that has only ever passed has
+// not been shown to be able to fail.
 //
 // The failure being pinned differs by target, which is why one lane cannot
 // stand in for another. Where the target's struct treats a stored null as
@@ -1104,7 +1149,18 @@ const AUTHNULL_LANES: {
   // `phase` separates a BUILD failure from a PROBE failure. Without it a
   // toolchain that cannot compile the generated SDK at all is reported as an
   // auth-null regression, which sends the reader hunting in the wrong file.
-  exec: (sdkroot: string) => { ok: boolean, out: string, phase?: string } | null,
+  //
+  // `timedOut` separates BOTH from a machine that could not finish the
+  // command at all - see RUN_TIMEOUT_MS.
+  //
+  // `{ skip }` is a lane declining to run here for a reason it can STATE -
+  // as against `null`, which means the toolchain is simply absent. The
+  // difference matters in the log: "gradle hangs on this OS" and "there is
+  // no gradle" call for different follow-up.
+  exec: (sdkroot: string) =>
+    { ok: boolean, out: string, phase?: string, timedOut?: boolean }
+    | { skip: string }
+    | null,
 }[] = [
   {
     target: 'py',
@@ -1448,6 +1504,7 @@ public class AuthNullProbe {
       const sources = listFiles(sdkroot, '.java')
         .filter((f) => !f.split(Path.sep).includes('test'))
       const built = run(javac, ['-d', classes, ...sources], sdkroot)
+      if (built.timedOut) return built
       if (!built.ok) return { ...built, phase: 'build' }
 
       return run(java, ['-cp', classes, 'AuthNullProbe'], sdkroot)
@@ -1772,6 +1829,325 @@ fn authnull_probe() {
       return run(cargo, ['test', '--test', 'authnull_probe'], sdkroot)
     },
   },
+  {
+    target: 'kotlin',
+    needs: 'gradle (which resolves the Kotlin plugin from the network)',
+    probe: 'test/AuthNullProbe.kt',
+    source: `package voxgig.demosdk.sdktest
+
+// \`auth: null\` must suppress an explicit apikey ON THE WIRE - in the headers
+// the transport is handed - not merely in the options map.
+//
+// An options-level assertion is not enough: lean's prepareAuth never read
+// options.auth at all, so a port of that shape passes an options check while
+// still transmitting the credential. This drives the real makeOptions (through
+// the constructor) and a real entity operation, and asserts on what a mock
+// fetcher receives.
+//
+// The baseline fails loudly if an ordinary apikey stops being sent, because
+// the suppression alone cannot fail visibly: with no apikey nothing goes on
+// the wire either way, so a probe without the baseline passes with the defect
+// live.
+
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+
+import voxgig.demosdk.core.Context
+import voxgig.demosdk.core.DemoSDK
+
+class AuthNullProbe {
+
+  private var seen: String? = null
+  private var had = false
+
+  // \`called\` matters as much as \`had\`. If the suppressed path fails before
+  // the transport runs, \`had\` stays false - indistinguishable from a
+  // successful suppression - and this would pass on a broken SDK. The baseline
+  // cannot catch that, since it exercises different options.
+  private var called = false
+
+  private fun wire(opts: MutableMap<String, Any?>) {
+    seen = null
+    had = false
+    called = false
+
+    val full = LinkedHashMap<String, Any?>(opts)
+    val mock: (Context, String, MutableMap<String, Any?>) -> Any? = { _, _, fetchdef ->
+      called = true
+      val h = fetchdef["headers"]
+      if (h is Map<*, *>) {
+        // Presence separately from value: a present-but-empty header is not
+        // suppression, and reading the value alone cannot tell them apart.
+        had = h.containsKey("authorization")
+        seen = h["authorization"]?.toString()
+      }
+      val res = linkedMapOf<String, Any?>()
+      res["status"] = 200
+      res["statusText"] = "OK"
+      res["headers"] = linkedMapOf<String, Any?>()
+      res["body"] = "{}"
+      res
+    }
+    full["utility"] = linkedMapOf<String, Any?>("fetcher" to mock)
+
+    // The plain constructor, not a test client: the \`test\` feature is
+    // transport: 'base' and REPLACES the transport by design, so a client in
+    // test mode would shadow the mock and this would assert nothing.
+    val sdk = DemoSDK(full)
+    try {
+      sdk.planet(null).create(linkedMapOf<String, Any?>("name" to "p1"), null)
+    }
+    catch (ignored: Throwable) {
+    }
+  }
+
+  @Test
+  fun authNullBeatsAnExplicitApikey() {
+    val fail = ArrayList<String>()
+
+    wire(linkedMapOf<String, Any?>("apikey" to "OPTKEY01"))
+    if (!had || "OPTKEY01" != seen) {
+      fail.add("baseline broken: an ordinary apikey was not sent (had=" + had +
+        " value=" + seen + ")")
+    }
+
+    val supp = linkedMapOf<String, Any?>("apikey" to "OPTKEY01")
+    supp["auth"] = null
+    wire(supp)
+    if (!called) {
+      fail.add("the request never reached the transport, so nothing was proved " +
+        "about suppression - the suppressed path failed earlier")
+    }
+    if (had) {
+      fail.add("auth null did not suppress the credential - sent " + seen)
+    }
+
+    assertTrue(fail.isEmpty(), fail.joinToString("; "))
+  }
+}
+`,
+    exec: (sdkroot) => {
+      // NOT ON WINDOWS. gradle is present on windows-latest and `where` finds
+      // it, so this would not skip on its own - it HANGS. Measured: the job
+      // sat 35+ minutes without finishing, and once bounded it burned the
+      // full five-minute cap and skipped, on every run, while ubuntu and
+      // macos did the entire suite in under four minutes each.
+      //
+      // Paying that on every windows run buys nothing. What this lane tests
+      // is OS-INDEPENDENT - the same Kotlin source, the same vendored struct,
+      // the same assertion about a header - and it genuinely runs on two of
+      // the three legs. A third copy of the same signal is not worth a
+      // five-minute tax, and skipping it here is cheaper and more honest
+      // than a longer timeout that would only make the tax bigger.
+      //
+      // Left as a stated exclusion rather than a fix because fixing it needs
+      // a windows machine to test on: --no-daemon may well be the answer, and
+      // guessing at it from linux is how an unverified lane gets shipped.
+      if ('win32' === process.platform) {
+        return {
+          skip: 'gradle hangs on windows (it does not fail - it never ' +
+            'returns), and this lane already runs on ubuntu and macos, ' +
+            'where the behaviour it pins is identical',
+        }
+      }
+
+      const gradle = toolchain('gradle')
+      if (null == gradle) return null
+
+      // Compile first as its own step purely for the phase distinction: gradle
+      // exits non-zero for a compile error and a failing assertion alike, and
+      // reporting a Kotlin type error as an auth-null regression sends the
+      // reader hunting in the wrong file.
+      //
+      // This is the ONLY lane that needs the network - gradle resolves the
+      // Kotlin plugin and junit on a cold runner - and also the only thing
+      // that compiles the kotlin target at all, which until now nothing did.
+      const built = run(gradle, ['--console=plain', 'compileTestKotlin'], sdkroot)
+      if (built.timedOut) return built
+      if (!built.ok) return { ...built, phase: 'build' }
+
+      return run(gradle, ['--console=plain', 'test', '--tests', '*AuthNullProbe*'],
+        sdkroot)
+    },
+  },
+  {
+    target: 'csharp',
+    needs: 'dotnet',
+    // test/ is the ONE directory the SDK csproj excludes (`<Compile
+    // Remove="test/**" />`), so the probe can live in the tree without being
+    // compiled into the library - where a second entry point would break the
+    // build for everyone.
+    probe: 'test/AuthNullProbe.cs',
+    source: `// \`auth: null\` must suppress an explicit apikey ON THE WIRE - in the headers
+// the transport is handed - not merely in the options map.
+//
+// An options-level assertion is not enough: lean's prepareAuth never read
+// options.auth at all, so a port of that shape passes an options check while
+// still transmitting the credential. This drives the real MakeOptions (through
+// the constructor) and a real entity operation, and asserts on what a mock
+// fetcher receives.
+//
+// The baseline fails loudly if an ordinary apikey stops being sent, because
+// the suppression alone cannot fail visibly: with no apikey nothing goes on
+// the wire either way, so a probe without the baseline passes with the defect
+// live.
+
+using DemoSdk;
+
+public static class AuthNullProbe
+{
+    private static string? seen;
+    private static bool had;
+
+    // \`called\` matters as much as \`had\`. If the suppressed path fails before
+    // the transport runs, \`had\` stays false - indistinguishable from a
+    // successful suppression - and this would pass on a broken SDK. The
+    // baseline cannot catch that, since it exercises different options.
+    private static bool called;
+
+    private static void Wire(Dictionary<string, object?> opts)
+    {
+        seen = null;
+        had = false;
+        called = false;
+
+        var full = new Dictionary<string, object?>(opts);
+
+        // A NATURAL lambda, as a caller writes it - NOT declared as
+        // FetcherFunc. C# delegate types are nominal, so this is a Func and
+        // not an instance of FetcherFunc at all; declaring it as the named
+        // type would exercise only the form that already worked.
+        var mock = (Context ctx, string fullurl, Dictionary<string, object?> fetchdef) =>
+        {
+            called = true;
+            if (fetchdef.TryGetValue("headers", out var hraw) &&
+                hraw is Dictionary<string, object?> headers)
+            {
+                // Presence separately from value: a present-but-empty header
+                // is not suppression, and reading the value alone cannot tell
+                // the two apart.
+                had = headers.ContainsKey("authorization");
+                seen = headers.TryGetValue("authorization", out var v) && null != v
+                    ? Convert.ToString(v)
+                    : null;
+            }
+            return (object?)new Dictionary<string, object?>
+            {
+                ["status"] = 200,
+                ["statusText"] = "OK",
+                ["headers"] = new Dictionary<string, object?>(),
+                ["json"] = (Func<object?>)(() => new Dictionary<string, object?>()),
+                ["body"] = "{}",
+            };
+        };
+        full["utility"] = new Dictionary<string, object?> { ["fetcher"] = mock };
+
+        // The plain constructor, not a test client: the \`test\` feature is
+        // transport: 'base' and REPLACES the transport by design, so a client
+        // in test mode would shadow the mock and this would assert nothing.
+        var sdk = new DemoSDK(full);
+        try
+        {
+            sdk.Planet(null).Create(new Dictionary<string, object?> { ["name"] = "p1" }, null);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    public static int Main()
+    {
+        var fail = new List<string>();
+
+        Wire(new Dictionary<string, object?> { ["apikey"] = "OPTKEY01" });
+        if (!had || "OPTKEY01" != seen)
+        {
+            fail.Add("baseline broken: an ordinary apikey was not sent (had=" + had +
+                " value=" + seen + ")");
+        }
+
+        var supp = new Dictionary<string, object?> { ["apikey"] = "OPTKEY01" };
+        supp["auth"] = null;
+        Wire(supp);
+        if (!called)
+        {
+            fail.Add("the request never reached the transport, so nothing was proved " +
+                "about suppression - the suppressed path failed earlier");
+        }
+        if (had)
+        {
+            fail.Add("auth null did not suppress the credential - sent " + seen);
+        }
+
+        foreach (var f in fail)
+        {
+            Console.WriteLine("FAIL: " + f);
+        }
+        Console.WriteLine("auth-null probe: " + (0 == fail.Count ? "ok" : "FAILED"));
+        return 0 == fail.Count ? 0 : 1;
+    }
+}
+`,
+    exec: (sdkroot) => {
+      const dotnet = toolchain('dotnet')
+      if (null == dotnet) return null
+
+      // A standalone console project referencing the SDK, rather than the
+      // generated xunit test project: with no PackageReference there is no
+      // nuget graph to restore, and no test framework that can fail
+      // independently of what is being probed.
+      const sdkproj = Fs.readdirSync(sdkroot).filter((n) => n.endsWith('.csproj'))
+      if (1 !== sdkproj.length) {
+        return {
+          ok: false,
+          phase: 'build',
+          out: 'expected exactly one .csproj at the SDK root, found: ' +
+            JSON.stringify(sdkproj),
+        }
+      }
+
+      // Read the framework rather than hardcode it: the probe and the library
+      // it references have to agree, and a bumped TargetFramework should not
+      // silently strand this lane.
+      const csproj = Fs.readFileSync(Path.join(sdkroot, sdkproj[0]), 'utf8')
+      const tfm = (csproj.match(/<TargetFramework>([^<]+)<\/TargetFramework>/) || [])[1]
+      if (null == tfm) {
+        return { ok: false, phase: 'build', out: 'no <TargetFramework> in ' + sdkproj[0] }
+      }
+
+      const dir = Path.join(sdkroot, 'zz-authnull')
+      Fs.mkdirSync(dir, { recursive: true })
+
+      // EnableDefaultCompileItems off, and the probe pulled in by an explicit
+      // path: the default glob would take nothing here (the .cs lives in
+      // test/) and adding a .cs beside this csproj would put it into the
+      // library's glob as well.
+      Fs.writeFileSync(Path.join(dir, 'AuthNullProbe.csproj'),
+        '<Project Sdk="Microsoft.NET.Sdk">\n' +
+        '  <PropertyGroup>\n' +
+        '    <OutputType>Exe</OutputType>\n' +
+        '    <TargetFramework>' + tfm + '</TargetFramework>\n' +
+        '    <Nullable>enable</Nullable>\n' +
+        '    <ImplicitUsings>enable</ImplicitUsings>\n' +
+        '    <LangVersion>12</LangVersion>\n' +
+        '    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>\n' +
+        '    <AssemblyName>AuthNullProbe</AssemblyName>\n' +
+        '    <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8625</NoWarn>\n' +
+        '  </PropertyGroup>\n' +
+        '  <ItemGroup>\n' +
+        '    <Compile Include="../test/AuthNullProbe.cs" />\n' +
+        '    <ProjectReference Include="../' + sdkproj[0] + '" />\n' +
+        '  </ItemGroup>\n' +
+        '</Project>\n')
+
+      const proj = Path.join(dir, 'AuthNullProbe.csproj')
+      const built = run(dotnet, ['build', '--nologo', '-v', 'quiet', proj], sdkroot)
+      if (built.timedOut) return built
+      if (!built.ok) return { ...built, phase: 'build' }
+
+      return run(dotnet, ['run', '--no-build', '--project', proj], sdkroot)
+    },
+  },
 ]
 
 
@@ -1799,26 +2175,40 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
   ts: 'pinned instead by the shipped tm/ts/test/feature/secrets/Secrets.test.ts ' +
     '("auth null suppresses the credential, chain or no chain"), which runs in ' +
     'a generated SDK rather than in sdkgen CI',
-  csharp: 'needs dotnet; the probe has never been executed, so it is not shipped',
-  dart: 'needs dart; the probe has never been executed, so it is not shipped',
-  kotlin: 'needs gradle; the probe has never been executed, so it is not shipped',
-  swift: 'needs swift; a probe needs a Package.swift target, and none is written',
+  dart: 'no runner in the CI matrix ships dart - ubuntu, macos and windows ' +
+    'all lack it - so a lane here would never run anywhere it could be seen ' +
+    'to fail',
+  swift: 'only the macos leg has swift, and a probe needs an executable ' +
+    'target in Package.swift that the template does not emit; adding one is ' +
+    'a template change, not a test change',
+
+  // The six below were the AUTHNULL_OUTSTANDING list. They now carry the fix,
+  // but READ BY EYE ONLY: no clojure, elixir, ocaml, scala, zig or lean
+  // toolchain existed where the change was written, so not one of them has
+  // been compiled, let alone had the suppression exercised. That is a weaker
+  // position than the four above it, which at least compile in some CI: these
+  // are unproven at BOTH levels. The structural guard below is all that holds
+  // them, and a structural guard cannot see a type error or a mis-ordered
+  // statement. Whoever gets one of these toolchains should build it first and
+  // add a lane second.
+  clojure: 'UNVERIFIED - no clojure toolchain; never compiled, never executed',
+  elixir: 'UNVERIFIED - no elixir toolchain; never compiled, never executed',
+  ocaml: 'UNVERIFIED - no ocaml toolchain; never compiled, never executed',
+  scala: 'UNVERIFIED - no scala toolchain; never compiled, never executed',
+  zig: 'UNVERIFIED - no zig toolchain; never compiled, never executed',
+  lean: 'UNVERIFIED - no lean toolchain; never compiled, never executed. ' +
+    'Also the one target whose fix is NOT in makeOptions - see ' +
+    'AUTHNULL_FIX_SHAPE',
 }
 
 
-// NOT FIXED YET. These carry the defect: with an explicit apikey AND
-// `auth: null`, the credential still goes out. They are listed rather than
-// quietly omitted, and the suite below fails if one of them ever gains the
-// fix without moving out of this list.
+// NOT FIXED YET. A target belongs here when it carries the defect: with an
+// explicit apikey AND `auth: null`, the credential still goes out. Empty
+// today - every expressible target has the fix - and kept because the suite
+// below needs somewhere honest to put the next regression, and because an
+// empty list is a claim the guard can check rather than a comment nobody
+// re-reads.
 const AUTHNULL_OUTSTANDING: Record<string, string> = {
-  clojure: 'merges and validates without capturing suppliedness',
-  elixir: 'merges and validates without capturing suppliedness',
-  ocaml: 'merges and validates without capturing suppliedness',
-  scala: 'merges and validates without capturing suppliedness',
-  zig: 'merges and validates without capturing suppliedness',
-  lean: 'TWO defects: makeOptions does not capture suppliedness, AND ' +
-    'prepareAuth never reads options.auth at all - it branches only on an ' +
-    'empty apikey, so a null auth has no effect even if it survives',
 }
 
 
@@ -1841,8 +2231,11 @@ const AUTHNULL_NOT_APPLICABLE = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider
 describe('auth null coverage is honest', () => {
 
   // The marker every implementation uses for the captured flag, in each
-  // language's casing.
-  const MARKER = /authsuppressed|auth_suppressed/i
+  // language's casing - INCLUDING kebab-case, which is not a stylistic
+  // afterthought: clojure spells it `auth-suppressed` because that is what
+  // Clojure names look like, and a marker that only knew camel and snake read
+  // a correctly fixed clojure template as unfixed.
+  const MARKER = /auth[-_]?suppressed/i
 
   const TM = Path.resolve(PKG, 'project', '.sdk', 'tm')
 
@@ -1852,18 +2245,66 @@ describe('auth null coverage is honest', () => {
       .sort()
   }
 
+  // The DEFAULT fix shape: capture suppliedness BEFORE validate, restore the
+  // null AFTER. So the marker has to appear on BOTH SIDES of a validate
+  // mention, not merely somewhere in the file - the identifier alone would
+  // accept a file that captures suppliedness and never restores it, which
+  // passes an identifier check while still leaking the credential.
+  //
+  // Anchoring that on `validate(` - the name with its opening paren - was a
+  // C-family assumption, and it silently misread two ports whose fix was
+  // right there in the file: clojure writes `(vs/validate merged optspec)`
+  // and ocaml `validate merged optspec`. Neither puts a paren after the name,
+  // so neither had a "call site" to bracket and both scanned as unfixed.
+  //
+  // Anchor on the bare IDENTIFIER between the FIRST and LAST marker instead.
+  // That is spelling-independent, and it drops the leading `merge/validate/
+  // init are unchanged` comments the paren rule was working around for free:
+  // those sit before the first marker, and any trailing mention after the
+  // last, so neither can stand in for the real call.
+  function bracketsValidate(src: string): boolean {
+    const marks = [...src.matchAll(new RegExp(MARKER.source, 'gi'))]
+      .map((m) => m.index ?? -1)
+      .filter((i) => 0 <= i)
+
+    if (marks.length < 2) {
+      return false
+    }
+
+    const first = marks[0]
+    const last = marks[marks.length - 1]
+
+    return [...src.matchAll(/\bvalidate\b/gi)]
+      .some((m) => first < (m.index ?? -1) && (m.index ?? -1) < last)
+  }
+
+
+  // Targets whose fix is a different shape, and what proves it instead.
+  //
+  // lean is the only one, and it is not a spelling difference: its defect was
+  // not in makeOptions at all. lean's makeOptions has no optspec and never
+  // calls validate, so no `auth` default can fire and there is nothing to
+  // capture around. The leak was in prepareAuth, which branched only on an
+  // empty apikey and never read options.auth, so a null auth had no effect
+  // whatever survived the merge. The fix reads the RAW stored slot -
+  // getpropRaw, the only reader that tells a stored null from an absent key,
+  // absence being the ordinary case here precisely because there is no
+  // optspec - and suppresses the header on it. bracketsValidate cannot see
+  // any of that, and loosening it until it could would blind it everywhere
+  // else.
+  const AUTHNULL_FIX_SHAPE: Record<string, (src: string) => boolean> = {
+    lean: (src) => /getpropRaw\s+options\s+"auth"/.test(src)
+      && /authRaw\s*==\s*\.null/.test(src)
+      && /dp\s+headers\s+"authorization"/.test(src),
+  }
+
+
   // Whole-tree scan. cpp keeps this logic in utility/pipeline.hpp and lean in
   // SdkUtility.lean, so anything narrower than "every file" reintroduces the
   // blind spot that made the first audit wrong.
-  //
-  // The marker must appear on BOTH SIDES of the validate call, not merely
-  // somewhere in the file. The fix is capture-before / restore-after, and
-  // presence of the identifier alone would accept a file that captures
-  // suppliedness and never restores it - or one where the only surviving
-  // mention is a comment. That shape passes an identifier check while leaking
-  // the credential, which is exactly what this list exists to prevent for the
-  // targets that have no lane.
   function carriesFix(target: string): boolean {
+    const shape = AUTHNULL_FIX_SHAPE[target] || bracketsValidate
+
     return listFiles(Path.join(TM, target), '')
       .some((f) => {
         let src = ''
@@ -1874,15 +2315,7 @@ describe('auth null coverage is honest', () => {
           return false
         }
 
-        // Every validate CALL site, not the first mention of the word: the
-        // files open with comments like "so merge/validate/init are
-        // unchanged", which sit before the capture and would make an
-        // otherwise-correct file look wrong. It is enough that SOME call has
-        // the marker on both sides.
-        const calls = [...src.matchAll(/\bvalidate\s*\(/gi)].map((m) => m.index ?? -1)
-        return calls.some((at) => 0 <= at
-          && MARKER.test(src.slice(0, at))
-          && MARKER.test(src.slice(at)))
+        return shape(src)
       })
   }
 
@@ -1950,6 +2383,19 @@ describe('auth null coverage is honest', () => {
   })
 
 
+  // A custom shape is a hole punched in the default check, so it must name a
+  // real target. A stale key - a target renamed or removed - is a hole that
+  // guards nothing while reading as though it does.
+  test('every custom fix shape names a real target', () => {
+    const targets = new Set(allTargets())
+    const stale = Object.keys(AUTHNULL_FIX_SHAPE).filter((t) => !targets.has(t))
+
+    deepStrictEqual(stale, [],
+      'these targets have a custom auth-null fix shape but no longer exist ' +
+      'in tm/ - drop the entry rather than leave a check that matches nothing')
+  })
+
+
   test('no target is declared both fixed and unfixed', () => {
     const unfixed = new Set(declaredUnfixed())
     const both = declaredFixed().filter((t) => unfixed.has(t))
@@ -1988,6 +2434,21 @@ describe('auth null suppresses the credential', () => {
       if (null == ran) {
         return t.skip('no usable ' + lane.target + ' toolchain here (' +
           lane.needs + ')')
+      }
+
+      // A machine that could not finish the command is in the same position
+      // as one without the toolchain: it has proved nothing either way. It
+      // is a SKIP rather than a failure - but never a silent one, because a
+      // lane that quietly stops running is exactly the false green this file
+      // exists to prevent. The reason names the timeout, so a machine that
+      // starts timing out reads as a machine problem in the log rather than
+      // as coverage that was always there.
+      if ('skip' in ran) {
+        return t.skip(lane.target + ': ' + ran.skip)
+      }
+
+      if (ran.timedOut) {
+        return t.skip(lane.target + ': ' + ran.out)
       }
 
       ok(ran.ok, lane.target + ': ' + ('build' === ran.phase

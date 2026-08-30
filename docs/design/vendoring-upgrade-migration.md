@@ -523,23 +523,23 @@ flow a non-applicable feature's dependency into a target's manifest.
 
 ### Still outstanding
 
-- **Phase 0 upstream filings.** The three omni patches are captured as
-  marked `PATCH` blocks and pinned by a guard test, but the upstream
-  issues/PRs (omni's three bugs plus the compat shim, sekreto's
-  browser-safety split) are not filed. struct's go-port drift is now
+- **Phase 0 upstream filings — DONE.** omni's three runner fixes landed
+  in omni#54 and sekreto's `checkaddr` and lazy-builtin fixes in
+  sekreto#13 and #14, so those are no longer local patches. What remained
+  is now filed: **omni#56** (structprovider hides the client members
+  corpus subjects reach through `ctx.client`), **omni#57** (port the three
+  runner fixes to the other 22 ports), **sekreto#16** (port `checkaddr`
+  and the lazy loading to the other 9 ports). struct's go-port drift is
   RESOLVED — see below.
 - **Corpus entries pinning the null semantics**, which belong in the
   corpus create-sdkgen owns, plus upstream 0.3.2's new sections. Now
   demonstrated to be a PER-TARGET defect, not a ts one — see below.
-- **sekreto's `checkaddr` rejects IPv6 loopback.** `http://[::1]:8200`
-  parses to host `'['`, so the `'::1'` and `'[::1]'` entries in its own
-  allowlist are unreachable and a legitimate local vault is refused. Found
-  by review on this PR; vendored verbatim, so it goes on the same sekreto
-  issue as the browser-safety split rather than being patched here.
-- **`jsonstr`'s cycle guard has a DAG false positive**: `seen` is added to
-  but never removed, so the same object appearing twice as siblings prints
-  `[Circular]`. Only affects failure-message rendering. Fix it when
-  upstreaming rather than diverging further here.
+- ~~**sekreto's `checkaddr` rejects IPv6 loopback.**~~ Fixed upstream in
+  sekreto#13 and resynced. Porting it to sekreto's other nine ports is
+  sekreto#16.
+- ~~**`jsonstr`'s cycle guard has a DAG false positive.**~~ Fixed upstream
+  in omni#54 (the guard now tracks ancestors and deletes on the way out,
+  so a DAG renders in full). Porting it is omni#57.
 - The other 21 language targets, which the rollout lists in
   `parity.test.ts` (`OMNI_RUNNER`, `SECRETS`) and `featuremodel.test.ts`
   (`GATED`) now gate explicitly rather than silently.
@@ -615,17 +615,46 @@ Two things follow for the other targets:
   validate is enough; on 0.0.10 the key must be DELETED before validate
   as well, or it throws before the restore can run.
 
-  **Rollout is PARTIAL, and the way it was first declared complete is the
-  lesson.** Fifteen targets now carry it: ts, js, go, c, cpp, csharp,
-  dart, java, kotlin, perl, php, py, rb, rust and swift.
+  **Every expressible target now carries it** — twenty-one of them: ts, js,
+  go, c, clojure, cpp, csharp, dart, elixir, java, kotlin, lean, ocaml,
+  perl, php, py, rb, rust, scala, swift and zig. Only lua cannot express it
+  at all (below).
 
-  **Seven still do not**, and with an explicit apikey plus `auth: null`
-  they still transmit the credential: **clojure, elixir, lean, ocaml,
-  scala, zig** — and lua, which cannot express it at all (below). lean is
-  the worst of them and needs two fixes rather than one: its makeOptions
-  does not capture suppliedness AND its `prepareAuth` never reads
-  `options.auth` at all, branching only on an empty apikey, so a null auth
-  has no effect even if it survives.
+  **Read the verification tier before you trust that list**, because it is
+  three tiers, not one:
+
+  | tier | targets | what backs it |
+  |---|---|---|
+  | executed probe | py, rb, perl, php, java, kotlin, c, cpp, rust, go, js, ts | a lane that generates an SDK, mocks the transport and asserts on the header |
+  | lane written, runs in CI only | csharp | the same lane, but no dotnet was available where it was written |
+  | no lane anywhere | dart, swift | no runner in the matrix ships dart; swift is macos-only and needs an executable target the template does not emit |
+  | **read by eye** | **clojure, elixir, lean, ocaml, scala, zig** | **nothing — never compiled, never run** |
+
+  The **kotlin** lane is the one added with a real toolchain to hand, and it
+  was checked BOTH ways: green with the fix, red with the capture stubbed
+  back out. A probe that has only ever passed has not been shown to be able
+  to fail — the c probe passed its own defect once, for exactly that reason.
+  It is also the first thing in this repo that compiles the kotlin target at
+  all, and the only lane that needs the network (gradle resolves the Kotlin
+  plugin on a cold runner).
+
+  The six in the bottom tier were written against toolchains that were not
+  available: no clojure, elixir, lean, ocaml, scala or zig compiler existed
+  where the change was made. They are held only by the structural guard in
+  `generatedcompile.test.ts`, and a structural guard cannot see a type
+  error, a scoping mistake or a mis-ordered statement. Treat them as
+  plausible, not proven. Anyone with one of those toolchains should build
+  that target FIRST and add a lane second.
+
+  **The fix is not always in makeOptions — lean's is not.** lean's
+  `makeOptions` runs no `validate` and its defaults carry no `auth` key, so
+  no optspec default can fire and there is nothing to capture around. The
+  leak was entirely in `prepareAuth`, which branched only on an empty
+  apikey and never read `options.auth`. Its fix therefore reads the raw
+  stored slot (`getpropRaw`, the only reader that tells a stored null from
+  an absent key) and suppresses the header on that — and, unlike every
+  other port, ABSENCE must stay the ordinary case there, precisely because
+  no optspec guarantees the key is present.
 
   The first audit behind this rollout missed all seven, because it looked
   for files named like `makeOptions` — and cpp keeps that logic in
@@ -651,15 +680,27 @@ Two things follow for the other targets:
   same sample error as the filename audit: thirteen targets were checked,
   not twenty-six.
 
-  **lean is the counterexample.** Its `prepareAuth` never reads
-  `options.auth` at all — it branches on an empty apikey and otherwise
-  reads `auth.prefix` — so restoring the null in makeOptions changes
-  nothing there. lean needs two fixes.
+  **lean is the counterexample.** Its `prepareAuth` never read
+  `options.auth` at all — it branched on an empty apikey and otherwise read
+  `auth.prefix` — so restoring the null in makeOptions would have changed
+  nothing there. lean's fix is in `prepareAuth` alone, and its makeOptions
+  needed no change at all.
 
   So for each target, check BOTH ends, and pin the property where it is
   actually observable: **assert on the authorization header a mocked
   transport receives**, not on the options map. An options-level assertion
   passes for a lean-shaped port that never consults the value.
+
+  **The structural guard had the same C-family blind spot, in miniature.**
+  It anchored on `validate(` — the name with an opening paren — and so read
+  two correctly fixed ports as unfixed: clojure writes `(vs/validate merged
+  optspec)` and ocaml `validate merged optspec`, and neither puts a paren
+  after the name. It also spelled the marker `authSuppressed|auth_suppressed`,
+  missing clojure's idiomatic `auth-suppressed`. It now anchors on the bare
+  identifier between the first and last marker, which is
+  spelling-independent, and lean — whose fix is a different shape entirely —
+  has an explicit entry in `AUTHNULL_FIX_SHAPE` rather than a loosened rule
+  that would blind the check everywhere else.
 
   Guards live in `generatedcompile.test.ts` as a table of per-target
   lanes, one row per target, each running a probe inside a freshly
@@ -667,6 +708,100 @@ Two things follow for the other targets:
   ordinary apikey is still sent, because the suppression alone cannot fail
   visibly — with no apikey nothing goes on the wire either way, so a probe
   without the baseline passes with the defect live.
+- **What a struct resync actually costs, measured on two targets.** The
+  rollout's per-target step 1 is "vendor that language's struct 0.3.2". Two
+  were attempted, and they came out at opposite ends, so do not price the
+  remaining ones off either alone.
+
+  **Read behaviour, not the stamp.** The upstream repo's per-port
+  `// VERSION:` lines are STALE: at commit `9440935` — the commit `ts@0.3.2`
+  and `go@0.1.3` were both taken from — `javascript/src/struct.js` still says
+  0.0.10 and most ports say nothing at all. Scanning those stamps says only
+  TypeScript has 0.3.2, and that is wrong: upstream python and javascript at
+  that commit both already answer the 0.3.2 way on every null question. The
+  stamps are the same trap as auditing by filename. Run the code.
+
+  **js was a one-file drop-in, and worth doing on its own.** 65 exports in
+  common, 6 new regex helpers, none dropped; header, manifest entry, golden
+  regen, done, whole suite green. It also closed a live parity hole: js was
+  on 0.0.10 while ts was on 0.3.2, so the two targets *every other language
+  is held in parity with* sat in different auth-null failure classes.
+
+  **php is NOT, and the reasons are concrete.** Two hard blockers, both
+  found by trying it:
+
+  1. **PHP's `[]` is both an empty list and an empty map**, and upstream
+     0.3.2's validate now rejects what the older vendored copy tolerated.
+     The generated SDK dies at construction with `Expected field
+     entity.ambient to be map, but found list: []` for every entity. Fixing
+     that is a php TEMPLATE change — the option/optspec construction has to
+     mark an empty map as a map — not a vendoring change.
+  2. **The provenance header cannot go first.** `vendored.test.ts` reads the
+     `// VENDORED:` line as line 1; php requires `<?php` there. Either the
+     guard learns a per-language prologue or php gets a different provenance
+     mechanism.
+
+  And a resync would NOT fix php's auth-null failure mode anyway. Upstream
+  php's validate still diverges from canonical on a stored null: with
+  `{auth: null}` against a spec whose `auth` carries a default, canonical
+  substitutes the default and php raises `Expected field auth to be map, but
+  found no value`. Both agree when `auth` is ABSENT — so this is specifically
+  the stored-null path, and it is why php is fail-CLOSED. That one is an
+  upstream php fix, not a resync.
+
+  **A third upstream-side item, already fixed there.** py's vendored getprop
+  is right for a map and wrong for a list — canonical tests `isnode(val)`
+  (map and list) then applies the null rule once, while py's copy branches
+  ismap/islist and its list branch does `return val[key]`, an early return
+  that skips it. Upstream python at `9440935` already returns `'ALT'` there,
+  so py needs a resync, not an upstream fix. Whether py's resync is
+  js-shaped or php-shaped is untested.
+
+  **rb is likely to be neither.** Its vendored copy carries a local
+  performance fix (lazy `log`, an O(n²) removal with measurements in the
+  comment) that upstream took with a DIFFERENT signature — block-only
+  upstream, block-or-string in the vendored copy — so a resync has call
+  sites to reconcile. 1249 differing lines.
+
+- **A silent BEHAVIOUR is now pinned too.** `ts/test/structnull.test.ts`
+  runs each vendored struct through the one question that started all of
+  this — when a key is PRESENT and holds a JSON null, is that "no value"? —
+  and pins the answer per port. Measured, not assumed:
+
+  | port | stamp | `getprop({x:null},'x','ALT')` | `haskey` | `validate({auth:null},…)` |
+  |---|---|---|---|---|
+  | go | 0.1.3 | `'ALT'` | false | returns the default |
+  | py | — | `'ALT'` | false | returns the default |
+  | perl | — | `'ALT'` | false | returns the default |
+  | rb | — | `null` | true | returns the default |
+  | php | — | `null` | true | THROWS |
+  | js | 0.0.10 | `null` | true | THROWS |
+
+  Three distinct behaviours across six ports — and **`ts` (0.3.2) and `js`
+  (0.0.10), the two targets every other language is held in parity WITH, are
+  in different classes.** That is not subtle: it is exactly the fail-open /
+  fail-closed split catalogued above. The signature pin below cannot see any
+  of it, because nothing about a signature changes.
+
+  The shared corpus cannot pin it either, for a reason worth writing down:
+  the runner's `fixJSON` rewrites every JSON null — on BOTH the `in` and
+  `out` sides — to the string `'__NULL__'` before the subject is called,
+  unless the section runs with the `null: false` flag. So a corpus case
+  written the obvious way passes the STRING `'__NULL__'` as the stored value
+  and asserts nothing about null at all.
+  **create-sdkgen#26** adds `struct/nullsem.aon` — 33 cases across getprop,
+  getelem, getpath, haskey and keysof, all verified against upstream 0.3.2 —
+  which runs with that flag and is OPT-IN, so it becomes each target's null
+  gate as it migrates rather than reddening the half of the tree that has
+  not.
+
+  That section found a defect on its first run: **py's vendored getprop is
+  correct for a map and wrong for a list.** Canonical getprop tests
+  `isnode(val)` — map and list — then applies the null rule once; py's copy
+  branches ismap/islist and its list branch does `return val[key]`, an early
+  return that skips the rule, so `getprop([null], 0, 'ALT')` hands back the
+  null. Fix upstream, resync, then py opts in.
+
 - **A silent signature is now pinned.** `ts/test/vendored.test.ts` grew a
   `vendored signature drift` block listing the exact `func` lines the
   templates' call sites assume — currently `GetPath` and `SetPath`, the
