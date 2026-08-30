@@ -1152,8 +1152,15 @@ const AUTHNULL_LANES: {
   //
   // `timedOut` separates BOTH from a machine that could not finish the
   // command at all - see RUN_TIMEOUT_MS.
+  //
+  // `{ skip }` is a lane declining to run here for a reason it can STATE -
+  // as against `null`, which means the toolchain is simply absent. The
+  // difference matters in the log: "gradle hangs on this OS" and "there is
+  // no gradle" call for different follow-up.
   exec: (sdkroot: string) =>
-    { ok: boolean, out: string, phase?: string, timedOut?: boolean } | null,
+    { ok: boolean, out: string, phase?: string, timedOut?: boolean }
+    | { skip: string }
+    | null,
 }[] = [
   {
     target: 'py',
@@ -1920,6 +1927,30 @@ class AuthNullProbe {
 }
 `,
     exec: (sdkroot) => {
+      // NOT ON WINDOWS. gradle is present on windows-latest and `where` finds
+      // it, so this would not skip on its own - it HANGS. Measured: the job
+      // sat 35+ minutes without finishing, and once bounded it burned the
+      // full five-minute cap and skipped, on every run, while ubuntu and
+      // macos did the entire suite in under four minutes each.
+      //
+      // Paying that on every windows run buys nothing. What this lane tests
+      // is OS-INDEPENDENT - the same Kotlin source, the same vendored struct,
+      // the same assertion about a header - and it genuinely runs on two of
+      // the three legs. A third copy of the same signal is not worth a
+      // five-minute tax, and skipping it here is cheaper and more honest
+      // than a longer timeout that would only make the tax bigger.
+      //
+      // Left as a stated exclusion rather than a fix because fixing it needs
+      // a windows machine to test on: --no-daemon may well be the answer, and
+      // guessing at it from linux is how an unverified lane gets shipped.
+      if ('win32' === process.platform) {
+        return {
+          skip: 'gradle hangs on windows (it does not fail - it never ' +
+            'returns), and this lane already runs on ubuntu and macos, ' +
+            'where the behaviour it pins is identical',
+        }
+      }
+
       const gradle = toolchain('gradle')
       if (null == gradle) return null
 
@@ -2412,6 +2443,10 @@ describe('auth null suppresses the credential', () => {
       // exists to prevent. The reason names the timeout, so a machine that
       // starts timing out reads as a machine problem in the log rather than
       // as coverage that was always there.
+      if ('skip' in ran) {
+        return t.skip(lane.target + ': ' + ran.skip)
+      }
+
       if (ran.timedOut) {
         return t.skip(lane.target + ': ' + ran.out)
       }
