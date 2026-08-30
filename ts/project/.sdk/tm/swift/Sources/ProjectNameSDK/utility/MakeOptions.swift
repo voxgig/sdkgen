@@ -85,7 +85,23 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     }
   }
 
+  // `auth: .null` is the documented way to disable auth outright, and
+  // prepareAuth honours it before it ever reads the apikey. It cannot survive
+  // validate: depending on the struct port a stored null is either REPLACED
+  // by the optspec default - transmitting the credential the caller withheld
+  // - or REJECTED outright. Withhold the key for validate, then put the null
+  // back. Same fix as ts/js/go makeOptions.
+  //
+  // `isNull` rather than `isNil`: the latter is also true for Noval, so it
+  // cannot tell an ABSENT auth from a suppressed one, and only the latter is
+  // a suppression.
+  let authSuppressed = options.entries["auth"]?.isNull ?? false
+
   let opts = clone(.map(options)).asMap ?? VMap()
+
+  if authSuppressed {
+    opts.entries.removeValue(forKey: "auth")
+  }
 
   // Feature add-order. options.feature may be given as an ordered LIST of
   // { name, active, ...opts } entries (the list position IS the order in which
@@ -123,6 +139,11 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   let merged = merge(.list([.map(VMap()), clone(.map(cfgopts)), .map(opts)]))
   let validated = validate(merged, optspec)
   let result = validated.asMap ?? VMap()
+
+  // Restore the suppression the optspec default would otherwise erase.
+  if authSuppressed {
+    result.entries["auth"] = .null
+  }
 
   // Restore system.fetch.
   if !isNil(sysFetch) {

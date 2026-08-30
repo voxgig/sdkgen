@@ -614,11 +614,31 @@ Two things follow for the other targets:
   validate is enough; on 0.0.10 the key must be DELETED before validate
   as well, or it throws before the restore can run.
 
-  Audit of `makeOptions` across the shipped targets, at the time of
-  writing: `ts` and `go` and `js` carry the suppression; **c, csharp,
-  dart, java, kotlin, lua, perl, php, py, rb, rust and swift do not**.
-  Each needs the fix matched to its own struct version, and its own test
-  — target-level, since the corpus cannot reach real nulls.
+  **Rollout complete.** Every target that CAN express the suppression now
+  carries it: ts, js, go, and then c, csharp, dart, java, kotlin, perl,
+  php, py, rb, rust and swift.
+
+  One exception, and it is a language limit rather than an oversight:
+  **lua cannot express it at all.** A Lua table stores no nil — `t.auth =
+  nil` removes the key — and the port has no null sentinel (its own
+  struct source says so: "Lua has no undefined; the unit tests use the
+  string `__NULL__` where necessary"). So `auth = nil` is indistinguishable
+  from omitting auth, and there is nothing for makeOptions to detect.
+  Giving lua the suppression means giving the port a null sentinel first,
+  which is a much larger change to its public shape.
+
+  Worth knowing for any future port: **every target's prepareAuth already
+  honours a null correctly** — the defect was only ever makeOptions
+  erasing it before prepareAuth could see it. So the fix is confined to
+  makeOptions, and an options-level assertion (`options.auth is still
+  null`) is a sound proxy where driving the wire is awkward.
+
+  Guards live in `generatedcompile.test.ts` as a table of per-target
+  lanes, one row per target, each running a probe inside a freshly
+  generated SDK. Every probe opens with a BASELINE assertion that an
+  ordinary apikey is still sent, because the suppression alone cannot fail
+  visibly — with no apikey nothing goes on the wire either way, so a probe
+  without the baseline passes with the defect live.
 - **A silent signature is now pinned.** `ts/test/vendored.test.ts` grew a
   `vendored signature drift` block listing the exact `func` lines the
   templates' call sites assume — currently `GetPath` and `SetPath`, the
