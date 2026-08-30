@@ -83,8 +83,14 @@ function toolchain(name: string): string | null {
 }
 
 
+// Bounded, and SIGKILL rather than the default SIGTERM: the go probe starts a
+// toolchain that spawns children of its own, and a TERMed parent can return
+// while they keep the runner. spawnSync blocks the only node thread, so a
+// child that never exits takes the whole job down with it - which is what the
+// gradle lane next door did on windows-latest.
 function run(cmd: string, args: string[], cwd?: string) {
-  const res = spawnSync(cmd, args, { encoding: 'utf8', cwd, timeout: 120000 })
+  const res = spawnSync(cmd, args,
+    { encoding: 'utf8', cwd, timeout: 120000, killSignal: 'SIGKILL' })
   return {
     ok: 0 === res.status,
     out: (res.stdout || '') + (res.stderr || ''),

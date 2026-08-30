@@ -90,9 +90,26 @@ function linkDeps(sdkroot: string) {
 // fwrite(STDERR), java's System.err - because that is where a test framework
 // puts a diagnostic. A lane that read stdout only would see a passing suite
 // and none of what it said, which is how a fully-SKIPPED run looks.
+//
+// AND A TIMEOUT, because spawnSync without one cannot be interrupted.
+//
+// Every lane here shells out to a real toolchain, and a toolchain that hangs
+// hangs the whole job: spawnSync blocks the single node thread until the
+// child exits, so nothing - not node's per-test timeout, not the reporter -
+// can step in. The job then runs to the runner's own limit, six hours, with
+// no output to say where it stopped. That is not hypothetical: the gradle
+// lane sat for over half an hour on windows-latest while ubuntu and macos
+// finished the ENTIRE suite in 3m46s and 2m20s.
+//
+// So every child is bounded. The budget is per-command and deliberately far
+// above anything observed - the whole ubuntu job is under four minutes - so
+// it can only fire on something genuinely stuck.
+const RUN_TIMEOUT_MS = 5 * 60 * 1000
+
 function run(
   cmd: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv,
-): { ok: boolean, out: string, unlaunchable: boolean } {
+  timeoutMs: number = RUN_TIMEOUT_MS,
+): { ok: boolean, out: string, unlaunchable: boolean, timedOut: boolean } {
   // A windows toolchain shim is a BATCH FILE - `mvn.cmd`, `phpunit.bat` - and
   // node refuses to spawn one without a shell (CVE-2024-27980). Quote the
   // path rather than pass it bare: `shell: true` builds one command line, so
@@ -103,11 +120,32 @@ function run(
   const res = spawnSync(shim ? '"' + cmd + '"' : cmd, args,
     {
       cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+      timeout: timeoutMs,
+      // SIGTERM leaves a JVM daemon and its children running, and spawnSync
+      // returns while they hold the runner. Kill the process outright.
+      killSignal: 'SIGKILL',
       ...(shim ? { shell: true } : {}),
       ...(env ? { env } : {}),
     })
 
   const out = String(res.stdout || '') + String(res.stderr || '')
+
+  // A TIMEOUT is neither a pass nor a lane failure: it says this machine
+  // could not finish the command, not that the behaviour under test is
+  // wrong. spawnSync signals it two ways depending on platform and node
+  // version - a killed child, or an ETIMEDOUT error - so check both.
+  const timedOut = 'SIGKILL' === res.signal
+    || 'ETIMEDOUT' === (res.error as any)?.code
+
+  if (timedOut) {
+    return {
+      ok: false,
+      out: cmd + ' did not finish within ' + Math.round(timeoutMs / 1000) +
+        's on this machine' + ('' === out.trim() ? '' : ':\n' + out),
+      unlaunchable: false,
+      timedOut: true,
+    }
+  }
 
   // A command that could not be LAUNCHED (ENOENT, EINVAL) has no output to
   // report, and says nothing about what it would have run: that is an
@@ -117,10 +155,11 @@ function run(
       ok: false,
       out: '' === out.trim() ? String(res.error.message) : out,
       unlaunchable: true,
+      timedOut: false,
     }
   }
 
-  return { ok: 0 === res.status, out, unlaunchable: false }
+  return { ok: 0 === res.status, out, unlaunchable: false, timedOut: false }
 }
 
 
@@ -1110,7 +1149,11 @@ const AUTHNULL_LANES: {
   // `phase` separates a BUILD failure from a PROBE failure. Without it a
   // toolchain that cannot compile the generated SDK at all is reported as an
   // auth-null regression, which sends the reader hunting in the wrong file.
-  exec: (sdkroot: string) => { ok: boolean, out: string, phase?: string } | null,
+  //
+  // `timedOut` separates BOTH from a machine that could not finish the
+  // command at all - see RUN_TIMEOUT_MS.
+  exec: (sdkroot: string) =>
+    { ok: boolean, out: string, phase?: string, timedOut?: boolean } | null,
 }[] = [
   {
     target: 'py',
@@ -1454,6 +1497,7 @@ public class AuthNullProbe {
       const sources = listFiles(sdkroot, '.java')
         .filter((f) => !f.split(Path.sep).includes('test'))
       const built = run(javac, ['-d', classes, ...sources], sdkroot)
+      if (built.timedOut) return built
       if (!built.ok) return { ...built, phase: 'build' }
 
       return run(java, ['-cp', classes, 'AuthNullProbe'], sdkroot)
@@ -1888,6 +1932,7 @@ class AuthNullProbe {
       // Kotlin plugin and junit on a cold runner - and also the only thing
       // that compiles the kotlin target at all, which until now nothing did.
       const built = run(gradle, ['--console=plain', 'compileTestKotlin'], sdkroot)
+      if (built.timedOut) return built
       if (!built.ok) return { ...built, phase: 'build' }
 
       return run(gradle, ['--console=plain', 'test', '--tests', '*AuthNullProbe*'],
@@ -2066,6 +2111,7 @@ public static class AuthNullProbe
 
       const proj = Path.join(dir, 'AuthNullProbe.csproj')
       const built = run(dotnet, ['build', '--nologo', '-v', 'quiet', proj], sdkroot)
+      if (built.timedOut) return built
       if (!built.ok) return { ...built, phase: 'build' }
 
       return run(dotnet, ['run', '--no-build', '--project', proj], sdkroot)
@@ -2357,6 +2403,17 @@ describe('auth null suppresses the credential', () => {
       if (null == ran) {
         return t.skip('no usable ' + lane.target + ' toolchain here (' +
           lane.needs + ')')
+      }
+
+      // A machine that could not finish the command is in the same position
+      // as one without the toolchain: it has proved nothing either way. It
+      // is a SKIP rather than a failure - but never a silent one, because a
+      // lane that quietly stops running is exactly the false green this file
+      // exists to prevent. The reason names the timeout, so a machine that
+      // starts timing out reads as a machine problem in the log rather than
+      // as coverage that was always there.
+      if (ran.timedOut) {
+        return t.skip(lane.target + ': ' + ran.out)
       }
 
       ok(ran.ok, lane.target + ': ' + ('build' === ran.phase
