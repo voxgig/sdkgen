@@ -129,7 +129,7 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 
 	// Preserve system.fetch before merge/validate.
 	var sysFetch any
-	if sf := vs.GetPath([]any{"system", "fetch"}, opts); sf != nil {
+	if sf := vs.GetPath(opts, []any{"system", "fetch"}); sf != nil {
 		sysFetch = sf
 	}
 
@@ -151,15 +151,15 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 	// PANICS (construction-time misconfiguration, as regexp.MustCompile).
 	if base, ok := opts["base"].(string); ok && strings.Contains(base, "{") {
 		testmode := false
-		if ta, ok := vs.GetPath([]any{"test", "active"}, opts).(bool); ok && ta {
+		if ta, ok := vs.GetPath(opts, []any{"test", "active"}).(bool); ok && ta {
 			testmode = true
 		}
-		if fa, ok := vs.GetPath([]any{"feature", "test", "active"}, opts).(bool); ok && fa {
+		if fa, ok := vs.GetPath(opts, []any{"feature", "test", "active"}).(bool); ok && fa {
 			testmode = true
 		}
 		server := core.ToMapAny(opts["server"])
 		sdkname := "SDK"
-		if mn, ok := vs.GetPath([]any{"main", "name"}, config).(string); ok && mn != "" {
+		if mn, ok := vs.GetPath(config, []any{"main", "name"}).(string); ok && mn != "" {
 			sdkname = mn
 		}
 		resolved := serverVarRe.ReplaceAllStringFunc(base, func(ph string) string {
@@ -191,7 +191,7 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 
 	// Derived clean config.
 	cleanKeys := "key,token,id"
-	if ck := vs.GetPath([]any{"clean", "keys"}, opts); ck != nil {
+	if ck := vs.GetPath(opts, []any{"clean", "keys"}); ck != nil {
 		if cks, ok := ck.(string); ok {
 			cleanKeys = cks
 		}

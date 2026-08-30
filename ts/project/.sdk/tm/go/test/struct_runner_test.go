@@ -33,7 +33,7 @@ type StructUtility struct {
 	IsNode     func(val any) bool
 	Clone      func(val any) any
 	CloneFlags func(val any, flags map[string]bool) any
-	GetPath    func(path any, store any, injdefs ...*voxgigstruct.Injection) any
+	GetPath    func(store any, path any, injdefs ...*voxgigstruct.Injection) any
 	Inject     func(val any, store any, injdefs ...*voxgigstruct.Injection) any
 	Items      func(val any) [][2]any
 	Stringify  func(val any, maxlen ...int) string
@@ -65,7 +65,7 @@ type StructUtility struct {
 	Size       func(val any) int
 	Slice      func(val any, args ...any) any
 	StrKey     func(key any) string
-	Transform  func(data any, spec any, injdefs ...*voxgigstruct.Injection) any
+	Transform  func(data any, spec any, injdefs ...*voxgigstruct.Injection) (any, error)
 	Typify     func(value any) int
 	Typename   func(t int) string
 	Validate   func(data any, spec any, injdefs ...*voxgigstruct.Injection) (any, error)
@@ -73,8 +73,8 @@ type StructUtility struct {
 	SKIP   any
 	DELETE any
 
-	Jo func(kv ...any) map[string]any
-	Ja func(v ...any) []any
+	Jm func(kv ...any) map[string]any
+	Jt func(v ...any) []any
 
 	CheckPlacement func(modes int, ijname string, parentTypes int, inj *voxgigstruct.Injection) bool
 	InjectorArgs   func(argTypes []int, args []any) []any
@@ -681,7 +681,7 @@ func MatchNode(
 			scalar := !structUtil.IsNode(val)
 
 			if scalar {
-				baseval := structUtil.GetPath(path, base)
+				baseval := structUtil.GetPath(base, path)
 				if !MatchScalar(val, baseval, structUtil) {
 					pass = false
 					err = fmt.Errorf(
@@ -1058,8 +1058,8 @@ func NewStructSDK(opts map[string]any) *StructSDK {
 		SKIP:   voxgigstruct.SKIP,
 		DELETE: voxgigstruct.DELETE,
 
-		Jo: voxgigstruct.Jo,
-		Ja: voxgigstruct.Ja,
+		Jm: voxgigstruct.Jm,
+		Jt: voxgigstruct.Jt,
 
 		CheckPlacement: voxgigstruct.CheckPlacement,
 		InjectorArgs:   voxgigstruct.InjectorArgs,

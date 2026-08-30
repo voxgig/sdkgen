@@ -525,8 +525,9 @@ flow a non-applicable feature's dependency into a target's manifest.
 
 - **Phase 0 upstream filings.** The three omni patches are captured as
   marked `PATCH` blocks and pinned by a guard test, but the upstream
-  issues/PRs (omni's three bugs plus the compat shim, struct's go-port
-  drift, sekreto's browser-safety split) are not filed.
+  issues/PRs (omni's three bugs plus the compat shim, sekreto's
+  browser-safety split) are not filed. struct's go-port drift is now
+  RESOLVED — see below.
 - **Corpus entries pinning the null semantics**, which belong in the
   corpus create-sdkgen owns, plus upstream 0.3.2's new sections.
 - **sekreto's `checkaddr` rejects IPv6 loopback.** `http://[::1]:8200`
@@ -541,3 +542,53 @@ flow a non-applicable feature's dependency into a target's manifest.
 - The other 21 language targets, which the rollout lists in
   `parity.test.ts` (`OMNI_RUNNER`, `SECRETS`) and `featuremodel.test.ts`
   (`GATED`) now gate explicitly rather than silently.
+
+### The go resync: what the plan got wrong, and the trap it hid
+
+Phase 0 listed struct's go port as "about 672 diff lines, in both
+directions", and asked whether the vendored copy's independent `net/url`
+addition was "still real" and should be ported upstream. It was not real.
+Upstream's `EscUrl` matches the TypeScript reference (`encodeURIComponent`)
+on every corpus case; the vendored `url.QueryEscape` diverges on 5 of 10,
+including encoding a space as `+` rather than `%20`. `make_url.go` used it
+for PATH parameters, and `struct_utility_test.go` carried a
+`ReplaceAll("+", "%20")` around the subject that made the shared corpus
+pass while real paths and query strings still went out wrong. There was
+nothing to port: the vendored copy was simply a bad local edit, and the
+workaround existed to hide it. Resync from upstream, delete the
+workaround, pass the subject bare.
+
+The resync itself is small. Diffing every exported signature between the
+old vendored copy and upstream 0.1.3 gives the complete breaking surface:
+
+| change | caught by |
+|---|---|
+| `Transform` returns `(any, error)` | the compiler |
+| `Jo`/`Ja` renamed to `Jm`/`Jt` | the compiler |
+| `Re*` helpers added | nothing to do |
+| **`GetPath(path, store)` → `GetPath(store, path)`** | **nothing** |
+
+The last one is the trap, and it is worth naming because every remaining
+target's resync can hit the same shape. Both parameters are `any`, so all
+35 call sites across `tm/go` and `src/cmp/go` kept compiling and began
+returning nil. `go vet` was clean. The golden manifest reported fourteen
+changed hashes and no reason. What went red was the feature-corpus lane,
+three layers from the cause, complaining that "no declared operation
+completed against a plain 200" — because `allow.op` had resolved to `""`.
+Upstream's change is a good one (it makes `GetPath` agree with
+`SetPath(store, path, val)`); it is only dangerous because it is invisible.
+
+Two things follow for the other targets:
+
+- **Diff the signatures, do not read the diff.** 672 lines of drift is
+  unreadable, and the one line that matters looks like formatting. Extract
+  every exported signature from both copies and compare them
+  mechanically; the table above took seconds to produce that way and
+  nothing else surfaced `GetPath` at all.
+- **A silent signature is now pinned.** `ts/test/vendored.test.ts` grew a
+  `vendored signature drift` block listing the exact `func` lines the
+  templates' call sites assume — currently `GetPath` and `SetPath`, the
+  two whose parameters share a type. A resync that reorders them fails
+  there, at the point of the resync, quoting both the old and the new
+  declaration. Add the equivalent pin for any other port whose vendored
+  API has same-typed adjacent parameters.

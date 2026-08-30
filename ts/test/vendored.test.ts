@@ -45,6 +45,7 @@ const MANIFEST = JSON.parse(
 const VENDOR_DIRS = [
   'tm/ts/test/vendor/omni',
   'tm/ts/src/feature/secrets/sekreto',
+  'tm/go/utility/struct',
 ]
 
 
@@ -233,4 +234,61 @@ describe('applicability tags', () => {
     // A tag set to false is not declared, so it is not an unknown tag.
     deepStrictEqual(unknownTags({ sekrreto: false }), [])
   })
+})
+
+
+// A resync can change a vendored function's ARGUMENT ORDER, and go will not
+// say a word: `GetPath(path, store)` became `GetPath(store, path)` in struct
+// go 0.1.3 — both parameters are `any`, so all 35 call sites in the go
+// templates kept compiling and started returning nil at runtime.
+//
+// Nothing cheap caught that. `go vet` compiles, so it saw nothing; the
+// golden manifest hashes content, so it reported 14 changed files and no
+// reason; only the feature-corpus lane went red, three layers away from the
+// cause, saying "no declared operation completed against a plain 200"
+// because `allow.op` had silently resolved to "".
+//
+// So the signatures the templates actually DEPEND ON are pinned here, at the
+// point where a resync happens. This is deliberately not a full API check:
+// it lists the few functions whose misuse is SILENT — the ones whose
+// parameters share a type, so the compiler cannot tell them apart.
+describe('vendored signature drift', () => {
+
+  // Each entry: the exact `func` line the templates' call sites assume.
+  // Written out in full rather than matched loosely, so a change to the
+  // return type is caught alongside a change to the order.
+  const PINNED: Record<string, string[]> = {
+    'tm/go/utility/struct/voxgigstruct.go': [
+      // Call sites pass (store, path) — the same order as SetPath. Reversing
+      // these two `any` parameters compiles and yields nil.
+      'func GetPath(store any, path any, injdefs ...*Injection) any {',
+      'func SetPath(store any, path any, val any, injdefs ...map[string]any) any {',
+    ],
+  }
+
+  for (const [rel, lines] of Object.entries(PINNED)) {
+    test(rel + ': the signatures its call sites assume are unchanged', () => {
+      const path = Path.join(SDK, rel)
+      ok(existsSync(path), 'no vendored file at ' + rel)
+
+      const src = readFileSync(path, 'utf8').replace(/\r\n/g, '\n')
+
+      for (const want of lines) {
+        const name = /^func (\w+)/.exec(want)?.[1]
+
+        // Report what it IS, not just that it is missing — the whole point
+        // is that the reader needs to see the new order to fix call sites.
+        const actual = new RegExp('^func ' + name + '\\(.*$', 'm').exec(src)
+
+        ok(src.includes('\n' + want) || src.startsWith(want),
+          'vendored ' + rel + ' no longer declares:\n' +
+          '  ' + want + '\n' +
+          'it now declares:\n' +
+          '  ' + (actual?.[0] ?? '(no ' + name + ' at all)') + '\n' +
+          'This is a SILENT break: the parameters share a type, so every ' +
+          'call site still compiles. Update the call sites in tm/go and ' +
+          'src/cmp/go to match, then update this pin in the same commit.')
+      }
+    })
+  }
 })

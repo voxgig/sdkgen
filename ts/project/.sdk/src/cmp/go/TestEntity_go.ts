@@ -205,7 +205,7 @@ ${allSteps.length > 0 ? '\t\tclient := setup.client\n\n' : ''}`)
       const preambleRef = entity.name + '_ref01'
       const preambleVar = goVar(preambleRef)
       Content(`		// Bootstrap entity data from existing test data (no create step in flow).
-		${preambleVar}DataRaw := vs.Items(core.ToMapAny(vs.GetPath("existing.${entity.name}", setup.data)))
+		${preambleVar}DataRaw := vs.Items(core.ToMapAny(vs.GetPath(setup.data, "existing.${entity.name}")))
 		var ${preambleVar}Data map[string]any
 		if len(${preambleVar}DataRaw) > 0 {
 			${preambleVar}Data = core.ToMapAny(${preambleVar}DataRaw[0][1])
@@ -265,9 +265,14 @@ ${allSteps.length > 0 ? '\t\tclient := setup.client\n\n' : ''}`)
 
 `)
 
-    // Generate idmap via vs.Transform
+    // Generate idmap via vs.Transform.
+    //
+    // The error return Transform gained in struct go 0.1.3 is discarded
+    // deliberately: this transforms the entity's own id names, which the
+    // generator produced, so an error would be a generator bug rather than
+    // anything the generated test can act on.
     Content('\t// Generate idmap via transform, matching TS pattern.\n')
-    Content('\tidmap := vs.Transform(\n')
+    Content('\tidmap, _ := vs.Transform(\n')
     Content('\t\t[]any{' + idnamesStr + '},\n')
     Content('\t\tmap[string]any{\n')
     Content('\t\t\t"`$PACK`": []any{"", map[string]any{\n')
@@ -361,11 +366,11 @@ const generateCreate: OpGen = (ctx, step, index) => {
   // Load data from test data file
   if (hasDatvar) {
     Content(`		${datavar} = core.ToMapAny(vs.GetProp(
-			vs.GetPath([]any{"new", "${entity.name}"}, setup.data), "${ref}"))
+			vs.GetPath(setup.data, []any{"new", "${entity.name}"}), "${ref}"))
 `)
   } else {
     Content(`		${datavar} := core.ToMapAny(vs.GetProp(
-			vs.GetPath([]any{"new", "${entity.name}"}, setup.data), "${ref}"))
+			vs.GetPath(setup.data, []any{"new", "${entity.name}"}), "${ref}"))
 `)
   }
 
@@ -606,7 +611,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 `)
   }
   if (!hasSrcData && hasEntId) {
-    Content(`		${srcdatavar}Raw := vs.Items(core.ToMapAny(vs.GetPath("existing.${entity.name}", setup.data)))
+    Content(`		${srcdatavar}Raw := vs.Items(core.ToMapAny(vs.GetPath(setup.data, "existing.${entity.name}")))
 		var ${srcdatavar} map[string]any
 		if len(${srcdatavar}Raw) > 0 {
 			${srcdatavar} = core.ToMapAny(${srcdatavar}Raw[0][1])

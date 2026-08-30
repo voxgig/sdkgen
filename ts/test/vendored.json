@@ -1,6 +1,6 @@
 {
   "library": {
-    "omni": {
+    "omni/typescript": {
       "commit": "bc9535d655564c0833f6eff003b0b13dad8b350f",
       "file": {
         "tm/ts/test/vendor/omni/Runner.ts": {
@@ -23,7 +23,7 @@
       "repo": "https://github.com/voxgig/omni",
       "version": "0.1.2"
     },
-    "sekreto": {
+    "sekreto/typescript": {
       "commit": "a8c293be1b6c33d65223b2b2275797c241b1a1f1",
       "file": {
         "tm/ts/src/feature/secrets/sekreto/Providers.ts": {
@@ -46,7 +46,18 @@
       "repo": "https://github.com/voxgig/sekreto",
       "version": "0.1.2"
     },
-    "struct": {
+    "struct/go": {
+      "commit": "94409354d0a60fda8098c83e290583b7dee76c84",
+      "file": {
+        "tm/go/utility/struct/voxgigstruct.go": {
+          "sha256": "9fab8535923631d848879d2e0de2f80c36e87b6e50299e1dbba9d1c18c7994c3",
+          "upstream": "go/voxgigstruct.go"
+        }
+      },
+      "repo": "https://github.com/voxgig/struct",
+      "version": "0.1.3"
+    },
+    "struct/typescript": {
       "commit": "94409354d0a60fda8098c83e290583b7dee76c84",
       "file": {
         "tm/ts/src/utility/StructUtility.ts": {
