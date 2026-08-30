@@ -529,7 +529,8 @@ flow a non-applicable feature's dependency into a target's manifest.
   browser-safety split) are not filed. struct's go-port drift is now
   RESOLVED — see below.
 - **Corpus entries pinning the null semantics**, which belong in the
-  corpus create-sdkgen owns, plus upstream 0.3.2's new sections.
+  corpus create-sdkgen owns, plus upstream 0.3.2's new sections. Now
+  demonstrated to be a PER-TARGET defect, not a ts one — see below.
 - **sekreto's `checkaddr` rejects IPv6 loopback.** `http://[::1]:8200`
   parses to host `'['`, so the `'::1'` and `'[::1]'` entries in its own
   allowlist are unreachable and a legitimate local vault is refused. Found
@@ -585,6 +586,39 @@ Two things follow for the other targets:
   every exported signature from both copies and compare them
   mechanically; the table above took seconds to produce that way and
   nothing else surfaced `GetPath` at all.
+- **Check `auth: null` on every target you touch.** It is broken in
+  ELEVEN targets and fails two different ways, so neither fix stands in
+  for the other. go had the same credential leak ts did, independently
+  and already present before the resync: `validate` treats a stored null as "no value", the optspec's
+  `auth` default fires, and the documented way to disable auth silently
+  becomes "use default auth" — putting the withheld credential on the
+  wire. It is invisible unless the caller ALSO supplies an apikey: with
+  none, nothing is sent either way, so the obvious test passes while the
+  defect is live. Fixed the same way as ts (capture suppliedness before
+  validate, restore the null after), but go needs the two-value map read
+  `authval, authgiven := options["auth"]` — a plain read is nil for an
+  absent key too, and only a present nil is a suppression. Every target
+  whose struct has these null semantics needs the check and its own test;
+  the corpus cannot supply one, because corpus nulls travel as the
+  `'__NULL__'` string.
+
+  The two failure modes follow the target's struct version, and only one
+  of them is a leak:
+
+  | struct | `validate({auth: null}, …)` | symptom |
+  |---|---|---|
+  | 0.3.2 / go 0.1.3 | returns the optspec default | **credential transmitted** (fail-open) |
+  | 0.0.10 | throws `Expected field auth to be map` | construction error (fail-closed) |
+
+  So the fix differs too: on the newer struct, restoring the null after
+  validate is enough; on 0.0.10 the key must be DELETED before validate
+  as well, or it throws before the restore can run.
+
+  Audit of `makeOptions` across the shipped targets, at the time of
+  writing: `ts` and `go` and `js` carry the suppression; **c, csharp,
+  dart, java, kotlin, lua, perl, php, py, rb, rust and swift do not**.
+  Each needs the fix matched to its own struct version, and its own test
+  — target-level, since the corpus cannot reach real nulls.
 - **A silent signature is now pinned.** `ts/test/vendored.test.ts` grew a
   `vendored signature drift` block listing the exact `func` lines the
   templates' call sites assume — currently `GetPath` and `SetPath`, the
