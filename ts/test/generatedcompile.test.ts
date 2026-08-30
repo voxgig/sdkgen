@@ -1071,11 +1071,21 @@ function listFiles(root: string, ext: string): string[] {
 // The auth-null rollout: `auth: null` - the documented way to disable auth
 // outright - must beat an explicit apikey on EVERY target.
 //
-// One lane per target, driven by a table so a target is a row. Each probe
-// opens with a baseline assertion (an ordinary apikey IS sent, or DOES yield
-// an auth block) because the suppression on its own cannot fail visibly: with
-// no apikey nothing goes on the wire either way, so a probe without the
-// baseline would pass with the defect live.
+// A lane per target, driven by a table so a target is a row. Each probe opens
+// with a baseline assertion (an ordinary apikey IS sent, or DOES yield an auth
+// block) because the suppression on its own cannot fail visibly: with no
+// apikey nothing goes on the wire either way, so a probe without the baseline
+// would pass with the defect live.
+//
+// COVERAGE IS NOT COMPLETE, and AUTHNULL_UNCOVERED below says so in code
+// rather than in a comment nobody re-reads: csharp, dart, kotlin and swift
+// carry the fix but have no lane. The reason is not that they do not deserve
+// one - it is that a lane which has never been executed even once is a
+// liability. It fails on someone else's machine, in a language whose build
+// invocation was guessed at, and reads as a regression in the fix rather than
+// a broken probe. Adding those four is real work for whoever has dotnet,
+// dart, kotlin or swift to hand; the test below makes sure the gap cannot
+// widen in silence while they wait.
 //
 // The failure being pinned differs by target, which is why one lane cannot
 // stand in for another. Where the target's struct treats a stored null as
@@ -1091,7 +1101,10 @@ const AUTHNULL_LANES: {
   needs: string,
   probe: string,
   source: string,
-  exec: (sdkroot: string) => { ok: boolean, out: string } | null,
+  // `phase` separates a BUILD failure from a PROBE failure. Without it a
+  // toolchain that cannot compile the generated SDK at all is reported as an
+  // auth-null regression, which sends the reader hunting in the wrong file.
+  exec: (sdkroot: string) => { ok: boolean, out: string, phase?: string } | null,
 }[] = [
   {
     target: 'py',
@@ -1367,7 +1380,7 @@ public class AuthNullProbe {
       const sources = listFiles(sdkroot, '.java')
         .filter((f) => !f.split(Path.sep).includes('test'))
       const built = run(javac, ['-d', classes, ...sources], sdkroot)
-      if (!built.ok) return built
+      if (!built.ok) return { ...built, phase: 'build' }
 
       return run(java, ['-cp', classes, 'AuthNullProbe'], sdkroot)
     },
@@ -1422,9 +1435,17 @@ int main(void) {
 `,
     exec: (sdkroot) => {
       const make = toolchain('make')
-      if (null == make) return null
+
+      // The compiler is probed as well as make. The generated Makefile takes
+      // CC from the environment and defaults to make's own `cc`, so an image
+      // carrying make without a working compiler would fail INSIDE the build
+      // and be read as an auth-null regression rather than the visible skip
+      // it should be.
+      const cc = toolchain(process.env.CC || 'cc') || toolchain('gcc')
+      if (null == make || null == cc) return null
+
       const built = run(make, ['tests/authnull_probe.out'], sdkroot)
-      if (!built.ok) return built
+      if (!built.ok) return { ...built, phase: 'build' }
       return run(Path.join(sdkroot, 'tests', 'authnull_probe.out'), [], sdkroot)
     },
   },
@@ -1504,6 +1525,128 @@ fn authnull_probe() {
 ]
 
 
+// Targets whose makeOptions carries the suppression but which have no lane
+// HERE, each with the reason. The test below holds this list and
+// AUTHNULL_LANES to what the templates actually contain, so adding the fix to
+// a new target without a lane fails here rather than passing quietly.
+//
+// Note ts is a different case from the rest: it IS pinned behaviourally, just
+// not from this file.
+const AUTHNULL_UNCOVERED: Record<string, string> = {
+  ts: 'pinned instead by the shipped tm/ts/test/feature/secrets/Secrets.test.ts ' +
+    '("auth null suppresses the credential, chain or no chain"), which runs in ' +
+    'a generated SDK rather than in sdkgen CI',
+  csharp: 'needs dotnet; the probe has never been executed, so it is not shipped',
+  dart: 'needs dart; the probe has never been executed, so it is not shipped',
+  kotlin: 'needs gradle; the probe has never been executed, so it is not shipped',
+  swift: 'needs swift; a probe needs a Package.swift target, and none is written',
+}
+
+
+// Covered, but by their own dedicated lanes earlier in this file rather than
+// by a row here - `go: auth null suppresses the credential` and `js: auth
+// null suppresses the credential`, written before this table existed. They
+// are listed so the coverage test below counts them as covered; folding them
+// into the table would mean rewriting two lanes that already work.
+const AUTHNULL_STANDALONE = ['go', 'js']
+
+
+// lua is absent from ALL of these lists on purpose: it cannot express the suppression
+// at all. A Lua table stores no nil - `t.auth = nil` removes the key - and the
+// port has no null sentinel, so `auth = nil` and an omitted auth are the same
+// value. There is nothing for makeOptions to detect and nothing to pin.
+const AUTHNULL_INEXPRESSIBLE = ['lua']
+
+
+// The lists above are only worth having if something holds them to the
+// templates. This walks every target's makeOptions, finds the ones that
+// actually carry the suppression, and requires each to be either covered by a
+// lane or named in AUTHNULL_UNCOVERED with a reason.
+//
+// It bites in both directions, which is the point: adding the fix to a new
+// target without a lane fails here, and so does writing a lane for a target
+// whose makeOptions never got the fix.
+describe('auth null coverage is honest', () => {
+
+  // The marker every implementation uses for the captured flag, in each
+  // language's casing.
+  const MARKER = /authsuppressed|auth_suppressed/i
+
+  function targetsWithFix(): string[] {
+    const tm = Path.resolve(PKG, 'project', '.sdk', 'tm')
+    const out: string[] = []
+
+    for (const target of Fs.readdirSync(tm)) {
+      const dir = Path.join(tm, target)
+      if (!Fs.statSync(dir).isDirectory()) continue
+
+      const found = listFiles(dir, '')
+        .filter((f) => /make_?options/i.test(Path.basename(f)))
+        .some((f) => MARKER.test(Fs.readFileSync(f, 'utf8')))
+
+      if (found) out.push(target)
+    }
+    return out.sort()
+  }
+
+
+  test('every target carrying the fix has a lane or a stated reason', () => {
+    const covered = new Set([
+      ...AUTHNULL_LANES.map((l) => l.target),
+      ...AUTHNULL_STANDALONE,
+    ])
+    const excused = new Set(Object.keys(AUTHNULL_UNCOVERED))
+
+    const orphans = targetsWithFix()
+      .filter((t) => !covered.has(t) && !excused.has(t))
+
+    deepStrictEqual(orphans, [],
+      'these targets carry the auth-null fix but have neither a lane nor an ' +
+      'entry in AUTHNULL_UNCOVERED - add one or the other, and do not leave ' +
+      'the fix unpinned in silence')
+  })
+
+
+  // The other direction. An excuse that outlives the thing it excuses is
+  // worse than none: it reads as a known gap when the gap has been closed.
+  test('nothing is excused that already has a lane', () => {
+    const covered = new Set([
+      ...AUTHNULL_LANES.map((l) => l.target),
+      ...AUTHNULL_STANDALONE,
+    ])
+    const stale = Object.keys(AUTHNULL_UNCOVERED).filter((t) => covered.has(t))
+
+    deepStrictEqual(stale, [],
+      'these targets have a lane AND an AUTHNULL_UNCOVERED entry - drop the ' +
+      'entry, the gap it describes is closed')
+  })
+
+
+  // And a lane for a target that never got the fix would pass vacuously.
+  test('every lane targets a template that carries the fix', () => {
+    const withFix = new Set(targetsWithFix())
+    const hollow = [...AUTHNULL_LANES.map((l) => l.target), ...AUTHNULL_STANDALONE]
+      .filter((t) => !withFix.has(t))
+
+    deepStrictEqual(hollow, [],
+      'these lanes probe a target whose makeOptions has no suppression - the ' +
+      'lane cannot be testing what it claims')
+  })
+
+
+  test('lua is not claimed as covered', () => {
+    const claimed = AUTHNULL_INEXPRESSIBLE
+      .filter((t) => AUTHNULL_LANES.some((l) => l.target === t)
+        || AUTHNULL_STANDALONE.includes(t)
+        || t in AUTHNULL_UNCOVERED)
+
+    deepStrictEqual(claimed, [],
+      'a target listed as unable to express the suppression must not also ' +
+      'appear as covered or merely uncovered - those say the fix is possible')
+  })
+})
+
+
 describe('auth null suppresses the credential', () => {
 
   let tmp = ''
@@ -1535,8 +1678,9 @@ describe('auth null suppresses the credential', () => {
           lane.needs + ')')
       }
 
-      ok(ran.ok, lane.target + ': auth null did not suppress the credential:\n' +
-        tail(ran.out))
+      ok(ran.ok, lane.target + ': ' + ('build' === ran.phase
+        ? 'the generated SDK did not build, so the probe never ran'
+        : 'auth null did not suppress the credential') + ':\n' + tail(ran.out))
     })
   }
 })
