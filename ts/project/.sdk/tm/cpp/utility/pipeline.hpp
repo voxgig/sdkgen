@@ -1114,11 +1114,12 @@ inline Value makeOptions(CtxPtr ctx) {
   // the credential the caller withheld. Withhold the key for validate, then
   // put the null back. Same fix as ts/js/go makeOptions.
   //
-  // map_contains AND is_nullish together, because neither alone can tell an
-  // ABSENT auth from a suppressed one: getp applies Group A and collapses a
-  // stored null to undef, while contains alone is true for a real auth map.
-  bool authSuppressed =
-    map_contains(options, "auth") && is_nullish(getp(options, "auth"));
+  // mapget rather than getp: getp applies Group A and collapses a stored null
+  // to undef, so it cannot tell an ABSENT auth from a suppressed one. And the
+  // test is is_null, NOT is_nullish - a present-but-UNDEF auth is a missing
+  // value, which the ts/js reference lets the optspec default fill in. Only an
+  // explicit null is a suppression.
+  bool authSuppressed = mapget(options, "auth").is_null();
 
   Value opts = Struct::clone(options);
 

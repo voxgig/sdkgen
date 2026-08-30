@@ -634,10 +634,6 @@ Two things follow for the other targets:
   `generatedcompile.test.ts` now classifies every target and scans whole
   trees for the marker, so the list cannot drift out of date again.
 
-  For the same reason, treat this earlier note with suspicion where it
-  says every target's prepareAuth already honours a null: that was checked
-  across thirteen targets, not all of them, and lean is a counterexample.
-
   One target is a language limit rather than an oversight:
   **lua cannot express it at all.** A Lua table stores no nil — `t.auth =
   nil` removes the key — and the port has no null sentinel (its own
@@ -647,11 +643,22 @@ Two things follow for the other targets:
   Giving lua the suppression means giving the port a null sentinel first,
   which is a much larger change to its public shape.
 
-  Worth knowing for any future port: **every target's prepareAuth already
-  honours a null correctly** — the defect was only ever makeOptions
-  erasing it before prepareAuth could see it. So the fix is confined to
-  makeOptions, and an options-level assertion (`options.auth is still
-  null`) is a sound proxy where driving the wire is awkward.
+  **Do not assume the fix is confined to makeOptions.** An earlier draft
+  of this note claimed every target's prepareAuth already honours a null,
+  and that an options-level assertion (`options.auth is still null`) was
+  therefore a sound proxy for driving the wire. Both were wrong, from the
+  same sample error as the filename audit: thirteen targets were checked,
+  not twenty-six.
+
+  **lean is the counterexample.** Its `prepareAuth` never reads
+  `options.auth` at all — it branches on an empty apikey and otherwise
+  reads `auth.prefix` — so restoring the null in makeOptions changes
+  nothing there. lean needs two fixes.
+
+  So for each target, check BOTH ends, and pin the property where it is
+  actually observable: **assert on the authorization header a mocked
+  transport receives**, not on the options map. An options-level assertion
+  passes for a lean-shaped port that never consults the value.
 
   Guards live in `generatedcompile.test.ts` as a table of per-target
   lanes, one row per target, each running a probe inside a freshly

@@ -1328,36 +1328,71 @@ exit(empty($fail) ? 0 : 1);
     target: 'java',
     needs: 'javac and java',
     probe: 'AuthNullProbe.java',
-    source: `// \`auth: null\` must survive makeOptions rather than being replaced by the
-// optspec default. That is the whole defect: every target's prepareAuth
-// already honours a null correctly, so once the null reaches it the header is
-// withheld. The baseline below fails loudly if a plain apikey stops producing
-// a real auth block, so this cannot pass vacuously.
+    source: `// \`auth: null\` must suppress an explicit apikey ON THE WIRE.
+//
+// This asserts on the authorization header a mocked transport receives, not on
+// the options map. An options-level assertion is not enough: lean's prepareAuth
+// never reads options.auth at all, so a port of that shape passes an options
+// check while still transmitting the credential.
+//
+// The baseline fails loudly if an ordinary apikey stops being sent, because the
+// suppression alone cannot fail visibly - with no apikey nothing goes on the
+// wire either way.
 import java.util.*;
 
 import voxgig.demosdk.core.DemoSDK;
+import voxgig.demosdk.core.Utility;
 
 public class AuthNullProbe {
+
+  static String seen;
+  static boolean had;
+
+  @SuppressWarnings("unchecked")
+  static void wire(Map<String, Object> opts) {
+    seen = null;
+    had = false;
+
+    Map<String, Object> full = new LinkedHashMap<>(opts);
+    Utility.FetcherFn mock = (ctx, fullurl, fetchdef) -> {
+      Object h = fetchdef.get("headers");
+      if (h instanceof Map) {
+        had = ((Map<String, Object>) h).containsKey("authorization");
+        Object v = ((Map<String, Object>) h).get("authorization");
+        seen = null == v ? null : String.valueOf(v);
+      }
+      Map<String, Object> res = new LinkedHashMap<>();
+      res.put("status", 200);
+      res.put("ok", true);
+      res.put("json", (java.util.function.Supplier<Object>) LinkedHashMap::new);
+      return res;
+    };
+    Map<String, Object> util = new LinkedHashMap<>();
+    util.put("fetcher", mock);
+    full.put("utility", util);
+
+    DemoSDK sdk = new DemoSDK(full);
+    try {
+      sdk.planet(null).create(new LinkedHashMap<>(Map.of("name", "p1")), null);
+    }
+    catch (Throwable ignored) { }
+  }
+
   public static void main(String[] args) {
     List<String> fail = new ArrayList<>();
 
-    Map<String, Object> plain = new LinkedHashMap<>();
-    plain.put("apikey", "OPTKEY01");
-    Object baseAuth = new DemoSDK(plain).optionsMap().get("auth");
-    if (!(baseAuth instanceof Map)) {
-      fail.add("baseline broken: a plain apikey did not yield an auth map, got " + baseAuth);
+    wire(new LinkedHashMap<>(Map.of("apikey", "OPTKEY01")));
+    if (!had || !"OPTKEY01".equals(seen)) {
+      fail.add("baseline broken: an ordinary apikey was not sent (had=" + had
+        + " value=" + seen + ")");
     }
 
     Map<String, Object> supp = new LinkedHashMap<>();
     supp.put("apikey", "OPTKEY01");
     supp.put("auth", null);
-    Map<String, Object> om = new DemoSDK(supp).optionsMap();
-    if (!om.containsKey("auth")) {
-      fail.add("options.auth was dropped entirely, so prepareAuth cannot tell it was suppressed");
-    }
-    else if (null != om.get("auth")) {
-      fail.add("options.auth is " + om.get("auth")
-        + ", not null - validate replaced the suppression");
+    wire(supp);
+    if (had) {
+      fail.add("auth null did not suppress the credential - sent " + seen);
     }
 
     for (String f : fail) { System.out.println("FAIL: " + f); }
@@ -1389,44 +1424,62 @@ public class AuthNullProbe {
     target: 'c',
     needs: 'make and a C compiler',
     probe: 'tests/authnull_probe.c',
-    source: `/* \`auth: null\` must survive make_options rather than being replaced by the
- * optspec default. That is the whole defect: every target's prepare_auth
- * already honours a null correctly, so once the null reaches it the header is
- * withheld. The baseline below fails loudly if a plain apikey stops producing
- * a real auth block, so this cannot pass vacuously. */
+    source: `/* \`auth: null\` must suppress an explicit apikey IN THE HEADER prepareAuth
+ * writes - not merely in the options map.
+ *
+ * An options-level assertion is not enough: lean's prepareAuth never reads
+ * options.auth at all, so a port of that shape passes an options check while
+ * still transmitting the credential. This drives the real makeOptions (through
+ * the client constructor) and then the real prepare_auth, and asserts on what
+ * lands in spec->headers - which is what makeRequest sends.
+ *
+ * The baseline fails loudly if an ordinary apikey stops being sent, because
+ * the suppression alone cannot fail visibly: with no apikey nothing goes on
+ * the wire either way. */
 #include "sdk.h"
+
 #include <stdio.h>
+#include <string.h>
 
 static int fails = 0;
 
-static void fail(const char* msg) {
-  printf("FAIL: %s\\n", msg);
+static void fail(const char* msg, const char* got) {
+  printf("FAIL: %s%s%s\\n", msg, got ? " - sent " : "", got ? got : "");
   fails++;
 }
 
-static voxgig_value* auth_of(voxgig_value* opts) {
-  DemoSDK* sdk = demo_sdk_new(opts);
-  voxgig_value* om = sdk_options_map(sdk);
-  return voxgig_is_map(om) ? voxgig_map_get(voxgig_as_map(om), "auth") : NULL;
+/* Build a client from opts, run the real prepare_auth, return the
+ * authorization header it wrote (NULL when absent). */
+static const char* authheader(voxgig_value* sdkopts) {
+  DemoSDK* client = test_sdk(v_undef(), sdkopts);
+  Utility* utility = sdk_get_utility(client);
+
+  CtxSpec cs;
+  memset(&cs, 0, sizeof(cs));
+  cs.opname = "load";
+  cs.client = client;
+  cs.utility = utility;
+  Context* ctx = make_context_util(cs, sdk_get_root_ctx(client));
+
+  ctx->spec = spec_new(cmap(2, "headers", v_map(), "step", v_str("s")));
+
+  PNError* err = NULL;
+  prepare_auth_util(ctx, &err);
+
+  return get_str(ctx->spec->headers, "authorization");
 }
 
 int main(void) {
-  voxgig_value* plain = voxgig_new_map();
-  voxgig_map_set(voxgig_as_map(plain), "apikey", voxgig_new_string("OPTKEY01"));
-  voxgig_value* basea = auth_of(plain);
-  if (NULL == basea || !voxgig_is_map(basea)) {
-    fail("baseline broken: a plain apikey did not yield an auth map");
+  voxgig_value* plain = cmap(1, "apikey", v_str("OPTKEY01"));
+  const char* base = authheader(plain);
+  if (NULL == base || 0 != strcmp(base, "OPTKEY01")) {
+    fail("baseline broken: an ordinary apikey was not sent", base);
   }
 
-  voxgig_value* supp = voxgig_new_map();
-  voxgig_map_set(voxgig_as_map(supp), "apikey", voxgig_new_string("OPTKEY01"));
-  voxgig_map_set(voxgig_as_map(supp), "auth", voxgig_new_null());
-  voxgig_value* suppa = auth_of(supp);
-  if (NULL == suppa) {
-    fail("options.auth was dropped entirely, so prepare_auth cannot tell it was suppressed");
-  }
-  else if (!voxgig_is_null(suppa)) {
-    fail("options.auth is not null - validate replaced the suppression");
+  voxgig_value* supp = cmap(2, "apikey", v_str("OPTKEY01"), "auth", voxgig_new_null());
+  const char* got = authheader(supp);
+  if (NULL != got) {
+    fail("auth null did not suppress the credential", got);
   }
 
   printf("auth-null probe: %s\\n", 0 == fails ? "ok" : "FAILED");
@@ -1462,47 +1515,69 @@ int main(void) {
     target: 'cpp',
     needs: 'make and a C++ compiler',
     probe: 'test/authnull_probe.cpp',
-    source: `// \`auth: null\` must survive makeOptions rather than being replaced by the
-// optspec default. Every target's prepareAuth already honours a null, so once
-// the null reaches it the header is withheld. The baseline fails loudly if a
-// plain apikey stops yielding a real auth block, so this cannot pass vacuously.
+    source: `// \`auth: null\` must suppress an explicit apikey IN THE HEADER prepareAuth
+// writes - not merely in the options map.
+//
+// An options-level assertion is not enough: lean's prepareAuth never reads
+// options.auth at all, so a port of that shape passes an options check while
+// still transmitting the credential. This drives the real makeOptions (through
+// the client constructor) and then the real prepareAuth, and asserts on what
+// lands in spec->headers - which is what makeRequest sends.
+//
+// The baseline fails loudly if an ordinary apikey stops being sent, because
+// the suppression alone cannot fail visibly: with no apikey nothing goes on
+// the wire either way.
 #include "runner_support.hpp"
 
 #include <cstdio>
+#include <string>
 
 using namespace sdk;
 
 static int fails = 0;
 
-static void fail(const char* msg) {
-  std::printf("FAIL: %s\\n", msg);
+static void fail(const char* msg, const std::string& got) {
+  std::printf("FAIL: %s%s%s\\n", msg, got.empty() ? "" : " - sent ", got.c_str());
   fails++;
 }
 
-static Value auth_of(const Value& opts) {
-  auto client = std::make_shared<DemoSDK>(opts);
-  Value om = client->optionsMap();
-  return map_contains(om, "auth") ? getp(om, "auth") : Value();
+// Build a client from opts, run the real prepareAuth, return the authorization
+// header it wrote (empty when absent).
+static std::string authheader(const Value& sdkopts) {
+  auto client = std::make_shared<DemoSDK>(sdkopts);
+  auto utility = client->getUtility();
+
+  Value ctxmap = vmap();
+  map_put(ctxmap, "opname", Value(std::string("load")));
+  map_put(ctxmap, "spec", vmap());
+
+  CtxPtr ctx = rs::make_ctx_from_map(ctxmap, client, utility);
+  Value specmap = vmap();
+  map_put(specmap, "headers", vmap());
+  map_put(specmap, "step", Value(std::string("s")));
+  ctx->spec = std::make_shared<Spec>(specmap);
+
+  utility->prepareAuth(ctx);
+
+  Value h = ctx->spec->headers;
+  Value a = map_contains(h, "authorization") ? mapget(h, "authorization") : Value();
+  return a.is_string() ? a.as_string() : std::string();
 }
 
 int main() {
   Value plain = vmap();
   map_put(plain, "apikey", Value(std::string("OPTKEY01")));
-  if (!auth_of(plain).is_map()) {
-    fail("baseline broken: a plain apikey did not yield an auth map");
+  std::string base = authheader(plain);
+  if ("OPTKEY01" != base) {
+    fail("baseline broken: an ordinary apikey was not sent", base);
   }
 
   Value supp = vmap();
   map_put(supp, "apikey", Value(std::string("OPTKEY01")));
   map_put(supp, "auth", Value(nullptr));
-
-  auto client = std::make_shared<DemoSDK>(supp);
-  Value om = client->optionsMap();
-  if (!map_contains(om, "auth")) {
-    fail("options.auth was dropped entirely, so prepareAuth cannot tell it was suppressed");
-  }
-  else if (!is_nullish(getp(om, "auth"))) {
-    fail("options.auth is not null - validate replaced the suppression");
+  std::string got = authheader(supp);
+  if (!got.empty()) {
+    fail("auth null did not suppress the credential", got);
   }
 
   std::printf("auth-null probe: %s\\n", 0 == fails ? "ok" : "FAILED");
@@ -1682,15 +1757,34 @@ describe('auth null coverage is honest', () => {
   // Whole-tree scan. cpp keeps this logic in utility/pipeline.hpp and lean in
   // SdkUtility.lean, so anything narrower than "every file" reintroduces the
   // blind spot that made the first audit wrong.
+  //
+  // The marker must appear on BOTH SIDES of the validate call, not merely
+  // somewhere in the file. The fix is capture-before / restore-after, and
+  // presence of the identifier alone would accept a file that captures
+  // suppliedness and never restores it - or one where the only surviving
+  // mention is a comment. That shape passes an identifier check while leaking
+  // the credential, which is exactly what this list exists to prevent for the
+  // targets that have no lane.
   function carriesFix(target: string): boolean {
     return listFiles(Path.join(TM, target), '')
       .some((f) => {
+        let src = ''
         try {
-          return MARKER.test(Fs.readFileSync(f, 'utf8'))
+          src = Fs.readFileSync(f, 'utf8')
         }
         catch (_e) {
           return false
         }
+
+        // Every validate CALL site, not the first mention of the word: the
+        // files open with comments like "so merge/validate/init are
+        // unchanged", which sit before the capture and would make an
+        // otherwise-correct file look wrong. It is enough that SOME call has
+        // the marker on both sides.
+        const calls = [...src.matchAll(/\bvalidate\s*\(/gi)].map((m) => m.index ?? -1)
+        return calls.some((at) => 0 <= at
+          && MARKER.test(src.slice(0, at))
+          && MARKER.test(src.slice(at)))
       })
   }
 
