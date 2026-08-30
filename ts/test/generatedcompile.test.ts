@@ -1078,14 +1078,20 @@ function listFiles(root: string, ext: string): string[] {
 // would pass with the defect live.
 //
 // COVERAGE IS NOT COMPLETE, and AUTHNULL_UNCOVERED below says so in code
-// rather than in a comment nobody re-reads: csharp, dart, kotlin and swift
-// carry the fix but have no lane. The reason is not that they do not deserve
-// one - it is that a lane which has never been executed even once is a
-// liability. It fails on someone else's machine, in a language whose build
-// invocation was guessed at, and reads as a regression in the fix rather than
-// a broken probe. Adding those four is real work for whoever has dotnet,
-// dart, kotlin or swift to hand; the test below makes sure the gap cannot
-// widen in silence while they wait.
+// rather than in a comment nobody re-reads. What is left there is what no
+// runner in the CI matrix can execute: dart, which none of ubuntu, macos or
+// windows ships; swift, which only the macos leg has and which needs a
+// Package.swift target the template does not emit; and the six ports whose
+// fix was written blind. kotlin and csharp used to sit in that list and now
+// have lanes below.
+//
+// The bar a lane has to clear is that it RUNS somewhere. One that has never
+// been executed is a liability: it fails on someone else's machine, in a
+// language whose build invocation was guessed at, and reads as a regression
+// in the fix rather than a broken probe. The kotlin lane was written against
+// a real gradle and checked BOTH ways - green with the fix, red with the
+// capture stubbed back out - because a probe that has only ever passed has
+// not been shown to be able to fail.
 //
 // The failure being pinned differs by target, which is why one lane cannot
 // stand in for another. Where the target's struct treats a stored null as
@@ -1772,6 +1778,299 @@ fn authnull_probe() {
       return run(cargo, ['test', '--test', 'authnull_probe'], sdkroot)
     },
   },
+  {
+    target: 'kotlin',
+    needs: 'gradle (which resolves the Kotlin plugin from the network)',
+    probe: 'test/AuthNullProbe.kt',
+    source: `package voxgig.demosdk.sdktest
+
+// \`auth: null\` must suppress an explicit apikey ON THE WIRE - in the headers
+// the transport is handed - not merely in the options map.
+//
+// An options-level assertion is not enough: lean's prepareAuth never read
+// options.auth at all, so a port of that shape passes an options check while
+// still transmitting the credential. This drives the real makeOptions (through
+// the constructor) and a real entity operation, and asserts on what a mock
+// fetcher receives.
+//
+// The baseline fails loudly if an ordinary apikey stops being sent, because
+// the suppression alone cannot fail visibly: with no apikey nothing goes on
+// the wire either way, so a probe without the baseline passes with the defect
+// live.
+
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+
+import voxgig.demosdk.core.Context
+import voxgig.demosdk.core.DemoSDK
+
+class AuthNullProbe {
+
+  private var seen: String? = null
+  private var had = false
+
+  // \`called\` matters as much as \`had\`. If the suppressed path fails before
+  // the transport runs, \`had\` stays false - indistinguishable from a
+  // successful suppression - and this would pass on a broken SDK. The baseline
+  // cannot catch that, since it exercises different options.
+  private var called = false
+
+  private fun wire(opts: MutableMap<String, Any?>) {
+    seen = null
+    had = false
+    called = false
+
+    val full = LinkedHashMap<String, Any?>(opts)
+    val mock: (Context, String, MutableMap<String, Any?>) -> Any? = { _, _, fetchdef ->
+      called = true
+      val h = fetchdef["headers"]
+      if (h is Map<*, *>) {
+        // Presence separately from value: a present-but-empty header is not
+        // suppression, and reading the value alone cannot tell them apart.
+        had = h.containsKey("authorization")
+        seen = h["authorization"]?.toString()
+      }
+      val res = linkedMapOf<String, Any?>()
+      res["status"] = 200
+      res["statusText"] = "OK"
+      res["headers"] = linkedMapOf<String, Any?>()
+      res["body"] = "{}"
+      res
+    }
+    full["utility"] = linkedMapOf<String, Any?>("fetcher" to mock)
+
+    // The plain constructor, not a test client: the \`test\` feature is
+    // transport: 'base' and REPLACES the transport by design, so a client in
+    // test mode would shadow the mock and this would assert nothing.
+    val sdk = DemoSDK(full)
+    try {
+      sdk.planet(null).create(linkedMapOf<String, Any?>("name" to "p1"), null)
+    }
+    catch (ignored: Throwable) {
+    }
+  }
+
+  @Test
+  fun authNullBeatsAnExplicitApikey() {
+    val fail = ArrayList<String>()
+
+    wire(linkedMapOf<String, Any?>("apikey" to "OPTKEY01"))
+    if (!had || "OPTKEY01" != seen) {
+      fail.add("baseline broken: an ordinary apikey was not sent (had=" + had +
+        " value=" + seen + ")")
+    }
+
+    val supp = linkedMapOf<String, Any?>("apikey" to "OPTKEY01")
+    supp["auth"] = null
+    wire(supp)
+    if (!called) {
+      fail.add("the request never reached the transport, so nothing was proved " +
+        "about suppression - the suppressed path failed earlier")
+    }
+    if (had) {
+      fail.add("auth null did not suppress the credential - sent " + seen)
+    }
+
+    assertTrue(fail.isEmpty(), fail.joinToString("; "))
+  }
+}
+`,
+    exec: (sdkroot) => {
+      const gradle = toolchain('gradle')
+      if (null == gradle) return null
+
+      // Compile first as its own step purely for the phase distinction: gradle
+      // exits non-zero for a compile error and a failing assertion alike, and
+      // reporting a Kotlin type error as an auth-null regression sends the
+      // reader hunting in the wrong file.
+      //
+      // This is the ONLY lane that needs the network - gradle resolves the
+      // Kotlin plugin and junit on a cold runner - and also the only thing
+      // that compiles the kotlin target at all, which until now nothing did.
+      const built = run(gradle, ['--console=plain', 'compileTestKotlin'], sdkroot)
+      if (!built.ok) return { ...built, phase: 'build' }
+
+      return run(gradle, ['--console=plain', 'test', '--tests', '*AuthNullProbe*'],
+        sdkroot)
+    },
+  },
+  {
+    target: 'csharp',
+    needs: 'dotnet',
+    // test/ is the ONE directory the SDK csproj excludes (`<Compile
+    // Remove="test/**" />`), so the probe can live in the tree without being
+    // compiled into the library - where a second entry point would break the
+    // build for everyone.
+    probe: 'test/AuthNullProbe.cs',
+    source: `// \`auth: null\` must suppress an explicit apikey ON THE WIRE - in the headers
+// the transport is handed - not merely in the options map.
+//
+// An options-level assertion is not enough: lean's prepareAuth never read
+// options.auth at all, so a port of that shape passes an options check while
+// still transmitting the credential. This drives the real MakeOptions (through
+// the constructor) and a real entity operation, and asserts on what a mock
+// fetcher receives.
+//
+// The baseline fails loudly if an ordinary apikey stops being sent, because
+// the suppression alone cannot fail visibly: with no apikey nothing goes on
+// the wire either way, so a probe without the baseline passes with the defect
+// live.
+
+using DemoSdk;
+
+public static class AuthNullProbe
+{
+    private static string? seen;
+    private static bool had;
+
+    // \`called\` matters as much as \`had\`. If the suppressed path fails before
+    // the transport runs, \`had\` stays false - indistinguishable from a
+    // successful suppression - and this would pass on a broken SDK. The
+    // baseline cannot catch that, since it exercises different options.
+    private static bool called;
+
+    private static void Wire(Dictionary<string, object?> opts)
+    {
+        seen = null;
+        had = false;
+        called = false;
+
+        var full = new Dictionary<string, object?>(opts);
+
+        // A NATURAL lambda, as a caller writes it - NOT declared as
+        // FetcherFunc. C# delegate types are nominal, so this is a Func and
+        // not an instance of FetcherFunc at all; declaring it as the named
+        // type would exercise only the form that already worked.
+        var mock = (Context ctx, string fullurl, Dictionary<string, object?> fetchdef) =>
+        {
+            called = true;
+            if (fetchdef.TryGetValue("headers", out var hraw) &&
+                hraw is Dictionary<string, object?> headers)
+            {
+                // Presence separately from value: a present-but-empty header
+                // is not suppression, and reading the value alone cannot tell
+                // the two apart.
+                had = headers.ContainsKey("authorization");
+                seen = headers.TryGetValue("authorization", out var v) && null != v
+                    ? Convert.ToString(v)
+                    : null;
+            }
+            return (object?)new Dictionary<string, object?>
+            {
+                ["status"] = 200,
+                ["statusText"] = "OK",
+                ["headers"] = new Dictionary<string, object?>(),
+                ["json"] = (Func<object?>)(() => new Dictionary<string, object?>()),
+                ["body"] = "{}",
+            };
+        };
+        full["utility"] = new Dictionary<string, object?> { ["fetcher"] = mock };
+
+        // The plain constructor, not a test client: the \`test\` feature is
+        // transport: 'base' and REPLACES the transport by design, so a client
+        // in test mode would shadow the mock and this would assert nothing.
+        var sdk = new DemoSDK(full);
+        try
+        {
+            sdk.Planet(null).Create(new Dictionary<string, object?> { ["name"] = "p1" }, null);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    public static int Main()
+    {
+        var fail = new List<string>();
+
+        Wire(new Dictionary<string, object?> { ["apikey"] = "OPTKEY01" });
+        if (!had || "OPTKEY01" != seen)
+        {
+            fail.Add("baseline broken: an ordinary apikey was not sent (had=" + had +
+                " value=" + seen + ")");
+        }
+
+        var supp = new Dictionary<string, object?> { ["apikey"] = "OPTKEY01" };
+        supp["auth"] = null;
+        Wire(supp);
+        if (!called)
+        {
+            fail.Add("the request never reached the transport, so nothing was proved " +
+                "about suppression - the suppressed path failed earlier");
+        }
+        if (had)
+        {
+            fail.Add("auth null did not suppress the credential - sent " + seen);
+        }
+
+        foreach (var f in fail)
+        {
+            Console.WriteLine("FAIL: " + f);
+        }
+        Console.WriteLine("auth-null probe: " + (0 == fail.Count ? "ok" : "FAILED"));
+        return 0 == fail.Count ? 0 : 1;
+    }
+}
+`,
+    exec: (sdkroot) => {
+      const dotnet = toolchain('dotnet')
+      if (null == dotnet) return null
+
+      // A standalone console project referencing the SDK, rather than the
+      // generated xunit test project: with no PackageReference there is no
+      // nuget graph to restore, and no test framework that can fail
+      // independently of what is being probed.
+      const sdkproj = Fs.readdirSync(sdkroot).filter((n) => n.endsWith('.csproj'))
+      if (1 !== sdkproj.length) {
+        return {
+          ok: false,
+          phase: 'build',
+          out: 'expected exactly one .csproj at the SDK root, found: ' +
+            JSON.stringify(sdkproj),
+        }
+      }
+
+      // Read the framework rather than hardcode it: the probe and the library
+      // it references have to agree, and a bumped TargetFramework should not
+      // silently strand this lane.
+      const csproj = Fs.readFileSync(Path.join(sdkroot, sdkproj[0]), 'utf8')
+      const tfm = (csproj.match(/<TargetFramework>([^<]+)<\/TargetFramework>/) || [])[1]
+      if (null == tfm) {
+        return { ok: false, phase: 'build', out: 'no <TargetFramework> in ' + sdkproj[0] }
+      }
+
+      const dir = Path.join(sdkroot, 'zz-authnull')
+      Fs.mkdirSync(dir, { recursive: true })
+
+      // EnableDefaultCompileItems off, and the probe pulled in by an explicit
+      // path: the default glob would take nothing here (the .cs lives in
+      // test/) and adding a .cs beside this csproj would put it into the
+      // library's glob as well.
+      Fs.writeFileSync(Path.join(dir, 'AuthNullProbe.csproj'),
+        '<Project Sdk="Microsoft.NET.Sdk">\n' +
+        '  <PropertyGroup>\n' +
+        '    <OutputType>Exe</OutputType>\n' +
+        '    <TargetFramework>' + tfm + '</TargetFramework>\n' +
+        '    <Nullable>enable</Nullable>\n' +
+        '    <ImplicitUsings>enable</ImplicitUsings>\n' +
+        '    <LangVersion>12</LangVersion>\n' +
+        '    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>\n' +
+        '    <AssemblyName>AuthNullProbe</AssemblyName>\n' +
+        '    <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8625</NoWarn>\n' +
+        '  </PropertyGroup>\n' +
+        '  <ItemGroup>\n' +
+        '    <Compile Include="../test/AuthNullProbe.cs" />\n' +
+        '    <ProjectReference Include="../' + sdkproj[0] + '" />\n' +
+        '  </ItemGroup>\n' +
+        '</Project>\n')
+
+      const proj = Path.join(dir, 'AuthNullProbe.csproj')
+      const built = run(dotnet, ['build', '--nologo', '-v', 'quiet', proj], sdkroot)
+      if (!built.ok) return { ...built, phase: 'build' }
+
+      return run(dotnet, ['run', '--no-build', '--project', proj], sdkroot)
+    },
+  },
 ]
 
 
@@ -1799,10 +2098,12 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
   ts: 'pinned instead by the shipped tm/ts/test/feature/secrets/Secrets.test.ts ' +
     '("auth null suppresses the credential, chain or no chain"), which runs in ' +
     'a generated SDK rather than in sdkgen CI',
-  csharp: 'needs dotnet; the probe has never been executed, so it is not shipped',
-  dart: 'needs dart; the probe has never been executed, so it is not shipped',
-  kotlin: 'needs gradle; the probe has never been executed, so it is not shipped',
-  swift: 'needs swift; a probe needs a Package.swift target, and none is written',
+  dart: 'no runner in the CI matrix ships dart - ubuntu, macos and windows ' +
+    'all lack it - so a lane here would never run anywhere it could be seen ' +
+    'to fail',
+  swift: 'only the macos leg has swift, and a probe needs an executable ' +
+    'target in Package.swift that the template does not emit; adding one is ' +
+    'a template change, not a test change',
 
   // The six below were the AUTHNULL_OUTSTANDING list. They now carry the fix,
   // but READ BY EYE ONLY: no clojure, elixir, ocaml, scala, zig or lean

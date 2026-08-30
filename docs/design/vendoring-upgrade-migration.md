@@ -625,9 +625,18 @@ Two things follow for the other targets:
 
   | tier | targets | what backs it |
   |---|---|---|
-  | executed probe | py, rb, perl, php, java, c, cpp, rust, go, js, ts | a lane that generates an SDK, mocks the transport and asserts on the header |
-  | compiled only | csharp, dart, kotlin, swift | the generated SDK builds; the suppression itself is never exercised |
+  | executed probe | py, rb, perl, php, java, kotlin, c, cpp, rust, go, js, ts | a lane that generates an SDK, mocks the transport and asserts on the header |
+  | lane written, runs in CI only | csharp | the same lane, but no dotnet was available where it was written |
+  | no lane anywhere | dart, swift | no runner in the matrix ships dart; swift is macos-only and needs an executable target the template does not emit |
   | **read by eye** | **clojure, elixir, lean, ocaml, scala, zig** | **nothing — never compiled, never run** |
+
+  The **kotlin** lane is the one added with a real toolchain to hand, and it
+  was checked BOTH ways: green with the fix, red with the capture stubbed
+  back out. A probe that has only ever passed has not been shown to be able
+  to fail — the c probe passed its own defect once, for exactly that reason.
+  It is also the first thing in this repo that compiles the kotlin target at
+  all, and the only lane that needs the network (gradle resolves the Kotlin
+  plugin on a cold runner).
 
   The six in the bottom tier were written against toolchains that were not
   available: no clojure, elixir, lean, ocaml, scala or zig compiler existed
