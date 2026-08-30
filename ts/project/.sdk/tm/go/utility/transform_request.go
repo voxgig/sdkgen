@@ -37,16 +37,23 @@ func transformRequestUtil(ctx *core.Context) any {
 	}, reqform)
 
 	if terr != nil {
-		out, eerr := makeErrorUtil(ctx, terr)
-		if eerr != nil {
-			// makeError has already recorded the error on ctx.Ctrl.Err and
-			// fired PreUnexpected. Hand back the CAUSE rather than its
-			// wrapped form: the operation prefixes whatever makeSpec
-			// re-raises, and returning the wrapped error doubles the
-			// "SDK: op:" prefix.
-			return terr
+		// Only the NON-throwing path goes through makeError here. With
+		// ctrl.throw false, ts's makeError returns result.resdata and the
+		// pipeline continues with it as the body; mirror that.
+		//
+		// On the throwing path the error is handed back raw, for makeSpec to
+		// re-raise and the operation to process once. Calling makeError here
+		// as well would report the same failure TWICE — it fires the
+		// PreUnexpected hook, and the operation fires it again when it
+		// handles what makeSpec re-raised. The built-in observability
+		// features happen to dedupe on a per-context marker, but a
+		// project-supplied feature may legitimately count or log on every
+		// dispatch, and ts dispatches once.
+		if ctx.Ctrl != nil && ctx.Ctrl.Throw != nil && !*ctx.Ctrl.Throw {
+			out, _ := makeErrorUtil(ctx, terr)
+			return out
 		}
-		return out
+		return terr
 	}
 
 	return reqdata

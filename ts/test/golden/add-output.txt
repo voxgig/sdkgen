@@ -631,8 +631,8 @@ tm/go/utility/result_basic.go 6621fff8681d
 tm/go/utility/result_body.go 26a11991a96c
 tm/go/utility/result_headers.go 1bf8bf65b390
 tm/go/utility/struct/voxgigstruct.go 9fab85359236
-tm/go/utility/transform_request.go 773f7f0f1749
-tm/go/utility/transform_response.go 6e2259ee6ecb
+tm/go/utility/transform_request.go 51b4748915c0
+tm/go/utility/transform_response.go 43096fbc05d2
 
 ## target go-cli
 model/feature/feature-index.aon 5f0737d1060e

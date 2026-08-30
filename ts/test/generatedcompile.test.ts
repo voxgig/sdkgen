@@ -428,6 +428,88 @@ func TestReqformProbe(t *testing.T) {
   })
 
 
+  // The response half of the same story, and a different trap.
+  //
+  // transformResponse runs from BOTH makeResponse and makeResult, but only
+  // the makeResult call reaches the transform: resultBasic never sets Ok, so
+  // the makeResponse call returns at its `!result.Ok` guard, and makeResponse
+  // then sets Ok true. By the time the transform really runs, Ok is already
+  // true - and doneUtil returns result.Resdata whenever Ok is true, WITHOUT
+  // consulting Err. So recording only the error left a failed response
+  // transform resolving successfully.
+  //
+  // Unlike the request lane this drives a REAL vs.Transform error, an unknown
+  // $FORMAT name in the list form, through the real utility.
+  test('go: a failed response transform fails the operation', async () => {
+    const go = toolchain('go')
+    if (null == go) {
+      return
+    }
+
+    const sdkroot = Path.join(tmp, 'go-resform')
+    await generateTo('go', sdkroot)
+
+    Fs.writeFileSync(
+      Path.join(sdkroot, 'test', 'resform_probe_test.go'),
+      `package sdktest
+
+import (
+	"testing"
+
+	sdk "github.com/voxgig-sdk/demo-sdk/go"
+	"github.com/voxgig-sdk/demo-sdk/go/core"
+)
+
+// A failed RESPONSE transform must fail the operation.
+//
+// Driven with a real vs.Transform error - an unknown $FORMAT name - through
+// the real transformResponse utility, in the state makeResult reaches it in:
+// result.Ok already true. resultBasic never sets Ok, so the makeResponse call
+// returns at the !result.Ok guard and only the makeResult call gets this far.
+func TestResformProbe(t *testing.T) {
+	client := sdk.NewDemoSDK(map[string]any{})
+	utility := client.GetUtility()
+
+	result := core.NewResult(map[string]any{})
+	result.Ok = true
+	result.Body = map[string]any{"a": "hi"}
+
+	ctx := &core.Context{
+		Out:     map[string]any{},
+		Ctrl:    &core.Control{},
+		Client:  client,
+		Utility: utility,
+		Op:      core.NewOperation(map[string]any{"name": "load"}),
+		Point: map[string]any{
+			"transform": map[string]any{
+				"res": []any{"\`$FORMAT\`", "nosuchformat", "\`body\`"},
+			},
+		},
+		Result: result,
+	}
+
+	utility.TransformResponse(ctx)
+
+	if result.Err == nil {
+		t.Errorf("FAIL: a failed response transform recorded no error")
+	}
+
+	// The half that matters: doneUtil returns result.Resdata whenever Ok is
+	// true and never consults Err, so recording only the error would leave
+	// the operation resolving successfully.
+	if result.Ok {
+		t.Errorf("FAIL: result.Ok left TRUE after a failed response transform - " +
+			"doneUtil ignores Err, so the operation would report success")
+	}
+}
+`)
+
+    const probe = run(go, ['test', './test/', '-run', 'TestResformProbe', '-v'], sdkroot)
+    ok(probe.ok,
+      'a failed response transform did not fail the operation:\n' + tail(probe.out))
+  })
+
+
   test('go: data and literal paths agree on number types', async () => {
     const go = toolchain('go')
     if (null == go) {
