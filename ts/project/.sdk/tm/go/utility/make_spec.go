@@ -41,7 +41,7 @@ func makeSpecUtil(ctx *core.Context) (*core.Spec, error) {
 
 	ctx.Spec.Method = utility.PrepareMethod(ctx)
 
-	allowMethod, _ := vs.GetPath([]any{"allow", "method"}, options).(string)
+	allowMethod, _ := vs.GetPath(options, []any{"allow", "method"}).(string)
 	if !strings.Contains(allowMethod, ctx.Spec.Method) {
 		return nil, ctx.MakeError("spec_method_allow",
 			"Method \""+ctx.Spec.Method+

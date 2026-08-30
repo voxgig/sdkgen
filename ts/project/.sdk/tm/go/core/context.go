@@ -245,7 +245,7 @@ func (ctx *Context) resolveOp(opname string) *Operation {
 		return NewOperation(map[string]any{})
 	}
 
-	opcfg := vs.GetPath([]any{"entity", entname, "op", opname}, ctx.Config)
+	opcfg := vs.GetPath(ctx.Config, []any{"entity", entname, "op", opname})
 
 	input := "match"
 	if opname == "update" || opname == "create" {

@@ -29,7 +29,9 @@ func transformResponseUtil(ctx *core.Context) any {
 		return nil
 	}
 
-	resdata := vs.Transform(map[string]any{
+	// See transform_request.go: Transform gained an error return in struct
+	// go 0.1.3, and the TS reference routes it through makeError.
+	resdata, terr := vs.Transform(map[string]any{
 		"ok":         result.Ok,
 		"status":     result.Status,
 		"statusText": result.StatusText,
@@ -39,6 +41,14 @@ func transformResponseUtil(ctx *core.Context) any {
 		"resdata":    result.Resdata,
 		"resmatch":   result.Resmatch,
 	}, resform)
+
+	if terr != nil {
+		out, eerr := makeErrorUtil(ctx, terr)
+		if eerr != nil {
+			return eerr
+		}
+		return out
+	}
 
 	result.Resdata = resdata
 	return resdata
