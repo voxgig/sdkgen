@@ -1055,6 +1055,949 @@ const CORPUS_LANES: CorpusLane[] = [
 
 
 
+// Recursive file list by extension, for the lanes that must hand a compiler
+// every source file (java has no in-tree build that avoids the network).
+function listFiles(root: string, ext: string): string[] {
+  const out: string[] = []
+  for (const entry of Fs.readdirSync(root, { withFileTypes: true })) {
+    const full = Path.join(root, entry.name)
+    if (entry.isDirectory()) out.push(...listFiles(full, ext))
+    else if (entry.name.endsWith(ext)) out.push(full)
+  }
+  return out
+}
+
+
+// The auth-null rollout: `auth: null` - the documented way to disable auth
+// outright - must beat an explicit apikey on EVERY target.
+//
+// A lane per target, driven by a table so a target is a row. Each probe opens
+// with a baseline assertion (an ordinary apikey IS sent, or DOES yield an auth
+// block) because the suppression on its own cannot fail visibly: with no
+// apikey nothing goes on the wire either way, so a probe without the baseline
+// would pass with the defect live.
+//
+// COVERAGE IS NOT COMPLETE, and AUTHNULL_UNCOVERED below says so in code
+// rather than in a comment nobody re-reads: csharp, dart, kotlin and swift
+// carry the fix but have no lane. The reason is not that they do not deserve
+// one - it is that a lane which has never been executed even once is a
+// liability. It fails on someone else's machine, in a language whose build
+// invocation was guessed at, and reads as a regression in the fix rather than
+// a broken probe. Adding those four is real work for whoever has dotnet,
+// dart, kotlin or swift to hand; the test below makes sure the gap cannot
+// widen in silence while they wait.
+//
+// The failure being pinned differs by target, which is why one lane cannot
+// stand in for another. Where the target's struct treats a stored null as
+// "no value" (py, rb, perl, rust, java, c, and go) the optspec default fires
+// and the credential is TRANSMITTED. Where it rejects one (php, and js)
+// construction THROWS. Both are the same broken contract.
+//
+// No corpus entry can cover this for any port: corpus nulls travel as the
+// '__NULL__' STRING, so real-JSON-null semantics are invisible to the shared
+// fixtures. It has to be target-level, here.
+const AUTHNULL_LANES: {
+  target: string,
+  needs: string,
+  probe: string,
+  source: string,
+  // `phase` separates a BUILD failure from a PROBE failure. Without it a
+  // toolchain that cannot compile the generated SDK at all is reported as an
+  // auth-null regression, which sends the reader hunting in the wrong file.
+  exec: (sdkroot: string) => { ok: boolean, out: string, phase?: string } | null,
+}[] = [
+  {
+    target: 'py',
+    needs: 'python3',
+    probe: 'authnull_probe.py',
+    source: `# \`auth: None\` must suppress an explicit apikey.
+#
+# Only that pairing DISCRIMINATES: with no apikey nothing goes on the wire
+# either way, so the obvious "auth None alone" check passes with the defect
+# live. The baseline below fails loudly if an ordinary apikey stops being
+# sent, so this cannot pass vacuously.
+import sys
+
+sys.path.insert(0, ".")
+from demo_sdk import DemoSDK
+
+def wire(opts):
+    # \`called\` matters as much as \`had\`. If the suppressed path fails before
+    # the transport runs, \`had\` stays False - indistinguishable from a
+    # successful suppression - and the lane would pass on a broken SDK. The
+    # baseline cannot catch that, since it exercises different options.
+    seen = {"called": False, "had": False, "val": None}
+
+    def fetcher(ctx, fullurl, fetchdef):
+        seen["called"] = True
+        h = fetchdef.get("headers") or {}
+        seen["had"] = "authorization" in h
+        seen["val"] = h.get("authorization")
+        return {"status": 200, "ok": True, "json": lambda: {}}
+
+    full = dict(opts)
+    full["utility"] = {"fetcher": fetcher}
+    sdk = DemoSDK(full)
+    try:
+        sdk.Planet().create({"name": "p1"})
+    except Exception:
+        pass
+    return seen
+
+fail = []
+
+base = wire({"apikey": "OPTKEY01"})
+if not base["had"] or "OPTKEY01" != base["val"]:
+    fail.append("baseline broken: an ordinary apikey was not sent: %r" % (base,))
+
+supp = wire({"apikey": "OPTKEY01", "auth": None})
+if not supp["called"]:
+    fail.append("the request never reached the transport, so nothing was proved "
+                "about suppression - the suppressed path failed earlier")
+if supp["had"]:
+    fail.append("auth None did not suppress the credential - sent %r" % (supp["val"],))
+
+sdk = DemoSDK({"apikey": "OPTKEY01", "auth": None})
+if sdk.options.get("auth", "MISSING") is not None:
+    fail.append("options.auth is %r, not None - validate replaced the suppression"
+                % (sdk.options.get("auth", "MISSING"),))
+
+for f in fail:
+    print("FAIL:", f)
+print("auth-null probe:", "FAILED" if fail else "ok")
+sys.exit(1 if fail else 0)
+`,
+    exec: (sdkroot) => {
+      const py = toolchain('python3')
+      if (null == py) return null
+      return run(py, ['authnull_probe.py'], sdkroot)
+    },
+  },
+  {
+    target: 'rb',
+    needs: 'ruby',
+    probe: 'authnull_probe.rb',
+    source: `# \`auth: nil\` must suppress an explicit apikey. See authnull.py for why that
+# pairing is the only discriminating case; the baseline guards vacuity.
+require_relative "Demo_sdk"
+
+def wire(opts)
+  # \`called\` matters as much as \`had\` - see authnull.py.
+  seen = { called: false, had: false, val: nil }
+  fetcher = lambda do |_ctx, _fullurl, fetchdef|
+    seen[:called] = true
+    h = fetchdef["headers"] || {}
+    seen[:had] = h.key?("authorization")
+    seen[:val] = h["authorization"]
+    { "status" => 200, "ok" => true, "json" => lambda { {} } }
+  end
+  sdk = DemoSDK.new(opts.merge("utility" => { "fetcher" => fetcher }))
+  begin
+    sdk.Planet.create({ "name" => "p1" })
+  rescue StandardError
+    nil
+  end
+  seen
+end
+
+fail_msgs = []
+
+base = wire({ "apikey" => "OPTKEY01" })
+unless base[:had] && "OPTKEY01" == base[:val]
+  fail_msgs << "baseline broken: an ordinary apikey was not sent: #{base.inspect}"
+end
+
+supp = wire({ "apikey" => "OPTKEY01", "auth" => nil })
+unless supp[:called]
+  fail_msgs << "the request never reached the transport, so nothing was proved about suppression"
+end
+if supp[:had]
+  fail_msgs << "auth nil did not suppress the credential - sent #{supp[:val].inspect}"
+end
+
+sdk = DemoSDK.new({ "apikey" => "OPTKEY01", "auth" => nil })
+om = sdk.options_map
+unless om.key?("auth") && om["auth"].nil?
+  fail_msgs << "options.auth is #{om['auth'].inspect}, not nil - validate replaced the suppression"
+end
+
+fail_msgs.each { |m| puts "FAIL: #{m}" }
+puts "auth-null probe: #{fail_msgs.empty? ? 'ok' : 'FAILED'}"
+exit(fail_msgs.empty? ? 0 : 1)
+`,
+    exec: (sdkroot) => {
+      const rb = toolchain('ruby')
+      if (null == rb) return null
+      return run(rb, ['authnull_probe.rb'], sdkroot)
+    },
+  },
+  {
+    target: 'perl',
+    needs: 'perl',
+    probe: 'authnull_probe.pl',
+    source: `# \`auth => undef\` must suppress an explicit apikey. See authnull.py for why
+# that pairing is the only discriminating case; the baseline guards vacuity.
+use strict;
+use warnings;
+use lib "lib";
+use DemoSDK;
+
+sub wire {
+  my ($opts) = @_;
+  # \`called\` matters as much as \`had\` - see authnull.py.
+  my %seen = (called => 0, had => 0, val => undef);
+  my %full = (%$opts, utility => { fetcher => sub {
+    my (undef, undef, $fetchdef) = @_;
+    $seen{called} = 1;
+    my $h = $fetchdef->{headers} || {};
+    $seen{had} = exists $h->{authorization} ? 1 : 0;
+    $seen{val} = $h->{authorization};
+    return { status => 200, ok => 1, json => sub { {} } };
+  } });
+  my $sdk = DemoSDK->new(\\%full);
+  eval { $sdk->Planet->create({ name => 'p1' }); 1 };
+  return \\%seen;
+}
+
+my @fail;
+
+my $base = wire({ apikey => 'OPTKEY01' });
+push @fail, "baseline broken: an ordinary apikey was not sent"
+  unless $base->{had} && defined $base->{val} && 'OPTKEY01' eq $base->{val};
+
+my $supp = wire({ apikey => 'OPTKEY01', auth => undef });
+push @fail, "the request never reached the transport, so nothing was proved about suppression"
+  unless $supp->{called};
+push @fail, "auth undef did not suppress the credential - sent "
+  . (defined $supp->{val} ? $supp->{val} : 'undef')
+  if $supp->{had};
+
+my $sdk = DemoSDK->new({ apikey => 'OPTKEY01', auth => undef });
+my $om = $sdk->options_map;
+push @fail, "options.auth is defined - validate replaced the suppression"
+  unless exists $om->{auth} && !defined $om->{auth};
+
+print "FAIL: $_\\n" for @fail;
+print "auth-null probe: " . (@fail ? "FAILED" : "ok") . "\\n";
+exit(@fail ? 1 : 0);
+`,
+    exec: (sdkroot) => {
+      const pl = toolchain('perl')
+      if (null == pl) return null
+      return run(pl, ['authnull_probe.pl'], sdkroot)
+    },
+  },
+  {
+    target: 'php',
+    needs: 'php',
+    probe: 'authnull_probe.php',
+    source: `<?php
+// \`auth: null\` must suppress an explicit apikey. See authnull.py for why that
+// pairing is the only discriminating case; the baseline guards vacuity.
+//
+// On this target the pre-fix failure was not a leak but a CONSTRUCTION ERROR:
+// its struct rejects a stored null in validate.
+require_once __DIR__ . '/demo_sdk.php';
+
+function wire(array $opts): array {
+  // \`called\` matters as much as \`had\` - see authnull.py.
+  $seen = ['called' => false, 'had' => false, 'val' => null];
+  $opts['utility'] = ['fetcher' => function ($ctx, $fullurl, $fetchdef) use (&$seen) {
+    $seen['called'] = true;
+    $h = $fetchdef['headers'] ?? [];
+    $seen['had'] = array_key_exists('authorization', $h);
+    $seen['val'] = $h['authorization'] ?? null;
+    return ['status' => 200, 'ok' => true, 'json' => function () { return []; }];
+  }];
+  $sdk = new DemoSDK($opts);
+  try { $sdk->Planet()->create(['name' => 'p1']); } catch (\\Throwable $e) { }
+  return $seen;
+}
+
+$fail = [];
+
+$base = wire(['apikey' => 'OPTKEY01']);
+if (!$base['had'] || 'OPTKEY01' !== $base['val']) {
+  $fail[] = 'baseline broken: an ordinary apikey was not sent';
+}
+
+$supp = wire(['apikey' => 'OPTKEY01', 'auth' => null]);
+if (!$supp['called']) {
+  $fail[] = 'the request never reached the transport, so nothing was proved about suppression';
+}
+if ($supp['had']) {
+  $fail[] = 'auth null did not suppress the credential - sent ' . var_export($supp['val'], true);
+}
+
+$sdk = new DemoSDK(['apikey' => 'OPTKEY01', 'auth' => null]);
+$om = $sdk->options_map();
+if (!array_key_exists('auth', $om) || null !== $om['auth']) {
+  $fail[] = 'options.auth is ' . var_export($om['auth'] ?? 'MISSING', true)
+    . ', not null - validate replaced the suppression';
+}
+
+foreach ($fail as $f) { echo "FAIL: $f\\n"; }
+echo 'auth-null probe: ' . (empty($fail) ? 'ok' : 'FAILED') . "\\n";
+exit(empty($fail) ? 0 : 1);
+`,
+    exec: (sdkroot) => {
+      const ph = toolchain('php')
+      if (null == ph) return null
+      return run(ph, ['authnull_probe.php'], sdkroot)
+    },
+  },
+  {
+    target: 'java',
+    needs: 'javac and java',
+    probe: 'AuthNullProbe.java',
+    source: `// \`auth: null\` must suppress an explicit apikey ON THE WIRE.
+//
+// This asserts on the authorization header a mocked transport receives, not on
+// the options map. An options-level assertion is not enough: lean's prepareAuth
+// never reads options.auth at all, so a port of that shape passes an options
+// check while still transmitting the credential.
+//
+// The baseline fails loudly if an ordinary apikey stops being sent, because the
+// suppression alone cannot fail visibly - with no apikey nothing goes on the
+// wire either way.
+import java.util.*;
+
+import voxgig.demosdk.core.DemoSDK;
+import voxgig.demosdk.core.Utility;
+
+public class AuthNullProbe {
+
+  static String seen;
+  static boolean had;
+  // \`called\` matters as much as \`had\`. If the suppressed path fails before the
+  // transport runs, \`had\` stays false - indistinguishable from a successful
+  // suppression - and this would pass on a broken SDK. The baseline cannot
+  // catch that, since it exercises different options.
+  static boolean called;
+
+  @SuppressWarnings("unchecked")
+  static void wire(Map<String, Object> opts) {
+    seen = null;
+    had = false;
+    called = false;
+
+    Map<String, Object> full = new LinkedHashMap<>(opts);
+    Utility.FetcherFn mock = (ctx, fullurl, fetchdef) -> {
+      called = true;
+      Object h = fetchdef.get("headers");
+      if (h instanceof Map) {
+        had = ((Map<String, Object>) h).containsKey("authorization");
+        Object v = ((Map<String, Object>) h).get("authorization");
+        seen = null == v ? null : String.valueOf(v);
+      }
+      Map<String, Object> res = new LinkedHashMap<>();
+      res.put("status", 200);
+      res.put("ok", true);
+      res.put("json", (java.util.function.Supplier<Object>) LinkedHashMap::new);
+      return res;
+    };
+    Map<String, Object> util = new LinkedHashMap<>();
+    util.put("fetcher", mock);
+    full.put("utility", util);
+
+    DemoSDK sdk = new DemoSDK(full);
+    try {
+      sdk.planet(null).create(new LinkedHashMap<>(Map.of("name", "p1")), null);
+    }
+    catch (Throwable ignored) { }
+  }
+
+  public static void main(String[] args) {
+    List<String> fail = new ArrayList<>();
+
+    wire(new LinkedHashMap<>(Map.of("apikey", "OPTKEY01")));
+    if (!had || !"OPTKEY01".equals(seen)) {
+      fail.add("baseline broken: an ordinary apikey was not sent (had=" + had
+        + " value=" + seen + ")");
+    }
+
+    Map<String, Object> supp = new LinkedHashMap<>();
+    supp.put("apikey", "OPTKEY01");
+    supp.put("auth", null);
+    wire(supp);
+    if (!called) {
+      fail.add("the request never reached the transport, so nothing was proved "
+        + "about suppression - the suppressed path failed earlier");
+    }
+    if (had) {
+      fail.add("auth null did not suppress the credential - sent " + seen);
+    }
+
+    for (String f : fail) { System.out.println("FAIL: " + f); }
+    System.out.println("auth-null probe: " + (fail.isEmpty() ? "ok" : "FAILED"));
+    System.exit(fail.isEmpty() ? 0 : 1);
+  }
+}
+`,
+    exec: (sdkroot) => {
+      const javac = toolchain('javac')
+      const java = toolchain('java')
+      if (null == javac || null == java) return null
+
+      // Compiled straight with javac rather than through mvn: the probe needs
+      // no test framework, and a maven run would hit the network on a cold
+      // runner.
+      const classes = Path.join(sdkroot, 'zz-classes')
+      Fs.mkdirSync(classes, { recursive: true })
+
+      const sources = listFiles(sdkroot, '.java')
+        .filter((f) => !f.split(Path.sep).includes('test'))
+      const built = run(javac, ['-d', classes, ...sources], sdkroot)
+      if (!built.ok) return { ...built, phase: 'build' }
+
+      return run(java, ['-cp', classes, 'AuthNullProbe'], sdkroot)
+    },
+  },
+  {
+    target: 'c',
+    needs: 'make and a C compiler',
+    probe: 'tests/authnull_probe.c',
+    source: `/* \`auth: null\` must suppress an explicit apikey IN THE HEADER prepareAuth
+ * writes - not merely in the options map.
+ *
+ * An options-level assertion is not enough: lean's prepareAuth never reads
+ * options.auth at all, so a port of that shape passes an options check while
+ * still transmitting the credential. This drives the real makeOptions (through
+ * the client constructor) and then the real prepare_auth, and asserts on what
+ * lands in spec->headers - which is what makeRequest sends.
+ *
+ * The baseline fails loudly if an ordinary apikey stops being sent, because
+ * the suppression alone cannot fail visibly: with no apikey nothing goes on
+ * the wire either way. */
+#include "sdk.h"
+
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
+static int fails = 0;
+
+static void fail(const char* msg, const char* got) {
+  printf("FAIL: %s%s%s\\n", msg, got ? " - sent " : "", got ? got : "");
+  fails++;
+}
+
+/* Build a client from opts, run the real prepare_auth, and report whether the
+ * authorization header is present plus what it holds.
+ *
+ * *ok is set false when prepare_auth ERRORED. That matters as much as the
+ * header: a suppressed path that fails before writing anything leaves no
+ * header, which is indistinguishable from a successful suppression, and this
+ * would pass on a broken SDK. The baseline cannot catch it, since it
+ * exercises different options. */
+static const char* authheader(voxgig_value* sdkopts, bool* ok, bool* present) {
+  DemoSDK* client = test_sdk(v_undef(), sdkopts);
+  Utility* utility = sdk_get_utility(client);
+
+  CtxSpec cs;
+  memset(&cs, 0, sizeof(cs));
+  cs.opname = "load";
+  cs.client = client;
+  cs.utility = utility;
+  Context* ctx = make_context_util(cs, sdk_get_root_ctx(client));
+
+  ctx->spec = spec_new(cmap(2, "headers", v_map(), "step", v_str("s")));
+
+  PNError* err = NULL;
+  prepare_auth_util(ctx, &err);
+  if (ok) *ok = (NULL == err);
+
+  /* Presence separately from value: a present-but-EMPTY header is not
+   * suppression, and get_str alone cannot tell the two apart. */
+  if (present) {
+    *present = voxgig_is_map(ctx->spec->headers)
+      && NULL != voxgig_map_get(voxgig_as_map(ctx->spec->headers), "authorization");
+  }
+
+  return get_str(ctx->spec->headers, "authorization");
+}
+
+int main(void) {
+  voxgig_value* plain = cmap(1, "apikey", v_str("OPTKEY01"));
+  bool baseok = false;
+  bool basepresent = false;
+  const char* base = authheader(plain, &baseok, &basepresent);
+  if (!baseok) {
+    fail("baseline broken: prepare_auth errored", NULL);
+  }
+  if (!basepresent || NULL == base || 0 != strcmp(base, "OPTKEY01")) {
+    fail("baseline broken: an ordinary apikey was not sent", base);
+  }
+
+  voxgig_value* supp = cmap(2, "apikey", v_str("OPTKEY01"), "auth", voxgig_new_null());
+  bool suppok = false;
+  bool supppresent = false;
+  const char* got = authheader(supp, &suppok, &supppresent);
+  if (!suppok) {
+    fail("prepare_auth errored on the suppressed path, so nothing was proved", NULL);
+  }
+  if (supppresent) {
+    fail("auth null did not suppress the credential - header still present", got);
+  }
+
+  printf("auth-null probe: %s\\n", 0 == fails ? "ok" : "FAILED");
+  return 0 == fails ? 0 : 1;
+}
+`,
+    exec: (sdkroot) => {
+      const make = toolchain('make')
+
+      // The compiler is probed as well as make, because the generated Makefile
+      // takes CC from the environment and otherwise uses make's own `cc`: an
+      // image carrying make without a working compiler would fail INSIDE the
+      // build and be read as an auth-null regression rather than the visible
+      // skip it should be.
+      //
+      // A configured CC that does not resolve is a SKIP, not a silent
+      // substitution - running the lane against some other compiler would not
+      // be testing what the operator asked for. Only when CC is unset does
+      // this fall back, and then it passes the resolved path to make
+      // explicitly, so make cannot pick a different one than was probed.
+      const configured = process.env.CC
+      const cc = null == configured || '' === configured
+        ? (toolchain('cc') || toolchain('gcc'))
+        : toolchain(configured)
+      if (null == make || null == cc) return null
+
+      const built = run(make, ['CC=' + cc, 'tests/authnull_probe.out'], sdkroot)
+      if (!built.ok) return { ...built, phase: 'build' }
+      return run(Path.join(sdkroot, 'tests', 'authnull_probe.out'), [], sdkroot)
+    },
+  },
+  {
+    target: 'cpp',
+    needs: 'make and a C++ compiler',
+    probe: 'test/authnull_probe.cpp',
+    source: `// \`auth: null\` must suppress an explicit apikey IN THE HEADER prepareAuth
+// writes - not merely in the options map.
+//
+// An options-level assertion is not enough: lean's prepareAuth never reads
+// options.auth at all, so a port of that shape passes an options check while
+// still transmitting the credential. This drives the real makeOptions (through
+// the client constructor) and then the real prepareAuth, and asserts on what
+// lands in spec->headers - which is what makeRequest sends.
+//
+// The baseline fails loudly if an ordinary apikey stops being sent, because
+// the suppression alone cannot fail visibly: with no apikey nothing goes on
+// the wire either way.
+#include "runner_support.hpp"
+
+#include <cstdio>
+#include <string>
+
+using namespace sdk;
+
+static int fails = 0;
+
+static void fail(const char* msg, const std::string& got) {
+  std::printf("FAIL: %s%s%s\\n", msg, got.empty() ? "" : " - sent ", got.c_str());
+  fails++;
+}
+
+// Build a client from opts, run the real prepareAuth, and report BOTH whether
+// the authorization header is present and what it holds. Presence is returned
+// separately because a present-but-EMPTY header is not suppression - returning
+// only the string would make "" mean both "absent" and "sent empty", and the
+// second would read as a pass.
+struct AuthResult {
+  bool present = false;
+  std::string value;
+  // Set false when prepareAuth returned nothing, i.e. it failed. That matters
+  // as much as the header: a suppressed path that fails before writing leaves
+  // no header, which is indistinguishable from a successful suppression, and
+  // this would pass on a broken SDK. The baseline cannot catch it, since it
+  // exercises different options.
+  bool ok = false;
+};
+
+static AuthResult authheader(const Value& sdkopts) {
+  auto client = std::make_shared<DemoSDK>(sdkopts);
+  auto utility = client->getUtility();
+
+  Value ctxmap = vmap();
+  map_put(ctxmap, "opname", Value(std::string("load")));
+  map_put(ctxmap, "spec", vmap());
+
+  CtxPtr ctx = rs::make_ctx_from_map(ctxmap, client, utility);
+  Value specmap = vmap();
+  map_put(specmap, "headers", vmap());
+  map_put(specmap, "step", Value(std::string("s")));
+  ctx->spec = std::make_shared<Spec>(specmap);
+
+  SpecPtr got = utility->prepareAuth(ctx);
+
+  Value h = ctx->spec->headers;
+  AuthResult out;
+  out.ok = (nullptr != got);
+  out.present = map_contains(h, "authorization");
+  if (out.present) {
+    Value a = mapget(h, "authorization");
+    out.value = a.is_string() ? a.as_string() : std::string();
+  }
+  return out;
+}
+
+int main() {
+  Value plain = vmap();
+  map_put(plain, "apikey", Value(std::string("OPTKEY01")));
+  AuthResult base = authheader(plain);
+  if (!base.ok) {
+    fail("baseline broken: prepareAuth failed", "");
+  }
+  if (!base.present || "OPTKEY01" != base.value) {
+    fail("baseline broken: an ordinary apikey was not sent", base.value);
+  }
+
+  Value supp = vmap();
+  map_put(supp, "apikey", Value(std::string("OPTKEY01")));
+  map_put(supp, "auth", Value(nullptr));
+  AuthResult got = authheader(supp);
+  if (!got.ok) {
+    fail("prepareAuth failed on the suppressed path, so nothing was proved", "");
+  }
+  if (got.present) {
+    fail("auth null did not suppress the credential - header still present", got.value);
+  }
+
+  std::printf("auth-null probe: %s\\n", 0 == fails ? "ok" : "FAILED");
+  return 0 == fails ? 0 : 1;
+}
+`,
+    exec: (sdkroot) => {
+      const make = toolchain('make')
+
+      // Same reasoning as the c lane: a configured CXX that does not resolve
+      // is a SKIP rather than a silent substitution, and the resolved path is
+      // passed to make so it cannot pick a different compiler than was probed.
+      const configured = process.env.CXX
+      const cxx = null == configured || '' === configured
+        ? (toolchain('g++') || toolchain('c++') || toolchain('clang++'))
+        : toolchain(configured)
+      if (null == make || null == cxx) return null
+
+      const built = run(make, ['CXX=' + cxx, 'test/authnull_probe.out'], sdkroot)
+      if (!built.ok) return { ...built, phase: 'build' }
+      return run(Path.join(sdkroot, 'test', 'authnull_probe.out'), [], sdkroot)
+    },
+  },
+  {
+    target: 'rust',
+    needs: 'cargo',
+    probe: 'tests/authnull_probe.rs',
+    source: `#![allow(unused_imports)]
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use demo_sdk::core::helpers::{getp, ja, jo, json_thunk, to_map};
+use demo_sdk::utility::voxgigstruct as vs;
+use demo_sdk::{DemoEntity, DemoSDK, Value};
+
+// Returns (header present, header value, transport was reached).
+//
+// The third matters as much as the first: if the suppressed path fails before
+// the transport runs, "no header" is indistinguishable from a successful
+// suppression, and this would pass on a broken SDK. The baseline cannot catch
+// that, since it exercises different options.
+fn wire(opts: Vec<(&str, Value)>) -> (bool, Value, bool) {
+    let seen: Rc<RefCell<Value>> = Rc::new(RefCell::new(Value::Noval));
+    let called: Rc<RefCell<bool>> = Rc::new(RefCell::new(false));
+    let s = seen.clone();
+    let c = called.clone();
+    let mock = Value::func(move |_inj, args, _r, _st| {
+        *c.borrow_mut() = true;
+        let init = vs::get_elem(args, &Value::Num(1.0), Value::Noval);
+        *s.borrow_mut() = getp(&init, "headers");
+        jo(vec![
+            ("status", Value::Num(200.0)),
+            ("statusText", Value::str("OK")),
+            ("headers", Value::empty_map()),
+            ("json", json_thunk(jo(vec![("id", Value::str("p1"))]))),
+        ])
+    });
+
+    let mut all = opts;
+    all.push(("base", Value::str("http://localhost:8080")));
+    all.push(("system", jo(vec![("fetch", mock)])));
+    let client = DemoSDK::new(jo(all));
+    let _ = client.planet(Value::Noval).create(jo(vec![("name", Value::str("p1"))]), Value::Noval);
+
+    let h = seen.borrow().clone();
+    let auth = match &h {
+        Value::Map(m) => m.borrow().get("authorization").cloned(),
+        _ => None,
+    };
+    let was_called = *called.borrow();
+    (auth.is_some(), auth.unwrap_or(Value::Noval), was_called)
+}
+
+#[test]
+fn authnull_probe() {
+    // Baseline: an ordinary apikey must be sent, else this proves nothing.
+    let (had, val, called) = wire(vec![("apikey", Value::str("OPTKEY01"))]);
+    assert!(called, "baseline broken: the request never reached the transport");
+    assert!(had, "baseline broken: an ordinary apikey was not sent");
+    assert_eq!(val, Value::str("OPTKEY01"));
+
+    // The suppression, against an explicit credential.
+    let (had2, val2, called2) = wire(vec![
+        ("apikey", Value::str("OPTKEY01")),
+        ("auth", Value::Null),
+    ]);
+    assert!(called2,
+        "the request never reached the transport, so nothing was proved about \\
+         suppression - the suppressed path failed earlier");
+    assert!(!had2, "auth null did not suppress the credential - sent {:?}", val2);
+
+    // And it survives validation rather than becoming the optspec default.
+    let client = DemoSDK::new(jo(vec![
+        ("apikey", Value::str("OPTKEY01")),
+        ("auth", Value::Null),
+    ]));
+    let om = client.options_map();
+    let a = match &om {
+        Value::Map(m) => m.borrow().get("auth").cloned(),
+        _ => None,
+    };
+    assert_eq!(a, Some(Value::Null), "options.auth is {:?}, not Null", a);
+}
+`,
+    exec: (sdkroot) => {
+      const cargo = toolchain('cargo')
+      if (null == cargo) return null
+      return run(cargo, ['test', '--test', 'authnull_probe'], sdkroot)
+    },
+  },
+]
+
+
+// Every target is classified below, and the suite further down holds each
+// classification against what the templates actually contain.
+//
+// This exists because the FIRST audit behind this rollout was keyed on files
+// named like `makeOptions`, which silently skipped thirteen of the twenty-six
+// targets - cpp keeps this logic in `utility/pipeline.hpp`, lean in
+// `SdkUtility.lean`, and so on. That produced a confident and wrong claim
+// that the rollout was complete. Nothing here reads a filename.
+
+// Fixed, and covered by a row in AUTHNULL_LANES above.
+// (derived, not declared - see the suite below)
+
+// Fixed, but covered by their own dedicated lanes earlier in this file:
+// `go: auth null suppresses the credential` and the js equivalent, both
+// written before the table existed. Folding them in would mean rewriting two
+// lanes that already work.
+const AUTHNULL_STANDALONE = ['go', 'js']
+
+
+// Fixed, but with no behavioural lane here, each with the reason.
+const AUTHNULL_UNCOVERED: Record<string, string> = {
+  ts: 'pinned instead by the shipped tm/ts/test/feature/secrets/Secrets.test.ts ' +
+    '("auth null suppresses the credential, chain or no chain"), which runs in ' +
+    'a generated SDK rather than in sdkgen CI',
+  csharp: 'needs dotnet; the probe has never been executed, so it is not shipped',
+  dart: 'needs dart; the probe has never been executed, so it is not shipped',
+  kotlin: 'needs gradle; the probe has never been executed, so it is not shipped',
+  swift: 'needs swift; a probe needs a Package.swift target, and none is written',
+}
+
+
+// NOT FIXED YET. These carry the defect: with an explicit apikey AND
+// `auth: null`, the credential still goes out. They are listed rather than
+// quietly omitted, and the suite below fails if one of them ever gains the
+// fix without moving out of this list.
+const AUTHNULL_OUTSTANDING: Record<string, string> = {
+  clojure: 'merges and validates without capturing suppliedness',
+  elixir: 'merges and validates without capturing suppliedness',
+  ocaml: 'merges and validates without capturing suppliedness',
+  scala: 'merges and validates without capturing suppliedness',
+  zig: 'merges and validates without capturing suppliedness',
+  lean: 'TWO defects: makeOptions does not capture suppliedness, AND ' +
+    'prepareAuth never reads options.auth at all - it branches only on an ' +
+    'empty apikey, so a null auth has no effect even if it survives',
+}
+
+
+// Cannot express the suppression at all. A Lua table stores no nil -
+// `t.auth = nil` removes the key - and the port has no null sentinel, so
+// `auth = nil` and an omitted auth are the same value. There is nothing for
+// makeOptions to detect and nothing to pin.
+const AUTHNULL_INEXPRESSIBLE = ['lua']
+
+
+// No auth optspec at all: wrappers and variants that do not build client
+// options of their own.
+const AUTHNULL_NOT_APPLICABLE = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider']
+
+
+// The lists above are only worth having if something holds them to the
+// templates. This scans EVERY file of every target for the suppression
+// marker - never a filename - and requires each target's real state to match
+// the list it is declared in.
+describe('auth null coverage is honest', () => {
+
+  // The marker every implementation uses for the captured flag, in each
+  // language's casing.
+  const MARKER = /authsuppressed|auth_suppressed/i
+
+  const TM = Path.resolve(PKG, 'project', '.sdk', 'tm')
+
+  function allTargets(): string[] {
+    return Fs.readdirSync(TM)
+      .filter((n) => Fs.statSync(Path.join(TM, n)).isDirectory())
+      .sort()
+  }
+
+  // Whole-tree scan. cpp keeps this logic in utility/pipeline.hpp and lean in
+  // SdkUtility.lean, so anything narrower than "every file" reintroduces the
+  // blind spot that made the first audit wrong.
+  //
+  // The marker must appear on BOTH SIDES of the validate call, not merely
+  // somewhere in the file. The fix is capture-before / restore-after, and
+  // presence of the identifier alone would accept a file that captures
+  // suppliedness and never restores it - or one where the only surviving
+  // mention is a comment. That shape passes an identifier check while leaking
+  // the credential, which is exactly what this list exists to prevent for the
+  // targets that have no lane.
+  function carriesFix(target: string): boolean {
+    return listFiles(Path.join(TM, target), '')
+      .some((f) => {
+        let src = ''
+        try {
+          src = Fs.readFileSync(f, 'utf8')
+        }
+        catch (_e) {
+          return false
+        }
+
+        // Every validate CALL site, not the first mention of the word: the
+        // files open with comments like "so merge/validate/init are
+        // unchanged", which sit before the capture and would make an
+        // otherwise-correct file look wrong. It is enough that SOME call has
+        // the marker on both sides.
+        const calls = [...src.matchAll(/\bvalidate\s*\(/gi)].map((m) => m.index ?? -1)
+        return calls.some((at) => 0 <= at
+          && MARKER.test(src.slice(0, at))
+          && MARKER.test(src.slice(at)))
+      })
+  }
+
+  const declaredFixed = () => [
+    ...AUTHNULL_LANES.map((l) => l.target),
+    ...AUTHNULL_STANDALONE,
+    ...Object.keys(AUTHNULL_UNCOVERED),
+  ]
+
+  const declaredUnfixed = () => [
+    ...Object.keys(AUTHNULL_OUTSTANDING),
+    ...AUTHNULL_INEXPRESSIBLE,
+    ...AUTHNULL_NOT_APPLICABLE,
+  ]
+
+
+  // A new target must be classified. Without this the lists drift out of date
+  // silently, which is how the first audit came to miss half the tree.
+  test('every target is classified', () => {
+    const known = new Set([...declaredFixed(), ...declaredUnfixed()])
+    const unclassified = allTargets().filter((t) => !known.has(t))
+
+    deepStrictEqual(unclassified, [],
+      'these targets appear in tm/ but in none of the auth-null lists - ' +
+      'classify each as covered, uncovered, outstanding, inexpressible or ' +
+      'not-applicable, and do not let a new target inherit the gap unnoticed')
+  })
+
+
+  // Without this, deleting the fix from an unexecuted target (csharp, dart,
+  // kotlin, swift) simply drops it from the scan and every other check still
+  // passes - the excuse then describes a fix that is no longer there.
+  test('every target declared fixed actually carries the fix', () => {
+    const lying = declaredFixed().filter((t) => !carriesFix(t))
+
+    deepStrictEqual(lying, [],
+      'these targets are listed as carrying the auth-null suppression but no ' +
+      'longer do - the fix was removed, or the marker renamed; either way the ' +
+      'list is now describing something that is not in the templates')
+  })
+
+
+  // And the other direction: a target that GAINS the fix must move out of the
+  // outstanding list, or its entry becomes a lie in the opposite sense.
+  test('nothing declared unfixed has quietly gained the fix', () => {
+    const moved = declaredUnfixed().filter((t) => carriesFix(t))
+
+    deepStrictEqual(moved, [],
+      'these targets carry the auth-null suppression but are still listed as ' +
+      'outstanding, inexpressible or not-applicable - move them to a lane or ' +
+      'to AUTHNULL_UNCOVERED')
+  })
+
+
+  test('nothing is excused that already has a lane', () => {
+    const covered = new Set([
+      ...AUTHNULL_LANES.map((l) => l.target),
+      ...AUTHNULL_STANDALONE,
+    ])
+    const stale = Object.keys(AUTHNULL_UNCOVERED).filter((t) => covered.has(t))
+
+    deepStrictEqual(stale, [],
+      'these targets have a lane AND an AUTHNULL_UNCOVERED entry - drop the ' +
+      'entry, the gap it describes is closed')
+  })
+
+
+  test('no target is declared both fixed and unfixed', () => {
+    const unfixed = new Set(declaredUnfixed())
+    const both = declaredFixed().filter((t) => unfixed.has(t))
+
+    deepStrictEqual(both, [], 'these targets are declared both fixed and unfixed')
+  })
+})
+
+
+describe('auth null suppresses the credential', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-authnull-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of AUTHNULL_LANES) {
+
+    test(lane.target + ': auth null beats an explicit apikey', async (t) => {
+      const sdkroot = Path.join(tmp, lane.target)
+      await generateTo(lane.target, sdkroot)
+
+      const probe = Path.join(sdkroot, ...lane.probe.split('/'))
+      Fs.mkdirSync(Path.dirname(probe), { recursive: true })
+      Fs.writeFileSync(probe, lane.source)
+
+      // Probed AFTER generating, so a machine without the toolchain still
+      // proves the SDK generates - the half of this check that needs no
+      // interpreter or compiler.
+      const ran = lane.exec(sdkroot)
+      if (null == ran) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' +
+          lane.needs + ')')
+      }
+
+      ok(ran.ok, lane.target + ': ' + ('build' === ran.phase
+        ? 'the generated SDK did not build, so the probe never ran'
+        : 'auth null did not suppress the credential') + ':\n' + tail(ran.out))
+    })
+  }
+})
+
+
 describe('the feature corpus runs from a generated SDK', () => {
 
   let tmp = ''

@@ -79,7 +79,7 @@ tm/c/utility/jsonparse.c cffd3f2ac8b1
 tm/c/utility/make_context.c 615156796cbb
 tm/c/utility/make_error.c bb1799d1c4a9
 tm/c/utility/make_fetch_def.c 08c73a9454ed
-tm/c/utility/make_options.c 00a84d730036
+tm/c/utility/make_options.c b6a39e145446
 tm/c/utility/make_point.c 684f5b7e7aa9
 tm/c/utility/make_request.c b5887e3fd94c
 tm/c/utility/make_response.c 5cb2535aec54
@@ -246,7 +246,7 @@ tm/cpp/test/sdk-test-control.json acadc87764f6
 tm/cpp/test/struct_corpus_test.cpp 2bf116e4ec55
 tm/cpp/test/struct_runner.hpp 7c013320e290
 tm/cpp/test/testlib.hpp f5f70c8c25b7
-tm/cpp/utility/pipeline.hpp 4be7cfe27b97
+tm/cpp/utility/pipeline.hpp 680428866961
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
@@ -333,7 +333,7 @@ tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs aa8db59afcdb
 tm/csharp/utility/MakeFetchDef.cs 89aca56837ef
-tm/csharp/utility/MakeOptions.cs e182b933209b
+tm/csharp/utility/MakeOptions.cs 50757570d73f
 tm/csharp/utility/MakePoint.cs c0182b4343c0
 tm/csharp/utility/MakeRequest.cs 32657a32522e
 tm/csharp/utility/MakeResponse.cs 8aa004eeaeb1
@@ -425,7 +425,7 @@ tm/dart/lib/utility/GraphqlUtility.dart dcfc615013d5
 tm/dart/lib/utility/MakeContextUtility.dart 896273f1e3c3
 tm/dart/lib/utility/MakeErrorUtility.dart 34d415651bee
 tm/dart/lib/utility/MakeFetchDefUtility.dart b5f13893e02d
-tm/dart/lib/utility/MakeOptionsUtility.dart b7a0b4901ad5
+tm/dart/lib/utility/MakeOptionsUtility.dart 5d7034a2d15b
 tm/dart/lib/utility/MakePointUtility.dart 63549de5ee14
 tm/dart/lib/utility/MakeRequestUtility.dart 3c335acdd7e1
 tm/dart/lib/utility/MakeResponseUtility.dart 074cc0b0eeb3
@@ -748,7 +748,7 @@ tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
 tm/java/utility/MakeError.java 16bb2d80d562
 tm/java/utility/MakeFetchDef.java b83d2aed69b6
-tm/java/utility/MakeOptions.java a2d5bc07ff08
+tm/java/utility/MakeOptions.java ecf227a34663
 tm/java/utility/MakePoint.java fdef9e9657ab
 tm/java/utility/MakeRequest.java b326d47c077d
 tm/java/utility/MakeResponse.java bce6807c2f70
@@ -958,7 +958,7 @@ tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
 tm/kotlin/utility/Fetcher.kt 206114285747
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
-tm/kotlin/utility/MakeOptions.kt ab6a66e57b4b
+tm/kotlin/utility/MakeOptions.kt b7f283e2c51b
 tm/kotlin/utility/MakePoint.kt e21c75b47c95
 tm/kotlin/utility/MakeReqRes.kt a745863aa7aa
 tm/kotlin/utility/MakeSpecUrl.kt 1b1facf0ad64
@@ -1272,7 +1272,7 @@ tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm b48207779329
 tm/perl/utility/make_fetch_def.pm ebb77b54060c
-tm/perl/utility/make_options.pm dfcb5a13bc1e
+tm/perl/utility/make_options.pm 00d78f935138
 tm/perl/utility/make_point.pm 584666550bc1
 tm/perl/utility/make_request.pm d4b1ec8cf30d
 tm/perl/utility/make_response.pm 51a842fc584b
@@ -1370,7 +1370,7 @@ tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 5bbbbecfc3d7
 tm/php/utility/MakeFetchDef.php c76cc8f6f00e
-tm/php/utility/MakeOptions.php be14c6754df9
+tm/php/utility/MakeOptions.php c88eb00d0192
 tm/php/utility/MakePoint.php b17607873309
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
@@ -1460,7 +1460,7 @@ tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py d68358f50bc8
 tm/py/pkg/utility/make_fetch_def.py 0ad63d779a4e
-tm/py/pkg/utility/make_options.py 6536fd7ed2c8
+tm/py/pkg/utility/make_options.py 6492989dcdad
 tm/py/pkg/utility/make_point.py 72db740ca620
 tm/py/pkg/utility/make_request.py 9835b18e665b
 tm/py/pkg/utility/make_response.py 2be9c7ffdfb6
@@ -1595,7 +1595,7 @@ tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb abe971c81e08
 tm/rb/utility/make_fetch_def.rb b0cbc0f3b381
-tm/rb/utility/make_options.rb 8d315bc7c442
+tm/rb/utility/make_options.rb 02b52ad35451
 tm/rb/utility/make_point.rb d5831921adcc
 tm/rb/utility/make_request.rb a4ef373194d8
 tm/rb/utility/make_response.rb 0ca41a876f23
@@ -1699,7 +1699,7 @@ tm/rust/utility/jsonparse.rs 17f7ee7b908a
 tm/rust/utility/make_context.rs 04f34b592c9c
 tm/rust/utility/make_error.rs 6a60ab3f2ab8
 tm/rust/utility/make_fetch_def.rs 6656dd09052b
-tm/rust/utility/make_options.rs 9eaeaeacacc7
+tm/rust/utility/make_options.rs df062a42b103
 tm/rust/utility/make_point.rs 9908e4c29dff
 tm/rust/utility/make_request.rs fa9eeee6d176
 tm/rust/utility/make_response.rs 87ae886eda3b
@@ -1937,7 +1937,7 @@ tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 9bc134d98639
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 667becbbc443
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 5139e01f2b4e
-tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 9d2acd96c639
+tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 113f23a47b54
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 746b4fd26f3d
 tm/swift/Sources/ProjectNameSDK/utility/Register.swift ce2198a186aa
 tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 0bb89feddaa3

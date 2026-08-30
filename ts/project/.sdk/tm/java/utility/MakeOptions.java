@@ -36,7 +36,23 @@ final class MakeOptions {
       }
     }
 
+    // `auth: null` is the documented way to disable auth outright, and
+    // PrepareAuth honours it before it ever reads the apikey. It cannot
+    // survive validate: depending on the struct port a stored null is either
+    // REPLACED by the optspec default - transmitting the credential the
+    // caller withheld - or REJECTED outright. Withhold the key for validate,
+    // then put the null back. Same fix as ts/js/go makeOptions.
+    //
+    // Suppliedness cannot be recovered after validate, hence here, and it
+    // must tell an ABSENT auth from a present null: containsKey rather than
+    // a get() null check, which cannot distinguish them.
+    boolean authSuppressed = options.containsKey("auth") && null == options.get("auth");
+
     Map<String, Object> opts = (Map<String, Object>) Struct.clone(options);
+
+    if (authSuppressed) {
+      opts.remove("auth");
+    }
 
     // Feature add-order. options.feature may be given as an ordered LIST of
     // { name, active, ...opts } entries (the list position IS the order in
@@ -114,6 +130,11 @@ final class MakeOptions {
     vopts.put("errs", new ArrayList<>());
     Object validated = Struct.validate(merged, optspec, vopts);
     opts = (Map<String, Object>) validated;
+
+    // Restore the suppression the optspec default would otherwise erase.
+    if (authSuppressed) {
+      opts.put("auth", null);
+    }
 
     // Restore system.fetch.
     if (sysFetch != null) {

@@ -586,9 +586,10 @@ Two things follow for the other targets:
   every exported signature from both copies and compare them
   mechanically; the table above took seconds to produce that way and
   nothing else surfaced `GetPath` at all.
-- **Check `auth: null` on every target you touch.** It is broken in
-  ELEVEN targets and fails two different ways, so neither fix stands in
-  for the other. go had the same credential leak ts did, independently
+- **Check `auth: null` on every target you touch.** When this was first
+  written the defect was live in eleven targets; twelve have since been
+  fixed and **six remain** (named below). It fails two different ways, so
+  neither fix stands in for the other. go had the same credential leak ts did, independently
   and already present before the resync: `validate` treats a stored null as "no value", the optspec's
   `auth` default fires, and the documented way to disable auth silently
   becomes "use default auth" — putting the withheld credential on the
@@ -614,11 +615,58 @@ Two things follow for the other targets:
   validate is enough; on 0.0.10 the key must be DELETED before validate
   as well, or it throws before the restore can run.
 
-  Audit of `makeOptions` across the shipped targets, at the time of
-  writing: `ts` and `go` and `js` carry the suppression; **c, csharp,
-  dart, java, kotlin, lua, perl, php, py, rb, rust and swift do not**.
-  Each needs the fix matched to its own struct version, and its own test
-  — target-level, since the corpus cannot reach real nulls.
+  **Rollout is PARTIAL, and the way it was first declared complete is the
+  lesson.** Fifteen targets now carry it: ts, js, go, c, cpp, csharp,
+  dart, java, kotlin, perl, php, py, rb, rust and swift.
+
+  **Seven still do not**, and with an explicit apikey plus `auth: null`
+  they still transmit the credential: **clojure, elixir, lean, ocaml,
+  scala, zig** — and lua, which cannot express it at all (below). lean is
+  the worst of them and needs two fixes rather than one: its makeOptions
+  does not capture suppliedness AND its `prepareAuth` never reads
+  `options.auth` at all, branching only on an empty apikey, so a null auth
+  has no effect even if it survives.
+
+  The first audit behind this rollout missed all seven, because it looked
+  for files named like `makeOptions` — and cpp keeps that logic in
+  `utility/pipeline.hpp`, lean in `SdkUtility.lean`, and so on. Thirteen
+  of twenty-six targets were skipped in silence, which produced a
+  confident and wrong "complete". **Audit by content, never by filename**;
+  `generatedcompile.test.ts` now classifies every target and scans whole
+  trees for the marker, so the list cannot drift out of date again.
+
+  One target is a language limit rather than an oversight:
+  **lua cannot express it at all.** A Lua table stores no nil — `t.auth =
+  nil` removes the key — and the port has no null sentinel (its own
+  struct source says so: "Lua has no undefined; the unit tests use the
+  string `__NULL__` where necessary"). So `auth = nil` is indistinguishable
+  from omitting auth, and there is nothing for makeOptions to detect.
+  Giving lua the suppression means giving the port a null sentinel first,
+  which is a much larger change to its public shape.
+
+  **Do not assume the fix is confined to makeOptions.** An earlier draft
+  of this note claimed every target's prepareAuth already honours a null,
+  and that an options-level assertion (`options.auth is still null`) was
+  therefore a sound proxy for driving the wire. Both were wrong, from the
+  same sample error as the filename audit: thirteen targets were checked,
+  not twenty-six.
+
+  **lean is the counterexample.** Its `prepareAuth` never reads
+  `options.auth` at all — it branches on an empty apikey and otherwise
+  reads `auth.prefix` — so restoring the null in makeOptions changes
+  nothing there. lean needs two fixes.
+
+  So for each target, check BOTH ends, and pin the property where it is
+  actually observable: **assert on the authorization header a mocked
+  transport receives**, not on the options map. An options-level assertion
+  passes for a lean-shaped port that never consults the value.
+
+  Guards live in `generatedcompile.test.ts` as a table of per-target
+  lanes, one row per target, each running a probe inside a freshly
+  generated SDK. Every probe opens with a BASELINE assertion that an
+  ordinary apikey is still sent, because the suppression alone cannot fail
+  visibly — with no apikey nothing goes on the wire either way, so a probe
+  without the baseline passes with the defect live.
 - **A silent signature is now pinned.** `ts/test/vendored.test.ts` grew a
   `vendored signature drift` block listing the exact `func` lines the
   templates' call sites assume — currently `GetPath` and `SetPath`, the
