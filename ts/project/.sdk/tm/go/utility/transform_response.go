@@ -29,8 +29,11 @@ func transformResponseUtil(ctx *core.Context) any {
 		return nil
 	}
 
-	// See transform_request.go: Transform gained an error return in struct
-	// go 0.1.3, and the TS reference routes it through makeError.
+	// Transform gained an error return in struct go 0.1.3. Both callers
+	// (makeResponse, makeResult) DISCARD this function's return value, so an
+	// error handed back that way would vanish. The convention they do honour
+	// is result.Err — makeResponse sets result.Ok only when it is nil, and
+	// GraphqlErrors reports the same way — so report there.
 	resdata, terr := vs.Transform(map[string]any{
 		"ok":         result.Ok,
 		"status":     result.Status,
@@ -43,11 +46,8 @@ func transformResponseUtil(ctx *core.Context) any {
 	}, resform)
 
 	if terr != nil {
-		out, eerr := makeErrorUtil(ctx, terr)
-		if eerr != nil {
-			return eerr
-		}
-		return out
+		result.Err = ctx.MakeError("resform", "resform: "+terr.Error())
+		return nil
 	}
 
 	result.Resdata = resdata

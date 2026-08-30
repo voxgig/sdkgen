@@ -349,6 +349,85 @@ describe('generated SDK compiles', () => {
   //
   // This is the check the earlier equivalence test could not make: the demo
   // fixture contains no numbers at all, so both paths trivially agreed.
+  // A request transform that FAILS must abort the operation.
+  //
+  // struct go 0.1.3 gave Transform an error return, so this path exists for
+  // the first time. The ts reference routes the failure through makeError -
+  // which THROWS, unwinding the operation. go's makeError cannot throw, it
+  // returns; and the PrepareBody seam this sits behind returns a plain
+  // value. So without an explicit abort in makeSpec the error object simply
+  // became the request BODY: the call went out, and a 200 made a failed
+  // transform look like a successful operation. That is what this pins.
+  //
+  // Driven through the supported `transformRequest` utility override rather
+  // than a spec that makes Transform fail: the validate injectors that
+  // produce Transform errors are not reachable from a transform spec, and
+  // the defect is in how the RESULT is handled, not in what triggers it.
+  test('go: a failed request transform aborts instead of being sent', async () => {
+    const go = toolchain('go')
+    if (null == go) {
+      return
+    }
+
+    const sdkroot = Path.join(tmp, 'go-reqform')
+    await generateTo('go', sdkroot)
+
+    Fs.writeFileSync(
+      Path.join(sdkroot, 'test', 'reqform_probe_test.go'),
+      `package sdktest
+
+import (
+	"errors"
+	"testing"
+
+	sdk "github.com/voxgig-sdk/demo-sdk/go"
+	"github.com/voxgig-sdk/demo-sdk/go/core"
+)
+
+// A failed request transform must ABORT the operation, not travel onward as
+// the request body.
+func TestReqformProbe(t *testing.T) {
+	sent := 0
+
+	client := sdk.NewDemoSDK(map[string]any{
+		"utility": map[string]any{
+			// Stands in for \`vs.Transform\` reporting an error: an error
+			// VALUE out of the seam, which is exactly what
+			// transformRequestUtil hands back on that path.
+			"transformRequest": func(ctx *core.Context) any {
+				return errors.New("reqform exploded")
+			},
+			"fetcher": sdk.FetcherFunc(func(
+				ctx *sdk.Context, fullurl string, fetchdef map[string]any,
+			) (any, error) {
+				sent++
+				return map[string]any{
+					"status": 200, "ok": true,
+					"json": func() (any, error) { return map[string]any{}, nil },
+				}, nil
+			}),
+		},
+	})
+
+	out, err := client.Planet(nil).Create(map[string]any{"name": "p1"}, map[string]any{})
+
+	t.Logf("sent=%d err=%v out=%T", sent, err, out)
+
+	if sent != 0 {
+		t.Errorf("FAIL: request was SENT despite a failed request transform (sent=%d)", sent)
+	}
+	if err == nil {
+		t.Errorf("FAIL: operation reported success despite a failed request transform")
+	}
+}
+`)
+
+    const probe = run(go, ['test', './test/', '-run', 'TestReqformProbe', '-v'], sdkroot)
+    ok(probe.ok,
+      'a failed request transform did not abort the operation:\n' + tail(probe.out))
+  })
+
+
   test('go: data and literal paths agree on number types', async () => {
     const go = toolchain('go')
     if (null == go) {

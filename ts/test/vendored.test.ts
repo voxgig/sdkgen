@@ -45,6 +45,7 @@ const MANIFEST = JSON.parse(
 const VENDOR_DIRS = [
   'tm/ts/test/vendor/omni',
   'tm/ts/src/feature/secrets/sekreto',
+  'tm/go/utility/struct',
 ]
 
 

@@ -68,6 +68,22 @@ func makeSpecUtil(ctx *core.Context) (*core.Spec, error) {
 		ctx.Spec.Headers["content-type"] = GraphqlContentType
 	} else {
 		ctx.Spec.Body = utility.PrepareBody(ctx)
+
+		// A failed request transform has nowhere else to report: the
+		// PrepareBody seam returns a plain value, and go's makeError RETURNS
+		// the error where the TS reference THROWS it, unwinding the operation
+		// from inside transformRequest. So the abort lands here. Without it
+		// the error object travels on as the request body and the call still
+		// goes out — a 200 would then make a failed transform look like a
+		// successful operation.
+		//
+		// Only the throwing path produces an error value: with ctrl.throw
+		// false, makeError hands back result.Resdata instead, and the
+		// pipeline continues, exactly as it does in ts.
+		if berr, isErr := ctx.Spec.Body.(error); isErr {
+			return nil, berr
+		}
+
 		ctx.Spec.Path = utility.PreparePath(ctx)
 	}
 

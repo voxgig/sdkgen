@@ -616,7 +616,7 @@ tm/go/utility/make_point.go 1ff96089fd15
 tm/go/utility/make_request.go cf4d4f55e911
 tm/go/utility/make_response.go 57ad84a7b3be
 tm/go/utility/make_result.go a9ddaa230b15
-tm/go/utility/make_spec.go 1cf53576614e
+tm/go/utility/make_spec.go 09a0b864f471
 tm/go/utility/make_url.go 938889ec16f5
 tm/go/utility/param.go 07b174540e6b
 tm/go/utility/prepare_auth.go 35a8d408199a
@@ -631,8 +631,8 @@ tm/go/utility/result_basic.go 6621fff8681d
 tm/go/utility/result_body.go 26a11991a96c
 tm/go/utility/result_headers.go 1bf8bf65b390
 tm/go/utility/struct/voxgigstruct.go 9fab85359236
-tm/go/utility/transform_request.go 3b47de567af6
-tm/go/utility/transform_response.go 1882dc25b069
+tm/go/utility/transform_request.go 773f7f0f1749
+tm/go/utility/transform_response.go 6e2259ee6ecb
 
 ## target go-cli
 model/feature/feature-index.aon 5f0737d1060e
