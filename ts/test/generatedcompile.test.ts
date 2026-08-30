@@ -1436,17 +1436,94 @@ int main(void) {
     exec: (sdkroot) => {
       const make = toolchain('make')
 
-      // The compiler is probed as well as make. The generated Makefile takes
-      // CC from the environment and defaults to make's own `cc`, so an image
-      // carrying make without a working compiler would fail INSIDE the build
-      // and be read as an auth-null regression rather than the visible skip
-      // it should be.
-      const cc = toolchain(process.env.CC || 'cc') || toolchain('gcc')
+      // The compiler is probed as well as make, because the generated Makefile
+      // takes CC from the environment and otherwise uses make's own `cc`: an
+      // image carrying make without a working compiler would fail INSIDE the
+      // build and be read as an auth-null regression rather than the visible
+      // skip it should be.
+      //
+      // A configured CC that does not resolve is a SKIP, not a silent
+      // substitution - running the lane against some other compiler would not
+      // be testing what the operator asked for. Only when CC is unset does
+      // this fall back, and then it passes the resolved path to make
+      // explicitly, so make cannot pick a different one than was probed.
+      const configured = process.env.CC
+      const cc = null == configured || '' === configured
+        ? (toolchain('cc') || toolchain('gcc'))
+        : toolchain(configured)
       if (null == make || null == cc) return null
 
-      const built = run(make, ['tests/authnull_probe.out'], sdkroot)
+      const built = run(make, ['CC=' + cc, 'tests/authnull_probe.out'], sdkroot)
       if (!built.ok) return { ...built, phase: 'build' }
       return run(Path.join(sdkroot, 'tests', 'authnull_probe.out'), [], sdkroot)
+    },
+  },
+  {
+    target: 'cpp',
+    needs: 'make and a C++ compiler',
+    probe: 'test/authnull_probe.cpp',
+    source: `// \`auth: null\` must survive makeOptions rather than being replaced by the
+// optspec default. Every target's prepareAuth already honours a null, so once
+// the null reaches it the header is withheld. The baseline fails loudly if a
+// plain apikey stops yielding a real auth block, so this cannot pass vacuously.
+#include "runner_support.hpp"
+
+#include <cstdio>
+
+using namespace sdk;
+
+static int fails = 0;
+
+static void fail(const char* msg) {
+  std::printf("FAIL: %s\\n", msg);
+  fails++;
+}
+
+static Value auth_of(const Value& opts) {
+  auto client = std::make_shared<DemoSDK>(opts);
+  Value om = client->optionsMap();
+  return map_contains(om, "auth") ? getp(om, "auth") : Value();
+}
+
+int main() {
+  Value plain = vmap();
+  map_put(plain, "apikey", Value(std::string("OPTKEY01")));
+  if (!auth_of(plain).is_map()) {
+    fail("baseline broken: a plain apikey did not yield an auth map");
+  }
+
+  Value supp = vmap();
+  map_put(supp, "apikey", Value(std::string("OPTKEY01")));
+  map_put(supp, "auth", Value(nullptr));
+
+  auto client = std::make_shared<DemoSDK>(supp);
+  Value om = client->optionsMap();
+  if (!map_contains(om, "auth")) {
+    fail("options.auth was dropped entirely, so prepareAuth cannot tell it was suppressed");
+  }
+  else if (!is_nullish(getp(om, "auth"))) {
+    fail("options.auth is not null - validate replaced the suppression");
+  }
+
+  std::printf("auth-null probe: %s\\n", 0 == fails ? "ok" : "FAILED");
+  return 0 == fails ? 0 : 1;
+}
+`,
+    exec: (sdkroot) => {
+      const make = toolchain('make')
+
+      // Same reasoning as the c lane: a configured CXX that does not resolve
+      // is a SKIP rather than a silent substitution, and the resolved path is
+      // passed to make so it cannot pick a different compiler than was probed.
+      const configured = process.env.CXX
+      const cxx = null == configured || '' === configured
+        ? (toolchain('g++') || toolchain('c++') || toolchain('clang++'))
+        : toolchain(configured)
+      if (null == make || null == cxx) return null
+
+      const built = run(make, ['CXX=' + cxx, 'test/authnull_probe.out'], sdkroot)
+      if (!built.ok) return { ...built, phase: 'build' }
+      return run(Path.join(sdkroot, 'test', 'authnull_probe.out'), [], sdkroot)
     },
   },
   {
@@ -1525,13 +1602,26 @@ fn authnull_probe() {
 ]
 
 
-// Targets whose makeOptions carries the suppression but which have no lane
-// HERE, each with the reason. The test below holds this list and
-// AUTHNULL_LANES to what the templates actually contain, so adding the fix to
-// a new target without a lane fails here rather than passing quietly.
+// Every target is classified below, and the suite further down holds each
+// classification against what the templates actually contain.
 //
-// Note ts is a different case from the rest: it IS pinned behaviourally, just
-// not from this file.
+// This exists because the FIRST audit behind this rollout was keyed on files
+// named like `makeOptions`, which silently skipped thirteen of the twenty-six
+// targets - cpp keeps this logic in `utility/pipeline.hpp`, lean in
+// `SdkUtility.lean`, and so on. That produced a confident and wrong claim
+// that the rollout was complete. Nothing here reads a filename.
+
+// Fixed, and covered by a row in AUTHNULL_LANES above.
+// (derived, not declared - see the suite below)
+
+// Fixed, but covered by their own dedicated lanes earlier in this file:
+// `go: auth null suppresses the credential` and the js equivalent, both
+// written before the table existed. Folding them in would mean rewriting two
+// lanes that already work.
+const AUTHNULL_STANDALONE = ['go', 'js']
+
+
+// Fixed, but with no behavioural lane here, each with the reason.
 const AUTHNULL_UNCOVERED: Record<string, string> = {
   ts: 'pinned instead by the shipped tm/ts/test/feature/secrets/Secrets.test.ts ' +
     '("auth null suppresses the credential, chain or no chain"), which runs in ' +
@@ -1543,72 +1633,118 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
 }
 
 
-// Covered, but by their own dedicated lanes earlier in this file rather than
-// by a row here - `go: auth null suppresses the credential` and `js: auth
-// null suppresses the credential`, written before this table existed. They
-// are listed so the coverage test below counts them as covered; folding them
-// into the table would mean rewriting two lanes that already work.
-const AUTHNULL_STANDALONE = ['go', 'js']
+// NOT FIXED YET. These carry the defect: with an explicit apikey AND
+// `auth: null`, the credential still goes out. They are listed rather than
+// quietly omitted, and the suite below fails if one of them ever gains the
+// fix without moving out of this list.
+const AUTHNULL_OUTSTANDING: Record<string, string> = {
+  clojure: 'merges and validates without capturing suppliedness',
+  elixir: 'merges and validates without capturing suppliedness',
+  ocaml: 'merges and validates without capturing suppliedness',
+  scala: 'merges and validates without capturing suppliedness',
+  zig: 'merges and validates without capturing suppliedness',
+  lean: 'TWO defects: makeOptions does not capture suppliedness, AND ' +
+    'prepareAuth never reads options.auth at all - it branches only on an ' +
+    'empty apikey, so a null auth has no effect even if it survives',
+}
 
 
-// lua is absent from ALL of these lists on purpose: it cannot express the suppression
-// at all. A Lua table stores no nil - `t.auth = nil` removes the key - and the
-// port has no null sentinel, so `auth = nil` and an omitted auth are the same
-// value. There is nothing for makeOptions to detect and nothing to pin.
+// Cannot express the suppression at all. A Lua table stores no nil -
+// `t.auth = nil` removes the key - and the port has no null sentinel, so
+// `auth = nil` and an omitted auth are the same value. There is nothing for
+// makeOptions to detect and nothing to pin.
 const AUTHNULL_INEXPRESSIBLE = ['lua']
 
 
+// No auth optspec at all: wrappers and variants that do not build client
+// options of their own.
+const AUTHNULL_NOT_APPLICABLE = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider']
+
+
 // The lists above are only worth having if something holds them to the
-// templates. This walks every target's makeOptions, finds the ones that
-// actually carry the suppression, and requires each to be either covered by a
-// lane or named in AUTHNULL_UNCOVERED with a reason.
-//
-// It bites in both directions, which is the point: adding the fix to a new
-// target without a lane fails here, and so does writing a lane for a target
-// whose makeOptions never got the fix.
+// templates. This scans EVERY file of every target for the suppression
+// marker - never a filename - and requires each target's real state to match
+// the list it is declared in.
 describe('auth null coverage is honest', () => {
 
   // The marker every implementation uses for the captured flag, in each
   // language's casing.
   const MARKER = /authsuppressed|auth_suppressed/i
 
-  function targetsWithFix(): string[] {
-    const tm = Path.resolve(PKG, 'project', '.sdk', 'tm')
-    const out: string[] = []
+  const TM = Path.resolve(PKG, 'project', '.sdk', 'tm')
 
-    for (const target of Fs.readdirSync(tm)) {
-      const dir = Path.join(tm, target)
-      if (!Fs.statSync(dir).isDirectory()) continue
-
-      const found = listFiles(dir, '')
-        .filter((f) => /make_?options/i.test(Path.basename(f)))
-        .some((f) => MARKER.test(Fs.readFileSync(f, 'utf8')))
-
-      if (found) out.push(target)
-    }
-    return out.sort()
+  function allTargets(): string[] {
+    return Fs.readdirSync(TM)
+      .filter((n) => Fs.statSync(Path.join(TM, n)).isDirectory())
+      .sort()
   }
 
+  // Whole-tree scan. cpp keeps this logic in utility/pipeline.hpp and lean in
+  // SdkUtility.lean, so anything narrower than "every file" reintroduces the
+  // blind spot that made the first audit wrong.
+  function carriesFix(target: string): boolean {
+    return listFiles(Path.join(TM, target), '')
+      .some((f) => {
+        try {
+          return MARKER.test(Fs.readFileSync(f, 'utf8'))
+        }
+        catch (_e) {
+          return false
+        }
+      })
+  }
 
-  test('every target carrying the fix has a lane or a stated reason', () => {
-    const covered = new Set([
-      ...AUTHNULL_LANES.map((l) => l.target),
-      ...AUTHNULL_STANDALONE,
-    ])
-    const excused = new Set(Object.keys(AUTHNULL_UNCOVERED))
+  const declaredFixed = () => [
+    ...AUTHNULL_LANES.map((l) => l.target),
+    ...AUTHNULL_STANDALONE,
+    ...Object.keys(AUTHNULL_UNCOVERED),
+  ]
 
-    const orphans = targetsWithFix()
-      .filter((t) => !covered.has(t) && !excused.has(t))
+  const declaredUnfixed = () => [
+    ...Object.keys(AUTHNULL_OUTSTANDING),
+    ...AUTHNULL_INEXPRESSIBLE,
+    ...AUTHNULL_NOT_APPLICABLE,
+  ]
 
-    deepStrictEqual(orphans, [],
-      'these targets carry the auth-null fix but have neither a lane nor an ' +
-      'entry in AUTHNULL_UNCOVERED - add one or the other, and do not leave ' +
-      'the fix unpinned in silence')
+
+  // A new target must be classified. Without this the lists drift out of date
+  // silently, which is how the first audit came to miss half the tree.
+  test('every target is classified', () => {
+    const known = new Set([...declaredFixed(), ...declaredUnfixed()])
+    const unclassified = allTargets().filter((t) => !known.has(t))
+
+    deepStrictEqual(unclassified, [],
+      'these targets appear in tm/ but in none of the auth-null lists - ' +
+      'classify each as covered, uncovered, outstanding, inexpressible or ' +
+      'not-applicable, and do not let a new target inherit the gap unnoticed')
   })
 
 
-  // The other direction. An excuse that outlives the thing it excuses is
-  // worse than none: it reads as a known gap when the gap has been closed.
+  // Without this, deleting the fix from an unexecuted target (csharp, dart,
+  // kotlin, swift) simply drops it from the scan and every other check still
+  // passes - the excuse then describes a fix that is no longer there.
+  test('every target declared fixed actually carries the fix', () => {
+    const lying = declaredFixed().filter((t) => !carriesFix(t))
+
+    deepStrictEqual(lying, [],
+      'these targets are listed as carrying the auth-null suppression but no ' +
+      'longer do - the fix was removed, or the marker renamed; either way the ' +
+      'list is now describing something that is not in the templates')
+  })
+
+
+  // And the other direction: a target that GAINS the fix must move out of the
+  // outstanding list, or its entry becomes a lie in the opposite sense.
+  test('nothing declared unfixed has quietly gained the fix', () => {
+    const moved = declaredUnfixed().filter((t) => carriesFix(t))
+
+    deepStrictEqual(moved, [],
+      'these targets carry the auth-null suppression but are still listed as ' +
+      'outstanding, inexpressible or not-applicable - move them to a lane or ' +
+      'to AUTHNULL_UNCOVERED')
+  })
+
+
   test('nothing is excused that already has a lane', () => {
     const covered = new Set([
       ...AUTHNULL_LANES.map((l) => l.target),
@@ -1622,27 +1758,11 @@ describe('auth null coverage is honest', () => {
   })
 
 
-  // And a lane for a target that never got the fix would pass vacuously.
-  test('every lane targets a template that carries the fix', () => {
-    const withFix = new Set(targetsWithFix())
-    const hollow = [...AUTHNULL_LANES.map((l) => l.target), ...AUTHNULL_STANDALONE]
-      .filter((t) => !withFix.has(t))
+  test('no target is declared both fixed and unfixed', () => {
+    const unfixed = new Set(declaredUnfixed())
+    const both = declaredFixed().filter((t) => unfixed.has(t))
 
-    deepStrictEqual(hollow, [],
-      'these lanes probe a target whose makeOptions has no suppression - the ' +
-      'lane cannot be testing what it claims')
-  })
-
-
-  test('lua is not claimed as covered', () => {
-    const claimed = AUTHNULL_INEXPRESSIBLE
-      .filter((t) => AUTHNULL_LANES.some((l) => l.target === t)
-        || AUTHNULL_STANDALONE.includes(t)
-        || t in AUTHNULL_UNCOVERED)
-
-    deepStrictEqual(claimed, [],
-      'a target listed as unable to express the suppression must not also ' +
-      'appear as covered or merely uncovered - those say the fix is possible')
+    deepStrictEqual(both, [], 'these targets are declared both fixed and unfixed')
   })
 })
 

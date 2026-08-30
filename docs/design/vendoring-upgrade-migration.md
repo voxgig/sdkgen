@@ -614,11 +614,31 @@ Two things follow for the other targets:
   validate is enough; on 0.0.10 the key must be DELETED before validate
   as well, or it throws before the restore can run.
 
-  **Rollout complete.** Every target that CAN express the suppression now
-  carries it: ts, js, go, and then c, csharp, dart, java, kotlin, perl,
-  php, py, rb, rust and swift.
+  **Rollout is PARTIAL, and the way it was first declared complete is the
+  lesson.** Fifteen targets now carry it: ts, js, go, c, cpp, csharp,
+  dart, java, kotlin, perl, php, py, rb, rust and swift.
 
-  One exception, and it is a language limit rather than an oversight:
+  **Seven still do not**, and with an explicit apikey plus `auth: null`
+  they still transmit the credential: **clojure, elixir, lean, ocaml,
+  scala, zig** — and lua, which cannot express it at all (below). lean is
+  the worst of them and needs two fixes rather than one: its makeOptions
+  does not capture suppliedness AND its `prepareAuth` never reads
+  `options.auth` at all, branching only on an empty apikey, so a null auth
+  has no effect even if it survives.
+
+  The first audit behind this rollout missed all seven, because it looked
+  for files named like `makeOptions` — and cpp keeps that logic in
+  `utility/pipeline.hpp`, lean in `SdkUtility.lean`, and so on. Thirteen
+  of twenty-six targets were skipped in silence, which produced a
+  confident and wrong "complete". **Audit by content, never by filename**;
+  `generatedcompile.test.ts` now classifies every target and scans whole
+  trees for the marker, so the list cannot drift out of date again.
+
+  For the same reason, treat this earlier note with suspicion where it
+  says every target's prepareAuth already honours a null: that was checked
+  across thirteen targets, not all of them, and lean is a counterexample.
+
+  One target is a language limit rather than an oversight:
   **lua cannot express it at all.** A Lua table stores no nil — `t.auth =
   nil` removes the key — and the port has no null sentinel (its own
   struct source says so: "Lua has no undefined; the unit tests use the

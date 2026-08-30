@@ -1107,7 +1107,24 @@ inline Value makeOptions(CtxPtr ctx) {
     }
   }
 
+  // `auth: null` is the documented way to disable auth outright, and
+  // prepareAuth honours it before it ever reads the apikey. It cannot survive
+  // validate: this port follows the Group A rule, so a stored null reads as
+  // "no value" and the optspec's `auth` default fires instead - transmitting
+  // the credential the caller withheld. Withhold the key for validate, then
+  // put the null back. Same fix as ts/js/go makeOptions.
+  //
+  // map_contains AND is_nullish together, because neither alone can tell an
+  // ABSENT auth from a suppressed one: getp applies Group A and collapses a
+  // stored null to undef, while contains alone is true for a real auth map.
+  bool authSuppressed =
+    map_contains(options, "auth") && is_nullish(getp(options, "auth"));
+
   Value opts = Struct::clone(options);
+
+  if (authSuppressed) {
+    map_remove(opts, "auth");
+  }
 
   // Feature add-order. options.feature may be an ordered list of
   // { name, active, ...opts } entries (the list position IS the order in which
@@ -1158,6 +1175,11 @@ inline Value makeOptions(CtxPtr ctx) {
   map_put(vopts, "errs", vlist());
   Value validated = Struct::validate(merged, optspec, vopts);
   opts = validated;
+
+  // Restore the suppression the optspec default would otherwise erase.
+  if (authSuppressed) {
+    map_put(opts, "auth", Value(nullptr));
+  }
 
   if (!is_nullish(sysFetch)) {
     Value sys = Helpers::toMapAny(getp(opts, "system"));
