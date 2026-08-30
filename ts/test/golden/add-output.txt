@@ -843,7 +843,7 @@ tm/js/src/utility/GraphqlUtility.js e8aed31713c4
 tm/js/src/utility/MakeContextUtility.js bbc1c9839da2
 tm/js/src/utility/MakeErrorUtility.js bc97ae72a43c
 tm/js/src/utility/MakeFetchDefUtility.js 624a772dedfa
-tm/js/src/utility/MakeOptionsUtility.js 3670a04f0680
+tm/js/src/utility/MakeOptionsUtility.js b9f9f5aacd62
 tm/js/src/utility/MakePointUtility.js 2f9abfa751fd
 tm/js/src/utility/MakeRequestUtility.js c586819bd2e6
 tm/js/src/utility/MakeResponseUtility.js 8e24747b5152

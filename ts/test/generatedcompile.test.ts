@@ -601,6 +601,94 @@ func TestAuthNullProbe(t *testing.T) {
   })
 
 
+  // The same contract on the js reference target, which fails DIFFERENTLY.
+  //
+  // go's struct treats a stored null as "no value", so the optspec default
+  // fired and the credential went out - a leak. js still ships struct 0.0.10,
+  // whose validate REJECTS a stored null outright, so `auth: null` threw
+  // "Expected field auth to be map" at construction. Same broken contract,
+  // opposite failure mode, so both need pinning rather than one standing in
+  // for the other.
+  test('js: auth null suppresses the credential', async () => {
+    const sdkroot = Path.join(tmp, 'js-authnull')
+    await generateTo('js', sdkroot)
+    linkDeps(sdkroot)
+
+    Fs.mkdirSync(Path.join(sdkroot, 'test', 'utility'), { recursive: true })
+    Fs.writeFileSync(
+      Path.join(sdkroot, 'test', 'utility', 'authnull.test.js'),
+      `const { test, describe } = require('node:test')
+const assert = require('node:assert')
+
+const { SDK } = require('../..')
+
+// \`auth: null\` is the documented way to disable auth outright. It must beat
+// an explicit apikey, because that is the only case that DISCRIMINATES: with
+// no apikey nothing goes on the wire anyway.
+//
+// This target's struct rejects a stored null in validate, so before the fix
+// the failure was not a leak but a CONSTRUCTION ERROR - the documented option
+// threw "Expected field auth to be map, but found no value".
+describe('auth null', () => {
+
+  // What the transport would actually send.
+  async function wire(opts) {
+    let seen
+    let had = false
+
+    const sdk = SDK.test({}, {
+      ...opts,
+      utility: {
+        fetcher: async (_ctx, _fullurl, fetchdef) => {
+          had = Object.prototype.hasOwnProperty.call(
+            fetchdef.headers || {}, 'authorization')
+          seen = (fetchdef.headers || {}).authorization
+          return { status: 200, ok: true, json: async () => ({}) }
+        },
+      },
+    })
+
+    const fetchdef = await sdk.prepare({ path: '/' })
+    assert.ok(!(fetchdef instanceof Error), String(fetchdef))
+
+    had = Object.prototype.hasOwnProperty.call(fetchdef.headers || {}, 'authorization')
+    seen = (fetchdef.headers || {}).authorization
+    return { seen, had }
+  }
+
+  // Baseline, so the assertion below cannot pass vacuously.
+  test('an ordinary apikey is sent', async () => {
+    const { seen } = await wire({ apikey: 'OPTKEY01' })
+    assert.equal(seen, 'OPTKEY01')
+  })
+
+  test('auth null suppresses an explicit apikey', async () => {
+    const { seen, had } = await wire({ apikey: 'OPTKEY01', auth: null })
+    assert.equal(had, false,
+      'auth null did not suppress the credential - sent authorization ' + seen)
+  })
+
+  test('constructing with auth null does not throw', async () => {
+    // The pre-fix failure mode on this target: validate rejected the null.
+    assert.doesNotThrow(() => SDK.test({}, { apikey: 'OPTKEY01', auth: null }))
+  })
+
+  test('options.auth survives validation as null', async () => {
+    const sdk = SDK.test({}, { apikey: 'OPTKEY01', auth: null })
+    assert.equal(sdk.options().auth, null,
+      'validate replaced the suppression with the optspec default')
+  })
+})
+`)
+
+    const probe = run(process.execPath,
+      ['--test', '--test-reporter=tap', Path.join('test', 'utility', 'authnull.test.js')],
+      sdkroot, nestedTestEnv())
+
+    ok(probe.ok, 'js auth null did not suppress the credential:\n' + tail(probe.out))
+  })
+
+
   test('go: data and literal paths agree on number types', async () => {
     const go = toolchain('go')
     if (null == go) {
