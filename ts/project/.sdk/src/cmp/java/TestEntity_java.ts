@@ -76,7 +76,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // environment, the same way the apikey is.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `    envm.put("${serverVarEnv(PROJUPPER, v.name)}", "");\n`).join('')
+    .map((v: any) => `    envm.put("${serverVarEnv(PROJUPPER, v.name)}", ${JSON.stringify(v.dflt)});\n`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `      Map<String, Object> serveropt = new LinkedHashMap<>();\n` +
     svars.map((v: any) =>
@@ -272,7 +272,7 @@ ${allSteps.length > 0 ? `    ${SDK} client = setup.client;\n\n` : ''}`)
     envm.put("${entidEnvVar}", idmap);
     envm.put("${PROJUPPER}_TEST_LIVE", "FALSE");
     envm.put("${PROJUPPER}_TEST_EXPLAIN", "FALSE");
-${authActive ? `    envm.put("${PROJUPPER}_APIKEY", "NONE");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
+${authActive ? `    envm.put("${PROJUPPER}_APIKEY", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
 
     Map<String, Object> idmapResolved = Helpers.toMapAny(env.get("${entidEnvVar}"));
     if (idmapResolved == null) {

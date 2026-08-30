@@ -183,6 +183,14 @@ public final class RunnerSupport {
   //
   // Merged UNDER the generated fields, so the suite's own base/apikey/server
   // values win: this ADDS to the live client, it does not redirect it.
+  //
+  // That contract is enforced HERE rather than left to each merge site: the
+  // generated map only names a field when the model calls for one, so a
+  // "base" in this block would face no competing value and would silently
+  // redirect the whole suite - credential included - to another host.
+  private static final List<String> LIVE_RESERVED = List.of(
+      "base", "prefix", "suffix", "server", "apikey", "secret");
+
   public static Map<String, Object> liveClientOptions() {
     Map<String, Object> ctrl = loadTestControl();
     Map<String, Object> test = Helpers.toMapAny(ctrl.get("test"));
@@ -194,7 +202,17 @@ public final class RunnerSupport {
       return new LinkedHashMap<>();
     }
     Map<String, Object> opts = Helpers.toMapAny(client.get("options"));
-    return opts == null ? new LinkedHashMap<>() : opts;
+    if (opts == null) {
+      return new LinkedHashMap<>();
+    }
+
+    Map<String, Object> out = new LinkedHashMap<>();
+    for (Map.Entry<String, Object> e : opts.entrySet()) {
+      if (!LIVE_RESERVED.contains(e.getKey())) {
+        out.put(e.getKey(), e.getValue());
+      }
+    }
+    return out;
   }
 
   // liveDelayMs returns the configured per-test live delay in ms; default 500.

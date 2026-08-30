@@ -66,7 +66,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive
-    ? `\n        "${PROJECTNAME}_APIKEY": "NONE",`
+    ? `\n        "${PROJECTNAME}_APIKEY": "",`
     : ''
   const apikeyLiveField = authActive
     ? `\n            "apikey": env.get("${PROJECTNAME}_APIKEY"),`
@@ -78,7 +78,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // environment, the same way the apikey is.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n        "${serverVarEnv(PROJECTNAME, v.name)}": "",`).join('')
+    .map((v: any) => `\n        "${serverVarEnv(PROJECTNAME, v.name)}": ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `\n            "server": {` +
     svars.map((v: any) =>

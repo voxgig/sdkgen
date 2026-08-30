@@ -73,7 +73,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive
-    ? `\n\t\t"${PROJUPPER}_APIKEY":         "NONE",`
+    ? `\n\t\t"${PROJUPPER}_APIKEY":         "",`
     : ''
   const apikeyLiveField = authActive
     ? `\n\t\t\t\t"apikey": env["${PROJUPPER}_APIKEY"],`
@@ -86,7 +86,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // environment, the same way the apikey is.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n\t\t"${serverVarEnv(PROJUPPER, v.name)}": "",`).join('')
+    .map((v: any) => `\n\t\t"${serverVarEnv(PROJUPPER, v.name)}": ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `\n\t\t\t\t"server": map[string]any{` +
     svars.map((v: any) =>

@@ -96,7 +96,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // environment, the same way the apikey is.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `    envm.put("${serverVarEnv(PROJECTNAME, v.name)}", "");\n`).join('')
+    .map((v: any) => `    envm.put("${serverVarEnv(PROJECTNAME, v.name)}", ${JSON.stringify(v.dflt)});\n`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `      Map<String, Object> serveropt = new LinkedHashMap<>();\n` +
     svars.map((v: any) =>
@@ -481,7 +481,7 @@ ${loadSkipBlock}    ${SDK} client = setup.client;
     Map<String, Object> envm = new LinkedHashMap<>();
     envm.put("${entidEnvVar}", new LinkedHashMap<>());
     envm.put("${PROJECTNAME}_TEST_LIVE", "FALSE");
-${authActive ? `    envm.put("${PROJECTNAME}_APIKEY", "NONE");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
+${authActive ? `    envm.put("${PROJECTNAME}_APIKEY", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
 
     boolean live = "TRUE".equals(env.get("${PROJECTNAME}_TEST_LIVE"));
 

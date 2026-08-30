@@ -69,7 +69,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const authActive = isAuthActive(model)
   const authBasic = authActive && isHttpBasicAuth(model)
   const apikeyEnvEntry = authActive
-    ? `\n    '${PROJENVNAME}_APIKEY': 'NONE',${authBasic ? `\n    '${PROJENVNAME}_SECRET': 'NONE',` : ''}`
+    ? `\n    '${PROJENVNAME}_APIKEY': '',${authBasic ? `\n    '${PROJENVNAME}_SECRET': 'NONE',` : ''}`
     : ''
   const apikeyLiveField = authActive
     ? `
@@ -83,7 +83,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': '',`).join('')
+    .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
         server: {${svars
       .map((v: any) => `

@@ -652,6 +652,81 @@ describe('secrets exchange', () => {
   })
 
 
+  test('auth: null suppresses the credential, refusal or not', async () => {
+    process.env[ENVPREFIX + 'REFRESH_TOKEN'] = REFRESH
+
+    // `auth: null` is the documented way to send no credential at all.
+    // A refusal of a deliberately unauthenticated request is not an
+    // expired token: buying one and retrying would transmit exactly the
+    // credential the caller suppressed.
+    const stub = stubfetch({ apiStatus: [401] })
+    const sdk = new (SDK as any)({
+      base: BASE,
+      auth: null,
+      system: { fetch: stub.fetch },
+      feature: {
+        secrets: {
+          active: true,
+          name: 'refresh_token',
+          providers: [{ kind: 'env', prefix: ENVPREFIX }],
+          exchange: { active: true },
+        },
+      },
+    })
+
+    await sdk.direct({ path: '/thing' })
+
+    assert.equal(stub.api().length, 1, 'a suppressed request must not be retried')
+    assert.equal(stub.api()[0].auth, undefined,
+      'no credential may be sent when auth is suppressed')
+  })
+
+
+  test('a token another request already bought is spent, not re-bought', async () => {
+    process.env[ENVPREFIX + 'REFRESH_TOKEN'] = REFRESH
+
+    // STAGGERED 401s: the case the shared in-flight purchase does NOT
+    // cover. Two requests go out on the same token; the first is refused,
+    // buys a new one and clears the shared promise; only then is the
+    // second refused. Buying again there is a wasted exchange, and on a
+    // provider that invalidates the previous credential on issuance it
+    // breaks the first request's own retry.
+    //
+    // Driven through the transport wrapper directly, because the race is
+    // in WHEN the refusal arrives relative to another request's refresh,
+    // and that is not something two ordinary calls can be made to stage.
+    const stub = stubfetch()
+    const sdk = exchangeSdk(stub)
+
+    await sdk.direct({ path: '/warmup' })
+    const bought = stub.token().length
+
+    const feature = sdk._secrets
+    const fetchdef: any = { headers: { authorization: 'Bearer STALE01' } }
+
+    sdk._options.apikey = 'STALE01'
+
+    let calls = 0
+    const inner = async () => {
+      calls++
+      if (1 === calls) {
+        // While this request was in flight, another one refreshed.
+        sdk._options.apikey = 'ACCESS09'
+        return { status: 401, json: async () => ({}), headers: {} }
+      }
+      return { status: 200, json: async () => ({ ok: true }), headers: {} }
+    }
+
+    const res: any = await feature._withRefresh({}, BASE + '/two', fetchdef, inner)
+
+    assert.equal(res.status, 200)
+    assert.equal(calls, 2, 'the request was retried once')
+    assert.equal(stub.token().length, bought,
+      'the retry must reuse the token another request already bought')
+    authIs({ auth: fetchdef.headers.authorization }, 'ACCESS09')
+  })
+
+
   test('exchange off leaves the feature exactly as it was', async () => {
     process.env[ENVPREFIX + 'APIKEY'] = 'PLAINKEY01'
 

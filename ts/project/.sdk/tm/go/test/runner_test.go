@@ -167,6 +167,16 @@ func isControlSkipped(kind, name, mode string) (bool, string) {
 //
 // Merged UNDER the generated fields, so the suite's own base/apikey/server
 // values win: this ADDS to the live client, it does not redirect it.
+//
+// That contract is enforced HERE rather than left to each merge site: the
+// generated map only names a field when the model calls for one, so a
+// "base" in this block would face no competing value and would silently
+// redirect the whole suite - credential included - to another host.
+var liveReserved = map[string]bool{
+	"base": true, "prefix": true, "suffix": true,
+	"server": true, "apikey": true, "secret": true,
+}
+
 func liveClientOptions() map[string]any {
 	ctrl := loadTestControl()
 	test, _ := ctrl["test"].(map[string]any)
@@ -181,7 +191,14 @@ func liveClientOptions() map[string]any {
 	if opts == nil {
 		return map[string]any{}
 	}
-	return opts
+
+	out := map[string]any{}
+	for k, v := range opts {
+		if !liveReserved[k] {
+			out[k] = v
+		}
+	}
+	return out
 }
 
 

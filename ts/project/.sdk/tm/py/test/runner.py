@@ -115,10 +115,19 @@ class ProjectNameTestRunner:
         Merged UNDER the generated fields, so the suite's own
         base/apikey/server values win: this ADDS to the live client, it does
         not redirect it.
+
+        Reserved fields are stripped HERE rather than at each merge site:
+        the generated dict only names a field when the model calls for one,
+        so a "base" in this block would face no competing value and would
+        silently redirect the whole suite - credential included - to another
+        host.
         """
         ctrl = ProjectNameTestRunner.load_test_control()
         opts = ctrl.get("test", {}).get("client", {}).get("options")
-        return opts if isinstance(opts, dict) else {}
+        if not isinstance(opts, dict):
+            return {}
+        reserved = ("base", "prefix", "suffix", "server", "apikey", "secret")
+        return {k: v for k, v in opts.items() if k not in reserved}
 
     @staticmethod
     def live_delay_ms():
