@@ -708,6 +708,45 @@ Two things follow for the other targets:
   ordinary apikey is still sent, because the suppression alone cannot fail
   visibly — with no apikey nothing goes on the wire either way, so a probe
   without the baseline passes with the defect live.
+- **A silent BEHAVIOUR is now pinned too.** `ts/test/structnull.test.ts`
+  runs each vendored struct through the one question that started all of
+  this — when a key is PRESENT and holds a JSON null, is that "no value"? —
+  and pins the answer per port. Measured, not assumed:
+
+  | port | stamp | `getprop({x:null},'x','ALT')` | `haskey` | `validate({auth:null},…)` |
+  |---|---|---|---|---|
+  | go | 0.1.3 | `'ALT'` | false | returns the default |
+  | py | — | `'ALT'` | false | returns the default |
+  | perl | — | `'ALT'` | false | returns the default |
+  | rb | — | `null` | true | returns the default |
+  | php | — | `null` | true | THROWS |
+  | js | 0.0.10 | `null` | true | THROWS |
+
+  Three distinct behaviours across six ports — and **`ts` (0.3.2) and `js`
+  (0.0.10), the two targets every other language is held in parity WITH, are
+  in different classes.** That is not subtle: it is exactly the fail-open /
+  fail-closed split catalogued above. The signature pin below cannot see any
+  of it, because nothing about a signature changes.
+
+  The shared corpus cannot pin it either, for a reason worth writing down:
+  the runner's `fixJSON` rewrites every JSON null — on BOTH the `in` and
+  `out` sides — to the string `'__NULL__'` before the subject is called,
+  unless the section runs with the `null: false` flag. So a corpus case
+  written the obvious way passes the STRING `'__NULL__'` as the stored value
+  and asserts nothing about null at all.
+  **create-sdkgen#26** adds `struct/nullsem.aon` — 33 cases across getprop,
+  getelem, getpath, haskey and keysof, all verified against upstream 0.3.2 —
+  which runs with that flag and is OPT-IN, so it becomes each target's null
+  gate as it migrates rather than reddening the half of the tree that has
+  not.
+
+  That section found a defect on its first run: **py's vendored getprop is
+  correct for a map and wrong for a list.** Canonical getprop tests
+  `isnode(val)` — map and list — then applies the null rule once; py's copy
+  branches ismap/islist and its list branch does `return val[key]`, an early
+  return that skips the rule, so `getprop([null], 0, 'ALT')` hands back the
+  null. Fix upstream, resync, then py opts in.
+
 - **A silent signature is now pinned.** `ts/test/vendored.test.ts` grew a
   `vendored signature drift` block listing the exact `func` lines the
   templates' call sites assume — currently `GetPath` and `SetPath`, the
