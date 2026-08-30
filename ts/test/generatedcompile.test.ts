@@ -1803,22 +1803,34 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
   dart: 'needs dart; the probe has never been executed, so it is not shipped',
   kotlin: 'needs gradle; the probe has never been executed, so it is not shipped',
   swift: 'needs swift; a probe needs a Package.swift target, and none is written',
+
+  // The six below were the AUTHNULL_OUTSTANDING list. They now carry the fix,
+  // but READ BY EYE ONLY: no clojure, elixir, ocaml, scala, zig or lean
+  // toolchain existed where the change was written, so not one of them has
+  // been compiled, let alone had the suppression exercised. That is a weaker
+  // position than the four above it, which at least compile in some CI: these
+  // are unproven at BOTH levels. The structural guard below is all that holds
+  // them, and a structural guard cannot see a type error or a mis-ordered
+  // statement. Whoever gets one of these toolchains should build it first and
+  // add a lane second.
+  clojure: 'UNVERIFIED - no clojure toolchain; never compiled, never executed',
+  elixir: 'UNVERIFIED - no elixir toolchain; never compiled, never executed',
+  ocaml: 'UNVERIFIED - no ocaml toolchain; never compiled, never executed',
+  scala: 'UNVERIFIED - no scala toolchain; never compiled, never executed',
+  zig: 'UNVERIFIED - no zig toolchain; never compiled, never executed',
+  lean: 'UNVERIFIED - no lean toolchain; never compiled, never executed. ' +
+    'Also the one target whose fix is NOT in makeOptions - see ' +
+    'AUTHNULL_FIX_SHAPE',
 }
 
 
-// NOT FIXED YET. These carry the defect: with an explicit apikey AND
-// `auth: null`, the credential still goes out. They are listed rather than
-// quietly omitted, and the suite below fails if one of them ever gains the
-// fix without moving out of this list.
+// NOT FIXED YET. A target belongs here when it carries the defect: with an
+// explicit apikey AND `auth: null`, the credential still goes out. Empty
+// today - every expressible target has the fix - and kept because the suite
+// below needs somewhere honest to put the next regression, and because an
+// empty list is a claim the guard can check rather than a comment nobody
+// re-reads.
 const AUTHNULL_OUTSTANDING: Record<string, string> = {
-  clojure: 'merges and validates without capturing suppliedness',
-  elixir: 'merges and validates without capturing suppliedness',
-  ocaml: 'merges and validates without capturing suppliedness',
-  scala: 'merges and validates without capturing suppliedness',
-  zig: 'merges and validates without capturing suppliedness',
-  lean: 'TWO defects: makeOptions does not capture suppliedness, AND ' +
-    'prepareAuth never reads options.auth at all - it branches only on an ' +
-    'empty apikey, so a null auth has no effect even if it survives',
 }
 
 
@@ -1841,8 +1853,11 @@ const AUTHNULL_NOT_APPLICABLE = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider
 describe('auth null coverage is honest', () => {
 
   // The marker every implementation uses for the captured flag, in each
-  // language's casing.
-  const MARKER = /authsuppressed|auth_suppressed/i
+  // language's casing - INCLUDING kebab-case, which is not a stylistic
+  // afterthought: clojure spells it `auth-suppressed` because that is what
+  // Clojure names look like, and a marker that only knew camel and snake read
+  // a correctly fixed clojure template as unfixed.
+  const MARKER = /auth[-_]?suppressed/i
 
   const TM = Path.resolve(PKG, 'project', '.sdk', 'tm')
 
@@ -1852,18 +1867,66 @@ describe('auth null coverage is honest', () => {
       .sort()
   }
 
+  // The DEFAULT fix shape: capture suppliedness BEFORE validate, restore the
+  // null AFTER. So the marker has to appear on BOTH SIDES of a validate
+  // mention, not merely somewhere in the file - the identifier alone would
+  // accept a file that captures suppliedness and never restores it, which
+  // passes an identifier check while still leaking the credential.
+  //
+  // Anchoring that on `validate(` - the name with its opening paren - was a
+  // C-family assumption, and it silently misread two ports whose fix was
+  // right there in the file: clojure writes `(vs/validate merged optspec)`
+  // and ocaml `validate merged optspec`. Neither puts a paren after the name,
+  // so neither had a "call site" to bracket and both scanned as unfixed.
+  //
+  // Anchor on the bare IDENTIFIER between the FIRST and LAST marker instead.
+  // That is spelling-independent, and it drops the leading `merge/validate/
+  // init are unchanged` comments the paren rule was working around for free:
+  // those sit before the first marker, and any trailing mention after the
+  // last, so neither can stand in for the real call.
+  function bracketsValidate(src: string): boolean {
+    const marks = [...src.matchAll(new RegExp(MARKER.source, 'gi'))]
+      .map((m) => m.index ?? -1)
+      .filter((i) => 0 <= i)
+
+    if (marks.length < 2) {
+      return false
+    }
+
+    const first = marks[0]
+    const last = marks[marks.length - 1]
+
+    return [...src.matchAll(/\bvalidate\b/gi)]
+      .some((m) => first < (m.index ?? -1) && (m.index ?? -1) < last)
+  }
+
+
+  // Targets whose fix is a different shape, and what proves it instead.
+  //
+  // lean is the only one, and it is not a spelling difference: its defect was
+  // not in makeOptions at all. lean's makeOptions has no optspec and never
+  // calls validate, so no `auth` default can fire and there is nothing to
+  // capture around. The leak was in prepareAuth, which branched only on an
+  // empty apikey and never read options.auth, so a null auth had no effect
+  // whatever survived the merge. The fix reads the RAW stored slot -
+  // getpropRaw, the only reader that tells a stored null from an absent key,
+  // absence being the ordinary case here precisely because there is no
+  // optspec - and suppresses the header on it. bracketsValidate cannot see
+  // any of that, and loosening it until it could would blind it everywhere
+  // else.
+  const AUTHNULL_FIX_SHAPE: Record<string, (src: string) => boolean> = {
+    lean: (src) => /getpropRaw\s+options\s+"auth"/.test(src)
+      && /authRaw\s*==\s*\.null/.test(src)
+      && /dp\s+headers\s+"authorization"/.test(src),
+  }
+
+
   // Whole-tree scan. cpp keeps this logic in utility/pipeline.hpp and lean in
   // SdkUtility.lean, so anything narrower than "every file" reintroduces the
   // blind spot that made the first audit wrong.
-  //
-  // The marker must appear on BOTH SIDES of the validate call, not merely
-  // somewhere in the file. The fix is capture-before / restore-after, and
-  // presence of the identifier alone would accept a file that captures
-  // suppliedness and never restores it - or one where the only surviving
-  // mention is a comment. That shape passes an identifier check while leaking
-  // the credential, which is exactly what this list exists to prevent for the
-  // targets that have no lane.
   function carriesFix(target: string): boolean {
+    const shape = AUTHNULL_FIX_SHAPE[target] || bracketsValidate
+
     return listFiles(Path.join(TM, target), '')
       .some((f) => {
         let src = ''
@@ -1874,15 +1937,7 @@ describe('auth null coverage is honest', () => {
           return false
         }
 
-        // Every validate CALL site, not the first mention of the word: the
-        // files open with comments like "so merge/validate/init are
-        // unchanged", which sit before the capture and would make an
-        // otherwise-correct file look wrong. It is enough that SOME call has
-        // the marker on both sides.
-        const calls = [...src.matchAll(/\bvalidate\s*\(/gi)].map((m) => m.index ?? -1)
-        return calls.some((at) => 0 <= at
-          && MARKER.test(src.slice(0, at))
-          && MARKER.test(src.slice(at)))
+        return shape(src)
       })
   }
 
@@ -1947,6 +2002,19 @@ describe('auth null coverage is honest', () => {
     deepStrictEqual(stale, [],
       'these targets have a lane AND an AUTHNULL_UNCOVERED entry - drop the ' +
       'entry, the gap it describes is closed')
+  })
+
+
+  // A custom shape is a hole punched in the default check, so it must name a
+  // real target. A stale key - a target renamed or removed - is a hole that
+  // guards nothing while reading as though it does.
+  test('every custom fix shape names a real target', () => {
+    const targets = new Set(allTargets())
+    const stale = Object.keys(AUTHNULL_FIX_SHAPE).filter((t) => !targets.has(t))
+
+    deepStrictEqual(stale, [],
+      'these targets have a custom auth-null fix shape but no longer exist ' +
+      'in tm/ - drop the entry rather than leave a check that matches nothing')
   })
 
 

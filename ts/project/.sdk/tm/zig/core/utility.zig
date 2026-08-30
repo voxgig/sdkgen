@@ -318,7 +318,25 @@ pub fn make_options_util(ctx: *Context) Value {
         }
     }
 
+    // `auth: null` is the documented way to suppress auth outright, and
+    // prepare_auth honours it before it ever reads the apikey. It cannot
+    // survive validate: a stored null reads as "no value", so the optspec
+    // `auth` default fires and the suppression becomes "use the default auth"
+    // - transmitting the credential the caller withheld. Withhold the key for
+    // validate, then put the null back. Same fix as ts/js/go make_options.
+    //
+    // Value has no separate undefined variant (is_noval IS `== .null`), so
+    // getp cannot tell an absent key from a stored null. The raw MapRef.get
+    // optional can: a null OPTIONAL is absent, a `.null` payload is a stored
+    // JSON null.
+    const auth_suppressed = switch (options) {
+        .object => |m| if (m.get("auth")) |a| a == .null else false,
+        else => false,
+    };
+
     var opts = h.clone(options);
+
+    if (auth_suppressed) h.del_prop(opts, h.vstr("auth"));
 
     // Feature add-order. options.feature may be an ordered list of
     // { name, active, ...opts } entries (the list position IS the order in
@@ -395,6 +413,11 @@ pub fn make_options_util(ctx: *Context) Value {
     if (vres) |vr| {
         if (vr.err == null and vr.out == .object) opts = vr.out;
     }
+
+    // Restore the suppression the optspec default would otherwise erase. setp
+    // does a direct map put, so the explicit null is STORED, not treated as a
+    // delete.
+    if (auth_suppressed) h.setp(opts, "auth", h.vnull());
 
     // Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
     // Every placeholder must resolve to a non-empty value: from options.server

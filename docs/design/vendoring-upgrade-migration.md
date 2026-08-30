@@ -523,23 +523,23 @@ flow a non-applicable feature's dependency into a target's manifest.
 
 ### Still outstanding
 
-- **Phase 0 upstream filings.** The three omni patches are captured as
-  marked `PATCH` blocks and pinned by a guard test, but the upstream
-  issues/PRs (omni's three bugs plus the compat shim, sekreto's
-  browser-safety split) are not filed. struct's go-port drift is now
+- **Phase 0 upstream filings — DONE.** omni's three runner fixes landed
+  in omni#54 and sekreto's `checkaddr` and lazy-builtin fixes in
+  sekreto#13 and #14, so those are no longer local patches. What remained
+  is now filed: **omni#56** (structprovider hides the client members
+  corpus subjects reach through `ctx.client`), **omni#57** (port the three
+  runner fixes to the other 22 ports), **sekreto#16** (port `checkaddr`
+  and the lazy loading to the other 9 ports). struct's go-port drift is
   RESOLVED — see below.
 - **Corpus entries pinning the null semantics**, which belong in the
   corpus create-sdkgen owns, plus upstream 0.3.2's new sections. Now
   demonstrated to be a PER-TARGET defect, not a ts one — see below.
-- **sekreto's `checkaddr` rejects IPv6 loopback.** `http://[::1]:8200`
-  parses to host `'['`, so the `'::1'` and `'[::1]'` entries in its own
-  allowlist are unreachable and a legitimate local vault is refused. Found
-  by review on this PR; vendored verbatim, so it goes on the same sekreto
-  issue as the browser-safety split rather than being patched here.
-- **`jsonstr`'s cycle guard has a DAG false positive**: `seen` is added to
-  but never removed, so the same object appearing twice as siblings prints
-  `[Circular]`. Only affects failure-message rendering. Fix it when
-  upstreaming rather than diverging further here.
+- ~~**sekreto's `checkaddr` rejects IPv6 loopback.**~~ Fixed upstream in
+  sekreto#13 and resynced. Porting it to sekreto's other nine ports is
+  sekreto#16.
+- ~~**`jsonstr`'s cycle guard has a DAG false positive.**~~ Fixed upstream
+  in omni#54 (the guard now tracks ancestors and deletes on the way out,
+  so a DAG renders in full). Porting it is omni#57.
 - The other 21 language targets, which the rollout lists in
   `parity.test.ts` (`OMNI_RUNNER`, `SECRETS`) and `featuremodel.test.ts`
   (`GATED`) now gate explicitly rather than silently.
@@ -615,17 +615,37 @@ Two things follow for the other targets:
   validate is enough; on 0.0.10 the key must be DELETED before validate
   as well, or it throws before the restore can run.
 
-  **Rollout is PARTIAL, and the way it was first declared complete is the
-  lesson.** Fifteen targets now carry it: ts, js, go, c, cpp, csharp,
-  dart, java, kotlin, perl, php, py, rb, rust and swift.
+  **Every expressible target now carries it** — twenty-one of them: ts, js,
+  go, c, clojure, cpp, csharp, dart, elixir, java, kotlin, lean, ocaml,
+  perl, php, py, rb, rust, scala, swift and zig. Only lua cannot express it
+  at all (below).
 
-  **Seven still do not**, and with an explicit apikey plus `auth: null`
-  they still transmit the credential: **clojure, elixir, lean, ocaml,
-  scala, zig** — and lua, which cannot express it at all (below). lean is
-  the worst of them and needs two fixes rather than one: its makeOptions
-  does not capture suppliedness AND its `prepareAuth` never reads
-  `options.auth` at all, branching only on an empty apikey, so a null auth
-  has no effect even if it survives.
+  **Read the verification tier before you trust that list**, because it is
+  three tiers, not one:
+
+  | tier | targets | what backs it |
+  |---|---|---|
+  | executed probe | py, rb, perl, php, java, c, cpp, rust, go, js, ts | a lane that generates an SDK, mocks the transport and asserts on the header |
+  | compiled only | csharp, dart, kotlin, swift | the generated SDK builds; the suppression itself is never exercised |
+  | **read by eye** | **clojure, elixir, lean, ocaml, scala, zig** | **nothing — never compiled, never run** |
+
+  The six in the bottom tier were written against toolchains that were not
+  available: no clojure, elixir, lean, ocaml, scala or zig compiler existed
+  where the change was made. They are held only by the structural guard in
+  `generatedcompile.test.ts`, and a structural guard cannot see a type
+  error, a scoping mistake or a mis-ordered statement. Treat them as
+  plausible, not proven. Anyone with one of those toolchains should build
+  that target FIRST and add a lane second.
+
+  **The fix is not always in makeOptions — lean's is not.** lean's
+  `makeOptions` runs no `validate` and its defaults carry no `auth` key, so
+  no optspec default can fire and there is nothing to capture around. The
+  leak was entirely in `prepareAuth`, which branched only on an empty
+  apikey and never read `options.auth`. Its fix therefore reads the raw
+  stored slot (`getpropRaw`, the only reader that tells a stored null from
+  an absent key) and suppresses the header on that — and, unlike every
+  other port, ABSENCE must stay the ordinary case there, precisely because
+  no optspec guarantees the key is present.
 
   The first audit behind this rollout missed all seven, because it looked
   for files named like `makeOptions` — and cpp keeps that logic in
@@ -651,15 +671,27 @@ Two things follow for the other targets:
   same sample error as the filename audit: thirteen targets were checked,
   not twenty-six.
 
-  **lean is the counterexample.** Its `prepareAuth` never reads
-  `options.auth` at all — it branches on an empty apikey and otherwise
-  reads `auth.prefix` — so restoring the null in makeOptions changes
-  nothing there. lean needs two fixes.
+  **lean is the counterexample.** Its `prepareAuth` never read
+  `options.auth` at all — it branched on an empty apikey and otherwise read
+  `auth.prefix` — so restoring the null in makeOptions would have changed
+  nothing there. lean's fix is in `prepareAuth` alone, and its makeOptions
+  needed no change at all.
 
   So for each target, check BOTH ends, and pin the property where it is
   actually observable: **assert on the authorization header a mocked
   transport receives**, not on the options map. An options-level assertion
   passes for a lean-shaped port that never consults the value.
+
+  **The structural guard had the same C-family blind spot, in miniature.**
+  It anchored on `validate(` — the name with an opening paren — and so read
+  two correctly fixed ports as unfixed: clojure writes `(vs/validate merged
+  optspec)` and ocaml `validate merged optspec`, and neither puts a paren
+  after the name. It also spelled the marker `authSuppressed|auth_suppressed`,
+  missing clojure's idiomatic `auth-suppressed`. It now anchors on the bare
+  identifier between the first and last marker, which is
+  spelling-independent, and lean — whose fix is a different shape entirely —
+  has an explicit entry in `AUTHNULL_FIX_SHAPE` rather than a loosened rule
+  that would blind the check everywhere else.
 
   Guards live in `generatedcompile.test.ts` as a table of per-target
   lanes, one row per target, each running a probe inside a freshly
