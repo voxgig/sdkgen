@@ -14,17 +14,22 @@
 //   go     0.1.3    'ALT'                         false    returns the default
 //   py     —        'ALT'                         false    returns the default
 //   perl   —        'ALT'                         false    returns the default
+//   js     0.3.2    'ALT'                         false    returns the default
 //   rb     —        null                          true     returns the default
 //   php    —        null                          true     THROWS
-//   js     0.0.10   null                          true     THROWS
 //
-// Three distinct behaviours across six ports - and `ts` (0.3.2) and `js`
-// (0.0.10), the two targets every other language is held in parity WITH, are
-// in different classes. That is not a subtle divergence; it is the direct
-// cause of the two auth-null failure modes catalogued in the migration guide.
-// Where validate returns the default, the suppression silently becomes "use
-// the default auth" and the withheld credential goes out (fail-open). Where it
-// throws, construction dies instead (fail-closed).
+// Still three behaviours, now across six ports. js used to be the sixth row
+// of the bottom group, on struct 0.0.10, which put it and `ts` (0.3.2) - the
+// two targets every other language is held in parity WITH - in DIFFERENT
+// classes. Resyncing js's vendored struct to the same commit ts came from is
+// what moved it, and this test is what noticed: the row above was written
+// from the old measurement and failed the moment the file changed.
+//
+// The remaining split is not subtle; it is the direct cause of the two
+// auth-null failure modes catalogued in the migration guide. Where validate
+// returns the default, the suppression silently becomes "use the default
+// auth" and the withheld credential goes out (fail-open). Where it throws,
+// construction dies instead (fail-closed).
 //
 // WHY THE SHARED CORPUS CANNOT DO THIS
 //
@@ -52,10 +57,13 @@
 //
 // It is not pinned here because the table asks the map question, which py
 // gets right. It is pinned in create-sdkgen's `struct/nullsem.aon`, the
-// opt-in corpus section written alongside this file, which is where the fix
-// belongs: upstream first, then a resync of the vendored copy, then py opts
-// in. Hand-patching a file stamped `do not edit: resync from upstream` would
-// just hide it again.
+// opt-in corpus section written alongside this file.
+//
+// It needs no upstream work: upstream python at the commit js and ts are
+// vendored from already answers 'ALT' for the list case. So the remedy is a
+// RESYNC of the vendored copy, the same one-file move made for js here, and
+// then py opts in to nullsem. Hand-patching a file stamped `do not edit:
+// resync from upstream` would just hide it again.
 
 import { test, describe, before, after } from 'node:test'
 import { strictEqual } from 'node:assert'
@@ -200,9 +208,9 @@ catch (\\Throwable $e) { echo 'validate=throws' . PHP_EOL; }
   },
   {
     target: 'js',
-    stamp: '0.0.10',
+    stamp: '0.3.2',
     needs: 'node (always present - this suite runs on it)',
-    answers: { getprop: 'null', haskey: 'true', validate: 'throws' },
+    answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
       return run(process.execPath, ['-e', `
 const S = require(${JSON.stringify(Path.join(TM, 'js', 'src', 'utility', 'StructUtility.js'))})

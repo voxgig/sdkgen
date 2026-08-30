@@ -862,7 +862,7 @@ tm/js/src/utility/README.md 443e45445e95
 tm/js/src/utility/ResultBasicUtility.js 5cbbeb7567d8
 tm/js/src/utility/ResultBodyUtility.js 0a7226de89f0
 tm/js/src/utility/ResultHeadersUtility.js 152bcfc7ac7b
-tm/js/src/utility/StructUtility.js 2600d418f085
+tm/js/src/utility/StructUtility.js e81925183b1b
 tm/js/src/utility/TransformRequestUtility.js 98c45d5104fb
 tm/js/src/utility/TransformResponseUtility.js 36fb184e55c9
 tm/js/src/utility/Utility.js 63c0e87a03bb
