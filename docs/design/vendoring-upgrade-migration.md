@@ -586,9 +586,10 @@ Two things follow for the other targets:
   every exported signature from both copies and compare them
   mechanically; the table above took seconds to produce that way and
   nothing else surfaced `GetPath` at all.
-- **Check `auth: null` on every target you touch.** It is broken in
-  ELEVEN targets and fails two different ways, so neither fix stands in
-  for the other. go had the same credential leak ts did, independently
+- **Check `auth: null` on every target you touch.** When this was first
+  written the defect was live in eleven targets; twelve have since been
+  fixed and **six remain** (named below). It fails two different ways, so
+  neither fix stands in for the other. go had the same credential leak ts did, independently
   and already present before the resync: `validate` treats a stored null as "no value", the optspec's
   `auth` default fires, and the documented way to disable auth silently
   becomes "use default auth" — putting the withheld credential on the

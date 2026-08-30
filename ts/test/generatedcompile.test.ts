@@ -1122,9 +1122,14 @@ sys.path.insert(0, ".")
 from demo_sdk import DemoSDK
 
 def wire(opts):
-    seen = {"had": False, "val": None}
+    # \`called\` matters as much as \`had\`. If the suppressed path fails before
+    # the transport runs, \`had\` stays False - indistinguishable from a
+    # successful suppression - and the lane would pass on a broken SDK. The
+    # baseline cannot catch that, since it exercises different options.
+    seen = {"called": False, "had": False, "val": None}
 
     def fetcher(ctx, fullurl, fetchdef):
+        seen["called"] = True
         h = fetchdef.get("headers") or {}
         seen["had"] = "authorization" in h
         seen["val"] = h.get("authorization")
@@ -1146,6 +1151,9 @@ if not base["had"] or "OPTKEY01" != base["val"]:
     fail.append("baseline broken: an ordinary apikey was not sent: %r" % (base,))
 
 supp = wire({"apikey": "OPTKEY01", "auth": None})
+if not supp["called"]:
+    fail.append("the request never reached the transport, so nothing was proved "
+                "about suppression - the suppressed path failed earlier")
 if supp["had"]:
     fail.append("auth None did not suppress the credential - sent %r" % (supp["val"],))
 
@@ -1174,8 +1182,10 @@ sys.exit(1 if fail else 0)
 require_relative "Demo_sdk"
 
 def wire(opts)
-  seen = { had: false, val: nil }
+  # \`called\` matters as much as \`had\` - see authnull.py.
+  seen = { called: false, had: false, val: nil }
   fetcher = lambda do |_ctx, _fullurl, fetchdef|
+    seen[:called] = true
     h = fetchdef["headers"] || {}
     seen[:had] = h.key?("authorization")
     seen[:val] = h["authorization"]
@@ -1198,6 +1208,9 @@ unless base[:had] && "OPTKEY01" == base[:val]
 end
 
 supp = wire({ "apikey" => "OPTKEY01", "auth" => nil })
+unless supp[:called]
+  fail_msgs << "the request never reached the transport, so nothing was proved about suppression"
+end
 if supp[:had]
   fail_msgs << "auth nil did not suppress the credential - sent #{supp[:val].inspect}"
 end
@@ -1231,9 +1244,11 @@ use DemoSDK;
 
 sub wire {
   my ($opts) = @_;
-  my %seen = (had => 0, val => undef);
+  # \`called\` matters as much as \`had\` - see authnull.py.
+  my %seen = (called => 0, had => 0, val => undef);
   my %full = (%$opts, utility => { fetcher => sub {
     my (undef, undef, $fetchdef) = @_;
+    $seen{called} = 1;
     my $h = $fetchdef->{headers} || {};
     $seen{had} = exists $h->{authorization} ? 1 : 0;
     $seen{val} = $h->{authorization};
@@ -1251,6 +1266,8 @@ push @fail, "baseline broken: an ordinary apikey was not sent"
   unless $base->{had} && defined $base->{val} && 'OPTKEY01' eq $base->{val};
 
 my $supp = wire({ apikey => 'OPTKEY01', auth => undef });
+push @fail, "the request never reached the transport, so nothing was proved about suppression"
+  unless $supp->{called};
 push @fail, "auth undef did not suppress the credential - sent "
   . (defined $supp->{val} ? $supp->{val} : 'undef')
   if $supp->{had};
@@ -1283,8 +1300,10 @@ exit(@fail ? 1 : 0);
 require_once __DIR__ . '/demo_sdk.php';
 
 function wire(array $opts): array {
-  $seen = ['had' => false, 'val' => null];
+  // \`called\` matters as much as \`had\` - see authnull.py.
+  $seen = ['called' => false, 'had' => false, 'val' => null];
   $opts['utility'] = ['fetcher' => function ($ctx, $fullurl, $fetchdef) use (&$seen) {
+    $seen['called'] = true;
     $h = $fetchdef['headers'] ?? [];
     $seen['had'] = array_key_exists('authorization', $h);
     $seen['val'] = $h['authorization'] ?? null;
@@ -1303,6 +1322,9 @@ if (!$base['had'] || 'OPTKEY01' !== $base['val']) {
 }
 
 $supp = wire(['apikey' => 'OPTKEY01', 'auth' => null]);
+if (!$supp['called']) {
+  $fail[] = 'the request never reached the transport, so nothing was proved about suppression';
+}
 if ($supp['had']) {
   $fail[] = 'auth null did not suppress the credential - sent ' . var_export($supp['val'], true);
 }
@@ -1347,14 +1369,21 @@ public class AuthNullProbe {
 
   static String seen;
   static boolean had;
+  // \`called\` matters as much as \`had\`. If the suppressed path fails before the
+  // transport runs, \`had\` stays false - indistinguishable from a successful
+  // suppression - and this would pass on a broken SDK. The baseline cannot
+  // catch that, since it exercises different options.
+  static boolean called;
 
   @SuppressWarnings("unchecked")
   static void wire(Map<String, Object> opts) {
     seen = null;
     had = false;
+    called = false;
 
     Map<String, Object> full = new LinkedHashMap<>(opts);
     Utility.FetcherFn mock = (ctx, fullurl, fetchdef) -> {
+      called = true;
       Object h = fetchdef.get("headers");
       if (h instanceof Map) {
         had = ((Map<String, Object>) h).containsKey("authorization");
@@ -1391,6 +1420,10 @@ public class AuthNullProbe {
     supp.put("apikey", "OPTKEY01");
     supp.put("auth", null);
     wire(supp);
+    if (!called) {
+      fail.add("the request never reached the transport, so nothing was proved "
+        + "about suppression - the suppressed path failed earlier");
+    }
     if (had) {
       fail.add("auth null did not suppress the credential - sent " + seen);
     }
@@ -1438,6 +1471,7 @@ public class AuthNullProbe {
  * the wire either way. */
 #include "sdk.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -1448,9 +1482,15 @@ static void fail(const char* msg, const char* got) {
   fails++;
 }
 
-/* Build a client from opts, run the real prepare_auth, return the
- * authorization header it wrote (NULL when absent). */
-static const char* authheader(voxgig_value* sdkopts) {
+/* Build a client from opts, run the real prepare_auth, and report whether the
+ * authorization header is present plus what it holds.
+ *
+ * *ok is set false when prepare_auth ERRORED. That matters as much as the
+ * header: a suppressed path that fails before writing anything leaves no
+ * header, which is indistinguishable from a successful suppression, and this
+ * would pass on a broken SDK. The baseline cannot catch it, since it
+ * exercises different options. */
+static const char* authheader(voxgig_value* sdkopts, bool* ok, bool* present) {
   DemoSDK* client = test_sdk(v_undef(), sdkopts);
   Utility* utility = sdk_get_utility(client);
 
@@ -1465,21 +1505,39 @@ static const char* authheader(voxgig_value* sdkopts) {
 
   PNError* err = NULL;
   prepare_auth_util(ctx, &err);
+  if (ok) *ok = (NULL == err);
+
+  /* Presence separately from value: a present-but-EMPTY header is not
+   * suppression, and get_str alone cannot tell the two apart. */
+  if (present) {
+    *present = voxgig_is_map(ctx->spec->headers)
+      && NULL != voxgig_map_get(voxgig_as_map(ctx->spec->headers), "authorization");
+  }
 
   return get_str(ctx->spec->headers, "authorization");
 }
 
 int main(void) {
   voxgig_value* plain = cmap(1, "apikey", v_str("OPTKEY01"));
-  const char* base = authheader(plain);
-  if (NULL == base || 0 != strcmp(base, "OPTKEY01")) {
+  bool baseok = false;
+  bool basepresent = false;
+  const char* base = authheader(plain, &baseok, &basepresent);
+  if (!baseok) {
+    fail("baseline broken: prepare_auth errored", NULL);
+  }
+  if (!basepresent || NULL == base || 0 != strcmp(base, "OPTKEY01")) {
     fail("baseline broken: an ordinary apikey was not sent", base);
   }
 
   voxgig_value* supp = cmap(2, "apikey", v_str("OPTKEY01"), "auth", voxgig_new_null());
-  const char* got = authheader(supp);
-  if (NULL != got) {
-    fail("auth null did not suppress the credential", got);
+  bool suppok = false;
+  bool supppresent = false;
+  const char* got = authheader(supp, &suppok, &supppresent);
+  if (!suppok) {
+    fail("prepare_auth errored on the suppressed path, so nothing was proved", NULL);
+  }
+  if (supppresent) {
+    fail("auth null did not suppress the credential - header still present", got);
   }
 
   printf("auth-null probe: %s\\n", 0 == fails ? "ok" : "FAILED");
@@ -1541,9 +1599,23 @@ static void fail(const char* msg, const std::string& got) {
   fails++;
 }
 
-// Build a client from opts, run the real prepareAuth, return the authorization
-// header it wrote (empty when absent).
-static std::string authheader(const Value& sdkopts) {
+// Build a client from opts, run the real prepareAuth, and report BOTH whether
+// the authorization header is present and what it holds. Presence is returned
+// separately because a present-but-EMPTY header is not suppression - returning
+// only the string would make "" mean both "absent" and "sent empty", and the
+// second would read as a pass.
+struct AuthResult {
+  bool present = false;
+  std::string value;
+  // Set false when prepareAuth returned nothing, i.e. it failed. That matters
+  // as much as the header: a suppressed path that fails before writing leaves
+  // no header, which is indistinguishable from a successful suppression, and
+  // this would pass on a broken SDK. The baseline cannot catch it, since it
+  // exercises different options.
+  bool ok = false;
+};
+
+static AuthResult authheader(const Value& sdkopts) {
   auto client = std::make_shared<DemoSDK>(sdkopts);
   auto utility = client->getUtility();
 
@@ -1557,27 +1629,39 @@ static std::string authheader(const Value& sdkopts) {
   map_put(specmap, "step", Value(std::string("s")));
   ctx->spec = std::make_shared<Spec>(specmap);
 
-  utility->prepareAuth(ctx);
+  SpecPtr got = utility->prepareAuth(ctx);
 
   Value h = ctx->spec->headers;
-  Value a = map_contains(h, "authorization") ? mapget(h, "authorization") : Value();
-  return a.is_string() ? a.as_string() : std::string();
+  AuthResult out;
+  out.ok = (nullptr != got);
+  out.present = map_contains(h, "authorization");
+  if (out.present) {
+    Value a = mapget(h, "authorization");
+    out.value = a.is_string() ? a.as_string() : std::string();
+  }
+  return out;
 }
 
 int main() {
   Value plain = vmap();
   map_put(plain, "apikey", Value(std::string("OPTKEY01")));
-  std::string base = authheader(plain);
-  if ("OPTKEY01" != base) {
-    fail("baseline broken: an ordinary apikey was not sent", base);
+  AuthResult base = authheader(plain);
+  if (!base.ok) {
+    fail("baseline broken: prepareAuth failed", "");
+  }
+  if (!base.present || "OPTKEY01" != base.value) {
+    fail("baseline broken: an ordinary apikey was not sent", base.value);
   }
 
   Value supp = vmap();
   map_put(supp, "apikey", Value(std::string("OPTKEY01")));
   map_put(supp, "auth", Value(nullptr));
-  std::string got = authheader(supp);
-  if (!got.empty()) {
-    fail("auth null did not suppress the credential", got);
+  AuthResult got = authheader(supp);
+  if (!got.ok) {
+    fail("prepareAuth failed on the suppressed path, so nothing was proved", "");
+  }
+  if (got.present) {
+    fail("auth null did not suppress the credential - header still present", got.value);
   }
 
   std::printf("auth-null probe: %s\\n", 0 == fails ? "ok" : "FAILED");
@@ -1613,10 +1697,19 @@ use demo_sdk::core::helpers::{getp, ja, jo, json_thunk, to_map};
 use demo_sdk::utility::voxgigstruct as vs;
 use demo_sdk::{DemoEntity, DemoSDK, Value};
 
-fn wire(opts: Vec<(&str, Value)>) -> (bool, Value) {
+// Returns (header present, header value, transport was reached).
+//
+// The third matters as much as the first: if the suppressed path fails before
+// the transport runs, "no header" is indistinguishable from a successful
+// suppression, and this would pass on a broken SDK. The baseline cannot catch
+// that, since it exercises different options.
+fn wire(opts: Vec<(&str, Value)>) -> (bool, Value, bool) {
     let seen: Rc<RefCell<Value>> = Rc::new(RefCell::new(Value::Noval));
+    let called: Rc<RefCell<bool>> = Rc::new(RefCell::new(false));
     let s = seen.clone();
+    let c = called.clone();
     let mock = Value::func(move |_inj, args, _r, _st| {
+        *c.borrow_mut() = true;
         let init = vs::get_elem(args, &Value::Num(1.0), Value::Noval);
         *s.borrow_mut() = getp(&init, "headers");
         jo(vec![
@@ -1638,21 +1731,26 @@ fn wire(opts: Vec<(&str, Value)>) -> (bool, Value) {
         Value::Map(m) => m.borrow().get("authorization").cloned(),
         _ => None,
     };
-    (auth.is_some(), auth.unwrap_or(Value::Noval))
+    let was_called = *called.borrow();
+    (auth.is_some(), auth.unwrap_or(Value::Noval), was_called)
 }
 
 #[test]
 fn authnull_probe() {
     // Baseline: an ordinary apikey must be sent, else this proves nothing.
-    let (had, val) = wire(vec![("apikey", Value::str("OPTKEY01"))]);
+    let (had, val, called) = wire(vec![("apikey", Value::str("OPTKEY01"))]);
+    assert!(called, "baseline broken: the request never reached the transport");
     assert!(had, "baseline broken: an ordinary apikey was not sent");
     assert_eq!(val, Value::str("OPTKEY01"));
 
     // The suppression, against an explicit credential.
-    let (had2, val2) = wire(vec![
+    let (had2, val2, called2) = wire(vec![
         ("apikey", Value::str("OPTKEY01")),
         ("auth", Value::Null),
     ]);
+    assert!(called2,
+        "the request never reached the transport, so nothing was proved about \\
+         suppression - the suppressed path failed earlier");
     assert!(!had2, "auth null did not suppress the credential - sent {:?}", val2);
 
     // And it survives validation rather than becoming the optspec default.
