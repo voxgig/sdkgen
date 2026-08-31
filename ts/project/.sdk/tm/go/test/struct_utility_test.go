@@ -172,10 +172,29 @@ func TestStructUtility(t *testing.T) {
 	t.Run("minor-stringify", func(t *testing.T) {
 		structRunSet(t, minorSpec["stringify"], func(v any) any {
 			m := v.(map[string]any)
-			val := m["val"]
+			val, hasVal := m["val"]
 
 			if "__NULL__" == val {
 				val = "null"
+			}
+
+			// Go has no `undefined`. Upstream Stringify renders nil as
+			// "null" ON PURPOSE - in Go nil IS JSON null, and
+			// JSON.stringify(null) is "null" - so the corpus's two
+			// separate cases,
+			//
+			//   {"val": null} -> "null"      and      {} -> ""
+			//
+			// both arrive here as a nil val and cannot be told apart by
+			// VALUE. They can be told apart by PRESENCE: the second case
+			// is the JavaScript stringify(undefined), and an absent key
+			// is the only thing Go has that means undefined.
+			//
+			// The runner is the right place for this: it is the seam
+			// between a language-neutral corpus and one language's type
+			// system, and it already bridges the same gap for pathify.
+			if !hasVal {
+				return ""
 			}
 
 			max, hasMax := m["max"]
@@ -590,9 +609,21 @@ func TestStructUtility(t *testing.T) {
 			} else {
 				ks = *k
 			}
+
+			// The ROOT node has no parent. The reference passes
+			// `undefined` there and logs `p=`; Go has only nil, which
+			// Stringify renders as "null" (its documented choice - see
+			// minor-stringify above). Rendering the absent parent as ""
+			// keeps the log identical to the reference's, which is what
+			// the corpus records.
+			ps := ""
+			if nil != p {
+				ps = voxgigstruct.Stringify(p)
+			}
+
 			entry := "k=" + voxgigstruct.Stringify(ks) +
 				", v=" + voxgigstruct.Stringify(v) +
-				", p=" + voxgigstruct.Stringify(p) +
+				", p=" + ps +
 				", t=" + voxgigstruct.Pathify(t)
 			return entry
 		}

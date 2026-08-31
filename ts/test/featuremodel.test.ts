@@ -107,10 +107,13 @@ describe('feature-model', () => {
     cost: 'wrap',
     audit: 'none', clienttrack: 'none', debug: 'none', idempotency: 'none',
     log: 'none', metrics: 'none', paging: 'none', rbac: 'none',
-    // Hook-only: it writes the resolved credential into the live options
-    // where the synchronous prepareAuth already reads it, and never touches
-    // the transport.
-    secrets: 'none',
+    // Both seams, like `cost`. The PreSpec hook writes the resolved
+    // credential into the live options where the synchronous prepareAuth
+    // reads it; the transport wrap exists for the access-token exchange,
+    // where a SPENT token is only ever discovered from a response. The
+    // wrap installs only when `exchange.active`, but the role is declared
+    // at the feature's widest, not at one configuration's.
+    secrets: 'wrap',
     streaming: 'none', telemetry: 'none',
   }
 

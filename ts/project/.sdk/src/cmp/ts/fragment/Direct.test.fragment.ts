@@ -8,6 +8,7 @@ import { ProjectNameSDK } from '../../..'
 
 import {
   envOverride,
+  liveClientOptions,
   liveDelay,
   loadEnvLocal,
   maybeSkipControl,

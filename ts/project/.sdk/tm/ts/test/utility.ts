@@ -90,6 +90,7 @@ type TestControl = {
       unit?: { direct?: any[], entityOp?: any[] }
     }
     live?: { delayMs?: number }
+    client?: { options?: Record<string, any> }
     [k: string]: any
   }
   [k: string]: any
@@ -164,6 +165,55 @@ function skipIfMissingIds(t: any, setup: any, requiredKeys: string[]): boolean {
     return true
   }
   return false
+}
+
+
+// Extra SDK options every LIVE client is constructed with, from
+// sdk-test-control.json `test.client.options`.
+//
+// The generated live client knows two things: the base URL (from the spec)
+// and the credential (from the environment). Everything else about how a
+// particular API wants to be talked to — which features to switch on, and
+// with what settings — is a property of THAT API, known to the project and
+// to nothing in the toolchain.
+//
+// The concrete case: an API that issues short-lived access tokens needs the
+// `secrets` feature's exchange turned on and pointed at its token endpoint,
+// or the live suite gets a handful of calls in and then fails 401 with
+// nothing explaining why. There was no seam for that, so the suite could
+// not be run at all.
+//
+// A committed FILE rather than an environment variable, because it is
+// configuration, not a secret: it belongs in the repo next to the API it
+// describes, where it can be read and reviewed. Secrets still come from the
+// environment (the providers this block names read them).
+//
+// Merged UNDER the generated fields, so the suite's own base/apikey/server
+// values win — this adds to the live client, it does not redirect it.
+//
+// That contract is enforced HERE rather than left to each merge site: the
+// generated object only names a field when the model calls for one, so a
+// `base` in this block would face no competing value and would silently
+// redirect the whole suite — credential included — to another host. The
+// reserved fields are stripped once, where the block is read, so every
+// caller gets the same guarantee whether or not it happens to emit them.
+const LIVE_RESERVED = ['base', 'prefix', 'suffix', 'server', 'apikey', 'secret']
+
+function liveClientOptions(): Record<string, any> {
+  const opts = loadTestControl()?.test?.client?.options
+
+  if (null == opts || 'object' !== typeof opts) {
+    return {}
+  }
+
+  const out: Record<string, any> = {}
+  for (const key of Object.keys(opts)) {
+    if (!LIVE_RESERVED.includes(key)) {
+      out[key] = (opts as any)[key]
+    }
+  }
+
+  return out
 }
 
 
@@ -269,6 +319,7 @@ export {
   isControlSkipped,
   maybeSkipControl,
   skipIfMissingIds,
+  liveClientOptions,
   liveDelayMs,
   liveDelay,
   loadEnvLocal,

@@ -156,6 +156,52 @@ func isControlSkipped(kind, name, mode string) (bool, string) {
 }
 
 // liveDelayMs returns the configured per-test live delay in ms; default 500.
+// liveClientOptions returns the extra SDK options every LIVE client is
+// constructed with, from sdk-test-control.json `test.client.options`.
+//
+// The generated live client knows two things: the base URL (from the spec)
+// and the credential (from the environment). Everything else about how a
+// particular API wants to be talked to - which features to switch on, and
+// with what settings - is a property of THAT API, known to the project and
+// to nothing in the toolchain.
+//
+// Merged UNDER the generated fields, so the suite's own base/apikey/server
+// values win: this ADDS to the live client, it does not redirect it.
+//
+// That contract is enforced HERE rather than left to each merge site: the
+// generated map only names a field when the model calls for one, so a
+// "base" in this block would face no competing value and would silently
+// redirect the whole suite - credential included - to another host.
+var liveReserved = map[string]bool{
+	"base": true, "prefix": true, "suffix": true,
+	"server": true, "apikey": true, "secret": true,
+}
+
+func liveClientOptions() map[string]any {
+	ctrl := loadTestControl()
+	test, _ := ctrl["test"].(map[string]any)
+	if test == nil {
+		return map[string]any{}
+	}
+	client, _ := test["client"].(map[string]any)
+	if client == nil {
+		return map[string]any{}
+	}
+	opts, _ := client["options"].(map[string]any)
+	if opts == nil {
+		return map[string]any{}
+	}
+
+	out := map[string]any{}
+	for k, v := range opts {
+		if !liveReserved[k] {
+			out[k] = v
+		}
+	}
+	return out
+}
+
+
 func liveDelayMs() int {
 	ctrl := loadTestControl()
 	test, _ := ctrl["test"].(map[string]any)

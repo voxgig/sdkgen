@@ -88,6 +88,24 @@ function serverVariables(model: any): ServerVar[] {
 }
 
 
+// The environment variable a generated LIVE test reads one server variable
+// from: `<PROJ>_SERVER_<NAME>`, e.g. ELEMENTDEMO_SERVER_ACCOUNT_ID.
+//
+// A live client CANNOT BE CONSTRUCTED without every required server
+// variable — makeOptions raises rather than issue requests to a URL with a
+// literal `{account_id}` in it — so an SDK whose spec templates its server
+// URL had no runnable live suite at all until the generated tests could be
+// told the values. The apikey has had `<PROJ>_APIKEY` since the beginning;
+// this is the same idea for the other half of "where do I point".
+//
+// One variable per NAME rather than one JSON blob: the names come from the
+// spec, they are few, and a shell export per name is what a CI secret store
+// and a .env file both hold naturally.
+function serverVarEnv(projenvname: string, name: string): string {
+  return projenvname + '_SERVER_' + String(name).toUpperCase()
+}
+
+
 // Does the model's server URL contain any {name} placeholders at all?
 function hasServerVariables(model: any): boolean {
   const info = model?.main?.kit?.info || model?.main?.KIT?.info
@@ -100,6 +118,7 @@ function hasServerVariables(model: any): boolean {
 export {
   serverVariables,
   hasServerVariables,
+  serverVarEnv,
 }
 
 export type { ServerVar }

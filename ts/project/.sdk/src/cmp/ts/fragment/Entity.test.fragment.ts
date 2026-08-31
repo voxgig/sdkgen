@@ -11,6 +11,7 @@ import { ProjectNameSDK, BaseFeature, stdutil } from '../../..'
 
 import {
   envOverride,
+  liveClientOptions,
   liveDelay,
   loadEnvLocal,
   makeCtrl,
