@@ -880,6 +880,18 @@ main: kit: target: js: phase: feature: active: false
   // Same for `test.client.options`: it is the project's own place to say how
   // its API wants to be talked to, and a target that ignores it silently drops
   // whatever the project put there.
+  // Every target names these differently — PlanetEntity.test.ts,
+  // test_planet_entity.py, planet_entity_test.go, planet_entity.t — so match on
+  // the two things they all share: an entity/direct basename, and a test-suite
+  // extension or path.
+  function testFiles(out: Record<string, string>, target: string): [string, string][] {
+    return filesFor(out, target)
+      .filter(([n]) => /(entity|direct)/i.test(n) &&
+        (/test/i.test(n) || /\.t$/.test(n)) &&
+        !/\.(json|md|txt|ya?ml)$/i.test(n))
+  }
+
+
   test('every live-capable target wires server variables and test.client.options',
     async () => {
       const LIVE_TARGETS = [
@@ -895,18 +907,27 @@ main: kit: target: js: phase: feature: active: false
         ' variables: { tenant: { default: %27%27 }, region: { default: %27eu%27 } } } ]'
           .replace(/%27/g, "'")
 
-      const out = await generate(LIVE_TARGETS, undefined, servers)
+      // A HOSTILE spec, run through the same assertions. Server-variable names
+      // are spec-derived and are not identifiers: the URL grammar admits a
+      // leading digit, and a declared-but-unreferenced name is unconstrained.
+      // A default is likewise arbitrary text, and `$region` / `#{region}` are
+      // interpolation in Dart, Perl, PHP and Ruby — the emitters have to write
+      // target-language string literals, not JSON.
+      const hostile =
+        'main: kit: info: servers: [ { url: "https://{2fa}.example.com/{region}",' +
+        ' variables: { "2fa": { default: "" },' +
+        ' region: { default: "$eu#{x}" },' +
+        ' "edge-zone": { default: "z" } } } ]'
 
       const gaps: string[] = []
+
+      // The plain spec proves the wiring exists; the hostile one proves it is
+      // written safely. Both must hold for every target.
+      const out = await generate(LIVE_TARGETS, undefined, servers)
+      const hostileOut = await generate(LIVE_TARGETS, undefined, hostile)
+
       for (const target of LIVE_TARGETS) {
-        // Every target names these differently — PlanetEntity.test.ts,
-        // test_planet_entity.py, planet_entity_test.go, planet_entity.t — so
-        // match on the two things they all share: an entity/direct basename,
-        // and a test-suite extension or path.
-        const tests = filesFor(out, target)
-          .filter(([n]) => /(entity|direct)/i.test(n) &&
-            (/test/i.test(n) || /\.t$/.test(n)) &&
-            !/\.(json|md|txt|ya?ml)$/i.test(n))
+        const tests = testFiles(out, target)
         if (0 === tests.length) {
           gaps.push(`${target}: generated no entity/direct test files`)
           continue
@@ -936,6 +957,37 @@ main: kit: target: js: phase: feature: active: false
           // credential: 'NONE' was sent verbatim to live APIs.
           if (/["']NONE["']/.test(src)) {
             gaps.push(`${target}:${name} still seeds a 'NONE' credential`)
+          }
+        }
+      }
+
+      // Hostile spec: nothing may reach the output as a bare identifier or as
+      // a JSON literal that the target language would reinterpret.
+      for (const target of LIVE_TARGETS) {
+        for (const [name, content] of testFiles(hostileOut, target)) {
+          const src = String(content)
+
+          // A bare `2fa:` / `2fa =` key, or a bare `edge-zone` one, is a
+          // syntax error in every target that does not quote its keys.
+          for (const bad of [/(^|[\s{[(,])2fa\s*[:=]/m, /(^|[\s{[(,])edge-zone\s*[:=]/m]) {
+            if (bad.test(src)) {
+              gaps.push(`${target}:${name} emits an unquoted server-variable key`)
+            }
+          }
+
+          // `env.PROJ_SERVER_EDGE-ZONE` is a subtraction, not a lookup.
+          if (/env\.[A-Z0-9_]*SERVER[A-Z0-9_]*-/.test(src)) {
+            gaps.push(`${target}:${name} reads a server env var by dotted access`)
+          }
+
+          // The default must survive as text. Dart/Perl/PHP interpolate `$eu`
+          // and Ruby interpolates `#{x}` inside a double-quoted literal, so a
+          // JSON-stringified default is wrong for those targets specifically.
+          if (['dart', 'perl', 'php'].includes(target) && /"\$eu/.test(src)) {
+            gaps.push(`${target}:${name} emits an interpolating default literal`)
+          }
+          if ('rb' === target && /[^\\]#\{x\}/.test(src)) {
+            gaps.push(`${target}:${name} emits an interpolating default literal`)
           }
         }
       }

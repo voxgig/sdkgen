@@ -19,7 +19,8 @@ import {
   isAuthActive,
   serverVarEnv,
   serverVariables,
-  jsProp, envName, envToken
+  jsProp, envName, envToken,
+  jsKey
 } from '@voxgig/sdkgen'
 
 
@@ -54,13 +55,19 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // impossible to construct without values: makeOptions raises rather than
   // request a URL with a literal `{account_id}` in it. Taken from the
   // environment, the same way the apikey is.
+  //
+  // Keys are quoted and the env read is bracketed via jsKey/jsProp: a server
+  // variable name is spec-derived and need not be a JS identifier — the URL
+  // grammar admits a leading digit ({2fa}), and a declared-but-unreferenced
+  // variable ({edge-zone}) is not constrained at all. Bare `name:` and
+  // `env.PROJ_SERVER_EDGE-ZONE` are both syntax errors.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
     .map((v: any) => `\n    '${serverVarEnv(PROJECTNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
       server: {${svars
       .map((v: any) => `
-        ${v.name}: env.${serverVarEnv(PROJECTNAME, v.name)},`).join('')}
+        ${jsKey(v.name)}: ${jsProp('env', serverVarEnv(PROJECTNAME, v.name))},`).join('')}
       },`
 
   const opnames = Object.keys(entity.op || {})

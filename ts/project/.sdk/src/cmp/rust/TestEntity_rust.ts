@@ -317,7 +317,15 @@ ${allSteps.length > 0 ? '    let client = setup.client.clone();\n' : ''}`)
             &ja(vec![
                 live_client_options(),
                 jo(vec![${apikeyLiveField}${serverLiveField}]),
-                extra,
+                // A NON-NODE later entry REPLACES the accumulated map in
+                // vs::merge, and the normal call passes Value::Noval - so a
+                // a bare extra discarded live_client_options() and the
+                // apikey/server map above it, and the live client was
+                // constructed with nothing.
+                match extra {
+                    Value::Map(m) => Value::Map(m),
+                    _ => Value::empty_map(),
+                },
             ]),
             None,
         );

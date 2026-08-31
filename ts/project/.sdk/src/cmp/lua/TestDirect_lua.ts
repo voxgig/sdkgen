@@ -16,6 +16,8 @@ import {
   serverVariables
 } from '@voxgig/sdkgen'
 
+import { formatLuaValue } from './utility_lua'
+
 
 function normalizePathParams(
   parts: string[],
@@ -78,11 +80,11 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n    ["${serverVarEnv(PROJECTNAME, v.name)}"] = ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n    ["${serverVarEnv(PROJECTNAME, v.name)}"] = ${formatLuaValue(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
       server = {${svars
       .map((v: any) => `
-        ${v.name} = env["${serverVarEnv(PROJECTNAME, v.name)}"],`).join('')}
+        ["${v.name}"] = env["${serverVarEnv(PROJECTNAME, v.name)}"],`).join('')}
       },`
 
   const opnames = Object.keys(entity.op || {})

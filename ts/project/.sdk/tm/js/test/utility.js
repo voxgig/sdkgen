@@ -136,6 +136,18 @@ function liveDelayMs() {
 }
 
 
+
+// afterEach hook helper for live pacing. Generated tests register this via
+// `afterEach(liveDelay(<envVar>))`; it sleeps `liveDelayMs()` only when the
+// SDK's *_TEST_LIVE env var is set.
+function liveDelay(liveEnvVar) {
+  return async () => {
+    if ('TRUE' === process.env[liveEnvVar]) {
+      await new Promise(r => setTimeout(r, liveDelayMs()))
+    }
+  }
+}
+
 module.exports = {
   makeStepData,
   makeMatch,
@@ -145,5 +157,6 @@ module.exports = {
   envOverride,
   loadTestControl,
   liveClientOptions,
-  liveDelayMs
+  liveDelayMs,
+  liveDelay
 }

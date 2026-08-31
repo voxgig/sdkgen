@@ -30,8 +30,7 @@ import {
 
 
 import {
-  projectPath
-} from './utility_dart'
+  projectPath, dartStringLiteral} from './utility_dart'
 
 
 // GenCtx is the per-language generation context passed to every OpGen.
@@ -69,7 +68,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${dartStringLiteral(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
         'server': <String, dynamic>{${svars
       .map((v: any) => `

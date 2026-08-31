@@ -30,6 +30,8 @@ import {
   phpEntityAccessor,
 } from '@voxgig/sdkgen'
 
+import { formatPhpValue } from './utility_php'
+
 
 // PHP's GenCtx mirrors the shared shape (see TestEntity_ts.ts) plus an
 // `accessor` slot used to mangle the entity factory name when it collides
@@ -89,7 +91,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n        "${serverVarEnv(PROJUPPER, v.name)}" => ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n        "${serverVarEnv(PROJUPPER, v.name)}" => ${formatPhpValue(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
                 "server" => [${svars
       .map((v: any) => `
@@ -287,7 +289,11 @@ ${hasList ? `
             Runner::live_client_options(),
             [${apikeyLiveField}${serverLiveField}
             ],
-            $extra ?? [],
+            // ismap, not a plain "?? []" default: an empty PHP array is a
+            // LIST, and a non-map later entry REPLACES the accumulated map in
+            // merge - so the no-extras call discarded live_client_options()
+            // and the apikey/server map above it.
+            Vs::ismap($extra) ? $extra : new \\stdClass(),
         ]);
         $client = new ${model.const.Name}SDK(Helpers::to_map($merged_opts));
     }

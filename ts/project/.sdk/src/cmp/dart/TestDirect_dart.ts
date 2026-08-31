@@ -24,8 +24,7 @@ import {
 
 import {
   projectPath,
-  dartValue,
-} from './utility_dart'
+  dartValue, dartStringLiteral} from './utility_dart'
 
 
 const TestDirect = cmp(function TestDirect(props: any) {
@@ -55,7 +54,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n    '${serverVarEnv(PROJECTNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n    '${serverVarEnv(PROJECTNAME, v.name)}': ${dartStringLiteral(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
       'server': <String, dynamic>{${svars
       .map((v: any) => `

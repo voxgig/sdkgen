@@ -16,6 +16,8 @@ import {
   serverVariables
 } from '@voxgig/sdkgen'
 
+import { formatRubyValue } from './utility_rb'
+
 
 function normalizePathParams(
   parts: string[],
@@ -78,7 +80,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n    "${serverVarEnv(PROJECTNAME, v.name)}" => ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n    "${serverVarEnv(PROJECTNAME, v.name)}" => ${formatRubyValue(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
       "server" => {${svars
       .map((v: any) => `

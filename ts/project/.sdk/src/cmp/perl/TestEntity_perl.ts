@@ -22,6 +22,8 @@ import {
   serverVariables
 } from '@voxgig/sdkgen'
 
+import { perlStringLiteral } from './utility_perl'
+
 
 // See TestEntity_ts.ts for the GenCtx/OpGen contract. Flow-step variables
 // are held in a single declared perl hash (%V) so generated steps never
@@ -68,7 +70,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n    '${serverVarEnv(PROJUPPER, v.name)}' => ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n    '${serverVarEnv(PROJUPPER, v.name)}' => ${perlStringLiteral(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
         'server' => {${svars
       .map((v: any) => `

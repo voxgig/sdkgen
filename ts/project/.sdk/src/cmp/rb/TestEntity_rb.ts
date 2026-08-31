@@ -29,6 +29,8 @@ import {
   serverVariables
 } from '@voxgig/sdkgen'
 
+import { formatRubyValue } from './utility_rb'
+
 
 // See TestEntity_ts.ts for the GenCtx/OpGen contract.
 type GenCtx = {
@@ -76,7 +78,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n    "${serverVarEnv(PROJUPPER, v.name)}" => ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n    "${serverVarEnv(PROJUPPER, v.name)}" => ${formatRubyValue(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
         "server" => {${svars
       .map((v: any) => `
