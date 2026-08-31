@@ -973,9 +973,13 @@ main: kit: target: js: phase: feature: active: false
     await pass()
 
     // Every target emits one, wherever its test directory lives.
-    // `.jostraca/generated/` is jostraca's own build-metadata mirror of the
-    // output, not the output — the shared generate() helper drops it too.
+    // Separators normalised first: jostraca builds paths with Path.join, so
+    // these keys are backslash-separated on Windows and the matches below
+    // would silently find nothing there. Same reason the shared generate()
+    // helper normalises. `.jostraca/generated/` is jostraca's own
+    // build-metadata mirror of the output, not the output — dropped here too.
     const controls = Object.keys(vol.toJSON())
+      .map((n) => n.split(Path.sep).join('/'))
       .filter((n) => n.endsWith('/sdk-test-control.json'))
       .filter((n) => !n.includes('/.jostraca/'))
     strictEqual(controls.length, TARGETS.length,
@@ -989,14 +993,16 @@ main: kit: target: js: phase: feature: active: false
         client: { options: { timeout: { active: true } } },
       },
     }, null, 2)
+    // Back to native separators to actually touch the volume.
+    const native = (n: string) => n.split('/').join(Path.sep)
     for (const path of controls) {
-      vol.writeFileSync(path, EDITED)
+      vol.writeFileSync(native(path), EDITED)
     }
 
     await pass()
 
     const reverted = controls.filter((path) =>
-      EDITED !== String(vol.readFileSync(path, 'utf8')))
+      EDITED !== String(vol.readFileSync(native(path), 'utf8')))
     deepStrictEqual(reverted, [],
       'regeneration overwrote a hand-edited sdk-test-control.json')
   })
