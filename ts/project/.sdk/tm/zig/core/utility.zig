@@ -372,7 +372,7 @@ pub fn make_options_util(ctx: *Context) Value {
         .{ "base", h.vstr("http://localhost:8000") },
         .{ "prefix", h.vstr("") },
         .{ "suffix", h.vstr("") },
-        .{ "auth", h.jo(&.{.{ "prefix", h.vstr("") }}) },
+        .{ "auth", h.jo(&.{ .{ "prefix", h.vstr("") }, .{ "basic", h.vbool(false) } }) },
         .{ "headers", h.jo(&.{.{ "`$CHILD`", h.vstr("`$STRING`") }}) },
         .{ "allow", h.jo(&.{
             .{ "method", h.vstr("GET,PUT,POST,PATCH,DELETE,OPTIONS") },

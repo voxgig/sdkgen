@@ -19,6 +19,7 @@ const Gitignore = cmp(async function Gitignore(_props: any) {
 a.out
 run_sdk_test
 run_struct_corpus
+run_primary_corpus
 
 # dune (unused; the build is stock ocamlc via the Makefile)
 _build/
