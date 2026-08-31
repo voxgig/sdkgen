@@ -11,6 +11,8 @@ import {
   requirePath,
   isAuthActive,
   resolveAuthPrefix,
+  resolveAuthExchange,
+  configDefinition,
 } from '../dist/utility.js'
 
 
@@ -42,6 +44,119 @@ describe('utility', () => {
 
     test('info present but auth not disabled stays active', () => {
       strictEqual(isAuthActive({ main: { kit: { info: { auth: true } } } }), true)
+    })
+  })
+
+
+  // apidef recognises an API's access-token exchange in the spec and records
+  // it as model facts; a feature receives them by declaring
+  // `spec: { authexchange: '<options-key>' }`. Pinned here because the whole
+  // point is that a project does NOT restate its own API's token endpoint —
+  // if the overlay silently stops happening, the generated config keeps the
+  // generic default and nothing fails loudly.
+  describe('resolveAuthExchange', () => {
+
+    test('null when the spec describes no exchange', () => {
+      strictEqual(resolveAuthExchange({}), null)
+      strictEqual(
+        resolveAuthExchange({ main: { kit: { info: { security: {} } } } }), null)
+    })
+
+    test('returns the recorded exchange facts', () => {
+      deepStrictEqual(
+        resolveAuthExchange({
+          main: {
+            kit: {
+              info: {
+                security: {
+                  prefix: 'Bearer',
+                  exchange: {
+                    path: 'auth/token', method: 'POST',
+                    request: 'refresh_token', response: 'access_token',
+                  },
+                },
+              },
+            },
+          },
+        }),
+        {
+          path: 'auth/token', method: 'POST',
+          request: 'refresh_token', response: 'access_token',
+        },
+      )
+    })
+  })
+
+
+  // The overlay itself: a feature that declares the fact gets it merged over
+  // its own declared defaults; one that does not is untouched.
+  describe('configDefinition spec-fact overlay', () => {
+
+    const modelWith = (featureExtra: any) => ({
+      const: { Name: 'Demo' },
+      name: 'demo',
+      main: {
+        kit: {
+          entity: {},
+          config: { headers: {} },
+          info: {
+            servers: [{ url: 'http://x/api' }],
+            security: {
+              exchange: {
+                path: 'auth/token', method: 'POST',
+                request: 'refresh_token', response: 'access_token',
+              },
+            },
+          },
+          feature: {
+            secrets: {
+              name: 'secrets',
+              active: true,
+              config: {
+                options: {
+                  active: false,
+                  exchange: {
+                    active: false,
+                    path: 'oauth/token',
+                    method: 'POST',
+                    request: 'refresh_token',
+                    response: 'access_token',
+                  },
+                },
+              },
+              ...featureExtra,
+            },
+          },
+        },
+      },
+    })
+
+    test('spec facts overlay the declared defaults', () => {
+      const { def } = configDefinition(modelWith({ spec: { authexchange: 'exchange' } }))
+      const ex = def.feature.secrets.options.exchange
+      // The spec says where THIS API's endpoint is; the declared
+      // 'oauth/token' was only ever a generic guess.
+      strictEqual(ex.path, 'auth/token')
+      strictEqual(ex.method, 'POST')
+      strictEqual(ex.request, 'refresh_token')
+      strictEqual(ex.response, 'access_token')
+    })
+
+    test('activation is NOT overlaid - it stays the project\'s call', () => {
+      const { def } = configDefinition(modelWith({ spec: { authexchange: 'exchange' } }))
+      strictEqual(def.feature.secrets.options.exchange.active, false)
+    })
+
+    test('a feature that does not declare the fact is untouched', () => {
+      const { def } = configDefinition(modelWith({}))
+      strictEqual(def.feature.secrets.options.exchange.path, 'oauth/token')
+    })
+
+    test('no exchange in the model leaves the defaults alone', () => {
+      const model: any = modelWith({ spec: { authexchange: 'exchange' } })
+      delete model.main.kit.info.security
+      const { def } = configDefinition(model)
+      strictEqual(def.feature.secrets.options.exchange.path, 'oauth/token')
     })
   })
 

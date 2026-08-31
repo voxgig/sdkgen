@@ -1,22 +1,28 @@
 {
   "library": {
     "omni/typescript": {
-      "commit": "bc9535d655564c0833f6eff003b0b13dad8b350f",
+      "commit": "5956cc4e5ecdaeebd11eab8bb4b9462dfc76e018",
       "file": {
         "tm/ts/test/vendor/omni/Runner.ts": {
-          "sha256": "a133321fb47c28df36b79729524ee1796fae70905cf2458a5d2f6557f96e6c7d",
+          "sha256": "3b876c8722da89a0c82d1d68dae069aec304c3f5f37826dc459e0772cbb3c6f3",
           "upstream": "typescript/src/Runner.ts"
         },
         "tm/ts/test/vendor/omni/Util.ts": {
-          "sha256": "0479ec199aa362bad665a7cc139f83e798ce79e8bca50185c972cd6e9fff0851",
+          "sha256": "2aca248ffd2ae83e59f1cc36f71e772b35561fb5453b57bce83fabda90180674",
           "upstream": "typescript/src/Util.ts"
         },
         "tm/ts/test/vendor/omni/compat.ts": {
-          "sha256": "a78e2d8a95b395638a22533c46b0eb72da13ae7201223cf55092f6cbf57e2b26",
-          "upstream": "typescript/compat/struct.ts"
+          "sha256": "6dbde85d5a408e7d30b75110680d99cb8af29c51a99ba7cc9a0e8bd1a84ea60f",
+          "upstream": "typescript/compat/struct.ts",
+          "adapt": [
+            {
+              "from": "'../src'",
+              "to": "'./index'"
+            }
+          ]
         },
         "tm/ts/test/vendor/omni/index.ts": {
-          "sha256": "a719a2509d669d7c6c2bbf3810df0c214e0beac173852ad3ab071262182da1f6",
+          "sha256": "0421ae83be9a8cc99151bf75676f4d80b400b7a49eb81739d7ea3bec2a8e77de",
           "upstream": "typescript/src/index.ts"
         }
       },
@@ -24,23 +30,83 @@
       "version": "0.1.2"
     },
     "sekreto/typescript": {
-      "commit": "a8c293be1b6c33d65223b2b2275797c241b1a1f1",
+      "commit": "65009cb5758850db767785ab666e71895f86086b",
       "file": {
-        "tm/ts/src/feature/secrets/sekreto/Providers.ts": {
-          "sha256": "b5b30111f4c20fd806dc9a6425228cc5dbb62c6b9a2af63a6cc75500a3ce4c36",
-          "upstream": "typescript/src/Providers.ts"
-        },
         "tm/ts/src/feature/secrets/sekreto/Sekreto.ts": {
-          "sha256": "c743866fdaab034e421a291442dfbc8c0c973fe357685a1a154fa0de2cedcdc8",
+          "sha256": "12df1974363a03ef4c0ef39ebb96e14ba298bcfa3991830895227131cec12dbd",
           "upstream": "typescript/src/Sekreto.ts"
         },
         "tm/ts/src/feature/secrets/sekreto/Sigv4.ts": {
-          "sha256": "504d8856a4eae071c6e0f5a059610e9cb775a3123b44afc5929b2055c1b52aa6",
+          "sha256": "eb412156a384c3484ad65fe05d39e643eae7104b7b506e608d9f9d825350a91d",
           "upstream": "typescript/src/Sigv4.ts"
         },
         "tm/ts/src/feature/secrets/sekreto/index.ts": {
-          "sha256": "6c2143cbeca4d74a6f3eec1c2311c223f6769c42e0c953cf28307ef65b1241e2",
+          "sha256": "8017d7d7b8ce6a0cae198388da73a6ebad3587ed23cc6dfd8d70cab0b62fc04c",
           "upstream": "typescript/src/index.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/Registry.ts": {
+          "sha256": "fe5b852cc0d1b3a814163284e3bee493c4f964a5ca44245bdd0e9896b28393e5",
+          "upstream": "typescript/src/provider/Registry.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/addr.ts": {
+          "sha256": "363bd7ebadb5fd7090a75cd5107170adfd5741228819cb31861611a511af12ef",
+          "upstream": "typescript/src/provider/addr.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/aws.ts": {
+          "sha256": "5c613853801ae353a79aedddaa025c465f5f07ceeec73858071b57cf222bf71f",
+          "upstream": "typescript/src/provider/aws.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/azuresecrets.ts": {
+          "sha256": "d60b2456b711f85dabf8ef1cada73641f27e1672794cedaee205be06f967f275",
+          "upstream": "typescript/src/provider/azuresecrets.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/boru.ts": {
+          "sha256": "7c386230f47a7a58ad1d7cb4c6edd03eaa72be5de49cf2013369bed88c901a03",
+          "upstream": "typescript/src/provider/boru.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/doppler.ts": {
+          "sha256": "5e61028dd4aacafac6b444f10d63c2535329c3ffc62614d30113ca0bcaff280f",
+          "upstream": "typescript/src/provider/doppler.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/dotenv.ts": {
+          "sha256": "e9a5563c4a6a5754c018b22eedf00b5b0c060a13b2620196fc30bac57fc5f3c9",
+          "upstream": "typescript/src/provider/dotenv.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/env.ts": {
+          "sha256": "a75b7fc94795be2837a9c3ad4694a1f9b703cdb79cbc9bb5eed6927422335eac",
+          "upstream": "typescript/src/provider/env.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/file.ts": {
+          "sha256": "e349afc6f9bd6d66ea62ead8a872c2c1f6da770940afd4ad9d26e4ae372ed117",
+          "upstream": "typescript/src/provider/file.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/gcpsecrets.ts": {
+          "sha256": "c886467570c0cabec5f7f430250a6aae50b6376ccabed0dc07bb98c0b8683356",
+          "upstream": "typescript/src/provider/gcpsecrets.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/hashicorp.ts": {
+          "sha256": "f411ebaec6fa57a65c7102cb8513a23563c5d13460d4891c3cdca13c0e6f8b33",
+          "upstream": "typescript/src/provider/hashicorp.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/http.ts": {
+          "sha256": "1daddbb330957f2bfb39ef61d08014d260af5c28162a65e26d1d0b3f57dd9d17",
+          "upstream": "typescript/src/provider/http.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/infisical.ts": {
+          "sha256": "5be909125e64fb8d12bafc1a13eadcd260ce47918314309ebc4f4ad7dff8a880",
+          "upstream": "typescript/src/provider/infisical.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/memory.ts": {
+          "sha256": "f0d55ac5383cf16a73f8a199e0287c920f08e01b9fc2d6af9888fe9dfbc20f64",
+          "upstream": "typescript/src/provider/memory.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/onepassword.ts": {
+          "sha256": "2524e1d742f1fc66df25a7609b39ccdc040e1cd0aea30b946a08fe99d6a44d12",
+          "upstream": "typescript/src/provider/onepassword.ts"
+        },
+        "tm/ts/src/feature/secrets/sekreto/provider/support.ts": {
+          "sha256": "d0a93fb668ca8eace81c466ed26be3a8c2dabccd127e69f571749fe0ef08c253",
+          "upstream": "typescript/src/provider/support.ts"
         }
       },
       "repo": "https://github.com/voxgig/sekreto",

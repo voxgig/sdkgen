@@ -260,6 +260,134 @@ function srcFeatureExcludes(model: any): RegExp[] {
 }
 
 
+// The same rule as srcFeatureExcludes, ONE LEVEL DEEPER: a feature's
+// declared-but-inactive PLUGINS.
+//
+// A plugin is a feature's optional part — the `secrets` feature over
+// sekreto has one per provider kind, and each carries its own platform
+// cost (node:crypto for AWS request signing, fetch for seven HTTP vault
+// clients). A project whose chain is `[dotenv, env]` should carry neither,
+// and before the plugin trim it carried both, because every kind was
+// reachable from a single import.
+//
+// Layout is `src/feature/<feature>/plugin/<plugin>/`, so a plugin's tree
+// is excluded exactly as a feature's is. Only declared-but-inactive
+// plugins are excluded: a directory the model never mentions is left
+// alone, matching srcFeatureExcludes' treatment of `base`.
+//
+// Note this trims a plugin belonging to an ACTIVE feature. An inactive
+// feature's whole tree — plugins included — is already gone via
+// srcFeatureExcludes, so walking its plugins here would be redundant, and
+// asking the model for them would fail on the `only_active` filter anyway.
+// One feature's inactive-plugin patterns.
+//
+// Separate from pluginExcludes(model) because the two COPIES that need it
+// see different things: Main copies the whole target tree and has the
+// model, while the Feature component copies one feature's tree and has
+// only that feature. Feature's copy is the one that actually matters —
+// it runs for every ACTIVE feature, so without this an active feature's
+// plugins were all copied regardless, and Main's exclude never saw them.
+function pluginExcludesFor(model: any, fname: string): RegExp[] {
+  if (null == model || null == fname) {
+    return []
+  }
+
+  // `only_active: false`, and this is the whole subtlety. The feature
+  // object a component is handed has ALREADY been filtered, so its
+  // `plugin` map contains only the ACTIVE plugins — and a function looking
+  // there for something inactive finds nothing and excludes nothing. That
+  // is exactly the trap srcFeatureExcludes documents, hit again one level
+  // down: the first cut of this read the filtered feature and silently
+  // trimmed nothing while every test passed.
+  const plugins = getModelPath(model,
+    `main.${KIT}.feature.${fname}.plugin`,
+    { required: false, only_active: false }) || {}
+
+  const out: RegExp[] = []
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  for (const pname of Object.keys(plugins).sort()) {
+    const plugin = plugins[pname]
+    if (false !== plugin?.active) continue
+
+    const declared = plugin.path || []
+
+    if (0 < declared.length) {
+      for (const one of declared) {
+        // FEATURE-RELATIVE, because jostraca tests a Copy's candidates
+        // against the path RELATIVE TO THAT COPY'S ROOT — `sekreto/
+        // provider/aws.ts`, not `src/feature/secrets/sekreto/provider/
+        // aws.ts`. The Feature component's Copy is rooted at
+        // `tm/<target>/src/feature/<feature>`, so a full declared path
+        // never matches and the trim silently does nothing.
+        //
+        // Worth stating because it is invisible: an exclude that matches
+        // nothing is indistinguishable from no exclude at all, and both
+        // the patterns and the model were correct while nothing was
+        // trimmed. Main's copy IS rooted at the target root, which is why
+        // pluginExcludes below keeps the full path.
+        const rel = String(one).replace(
+          new RegExp('^src/feature/' + esc(fname) + '/'), '')
+        const pat = esc(rel)
+        out.push(new RegExp('(^|/)' + pat.replace(/\\\/$/, '') +
+          (/\/$/.test(rel) ? '/' : '$')))
+      }
+      continue
+    }
+
+    out.push(new RegExp('(^|/)plugin/' + esc(pname) + '/'))
+  }
+
+  return out
+}
+
+
+function pluginExcludes(model: any): RegExp[] {
+  const active = getModelPath(model, `main.${KIT}.feature`,
+    { required: false }) || {}
+
+  const out: RegExp[] = []
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  for (const fname of Object.keys(active)) {
+    const all = getModelPath(model,
+      `main.${KIT}.feature.${fname}.plugin`,
+      { required: false, only_active: false }) || {}
+    const on = getModelPath(model,
+      `main.${KIT}.feature.${fname}.plugin`,
+      { required: false }) || {}
+
+    for (const pname of Object.keys(all)) {
+      if (null != on[pname]) continue
+
+      // DECLARED paths first. A plugin's files are often not free to
+      // move — sekreto's provider modules are vendored, and both the
+      // vendoring guard and their own relative imports pin them at
+      // upstream's directory depth — so a plugin says which paths it
+      // owns rather than being assumed to own a directory.
+      const declared = all[pname].path || []
+
+      if (0 < declared.length) {
+        for (const one of declared) {
+          const pat = esc(String(one))
+          // A trailing slash means a folder and everything under it;
+          // anything else matches that path exactly, as featureExcludes
+          // does for a file source.
+          out.push(new RegExp('(^|/)' + pat.replace(/\\\/$/, '') +
+            (/\/$/.test(String(one)) ? '/' : '$')))
+        }
+        continue
+      }
+
+      out.push(new RegExp(
+        '(^|/)src/feature/' + esc(fname) + '/plugin/' + esc(pname) + '/'))
+    }
+  }
+
+  return out
+}
+
+
 export type {
   FeatureSource,
   FeatureEntry,
@@ -275,4 +403,6 @@ export {
   featureExcludes,
   fullsetExcludes,
   srcFeatureExcludes,
+  pluginExcludes,
+  pluginExcludesFor,
 }

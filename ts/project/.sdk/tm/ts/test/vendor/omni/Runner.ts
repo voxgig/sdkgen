@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/omni 0.1.2 (typescript/src/Runner.ts)
-// Source: https://github.com/voxgig/omni @ bc9535d655564c0833f6eff003b0b13dad8b350f
+// Source: https://github.com/voxgig/omni @ 5956cc4e5ecdaeebd11eab8bb4b9462dfc76e018
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Omni: the shared multi-language test runner.
 //
@@ -352,20 +352,22 @@ function fixjsonval(val: Json, donull: boolean): Json {
 }
 
 // The JSON form of an error: always at least {name,message}.
-// PATCH (solardemo prototype, pending upstream fix), here and in
-// errmessage below: handle error-shaped MAPS. The shared corpus throws
-// plain objects in some ports (this SDK's makeError rethrows the
-// fixture's ctrl.err verbatim), and the struct repos' original runner
-// matched err.message regardless of the thrown value's class. Upstream
-// collapses any non-Error to String(err) — '[object Object]' — which
-// fails both the err check and every match.err.* leaf.
+//
+// A thrown value need not be an Error. Ports commonly rethrow an
+// error-SHAPED map ({name, message, ...}) - voxgig/sdkgen's generated
+// makeError rethrows the fixture's own error object verbatim - and
+// collapsing that to String(err) yields '[object Object]', which fails both
+// the `err` check and every `match.err.*` leaf. The struct repository's
+// original runner read `.message` regardless of the thrown value's class.
 function errify(err: any): Json {
   if (err instanceof Error) {
     return { ...err, name: err.name, message: err.message }
   }
+
   if (null != err && 'object' === typeof err) {
     return { name: 'Error', ...err }
   }
+
   return { name: 'Error', message: String(err) }
 }
 
@@ -481,11 +483,11 @@ function handleerror(flags: Flags, index: number, entry: Json, err: any) {
 
 // Check that every leaf of `check` is present, and matches, in `base`.
 function match(flags: Flags, index: number, entry: Json, check: Json, base: Json) {
-  // PATCH (solardemo prototype, pending upstream fix): read the base
-  // directly instead of cloning it. The clone gained nothing (the walk
-  // below only READS via getpath) and blew the stack on cyclic bases —
-  // which every corpus ctx entry produces, because a live Context reaches
-  // its client and the client's root context reaches the client again.
+  // Read the base DIRECTLY. The clone bought nothing - the walk below only
+  // reads, via getpath - and it blows the stack on a cyclic base. A port
+  // that drives entries with live objects rather than pure JSON produces
+  // those routinely: voxgig/sdkgen's corpus matches against a live client
+  // context whose root context reaches the client again.
   const cbase = base
 
   const at = (path: Json[]) => (0 === path.length ? '<root>' : pathify(path))

@@ -4,6 +4,7 @@ exports.Feature = void 0;
 const jostraca_1 = require("jostraca");
 const stdrep_1 = require("../helpers/stdrep");
 const applicability_1 = require("../helpers/applicability");
+const featureSource_1 = require("../helpers/featureSource");
 const Feature = (0, jostraca_1.cmp)(function Feature(props) {
     const { target, feature, ctx$ } = props;
     const { log } = ctx$;
@@ -28,6 +29,10 @@ const Feature = (0, jostraca_1.cmp)(function Feature(props) {
             // TODO: Copy should just warn if from not found
             (0, jostraca_1.Copy)({
                 from: 'tm/' + target.name + '/src/feature/' + feature.name,
+                // An ACTIVE feature's INACTIVE plugins do not come with it. This
+                // is the copy that decides it: Main's exclude never sees these
+                // files, because this Copy has already written them.
+                exclude: (0, featureSource_1.pluginExcludesFor)(ctx$.model, feature.name),
                 replace: {
                     // Feature templates reference the SDK class by placeholder — e.g.
                     // tm/ts/.../TestFeature.ts imports `ProjectNameSDK`. Without the

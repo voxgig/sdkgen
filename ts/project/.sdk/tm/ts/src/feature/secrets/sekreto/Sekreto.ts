@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/sekreto 0.1.2 (typescript/src/Sekreto.ts)
-// Source: https://github.com/voxgig/sekreto @ a8c293be1b6c33d65223b2b2275797c241b1a1f1
+// Source: https://github.com/voxgig/sekreto @ 65009cb5758850db767785ab666e71895f86086b
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // sekreto: one interface for secrets, wherever they live.
 //
@@ -11,7 +11,13 @@
 // This file is CANONICAL. Every other port is a translation of it, and
 // spec/sekreto.json is the behavioural contract they all run.
 
-import { Provider, ProviderSpec, makeprovider } from './Providers'
+// The REGISTRY, never './Providers'. Importing the barrel here is what
+// made every provider kind reachable from the core: the chain needs
+// `makeprovider`, and the barrel's edge dragged AWS request signing and
+// seven HTTP clients in behind it. The registry knows only the kinds
+// something actually imported. See docs/design/plugin-providers.md.
+import { Provider, ProviderSpec } from './provider/support'
+import { makeprovider } from './provider/Registry'
 
 /** A secret name: dot-separated lowercase segments, e.g. `api.token`. */
 export type Name = string
