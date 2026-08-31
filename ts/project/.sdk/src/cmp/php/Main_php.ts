@@ -5,6 +5,7 @@ import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   targetFeatures,
+  TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
 
 
@@ -44,7 +45,7 @@ const Main = cmp(async function Main(props: any) {
   // Copy tm/php files with replacements
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//],
+    exclude: [/src\//, TEST_CONTROL_EXCLUDE],
     replace: {
       ...props.ctx$.stdrep,
     }

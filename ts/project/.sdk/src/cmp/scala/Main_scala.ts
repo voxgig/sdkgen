@@ -5,6 +5,7 @@ import {
   cmp, each,
   File, Content, Copy, Folder, Fragment,
   targetFeatures,
+  TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
 
 
@@ -51,7 +52,7 @@ const Main = cmp(async function Main(props: any) {
   // ProjectName carries the SDK name into vendored template strings.
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//],
+    exclude: [/src\//, TEST_CONTROL_EXCLUDE],
     replace: {
       ...props.ctx$.stdrep,
       ProjectName: model.const.Name,

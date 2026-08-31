@@ -865,6 +865,201 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // A LIVE suite for an SDK whose spec templates its server URL cannot even
+  // CONSTRUCT a client: makeOptions raises rather than issue requests to a URL
+  // with a literal `{tenant}` in it. The generated tests therefore have to be
+  // told the values, the same way they have always been told the apikey — via
+  // the environment, one `<PROJ>_SERVER_<NAME>` var per declared variable.
+  //
+  // This was wired for ts/go/py/java first and the other eight targets kept
+  // generating live suites that could not run, silently: nothing in the suite
+  // read the generated TEXT for it, so the gap was invisible per-target. The
+  // list below is therefore the CONTRACT, not a sample — a target that grows a
+  // live client without the server-variable wiring fails here.
+  //
+  // Same for `test.client.options`: it is the project's own place to say how
+  // its API wants to be talked to, and a target that ignores it silently drops
+  // whatever the project put there.
+  // Every target names these differently — PlanetEntity.test.ts,
+  // test_planet_entity.py, planet_entity_test.go, planet_entity.t — so match on
+  // the two things they all share: an entity/direct basename, and a test-suite
+  // extension or path.
+  function testFiles(out: Record<string, string>, target: string): [string, string][] {
+    return filesFor(out, target)
+      .filter(([n]) => /(entity|direct)/i.test(n) &&
+        (/test/i.test(n) || /\.t$/.test(n)) &&
+        !/\.(json|md|txt|ya?ml)$/i.test(n))
+  }
+
+
+  test('every live-capable target wires server variables and test.client.options',
+    async () => {
+      const LIVE_TARGETS = [
+        'ts', 'js', 'go', 'py', 'java',
+        'php', 'rb', 'lua', 'rust', 'dart', 'csharp', 'perl',
+      ]
+
+      // Two variables on purpose: one REQUIRED (empty default) and one with a
+      // default, so a target that emits only the required ones, or seeds the
+      // env map with '' regardless of the spec, shows up here.
+      const servers =
+        "main: kit: info: servers: [ { url: 'https://{tenant}.example.com/{region}'," +
+        ' variables: { tenant: { default: %27%27 }, region: { default: %27eu%27 } } } ]'
+          .replace(/%27/g, "'")
+
+      // A HOSTILE spec, run through the same assertions. Server-variable names
+      // are spec-derived and are not identifiers: the URL grammar admits a
+      // leading digit, and a declared-but-unreferenced name is unconstrained.
+      // A default is likewise arbitrary text, and `$region` / `#{region}` are
+      // interpolation in Dart, Perl, PHP and Ruby — the emitters have to write
+      // target-language string literals, not JSON.
+      const hostile =
+        'main: kit: info: servers: [ { url: "https://{2fa}.example.com/{region}",' +
+        ' variables: { "2fa": { default: "" },' +
+        ' region: { default: "$eu#{x}" },' +
+        ' "edge-zone": { default: "z" } } } ]'
+
+      const gaps: string[] = []
+
+      // The plain spec proves the wiring exists; the hostile one proves it is
+      // written safely. Both must hold for every target.
+      const out = await generate(LIVE_TARGETS, undefined, servers)
+      const hostileOut = await generate(LIVE_TARGETS, undefined, hostile)
+
+      for (const target of LIVE_TARGETS) {
+        const tests = testFiles(out, target)
+        if (0 === tests.length) {
+          gaps.push(`${target}: generated no entity/direct test files`)
+          continue
+        }
+
+        for (const [name, content] of tests) {
+          const src = String(content)
+
+          // Both variables reach the env map, under the documented name.
+          for (const v of ['TENANT', 'REGION']) {
+            if (!src.includes('_SERVER_' + v)) {
+              gaps.push(`${target}:${name} has no _SERVER_${v} env entry`)
+            }
+          }
+
+          // The spec default is carried through, not flattened to ''.
+          if (!/['"]eu['"]/.test(src)) {
+            gaps.push(`${target}:${name} lost the 'eu' server-variable default`)
+          }
+
+          // sdk-test-control.json's test.client.options reaches the live client.
+          if (!/live_client_options|liveClientOptions|LiveClientOptions/.test(src)) {
+            gaps.push(`${target}:${name} does not read test.client.options`)
+          }
+
+          // The apikey placeholder must be EMPTY, not a plausible-looking
+          // credential: 'NONE' was sent verbatim to live APIs.
+          if (/["']NONE["']/.test(src)) {
+            gaps.push(`${target}:${name} still seeds a 'NONE' credential`)
+          }
+        }
+      }
+
+      // Hostile spec: nothing may reach the output as a bare identifier or as
+      // a JSON literal that the target language would reinterpret.
+      for (const target of LIVE_TARGETS) {
+        for (const [name, content] of testFiles(hostileOut, target)) {
+          const src = String(content)
+
+          // A bare `2fa:` / `2fa =` key, or a bare `edge-zone` one, is a
+          // syntax error in every target that does not quote its keys.
+          for (const bad of [/(^|[\s{[(,])2fa\s*[:=]/m, /(^|[\s{[(,])edge-zone\s*[:=]/m]) {
+            if (bad.test(src)) {
+              gaps.push(`${target}:${name} emits an unquoted server-variable key`)
+            }
+          }
+
+          // `env.PROJ_SERVER_EDGE-ZONE` is a subtraction, not a lookup.
+          if (/env\.[A-Z0-9_]*SERVER[A-Z0-9_]*-/.test(src)) {
+            gaps.push(`${target}:${name} reads a server env var by dotted access`)
+          }
+
+          // The default must survive as text. Dart/Perl/PHP interpolate `$eu`
+          // and Ruby interpolates `#{x}` inside a double-quoted literal, so a
+          // JSON-stringified default is wrong for those targets specifically.
+          if (['dart', 'perl', 'php'].includes(target) && /"\$eu/.test(src)) {
+            gaps.push(`${target}:${name} emits an interpolating default literal`)
+          }
+          if ('rb' === target && /[^\\]#\{x\}/.test(src)) {
+            gaps.push(`${target}:${name} emits an interpolating default literal`)
+          }
+        }
+      }
+
+      deepStrictEqual(gaps, [], 'live-suite wiring is not uniform across targets')
+    })
+
+
+  // `sdk-test-control.json` is documented "edit by hand" — it is where a
+  // project names the tests to skip, the live pacing, and the extra client
+  // options a live run needs. It shipped inside each target's blanket
+  // `Copy({ from: 'tm/<lang>' })`, and a Copy has no per-file "leave it alone
+  // if it already exists", so every `npm run generate` silently reverted those
+  // edits. Editing the template master under `.sdk/tm/` instead is worse:
+  // `doctor` reports it as drift and the next `target add <lang>` reverts it.
+  //
+  // So the assertion is not "the file is emitted" (the old Copy did that too)
+  // but "a SECOND generation does not touch it". That needs two passes over
+  // ONE volume, which the shared `generate()` cannot do — it starts a fresh
+  // memfs each call — hence the local twin below.
+  test('an edited sdk-test-control.json survives regeneration', async () => {
+    const TARGETS = ['ts', 'go', 'py', 'rust', 'perl', 'scala']
+
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const pass = async () => {
+      const res = await sdkgen.generate({
+        model: makeModel(TARGETS), root: makeRoot(),
+      })
+      strictEqual(res.ok, true, 'generation did not report ok')
+    }
+
+    await pass()
+
+    // Every target emits one, wherever its test directory lives.
+    // Separators normalised first: jostraca builds paths with Path.join, so
+    // these keys are backslash-separated on Windows and the matches below
+    // would silently find nothing there. Same reason the shared generate()
+    // helper normalises. `.jostraca/generated/` is jostraca's own
+    // build-metadata mirror of the output, not the output — dropped here too.
+    const controls = Object.keys(vol.toJSON())
+      .map((n) => n.split(Path.sep).join('/'))
+      .filter((n) => n.endsWith('/sdk-test-control.json'))
+      .filter((n) => !n.includes('/.jostraca/'))
+    strictEqual(controls.length, TARGETS.length,
+      'expected one control file per target, got:\n' + controls.join('\n'))
+
+    // What a project would actually put there.
+    const EDITED = JSON.stringify({
+      version: 1,
+      test: {
+        skip: { live: { direct: [{ test: 'direct-list-planet' }], entityOp: [] } },
+        client: { options: { timeout: { active: true } } },
+      },
+    }, null, 2)
+    // Back to native separators to actually touch the volume.
+    const native = (n: string) => n.split('/').join(Path.sep)
+    for (const path of controls) {
+      vol.writeFileSync(native(path), EDITED)
+    }
+
+    await pass()
+
+    const reverted = controls.filter((path) =>
+      EDITED !== String(vol.readFileSync(native(path), 'utf8')))
+    deepStrictEqual(reverted, [],
+      'regeneration overwrote a hand-edited sdk-test-control.json')
+  })
+
+
   // The CONSUMER targets, each generated against the target it wraps.
   //
   // They are out of the two loops above for a good reason — standalone they

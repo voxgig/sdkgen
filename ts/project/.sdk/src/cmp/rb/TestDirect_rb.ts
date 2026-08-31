@@ -11,8 +11,12 @@ import {
   File,
   cmp,
   snakify,
-  isAuthActive, envName, envToken
+  isAuthActive, envName, envToken,
+  serverVarEnv,
+  serverVariables
 } from '@voxgig/sdkgen'
+
+import { formatRubyValue } from './utility_rb'
 
 
 function normalizePathParams(
@@ -64,11 +68,24 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive
-    ? `\n    "${PROJECTNAME}_APIKEY" => "NONE",`
+    ? `\n    "${PROJECTNAME}_APIKEY" => "",`
     : ''
   const apikeyLiveField = authActive
     ? `\n      "apikey" => env["${PROJECTNAME}_APIKEY"],`
     : ''
+
+  // A templated server URL (OpenAPI server variables) makes a LIVE client
+  // impossible to construct without values: makeOptions raises rather than
+  // request a URL with a literal `{account_id}` in it. So the live suite
+  // takes them from the environment the same way it takes the apikey.
+  const svars = serverVariables(model)
+  const serverEnvEntry = svars
+    .map((v: any) => `\n    "${serverVarEnv(PROJECTNAME, v.name)}" => ${formatRubyValue(v.dflt)},`).join('')
+  const serverLiveField = 0 === svars.length ? '' : `
+      "server" => {${svars
+      .map((v: any) => `
+        "${v.name}" => env["${serverVarEnv(PROJECTNAME, v.name)}"],`).join('')}
+      },`
 
   const opnames = Object.keys(entity.op || {})
   const hasLoad = opnames.includes('load')
@@ -349,14 +366,16 @@ def ${entity.name}_direct_setup(mockres)
 
   env = Runner.env_override({
     "${entidEnvVar}" => {},
-    "${PROJECTNAME}_TEST_LIVE" => "FALSE",${apikeyEnvEntry}
+    "${PROJECTNAME}_TEST_LIVE" => "FALSE",${apikeyEnvEntry}${serverEnvEntry}
   })
 
   live = env["${PROJECTNAME}_TEST_LIVE"] == "TRUE"
 
   if live
-    merged_opts = {${apikeyLiveField}
-    }
+    # Merged so the generated fields win: sdk-test-control.json's
+    # test.client.options adds to the live client, it does not redirect it.
+    merged_opts = Runner.live_client_options.merge({${apikeyLiveField}${serverLiveField}
+    })
     client = ${model.const.Name}SDK.new(merged_opts)
     return {
       client: client,

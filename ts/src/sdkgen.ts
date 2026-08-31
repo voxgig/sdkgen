@@ -40,6 +40,7 @@ import { License } from './cmp/License'
 import { Security } from './cmp/Security'
 import { Changelog } from './cmp/Changelog'
 import { Test } from './cmp/Test'
+import { TestControl, TEST_CONTROL_EXCLUDE } from './cmp/TestControl'
 import { ReadmeInstall } from './cmp/ReadmeInstall'
 import { ReadmeQuick } from './cmp/ReadmeQuick'
 import { ReadmeErrors } from './cmp/ReadmeErrors'
@@ -1074,6 +1075,8 @@ export {
   Entity,
   Feature,
   Test,
+  TestControl,
+  TEST_CONTROL_EXCLUDE,
   Readme,
   ReadmeTop,
   AgentGuideTop,

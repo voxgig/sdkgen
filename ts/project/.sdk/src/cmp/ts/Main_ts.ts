@@ -7,6 +7,7 @@ import {
   entityClassName, entityCollection, srcFeatureExcludes, pluginExcludes,
   stationLibrary,
   targetFeatures,
+  TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
 
 
@@ -56,7 +57,11 @@ const Main = cmp(async function Main(props: any) {
     // copy from restoring one that was switched off after `target add`.
     // A feature's inactive plugins go too - same rule, one level
     // deeper. See helpers/featureSource.pluginExcludes.
-    exclude: [...srcFeatureExcludes(model), ...pluginExcludes(model)],
+    exclude: [
+      ...srcFeatureExcludes(model),
+      ...pluginExcludes(model),
+      TEST_CONTROL_EXCLUDE,
+    ],
     replace: {
       ...props.ctx$.stdrep,
     }

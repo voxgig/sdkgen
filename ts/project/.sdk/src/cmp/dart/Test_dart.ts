@@ -7,7 +7,8 @@ import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, snakify, Folder, File, Content, entityCollection } from '@voxgig/sdkgen'
+import { cmp, each, snakify, Folder, File, Content, entityCollection,
+  TestControl } from '@voxgig/sdkgen'
 
 
 import { TestDirect } from './TestDirect_dart'
@@ -23,6 +24,9 @@ const Test = cmp(function Test(props: any) {
     .filter((e: any) => false !== e.active)
 
   Folder({ name: 'test' }, () => {
+
+    // Write-once: a project's edited control file survives regeneration.
+    TestControl({ target, dir: 'test' })
 
     // Suite entry: registers every static suite plus the generated
     // per-entity suites, then runs them (Makefile: dart run test/main.dart).
