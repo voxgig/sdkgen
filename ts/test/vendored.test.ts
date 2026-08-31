@@ -45,6 +45,12 @@ const MANIFEST = JSON.parse(
 const VENDOR_DIRS = [
   'tm/ts/test/vendor/omni',
   'tm/ts/src/feature/secrets/sekreto',
+  // sekreto's providers are a module each, so the vendored tree has a
+  // second level. Listed explicitly rather than walked recursively: the
+  // list is the thing that makes an ADDED file visible, and a recursive
+  // walk that discovers its own directories would quietly accept a new
+  // one.
+  'tm/ts/src/feature/secrets/sekreto/provider',
   'tm/go/utility/struct',
 ]
 
@@ -152,6 +158,15 @@ describe('vendored', () => {
 
       for (const name of readdirSync(abs)) {
         const rel = dir + '/' + name
+        // A DIRECTORY is not an unlisted file. It must still be covered,
+        // which is what its own VENDOR_DIRS entry does — a vendored
+        // subtree nobody listed would otherwise pass unseen.
+        if (statSync(Path.join(abs, name)).isDirectory()) {
+          ok(VENDOR_DIRS.includes(rel),
+            'vendored directory ' + rel + ' is not in VENDOR_DIRS, so the ' +
+            'files beneath it are unchecked — add it')
+          continue
+        }
         if (!listed.has(rel)) {
           found.push(rel)
         }
@@ -165,14 +180,78 @@ describe('vendored', () => {
   })
 
 
-  // The three PATCH blocks the migration guide's Phase 0 documents. They
-  // are deviations from upstream, so they must stay LOUD: an unmarked one
-  // is indistinguishable from a resync that silently lost a fix.
-  test('local deviations from vendored code stay marked', () => {
-    const patched: Record<string, number> = {
-      'tm/ts/test/vendor/omni/Runner.ts': 2,
-      'tm/ts/test/vendor/omni/Util.ts': 1,
+  // IMPORT ADAPTATIONS, declared as data rather than as prose.
+  //
+  // A vendored file is sometimes not usable verbatim: omni's
+  // `compat/struct.ts` imports `../src`, which resolves inside omni's own
+  // repo and nowhere in a vendored tree. The adaptation was recorded only
+  // in that file's provenance header — human-readable, and enforced by
+  // nothing.
+  //
+  // So a resync silently reverted it, the manifest hash updated cleanly
+  // because the resync wrote both, and the break surfaced two steps later
+  // as a generated SDK that would not compile. Prose in a header is not a
+  // guard. `adapt` in the manifest is.
+  test('declared import adaptations survive a resync', () => {
+    for (const [lib, entry] of Object.entries<any>(MANIFEST.library)) {
+      for (const [rel, spec] of Object.entries<any>(entry.file)) {
+        for (const adapt of spec.adapt || []) {
+          const src = readFileSync(Path.join(SDK, rel), 'utf8')
+
+          // Skip the provenance header, which NAMES the `from` string.
+          const body = src.split('\n').slice(3).join('\n')
+
+          ok(body.includes(adapt.to),
+            lib + ' ' + rel + ': adaptation lost — expected ' + adapt.to +
+            '. A resync overwrote it with upstream; re-apply it and rehash')
+          ok(!body.includes(adapt.from),
+            lib + ' ' + rel + ': unadapted ' + adapt.from + ' is still ' +
+            'present, so this file will not resolve in a vendored tree')
+        }
+      }
     }
+  })
+
+
+  // The FULL-SET BARREL is deliberately not vendored.
+  //
+  // sekreto's `Providers.ts` exists to re-export every provider kind at
+  // once — which is precisely what an SDK must not contain. Vendoring it
+  // would import all thirteen modules, so the plugin trim would remove a
+  // provider's file and leave the barrel importing it: the SDK does not
+  // get leaner, it stops compiling. That is not hypothetical; it is what
+  // happened on the first generated build.
+  test('the full-set barrel is not vendored into SDKs', () => {
+    const rel = 'tm/ts/src/feature/secrets/sekreto/Providers.ts'
+
+    ok(!existsSync(Path.join(SDK, rel)),
+      'sekreto Providers.ts is in the template tree: it re-exports every ' +
+      'provider kind, so a trimmed SDK will not compile')
+
+    const sekreto = MANIFEST.library['sekreto/typescript']
+    ok(null == sekreto.file[rel],
+      'sekreto Providers.ts is in vendored.json, so a resync would put it back')
+  })
+
+
+  // Local deviations from upstream must stay LOUD: an unmarked one is
+  // indistinguishable from a resync that silently lost a fix.
+  //
+  // The table is EMPTY, and that is the finished state of the migration
+  // guide's Phase 0. It carried three entries — two in Runner.ts, one in
+  // Util.ts — for the patches the solardemo prototype made while waiting on
+  // upstream: `match()` cloning its base, `jsonstr()` without a cycle guard,
+  // and `errify`/`errmessage` collapsing error-shaped maps to
+  // '[object Object]'. omni has since absorbed all three (`seen` in
+  // Util.jsonstr, "Read the base DIRECTLY" in Runner.match, and an errify
+  // that spreads a plain object), so the resync to 5956cc4 removed the
+  // patches and this expectation together — which is exactly the sequence
+  // the assertion below demands.
+  //
+  // Keep the test, not just the table: an empty map still fails loudly the
+  // moment someone hand-edits a vendored file without marking it.
+  test('local deviations from vendored code stay marked', () => {
+    const patched: Record<string, number> = {}
 
     for (const [rel, count] of Object.entries(patched)) {
       const src = readFileSync(Path.join(SDK, rel), 'utf8')
@@ -184,6 +263,25 @@ describe('vendored', () => {
         'REMOVE both the patch and this expectation; a new local deviation ' +
         'needs its own marker and an upstream issue')
     }
+
+    // The other direction, which the table alone cannot cover: a marked
+    // patch in a file the table does not list. Without this an empty table
+    // would assert nothing at all, and a hand-edit to vendored code would
+    // pass in silence — the precise failure this suite exists to stop.
+    const unlisted: string[] = []
+    for (const entry of Object.values<any>(MANIFEST.library)) {
+      for (const rel of Object.keys(entry.file)) {
+        if (null != patched[rel]) continue
+        const src = readFileSync(Path.join(SDK, rel), 'utf8')
+        if (/PATCH \(solardemo prototype, pending upstream fix\)/.test(src)) {
+          unlisted.push(rel)
+        }
+      }
+    }
+
+    deepStrictEqual(unlisted, [],
+      'these vendored files carry a marked PATCH that the table above does ' +
+      'not declare — add the count, or resync the file if upstream has the fix')
   })
 })
 

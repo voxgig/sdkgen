@@ -82,6 +82,34 @@ function isHttpBasicAuth(model: any): boolean {
 }
 
 
+// The API's ACCESS-TOKEN EXCHANGE, as apidef recorded it from the spec
+// (main.kit.info.security.exchange): where the token endpoint lives, and the
+// field names it sends and answers with. Null when the spec describes none,
+// which is the common case.
+//
+// These are FACTS ABOUT THE API, so they belong in the generated config
+// rather than in a project's hand-written model: an SDK whose spec says the
+// exchange is at `auth/token` should not need to be told so again. A feature
+// opts in to receiving them with `spec: { authexchange: '<options-key>' }`;
+// configDefinition does the overlay.
+//
+// Deliberately NOT included: `active`. Whether a client performs the
+// exchange is the project's decision (some resolve a static credential
+// through the same feature on an API that also has a token endpoint), so
+// apidef records only what the exchange IS, never that it should run.
+function resolveAuthExchange(model: any): Record<string, any> | null {
+  const security = getModelPath(model, `main.${KIT}.info.security`,
+    { only_active: false, required: false })
+
+  const exchange = security?.exchange
+  if (null == exchange || 'object' !== typeof exchange) {
+    return null
+  }
+
+  return exchange
+}
+
+
 function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any {
   const fullpath = resolvePath(ctx$, path)
   const ignore = null == flags?.ignore ? false : flags.ignore
@@ -118,6 +146,7 @@ export {
   requirePath,
   isAuthActive,
   resolveAuthPrefix,
+  resolveAuthExchange,
   isHttpBasicAuth,
   SdkGenError,
   CONFIG_DATA_THRESHOLD,
@@ -301,6 +330,15 @@ function rawStringLiteral(s: string): string {
 }
 
 
+// The closed vocabulary of spec-derived facts a feature may ask for by
+// declaring `spec: { <fact>: <options-key> }`. Closed, and resolved through
+// one function each, so a feature cannot reach arbitrarily into the model
+// and a fact's shape is defined in exactly one place.
+const SPEC_FACTS: Record<string, (model: any) => any> = {
+  authexchange: resolveAuthExchange,
+}
+
+
 // THE CANONICAL CONFIG OBJECT, and the JSON the threshold is measured on.
 //
 // Every target builds its config from this one function, so the literal a
@@ -361,6 +399,29 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
     if (null != f.transport && '' !== f.transport) {
       fdef.transport = String(f.transport)
     }
+
+    // SPEC-DERIVED OPTIONS. A feature declares `spec: { <fact>: <options
+    // key> }` to receive facts apidef recorded from the OpenAPI spec — the
+    // same declare-never-infer rule `needs` and `transport` follow, and for
+    // the same reason: the alternative is this function knowing feature
+    // names, which is exactly the coupling the generic feature loop exists
+    // to avoid.
+    //
+    // The fact overlays the feature's DECLARED DEFAULTS, and rightly: a
+    // default like `path: 'auth/token'` is a generic guess, while the spec
+    // states where this API's endpoint actually is. A project that needs
+    // something else still overrides at runtime through `options.feature`,
+    // which beats the embedded config either way.
+    for (const factname of Object.keys(f.spec || {}).sort()) {
+      const optkey = f.spec[factname]
+      const fact = SPEC_FACTS[factname]?.(model)
+      if (null == fact || null == optkey || '' === optkey) {
+        continue
+      }
+      fdef.options = { ...(fdef.options || {}) }
+      fdef.options[optkey] = { ...(fdef.options[optkey] || {}), ...fact }
+    }
+
     featureDefs[f.name] = fdef
   })
 

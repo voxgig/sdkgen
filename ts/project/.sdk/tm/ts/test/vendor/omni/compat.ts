@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/omni 0.1.2 (typescript/compat/struct.ts), import path adapted ('../src' -> './index').
-// Source: https://github.com/voxgig/omni @ bc9535d655564c0833f6eff003b0b13dad8b350f
+// Source: https://github.com/voxgig/omni @ 5956cc4e5ecdaeebd11eab8bb4b9462dfc76e018
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Drop-in replacement for the in-situ test runner in the voxgig/struct
 // repository (`typescript/test/runner.ts`).

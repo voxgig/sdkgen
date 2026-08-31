@@ -1217,7 +1217,21 @@ const SECRETS: Record<string, {
   ts: {
     feature: 'ts/src/feature/secrets/SecretsFeature.ts',
     vendor: 'ts/src/feature/secrets/sekreto',
-    vendorfiles: ['Providers.ts', 'Sekreto.ts', 'Sigv4.ts', 'index.ts'],
+    // `Providers.ts` — sekreto's full-set barrel — is deliberately NOT
+    // here: it re-exports every provider kind, so vendoring it would defeat
+    // the plugin trim and, worse, leave an import of a module the trim just
+    // deleted. vendored.test.ts asserts its absence directly.
+    //
+    // `Sigv4.ts` is owned by the `aws` PLUGIN, not by the feature, so a
+    // project that does not read from AWS does not ship it. It is listed
+    // against the template tree, which carries every plugin; what reaches a
+    // generated SDK is decided per project.
+    vendorfiles: [
+      'Sekreto.ts', 'Sigv4.ts', 'index.ts',
+      'provider/Registry.ts', 'provider/support.ts',
+      'provider/env.ts', 'provider/memory.ts',
+      'provider/dotenv.ts', 'provider/aws.ts',
+    ],
     tests: 'ts/test/feature/secrets',
   },
 }

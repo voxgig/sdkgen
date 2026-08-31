@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/sekreto 0.1.2 (typescript/src/index.ts)
-// Source: https://github.com/voxgig/sekreto @ a8c293be1b6c33d65223b2b2275797c241b1a1f1
+// Source: https://github.com/voxgig/sekreto @ 65009cb5758850db767785ab666e71895f86086b
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // @voxgig/sekreto - one interface for secrets, wherever they live.
 
@@ -18,25 +18,34 @@ export {
 
 export type { Name, SekretoOptions } from './Sekreto'
 
-export {
-  awsparamsprovider,
-  awssecretsprovider,
-  azuresecretsprovider,
-  boruprovider,
-  checkaddr,
-  dopplerprovider,
-  dotenvprovider,
-  envprovider,
-  fileprovider,
-  gcpsecretsprovider,
-  hashicorpprovider,
-  infisicalprovider,
-  makeprovider,
-  memoryprovider,
-  onepasswordprovider,
-} from './Providers'
+// THE CORE SURFACE. Deliberately does NOT re-export the eleven provider
+// kinds that need something of their runtime: pulling one through this
+// file would make all of them reachable and put AWS request signing in
+// every build, which is the thing the split removes.
+//
+// `env` and `memory` are here because they import nothing at all, and a
+// chain with nowhere to read from is not usable or testable.
+//
+// Everything else registers itself when its module is imported:
+//
+//     import '@voxgig/sekreto/provider/dotenv'
+//
+// or, for the old all-in behaviour, `from '@voxgig/sekreto/Providers'`.
+// See docs/design/plugin-providers.md.
+export { envprovider } from './provider/env'
+export { memoryprovider } from './provider/memory'
 
-export type { Provider, ProviderSpec } from './Providers'
+// A pure validator, no platform dependency - kept on the core surface
+// because callers validate an address before configuring a provider.
+export { checkaddr } from './provider/addr'
 
-export { sigv4 } from './Sigv4'
-export type { Sigv4Input, Sigv4Output } from './Sigv4'
+export { makeprovider, register, registered, kinds } from './provider/Registry'
+export type { ProviderDefinition } from './provider/Registry'
+
+export type { Provider, ProviderSpec } from './provider/support'
+
+// `sigv4` is NOT on the core surface: it is the node:crypto edge, and
+// only the two aws providers use it. Import it from the module that
+// needs it - `@voxgig/sekreto/provider/aws` - or from the full-set
+// barrel. Re-exporting it here would put request signing in every
+// build again, which is the thing the split removes.

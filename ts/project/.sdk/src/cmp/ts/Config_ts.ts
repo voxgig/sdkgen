@@ -99,10 +99,13 @@ const Config = cmp(async function Config(props: any) {
 
         replace: {
 
-          '// #ImportFeatures': () => each(feature, (f: any) => {
-            Line(`import { ${nom(f, 'Name')}Feature } from ` +
-              `'./feature/${f.name}/${nom(f, 'Name')}Feature'`)
-          }),
+          '// #ImportFeatures': () => {
+            each(feature, (f: any) => {
+              Line(`import { ${nom(f, 'Name')}Feature } from ` +
+                `'./feature/${f.name}/${nom(f, 'Name')}Feature'`)
+            })
+            pluginImports(feature)
+          },
 
           '// #FeatureClasses': () => each(feature, (f: any) => {
             Line(` ${f.name}: ${nom(f, 'Name')}Feature,`)
@@ -130,10 +133,13 @@ const Config = cmp(async function Config(props: any) {
 
         "'HEADERS'": indent(JSON.stringify(headers, null, 2), 4).trim(),
 
-        '// #ImportFeatures': () => each(feature, (f: any) => {
-          Line(`import { ${nom(f, 'Name')}Feature } from ` +
-            `'./feature/${f.name}/${nom(f, 'Name')}Feature'`)
-        }),
+        '// #ImportFeatures': () => {
+          each(feature, (f: any) => {
+            Line(`import { ${nom(f, 'Name')}Feature } from ` +
+              `'./feature/${f.name}/${nom(f, 'Name')}Feature'`)
+          })
+          pluginImports(feature)
+        },
 
         // Values from configDefinition's def, not re-derived here, so the
         // literal rep and the data rep cannot disagree on identity.
@@ -176,6 +182,42 @@ const Config = cmp(async function Config(props: any) {
   })
 })
 
+
+
+// PLUGIN REGISTRATION IMPORTS.
+//
+// A sekreto provider module registers itself when it is imported, and
+// nothing else imports it: the core surface deliberately does not reach a
+// platform-dependent provider, and the full-set barrel — the file whose
+// job was to reach all of them — is not vendored into an SDK at all.
+//
+// So without these lines an SDK generates `provider/dotenv.ts`, never
+// imports it, and throws `unknown provider kind: dotenv` the first time a
+// chain names it. Emitted here because Config already imports every active
+// feature from the model, and this is the same list one level down.
+//
+// Import for SIDE EFFECT only — `import '...'`, no bindings. The module's
+// top-level `register()` call is the whole point.
+function pluginImports(feature: any) {
+  each(feature, (f: any) => {
+    each(f.plugin, (plugin: any) => {
+      // Filter on `active` HERE rather than trusting the feature object to
+      // arrive filtered. Whether a model path was read with `only_active`
+      // varies by call site, and getting it wrong in this direction emits
+      // an import for a module the trim just deleted — an SDK that does
+      // not compile, rather than one that merely carries too much.
+      if (false === plugin.active || null == plugin.active) return
+
+      for (const one of (plugin.path || [])) {
+        const path = String(one)
+        // Only a provider MODULE registers a kind; a plugin may own other
+        // files (Sigv4.ts is signing support, not a provider).
+        if (!/\/provider\/[^/]+\.ts$/.test(path)) continue
+        Line(`import '${'./' + path.replace(/^src\//, '').replace(/\.ts$/, '')}'`)
+      }
+    })
+  })
+}
 
 export {
   Config

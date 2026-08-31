@@ -3,6 +3,7 @@ import { cmp, Copy, Folder } from 'jostraca'
 
 import { ensureStdrep } from '../helpers/stdrep'
 import { featureApplies, featureTags } from '../helpers/applicability'
+import { pluginExcludesFor } from '../helpers/featureSource'
 
 const Feature = cmp(function Feature(props: any) {
   const { target, feature, ctx$ } = props
@@ -31,6 +32,10 @@ const Feature = cmp(function Feature(props: any) {
       // TODO: Copy should just warn if from not found
       Copy({
         from: 'tm/' + target.name + '/src/feature/' + feature.name,
+        // An ACTIVE feature's INACTIVE plugins do not come with it. This
+        // is the copy that decides it: Main's exclude never sees these
+        // files, because this Copy has already written them.
+        exclude: pluginExcludesFor(ctx$.model, feature.name),
         replace: {
           // Feature templates reference the SDK class by placeholder — e.g.
           // tm/ts/.../TestFeature.ts imports `ProjectNameSDK`. Without the
