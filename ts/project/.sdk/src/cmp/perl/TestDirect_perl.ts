@@ -11,7 +11,9 @@ import {
   File,
   cmp,
   snakify,
-  isAuthActive, envName, envToken
+  isAuthActive, envName, envToken,
+  serverVarEnv,
+  serverVariables
 } from '@voxgig/sdkgen'
 
 
@@ -74,11 +76,24 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive
-    ? `\n    '${PROJECTNAME}_APIKEY' => 'NONE',`
+    ? `\n    '${PROJECTNAME}_APIKEY' => '',`
     : ''
   const apikeyLiveField = authActive
     ? `\n      'apikey' => $env->{'${PROJECTNAME}_APIKEY'},`
     : ''
+
+  // A templated server URL (OpenAPI server variables) makes a LIVE client
+  // impossible to construct without values: makeOptions raises rather than
+  // request a URL with a literal `{account_id}` in it. So the live suite
+  // takes them from the environment the same way it takes the apikey.
+  const svars = serverVariables(model)
+  const serverEnvEntry = svars
+    .map((v: any) => `\n    '${serverVarEnv(PROJECTNAME, v.name)}' => ${JSON.stringify(v.dflt)},`).join('')
+  const serverLiveField = 0 === svars.length ? '' : `
+      'server' => {${svars
+      .map((v: any) => `
+        '${v.name}' => $env->{'${serverVarEnv(PROJECTNAME, v.name)}'},`).join('')}
+      },`
 
   const opnames = Object.keys(entity.op || {})
   const hasLoad = opnames.includes('load')
@@ -377,13 +392,17 @@ sub ${entity.name}_direct_setup {
 
   my $env = ${N}TestRunner::env_override({
     '${entidEnvVar}' => {},
-    '${PROJECTNAME}_TEST_LIVE' => 'FALSE',${apikeyEnvEntry}
+    '${PROJECTNAME}_TEST_LIVE' => 'FALSE',${apikeyEnvEntry}${serverEnvEntry}
   });
 
   my $live = ((($env->{'${PROJECTNAME}_TEST_LIVE'}) || '') eq 'TRUE') ? 1 : 0;
 
   if ($live) {
-    my $client = ${N}SDK->new({${apikeyLiveField}
+    # live_client_options() FIRST so the generated fields below win:
+    # sdk-test-control.json's test.client.options adds to the live client,
+    # it does not redirect it (a later key wins in a Perl hash literal).
+    my $client = ${N}SDK->new({
+      %{ ${N}TestRunner::live_client_options() },${apikeyLiveField}${serverLiveField}
     });
     return {
       'client' => $client,

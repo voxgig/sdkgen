@@ -49,7 +49,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const authActive = isAuthActive(model)
   const authBasic = authActive && isHttpBasicAuth(model)
   const apikeyEnvEntry = authActive
-    ? `\n    '${PROJECTNAME}_APIKEY': '',${authBasic ? `\n    '${PROJECTNAME}_SECRET': 'NONE',` : ''}`
+    ? `\n    '${PROJECTNAME}_APIKEY': '',${authBasic ? `\n    '${PROJECTNAME}_SECRET': '',` : ''}`
     : ''
   const apikeyLiveField = authActive
     ? `

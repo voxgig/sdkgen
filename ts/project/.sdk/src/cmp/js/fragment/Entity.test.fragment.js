@@ -13,6 +13,7 @@ const { ProjectNameSDK, BaseFeature, stdutil, config } = require('../../..')
 
 const {
   envOverride,
+  liveClientOptions,
   makeCtrl,
   makeMatch,
   makeReqdata,

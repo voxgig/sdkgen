@@ -10,6 +10,7 @@ const { ProjectNameSDK } = require('../../..')
 
 const {
   envOverride,
+  liveClientOptions,
 } = require('../../utility')
 
 

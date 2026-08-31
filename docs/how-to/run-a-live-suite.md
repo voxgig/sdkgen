@@ -76,6 +76,18 @@ These options are merged UNDER the generated fields, so the suite's own
 does not redirect it. The credential itself is NOT in the file — the providers
 it names read that from the environment or a gitignored `.env`.
 
+## Target coverage
+
+Twelve targets carry the full live wiring — credential, server variables and
+`test.client.options`:
+
+`ts`, `js`, `go`, `py`, `java`, `php`, `rb`, `lua`, `rust`, `dart`, `csharp`, `perl`
+
+The rest generate the mock suite only: they have no live client to configure,
+so the environment variables above do nothing there. `ts/test/generate.test.ts`
+pins that list, so a target gaining a live client without the wiring fails the
+suite rather than shipping a live suite that cannot run.
+
 ## Strict mode
 
 `main.kit.test.live.strict` decides what a live non-2xx means.
@@ -96,15 +108,22 @@ passes with nothing listening on the port. What strict mode does not do is
 assert the MOCK's own fixtures against a live server — the scripted ids and
 recorded calls belong to the mock transport and exist only offline.
 
-## Caveat: `sdk-test-control.json` is regenerated
+## `sdk-test-control.json` is write-once
 
-The copy under `<lang>/test/` is generated output: `npm run generate`
-overwrites it. Edit the project's template master at
-`.sdk/tm/<lang>/test/sdk-test-control.json`, which survives generation —
-`voxgig-sdkgen target add <lang>` still refreshes it from the toolchain, and
-`voxgig-sdkgen doctor` reports the edit as drift. Making the file genuinely
-write-once (emitted only when absent) is the fix, and is not done yet: it
-ships from `tm/` in fourteen targets.
+Edit the copy under `<lang>/test/` — the one the test runner actually loads.
+It is emitted **only when absent**, so `npm run generate` leaves an existing
+file alone and your edits survive regeneration.
+
+Do **not** edit the template master at `.sdk/tm/<lang>/test/sdk-test-control.json`.
+That was the old workaround, from when `generate` overwrote the generated copy;
+it is no longer needed and was never safe — `voxgig-sdkgen target add <lang>`
+refreshes the master from the toolchain, and `voxgig-sdkgen doctor` reports the
+edit as drift. If a project still carries that workaround, move the content to
+`<lang>/test/sdk-test-control.json` and revert the master.
+
+The trade-off of write-once is the usual one: a project that already has the
+file will not pick up later changes to the toolchain's default. To take a fresh
+default, delete `<lang>/test/sdk-test-control.json` and regenerate.
 
 ## See also
 

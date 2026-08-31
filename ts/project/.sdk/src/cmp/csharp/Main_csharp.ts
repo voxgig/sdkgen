@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each,
   File, Content, Copy, Folder, Fragment,
+  TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
 
 
@@ -42,7 +43,7 @@ const Main = cmp(async function Main(props: any) {
   // per-feature extension folders (not shipped into the SDK output).
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//],
+    exclude: [/src\//, TEST_CONTROL_EXCLUDE],
     replace: {
       ...props.ctx$.stdrep,
     }

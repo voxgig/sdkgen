@@ -11,7 +11,9 @@ import {
   File,
   cmp,
   snakify,
-  isAuthActive, envName, envToken
+  isAuthActive, envName, envToken,
+  serverVarEnv,
+  serverVariables
 } from '@voxgig/sdkgen'
 
 
@@ -64,11 +66,24 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const authActive = isAuthActive(model)
   const apikeyEnvEntry = authActive
-    ? `\n    ["${PROJECTNAME}_APIKEY"] = "NONE",`
+    ? `\n    ["${PROJECTNAME}_APIKEY"] = "",`
     : ''
   const apikeyLiveField = authActive
     ? `\n      apikey = env["${PROJECTNAME}_APIKEY"],`
     : ''
+
+  // A templated server URL (OpenAPI server variables) makes a LIVE client
+  // impossible to construct without values: makeOptions raises rather than
+  // request a URL with a literal `{account_id}` in it. So the live suite
+  // takes them from the environment the same way it takes the apikey.
+  const svars = serverVariables(model)
+  const serverEnvEntry = svars
+    .map((v: any) => `\n    ["${serverVarEnv(PROJECTNAME, v.name)}"] = ${JSON.stringify(v.dflt)},`).join('')
+  const serverLiveField = 0 === svars.length ? '' : `
+      server = {${svars
+      .map((v: any) => `
+        ${v.name} = env["${serverVarEnv(PROJECTNAME, v.name)}"],`).join('')}
+      },`
 
   const opnames = Object.keys(entity.op || {})
   const hasLoad = opnames.includes('load')
@@ -350,14 +365,21 @@ function ${entity.name}_direct_setup(mockres)
 
   local env = runner.env_override({
     ["${entidEnvVar}"] = {},
-    ["${PROJECTNAME}_TEST_LIVE"] = "FALSE",${apikeyEnvEntry}
+    ["${PROJECTNAME}_TEST_LIVE"] = "FALSE",${apikeyEnvEntry}${serverEnvEntry}
   })
 
   local live = env["${PROJECTNAME}_TEST_LIVE"] == "TRUE"
 
   if live then
-    local merged_opts = {${apikeyLiveField}
+    local merged_opts = {${apikeyLiveField}${serverLiveField}
     }
+    -- sdk-test-control.json's test.client.options goes UNDER the generated
+    -- fields: it adds to the live client, it does not redirect it.
+    for _k, _v in pairs(runner.live_client_options()) do
+      if merged_opts[_k] == nil then
+        merged_opts[_k] = _v
+      end
+    end
     local client = sdk.new(merged_opts)
     return {
       client = client,

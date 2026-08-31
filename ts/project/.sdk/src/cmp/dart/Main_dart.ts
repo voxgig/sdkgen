@@ -5,6 +5,7 @@ import {
   cmp, each,
   List, File, Copy, Folder, Fragment, Line,
   entityClassName, entityCollection,
+  TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
 
 
@@ -45,7 +46,7 @@ const Main = cmp(async function Main(props: any) {
   // lib/feature/), so they are excluded from the generated package.
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//],
+    exclude: [/src\//, TEST_CONTROL_EXCLUDE],
     replace: {
       ...props.ctx$.stdrep,
     }

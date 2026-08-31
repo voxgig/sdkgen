@@ -153,6 +153,51 @@ public static class TestRunner
         return _testControl;
     }
 
+    // LiveClientOptions returns the extra SDK options every LIVE client is
+    // constructed with, read from sdk-test-control.json `test.client.options`.
+    //
+    // The generated live client knows two things: the base URL (from the
+    // spec) and the credential (from the environment). Everything else about
+    // how a particular API wants to be talked to - which features to switch
+    // on, and with what settings - is a property of THAT API, known to the
+    // project and to nothing in the toolchain.
+    //
+    // Merged UNDER the generated fields, so the suite's own
+    // base/apikey/server values win: this ADDS to the live client, it does
+    // not redirect it.
+    //
+    // Reserved fields are stripped HERE rather than at each merge site: the
+    // generated dictionary only names a field when the model calls for one,
+    // so a "base" in this block would face no competing value and would
+    // silently redirect the whole suite - credential included - to another
+    // host.
+    private static readonly string[] LiveReserved =
+        { "base", "prefix", "suffix", "server", "apikey", "secret" };
+
+    public static Dictionary<string, object?> LiveClientOptions()
+    {
+        var ctrl = LoadTestControl();
+        if (!ctrl.TryGetValue("test", out var testRaw) ||
+            testRaw is not Dictionary<string, object?> test ||
+            !test.TryGetValue("client", out var clientRaw) ||
+            clientRaw is not Dictionary<string, object?> client ||
+            !client.TryGetValue("options", out var optsRaw) ||
+            optsRaw is not Dictionary<string, object?> opts)
+        {
+            return new Dictionary<string, object?>();
+        }
+
+        var out_ = new Dictionary<string, object?>();
+        foreach (var kv in opts)
+        {
+            if (Array.IndexOf(LiveReserved, kv.Key) < 0)
+            {
+                out_[kv.Key] = kv.Value;
+            }
+        }
+        return out_;
+    }
+
     // IsControlSkipped checks sdk-test-control.json for a skip entry.
     // Returns (skip, reason).
     public static (bool, string) IsControlSkipped(string kind, string name, string mode)

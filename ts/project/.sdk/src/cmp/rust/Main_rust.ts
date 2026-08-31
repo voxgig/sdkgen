@@ -6,6 +6,7 @@ import {
   File, Content, Copy, Folder, Fragment,
   entityClassName,
   targetFeatures,
+  TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
 
 
@@ -54,7 +55,7 @@ const Main = cmp(async function Main(props: any) {
   // here exactly like the go target.
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//],
+    exclude: [/src\//, TEST_CONTROL_EXCLUDE],
     replace: {
       ...props.ctx$.stdrep,
       RUSTCRATE: rustcrate,

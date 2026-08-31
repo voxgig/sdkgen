@@ -6,6 +6,7 @@ import {
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   entityClassName, entityCollection, goModule, goPackageIdent,
   targetFeatures,
+  TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
 
 
@@ -59,7 +60,7 @@ const Main = cmp(async function Main(props: any) {
   // downstream consumers.
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//, /utility\/struct\/go\.mod$/],
+    exclude: [/src\//, /utility\/struct\/go\.mod$/, TEST_CONTROL_EXCLUDE],
     replace: {
       ...props.ctx$.stdrep,
       GOMODULE: gomodule,

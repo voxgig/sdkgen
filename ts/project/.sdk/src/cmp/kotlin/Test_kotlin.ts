@@ -3,7 +3,8 @@ import type {
   ModelEntity
 } from '@voxgig/apidef'
 
-import { cmp, each, Folder, entityCollection } from '@voxgig/sdkgen'
+import { cmp, each, Folder, entityCollection,
+  TestControl } from '@voxgig/sdkgen'
 
 
 import { TestEntity } from './TestEntity_kotlin'
@@ -19,6 +20,9 @@ const Test = cmp(function Test(props: any) {
   const kotlinpackage = kotlinPackage(model)
 
   Folder({ name: 'test' }, () => {
+
+    // Write-once: a project's edited control file survives regeneration.
+    TestControl({ target, dir: 'test' })
 
     // The shared test infrastructure (RunnerSupport, FeatureHarness,
     // PipelineTest, FeatureTest, NetsimTest, PrimaryUtilityTest,
