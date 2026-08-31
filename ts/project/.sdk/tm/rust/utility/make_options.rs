@@ -78,7 +78,7 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         ("base", Value::str("http://localhost:8000")),
         ("prefix", Value::str("")),
         ("suffix", Value::str("")),
-        ("auth", jo(vec![("prefix", Value::str(""))])),
+        ("auth", jo(vec![("prefix", Value::str("")), ("basic", Value::Bool(false))])),
         ("headers", jo(vec![("`$CHILD`", Value::str("`$STRING`"))])),
         (
             "allow",
