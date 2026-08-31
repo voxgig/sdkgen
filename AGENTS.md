@@ -8,6 +8,11 @@ Human-oriented docs live in [`docs/`](./docs/README.md) (tutorial,
 how-to, reference, explanation). This file is the agent-facing summary
 plus the gotchas.
 
+Fundamentals are recorded in [`ADR.md`](./ADR.md): decisions everything
+else is built on, which must not be quietly reversed. **ADR-001 — the
+model is the only input**, is the one most easily broken by accident,
+because reading the spec here always looks like the shorter path.
+
 **Building an SDK, not modifying the generator?** If your goal is to
 produce an SDK for your own API — i.e. *consume* this tool rather than
 change it — start at

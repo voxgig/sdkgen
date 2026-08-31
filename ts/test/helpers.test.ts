@@ -3,6 +3,7 @@ import { test, describe } from 'node:test'
 import { deepStrictEqual, strictEqual } from 'node:assert'
 
 import {
+  pluginExcludes,
   collectDeps,
   buildIdNames,
   getMatchEntries,
@@ -695,4 +696,51 @@ describe('helpers', () => {
 
   })
 
+})
+
+
+// A feature's PLUGINS are its optional parts, trimmed one level deeper
+// than the feature itself. This is the mechanism that keeps a generated
+// SDK lean: the `secrets` feature over sekreto has a plugin per provider
+// kind, and a project whose chain is `[dotenv, env]` must carry neither
+// AWS request signing nor the seven HTTP vault clients.
+describe('pluginExcludes', () => {
+
+  const model = (plugins: any) => ({
+    main: { kit: { feature: { secrets: {
+      name: 'secrets', active: true, plugin: plugins,
+    } } } },
+  })
+
+  test('an inactive plugin is excluded', () => {
+    const out = pluginExcludes(model({
+      dotenv: { name: 'dotenv', active: true },
+      aws: { name: 'aws', active: false },
+    }))
+    deepStrictEqual(out.map(String),
+      [String(/(^|\/)src\/feature\/secrets\/plugin\/aws\//)])
+  })
+
+  test('an active plugin is kept', () => {
+    deepStrictEqual(
+      pluginExcludes(model({ dotenv: { name: 'dotenv', active: true } })), [])
+  })
+
+  test('a feature with no plugins excludes nothing', () => {
+    deepStrictEqual(pluginExcludes({
+      main: { kit: { feature: { retry: { name: 'retry', active: true } } } },
+    }), [])
+  })
+
+  // An INACTIVE feature's whole tree is already gone via
+  // srcFeatureExcludes, so its plugins must not be walked again here -
+  // and the model's only_active filter would not return them anyway.
+  test('an inactive feature contributes no plugin patterns', () => {
+    deepStrictEqual(pluginExcludes({
+      main: { kit: { feature: { secrets: {
+        name: 'secrets', active: false,
+        plugin: { aws: { name: 'aws', active: false } },
+      } } } },
+    }), [])
+  })
 })

@@ -469,6 +469,64 @@ main: kit: feature: &: {
   # feature that both wraps AND dispatches hooks (station does).
   transport: *'none' | 'base' | 'wrap'
 
+  # SPEC-DERIVED OPTIONS. Facts apidef records from the OpenAPI spec, mapped
+  # onto the key in this feature's `config.options` that should carry them:
+  #
+  #   spec: { authexchange: 'exchange' }
+  #
+  # configDefinition performs the overlay at generation time, so the fact
+  # reaches the SDK's embedded config without a project restating what its
+  # own spec already says. The fact name comes from a CLOSED vocabulary
+  # (`SPEC_FACTS` in ts/src/utility.ts); an unknown name is ignored rather
+  # than failing, so a project on an older sdkgen is unaffected.
+  #
+  # A map keyed by fact name, for the same reason `needs` is a map: aontu
+  # unifies maps by key, so a package can add one entry without restating
+  # the others.
+  spec: &: string
+
+  # PLUGINS — a feature's optional, separately-trimmed parts.
+  #
+  # A feature whose implementation is a thin layer over a library with
+  # OPTIONAL pieces (secrets over sekreto, whose thirteen provider kinds
+  # each carry their own platform cost) declares them here. Each plugin
+  # owns a template subfolder under the feature's own tree, and the
+  # feature trim removes an inactive one exactly as it removes an
+  # inactive feature — the same walk, one level deeper.
+  #
+  # This is what makes a generated SDK lean: a project whose chain is
+  # `[dotenv, env]` should not carry AWS request signing and seven HTTP
+  # vault clients, and before this it carried all of them because they
+  # were reachable from one import.
+  #
+  # `needs` is the same closed applicability vocabulary a feature uses,
+  # so a plugin requiring something of its target is gated the same way.
+  plugin: &: {
+    name: key()
+    active: *false | boolean
+    title: *'' | string
+
+    # What this plugin needs of the RUNTIME - 'fs', 'fetch', 'crypto'.
+    # Declared so a target that cannot provide it is refused at
+    # generation rather than at the consumer's first lookup.
+    needs: &: boolean
+
+    # The template paths this plugin OWNS, relative to the target
+    # template root, dropped when it is inactive.
+    #
+    # Declared rather than derived from a `plugin/<name>/` directory
+    # convention, because the files a plugin owns are frequently NOT
+    # free to move. sekreto's provider modules are VENDORED: the
+    # vendoring guard holds each file against its upstream path, and
+    # their relative imports (`./support`, `../Sigv4`) only resolve at
+    # upstream's own directory depth. Relocating them under a
+    # convention would break both at once.
+    #
+    # Empty means the convention — `src/feature/<feature>/plugin/<name>/`
+    # — which is right for a plugin whose files sdkgen owns outright.
+    path: *[] | [&: string]
+  }
+
   hook: &: {
    active: *false | boolean
    await: *false | boolean
