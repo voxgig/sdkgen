@@ -49,7 +49,7 @@ main: kit: entity: planet: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/planet", parts: ["planet"]
+        args: {}, method: "GET", orig: "/planet", segments: [{ lit: "planet" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -59,7 +59,7 @@ main: kit: entity: planet: {
         args: { params: [
           { kind: "param", name: "id", orig: "id", reqd: true, type: "\`$STRING\`", example: "p01" }
         ] }
-        method: "GET", orig: "/planet/{id}", parts: ["planet", "{id}"]
+        method: "GET", orig: "/planet/{id}", segments: [{ lit: "planet" }, { var: "id" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }

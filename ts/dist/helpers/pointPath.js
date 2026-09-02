@@ -19,11 +19,30 @@ function pointSegments(point) {
 function pointParts(point) {
     return pointSegments(point).map((seg) => null == seg.var ? String(seg.lit ?? '') : '{' + seg.var + '}');
 }
-// Does the path end in a parameter? The braced form had to ask whether the
-// last part started with `{`; the vector states it.
+// Does the path end in a parameter?
+//
+// DELIBERATELY asked of the reconstructed part, not of the vector, even
+// though the vector states it directly and more accurately.
+//
+// The same rule runs at RUNTIME, in all 21 languages' makePoint template
+// (`0 === last.indexOf('{')` over `parts`), to pick a fallback route when no
+// point's `select.exist` matches. Those templates ship standalone, outside
+// this package, so the rule is written twice on purpose and BOTH SIDES MUST
+// MOVE TOGETHER — see the note in opShape.ts and in each template.
+//
+// Reading the vector here would break that. A path ending in a LITERAL that
+// contains braces (`/reports/{id}.json`) is not a terminal parameter by the
+// vector, but every runtime still says it is, because from the reconstructed
+// string it cannot tell. Generation-time `ownPoint` would then pick a
+// different route than the SDK picks at request time — for the same model.
+//
+// So this stays bug-compatible with the runtimes until they move onto
+// segments, at which point this becomes `null != last.var` and all 21 change
+// with it.
 function pointTerminalParam(point) {
-    const segments = pointSegments(point);
-    return 0 < segments.length && null != segments[segments.length - 1].var;
+    const parts = pointParts(point);
+    const last = 0 < parts.length ? parts[parts.length - 1] : '';
+    return 0 === last.indexOf('{');
 }
 // Do two points describe the same route? Compares the vectors, so a literal
 // containing braces cannot be mistaken for a parameter of the same spelling.

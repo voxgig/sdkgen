@@ -55,6 +55,39 @@ describe('pointPath', () => {
   })
 
 
+  // The rule must stay IDENTICAL to the one in all 21 makePoint templates,
+  // which read `parts` and cannot tell a braced literal from a parameter.
+  // Asking the vector instead would be more accurate and would make
+  // generation-time ownPoint pick a different route than the SDK picks at
+  // request time, for the same model. Both sides move together or not at all.
+  test('pointTerminalParam: agrees with the runtime rule, brace-for-brace', () => {
+    // The runtime's rule, copied from tm/ts/src/utility/MakePointUtility.ts.
+    const runtime = (point: any) => {
+      const parts = pointParts(point)
+      const last = 0 < parts.length ? parts[parts.length - 1] : ''
+      return 'string' === typeof last && 0 === last.indexOf('{')
+    }
+
+    const points = [
+      { segments: [{ lit: 'a' }, { var: 'id' }] },
+      { segments: [{ var: 'id' }, { lit: 'a' }] },
+      // The case that separates the two rules: a LITERAL containing braces.
+      { segments: [{ lit: 'reports' }, { lit: '{id}.json' }] },
+      { segments: [{ lit: 'v{version}' }] },
+      { segments: [] },
+    ]
+
+    for (const pt of points) {
+      strictEqual(pointTerminalParam(pt), runtime(pt),
+        'diverged from the runtime on ' + JSON.stringify(pt.segments))
+    }
+
+    // And specifically: the braced literal reads as terminal, as it must.
+    strictEqual(
+      pointTerminalParam({ segments: [{ lit: 'reports' }, { lit: '{id}.json' }] }), true)
+  })
+
+
   // The route-identity test the braced form could not make safely: a LITERAL
   // spelled `{id}` is not the same route as a PARAMETER named `id`, but
   // joining the reconstructed strings makes them identical.
