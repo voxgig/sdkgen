@@ -8,6 +8,7 @@ import { KIT, getModelPath } from '@voxgig/apidef'
 import { targetFeatures } from './helpers/applicability'
 
 import { serverVariables } from './helpers/serverVars'
+import { pointParts } from './helpers/pointPath'
 import { packageVersion } from './helpers/packageMeta'
 
 
@@ -350,6 +351,35 @@ const SPEC_FACTS: Record<string, (model: any) => any> = {
 //
 // Key order is `each`'s order, which is sorted, so the JSON is byte-stable
 // across runs exactly like the literal it replaces.
+// The embedded config still speaks the braced-string path form
+// (`['element', '{id}']`) that every generated runtime reads. apidef now
+// emits the resolved vector instead (its ADR-003), so the old shape is
+// reconstructed HERE — the single point at which a point reaches generated
+// output — via the single reconstruction in helpers/pointPath.
+//
+// Both are written: `parts` for the runtimes as they stand, `segments`
+// alongside it so a runtime can be moved over one language at a time. That
+// duplication is deliberate and temporary, and it lives in GENERATED output,
+// not in the model — which is what ADR-003 forbids. It ends when the last
+// runtime reads segments and `parts` is dropped from this function.
+function withPointParts(op: any): any {
+  if (null == op) {
+    return op
+  }
+
+  const out: any = {}
+  each(op, (o: any, opname: string) => {
+    out[opname] = null == o || null == o.points ? o : {
+      ...o,
+      points: each(o.points).map((pt: any) =>
+        null == pt ? pt : { ...pt, parts: pointParts(pt) }),
+    }
+  })
+
+  return out
+}
+
+
 function configDefinition(model: any, targetname?: string): { def: any, json: string } {
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -377,7 +407,7 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
     entityDefs[e.name] = clean({
       fields: e.fields,
       name: e.name,
-      op: e.op,
+      op: withPointParts(e.op),
       relations: e.relations,
     }, true)
     entityStubs[e.name] = {}

@@ -28,7 +28,6 @@ import {
 
 
 import {
-  clean,
   formatLuaTable,
   luaLongString,
 } from './utility_lua'
@@ -160,12 +159,7 @@ ${serverBlock}${authBlock}      headers = ${formatLuaTable(headers, 3)},
     Content(`      },
     },
     entity = ${formatLuaTable(
-      Object.values(entity).reduce((a: any, n: any) => (a[n.name] = clean({
-        fields: n.fields,
-        name: n.name,
-        op: n.op,
-        relations: n.relations,
-      }, true), a), {}), 2)},
+configDef.entity, 2)},
   }
 end
 `)

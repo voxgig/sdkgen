@@ -18,7 +18,8 @@ import {
   snakify,
   isAuthActive, envName, envToken,
   serverVarEnv,
-  serverVariables
+  serverVariables,
+  pointParts,
 } from '@voxgig/sdkgen'
 
 
@@ -182,12 +183,12 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   }
 
   const allLoadParams = loadPoint.args?.params || []
-  const loadPath = normalizePathParams(loadPoint.parts || [], allLoadParams, loadPoint.rename?.param)
+  const loadPath = normalizePathParams(pointParts(loadPoint), allLoadParams, loadPoint.rename?.param)
 
   // Only path params that actually appear in the URL template drive the
   // direct-test path-param setup and URL-substitution asserts.
   const pathPlaceholders = new Set<string>()
-  for (const part of (loadPoint.parts || [])) {
+  for (const part of pointParts(loadPoint)) {
     if (typeof part === 'string' && part.startsWith('{') && part.endsWith('}')) {
       pathPlaceholders.add(part.slice(1, -1))
     }
@@ -217,7 +218,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   const listOp = entity.op?.list
   const listPoint = listOp?.points?.[0]
   const listParams = listPoint?.args?.params || []
-  const listPath = listPoint ? normalizePathParams(listPoint.parts || [], listParams, listPoint.rename?.param) : ''
+  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listParams, listPoint.rename?.param) : ''
   const hasList = null != listPoint
 
   // Ancestor params (not 'id') for live mode
@@ -375,7 +376,7 @@ function generateDirectList(model: Model, entity: ModelEntity) {
   }
 
   const listParams = listPoint.args?.params || []
-  const listPath = normalizePathParams(listPoint.parts || [], listParams, listPoint.rename?.param)
+  const listPath = normalizePathParams(pointParts(listPoint), listParams, listPoint.rename?.param)
 
   const listQuery = listPoint.args?.query || []
   const liveQueryLines = listQuery

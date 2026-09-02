@@ -47,6 +47,7 @@ exports.entityTypeCollisions = entityTypeCollisions;
 exports.warnEntityTypeCollisions = warnEntityTypeCollisions;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
+const pointPath_1 = require("./pointPath");
 // THE entity collection for a model — resolved once, with a stable identity.
 //
 // Two problems this solves, both caused by every component calling
@@ -201,20 +202,16 @@ function entityPath(entity) {
 // no point's `select.exist` matches. It cannot be shared with them — a
 // template ships standalone, outside this package — so it is written twice on
 // purpose, and both sides must move together.
-function terminalParam(point) {
-    const parts = (point && point.parts) || [];
-    const last = 0 < parts.length ? parts[parts.length - 1] : '';
-    return 'string' === typeof last && last.startsWith('{');
-}
 function ownPoint(points) {
     let best = points[0];
     for (const pt of points) {
-        if (null == pt || null == pt.parts || null == best || null == best.parts) {
+        if (null == pt || null == pt.segments || null == best || null == best.segments) {
             continue;
         }
-        const ptterm = terminalParam(pt);
-        const bestterm = terminalParam(best);
-        if (ptterm !== bestterm ? ptterm : pt.parts.length < best.parts.length) {
+        const ptterm = (0, pointPath_1.pointTerminalParam)(pt);
+        const bestterm = (0, pointPath_1.pointTerminalParam)(best);
+        if (ptterm !== bestterm ?
+            ptterm : (0, pointPath_1.pointSegments)(pt).length < (0, pointPath_1.pointSegments)(best).length) {
             best = pt;
         }
     }
@@ -224,8 +221,8 @@ function ownPoint(points) {
 // selectors on one endpoint (the same path, chosen by different query
 // params), not cross-references to different resources.
 function samePath(points) {
-    const first = ((points[0] && points[0].parts) || []).join('/');
-    return points.every((pt) => first === ((pt && pt.parts) || []).join('/'));
+    const first = (0, pointPath_1.pointPathKey)(points[0]);
+    return points.every((pt) => first === (0, pointPath_1.pointPathKey)(pt));
 }
 function opParams(op) {
     let points = op && op.points ? (0, jostraca_1.each)(op.points) : [];

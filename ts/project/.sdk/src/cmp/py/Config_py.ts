@@ -28,7 +28,6 @@ import {
 
 
 import {
-  clean,
   formatPyDict,
 } from './utility_py'
 
@@ -180,12 +179,7 @@ ${serverBlock}${authBlock}            "headers": ${formatPyDict(headers, 3)},
     Content(`            },
         },
         "entity": ${formatPyDict(
-      Object.values(entity).reduce((a: any, n: any) => (a[n.name] = clean({
-        fields: n.fields,
-        name: n.name,
-        op: n.op,
-        relations: n.relations,
-      }, true), a), {}), 2)},
+configDef.entity, 2)},
     }
 `)
   })

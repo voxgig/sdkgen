@@ -2612,7 +2612,7 @@ main: kit: entity: namespace: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/namespace", parts: ["namespace"]
+        args: {}, method: "GET", orig: "/namespace", segments: [{ lit: "namespace" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }

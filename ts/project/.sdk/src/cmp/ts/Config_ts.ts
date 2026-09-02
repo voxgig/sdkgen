@@ -8,7 +8,6 @@ import {
   Fragment,
   Line,
   cmp,
-  clean,
   configDefinition,
   configReprSetting,
   each,
@@ -170,13 +169,13 @@ const Config = cmp(async function Config(props: any) {
 `)
         }),
 
-        "'ENTITYMAP'": formatJson(Object.values(entity)
-          .reduce((a: any, n: any) => (a[n.name] = clean({
-            fields: n.fields,
-            name: n.name,
-            op: n.op,
-            relations: n.relations,
-          }, true), a), {}), { margin: 2 }).trim(),
+        // configDefinition's `def.entity` verbatim, NOT rebuilt here. This
+        // reduce was a second copy of that function's entityDefs loop, and
+        // when configDefinition started reconstructing a point's `parts`
+        // from apidef's segment vector (its ADR-003), only the data
+        // representation got it — the literal one emitted empty paths. The
+        // config-repr equivalence test caught it, which is what it is for.
+        "'ENTITYMAP'": formatJson(configDef.entity, { margin: 2 }).trim(),
       }
     })
   })

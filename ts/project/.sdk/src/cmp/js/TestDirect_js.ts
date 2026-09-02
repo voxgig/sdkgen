@@ -20,7 +20,8 @@ import {
   serverVarEnv,
   serverVariables,
   jsProp, envName, envToken,
-  jsKey
+  jsKey,
+  pointParts,
 } from '@voxgig/sdkgen'
 
 
@@ -172,13 +173,13 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   }
 
   const loadParams = loadPoint.args?.params || []
-  const loadPath = normalizePathParams(loadPoint.parts || [], loadParams, loadPoint.rename?.param)
+  const loadPath = normalizePathParams(pointParts(loadPoint), loadParams, loadPoint.rename?.param)
 
   // Get list info for live mode bootstrapping
   const listOp = entity.op?.list
   const listPoint = listOp?.points?.[0]
   const listParams = listPoint?.args?.params || []
-  const listPath = listPoint ? normalizePathParams(listPoint.parts || [], listParams, listPoint.rename?.param) : ''
+  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listParams, listPoint.rename?.param) : ''
   const hasList = null != listPoint
 
   // Ancestor params (not 'id') for live mode
@@ -274,7 +275,7 @@ function generateDirectList(model: Model, entity: ModelEntity) {
   }
 
   const listParams = listPoint.args?.params || []
-  const listPath = normalizePathParams(listPoint.parts || [], listParams, listPoint.rename?.param)
+  const listPath = normalizePathParams(pointParts(listPoint), listParams, listPoint.rename?.param)
 
   // Build live params
   const liveParams = listParams.map((p: any) => {

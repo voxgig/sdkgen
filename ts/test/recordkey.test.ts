@@ -53,7 +53,7 @@ describe('recordKey', () => {
       op: {
         load: {
           points: [{
-            parts: ['{base_id}', '{table_id}', '{record_id}'],
+            segments: [{ var: 'base_id' }, { var: 'table_id' }, { var: 'record_id' }],
             args: { params: {
               base_id: { name: 'base_id', reqd: true },
               table_id: { name: 'table_id', reqd: true },
@@ -77,7 +77,7 @@ describe('recordKey', () => {
       op: {
         load: {
           points: [{
-            parts: ['boards', '{id}'],
+            segments: [{ lit: 'boards' }, { var: 'id' }],
             args: { params: { id: { name: 'id', reqd: true } } },
           }],
         },

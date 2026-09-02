@@ -7,6 +7,7 @@ import {
   authorInfo, contributorList, isAuthActive, isHttpBasicAuth, jsKey, jsProp,
   SdkGenError,
   PUBLISHER, PUBLISHER_URL,
+  pointSegments,
 } from '@voxgig/sdkgen'
 
 import {
@@ -102,11 +103,14 @@ function recordKey(ent: any): string {
     const canonical = op.points.filter((pt: any) =>
       null == (pt && pt.select && pt.select['$action']))
     const point = ownPoint(0 < canonical.length ? canonical : op.points)
-    const parts: string[] = (point && point.parts) || []
-    const lastParam = [...parts].reverse().find((p: string) => p.startsWith('{'))
+    // The LAST variable segment names the record's key. apidef states which
+    // segments are variables (its ADR-003), so this reads the name off the
+    // vector rather than finding a `{` and slicing the braces back off.
+    const vars = pointSegments(point)
+      .filter((seg: any) => null != seg.var)
 
-    if (null != lastParam) {
-      return lastParam.slice(1, -1)
+    if (0 < vars.length) {
+      return String(vars[vars.length - 1].var)
     }
 
     // No path param at all (e.g. GET /scan/async/result?trace_id=...): the

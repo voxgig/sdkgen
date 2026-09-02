@@ -67,6 +67,9 @@ import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/ser
 import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
 import type { ExampleLang } from './helpers/opExample'
 import { liveStrict } from './helpers/testPolicy'
+import { pointSegments, pointParts, pointTerminalParam, pointPathKey }
+  from './helpers/pointPath'
+import type { PathSegment } from './helpers/pointPath'
 import {
   featureOf,
   availableFeatures,
@@ -1014,6 +1017,7 @@ export type {
   SdkGenOptions,
   ExampleLang,
   DepEntry,
+  PathSegment,
   FeatureSource,
   DoctorReport,
   RegisterOptions,
@@ -1119,6 +1123,13 @@ export {
   buildIdNames,
   getMatchEntries,
   collectDeps,
+
+  // apidef ADR-003: the model carries typed path segments, not braced
+  // strings. Scaffold components read the path through these.
+  pointSegments,
+  pointParts,
+  pointTerminalParam,
+  pointPathKey,
   canonToType,
   canonToDtype,
   canonKey,

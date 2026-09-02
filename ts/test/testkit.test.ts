@@ -64,7 +64,7 @@ main: kit: entity: planet: {
     { name: "title", req: true, type: "\`$STRING\`" }
   ]
   op: { list: { name: "list", points: [ {
-    args: {}, method: "GET", orig: "/planet", parts: ["planet"]
+    args: {}, method: "GET", orig: "/planet", segments: [{ lit: "planet" }]
     transform: { req: "\`reqdata\`", res: "\`body\`" } } ] } }
 }
 
@@ -75,7 +75,7 @@ main: kit: entity: hidden: {
   field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
   fields: [ { name: "id", req: true, type: "\`$STRING\`" } ]
   op: { list: { name: "list", points: [ {
-    args: {}, method: "GET", orig: "/hidden", parts: ["hidden"]
+    args: {}, method: "GET", orig: "/hidden", segments: [{ lit: "hidden" }]
     transform: { req: "\`reqdata\`", res: "\`body\`" } } ] } }
 }
 `

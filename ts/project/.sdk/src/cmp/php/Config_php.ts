@@ -29,7 +29,6 @@ import {
 
 
 import {
-  clean,
   formatPhpArray,
 } from './utility_php'
 
@@ -239,12 +238,7 @@ ${serverBlock}${authBlock}                "headers" => ${formatPhpArray(headers,
     Content(`                ],
             ],
             "entity" => ${formatPhpArray(
-      Object.values(entity).reduce((a: any, n: any) => (a[n.name] = clean({
-        fields: n.fields,
-        name: n.name,
-        op: n.op,
-        relations: n.relations,
-      }, true), a), {}), 3)},
+configDef.entity, 3)},
         ];
 `)
     }

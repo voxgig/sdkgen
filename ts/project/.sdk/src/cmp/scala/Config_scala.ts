@@ -7,6 +7,7 @@ import {
   isAuthActive,
   resolveAuthPrefix,
   targetFeatures,
+  configDefinition,
 } from '@voxgig/sdkgen'
 
 
@@ -36,6 +37,7 @@ const Config = cmp(async function Config(props: any) {
   const scalapackage = scalaPackage(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
+  const { def: configDef } = configDefinition(model, target.name)
   // Gated by the applicability tags, so this target never imports or
   // registers a feature it has no source for. One rule, one place:
   // helpers/applicability.
@@ -68,13 +70,13 @@ const Config = cmp(async function Config(props: any) {
   options.headers = headers
   options.entity = optionsEntity
 
-  const entityConfig = Object.values(entity).reduce((a: any, n: any) => (
-    a[n.name] = cleanModel({
-      fields: n.fields,
-      name: n.name,
-      op: n.op,
-      relations: n.relations,
-    }, true), a), {})
+  // configDefinition's `def.entity` verbatim, NOT rebuilt here. This reduce
+  // was one of fourteen copies of that function's entityDefs loop, and when
+  // configDefinition started reconstructing a point's `parts` from apidef's
+  // segment vector (its ADR-003), only the copies that read `configDef` got
+  // it — this target's literal config emitted paths with no parts at all
+  // while its data config had them. One rule, one place.
+  const entityConfig = configDef.entity
 
   const config = {
     main: { name: model.const.Name },

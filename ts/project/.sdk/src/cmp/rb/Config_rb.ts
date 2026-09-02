@@ -29,7 +29,6 @@ import {
 
 
 import {
-  clean,
   formatRubyHash,
 } from './utility_rb'
 
@@ -165,12 +164,7 @@ ${serverBlock}${authBlock}        "headers" => ${formatRubyHash(headers, 4)},
     Content(`        },
       },
       "entity" => ${formatRubyHash(
-      Object.values(entity).reduce((a: any, n: any) => (a[n.name] = clean({
-        fields: n.fields,
-        name: n.name,
-        op: n.op,
-        relations: n.relations,
-      }, true), a), {}), 3)},
+configDef.entity, 3)},
     }
   end
 `)
