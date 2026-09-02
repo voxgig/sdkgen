@@ -2,6 +2,7 @@ import {
   cmp, each,
   File, Content, Folder,
   jsKey, jsProp,
+  pointSegments,
 } from '@voxgig/sdkgen'
 
 
@@ -22,7 +23,8 @@ import {
 function loadHasKey(ent: any): boolean {
   const point = (ent.op && ent.op.load && ent.op.load.points || [])[0]
   if (null == point) return false
-  const hasPathParam = (point.parts || []).some((p: string) => p.startsWith('{'))
+  // apidef states which segments are variables (its ADR-003) — no brace test.
+  const hasPathParam = pointSegments(point).some((seg: any) => null != seg.var)
   const hasQueryParam = (point.args && point.args.query || [])
     .some((q: any) => false !== q.reqd)
   return hasPathParam || hasQueryParam

@@ -7,7 +7,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/c.aon 1a783bba9eba
 model/target/target-index.aon a1ddf98d9368
-src/cmp/c/Config_c.ts 42702749057b
+src/cmp/c/Config_c.ts 83f4e42320da
 src/cmp/c/EntityBase_c.ts 70f610b1220f
 src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
 src/cmp/c/EntityTypes_c.ts d0c20304f410
@@ -29,7 +29,7 @@ src/cmp/c/ReadmeRef_c.ts 429865784db3
 src/cmp/c/ReadmeTopHowto_c.ts 53480bd63967
 src/cmp/c/ReadmeTopQuick_c.ts 38971de7faf5
 src/cmp/c/ReadmeTopTest_c.ts 94aa193c7015
-src/cmp/c/TestDirect_c.ts 05edbbed4d9b
+src/cmp/c/TestDirect_c.ts 8c6db9aad987
 src/cmp/c/TestEntity_c.ts 84c0cb4a54e6
 src/cmp/c/Test_c.ts 540c16c88fa8
 src/cmp/c/fragment/Entity.fragment.c 1f68ddd484b8
@@ -211,7 +211,7 @@ src/cmp/cpp/ReadmeRef_cpp.ts 955199a424e5
 src/cmp/cpp/ReadmeTopHowto_cpp.ts 4b4bbe9d899a
 src/cmp/cpp/ReadmeTopQuick_cpp.ts 4b94785fbebc
 src/cmp/cpp/ReadmeTopTest_cpp.ts 1a2decabecde
-src/cmp/cpp/TestDirect_cpp.ts c97993d68976
+src/cmp/cpp/TestDirect_cpp.ts 3692b05a725d
 src/cmp/cpp/TestEntity_cpp.ts 23dc7977bc30
 src/cmp/cpp/Test_cpp.ts bafd48172676
 src/cmp/cpp/fragment/Entity.fragment.cpp 20241a80404e
@@ -280,7 +280,7 @@ src/cmp/csharp/ReadmeTopHowto_csharp.ts 8c938ccb8691
 src/cmp/csharp/ReadmeTopQuick_csharp.ts e070795e3016
 src/cmp/csharp/ReadmeTopTest_csharp.ts a4e7d74be219
 src/cmp/csharp/SdkError_csharp.ts 1cd61a4cfec7
-src/cmp/csharp/TestDirect_csharp.ts cc9d32c800cd
+src/cmp/csharp/TestDirect_csharp.ts 262a6f74c9bb
 src/cmp/csharp/TestEntity_csharp.ts 14ea0805eb71
 src/cmp/csharp/Test_csharp.ts 68982b5a8646
 src/cmp/csharp/fragment/Entity.fragment.cs ccdd760779fe
@@ -362,7 +362,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/dart.aon 2faa4432cb82
 model/target/target-index.aon 4125cafa4969
-src/cmp/dart/Config_dart.ts b72a6ed4f236
+src/cmp/dart/Config_dart.ts 105d89ff4b4c
 src/cmp/dart/EntityBase_dart.ts a08877768561
 src/cmp/dart/EntityOperation_dart.ts 943876175932
 src/cmp/dart/EntityTypes_dart.ts 73e3ad824eaf
@@ -385,7 +385,7 @@ src/cmp/dart/ReadmeTopHowto_dart.ts f8d15d29913f
 src/cmp/dart/ReadmeTopQuick_dart.ts 2182e1533a24
 src/cmp/dart/ReadmeTopTest_dart.ts 7b630874fbc3
 src/cmp/dart/SdkError_dart.ts 6411a73a5460
-src/cmp/dart/TestDirect_dart.ts 6ead1bd6047c
+src/cmp/dart/TestDirect_dart.ts 2a172a30bd05
 src/cmp/dart/TestEntity_dart.ts a8288a57ab57
 src/cmp/dart/Test_dart.ts 136a5ebf2a83
 src/cmp/dart/fragment/Config.data.fragment.dart f48f9ad4df82
@@ -471,7 +471,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/elixir.aon 878deb7c36ea
 model/target/target-index.aon c9b09d715b14
-src/cmp/elixir/Config_elixir.ts 5f739fec1666
+src/cmp/elixir/Config_elixir.ts 0cedd3e7a531
 src/cmp/elixir/EntityOperation_elixir.ts 69ddad39f404
 src/cmp/elixir/EntityTypes_elixir.ts b30edbe49d6b
 src/cmp/elixir/Entity_elixir.ts c30a8cfd1fee
@@ -537,7 +537,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/go.aon cb1efe3c5a7e
 model/target/target-index.aon 626b8fa31e53
-src/cmp/go/Config_go.ts c886687c8786
+src/cmp/go/Config_go.ts 93f196c63bc0
 src/cmp/go/EntityOperation_go.ts 466b87860b69
 src/cmp/go/EntityTypes_go.ts 79d3a2c638db
 src/cmp/go/Entity_go.ts eda6f8bedfca
@@ -558,7 +558,7 @@ src/cmp/go/ReadmeRef_go.ts a9f499266c28
 src/cmp/go/ReadmeTopHowto_go.ts 2d7332aca33c
 src/cmp/go/ReadmeTopQuick_go.ts fae7ec32036b
 src/cmp/go/ReadmeTopTest_go.ts 747e3b9fc1c5
-src/cmp/go/TestDirect_go.ts 947b05df3b80
+src/cmp/go/TestDirect_go.ts b88b392ac388
 src/cmp/go/TestEntity_go.ts 9742f5b80863
 src/cmp/go/Test_go.ts ef2532dbbaf1
 src/cmp/go/fragment/Entity.fragment.go e00728a52f1d
@@ -666,7 +666,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/java.aon 10cccb455dbb
 model/target/target-index.aon cd7f19307030
-src/cmp/java/Config_java.ts 2fe963d9b6eb
+src/cmp/java/Config_java.ts 42930739d78b
 src/cmp/java/EntityBase_java.ts ac3da23ea6f8
 src/cmp/java/EntityOperation_java.ts e66863d4a002
 src/cmp/java/EntityTypes_java.ts f700de632a57
@@ -689,7 +689,7 @@ src/cmp/java/ReadmeTopHowto_java.ts c3befccf0daa
 src/cmp/java/ReadmeTopQuick_java.ts 9b293b845611
 src/cmp/java/ReadmeTopTest_java.ts 798f5114294c
 src/cmp/java/SdkError_java.ts 2957202451b0
-src/cmp/java/TestDirect_java.ts 9da190c200fb
+src/cmp/java/TestDirect_java.ts 85790864e2f8
 src/cmp/java/TestEntity_java.ts 4fe8d8a8959d
 src/cmp/java/Test_java.ts efcd4f01b8bc
 src/cmp/java/fragment/Entity.fragment.java 8615d49ba6a6
@@ -777,7 +777,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/js.aon fe9b11f8de9e
 model/target/target-index.aon 66e6d039373f
-src/cmp/js/Config_js.ts 3af51c8e0928
+src/cmp/js/Config_js.ts 80f18fe29995
 src/cmp/js/EntityBase_js.ts 69622212f72b
 src/cmp/js/EntityOperation_js.ts 6d165a88201a
 src/cmp/js/EntityTypes_js.ts 83ce997ce401
@@ -799,7 +799,7 @@ src/cmp/js/ReadmeTopHowto_js.ts 7580c1d8ef9c
 src/cmp/js/ReadmeTopQuick_js.ts 279f98ea3310
 src/cmp/js/ReadmeTopTest_js.ts 1fa9a087871f
 src/cmp/js/SdkError_js.ts c3c526f2b624
-src/cmp/js/TestDirect_js.ts 1df198404b47
+src/cmp/js/TestDirect_js.ts 95d3067cdbb7
 src/cmp/js/TestEntity_js.ts 834bc53920fd
 src/cmp/js/TestMain_js.ts 8b45d4d8db1a
 src/cmp/js/Test_js.ts 3b76cc12e910
@@ -887,7 +887,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/kotlin.aon 3e0813d415fe
 model/target/target-index.aon 28086b55b8bd
-src/cmp/kotlin/Config_kotlin.ts 62ac57ee4ce5
+src/cmp/kotlin/Config_kotlin.ts bd052618cabb
 src/cmp/kotlin/EntityBase_kotlin.ts afa36713ef4c
 src/cmp/kotlin/EntityOperation_kotlin.ts b39b1c9d620a
 src/cmp/kotlin/EntityTypes_kotlin.ts 2cc19adcce0c
@@ -910,7 +910,7 @@ src/cmp/kotlin/ReadmeTopHowto_kotlin.ts 5f8193767df5
 src/cmp/kotlin/ReadmeTopQuick_kotlin.ts b722e70958f2
 src/cmp/kotlin/ReadmeTopTest_kotlin.ts 15706807d852
 src/cmp/kotlin/SdkError_kotlin.ts dc0cd7ddcc31
-src/cmp/kotlin/TestDirect_kotlin.ts 366ec17d62ee
+src/cmp/kotlin/TestDirect_kotlin.ts b1b09a7992d7
 src/cmp/kotlin/TestEntity_kotlin.ts aeb207fe7a63
 src/cmp/kotlin/Test_kotlin.ts 73fb779b3c20
 src/cmp/kotlin/fragment/Entity.fragment.kt 71737b03ef7d
@@ -974,7 +974,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/lean.aon 024cdb46ad2e
 model/target/target-index.aon 0380baac2f34
-src/cmp/lean/Config_lean.ts d131c927b204
+src/cmp/lean/Config_lean.ts 3dd4b09fd1e8
 src/cmp/lean/Entity_lean.ts 8f1a57a3ed36
 src/cmp/lean/Gitignore_lean.ts b5631e71c626
 src/cmp/lean/Main_lean.ts 2a7a4e82aad6
@@ -1033,7 +1033,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/lua.aon 5d3abe24ad8a
 model/target/target-index.aon ea75509be8db
-src/cmp/lua/Config_lua.ts 5b4557669428
+src/cmp/lua/Config_lua.ts 3baba859a2af
 src/cmp/lua/EntityOperation_lua.ts daa4641b002e
 src/cmp/lua/EntityTypes_lua.ts 77fba0685c63
 src/cmp/lua/Entity_lua.ts e3e43269850c
@@ -1054,7 +1054,7 @@ src/cmp/lua/ReadmeRef_lua.ts 4937a79882d2
 src/cmp/lua/ReadmeTopHowto_lua.ts 2f4ff4561460
 src/cmp/lua/ReadmeTopQuick_lua.ts 1b94cb7d3aef
 src/cmp/lua/ReadmeTopTest_lua.ts 747e3a11882c
-src/cmp/lua/TestDirect_lua.ts 311275dc0e64
+src/cmp/lua/TestDirect_lua.ts dbbec3edb7be
 src/cmp/lua/TestEntity_lua.ts b1eb12ed2384
 src/cmp/lua/Test_lua.ts 2564e8eccd24
 src/cmp/lua/fragment/Entity.fragment.lua 2295ead71290
@@ -1223,7 +1223,7 @@ src/cmp/perl/ReadmeRef_perl.ts 8109ce61df0a
 src/cmp/perl/ReadmeTopHowto_perl.ts 287f685ca3bf
 src/cmp/perl/ReadmeTopQuick_perl.ts 292e04935a5a
 src/cmp/perl/ReadmeTopTest_perl.ts fd5247ab7792
-src/cmp/perl/TestDirect_perl.ts f591dfa5962c
+src/cmp/perl/TestDirect_perl.ts 5a3cc695f8e4
 src/cmp/perl/TestEntity_perl.ts 4b5ae0bf6f66
 src/cmp/perl/Test_perl.ts 1485487244ad
 src/cmp/perl/fragment/Entity.fragment.pm b0c23633312a
@@ -1301,7 +1301,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/php.aon adbcd3850c15
 model/target/target-index.aon 4bd43db1bef1
-src/cmp/php/Config_php.ts 7b2d3e6498be
+src/cmp/php/Config_php.ts cc91db1b3460
 src/cmp/php/EntityOperation_php.ts 65b4daf2dff8
 src/cmp/php/EntityTypes_php.ts 92945dd564fe
 src/cmp/php/Entity_php.ts 44b5f53db2e9
@@ -1322,7 +1322,7 @@ src/cmp/php/ReadmeRef_php.ts 189e092943d8
 src/cmp/php/ReadmeTopHowto_php.ts a0a90593a80f
 src/cmp/php/ReadmeTopQuick_php.ts b3edfcea6b72
 src/cmp/php/ReadmeTopTest_php.ts e602ef0b983e
-src/cmp/php/TestDirect_php.ts 915671b03a16
+src/cmp/php/TestDirect_php.ts 8f7b0e32a59f
 src/cmp/php/TestEntity_php.ts 923183f5805b
 src/cmp/php/Test_php.ts ae9d9cb4d7e7
 src/cmp/php/fragment/Entity.fragment.php 001ec896c0f3
@@ -1400,7 +1400,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/py.aon 8eda693200e7
 model/target/target-index.aon 9424f27eb776
-src/cmp/py/Config_py.ts b61486c3c892
+src/cmp/py/Config_py.ts cda039df357d
 src/cmp/py/EntityOperation_py.ts 8b1b1cf28054
 src/cmp/py/EntityTypes_py.ts eef793247b33
 src/cmp/py/Entity_py.ts 8106dc666873
@@ -1421,7 +1421,7 @@ src/cmp/py/ReadmeRef_py.ts c92e6b0d56a4
 src/cmp/py/ReadmeTopHowto_py.ts 98e1b9247b51
 src/cmp/py/ReadmeTopQuick_py.ts ea8e22778b5d
 src/cmp/py/ReadmeTopTest_py.ts 5416eade0670
-src/cmp/py/TestDirect_py.ts 55437cf01f8d
+src/cmp/py/TestDirect_py.ts 67384c195ec0
 src/cmp/py/TestEntity_py.ts 50e3c615c0f8
 src/cmp/py/Test_py.ts 4b5557a0df5c
 src/cmp/py/fragment/Entity.fragment.py 527a7f53f42c
@@ -1526,7 +1526,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/rb.aon 942b3d63ea19
 model/target/target-index.aon ac0bc237c44c
-src/cmp/rb/Config_rb.ts b6ac19413046
+src/cmp/rb/Config_rb.ts 19de493ec0e3
 src/cmp/rb/EntityOperation_rb.ts 43ad5a64b0c9
 src/cmp/rb/EntityTypes_rb.ts 89606bbf992c
 src/cmp/rb/Entity_rb.ts 099deec849d9
@@ -1547,7 +1547,7 @@ src/cmp/rb/ReadmeRef_rb.ts a0419ad0ebde
 src/cmp/rb/ReadmeTopHowto_rb.ts d4c1341f730d
 src/cmp/rb/ReadmeTopQuick_rb.ts ef63760e8ff6
 src/cmp/rb/ReadmeTopTest_rb.ts 0ca36d32a47b
-src/cmp/rb/TestDirect_rb.ts b48e022bc9ba
+src/cmp/rb/TestDirect_rb.ts 815de3741cb7
 src/cmp/rb/TestEntity_rb.ts da6b2d4ddb44
 src/cmp/rb/Test_rb.ts 41bb05824ffe
 src/cmp/rb/fragment/Entity.fragment.rb 2eb9ff03ad75
@@ -1648,7 +1648,7 @@ src/cmp/rust/ReadmeTopHowto_rust.ts 7f66286916f9
 src/cmp/rust/ReadmeTopQuick_rust.ts fd5cbe899956
 src/cmp/rust/ReadmeTopTest_rust.ts d42ced4f735d
 src/cmp/rust/SdkError_rust.ts 44f812a8460e
-src/cmp/rust/TestDirect_rust.ts 2b9e2470ef88
+src/cmp/rust/TestDirect_rust.ts a92797568804
 src/cmp/rust/TestEntity_rust.ts a62f2f7bf893
 src/cmp/rust/Test_rust.ts 378ac12d3a19
 src/cmp/rust/fragment/Entity.fragment.rs ec20aff2866f
@@ -1735,7 +1735,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/scala.aon 5992621f44e1
 model/target/target-index.aon 0da3132ebe91
-src/cmp/scala/Config_scala.ts b35299ca7b52
+src/cmp/scala/Config_scala.ts 971a7fe13713
 src/cmp/scala/EntityBase_scala.ts 95d5e61aa06f
 src/cmp/scala/EntityOperation_scala.ts 5de61f269ee2
 src/cmp/scala/EntityTypes_scala.ts 8ba0e8ef8f2e
@@ -1757,7 +1757,7 @@ src/cmp/scala/ReadmeRef_scala.ts 20ed60ca8638
 src/cmp/scala/ReadmeTopHowto_scala.ts 1169e3db1008
 src/cmp/scala/ReadmeTopQuick_scala.ts a8363080c879
 src/cmp/scala/ReadmeTopTest_scala.ts 8b1837c964cb
-src/cmp/scala/TestDirect_scala.ts 848e69d6bd5a
+src/cmp/scala/TestDirect_scala.ts 7df1eeaad028
 src/cmp/scala/TestEntity_scala.ts e6bd86ddf84d
 src/cmp/scala/Test_scala.ts e88d8f87a50e
 src/cmp/scala/fragment/Entity.fragment.scala 84b22d8892fa
@@ -1852,9 +1852,9 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/seneca-provider.aon df62646e352f
 model/target/target-index.aon 7fa724b7bda4
-src/cmp/seneca-provider/Extras_seneca-provider.ts 5515abe8e3ed
+src/cmp/seneca-provider/Extras_seneca-provider.ts b66a4671a34d
 src/cmp/seneca-provider/Gitignore_seneca-provider.ts 188e88524e59
-src/cmp/seneca-provider/Main_seneca-provider.ts c92ab76ab983
+src/cmp/seneca-provider/Main_seneca-provider.ts 5ab7542df87d
 tm/seneca-provider/CODE_OF_CONDUCT.md ae654991bd5f
 tm/seneca-provider/LICENSE 5466e344bee1
 tm/seneca-provider/Makefile 6856c7df3e08
@@ -1960,7 +1960,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/target-index.aon 6d6ce1a6c7d8
 model/target/ts.aon c5143af866de
-src/cmp/ts/Config_ts.ts 9a70c00f2709
+src/cmp/ts/Config_ts.ts fb8763b8e7f3
 src/cmp/ts/EntityBase_ts.ts 901c1c6f2730
 src/cmp/ts/EntityOperation_ts.ts 8e35c5f506d0
 src/cmp/ts/EntityTypes_ts.ts 7114b6e9f274
@@ -1984,7 +1984,7 @@ src/cmp/ts/ReadmeTopHowto_ts.ts cb6e656a9bf5
 src/cmp/ts/ReadmeTopQuick_ts.ts b5732f4195c0
 src/cmp/ts/ReadmeTopTest_ts.ts 171136366bd2
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
-src/cmp/ts/TestDirect_ts.ts d0e64449b3e2
+src/cmp/ts/TestDirect_ts.ts 054c048e9206
 src/cmp/ts/TestEntity_ts.ts e8e08dc5e032
 src/cmp/ts/TestMain_ts.ts 8b45d4d8db1a
 src/cmp/ts/Test_ts.ts 9f0224fad553

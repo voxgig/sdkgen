@@ -183,13 +183,13 @@ describe('opRequestShape — multi-point param merging', () => {
       op: {
         load: { points: [
           {
-            parts: ['notifications', '{id}', 'board'],
+            segments: [{ lit: 'notifications' }, { var: 'id' }, { lit: 'board' }],
             args: { params: {
               notification_id: { name: 'notification_id', type: '`$STRING`', reqd: true },
             } },
           },
           {
-            parts: ['boards', '{id}'],
+            segments: [{ lit: 'boards' }, { var: 'id' }],
             args: { params: { id: { name: 'id', type: '`$STRING`', reqd: true } } },
           },
         ] },
@@ -214,13 +214,13 @@ describe('opRequestShape — multi-point param merging', () => {
       op: {
         load: { points: [
           {
-            parts: ['users'],
+            segments: [{ lit: 'users' }],
             args: { params: {
               email: { name: 'email', type: '`$STRING`', reqd: false },
             } },
           },
           {
-            parts: ['users'],
+            segments: [{ lit: 'users' }],
             args: { params: {
               name: { name: 'name', type: '`$STRING`', reqd: false },
             } },
@@ -246,13 +246,13 @@ describe('opRequestShape — multi-point param merging', () => {
       op: {
         load: { points: [
           {
-            parts: ['posts', '{id}', 'author'],
+            segments: [{ lit: 'posts' }, { var: 'id' }, { lit: 'author' }],
             args: { params: {
               post_id: { name: 'post_id', type: '`$STRING`', reqd: false },
             } },
           },
           {
-            parts: ['accounts', '{account_id}', 'users', '{id}'],
+            segments: [{ lit: 'accounts' }, { var: 'account_id' }, { lit: 'users' }, { var: 'id' }],
             args: { params: {
               account_id: { name: 'account_id', type: '`$STRING`', reqd: true },
               id: { name: 'id', type: '`$STRING`', reqd: true },

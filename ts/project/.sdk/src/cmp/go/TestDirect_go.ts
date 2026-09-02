@@ -13,7 +13,8 @@ import {
   snakify,
   isAuthActive,
   serverVarEnv,
-  serverVariables, envName, envToken, liveStrict
+  serverVariables, envName, envToken, liveStrict,
+  pointParts,
 } from '@voxgig/sdkgen'
 
 
@@ -109,7 +110,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // Get load point info
   const loadPoint = loadOp?.points?.[0]
   const loadIsGraphql = 'graphql' === (loadPoint as any)?.kind
-  const loadPath = loadPoint ? normalizePathParams(loadPoint.parts || [], loadPoint?.args?.params || [], loadPoint?.rename?.param) : ''
+  const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.args?.params || [], loadPoint?.rename?.param) : ''
   const allLoadParams = loadPoint?.args?.params || []
   // Some upstream OpenAPI specs declare a parameter as `in: path` even when
   // that path has no `{name}` placeholder for it. Only path params that
@@ -117,7 +118,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // setup and URL-substitution asserts; otherwise the SDK silently drops
   // them and the URL-includes assert fails.
   const _pathPlaceholders = new Set<string>()
-  for (const part of (loadPoint?.parts || [])) {
+  for (const part of pointParts(loadPoint)) {
     if (typeof part === 'string' && part.startsWith('{') && part.endsWith('}')) {
       _pathPlaceholders.add(part.slice(1, -1))
     }
@@ -136,7 +137,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // Get list point info
   const listPoint = listOp?.points?.[0]
   const listIsGraphql = 'graphql' === (listPoint as any)?.kind
-  const listPath = listPoint ? normalizePathParams(listPoint.parts || [], listPoint?.args?.params || [], listPoint?.rename?.param) : ''
+  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.args?.params || [], listPoint?.rename?.param) : ''
   const listParams = listPoint?.args?.params || []
 
   // Required query params with spec-provided examples — needed in live mode

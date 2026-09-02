@@ -21,6 +21,7 @@ const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
 const applicability_1 = require("./helpers/applicability");
 const serverVars_1 = require("./helpers/serverVars");
+const pointPath_1 = require("./helpers/pointPath");
 const packageMeta_1 = require("./helpers/packageMeta");
 // Where a per-target component is loaded from: `<project>/.sdk/dist/<path>`.
 //
@@ -305,6 +306,30 @@ const SPEC_FACTS = {
 //
 // Key order is `each`'s order, which is sorted, so the JSON is byte-stable
 // across runs exactly like the literal it replaces.
+// The embedded config still speaks the braced-string path form
+// (`['element', '{id}']`) that every generated runtime reads. apidef now
+// emits the resolved vector instead (its ADR-003), so the old shape is
+// reconstructed HERE — the single point at which a point reaches generated
+// output — via the single reconstruction in helpers/pointPath.
+//
+// Both are written: `parts` for the runtimes as they stand, `segments`
+// alongside it so a runtime can be moved over one language at a time. That
+// duplication is deliberate and temporary, and it lives in GENERATED output,
+// not in the model — which is what ADR-003 forbids. It ends when the last
+// runtime reads segments and `parts` is dropped from this function.
+function withPointParts(op) {
+    if (null == op) {
+        return op;
+    }
+    const out = {};
+    (0, jostraca_1.each)(op, (o, opname) => {
+        out[opname] = null == o || null == o.points ? o : {
+            ...o,
+            points: (0, jostraca_1.each)(o.points).map((pt) => null == pt ? pt : { ...pt, parts: (0, pointPath_1.pointParts)(pt) }),
+        };
+    });
+    return out;
+}
 function configDefinition(model, targetname) {
     const entity = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.entity`);
     // Gated by the target when one is named, so the embedded config cannot
@@ -329,7 +354,7 @@ function configDefinition(model, targetname) {
         entityDefs[e.name] = clean({
             fields: e.fields,
             name: e.name,
-            op: e.op,
+            op: withPointParts(e.op),
             relations: e.relations,
         }, true);
         entityStubs[e.name] = {};

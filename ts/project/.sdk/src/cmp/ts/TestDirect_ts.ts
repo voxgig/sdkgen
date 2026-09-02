@@ -22,7 +22,8 @@ import {
   isHttpBasicAuth,
   jsProp,
   jsOptProp, envName, envToken, liveStrict,
-  jsKey
+  jsKey,
+  pointParts,
 } from '@voxgig/sdkgen'
 
 
@@ -295,7 +296,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity, strict: boolean) 
   }
 
   const allLoadParams = loadPoint.args?.params || []
-  const loadPath = normalizePathParams(loadPoint.parts || [], allLoadParams, loadPoint.rename?.param)
+  const loadPath = normalizePathParams(pointParts(loadPoint), allLoadParams, loadPoint.rename?.param)
 
   // Some upstream OpenAPI specs declare a parameter as `in: path` even when
   // that path has no `{name}` placeholder for it. Only path params that
@@ -303,7 +304,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity, strict: boolean) 
   // setup and URL-substitution asserts; otherwise the SDK silently drops
   // them and the URL-includes assert fails.
   const pathPlaceholders = new Set<string>()
-  for (const part of (loadPoint.parts || [])) {
+  for (const part of pointParts(loadPoint)) {
     if (typeof part === 'string' && part.startsWith('{') && part.endsWith('}')) {
       pathPlaceholders.add(part.slice(1, -1))
     }
@@ -337,7 +338,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity, strict: boolean) 
   const listOp = entity.op?.list
   const listPoint = listOp?.points?.[0]
   const listParams = listPoint?.args?.params || []
-  const listPath = listPoint ? normalizePathParams(listPoint.parts || [], listParams, listPoint.rename?.param) : ''
+  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listParams, listPoint.rename?.param) : ''
   const hasList = null != listPoint
 
   // Ancestor params (not 'id') for live mode
@@ -530,7 +531,7 @@ function generateDirectList(model: Model, entity: ModelEntity, strict: boolean) 
   }
 
   const listParams = listPoint.args?.params || []
-  const listPath = normalizePathParams(listPoint.parts || [], listParams, listPoint.rename?.param)
+  const listPath = normalizePathParams(pointParts(listPoint), listParams, listPoint.rename?.param)
 
   // Required query params with spec-provided examples — needed to satisfy
   // the API contract in live mode (see generateDirectLoad for rationale).

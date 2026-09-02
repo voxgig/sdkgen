@@ -118,7 +118,7 @@ main: kit: entity: planet: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/planet", parts: ["planet"]
+        args: {}, method: "GET", orig: "/planet", segments: [{ lit: "planet" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -128,7 +128,7 @@ main: kit: entity: planet: {
         args: { params: [
           { kind: "param", name: "id", orig: "id", reqd: true, type: "\`$STRING\`", example: "p01" }
         ] }
-        method: "GET", orig: "/planet/{id}", parts: ["planet", "{id}"]
+        method: "GET", orig: "/planet/{id}", segments: [{ lit: "planet" }, { var: "id" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -136,7 +136,7 @@ main: kit: entity: planet: {
       name: "create"
       points: [
         {
-          args: {}, method: "POST", orig: "/planet", parts: ["planet"]
+          args: {}, method: "POST", orig: "/planet", segments: [{ lit: "planet" }]
           transform: { req: "\`reqdata\`", res: "\`body\`" }
         }
         # A CUSTOM ACTION folded into create, selected by \`$action\` at call
@@ -148,7 +148,7 @@ main: kit: entity: planet: {
           args: { params: [
             { kind: "param", name: "id", orig: "id", reqd: true, type: "\`$STRING\`", example: "p01" }
           ] }
-          method: "POST", orig: "/planet/{id}/terraform", parts: ["planet", "{id}", "terraform"]
+          method: "POST", orig: "/planet/{id}/terraform", segments: [{ lit: "planet" }, { var: "id" }, { lit: "terraform" }]
           select: { "$action": "terraform", exist: ["id"] }
           transform: { req: "\`reqdata\`", res: "\`body\`" }
         }
@@ -160,7 +160,7 @@ main: kit: entity: planet: {
         args: { params: [
           { kind: "param", name: "id", orig: "id", reqd: true, type: "\`$STRING\`", example: "p01" }
         ] }
-        method: "PUT", orig: "/planet/{id}", parts: ["planet", "{id}"]
+        method: "PUT", orig: "/planet/{id}", segments: [{ lit: "planet" }, { var: "id" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -170,7 +170,7 @@ main: kit: entity: planet: {
         args: { params: [
           { kind: "param", name: "id", orig: "id", reqd: true, type: "\`$STRING\`", example: "p01" }
         ] }
-        method: "DELETE", orig: "/planet/{id}", parts: ["planet", "{id}"]
+        method: "DELETE", orig: "/planet/{id}", segments: [{ lit: "planet" }, { var: "id" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -194,7 +194,7 @@ main: kit: entity: ambient: {
     load: {
       name: "load"
       points: [ {
-        args: {}, method: "GET", orig: "/ambient", parts: ["ambient"]
+        args: {}, method: "GET", orig: "/ambient", segments: [{ lit: "ambient" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -218,7 +218,7 @@ main: kit: entity: history: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/history", parts: ["history"]
+        args: {}, method: "GET", orig: "/history", segments: [{ lit: "history" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -260,7 +260,7 @@ main: kit: entity: utility: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/utility", parts: ["utility"]
+        args: {}, method: "GET", orig: "/utility", segments: [{ lit: "utility" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -282,7 +282,7 @@ main: kit: entity: graph_ql: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/graphql", parts: ["graphql"]
+        args: {}, method: "GET", orig: "/graphql", segments: [{ lit: "graphql" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -304,7 +304,7 @@ main: kit: entity: console: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/console", parts: ["console"]
+        args: {}, method: "GET", orig: "/console", segments: [{ lit: "console" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -328,7 +328,7 @@ main: kit: entity: record: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/record", parts: ["record"]
+        args: {}, method: "GET", orig: "/record", segments: [{ lit: "record" }]
         transform: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }

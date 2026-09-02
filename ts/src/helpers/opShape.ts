@@ -29,6 +29,8 @@
 import { each, names } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
+import { pointSegments, pointTerminalParam, pointPathKey } from './pointPath'
+
 
 // THE entity collection for a model — resolved once, with a stable identity.
 //
@@ -217,25 +219,19 @@ function entityPath(entity: any): string {
 // no point's `select.exist` matches. It cannot be shared with them — a
 // template ships standalone, outside this package — so it is written twice on
 // purpose, and both sides must move together.
-function terminalParam(point: any): boolean {
-  const parts: any[] = (point && point.parts) || []
-  const last = 0 < parts.length ? parts[parts.length - 1] : ''
-  return 'string' === typeof last && last.startsWith('{')
-}
-
-
 function ownPoint(points: any[]): any {
   let best = points[0]
 
   for (const pt of points) {
-    if (null == pt || null == pt.parts || null == best || null == best.parts) {
+    if (null == pt || null == pt.segments || null == best || null == best.segments) {
       continue
     }
 
-    const ptterm = terminalParam(pt)
-    const bestterm = terminalParam(best)
+    const ptterm = pointTerminalParam(pt)
+    const bestterm = pointTerminalParam(best)
 
-    if (ptterm !== bestterm ? ptterm : pt.parts.length < best.parts.length) {
+    if (ptterm !== bestterm ?
+      ptterm : pointSegments(pt).length < pointSegments(best).length) {
       best = pt
     }
   }
@@ -248,10 +244,9 @@ function ownPoint(points: any[]): any {
 // selectors on one endpoint (the same path, chosen by different query
 // params), not cross-references to different resources.
 function samePath(points: any[]): boolean {
-  const first = ((points[0] && points[0].parts) || []).join('/')
+  const first = pointPathKey(points[0])
 
-  return points.every((pt: any) =>
-    first === ((pt && pt.parts) || []).join('/'))
+  return points.every((pt: any) => first === pointPathKey(pt))
 }
 
 
