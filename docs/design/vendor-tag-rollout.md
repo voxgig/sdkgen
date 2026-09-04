@@ -16,6 +16,13 @@ This one adds three things:
 3. **omni as the test runner for every LANGUAGE target**, replacing the
    hand-written runners.
 
+> **Status: IMPLEMENTED for the pilot (ts, js, go, py) — see "Outcome"
+> at the end of this note.** The decision record below is kept as
+> written, corrections and all, because the next 18 targets walk the
+> same road.
+>
+> Original status line follows.
+>
 > **Status: the decisions below are settled; the ROLLOUT SHAPE is not.**
 > An adversarial verification pass (82 agents, every claim re-read
 > against the repos, each alleged defect independently refuted or upheld)
@@ -540,3 +547,63 @@ nobody had written down, and the next pass will need them:
 | haskell is a 23rd target outside the tool's write root, already drifted 167 lines with two regex functions stubbed out | a live correctness bug in shipped code |
 | js `StructUtility.js` version stamp is hand-bumped; 17 sekreto files record the wrong commit | the guard cannot see either |
 | corpus v1 needs `empty: true` ADDED and five fields renamed | the draft had it backwards |
+
+
+## Outcome (2026-09-04, branch feat/vendor-tag-20260904)
+
+Implemented and proven, in one pass:
+
+- **The tool**: `make vendor` / `vendor-check`, `ts/build/vendor.js` +
+  `ts/vendor/routes.json` (14 routes), content via `git show` at the tag,
+  per-file adapts, per-language provenance headers, generated
+  `ts/test/vendored.json`.
+- **ts**: struct 0.3.4; omni 0.1.4 driven NATIVELY (compat shim deleted,
+  resolver carries the adapter); sekreto reshaped (provider/ built-ins +
+  plugins/ definitions) with voxgig/plugin vendored in the feature
+  container; def-per-target model wiring -> Config `FEATURE_PLUGINS` ->
+  `plugins: [...]`.
+- **js**: single fused runner (both corpora) replaced by the native
+  resolver; the resolver carries workarounds for all three omni#54 gaps
+  in the js port at the tag (proved red->green on the match-clone cycle).
+  Secrets deliberately NOT attempted (monolithic upstream port).
+- **go**: support split (same package, zero call-site churn), both fused
+  runners retired; `subjectify` reflection + novalargs in the resolver;
+  full secrets feature (PreSpec resolve, fail-closed transport gate for
+  go's sync hooks, token exchange) over vendored sekreto+plugin in the
+  gated `feature/secrets/` container; generate-time plugin trim added to
+  Main_go. Two template bugs surfaced and fixed: `options.extend` was
+  validated away (the extension seam was DEAD in go), and prepareMethod
+  answered 'GET' for unknown ops.
+- **py**: inline runner retired, support-only `runner.py` retained;
+  struct resync fallout fixed (`jo`/`ja` -> `jm`/`jt`; the LIST-form null
+  defect is fixed upstream at the tag, measured); full secrets feature
+  under `pkg/feature/secrets/`; plugin trim added to Main_py; stray
+  'GET' fallback removed.
+- **Guards**: parity rows for all four (superseded is a list), discovery
+  probes per-language, barrel pins (ts index, go eager plugins.go, py
+  LAZY `plugins/__init__.py` — the shape a compile check cannot catch),
+  structnull ts row (node type-stripping probe), tag-agreement +
+  comment-prefix guard extensions. sdkgen suite: **1117 tests, 0 fail**.
+- **solardemo** (branch feat/vendor-tag-baseline): baseline commit on
+  published 4.8.1 + apidef 8.2.2 (dissolves the parts/segments deadlock),
+  then the vendored regen. INACTIVE: zero sekreto/plugin/secrets code in
+  any tree, suites ts 196 / js 184 / go ok / py 197. ACTIVE: ts 228 /
+  go (+ gated secrets package) / py 203, **js untouched by the gate**.
+  The six superseded files jostraca cannot delete were pruned by hand —
+  the doctor prune remains open (below).
+
+Follow-ups, in rough order:
+1. **go Direct-path secrets**: `Prepare`/`Direct` bypass feature hooks
+   and go's Main has no conditional resolve emission — entity ops are
+   the resolution path today. Needs a conditional Main_go fragment.
+2. **doctor prune** for superseded template files (hand-pruned in the
+   proof; five more languages' worth of stale runners arrive with the
+   fleet rollout).
+3. **omni#57 / sekreto#16 upstreaming**: the js/go/py omni ports lack
+   the omni#54 fixes at this tag; every resolver carries a workaround
+   that becomes redundancy after the upstream port.
+4. **js secrets** when upstream sekreto's js port is reshaped.
+5. **The remaining 18 bundled language targets + haskell** (own route
+   root), one PR each on these rails.
+6. **elementdemo**: the second acceptance gate (custom target + feature
+   must regenerate unchanged) before a release.
