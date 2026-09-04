@@ -640,14 +640,17 @@ func TestAuthNullProbe(t *testing.T) {
   })
 
 
-  // The same contract on the js reference target, which fails DIFFERENTLY.
+  // The same contract on the js reference target, which HAS fail-open
+  // history in both classes.
   //
   // go's struct treats a stored null as "no value", so the optspec default
-  // fired and the credential went out - a leak. js still ships struct 0.0.10,
-  // whose validate REJECTS a stored null outright, so `auth: null` threw
-  // "Expected field auth to be map" at construction. Same broken contract,
-  // opposite failure mode, so both need pinning rather than one standing in
-  // for the other.
+  // fired and the credential went out - a leak. js WAS the opposite: on
+  // struct 0.0.10 validate REJECTED a stored null outright, so `auth: null`
+  // threw "Expected field auth to be map" at construction. The tag resync
+  // (struct-js 0.1.4, 0.3.x behaviour, structnull.test.ts) moved js into
+  // go's fail-open class - which makes this lane the leak pin now, not
+  // just a construction-error pin, and pinning both targets stays the
+  // point: the failure mode follows the vendored struct, not the fix.
   test('js: auth null suppresses the credential', async () => {
     const sdkroot = Path.join(tmp, 'js-authnull')
     await generateTo('js', sdkroot)
@@ -665,9 +668,11 @@ const { SDK } = require('../..')
 // an explicit apikey, because that is the only case that DISCRIMINATES: with
 // no apikey nothing goes on the wire anyway.
 //
-// This target's struct rejects a stored null in validate, so before the fix
-// the failure was not a leak but a CONSTRUCTION ERROR - the documented option
-// threw "Expected field auth to be map, but found no value".
+// On struct 0.0.10 this target's validate rejected a stored null, so the
+// pre-fix failure was a CONSTRUCTION ERROR ("Expected field auth to be map").
+// Since the tag resync (struct-js 0.1.4, 0.3.x behaviour) validate returns
+// the optspec default instead, so without the fix this would now be the
+// fail-open LEAK - the assertions below pin against both.
 describe('auth null', () => {
 
   // What the transport would actually send.

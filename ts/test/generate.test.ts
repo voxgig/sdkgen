@@ -622,7 +622,10 @@ main: kit: target: js: phase: feature: active: false
     ['go', /core\/config\.go$/, /const configJSON = "/, /return map\[string\]any\{/],
     ['ts', /src\/Config\.ts$/, /const CONFIG_DATA = "/, /^\s*entity = \{/m],
     ['js', /src\/Config\.js$/, /const CONFIG_DATA = "/, /^\s*entity = \{/m],
-    ['py', /config\.py$/, /_CONFIG_DATA = "/, /^\s+return \{$/m],
+    // Anchored on the package root: the vendored secrets trees ship a
+    // voxgig_plugin/config.py of their own (py has no generate-time
+    // feature trim), and a bare /config\.py$/ finds that one first.
+    ['py', /_sdk\/config\.py$/, /_CONFIG_DATA = "/, /^\s+return \{$/m],
     ['rb', /config\.rb$/, /CONFIG_DATA = '/, /"main" => \{/],
     ['php', /config\.php$/, /const CONFIG_DATA = '/, /"main" => \[/],
     ['lua', /config\.lua$/, /local CONFIG_DATA = \[=*\[/, /^\s*main = \{$/m],
@@ -1829,6 +1832,141 @@ main: kit: target: js: phase: feature: active: false
       'more than one env-var spelling reached the output:\n  ' +
       Array.from(new Set(offenders)).slice(0, 10).join('\n  '))
     strictEqual(prefixes.size, 1, 'prefixes: ' + Array.from(prefixes).join(', '))
+  })
+
+
+  // go: the secrets plugin wiring is EMITTED, and the trim is REAL.
+  //
+  // The ts pass established that pluginImports silently no-ops when its
+  // path filter and the model drift (vendor-tag rollout, reshape edit 5):
+  // nothing asserted on the emitted imports, and the failure surfaced only
+  // at runtime as "<kind> is a sekreto plugin, not built in". This is the
+  // go guard for the same seam: an ACTIVE secrets model must emit the
+  // plugin package imports and the FeaturePlugins entries into
+  // core/config.go, and the INACTIVE groups' vendored files must stay out
+  // of the tree (Main_go's pluginExcludes - the generate-time trim go now
+  // has), while the shared httpjson helper (in no group) ships regardless.
+  test('go: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['go'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    const config = findFile(out, 'core/config.go')
+    ok(null != config, 'go: no core/config.go generated')
+
+    // The NAMED imports and the definitions list - the two emissions that
+    // can silently no-op while everything else stays green.
+    ok(/feature\/secrets\/plugins\/hashicorp"/.test(config!),
+      'go: active vault group did not emit the hashicorp plugin import')
+    ok(/"secrets": \{boru\.Plugin, hashicorp\.Plugin\}/.test(config!),
+      'go: FeaturePlugins is missing the vault definitions:\n' +
+      (config!.match(/var featurePlugins[^}]*\}/) || ['(no featurePlugins var)'])[0])
+
+    // The trim: an inactive group's vendored file is OUT, the active
+    // group's and the group-less shared helper are IN.
+    ok(null == findFile(out, 'plugins/gcpsecrets/gcpsecrets.go'),
+      'go: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'plugins/secretspec/secretspec.go'),
+      'go: the inactive secretspec group still ships its child-process plugin')
+    ok(null != findFile(out, 'plugins/hashicorp/hashicorp.go'),
+      'go: the ACTIVE vault group lost hashicorp')
+    ok(null != findFile(out, 'plugins/httpjson/httpjson.go'),
+      'go: the shared httpjson helper must ship with the feature core')
+
+    // And the inactive-model baseline: no secrets machinery in config.go.
+    const plain = findFile(await generate(['go']), 'core/config.go')
+    ok(!/feature\/secrets\/plugins/.test(plain!),
+      'go: an inactive model still emitted plugin imports')
+    ok(/var featurePlugins = map\[string\]\[\]any\{\n\}/.test(plain!),
+      'go: an inactive model must emit an EMPTY featurePlugins map')
+  })
+
+
+  // py guard for the same seam: an ACTIVE secrets model must emit the
+  // plugin module imports and the FEATURE_PLUGINS entries into the
+  // package config.py, and the INACTIVE groups' vendored files must stay
+  // out of the tree (Main_py's pluginExcludes - the generate-time trim py
+  // now has), while the shared httpjson helper (in no group) ships
+  // regardless. The runner-swap artefacts ride along: the omni resolver
+  // and smoke test are generated, the retired struct_runner is not.
+  test('py: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['py'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    const config = findFile(out, '_sdk/config.py')
+    ok(null != config, 'py: no package config.py generated')
+
+    // The NAMED imports and the definitions list - the two emissions that
+    // can silently no-op while everything else stays green.
+    ok(/from \w+_sdk\.feature\.secrets\.voxgig_sekreto\.plugins\.hashicorp import hashicorp/
+      .test(config!),
+      'py: active vault group did not emit the hashicorp plugin import')
+    ok(/"secrets": \[boru, hashicorp\],/.test(config!),
+      'py: FEATURE_PLUGINS is missing the vault definitions:\n' +
+      (config!.match(/FEATURE_PLUGINS = \{[^}]*\}/) || ['(no FEATURE_PLUGINS)'])[0])
+
+    // The trim: an inactive group's vendored file is OUT, the active
+    // group's and the group-less shared helper are IN.
+    ok(null == findFile(out, 'voxgig_sekreto/plugins/gcpsecrets.py'),
+      'py: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'voxgig_sekreto/plugins/secretspec.py'),
+      'py: the inactive secretspec group still ships its child-process plugin')
+    ok(null != findFile(out, 'voxgig_sekreto/plugins/hashicorp.py'),
+      'py: the ACTIVE vault group lost hashicorp')
+    ok(null != findFile(out, 'voxgig_sekreto/plugins/httpjson.py'),
+      'py: the shared httpjson helper must ship with the feature core')
+
+    // The runner swap: the omni resolver, its vendored package and the
+    // must-fail smoke test are generated; the superseded struct runner
+    // is gone.
+    ok(null != findFile(out, 'test/omni.py'), 'py: no omni resolver generated')
+    ok(null != findFile(out, 'test/voxgig_omni/runner.py'),
+      'py: vendored omni runner missing')
+    ok(null != findFile(out, 'test/test_omni_smoke.py'),
+      'py: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/struct_runner.py'),
+      'py: the superseded struct_runner.py is still generated')
+
+    // And the inactive-model baseline: no plugin machinery in config.py.
+    const plainout = await generate(['py'])
+    const plain = findFile(plainout, '_sdk/config.py')
+    ok(!/voxgig_sekreto\.plugins/.test(plain!),
+      'py: an inactive model still emitted plugin imports')
+    ok(/FEATURE_PLUGINS = \{\n\}/.test(plain!),
+      'py: an inactive model must emit an EMPTY FEATURE_PLUGINS map')
   })
 
 

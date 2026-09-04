@@ -57,6 +57,25 @@ const VENDOR_DIRS = [
   'tm/ts/src/feature/secrets/sekreto/plugins',
   'tm/ts/src/feature/secrets/plugin',
   'tm/go/utility/struct',
+  'tm/js/test/vendor/omni',
+  'tm/go/test/omni',
+  'tm/py/test/voxgig_omni',
+  'tm/go/feature/secrets/sekreto',
+  'tm/go/feature/secrets/plugin',
+  'tm/go/feature/secrets/plugins',
+  'tm/go/feature/secrets/plugins/aws',
+  'tm/go/feature/secrets/plugins/azuresecrets',
+  'tm/go/feature/secrets/plugins/boru',
+  'tm/go/feature/secrets/plugins/doppler',
+  'tm/go/feature/secrets/plugins/gcpsecrets',
+  'tm/go/feature/secrets/plugins/hashicorp',
+  'tm/go/feature/secrets/plugins/httpjson',
+  'tm/go/feature/secrets/plugins/infisical',
+  'tm/go/feature/secrets/plugins/onepassword',
+  'tm/go/feature/secrets/plugins/secretspec',
+  'tm/py/pkg/feature/secrets/voxgig_sekreto',
+  'tm/py/pkg/feature/secrets/voxgig_sekreto/plugins',
+  'tm/py/pkg/feature/secrets/voxgig_plugin',
 ]
 
 
@@ -280,6 +299,12 @@ describe('vendored', () => {
     const BARRELS = [
       'tm/ts/src/feature/secrets/sekreto/Providers.ts',
       'tm/ts/src/feature/secrets/sekreto/plugins/index.ts',
+      // go: eager imports of all ten kinds — a compile break if trimmed.
+      'tm/go/feature/secrets/plugins/plugins.go',
+      // py: a PEP-562 LAZY barrel — it imports nothing eagerly, so its
+      // breakage is at attribute access, which a compile-only check
+      // cannot see. The one shape that can SHIP broken; pinned absent.
+      'tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/__init__.py',
     ]
 
     for (const rel of BARRELS) {

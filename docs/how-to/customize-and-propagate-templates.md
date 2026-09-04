@@ -73,7 +73,7 @@ npm run generate              # recreates it fresh, with all replacements
 When you fix one language, check whether the same pattern exists in the
 others. **The JS/TS targets are the reference implementation** — compare
 against them. Test-runner logic (e.g. regex matching in Go's
-`runner_test.go`) should match the JS runner in `js/test/runner.js`.
+`omniresolver_test.go`) should match the JS resolver in `js/test/omni.js` — both drive the vendored @voxgig/omni runner.
 
 ## Step 5 — validate
 

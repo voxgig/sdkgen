@@ -1,4 +1,4 @@
-// VERSION: @voxgig/struct 0.0.10
+// VERSION: @voxgig/struct-js 0.1.4 (vendored via omni; see ../omni.js)
 // RUN: npm test
 // RUN-SOME: npm run test-some --pattern=getpath
 
@@ -9,7 +9,7 @@ const {
   makeRunner,
   nullModifier,
   NULLMARK,
-} = require('../runner')
+} = require('../omni')
 
 
 const {

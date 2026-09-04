@@ -855,6 +855,31 @@ Every generated ts SDK ships its own coverage-oriented tests:
 
 ---
 
+## Vendored libraries: one tag, one tool
+
+struct, omni, plugin and sekreto are vendored into the scaffold templates
+at a single shared git tag so "what is this SDK vendoring" has one answer.
+The tool is `make vendor` (`ts/build/vendor.js` + `ts/vendor/routes.json`);
+it reads file content with `git show <tag>:<path>` — never a working tree —
+applies the declared per-file `adapt` rewrites (a missing `from` fails the
+run), stamps a three-line provenance header in each language's comment
+syntax, and regenerates `ts/test/vendored.json`. `make vendor-check` is the
+no-write verification CI can run.
+
+Rules that keep it honest:
+- **Never edit a vendored file.** An intentional change is an upstream PR +
+  a resync at a new tag; an emergency local fix is a marked
+  `PATCH (…, pending upstream fix)` block declared in vendored.test.ts.
+- **Full-set plugin barrels are never vendored** (`plugins/index.ts`,
+  go `plugins.go`, py `plugins/__init__.py`): the plugin trim would leave
+  them importing deleted modules. vendored.test.ts pins their absence.
+- **A resync moves stamps, hashes and behaviour pins together** —
+  structnull.test.ts characterizes each port's null semantics and fails
+  when a resync silently moves a port between auth-null failure classes.
+- **haskell is outside the tool's write root** (`packages/sdkgen-haskell`)
+  and needs its own route root — recorded in the routes.json note, not
+  silently absent.
+
 ## Releasing
 
 Publishing is **tag-driven and runs in CI**: pushing a `v*` tag fires

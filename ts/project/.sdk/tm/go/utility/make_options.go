@@ -122,7 +122,14 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 			},
 		},
 		"utility": map[string]any{},
-		"system":  map[string]any{},
+		// Feature INSTANCES supplied at construction (the station adopt
+		// path): consumed by the constructor's featureAdd loop, so they
+		// are class instances, not data - `$ANY` accepts them verbatim.
+		// Without this entry the seam is dead: the constructor reads
+		// options.extend, but validate rejected the key (mirrors
+		// MakeOptionsUtility.ts).
+		"extend": "`$ANY`",
+		"system": map[string]any{},
 		"test": map[string]any{
 			"active": false,
 			"entity": map[string]any{

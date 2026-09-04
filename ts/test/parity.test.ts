@@ -471,14 +471,14 @@ describe('reference-target invariants', () => {
     // cases — the exact drift this suite exists to prevent.
     ok(CORPUS_SECTIONS.includes('preparePath'))
     const src = readFileSync(primaryTestFile('go')!, 'utf8')
-    ok(/runsetNamed\(t, "preparePath"/.test(src),
+    ok(/runsection\(t, "preparePath"/.test(src),
       'go must drive preparePath from the corpus, not hand-written cases')
   })
 
   test('the go runner fails loudly on an empty or missing corpus section', () => {
     // It used to `return` silently, so a renamed section or a fixture that
     // compiled to an empty set reported PASS while running zero assertions.
-    const runner = readFileSync(Path.join(TM, 'go', 'test', 'runner_test.go'), 'utf8')
+    const runner = readFileSync(Path.join(TM, 'go', 'test', 'primary_utility_test.go'), 'utf8')
     ok(/t\.Fatalf\(/.test(runner), 'runset must fail, not return')
     ok(/is EMPTY/.test(runner), 'runset must reject a zero-case section')
     ok(/pendingSections/.test(runner),
@@ -1208,6 +1208,37 @@ const OMNI_RUNNER: Record<string, {
     smoke: 'ts/test/omni.test.ts',
     superseded: ['ts/test/runner.ts'],
   },
+  js: {
+    resolver: 'js/test/omni.js',
+    vendor: 'js/test/vendor/omni',
+    vendorfiles: ['runner.js', 'util.js', 'index.js'],
+    smoke: 'js/test/omni.test.js',
+    // js's ONE runner file drove BOTH corpora; its support half was
+    // already split into the retained test/utility.js.
+    superseded: ['js/test/runner.js'],
+  },
+  go: {
+    // _test.go suffix: the resolver is test-only code and must not ship
+    // in the module a consumer imports.
+    resolver: 'go/test/omniresolver_test.go',
+    vendor: 'go/test/omni',
+    vendorfiles: ['omni.go', 'util.go'],
+    smoke: 'go/test/omnismoke_test.go',
+    // go's support half was split into the retained testsupport_test.go
+    // FIRST (same package, zero call-site churn), then both fused files
+    // were retired.
+    superseded: ['go/test/runner_test.go', 'go/test/struct_runner_test.go'],
+  },
+  py: {
+    resolver: 'py/test/omni.py',
+    vendor: 'py/test/voxgig_omni',
+    vendorfiles: ['__init__.py', 'runner.py', 'util.py'],
+    smoke: 'py/test/test_omni_smoke.py',
+    // py's file NAMED runner.py is support-ONLY and is RETAINED; the
+    // generic engine it superseded was inlined in the primary-utility
+    // template, so the only whole-file retirement is the struct runner.
+    superseded: ['py/test/struct_runner.py'],
+  },
 }
 
 
@@ -1246,6 +1277,44 @@ const SECRETS: Record<string, {
     pluginfiles: ['index.ts', 'Catalog.ts', 'Host.ts', 'Types.ts'],
     tests: 'ts/test/feature/secrets',
   },
+  go: {
+    // go's feature container is the top-level feature/ dir (srcfeature:
+    // false), so the vendored trees live beside the feature file and the
+    // add-time featureExcludes gates the whole folder.
+    feature: 'go/feature/secrets_feature.go',
+    vendor: 'go/feature/secrets',
+    vendorfiles: [
+      'sekreto/sekreto.go', 'sekreto/providers.go', 'sekreto/addr.go',
+      'plugins/httpjson/httpjson.go',
+      'plugins/hashicorp/hashicorp.go', 'plugins/boru/boru.go',
+      'plugins/gcpsecrets/gcpsecrets.go', 'plugins/azuresecrets/azuresecrets.go',
+      'plugins/onepassword/onepassword.go', 'plugins/doppler/doppler.go',
+      'plugins/infisical/infisical.go', 'plugins/secretspec/secretspec.go',
+      'plugins/aws/aws.go', 'plugins/aws/sigv4.go',
+    ],
+    plugindir: 'go/feature/secrets/plugin',
+    pluginfiles: [
+      'capability.go', 'catalog.go', 'config.go', 'depend.go', 'env.go',
+      'export.go', 'graph.go', 'host.go', 'order.go', 'point.go',
+      'ref.go', 'resolve.go', 'types.go', 'util.go', 'version.go',
+    ],
+    tests: 'go/test/feature/secrets',
+  },
+  py: {
+    // py's feature container is pkg/feature/ (srcfeature: false); the
+    // vendored trees live under the gated secrets/ folder beside the
+    // feature file.
+    feature: 'py/pkg/feature/secrets_feature.py',
+    vendor: 'py/pkg/feature/secrets/voxgig_sekreto',
+    vendorfiles: [
+      '__init__.py', 'sekreto.py', 'providers.py', 'addr.py',
+      'plugins/aws.py', 'plugins/sigv4.py', 'plugins/httpjson.py',
+      'plugins/hashicorp.py', 'plugins/secretspec.py',
+    ],
+    plugindir: 'py/pkg/feature/secrets/voxgig_plugin',
+    pluginfiles: ['__init__.py', 'catalog.py', 'host.py', 'types.py'],
+    tests: 'py/test/feature/secrets',
+  },
 }
 
 
@@ -1277,9 +1346,20 @@ describe('vendored-library rollout parity', () => {
 
 
   test('no target is half-migrated to omni without being listed', () => {
+    // The vendored-omni location is per-language (ts/js keep a vendor/
+    // dir, go vendors a package at test/omni, py a package at
+    // test/voxgig_omni) — one hard-coded path here read a third of the
+    // tree as unmigrated. Any candidate existing without a row is the
+    // half-migrated state this exists to catch.
+    const CANDIDATES = [
+      ['test', 'vendor', 'omni'],
+      ['test', 'omni'],
+      ['test', 'voxgig_omni'],
+    ]
+
     const unlisted = sdkTargets()
       .filter((t) => null == OMNI_RUNNER[t])
-      .filter((t) => existsSync(Path.join(TM, t, 'test', 'vendor', 'omni')))
+      .filter((t) => CANDIDATES.some((c) => existsSync(Path.join(TM, t, ...c))))
 
     deepStrictEqual(unlisted, [],
       'these targets have a vendored omni tree but are not in OMNI_RUNNER — ' +
@@ -1310,15 +1390,23 @@ describe('vendored-library rollout parity', () => {
 
 
   test('no target ships secrets source without being listed', () => {
+    // Feature containers are per-language too: ts/js use src/feature/,
+    // go a top-level feature/ dir, py pkg/feature/.
+    const CONTAINERS = [
+      ['src', 'feature', 'secrets'],
+      ['feature', 'secrets'],
+      ['pkg', 'feature', 'secrets'],
+    ]
+
     const unlisted = sdkTargets()
       .filter((t) => null == SECRETS[t])
-      .filter((t) => {
-        const dir = Path.join(TM, t, 'src', 'feature', 'secrets')
+      .filter((t) => CONTAINERS.some((c) => {
+        const dir = Path.join(TM, t, ...c)
         if (!existsSync(dir)) return false
         // A bare copy-target dir (.gitkeep only) is what `feature add`
         // needs and is not an implementation.
         return readdirSync(dir).some((f) => !f.startsWith('.'))
-      })
+      }))
 
     deepStrictEqual(unlisted, [],
       'these targets carry secrets source but are not in SECRETS — add them ' +
