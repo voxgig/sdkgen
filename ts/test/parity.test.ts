@@ -1194,14 +1194,19 @@ const OMNI_RUNNER: Record<string, {
   vendor: string,
   vendorfiles: string[],
   smoke: string,
-  superseded: string,
+  // Most targets retire MORE than one file (a generic runner AND a struct
+  // runner), so this is a list — every entry must be gone.
+  superseded: string[],
 }> = {
   ts: {
     resolver: 'ts/test/omni.ts',
     vendor: 'ts/test/vendor/omni',
-    vendorfiles: ['Runner.ts', 'Util.ts', 'compat.ts', 'index.ts'],
+    // No compat shim: the resolver drives omni's NATIVE makeRunner and
+    // carries the SDK-provider adapter itself (vendor-tag rollout,
+    // Decision 4).
+    vendorfiles: ['Runner.ts', 'Util.ts', 'index.ts'],
     smoke: 'ts/test/omni.test.ts',
-    superseded: 'ts/test/runner.ts',
+    superseded: ['ts/test/runner.ts'],
   },
 }
 
@@ -1212,26 +1217,33 @@ const SECRETS: Record<string, {
   feature: string,
   vendor: string,
   vendorfiles: string[],
+  plugindir?: string,
+  pluginfiles?: string[],
   tests: string,
 }> = {
   ts: {
     feature: 'ts/src/feature/secrets/SecretsFeature.ts',
     vendor: 'ts/src/feature/secrets/sekreto',
-    // `Providers.ts` — sekreto's full-set barrel — is deliberately NOT
-    // here: it re-exports every provider kind, so vendoring it would defeat
-    // the plugin trim and, worse, leave an import of a module the trim just
-    // deleted. vendored.test.ts asserts its absence directly.
-    //
-    // `Sigv4.ts` is owned by the `aws` PLUGIN, not by the feature, so a
-    // project that does not read from AWS does not ship it. It is listed
-    // against the template tree, which carries every plugin; what reaches a
-    // generated SDK is decided per project.
+    // The RESHAPED sekreto (vendor-tag rollout): `src/provider/` holds the
+    // built-ins the core imports unconditionally (env, memory, dotenv,
+    // file, via builtin.ts), and `plugins/` holds the gated definitions.
+    // `plugins/index.ts` — the full-set barrel — is deliberately NOT here:
+    // vendored.test.ts asserts its absence directly. `plugins/sigv4.ts` is
+    // owned by the `aws` PLUGIN; what reaches a generated SDK is decided
+    // per project by the plugin trim.
     vendorfiles: [
-      'Sekreto.ts', 'Sigv4.ts', 'index.ts',
-      'provider/Registry.ts', 'provider/support.ts',
+      'Sekreto.ts', 'index.ts',
+      'provider/support.ts', 'provider/builtin.ts', 'provider/addr.ts',
       'provider/env.ts', 'provider/memory.ts',
-      'provider/dotenv.ts', 'provider/aws.ts',
+      'provider/dotenv.ts', 'provider/file.ts',
+      'plugins/aws.ts', 'plugins/sigv4.ts', 'plugins/httpjson.ts',
+      'plugins/hashicorp.ts', 'plugins/secretspec.ts',
     ],
+    // The vendored voxgig/plugin runtime sekreto's reshape depends on,
+    // INSIDE the feature container so the feature trim removes both
+    // together.
+    plugindir: 'ts/src/feature/secrets/plugin',
+    pluginfiles: ['index.ts', 'Catalog.ts', 'Host.ts', 'Types.ts'],
     tests: 'ts/test/feature/secrets',
   },
 }
@@ -1254,10 +1266,12 @@ describe('vendored-library rollout parity', () => {
       ok(existsSync(Path.join(TM, spec.smoke)),
         target + ': missing the runner-must-fail smoke test ' + spec.smoke)
 
-      ok(!existsSync(Path.join(TM, spec.superseded)),
-        target + ': the superseded runner ' + spec.superseded + ' is still ' +
-        'present alongside vendored omni — two copies of the same runner, ' +
-        'one of them stale')
+      for (const gone of spec.superseded) {
+        ok(!existsSync(Path.join(TM, gone)),
+          target + ': the superseded runner ' + gone + ' is still ' +
+          'present alongside vendored omni — two copies of the same runner, ' +
+          'one of them stale')
+      }
     }
   })
 
@@ -1281,6 +1295,11 @@ describe('vendored-library rollout parity', () => {
       for (const f of spec.vendorfiles) {
         ok(existsSync(Path.join(TM, spec.vendor, f)),
           target + ': missing vendored sekreto file ' + spec.vendor + '/' + f)
+      }
+
+      for (const f of spec.pluginfiles || []) {
+        ok(existsSync(Path.join(TM, spec.plugindir as string, f)),
+          target + ': missing vendored plugin file ' + spec.plugindir + '/' + f)
       }
 
       // In the feature container, so the trim removes it with the feature.

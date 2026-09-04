@@ -125,6 +125,14 @@ component.* See [docs/explanation/components-and-templates](./docs/explanation/c
 - **Generated SDK** (`~/Projects/voxgig-sdk/voxgig-solardemo-sdk`) — the solardemo reference SDK; `ts/` has the TypeScript SDK, `.sdk/` has the build tooling
 - **Customization demo** (`~/Projects/voxgig-sdk/voxgig-elementdemo-sdk`) — the elementdemo reference SDK for CUSTOMIZATION: its `ext/` sdkgen package adds an entirely custom `bash` target and a custom `elementcard` feature (ts, go, py, java, bash), with project-owned corpus cases driving all five
 
+## Toolchains: check, never assume
+Before saying a target can't be built or verified here, run the check —
+`command -v zig lean ocaml ghc clojure elixir dart swift sbt ...`. This
+machine has every target toolchain except `scalac` (and `sbt` resolves
+that per project). A "no X compiler was available" note in `docs/design/`
+describes the environment THAT work happened in, not yours. See AGENTS.md
+"Verify on the real toolchain".
+
 ## Debugging generated targets (summary)
 Fix bugs in the sdkgen **template/component**, never in generated output
 (it's overwritten). Propagate: edit → (consumer `.sdk/`)

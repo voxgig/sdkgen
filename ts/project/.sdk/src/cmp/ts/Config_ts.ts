@@ -110,6 +110,8 @@ const Config = cmp(async function Config(props: any) {
             Line(` ${f.name}: ${nom(f, 'Name')}Feature,`)
           }),
 
+          '// #FeaturePlugins': () => pluginDefs(feature),
+
           // A JS string literal, so the JSON survives verbatim. JSON.stringify
           // escapes the quotes and backslashes the model contains (values like
           // `$STRING` carry backticks, which a template literal could not).
@@ -154,6 +156,8 @@ const Config = cmp(async function Config(props: any) {
           Line(` ${f.name}: ${nom(f, 'Name')}Feature,`)
         }),
 
+        '// #FeaturePlugins': () => pluginDefs(feature),
+
         // Rendered from configDefinition's def, not from f.config, so the
         // literal carries the feature's `transport` role (station design
         // §8.4) beside its options and cannot drift from the data rep.
@@ -183,22 +187,26 @@ const Config = cmp(async function Config(props: any) {
 
 
 
-// PLUGIN REGISTRATION IMPORTS.
+// PLUGIN DEFINITION IMPORTS AND THE FEATURE_PLUGINS MAP.
 //
-// A sekreto provider module registers itself when it is imported, and
-// nothing else imports it: the core surface deliberately does not reach a
-// platform-dependent provider, and the full-set barrel — the file whose
-// job was to reach all of them — is not vendored into an SDK at all.
+// Upstream sekreto replaced its self-registration registry with
+// voxgig/plugin definitions: a provider kind the caller did not pass in
+// via `plugins: [...]` is unknown to that Sekreto. So Config no longer
+// imports provider modules for their side effects — it imports each
+// active plugin's exported Definition BY NAME (the model's `def` map)
+// and hands the list to the feature through FEATURE_PLUGINS.
 //
-// So without these lines an SDK generates `provider/dotenv.ts`, never
-// imports it, and throws `unknown provider kind: dotenv` the first time a
-// chain names it. Emitted here because Config already imports every active
-// feature from the model, and this is the same list one level down.
-//
-// Import for SIDE EFFECT only — `import '...'`, no bindings. The module's
-// top-level `register()` call is the whole point.
+// Emitted here because Config already imports every active feature from
+// the model, and this is the same list one level down. The `def` map is
+// declared in the model rather than derived from filenames because one
+// file may export several definitions (sekreto's aws.ts exports
+// awssecrets AND awsparams).
 function pluginImports(feature: any) {
   each(feature, (f: any) => {
+    // path -> [symbol, ...], so one import line serves a two-definition
+    // module.
+    const bypath: Record<string, string[]> = {}
+
     each(f.plugin, (plugin: any) => {
       // Filter on `active` HERE rather than trusting the feature object to
       // arrive filtered. Whether a model path was read with `only_active`
@@ -207,14 +215,31 @@ function pluginImports(feature: any) {
       // not compile, rather than one that merely carries too much.
       if (false === plugin.active || null == plugin.active) return
 
-      for (const one of (plugin.path || [])) {
+      for (const [sym, one] of Object.entries(plugin.def?.ts || {})) {
         const path = String(one)
-        // Only a provider MODULE registers a kind; a plugin may own other
-        // files (Sigv4.ts is signing support, not a provider).
-        if (!/\/provider\/[^/]+\.ts$/.test(path)) continue
-        Line(`import '${'./' + path.replace(/^src\//, '').replace(/\.ts$/, '')}'`)
+        ; (bypath[path] = bypath[path] || []).push(sym)
       }
     })
+
+    for (const path of Object.keys(bypath).sort()) {
+      const spec = './' + path.replace(/^src\//, '').replace(/\.ts$/, '')
+      Line(`import { ${bypath[path].sort().join(', ')} } from '${spec}'`)
+    }
+  })
+}
+
+// The FEATURE_PLUGINS entries: one line per feature that has any active
+// plugin definitions, listing the imported symbols.
+function pluginDefs(feature: any) {
+  each(feature, (f: any) => {
+    const syms: string[] = []
+    each(f.plugin, (plugin: any) => {
+      if (false === plugin.active || null == plugin.active) return
+      syms.push(...Object.keys(plugin.def?.ts || {}))
+    })
+    if (0 < syms.length) {
+      Line(` ${f.name}: [${syms.sort().join(', ')}],`)
+    }
   })
 }
 

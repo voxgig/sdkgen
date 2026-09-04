@@ -2,6 +2,12 @@ import type { Context, FeatureOptions } from '../../types'
 
 import { BaseFeature } from '../base/BaseFeature'
 import { Sekreto, envkey } from './sekreto'
+// The plugin DEFINITIONS the model selected for this feature, emitted by
+// Config generically from the catalogue's active `plugin.def` entries.
+// Upstream sekreto's contract since the registry was retired: a kind not
+// passed in `plugins` is unknown to that Sekreto, so the model's choice of
+// plugin groups IS the SDK's provider vocabulary.
+import { FEATURE_PLUGINS } from '../../Config'
 
 
 // Secret access via a vendored @voxgig/sekreto provider chain, and the
@@ -107,6 +113,7 @@ class SecretsFeature extends BaseFeature {
 
     this._sekreto = new Sekreto({
       providers,
+      plugins: FEATURE_PLUGINS[this.name] || [],
       cache: this._cache,
     })
 

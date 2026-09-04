@@ -231,6 +231,16 @@ Rules:
   component, immediately grep the sibling `src/cmp/*/` files for the same
   shape and fix every one. Enumerate the targets — don't fix the language in
   front of you and move on.
+- **CHECK THE TOOLCHAIN, DON'T ASSUME IT.** Before you conclude a target
+  cannot be built, run, benchmarked or verified here, run the check — a
+  `command -v` loop over the target compilers takes a second. This machine
+  has the full matrix (zig, lean, ocaml, ghc, clojure, elixir, dart, swift,
+  go, rust, dotnet, kotlin, java, php, perl, ruby, lua, python, node,
+  gcc/g++); only `scalac` is absent, and `sbt` resolves it per project.
+  A "no X compiler was available" line in one of this repo's design notes
+  is a fact about the environment THAT work happened in — never about
+  yours. Reading it as a live constraint is how six targets ended up
+  marked "plausible, not proven" and stayed that way.
 - **`ts`/`js` are the reference implementation.** Bring a change to `ts`/`js`
   first, then port to the rest; check the others against them.
 - **Parity is testable.** `ts/test/parity.test.ts` states the coverage TIERS
@@ -412,6 +422,28 @@ Debugging a failing target: [debug-generation](./docs/how-to/debug-generation.md
   the rendered output before your change and diff after to prove
   intentional vs accidental changes. (This is how `ReadmeExplanation` was
   refactored to a data table with zero output change.)
+
+### Verify on the real toolchain — a structural guard is not a build
+
+A guard that greps for a marker cannot see a type error, a scoping mistake
+or a mis-ordered statement. When you change a target, BUILD it and RUN its
+suite; when you cannot, say so explicitly in the PR rather than letting a
+structural check stand in silently.
+
+```bash
+# settle it in one second, before claiming a target is unverifiable
+for c in zig lean ocaml ghc clojure elixir dart swift go rustc dotnet \
+         kotlinc javac php perl ruby lua5.4 python3 node g++ sbt; do
+  command -v $c >/dev/null && echo "$c $( $c --version 2>&1 | head -1 )" \
+                           || echo "$c MISSING"
+done
+```
+
+`docs/design/vendoring-upgrade-migration.md` records six targets — clojure,
+elixir, lean, ocaml, scala, zig — as "read by eye: nothing, never compiled,
+never run", because no compiler for them existed where that change was made.
+Those compilers DO exist here. Anything still resting on that tier can be
+promoted by building it, and should be.
 
 Validation sequence for a template/component change:
 

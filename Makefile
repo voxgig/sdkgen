@@ -1,4 +1,4 @@
-.PHONY: all build test clean build-ts test-ts clean-ts reset sync-model check-model publish
+.PHONY: all build test clean build-ts test-ts clean-ts reset sync-model check-model publish vendor vendor-check
 
 all: check-model build test
 
@@ -25,6 +25,15 @@ check-model:
 	done
 	@echo "model mirror in sync"
 	@cd ts && node build/check-model.js
+
+# Vendored libraries (struct, omni, plugin, sekreto) at the shared tag.
+# Routes: ts/vendor/routes.json; manifest: ts/test/vendored.json.
+# Filter with V='--lib=omni --lang=ts'.
+vendor:
+	cd ts && node build/vendor.js $(V)
+
+vendor-check:
+	cd ts && node build/vendor.js --check $(V)
 
 # TypeScript
 build-ts:

@@ -525,6 +525,17 @@ main: kit: feature: &: {
     # Empty means the convention — `src/feature/<feature>/plugin/<name>/`
     # — which is right for a plugin whose files sdkgen owns outright.
     path: *[] | [&: string]
+
+    # The plugin DEFINITIONS this plugin's files export, keyed by TARGET,
+    # then by exported symbol, valued by the owning template path (which
+    # must also appear in `path`). This is what lets each Config emit
+    # NAMED imports and hand the feature an explicit `plugins: [...]`
+    # list — upstream sekreto's shape since its registry was replaced by
+    # voxgig/plugin definitions. Target-keyed because the symbol grammar
+    # is the language's own (`awssecrets` in ts, `aws.Secrets` in go),
+    # and one file may export several (ts aws.ts exports awssecrets AND
+    # awsparams), which is why the inner level is a map and not one name.
+    def: &: &: string
   }
 
   hook: &: {
