@@ -13,6 +13,14 @@ main: kit: target: go: {
   # a feature that resolves secrets through sekreto can apply here.
   provides: { sekreto: true }
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): both fused runners. `doctor` reports leftovers;
+  # `doctor prune` deletes them.
+  superseded: [
+    'test/runner_test.go'
+    'test/struct_runner_test.go'
+  ]
+
   deps: &: {
     kind: *'prod' | string
   }

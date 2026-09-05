@@ -12,6 +12,19 @@ main: kit: target: ts: {
   # secrets through sekreto can apply here.
   provides: { sekreto: true }
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): the hand-written runner and the omni compat
+  # shim, and the pre-reshape sekreto shapes. `doctor` reports leftovers;
+  # `doctor prune` deletes them.
+  superseded: [
+    'test/runner.ts'
+    'test/vendor/omni/compat.ts'
+    'src/feature/secrets/sekreto/Providers.ts'
+    'src/feature/secrets/sekreto/Sigv4.ts'
+    'src/feature/secrets/sekreto/provider/Registry.ts'
+    'src/feature/secrets/sekreto/provider/http.ts'
+  ]
+
   deps: &: {
     # TODO: fix aontu disjunctions!
     kind: *'prod' | string # 'peer' |'dev'

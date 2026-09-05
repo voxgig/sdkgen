@@ -47,6 +47,28 @@
     },
     "py": {
       "comment": "#"
+    },
+    "rb": {
+      "comment": "#"
+    },
+    "php": {
+      "comment": "//",
+      "prologue": "<?php"
+    },
+    "lua": {
+      "comment": "--"
+    },
+    "perl": {
+      "comment": "#"
+    },
+    "java": {
+      "comment": "//"
+    },
+    "kotlin": {
+      "comment": "//"
+    },
+    "csharp": {
+      "comment": "//"
     }
   },
   "route": [

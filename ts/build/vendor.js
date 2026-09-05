@@ -140,7 +140,17 @@ function main() {
         c + ' Source: ' + routes.repo[route.lib].url + ' @ ' + commit + '  [tag: ' + tag + ']\n' +
         c + ' License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.\n'
 
-      const out = header + content
+      // A language whose files MUST open with a fixed line (php's `<?php`)
+      // declares it as `prologue`; the header goes immediately after it.
+      // The guard reads the same offset from the same declaration.
+      let out
+      if (null != lang.prologue && content.startsWith(lang.prologue)) {
+        const nl = content.indexOf('\n') + 1
+        out = content.slice(0, nl) + header + content.slice(nl)
+      }
+      else {
+        out = header + content
+      }
       const sha256 = Crypto.createHash('sha256').update(out).digest('hex')
 
       const abs = Path.join(SDK, dest)

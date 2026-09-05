@@ -69,11 +69,10 @@ type SecretsFeature struct {
 	exchange *secretsExchange
 	refresh  string
 
-	mu         sync.Mutex
-	resolving  *secretsCall
-	resolveerr error
-	buying     *secretsBuy
-	initerr    error
+	mu        sync.Mutex
+	resolving *secretsCall
+	buying    *secretsBuy
+	initerr   error
 
 	// The RESOLVED credential, held in feature state and injected into
 	// each request at the transport seam - NEVER written into the shared
@@ -249,16 +248,6 @@ func (f *SecretsFeature) Init(ctx *core.Context, options map[string]any) {
 	}
 }
 
-// PreSpec resolves the secret before makeSpec builds the request spec -
-// the one seam where the lookup can happen and still land in time for the
-// synchronous prepareAuth.
-func (f *SecretsFeature) PreSpec(ctx *core.Context) {
-	if !f.Active {
-		return
-	}
-	f.resolve()
-}
-
 // resolve runs one resolution, shared by every concurrent caller. A
 // settled SUCCESS is kept only when caching is on (`cache: false` means
 // every resolve asks the chain again); a FAILURE is always cleared, so a
@@ -277,18 +266,12 @@ func (f *SecretsFeature) resolve() error {
 	}
 	call := &secretsCall{done: make(chan struct{})}
 	f.resolving = call
-	// resolveerr is NOT cleared here: the transport gate must stay
-	// closed until this attempt SETTLES, or an operation whose own
-	// resolution failed could reach the wire in the retry window with a
-	// missing or stale credential. The gate waits on `resolving` and
-	// rereads the error once it closes.
 	f.mu.Unlock()
 
 	err := f.resolveonce()
 
 	f.mu.Lock()
 	call.err = err
-	f.resolveerr = err
 	if nil != err || !f.cache {
 		f.resolving = nil
 	}
@@ -362,36 +345,22 @@ func (f *SecretsFeature) resolveonce() error {
 func (f *SecretsFeature) transport(ctx *core.Context, url string,
 	fetchdef map[string]any, inner core.FetcherFunc) (any, error) {
 
-	// The fail-closed gate: while the last resolution stands failed (or
-	// the chain could not be built), nothing goes on the wire - the op
-	// fails with the provider's error instead of proceeding without the
-	// credential it was meant to carry.
+	// Fail-closed, at the ONE seam every wire path crosses. Entity ops,
+	// Direct, Graphql and the exchange retries all come through this
+	// wrapper, so resolving HERE is what gives the raw paths - which run
+	// no feature hooks at all - the same credential the entity pipeline
+	// gets (ts resolves in its awaited PreSpec instead; go's header is
+	// rewritten below AFTER Prepare built it, so the transport is exactly
+	// early enough). resolve() is shared and cached: concurrent callers
+	// join the in-flight attempt, a cached success is free, and with
+	// `cache: false` the chain is asked once per REQUEST, which is that
+	// option's meaning. A provider ERROR refuses the request with the
+	// provider's error - never an unauthenticated send.
 	if nil != f.initerr {
 		return nil, f.initerr
 	}
-	f.mu.Lock()
-	gate := f.resolveerr
-	call := f.resolving
-	f.mu.Unlock()
-	if nil != gate {
-		// A retry may be in flight (another operation re-asked the
-		// chain). Wait for it to SETTLE rather than refusing on the old
-		// error or - worse - proceeding: if it succeeded the credential
-		// is now current and this request may go out; if it failed the
-		// refusal carries the fresh error.
-		if nil != call {
-			<-call.done
-			f.mu.Lock()
-			gate = f.resolveerr
-			f.mu.Unlock()
-		}
-		if nil != gate {
-			return nil, gate
-		}
-		// The retry SUCCEEDED - but this operation's authorization header
-		// was built by prepareAuth BEFORE the recovery, from the failed
-		// state. Rewrite it from the freshly resolved credential, or the
-		// wait would end in a stale (or absent) header going out.
+	if err := f.resolve(); nil != err {
+		return nil, err
 	}
 
 	// Inject the resolved credential into THIS request's header. The

@@ -234,6 +234,16 @@ main: kit: target: &: {
     version: *'*' | string
   }
 
+  # Generated files this target NO LONGER writes - the runner a template
+  # retirement superseded, an old vendored-library shape. jostraca writes
+  # and never deletes, so retiring a template leaves the old generated
+  # file behind in every consumer, beside its replacement: two copies of
+  # the same machinery, one of them stale. Paths are relative to the
+  # target's OUTPUT directory. `doctor` reports any that still exist;
+  # `doctor prune` deletes them - the one write doctor performs, and only
+  # ever of files this list names.
+  superseded: *[] | [&: string]
+
   # How `target add` trims this target's feature source down to the
   # features the model actually selects. Where that source LIVES is
   # discovered by walking the template tree (helpers/featureSource), so

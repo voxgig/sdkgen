@@ -331,7 +331,7 @@ func TestSecretsChain(t *testing.T) {
 		}
 	})
 
-	t.Run("an omitted apikey defers to the chain via PreSpec", func(t *testing.T) {
+	t.Run("an omitted apikey defers to the chain at the transport seam", func(t *testing.T) {
 		os.Setenv(envprefix+"APIKEY", "ENVKEY02")
 		defer os.Unsetenv(envprefix + "APIKEY")
 
@@ -345,11 +345,12 @@ func TestSecretsChain(t *testing.T) {
 
 		driveEntityOp(t, client, w)
 
-		// The awaited PreSpec seam ran before the spec was built: the
-		// credential is on the wire, not merely resolved. go holds it in
-		// FEATURE STATE and injects at the transport - the options map is
-		// never mutated (it stays raced-read-safe for every concurrent
-		// operation), so the state assertion reads the feature.
+		// Resolution happens AT THE TRANSPORT - the one seam every wire
+		// path crosses - so the credential is on the wire, not merely
+		// resolved. go holds it in FEATURE STATE and injects there; the
+		// options map is never mutated (it stays raced-read-safe for
+		// every concurrent operation), so the state assertion reads the
+		// feature.
 		credentialIs(t, w.api()[0].auth, "ENVKEY02")
 		if v := secretsFeatureOf(client).Credential(); "ENVKEY02" != v {
 			t.Fatalf("the entity op did not resolve the secret through PreSpec: %q", v)
@@ -678,6 +679,56 @@ func TestSecretsUncachedMissRetracts(t *testing.T) {
 	if last.has && "" != last.auth {
 		t.Fatalf("after the chain reports a miss, the retracted credential "+
 			"must not go out; the wire saw %q", last.auth)
+	}
+}
+
+// The RAW paths - Direct and Graphql - run no feature hooks at all, so
+// for them the transport seam is the ONLY place resolution can happen.
+// This is the pin that Direct gets the chain credential (and the same
+// fail-closed refusal) without any entity pipeline involved.
+func TestSecretsDirectPath(t *testing.T) {
+	os.Setenv(envprefix+"APIKEY", "DIRECTKEY01")
+	defer os.Unsetenv(envprefix + "APIKEY")
+
+	w := makewire()
+	client := secretsClient(w, map[string]any{
+		"allow":   map[string]any{"op": "direct"},
+		"feature": secretsOpts(nil),
+	})
+
+	res, err := client.Direct(map[string]any{"path": "/direct-probe"})
+	if nil != err {
+		t.Fatalf("direct failed: %v", err)
+	}
+	if ok, _ := res["ok"].(bool); !ok {
+		t.Fatalf("direct refused: %v", res["err"])
+	}
+	if 1 != len(w.api()) {
+		t.Fatalf("expected one direct call on the wire, got %d", len(w.api()))
+	}
+	credentialIs(t, w.api()[0].auth, "DIRECTKEY01")
+
+	// And fail-closed holds for raw access too: a broken chain refuses
+	// the Direct call before anything reaches the wire.
+	broken := secretsClient(makewire(), map[string]any{
+		"allow": map[string]any{"op": "direct"},
+		"feature": map[string]any{"secrets": map[string]any{
+			"active": true,
+			"providers": []any{
+				&customProvider{
+					lookup: func(name string) (string, bool, error) {
+						return "", false, fmt.Errorf("vault unreachable")
+					},
+				},
+			},
+		}},
+	})
+	res, err = broken.Direct(map[string]any{"path": "/direct-probe"})
+	if nil != err {
+		t.Fatalf("direct must report the refusal in-band: %v", err)
+	}
+	if ok, _ := res["ok"].(bool); ok {
+		t.Fatal("a broken chain must refuse the raw path fail-closed")
 	}
 }
 

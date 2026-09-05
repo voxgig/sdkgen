@@ -107,6 +107,15 @@ function sha256(path: string): string {
 // vendored file lands.
 const LANG_COMMENT: Record<string, string> = {
   ts: '//', js: '//', go: '//', py: '#',
+  rb: '#', php: '//', lua: '--', perl: '#',
+  java: '//', kotlin: '//', csharp: '//',
+}
+
+// Languages whose files must OPEN with a fixed line (php's `<?php`): the
+// provenance header sits immediately after it, so the guard reads from
+// this offset. Mirrors the `prologue` declaration in vendor/routes.json.
+const LANG_HEADER_OFFSET: Record<string, number> = {
+  php: 1,
 }
 
 function commentFor(rel: string): string {
@@ -117,10 +126,13 @@ function commentFor(rel: string): string {
 }
 
 function provenance(path: string, rel: string): any {
+  const lang = /^tm\/([^/]+)\//.exec(rel.split(Path.sep).join('/'))?.[1]
+  const offset = (lang && LANG_HEADER_OFFSET[lang]) || 0
+
   // Same reason as sha256 above: a CRLF checkout would leave a trailing
   // '\r' on every line, which the anchored patterns below would still
   // match but the licence/resync checks would read oddly.
-  const head = readFileSync(path, 'utf8').split(/\r?\n/).slice(0, 3)
+  const head = readFileSync(path, 'utf8').split(/\r?\n/).slice(offset, offset + 3)
 
   const c = commentFor(rel).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -269,8 +281,11 @@ describe('vendored', () => {
         for (const adapt of spec.adapt || []) {
           const src = readFileSync(Path.join(SDK, rel), 'utf8')
 
-          // Skip the provenance header, which NAMES the `from` string.
-          const body = src.split('\n').slice(3).join('\n')
+          // Skip the provenance header (and any language prologue before
+          // it), which NAMES the `from` string.
+          const lang = /^tm\/([^/]+)\//.exec(rel)?.[1]
+          const skip = 3 + ((lang && LANG_HEADER_OFFSET[lang]) || 0)
+          const body = src.split('\n').slice(skip).join('\n')
 
           ok(body.includes(adapt.to),
             lib + ' ' + rel + ': adaptation lost — expected ' + adapt.to +

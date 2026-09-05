@@ -13,6 +13,14 @@ main: kit: target: py: {
   # so a feature that resolves secrets through sekreto can apply here.
   provides: { sekreto: true }
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): the struct-corpus runner (test/runner.py is
+  # support-only and RETAINED). `doctor` reports leftovers; `doctor
+  # prune` deletes them.
+  superseded: [
+    'test/struct_runner.py'
+  ]
+
   deps: &: {
     kind: *'prod' | string
   }
