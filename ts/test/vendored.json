@@ -1,150 +1,762 @@
 {
-  "library": {
-    "omni/typescript": {
-      "commit": "5956cc4e5ecdaeebd11eab8bb4b9462dfc76e018",
-      "file": {
-        "tm/ts/test/vendor/omni/Runner.ts": {
-          "sha256": "3b876c8722da89a0c82d1d68dae069aec304c3f5f37826dc459e0772cbb3c6f3",
-          "upstream": "typescript/src/Runner.ts"
-        },
-        "tm/ts/test/vendor/omni/Util.ts": {
-          "sha256": "2aca248ffd2ae83e59f1cc36f71e772b35561fb5453b57bce83fabda90180674",
-          "upstream": "typescript/src/Util.ts"
-        },
-        "tm/ts/test/vendor/omni/compat.ts": {
-          "sha256": "6dbde85d5a408e7d30b75110680d99cb8af29c51a99ba7cc9a0e8bd1a84ea60f",
-          "upstream": "typescript/compat/struct.ts",
-          "adapt": [
-            {
-              "from": "'../src'",
-              "to": "'./index'"
-            }
-          ]
-        },
-        "tm/ts/test/vendor/omni/index.ts": {
-          "sha256": "0421ae83be9a8cc99151bf75676f4d80b400b7a49eb81739d7ea3bec2a8e77de",
-          "upstream": "typescript/src/index.ts"
-        }
-      },
-      "repo": "https://github.com/voxgig/omni",
-      "version": "0.1.2"
+ "library": {
+  "omni/go": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/go/test/omni/omni.go": {
+     "sha256": "516224900d941d0692d0bd97281a84ebed026d4bf0c4da123dc5c974c8b3018c",
+     "upstream": "go/omni.go"
     },
-    "sekreto/typescript": {
-      "commit": "65009cb5758850db767785ab666e71895f86086b",
-      "file": {
-        "tm/ts/src/feature/secrets/sekreto/Sekreto.ts": {
-          "sha256": "12df1974363a03ef4c0ef39ebb96e14ba298bcfa3991830895227131cec12dbd",
-          "upstream": "typescript/src/Sekreto.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/Sigv4.ts": {
-          "sha256": "eb412156a384c3484ad65fe05d39e643eae7104b7b506e608d9f9d825350a91d",
-          "upstream": "typescript/src/Sigv4.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/index.ts": {
-          "sha256": "8017d7d7b8ce6a0cae198388da73a6ebad3587ed23cc6dfd8d70cab0b62fc04c",
-          "upstream": "typescript/src/index.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/Registry.ts": {
-          "sha256": "fe5b852cc0d1b3a814163284e3bee493c4f964a5ca44245bdd0e9896b28393e5",
-          "upstream": "typescript/src/provider/Registry.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/addr.ts": {
-          "sha256": "363bd7ebadb5fd7090a75cd5107170adfd5741228819cb31861611a511af12ef",
-          "upstream": "typescript/src/provider/addr.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/aws.ts": {
-          "sha256": "5c613853801ae353a79aedddaa025c465f5f07ceeec73858071b57cf222bf71f",
-          "upstream": "typescript/src/provider/aws.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/azuresecrets.ts": {
-          "sha256": "d60b2456b711f85dabf8ef1cada73641f27e1672794cedaee205be06f967f275",
-          "upstream": "typescript/src/provider/azuresecrets.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/boru.ts": {
-          "sha256": "7c386230f47a7a58ad1d7cb4c6edd03eaa72be5de49cf2013369bed88c901a03",
-          "upstream": "typescript/src/provider/boru.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/doppler.ts": {
-          "sha256": "5e61028dd4aacafac6b444f10d63c2535329c3ffc62614d30113ca0bcaff280f",
-          "upstream": "typescript/src/provider/doppler.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/dotenv.ts": {
-          "sha256": "e9a5563c4a6a5754c018b22eedf00b5b0c060a13b2620196fc30bac57fc5f3c9",
-          "upstream": "typescript/src/provider/dotenv.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/env.ts": {
-          "sha256": "a75b7fc94795be2837a9c3ad4694a1f9b703cdb79cbc9bb5eed6927422335eac",
-          "upstream": "typescript/src/provider/env.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/file.ts": {
-          "sha256": "e349afc6f9bd6d66ea62ead8a872c2c1f6da770940afd4ad9d26e4ae372ed117",
-          "upstream": "typescript/src/provider/file.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/gcpsecrets.ts": {
-          "sha256": "c886467570c0cabec5f7f430250a6aae50b6376ccabed0dc07bb98c0b8683356",
-          "upstream": "typescript/src/provider/gcpsecrets.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/hashicorp.ts": {
-          "sha256": "f411ebaec6fa57a65c7102cb8513a23563c5d13460d4891c3cdca13c0e6f8b33",
-          "upstream": "typescript/src/provider/hashicorp.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/http.ts": {
-          "sha256": "1daddbb330957f2bfb39ef61d08014d260af5c28162a65e26d1d0b3f57dd9d17",
-          "upstream": "typescript/src/provider/http.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/infisical.ts": {
-          "sha256": "5be909125e64fb8d12bafc1a13eadcd260ce47918314309ebc4f4ad7dff8a880",
-          "upstream": "typescript/src/provider/infisical.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/memory.ts": {
-          "sha256": "f0d55ac5383cf16a73f8a199e0287c920f08e01b9fc2d6af9888fe9dfbc20f64",
-          "upstream": "typescript/src/provider/memory.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/onepassword.ts": {
-          "sha256": "2524e1d742f1fc66df25a7609b39ccdc040e1cd0aea30b946a08fe99d6a44d12",
-          "upstream": "typescript/src/provider/onepassword.ts"
-        },
-        "tm/ts/src/feature/secrets/sekreto/provider/support.ts": {
-          "sha256": "d0a93fb668ca8eace81c466ed26be3a8c2dabccd127e69f571749fe0ef08c253",
-          "upstream": "typescript/src/provider/support.ts"
-        }
-      },
-      "repo": "https://github.com/voxgig/sekreto",
-      "version": "0.1.2"
-    },
-    "struct/go": {
-      "commit": "94409354d0a60fda8098c83e290583b7dee76c84",
-      "file": {
-        "tm/go/utility/struct/voxgigstruct.go": {
-          "sha256": "9fab8535923631d848879d2e0de2f80c36e87b6e50299e1dbba9d1c18c7994c3",
-          "upstream": "go/voxgigstruct.go"
-        }
-      },
-      "repo": "https://github.com/voxgig/struct",
-      "version": "0.1.3"
-    },
-    "struct/javascript": {
-      "commit": "94409354d0a60fda8098c83e290583b7dee76c84",
-      "file": {
-        "tm/js/src/utility/StructUtility.js": {
-          "sha256": "e81925183b1b5e4b6a68ac22edfc4e0501db8efe6746732d07ff5e44a9002c30",
-          "upstream": "javascript/src/struct.js"
-        }
-      },
-      "repo": "https://github.com/voxgig/struct",
-      "version": "0.3.2"
-    },
-    "struct/typescript": {
-      "commit": "94409354d0a60fda8098c83e290583b7dee76c84",
-      "file": {
-        "tm/ts/src/utility/StructUtility.ts": {
-          "sha256": "35739a9975088bc555b2c24ca5e490f323b9ff3364ef635a6131256dfb16cc44",
-          "upstream": "typescript/src/StructUtility.ts"
-        }
-      },
-      "repo": "https://github.com/voxgig/struct",
-      "version": "0.3.2"
+    "tm/go/test/omni/util.go": {
+     "sha256": "b91beb6411d0e0d14a3a208fcd8f97d730f05d5f7fa8f2c84318016f667fae20",
+     "upstream": "go/util.go"
     }
+   }
   },
-  "note": "Generated data, hand-maintained on resync. See test/vendored.test.ts."
+  "omni/javascript": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "0.1.4",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/js/test/vendor/omni/index.js": {
+     "sha256": "e730882c6e7222b88335d9c7dfa3b2e84e67fc84fc4649df47f1941d65c2bee6",
+     "upstream": "javascript/src/index.js"
+    },
+    "tm/js/test/vendor/omni/runner.js": {
+     "sha256": "4afc1e902a89aeaac44ffa21ec97a446c3e4421a830f05273bf60dba72a68a31",
+     "upstream": "javascript/src/runner.js"
+    },
+    "tm/js/test/vendor/omni/util.js": {
+     "sha256": "99c70c5f8dc3bebf22aacc908dc2240b1eef63a7150bfa09e94dbf71b6527cb2",
+     "upstream": "javascript/src/util.js"
+    }
+   }
+  },
+  "omni/python": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "0.1.0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/py/test/voxgig_omni/__init__.py": {
+     "sha256": "077baa867f91c42b7b3c929baca9f044eddf3bcefbfe241308d1439db8f02b93",
+     "upstream": "python/voxgig_omni/__init__.py"
+    },
+    "tm/py/test/voxgig_omni/runner.py": {
+     "sha256": "ab3da0b0284bdb4a0db71d9390ea9066b92ca41dba89d1108270be2196ff5d21",
+     "upstream": "python/voxgig_omni/runner.py"
+    },
+    "tm/py/test/voxgig_omni/util.py": {
+     "sha256": "86746b42203d02e9263bc2cb23d10316ff97bf4549b5c028339aa92461664fb7",
+     "upstream": "python/voxgig_omni/util.py"
+    }
+   }
+  },
+  "omni/typescript": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "0.1.4",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/ts/test/vendor/omni/index.ts": {
+     "sha256": "8e8eb2609c79a95c391b8e405fa6cac4dc06ef3028705b05898fc8773c007c62",
+     "upstream": "typescript/src/index.ts"
+    },
+    "tm/ts/test/vendor/omni/Runner.ts": {
+     "sha256": "e6b93d8d3c8c92c8c7e369fbfc0ff25b201bc7e55c40ce3d7415bdd71d86ab46",
+     "upstream": "typescript/src/Runner.ts"
+    },
+    "tm/ts/test/vendor/omni/Util.ts": {
+     "sha256": "86cdf764743a756cda54c1fd3aa3726d10d81b2c351b617b4b28826d3e547f54",
+     "upstream": "typescript/src/Util.ts"
+    }
+   }
+  },
+  "plugin/go": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "8d8968afc0a2008fbd795b41ab166307d989f02a",
+   "version": "0.1.6",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/go/feature/secrets/plugin/capability.go": {
+     "sha256": "a16a9b8f951b2536970be349d288a32ff29a7f8b187554dd82202b150a2241e2",
+     "upstream": "go/plugin/capability.go"
+    },
+    "tm/go/feature/secrets/plugin/catalog.go": {
+     "sha256": "2d31e0aca922773be7024376bc35fcf14f9ceb38bfb53e332492b376acbd3fce",
+     "upstream": "go/plugin/catalog.go"
+    },
+    "tm/go/feature/secrets/plugin/config.go": {
+     "sha256": "2fe9fbebd3d0cd68a7826e1395dc4e87d5e98fb0a9579aee95ecf1508922bf74",
+     "upstream": "go/plugin/config.go"
+    },
+    "tm/go/feature/secrets/plugin/depend.go": {
+     "sha256": "b0ade6b173fd4d21f70569cd26984a65350dca82c683389bc984eff4fefa6a72",
+     "upstream": "go/plugin/depend.go"
+    },
+    "tm/go/feature/secrets/plugin/env.go": {
+     "sha256": "67c31ef91e6d40ce649167fa3012ef89864784e1c3b6fd4bcec7995656c83404",
+     "upstream": "go/plugin/env.go"
+    },
+    "tm/go/feature/secrets/plugin/export.go": {
+     "sha256": "c76fa33873f3213c4e2743662a2404cccbc9afe0bf579ab248e5f541e52de3cf",
+     "upstream": "go/plugin/export.go"
+    },
+    "tm/go/feature/secrets/plugin/graph.go": {
+     "sha256": "1192bcc8b1a31e2da45451e999838708ab94f2c2bd8f11f3a1921447aeb3d5df",
+     "upstream": "go/plugin/graph.go"
+    },
+    "tm/go/feature/secrets/plugin/host.go": {
+     "sha256": "0bcc49ceefa9254fc59dffe47dd413233765847484f77be61739bf85dd8b09f7",
+     "upstream": "go/plugin/host.go"
+    },
+    "tm/go/feature/secrets/plugin/order.go": {
+     "sha256": "d6fdde25cc620ce06916ac7011de9ab91d5d121f212212db648f008f56069d00",
+     "upstream": "go/plugin/order.go"
+    },
+    "tm/go/feature/secrets/plugin/point.go": {
+     "sha256": "1f4909abac63ded1702e272408da3c46044d25730999e9305141357ae76884b7",
+     "upstream": "go/plugin/point.go"
+    },
+    "tm/go/feature/secrets/plugin/ref.go": {
+     "sha256": "2270dbbac9d5371b5fa8b753844fb3ea815c44d4c3dec80b90861ce72de64235",
+     "upstream": "go/plugin/ref.go"
+    },
+    "tm/go/feature/secrets/plugin/resolve.go": {
+     "sha256": "e29b4145180202e5fc33354706e22f18d285e5e57e3f710784996c43e1ac8220",
+     "upstream": "go/plugin/resolve.go"
+    },
+    "tm/go/feature/secrets/plugin/types.go": {
+     "sha256": "49abaa75b3054375d029b614972a86505a4f2ab0f38f851e05276c684bd09da3",
+     "upstream": "go/plugin/types.go"
+    },
+    "tm/go/feature/secrets/plugin/util.go": {
+     "sha256": "553137845cf88f9af9973c92ccb9ec00a89a7bee62b237818ab6f2110bca94d7",
+     "upstream": "go/plugin/util.go"
+    },
+    "tm/go/feature/secrets/plugin/version.go": {
+     "sha256": "8e51888082927fdff1dd6ba762c422b2604d07885d75c6cca2a69e531da61ac0",
+     "upstream": "go/plugin/version.go"
+    }
+   }
+  },
+  "plugin/python": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "8d8968afc0a2008fbd795b41ab166307d989f02a",
+   "version": "0.1.6",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/py/pkg/feature/secrets/voxgig_plugin/__init__.py": {
+     "sha256": "eaf98bb112f1336821ea395bec9c864c82b4e13c48c9c30db739086b2c353a46",
+     "upstream": "python/voxgig_plugin/__init__.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/capability.py": {
+     "sha256": "f4cbea467fb014492ba4618d44f01006cda61cdd94ab1088b8230e858faa8ff9",
+     "upstream": "python/voxgig_plugin/capability.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/catalog.py": {
+     "sha256": "47620e193ed3c369ec38cc36dc66457d8448fbe5b4b4195b741f69abfa59d4b4",
+     "upstream": "python/voxgig_plugin/catalog.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/config.py": {
+     "sha256": "2dd99a47009850dd97aa5f41149950848e4dc82fd0e4698bd94655affea997f7",
+     "upstream": "python/voxgig_plugin/config.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/depend.py": {
+     "sha256": "8291bdacc5be3765572dc864e1df975fab6e2cacb76485f756375cde933f3c7a",
+     "upstream": "python/voxgig_plugin/depend.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/env.py": {
+     "sha256": "c97d6c5af13d87a3c68dc5c4d2453808fc9eefcdb109483ae73356c3c491148c",
+     "upstream": "python/voxgig_plugin/env.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/export.py": {
+     "sha256": "34aacbecff15e247d6334724c154a4e2d167afab169f893d471a54cc6c841391",
+     "upstream": "python/voxgig_plugin/export.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/graph.py": {
+     "sha256": "6fb5d4f7cbe08dc4ff46782ba0f887acb6ecb7f81ea729d3e1ae3e1e575d215f",
+     "upstream": "python/voxgig_plugin/graph.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/host.py": {
+     "sha256": "3414a6b47d67b549f87450420f68723c6673e747cce1c9077aad3ad22a2bdbc4",
+     "upstream": "python/voxgig_plugin/host.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/order.py": {
+     "sha256": "95221ff6eaba7e4d086e6202c7b57c8b50c58890d982cf7b037186483c84b60d",
+     "upstream": "python/voxgig_plugin/order.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/point.py": {
+     "sha256": "6684078176d83bafdfee47a2dbc57deef0b5251039cacc27aa265be4c4494e5c",
+     "upstream": "python/voxgig_plugin/point.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/ref.py": {
+     "sha256": "15f062670dd7eeac7ace874063262df66b83befac5fe3690135c31f285a914e1",
+     "upstream": "python/voxgig_plugin/ref.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/resolve.py": {
+     "sha256": "cc57930abdf6c4fe20568176737fca2991a2542de931bea9f13c434ab151a8ed",
+     "upstream": "python/voxgig_plugin/resolve.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/types.py": {
+     "sha256": "58bc859c4b170d2477fd43ca02c721092b4d9cf6be579866a42f96a6d366112a",
+     "upstream": "python/voxgig_plugin/types.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_plugin/version.py": {
+     "sha256": "7ae12475d3afe8a6d362b856a6722ac10a35d371b7c5ba0e7ea3df0157b9adf6",
+     "upstream": "python/voxgig_plugin/version.py"
+    }
+   }
+  },
+  "plugin/typescript": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "8d8968afc0a2008fbd795b41ab166307d989f02a",
+   "version": "0.1.6",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/ts/src/feature/secrets/plugin/Capability.ts": {
+     "sha256": "77715463a52e191e01e0f8e44135bfb56122b345539b2890778c14eec12b1f12",
+     "upstream": "typescript/src/Capability.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Catalog.ts": {
+     "sha256": "8257996f4dd6cffea9c612019b2d56c36b07af91090e997621dd9cc2619f1a1d",
+     "upstream": "typescript/src/Catalog.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Config.ts": {
+     "sha256": "a541874112f675392867a18ffed10734be14499ada7db3e5984a8f79fe4827a2",
+     "upstream": "typescript/src/Config.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Depend.ts": {
+     "sha256": "b07011c49b6ccdba806ba0b32d04a2091c733fb33f1fa88d762b5b3d7e04ae16",
+     "upstream": "typescript/src/Depend.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Env.ts": {
+     "sha256": "b1c08514009a703d9395e03762a18740969fa02cf58f288387e0a69448661d61",
+     "upstream": "typescript/src/Env.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Export.ts": {
+     "sha256": "c6e4ec29de3c4e172a56164d5bc322f63c05b515162a779314df4d30d8ef98b5",
+     "upstream": "typescript/src/Export.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/FeatureHost.ts": {
+     "sha256": "3f3e2e6debedc9e8380f01a24d05bb848fa3e2a670d8567a2de6400fc3c506df",
+     "upstream": "typescript/src/FeatureHost.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Graph.ts": {
+     "sha256": "6f3fbf3872a7bbc6a6708e60118548660fad8fc92c6dc216dd894c880ca45032",
+     "upstream": "typescript/src/Graph.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Host.ts": {
+     "sha256": "39c55384249e3ee5dd8b8fd871d2bccbdd08224516e215439659585dc90c50ad",
+     "upstream": "typescript/src/Host.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/index.ts": {
+     "sha256": "efd2cd7430cd5e85b47848dee1958e59c96aae73cfda274a8d0bec5ec2ba89e2",
+     "upstream": "typescript/src/index.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Order.ts": {
+     "sha256": "ae7d91d7727cc784a7dc3582d68c39d8c2d186b4c53a4b84421f3b8c80108f9b",
+     "upstream": "typescript/src/Order.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Point.ts": {
+     "sha256": "8ea65d9bad47be75ebe36eb6364b8464e88c05456e3e162dc82d8f3de03f61cb",
+     "upstream": "typescript/src/Point.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Ref.ts": {
+     "sha256": "f6e6c8cd18c3da83ab5186decbad0e5c35edee0bef1778c2040bed06785d7a5a",
+     "upstream": "typescript/src/Ref.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Resolve.ts": {
+     "sha256": "ed74db2ed336a1df44f6a2092d18744e74114a1dca6ff5632c1e64fdd5e3b5fa",
+     "upstream": "typescript/src/Resolve.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Types.ts": {
+     "sha256": "b9c3835f7a93f5ba8eb5f8c2015c6017cc3096e22374c1269b54ceccf7f3172f",
+     "upstream": "typescript/src/Types.ts"
+    },
+    "tm/ts/src/feature/secrets/plugin/Version.ts": {
+     "sha256": "4bb64de85dba0d9ad697383c9524f603ece8290e4157d562dfe26e502eb13fc5",
+     "upstream": "typescript/src/Version.ts"
+    }
+   }
+  },
+  "sekreto/go": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/go/feature/secrets/plugins/aws/aws.go": {
+     "sha256": "50b07ee660aa5b306fb0e6bff9c62b860dba357653637909ba9ec73f0932f99d",
+     "upstream": "go/plugins/aws/aws.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      },
+      {
+       "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
+       "to": "\"GOMODULE/feature/secrets/plugins/httpjson\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/aws/sigv4.go": {
+     "sha256": "95ed37d5212ea5d74637b86a35d7856c88154dd1ac3ff741ba31e9d45b3ace1f",
+     "upstream": "go/plugins/aws/sigv4.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      },
+      {
+       "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
+       "to": "\"GOMODULE/feature/secrets/plugins/httpjson\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/azuresecrets/azuresecrets.go": {
+     "sha256": "f97ce55ec1369741ad39f2109f8c9c9acf97d625fb85a1b2507bd012357eda93",
+     "upstream": "go/plugins/azuresecrets/azuresecrets.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      },
+      {
+       "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
+       "to": "\"GOMODULE/feature/secrets/plugins/httpjson\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/boru/boru.go": {
+     "sha256": "91e6d1c2ff0f7a0a3c44bb38fe10958af81c583429a262bfb53b60eefd663856",
+     "upstream": "go/plugins/boru/boru.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      },
+      {
+       "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
+       "to": "\"GOMODULE/feature/secrets/plugins/httpjson\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/doppler/doppler.go": {
+     "sha256": "280ee0c0fc759a6b91646cd2955d011efe8d4a38964cb4f09bf4ab8528103cf3",
+     "upstream": "go/plugins/doppler/doppler.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      },
+      {
+       "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
+       "to": "\"GOMODULE/feature/secrets/plugins/httpjson\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/gcpsecrets/gcpsecrets.go": {
+     "sha256": "f4c4c0806351edd72c897dc4ec9b3dda37a65cea6a41ce5ed815f7a20d160f6c",
+     "upstream": "go/plugins/gcpsecrets/gcpsecrets.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      },
+      {
+       "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
+       "to": "\"GOMODULE/feature/secrets/plugins/httpjson\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/hashicorp/hashicorp.go": {
+     "sha256": "0b3860d3576d9f04a96f9c830ab04721c755076fc911af30f6fff484c355aeef",
+     "upstream": "go/plugins/hashicorp/hashicorp.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      },
+      {
+       "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
+       "to": "\"GOMODULE/feature/secrets/plugins/httpjson\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/httpjson/httpjson.go": {
+     "sha256": "f139436f191604d2fc51de5e9b00e43069e341b310842e15c6ed1447044d0dab",
+     "upstream": "go/plugins/httpjson/httpjson.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/infisical/infisical.go": {
+     "sha256": "56912dc6ffb42894fc502cc735682e867762642def36bd9c09e9de9c3c2265f1",
+     "upstream": "go/plugins/infisical/infisical.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      },
+      {
+       "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
+       "to": "\"GOMODULE/feature/secrets/plugins/httpjson\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/onepassword/onepassword.go": {
+     "sha256": "5bb2c0001dfa3cb77d7f673462844ae904119ceb3128af284f893c87f9cd754b",
+     "upstream": "go/plugins/onepassword/onepassword.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      },
+      {
+       "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
+       "to": "\"GOMODULE/feature/secrets/plugins/httpjson\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/secretspec/secretspec.go": {
+     "sha256": "42530ca947f28e012a4893ee61ef1ae28cf4ac0400891d923fbd27ea4c2871fb",
+     "upstream": "go/plugins/secretspec/secretspec.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/sekreto/addr.go": {
+     "sha256": "ac91ccd438eb38fe75fc920f88185c35ced5b1cbc82071d2dd140884c81172bf",
+     "upstream": "go/sekreto/addr.go"
+    },
+    "tm/go/feature/secrets/sekreto/providers.go": {
+     "sha256": "3a88d694f0f83fc83ab7a4a5df4e0480842b97f5014e9f51a68ee66088861cf9",
+     "upstream": "go/sekreto/providers.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/plugin/go/plugin\"",
+       "to": "\"GOMODULE/feature/secrets/plugin\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/sekreto/sekreto.go": {
+     "sha256": "bc5178a628675589d31408b477187074f5ed90bd72384a4043939ae85b12ad0c",
+     "upstream": "go/sekreto/sekreto.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/plugin/go/plugin\"",
+       "to": "\"GOMODULE/feature/secrets/plugin\""
+      }
+     ]
+    }
+   }
+  },
+  "sekreto/python": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042",
+   "version": "0.2.0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/__init__.py": {
+     "sha256": "511e5b6396ee3c9679f9b230223fb83d4f234fee95853c27ec9e298cc6963b46",
+     "upstream": "python/voxgig_sekreto/__init__.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/addr.py": {
+     "sha256": "2a4c1751348447309038099c5f564f2ed683d85f2f99ea669086c1a8de4d870d",
+     "upstream": "python/voxgig_sekreto/addr.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/aws.py": {
+     "sha256": "cb580ceff72cb17d081f967c033bbb52e9b312c8bbc091785932818d5ceb1bb4",
+     "upstream": "python/voxgig_sekreto/plugins/aws.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/azuresecrets.py": {
+     "sha256": "6bde6679ca0c3d49476a22ed6e95530d9f939299def00dbdc54445f6512ef9c4",
+     "upstream": "python/voxgig_sekreto/plugins/azuresecrets.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/boru.py": {
+     "sha256": "a71e14c5967caec03a24c58c7511dbf4423c7e04efa80d8f91fe7962640c89b2",
+     "upstream": "python/voxgig_sekreto/plugins/boru.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/doppler.py": {
+     "sha256": "b6582c4d3bb7d2973597c31ca453e62da3e223f0598f36371ee2289e188d9400",
+     "upstream": "python/voxgig_sekreto/plugins/doppler.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/gcpsecrets.py": {
+     "sha256": "34207971a9a47a443bdc4d5968e74183060f44972a5bf60c2c8e912c64c491e0",
+     "upstream": "python/voxgig_sekreto/plugins/gcpsecrets.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/hashicorp.py": {
+     "sha256": "15ebb81e48b96cf3b5dfbf38177ff6e5237b12b2b1cf2ccccfd22c443f82e7e4",
+     "upstream": "python/voxgig_sekreto/plugins/hashicorp.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/httpjson.py": {
+     "sha256": "753eeec085d7387065753ef5d86f4fdf429ae3cf92740abac132a214595ba513",
+     "upstream": "python/voxgig_sekreto/plugins/httpjson.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/infisical.py": {
+     "sha256": "2111d8f5c549557057e4859268856474cf24628d16948e132d71158bbf683a66",
+     "upstream": "python/voxgig_sekreto/plugins/infisical.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/onepassword.py": {
+     "sha256": "6a678c2639ac5f643ef8ac94946ca77b737e74901b225efc43a978f209c0d4e3",
+     "upstream": "python/voxgig_sekreto/plugins/onepassword.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/secretspec.py": {
+     "sha256": "6788947a42c895b0ad8b057dd0d5c45c96a9b162fa5a25001239138f2bbd944a",
+     "upstream": "python/voxgig_sekreto/plugins/secretspec.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/sigv4.py": {
+     "sha256": "563457550f13e98321f474cb4be44058754c7b3c385af26ff01cd3e8c77b4eaa",
+     "upstream": "python/voxgig_sekreto/plugins/sigv4.py"
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/providers.py": {
+     "sha256": "730467e93d68ae7686511449fa4b087dda6e29ce434dafe97123c5f0e2195b0c",
+     "upstream": "python/voxgig_sekreto/providers.py",
+     "adapt": [
+      {
+       "from": "from voxgig_plugin import",
+       "to": "from ..voxgig_plugin import"
+      }
+     ]
+    },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/sekreto.py": {
+     "sha256": "5084df8e7c718a9c0b26ed202311f03c325286011ed90d320ec382b39066a2c6",
+     "upstream": "python/voxgig_sekreto/sekreto.py",
+     "adapt": [
+      {
+       "from": "from voxgig_plugin import",
+       "to": "from ..voxgig_plugin import"
+      }
+     ]
+    }
+   }
+  },
+  "sekreto/typescript": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042",
+   "version": "0.2.0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/ts/src/feature/secrets/sekreto/index.ts": {
+     "sha256": "ccace70063f5a340a75d246808725bf0dae093317f253f11df6fce9c25c316f5",
+     "upstream": "typescript/src/index.ts",
+     "adapt": [
+      {
+       "from": "'@voxgig/plugin'",
+       "to": "'../plugin'"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/aws.ts": {
+     "sha256": "34efaf8ad36e8da0daf2b9b74bae6d36ccc4571d550c01b6fe29077e3806e921",
+     "upstream": "typescript/plugins/aws.ts",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/azuresecrets.ts": {
+     "sha256": "cea9c81c5e46fa1172bb7be2e7f430101aa2390462c6bc262af0f0b0db177d74",
+     "upstream": "typescript/plugins/azuresecrets.ts",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/boru.ts": {
+     "sha256": "ef705e79fc7d55d16b1412d60472060545332d84dcef9b11a8a9b2e51f6cabc5",
+     "upstream": "typescript/plugins/boru.ts",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/doppler.ts": {
+     "sha256": "f0c4823c29883981e6f470bbee0db58eb91489e44f4cc6b638e6422972524e8a",
+     "upstream": "typescript/plugins/doppler.ts",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/gcpsecrets.ts": {
+     "sha256": "6a943a6fd6c71f2421e96faa4ad05a8d1ba07368f9d982341c5655f1c9118650",
+     "upstream": "typescript/plugins/gcpsecrets.ts",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/hashicorp.ts": {
+     "sha256": "166112e5a4012235bd6c02abc6febfd1b84a87b143d980a92eb5b68396556bf0",
+     "upstream": "typescript/plugins/hashicorp.ts",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/httpjson.ts": {
+     "sha256": "b4ae79afeeb51abd9d3c7397ad7cda1edc62a9e397f34a20ba094259aeb4982b",
+     "upstream": "typescript/plugins/httpjson.ts",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/infisical.ts": {
+     "sha256": "e667a776f2a24ad861b7a653a1f92497e150fe9d8de8216e7ac38545bbc07594",
+     "upstream": "typescript/plugins/infisical.ts",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/onepassword.ts": {
+     "sha256": "730ed11b1c43d74acf5e8f1feab5736160e786116317872276decdefb707a10b",
+     "upstream": "typescript/plugins/onepassword.ts",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/secretspec.ts": {
+     "sha256": "42f9c3ca240d5f02b4596470286abef13b7861da5fc1eb3a99c8a15556c3eb93",
+     "upstream": "typescript/plugins/secretspec.ts",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/plugins/sigv4.ts": {
+     "sha256": "27c01201e0cb0d5747ad8dbaa5c7ccb64db29857543fcc7a5dcafd8f95841419",
+     "upstream": "typescript/plugins/sigv4.ts"
+    },
+    "tm/ts/src/feature/secrets/sekreto/provider/addr.ts": {
+     "sha256": "5a21c12e4154aaf5e6c5f1c2cdc07903c3ac40515eb8fd06e2445e08d864c7c9",
+     "upstream": "typescript/src/provider/addr.ts"
+    },
+    "tm/ts/src/feature/secrets/sekreto/provider/builtin.ts": {
+     "sha256": "23a57b7bb615007dd3b5722190cdc399a9969013253ef574ac3bcac169c9c085",
+     "upstream": "typescript/src/provider/builtin.ts"
+    },
+    "tm/ts/src/feature/secrets/sekreto/provider/dotenv.ts": {
+     "sha256": "b5e5bb1bf43b79bc692a165f2660a8f518a98067b50c4648bf452b3ebad4d0bb",
+     "upstream": "typescript/src/provider/dotenv.ts"
+    },
+    "tm/ts/src/feature/secrets/sekreto/provider/env.ts": {
+     "sha256": "e86f07aeb58d5b78ed421298ce43b01e70b69eee2454c4f7fa2abb1092c8b4f5",
+     "upstream": "typescript/src/provider/env.ts"
+    },
+    "tm/ts/src/feature/secrets/sekreto/provider/file.ts": {
+     "sha256": "c2466f6f4e6c3f87f01ddccb85b02ff4174fda8c6c583c7c73972b33778673c0",
+     "upstream": "typescript/src/provider/file.ts"
+    },
+    "tm/ts/src/feature/secrets/sekreto/provider/memory.ts": {
+     "sha256": "484fd2e2b206b44488bed9a1c507adfe178a8570edd3b572664af3af0c60fdee",
+     "upstream": "typescript/src/provider/memory.ts"
+    },
+    "tm/ts/src/feature/secrets/sekreto/provider/support.ts": {
+     "sha256": "24e122dc240f2fe6f078fcc3af72edd79bd2219c47a3c629c8c9f7846d0ce021",
+     "upstream": "typescript/src/provider/support.ts",
+     "adapt": [
+      {
+       "from": "'@voxgig/plugin'",
+       "to": "'../../plugin'"
+      }
+     ]
+    },
+    "tm/ts/src/feature/secrets/sekreto/Sekreto.ts": {
+     "sha256": "090ea1a9ef606206da29b6c3e3b136b6dcd8438e1bcde544b588770327c3baf7",
+     "upstream": "typescript/src/Sekreto.ts",
+     "adapt": [
+      {
+       "from": "'@voxgig/plugin'",
+       "to": "'../plugin'"
+      }
+     ]
+    }
+   }
+  },
+  "struct/go": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "2caf7f448f265144c18dd6fab6ba270a7f3bca07",
+   "version": "0.1.0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/go/utility/struct/voxgigstruct.go": {
+     "sha256": "504d2d06d19793117cc424c6e1397edfe398e2fbd033b01da90672b224a59ec0",
+     "upstream": "go/voxgigstruct.go"
+    }
+   }
+  },
+  "struct/javascript": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "2caf7f448f265144c18dd6fab6ba270a7f3bca07",
+   "version": "0.1.4",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/js/src/utility/StructUtility.js": {
+     "sha256": "d11955f6711aef4c9e2bec03bbd985e3061502daea920fad045c07cb216ea763",
+     "upstream": "javascript/src/struct.js"
+    }
+   }
+  },
+  "struct/python": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "2caf7f448f265144c18dd6fab6ba270a7f3bca07",
+   "version": "0.1.1",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/py/pkg/utility/voxgig_struct/voxgig_struct.py": {
+     "sha256": "46fbd86eaab54a3879bb9686e2961da7030ba18def93180e7c3a124ce031fbcd",
+     "upstream": "python/voxgig_struct/voxgig_struct.py"
+    }
+   }
+  },
+  "struct/typescript": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "2caf7f448f265144c18dd6fab6ba270a7f3bca07",
+   "version": "0.3.4",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/ts/src/utility/StructUtility.ts": {
+     "sha256": "55364072741cb7c1829f34a6dad0349d606e67b5f39a97be3353c0dbed06734b",
+     "upstream": "typescript/src/StructUtility.ts"
+    }
+   }
+  }
+ },
+ "note": "Generated data, hand-maintained on resync. See test/vendored.test.ts.",
+ "tag": "sdk-20260904-1610-0"
 }

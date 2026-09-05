@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
-  entityClassName, entityCollection, goModule, goPackageIdent,
+  entityClassName, entityCollection, goModule, goPackageIdent, pluginExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
@@ -60,7 +60,13 @@ const Main = cmp(async function Main(props: any) {
   // downstream consumers.
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//, /utility\/struct\/go\.mod$/, TEST_CONTROL_EXCLUDE],
+    // pluginExcludes: the generate-time plugin trim (an INACTIVE plugin
+    // group's declared files stay out of the tree - the model's `path`
+    // entries are target-root-relative, which is this Copy's root). The
+    // FEATURE-level trim for go stays an add-time concern (vendor-tag
+    // rollout, Decision 5).
+    exclude: [/src\//, /utility\/struct\/go\.mod$/, TEST_CONTROL_EXCLUDE,
+      ...pluginExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
       GOMODULE: gomodule,

@@ -273,10 +273,10 @@ describe('feature-language-parity', () => {
   // below, exactly like NO_FEATURE_DIRS: a list that can silently grow
   // stale is a mute button.
   const GATED: Record<string, string[]> = {
-    // needs: ['sekreto'] — only ts vendors a sekreto port today. go, py,
-    // java, rb, php and rust follow in the language rollout, each adding
-    // its port and `provides: ['sekreto']` together.
-    secrets: ['ts'],
+    // needs: ['sekreto'] — a target joins when it vendors its sekreto
+    // port and declares `provides: ['sekreto']` together (the vendor-tag
+    // rollout added go and py; java, rb, php and rust follow).
+    secrets: ['go', 'py', 'ts'],
   }
 
   // Which targets must carry this feature: all of them, or just the ones

@@ -86,6 +86,10 @@ function loadFeature(name: string): any {
     // here only CONSTRUCT the class and read its hooks, so stubbing the two
     // symbols the template names is enough. A test that exercised
     // resolution would load the real thing instead.
+    // FEATURE_PLUGINS is generated into Config; the structural checks
+    // construct the class with no plugin groups selected.
+    '../../Config': { FEATURE_PLUGINS: {} },
+
     './sekreto': {
       Sekreto: class {
         constructor(_options?: any) { }

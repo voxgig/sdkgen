@@ -471,14 +471,14 @@ describe('reference-target invariants', () => {
     // cases — the exact drift this suite exists to prevent.
     ok(CORPUS_SECTIONS.includes('preparePath'))
     const src = readFileSync(primaryTestFile('go')!, 'utf8')
-    ok(/runsetNamed\(t, "preparePath"/.test(src),
+    ok(/runsection\(t, "preparePath"/.test(src),
       'go must drive preparePath from the corpus, not hand-written cases')
   })
 
   test('the go runner fails loudly on an empty or missing corpus section', () => {
     // It used to `return` silently, so a renamed section or a fixture that
     // compiled to an empty set reported PASS while running zero assertions.
-    const runner = readFileSync(Path.join(TM, 'go', 'test', 'runner_test.go'), 'utf8')
+    const runner = readFileSync(Path.join(TM, 'go', 'test', 'primary_utility_test.go'), 'utf8')
     ok(/t\.Fatalf\(/.test(runner), 'runset must fail, not return')
     ok(/is EMPTY/.test(runner), 'runset must reject a zero-case section')
     ok(/pendingSections/.test(runner),
@@ -1194,14 +1194,50 @@ const OMNI_RUNNER: Record<string, {
   vendor: string,
   vendorfiles: string[],
   smoke: string,
-  superseded: string,
+  // Most targets retire MORE than one file (a generic runner AND a struct
+  // runner), so this is a list — every entry must be gone.
+  superseded: string[],
 }> = {
   ts: {
     resolver: 'ts/test/omni.ts',
     vendor: 'ts/test/vendor/omni',
-    vendorfiles: ['Runner.ts', 'Util.ts', 'compat.ts', 'index.ts'],
+    // No compat shim: the resolver drives omni's NATIVE makeRunner and
+    // carries the SDK-provider adapter itself (vendor-tag rollout,
+    // Decision 4).
+    vendorfiles: ['Runner.ts', 'Util.ts', 'index.ts'],
     smoke: 'ts/test/omni.test.ts',
-    superseded: 'ts/test/runner.ts',
+    superseded: ['ts/test/runner.ts'],
+  },
+  js: {
+    resolver: 'js/test/omni.js',
+    vendor: 'js/test/vendor/omni',
+    vendorfiles: ['runner.js', 'util.js', 'index.js'],
+    smoke: 'js/test/omni.test.js',
+    // js's ONE runner file drove BOTH corpora; its support half was
+    // already split into the retained test/utility.js.
+    superseded: ['js/test/runner.js'],
+  },
+  go: {
+    // _test.go suffix: the resolver is test-only code and must not ship
+    // in the module a consumer imports.
+    resolver: 'go/test/omniresolver_test.go',
+    vendor: 'go/test/omni',
+    vendorfiles: ['omni.go', 'util.go'],
+    smoke: 'go/test/omnismoke_test.go',
+    // go's support half was split into the retained testsupport_test.go
+    // FIRST (same package, zero call-site churn), then both fused files
+    // were retired.
+    superseded: ['go/test/runner_test.go', 'go/test/struct_runner_test.go'],
+  },
+  py: {
+    resolver: 'py/test/omni.py',
+    vendor: 'py/test/voxgig_omni',
+    vendorfiles: ['__init__.py', 'runner.py', 'util.py'],
+    smoke: 'py/test/test_omni_smoke.py',
+    // py's file NAMED runner.py is support-ONLY and is RETAINED; the
+    // generic engine it superseded was inlined in the primary-utility
+    // template, so the only whole-file retirement is the struct runner.
+    superseded: ['py/test/struct_runner.py'],
   },
 }
 
@@ -1212,27 +1248,72 @@ const SECRETS: Record<string, {
   feature: string,
   vendor: string,
   vendorfiles: string[],
+  plugindir?: string,
+  pluginfiles?: string[],
   tests: string,
 }> = {
   ts: {
     feature: 'ts/src/feature/secrets/SecretsFeature.ts',
     vendor: 'ts/src/feature/secrets/sekreto',
-    // `Providers.ts` — sekreto's full-set barrel — is deliberately NOT
-    // here: it re-exports every provider kind, so vendoring it would defeat
-    // the plugin trim and, worse, leave an import of a module the trim just
-    // deleted. vendored.test.ts asserts its absence directly.
-    //
-    // `Sigv4.ts` is owned by the `aws` PLUGIN, not by the feature, so a
-    // project that does not read from AWS does not ship it. It is listed
-    // against the template tree, which carries every plugin; what reaches a
-    // generated SDK is decided per project.
+    // The RESHAPED sekreto (vendor-tag rollout): `src/provider/` holds the
+    // built-ins the core imports unconditionally (env, memory, dotenv,
+    // file, via builtin.ts), and `plugins/` holds the gated definitions.
+    // `plugins/index.ts` — the full-set barrel — is deliberately NOT here:
+    // vendored.test.ts asserts its absence directly. `plugins/sigv4.ts` is
+    // owned by the `aws` PLUGIN; what reaches a generated SDK is decided
+    // per project by the plugin trim.
     vendorfiles: [
-      'Sekreto.ts', 'Sigv4.ts', 'index.ts',
-      'provider/Registry.ts', 'provider/support.ts',
+      'Sekreto.ts', 'index.ts',
+      'provider/support.ts', 'provider/builtin.ts', 'provider/addr.ts',
       'provider/env.ts', 'provider/memory.ts',
-      'provider/dotenv.ts', 'provider/aws.ts',
+      'provider/dotenv.ts', 'provider/file.ts',
+      'plugins/aws.ts', 'plugins/sigv4.ts', 'plugins/httpjson.ts',
+      'plugins/hashicorp.ts', 'plugins/secretspec.ts',
     ],
+    // The vendored voxgig/plugin runtime sekreto's reshape depends on,
+    // INSIDE the feature container so the feature trim removes both
+    // together.
+    plugindir: 'ts/src/feature/secrets/plugin',
+    pluginfiles: ['index.ts', 'Catalog.ts', 'Host.ts', 'Types.ts'],
     tests: 'ts/test/feature/secrets',
+  },
+  go: {
+    // go's feature container is the top-level feature/ dir (srcfeature:
+    // false), so the vendored trees live beside the feature file and the
+    // add-time featureExcludes gates the whole folder.
+    feature: 'go/feature/secrets_feature.go',
+    vendor: 'go/feature/secrets',
+    vendorfiles: [
+      'sekreto/sekreto.go', 'sekreto/providers.go', 'sekreto/addr.go',
+      'plugins/httpjson/httpjson.go',
+      'plugins/hashicorp/hashicorp.go', 'plugins/boru/boru.go',
+      'plugins/gcpsecrets/gcpsecrets.go', 'plugins/azuresecrets/azuresecrets.go',
+      'plugins/onepassword/onepassword.go', 'plugins/doppler/doppler.go',
+      'plugins/infisical/infisical.go', 'plugins/secretspec/secretspec.go',
+      'plugins/aws/aws.go', 'plugins/aws/sigv4.go',
+    ],
+    plugindir: 'go/feature/secrets/plugin',
+    pluginfiles: [
+      'capability.go', 'catalog.go', 'config.go', 'depend.go', 'env.go',
+      'export.go', 'graph.go', 'host.go', 'order.go', 'point.go',
+      'ref.go', 'resolve.go', 'types.go', 'util.go', 'version.go',
+    ],
+    tests: 'go/test/feature/secrets',
+  },
+  py: {
+    // py's feature container is pkg/feature/ (srcfeature: false); the
+    // vendored trees live under the gated secrets/ folder beside the
+    // feature file.
+    feature: 'py/pkg/feature/secrets_feature.py',
+    vendor: 'py/pkg/feature/secrets/voxgig_sekreto',
+    vendorfiles: [
+      '__init__.py', 'sekreto.py', 'providers.py', 'addr.py',
+      'plugins/aws.py', 'plugins/sigv4.py', 'plugins/httpjson.py',
+      'plugins/hashicorp.py', 'plugins/secretspec.py',
+    ],
+    plugindir: 'py/pkg/feature/secrets/voxgig_plugin',
+    pluginfiles: ['__init__.py', 'catalog.py', 'host.py', 'types.py'],
+    tests: 'py/test/feature/secrets',
   },
 }
 
@@ -1254,18 +1335,31 @@ describe('vendored-library rollout parity', () => {
       ok(existsSync(Path.join(TM, spec.smoke)),
         target + ': missing the runner-must-fail smoke test ' + spec.smoke)
 
-      ok(!existsSync(Path.join(TM, spec.superseded)),
-        target + ': the superseded runner ' + spec.superseded + ' is still ' +
-        'present alongside vendored omni — two copies of the same runner, ' +
-        'one of them stale')
+      for (const gone of spec.superseded) {
+        ok(!existsSync(Path.join(TM, gone)),
+          target + ': the superseded runner ' + gone + ' is still ' +
+          'present alongside vendored omni — two copies of the same runner, ' +
+          'one of them stale')
+      }
     }
   })
 
 
   test('no target is half-migrated to omni without being listed', () => {
+    // The vendored-omni location is per-language (ts/js keep a vendor/
+    // dir, go vendors a package at test/omni, py a package at
+    // test/voxgig_omni) — one hard-coded path here read a third of the
+    // tree as unmigrated. Any candidate existing without a row is the
+    // half-migrated state this exists to catch.
+    const CANDIDATES = [
+      ['test', 'vendor', 'omni'],
+      ['test', 'omni'],
+      ['test', 'voxgig_omni'],
+    ]
+
     const unlisted = sdkTargets()
       .filter((t) => null == OMNI_RUNNER[t])
-      .filter((t) => existsSync(Path.join(TM, t, 'test', 'vendor', 'omni')))
+      .filter((t) => CANDIDATES.some((c) => existsSync(Path.join(TM, t, ...c))))
 
     deepStrictEqual(unlisted, [],
       'these targets have a vendored omni tree but are not in OMNI_RUNNER — ' +
@@ -1283,6 +1377,11 @@ describe('vendored-library rollout parity', () => {
           target + ': missing vendored sekreto file ' + spec.vendor + '/' + f)
       }
 
+      for (const f of spec.pluginfiles || []) {
+        ok(existsSync(Path.join(TM, spec.plugindir as string, f)),
+          target + ': missing vendored plugin file ' + spec.plugindir + '/' + f)
+      }
+
       // In the feature container, so the trim removes it with the feature.
       ok(existsSync(Path.join(TM, spec.tests)),
         target + ': missing the trimmable feature tests ' + spec.tests)
@@ -1291,15 +1390,23 @@ describe('vendored-library rollout parity', () => {
 
 
   test('no target ships secrets source without being listed', () => {
+    // Feature containers are per-language too: ts/js use src/feature/,
+    // go a top-level feature/ dir, py pkg/feature/.
+    const CONTAINERS = [
+      ['src', 'feature', 'secrets'],
+      ['feature', 'secrets'],
+      ['pkg', 'feature', 'secrets'],
+    ]
+
     const unlisted = sdkTargets()
       .filter((t) => null == SECRETS[t])
-      .filter((t) => {
-        const dir = Path.join(TM, t, 'src', 'feature', 'secrets')
+      .filter((t) => CONTAINERS.some((c) => {
+        const dir = Path.join(TM, t, ...c)
         if (!existsSync(dir)) return false
         // A bare copy-target dir (.gitkeep only) is what `feature add`
         // needs and is not an implementation.
         return readdirSync(dir).some((f) => !f.startsWith('.'))
-      })
+      }))
 
     deepStrictEqual(unlisted, [],
       'these targets carry secrets source but are not in SECRETS — add them ' +

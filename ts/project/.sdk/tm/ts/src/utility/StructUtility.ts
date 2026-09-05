@@ -1,9 +1,9 @@
-// VENDORED: @voxgig/struct 0.3.2 (typescript/src/StructUtility.ts)
-// Source: https://github.com/voxgig/struct @ 94409354d0a60fda8098c83e290583b7dee76c84
+// VENDORED: @voxgig/struct 0.3.4 (typescript/src/StructUtility.ts)
+// Source: https://github.com/voxgig/struct @ 2caf7f448f265144c18dd6fab6ba270a7f3bca07  [tag: sdk-20260904-1610-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE. */
 
-// VERSION: @voxgig/struct 0.3.2
+// VERSION: @voxgig/struct 0.3.4
 
 /* Voxgig Struct
  * =============

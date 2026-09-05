@@ -1,0 +1,418 @@
+{
+  "note": [
+    "The vendoring route table: which upstream files, from which repo at",
+    "the shared tag, land where in the scaffold \u2014 and how they are adapted",
+    "on the way in. Hand-maintained. `node build/vendor.js` executes it and",
+    "writes ts/test/vendored.json (the manifest the guard reads); --check",
+    "verifies without writing. See docs/design/vendor-tag-rollout.md.",
+    "",
+    "`version` is HAND-SET per route: the port's own declared version at",
+    "the tag where it declares one, the tag string where it declares none.",
+    "Behaviour is pinned by tests (structnull.test.ts), never by stamps \u2014",
+    "upstream's own in-file stamps have been stale before.",
+    "",
+    "An `adapt` applies to every route file whose DESTINATION path matches",
+    "`match`; `from` must be present in the file or the run fails loudly.",
+    "haskell (packages/sdkgen-haskell) is EXCLUDED: its scaffold is outside",
+    "this write root and needs its own route root \u2014 recorded, not silent."
+  ],
+  "tag": "sdk-20260904-1610-0",
+  "repo": {
+    "struct": {
+      "url": "https://github.com/voxgig/struct",
+      "local": "~/Projects/voxgig/struct"
+    },
+    "omni": {
+      "url": "https://github.com/voxgig/omni",
+      "local": "~/Projects/voxgig/omni"
+    },
+    "plugin": {
+      "url": "https://github.com/voxgig/plugin",
+      "local": "~/Projects/voxgig/plugin"
+    },
+    "sekreto": {
+      "url": "https://github.com/voxgig/sekreto",
+      "local": "~/Projects/voxgig/sekreto"
+    }
+  },
+  "lang": {
+    "ts": {
+      "comment": "//"
+    },
+    "js": {
+      "comment": "//"
+    },
+    "go": {
+      "comment": "//"
+    },
+    "py": {
+      "comment": "#"
+    },
+    "rb": {
+      "comment": "#"
+    },
+    "php": {
+      "comment": "//",
+      "prologue": "<?php"
+    },
+    "lua": {
+      "comment": "--"
+    },
+    "perl": {
+      "comment": "#"
+    },
+    "java": {
+      "comment": "//"
+    },
+    "kotlin": {
+      "comment": "//"
+    },
+    "csharp": {
+      "comment": "//"
+    }
+  },
+  "route": [
+    {
+      "lib": "struct",
+      "port": "typescript",
+      "lang": "ts",
+      "version": "0.3.4",
+      "file": {
+        "typescript/src/StructUtility.ts": "tm/ts/src/utility/StructUtility.ts"
+      }
+    },
+    {
+      "lib": "struct",
+      "port": "javascript",
+      "lang": "js",
+      "version": "0.1.4",
+      "file": {
+        "javascript/src/struct.js": "tm/js/src/utility/StructUtility.js"
+      }
+    },
+    {
+      "lib": "struct",
+      "port": "go",
+      "lang": "go",
+      "version": "0.1.0",
+      "file": {
+        "go/voxgigstruct.go": "tm/go/utility/struct/voxgigstruct.go"
+      }
+    },
+    {
+      "lib": "struct",
+      "port": "python",
+      "lang": "py",
+      "version": "0.1.1",
+      "file": {
+        "python/voxgig_struct/voxgig_struct.py": "tm/py/pkg/utility/voxgig_struct/voxgig_struct.py"
+      }
+    },
+    {
+      "lib": "omni",
+      "port": "typescript",
+      "lang": "ts",
+      "version": "0.1.4",
+      "dir": [
+        "tm/ts/test/vendor/omni"
+      ],
+      "file": {
+        "typescript/src/Runner.ts": "tm/ts/test/vendor/omni/Runner.ts",
+        "typescript/src/Util.ts": "tm/ts/test/vendor/omni/Util.ts",
+        "typescript/src/index.ts": "tm/ts/test/vendor/omni/index.ts"
+      }
+    },
+    {
+      "lib": "omni",
+      "port": "javascript",
+      "lang": "js",
+      "version": "0.1.4",
+      "dir": [
+        "tm/js/test/vendor/omni"
+      ],
+      "file": {
+        "javascript/src/runner.js": "tm/js/test/vendor/omni/runner.js",
+        "javascript/src/util.js": "tm/js/test/vendor/omni/util.js",
+        "javascript/src/index.js": "tm/js/test/vendor/omni/index.js"
+      }
+    },
+    {
+      "lib": "omni",
+      "port": "go",
+      "lang": "go",
+      "version": "sdk-20260904-1610-0",
+      "dir": [
+        "tm/go/test/omni"
+      ],
+      "file": {
+        "go/omni.go": "tm/go/test/omni/omni.go",
+        "go/util.go": "tm/go/test/omni/util.go"
+      }
+    },
+    {
+      "lib": "omni",
+      "port": "python",
+      "lang": "py",
+      "version": "0.1.0",
+      "dir": [
+        "tm/py/test/voxgig_omni"
+      ],
+      "file": {
+        "python/voxgig_omni/__init__.py": "tm/py/test/voxgig_omni/__init__.py",
+        "python/voxgig_omni/runner.py": "tm/py/test/voxgig_omni/runner.py",
+        "python/voxgig_omni/util.py": "tm/py/test/voxgig_omni/util.py"
+      }
+    },
+    {
+      "lib": "plugin",
+      "port": "typescript",
+      "lang": "ts",
+      "version": "0.1.6",
+      "dir": [
+        "tm/ts/src/feature/secrets/plugin"
+      ],
+      "file": {
+        "typescript/src/Capability.ts": "tm/ts/src/feature/secrets/plugin/Capability.ts",
+        "typescript/src/Catalog.ts": "tm/ts/src/feature/secrets/plugin/Catalog.ts",
+        "typescript/src/Config.ts": "tm/ts/src/feature/secrets/plugin/Config.ts",
+        "typescript/src/Depend.ts": "tm/ts/src/feature/secrets/plugin/Depend.ts",
+        "typescript/src/Env.ts": "tm/ts/src/feature/secrets/plugin/Env.ts",
+        "typescript/src/Export.ts": "tm/ts/src/feature/secrets/plugin/Export.ts",
+        "typescript/src/FeatureHost.ts": "tm/ts/src/feature/secrets/plugin/FeatureHost.ts",
+        "typescript/src/Graph.ts": "tm/ts/src/feature/secrets/plugin/Graph.ts",
+        "typescript/src/Host.ts": "tm/ts/src/feature/secrets/plugin/Host.ts",
+        "typescript/src/Order.ts": "tm/ts/src/feature/secrets/plugin/Order.ts",
+        "typescript/src/Point.ts": "tm/ts/src/feature/secrets/plugin/Point.ts",
+        "typescript/src/Ref.ts": "tm/ts/src/feature/secrets/plugin/Ref.ts",
+        "typescript/src/Resolve.ts": "tm/ts/src/feature/secrets/plugin/Resolve.ts",
+        "typescript/src/Types.ts": "tm/ts/src/feature/secrets/plugin/Types.ts",
+        "typescript/src/Version.ts": "tm/ts/src/feature/secrets/plugin/Version.ts",
+        "typescript/src/index.ts": "tm/ts/src/feature/secrets/plugin/index.ts"
+      }
+    },
+    {
+      "lib": "sekreto",
+      "port": "typescript",
+      "lang": "ts",
+      "version": "0.2.0",
+      "dir": [
+        "tm/ts/src/feature/secrets/sekreto",
+        "tm/ts/src/feature/secrets/sekreto/provider",
+        "tm/ts/src/feature/secrets/sekreto/plugins"
+      ],
+      "file": {
+        "typescript/src/Sekreto.ts": "tm/ts/src/feature/secrets/sekreto/Sekreto.ts",
+        "typescript/src/index.ts": "tm/ts/src/feature/secrets/sekreto/index.ts",
+        "typescript/src/provider/addr.ts": "tm/ts/src/feature/secrets/sekreto/provider/addr.ts",
+        "typescript/src/provider/builtin.ts": "tm/ts/src/feature/secrets/sekreto/provider/builtin.ts",
+        "typescript/src/provider/dotenv.ts": "tm/ts/src/feature/secrets/sekreto/provider/dotenv.ts",
+        "typescript/src/provider/env.ts": "tm/ts/src/feature/secrets/sekreto/provider/env.ts",
+        "typescript/src/provider/file.ts": "tm/ts/src/feature/secrets/sekreto/provider/file.ts",
+        "typescript/src/provider/memory.ts": "tm/ts/src/feature/secrets/sekreto/provider/memory.ts",
+        "typescript/src/provider/support.ts": "tm/ts/src/feature/secrets/sekreto/provider/support.ts",
+        "typescript/plugins/aws.ts": "tm/ts/src/feature/secrets/sekreto/plugins/aws.ts",
+        "typescript/plugins/azuresecrets.ts": "tm/ts/src/feature/secrets/sekreto/plugins/azuresecrets.ts",
+        "typescript/plugins/boru.ts": "tm/ts/src/feature/secrets/sekreto/plugins/boru.ts",
+        "typescript/plugins/doppler.ts": "tm/ts/src/feature/secrets/sekreto/plugins/doppler.ts",
+        "typescript/plugins/gcpsecrets.ts": "tm/ts/src/feature/secrets/sekreto/plugins/gcpsecrets.ts",
+        "typescript/plugins/hashicorp.ts": "tm/ts/src/feature/secrets/sekreto/plugins/hashicorp.ts",
+        "typescript/plugins/httpjson.ts": "tm/ts/src/feature/secrets/sekreto/plugins/httpjson.ts",
+        "typescript/plugins/infisical.ts": "tm/ts/src/feature/secrets/sekreto/plugins/infisical.ts",
+        "typescript/plugins/onepassword.ts": "tm/ts/src/feature/secrets/sekreto/plugins/onepassword.ts",
+        "typescript/plugins/secretspec.ts": "tm/ts/src/feature/secrets/sekreto/plugins/secretspec.ts",
+        "typescript/plugins/sigv4.ts": "tm/ts/src/feature/secrets/sekreto/plugins/sigv4.ts"
+      },
+      "adapt": [
+        {
+          "match": "sekreto/(Sekreto|index)\\.ts$",
+          "from": "'@voxgig/plugin'",
+          "to": "'../plugin'"
+        },
+        {
+          "match": "sekreto/provider/support\\.ts$",
+          "from": "'@voxgig/plugin'",
+          "to": "'../../plugin'"
+        },
+        {
+          "match": "sekreto/plugins/[a-z0-9]+\\.ts$",
+          "from": "'@voxgig/plugin'",
+          "to": "'../../plugin'",
+          "optional": true
+        },
+        {
+          "match": "sekreto/plugins/[a-z0-9]+\\.ts$",
+          "from": "'../src/provider/",
+          "to": "'../provider/",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "lib": "plugin",
+      "port": "go",
+      "lang": "go",
+      "version": "0.1.6",
+      "dir": [
+        "tm/go/feature/secrets/plugin"
+      ],
+      "file": {
+        "go/plugin/capability.go": "tm/go/feature/secrets/plugin/capability.go",
+        "go/plugin/catalog.go": "tm/go/feature/secrets/plugin/catalog.go",
+        "go/plugin/config.go": "tm/go/feature/secrets/plugin/config.go",
+        "go/plugin/depend.go": "tm/go/feature/secrets/plugin/depend.go",
+        "go/plugin/env.go": "tm/go/feature/secrets/plugin/env.go",
+        "go/plugin/export.go": "tm/go/feature/secrets/plugin/export.go",
+        "go/plugin/graph.go": "tm/go/feature/secrets/plugin/graph.go",
+        "go/plugin/host.go": "tm/go/feature/secrets/plugin/host.go",
+        "go/plugin/order.go": "tm/go/feature/secrets/plugin/order.go",
+        "go/plugin/point.go": "tm/go/feature/secrets/plugin/point.go",
+        "go/plugin/ref.go": "tm/go/feature/secrets/plugin/ref.go",
+        "go/plugin/resolve.go": "tm/go/feature/secrets/plugin/resolve.go",
+        "go/plugin/types.go": "tm/go/feature/secrets/plugin/types.go",
+        "go/plugin/util.go": "tm/go/feature/secrets/plugin/util.go",
+        "go/plugin/version.go": "tm/go/feature/secrets/plugin/version.go"
+      }
+    },
+    {
+      "lib": "plugin",
+      "port": "python",
+      "lang": "py",
+      "version": "0.1.6",
+      "dir": [
+        "tm/py/pkg/feature/secrets/voxgig_plugin"
+      ],
+      "file": {
+        "python/voxgig_plugin/capability.py": "tm/py/pkg/feature/secrets/voxgig_plugin/capability.py",
+        "python/voxgig_plugin/catalog.py": "tm/py/pkg/feature/secrets/voxgig_plugin/catalog.py",
+        "python/voxgig_plugin/config.py": "tm/py/pkg/feature/secrets/voxgig_plugin/config.py",
+        "python/voxgig_plugin/depend.py": "tm/py/pkg/feature/secrets/voxgig_plugin/depend.py",
+        "python/voxgig_plugin/env.py": "tm/py/pkg/feature/secrets/voxgig_plugin/env.py",
+        "python/voxgig_plugin/export.py": "tm/py/pkg/feature/secrets/voxgig_plugin/export.py",
+        "python/voxgig_plugin/graph.py": "tm/py/pkg/feature/secrets/voxgig_plugin/graph.py",
+        "python/voxgig_plugin/host.py": "tm/py/pkg/feature/secrets/voxgig_plugin/host.py",
+        "python/voxgig_plugin/__init__.py": "tm/py/pkg/feature/secrets/voxgig_plugin/__init__.py",
+        "python/voxgig_plugin/order.py": "tm/py/pkg/feature/secrets/voxgig_plugin/order.py",
+        "python/voxgig_plugin/point.py": "tm/py/pkg/feature/secrets/voxgig_plugin/point.py",
+        "python/voxgig_plugin/ref.py": "tm/py/pkg/feature/secrets/voxgig_plugin/ref.py",
+        "python/voxgig_plugin/resolve.py": "tm/py/pkg/feature/secrets/voxgig_plugin/resolve.py",
+        "python/voxgig_plugin/types.py": "tm/py/pkg/feature/secrets/voxgig_plugin/types.py",
+        "python/voxgig_plugin/version.py": "tm/py/pkg/feature/secrets/voxgig_plugin/version.py"
+      }
+    },
+    {
+      "lib": "sekreto",
+      "port": "go",
+      "lang": "go",
+      "version": "sdk-20260904-1610-0",
+      "dir": [
+        "tm/go/feature/secrets/sekreto",
+        "tm/go/feature/secrets/plugins",
+        "tm/go/feature/secrets/plugins/aws",
+        "tm/go/feature/secrets/plugins/azuresecrets",
+        "tm/go/feature/secrets/plugins/boru",
+        "tm/go/feature/secrets/plugins/doppler",
+        "tm/go/feature/secrets/plugins/gcpsecrets",
+        "tm/go/feature/secrets/plugins/hashicorp",
+        "tm/go/feature/secrets/plugins/httpjson",
+        "tm/go/feature/secrets/plugins/infisical",
+        "tm/go/feature/secrets/plugins/onepassword",
+        "tm/go/feature/secrets/plugins/secretspec"
+      ],
+      "file": {
+        "go/sekreto/sekreto.go": "tm/go/feature/secrets/sekreto/sekreto.go",
+        "go/sekreto/providers.go": "tm/go/feature/secrets/sekreto/providers.go",
+        "go/sekreto/addr.go": "tm/go/feature/secrets/sekreto/addr.go",
+        "go/plugins/aws/aws.go": "tm/go/feature/secrets/plugins/aws/aws.go",
+        "go/plugins/aws/sigv4.go": "tm/go/feature/secrets/plugins/aws/sigv4.go",
+        "go/plugins/azuresecrets/azuresecrets.go": "tm/go/feature/secrets/plugins/azuresecrets/azuresecrets.go",
+        "go/plugins/boru/boru.go": "tm/go/feature/secrets/plugins/boru/boru.go",
+        "go/plugins/doppler/doppler.go": "tm/go/feature/secrets/plugins/doppler/doppler.go",
+        "go/plugins/gcpsecrets/gcpsecrets.go": "tm/go/feature/secrets/plugins/gcpsecrets/gcpsecrets.go",
+        "go/plugins/hashicorp/hashicorp.go": "tm/go/feature/secrets/plugins/hashicorp/hashicorp.go",
+        "go/plugins/httpjson/httpjson.go": "tm/go/feature/secrets/plugins/httpjson/httpjson.go",
+        "go/plugins/infisical/infisical.go": "tm/go/feature/secrets/plugins/infisical/infisical.go",
+        "go/plugins/onepassword/onepassword.go": "tm/go/feature/secrets/plugins/onepassword/onepassword.go",
+        "go/plugins/secretspec/secretspec.go": "tm/go/feature/secrets/plugins/secretspec/secretspec.go"
+      },
+      "adapt": [
+        {
+          "match": "feature/secrets/",
+          "from": "\"github.com/voxgig/plugin/go/plugin\"",
+          "to": "\"GOMODULE/feature/secrets/plugin\"",
+          "optional": true
+        },
+        {
+          "match": "feature/secrets/plugins/",
+          "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+          "to": "\"GOMODULE/feature/secrets/sekreto\"",
+          "optional": true
+        },
+        {
+          "match": "feature/secrets/plugins/",
+          "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
+          "to": "\"GOMODULE/feature/secrets/plugins/httpjson\"",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "lib": "sekreto",
+      "port": "python",
+      "lang": "py",
+      "version": "0.2.0",
+      "dir": [
+        "tm/py/pkg/feature/secrets/voxgig_sekreto",
+        "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins"
+      ],
+      "file": {
+        "python/voxgig_sekreto/__init__.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/__init__.py",
+        "python/voxgig_sekreto/sekreto.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/sekreto.py",
+        "python/voxgig_sekreto/providers.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/providers.py",
+        "python/voxgig_sekreto/addr.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/addr.py",
+        "python/voxgig_sekreto/plugins/aws.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/aws.py",
+        "python/voxgig_sekreto/plugins/sigv4.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/sigv4.py",
+        "python/voxgig_sekreto/plugins/azuresecrets.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/azuresecrets.py",
+        "python/voxgig_sekreto/plugins/boru.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/boru.py",
+        "python/voxgig_sekreto/plugins/doppler.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/doppler.py",
+        "python/voxgig_sekreto/plugins/gcpsecrets.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/gcpsecrets.py",
+        "python/voxgig_sekreto/plugins/hashicorp.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/hashicorp.py",
+        "python/voxgig_sekreto/plugins/httpjson.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/httpjson.py",
+        "python/voxgig_sekreto/plugins/infisical.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/infisical.py",
+        "python/voxgig_sekreto/plugins/onepassword.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/onepassword.py",
+        "python/voxgig_sekreto/plugins/secretspec.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/secretspec.py"
+      },
+      "adapt": [
+        {
+          "match": "voxgig_sekreto/(sekreto|providers|addr|__init__)\\.py$",
+          "from": "from voxgig_plugin import",
+          "to": "from ..voxgig_plugin import",
+          "optional": true
+        },
+        {
+          "match": "voxgig_sekreto/plugins/[a-z0-9]+\\.py$",
+          "from": "from voxgig_plugin import",
+          "to": "from ...voxgig_plugin import",
+          "optional": true
+        },
+        {
+          "match": "voxgig_sekreto/plugins/[a-z0-9]+\\.py$",
+          "from": "from voxgig_sekreto import",
+          "to": "from .. import",
+          "optional": true
+        },
+        {
+          "match": "voxgig_sekreto/plugins/[a-z0-9]+\\.py$",
+          "from": "from voxgig_sekreto.plugins.httpjson import",
+          "to": "from .httpjson import",
+          "optional": true
+        },
+        {
+          "match": "voxgig_sekreto/plugins/[a-z0-9]+\\.py$",
+          "from": "from voxgig_sekreto.plugins.sigv4 import",
+          "to": "from .sigv4 import",
+          "optional": true
+        }
+      ]
+    }
+  ]
+}

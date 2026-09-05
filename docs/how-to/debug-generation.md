@@ -64,7 +64,7 @@ npm run generate
 Fixing one language often reveals the same latent bug in others. The
 **JS/TS targets are the reference** — compare the broken language's
 template/component against the `ts` equivalent. Test-runner matching logic
-in particular should mirror `js/test/runner.js`.
+in particular should mirror the vendored omni resolver `js/test/omni.js` (the shared runner is vendored @voxgig/omni; see docs/design/vendor-tag-rollout.md).
 
 ## 6. Validate end to end
 

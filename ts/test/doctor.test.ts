@@ -21,7 +21,7 @@ import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
 
-import { doctor } from '../dist/action/doctor.js'
+import { action_doctor, doctor } from '../dist/action/doctor.js'
 import {
   SCAFFOLD, SCAFFOLD_BASE, ROOT, KIT, makeProject, targetRef, target_add,
   feature_add,
@@ -68,6 +68,37 @@ describe('doctor', () => {
     deepStrictEqual(report.stale, [], 'fresh project reports stale files')
     deepStrictEqual(report.missing, [], 'fresh project reports missing files')
     strictEqual(report.ok, true, 'fresh project is not ok')
+  })
+
+
+  // Retired generated output. jostraca writes and never deletes, so a
+  // template retirement leaves the old file in every consumer beside its
+  // replacement - hand-pruned three times during the vendor-tag rollout
+  // before this existed. The list is the TARGET MODEL's own declaration
+  // (`superseded`), so external packages get the same treatment.
+  test('superseded output is a finding, and prune deletes exactly it', async () => {
+    const project = await addedProject()
+
+    // The target model declares one retired file; the project still has
+    // it, in the target OUTPUT directory (a sibling of .sdk/).
+    project.actx.model.main[KIT].target.go.superseded = ['test/old_runner.go']
+    write(project, '../go/test/old_runner.go', '// stale generated runner\n')
+    write(project, '../go/test/keep_test.go', '// current\n')
+
+    const report = await check(project)
+    strictEqual(report.ok, false, 'a superseded leftover must fail the check')
+    deepStrictEqual(report.superseded.map((p: string) => p.split('/').pop()),
+      ['old_runner.go'])
+
+    // Prune deletes the declared file and NOTHING else.
+    await action_doctor(['doctor', 'prune'], project.actx)
+    strictEqual(project.fs.existsSync(Path.join(ROOT, '../go/test/old_runner.go')), false,
+      'prune must delete the declared superseded file')
+    strictEqual(project.fs.existsSync(Path.join(ROOT, '../go/test/keep_test.go')), true,
+      'prune must not touch anything the model does not name')
+
+    const after = await check(project)
+    deepStrictEqual(after.superseded, [], 'after prune the finding clears')
   })
 
 
