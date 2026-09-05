@@ -592,18 +592,24 @@ Implemented and proven, in one pass:
   The six superseded files jostraca cannot delete were pruned by hand —
   the doctor prune remains open (below).
 
-Follow-ups, in rough order:
+Follow-ups, in rough order (updated 2026-09-05):
 1. **go Direct-path secrets**: `Prepare`/`Direct` bypass feature hooks
    and go's Main has no conditional resolve emission — entity ops are
    the resolution path today. Needs a conditional Main_go fragment.
 2. **doctor prune** for superseded template files (hand-pruned in the
-   proof; five more languages' worth of stale runners arrive with the
-   fleet rollout).
-3. **omni#57 / sekreto#16 upstreaming**: the js/go/py omni ports lack
-   the omni#54 fixes at this tag; every resolver carries a workaround
-   that becomes redundancy after the upstream port.
+   solardemo AND elementdemo proofs; five more languages' worth of
+   stale runners arrive with the fleet rollout).
+3. ~~omni#57 for the pilot ports~~ **DONE upstream** — voxgig/omni#64
+   ports the three runner fixes to js/go/py with per-port regression
+   pins. The resolvers' workarounds become removable at the NEXT shared
+   tag (a deliberate resync event, not this one). sekreto#16 and the
+   other omni ports remain.
 4. **js secrets** when upstream sekreto's js port is reshaped.
 5. **The remaining 18 bundled language targets + haskell** (own route
    root), one PR each on these rails.
-6. **elementdemo**: the second acceptance gate (custom target + feature
-   must regenerate unchanged) before a release.
+6. ~~elementdemo~~ **DONE** — the second acceptance gate PASSED
+   (voxgig-sdk/voxgig-elementdemo-sdk#8): `ext/` regenerates with an
+   empty diff, bash 29/29, java elementcard 4/4; the dotenv-as-builtin
+   path proven on its live `[dotenv, env]` chain; go/py gain secrets;
+   the struct.nullsem lanes (opt-in flipped for all four pilots, corpus
+   adopted from create-sdkgen) run green.
