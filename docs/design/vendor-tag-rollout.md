@@ -593,20 +593,37 @@ Implemented and proven, in one pass:
   the doctor prune remains open (below).
 
 Follow-ups, in rough order (updated 2026-09-05):
-1. **go Direct-path secrets**: `Prepare`/`Direct` bypass feature hooks
-   and go's Main has no conditional resolve emission — entity ops are
-   the resolution path today. Needs a conditional Main_go fragment.
-2. **doctor prune** for superseded template files (hand-pruned in the
-   solardemo AND elementdemo proofs; five more languages' worth of
-   stale runners arrive with the fleet rollout).
+1. ~~go Direct-path secrets~~ **DONE**: resolution moved to the
+   TRANSPORT seam — the one place entity ops, Direct, Graphql and the
+   exchange retries all cross — so the raw paths resolve and refuse
+   fail-closed with no Main emission at all; PreSpec deleted, the gate
+   machinery collapsed into resolve()'s shared in-flight call. Pinned by
+   TestSecretsDirectPath, -race green.
+2. ~~doctor prune~~ **DONE**: targets declare `superseded` in their
+   model (shipped schema — external packages get it too); `doctor`
+   reports leftovers, `doctor prune` deletes exactly the declared files.
+   Tranche-2 targets declare theirs. Verified end-to-end on solardemo.
 3. ~~omni#57 for the pilot ports~~ **DONE upstream** — voxgig/omni#64
    ports the three runner fixes to js/go/py with per-port regression
    pins. The resolvers' workarounds become removable at the NEXT shared
    tag (a deliberate resync event, not this one). sekreto#16 and the
    other omni ports remain.
 4. **js secrets** when upstream sekreto's js port is reshaped.
-5. **The remaining 18 bundled language targets + haskell** (own route
-   root), one PR each on these rails.
+5. ~~The remaining 18~~ **Tranche 2 DONE (2026-09-05)**: rb, php, lua,
+   perl, java, kotlin and csharp are on the vendored native omni runner,
+   each proven on a real generated SDK on its real toolchain (elementdemo
+   re-proved java + elementcard as the consumer gate). struct resynced at
+   the tag where drop-in (lua, perl, java, kotlin, csharp — the three
+   compiled ports each took upstream's validate `$CHILD` list-form fix);
+   rb's struct DEFERRED (a resync flips its null class — its own event);
+   php's SKIPPED (upstream validate rejects the `[]` shape php templates
+   emit — template fix first). The stray-`'GET'` prepareMethod fallback
+   existed in FIVE more targets; all removed, corpus-pinned. New guards:
+   csharp structnull row (new-way readers + fail-CLOSED validate — a
+   class no port had), csharp GetPath/SetPath signature pin, perl `t/`
+   half-migration probe. **Remaining: c, cpp, dart, swift, rust, scala,
+   clojure, elixir, ocaml, lean, zig (11 bundled) + haskell (own route
+   root); zig can take secrets (reshaped upstream).**
 6. ~~elementdemo~~ **DONE** — the second acceptance gate PASSED
    (voxgig-sdk/voxgig-elementdemo-sdk#8): `ext/` regenerates with an
    empty diff, bash 29/29, java elementcard 4/4; the dotenv-as-builtin
