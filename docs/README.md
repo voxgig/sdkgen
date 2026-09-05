@@ -4,9 +4,9 @@
 client SDKs (plus a CLI and an MCP server) from a single source of truth.
 
 > **Building an SDK for your own API?** Start at
-> [`create-sdkgen`'s AGENTS.md](https://github.com/voxgig/create-sdkgen/blob/main/AGENTS.md) for the
-> end-to-end spec → scaffold → generate → test onboarding. The material
-> below documents the generator itself in depth.
+> [`create-sdkgen`](https://github.com/voxgig/create-sdkgen), which walks
+> you from an OpenAPI spec through scaffold, generate, and test. The
+> material here documents the generator itself in depth.
 
 This documentation is organised into four kinds of material. Pick the one
 that matches what you are trying to do right now:
@@ -61,45 +61,28 @@ that matches what you are trying to do right now:
   — the mechanism behind `seneca-provider`
 
 ### Design notes
-- [The `py-data` target](./design/py-data-target.md) — notebook/analyst-oriented
-  Python package layered on the `py` SDK. The design note that preceded the
-  target; `py-data` now ships.
-- [sdkgen packages](./design/sdkgen-packages.md) — externally-defined
-  targets, features and other kinds, added from a local folder, a git
-  checkout, or an npm package installed in `.sdk/`. Mostly implemented;
-  the status note at the top of the file carries the current line.
-- [Feature tags](./design/feature-tags.md) — declaring which targets a
-  feature can actually apply to, so `feature-source-missing` means "this
-  is a mistake" rather than "this target was never going to take it".
-  Proposal.
-- [Vendoring upgrade migration](./design/vendoring-upgrade-migration.md) —
-  phased plan to vendor omni 0.1.2 (test runner), struct 0.3.2 (utils)
-  and sekreto 0.1.2 (secrets, with the apikey option layered as the
-  first provider) into every target, with the upstream bug-fix
-  backports. Grounded in the solardemo vendoring prototype
-  (voxgig-sdk/voxgig-solardemo-sdk#29), which is also its acceptance
-  test. Plan.
-- [API versioning](./design/api-versioning.md) — compatibility across
-  apidef, sdkgen, and aontu: matching SDK versions to API/app versions,
-  breaking-change tooling (`apidef breaking`, the aontu G3 subsumption
-  route and what it still needs), runtime robustness in generated SDKs,
-  and the verified-pairs compatibility matrix. Discussion draft; the
-  open questions in §12 gate the plan.
-- [voxgig/station](https://github.com/voxgig/station) — the runtime
-  companion: generated SDKs register as plugins with a per-language
-  station library, giving one control surface for outbound integrations
-  — secrets (through
-  [voxgig/sekreto](https://github.com/voxgig/sekreto)), policy,
-  observability, debugging — plus an optional consolidated proxy hosting
-  the MCP agent surface. Proposal; the design doc now lives in the
-  station repo, as [`docs/design/station.md`][station-design].
 
-## For AI coding agents
+Design proposals and plans live beside these pages, under `docs/design/`,
+and are working documents: written for the people changing the generator,
+argued rather than stated, and revised on the code's schedule. Nothing
+listed here depends on them.
 
-If you are an automated coding agent, start with
-[`../AGENTS.md`](../AGENTS.md). It is the operating manual: build/test
-commands, where to make each kind of change, the template-propagation
-pipeline, conventions, and the gotchas that will otherwise cost you a
-build.
+[voxgig/station](https://github.com/voxgig/station) is the runtime
+companion: generated SDKs register as plugins with a per-language station
+library, giving one control surface for outbound integrations (secrets
+through [voxgig/sekreto](https://github.com/voxgig/sekreto), policy,
+observability, debugging) plus an optional consolidated proxy hosting the
+MCP agent surface. [Use voxgig/station with a generated
+SDK](./how-to/use-station.md) is the install flow.
 
-[station-design]: https://github.com/voxgig/station/blob/main/docs/design/station.md
+## Working on the generator
+
+Every target is generated from two layers, and the layer decides where a
+fix goes. A file that is the same for every API is a template
+(`ts/project/.sdk/tm/<lang>/`); a file whose shape depends on the
+entities and operations is a component (`ts/project/.sdk/src/cmp/<lang>/`).
+Fix the template or component, never the generated output, which the next
+run overwrites. A change to one language is not done until it is mirrored
+across every target that has the same component. The guides on
+[propagating a template change](./how-to/customize-and-propagate-templates.md)
+and [debugging generation](./how-to/debug-generation.md) carry the loop.

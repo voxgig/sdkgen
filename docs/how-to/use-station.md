@@ -4,11 +4,8 @@
 companion: every generated SDK an application uses registers with a
 local `Station` as a plugin, and station becomes the one place outbound
 integrations are configured, credentialed, and observed. The full
-design lives in the station repo —
-[docs/design/station.md](https://github.com/voxgig/station/blob/main/docs/design/station.md)
-and, for the declarative config this page leads with,
-[docs/design/station-declarative-config.md](https://github.com/voxgig/station/blob/main/docs/design/station-declarative-config.md)
-— this page is the install flow and the two ways to bind.
+design lives in the [station repository](https://github.com/voxgig/station);
+this page is the install flow and the two ways to bind.
 
 ## Add the station feature to an SDK project
 
@@ -63,7 +60,7 @@ imports the SDK for its types anyway can drop the key: that import is
 itself the bootstrap. Without either, `sdk()` raises
 `station_no_factory`, naming the remedy.
 
-`open()` validates the whole file at once — a typo'd key fails there,
+`open()` validates the whole file at once — a mistyped key fails there,
 with every error reported — and constructs nothing. The instance is
 built lazily on the first `sdk()` call, through a process-global
 factory table filled three ways: a generated SDK **self-registers** its
@@ -98,8 +95,8 @@ call site; the option keys are validated against the schema each
 feature model declares (this is what `configDefinition`'s embedded
 feature options and `transport` roles exist for). And `station.check()`
 resolves and constructs every active instance without sending a
-request, so a typo'd package name or feature option is a CI failure
-rather than a 3am one.
+request, so a mistyped package name or feature option is a CI failure
+rather than a 3 AM one.
 
 ## Bind imperatively: `connect()` and `adopt()`
 

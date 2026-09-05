@@ -6,6 +6,11 @@
   conventions, sharp edges). Read it first.
 - **[`docs/`](./docs/README.md)** — full documentation: tutorial, how-to
   guides, reference (features/CLI/API/model/layout/hooks), and explanation.
+- **[`STYLE-GUIDE.md`](./STYLE-GUIDE.md)** — normative for the reader-facing
+  pages (`README.md`, `docs/` minus `docs/design/`, the haskell package
+  README). `make scan-prose` runs the two gates (Vale + `tools/check_prose.py`);
+  `make test` includes it. Pages never cite `AGENTS.md`, `CLAUDE.md`,
+  `ADR.md`, `NOTES.md` or `docs/design/`.
 
 This file is the quick inline reference; `AGENTS.md` and `docs/` have the
 depth.

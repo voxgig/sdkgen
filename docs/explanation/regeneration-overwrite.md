@@ -76,4 +76,5 @@ opt-in merge can't silently corrupt output:
 
 - [components-and-templates](./components-and-templates.md) — the two-layer model
 - [architecture](./architecture.md)
-- `AGENTS.md` → "Never edit generated output"
+- [Debug a failing generated target](../how-to/debug-generation.md) — fix the
+  template or component, never the output

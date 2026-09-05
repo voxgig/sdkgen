@@ -2,7 +2,7 @@
 
 The **model** is the single structured object that drives generation. It
 is assembled by `aontu` from several `.aontu` fragments and constrained
-by the base schema in [`model/sdkgen.aontu`](../../model/sdkgen.aontu).
+by the base schema in [`model/sdkgen.aon`](../../model/sdkgen.aon).
 
 A model is the unification of:
 
@@ -59,7 +59,7 @@ for that purpose:
 
 | Path | Why it exists |
 | --- | --- |
-| `main.kit.repo.path` / `.host` | Repo identity. The repo is NOT always `<origin>/<name>-sdk`; deriving it from the slug produced a go module path that 404s and homepage/bugs URLs for a repo that does not exist. |
+| `main.kit.repo.path` / `.host` | Repo identity. The repo is NOT always `<origin>/<name>-sdk`; deriving it from the slug produced a go module path that returns 404 and homepage/bugs URLs for a repo that does not exist. |
 | `main.kit.author` / `main.kit.contributor.<key>` | Manifest attribution. Hand-edited credit in a `package.json` is DELETED by the next regeneration — which is what happened to a hand-written provider repo the first time it was regenerated. |
 | `main.kit.target.<t>.author` | Attribution for ONE target, overriding the model-wide value. A generated SDK is an artefact of the publisher; a Seneca provider is independently released by named people. One model produces both. |
 | `main.kit.test.live.strict` | Whether a live test run asserts or merely observes. |
@@ -142,7 +142,7 @@ The same three keys exist on `main.kit.feature.<name>`.
 
 ## `main.kit.target.<name>`
 
-From [`model/sdkgen.aontu`](../../model/sdkgen.aontu) and the per-target
+From [`model/sdkgen.aon`](../../model/sdkgen.aon) and the per-target
 files in `ts/project/.sdk/model/target/`:
 
 | Field | Type | Default | Description |
@@ -156,7 +156,7 @@ files in `ts/project/.sdk/model/target/`:
 | `module.path` | string | `''` | Go family. Full module path, overriding `'<repo.host>/<repo.path>/<target>'`. |
 | `module.package` | string | `''` | Go family. The root package IDENTIFIER (`package acmesdk`), not an import path. |
 | `module.goversion` | string | `''` | Go family. The `go` directive in `go.mod`. `''` defaults to 1.21 — the release that introduced `log/slog`, which the `log` feature imports. |
-| `base` | string | — | **Provenance.** The `.sdk` folder this copy came from, always `/`-normalised. Project-relative when the source is inside the project (`node_modules/@acme/sdkgen-iot/.sdk`); a source outside it records what the ref resolved to — `../acme-sdkgen-iot/.sdk` for a relative ref, an absolute path for an absolute one, which is then specific to the machine that ran the add. Ships as the literal `'BASE'`; `add` replaces that one line with the block above. |
+| `base` | string | — | **Provenance.** The `.sdk` folder this copy came from, always `/`-normalised. Project-relative when the source is inside the project (`node_modules/@acme/sdkgen-iot/.sdk`); a source outside it records what the ref resolved to — `../acme-sdkgen-iot/.sdk` for a relative ref, an absolute path for an absolute one, which is then specific to the machine that ran the add. Ships as the literal `'BASE'`; `add` replaces that one line with the preceding block. |
 | `origname` | string | `''` | **Provenance.** The name in the SOURCE, when it differs — i.e. this was installed as `<origname>~<name>`. What makes an alias checkable. |
 | `package` | string | `''` | **Provenance.** The sdkgen package that supplied it, when the source declares a manifest. What `package update` and `package list` act on. |
 | `srcfeature` | boolean | `true` | Whether per-feature source is copied into `src/feature/`. |
@@ -176,7 +176,7 @@ files in `ts/project/.sdk/model/target/`:
 | `publish.registry.package` | string | `''` | Published package name. `''` derives one. |
 | `deps.<dep>.active` | boolean | `false` | Include this dependency. |
 | `deps.<dep>.version` | string | `'*'` | Version constraint. |
-| `deps.<dep>.kind` | string | `'prod'` | Manifest section(s). Target-defined, and a COMMA-SEPARATED LIST where a package belongs in two (`'peer,dev'`) — the map is keyed by package name, so it cannot be declared twice. |
+| `deps.<dep>.kind` | string | `'prod'` | Manifest sections. Target-defined, and a COMMA-SEPARATED LIST where a package belongs in two (`'peer,dev'`) — the map is keyed by package name, so it cannot be declared twice. |
 
 Example (`ts/project/.sdk/model/target/ts.aontu`):
 
@@ -229,7 +229,7 @@ main: kit: target: 'seneca-provider': output: {
   `<target>/` subfolder: the destination IS the package.
 - Generation into it is a **separate pass**, so the destination receives
   only what this target emits — none of the SDK repo's own root files
-  (README, AGENTS.md, the build scaffold) follow it out.
+  (README, the contributor guides, the build scaffold) follow it out.
 - `repo` is what the generated manifest's homepage / repository / bugs
   URLs point at. Left unset, a target may supply its own convention, and
   otherwise falls back to the SDK's own repo — which would be wrong for a
