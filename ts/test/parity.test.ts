@@ -1481,3 +1481,50 @@ describe('vendored-library rollout parity', () => {
       'so the vendored library and the tests are checked too')
   })
 })
+
+
+// A zig file belongs to exactly ONE module. `build.zig` makes
+// `utility/voxgigstruct/struct.zig` the root of the `voxgig-struct` module
+// and hands that import to every test module by name, so a test that ALSO
+// reaches those files by relative path puts them in two modules at once —
+// `error: file exists in multiple modules`, raised whether or not the
+// path-imported decl is ever used, and it gives the importer a second copy
+// of the file with distinct types besides.
+//
+// Two test templates did exactly that. CI caught it once and then passed on
+// a re-run of the same tree, which is the worst way to learn about a rule:
+// the pin is here so the next one fails on the first run instead.
+describe('zig test templates reach modules by name', () => {
+
+  test('no zig template path-imports a file the struct module owns', () => {
+    const dir = Path.join(TM, 'zig', 'test')
+    const offenders: string[] = []
+
+    for (const name of readdirSync(dir).filter((f) => f.endsWith('.zig'))) {
+      const src = readFileSync(Path.join(dir, name), 'utf8')
+      for (const line of src.split('\n')) {
+        if (/@import\("[^"]*utility\/voxgigstruct\//.test(line)) {
+          offenders.push(name + ': ' + line.trim())
+        }
+      }
+    }
+
+    deepStrictEqual(offenders, [],
+      'import the module by name — @import("voxgig-struct") — rather than ' +
+      'reaching into utility/voxgigstruct/ by path')
+  })
+
+
+  test('the runner still has a regex path, reached through the module', () => {
+    // The rewrite swapped a hand-rolled compile/isMatch/deinit for the
+    // module's own re_test. Losing the call entirely would leave every
+    // /pattern/ corpus check falling through to the substring branch and
+    // quietly passing, so pin that the call is still there.
+    const src = readFileSync(
+      Path.join(TM, 'zig', 'test', 'struct_runner.zig'), 'utf8')
+
+    ok(src.includes('voxgig_struct.re_test(pat, basestr)'),
+      'struct_runner lost its regex match — /pattern/ checks would degrade ' +
+      'to a substring comparison and still look green')
+  })
+})

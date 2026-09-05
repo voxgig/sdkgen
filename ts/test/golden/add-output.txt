@@ -2212,9 +2212,9 @@ tm/zig/test/feature_test.zig 0edc2054bb9d
 tm/zig/test/fh.zig 45d3b4e8919a
 tm/zig/test/gotcha_test.zig 2bb91ba7ceb9
 tm/zig/test/pipeline_test.zig dff8531ee2da
-tm/zig/test/primary_utility_test.zig 096345851047
+tm/zig/test/primary_utility_test.zig ad9e60a176d4
 tm/zig/test/struct_corpus.zig b4a327ea6738
-tm/zig/test/struct_runner.zig bc949f12a121
+tm/zig/test/struct_runner.zig e5b58fc28302
 tm/zig/utility/jsonparse.zig 3bf825b60025
 tm/zig/utility/voxgigstruct/regex.zig c298936fbb0e
 tm/zig/utility/voxgigstruct/struct.zig 37fb3adca8da
