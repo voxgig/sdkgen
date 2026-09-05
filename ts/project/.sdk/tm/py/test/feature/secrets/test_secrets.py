@@ -23,7 +23,10 @@
 # trims it, along with the feature source and the vendored library, for a
 # project whose model does not select `secrets`.
 
+import json
 import os
+import http.server
+import threading
 import unittest
 
 from projectname_sdk import ProjectNameSDK
@@ -215,3 +218,120 @@ class TestSecrets(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------
+# Review-hardening pins (vendor-tag rollout, PR review): the exchange
+# works with ORDINARY options (no custom transport, the stdlib fallback
+# carries the purchase), and an uncached miss retracts the credential.
+
+class _TokenEndpoint(http.server.BaseHTTPRequestHandler):
+    refresh_seen = None
+
+    def do_POST(self):
+        raw = self.rfile.read(int(self.headers.get("content-length") or 0))
+        try:
+            body = json.loads(raw.decode("utf-8"))
+        except Exception:
+            body = {}
+        _TokenEndpoint.refresh_seen = body.get("refresh_token")
+        out = json.dumps({"access_token": "RAWTOK01"}).encode("utf-8")
+        self.send_response(200)
+        self.send_header("content-type", "application/json")
+        self.send_header("content-length", str(len(out)))
+        self.end_headers()
+        self.wfile.write(out)
+
+    def log_message(self, *args):
+        pass
+
+
+class TestSecretsReviewPins(unittest.TestCase):
+
+    def test_exchange_uses_the_raw_fallback_and_marshals_the_body(self):
+        # A refresh token full of JSON-hostile characters must arrive at
+        # the endpoint as its literal value, through the feature's OWN
+        # raw transport - ordinary options carry no system.fetch for it.
+        tricky = 're"fresh\\to\nken'
+        _TokenEndpoint.refresh_seen = None
+
+        srv = http.server.HTTPServer(("127.0.0.1", 0), _TokenEndpoint)
+        thread = threading.Thread(target=srv.serve_forever, daemon=True)
+        thread.start()
+        try:
+            # NO system.fetch anywhere: with the seam set, the purchase
+            # rightly prefers it - the point of this pin is the OTHER
+            # case, ordinary options, where the feature's own stdlib
+            # fallback must carry the exchange. Only PreSpec runs, so no
+            # API call ever leaves; the one HTTP request is the purchase.
+            sdk = secrets_sdk({
+                "base": "http://127.0.0.1:%d/api" % srv.server_port,
+                "feature": {"secrets": {
+                    "active": True,
+                    "name": "refresh_token",
+                    "exchange": {"active": True, "refresh": tricky},
+                }},
+            })
+
+            utility = sdk._utility
+            ctx = utility.make_context({"opname": "load"}, sdk.get_root_ctx())
+            utility.feature_hook(ctx, "PreSpec")
+
+            self.assertEqual(tricky, _TokenEndpoint.refresh_seen)
+            self.assertEqual("RAWTOK01", sdk.options.get("apikey"))
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+    def test_uncached_miss_retracts_the_credential(self):
+        # `cache: False` re-asks the chain per operation; when a provider
+        # that answered once reports a MISS (a revoked secret), the value
+        # this feature wrote must stop going out on the wire.
+        state = {"have": True}
+
+        def lookup(name):
+            return "REVOCABLE01" if state["have"] else None
+
+        sdk, transport = self._pair({
+            "feature": {"secrets": {
+                "active": True,
+                "cache": False,
+                "providers": [{"lookup": lookup, "describe": lambda: "revocable"}],
+            }},
+        })
+
+        headers = self._wire(sdk, transport)
+        self.assert_credential(headers, "REVOCABLE01")
+
+        state["have"] = False
+        headers = self._wire(sdk, transport)
+        self.assertEqual("", str(headers.get("authorization") or ""),
+                         "after the chain reports a miss, the retracted "
+                         "credential must not go out")
+
+    # Local mirrors of TestSecrets' helpers (kept self-contained so this
+    # class needs none of its state).
+    def _pair(self, sdkopts):
+        transport = RecordingTransport()
+        opts = {
+            "base": "http://localhost:8080",
+            "system": {"fetch": transport},
+        }
+        opts.update(sdkopts)
+        return secrets_sdk(opts), transport
+
+    def _wire(self, sdk, transport):
+        utility = sdk._utility
+        ctx = utility.make_context({"opname": "load"}, sdk.get_root_ctx())
+        utility.feature_hook(ctx, "PreSpec")
+        fetchdef = sdk.prepare({"path": "/"})
+        res, err = utility.fetcher(ctx, fetchdef["url"], fetchdef)
+        self.assertIsNone(err)
+        return transport.calls[-1]["fetchdef"].get("headers") or {}
+
+    def assert_credential(self, headers, token):
+        got = str(headers.get("authorization") or "")
+        self.assertTrue(
+            got == token or got.endswith(" " + token),
+            "expected the authorization header to carry %s, got: %r"
+            % (token, got))

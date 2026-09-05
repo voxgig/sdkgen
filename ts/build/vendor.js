@@ -63,7 +63,8 @@ function main() {
     if (null == spec) fail('routes.json names no repo for library: ' + lib)
     const dir = resolveRepo(lib, spec, tag, check)
     repodir[lib] = dir
-    repocommit[lib] = gitq(dir, ['rev-parse', tag + '^{commit}']).trim()
+    repocommit[lib] = null == dir ? null :
+      gitq(dir, ['rev-parse', tag + '^{commit}']).trim()
   }
 
   let drift = 0
@@ -75,6 +76,34 @@ function main() {
     if (null == lang) fail('routes.json defines no lang entry for: ' + route.lang)
 
     const key = route.lib + '/' + route.port
+
+    // OFFLINE check: no repo to recompute from, so hold the tree to the
+    // COMMITTED manifest - every listed file must exist and hash-match.
+    // A local edit still fails; only upstream drift detection degrades.
+    if (check && null == dir) {
+      const have = manifest.library[key]
+      if (null == have) {
+        console.error('MANIFEST ' + key + ' has no entry to verify offline')
+        drift++
+        continue
+      }
+      for (const [dest, spec] of Object.entries(have.file)) {
+        const abs = Path.join(SDK, dest)
+        if (!Fs.existsSync(abs)) {
+          console.error('MISSING ' + dest)
+          drift++
+          continue
+        }
+        const disk = Fs.readFileSync(abs).toString('binary').replace(/\r\n/g, '\n')
+        const sha = Crypto.createHash('sha256')
+          .update(Buffer.from(disk, 'binary')).digest('hex')
+        if (sha !== spec.sha256) {
+          console.error('DRIFT   ' + dest)
+          drift++
+        }
+      }
+      continue
+    }
     const entry = {
       repo: routes.repo[route.lib].url,
       commit,
@@ -200,14 +229,25 @@ function resolveRepo(lib, spec, tag, check) {
     catch (e) { /* stale cache; re-clone below */ }
   }
 
-  if (check) {
-    fail(lib + ': no repo can resolve tag ' + tag + ' (and --check does not clone)')
-  }
-
+  // --check clones too: its job is CI verification, and a fresh CI
+  // checkout has neither the sibling repos nor a warm cache. OFFLINE is
+  // the one case that degrades: the caller falls back to verifying the
+  // committed manifest against the tree (hashes still fail on any local
+  // edit); only the routes-vs-upstream recomputation needs the repo.
   Fs.rmSync(cached, { recursive: true, force: true })
   Fs.mkdirSync(CACHE, { recursive: true })
-  execFileSync('git', ['clone', '--depth', '1', '--branch', tag, spec.url, cached],
-    { stdio: 'inherit' })
+  try {
+    execFileSync('git', ['clone', '--depth', '1', '--branch', tag, spec.url, cached],
+      { stdio: check ? 'pipe' : 'inherit' })
+  }
+  catch (e) {
+    if (check) {
+      console.error('note: cannot clone ' + spec.url + ' (offline?); ' +
+        lib + ' falls back to manifest-vs-tree verification only')
+      return null
+    }
+    throw e
+  }
   return cached
 }
 

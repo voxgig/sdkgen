@@ -1,9 +1,13 @@
 package feature
 
 import (
+	"encoding/json"
+	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"GOMODULE/core"
 	plugin "GOMODULE/feature/secrets/plugin"
@@ -70,6 +74,18 @@ type SecretsFeature struct {
 	resolveerr error
 	buying     *secretsBuy
 	initerr    error
+
+	// The RESOLVED credential, held in feature state and injected into
+	// each request at the transport seam - NEVER written into the shared
+	// live options map. This is go's structural deviation from the ts
+	// reference (which writes options.apikey): the go request path reads
+	// ctx.Options raw on every operation goroutine, so a feature that
+	// mutated that map would race every concurrent operation. With the
+	// feature as sole holder, the options map is frozen after
+	// construction and every raw read is safe; the header the wire sees
+	// is identical, because the transport wrapper rewrites it from this
+	// value the same way prepareAuth builds it.
+	cred string
 }
 
 type secretsExchange struct {
@@ -261,7 +277,11 @@ func (f *SecretsFeature) resolve() error {
 	}
 	call := &secretsCall{done: make(chan struct{})}
 	f.resolving = call
-	f.resolveerr = nil
+	// resolveerr is NOT cleared here: the transport gate must stay
+	// closed until this attempt SETTLES, or an operation whose own
+	// resolution failed could reach the wire in the retry window with a
+	// missing or stale credential. The gate waits on `resolving` and
+	// rereads the error once it closes.
 	f.mu.Unlock()
 
 	err := f.resolveonce()
@@ -291,12 +311,19 @@ func (f *SecretsFeature) resolveonce() error {
 	}
 
 	if nil == f.exchange {
+		f.mu.Lock()
 		if has {
-			// The live-mutation seam: prepareAuth reads a clone of the
-			// live options, so the resolved value lands where the sync
-			// auth path already looks.
-			f.liveopts["apikey"] = found
+			f.cred = found
+		} else {
+			// An UNCACHED miss after an earlier hit is a revocation: the
+			// chain now says no provider has the secret, so the resolved
+			// value must not keep going out on the wire. (An explicit
+			// apikey OPTION is never lost here - it seats FIRST in the
+			// chain as a memory provider, so the chain HITS while one is
+			// set and the miss branch is unreachable.)
+			f.cred = ""
 		}
+		f.mu.Unlock()
 		return nil
 	}
 
@@ -309,7 +336,17 @@ func (f *SecretsFeature) resolveonce() error {
 		f.refresh = found
 	}
 
-	apikey, _ := f.liveopts["apikey"].(string)
+	f.mu.Lock()
+	apikey := f.cred
+	f.mu.Unlock()
+	if "" == apikey {
+		// A starting access token supplied as the OPTION: read from the
+		// frozen options map (no feature ever writes it).
+		apikey, _ = f.liveopts["apikey"].(string)
+		f.mu.Lock()
+		f.cred = apikey
+		f.mu.Unlock()
+	}
 	if "" != apikey {
 		// A starting access token was supplied. Spend it: if it is stale
 		// the API answers with an expiry status and the transport wrapper
@@ -317,12 +354,8 @@ func (f *SecretsFeature) resolveonce() error {
 		return nil
 	}
 
-	token, err := f.buy()
-	if nil != err {
-		return err
-	}
-	f.liveopts["apikey"] = token
-	return nil
+	_, err = f.buy()
+	return err
 }
 
 // transport wraps whatever transport was current at Init.
@@ -338,9 +371,36 @@ func (f *SecretsFeature) transport(ctx *core.Context, url string,
 	}
 	f.mu.Lock()
 	gate := f.resolveerr
+	call := f.resolving
 	f.mu.Unlock()
 	if nil != gate {
-		return nil, gate
+		// A retry may be in flight (another operation re-asked the
+		// chain). Wait for it to SETTLE rather than refusing on the old
+		// error or - worse - proceeding: if it succeeded the credential
+		// is now current and this request may go out; if it failed the
+		// refusal carries the fresh error.
+		if nil != call {
+			<-call.done
+			f.mu.Lock()
+			gate = f.resolveerr
+			f.mu.Unlock()
+		}
+		if nil != gate {
+			return nil, gate
+		}
+		// The retry SUCCEEDED - but this operation's authorization header
+		// was built by prepareAuth BEFORE the recovery, from the failed
+		// state. Rewrite it from the freshly resolved credential, or the
+		// wait would end in a stale (or absent) header going out.
+	}
+
+	// Inject the resolved credential into THIS request's header. The
+	// header was built by prepareAuth from the options apikey; the
+	// chain-resolved value lives in feature state instead (see `cred`),
+	// so the wrapper writes it here - same construction, same
+	// suppression rules - and the shared options map stays untouched.
+	if token := f.getcred(); "" != token {
+		f.reauth(fetchdef, token)
 	}
 
 	if nil == f.exchange {
@@ -376,7 +436,7 @@ func (f *SecretsFeature) withrefresh(ctx *core.Context, url string,
 	for {
 		// The credential THIS attempt goes out with, captured before it
 		// leaves: it is what tells a stale refusal apart from a fresh one.
-		used, _ := f.liveopts["apikey"].(string)
+		used := f.getcred()
 
 		res, err := inner(ctx, url, fetchdef)
 
@@ -390,7 +450,7 @@ func (f *SecretsFeature) withrefresh(ctx *core.Context, url string,
 		// a second exchange for a token that is already fresh is wasted,
 		// and on a provider that invalidates the previous credential on
 		// issuance it breaks the first request's own retry.
-		current, _ := f.liveopts["apikey"].(string)
+		current := f.getcred()
 		token := ""
 
 		if "" != current && current != used {
@@ -404,8 +464,11 @@ func (f *SecretsFeature) withrefresh(ctx *core.Context, url string,
 				// exchange error is a symptom.
 				return res, nil
 			}
+			// buy() published the token to the live options under the
+			// feature mutex - the PURCHASING goroutine is the only
+			// writer, so a burst of expired requests cannot race the
+			// map. Waiters use the returned value directly.
 			token = bought
-			f.liveopts["apikey"] = token
 		}
 
 		f.reauth(fetchdef, token)
@@ -427,6 +490,21 @@ func (f *SecretsFeature) spent(res any) bool {
 	return false
 }
 
+// getcred reads the resolved credential under the feature mutex.
+func (f *SecretsFeature) getcred() string {
+	f.mu.Lock()
+	v := f.cred
+	f.mu.Unlock()
+	return v
+}
+
+// Credential exposes the resolved credential (empty when none) - the
+// state the transport injects; tests and callers read it here rather
+// than from the options map, which this feature never mutates.
+func (f *SecretsFeature) Credential() string {
+	return f.getcred()
+}
+
 func (f *SecretsFeature) reauth(fetchdef map[string]any, token string) {
 	headers, _ := fetchdef["headers"].(map[string]any)
 	if nil == headers {
@@ -437,8 +515,11 @@ func (f *SecretsFeature) reauth(fetchdef map[string]any, token string) {
 	// Reached defensively - withrefresh does not retry at all when auth is
 	// nil - but this is the function that writes the credential, so it is
 	// where the rule has to hold.
-	auth, _ := f.liveopts["auth"].(map[string]any)
-	if nil == f.liveopts["auth"] || nil == auth {
+	// The options map is FROZEN after construction (this feature never
+	// writes it), so the raw read is safe on any goroutine.
+	rawauth := f.liveopts["auth"]
+	auth, _ := rawauth.(map[string]any)
+	if nil == rawauth || nil == auth {
 		delete(headers, "authorization")
 		return
 	}
@@ -462,7 +543,11 @@ func (f *SecretsFeature) buy() (string, error) {
 	// obviously-fake token instead - the same answer makeOptions gives a
 	// required server variable, for the same reason.
 	if "live" != f.client.Mode {
-		return "test-" + f.exchange.response, nil
+		token := "test-" + f.exchange.response
+		f.mu.Lock()
+		f.cred = token
+		f.mu.Unlock()
+		return token, nil
 	}
 
 	f.mu.Lock()
@@ -481,6 +566,11 @@ func (f *SecretsFeature) buy() (string, error) {
 	buying.token = token
 	buying.err = err
 	f.buying = nil
+	if nil == err {
+		// Publish HERE, before the waiters wake: one writer, under the
+		// mutex - waiters consume the returned value.
+		f.cred = token
+	}
 	f.mu.Unlock()
 	close(buying.done)
 
@@ -508,7 +598,20 @@ func (f *SecretsFeature) buyonce() (string, error) {
 	fetch, _ := system["fetch"].(func(string, map[string]any) (map[string]any, error))
 
 	if nil == fetch {
-		return "", sekreto.Fail("secrets: no fetch implementation for the token exchange")
+		// No custom transport supplied - the ordinary case. makeOptions
+		// leaves system.fetch unset, so the exchange gets its own raw
+		// HTTP path (mirroring the ts reference, whose system.fetch is
+		// initialized from the platform fetcher). Local and minimal on
+		// purpose: see the NOT-the-SDK-transport note below.
+		fetch = rawExchangeFetch
+	}
+
+	// The body is MARSHALLED, never concatenated: a refresh token (or a
+	// configured request-field name) carrying a quote, backslash or
+	// newline must arrive as that literal value, not as malformed JSON.
+	bodybytes, err := json.Marshal(map[string]string{x.request: f.refresh})
+	if nil != err {
+		return "", err
 	}
 
 	// Deliberately NOT the SDK transport. The transport is what this
@@ -518,7 +621,7 @@ func (f *SecretsFeature) buyonce() (string, error) {
 	res, err := fetch(url, map[string]any{
 		"method":  x.method,
 		"headers": map[string]any{"content-type": "application/json"},
-		"body":    "{\"" + x.request + "\": \"" + f.refresh + "\"}",
+		"body":    string(bodybytes),
 	})
 	if nil != err {
 		return "", err
@@ -548,4 +651,56 @@ func (f *SecretsFeature) buyonce() (string, error) {
 	}
 
 	return token, nil
+}
+
+// rawExchangeFetch is the token-exchange transport of last resort: plain
+// net/http, same result shape the system.fetch seam promises ("status" +
+// "json"). It exists so an exchange works with ordinary SDK options -
+// requiring a custom transport for the COMMON case would reject every
+// live token purchase before a request was made.
+func rawExchangeFetch(fullurl string, fetchdef map[string]any) (map[string]any, error) {
+	method, _ := fetchdef["method"].(string)
+	if "" == method {
+		method = "POST"
+	}
+
+	var body io.Reader
+	if raw, is := fetchdef["body"].(string); is && "" != raw {
+		body = strings.NewReader(raw)
+	}
+
+	req, err := http.NewRequest(method, fullurl, body)
+	if nil != err {
+		return nil, err
+	}
+	if headers, is := fetchdef["headers"].(map[string]any); is {
+		for k, v := range headers {
+			if vs, is := v.(string); is {
+				req.Header.Set(k, vs)
+			}
+		}
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	res, err := client.Do(req)
+	if nil != err {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	raw, err := io.ReadAll(res.Body)
+	if nil != err {
+		return nil, err
+	}
+
+	return map[string]any{
+		"status": res.StatusCode,
+		"json": func() any {
+			var out any
+			if nil != json.Unmarshal(raw, &out) {
+				return nil
+			}
+			return out
+		},
+	}, nil
 }

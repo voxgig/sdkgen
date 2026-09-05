@@ -574,7 +574,7 @@ src/cmp/go/utility_go.ts 91469b653988
 tm/go/LICENSE ed2f88b0aab8
 tm/go/Makefile 72a251a943a5
 tm/go/VERSION e6635045e1d2
-tm/go/core/context.go 5f8d0d6da8a3
+tm/go/core/context.go ce6aaded9ce6
 tm/go/core/control.go e5f055beb2f1
 tm/go/core/error.go 543d20339a60
 tm/go/core/helpers.go b6a4ff51a034

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 import json
+import urllib.error
+import urllib.request
 
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
@@ -91,6 +93,7 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
         self._sekreto = None
         self._secretname = "apikey"
         self._resolved = False
+        self._lastset = None
         self._cache = True
 
         # Exchange state. `_exchange` is the resolved config (None when
@@ -227,6 +230,18 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
                 # resolved value lands where the sync auth path already
                 # looks.
                 self._client.options["apikey"] = found
+                self._lastset = found
+            elif self._lastset:
+                # An UNCACHED miss after an earlier hit is a revocation:
+                # the chain now says no provider has the secret, so the
+                # value this feature wrote must not keep going out on the
+                # wire. Only the feature's own write is retracted - an
+                # explicit apikey seats FIRST in the chain as a memory
+                # provider, so the chain HITS while one is set and this
+                # branch is never reached.
+                if self._client.options.get("apikey") == self._lastset:
+                    self._client.options["apikey"] = ""
+                self._lastset = None
             return
 
         # Exchanging: what the chain resolved is the REFRESH token, kept
@@ -283,8 +298,13 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
         fetch = vs.getpath(options, "system.fetch")
 
         if not callable(fetch):
-            raise Exception(
-                "secrets: no fetch implementation for the token exchange")
+            # No custom transport supplied - the ordinary case.
+            # make_options leaves system.fetch unset, so the exchange
+            # gets its own raw HTTP path (stdlib urllib, mirroring the ts
+            # reference whose system.fetch is initialized from the
+            # platform fetcher). Local and minimal on purpose: see the
+            # NOT-the-SDK-transport note below.
+            fetch = _raw_exchange_fetch
 
         # Deliberately NOT the SDK transport. The transport is what this
         # feature wraps, and sending the token request back through it
@@ -408,3 +428,40 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
         prefix = auth.get("prefix") if isinstance(auth, dict) else None
         fetchdef["headers"]["authorization"] = \
             prefix + " " + token if prefix else token
+
+
+def _raw_exchange_fetch(fullurl, fetchdef):
+    """Token-exchange transport of last resort: stdlib urllib, answering
+    the same (res, err) shape the system.fetch seam promises. Exists so an
+    exchange works with ordinary SDK options - requiring a custom
+    transport for the COMMON case would reject every live token purchase
+    before a request was made."""
+    try:
+        body = fetchdef.get("body")
+        data = body.encode("utf-8") if isinstance(body, str) and body else None
+        req = urllib.request.Request(
+            fullurl,
+            data=data,
+            method=str(fetchdef.get("method") or "POST"),
+        )
+        for k, v in (fetchdef.get("headers") or {}).items():
+            if isinstance(v, str):
+                req.add_header(k, v)
+        with urllib.request.urlopen(req, timeout=30) as res:
+            raw = res.read()
+            status = res.status
+
+        def _json():
+            try:
+                return json.loads(raw.decode("utf-8"))
+            except Exception:
+                return None
+
+        return {"status": status, "json": _json}, None
+    except urllib.error.HTTPError as e:
+        # A non-2xx answer IS a response: hand back its status so the
+        # caller reports "token exchange failed: <status>" rather than a
+        # transport error.
+        return {"status": e.code, "json": lambda: None}, None
+    except Exception as e:
+        return None, e

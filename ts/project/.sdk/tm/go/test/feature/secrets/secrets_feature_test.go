@@ -25,12 +25,16 @@
 package secretstest
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 	"unicode"
 
 	sdk "GOMODULE"
@@ -158,12 +162,31 @@ func secretsClient(w *wire, sdkopts map[string]any) *sdk.ProjectNameSDK {
 	opts := map[string]any{
 		"base":   "http://secrets.test/api",
 		"system": map[string]any{"fetch": w.fetch},
-		"extend": []any{feat.NewSecretsFeature()},
 	}
 	for k, v := range sdkopts {
 		opts[k] = v
 	}
-	return sdk.NewProjectNameSDK(opts)
+	return withSecrets(func(extend bool) *sdk.ProjectNameSDK {
+		if extend {
+			opts["extend"] = []any{feat.NewSecretsFeature()}
+		}
+		return sdk.NewProjectNameSDK(opts)
+	})
+}
+
+// withSecrets constructs the client and ADOPTS the feature via `extend`
+// ONLY when the generated config did not already install it - when this
+// SDK was generated with `secrets` model-active, the ordinary factory
+// path builds the instance, and adding a second via extend would DOUBLE
+// the feature: two transport wraps, two resolutions, and a token
+// purchase the assertions cannot account for. (The py harness guards the
+// same way via _has_feature.)
+func withSecrets(build func(extend bool) *sdk.ProjectNameSDK) *sdk.ProjectNameSDK {
+	client := build(false)
+	if nil == secretsFeatureOf(client) {
+		client = build(true)
+	}
+	return client
 }
 
 func secretsOpts(extra map[string]any) map[string]any {
@@ -323,10 +346,16 @@ func TestSecretsChain(t *testing.T) {
 		driveEntityOp(t, client, w)
 
 		// The awaited PreSpec seam ran before the spec was built: the
-		// credential is on the wire, not merely in the options.
+		// credential is on the wire, not merely resolved. go holds it in
+		// FEATURE STATE and injects at the transport - the options map is
+		// never mutated (it stays raced-read-safe for every concurrent
+		// operation), so the state assertion reads the feature.
 		credentialIs(t, w.api()[0].auth, "ENVKEY02")
-		if v, _ := client.OptionsMap()["apikey"].(string); "ENVKEY02" != v {
+		if v := secretsFeatureOf(client).Credential(); "ENVKEY02" != v {
 			t.Fatalf("the entity op did not resolve the secret through PreSpec: %q", v)
+		}
+		if v, _ := client.OptionsMap()["apikey"].(string); "" != v {
+			t.Fatalf("the options map must stay unwritten (frozen after construction), got apikey=%q", v)
 		}
 	})
 
@@ -513,18 +542,22 @@ func TestSecretsExchange(t *testing.T) {
 		defer os.Unsetenv(envprefix + "REFRESH_TOKEN")
 
 		w := makewire()
-		client := sdk.TestSDK(nil, map[string]any{
-			"system": map[string]any{"fetch": w.fetch},
-			"extend": []any{feat.NewSecretsFeature()},
-			"feature": secretsOpts(map[string]any{
-				"name":     "refresh_token",
-				"exchange": map[string]any{"active": true},
-			}),
+		client := withSecrets(func(extend bool) *sdk.ProjectNameSDK {
+			opts := map[string]any{
+				"system": map[string]any{"fetch": w.fetch},
+				"feature": secretsOpts(map[string]any{
+					"name":     "refresh_token",
+					"exchange": map[string]any{"active": true},
+				}),
+			}
+			if extend {
+				opts["extend"] = []any{feat.NewSecretsFeature()}
+			}
+			return sdk.TestSDK(nil, opts)
 		})
 
 		driveEntityOpUntil(t, client, "resolved the fake token", func() bool {
-			v, _ := client.OptionsMap()["apikey"].(string)
-			return "" != v
+			return "" != secretsFeatureOf(client).Credential()
 		})
 
 		if 0 != len(w.calls) {
@@ -532,8 +565,184 @@ func TestSecretsExchange(t *testing.T) {
 		}
 		// A deterministic placeholder, so offline suites need no
 		// configuration.
-		if v, _ := client.OptionsMap()["apikey"].(string); "test-access_token" != v {
+		if v := secretsFeatureOf(client).Credential(); "test-access_token" != v {
 			t.Fatalf("expected the fake test token, got %q", v)
 		}
 	})
+}
+
+// ---------------------------------------------------------------------
+// Review-hardening pins (vendor-tag rollout, PR review): the exchange
+// works with ORDINARY options (no custom transport), the token body is
+// real JSON, an uncached miss retracts the credential, and a failed
+// resolution recovers safely under concurrency.
+
+// The exchange with NO system.fetch: the raw fallback transport carries
+// the purchase, and the body is MARSHALLED - a refresh token full of
+// JSON-hostile characters must arrive as that literal value. End to end
+// over real HTTP (httptest), token purchase and API call alike.
+func TestSecretsExchangeRawFetch(t *testing.T) {
+	tricky := "re\"fresh\\to\nken"
+
+	var mu sync.Mutex
+	gotrefresh := ""
+	gotauth := ""
+
+	srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		if strings.HasSuffix(req.URL.Path, "/auth/token") {
+			var body map[string]any
+			json.NewDecoder(req.Body).Decode(&body)
+			mu.Lock()
+			gotrefresh, _ = body["refresh_token"].(string)
+			mu.Unlock()
+			res.Header().Set("content-type", "application/json")
+			res.Write([]byte(`{"access_token": "RAWTOK01"}`))
+			return
+		}
+		mu.Lock()
+		gotauth = req.Header.Get("authorization")
+		mu.Unlock()
+		res.Header().Set("content-type", "application/json")
+		res.Write([]byte(`{}`))
+	}))
+	defer srv.Close()
+
+	// No system.fetch anywhere: the API call takes the SDK's default
+	// transport and the token purchase takes the feature's raw fallback.
+	client := withSecrets(func(extend bool) *sdk.ProjectNameSDK {
+		opts := map[string]any{
+			"base": srv.URL + "/api",
+			"feature": map[string]any{"secrets": map[string]any{
+				"active":   true,
+				"name":     "refresh_token",
+				"exchange": map[string]any{"active": true, "refresh": tricky},
+			}},
+		}
+		if extend {
+			opts["extend"] = []any{feat.NewSecretsFeature()}
+		}
+		return sdk.NewProjectNameSDK(opts)
+	})
+
+	driveEntityOpUntil(t, client, "reached the httptest server", func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return "" != gotauth
+	})
+
+	mu.Lock()
+	defer mu.Unlock()
+	if tricky != gotrefresh {
+		t.Fatalf("the refresh token must arrive as its literal value "+
+			"(marshalled, not concatenated): want %q got %q", tricky, gotrefresh)
+	}
+	credentialIs(t, gotauth, "RAWTOK01")
+}
+
+// With `cache: false`, a provider that answered once and then reports a
+// MISS (a revoked secret) must RETRACT the credential the feature wrote -
+// prepareAuth must stop transmitting it.
+func TestSecretsUncachedMissRetracts(t *testing.T) {
+	var mu sync.Mutex
+	have := true
+
+	w := makewire()
+	client := secretsClient(w, map[string]any{
+		"feature": map[string]any{"secrets": map[string]any{
+			"active": true,
+			"cache":  false,
+			"providers": []any{
+				&customProvider{
+					lookup: func(name string) (string, bool, error) {
+						mu.Lock()
+						defer mu.Unlock()
+						if have {
+							return "REVOCABLE01", true, nil
+						}
+						return "", false, nil
+					},
+				},
+			},
+		}},
+	})
+
+	driveEntityOp(t, client, w)
+	credentialIs(t, w.api()[0].auth, "REVOCABLE01")
+
+	mu.Lock()
+	have = false
+	mu.Unlock()
+
+	driveEntityOp(t, client, w)
+	last := w.api()[len(w.api())-1]
+	if last.has && "" != last.auth {
+		t.Fatalf("after the chain reports a miss, the retracted credential "+
+			"must not go out; the wire saw %q", last.auth)
+	}
+}
+
+// A provider failure closes the transport gate; a later retry that
+// SUCCEEDS reopens it and every waiting operation goes out with the FRESH
+// credential - never the stale pre-failure header, and never nothing.
+func TestSecretsGateRecovery(t *testing.T) {
+	var mu sync.Mutex
+	mode := "fail"
+	release := make(chan struct{})
+
+	w := makewire()
+	client := secretsClient(w, map[string]any{
+		"feature": map[string]any{"secrets": map[string]any{
+			"active": true,
+			"cache":  false,
+			"providers": []any{
+				&customProvider{
+					lookup: func(name string) (string, bool, error) {
+						mu.Lock()
+						m := mode
+						mu.Unlock()
+						if "fail" == m {
+							return "", false, fmt.Errorf("vault unreachable")
+						}
+						if "slow" == m {
+							<-release
+						}
+						return "FRESH01", true, nil
+					},
+				},
+			},
+		}},
+	})
+
+	// 1. The failure closes the gate: nothing reaches the wire.
+	driveEntityOpUntil(t, client, "was refused by the gate", func() bool { return true })
+	if 0 != len(w.api()) {
+		t.Fatalf("a failed resolution must keep the wire silent, saw %d calls", len(w.api()))
+	}
+
+	// 2. Recovery under concurrency: two operations race the slow retry;
+	// both must come out carrying the fresh credential.
+	mu.Lock()
+	mode = "slow"
+	mu.Unlock()
+
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			driveEntityOpUntil(t, client, "recovered", func() bool { return true })
+		}()
+	}
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		close(release)
+	}()
+	wg.Wait()
+
+	for _, call := range w.api() {
+		credentialIs(t, call.auth, "FRESH01")
+	}
+	if 0 == len(w.api()) {
+		t.Fatal("recovery must let the operations out")
+	}
 }
