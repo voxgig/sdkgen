@@ -163,6 +163,35 @@ class TestStructUtility(unittest.TestCase):
         self.assertEqual({"a":f0}, clone({"a":f0}))
 
 
+    def test_nullsem(self):
+        # The struct.nullsem section: does a PRESENT key holding a JSON
+        # null read as "no value"? Opt-in per target (create-sdkgen ships
+        # it; an older project corpus may predate it - the skip says so
+        # OUT LOUD rather than passing vacuously). All lanes {null: False}.
+        nullsem = spec.get("nullsem")
+        if nullsem is None:
+            self.skipTest(
+                "corpus predates struct.nullsem - refresh .sdk/test/struct"
+                " from create-sdkgen")
+
+        def prop_subject(vin):
+            if "alt" in vin:
+                return getprop(vin["val"], vin["key"], vin["alt"])
+            return getprop(vin["val"], vin["key"])
+
+        def elem_subject(vin):
+            if "alt" in vin:
+                return getelem(vin["val"], vin["key"], vin["alt"])
+            return getelem(vin["val"], vin["key"])
+
+        runsetflags(nullsem["getprop"], {"null": False}, prop_subject)
+        runsetflags(nullsem["getelem"], {"null": False}, elem_subject)
+        runsetflags(nullsem["getpath"], {"null": False},
+                    lambda vin: getpath(vin["store"], vin["path"]))
+        runsetflags(nullsem["haskey"], {"null": False},
+                    lambda vin: haskey(vin["src"], vin["key"]))
+        runsetflags(nullsem["keysof"], {"null": False}, keysof)
+
     def test_minor_escre(self):
         runset(minorSpec["escre"], escre)
 
