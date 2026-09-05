@@ -92,7 +92,7 @@ per-language decision:
   `<Name>*Match` types; the persistent match-state slot is looser.
 - The documentary-tier targets deliberately do NOT wire types into op
   signatures. Promoting one to go's additive `*Typed`-wrapper tier is a
-  per-language feature (conversion helpers + wrappers), best done with
+  per-language feature (conversion helpers + wrappers), and needs
   that language's toolchain available to verify.
 
 ## Porting checklist (new language)

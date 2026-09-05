@@ -23,7 +23,7 @@ target language.
         │
         │  +  target/feature/option definitions
         │     (added by `voxgig-sdkgen target add` / `feature add`)
-        │  +  the sdkgen base schema (model/sdkgen.aontu)
+        │  +  the sdkgen base schema (model/sdkgen.aon)
         ▼
   ┌───────────────┐   unify (CUE-like)
   │     aontu      │ ─────────────────────▶  one coherent model object
@@ -75,7 +75,7 @@ pass rooted at that path. See
 `ts/project/` is itself an sdkgen package — a `sdkgen-package.json`
 manifest beside a `.sdk/` directory — so "the bundled scaffold" and "a
 third-party package" are the same thing to every code path that installs,
-compares or updates them. That is the point: the bundled path is the
+compares, or updates them. That is the point: the bundled path is the
 external path, so the external one cannot rot from disuse.
 
 What holds it together is **provenance in the model**. Each copied
@@ -89,7 +89,8 @@ That record is what lets `doctor` compare a project against sources it
 has never heard of, and `package update` refresh exactly what a package
 supplied.
 
-See [the design note](../design/sdkgen-packages.md).
+See [Use an sdkgen package](../how-to/use-an-sdkgen-package.md) and
+[Author an sdkgen package](../how-to/author-an-sdkgen-package.md).
 
 ## Where this package sits at runtime
 

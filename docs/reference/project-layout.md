@@ -11,7 +11,7 @@ canonical `model/`, the `Makefile`, and `docs/`.
 ```
 sdkgen/
 ├── model/
-│   └── sdkgen.aontu           # canonical base model schema (defaults + constraints)
+│   └── sdkgen.aon             # canonical base model schema (defaults + constraints)
 ├── Makefile                   # build / test / check-model / sync-model (wraps ts/ npm)
 ├── docs/                      # this documentation
 └── ts/                        # the self-contained npm package root (@voxgig/sdkgen)
@@ -21,7 +21,7 @@ sdkgen/
     ├── build/
     │   └── version.js         # embeds package version into bin/ at publish time
     ├── model/
-    │   └── sdkgen.aontu       # npm-shipped mirror of ../model/ (kept in sync by `make sync-model`)
+    │   └── sdkgen.aon         # npm-shipped mirror of ../model/ (kept in sync by `make sync-model`)
     ├── src/                   # TypeScript source (CommonJS, ES2021)
     │   ├── sdkgen.ts          # entry: SdkGen, makeBuild, all public exports
     │   ├── types.ts           # ActionContext + model interfaces (SdkModel, …)
@@ -92,7 +92,7 @@ checkout, or a plain local directory:
                                  # package does NOT provide (an overlay)
 ```
 
-The `.sdk` subfolder is the load-bearing convention: it is what
+The `.sdk` subfolder is the convention everything else rests on: it is what
 resolution probes for, and it means the whole copy pipeline works on a
 package tree unchanged, because it cannot tell one apart from the bundled
 scaffold.
@@ -125,7 +125,7 @@ keeps the bundled path and the external path on the same code. Its
 `provides` is pinned to the actual directory listings by a guard test, so
 it cannot drift from the scaffold.
 
-See [the design note](../design/sdkgen-packages.md) and the
+See [Use an sdkgen package](../how-to/use-an-sdkgen-package.md) and the
 [CLI reference](./cli.md).
 
 ## A scaffolded SDK project

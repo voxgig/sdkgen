@@ -78,7 +78,7 @@ is named*:
 | Bare name | `go` | the bundled `node_modules/@voxgig/sdkgen/project/.sdk` | `go` |
 | Scoped/path | `acme/widgets/go` | `node_modules/acme/widgets/.sdk`, falling back to `acme/widgets/.sdk` | `go` |
 | Absolute | `/abs/widgets/go` | `/abs/widgets/.sdk` | `go` |
-| Alias (`~`) | `go~go2` | as above for `go` | `go2` |
+| Alias (`~`) | `go~go2` | as for `go` | `go2` |
 
 The **last path element** of a ref is the target/folder name; everything
 before it locates the `.sdk` source. The alias suffix (`ref~alias`)
@@ -157,8 +157,7 @@ target, so it cannot be renamed at install time.
 
 Install a **docs item** — a generation target whose destination is a
 documentation system rather than a language: a static site, a
-developer-portal catalogue, a hosted service's config. See
-[the design note](../design/sdkgen-packages.md) §20.
+developer-portal catalogue, a hosted service's config.
 
 ```bash
 voxgig-sdkgen docs add @voxgig/docgen/apidocs
@@ -189,7 +188,7 @@ so `docs add` works in a project scaffolded before the kind existed.
 
 ### `package add <pkg>[,<pkg>...]`
 
-Install everything an [sdkgen package](../design/sdkgen-packages.md)
+Install everything an [sdkgen package](../how-to/use-an-sdkgen-package.md)
 provides. A package is a folder holding a `sdkgen-package.json` manifest
 beside a `.sdk/` directory shaped exactly like the bundled scaffold.
 
@@ -219,7 +218,7 @@ Three things it does that the individual commands cannot:
   unparsed range would block a package that works.
 - **Targets are installed before features**, because `feature add`
   copies a feature's source into every target already present, and the
-  in-memory model is updated between kinds so the feature sees the
+  in-memory model is updated between kinds so the feature finds the
   targets this same command just installed.
 
 A typo in `--only` is an error listing what the package does provide,
@@ -262,8 +261,8 @@ directory (rust's `retry.rs`) is written exactly like shared machinery
 reported where it would have to guess.
 
 The bundled scaffold — `ts/project`, itself an sdkgen package — passes
-this battery with no findings, which is what keeps the checks honest
-about false positives across 27 targets and 17 features.
+this battery with no findings, which is what shows the checks do not fire falsely
+across 27 targets and 17 features.
 
 ### `package list`
 

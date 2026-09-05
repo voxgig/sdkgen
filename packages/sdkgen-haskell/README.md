@@ -34,8 +34,7 @@ Declared `MIRRORED` in `sdkgen-package.json`: this target has a
 primary-utility suite, but it MIRRORS the shared `.aontu` corpus by hand
 rather than executing it, so the cases can drift from the reference. Moving
 it to FULL is the highest-value work available here, and it is blocked on the
-corpus being published as a consumable package
-([design §14](https://github.com/voxgig/sdkgen/blob/main/docs/design/sdkgen-packages.md)).
+corpus being published as a consumable package.
 
 ## Developing
 

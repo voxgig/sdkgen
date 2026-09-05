@@ -84,7 +84,7 @@ Twelve targets carry the full live wiring — credential, server variables and
 `ts`, `js`, `go`, `py`, `java`, `php`, `rb`, `lua`, `rust`, `dart`, `csharp`, `perl`
 
 The rest generate the mock suite only: they have no live client to configure,
-so the environment variables above do nothing there. `ts/test/generate.test.ts`
+so those environment variables do nothing there. `ts/test/generate.test.ts`
 pins that list, so a target gaining a live client without the wiring fails the
 suite rather than shipping a live suite that cannot run.
 
@@ -105,7 +105,7 @@ main: kit: test: live: strict: true
 
 A live run then FAILS on a non-2xx, which is the point: without it a suite
 passes with nothing listening on the port. What strict mode does not do is
-assert the MOCK's own fixtures against a live server — the scripted ids and
+assert the mock transport's own fixtures against a live server — the scripted ids and
 recorded calls belong to the mock transport and exist only offline.
 
 ## `sdk-test-control.json` is write-once

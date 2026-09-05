@@ -3,7 +3,7 @@
 A **feature** is a self-contained piece of client behaviour that plugs into
 the generated SDK's operation pipeline: retries, caching, rate limiting,
 tracing, an offline mock transport, and so on. Features are the answer to
-"my SDK needs to do X on every call" that does not involve forking
+"the SDK needs to do X on every call" that does not involve forking
 generated code.
 
 Eighteen features ship with `@voxgig/sdkgen`. Every one of them is
@@ -94,7 +94,7 @@ feature shares; the rest are per-feature and documented below.
 
 Six features work by **wrapping the transport**. Each one wraps whatever is
 already installed, so the one initialised *last* ends up *outermost* and
-sees the call first.
+handles the call first.
 
 Given a map, the order is deterministic: `test` first (it installs the base
 mock transport, so it must sit at the bottom of the chain), then the
@@ -160,8 +160,8 @@ feature can see.
 ### Transport wrapping (`transport: 'wrap'`)
 
 The feature replaces `utility.fetcher` in `init()` with a function that
-calls the previous one. It sees **every HTTP attempt**, including attempts
-made by another wrapper, and it can suppress, delay, repeat or answer a
+calls the previous one. It handles **every HTTP attempt**, including attempts
+made by another wrapper, and it can suppress, delay, repeat, or answer a
 request without the pipeline knowing.
 
 `retry`, `timeout`, `ratelimit`, `cache`, `proxy` and `netsim` work this
@@ -189,7 +189,7 @@ PrePoint → PreSpec → PreRequest → PreResponse → PreResult → PreDone
                                            (exception) → PreUnexpected
 ```
 
-A hook sees the operation, not the HTTP attempt: one call, one pass. This
+A hook runs per operation, not per HTTP attempt: one call, one pass. This
 is the right seam for anything that reasons about *what the caller asked
 for* rather than *what went over the wire*: `rbac` (deny at `PrePoint`,
 before an endpoint is even resolved), `paging` (read the operation's
@@ -336,7 +336,7 @@ lot; put it first in the array form for a per-attempt deadline.
 Each request consumes a token. The bucket refills at `rate` tokens per
 second up to `burst` capacity; when it is empty the request waits for a
 token rather than being rejected. This keeps a client under a published
-quota by construction instead of discovering the quota through 429s.
+quota by construction instead of discovering the quota through 429 responses.
 
 **Seam:** transport wrapper. No pipeline hooks.
 
@@ -430,7 +430,7 @@ feature: {
 
 Injects realistic network conditions over whatever transport is beneath
 it, live or mocked, so a test suite can exercise slowness, transient
-failure, rate limiting and total outage without a network.
+failure, rate limiting, and total outage without a network.
 
 Every mode is **counter-driven per client instance**, so simulations are
 reproducible without mocking timers. `failRate` adds probabilistic
@@ -465,7 +465,7 @@ feature: {
 ```
 
 **Notes.** `netsim` is how you test [`retry`](#retry),
-[`timeout`](#timeout) and [`ratelimit`](#ratelimit) honestly, so it wants
+[`timeout`](#timeout) and [`ratelimit`](#ratelimit) against simulated faults, so it wants
 to sit *inside* them in the chain, which the default ordering already
 does. The [`test`](#test) feature also accepts a smaller `net` block
 directly for the common cases. See
@@ -489,7 +489,7 @@ identifier as the API names it, not a hardcoded `id`, so an API keyed on
 `record_id` behaves like itself.
 
 While `test` is active, the live transport refuses to send anything
-(`fetch_test_block`), so a mis-seeded test fails loudly instead of quietly
+(`fetch_test_block`), so a mis-seeded test fails loudly instead of silently
 calling production.
 
 **Seam:** base transport. Also dispatches the lifecycle and pipeline hooks.
@@ -561,7 +561,7 @@ LLM API, `extensions.cost.actualQueryCost` for Shopify GraphQL), priced by
 the per-attempt estimate rather than adding to it.
 
 Every record carries its `source`, and the totals keep `reported` and
-`estimated` apart: "the server told us" and "we guessed from a price list"
+`estimated` apart: "the server reported it" and "it was guessed from a price list"
 are different claims and should not be silently summed.
 
 **Seam:** transport wrapper **and** `PrePoint`, `PreDone`, `PreUnexpected`.
@@ -610,7 +610,7 @@ a refused call costs nothing and never touches the network. With
 sets `budget.exceeded` and lets the call through.
 
 **It is a cutoff, not a hard cap, and the difference matters.** The check
-asks *have I already spent the budget*, not *will this call exceed it*.
+asks *is the budget already spent*, not *would this call exceed it*.
 What a call costs is generally not known until after it has been made — a
 reported header or body figure arrives with the response, and a retried
 call is charged per attempt — so the last admitted call can carry total
@@ -625,7 +625,7 @@ client._cost.total.amount                      // 5 — the limit is already pas
 await client.Report().generate({ id: 'r2' })   // refused: cost_budget
 ```
 
-So `budget` bounds a run; it does not guarantee a maximum. Size it with
+So `budget` bounds a run; it does not enforce a maximum. Size it with
 that overshoot in mind — one call's worth, or one retried call's worth,
 below the number you actually cannot exceed.
 
@@ -678,8 +678,8 @@ loop that would otherwise run until the invoice arrives.
 Adds an `Idempotency-Key` header to unsafe requests so a server can
 de-duplicate a write that was retried. The key is generated once, at
 `PreRequest`, before the request is built, which means it stays **stable
-across transport-level retries of the same call**: that is the entire
-point, and it is why this is a hook rather than a transport wrapper. A key
+across transport-level retries of the same call**: that is what the key
+is for, and it is why this is a hook rather than a transport wrapper. A key
 the caller supplied is never overwritten.
 
 An operation counts as mutating if its HTTP method is in `methods`, or its
@@ -831,7 +831,7 @@ feature: {
 }
 ```
 
-**Notes.** This is client-side enforcement: it gives fast, local, honest
+**Notes.** This is client-side enforcement: it gives fast, local
 failures and keeps a UI from offering actions the caller cannot perform.
 It is not a security boundary, and it does not replace server-side
 authorization.
@@ -990,7 +990,7 @@ always refreshed: it identifies this call, so a stale one would be wrong.
 
 > Structured request and response logging
 
-Logs at every pipeline stage, with the operation, spec and context
+Logs at every pipeline stage, with the operation, spec, and context
 attached. Uses [pino](https://getpino.io) with pretty printing by default,
 and takes any pino-compatible logger instead.
 
@@ -1051,8 +1051,7 @@ from a RESPONSE, which is why the exchange needs the transport seam as well.
 
 **Applicability:** `needs: { sekreto: true }` — the feature is a thin layer
 over a vendored sekreto port, so it reaches only targets whose feature
-container carries one (`ts` today). See
-[feature tags](../design/feature-tags.md).
+container carries one (`ts` today).
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -1065,7 +1064,7 @@ container carries one (`ts` today). See
 | `exchange.method` | `'POST'` | |
 | `exchange.request` | `'refresh_token'` | JSON field the refresh credential is sent in. |
 | `exchange.response` | `'access_token'` | JSON field the access token comes back in. |
-| `exchange.refresh` | `''` | An explicit refresh token, given in code. First in the chain, so it wins. `apikey` cannot serve here: with an exchange configured it means "an access token I already hold". |
+| `exchange.refresh` | `''` | An explicit refresh token, given in code. First in the chain, so it wins. `apikey` cannot serve here: with an exchange configured it means "an access token already held". |
 | `exchange.statuses` | `[401]` | Statuses meaning "your access token is spent". |
 | `exchange.retries` | `1` | Purchases-and-retries per request. One: a second refusal on a token bought moments ago is a real failure. |
 

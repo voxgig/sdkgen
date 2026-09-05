@@ -98,4 +98,3 @@ reference implementation.
 
 - [Customize templates and propagate the change](./customize-and-propagate-templates.md)
 - [Components vs templates](../explanation/components-and-templates.md)
-- The repository [`AGENTS.md`](../../AGENTS.md) for the same loop as an agent checklist.

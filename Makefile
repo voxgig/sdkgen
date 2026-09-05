@@ -1,10 +1,10 @@
-.PHONY: all build test clean build-ts test-ts clean-ts reset sync-model check-model publish
+.PHONY: all build test clean build-ts test-ts clean-ts scan-prose reset sync-model check-model publish
 
 all: check-model build test
 
 build: build-ts
 
-test: test-ts
+test: test-ts scan-prose
 
 clean: clean-ts
 
@@ -35,6 +35,22 @@ test-ts:
 
 clean-ts:
 	rm -rf ts/dist-test
+
+# The prose gate over the reader-facing pages (STYLE-GUIDE.md). Vale runs
+# where it is installed, over the page set tools/check_prose.py prints,
+# so both halves read the same files; check_prose always runs, because it
+# carries the house rules .vale.ini switches Google rules OFF in favour
+# of -- skipping it silently would widen what is allowed.
+scan-prose:
+	@echo "======== scan: prose (vale + check_prose) ========"
+	@if command -v vale >/dev/null 2>&1; then \
+	  vale sync >/dev/null && \
+	  vale --minAlertLevel=error $$(python3 tools/check_prose.py --files); \
+	else \
+	  echo "(vale not installed - skipping the Google/banned-list half;"; \
+	  echo " see .github/workflows/docs.yml for the pinned version)"; \
+	fi
+	@python3 tools/check_prose.py
 
 reset:
 	cd ts && npm run reset

@@ -175,7 +175,7 @@ resync works.
 
 ## Automate that loop: the test kit
 
-Doing the above by hand proves the package once. `@voxgig/sdkgen/testkit`
+Doing that by hand proves the package once. `@voxgig/sdkgen/testkit`
 does the same thing in your own suite, on every commit:
 
 ```js
@@ -244,7 +244,7 @@ compares against the source on disk.
 ## Things that will bite you
 
 - **A key that is not a bare identifier must be quoted** in aontu.
-  The name grammar above admits more than aontu's bare keys do — a
+  That name grammar admits more than aontu's bare keys do — a
   hyphen (`iot-go`), a dot (`go.v2`) or a leading digit (`2go`) all need
   `target: 'iot-go':`.
 - **Keep `base: 'BASE'`** in every definition, or the copy records no
@@ -263,4 +263,3 @@ compares against the source on disk.
 - [Author a brand-new language target](./author-a-new-language.md) — the
   deeper guide to what a target must implement
 - [Project layout](../reference/project-layout.md#an-sdkgen-package)
-- [The design note](../design/sdkgen-packages.md)

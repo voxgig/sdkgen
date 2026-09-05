@@ -144,7 +144,7 @@ ts/project/.sdk/tm/swift/Sources/ProjectNameSDK/feature/RetryFeature.swift
 # …one per target
 ```
 
-The file name maps back to the feature: `<name>`, `<name>_feature.<ext>`,
+The filename maps back to the feature: `<name>`, `<name>_feature.<ext>`,
 `<Name>Feature.<ext>`, or a directory named `<name>`. Anything else in
 those directories (`feature_options.go`, `mod.rs`, `support.rs`,
 `__init__.py`) is shared machinery and is never treated as a feature.

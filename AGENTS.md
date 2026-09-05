@@ -681,8 +681,11 @@ emitted broken source reached the fleet unchallenged.
 
 ```
 model/sdkgen.aontu     canonical base model schema (mirrored to ts/model/)
-Makefile               build/test/check-model/sync-model (wraps ts/ npm)
-docs/                  human-oriented documentation
+Makefile               build/test/check-model/sync-model/scan-prose (wraps ts/ npm)
+docs/                  human-oriented documentation (docs/design/ is working notes)
+STYLE-GUIDE.md         the documentation style guide; normative for the pages
+tools/check_prose.py   the second prose gate, and the page set both gates read
+.vale.ini .vale/       the Vale half of the gate: rule levels, vocabulary, banned list
 ts/                    the self-contained npm package root (@voxgig/sdkgen)
   package.json         the npm manifest (main: dist/sdkgen.js)
   bin/voxgig-sdkgen    CLI entry
@@ -856,6 +859,32 @@ as one artifact with the npm package, so the two versions must agree).
 Choosing the bump: patch for fixes, **minor when the release carries a
 `feat:`** — the log between the last `v*` tag and `main` is the input to that
 decision, not the size of the diff.
+
+## Prose follows STYLE-GUIDE.md
+
+[`STYLE-GUIDE.md`](STYLE-GUIDE.md) is normative for the reader-facing pages:
+the root `README.md`, every page under `docs/` except `docs/design/`, and
+`packages/sdkgen-haskell/README.md`. Two gates enforce it and both run in
+CI (`.github/workflows/docs.yml`) and under `make test`:
+
+| Gate | Checks |
+|---|---|
+| `vale --minAlertLevel=error $(python3 tools/check_prose.py --files)` | Google's rules plus the banned list, at the levels in `.vale.ini` |
+| `python3 tools/check_prose.py` | the banned list across line wraps, em-dash spacing and ration, first person, no emoji, no citations of a working document, resolving relative links, a complete page set |
+
+`make scan-prose` runs both (Vale where installed). The banned list is
+`.vale/styles/config/vocabularies/Sdkgen/reject.txt`, read by both gates.
+The page set is the configuration block at the top of
+`tools/check_prose.py`; a new documentation page must be reachable from it
+or neither gate reads it. Nothing under `ts/` is a page: `ts/project/`
+holds the scaffold templates copied into generated SDKs, and they document
+those SDKs, not this repository.
+
+Three things trip agents most often: a page must not name or link
+`AGENTS.md`, `CLAUDE.md`, `ADR.md`, `NOTES.md` or anything under
+`docs/design/` (state the fact instead); the em dash is spaced (` — `) and
+rationed to one aside per line; and a word Vale's dictionary does not know
+goes into `accept.txt` one entry at a time, never as a suffix pattern.
 
 ## Git / workflow
 
