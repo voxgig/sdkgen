@@ -87,7 +87,7 @@ describe('doctor', () => {
 
     const report = await check(project)
     strictEqual(report.ok, false, 'a superseded leftover must fail the check')
-    deepStrictEqual(report.superseded.map((p: string) => p.split('/').pop()),
+    deepStrictEqual(report.superseded.map((p: string) => p.split(/[\\/]/).pop()),
       ['old_runner.go'])
 
     // Prune deletes the declared file and NOTHING else.
