@@ -3,7 +3,7 @@
     "package": 1
   },
   "name": "@voxgig/sdkgen",
-  "version": "4.8.1",
+  "version": "4.8.2",
   "provides": {
     "target": [
       "c",
