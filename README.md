@@ -5,7 +5,7 @@
 plugin) from a single API definition.
 
 Point it at an OpenAPI spec and it produces consistent SDKs across 23
-languages — TypeScript, JavaScript, Go, Python, PHP, Ruby, Lua and the
+languages — TypeScript, JavaScript, Go, Python, PHP, Ruby, Lua, and the
 rest — each with the same operation pipeline, the same feature model,
 generated docs, and an offline test suite.
 
@@ -24,10 +24,9 @@ OpenAPI spec ──▶ model ──┬─▶ 22 bundled language SDKs
 ```
 
 > **Just want to build an SDK for your API?** Start with
-> [`create-sdkgen`](https://github.com/voxgig/create-sdkgen) — its
-> [`AGENTS.md`](https://github.com/voxgig/create-sdkgen/blob/main/AGENTS.md) walks an agent (or you) from an
-> OpenAPI spec to a tested SDK end-to-end. This README is about the generator
-> itself.
+> [`create-sdkgen`](https://github.com/voxgig/create-sdkgen), which walks
+> you (or an agent) from an OpenAPI spec to a tested SDK end-to-end. This
+> README is about the generator itself.
 
 ## How it works in one minute
 
@@ -81,7 +80,7 @@ The full walkthrough is in the [Tutorial](./docs/tutorial.md).
 
 ## Documentation
 
-Comprehensive docs live in [`docs/`](./docs/README.md):
+The full documentation lives in [`docs/`](./docs/README.md):
 
 | | |
 | --- | --- |
@@ -90,7 +89,11 @@ Comprehensive docs live in [`docs/`](./docs/README.md):
 | **[Reference](./docs/reference/)** | [Features](./docs/reference/features.md) · [CLI](./docs/reference/cli.md) · [API](./docs/reference/api.md) · [Model schema](./docs/reference/model.md) · [Layout](./docs/reference/project-layout.md) · [Hooks](./docs/reference/hooks.md). |
 | **[Explanation](./docs/explanation/)** | [Architecture](./docs/explanation/architecture.md) · [Components vs templates](./docs/explanation/components-and-templates.md) · [Operation pipeline](./docs/explanation/operation-pipeline.md). |
 
-**Automated coding agents:** start with [`AGENTS.md`](./AGENTS.md).
+**Working on the generator itself?** Fix the template or component, never
+a generated file (generation overwrites), and mirror a per-language change
+across every target that has the same component.
+[Debug a failing generated target](./docs/how-to/debug-generation.md) has
+the loop.
 
 ## What a generated SDK gives you
 

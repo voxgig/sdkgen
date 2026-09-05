@@ -46,7 +46,7 @@ voxgig-sdkgen package add @acme/sdkgen-iot --alias iot-go=acme-go
 The alias becomes the target's name everywhere: `model/target/acme-go.aontu`,
 `src/cmp/acme-go/`, `tm/acme-go/`. That model file is then **yours** —
 `add` creates it once and never overwrites it again, because
-differentiating it is the entire point of an alias.
+differentiating it is what an alias is for.
 
 Features cannot be aliased: a feature's name is part of the generated
 `options.feature.<name>` config key and of the hook wiring in every
@@ -79,7 +79,7 @@ changed. If you fetch first and check afterwards, everything differs
 because the source moved — the check fires on every file and stops
 meaning anything.
 
-If it finds differences it stops and tells you, because it cannot know
+If it finds differences it stops and reports them, because it cannot know
 which of two things they are:
 
 ```
@@ -154,4 +154,3 @@ update itself no longer can.
 - [CLI reference](../reference/cli.md)
 - [Project layout — an sdkgen package](../reference/project-layout.md#an-sdkgen-package)
 - [Author an sdkgen package](./author-an-sdkgen-package.md)
-- [The design note](../design/sdkgen-packages.md)

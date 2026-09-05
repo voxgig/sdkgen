@@ -2,13 +2,13 @@
 
 This is the most involved task in sdkgen: teaching it to emit a language
 it doesn't yet support. Budget real time, and **work from an existing
-target as your reference** — `ts` is the canonical one, `go` is the best
+target as your reference** — `ts` is the canonical one, `go` is the closest
 reference for a statically-typed, non-class language.
 
 Before starting, read
 [Components vs templates](../explanation/components-and-templates.md) and
 [The operation pipeline](../explanation/operation-pipeline.md). A target
-is not just code generation — it must implement the same runtime pipeline
+is more than code generation: it must implement the same runtime pipeline
 every other SDK implements.
 
 ## The three pieces

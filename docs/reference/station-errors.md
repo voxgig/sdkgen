@@ -18,8 +18,7 @@ raise the rest.
 
 ## The base set
 
-Station's core contract (station design
-[§14](https://github.com/voxgig/station/blob/main/docs/design/station.md)):
+Station's core contract:
 
 | code | when |
 |---|---|
@@ -42,11 +41,10 @@ Station's core contract (station design
 
 ## The declarative front door
 
-Added by the declarative config design
-([station-declarative-config.md §6.4](https://github.com/voxgig/station/blob/main/docs/design/station-declarative-config.md)):
+Added by the declarative config:
 shape errors are fatal at `open()`; availability errors are fatal at
 first use (`station.sdk(name)`), so a fleet of twenty declared SDKs
-does not die because the eighteenth has a typo'd package name —
+does not die because the eighteenth has a mistyped package name —
 `station.check()` is the CI verb that surfaces those eagerly.
 
 | code | when |
@@ -60,7 +58,7 @@ does not die because the eighteenth has a typo'd package name —
 | `station_instance_inactive` | the instance is declared with `active: false` |
 | `station_sdk_load` | `package` could not be imported, `export` is absent from it, or it is ESM-only and `station.load()` was not awaited |
 | `station_no_factory` | no factory for the api; the message names both remedies (self-registration via the package, or `Station.provide`) |
-| `station_factory_conflict` | two different factories registered for one api — silently picking one of two SDK builds is not a thing to do quietly |
+| `station_factory_conflict` | two different factories registered for one api — picking one of two SDK builds is not a thing to do silently |
 | `station_feature_unknown` | a configured feature the SDK does not have; the message lists what it does |
 | `station_feature_option` | an option key the feature does not declare, or the wrong type — checked against the schema the SDK's embedded config carries |
 | `station_feature_order` | a feature-order constraint cycle, a `base` feature resolved anywhere but innermost, or an ordering that would move the pinned station wrap |

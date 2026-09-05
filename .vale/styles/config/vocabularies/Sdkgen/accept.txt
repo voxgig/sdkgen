@@ -1,0 +1,133 @@
+# Terms Vale's dictionary does not know. Entries are REGEXES, so
+# [Vv]oxgig accepts both casings without Vale.Terms then enforcing one of
+# them over the other -- listing both plain forms is what turns this file
+# into a capitalisation rule by accident.
+#
+# EVERY ENTRY BELOW WAS MEASURED, not guessed. `Vale.Spelling` at error
+# level over the 30 reader-facing pages produced 425 alerts across 125
+# distinct words on a clean run; this file is those words, sorted into
+# the groups below, and nothing else. Two of the 125 were rewritten
+# rather than accepted (`typo'd` to "mistyped", `MOCK's` to "the
+# mock's"). A word that stops appearing in the docs should come out of
+# here, and a new one is added when the gate asks for it.
+
+[Vv]oxgig
+voxgig's
+
+# British spellings. Google style is US English; the house voice is not,
+# and the precedence in .vale.ini puts the house voice first.
+#
+# LISTED, not matched by suffix. `\w+ise` and friends accept any word
+# ending in those letters -- `madeupise` included -- and so punch a hole
+# straight through the error-level spelling gate this file exists to make
+# usable. Add the stem when a new one is needed; the cost of doing that is
+# the point.
+organised?
+recognises?
+
+# The Voxgig projects and the tools the generator is built on.
+sdkgen('s)?
+apidef('s)?
+[Aa]ontu('s)?
+[Jj]ostraca('s)?
+sekreto('s)?
+omni
+solardemo
+[Pp]ino
+undici's
+[Ss]hopify
+
+# The target languages, by the short names the CLI uses.
+js
+py
+php
+rb
+[Ll]ua
+csharp
+cpp
+clojure
+haskell
+kotlin
+ocaml
+perl
+scala
+c's
+
+# The feature names, and the SDK vocabulary the pages define.
+netsim
+ratelimit
+rbac
+clienttrack
+[Ii]dempotency
+idempotently
+apikey
+scaffolded
+resync(ed)?
+retargeted
+templated
+vendor(ed|ing)
+[Vv]endoring
+[Ii]njectable
+[Uu]ntyped
+[Oo]verridable
+[Cc]ompilable
+fieldless
+nullable
+nullability
+requiredness
+unactivated
+unwired
+undiscoverable
+backports
+bursty
+cacheable
+retryable
+desyncs
+dedupe
+snake_cased
+lowercased
+subfolder
+semver
+toolchain('s)?
+[Bb]ackoff
+
+# General programming vocabulary.
+[Rr]epo('s)?
+repos
+npm
+config
+[Bb]oolean
+SDK's
+SDKs
+API's
+APIs
+api
+deps
+devDeps
+devDependency
+async
+lockfile
+env
+params?
+lookups
+gitignored
+walkthrough
+readme
+README's
+JSDoc
+PHPDoc
+Makefile
+URL's
+enums
+dirs
+utils
+orgs
+hardcoded?
+middleware
+onboarding
+redeclare
+reimplemented
+rethrown
+transpiles
+unparsed
+else's

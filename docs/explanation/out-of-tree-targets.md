@@ -35,7 +35,7 @@ project's own.
 | Output root | the SDK project folder | the resolved `output.path` |
 | Root component | the project's `Root.ts` | `ExternalTarget` (sdkgen's own) |
 | Targets rendered | every target *except* those with an `output.path` | exactly one |
-| Repo furniture (root README, AGENTS.md, build scaffold) | emitted once | **not** emitted |
+| Repo furniture (root README, contributor guides, build scaffold) | emitted once | **not** emitted |
 | Per-target components | resolved from the project | resolved from the project (`ctx$.cmpfolder`) |
 
 Three of those rows are the failure modes worth naming:
@@ -62,7 +62,7 @@ at another repo and it generates there exactly as it would in-tree.
 The path is taken verbatim from the model, generation overwrites, and
 jostraca creates missing parent directories. A mistyped path therefore
 fabricates a package tree somewhere arbitrary — or replaces a real
-repo's `package.json`, README, LICENSE and CI workflow in place.
+repo's `package.json`, README, LICENSE, and CI workflow in place.
 
 So every destination is validated **before any file is written**,
 in-tree output included: an abort must not leave half a generation done.

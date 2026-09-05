@@ -96,4 +96,3 @@ reference implementation.
 
 - [Debug a failing generated target](./debug-generation.md)
 - [Project layout](../reference/project-layout.md)
-- The repository's [`AGENTS.md`](../../AGENTS.md) for the same pipeline as an agent checklist.

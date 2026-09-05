@@ -1,7 +1,7 @@
 # How to migrate a bundled target into an sdkgen package
 
-The §14 deliverable from [the packages design](../design/sdkgen-packages.md):
-the checklist that makes the first move safe.
+The checklist that makes the first move of a bundled target into its own
+package safe.
 
 **This has been done once**, for `haskell` →
 [`packages/sdkgen-haskell`](https://github.com/voxgig/sdkgen/tree/main/packages/sdkgen-haskell).
@@ -39,7 +39,7 @@ as **peers** (a consumer necessarily has them via sdkgen, and a second copy
 at a different version is the outcome worth preventing) **and** as devDeps,
 so its own type-check resolves.
 
-Run the grep above and declare whatever it prints, minus `@voxgig/sdkgen`
+Run that grep and declare whatever it prints, minus `@voxgig/sdkgen`
 itself.
 
 **Check its parity tier.** A FULL-tier target drives the shared `.aontu`
@@ -111,7 +111,7 @@ declaration and on `formatHsValue` key ordering, each with several
 paragraphs of hard-won rationale.
 
 Deleting them is not an option: that is coverage the target still needs.
-Port them to the package's suite on the test kit, comments and all. The
+Port them to the package's suite on the test kit, keeping their comments. The
 mechanical differences are small — `generateInto()` returns a path→content
 map instead of the in-repo harness's tuples, and a component is required
 from the staged consumer's `dist/cmp/<t>/` rather than from
@@ -140,8 +140,8 @@ has to exercise the shapes that have historically broken this target.
 the point of moving it.
 
 `package.json` — what npm reads. Beyond the usual, it needs `files`
-covering `.sdk` and `sdkgen-package.json`, the peers from the screen
-above, and a devDependency on `@voxgig/sdkgen` as `file:../../ts` if the
+covering `.sdk` and `sdkgen-package.json`, the peers the candidate check
+listed, and a devDependency on `@voxgig/sdkgen` as `file:../../ts` if the
 package lives in this repo, so its suite runs against the working
 checkout.
 
@@ -155,7 +155,7 @@ than a type error naming a line.
 Give the package a `tsconfig.json` over `.sdk/src/cmp/**` (excluding
 `fragment/**`, which is template source, not modules) and wire it into its
 `test` script. This is the step that caught the peer-dependency problem
-above — the first thing it did was fail.
+from the candidate check — the first thing it did was fail.
 
 ### 5. Its own suite, on the test kit
 
@@ -167,7 +167,7 @@ See [author-an-sdkgen-package](./author-an-sdkgen-package.md#automate-that-loop-
 
 ### 6. CI
 
-A migrated target leaves sdkgen's suites, which is also how it quietly
+A migrated target leaves sdkgen's suites, which is also how it silently
 stops being tested. Add a step to `.github/workflows/build.yml` that
 installs and tests the package against the checkout, so a change to sdkgen
 that breaks a packaged target fails in this repo rather than in someone's
@@ -192,7 +192,7 @@ That comparison has been run for all five MIRRORED-tier targets:
 | `zig` | 61 | 0 |
 
 Byte-identical, with no placeholder leaks on either side. The mechanism
-works; what remains for any given target is the bookkeeping above.
+works; what remains for any given target is the preceding bookkeeping.
 
 Then, in a real project:
 

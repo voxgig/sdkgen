@@ -88,7 +88,7 @@ init(ctx: Context, options: FeatureOptions) {
 }
 ```
 
-That seam sees **every HTTP attempt**, where a hook sees one operation.
+That seam handles **every HTTP attempt**, where a hook handles one operation.
 It is the right place for anything that suppresses, delays, repeats or
 answers a request: a single operation call can make three HTTP attempts
 and still fire exactly one `PreDone`.
