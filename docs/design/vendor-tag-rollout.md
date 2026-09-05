@@ -306,6 +306,16 @@ and eight are still monolithic (javascript, ruby, php, perl, rust, java,
 csharp, kotlin). The distinction decides whether Decision 5 applies at
 all.
 
+**Sekreto is the only library the tag caps, and it has since moved.** On
+2026-09-05 sekreto main carries TWENTY-THREE ports: c, clojure, cpp,
+dart, elixir, haskell, lean, lua, ocaml, scala and swift all landed after
+the tag was cut. Struct, omni and plugin already cover every target AT
+the tag, so the runner and struct halves of tranche 3 need nothing new.
+Secrets beyond typescript, go, python and zig does — and the way to get
+it is to cut the NEXT shared tag, which is also what retires the
+resolvers' omni#54 workarounds. Cutting one is therefore a single
+deliberate resync event, not a per-language decision.
+
 Out of scope by construction: the four consumer targets — `go-cli`,
 `go-mcp`, `py-data`, `seneca-provider`. `parity.test.ts` excludes them as
 `NON_SDK_TARGETS`, each sets `phase.test.active: false`, and none has a
