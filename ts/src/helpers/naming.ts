@@ -148,6 +148,8 @@ const RB_SDK_CONSTANTS = new Set<string>([
   // vendored struct library and its test scaffolding
   'StructRunner', 'StructTestClient', 'StructUtilityTest', 'VoxgigStruct',
   'STRUCT_TEST_JSON_FILE',
+  // vendored omni runner and its smoke test (vendor-tag rollout)
+  'VoxgigOmni', 'OmniSmokeTest',
   // the generated/templated test classes
   'ExistsTest', 'FeatureCorpusTest', 'FeatureTest', 'NetsimTest',
   'PipelineTest', 'PrimaryUtilityTest', 'ReadmeExamplesTest',
@@ -330,8 +332,8 @@ function isPhpReservedType(Name: string): boolean {
 const PHP_SDK_CLASSES = new Set<string>([
   // the generated/templated test classes
   'existstest', 'featurecorpustest', 'featuretest', 'netsimtest',
-  'pipelinetest', 'primaryutilitytest', 'readmeexamplestest',
-  'structutilitytest',
+  'omnismoketest', 'pipelinetest', 'primaryutilitytest',
+  'readmeexamplestest', 'structutilitytest',
   // helper classes those suites declare beside them
   'ftclient', 'ftclock', 'ftctrl', 'ftentity', 'ftharness', 'ftrecorder',
   'plclient', 'plentity', 'plentityitem',

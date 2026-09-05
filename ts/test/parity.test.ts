@@ -1239,6 +1239,71 @@ const OMNI_RUNNER: Record<string, {
     // template, so the only whole-file retirement is the struct runner.
     superseded: ['py/test/struct_runner.py'],
   },
+  rb: {
+    resolver: 'rb/test/omni.rb',
+    vendor: 'rb/test/vendor/omni',
+    vendorfiles: ['voxgig_omni.rb', 'runner.rb', 'util.rb'],
+    smoke: 'rb/test/omni_smoke_test.rb',
+    // rb's runner.rb is support-ONLY and RETAINED (py shape); the inlined
+    // engine left with the primary-utility rewrite.
+    superseded: ['rb/test/struct_runner.rb'],
+  },
+  php: {
+    resolver: 'php/test/Omni.php',
+    vendor: 'php/test/vendor/omni',
+    vendorfiles: ['Runner.php', 'Util.php'],
+    smoke: 'php/test/OmniSmokeTest.php',
+    // php's Runner.php is support-ONLY and RETAINED (py shape); the
+    // engine was inlined in the primary-utility template.
+    superseded: ['php/test/StructRunner.php'],
+  },
+  lua: {
+    resolver: 'lua/test/omni.lua',
+    vendor: 'lua/test/vendor/omni',
+    // The lua port is self-contained by design: it carries its own
+    // json/regex modules, so the vendored runner is four files.
+    vendorfiles: ['json.lua', 'regex.lua', 'runner.lua', 'util.lua'],
+    smoke: 'lua/test/omni_smoke_test.lua',
+    // lua's runner.lua is support-ONLY and RETAINED (py shape).
+    superseded: ['lua/test/struct_runner.lua'],
+  },
+  java: {
+    resolver: 'java/test/OmniResolver.java',
+    vendor: 'java/test/vendor/omni',
+    vendorfiles: ['Json.java', 'Runner.java', 'Util.java'],
+    smoke: 'java/test/OmniSmokeTest.java',
+    // RunnerSupport.java KEEPS ITS NAME with the engine stripped out -
+    // emitted call sites reference the class, so support survives in
+    // place (the go split's zero-churn rule, class-scoped).
+    superseded: ['java/test/StructRunner.java'],
+  },
+  perl: {
+    resolver: 'perl/t/omni.pm',
+    vendor: 'perl/t/vendor/omni',
+    vendorfiles: ['Voxgig/Omni.pm', 'Voxgig/Omni/Runner.pm', 'Voxgig/Omni/Util.pm'],
+    smoke: 'perl/t/omni_smoke.t',
+    // perl's t/runner.pm is support-ONLY and RETAINED (py shape).
+    superseded: ['perl/t/struct_runner.pm'],
+  },
+  kotlin: {
+    resolver: 'kotlin/test/OmniResolver.kt',
+    vendor: 'kotlin/test/vendor/omni',
+    vendorfiles: ['Json.kt', 'Runner.kt', 'Util.kt'],
+    smoke: 'kotlin/test/OmniSmokeTest.kt',
+    // RunnerSupport.kt KEEPS ITS NAME with the engine stripped out (the
+    // class-scoped zero-churn rule, as java).
+    superseded: ['kotlin/test/StructRunner.kt'],
+  },
+  csharp: {
+    resolver: 'csharp/test/OmniResolver.cs',
+    vendor: 'csharp/test/vendor/omni',
+    vendorfiles: ['Runner.cs', 'Util.cs'],
+    smoke: 'csharp/test/OmniSmokeTest.cs',
+    // Runner.cs keeps the TestRunner class name with the engine stripped
+    // (support + the StructRunner support members live on inside it), so
+    // the emitted call sites need zero churn.
+    superseded: ['csharp/test/StructRunner.cs'],
+  },
 }
 
 
@@ -1355,6 +1420,9 @@ describe('vendored-library rollout parity', () => {
       ['test', 'vendor', 'omni'],
       ['test', 'omni'],
       ['test', 'voxgig_omni'],
+      // perl keeps its tests in t/, not test/ — a candidate list that
+      // only knew test/ would let a rowless perl vendor pass unseen.
+      ['t', 'vendor', 'omni'],
     ]
 
     const unlisted = sdkTargets()

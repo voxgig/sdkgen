@@ -1970,6 +1970,209 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // rb runner swap: the omni resolver, its vendored port and the
+  // must-fail smoke test are generated; the superseded struct runner is
+  // not. rb ships no secrets feature, so unlike go/py these artefacts
+  // get their own lane instead of riding along with a secrets one.
+  test('rb: the omni runner swap generates the resolver and retires struct_runner', async () => {
+    const out = await generate(['rb'])
+
+    ok(null != findFile(out, 'test/omni.rb'), 'rb: no omni resolver generated')
+    ok(null != findFile(out, 'test/vendor/omni/voxgig_omni.rb'),
+      'rb: vendored omni entry missing')
+    ok(null != findFile(out, 'test/vendor/omni/runner.rb'),
+      'rb: vendored omni runner missing')
+    ok(null != findFile(out, 'test/vendor/omni/util.rb'),
+      'rb: vendored omni util missing')
+    ok(null != findFile(out, 'test/omni_smoke_test.rb'),
+      'rb: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/struct_runner.rb'),
+      'rb: the superseded struct_runner.rb is still generated')
+
+    // The support module is RETAINED untouched (emitted TestEntity /
+    // TestDirect call sites use it), and the suites run on the resolver.
+    ok(null != findFile(out, 'test/runner.rb'),
+      'rb: the retained support module test/runner.rb is missing')
+    const primary = findFile(out, 'test/primary_utility_test.rb')
+    ok(null != primary, 'rb: no primary_utility_test.rb generated')
+    ok(/require_relative "omni"/.test(primary!),
+      'rb: primary_utility_test.rb does not use the omni resolver')
+    const struct = findFile(out, 'test/struct_utility_test.rb')
+    ok(null != struct, 'rb: no struct_utility_test.rb generated')
+    ok(/require_relative 'omni'/.test(struct!),
+      'rb: struct_utility_test.rb does not use the omni resolver')
+  })
+
+
+  // lua runner swap: the omni resolver, its vendored port and the
+  // must-fail smoke test are generated; the superseded struct runner is
+  // not. The struct resync rides along: the vendored struct is now the
+  // upstream two-file layout (struct.lua + its RE2-subset regex.lua).
+  test('lua: the omni runner swap generates the resolver and retires struct_runner', async () => {
+    const out = await generate(['lua'])
+
+    ok(null != findFile(out, 'test/omni.lua'), 'lua: no omni resolver generated')
+    for (const vf of ['json.lua', 'regex.lua', 'runner.lua', 'util.lua']) {
+      ok(null != findFile(out, 'test/vendor/omni/' + vf),
+        'lua: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 'test/omni_smoke_test.lua'),
+      'lua: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/struct_runner.lua'),
+      'lua: the superseded struct_runner.lua is still generated')
+
+    // The struct resync: upstream's own layout, regex engine included.
+    ok(null != findFile(out, 'utility/struct/struct.lua'),
+      'lua: vendored struct missing')
+    ok(null != findFile(out, 'utility/struct/regex.lua'),
+      'lua: vendored struct regex module missing')
+
+    // The support module is RETAINED untouched (emitted TestEntity /
+    // TestDirect call sites use it), and the suites run on the resolver.
+    ok(null != findFile(out, 'test/runner.lua'),
+      'lua: the retained support module test/runner.lua is missing')
+    const primary = findFile(out, 'test/primary_utility_test.lua')
+    ok(null != primary, 'lua: no primary_utility_test.lua generated')
+    ok(/require\("test\.omni"\)/.test(primary!),
+      'lua: primary_utility_test.lua does not use the omni resolver')
+    const struct = findFile(out, 'test/struct_utility_test.lua')
+    ok(null != struct, 'lua: no struct_utility_test.lua generated')
+    ok(/require\("test\.omni"\)/.test(struct!),
+      'lua: struct_utility_test.lua does not use the omni resolver')
+  })
+
+
+  // perl runner swap: the omni resolver, its vendored port (upstream
+  // package layout, resolved via @INC) and the must-fail smoke test are
+  // generated; the superseded struct runner is not. The struct resync
+  // (0.1.1) rides along under lib/.
+  test('perl: the omni runner swap generates the resolver and retires struct_runner', async () => {
+    const out = await generate(['perl'])
+
+    ok(null != findFile(out, 't/omni.pm'), 'perl: no omni resolver generated')
+    for (const vf of ['Voxgig/Omni.pm', 'Voxgig/Omni/Runner.pm', 'Voxgig/Omni/Util.pm']) {
+      ok(null != findFile(out, 't/vendor/omni/' + vf),
+        'perl: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 't/omni_smoke.t'),
+      'perl: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 't/struct_runner.pm'),
+      'perl: the superseded struct_runner.pm is still generated')
+
+    // The struct resync: 0.1.1 vendored with provenance.
+    const vs = findFile(out, 'lib/Voxgig/Struct.pm')
+    ok(null != vs, 'perl: vendored struct missing')
+    ok(/VENDORED: @voxgig\/struct 0\.1\.1/.test(vs!),
+      'perl: vendored struct is not the 0.1.1 resync')
+
+    // The support module is RETAINED untouched (emitted TestEntity /
+    // TestDirect call sites use it), and the suites run on the resolver.
+    ok(null != findFile(out, 't/runner.pm'),
+      'perl: the retained support module t/runner.pm is missing')
+    const primary = findFile(out, 't/primary_utility.t')
+    ok(null != primary, 'perl: no primary_utility.t generated')
+    ok(/\/omni\.pm"\)/.test(primary!),
+      'perl: primary_utility.t does not use the omni resolver')
+    const struct = findFile(out, 't/struct_utility.t')
+    ok(null != struct, 'perl: no struct_utility.t generated')
+    ok(/\/omni\.pm"\)/.test(struct!),
+      'perl: struct_utility.t does not use the omni resolver')
+  })
+
+
+  // kotlin runner swap (fused family, java shape): RunnerSupport.kt keeps
+  // its name with the engine stripped (emitted TestEntity/TestDirect call
+  // sites reference the object - zero call-site churn); the OmniResolver
+  // bridges the SDK's plain values to the vendored port's sealed Json;
+  // the StructRunner class is retired. The struct resync (0.1.1 at the
+  // shared tag) rides along under utility/struct/.
+  test('kotlin: the omni runner swap generates the resolver and retires StructRunner', async () => {
+    const out = await generate(['kotlin'])
+
+    ok(null != findFile(out, 'test/OmniResolver.kt'),
+      'kotlin: no omni resolver generated')
+    for (const vf of ['Json.kt', 'Runner.kt', 'Util.kt']) {
+      ok(null != findFile(out, 'test/vendor/omni/' + vf),
+        'kotlin: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 'test/OmniSmokeTest.kt'),
+      'kotlin: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/StructRunner.kt'),
+      'kotlin: the superseded StructRunner.kt is still generated')
+
+    // The struct resync: 0.1.1 vendored with provenance, package adapted.
+    const vs = findFile(out, 'utility/struct/Struct.kt')
+    ok(null != vs, 'kotlin: vendored struct missing')
+    ok(/VENDORED: @voxgig\/struct 0\.1\.1/.test(vs!),
+      'kotlin: vendored struct is not the 0.1.1 resync')
+
+    // The support object is RETAINED under its own name (emitted
+    // TestEntity/TestDirect call sites reference RunnerSupport.*), with
+    // the corpus engine stripped out; the suites run on the resolver.
+    const support = findFile(out, 'test/RunnerSupport.kt')
+    ok(null != support, 'kotlin: the retained RunnerSupport.kt is missing')
+    ok(!/fun runset\(/.test(support!),
+      'kotlin: RunnerSupport.kt still carries the retired corpus engine')
+    const primary = findFile(out, 'test/PrimaryUtilityTest.kt')
+    ok(null != primary, 'kotlin: no PrimaryUtilityTest.kt generated')
+    ok(/OmniResolver/.test(primary!),
+      'kotlin: PrimaryUtilityTest.kt does not use the omni resolver')
+    const struct = findFile(out, 'test/StructCorpusTest.kt')
+    ok(null != struct, 'kotlin: no StructCorpusTest.kt generated')
+    ok(/OmniResolver/.test(struct!),
+      'kotlin: StructCorpusTest.kt does not use the omni resolver')
+  })
+
+
+  // csharp runner swap (fused family, go/java shape): Runner.cs keeps the
+  // TestRunner class name with the engine stripped (emitted
+  // TestEntity/TestDirect call sites reference TestRunner.* and
+  // StructRunner.* - zero call-site churn; the StructRunner SUPPORT
+  // members live on inside Runner.cs); the OmniResolver drives the
+  // vendored port natively; the StructRunner.cs file is retired. The
+  // struct resync (0.1.1 at the shared tag) rides along under
+  // utility/struct/.
+  test('csharp: the omni runner swap generates the resolver and retires StructRunner', async () => {
+    const out = await generate(['csharp'])
+
+    ok(null != findFile(out, 'test/OmniResolver.cs'),
+      'csharp: no omni resolver generated')
+    for (const vf of ['Runner.cs', 'Util.cs']) {
+      ok(null != findFile(out, 'test/vendor/omni/' + vf),
+        'csharp: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 'test/OmniSmokeTest.cs'),
+      'csharp: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/StructRunner.cs'),
+      'csharp: the superseded StructRunner.cs is still generated')
+
+    // The struct resync: 0.1.1 vendored with provenance.
+    const vs = findFile(out, 'utility/struct/Struct.cs')
+    ok(null != vs, 'csharp: vendored struct missing')
+    ok(/VENDORED: @voxgig\/struct 0\.1\.1/.test(vs!),
+      'csharp: vendored struct is not the 0.1.1 resync')
+
+    // The support class is RETAINED under its own name (emitted
+    // TestEntity/TestDirect call sites reference TestRunner.* and
+    // StructRunner.*), with the corpus engine stripped out; the suites
+    // run on the resolver.
+    const support = findFile(out, 'test/Runner.cs')
+    ok(null != support, 'csharp: the retained support Runner.cs is missing')
+    ok(/class TestRunner/.test(support!) && /class StructRunner/.test(support!),
+      'csharp: Runner.cs no longer carries the retained support classes')
+    ok(!/MatchDeep\(|public static void RunSet\(/.test(support!),
+      'csharp: Runner.cs still carries the retired corpus engine')
+    const primary = findFile(out, 'test/PrimaryUtilityTest.cs')
+    ok(null != primary, 'csharp: no PrimaryUtilityTest.cs generated')
+    ok(/OmniResolver/.test(primary!),
+      'csharp: PrimaryUtilityTest.cs does not use the omni resolver')
+    const struct = findFile(out, 'test/StructUtilityTest.cs')
+    ok(null != struct, 'csharp: no StructUtilityTest.cs generated')
+    ok(/OmniResolver/.test(struct!),
+      'csharp: StructUtilityTest.cs does not use the omni resolver')
+  })
+
+
   // rust: feature/mod.rs is GENERATED, not templated.
   //
   // `target add` copies source only for the features the model selects, but

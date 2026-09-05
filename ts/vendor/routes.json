@@ -1,20 +1,20 @@
 {
   "note": [
     "The vendoring route table: which upstream files, from which repo at",
-    "the shared tag, land where in the scaffold \u2014 and how they are adapted",
+    "the shared tag, land where in the scaffold — and how they are adapted",
     "on the way in. Hand-maintained. `node build/vendor.js` executes it and",
     "writes ts/test/vendored.json (the manifest the guard reads); --check",
     "verifies without writing. See docs/design/vendor-tag-rollout.md.",
     "",
     "`version` is HAND-SET per route: the port's own declared version at",
     "the tag where it declares one, the tag string where it declares none.",
-    "Behaviour is pinned by tests (structnull.test.ts), never by stamps \u2014",
+    "Behaviour is pinned by tests (structnull.test.ts), never by stamps —",
     "upstream's own in-file stamps have been stale before.",
     "",
     "An `adapt` applies to every route file whose DESTINATION path matches",
     "`match`; `from` must be present in the file or the run fails loudly.",
     "haskell (packages/sdkgen-haskell) is EXCLUDED: its scaffold is outside",
-    "this write root and needs its own route root \u2014 recorded, not silent."
+    "this write root and needs its own route root — recorded, not silent."
   ],
   "tag": "sdk-20260904-1610-0",
   "repo": {
@@ -109,6 +109,85 @@
       }
     },
     {
+      "lib": "struct",
+      "port": "lua",
+      "lang": "lua",
+      "version": "0.1.1",
+      "dir": [
+        "tm/lua/utility/struct"
+      ],
+      "file": {
+        "lua/src/struct.lua": "tm/lua/utility/struct/struct.lua",
+        "lua/src/regex.lua": "tm/lua/utility/struct/regex.lua"
+      },
+      "adapt": [
+        {
+          "match": "utility/struct/struct\\.lua$",
+          "from": "pcall(require, \"voxgig.struct.regex\")",
+          "to": "pcall(require, \"utility.struct.regex\")"
+        }
+      ]
+    },
+    {
+      "lib": "struct",
+      "port": "perl",
+      "lang": "perl",
+      "version": "0.1.1",
+      "file": {
+        "perl/lib/Voxgig/Struct.pm": "tm/perl/lib/Voxgig/Struct.pm"
+      }
+    },
+    {
+      "lib": "struct",
+      "port": "java",
+      "lang": "java",
+      "version": "0.1.1",
+      "dir": [
+        "tm/java/utility/struct"
+      ],
+      "file": {
+        "java/src/Struct.java": "tm/java/utility/struct/Struct.java"
+      },
+      "adapt": [
+        {
+          "match": "utility/struct/Struct\\.java$",
+          "from": "package voxgig.struct;",
+          "to": "package JAVAPACKAGE.utility.struct;"
+        }
+      ]
+    },
+    {
+      "lib": "struct",
+      "port": "kotlin",
+      "lang": "kotlin",
+      "version": "0.1.1",
+      "dir": [
+        "tm/kotlin/utility/struct"
+      ],
+      "file": {
+        "kotlin/src/main/kotlin/voxgig/struct/Struct.kt": "tm/kotlin/utility/struct/Struct.kt"
+      },
+      "adapt": [
+        {
+          "match": "utility/struct/Struct\\.kt$",
+          "from": "package voxgig.struct",
+          "to": "package KOTLINPACKAGE.utility.struct"
+        }
+      ]
+    },
+    {
+      "lib": "struct",
+      "port": "csharp",
+      "lang": "csharp",
+      "version": "0.1.1",
+      "dir": [
+        "tm/csharp/utility/struct"
+      ],
+      "file": {
+        "csharp/Struct.cs": "tm/csharp/utility/struct/Struct.cs"
+      }
+    },
+    {
       "lib": "omni",
       "port": "typescript",
       "lang": "ts",
@@ -161,6 +240,117 @@
         "python/voxgig_omni/__init__.py": "tm/py/test/voxgig_omni/__init__.py",
         "python/voxgig_omni/runner.py": "tm/py/test/voxgig_omni/runner.py",
         "python/voxgig_omni/util.py": "tm/py/test/voxgig_omni/util.py"
+      }
+    },
+    {
+      "lib": "omni",
+      "port": "ruby",
+      "lang": "rb",
+      "version": "sdk-20260904-1610-0",
+      "dir": [
+        "tm/rb/test/vendor/omni"
+      ],
+      "file": {
+        "ruby/lib/voxgig_omni.rb": "tm/rb/test/vendor/omni/voxgig_omni.rb",
+        "ruby/lib/voxgig_omni/runner.rb": "tm/rb/test/vendor/omni/runner.rb",
+        "ruby/lib/voxgig_omni/util.rb": "tm/rb/test/vendor/omni/util.rb"
+      },
+      "adapt": [
+        {
+          "match": "vendor/omni/voxgig_omni\\.rb$",
+          "from": "require_relative 'voxgig_omni/util'",
+          "to": "require_relative 'util'"
+        },
+        {
+          "match": "vendor/omni/voxgig_omni\\.rb$",
+          "from": "require_relative 'voxgig_omni/runner'",
+          "to": "require_relative 'runner'"
+        }
+      ]
+    },
+    {
+      "lib": "omni",
+      "port": "php",
+      "lang": "php",
+      "version": "sdk-20260904-1610-0",
+      "dir": [
+        "tm/php/test/vendor/omni"
+      ],
+      "file": {
+        "php/src/Runner.php": "tm/php/test/vendor/omni/Runner.php",
+        "php/src/Util.php": "tm/php/test/vendor/omni/Util.php"
+      }
+    },
+    {
+      "lib": "omni",
+      "port": "lua",
+      "lang": "lua",
+      "version": "sdk-20260904-1610-0",
+      "dir": [
+        "tm/lua/test/vendor/omni"
+      ],
+      "file": {
+        "lua/src/json.lua": "tm/lua/test/vendor/omni/json.lua",
+        "lua/src/regex.lua": "tm/lua/test/vendor/omni/regex.lua",
+        "lua/src/runner.lua": "tm/lua/test/vendor/omni/runner.lua",
+        "lua/src/util.lua": "tm/lua/test/vendor/omni/util.lua"
+      }
+    },
+    {
+      "lib": "omni",
+      "port": "perl",
+      "lang": "perl",
+      "version": "0.1.0",
+      "dir": [
+        "tm/perl/t/vendor/omni",
+        "tm/perl/t/vendor/omni/Voxgig",
+        "tm/perl/t/vendor/omni/Voxgig/Omni"
+      ],
+      "file": {
+        "perl/lib/Voxgig/Omni.pm": "tm/perl/t/vendor/omni/Voxgig/Omni.pm",
+        "perl/lib/Voxgig/Omni/Runner.pm": "tm/perl/t/vendor/omni/Voxgig/Omni/Runner.pm",
+        "perl/lib/Voxgig/Omni/Util.pm": "tm/perl/t/vendor/omni/Voxgig/Omni/Util.pm"
+      }
+    },
+    {
+      "lib": "omni",
+      "port": "java",
+      "lang": "java",
+      "version": "sdk-20260904-1610-0",
+      "dir": [
+        "tm/java/test/vendor/omni"
+      ],
+      "file": {
+        "java/src/com/voxgig/omni/Json.java": "tm/java/test/vendor/omni/Json.java",
+        "java/src/com/voxgig/omni/Runner.java": "tm/java/test/vendor/omni/Runner.java",
+        "java/src/com/voxgig/omni/Util.java": "tm/java/test/vendor/omni/Util.java"
+      }
+    },
+    {
+      "lib": "omni",
+      "port": "kotlin",
+      "lang": "kotlin",
+      "version": "sdk-20260904-1610-0",
+      "dir": [
+        "tm/kotlin/test/vendor/omni"
+      ],
+      "file": {
+        "kotlin/src/Json.kt": "tm/kotlin/test/vendor/omni/Json.kt",
+        "kotlin/src/Runner.kt": "tm/kotlin/test/vendor/omni/Runner.kt",
+        "kotlin/src/Util.kt": "tm/kotlin/test/vendor/omni/Util.kt"
+      }
+    },
+    {
+      "lib": "omni",
+      "port": "csharp",
+      "lang": "csharp",
+      "version": "sdk-20260904-1610-0",
+      "dir": [
+        "tm/csharp/test/vendor/omni"
+      ],
+      "file": {
+        "csharp/src/Runner.cs": "tm/csharp/test/vendor/omni/Runner.cs",
+        "csharp/src/Util.cs": "tm/csharp/test/vendor/omni/Util.cs"
       }
     },
     {

@@ -141,7 +141,7 @@ except Exception:
   },
   {
     target: 'perl',
-    stamp: 'unstamped',
+    stamp: '0.1.1',
     needs: 'perl',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
@@ -202,6 +202,56 @@ try {
 }
 catch (\\Throwable $e) { echo 'validate=throws' . PHP_EOL; }
 `])
+    },
+  },
+  {
+    // The go/py READER class combined with the php VALIDATE class - a
+    // combination no other port pins: getprop/haskey answer the new way
+    // while validate on a stored null THROWS (fail-closed). Resynced to
+    // struct 0.1.1 at the vendor tag.
+    target: 'csharp',
+    stamp: '0.1.1',
+    needs: 'dotnet',
+    answers: { getprop: 'alt', haskey: 'false', validate: 'throws' },
+    exec: (tmp) => {
+      const dotnet = toolchain('dotnet')
+      if (null == dotnet) return null
+
+      const dir = Path.join(tmp, 'csharp')
+      Fs.mkdirSync(dir, { recursive: true })
+      Fs.copyFileSync(
+        Path.join(TM, 'csharp', 'utility', 'struct', 'Struct.cs'),
+        Path.join(dir, 'Struct.cs'))
+      Fs.writeFileSync(Path.join(dir, 'probe.csproj'), `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>probe</AssemblyName>
+  </PropertyGroup>
+</Project>
+`)
+      Fs.writeFileSync(Path.join(dir, 'Program.cs'), `using Voxgig.Struct;
+
+var m = new Dictionary<string, object?> { ["x"] = null };
+Console.WriteLine("getprop=" +
+  ("ALT" == StructUtils.GetProp(m, "x", "ALT") as string ? "alt" : "null"));
+Console.WriteLine("haskey=" + (StructUtils.HasKey(m, "x") ? "true" : "false"));
+try
+{
+  StructUtils.Validate(
+    new Dictionary<string, object?> { ["auth"] = null },
+    new Dictionary<string, object?> {
+      ["auth"] = new Dictionary<string, object?> { ["prefix"] = "" } });
+  Console.WriteLine("validate=default");
+}
+catch (Exception)
+{
+  Console.WriteLine("validate=throws");
+}
+`)
+      return run(dotnet, ['run', '--project', dir, '-v', 'q', '--nologo'], dir)
     },
   },
   {
@@ -361,7 +411,7 @@ describe('vendored struct null semantics', () => {
   // documents. Without this, deleting a row silently shrinks the table to the
   // ports that happen to agree.
   test('every port in the documented table has a row', () => {
-    const documented = ['go', 'py', 'perl', 'rb', 'php', 'js', 'ts'].sort()
+    const documented = ['go', 'py', 'perl', 'rb', 'php', 'js', 'ts', 'csharp'].sort()
     const rows = PORTS.map((p) => p.target).sort()
 
     strictEqual(JSON.stringify(rows), JSON.stringify(documented),

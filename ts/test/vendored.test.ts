@@ -76,6 +76,19 @@ const VENDOR_DIRS = [
   'tm/py/pkg/feature/secrets/voxgig_sekreto',
   'tm/py/pkg/feature/secrets/voxgig_sekreto/plugins',
   'tm/py/pkg/feature/secrets/voxgig_plugin',
+  'tm/rb/test/vendor/omni',
+  'tm/php/test/vendor/omni',
+  'tm/lua/test/vendor/omni',
+  'tm/lua/utility/struct',
+  'tm/java/test/vendor/omni',
+  'tm/java/utility/struct',
+  'tm/perl/t/vendor/omni',
+  'tm/perl/t/vendor/omni/Voxgig',
+  'tm/perl/t/vendor/omni/Voxgig/Omni',
+  'tm/kotlin/test/vendor/omni',
+  'tm/kotlin/utility/struct',
+  'tm/csharp/test/vendor/omni',
+  'tm/csharp/utility/struct',
 ]
 
 
@@ -458,6 +471,14 @@ describe('vendored signature drift', () => {
   // Written out in full rather than matched loosely, so a change to the
   // return type is caught alongside a change to the order.
   const PINNED: Record<string, string[]> = {
+    'tm/csharp/utility/struct/Struct.cs': [
+      // store/path share a type; a resync that reorders them compiles
+      // and returns junk - the exact go trap, C#-spelled.
+      // Pinned WITH the file's indentation: the check is a literal
+      // line-match, and C# nests inside a class.
+      '        public static object? SetPath(object? store, object? path, object? val)',
+      '        public static object? GetPath(object? store, object? path,',
+    ],
     'tm/go/utility/struct/voxgigstruct.go': [
       // Call sites pass (store, path) — the same order as SetPath. Reversing
       // these two `any` parameters compiles and yields nil.
@@ -474,11 +495,13 @@ describe('vendored signature drift', () => {
       const src = readFileSync(path, 'utf8').replace(/\r\n/g, '\n')
 
       for (const want of lines) {
-        const name = /^func (\w+)/.exec(want)?.[1]
+        // go spells it `func Name(`, C# `... object? Name(` - take the
+        // identifier immediately before the first open paren.
+        const name = /(\w+)\s*\(/.exec(want)?.[1]
 
         // Report what it IS, not just that it is missing — the whole point
         // is that the reader needs to see the new order to fix call sites.
-        const actual = new RegExp('^func ' + name + '\\(.*$', 'm').exec(src)
+        const actual = new RegExp('^.*\\b' + name + '\\s*\\(.*$', 'm').exec(src)
 
         ok(src.includes('\n' + want) || src.startsWith(want),
           'vendored ' + rel + ' no longer declares:\n' +
