@@ -631,9 +631,33 @@ Follow-ups, in rough order (updated 2026-09-05):
    existed in FIVE more targets; all removed, corpus-pinned. New guards:
    csharp structnull row (new-way readers + fail-CLOSED validate — a
    class no port had), csharp GetPath/SetPath signature pin, perl `t/`
-   half-migration probe. **Remaining: c, cpp, dart, swift, rust, scala,
-   clojure, elixir, ocaml, lean, zig (11 bundled) + haskell (own route
-   root); zig can take secrets (reshaped upstream).**
+   half-migration probe.
+
+   **Tranche 3 DONE (2026-09-06)**: c, cpp, dart, swift, rust, scala,
+   clojure, elixir, ocaml and lean, each proven on its real toolchain and
+   each proof required to survive a deliberate break. TWENTY-ONE of the
+   twenty-two SDK targets are now on the vendored native runner. haskell
+   was never one of them: it appears in the docs but has no `tm/haskell`
+   and no target model, so there is nothing to migrate.
+
+   **zig is the one holdout, and on evidence.** Its omni port at the tag
+   is a Zig 0.16 port while this target is pinned to 0.13; compiling it
+   needed nineteen adapts that are an API backport rather than import
+   rewrites, one of which moves allocation into the parse arena.
+   Vendoring carries code unchanged - a version bridge hidden in the
+   adapt table is invisible upstream and rots at the next resync. It
+   waits for a 0.13-compatible omni port, or for this target to move off
+   0.13 (blocked on the generated `build.zig.zon` `.name` string form,
+   which 0.14+ rejects).
+
+   The adversarial pass earned its keep. clojure and scala were counting
+   the corpus's DECLARED set sizes rather than executions - disconnecting
+   the engine entirely left the output bit-identical and green. cpp left
+   two primary sections undriven behind stubs, and closing that exposed a
+   shared op cache serving one entry's operation to all seven makePoint
+   cases. rust had a sorted-key guard that could not fail, because it
+   inspected the corpus after omni's BTreeMap had already sorted it. dart
+   had no empty-section guard. All fixed, all red-checked.
 6. ~~elementdemo~~ **DONE** — the second acceptance gate PASSED
    (voxgig-sdk/voxgig-elementdemo-sdk#8): `ext/` regenerates with an
    empty diff, bash 29/29, java elementcard 4/4; the dotenv-as-builtin
