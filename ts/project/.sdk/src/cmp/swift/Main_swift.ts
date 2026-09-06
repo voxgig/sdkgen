@@ -82,6 +82,16 @@ const Main = cmp(async function Main(props: any) {
         ProjectName: model.const.Name,
       }
     })
+
+    // The vendored @voxgig/omni corpus engine. Its path is FIXED (Package
+    // .swift declares an `Omni` target over Tests/vendor/omni, and the port
+    // calls `Omni.errify` by module name), and its files are vendored
+    // verbatim - no ProjectName substitution, which would rewrite an
+    // upstream file.
+    Copy({
+      from: 'tm/' + target.name + '/Tests/vendor',
+      to: 'vendor',
+    })
   })
 
   // Generated sources join the copied runtime under Sources/ProjectNameSDK.

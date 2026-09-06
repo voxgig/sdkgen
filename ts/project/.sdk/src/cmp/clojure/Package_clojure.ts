@@ -16,6 +16,13 @@ import type {
 // tools.deps shim used to run the tests supports `-M:alias` reading :paths /
 // :extra-paths / :main-opts, but NOT per-alias :extra-deps, so every dependency
 // lives at the top-level :deps.
+//
+// `test/vendor/omni` is a SECOND test source root, not a subdirectory of the
+// first: the vendored @voxgig/omni port declares `voxgig.omni.runner`, so its
+// namespaces resolve only when the directory holding `voxgig/` is itself on
+// the classpath. Rooting it at `test` instead would demand the namespace
+// `vendor.omni.voxgig.omni.runner`, which the vendored file cannot carry -
+// it is read-only, resynced from upstream.
 const Package = cmp(async function Package(props: any) {
   const ctx$ = props.ctx$
   const model: Model = ctx$.model
@@ -26,10 +33,10 @@ const Package = cmp(async function Package(props: any) {
  :deps {org.clojure/clojure {:mvn/version "1.12.5"}}
  :aliases
  {:test
-  {:extra-paths ["test"]
+  {:extra-paths ["test" "test/vendor/omni"]
    :main-opts ["-m" "sdk.test-runner"]}
   :test-compile
-  {:extra-paths ["test"]
+  {:extra-paths ["test" "test/vendor/omni"]
    :main-opts ["-e" "(require 'sdk.test-runner)(println :ok)"]}}}
 `)
   })

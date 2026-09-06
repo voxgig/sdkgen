@@ -159,8 +159,13 @@ const CORPUS_LOADERS =
 // assertion, so ten FULL-tier targets passed while running preparePath through
 // private hand-written contexts. That is the same "green while checking
 // nothing" failure this file exists to catch, reproduced in the checker.
+//
+// `_sec(` is dart's: closing the empty-section hole meant wrapping
+// `_runset(_g('x.basic'), fn)` in a helper that asserts the section is
+// non-empty first, so the lookup now happens one level in. The token has to
+// name the wrapper, or a target gets punished for adding a guard.
 const SECTION_LOOKUP =
-  /getSpec|get_spec|GetSpec|getspec|spec\.|spec\[|primary|runsection|runset|runSet|_runset|_g\(/
+  /getSpec|get_spec|GetSpec|getspec|spec\.|spec\[|primary|runsection|runset|runSet|_runset|_g\(|_sec\(/
 
 
 describe('cross-language corpus coverage', () => {
@@ -1304,6 +1309,96 @@ const OMNI_RUNNER: Record<string, {
     // the emitted call sites need zero churn.
     superseded: ['csharp/test/StructRunner.cs'],
   },
+  // ---- Tranche 3: the last ten. Between them they complete the rollout
+  // for every SDK target except zig, whose omni port at the tag is written
+  // for Zig 0.16 while this target is pinned to 0.13.
+  c: {
+    // c has no modules: the resolver is a header the corpus drivers
+    // include, and the vendored .c files build into their own archive so
+    // they never reach the shipped libsdk.a.
+    resolver: 'c/tests/omni_resolver.h',
+    vendor: 'c/tests/vendor/omni',
+    vendorfiles: ['omni.h', 'json.c', 'runner.c', 'util.c'],
+    smoke: 'c/tests/omni_smoke_test.c',
+    superseded: ['c/tests/runner.h'],
+  },
+  cpp: {
+    resolver: 'cpp/test/omni_resolver.hpp',
+    vendor: 'cpp/test/vendor/omni',
+    vendorfiles: ['omni.hpp', 'json.hpp', 'util.hpp'],
+    smoke: 'cpp/test/omni_smoke_test.cpp',
+    superseded: ['cpp/test/struct_runner.hpp'],
+  },
+  dart: {
+    resolver: 'dart/test/omni.dart',
+    vendor: 'dart/test/vendor/omni',
+    vendorfiles: ['omni.dart', 'runner.dart', 'util.dart'],
+    smoke: 'dart/test/omni_smoke_test.dart',
+    // dart is the one target that retires BOTH halves: a generic
+    // runner.dart AND a struct_corpus.dart that carried its own engine.
+    superseded: ['dart/test/runner.dart', 'dart/test/struct_corpus.dart'],
+  },
+  swift: {
+    resolver: 'swift/Tests/ProjectNameSDKTests/OmniResolver.swift',
+    vendor: 'swift/Tests/vendor/omni',
+    vendorfiles: ['Json.swift', 'Runner.swift', 'Util.swift'],
+    smoke: 'swift/Tests/ProjectNameSDKTests/OmniSmokeTest.swift',
+    // Runner.swift is support-ONLY (py shape) and is RETAINED; the corpus
+    // files keep their names and were rewritten in place.
+    superseded: [],
+  },
+  rust: {
+    resolver: 'rust/tests/omni_resolver/mod.rs',
+    vendor: 'rust/tests/vendor/omni',
+    vendorfiles: ['mod.rs', 'json.rs', 'regex.rs', 'runner.rs', 'util.rs'],
+    smoke: 'rust/tests/omni_smoke_test.rs',
+    superseded: ['rust/tests/struct_runner/mod.rs'],
+  },
+  scala: {
+    resolver: 'scala/sdktest/OmniResolver.scala',
+    vendor: 'scala/sdktest/vendor/omni',
+    vendorfiles: ['Json.scala', 'Runner.scala', 'Util.scala'],
+    smoke: 'scala/sdktest/OmniSmoke.scala',
+    // StructCorpus.scala keeps its name: the build binds a main class to
+    // it, so a rename would be pure call-site churn.
+    superseded: [],
+  },
+  clojure: {
+    resolver: 'clojure/test/sdk/test/omni.clj',
+    // A clojure namespace is derived from its PATH, so the vendored files
+    // keep their voxgig/omni/ prefix underneath the vendor root.
+    vendor: 'clojure/test/vendor/omni',
+    vendorfiles: [
+      'voxgig/omni/json.clj', 'voxgig/omni/runner.clj', 'voxgig/omni/util.clj',
+    ],
+    smoke: 'clojure/test/sdk/test/omni_smoke.clj',
+    superseded: [],
+  },
+  elixir: {
+    resolver: 'elixir/test/support/omni.ex',
+    vendor: 'elixir/test/vendor/omni',
+    vendorfiles: ['json.ex', 'runner.ex', 'util.ex'],
+    smoke: 'elixir/test/omni_smoke_test.exs',
+    superseded: ['elixir/test/support/struct_corpus.ex'],
+  },
+  ocaml: {
+    resolver: 'ocaml/test/omni_resolver.ml',
+    // The whole ocaml port is ONE file — the only single-file omni port
+    // besides lean.
+    vendor: 'ocaml/test/vendor/omni',
+    vendorfiles: ['omni.ml'],
+    smoke: 'ocaml/test/omni_smoke_test.ml',
+    superseded: ['ocaml/test/corpus_runner.ml'],
+  },
+  lean: {
+    resolver: 'lean/test/OmniResolver.lean',
+    vendor: 'lean/test/vendor/omni',
+    vendorfiles: ['Omni.lean'],
+    smoke: 'lean/test/OmniSmoke.lean',
+    // StructCorpus.lean and TPrimaryUtility.lean keep their names: lakefile
+    // binds an executable root to each.
+    superseded: [],
+  },
 }
 
 
@@ -1423,6 +1518,12 @@ describe('vendored-library rollout parity', () => {
       // perl keeps its tests in t/, not test/ — a candidate list that
       // only knew test/ would let a rowless perl vendor pass unseen.
       ['t', 'vendor', 'omni'],
+      // Tranche 3 brought three more test-directory spellings, and each
+      // was invisible here until it was listed: c and rust use tests/
+      // (plural), scala sdktest/, swift Tests/.
+      ['tests', 'vendor', 'omni'],
+      ['sdktest', 'vendor', 'omni'],
+      ['Tests', 'vendor', 'omni'],
     ]
 
     const unlisted = sdkTargets()

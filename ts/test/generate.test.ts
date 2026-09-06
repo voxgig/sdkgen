@@ -2180,6 +2180,57 @@ main: kit: target: js: phase: feature: active: false
   // eighteen shipped features, so the crate stopped compiling the moment the
   // set was trimmed — `pub mod retry;` with no retry.rs is a hard error.
   // This fixture declares `test` and `log` only.
+  // dart runner swap: the omni resolver, its vendored port and the
+  // must-fail smoke test are generated; BOTH superseded engines - the fused
+  // test/runner.dart and the second, independent test/struct_corpus.dart -
+  // are gone. test/harness.dart and test/utility.dart are RETAINED: despite
+  // the names, neither is a corpus runner (harness.dart is the
+  // dependency-free describe/test framework every generated suite imports,
+  // utility.dart the sdk-test-control / path-resolution support). The
+  // smoke test must also be REGISTERED in the hand-written test/main.dart
+  // registry, or it would exist and never run.
+  test('dart: the omni runner swap generates the resolver and retires both engines', async () => {
+    const out = await generate(['dart'])
+
+    ok(null != findFile(out, 'test/omni.dart'), 'dart: no omni resolver generated')
+    for (const vf of ['omni.dart', 'runner.dart', 'util.dart']) {
+      ok(null != findFile(out, 'test/vendor/omni/' + vf),
+        'dart: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 'test/omni_smoke_test.dart'),
+      'dart: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/runner.dart'),
+      'dart: the superseded test/runner.dart is still generated')
+    ok(null == findFile(out, 'test/struct_corpus.dart'),
+      'dart: the superseded test/struct_corpus.dart is still generated')
+
+    // The support files are RETAINED (every suite imports harness.dart; the
+    // generated entity suites use utility.dart).
+    ok(null != findFile(out, 'test/harness.dart'),
+      'dart: the retained test framework test/harness.dart is missing')
+    ok(null != findFile(out, 'test/utility.dart'),
+      'dart: the retained support module test/utility.dart is missing')
+
+    const primary = findFile(out, 'test/primary_test.dart')
+    ok(null != primary, 'dart: no primary_test.dart generated')
+    ok(/import 'omni\.dart';/.test(primary!),
+      'dart: primary_test.dart does not use the omni resolver')
+    const struct = findFile(out, 'test/struct_test.dart')
+    ok(null != struct, 'dart: no struct_test.dart generated')
+    ok(/import 'omni\.dart';/.test(struct!),
+      'dart: struct_test.dart does not use the omni resolver')
+
+    // test/main.dart is a hand-written registry, not auto-discovery: a
+    // suite it does not list never runs.
+    const main = findFile(out, 'test/main.dart')
+    ok(null != main, 'dart: no test/main.dart generated')
+    ok(/import 'omni_smoke_test\.dart' as omni_smoke_test;/.test(main!),
+      'dart: main.dart does not import the omni smoke test')
+    ok(/omni_smoke_test\.tests\(\);/.test(main!),
+      'dart: main.dart does not run the omni smoke test')
+  })
+
+
   test('rust: feature/mod.rs declares exactly the model features', async () => {
     const out = await generate(['rust'])
 

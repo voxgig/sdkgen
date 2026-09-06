@@ -8,6 +8,15 @@ main: kit: target: ocaml: {
   base: 'BASE'
   srcfeature: false
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): the hand-written corpus engine, replaced by
+  # test/omni_resolver.ml over the vendored @voxgig/omni port
+  # (test/vendor/omni/omni.ml). `doctor` reports leftovers; `doctor prune`
+  # deletes them (jostraca only ever writes, it cannot delete).
+  superseded: [
+    'test/corpus_runner.ml'
+  ]
+
   deps: &: {
     kind: *'prod' | string
   }

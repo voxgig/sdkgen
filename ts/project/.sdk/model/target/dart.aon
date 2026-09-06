@@ -7,6 +7,16 @@ main: kit: target: dart: {
   base: 'BASE'
   srcfeature: false
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): the fused corpus runner and the second, independent
+  # struct-corpus engine, both replaced by test/omni.dart over the vendored
+  # @voxgig/omni port. `doctor` reports leftovers; `doctor prune` deletes
+  # them (jostraca only ever writes, it cannot delete).
+  superseded: [
+    'test/runner.dart'
+    'test/struct_corpus.dart'
+  ]
+
   deps: &: {
     kind: *'prod' | string
   }

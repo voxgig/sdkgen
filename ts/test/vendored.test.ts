@@ -89,6 +89,23 @@ const VENDOR_DIRS = [
   'tm/kotlin/utility/struct',
   'tm/csharp/test/vendor/omni',
   'tm/csharp/utility/struct',
+  // Tranche 3. The destination is whatever the language's own module
+  // system can actually load from: clojure's namespaces are path-derived,
+  // so its files sit under voxgig/omni/ and each level is listed; rust
+  // and c keep their suites in tests/ (plural), scala in sdktest/, swift
+  // in Tests/.
+  'tm/c/tests/vendor/omni',
+  'tm/cpp/test/vendor/omni',
+  'tm/dart/test/vendor/omni',
+  'tm/swift/Tests/vendor/omni',
+  'tm/rust/tests/vendor/omni',
+  'tm/scala/sdktest/vendor/omni',
+  'tm/clojure/test/vendor/omni',
+  'tm/clojure/test/vendor/omni/voxgig',
+  'tm/clojure/test/vendor/omni/voxgig/omni',
+  'tm/elixir/test/vendor/omni',
+  'tm/ocaml/test/vendor/omni',
+  'tm/lean/test/vendor/omni',
 ]
 
 
@@ -122,6 +139,22 @@ const LANG_COMMENT: Record<string, string> = {
   ts: '//', js: '//', go: '//', py: '#',
   rb: '#', php: '//', lua: '--', perl: '#',
   java: '//', kotlin: '//', csharp: '//',
+  c: '//', cpp: '//', dart: '//', swift: '//', rust: '//', scala: '//',
+  clojure: ';;', elixir: '#', lean: '--',
+  // OCaml has no LINE comment at all, so its header is three BLOCK
+  // comments and the token is regex metacharacters — see escape() below,
+  // and `commentend` in build/vendor.js for the closing half.
+  ocaml: '(*',
+}
+
+
+// The comment token goes into a RegExp, and ocaml's is not literal there:
+// `(*` reads as an unterminated group followed by a quantifier with
+// nothing to repeat, which THROWS rather than failing an assertion. The
+// escape was always here, inline and unexplained; it is named now because
+// ocaml is the first language that actually needs it.
+function escape(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 // Languages whose files must OPEN with a fixed line (php's `<?php`): the
@@ -147,7 +180,7 @@ function provenance(path: string, rel: string): any {
   // match but the licence/resync checks would read oddly.
   const head = readFileSync(path, 'utf8').split(/\r?\n/).slice(offset, offset + 3)
 
-  const c = commentFor(rel).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const c = escape(commentFor(rel))
 
   const vendored = new RegExp(
     '^' + c + ' VENDORED: @voxgig/(\\S+) (\\S+) \\((.+?)\\)').exec(head[0])

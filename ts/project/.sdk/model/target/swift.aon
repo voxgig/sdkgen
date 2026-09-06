@@ -7,6 +7,24 @@ main: kit: target: swift: {
   base: 'BASE'
   srcfeature: false
 
+  # Retired by the move to the vendored @voxgig/omni corpus runner
+  # (vendor-tag rollout): NOTHING, deliberately, and the empty list says so
+  # rather than leaving the key off.
+  #
+  # Swift's corpus ENGINE was never a file of its own. It lived inline in
+  # two places - `SdkRunner.runSet`/`matchDeep` inside
+  # Tests/ProjectNameSDKTests/Runner.swift, and a second, independent
+  # engine (`runset`/`canon`/`fixNull`) private to
+  # Tests/ProjectNameSDKTests/StructUtilityTest.swift. Both were rewritten
+  # IN PLACE onto Tests/ProjectNameSDKTests/OmniResolver.swift, so both
+  # files KEEP THEIR NAMES and every emitted call site needs no churn:
+  # Runner.swift is support-ONLY now (testJsonPath, makeCtxFromMap, fixCtx,
+  # errFromMap, and the deepEqual/matchString/errCode the behavioural
+  # suites use) and is RETAINED, exactly as csharp's Runner.cs and java's
+  # RunnerSupport.java. There is therefore no whole-file leftover for
+  # `doctor` to report or `doctor prune` to delete.
+  superseded: []
+
   deps: &: {
     kind: *'prod' | string
   }

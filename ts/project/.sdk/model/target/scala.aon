@@ -7,14 +7,33 @@ main: kit: target: scala: {
   base: 'BASE'
   srcfeature: false
 
+  # Retired by the move to the vendored @voxgig/omni corpus runner
+  # (vendor-tag rollout): NOTHING, deliberately, and the empty list says so
+  # rather than leaving the key off.
+  #
+  # Scala's corpus ENGINE was never a file of its own. It lived FUSED inside
+  # sdktest/StructCorpus.scala — `object Runner`'s own JSON reader, fixJson,
+  # deep equality, matchval/doMatch, resolveArgs, checkResult, handleError and
+  # runSet — and sdktest/PrimaryCorpus.scala drove the same object. Both files
+  # were rewritten IN PLACE onto sdktest/OmniResolver.scala, so both KEEP
+  # THEIR NAMES, `object Runner` keeps its name (the Makefile still runs
+  # `--main-class Runner`), and no emitted call site needed churn.
+  # sdktest/SdkTestSupport.scala is support-ONLY and is RETAINED, exactly as
+  # java's RunnerSupport.java and csharp's Runner.cs. There is therefore no
+  # whole-file leftover for `doctor` to report or `doctor prune` to delete.
+  superseded: []
+
   deps: &: {
     kind: *'prod' | string
   }
 
   # struct is inlined under utility/struct — no external runtime dep.
   # JSON parsing is the zero-dep utility/Json.java; HTTP transport is
-  # java.net.http.HttpClient (JDK built-in). The corpus runner and pipeline
-  # tests are plain scala-cli mains (no test-framework dependency).
+  # java.net.http.HttpClient (JDK built-in). The corpus ENGINE is the vendored
+  # @voxgig/omni scala port under sdktest/vendor/omni — source, not a
+  # dependency, and scala-cli compiles it with everything else. The corpus
+  # runners, the omni smoke test and the pipeline tests are plain scala-cli
+  # mains (no test-framework dependency).
   deps: {}
 }
 

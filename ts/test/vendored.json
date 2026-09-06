@@ -1,5 +1,69 @@
 {
  "library": {
+  "omni/c": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/c/tests/vendor/omni/json.c": {
+     "sha256": "e26a242e3b01181f30575086a99253ae6f4f615fe3d108ec6ca508bc3735f6ab",
+     "upstream": "c/src/json.c"
+    },
+    "tm/c/tests/vendor/omni/omni.h": {
+     "sha256": "86653c6dafa1c200c3c163c5a1e4ca086c565522177ebabf0b7e2645a94d450e",
+     "upstream": "c/src/omni.h"
+    },
+    "tm/c/tests/vendor/omni/runner.c": {
+     "sha256": "1247ee36188fc49bbc635bad9f7d0e5a847483673d7c511c254fb639ef7acbfd",
+     "upstream": "c/src/runner.c"
+    },
+    "tm/c/tests/vendor/omni/util.c": {
+     "sha256": "0e328e68a71e3f47e7b6dfdc67078e3e2c52416f8ad59cd5a4c27cf0f7e65838",
+     "upstream": "c/src/util.c"
+    }
+   }
+  },
+  "omni/clojure": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/clojure/test/vendor/omni/voxgig/omni/json.clj": {
+     "sha256": "e0c7319cb52350397e2c3bfd074d24550215fb860040d511924a611f5349e433",
+     "upstream": "clojure/src/voxgig/omni/json.clj"
+    },
+    "tm/clojure/test/vendor/omni/voxgig/omni/runner.clj": {
+     "sha256": "0529e5697cf887e4271b015540412df84e72202c52248c422166dfd81f797abe",
+     "upstream": "clojure/src/voxgig/omni/runner.clj"
+    },
+    "tm/clojure/test/vendor/omni/voxgig/omni/util.clj": {
+     "sha256": "026734e247081e2b4269a123ff99cd4af9a0d4b0bb16da844cf11b2b06cfca22",
+     "upstream": "clojure/src/voxgig/omni/util.clj"
+    }
+   }
+  },
+  "omni/cpp": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/cpp/test/vendor/omni/json.hpp": {
+     "sha256": "1ce5c9431af22e7c7c4a2f9e309ad8d9086f8a14f53f0b9d1490557a179ca54f",
+     "upstream": "cpp/src/json.hpp"
+    },
+    "tm/cpp/test/vendor/omni/omni.hpp": {
+     "sha256": "0a08a76da711e1bfb90fd5f9db8f9fe9fc120fa911d66ada2ca3bff9d9bc3904",
+     "upstream": "cpp/src/omni.hpp"
+    },
+    "tm/cpp/test/vendor/omni/util.hpp": {
+     "sha256": "53db9039000dd3dee9f271fb56c2faa1e4d49f85e6b8ee1ced3afaeabb430043",
+     "upstream": "cpp/src/util.hpp"
+    }
+   }
+  },
   "omni/csharp": {
    "repo": "https://github.com/voxgig/omni",
    "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
@@ -13,6 +77,46 @@
     "tm/csharp/test/vendor/omni/Util.cs": {
      "sha256": "1ba7da27837e30e2567aa69739380fba9def26e03d6a074d45eb93cc0a62db52",
      "upstream": "csharp/src/Util.cs"
+    }
+   }
+  },
+  "omni/dart": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/dart/test/vendor/omni/omni.dart": {
+     "sha256": "d1cb9c8b1b8d10f46bf357245e3b7c0dc5a872b429b34722239a4f5d45caa974",
+     "upstream": "dart/lib/omni.dart"
+    },
+    "tm/dart/test/vendor/omni/runner.dart": {
+     "sha256": "340755a49ace201fff6bfba66802338a2a2645681874942842d06f10dae6e6bd",
+     "upstream": "dart/lib/runner.dart"
+    },
+    "tm/dart/test/vendor/omni/util.dart": {
+     "sha256": "744ff7a728861118a0b066b7d03ac46ff3fa7f5c25274d7a4944598d47c9de06",
+     "upstream": "dart/lib/util.dart"
+    }
+   }
+  },
+  "omni/elixir": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/elixir/test/vendor/omni/json.ex": {
+     "sha256": "8fd2af80e1a5e7633c847d32c5aff69c5fa6368869760a51a38563c70b3f4554",
+     "upstream": "elixir/lib/json.ex"
+    },
+    "tm/elixir/test/vendor/omni/runner.ex": {
+     "sha256": "db6a52d5444546769f7f9eeeed097b6b3e0b4e954b953d02ee6c135b34aa7e1c",
+     "upstream": "elixir/lib/runner.ex"
+    },
+    "tm/elixir/test/vendor/omni/util.ex": {
+     "sha256": "97975a9b88b9522b4855c473a628511e42ccf74aead5519d84f411a7af7f0256",
+     "upstream": "elixir/lib/util.ex"
     }
    }
   },
@@ -92,6 +196,18 @@
     }
    }
   },
+  "omni/lean": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/lean/test/vendor/omni/Omni.lean": {
+     "sha256": "d83522c9b2e684d0613e62505e6736d2448eefa101ab5b757ac60bc1b16b41ea",
+     "upstream": "lean/Omni.lean"
+    }
+   }
+  },
   "omni/lua": {
    "repo": "https://github.com/voxgig/omni",
    "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
@@ -113,6 +229,18 @@
     "tm/lua/test/vendor/omni/util.lua": {
      "sha256": "36e50817fa8d35c304962112dc65f2928af4fbc0e31a04730781d32eb858d883",
      "upstream": "lua/src/util.lua"
+    }
+   }
+  },
+  "omni/ocaml": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/ocaml/test/vendor/omni/omni.ml": {
+     "sha256": "ec1d13f9192da0f51e961d467f1d8142b242c4648494c7337ed7d9f7e2ba51ef",
+     "upstream": "ocaml/src/omni.ml"
     }
    }
   },
@@ -199,6 +327,100 @@
        "to": "require_relative 'runner'"
       }
      ]
+    }
+   }
+  },
+  "omni/rust": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/rust/tests/vendor/omni/json.rs": {
+     "sha256": "b260b2996862a8e1f53bd50fe75a56a263e69f0569dcd92bac05997601cc3628",
+     "upstream": "rust/src/json.rs",
+     "adapt": [
+      {
+       "from": "crate::util::jsonstr(self)",
+       "to": "super::util::jsonstr(self)"
+      }
+     ]
+    },
+    "tm/rust/tests/vendor/omni/mod.rs": {
+     "sha256": "84b7c4b0f055e688d26da562cc980784af419bfdc8094b322bd9ef19ce28709c",
+     "upstream": "rust/src/lib.rs"
+    },
+    "tm/rust/tests/vendor/omni/regex.rs": {
+     "sha256": "61372af872e1850c8ca21465aed03b6ef037b0a5a23e5b8389c135fa1fef0e61",
+     "upstream": "rust/src/regex.rs"
+    },
+    "tm/rust/tests/vendor/omni/runner.rs": {
+     "sha256": "84aa277be8cc544dbe5a6ffeacba5d4630d826acc773518edd88a1c916e3e176",
+     "upstream": "rust/src/runner.rs",
+     "adapt": [
+      {
+       "from": "use crate::json::{self, Json};",
+       "to": "use super::json::{self, Json};"
+      },
+      {
+       "from": "use crate::regex::Regex;",
+       "to": "use super::regex::Regex;"
+      },
+      {
+       "from": "use crate::util::{",
+       "to": "use super::util::{"
+      }
+     ]
+    },
+    "tm/rust/tests/vendor/omni/util.rs": {
+     "sha256": "48e4b52a6268df7f996403cb6bfa52428b29de257a2f3c7ba9bae7fe563006e1",
+     "upstream": "rust/src/util.rs",
+     "adapt": [
+      {
+       "from": "use crate::json::Json;",
+       "to": "use super::json::Json;"
+      }
+     ]
+    }
+   }
+  },
+  "omni/scala": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/scala/sdktest/vendor/omni/Json.scala": {
+     "sha256": "a11cf37d1b11aeff1118cb01e14cc094af80bff150a2e12a246a547242aea549",
+     "upstream": "scala/src/Json.scala"
+    },
+    "tm/scala/sdktest/vendor/omni/Runner.scala": {
+     "sha256": "6e2aa57ddbf11ac06c38f915f0bbfc70add22e5087087c9904c37ab4f7c5424e",
+     "upstream": "scala/src/Runner.scala"
+    },
+    "tm/scala/sdktest/vendor/omni/Util.scala": {
+     "sha256": "ebf359eab35e787f3b170b75fc0ae6e59f81a0e750550db4380fc0e36fb67550",
+     "upstream": "scala/src/Util.scala"
+    }
+   }
+  },
+  "omni/swift": {
+   "repo": "https://github.com/voxgig/omni",
+   "commit": "8c3e1b573a8d35796f7fc45e3226b977023cabf7",
+   "version": "sdk-20260904-1610-0",
+   "tag": "sdk-20260904-1610-0",
+   "file": {
+    "tm/swift/Tests/vendor/omni/Json.swift": {
+     "sha256": "e5547a0c9834aebf86f25cce48deeb71a3c311f055e185857881eb54ec888534",
+     "upstream": "swift/Sources/Omni/Json.swift"
+    },
+    "tm/swift/Tests/vendor/omni/Runner.swift": {
+     "sha256": "b9099d9a1c96fa8d2bd0ad6ecd0036b56cdcae87dd3db8846c662095b9995aa6",
+     "upstream": "swift/Sources/Omni/Runner.swift"
+    },
+    "tm/swift/Tests/vendor/omni/Util.swift": {
+     "sha256": "b12488cf9317146e47df776a6886e949a687841662ae6c7363ac0c72027306da",
+     "upstream": "swift/Sources/Omni/Util.swift"
     }
    }
   },

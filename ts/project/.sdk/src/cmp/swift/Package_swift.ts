@@ -44,6 +44,15 @@ import type {
 // An entry WITHOUT a `url` is not expressible in a SwiftPM manifest (no
 // registry-less by-name dependencies), so it is skipped - unadorned entries
 // keep today's zero-dependency output.
+//
+// The `Omni` target is the VENDORED corpus test engine (Tests/vendor/omni,
+// @voxgig/omni at the shared tag). It has to be its own MODULE, not files
+// folded into the test target: the port calls `Omni.errify` by module name,
+// and its top-level `clone`/`getpath`/`walk`/`stringify`/`pathify` collide
+// head-on with the struct utility's functions of the same names. It is
+// declared as a .testTarget rather than a .target so `swift build` - a
+// consumer's library build - never compiles the test engine; `swift test`
+// builds it and the suite target depends on it.
 const Package = cmp(async function Package(props: any) {
   const ctx$ = props.ctx$
   const target = props.target
@@ -96,8 +105,11 @@ let package = Package(
             name: "${Name}Sdk",${targetdeps}
             path: "Sources/${swiftTargetDir(model)}"),
         .testTarget(
+            name: "Omni",
+            path: "Tests/vendor/omni"),
+        .testTarget(
             name: "${Name}SdkTests",
-            dependencies: ["${Name}Sdk"],
+            dependencies: ["${Name}Sdk", "Omni"],
             path: "Tests/${swiftTestDir(model)}"),
     ]
 )

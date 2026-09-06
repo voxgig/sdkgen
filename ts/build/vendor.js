@@ -134,11 +134,15 @@ function main() {
         applied.push({ from: adapt.from, to: adapt.to })
       }
 
+      // A language with no LINE comment (ocaml) declares `commentend`, and
+      // every header line is closed with it. Empty for the other languages,
+      // so their headers are byte-identical to before.
       const c = lang.comment
+      const e = lang.commentend || ''
       const header =
-        c + ' VENDORED: @voxgig/' + route.lib + ' ' + route.version + ' (' + src + ')\n' +
-        c + ' Source: ' + routes.repo[route.lib].url + ' @ ' + commit + '  [tag: ' + tag + ']\n' +
-        c + ' License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.\n'
+        c + ' VENDORED: @voxgig/' + route.lib + ' ' + route.version + ' (' + src + ')' + e + '\n' +
+        c + ' Source: ' + routes.repo[route.lib].url + ' @ ' + commit + '  [tag: ' + tag + ']' + e + '\n' +
+        c + ' License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.' + e + '\n'
 
       // A language whose files MUST open with a fixed line (php's `<?php`)
       // declares it as `prologue`; the header goes immediately after it.

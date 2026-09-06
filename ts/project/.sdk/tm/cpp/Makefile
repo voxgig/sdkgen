@@ -17,8 +17,12 @@ TEST_BINS := $(TEST_SRCS:.cpp=.out)
 # as "still failing" through several rebuilds because the binary under test
 # predated it. Listing the headers is cheap and makes `make test` mean what it
 # says.
+# test/ is listed too: the corpus suites are driven by test/*.hpp (the omni
+# resolver and the retained runner support) and by the vendored omni headers
+# under test/vendor/omni/, none of which the pattern rule below names either.
 SDK_HDRS := $(wildcard core/*.hpp entity/*.hpp feature/*.hpp \
-                       utility/*.hpp utility/*/*.hpp *.hpp)
+                       utility/*.hpp utility/*/*.hpp *.hpp \
+                       test/*.hpp test/vendor/omni/*.hpp)
 
 .PHONY: test build clean
 

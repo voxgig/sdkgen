@@ -5,6 +5,10 @@
 CC ?= gcc
 CFLAGS ?= -std=c11 -Wall -Wextra -Wno-unused-parameter -D_GNU_SOURCE -O0 -g
 INC := -I core -I utility/struct
+# The vendored omni test runner (tests/vendor/omni) is TEST-ONLY: it is
+# reachable from tests/ alone, never from LIB_SRCS, so it cannot enter the
+# shipped libsdk.a. That is why it lives under tests/ and not utility/.
+OMNI_INC := -I tests -I tests/vendor/omni
 LDLIBS := -lm
 
 # feature/*/*.c: a feature may carry a vendored library payload in its own
@@ -15,8 +19,13 @@ LDLIBS := -lm
 LIB_SRCS := $(wildcard core/*.c utility/*.c utility/struct/*.c feature/*.c feature/*/*.c entity/*.c)
 LIB_OBJS := $(LIB_SRCS:.c=.o)
 
+# Single-level on purpose: the vendored omni sources under
+# tests/vendor/omni have no main() and must not become test binaries.
 TEST_SRCS := $(wildcard tests/*.c)
 TEST_BINS := $(TEST_SRCS:.c=.out)
+
+OMNI_SRCS := $(wildcard tests/vendor/omni/*.c)
+OMNI_OBJS := $(OMNI_SRCS:.c=.o)
 
 .PHONY: all build test clean publish
 
@@ -30,15 +39,24 @@ build: libsdk.a
 libsdk.a: $(LIB_OBJS)
 	ar rcs $@ $(LIB_OBJS)
 
-tests/%.out: tests/%.c libsdk.a
-	$(CC) $(CFLAGS) $(INC) $< libsdk.a -o $@ $(LDLIBS)
+# omni's util.c includes <regex.h>. CFLAGS is `?=`, so an operator override
+# can drop the -D_GNU_SOURCE that exposes it; -D_POSIX_C_SOURCE is the
+# minimum omni itself compiles under (its own test/run.c sets exactly this).
+tests/vendor/omni/%.o: tests/vendor/omni/%.c
+	$(CC) $(CFLAGS) -D_POSIX_C_SOURCE=200809L -c $< -o $@
+
+libomni.a: $(OMNI_OBJS)
+	ar rcs $@ $(OMNI_OBJS)
+
+tests/%.out: tests/%.c libsdk.a libomni.a
+	$(CC) $(CFLAGS) $(INC) $(OMNI_INC) $< libsdk.a libomni.a -o $@ $(LDLIBS)
 
 # Build and run every test; aggregate pass/fail.
-test: libsdk.a
+test: libsdk.a libomni.a
 	@fail=0; total=0; \
 	for src in $(TEST_SRCS); do \
 	  bin=$${src%.c}.out; \
-	  $(CC) $(CFLAGS) $(INC) $$src libsdk.a -o $$bin $(LDLIBS) || { echo "BUILD FAIL: $$src"; fail=1; continue; }; \
+	  $(CC) $(CFLAGS) $(INC) $(OMNI_INC) $$src libsdk.a libomni.a -o $$bin $(LDLIBS) || { echo "BUILD FAIL: $$src"; fail=1; continue; }; \
 	  total=$$((total+1)); \
 	  if ./$$bin; then :; else echo "TEST FAIL: $$bin"; fail=1; fi; \
 	done; \
@@ -47,7 +65,8 @@ test: libsdk.a
 	exit $$fail
 
 clean:
-	rm -f $(LIB_OBJS) libsdk.a $(TEST_BINS) tests/*.out corpus-scoreboard.json
+	rm -f $(LIB_OBJS) libsdk.a $(OMNI_OBJS) libomni.a $(TEST_BINS) tests/*.out \
+	  corpus-scoreboard.json
 
 # C has no central registry — publishing IS the git tag.
 VERSION := $(shell cat VERSION 2>/dev/null || echo 0.0.1)
