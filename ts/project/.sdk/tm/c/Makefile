@@ -42,21 +42,37 @@ libsdk.a: $(LIB_OBJS)
 # omni's util.c includes <regex.h>. CFLAGS is `?=`, so an operator override
 # can drop the -D_GNU_SOURCE that exposes it; -D_POSIX_C_SOURCE is the
 # minimum omni itself compiles under (its own test/run.c sets exactly this).
+# _DARWIN_C_SOURCE is needed BESIDE it, not instead of it: on Darwin,
+# defining _POSIX_C_SOURCE alone LOWERS __DARWIN_C_LEVEL and hides regex_t,
+# so the same flag that exposes the header on glibc hides it on macOS. Each
+# platform ignores the other's macro.
 tests/vendor/omni/%.o: tests/vendor/omni/%.c
-	$(CC) $(CFLAGS) -D_POSIX_C_SOURCE=200809L -c $< -o $@
+	$(CC) $(CFLAGS) -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE -c $< -o $@
 
 libomni.a: $(OMNI_OBJS)
 	ar rcs $@ $(OMNI_OBJS)
 
-tests/%.out: tests/%.c libsdk.a libomni.a
+# Only the corpus drivers and the smoke test reach for omni, and the generic
+# rule must stay free of it: omni's util.c needs POSIX <regex.h>, which
+# Windows does not have at all. Linking it into EVERY test binary broke the
+# auth-null probe the generator's own suite builds on windows and macos,
+# neither of which runs a corpus.
+OMNI_TESTS := tests/struct_corpus_test.out tests/primary_corpus_test.out \
+  tests/omni_smoke_test.out
+
+$(OMNI_TESTS): tests/%.out: tests/%.c libsdk.a libomni.a
 	$(CC) $(CFLAGS) $(INC) $(OMNI_INC) $< libsdk.a libomni.a -o $@ $(LDLIBS)
+
+tests/%.out: tests/%.c libsdk.a
+	$(CC) $(CFLAGS) $(INC) $< libsdk.a -o $@ $(LDLIBS)
 
 # Build and run every test; aggregate pass/fail.
 test: libsdk.a libomni.a
 	@fail=0; total=0; \
 	for src in $(TEST_SRCS); do \
 	  bin=$${src%.c}.out; \
-	  $(CC) $(CFLAGS) $(INC) $(OMNI_INC) $$src libsdk.a libomni.a -o $$bin $(LDLIBS) || { echo "BUILD FAIL: $$src"; fail=1; continue; }; \
+	  case " $(OMNI_TESTS) " in *" $$bin "*) omni="libomni.a"; oinc="$(OMNI_INC)";; *) omni=""; oinc="";; esac; \
+	  $(CC) $(CFLAGS) $(INC) $$oinc $$src libsdk.a $$omni -o $$bin $(LDLIBS) || { echo "BUILD FAIL: $$src"; fail=1; continue; }; \
 	  total=$$((total+1)); \
 	  if ./$$bin; then :; else echo "TEST FAIL: $$bin"; fail=1; fi; \
 	done; \
