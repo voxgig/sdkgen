@@ -37,11 +37,15 @@ const Main = cmp(async function Main(props: any) {
 
   // Copy tm/ocaml verbatim with ProjectName replacement. The src/ subtree
   // only stages per-feature custom-source dirs (srcfeature: false, so unused),
-  // excluded like the go/rust targets. Stray compiled artifacts are excluded
-  // defensively.
+  // excluded like the go/rust targets. Stray compiled artifacts and built
+  // test binaries are excluded defensively. test/vendor/omni (the vendored
+  // @voxgig/omni corpus engine) rides along verbatim - the replacements are
+  // ProjectName-shaped and the port names nothing project-specific, so it
+  // lands byte-identical to its recorded vendored.json digest.
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//, /\.(cmi|cmo|cmx|cma|cmxa|o|a)$/, /a\.out$/, /run_sdk_test$/, /run_struct_corpus$/],
+    exclude: [/src\//, /\.(cmi|cmo|cmx|cma|cmxa|o|a)$/, /a\.out$/,
+      /run_sdk_test$/, /run_omni_smoke$/, /run_struct_corpus$/, /run_primary_corpus$/],
     replace: {
       ...props.ctx$.stdrep,
     }

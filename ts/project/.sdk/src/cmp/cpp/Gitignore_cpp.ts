@@ -13,6 +13,9 @@ test/*.out
 *.o
 *.out
 
+# Struct-corpus run report (written by test/struct_corpus_test.cpp)
+corpus-scoreboard.json
+
 # IDE / OS
 .idea/
 .vscode/

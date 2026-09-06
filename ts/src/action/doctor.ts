@@ -128,6 +128,11 @@ type DoctorReport = {
   // Project-owned components the scaffold never shipped. NOT drift.
   additive: string[]
 
+  // Generated files the model declares RETIRED (`target.superseded`) that
+  // still sit in the target output directories — the old runner beside its
+  // replacement. `doctor prune` deletes exactly these.
+  superseded: string[]
+
   // Root-level components this sdkgen provides that the project's root
   // wiring never calls. Informational: opting out is legitimate.
   unwired: string[]
@@ -151,6 +156,7 @@ type DoctorReport = {
 
 const CMD_MAP: any = {
   check: cmd_doctor_check,
+  prune: cmd_doctor_prune,
 }
 
 
@@ -170,6 +176,57 @@ async function action_doctor(args: string[], actx: ActionContext): Promise<Actio
 
 async function cmd_doctor_check(_args: string[], actx: ActionContext): Promise<ActionResult> {
   return doctor(actx)
+}
+
+
+// `doctor prune` — the ONE write doctor performs, and only ever of files a
+// target's model DECLARES superseded (retired templates jostraca cannot
+// delete from a consumer: the old runner beside its replacement, a
+// pre-reshape vendored file). Everything else doctor does stays read-only.
+async function cmd_doctor_prune(_args: string[], actx: ActionContext): Promise<ActionResult> {
+  const log = actx.log
+  const fs = actx.fs()
+
+  const found = supersededFiles(actx)
+  const pruned: string[] = []
+
+  for (const abs of found) {
+    fs.unlinkSync(abs)
+    pruned.push(abs)
+    log.info({ point: 'doctor-prune', file: abs, note: 'pruned superseded: ' + abs })
+  }
+
+  log.info({
+    point: 'doctor-prune-end', pruned: pruned.length,
+    note: 0 === pruned.length ? 'nothing superseded to prune' :
+      ('pruned ' + pruned.length + ' superseded file(s)')
+  })
+
+  return { report: { pruned, ok: true } }
+}
+
+
+// Generated files the model says this toolchain NO LONGER writes, that
+// still exist in the project's target output directories. Paths in the
+// model are relative to each target's output dir (a sibling of `.sdk/`,
+// named for the target).
+function supersededFiles(actx: ActionContext): string[] {
+  const fs = actx.fs()
+  const model = actx.model
+  const root = actx.folder
+
+  const targets = (model as any)?.main?.[KIT]?.target ?? {}
+
+  const found: string[] = []
+  for (const tname of Object.keys(targets).sort()) {
+    for (const rel of (targets[tname].superseded || [])) {
+      const abs = Path.join(root, '..', tname, String(rel))
+      if (fs.existsSync(abs)) {
+        found.push(abs)
+      }
+    }
+  }
+  return found
 }
 
 
@@ -193,8 +250,13 @@ async function doctor(
 
   const report: DoctorReport = {
     forked: [], edited: [], stale: [], missing: [], additive: [],
-    unwired: [], resyncPending: [], aliasedDiff: [], ok: true,
+    superseded: [], unwired: [], resyncPending: [], aliasedDiff: [], ok: true,
   }
+
+  // Retired-output leftovers first: purely model-driven, and a finding —
+  // two copies of the same machinery, one stale, is exactly the state the
+  // migration guide had to clean up by hand three times.
+  report.superseded = supersededFiles(actx)
 
   // EVERY KIND, not just targets.
   //
@@ -283,7 +345,7 @@ async function doctor(
   }
 
   report.ok = 0 === report.forked.length + report.edited.length +
-    report.stale.length + report.missing.length
+    report.stale.length + report.missing.length + report.superseded.length
 
   for (const [kind, note] of [
     ['forked', 'FORKED (will be reverted by `target add`)'],
@@ -291,6 +353,7 @@ async function doctor(
     ['stale', 'STALE (no longer written by `target add`)'],
     ['missing', 'MISSING (would be written by `target add`)'],
     ['additive', 'additive (project-owned, not drift)'],
+    ['superseded', 'SUPERSEDED generated output (run `doctor prune` to delete)'],
     ['unwired', 'NOT WIRED IN (root capability this project is missing)'],
     ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
     ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
@@ -308,6 +371,7 @@ async function doctor(
     stale: report.stale.length,
     missing: report.missing.length,
     additive: report.additive.length,
+    superseded: report.superseded.length,
     unwired: report.unwired.length,
     resyncPending: report.resyncPending.length,
     aliasedDiff: report.aliasedDiff.length,

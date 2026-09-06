@@ -18,6 +18,7 @@ const Gitignore = cmp(async function Gitignore(_props: any) {
 *.a
 a.out
 run_sdk_test
+run_omni_smoke
 run_struct_corpus
 run_primary_corpus
 

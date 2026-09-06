@@ -622,7 +622,10 @@ main: kit: target: js: phase: feature: active: false
     ['go', /core\/config\.go$/, /const configJSON = "/, /return map\[string\]any\{/],
     ['ts', /src\/Config\.ts$/, /const CONFIG_DATA = "/, /^\s*entity = \{/m],
     ['js', /src\/Config\.js$/, /const CONFIG_DATA = "/, /^\s*entity = \{/m],
-    ['py', /config\.py$/, /_CONFIG_DATA = "/, /^\s+return \{$/m],
+    // Anchored on the package root: the vendored secrets trees ship a
+    // voxgig_plugin/config.py of their own (py has no generate-time
+    // feature trim), and a bare /config\.py$/ finds that one first.
+    ['py', /_sdk\/config\.py$/, /_CONFIG_DATA = "/, /^\s+return \{$/m],
     ['rb', /config\.rb$/, /CONFIG_DATA = '/, /"main" => \{/],
     ['php', /config\.php$/, /const CONFIG_DATA = '/, /"main" => \[/],
     ['lua', /config\.lua$/, /local CONFIG_DATA = \[=*\[/, /^\s*main = \{$/m],
@@ -1832,6 +1835,344 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // go: the secrets plugin wiring is EMITTED, and the trim is REAL.
+  //
+  // The ts pass established that pluginImports silently no-ops when its
+  // path filter and the model drift (vendor-tag rollout, reshape edit 5):
+  // nothing asserted on the emitted imports, and the failure surfaced only
+  // at runtime as "<kind> is a sekreto plugin, not built in". This is the
+  // go guard for the same seam: an ACTIVE secrets model must emit the
+  // plugin package imports and the FeaturePlugins entries into
+  // core/config.go, and the INACTIVE groups' vendored files must stay out
+  // of the tree (Main_go's pluginExcludes - the generate-time trim go now
+  // has), while the shared httpjson helper (in no group) ships regardless.
+  test('go: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['go'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    const config = findFile(out, 'core/config.go')
+    ok(null != config, 'go: no core/config.go generated')
+
+    // The NAMED imports and the definitions list - the two emissions that
+    // can silently no-op while everything else stays green.
+    ok(/feature\/secrets\/plugins\/hashicorp"/.test(config!),
+      'go: active vault group did not emit the hashicorp plugin import')
+    ok(/"secrets": \{boru\.Plugin, hashicorp\.Plugin\}/.test(config!),
+      'go: FeaturePlugins is missing the vault definitions:\n' +
+      (config!.match(/var featurePlugins[^}]*\}/) || ['(no featurePlugins var)'])[0])
+
+    // The trim: an inactive group's vendored file is OUT, the active
+    // group's and the group-less shared helper are IN.
+    ok(null == findFile(out, 'plugins/gcpsecrets/gcpsecrets.go'),
+      'go: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'plugins/secretspec/secretspec.go'),
+      'go: the inactive secretspec group still ships its child-process plugin')
+    ok(null != findFile(out, 'plugins/hashicorp/hashicorp.go'),
+      'go: the ACTIVE vault group lost hashicorp')
+    ok(null != findFile(out, 'plugins/httpjson/httpjson.go'),
+      'go: the shared httpjson helper must ship with the feature core')
+
+    // And the inactive-model baseline: no secrets machinery in config.go.
+    const plain = findFile(await generate(['go']), 'core/config.go')
+    ok(!/feature\/secrets\/plugins/.test(plain!),
+      'go: an inactive model still emitted plugin imports')
+    ok(/var featurePlugins = map\[string\]\[\]any\{\n\}/.test(plain!),
+      'go: an inactive model must emit an EMPTY featurePlugins map')
+  })
+
+
+  // py guard for the same seam: an ACTIVE secrets model must emit the
+  // plugin module imports and the FEATURE_PLUGINS entries into the
+  // package config.py, and the INACTIVE groups' vendored files must stay
+  // out of the tree (Main_py's pluginExcludes - the generate-time trim py
+  // now has), while the shared httpjson helper (in no group) ships
+  // regardless. The runner-swap artefacts ride along: the omni resolver
+  // and smoke test are generated, the retired struct_runner is not.
+  test('py: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['py'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    const config = findFile(out, '_sdk/config.py')
+    ok(null != config, 'py: no package config.py generated')
+
+    // The NAMED imports and the definitions list - the two emissions that
+    // can silently no-op while everything else stays green.
+    ok(/from \w+_sdk\.feature\.secrets\.voxgig_sekreto\.plugins\.hashicorp import hashicorp/
+      .test(config!),
+      'py: active vault group did not emit the hashicorp plugin import')
+    ok(/"secrets": \[boru, hashicorp\],/.test(config!),
+      'py: FEATURE_PLUGINS is missing the vault definitions:\n' +
+      (config!.match(/FEATURE_PLUGINS = \{[^}]*\}/) || ['(no FEATURE_PLUGINS)'])[0])
+
+    // The trim: an inactive group's vendored file is OUT, the active
+    // group's and the group-less shared helper are IN.
+    ok(null == findFile(out, 'voxgig_sekreto/plugins/gcpsecrets.py'),
+      'py: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'voxgig_sekreto/plugins/secretspec.py'),
+      'py: the inactive secretspec group still ships its child-process plugin')
+    ok(null != findFile(out, 'voxgig_sekreto/plugins/hashicorp.py'),
+      'py: the ACTIVE vault group lost hashicorp')
+    ok(null != findFile(out, 'voxgig_sekreto/plugins/httpjson.py'),
+      'py: the shared httpjson helper must ship with the feature core')
+
+    // The runner swap: the omni resolver, its vendored package and the
+    // must-fail smoke test are generated; the superseded struct runner
+    // is gone.
+    ok(null != findFile(out, 'test/omni.py'), 'py: no omni resolver generated')
+    ok(null != findFile(out, 'test/voxgig_omni/runner.py'),
+      'py: vendored omni runner missing')
+    ok(null != findFile(out, 'test/test_omni_smoke.py'),
+      'py: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/struct_runner.py'),
+      'py: the superseded struct_runner.py is still generated')
+
+    // And the inactive-model baseline: no plugin machinery in config.py.
+    const plainout = await generate(['py'])
+    const plain = findFile(plainout, '_sdk/config.py')
+    ok(!/voxgig_sekreto\.plugins/.test(plain!),
+      'py: an inactive model still emitted plugin imports')
+    ok(/FEATURE_PLUGINS = \{\n\}/.test(plain!),
+      'py: an inactive model must emit an EMPTY FEATURE_PLUGINS map')
+  })
+
+
+  // rb runner swap: the omni resolver, its vendored port and the
+  // must-fail smoke test are generated; the superseded struct runner is
+  // not. rb ships no secrets feature, so unlike go/py these artefacts
+  // get their own lane instead of riding along with a secrets one.
+  test('rb: the omni runner swap generates the resolver and retires struct_runner', async () => {
+    const out = await generate(['rb'])
+
+    ok(null != findFile(out, 'test/omni.rb'), 'rb: no omni resolver generated')
+    ok(null != findFile(out, 'test/vendor/omni/voxgig_omni.rb'),
+      'rb: vendored omni entry missing')
+    ok(null != findFile(out, 'test/vendor/omni/runner.rb'),
+      'rb: vendored omni runner missing')
+    ok(null != findFile(out, 'test/vendor/omni/util.rb'),
+      'rb: vendored omni util missing')
+    ok(null != findFile(out, 'test/omni_smoke_test.rb'),
+      'rb: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/struct_runner.rb'),
+      'rb: the superseded struct_runner.rb is still generated')
+
+    // The support module is RETAINED untouched (emitted TestEntity /
+    // TestDirect call sites use it), and the suites run on the resolver.
+    ok(null != findFile(out, 'test/runner.rb'),
+      'rb: the retained support module test/runner.rb is missing')
+    const primary = findFile(out, 'test/primary_utility_test.rb')
+    ok(null != primary, 'rb: no primary_utility_test.rb generated')
+    ok(/require_relative "omni"/.test(primary!),
+      'rb: primary_utility_test.rb does not use the omni resolver')
+    const struct = findFile(out, 'test/struct_utility_test.rb')
+    ok(null != struct, 'rb: no struct_utility_test.rb generated')
+    ok(/require_relative 'omni'/.test(struct!),
+      'rb: struct_utility_test.rb does not use the omni resolver')
+  })
+
+
+  // lua runner swap: the omni resolver, its vendored port and the
+  // must-fail smoke test are generated; the superseded struct runner is
+  // not. The struct resync rides along: the vendored struct is now the
+  // upstream two-file layout (struct.lua + its RE2-subset regex.lua).
+  test('lua: the omni runner swap generates the resolver and retires struct_runner', async () => {
+    const out = await generate(['lua'])
+
+    ok(null != findFile(out, 'test/omni.lua'), 'lua: no omni resolver generated')
+    for (const vf of ['json.lua', 'regex.lua', 'runner.lua', 'util.lua']) {
+      ok(null != findFile(out, 'test/vendor/omni/' + vf),
+        'lua: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 'test/omni_smoke_test.lua'),
+      'lua: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/struct_runner.lua'),
+      'lua: the superseded struct_runner.lua is still generated')
+
+    // The struct resync: upstream's own layout, regex engine included.
+    ok(null != findFile(out, 'utility/struct/struct.lua'),
+      'lua: vendored struct missing')
+    ok(null != findFile(out, 'utility/struct/regex.lua'),
+      'lua: vendored struct regex module missing')
+
+    // The support module is RETAINED untouched (emitted TestEntity /
+    // TestDirect call sites use it), and the suites run on the resolver.
+    ok(null != findFile(out, 'test/runner.lua'),
+      'lua: the retained support module test/runner.lua is missing')
+    const primary = findFile(out, 'test/primary_utility_test.lua')
+    ok(null != primary, 'lua: no primary_utility_test.lua generated')
+    ok(/require\("test\.omni"\)/.test(primary!),
+      'lua: primary_utility_test.lua does not use the omni resolver')
+    const struct = findFile(out, 'test/struct_utility_test.lua')
+    ok(null != struct, 'lua: no struct_utility_test.lua generated')
+    ok(/require\("test\.omni"\)/.test(struct!),
+      'lua: struct_utility_test.lua does not use the omni resolver')
+  })
+
+
+  // perl runner swap: the omni resolver, its vendored port (upstream
+  // package layout, resolved via @INC) and the must-fail smoke test are
+  // generated; the superseded struct runner is not. The struct resync
+  // (0.1.1) rides along under lib/.
+  test('perl: the omni runner swap generates the resolver and retires struct_runner', async () => {
+    const out = await generate(['perl'])
+
+    ok(null != findFile(out, 't/omni.pm'), 'perl: no omni resolver generated')
+    for (const vf of ['Voxgig/Omni.pm', 'Voxgig/Omni/Runner.pm', 'Voxgig/Omni/Util.pm']) {
+      ok(null != findFile(out, 't/vendor/omni/' + vf),
+        'perl: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 't/omni_smoke.t'),
+      'perl: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 't/struct_runner.pm'),
+      'perl: the superseded struct_runner.pm is still generated')
+
+    // The struct resync: 0.1.1 vendored with provenance.
+    const vs = findFile(out, 'lib/Voxgig/Struct.pm')
+    ok(null != vs, 'perl: vendored struct missing')
+    ok(/VENDORED: @voxgig\/struct 0\.1\.1/.test(vs!),
+      'perl: vendored struct is not the 0.1.1 resync')
+
+    // The support module is RETAINED untouched (emitted TestEntity /
+    // TestDirect call sites use it), and the suites run on the resolver.
+    ok(null != findFile(out, 't/runner.pm'),
+      'perl: the retained support module t/runner.pm is missing')
+    const primary = findFile(out, 't/primary_utility.t')
+    ok(null != primary, 'perl: no primary_utility.t generated')
+    ok(/\/omni\.pm"\)/.test(primary!),
+      'perl: primary_utility.t does not use the omni resolver')
+    const struct = findFile(out, 't/struct_utility.t')
+    ok(null != struct, 'perl: no struct_utility.t generated')
+    ok(/\/omni\.pm"\)/.test(struct!),
+      'perl: struct_utility.t does not use the omni resolver')
+  })
+
+
+  // kotlin runner swap (fused family, java shape): RunnerSupport.kt keeps
+  // its name with the engine stripped (emitted TestEntity/TestDirect call
+  // sites reference the object - zero call-site churn); the OmniResolver
+  // bridges the SDK's plain values to the vendored port's sealed Json;
+  // the StructRunner class is retired. The struct resync (0.1.1 at the
+  // shared tag) rides along under utility/struct/.
+  test('kotlin: the omni runner swap generates the resolver and retires StructRunner', async () => {
+    const out = await generate(['kotlin'])
+
+    ok(null != findFile(out, 'test/OmniResolver.kt'),
+      'kotlin: no omni resolver generated')
+    for (const vf of ['Json.kt', 'Runner.kt', 'Util.kt']) {
+      ok(null != findFile(out, 'test/vendor/omni/' + vf),
+        'kotlin: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 'test/OmniSmokeTest.kt'),
+      'kotlin: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/StructRunner.kt'),
+      'kotlin: the superseded StructRunner.kt is still generated')
+
+    // The struct resync: 0.1.1 vendored with provenance, package adapted.
+    const vs = findFile(out, 'utility/struct/Struct.kt')
+    ok(null != vs, 'kotlin: vendored struct missing')
+    ok(/VENDORED: @voxgig\/struct 0\.1\.1/.test(vs!),
+      'kotlin: vendored struct is not the 0.1.1 resync')
+
+    // The support object is RETAINED under its own name (emitted
+    // TestEntity/TestDirect call sites reference RunnerSupport.*), with
+    // the corpus engine stripped out; the suites run on the resolver.
+    const support = findFile(out, 'test/RunnerSupport.kt')
+    ok(null != support, 'kotlin: the retained RunnerSupport.kt is missing')
+    ok(!/fun runset\(/.test(support!),
+      'kotlin: RunnerSupport.kt still carries the retired corpus engine')
+    const primary = findFile(out, 'test/PrimaryUtilityTest.kt')
+    ok(null != primary, 'kotlin: no PrimaryUtilityTest.kt generated')
+    ok(/OmniResolver/.test(primary!),
+      'kotlin: PrimaryUtilityTest.kt does not use the omni resolver')
+    const struct = findFile(out, 'test/StructCorpusTest.kt')
+    ok(null != struct, 'kotlin: no StructCorpusTest.kt generated')
+    ok(/OmniResolver/.test(struct!),
+      'kotlin: StructCorpusTest.kt does not use the omni resolver')
+  })
+
+
+  // csharp runner swap (fused family, go/java shape): Runner.cs keeps the
+  // TestRunner class name with the engine stripped (emitted
+  // TestEntity/TestDirect call sites reference TestRunner.* and
+  // StructRunner.* - zero call-site churn; the StructRunner SUPPORT
+  // members live on inside Runner.cs); the OmniResolver drives the
+  // vendored port natively; the StructRunner.cs file is retired. The
+  // struct resync (0.1.1 at the shared tag) rides along under
+  // utility/struct/.
+  test('csharp: the omni runner swap generates the resolver and retires StructRunner', async () => {
+    const out = await generate(['csharp'])
+
+    ok(null != findFile(out, 'test/OmniResolver.cs'),
+      'csharp: no omni resolver generated')
+    for (const vf of ['Runner.cs', 'Util.cs']) {
+      ok(null != findFile(out, 'test/vendor/omni/' + vf),
+        'csharp: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 'test/OmniSmokeTest.cs'),
+      'csharp: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/StructRunner.cs'),
+      'csharp: the superseded StructRunner.cs is still generated')
+
+    // The struct resync: 0.1.1 vendored with provenance.
+    const vs = findFile(out, 'utility/struct/Struct.cs')
+    ok(null != vs, 'csharp: vendored struct missing')
+    ok(/VENDORED: @voxgig\/struct 0\.1\.1/.test(vs!),
+      'csharp: vendored struct is not the 0.1.1 resync')
+
+    // The support class is RETAINED under its own name (emitted
+    // TestEntity/TestDirect call sites reference TestRunner.* and
+    // StructRunner.*), with the corpus engine stripped out; the suites
+    // run on the resolver.
+    const support = findFile(out, 'test/Runner.cs')
+    ok(null != support, 'csharp: the retained support Runner.cs is missing')
+    ok(/class TestRunner/.test(support!) && /class StructRunner/.test(support!),
+      'csharp: Runner.cs no longer carries the retained support classes')
+    ok(!/MatchDeep\(|public static void RunSet\(/.test(support!),
+      'csharp: Runner.cs still carries the retired corpus engine')
+    const primary = findFile(out, 'test/PrimaryUtilityTest.cs')
+    ok(null != primary, 'csharp: no PrimaryUtilityTest.cs generated')
+    ok(/OmniResolver/.test(primary!),
+      'csharp: PrimaryUtilityTest.cs does not use the omni resolver')
+    const struct = findFile(out, 'test/StructUtilityTest.cs')
+    ok(null != struct, 'csharp: no StructUtilityTest.cs generated')
+    ok(/OmniResolver/.test(struct!),
+      'csharp: StructUtilityTest.cs does not use the omni resolver')
+  })
+
+
   // rust: feature/mod.rs is GENERATED, not templated.
   //
   // `target add` copies source only for the features the model selects, but
@@ -1839,6 +2180,57 @@ main: kit: target: js: phase: feature: active: false
   // eighteen shipped features, so the crate stopped compiling the moment the
   // set was trimmed — `pub mod retry;` with no retry.rs is a hard error.
   // This fixture declares `test` and `log` only.
+  // dart runner swap: the omni resolver, its vendored port and the
+  // must-fail smoke test are generated; BOTH superseded engines - the fused
+  // test/runner.dart and the second, independent test/struct_corpus.dart -
+  // are gone. test/harness.dart and test/utility.dart are RETAINED: despite
+  // the names, neither is a corpus runner (harness.dart is the
+  // dependency-free describe/test framework every generated suite imports,
+  // utility.dart the sdk-test-control / path-resolution support). The
+  // smoke test must also be REGISTERED in the hand-written test/main.dart
+  // registry, or it would exist and never run.
+  test('dart: the omni runner swap generates the resolver and retires both engines', async () => {
+    const out = await generate(['dart'])
+
+    ok(null != findFile(out, 'test/omni.dart'), 'dart: no omni resolver generated')
+    for (const vf of ['omni.dart', 'runner.dart', 'util.dart']) {
+      ok(null != findFile(out, 'test/vendor/omni/' + vf),
+        'dart: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 'test/omni_smoke_test.dart'),
+      'dart: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/runner.dart'),
+      'dart: the superseded test/runner.dart is still generated')
+    ok(null == findFile(out, 'test/struct_corpus.dart'),
+      'dart: the superseded test/struct_corpus.dart is still generated')
+
+    // The support files are RETAINED (every suite imports harness.dart; the
+    // generated entity suites use utility.dart).
+    ok(null != findFile(out, 'test/harness.dart'),
+      'dart: the retained test framework test/harness.dart is missing')
+    ok(null != findFile(out, 'test/utility.dart'),
+      'dart: the retained support module test/utility.dart is missing')
+
+    const primary = findFile(out, 'test/primary_test.dart')
+    ok(null != primary, 'dart: no primary_test.dart generated')
+    ok(/import 'omni\.dart';/.test(primary!),
+      'dart: primary_test.dart does not use the omni resolver')
+    const struct = findFile(out, 'test/struct_test.dart')
+    ok(null != struct, 'dart: no struct_test.dart generated')
+    ok(/import 'omni\.dart';/.test(struct!),
+      'dart: struct_test.dart does not use the omni resolver')
+
+    // test/main.dart is a hand-written registry, not auto-discovery: a
+    // suite it does not list never runs.
+    const main = findFile(out, 'test/main.dart')
+    ok(null != main, 'dart: no test/main.dart generated')
+    ok(/import 'omni_smoke_test\.dart' as omni_smoke_test;/.test(main!),
+      'dart: main.dart does not import the omni smoke test')
+    ok(/omni_smoke_test\.tests\(\);/.test(main!),
+      'dart: main.dart does not run the omni smoke test')
+  })
+
+
   test('rust: feature/mod.rs declares exactly the model features', async () => {
     const out = await generate(['rust'])
 

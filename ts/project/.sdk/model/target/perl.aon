@@ -8,6 +8,14 @@ main: kit: target: perl: {
   base: 'BASE'
   srcfeature: false
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): the struct-corpus runner (t/runner.pm is
+  # support-only and RETAINED). `doctor` reports leftovers; `doctor
+  # prune` deletes them.
+  superseded: [
+    't/struct_runner.pm'
+  ]
+
   deps: &: {
     kind: *'prod' | string
   }

@@ -2,7 +2,6 @@
 // against subject functions, mirroring the TS/Go runner pattern.
 
 const std = @import("std");
-const regex = @import("../utility/voxgigstruct/regex.zig");
 const voxgig_struct = @import("voxgig-struct");
 
 const Allocator = std.mem.Allocator;
@@ -322,9 +321,11 @@ pub fn matchval(alloc: Allocator, check: StdJsonValue, base: StdJsonValue) bool 
         // A /pattern/ is a regex over the stringified base.
         if (2 <= c.len and c[0] == '/' and c[c.len - 1] == '/') {
             const pat = c[1 .. c.len - 1];
-            var re = regex.compile(alloc, pat) orelse return false;
-            defer re.deinit();
-            return re.isMatch(basestr);
+            // Through the MODULE, never `../utility/voxgigstruct/regex.zig`:
+            // a file may belong to exactly one module, and regex.zig already
+            // belongs to voxgig-struct. Importing it by path a second time is
+            // "file exists in multiple modules".
+            return voxgig_struct.re_test(pat, basestr);
         }
 
         // Otherwise a case-insensitive substring, as the reference does.

@@ -356,7 +356,7 @@ test "primary new sdk smoke" {
 // ---------------------------------------------------------------------------
 
 const runner = @import("struct_runner.zig");
-const vs = @import("../utility/voxgigstruct/struct.zig");
+const vs = @import("voxgig-struct");
 
 const StdJson = std.json.Value;
 

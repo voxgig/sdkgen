@@ -8,6 +8,16 @@ main: kit: target: cpp: {
   base: 'BASE'
   srcfeature: false
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): the struct-corpus runner header
+  # (test/runner_support.hpp is support-only — the file/env loaders,
+  # sdk-test-control skips, make_ctx_from_map/fixctx, entity_list_to_data —
+  # and is RETAINED, name unchanged, because the generated entity suites
+  # include it). `doctor` reports leftovers; `doctor prune` deletes them.
+  superseded: [
+    'test/struct_runner.hpp'
+  ]
+
   deps: &: {
     kind: *'prod' | string
   }

@@ -8,6 +8,16 @@ main: kit: target: rust: {
   base: 'BASE'
   srcfeature: false
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): the hand-written struct corpus runner, superseded
+  # by the vendored @voxgig/omni engine driven through
+  # tests/omni_resolver/mod.rs. `doctor` reports leftovers; `doctor prune`
+  # deletes them. (tests/common/mod.rs is NOT listed: it kept its name and
+  # its support half, and only the corpus engine inside it was retired.)
+  superseded: [
+    'tests/struct_runner/mod.rs'
+  ]
+
   deps: &: {
     kind: *'prod' | string
   }

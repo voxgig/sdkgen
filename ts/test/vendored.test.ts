@@ -49,9 +49,63 @@ const VENDOR_DIRS = [
   // second level. Listed explicitly rather than walked recursively: the
   // list is the thing that makes an ADDED file visible, and a recursive
   // walk that discovers its own directories would quietly accept a new
-  // one.
+  // one. Only DIRECTORY-valued vendoring destinations belong here — a
+  // single vendored file inside a shared template directory (ts/js
+  // StructUtility) is covered by its manifest hash, and listing its
+  // parent would report every ordinary sibling as unlisted.
   'tm/ts/src/feature/secrets/sekreto/provider',
+  'tm/ts/src/feature/secrets/sekreto/plugins',
+  'tm/ts/src/feature/secrets/plugin',
   'tm/go/utility/struct',
+  'tm/js/test/vendor/omni',
+  'tm/go/test/omni',
+  'tm/py/test/voxgig_omni',
+  'tm/go/feature/secrets/sekreto',
+  'tm/go/feature/secrets/plugin',
+  'tm/go/feature/secrets/plugins',
+  'tm/go/feature/secrets/plugins/aws',
+  'tm/go/feature/secrets/plugins/azuresecrets',
+  'tm/go/feature/secrets/plugins/boru',
+  'tm/go/feature/secrets/plugins/doppler',
+  'tm/go/feature/secrets/plugins/gcpsecrets',
+  'tm/go/feature/secrets/plugins/hashicorp',
+  'tm/go/feature/secrets/plugins/httpjson',
+  'tm/go/feature/secrets/plugins/infisical',
+  'tm/go/feature/secrets/plugins/onepassword',
+  'tm/go/feature/secrets/plugins/secretspec',
+  'tm/py/pkg/feature/secrets/voxgig_sekreto',
+  'tm/py/pkg/feature/secrets/voxgig_sekreto/plugins',
+  'tm/py/pkg/feature/secrets/voxgig_plugin',
+  'tm/rb/test/vendor/omni',
+  'tm/php/test/vendor/omni',
+  'tm/lua/test/vendor/omni',
+  'tm/lua/utility/struct',
+  'tm/java/test/vendor/omni',
+  'tm/java/utility/struct',
+  'tm/perl/t/vendor/omni',
+  'tm/perl/t/vendor/omni/Voxgig',
+  'tm/perl/t/vendor/omni/Voxgig/Omni',
+  'tm/kotlin/test/vendor/omni',
+  'tm/kotlin/utility/struct',
+  'tm/csharp/test/vendor/omni',
+  'tm/csharp/utility/struct',
+  // Tranche 3. The destination is whatever the language's own module
+  // system can actually load from: clojure's namespaces are path-derived,
+  // so its files sit under voxgig/omni/ and each level is listed; rust
+  // and c keep their suites in tests/ (plural), scala in sdktest/, swift
+  // in Tests/.
+  'tm/c/tests/vendor/omni',
+  'tm/cpp/test/vendor/omni',
+  'tm/dart/test/vendor/omni',
+  'tm/swift/Tests/vendor/omni',
+  'tm/rust/tests/vendor/omni',
+  'tm/scala/sdktest/vendor/omni',
+  'tm/clojure/test/vendor/omni',
+  'tm/clojure/test/vendor/omni/voxgig',
+  'tm/clojure/test/vendor/omni/voxgig/omni',
+  'tm/elixir/test/vendor/omni',
+  'tm/ocaml/test/vendor/omni',
+  'tm/lean/test/vendor/omni',
 ]
 
 
@@ -66,20 +120,74 @@ function sha256(path: string): string {
 }
 
 
-// The convention every vendored file carries, as three lines at the top:
+// The convention every vendored file carries, as three lines at the top,
+// in that language's comment syntax (see LANG_COMMENT):
 //
 //   // VENDORED: @voxgig/<lib> <version> (<upstream path>)
-//   // Source: <repo> @ <commit>
+//   // Source: <repo> @ <commit>  [tag: <tag>]
 //   // License: MIT ... Do not edit: resync from upstream.
-function provenance(path: string): any {
+//
+// The `[tag: ...]` suffix is OPTIONAL so pre-tag vendored files still
+// parse; when present it must agree with the manifest's tag, which the
+// tag-agreement test below asserts.
+
+// Comment prefix per template language, keyed by the tm/<lang>/ segment of
+// the destination path. A vendored file in a language not listed here is a
+// loud failure, not a silent pass — add the language when its first
+// vendored file lands.
+const LANG_COMMENT: Record<string, string> = {
+  ts: '//', js: '//', go: '//', py: '#',
+  rb: '#', php: '//', lua: '--', perl: '#',
+  java: '//', kotlin: '//', csharp: '//',
+  c: '//', cpp: '//', dart: '//', swift: '//', rust: '//', scala: '//',
+  clojure: ';;', elixir: '#', lean: '--',
+  // OCaml has no LINE comment at all, so its header is three BLOCK
+  // comments and the token is regex metacharacters — see escape() below,
+  // and `commentend` in build/vendor.js for the closing half.
+  ocaml: '(*',
+}
+
+
+// The comment token goes into a RegExp, and ocaml's is not literal there:
+// `(*` reads as an unterminated group followed by a quantifier with
+// nothing to repeat, which THROWS rather than failing an assertion. The
+// escape was always here, inline and unexplained; it is named now because
+// ocaml is the first language that actually needs it.
+function escape(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// Languages whose files must OPEN with a fixed line (php's `<?php`): the
+// provenance header sits immediately after it, so the guard reads from
+// this offset. Mirrors the `prologue` declaration in vendor/routes.json.
+const LANG_HEADER_OFFSET: Record<string, number> = {
+  php: 1,
+}
+
+function commentFor(rel: string): string {
+  const lang = /^tm\/([^/]+)\//.exec(rel.split(Path.sep).join('/'))?.[1]
+  const c = lang && LANG_COMMENT[lang]
+  ok(null != c, rel + ': no LANG_COMMENT entry for its language — add one')
+  return c as string
+}
+
+function provenance(path: string, rel: string): any {
+  const lang = /^tm\/([^/]+)\//.exec(rel.split(Path.sep).join('/'))?.[1]
+  const offset = (lang && LANG_HEADER_OFFSET[lang]) || 0
+
   // Same reason as sha256 above: a CRLF checkout would leave a trailing
   // '\r' on every line, which the anchored patterns below would still
   // match but the licence/resync checks would read oddly.
-  const head = readFileSync(path, 'utf8').split(/\r?\n/).slice(0, 3)
+  const head = readFileSync(path, 'utf8').split(/\r?\n/).slice(offset, offset + 3)
 
-  const vendored = /^\/\/ VENDORED: @voxgig\/(\S+) (\S+) \((.+?)\)/.exec(head[0])
-  const source = /^\/\/ Source: (\S+) @ ([0-9a-f]{40})/.exec(head[1] || '')
-  const license = /^\/\/ License: (\S+)/.exec(head[2] || '')
+  const c = escape(commentFor(rel))
+
+  const vendored = new RegExp(
+    '^' + c + ' VENDORED: @voxgig/(\\S+) (\\S+) \\((.+?)\\)').exec(head[0])
+  const source = new RegExp(
+    '^' + c + ' Source: (\\S+) @ ([0-9a-f]{40})(?:\\s+\\[tag: (\\S+)\\])?')
+    .exec(head[1] || '')
+  const license = new RegExp('^' + c + ' License: (\\S+)').exec(head[2] || '')
 
   return {
     lib: vendored && vendored[1],
@@ -87,6 +195,7 @@ function provenance(path: string): any {
     upstream: vendored && vendored[3],
     repo: source && source[1],
     commit: source && source[2],
+    tag: source && source[3],
     license: license && license[1],
     resync: /Do not edit: resync from upstream\./.test(head[2] || ''),
   }
@@ -113,7 +222,7 @@ describe('vendored', () => {
 
     test(`${lib}: every file's own header agrees with the manifest`, () => {
       for (const [rel, spec] of Object.entries<any>(entry.file)) {
-        const p = provenance(Path.join(SDK, rel))
+        const p = provenance(Path.join(SDK, rel), rel)
 
         ok(null != p.lib, rel + ': no VENDORED provenance header')
 
@@ -137,6 +246,26 @@ describe('vendored', () => {
       }
     })
   }
+
+
+  // ONE TAG. The whole point of the shared tag is that "what is this SDK
+  // vendoring" has a single answer, so an entry resynced at a different
+  // tag than the manifest's is a failure even when its hashes are fine.
+  test('every tagged entry agrees with the manifest tag', () => {
+    for (const [lib, entry] of Object.entries<any>(MANIFEST.library)) {
+      if (null == entry.tag) continue
+      strictEqual(entry.tag, MANIFEST.tag,
+        lib + ': entry tag ' + entry.tag + ' != manifest tag ' + MANIFEST.tag)
+
+      for (const rel of Object.keys(entry.file)) {
+        const p = provenance(Path.join(SDK, rel), rel)
+        if (null != p.tag) {
+          strictEqual(p.tag, MANIFEST.tag,
+            rel + ': header tag disagrees with the manifest tag')
+        }
+      }
+    }
+  })
 
 
   // A hash check only covers files the manifest names, so without this a
@@ -198,8 +327,11 @@ describe('vendored', () => {
         for (const adapt of spec.adapt || []) {
           const src = readFileSync(Path.join(SDK, rel), 'utf8')
 
-          // Skip the provenance header, which NAMES the `from` string.
-          const body = src.split('\n').slice(3).join('\n')
+          // Skip the provenance header (and any language prologue before
+          // it), which NAMES the `from` string.
+          const lang = /^tm\/([^/]+)\//.exec(rel)?.[1]
+          const skip = 3 + ((lang && LANG_HEADER_OFFSET[lang]) || 0)
+          const body = src.split('\n').slice(skip).join('\n')
 
           ok(body.includes(adapt.to),
             lib + ' ' + rel + ': adaptation lost — expected ' + adapt.to +
@@ -222,15 +354,31 @@ describe('vendored', () => {
   // get leaner, it stops compiling. That is not hypothetical; it is what
   // happened on the first generated build.
   test('the full-set barrel is not vendored into SDKs', () => {
-    const rel = 'tm/ts/src/feature/secrets/sekreto/Providers.ts'
+    // One entry per port as it lands: each names the file that imports (or
+    // lazily reaches) EVERY plugin at once. `Providers.ts` was the
+    // pre-reshape ts barrel; `plugins/index.ts` is the reshaped one.
+    const BARRELS = [
+      'tm/ts/src/feature/secrets/sekreto/Providers.ts',
+      'tm/ts/src/feature/secrets/sekreto/plugins/index.ts',
+      // go: eager imports of all ten kinds — a compile break if trimmed.
+      'tm/go/feature/secrets/plugins/plugins.go',
+      // py: a PEP-562 LAZY barrel — it imports nothing eagerly, so its
+      // breakage is at attribute access, which a compile-only check
+      // cannot see. The one shape that can SHIP broken; pinned absent.
+      'tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/__init__.py',
+    ]
 
-    ok(!existsSync(Path.join(SDK, rel)),
-      'sekreto Providers.ts is in the template tree: it re-exports every ' +
-      'provider kind, so a trimmed SDK will not compile')
+    for (const rel of BARRELS) {
+      ok(!existsSync(Path.join(SDK, rel)),
+        rel + ' is in the template tree: it reaches every plugin kind, so ' +
+        'a trimmed SDK will not compile (or, for a lazy barrel, breaks at ' +
+        'first attribute access)')
 
-    const sekreto = MANIFEST.library['sekreto/typescript']
-    ok(null == sekreto.file[rel],
-      'sekreto Providers.ts is in vendored.json, so a resync would put it back')
+      for (const entry of Object.values<any>(MANIFEST.library)) {
+        ok(null == entry.file[rel],
+          rel + ' is in vendored.json, so a resync would put it back')
+      }
+    }
   })
 
 
@@ -356,6 +504,14 @@ describe('vendored signature drift', () => {
   // Written out in full rather than matched loosely, so a change to the
   // return type is caught alongside a change to the order.
   const PINNED: Record<string, string[]> = {
+    'tm/csharp/utility/struct/Struct.cs': [
+      // store/path share a type; a resync that reorders them compiles
+      // and returns junk - the exact go trap, C#-spelled.
+      // Pinned WITH the file's indentation: the check is a literal
+      // line-match, and C# nests inside a class.
+      '        public static object? SetPath(object? store, object? path, object? val)',
+      '        public static object? GetPath(object? store, object? path,',
+    ],
     'tm/go/utility/struct/voxgigstruct.go': [
       // Call sites pass (store, path) — the same order as SetPath. Reversing
       // these two `any` parameters compiles and yields nil.
@@ -372,11 +528,13 @@ describe('vendored signature drift', () => {
       const src = readFileSync(path, 'utf8').replace(/\r\n/g, '\n')
 
       for (const want of lines) {
-        const name = /^func (\w+)/.exec(want)?.[1]
+        // go spells it `func Name(`, C# `... object? Name(` - take the
+        // identifier immediately before the first open paren.
+        const name = /(\w+)\s*\(/.exec(want)?.[1]
 
         // Report what it IS, not just that it is missing — the whole point
         // is that the reader needs to see the new order to fix call sites.
-        const actual = new RegExp('^func ' + name + '\\(.*$', 'm').exec(src)
+        const actual = new RegExp('^.*\\b' + name + '\\s*\\(.*$', 'm').exec(src)
 
         ok(src.includes('\n' + want) || src.startsWith(want),
           'vendored ' + rel + ' no longer declares:\n' +

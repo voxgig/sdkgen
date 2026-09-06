@@ -159,8 +159,13 @@ const CORPUS_LOADERS =
 // assertion, so ten FULL-tier targets passed while running preparePath through
 // private hand-written contexts. That is the same "green while checking
 // nothing" failure this file exists to catch, reproduced in the checker.
+//
+// `_sec(` is dart's: closing the empty-section hole meant wrapping
+// `_runset(_g('x.basic'), fn)` in a helper that asserts the section is
+// non-empty first, so the lookup now happens one level in. The token has to
+// name the wrapper, or a target gets punished for adding a guard.
 const SECTION_LOOKUP =
-  /getSpec|get_spec|GetSpec|getspec|spec\.|spec\[|primary|runsection|runset|runSet|_runset|_g\(/
+  /getSpec|get_spec|GetSpec|getspec|spec\.|spec\[|primary|runsection|runset|runSet|_runset|_g\(|_sec\(/
 
 
 describe('cross-language corpus coverage', () => {
@@ -471,14 +476,14 @@ describe('reference-target invariants', () => {
     // cases — the exact drift this suite exists to prevent.
     ok(CORPUS_SECTIONS.includes('preparePath'))
     const src = readFileSync(primaryTestFile('go')!, 'utf8')
-    ok(/runsetNamed\(t, "preparePath"/.test(src),
+    ok(/runsection\(t, "preparePath"/.test(src),
       'go must drive preparePath from the corpus, not hand-written cases')
   })
 
   test('the go runner fails loudly on an empty or missing corpus section', () => {
     // It used to `return` silently, so a renamed section or a fixture that
     // compiled to an empty set reported PASS while running zero assertions.
-    const runner = readFileSync(Path.join(TM, 'go', 'test', 'runner_test.go'), 'utf8')
+    const runner = readFileSync(Path.join(TM, 'go', 'test', 'primary_utility_test.go'), 'utf8')
     ok(/t\.Fatalf\(/.test(runner), 'runset must fail, not return')
     ok(/is EMPTY/.test(runner), 'runset must reject a zero-case section')
     ok(/pendingSections/.test(runner),
@@ -1194,14 +1199,205 @@ const OMNI_RUNNER: Record<string, {
   vendor: string,
   vendorfiles: string[],
   smoke: string,
-  superseded: string,
+  // Most targets retire MORE than one file (a generic runner AND a struct
+  // runner), so this is a list — every entry must be gone.
+  superseded: string[],
 }> = {
   ts: {
     resolver: 'ts/test/omni.ts',
     vendor: 'ts/test/vendor/omni',
-    vendorfiles: ['Runner.ts', 'Util.ts', 'compat.ts', 'index.ts'],
+    // No compat shim: the resolver drives omni's NATIVE makeRunner and
+    // carries the SDK-provider adapter itself (vendor-tag rollout,
+    // Decision 4).
+    vendorfiles: ['Runner.ts', 'Util.ts', 'index.ts'],
     smoke: 'ts/test/omni.test.ts',
-    superseded: 'ts/test/runner.ts',
+    superseded: ['ts/test/runner.ts'],
+  },
+  js: {
+    resolver: 'js/test/omni.js',
+    vendor: 'js/test/vendor/omni',
+    vendorfiles: ['runner.js', 'util.js', 'index.js'],
+    smoke: 'js/test/omni.test.js',
+    // js's ONE runner file drove BOTH corpora; its support half was
+    // already split into the retained test/utility.js.
+    superseded: ['js/test/runner.js'],
+  },
+  go: {
+    // _test.go suffix: the resolver is test-only code and must not ship
+    // in the module a consumer imports.
+    resolver: 'go/test/omniresolver_test.go',
+    vendor: 'go/test/omni',
+    vendorfiles: ['omni.go', 'util.go'],
+    smoke: 'go/test/omnismoke_test.go',
+    // go's support half was split into the retained testsupport_test.go
+    // FIRST (same package, zero call-site churn), then both fused files
+    // were retired.
+    superseded: ['go/test/runner_test.go', 'go/test/struct_runner_test.go'],
+  },
+  py: {
+    resolver: 'py/test/omni.py',
+    vendor: 'py/test/voxgig_omni',
+    vendorfiles: ['__init__.py', 'runner.py', 'util.py'],
+    smoke: 'py/test/test_omni_smoke.py',
+    // py's file NAMED runner.py is support-ONLY and is RETAINED; the
+    // generic engine it superseded was inlined in the primary-utility
+    // template, so the only whole-file retirement is the struct runner.
+    superseded: ['py/test/struct_runner.py'],
+  },
+  rb: {
+    resolver: 'rb/test/omni.rb',
+    vendor: 'rb/test/vendor/omni',
+    vendorfiles: ['voxgig_omni.rb', 'runner.rb', 'util.rb'],
+    smoke: 'rb/test/omni_smoke_test.rb',
+    // rb's runner.rb is support-ONLY and RETAINED (py shape); the inlined
+    // engine left with the primary-utility rewrite.
+    superseded: ['rb/test/struct_runner.rb'],
+  },
+  php: {
+    resolver: 'php/test/Omni.php',
+    vendor: 'php/test/vendor/omni',
+    vendorfiles: ['Runner.php', 'Util.php'],
+    smoke: 'php/test/OmniSmokeTest.php',
+    // php's Runner.php is support-ONLY and RETAINED (py shape); the
+    // engine was inlined in the primary-utility template.
+    superseded: ['php/test/StructRunner.php'],
+  },
+  lua: {
+    resolver: 'lua/test/omni.lua',
+    vendor: 'lua/test/vendor/omni',
+    // The lua port is self-contained by design: it carries its own
+    // json/regex modules, so the vendored runner is four files.
+    vendorfiles: ['json.lua', 'regex.lua', 'runner.lua', 'util.lua'],
+    smoke: 'lua/test/omni_smoke_test.lua',
+    // lua's runner.lua is support-ONLY and RETAINED (py shape).
+    superseded: ['lua/test/struct_runner.lua'],
+  },
+  java: {
+    resolver: 'java/test/OmniResolver.java',
+    vendor: 'java/test/vendor/omni',
+    vendorfiles: ['Json.java', 'Runner.java', 'Util.java'],
+    smoke: 'java/test/OmniSmokeTest.java',
+    // RunnerSupport.java KEEPS ITS NAME with the engine stripped out -
+    // emitted call sites reference the class, so support survives in
+    // place (the go split's zero-churn rule, class-scoped).
+    superseded: ['java/test/StructRunner.java'],
+  },
+  perl: {
+    resolver: 'perl/t/omni.pm',
+    vendor: 'perl/t/vendor/omni',
+    vendorfiles: ['Voxgig/Omni.pm', 'Voxgig/Omni/Runner.pm', 'Voxgig/Omni/Util.pm'],
+    smoke: 'perl/t/omni_smoke.t',
+    // perl's t/runner.pm is support-ONLY and RETAINED (py shape).
+    superseded: ['perl/t/struct_runner.pm'],
+  },
+  kotlin: {
+    resolver: 'kotlin/test/OmniResolver.kt',
+    vendor: 'kotlin/test/vendor/omni',
+    vendorfiles: ['Json.kt', 'Runner.kt', 'Util.kt'],
+    smoke: 'kotlin/test/OmniSmokeTest.kt',
+    // RunnerSupport.kt KEEPS ITS NAME with the engine stripped out (the
+    // class-scoped zero-churn rule, as java).
+    superseded: ['kotlin/test/StructRunner.kt'],
+  },
+  csharp: {
+    resolver: 'csharp/test/OmniResolver.cs',
+    vendor: 'csharp/test/vendor/omni',
+    vendorfiles: ['Runner.cs', 'Util.cs'],
+    smoke: 'csharp/test/OmniSmokeTest.cs',
+    // Runner.cs keeps the TestRunner class name with the engine stripped
+    // (support + the StructRunner support members live on inside it), so
+    // the emitted call sites need zero churn.
+    superseded: ['csharp/test/StructRunner.cs'],
+  },
+  // ---- Tranche 3: the last ten. Between them they complete the rollout
+  // for every SDK target except zig, whose omni port at the tag is written
+  // for Zig 0.16 while this target is pinned to 0.13.
+  c: {
+    // c has no modules: the resolver is a header the corpus drivers
+    // include, and the vendored .c files build into their own archive so
+    // they never reach the shipped libsdk.a.
+    resolver: 'c/tests/omni_resolver.h',
+    vendor: 'c/tests/vendor/omni',
+    vendorfiles: ['omni.h', 'json.c', 'runner.c', 'util.c'],
+    smoke: 'c/tests/omni_smoke_test.c',
+    superseded: ['c/tests/runner.h'],
+  },
+  cpp: {
+    resolver: 'cpp/test/omni_resolver.hpp',
+    vendor: 'cpp/test/vendor/omni',
+    vendorfiles: ['omni.hpp', 'json.hpp', 'util.hpp'],
+    smoke: 'cpp/test/omni_smoke_test.cpp',
+    superseded: ['cpp/test/struct_runner.hpp'],
+  },
+  dart: {
+    resolver: 'dart/test/omni.dart',
+    vendor: 'dart/test/vendor/omni',
+    vendorfiles: ['omni.dart', 'runner.dart', 'util.dart'],
+    smoke: 'dart/test/omni_smoke_test.dart',
+    // dart is the one target that retires BOTH halves: a generic
+    // runner.dart AND a struct_corpus.dart that carried its own engine.
+    superseded: ['dart/test/runner.dart', 'dart/test/struct_corpus.dart'],
+  },
+  swift: {
+    resolver: 'swift/Tests/ProjectNameSDKTests/OmniResolver.swift',
+    vendor: 'swift/Tests/vendor/omni',
+    vendorfiles: ['Json.swift', 'Runner.swift', 'Util.swift'],
+    smoke: 'swift/Tests/ProjectNameSDKTests/OmniSmokeTest.swift',
+    // Runner.swift is support-ONLY (py shape) and is RETAINED; the corpus
+    // files keep their names and were rewritten in place.
+    superseded: [],
+  },
+  rust: {
+    resolver: 'rust/tests/omni_resolver/mod.rs',
+    vendor: 'rust/tests/vendor/omni',
+    vendorfiles: ['mod.rs', 'json.rs', 'regex.rs', 'runner.rs', 'util.rs'],
+    smoke: 'rust/tests/omni_smoke_test.rs',
+    superseded: ['rust/tests/struct_runner/mod.rs'],
+  },
+  scala: {
+    resolver: 'scala/sdktest/OmniResolver.scala',
+    vendor: 'scala/sdktest/vendor/omni',
+    vendorfiles: ['Json.scala', 'Runner.scala', 'Util.scala'],
+    smoke: 'scala/sdktest/OmniSmoke.scala',
+    // StructCorpus.scala keeps its name: the build binds a main class to
+    // it, so a rename would be pure call-site churn.
+    superseded: [],
+  },
+  clojure: {
+    resolver: 'clojure/test/sdk/test/omni.clj',
+    // A clojure namespace is derived from its PATH, so the vendored files
+    // keep their voxgig/omni/ prefix underneath the vendor root.
+    vendor: 'clojure/test/vendor/omni',
+    vendorfiles: [
+      'voxgig/omni/json.clj', 'voxgig/omni/runner.clj', 'voxgig/omni/util.clj',
+    ],
+    smoke: 'clojure/test/sdk/test/omni_smoke.clj',
+    superseded: [],
+  },
+  elixir: {
+    resolver: 'elixir/test/support/omni.ex',
+    vendor: 'elixir/test/vendor/omni',
+    vendorfiles: ['json.ex', 'runner.ex', 'util.ex'],
+    smoke: 'elixir/test/omni_smoke_test.exs',
+    superseded: ['elixir/test/support/struct_corpus.ex'],
+  },
+  ocaml: {
+    resolver: 'ocaml/test/omni_resolver.ml',
+    // The whole ocaml port is ONE file — the only single-file omni port
+    // besides lean.
+    vendor: 'ocaml/test/vendor/omni',
+    vendorfiles: ['omni.ml'],
+    smoke: 'ocaml/test/omni_smoke_test.ml',
+    superseded: ['ocaml/test/corpus_runner.ml'],
+  },
+  lean: {
+    resolver: 'lean/test/OmniResolver.lean',
+    vendor: 'lean/test/vendor/omni',
+    vendorfiles: ['Omni.lean'],
+    smoke: 'lean/test/OmniSmoke.lean',
+    // StructCorpus.lean and TPrimaryUtility.lean keep their names: lakefile
+    // binds an executable root to each.
+    superseded: [],
   },
 }
 
@@ -1212,27 +1408,72 @@ const SECRETS: Record<string, {
   feature: string,
   vendor: string,
   vendorfiles: string[],
+  plugindir?: string,
+  pluginfiles?: string[],
   tests: string,
 }> = {
   ts: {
     feature: 'ts/src/feature/secrets/SecretsFeature.ts',
     vendor: 'ts/src/feature/secrets/sekreto',
-    // `Providers.ts` — sekreto's full-set barrel — is deliberately NOT
-    // here: it re-exports every provider kind, so vendoring it would defeat
-    // the plugin trim and, worse, leave an import of a module the trim just
-    // deleted. vendored.test.ts asserts its absence directly.
-    //
-    // `Sigv4.ts` is owned by the `aws` PLUGIN, not by the feature, so a
-    // project that does not read from AWS does not ship it. It is listed
-    // against the template tree, which carries every plugin; what reaches a
-    // generated SDK is decided per project.
+    // The RESHAPED sekreto (vendor-tag rollout): `src/provider/` holds the
+    // built-ins the core imports unconditionally (env, memory, dotenv,
+    // file, via builtin.ts), and `plugins/` holds the gated definitions.
+    // `plugins/index.ts` — the full-set barrel — is deliberately NOT here:
+    // vendored.test.ts asserts its absence directly. `plugins/sigv4.ts` is
+    // owned by the `aws` PLUGIN; what reaches a generated SDK is decided
+    // per project by the plugin trim.
     vendorfiles: [
-      'Sekreto.ts', 'Sigv4.ts', 'index.ts',
-      'provider/Registry.ts', 'provider/support.ts',
+      'Sekreto.ts', 'index.ts',
+      'provider/support.ts', 'provider/builtin.ts', 'provider/addr.ts',
       'provider/env.ts', 'provider/memory.ts',
-      'provider/dotenv.ts', 'provider/aws.ts',
+      'provider/dotenv.ts', 'provider/file.ts',
+      'plugins/aws.ts', 'plugins/sigv4.ts', 'plugins/httpjson.ts',
+      'plugins/hashicorp.ts', 'plugins/secretspec.ts',
     ],
+    // The vendored voxgig/plugin runtime sekreto's reshape depends on,
+    // INSIDE the feature container so the feature trim removes both
+    // together.
+    plugindir: 'ts/src/feature/secrets/plugin',
+    pluginfiles: ['index.ts', 'Catalog.ts', 'Host.ts', 'Types.ts'],
     tests: 'ts/test/feature/secrets',
+  },
+  go: {
+    // go's feature container is the top-level feature/ dir (srcfeature:
+    // false), so the vendored trees live beside the feature file and the
+    // add-time featureExcludes gates the whole folder.
+    feature: 'go/feature/secrets_feature.go',
+    vendor: 'go/feature/secrets',
+    vendorfiles: [
+      'sekreto/sekreto.go', 'sekreto/providers.go', 'sekreto/addr.go',
+      'plugins/httpjson/httpjson.go',
+      'plugins/hashicorp/hashicorp.go', 'plugins/boru/boru.go',
+      'plugins/gcpsecrets/gcpsecrets.go', 'plugins/azuresecrets/azuresecrets.go',
+      'plugins/onepassword/onepassword.go', 'plugins/doppler/doppler.go',
+      'plugins/infisical/infisical.go', 'plugins/secretspec/secretspec.go',
+      'plugins/aws/aws.go', 'plugins/aws/sigv4.go',
+    ],
+    plugindir: 'go/feature/secrets/plugin',
+    pluginfiles: [
+      'capability.go', 'catalog.go', 'config.go', 'depend.go', 'env.go',
+      'export.go', 'graph.go', 'host.go', 'order.go', 'point.go',
+      'ref.go', 'resolve.go', 'types.go', 'util.go', 'version.go',
+    ],
+    tests: 'go/test/feature/secrets',
+  },
+  py: {
+    // py's feature container is pkg/feature/ (srcfeature: false); the
+    // vendored trees live under the gated secrets/ folder beside the
+    // feature file.
+    feature: 'py/pkg/feature/secrets_feature.py',
+    vendor: 'py/pkg/feature/secrets/voxgig_sekreto',
+    vendorfiles: [
+      '__init__.py', 'sekreto.py', 'providers.py', 'addr.py',
+      'plugins/aws.py', 'plugins/sigv4.py', 'plugins/httpjson.py',
+      'plugins/hashicorp.py', 'plugins/secretspec.py',
+    ],
+    plugindir: 'py/pkg/feature/secrets/voxgig_plugin',
+    pluginfiles: ['__init__.py', 'catalog.py', 'host.py', 'types.py'],
+    tests: 'py/test/feature/secrets',
   },
 }
 
@@ -1254,18 +1495,40 @@ describe('vendored-library rollout parity', () => {
       ok(existsSync(Path.join(TM, spec.smoke)),
         target + ': missing the runner-must-fail smoke test ' + spec.smoke)
 
-      ok(!existsSync(Path.join(TM, spec.superseded)),
-        target + ': the superseded runner ' + spec.superseded + ' is still ' +
-        'present alongside vendored omni — two copies of the same runner, ' +
-        'one of them stale')
+      for (const gone of spec.superseded) {
+        ok(!existsSync(Path.join(TM, gone)),
+          target + ': the superseded runner ' + gone + ' is still ' +
+          'present alongside vendored omni — two copies of the same runner, ' +
+          'one of them stale')
+      }
     }
   })
 
 
   test('no target is half-migrated to omni without being listed', () => {
+    // The vendored-omni location is per-language (ts/js keep a vendor/
+    // dir, go vendors a package at test/omni, py a package at
+    // test/voxgig_omni) — one hard-coded path here read a third of the
+    // tree as unmigrated. Any candidate existing without a row is the
+    // half-migrated state this exists to catch.
+    const CANDIDATES = [
+      ['test', 'vendor', 'omni'],
+      ['test', 'omni'],
+      ['test', 'voxgig_omni'],
+      // perl keeps its tests in t/, not test/ — a candidate list that
+      // only knew test/ would let a rowless perl vendor pass unseen.
+      ['t', 'vendor', 'omni'],
+      // Tranche 3 brought three more test-directory spellings, and each
+      // was invisible here until it was listed: c and rust use tests/
+      // (plural), scala sdktest/, swift Tests/.
+      ['tests', 'vendor', 'omni'],
+      ['sdktest', 'vendor', 'omni'],
+      ['Tests', 'vendor', 'omni'],
+    ]
+
     const unlisted = sdkTargets()
       .filter((t) => null == OMNI_RUNNER[t])
-      .filter((t) => existsSync(Path.join(TM, t, 'test', 'vendor', 'omni')))
+      .filter((t) => CANDIDATES.some((c) => existsSync(Path.join(TM, t, ...c))))
 
     deepStrictEqual(unlisted, [],
       'these targets have a vendored omni tree but are not in OMNI_RUNNER — ' +
@@ -1283,6 +1546,11 @@ describe('vendored-library rollout parity', () => {
           target + ': missing vendored sekreto file ' + spec.vendor + '/' + f)
       }
 
+      for (const f of spec.pluginfiles || []) {
+        ok(existsSync(Path.join(TM, spec.plugindir as string, f)),
+          target + ': missing vendored plugin file ' + spec.plugindir + '/' + f)
+      }
+
       // In the feature container, so the trim removes it with the feature.
       ok(existsSync(Path.join(TM, spec.tests)),
         target + ': missing the trimmable feature tests ' + spec.tests)
@@ -1291,18 +1559,73 @@ describe('vendored-library rollout parity', () => {
 
 
   test('no target ships secrets source without being listed', () => {
+    // Feature containers are per-language too: ts/js use src/feature/,
+    // go a top-level feature/ dir, py pkg/feature/.
+    const CONTAINERS = [
+      ['src', 'feature', 'secrets'],
+      ['feature', 'secrets'],
+      ['pkg', 'feature', 'secrets'],
+    ]
+
     const unlisted = sdkTargets()
       .filter((t) => null == SECRETS[t])
-      .filter((t) => {
-        const dir = Path.join(TM, t, 'src', 'feature', 'secrets')
+      .filter((t) => CONTAINERS.some((c) => {
+        const dir = Path.join(TM, t, ...c)
         if (!existsSync(dir)) return false
         // A bare copy-target dir (.gitkeep only) is what `feature add`
         // needs and is not an implementation.
         return readdirSync(dir).some((f) => !f.startsWith('.'))
-      })
+      }))
 
     deepStrictEqual(unlisted, [],
       'these targets carry secrets source but are not in SECRETS — add them ' +
       'so the vendored library and the tests are checked too')
+  })
+})
+
+
+// A zig file belongs to exactly ONE module. `build.zig` makes
+// `utility/voxgigstruct/struct.zig` the root of the `voxgig-struct` module
+// and hands that import to every test module by name, so a test that ALSO
+// reaches those files by relative path puts them in two modules at once —
+// `error: file exists in multiple modules`, raised whether or not the
+// path-imported decl is ever used, and it gives the importer a second copy
+// of the file with distinct types besides.
+//
+// Two test templates did exactly that. CI caught it once and then passed on
+// a re-run of the same tree, which is the worst way to learn about a rule:
+// the pin is here so the next one fails on the first run instead.
+describe('zig test templates reach modules by name', () => {
+
+  test('no zig template path-imports a file the struct module owns', () => {
+    const dir = Path.join(TM, 'zig', 'test')
+    const offenders: string[] = []
+
+    for (const name of readdirSync(dir).filter((f) => f.endsWith('.zig'))) {
+      const src = readFileSync(Path.join(dir, name), 'utf8')
+      for (const line of src.split('\n')) {
+        if (/@import\("[^"]*utility\/voxgigstruct\//.test(line)) {
+          offenders.push(name + ': ' + line.trim())
+        }
+      }
+    }
+
+    deepStrictEqual(offenders, [],
+      'import the module by name — @import("voxgig-struct") — rather than ' +
+      'reaching into utility/voxgigstruct/ by path')
+  })
+
+
+  test('the runner still has a regex path, reached through the module', () => {
+    // The rewrite swapped a hand-rolled compile/isMatch/deinit for the
+    // module's own re_test. Losing the call entirely would leave every
+    // /pattern/ corpus check falling through to the substring branch and
+    // quietly passing, so pin that the call is still there.
+    const src = readFileSync(
+      Path.join(TM, 'zig', 'test', 'struct_runner.zig'), 'utf8')
+
+    ok(src.includes('voxgig_struct.re_test(pat, basestr)'),
+      'struct_runner lost its regex match — /pattern/ checks would degrade ' +
+      'to a substring comparison and still look green')
   })
 })

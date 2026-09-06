@@ -71,12 +71,25 @@ def isErrV (v : Value) : SIO Bool := do
 -- Operation naming
 -- ---------------------------------------------------------------------------
 
+/-- The op-name convention, used only when the API definition names no
+    method for the point.
+
+    NO CATCH-ALL GET. The ts reference returns `methodMap[key]`, which is
+    undefined for an op the map does not name — the request is then rejected
+    rather than silently issued. A `| _ => "GET"` here turned every
+    unrecognised op into a GET, which is both a divergence from the corpus
+    (`primary/prepareMethod` case 6, opname "bad", expects no method) and the
+    more dangerous of the two behaviours: a mistyped or unsupported op quietly
+    fetched. "" is Lean's spelling of the same "no value"; the seven other
+    targets that carried this bug answer it identically. -/
 def opMethodOf : String → String
   | "create" => "POST"
   | "update" => "PUT"
+  | "load"   => "GET"
+  | "list"   => "GET"
   | "remove" => "DELETE"
   | "patch"  => "PATCH"
-  | _        => "GET"
+  | _        => ""
 
 def opInputOf : String → String
   | "create" => "data"

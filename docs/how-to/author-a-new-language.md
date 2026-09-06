@@ -54,7 +54,7 @@ the feature runtime, base classes, utilities. Port them from `tm/ts/`:
   the contract your generated entities call.
 - `src/utility/` — request/response building, params, headers, auth.
 - `test/` — the test runner and shared test utilities. The runner's
-  matching logic must mirror `js/test/runner.js`.
+  matching logic comes from vendored @voxgig/omni — add a resolver mirroring `js/test/omni.js` rather than writing a runner.
 
 Use placeholders where the SDK name appears: `ProjectName` for the
 Pascal-case name, plus any language-specific token (e.g. `GOMODULE`).

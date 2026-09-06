@@ -7,6 +7,15 @@ main: kit: target: java: {
   base: 'BASE'
   srcfeature: false
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): the struct-corpus runner class
+  # (test/RunnerSupport.java is support-only and RETAINED, name unchanged
+  # so emitted call sites need no churn). `doctor` reports leftovers;
+  # `doctor prune` deletes them.
+  superseded: [
+    'test/StructRunner.java'
+  ]
+
   deps: &: {
     kind: *'prod' | string
   }

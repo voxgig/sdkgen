@@ -1,12 +1,18 @@
-// VENDORED: @voxgig/sekreto 0.1.2 (typescript/src/provider/file.ts)
-// Source: https://github.com/voxgig/sekreto @ 65009cb5758850db767785ab666e71895f86086b
+// VENDORED: @voxgig/sekreto 0.2.0 (typescript/src/provider/file.ts)
+// Source: https://github.com/voxgig/sekreto @ a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042  [tag: sdk-20260904-1610-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025 Voxgig Ltd, MIT License */
 
-import {
-  ProviderSpec, Provider, SekretoError, envkey, flatname, nodemod,
-} from './support'
+import { Provider, SekretoError, envkey, nodemod } from './support'
 
+/** A directory of one-secret-per-file entries, keyed like the
+ * environment: `api.token` reads `<dir>/API_TOKEN`.
+ *
+ * This is the shape of a mounted Kubernetes Secret, a Docker or Swarm
+ * secret, and a systemd credentials directory, so those all work with no
+ * further configuration. One trailing newline is stripped - tools that
+ * write these files disagree about it, and a newline is never part of a
+ * secret on purpose. */
 export function fileprovider(dir: string, prefix?: string): Provider {
   return {
     lookup: (name: string) => {
@@ -32,23 +38,3 @@ export function fileprovider(dir: string, prefix?: string): Provider {
     describe: () => 'file:' + dir,
   }
 }
-
-/** Refuse to send a secret-bearing credential in the clear.
- *
- * A vault API is HTTPS in any real deployment; plaintext is a dev-mode
- * convenience. Sending a token over http to anything but the local
- * machine puts both the token and the secret it fetches on the wire for
- * anyone on the path, so sekreto will not do it. Loopback stays allowed:
- * that is `vault server -dev`, `boru vault serve`, and this repo's own
- * test harness. */
-
-
-// Registering at import is what makes this module's presence the only
-// thing that decides whether the kind exists in a build.
-import { register } from './Registry'
-
-register({
-  name: 'file',
-  needs: ['fs'],
-  define: (spec: ProviderSpec) => fileprovider(spec.dir || '', spec.prefix),
-})

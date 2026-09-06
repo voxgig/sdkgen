@@ -8,6 +8,16 @@ main: kit: target: c: {
   base: 'BASE'
   srcfeature: false
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): the fused corpus runner, whose engine half is now
+  # the vendored omni runner (tests/vendor/omni) and whose support half
+  # (normalize / deep_equal / brief / null_substitute) is subsumed by
+  # omni_deepequal / omni_matchval / omni_stringify. `doctor` reports
+  # leftovers; `doctor prune` deletes them.
+  superseded: [
+    'tests/runner.h'
+  ]
+
   deps: &: {
     kind: *'prod' | string
   }

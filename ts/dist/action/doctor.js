@@ -83,6 +83,7 @@ const ROOT_COMPONENTS = [
 ];
 const CMD_MAP = {
     check: cmd_doctor_check,
+    prune: cmd_doctor_prune,
 };
 async function action_doctor(args, actx) {
     // `doctor` with no subcommand is the check — the command exists to be run
@@ -97,6 +98,47 @@ async function action_doctor(args, actx) {
 async function cmd_doctor_check(_args, actx) {
     return doctor(actx);
 }
+// `doctor prune` — the ONE write doctor performs, and only ever of files a
+// target's model DECLARES superseded (retired templates jostraca cannot
+// delete from a consumer: the old runner beside its replacement, a
+// pre-reshape vendored file). Everything else doctor does stays read-only.
+async function cmd_doctor_prune(_args, actx) {
+    const log = actx.log;
+    const fs = actx.fs();
+    const found = supersededFiles(actx);
+    const pruned = [];
+    for (const abs of found) {
+        fs.unlinkSync(abs);
+        pruned.push(abs);
+        log.info({ point: 'doctor-prune', file: abs, note: 'pruned superseded: ' + abs });
+    }
+    log.info({
+        point: 'doctor-prune-end', pruned: pruned.length,
+        note: 0 === pruned.length ? 'nothing superseded to prune' :
+            ('pruned ' + pruned.length + ' superseded file(s)')
+    });
+    return { report: { pruned, ok: true } };
+}
+// Generated files the model says this toolchain NO LONGER writes, that
+// still exist in the project's target output directories. Paths in the
+// model are relative to each target's output dir (a sibling of `.sdk/`,
+// named for the target).
+function supersededFiles(actx) {
+    const fs = actx.fs();
+    const model = actx.model;
+    const root = actx.folder;
+    const targets = model?.main?.[types_1.KIT]?.target ?? {};
+    const found = [];
+    for (const tname of Object.keys(targets).sort()) {
+        for (const rel of (targets[tname].superseded || [])) {
+            const abs = node_path_1.default.join(root, '..', tname, String(rel));
+            if (fs.existsSync(abs)) {
+                found.push(abs);
+            }
+        }
+    }
+    return found;
+}
 // Code API. Returns the report; the CLI turns a non-ok report into a
 // non-zero exit so this can gate CI.
 async function doctor(actx, scope) {
@@ -106,8 +148,12 @@ async function doctor(actx, scope) {
     const root = actx.folder;
     const report = {
         forked: [], edited: [], stale: [], missing: [], additive: [],
-        unwired: [], resyncPending: [], aliasedDiff: [], ok: true,
+        superseded: [], unwired: [], resyncPending: [], aliasedDiff: [], ok: true,
     };
+    // Retired-output leftovers first: purely model-driven, and a finding —
+    // two copies of the same machinery, one stale, is exactly the state the
+    // migration guide had to clean up by hand three times.
+    report.superseded = supersededFiles(actx);
     // EVERY KIND, not just targets.
     //
     // `add` writes a copied model file for each kind — `model/target/<t>.aon`
@@ -179,13 +225,14 @@ async function doctor(actx, scope) {
         checkWiring(actx, report);
     }
     report.ok = 0 === report.forked.length + report.edited.length +
-        report.stale.length + report.missing.length;
+        report.stale.length + report.missing.length + report.superseded.length;
     for (const [kind, note] of [
         ['forked', 'FORKED (will be reverted by `target add`)'],
         ['edited', 'EDITED template master'],
         ['stale', 'STALE (no longer written by `target add`)'],
         ['missing', 'MISSING (would be written by `target add`)'],
         ['additive', 'additive (project-owned, not drift)'],
+        ['superseded', 'SUPERSEDED generated output (run `doctor prune` to delete)'],
         ['unwired', 'NOT WIRED IN (root capability this project is missing)'],
         ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
         ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
@@ -202,6 +249,7 @@ async function doctor(actx, scope) {
         stale: report.stale.length,
         missing: report.missing.length,
         additive: report.additive.length,
+        superseded: report.superseded.length,
         unwired: report.unwired.length,
         resyncPending: report.resyncPending.length,
         aliasedDiff: report.aliasedDiff.length,

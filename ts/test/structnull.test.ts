@@ -46,24 +46,16 @@
 // between classes moves it between auth-null failure modes too, and the
 // vendored signature pin next door cannot see a behaviour change at all.
 //
-// KNOWN DEFECT, PINNED AS-IS
+// FORMER KNOWN DEFECT, now resynced away
 //
-// py answers correctly for a MAP and incorrectly for a LIST:
-// `getprop([null], 0, 'ALT')` gives back the null where canonical 0.3.2
-// gives 'ALT'. Canonical getprop tests `isnode(val)` - map and list - then
-// applies the null rule once to whatever it read; py's copy branches
-// ismap/islist and its list branch does `return val[key]`, an early return
-// that skips the rule. The map path being right is why nothing noticed.
-//
-// It is not pinned here because the table asks the map question, which py
-// gets right. It is pinned in create-sdkgen's `struct/nullsem.aon`, the
-// opt-in corpus section written alongside this file.
-//
-// It needs no upstream work: upstream python at the commit js and ts are
-// vendored from already answers 'ALT' for the list case. So the remedy is a
-// RESYNC of the vendored copy, the same one-file move made for js here, and
-// then py opts in to nullsem. Hand-patching a file stamped `do not edit:
-// resync from upstream` would just hide it again.
+// py used to answer correctly for a MAP and incorrectly for a LIST:
+// `getprop([null], 0, 'ALT')` handed back the null where canonical gives
+// 'ALT' (its list branch did `return val[key]`, an early return skipping
+// the null rule). The tag resync (sdk-20260904-1610-0, struct python
+// 0.1.1) brought upstream's isnode-shaped getprop, and the list case now
+// answers 'ALT' — measured at the resync, and pinned by create-sdkgen's
+// opt-in `struct/nullsem.aon` corpus section, which py can now opt into.
+// py's MAP-question class below is unchanged by the resync.
 
 import { test, describe, before, after } from 'node:test'
 import { strictEqual } from 'node:assert'
@@ -124,7 +116,7 @@ const PORTS: {
 }[] = [
   {
     target: 'py',
-    stamp: 'unstamped',
+    stamp: '0.1.1',
     needs: 'python3',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
@@ -149,7 +141,7 @@ except Exception:
   },
   {
     target: 'perl',
-    stamp: 'unstamped',
+    stamp: '0.1.1',
     needs: 'perl',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
@@ -213,8 +205,89 @@ catch (\\Throwable $e) { echo 'validate=throws' . PHP_EOL; }
     },
   },
   {
+    // The go/py READER class combined with the php VALIDATE class - a
+    // combination no other port pins: getprop/haskey answer the new way
+    // while validate on a stored null THROWS (fail-closed). Resynced to
+    // struct 0.1.1 at the vendor tag.
+    target: 'csharp',
+    stamp: '0.1.1',
+    needs: 'dotnet',
+    answers: { getprop: 'alt', haskey: 'false', validate: 'throws' },
+    exec: (tmp) => {
+      const dotnet = toolchain('dotnet')
+      if (null == dotnet) return null
+
+      const dir = Path.join(tmp, 'csharp')
+      Fs.mkdirSync(dir, { recursive: true })
+      Fs.copyFileSync(
+        Path.join(TM, 'csharp', 'utility', 'struct', 'Struct.cs'),
+        Path.join(dir, 'Struct.cs'))
+      Fs.writeFileSync(Path.join(dir, 'probe.csproj'), `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>probe</AssemblyName>
+  </PropertyGroup>
+</Project>
+`)
+      Fs.writeFileSync(Path.join(dir, 'Program.cs'), `using Voxgig.Struct;
+
+var m = new Dictionary<string, object?> { ["x"] = null };
+Console.WriteLine("getprop=" +
+  ("ALT" == StructUtils.GetProp(m, "x", "ALT") as string ? "alt" : "null"));
+Console.WriteLine("haskey=" + (StructUtils.HasKey(m, "x") ? "true" : "false"));
+try
+{
+  StructUtils.Validate(
+    new Dictionary<string, object?> { ["auth"] = null },
+    new Dictionary<string, object?> {
+      ["auth"] = new Dictionary<string, object?> { ["prefix"] = "" } });
+  Console.WriteLine("validate=default");
+}
+catch (Exception)
+{
+  Console.WriteLine("validate=throws");
+}
+`)
+      return run(dotnet, ['run', '--project', dir, '-v', 'q', '--nologo'], dir)
+    },
+  },
+  {
+    // The REFERENCE target's own vendored copy, which the first pass never
+    // rowed — "add a row per newly vendored struct port" literally applies
+    // here. TypeScript is transpiled in-process with the repo's own
+    // compiler; no toolchain beyond node is needed.
+    target: 'ts',
+    stamp: '0.3.4',
+    needs: 'node (always present - this suite runs on it)',
+    answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
+    exec: (tmp) => {
+      // Node >=23.6 strips erasable TS syntax from FILES natively, which
+      // is exactly enough for the vendored utility (typescript-the-package
+      // is v7 here and no longer exposes transpileModule).
+      const dir = Fs.mkdtempSync(Path.join(tmp || Os.tmpdir(), 'structnull-ts-'))
+      Fs.copyFileSync(
+        Path.join(TM, 'ts', 'src', 'utility', 'StructUtility.ts'),
+        Path.join(dir, 'StructUtility.ts'))
+      const probe = `
+import { getprop, haskey, validate } from './StructUtility.ts'
+console.log('getprop=' + ('ALT' === getprop({x: null}, 'x', 'ALT') ? 'alt' : 'null'))
+console.log('haskey=' + (haskey({x: null}, 'x') ? 'true' : 'false'))
+try {
+  validate({auth: null}, {auth: {prefix: ''}})
+  console.log('validate=default')
+}
+catch (e) { console.log('validate=throws') }
+`
+      Fs.writeFileSync(Path.join(dir, 'probe.ts'), probe)
+      return run(process.execPath, [Path.join(dir, 'probe.ts')])
+    },
+  },
+  {
     target: 'js',
-    stamp: '0.3.2',
+    stamp: '0.1.4 (0.3.x behaviour)',
     needs: 'node (always present - this suite runs on it)',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
@@ -232,7 +305,7 @@ catch (e) { console.log('validate=throws') }
   },
   {
     target: 'go',
-    stamp: '0.1.3',
+    stamp: '0.1.0',
     needs: 'go',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: (tmp) => {
@@ -338,7 +411,7 @@ describe('vendored struct null semantics', () => {
   // documents. Without this, deleting a row silently shrinks the table to the
   // ports that happen to agree.
   test('every port in the documented table has a row', () => {
-    const documented = ['go', 'py', 'perl', 'rb', 'php', 'js'].sort()
+    const documented = ['go', 'py', 'perl', 'rb', 'php', 'js', 'ts', 'csharp'].sort()
     const rows = PORTS.map((p) => p.target).sort()
 
     strictEqual(JSON.stringify(rows), JSON.stringify(documented),

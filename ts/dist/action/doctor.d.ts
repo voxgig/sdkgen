@@ -5,6 +5,7 @@ type DoctorReport = {
     stale: string[];
     missing: string[];
     additive: string[];
+    superseded: string[];
     unwired: string[];
     resyncPending: string[];
     aliasedDiff: string[];

@@ -1,13 +1,15 @@
 ;; ProjectName SDK test runner (tools.deps main entry point).
-;; Runs the API-agnostic suites (primary utility, pipeline, features, netsim),
-;; the generated API-specific suite, and the vendored struct corpus, then
-;; reports counts and exits non-zero on any failure.
+;; Runs the vendored omni runner's smoke test, the API-agnostic suites
+;; (primary utility, pipeline, features, netsim), the generated API-specific
+;; suite, and the vendored struct corpus, then reports counts and exits
+;; non-zero on any failure.
 (ns sdk.test-runner
   (:require [sdk.test.primary :as primary]
             [sdk.test.pipeline :as pipeline]
             [sdk.test.feature :as feature]
             [sdk.test.netsim :as netsim]
             [sdk.test.struct-corpus :as corpus]
+            [sdk.test.omni-smoke :as omnismoke]
             [sdk.gentest :as gentest]))
 
 (defn- find-corpus-file []
@@ -17,6 +19,9 @@
 (defn -main [& _args]
   (let [results (atom [])
         rec (fn [name ok? msg] (swap! results conj {:name name :ok ok? :msg msg}))]
+    ;; The vendored engine's own smoke test runs FIRST: if the runner cannot
+    ;; fail a bad entry, every corpus count below it is meaningless.
+    (omnismoke/run rec)
     (primary/run rec)
     ;; The shared corpus, driven through this SDK's utilities.
     (primary/run-corpus rec)

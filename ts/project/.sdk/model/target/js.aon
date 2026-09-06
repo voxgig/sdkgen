@@ -7,6 +7,13 @@ main: kit: target: js: {
   module: name: '$$name$$'
   base: 'BASE'
 
+  # Files earlier toolchains generated that this target has RETIRED
+  # (vendor-tag rollout): the single fused runner. `doctor` reports
+  # leftovers; `doctor prune` deletes them.
+  superseded: [
+    'test/runner.js'
+  ]
+
   deps: &: {
     # TODO: fix aontu disjunctions!
     kind: *'prod' | string # 'peer' |'dev'
