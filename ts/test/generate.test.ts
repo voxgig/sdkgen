@@ -2231,6 +2231,49 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // zig runner swap: the omni resolver, its vendored port and the
+  // must-fail smoke test are generated; the superseded
+  // test/struct_runner.zig is gone. build.zig must ALSO declare the `omni`
+  // module and list the smoke test - zig has no test auto-discovery, so a
+  // suite the build file does not name exists and never runs, and the
+  // vendored omni.zig reaches its own regex.zig by path, which only works
+  // when the pair belongs to exactly one module.
+  test('zig: the omni runner swap generates the resolver and retires struct_runner', async () => {
+    const out = await generate(['zig'])
+
+    ok(null != findFile(out, 'test/omniresolver.zig'),
+      'zig: no omni resolver generated')
+    for (const vf of ['omni.zig', 'regex.zig']) {
+      ok(null != findFile(out, 'test/vendor/omni/' + vf),
+        'zig: vendored omni file missing: ' + vf)
+    }
+    ok(null != findFile(out, 'test/omnismoke_test.zig'),
+      'zig: the runner-must-fail smoke test is missing')
+    ok(null == findFile(out, 'test/struct_runner.zig'),
+      'zig: the superseded test/struct_runner.zig is still generated')
+
+    const build = findFile(out, 'build.zig')
+    ok(null != build, 'zig: no build.zig generated')
+    ok(/b\.addModule\("omni"/.test(build!),
+      'zig: build.zig does not declare the vendored omni module')
+    ok(/addImport\("omni", omni_mod\)/.test(build!),
+      'zig: build.zig does not give the test modules the omni module')
+    ok(/"test\/omnismoke_test\.zig"/.test(build!),
+      'zig: build.zig does not run the omni smoke test')
+
+    const primary = findFile(out, 'test/primary_utility_test.zig')
+    ok(null != primary, 'zig: no primary_utility_test.zig generated')
+    ok(/@import\("omniresolver\.zig"\)/.test(primary!),
+      'zig: primary_utility_test.zig does not use the omni resolver')
+    const struct = findFile(out, 'test/struct_corpus.zig')
+    ok(null != struct, 'zig: no struct_corpus.zig generated')
+    ok(/@import\("omniresolver\.zig"\)/.test(struct!),
+      'zig: struct_corpus.zig does not use the omni resolver')
+    ok(!/@import\("struct_runner\.zig"\)/.test(struct!),
+      'zig: struct_corpus.zig still imports the retired struct_runner')
+  })
+
+
   test('rust: feature/mod.rs declares exactly the model features', async () => {
     const out = await generate(['rust'])
 

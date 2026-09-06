@@ -100,6 +100,9 @@
   },
   "ts": {
    "comment": "//"
+  },
+  "zig": {
+   "comment": "//"
   }
  },
  "route": [
@@ -435,6 +438,19 @@
     "typescript/src/Runner.ts": "tm/ts/test/vendor/omni/Runner.ts",
     "typescript/src/Util.ts": "tm/ts/test/vendor/omni/Util.ts",
     "typescript/src/index.ts": "tm/ts/test/vendor/omni/index.ts"
+   }
+  },
+  {
+   "lib": "omni",
+   "port": "zig",
+   "lang": "zig",
+   "version": "sdk-20260904-1610-0",
+   "dir": [
+    "tm/zig/test/vendor/omni"
+   ],
+   "file": {
+    "zig/src/omni.zig": "tm/zig/test/vendor/omni/omni.zig",
+    "zig/src/regex.zig": "tm/zig/test/vendor/omni/regex.zig"
    }
   },
   {
@@ -801,6 +817,19 @@
    "version": "0.3.4",
    "file": {
     "typescript/src/StructUtility.ts": "tm/ts/src/utility/StructUtility.ts"
+   }
+  },
+  {
+   "lib": "struct",
+   "port": "zig",
+   "lang": "zig",
+   "version": "sdk-20260904-1610-0",
+   "dir": [
+    "tm/zig/utility/voxgigstruct"
+   ],
+   "file": {
+    "zig/src/struct.zig": "tm/zig/utility/voxgigstruct/struct.zig",
+    "zig/src/regex.zig": "tm/zig/utility/voxgigstruct/regex.zig"
    }
   }
  ]

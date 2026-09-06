@@ -1390,6 +1390,16 @@ const OMNI_RUNNER: Record<string, {
     smoke: 'ocaml/test/omni_smoke_test.ml',
     superseded: ['ocaml/test/corpus_runner.ml'],
   },
+  zig: {
+    // The LAST target, and the one that needed a toolchain move to get
+    // here: omni's zig port is written for Zig 0.16, so vendoring it was
+    // impossible while this target was pinned to 0.13.
+    resolver: 'zig/test/omniresolver.zig',
+    vendor: 'zig/test/vendor/omni',
+    vendorfiles: ['omni.zig', 'regex.zig'],
+    smoke: 'zig/test/omnismoke_test.zig',
+    superseded: ['zig/test/struct_runner.zig'],
+  },
   lean: {
     resolver: 'lean/test/OmniResolver.lean',
     vendor: 'lean/test/vendor/omni',
@@ -1616,16 +1626,17 @@ describe('zig test templates reach modules by name', () => {
   })
 
 
-  test('the runner still has a regex path, reached through the module', () => {
-    // The rewrite swapped a hand-rolled compile/isMatch/deinit for the
-    // module's own re_test. Losing the call entirely would leave every
-    // /pattern/ corpus check falling through to the substring branch and
-    // quietly passing, so pin that the call is still there.
+  test('the runner still has a regex path', () => {
+    // Originally this read the hand-written struct_runner.zig, which owned
+    // the /pattern/ branch. That file is retired: the engine is vendored
+    // omni now, and the regex path is ITS regex path. Same risk, new home —
+    // losing the call would leave every /pattern/ corpus check falling
+    // through to a substring comparison and quietly passing.
     const src = readFileSync(
-      Path.join(TM, 'zig', 'test', 'struct_runner.zig'), 'utf8')
+      Path.join(TM, 'zig', 'test', 'vendor', 'omni', 'omni.zig'), 'utf8')
 
-    ok(src.includes('voxgig_struct.re_test(pat, basestr)'),
-      'struct_runner lost its regex match — /pattern/ checks would degrade ' +
-      'to a substring comparison and still look green')
+    ok(/regex\.(find|match|test)/.test(src),
+      'the vendored omni zig port lost its regex match — /pattern/ checks ' +
+      'would degrade to a substring comparison and still look green')
   })
 })

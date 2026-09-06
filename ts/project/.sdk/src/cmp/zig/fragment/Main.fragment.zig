@@ -45,7 +45,7 @@ pub const ProjectNameSDK = struct {
             .mode = "live",
             .options = h.vnull(),
             .sdkUtility = Utility.new(),
-            .features = std.ArrayList(Feature).init(h.A()),
+            .features = .empty,
             .rootctx = null,
         };
 
@@ -93,8 +93,8 @@ pub const ProjectNameSDK = struct {
         }
 
         // Initialize features.
-        var snap = std.ArrayList(Feature).init(h.A());
-        for (sdk.features.items) |f| snap.append(f) catch {};
+        var snap: std.ArrayList(Feature) = .empty;
+        for (sdk.features.items) |f| snap.append(h.A(), f) catch {};
         for (snap.items) |f| sdk.sdkUtility.feature_init(rootctx, f);
 
         sdk.sdkUtility.feature_hook(rootctx, "PostConstruct");

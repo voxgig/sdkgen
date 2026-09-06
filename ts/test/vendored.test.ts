@@ -106,6 +106,12 @@ const VENDOR_DIRS = [
   'tm/elixir/test/vendor/omni',
   'tm/ocaml/test/vendor/omni',
   'tm/lean/test/vendor/omni',
+  // zig arrives last and vendors BOTH libraries: its struct copy was a
+  // hand-maintained 0.13-era fork until the target moved to Zig 0.16, at
+  // which point upstream's own port - already written for 0.16 - could
+  // simply replace it.
+  'tm/zig/utility/voxgigstruct',
+  'tm/zig/test/vendor/omni',
 ]
 
 
@@ -140,7 +146,7 @@ const LANG_COMMENT: Record<string, string> = {
   rb: '#', php: '//', lua: '--', perl: '#',
   java: '//', kotlin: '//', csharp: '//',
   c: '//', cpp: '//', dart: '//', swift: '//', rust: '//', scala: '//',
-  clojure: ';;', elixir: '#', lean: '--',
+  clojure: ';;', elixir: '#', lean: '--', zig: '//',
   // OCaml has no LINE comment at all, so its header is three BLOCK
   // comments and the token is regex metacharacters — see escape() below,
   // and `commentend` in build/vendor.js for the closing half.
