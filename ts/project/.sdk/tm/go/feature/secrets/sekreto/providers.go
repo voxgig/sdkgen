@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/sekreto sdk-20260904-1610-0 (go/sekreto/providers.go)
-// Source: https://github.com/voxgig/sekreto @ a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042  [tag: sdk-20260904-1610-0]
+// VENDORED: @voxgig/sekreto sdk-20260907-0029-0 (go/sekreto/providers.go)
+// Source: https://github.com/voxgig/sekreto @ 86ba35a646e68a311bdece43cd5689369ca62e9d  [tag: sdk-20260907-0029-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // What a provider is, what its declarative form looks like, how a provider
 // kind becomes a voxgig/plugin definition - and the four BUILT-IN kinds.
@@ -368,6 +368,9 @@ func ProviderPlugin(kind string, make func(spec *ProviderSpec) (Provider, error)
 // the JSON shape OptionsOf produced, and the shape a config document
 // would.
 func SpecOf(options map[string]any) (*ProviderSpec, error) {
+	// json.Marshal, not WriteJSON: these bytes are unmarshalled on the next
+	// line and never leave the process, so HTML escaping cannot be observed
+	// - Unmarshal reads \u003c back as <. WriteJSON is for what is emitted.
 	text, err := json.Marshal(options)
 	if nil != err {
 		return nil, Fail("sekreto: unreadable provider options: " + err.Error())

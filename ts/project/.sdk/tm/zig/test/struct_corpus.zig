@@ -1033,12 +1033,7 @@ fn wrap_validate(allocator: Allocator, val: JsonValue, errout: *?[]const u8) Jso
     // invisible until now, because the retiring runner swallowed the
     // validation error and compared only the value, which `$=` leaves alone.
     //
-    // validateWith(..., .null) IS validate: the three-argument form is a
-    // one-line delegation to it, and that delegation does not compile —
-    // `validate` and `validateWith` each declare their own anonymous
-    // `struct { out, err }` return type, which Zig makes distinct types. The
-    // file is vendored and read-only, so the call goes straight to
-    // validateWith for identical behaviour.
+    // validateWith, not validate, because there IS a third argument here.
     const injdef = m.get("inj") orelse .null;
     const result = voxgig_struct.validateWith(allocator, data, spec, injdef) catch return .null;
     if (result.err) |message| {

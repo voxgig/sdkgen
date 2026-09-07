@@ -1,14 +1,13 @@
 # VENDORED: @voxgig/sekreto 0.2.0 (python/voxgig_sekreto/plugins/hashicorp.py)
-# Source: https://github.com/voxgig/sekreto @ a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042  [tag: sdk-20260904-1610-0]
+# Source: https://github.com/voxgig/sekreto @ 86ba35a646e68a311bdece43cd5689369ca62e9d  [tag: sdk-20260907-0029-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # The hashicorp plugin: HashiCorp Vault, and OpenBao. Needs HTTPS, and
 # the filesystem for a kubernetes service-account JWT. A port of
 # typescript/plugins/hashicorp.ts.
-import json
 import time
 
 from ..addr import checkaddr
-from ..sekreto import SekretoError, vaultref
+from ..sekreto import SekretoError, vaultref, writejson
 from ..providers import Provider, providerplugin
 from .httpjson import fetchjson, tonumber
 
@@ -89,7 +88,7 @@ class HashicorpProvider(Provider):
             )
 
         status, resbody = fetchjson(
-            'POST', url, self.baseheaders(), json.dumps(body, separators=(',', ':'))
+            'POST', url, self.baseheaders(), writejson(body)
         )
 
         got = ((resbody or {}).get('auth') or {}).get('client_token')

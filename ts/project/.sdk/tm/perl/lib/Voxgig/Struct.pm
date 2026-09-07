@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/struct 0.1.1 (perl/lib/Voxgig/Struct.pm)
-# Source: https://github.com/voxgig/struct @ 2caf7f448f265144c18dd6fab6ba270a7f3bca07  [tag: sdk-20260904-1610-0]
+# Source: https://github.com/voxgig/struct @ adda9521c828147573df5a8878408a3f2193ddf4  [tag: sdk-20260907-0029-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 # Perl port of the canonical TypeScript implementation (ts/src/StructUtility.ts).

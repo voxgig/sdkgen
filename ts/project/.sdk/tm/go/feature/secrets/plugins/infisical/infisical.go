@@ -1,12 +1,11 @@
-// VENDORED: @voxgig/sekreto sdk-20260904-1610-0 (go/plugins/infisical/infisical.go)
-// Source: https://github.com/voxgig/sekreto @ a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042  [tag: sdk-20260904-1610-0]
+// VENDORED: @voxgig/sekreto sdk-20260907-0029-0 (go/plugins/infisical/infisical.go)
+// Source: https://github.com/voxgig/sekreto @ 86ba35a646e68a311bdece43cd5689369ca62e9d  [tag: sdk-20260907-0029-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // The infisical plugin: Infisical. Needs HTTPS. A port of
 // typescript/plugins/infisical.ts.
 package infisical
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -48,7 +47,7 @@ func (provider *Provider) login(addr string) (string, error) {
 		return "", sekreto.Fail("sekreto: infisical: no token and no client credentials")
 	}
 
-	payload, _ := json.Marshal(struct {
+	payload, _ := sekreto.WriteJSON(struct {
 		ClientID     string `json:"clientId"`
 		ClientSecret string `json:"clientSecret"`
 	}{ClientID: provider.ClientID, ClientSecret: provider.ClientSecret})

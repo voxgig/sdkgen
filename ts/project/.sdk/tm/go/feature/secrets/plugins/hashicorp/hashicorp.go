@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/sekreto sdk-20260904-1610-0 (go/plugins/hashicorp/hashicorp.go)
-// Source: https://github.com/voxgig/sekreto @ a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042  [tag: sdk-20260904-1610-0]
+// VENDORED: @voxgig/sekreto sdk-20260907-0029-0 (go/plugins/hashicorp/hashicorp.go)
+// Source: https://github.com/voxgig/sekreto @ 86ba35a646e68a311bdece43cd5689369ca62e9d  [tag: sdk-20260907-0029-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // The hashicorp plugin: HashiCorp Vault, and OpenBao. Needs HTTPS, and
 // the filesystem for a kubernetes service-account JWT. A port of
@@ -7,7 +7,6 @@
 package hashicorp
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 	"strconv"
@@ -91,12 +90,12 @@ func (provider *Provider) login() (string, error) {
 			}
 			jwt = strings.TrimSpace(string(raw))
 		}
-		payload, _ = json.Marshal(struct {
+		payload, _ = sekreto.WriteJSON(struct {
 			Role string `json:"role"`
 			Jwt  string `json:"jwt"`
 		}{Role: auth.Role, Jwt: jwt})
 	case "approle":
-		payload, _ = json.Marshal(struct {
+		payload, _ = sekreto.WriteJSON(struct {
 			RoleID   string `json:"role_id"`
 			SecretID string `json:"secret_id"`
 		}{RoleID: auth.RoleID, SecretID: auth.SecretID})

@@ -1,13 +1,12 @@
 # VENDORED: @voxgig/sekreto 0.2.0 (python/voxgig_sekreto/plugins/infisical.py)
-# Source: https://github.com/voxgig/sekreto @ a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042  [tag: sdk-20260904-1610-0]
+# Source: https://github.com/voxgig/sekreto @ 86ba35a646e68a311bdece43cd5689369ca62e9d  [tag: sdk-20260907-0029-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # The infisical plugin: Infisical. Needs HTTPS. A port of
 # typescript/plugins/infisical.ts.
-import json
 import time
 
 from ..addr import checkaddr
-from ..sekreto import SekretoError, envkey
+from ..sekreto import SekretoError, envkey, writejson
 from ..providers import Provider, providerplugin
 from .httpjson import fetchjson, tonumber, urlpart
 
@@ -40,9 +39,8 @@ class InfisicalProvider(Provider):
             'POST',
             addr + '/api/v1/auth/universal-auth/login',
             {'content-type': 'application/json'},
-            json.dumps(
-                {'clientId': self.opts['clientid'], 'clientSecret': self.opts['clientsecret']},
-                separators=(',', ':'),
+            writejson(
+                {'clientId': self.opts['clientid'], 'clientSecret': self.opts['clientsecret']}
             ),
         )
 

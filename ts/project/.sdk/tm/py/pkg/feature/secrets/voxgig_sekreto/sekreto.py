@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/sekreto 0.2.0 (python/voxgig_sekreto/sekreto.py)
-# Source: https://github.com/voxgig/sekreto @ a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042  [tag: sdk-20260904-1610-0]
+# Source: https://github.com/voxgig/sekreto @ 86ba35a646e68a311bdece43cd5689369ca62e9d  [tag: sdk-20260907-0029-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # sekreto: one interface for secrets, wherever they live.
 #
@@ -17,6 +17,7 @@
 # project handed it in through `plugins`. See
 # docs/design/plugin-providers.md.
 
+import json
 import re
 import types
 
@@ -34,6 +35,25 @@ class SekretoError(Exception):
 # `API_TOKEN\n`, sending this port looking for a differently named file and
 # variable than the others.
 NAMEPART = re.compile(r'\A[a-z0-9_]+\Z')
+
+
+def writejson(value):
+    """JSON text for a value that LEAVES the process.
+
+    Two defaults have to be turned off. `ensure_ascii` escapes every
+    non-ASCII character as \\uXXXX, and `separators` otherwise puts a space
+    after each comma and colon. Neither is wrong, and both made python one
+    of only three ports whose bytes differed: the rest emit a secret's
+    accented or non-Latin characters as the UTF-8 they already are. The
+    writer's output is part of what the ports agree on - the CLI line is
+    compared byte for byte across all of them - so python matches the
+    rest.
+
+    Use this for a request body, a returned secret, the CLI's line. A
+    `json.dumps` whose text is parsed again without ever being emitted
+    needs no such care.
+    """
+    return json.dumps(value, ensure_ascii=False, separators=(',', ':'))
 
 
 def validname(name):

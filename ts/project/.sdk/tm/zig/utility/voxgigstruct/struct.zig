@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/struct sdk-20260904-1610-0 (zig/src/struct.zig)
-// Source: https://github.com/voxgig/struct @ 2caf7f448f265144c18dd6fab6ba270a7f3bca07  [tag: sdk-20260904-1610-0]
+// VENDORED: @voxgig/struct sdk-20260907-0029-0 (zig/src/struct.zig)
+// Source: https://github.com/voxgig/struct @ adda9521c828147573df5a8878408a3f2193ddf4  [tag: sdk-20260907-0029-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 
@@ -3786,11 +3786,19 @@ fn resolveSpecialEscapes(allocator: Allocator, pathref: []const u8) []const u8 {
 // Uses the transform/inject infrastructure with type-checking commands.
 // ============================================================================
 
-pub fn validate(allocator: Allocator, data: JsonValue, spec: JsonValue) anyerror!struct { out: JsonValue, err: ?[]const u8 } {
+// NAMED, not anonymous. Two `struct { ... }` written out separately are two
+// DISTINCT types in Zig even when their fields match, so while `validate` and
+// `validateWith` each declared their own, `validate`'s one-line delegation
+// could not compile: "error union payload cannot cast into error union
+// payload". Zig analyses lazily, so nothing noticed until a caller appeared -
+// the SDK's zig target was the first. Fails identically on 0.13 and 0.16.
+pub const ValidateResult = struct { out: JsonValue, err: ?[]const u8 };
+
+pub fn validate(allocator: Allocator, data: JsonValue, spec: JsonValue) anyerror!ValidateResult {
     return validateWith(allocator, data, spec, .null);
 }
 
-pub fn validateWith(allocator: Allocator, data: JsonValue, spec: JsonValue, injdef: JsonValue) anyerror!struct { out: JsonValue, err: ?[]const u8 } {
+pub fn validateWith(allocator: Allocator, data: JsonValue, spec: JsonValue, injdef: JsonValue) anyerror!ValidateResult {
     const spec_clone = try clone(allocator, spec);
     const data_clone = if (data == .null) JsonValue{ .null = {} } else try clone(allocator, data);
     const orig_spec = try clone(allocator, spec);

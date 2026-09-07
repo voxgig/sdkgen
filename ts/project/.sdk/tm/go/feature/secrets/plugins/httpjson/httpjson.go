@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/sekreto sdk-20260904-1610-0 (go/plugins/httpjson/httpjson.go)
-// Source: https://github.com/voxgig/sekreto @ a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042  [tag: sdk-20260904-1610-0]
+// VENDORED: @voxgig/sekreto sdk-20260907-0029-0 (go/plugins/httpjson/httpjson.go)
+// Source: https://github.com/voxgig/sekreto @ 86ba35a646e68a311bdece43cd5689369ca62e9d  [tag: sdk-20260907-0029-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // The HTTP half of every plugin that speaks to a store over the wire, in
 // one place and OUTSIDE the core: a chain of built-ins never links this
@@ -207,7 +207,7 @@ func ToString(value any) string {
 	case float64:
 		return strconv.FormatFloat(typed, 'f', -1, 64)
 	default:
-		text, err := json.Marshal(typed)
+		text, err := sekreto.WriteJSON(typed)
 		if nil != err {
 			return ""
 		}

@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/omni sdk-20260904-1610-0 (rust/src/runner.rs)
-// Source: https://github.com/voxgig/omni @ 8c3e1b573a8d35796f7fc45e3226b977023cabf7  [tag: sdk-20260904-1610-0]
+// VENDORED: @voxgig/omni sdk-20260907-0029-0 (rust/src/runner.rs)
+// Source: https://github.com/voxgig/omni @ 274708cc2d12b21707d975543953f845f8444be0  [tag: sdk-20260907-0029-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 //! Omni: the shared multi-language test runner.
 //!

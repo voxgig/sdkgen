@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/omni sdk-20260904-1610-0 (go/omni.go)
-// Source: https://github.com/voxgig/omni @ 8c3e1b573a8d35796f7fc45e3226b977023cabf7  [tag: sdk-20260904-1610-0]
+// VENDORED: @voxgig/omni sdk-20260907-0029-0 (go/omni.go)
+// Source: https://github.com/voxgig/omni @ 274708cc2d12b21707d975543953f845f8444be0  [tag: sdk-20260907-0029-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Omni: the shared multi-language test runner.
 //
@@ -638,7 +638,12 @@ func handleerror(flags Flags, index int, entry map[string]any, err error, provid
 // Match checks that every leaf of `check` is present, and matches, in
 // `base`.
 func Match(flags Flags, index int, entry map[string]any, check any, base any) error {
-	cbase := Clone(base)
+	// Read the base DIRECTLY. The clone bought nothing - the walk below
+	// only reads, via GetPath - and it blows the stack on a cyclic base. A
+	// port driving entries with live objects rather than pure JSON produces
+	// those routinely (voxgig/sdkgen's corpus matches a live client context
+	// whose root context reaches the client again).
+	cbase := base
 	var failure error
 
 	Walk(Clone(check), func(_key any, val any, _parent any, path []any) any {

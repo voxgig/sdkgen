@@ -16,7 +16,7 @@
   "haskell (packages/sdkgen-haskell) is EXCLUDED: its scaffold is outside",
   "this write root and needs its own route root \u2014 recorded, not silent."
  ],
- "tag": "sdk-20260904-1610-0",
+ "tag": "sdk-20260907-0029-0",
  "repo": {
   "struct": {
    "url": "https://github.com/voxgig/struct",
@@ -110,7 +110,7 @@
    "lib": "omni",
    "port": "c",
    "lang": "c",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/c/tests/vendor/omni"
    ],
@@ -125,7 +125,7 @@
    "lib": "omni",
    "port": "clojure",
    "lang": "clojure",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/clojure/test/vendor/omni",
     "tm/clojure/test/vendor/omni/voxgig",
@@ -141,7 +141,7 @@
    "lib": "omni",
    "port": "cpp",
    "lang": "cpp",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/cpp/test/vendor/omni"
    ],
@@ -155,7 +155,7 @@
    "lib": "omni",
    "port": "csharp",
    "lang": "csharp",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/csharp/test/vendor/omni"
    ],
@@ -168,7 +168,7 @@
    "lib": "omni",
    "port": "dart",
    "lang": "dart",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/dart/test/vendor/omni"
    ],
@@ -182,7 +182,7 @@
    "lib": "omni",
    "port": "elixir",
    "lang": "elixir",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/elixir/test/vendor/omni"
    ],
@@ -196,7 +196,7 @@
    "lib": "omni",
    "port": "go",
    "lang": "go",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/go/test/omni"
    ],
@@ -209,7 +209,7 @@
    "lib": "omni",
    "port": "java",
    "lang": "java",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/java/test/vendor/omni"
    ],
@@ -237,7 +237,7 @@
    "lib": "omni",
    "port": "kotlin",
    "lang": "kotlin",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/kotlin/test/vendor/omni"
    ],
@@ -251,7 +251,7 @@
    "lib": "omni",
    "port": "lean",
    "lang": "lean",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/lean/test/vendor/omni"
    ],
@@ -263,7 +263,7 @@
    "lib": "omni",
    "port": "lua",
    "lang": "lua",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/lua/test/vendor/omni"
    ],
@@ -278,7 +278,7 @@
    "lib": "omni",
    "port": "ocaml",
    "lang": "ocaml",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/ocaml/test/vendor/omni"
    ],
@@ -306,7 +306,7 @@
    "lib": "omni",
    "port": "php",
    "lang": "php",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/php/test/vendor/omni"
    ],
@@ -333,7 +333,7 @@
    "lib": "omni",
    "port": "ruby",
    "lang": "rb",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/rb/test/vendor/omni"
    ],
@@ -359,7 +359,7 @@
    "lib": "omni",
    "port": "rust",
    "lang": "rust",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/rust/tests/vendor/omni"
    ],
@@ -402,7 +402,7 @@
    "lib": "omni",
    "port": "scala",
    "lang": "scala",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/scala/sdktest/vendor/omni"
    ],
@@ -416,7 +416,7 @@
    "lib": "omni",
    "port": "swift",
    "lang": "swift",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/swift/Tests/vendor/omni"
    ],
@@ -444,7 +444,7 @@
    "lib": "omni",
    "port": "zig",
    "lang": "zig",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/zig/test/vendor/omni"
    ],
@@ -536,7 +536,7 @@
    "lib": "sekreto",
    "port": "go",
    "lang": "go",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/go/feature/secrets/sekreto",
     "tm/go/feature/secrets/plugins",
@@ -823,7 +823,7 @@
    "lib": "struct",
    "port": "zig",
    "lang": "zig",
-   "version": "sdk-20260904-1610-0",
+   "version": "sdk-20260907-0029-0",
    "dir": [
     "tm/zig/utility/voxgigstruct"
    ],

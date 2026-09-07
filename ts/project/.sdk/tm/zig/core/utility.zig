@@ -409,14 +409,7 @@ pub fn make_options_util(ctx: *Context) Value {
     // so without this one client's options (headers, server, ...) are written
     // into the shared config and inherited by every client built after it.
     const merged = vs.merge(h.A(), h.ja(&.{ h.omap(), h.clone(cfgopts), opts }), vs.MAXDEPTH) catch opts;
-    // validateWith(..., .null) IS validate: the three-argument form is a
-    // one-line delegation to it. It is called directly because that
-    // delegation does not compile — the two functions each declare their own
-    // anonymous "struct { out, err }" return type, and Zig makes those
-    // distinct types, so the delegating return cannot coerce. Upstream's
-    // file is vendored and read-only; going straight to validateWith gets
-    // identical behaviour without touching it.
-    const vres = vs.validateWith(h.A(), merged, optspec, .null) catch null;
+    const vres = vs.validate(h.A(), merged, optspec) catch null;
     if (vres) |vr| {
         if (vr.err == null and vr.out == .object) opts = vr.out;
     }

@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/sekreto sdk-20260904-1610-0 (go/sekreto/sekreto.go)
-// Source: https://github.com/voxgig/sekreto @ a5a00db6e6d3a1ddbdef7ac62e8a75be53a9e042  [tag: sdk-20260904-1610-0]
+// VENDORED: @voxgig/sekreto sdk-20260907-0029-0 (go/sekreto/sekreto.go)
+// Source: https://github.com/voxgig/sekreto @ 86ba35a646e68a311bdece43cd5689369ca62e9d  [tag: sdk-20260907-0029-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // sekreto: one interface for secrets, wherever they live.
 //
@@ -15,6 +15,8 @@
 package sekreto
 
 import (
+	"bytes"
+	"encoding/json"
 	"regexp"
 	"sort"
 	"strings"
@@ -37,6 +39,33 @@ func (err *SekretoError) Error() string {
 // plugins, which return their own refusals through it.
 func Fail(message string) error {
 	return &SekretoError{Message: message}
+}
+
+// WriteJSON is json.Marshal with Go's HTML escaping turned OFF.
+//
+// encoding/json escapes <, > and & as \u003c, \u003e and \u0026 unless
+// told otherwise. That is a defence for JSON pasted into an HTML page,
+// which this library never does, and it made go the only port whose bytes
+// differed: every other port emits those three characters raw. The
+// writer's output is part of what the ports agree on - the CLI line is
+// compared byte for byte across all of them - so go matches the rest
+// rather than the rest matching go.
+//
+// Encode appends a newline, which a JSON document does not carry, so it
+// is trimmed. Use this for every value that LEAVES the process: a request
+// body, a returned secret, the CLI's line. A marshal whose bytes are
+// unmarshalled again without ever being emitted needs no such care.
+func WriteJSON(value any) ([]byte, error) {
+	var buf bytes.Buffer
+
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+
+	if err := enc.Encode(value); nil != err {
+		return nil, err
+	}
+
+	return bytes.TrimRight(buf.Bytes(), "\n"), nil
 }
 
 var namepart = regexp.MustCompile(`^[a-z0-9_]+$`)

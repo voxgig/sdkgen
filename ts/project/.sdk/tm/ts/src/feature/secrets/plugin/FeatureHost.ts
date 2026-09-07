@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/plugin 0.1.6 (typescript/src/FeatureHost.ts)
-// Source: https://github.com/voxgig/plugin @ 8d8968afc0a2008fbd795b41ab166307d989f02a  [tag: sdk-20260904-1610-0]
+// Source: https://github.com/voxgig/plugin @ b48ae643eb0eb56c5ebe3198da98cecdf6a7f7fc  [tag: sdk-20260907-0029-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* The sdkgen bridge (§17.2, P3 item 2).
  *
