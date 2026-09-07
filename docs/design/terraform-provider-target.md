@@ -256,9 +256,41 @@ It also gives the target a test surface that does not need Terraform: the
 report is generated from the same decisions the schema is, so a suite can
 assert on the decisions directly rather than parsing Go.
 
+## What the apidef work found
+
+Part 1 is done and open as [voxgig/apidef#46](https://github.com/voxgig/apidef/pull/46):
+`readOnly`, `writeOnly`, `deprecated` and `format` now reach `ModelField`,
+present only when the spec states them and, for the flags, only when it states
+them true. Two things came out of doing it that this note had not predicted.
+
+**The Go port needed the change in three places, not one.** Besides the field
+construction and the merge, `extractFields` (the response route) and
+`extractPropertiesOnly` (the request-body route) each build a *fresh* field def
+from named keys, so a key not copied in both is invisible on half of all specs.
+The first cut of the Go test failed on `deprecated` and `format` for exactly
+that reason. `extractPropertiesOnly` already carries a comment saying this is
+how `description` once reached TS and not Go — the trap is documented and was
+still stepped in, which is a fact about any future field-record addition.
+
+**The merge order is a judgement call, and it is recorded as one.** A response
+marking a field `readOnly` while a request body lists it as ordinary is a
+self-contradictory spec. First-declaration-wins in `opFieldPrecedence` order
+reads the response first, so the restriction wins. The asymmetry is the whole
+argument, and it is the same asymmetry the tier-2 sensitivity heuristic rests
+on: over-restricting costs a caller one field, under-restricting sends a value
+the server rejects or writes a credential to a state file.
+
+Part 2 — per-op request participation — is deliberately not in that PR. It is
+a change to `findFieldDefs`'s contract in both languages (it unions the
+response schema and the request body into one list before anything can tell
+them apart), with its own fixture movement, and it wants its own review. Until
+it lands, `SCHEMA.md` must say that the spec's request schemas were not
+available to the model, and the target must not guess the difference.
+
 ## Order of work
 
-1. **apidef** — the two changes above, in voxgig/apidef, released.
+1. **apidef** — the two changes above, in voxgig/apidef, released. Part 1 is
+   open as PR #46; part 2 is not started.
 2. **The package skeleton** — `packages/sdkgen-terraform-provider`, with
    its manifest (`provides.target`, `parity: CONSUMER`), its component
    type-check lane, its test-kit suite, and a CI step in this repo, all of
