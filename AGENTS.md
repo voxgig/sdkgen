@@ -763,19 +763,26 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
 SDK targets, BUNDLED (22): `ts js go py php rb lua csharp java kotlin scala
 swift dart rust c cpp zig perl clojure elixir ocaml lean`.
 
-SDK targets, PACKAGED (1): `haskell`, in `packages/sdkgen-haskell` — the
-first migration out of the scaffold. It is NOT in any of this repo's closed
-guard sets and has its own suite; see
+PACKAGED targets (2): `haskell` in `packages/sdkgen-haskell` (an SDK
+target, the first migration out of the scaffold) and `seneca-provider` in
+`packages/sdkgen-seneca-provider` (a CONSUMER target, the second). Neither
+is in any of this repo's closed guard sets and each has its own suite; see
 [docs/how-to/migrate-a-bundled-target](./docs/how-to/migrate-a-bundled-target.md).
 
-CONSUMER targets (4): `go-cli go-mcp` (wrap `go`), `py-data` (wraps `py`),
-`seneca-provider` (wraps `ts`). Each switches every standard generation phase
-off (`phase.<name>.active: false`) and emits its whole package from `Main`,
-and each FAILS without the target it wraps — deliberately. `seneca-provider`
-is also the one target that generates into ANOTHER REPO, via
-`main: kit: target: <t>: output: path` (`cmp/ExternalTarget.ts` +
-`externalTargets()`): see
-[out-of-tree-targets](./docs/explanation/out-of-tree-targets.md).
+`seneca-provider` went next because every bundled LANGUAGE target is now
+FULL tier, and a FULL-tier target that migrates is silently capped until the
+corpus is published — while a consumer target is in no tier set and so has
+none to cap. Its package declares `parity: CONSUMER`, which
+`helpers/manifest.ts` now holds to a closed vocabulary.
+
+CONSUMER targets, BUNDLED (3): `go-cli go-mcp` (wrap `go`), `py-data`
+(wraps `py`). Each switches every standard generation phase off
+(`phase.<name>.active: false`) and emits its whole package from `Main`, and
+each FAILS without the target it wraps — deliberately. `seneca-provider`,
+now packaged, is the same shape and the one target a project normally
+generates into ANOTHER REPO, via `main: kit: target: <t>: output: path`
+(`cmp/ExternalTarget.ts` + `externalTargets()`) — a mode every target has:
+see [out-of-tree-targets](./docs/explanation/out-of-tree-targets.md).
 
 Both lists are enforced, not decorative: `ts/test/parity.test.ts` fails until
 a new target declares its parity tier, and `ts/test/featuremodel.test.ts`

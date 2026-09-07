@@ -23,11 +23,14 @@ Built-in SDK targets: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
 `csharp`, `java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`,
 `zig`, `perl`, `clojure`, `elixir`, `ocaml`, `haskell`, `lean`.
 
-Plus four **consumer** targets, which wrap another target's SDK rather
-than being one: `go-cli` and `go-mcp` (wrap `go`), `py-data` (wraps
-`py`), and `seneca-provider` (wraps `ts`). Each needs the target it wraps
-to be present in the same project. `seneca-provider` also generates into
-a **separate repo** — see
+Plus three built-in **consumer** targets, which wrap another target's
+SDK rather than being one: `go-cli` and `go-mcp` (wrap `go`) and
+`py-data` (wraps `py`). Each needs the target it wraps to be present in
+the same project.
+
+A fourth, `seneca-provider` (wraps `ts`), comes from the package
+`@voxgig/sdkgen-seneca-provider`. It is the one normally generated into a
+**separate repo** — see
 [out-of-tree targets](../explanation/out-of-tree-targets.md).
 
 This copies the target's model, components, and templates into `.sdk/`

@@ -241,21 +241,23 @@ describe('feature-language-parity', () => {
   ]
 
   // Targets that CONSUME another target's SDK rather than being one
-  // (go-cli/go-mcp wrap `go`, py-data wraps `py`, seneca-provider wraps `ts`).
-  // Same list as parity.test.ts's NON_SDK_TARGETS.
-  const CONSUMER_TARGETS = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider']
+  // (go-cli/go-mcp wrap `go`, py-data wraps `py`). Same list as
+  // parity.test.ts's NON_SDK_TARGETS. `seneca-provider` was the fourth and
+  // has moved to packages/sdkgen-seneca-provider.
+  const CONSUMER_TARGETS = ['go-cli', 'go-mcp', 'py-data']
 
   // Targets that ship NO tm/<t>/src/feature/<name>/ dirs, and why.
   //
-  // seneca-provider is the only one: `feature add` copies per-target feature
-  // source, and this target has none to copy — Main emits the whole package
-  // and every standard phase, `feature` included, is switched off in its
-  // model. Note that `srcfeature: false` is NOT the reason: 23 targets set
-  // that (go, py, rb, lua, perl, lean, …) and all of them ship the dirs —
+  // EMPTY, and that is a statement rather than an oversight: the only entry
+  // was `seneca-provider`, which has left the scaffold. `feature add` copies
+  // per-target feature source and that target had none to copy — Main emits
+  // the whole package and every standard phase, `feature` included, is off in
+  // its model. Note that `srcfeature: false` was NOT the reason: 23 targets
+  // set that (go, py, rb, lua, perl, lean, …) and all of them ship the dirs —
   // srcfeature gates the GENERATED layout (src/cmp/Feature.ts), not the
   // template tree. Declared rather than inferred, so a target that gains
   // feature source fails the accuracy test below until it is moved.
-  const NO_FEATURE_DIRS = ['seneca-provider']
+  const NO_FEATURE_DIRS: string[] = []
 
   // Every SDK target plus the non-SDK consumer surfaces need a
   // src/feature/<name>/ dir for `feature add` to copy (flat-feature languages

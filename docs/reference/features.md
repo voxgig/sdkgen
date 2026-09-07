@@ -7,10 +7,10 @@ tracing, an offline mock transport, and so on. Features are the answer to
 generated code.
 
 Eighteen features ship with `@voxgig/sdkgen`. Every one of them is
-implemented for **every bundled language target** (the only exception is
-`seneca-provider`, which delegates to the `ts` SDK it wraps rather than
-implementing features itself), so `retry` means the same thing in Go as it
-does in TypeScript.
+implemented for **every bundled language target**, so `retry` means the
+same thing in Go as it does in TypeScript. A consumer target such as
+`seneca-provider` is the exception: it delegates to the SDK it wraps
+rather than implementing features itself.
 
 Everything below is generated into *your* repo, under your license. There
 is no runtime to install and no service to call.

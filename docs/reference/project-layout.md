@@ -64,9 +64,10 @@ holds the **two layers** described in
 Built-in SDK targets: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
 `csharp`, `java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`,
 `zig`, `perl`, `clojure`, `elixir`, `ocaml`, `haskell`, `lean`, plus the
-four consumer targets `go-cli`, `go-mcp`, `py-data` and
-`seneca-provider`, which wrap another target's SDK (`go`, `go`, `py` and
-`ts` respectively). Built-in features: `log`, `test`, plus the enterprise
+three consumer targets `go-cli`, `go-mcp` and `py-data`, which wrap
+another target's SDK (`go`, `go` and `py` respectively). A fourth
+consumer target, `seneca-provider` (wraps `ts`), comes from the package
+`@voxgig/sdkgen-seneca-provider`. Built-in features: `log`, `test`, plus the enterprise
 features `retry`, `timeout`, `ratelimit`, `cache`, `idempotency`,
 `paging`, `streaming`, `proxy`, `telemetry`, `metrics`, `debug`, `audit`,
 `clienttrack`, `rbac`, and `netsim` (all inactive by default).

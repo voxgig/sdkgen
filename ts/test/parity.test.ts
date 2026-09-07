@@ -53,12 +53,19 @@ const CORPUS_SECTIONS = [
 
 
 // Targets that are not language SDKs: they CONSUME another target's SDK
-// (go-cli/go-mcp consume `go`; py-data consumes `py`; seneca-provider
-// consumes `ts`, and is the one that generates into its OWN repo) and switch
-// the standard generation phases off, so they have no primary-utility surface
-// of their own. Their own behaviour is covered by their generated tests, not by
-// the cross-language corpus.
-const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider']
+// (go-cli/go-mcp consume `go`; py-data consumes `py`) and switch the standard
+// generation phases off, so they have no primary-utility surface of their own.
+// Their own behaviour is covered by their generated tests, not by the
+// cross-language corpus.
+//
+// `seneca-provider` was the fourth and has MOVED to
+// packages/sdkgen-seneca-provider, where its manifest declares
+// `parity: CONSUMER` — the same statement this list makes, in the only place
+// an external package can make it. It went first among the four because every
+// bundled LANGUAGE target is now FULL tier, and a FULL-tier target that
+// migrates is silently capped until the corpus is published; a target in no
+// tier set has no tier to cap.
+const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data']
 
 
 // TIER 1 — drives the shared corpus for every section. This is the bar.

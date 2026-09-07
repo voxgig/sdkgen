@@ -39,7 +39,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ITEM_NAME_RE = exports.SCHEMA = exports.MANIFEST = void 0;
+exports.ITEM_NAME_RE = exports.PARITY = exports.SCHEMA = exports.MANIFEST = void 0;
 exports.manifestPath = manifestPath;
 exports.probePackage = probePackage;
 exports.readManifest = readManifest;
@@ -55,6 +55,23 @@ exports.MANIFEST = MANIFEST;
 // the file, before anything version-specific is interpreted.
 const SCHEMA = 1;
 exports.SCHEMA = SCHEMA;
+// THE CLOSED PARITY VOCABULARY.
+//
+// The first three are `ts/test/parity.test.ts`'s tiers, which grade a
+// language target against the shared `.aontu` corpus. `CONSUMER` is the
+// fourth and grades nothing: a consumer target wraps another target's SDK and
+// has no primary-utility surface to measure, so `parity.test.ts` keeps the
+// bundled ones in NON_SDK_TARGETS rather than in a tier. A package holding
+// one needs a way to say the same thing, and saying nothing is not it — an
+// absent field cannot be told apart from an author who did not know the field
+// existed, which is the silently-absent shape every other guard in this repo
+// exists to prevent.
+//
+// Closed, and checked, because a declaration nothing checks is the failure
+// `engines.sdkgen` documents about itself two fields up: a typo would
+// otherwise be indistinguishable from a considered choice.
+const PARITY = ['FULL', 'MIRRORED', 'UNCOVERED', 'CONSUMER'];
+exports.PARITY = PARITY;
 // The manifest path for a `.sdk` folder: its SIBLING, not its child.
 //
 // The package root is the parent of `.sdk` — which is what `resolveSource`
@@ -243,6 +260,28 @@ function validateManifest(fs, sdkfolder, manifest, kinds) {
                         '` but ' + missing + ' is not in the package'
                 });
             }
+        }
+    }
+    // The parity declaration, checked in both directions like everything else
+    // here: the VALUE against the closed vocabulary, and the KEY against what
+    // the package actually provides. A tier declared for a target the package
+    // does not ship is a leftover from a rename — harmless in itself, and
+    // exactly the kind of leftover that later reads as coverage.
+    const targets = new Set(provides.target ?? []);
+    for (const [name, tier] of Object.entries(manifest.parity ?? {})) {
+        if (!PARITY.includes(tier)) {
+            found.push({
+                level: 'error', point: 'manifest-parity-unknown', file, name,
+                note: file + ': `parity.' + name + '` is "' + tier +
+                    '" — must be one of: ' + PARITY.join(', ')
+            });
+        }
+        if (!targets.has(name)) {
+            found.push({
+                level: 'warn', point: 'manifest-parity-unprovided', file, name,
+                note: file + ': `parity.' + name + '` names a target this package ' +
+                    'does not provide — nothing declares its coverage'
+            });
         }
     }
     // The other direction. Only for kinds the manifest MENTIONS plus the ones

@@ -1,12 +1,18 @@
 # Out-of-tree targets: generating into another repo
 
 Almost every target writes into the SDK repo it belongs to:
-`<sdk-repo>/ts/`, `<sdk-repo>/go/`, and so on. One does not.
+`<sdk-repo>/ts/`, `<sdk-repo>/go/`, and so on. Any target can be pointed
+somewhere else instead, and one is normally used that way.
+
 `seneca-provider` produces a Seneca plugin — an independently released
 npm package, in its own repo, that depends on the generated `ts` SDK the
-way any other consumer would. This page explains why that needs a
-mechanism rather than a different folder name, and what it means for a
-project that uses it.
+way any other consumer would. It ships as
+[`@voxgig/sdkgen-seneca-provider`](https://www.npmjs.com/package/@voxgig/sdkgen-seneca-provider)
+rather than in the box, so add it with `voxgig-sdkgen package add` first;
+the mechanism below is the generator's and works for whichever target a
+project points outward. This page explains why that needs a mechanism
+rather than a different folder name, and what it means for a project that
+uses it.
 
 The model key is
 [`main.kit.target.<t>.output`](../reference/model.md#generating-outside-the-sdk-repo-output).
@@ -91,8 +97,10 @@ destination-safety checks still apply. The default is `true`, which preserves
 the original behaviour of creating a missing destination and its parents.
 
 In the project's OWN model — never in
-`.sdk/model/target/seneca-provider.aontu`, which `target add` overwrites
+`.sdk/model/target/seneca-provider.aon`, which `target add` overwrites
 (and which `voxgig-sdkgen doctor` now reports when it has been edited).
+That holds whether the target came from the box or from a package: a
+`package update` refreshes the installed copy the same way.
 
 `sdkrel` is the walk back from the destination to the SDK project, which
 the generated package's docs, scripts and live tests name — the companion

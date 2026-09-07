@@ -2351,7 +2351,7 @@ const AUTHNULL_INEXPRESSIBLE = ['lua']
 
 // No auth optspec at all: wrappers and variants that do not build client
 // options of their own.
-const AUTHNULL_NOT_APPLICABLE = ['go-cli', 'go-mcp', 'py-data', 'seneca-provider']
+const AUTHNULL_NOT_APPLICABLE = ['go-cli', 'go-mcp', 'py-data']
 
 
 // The lists above are only worth having if something holds them to the

@@ -667,7 +667,7 @@ model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
 model/target/go-cli.aon 2f5ed2f4fad5
 model/target/target-index.aon 1c02e69904e8
-src/cmp/go-cli/Main_go-cli.ts e2b169eb98e7
+src/cmp/go-cli/Main_go-cli.ts c44bf5e22e3f
 src/cmp/go-cli/fragment/main.fragment.go edad9cbfb479
 src/cmp/go-cli/fragment/words.fragment.go 7901dd676a27
 tm/go-cli/src/feature/README.md 2c5a3094a7ed
@@ -1922,22 +1922,6 @@ tm/scala/utility/StructUtility.scala 2dc27377f838
 tm/scala/utility/Transform.scala 0b54cf299ccc
 tm/scala/utility/struct/Struct.java 5e1cee8646e5
 tm/scala/utility/struct/voxgig_struct.scala 8fc853fd8f03
-
-## target seneca-provider
-model/feature/feature-index.aon 5f0737d1060e
-model/feature/test.aon 50645dfffc2a
-model/sdk.aon c57422e2c737
-model/target/seneca-provider.aon df62646e352f
-model/target/target-index.aon 7fa724b7bda4
-src/cmp/seneca-provider/Extras_seneca-provider.ts b66a4671a34d
-src/cmp/seneca-provider/Gitignore_seneca-provider.ts 188e88524e59
-src/cmp/seneca-provider/Main_seneca-provider.ts 5ab7542df87d
-tm/seneca-provider/CODE_OF_CONDUCT.md ae654991bd5f
-tm/seneca-provider/LICENSE 5466e344bee1
-tm/seneca-provider/Makefile 6856c7df3e08
-tm/seneca-provider/src/tsconfig.json 50af5ff9fdb4
-tm/seneca-provider/test/tsconfig.json bbb2c0062d48
-tm/seneca-provider/tsfmt.json 30507e31f8ba
 
 ## target swift
 model/feature/feature-index.aon 5f0737d1060e

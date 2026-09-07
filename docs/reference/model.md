@@ -198,8 +198,8 @@ main: kit: target: ts: {
 A target declares `phase.<name>.active: false` to skip a standard
 generation phase; the phases are `entity`, `feature`, `readme`,
 `agentguide` and `test`, and all default to on. The CONSUMER targets
-(`go-cli`, `go-mcp`, `py-data`, `seneca-provider`) switch every one of
-them off and emit their whole package from `Main`: they wrap another
+(`go-cli`, `go-mcp`, `py-data`, and `seneca-provider` from its package)
+switch every one of them off and emit their whole package from `Main`: they wrap another
 target's SDK rather than being one, so the standard components — which
 assume an SDK-shaped package — would emit the wrong content.
 

@@ -16,11 +16,12 @@ OpenAPI spec ──▶ model ──┬─▶ 22 bundled language SDKs
                          │     zig  perl  clojure  elixir  ocaml  lean
                          │
                          ├─▶ more from packages
-                         │     haskell (@voxgig/sdkgen-haskell)
+                         │     haskell         (@voxgig/sdkgen-haskell)
+                         │     seneca-provider (@voxgig/sdkgen-seneca-provider)
+                         │                     (ts — into its own repo)
                          │
-                         └─▶ 4 consumer targets, each wrapping one of them
+                         └─▶ 3 consumer targets, each wrapping one of them
                                go-cli, go-mcp (go)   py-data (py)
-                               seneca-provider (ts — into its own repo)
 ```
 
 > **Just want to build an SDK for your API?** Start with

@@ -71,9 +71,27 @@ type Manifest = {
   targetsSupported?: Record<string, string[]>
 
   // Optional: the author's declared parity tier per target, in
-  // ts/test/parity.test.ts's vocabulary.
+  // ts/test/parity.test.ts's vocabulary plus CONSUMER — see PARITY below.
   parity?: Record<string, string>
 }
+
+
+// THE CLOSED PARITY VOCABULARY.
+//
+// The first three are `ts/test/parity.test.ts`'s tiers, which grade a
+// language target against the shared `.aontu` corpus. `CONSUMER` is the
+// fourth and grades nothing: a consumer target wraps another target's SDK and
+// has no primary-utility surface to measure, so `parity.test.ts` keeps the
+// bundled ones in NON_SDK_TARGETS rather than in a tier. A package holding
+// one needs a way to say the same thing, and saying nothing is not it — an
+// absent field cannot be told apart from an author who did not know the field
+// existed, which is the silently-absent shape every other guard in this repo
+// exists to prevent.
+//
+// Closed, and checked, because a declaration nothing checks is the failure
+// `engines.sdkgen` documents about itself two fields up: a typo would
+// otherwise be indistinguishable from a considered choice.
+const PARITY = ['FULL', 'MIRRORED', 'UNCOVERED', 'CONSUMER']
 
 
 // What `readManifest` found. THREE outcomes, deliberately distinct: a
@@ -325,6 +343,31 @@ function validateManifest(
     }
   }
 
+  // The parity declaration, checked in both directions like everything else
+  // here: the VALUE against the closed vocabulary, and the KEY against what
+  // the package actually provides. A tier declared for a target the package
+  // does not ship is a leftover from a rename — harmless in itself, and
+  // exactly the kind of leftover that later reads as coverage.
+  const targets = new Set(provides.target ?? [])
+
+  for (const [name, tier] of Object.entries(manifest.parity ?? {})) {
+    if (!PARITY.includes(tier)) {
+      found.push({
+        level: 'error', point: 'manifest-parity-unknown', file, name,
+        note: file + ': `parity.' + name + '` is "' + tier +
+          '" — must be one of: ' + PARITY.join(', ')
+      })
+    }
+
+    if (!targets.has(name)) {
+      found.push({
+        level: 'warn', point: 'manifest-parity-unprovided', file, name,
+        note: file + ': `parity.' + name + '` names a target this package ' +
+          'does not provide — nothing declares its coverage'
+      })
+    }
+  }
+
   // The other direction. Only for kinds the manifest MENTIONS plus the ones
   // this generator knows — a directory named after a kind nobody registered
   // is already reported above if claimed, and is not this check's business if
@@ -465,6 +508,7 @@ export type {
 export {
   MANIFEST,
   SCHEMA,
+  PARITY,
   ITEM_NAME_RE,
   manifestPath,
   probePackage,

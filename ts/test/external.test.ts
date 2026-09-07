@@ -23,6 +23,18 @@
 // once covered only an absolute path, one target, all of it succeeding; the
 // forms every real project uses (a relative path, more than one target, a
 // dry run) went untested, and so did every guard.
+//
+// THE TARGET HERE IS A VEHICLE, NOT THE SUBJECT. Everything below is about
+// the MECHANISM — placement, partition, resolution, refusal — so the target
+// driving it only has to be one with an `output: path`. It was
+// `seneca-provider` for as long as that was the only such target; that target
+// now lives in packages/sdkgen-seneca-provider and its own suite covers what
+// it EMITS. `go-cli` took its place because the shape is what matters: a
+// consumer target emitting a small package with its own README and manifest
+// and no AGENTS.md, which is what makes "the SDK repo's own root files did
+// not follow it out" a statement about the mechanism rather than about one
+// target's file list. It needs `go` in the model, as every consumer target
+// needs the target it wraps.
 
 import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -38,16 +50,16 @@ import { makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD } from './gene
 
 // Somewhere that is emphatically not under STAGE, so "did it land outside?"
 // is unambiguous.
-const OUT = '/elsewhere/acme-provider'
+const OUT = '/elsewhere/acme-cli'
 
 // A second destination, for the multi-target case.
-const OUT2 = '/elsewhere/acme-cli'
+const OUT2 = '/elsewhere/acme-sdk'
 
 // The form every real project actually declares: relative, resolved against
 // the SDK project rather than the working directory. The suite runs chdir'd
 // to SCAFFOLD (see below), so the two bases give different answers here —
 // which is the point.
-const REL = '../elsewhere/rel-provider'
+const REL = '../elsewhere/rel-cli'
 
 
 // A path as the in-memory VOLUME spells it. memfs is a POSIX volume: it
@@ -194,18 +206,18 @@ describe('external target', () => {
 
   // An ABSOLUTE output path, which is the unambiguous case.
   test('its files land at the output path, not in the SDK repo', async () => {
-    const { inside, outside } = await generate(['ts', 'seneca-provider'], 'seneca-provider')
+    const { inside, outside } = await generate(['go', 'go-cli'], 'go-cli')
 
     ok(0 < Object.keys(outside).length, 'nothing was written to the output path')
 
     // The package is written at the ROOT of the destination: the destination
-    // IS the package, so a `seneca-provider/` subfolder there would be wrong.
-    ok(null != outside['package.json'],
-      'no package.json at the output root — files landed under a subfolder:\n  ' +
+    // IS the package, so a `go-cli/` subfolder there would be wrong.
+    ok(null != outside['go.mod'],
+      'no go.mod at the output root — files landed under a subfolder:\n  ' +
       Object.keys(outside).join('\n  '))
 
     // ...and nothing of it stayed behind.
-    const strays = Object.keys(inside).filter((p) => p.startsWith('seneca-provider/'))
+    const strays = Object.keys(inside).filter((p) => p.startsWith('go-cli/'))
     deepStrictEqual(strays, [],
       'the external target ALSO generated into the SDK repo — the in-tree ' +
       'pass still saw it')
@@ -213,7 +225,8 @@ describe('external target', () => {
 
 
   // The RELATIVE form, which is what every real project declares
-  // (voxgig-solardemo-sdk: '../../seneca/solardemo-provider'). It resolves
+  // (voxgig-solardemo-sdk points its provider at
+  // '../../seneca/solardemo-provider'). It resolves
   // against the SDK project, NOT the working directory — a generation is run
   // from the project's `.sdk`, and a model path that moved with the caller's
   // CWD would put the package somewhere different depending on where the
@@ -221,7 +234,7 @@ describe('external target', () => {
   // absolute path resolves the same against either.
   test('a relative output path resolves against the SDK project, not the CWD',
     async () => {
-      const gen = setup(['ts', 'seneca-provider'], { 'seneca-provider': REL })
+      const gen = setup(['go', 'go-cli'], { 'go-cli': REL })
       const res = await gen.run()
       strictEqual(res.ok, true, 'generation did not report ok')
 
@@ -232,7 +245,7 @@ describe('external target', () => {
 
       const all = gen.files()
 
-      ok(null != under(all, fromProject)['package.json'],
+      ok(null != under(all, fromProject)['go.mod'],
         'nothing landed at the project-relative destination ' + fromProject +
         ':\n  ' + Object.keys(all).join('\n  '))
 
@@ -246,7 +259,7 @@ describe('external target', () => {
   // emitted once per repo by the consumer Root. They must not follow a target
   // out to a separate package's repo.
   test('the SDK repo\'s own root files do not follow it out', async () => {
-    const { inside, outside } = await generate(['ts', 'seneca-provider'], 'seneca-provider')
+    const { inside, outside } = await generate(['go', 'go-cli'], 'go-cli')
 
     ok(null != inside['README.md'], 'the SDK repo lost its own README')
 
@@ -255,25 +268,37 @@ describe('external target', () => {
       .sort()
 
     // Whatever the target itself emits at its root is fine; what must NOT
-    // appear is the SDK's. The SDK README names the SDK, the provider's names
-    // the provider.
+    // appear is the SDK's. Both are checked by CONTENT, not by filename: a
+    // target that emits a README of its own — this one does — makes "no
+    // README out there" the wrong assertion, and asserting the filename is
+    // absent would pass for the wrong reason the moment the SDK's README
+    // stopped being called README.md.
     const readme = outside['README.md']
     if (null != readme) {
       ok(!readme.includes('# Demo SDK'),
         'the SDK repo README was written into the external target:\n' +
         readme.split('\n').slice(0, 3).join('\n'))
+      ok(readme !== inside['README.md'],
+        'the external target got a byte-identical copy of the SDK README')
     }
 
-    ok(!rootFiles.includes('AGENTS.md'),
-      'the SDK repo AGENTS.md followed the external target out: ' +
-      rootFiles.join(', '))
+    // The SDK repo's agent guides are emitted once per repo by the consumer
+    // Root and belong to the repo, not to any target.
+    for (const name of ['AGENTS.md', 'CLAUDE.md']) {
+      const out = outside[name]
+      if (null != out && null != inside[name]) {
+        ok(out !== inside[name],
+          'the SDK repo ' + name + ' followed the external target out: ' +
+          rootFiles.join(', '))
+      }
+    }
   })
 
 
   // The in-tree targets must be untouched by the partition — a bug here would
   // drop them from the model the consumer Root is handed.
   test('the other targets still generate normally', async () => {
-    const { inside } = await generate(['ts', 'go', 'seneca-provider'], 'seneca-provider')
+    const { inside } = await generate(['ts', 'go', 'go-cli'], 'go-cli')
 
     for (const t of ['ts', 'go']) {
       ok(Object.keys(inside).some((p) => p.startsWith(t + '/')),
@@ -286,26 +311,29 @@ describe('external target', () => {
   // destination, so nothing of one may appear in the other, and the in-tree
   // model must lose BOTH.
   test('two external targets each generate into their own repo', async () => {
-    const { inside, all } = await generate(['ts', 'go', 'seneca-provider'],
-      { 'seneca-provider': OUT, go: OUT2 })
+    const { inside, all } = await generate(['ts', 'go', 'go-cli'],
+      { 'go-cli': OUT, go: OUT2 })
 
-    const provider = under(all, OUT)
-    const cli = under(all, OUT2)
+    const cli = under(all, OUT)
+    const sdk = under(all, OUT2)
 
-    ok(null != provider['package.json'],
-      'the provider did not land at its own destination:\n  ' +
-      Object.keys(provider).join('\n  '))
-    // Each destination holds ONE package: the provider's manifest is
-    // package.json, go's is go.mod, and neither may appear in the other.
-    ok(null != cli['go.mod'],
-      'go did not land at its own destination:\n  ' +
+    // BOTH are Go modules, so `go.mod` cannot tell them apart and the
+    // discriminator is a file only one of them emits: `main.go` from
+    // Main_go-cli, `core/config.go` from the SDK's own components. Picking
+    // the manifest here would assert nothing — each destination would hold
+    // one either way.
+    ok(null != cli['main.go'],
+      'the cli did not land at its own destination:\n  ' +
       Object.keys(cli).join('\n  '))
-    ok(null == cli['package.json'],
-      'the provider generated into the go destination as well')
-    ok(null == provider['go.mod'],
-      'go generated into the provider destination as well')
+    ok(null != sdk['core/config.go'],
+      'the SDK did not land at its own destination:\n  ' +
+      Object.keys(sdk).join('\n  '))
+    ok(null == sdk['main.go'],
+      'the cli generated into the SDK destination as well')
+    ok(null == cli['core/config.go'],
+      'the SDK generated into the cli destination as well')
 
-    for (const t of ['seneca-provider', 'go']) {
+    for (const t of ['go-cli', 'go']) {
       const strays = Object.keys(inside).filter((p) => p.startsWith(t + '/'))
       deepStrictEqual(strays, [], t + ' also generated into the SDK repo')
     }
@@ -321,11 +349,12 @@ describe('external target', () => {
   // dies with "Cannot find module".
   test('per-target components resolve from the project, not the destination',
     async () => {
-      const { outside } = await generate(['ts', 'seneca-provider'], 'seneca-provider')
+      const { outside } = await generate(['go', 'go-cli'], 'go-cli')
 
-      // Main_seneca-provider is what emits this; reaching it at all is the
+      // Main_go-cli is what emits this — it is not in the target's template
+      // tree, so a Copy could not have produced it. Reaching it at all is the
       // proof that resolution stayed with the project.
-      const src = outside['src/demo-provider.ts']
+      const src = outside['main.go']
       ok(null != src,
         'the target component did not run — generated:\n  ' +
         Object.keys(outside).join('\n  '))
@@ -345,7 +374,7 @@ describe('external target', () => {
     })
 
     const res = await sdkgen.generate({
-      model: makeModel(['ts', 'seneca-provider']),
+      model: makeModel(['go', 'go-cli']),
       root: makeRoot(),
     })
     strictEqual(res.ok, true)
@@ -353,9 +382,9 @@ describe('external target', () => {
     const paths = Object.keys(vol.toJSON() as Record<string, string>)
       .map((p) => Path.relative(STAGE, p).split(Path.sep).join('/'))
 
-    ok(paths.some((p) => p.startsWith('seneca-provider/')),
+    ok(paths.some((p) => p.startsWith('go-cli/')),
       'with no output path the target should generate in-tree, under ' +
-      'seneca-provider/')
+      'go-cli/')
   })
 
 
@@ -367,24 +396,24 @@ describe('external target', () => {
     async () => {
       const sink: any[] = []
       const { inside, outside } = await generate(
-        ['ts', 'seneca-provider'], 'seneca-provider',
-        "main: kit: target: 'seneca-provider': output: create: false",
+        ['go', 'go-cli'], 'go-cli',
+        "main: kit: target: 'go-cli': output: create: false",
         { sink })
 
       deepStrictEqual(Object.keys(outside), [],
         'an absent optional destination was created and generated into')
 
       const strays = Object.keys(inside)
-        .filter((p) => p.startsWith('seneca-provider/'))
+        .filter((p) => p.startsWith('go-cli/'))
       deepStrictEqual(strays, [],
         'the skipped external target fell back to generating in-tree')
 
-      ok(Object.keys(inside).some((p) => p.startsWith('ts/')),
+      ok(Object.keys(inside).some((p) => p.startsWith('go/')),
         'the rest of the SDK stopped generating')
 
       const skip = sink.find((e: any) =>
         'generate-external-skip' === e.point &&
-        'seneca-provider' === e.target)
+        'go-cli' === e.target)
       ok(null != skip, 'the skipped target was not reported')
       ok(String(skip.note).includes('output.create=false'),
         'the skip report does not name the controlling setting: ' + skip.note)
@@ -394,11 +423,11 @@ describe('external target', () => {
   test('`output.create: false` still generates when the destination exists',
     async () => {
       const { outside } = await generate(
-        ['ts', 'seneca-provider'], 'seneca-provider',
-        "main: kit: target: 'seneca-provider': output: create: false",
+        ['go', 'go-cli'], 'go-cli',
+        "main: kit: target: 'go-cli': output: create: false",
         { seed: { [OUT + '/.git/HEAD']: 'ref: refs/heads/main\n' } })
 
-      ok(null != outside['package.json'],
+      ok(null != outside['go.mod'],
         'an existing destination was skipped')
     })
 
@@ -408,7 +437,7 @@ describe('external target', () => {
   // see what this would do first" matters most.
   test('a dry run writes nothing, at the destination or in the SDK repo',
     async () => {
-      const gen = setup(['ts', 'seneca-provider'], { 'seneca-provider': OUT },
+      const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
         { dryrun: true })
 
       const res = await gen.run()
@@ -424,26 +453,28 @@ describe('external target', () => {
   // is the only lever a project has to stop the generator writing into a repo
   // it does not own. It used to gate nothing at all.
   test('an inactive external target generates nowhere', async () => {
-    const { inside, all } = await generate(['ts', 'seneca-provider'],
-      'seneca-provider',
-      'main: kit: target: \'seneca-provider\': active: false')
+    const { inside, all } = await generate(['go', 'go-cli'],
+      'go-cli',
+      'main: kit: target: \'go-cli\': active: false')
 
     deepStrictEqual(Object.keys(under(all, OUT)), [],
       'an inactive target still generated into the destination')
 
     // Nor may switching it off RELOCATE it into the SDK repo: the in-tree
     // pass must not pick it up either.
-    const strays = Object.keys(inside).filter((p) => p.startsWith('seneca-provider/'))
+    const strays = Object.keys(inside).filter((p) => p.startsWith('go-cli/'))
     deepStrictEqual(strays, [],
       'an inactive external target fell back to generating in-tree')
 
-    ok(Object.keys(inside).some((p) => p.startsWith('ts/')),
+    ok(Object.keys(inside).some((p) => p.startsWith('go/')),
       'the rest of the SDK stopped generating')
   })
 
 
-  // ExternalTarget.ts's own entity loop (unlike seneca-provider, which
-  // disables this phase) had no `active` check at all.
+  // ExternalTarget.ts's own entity loop had no `active` check at all. A
+  // consumer target cannot catch this — it disables the entity phase — so
+  // this case drives a PLAIN target out of tree, which is the other half of
+  // what `output: path` has to support.
   test('an inactive entity is excluded from a plain target generated out-of-tree', async () => {
     const { outside } = await generate(['ts'], 'ts',
       'main: kit: entity: history: active: false\n')
@@ -463,7 +494,7 @@ describe('external target', () => {
   // control — so without the ignore, every regeneration leaves that repo
   // dirty with hundreds of untracked files.
   test('the destination ignores the generator bookkeeping left in it', async () => {
-    const { all, outside } = await generate(['ts', 'seneca-provider'], 'seneca-provider')
+    const { all, outside } = await generate(['go', 'go-cli'], 'go-cli')
 
     ok(Object.keys(all).some((p) => p.startsWith(OUT + '/.jostraca/')),
       'no bookkeeping was written to the destination — this test no longer ' +
@@ -478,11 +509,12 @@ describe('external target', () => {
 
 
   // `sdkrelpath` — the walk BACK from the destination to the SDK project,
-  // which the target writes into its README and its live/quick test scripts
-  // (the companion test server lives in the SDK repo and is not published).
-  // Those files are COMMITTED in the destination repo, so anything
-  // machine-local that gets into this value becomes a tracked diff on the
-  // next developer's machine.
+  // which a target writes into files such as its README and its live-test
+  // scripts (the companion test server lives in the SDK repo and is not
+  // published). Those files are COMMITTED in the destination repo, so
+  // anything machine-local that gets into this value becomes a tracked diff
+  // on the next developer's machine. That is why the derivation WARNS rather
+  // than quietly emitting a path only this checkout has.
   describe('path back to the SDK project', () => {
 
     // Derived by inverting the two resolved folders. That is exact only
@@ -492,13 +524,13 @@ describe('external target', () => {
     // ('../../voxgig-sdk/voxgig-solardemo-sdk', committed).
     test('a derivation that names undeclared directories warns', async () => {
       const sink: any[] = []
-      await generate(['ts', 'seneca-provider'], 'seneca-provider', '', { sink })
+      await generate(['go', 'go-cli'], 'go-cli', '', { sink })
 
       const warn = sink.find((e: any) => 'external-sdkrel-derived' === e.point)
       ok(null != warn,
         'no warning for a derived path naming ' +
         norm(Path.resolve(STAGE)).split('/').length + ' undeclared directories')
-      ok(String(warn.note).includes('seneca-provider'),
+      ok(String(warn.note).includes('go-cli'),
         'the warning does not name the target: ' + warn.note)
     })
 
@@ -507,7 +539,7 @@ describe('external target', () => {
     // ordinary sibling layout emits.
     test('a sibling destination derives cleanly', async () => {
       const sink: any[] = []
-      const gen = setup(['ts', 'seneca-provider'], { 'seneca-provider': REL },
+      const gen = setup(['go', 'go-cli'], { 'go-cli': REL },
         { sink })
       await gen.run()
 
@@ -517,33 +549,38 @@ describe('external target', () => {
     })
 
 
-    // The declared value takes over, and it is what reaches the generated
-    // files — the project states the layout instead of the filesystem
-    // implying it.
-    test('a declared `output: sdkrel` is used verbatim', async () => {
+    // A declared value takes over from the derivation: the project states
+    // the layout instead of the filesystem implying it, so the generator
+    // stops deriving and stops warning.
+    //
+    // SPLIT AT THE SEAM, DELIBERATELY. This used to also assert that the
+    // declared string reached generated CONTENT. It cannot here, and the
+    // reason is worth stating rather than working around: the core's job
+    // ends at handing `ctx$.sdkrelpath` to the pass, and reading it is a
+    // COMPONENT's job. The only component that ever did was
+    // Main_seneca-provider, which now lives in
+    // packages/sdkgen-seneca-provider — and its suite asserts the content
+    // half, against the component that consumes the value. Substituting a
+    // target that ignores `sdkrelpath` would have left an assertion that
+    // passes without testing anything.
+    //
+    // What stays here is the whole of `externalSdkRel`'s decision surface,
+    // which is observable in the log without any target's cooperation:
+    // derive-and-warn (above), derive-cleanly (above), and declared-so-do-
+    // neither (here).
+    test('a declared `output: sdkrel` replaces the derivation', async () => {
       const sink: any[] = []
-      const { outside } = await generate(['ts', 'seneca-provider'],
-        'seneca-provider',
-        'main: kit: target: \'seneca-provider\': output: sdkrel: \'../../acme-sdk\'',
-        { sink })
-
-      const named = Object.entries(outside)
-        .filter(([, content]) => content.includes('../../acme-sdk'))
-        .map(([path]) => path)
-
-      ok(0 < named.length,
-        'the declared path back to the SDK project reached no generated file')
-
-      // Nothing may still be carrying the derived value, which on this
-      // machine names the checkout layout.
-      const leaked = Object.entries(outside)
-        .filter(([, content]) => content.includes('dist-test-scaffold'))
-        .map(([path]) => path)
-      deepStrictEqual(leaked, [],
-        'generated files still carry the machine-derived path')
+      const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
+        {
+          extra:
+            'main: kit: target: \'go-cli\': output: sdkrel: \'../../acme-sdk\'',
+          sink,
+        })
+      await gen.run()
 
       strictEqual(sink.find((e: any) => 'external-sdkrel-derived' === e.point),
-        undefined, 'a declared path back should not warn')
+        undefined,
+        'a declared path back was derived — and warned about — anyway')
     })
 
   })
@@ -554,14 +591,14 @@ describe('external target', () => {
     // '.' is the whole point of the guard: it resolves to the SDK project
     // itself, and the external pass runs SECOND, so it overwrites what the
     // in-tree pass has just written — the SDK repo's own README, and a
-    // package.json it never had.
+    // go.mod it never had.
     test('a path resolving to the SDK project is refused', async () => {
-      const { msg, files } = await refuse(['ts', 'seneca-provider'],
-        { 'seneca-provider': '.' })
+      const { msg, files } = await refuse(['go', 'go-cli'],
+        { 'go-cli': '.' })
 
       ok(msg.includes(STAGE),
         'the message does not name the SDK project:\n' + msg)
-      ok(msg.includes('seneca-provider'),
+      ok(msg.includes('go-cli'),
         'the message does not name the target:\n' + msg)
 
       deepStrictEqual(Object.keys(files), [],
@@ -573,10 +610,10 @@ describe('external target', () => {
     // in-tree target lands. It is also the collision the external pass would
     // win, silently replacing what the in-tree pass wrote there.
     test('a path inside the SDK project is refused', async () => {
-      const { msg } = await refuse(['ts', 'seneca-provider'],
-        { 'seneca-provider': 'ts' })
+      const { msg } = await refuse(['go', 'go-cli'],
+        { 'go-cli': 'go' })
 
-      ok(msg.includes(Path.resolve(STAGE, 'ts')),
+      ok(msg.includes(Path.resolve(STAGE, 'go')),
         'the message does not name the destination:\n' + msg)
     })
 
@@ -586,8 +623,8 @@ describe('external target', () => {
     // "inside the project" test, and generation would write a package over
     // the directory holding the project itself.
     test('a path containing the SDK project is refused', async () => {
-      const { msg } = await refuse(['ts', 'seneca-provider'],
-        { 'seneca-provider': '..' })
+      const { msg } = await refuse(['go', 'go-cli'],
+        { 'go-cli': '..' })
 
       ok(msg.includes('contains the SDK project'),
         'unexpected refusal reason:\n' + msg)
@@ -597,10 +634,10 @@ describe('external target', () => {
     // Two targets, one folder: the second pass overwrites the first, in
     // target-name order, and the operator sees two "generated ok" lines.
     test('two targets claiming the same folder are refused', async () => {
-      const { msg } = await refuse(['ts', 'go', 'seneca-provider'],
-        { 'seneca-provider': OUT, go: OUT })
+      const { msg } = await refuse(['ts', 'go', 'go-cli'],
+        { 'go-cli': OUT, go: OUT })
 
-      ok(msg.includes('go') && msg.includes('seneca-provider'),
+      ok(msg.includes('go') && msg.includes('go-cli'),
         'the message does not name both targets:\n' + msg)
     })
 
@@ -609,8 +646,8 @@ describe('external target', () => {
     // someone else's repo. Overwrite-not-merge means generation would replace
     // its package.json, README and LICENSE in place.
     test('a destination holding unrelated content is refused', async () => {
-      const { msg, files } = await refuse(['ts', 'seneca-provider'],
-        { 'seneca-provider': OUT },
+      const { msg, files } = await refuse(['go', 'go-cli'],
+        { 'go-cli': OUT },
         {
           seed: {
             [OUT + '/package.json']: '{"name":"someone-elses-repo"}',
@@ -630,10 +667,10 @@ describe('external target', () => {
 
     test('`output.create: false` does not bypass guards for an existing destination',
       async () => {
-        const { msg } = await refuse(['ts', 'seneca-provider'],
-          { 'seneca-provider': OUT },
+        const { msg } = await refuse(['go', 'go-cli'],
+          { 'go-cli': OUT },
           {
-            extra: "main: kit: target: 'seneca-provider': output: create: false",
+            extra: "main: kit: target: 'go-cli': output: create: false",
             seed: { [OUT + '/README.md']: '# Existing repository\n' },
           })
 
@@ -646,31 +683,32 @@ describe('external target', () => {
     // flag on the command line: the destination is a property of the project.
     test('`output: adopt` writes into a destination holding other content',
       async () => {
-        const { outside } = await generate(['ts', 'seneca-provider'],
-          'seneca-provider',
-          'main: kit: target: \'seneca-provider\': output: adopt: true',
+        const { outside } = await generate(['go', 'go-cli'],
+          'go-cli',
+          'main: kit: target: \'go-cli\': output: adopt: true',
           { seed: { [OUT + '/README.md']: '# Seeded by the repo host\n' } })
 
-        ok(null != outside['package.json'],
+        ok(null != outside['go.mod'],
           'adopt did not let generation proceed')
       })
 
 
     // A destination this generator has written before carries jostraca's
-    // bookkeeping tree, and that is the ownership marker: the live provider
-    // repos are all in exactly this state, so the guard must not stop them.
+    // bookkeeping tree, and that is the ownership marker: every destination
+    // that has been generated into before is in exactly this state, so the
+    // guard must not stop them.
     test('a destination carrying the generator\'s own marker is accepted',
       async () => {
-        const { outside } = await generate(['ts', 'seneca-provider'],
-          'seneca-provider', '',
+        const { outside } = await generate(['go', 'go-cli'],
+          'go-cli', '',
           {
             seed: {
-              [OUT + '/package.json']: '{"name":"@seneca/demo-provider"}',
+              [OUT + '/go.mod']: 'module example.com/demo-cli\n',
               [OUT + '/.jostraca/jostraca.meta.log']: '{}\n',
             }
           })
 
-        ok(null != outside['package.json'],
+        ok(null != outside['go.mod'],
           'a destination generated into before was refused')
       })
 
@@ -678,11 +716,11 @@ describe('external target', () => {
     // A freshly created repo holds only `.git`, and that is precisely the
     // destination a FIRST generation is aimed at.
     test('an empty destination is accepted', async () => {
-      const { outside } = await generate(['ts', 'seneca-provider'],
-        'seneca-provider', '',
+      const { outside } = await generate(['go', 'go-cli'],
+        'go-cli', '',
         { seed: { [OUT + '/.git/HEAD']: 'ref: refs/heads/main\n' } })
 
-      ok(null != outside['package.json'],
+      ok(null != outside['go.mod'],
         'an empty git repo was refused')
     })
 

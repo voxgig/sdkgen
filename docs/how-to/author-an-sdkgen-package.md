@@ -185,7 +185,7 @@ const consumer = stageConsumer()
 try {
   await consumer.addPackage(__dirname + '/..')   // the package under test
   consumer.compile()                             // as a consumer's build does
-  const { files, leaks } = await generateInto(consumer, { model })
+  const { files, outside, leaks } = await generateInto(consumer, { model })
 
   assert.deepEqual(leaks, [])                    // no placeholder survived
   assert.ok(files['iot-go/main.go'])
@@ -207,8 +207,15 @@ Everything it calls is the real thing: `addPackage` is `package add`,
 `generateInto` is a real generation run. That is the point — a kit that
 reimplemented any of it would pass while the shipped path was broken.
 
-Two details worth knowing:
+Three details worth knowing:
 
+- **A target that generates out of tree must declare where.** `generateInto`
+  treats a generated path outside the consumer root as a bug, because that
+  is what it is when a prefix goes wrong. A target with `output: path`
+  writes outside the root on purpose, so pass those destinations as
+  `outside: ['../acme-provider']` and read their files back from the
+  `outside` map in the result, keyed by destination. A path under neither
+  the root nor a declared destination still fails.
 - **`compile()` transpiles; it does not type-check.** Type-checking your
   components is your build's job (`tsc --noEmit` over `src/cmp/**`), and
   repeating it per staged consumer would add seconds to every test for an

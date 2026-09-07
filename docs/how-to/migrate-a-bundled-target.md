@@ -39,8 +39,21 @@ as **peers** (a consumer necessarily has them via sdkgen, and a second copy
 at a different version is the outcome worth preventing) **and** as devDeps,
 so its own type-check resolves.
 
-Run that grep and declare whatever it prints, minus `@voxgig/sdkgen`
-itself.
+**The grep is a starting point, not the answer.** It is a text search over
+files that are mostly strings containing other languages' source, so it
+cannot tell an import of the component from a `require` line the component
+*emits*. Open each hit and declare only the module's real top-level imports.
+
+For `haskell` the two coincided. For `seneca-provider` they do not:
+the grep prints `@seneca/maintain`, which appears inside the template
+literal that writes the generated provider's test file. It is a dependency
+of the generated package, declared in that target's `deps` block, and
+putting it in the sdkgen package's manifest would make every consumer supply
+a peer they have no reason to have. Expect this from any target that
+generates a Node package.
+
+Declare what remains, minus `@voxgig/sdkgen` itself. The set is per target:
+`haskell` needs `@voxgig/struct`, `seneca-provider` does not.
 
 **Check its parity tier.** A FULL-tier target drives the shared `.aontu`
 corpus, which today lives in create-sdkgen and is reachable only from
@@ -49,10 +62,20 @@ migrated FULL-tier target is silently capped below its tier. MIRRORED and
 UNCOVERED targets have no such dependency — which is the whole argument
 for going first with one.
 
-**Check nothing wraps it.** The consumer targets (`go-cli`, `go-mcp`,
-`py-data`, `seneca-provider`) each name the target they wrap. Migrating a
-wrapped target means the wrapper's package now depends on the wrapped
-one's.
+Both of those sets are now empty: every bundled language target is FULL, so
+none of them can move until the corpus is a package. The targets that can
+are the CONSUMER ones, which are in no tier set at all and so have no tier
+to cap. They declare `"parity": {"<t>": "CONSUMER"}`, which says outside the
+tier system rather than saying nothing — an absent field cannot be told
+apart from an author who did not know it existed.
+
+**Check what wraps it, and what it wraps.** The consumer targets (`go-cli`,
+`go-mcp`, `py-data`, `seneca-provider`) each name the target they wrap.
+Migrating a wrapped target means the wrapper's package now depends on the
+wrapped one's. Migrating a wrapper is the safe direction — it needs
+something the box still provides — but there is no manifest field for that
+requirement, so state it in the package README and let the target's own
+throw report it at generation.
 
 ## The move
 
@@ -137,7 +160,9 @@ has to exercise the shapes that have historically broken this target.
 ```
 
 `parity` is where the tier now lives. It travels with the target, which is
-the point of moving it.
+the point of moving it. The vocabulary is `FULL`, `MIRRORED`, `UNCOVERED`
+and `CONSUMER`, and `package check` rejects anything else — along with an
+entry naming a target the package does not provide.
 
 `package.json` — what npm reads. Beyond the usual, it needs `files`
 covering `.sdk` and `sdkgen-package.json`, the peers the candidate check

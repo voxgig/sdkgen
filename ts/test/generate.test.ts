@@ -83,22 +83,25 @@ const PLACEHOLDER_PINNED = [
 
 
 // Targets that consume ANOTHER target's output rather than generating an SDK
-// of their own: go-cli/go-mcp wrap `go`, py-data wraps `py`, and
-// seneca-provider wraps `ts`. They switch the standard phases off and are
-// driven by the wrapped target's model, so generating them standalone proves
-// nothing — and each fails outright without its sibling, deliberately.
-// Mirrors parity.test.ts.
+// of their own: go-cli/go-mcp wrap `go` and py-data wraps `py`. They switch
+// the standard phases off and are driven by the wrapped target's model, so
+// generating them standalone proves nothing — and each fails outright without
+// its sibling, deliberately. Mirrors parity.test.ts.
 //
 // The sibling each one needs is declared HERE rather than left implicit,
 // because "excluded from the loop" was silently reading as "excluded from the
 // suite": the placeholder scan is this file's only content guard, and none of
-// these four had ever been through it. See 'a consumer target generates
-// against its sibling', which does exactly that.
+// them had ever been through it. See 'a consumer target generates against its
+// sibling', which does exactly that.
+//
+// `seneca-provider` was the fourth and has moved to
+// packages/sdkgen-seneca-provider, which runs the same scan through the test
+// kit's `generateInto` — the kit's PLACEHOLDERS list is kept in step with this
+// file's for exactly that reason.
 const NON_SDK_SIBLING: Record<string, string> = {
   'go-cli': 'go',
   'go-mcp': 'go',
   'py-data': 'py',
-  'seneca-provider': 'ts',
 }
 
 const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
@@ -1072,16 +1075,15 @@ main: kit: target: js: phase: feature: active: false
   // They are out of the two loops above for a good reason — standalone they
   // throw, by design — but that also took them out of the placeholder scan,
   // which is the only guard in this suite that reads the generated TEXT. So
-  // the ~1650 lines of Main_seneca-provider + Extras_seneca-provider, and the
-  // go-cli / go-mcp / py-data emitters, had no content check at all: a Copy or
-  // Fragment added there without `...ctx$.stdrep` would ship a package naming
-  // itself "ProjectName" at runtime and every suite would stay green.
-  // external.test.ts generates seneca-provider but asserts only on file
+  // the go-cli / go-mcp / py-data emitters had no content check at all: a Copy
+  // or Fragment added there without `...ctx$.stdrep` would ship a package
+  // naming itself "ProjectName" at runtime and every suite would stay green.
+  // external.test.ts generates a consumer target too, but asserts only on file
   // PLACEMENT.
   //
-  // seneca-provider generates IN-TREE here (under `seneca-provider/`): its
-  // out-of-tree `output: path` mode is external.test.ts's subject, and the
-  // text it emits is the same either way.
+  // Each generates IN-TREE here (under `<target>/`): the out-of-tree
+  // `output: path` mode is external.test.ts's subject, and the text a target
+  // emits is the same either way.
   test('a consumer target generates against its sibling', async () => {
     const leaks: string[] = []
 
@@ -1720,36 +1722,6 @@ main: kit: target: js: phase: feature: active: false
     // Still ignoring the things that genuinely should not be committed.
     ok(lines.includes('node_modules/'), 'ts/.gitignore stopped ignoring node_modules')
     ok(lines.includes('*.tsbuildinfo'), 'ts/.gitignore stopped ignoring tsbuildinfo')
-  })
-
-
-  // The provider gets one too — and from a COMPONENT.
-  //
-  // It used to come from `tm/seneca-provider/.gitignore`, which meant it
-  // reached only people working from a checkout: npm never publishes a file
-  // by that name, whatever package.json `files` says, so every consumer who
-  // installed sdkgen from the registry generated a provider repo with no
-  // ignore file at all. packaging.test.ts guards the tarball; this guards the
-  // OUTPUT, because the two failed independently — the template was present
-  // in this repo the whole time, so nothing here noticed.
-  //
-  // `.jostraca/` is the line that matters most: jostraca drops its meta log
-  // and a full duplicate of the last generated output into the provider repo
-  // on every run, so without it the first regeneration leaves hundreds of
-  // untracked files behind.
-  test('the seneca-provider gitignore is generated, not copied', async () => {
-    const out = await generate(['ts', 'seneca-provider'])
-
-    const ignore = findFile(out, 'seneca-provider/.gitignore')
-    ok(null != ignore, 'seneca-provider: no .gitignore generated')
-
-    const lines = ignore!.split('\n').map((l: string) => l.trim())
-      .filter((l: string) => '' !== l && !l.startsWith('#'))
-
-    for (const needed of ['node_modules/', '.jostraca/', '*.tsbuildinfo']) {
-      ok(lines.includes(needed),
-        'seneca-provider/.gitignore stopped ignoring ' + needed)
-    }
   })
 
 
