@@ -331,7 +331,13 @@ describe('vendored', () => {
     for (const [lib, entry] of Object.entries<any>(MANIFEST.library)) {
       for (const [rel, spec] of Object.entries<any>(entry.file)) {
         for (const adapt of spec.adapt || []) {
+          // LF-NORMALIZED, like the hash check above and for the same
+          // reason: an `adapt` string may span a line ending (the php
+          // require rewrite ends in "\n"), and a CRLF checkout would then
+          // never match it. That failed on windows only, while linux and
+          // macos passed — the file was correct on all three.
           const src = readFileSync(Path.join(SDK, rel), 'utf8')
+            .replace(/\r\n/g, '\n')
 
           // Skip the provenance header (and any language prologue before
           // it), which NAMES the `from` string.

@@ -2023,7 +2023,7 @@ main: kit: target: js: phase: feature: active: false
 
     // The map has to be EXPORTED, or the deferred require in
     // SecretsFeature reads undefined and the vocabulary is silently empty.
-    ok(/module\.exports = \{\n  config,\n  FEATURE_PLUGINS,\n\}/.test(config!),
+    ok(/module\.exports = \{\r?\n  config,\r?\n  FEATURE_PLUGINS,\r?\n\}/.test(config!),
       'js: Config.js does not export FEATURE_PLUGINS')
 
     // DEFERRED, not eager: an eager require of Config from the feature is
@@ -2065,7 +2065,7 @@ main: kit: target: js: phase: feature: active: false
       'js: an inactive model still required the secrets feature')
     ok(!/secrets: SecretsFeature,/.test(plain!),
       'js: an inactive model still registered the secrets feature class')
-    ok(/const FEATURE_PLUGINS = \{\s*\n\}/.test(plain!),
+    ok(/const FEATURE_PLUGINS = \{\s*\r?\n\}/.test(plain!),
       'js: an inactive model must emit an EMPTY FEATURE_PLUGINS map')
   })
 
@@ -2202,7 +2202,7 @@ main: kit: target: js: phase: feature: active: false
     ok(/\\Voxgig\\Sekreto\\Plugins\\boru\(\),/.test(config!) &&
       /\\Voxgig\\Sekreto\\Plugins\\hashicorp\(\),/.test(config!),
       'php: feature_plugins is missing the vault definitions:\n' +
-      (config!.match(/feature_plugins[\s\S]*?\n    \}/) ||
+      (config!.match(/feature_plugins[\s\S]*?\r?\n    \}/) ||
         ['(no feature_plugins)'])[0])
 
     // The trim: an inactive group's vendored file is OUT, the active
