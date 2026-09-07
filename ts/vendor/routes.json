@@ -481,6 +481,58 @@
   },
   {
    "lib": "plugin",
+   "port": "javascript",
+   "lang": "js",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/js/src/feature/secrets/plugin"
+   ],
+   "file": {
+    "javascript/src/index.js": "tm/js/src/feature/secrets/plugin/index.js",
+    "javascript/src/capability.js": "tm/js/src/feature/secrets/plugin/capability.js",
+    "javascript/src/catalog.js": "tm/js/src/feature/secrets/plugin/catalog.js",
+    "javascript/src/config.js": "tm/js/src/feature/secrets/plugin/config.js",
+    "javascript/src/depend.js": "tm/js/src/feature/secrets/plugin/depend.js",
+    "javascript/src/env.js": "tm/js/src/feature/secrets/plugin/env.js",
+    "javascript/src/export.js": "tm/js/src/feature/secrets/plugin/export.js",
+    "javascript/src/graph.js": "tm/js/src/feature/secrets/plugin/graph.js",
+    "javascript/src/host.js": "tm/js/src/feature/secrets/plugin/host.js",
+    "javascript/src/order.js": "tm/js/src/feature/secrets/plugin/order.js",
+    "javascript/src/point.js": "tm/js/src/feature/secrets/plugin/point.js",
+    "javascript/src/ref.js": "tm/js/src/feature/secrets/plugin/ref.js",
+    "javascript/src/resolve.js": "tm/js/src/feature/secrets/plugin/resolve.js",
+    "javascript/src/types.js": "tm/js/src/feature/secrets/plugin/types.js",
+    "javascript/src/version.js": "tm/js/src/feature/secrets/plugin/version.js"
+   }
+  },
+  {
+   "lib": "plugin",
+   "port": "php",
+   "lang": "php",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/php/feature/secrets/plugin"
+   ],
+   "file": {
+    "php/src/plugin.php": "tm/php/feature/secrets/plugin/plugin.php",
+    "php/src/Types.php": "tm/php/feature/secrets/plugin/Types.php",
+    "php/src/Ref.php": "tm/php/feature/secrets/plugin/Ref.php",
+    "php/src/Version.php": "tm/php/feature/secrets/plugin/Version.php",
+    "php/src/Capability.php": "tm/php/feature/secrets/plugin/Capability.php",
+    "php/src/Resolve.php": "tm/php/feature/secrets/plugin/Resolve.php",
+    "php/src/Graph.php": "tm/php/feature/secrets/plugin/Graph.php",
+    "php/src/Order.php": "tm/php/feature/secrets/plugin/Order.php",
+    "php/src/Config.php": "tm/php/feature/secrets/plugin/Config.php",
+    "php/src/Env.php": "tm/php/feature/secrets/plugin/Env.php",
+    "php/src/Export.php": "tm/php/feature/secrets/plugin/Export.php",
+    "php/src/Point.php": "tm/php/feature/secrets/plugin/Point.php",
+    "php/src/Catalog.php": "tm/php/feature/secrets/plugin/Catalog.php",
+    "php/src/Depend.php": "tm/php/feature/secrets/plugin/Depend.php",
+    "php/src/Host.php": "tm/php/feature/secrets/plugin/Host.php"
+   }
+  },
+  {
+   "lib": "plugin",
    "port": "python",
    "lang": "py",
    "version": "0.1.6",
@@ -503,6 +555,32 @@
     "python/voxgig_plugin/resolve.py": "tm/py/pkg/feature/secrets/voxgig_plugin/resolve.py",
     "python/voxgig_plugin/types.py": "tm/py/pkg/feature/secrets/voxgig_plugin/types.py",
     "python/voxgig_plugin/version.py": "tm/py/pkg/feature/secrets/voxgig_plugin/version.py"
+   }
+  },
+  {
+   "lib": "plugin",
+   "port": "ruby",
+   "lang": "rb",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/rb/feature/secrets/voxgig_plugin"
+   ],
+   "file": {
+    "ruby/lib/voxgig_plugin.rb": "tm/rb/feature/secrets/voxgig_plugin.rb",
+    "ruby/lib/voxgig_plugin/types.rb": "tm/rb/feature/secrets/voxgig_plugin/types.rb",
+    "ruby/lib/voxgig_plugin/ref.rb": "tm/rb/feature/secrets/voxgig_plugin/ref.rb",
+    "ruby/lib/voxgig_plugin/version.rb": "tm/rb/feature/secrets/voxgig_plugin/version.rb",
+    "ruby/lib/voxgig_plugin/capability.rb": "tm/rb/feature/secrets/voxgig_plugin/capability.rb",
+    "ruby/lib/voxgig_plugin/resolve.rb": "tm/rb/feature/secrets/voxgig_plugin/resolve.rb",
+    "ruby/lib/voxgig_plugin/graph.rb": "tm/rb/feature/secrets/voxgig_plugin/graph.rb",
+    "ruby/lib/voxgig_plugin/order.rb": "tm/rb/feature/secrets/voxgig_plugin/order.rb",
+    "ruby/lib/voxgig_plugin/config.rb": "tm/rb/feature/secrets/voxgig_plugin/config.rb",
+    "ruby/lib/voxgig_plugin/env.rb": "tm/rb/feature/secrets/voxgig_plugin/env.rb",
+    "ruby/lib/voxgig_plugin/export.rb": "tm/rb/feature/secrets/voxgig_plugin/export.rb",
+    "ruby/lib/voxgig_plugin/point.rb": "tm/rb/feature/secrets/voxgig_plugin/point.rb",
+    "ruby/lib/voxgig_plugin/catalog.rb": "tm/rb/feature/secrets/voxgig_plugin/catalog.rb",
+    "ruby/lib/voxgig_plugin/depend.rb": "tm/rb/feature/secrets/voxgig_plugin/depend.rb",
+    "ruby/lib/voxgig_plugin/host.rb": "tm/rb/feature/secrets/voxgig_plugin/host.rb"
    }
   },
   {
@@ -590,6 +668,90 @@
   },
   {
    "lib": "sekreto",
+   "port": "javascript",
+   "lang": "js",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/js/src/feature/secrets/sekreto",
+    "tm/js/src/feature/secrets/sekreto/provider",
+    "tm/js/src/feature/secrets/sekreto/plugins"
+   ],
+   "file": {
+    "javascript/src/Sekreto.js": "tm/js/src/feature/secrets/sekreto/Sekreto.js",
+    "javascript/src/index.js": "tm/js/src/feature/secrets/sekreto/index.js",
+    "javascript/src/provider/support.js": "tm/js/src/feature/secrets/sekreto/provider/support.js",
+    "javascript/src/provider/builtin.js": "tm/js/src/feature/secrets/sekreto/provider/builtin.js",
+    "javascript/src/provider/addr.js": "tm/js/src/feature/secrets/sekreto/provider/addr.js",
+    "javascript/src/provider/env.js": "tm/js/src/feature/secrets/sekreto/provider/env.js",
+    "javascript/src/provider/memory.js": "tm/js/src/feature/secrets/sekreto/provider/memory.js",
+    "javascript/src/provider/dotenv.js": "tm/js/src/feature/secrets/sekreto/provider/dotenv.js",
+    "javascript/src/provider/file.js": "tm/js/src/feature/secrets/sekreto/provider/file.js",
+    "javascript/plugins/httpjson.js": "tm/js/src/feature/secrets/sekreto/plugins/httpjson.js",
+    "javascript/plugins/hashicorp.js": "tm/js/src/feature/secrets/sekreto/plugins/hashicorp.js",
+    "javascript/plugins/boru.js": "tm/js/src/feature/secrets/sekreto/plugins/boru.js",
+    "javascript/plugins/gcpsecrets.js": "tm/js/src/feature/secrets/sekreto/plugins/gcpsecrets.js",
+    "javascript/plugins/azuresecrets.js": "tm/js/src/feature/secrets/sekreto/plugins/azuresecrets.js",
+    "javascript/plugins/onepassword.js": "tm/js/src/feature/secrets/sekreto/plugins/onepassword.js",
+    "javascript/plugins/doppler.js": "tm/js/src/feature/secrets/sekreto/plugins/doppler.js",
+    "javascript/plugins/infisical.js": "tm/js/src/feature/secrets/sekreto/plugins/infisical.js",
+    "javascript/plugins/secretspec.js": "tm/js/src/feature/secrets/sekreto/plugins/secretspec.js",
+    "javascript/plugins/aws.js": "tm/js/src/feature/secrets/sekreto/plugins/aws.js",
+    "javascript/plugins/sigv4.js": "tm/js/src/feature/secrets/sekreto/plugins/sigv4.js"
+   },
+   "adapt": [
+    {
+     "match": "sekreto/Sekreto\\.js$",
+     "from": "'@voxgig/plugin-js'",
+     "to": "'../plugin'"
+    },
+    {
+     "match": "sekreto/provider/support\\.js$",
+     "from": "'@voxgig/plugin-js'",
+     "to": "'../../plugin'"
+    },
+    {
+     "match": "sekreto/plugins/(?!sigv4)[a-z0-9]+\\.js$",
+     "from": "'../src/provider/",
+     "to": "'../provider/"
+    }
+   ]
+  },
+  {
+   "lib": "sekreto",
+   "port": "php",
+   "lang": "php",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/php/feature/secrets/sekreto/src",
+    "tm/php/feature/secrets/sekreto/plugins"
+   ],
+   "file": {
+    "php/src/Sekreto.php": "tm/php/feature/secrets/sekreto/src/Sekreto.php",
+    "php/src/Providers.php": "tm/php/feature/secrets/sekreto/src/Providers.php",
+    "php/src/Addr.php": "tm/php/feature/secrets/sekreto/src/Addr.php",
+    "php/plugins/httpjson.php": "tm/php/feature/secrets/sekreto/plugins/httpjson.php",
+    "php/plugins/runcmd.php": "tm/php/feature/secrets/sekreto/plugins/runcmd.php",
+    "php/plugins/hashicorp.php": "tm/php/feature/secrets/sekreto/plugins/hashicorp.php",
+    "php/plugins/boru.php": "tm/php/feature/secrets/sekreto/plugins/boru.php",
+    "php/plugins/aws.php": "tm/php/feature/secrets/sekreto/plugins/aws.php",
+    "php/plugins/sigv4.php": "tm/php/feature/secrets/sekreto/plugins/sigv4.php",
+    "php/plugins/gcpsecrets.php": "tm/php/feature/secrets/sekreto/plugins/gcpsecrets.php",
+    "php/plugins/azuresecrets.php": "tm/php/feature/secrets/sekreto/plugins/azuresecrets.php",
+    "php/plugins/onepassword.php": "tm/php/feature/secrets/sekreto/plugins/onepassword.php",
+    "php/plugins/doppler.php": "tm/php/feature/secrets/sekreto/plugins/doppler.php",
+    "php/plugins/infisical.php": "tm/php/feature/secrets/sekreto/plugins/infisical.php",
+    "php/plugins/secretspec.php": "tm/php/feature/secrets/sekreto/plugins/secretspec.php"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/sekreto/src/Sekreto\\.php$",
+     "from": "require_once __DIR__ . '/Plugin.php';\nrequireplugin();\n",
+     "to": "require_once __DIR__ . '/../../plugin/plugin.php';\n"
+    }
+   ]
+  },
+  {
+   "lib": "sekreto",
    "port": "python",
    "lang": "py",
    "version": "0.2.0",
@@ -644,6 +806,41 @@
      "from": "from voxgig_sekreto.plugins.sigv4 import",
      "to": "from .sigv4 import",
      "optional": true
+    }
+   ]
+  },
+  {
+   "lib": "sekreto",
+   "port": "ruby",
+   "lang": "rb",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/rb/feature/secrets",
+    "tm/rb/feature/secrets/voxgig_sekreto",
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins"
+   ],
+   "file": {
+    "ruby/lib/voxgig_sekreto.rb": "tm/rb/feature/secrets/voxgig_sekreto.rb",
+    "ruby/lib/voxgig_sekreto/sekreto.rb": "tm/rb/feature/secrets/voxgig_sekreto/sekreto.rb",
+    "ruby/lib/voxgig_sekreto/providers.rb": "tm/rb/feature/secrets/voxgig_sekreto/providers.rb",
+    "ruby/lib/voxgig_sekreto/addr.rb": "tm/rb/feature/secrets/voxgig_sekreto/addr.rb",
+    "ruby/lib/voxgig_sekreto/plugins/httpjson.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/httpjson.rb",
+    "ruby/lib/voxgig_sekreto/plugins/hashicorp.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/hashicorp.rb",
+    "ruby/lib/voxgig_sekreto/plugins/boru.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/boru.rb",
+    "ruby/lib/voxgig_sekreto/plugins/gcpsecrets.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/gcpsecrets.rb",
+    "ruby/lib/voxgig_sekreto/plugins/azuresecrets.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/azuresecrets.rb",
+    "ruby/lib/voxgig_sekreto/plugins/onepassword.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/onepassword.rb",
+    "ruby/lib/voxgig_sekreto/plugins/doppler.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/doppler.rb",
+    "ruby/lib/voxgig_sekreto/plugins/infisical.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/infisical.rb",
+    "ruby/lib/voxgig_sekreto/plugins/secretspec.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/secretspec.rb",
+    "ruby/lib/voxgig_sekreto/plugins/aws.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/aws.rb",
+    "ruby/lib/voxgig_sekreto/plugins/sigv4.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/sigv4.rb"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/voxgig_sekreto/sekreto\\.rb$",
+     "from": "require 'voxgig_plugin'",
+     "to": "require_relative '../voxgig_plugin'"
     }
    ]
   },

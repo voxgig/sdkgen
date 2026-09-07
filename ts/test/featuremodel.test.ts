@@ -276,7 +276,7 @@ describe('feature-language-parity', () => {
     // needs: ['sekreto'] — a target joins when it vendors its sekreto
     // port and declares `provides: ['sekreto']` together (the vendor-tag
     // rollout added go and py; java, rb, php and rust follow).
-    secrets: ['go', 'py', 'ts'],
+    secrets: ['go', 'js', 'php', 'py', 'rb', 'ts'],
   }
 
   // Which targets must carry this feature: all of them, or just the ones

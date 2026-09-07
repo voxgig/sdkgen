@@ -1422,6 +1422,58 @@ const SECRETS: Record<string, {
   pluginfiles?: string[],
   tests: string,
 }> = {
+  // ---- The checkpoint expansion. sekreto's ports were reshaped one at a
+  // time; at sdk-20260904-1610-0 only four had the provider/ + plugins/
+  // shape, which is why secrets stopped at ts/go/py. At
+  // sdk-20260907-0029-0 all twenty-three do, and js — deferred since the
+  // pilot for exactly this reason — is first through.
+  js: {
+    feature: 'js/src/feature/secrets/SecretsFeature.js',
+    vendor: 'js/src/feature/secrets/sekreto',
+    vendorfiles: [
+      'Sekreto.js', 'index.js',
+      'provider/support.js', 'provider/builtin.js', 'provider/addr.js',
+      'provider/env.js', 'provider/memory.js',
+      'provider/dotenv.js', 'provider/file.js',
+      'plugins/aws.js', 'plugins/sigv4.js', 'plugins/httpjson.js',
+      'plugins/hashicorp.js', 'plugins/secretspec.js',
+    ],
+    plugindir: 'js/src/feature/secrets/plugin',
+    pluginfiles: ['index.js', 'catalog.js', 'host.js', 'types.js'],
+    tests: 'js/test/feature/secrets',
+  },
+  rb: {
+    // rb's container is the top-level feature/ dir (srcfeature: false), and
+    // its vendored trees carry the voxgig_ prefix a ruby require path needs.
+    feature: 'rb/feature/secrets_feature.rb',
+    vendor: 'rb/feature/secrets/voxgig_sekreto',
+    // ruby's reshape is NOT ts's: the built-ins stay in one aggregate
+    // `providers.rb` rather than a `provider/` directory, and only the
+    // gated kinds are split into `plugins/`. `plugins.rb` is the full-set
+    // barrel and is deliberately absent — vendoring a barrel would defeat
+    // the plugin trim by importing every kind.
+    vendorfiles: [
+      'sekreto.rb', 'addr.rb', 'providers.rb',
+      'plugins/aws.rb', 'plugins/sigv4.rb', 'plugins/httpjson.rb',
+      'plugins/hashicorp.rb', 'plugins/secretspec.rb',
+    ],
+    plugindir: 'rb/feature/secrets/voxgig_plugin',
+    pluginfiles: ['catalog.rb', 'host.rb', 'types.rb'],
+    tests: 'rb/test/feature/secrets',
+  },
+  php: {
+    feature: 'php/feature/SecretsFeature.php',
+    vendor: 'php/feature/secrets/sekreto',
+    // php keeps the core under src/ and the gated kinds beside it.
+    vendorfiles: [
+      'src/Sekreto.php', 'src/Providers.php', 'src/Addr.php',
+      'plugins/aws.php', 'plugins/sigv4.php', 'plugins/httpjson.php',
+      'plugins/hashicorp.php', 'plugins/secretspec.php',
+    ],
+    plugindir: 'php/feature/secrets/plugin',
+    pluginfiles: ['Catalog.php', 'Host.php', 'Types.php'],
+    tests: 'php/test/feature/secrets',
+  },
   ts: {
     feature: 'ts/src/feature/secrets/SecretsFeature.ts',
     vendor: 'ts/src/feature/secrets/sekreto',

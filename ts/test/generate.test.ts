@@ -626,7 +626,11 @@ main: kit: target: js: phase: feature: active: false
     // voxgig_plugin/config.py of their own (py has no generate-time
     // feature trim), and a bare /config\.py$/ finds that one first.
     ['py', /_sdk\/config\.py$/, /_CONFIG_DATA = "/, /^\s+return \{$/m],
-    ['rb', /config\.rb$/, /CONFIG_DATA = '/, /"main" => \{/],
+    // Anchored at the target root, for the reason py's row is: the
+    // vendored secrets tree ships a voxgig_plugin/config.rb of its own
+    // (rb, like go and py, trims a feature at ADD time rather than at
+    // generate time), and a bare /config\.rb$/ finds that one first.
+    ['rb', /^rb\/config\.rb$/, /CONFIG_DATA = '/, /"main" => \{/],
     ['php', /config\.php$/, /const CONFIG_DATA = '/, /"main" => \[/],
     ['lua', /config\.lua$/, /local CONFIG_DATA = \[=*\[/, /^\s*main = \{$/m],
     ['c', /core\/config\.c$/, /static const char CONFIG_DATA\[\] =/, /return cmap\(/],
@@ -1970,10 +1974,282 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // js guard for the same seam, plus the one hazard only js has.
+  //
+  // An ACTIVE secrets model must emit the plugin requires and the
+  // FEATURE_PLUGINS entries into src/Config.js, and the INACTIVE groups'
+  // vendored files must stay out of the tree (Main_js's pluginExcludes),
+  // while the shared httpjson helper (in no group) ships regardless.
+  //
+  // The js-only hazard: Config.js requires SecretsFeature.js at its top
+  // and assigns module.exports at the END of its body, so the pair is a
+  // CommonJS cycle. Reading FEATURE_PLUGINS at module load - eagerly or
+  // through a kept module handle - yields undefined, and the SDK then
+  // carries every selected plugin module while refusing every one of
+  // their kinds at runtime. So the feature must read it through a
+  // DEFERRED require inside init(), which this pins.
+  test('js: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['js'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    const config = findFile(out, 'src/Config.js')
+    ok(null != config, 'js: no src/Config.js generated')
+
+    // The NAMED requires and the definitions list - the two emissions that
+    // can silently no-op while everything else stays green.
+    ok(/require\('\.\/feature\/secrets\/sekreto\/plugins\/hashicorp'\)/.test(config!),
+      'js: active vault group did not emit the hashicorp plugin require')
+    ok(/secrets: \[boru, hashicorp\],/.test(config!),
+      'js: FEATURE_PLUGINS is missing the vault definitions:\n' +
+      (config!.match(/const FEATURE_PLUGINS = \{[^}]*\}/) ||
+        ['(no FEATURE_PLUGINS)'])[0])
+
+    // The map has to be EXPORTED, or the deferred require in
+    // SecretsFeature reads undefined and the vocabulary is silently empty.
+    ok(/module\.exports = \{\n  config,\n  FEATURE_PLUGINS,\n\}/.test(config!),
+      'js: Config.js does not export FEATURE_PLUGINS')
+
+    // DEFERRED, not eager: an eager require of Config from the feature is
+    // the cycle that makes FEATURE_PLUGINS undefined.
+    const impl = findFile(out, 'feature/secrets/SecretsFeature.js')
+    ok(null != impl, 'js: no SecretsFeature.js generated')
+    ok(!/^const .*require\('\.\.\/\.\.\/Config'\)/m.test(impl!),
+      'js: SecretsFeature requires Config at module load - the CommonJS ' +
+      'cycle makes FEATURE_PLUGINS undefined there')
+    ok(/require\('\.\.\/\.\.\/Config'\)\.FEATURE_PLUGINS/.test(impl!),
+      'js: SecretsFeature does not read FEATURE_PLUGINS through a deferred require')
+
+    // The trim: an inactive group's vendored file is OUT, the active
+    // group's and the group-less shared helper are IN.
+    ok(null == findFile(out, 'sekreto/plugins/gcpsecrets.js'),
+      'js: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'sekreto/plugins/secretspec.js'),
+      'js: the inactive secretspec group still ships its child-process plugin')
+    ok(null != findFile(out, 'sekreto/plugins/hashicorp.js'),
+      'js: the ACTIVE vault group lost hashicorp')
+    ok(null != findFile(out, 'sekreto/plugins/httpjson.js'),
+      'js: the shared httpjson helper must ship with the feature core')
+
+    // And the inactive-model baseline: no plugin machinery in Config.js and
+    // no secrets registration, so a model that does not select the feature
+    // generates the Config it always did.
+    //
+    // The SOURCE trim is not asserted here: this harness copies the whole
+    // staged tm/ tree, while a real project's `target add` drops an
+    // undeclared feature before generate ever runs. srcFeatureExcludes only
+    // covers declared-but-inactive features, by design (`base` is left
+    // alone the same way), so the file-set claim belongs to a real
+    // `target add`, not to memfs.
+    const plainout = await generate(['js'])
+    const plain = findFile(plainout, 'src/Config.js')
+    ok(!/sekreto\/plugins/.test(plain!),
+      'js: an inactive model still emitted plugin requires')
+    ok(!/require\('\.\/feature\/secrets\/SecretsFeature'\)/.test(plain!),
+      'js: an inactive model still required the secrets feature')
+    ok(!/secrets: SecretsFeature,/.test(plain!),
+      'js: an inactive model still registered the secrets feature class')
+    ok(/const FEATURE_PLUGINS = \{\s*\n\}/.test(plain!),
+      'js: an inactive model must emit an EMPTY FEATURE_PLUGINS map')
+  })
+
+
+  // rb guard for the same seam. An ACTIVE secrets model must emit the
+  // plugin module requires and the FEATURE_PLUGINS entries into config.rb,
+  // and the INACTIVE groups' vendored files must stay out of the tree
+  // (Main_rb's pluginExcludes - the generate-time trim rb now has), while
+  // the shared httpjson helper (in no group) ships regardless.
+  //
+  // The rb-only shape: FEATURE_PLUGINS is GATED on a catalogue being
+  // declared at all, rather than always emitted as go's and py's are, so
+  // an SDK that carries no secrets feature keeps the config.rb it had
+  // before the feature existed - byte for byte. The inactive baseline
+  // below is what holds that.
+  test('rb: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['rb'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    // Anchored at the target root: the vendored secrets tree ships a
+    // voxgig_plugin/config.rb of its own, and a bare 'config.rb' suffix
+    // finds that one first.
+    const config = findFile(out, 'rb/config.rb')
+    ok(null != config, 'rb: no config.rb generated')
+
+    // The NAMED requires and the definitions list - the two emissions that
+    // can silently no-op while everything else stays green.
+    ok(/require_relative 'feature\/secrets\/voxgig_sekreto\/plugins\/hashicorp'/
+      .test(config!),
+      'rb: active vault group did not emit the hashicorp plugin require')
+    ok(/"secrets" => \[VoxgigSekreto::Plugins::BORU, VoxgigSekreto::Plugins::HASHICORP\],/
+      .test(config!),
+      'rb: FEATURE_PLUGINS is missing the vault definitions:\n' +
+      (config!.match(/FEATURE_PLUGINS = \{[^}]*\}/) || ['(no FEATURE_PLUGINS)'])[0])
+
+    // The trim: an inactive group's vendored file is OUT, the active
+    // group's and the group-less shared helper are IN.
+    ok(null == findFile(out, 'voxgig_sekreto/plugins/gcpsecrets.rb'),
+      'rb: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'voxgig_sekreto/plugins/secretspec.rb'),
+      'rb: the inactive secretspec group still ships its child-process plugin')
+    ok(null != findFile(out, 'voxgig_sekreto/plugins/hashicorp.rb'),
+      'rb: the ACTIVE vault group lost hashicorp')
+    ok(null != findFile(out, 'voxgig_sekreto/plugins/httpjson.rb'),
+      'rb: the shared httpjson helper must ship with the feature core')
+
+    // The gated suite has to be RUNNABLE where it lands: the shipped
+    // Makefile glob is recursive, or test/feature/secrets/ ships and never
+    // runs - a vacuously green suite.
+    ok(null != findFile(out, 'test/feature/secrets/secrets_feature_test.rb'),
+      'rb: the gated secrets suite was not generated')
+    const makefile = findFile(out, 'rb/Makefile')
+    ok(null != makefile, 'rb: no Makefile generated')
+    ok(/Dir\.glob\("\.\/test\/\*\*\/\*_test\.rb"\)/.test(makefile!),
+      'rb: the Makefile test glob is not recursive, so test/feature/** never runs')
+
+    // And the inactive-model baseline: no plugin machinery in config.rb AT
+    // ALL - not even an empty map. This is the byte-identity guard.
+    const plainout = await generate(['rb'])
+    const plain = findFile(plainout, 'rb/config.rb')
+    ok(!/voxgig_sekreto/.test(plain!),
+      'rb: an inactive model still emitted plugin requires')
+    ok(!/FEATURE_PLUGINS/.test(plain!),
+      'rb: an inactive model must emit NO FEATURE_PLUGINS map')
+  })
+
+
+  // php guard for the same seam. An ACTIVE secrets model must emit the
+  // plugin file require_onces and the definition CALLS into config.php's
+  // feature_plugins accessor, and the INACTIVE groups' vendored files must
+  // stay out of the tree (Main_php's pluginExcludes - the generate-time
+  // trim php now has).
+  //
+  // Two php-only shapes this pins. First, the accessor is a static METHOD
+  // whose requires live INSIDE it: a sekreto definition holds closures, so
+  // it can be neither a class constant nor classmap-autoloadable, and
+  // getting that wrong is invisible until a chain names the kind at
+  // runtime. Second, php has TWO group-less shared helpers, not one -
+  // httpjson.php (eight plugins) and runcmd.php, which boru (vault) and
+  // secretspec (secretspec) BOTH require, so no group may own it.
+  //
+  // The vendored sekreto CORE assertion is a regression pin: this Copy's
+  // exclude used to be an unanchored /src\//, which silently pruned
+  // `feature/secrets/sekreto/src/` - upstream's own directory depth, which
+  // the vendoring guard holds it at.
+  test('php: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['php'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    // Anchored at the target root: the vendored plugin tree ships a
+    // Config.php of its own, and a bare 'config.php' suffix finds that one.
+    const config = findFile(out, 'php/config.php')
+    ok(null != config, 'php: no config.php generated')
+
+    // The NAMED requires and the definition calls - the two emissions that
+    // can silently no-op while everything else stays green.
+    ok(/require_once __DIR__ \. '\/feature\/secrets\/sekreto\/plugins\/hashicorp\.php';/
+      .test(config!),
+      'php: active vault group did not emit the hashicorp plugin require')
+    ok(/\\Voxgig\\Sekreto\\Plugins\\boru\(\),/.test(config!) &&
+      /\\Voxgig\\Sekreto\\Plugins\\hashicorp\(\),/.test(config!),
+      'php: feature_plugins is missing the vault definitions:\n' +
+      (config!.match(/feature_plugins[\s\S]*?\n    \}/) ||
+        ['(no feature_plugins)'])[0])
+
+    // The trim: an inactive group's vendored file is OUT, the active
+    // group's and BOTH group-less shared helpers are IN.
+    ok(null == findFile(out, 'sekreto/plugins/gcpsecrets.php'),
+      'php: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'sekreto/plugins/secretspec.php'),
+      'php: the inactive secretspec group still ships its child-process plugin')
+    ok(null != findFile(out, 'sekreto/plugins/hashicorp.php'),
+      'php: the ACTIVE vault group lost hashicorp')
+    ok(null != findFile(out, 'sekreto/plugins/httpjson.php'),
+      'php: the shared httpjson helper must ship with the feature core')
+    ok(null != findFile(out, 'sekreto/plugins/runcmd.php'),
+      'php: the shared runcmd helper spans two groups and must ship with ' +
+      'the feature core - boru and secretspec both require it')
+
+    // The vendored core itself, at upstream's depth.
+    ok(null != findFile(out, 'feature/secrets/sekreto/src/Sekreto.php'),
+      'php: the vendored sekreto core was pruned - check the Copy exclude ' +
+      'is anchored (/^src(\\/|$)/), not a bare /src\\//')
+    ok(null != findFile(out, 'feature/secrets/plugin/plugin.php'),
+      'php: the vendored voxgig/plugin core was not generated')
+
+    // The gated suite has to LAND where phpunit looks: the shipped Makefile
+    // runs `phpunit test`, which recurses, so test/feature/secrets/ runs.
+    ok(null != findFile(out, 'php/test/feature/secrets/SecretsTest.php'),
+      'php: the gated secrets suite was not generated')
+
+    // And the inactive-model baseline: no plugin machinery in config.php AT
+    // ALL - not even an empty accessor. This is the byte-identity guard.
+    const plainout = await generate(['php'])
+    const plain = findFile(plainout, 'php/config.php')
+    ok(!/Voxgig\\Sekreto/.test(plain!),
+      'php: an inactive model still emitted plugin requires')
+    ok(!/feature_plugins/.test(plain!),
+      'php: an inactive model must emit NO feature_plugins accessor')
+
+    // The anchored exclude still prunes the top-level placeholder tree.
+    deepStrictEqual(
+      Object.keys(plainout).filter((p) => /(^|\/)php\/src\//.test(p)), [],
+      'php: tm/php/src placeholders leaked into the SDK')
+  })
+
+
   // rb runner swap: the omni resolver, its vendored port and the
   // must-fail smoke test are generated; the superseded struct runner is
-  // not. rb ships no secrets feature, so unlike go/py these artefacts
-  // get their own lane instead of riding along with a secrets one.
+  // not.
   test('rb: the omni runner swap generates the resolver and retires struct_runner', async () => {
     const out = await generate(['rb'])
 

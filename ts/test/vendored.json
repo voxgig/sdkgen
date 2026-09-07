@@ -528,6 +528,142 @@
     }
    }
   },
+  "plugin/javascript": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "b48ae643eb0eb56c5ebe3198da98cecdf6a7f7fc",
+   "version": "sdk-20260907-0029-0",
+   "tag": "sdk-20260907-0029-0",
+   "file": {
+    "tm/js/src/feature/secrets/plugin/capability.js": {
+     "sha256": "303373f6543961e8378ae7327aa02e04057f6b33b34857bbafd42ae359e9b2ca",
+     "upstream": "javascript/src/capability.js"
+    },
+    "tm/js/src/feature/secrets/plugin/catalog.js": {
+     "sha256": "6bc6ca0dfe68b7799552d0fb430eb206730f268d0c965baf0a36c49870f6fd43",
+     "upstream": "javascript/src/catalog.js"
+    },
+    "tm/js/src/feature/secrets/plugin/config.js": {
+     "sha256": "3a2c065f1b398a7ec4895feaa0fa216966cb36ad0ea360e32088808e01c00f4f",
+     "upstream": "javascript/src/config.js"
+    },
+    "tm/js/src/feature/secrets/plugin/depend.js": {
+     "sha256": "41a845ea9cc21aa79d785255bb195e4f2f80eb7f5fdd097e836dcd299739fe68",
+     "upstream": "javascript/src/depend.js"
+    },
+    "tm/js/src/feature/secrets/plugin/env.js": {
+     "sha256": "cacc05bebec4146bce1c27aa0020890bf0ad8fdfb71962cf33d0b72fa9425eab",
+     "upstream": "javascript/src/env.js"
+    },
+    "tm/js/src/feature/secrets/plugin/export.js": {
+     "sha256": "c264d3a7dcbcd1684490f8fc282e60bdfaf92f736a1a03dded317945d71034eb",
+     "upstream": "javascript/src/export.js"
+    },
+    "tm/js/src/feature/secrets/plugin/graph.js": {
+     "sha256": "05f5cd552f81712a83be97e721ed5c7eec33d82d343afbfada7c01b7de469f79",
+     "upstream": "javascript/src/graph.js"
+    },
+    "tm/js/src/feature/secrets/plugin/host.js": {
+     "sha256": "fade3fbb9ef032f0e31cdd7bffdea26d3ee4951231aa5284998934d1f3889dba",
+     "upstream": "javascript/src/host.js"
+    },
+    "tm/js/src/feature/secrets/plugin/index.js": {
+     "sha256": "615596e0f47ac71f99f6911d99a0e9cc625798d2d5d7adee79b92c3a692dd3d2",
+     "upstream": "javascript/src/index.js"
+    },
+    "tm/js/src/feature/secrets/plugin/order.js": {
+     "sha256": "dbeee005aff91749bfebd68c7b1e61dd138244857162c5e5bb169d894f8198c3",
+     "upstream": "javascript/src/order.js"
+    },
+    "tm/js/src/feature/secrets/plugin/point.js": {
+     "sha256": "557b5991ff0eb087ec255c9eac165eee7ce252d99b6ef5891d94e43c97512170",
+     "upstream": "javascript/src/point.js"
+    },
+    "tm/js/src/feature/secrets/plugin/ref.js": {
+     "sha256": "ca45aa648c35c9399c1402d193371a8d1a8326c5adc0798c2a9b2ce2dfea53a8",
+     "upstream": "javascript/src/ref.js"
+    },
+    "tm/js/src/feature/secrets/plugin/resolve.js": {
+     "sha256": "54dc25c6e57686ced84a35cc6092b7e1cf5e0d50354870bd895954dc417cfb64",
+     "upstream": "javascript/src/resolve.js"
+    },
+    "tm/js/src/feature/secrets/plugin/types.js": {
+     "sha256": "18dbddfaa6ce3ab5f1737db082f95c984ecd151883776feb5d46ed0fef98344c",
+     "upstream": "javascript/src/types.js"
+    },
+    "tm/js/src/feature/secrets/plugin/version.js": {
+     "sha256": "139ea126671a55f3ba80e97a46b579397a9115cd7df8b2b77782daf68e93df19",
+     "upstream": "javascript/src/version.js"
+    }
+   }
+  },
+  "plugin/php": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "b48ae643eb0eb56c5ebe3198da98cecdf6a7f7fc",
+   "version": "sdk-20260907-0029-0",
+   "tag": "sdk-20260907-0029-0",
+   "file": {
+    "tm/php/feature/secrets/plugin/Capability.php": {
+     "sha256": "c352401636f23a0f0d9566f90c98551704e7377c5d34ee76653ed010778f3b36",
+     "upstream": "php/src/Capability.php"
+    },
+    "tm/php/feature/secrets/plugin/Catalog.php": {
+     "sha256": "b8317d73ef0e58ee75a7a63c1725bc83512b130465044ad26ec804c28b496cf9",
+     "upstream": "php/src/Catalog.php"
+    },
+    "tm/php/feature/secrets/plugin/Config.php": {
+     "sha256": "6c044fe78c7de1350bde7530edec0b69ce71ab7da4488a32e6f76b601d993312",
+     "upstream": "php/src/Config.php"
+    },
+    "tm/php/feature/secrets/plugin/Depend.php": {
+     "sha256": "c873450df6c8d5d50be0fd369dfb2daeab1d515b62e82a8ed79ef8b222aa828f",
+     "upstream": "php/src/Depend.php"
+    },
+    "tm/php/feature/secrets/plugin/Env.php": {
+     "sha256": "777f825878415851a23c0a3461a83d894df159b5719452cde0526b198a2ea004",
+     "upstream": "php/src/Env.php"
+    },
+    "tm/php/feature/secrets/plugin/Export.php": {
+     "sha256": "4d52fa0a3c08e79e33d0d4f4bf9d78fbc48f098992afe6c03f959d8658ae0542",
+     "upstream": "php/src/Export.php"
+    },
+    "tm/php/feature/secrets/plugin/Graph.php": {
+     "sha256": "e9b2f34377026dc7d49d7b210636127e654e7ee0db8b4ce0aab567807a00c655",
+     "upstream": "php/src/Graph.php"
+    },
+    "tm/php/feature/secrets/plugin/Host.php": {
+     "sha256": "55aedfe1880f980369eb0dd1d1dd35f5293d23e2e5471324de9644bd930dcc5b",
+     "upstream": "php/src/Host.php"
+    },
+    "tm/php/feature/secrets/plugin/Order.php": {
+     "sha256": "9c3a84c887b0d46a63faab6186f893b0028b320c2b3effc64f0172035a02759e",
+     "upstream": "php/src/Order.php"
+    },
+    "tm/php/feature/secrets/plugin/plugin.php": {
+     "sha256": "acdea650957b0750bbe1200e2d648b5e675db91b321e9b237925bcc9ac0c1f93",
+     "upstream": "php/src/plugin.php"
+    },
+    "tm/php/feature/secrets/plugin/Point.php": {
+     "sha256": "c3b8bf1e040f0d1e343869504c5ae6282907a47a9c5ef5c4cbc7f5e24bb7ef80",
+     "upstream": "php/src/Point.php"
+    },
+    "tm/php/feature/secrets/plugin/Ref.php": {
+     "sha256": "4feff8428312882437d2605ac31c756990e3e2f8356dc150dc0b3406970f8f37",
+     "upstream": "php/src/Ref.php"
+    },
+    "tm/php/feature/secrets/plugin/Resolve.php": {
+     "sha256": "3ac9380842343a2e8a07d923865e8baedf762782890737a51087fdda4077df39",
+     "upstream": "php/src/Resolve.php"
+    },
+    "tm/php/feature/secrets/plugin/Types.php": {
+     "sha256": "d33b09a54dff8adb4db32e10dbb20f2fc724039e8fc2bb69e883cb370151a6e9",
+     "upstream": "php/src/Types.php"
+    },
+    "tm/php/feature/secrets/plugin/Version.php": {
+     "sha256": "359975cd9e38632e21de45e15f5ffd30d82c38229eba1d9f5c1067ac75d17988",
+     "upstream": "php/src/Version.php"
+    }
+   }
+  },
   "plugin/python": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "b48ae643eb0eb56c5ebe3198da98cecdf6a7f7fc",
@@ -593,6 +729,74 @@
     "tm/py/pkg/feature/secrets/voxgig_plugin/version.py": {
      "sha256": "3eae106e7e0e662b7a08e0e23d2933530d3cb14ae51f46e0fd049ff09e5de8b5",
      "upstream": "python/voxgig_plugin/version.py"
+    }
+   }
+  },
+  "plugin/ruby": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "b48ae643eb0eb56c5ebe3198da98cecdf6a7f7fc",
+   "version": "sdk-20260907-0029-0",
+   "tag": "sdk-20260907-0029-0",
+   "file": {
+    "tm/rb/feature/secrets/voxgig_plugin.rb": {
+     "sha256": "e2880152e5746721ce8036e5812f389f8d9df16d4a17fca59775aaefb98523a3",
+     "upstream": "ruby/lib/voxgig_plugin.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/capability.rb": {
+     "sha256": "2de81ddf8a5540f3368876cfaceab9ca55645b92a6d98e0f5647afe8ffdbfb42",
+     "upstream": "ruby/lib/voxgig_plugin/capability.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/catalog.rb": {
+     "sha256": "d2dd7d8b528450dd417da113453c47bd0f8f24452e073de7a26d94aebfd5501f",
+     "upstream": "ruby/lib/voxgig_plugin/catalog.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/config.rb": {
+     "sha256": "b8fd59b3813d6bec6cc05fbc0b0e58d084249079a8a044f76a23e861ac417c1a",
+     "upstream": "ruby/lib/voxgig_plugin/config.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/depend.rb": {
+     "sha256": "9a5262459061b2fba6ec48e8b237e19259822b0f2be26388e3f64013d1a0b160",
+     "upstream": "ruby/lib/voxgig_plugin/depend.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/env.rb": {
+     "sha256": "c4183278ebbbf86075ba61692cc348213c78e2c616bb50214448078c28014ca4",
+     "upstream": "ruby/lib/voxgig_plugin/env.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/export.rb": {
+     "sha256": "9b2b861efbc20acd2db36f529def03a8faa179e12a5dffc6e4269c68543584af",
+     "upstream": "ruby/lib/voxgig_plugin/export.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/graph.rb": {
+     "sha256": "aefec74d3b610b1267733cc899a568bf51e61939fe6da8baa346ba8b2f06f085",
+     "upstream": "ruby/lib/voxgig_plugin/graph.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/host.rb": {
+     "sha256": "d7de270e8c572fbd7a0a77eb5852fc2658fe3aaaf2d27a2e39129ae9b615d4ea",
+     "upstream": "ruby/lib/voxgig_plugin/host.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/order.rb": {
+     "sha256": "b0f5e4c8adb58711d868a69e612c2313d84b6227623321109e5a7fe426722950",
+     "upstream": "ruby/lib/voxgig_plugin/order.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/point.rb": {
+     "sha256": "5814f5c63ac5a355f4fd88c1a994d95bf271006e6947f11e4ad1b4cb3ff938e6",
+     "upstream": "ruby/lib/voxgig_plugin/point.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/ref.rb": {
+     "sha256": "08964f6ce915fd0331c2f965854806f0b01c9d307ba4a6bf4f8bd73ae29cf43f",
+     "upstream": "ruby/lib/voxgig_plugin/ref.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/resolve.rb": {
+     "sha256": "a6f153c1e87355ddd6c5cd81d1fa29b5978c899ec5a4405ef8d330e85fbbdc4b",
+     "upstream": "ruby/lib/voxgig_plugin/resolve.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/types.rb": {
+     "sha256": "18fa5728db09c9f6e2d1c5da553f6e2037f303939edbff55d0462b2673ab5034",
+     "upstream": "ruby/lib/voxgig_plugin/types.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_plugin/version.rb": {
+     "sha256": "fdd424d391081a45c00ab3d6c74aae798277516fc9754af2a6b95beca6e25093",
+     "upstream": "ruby/lib/voxgig_plugin/version.rb"
     }
    }
   },
@@ -846,6 +1050,240 @@
     }
    }
   },
+  "sekreto/javascript": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "86ba35a646e68a311bdece43cd5689369ca62e9d",
+   "version": "sdk-20260907-0029-0",
+   "tag": "sdk-20260907-0029-0",
+   "file": {
+    "tm/js/src/feature/secrets/sekreto/index.js": {
+     "sha256": "a901c061b318676900be584855704b3dfc388d53efb43193a49f752a5408cd47",
+     "upstream": "javascript/src/index.js"
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/aws.js": {
+     "sha256": "1bedb28317313463bfbeacc3cb193e21cc55e9a24c174892085a97631be7fe0a",
+     "upstream": "javascript/plugins/aws.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/azuresecrets.js": {
+     "sha256": "7783e8f2bf3d7ce398b85c666a55c7f2d5f8d3713936dee4f15c574a2aeb9893",
+     "upstream": "javascript/plugins/azuresecrets.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/boru.js": {
+     "sha256": "de8bc7da51781e136a2019c25a50d55c681db27fba6c0b261f6bac25b37b8e6c",
+     "upstream": "javascript/plugins/boru.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/doppler.js": {
+     "sha256": "faf4ef8dbc28fa5da62d3eec9ffaaab75656306917904e6cdf2a9843b2702df6",
+     "upstream": "javascript/plugins/doppler.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/gcpsecrets.js": {
+     "sha256": "87f6b800c273a27eecf8c0348dfc09d2ed30429fc9f18d7b15df62d5d0411e7d",
+     "upstream": "javascript/plugins/gcpsecrets.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/hashicorp.js": {
+     "sha256": "a4479230fae979285772d695741256b55585865cc5e4c142b2ffa3721181f580",
+     "upstream": "javascript/plugins/hashicorp.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/httpjson.js": {
+     "sha256": "585042667d2fdd686e54d25be75c7ef4c48c68b557b21cac1d9960ac4a6703ad",
+     "upstream": "javascript/plugins/httpjson.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/infisical.js": {
+     "sha256": "d9fddac4c4f86be4f03f71912ba6f1ca04ae51bd99098f2505118b5158685eba",
+     "upstream": "javascript/plugins/infisical.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/onepassword.js": {
+     "sha256": "2347066e71943f4b254d1fa08eee5184a0af6bc92e25df98b7a2117b389d3873",
+     "upstream": "javascript/plugins/onepassword.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/secretspec.js": {
+     "sha256": "12524fa521fbc1064c0d9e07e44ff8910466180c348ab86efe7b90cef5575e79",
+     "upstream": "javascript/plugins/secretspec.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/plugins/sigv4.js": {
+     "sha256": "b761889faf1885734a34e8628398522e9d60545b2a33d2afdfd3148c1df2034c",
+     "upstream": "javascript/plugins/sigv4.js"
+    },
+    "tm/js/src/feature/secrets/sekreto/provider/addr.js": {
+     "sha256": "5995669f6f1774f7f2dc6544e06f7623a19b12be2f488df9dbcb030e5521105d",
+     "upstream": "javascript/src/provider/addr.js"
+    },
+    "tm/js/src/feature/secrets/sekreto/provider/builtin.js": {
+     "sha256": "4a91d3f28d1f3ecfba298d2231cf784718fda28d2590ab5a4f0f7351bc58de7d",
+     "upstream": "javascript/src/provider/builtin.js"
+    },
+    "tm/js/src/feature/secrets/sekreto/provider/dotenv.js": {
+     "sha256": "1438c8e28c617677999c187c3ce9ec33d0439eac874ce9e62bf840df8b0c69e2",
+     "upstream": "javascript/src/provider/dotenv.js"
+    },
+    "tm/js/src/feature/secrets/sekreto/provider/env.js": {
+     "sha256": "350d4cf593295c5416b9b5cc71d603210bd0c658ef0aaa6cc2a149fb013cab58",
+     "upstream": "javascript/src/provider/env.js"
+    },
+    "tm/js/src/feature/secrets/sekreto/provider/file.js": {
+     "sha256": "49c005427ec5f51fc54bb82cf05478143db66a3e437e787a6078fc2ebb44b91b",
+     "upstream": "javascript/src/provider/file.js"
+    },
+    "tm/js/src/feature/secrets/sekreto/provider/memory.js": {
+     "sha256": "e8270c260618f519fbe3f9c6bb667bcfb67d2928a28b59c41ba3a31cb6a15772",
+     "upstream": "javascript/src/provider/memory.js"
+    },
+    "tm/js/src/feature/secrets/sekreto/provider/support.js": {
+     "sha256": "3406c919d6b23c6f404a0b2b1c7ed0d267b378398f86f478110fe68d953a363c",
+     "upstream": "javascript/src/provider/support.js",
+     "adapt": [
+      {
+       "from": "'@voxgig/plugin-js'",
+       "to": "'../../plugin'"
+      }
+     ]
+    },
+    "tm/js/src/feature/secrets/sekreto/Sekreto.js": {
+     "sha256": "f90897c602b4ac9228bcc5311d61769e3f440686b596525c1a42d1b717513ee2",
+     "upstream": "javascript/src/Sekreto.js",
+     "adapt": [
+      {
+       "from": "'@voxgig/plugin-js'",
+       "to": "'../plugin'"
+      }
+     ]
+    }
+   }
+  },
+  "sekreto/php": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "86ba35a646e68a311bdece43cd5689369ca62e9d",
+   "version": "sdk-20260907-0029-0",
+   "tag": "sdk-20260907-0029-0",
+   "file": {
+    "tm/php/feature/secrets/sekreto/plugins/aws.php": {
+     "sha256": "e5eebb8af15400c3782327bafded6a01aedec899b18b30b91670443ef36a43a0",
+     "upstream": "php/plugins/aws.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/azuresecrets.php": {
+     "sha256": "e3c7df93dbdfa46e138ca6a0585c1c898d161fbffeeebf1b70524a3806c8a7e3",
+     "upstream": "php/plugins/azuresecrets.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/boru.php": {
+     "sha256": "cd1550194b36618cb9ca7041fa23c2d3409249a5807c9e56d3767267f31941d2",
+     "upstream": "php/plugins/boru.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/doppler.php": {
+     "sha256": "40a76ce02f9f1027ca909aadb22832908eb9287d43ca661fb1bcb499ec1d13a2",
+     "upstream": "php/plugins/doppler.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/gcpsecrets.php": {
+     "sha256": "946c08f99c2bae89400501149a9371da62740ae72b50ae676ab1ce16bfaa5ce0",
+     "upstream": "php/plugins/gcpsecrets.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/hashicorp.php": {
+     "sha256": "5dc9be6882fea23235aa5b108594f295eaf59abac252592cda5d7dec9d52061c",
+     "upstream": "php/plugins/hashicorp.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/httpjson.php": {
+     "sha256": "f518e465bb621c1372776c72031662137cde4e6a6d43a293a2e7846bd84235cd",
+     "upstream": "php/plugins/httpjson.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/infisical.php": {
+     "sha256": "b47655772e9ab47a7fc51bbd226217d0a05d56ab665acabc58373a7feb6e5355",
+     "upstream": "php/plugins/infisical.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/onepassword.php": {
+     "sha256": "9c832a4a8ac28a886ca8a244b4a103637a3d01fd5ca5780ae0d098d3ce4e64c2",
+     "upstream": "php/plugins/onepassword.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/runcmd.php": {
+     "sha256": "0197bae029597a50dbea1eb0e0f56fcd6ad919077bffe4c79aeacbda62f37e17",
+     "upstream": "php/plugins/runcmd.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/secretspec.php": {
+     "sha256": "bfd63341af7d39d8b93041dbc9e501664f51558fc24f5eff8d8426fecc287bd3",
+     "upstream": "php/plugins/secretspec.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/sigv4.php": {
+     "sha256": "d12e1a800b5466373e3bfce941033679a253a9262c3ae4b263eeca0ae4fb2f46",
+     "upstream": "php/plugins/sigv4.php"
+    },
+    "tm/php/feature/secrets/sekreto/src/Addr.php": {
+     "sha256": "e5664504afd28dce4b24eb4b857fd9f6e35f4c015388ea98ffaa0abc601e5912",
+     "upstream": "php/src/Addr.php"
+    },
+    "tm/php/feature/secrets/sekreto/src/Providers.php": {
+     "sha256": "fef6afe88c12e101aa6cf2f1c7e59606d78fe16bfa78d480886b2508dd26e7fe",
+     "upstream": "php/src/Providers.php"
+    },
+    "tm/php/feature/secrets/sekreto/src/Sekreto.php": {
+     "sha256": "b4be34632fc0a9ee5f98cf169b929bc998ac4a104c9c7b9cd598d98818f22607",
+     "upstream": "php/src/Sekreto.php",
+     "adapt": [
+      {
+       "from": "require_once __DIR__ . '/Plugin.php';\nrequireplugin();\n",
+       "to": "require_once __DIR__ . '/../../plugin/plugin.php';\n"
+      }
+     ]
+    }
+   }
+  },
   "sekreto/python": {
    "repo": "https://github.com/voxgig/sekreto",
    "commit": "86ba35a646e68a311bdece43cd5689369ca62e9d",
@@ -921,6 +1359,80 @@
       {
        "from": "from voxgig_plugin import",
        "to": "from ..voxgig_plugin import"
+      }
+     ]
+    }
+   }
+  },
+  "sekreto/ruby": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "86ba35a646e68a311bdece43cd5689369ca62e9d",
+   "version": "sdk-20260907-0029-0",
+   "tag": "sdk-20260907-0029-0",
+   "file": {
+    "tm/rb/feature/secrets/voxgig_sekreto.rb": {
+     "sha256": "fcb43829384336156cb3931f3caa9f456d980cd1bbe2a81f434e1b8fee80daba",
+     "upstream": "ruby/lib/voxgig_sekreto.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/addr.rb": {
+     "sha256": "a5f4a1df0202b6f6178c0002df4f16ed383aefdb02eae10f11580a9a9ce46a07",
+     "upstream": "ruby/lib/voxgig_sekreto/addr.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/aws.rb": {
+     "sha256": "6c0b57e83451ced56022aceaeaf72e9e067d6bb3113281ab60e755a89939b048",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/aws.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/azuresecrets.rb": {
+     "sha256": "3f227ae3adfa114bfcc531484657448c64c9c3a6b34fa9f9e4179922d7d4fbfd",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/azuresecrets.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/boru.rb": {
+     "sha256": "d0942423b652ed8184f676ccd5b11a114db0ba9b28e6947d058f1d6528a81a36",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/boru.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/doppler.rb": {
+     "sha256": "8c85702b4ecc84968c08c82e0896188726c659c4cebc19e3b66cf73dfd694346",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/doppler.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/gcpsecrets.rb": {
+     "sha256": "b6e222f0e9fdd108ef146ba6ac4a2439697e9f4545a9ec19960f42f0e0961f78",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/gcpsecrets.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/hashicorp.rb": {
+     "sha256": "492635d214114dd0a3245111aad32c27e0717cefad35ff76496d93165ed2d7d2",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/hashicorp.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/httpjson.rb": {
+     "sha256": "23b4d723597053926618f6f174e8f7d8d0cd152857db8c3250768389742e16e0",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/httpjson.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/infisical.rb": {
+     "sha256": "1c390490ba7af9c20831de95fb2f2dfc1370bb334d42618d1e68f3216d7905ab",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/infisical.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/onepassword.rb": {
+     "sha256": "b7f080e4bc81e2a3e8f4106f2e4d1b0c008f84eaad2a3ff03965fad9936e42c5",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/onepassword.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/secretspec.rb": {
+     "sha256": "2bd371f168d924da83b298baf7216e901e2a53f27fed78bd09cd68320a8e1a21",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/secretspec.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/sigv4.rb": {
+     "sha256": "f8920b90d65147172a1236ee37b9983d22ee3a7b96a87bb9abb0bc0ea0948f66",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/sigv4.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/providers.rb": {
+     "sha256": "2f7dcc97f19ef9fce850ec0b2feb440f6f9df852432a914980a73331cb6383a7",
+     "upstream": "ruby/lib/voxgig_sekreto/providers.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/sekreto.rb": {
+     "sha256": "7d1b1989e9ebcaee1123ac555405e69779fedb0fc2a1f0bd586c614058d4fb46",
+     "upstream": "ruby/lib/voxgig_sekreto/sekreto.rb",
+     "adapt": [
+      {
+       "from": "require 'voxgig_plugin'",
+       "to": "require_relative '../voxgig_plugin'"
       }
      ]
     }

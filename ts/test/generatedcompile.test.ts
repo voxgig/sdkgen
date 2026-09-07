@@ -733,6 +733,131 @@ describe('auth null', () => {
   })
 
 
+  // js SECRETS, END TO END — the only lane that RUNS the js secrets
+  // feature with the feature ACTIVE.
+  //
+  // js has no compiler. tsconfig.scaffold.json type-checks the components
+  // but nothing type-checks tm/js at all, so a typo in SecretsFeature.js
+  // or a broken vendoring adapt cannot be caught the way the ts, go and py
+  // implementations were - it ships until a runtime test hits it. That
+  // inverts the usual cost balance and makes the generated suite the whole
+  // gate rather than a nicety.
+  //
+  // The `vault` group is on so the lane also exercises the plugin
+  // vocabulary: Config.js and SecretsFeature.js form a CommonJS cycle, and
+  // reading FEATURE_PLUGINS at module load there yields undefined - an SDK
+  // that carries hashicorp and refuses the `hashicorp` kind. Every
+  // builtin-only assertion stays green through that, so it needs a lane
+  // where a plugin kind is actually declared.
+  test('js: the secrets feature runs with the feature active', async () => {
+    const sdkroot = Path.join(tmp, 'js-secrets')
+    await generateTo('js', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+    linkDeps(sdkroot)
+
+    // The shipped suite must actually be there: `node --test` on a missing
+    // path is not an error, so a lane that lost its runner would pass.
+    const suite = Path.join(sdkroot, 'test', 'feature', 'secrets', 'Secrets.test.js')
+    ok(Fs.existsSync(suite), 'js: the gated secrets suite was not generated')
+
+    const probe = run(process.execPath,
+      ['--test', '--test-reporter=tap',
+        Path.join('test', 'feature', 'secrets', 'Secrets.test.js')],
+      sdkroot, nestedTestEnv())
+
+    // Name the failing cases: `tail` alone shows the TAP epilogue, which
+    // says how many failed and never which.
+    const failed = probe.out.split(/\r?\n/)
+      .filter((l: string) => /^\s*not ok /.test(l))
+    ok(probe.ok, 'js secrets suite failed:\n' + failed.join('\n') +
+      '\n' + tail(probe.out))
+  })
+
+
+  // rb SECRETS, END TO END — the only lane that RUNS the rb secrets
+  // feature with the feature ACTIVE.
+  //
+  // ruby has no compiler either. `ruby -c` parses a file and stops there:
+  // it never loads a require, never resolves a constant, and never notices
+  // that a vendoring adapt rewrote a path to nothing — so a broken port
+  // ships until a runtime test hits it, exactly as it does for js. That
+  // makes the generated suite the whole gate rather than a nicety, and the
+  // suite is worth nothing unless something runs it: the shipped file
+  // arrived carrying two cases that FAILED on any SDK whose first entity
+  // has no `list` op (the fixture's `ambient` is one), and no lane existed
+  // to say so.
+  //
+  // The `vault` group is on so the lane also exercises the plugin
+  // vocabulary — Config_rb's require_relative emission and the
+  // FEATURE_PLUGINS constant the feature reads lazily inside `init` to stay
+  // clear of the config.rb <-> features.rb require cycle. Every
+  // builtin-only assertion stays green through a broken plugin path, so it
+  // needs a lane where a plugin kind is actually declared.
+  test('rb: the secrets feature runs with the feature active', async () => {
+    const rb = toolchain('ruby')
+    if (null == rb) return
+    if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return
+
+    const sdkroot = Path.join(tmp, 'rb-secrets')
+    await generateTo('rb', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // The shipped suite must actually be there: a `ruby <path>` on a
+    // missing file IS an error, but a lane whose runner moved would then
+    // fail for a reason that names the wrong thing.
+    const suite = Path.join(sdkroot, 'test', 'feature', 'secrets',
+      'secrets_feature_test.rb')
+    ok(Fs.existsSync(suite), 'rb: the gated secrets suite was not generated')
+
+    // Parse-check the vendored tree first. It cannot catch a bad require,
+    // but a syntax error inside a plugin only surfaces at the moment the
+    // chain loads it, which is one kind that one test drives.
+    const files: string[] = []
+    const walk = (dir: string) => {
+      for (const ent of Fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = Path.join(dir, ent.name)
+        if (ent.isDirectory()) walk(full)
+        else if (ent.name.endsWith('.rb')) files.push(full)
+      }
+    }
+    walk(Path.join(sdkroot, 'feature'))
+    ok(0 < files.length, 'rb: no feature source was generated')
+    for (const file of files) {
+      const syn = run(rb, ['-c', file], sdkroot)
+      ok(syn.ok, 'rb: ' + Path.relative(sdkroot, file) +
+        ' does not parse:\n' + tail(syn.out))
+    }
+
+    const probe = run(rb,
+      ['-Ilib', '-Itest',
+        Path.join('test', 'feature', 'secrets', 'secrets_feature_test.rb')],
+      sdkroot)
+
+    // Name the failing cases: minitest's epilogue says how many failed and
+    // never which, and the failure bodies are above it.
+    const failed = probe.out.split(/\r?\n/)
+      .filter((l: string) => /^\s*\d+\) (Failure|Error):/.test(l))
+    ok(probe.ok, 'rb secrets suite failed:\n' + failed.join('\n') +
+      '\n' + tail(probe.out))
+
+    // A minitest file that defines no test method EXITS ZERO. Without this
+    // the lane would go green on a suite `target add` had trimmed to
+    // nothing, or one whose class name stopped matching — the vacuous pass
+    // this lane exists to prevent.
+    const runs = /(\d+) runs, (\d+) assertions/.exec(probe.out)
+    ok(null != runs, 'rb: minitest printed no summary:\n' + tail(probe.out))
+    ok(10 < Number((runs as RegExpExecArray)[1]),
+      'rb: the secrets suite ran only ' + (runs as RegExpExecArray)[1] +
+      ' tests - it was trimmed, not run:\n' + tail(probe.out))
+    ok(Number((runs as RegExpExecArray)[1]) < Number((runs as RegExpExecArray)[2]),
+      'rb: the secrets suite made ' + (runs as RegExpExecArray)[2] +
+      ' assertions across ' + (runs as RegExpExecArray)[1] +
+      ' tests - cases are exiting before they assert:\n' + tail(probe.out))
+  })
+
+
   test('go: data and literal paths agree on number types', async () => {
     const go = toolchain('go')
     if (null == go) {

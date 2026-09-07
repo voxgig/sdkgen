@@ -158,9 +158,14 @@ const RB_SDK_CONSTANTS = new Set([
     'STRUCT_TEST_JSON_FILE',
     // vendored omni runner and its smoke test (vendor-tag rollout)
     'VoxgigOmni', 'OmniSmokeTest',
+    // vendored sekreto and its plugin host — the `secrets` feature's library,
+    // shipped only when that feature is selected, but declared at the top
+    // level when it is
+    'VoxgigSekreto', 'VoxgigPlugin',
     // the generated/templated test classes
     'ExistsTest', 'FeatureCorpusTest', 'FeatureTest', 'NetsimTest',
     'PipelineTest', 'PrimaryUtilityTest', 'ReadmeExamplesTest',
+    'SecretsFeatureTest',
     'TestHookFeature', 'TestInitFeature',
 ]);
 // Does `Name` collide with a constant the generated Ruby SDK already declares?

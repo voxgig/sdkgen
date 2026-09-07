@@ -95,14 +95,19 @@ const Config = cmp(async function Config(props: any) {
 
         replace: {
 
-          '// #ImportFeatures': () => each(feature, (f: any) => {
-            Line(`const { ${nom(f, 'Name')}Feature } = ` +
-              `require('./feature/${f.name}/${nom(f, 'Name')}Feature')`)
-          }),
+          '// #ImportFeatures': () => {
+            each(feature, (f: any) => {
+              Line(`const { ${nom(f, 'Name')}Feature } = ` +
+                `require('./feature/${f.name}/${nom(f, 'Name')}Feature')`)
+            })
+            pluginImports(feature)
+          },
 
           '// #FeatureClasses': () => each(feature, (f: any) => {
             Line(` ${f.name}: ${nom(f, 'Name')}Feature,`)
           }),
+
+          '// #FeaturePlugins': () => pluginDefs(feature),
 
           // A JS string literal, so the JSON survives verbatim. JSON.stringify
           // escapes the quotes and backslashes the model contains (values like
@@ -126,10 +131,13 @@ const Config = cmp(async function Config(props: any) {
 
         "'HEADERS'": indent(JSON.stringify(headers, null, 2), 4).trim(),
 
-        '// #ImportFeatures': () => each(feature, (f: any) => {
-          Line(`const { ${nom(f, 'Name')}Feature } = ` +
-            `require('./feature/${f.name}/${nom(f, 'Name')}Feature')`)
-        }),
+        '// #ImportFeatures': () => {
+          each(feature, (f: any) => {
+            Line(`const { ${nom(f, 'Name')}Feature } = ` +
+              `require('./feature/${f.name}/${nom(f, 'Name')}Feature')`)
+          })
+          pluginImports(feature)
+        },
 
         // Values from configDefinition's def, not re-derived here, so the
         // literal rep and the data rep cannot disagree on identity.
@@ -144,6 +152,8 @@ const Config = cmp(async function Config(props: any) {
           // must be comma-separated (a single feature hid this until now).
           Line(` ${f.name}: ${nom(f, 'Name')}Feature,`)
         }),
+
+        '// #FeaturePlugins': () => pluginDefs(feature),
 
         // Rendered from configDefinition's def, not from f.config, so the
         // literal carries the feature's `transport` role (station design
@@ -171,6 +181,63 @@ const Config = cmp(async function Config(props: any) {
     })
   })
 })
+
+
+// PLUGIN DEFINITION REQUIRES AND THE FEATURE_PLUGINS MAP.
+//
+// Upstream sekreto replaced its self-registration registry with
+// voxgig/plugin definitions: a provider kind the caller did not pass in
+// via `plugins: [...]` is unknown to that Sekreto. So Config no longer
+// requires provider modules for their side effects — it requires each
+// active plugin's exported Definition BY NAME (the model's `def` map)
+// and hands the list to the feature through FEATURE_PLUGINS.
+//
+// Emitted here because Config already requires every active feature from
+// the model, and this is the same list one level down. The `def` map is
+// declared in the model rather than derived from filenames because one
+// file may export several definitions (sekreto's aws.js exports
+// awssecrets AND awsparams).
+function pluginImports(feature: any) {
+  each(feature, (f: any) => {
+    // path -> [symbol, ...], so one require line serves a two-definition
+    // module.
+    const bypath: Record<string, string[]> = {}
+
+    each(f.plugin, (plugin: any) => {
+      // Filter on `active` HERE rather than trusting the feature object to
+      // arrive filtered. Whether a model path was read with `only_active`
+      // varies by call site, and getting it wrong in this direction emits
+      // a require for a module the trim just deleted — an SDK that throws
+      // on load, rather than one that merely carries too much.
+      if (false === plugin.active || null == plugin.active) return
+
+      for (const [sym, one] of Object.entries(plugin.def?.js || {})) {
+        const path = String(one)
+        ; (bypath[path] = bypath[path] || []).push(sym)
+      }
+    })
+
+    for (const path of Object.keys(bypath).sort()) {
+      const spec = './' + path.replace(/^src\//, '').replace(/\.js$/, '')
+      Line(`const { ${bypath[path].sort().join(', ')} } = require('${spec}')`)
+    }
+  })
+}
+
+// The FEATURE_PLUGINS entries: one line per feature that has any active
+// plugin definitions, listing the required symbols.
+function pluginDefs(feature: any) {
+  each(feature, (f: any) => {
+    const syms: string[] = []
+    each(f.plugin, (plugin: any) => {
+      if (false === plugin.active || null == plugin.active) return
+      syms.push(...Object.keys(plugin.def?.js || {}))
+    })
+    if (0 < syms.length) {
+      Line(` ${f.name}: [${syms.sort().join(', ')}],`)
+    }
+  })
+}
 
 
 export {
