@@ -149,6 +149,14 @@ const VENDOR_DIRS = [
   'tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin',
   'tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins',
   'tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto',
+  'tm/c/feature/secrets/plugin',
+  'tm/c/feature/secrets/plugins',
+  'tm/c/feature/secrets/sekreto',
+  'tm/lua/feature/secrets',
+  'tm/lua/feature/secrets/native',
+  'tm/lua/feature/secrets/plugin',
+  'tm/lua/feature/secrets/sekreto',
+  'tm/lua/feature/secrets/sekreto/plugins',
 ]
 
 
@@ -418,6 +426,11 @@ describe('vendored', () => {
       // swift: `allplugins` lists every Definition - the same shape as
       // ts's plugins/index.ts, as one file in the SekretoPlugins module.
       'tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/All.swift',
+      // c: names every sek_plugin_* symbol, so linking it pulls every
+      // plugin object, the TLS binding and the child-process launcher.
+      'tm/c/feature/secrets/plugins/all.c',
+      // lua: requires every kind module at once.
+      'tm/lua/feature/secrets/sekreto/plugins.lua',
     ]
 
     for (const rel of BARRELS) {

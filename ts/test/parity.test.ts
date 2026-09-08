@@ -1758,6 +1758,67 @@ const SECRETS: Record<string, {
     ],
     tests: 'swift/Tests/ProjectNameSDKTests/feature/secrets',
   },
+  c: {
+    // c's feature is the flat secrets.c (+ secrets.h) beside a same-named
+    // directory holding both vendored libraries; sekreto/ and plugins/ are
+    // siblings as upstream lays them out, and every include is a bare
+    // basename resolved by -I, so there are no adapts. plugins/all.c is the
+    // full-set barrel and is deliberately absent (pinned by vendored.test.ts).
+    // The generated feature/secrets/kinds.c (definitions + the gated libcurl
+    // transport) is NOT vendored and lives outside these three dirs.
+    feature: 'c/feature/secrets.c',
+    vendor: 'c/feature/secrets',
+    vendorfiles: [
+      'sekreto/internal.h', 'sekreto/json.c', 'sekreto/providers.c',
+      'sekreto/sekreto.c', 'sekreto/sekreto.h', 'sekreto/util.c',
+      'plugins/aws.c', 'plugins/azuresecrets.c', 'plugins/boru.c',
+      'plugins/clock.c', 'plugins/doppler.c', 'plugins/encode.c',
+      'plugins/gcpsecrets.c', 'plugins/hashicorp.c', 'plugins/httpjson.c',
+      'plugins/infisical.c', 'plugins/onepassword.c', 'plugins/proc.c',
+      'plugins/secretspec.c', 'plugins/sekretoplugins.h', 'plugins/sha256.c',
+      'plugins/sigv4.c', 'plugins/support.h', 'plugins/tls.c',
+    ],
+    plugindir: 'c/feature/secrets/plugin',
+    pluginfiles: [
+      'capability.c', 'capability.h', 'catalog.c', 'catalog.h', 'config.c',
+      'config.h', 'depend.c', 'depend.h', 'env.c', 'env.h', 'export.c',
+      'export.h', 'graph.c', 'graph.h', 'host.c', 'host.h', 'order.c',
+      'order.h', 'point.c', 'point.h', 'ref.c', 'ref.h', 'resolve.c',
+      'resolve.h', 'types.c', 'types.h', 'value.c', 'value.h', 'version.c',
+      'version.h',
+    ],
+    tests: 'c/tests/feature/secrets',
+  },
+  lua: {
+    // lua's feature container is the top-level feature/ dir. The two library
+    // entry modules (sekreto.lua, plugin.lua) sit at the container root
+    // because `require` resolves them by that path; sekreto/ holds the core
+    // and its plugins/, plugin/ the voxgig/plugin runtime, and native/ the
+    // vendored C source of sekreto's socket helper, compiled by the generated
+    // Makefile only when a plugin group is active. sekreto/plugins.lua is the
+    // full-set barrel and is deliberately absent (pinned by vendored.test.ts).
+    feature: 'lua/feature/secrets_feature.lua',
+    vendor: 'lua/feature/secrets',
+    vendorfiles: [
+      'plugin.lua', 'sekreto.lua', 'sekreto/addr.lua', 'sekreto/err.lua',
+      'sekreto/name.lua', 'sekreto/plugins/aws.lua',
+      'sekreto/plugins/azuresecrets.lua', 'sekreto/plugins/boru.lua',
+      'sekreto/plugins/crypto.lua', 'sekreto/plugins/doppler.lua',
+      'sekreto/plugins/gcpsecrets.lua', 'sekreto/plugins/hashicorp.lua',
+      'sekreto/plugins/httpjson.lua', 'sekreto/plugins/infisical.lua',
+      'sekreto/plugins/json.lua', 'sekreto/plugins/net.lua',
+      'sekreto/plugins/onepassword.lua', 'sekreto/plugins/secretspec.lua',
+      'sekreto/plugins/sigv4.lua', 'sekreto/plugins/support.lua',
+      'sekreto/providers.lua', 'native/sekretonet.c',
+    ],
+    plugindir: 'lua/feature/secrets/plugin',
+    pluginfiles: [
+      'capability.lua', 'catalog.lua', 'config.lua', 'depend.lua', 'env.lua',
+      'export.lua', 'graph.lua', 'host.lua', 'json.lua', 'order.lua',
+      'point.lua', 'ref.lua', 'resolve.lua', 'types.lua', 'version.lua',
+    ],
+    tests: 'lua/test/feature/secrets',
+  },
 }
 
 
