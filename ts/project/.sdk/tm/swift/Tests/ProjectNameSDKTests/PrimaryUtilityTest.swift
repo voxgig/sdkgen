@@ -286,6 +286,36 @@ final class PrimaryUtilityTest: XCTestCase {
     XCTAssertTrue(initCalled, "expected init to be called")
   }
 
+  // THE `extend` SEAM IS REAL. options.extend is the runtime
+  // feature-injection seam the README documents, and the constructor reads
+  // it - but only after makeOptions' validate, which used to REJECT the key
+  // because buildOptSpec never named it. The seam was dead: a caller could
+  // not hand in a feature the model did not activate, and every suite that
+  // adopts a feature through `extend` passed VACUOUSLY on a client that
+  // never held it. Pinned here, in the ungated suite, so the seam is proven
+  // whatever features a project selects. Delete the `extend` optspec entry
+  // and this goes red.
+  func testExtendOptionInstallsAndInitialisesTheFeature() {
+    var initCalled = false
+    let feature = TestInitFeature()
+    feature.name = "extra"
+    feature.initFn = { initCalled = true }
+
+    let opts = VMap()
+    opts.entries["feature"] = .map(vm(("extra", .map(vm(("active", .bool(true)))))))
+    opts.entries["extend"] = .list([.nat(feature)])
+
+    let client = ProjectNameSDK.testSDK(nil, opts)
+
+    XCTAssertTrue(client.features.contains { $0 === feature },
+      "options.extend did not install the feature; installed: "
+        + client.features.map { $0.getName() }.joined(separator: ","))
+    XCTAssertTrue(initCalled,
+      "the extended feature was installed but never initialised")
+    XCTAssertFalse(isNil(gp(client.optionsMap(), "extend")),
+      "options.extend was validated away by makeOptions")
+  }
+
   func testFeatureInitInactive() {
     let initClient = ProjectNameSDK.testSDK(nil, nil)
     let initUtility = initClient.getUtility()

@@ -42,11 +42,28 @@ const DECL =
 // module's namespace, so these cannot collide.
 const TEST_MODULE_ONLY = new Set(['ReadmeExamplesTest'])
 
+// The vendored @voxgig/plugin, @voxgig/sekreto and sekreto-plugins trees
+// under feature/secrets/ are SEPARATE SwiftPM modules (VoxgigPlugin,
+// Sekreto, SekretoPlugins - Package_swift declares them and excludes the
+// directory from the SDK target), so their types live in other namespaces
+// and cannot redeclare anything in the SDK module. Walking them would
+// demand every upstream type - including plugin's own `Value` and `Point`,
+// which coexist with the SDK's precisely BECAUSE of the module split - be
+// added to a guard about the SDK module. Skipped by directory, not by
+// name: a file added upstream lands in the same three modules.
+const SEPARATE_MODULE_DIRS = [Path.join('feature', 'secrets') + Path.sep]
+
 function walk(dir: string, out: string[] = []): string[] {
   if (!Fs.existsSync(dir)) return out
   for (const e of Fs.readdirSync(dir, { withFileTypes: true })) {
     const p = Path.join(dir, e.name)
-    if (e.isDirectory()) walk(p, out)
+    if (e.isDirectory()) {
+      const rel = Path.relative(TM_SWIFT, p) + Path.sep
+      if (SEPARATE_MODULE_DIRS.some((d) => rel.endsWith(Path.sep + d) || rel === d)) {
+        continue
+      }
+      walk(p, out)
+    }
     else out.push(p)
   }
   return out

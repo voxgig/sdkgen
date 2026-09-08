@@ -811,6 +811,33 @@
   },
   {
    "lib": "plugin",
+   "port": "swift",
+   "lang": "swift",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin"
+   ],
+   "file": {
+    "swift/src/Capability.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Capability.swift",
+    "swift/src/Catalog.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Catalog.swift",
+    "swift/src/Config.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Config.swift",
+    "swift/src/Depend.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Depend.swift",
+    "swift/src/Env.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Env.swift",
+    "swift/src/Export.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Export.swift",
+    "swift/src/Graph.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Graph.swift",
+    "swift/src/Host.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Host.swift",
+    "swift/src/Json.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Json.swift",
+    "swift/src/Order.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Order.swift",
+    "swift/src/Point.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Point.swift",
+    "swift/src/Refs.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Refs.swift",
+    "swift/src/Resolve.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Resolve.swift",
+    "swift/src/Types.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Types.swift",
+    "swift/src/Value.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Value.swift",
+    "swift/src/Version.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Version.swift"
+   }
+  },
+  {
+   "lib": "plugin",
    "port": "typescript",
    "lang": "ts",
    "version": "0.1.6",
@@ -1390,6 +1417,36 @@
     "scala/plugins/Doppler.scala": "tm/scala/feature/secrets/sekreto/plugins/Doppler.scala",
     "scala/plugins/Infisical.scala": "tm/scala/feature/secrets/sekreto/plugins/Infisical.scala",
     "scala/plugins/Secretspec.scala": "tm/scala/feature/secrets/sekreto/plugins/Secretspec.scala"
+   }
+  },
+  {
+   "lib": "sekreto",
+   "port": "swift",
+   "lang": "swift",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto",
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins"
+   ],
+   "file": {
+    "swift/src/Sekreto.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto/Sekreto.swift",
+    "swift/src/Providers.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto/Providers.swift",
+    "swift/src/Provider.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto/Provider.swift",
+    "swift/src/Addr.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto/Addr.swift",
+    "swift/src/Json.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto/Json.swift",
+    "swift/plugins/Httpjson.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Httpjson.swift",
+    "swift/plugins/Proc.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Proc.swift",
+    "swift/plugins/Hashicorp.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Hashicorp.swift",
+    "swift/plugins/Boru.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Boru.swift",
+    "swift/plugins/Gcpsecrets.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Gcpsecrets.swift",
+    "swift/plugins/Azuresecrets.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Azuresecrets.swift",
+    "swift/plugins/Onepassword.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Onepassword.swift",
+    "swift/plugins/Doppler.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Doppler.swift",
+    "swift/plugins/Infisical.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Infisical.swift",
+    "swift/plugins/Secretspec.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Secretspec.swift",
+    "swift/plugins/Aws.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Aws.swift",
+    "swift/plugins/Sigv4.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Sigv4.swift",
+    "swift/plugins/Crypto.swift": "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Crypto.swift"
    }
   },
   {

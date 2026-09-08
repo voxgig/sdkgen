@@ -47,6 +47,15 @@ private func buildOptSpec() -> Value {
   spec.entries["entity"] = .map(entity)
   spec.entries["feature"] = .map(feature)
   spec.entries["utility"] = .map(VMap())
+  // `extend` is the runtime feature-injection seam: a list of feature
+  // objects the constructor adds after the model-activated ones. Without
+  // this entry the seam is dead: the constructor reads options.extend, but
+  // validate rejected the key, so a caller could not hand in a feature the
+  // model did not activate, although the README documents the option - and
+  // every test that adopts a feature through it passed VACUOUSLY. Ported
+  // from MakeOptionsUtility.ts / make_options.go / MakeOptions.cs, which all
+  // carry it.
+  spec.entries["extend"] = .string("`$ANY`")
   spec.entries["system"] = .map(VMap())
   spec.entries["test"] = .map(test)
   spec.entries["clean"] = .map(clean)

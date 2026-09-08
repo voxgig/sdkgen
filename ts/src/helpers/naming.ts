@@ -231,7 +231,8 @@ const SWIFT_SDK_TYPES = new Set<string>([
   'CostTotal', 'DebugFeature', 'IdempotencyFeature', 'LogFeature',
   'MetricsBucket', 'MetricsFeature', 'NetsimFeature', 'PagingFeature',
   'ProxyFeature', 'RatelimitFeature', 'RbacFeature', 'RetryFeature',
-  'StreamingFeature', 'TelemetryFeature', 'TestFeature', 'TimeoutFeature',
+  'SecretsFeature', 'StreamingFeature', 'TelemetryFeature', 'TestFeature',
+  'TimeoutFeature',
 ])
 
 

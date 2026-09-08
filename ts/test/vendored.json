@@ -1676,6 +1676,78 @@
     }
    }
   },
+  "plugin/swift": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Capability.swift": {
+     "sha256": "0699923c343f48e3cb121869cb09851514db8498599a79544f2f150093aaf59e",
+     "upstream": "swift/src/Capability.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Catalog.swift": {
+     "sha256": "3fe3407ac83e8705668ad88341bfe5acda00082f449c041b1d0bfb9c6e14993c",
+     "upstream": "swift/src/Catalog.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Config.swift": {
+     "sha256": "c7f2a8027c5b3851162d3b35ddf829e287a1f201f67ced3e942234596a9a217c",
+     "upstream": "swift/src/Config.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Depend.swift": {
+     "sha256": "157f0bc289c141cf53236b9dd0de2bd0cdfb129262755c5ca03c970b363700fb",
+     "upstream": "swift/src/Depend.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Env.swift": {
+     "sha256": "1cda0668ec27e6edd7fc3a4583365c6a1afc0128647d7bd895bbe3027293fee2",
+     "upstream": "swift/src/Env.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Export.swift": {
+     "sha256": "25f46877bf4e50297296c226a588e761a2d4199e1a302b31bde31e13f48e4235",
+     "upstream": "swift/src/Export.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Graph.swift": {
+     "sha256": "ab6ccbc2c1563716cdc877fcd98b34624b87e31535408f6167e3082e61a7c6b6",
+     "upstream": "swift/src/Graph.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Host.swift": {
+     "sha256": "521748e5ceb288dd92dcbd2e2dbdbf151116a29c22eb81d11dbf3e06fd8029d1",
+     "upstream": "swift/src/Host.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Json.swift": {
+     "sha256": "45147b614d7b1438f4ac45d8ce8f057fd792824eeaffca063a58f13d03985338",
+     "upstream": "swift/src/Json.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Order.swift": {
+     "sha256": "41e623600e125a108b88c4fb4eed5370c4bf002fd7afb050599801298a7aff8f",
+     "upstream": "swift/src/Order.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Point.swift": {
+     "sha256": "ccfa1dd8e1d6b98916ea456bfb98c7cbd8fd9873a18d3a568e5153d63950b94e",
+     "upstream": "swift/src/Point.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Refs.swift": {
+     "sha256": "b0844eb07f02586de13d9a5086066cc719312926d820598e6aea41f42bd755d0",
+     "upstream": "swift/src/Refs.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Resolve.swift": {
+     "sha256": "e0cda939f8e5aa575bd0773c15f536209057d6a39b601f99d30c04679ecc5d0a",
+     "upstream": "swift/src/Resolve.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Types.swift": {
+     "sha256": "437bb18ae6014371b6769028a8f1e94d51670857172c1439f044f76da7daa6dc",
+     "upstream": "swift/src/Types.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Value.swift": {
+     "sha256": "adebe7b38fc511d34bab980ffdb05997f1345e02bfe59d4b9784ebe751180e44",
+     "upstream": "swift/src/Value.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin/Version.swift": {
+     "sha256": "772cd2cd8dbede848df1e59a899a9f63098a24bb0288a2e0834435e1f9cd291a",
+     "upstream": "swift/src/Version.swift"
+    }
+   }
+  },
   "plugin/typescript": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
@@ -3373,6 +3445,86 @@
     "tm/scala/feature/secrets/sekreto/Support.scala": {
      "sha256": "dc4397848f02a4a663777e75e8de27888c9ff54be92ee1791a62012e5aeee5bf",
      "upstream": "scala/src/Support.scala"
+    }
+   }
+  },
+  "sekreto/swift": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "1267ee2e5f49566bc92695bc9eb3a60ef4924998",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Aws.swift": {
+     "sha256": "e05576491a6c8441d8a6d15a7b0d0e84f57717cc442313fcf3520e2514d9fec6",
+     "upstream": "swift/plugins/Aws.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Azuresecrets.swift": {
+     "sha256": "8a5732d9c31685e1dceb8b526c21d3227aec2202aa56c0e6a8e1bb23e9908869",
+     "upstream": "swift/plugins/Azuresecrets.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Boru.swift": {
+     "sha256": "f0ab8e3bf280e354f1d0f934479a14d3aafe7eb395e8d7f4491ed5fe48ac8abf",
+     "upstream": "swift/plugins/Boru.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Crypto.swift": {
+     "sha256": "1c905a3f6d74bc74bd82cd2ab881eabcfeaad718a6b8c55f3698be5b48ec07af",
+     "upstream": "swift/plugins/Crypto.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Doppler.swift": {
+     "sha256": "7879860651303bee7f8257ca1d6758a5701d9ec8d6ee5a819a4f1b552636cd9a",
+     "upstream": "swift/plugins/Doppler.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Gcpsecrets.swift": {
+     "sha256": "fe5a63c79589697046d5f7c0e6758216d858e60d1056582980c9163eed65fa7b",
+     "upstream": "swift/plugins/Gcpsecrets.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Hashicorp.swift": {
+     "sha256": "9b773e8f9e5ca11a1265ba674c9b136f73c025dfd8f44952b7e93cf904d7dc5c",
+     "upstream": "swift/plugins/Hashicorp.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Httpjson.swift": {
+     "sha256": "a716f6a333c2583726129fb39ed75b3743d574f1c5d728106f284dc51f43cc45",
+     "upstream": "swift/plugins/Httpjson.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Infisical.swift": {
+     "sha256": "e2e5cbb006f7b3194ded05b4ef49af9bf5f9ccb9d3ff89251caf71eb6d1290e7",
+     "upstream": "swift/plugins/Infisical.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Onepassword.swift": {
+     "sha256": "4408045be474e21f9955680aa3ac0cf87a5cafee33ae54735d80234909a36bdd",
+     "upstream": "swift/plugins/Onepassword.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Proc.swift": {
+     "sha256": "d0b81990272d33233dc6b207ff89d2274783d8cbb990f36b2d9e7cc63fcdc104",
+     "upstream": "swift/plugins/Proc.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Secretspec.swift": {
+     "sha256": "f9b47626dbee22b360905fe5ba036c7902fc2f4b4171645a80ab6111c49d2f18",
+     "upstream": "swift/plugins/Secretspec.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Sigv4.swift": {
+     "sha256": "0bafca7ce80d2e06c93ff8736b69294f3f71514f5e09aa86ad4f06872047d006",
+     "upstream": "swift/plugins/Sigv4.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto/Addr.swift": {
+     "sha256": "dbe1b7c47e4338403f4b28c4e8f392dc2737faa0c7fc874426a8a0722336a44f",
+     "upstream": "swift/src/Addr.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto/Json.swift": {
+     "sha256": "1a007f103ba6c5f8ff69da8e551af683ba9d8d1ea1056fabf48c6ff7171297d1",
+     "upstream": "swift/src/Json.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto/Provider.swift": {
+     "sha256": "d05832b343601b0476caf097c60bb4d4067cfcb845267285c034299a95b69a74",
+     "upstream": "swift/src/Provider.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto/Providers.swift": {
+     "sha256": "9e23fd76aae43f388ee7b4c387acc89737540401073e604dcb7dc7075e5d2890",
+     "upstream": "swift/src/Providers.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto/Sekreto.swift": {
+     "sha256": "7a3cdedb95ed13e5c55adfd6a03272e103d37d0f6e4acc283bac1e6b31ffd63d",
+     "upstream": "swift/src/Sekreto.swift"
     }
    }
   },

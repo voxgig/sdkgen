@@ -960,6 +960,93 @@ describe('auth null', () => {
   })
 
 
+  // swift SECRETS, END TO END - the only lane that RUNS the swift secrets
+  // feature with the feature ACTIVE, through the shipped XCTest suite. The
+  // toolchain IS here (`command -v swift` -> /opt/swift/usr/bin/swift,
+  // 6.0.3); a "no swift toolchain" note elsewhere describes the machine
+  // that note was written on, not this one.
+  //
+  // This is also the only lane that COMPILES the three vendored modules
+  // (VoxgigPlugin, Sekreto, SekretoPlugins) against the generated
+  // Package.swift: generate.test.ts pins the manifest's TEXT, and only a
+  // real `swift test` can see that SwiftPM accepts it and that the SDK
+  // module links the feature.
+  //
+  // The `vault` group is on so the lane also exercises the plugin
+  // vocabulary - Config_swift's `import SekretoPlugins` plus the
+  // featurePlugins list, and Main_swift's trim - with a kind actually
+  // declared. `--filter` selects the secrets suite, so the count below is a
+  // count of THIS suite rather than the whole shipped test tree.
+  test('swift: the secrets feature runs with the feature active', async (t) => {
+    const swift = toolchain('swift')
+    if (null == swift) return t.skip('no swift toolchain here (swift)')
+
+    const sdkroot = Path.join(tmp, 'swift-secrets')
+    await generateTo('swift', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // The shipped suite must actually be there: a --filter that matches
+    // nothing is not an error to `swift test`, so a lane that lost its
+    // suite would otherwise fail on the count with a message naming the
+    // wrong thing. The test directory carries the model name, so find it
+    // rather than hardcode it.
+    const testdirs = Fs.readdirSync(Path.join(sdkroot, 'Tests'))
+      .filter((n) => n.endsWith('SdkTests'))
+    strictEqual(testdirs.length, 1,
+      'swift: expected exactly one Tests/<Name>SdkTests directory, found: ' +
+      JSON.stringify(testdirs))
+    const suite = Path.join(sdkroot, 'Tests', testdirs[0],
+      'feature', 'secrets', 'SecretsFeatureTest.swift')
+    ok(Fs.existsSync(suite), 'swift: the gated secrets suite was not generated')
+
+    // `swift test` builds the whole package (the three vendored modules,
+    // the SDK, Omni and the suite) before running, so a broken vendored
+    // file or manifest fails HERE, naming the file. -j 2: a swift build
+    // is memory-hungry and this lane shares the machine.
+    const probe = run(swift,
+      ['test', '-j', '2', '--filter', 'SecretsFeatureTest'],
+      sdkroot, undefined, 30 * 60 * 1000)
+
+    if (probe.unlaunchable) {
+      return t.skip('swift: the toolchain could not be started here: ' +
+        tail(probe.out, 3))
+    }
+    if (probe.timedOut) return t.skip('swift: ' + probe.out)
+
+    // LF-normalised before anything is matched, as the perl lane does.
+    const lines = probe.out.split(/\r?\n/)
+
+    // Name the failing cases: XCTest prints one `Test Case '...' failed`
+    // line per failure, and the summary never says which.
+    const failed = lines.filter((l: string) =>
+      /^Test Case '.*' failed/.test(l) || /error: /.test(l))
+    ok(probe.ok, 'swift secrets suite failed:\n' + failed.join('\n') +
+      '\n' + tail(probe.out))
+
+    // POSITIVE evidence the tests RAN. XCTest prints `Executed N tests,
+    // with F failures (U unexpected)` per suite and then for the run; the
+    // LAST one is the run's total, which under --filter is this suite's.
+    // A filter that matched nothing executes zero tests and EXITS ZERO -
+    // the vacuous pass this lane exists to prevent.
+    const executed = lines
+      .map((l: string) => /Executed (\d+) tests?, with (\d+) failures? \((\d+) unexpected\)/.exec(l))
+      .filter((m) => null != m)
+    ok(0 < executed.length,
+      'swift: XCTest printed no `Executed N tests` summary:\n' + tail(probe.out))
+    const [, ran, nfailed] = (executed[executed.length - 1] as RegExpExecArray).map(Number)
+
+    strictEqual(nfailed, 0, 'swift: the secrets suite reported failures:\n' +
+      failed.join('\n') + '\n' + tail(probe.out))
+    ok(10 < ran, 'swift: the secrets suite ran only ' + ran +
+      ' tests - it was trimmed, not run:\n' + tail(probe.out))
+
+    // Say so in the log: the count is the evidence, and a reader of a green
+    // run should not have to trust that it was read.
+    t.diagnostic('swift: secrets suite ran ' + ran + ' tests, ' + nfailed + ' failures')
+  })
+
+
   test('go: data and literal paths agree on number types', async () => {
     const go = toolchain('go')
     if (null == go) {
@@ -1510,10 +1597,10 @@ function listFiles(root: string, ext: string): string[] {
 // COVERAGE IS NOT COMPLETE, and AUTHNULL_UNCOVERED below says so in code
 // rather than in a comment nobody re-reads. What is left there is what no
 // runner in the CI matrix can execute: dart, which none of ubuntu, macos or
-// windows ships; swift, which only the macos leg has and which needs a
-// Package.swift target the template does not emit; and the six ports whose
-// fix was written blind. kotlin and csharp used to sit in that list and now
-// have lanes below.
+// windows ships; and the ports whose fix was written blind. kotlin and
+// csharp used to sit in that list and now have lanes below; swift's
+// suppression is pinned by its shipped secrets suite, which the swift
+// secrets lane runs on a real `swift test` (see AUTHNULL_UNCOVERED).
 //
 // The bar a lane has to clear is that it RUNS somewhere. One that has never
 // been executed is a liability: it fails on someone else's machine, in a
@@ -2703,9 +2790,22 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
   ts: 'pinned instead by the shipped tm/ts/test/feature/secrets/Secrets.test.ts ' +
     '("auth null suppresses the credential, chain or no chain"), which runs in ' +
     'a generated SDK rather than in sdkgen CI',
-  swift: 'only the macos leg has swift, and a probe needs an executable ' +
-    'target in Package.swift that the template does not emit; adding one is ' +
-    'a template change, not a test change',
+  // swift: pinned by the shipped Tests/<Name>SdkTests/feature/secrets/
+  // SecretsFeatureTest.swift ("testAuthNullSuppressesTheCredentialChainOrNoChain"),
+  // which drives a LIVE client through system.fetch with `auth: null` set
+  // alongside an explicit apikey AND a resolving chain, and asserts no
+  // authorization header reaches the transport (plus that options.auth
+  // survives validation as a present null). The `swift: the secrets
+  // feature runs with the feature active` lane above runs that suite on a
+  // real `swift test` - the toolchain is here (/opt/swift/usr/bin/swift,
+  // 6.0.3), whatever an older note about the macos leg said. A secrets
+  // lane rather than an AUTHNULL_LANES row, as for clojure: the table's
+  // probe shape (an executable target the manifest does not emit) does
+  // not fit a SwiftPM test target, and the shipped suite already pins it.
+  swift: 'pinned by the shipped tm/swift/Tests/ProjectNameSDKTests/feature/' +
+    'secrets/SecretsFeatureTest.swift ' +
+    '("testAuthNullSuppressesTheCredentialChainOrNoChain"), which the swift ' +
+    'secrets lane in this file runs through `swift test`',
 
   // clojure has left the UNVERIFIED list. The clojure CLI and a JDK ARE
   // installed on this machine (`command -v clojure`), and the secrets

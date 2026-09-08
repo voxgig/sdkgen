@@ -2984,6 +2984,183 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // swift guard for the same seam, and for the two hazards particular to
+  // this target: the vendored trees are SEPARATE SwiftPM MODULES that
+  // Package.swift must declare (and exclude from the SDK target) exactly
+  // when the feature ships, and the test file that imports them must go
+  // with them.
+  test('swift: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['swift'], undefined,
+        'main: kit: feature: secrets: { active: true ' +
+        'plugin: { vault: active: true aws: active: true } }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    const config = findFile(out, 'Sources/DemoSdk/core/Config.swift')
+    ok(null != config, 'swift: no Sources/DemoSdk/core/Config.swift generated')
+
+    // The module import and the definitions list - the two emissions that
+    // can silently no-op while everything else stays green. Each active
+    // `plugin.def.swift` key is a top-level `let` in the SekretoPlugins
+    // module, so the list is bare symbols behind one import.
+    ok(/^import SekretoPlugins$/m.test(config!),
+      'swift: active plugin groups did not emit `import SekretoPlugins`')
+    ok(/"secrets": \[awsparams, awssecrets, boru, hashicorp\],/.test(config!),
+      'swift: featurePlugins is missing the active definitions:\n' +
+      (config!.match(/featurePluginsVal: \[String: \[Any\]\] = \[[^\]]*\]/) ||
+        ['(no featurePluginsVal)'])[0])
+    ok(/public static func featurePlugins\(_ name: String\) -> \[Any\]/.test(config!),
+      'swift: the featurePlugins accessor the feature calls is not emitted')
+    ok(/case "secrets": return SecretsFeature\(\)/.test(config!),
+      'swift: the feature factory does not construct the secrets feature')
+
+    // THE MANIFEST: three module targets over the three vendored trees, the
+    // SDK target depending on them with `exclude:` AFTER `path:` (SwiftPM's
+    // argument order - the other way round the manifest does not compile),
+    // and the library product vending all four.
+    const pkg = findFile(out, 'swift/Package.swift')
+    ok(null != pkg, 'swift: no Package.swift generated')
+    for (const [mod, dir] of [['VoxgigPlugin', 'plugin'], ['Sekreto', 'sekreto'],
+      ['SekretoPlugins', 'plugins']]) {
+      ok(new RegExp('name: "' + mod + '",[\\s\\S]{0,120}?path: "Sources/DemoSdk/feature/secrets/' +
+        dir + '"\\)').test(pkg!),
+        'swift: Package.swift declares no ' + mod + ' target over feature/secrets/' + dir)
+    }
+    ok(/path: "Sources\/DemoSdk",\s*\r?\n\s*exclude: \["feature\/secrets"\]\)/.test(pkg!),
+      'swift: the SDK target must exclude feature/secrets AFTER its path:\n' + pkg)
+    ok(/\.library\(name: "DemoSdk", targets: \["DemoSdk", "Sekreto", "SekretoPlugins", "VoxgigPlugin"\]\)/
+      .test(pkg!),
+      'swift: the library product must vend the three vendored modules')
+    ok(/dependencies: \["DemoSdk", "Omni", "Sekreto", "VoxgigPlugin"\]/.test(pkg!),
+      'swift: the test target must depend on Sekreto and VoxgigPlugin')
+
+    // THE TRIM, from the file list. The vendored tree rides Main_swift's
+    // Sources/ProjectNameSDK Copy (rooted on Sources/<Name>Sdk/), so every
+    // plugin path is under feature/secrets/plugins/.
+    for (const kind of ['Hashicorp', 'Boru', 'Aws', 'Sigv4', 'Crypto']) {
+      ok(null != findFile(out, 'Sources/DemoSdk/feature/secrets/plugins/' + kind + '.swift'),
+        'swift: the ACTIVE vault/aws groups lost ' + kind)
+    }
+    for (const kind of ['Gcpsecrets', 'Azuresecrets', 'Onepassword', 'Doppler',
+      'Infisical', 'Secretspec']) {
+      ok(null == findFile(out, 'feature/secrets/plugins/' + kind + '.swift'),
+        'swift: an INACTIVE group still ships ' + kind + ' (Main_swift\'s ' +
+        'pluginExcludes on the Sources/ProjectNameSDK Copy)')
+    }
+    // The two UNGROUPED helpers ship with the feature core: Httpjson.swift
+    // (nine plugins) and Proc.swift (`runcmd`, shared by Boru AND
+    // Secretspec, so it may belong to neither group).
+    for (const shared of ['Httpjson', 'Proc']) {
+      ok(null != findFile(out, 'Sources/DemoSdk/feature/secrets/plugins/' + shared + '.swift'),
+        'swift: the shared ' + shared + '.swift helper must ship with the feature core')
+    }
+    // The full-set barrel is never vendored: the trim would leave it naming
+    // deleted definitions and swiftc would fail the SekretoPlugins module.
+    ok(null == findFile(out, 'feature/secrets/plugins/All.swift'),
+      'swift: the full-set barrel All.swift reached the SDK')
+
+    // The vendored cores, and the feature itself.
+    for (const core of ['sekreto/Sekreto.swift', 'sekreto/Providers.swift',
+      'sekreto/Provider.swift', 'sekreto/Addr.swift', 'sekreto/Json.swift',
+      'plugin/Host.swift', 'plugin/Catalog.swift', 'plugin/Value.swift']) {
+      ok(null != findFile(out, 'Sources/DemoSdk/feature/secrets/' + core),
+        'swift: the vendored core file ' + core + ' did not reach the SDK')
+    }
+    const feature = findFile(out, 'Sources/DemoSdk/feature/SecretsFeature.swift')
+    ok(null != feature, 'swift: the secrets feature source was not generated')
+    ok(/^import Sekreto$/m.test(feature!),
+      'swift: the feature does not import the vendored Sekreto module')
+
+    // The gated suite, under the test target's own feature/ container, so
+    // SwiftPM collects it recursively and `target add` trims it with the
+    // feature.
+    const suite = findFile(out, 'Tests/DemoSdkTests/feature/secrets/SecretsFeatureTest.swift')
+    ok(null != suite, 'swift: the gated secrets suite was not generated')
+    ok(/@testable import DemoSdk/.test(suite!),
+      'swift: the suite does not import the generated module by name')
+
+    // Placeholders, in the two files this feature adds outside the broad
+    // loop's scan: a leaked `ProjectName` in either is a type that does not
+    // exist in the generated module.
+    for (const [name, src] of [['Sources/DemoSdk/feature/SecretsFeature.swift', feature!],
+      ['Tests/DemoSdkTests/feature/secrets/SecretsFeatureTest.swift', suite!]]) {
+      ok(!/ProjectName|PROJECTENV/.test(src),
+        'swift: a placeholder survived in ' + name)
+    }
+
+    // And the copy-target dir the feature-add mechanism needs is not shipped.
+    ok(null == findFile(out, 'swift/src/feature/secrets/.gitkeep'),
+      'swift: the feature-add copy-target dir leaked into the package')
+
+    // THE INACTIVE BASELINES, both of them: the feature never declared, and
+    // the feature DECLARED and left off. Either way the SDK module must
+    // compile ALONE - no manifest targets over trees that are not there, no
+    // vendored tree folded into the SDK target (five redeclarations), no
+    // SecretsFeature.swift importing a module the manifest never declared -
+    // so Main_swift withholds the trees and the suite at generate time,
+    // where go/py/dart leave that to `target add`. Both halves are keyed on
+    // ONE predicate (utility_swift.swiftSecretsActive), and this pins that
+    // they agree.
+    for (const [label, features] of [['undeclared', undefined],
+      ['declared-inactive', ['test', 'log', 'secrets']]] as [string, string[] | undefined][]) {
+      const { fs: offfs, vol: offvol } = memfs({})
+      const offgen = SdkGen({
+        fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
+      })
+      const offres = await offgen.generate({
+        model: makeModel(['swift'], undefined, undefined, features),
+        root: makeRoot(),
+      })
+      strictEqual(offres.ok, true, label + ': generation did not report ok')
+
+      const off: Record<string, string> = {}
+      for (const [path, content] of
+        Object.entries(offvol.toJSON() as Record<string, string>)) {
+        const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+        if (rel.includes('.jostraca/')) continue
+        off[rel] = content
+      }
+
+      const plain = findFile(off, 'Sources/DemoSdk/core/Config.swift')
+      ok(null != plain, 'swift ' + label + ': no Config.swift generated')
+      ok(!/SekretoPlugins/.test(plain!),
+        'swift ' + label + ': an inactive model still imported SekretoPlugins')
+      ok(/featurePluginsVal: \[String: \[Any\]\] = \[:\]/.test(plain!),
+        'swift ' + label + ': an inactive model must emit an EMPTY featurePlugins map')
+      ok(/public static func featurePlugins\(_ name: String\) -> \[Any\]/.test(plain!),
+        'swift ' + label + ': the featurePlugins accessor must be emitted UNCONDITIONALLY')
+      ok(!/SecretsFeature/.test(plain!),
+        'swift ' + label + ': an inactive model still names the secrets feature in the factory')
+
+      const plainpkg = findFile(off, 'swift/Package.swift')
+      ok(null != plainpkg, 'swift ' + label + ': no Package.swift generated')
+      ok(!/Sekreto|VoxgigPlugin|feature\/secrets/.test(plainpkg!),
+        'swift ' + label + ': an inactive model still declares the secrets modules:\n' + plainpkg)
+
+      const shipped = Object.keys(off).filter((p) =>
+        /feature\/secrets\/|feature\/SecretsFeature\.swift$|SecretsFeatureTest\.swift$/.test(p))
+      deepStrictEqual(shipped, [],
+        'swift ' + label + ': an inactive model still ships secrets source, which the ' +
+        'manifest above does not declare and the SDK target cannot compile')
+    }
+  })
+
+
   // rb runner swap: the omni resolver, its vendored port and the
   // must-fail smoke test are generated; the superseded struct runner is
   // not.
