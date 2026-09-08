@@ -145,13 +145,18 @@ if (Quick) Quick['ReadmeQuick']({ target })
 
 ### `isAuthActive(model) → boolean`
 
-True unless the model opts out of auth. Two opt-outs, in priority order:
+True unless the model opts out of auth. The project's own config decides
+when it says so explicitly; otherwise the spec-derived signal governs:
 
-1. `main.kit.info.auth === false`
-2. `main.kit.config.auth.active === false`
+1. `main.kit.config.auth.active` set to `true` or `false` (per-SDK, in
+   `config.aon`)
+2. `main.kit.info.auth === false` (apidef: the spec declares no
+   authentication)
 
 Templates use it to gate API-key code, docs, and examples for public
-APIs that need no authentication.
+APIs that need no authentication. An API whose spec omits its security
+schemes (GitHub's official OpenAPI does) still gets a credential when the
+project sets `config: auth: { active: true, prefix: 'Bearer' }`.
 
 ### `collectDeps(model, targetName, targetDeps) → DepEntry[]`
 
