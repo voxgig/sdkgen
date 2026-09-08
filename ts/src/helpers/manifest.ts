@@ -349,6 +349,42 @@ function validateManifest(
   // does not ship is a leftover from a rename — harmless in itself, and
   // exactly the kind of leftover that later reads as coverage.
   const targets = new Set(provides.target ?? [])
+  const graded = new Set(Object.keys(manifest.parity ?? {}))
+
+  // A PROVIDED TARGET THE MANIFEST GRADES NOTHING FOR, when it grades OTHERS.
+  //
+  // Checking only the values leaves the weaker half undone: a typo'd tier is
+  // caught while an absent one passes, and absent is the failure mode the
+  // closed sets in this repo exist for — indistinguishable from an author who
+  // did not know the field was there.
+  //
+  // SCOPED TO A PARTIAL DECLARATION, and the scope is a real constraint
+  // rather than timidity. An ENTIRELY absent `parity` is the BUNDLED
+  // manifest's deliberate state: design §18.4a refused to duplicate
+  // parity.test.ts's tier map into ts/project/sdkgen-package.json, because
+  // the intended direction is the reverse — the manifest becomes the source
+  // and the suite reads it. Warning on a wholly absent field would fire on
+  // the shipped scaffold's 25 targets and demand that duplication now, which
+  // is the decision §18.4a made, not one to reverse from inside a validator.
+  //
+  // What IS unambiguous is inconsistency: a manifest that grades some of its
+  // targets and not others has no second reading. Nobody decides to grade two
+  // of three.
+  //
+  // WARNING, not error, and the level is the argument. The package works — a
+  // missing coverage declaration installs and generates correctly — so
+  // refusing it would be a worse outcome than saying so, the same call
+  // `manifest-item-unclaimed` makes for a tree nothing claims.
+  for (const name of (0 === graded.size ? [] : [...targets].sort())) {
+    if (!graded.has(name as string)) {
+      found.push({
+        level: 'warn', point: 'manifest-parity-missing', file, name: name as string,
+        note: file + ': target `' + name + '` has no `parity` entry — its ' +
+          'coverage is undeclared, which reads the same as having none. One ' +
+          'of: ' + PARITY.join(', ')
+      })
+    }
+  }
 
   for (const [name, tier] of Object.entries(manifest.parity ?? {})) {
     if (!PARITY.includes(tier)) {

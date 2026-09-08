@@ -5,7 +5,7 @@
   "name": "@voxgig/sdkgen-seneca-provider",
   "version": "1.0.0",
   "engines": {
-    "sdkgen": ">=3.5.0"
+    "sdkgen": ">=4.8.0"
   },
   "provides": {
     "target": [

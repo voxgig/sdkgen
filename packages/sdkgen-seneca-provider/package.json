@@ -54,11 +54,24 @@
     "The apidef floor MATCHES SDKGEN'S OWN peer range rather than being",
     "chosen here. A consumer satisfies this package through sdkgen, so a",
     "looser range would only let npm resolve an apidef that sdkgen itself",
-    "rejects — a package that installs and then fails to generate."
+    "rejects — a package that installs and then fails to generate.",
+    "",
+    "THE SDKGEN FLOOR IS 4.8.0, AND IT IS NOT THE PACKAGE-SYSTEM FLOOR.",
+    "3.5.0 is when sdkgen packages became installable at all, which is what",
+    "the haskell package declares and what this one copied. But these",
+    "components call `pointSegments`, which sdkgen first EXPORTED in 4.8.0",
+    "(commit 3b23388, between the 4.7.0 and 4.8.0 bumps). Against 4.7 the",
+    "package installs and then dies at generation on a missing export — the",
+    "worst shape of version error, because `package add` reports success.",
+    "The floor is the oldest sdkgen whose PUBLIC API this target actually",
+    "uses, not the oldest that understands the manifest.",
+    "",
+    "Kept in step with engines.sdkgen in sdkgen-package.json: npm reads one",
+    "and `package add` reads the other, so a consumer can hit either first."
   ],
   "peerDependencies": {
     "@voxgig/apidef": ">=8.2.2",
-    "@voxgig/sdkgen": ">=3.5.0"
+    "@voxgig/sdkgen": ">=4.8.0"
   },
   "devDependencies": {
     "@voxgig/apidef": ">=8.2.2",

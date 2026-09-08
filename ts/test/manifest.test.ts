@@ -354,6 +354,71 @@ describe('validateManifest', () => {
   })
 
 
+  // GRADING SOME TARGETS AND NOT OTHERS.
+  //
+  // The value check above catches a typo'd tier; this catches the other half,
+  // an absent one. Scoped to a PARTIAL declaration on purpose: a wholly
+  // absent `parity` is the bundled manifest's deliberate state (design §18.4a
+  // keeps the tier map in parity.test.ts rather than duplicating it here), so
+  // warning on that would fire on the shipped scaffold. A manifest that
+  // grades two of three targets has no such second reading.
+  test('a provided target with no tier, when others have one, is a WARNING', () => {
+    const dir = makePackage(
+      {
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        provides: { target: ['iotgo', 'iotrb'] },
+        parity: { iotgo: 'MIRRORED' },
+      },
+      (sdk) => {
+        for (const t of ['iotgo', 'iotrb']) {
+          def(sdk, 'target', t)
+          tree(sdk, 'src', 'cmp', t)
+          tree(sdk, 'tm', t)
+        }
+      })
+
+    try {
+      const sdk = Path.join(dir, '.sdk')
+      const found = validateManifest(Fs, sdk, manifestOf(sdk), KINDS)
+
+      deepStrictEqual(errors(found), [],
+        'an ungraded target failed the package')
+      deepStrictEqual(found.map((f: any) => f.point),
+        ['manifest-parity-missing'])
+      ok(found[0].note.includes('iotrb'),
+        'the finding does not name the ungraded target: ' + found[0].note)
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
+  // ...and a manifest that grades NOTHING is silent, which is what keeps the
+  // bundled scaffold clean. Pinned in both directions so the scope above
+  // cannot be widened by accident.
+  test('a manifest with no parity at all is not warned about', () => {
+    const dir = makePackage(
+      {
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        provides: { target: ['iotgo'] },
+      },
+      (sdk) => {
+        def(sdk, 'target', 'iotgo')
+        tree(sdk, 'src', 'cmp', 'iotgo')
+        tree(sdk, 'tm', 'iotgo')
+      })
+
+    try {
+      const sdk = Path.join(dir, '.sdk')
+      deepStrictEqual(validateManifest(Fs, sdk, manifestOf(sdk), KINDS), [])
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
   // A tier for a target the package does not ship. Harmless on its own, and
   // exactly the leftover a rename produces — which later reads as coverage
   // for something that is not there.

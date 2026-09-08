@@ -161,8 +161,15 @@ has to exercise the shapes that have historically broken this target.
 
 `parity` is where the tier now lives. It travels with the target, which is
 the point of moving it. The vocabulary is `FULL`, `MIRRORED`, `UNCOVERED`
-and `CONSUMER`, and `package check` rejects anything else — along with an
-entry naming a target the package does not provide.
+and `CONSUMER`, and `package check` rejects anything else. It also warns on
+an entry naming a target the package does not provide, and on a target left
+ungraded when the manifest grades others.
+
+Declare the sdkgen range from the API the target actually uses, not from the
+oldest release that understands a package. A target calling a helper added in
+4.8.0 needs `>=4.8.0` in both `engines.sdkgen` and the peer range, or it
+installs against 4.7 and dies at generation on a missing export — after
+`package add` has reported success.
 
 `package.json` — what npm reads. Beyond the usual, it needs `files`
 covering `.sdk` and `sdkgen-package.json`, the peers the candidate check
