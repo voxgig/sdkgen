@@ -1,13 +1,25 @@
 .PHONY: test build clean publish
 
-test:
+# NATIVE is the list of compiled artefacts this SDK needs, and it is EMPTY
+# unless a generated fragment says otherwise. The only one there is: the
+# secrets feature's sekreto transport helper (feature/secrets/native/
+# sekretonet.c, -lssl -lcrypto), which every PLUGIN provider kind
+# (hashicorp, aws, ...) runs because Lua 5.4 has no sockets and no TLS.
+# The four built-in kinds never reach it, so Main_lua emits
+# feature/secrets/native.mk ONLY when a plugin group is active - an SDK
+# without secrets, or with the built-in chain alone, runs no compiler and
+# links no OpenSSL. The fragment is optional here for exactly that reason.
+NATIVE ?=
+-include feature/secrets/native.mk
+
+test: build
 	busted -p _test test/
 
-build:
-	@echo "No build step for Lua"
+build: $(NATIVE)
+	@echo "lua: build complete$(if $(NATIVE), ($(NATIVE)),: no compile step)"
 
 clean:
-	@echo "No clean step for Lua"
+	@if [ -n "$(NATIVE)" ]; then rm -f $(NATIVE); echo "removed $(NATIVE)"; else echo "No clean step for Lua"; fi
 
 # --- Release: publish to LuaRocks -----------------------------------------
 # Upload the rockspec to LuaRocks, then tag lua/vX.Y.Z. LuaRocks has no boru
