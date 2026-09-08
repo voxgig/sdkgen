@@ -428,134 +428,6 @@
     }
    }
   },
-  "plugin/c": {
-   "repo": "https://github.com/voxgig/plugin",
-   "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
-   "version": "sdk-20260908-1556-0",
-   "tag": "sdk-20260908-1556-0",
-   "file": {
-    "tm/c/feature/secrets/plugin/capability.c": {
-     "sha256": "f31fea7cd9b38bc926926eb98c54a03da55ff4b731ba4b74eddb200508ff690a",
-     "upstream": "c/src/capability.c"
-    },
-    "tm/c/feature/secrets/plugin/capability.h": {
-     "sha256": "bac64317b6aecf68b1a3837679a82c534c02f4c5e467ea2a1f4271ebe3c85702",
-     "upstream": "c/src/capability.h"
-    },
-    "tm/c/feature/secrets/plugin/catalog.c": {
-     "sha256": "97a536041d2b37569dd1f425d29d6277f875b22f3c054dca188ca1ed26e315ef",
-     "upstream": "c/src/catalog.c"
-    },
-    "tm/c/feature/secrets/plugin/catalog.h": {
-     "sha256": "50f00987ce343726704e6041634e374dfa03a0857a0903de6409b10232342140",
-     "upstream": "c/src/catalog.h"
-    },
-    "tm/c/feature/secrets/plugin/config.c": {
-     "sha256": "cf44f0801745538f06a1bbe2a1190f0bd0301ecaa75e87e62ee7711f0b83f4a3",
-     "upstream": "c/src/config.c"
-    },
-    "tm/c/feature/secrets/plugin/config.h": {
-     "sha256": "009cf42d47a77409c00a753172e31d4b8e2a502d47a3ab3d64efe0553d60fc01",
-     "upstream": "c/src/config.h"
-    },
-    "tm/c/feature/secrets/plugin/depend.c": {
-     "sha256": "753ba652e7db89c3ca440d5521d4a43dc39705995071cd62a544be27032cd1e7",
-     "upstream": "c/src/depend.c"
-    },
-    "tm/c/feature/secrets/plugin/depend.h": {
-     "sha256": "b1d6fc576c90fcfb159b46195926735dcbd0b4cec4efb22591350567d897ab18",
-     "upstream": "c/src/depend.h"
-    },
-    "tm/c/feature/secrets/plugin/env.c": {
-     "sha256": "df8a920c974fbf46149b8df53262c2d6f687ea832ea2954c2ad3a10732095f0f",
-     "upstream": "c/src/env.c"
-    },
-    "tm/c/feature/secrets/plugin/env.h": {
-     "sha256": "35feb68b9cccaa671eaefbc0da3e7cc03dd20c7701a109f241f3d28c0b2098bf",
-     "upstream": "c/src/env.h"
-    },
-    "tm/c/feature/secrets/plugin/export.c": {
-     "sha256": "e35a45c6bb02a2e4d22c8c19fc60a71170fbd875f328b82ab194e0e82553ef32",
-     "upstream": "c/src/export.c"
-    },
-    "tm/c/feature/secrets/plugin/export.h": {
-     "sha256": "56536dc9351bedf6ed9a59907acd7344c43bbd48a4e5673c9ec599d17e8d365f",
-     "upstream": "c/src/export.h"
-    },
-    "tm/c/feature/secrets/plugin/graph.c": {
-     "sha256": "d04e1c02df3d8403ec0ad6a69a1850a2e0c62c3a3402a441daa292a8b31b73f6",
-     "upstream": "c/src/graph.c"
-    },
-    "tm/c/feature/secrets/plugin/graph.h": {
-     "sha256": "64e09cd79843d00906f40b98f9db3634b250e5cd36aebab3f6490f795fa86db8",
-     "upstream": "c/src/graph.h"
-    },
-    "tm/c/feature/secrets/plugin/host.c": {
-     "sha256": "134e5a67f0ca5812ef2c7696b3f174417f0e02da4cda8b33c531961458966309",
-     "upstream": "c/src/host.c"
-    },
-    "tm/c/feature/secrets/plugin/host.h": {
-     "sha256": "82dc6d98cc8425b4c3d7b93317e27f0365b1482835e4034d8b30658e097126fd",
-     "upstream": "c/src/host.h"
-    },
-    "tm/c/feature/secrets/plugin/order.c": {
-     "sha256": "5fd53ce5af586310697c9ee4a193285a1c320842e786680b2a53b1e0d0cbb5a1",
-     "upstream": "c/src/order.c"
-    },
-    "tm/c/feature/secrets/plugin/order.h": {
-     "sha256": "38550c4cd5b97aecc0d082d640fcd77077b98b01bbc269f613f6246046ed5fa6",
-     "upstream": "c/src/order.h"
-    },
-    "tm/c/feature/secrets/plugin/point.c": {
-     "sha256": "64784d27631cd6f74e6f282654d31129c85f38188f572eea384d5f001a088e6a",
-     "upstream": "c/src/point.c"
-    },
-    "tm/c/feature/secrets/plugin/point.h": {
-     "sha256": "6f63b638461f09f519fcd36d1f2af68964569ed0ead5825516d65d5cd49f026b",
-     "upstream": "c/src/point.h"
-    },
-    "tm/c/feature/secrets/plugin/ref.c": {
-     "sha256": "86cef021f2c591e4980ef7d81db0beebade69e0fd5c044a18fef566c5caf25b9",
-     "upstream": "c/src/ref.c"
-    },
-    "tm/c/feature/secrets/plugin/ref.h": {
-     "sha256": "75f7a28e8027b00f046721b763cc1c8df8edff0481feaa8c17e7f964c79b04d6",
-     "upstream": "c/src/ref.h"
-    },
-    "tm/c/feature/secrets/plugin/resolve.c": {
-     "sha256": "9269261e004970641a9788d5654322d27a856208d50b74ab4f36d086f3f4bc00",
-     "upstream": "c/src/resolve.c"
-    },
-    "tm/c/feature/secrets/plugin/resolve.h": {
-     "sha256": "d358f66be86c6fdf02a570ddad0eec73d3e9db54135f86af01ca378d94773fc8",
-     "upstream": "c/src/resolve.h"
-    },
-    "tm/c/feature/secrets/plugin/types.c": {
-     "sha256": "b72b8414c1d3c11ac778728e1c78da3e7a4fef6f7ff6c7f9bd103bbb7d7d27dd",
-     "upstream": "c/src/types.c"
-    },
-    "tm/c/feature/secrets/plugin/types.h": {
-     "sha256": "47460a121236b4b56ef6bba4043af1151e0aebf4b251cb0456c84ba70b9fcec2",
-     "upstream": "c/src/types.h"
-    },
-    "tm/c/feature/secrets/plugin/value.c": {
-     "sha256": "c91ddff97a5c3f0d82fbf76ef40cf17b4b2d623ae04e2728bfac1b8c3d275b88",
-     "upstream": "c/src/value.c"
-    },
-    "tm/c/feature/secrets/plugin/value.h": {
-     "sha256": "275fda4994078ed5c3449ff90ef978b40cf34b20aac024ecafe0065567edd4fa",
-     "upstream": "c/src/value.h"
-    },
-    "tm/c/feature/secrets/plugin/version.c": {
-     "sha256": "23b2d953eaef4439ffbc3f111e55e782094ed7ab30a59943ca944a82a1de5fa6",
-     "upstream": "c/src/version.c"
-    },
-    "tm/c/feature/secrets/plugin/version.h": {
-     "sha256": "e0c610297b5563e8648852e94ef5fef7031652d81d6307e568cff986bde6a347",
-     "upstream": "c/src/version.h"
-    }
-   }
-  },
   "plugin/clojure": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
@@ -1304,168 +1176,6 @@
     }
    }
   },
-  "plugin/lua": {
-   "repo": "https://github.com/voxgig/plugin",
-   "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
-   "version": "sdk-20260908-1556-0",
-   "tag": "sdk-20260908-1556-0",
-   "file": {
-    "tm/lua/feature/secrets/plugin.lua": {
-     "sha256": "844a863b1d180e3360fe674d892ba3dbd39291cd8250ffbde486a5b171106c89",
-     "upstream": "lua/src/plugin.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/capability.lua": {
-     "sha256": "fcba698c5a99449e6f684afd674008b41fbfe8c99972b88cadbca4c90f928a77",
-     "upstream": "lua/src/plugin/capability.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/catalog.lua": {
-     "sha256": "4509c85a16aaf370fe91d9c3e6b479fef8345317b7e3c95173d9912eb276473e",
-     "upstream": "lua/src/plugin/catalog.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/config.lua": {
-     "sha256": "7c18aae83584f9fea0027ef22bb6bd736bdf0af400ea88594dd708895c750796",
-     "upstream": "lua/src/plugin/config.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/depend.lua": {
-     "sha256": "1e92561ce3803d83423408505625bdb756043bf0d3aa45c1a0097781367c7389",
-     "upstream": "lua/src/plugin/depend.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/env.lua": {
-     "sha256": "8d992ef30ba71865257a579f3bb30af4d02a89c1f6a27d9e756a7be4a303b327",
-     "upstream": "lua/src/plugin/env.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/export.lua": {
-     "sha256": "5ffca7355805e76a0e199232318cbace8eddf344f00a2cdacf120952fa3651d6",
-     "upstream": "lua/src/plugin/export.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/graph.lua": {
-     "sha256": "6f56c0725fc84332986391cb8b24d22ef87a5a9900014cfe2be245fbcd049c14",
-     "upstream": "lua/src/plugin/graph.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/host.lua": {
-     "sha256": "48f39beedbc260d735c519b478eeab136e5040102ed07f0bff32e4d1caeaa7aa",
-     "upstream": "lua/src/plugin/host.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/json.lua": {
-     "sha256": "6d18c4d268580f91ae4a23daa929c3930845073fb66608e7e39b9212e45d7d32",
-     "upstream": "lua/src/plugin/json.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/order.lua": {
-     "sha256": "5d84fe86511f74935eab185f2c396d2bccbc41675eed9e8fe7769e3b895a3e80",
-     "upstream": "lua/src/plugin/order.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/point.lua": {
-     "sha256": "1509f9c9ff5aaf0783287115d5287e7be39bc662d3f98eccf9ff1793e5d78b2f",
-     "upstream": "lua/src/plugin/point.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/ref.lua": {
-     "sha256": "133df48e9421d73c9687aa942d948515c7ff094400a94f4516d8ccc96de9c58a",
-     "upstream": "lua/src/plugin/ref.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/resolve.lua": {
-     "sha256": "aa24577e54f68bb19c8eaa28affb46316c5db993af68a57cc78a38cb5ffdfed7",
-     "upstream": "lua/src/plugin/resolve.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/plugin/types.lua": {
-     "sha256": "7903e40414138ed3401804e44e9dc41694cd340dda157803d92ad8fb2532083b",
-     "upstream": "lua/src/plugin/types.lua"
-    },
-    "tm/lua/feature/secrets/plugin/version.lua": {
-     "sha256": "750a4f3b6a1d908c41deacd9962a55321d898a32da2cd6b6a86cb70fa798d049",
-     "upstream": "lua/src/plugin/version.lua",
-     "adapt": [
-      {
-       "from": "require 'plugin.",
-       "to": "require 'feature.secrets.plugin."
-      }
-     ]
-    }
-   }
-  },
   "plugin/perl": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
@@ -2110,107 +1820,85 @@
     }
    }
   },
-  "sekreto/c": {
-   "repo": "https://github.com/voxgig/sekreto",
-   "commit": "1267ee2e5f49566bc92695bc9eb3a60ef4924998",
+  "plugin/zig": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
    "version": "sdk-20260908-1556-0",
    "tag": "sdk-20260908-1556-0",
    "file": {
-    "tm/c/feature/secrets/plugins/aws.c": {
-     "sha256": "b7c92436a846b07f1b0dc942890c6f9f5363692e8cdc561f56a0b8242cb8c7b7",
-     "upstream": "c/plugins/aws.c"
+    "tm/zig/feature/secrets/plugin/capability.zig": {
+     "sha256": "c41f330b5205653acdb8f508632cb62d848a999f69ed7b1f4df19cb2dc4ed326",
+     "upstream": "zig/src/capability.zig"
     },
-    "tm/c/feature/secrets/plugins/azuresecrets.c": {
-     "sha256": "a70fd245c0cb4dd7613e02598c728eed5a5b49ac278c544c3772c46b7b6a4039",
-     "upstream": "c/plugins/azuresecrets.c"
+    "tm/zig/feature/secrets/plugin/catalog.zig": {
+     "sha256": "b0ad7241db360a6c6786165a001365ae567d602e66ec4fc72e9255a1d8de4211",
+     "upstream": "zig/src/catalog.zig"
     },
-    "tm/c/feature/secrets/plugins/boru.c": {
-     "sha256": "3141a025e554dc950c28a058c7fc40840e129adb8adf85562cf743ff08abd269",
-     "upstream": "c/plugins/boru.c"
+    "tm/zig/feature/secrets/plugin/config.zig": {
+     "sha256": "e959ab61be16ecc81ecc8e88b59b182d586e35e4dcd4ee77ce9959f3a2a57a85",
+     "upstream": "zig/src/config.zig"
     },
-    "tm/c/feature/secrets/plugins/clock.c": {
-     "sha256": "f457ffd24a5b1ea668b7f542d98c6d1a9f00cac4297d4cc8f12a1b3a8d1af829",
-     "upstream": "c/plugins/clock.c"
+    "tm/zig/feature/secrets/plugin/depend.zig": {
+     "sha256": "719eae3194a5b82c8cc0a7e34e3d2cb4209f048e47a6cefd6673b8196078e2b9",
+     "upstream": "zig/src/depend.zig"
     },
-    "tm/c/feature/secrets/plugins/doppler.c": {
-     "sha256": "a4e4ddc7db363cb2485d877e2344ec6ade1a1082273299f3af072b6b45e3efe6",
-     "upstream": "c/plugins/doppler.c"
+    "tm/zig/feature/secrets/plugin/env.zig": {
+     "sha256": "af877efae4197b4517ddcaf4df6a34e8b4b0c7bdc69063d8ae3c36dc4aff70aa",
+     "upstream": "zig/src/env.zig"
     },
-    "tm/c/feature/secrets/plugins/encode.c": {
-     "sha256": "cbafab3fafa88744ce3a9c1b5bd6ec59616997fdee424b09430a09b4d02478af",
-     "upstream": "c/plugins/encode.c"
+    "tm/zig/feature/secrets/plugin/export.zig": {
+     "sha256": "d587c0027b2013ca33db9d33e0a4c502371061b51a01f762de9108bb4cf97959",
+     "upstream": "zig/src/export.zig"
     },
-    "tm/c/feature/secrets/plugins/gcpsecrets.c": {
-     "sha256": "0d22f72dc3d857fa431441bccce55c80975aca96389aaa5984e0244f3e9622a4",
-     "upstream": "c/plugins/gcpsecrets.c"
+    "tm/zig/feature/secrets/plugin/graph.zig": {
+     "sha256": "067925c93b51713d12f521b627a787f871937bcc2e1efc572759b2e9fc6adbae",
+     "upstream": "zig/src/graph.zig"
     },
-    "tm/c/feature/secrets/plugins/hashicorp.c": {
-     "sha256": "805dc465580c70a1fbc271cd1a25efec99a8cee560d8ce0da3b31763280d230a",
-     "upstream": "c/plugins/hashicorp.c"
+    "tm/zig/feature/secrets/plugin/host.zig": {
+     "sha256": "aa153f21a45bda203b0558f1fcbc6f6a716d1b553763639331bd8cd61cd85c32",
+     "upstream": "zig/src/host.zig"
     },
-    "tm/c/feature/secrets/plugins/httpjson.c": {
-     "sha256": "98d5f1c1996d27db25fd97240409cd38eb01060165013a188ce44dc0804c8d96",
-     "upstream": "c/plugins/httpjson.c"
+    "tm/zig/feature/secrets/plugin/inst.zig": {
+     "sha256": "15d69073728358eb004550323b005f3066da986aef243d0c75c80bbfdf6d4a4e",
+     "upstream": "zig/src/inst.zig"
     },
-    "tm/c/feature/secrets/plugins/infisical.c": {
-     "sha256": "18d8d40c41aa5dcf44605e606a1f880f250d1b523444d96cd2cb9c4714b5f1f6",
-     "upstream": "c/plugins/infisical.c"
+    "tm/zig/feature/secrets/plugin/order.zig": {
+     "sha256": "0140ece5ccea0baef6c03ff0aabe0864ad4c069b5603119719ce05c4c8b7a2c5",
+     "upstream": "zig/src/order.zig"
     },
-    "tm/c/feature/secrets/plugins/onepassword.c": {
-     "sha256": "b1fb4e14d1dd1b7848e45c0157b06f2e171db68907bb2c6ac2d82b4892558cc1",
-     "upstream": "c/plugins/onepassword.c"
+    "tm/zig/feature/secrets/plugin/plugin.zig": {
+     "sha256": "9490a15b3059b21fe85af95955535b06b4c8d17c885e25eb1f3597bcdf9c7faf",
+     "upstream": "zig/src/plugin.zig"
     },
-    "tm/c/feature/secrets/plugins/proc.c": {
-     "sha256": "67ff2318aba28f7bf3e6433b85e0c752b06191e99fcf07348b94c6cc97edaf47",
-     "upstream": "c/plugins/proc.c"
+    "tm/zig/feature/secrets/plugin/point.zig": {
+     "sha256": "636258234de9b7823010f277ee3668b69bcc93402429eb85b4f872826c963eea",
+     "upstream": "zig/src/point.zig"
     },
-    "tm/c/feature/secrets/plugins/secretspec.c": {
-     "sha256": "33e0cbf7733446e94f0eb76efed89079156831f22b98cdee309504d20025f8ee",
-     "upstream": "c/plugins/secretspec.c"
+    "tm/zig/feature/secrets/plugin/ref.zig": {
+     "sha256": "db723c426dc75095e2fbd546e7cc519b2b77a6472e47c5a336f0f26dda7f256a",
+     "upstream": "zig/src/ref.zig"
     },
-    "tm/c/feature/secrets/plugins/sekretoplugins.h": {
-     "sha256": "59f6e7e6a41580c141e00c1fb2e4e1f59eaf4f984739c8bb1ab83f3314ef69d1",
-     "upstream": "c/plugins/sekretoplugins.h"
+    "tm/zig/feature/secrets/plugin/resolve.zig": {
+     "sha256": "18c93b39981800102e995618accc9fbbb6c988aff2d375a8fcee9903b4b531a7",
+     "upstream": "zig/src/resolve.zig"
     },
-    "tm/c/feature/secrets/plugins/sha256.c": {
-     "sha256": "ed2216da9ab205627a241f84b1d0018c7475b9ab17593b37060ce0c57d9701c0",
-     "upstream": "c/plugins/sha256.c"
+    "tm/zig/feature/secrets/plugin/types.zig": {
+     "sha256": "bc516e6ec6c595a4a733f624ac67b663119b6e267de3cb3eade5821401004766",
+     "upstream": "zig/src/types.zig",
+     "adapt": [
+      {
+       "from": "    \"host\",  \"ref\",        \"name\",  \"tag\",     \"point\", \"key\", \"capability\",\n    \"range\", \"version\",    \"match\", \"candidates\", \"cycle\", \"holders\",\n    \"refs\",  \"path\",       \"cause\",",
+       "to": "    \"host\",  \"ref\",     \"name\",  \"tag\",        \"point\", \"key\",     \"capability\",\n    \"range\", \"version\", \"match\", \"candidates\", \"cycle\", \"holders\", \"refs\",\n    \"path\",  \"cause\","
+      }
+     ]
     },
-    "tm/c/feature/secrets/plugins/sigv4.c": {
-     "sha256": "c9444623f482c7bcd5ed51c24b21ad64b2226df633519dc9f101202d70aa4ea3",
-     "upstream": "c/plugins/sigv4.c"
+    "tm/zig/feature/secrets/plugin/value.zig": {
+     "sha256": "7048f0756b81e6dc89c3c69d05582f65fefbd746cc0d33b62dce3b5322ce4d3b",
+     "upstream": "zig/src/value.zig"
     },
-    "tm/c/feature/secrets/plugins/support.h": {
-     "sha256": "241b938db8af5e9077bd2aad3bc2700f9a01ab3e676f9cce9ed8ccf56cd480fc",
-     "upstream": "c/plugins/support.h"
-    },
-    "tm/c/feature/secrets/plugins/tls.c": {
-     "sha256": "2c5aa0222778051f6aad7c79511e1c44e1529dd0003aff906d43ae838608a6fc",
-     "upstream": "c/plugins/tls.c"
-    },
-    "tm/c/feature/secrets/sekreto/internal.h": {
-     "sha256": "903c3f156524b753f8e75bf979351b95f99ae5b58262f6de42e06434b9e66a08",
-     "upstream": "c/src/internal.h"
-    },
-    "tm/c/feature/secrets/sekreto/json.c": {
-     "sha256": "364953d5fc08d2d0bbc32d7b4d53ea409d81c08b98609e8ab099dde695a28572",
-     "upstream": "c/src/json.c"
-    },
-    "tm/c/feature/secrets/sekreto/providers.c": {
-     "sha256": "0b796ee005df155c2e7c98e11f4814c3b94ecf14908edd9ab661f0d348d18cbc",
-     "upstream": "c/src/providers.c"
-    },
-    "tm/c/feature/secrets/sekreto/sekreto.c": {
-     "sha256": "79018e56fa6594c6a4a4bb5788965cb9c0205b8008ff0ba1f4fa45312d98eaa6",
-     "upstream": "c/src/sekreto.c"
-    },
-    "tm/c/feature/secrets/sekreto/sekreto.h": {
-     "sha256": "161731905452025eda8f23b411f8a377577ef78df7b53da0320cf8bae28ff098",
-     "upstream": "c/src/sekreto.h"
-    },
-    "tm/c/feature/secrets/sekreto/util.c": {
-     "sha256": "45e6948f30b0c838806cd177f0dd23f6c51b46d49db49dbbb28516c5638b9e3d",
-     "upstream": "c/src/util.c"
+    "tm/zig/feature/secrets/plugin/version.zig": {
+     "sha256": "6630bf518cb75d58603de149916c6b8bbb4d95be5686dc34f7d2cd5a6b21812b",
+     "upstream": "zig/src/version.zig"
     }
    }
   },
@@ -3202,210 +2890,6 @@
     }
    }
   },
-  "sekreto/lua": {
-   "repo": "https://github.com/voxgig/sekreto",
-   "commit": "1267ee2e5f49566bc92695bc9eb3a60ef4924998",
-   "version": "sdk-20260908-1556-0",
-   "tag": "sdk-20260908-1556-0",
-   "file": {
-    "tm/lua/feature/secrets/native/sekretonet.c": {
-     "sha256": "c19bab5364e047db66be87478604daa7708766addd43748ba374d782349e101b",
-     "upstream": "lua/native/sekretonet.c"
-    },
-    "tm/lua/feature/secrets/sekreto.lua": {
-     "sha256": "29e55b619b5ad060a08b18d67d2d2b286d071952afdfb760e3f18401d62c1b74",
-     "upstream": "lua/src/sekreto.lua",
-     "adapt": [
-      {
-       "from": "require('plugin')",
-       "to": "require('feature.secrets.plugin')"
-      },
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/addr.lua": {
-     "sha256": "21133aa9016775dfa14226e2c9b887efbf251d402d0cf30a63905bd7f6c98948",
-     "upstream": "lua/src/sekreto/addr.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/err.lua": {
-     "sha256": "cd36145b235660813e1675a04ae604e4e8fc17c705564116374254ea3466f46a",
-     "upstream": "lua/src/sekreto/err.lua"
-    },
-    "tm/lua/feature/secrets/sekreto/name.lua": {
-     "sha256": "253f5dabdeecf4d193a8bf770a5d74930229b3af3b2aa25529647aff0b27c4c7",
-     "upstream": "lua/src/sekreto/name.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/aws.lua": {
-     "sha256": "653e68fdbef29418bc86577d496d1fe41019f56c7bef576c02057b11faa108da",
-     "upstream": "lua/src/sekreto/plugins/aws.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/azuresecrets.lua": {
-     "sha256": "3466a0b5a392333362deb656393efaf519ccbe61d7bc1951b513b48efa6894ef",
-     "upstream": "lua/src/sekreto/plugins/azuresecrets.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/boru.lua": {
-     "sha256": "281759c998740d8bdbf961f354eea9ad3d05f4e55ccf559b986c4fd7cd60c97e",
-     "upstream": "lua/src/sekreto/plugins/boru.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/crypto.lua": {
-     "sha256": "386528c1b8e0236f7b8465e44a4aefe4f0e096d82bc173ff60c3d8bcda44bc52",
-     "upstream": "lua/src/sekreto/plugins/crypto.lua"
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/doppler.lua": {
-     "sha256": "d535fb33f67d1e49da02369f0ef8a4f3b68703c4dfc4b4d5b85d36827bec5119",
-     "upstream": "lua/src/sekreto/plugins/doppler.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/gcpsecrets.lua": {
-     "sha256": "ac35a3bb63b67cc866788f10cfe8329b48b8cb95a7450f4837af2ddd68afb05d",
-     "upstream": "lua/src/sekreto/plugins/gcpsecrets.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/hashicorp.lua": {
-     "sha256": "7e07f0e12e4bcdc60846f6233f0c4d709be2563b5fbef3ee87f16eb296b39c6c",
-     "upstream": "lua/src/sekreto/plugins/hashicorp.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/httpjson.lua": {
-     "sha256": "b06c634d2bd75ba51119ed51395c3aaf19d4357c62a9bee5712f80ecc6042450",
-     "upstream": "lua/src/sekreto/plugins/httpjson.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/infisical.lua": {
-     "sha256": "4bfc7e272093dde54e916f91ccb843d12e4dfff00c3e72326855ae9914806c29",
-     "upstream": "lua/src/sekreto/plugins/infisical.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/json.lua": {
-     "sha256": "9103d7b4cb57df8eca093deacc7abba18478ed8df9370e24dcc83125cb11f6e3",
-     "upstream": "lua/src/sekreto/plugins/json.lua"
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/net.lua": {
-     "sha256": "3013f1697995ddaf8128582104e01106f28e87a254e228d8e725a80b4e35467e",
-     "upstream": "lua/src/sekreto/plugins/net.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      },
-      {
-       "from": "'^(.*)/src/sekreto/plugins/net%.lua$'",
-       "to": "'^(.*)/feature/secrets/sekreto/plugins/net%.lua$'"
-      },
-      {
-       "from": "build/sekreto-net",
-       "to": "feature/secrets/native/sekreto-net"
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/onepassword.lua": {
-     "sha256": "719ea3134b9b5bd3ec070d88184b854d168a92679679ee428d5cea3db2ca9e35",
-     "upstream": "lua/src/sekreto/plugins/onepassword.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/secretspec.lua": {
-     "sha256": "33c7af1238095e2b65a83d1c71668b000a14519e2c045dbcfa0c44a78317734a",
-     "upstream": "lua/src/sekreto/plugins/secretspec.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/sigv4.lua": {
-     "sha256": "a1261c6a574f0e5d5adf90fd5f974389efd5088d38b0061aeaea68e97fa23e1e",
-     "upstream": "lua/src/sekreto/plugins/sigv4.lua",
-     "adapt": [
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    },
-    "tm/lua/feature/secrets/sekreto/plugins/support.lua": {
-     "sha256": "5508e7ff0a35fec81cd4ef5060d31510ec0748351b6d2442534124ea50214dbb",
-     "upstream": "lua/src/sekreto/plugins/support.lua"
-    },
-    "tm/lua/feature/secrets/sekreto/providers.lua": {
-     "sha256": "1a828567b1434928bb8ab0712c23619717d4af0641b962e75d884f3ce0d9486e",
-     "upstream": "lua/src/sekreto/providers.lua",
-     "adapt": [
-      {
-       "from": "require('plugin')",
-       "to": "require('feature.secrets.plugin')"
-      },
-      {
-       "from": "require('sekreto.",
-       "to": "require('feature.secrets.sekreto."
-      }
-     ]
-    }
-   }
-  },
   "sekreto/perl": {
    "repo": "https://github.com/voxgig/sekreto",
    "commit": "1267ee2e5f49566bc92695bc9eb3a60ef4924998",
@@ -4289,6 +3773,74 @@
        "to": "'../plugin'"
       }
      ]
+    }
+   }
+  },
+  "sekreto/zig": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "1267ee2e5f49566bc92695bc9eb3a60ef4924998",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/zig/feature/secrets/plugins/aws.zig": {
+     "sha256": "8d55f69940a4c9a70a2d465696da6d4f2edbd756d079559fa64232be6125cbad",
+     "upstream": "zig/plugins/aws.zig"
+    },
+    "tm/zig/feature/secrets/plugins/azuresecrets.zig": {
+     "sha256": "5d6a0fd4c00b0893e218cd74dea8f11b2f0e57709bef2a3b60b7e187a6d3e71a",
+     "upstream": "zig/plugins/azuresecrets.zig"
+    },
+    "tm/zig/feature/secrets/plugins/boru.zig": {
+     "sha256": "7bd75200e48a186ca1ea17322957b233da07598b6973850fe53d2e96da8ee364",
+     "upstream": "zig/plugins/boru.zig"
+    },
+    "tm/zig/feature/secrets/plugins/doppler.zig": {
+     "sha256": "9d3a655224bc8e17de5366d09e185a85d5b4047126a92304e7ec4bf28fb87efd",
+     "upstream": "zig/plugins/doppler.zig"
+    },
+    "tm/zig/feature/secrets/plugins/gcpsecrets.zig": {
+     "sha256": "ada6086ff5a97b92b93ece56c2da422320982599b52370c78898770900cdf385",
+     "upstream": "zig/plugins/gcpsecrets.zig"
+    },
+    "tm/zig/feature/secrets/plugins/hashicorp.zig": {
+     "sha256": "7378c3faf1e8ea6aff7a4fe7fb32b21db09bdfc4f11a905b04aa6e1b45ef9658",
+     "upstream": "zig/plugins/hashicorp.zig"
+    },
+    "tm/zig/feature/secrets/plugins/httpjson.zig": {
+     "sha256": "f1463ee3c93fdc64bd3bbfa74c6ac2aeb7a7821c51136bfb268e62faf9e5d82c",
+     "upstream": "zig/plugins/httpjson.zig"
+    },
+    "tm/zig/feature/secrets/plugins/infisical.zig": {
+     "sha256": "4864ffd3b49567c2ae40635d78f22cdc0d03db07584e2ab88a958696aa118818",
+     "upstream": "zig/plugins/infisical.zig"
+    },
+    "tm/zig/feature/secrets/plugins/onepassword.zig": {
+     "sha256": "b511a0c678526f69640fae618db9c82dfa217eecede8cff50d29e459465986fc",
+     "upstream": "zig/plugins/onepassword.zig"
+    },
+    "tm/zig/feature/secrets/plugins/secretspec.zig": {
+     "sha256": "c36f9facee6fb7907e069c77fbcb5569a63b35a98270940512d46842fbb04f3d",
+     "upstream": "zig/plugins/secretspec.zig"
+    },
+    "tm/zig/feature/secrets/plugins/sigv4.zig": {
+     "sha256": "97a012b845acbb230dd812d3e17b2361ba0d441865044e3ae9dc1f98b0e156e5",
+     "upstream": "zig/plugins/sigv4.zig"
+    },
+    "tm/zig/feature/secrets/sekreto/addr.zig": {
+     "sha256": "d599b79f6b6c266f8dea88be3e70727c2605cd77555a1552d66464c9e510dbf4",
+     "upstream": "zig/src/addr.zig"
+    },
+    "tm/zig/feature/secrets/sekreto/builtins.zig": {
+     "sha256": "1aefb1af20ed3c6dc1448360c9feef65afdc346e6740ff31a27af3f76c630ffa",
+     "upstream": "zig/src/builtins.zig"
+    },
+    "tm/zig/feature/secrets/sekreto/provider.zig": {
+     "sha256": "f2dd423575beb140c725c669f8330ecb465019487cfca9f4250cd1aecc8e8d0c",
+     "upstream": "zig/src/provider.zig"
+    },
+    "tm/zig/feature/secrets/sekreto/sekreto.zig": {
+     "sha256": "71a37053b0c91b477ea28680cd2455456516b93d7b0842172bda5e049f99de94",
+     "upstream": "zig/src/sekreto.zig"
     }
    }
   },

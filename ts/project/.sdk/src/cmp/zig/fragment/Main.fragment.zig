@@ -40,6 +40,22 @@ pub const ProjectNameSDK = struct {
     rootctx: ?*Context = null,
 
     pub fn new(options: Value) *ProjectNameSDK {
+        return new_with(options, &.{});
+    }
+
+    // The `extend` seam, in zig's spelling. go/ts/py read live Feature
+    // objects off `options.extend`; a zig Value is a CLOSED data union that
+    // cannot carry a Feature, so the extension list is a second argument
+    // instead - same meaning, same position in construction (added after the
+    // config-driven features, before any init runs).
+    //
+    // DELIBERATE DIVERGENCE: an extension whose NAME the config already
+    // installed is skipped. go adds it regardless and the kotlin/java suites
+    // work around the resulting double install (two transport wraps, two
+    // purchases) by probing the config first; here the seam itself keeps the
+    // set to one feature per name, so a suite can always hand in the feature
+    // it needs and hold in any generated tree.
+    pub fn new_with(options: Value, extend: []const Feature) *ProjectNameSDK {
         const sdk = h.A().create(ProjectNameSDK) catch unreachable;
         sdk.* = .{
             .mode = "live",
@@ -90,6 +106,15 @@ pub const ProjectNameSDK = struct {
                     }
                 }
             }
+        }
+
+        // Add extension features (see new_with).
+        for (extend) |f| {
+            var present = false;
+            for (sdk.features.items) |have| {
+                if (std.mem.eql(u8, have.name(), f.name())) present = true;
+            }
+            if (!present) sdk.sdkUtility.feature_add(rootctx, f);
         }
 
         // Initialize features.
