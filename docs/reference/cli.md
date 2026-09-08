@@ -90,8 +90,8 @@ If the source `.sdk` folder cannot be found, the CLI fails and lists the
 locations it searched.
 
 The built-in SDK targets are: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
-`csharp`, `java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`,
-`zig`, `perl`, `clojure`, `elixir`, `ocaml`, `haskell`, `lean`. Every one
+`csharp`, `java`, `kotlin`, `scala`, `swift`, `rust`, `c`, `cpp`,
+`zig`, `perl`, `clojure`, `elixir`, `ocaml`. Every one
 of them vendors a `@voxgig/struct` port and ships all enterprise features
 with a full offline test suite.
 
@@ -101,7 +101,7 @@ being one, and need it present in the same project: `go-cli` and `go-mcp`
 generation phases off and emit their whole package from `Main`.
 
 `seneca-provider` (wraps `ts`) is the same shape and comes from a package:
-`voxgig-sdkgen package add @voxgig/sdkgen-seneca-provider`. It is the one
+`voxgig-sdkgen package add @voxgig/sdkgen-infrapack`. It is the one
 a project normally generates into a separate repo — see
 [out-of-tree targets](../explanation/out-of-tree-targets.md).
 

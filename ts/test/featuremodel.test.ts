@@ -214,8 +214,8 @@ describe('feature-language-parity', () => {
     rb: (n) => Path.join('rb', 'feature', n + '_feature.rb'),
     lua: (n) => Path.join('lua', 'feature', n + '_feature.lua'),
     // Added language targets. Per-feature source files; naming follows each
-    // language's convention (clojure/ocaml/lean keep all features in
-    // a single module — lean's is src/SdkFeatures.lean — so they are covered
+    // language's convention (clojure/ocaml keep all features in
+    // a single module — so they are covered
     // by the copy-dir + model checks below rather than a per-feature file).
     csharp: (n) => Path.join('csharp', 'feature', cap(n) + 'Feature.cs'),
     java: (n) => Path.join('java', 'feature', cap(n) + 'Feature.java'),
@@ -223,7 +223,6 @@ describe('feature-language-parity', () => {
     scala: (n) => Path.join('scala', 'feature', cap(n) + 'Feature.scala'),
     swift: (n) =>
       Path.join('swift', 'Sources', 'ProjectNameSDK', 'feature', cap(n) + 'Feature.swift'),
-    dart: (n) => Path.join('dart', 'lib', 'feature', n, cap(n) + 'Feature.dart'),
     perl: (n) => Path.join('perl', 'feature', n + '_feature.pm'),
     rust: (n) => Path.join('rust', 'feature', n + '.rs'),
     c: (n) => Path.join('c', 'feature', n + '.c'),
@@ -236,8 +235,8 @@ describe('feature-language-parity', () => {
   // have a target definition and a feature-add copy dir per enterprise feature.
   const SDK_TARGETS = [
     'ts', 'js', 'go', 'py', 'php', 'rb', 'lua',
-    'csharp', 'java', 'kotlin', 'scala', 'swift', 'dart', 'rust', 'c', 'cpp',
-    'zig', 'perl', 'clojure', 'elixir', 'ocaml', 'lean',
+    'csharp', 'java', 'kotlin', 'scala', 'swift', 'rust', 'c', 'cpp',
+    'zig', 'perl', 'clojure', 'elixir', 'ocaml',
   ]
 
   // Targets that CONSUME another target's SDK rather than being one
@@ -253,7 +252,7 @@ describe('feature-language-parity', () => {
   // per-target feature source and that target had none to copy — Main emits
   // the whole package and every standard phase, `feature` included, is off in
   // its model. Note that `srcfeature: false` was NOT the reason: 23 targets
-  // set that (go, py, rb, lua, perl, lean, …) and all of them ship the dirs —
+  // set that (go, py, rb, lua, perl, …) and all of them ship the dirs —
   // srcfeature gates the GENERATED layout (src/cmp/Feature.ts), not the
   // template tree. Declared rather than inferred, so a target that gains
   // feature source fails the accuracy test below until it is moved.
@@ -313,8 +312,9 @@ describe('feature-language-parity', () => {
   // The lists above are HAND-WRITTEN, so until this test existed a new target
   // was simply absent from all of them and every check in this file quietly
   // skipped it — which is how `lean` (an SDK target with a full set of
-  // src/feature dirs) and `seneca-provider` both came to be exempt without
-  // anyone deciding they should be. Mirrors parity.test.ts's tier manifest:
+  // src/feature dirs, since moved to @voxgig/sdkgen-langpack) and
+  // `seneca-provider` both came to be exempt without anyone deciding they
+  // should be. Mirrors parity.test.ts's tier manifest:
   // the list is the stated policy, and a target added without a decision
   // fails here.
   test('the target lists cover every shipped target exactly once', () => {

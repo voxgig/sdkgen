@@ -13,8 +13,12 @@
   "",
   "An `adapt` applies to every route file whose DESTINATION path matches",
   "`match`; `from` must be present in the file or the run fails loudly.",
-  "haskell (packages/sdkgen-haskell) is EXCLUDED: its scaffold is outside",
-  "this write root and needs its own route root \u2014 recorded, not silent."
+  "dart, haskell and lean (@voxgig/sdkgen-langpack) are EXCLUDED: their",
+  "scaffolds are outside this write root and need their own route root in",
+  "that repository \u2014 recorded, not silent. haskell was already out; dart",
+  "and lean left with it, and their routes were REMOVED here rather than",
+  "left pointing at trees this repo no longer ships, which would fail the",
+  "run on a path that simply is not there."
  ],
  "tag": "sdk-20260907-0029-0",
  "repo": {
@@ -166,20 +170,6 @@
   },
   {
    "lib": "omni",
-   "port": "dart",
-   "lang": "dart",
-   "version": "sdk-20260907-0029-0",
-   "dir": [
-    "tm/dart/test/vendor/omni"
-   ],
-   "file": {
-    "dart/lib/omni.dart": "tm/dart/test/vendor/omni/omni.dart",
-    "dart/lib/runner.dart": "tm/dart/test/vendor/omni/runner.dart",
-    "dart/lib/util.dart": "tm/dart/test/vendor/omni/util.dart"
-   }
-  },
-  {
-   "lib": "omni",
    "port": "elixir",
    "lang": "elixir",
    "version": "sdk-20260907-0029-0",
@@ -245,18 +235,6 @@
     "kotlin/src/Json.kt": "tm/kotlin/test/vendor/omni/Json.kt",
     "kotlin/src/Runner.kt": "tm/kotlin/test/vendor/omni/Runner.kt",
     "kotlin/src/Util.kt": "tm/kotlin/test/vendor/omni/Util.kt"
-   }
-  },
-  {
-   "lib": "omni",
-   "port": "lean",
-   "lang": "lean",
-   "version": "sdk-20260907-0029-0",
-   "dir": [
-    "tm/lean/test/vendor/omni"
-   ],
-   "file": {
-    "lean/Omni.lean": "tm/lean/test/vendor/omni/Omni.lean"
    }
   },
   {

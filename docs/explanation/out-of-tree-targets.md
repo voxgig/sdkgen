@@ -7,7 +7,7 @@ somewhere else instead, and one is normally used that way.
 `seneca-provider` produces a Seneca plugin — an independently released
 npm package, in its own repo, that depends on the generated `ts` SDK the
 way any other consumer would. It ships as
-[`@voxgig/sdkgen-seneca-provider`](https://www.npmjs.com/package/@voxgig/sdkgen-seneca-provider)
+[`@voxgig/sdkgen-infrapack`](https://github.com/voxgig/sdkgen-infrapack)
 rather than in the box, so add it with `voxgig-sdkgen package add` first;
 the mechanism below is the generator's and works for whichever target a
 project points outward. This page explains why that needs a mechanism

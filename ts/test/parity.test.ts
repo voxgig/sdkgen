@@ -70,7 +70,7 @@ const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data']
 
 // TIER 1 — drives the shared corpus for every section. This is the bar.
 const FULL = [
-  'cpp', 'csharp', 'dart', 'go', 'java', 'js', 'kotlin', 'lean', 'lua', 'ocaml',
+  'cpp', 'csharp', 'go', 'java', 'js', 'kotlin', 'lua', 'ocaml',
   'perl', 'php', 'py', 'rb', 'rust', 'swift', 'ts', 'zig', 'clojure',
   'elixir', 'c', 'scala',
 ]
@@ -90,7 +90,7 @@ const UNCOVERED: string[] = []
 // Targets exposing the raw-access escape hatch (direct/graphql). See the
 // 'raw-access gate parity' suite below.
 const RAW_ACCESS = [
-  'c', 'clojure', 'cpp', 'csharp', 'dart', 'elixir', 'go', 'java',
+  'c', 'clojure', 'cpp', 'csharp', 'elixir', 'go', 'java',
   'js', 'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala',
   'swift', 'ts', 'zig',
 ]
@@ -310,10 +310,11 @@ describe('graphql transport parity', () => {
   // query string that is then discarded, and reads only top-level body
   // cursors — so a Relay connection stops after page one.
   //
-  // lean is exempt: its paging feature stamps size/page and counts pages,
-  // with no cursor pagination, Link header or hasMore for REST either, so
-  // there is no branch to mirror without first porting the REST feature.
-  const NO_CURSOR_PAGING = ['lean']
+  // EMPTY: `lean` was the only exemption — its paging feature stamps
+  // size/page and counts pages, with no cursor pagination, Link header or
+  // hasMore for REST — and it has moved to @voxgig/sdkgen-langpack. Every
+  // bundled target now mirrors the cursor branch.
+  const NO_CURSOR_PAGING: string[] = []
 
   for (const lang of sdkTargets()) {
     if (NO_CURSOR_PAGING.includes(lang)) {
@@ -361,7 +362,11 @@ describe('graphql transport parity', () => {
 //
 // One target ships no raw-access surface at all. It is listed rather than
 // inferred, so adding `direct` to it fails here until its gate lands with it.
-const NO_RAW_ACCESS = ['lean']
+// EMPTY, and that is a statement rather than an oversight: `lean` was the
+// only entry, and it has moved to @voxgig/sdkgen-langpack. Every bundled
+// target now exposes the raw-access escape hatch, so the closed-set check
+// below asserts RAW_ACCESS alone covers the shipped list.
+const NO_RAW_ACCESS: string[] = []
 
 describe('raw-access gate parity', () => {
 
@@ -950,7 +955,6 @@ describe('config representation is chosen by size', () => {
     ['c', 'Config_c.ts', 'cStringLiteral\\(configJson\\)', 'formatCValue'],
     ['rust', 'Config_rust.ts', 'rustRawString\\(configJson\\)', 'formatRustValue'],
     ['zig', 'Config_zig.ts', 'CONFIG_DATA: \\[\\]const u8', 'formatZigValue'],
-    ['dart', 'Config_dart.ts', 'Config\\.data\\.fragment\\.dart', 'Config\\.fragment\\.dart'],
     ['elixir', 'Config_elixir.ts', '@config_data', 'Helpers\\.deep'],
     ['clojure', 'Config_clojure.ts', 'core/json-parse', 'formatCljValue'],
     ['ocaml', 'Config_ocaml.ts', 'Sdk_json\\.json_read', 'formatOcamlValue'],
@@ -1102,7 +1106,6 @@ describe('config representation is chosen by size', () => {
     ['go', 'utility/make_options.go'],
     ['py', 'pkg/utility/make_options.py'],
     ['rb', 'utility/make_options.rb'],
-    ['dart', 'lib/utility/MakeOptionsUtility.dart'],
     ['rust', 'utility/make_options.rs'],
     ['zig', 'core/utility.zig'],
     ['elixir', 'lib/projectname/utility.ex'],
@@ -1157,7 +1160,6 @@ describe('config representation is chosen by size', () => {
     ['cpp', 'Config_cpp.ts', 'parse_json'],
     ['java', 'Config_java.ts', 'Json\\.parse'],
     ['kotlin', 'Config_kotlin.ts', 'Json\\.parse'],
-    ['lean', 'Config_lean.ts', 'configJson'],
     ['perl', 'Config_perl.ts', 'parse_json'],
     ['scala', 'Config_scala.ts', 'Json\\.parse'],
     ['swift', 'Config_swift.ts', 'configJson'],
@@ -1336,15 +1338,6 @@ const OMNI_RUNNER: Record<string, {
     smoke: 'cpp/test/omni_smoke_test.cpp',
     superseded: ['cpp/test/struct_runner.hpp'],
   },
-  dart: {
-    resolver: 'dart/test/omni.dart',
-    vendor: 'dart/test/vendor/omni',
-    vendorfiles: ['omni.dart', 'runner.dart', 'util.dart'],
-    smoke: 'dart/test/omni_smoke_test.dart',
-    // dart is the one target that retires BOTH halves: a generic
-    // runner.dart AND a struct_corpus.dart that carried its own engine.
-    superseded: ['dart/test/runner.dart', 'dart/test/struct_corpus.dart'],
-  },
   swift: {
     resolver: 'swift/Tests/ProjectNameSDKTests/OmniResolver.swift',
     vendor: 'swift/Tests/vendor/omni',
@@ -1406,15 +1399,6 @@ const OMNI_RUNNER: Record<string, {
     vendorfiles: ['omni.zig', 'regex.zig'],
     smoke: 'zig/test/omnismoke_test.zig',
     superseded: ['zig/test/struct_runner.zig'],
-  },
-  lean: {
-    resolver: 'lean/test/OmniResolver.lean',
-    vendor: 'lean/test/vendor/omni',
-    vendorfiles: ['Omni.lean'],
-    smoke: 'lean/test/OmniSmoke.lean',
-    // StructCorpus.lean and TPrimaryUtility.lean keep their names: lakefile
-    // binds an executable root to each.
-    superseded: [],
   },
 }
 

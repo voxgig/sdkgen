@@ -20,8 +20,14 @@ npm run add-target ts
 ```
 
 Built-in SDK targets: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
-`csharp`, `java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`,
-`zig`, `perl`, `clojure`, `elixir`, `ocaml`, `haskell`, `lean`.
+`csharp`, `java`, `kotlin`, `scala`, `swift`, `rust`, `c`, `cpp`,
+`zig`, `perl`, `clojure`, `elixir`, `ocaml`.
+
+Three more come from the **language pack**
+([`@voxgig/sdkgen-langpack`](https://github.com/voxgig/sdkgen-langpack)):
+`dart`, `haskell` and `lean`. Add them with
+`voxgig-sdkgen package add @voxgig/sdkgen-langpack`, or one at a time with
+`target add @voxgig/sdkgen-langpack/dart`.
 
 Plus three built-in **consumer** targets, which wrap another target's
 SDK rather than being one: `go-cli` and `go-mcp` (wrap `go`) and
@@ -29,7 +35,7 @@ SDK rather than being one: `go-cli` and `go-mcp` (wrap `go`) and
 the same project.
 
 A fourth, `seneca-provider` (wraps `ts`), comes from the package
-`@voxgig/sdkgen-seneca-provider`. It is the one normally generated into a
+`@voxgig/sdkgen-infrapack`. It is the one normally generated into a
 **separate repo** — see
 [out-of-tree targets](../explanation/out-of-tree-targets.md).
 

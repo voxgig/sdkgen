@@ -288,7 +288,6 @@ describe('EntityTypes emitters — fixture model output', () => {
     ['kotlin', { name: 'kotlin', ext: 'kt' }, /DemoTypes\.kt$/],
     ['scala', { name: 'scala', ext: 'scala' }, /DemoTypes\.scala$/],
     ['swift', { name: 'swift', ext: 'swift' }, /DemoTypes\.swift$/],
-    ['dart', { name: 'dart', ext: 'dart' }, /DemoTypes\.dart$/],
     ['c', { name: 'c', ext: 'h' }, /types\.h$/],
   ] as const) {
     test(`${lang}: all entities emitted (include-all filter)`, async () => {

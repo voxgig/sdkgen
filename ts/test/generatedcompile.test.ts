@@ -2305,9 +2305,6 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
   ts: 'pinned instead by the shipped tm/ts/test/feature/secrets/Secrets.test.ts ' +
     '("auth null suppresses the credential, chain or no chain"), which runs in ' +
     'a generated SDK rather than in sdkgen CI',
-  dart: 'no runner in the CI matrix ships dart - ubuntu, macos and windows ' +
-    'all lack it - so a lane here would never run anywhere it could be seen ' +
-    'to fail',
   swift: 'only the macos leg has swift, and a probe needs an executable ' +
     'target in Package.swift that the template does not emit; adding one is ' +
     'a template change, not a test change',
@@ -2326,9 +2323,6 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
   ocaml: 'UNVERIFIED - no ocaml toolchain; never compiled, never executed',
   scala: 'UNVERIFIED - no scala toolchain; never compiled, never executed',
   zig: 'UNVERIFIED - no zig toolchain; never compiled, never executed',
-  lean: 'UNVERIFIED - no lean toolchain; never compiled, never executed. ' +
-    'Also the one target whose fix is NOT in makeOptions - see ' +
-    'AUTHNULL_FIX_SHAPE',
 }
 
 
@@ -2423,14 +2417,11 @@ describe('auth null coverage is honest', () => {
   // any of that, and loosening it until it could would blind it everywhere
   // else.
   const AUTHNULL_FIX_SHAPE: Record<string, (src: string) => boolean> = {
-    lean: (src) => /getpropRaw\s+options\s+"auth"/.test(src)
-      && /authRaw\s*==\s*\.null/.test(src)
-      && /dp\s+headers\s+"authorization"/.test(src),
   }
 
 
-  // Whole-tree scan. cpp keeps this logic in utility/pipeline.hpp and lean in
-  // SdkUtility.lean, so anything narrower than "every file" reintroduces the
+  // Whole-tree scan. cpp keeps this logic in utility/pipeline.hpp, so
+  // anything narrower than "every file" reintroduces the
   // blind spot that made the first audit wrong.
   function carriesFix(target: string): boolean {
     const shape = AUTHNULL_FIX_SHAPE[target] || bracketsValidate

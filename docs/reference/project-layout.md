@@ -62,12 +62,14 @@ holds the **two layers** described in
 | `tm/<lang>/**` | templates | language-neutral runtime, copied with substitution |
 
 Built-in SDK targets: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
-`csharp`, `java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`,
-`zig`, `perl`, `clojure`, `elixir`, `ocaml`, `haskell`, `lean`, plus the
-three consumer targets `go-cli`, `go-mcp` and `py-data`, which wrap
-another target's SDK (`go`, `go` and `py` respectively). A fourth
-consumer target, `seneca-provider` (wraps `ts`), comes from the package
-`@voxgig/sdkgen-seneca-provider`. Built-in features: `log`, `test`, plus the enterprise
+`csharp`, `java`, `kotlin`, `scala`, `swift`, `rust`, `c`, `cpp`,
+`zig`, `perl`, `clojure`, `elixir`, `ocaml`, plus the three consumer
+targets `go-cli`, `go-mcp` and `py-data`, which wrap another target's SDK
+(`go`, `go` and `py` respectively).
+
+From packs: `dart`, `haskell` and `lean` in
+`@voxgig/sdkgen-langpack`, and the consumer target `seneca-provider`
+(wraps `ts`) in `@voxgig/sdkgen-infrapack`. Built-in features: `log`, `test`, plus the enterprise
 features `retry`, `timeout`, `ratelimit`, `cache`, `idempotency`,
 `paging`, `streaming`, `proxy`, `telemetry`, `metrics`, `debug`, `audit`,
 `clienttrack`, `rbac`, and `netsim` (all inactive by default).

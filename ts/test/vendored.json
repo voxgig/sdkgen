@@ -80,26 +80,6 @@
     }
    }
   },
-  "omni/dart": {
-   "repo": "https://github.com/voxgig/omni",
-   "commit": "274708cc2d12b21707d975543953f845f8444be0",
-   "version": "sdk-20260907-0029-0",
-   "tag": "sdk-20260907-0029-0",
-   "file": {
-    "tm/dart/test/vendor/omni/omni.dart": {
-     "sha256": "da47fa74fcd0a8321e67bb12b4285acc9cbdd85ad74b20cb33916d6d59f00b11",
-     "upstream": "dart/lib/omni.dart"
-    },
-    "tm/dart/test/vendor/omni/runner.dart": {
-     "sha256": "fa0804436f149148ef6bd504462f79a85e4075c08d37fb395f4c63c7722efcc3",
-     "upstream": "dart/lib/runner.dart"
-    },
-    "tm/dart/test/vendor/omni/util.dart": {
-     "sha256": "850a23446344b58414a04d8209064d92cab3f496a27d4c247dd4f4636381d642",
-     "upstream": "dart/lib/util.dart"
-    }
-   }
-  },
   "omni/elixir": {
    "repo": "https://github.com/voxgig/omni",
    "commit": "274708cc2d12b21707d975543953f845f8444be0",
@@ -193,18 +173,6 @@
     "tm/kotlin/test/vendor/omni/Util.kt": {
      "sha256": "d7c8b463ea1bb5e001ca0e7dfb2775223a445d428817ae2b0999cdd9c003186b",
      "upstream": "kotlin/src/Util.kt"
-    }
-   }
-  },
-  "omni/lean": {
-   "repo": "https://github.com/voxgig/omni",
-   "commit": "274708cc2d12b21707d975543953f845f8444be0",
-   "version": "sdk-20260907-0029-0",
-   "tag": "sdk-20260907-0029-0",
-   "file": {
-    "tm/lean/test/vendor/omni/Omni.lean": {
-     "sha256": "eca6de6245f55e3ed8b9fc8b6085cbd26a857c5e37b9b1e556f2f56f0ad928ae",
-     "upstream": "lean/Omni.lean"
     }
    }
   },

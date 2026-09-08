@@ -701,7 +701,7 @@ emitted broken source reached the fleet unchallenged.
   `featuresource.test.ts` guard to quoted names produces ~25 hits of which
   one is real. Declare it in `fullset` instead; a target that cannot be trimmed at all says
   `feature: { trim: false }` (currently `clojure`, `lean`, `ocaml`,
-  `scala`, `zig` bundled, plus `haskell` in its own package — see their
+  `scala`, `zig` bundled, plus `lean` in the language pack — see their
   model files for what has to change first). Aggregate indexes must be GENERATED, not templated: that is why
   `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
   must not live in the file that gets dropped — go and csharp keep it in
@@ -760,20 +760,30 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       tm/<lang>/       per-language TEMPLATES
 ```
 
-SDK targets, BUNDLED (22): `ts js go py php rb lua csharp java kotlin scala
-swift dart rust c cpp zig perl clojure elixir ocaml lean`.
+SDK targets, BUNDLED (20): `ts js go py php rb lua csharp java kotlin scala
+swift rust c cpp zig perl clojure elixir ocaml`.
 
-PACKAGED targets (2): `haskell` in `packages/sdkgen-haskell` (an SDK
-target, the first migration out of the scaffold) and `seneca-provider` in
-`packages/sdkgen-seneca-provider` (a CONSUMER target, the second). Neither
-is in any of this repo's closed guard sets and each has its own suite; see
+PACKAGED targets live in their own REPOSITORIES, not under `packages/`
+here — this repo ships no packages at all:
+
+- **[voxgig/sdkgen-langpack](https://github.com/voxgig/sdkgen-langpack)**
+  (`@voxgig/sdkgen-langpack`) — the language pack: `dart`, `haskell`,
+  `lean`. One npm package providing three targets.
+- **[voxgig/sdkgen-infrapack](https://github.com/voxgig/sdkgen-infrapack)**
+  (`@voxgig/sdkgen-infrapack`) — the infrastructure-provider pack:
+  `seneca-provider`, with `terraform-provider` designed and not yet built.
+
+None of them is in any of this repo's closed guard sets, and each pack has
+its own suite running against the PUBLISHED generator — which is what makes
+a pack's CI the thing that catches an sdkgen release breaking a packaged
+target. See
 [docs/how-to/migrate-a-bundled-target](./docs/how-to/migrate-a-bundled-target.md).
 
-`seneca-provider` went next because every bundled LANGUAGE target is now
-FULL tier, and a FULL-tier target that migrates is silently capped until the
-corpus is published — while a consumer target is in no tier set and so has
-none to cap. Its package declares `parity: CONSUMER`, which
-`helpers/manifest.ts` now holds to a closed vocabulary.
+**`dart` and `lean` are FULL tier and are now packaged**, which is a
+deliberate cost rather than an oversight: the shared corpus is materialised
+into each project as `.sdk/test/test.json`, so a real generated SDK still
+executes it, but the pack repo cannot verify that until the corpus ships as
+a package. A green build there is not a green corpus.
 
 CONSUMER targets, BUNDLED (3): `go-cli go-mcp` (wrap `go`), `py-data`
 (wraps `py`). Each switches every standard generation phase off
@@ -886,9 +896,12 @@ Rules that keep it honest:
 - **A resync moves stamps, hashes and behaviour pins together** —
   structnull.test.ts characterizes each port's null semantics and fails
   when a resync silently moves a port between auth-null failure classes.
-- **haskell is outside the tool's write root** (`packages/sdkgen-haskell`)
-  and needs its own route root — recorded in the routes.json note, not
-  silently absent.
+- **dart, haskell and lean are outside the tool's write root** (they live in
+  `@voxgig/sdkgen-langpack`) and need their own route root there — recorded
+  in the routes.json note, not silently absent. Removing a route now PRUNES
+  its manifest section: a section left behind claiming files the tree no
+  longer has failed as "vendored file is missing", which reads as a deleted
+  template rather than a stale manifest.
 
 ## Releasing
 
@@ -928,7 +941,7 @@ decision, not the size of the diff.
 
 [`STYLE-GUIDE.md`](STYLE-GUIDE.md) is normative for the reader-facing pages:
 the root `README.md`, every page under `docs/` except `docs/design/`, and
-`packages/sdkgen-haskell/README.md`. Two gates enforce it and both run in
+the documentation tree. Two gates enforce it and both run in
 CI (`.github/workflows/docs.yml`) and under `make test`:
 
 | Gate | Checks |

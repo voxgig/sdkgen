@@ -69,7 +69,7 @@ describe('featureOf', () => {
     strictEqual(featureOf('RetryFeature.cs', false), 'retry')
     // rust, c, cpp, zig, elixir
     strictEqual(featureOf('retry.rs', false), 'retry')
-    // ts, js, dart — the whole feature is a directory
+    // ts, js — the whole feature is a directory
     strictEqual(featureOf('retry', true), 'retry')
   })
 
@@ -107,7 +107,6 @@ describe('findFeatureSources', () => {
       go: 'feature/retry_feature.go',
       rust: 'feature/retry.rs',
       py: 'pkg/feature/retry_feature.py',
-      dart: 'lib/feature/retry',
       swift: 'Sources/ProjectNameSDK/feature/RetryFeature.swift',
       elixir: 'lib/projectname/feature/retry.ex',
       csharp: 'feature/RetryFeature.cs',
@@ -210,8 +209,8 @@ describe('target add feature trimming', () => {
 
     // Pinned, not muted: this is the remaining work, and a target joining
     // or leaving the list is a decision that should be reviewed.
-    //   clojure, lean, ocaml — every feature lives in ONE module
-    //           (features.clj / SdkFeatures.lean / sdk_features.ml); there
+    //   clojure, ocaml — every feature lives in ONE module
+    //           (features.clj / sdk_features.ml); there
     //           is no per-feature file to leave out until that module is
     //           generated from the model. (haskell was the fourth, until it
     //           moved to @voxgig/sdkgen-haskell.)
@@ -220,7 +219,7 @@ describe('target add feature trimming', () => {
     //   zig   — root.zig @imports every feature module, and build.zig names
     //           test/feature_test.zig explicitly.
     deepStrictEqual(untrimmable,
-      ['clojure', 'lean', 'ocaml', 'scala', 'zig'],
+      ['clojure', 'ocaml', 'scala', 'zig'],
       'the set of targets that cannot trim feature source changed')
   })
 
@@ -272,7 +271,7 @@ describe('target add feature trimming', () => {
       cache: { name: 'cache', active: true },
     }
 
-    for (const target of ['ts', 'go', 'dart', 'py']) {
+    for (const target of ['ts', 'go', 'py']) {
       const written = await addTarget(target, feature)
       const joined = written.join('\n')
 

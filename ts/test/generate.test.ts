@@ -639,7 +639,6 @@ main: kit: target: js: phase: feature: active: false
     ['c', /core\/config\.c$/, /static const char CONFIG_DATA\[\] =/, /return cmap\(/],
     ['rust', /core\/config\.rs$/, /const CONFIG_DATA: &str = r/, /Value::map_of\(\[/],
     ['zig', /core\/config\.zig$/, /const CONFIG_DATA: \[\]const u8 =/, /return h\.jo\(&\./],
-    ['dart', /lib\/Config\.dart$/, /const String _CONFIG_DATA = "/, /^\s*final Map<String, dynamic> main = <String, dynamic>\{/m],
     ['elixir', /lib\/config\.ex$/, /@config_data "/, /Helpers\.deep\(%\{/],
     ['clojure', /src\/sdk\/config\.clj$/, /def \^:private config-data/, /formatCljValue|vs\/jm/],
     ['ocaml', /sdk_config\.ml$/, /let config_data = "/, /^\s*\(jo \[/m],
@@ -710,31 +709,6 @@ main: kit: target: js: phase: feature: active: false
   }
 
 
-  // Both dart branches must carry `options.server` — the OpenAPI
-  // server-variable defaults — for a spec with a templated server URL.
-  //
-  // The literal branch assembled `options` slot by slot and simply had no slot
-  // for `server`, so it was absent there and present in the data, and the same
-  // API described a different config either side of the threshold. It is now
-  // rendered whole from the canonical definition. The fixture has no server
-  // variables, which is why this test supplies its own.
-  test('dart: both representations carry the server-variable defaults', async () => {
-    const servers = "main: kit: info: servers: [ { url: 'https://{tenant}.example.com'," +
-      ' variables: { tenant: { default: %27acme%27 } } } ]'.replace(/%27/g, "'")
-
-    for (const repr of ['literal', 'data']) {
-      const out = await generate(['dart'], undefined,
-        `main: kit: config: repr: '${repr}'\n${servers}`)
-      const config = filesFor(out, 'dart').find(([n]) => /lib\/Config\.dart$/.test(n))
-      ok(config, repr + ': no dart Config.dart generated')
-      const plain = String(config![1]).replace(/\\"/g, '"')
-
-      ok(/server/.test(plain), repr + ': dart config lost options.server')
-      ok(/acme/.test(plain), repr + ': dart config lost the server-variable default')
-    }
-  })
-
-
   // java and kotlin emit config as DATA ONLY, assembling the JSON with their
   // own StringBuilder chunking rather than embedding configDefinition's json
   // string - which is exactly how their feature block could silently drop
@@ -756,33 +730,6 @@ main: kit: target: js: phase: feature: active: false
         target + ': assembled config lost the feature transport role')
     })
   }
-
-
-  // The dart DATA branch must give every constructed Config its own maps.
-  //
-  // The literal builds fresh maps in each field initialiser, so `Config()` is
-  // independent per instance — and `Config` is exported by Main.fragment.dart,
-  // so callers can construct one. A first version of the data branch bound the
-  // fields to a single top-level parsed map, which made
-  // `Config().options['x'] = 1` mutate the `config` singleton every SDK client
-  // reads. Verified by running it:
-  //
-  //   literal: b sees probe = false      data: b sees probe = true
-  //
-  // This is the structural guard for that: the decode must happen in the
-  // CONSTRUCTOR, not in a top-level final the fields alias.
-  test('dart: the data branch decodes per Config instance', async () => {
-    const out = await generate(['dart'], undefined, "main: kit: config: repr: 'data'")
-    const config = filesFor(out, 'dart').find(([n]) => /lib\/Config\.dart$/.test(n))
-    ok(config, 'no dart Config.dart generated')
-    const src = String(config![1])
-
-    ok(/Config\(\) : this\._\(jsonDecode\(_CONFIG_DATA\)/.test(src),
-      'dart data config does not decode in the constructor, so every ' +
-      'constructed Config would share one parsed map with the singleton')
-    ok(!/^final Map<String, dynamic> _CONFIG =/m.test(src),
-      'dart data config still binds its fields to a shared top-level map')
-  })
 
 
   // THE POINT OF L1: the representation is an emission detail, and nothing
@@ -906,7 +853,7 @@ main: kit: target: js: phase: feature: active: false
     async () => {
       const LIVE_TARGETS = [
         'ts', 'js', 'go', 'py', 'java',
-        'php', 'rb', 'lua', 'rust', 'dart', 'csharp', 'perl',
+        'php', 'rb', 'lua', 'rust', 'csharp', 'perl',
       ]
 
       // Two variables on purpose: one REQUIRED (empty default) and one with a
@@ -993,7 +940,7 @@ main: kit: target: js: phase: feature: active: false
           // The default must survive as text. Dart/Perl/PHP interpolate `$eu`
           // and Ruby interpolates `#{x}` inside a double-quoted literal, so a
           // JSON-stringified default is wrong for those targets specifically.
-          if (['dart', 'perl', 'php'].includes(target) && /"\$eu/.test(src)) {
+          if (['perl', 'php'].includes(target) && /"\$eu/.test(src)) {
             gaps.push(`${target}:${name} emits an interpolating default literal`)
           }
           if ('rb' === target && /[^\\]#\{x\}/.test(src)) {
@@ -1329,33 +1276,6 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
-  // lean: the runner drives ops the entity declares. `X.create` is not
-  // generated for a load-only entity, so emitting the create block breaks the
-  // build with "Unknown identifier"; and a `do` block with no statements does
-  // not parse at all.
-  test('lean: runner only drives declared ops, and never emits an empty do', async () => {
-    const out = await generate(['lean'])
-
-    const runner = findFile(out, 'test/Runner.lean')
-    ok(null != runner, 'lean: no test runner generated')
-
-    // archive is list-only and current is load-only: neither may be created
-    // or removed.
-    for (const ent of ['history', 'ambient']) {
-      for (const op of ['create', 'remove']) {
-        const call = new RegExp('\\b' + ent[0].toUpperCase() + ent.slice(1) + '\\.' + op + '\\b')
-        ok(!call.test(runner!),
-          'lean: runner calls ' + ent + '.' + op + ', which is not generated for that entity')
-      }
-    }
-
-    // An empty lane is terminated explicitly; `do` immediately followed by a
-    // dedented line is the shape that fails to parse.
-    ok(!/:=\s*do\s*\n\s*\n/.test(runner!), 'lean: runner emits an empty do block')
-
-    // And the whole point of a runner: it must actually assert something.
-    ok(/pass |fail |pure \(\)/.test(runner!), 'lean: runner has no lane body at all')
-  })
 
 
   // Repo identity is DECLARED, not derived from the slug.
@@ -1426,7 +1346,7 @@ main: kit: target: js: phase: feature: active: false
 
   test('a declared version reaches every manifest', async () => {
     const TARGETS = [
-      'csharp', 'dart', 'elixir', 'java', 'js', 'kotlin', 'lean',
+      'csharp', 'elixir', 'java', 'js', 'kotlin',
       'lua', 'ocaml', 'py', 'rb', 'rust', 'ts', 'zig',
     ]
     const declared = TARGETS
@@ -1437,9 +1357,9 @@ main: kit: target: js: phase: feature: active: false
 
     // The manifest each ecosystem actually publishes from.
     const MANIFEST: Record<string, string> = {
-      csharp: 'DemoSDK.csproj', dart: 'pubspec.yaml', elixir: 'mix.exs',
+      csharp: 'DemoSDK.csproj', elixir: 'mix.exs',
       java: 'pom.xml', js: 'package.json',
-      kotlin: 'build.gradle.kts', lean: 'lakefile.toml', lua: 'demo.rockspec',
+      kotlin: 'build.gradle.kts', lua: 'demo.rockspec',
       ocaml: 'voxgig-demo-sdk.opam', py: 'pyproject.toml', rb: 'Demo_sdk.gemspec',
       rust: 'Cargo.toml', ts: 'package.json', zig: 'build.zig.zon',
     }
@@ -2428,55 +2348,6 @@ main: kit: target: js: phase: feature: active: false
   // eighteen shipped features, so the crate stopped compiling the moment the
   // set was trimmed — `pub mod retry;` with no retry.rs is a hard error.
   // This fixture declares `test` and `log` only.
-  // dart runner swap: the omni resolver, its vendored port and the
-  // must-fail smoke test are generated; BOTH superseded engines - the fused
-  // test/runner.dart and the second, independent test/struct_corpus.dart -
-  // are gone. test/harness.dart and test/utility.dart are RETAINED: despite
-  // the names, neither is a corpus runner (harness.dart is the
-  // dependency-free describe/test framework every generated suite imports,
-  // utility.dart the sdk-test-control / path-resolution support). The
-  // smoke test must also be REGISTERED in the hand-written test/main.dart
-  // registry, or it would exist and never run.
-  test('dart: the omni runner swap generates the resolver and retires both engines', async () => {
-    const out = await generate(['dart'])
-
-    ok(null != findFile(out, 'test/omni.dart'), 'dart: no omni resolver generated')
-    for (const vf of ['omni.dart', 'runner.dart', 'util.dart']) {
-      ok(null != findFile(out, 'test/vendor/omni/' + vf),
-        'dart: vendored omni file missing: ' + vf)
-    }
-    ok(null != findFile(out, 'test/omni_smoke_test.dart'),
-      'dart: the runner-must-fail smoke test is missing')
-    ok(null == findFile(out, 'test/runner.dart'),
-      'dart: the superseded test/runner.dart is still generated')
-    ok(null == findFile(out, 'test/struct_corpus.dart'),
-      'dart: the superseded test/struct_corpus.dart is still generated')
-
-    // The support files are RETAINED (every suite imports harness.dart; the
-    // generated entity suites use utility.dart).
-    ok(null != findFile(out, 'test/harness.dart'),
-      'dart: the retained test framework test/harness.dart is missing')
-    ok(null != findFile(out, 'test/utility.dart'),
-      'dart: the retained support module test/utility.dart is missing')
-
-    const primary = findFile(out, 'test/primary_test.dart')
-    ok(null != primary, 'dart: no primary_test.dart generated')
-    ok(/import 'omni\.dart';/.test(primary!),
-      'dart: primary_test.dart does not use the omni resolver')
-    const struct = findFile(out, 'test/struct_test.dart')
-    ok(null != struct, 'dart: no struct_test.dart generated')
-    ok(/import 'omni\.dart';/.test(struct!),
-      'dart: struct_test.dart does not use the omni resolver')
-
-    // test/main.dart is a hand-written registry, not auto-discovery: a
-    // suite it does not list never runs.
-    const main = findFile(out, 'test/main.dart')
-    ok(null != main, 'dart: no test/main.dart generated')
-    ok(/import 'omni_smoke_test\.dart' as omni_smoke_test;/.test(main!),
-      'dart: main.dart does not import the omni smoke test')
-    ok(/omni_smoke_test\.tests\(\);/.test(main!),
-      'dart: main.dart does not run the omni smoke test')
-  })
 
 
   // zig runner swap: the omni resolver, its vendored port and the
