@@ -2083,16 +2083,17 @@ main: kit: target: js: phase: feature: active: false
   // c guard for the same seam, and for the two hazards particular to a
   // target whose build is a Makefile that reads the TRIMMED TREE.
   //
-  // FIRST HAZARD: the wiring file. tm/c/Makefile compiles feature/secrets.c
-  // and the vendored sekreto/plugin payload only while the GENERATED
-  // feature/secrets/kinds.c exists, and compiles the plugin layer - linking
-  // OpenSSL and libcurl - only while a KIND file survived the plugin trim.
-  // So kinds.c must exist for an active feature and name exactly the active
-  // groups' constructors (a symbol for a trimmed file is a link error; a
-  // missing one is a kind silently absent from the vocabulary), the
-  // inactive groups' kind files must be gone from the tree, and the five
-  // UNGROUPED helpers (httpjson, tls, encode, clock, proc - shared by
-  // several groups, so owned by none) must stay.
+  // FIRST HAZARD: the wiring files. tm/c/Makefile names no feature (the
+  // `nothing left behind names a dropped feature` guard holds a trimmed
+  // template to that) and `-include`s a GENERATED feature/<name>/kinds.mk,
+  // so everything the payload needs from the build comes from Config_c:
+  // the vendored cores, the suite, and - only when a group is active - the
+  // plugin layer with -lssl -lcrypto -lcurl. Beside it kinds.c must name
+  // exactly the active groups' constructors (a symbol for a trimmed file is
+  // a link error; a missing one is a kind silently absent from the
+  // vocabulary), the inactive groups' kind files must be gone from the
+  // tree, and the five UNGROUPED helpers (httpjson, tls, encode, clock,
+  // proc - shared by several groups, so owned by none) must stay.
   //
   // SECOND HAZARD: a feature that is itself OFF. c has `srcfeature: false`,
   // so Main_c's whole-tree Copy is the only copy the target has, and
@@ -2146,6 +2147,17 @@ main: kit: target: js: phase: feature: active: false
     ok(/#include <curl\/curl\.h>/.test(kinds!) &&
       /voxgig_value\* secrets_rawfetch\(/.test(kinds!),
       'c: a plugin-bearing model must carry the libcurl exchange transport')
+
+    // The build wiring: the cores and the suite always, the plugin layer
+    // and its two libraries because a group is active.
+    const mk = findFile(out, 'c/feature/secrets/kinds.mk')
+    ok(null != mk, 'c: no feature/secrets/kinds.mk generated')
+    ok(/^FEATURE_SRCS \+= \$\(wildcard feature\/secrets\/sekreto\/\*\.c feature\/secrets\/plugin\/\*\.c\)$/m.test(mk!) &&
+      /^FEATURE_TEST_SRCS \+= \$\(wildcard tests\/feature\/secrets\/\*\.c\)$/m.test(mk!),
+      'c: kinds.mk does not wire the vendored cores and the suite:\n' + mk)
+    ok(/^FEATURE_SRCS \+= \$\(wildcard feature\/secrets\/plugins\/\*\.c\)$/m.test(mk!) &&
+      /^LDLIBS \+= -lssl -lcrypto -lcurl$/m.test(mk!),
+      'c: a plugin-bearing model must compile the plugin layer and link its libraries:\n' + mk)
 
     // The accessor in core/config.c dispatches to it, and the feature's
     // constructor is declared and dispatched like every declared feature.
@@ -2209,8 +2221,9 @@ main: kit: target: js: phase: feature: active: false
     const off = await genc(
       'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
       ['test', 'log', 'secrets'])
-    ok(null == findFile(off, 'c/feature/secrets/kinds.c'),
-      'c: an inactive feature still generated its wiring file')
+    ok(null == findFile(off, 'c/feature/secrets/kinds.c') &&
+      null == findFile(off, 'c/feature/secrets/kinds.mk'),
+      'c: an inactive feature still generated its wiring files')
     ok(null == findFile(off, 'feature/secrets/plugins/hashicorp.c'),
       'c: an inactive feature still ships its vault kind (Main_c inactivePluginExcludes)')
     const offconfig = findFile(off, 'c/core/config.c')
@@ -2223,11 +2236,12 @@ main: kit: target: js: phase: feature: active: false
     // And a model that never mentions the feature: the same empty accessor
     // and no wiring file. The vendored tree rides along in the Copy here -
     // this harness runs no `target add`, which is where an undeclared
-    // feature is trimmed - and without kinds.c the Makefile compiles none
-    // of it (the generatedcompile lanes prove that with ldd).
+    // feature is trimmed - and without kinds.mk the Makefile compiles none
+    // of the payload (the generatedcompile lanes prove that with ldd).
     const plain = await generate(['c'])
-    ok(null == findFile(plain, 'c/feature/secrets/kinds.c'),
-      'c: a model without secrets still generated the wiring file')
+    ok(null == findFile(plain, 'c/feature/secrets/kinds.c') &&
+      null == findFile(plain, 'c/feature/secrets/kinds.mk'),
+      'c: a model without secrets still generated the wiring files')
     ok(!/secrets_plugins|feature_secrets_new/.test(findFile(plain, 'c/core/config.c')!),
       'c: a model without secrets still reached config.c')
   })
