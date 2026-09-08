@@ -134,6 +134,44 @@ const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
 // them which ops to exercise), so each entity carries the basic flow apidef
 // would derive for it. Without one, no test is generated and the shapes above
 // would prove nothing.
+// An entity whose name is not a legal identifier, injected into the fixture
+// model rather than added to it: every other test in this file asserts on the
+// base entity set, and a permanent extra entity would move all of them.
+// `/3ds-sessions` is Evervault's real path shape.
+const DIGIT_ENTITY = `
+main: kit: entity: 3ds_session: {
+  alias: field: {}
+  name: "3ds_session"
+  field: {
+    id: { name: "id", kind: "field", type: "\`$STRING\`", required: true }
+  }
+  fields: [ { name: "id", req: true, type: "\`$STRING\`" } ]
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        args: {}, method: "GET", orig: "/3ds-sessions"
+        segments: [{ lit: "3ds-sessions" }]
+        transform: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: Basic3dsSessionFlow: {
+  entity: "3ds_session", kind: "basic", name: "Basic3dsSessionFlow"
+  step: [ { name: "list", op: "list", match: {} } ]
+}
+`
+
+
+// A `3ds…` token in an IDENTIFIER position: not inside a string or a path,
+// and not the tail of a longer word. Deliberately matches the RAW stem, so it
+// fires when the rename was skipped and stays quiet on the guarded
+// `n3ds_session` / `N3dsSession`.
+const RAW_DIGIT_IDENT = /(^|[^A-Za-z0-9_$."'`\/-])(3ds[A-Za-z_]|3ds_session)/
+
+
 async function generate(
   targetNames: string[], name?: string, extra?: string, sink?: any[],
 ): Promise<Record<string, string>> {
@@ -276,6 +314,69 @@ describe('generate', () => {
 
     strictEqual(leaks.length, 0,
       'generated files leak the ProjectName placeholder:\n  ' + leaks.join('\n  '))
+  })
+
+
+  // AN ENTITY NAME THAT IS NOT AN IDENTIFIER, through the real generator.
+  //
+  // `/3ds-sessions` is an ordinary REST resource and yields the entity name
+  // `3ds_session`. Every target builds identifiers from that name — the
+  // PascalCase Name for the class, the SDK accessor and the generated types;
+  // the snake stem for python modules and test functions; the bare key in the
+  // emitted config map — and no target language permits an identifier that
+  // starts with a digit. Before the guard, `ts` alone emitted
+  // `class 3dsSessionEntity`, `import { 3dsSession }` and `3dsSession()`:
+  // not a degraded SDK, no SDK (issue #124).
+  //
+  // The unit tests pin the rename; this pins the OUTCOME, which is the part
+  // that can regress silently. A component reading `entity.name` where it
+  // needs an identifier reopens the bug in exactly one target, and only a
+  // sweep over the generated text finds it.
+  //
+  // The scan deliberately looks for the RAW stem, not the guarded one: it
+  // fails if the rename is skipped anywhere, and stays quiet on the legal
+  // `n3ds_session` / `N3dsSession` the guard produces. String positions are
+  // excluded, since a digit is fine in the wire route and in a quoted key —
+  // the route `/3ds-sessions` MUST survive, and is asserted separately below.
+  test('a digit-leading entity name generates legal identifiers', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+
+    const bad: string[] = []
+
+    for (const target of targets) {
+      const out = await generate([target], undefined, DIGIT_ENTITY)
+
+      const files = filesFor(out, target)
+      ok(0 < files.length, target + ': generated no files')
+
+      for (const [path, content] of files) {
+        content.split('\n').forEach((line, i) => {
+          if (RAW_DIGIT_IDENT.test(line)) {
+            bad.push(`${path}:${i + 1}: ${line.trim().slice(0, 100)}`)
+          }
+        })
+      }
+    }
+
+    strictEqual(bad.length, 0,
+      'generated identifiers start with a digit:\n  ' + bad.join('\n  '))
+  })
+
+
+  // The rename must not move the WIRE. A request path comes from the point's
+  // `orig`, never from the entity name, so the guarded SDK still calls
+  // `/3ds-sessions` — otherwise the fix would trade a compile error for a
+  // silent 404, which is far worse.
+  test('the digit-leading rename leaves the route alone', async () => {
+    const out = await generate(['ts'], undefined, DIGIT_ENTITY)
+
+    const config = out['ts/src/Config.ts']
+    ok(null != config, 'ts config not generated')
+    ok(config.includes('/3ds-sessions'), 'the route did not survive the rename')
+
+    const sdk = out['ts/src/DemoSDK.ts']
+    ok(null != sdk, 'ts SDK not generated')
+    ok(sdk.includes('N3dsSession('), 'the accessor is not the guarded Name')
   })
 
 
