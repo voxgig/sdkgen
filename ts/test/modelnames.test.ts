@@ -203,6 +203,56 @@ describe('guard-model-names', () => {
   })
 
 
+  // The basic flow key is REBUILT from the guarded `Name` by every Test
+  // component. If that key is already held by a different flow, renaming
+  // would point all of them at that one and strand this entity's own flow
+  // under its old key — generated tests that exercise the wrong entity,
+  // silently. Refuse, as for an entity-name collision.
+  test('refuses a rename that would strand the flow', () => {
+    const model = digitModel()
+    model.main[KIT].flow.BasicN3dsSessionFlow = {
+      name: 'BasicN3dsSessionFlow', entity: 'something_else', kind: 'basic',
+    }
+
+    const warns: any[] = []
+    deepEqual(guardModelNames(model, { warn: (e: any) => warns.push(e) }), [])
+
+    // Nothing moved: not the entity, not its flow, not the flow's `entity`.
+    const ents = model.main[KIT].entity
+    equal(ents['3ds_session'].name, '3ds_session')
+
+    const flow = model.main[KIT].flow
+    equal(flow.Basic3dsSessionFlow.entity, '3ds_session')
+    equal(flow.BasicN3dsSessionFlow.entity, 'something_else')
+
+    equal(warns.length, 1)
+    equal(warns[0].point, 'entity-name-guard-blocked')
+  })
+
+
+  // The generated flow test reads its fixture from
+  // `.sdk/test/entity/<name>/<Name>TestData.json`, which sdkgen READS and
+  // never writes — it is the project's own content. The rename cannot carry
+  // it, so the warning has to name the file, or the project owner is left
+  // with a compiling SDK and an unexplained missing-fixture failure.
+  test('warns with the fixture path the rename cannot carry', () => {
+    const warns: any[] = []
+    guardModelNames(digitModel(), { warn: (e: any) => warns.push(e) })
+
+    equal(warns.length, 1)
+    equal(warns[0].point, 'entity-name-guard')
+    deepEqual(warns[0].renames,
+      [{ from: '3ds_session', to: 'n3ds_session', key: 'n3ds_session' }])
+
+    const note = warns[0].note
+    ok(note.includes('.sdk/test/entity/3ds_session/3dsSessionTestData.json'),
+      'names the fixture to move: ' + note)
+    ok(note.includes('.sdk/test/entity/n3ds_session/N3dsSessionTestData.json'),
+      'names where it goes: ' + note)
+    ok(note.includes('existing.3ds_session'), 'names the key inside it')
+  })
+
+
   test('survives a model with no entities', () => {
     deepEqual(guardModelNames({}), [])
     deepEqual(guardModelNames(makeModel({})), [])

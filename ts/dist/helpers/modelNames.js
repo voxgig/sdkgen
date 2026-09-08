@@ -46,6 +46,7 @@ function guardModelNames(model, log) {
     if (null == entity || 'object' !== typeof entity || Array.isArray(entity)) {
         return [];
     }
+    const flow = flowMap(model);
     // Sorted keys: the rename set, and any collision report, is byte-stable.
     const keys = Object.keys(entity).sort();
     const taken = new Set(keys);
@@ -78,6 +79,17 @@ function guardModelNames(model, log) {
             blocked.push(from);
             continue;
         }
+        // The FLOW key would collide. `Basic<Name>Flow` is rebuilt from the
+        // guarded Name by every Test component, so if the guarded key is already
+        // occupied by a different flow, renaming would point all of them at that
+        // one and strand this entity's own flow under its old key — generated
+        // tests that exercise the wrong entity, silently. Refuse, exactly as for
+        // an entity-name collision: an SDK that does not compile is a better
+        // outcome than one whose tests lie.
+        if (null != flow && flowCollides(flow, from, to)) {
+            blocked.push(from);
+            continue;
+        }
         taken.add(to);
         plans.push({ from, to, origkey: key });
     }
@@ -85,9 +97,10 @@ function guardModelNames(model, log) {
         log.warn({
             point: 'entity-name-guard-blocked', names: blocked.sort(),
             note: `entity name(s) ${blocked.sort().join(', ')} start with a digit ` +
-                `and cannot be guarded: the guarded name is already taken by another ` +
-                `entity. Rename one of them in the model — the generated SDK will ` +
-                `not compile in any target while an entity name is not an identifier`,
+                `and cannot be guarded: the guarded name, or the basic flow key it ` +
+                `implies, is already taken. Rename the entity (or that flow) in the ` +
+                `model — the generated SDK will not compile in any target while an ` +
+                `entity name is not an identifier`,
         });
     }
     if (0 === plans.length) {
@@ -115,14 +128,44 @@ function guardModelNames(model, log) {
         renames.push({ from, to, key: origkey === from ? to : origkey });
     }
     renameReferences(model, renames);
-    if (log?.info) {
-        log.info({
+    // WARN, not info, because it names work only the project owner can do.
+    //
+    // The generated flow test reads its fixture from
+    // `.sdk/test/entity/<name>/<Name>TestData.json` and seeds the config under
+    // `<name>` — both derived from the guarded name. sdkgen READS that path and
+    // never writes it: the fixture is the project's own content under `.sdk/`,
+    // not generated output, so the rename cannot carry it. A project that
+    // already has one for a digit-named entity goes from an SDK that does not
+    // compile at all to one that compiles with a flow test failing on a missing
+    // fixture — better, but only if it says which file to move.
+    if (log?.warn) {
+        log.warn({
             point: 'entity-name-guard', renames,
             note: 'entity name(s) renamed so generated identifiers are legal: ' +
-                renames.map((r) => `${r.from} -> ${r.to}`).join(', '),
+                renames.map((r) => `${r.from} -> ${r.to}`).join(', ') +
+                '. If this project has a test fixture for one of them, move it: ' +
+                renames.map((r) => `.sdk/test/entity/${r.from}/${pascalName(r.from)}TestData.json -> ` +
+                    `.sdk/test/entity/${r.to}/${pascalName(r.to)}TestData.json ` +
+                    `(renaming its \`existing.${r.from}\` key to \`${r.to}\`)`)
+                    .join('; '),
         });
     }
     return renames;
+}
+// The flow collection, when the model has one shaped like a map.
+function flowMap(model) {
+    const flow = model?.main?.[apidef_1.KIT]?.flow;
+    return (null != flow && 'object' === typeof flow && !Array.isArray(flow))
+        ? flow
+        : null;
+}
+// Would renaming `from` to `to` put this entity's basic flow on a key another
+// flow already holds? The entity's own flow is the one sitting at the key its
+// CURRENT name implies; anything else at the guarded key belongs to something
+// else.
+function flowCollides(flow, from, to) {
+    const held = flow[flowKey(to)];
+    return null != held && held !== flow[flowKey(from)];
 }
 // The model refers to an entity by name in two more places, and both have to
 // move with it or the reference dangles.
@@ -134,8 +177,8 @@ function renameReferences(model, renames) {
     //    entity silently generates no tests. Only a key that matches the
     //    reconstructed old one is renamed; anything else the author chose is
     //    left as it is, with just its `entity` field corrected.
-    const flow = model?.main?.[apidef_1.KIT]?.flow;
-    if (null != flow && 'object' === typeof flow) {
+    const flow = flowMap(model);
+    if (null != flow) {
         for (const key of Object.keys(flow).sort()) {
             const f = flow[key];
             if (null == f || 'object' !== typeof f) {
@@ -147,9 +190,11 @@ function renameReferences(model, renames) {
             }
             const from = f.entity;
             f.entity = to;
+            // The destination is free: `flowCollides` refused the rename outright
+            // when it was not, so this cannot clobber another flow.
             const oldkey = flowKey(from);
-            const newkey = flowKey(to);
-            if (key === oldkey && null == flow[newkey]) {
+            if (key === oldkey) {
+                const newkey = flowKey(to);
                 f.name = newkey;
                 flow[newkey] = f;
                 delete flow[oldkey];
@@ -174,8 +219,14 @@ function renameReferences(model, renames) {
 // second spelling of that rule is exactly how the key and the lookup drift
 // apart, and the failure is silent (an entity that generates no tests).
 function flowKey(name) {
+    return 'Basic' + pascalName(name) + 'Flow';
+}
+// The PascalCase `Name` for an entity name, through jostraca's own names() on
+// a scratch object — the same derivation every component gets, so a caller
+// here cannot drift from what is emitted.
+function pascalName(name) {
     const scratch = {};
     (0, jostraca_1.names)(scratch, name);
-    return 'Basic' + scratch.Name + 'Flow';
+    return scratch.Name;
 }
 //# sourceMappingURL=modelNames.js.map
