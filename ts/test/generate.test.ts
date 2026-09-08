@@ -1964,8 +1964,11 @@ main: kit: target: js: phase: feature: active: false
     ok(/secrets\.vault/.test(mk!) && /-lssl -lcrypto/.test(mk!) && /tail -n \+4/.test(mk!),
       'lua: native.mk does not name the group, link OpenSSL and skip the provenance header:\n' + mk)
     const makefile = findFile(out, 'lua/Makefile')
-    ok(/-include feature\/secrets\/native\.mk/.test(makefile!),
-      'lua: the Makefile does not include the native fragment')
+    // The template names NO feature (featuresource.test.ts's nothing-left-
+    // behind guard): it includes whatever native.mk a feature folder ships.
+    ok(/-include \$\(wildcard feature\/\*\/native\.mk\)/.test(makefile!),
+      'lua: the Makefile does not include the per-feature native fragments')
+    ok(!/secrets/.test(makefile!), 'lua: the Makefile template hardcodes a feature')
     ok(/^feature\/secrets\/native\/sekreto-net$/m.test(findFile(out, 'lua/.gitignore')!),
       'lua: the built helper is not gitignored')
 
