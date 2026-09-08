@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/sekreto sdk-20260907-0029-0 (csharp/plugins/Infisical.cs)
-// Source: https://github.com/voxgig/sekreto @ 86ba35a646e68a311bdece43cd5689369ca62e9d  [tag: sdk-20260907-0029-0]
+// VENDORED: @voxgig/sekreto sdk-20260908-1556-0 (csharp/plugins/Infisical.cs)
+// Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260908-1556-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Infisical, as a voxgig/plugin definition.
 //

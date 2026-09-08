@@ -16,7 +16,7 @@
   "haskell (packages/sdkgen-haskell) is EXCLUDED: its scaffold is outside",
   "this write root and needs its own route root \u2014 recorded, not silent."
  ],
- "tag": "sdk-20260907-0029-0",
+ "tag": "sdk-20260908-1556-0",
  "repo": {
   "struct": {
    "url": "https://github.com/voxgig/struct",
@@ -110,7 +110,7 @@
    "lib": "omni",
    "port": "c",
    "lang": "c",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/c/tests/vendor/omni"
    ],
@@ -125,7 +125,7 @@
    "lib": "omni",
    "port": "clojure",
    "lang": "clojure",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/clojure/test/vendor/omni",
     "tm/clojure/test/vendor/omni/voxgig",
@@ -141,7 +141,7 @@
    "lib": "omni",
    "port": "cpp",
    "lang": "cpp",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/cpp/test/vendor/omni"
    ],
@@ -155,7 +155,7 @@
    "lib": "omni",
    "port": "csharp",
    "lang": "csharp",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/csharp/test/vendor/omni"
    ],
@@ -168,7 +168,7 @@
    "lib": "omni",
    "port": "dart",
    "lang": "dart",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/dart/test/vendor/omni"
    ],
@@ -182,7 +182,7 @@
    "lib": "omni",
    "port": "elixir",
    "lang": "elixir",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/elixir/test/vendor/omni"
    ],
@@ -196,7 +196,7 @@
    "lib": "omni",
    "port": "go",
    "lang": "go",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/go/test/omni"
    ],
@@ -209,7 +209,7 @@
    "lib": "omni",
    "port": "java",
    "lang": "java",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/java/test/vendor/omni"
    ],
@@ -237,7 +237,7 @@
    "lib": "omni",
    "port": "kotlin",
    "lang": "kotlin",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/kotlin/test/vendor/omni"
    ],
@@ -251,7 +251,7 @@
    "lib": "omni",
    "port": "lean",
    "lang": "lean",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/lean/test/vendor/omni"
    ],
@@ -263,7 +263,7 @@
    "lib": "omni",
    "port": "lua",
    "lang": "lua",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/lua/test/vendor/omni"
    ],
@@ -278,7 +278,7 @@
    "lib": "omni",
    "port": "ocaml",
    "lang": "ocaml",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/ocaml/test/vendor/omni"
    ],
@@ -306,7 +306,7 @@
    "lib": "omni",
    "port": "php",
    "lang": "php",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/php/test/vendor/omni"
    ],
@@ -333,7 +333,7 @@
    "lib": "omni",
    "port": "ruby",
    "lang": "rb",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/rb/test/vendor/omni"
    ],
@@ -359,7 +359,7 @@
    "lib": "omni",
    "port": "rust",
    "lang": "rust",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/rust/tests/vendor/omni"
    ],
@@ -402,7 +402,7 @@
    "lib": "omni",
    "port": "scala",
    "lang": "scala",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/scala/sdktest/vendor/omni"
    ],
@@ -416,7 +416,7 @@
    "lib": "omni",
    "port": "swift",
    "lang": "swift",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/swift/Tests/vendor/omni"
    ],
@@ -444,7 +444,7 @@
    "lib": "omni",
    "port": "zig",
    "lang": "zig",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/zig/test/vendor/omni"
    ],
@@ -457,7 +457,7 @@
    "lib": "plugin",
    "port": "clojure",
    "lang": "clojure",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/clojure/feature/secrets/voxgig",
     "tm/clojure/feature/secrets/voxgig/plugin"
@@ -485,7 +485,7 @@
    "lib": "plugin",
    "port": "csharp",
    "lang": "csharp",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/csharp/feature/secrets/plugin"
    ],
@@ -515,7 +515,7 @@
    "lib": "plugin",
    "port": "dart",
    "lang": "dart",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/dart/lib/feature/secrets/plugin"
    ],
@@ -541,7 +541,7 @@
    "lib": "plugin",
    "port": "elixir",
    "lang": "elixir",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/elixir/lib/projectname/feature/secrets/plugin"
    ],
@@ -596,7 +596,7 @@
    "lib": "plugin",
    "port": "java",
    "lang": "java",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/java/feature/secrets/plugin"
    ],
@@ -634,7 +634,7 @@
    "lib": "plugin",
    "port": "javascript",
    "lang": "js",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/js/src/feature/secrets/plugin"
    ],
@@ -660,7 +660,7 @@
    "lib": "plugin",
    "port": "kotlin",
    "lang": "kotlin",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/kotlin/feature/secrets/plugin"
    ],
@@ -694,7 +694,7 @@
    "lib": "plugin",
    "port": "perl",
    "lang": "perl",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/perl/feature/secrets/plugin",
     "tm/perl/feature/secrets/plugin/Voxgig",
@@ -722,7 +722,7 @@
    "lib": "plugin",
    "port": "php",
    "lang": "php",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/php/feature/secrets/plugin"
    ],
@@ -774,7 +774,7 @@
    "lib": "plugin",
    "port": "ruby",
    "lang": "rb",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/rb/feature/secrets/voxgig_plugin"
    ],
@@ -800,7 +800,7 @@
    "lib": "plugin",
    "port": "rust",
    "lang": "rust",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/rust/feature/secrets/plugin"
    ],
@@ -834,7 +834,7 @@
    "lib": "plugin",
    "port": "scala",
    "lang": "scala",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/scala/feature/secrets/plugin"
    ],
@@ -888,7 +888,7 @@
    "lib": "sekreto",
    "port": "clojure",
    "lang": "clojure",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/clojure/feature/secrets/voxgig",
     "tm/clojure/feature/secrets/voxgig/sekreto",
@@ -920,7 +920,7 @@
    "lib": "sekreto",
    "port": "csharp",
    "lang": "csharp",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/csharp/feature/secrets/sekreto",
     "tm/csharp/feature/secrets/plugins"
@@ -947,7 +947,7 @@
    "lib": "sekreto",
    "port": "dart",
    "lang": "dart",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/dart/lib/feature/secrets/sekreto",
     "tm/dart/lib/feature/secrets/sekreto/src",
@@ -986,7 +986,7 @@
    "lib": "sekreto",
    "port": "elixir",
    "lang": "elixir",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/elixir/lib/projectname/feature/secrets/sekreto",
     "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins"
@@ -1015,7 +1015,7 @@
    "lib": "sekreto",
    "port": "go",
    "lang": "go",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/go/feature/secrets/sekreto",
     "tm/go/feature/secrets/plugins",
@@ -1071,7 +1071,7 @@
    "lib": "sekreto",
    "port": "java",
    "lang": "java",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/java/feature/secrets/sekreto",
     "tm/java/feature/secrets/sekreto/plugins"
@@ -1113,7 +1113,7 @@
    "lib": "sekreto",
    "port": "javascript",
    "lang": "js",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/js/src/feature/secrets/sekreto",
     "tm/js/src/feature/secrets/sekreto/provider",
@@ -1163,7 +1163,7 @@
    "lib": "sekreto",
    "port": "kotlin",
    "lang": "kotlin",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/kotlin/feature/secrets",
     "tm/kotlin/feature/secrets/sekreto",
@@ -1205,7 +1205,7 @@
    "lib": "sekreto",
    "port": "perl",
    "lang": "perl",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/perl/feature/secrets/sekreto",
     "tm/perl/feature/secrets/sekreto/Voxgig",
@@ -1237,7 +1237,7 @@
    "lib": "sekreto",
    "port": "php",
    "lang": "php",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/php/feature/secrets/sekreto/src",
     "tm/php/feature/secrets/sekreto/plugins"
@@ -1330,7 +1330,7 @@
    "lib": "sekreto",
    "port": "ruby",
    "lang": "rb",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/rb/feature/secrets",
     "tm/rb/feature/secrets/voxgig_sekreto",
@@ -1365,7 +1365,7 @@
    "lib": "sekreto",
    "port": "rust",
    "lang": "rust",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/rust/feature/secrets/sekreto",
     "tm/rust/feature/secrets/plugins",
@@ -1454,7 +1454,7 @@
    "lib": "sekreto",
    "port": "scala",
    "lang": "scala",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/scala/feature/secrets/sekreto",
     "tm/scala/feature/secrets/sekreto/plugins"
@@ -1655,7 +1655,7 @@
    "lib": "struct",
    "port": "zig",
    "lang": "zig",
-   "version": "sdk-20260907-0029-0",
+   "version": "sdk-20260908-1556-0",
    "dir": [
     "tm/zig/utility/voxgigstruct"
    ],

@@ -132,7 +132,7 @@ component.* See [docs/explanation/components-and-templates](./docs/explanation/c
 
 ## Vendored libraries (struct, omni, plugin, sekreto)
 Generated SDKs vendor these at ONE shared git tag (currently
-`sdk-20260904-1610-0`). Never hand-copy: `make vendor` runs
+`sdk-20260908-1556-0`). Never hand-copy: `make vendor` runs
 `ts/build/vendor.js` over `ts/vendor/routes.json` (content read with
 `git show` at the tag — a dirty checkout cannot leak), stamps provenance
 headers, and writes `ts/test/vendored.json`, which `ts/test/vendored.test.ts`

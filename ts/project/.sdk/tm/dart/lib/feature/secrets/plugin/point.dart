@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20260907-0029-0 (dart/lib/point.dart)
-// Source: https://github.com/voxgig/plugin @ b48ae643eb0eb56c5ebe3198da98cecdf6a7f7fc  [tag: sdk-20260907-0029-0]
+// VENDORED: @voxgig/plugin sdk-20260908-1556-0 (dart/lib/point.dart)
+// Source: https://github.com/voxgig/plugin @ 48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a  [tag: sdk-20260908-1556-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /// Extension points (section 6). Three kinds, chosen because they are what
 /// the two existing systems actually needed, and no more.
