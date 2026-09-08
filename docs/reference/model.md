@@ -347,7 +347,8 @@ Fields the README components read (all optional): `title`, `tagline`,
 ## `main.kit.config` (from apidef)
 
 Build/runtime configuration. The generator reads `config.auth.active`
-(set `false` to disable auth code), among others. See
+(set `false` to disable auth code, `true` to keep it when the spec
+declares no security scheme), among others. See
 [`isAuthActive`](./api.md#isauthactivemodel--boolean).
 
 ## Index files

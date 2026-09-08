@@ -42,6 +42,28 @@ describe('utility', () => {
       )
     })
 
+    // A spec that declares no securitySchemes (GitHub's official OpenAPI)
+    // yields info.auth: false; the project's explicit config wins over it.
+    test('config.auth.active === true overrides info.auth === false', () => {
+      strictEqual(
+        isAuthActive({ main: { kit: {
+          info: { auth: false },
+          config: { auth: { active: true, prefix: 'Bearer' } },
+        } } }),
+        true,
+      )
+    })
+
+    test('config.auth without an explicit active leaves info.auth in charge', () => {
+      strictEqual(
+        isAuthActive({ main: { kit: {
+          info: { auth: false },
+          config: { auth: { prefix: 'Bearer' } },
+        } } }),
+        false,
+      )
+    })
+
     test('info present but auth not disabled stays active', () => {
       strictEqual(isAuthActive({ main: { kit: { info: { auth: true } } } }), true)
     })

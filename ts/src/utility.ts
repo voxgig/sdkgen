@@ -29,17 +29,27 @@ function resolvePath(ctx$: any, path: string): any {
 
 // True unless the model declares auth off. Templates use this to gate
 // apikey-related code, docs, and examples for public APIs that need no
-// authentication. Two opt-outs, in priority order:
-//   1. main.kit.info.auth: false        (user-facing, set in api-info.aon)
-//   2. main.kit.config.auth.active: false
+// authentication.
+//
+// The project's own word comes first: `main.kit.config.auth.active` set
+// EXPLICITLY (true or false) decides. GitHub's official OpenAPI declares no
+// securitySchemes, so apidef faithfully writes `info.auth: false` and every
+// generated client sent no credential; the only override lived in a
+// generated file. A project that knows its API takes a bearer token says so
+// once in its own config and that wins over the spec's silence.
+//
+// Otherwise the spec-derived signal governs:
+//   1. main.kit.config.auth.active: true|false  (per-SDK, in config.aon)
+//   2. main.kit.info.auth: false                (apidef: the spec declares
+//                                               no authentication)
 function isAuthActive(model: any): boolean {
-  const info = getModelPath(model, `main.${KIT}.info`,
-    { only_active: false, required: false })
-  if (info && false === info.auth) return false
-
   const auth = getModelPath(model, `main.${KIT}.config.auth`,
     { only_active: false, required: false })
-  return null == auth || false !== auth.active
+  if (null != auth && 'boolean' === typeof auth.active) return auth.active
+
+  const info = getModelPath(model, `main.${KIT}.info`,
+    { only_active: false, required: false })
+  return !(info && false === info.auth)
 }
 
 
