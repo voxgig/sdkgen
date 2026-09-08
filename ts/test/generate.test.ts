@@ -3035,6 +3035,10 @@ main: kit: target: js: phase: feature: active: false
     // and the library product vending all four.
     const pkg = findFile(out, 'swift/Package.swift')
     ok(null != pkg, 'swift: no Package.swift generated')
+    // The deployment floor - absent, the macos CI leg fails on AsyncStream
+    // ("only available in macOS 10.15 or newer") while linux compiles.
+    ok(/platforms: \[\.macOS\(\.v10_15\)\]/.test(pkg!),
+      'swift: Package.swift declares no macOS deployment floor')
     for (const [mod, dir] of [['VoxgigPlugin', 'plugin'], ['Sekreto', 'sekreto'],
       ['SekretoPlugins', 'plugins']]) {
       ok(new RegExp('name: "' + mod + '",[\\s\\S]{0,120}?path: "Sources/DemoSdk/feature/secrets/' +
