@@ -732,6 +732,129 @@ func TestSecretsDirectPath(t *testing.T) {
 	}
 }
 
+// FAIL CLOSED ON A CONSTRUCTION FAILURE. The chain a project configures
+// can be wrong before a single lookup happens, and Init cannot fail the
+// client construction the way ts's throwing init does - so it HOLDS the
+// error (initerr) and the transport gate refuses to send.
+//
+// The entry pinned here is a bare kind name where a spec belongs. Init's
+// type switch over the providers list had cases for a *ProviderSpec, a
+// Provider and a map, and no default - so the entry was silently DROPPED,
+// the chain got SHORTER rather than broken, and every request went out
+// unauthenticated while the gate had nothing to refuse. That is fail-open
+// by omission, and it survived every other case in this file because each
+// of them configures the chain correctly.
+//
+// Both wire paths - the entity pipeline and Direct - each with a CONTROL
+// leg through the SAME live transport, so a zero means REFUSED and not
+// UNWIRED. The refusal is matched on sekreto's OWN message, so an
+// unrelated failure cannot stand in for it.
+func TestSecretsMalformedProviderEntry(t *testing.T) {
+	// A kind NAME where a provider or spec belongs.
+	malformed := []any{"hashicorp"}
+	const notaprovider = "not a provider or a provider spec"
+
+	workingchain := func(value string) map[string]any {
+		return map[string]any{"secrets": map[string]any{
+			"active": true,
+			"providers": []any{
+				&customProvider{
+					lookup: func(name string) (string, bool, error) {
+						if "apikey" == name {
+							return value, true, nil
+						}
+						return "", false, nil
+					},
+				},
+			},
+		}}
+	}
+	malformedchain := map[string]any{"secrets": map[string]any{
+		"active":    true,
+		"providers": malformed,
+	}}
+
+	t.Run("fails the entity op and nothing reaches the wire", func(t *testing.T) {
+		// CONTROL FIRST, so the zero below is known to be observable at all.
+		control := makewire()
+		ok := secretsClient(control, map[string]any{"feature": workingchain("INITKEY01")})
+		driveEntityOp(t, ok, control)
+		if 1 != len(control.api()) {
+			t.Fatalf("the control operation did not reach system.fetch exactly once,"+
+				" so this test cannot observe a request going out at all: got %d",
+				len(control.api()))
+		}
+		credentialIs(t, control.api()[0].auth, "INITKEY01")
+
+		// THE RULE.
+		w := makewire()
+		client := secretsClient(w, map[string]any{"feature": malformedchain})
+
+		// The feature must still be INSTALLED: a construction failure that
+		// silently uninstalled it would be the same fail-open by another
+		// route, with nothing downstream gating anything.
+		if nil == secretsFeatureOf(client) {
+			t.Fatal("the secrets feature must stay installed on a construction failure")
+		}
+
+		// Every op the control leg could have taken: the gate sits at the
+		// transport, so an op that never reached it proves nothing either way.
+		driveEntityOpUntil(t, client, "was driven", func() bool { return true })
+
+		if 0 != len(w.api()) {
+			t.Fatalf("a malformed providers entry was DROPPED and the shortened chain"+
+				" sent an UNAUTHENTICATED request: %d calls went out, first %q auth=%q",
+				len(w.api()), w.api()[0].url, w.api()[0].auth)
+		}
+	})
+
+	t.Run("fails Direct rather than sending, with sekreto's own message", func(t *testing.T) {
+		// CONTROL FIRST.
+		control := makewire()
+		res, err := secretsClient(control, map[string]any{
+			"allow":   map[string]any{"op": "direct"},
+			"feature": workingchain("INITKEY01"),
+		}).Direct(map[string]any{"path": "/thing"})
+		if nil != err {
+			t.Fatalf("the control request failed: %v", err)
+		}
+		if ok, _ := res["ok"].(bool); !ok {
+			t.Fatalf("the control request was refused: %v", res["err"])
+		}
+		if 1 != len(control.api()) {
+			t.Fatalf("the control request did not reach system.fetch exactly once,"+
+				" so this test cannot observe a request going out at all: got %d",
+				len(control.api()))
+		}
+		credentialIs(t, control.api()[0].auth, "INITKEY01")
+
+		// THE RULE. Direct runs no feature hook at all, so the ONLY thing
+		// that can refuse it is the transport gate.
+		w := makewire()
+		out, err := secretsClient(w, map[string]any{
+			"allow":   map[string]any{"op": "direct"},
+			"feature": malformedchain,
+		}).Direct(map[string]any{"path": "/thing"})
+		if nil != err {
+			t.Fatalf("direct must report the refusal in-band: %v", err)
+		}
+
+		if 0 != len(w.api()) {
+			t.Fatalf("a malformed providers entry was DROPPED and the shortened chain"+
+				" sent an UNAUTHENTICATED direct request: %d calls went out, first %q auth=%q",
+				len(w.api()), w.api()[0].url, w.api()[0].auth)
+		}
+		if ok, _ := out["ok"].(bool); ok {
+			t.Fatal("a chain that could not be built must refuse the raw path fail-closed")
+		}
+		msg := fmt.Sprint(out["err"])
+		if !strings.Contains(msg, notaprovider) {
+			t.Fatalf("the refusal must carry sekreto's own message (%s), got: %s",
+				notaprovider, msg)
+		}
+	})
+}
+
 // A provider failure closes the transport gate; a later retry that
 // SUCCEEDS reopens it and every waiting operation goes out with the FRESH
 // credential - never the stale pre-failure header, and never nothing.

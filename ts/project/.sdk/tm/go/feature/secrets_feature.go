@@ -2,6 +2,7 @@ package feature
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -207,6 +208,21 @@ func (f *SecretsFeature) Init(ctx *core.Context, options map[string]any) {
 				continue
 			}
 			specs = append(specs, spec)
+		default:
+			// ANYTHING ELSE is refused, fail-closed - a bare kind name
+			// ("hashicorp"), a nil, a number. DELIBERATE DIVERGENCE from
+			// ts/kotlin: those push every entry through to Sekreto's
+			// constructor, whose dynamic providers list refuses it with this
+			// message. Go's Options.Providers is a typed slice, so there is
+			// nothing to push a string through; the feature raises the
+			// library's own error here instead, via sekreto.Fail with the
+			// constructor's own wording, and the transport gate below refuses
+			// to send. A switch without this arm silently DROPPED the entry,
+			// which SHORTENED the chain instead of failing it - a
+			// misconfigured providers list then sent ordinary unauthenticated
+			// requests, the exact fail-open the gate exists to prevent.
+			f.initerr = sekreto.Fail(
+				"sekreto: not a provider or a provider spec: " + fmt.Sprint(v))
 		}
 	}
 

@@ -11,7 +11,7 @@
 # or signs a request is a PLUGIN, is not imported by this package, and is
 # handed to `Sekreto` by the calling project:
 #
-#     from voxgig_sekreto import Sekreto
+#     from .. import Sekreto
 #     from voxgig_sekreto.plugins.hashicorp import hashicorp
 #
 #     secrets = Sekreto({

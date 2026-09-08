@@ -8,6 +8,12 @@ main: kit: target: elixir: {
   base: 'BASE'
   srcfeature: false
 
+  # Applicability (docs/design/feature-tags.md). A vendored sekreto port
+  # lives in this target's feature container
+  # (tm/elixir/lib/projectname/feature/secrets/), so a feature that resolves
+  # secrets through sekreto can apply here.
+  provides: { sekreto: true }
+
   # Files earlier toolchains generated that this target has RETIRED
   # (vendor-tag rollout): the hand-written corpus engine, replaced by the
   # vendored @voxgig/omni runner under test/vendor/omni driven through

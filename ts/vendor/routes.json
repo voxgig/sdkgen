@@ -455,6 +455,119 @@
   },
   {
    "lib": "plugin",
+   "port": "clojure",
+   "lang": "clojure",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/clojure/feature/secrets/voxgig",
+    "tm/clojure/feature/secrets/voxgig/plugin"
+   ],
+   "file": {
+    "clojure/src/voxgig/plugin.clj": "tm/clojure/feature/secrets/voxgig/plugin.clj",
+    "clojure/src/voxgig/plugin/capability.clj": "tm/clojure/feature/secrets/voxgig/plugin/capability.clj",
+    "clojure/src/voxgig/plugin/catalog.clj": "tm/clojure/feature/secrets/voxgig/plugin/catalog.clj",
+    "clojure/src/voxgig/plugin/config.clj": "tm/clojure/feature/secrets/voxgig/plugin/config.clj",
+    "clojure/src/voxgig/plugin/depend.clj": "tm/clojure/feature/secrets/voxgig/plugin/depend.clj",
+    "clojure/src/voxgig/plugin/env.clj": "tm/clojure/feature/secrets/voxgig/plugin/env.clj",
+    "clojure/src/voxgig/plugin/export.clj": "tm/clojure/feature/secrets/voxgig/plugin/export.clj",
+    "clojure/src/voxgig/plugin/graph.clj": "tm/clojure/feature/secrets/voxgig/plugin/graph.clj",
+    "clojure/src/voxgig/plugin/host.clj": "tm/clojure/feature/secrets/voxgig/plugin/host.clj",
+    "clojure/src/voxgig/plugin/json.clj": "tm/clojure/feature/secrets/voxgig/plugin/json.clj",
+    "clojure/src/voxgig/plugin/order.clj": "tm/clojure/feature/secrets/voxgig/plugin/order.clj",
+    "clojure/src/voxgig/plugin/point.clj": "tm/clojure/feature/secrets/voxgig/plugin/point.clj",
+    "clojure/src/voxgig/plugin/ref.clj": "tm/clojure/feature/secrets/voxgig/plugin/ref.clj",
+    "clojure/src/voxgig/plugin/resolve.clj": "tm/clojure/feature/secrets/voxgig/plugin/resolve.clj",
+    "clojure/src/voxgig/plugin/types.clj": "tm/clojure/feature/secrets/voxgig/plugin/types.clj",
+    "clojure/src/voxgig/plugin/version.clj": "tm/clojure/feature/secrets/voxgig/plugin/version.clj"
+   }
+  },
+  {
+   "lib": "plugin",
+   "port": "csharp",
+   "lang": "csharp",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/csharp/feature/secrets/plugin"
+   ],
+   "file": {
+    "csharp/src/Capability.cs": "tm/csharp/feature/secrets/plugin/Capability.cs",
+    "csharp/src/Catalog.cs": "tm/csharp/feature/secrets/plugin/Catalog.cs",
+    "csharp/src/Config.cs": "tm/csharp/feature/secrets/plugin/Config.cs",
+    "csharp/src/Definition.cs": "tm/csharp/feature/secrets/plugin/Definition.cs",
+    "csharp/src/Depend.cs": "tm/csharp/feature/secrets/plugin/Depend.cs",
+    "csharp/src/Entry.cs": "tm/csharp/feature/secrets/plugin/Entry.cs",
+    "csharp/src/Env.cs": "tm/csharp/feature/secrets/plugin/Env.cs",
+    "csharp/src/Export.cs": "tm/csharp/feature/secrets/plugin/Export.cs",
+    "csharp/src/Graph.cs": "tm/csharp/feature/secrets/plugin/Graph.cs",
+    "csharp/src/Host.cs": "tm/csharp/feature/secrets/plugin/Host.cs",
+    "csharp/src/Inst.cs": "tm/csharp/feature/secrets/plugin/Inst.cs",
+    "csharp/src/Json.cs": "tm/csharp/feature/secrets/plugin/Json.cs",
+    "csharp/src/Order.cs": "tm/csharp/feature/secrets/plugin/Order.cs",
+    "csharp/src/Plugin.cs": "tm/csharp/feature/secrets/plugin/Plugin.cs",
+    "csharp/src/Point.cs": "tm/csharp/feature/secrets/plugin/Point.cs",
+    "csharp/src/Refs.cs": "tm/csharp/feature/secrets/plugin/Refs.cs",
+    "csharp/src/Resolve.cs": "tm/csharp/feature/secrets/plugin/Resolve.cs",
+    "csharp/src/Types.cs": "tm/csharp/feature/secrets/plugin/Types.cs",
+    "csharp/src/Version.cs": "tm/csharp/feature/secrets/plugin/Version.cs"
+   }
+  },
+  {
+   "lib": "plugin",
+   "port": "dart",
+   "lang": "dart",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/dart/lib/feature/secrets/plugin"
+   ],
+   "file": {
+    "dart/lib/plugin.dart": "tm/dart/lib/feature/secrets/plugin/plugin.dart",
+    "dart/lib/types.dart": "tm/dart/lib/feature/secrets/plugin/types.dart",
+    "dart/lib/ref.dart": "tm/dart/lib/feature/secrets/plugin/ref.dart",
+    "dart/lib/version.dart": "tm/dart/lib/feature/secrets/plugin/version.dart",
+    "dart/lib/capability.dart": "tm/dart/lib/feature/secrets/plugin/capability.dart",
+    "dart/lib/resolve.dart": "tm/dart/lib/feature/secrets/plugin/resolve.dart",
+    "dart/lib/export.dart": "tm/dart/lib/feature/secrets/plugin/export.dart",
+    "dart/lib/order.dart": "tm/dart/lib/feature/secrets/plugin/order.dart",
+    "dart/lib/point.dart": "tm/dart/lib/feature/secrets/plugin/point.dart",
+    "dart/lib/config.dart": "tm/dart/lib/feature/secrets/plugin/config.dart",
+    "dart/lib/env.dart": "tm/dart/lib/feature/secrets/plugin/env.dart",
+    "dart/lib/graph.dart": "tm/dart/lib/feature/secrets/plugin/graph.dart",
+    "dart/lib/depend.dart": "tm/dart/lib/feature/secrets/plugin/depend.dart",
+    "dart/lib/catalog.dart": "tm/dart/lib/feature/secrets/plugin/catalog.dart",
+    "dart/lib/host.dart": "tm/dart/lib/feature/secrets/plugin/host.dart"
+   }
+  },
+  {
+   "lib": "plugin",
+   "port": "elixir",
+   "lang": "elixir",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/elixir/lib/projectname/feature/secrets/plugin"
+   ],
+   "file": {
+    "elixir/lib/voxgig_plugin.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/voxgig_plugin.ex",
+    "elixir/lib/voxgig_plugin/capability.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/capability.ex",
+    "elixir/lib/voxgig_plugin/catalog.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/catalog.ex",
+    "elixir/lib/voxgig_plugin/config.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/config.ex",
+    "elixir/lib/voxgig_plugin/depend.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/depend.ex",
+    "elixir/lib/voxgig_plugin/env.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/env.ex",
+    "elixir/lib/voxgig_plugin/error.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/error.ex",
+    "elixir/lib/voxgig_plugin/export.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/export.ex",
+    "elixir/lib/voxgig_plugin/graph.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/graph.ex",
+    "elixir/lib/voxgig_plugin/host.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/host.ex",
+    "elixir/lib/voxgig_plugin/inst.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/inst.ex",
+    "elixir/lib/voxgig_plugin/json.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/json.ex",
+    "elixir/lib/voxgig_plugin/order.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/order.ex",
+    "elixir/lib/voxgig_plugin/point.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/point.ex",
+    "elixir/lib/voxgig_plugin/ref.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/ref.ex",
+    "elixir/lib/voxgig_plugin/resolve.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/resolve.ex",
+    "elixir/lib/voxgig_plugin/types.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/types.ex",
+    "elixir/lib/voxgig_plugin/version.ex": "tm/elixir/lib/projectname/feature/secrets/plugin/version.ex"
+   }
+  },
+  {
+   "lib": "plugin",
    "port": "go",
    "lang": "go",
    "version": "0.1.6",
@@ -481,6 +594,44 @@
   },
   {
    "lib": "plugin",
+   "port": "java",
+   "lang": "java",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/java/feature/secrets/plugin"
+   ],
+   "file": {
+    "java/src/voxgig/plugin/Capability.java": "tm/java/feature/secrets/plugin/Capability.java",
+    "java/src/voxgig/plugin/Catalog.java": "tm/java/feature/secrets/plugin/Catalog.java",
+    "java/src/voxgig/plugin/Config.java": "tm/java/feature/secrets/plugin/Config.java",
+    "java/src/voxgig/plugin/Definition.java": "tm/java/feature/secrets/plugin/Definition.java",
+    "java/src/voxgig/plugin/Depend.java": "tm/java/feature/secrets/plugin/Depend.java",
+    "java/src/voxgig/plugin/Entry.java": "tm/java/feature/secrets/plugin/Entry.java",
+    "java/src/voxgig/plugin/Env.java": "tm/java/feature/secrets/plugin/Env.java",
+    "java/src/voxgig/plugin/Export.java": "tm/java/feature/secrets/plugin/Export.java",
+    "java/src/voxgig/plugin/Graph.java": "tm/java/feature/secrets/plugin/Graph.java",
+    "java/src/voxgig/plugin/Host.java": "tm/java/feature/secrets/plugin/Host.java",
+    "java/src/voxgig/plugin/Inst.java": "tm/java/feature/secrets/plugin/Inst.java",
+    "java/src/voxgig/plugin/Json.java": "tm/java/feature/secrets/plugin/Json.java",
+    "java/src/voxgig/plugin/Order.java": "tm/java/feature/secrets/plugin/Order.java",
+    "java/src/voxgig/plugin/Plugin.java": "tm/java/feature/secrets/plugin/Plugin.java",
+    "java/src/voxgig/plugin/PluginException.java": "tm/java/feature/secrets/plugin/PluginException.java",
+    "java/src/voxgig/plugin/Point.java": "tm/java/feature/secrets/plugin/Point.java",
+    "java/src/voxgig/plugin/Refs.java": "tm/java/feature/secrets/plugin/Refs.java",
+    "java/src/voxgig/plugin/Resolve.java": "tm/java/feature/secrets/plugin/Resolve.java",
+    "java/src/voxgig/plugin/Types.java": "tm/java/feature/secrets/plugin/Types.java",
+    "java/src/voxgig/plugin/Version.java": "tm/java/feature/secrets/plugin/Version.java"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/plugin/",
+     "from": "voxgig.plugin",
+     "to": "JAVAPACKAGE.feature.secrets.plugin"
+    }
+   ]
+  },
+  {
+   "lib": "plugin",
    "port": "javascript",
    "lang": "js",
    "version": "sdk-20260907-0029-0",
@@ -503,6 +654,68 @@
     "javascript/src/resolve.js": "tm/js/src/feature/secrets/plugin/resolve.js",
     "javascript/src/types.js": "tm/js/src/feature/secrets/plugin/types.js",
     "javascript/src/version.js": "tm/js/src/feature/secrets/plugin/version.js"
+   }
+  },
+  {
+   "lib": "plugin",
+   "port": "kotlin",
+   "lang": "kotlin",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/kotlin/feature/secrets/plugin"
+   ],
+   "file": {
+    "kotlin/src/Capability.kt": "tm/kotlin/feature/secrets/plugin/Capability.kt",
+    "kotlin/src/Catalog.kt": "tm/kotlin/feature/secrets/plugin/Catalog.kt",
+    "kotlin/src/Config.kt": "tm/kotlin/feature/secrets/plugin/Config.kt",
+    "kotlin/src/Depend.kt": "tm/kotlin/feature/secrets/plugin/Depend.kt",
+    "kotlin/src/Env.kt": "tm/kotlin/feature/secrets/plugin/Env.kt",
+    "kotlin/src/Export.kt": "tm/kotlin/feature/secrets/plugin/Export.kt",
+    "kotlin/src/Graph.kt": "tm/kotlin/feature/secrets/plugin/Graph.kt",
+    "kotlin/src/Host.kt": "tm/kotlin/feature/secrets/plugin/Host.kt",
+    "kotlin/src/Json.kt": "tm/kotlin/feature/secrets/plugin/Json.kt",
+    "kotlin/src/Order.kt": "tm/kotlin/feature/secrets/plugin/Order.kt",
+    "kotlin/src/Plugin.kt": "tm/kotlin/feature/secrets/plugin/Plugin.kt",
+    "kotlin/src/Point.kt": "tm/kotlin/feature/secrets/plugin/Point.kt",
+    "kotlin/src/Refs.kt": "tm/kotlin/feature/secrets/plugin/Refs.kt",
+    "kotlin/src/Resolve.kt": "tm/kotlin/feature/secrets/plugin/Resolve.kt",
+    "kotlin/src/Types.kt": "tm/kotlin/feature/secrets/plugin/Types.kt",
+    "kotlin/src/Version.kt": "tm/kotlin/feature/secrets/plugin/Version.kt"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/plugin/",
+     "from": "voxgig.plugin",
+     "to": "KOTLINPACKAGE.feature.secrets.plugin"
+    }
+   ]
+  },
+  {
+   "lib": "plugin",
+   "port": "perl",
+   "lang": "perl",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/perl/feature/secrets/plugin",
+    "tm/perl/feature/secrets/plugin/Voxgig",
+    "tm/perl/feature/secrets/plugin/Voxgig/Plugin"
+   ],
+   "file": {
+    "perl/lib/Voxgig/Plugin.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin.pm",
+    "perl/lib/Voxgig/Plugin/Capability.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Capability.pm",
+    "perl/lib/Voxgig/Plugin/Catalog.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Catalog.pm",
+    "perl/lib/Voxgig/Plugin/Config.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Config.pm",
+    "perl/lib/Voxgig/Plugin/Depend.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Depend.pm",
+    "perl/lib/Voxgig/Plugin/Env.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Env.pm",
+    "perl/lib/Voxgig/Plugin/Export.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Export.pm",
+    "perl/lib/Voxgig/Plugin/Graph.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Graph.pm",
+    "perl/lib/Voxgig/Plugin/Host.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Host.pm",
+    "perl/lib/Voxgig/Plugin/Order.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Order.pm",
+    "perl/lib/Voxgig/Plugin/Point.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Point.pm",
+    "perl/lib/Voxgig/Plugin/Ref.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Ref.pm",
+    "perl/lib/Voxgig/Plugin/Resolve.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Resolve.pm",
+    "perl/lib/Voxgig/Plugin/Types.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Types.pm",
+    "perl/lib/Voxgig/Plugin/Version.pm": "tm/perl/feature/secrets/plugin/Voxgig/Plugin/Version.pm"
    }
   },
   {
@@ -585,6 +798,67 @@
   },
   {
    "lib": "plugin",
+   "port": "rust",
+   "lang": "rust",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/rust/feature/secrets/plugin"
+   ],
+   "file": {
+    "rust/src/lib.rs": "tm/rust/feature/secrets/plugin/mod.rs",
+    "rust/src/value.rs": "tm/rust/feature/secrets/plugin/value.rs",
+    "rust/src/types.rs": "tm/rust/feature/secrets/plugin/types.rs",
+    "rust/src/refs.rs": "tm/rust/feature/secrets/plugin/refs.rs",
+    "rust/src/version.rs": "tm/rust/feature/secrets/plugin/version.rs",
+    "rust/src/capability.rs": "tm/rust/feature/secrets/plugin/capability.rs",
+    "rust/src/resolve.rs": "tm/rust/feature/secrets/plugin/resolve.rs",
+    "rust/src/export.rs": "tm/rust/feature/secrets/plugin/export.rs",
+    "rust/src/graph.rs": "tm/rust/feature/secrets/plugin/graph.rs",
+    "rust/src/order.rs": "tm/rust/feature/secrets/plugin/order.rs",
+    "rust/src/depend.rs": "tm/rust/feature/secrets/plugin/depend.rs",
+    "rust/src/config.rs": "tm/rust/feature/secrets/plugin/config.rs",
+    "rust/src/env.rs": "tm/rust/feature/secrets/plugin/env.rs",
+    "rust/src/point.rs": "tm/rust/feature/secrets/plugin/point.rs",
+    "rust/src/catalog.rs": "tm/rust/feature/secrets/plugin/catalog.rs",
+    "rust/src/host.rs": "tm/rust/feature/secrets/plugin/host.rs"
+   },
+   "adapt": [
+    {
+     "match": "(?!.*/value\\.rs$)(?!.*/mod\\.rs$)feature/secrets/plugin/",
+     "from": "crate::",
+     "to": "super::"
+    }
+   ]
+  },
+  {
+   "lib": "plugin",
+   "port": "scala",
+   "lang": "scala",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/scala/feature/secrets/plugin"
+   ],
+   "file": {
+    "scala/src/Capability.scala": "tm/scala/feature/secrets/plugin/Capability.scala",
+    "scala/src/Config.scala": "tm/scala/feature/secrets/plugin/Config.scala",
+    "scala/src/Depend.scala": "tm/scala/feature/secrets/plugin/Depend.scala",
+    "scala/src/Env.scala": "tm/scala/feature/secrets/plugin/Env.scala",
+    "scala/src/Export.scala": "tm/scala/feature/secrets/plugin/Export.scala",
+    "scala/src/Graph.scala": "tm/scala/feature/secrets/plugin/Graph.scala",
+    "scala/src/Host.scala": "tm/scala/feature/secrets/plugin/Host.scala",
+    "scala/src/Json.scala": "tm/scala/feature/secrets/plugin/Json.scala",
+    "scala/src/Order.scala": "tm/scala/feature/secrets/plugin/Order.scala",
+    "scala/src/Plugin.scala": "tm/scala/feature/secrets/plugin/Plugin.scala",
+    "scala/src/Point.scala": "tm/scala/feature/secrets/plugin/Point.scala",
+    "scala/src/Refs.scala": "tm/scala/feature/secrets/plugin/Refs.scala",
+    "scala/src/Resolve.scala": "tm/scala/feature/secrets/plugin/Resolve.scala",
+    "scala/src/Types.scala": "tm/scala/feature/secrets/plugin/Types.scala",
+    "scala/src/Value.scala": "tm/scala/feature/secrets/plugin/Value.scala",
+    "scala/src/Version.scala": "tm/scala/feature/secrets/plugin/Version.scala"
+   }
+  },
+  {
+   "lib": "plugin",
    "port": "typescript",
    "lang": "ts",
    "version": "0.1.6",
@@ -608,6 +882,133 @@
     "typescript/src/Types.ts": "tm/ts/src/feature/secrets/plugin/Types.ts",
     "typescript/src/Version.ts": "tm/ts/src/feature/secrets/plugin/Version.ts",
     "typescript/src/index.ts": "tm/ts/src/feature/secrets/plugin/index.ts"
+   }
+  },
+  {
+   "lib": "sekreto",
+   "port": "clojure",
+   "lang": "clojure",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/clojure/feature/secrets/voxgig",
+    "tm/clojure/feature/secrets/voxgig/sekreto",
+    "tm/clojure/feature/secrets/voxgig/sekreto/plugins"
+   ],
+   "file": {
+    "clojure/src/voxgig/sekreto.clj": "tm/clojure/feature/secrets/voxgig/sekreto.clj",
+    "clojure/src/voxgig/sekreto/core.clj": "tm/clojure/feature/secrets/voxgig/sekreto/core.clj",
+    "clojure/src/voxgig/sekreto/chain.clj": "tm/clojure/feature/secrets/voxgig/sekreto/chain.clj",
+    "clojure/src/voxgig/sekreto/provider.clj": "tm/clojure/feature/secrets/voxgig/sekreto/provider.clj",
+    "clojure/src/voxgig/sekreto/providers.clj": "tm/clojure/feature/secrets/voxgig/sekreto/providers.clj",
+    "clojure/src/voxgig/sekreto/addr.clj": "tm/clojure/feature/secrets/voxgig/sekreto/addr.clj",
+    "clojure/src/voxgig/sekreto/json.clj": "tm/clojure/feature/secrets/voxgig/sekreto/json.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/httpjson.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/httpjson.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/proc.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/proc.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/sigv4.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/sigv4.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/aws.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/aws.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/hashicorp.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/hashicorp.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/boru.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/boru.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/gcpsecrets.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/gcpsecrets.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/azuresecrets.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/azuresecrets.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/onepassword.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/onepassword.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/doppler.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/doppler.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/infisical.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/infisical.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/secretspec.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/secretspec.clj"
+   }
+  },
+  {
+   "lib": "sekreto",
+   "port": "csharp",
+   "lang": "csharp",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/csharp/feature/secrets/sekreto",
+    "tm/csharp/feature/secrets/plugins"
+   ],
+   "file": {
+    "csharp/src/Sekreto.cs": "tm/csharp/feature/secrets/sekreto/Sekreto.cs",
+    "csharp/src/Providers.cs": "tm/csharp/feature/secrets/sekreto/Providers.cs",
+    "csharp/src/Json.cs": "tm/csharp/feature/secrets/sekreto/Json.cs",
+    "csharp/plugins/HttpJson.cs": "tm/csharp/feature/secrets/plugins/HttpJson.cs",
+    "csharp/plugins/Child.cs": "tm/csharp/feature/secrets/plugins/Child.cs",
+    "csharp/plugins/Hashicorp.cs": "tm/csharp/feature/secrets/plugins/Hashicorp.cs",
+    "csharp/plugins/Boru.cs": "tm/csharp/feature/secrets/plugins/Boru.cs",
+    "csharp/plugins/GcpSecrets.cs": "tm/csharp/feature/secrets/plugins/GcpSecrets.cs",
+    "csharp/plugins/AzureSecrets.cs": "tm/csharp/feature/secrets/plugins/AzureSecrets.cs",
+    "csharp/plugins/OnePassword.cs": "tm/csharp/feature/secrets/plugins/OnePassword.cs",
+    "csharp/plugins/Doppler.cs": "tm/csharp/feature/secrets/plugins/Doppler.cs",
+    "csharp/plugins/Infisical.cs": "tm/csharp/feature/secrets/plugins/Infisical.cs",
+    "csharp/plugins/Aws.cs": "tm/csharp/feature/secrets/plugins/Aws.cs",
+    "csharp/plugins/Sigv4.cs": "tm/csharp/feature/secrets/plugins/Sigv4.cs",
+    "csharp/plugins/SecretSpec.cs": "tm/csharp/feature/secrets/plugins/SecretSpec.cs"
+   }
+  },
+  {
+   "lib": "sekreto",
+   "port": "dart",
+   "lang": "dart",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/dart/lib/feature/secrets/sekreto",
+    "tm/dart/lib/feature/secrets/sekreto/src",
+    "tm/dart/lib/feature/secrets/sekreto/plugins"
+   ],
+   "file": {
+    "dart/src/sekreto.dart": "tm/dart/lib/feature/secrets/sekreto/src/sekreto.dart",
+    "dart/src/provider.dart": "tm/dart/lib/feature/secrets/sekreto/src/provider.dart",
+    "dart/src/providers.dart": "tm/dart/lib/feature/secrets/sekreto/src/providers.dart",
+    "dart/src/spec.dart": "tm/dart/lib/feature/secrets/sekreto/src/spec.dart",
+    "dart/src/support.dart": "tm/dart/lib/feature/secrets/sekreto/src/support.dart",
+    "dart/src/addr.dart": "tm/dart/lib/feature/secrets/sekreto/src/addr.dart",
+    "dart/src/json.dart": "tm/dart/lib/feature/secrets/sekreto/src/json.dart",
+    "dart/plugins/httpjson.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/httpjson.dart",
+    "dart/plugins/hashicorp.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/hashicorp.dart",
+    "dart/plugins/boru.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/boru.dart",
+    "dart/plugins/gcpsecrets.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/gcpsecrets.dart",
+    "dart/plugins/azuresecrets.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/azuresecrets.dart",
+    "dart/plugins/onepassword.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/onepassword.dart",
+    "dart/plugins/doppler.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/doppler.dart",
+    "dart/plugins/infisical.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/infisical.dart",
+    "dart/plugins/secretspec.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/secretspec.dart",
+    "dart/plugins/aws.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/aws.dart",
+    "dart/plugins/sigv4.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/sigv4.dart",
+    "dart/plugins/crypto.dart": "tm/dart/lib/feature/secrets/sekreto/plugins/crypto.dart"
+   },
+   "adapt": [
+    {
+     "match": "sekreto/src/(sekreto|support)\\.dart$",
+     "from": "'package:voxgig_plugin/plugin.dart'",
+     "to": "'../../plugin/plugin.dart'"
+    }
+   ]
+  },
+  {
+   "lib": "sekreto",
+   "port": "elixir",
+   "lang": "elixir",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/elixir/lib/projectname/feature/secrets/sekreto",
+    "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins"
+   ],
+   "file": {
+    "elixir/src/sekreto.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/sekreto.ex",
+    "elixir/src/providers.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/providers.ex",
+    "elixir/src/provider.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/provider.ex",
+    "elixir/src/json.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/json.ex",
+    "elixir/plugins/http.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/http.ex",
+    "elixir/plugins/httpjson.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/httpjson.ex",
+    "elixir/plugins/proc.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/proc.ex",
+    "elixir/plugins/hashicorp.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/hashicorp.ex",
+    "elixir/plugins/boru.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/boru.ex",
+    "elixir/plugins/gcpsecrets.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/gcpsecrets.ex",
+    "elixir/plugins/azuresecrets.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/azuresecrets.ex",
+    "elixir/plugins/onepassword.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/onepassword.ex",
+    "elixir/plugins/doppler.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/doppler.ex",
+    "elixir/plugins/infisical.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/infisical.ex",
+    "elixir/plugins/secretspec.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/secretspec.ex",
+    "elixir/plugins/aws.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/aws.ex",
+    "elixir/plugins/sigv4.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/sigv4.ex"
    }
   },
   {
@@ -647,7 +1048,7 @@
    },
    "adapt": [
     {
-     "match": "feature/secrets/",
+     "match": "/(providers\\.go|sekreto\\.go)$",
      "from": "\"github.com/voxgig/plugin/go/plugin\"",
      "to": "\"GOMODULE/feature/secrets/plugin\"",
      "optional": true
@@ -659,10 +1060,52 @@
      "optional": true
     },
     {
-     "match": "feature/secrets/plugins/",
+     "match": "/(aws\\.go|azuresecrets\\.go|boru\\.go|doppler\\.go|gcpsecrets\\.go|hashicorp\\.go|infisical\\.go|onepassword\\.go|sigv4\\.go)$",
      "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
      "to": "\"GOMODULE/feature/secrets/plugins/httpjson\"",
      "optional": true
+    }
+   ]
+  },
+  {
+   "lib": "sekreto",
+   "port": "java",
+   "lang": "java",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/java/feature/secrets/sekreto",
+    "tm/java/feature/secrets/sekreto/plugins"
+   ],
+   "file": {
+    "java/src/com/voxgig/sekreto/Sekreto.java": "tm/java/feature/secrets/sekreto/Sekreto.java",
+    "java/src/com/voxgig/sekreto/Support.java": "tm/java/feature/secrets/sekreto/Support.java",
+    "java/src/com/voxgig/sekreto/Builtins.java": "tm/java/feature/secrets/sekreto/Builtins.java",
+    "java/src/com/voxgig/sekreto/Provider.java": "tm/java/feature/secrets/sekreto/Provider.java",
+    "java/src/com/voxgig/sekreto/Addr.java": "tm/java/feature/secrets/sekreto/Addr.java",
+    "java/src/com/voxgig/sekreto/Json.java": "tm/java/feature/secrets/sekreto/Json.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Httpjson.java": "tm/java/feature/secrets/sekreto/plugins/Httpjson.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Proc.java": "tm/java/feature/secrets/sekreto/plugins/Proc.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Sigv4.java": "tm/java/feature/secrets/sekreto/plugins/Sigv4.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Aws.java": "tm/java/feature/secrets/sekreto/plugins/Aws.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Hashicorp.java": "tm/java/feature/secrets/sekreto/plugins/Hashicorp.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Boru.java": "tm/java/feature/secrets/sekreto/plugins/Boru.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Gcpsecrets.java": "tm/java/feature/secrets/sekreto/plugins/Gcpsecrets.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Azuresecrets.java": "tm/java/feature/secrets/sekreto/plugins/Azuresecrets.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Onepassword.java": "tm/java/feature/secrets/sekreto/plugins/Onepassword.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Doppler.java": "tm/java/feature/secrets/sekreto/plugins/Doppler.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Infisical.java": "tm/java/feature/secrets/sekreto/plugins/Infisical.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Secretspec.java": "tm/java/feature/secrets/sekreto/plugins/Secretspec.java"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/sekreto/",
+     "from": "com.voxgig.sekreto",
+     "to": "JAVAPACKAGE.feature.secrets.sekreto"
+    },
+    {
+     "match": "(?!.*/Sigv4\\.java$)(?!.*/Proc\\.java$)(?!.*/Httpjson\\.java$)(?!.*/Json\\.java$)(?!.*/Addr\\.java$)(?!.*/Provider\\.java$)feature/secrets/sekreto/",
+     "from": "voxgig.plugin",
+     "to": "JAVAPACKAGE.feature.secrets.plugin"
     }
    ]
   },
@@ -715,6 +1158,80 @@
      "to": "'../provider/"
     }
    ]
+  },
+  {
+   "lib": "sekreto",
+   "port": "kotlin",
+   "lang": "kotlin",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/kotlin/feature/secrets",
+    "tm/kotlin/feature/secrets/sekreto",
+    "tm/kotlin/feature/secrets/sekreto/plugins"
+   ],
+   "file": {
+    "kotlin/src/Sekreto.kt": "tm/kotlin/feature/secrets/sekreto/Sekreto.kt",
+    "kotlin/src/Provider.kt": "tm/kotlin/feature/secrets/sekreto/Provider.kt",
+    "kotlin/src/Providers.kt": "tm/kotlin/feature/secrets/sekreto/Providers.kt",
+    "kotlin/src/Spec.kt": "tm/kotlin/feature/secrets/sekreto/Spec.kt",
+    "kotlin/src/Support.kt": "tm/kotlin/feature/secrets/sekreto/Support.kt",
+    "kotlin/src/Json.kt": "tm/kotlin/feature/secrets/sekreto/Json.kt",
+    "kotlin/plugins/Httpjson.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Httpjson.kt",
+    "kotlin/plugins/Hashicorp.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Hashicorp.kt",
+    "kotlin/plugins/Boru.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Boru.kt",
+    "kotlin/plugins/Gcpsecrets.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Gcpsecrets.kt",
+    "kotlin/plugins/Azuresecrets.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Azuresecrets.kt",
+    "kotlin/plugins/Onepassword.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Onepassword.kt",
+    "kotlin/plugins/Doppler.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Doppler.kt",
+    "kotlin/plugins/Infisical.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Infisical.kt",
+    "kotlin/plugins/Secretspec.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Secretspec.kt",
+    "kotlin/plugins/Aws.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Aws.kt",
+    "kotlin/plugins/Sigv4.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Sigv4.kt"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/",
+     "from": "com.voxgig.sekreto",
+     "to": "KOTLINPACKAGE.feature.secrets.sekreto"
+    },
+    {
+     "match": "(?!.*/Sigv4\\.kt$)(?!.*/Aws\\.kt$)(?!.*/Secretspec\\.kt$)(?!.*/Infisical\\.kt$)(?!.*/Doppler\\.kt$)(?!.*/Onepassword\\.kt$)(?!.*/Azuresecrets\\.kt$)(?!.*/Gcpsecrets\\.kt$)(?!.*/Boru\\.kt$)(?!.*/Hashicorp\\.kt$)(?!.*/Httpjson\\.kt$)(?!.*/Json\\.kt$)(?!.*/Spec\\.kt$)(?!.*/Providers\\.kt$)(?!.*/Provider\\.kt$)feature/secrets/",
+     "from": "voxgig.plugin",
+     "to": "KOTLINPACKAGE.feature.secrets.plugin"
+    }
+   ]
+  },
+  {
+   "lib": "sekreto",
+   "port": "perl",
+   "lang": "perl",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/perl/feature/secrets/sekreto",
+    "tm/perl/feature/secrets/sekreto/Voxgig",
+    "tm/perl/feature/secrets/sekreto/Voxgig/Sekreto",
+    "tm/perl/feature/secrets/plugins",
+    "tm/perl/feature/secrets/plugins/Voxgig",
+    "tm/perl/feature/secrets/plugins/Voxgig/Sekreto",
+    "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins"
+   ],
+   "file": {
+    "perl/lib/Voxgig/Sekreto.pm": "tm/perl/feature/secrets/sekreto/Voxgig/Sekreto.pm",
+    "perl/lib/Voxgig/Sekreto/Addr.pm": "tm/perl/feature/secrets/sekreto/Voxgig/Sekreto/Addr.pm",
+    "perl/lib/Voxgig/Sekreto/Providers.pm": "tm/perl/feature/secrets/sekreto/Voxgig/Sekreto/Providers.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Httpjson.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Httpjson.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Proc.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Proc.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Hashicorp.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Hashicorp.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Boru.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Boru.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Aws.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Aws.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Sigv4.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Sigv4.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Gcpsecrets.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Gcpsecrets.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Azuresecrets.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Azuresecrets.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Onepassword.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Onepassword.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Doppler.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Doppler.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Infisical.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Infisical.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Secretspec.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Secretspec.pm"
+   }
   },
   {
    "lib": "sekreto",
@@ -790,7 +1307,7 @@
      "optional": true
     },
     {
-     "match": "voxgig_sekreto/plugins/[a-z0-9]+\\.py$",
+     "match": "/(__init__\\.py)$",
      "from": "from voxgig_sekreto import",
      "to": "from .. import",
      "optional": true
@@ -846,6 +1363,124 @@
   },
   {
    "lib": "sekreto",
+   "port": "rust",
+   "lang": "rust",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/rust/feature/secrets/sekreto",
+    "tm/rust/feature/secrets/plugins",
+    "tm/rust/feature/secrets/plugins/aws",
+    "tm/rust/feature/secrets/plugins/httpjson"
+   ],
+   "file": {
+    "rust/src/lib.rs": "tm/rust/feature/secrets/sekreto/mod.rs",
+    "rust/src/sekreto.rs": "tm/rust/feature/secrets/sekreto/sekreto.rs",
+    "rust/src/providers.rs": "tm/rust/feature/secrets/sekreto/providers.rs",
+    "rust/src/addr.rs": "tm/rust/feature/secrets/sekreto/addr.rs",
+    "rust/plugins/httpjson/src/lib.rs": "tm/rust/feature/secrets/plugins/httpjson.rs",
+    "rust/plugins/httpjson/src/http.rs": "tm/rust/feature/secrets/plugins/httpjson/http.rs",
+    "rust/plugins/httpjson/src/json.rs": "tm/rust/feature/secrets/plugins/httpjson/json.rs",
+    "rust/plugins/aws/src/lib.rs": "tm/rust/feature/secrets/plugins/aws.rs",
+    "rust/plugins/aws/src/sigv4.rs": "tm/rust/feature/secrets/plugins/aws/sigv4.rs",
+    "rust/plugins/aws/src/crypto.rs": "tm/rust/feature/secrets/plugins/aws/crypto.rs",
+    "rust/plugins/hashicorp/src/lib.rs": "tm/rust/feature/secrets/plugins/hashicorp.rs",
+    "rust/plugins/boru/src/lib.rs": "tm/rust/feature/secrets/plugins/boru.rs",
+    "rust/plugins/gcpsecrets/src/lib.rs": "tm/rust/feature/secrets/plugins/gcpsecrets.rs",
+    "rust/plugins/azuresecrets/src/lib.rs": "tm/rust/feature/secrets/plugins/azuresecrets.rs",
+    "rust/plugins/onepassword/src/lib.rs": "tm/rust/feature/secrets/plugins/onepassword.rs",
+    "rust/plugins/doppler/src/lib.rs": "tm/rust/feature/secrets/plugins/doppler.rs",
+    "rust/plugins/infisical/src/lib.rs": "tm/rust/feature/secrets/plugins/infisical.rs",
+    "rust/plugins/secretspec/src/lib.rs": "tm/rust/feature/secrets/plugins/secretspec.rs"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/sekreto/mod\\.rs$",
+     "from": "pub use crate::",
+     "to": "pub use self::"
+    },
+    {
+     "match": "feature/secrets/sekreto/(addr|providers|sekreto)\\.rs$",
+     "from": "crate::",
+     "to": "super::"
+    },
+    {
+     "match": "feature/secrets/plugins/httpjson\\.rs$",
+     "from": "crate::",
+     "to": "self::"
+    },
+    {
+     "match": "feature/secrets/plugins/aws\\.rs$",
+     "from": "pub use crate::sigv4::",
+     "to": "pub use self::sigv4::"
+    },
+    {
+     "match": "feature/secrets/plugins/aws/sigv4\\.rs$",
+     "from": "use crate::crypto;",
+     "to": "use super::crypto;"
+    },
+    {
+     "match": "feature/secrets/sekreto/(providers|sekreto)\\.rs$",
+     "from": "use voxgig_plugin::",
+     "to": "use super::super::plugin::"
+    },
+    {
+     "match": "(?!.*/crypto\\.rs$)(?!.*/sigv4\\.rs$)(?!.*/json\\.rs$)(?!.*/http\\.rs$)(?!.*/httpjson\\.rs$)feature/secrets/plugins/",
+     "from": "use voxgig_plugin::",
+     "to": "use crate::feature::secrets::plugin::"
+    },
+    {
+     "match": "(?!.*/secretspec\\.rs$)(?!.*/crypto\\.rs$)(?!.*/sigv4\\.rs$)(?!.*/json\\.rs$)(?!.*/http\\.rs$)(?!.*/httpjson\\.rs$)feature/secrets/plugins/",
+     "from": "use voxgig_sekreto_httpjson::",
+     "to": "use super::httpjson::"
+    },
+    {
+     "match": "feature/secrets/plugins/httpjson\\.rs$",
+     "from": "use voxgig_sekreto::",
+     "to": "use super::super::sekreto::"
+    },
+    {
+     "match": "(?!.*/crypto\\.rs$)(?!.*/json\\.rs$)(?!.*/http\\.rs$)(?!.*/httpjson\\.rs$)feature/secrets/plugins/",
+     "from": "use voxgig_sekreto::",
+     "to": "use crate::feature::secrets::sekreto::"
+    },
+    {
+     "match": "feature/secrets/sekreto/mod\\.rs$",
+     "from": "pub use voxgig_plugin;",
+     "to": "pub use super::plugin as voxgig_plugin;"
+    }
+   ]
+  },
+  {
+   "lib": "sekreto",
+   "port": "scala",
+   "lang": "scala",
+   "version": "sdk-20260907-0029-0",
+   "dir": [
+    "tm/scala/feature/secrets/sekreto",
+    "tm/scala/feature/secrets/sekreto/plugins"
+   ],
+   "file": {
+    "scala/src/Sekreto.scala": "tm/scala/feature/secrets/sekreto/Sekreto.scala",
+    "scala/src/Provider.scala": "tm/scala/feature/secrets/sekreto/Provider.scala",
+    "scala/src/Providers.scala": "tm/scala/feature/secrets/sekreto/Providers.scala",
+    "scala/src/Spec.scala": "tm/scala/feature/secrets/sekreto/Spec.scala",
+    "scala/src/Support.scala": "tm/scala/feature/secrets/sekreto/Support.scala",
+    "scala/src/Json.scala": "tm/scala/feature/secrets/sekreto/Json.scala",
+    "scala/plugins/Httpjson.scala": "tm/scala/feature/secrets/sekreto/plugins/Httpjson.scala",
+    "scala/plugins/Hashicorp.scala": "tm/scala/feature/secrets/sekreto/plugins/Hashicorp.scala",
+    "scala/plugins/Boru.scala": "tm/scala/feature/secrets/sekreto/plugins/Boru.scala",
+    "scala/plugins/Aws.scala": "tm/scala/feature/secrets/sekreto/plugins/Aws.scala",
+    "scala/plugins/Sigv4.scala": "tm/scala/feature/secrets/sekreto/plugins/Sigv4.scala",
+    "scala/plugins/Gcpsecrets.scala": "tm/scala/feature/secrets/sekreto/plugins/Gcpsecrets.scala",
+    "scala/plugins/Azuresecrets.scala": "tm/scala/feature/secrets/sekreto/plugins/Azuresecrets.scala",
+    "scala/plugins/Onepassword.scala": "tm/scala/feature/secrets/sekreto/plugins/Onepassword.scala",
+    "scala/plugins/Doppler.scala": "tm/scala/feature/secrets/sekreto/plugins/Doppler.scala",
+    "scala/plugins/Infisical.scala": "tm/scala/feature/secrets/sekreto/plugins/Infisical.scala",
+    "scala/plugins/Secretspec.scala": "tm/scala/feature/secrets/sekreto/plugins/Secretspec.scala"
+   }
+  },
+  {
+   "lib": "sekreto",
    "port": "typescript",
    "lang": "ts",
    "version": "0.2.0",
@@ -894,7 +1529,7 @@
      "optional": true
     },
     {
-     "match": "sekreto/plugins/[a-z0-9]+\\.ts$",
+     "match": "/(aws\\.ts|azuresecrets\\.ts|boru\\.ts|doppler\\.ts|gcpsecrets\\.ts|hashicorp\\.ts|httpjson\\.ts|infisical\\.ts|onepassword\\.ts|secretspec\\.ts)$",
      "from": "'../src/provider/",
      "to": "'../provider/",
      "optional": true

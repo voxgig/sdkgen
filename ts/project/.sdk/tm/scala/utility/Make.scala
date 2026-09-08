@@ -320,6 +320,13 @@ object MakeOptions {
         + "\"feature\": { \"`$CHILD`\": {"
         + "  \"`$OPEN`\": true, \"active\": false } },"
         + "\"utility\": {},"
+        // `extend` carries LIVE Feature objects a caller hands in, and an
+        // optspec with no entry for a key makes Struct.validate DROP it -
+        // silently, so `new Client(Map.of("extend", List.of(feature)))`
+        // built a client with no such feature and nothing said so. `$ANY`
+        // passes the list through untouched, which is what go's optspec
+        // does (tm/go/utility/make_options.go).
+        + "\"extend\": \"`$ANY`\","
         + "\"system\": {},"
         + "\"test\": { \"active\": false, \"entity\": { \"`$OPEN`\": true } },"
         + "\"clean\": { \"keys\": \"key,token,id\" }"
