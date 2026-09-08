@@ -59,10 +59,11 @@ import type { RegisterOptions } from './cmp/Registered'
 import { buildIdNames } from './helpers/buildIdNames'
 import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
+import { guardModelNames } from './helpers/modelNames'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey, canonScalarKey } from './helpers/canonType'
 import { OP_SUFFIX, opTypeName, opParams, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape'
-import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, tsSafeTypeName, jsProp, jsOptProp, jsKey } from './helpers/naming'
+import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, tsSafeTypeName, jsProp, jsOptProp, jsKey, prefixLeadingDigit } from './helpers/naming'
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
 import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
 import type { ExampleLang } from './helpers/opExample'
@@ -268,6 +269,13 @@ function SdkGen(opts: SdkGenOptions) {
 
     log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' })
     log.debug({ point: 'generate-spec', spec })
+
+    // BEFORE ANYTHING READS A NAME. An entity whose name starts with a digit
+    // yields identifiers no target language accepts, and the consumer's own
+    // Root.ts re-derives those names per target — so the only correction that
+    // survives is one made to the model itself, before Root runs. No-op on
+    // every model apidef produces; see helpers/modelNames.
+    guardModelNames(model, log)
 
     let Root = spec.root
 
@@ -1153,6 +1161,7 @@ export {
   warnEntityTypeCollisions,
   deriveEntityNames,
   entityCollection,
+  guardModelNames,
   isReservedName,
   safeVarName,
   exampleVarName,
@@ -1205,6 +1214,7 @@ export {
   jsProp,
   jsOptProp,
   jsKey,
+  prefixLeadingDigit,
 
   packageName,
   installCommand,

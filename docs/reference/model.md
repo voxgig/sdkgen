@@ -267,6 +267,17 @@ the `Name` case variants. The SDK generates one entity class per active
 entity, with `load` / `list` / `create` / `update` / `remove` where the
 API supports them.
 
+An entity name is also an identifier stem: the class name, the SDK method
+that returns it, the generated type names and the per-language module names
+all come from it.
+No target language accepts an identifier that starts with a digit, so a name
+that does is prefixed with an `n` before anything reads it — the entity
+`3ds_session` from `/3ds-sessions` becomes `n3ds_session`, and its class
+`N3dsSessionEntity`. The key, the flow that names the entity and any ancestor
+reference move with it. The request path does not: it comes from the point,
+so the SDK still calls `/3ds-sessions`. apidef applies the same rule when it
+derives the name, so this changes nothing for a model apidef produced.
+
 ## `main.kit.feature.<name>`
 
 | Field | Type | Default | Description |
