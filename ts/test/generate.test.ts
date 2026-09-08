@@ -83,22 +83,25 @@ const PLACEHOLDER_PINNED = [
 
 
 // Targets that consume ANOTHER target's output rather than generating an SDK
-// of their own: go-cli/go-mcp wrap `go`, py-data wraps `py`, and
-// seneca-provider wraps `ts`. They switch the standard phases off and are
-// driven by the wrapped target's model, so generating them standalone proves
-// nothing — and each fails outright without its sibling, deliberately.
-// Mirrors parity.test.ts.
+// of their own: go-cli/go-mcp wrap `go` and py-data wraps `py`. They switch
+// the standard phases off and are driven by the wrapped target's model, so
+// generating them standalone proves nothing — and each fails outright without
+// its sibling, deliberately. Mirrors parity.test.ts.
 //
 // The sibling each one needs is declared HERE rather than left implicit,
 // because "excluded from the loop" was silently reading as "excluded from the
 // suite": the placeholder scan is this file's only content guard, and none of
-// these four had ever been through it. See 'a consumer target generates
-// against its sibling', which does exactly that.
+// them had ever been through it. See 'a consumer target generates against its
+// sibling', which does exactly that.
+//
+// `seneca-provider` was the fourth and has moved to
+// packages/sdkgen-seneca-provider, which runs the same scan through the test
+// kit's `generateInto` — the kit's PLACEHOLDERS list is kept in step with this
+// file's for exactly that reason.
 const NON_SDK_SIBLING: Record<string, string> = {
   'go-cli': 'go',
   'go-mcp': 'go',
   'py-data': 'py',
-  'seneca-provider': 'ts',
 }
 
 const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
@@ -737,7 +740,6 @@ main: kit: target: js: phase: feature: active: false
     ['c', /core\/config\.c$/, /static const char CONFIG_DATA\[\] =/, /return cmap\(/],
     ['rust', /core\/config\.rs$/, /const CONFIG_DATA: &str = r/, /Value::map_of\(\[/],
     ['zig', /core\/config\.zig$/, /const CONFIG_DATA: \[\]const u8 =/, /return h\.jo\(&\./],
-    ['dart', /lib\/Config\.dart$/, /const String _CONFIG_DATA = "/, /^\s*final Map<String, dynamic> main = <String, dynamic>\{/m],
     ['elixir', /lib\/config\.ex$/, /@config_data "/, /Helpers\.deep\(%\{/],
     ['clojure', /src\/sdk\/config\.clj$/, /def \^:private config-data/, /formatCljValue|vs\/jm/],
     ['ocaml', /sdk_config\.ml$/, /let config_data = "/, /^\s*\(jo \[/m],
@@ -808,31 +810,6 @@ main: kit: target: js: phase: feature: active: false
   }
 
 
-  // Both dart branches must carry `options.server` — the OpenAPI
-  // server-variable defaults — for a spec with a templated server URL.
-  //
-  // The literal branch assembled `options` slot by slot and simply had no slot
-  // for `server`, so it was absent there and present in the data, and the same
-  // API described a different config either side of the threshold. It is now
-  // rendered whole from the canonical definition. The fixture has no server
-  // variables, which is why this test supplies its own.
-  test('dart: both representations carry the server-variable defaults', async () => {
-    const servers = "main: kit: info: servers: [ { url: 'https://{tenant}.example.com'," +
-      ' variables: { tenant: { default: %27acme%27 } } } ]'.replace(/%27/g, "'")
-
-    for (const repr of ['literal', 'data']) {
-      const out = await generate(['dart'], undefined,
-        `main: kit: config: repr: '${repr}'\n${servers}`)
-      const config = filesFor(out, 'dart').find(([n]) => /lib\/Config\.dart$/.test(n))
-      ok(config, repr + ': no dart Config.dart generated')
-      const plain = String(config![1]).replace(/\\"/g, '"')
-
-      ok(/server/.test(plain), repr + ': dart config lost options.server')
-      ok(/acme/.test(plain), repr + ': dart config lost the server-variable default')
-    }
-  })
-
-
   // java and kotlin emit config as DATA ONLY, assembling the JSON with their
   // own StringBuilder chunking rather than embedding configDefinition's json
   // string - which is exactly how their feature block could silently drop
@@ -854,33 +831,6 @@ main: kit: target: js: phase: feature: active: false
         target + ': assembled config lost the feature transport role')
     })
   }
-
-
-  // The dart DATA branch must give every constructed Config its own maps.
-  //
-  // The literal builds fresh maps in each field initialiser, so `Config()` is
-  // independent per instance — and `Config` is exported by Main.fragment.dart,
-  // so callers can construct one. A first version of the data branch bound the
-  // fields to a single top-level parsed map, which made
-  // `Config().options['x'] = 1` mutate the `config` singleton every SDK client
-  // reads. Verified by running it:
-  //
-  //   literal: b sees probe = false      data: b sees probe = true
-  //
-  // This is the structural guard for that: the decode must happen in the
-  // CONSTRUCTOR, not in a top-level final the fields alias.
-  test('dart: the data branch decodes per Config instance', async () => {
-    const out = await generate(['dart'], undefined, "main: kit: config: repr: 'data'")
-    const config = filesFor(out, 'dart').find(([n]) => /lib\/Config\.dart$/.test(n))
-    ok(config, 'no dart Config.dart generated')
-    const src = String(config![1])
-
-    ok(/Config\(\) : this\._\(jsonDecode\(_CONFIG_DATA\)/.test(src),
-      'dart data config does not decode in the constructor, so every ' +
-      'constructed Config would share one parsed map with the singleton')
-    ok(!/^final Map<String, dynamic> _CONFIG =/m.test(src),
-      'dart data config still binds its fields to a shared top-level map')
-  })
 
 
   // THE POINT OF L1: the representation is an emission detail, and nothing
@@ -1004,7 +954,7 @@ main: kit: target: js: phase: feature: active: false
     async () => {
       const LIVE_TARGETS = [
         'ts', 'js', 'go', 'py', 'java',
-        'php', 'rb', 'lua', 'rust', 'dart', 'csharp', 'perl',
+        'php', 'rb', 'lua', 'rust', 'csharp', 'perl',
       ]
 
       // Two variables on purpose: one REQUIRED (empty default) and one with a
@@ -1091,7 +1041,7 @@ main: kit: target: js: phase: feature: active: false
           // The default must survive as text. Dart/Perl/PHP interpolate `$eu`
           // and Ruby interpolates `#{x}` inside a double-quoted literal, so a
           // JSON-stringified default is wrong for those targets specifically.
-          if (['dart', 'perl', 'php'].includes(target) && /"\$eu/.test(src)) {
+          if (['perl', 'php'].includes(target) && /"\$eu/.test(src)) {
             gaps.push(`${target}:${name} emits an interpolating default literal`)
           }
           if ('rb' === target && /[^\\]#\{x\}/.test(src)) {
@@ -1173,16 +1123,15 @@ main: kit: target: js: phase: feature: active: false
   // They are out of the two loops above for a good reason — standalone they
   // throw, by design — but that also took them out of the placeholder scan,
   // which is the only guard in this suite that reads the generated TEXT. So
-  // the ~1650 lines of Main_seneca-provider + Extras_seneca-provider, and the
-  // go-cli / go-mcp / py-data emitters, had no content check at all: a Copy or
-  // Fragment added there without `...ctx$.stdrep` would ship a package naming
-  // itself "ProjectName" at runtime and every suite would stay green.
-  // external.test.ts generates seneca-provider but asserts only on file
+  // the go-cli / go-mcp / py-data emitters had no content check at all: a Copy
+  // or Fragment added there without `...ctx$.stdrep` would ship a package
+  // naming itself "ProjectName" at runtime and every suite would stay green.
+  // external.test.ts generates a consumer target too, but asserts only on file
   // PLACEMENT.
   //
-  // seneca-provider generates IN-TREE here (under `seneca-provider/`): its
-  // out-of-tree `output: path` mode is external.test.ts's subject, and the
-  // text it emits is the same either way.
+  // Each generates IN-TREE here (under `<target>/`): the out-of-tree
+  // `output: path` mode is external.test.ts's subject, and the text a target
+  // emits is the same either way.
   test('a consumer target generates against its sibling', async () => {
     const leaks: string[] = []
 
@@ -1428,33 +1377,6 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
-  // lean: the runner drives ops the entity declares. `X.create` is not
-  // generated for a load-only entity, so emitting the create block breaks the
-  // build with "Unknown identifier"; and a `do` block with no statements does
-  // not parse at all.
-  test('lean: runner only drives declared ops, and never emits an empty do', async () => {
-    const out = await generate(['lean'])
-
-    const runner = findFile(out, 'test/Runner.lean')
-    ok(null != runner, 'lean: no test runner generated')
-
-    // archive is list-only and current is load-only: neither may be created
-    // or removed.
-    for (const ent of ['history', 'ambient']) {
-      for (const op of ['create', 'remove']) {
-        const call = new RegExp('\\b' + ent[0].toUpperCase() + ent.slice(1) + '\\.' + op + '\\b')
-        ok(!call.test(runner!),
-          'lean: runner calls ' + ent + '.' + op + ', which is not generated for that entity')
-      }
-    }
-
-    // An empty lane is terminated explicitly; `do` immediately followed by a
-    // dedented line is the shape that fails to parse.
-    ok(!/:=\s*do\s*\n\s*\n/.test(runner!), 'lean: runner emits an empty do block')
-
-    // And the whole point of a runner: it must actually assert something.
-    ok(/pass |fail |pure \(\)/.test(runner!), 'lean: runner has no lane body at all')
-  })
 
 
   // Repo identity is DECLARED, not derived from the slug.
@@ -1525,7 +1447,7 @@ main: kit: target: js: phase: feature: active: false
 
   test('a declared version reaches every manifest', async () => {
     const TARGETS = [
-      'csharp', 'dart', 'elixir', 'java', 'js', 'kotlin', 'lean',
+      'csharp', 'elixir', 'java', 'js', 'kotlin',
       'lua', 'ocaml', 'py', 'rb', 'rust', 'ts', 'zig',
     ]
     const declared = TARGETS
@@ -1536,9 +1458,9 @@ main: kit: target: js: phase: feature: active: false
 
     // The manifest each ecosystem actually publishes from.
     const MANIFEST: Record<string, string> = {
-      csharp: 'DemoSDK.csproj', dart: 'pubspec.yaml', elixir: 'mix.exs',
+      csharp: 'DemoSDK.csproj', elixir: 'mix.exs',
       java: 'pom.xml', js: 'package.json',
-      kotlin: 'build.gradle.kts', lean: 'lakefile.toml', lua: 'demo.rockspec',
+      kotlin: 'build.gradle.kts', lua: 'demo.rockspec',
       ocaml: 'voxgig-demo-sdk.opam', py: 'pyproject.toml', rb: 'Demo_sdk.gemspec',
       rust: 'Cargo.toml', ts: 'package.json', zig: 'build.zig.zon',
     }
@@ -1821,36 +1743,6 @@ main: kit: target: js: phase: feature: active: false
     // Still ignoring the things that genuinely should not be committed.
     ok(lines.includes('node_modules/'), 'ts/.gitignore stopped ignoring node_modules')
     ok(lines.includes('*.tsbuildinfo'), 'ts/.gitignore stopped ignoring tsbuildinfo')
-  })
-
-
-  // The provider gets one too — and from a COMPONENT.
-  //
-  // It used to come from `tm/seneca-provider/.gitignore`, which meant it
-  // reached only people working from a checkout: npm never publishes a file
-  // by that name, whatever package.json `files` says, so every consumer who
-  // installed sdkgen from the registry generated a provider repo with no
-  // ignore file at all. packaging.test.ts guards the tarball; this guards the
-  // OUTPUT, because the two failed independently — the template was present
-  // in this repo the whole time, so nothing here noticed.
-  //
-  // `.jostraca/` is the line that matters most: jostraca drops its meta log
-  // and a full duplicate of the last generated output into the provider repo
-  // on every run, so without it the first regeneration leaves hundreds of
-  // untracked files behind.
-  test('the seneca-provider gitignore is generated, not copied', async () => {
-    const out = await generate(['ts', 'seneca-provider'])
-
-    const ignore = findFile(out, 'seneca-provider/.gitignore')
-    ok(null != ignore, 'seneca-provider: no .gitignore generated')
-
-    const lines = ignore!.split('\n').map((l: string) => l.trim())
-      .filter((l: string) => '' !== l && !l.startsWith('#'))
-
-    for (const needed of ['node_modules/', '.jostraca/', '*.tsbuildinfo']) {
-      ok(lines.includes(needed),
-        'seneca-provider/.gitignore stopped ignoring ' + needed)
-    }
   })
 
 
@@ -2596,128 +2488,6 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
-  // dart guard for the same seam, plus the two hazards only dart has.
-  //
-  // An ACTIVE secrets model must emit the `show` imports and the
-  // FEATURE_PLUGINS entries into lib/Config.dart, and the INACTIVE groups'
-  // vendored files must stay out of the tree (Main_dart's pluginExcludes),
-  // while the shared httpjson helper (in no group) ships regardless.
-  //
-  // FIRST DART HAZARD: the whole sekreto CORE lives at
-  // `sekreto/src/*.dart`, upstream's layout. Main_dart's Copy excluded
-  // `/src\//` unanchored - for the `tm/dart/src/feature/<name>/` copy-target
-  // dirs - and that pattern matched the vendored core too, so the entire
-  // secrets library was dropped from the package while the plugins beside it
-  // survived. `dart analyze` reported it as undefined symbols in
-  // httpjson.dart, naming nothing that would lead you to the Copy.
-  //
-  // SECOND DART HAZARD: test/main.dart is a HAND-LISTED suite entry - dart
-  // has no `go test ./...` or pytest discovery - so the secrets suite must
-  // be registered there or it ships and never runs, with the lane green.
-  test('dart: active secrets emits plugin defs and trims inactive groups', async () => {
-    const { fs, vol } = memfs({})
-    const sdkgen = SdkGen({
-      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
-    })
-    const res = await sdkgen.generate({
-      model: makeModel(['dart'], undefined,
-        'main: kit: feature: secrets: { active: true ' +
-        'plugin: { vault: active: true aws: active: true } }',
-        ['test', 'log', 'secrets']),
-      root: makeRoot(),
-    })
-    strictEqual(res.ok, true, 'generation did not report ok')
-
-    const out: Record<string, string> = {}
-    for (const [path, content] of
-      Object.entries(vol.toJSON() as Record<string, string>)) {
-      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
-      if (rel.includes('.jostraca/')) continue
-      out[rel] = content
-    }
-
-    const config = findFile(out, 'lib/Config.dart')
-    ok(null != config, 'dart: no lib/Config.dart generated')
-
-    // The NAMED imports and the definitions list - the two emissions that
-    // can silently no-op while everything else stays green.
-    ok(/import 'feature\/secrets\/sekreto\/plugins\/hashicorp\.dart' show hashicorp;/
-      .test(config!),
-      'dart: active vault group did not emit the hashicorp plugin import')
-    // ONE file, TWO definitions: aws.dart carries awssecrets and awsparams,
-    // so the imports are grouped by path or the library is imported twice.
-    ok(/import 'feature\/secrets\/sekreto\/plugins\/aws\.dart' show awsparams, awssecrets;/
-      .test(config!),
-      'dart: the two aws definitions did not share one import')
-    ok(/'secrets': \[awsparams, awssecrets, boru, hashicorp\],/.test(config!),
-      'dart: FEATURE_PLUGINS is missing the active definitions:\n' +
-      (config!.match(/FEATURE_PLUGINS = <String, List<dynamic>>\{[^}]*\}/) ||
-        ['(no FEATURE_PLUGINS)'])[0])
-
-    // The vendored CORE survived the Copy exclude. Without this the tree
-    // still carries the plugins and Config still names them, so every
-    // assertion above passes on a package that does not compile.
-    for (const core of ['sekreto/src/sekreto.dart', 'sekreto/src/providers.dart',
-      'sekreto/src/support.dart', 'sekreto/src/spec.dart']) {
-      ok(null != findFile(out, 'lib/feature/secrets/' + core),
-        'dart: the vendored sekreto core file ' + core + ' was excluded from ' +
-        'the package - check Main_dart\'s `^src/` Copy exclude is ANCHORED')
-    }
-    // And the copy-target dirs that exclude is FOR are still gone.
-    ok(null == findFile(out, 'dart/src/feature/secrets/.gitkeep'),
-      'dart: the feature-add copy-target dir leaked into the package')
-
-    // The trim: an inactive group's vendored file is OUT, the active
-    // groups' and the group-less shared helper are IN.
-    ok(null == findFile(out, 'sekreto/plugins/gcpsecrets.dart'),
-      'dart: the inactive cloud group still ships gcpsecrets')
-    ok(null == findFile(out, 'sekreto/plugins/secretspec.dart'),
-      'dart: the inactive secretspec group still ships its CLI plugin')
-    ok(null != findFile(out, 'sekreto/plugins/hashicorp.dart'),
-      'dart: the ACTIVE vault group lost hashicorp')
-    ok(null != findFile(out, 'sekreto/plugins/httpjson.dart'),
-      'dart: the shared httpjson helper must ship with the feature core')
-    // crypto.dart is THIS PORT'S SHA-256/HMAC and sigv4.dart is its only
-    // caller, so it belongs to the aws group and to no other. Trimming it
-    // away from an active aws group is nine `dart analyze` errors.
-    ok(null != findFile(out, 'sekreto/plugins/sigv4.dart'),
-      'dart: the ACTIVE aws group lost sigv4')
-    ok(null != findFile(out, 'sekreto/plugins/crypto.dart'),
-      'dart: the ACTIVE aws group lost crypto, which sigv4 compiles against')
-
-    // REGISTERED in the hand-listed suite entry, or it never runs.
-    const main = findFile(out, 'test/main.dart')
-    ok(null != main, 'dart: no test/main.dart generated')
-    ok(/import 'feature\/secrets\/secrets_test\.dart' as secrets_test;/.test(main!),
-      'dart: the secrets suite is not imported by test/main.dart')
-    ok(/secrets_test\.tests\(\);/.test(main!),
-      'dart: the secrets suite is imported but never RUN')
-
-    // And the inactive-model baseline: no secrets machinery anywhere the
-    // feature did not put it.
-    //
-    // The SOURCE trim is not asserted here: this harness copies the whole
-    // staged tm/ tree, while a real project's `target add` drops an
-    // undeclared feature before generate ever runs (the js note above).
-    const plainout = await generate(['dart'])
-    const plain = findFile(plainout, 'lib/Config.dart')
-    ok(!/sekreto\/plugins/.test(plain!),
-      'dart: an inactive model still emitted plugin imports')
-    ok(!/import 'feature\/secrets\/SecretsFeature\.dart';/.test(plain!),
-      'dart: an inactive model still imported the secrets feature')
-    ok(/FEATURE_PLUGINS = <String, List<dynamic>>\{\s*\r?\n\};/.test(plain!),
-      'dart: an inactive model must emit an EMPTY FEATURE_PLUGINS map')
-    const plainmain = findFile(plainout, 'test/main.dart')
-    ok(!/secrets_test/.test(plainmain!),
-      'dart: an inactive model still registers the secrets suite, which is ' +
-      'an import of a file `target add` removed')
-    const plainsdk = findFile(plainout, 'lib/DemoSDK.dart')
-    ok(null != plainsdk, 'dart: no SDK entry generated')
-    ok(!/dynamic secrets\(\)/.test(plainsdk!),
-      'dart: an inactive model still emitted the secrets() accessor')
-  })
-
-
   // scala guard for the same seam, and for the two hazards particular to a
   // target whose FEATURE trim is off (model/target/scala.aon `feature: {
   // trim: false }` - the cross-feature tests are fused into one
@@ -3423,55 +3193,6 @@ main: kit: target: js: phase: feature: active: false
   // eighteen shipped features, so the crate stopped compiling the moment the
   // set was trimmed — `pub mod retry;` with no retry.rs is a hard error.
   // This fixture declares `test` and `log` only.
-  // dart runner swap: the omni resolver, its vendored port and the
-  // must-fail smoke test are generated; BOTH superseded engines - the fused
-  // test/runner.dart and the second, independent test/struct_corpus.dart -
-  // are gone. test/harness.dart and test/utility.dart are RETAINED: despite
-  // the names, neither is a corpus runner (harness.dart is the
-  // dependency-free describe/test framework every generated suite imports,
-  // utility.dart the sdk-test-control / path-resolution support). The
-  // smoke test must also be REGISTERED in the hand-written test/main.dart
-  // registry, or it would exist and never run.
-  test('dart: the omni runner swap generates the resolver and retires both engines', async () => {
-    const out = await generate(['dart'])
-
-    ok(null != findFile(out, 'test/omni.dart'), 'dart: no omni resolver generated')
-    for (const vf of ['omni.dart', 'runner.dart', 'util.dart']) {
-      ok(null != findFile(out, 'test/vendor/omni/' + vf),
-        'dart: vendored omni file missing: ' + vf)
-    }
-    ok(null != findFile(out, 'test/omni_smoke_test.dart'),
-      'dart: the runner-must-fail smoke test is missing')
-    ok(null == findFile(out, 'test/runner.dart'),
-      'dart: the superseded test/runner.dart is still generated')
-    ok(null == findFile(out, 'test/struct_corpus.dart'),
-      'dart: the superseded test/struct_corpus.dart is still generated')
-
-    // The support files are RETAINED (every suite imports harness.dart; the
-    // generated entity suites use utility.dart).
-    ok(null != findFile(out, 'test/harness.dart'),
-      'dart: the retained test framework test/harness.dart is missing')
-    ok(null != findFile(out, 'test/utility.dart'),
-      'dart: the retained support module test/utility.dart is missing')
-
-    const primary = findFile(out, 'test/primary_test.dart')
-    ok(null != primary, 'dart: no primary_test.dart generated')
-    ok(/import 'omni\.dart';/.test(primary!),
-      'dart: primary_test.dart does not use the omni resolver')
-    const struct = findFile(out, 'test/struct_test.dart')
-    ok(null != struct, 'dart: no struct_test.dart generated')
-    ok(/import 'omni\.dart';/.test(struct!),
-      'dart: struct_test.dart does not use the omni resolver')
-
-    // test/main.dart is a hand-written registry, not auto-discovery: a
-    // suite it does not list never runs.
-    const main = findFile(out, 'test/main.dart')
-    ok(null != main, 'dart: no test/main.dart generated')
-    ok(/import 'omni_smoke_test\.dart' as omni_smoke_test;/.test(main!),
-      'dart: main.dart does not import the omni smoke test')
-    ok(/omni_smoke_test\.tests\(\);/.test(main!),
-      'dart: main.dart does not run the omni smoke test')
-  })
 
 
   // zig runner swap: the omni resolver, its vendored port and the

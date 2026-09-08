@@ -28,9 +28,11 @@ type GenerateOptions = {
     model: any;
     root?: any;
     allowPlaceholder?: (path: string, token: string) => boolean;
+    outside?: string[];
 };
 type GenerateResult = {
     files: Record<string, string>;
+    outside: Record<string, Record<string, string>>;
     leaks: string[];
 };
 declare function generateInto(consumer: Consumer, opts: GenerateOptions): Promise<GenerateResult>;

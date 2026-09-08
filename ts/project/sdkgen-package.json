@@ -10,7 +10,6 @@
       "clojure",
       "cpp",
       "csharp",
-      "dart",
       "elixir",
       "go",
       "go-cli",
@@ -18,7 +17,6 @@
       "java",
       "js",
       "kotlin",
-      "lean",
       "lua",
       "ocaml",
       "perl",
@@ -28,7 +26,6 @@
       "rb",
       "rust",
       "scala",
-      "seneca-provider",
       "swift",
       "ts",
       "zig"

@@ -13,6 +13,7 @@ type Manifest = {
     targetsSupported?: Record<string, string[]>;
     parity?: Record<string, string>;
 };
+declare const PARITY: string[];
 type ManifestRead = {
     file: string;
     manifest?: Manifest;
@@ -47,4 +48,4 @@ declare function probePackage(fs: any, project: string, ref: string): {
     search: string[];
 };
 export type { Manifest, ManifestRead, PackageProbe, Finding, };
-export { MANIFEST, SCHEMA, ITEM_NAME_RE, manifestPath, probePackage, readManifest, validateManifest, checkShape, };
+export { MANIFEST, SCHEMA, PARITY, ITEM_NAME_RE, manifestPath, probePackage, readManifest, validateManifest, checkShape, };

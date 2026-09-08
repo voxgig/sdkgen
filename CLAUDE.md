@@ -7,8 +7,7 @@
 - **[`docs/`](./docs/README.md)** — full documentation: tutorial, how-to
   guides, reference (features/CLI/API/model/layout/hooks), and explanation.
 - **[`STYLE-GUIDE.md`](./STYLE-GUIDE.md)** — normative for the reader-facing
-  pages (`README.md`, `docs/` minus `docs/design/`, the haskell package
-  README). `make scan-prose` runs the two gates (Vale + `tools/check_prose.py`);
+  pages (`README.md` and `docs/` minus `docs/design/`). `make scan-prose` runs the two gates (Vale + `tools/check_prose.py`);
   `make test` includes it. Pages never cite `AGENTS.md`, `CLAUDE.md`,
   `ADR.md`, `NOTES.md` or `docs/design/`.
 
@@ -19,8 +18,9 @@ depth.
 Voxgig SDK Generator (`@voxgig/sdkgen`) — generates idiomatic
 multi-language client SDKs (ts, js, go, py, php, rb, lua, csharp, java,
 kotlin, scala, swift, dart, rust, c, cpp, zig, perl, clojure, elixir, ocaml,
-plus go-cli and go-mcp) from an OpenAPI-derived model. `haskell` ships
-separately, in `packages/sdkgen-haskell`.
+plus go-cli and go-mcp) from an OpenAPI-derived model. `dart`, `haskell` and
+`lean` ship separately in @voxgig/sdkgen-langpack, and `seneca-provider` in
+@voxgig/sdkgen-infrapack; this repo carries no packages of its own.
 
 ## Build & Test
 The npm package root is **`ts/`** — run npm commands there, or use the

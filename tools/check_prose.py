@@ -68,11 +68,18 @@ ROOT_PAGES = ("README.md",)
 DOC_GLOBS = ("docs/**/*.md",)
 NOT_DOCS = ("docs/design/",)
 
-# Pages outside the tree: the packaged haskell target's README, which a
-# reader lands on from npm. Nothing under ts/ is a page -- ts/project/
+# Pages outside the tree: none, now that every packaged target lives in its
+# own repository (@voxgig/sdkgen-langpack, @voxgig/sdkgen-infrapack), where
+# its README is gated by that repo. Nothing under ts/ is a page -- ts/project/
 # holds the scaffold templates copied into generated SDKs, which document
 # those SDKs rather than this repository.
-EXTRA_PAGES = ("packages/sdkgen-haskell/README.md",)
+#
+# The glob STAYS even though it currently matches nothing: a package added
+# back under packages/ would otherwise ship a README no gate reads, which is
+# the silently-absent shape the rest of this repo's guards exist for. An
+# empty match is not an error; an unread page is.
+PACKAGE_GLOBS = ("packages/*/README.md",)
+EXTRA_PAGES = ()
 
 # Multi-port layout (one directory per language, each carrying its own
 # pages). Off here: the generator is one TypeScript package.
@@ -184,6 +191,10 @@ def pages() -> list[Path]:
     for pattern in DOC_GLOBS:
         for path in sorted(ROOT.glob(pattern)):
             if path.is_file() and not _excluded(rel(path)):
+                found.append(path)
+    for pattern in PACKAGE_GLOBS:
+        for path in sorted(ROOT.glob(pattern)):
+            if path.is_file():
                 found.append(path)
     for child in port_dirs():
         found += [child / name for name in PORT_PAGES]

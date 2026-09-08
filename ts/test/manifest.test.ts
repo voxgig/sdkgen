@@ -292,6 +292,165 @@ describe('validateManifest', () => {
   })
 
 
+  // THE PARITY VOCABULARY IS CLOSED — see PARITY in helpers/manifest.
+  //
+  // A tier travels with a migrated target, and it is the only place an
+  // external package can state its coverage. That makes a typo indistinct
+  // from a decision unless something reads it, which is the same reasoning
+  // every other closed set in this repo rests on.
+  test('a parity tier outside the vocabulary is an ERROR', () => {
+    const dir = makePackage(
+      {
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        provides: { target: ['iotgo'] },
+        parity: { iotgo: 'PARTIAL' },
+      },
+      (sdk) => {
+        def(sdk, 'target', 'iotgo')
+        tree(sdk, 'src', 'cmp', 'iotgo')
+        tree(sdk, 'tm', 'iotgo')
+      })
+
+    try {
+      const sdk = Path.join(dir, '.sdk')
+      const found = validateManifest(Fs, sdk, manifestOf(sdk), KINDS)
+
+      deepStrictEqual(found.map((f: any) => f.point),
+        ['manifest-parity-unknown'])
+      ok(found[0].note.includes('PARTIAL'),
+        'the finding does not say what was declared: ' + found[0].note)
+      ok(found[0].note.includes('CONSUMER'),
+        'the finding does not list the vocabulary: ' + found[0].note)
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
+  // CONSUMER is in the vocabulary, and is what a consumer target declares:
+  // it wraps another target's SDK and has no primary-utility surface to
+  // grade, so it is outside the tier system rather than at the bottom of it.
+  test('CONSUMER is a valid tier', () => {
+    const dir = makePackage(
+      {
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        provides: { target: ['iotgo'] },
+        parity: { iotgo: 'CONSUMER' },
+      },
+      (sdk) => {
+        def(sdk, 'target', 'iotgo')
+        tree(sdk, 'src', 'cmp', 'iotgo')
+        tree(sdk, 'tm', 'iotgo')
+      })
+
+    try {
+      const sdk = Path.join(dir, '.sdk')
+      deepStrictEqual(validateManifest(Fs, sdk, manifestOf(sdk), KINDS), [])
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
+  // GRADING SOME TARGETS AND NOT OTHERS.
+  //
+  // The value check above catches a typo'd tier; this catches the other half,
+  // an absent one. Scoped to a PARTIAL declaration on purpose: a wholly
+  // absent `parity` is the bundled manifest's deliberate state (design §18.4a
+  // keeps the tier map in parity.test.ts rather than duplicating it here), so
+  // warning on that would fire on the shipped scaffold. A manifest that
+  // grades two of three targets has no such second reading.
+  test('a provided target with no tier, when others have one, is a WARNING', () => {
+    const dir = makePackage(
+      {
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        provides: { target: ['iotgo', 'iotrb'] },
+        parity: { iotgo: 'MIRRORED' },
+      },
+      (sdk) => {
+        for (const t of ['iotgo', 'iotrb']) {
+          def(sdk, 'target', t)
+          tree(sdk, 'src', 'cmp', t)
+          tree(sdk, 'tm', t)
+        }
+      })
+
+    try {
+      const sdk = Path.join(dir, '.sdk')
+      const found = validateManifest(Fs, sdk, manifestOf(sdk), KINDS)
+
+      deepStrictEqual(errors(found), [],
+        'an ungraded target failed the package')
+      deepStrictEqual(found.map((f: any) => f.point),
+        ['manifest-parity-missing'])
+      ok(found[0].note.includes('iotrb'),
+        'the finding does not name the ungraded target: ' + found[0].note)
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
+  // ...and a manifest that grades NOTHING is silent, which is what keeps the
+  // bundled scaffold clean. Pinned in both directions so the scope above
+  // cannot be widened by accident.
+  test('a manifest with no parity at all is not warned about', () => {
+    const dir = makePackage(
+      {
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        provides: { target: ['iotgo'] },
+      },
+      (sdk) => {
+        def(sdk, 'target', 'iotgo')
+        tree(sdk, 'src', 'cmp', 'iotgo')
+        tree(sdk, 'tm', 'iotgo')
+      })
+
+    try {
+      const sdk = Path.join(dir, '.sdk')
+      deepStrictEqual(validateManifest(Fs, sdk, manifestOf(sdk), KINDS), [])
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
+  // A tier for a target the package does not ship. Harmless on its own, and
+  // exactly the leftover a rename produces — which later reads as coverage
+  // for something that is not there.
+  test('a parity tier for an unprovided target is a WARNING', () => {
+    const dir = makePackage(
+      {
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        provides: { target: ['iotgo'] },
+        parity: { iotgo: 'MIRRORED', iotrb: 'MIRRORED' },
+      },
+      (sdk) => {
+        def(sdk, 'target', 'iotgo')
+        tree(sdk, 'src', 'cmp', 'iotgo')
+        tree(sdk, 'tm', 'iotgo')
+      })
+
+    try {
+      const sdk = Path.join(dir, '.sdk')
+      const found = validateManifest(Fs, sdk, manifestOf(sdk), KINDS)
+
+      deepStrictEqual(errors(found), [],
+        'a stale parity entry failed the package')
+      deepStrictEqual(found.map((f: any) => f.point),
+        ['manifest-parity-unprovided'])
+      ok(found[0].note.includes('iotrb'))
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
   test('something on disk that nobody claims is a WARNING', () => {
     // It works — it is just undiscoverable, which is nearly always a
     // forgotten manifest edit rather than a broken package. Warning, not

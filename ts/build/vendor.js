@@ -195,7 +195,29 @@ function main() {
     }
   }
 
+  // A MANIFEST SECTION NO ROUTE PRODUCES ANY MORE.
+  //
+  // Entries are written per key and were never pruned, so REMOVING a route —
+  // which is what migrating a target out of the scaffold does — left its
+  // section behind claiming files that are no longer in the tree. The guard
+  // then failed as "vendored file is missing", which reads as a deleted
+  // template rather than as a stale manifest, and the fix looks like putting
+  // the file back.
+  //
+  // Only meaningful on an UNFILTERED run: `--lib`/`--lang` deliberately leave
+  // every unselected route's entry alone (see the header note), so a filtered
+  // run cannot tell "not selected" from "no longer exists".
+  const wholeRun = 0 === libsel.length && 0 === langsel.length
+  const produced = new Set(routes.route.map((r) => r.lib + '/' + r.port))
+  const stale = !wholeRun ? [] :
+    Object.keys(manifest.library).filter((k) => !produced.has(k))
+
   if (check) {
+    for (const key of stale) {
+      console.error('MANIFEST ' + key + ' has no route — stale section, run `make vendor`')
+      drift++
+    }
+
     if (0 < drift) {
       console.error('\nvendor --check: ' + drift + ' problem(s). Run `make vendor` ' +
         'for an intentional resync; a local edit to vendored code needs a marked ' +
@@ -207,6 +229,10 @@ function main() {
   }
 
   manifest.tag = tag
+  for (const key of stale) {
+    delete manifest.library[key]
+    console.log('pruned ' + key + ' (no route)')
+  }
   manifest.library = Object.fromEntries(
     Object.entries(manifest.library).sort(([a], [b]) => a.localeCompare(b)))
   manifest.note = manifest.note ||

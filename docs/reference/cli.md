@@ -90,16 +90,19 @@ If the source `.sdk` folder cannot be found, the CLI fails and lists the
 locations it searched.
 
 The built-in SDK targets are: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
-`csharp`, `java`, `kotlin`, `scala`, `swift`, `dart`, `rust`, `c`, `cpp`,
-`zig`, `perl`, `clojure`, `elixir`, `ocaml`, `haskell`, `lean`. Every one
+`csharp`, `java`, `kotlin`, `scala`, `swift`, `rust`, `c`, `cpp`,
+`zig`, `perl`, `clojure`, `elixir`, `ocaml`. Every one
 of them vendors a `@voxgig/struct` port and ships all enterprise features
 with a full offline test suite.
 
-Four further targets CONSUME another target's SDK rather than being one,
-and need it present in the same project: `go-cli` and `go-mcp` (wrap
-`go`), `py-data` (wraps `py`) and `seneca-provider` (wraps `ts`). They
-switch the standard generation phases off and emit their whole package
-from `Main`. `seneca-provider` generates into a separate repo — see
+Three further built-in targets CONSUME another target's SDK rather than
+being one, and need it present in the same project: `go-cli` and `go-mcp`
+(wrap `go`) and `py-data` (wraps `py`). They switch the standard
+generation phases off and emit their whole package from `Main`.
+
+`seneca-provider` (wraps `ts`) is the same shape and comes from a package:
+`voxgig-sdkgen package add @voxgig/sdkgen-infrapack`. It is the one
+a project normally generates into a separate repo — see
 [out-of-tree targets](../explanation/out-of-tree-targets.md).
 
 ### `doctor`

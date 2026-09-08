@@ -39,7 +39,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ITEM_NAME_RE = exports.SCHEMA = exports.MANIFEST = void 0;
+exports.ITEM_NAME_RE = exports.PARITY = exports.SCHEMA = exports.MANIFEST = void 0;
 exports.manifestPath = manifestPath;
 exports.probePackage = probePackage;
 exports.readManifest = readManifest;
@@ -55,6 +55,23 @@ exports.MANIFEST = MANIFEST;
 // the file, before anything version-specific is interpreted.
 const SCHEMA = 1;
 exports.SCHEMA = SCHEMA;
+// THE CLOSED PARITY VOCABULARY.
+//
+// The first three are `ts/test/parity.test.ts`'s tiers, which grade a
+// language target against the shared `.aontu` corpus. `CONSUMER` is the
+// fourth and grades nothing: a consumer target wraps another target's SDK and
+// has no primary-utility surface to measure, so `parity.test.ts` keeps the
+// bundled ones in NON_SDK_TARGETS rather than in a tier. A package holding
+// one needs a way to say the same thing, and saying nothing is not it — an
+// absent field cannot be told apart from an author who did not know the field
+// existed, which is the silently-absent shape every other guard in this repo
+// exists to prevent.
+//
+// Closed, and checked, because a declaration nothing checks is the failure
+// `engines.sdkgen` documents about itself two fields up: a typo would
+// otherwise be indistinguishable from a considered choice.
+const PARITY = ['FULL', 'MIRRORED', 'UNCOVERED', 'CONSUMER'];
+exports.PARITY = PARITY;
 // The manifest path for a `.sdk` folder: its SIBLING, not its child.
 //
 // The package root is the parent of `.sdk` — which is what `resolveSource`
@@ -243,6 +260,63 @@ function validateManifest(fs, sdkfolder, manifest, kinds) {
                         '` but ' + missing + ' is not in the package'
                 });
             }
+        }
+    }
+    // The parity declaration, checked in both directions like everything else
+    // here: the VALUE against the closed vocabulary, and the KEY against what
+    // the package actually provides. A tier declared for a target the package
+    // does not ship is a leftover from a rename — harmless in itself, and
+    // exactly the kind of leftover that later reads as coverage.
+    const targets = new Set(provides.target ?? []);
+    const graded = new Set(Object.keys(manifest.parity ?? {}));
+    // A PROVIDED TARGET THE MANIFEST GRADES NOTHING FOR, when it grades OTHERS.
+    //
+    // Checking only the values leaves the weaker half undone: a typo'd tier is
+    // caught while an absent one passes, and absent is the failure mode the
+    // closed sets in this repo exist for — indistinguishable from an author who
+    // did not know the field was there.
+    //
+    // SCOPED TO A PARTIAL DECLARATION, and the scope is a real constraint
+    // rather than timidity. An ENTIRELY absent `parity` is the BUNDLED
+    // manifest's deliberate state: design §18.4a refused to duplicate
+    // parity.test.ts's tier map into ts/project/sdkgen-package.json, because
+    // the intended direction is the reverse — the manifest becomes the source
+    // and the suite reads it. Warning on a wholly absent field would fire on
+    // the shipped scaffold's 25 targets and demand that duplication now, which
+    // is the decision §18.4a made, not one to reverse from inside a validator.
+    //
+    // What IS unambiguous is inconsistency: a manifest that grades some of its
+    // targets and not others has no second reading. Nobody decides to grade two
+    // of three.
+    //
+    // WARNING, not error, and the level is the argument. The package works — a
+    // missing coverage declaration installs and generates correctly — so
+    // refusing it would be a worse outcome than saying so, the same call
+    // `manifest-item-unclaimed` makes for a tree nothing claims.
+    for (const name of (0 === graded.size ? [] : [...targets].sort())) {
+        if (!graded.has(name)) {
+            found.push({
+                level: 'warn', point: 'manifest-parity-missing', file, name: name,
+                note: file + ': target `' + name + '` has no `parity` entry — its ' +
+                    'coverage is undeclared, which reads the same as having none. One ' +
+                    'of: ' + PARITY.join(', ')
+            });
+        }
+    }
+    for (const [name, tier] of Object.entries(manifest.parity ?? {})) {
+        if (!PARITY.includes(tier)) {
+            found.push({
+                level: 'error', point: 'manifest-parity-unknown', file, name,
+                note: file + ': `parity.' + name + '` is "' + tier +
+                    '" — must be one of: ' + PARITY.join(', ')
+            });
+        }
+        if (!targets.has(name)) {
+            found.push({
+                level: 'warn', point: 'manifest-parity-unprovided', file, name,
+                note: file + ': `parity.' + name + '` names a target this package ' +
+                    'does not provide — nothing declares its coverage'
+            });
         }
     }
     // The other direction. Only for kinds the manifest MENTIONS plus the ones

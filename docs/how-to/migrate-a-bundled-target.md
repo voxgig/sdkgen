@@ -3,9 +3,19 @@
 The checklist that makes the first move of a bundled target into its own
 package safe.
 
-**This has been done once**, for `haskell` →
-[`packages/sdkgen-haskell`](https://github.com/voxgig/sdkgen/tree/main/packages/sdkgen-haskell).
-Everything below is written from that, not from reading the code.
+**This has been done for four targets**, into two pack repositories:
+`dart`, `haskell` and `lean` →
+[sdkgen-langpack](https://github.com/voxgig/sdkgen-langpack), and
+`seneca-provider` →
+[sdkgen-infrapack](https://github.com/voxgig/sdkgen-infrapack). Everything
+below is written from those moves, not from reading the code.
+
+**A pack is one npm package providing SEVERAL targets.** `provides.target`
+is a list, so `package add` installs them all and
+`target add @voxgig/sdkgen-langpack/dart` takes one. That is the shape to
+copy: three languages nobody releases separately do not need three release
+trains, and while no packaged target is publishable at all, fewer published
+artifacts is the cheaper mistake.
 
 A bundled target and a package target are the *same shape* — `ts/project/`
 is itself an sdkgen package, which is exactly why. So migrating one is a
@@ -39,8 +49,21 @@ as **peers** (a consumer necessarily has them via sdkgen, and a second copy
 at a different version is the outcome worth preventing) **and** as devDeps,
 so its own type-check resolves.
 
-Run that grep and declare whatever it prints, minus `@voxgig/sdkgen`
-itself.
+**The grep is a starting point, not the answer.** It is a text search over
+files that are mostly strings containing other languages' source, so it
+cannot tell an import of the component from a `require` line the component
+*emits*. Open each hit and declare only the module's real top-level imports.
+
+For `haskell` the two coincided. For `seneca-provider` they do not:
+the grep prints `@seneca/maintain`, which appears inside the template
+literal that writes the generated provider's test file. It is a dependency
+of the generated package, declared in that target's `deps` block, and
+putting it in the sdkgen package's manifest would make every consumer supply
+a peer they have no reason to have. Expect this from any target that
+generates a Node package.
+
+Declare what remains, minus `@voxgig/sdkgen` itself. The set is per target:
+`haskell` needs `@voxgig/struct`, `seneca-provider` does not.
 
 **Check its parity tier.** A FULL-tier target drives the shared `.aontu`
 corpus, which today lives in create-sdkgen and is reachable only from
@@ -49,10 +72,29 @@ migrated FULL-tier target is silently capped below its tier. MIRRORED and
 UNCOVERED targets have no such dependency — which is the whole argument
 for going first with one.
 
-**Check nothing wraps it.** The consumer targets (`go-cli`, `go-mcp`,
-`py-data`, `seneca-provider`) each name the target they wrap. Migrating a
-wrapped target means the wrapper's package now depends on the wrapped
-one's.
+Both of those sets are now empty: every bundled language target is FULL.
+A CONSUMER target has no tier to cap at all, and declares
+`"parity": {"<t>": "CONSUMER"}` — outside the tier system rather than
+saying nothing, since an absent field cannot be told apart from an author
+who did not know it existed.
+
+**Two FULL-tier targets have since moved anyway** (`dart` and `lean`), and
+the cost is worth stating rather than hiding. The corpus is materialised
+into each project as `.sdk/test/test.json`, so a real generated SDK still
+executes it and the FULL tier stays accurate for a consumer. What the pack
+repository cannot do is verify that, because the corpus source is not
+published. Declare the true tier and say so in the pack README: a green
+build in a pack is not a green corpus. Do not downgrade the tier to match
+what CI happens to check — that would make the manifest lie about the
+target.
+
+**Check what wraps it, and what it wraps.** The consumer targets (`go-cli`,
+`go-mcp`, `py-data`, `seneca-provider`) each name the target they wrap.
+Migrating a wrapped target means the wrapper's package now depends on the
+wrapped one's. Migrating a wrapper is the safe direction — it needs
+something the box still provides — but there is no manifest field for that
+requirement, so state it in the package README and let the target's own
+throw report it at generation.
 
 ## The move
 
@@ -92,7 +134,23 @@ membership in closed sets:
 | `ts/test/featuremodel.test.ts` | remove from `SDK_TARGETS` |
 | `ts/test/featuresource.test.ts` | remove from the pinned `untrimmable` list, if it is on it |
 | `ts/test/generate.test.ts` | remove its rows from the data-representation and manifest-name tables |
+| `ts/test/entitytypes.test.ts` | remove its typed-model row |
+| `ts/test/generatedcompile.test.ts` | remove from the auth-null tables (`AUTHNULL_UNCOVERED`, `AUTHNULL_FIX_SHAPE`, …) |
+| `ts/vendor/routes.json` | remove its vendoring routes, and record the exclusion in the note — its templates are outside this write root now |
+| `ts/test/vendored.test.ts` | remove its vendored-tree pins and comment-syntax entry |
 | `ts/test/golden/add-output.txt` | regenerate with `npm run golden` |
+| `ts/test/vendored.json` | regenerate with `make vendor` — do NOT hand-edit |
+
+`src/helpers/canonType.ts` is the exception that STAYS. Its per-target
+column is public API (`canonToType`), and a packaged target's
+`EntityTypes_<lang>` still calls it. A shared lookup keyed by target name is
+not an enumeration of what this repo ships.
+
+A removed vendoring route used to leave its manifest section behind,
+claiming files the tree no longer had — which the guard reported as
+"vendored file is missing", reading like a deleted template rather than a
+stale manifest. `build/vendor.js` now prunes a section no route produces,
+on an unfiltered run, and `--check` reports one as drift.
 
 There is **no `target-index.aontu` in the bundled scaffold** — the index is
 created per consumer project by the `loadContent` bootstrap, so there is
@@ -108,7 +166,13 @@ tier, and equally if you remove the tier and forget the tree. Let it.
 This is the step with real content in it. A mature target has tests that
 are *about that language* — `haskell` had two, on the `.cabal` module
 declaration and on `formatHsValue` key ordering, each with several
-paragraphs of hard-won rationale.
+paragraphs of hard-won rationale. `dart` had four (both config
+representations carrying `options.server`, the data branch decoding per
+Config instance, and the omni runner swap) and `lean` one (its runner
+driving only declared ops). Budget for finding them: they are scattered
+through `generate.test.ts` rather than gathered anywhere, and a grep for
+the target name also returns every list membership and every comment that
+merely mentions it.
 
 Deleting them is not an option: that is coverage the target still needs.
 Port them to the package's suite on the test kit, keeping their comments. The
@@ -137,7 +201,16 @@ has to exercise the shapes that have historically broken this target.
 ```
 
 `parity` is where the tier now lives. It travels with the target, which is
-the point of moving it.
+the point of moving it. The vocabulary is `FULL`, `MIRRORED`, `UNCOVERED`
+and `CONSUMER`, and `package check` rejects anything else. It also warns on
+an entry naming a target the package does not provide, and on a target left
+ungraded when the manifest grades others.
+
+Declare the sdkgen range from the API the target actually uses, not from the
+oldest release that understands a package. A target calling a helper added in
+4.8.0 needs `>=4.8.0` in both `engines.sdkgen` and the peer range, or it
+installs against 4.7 and dies at generation on a missing export — after
+`package add` has reported success.
 
 `package.json` — what npm reads. Beyond the usual, it needs `files`
 covering `.sdk` and `sdkgen-package.json`, the peers the candidate check

@@ -35,6 +35,12 @@ exports.manifestParity = manifestParity;
 //   consumer.compile()                             // as a consumer's build does
 //   const { files, leaks } = await generateInto(consumer, { model })
 //
+// A target with `output: path` writes outside the consumer root, so declare
+// its destinations and read them back per destination:
+//
+//   const { outside } = await generateInto(
+//     consumer, { model, outside: ['../acme-provider'] })
+//
 // That runs the REAL add pipeline and the REAL generation, so provenance,
 // index handling, the feature fan-out and the trim catalogue are all exercised
 // against the package as published rather than as described.
@@ -532,44 +538,94 @@ async function generateInto(consumer, opts) {
     //
     // On POSIX both transformations are identity, so this changes nothing there.
     const rootkey = volumeKey(consumer.root);
+    // The declared out-of-tree destinations, resolved the way `output: path` is
+    // — against the consumer root — and reduced to volume keys so they compare
+    // with generated paths on the same terms as the root does.
+    //
+    // LONGEST KEY FIRST. A destination nested inside another would otherwise be
+    // matched by whichever came first in the array, silently filing its files
+    // under the wrong one; sorting makes the most specific destination win, the
+    // same rule a router uses.
+    const declared = (opts.outside ?? [])
+        .map((dest) => ({ dest, key: volumeKey(node_path_1.default.resolve(consumer.root, dest)) }))
+        .sort((a, b) => b.key.length - a.key.length);
     const files = {};
+    const outside = {};
+    for (const { dest } of declared) {
+        outside[dest] = {};
+    }
     for (const [path, content] of Object.entries(vol.toJSON())) {
         const key = volumeKey(path);
-        // A KEY OUTSIDE THE ROOT IS A BUG HERE, NOT A RESULT.
+        const under = (base) => key === base || key.startsWith(base + '/');
+        const rel = (base) => key === base ? '' : key.slice(base.length + 1);
+        // The generator's own bookkeeping, wherever it landed. Skipped in both
+        // views for the same reason: the caller is asking what package was
+        // written, not what jostraca recorded about writing it.
+        const junk = (p) => p.startsWith('.jostraca/') || p.includes('/.jostraca/');
+        if (under(rootkey)) {
+            const p = rel(rootkey);
+            if (!junk(p))
+                files[p] = content;
+            continue;
+        }
+        const hit = declared.find((d) => under(d.key));
+        if (null != hit) {
+            const p = rel(hit.key);
+            if (!junk(p))
+                outside[hit.dest][p] = content;
+            continue;
+        }
+        // A KEY OUTSIDE THE ROOT AND EVERY DECLARED DESTINATION IS A BUG HERE,
+        // NOT A RESULT.
         //
         // It means the string generation wrote under and the string being stripped
         // off have diverged, and the caller would otherwise get a file map keyed
         // by absolute path — which reads as "my component never ran" rather than
         // as a path problem, and is exactly how this presented on Windows.
-        if (key !== rootkey && !key.startsWith(rootkey + '/')) {
-            throw new Error('testkit: generated path is not under the consumer root, so the ' +
-                'result cannot be keyed.\n  root: ' + consumer.root +
-                '\n  path: ' + path +
-                '\n  compared as: ' + rootkey + '  vs  ' + key +
-                '\nThese must agree once separators and any drive letter are ' +
-                'normalised — memfs stores volume keys, not OS paths.');
-        }
-        const rel = key === rootkey ? '' : key.slice(rootkey.length + 1);
-        if (rel.startsWith('.jostraca/') || rel.includes('/.jostraca/'))
-            continue;
-        files[rel] = content;
+        //
+        // An out-of-tree target is the one legitimate way to be outside the root,
+        // and it is legitimate only because the caller SAID SO: pass its
+        // `output: path` in `outside`. A path under neither still throws, so a
+        // package cannot get here by accident.
+        throw new Error('testkit: generated path is not under the consumer root or any ' +
+            'declared out-of-tree destination, so the result cannot be keyed.' +
+            '\n  root: ' + consumer.root +
+            '\n  path: ' + path +
+            '\n  compared as: ' + rootkey + '  vs  ' + key +
+            (0 === declared.length
+                ? '\nIf this target declares `output: path`, pass that path in the ' +
+                    '`outside` option.'
+                : '\n  declared: ' + declared.map((d) => d.key).join(', ')) +
+            '\nThese must agree once separators and any drive letter are ' +
+            'normalised — memfs stores volume keys, not OS paths.');
     }
     const allow = opts.allowPlaceholder ?? (() => false);
     const leaks = [];
-    for (const [path, content] of Object.entries(files)) {
-        if ('string' !== typeof content)
-            continue;
-        for (const token of PLACEHOLDERS) {
-            if (content.includes(token) && !allow(path, token)) {
-                leaks.push(path + ': ' + token);
+    // SCANNED IN BOTH VIEWS. An out-of-tree target's output goes through the
+    // same replace maps and leaks a placeholder the same way, so a scan that
+    // covered only the in-tree files would report `leaks: []` for a package
+    // whose whole output is external.
+    const scan = (prefix, map) => {
+        for (const [path, content] of Object.entries(map)) {
+            if ('string' !== typeof content)
+                continue;
+            const label = prefix + path;
+            for (const token of PLACEHOLDERS) {
+                if (content.includes(token) && !allow(label, token)) {
+                    leaks.push(label + ': ' + token);
+                }
+            }
+            const ref = content.match(PLACEHOLDER_REF);
+            if (null != ref && !allow(label, ref[0])) {
+                leaks.push(label + ': ' + ref[0]);
             }
         }
-        const ref = content.match(PLACEHOLDER_REF);
-        if (null != ref && !allow(path, ref[0])) {
-            leaks.push(path + ': ' + ref[0]);
-        }
+    };
+    scan('', files);
+    for (const { dest } of declared) {
+        scan(dest + '/', outside[dest]);
     }
-    return { files, leaks: leaks.sort() };
+    return { files, outside, leaks: leaks.sort() };
 }
 // Write to memfs, read through to the real project.
 function layeredFs(mem) {
