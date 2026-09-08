@@ -2063,6 +2063,151 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // zig guard for the same seam - and for the thing that makes the plugin
+  // trim REAL in zig: the compiler analyses only what a module root reaches,
+  // so the GENERATED feature/secrets/plugins.zig (the root of the
+  // `sekretoplugins` build module) IS the vocabulary, and build.zig declares
+  // the three vendored modules, the root export and the suite's test step
+  // only when the feature is active. An inactive model must generate none of
+  // that: with zig's feature trim off (model/target/zig.aon) the vendored
+  // files still ship, and what keeps a secrets-off SDK from compiling any of
+  // them is exactly the absence asserted below.
+  test('zig: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['zig'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    // THE MODULE ROOT. A kind missing from it is silently absent from the
+    // vocabulary; a kind named in it whose file the trim removed is a
+    // compile error.
+    const root = findFile(out, 'zig/feature/secrets/plugins.zig')
+    ok(null != root, 'zig: no feature/secrets/plugins.zig generated')
+
+    ok(/^pub const hashicorp = @import\("plugins\/hashicorp\.zig"\)\.hashicorp;$/m.test(root!) &&
+      /^pub const boru = @import\("plugins\/boru\.zig"\)\.boru;$/m.test(root!),
+      'zig: the ACTIVE vault group did not reach the module root:\n' + root)
+    ok(/pub const SELECTED = \[_\]sekreto\.Definition\{\s*boru,\s*hashicorp,\s*\};/.test(root!),
+      'zig: SELECTED is missing the vault definitions:\n' + root)
+
+    // The shared HTTP client belongs to NO group (eight kinds import it by
+    // relative path, and the exchange's fetch of last resort is its
+    // fetchjson), so the root always reaches it.
+    ok(/^pub const httpjson = @import\("plugins\/httpjson\.zig"\);$/m.test(root!),
+      'zig: the module root must always export the shared httpjson helper')
+    ok(!/plugins\/(gcpsecrets|azuresecrets|aws|secretspec|onepassword|doppler|infisical)\.zig/.test(root!),
+      'zig: an INACTIVE group reached the module root:\n' + root)
+
+    // build.zig: the three vendored modules, rooted where the vendoring
+    // put them - and the sekretoplugins module rooted at the GENERATED
+    // selection, never at upstream's full-set all.zig.
+    const build = findFile(out, 'zig/build.zig')
+    ok(null != build, 'zig: no build.zig generated')
+    ok(/b\.addModule\("plugin", \.\{\s*\.root_source_file = b\.path\("feature\/secrets\/plugin\/plugin\.zig"\)/.test(build!),
+      'zig: build.zig does not declare the vendored voxgig/plugin module')
+    ok(/b\.addModule\("sekreto", \.\{\s*\.root_source_file = b\.path\("feature\/secrets\/sekreto\/sekreto\.zig"\)/.test(build!),
+      'zig: build.zig does not declare the vendored sekreto module')
+    ok(/b\.addModule\("sekretoplugins", \.\{\s*\.root_source_file = b\.path\("feature\/secrets\/plugins\.zig"\)/.test(build!),
+      'zig: the sekretoplugins module is not rooted at the generated selection')
+    ok(!/b\.path\("[^"]*all\.zig"\)/.test(build!),
+      'zig: build.zig must never root a module at the full-set all.zig barrel')
+    ok(/sdk_mod\.addImport\("sekreto", sekreto_mod\)/.test(build!) &&
+      /sdk_mod\.addImport\("sekretoplugins", sekretoplugins_mod\)/.test(build!),
+      'zig: the sdk module does not import the secrets modules')
+
+    // The gated suite, and the build steps that make zig RUN it: the
+    // all-tests step and a step of its own.
+    ok(null != findFile(out, 'zig/test/feature/secrets/secrets_test.zig'),
+      'zig: the gated secrets suite was not generated')
+    ok(/b\.path\("test\/feature\/secrets\/secrets_test\.zig"\)/.test(build!),
+      'zig: build.zig does not name the secrets suite')
+    ok(/b\.step\("test-secrets"/.test(build!),
+      'zig: build.zig has no test-secrets step')
+    ok(/test_step\.dependOn\(&run_secrets\.step\)/.test(build!),
+      'zig: the all-tests step does not run the secrets suite')
+
+    // root.zig exports the feature type; the feature source and the vendored
+    // cores are in the tree, at upstream\'s depth.
+    ok(/^pub const SecretsFeature = @import\("feature\/secrets\.zig"\)\.SecretsFeature;$/m
+      .test(findFile(out, 'zig/root.zig')!),
+      'zig: root.zig does not export SecretsFeature')
+    ok(null != findFile(out, 'zig/feature/secrets.zig'),
+      'zig: the secrets feature source was not generated')
+    ok(/name, "secrets"\)\) return @import\("\.\.\/feature\/secrets\.zig"\)\.SecretsFeature\.make\(\)/
+      .test(findFile(out, 'zig/core/config.zig')!),
+      'zig: make_feature does not instantiate the secrets feature')
+    ok(null != findFile(out, 'zig/feature/secrets/sekreto/sekreto.zig'),
+      'zig: the vendored sekreto core was not generated')
+    ok(null != findFile(out, 'zig/feature/secrets/plugin/host.zig'),
+      'zig: the vendored voxgig/plugin core was not generated')
+
+    // The trim on disk: the active group and the ungrouped helper stay, an
+    // inactive group goes - request signing with the aws group.
+    ok(null != findFile(out, 'zig/feature/secrets/plugins/hashicorp.zig'),
+      'zig: the ACTIVE vault group lost hashicorp')
+    ok(null != findFile(out, 'zig/feature/secrets/plugins/httpjson.zig'),
+      'zig: the shared httpjson helper must ship with the feature core')
+    ok(null == findFile(out, 'zig/feature/secrets/plugins/gcpsecrets.zig'),
+      'zig: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'zig/feature/secrets/plugins/sigv4.zig'),
+      'zig: the inactive aws group still ships its request signing')
+
+    // THE INACTIVE BASELINE: nothing of the feature is REACHABLE. Not a
+    // file-absence check for the vendored cores, deliberately: zig\'s
+    // feature trim is off, so they ride along in the Copy - but no module
+    // is rooted in them, so zig never analyses them. What must be absent is
+    // every declaration that would.
+    const plain = await generate(['zig'])
+    const plainbuild = findFile(plain, 'zig/build.zig')
+    ok(!/sekreto|secrets/.test(plainbuild!),
+      'zig: an inactive model still declares the secrets modules or suite:\n' +
+      plainbuild)
+    ok(!/SecretsFeature/.test(findFile(plain, 'zig/root.zig')!),
+      'zig: an inactive model still exports SecretsFeature from root.zig')
+    ok(null == findFile(plain, 'zig/feature/secrets/plugins.zig'),
+      'zig: an inactive model still generated the plugin module root')
+    ok(!/"secrets"/.test(findFile(plain, 'zig/core/config.zig')!),
+      'zig: an inactive model still names the secrets feature in make_feature')
+
+    // And a model that DECLARES the feature inactive trims every provider
+    // group (the scala hazard: pluginExcludes walks active features only),
+    // leaving the ungrouped helper as the one file under plugins/.
+    const { fs: fs2, vol: vol2 } = memfs({})
+    const off = SdkGen({
+      fs: layeredFs(fs2), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const offres = await off.generate({
+      model: makeModel(['zig'], undefined,
+        'main: kit: feature: secrets: { active: false }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(offres.ok, true, 'generation did not report ok')
+    const offfiles = Object.keys(vol2.toJSON() as Record<string, string>)
+      .map((p) => Path.relative(STAGE, p).split(Path.sep).join('/'))
+      .filter((p) => !p.includes('.jostraca/'))
+      .filter((p) => /zig\/feature\/secrets\/plugins\//.test(p))
+    deepStrictEqual(offfiles.map((p) => p.replace(/^.*\//, '')).sort(),
+      ['httpjson.zig'],
+      'zig: a model with secrets declared INACTIVE must trim every plugin group')
+  })
+
+
   // rb guard for the same seam. An ACTIVE secrets model must emit the
   // plugin module requires and the FEATURE_PLUGINS entries into config.rb,
   // and the INACTIVE groups' vendored files must stay out of the tree

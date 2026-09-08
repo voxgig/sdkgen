@@ -960,6 +960,107 @@ describe('auth null', () => {
   })
 
 
+  // zig SECRETS, END TO END - the only lane that BUILDS a generated zig SDK
+  // and RUNS its shipped secrets suite with the feature ACTIVE. The
+  // toolchain IS here (`command -v zig` -> ~/.zvm/bin/zig, 0.16.0); the
+  // "no zig toolchain" note this file used to carry described the machine
+  // it was written on, not this one.
+  //
+  // This is also the only lane that COMPILES the three vendored modules
+  // (plugin, sekreto, sekretoplugins) against the generated build.zig, and
+  // the generated feature/secrets/plugins.zig as the sekretoplugins root:
+  // generate.test.ts pins their TEXT, and only a real `zig build` can see
+  // that the module graph resolves and that the feature links.
+  //
+  // `zig build test-secrets` rather than `zig build test`: the all-tests
+  // step also runs the struct and primary corpus suites, which read a
+  // PROJECT's compiled `.sdk/test/test.json` beside the SDK - sdkgen does not
+  // carry one - so the suite gets a step of its own (Main_zig FEATURE_TESTS),
+  // and the count below is a count of THIS suite.
+  //
+  // The `vault` group is on so the lane also exercises the plugin
+  // vocabulary with a kind actually declared: the suite's "selected plugin
+  // kind" case SKIPS itself when the group was trimmed, which is the one
+  // condition this lane generates with `vault` on to see - so a skip here
+  // is a failure.
+  test('zig: the secrets feature runs with the feature active', async (t) => {
+    const sdkroot = Path.join(tmp, 'zig-secrets')
+    await generateTo('zig', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // The shipped suite and the module root must actually be there: build.zig
+    // names both, so a lane that lost either would fail for a reason that
+    // names the wrong thing.
+    ok(Fs.existsSync(Path.join(sdkroot, 'test', 'feature', 'secrets', 'secrets_test.zig')),
+      'zig: the gated secrets suite was not generated')
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'plugins.zig')),
+      'zig: the sekretoplugins module root was not generated')
+
+    // Probed AFTER generating, so a machine without zig still proves the
+    // suite is emitted. The templates and both vendored ports are written
+    // for zig 0.16 (build.zig's `root_module`, std.Io, std.process.Environ),
+    // so any other version is an environment gap, reported as a visible
+    // skip rather than as a compile failure of the generated SDK.
+    const zig = toolchain('zig')
+    if (null == zig) return t.skip('no zig toolchain here (zig)')
+    const version = run(zig, ['version'], sdkroot)
+    const found = version.out.trim().split(/\r?\n/)[0] || ''
+    if (!version.ok || !/^0\.16\./.test(found)) {
+      return t.skip('zig 0.16 is required by the generated build.zig; found: ' +
+        (found || tail(version.out, 3)))
+    }
+
+    const probe = run(zig, ['build', 'test-secrets', '--summary', 'all'], sdkroot)
+
+    // Neither is a pass nor a lane failure - see the authnull lanes.
+    if (probe.unlaunchable) {
+      return t.skip('zig: the toolchain could not be started here: ' +
+        tail(probe.out, 3))
+    }
+    if (probe.timedOut) return t.skip('zig: ' + probe.out)
+
+    // LF-normalised before anything is matched, as the other lanes do.
+    const out = probe.out.replace(/\r\n/g, '\n')
+
+    // Name the failing cases: the summary says how many and never which.
+    const failed = out.split('\n')
+      .filter((l: string) => /^error: '.*' failed/.test(l))
+    ok(probe.ok, 'zig secrets suite failed:\n' + failed.join('\n') +
+      '\n' + tail(out))
+
+    // Exit zero is not enough: positive evidence that the tests RAN. The
+    // summary tallies the suite ("34/34 tests passed"), and a suite that was
+    // trimmed reads as a small number here rather than a pass. Every counted
+    // test must pass, and none may skip - the vault vocabulary case skips
+    // itself when the plugin group was not generated, which is the very
+    // condition this lane generates with `vault` on to see.
+    const tally = /(\d+)\/(\d+) tests passed( \(([^)]*)\))?/.exec(out)
+    ok(null != tally,
+      'zig: no `N/N tests passed` tally - the suite did not run:\n' + tail(out))
+    const passed = Number((tally as RegExpExecArray)[1])
+    const total = Number((tally as RegExpExecArray)[2])
+    const annotation = (tally as RegExpExecArray)[4] || ''
+
+    ok(10 < total, 'zig: the secrets suite counted only ' + total +
+      ' test(s) - it was trimmed, not run:\n' + tail(out))
+    strictEqual(passed, total,
+      'zig: the secrets suite counted ' + total + ' test(s) but ' + passed +
+      ' passed:\n' + failed.join('\n') + '\n' + tail(out))
+    ok(!/skipped/.test(annotation),
+      'zig: test(s) were SKIPPED (' + annotation + ') - the vault plugin ' +
+      'group was not generated, so the plugin vocabulary went untested:\n' +
+      tail(out))
+    ok(/steps succeeded/.test(out) && !/failed\)/.test(out.match(/Build Summary:.*/)?.[0] || ''),
+      'zig: a build step failed, so the tally is incomplete:\n' + tail(out))
+
+    // Say so in the log: the count is the evidence, and a reader of a green
+    // run should not have to trust that it was read.
+    t.diagnostic('zig: secrets suite ran ' + passed + ' of ' + total +
+      ' test(s) through `zig build test-secrets`')
+  })
+
+
   // swift SECRETS, END TO END - the only lane that RUNS the swift secrets
   // feature with the feature ACTIVE, through the shipped XCTest suite. The
   // toolchain IS here (`command -v swift` -> /opt/swift/usr/bin/swift,
@@ -2824,23 +2925,41 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
     'secrets.clj ("secrets-auth-nil-suppresses-the-credential"), which the ' +
     'clojure secrets lane in this file runs through the generated runner',
 
-  // The four below were the AUTHNULL_OUTSTANDING list. They now carry the
-  // fix, but READ BY EYE ONLY: no ocaml, scala, zig or lean toolchain
-  // existed where the change was written, so not one of them has been
-  // compiled, let alone had the suppression exercised. That is a weaker
-  // position than the four above it, which at least compile in some CI: these
-  // are unproven at BOTH levels. The structural guard below is all that holds
-  // them, and a structural guard cannot see a type error or a mis-ordered
-  // statement. Whoever gets one of these toolchains should build it first and
-  // add a lane second. (clojure and elixir were the fifth and sixth, and are
-  // the worked examples of doing exactly that - check the toolchain before
-  // inheriting the claim. elixir's lane is above, and it is in
-  // AUTHNULL_STANDALONE; this list sat on "no elixir toolchain" for a machine
-  // that had one, and the stale-entry guard cannot see a false excuse that
-  // has no lane to contradict it.)
+  // zig has left the UNVERIFIED list. zig 0.16 IS on this machine
+  // (`command -v zig` -> ~/.zvm/bin/zig), and the secrets rollout built a
+  // generated zig SDK and RAN it: the shipped
+  // tm/zig/test/feature/secrets/secrets_test.zig case "secrets active: auth
+  // null suppresses the credential, chain or no chain" drives a LIVE client
+  // through system.fetch and asserts no authorization header reaches the
+  // transport with `auth: null` set alongside an explicit apikey AND a
+  // resolving chain, plus that options.auth survives validation as a
+  // present null. That suite now ALSO runs in sdkgen CI: the `zig: the
+  // secrets feature runs with the feature active` lane above drives
+  // `zig build test-secrets` and requires its tally. It is a secrets lane
+  // rather than an AUTHNULL_LANES row (the table's probe shape - an
+  // executable target - does not fit a zig test step), which is why the
+  // entry stays.
+  zig: 'pinned by the shipped tm/zig/test/feature/secrets/secrets_test.zig ' +
+    '("secrets active: auth null suppresses the credential, chain or no ' +
+    'chain"), which the zig secrets lane in this file runs through ' +
+    '`zig build test-secrets`',
+
+  // The two below were the AUTHNULL_OUTSTANDING list. They now carry the
+  // fix, but READ BY EYE ONLY: no ocaml or scala toolchain existed where the
+  // change was written, so neither has been compiled, let alone had the
+  // suppression exercised. That is a weaker position than the entries above
+  // it, which at least compile in some CI: these are unproven at BOTH levels.
+  // The structural guard below is all that holds them, and a structural
+  // guard cannot see a type error or a mis-ordered statement. Whoever gets
+  // one of these toolchains should build it first and add a lane second.
+  // (clojure, elixir and zig were once on this list, and are the worked
+  // examples of doing exactly that - check the toolchain before inheriting
+  // the claim. elixir's lane is above, and it is in AUTHNULL_STANDALONE;
+  // this list sat on "no elixir toolchain" and "no zig toolchain" for a
+  // machine that had both, and the stale-entry guard cannot see a false
+  // excuse that has no lane to contradict it.)
   ocaml: 'UNVERIFIED - no ocaml toolchain; never compiled, never executed',
   scala: 'UNVERIFIED - no scala toolchain; never compiled, never executed',
-  zig: 'UNVERIFIED - no zig toolchain; never compiled, never executed',
 }
 
 

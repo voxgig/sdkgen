@@ -864,6 +864,41 @@
    }
   },
   {
+   "lib": "plugin",
+   "port": "zig",
+   "lang": "zig",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/zig/feature/secrets/plugin"
+   ],
+   "file": {
+    "zig/src/plugin.zig": "tm/zig/feature/secrets/plugin/plugin.zig",
+    "zig/src/value.zig": "tm/zig/feature/secrets/plugin/value.zig",
+    "zig/src/types.zig": "tm/zig/feature/secrets/plugin/types.zig",
+    "zig/src/ref.zig": "tm/zig/feature/secrets/plugin/ref.zig",
+    "zig/src/version.zig": "tm/zig/feature/secrets/plugin/version.zig",
+    "zig/src/capability.zig": "tm/zig/feature/secrets/plugin/capability.zig",
+    "zig/src/resolve.zig": "tm/zig/feature/secrets/plugin/resolve.zig",
+    "zig/src/env.zig": "tm/zig/feature/secrets/plugin/env.zig",
+    "zig/src/config.zig": "tm/zig/feature/secrets/plugin/config.zig",
+    "zig/src/graph.zig": "tm/zig/feature/secrets/plugin/graph.zig",
+    "zig/src/depend.zig": "tm/zig/feature/secrets/plugin/depend.zig",
+    "zig/src/order.zig": "tm/zig/feature/secrets/plugin/order.zig",
+    "zig/src/point.zig": "tm/zig/feature/secrets/plugin/point.zig",
+    "zig/src/export.zig": "tm/zig/feature/secrets/plugin/export.zig",
+    "zig/src/catalog.zig": "tm/zig/feature/secrets/plugin/catalog.zig",
+    "zig/src/inst.zig": "tm/zig/feature/secrets/plugin/inst.zig",
+    "zig/src/host.zig": "tm/zig/feature/secrets/plugin/host.zig"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/plugin/types\\.zig$",
+     "from": "    \"host\",  \"ref\",        \"name\",  \"tag\",     \"point\", \"key\", \"capability\",\n    \"range\", \"version\",    \"match\", \"candidates\", \"cycle\", \"holders\",\n    \"refs\",  \"path\",       \"cause\",",
+     "to": "    \"host\",  \"ref\",     \"name\",  \"tag\",        \"point\", \"key\",     \"capability\",\n    \"range\", \"version\", \"match\", \"candidates\", \"cycle\", \"holders\", \"refs\",\n    \"path\",  \"cause\","
+    }
+   ]
+  },
+  {
    "lib": "sekreto",
    "port": "clojure",
    "lang": "clojure",
@@ -1505,6 +1540,33 @@
      "optional": true
     }
    ]
+  },
+  {
+   "lib": "sekreto",
+   "port": "zig",
+   "lang": "zig",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/zig/feature/secrets/sekreto",
+    "tm/zig/feature/secrets/plugins"
+   ],
+   "file": {
+    "zig/src/sekreto.zig": "tm/zig/feature/secrets/sekreto/sekreto.zig",
+    "zig/src/provider.zig": "tm/zig/feature/secrets/sekreto/provider.zig",
+    "zig/src/builtins.zig": "tm/zig/feature/secrets/sekreto/builtins.zig",
+    "zig/src/addr.zig": "tm/zig/feature/secrets/sekreto/addr.zig",
+    "zig/plugins/httpjson.zig": "tm/zig/feature/secrets/plugins/httpjson.zig",
+    "zig/plugins/sigv4.zig": "tm/zig/feature/secrets/plugins/sigv4.zig",
+    "zig/plugins/aws.zig": "tm/zig/feature/secrets/plugins/aws.zig",
+    "zig/plugins/hashicorp.zig": "tm/zig/feature/secrets/plugins/hashicorp.zig",
+    "zig/plugins/boru.zig": "tm/zig/feature/secrets/plugins/boru.zig",
+    "zig/plugins/gcpsecrets.zig": "tm/zig/feature/secrets/plugins/gcpsecrets.zig",
+    "zig/plugins/azuresecrets.zig": "tm/zig/feature/secrets/plugins/azuresecrets.zig",
+    "zig/plugins/onepassword.zig": "tm/zig/feature/secrets/plugins/onepassword.zig",
+    "zig/plugins/doppler.zig": "tm/zig/feature/secrets/plugins/doppler.zig",
+    "zig/plugins/infisical.zig": "tm/zig/feature/secrets/plugins/infisical.zig",
+    "zig/plugins/secretspec.zig": "tm/zig/feature/secrets/plugins/secretspec.zig"
+   }
   },
   {
    "lib": "struct",

@@ -15,6 +15,11 @@ const std = @import("std");
 // The Zig test framework can crash with signal 11 during cleanup *after* all
 // tests pass, due to *MapRef/*ListRef cross-references in arena teardown. The
 // Makefile filters the output: "N/N tests passed" with N==total is success.
+//
+// GENERATED from src/cmp/zig/fragment/Build.fragment.zig (Main_zig): the
+// `// #...` marker lines there are slots the generator fills from the model -
+// a GATED feature's build modules and its test step appear only when the
+// feature is active, so an SDK without that feature declares none of them.
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -44,6 +49,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     sdk_mod.addImport("voxgig-struct", struct_mod);
+    // #FeatureModules
 
     const test_step = b.step("test", "Run all tests");
 
@@ -73,4 +79,5 @@ pub fn build(b: *std.Build) void {
         run_t.has_side_effects = true;
         test_step.dependOn(&run_t.step);
     }
+    // #FeatureTestSteps
 }
