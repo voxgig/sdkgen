@@ -137,6 +137,44 @@ const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
 // them which ops to exercise), so each entity carries the basic flow apidef
 // would derive for it. Without one, no test is generated and the shapes above
 // would prove nothing.
+// An entity whose name is not a legal identifier, injected into the fixture
+// model rather than added to it: every other test in this file asserts on the
+// base entity set, and a permanent extra entity would move all of them.
+// `/3ds-sessions` is Evervault's real path shape.
+const DIGIT_ENTITY = `
+main: kit: entity: 3ds_session: {
+  alias: field: {}
+  name: "3ds_session"
+  field: {
+    id: { name: "id", kind: "field", type: "\`$STRING\`", required: true }
+  }
+  fields: [ { name: "id", req: true, type: "\`$STRING\`" } ]
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        args: {}, method: "GET", orig: "/3ds-sessions"
+        segments: [{ lit: "3ds-sessions" }]
+        transform: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: Basic3dsSessionFlow: {
+  entity: "3ds_session", kind: "basic", name: "Basic3dsSessionFlow"
+  step: [ { name: "list", op: "list", match: {} } ]
+}
+`
+
+
+// A `3ds…` token in an IDENTIFIER position: not inside a string or a path,
+// and not the tail of a longer word. Deliberately matches the RAW stem, so it
+// fires when the rename was skipped and stays quiet on the guarded
+// `n3ds_session` / `N3dsSession`.
+const RAW_DIGIT_IDENT = /(^|[^A-Za-z0-9_$."'`\/-])(3ds[A-Za-z_]|3ds_session)/
+
+
 async function generate(
   targetNames: string[], name?: string, extra?: string, sink?: any[],
 ): Promise<Record<string, string>> {
@@ -279,6 +317,69 @@ describe('generate', () => {
 
     strictEqual(leaks.length, 0,
       'generated files leak the ProjectName placeholder:\n  ' + leaks.join('\n  '))
+  })
+
+
+  // AN ENTITY NAME THAT IS NOT AN IDENTIFIER, through the real generator.
+  //
+  // `/3ds-sessions` is an ordinary REST resource and yields the entity name
+  // `3ds_session`. Every target builds identifiers from that name — the
+  // PascalCase Name for the class, the SDK accessor and the generated types;
+  // the snake stem for python modules and test functions; the bare key in the
+  // emitted config map — and no target language permits an identifier that
+  // starts with a digit. Before the guard, `ts` alone emitted
+  // `class 3dsSessionEntity`, `import { 3dsSession }` and `3dsSession()`:
+  // not a degraded SDK, no SDK (issue #124).
+  //
+  // The unit tests pin the rename; this pins the OUTCOME, which is the part
+  // that can regress silently. A component reading `entity.name` where it
+  // needs an identifier reopens the bug in exactly one target, and only a
+  // sweep over the generated text finds it.
+  //
+  // The scan deliberately looks for the RAW stem, not the guarded one: it
+  // fails if the rename is skipped anywhere, and stays quiet on the legal
+  // `n3ds_session` / `N3dsSession` the guard produces. String positions are
+  // excluded, since a digit is fine in the wire route and in a quoted key —
+  // the route `/3ds-sessions` MUST survive, and is asserted separately below.
+  test('a digit-leading entity name generates legal identifiers', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+
+    const bad: string[] = []
+
+    for (const target of targets) {
+      const out = await generate([target], undefined, DIGIT_ENTITY)
+
+      const files = filesFor(out, target)
+      ok(0 < files.length, target + ': generated no files')
+
+      for (const [path, content] of files) {
+        content.split('\n').forEach((line, i) => {
+          if (RAW_DIGIT_IDENT.test(line)) {
+            bad.push(`${path}:${i + 1}: ${line.trim().slice(0, 100)}`)
+          }
+        })
+      }
+    }
+
+    strictEqual(bad.length, 0,
+      'generated identifiers start with a digit:\n  ' + bad.join('\n  '))
+  })
+
+
+  // The rename must not move the WIRE. A request path comes from the point's
+  // `orig`, never from the entity name, so the guarded SDK still calls
+  // `/3ds-sessions` — otherwise the fix would trade a compile error for a
+  // silent 404, which is far worse.
+  test('the digit-leading rename leaves the route alone', async () => {
+    const out = await generate(['ts'], undefined, DIGIT_ENTITY)
+
+    const config = out['ts/src/Config.ts']
+    ok(null != config, 'ts config not generated')
+    ok(config.includes('/3ds-sessions'), 'the route did not survive the rename')
+
+    const sdk = out['ts/src/DemoSDK.ts']
+    ok(null != sdk, 'ts SDK not generated')
+    ok(sdk.includes('N3dsSession('), 'the accessor is not the guarded Name')
   })
 
 
@@ -2136,6 +2237,750 @@ main: kit: target: js: phase: feature: active: false
     deepStrictEqual(
       Object.keys(plainout).filter((p) => /(^|\/)php\/src\//.test(p)), [],
       'php: tm/php/src placeholders leaked into the SDK')
+  })
+
+
+  // csharp guard for the same seam: an ACTIVE secrets model must emit the
+  // FeaturePlugins definitions into core/Config.cs (fully qualified, no
+  // `using`), and the INACTIVE groups' vendored files must stay out of the
+  // tree (Main_csharp's pluginExcludes - the generate-time trim), while the
+  // TWO group-less shared helpers ship regardless: HttpJson.cs, and
+  // Child.cs, which boru (vault) and secretspec (its own group) both call.
+  // Package_csharp's CS8619 gate rides along: the suppression exists for
+  // ONE vendored line in the aws group, so it must appear exactly when that
+  // group is on.
+  test('csharp: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['csharp'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    // Anchored at core/: the vendored voxgig/plugin tree ships a Config.cs
+    // of its own (feature/secrets/plugin/Config.cs), and a bare 'Config.cs'
+    // suffix could find that one.
+    const config = findFile(out, 'csharp/core/Config.cs')
+    ok(null != config, 'csharp: no core/Config.cs generated')
+
+    // The definitions list - the emission that can silently no-op while
+    // everything else stays green. Each symbol is `global::`-qualified,
+    // which is what lets an inactive model emit no `using` at all.
+    ok(/case "secrets":/.test(config!),
+      'csharp: FeaturePlugins has no case for the active secrets feature')
+    ok(/global::Voxgig\.Sekreto\.Plugins\.Boru\.Plugin,/.test(config!) &&
+      /global::Voxgig\.Sekreto\.Plugins\.Hashicorp\.Plugin,/.test(config!),
+      'csharp: FeaturePlugins is missing the vault definitions:\n' +
+      (config!.match(/FeaturePlugins\(string name\)[\s\S]*?\r?\n    \}/) ||
+        ['(no FeaturePlugins)'])[0])
+    ok(!/using Voxgig\.Sekreto/.test(config!),
+      'csharp: Config.cs must reference the plugins fully qualified, not via a using')
+
+    // The trim: an inactive group's vendored file is OUT, the active
+    // group's and BOTH group-less shared helpers are IN.
+    ok(null == findFile(out, 'feature/secrets/plugins/GcpSecrets.cs'),
+      'csharp: the inactive cloud group still ships GcpSecrets')
+    ok(null == findFile(out, 'feature/secrets/plugins/SecretSpec.cs'),
+      'csharp: the inactive secretspec group still ships its child-process plugin')
+    ok(null == findFile(out, 'feature/secrets/plugins/Aws.cs'),
+      'csharp: the inactive aws group still ships Aws.cs')
+    ok(null != findFile(out, 'feature/secrets/plugins/Hashicorp.cs'),
+      'csharp: the ACTIVE vault group lost Hashicorp')
+    ok(null != findFile(out, 'feature/secrets/plugins/HttpJson.cs'),
+      'csharp: the shared HttpJson helper must ship with the feature core')
+    ok(null != findFile(out, 'feature/secrets/plugins/Child.cs'),
+      'csharp: the shared Child helper spans two groups and must ship with ' +
+      'the feature core - Boru and SecretSpec both call it')
+
+    // The vendored cores themselves, and the feature that uses them.
+    ok(null != findFile(out, 'feature/secrets/sekreto/Sekreto.cs'),
+      'csharp: the vendored sekreto core was not generated')
+    ok(null != findFile(out, 'feature/secrets/plugin/Plugin.cs'),
+      'csharp: the vendored voxgig/plugin core was not generated')
+    ok(null != findFile(out, 'csharp/feature/SecretsFeature.cs'),
+      'csharp: the secrets feature source was not generated')
+
+    // The gated suite has to LAND where the test csproj compiles from:
+    // test/ is one default glob, so test/feature/secrets/ is compiled in.
+    ok(null != findFile(out, 'csharp/test/feature/secrets/SecretsFeatureTest.cs'),
+      'csharp: the gated secrets suite was not generated')
+
+    // The CS8619 gate is OFF: the vault group has no such line to quiet.
+    // The root csproj is the one ending 'SDK.csproj'; the test project ends
+    // 'SDKTest.csproj' and does not match.
+    const csproj = findFile(out, 'SDK.csproj')
+    ok(null != csproj, 'csharp: no SDK csproj generated')
+    ok(!/CS8619/.test(csproj!),
+      'csharp: CS8619 must not be suppressed unless the aws group is on')
+
+    // ... and ON when the aws group is selected: the one vendored line in
+    // plugins/Aws.cs that trips it is then compiled into the SDK.
+    const { fs: awsfs, vol: awsvol } = memfs({})
+    const awsres = await SdkGen({
+      fs: layeredFs(awsfs), folder: STAGE, root: '', pino: makeLog(),
+    }).generate({
+      model: makeModel(['csharp'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: aws: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(awsres.ok, true, 'aws generation did not report ok')
+    const awsout: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(awsvol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      awsout[rel] = content
+    }
+    const awscsproj = findFile(awsout, 'SDK.csproj')
+    ok(null != awscsproj, 'csharp: no SDK csproj generated with the aws group')
+    ok(/;CS8619/.test(awscsproj!),
+      'csharp: the aws group is on but Package_csharp did not gate CS8619 in')
+    ok(null != findFile(awsout, 'feature/secrets/plugins/Aws.cs') &&
+      null != findFile(awsout, 'feature/secrets/plugins/Sigv4.cs'),
+      'csharp: the ACTIVE aws group lost Aws.cs or Sigv4.cs')
+    ok(null == findFile(awsout, 'feature/secrets/plugins/Hashicorp.cs'),
+      'csharp: the inactive vault group still ships Hashicorp')
+    const awsconfig = findFile(awsout, 'csharp/core/Config.cs')
+    ok(/global::Voxgig\.Sekreto\.Plugins\.AwsPlugins\.Secrets,/.test(awsconfig!) &&
+      /global::Voxgig\.Sekreto\.Plugins\.AwsPlugins\.Params,/.test(awsconfig!),
+      'csharp: FeaturePlugins is missing the two aws definitions (one file, ' +
+      'two definitions - the class is AwsPlugins, not Aws)')
+
+    // And the inactive-model baseline: no sekreto type named in Config.cs
+    // at all. The accessor itself is ALWAYS emitted (SecretsFeature.cs can
+    // be present in a tree whose model has secrets off, and it calls it),
+    // but with an empty switch - that is the byte-identity guard.
+    const plainout = await generate(['csharp'])
+    const plain = findFile(plainout, 'csharp/core/Config.cs')
+    ok(null != plain, 'csharp: no core/Config.cs generated for the inactive model')
+    ok(!/Voxgig\.Sekreto/.test(plain!),
+      'csharp: an inactive model still emitted plugin definitions')
+    ok(/FeaturePlugins\(string name\)/.test(plain!),
+      'csharp: the FeaturePlugins accessor must always be emitted - ' +
+      'SecretsFeature.cs calls it whenever it is present in the tree')
+    ok(!/case "secrets":/.test(plain!),
+      'csharp: an inactive model must emit an EMPTY FeaturePlugins switch')
+    ok(!/CS8619/.test(findFile(plainout, 'SDK.csproj') || ''),
+      'csharp: an inactive model must not suppress CS8619')
+
+    // The `src/` exclude still prunes the top-level placeholder tree.
+    deepStrictEqual(
+      Object.keys(plainout).filter((p) => /(^|\/)csharp\/src\//.test(p)), [],
+      'csharp: tm/csharp/src placeholders leaked into the SDK')
+  })
+
+
+  test('rust: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['rust'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    // THE MODULE INDEX. rust compiles only what a parent module DECLARES,
+    // so this generated file is the whole plugin story: a kind missing
+    // from it is silently absent from the vocabulary, and a kind named in
+    // it whose file the trim removed is a compile error.
+    const index = findFile(out, 'rust/feature/secrets/plugins.rs')
+    ok(null != index, 'rust: no feature/secrets/plugins.rs generated')
+
+    ok(/^pub mod hashicorp;$/m.test(index!) && /^pub mod boru;$/m.test(index!),
+      'rust: the ACTIVE vault group did not reach the module index:\n' + index)
+    ok(/hashicorp::plugin\(\),/.test(index!) && /boru::plugin\(\),/.test(index!),
+      'rust: definitions() is missing the vault definitions:\n' + index)
+
+    // The shared HTTP client belongs to NO group (eight kinds import it),
+    // so it ships with the feature core - but it is only DECLARED when a
+    // kind that needs it is active. That declaration is what pulls rustls
+    // into the build, so it must not appear by default.
+    ok(/^pub mod httpjson;$/m.test(index!),
+      'rust: the vault kinds need the shared httpjson helper declared')
+    ok(!/^pub mod (gcpsecrets|azuresecrets|aws|secretspec);$/m.test(index!),
+      'rust: an INACTIVE group reached the module index:\n' + index)
+
+    // The feature module itself, and the trim on disk.
+    ok(/^pub mod secrets;$/m.test(findFile(out, 'rust/feature/mod.rs')!),
+      'rust: feature/mod.rs does not declare the secrets module')
+    ok(null != findFile(out, 'rust/feature/secrets.rs'),
+      'rust: the secrets feature source was not generated')
+    ok(null != findFile(out, 'feature/secrets/plugins/hashicorp.rs'),
+      'rust: the ACTIVE vault group lost hashicorp')
+    ok(null != findFile(out, 'feature/secrets/plugins/httpjson.rs'),
+      'rust: the shared httpjson helper must ship with the feature core')
+    ok(null == findFile(out, 'feature/secrets/plugins/gcpsecrets.rs'),
+      'rust: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'feature/secrets/plugins/aws/sigv4.rs'),
+      'rust: the inactive aws group still ships its request signing')
+
+    // The vendored core, at upstream's depth.
+    ok(null != findFile(out, 'feature/secrets/sekreto/sekreto.rs'),
+      'rust: the vendored sekreto core was not generated')
+    ok(null != findFile(out, 'feature/secrets/plugin/host.rs'),
+      'rust: the vendored voxgig/plugin core was not generated')
+
+    // The gated suite, and the manifest entry that makes cargo RUN it:
+    // cargo auto-discovers tests/*.rs and tests/<dir>/main.rs but not the
+    // two-level path the feature trim forces, so without the stanza the
+    // suite exists and never runs.
+    ok(null != findFile(out, 'rust/tests/feature/secrets/main.rs'),
+      'rust: the gated secrets suite was not generated')
+
+    const cargo = findFile(out, 'rust/Cargo.toml')
+    ok(/\[\[test\]\]\nname = "secrets_feature"\npath = "tests\/feature\/secrets\/main\.rs"/
+      .test(cargo!),
+      'rust: Cargo.toml does not declare the secrets test target:\n' + cargo)
+
+    // The dependency TABLE form. `rustls = "0.23"` with default features
+    // pulls aws-lc-rs and a cmake C build; the ring set below is what the
+    // target's existing ureq dep already compiles.
+    ok(/rustls = \{ version = "0\.23", default-features = false, features = \["std", "ring", "tls12"\] \}/
+      .test(cargo!),
+      'rust: rustls must be declared with default features OFF:\n' + cargo)
+
+    // THE INACTIVE BASELINE: nothing of the feature is COMPILED, and the
+    // manifest names none of it.
+    //
+    // Not a file-absence check, deliberately. This harness generates
+    // straight from the full scaffold, so the add-time feature trim
+    // (`target add`, helpers/featureSource) never runs and the vendored
+    // tree rides along in the Copy - as it does for every target here.
+    // What matters for rust is that none of it is REACHABLE: rustc
+    // compiles only what a module declares, so an undeclared file is inert,
+    // and a real project's `target add` removes it outright.
+    const plain = await generate(['rust'])
+    ok(!/^pub mod secrets;$/m.test(findFile(plain, 'rust/feature/mod.rs')!),
+      'rust: an inactive model still declared the secrets module')
+    ok(null == findFile(plain, 'rust/feature/secrets/plugins.rs'),
+      'rust: an inactive model still generated the plugin module index')
+    const plaincargo = findFile(plain, 'rust/Cargo.toml')
+    ok(!/rustls|webpki-roots/.test(plaincargo!),
+      'rust: an inactive model still names the secrets TLS crates')
+    ok(!/\[\[test\]\]/.test(plaincargo!),
+      'rust: an inactive model still declares a feature test target')
+  })
+
+
+  // scala guard for the same seam, and for the two hazards particular to a
+  // target whose FEATURE trim is off (model/target/scala.aon `feature: {
+  // trim: false }` - the cross-feature tests are fused into one
+  // sdktest/SdkTestMain.scala).
+  //
+  // FIRST SCALA HAZARD: a plugin file that spans groups. plugins/Sigv4.scala
+  // defines `private[plugins] uriescape`, and Azuresecrets (`cloud`),
+  // Doppler, Infisical and Onepassword (`saas`) all call it - so listing it
+  // under `aws`, which the first cut did, let a saas-only trim delete a file
+  // four other kinds compile against. scalac fails the whole build on it
+  // ("Not found: uriescape", four times for saas, twice for cloud). It
+  // belongs to NO group, exactly as java's and kotlin's do, and this test
+  // selects `saas` ALONE so that a regression shows up here rather than in a
+  // generated SDK nobody compiled.
+  //
+  // SECOND SCALA HAZARD: with the feature trim off, an INACTIVE feature's
+  // whole tree still ships, and pluginExcludes(model) walks only ACTIVE
+  // features - so before Main_scala's second exclude list, a scala SDK whose
+  // model never mentioned secrets carried all nine vendored provider
+  // clients. The inactive-model leg below is that guard.
+  test('scala: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['scala'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: saas: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    const config = findFile(out, 'core/Config.scala')
+    ok(null != config, 'scala: no core/Config.scala generated')
+
+    // The definitions list - the emission that can silently no-op while
+    // everything else stays green. scala names fully-qualified top-level
+    // vals, so there is no import half to check.
+    ok(/case "secrets" => List\(com\.voxgig\.sekreto\.plugins\.doppler, com\.voxgig\.sekreto\.plugins\.infisical, com\.voxgig\.sekreto\.plugins\.onepassword\)/
+      .test(config!),
+      'scala: featurePlugins is missing the saas definitions:\n' +
+      (config!.match(/def featurePlugins[\s\S]*?\n  \}/) ||
+        ['(no featurePlugins)'])[0])
+
+    // The trim: the ACTIVE group's clients are IN, every inactive group's
+    // are OUT, and the two UNGROUPED helpers ship with the feature core.
+    for (const kind of ['Doppler', 'Infisical', 'Onepassword']) {
+      ok(null != findFile(out, 'feature/secrets/sekreto/plugins/' + kind + '.scala'),
+        'scala: the ACTIVE saas group lost ' + kind)
+    }
+    for (const kind of ['Hashicorp', 'Boru', 'Aws', 'Gcpsecrets', 'Azuresecrets',
+      'Secretspec']) {
+      ok(null == findFile(out, 'feature/secrets/sekreto/plugins/' + kind + '.scala'),
+        'scala: an INACTIVE group still ships ' + kind)
+    }
+    ok(null != findFile(out, 'feature/secrets/sekreto/plugins/Httpjson.scala'),
+      'scala: the shared HTTP/ProcessBuilder helper must ship with the feature core')
+    // THE CROSS-GROUP FILE. Doppler, Infisical and Onepassword compile
+    // against Sigv4.scala's uriescape, so a saas-only selection that loses
+    // it is four scalac errors - see the note above this test.
+    ok(null != findFile(out, 'feature/secrets/sekreto/plugins/Sigv4.scala'),
+      'scala: Sigv4.scala was trimmed away from a saas-only selection - it ' +
+      'defines the `uriescape` that Doppler, Infisical, Onepassword and ' +
+      'Azuresecrets call, so it belongs to NO plugin group')
+
+    // The vendored cores, and the feature itself.
+    for (const core of ['sekreto/Sekreto.scala', 'sekreto/Providers.scala',
+      'sekreto/Support.scala', 'sekreto/Spec.scala', 'plugin/Plugin.scala']) {
+      ok(null != findFile(out, 'feature/secrets/' + core),
+        'scala: the vendored core file ' + core + ' did not reach the SDK')
+    }
+    ok(null != findFile(out, 'feature/SecretsFeature.scala'),
+      'scala: the secrets feature source was not generated')
+    // The suite is NAMED in the Makefile - scala has no test discovery - so
+    // it ships and runs or it never runs at all.
+    // 'scala/Makefile', not 'Makefile': the fixture project has a root
+    // Makefile of its own, and findFile matches on a path SUFFIX.
+    const make = findFile(out, 'scala/Makefile')
+    ok(null != make, 'scala: no Makefile generated')
+    ok(/--main-class SecretsTestMain/.test(make!),
+      'scala: the secrets suite is not run by `make test`')
+    ok(null != findFile(out, 'sdktest/feature/secrets/SecretsTestMain.scala'),
+      'scala: the secrets suite is named by the Makefile but was not generated')
+
+    // And the INACTIVE-model baseline: the feature DECLARED and left off,
+    // which is what a project looks like after `feature add secrets` without
+    // the activation (voxgig-solardemo-sdk's model/feature/secrets.aon with
+    // `active: false`). featurePlugins must be empty, and - the hazard
+    // particular to this target - NO provider client may ship, even though
+    // the feature trim is off and the rest of the feature's tree does.
+    const { fs: offfs, vol: offvol } = memfs({})
+    const offgen = SdkGen({
+      fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const offres = await offgen.generate({
+      model: makeModel(['scala'], undefined, undefined, ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(offres.ok, true, 'feature-off generation did not report ok')
+
+    const off: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(offvol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      off[rel] = content
+    }
+
+    const plain = findFile(off, 'core/Config.scala')
+    ok(null != plain, 'scala: no core/Config.scala for the feature-off model')
+    ok(/def featurePlugins\(name: String\): List\[Any\] = name match \{\r?\n    case _ => Nil/
+      .test(plain!),
+      'scala: an inactive model must emit an EMPTY featurePlugins:\n' +
+      (plain!.match(/def featurePlugins[\s\S]*?\n  \}/) ||
+        ['(no featurePlugins)'])[0])
+
+    for (const kind of ['Hashicorp', 'Boru', 'Aws', 'Gcpsecrets', 'Azuresecrets',
+      'Doppler', 'Infisical', 'Onepassword', 'Secretspec']) {
+      ok(null == findFile(off, 'feature/secrets/sekreto/plugins/' + kind + '.scala'),
+        'scala: an INACTIVE secrets feature still ships the ' + kind +
+        ' provider client - pluginExcludes walks only ACTIVE features, so ' +
+        'Main_scala has to exclude an inactive feature\'s declared groups too')
+    }
+
+    // What the feature trim being off still costs, pinned so the number in
+    // model/target/scala.aon cannot quietly drift: the rest of the feature
+    // ships to an SDK that did not ask for it, ungrouped helpers included.
+    ok(null != findFile(off, 'feature/SecretsFeature.scala') &&
+      null != findFile(off, 'feature/secrets/sekreto/Sekreto.scala') &&
+      null != findFile(off, 'feature/secrets/sekreto/plugins/Sigv4.scala'),
+      'scala: model/target/scala.aon documents that a secrets-OFF SDK still ' +
+      'carries the feature, the vendored cores and the two ungrouped plugin ' +
+      'files - it no longer does, so update that note (and this test)')
+  })
+
+
+  // clojure guard for the same seam, and for the hazard particular to a
+  // target whose test entry point is HAND-WIRED.
+  //
+  // clojure has no test discovery: test/sdk/test_runner.clj is the
+  // tools.deps `-M:test` main, and it reaches the gated secrets suite only
+  // through its own `run-feature-suites`, which lists sdk/test/feature/*.clj
+  // off the classpath and requires `sdk.test.feature.<name>`. Delete that
+  // one call and every secrets check simply vanishes from the SDK count
+  // with ALL GREEN still printed - measured: PASS 174 became PASS 156, no
+  // red anywhere. So the runner is pinned here the way rust's Cargo
+  // `[[test]]` stanza and dart's `secrets_test.tests();` are: the call is
+  // in -main, the discovery names the suite's namespace, and the runner
+  // prints a `feature.<name>: ran N check(s)` line whose count comes from
+  // checks that EXECUTED, which generatedcompile.test.ts's clojure lane
+  // requires. Both halves of the guard are needed: this one sees the text,
+  // the lane sees the run.
+  //
+  // The plugin wiring is the clojure peer of Config_go's: `(:require
+  // [voxgig.sekreto.plugins.X :as p-X])` per ACTIVE definition namespace
+  // and `feature-plugins` / `feature-extra` maps in src/sdk/config.clj.
+  // `aws` is on as well as `vault` because aws.clj is ONE namespace with
+  // TWO definitions (awssecrets, awsparams) - one require, two references.
+  // And the feature container is ALSO a classpath root (deps.edn :paths),
+  // because clojure resolves `voxgig.sekreto.chain` to voxgig/sekreto/
+  // chain.clj searched from each root, never by relative import.
+  test('clojure: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['clojure'], undefined,
+        'main: kit: feature: secrets: { active: true ' +
+        'plugin: { vault: active: true aws: active: true } }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    const config = findFile(out, 'src/sdk/config.clj')
+    ok(null != config, 'clojure: no src/sdk/config.clj generated')
+
+    // The requires and the definitions map - the two emissions that can
+    // silently no-op while everything else stays green.
+    for (const ns of ['hashicorp', 'boru', 'aws']) {
+      ok(new RegExp('\\[voxgig\\.sekreto\\.plugins\\.' + ns + ' :as p-' + ns + '\\]')
+        .test(config!),
+        'clojure: the active ' + ns + ' plugin namespace is not required by config.clj')
+    }
+    ok(/\[sdk\.feature\.secrets :as fx-secrets\]/.test(config!),
+      'clojure: config.clj does not require the secrets feature namespace')
+    ok(/"secrets" \[p-aws\/awsparams p-aws\/awssecrets p-boru\/boru p-hashicorp\/hashicorp\]/
+      .test(config!),
+      'clojure: feature-plugins is missing the active definitions:\n' +
+      (config!.match(/\(def feature-plugins[\s\S]*?\}\)/) ||
+        ['(no feature-plugins)'])[0])
+    ok(/"secrets" \(fn \[\] \(sdk\.feature\.secrets\/secrets-feature \(get feature-plugins "secrets"\)\)\)/
+      .test(config!),
+      'clojure: feature-extra does not construct the secrets feature:\n' +
+      (config!.match(/\(def feature-extra[\s\S]*?\}\)/) ||
+        ['(no feature-extra)'])[0])
+    ok(!/voxgig\.sekreto\.plugins\.(gcpsecrets|azuresecrets|onepassword|doppler|infisical|secretspec)/
+      .test(config!),
+      'clojure: an INACTIVE group reached the config requires:\n' + config)
+
+    // THE CLASSPATH ROOT. Without it every vendored namespace is unresolvable
+    // and the suite fails at load, naming a file that is right there.
+    const deps = findFile(out, 'clojure/deps.edn')
+    ok(null != deps, 'clojure: no deps.edn generated')
+    ok(/:paths \["src" "feature\/secrets"\]/.test(deps!),
+      'clojure: deps.edn does not put the feature container on the classpath:\n' + deps)
+
+    // The trim: the ACTIVE groups' plugin files are IN, every INACTIVE
+    // group's are OUT, and the UNGROUPED helpers ship with the feature
+    // core - httpjson (nine kinds import it) and proc, the child-process
+    // helper only this port has, imported by boru (vault) AND secretspec.
+    const plugins = 'feature/secrets/voxgig/sekreto/plugins/'
+    for (const kind of ['hashicorp', 'boru', 'aws', 'sigv4']) {
+      ok(null != findFile(out, plugins + kind + '.clj'),
+        'clojure: the ACTIVE group lost ' + kind)
+    }
+    for (const kind of ['gcpsecrets', 'azuresecrets', 'onepassword', 'doppler',
+      'infisical', 'secretspec']) {
+      ok(null == findFile(out, plugins + kind + '.clj'),
+        'clojure: an INACTIVE group still ships ' + kind)
+    }
+    ok(null != findFile(out, plugins + 'httpjson.clj'),
+      'clojure: the shared httpjson helper must ship with the feature core')
+    ok(null != findFile(out, plugins + 'proc.clj'),
+      'clojure: the shared proc helper must ship with the feature core - ' +
+      'boru (vault) and secretspec both require it, so it belongs to NO group')
+    // The ALL barrel is the thing to avoid: it requires every plugin, so
+    // vendoring it would make the trim a load error.
+    ok(null == findFile(out, 'feature/secrets/voxgig/sekreto/plugins.clj'),
+      'clojure: the plugins.clj ALL barrel was vendored - it requires every ' +
+      'kind, so any trimmed group becomes a load failure')
+
+    // The vendored cores, and the feature namespace itself.
+    for (const core of ['voxgig/sekreto.clj', 'voxgig/sekreto/chain.clj',
+      'voxgig/sekreto/providers.clj', 'voxgig/plugin.clj', 'voxgig/plugin/host.clj']) {
+      ok(null != findFile(out, 'feature/secrets/' + core),
+        'clojure: the vendored core file ' + core + ' did not reach the SDK')
+    }
+    const feature = findFile(out, 'feature/secrets/sdk/feature/secrets.clj')
+    ok(null != feature, 'clojure: the secrets feature source was not generated')
+    ok(/^\(ns sdk\.feature\.secrets\b/m.test(feature!),
+      'clojure: the feature file does not declare the namespace config.clj requires')
+    ok(/\(defn secrets-feature\b/.test(feature!),
+      'clojure: the feature file does not define the constructor feature-extra calls')
+
+    // THE RUNNER IS WIRED. The suite ships, its namespace is what the
+    // runner's discovery builds, -main CALLS the discovery, and the
+    // discovery prints the executed-count line the lane reads.
+    const suite = findFile(out, 'test/sdk/test/feature/secrets.clj')
+    ok(null != suite, 'clojure: the gated secrets suite was not generated')
+    ok(/^\(ns sdk\.test\.feature\.secrets\b/m.test(suite!),
+      'clojure: the suite does not declare the namespace the runner requires')
+    ok(/^\(defn run \[rec\]/m.test(suite!),
+      'clojure: the suite has no `run` entry for the runner to call')
+
+    const runner = findFile(out, 'test/sdk/test_runner.clj')
+    ok(null != runner, 'clojure: no test_runner.clj generated')
+    ok(/\(io\/resource "sdk\/test\/feature"\)/.test(runner!) &&
+      /"sdk\.test\.feature\."/.test(runner!),
+      'clojure: the runner no longer discovers sdk/test/feature/*.clj as ' +
+      'sdk.test.feature.<name> - the secrets suite is unreachable from it')
+    const main = runner!.match(/\(defn -main[\s\S]*$/)
+    ok(null != main, 'clojure: test_runner.clj has no -main')
+    // Anchored at the start of a line: a commented-out call still contains
+    // the text, and is exactly the edit this guards against.
+    ok(/^\s*\(run-feature-suites rec\)/m.test(main![0]),
+      'clojure: -main does not call (run-feature-suites rec) - the secrets ' +
+      'suite ships and never runs, and the SDK count drops with ALL GREEN ' +
+      'still printed')
+    ok(/"feature\." fname ": ran " @ran " check\(s\)"/.test(runner!),
+      'clojure: run-feature-suites no longer prints the executed-count line ' +
+      'the generatedcompile lane requires')
+
+    // And the INACTIVE-model baseline: the feature DECLARED and left off.
+    // The container is gated at generate time (Main_clojure), so unlike
+    // scala's trim-off baseline NOTHING of it may ship - the vendored
+    // cores, the plugin files, the feature namespace and its suite are all
+    // absent, deps.edn names no root that is not there, and the runner's
+    // discovery finds no file to require.
+    const { fs: offfs, vol: offvol } = memfs({})
+    const offgen = SdkGen({
+      fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const offres = await offgen.generate({
+      model: makeModel(['clojure'], undefined, undefined, ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(offres.ok, true, 'feature-off generation did not report ok')
+
+    const off: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(offvol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      off[rel] = content
+    }
+
+    const plain = findFile(off, 'src/sdk/config.clj')
+    ok(null != plain, 'clojure: no src/sdk/config.clj for the feature-off model')
+    ok(/\(def feature-plugins\r?\n  \{\}\)/.test(plain!) &&
+      /\(def feature-extra\r?\n  \{\}\)/.test(plain!),
+      'clojure: an inactive model must emit EMPTY feature-plugins and ' +
+      'feature-extra maps:\n' + plain)
+    ok(!/sekreto|sdk\.feature\.secrets/.test(plain!),
+      'clojure: an inactive model still requires secrets namespaces')
+    ok(/:paths \["src"\]/.test(findFile(off, 'clojure/deps.edn')!),
+      'clojure: an inactive model still puts feature/secrets on the classpath')
+    const leaked = Object.keys(off).filter((p) =>
+      /(^|\/)feature\/secrets\//.test(p) || /test\/sdk\/test\/feature\/secrets\.clj$/.test(p))
+    deepStrictEqual(leaked, [],
+      'clojure: an inactive model still ships the secrets container or its suite')
+  })
+
+
+  // elixir guard for the same seam, and for the hazard particular to this
+  // target: THE TRIM IS INVISIBLE TO THE COMPILER. mix compiles everything
+  // under lib/ and Elixir resolves modules by `defmodule`, never by import,
+  // so a plugin file Main_elixir's pluginExcludes failed to remove compiles
+  // silently and SHIPS - where go fails on an unused import, py on a missing
+  // module and ts on an unresolved one (Main_elixir.ts says as much). A
+  // generated elixir SDK therefore cannot tell you its trim broke; this test
+  // has to, from the file list.
+  //
+  // The other elixir particular is proc.ex: the port factors the child
+  // process spawn OUT of the two plugins that use it - boru (`vault`) and
+  // secretspec (`secretspec`) - so it belongs to NO group and ships with the
+  // feature core, beside http.ex and httpjson.ex. Listing it under either
+  // group would delete it whenever the OTHER group was the one selected.
+  // `vault` ALONE is selected here so that a regression shows up as boru
+  // failing to compile in a generated SDK nobody built - which is why the
+  // file's presence is pinned here instead.
+  test('elixir: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['elixir'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    const config = findFile(out, 'lib/config.ex')
+    ok(null != config, 'elixir: no lib/config.ex generated')
+
+    // The definitions list - the emission that can silently no-op while
+    // everything else stays green. Each active `plugin.def.elixir` key is
+    // emitted as a fully-qualified zero-arity CALL, sorted, and there is no
+    // import half to check: Elixir resolves modules globally.
+    ok(/^      "secrets" -> \[Sekreto\.Plugins\.Boru\.boru\(\), Sekreto\.Plugins\.Hashicorp\.hashicorp\(\)\]$/m
+      .test(config!),
+      'elixir: feature_plugins/1 is missing the vault definitions:\n' +
+      (config!.match(/def feature_plugins[\s\S]*?\n  end/) ||
+        ['(no feature_plugins)'])[0])
+    ok(!/Sekreto\.Plugins\.(Aws|Gcpsecrets|Azuresecrets|Doppler|Infisical|Onepassword|Secretspec)\./
+      .test(config!),
+      'elixir: an INACTIVE group\'s definition reached feature_plugins/1:\n' +
+      (config!.match(/def feature_plugins[\s\S]*?\n  end/) ||
+        ['(no feature_plugins)'])[0])
+
+    // THE TRIM, from the file list, because nothing else can see it here.
+    // The vendored tree rides Main_elixir's `lib/projectname` Copy (rooted on
+    // lib/<app>/), so every plugin path is under feature/secrets/sekreto/.
+    for (const kind of ['hashicorp', 'boru']) {
+      ok(null != findFile(out, 'feature/secrets/sekreto/plugins/' + kind + '.ex'),
+        'elixir: the ACTIVE vault group lost ' + kind)
+    }
+    for (const kind of ['aws', 'sigv4', 'gcpsecrets', 'azuresecrets', 'doppler',
+      'infisical', 'onepassword', 'secretspec']) {
+      ok(null == findFile(out, 'feature/secrets/sekreto/plugins/' + kind + '.ex'),
+        'elixir: an INACTIVE group still ships ' + kind + ' - and mix would ' +
+        'compile it without complaint, so only this test can see the trim ' +
+        'failed (Main_elixir\'s pluginExcludes on the lib/projectname Copy)')
+    }
+    // The three UNGROUPED helpers ship with the feature core. proc.ex is the
+    // cross-group one - see the note above this test.
+    for (const shared of ['http', 'httpjson', 'proc']) {
+      ok(null != findFile(out, 'feature/secrets/sekreto/plugins/' + shared + '.ex'),
+        'elixir: the shared ' + shared + '.ex helper must ship with the ' +
+        'feature core - it belongs to no plugin group')
+    }
+
+    // The vendored cores, and the feature itself.
+    for (const core of ['sekreto/sekreto.ex', 'sekreto/providers.ex',
+      'sekreto/provider.ex', 'sekreto/json.ex',
+      'plugin/voxgig_plugin.ex', 'plugin/host.ex']) {
+      ok(null != findFile(out, 'feature/secrets/' + core),
+        'elixir: the vendored core file ' + core + ' did not reach the SDK')
+    }
+    const feature = findFile(out, 'feature/secrets.ex')
+    ok(null != feature, 'elixir: the secrets feature source was not generated')
+    ok(/^defmodule \w+\.Feature\.Secrets do$/m.test(feature!),
+      'elixir: the secrets feature module is not declared under the app name')
+
+    // REGISTERED in the feature factory, or `feature.secrets.active` builds
+    // the base feature and every assertion in the shipped suite that reads
+    // the chain passes vacuously on a client with no chain.
+    const factory = findFile(out, 'lib/features.ex')
+    ok(null != factory, 'elixir: no lib/features.ex generated')
+    ok(/"secrets" -> \w+\.Feature\.Secrets\.new\(\)/.test(factory!),
+      'elixir: the feature factory does not construct the secrets feature:\n' +
+      factory)
+
+    // The gated suite, and the wiring that makes mix RUN it. mix discovers
+    // `test/**/*_test.exs` by default, so the suffix IS the wiring - and a
+    // mix.exs that narrowed `test_paths` or `test_pattern` would silently
+    // un-wire it, which is why both are pinned absent.
+    const suite = findFile(out, 'test/feature/secrets/secrets_test.exs')
+    ok(null != suite, 'elixir: the gated secrets suite was not generated')
+    ok(null != findFile(out, 'elixir/test/test_helper.exs'),
+      'elixir: no test/test_helper.exs, so mix test cannot start')
+    const mix = findFile(out, 'elixir/mix.exs')
+    ok(null != mix, 'elixir: no mix.exs generated')
+    ok(!/test_paths|test_pattern/.test(mix!),
+      'elixir: mix.exs narrows test discovery, so test/feature/secrets/ may ' +
+      'no longer be found:\n' + mix)
+
+    // Placeholders, in the two files this feature adds outside the broad
+    // loop's scan: a leaked `ProjectName` in the feature is a module that
+    // does not exist, and `PROJECTENV` in the suite is an env prefix no
+    // project sets.
+    for (const [name, src] of [['feature/secrets.ex', feature!],
+      ['test/feature/secrets/secrets_test.exs', suite!]]) {
+      ok(!/ProjectName|PROJECTENV|projectname/.test(src),
+        'elixir: a placeholder survived in ' + name)
+    }
+
+    // And the INACTIVE-model baseline: the feature DECLARED and left off.
+    // Config_elixir's emit gate is "an ACTIVE feature declares plugin groups"
+    // (active groups or not), so a model with secrets off gets NO
+    // feature_plugins/1 - config.ex is byte-for-byte what it was before the
+    // feature existed - and the factory never names the feature.
+    //
+    // The SOURCE trim is not asserted here: this harness copies the whole
+    // staged tm/ tree, while a real project's `target add` drops an
+    // undeclared feature before generate ever runs (the js note above).
+    const { fs: offfs, vol: offvol } = memfs({})
+    const offgen = SdkGen({
+      fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const offres = await offgen.generate({
+      model: makeModel(['elixir'], undefined, undefined, ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(offres.ok, true, 'feature-off generation did not report ok')
+
+    const off: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(offvol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      off[rel] = content
+    }
+
+    const plain = findFile(off, 'lib/config.ex')
+    ok(null != plain, 'elixir: no lib/config.ex for the feature-off model')
+    ok(!/feature_plugins|Sekreto\.Plugins/.test(plain!),
+      'elixir: an inactive model still emitted feature_plugins/1 - the ' +
+      'emit gate is "a plugin-bearing feature is ACTIVE", so an SDK that ' +
+      'selects none must get no function at all')
+    const plainfactory = findFile(off, 'lib/features.ex')
+    ok(null != plainfactory, 'elixir: no lib/features.ex for the feature-off model')
+    ok(!/secrets/.test(plainfactory!),
+      'elixir: an inactive model still registers the secrets feature in the ' +
+      'factory, which names a module `target add` removed')
   })
 
 

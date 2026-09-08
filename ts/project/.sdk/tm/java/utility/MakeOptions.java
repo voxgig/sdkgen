@@ -110,6 +110,13 @@ final class MakeOptions {
         + "\"feature\": { \"`$CHILD`\": {"
         + "  \"`$OPEN`\": true, \"active\": false } },"
         + "\"utility\": {},"
+        // Feature INSTANCES supplied at construction (the `extend` seam
+        // SdkClient's constructor reads at line 82): class instances, not
+        // data, so `$ANY` accepts them verbatim. Without this entry the
+        // seam is DEAD - validate drops the unknown key and the
+        // constructor's loop never sees a feature. Ported from
+        // MakeOptionsUtility.ts / make_options.go, which both carry it.
+        + "\"extend\": \"`$ANY`\","
         + "\"system\": {},"
         + "\"test\": { \"active\": false, \"entity\": { \"`$OPEN`\": true } },"
         + "\"clean\": { \"keys\": \"key,token,id\" },"

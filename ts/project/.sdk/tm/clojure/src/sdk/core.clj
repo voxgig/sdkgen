@@ -1039,6 +1039,15 @@
                    "entity" (vs/jm "`$CHILD`" (vs/jm "`$OPEN`" true "active" false "alias" (vs/jm)))
                    "feature" (vs/jm "`$CHILD`" (vs/jm "`$OPEN`" true "active" false))
                    "utility" (vs/jm)
+                   ;; Feature INSTANCES supplied at construction (the station
+                   ;; adopt path): consumed by make-sdk's feature-add loop, so
+                   ;; they are live feature atoms, not data - `$ANY` accepts
+                   ;; them verbatim. Without this entry the seam is DEAD:
+                   ;; client.clj reads options.extend, but validate rejected
+                   ;; the key ("Unexpected keys at field <root>: extend"), so
+                   ;; every construction that used it failed outright.
+                   ;; Mirrors go's make_options.go and MakeOptionsUtility.ts.
+                   "extend" "`$ANY`"
                    "system" (vs/jm)
                    "test" (vs/jm "active" false "entity" (vs/jm "`$OPEN`" true))
                    "clean" (vs/jm "keys" "key,token,id")

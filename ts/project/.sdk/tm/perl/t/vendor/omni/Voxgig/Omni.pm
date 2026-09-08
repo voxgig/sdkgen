@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/omni 0.1.0 (perl/lib/Voxgig/Omni.pm)
-# Source: https://github.com/voxgig/omni @ 274708cc2d12b21707d975543953f845f8444be0  [tag: sdk-20260907-0029-0]
+# Source: https://github.com/voxgig/omni @ 274708cc2d12b21707d975543953f845f8444be0  [tag: sdk-20260908-1556-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 package Voxgig::Omni;
 

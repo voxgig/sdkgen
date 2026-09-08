@@ -214,6 +214,16 @@ public static partial class SdkUtility
                 },
             },
             ["utility"] = new Dictionary<string, object?>(),
+            // Feature INSTANCES supplied at construction (the `extend` seam
+            // the client constructor reads after the config-driven features):
+            // class instances, not data, so `$ANY` accepts them verbatim.
+            // Without this entry the seam is DEAD - validate REJECTS the
+            // unknown key ("Unexpected keys at field <root>: extend"), so a
+            // caller cannot hand in a feature the model did not activate,
+            // although the README documents the option. Ported from
+            // MakeOptionsUtility.ts / make_options.go / MakeOptions.java,
+            // which all carry it.
+            ["extend"] = "`$ANY`",
             ["system"] = new Dictionary<string, object?>(),
             ["test"] = new Dictionary<string, object?>
             {

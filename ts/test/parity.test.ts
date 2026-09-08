@@ -1528,6 +1528,209 @@ const SECRETS: Record<string, {
     pluginfiles: ['__init__.py', 'catalog.py', 'host.py', 'types.py'],
     tests: 'py/test/feature/secrets',
   },
+  // ---- Tranche B: the nine targets that joined at sdk-20260907-0029-0.
+  // Each row is written from the tree ON DISK, not from the ts shape:
+  // every port reshaped sekreto in its own idiom.
+  java: {
+    // java's feature container is the top-level feature/ dir. Two files
+    // under plugins/ are SHARED, not grouped: Httpjson and Proc, and Sigv4
+    // whose package-private uriescape three saas kinds call - the plugin
+    // trim must never remove them (see model/feature/secrets.aon).
+    feature: 'java/feature/SecretsFeature.java',
+    vendor: 'java/feature/secrets/sekreto',
+    vendorfiles: [
+      'Addr.java', 'Builtins.java', 'Json.java', 'Provider.java',
+      'Sekreto.java', 'Support.java', 'plugins/Aws.java',
+      'plugins/Azuresecrets.java', 'plugins/Boru.java',
+      'plugins/Doppler.java', 'plugins/Gcpsecrets.java',
+      'plugins/Hashicorp.java', 'plugins/Httpjson.java',
+      'plugins/Infisical.java', 'plugins/Onepassword.java',
+      'plugins/Proc.java', 'plugins/Secretspec.java', 'plugins/Sigv4.java',
+    ],
+    plugindir: 'java/feature/secrets/plugin',
+    pluginfiles: [
+      'Capability.java', 'Catalog.java', 'Config.java', 'Definition.java',
+      'Depend.java', 'Entry.java', 'Env.java', 'Export.java', 'Graph.java',
+      'Host.java', 'Inst.java', 'Json.java', 'Order.java', 'Plugin.java',
+      'PluginException.java', 'Point.java', 'Refs.java', 'Resolve.java',
+      'Types.java', 'Version.java',
+    ],
+    tests: 'java/test/feature/secrets',
+  },
+  csharp: {
+    // csharp keeps the sekreto core and its gated kinds as SIBLINGS -
+    // sekreto/ beside plugins/ - rather than nesting plugins/ inside.
+    feature: 'csharp/feature/SecretsFeature.cs',
+    vendor: 'csharp/feature/secrets',
+    vendorfiles: [
+      'sekreto/Json.cs', 'sekreto/Providers.cs', 'sekreto/Sekreto.cs',
+      'plugins/Aws.cs', 'plugins/AzureSecrets.cs', 'plugins/Boru.cs',
+      'plugins/Child.cs', 'plugins/Doppler.cs', 'plugins/GcpSecrets.cs',
+      'plugins/Hashicorp.cs', 'plugins/HttpJson.cs', 'plugins/Infisical.cs',
+      'plugins/OnePassword.cs', 'plugins/SecretSpec.cs', 'plugins/Sigv4.cs',
+    ],
+    plugindir: 'csharp/feature/secrets/plugin',
+    pluginfiles: [
+      'Capability.cs', 'Catalog.cs', 'Config.cs', 'Definition.cs',
+      'Depend.cs', 'Entry.cs', 'Env.cs', 'Export.cs', 'Graph.cs', 'Host.cs',
+      'Inst.cs', 'Json.cs', 'Order.cs', 'Plugin.cs', 'Point.cs', 'Refs.cs',
+      'Resolve.cs', 'Types.cs', 'Version.cs',
+    ],
+    tests: 'csharp/test/feature/secrets',
+  },
+  kotlin: {
+    // kotlin mirrors java's shape, with Spec.kt split out of the core.
+    feature: 'kotlin/feature/SecretsFeature.kt',
+    vendor: 'kotlin/feature/secrets/sekreto',
+    vendorfiles: [
+      'Json.kt', 'Provider.kt', 'Providers.kt', 'Sekreto.kt', 'Spec.kt',
+      'Support.kt', 'plugins/Aws.kt', 'plugins/Azuresecrets.kt',
+      'plugins/Boru.kt', 'plugins/Doppler.kt', 'plugins/Gcpsecrets.kt',
+      'plugins/Hashicorp.kt', 'plugins/Httpjson.kt', 'plugins/Infisical.kt',
+      'plugins/Onepassword.kt', 'plugins/Secretspec.kt', 'plugins/Sigv4.kt',
+    ],
+    plugindir: 'kotlin/feature/secrets/plugin',
+    pluginfiles: [
+      'Capability.kt', 'Catalog.kt', 'Config.kt', 'Depend.kt', 'Env.kt',
+      'Export.kt', 'Graph.kt', 'Host.kt', 'Json.kt', 'Order.kt', 'Plugin.kt',
+      'Point.kt', 'Refs.kt', 'Resolve.kt', 'Types.kt', 'Version.kt',
+    ],
+    tests: 'kotlin/test/feature/secrets',
+  },
+  scala: {
+    // scala's suite lives in sdktest/ (its test roots are named, not
+    // discovered), and Sigv4.scala ships ungrouped for the same reason
+    // as java's: its private[plugins] uriescape has four callers outside
+    // the aws group.
+    feature: 'scala/feature/SecretsFeature.scala',
+    vendor: 'scala/feature/secrets/sekreto',
+    vendorfiles: [
+      'Json.scala', 'Provider.scala', 'Providers.scala', 'Sekreto.scala',
+      'Spec.scala', 'Support.scala', 'plugins/Aws.scala',
+      'plugins/Azuresecrets.scala', 'plugins/Boru.scala',
+      'plugins/Doppler.scala', 'plugins/Gcpsecrets.scala',
+      'plugins/Hashicorp.scala', 'plugins/Httpjson.scala',
+      'plugins/Infisical.scala', 'plugins/Onepassword.scala',
+      'plugins/Secretspec.scala', 'plugins/Sigv4.scala',
+    ],
+    plugindir: 'scala/feature/secrets/plugin',
+    pluginfiles: [
+      'Capability.scala', 'Config.scala', 'Depend.scala', 'Env.scala',
+      'Export.scala', 'Graph.scala', 'Host.scala', 'Json.scala',
+      'Order.scala', 'Plugin.scala', 'Point.scala', 'Refs.scala',
+      'Resolve.scala', 'Types.scala', 'Value.scala', 'Version.scala',
+    ],
+    tests: 'scala/sdktest/feature/secrets',
+  },
+  perl: {
+    // perl nests the package path under each vendored root:
+    // sekreto/Voxgig/Sekreto.pm, plugins/Voxgig/Sekreto/Plugins/*.pm,
+    // plugin/Voxgig/Plugin/*.pm. The suite lives in t/, not test/.
+    feature: 'perl/feature/secrets_feature.pm',
+    vendor: 'perl/feature/secrets',
+    vendorfiles: [
+      'sekreto/Voxgig/Sekreto.pm', 'sekreto/Voxgig/Sekreto/Addr.pm',
+      'sekreto/Voxgig/Sekreto/Providers.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Aws.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Azuresecrets.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Boru.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Doppler.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Gcpsecrets.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Hashicorp.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Httpjson.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Infisical.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Onepassword.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Proc.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Secretspec.pm',
+      'plugins/Voxgig/Sekreto/Plugins/Sigv4.pm',
+    ],
+    plugindir: 'perl/feature/secrets/plugin',
+    pluginfiles: [
+      'Voxgig/Plugin.pm', 'Voxgig/Plugin/Capability.pm',
+      'Voxgig/Plugin/Catalog.pm', 'Voxgig/Plugin/Config.pm',
+      'Voxgig/Plugin/Depend.pm', 'Voxgig/Plugin/Env.pm',
+      'Voxgig/Plugin/Export.pm', 'Voxgig/Plugin/Graph.pm',
+      'Voxgig/Plugin/Host.pm', 'Voxgig/Plugin/Order.pm',
+      'Voxgig/Plugin/Point.pm', 'Voxgig/Plugin/Ref.pm',
+      'Voxgig/Plugin/Resolve.pm', 'Voxgig/Plugin/Types.pm',
+      'Voxgig/Plugin/Version.pm',
+    ],
+    tests: 'perl/t/feature/secrets',
+  },
+  rust: {
+    // rust's feature is a single secrets.rs beside the secrets/ tree; aws
+    // and httpjson are each a module file plus a submodule directory.
+    feature: 'rust/feature/secrets.rs',
+    vendor: 'rust/feature/secrets',
+    vendorfiles: [
+      'sekreto/addr.rs', 'sekreto/mod.rs', 'sekreto/providers.rs',
+      'sekreto/sekreto.rs', 'plugins/aws.rs', 'plugins/aws/crypto.rs',
+      'plugins/aws/sigv4.rs', 'plugins/azuresecrets.rs', 'plugins/boru.rs',
+      'plugins/doppler.rs', 'plugins/gcpsecrets.rs', 'plugins/hashicorp.rs',
+      'plugins/httpjson.rs', 'plugins/httpjson/http.rs',
+      'plugins/httpjson/json.rs', 'plugins/infisical.rs',
+      'plugins/onepassword.rs', 'plugins/secretspec.rs',
+    ],
+    plugindir: 'rust/feature/secrets/plugin',
+    pluginfiles: [
+      'capability.rs', 'catalog.rs', 'config.rs', 'depend.rs', 'env.rs',
+      'export.rs', 'graph.rs', 'host.rs', 'mod.rs', 'order.rs', 'point.rs',
+      'refs.rs', 'resolve.rs', 'types.rs', 'value.rs', 'version.rs',
+    ],
+    tests: 'rust/tests/feature/secrets',
+  },
+  clojure: {
+    // clojure's namespaces are path-derived, so both vendored libraries
+    // sit under one voxgig/ root: sekreto.clj + sekreto/, plugin.clj +
+    // plugin/. The feature namespace is sdk.feature.secrets, and the
+    // suite is one file under test/sdk/test/feature/.
+    feature: 'clojure/feature/secrets/sdk/feature/secrets.clj',
+    vendor: 'clojure/feature/secrets/voxgig',
+    vendorfiles: [
+      'sekreto.clj', 'sekreto/addr.clj', 'sekreto/chain.clj',
+      'sekreto/core.clj', 'sekreto/json.clj', 'sekreto/plugins/aws.clj',
+      'sekreto/plugins/azuresecrets.clj', 'sekreto/plugins/boru.clj',
+      'sekreto/plugins/doppler.clj', 'sekreto/plugins/gcpsecrets.clj',
+      'sekreto/plugins/hashicorp.clj', 'sekreto/plugins/httpjson.clj',
+      'sekreto/plugins/infisical.clj', 'sekreto/plugins/onepassword.clj',
+      'sekreto/plugins/proc.clj', 'sekreto/plugins/secretspec.clj',
+      'sekreto/plugins/sigv4.clj', 'sekreto/provider.clj',
+      'sekreto/providers.clj',
+    ],
+    plugindir: 'clojure/feature/secrets/voxgig',
+    pluginfiles: [
+      'plugin.clj', 'plugin/capability.clj', 'plugin/catalog.clj',
+      'plugin/config.clj', 'plugin/depend.clj', 'plugin/env.clj',
+      'plugin/export.clj', 'plugin/graph.clj', 'plugin/host.clj',
+      'plugin/json.clj', 'plugin/order.clj', 'plugin/point.clj',
+      'plugin/ref.clj', 'plugin/resolve.clj', 'plugin/types.clj',
+      'plugin/version.clj',
+    ],
+    tests: 'clojure/test/sdk/test/feature/secrets.clj',
+  },
+  elixir: {
+    // elixir's container is lib/projectname/feature/secrets/ - the
+    // ProjectName placeholder is the module root a mix project needs.
+    // Its port carries http.ex and proc.ex as shared plugin helpers.
+    feature: 'elixir/lib/projectname/feature/secrets.ex',
+    vendor: 'elixir/lib/projectname/feature/secrets/sekreto',
+    vendorfiles: [
+      'json.ex', 'plugins/aws.ex', 'plugins/azuresecrets.ex',
+      'plugins/boru.ex', 'plugins/doppler.ex', 'plugins/gcpsecrets.ex',
+      'plugins/hashicorp.ex', 'plugins/http.ex', 'plugins/httpjson.ex',
+      'plugins/infisical.ex', 'plugins/onepassword.ex', 'plugins/proc.ex',
+      'plugins/secretspec.ex', 'plugins/sigv4.ex', 'provider.ex',
+      'providers.ex', 'sekreto.ex',
+    ],
+    plugindir: 'elixir/lib/projectname/feature/secrets/plugin',
+    pluginfiles: [
+      'capability.ex', 'catalog.ex', 'config.ex', 'depend.ex', 'env.ex',
+      'error.ex', 'export.ex', 'graph.ex', 'host.ex', 'inst.ex', 'json.ex',
+      'order.ex', 'point.ex', 'ref.ex', 'resolve.ex', 'types.ex',
+      'version.ex', 'voxgig_plugin.ex',
+    ],
+    tests: 'elixir/test/feature/secrets',
+  },
 }
 
 
@@ -1618,6 +1821,9 @@ describe('vendored-library rollout parity', () => {
       ['src', 'feature', 'secrets'],
       ['feature', 'secrets'],
       ['pkg', 'feature', 'secrets'],
+      // dart keeps its feature under lib/, elixir under the mix module root.
+      ['lib', 'feature', 'secrets'],
+      ['lib', 'projectname', 'feature', 'secrets'],
     ]
 
     const unlisted = sdkTargets()

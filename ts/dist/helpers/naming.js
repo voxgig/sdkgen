@@ -36,6 +36,7 @@ exports.tsSafeTypeName = tsSafeTypeName;
 exports.jsProp = jsProp;
 exports.jsOptProp = jsOptProp;
 exports.jsKey = jsKey;
+exports.prefixLeadingDigit = prefixLeadingDigit;
 const JS_RESERVED = new Set([
     'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
     'default', 'delete', 'do', 'else', 'enum', 'export', 'extends', 'false',
@@ -468,6 +469,43 @@ function exampleVarName(name, lang) {
     if ((EXAMPLE_GLOBALS[lang] || []).includes(v))
         return v + '_';
     return v;
+}
+// LEADING DIGITS — the one hazard on this page that is not about a word being
+// taken. Every other guard here asks "is this name already claimed?"; this one
+// asks whether the name is an identifier at all. No target language permits
+// one that starts with a digit, and ordinary resources produce one:
+//
+//   /3ds-sessions  -> entity `3ds_session` -> Name `3dsSession`
+//   /2fa-tokens    -> entity `2fa_token`   -> Name `2faToken`
+//
+// `Name` feeds the class name, the SDK accessor and every generated type
+// name, so the SDK does not compile at all — it is not a degraded SDK, it is
+// no SDK (issue #124).
+//
+// The prefix takes the case of the name it guards — lower for `3ds_session`,
+// upper for `3DSecure` — so the result stays in whatever casing convention
+// the caller works in. Applied to the STEM before PascalCasing, which is why
+// `Name` comes out `N3dsSession` and not `n3dsSession`.
+//
+// This is deliberately the SAME rule, spelled the same way, as apidef's
+// `prefixLeadingDigit`. A model that came through apidef is already guarded,
+// so this is a no-op on it; a hand-authored `.sdk/model` entity gets the
+// identical name apidef would have given it. Idempotent by construction.
+//
+// The rule is applied ONCE, to the model's own entity name, by
+// `guardModelNames` — never to a derived form. Guarding `Name` alone does not
+// survive: a consumer's scaffolded `Root.ts` runs its own
+// `names(entity, entity.name)` per target, which re-derives `Name` from the
+// unguarded name and silently undoes the correction.
+function prefixLeadingDigit(s) {
+    if (null == s || '' === s)
+        return s;
+    const first = s.charCodeAt(0);
+    if (first < 48 || first > 57)
+        return s;
+    const letter = s.match(/[a-zA-Z]/);
+    const upper = null != letter && letter[0] >= 'A' && letter[0] <= 'Z';
+    return (upper ? 'N' : 'n') + s;
 }
 // A valid ECMAScript identifier — the only shape `obj.name` can express.
 const JS_IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/;

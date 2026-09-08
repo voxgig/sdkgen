@@ -110,6 +110,42 @@ const VENDOR_DIRS = [
   // simply replace it.
   'tm/zig/utility/voxgigstruct',
   'tm/zig/test/vendor/omni',
+  // The secrets expansion: sekreto and voxgig/plugin, vendored INSIDE
+  // each target's feature container so the feature trim removes both
+  // with the feature. Every level is listed, per the rule above.
+  'tm/clojure/feature/secrets/voxgig/plugin',
+  'tm/clojure/feature/secrets/voxgig/sekreto',
+  'tm/clojure/feature/secrets/voxgig/sekreto/plugins',
+  'tm/csharp/feature/secrets/plugin',
+  'tm/csharp/feature/secrets/plugins',
+  'tm/csharp/feature/secrets/sekreto',
+  'tm/elixir/lib/projectname/feature/secrets/plugin',
+  'tm/elixir/lib/projectname/feature/secrets/sekreto',
+  'tm/elixir/lib/projectname/feature/secrets/sekreto/plugins',
+  'tm/java/feature/secrets/plugin',
+  'tm/java/feature/secrets/sekreto',
+  'tm/java/feature/secrets/sekreto/plugins',
+  'tm/kotlin/feature/secrets/plugin',
+  'tm/kotlin/feature/secrets/sekreto',
+  'tm/kotlin/feature/secrets/sekreto/plugins',
+  'tm/perl/feature/secrets/plugin',
+  'tm/perl/feature/secrets/plugin/Voxgig',
+  'tm/perl/feature/secrets/plugin/Voxgig/Plugin',
+  'tm/perl/feature/secrets/plugins',
+  'tm/perl/feature/secrets/plugins/Voxgig',
+  'tm/perl/feature/secrets/plugins/Voxgig/Sekreto',
+  'tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins',
+  'tm/perl/feature/secrets/sekreto',
+  'tm/perl/feature/secrets/sekreto/Voxgig',
+  'tm/perl/feature/secrets/sekreto/Voxgig/Sekreto',
+  'tm/rust/feature/secrets/plugin',
+  'tm/rust/feature/secrets/plugins',
+  'tm/rust/feature/secrets/plugins/aws',
+  'tm/rust/feature/secrets/plugins/httpjson',
+  'tm/rust/feature/secrets/sekreto',
+  'tm/scala/feature/secrets/plugin',
+  'tm/scala/feature/secrets/sekreto',
+  'tm/scala/feature/secrets/sekreto/plugins',
 ]
 
 

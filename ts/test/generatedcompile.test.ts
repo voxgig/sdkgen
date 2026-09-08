@@ -858,6 +858,108 @@ describe('auth null', () => {
   })
 
 
+  // perl SECRETS, END TO END — the only lane that RUNS the perl secrets
+  // feature with the feature ACTIVE.
+  //
+  // perl has no compiler either. `perl -c` compiles one file and stops
+  // there: it never runs a test, never loads a plugin the way the chain
+  // does at the moment a kind is declared, and never notices that the
+  // definition table Config_perl emits names a symbol no vendored module
+  // exports — so a broken port ships until a runtime test hits it,
+  // exactly as it does for js and rb. That makes the generated suite the
+  // whole gate rather than a nicety, and the suite is worth nothing unless
+  // something runs it: the shipped t/feature/secrets/secrets.t ran 97
+  // assertions on the author's machine and was executed by no lane at all,
+  // and the target's own Makefile once drove `prove` non-recursively, so a
+  // suite under t/feature/ was collected by nothing and a clean `make test`
+  // said as much about it as no suite would have.
+  //
+  // The `vault` group is on so the lane also exercises the plugin
+  // vocabulary — Config_perl's `use Voxgig::Sekreto::Plugins::...` lines
+  // and the %FEATURE_PLUGINS table the feature reads at init. The suite's
+  // vocabulary case SKIPS when the plugin module is absent, which is right
+  // for a project that did not select the group and wrong here, so a
+  // skipped TAP line fails the lane rather than passing it.
+  test('perl: the secrets feature runs with the feature active', async (t) => {
+    const sdkroot = Path.join(tmp, 'perl-secrets')
+    await generateTo('perl', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // The shipped suite must actually be there: `perl <path>` on a missing
+    // file IS an error, but a lane whose runner moved would then fail for
+    // a reason that names the wrong thing.
+    const suite = Path.join('t', 'feature', 'secrets', 'secrets.t')
+    ok(Fs.existsSync(Path.join(sdkroot, suite)),
+      'perl: the gated secrets suite was not generated')
+
+    // Probed AFTER generating, so a machine without perl still proves the
+    // suite is emitted - the half of this check that needs no interpreter.
+    // Test::More is core, but a minimal perl can be built without it, and
+    // a `use` that fails is a compile error that would read as a suite
+    // failure.
+    const perl = toolchain('perl')
+    if (null == perl) return t.skip('no usable perl toolchain here (perl)')
+    if (!probeOk(perl, ['-MTest::More', '-e', '1'])) {
+      return t.skip('perl is here but Test::More is not')
+    }
+
+    // Same invocation as the target's Makefile (`prove -r -Ilib t/`), one
+    // file, without prove: the raw TAP is what the counts below read.
+    const probe = run(perl, ['-Ilib', suite], sdkroot)
+
+    // Neither is a pass nor a lane failure - see the authnull lanes.
+    if (probe.unlaunchable) {
+      return t.skip('perl: the toolchain could not be started here: ' +
+        tail(probe.out, 3))
+    }
+    if (probe.timedOut) return t.skip('perl: ' + probe.out)
+
+    // LF-normalised before anything is matched: perl on windows writes
+    // CRLF, and an anchored `$` that misses the plan line would report a
+    // suite that ran as one that never did.
+    const lines = probe.out.split(/\r?\n/)
+
+    // Name the failing cases: `tail` alone shows the TAP epilogue, which
+    // says how many failed and never which.
+    const failed = lines.filter((l: string) => /^not ok /.test(l))
+    ok(probe.ok, 'perl secrets suite failed:\n' + failed.join('\n') +
+      '\n' + tail(probe.out))
+
+    // Exit zero is not enough: positive evidence that the tests RAN. The
+    // suite ends with `done_testing`, which prints the plan LAST, so a
+    // script that died half-way has no `1..N` at all, and one that ran a
+    // gutted file has a small one. Every planned assertion must be an
+    // `ok`, and none of them a `# skip` - the vault vocabulary case skips
+    // itself when the plugin group was trimmed, which is the very
+    // condition this lane generates with `vault` on to see.
+    const plan = lines
+      .map((l: string) => /^1\.\.(\d+)$/.exec(l))
+      .find((m) => null != m)
+    ok(null != plan,
+      'perl: no TAP plan line - the suite did not run to done_testing:\n' +
+      tail(probe.out))
+    const planned = Number((plan as RegExpExecArray)[1])
+    const passed = lines.filter((l: string) => /^ok \d+/.test(l)).length
+    const skipped = lines.filter((l: string) => /^ok \d+ # skip/i.test(l))
+
+    ok(10 < planned, 'perl: the secrets suite planned only ' + planned +
+      ' assertion(s) - it was trimmed, not run:\n' + tail(probe.out))
+    strictEqual(passed, planned,
+      'perl: the secrets suite planned ' + planned + ' assertion(s) but ' +
+      passed + ' passed:\n' + failed.join('\n') + '\n' + tail(probe.out))
+    strictEqual(skipped.length, 0,
+      'perl: ' + skipped.length + ' assertion(s) were SKIPPED - the vault ' +
+      'plugin group was not generated, so the plugin vocabulary went ' +
+      'untested:\n' + skipped.join('\n'))
+
+    // Say so in the log: the count is the evidence, and a reader of a green
+    // run should not have to trust that it was read.
+    t.diagnostic('perl: secrets suite ran ' + passed + ' of ' + planned +
+      ' planned assertion(s), 1..' + planned)
+  })
+
+
   test('go: data and literal paths agree on number types', async () => {
     const go = toolchain('go')
     if (null == go) {
@@ -937,6 +1039,85 @@ func TestTypesProbe(t *testing.T) {
   })
 
 
+  // csharp SECRETS, END TO END - the only lane that RUNS the csharp secrets
+  // feature with the feature ACTIVE. The build lane above generates with
+  // the default feature set, so no lane compiled SecretsFeature.cs, the
+  // vendored sekreto/plugin trees or the gated suite, let alone ran it;
+  // the 29 shipped tests were only ever run by hand. `dotnet build` on the
+  // library also never compiles test/ (the csproj removes it), so the suite
+  // is not even type-checked without this.
+  //
+  // The `vault` group is on so the lane also exercises the plugin
+  // vocabulary - Config_csharp's fully-qualified FeaturePlugins emission
+  // and Main_csharp's trim - with a kind actually declared.
+  //
+  // Only the secrets suite is selected (--filter), so the count below is
+  // a count of THIS suite: the test project compiles the whole shipped
+  // test tree, and an unfiltered total would hide a trimmed-to-nothing
+  // secrets file behind two hundred green entity tests.
+  test('csharp: the secrets feature runs with the feature active', async (t) => {
+    const dotnet = toolchain('dotnet')
+    if (null == dotnet) {
+      return t.skip('no dotnet toolchain here')
+    }
+
+    const sdkroot = Path.join(tmp, 'csharp-secrets')
+    await generateTo('csharp', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // The shipped suite must actually be there: a --filter that matches
+    // nothing is not an error to `dotnet test`, so a lane that lost its
+    // suite would otherwise fail on the count with a message naming the
+    // wrong thing.
+    const suite = Path.join(sdkroot, 'test', 'feature', 'secrets', 'SecretsFeatureTest.cs')
+    ok(Fs.existsSync(suite), 'csharp: the gated secrets suite was not generated')
+
+    // Read the test project's name rather than hardcode it: it carries the
+    // model name, and the fixture's is not this lane's business.
+    const testproj = Fs.readdirSync(Path.join(sdkroot, 'test'))
+      .filter((n) => n.endsWith('.csproj'))
+    strictEqual(testproj.length, 1,
+      'csharp: expected exactly one test csproj, found: ' + JSON.stringify(testproj))
+
+    // `dotnet test` builds the library through the project reference, so
+    // a broken vendored file fails HERE, naming the file - which is also
+    // why the build is not run separately first.
+    const probe = run(dotnet,
+      ['test', '--nologo', '-v', 'quiet',
+        '--filter', 'FullyQualifiedName~SecretsFeatureTest',
+        Path.join('test', testproj[0])],
+      sdkroot)
+
+    if (probe.timedOut) {
+      return t.skip('csharp: ' + probe.out)
+    }
+
+    // Name the failing cases: the summary says how many failed and never
+    // which, and the failure bodies are above it.
+    const lines = probe.out.split(/\r?\n/)
+    const failed = lines.filter((l: string) => /^\s*(Failed|\[FAIL\])\s+\S/.test(l))
+    ok(probe.ok, 'csharp secrets suite failed:\n' + failed.join('\n') +
+      '\n' + tail(probe.out))
+
+    // POSITIVE evidence the tests RAN. A test project whose filter matched
+    // nothing, or whose suite file `target add` trimmed away, EXITS ZERO
+    // with "No test is available" - the vacuous pass this lane exists to
+    // prevent. The summary line is `Passed! - Failed: 0, Passed: N,
+    // Skipped: 0, Total: N`; the count has to be this suite's, not a
+    // rounding error's.
+    const summary = /Passed!\s+-\s+Failed:\s+(\d+),\s+Passed:\s+(\d+),\s+Skipped:\s+(\d+),\s+Total:\s+(\d+)/
+      .exec(probe.out)
+    ok(null != summary, 'csharp: dotnet test printed no Passed! summary:\n' + tail(probe.out))
+    const [, nfailed, npassed, nskipped] = (summary as RegExpExecArray).map(Number)
+    strictEqual(nfailed, 0, 'csharp: the secrets suite reported failures:\n' + tail(probe.out))
+    strictEqual(nskipped, 0, 'csharp: the secrets suite skipped cases:\n' + tail(probe.out))
+    ok(10 < npassed,
+      'csharp: the secrets suite ran only ' + npassed +
+      ' tests - it was trimmed, not run:\n' + tail(probe.out))
+  })
+
+
   // PHP HAS NO BUILD STEP, WHICH IS WHY IT NEEDED THIS.
   //
   // `php -l` parses a file without running it — the cheapest possible check,
@@ -992,6 +1173,86 @@ func TestTypesProbe(t *testing.T) {
         'the reserved-word entity was not renamed:\n' +
         (String(types![1]).match(/^class \w*Namespace\w*$/gm) || []).join('\n'))
     })
+
+
+  // clojure SECRETS, END TO END - the only lane that RUNS the clojure
+  // secrets feature with the feature ACTIVE, through the SHIPPED RUNNER.
+  //
+  // clojure has no test discovery. test/sdk/test_runner.clj is the
+  // tools.deps `-M:test` main, and the gated secrets suite is reached only
+  // through its own `run-feature-suites`. Delete that one call and every
+  // secrets check vanishes from the SDK count with ALL GREEN still printed
+  // (measured: PASS 174 -> PASS 156, no red anywhere). generate.test.ts
+  // pins the call in the TEXT; this lane pins it in the RUN, by requiring
+  // the `feature.secrets: ran N check(s)` line the runner prints from the
+  // checks that actually executed - the clojure spelling of the
+  // `feature.<name>: ran N of M case(s)` line the corpus lanes read.
+  //
+  // `--sdk-only`: the default run also drives the shared corpus
+  // (.sdk/test/test.json: omni smoke, primary, struct), which create-sdkgen
+  // compiles into a real project and which this repo does not have. The
+  // flag skips those three steps VISIBLY and runs everything else through
+  // the same -main a project runs, which is the point: a lane that called
+  // the suite's `run` directly would prove the suite and not the wiring.
+  //
+  // The `vault` group is on so the lane also exercises the plugin
+  // vocabulary: Config_clojure's `(:require [voxgig.sekreto.plugins.X ...])`
+  // emission and the feature-plugins map the feature reads through
+  // feature-extra. Every builtin-only assertion stays green through a
+  // broken plugin require, so it needs a lane where a kind is declared.
+  test('clojure: the secrets feature runs with the feature active', async (t) => {
+    const clj = toolchain('clojure')
+    if (null == clj) {
+      return t.skip('no clojure toolchain here')
+    }
+
+    const sdkroot = Path.join(tmp, 'clojure-secrets')
+    await generateTo('clojure', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // The shipped suite and the feature must actually be there: the
+    // runner's discovery is conditional on the FILES, so a lane that lost
+    // either would still exit zero, reporting a run of nothing.
+    ok(Fs.existsSync(Path.join(sdkroot, 'test', 'sdk', 'test', 'feature', 'secrets.clj')),
+      'clojure: the gated secrets suite was not generated')
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'sdk', 'feature', 'secrets.clj')),
+      'clojure: the secrets feature source was not generated')
+
+    const probe = run(clj, ['-M:test', '--sdk-only'], sdkroot)
+
+    if (probe.unlaunchable) {
+      return t.skip('clojure: the toolchain could not be started here: ' +
+        tail(probe.out, 3))
+    }
+    if (probe.timedOut) {
+      return t.skip('clojure: ' + tail(probe.out, 3))
+    }
+
+    // Name the failing checks: the epilogue says how many and never which.
+    const failed = probe.out.split(/\r?\n/)
+      .filter((l: string) => /^FAIL /.test(l))
+    ok(probe.ok, 'clojure secrets suite failed:\n' + failed.join('\n') +
+      '\n' + tail(probe.out))
+
+    // Exit zero is not enough. The runner discovers feature suites off the
+    // classpath and -main has to CALL that discovery; without the call the
+    // suite ships and never runs, and every other count stays green. The
+    // count is of checks that executed (one per sdk.testutil/run-check),
+    // so a suite trimmed to nothing, or one whose `run` returned before
+    // its first check, reads as a small number here rather than a pass.
+    const ran = /^feature\.secrets: ran (\d+) check\(s\)$/m.exec(probe.out)
+    ok(null != ran,
+      'clojure: the runner printed no `feature.secrets: ran N check(s)` line ' +
+      '- -main is not calling run-feature-suites, so the shipped secrets ' +
+      'suite never ran:\n' + tail(probe.out))
+    ok(10 < Number((ran as RegExpExecArray)[1]),
+      'clojure: the secrets suite ran only ' + (ran as RegExpExecArray)[1] +
+      ' checks - it was trimmed, not run:\n' + tail(probe.out))
+    ok(/^ALL GREEN$/m.test(probe.out),
+      'clojure: the runner exited zero without printing ALL GREEN:\n' +
+      tail(probe.out))
+  })
 })
 
 
@@ -2281,6 +2542,141 @@ public static class AuthNullProbe
 ]
 
 
+// elixir SECRETS, END TO END - the only lane that COMPILES and RUNS the
+// elixir secrets feature with the feature ACTIVE.
+//
+// This lane replaces an entry that read "UNVERIFIED - no elixir toolchain;
+// never compiled, never executed". That was a fact about the machine the
+// auth-null fix was written on, inherited as though it were a fact about
+// every machine; `command -v elixir mix` finds both here (Elixir 1.14, OTP
+// 25), and a generated elixir SDK runs its whole suite green. The stale
+// claim survived because the "nothing is excused that already has a lane"
+// guard only fires for a target that has BOTH a lane and an entry - so a
+// false excuse with no lane passes every check. This is the lane.
+//
+// Why elixir needs a RUNTIME lane more than most: the plugin trim is
+// invisible to its compiler. mix compiles everything under lib/ and Elixir
+// resolves modules by `defmodule`, never by import, so a vendored plugin
+// the trim failed to remove compiles silently and ships (Main_elixir.ts).
+// generate.test.ts pins the trim from the file list; this lane is what
+// proves the files that DID ship compile together and that the emitted
+// feature_plugins/1 names definitions that exist - `vault` is on so a
+// plugin kind is actually declared, and the shipped suite's "a selected
+// plugin kind is in the SDK vocabulary" case constructs a hashicorp chain.
+//
+// It also runs the shipped auth-nil cases ("auth nil suppresses the
+// credential, chain or no chain" and "... an EXPLICIT apikey too"), which
+// drive a LIVE client through system.fetch and assert no authorization
+// header reaches the transport - which is why elixir is classified in
+// AUTHNULL_STANDALONE below rather than excused.
+//
+// Exit zero is not enough: ExUnit exits zero on a file that defines no
+// test, and `--trace` names each case as it runs, so the lane requires the
+// summary count AND the two auth-nil case names in the output.
+describe('the elixir secrets feature runs from a generated SDK', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-elixir-secrets-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  test('elixir: the secrets feature runs with the feature active', async (t) => {
+    const sdkroot = Path.join(tmp, 'elixir-secrets')
+    await generateTo('elixir', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // The shipped suite must actually be there, and the trim must have
+    // happened: asserted BEFORE the toolchain probe, so a machine without
+    // mix still proves that much.
+    const suite = Path.join('test', 'feature', 'secrets', 'secrets_test.exs')
+    ok(Fs.existsSync(Path.join(sdkroot, suite)),
+      'elixir: the gated secrets suite was not generated')
+    // The runtime lives under lib/<app>/ - the app name is the fixture's,
+    // so it is discovered rather than spelled.
+    const app = Fs.readdirSync(Path.join(sdkroot, 'lib'))
+      .find((n) => Fs.existsSync(Path.join(sdkroot, 'lib', n, 'feature', 'secrets')))
+    ok(null != app, 'elixir: no lib/<app>/feature/secrets/ was generated')
+    const plugins = Path.join(sdkroot, 'lib', app!, 'feature', 'secrets',
+      'sekreto', 'plugins')
+    ok(Fs.existsSync(Path.join(plugins, 'hashicorp.ex')),
+      'elixir: the ACTIVE vault group lost hashicorp')
+    ok(!Fs.existsSync(Path.join(plugins, 'gcpsecrets.ex')),
+      'elixir: the inactive cloud group still ships gcpsecrets - mix would ' +
+      'compile it without complaint, so the trim has to be checked here')
+
+    // Probed AFTER generating: a machine without the toolchain still
+    // proves the SDK generates. `mix` is the entry point; `elixir` is
+    // checked too because a mix shim can outlive the runtime it wraps.
+    const mix = toolchain('mix')
+    const elixir = toolchain('elixir')
+    if (null == mix || null == elixir) {
+      return t.skip('no usable elixir toolchain here (elixir + mix)')
+    }
+
+    // `mix test` refuses to run under any other MIX_ENV, so it is pinned
+    // rather than inherited. `--no-color` because the assertions below read
+    // the output, and `--trace` for the per-case lines they need.
+    const env = { ...process.env, MIX_ENV: 'test' }
+    const ran = run(mix, ['test', '--no-color', '--trace', suite], sdkroot, env)
+
+    if (ran.unlaunchable) {
+      return t.skip('elixir: the toolchain could not be started here: ' +
+        tail(ran.out, 3))
+    }
+    if (ran.timedOut) {
+      return t.skip('elixir: ' + ran.out)
+    }
+    const gap = UNUSABLE.find((re) => re.test(ran.out))
+    if (null != gap && !ran.ok) {
+      return t.skip('elixir: toolchain present but not usable (' +
+        gap.source + '):\n' + tail(ran.out))
+    }
+
+    // LF-normalised before anything is matched: CRLF output on Windows has
+    // broken this file's line-anchored checks three times.
+    const out = ran.out.split(/\r?\n/).join('\n')
+
+    // Name the failing cases: ExUnit's epilogue says how many failed and
+    // never which, and with --trace the failures are the bodies above it.
+    const failed = out.split('\n')
+      .filter((l: string) => /^\s+\d+\) test /.test(l))
+    ok(ran.ok, 'elixir secrets suite failed:\n' + failed.join('\n') +
+      '\n' + tail(out))
+
+    // Positive evidence the suite RAN. An ExUnit file with no test exits
+    // zero and prints "0 tests, 0 failures", and so would a suite whose
+    // module name stopped matching mix's discovery - the vacuous pass this
+    // lane exists to prevent.
+    const counted = /(\d+) tests?, (\d+) failures?/.exec(out)
+    ok(null != counted, 'elixir: ExUnit printed no summary:\n' + tail(out))
+    ok(10 < Number(counted![1]),
+      'elixir: the secrets suite ran only ' + counted![1] +
+      ' tests - it was trimmed, not run:\n' + tail(out))
+    strictEqual(Number(counted![2]), 0,
+      'elixir: ' + counted![2] + ' secrets tests failed:\n' + tail(out))
+
+    // The two auth-nil cases by NAME, since they are what lets this target
+    // stand in AUTHNULL_STANDALONE rather than in AUTHNULL_UNCOVERED. A
+    // --trace line is `* test <describe> <name> (<ms>) [L#n]`, and the
+    // suite's describe is "secrets".
+    for (const name of [
+      'auth nil suppresses the credential, chain or no chain',
+      'auth nil suppresses an EXPLICIT apikey too',
+    ]) {
+      ok(out.includes('test secrets active: ' + name),
+        'elixir: the shipped suite no longer runs "' + name + '" - the ' +
+        'auth-null classification below rests on it:\n' + tail(out))
+    }
+  })
+})
+
+
 // Every target is classified below, and the suite further down holds each
 // classification against what the templates actually contain.
 //
@@ -2296,8 +2692,10 @@ public static class AuthNullProbe
 // Fixed, but covered by their own dedicated lanes earlier in this file:
 // `go: auth null suppresses the credential` and the js equivalent, both
 // written before the table existed. Folding them in would mean rewriting two
-// lanes that already work.
-const AUTHNULL_STANDALONE = ['go', 'js']
+// lanes that already work. elixir's is `elixir: the secrets feature runs
+// with the feature active`, which runs the shipped suite's two auth-nil
+// cases by name against a LIVE client, on a real mix.
+const AUTHNULL_STANDALONE = ['go', 'js', 'elixir']
 
 
 // Fixed, but with no behavioural lane here, each with the reason.
@@ -2309,17 +2707,37 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
     'target in Package.swift that the template does not emit; adding one is ' +
     'a template change, not a test change',
 
-  // The six below were the AUTHNULL_OUTSTANDING list. They now carry the fix,
-  // but READ BY EYE ONLY: no clojure, elixir, ocaml, scala, zig or lean
-  // toolchain existed where the change was written, so not one of them has
-  // been compiled, let alone had the suppression exercised. That is a weaker
+  // clojure has left the UNVERIFIED list. The clojure CLI and a JDK ARE
+  // installed on this machine (`command -v clojure`), and the secrets
+  // rollout built a generated clojure SDK and RAN it: the shipped
+  // tm/clojure/test/sdk/test/feature/secrets.clj check
+  // "secrets-auth-nil-suppresses-the-credential" drives a LIVE client
+  // through system.fetch and asserts no authorization header reaches the
+  // transport with `auth: nil` set alongside an explicit apikey AND a
+  // resolving chain, plus that options.auth survives validation as a
+  // present null. Unlike ts, that suite now ALSO runs in sdkgen CI: the
+  // `clojure: the secrets feature runs with the feature active` lane above
+  // drives the shipped runner and requires its executed-count line. It is
+  // a secrets lane rather than an AUTHNULL_LANES row (the table's probe
+  // shape does not fit a tools.deps main), which is why the entry stays.
+  clojure: 'pinned by the shipped tm/clojure/test/sdk/test/feature/' +
+    'secrets.clj ("secrets-auth-nil-suppresses-the-credential"), which the ' +
+    'clojure secrets lane in this file runs through the generated runner',
+
+  // The four below were the AUTHNULL_OUTSTANDING list. They now carry the
+  // fix, but READ BY EYE ONLY: no ocaml, scala, zig or lean toolchain
+  // existed where the change was written, so not one of them has been
+  // compiled, let alone had the suppression exercised. That is a weaker
   // position than the four above it, which at least compile in some CI: these
   // are unproven at BOTH levels. The structural guard below is all that holds
   // them, and a structural guard cannot see a type error or a mis-ordered
   // statement. Whoever gets one of these toolchains should build it first and
-  // add a lane second.
-  clojure: 'UNVERIFIED - no clojure toolchain; never compiled, never executed',
-  elixir: 'UNVERIFIED - no elixir toolchain; never compiled, never executed',
+  // add a lane second. (clojure and elixir were the fifth and sixth, and are
+  // the worked examples of doing exactly that - check the toolchain before
+  // inheriting the claim. elixir's lane is above, and it is in
+  // AUTHNULL_STANDALONE; this list sat on "no elixir toolchain" for a machine
+  // that had one, and the stale-entry guard cannot see a false excuse that
+  // has no lane to contradict it.)
   ocaml: 'UNVERIFIED - no ocaml toolchain; never compiled, never executed',
   scala: 'UNVERIFIED - no scala toolchain; never compiled, never executed',
   zig: 'UNVERIFIED - no zig toolchain; never compiled, never executed',

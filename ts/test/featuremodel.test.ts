@@ -276,8 +276,14 @@ describe('feature-language-parity', () => {
   const GATED: Record<string, string[]> = {
     // needs: ['sekreto'] — a target joins when it vendors its sekreto
     // port and declares `provides: ['sekreto']` together (the vendor-tag
-    // rollout added go and py; java, rb, php and rust follow).
-    secrets: ['go', 'js', 'php', 'py', 'rb', 'ts'],
+    // rollout added go and py; js, rb and php followed, then the nine of
+    // tranche B at sdk-20260907-0029-0).
+    // `dart` gained secrets in tranche B and then left with the language
+    // pack (@voxgig/sdkgen-langpack); the gate lists what THIS repo ships.
+    secrets: [
+      'clojure', 'csharp', 'elixir', 'go', 'java', 'js', 'kotlin',
+      'perl', 'php', 'py', 'rb', 'rust', 'scala', 'ts',
+    ],
   }
 
   // Which targets must carry this feature: all of them, or just the ones

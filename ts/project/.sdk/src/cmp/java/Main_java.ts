@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each,
   File, Content, Copy, Folder, Fragment,
+  pluginExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
@@ -53,7 +54,15 @@ const Main = cmp(async function Main(props: any) {
   // token used throughout the templates (package/import statements).
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//, TEST_CONTROL_EXCLUDE],
+    // pluginExcludes: the generate-time plugin trim (an INACTIVE plugin
+    // group's declared files stay out of the tree - the model's `path`
+    // entries are target-root-relative, which is this Copy's root).
+    // javac performs no dead-code elimination and the trim deletes whole
+    // .java files, so a surviving reference to a trimmed class is a hard
+    // build failure - which is why Config_java imports only the ACTIVE
+    // plugin symbols. The FEATURE-level trim stays an add-time concern
+    // (vendor-tag rollout, Decision 5), as it does for go and py.
+    exclude: [/src\//, TEST_CONTROL_EXCLUDE, ...pluginExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
       JAVAPACKAGE: javapackage,
