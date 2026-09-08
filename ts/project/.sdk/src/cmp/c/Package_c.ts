@@ -10,12 +10,13 @@ import {
 //
 // This is also why the secrets feature's build model is not emitted from
 // here, unlike Package_rust's rustls dependency table or Package_swift's
-// targets: the Makefile reads the TRIMMED TREE. Config_c generates
-// feature/secrets/kinds.c only when the model activates `secrets` for this
-// target, and the Makefile compiles the vendored sekreto/plugin payload only
-// when that file exists, compiles the plugin layer (and links OpenSSL and
-// libcurl) only when a kind file survived the plugin trim. Nothing here has
-// to restate the model's choice, so nothing here can drift from it.
+// targets: the Makefile is feature-agnostic (a trimmed template tree must
+// name no feature) and `-include`s a GENERATED feature/<name>/kinds.mk that
+// Config_c emits only when the model activates the feature for this
+// target - the vendored payload to compile, the suite to run, and the
+// plugin layer with its OpenSSL and libcurl only when a plugin group is
+// active. Nothing here has to restate the model's choice, so nothing here
+// can drift from it.
 const Package = cmp(async function Package(_props: any) {
   // intentionally empty
 })

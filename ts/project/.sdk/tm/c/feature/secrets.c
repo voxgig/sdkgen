@@ -64,7 +64,9 @@
 //     live c request already lives under - and otherwise
 //     `secrets_rawfetch`, which lives in the GENERATED feature/secrets/
 //     kinds.c: a libcurl round-trip when a plugin group is active, a
-//     transport error that says so when none is (see Config_c).
+//     transport error that says so when none is (see Config_c; the
+//     generated kinds.mk beside it is what links libcurl on the same
+//     condition).
 //
 //   * sek_new is documented NOT REENTRANT (a file-scope slot for the
 //     duration of the call). It runs once, in the client constructor,

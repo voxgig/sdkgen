@@ -864,9 +864,8 @@ describe('auth null', () => {
   // (the generated kinds.c, the trim, the accessor); only a compiler can
   // say whether the vendored c ports of sekreto and voxgig/plugin, the
   // feature and the generated kinds.c agree on a type, and only a linker
-  // whether the Makefile's gating - the payload behind kinds.c, the plugin
-  // layer and its -lssl -lcrypto -lcurl behind a surviving kind file -
-  // holds up.
+  // whether the Makefile's gating - the payload and the plugin layer with
+  // its -lssl -lcrypto -lcurl behind the generated kinds.mk - holds up.
   //
   // The `vault` group is on so the plugin layer is compiled and linked: the
   // configuration with the most that can go wrong (plugins/tls.c needs the
@@ -900,8 +899,9 @@ describe('auth null', () => {
 
     // Generated BEFORE the header probe, so a machine without the headers
     // still proves the wiring file and the suite are emitted.
-    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.c')),
-      'c: the wiring file feature/secrets/kinds.c was not generated')
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.c')) &&
+      Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.mk')),
+      'c: the wiring files feature/secrets/kinds.{c,mk} were not generated')
     const suite = Path.join('tests', 'feature', 'secrets', 'secrets_test.c')
     ok(Fs.existsSync(Path.join(sdkroot, suite)),
       'c: the gated secrets suite was not generated')

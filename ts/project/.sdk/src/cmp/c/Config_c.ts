@@ -85,12 +85,18 @@ function pluginDefinitions(model: Model, target: any):
 // directories on purpose: the vendoring guard fails any non-vendored file
 // inside a vendor dir, and this one is generated.
 //
-// It is also the Makefile's WIRING GATE: tm/c/Makefile compiles the
-// feature source and the vendored payload only when this file exists, so a
-// tree whose model never activated the feature compiles none of it and
-// links libc alone. That is why it is emitted for an active feature with
-// NO active group as well - an [env, memory] chain still needs the sekreto
-// core - with an empty definitions list.
+// Beside it goes feature/<name>/kinds.mk, the feature's BUILD WIRING: a
+// generated make fragment that tm/c/Makefile reads through
+// `-include $(wildcard feature/*/kinds.mk)`. The Makefile itself names no
+// feature (the `nothing left behind names a dropped feature` guard holds a
+// trimmed template tree to that), so everything a payload needs from the
+// build is stated here, from the model: the vendored cores to compile, the
+// suite to run, and - only when a plugin group is active - the plugin layer
+// with the external libraries it brings. A tree whose model never
+// activated the feature has no fragment, compiles none of the payload and
+// links libc alone. Both files are emitted for an active feature with NO
+// active group as well - an [env, memory] chain still needs the sekreto
+// core - with an empty definitions list and no plugin layer.
 //
 // For `secrets` it additionally carries `secrets_rawfetch`, the
 // token-exchange transport of last resort (go's rawExchangeFetch). The c
@@ -116,14 +122,50 @@ const FeaturePlugins = cmp(async function FeaturePlugins(props: any) {
       const { syms, groups } = defs[fname]
 
       Folder({ name: fname }, () => {
+        // The build wiring (see above). Paths are SDK-root-relative, as the
+        // Makefile's own globs are. `feature/<name>.c` is NOT listed: the
+        // Makefile's feature/*.c glob already compiles every feature's own
+        // file, and its headers are on INC through the generic payload
+        // -I paths.
+        File({ name: 'kinds.mk' }, () => {
+          Content(`# Generated beside kinds.c: what the \`${fname}\` feature needs from the
+# build, read by the Makefile through \`-include $(wildcard feature/*/kinds.mk)\`.
+# Without this file none of the feature's vendored payload is compiled or
+# linked. Do not hand-edit - change the model and regenerate.
+
+# The vendored cores every chain needs (sekreto and the voxgig/plugin host it
+# is built on), and the feature's gated suite.
+FEATURE_SRCS += $(wildcard feature/${fname}/sekreto/*.c feature/${fname}/plugin/*.c)
+FEATURE_TEST_SRCS += $(wildcard tests/feature/${fname}/*.c)
+`)
+          if (0 === groups) {
+            Content(`
+# No plugin group is active: the plugin layer (the kinds, the socket HTTP
+# client and its OpenSSL binding, the encoders, the clock and the
+# child-process launcher) is on disk but NOT compiled, and nothing beyond
+# libc is linked. A chain of built-ins needs none of it.
+`)
+          }
+          else {
+            Content(`
+# A plugin group is active: the selected kinds and the five shared helpers
+# they call (the socket HTTP client and its OpenSSL binding, the encoders,
+# the clock and the child-process launcher), with the two external
+# libraries they bring - OpenSSL for the vault kinds' TLS, libcurl for the
+# token-exchange transport of last resort in kinds.c.
+FEATURE_SRCS += $(wildcard feature/${fname}/plugins/*.c)
+LDLIBS += -lssl -lcrypto -lcurl
+`)
+          }
+        })
+
         File({ name: 'kinds.c' }, () => {
           Content(`// Generated: the plugin definitions the model selected for the \`${fname}\`
 // feature's provider chain (the c peer of go's core.FeaturePlugins), read
 // back by core/config.c's feature_plugins("${fname}", &n).
 //
-// GENERATED, AND ALSO THE WIRING: tm/c/Makefile compiles the feature and
-// its vendored payload only while this file exists. Do not hand-edit -
-// change the model's plugin groups and regenerate.
+// GENERATED beside kinds.mk, the build wiring tm/c/Makefile includes. Do
+// not hand-edit - change the model's plugin groups and regenerate.
 
 #include "sdk.h"
 

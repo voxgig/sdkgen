@@ -13,7 +13,7 @@
 // This file lives in the tests/feature/ container on purpose: `target add`
 // trims it, along with the feature source and the vendored library, for a
 // project whose model does not select `secrets`; the Makefile compiles it
-// only when the feature is wired in (feature/secrets/kinds.c exists).
+// only when the feature is wired in (its generated kinds.mk exists).
 //
 // THE CLIENT IS LIVE AND THE TRANSPORT IS THE THING COUNTED. Every wire
 // assertion here runs against a real client whose `options.system.fetch` is

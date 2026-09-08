@@ -4,91 +4,65 @@
 
 CC ?= gcc
 CFLAGS ?= -std=c11 -Wall -Wextra -Wno-unused-parameter -D_GNU_SOURCE -O0 -g
-# -I feature: the gated feature headers (feature/secrets.h) a test suite
-# under tests/feature/<name>/ includes by bare name, the way every test
-# includes sdk.h. The three feature/secrets/... paths are the vendored
-# sekreto core, the voxgig/plugin host it is built on, and the plugin
-# kinds; every quoted include in that tree is a bare basename ("host.h",
-# "support.h") resolved through these. Harmless when the feature trim has
-# removed the directories - gcc ignores a -I it cannot find - and the
-# plugin's value.h / point.h / types.h / config.h / env.h shadow nothing:
-# the SDK's own value.h (utility/struct) is reached by its neighbours
-# through the including file's directory, which a quoted include searches
-# before any -I.
-INC := -I core -I utility/struct -I feature \
-  -I feature/secrets/sekreto -I feature/secrets/plugin -I feature/secrets/plugins
+# -I feature: a feature's own header (feature/<name>.h), which a suite under
+# tests/feature/<name>/ includes by bare name the way every test includes
+# sdk.h. Then EVERY payload directory two levels under feature/: a feature
+# that carries a vendored library keeps it in feature/<name>/<lib>/, and
+# every quoted include inside such a port is a bare basename resolved
+# through these. Derived from the tree rather than listed, so the Makefile
+# names no feature; harmless when the feature trim has removed the
+# directories (the wildcard is then empty), and a payload's value.h /
+# point.h / types.h shadow nothing: the SDK's own value.h (utility/struct)
+# is reached by its neighbours through the including file's directory,
+# which a quoted include searches before any -I.
+PAYLOAD_DIRS := $(patsubst %/,%,$(wildcard feature/*/*/))
+INC := -I core -I utility/struct -I feature $(addprefix -I ,$(PAYLOAD_DIRS))
 # The vendored omni test runner (tests/vendor/omni) is TEST-ONLY: it is
 # reachable from tests/ alone, never from LIB_SRCS, so it cannot enter the
 # shipped libsdk.a. That is why it lives under tests/ and not utility/.
 OMNI_INC := -I tests -I tests/vendor/omni
 # The test harness headers (ctest.h, feature_harness.h) by bare name, for a
-# suite that lives BELOW tests/ (the gated tests/feature/<name>/ suites) and
-# so cannot reach them through its own directory as tests/*.c do.
+# suite that lives BELOW tests/ (a gated feature's tests/feature/<name>/
+# suite) and so cannot reach them through its own directory as tests/*.c do.
 TEST_INC := -I tests
 LDLIBS := -lm
 
-# ---- the secrets feature (gated; model/feature/secrets.aon) -----------------
+# ---- gated feature payloads (model/feature/<name>.aon plugin groups) --------
 #
-# feature/secrets/ holds the vendored @voxgig/sekreto c port (sekreto/), the
-# voxgig/plugin host it is built on (plugin/) and the provider kinds
-# (plugins/), two levels below feature/ - out of reach of the feature/*/*.c
-# glob below, and deliberately so: this block decides what of it is built.
-#
-# feature/secrets/kinds.c IS THE WIRING. Config_c GENERATES it only when the
-# model activates `secrets` for this target (it lists the selected plugin
-# definitions and carries the token-exchange transport of last resort).
-# Without it nothing of the feature is compiled: a tree generated straight
-# from the scaffold, or one whose model declares the feature inactive,
-# carries the payload as inert source - exactly as rust carries a module no
-# parent declares - and a project's `target add` trims it outright.
-#
-# THE PLUGIN LAYER IS BUILT ONLY WHEN A KIND SURVIVED THE TRIM. The five
-# shared helpers (the socket HTTP client, its OpenSSL binding, the encoders,
-# the clock and the child-process launcher) belong to no plugin group, so
-# they are always on disk; they are compiled only beside a kind that calls
-# them, because plugins/tls.c hard-includes <openssl/ssl.h>. So a chain of
-# built-ins ([env, memory, dotenv, file]) compiles the sekreto and
-# voxgig/plugin cores alone and links libc alone, and the two external
-# dependencies a c SDK can have - OpenSSL for the vault kinds, libcurl for
-# the exchange transport in kinds.c - are linked only when a plugin group is
-# active. `ldd` on any test binary shows which case this tree is.
-SEK_WIRED := $(wildcard feature/secrets/kinds.c)
-SEK_SHARED := clock.c encode.c httpjson.c proc.c tls.c
-SEK_ALL := $(wildcard feature/secrets/plugins/*.c)
-SEK_KINDS := $(filter-out $(addprefix feature/secrets/plugins/,$(SEK_SHARED)),$(SEK_ALL))
-SEK_SRCS :=
-SEK_TEST_SRCS :=
-ifneq ($(SEK_WIRED),)
-  # kinds.c itself is one level under feature/, so the feature/*/*.c glob
-  # below already compiles it; this adds the feature and the two cores.
-  SEK_SRCS := feature/secrets.c \
-    $(wildcard feature/secrets/sekreto/*.c feature/secrets/plugin/*.c)
-  ifneq ($(strip $(SEK_KINDS)),)
-    SEK_SRCS += $(SEK_ALL)
-    LDLIBS += -lssl -lcrypto -lcurl
-  endif
-  # The gated suite: tests/feature/<name>/ is a `feature` container, so the
-  # trim drops it with the feature, and this only ever adds files that the
-  # feature wired in above can link.
-  SEK_TEST_SRCS := $(wildcard tests/feature/secrets/*.c)
-endif
+# A gated feature's vendored payload sits two levels under feature/
+# (feature/<name>/<lib>/*.c) - out of reach of the feature/*/*.c glob below,
+# and deliberately so. What of it is built is decided by a GENERATED make
+# fragment, feature/<name>/kinds.mk, that Config_c emits beside the
+# feature's generated kinds.c only when the model activates the feature for
+# this target. The fragment appends the payload sources to FEATURE_SRCS, the
+# feature's suite to FEATURE_TEST_SRCS, and - only when a plugin group is
+# active - the plugin layer and the external libraries it brings to LDLIBS.
+# Nothing here names a feature: a tree whose model never activated one
+# carries its payload as inert source (as rust carries a module no parent
+# declares), links libc alone, and a project's `target add` trims it
+# outright. `ldd` on any test binary shows which case this tree is.
+FEATURE_SRCS :=
+FEATURE_TEST_SRCS :=
+-include $(wildcard feature/*/kinds.mk)
 
 # feature/*/*.c: a feature may carry a vendored library payload in its own
 # subdirectory (the station feature vendors voxgig_station there - C has no
 # package registry, so tier-C libraries ride the feature source; see
 # utility/struct/ for the same precedent at the utility level). Empty when
-# no feature ships one. feature/secrets.c is taken OUT of the glob and put
-# back by SEK_SRCS, so it is compiled only when its wiring exists.
-LIB_SRCS := $(filter-out feature/secrets.c,\
-  $(wildcard core/*.c utility/*.c utility/struct/*.c feature/*.c feature/*/*.c entity/*.c)) \
-  $(SEK_SRCS)
+# no feature ships one. A gated feature's own feature/<name>.c is in this
+# glob too and always compiles (its headers are on INC above); without its
+# kinds.mk nothing references it, so the archive member is never pulled
+# into a link.
+LIB_SRCS := $(wildcard core/*.c utility/*.c utility/struct/*.c feature/*.c feature/*/*.c entity/*.c) \
+  $(FEATURE_SRCS)
 LIB_OBJS := $(LIB_SRCS:.c=.o)
 
 # Single-level on purpose: the vendored omni sources under
-# tests/vendor/omni have no main() and must not become test binaries. The
-# one addition is the gated secrets suite, added above only when the
-# feature is wired in.
-TEST_SRCS := $(wildcard tests/*.c) $(SEK_TEST_SRCS)
+# tests/vendor/omni have no main() and must not become test binaries. A
+# gated feature's suite under tests/feature/<name>/ is added by its
+# generated kinds.mk, so it is only ever built when the feature it links
+# against is wired in.
+TEST_SRCS := $(wildcard tests/*.c) $(FEATURE_TEST_SRCS)
 TEST_BINS := $(TEST_SRCS:.c=.out)
 
 OMNI_SRCS := $(wildcard tests/vendor/omni/*.c)
@@ -104,13 +78,11 @@ build: libsdk.a
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
 # `ar r` REPLACES a member by basename on an archive it finds, and this
-# archive carries duplicate basenames by construction: core/point.o and
-# core/config.o beside the vendored voxgig/plugin's point.o and config.o,
-# utility/struct/value.o beside its value.o (and core/utility.o beside
-# utility/struct/utility.o from before). One cold `ar rcs` keeps every
-# member; an incremental one would silently drop whichever came first, so
-# the archive is deleted before it is written - upstream sekreto's own
-# Makefile does the same, for the same reason.
+# archive carries duplicate basenames by construction: core/utility.o
+# beside utility/struct/utility.o, and a vendored payload's point.o,
+# config.o and value.o beside core's and utility/struct's. One cold
+# `ar rcs` keeps every member; an incremental one would silently drop
+# whichever came first, so the archive is deleted before it is written.
 libsdk.a: $(LIB_OBJS)
 	@rm -f $@
 	ar rcs $@ $(LIB_OBJS)
