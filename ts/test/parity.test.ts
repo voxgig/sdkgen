@@ -1731,6 +1731,33 @@ const SECRETS: Record<string, {
     ],
     tests: 'elixir/test/feature/secrets',
   },
+  swift: {
+    // swift vendors THREE SwiftPM modules (Sekreto, SekretoPlugins,
+    // VoxgigPlugin) under one gated folder: sekreto/ and plugins/ are
+    // SIBLINGS, as upstream lays them out, and Package_swift names each as
+    // its own target. plugins/All.swift is the full-set barrel and is
+    // deliberately absent (pinned by vendored.test.ts).
+    feature: 'swift/Sources/ProjectNameSDK/feature/SecretsFeature.swift',
+    vendor: 'swift/Sources/ProjectNameSDK/feature/secrets',
+    vendorfiles: [
+      'sekreto/Addr.swift', 'sekreto/Json.swift', 'sekreto/Provider.swift',
+      'sekreto/Providers.swift', 'sekreto/Sekreto.swift',
+      'plugins/Aws.swift', 'plugins/Azuresecrets.swift',
+      'plugins/Boru.swift', 'plugins/Crypto.swift', 'plugins/Doppler.swift',
+      'plugins/Gcpsecrets.swift', 'plugins/Hashicorp.swift',
+      'plugins/Httpjson.swift', 'plugins/Infisical.swift',
+      'plugins/Onepassword.swift', 'plugins/Proc.swift',
+      'plugins/Secretspec.swift', 'plugins/Sigv4.swift',
+    ],
+    plugindir: 'swift/Sources/ProjectNameSDK/feature/secrets/plugin',
+    pluginfiles: [
+      'Capability.swift', 'Catalog.swift', 'Config.swift', 'Depend.swift',
+      'Env.swift', 'Export.swift', 'Graph.swift', 'Host.swift', 'Json.swift',
+      'Order.swift', 'Point.swift', 'Refs.swift', 'Resolve.swift',
+      'Types.swift', 'Value.swift', 'Version.swift',
+    ],
+    tests: 'swift/Tests/ProjectNameSDKTests/feature/secrets',
+  },
 }
 
 
@@ -1824,6 +1851,8 @@ describe('vendored-library rollout parity', () => {
       // dart keeps its feature under lib/, elixir under the mix module root.
       ['lib', 'feature', 'secrets'],
       ['lib', 'projectname', 'feature', 'secrets'],
+      // swift's SwiftPM source root.
+      ['Sources', 'ProjectNameSDK', 'feature', 'secrets'],
     ]
 
     const unlisted = sdkTargets()

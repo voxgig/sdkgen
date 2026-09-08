@@ -146,6 +146,9 @@ const VENDOR_DIRS = [
   'tm/scala/feature/secrets/plugin',
   'tm/scala/feature/secrets/sekreto',
   'tm/scala/feature/secrets/sekreto/plugins',
+  'tm/swift/Sources/ProjectNameSDK/feature/secrets/plugin',
+  'tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins',
+  'tm/swift/Sources/ProjectNameSDK/feature/secrets/sekreto',
 ]
 
 
@@ -412,6 +415,9 @@ describe('vendored', () => {
       // breakage is at attribute access, which a compile-only check
       // cannot see. The one shape that can SHIP broken; pinned absent.
       'tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/__init__.py',
+      // swift: `allplugins` lists every Definition - the same shape as
+      // ts's plugins/index.ts, as one file in the SekretoPlugins module.
+      'tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/All.swift',
     ]
 
     for (const rel of BARRELS) {
