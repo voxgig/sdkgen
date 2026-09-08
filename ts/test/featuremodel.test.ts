@@ -283,6 +283,7 @@ describe('feature-language-parity', () => {
     secrets: [
       'c', 'clojure', 'csharp', 'elixir', 'go', 'java', 'js', 'kotlin',
       'lua', 'perl', 'php', 'py', 'rb', 'rust', 'scala', 'swift', 'ts',
+      'zig',
     ],
   }
 

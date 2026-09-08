@@ -1819,6 +1819,32 @@ const SECRETS: Record<string, {
     ],
     tests: 'lua/test/feature/secrets',
   },
+  zig: {
+    // zig's feature is the flat secrets.zig beside a same-named directory
+    // holding both libraries as sibling sekreto/ and plugins/ module trees.
+    // The generated feature/secrets/plugins.zig (the sekretoplugins module
+    // root, listing the selected kinds) sits ABOVE the vendored plugins/ dir
+    // on purpose, so no vendored-guard exemption is needed. plugins/all.zig
+    // is the full-set barrel and is deliberately absent.
+    feature: 'zig/feature/secrets.zig',
+    vendor: 'zig/feature/secrets',
+    vendorfiles: [
+      'sekreto/addr.zig', 'sekreto/builtins.zig', 'sekreto/provider.zig',
+      'sekreto/sekreto.zig', 'plugins/aws.zig', 'plugins/azuresecrets.zig',
+      'plugins/boru.zig', 'plugins/doppler.zig', 'plugins/gcpsecrets.zig',
+      'plugins/hashicorp.zig', 'plugins/httpjson.zig',
+      'plugins/infisical.zig', 'plugins/onepassword.zig',
+      'plugins/secretspec.zig', 'plugins/sigv4.zig',
+    ],
+    plugindir: 'zig/feature/secrets/plugin',
+    pluginfiles: [
+      'capability.zig', 'catalog.zig', 'config.zig', 'depend.zig', 'env.zig',
+      'export.zig', 'graph.zig', 'host.zig', 'inst.zig', 'order.zig',
+      'plugin.zig', 'point.zig', 'ref.zig', 'resolve.zig', 'types.zig',
+      'value.zig', 'version.zig',
+    ],
+    tests: 'zig/test/feature/secrets',
+  },
 }
 
 

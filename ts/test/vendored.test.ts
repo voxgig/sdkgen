@@ -157,6 +157,9 @@ const VENDOR_DIRS = [
   'tm/lua/feature/secrets/plugin',
   'tm/lua/feature/secrets/sekreto',
   'tm/lua/feature/secrets/sekreto/plugins',
+  'tm/zig/feature/secrets/plugin',
+  'tm/zig/feature/secrets/plugins',
+  'tm/zig/feature/secrets/sekreto',
 ]
 
 
@@ -431,6 +434,8 @@ describe('vendored', () => {
       'tm/c/feature/secrets/plugins/all.c',
       // lua: requires every kind module at once.
       'tm/lua/feature/secrets/sekreto/plugins.lua',
+      // zig: exports every kind at once.
+      'tm/zig/feature/secrets/plugins/all.zig',
     ]
 
     for (const rel of BARRELS) {
