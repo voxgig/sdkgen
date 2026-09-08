@@ -1838,7 +1838,7 @@ src/cmp/swift/Entity_swift.ts 251e4b55da25
 src/cmp/swift/Gitignore_swift.ts 335a862c06a8
 src/cmp/swift/MainEntity_swift.ts a077a33118e1
 src/cmp/swift/Main_swift.ts 8710cac7b9dc
-src/cmp/swift/Package_swift.ts b813b0fa3498
+src/cmp/swift/Package_swift.ts c144117b421d
 src/cmp/swift/ReadmeEntity_swift.ts 99ed05fdeb6f
 src/cmp/swift/ReadmeExamplesTest_swift.ts e51e1dcd2b2a
 src/cmp/swift/ReadmeExplanation_swift.ts 9d20df0c92d9
