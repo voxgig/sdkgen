@@ -2,6 +2,7 @@
 import {
   Content,
   File,
+  Folder,
   cmp,
   configDefinition,
   configReprSetting,
@@ -24,6 +25,270 @@ import {
   cStringLiteral,
   formatCValue,
 } from './utility_c'
+
+
+// PLUGIN DEFINITIONS PER FEATURE (the c peer of Config_go's featurePlugins
+// map and Main_rust's generated plugins.rs).
+//
+// Upstream sekreto retired its self-registration registry for voxgig/plugin
+// definitions: a provider kind the caller did not pass in `sek_options.
+// plugins` is unknown to that Sekreto. So the model's choice of plugin
+// groups IS the SDK's provider vocabulary, and the generated code names each
+// active group's constructor symbol (`def: c:` in model/feature/secrets.aon
+// - `sek_plugin_hashicorp`, the `Definition *(void)` each vendored kind
+// file defines) and nothing else. A symbol named here whose file the plugin
+// trim removed is an unresolved reference at link time - a loud failure,
+// which is the right kind.
+//
+// One entry per ACTIVE feature that declares a `plugin` map at all, read
+// with `only_active: false` (pluginExcludesFor's subtlety: the feature
+// object a component is handed has already been filtered, so a feature
+// whose groups are all off would otherwise look like one with no plugin
+// machinery, and its kinds.c - which the Makefile reads as the feature's
+// WIRING - would not be emitted).
+function pluginDefinitions(model: Model, target: any):
+  Record<string, { syms: string[], groups: number }> {
+  const out: Record<string, { syms: string[], groups: number }> = {}
+  const feature = targetFeatures(model, target)
+
+  each(feature, (f: any) => {
+    const declared = getModelPath(model,
+      `main.${KIT}.feature.${f.name}.plugin`,
+      { required: false, only_active: false }) || {}
+    if (0 === Object.keys(declared).length) return
+
+    const syms = new Set<string>()
+    let groups = 0
+    each(declared, (plugin: any) => {
+      // Filter on `active` HERE rather than trusting the feature object to
+      // arrive filtered (Config_go's note): getting this wrong names a
+      // constructor for a file the trim just deleted.
+      if (true !== plugin.active) return
+      const defs = Object.keys(plugin.def?.[target.name] || {})
+      if (0 < defs.length) groups++
+      for (const sym of defs) syms.add(sym)
+    })
+
+    out[f.name] = { syms: Array.from(syms).sort(), groups }
+  })
+
+  return out
+}
+
+
+// feature/<name>/kinds.c - GENERATED, one per plugin-bearing active feature.
+//
+// It cannot live in core/config.c: that translation unit must not name the
+// vendored voxgig/plugin's `Definition` type, which is why sdk.h types the
+// accessor as void** (the same reason go hides its list behind []any). It
+// sits one level ABOVE the vendored sekreto/, plugin/ and plugins/
+// directories on purpose: the vendoring guard fails any non-vendored file
+// inside a vendor dir, and this one is generated.
+//
+// It is also the Makefile's WIRING GATE: tm/c/Makefile compiles the
+// feature source and the vendored payload only when this file exists, so a
+// tree whose model never activated the feature compiles none of it and
+// links libc alone. That is why it is emitted for an active feature with
+// NO active group as well - an [env, memory] chain still needs the sekreto
+// core - with an empty definitions list.
+//
+// For `secrets` it additionally carries `secrets_rawfetch`, the
+// token-exchange transport of last resort (go's rawExchangeFetch). The c
+// core ships no HTTP client (utility/fetcher.c), and the decision for this
+// target is to bundle one INSIDE the gated feature: libcurl, compiled in
+// only when a plugin group is active, so that an SDK without secrets - or
+// with secrets and a chain of built-ins - still ships zero external
+// dependencies. The Makefile adds -lcurl on the same condition (a kind file
+// present), so the two cannot disagree. With no group active the exchange
+// still works through a caller-supplied options.system.fetch, which every
+// live c request already lives under; only the fallback is missing, and it
+// says so.
+const FeaturePlugins = cmp(async function FeaturePlugins(props: any) {
+  const ctx$ = props.ctx$
+  const target = props.target
+  const model: Model = ctx$.model
+
+  const defs = pluginDefinitions(model, target)
+  if (0 === Object.keys(defs).length) return
+
+  Folder({ name: 'feature' }, () => {
+    for (const fname of Object.keys(defs).sort()) {
+      const { syms, groups } = defs[fname]
+
+      Folder({ name: fname }, () => {
+        File({ name: 'kinds.c' }, () => {
+          Content(`// Generated: the plugin definitions the model selected for the \`${fname}\`
+// feature's provider chain (the c peer of go's core.FeaturePlugins), read
+// back by core/config.c's feature_plugins("${fname}", &n).
+//
+// GENERATED, AND ALSO THE WIRING: tm/c/Makefile compiles the feature and
+// its vendored payload only while this file exists. Do not hand-edit -
+// change the model's plugin groups and regenerate.
+
+#include "sdk.h"
+
+#include "sekreto.h"
+
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+
+// One prototype per selected kind: the \`Definition *(void)\` constructor
+// its vendored file defines (plugins/sekretoplugins.h declares all ten;
+// naming only these keeps the link line the boundary upstream intends).
+${syms.map((sym: string) => `Definition* ${sym}(void);
+`).join('')}
+${0 === syms.length ?
+`// No plugin group is active: the chain can name the four built-in kinds
+// (env, memory, dotenv, file) and a custom provider, and nothing else.
+void** ${fname}_plugins(size_t* n) {
+  *n = 0;
+  return NULL;
+}
+` :
+`static void* ${fname.toUpperCase()}_KINDS[${syms.length}];
+
+void** ${fname}_plugins(size_t* n) {
+${syms.map((sym: string, i: number) => `  ${fname.toUpperCase()}_KINDS[${i}] = ${sym}();
+`).join('')}  *n = ${syms.length};
+  return ${fname.toUpperCase()}_KINDS;
+}
+`}`)
+
+          if ('secrets' !== fname) return
+
+          if (0 === groups) {
+            Content(`
+// THE EXCHANGE TRANSPORT OF LAST RESORT, when no plugin group is active:
+// there is none. The c core ships no HTTP client, and libcurl is bundled
+// with the plugin groups only (see tm/c/Makefile), so a token purchase
+// needs options.system.fetch - the seam every live c request already uses.
+// Reached only by an exchange whose caller supplied no transport; a chain
+// that resolves a static credential never comes here.
+voxgig_value* secrets_rawfetch(Context* ctx, const char* url,
+                               voxgig_value* fetchdef, PNError** err) {
+  (void)url; (void)fetchdef;
+  *err = context_make_error(ctx, "secrets_no_transport",
+    "secrets: the token exchange has no HTTP transport: this SDK selected no "
+    "secrets plugin group, so libcurl is not linked; supply "
+    "options.system.fetch or activate a plugin group");
+  return NULL;
+}
+`)
+            return
+          }
+
+          Content(`
+// THE EXCHANGE TRANSPORT OF LAST RESORT (go's rawExchangeFetch): plain
+// libcurl, answering the same transport-shaped map the system.fetch seam
+// promises ({status, statusText, headers, json(), body}). It exists so an
+// exchange works with ordinary SDK options - requiring a custom transport
+// for the COMMON case would refuse every live token purchase before a
+// request was made. Deliberately NOT the SDK transport: that is what the
+// secrets feature wraps, and sending the token request back through it
+// would recurse on the first expiry.
+//
+// libcurl is linked because a plugin group is active in this model; the
+// Makefile adds -lcurl on exactly that condition.
+
+#include <curl/curl.h>
+
+typedef struct {
+  char* data;
+  size_t len;
+} SecretsBuf;
+
+static size_t secrets_curl_write(char* ptr, size_t size, size_t nmemb, void* ud) {
+  SecretsBuf* b = (SecretsBuf*)ud;
+  size_t add = size * nmemb;
+  char* grown = (char*)realloc(b->data, b->len + add + 1);
+  if (NULL == grown) return 0;
+  b->data = grown;
+  memcpy(b->data + b->len, ptr, add);
+  b->len += add;
+  b->data[b->len] = '\\0';
+  return add;
+}
+
+voxgig_value* secrets_rawfetch(Context* ctx, const char* url,
+                               voxgig_value* fetchdef, PNError** err) {
+  static bool inited = false;
+  *err = NULL;
+  if (!inited) {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    inited = true;
+  }
+
+  CURL* curl = curl_easy_init();
+  if (NULL == curl) {
+    *err = context_make_error(ctx, "secrets_transport", "secrets: curl_easy_init failed");
+    return NULL;
+  }
+
+  const char* method = get_str(fetchdef, "method");
+  if (NULL == method || '\\0' == method[0]) method = "POST";
+
+  struct curl_slist* hdrs = NULL;
+  voxgig_value* headers = getp(fetchdef, "headers");
+  if (voxgig_is_map(headers)) {
+    voxgig_map* hm = voxgig_as_map(headers);
+    for (size_t i = 0; i < hm->len; i++) {
+      if (!voxgig_is_string(hm->entries[i].value)) continue;
+      size_t klen = strlen(hm->entries[i].key);
+      const char* v = voxgig_as_string(hm->entries[i].value);
+      char* line = (char*)malloc(klen + 2 + strlen(v) + 1);
+      sprintf(line, "%s: %s", hm->entries[i].key, v);
+      hdrs = curl_slist_append(hdrs, line);
+      free(line);
+    }
+  }
+
+  SecretsBuf body = {NULL, 0};
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hdrs);
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, secrets_curl_write);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &body);
+  const char* reqbody = get_str(fetchdef, "body");
+  if (NULL != reqbody) {
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, reqbody);
+  }
+
+  CURLcode rc = curl_easy_perform(curl);
+  long status = 0;
+  if (CURLE_OK == rc) {
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+  }
+  curl_slist_free_all(hdrs);
+  curl_easy_cleanup(curl);
+
+  if (CURLE_OK != rc) {
+    char msg[512];
+    snprintf(msg, sizeof(msg), "secrets: token exchange transport failed: %s (URL was: \\"%s\\")",
+             curl_easy_strerror(rc), url);
+    free(body.data);
+    *err = context_make_error(ctx, "secrets_transport", msg);
+    return NULL;
+  }
+
+  const char* text = body.data ? body.data : "";
+  voxgig_value* parsed = json_parse(text);
+  voxgig_value* out = cmap(5,
+    "status", v_num((double)status),
+    "statusText", v_str(status >= 400 ? "ERR" : "OK"),
+    "headers", v_map(),
+    "json", json_thunk(parsed),
+    "body", v_str(text));
+  free(body.data);
+  return out;
+}
+`)
+        })
+      })
+    }
+  })
+})
 
 
 // core/config.c: make_config() builds the embedded API model as a Value;
@@ -227,10 +492,40 @@ Feature* make_feature(const char* name) {
     Content(`  return feature_base_new();
 }
 `)
+
+    // The plugin-definitions accessor (sdk.h feature_plugins), EMITTED
+    // UNCONDITIONALLY so the prototype in sdk.h always has a definition,
+    // and EMPTY unless a plugin-bearing feature is active: each such
+    // feature's list lives in its generated feature/<name>/kinds.c (see
+    // FeaturePlugins above), which this dispatches to by name, so this
+    // translation unit never names the vendored plugin's types.
+    const plugged = Object.keys(pluginDefinitions(model, target)).sort()
+
+    Content(`
+`)
+    for (const fname of plugged) {
+      Content(`void** ${fname}_plugins(size_t* n);
+`)
+    }
+
+    Content(`
+void** feature_plugins(const char* name, size_t* n) {
+`)
+    for (const fname of plugged) {
+      Content(`  if (strcmp(name, "${fname}") == 0) return ${fname}_plugins(n);
+`)
+    }
+    Content(`  (void)name;
+  *n = 0;
+  return NULL;
+}
+`)
   })
 })
 
 
 export {
-  Config
+  Config,
+  FeaturePlugins,
+  pluginDefinitions,
 }

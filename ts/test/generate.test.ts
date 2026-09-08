@@ -1967,6 +1967,159 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // c guard for the same seam, and for the two hazards particular to a
+  // target whose build is a Makefile that reads the TRIMMED TREE.
+  //
+  // FIRST HAZARD: the wiring file. tm/c/Makefile compiles feature/secrets.c
+  // and the vendored sekreto/plugin payload only while the GENERATED
+  // feature/secrets/kinds.c exists, and compiles the plugin layer - linking
+  // OpenSSL and libcurl - only while a KIND file survived the plugin trim.
+  // So kinds.c must exist for an active feature and name exactly the active
+  // groups' constructors (a symbol for a trimmed file is a link error; a
+  // missing one is a kind silently absent from the vocabulary), the
+  // inactive groups' kind files must be gone from the tree, and the five
+  // UNGROUPED helpers (httpjson, tls, encode, clock, proc - shared by
+  // several groups, so owned by none) must stay.
+  //
+  // SECOND HAZARD: a feature that is itself OFF. c has `srcfeature: false`,
+  // so Main_c's whole-tree Copy is the only copy the target has, and
+  // pluginExcludes(model) walks only ACTIVE features - a `secrets` declared
+  // `active: false` with a group on would keep that group's vault client in
+  // the tree, and the Makefile would compile and link it into an SDK whose
+  // model turned the feature off. Main_c's inactivePluginExcludes (scala's
+  // shape) is the guard, and no kinds.c is emitted, so nothing of the
+  // feature is compiled either way.
+  test('c: active secrets emits plugin defs and trims inactive groups', async () => {
+    const genc = async (extra: string, features: string[]) => {
+      const { fs, vol } = memfs({})
+      const sdkgen = SdkGen({
+        fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+      })
+      const res = await sdkgen.generate({
+        model: makeModel(['c'], undefined, extra, features),
+        root: makeRoot(),
+      })
+      strictEqual(res.ok, true, 'generation did not report ok')
+      const out: Record<string, string> = {}
+      for (const [path, content] of
+        Object.entries(vol.toJSON() as Record<string, string>)) {
+        const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+        if (rel.includes('.jostraca/')) continue
+        out[rel] = content
+      }
+      return out
+    }
+
+    const out = await genc(
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // THE WIRING FILE, and the definitions in it.
+    const kinds = findFile(out, 'c/feature/secrets/kinds.c')
+    ok(null != kinds, 'c: no feature/secrets/kinds.c generated')
+    ok(/^Definition\* sek_plugin_hashicorp\(void\);$/m.test(kinds!) &&
+      /^Definition\* sek_plugin_boru\(void\);$/m.test(kinds!),
+      'c: the ACTIVE vault group did not reach kinds.c:\n' + kinds)
+    ok(/SECRETS_KINDS\[0\] = sek_plugin_boru\(\);/.test(kinds!) &&
+      /SECRETS_KINDS\[1\] = sek_plugin_hashicorp\(\);/.test(kinds!) &&
+      /\*n = 2;/.test(kinds!),
+      'c: secrets_plugins() is missing the vault definitions:\n' + kinds)
+    ok(!/sek_plugin_(gcpsecrets|azuresecrets|awssecrets|awsparams|onepassword|doppler|infisical|secretspec)/
+      .test(kinds!),
+      'c: an INACTIVE group reached kinds.c:\n' + kinds)
+
+    // The exchange transport of last resort: libcurl, because a plugin
+    // group is active (the Makefile adds -lcurl on the same condition).
+    ok(/#include <curl\/curl\.h>/.test(kinds!) &&
+      /voxgig_value\* secrets_rawfetch\(/.test(kinds!),
+      'c: a plugin-bearing model must carry the libcurl exchange transport')
+
+    // The accessor in core/config.c dispatches to it, and the feature's
+    // constructor is declared and dispatched like every declared feature.
+    const config = findFile(out, 'c/core/config.c')
+    ok(null != config, 'c: no core/config.c generated')
+    ok(/^void\*\* secrets_plugins\(size_t\* n\);$/m.test(config!) &&
+      /if \(strcmp\(name, "secrets"\) == 0\) return secrets_plugins\(n\);/.test(config!),
+      'c: feature_plugins() does not dispatch to secrets_plugins:\n' + config)
+    ok(/if \(strcmp\(name, "secrets"\) == 0\) return feature_secrets_new\(\);/.test(config!),
+      'c: make_feature() does not construct the secrets feature')
+
+    // The trim on disk: the active group's files and the ungrouped helpers
+    // are IN, every other group's are OUT, and the full-set barrel is never
+    // there at all.
+    ok(null != findFile(out, 'feature/secrets/plugins/hashicorp.c') &&
+      null != findFile(out, 'feature/secrets/plugins/boru.c'),
+      'c: the ACTIVE vault group lost a kind file')
+    for (const helper of ['httpjson', 'tls', 'encode', 'clock', 'proc']) {
+      ok(null != findFile(out, 'feature/secrets/plugins/' + helper + '.c'),
+        'c: the shared ' + helper + '.c helper must ship with the feature core')
+    }
+    ok(null == findFile(out, 'feature/secrets/plugins/gcpsecrets.c'),
+      'c: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'feature/secrets/plugins/secretspec.c'),
+      'c: the inactive secretspec group still ships its child-process plugin')
+    ok(null == findFile(out, 'feature/secrets/plugins/sigv4.c') &&
+      null == findFile(out, 'feature/secrets/plugins/sha256.c'),
+      'c: the inactive aws group still ships its request signing')
+    ok(null == findFile(out, 'feature/secrets/plugins/all.c'),
+      'c: the full-set barrel plugins/all.c must never be generated')
+
+    // The vendored cores at upstream's depth, the feature, and the gated
+    // suite in the tests/feature/ container the trim drops with it.
+    ok(null != findFile(out, 'feature/secrets/sekreto/sekreto.c'),
+      'c: the vendored sekreto core was not generated')
+    ok(null != findFile(out, 'feature/secrets/plugin/host.c'),
+      'c: the vendored voxgig/plugin core was not generated')
+    ok(null != findFile(out, 'c/feature/secrets.c') &&
+      null != findFile(out, 'c/feature/secrets.h'),
+      'c: the secrets feature source was not generated')
+    ok(null != findFile(out, 'c/tests/feature/secrets/secrets_test.c'),
+      'c: the gated secrets suite was not generated')
+
+    // A DIFFERENT group alone, so a regression in the per-group def maps
+    // shows up here rather than in a generated SDK nobody compiled.
+    const saas = await genc(
+      'main: kit: feature: secrets: { active: true plugin: saas: active: true }',
+      ['test', 'log', 'secrets'])
+    const saaskinds = findFile(saas, 'c/feature/secrets/kinds.c')
+    ok(null != saaskinds && /sek_plugin_doppler\(\)/.test(saaskinds) &&
+      /sek_plugin_infisical\(\)/.test(saaskinds) &&
+      /sek_plugin_onepassword\(\)/.test(saaskinds) &&
+      !/sek_plugin_(hashicorp|boru)/.test(saaskinds),
+      'c: the saas group did not select exactly its three kinds:\n' + saaskinds)
+    ok(null == findFile(saas, 'feature/secrets/plugins/hashicorp.c'),
+      'c: a saas-only model still ships the vault kind')
+
+    // THE INACTIVE FEATURE (declared, off, with a group on): no wiring file,
+    // no kind file, and the accessor emitted EMPTY - it exists in every
+    // config.c so sdk.h's prototype always has a definition.
+    const off = await genc(
+      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+    ok(null == findFile(off, 'c/feature/secrets/kinds.c'),
+      'c: an inactive feature still generated its wiring file')
+    ok(null == findFile(off, 'feature/secrets/plugins/hashicorp.c'),
+      'c: an inactive feature still ships its vault kind (Main_c inactivePluginExcludes)')
+    const offconfig = findFile(off, 'c/core/config.c')
+    ok(!/secrets_plugins|feature_secrets_new/.test(offconfig!),
+      'c: an inactive feature still reached config.c')
+    ok(/void\*\* feature_plugins\(const char\* name, size_t\* n\) \{\n  \(void\)name;\n  \*n = 0;\n  return NULL;\n\}/
+      .test(offconfig!),
+      'c: an inactive model must emit an EMPTY feature_plugins accessor:\n' + offconfig)
+
+    // And a model that never mentions the feature: the same empty accessor
+    // and no wiring file. The vendored tree rides along in the Copy here -
+    // this harness runs no `target add`, which is where an undeclared
+    // feature is trimmed - and without kinds.c the Makefile compiles none
+    // of it (the generatedcompile lanes prove that with ldd).
+    const plain = await generate(['c'])
+    ok(null == findFile(plain, 'c/feature/secrets/kinds.c'),
+      'c: a model without secrets still generated the wiring file')
+    ok(!/secrets_plugins|feature_secrets_new/.test(findFile(plain, 'c/core/config.c')!),
+      'c: a model without secrets still reached config.c')
+  })
+
+
   // js guard for the same seam, plus the one hazard only js has.
   //
   // An ACTIVE secrets model must emit the plugin requires and the

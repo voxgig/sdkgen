@@ -433,6 +433,47 @@
   },
   {
    "lib": "plugin",
+   "port": "c",
+   "lang": "c",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/c/feature/secrets/plugin"
+   ],
+   "file": {
+    "c/src/capability.c": "tm/c/feature/secrets/plugin/capability.c",
+    "c/src/capability.h": "tm/c/feature/secrets/plugin/capability.h",
+    "c/src/catalog.c": "tm/c/feature/secrets/plugin/catalog.c",
+    "c/src/catalog.h": "tm/c/feature/secrets/plugin/catalog.h",
+    "c/src/config.c": "tm/c/feature/secrets/plugin/config.c",
+    "c/src/config.h": "tm/c/feature/secrets/plugin/config.h",
+    "c/src/depend.c": "tm/c/feature/secrets/plugin/depend.c",
+    "c/src/depend.h": "tm/c/feature/secrets/plugin/depend.h",
+    "c/src/env.c": "tm/c/feature/secrets/plugin/env.c",
+    "c/src/env.h": "tm/c/feature/secrets/plugin/env.h",
+    "c/src/export.c": "tm/c/feature/secrets/plugin/export.c",
+    "c/src/export.h": "tm/c/feature/secrets/plugin/export.h",
+    "c/src/graph.c": "tm/c/feature/secrets/plugin/graph.c",
+    "c/src/graph.h": "tm/c/feature/secrets/plugin/graph.h",
+    "c/src/host.c": "tm/c/feature/secrets/plugin/host.c",
+    "c/src/host.h": "tm/c/feature/secrets/plugin/host.h",
+    "c/src/order.c": "tm/c/feature/secrets/plugin/order.c",
+    "c/src/order.h": "tm/c/feature/secrets/plugin/order.h",
+    "c/src/point.c": "tm/c/feature/secrets/plugin/point.c",
+    "c/src/point.h": "tm/c/feature/secrets/plugin/point.h",
+    "c/src/ref.c": "tm/c/feature/secrets/plugin/ref.c",
+    "c/src/ref.h": "tm/c/feature/secrets/plugin/ref.h",
+    "c/src/resolve.c": "tm/c/feature/secrets/plugin/resolve.c",
+    "c/src/resolve.h": "tm/c/feature/secrets/plugin/resolve.h",
+    "c/src/types.c": "tm/c/feature/secrets/plugin/types.c",
+    "c/src/types.h": "tm/c/feature/secrets/plugin/types.h",
+    "c/src/value.c": "tm/c/feature/secrets/plugin/value.c",
+    "c/src/value.h": "tm/c/feature/secrets/plugin/value.h",
+    "c/src/version.c": "tm/c/feature/secrets/plugin/version.c",
+    "c/src/version.h": "tm/c/feature/secrets/plugin/version.h"
+   }
+  },
+  {
+   "lib": "plugin",
    "port": "clojure",
    "lang": "clojure",
    "version": "sdk-20260908-1556-0",
@@ -861,6 +902,42 @@
     "typescript/src/Types.ts": "tm/ts/src/feature/secrets/plugin/Types.ts",
     "typescript/src/Version.ts": "tm/ts/src/feature/secrets/plugin/Version.ts",
     "typescript/src/index.ts": "tm/ts/src/feature/secrets/plugin/index.ts"
+   }
+  },
+  {
+   "lib": "sekreto",
+   "port": "c",
+   "lang": "c",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/c/feature/secrets/sekreto",
+    "tm/c/feature/secrets/plugins"
+   ],
+   "file": {
+    "c/src/sekreto.h": "tm/c/feature/secrets/sekreto/sekreto.h",
+    "c/src/internal.h": "tm/c/feature/secrets/sekreto/internal.h",
+    "c/src/util.c": "tm/c/feature/secrets/sekreto/util.c",
+    "c/src/json.c": "tm/c/feature/secrets/sekreto/json.c",
+    "c/src/sekreto.c": "tm/c/feature/secrets/sekreto/sekreto.c",
+    "c/src/providers.c": "tm/c/feature/secrets/sekreto/providers.c",
+    "c/plugins/sekretoplugins.h": "tm/c/feature/secrets/plugins/sekretoplugins.h",
+    "c/plugins/support.h": "tm/c/feature/secrets/plugins/support.h",
+    "c/plugins/encode.c": "tm/c/feature/secrets/plugins/encode.c",
+    "c/plugins/clock.c": "tm/c/feature/secrets/plugins/clock.c",
+    "c/plugins/httpjson.c": "tm/c/feature/secrets/plugins/httpjson.c",
+    "c/plugins/tls.c": "tm/c/feature/secrets/plugins/tls.c",
+    "c/plugins/proc.c": "tm/c/feature/secrets/plugins/proc.c",
+    "c/plugins/sha256.c": "tm/c/feature/secrets/plugins/sha256.c",
+    "c/plugins/sigv4.c": "tm/c/feature/secrets/plugins/sigv4.c",
+    "c/plugins/hashicorp.c": "tm/c/feature/secrets/plugins/hashicorp.c",
+    "c/plugins/boru.c": "tm/c/feature/secrets/plugins/boru.c",
+    "c/plugins/aws.c": "tm/c/feature/secrets/plugins/aws.c",
+    "c/plugins/gcpsecrets.c": "tm/c/feature/secrets/plugins/gcpsecrets.c",
+    "c/plugins/azuresecrets.c": "tm/c/feature/secrets/plugins/azuresecrets.c",
+    "c/plugins/onepassword.c": "tm/c/feature/secrets/plugins/onepassword.c",
+    "c/plugins/doppler.c": "tm/c/feature/secrets/plugins/doppler.c",
+    "c/plugins/infisical.c": "tm/c/feature/secrets/plugins/infisical.c",
+    "c/plugins/secretspec.c": "tm/c/feature/secrets/plugins/secretspec.c"
    }
   },
   {

@@ -428,6 +428,134 @@
     }
    }
   },
+  "plugin/c": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/c/feature/secrets/plugin/capability.c": {
+     "sha256": "f31fea7cd9b38bc926926eb98c54a03da55ff4b731ba4b74eddb200508ff690a",
+     "upstream": "c/src/capability.c"
+    },
+    "tm/c/feature/secrets/plugin/capability.h": {
+     "sha256": "bac64317b6aecf68b1a3837679a82c534c02f4c5e467ea2a1f4271ebe3c85702",
+     "upstream": "c/src/capability.h"
+    },
+    "tm/c/feature/secrets/plugin/catalog.c": {
+     "sha256": "97a536041d2b37569dd1f425d29d6277f875b22f3c054dca188ca1ed26e315ef",
+     "upstream": "c/src/catalog.c"
+    },
+    "tm/c/feature/secrets/plugin/catalog.h": {
+     "sha256": "50f00987ce343726704e6041634e374dfa03a0857a0903de6409b10232342140",
+     "upstream": "c/src/catalog.h"
+    },
+    "tm/c/feature/secrets/plugin/config.c": {
+     "sha256": "cf44f0801745538f06a1bbe2a1190f0bd0301ecaa75e87e62ee7711f0b83f4a3",
+     "upstream": "c/src/config.c"
+    },
+    "tm/c/feature/secrets/plugin/config.h": {
+     "sha256": "009cf42d47a77409c00a753172e31d4b8e2a502d47a3ab3d64efe0553d60fc01",
+     "upstream": "c/src/config.h"
+    },
+    "tm/c/feature/secrets/plugin/depend.c": {
+     "sha256": "753ba652e7db89c3ca440d5521d4a43dc39705995071cd62a544be27032cd1e7",
+     "upstream": "c/src/depend.c"
+    },
+    "tm/c/feature/secrets/plugin/depend.h": {
+     "sha256": "b1d6fc576c90fcfb159b46195926735dcbd0b4cec4efb22591350567d897ab18",
+     "upstream": "c/src/depend.h"
+    },
+    "tm/c/feature/secrets/plugin/env.c": {
+     "sha256": "df8a920c974fbf46149b8df53262c2d6f687ea832ea2954c2ad3a10732095f0f",
+     "upstream": "c/src/env.c"
+    },
+    "tm/c/feature/secrets/plugin/env.h": {
+     "sha256": "35feb68b9cccaa671eaefbc0da3e7cc03dd20c7701a109f241f3d28c0b2098bf",
+     "upstream": "c/src/env.h"
+    },
+    "tm/c/feature/secrets/plugin/export.c": {
+     "sha256": "e35a45c6bb02a2e4d22c8c19fc60a71170fbd875f328b82ab194e0e82553ef32",
+     "upstream": "c/src/export.c"
+    },
+    "tm/c/feature/secrets/plugin/export.h": {
+     "sha256": "56536dc9351bedf6ed9a59907acd7344c43bbd48a4e5673c9ec599d17e8d365f",
+     "upstream": "c/src/export.h"
+    },
+    "tm/c/feature/secrets/plugin/graph.c": {
+     "sha256": "d04e1c02df3d8403ec0ad6a69a1850a2e0c62c3a3402a441daa292a8b31b73f6",
+     "upstream": "c/src/graph.c"
+    },
+    "tm/c/feature/secrets/plugin/graph.h": {
+     "sha256": "64e09cd79843d00906f40b98f9db3634b250e5cd36aebab3f6490f795fa86db8",
+     "upstream": "c/src/graph.h"
+    },
+    "tm/c/feature/secrets/plugin/host.c": {
+     "sha256": "134e5a67f0ca5812ef2c7696b3f174417f0e02da4cda8b33c531961458966309",
+     "upstream": "c/src/host.c"
+    },
+    "tm/c/feature/secrets/plugin/host.h": {
+     "sha256": "82dc6d98cc8425b4c3d7b93317e27f0365b1482835e4034d8b30658e097126fd",
+     "upstream": "c/src/host.h"
+    },
+    "tm/c/feature/secrets/plugin/order.c": {
+     "sha256": "5fd53ce5af586310697c9ee4a193285a1c320842e786680b2a53b1e0d0cbb5a1",
+     "upstream": "c/src/order.c"
+    },
+    "tm/c/feature/secrets/plugin/order.h": {
+     "sha256": "38550c4cd5b97aecc0d082d640fcd77077b98b01bbc269f613f6246046ed5fa6",
+     "upstream": "c/src/order.h"
+    },
+    "tm/c/feature/secrets/plugin/point.c": {
+     "sha256": "64784d27631cd6f74e6f282654d31129c85f38188f572eea384d5f001a088e6a",
+     "upstream": "c/src/point.c"
+    },
+    "tm/c/feature/secrets/plugin/point.h": {
+     "sha256": "6f63b638461f09f519fcd36d1f2af68964569ed0ead5825516d65d5cd49f026b",
+     "upstream": "c/src/point.h"
+    },
+    "tm/c/feature/secrets/plugin/ref.c": {
+     "sha256": "86cef021f2c591e4980ef7d81db0beebade69e0fd5c044a18fef566c5caf25b9",
+     "upstream": "c/src/ref.c"
+    },
+    "tm/c/feature/secrets/plugin/ref.h": {
+     "sha256": "75f7a28e8027b00f046721b763cc1c8df8edff0481feaa8c17e7f964c79b04d6",
+     "upstream": "c/src/ref.h"
+    },
+    "tm/c/feature/secrets/plugin/resolve.c": {
+     "sha256": "9269261e004970641a9788d5654322d27a856208d50b74ab4f36d086f3f4bc00",
+     "upstream": "c/src/resolve.c"
+    },
+    "tm/c/feature/secrets/plugin/resolve.h": {
+     "sha256": "d358f66be86c6fdf02a570ddad0eec73d3e9db54135f86af01ca378d94773fc8",
+     "upstream": "c/src/resolve.h"
+    },
+    "tm/c/feature/secrets/plugin/types.c": {
+     "sha256": "b72b8414c1d3c11ac778728e1c78da3e7a4fef6f7ff6c7f9bd103bbb7d7d27dd",
+     "upstream": "c/src/types.c"
+    },
+    "tm/c/feature/secrets/plugin/types.h": {
+     "sha256": "47460a121236b4b56ef6bba4043af1151e0aebf4b251cb0456c84ba70b9fcec2",
+     "upstream": "c/src/types.h"
+    },
+    "tm/c/feature/secrets/plugin/value.c": {
+     "sha256": "c91ddff97a5c3f0d82fbf76ef40cf17b4b2d623ae04e2728bfac1b8c3d275b88",
+     "upstream": "c/src/value.c"
+    },
+    "tm/c/feature/secrets/plugin/value.h": {
+     "sha256": "275fda4994078ed5c3449ff90ef978b40cf34b20aac024ecafe0065567edd4fa",
+     "upstream": "c/src/value.h"
+    },
+    "tm/c/feature/secrets/plugin/version.c": {
+     "sha256": "23b2d953eaef4439ffbc3f111e55e782094ed7ab30a59943ca944a82a1de5fa6",
+     "upstream": "c/src/version.c"
+    },
+    "tm/c/feature/secrets/plugin/version.h": {
+     "sha256": "e0c610297b5563e8648852e94ef5fef7031652d81d6307e568cff986bde6a347",
+     "upstream": "c/src/version.h"
+    }
+   }
+  },
   "plugin/clojure": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
@@ -1817,6 +1945,110 @@
     "tm/ts/src/feature/secrets/plugin/Version.ts": {
      "sha256": "683c909df153323afdf285efa03b030061a099b609788f904159938da542e202",
      "upstream": "typescript/src/Version.ts"
+    }
+   }
+  },
+  "sekreto/c": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "1267ee2e5f49566bc92695bc9eb3a60ef4924998",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/c/feature/secrets/plugins/aws.c": {
+     "sha256": "b7c92436a846b07f1b0dc942890c6f9f5363692e8cdc561f56a0b8242cb8c7b7",
+     "upstream": "c/plugins/aws.c"
+    },
+    "tm/c/feature/secrets/plugins/azuresecrets.c": {
+     "sha256": "a70fd245c0cb4dd7613e02598c728eed5a5b49ac278c544c3772c46b7b6a4039",
+     "upstream": "c/plugins/azuresecrets.c"
+    },
+    "tm/c/feature/secrets/plugins/boru.c": {
+     "sha256": "3141a025e554dc950c28a058c7fc40840e129adb8adf85562cf743ff08abd269",
+     "upstream": "c/plugins/boru.c"
+    },
+    "tm/c/feature/secrets/plugins/clock.c": {
+     "sha256": "f457ffd24a5b1ea668b7f542d98c6d1a9f00cac4297d4cc8f12a1b3a8d1af829",
+     "upstream": "c/plugins/clock.c"
+    },
+    "tm/c/feature/secrets/plugins/doppler.c": {
+     "sha256": "a4e4ddc7db363cb2485d877e2344ec6ade1a1082273299f3af072b6b45e3efe6",
+     "upstream": "c/plugins/doppler.c"
+    },
+    "tm/c/feature/secrets/plugins/encode.c": {
+     "sha256": "cbafab3fafa88744ce3a9c1b5bd6ec59616997fdee424b09430a09b4d02478af",
+     "upstream": "c/plugins/encode.c"
+    },
+    "tm/c/feature/secrets/plugins/gcpsecrets.c": {
+     "sha256": "0d22f72dc3d857fa431441bccce55c80975aca96389aaa5984e0244f3e9622a4",
+     "upstream": "c/plugins/gcpsecrets.c"
+    },
+    "tm/c/feature/secrets/plugins/hashicorp.c": {
+     "sha256": "805dc465580c70a1fbc271cd1a25efec99a8cee560d8ce0da3b31763280d230a",
+     "upstream": "c/plugins/hashicorp.c"
+    },
+    "tm/c/feature/secrets/plugins/httpjson.c": {
+     "sha256": "98d5f1c1996d27db25fd97240409cd38eb01060165013a188ce44dc0804c8d96",
+     "upstream": "c/plugins/httpjson.c"
+    },
+    "tm/c/feature/secrets/plugins/infisical.c": {
+     "sha256": "18d8d40c41aa5dcf44605e606a1f880f250d1b523444d96cd2cb9c4714b5f1f6",
+     "upstream": "c/plugins/infisical.c"
+    },
+    "tm/c/feature/secrets/plugins/onepassword.c": {
+     "sha256": "b1fb4e14d1dd1b7848e45c0157b06f2e171db68907bb2c6ac2d82b4892558cc1",
+     "upstream": "c/plugins/onepassword.c"
+    },
+    "tm/c/feature/secrets/plugins/proc.c": {
+     "sha256": "67ff2318aba28f7bf3e6433b85e0c752b06191e99fcf07348b94c6cc97edaf47",
+     "upstream": "c/plugins/proc.c"
+    },
+    "tm/c/feature/secrets/plugins/secretspec.c": {
+     "sha256": "33e0cbf7733446e94f0eb76efed89079156831f22b98cdee309504d20025f8ee",
+     "upstream": "c/plugins/secretspec.c"
+    },
+    "tm/c/feature/secrets/plugins/sekretoplugins.h": {
+     "sha256": "59f6e7e6a41580c141e00c1fb2e4e1f59eaf4f984739c8bb1ab83f3314ef69d1",
+     "upstream": "c/plugins/sekretoplugins.h"
+    },
+    "tm/c/feature/secrets/plugins/sha256.c": {
+     "sha256": "ed2216da9ab205627a241f84b1d0018c7475b9ab17593b37060ce0c57d9701c0",
+     "upstream": "c/plugins/sha256.c"
+    },
+    "tm/c/feature/secrets/plugins/sigv4.c": {
+     "sha256": "c9444623f482c7bcd5ed51c24b21ad64b2226df633519dc9f101202d70aa4ea3",
+     "upstream": "c/plugins/sigv4.c"
+    },
+    "tm/c/feature/secrets/plugins/support.h": {
+     "sha256": "241b938db8af5e9077bd2aad3bc2700f9a01ab3e676f9cce9ed8ccf56cd480fc",
+     "upstream": "c/plugins/support.h"
+    },
+    "tm/c/feature/secrets/plugins/tls.c": {
+     "sha256": "2c5aa0222778051f6aad7c79511e1c44e1529dd0003aff906d43ae838608a6fc",
+     "upstream": "c/plugins/tls.c"
+    },
+    "tm/c/feature/secrets/sekreto/internal.h": {
+     "sha256": "903c3f156524b753f8e75bf979351b95f99ae5b58262f6de42e06434b9e66a08",
+     "upstream": "c/src/internal.h"
+    },
+    "tm/c/feature/secrets/sekreto/json.c": {
+     "sha256": "364953d5fc08d2d0bbc32d7b4d53ea409d81c08b98609e8ab099dde695a28572",
+     "upstream": "c/src/json.c"
+    },
+    "tm/c/feature/secrets/sekreto/providers.c": {
+     "sha256": "0b796ee005df155c2e7c98e11f4814c3b94ecf14908edd9ab661f0d348d18cbc",
+     "upstream": "c/src/providers.c"
+    },
+    "tm/c/feature/secrets/sekreto/sekreto.c": {
+     "sha256": "79018e56fa6594c6a4a4bb5788965cb9c0205b8008ff0ba1f4fa45312d98eaa6",
+     "upstream": "c/src/sekreto.c"
+    },
+    "tm/c/feature/secrets/sekreto/sekreto.h": {
+     "sha256": "161731905452025eda8f23b411f8a377577ef78df7b53da0320cf8bae28ff098",
+     "upstream": "c/src/sekreto.h"
+    },
+    "tm/c/feature/secrets/sekreto/util.c": {
+     "sha256": "45e6948f30b0c838806cd177f0dd23f6c51b46d49db49dbbb28516c5638b9e3d",
+     "upstream": "c/src/util.c"
     }
    }
   },
