@@ -685,6 +685,41 @@
   },
   {
    "lib": "plugin",
+   "port": "lua",
+   "lang": "lua",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/lua/feature/secrets",
+    "tm/lua/feature/secrets/plugin"
+   ],
+   "file": {
+    "lua/src/plugin.lua": "tm/lua/feature/secrets/plugin.lua",
+    "lua/src/plugin/capability.lua": "tm/lua/feature/secrets/plugin/capability.lua",
+    "lua/src/plugin/catalog.lua": "tm/lua/feature/secrets/plugin/catalog.lua",
+    "lua/src/plugin/config.lua": "tm/lua/feature/secrets/plugin/config.lua",
+    "lua/src/plugin/depend.lua": "tm/lua/feature/secrets/plugin/depend.lua",
+    "lua/src/plugin/env.lua": "tm/lua/feature/secrets/plugin/env.lua",
+    "lua/src/plugin/export.lua": "tm/lua/feature/secrets/plugin/export.lua",
+    "lua/src/plugin/graph.lua": "tm/lua/feature/secrets/plugin/graph.lua",
+    "lua/src/plugin/host.lua": "tm/lua/feature/secrets/plugin/host.lua",
+    "lua/src/plugin/json.lua": "tm/lua/feature/secrets/plugin/json.lua",
+    "lua/src/plugin/order.lua": "tm/lua/feature/secrets/plugin/order.lua",
+    "lua/src/plugin/point.lua": "tm/lua/feature/secrets/plugin/point.lua",
+    "lua/src/plugin/ref.lua": "tm/lua/feature/secrets/plugin/ref.lua",
+    "lua/src/plugin/resolve.lua": "tm/lua/feature/secrets/plugin/resolve.lua",
+    "lua/src/plugin/types.lua": "tm/lua/feature/secrets/plugin/types.lua",
+    "lua/src/plugin/version.lua": "tm/lua/feature/secrets/plugin/version.lua"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/(plugin\\.lua|plugin/(capability|catalog|config|depend|env|export|graph|host|json|order|point|ref|resolve|version)\\.lua)$",
+     "from": "require 'plugin.",
+     "to": "require 'feature.secrets.plugin."
+    }
+   ]
+  },
+  {
+   "lib": "plugin",
    "port": "perl",
    "lang": "perl",
    "version": "sdk-20260908-1556-0",
@@ -1215,6 +1250,63 @@
      "match": "(?!.*/Sigv4\\.kt$)(?!.*/Aws\\.kt$)(?!.*/Secretspec\\.kt$)(?!.*/Infisical\\.kt$)(?!.*/Doppler\\.kt$)(?!.*/Onepassword\\.kt$)(?!.*/Azuresecrets\\.kt$)(?!.*/Gcpsecrets\\.kt$)(?!.*/Boru\\.kt$)(?!.*/Hashicorp\\.kt$)(?!.*/Httpjson\\.kt$)(?!.*/Json\\.kt$)(?!.*/Spec\\.kt$)(?!.*/Providers\\.kt$)(?!.*/Provider\\.kt$)feature/secrets/",
      "from": "voxgig.plugin",
      "to": "KOTLINPACKAGE.feature.secrets.plugin"
+    }
+   ]
+  },
+  {
+   "lib": "sekreto",
+   "port": "lua",
+   "lang": "lua",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/lua/feature/secrets",
+    "tm/lua/feature/secrets/sekreto",
+    "tm/lua/feature/secrets/sekreto/plugins",
+    "tm/lua/feature/secrets/native"
+   ],
+   "file": {
+    "lua/src/sekreto.lua": "tm/lua/feature/secrets/sekreto.lua",
+    "lua/src/sekreto/addr.lua": "tm/lua/feature/secrets/sekreto/addr.lua",
+    "lua/src/sekreto/err.lua": "tm/lua/feature/secrets/sekreto/err.lua",
+    "lua/src/sekreto/name.lua": "tm/lua/feature/secrets/sekreto/name.lua",
+    "lua/src/sekreto/providers.lua": "tm/lua/feature/secrets/sekreto/providers.lua",
+    "lua/src/sekreto/plugins/aws.lua": "tm/lua/feature/secrets/sekreto/plugins/aws.lua",
+    "lua/src/sekreto/plugins/azuresecrets.lua": "tm/lua/feature/secrets/sekreto/plugins/azuresecrets.lua",
+    "lua/src/sekreto/plugins/boru.lua": "tm/lua/feature/secrets/sekreto/plugins/boru.lua",
+    "lua/src/sekreto/plugins/crypto.lua": "tm/lua/feature/secrets/sekreto/plugins/crypto.lua",
+    "lua/src/sekreto/plugins/doppler.lua": "tm/lua/feature/secrets/sekreto/plugins/doppler.lua",
+    "lua/src/sekreto/plugins/gcpsecrets.lua": "tm/lua/feature/secrets/sekreto/plugins/gcpsecrets.lua",
+    "lua/src/sekreto/plugins/hashicorp.lua": "tm/lua/feature/secrets/sekreto/plugins/hashicorp.lua",
+    "lua/src/sekreto/plugins/httpjson.lua": "tm/lua/feature/secrets/sekreto/plugins/httpjson.lua",
+    "lua/src/sekreto/plugins/infisical.lua": "tm/lua/feature/secrets/sekreto/plugins/infisical.lua",
+    "lua/src/sekreto/plugins/json.lua": "tm/lua/feature/secrets/sekreto/plugins/json.lua",
+    "lua/src/sekreto/plugins/net.lua": "tm/lua/feature/secrets/sekreto/plugins/net.lua",
+    "lua/src/sekreto/plugins/onepassword.lua": "tm/lua/feature/secrets/sekreto/plugins/onepassword.lua",
+    "lua/src/sekreto/plugins/secretspec.lua": "tm/lua/feature/secrets/sekreto/plugins/secretspec.lua",
+    "lua/src/sekreto/plugins/sigv4.lua": "tm/lua/feature/secrets/sekreto/plugins/sigv4.lua",
+    "lua/src/sekreto/plugins/support.lua": "tm/lua/feature/secrets/sekreto/plugins/support.lua",
+    "lua/native/sekretonet.c": "tm/lua/feature/secrets/native/sekretonet.c"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/(sekreto\\.lua|sekreto/providers\\.lua)$",
+     "from": "require('plugin')",
+     "to": "require('feature.secrets.plugin')"
+    },
+    {
+     "match": "feature/secrets/(sekreto\\.lua|sekreto/(addr|name|providers)\\.lua|sekreto/plugins/(aws|azuresecrets|boru|doppler|gcpsecrets|hashicorp|httpjson|infisical|net|onepassword|secretspec|sigv4)\\.lua)$",
+     "from": "require('sekreto.",
+     "to": "require('feature.secrets.sekreto."
+    },
+    {
+     "match": "sekreto/plugins/net\\.lua$",
+     "from": "'^(.*)/src/sekreto/plugins/net%.lua$'",
+     "to": "'^(.*)/feature/secrets/sekreto/plugins/net%.lua$'"
+    },
+    {
+     "match": "sekreto/plugins/net\\.lua$",
+     "from": "build/sekreto-net",
+     "to": "feature/secrets/native/sekreto-net"
     }
    ]
   },

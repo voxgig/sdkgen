@@ -1895,6 +1895,116 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // lua guard for the same seam: an ACTIVE secrets model must emit the
+  // plugin module requires and the FEATURE_PLUGINS entries into the
+  // generated config_plugins.lua, and the INACTIVE groups' vendored files
+  // must stay out of the tree (Main_lua's pluginExcludes - the
+  // generate-time trim), while the shared helpers (in no group) ship
+  // regardless. lua alone has a NATIVE tier: the plugin kinds run a C
+  // transport helper, so an active group must also produce the Makefile
+  // fragment that compiles it - and an inactive model must produce
+  // neither the fragment nor the helper's source.
+  test('lua: active secrets emits plugin defs and trims inactive groups', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const res = await sdkgen.generate({
+      model: makeModel(['lua'], undefined,
+        'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+        ['test', 'log', 'secrets']),
+      root: makeRoot(),
+    })
+    strictEqual(res.ok, true, 'generation did not report ok')
+
+    const out: Record<string, string> = {}
+    for (const [path, content] of
+      Object.entries(vol.toJSON() as Record<string, string>)) {
+      const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+      if (rel.includes('.jostraca/')) continue
+      out[rel] = content
+    }
+
+    const plugins = findFile(out, 'lua/config_plugins.lua')
+    ok(null != plugins, 'lua: no config_plugins.lua generated')
+
+    // The NAMED requires and the definitions list - the two emissions that
+    // can silently no-op while everything else stays green.
+    ok(/require\("feature\.secrets\.sekreto\.plugins\.hashicorp"\)/.test(plugins!),
+      'lua: active vault group did not emit the hashicorp plugin require')
+    ok(/\["secrets"\] = \{\n    plugin_boru\.boru,\n    plugin_hashicorp\.hashicorp,\n  \}/.test(plugins!),
+      'lua: FEATURE_PLUGINS is missing the vault definitions:\n' + plugins)
+    ok(!/gcpsecrets|secretspec|awssecrets/.test(plugins!),
+      'lua: an inactive group reached config_plugins.lua')
+
+    // The trim: an inactive group's vendored file is OUT, the active
+    // group's and the group-less shared helpers are IN.
+    ok(null == findFile(out, 'sekreto/plugins/gcpsecrets.lua'),
+      'lua: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'sekreto/plugins/secretspec.lua'),
+      'lua: the inactive secretspec group still ships its child-process plugin')
+    ok(null == findFile(out, 'sekreto/plugins/sigv4.lua'),
+      'lua: the inactive aws group still ships sigv4 (aws.lua is its only user)')
+    ok(null != findFile(out, 'sekreto/plugins/hashicorp.lua'),
+      'lua: the ACTIVE vault group lost hashicorp')
+    for (const shared of ['httpjson', 'net', 'json', 'support', 'crypto']) {
+      ok(null != findFile(out, 'sekreto/plugins/' + shared + '.lua'),
+        'lua: the shared ' + shared + ' helper must ship with the feature core')
+    }
+    ok(null == findFile(out, 'sekreto/plugins.lua'),
+      'lua: the full-set barrel plugins.lua must never be vendored')
+
+    // The NATIVE tier: the helper's source is vendored with the feature,
+    // its build fragment is generated because a plugin group is active,
+    // the Makefile includes it, and the built binary is ignored by git.
+    ok(null != findFile(out, 'feature/secrets/native/sekretonet.c'),
+      'lua: the sekreto transport helper source was not carried')
+    const mk = findFile(out, 'feature/secrets/native.mk')
+    ok(null != mk, 'lua: an active plugin group must generate feature/secrets/native.mk')
+    ok(/secrets\.vault/.test(mk!) && /-lssl -lcrypto/.test(mk!) && /tail -n \+4/.test(mk!),
+      'lua: native.mk does not name the group, link OpenSSL and skip the provenance header:\n' + mk)
+    const makefile = findFile(out, 'lua/Makefile')
+    ok(/-include feature\/secrets\/native\.mk/.test(makefile!),
+      'lua: the Makefile does not include the native fragment')
+    ok(/^feature\/secrets\/native\/sekreto-net$/m.test(findFile(out, 'lua/.gitignore')!),
+      'lua: the built helper is not gitignored')
+
+    // The rockspec lists the vendored core and the ACTIVE kinds only.
+    const rock = findFile(out, '.rockspec')
+    ok(null != rock, 'lua: no rockspec generated')
+    for (const mod of ['feature.secrets.sekreto', 'feature.secrets.plugin',
+      'feature.secrets.sekreto.plugins.httpjson',
+      'feature.secrets.sekreto.plugins.hashicorp', 'config_plugins']) {
+      ok(rock!.includes('["' + mod + '"]'),
+        'lua: the rockspec does not list ' + mod)
+    }
+    ok(!rock!.includes('plugins.gcpsecrets'),
+      'lua: the rockspec claims a module the trim removed')
+
+    // And the inactive-model baseline: an EMPTY definitions table, no
+    // native fragment, and no secrets container at all - the feature's
+    // source, its vendored trees and its shipped suite are gated by the
+    // model, so an SDK that never asked for secrets carries none of them.
+    const plain = await generate(['lua'])
+    const plainPlugins = findFile(plain, 'lua/config_plugins.lua')
+    ok(null != plainPlugins, 'lua: config_plugins.lua must be emitted unconditionally')
+    ok(/local FEATURE_PLUGINS = \{\n\}/.test(plainPlugins!),
+      'lua: an inactive model must emit an EMPTY FEATURE_PLUGINS table:\n' + plainPlugins)
+    ok(null == findFile(plain, 'feature/secrets/native.mk'),
+      'lua: an inactive model generated the native build fragment')
+    ok(null == findFile(plain, 'feature/secrets/native/sekretonet.c'),
+      'lua: an inactive model still carries the transport helper source')
+    ok(null == findFile(plain, 'feature/secrets_feature.lua'),
+      'lua: an inactive model still carries the secrets feature source')
+    ok(null == findFile(plain, 'test/feature/secrets/secrets_feature_test.lua'),
+      'lua: an inactive model still carries the gated secrets suite')
+    ok(null == findFile(plain, 'feature/secrets/sekreto.lua'),
+      'lua: an inactive model still carries the vendored sekreto core')
+    ok(!findFile(plain, '.rockspec')!.includes('feature.secrets'),
+      'lua: an inactive model lists secrets modules in its rockspec')
+  })
+
+
   // py guard for the same seam: an ACTIVE secrets model must emit the
   // plugin module imports and the FEATURE_PLUGINS entries into the
   // package config.py, and the INACTIVE groups' vendored files must stay

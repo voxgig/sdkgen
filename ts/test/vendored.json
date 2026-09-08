@@ -1304,6 +1304,168 @@
     }
    }
   },
+  "plugin/lua": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/lua/feature/secrets/plugin.lua": {
+     "sha256": "844a863b1d180e3360fe674d892ba3dbd39291cd8250ffbde486a5b171106c89",
+     "upstream": "lua/src/plugin.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/capability.lua": {
+     "sha256": "fcba698c5a99449e6f684afd674008b41fbfe8c99972b88cadbca4c90f928a77",
+     "upstream": "lua/src/plugin/capability.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/catalog.lua": {
+     "sha256": "4509c85a16aaf370fe91d9c3e6b479fef8345317b7e3c95173d9912eb276473e",
+     "upstream": "lua/src/plugin/catalog.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/config.lua": {
+     "sha256": "7c18aae83584f9fea0027ef22bb6bd736bdf0af400ea88594dd708895c750796",
+     "upstream": "lua/src/plugin/config.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/depend.lua": {
+     "sha256": "1e92561ce3803d83423408505625bdb756043bf0d3aa45c1a0097781367c7389",
+     "upstream": "lua/src/plugin/depend.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/env.lua": {
+     "sha256": "8d992ef30ba71865257a579f3bb30af4d02a89c1f6a27d9e756a7be4a303b327",
+     "upstream": "lua/src/plugin/env.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/export.lua": {
+     "sha256": "5ffca7355805e76a0e199232318cbace8eddf344f00a2cdacf120952fa3651d6",
+     "upstream": "lua/src/plugin/export.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/graph.lua": {
+     "sha256": "6f56c0725fc84332986391cb8b24d22ef87a5a9900014cfe2be245fbcd049c14",
+     "upstream": "lua/src/plugin/graph.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/host.lua": {
+     "sha256": "48f39beedbc260d735c519b478eeab136e5040102ed07f0bff32e4d1caeaa7aa",
+     "upstream": "lua/src/plugin/host.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/json.lua": {
+     "sha256": "6d18c4d268580f91ae4a23daa929c3930845073fb66608e7e39b9212e45d7d32",
+     "upstream": "lua/src/plugin/json.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/order.lua": {
+     "sha256": "5d84fe86511f74935eab185f2c396d2bccbc41675eed9e8fe7769e3b895a3e80",
+     "upstream": "lua/src/plugin/order.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/point.lua": {
+     "sha256": "1509f9c9ff5aaf0783287115d5287e7be39bc662d3f98eccf9ff1793e5d78b2f",
+     "upstream": "lua/src/plugin/point.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/ref.lua": {
+     "sha256": "133df48e9421d73c9687aa942d948515c7ff094400a94f4516d8ccc96de9c58a",
+     "upstream": "lua/src/plugin/ref.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/resolve.lua": {
+     "sha256": "aa24577e54f68bb19c8eaa28affb46316c5db993af68a57cc78a38cb5ffdfed7",
+     "upstream": "lua/src/plugin/resolve.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/plugin/types.lua": {
+     "sha256": "7903e40414138ed3401804e44e9dc41694cd340dda157803d92ad8fb2532083b",
+     "upstream": "lua/src/plugin/types.lua"
+    },
+    "tm/lua/feature/secrets/plugin/version.lua": {
+     "sha256": "750a4f3b6a1d908c41deacd9962a55321d898a32da2cd6b6a86cb70fa798d049",
+     "upstream": "lua/src/plugin/version.lua",
+     "adapt": [
+      {
+       "from": "require 'plugin.",
+       "to": "require 'feature.secrets.plugin."
+      }
+     ]
+    }
+   }
+  },
   "plugin/perl": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
@@ -3035,6 +3197,210 @@
       {
        "from": "voxgig.plugin",
        "to": "KOTLINPACKAGE.feature.secrets.plugin"
+      }
+     ]
+    }
+   }
+  },
+  "sekreto/lua": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "1267ee2e5f49566bc92695bc9eb3a60ef4924998",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/lua/feature/secrets/native/sekretonet.c": {
+     "sha256": "c19bab5364e047db66be87478604daa7708766addd43748ba374d782349e101b",
+     "upstream": "lua/native/sekretonet.c"
+    },
+    "tm/lua/feature/secrets/sekreto.lua": {
+     "sha256": "29e55b619b5ad060a08b18d67d2d2b286d071952afdfb760e3f18401d62c1b74",
+     "upstream": "lua/src/sekreto.lua",
+     "adapt": [
+      {
+       "from": "require('plugin')",
+       "to": "require('feature.secrets.plugin')"
+      },
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/addr.lua": {
+     "sha256": "21133aa9016775dfa14226e2c9b887efbf251d402d0cf30a63905bd7f6c98948",
+     "upstream": "lua/src/sekreto/addr.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/err.lua": {
+     "sha256": "cd36145b235660813e1675a04ae604e4e8fc17c705564116374254ea3466f46a",
+     "upstream": "lua/src/sekreto/err.lua"
+    },
+    "tm/lua/feature/secrets/sekreto/name.lua": {
+     "sha256": "253f5dabdeecf4d193a8bf770a5d74930229b3af3b2aa25529647aff0b27c4c7",
+     "upstream": "lua/src/sekreto/name.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/aws.lua": {
+     "sha256": "653e68fdbef29418bc86577d496d1fe41019f56c7bef576c02057b11faa108da",
+     "upstream": "lua/src/sekreto/plugins/aws.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/azuresecrets.lua": {
+     "sha256": "3466a0b5a392333362deb656393efaf519ccbe61d7bc1951b513b48efa6894ef",
+     "upstream": "lua/src/sekreto/plugins/azuresecrets.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/boru.lua": {
+     "sha256": "281759c998740d8bdbf961f354eea9ad3d05f4e55ccf559b986c4fd7cd60c97e",
+     "upstream": "lua/src/sekreto/plugins/boru.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/crypto.lua": {
+     "sha256": "386528c1b8e0236f7b8465e44a4aefe4f0e096d82bc173ff60c3d8bcda44bc52",
+     "upstream": "lua/src/sekreto/plugins/crypto.lua"
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/doppler.lua": {
+     "sha256": "d535fb33f67d1e49da02369f0ef8a4f3b68703c4dfc4b4d5b85d36827bec5119",
+     "upstream": "lua/src/sekreto/plugins/doppler.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/gcpsecrets.lua": {
+     "sha256": "ac35a3bb63b67cc866788f10cfe8329b48b8cb95a7450f4837af2ddd68afb05d",
+     "upstream": "lua/src/sekreto/plugins/gcpsecrets.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/hashicorp.lua": {
+     "sha256": "7e07f0e12e4bcdc60846f6233f0c4d709be2563b5fbef3ee87f16eb296b39c6c",
+     "upstream": "lua/src/sekreto/plugins/hashicorp.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/httpjson.lua": {
+     "sha256": "b06c634d2bd75ba51119ed51395c3aaf19d4357c62a9bee5712f80ecc6042450",
+     "upstream": "lua/src/sekreto/plugins/httpjson.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/infisical.lua": {
+     "sha256": "4bfc7e272093dde54e916f91ccb843d12e4dfff00c3e72326855ae9914806c29",
+     "upstream": "lua/src/sekreto/plugins/infisical.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/json.lua": {
+     "sha256": "9103d7b4cb57df8eca093deacc7abba18478ed8df9370e24dcc83125cb11f6e3",
+     "upstream": "lua/src/sekreto/plugins/json.lua"
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/net.lua": {
+     "sha256": "3013f1697995ddaf8128582104e01106f28e87a254e228d8e725a80b4e35467e",
+     "upstream": "lua/src/sekreto/plugins/net.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      },
+      {
+       "from": "'^(.*)/src/sekreto/plugins/net%.lua$'",
+       "to": "'^(.*)/feature/secrets/sekreto/plugins/net%.lua$'"
+      },
+      {
+       "from": "build/sekreto-net",
+       "to": "feature/secrets/native/sekreto-net"
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/onepassword.lua": {
+     "sha256": "719ea3134b9b5bd3ec070d88184b854d168a92679679ee428d5cea3db2ca9e35",
+     "upstream": "lua/src/sekreto/plugins/onepassword.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/secretspec.lua": {
+     "sha256": "33c7af1238095e2b65a83d1c71668b000a14519e2c045dbcfa0c44a78317734a",
+     "upstream": "lua/src/sekreto/plugins/secretspec.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/sigv4.lua": {
+     "sha256": "a1261c6a574f0e5d5adf90fd5f974389efd5088d38b0061aeaea68e97fa23e1e",
+     "upstream": "lua/src/sekreto/plugins/sigv4.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      }
+     ]
+    },
+    "tm/lua/feature/secrets/sekreto/plugins/support.lua": {
+     "sha256": "5508e7ff0a35fec81cd4ef5060d31510ec0748351b6d2442534124ea50214dbb",
+     "upstream": "lua/src/sekreto/plugins/support.lua"
+    },
+    "tm/lua/feature/secrets/sekreto/providers.lua": {
+     "sha256": "1a828567b1434928bb8ab0712c23619717d4af0641b962e75d884f3ce0d9486e",
+     "upstream": "lua/src/sekreto/providers.lua",
+     "adapt": [
+      {
+       "from": "require('plugin')",
+       "to": "require('feature.secrets.plugin')"
+      },
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
       }
      ]
     }

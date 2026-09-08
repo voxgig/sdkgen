@@ -775,6 +775,117 @@ describe('auth null', () => {
   })
 
 
+  // lua SECRETS, END TO END - the only lane that RUNS the lua secrets
+  // feature with the feature ACTIVE.
+  //
+  // lua has no compiler either: `luac -p` parses a file and stops there, so
+  // a broken require, a vendoring adapt that rewrote a path to nothing, or
+  // the options-map cycle the `extend` seam used to leave behind all
+  // surface at run time and nowhere earlier. The generated suite is the
+  // whole gate, and busted's summary line is what proves it RAN: a
+  // directory with no matching file is a clean exit and "0 successes".
+  //
+  // The `vault` group is on so the lane exercises the PLUGIN tier, which lua
+  // alone among the interpreted targets has to COMPILE for: sekreto's lua
+  // plugin kinds run a small C transport helper (Lua 5.4 has no sockets and
+  // no TLS), vendored into the feature and built by the generated Makefile
+  // only when a plugin group is active. `make build` here IS that build,
+  // and the shipped suite then drives a hashicorp provider at a closed port
+  // through it - the helper answering "connection refused" is what proves
+  // the binary was found, compiled and executed, with no vault anywhere.
+  //
+  // lua5.4, luarocks and busted are installed on the reference machine (see
+  // AGENTS.md "CHECK THE TOOLCHAIN"); a machine without them SKIPS, visibly.
+  test('lua: the secrets feature runs with the feature active', async (t) => {
+    const lua = toolchain('lua5.4')
+    if (null == lua) return t.skip('no lua 5.4 toolchain here (lua5.4)')
+    const busted = toolchain('busted')
+    if (null == busted) return t.skip('lua 5.4 is here but busted is not')
+    const make = toolchain('make')
+    if (null == make) return t.skip('lua 5.4 is here but make is not')
+    if (!probeOk(lua, ['-e', 'require "dkjson"'])) {
+      return t.skip('lua 5.4 is here but the dkjson rock is not')
+    }
+
+    const sdkroot = Path.join(tmp, 'lua-secrets')
+    await generateTo('lua', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // The shipped suite must actually be there: busted over a directory
+    // with no matching file exits zero, so a lane that lost its suite
+    // would otherwise fail on the count with a message naming the wrong
+    // thing.
+    const suite = Path.join(sdkroot, 'test', 'feature', 'secrets',
+      'secrets_feature_test.lua')
+    ok(Fs.existsSync(suite), 'lua: the gated secrets suite was not generated')
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'native', 'sekretonet.c')),
+      'lua: the transport helper source was not generated')
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'native.mk')),
+      'lua: the native build fragment was not generated for an active group')
+
+    // Parse-check every lua file of the feature first. It cannot catch a
+    // bad require, but a syntax error inside a plugin only surfaces at the
+    // moment the chain loads it, which is one kind that one test drives.
+    const luac = toolchain('luac5.4')
+    if (null != luac) {
+      const files = listFiles(Path.join(sdkroot, 'feature'), '.lua')
+      ok(0 < files.length, 'lua: no feature source was generated')
+      for (const file of files) {
+        const syn = run(luac, ['-p', file], sdkroot)
+        ok(syn.ok, 'lua: ' + Path.relative(sdkroot, file) +
+          ' does not parse:\n' + tail(syn.out))
+      }
+    }
+
+    // The native build: the generated Makefile compiles the helper
+    // because a plugin group is active. A machine with lua but no C
+    // compiler or OpenSSL headers skips rather than fails - that is an
+    // environment gap, not a generator defect - but a compiler that IS
+    // here and fails is a defect.
+    const built = run(make, ['build'], sdkroot)
+    if (!built.ok && /a C compiler .* is needed|openssl\/ssl\.h: No such file/.test(built.out)) {
+      return t.skip('lua: no C compiler or OpenSSL headers here to build the sekreto helper:\n' +
+        tail(built.out, 10))
+    }
+    ok(built.ok, 'lua: make build failed:\n' + tail(built.out))
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'native', 'sekreto-net')),
+      'lua: make build did not produce feature/secrets/native/sekreto-net')
+
+    const probe = run(busted,
+      ['-p', '_test', Path.join('test', 'feature', 'secrets')], sdkroot)
+    if (probe.unlaunchable) {
+      return t.skip('lua: busted could not be started here: ' + tail(probe.out, 5))
+    }
+    if (probe.timedOut) return t.skip('lua: ' + probe.out)
+
+    // LF-normalised before any pattern touches it: busted's output is read
+    // the same way on every platform.
+    const out = probe.out.replace(/\r\n/g, '\n')
+
+    // Name the failing cases: busted's summary says how many failed and
+    // never which, and the failure bodies are above it.
+    const failed = out.split('\n')
+      .filter((l: string) => /^(Failure|Error) ->/.test(l))
+    ok(probe.ok, 'lua secrets suite failed:\n' + failed.join('\n') +
+      '\n' + tail(out))
+
+    // POSITIVE EVIDENCE THE TESTS RAN. busted prints one summary line;
+    // without it - or with a count that says the suite was trimmed to a
+    // handful - the lane would go green on a run that proved nothing.
+    const summary = /(\d+) successes? \/ (\d+) failures? \/ (\d+) errors? \/ (\d+) pending/.exec(out)
+    ok(null != summary, 'lua: busted printed no summary:\n' + tail(out))
+    const [, successes, failures, errors] = (summary as RegExpExecArray).map(Number)
+    strictEqual(failures, 0, 'lua: the secrets suite reported failures:\n' + tail(out))
+    strictEqual(errors, 0, 'lua: the secrets suite reported errors:\n' + tail(out))
+    ok(10 < successes,
+      'lua: the secrets suite ran only ' + successes +
+      ' tests - it was trimmed, not run:\n' + tail(out))
+    t.diagnostic('lua: secrets suite ran ' + successes + ' tests, ' + failures +
+      ' failures, ' + errors + ' errors (vault group, native helper built)')
+  })
+
+
   // rb SECRETS, END TO END — the only lane that RUNS the rb secrets
   // feature with the feature ACTIVE.
   //
