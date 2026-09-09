@@ -140,7 +140,7 @@ function makeModel() {
 }
 
 
-async function render(lang: string, target: any): Promise<{
+async function render(lang: string, target: any, model?: any): Promise<{
   files: Record<string, string>, warnings: any[],
 }> {
   const EntityTypes =
@@ -151,7 +151,7 @@ async function render(lang: string, target: any): Promise<{
   const { log, warnings } = makeLog()
 
   await jostraca.generate(
-    { fs: () => fs, folder: '/x', model: makeModel(), log },
+    { fs: () => fs, folder: '/x', model: model ?? makeModel(), log },
     () => {
       Project({ folder: 'p' }, () => {
         EntityTypes({ target })
@@ -271,6 +271,29 @@ describe('EntityTypes emitters — fixture model output', () => {
     ok(out.includes('@type sun_create_data ::'), 'data op alias')
     ok(out.includes('String.t() | integer()'), 'union renders as typespec union')
   })
+
+  // A nameless field reaches a target when a spec carries a parameter with
+  // no name -- a dangling `$ref` is the way that happens. apidef now drops
+  // those, but Ruby is the target that cannot survive one: `Struct.new(:"")`
+  // raises `NameError: cannot make operator ID : attrset` at load, so the
+  // whole SDK fails to require over a single junk field. Quoting is not the
+  // answer; the empty symbol is the only one Ruby rejects here.
+  test('rb: a nameless field is dropped, not emitted as an empty symbol', async () => {
+    const model = makeModel()
+    const sun: any = model.main[KIT].entity.sun
+    sun.fields[''] = { name: '', type: '`$STRING`', req: false }
+    sun.op.load.points[0].args.params.push({ name: '', type: '`$STRING`' })
+
+    const { files } = await render('rb', { name: 'rb', ext: 'rb' }, model)
+    const out = findFile(files, /Demo_types\.rb$/)
+
+    ok(!out.includes(':""'), 'no empty symbol reaches the output')
+    ok(!/@!attribute \[rw\]\s*$/m.test(out), 'no nameless attribute doc line')
+    ok(out.includes('Sun = Struct.new('), 'Sun struct still emitted')
+    ok(out.includes(':id,'), 'real members survive')
+    ok(out.includes('SunLoadMatch = Struct.new('), 'op match struct still emitted')
+  })
+
 
   test('go: structs for every entity incl. inactive', async () => {
     const { files } = await render('go', { name: 'go', ext: 'go' })
