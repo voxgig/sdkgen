@@ -77,11 +77,18 @@ be replaced by "tag and let the publisher fire on it".
    `v*` path: pushing `v3.8.0` while `ts/package.json` still says `3.7.2`
    would resolve 3.7.2, find it published, skip the publish and go green —
    leaving a tag with no release behind it.
-3. **A failing `make check-model`, build or test.**
+3. **A commit that is not on `main`.** A tag names whatever commit its pusher
+   chooses, so the preceding check proves the tag's *name* is right and says
+   nothing about its *code* — a `v*` tag pushed from a feature branch would
+   otherwise publish code that never reached `main`, and npm never allows
+   republishing a version. Containment in `origin/main` is checked on both
+   ways in: trivially true for a dispatch from `main`, and the check that does
+   the work on a pushed tag.
+4. **A failing `make check-model`, build or test.**
 
 And one that fails *open*, on purpose:
 
-4. **A version already on npm** is checked, not assumed. A run can publish and
+5. **A version already on npm** is checked, not assumed. A run can publish and
    then fail before tagging, leaving a version on npm with nothing pointing at
    it. Without this check that state is unrecoverable — the publish step dies
    on `cannot publish over the previously published versions` before the tag
