@@ -1870,6 +1870,43 @@ const SECRETS: Record<string, {
     ],
     tests: 'ocaml/test/feature/secrets',
   },
+  cpp: {
+    // cpp's feature is the header secrets.hpp beside a same-named directory
+    // holding both libraries as sibling sekreto/ and plugins/ trees, each
+    // file a .hpp/.cpp pair compiled into libsdksecrets.a only while the
+    // generated feature/secrets/kinds.cpp exists. plugins/All.{hpp,cpp} is
+    // the full-set barrel and is deliberately absent.
+    feature: 'cpp/feature/secrets.hpp',
+    vendor: 'cpp/feature/secrets',
+    vendorfiles: [
+      'sekreto/Json.cpp', 'sekreto/Json.hpp', 'sekreto/Provider.cpp',
+      'sekreto/Provider.hpp', 'sekreto/Providers.cpp',
+      'sekreto/Providers.hpp', 'sekreto/Sekreto.cpp', 'sekreto/Sekreto.hpp',
+      'plugins/Aws.cpp', 'plugins/Aws.hpp', 'plugins/Azuresecrets.cpp',
+      'plugins/Azuresecrets.hpp', 'plugins/Boru.cpp', 'plugins/Boru.hpp',
+      'plugins/Crypto.cpp', 'plugins/Crypto.hpp', 'plugins/Doppler.cpp',
+      'plugins/Doppler.hpp', 'plugins/Gcpsecrets.cpp',
+      'plugins/Gcpsecrets.hpp', 'plugins/Hashicorp.cpp',
+      'plugins/Hashicorp.hpp', 'plugins/Httpjson.cpp',
+      'plugins/Httpjson.hpp', 'plugins/Infisical.cpp',
+      'plugins/Infisical.hpp', 'plugins/Onepassword.cpp',
+      'plugins/Onepassword.hpp', 'plugins/Proc.cpp', 'plugins/Proc.hpp',
+      'plugins/Secretspec.cpp', 'plugins/Secretspec.hpp',
+      'plugins/Sigv4.cpp', 'plugins/Sigv4.hpp', 'plugins/Tls.cpp',
+      'plugins/Tls.hpp',
+    ],
+    plugindir: 'cpp/feature/secrets/plugin',
+    pluginfiles: [
+      'capability.cpp', 'capability.hpp', 'catalog.cpp', 'catalog.hpp',
+      'config.cpp', 'config.hpp', 'depend.cpp', 'depend.hpp', 'env.cpp',
+      'env.hpp', 'export.cpp', 'export.hpp', 'graph.cpp', 'graph.hpp',
+      'host.cpp', 'host.hpp', 'order.cpp', 'order.hpp', 'point.cpp',
+      'point.hpp', 'ref.cpp', 'ref.hpp', 'resolve.cpp', 'resolve.hpp',
+      'types.cpp', 'types.hpp', 'value.cpp', 'value.hpp', 'version.cpp',
+      'version.hpp',
+    ],
+    tests: 'cpp/test/feature/secrets',
+  },
 }
 
 

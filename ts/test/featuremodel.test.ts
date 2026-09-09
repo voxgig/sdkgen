@@ -281,7 +281,7 @@ describe('feature-language-parity', () => {
     // `dart` gained secrets in tranche B and then left with the language
     // pack (@voxgig/sdkgen-langpack); the gate lists what THIS repo ships.
     secrets: [
-      'c', 'clojure', 'csharp', 'elixir', 'go', 'java', 'js', 'kotlin',
+      'c', 'clojure', 'cpp', 'csharp', 'elixir', 'go', 'java', 'js', 'kotlin',
       'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala', 'swift',
       'ts', 'zig',
     ],
