@@ -2517,16 +2517,25 @@ main: kit: target: js: phase: feature: active: false
     ok(null != findFile(out, 'cpp/test/feature/secrets/secrets_test.cpp'),
       'cpp: the gated secrets suite was not generated')
 
-    // The Makefile is the verbatim template, and it carries the gate: the
-    // wiring wildcard, the OpenSSL link and the gated suite glob. A Makefile
-    // without these builds the suite as a single header-only TU and fails
-    // at link, or never builds it at all.
+    // THE BUILD WIRING: the Makefile is the verbatim, feature-agnostic
+    // template that `-include`s every feature/*/kinds.mk, and the generated
+    // fragment is what compiles the payload, builds the suite and (a group
+    // being active) the plugin layer with OpenSSL. A fragment without these
+    // builds the suite as a single header-only TU and fails at link, or
+    // never builds it at all.
     const makefile = findFile(out, 'cpp/Makefile')
     ok(null != makefile, 'cpp: no Makefile generated')
-    ok(/SEK_WIRED := \$\(wildcard feature\/secrets\/kinds\.cpp\)/.test(makefile!) &&
-      /SEK_LIBS := -lssl -lcrypto/.test(makefile!) &&
-      /\$\(wildcard test\/feature\/secrets\/\*\.cpp\)/.test(makefile!),
-      'cpp: the Makefile lost the secrets build gate')
+    ok(/^-include \$\(wildcard feature\/\*\/kinds\.mk\)$/m.test(makefile!) &&
+      !/secrets/.test(makefile!),
+      'cpp: the Makefile must include feature/*/kinds.mk and name no feature')
+    const mk = findFile(out, 'cpp/feature/secrets/kinds.mk')
+    ok(null != mk, 'cpp: no feature/secrets/kinds.mk generated')
+    ok(/^FEATURE_SRCS \+= feature\/secrets\/kinds\.cpp \\\n  \$\(wildcard feature\/secrets\/sekreto\/\*\.cpp feature\/secrets\/plugin\/\*\.cpp\)$/m
+      .test(mk!) &&
+      /^FEATURE_TEST_SRCS \+= \$\(wildcard test\/feature\/secrets\/\*\.cpp\)$/m.test(mk!) &&
+      /^FEATURE_SRCS \+= \$\(wildcard feature\/secrets\/plugins\/\*\.cpp\)$/m.test(mk!) &&
+      /^FEATURE_LIBS \+= -lssl -lcrypto$/m.test(mk!),
+      'cpp: kinds.mk does not wire the cores, the suite and the plugin layer:\n' + mk)
 
     // A DIFFERENT group alone, so a regression in the per-group def maps
     // shows up here rather than in a generated SDK nobody compiled.
@@ -2558,6 +2567,10 @@ main: kit: target: js: phase: feature: active: false
       'cpp: a group-less model must wire an empty list and no transport:\n' + barekinds)
     ok(null == findFile(bare, 'feature/secrets/plugins/Hashicorp.cpp'),
       'cpp: a group-less model still ships a kind file')
+    const baremk = findFile(bare, 'cpp/feature/secrets/kinds.mk')
+    ok(null != baremk && /FEATURE_TEST_SRCS \+=/.test(baremk) &&
+      !/plugins\/\*\.cpp|-lssl/.test(baremk),
+      'cpp: a group-less kinds.mk must compile no plugin layer and link no OpenSSL:\n' + baremk)
 
     // THE INACTIVE FEATURE (declared, off, with a group on): no wiring file,
     // no kind file, no include, and the accessor emitted EMPTY - it exists
@@ -2565,8 +2578,9 @@ main: kit: target: js: phase: feature: active: false
     const off = await gencpp(
       'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
       ['test', 'log', 'secrets'])
-    ok(null == findFile(off, 'cpp/feature/secrets/kinds.cpp'),
-      'cpp: an inactive feature still generated its wiring file')
+    ok(null == findFile(off, 'cpp/feature/secrets/kinds.cpp') &&
+      null == findFile(off, 'cpp/feature/secrets/kinds.mk'),
+      'cpp: an inactive feature still generated its wiring files')
     ok(null == findFile(off, 'feature/secrets/plugins/Hashicorp.cpp') &&
       null == findFile(off, 'feature/secrets/plugins/Hashicorp.hpp'),
       'cpp: an inactive feature still ships its vault kind (Main_cpp inactivePluginExcludes)')
@@ -2583,8 +2597,9 @@ main: kit: target: js: phase: feature: active: false
     // feature is trimmed - and without kinds.cpp the Makefile compiles none
     // of it (the generatedcompile lanes prove that with ldd).
     const plain = await generate(['cpp'])
-    ok(null == findFile(plain, 'cpp/feature/secrets/kinds.cpp'),
-      'cpp: a model without secrets still generated the wiring file')
+    ok(null == findFile(plain, 'cpp/feature/secrets/kinds.cpp') &&
+      null == findFile(plain, 'cpp/feature/secrets/kinds.mk'),
+      'cpp: a model without secrets still generated the wiring files')
     ok(!/secrets_plugins|SecretsFeature|feature\/secrets\.hpp/.test(findFile(plain, 'cpp/core/config.hpp')!),
       'cpp: a model without secrets still reached config.hpp')
   })

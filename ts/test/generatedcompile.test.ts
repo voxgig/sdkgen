@@ -1451,8 +1451,9 @@ func TestTypesProbe(t *testing.T) {
 
     // Generated BEFORE the header probe, so a machine without the headers
     // still proves the wiring file and the suite are emitted.
-    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.cpp')),
-      'cpp: the wiring file feature/secrets/kinds.cpp was not generated')
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.cpp')) &&
+      Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.mk')),
+      'cpp: the wiring files feature/secrets/kinds.{cpp,mk} were not generated')
     const suite = Path.join('test', 'feature', 'secrets', 'secrets_test.cpp')
     ok(Fs.existsSync(Path.join(sdkroot, suite)),
       'cpp: the gated secrets suite was not generated')
@@ -1468,8 +1469,8 @@ func TestTypesProbe(t *testing.T) {
         'headers are not (libssl-dev):\n' + tail(hdr.out, 5))
     }
 
-    // Build the ONE suite binary (the Makefile builds libsdksecrets.a for
-    // it), as the auth-null lane does; `make test` would also build every
+    // Build the ONE suite binary (the Makefile builds libsdkfeature.a for
+    // it through the generated kinds.mk), as the auth-null lane does; `make test` would also build every
     // entity suite and run the corpus drivers, which need a corpus this
     // lane does not write. -j2 because the archive is some seventy
     // translation units and this lane shares CI with other compilers.

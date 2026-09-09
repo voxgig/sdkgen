@@ -86,12 +86,19 @@ function pluginDefinitions(model: Model, target: any):
 // guard fails any non-vendored file inside a vendor dir, and this one is
 // generated.
 //
-// It is also the Makefile's WIRING GATE: tm/cpp/Makefile compiles the
-// vendored payload into libsdksecrets.a only when this file exists, so a
-// tree whose model never activated the feature compiles none of it and
-// links libstdc++ alone. That is why it is emitted for an active feature
-// with NO active group as well - an [env, memory] chain still needs the
-// sekreto core - with an empty definitions list.
+// Beside it goes feature/<name>/kinds.mk, the feature's BUILD WIRING: a
+// generated make fragment that tm/cpp/Makefile reads through
+// `-include $(wildcard feature/*/kinds.mk)`. The Makefile itself names no
+// feature (the `nothing left behind names a dropped feature` guard holds a
+// trimmed template tree to that), so everything the payload needs from the
+// build is stated here, from the model: this translation unit and the
+// vendored cores to compile into libsdkfeature.a, the suite to build, and
+// - only when a plugin group is active - the plugin layer with the OpenSSL
+// it brings. A tree whose model never activated the feature has no
+// fragment, compiles none of the payload and links libstdc++ alone. Both
+// files are emitted for an active feature with NO active group as well -
+// an [env, memory] chain still needs the sekreto core - with an empty
+// definitions list and no plugin layer.
 //
 // For `secrets` it additionally carries `secrets_rawfetch`, the
 // token-exchange transport of last resort (go's rawExchangeFetch). The cpp
@@ -104,8 +111,8 @@ function pluginDefinitions(model: Model, target: any):
 // (`sekreto::httprequest`, plugins/Httpjson.cpp over plugins/Tls.cpp), and
 // it is already compiled and linked - OpenSSL and all - on exactly the
 // condition this transport needs. Reusing it means one HTTP stack and one
-// -l pair (-lssl -lcrypto) instead of two; the Makefile links OpenSSL on
-// the same condition (a kind file present), so the two cannot disagree.
+// -l pair (-lssl -lcrypto) instead of two; kinds.mk links OpenSSL on the
+// same condition (a plugin group active), so the two cannot disagree.
 // With no group active the exchange still works through a caller-supplied
 // options.system.fetch, which every live cpp request already lives under;
 // only the fallback is missing, and it says so.
@@ -132,14 +139,50 @@ const FeaturePlugins = cmp(async function FeaturePlugins(props: any) {
           .replace(/\.cpp$/, '.hpp')))).sort()
 
       Folder({ name: fname }, () => {
+        // The build wiring (see above). Paths are SDK-root-relative, as the
+        // Makefile's own globs are. kinds.cpp itself is listed: nothing
+        // else in the tree is a .cpp the Makefile would otherwise compile.
+        File({ name: 'kinds.mk' }, () => {
+          Content(`# Generated beside kinds.cpp: what the \`${fname}\` feature needs from the
+# build, read by the Makefile through \`-include $(wildcard feature/*/kinds.mk)\`.
+# Without this file none of the feature's vendored payload is compiled or
+# linked. Do not hand-edit - change the model and regenerate.
+
+# The wiring translation unit, the vendored cores every chain needs (sekreto
+# and the voxgig/plugin host it is built on), and the feature's gated suite.
+FEATURE_SRCS += feature/${fname}/kinds.cpp \\
+  $(wildcard feature/${fname}/sekreto/*.cpp feature/${fname}/plugin/*.cpp)
+FEATURE_TEST_SRCS += $(wildcard test/feature/${fname}/*.cpp)
+`)
+          if (0 === groups) {
+            Content(`
+# No plugin group is active: the plugin layer (the kinds, the socket HTTPS
+# client and its OpenSSL binding, the digests and the child-process
+# launcher) is on disk but NOT compiled - plugins/Tls.cpp hard-includes
+# <openssl/ssl.h> - and nothing beyond libstdc++ is linked. A chain of
+# built-ins needs none of it.
+`)
+          }
+          else {
+            Content(`
+# A plugin group is active: the selected kinds and the four shared helpers
+# they call (the socket HTTPS client, its OpenSSL binding, the digests and
+# the child-process launcher), with the one external library they bring -
+# OpenSSL, for the vault kinds' TLS and for the token-exchange transport of
+# last resort in kinds.cpp, which rides on the same vendored client.
+FEATURE_SRCS += $(wildcard feature/${fname}/plugins/*.cpp)
+FEATURE_LIBS += -lssl -lcrypto
+`)
+          }
+        })
+
         File({ name: 'kinds.cpp' }, () => {
           Content(`// Generated: the plugin definitions the model selected for the \`${fname}\`
 // feature's provider chain (the cpp peer of go's core.FeaturePlugins),
 // read back by core/config.hpp's featurePlugins("${fname}") and by the
 // feature itself through ${fname}_plugins().
 //
-// GENERATED, AND ALSO THE WIRING: tm/cpp/Makefile compiles the feature's
-// vendored payload into libsdksecrets.a only while this file exists. Do
+// GENERATED beside kinds.mk, the build wiring tm/cpp/Makefile includes. Do
 // not hand-edit - change the model's plugin groups and regenerate.
 //
 // The one non-header translation unit this SDK generates: it includes the
@@ -185,7 +228,7 @@ ${symnames.map((sym) => `    std::static_pointer_cast<void>(sekreto::${sym}()),
 // THE EXCHANGE TRANSPORT OF LAST RESORT, when no plugin group is active:
 // there is none. The cpp core ships no HTTP client, and the vendored HTTPS
 // client (plugins/Httpjson.cpp, OpenSSL) is compiled with the plugin
-// groups only (see tm/cpp/Makefile), so a token purchase needs
+// groups only (see kinds.mk beside this file), so a token purchase needs
 // options.system.fetch - the seam every live cpp request already uses.
 // Reached only by an exchange whose caller supplied no transport; a chain
 // that resolves a static credential never comes here.
@@ -222,7 +265,7 @@ SecretsRawResponse secrets_rawfetch(
 // 401 from a token endpoint is an answer), raises only on a transport
 // failure, follows no redirect and consults no proxy - the properties a
 // credential-bearing request wants. It is compiled because a plugin group
-// is active in this model; the Makefile links OpenSSL on exactly that
+// is active in this model; kinds.mk links OpenSSL on exactly that
 // condition. (c bundles libcurl here instead - see the note on
 // FeaturePlugins in Config_cpp.ts for why cpp reuses the vendored client.)
 
@@ -361,7 +404,7 @@ inline FeaturePtr makeFeature(const std::string& name) {
     // feature casts back to plugin::DefinitionPtr), the way go returns
     // []any and c void**. The per-feature function is an ordinary extern
     // declaration here and in the feature header alike; kinds.cpp defines
-    // it, and the Makefile compiles kinds.cpp whenever it exists.
+    // it, and the generated kinds.mk has the Makefile compile it.
     const plugged = Object.keys(pluginDefinitions(model, target)).sort()
 
     Content(`

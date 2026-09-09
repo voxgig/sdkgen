@@ -4,71 +4,39 @@
 # an independent executable. `make test` compiles and runs them all, failing
 # if any test binary exits non-zero. Mirrors the struct/cpp and tm/rust build.
 #
-# The ONE exception to header-only is the gated `secrets` feature (below):
-# its vendored payload is a multi-translation-unit library, compiled into an
-# archive the test executables link - and only while the feature is wired in.
+# The ONE exception to header-only is a gated feature's vendored payload
+# (below): a multi-translation-unit library, compiled into an archive the
+# test executables link - and only while that feature is wired in.
 
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -O0 -g -Wall -Wextra -Wno-unused-parameter -pthread
 
-# ---- the secrets feature (gated; model/feature/secrets.aon) -----------------
+# ---- gated feature payloads (model/feature/<name>.aon plugin groups) --------
 #
-# feature/secrets/ holds the vendored @voxgig/sekreto cpp port (sekreto/),
-# the voxgig/plugin host it is built on (plugin/) and the provider kinds
-# (plugins/). Unlike everything else in this SDK they are .cpp/.hpp pairs,
-# so they cannot ride inside a test's single translation unit: this block
-# compiles them into libsdksecrets.a and links it into every test binary.
-# Every quoted include in that tree is either same-directory or an explicit
-# ../plugin/ or ../sekreto/ path (written at vendoring time; see
-# ts/vendor/routes.json), so NO -I is needed and the vendored plugin's
-# types.hpp/value.hpp can never shadow core/types.hpp.
-#
-# feature/secrets/kinds.cpp IS THE WIRING. Config_cpp GENERATES it only when
-# the model activates `secrets` for this target (it lists the selected plugin
-# definitions and carries the token-exchange transport of last resort).
-# Without it nothing of the feature is compiled: a tree generated straight
-# from the scaffold, or one whose model declares the feature inactive,
-# carries the payload as inert source - core/config.hpp includes no
-# feature/secrets.hpp, so no test translation unit ever sees a sekreto
-# declaration - and a project's `target add` trims it outright.
-#
-# THE PLUGIN LAYER IS BUILT ONLY WHEN A KIND SURVIVED THE TRIM. The four
-# shared helpers (the socket HTTP client, its OpenSSL binding, the digests
-# and the child-process launcher) belong to no plugin group, so they are
-# always on disk; they are compiled only beside a kind that calls them,
-# because plugins/Tls.cpp hard-includes <openssl/ssl.h>. So a chain of
-# built-ins ([env, memory, dotenv, file]) compiles the sekreto and
-# voxgig/plugin cores alone and links libstdc++ alone, and the one external
-# dependency a cpp SDK can have - OpenSSL, for the vault kinds AND for the
-# exchange transport in kinds.cpp, which rides on the same vendored client -
-# is linked only when a plugin group is active. `ldd` on any test binary
-# shows which case this tree is. (c bundles libcurl for the same transport;
-# cpp's port exports its HTTPS client as `sekreto::httprequest`, so a second
-# HTTP stack would buy nothing.)
-SEK_WIRED := $(wildcard feature/secrets/kinds.cpp)
-SEK_SHARED := Crypto.cpp Httpjson.cpp Proc.cpp Tls.cpp
-SEK_ALL := $(wildcard feature/secrets/plugins/*.cpp)
-SEK_KINDS := $(filter-out $(addprefix feature/secrets/plugins/,$(SEK_SHARED)),$(SEK_ALL))
-SEK_SRCS :=
-SEK_LIBS :=
-SEK_ARCHIVE :=
-SEK_TEST_SRCS :=
-ifneq ($(SEK_WIRED),)
-  SEK_SRCS := feature/secrets/kinds.cpp \
-    $(wildcard feature/secrets/sekreto/*.cpp feature/secrets/plugin/*.cpp)
-  ifneq ($(strip $(SEK_KINDS)),)
-    SEK_SRCS += $(SEK_ALL)
-    SEK_LIBS := -lssl -lcrypto
-  endif
-  SEK_ARCHIVE := libsdksecrets.a
-  # The gated suite: test/feature/<name>/ is a `feature` container, so the
-  # trim drops it with the feature, and this only ever adds files that the
-  # feature wired in above can link.
-  SEK_TEST_SRCS := $(wildcard test/feature/secrets/*.cpp)
-endif
-SEK_OBJS := $(SEK_SRCS:.cpp=.o)
+# A gated feature's vendored payload sits two levels under feature/
+# (feature/<name>/<lib>/*.cpp), as .cpp/.hpp pairs that cannot ride inside
+# a test's single translation unit. What of it is built is decided by a
+# GENERATED make fragment, feature/<name>/kinds.mk, that the feature's
+# Config component emits beside its generated wiring file only when the
+# model activates the feature for this target. The fragment appends the
+# payload sources to FEATURE_SRCS, the feature's suite to FEATURE_TEST_SRCS,
+# and - only when a plugin group is active - the plugin layer and the
+# external libraries it brings to FEATURE_LIBS. Nothing here names a
+# feature: a tree whose model never activated one has no fragment, carries
+# its payload as inert source, and links libstdc++ alone, and a project's
+# `target add` trims it outright. `ldd` on any test binary shows which case
+# this tree is. Every quoted include inside a payload is either
+# same-directory or an explicit sibling path written at vendoring time
+# (ts/vendor/routes.json), so NO -I is needed and a payload's types.hpp or
+# value.hpp can never shadow core/types.hpp.
+FEATURE_SRCS :=
+FEATURE_TEST_SRCS :=
+FEATURE_LIBS :=
+-include $(wildcard feature/*/kinds.mk)
+FEATURE_OBJS := $(FEATURE_SRCS:.cpp=.o)
+FEATURE_ARCHIVE := $(if $(strip $(FEATURE_SRCS)),libsdkfeature.a,)
 
-TEST_SRCS := $(wildcard test/*.cpp) $(SEK_TEST_SRCS)
+TEST_SRCS := $(wildcard test/*.cpp) $(FEATURE_TEST_SRCS)
 TEST_BINS := $(TEST_SRCS:.cpp=.out)
 
 # REBUILD WHEN A HEADER CHANGES. The runtime is header-only, so a test binary
@@ -81,7 +49,7 @@ TEST_BINS := $(TEST_SRCS:.cpp=.out)
 # test/ is listed too: the corpus suites are driven by test/*.hpp (the omni
 # resolver and the retained runner support) and by the vendored omni headers
 # under test/vendor/omni/, none of which the pattern rule below names either.
-# feature/*/ and feature/*/*/ cover the secrets feature's vendored headers.
+# feature/*/ and feature/*/*/ cover a gated feature's vendored headers.
 SDK_HDRS := $(wildcard core/*.hpp entity/*.hpp feature/*.hpp \
                        feature/*/*.hpp feature/*/*/*.hpp \
                        utility/*.hpp utility/*/*.hpp *.hpp \
@@ -100,26 +68,24 @@ test: build
 	if [ $$fail -ne 0 ]; then echo "SOME TESTS FAILED"; exit 1; fi; \
 	echo "ALL TESTS PASSED"
 
-# The secrets archive. `ar r` REPLACES a member by basename on an archive it
-# finds, and this archive carries duplicate basenames by construction
-# (the vendored plugin's types.o and value.o beside nothing of the SDK's,
-# today - but upstream sekreto's own Makefile deletes first for the same
-# reason, and a stale member from a removed source would otherwise outlive
-# it). One cold `ar rcs` keeps every member.
+# The payload archive. `ar r` REPLACES a member by basename on an archive it
+# finds and KEEPS every other one, so a stale member from a removed source
+# would outlive it; one cold `ar rcs` keeps exactly the current members
+# (upstream sekreto's own Makefile deletes first for the same reason).
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-libsdksecrets.a: $(SEK_OBJS)
+libsdkfeature.a: $(FEATURE_OBJS)
 	@rm -f $@
-	ar rcs $@ $(SEK_OBJS)
+	ar rcs $@ $(FEATURE_OBJS)
 
-# $(SEK_ARCHIVE) and $(SEK_LIBS) are empty unless the secrets feature is
+# $(FEATURE_ARCHIVE) and $(FEATURE_LIBS) are empty unless a gated feature is
 # wired in, so this rule is byte-for-byte the header-only build otherwise.
-test/%.out: test/%.cpp $(SDK_HDRS) $(SEK_ARCHIVE)
-	$(CXX) $(CXXFLAGS) $< -o $@ $(SEK_ARCHIVE) $(SEK_LIBS)
+test/%.out: test/%.cpp $(SDK_HDRS) $(FEATURE_ARCHIVE)
+	$(CXX) $(CXXFLAGS) $< -o $@ $(FEATURE_ARCHIVE) $(FEATURE_LIBS)
 
 clean:
-	rm -f test/*.out test/feature/*/*.out $(SEK_OBJS) libsdksecrets.a
+	rm -f test/*.out test/*/*/*.out $(FEATURE_OBJS) libsdkfeature.a
 
 # --- Release: tag cpp/vX.Y.Z (header-only; no registry) --------------------
 VERSION := $(shell cat VERSION 2>/dev/null || echo 0.0.1)

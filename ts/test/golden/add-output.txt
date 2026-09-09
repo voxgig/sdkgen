@@ -236,9 +236,9 @@ tm/clojure/test/vendor/omni/voxgig/omni/util.clj 0a71e7017514
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon 50645dfffc2a
 model/sdk.aon c57422e2c737
-model/target/cpp.aon 602b809919a2
+model/target/cpp.aon e82cc3aa91bf
 model/target/target-index.aon c6799adcc977
-src/cmp/cpp/Config_cpp.ts 1245329e781d
+src/cmp/cpp/Config_cpp.ts caf535f8edb4
 src/cmp/cpp/EntityBase_cpp.ts 8218701f0ef9
 src/cmp/cpp/EntityOperation_cpp.ts 805c7dfa4fdf
 src/cmp/cpp/EntityTypes_cpp.ts 690fbf7bb9f7
@@ -246,7 +246,7 @@ src/cmp/cpp/Entity_cpp.ts 58549e5990d6
 src/cmp/cpp/Gitignore_cpp.ts 164c931b3983
 src/cmp/cpp/MainEntity_cpp.ts e419d3bb76ae
 src/cmp/cpp/Main_cpp.ts 4f426ff9a3c0
-src/cmp/cpp/Package_cpp.ts 0fef85f589f0
+src/cmp/cpp/Package_cpp.ts fe9270b598ba
 src/cmp/cpp/ReadmeEntity_cpp.ts 73b806a3b452
 src/cmp/cpp/ReadmeExamplesTest_cpp.ts 9cf7d6455bcf
 src/cmp/cpp/ReadmeExplanation_cpp.ts beb3014070b4
@@ -273,7 +273,7 @@ src/cmp/cpp/fragment/Main.fragment.cpp 202d212074c2
 src/cmp/cpp/tsconfig.json 720a3f229019
 src/cmp/cpp/utility_cpp.ts a1b8cae7e4c3
 tm/cpp/LICENSE ed2f88b0aab8
-tm/cpp/Makefile 0c92088eb1be
+tm/cpp/Makefile 4b73fb1987a5
 tm/cpp/VERSION e6635045e1d2
 tm/cpp/core/sdk.hpp 29180a8846ed
 tm/cpp/core/struct.hpp 0be0006d1389
