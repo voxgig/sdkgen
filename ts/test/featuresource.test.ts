@@ -354,10 +354,6 @@ describe('target add feature trimming', () => {
     //     Sdk_features (the test-only simulator is not a model feature and
     //     has no source to trim); every model feature goes through
     //     Sdk_config.make_feature behind has_feature.
-    //   ocaml/Makefile — `-include feature/secrets/secrets.mk`, the gated
-    //     build fragment Main_ocaml generates only for an active secrets
-    //     feature. An optional include of an absent file is a no-op, so a
-    //     trimmed tree builds with every secrets variable empty.
     //   cpp/Makefile — names `feature/secrets` only inside the
     //     `$(wildcard ...)` gates that decide whether the vendored secrets
     //     payload is compiled at all (feature/secrets/kinds.cpp, the
@@ -372,7 +368,6 @@ describe('target add feature trimming', () => {
       /^tm\/py\/test\/test_feature\.py$/,
       /^tm\/ocaml\/sdk_features\.ml$/,
       /^tm\/ocaml\/test\/harness\.ml$/,
-      /^tm\/ocaml\/Makefile$/,
       /^tm\/cpp\/Makefile$/,
     ]
 

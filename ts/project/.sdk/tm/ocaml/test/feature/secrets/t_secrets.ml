@@ -23,7 +23,7 @@
  *
  * This file lives in the test/feature/ container on purpose: `target add`
  * trims it, along with the feature source and the vendored trees, for a
- * project whose model does not select `secrets`; secrets.mk lists it, so
+ * project whose model does not select `secrets`; feature/secrets/feature.mk lists it, so
  * it is linked into run_sdk_test whenever the feature is. It prints
  * `feature.secrets: ran N check(s)` from EXECUTIONS, which the generator's
  * own lane requires - a suite trimmed to nothing cannot pass by exiting

@@ -18,58 +18,49 @@
 OCAMLC = ocamlc
 CC ?= cc
 
-# ---- the secrets feature (gated; model/feature/secrets.aon) -----------------
+# ---- gated feature build fragments ------------------------------------------
 #
-# feature/secrets/ holds the vendored @voxgig/sekreto ocaml port (sekreto/),
-# the voxgig/plugin host it is built on (plugin/) and the provider kinds
-# (plugins/), beside the feature itself (feature/secrets_feature.ml) - some
-# forty modules that an SDK which never asked for secrets must not compile.
+# A feature carried as a CONTAINER under feature/<name>/ (beside the single
+# template module sdk_features.ml every other feature lives in) may need
+# more than the verbatim copy: vendored modules that must be compiled in a
+# specific order, a library archive, a C stub and its link flags. A
+# generator component emits feature/<name>/feature.mk for such a feature
+# ONLY when the model activates it, and this Makefile includes whatever
+# fragments exist. Without one every variable below stays EMPTY: a tree
+# whose model never activated such a feature compiles nothing extra and
+# links the OCaml distribution alone.
 #
-# feature/secrets/secrets.mk IS THE WIRING. Main_ocaml GENERATES it only when
-# the model activates `secrets` for this target, and it carries what only the
-# model knows and what only a MAKEFILE can say in OCaml: the module list IN
-# DEPENDENCY ORDER. ocamlc compiles a module before anything that uses it and
-# has no link-time reordering, so a `$(wildcard)` over the vendored
-# directories - alphabetical - would not build; the fragment lists the
-# voxgig/plugin host, the sekreto core, the shared helpers a selected kind
-# opens, the kinds the plugin trim kept, then the feature, in that order.
-# Without the fragment every variable below stays EMPTY: a tree generated
-# straight from the scaffold, or one whose model declares the feature
-# inactive, compiles none of it and links the OCaml distribution alone.
+# WHY A FRAGMENT AND NOT A WILDCARD. ocamlc compiles a module before anything
+# that uses it and has no link-time reordering, so a `$(wildcard)` over a
+# vendored directory - alphabetical - would not build. The fragment carries
+# what only the model knows and only a Makefile can say in OCaml: the module
+# list IN DEPENDENCY ORDER, and the one external dependency (if any) behind
+# the plugin groups that need it.
 #
-# THE ONE EXTERNAL DEPENDENCY IS BEHIND A PLUGIN GROUP. The HTTPS kinds open
-# plugins/http.ml -> tls.ml, whose externals live in plugins/tls_stubs.c
-# against OpenSSL. The fragment compiles that stub and adds
-# `-custom -cclib -lssl -cclib -lcrypto` ONLY when an active plugin group
-# declares `needs.fetch`; a chain of built-ins ([env, memory, dotenv, file]),
-# or `secretspec` alone, compiles the two cores (and runcmd.ml) and links
-# unix.cma alone. `ldd run_sdk_test` (or its absence: a non-custom bytecode
-# executable is an ocamlrun script) shows which case this tree is.
-#
-#   SECRETS_INC   -I +unix and the three vendored directories + feature/
-#   SECRETS_LIB   unix.cma (the dotenv/file built-ins read files through Unix)
-#   SECRETS_SRC   the ordered module list, ending in feature/secrets_feature.ml
-#   SECRETS_TESTS the gated suite under test/feature/secrets/ (a `feature`
-#                 container, so the trim drops it with the feature)
-#   SECRETS_OBJ   the compiled TLS stub, when a transport-needing group is on
-#   SECRETS_LINK  -custom and the OpenSSL link flags, on the same condition
-SECRETS_INC ?=
-SECRETS_LIB ?=
-SECRETS_SRC ?=
-SECRETS_TESTS ?=
-SECRETS_OBJ ?=
-SECRETS_LINK ?=
--include feature/secrets/secrets.mk
+#   FEATURE_INC   extra -I paths (and -I +unix when unix.cma is linked)
+#   FEATURE_LIB   library archives, listed BEFORE the modules that use them
+#   FEATURE_SRC   the ordered module list, ending in the feature module
+#   FEATURE_TESTS the feature's gated suite under test/feature/<name>/ (a
+#                 `feature` container, so the trim drops it with the feature)
+#   FEATURE_OBJ   compiled C stub objects, when the feature needs any
+#   FEATURE_LINK  link flags for those stubs (-custom, -cclib ...)
+FEATURE_INC ?=
+FEATURE_LIB ?=
+FEATURE_SRC ?=
+FEATURE_TESTS ?=
+FEATURE_OBJ ?=
+FEATURE_LINK ?=
+-include $(wildcard feature/*/feature.mk)
 
-INC = -I utility -I . -I test -I test/vendor/omni $(SECRETS_INC)
+INC = -I utility -I . -I test -I test/vendor/omni $(FEATURE_INC)
 
 # The shared JSON corpus lives in the sibling .sdk workspace.
 CORPUS = ../.sdk/test/test.json
 
-# The gated secrets modules come AFTER sdk_features.ml (the feature opens
-# it) and BEFORE sdk_config.ml (the generated factory names the feature).
+# A gated feature's modules come AFTER sdk_features.ml (a feature module
+# opens it) and BEFORE sdk_config.ml (the generated factory names them).
 RUNTIME = utility/vregex.ml utility/voxgig_struct.ml sdk_json.ml \
-  sdk_types.ml sdk_helpers.ml sdk_runtime.ml sdk_features.ml $(SECRETS_SRC)
+  sdk_types.ml sdk_helpers.ml sdk_runtime.ml sdk_features.ml $(FEATURE_SRC)
 
 # The vendored corpus engine plus the adapter that drives it. Order matters:
 # the adapter references the vendored module.
@@ -90,7 +81,7 @@ DOC_TESTS = $(sort $(wildcard test/readme_examples_test.ml))
 SDK_TEST = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml \
   test/testutil.ml test/harness.ml \
   test/t_pipeline.ml test/t_feature.ml test/custom_utility.ml \
-  $(ENTITY_TESTS) $(DOC_TESTS) $(SECRETS_TESTS) test/t_main.ml
+  $(ENTITY_TESTS) $(DOC_TESTS) $(FEATURE_TESTS) test/t_main.ml
 
 # The struct corpus needs only the struct library and the corpus engine —
 # omni carries its own JSON reader and regex engine, so nothing of the SDK
@@ -123,11 +114,11 @@ test-corpus: run_struct_corpus
 test-primary: run_primary_corpus
 	./run_primary_corpus $(CORPUS)
 
-# Every executable that links the RUNTIME links the secrets tier with it:
-# unix.cma FIRST (a library archive must precede the modules that use it),
-# the stub object and the link flags LAST.
-run_sdk_test: $(SDK_TEST) $(SECRETS_OBJ)
-	$(OCAMLC) $(INC) $(SECRETS_LIB) $(SDK_TEST) $(SECRETS_OBJ) $(SECRETS_LINK) -o run_sdk_test
+# Every executable that links the RUNTIME links the gated feature tier with
+# it: library archives FIRST (an archive must precede the modules that use
+# it), stub objects and link flags LAST.
+run_sdk_test: $(SDK_TEST) $(FEATURE_OBJ)
+	$(OCAMLC) $(INC) $(FEATURE_LIB) $(SDK_TEST) $(FEATURE_OBJ) $(FEATURE_LINK) -o run_sdk_test
 
 run_omni_smoke: $(SMOKE_SRC)
 	$(OCAMLC) $(INC) $(SMOKE_SRC) -o run_omni_smoke
@@ -135,8 +126,8 @@ run_omni_smoke: $(SMOKE_SRC)
 run_struct_corpus: $(CORPUS_SRC)
 	$(OCAMLC) $(INC) $(CORPUS_SRC) -o run_struct_corpus
 
-run_primary_corpus: $(PRIMARY_SRC) $(SECRETS_OBJ)
-	$(OCAMLC) $(INC) $(SECRETS_LIB) $(PRIMARY_SRC) $(SECRETS_OBJ) $(SECRETS_LINK) -o run_primary_corpus
+run_primary_corpus: $(PRIMARY_SRC) $(FEATURE_OBJ)
+	$(OCAMLC) $(INC) $(FEATURE_LIB) $(PRIMARY_SRC) $(FEATURE_OBJ) $(FEATURE_LINK) -o run_primary_corpus
 
 # Type-check the SDK library (a clean compile means it is sound).
 build: lint
@@ -147,6 +138,6 @@ lint:
 clean:
 	rm -f *.cmi *.cmo test/*.cmi test/*.cmo utility/*.cmi utility/*.cmo \
 	  test/vendor/omni/*.cmi test/vendor/omni/*.cmo \
-	  feature/*.cmi feature/*.cmo feature/secrets/*/*.cmi feature/secrets/*/*.cmo \
-	  feature/secrets/plugins/*.o test/feature/secrets/*.cmi test/feature/secrets/*.cmo \
+	  feature/*.cmi feature/*.cmo feature/*/*/*.cmi feature/*/*/*.cmo \
+	  feature/*/*/*.o test/feature/*/*.cmi test/feature/*/*.cmo \
 	  run_sdk_test run_omni_smoke run_struct_corpus run_primary_corpus a.out
