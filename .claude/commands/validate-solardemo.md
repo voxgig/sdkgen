@@ -59,7 +59,8 @@ In `~/Projects/voxgig-sdk/voxgig-solardemo-sdk/ts/`:
 ```
 npm install && npm run build && npm test
 ```
-All 128 tests should pass.
+All 198 tests should pass (197 pass, 1 skip — `cost`, which this SDK is
+generated without).
 
 ## Live testing against the test HTTP server
 
