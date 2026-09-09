@@ -720,6 +720,33 @@
   },
   {
    "lib": "plugin",
+   "port": "ocaml",
+   "lang": "ocaml",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/ocaml/feature/secrets/plugin"
+   ],
+   "file": {
+    "ocaml/src/value.ml": "tm/ocaml/feature/secrets/plugin/value.ml",
+    "ocaml/src/types.ml": "tm/ocaml/feature/secrets/plugin/types.ml",
+    "ocaml/src/ref.ml": "tm/ocaml/feature/secrets/plugin/ref.ml",
+    "ocaml/src/version.ml": "tm/ocaml/feature/secrets/plugin/version.ml",
+    "ocaml/src/capability.ml": "tm/ocaml/feature/secrets/plugin/capability.ml",
+    "ocaml/src/resolve.ml": "tm/ocaml/feature/secrets/plugin/resolve.ml",
+    "ocaml/src/env.ml": "tm/ocaml/feature/secrets/plugin/env.ml",
+    "ocaml/src/config.ml": "tm/ocaml/feature/secrets/plugin/config.ml",
+    "ocaml/src/graph.ml": "tm/ocaml/feature/secrets/plugin/graph.ml",
+    "ocaml/src/order.ml": "tm/ocaml/feature/secrets/plugin/order.ml",
+    "ocaml/src/export.ml": "tm/ocaml/feature/secrets/plugin/export.ml",
+    "ocaml/src/depend.ml": "tm/ocaml/feature/secrets/plugin/depend.ml",
+    "ocaml/src/point.ml": "tm/ocaml/feature/secrets/plugin/point.ml",
+    "ocaml/src/defs.ml": "tm/ocaml/feature/secrets/plugin/defs.ml",
+    "ocaml/src/catalog.ml": "tm/ocaml/feature/secrets/plugin/catalog.ml",
+    "ocaml/src/host.ml": "tm/ocaml/feature/secrets/plugin/host.ml"
+   }
+  },
+  {
+   "lib": "plugin",
    "port": "perl",
    "lang": "perl",
    "version": "sdk-20260908-1556-0",
@@ -1344,6 +1371,38 @@
      "to": "feature/secrets/native/sekreto-net"
     }
    ]
+  },
+  {
+   "lib": "sekreto",
+   "port": "ocaml",
+   "lang": "ocaml",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/ocaml/feature/secrets/sekreto",
+    "tm/ocaml/feature/secrets/plugins"
+   ],
+   "file": {
+    "ocaml/src/json.ml": "tm/ocaml/feature/secrets/sekreto/json.ml",
+    "ocaml/src/secret.ml": "tm/ocaml/feature/secrets/sekreto/secret.ml",
+    "ocaml/src/provider.ml": "tm/ocaml/feature/secrets/sekreto/provider.ml",
+    "ocaml/src/sekreto.ml": "tm/ocaml/feature/secrets/sekreto/sekreto.ml",
+    "ocaml/plugins/crypto.ml": "tm/ocaml/feature/secrets/plugins/crypto.ml",
+    "ocaml/plugins/sigv4.ml": "tm/ocaml/feature/secrets/plugins/sigv4.ml",
+    "ocaml/plugins/tls.ml": "tm/ocaml/feature/secrets/plugins/tls.ml",
+    "ocaml/plugins/http.ml": "tm/ocaml/feature/secrets/plugins/http.ml",
+    "ocaml/plugins/httpjson.ml": "tm/ocaml/feature/secrets/plugins/httpjson.ml",
+    "ocaml/plugins/runcmd.ml": "tm/ocaml/feature/secrets/plugins/runcmd.ml",
+    "ocaml/plugins/hashicorp.ml": "tm/ocaml/feature/secrets/plugins/hashicorp.ml",
+    "ocaml/plugins/boru.ml": "tm/ocaml/feature/secrets/plugins/boru.ml",
+    "ocaml/plugins/aws.ml": "tm/ocaml/feature/secrets/plugins/aws.ml",
+    "ocaml/plugins/gcpsecrets.ml": "tm/ocaml/feature/secrets/plugins/gcpsecrets.ml",
+    "ocaml/plugins/azuresecrets.ml": "tm/ocaml/feature/secrets/plugins/azuresecrets.ml",
+    "ocaml/plugins/onepassword.ml": "tm/ocaml/feature/secrets/plugins/onepassword.ml",
+    "ocaml/plugins/doppler.ml": "tm/ocaml/feature/secrets/plugins/doppler.ml",
+    "ocaml/plugins/infisical.ml": "tm/ocaml/feature/secrets/plugins/infisical.ml",
+    "ocaml/plugins/secretspec.ml": "tm/ocaml/feature/secrets/plugins/secretspec.ml",
+    "ocaml/plugins/tls_stubs.c": "tm/ocaml/feature/secrets/plugins/tls_stubs.c"
+   }
   },
   {
    "lib": "sekreto",

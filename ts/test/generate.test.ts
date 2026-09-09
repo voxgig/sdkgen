@@ -2665,6 +2665,206 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // ocaml guard for the same seam, plus the two things only ocaml has.
+  //
+  // An ACTIVE secrets model must emit the plugin definitions into
+  // sdk_config.ml (module-qualified, `Hashicorp.plugin ()`), and the
+  // INACTIVE groups' vendored modules must stay out of the tree
+  // (Main_ocaml's pluginExcludes), while the seven group-less shared
+  // helpers ship regardless: the transport chain (crypto, sigv4, tls, http,
+  // httpjson, tls_stubs.c) and runcmd, which boru (vault) and secretspec
+  // both open.
+  //
+  // The ocaml-only shapes: (1) the BUILD MODEL is a generated Makefile
+  // fragment, feature/secrets/secrets.mk, carrying the module list in
+  // DEPENDENCY ORDER - ocamlc has no link-time reordering, so the order is
+  // the thing to pin - and the OpenSSL binding (`-custom -cclib -lssl`)
+  // only when an active group declares `needs.fetch`; (2) the accessor is
+  // typed `Defs.definition list` only when the feature is active, because
+  // the `Defs` module is compiled only then, and is the polymorphic empty
+  // list otherwise.
+  test('ocaml: active secrets emits plugin defs and trims inactive groups', async () => {
+    const genml = async (extra: string, features: string[]) => {
+      const { fs, vol } = memfs({})
+      const sdkgen = SdkGen({
+        fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+      })
+      const res = await sdkgen.generate({
+        model: makeModel(['ocaml'], undefined, extra, features),
+        root: makeRoot(),
+      })
+      strictEqual(res.ok, true, 'generation did not report ok')
+      const out: Record<string, string> = {}
+      for (const [path, content] of
+        Object.entries(vol.toJSON() as Record<string, string>)) {
+        const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+        if (rel.includes('.jostraca/')) continue
+        out[rel] = content
+      }
+      return out
+    }
+
+    const out = await genml(
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // The definitions, the factory arm and the bundled transport.
+    const config = findFile(out, 'ocaml/sdk_config.ml')
+    ok(null != config, 'ocaml: no sdk_config.ml generated')
+    ok(/let feature_plugins \(name : string\) : Defs\.definition list =/.test(config!),
+      'ocaml: an active feature must type the accessor as Defs.definition list:\n' + config)
+    ok(/\| "secrets" -> \[\n {6}Boru\.plugin \(\);\n {6}Hashicorp\.plugin \(\);\n {4}\]/.test(config!),
+      'ocaml: feature_plugins is missing the vault definitions:\n' + config)
+    ok(!/(Gcpsecrets|Azuresecrets|Aws|Onepassword|Doppler|Infisical|Secretspec)\./.test(config!),
+      'ocaml: an INACTIVE group reached sdk_config.ml:\n' + config)
+    ok(/\| "secrets" -> Secrets_feature\.make ~plugins:\(feature_plugins "secrets"\) ~transport:secrets_transport \(\)/
+      .test(config!),
+      'ocaml: make_feature does not construct the secrets feature with its definitions and transport')
+    ok(/let secrets_transport \(url : string\) \(fetchdef : value\) : value =/.test(config!) &&
+      /Http\.request meth url headers body/.test(config!),
+      'ocaml: a transport-needing group must emit the bundled exchange transport')
+    ok(config!.indexOf('let feature_plugins') < config!.indexOf('let make_feature') &&
+      config!.indexOf('let secrets_transport') < config!.indexOf('let make_feature'),
+      'ocaml: the factory must come AFTER the definitions it names (OCaml binds top to bottom)')
+
+    // THE BUILD MODEL: the fragment, its ORDER, and the gated binding.
+    const mk = findFile(out, 'ocaml/feature/secrets/secrets.mk')
+    ok(null != mk, 'ocaml: an active feature must generate feature/secrets/secrets.mk')
+    const order = [
+      'feature/secrets/plugin/value.ml', 'feature/secrets/plugin/host.ml',
+      'feature/secrets/sekreto/json.ml', 'feature/secrets/sekreto/sekreto.ml',
+      'feature/secrets/plugins/crypto.ml', 'feature/secrets/plugins/sigv4.ml',
+      'feature/secrets/plugins/tls.ml', 'feature/secrets/plugins/http.ml',
+      'feature/secrets/plugins/httpjson.ml', 'feature/secrets/plugins/runcmd.ml',
+      'feature/secrets/plugins/boru.ml', 'feature/secrets/plugins/hashicorp.ml',
+      'feature/secrets_feature.ml',
+    ]
+    const at = order.map((m) => mk!.indexOf(m))
+    ok(at.every((i) => 0 <= i),
+      'ocaml: secrets.mk is missing a module: ' + order.filter((_m, i) => 0 > at[i]).join(', ') +
+      '\n' + mk)
+    ok(at.every((i, n) => 0 === n || at[n - 1] < i),
+      'ocaml: secrets.mk lists the modules OUT of dependency order (ocamlc cannot reorder):\n' + mk)
+    ok(!/(gcpsecrets|azuresecrets|aws|onepassword|doppler|infisical|secretspec)\.ml/.test(mk!),
+      'ocaml: an inactive group reached secrets.mk:\n' + mk)
+    ok(/^SECRETS_INC = -I \+unix /m.test(mk!) && /^SECRETS_LIB = unix\.cma$/m.test(mk!),
+      'ocaml: secrets.mk must link unix.cma for the dotenv/file built-ins')
+    ok(/^SECRETS_TESTS = test\/feature\/secrets\/t_secrets\.ml$/m.test(mk!),
+      'ocaml: secrets.mk does not list the gated suite')
+    ok(/plugin groups: vault\)/.test(mk!) &&
+      /^SECRETS_LINK = -custom -cclib -lssl -cclib -lcrypto$/m.test(mk!) &&
+      /^SECRETS_OBJ = feature\/secrets\/plugins\/tls_stubs\.o$/m.test(mk!) &&
+      /tail -n \+4 \$< \| \$\(CC\)/.test(mk!),
+      'ocaml: secrets.mk does not name the group, link OpenSSL with -custom and ' +
+      'skip the provenance header on the stub:\n' + mk)
+    const makefile = findFile(out, 'ocaml/Makefile')
+    ok(/^-include feature\/secrets\/secrets\.mk$/m.test(makefile!),
+      'ocaml: the Makefile does not include the fragment')
+    ok(/\$\(SECRETS_LIB\) \$\(SDK_TEST\) \$\(SECRETS_OBJ\) \$\(SECRETS_LINK\)/.test(makefile!),
+      'ocaml: run_sdk_test does not link the secrets tier')
+    ok(/depexts: \[\n  \["libssl-dev"\]/.test(findFile(out, '.opam')!),
+      'ocaml: a transport-needing group must declare the OpenSSL depext in the opam file')
+
+    // The trim on disk: the active group's modules and the ungrouped
+    // helpers are IN, every other group's are OUT, and the full-set barrel
+    // is never there at all.
+    ok(null != findFile(out, 'feature/secrets/plugins/hashicorp.ml') &&
+      null != findFile(out, 'feature/secrets/plugins/boru.ml'),
+      'ocaml: the ACTIVE vault group lost a kind module')
+    for (const helper of ['crypto.ml', 'sigv4.ml', 'tls.ml', 'http.ml', 'httpjson.ml',
+      'runcmd.ml', 'tls_stubs.c']) {
+      ok(null != findFile(out, 'feature/secrets/plugins/' + helper),
+        'ocaml: the shared ' + helper + ' helper must ship with the feature core')
+    }
+    ok(null == findFile(out, 'feature/secrets/plugins/gcpsecrets.ml'),
+      'ocaml: the inactive cloud group still ships gcpsecrets')
+    ok(null == findFile(out, 'feature/secrets/plugins/secretspec.ml'),
+      'ocaml: the inactive secretspec group still ships its child-process plugin')
+    ok(null == findFile(out, 'feature/secrets/plugins/aws.ml'),
+      'ocaml: the inactive aws group still ships its kind')
+    ok(null == findFile(out, 'feature/secrets/plugins/allplugins.ml'),
+      'ocaml: the full-set barrel plugins/allplugins.ml must never be generated')
+
+    // The vendored cores at upstream's depth, the feature, the gated
+    // suite, and the by-name entity accessor the suite drives ops through.
+    ok(null != findFile(out, 'feature/secrets/sekreto/sekreto.ml'),
+      'ocaml: the vendored sekreto core was not generated')
+    ok(null != findFile(out, 'feature/secrets/plugin/host.ml'),
+      'ocaml: the vendored voxgig/plugin core was not generated')
+    ok(null != findFile(out, 'ocaml/feature/secrets_feature.ml'),
+      'ocaml: the secrets feature source was not generated')
+    ok(null != findFile(out, 'ocaml/test/feature/secrets/t_secrets.ml'),
+      'ocaml: the gated secrets suite was not generated')
+    ok(/^let entity \(client : sdk_client\) \(name : string\) \(entopts : value\) : entity_obj option =/m
+      .test(findFile(out, 'ocaml/sdk_client.ml')!),
+      'ocaml: sdk_client.ml lost the by-name entity accessor')
+    deepStrictEqual(
+      Object.keys(out).filter((p) => /(^|\/)ocaml\/src\//.test(p)), [],
+      'ocaml: tm/ocaml/src placeholders leaked into the SDK')
+
+    // A group that needs NO transport, alone: runcmd.ml beside its kind,
+    // no TLS chain, no stub, no -custom, no depext - a secretspec-only
+    // ocaml SDK links the OCaml distribution alone.
+    const spec = await genml(
+      'main: kit: feature: secrets: { active: true plugin: secretspec: active: true }',
+      ['test', 'log', 'secrets'])
+    const specmk = findFile(spec, 'ocaml/feature/secrets/secrets.mk')
+    ok(null != specmk &&
+      /^SECRETS_HELPERS = feature\/secrets\/plugins\/runcmd\.ml$/m.test(specmk) &&
+      /^SECRETS_KINDS = feature\/secrets\/plugins\/secretspec\.ml$/m.test(specmk) &&
+      /^SECRETS_LINK =$/m.test(specmk) && /^SECRETS_OBJ =$/m.test(specmk) &&
+      !/-custom|tls_stubs/.test(specmk),
+      'ocaml: a secretspec-only model must compile runcmd.ml and no TLS:\n' + specmk)
+    const specconfig = findFile(spec, 'ocaml/sdk_config.ml')
+    ok(/Secretspec\.plugin \(\);/.test(specconfig!) && !/Hashicorp|secrets_transport/.test(specconfig!),
+      'ocaml: the secretspec group did not select exactly its kind, without a transport:\n' + specconfig)
+    ok(null == findFile(spec, 'feature/secrets/plugins/hashicorp.ml'),
+      'ocaml: a secretspec-only model still ships the vault kind')
+    ok(!/depexts/.test(findFile(spec, '.opam')!),
+      'ocaml: a secretspec-only model must declare no OpenSSL depext')
+
+    // The built-in chain alone (feature on, every group off): the two
+    // cores and the feature, nothing else, an EMPTY typed definitions list.
+    const bare = await genml('main: kit: feature: secrets: { active: true }',
+      ['test', 'log', 'secrets'])
+    const baremk = findFile(bare, 'ocaml/feature/secrets/secrets.mk')
+    ok(null != baremk && /^SECRETS_HELPERS =$/m.test(baremk) && /^SECRETS_KINDS =$/m.test(baremk) &&
+      /^SECRETS_LINK =$/m.test(baremk) && /the built-in kinds alone/.test(baremk),
+      'ocaml: a built-ins-only model must compile no helper and no kind:\n' + baremk)
+    ok(/let feature_plugins \(name : string\) : Defs\.definition list =\n  match name with\n  \| "secrets" -> \[\]/
+      .test(findFile(bare, 'ocaml/sdk_config.ml')!),
+      'ocaml: a built-ins-only model must emit an EMPTY typed definitions list')
+
+    // THE INACTIVE FEATURE (declared, off, with a group on): no fragment,
+    // no container, no kind module, and the accessor emitted EMPTY and
+    // untyped - it exists in every sdk_config.ml.
+    const off = await genml(
+      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+    ok(null == findFile(off, 'ocaml/feature/secrets/secrets.mk'),
+      'ocaml: an inactive feature still generated its build fragment')
+    ok(null == findFile(off, 'ocaml/feature/secrets_feature.ml') &&
+      null == findFile(off, 'feature/secrets/sekreto/sekreto.ml') &&
+      null == findFile(off, 'feature/secrets/plugins/hashicorp.ml') &&
+      null == findFile(off, 'ocaml/test/feature/secrets/t_secrets.ml'),
+      'ocaml: an inactive feature still ships its container (Main_ocaml containerExcludes)')
+    const offconfig = findFile(off, 'ocaml/sdk_config.ml')
+    ok(!/Secrets_feature|Defs\.|secrets_transport/.test(offconfig!),
+      'ocaml: an inactive feature still reached sdk_config.ml')
+    ok(/^let feature_plugins \(_name : string\) = \[\]$/m.test(offconfig!),
+      'ocaml: an inactive model must emit the EMPTY polymorphic accessor:\n' + offconfig)
+
+    // And a model that never mentions the feature: the same empty accessor
+    // and no container at all.
+    const plain = await generate(['ocaml'])
+    ok(null == findFile(plain, 'ocaml/feature/secrets/secrets.mk') &&
+      null == findFile(plain, 'ocaml/feature/secrets_feature.ml'),
+      'ocaml: a model without secrets still generated the feature')
+    ok(/^let feature_plugins \(_name : string\) = \[\]$/m.test(findFile(plain, 'ocaml/sdk_config.ml')!),
+      'ocaml: a model without secrets must emit the EMPTY polymorphic accessor')
+  })
+
+
   // csharp guard for the same seam: an ACTIVE secrets model must emit the
   // FeaturePlugins definitions into core/Config.cs (fully qualified, no
   // `using`), and the INACTIVE groups' vendored files must stay out of the

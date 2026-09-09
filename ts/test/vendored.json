@@ -1466,6 +1466,78 @@
     }
    }
   },
+  "plugin/ocaml": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/ocaml/feature/secrets/plugin/capability.ml": {
+     "sha256": "c5a0f4a1a4c30cad6fdb826f6c841a8f09abcd28d195789c87cbe62d3da86e07",
+     "upstream": "ocaml/src/capability.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/catalog.ml": {
+     "sha256": "447c24baa339a2df69bc96ebaa5a3d8fac25d1cc7553540f1774d60e1221e2cf",
+     "upstream": "ocaml/src/catalog.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/config.ml": {
+     "sha256": "0c197a2cf3d4d897c2e68855c117f9ecb62ef9dabe1d3dd8abd927942db951a5",
+     "upstream": "ocaml/src/config.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/defs.ml": {
+     "sha256": "7f34cfb8d8a4e8fa3cbb5738bca28ffeb4abff3933d37bc38eb7d9132a28219c",
+     "upstream": "ocaml/src/defs.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/depend.ml": {
+     "sha256": "a928f6a8ff7a36f0016260551769aa55a499f7830338ae71b97906829de11cee",
+     "upstream": "ocaml/src/depend.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/env.ml": {
+     "sha256": "5787180b76a416667004610776ce050f775a253841d8dabef475d460c19fdf68",
+     "upstream": "ocaml/src/env.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/export.ml": {
+     "sha256": "69419e0b907634e67c3d3223402b1f4338743514c43f0a4e03650dc0f589ac1e",
+     "upstream": "ocaml/src/export.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/graph.ml": {
+     "sha256": "7a4d1f74f7e4f4d5174be7418d01e4c0587f67e27309eac34e82c0af0d2d27b8",
+     "upstream": "ocaml/src/graph.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/host.ml": {
+     "sha256": "039f4bf09515d7ab6099a24cc8310f59627c3d189c97cbe151bed7cca534b8b8",
+     "upstream": "ocaml/src/host.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/order.ml": {
+     "sha256": "28374b2dbb6691ff757aae9907eb9e335e3f665d4c2e7a14ffc4566b33702155",
+     "upstream": "ocaml/src/order.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/point.ml": {
+     "sha256": "d71892272b9e1dbe6081c171054f7bf983c4b2975f840732e17646a7a174744d",
+     "upstream": "ocaml/src/point.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/ref.ml": {
+     "sha256": "43476417736f933f3d4aa167aedc837565f531852c257141f63e90e92dc42e73",
+     "upstream": "ocaml/src/ref.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/resolve.ml": {
+     "sha256": "130e1bc5b0eb13a44a7356f2e8453ebca67bfb3c0df8c274bd157bcc6a0ebf4f",
+     "upstream": "ocaml/src/resolve.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/types.ml": {
+     "sha256": "ccfe5bbb9f4279826a224165736611889422d217c8aa12ebb4fbff6c9709fa0e",
+     "upstream": "ocaml/src/types.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/value.ml": {
+     "sha256": "d5bb2ef274689c29ecfe316c40981e341074a2ec2a1c34253a461a465d144d3f",
+     "upstream": "ocaml/src/value.ml"
+    },
+    "tm/ocaml/feature/secrets/plugin/version.ml": {
+     "sha256": "d5bdac309ab455d5f9e021a74f2a4828879d26e18dda18b9dd4b03e85554b53f",
+     "upstream": "ocaml/src/version.ml"
+    }
+   }
+  },
   "plugin/perl": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
@@ -3485,6 +3557,94 @@
        "to": "require('feature.secrets.sekreto."
       }
      ]
+    }
+   }
+  },
+  "sekreto/ocaml": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "1267ee2e5f49566bc92695bc9eb3a60ef4924998",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/ocaml/feature/secrets/plugins/aws.ml": {
+     "sha256": "03366973de65abb670a50df2c625c5fbb8911f0f937763f67628bfea24aacb38",
+     "upstream": "ocaml/plugins/aws.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/azuresecrets.ml": {
+     "sha256": "b22d7323d4362b66e43052ddb9a3c27051170bccf4812f572092eee6d06b3dbe",
+     "upstream": "ocaml/plugins/azuresecrets.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/boru.ml": {
+     "sha256": "b4488e35058f6df98b22e54e41ae77bebc64c79a124f3c90a14da144fc085ec8",
+     "upstream": "ocaml/plugins/boru.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/crypto.ml": {
+     "sha256": "136fb3ad1f899e6bf13f2d337897a0d4c00acb351d43f231d411e91899677cc6",
+     "upstream": "ocaml/plugins/crypto.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/doppler.ml": {
+     "sha256": "0a94e9c699d059722ceee9b235fb61386078318c257419b5c653c252a4207993",
+     "upstream": "ocaml/plugins/doppler.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/gcpsecrets.ml": {
+     "sha256": "993a820a0df5aafc8edbc9bc201dc6c8fc7295c00dc1e3c471fa81fc8f1896a2",
+     "upstream": "ocaml/plugins/gcpsecrets.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/hashicorp.ml": {
+     "sha256": "a4542c262b41050aa40fc7a25497be65ffa5efadbf87aa08cff0dffc9979dfc4",
+     "upstream": "ocaml/plugins/hashicorp.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/http.ml": {
+     "sha256": "7036db8dc1d62475300d16bf0c8e7d0ae5879d1518061286b78c6752e2997646",
+     "upstream": "ocaml/plugins/http.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/httpjson.ml": {
+     "sha256": "92e44e4ec6d0827d71aacd5989f27685652be5624d5ff2cb3959fb1c84b8489d",
+     "upstream": "ocaml/plugins/httpjson.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/infisical.ml": {
+     "sha256": "a0715e8d52c56cad25f9764530905e36244f79e0b5c0be34d15c68384681e3bc",
+     "upstream": "ocaml/plugins/infisical.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/onepassword.ml": {
+     "sha256": "c2f311881ffc2d95a9df9d2d5dbc712626e37a0264a9426db3940fa91971ac6c",
+     "upstream": "ocaml/plugins/onepassword.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/runcmd.ml": {
+     "sha256": "63cbc0c1d5dd715d1a4126fed1ab2cdce4c7fbbca816d77e172bdb24a6aec0cf",
+     "upstream": "ocaml/plugins/runcmd.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/secretspec.ml": {
+     "sha256": "6aa060f02aef405ba52b7e213c86b2a6648066c697c92938e9378a8fceb86e23",
+     "upstream": "ocaml/plugins/secretspec.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/sigv4.ml": {
+     "sha256": "c71f601550592ddb4417bbe596285bb604f2e726dae0dd47fc3acf0baa47745e",
+     "upstream": "ocaml/plugins/sigv4.ml"
+    },
+    "tm/ocaml/feature/secrets/plugins/tls_stubs.c": {
+     "sha256": "b8b236024e2ae029b0bdcc0e13337e0a62724f249cba0066bf1c5859095fdf7d",
+     "upstream": "ocaml/plugins/tls_stubs.c"
+    },
+    "tm/ocaml/feature/secrets/plugins/tls.ml": {
+     "sha256": "d9c64a3deaf93e680b025d2b714ee25d92abefe10c29cd473ae0422ab44d7a73",
+     "upstream": "ocaml/plugins/tls.ml"
+    },
+    "tm/ocaml/feature/secrets/sekreto/json.ml": {
+     "sha256": "dad1f32215f60f10a9ce7629863c2d3cbb7522cafd09f6375737a35e8b759c6a",
+     "upstream": "ocaml/src/json.ml"
+    },
+    "tm/ocaml/feature/secrets/sekreto/provider.ml": {
+     "sha256": "1cd2e457b4feb15edee7693d0f6bb08848ca108bfc0b9bc88fff998c6dea1ff3",
+     "upstream": "ocaml/src/provider.ml"
+    },
+    "tm/ocaml/feature/secrets/sekreto/secret.ml": {
+     "sha256": "6d35f8eb4ab83f00e3bbb1e5379685a58e2bc791c296d700d0becf6a00b6610b",
+     "upstream": "ocaml/src/secret.ml"
+    },
+    "tm/ocaml/feature/secrets/sekreto/sekreto.ml": {
+     "sha256": "2f4450240457b23bec27454a38b389bb3b5a220cf055e090108d7baaa9fbe791",
+     "upstream": "ocaml/src/sekreto.ml"
     }
    }
   },
