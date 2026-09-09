@@ -106,6 +106,32 @@ jobs:
             exit 1
           fi
 
+      # ...AND SO DOES THE TAG PATH, which the check above does not cover.
+      # A tag names whatever commit its pusher chooses, and the pushed-tag
+      # guard below only compares the tag NAME with ts/package.json — so a
+      # `v*` tag pushed from an unmerged branch carrying a bumped version
+      # passes every existing check and publishes unreviewed code. npm never
+      # allows republishing a version, so that cannot be taken back.
+      #
+      # Containment is the invariant both entry points actually need, and it
+      # is the same question for each: on a dispatch from main it passes
+      # trivially, on a tag push it does the work. The branch-name check above
+      # stays because it fails earlier and says so more clearly.
+      - name: The released commit must be on main
+        run: |
+          set -euo pipefail
+          # FETCH_HEAD, not origin/main: `--depth=0` is not a thing (git
+          # rejects it -- only the checkout action spells "full history" that
+          # way), and on a TAG build the checked-out ref is the tag, so a
+          # remote-tracking origin/main need not exist at all. FETCH_HEAD is
+          # what the fetch just wrote, on both paths.
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" FETCH_HEAD; then
+            echo "::error::$GITHUB_SHA is not contained in origin/main; refusing to release it"
+            exit 1
+          fi
+          echo "$GITHUB_SHA is on main"
+
       # `--ref main` names a MUTABLE branch, so between `make publish` pushing
       # the release commit and this run resolving, another commit can land and
       # be published under the version just bumped. `make publish` passes the
