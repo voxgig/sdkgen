@@ -2860,7 +2860,7 @@ main: kit: target: js: phase: feature: active: false
   // both open.
   //
   // The ocaml-only shapes: (1) the BUILD MODEL is a generated Makefile
-  // fragment, feature/secrets/secrets.mk, carrying the module list in
+  // fragment, feature/secrets/feature.mk, carrying the module list in
   // DEPENDENCY ORDER - ocamlc has no link-time reordering, so the order is
   // the thing to pin - and the OpenSSL binding (`-custom -cclib -lssl`)
   // only when an active group declares `needs.fetch`; (2) the accessor is
@@ -2912,8 +2912,8 @@ main: kit: target: js: phase: feature: active: false
       'ocaml: the factory must come AFTER the definitions it names (OCaml binds top to bottom)')
 
     // THE BUILD MODEL: the fragment, its ORDER, and the gated binding.
-    const mk = findFile(out, 'ocaml/feature/secrets/secrets.mk')
-    ok(null != mk, 'ocaml: an active feature must generate feature/secrets/secrets.mk')
+    const mk = findFile(out, 'ocaml/feature/secrets/feature.mk')
+    ok(null != mk, 'ocaml: an active feature must generate feature/secrets/feature.mk')
     const order = [
       'feature/secrets/plugin/value.ml', 'feature/secrets/plugin/host.ml',
       'feature/secrets/sekreto/json.ml', 'feature/secrets/sekreto/sekreto.ml',
@@ -2925,26 +2925,28 @@ main: kit: target: js: phase: feature: active: false
     ]
     const at = order.map((m) => mk!.indexOf(m))
     ok(at.every((i) => 0 <= i),
-      'ocaml: secrets.mk is missing a module: ' + order.filter((_m, i) => 0 > at[i]).join(', ') +
+      'ocaml: feature.mk is missing a module: ' + order.filter((_m, i) => 0 > at[i]).join(', ') +
       '\n' + mk)
     ok(at.every((i, n) => 0 === n || at[n - 1] < i),
-      'ocaml: secrets.mk lists the modules OUT of dependency order (ocamlc cannot reorder):\n' + mk)
+      'ocaml: feature.mk lists the modules OUT of dependency order (ocamlc cannot reorder):\n' + mk)
     ok(!/(gcpsecrets|azuresecrets|aws|onepassword|doppler|infisical|secretspec)\.ml/.test(mk!),
-      'ocaml: an inactive group reached secrets.mk:\n' + mk)
-    ok(/^SECRETS_INC = -I \+unix /m.test(mk!) && /^SECRETS_LIB = unix\.cma$/m.test(mk!),
-      'ocaml: secrets.mk must link unix.cma for the dotenv/file built-ins')
-    ok(/^SECRETS_TESTS = test\/feature\/secrets\/t_secrets\.ml$/m.test(mk!),
-      'ocaml: secrets.mk does not list the gated suite')
+      'ocaml: an inactive group reached feature.mk:\n' + mk)
+    ok(/^FEATURE_INC = -I \+unix /m.test(mk!) && /^FEATURE_LIB = unix\.cma$/m.test(mk!),
+      'ocaml: feature.mk must link unix.cma for the dotenv/file built-ins')
+    ok(/^FEATURE_TESTS = test\/feature\/secrets\/t_secrets\.ml$/m.test(mk!),
+      'ocaml: feature.mk does not list the gated suite')
     ok(/plugin groups: vault\)/.test(mk!) &&
-      /^SECRETS_LINK = -custom -cclib -lssl -cclib -lcrypto$/m.test(mk!) &&
-      /^SECRETS_OBJ = feature\/secrets\/plugins\/tls_stubs\.o$/m.test(mk!) &&
+      /^FEATURE_LINK = -custom -cclib -lssl -cclib -lcrypto$/m.test(mk!) &&
+      /^FEATURE_OBJ = feature\/secrets\/plugins\/tls_stubs\.o$/m.test(mk!) &&
       /tail -n \+4 \$< \| \$\(CC\)/.test(mk!),
-      'ocaml: secrets.mk does not name the group, link OpenSSL with -custom and ' +
+      'ocaml: feature.mk does not name the group, link OpenSSL with -custom and ' +
       'skip the provenance header on the stub:\n' + mk)
     const makefile = findFile(out, 'ocaml/Makefile')
-    ok(/^-include feature\/secrets\/secrets\.mk$/m.test(makefile!),
-      'ocaml: the Makefile does not include the fragment')
-    ok(/\$\(SECRETS_LIB\) \$\(SDK_TEST\) \$\(SECRETS_OBJ\) \$\(SECRETS_LINK\)/.test(makefile!),
+    ok(/^-include \$\(wildcard feature\/\*\/feature\.mk\)$/m.test(makefile!),
+      'ocaml: the Makefile does not include the feature fragments')
+    ok(!/secrets/i.test(makefile!),
+      'ocaml: the template Makefile must stay feature-agnostic (it names secrets)')
+    ok(/\$\(FEATURE_LIB\) \$\(SDK_TEST\) \$\(FEATURE_OBJ\) \$\(FEATURE_LINK\)/.test(makefile!),
       'ocaml: run_sdk_test does not link the secrets tier')
     ok(/depexts: \[\n  \["libssl-dev"\]/.test(findFile(out, '.opam')!),
       'ocaml: a transport-needing group must declare the OpenSSL depext in the opam file')
@@ -2992,11 +2994,11 @@ main: kit: target: js: phase: feature: active: false
     const spec = await genml(
       'main: kit: feature: secrets: { active: true plugin: secretspec: active: true }',
       ['test', 'log', 'secrets'])
-    const specmk = findFile(spec, 'ocaml/feature/secrets/secrets.mk')
+    const specmk = findFile(spec, 'ocaml/feature/secrets/feature.mk')
     ok(null != specmk &&
       /^SECRETS_HELPERS = feature\/secrets\/plugins\/runcmd\.ml$/m.test(specmk) &&
       /^SECRETS_KINDS = feature\/secrets\/plugins\/secretspec\.ml$/m.test(specmk) &&
-      /^SECRETS_LINK =$/m.test(specmk) && /^SECRETS_OBJ =$/m.test(specmk) &&
+      /^FEATURE_LINK =$/m.test(specmk) && /^FEATURE_OBJ =$/m.test(specmk) &&
       !/-custom|tls_stubs/.test(specmk),
       'ocaml: a secretspec-only model must compile runcmd.ml and no TLS:\n' + specmk)
     const specconfig = findFile(spec, 'ocaml/sdk_config.ml')
@@ -3011,9 +3013,9 @@ main: kit: target: js: phase: feature: active: false
     // cores and the feature, nothing else, an EMPTY typed definitions list.
     const bare = await genml('main: kit: feature: secrets: { active: true }',
       ['test', 'log', 'secrets'])
-    const baremk = findFile(bare, 'ocaml/feature/secrets/secrets.mk')
+    const baremk = findFile(bare, 'ocaml/feature/secrets/feature.mk')
     ok(null != baremk && /^SECRETS_HELPERS =$/m.test(baremk) && /^SECRETS_KINDS =$/m.test(baremk) &&
-      /^SECRETS_LINK =$/m.test(baremk) && /the built-in kinds alone/.test(baremk),
+      /^FEATURE_LINK =$/m.test(baremk) && /the built-in kinds alone/.test(baremk),
       'ocaml: a built-ins-only model must compile no helper and no kind:\n' + baremk)
     ok(/let feature_plugins \(name : string\) : Defs\.definition list =\n  match name with\n  \| "secrets" -> \[\]/
       .test(findFile(bare, 'ocaml/sdk_config.ml')!),
@@ -3025,7 +3027,7 @@ main: kit: target: js: phase: feature: active: false
     const off = await genml(
       'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
       ['test', 'log', 'secrets'])
-    ok(null == findFile(off, 'ocaml/feature/secrets/secrets.mk'),
+    ok(null == findFile(off, 'ocaml/feature/secrets/feature.mk'),
       'ocaml: an inactive feature still generated its build fragment')
     ok(null == findFile(off, 'ocaml/feature/secrets_feature.ml') &&
       null == findFile(off, 'feature/secrets/sekreto/sekreto.ml') &&
@@ -3041,7 +3043,7 @@ main: kit: target: js: phase: feature: active: false
     // And a model that never mentions the feature: the same empty accessor
     // and no container at all.
     const plain = await generate(['ocaml'])
-    ok(null == findFile(plain, 'ocaml/feature/secrets/secrets.mk') &&
+    ok(null == findFile(plain, 'ocaml/feature/secrets/feature.mk') &&
       null == findFile(plain, 'ocaml/feature/secrets_feature.ml'),
       'ocaml: a model without secrets still generated the feature')
     ok(/^let feature_plugins \(_name : string\) = \[\]$/m.test(findFile(plain, 'ocaml/sdk_config.ml')!),

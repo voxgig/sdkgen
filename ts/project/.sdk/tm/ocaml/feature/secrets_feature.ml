@@ -7,7 +7,7 @@
  * sdk_features.ml: this file, the vendored trees under feature/secrets/
  * (sekreto/, plugin/, plugins/) and the shipped suite under
  * test/feature/secrets/ are what `target add` trims for a project that never
- * selected `secrets`, and what the generated feature/secrets/secrets.mk
+ * selected `secrets`, and what the generated feature/secrets/feature.mk
  * compiles, in dependency order, when it did.
  *
  * The SDK's `apikey` option keeps exactly its old meaning: an explicit

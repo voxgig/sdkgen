@@ -20,7 +20,7 @@ main: kit: target: ocaml: {
   # plugins/tls.ml, whose externals are bound in plugins/tls_stubs.c
   # against OpenSSL (-lssl -lcrypto, and `ocamlc -custom` to carry the
   # stub). That dependency is scoped INSIDE the gated feature: the
-  # generated feature/secrets/secrets.mk (Main_ocaml) compiles the stub
+  # generated feature/secrets/feature.mk (Main_ocaml) compiles the stub
   # and links OpenSSL ONLY when a plugin group that needs a transport is
   # active, so an SDK without secrets, or with the built-in chain alone,
   # or with `secretspec` alone, runs no C compiler and links no OpenSSL.
@@ -50,7 +50,7 @@ main: kit: target: ocaml: {
   # needing a transport is active: the vendored HTTPS kinds bind OpenSSL
   # through plugins/tls_stubs.c, and the feature's token-exchange transport
   # of last resort rides the same vendored HTTP client. The generated
-  # feature/secrets/secrets.mk turns both on from the trimmed tree, so an
+  # feature/secrets/feature.mk turns both on from the trimmed tree, so an
   # SDK with secrets inactive, or with no plugin group, links the OCaml
   # distribution alone (unix.cma for the dotenv/file built-ins).
   deps: {}

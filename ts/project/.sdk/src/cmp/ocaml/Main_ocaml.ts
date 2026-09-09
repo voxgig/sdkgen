@@ -98,7 +98,7 @@ const Main = cmp(async function Main(props: any) {
     }
   })
 
-  // THE BUILD SEAM: feature/secrets/secrets.mk, GENERATED only when the
+  // THE BUILD SEAM: feature/secrets/feature.mk, GENERATED only when the
   // model activates `secrets` for this target. It is what only the model
   // knows and only a Makefile can say in OCaml - the module list in
   // DEPENDENCY ORDER (ocamlc compiles a module before anything that uses
@@ -107,8 +107,9 @@ const Main = cmp(async function Main(props: any) {
   // and file built-ins, the gated suite, and, ONLY when an active plugin
   // group declares `needs.fetch`, the OpenSSL binding: plugins/tls_stubs.c
   // compiled and linked with `-custom -cclib -lssl -cclib -lcrypto`. The
-  // template Makefile `-include`s the fragment and every variable it sets
-  // is empty without it, so an SDK without secrets - or with the built-in
+  // template Makefile includes `$(wildcard feature/*/feature.mk)` - it names
+  // no feature itself - and every variable a fragment sets is empty without
+  // one, so an SDK without secrets - or with the built-in
   // chain alone, or with `secretspec` alone - runs no C compiler and links
   // no OpenSSL. The shape lua's native.mk and c's kinds.c take.
   //
@@ -121,7 +122,7 @@ const Main = cmp(async function Main(props: any) {
   if (null != build) {
     Folder({ name: 'feature' }, () => {
       Folder({ name: 'secrets' }, () => {
-        File({ name: 'secrets.mk' }, () => {
+        File({ name: 'feature.mk' }, () => {
           Content(`# ${model.const.Name} SDK: the secrets feature build.
 #
 # GENERATED because the model activates \`secrets\` for this target
@@ -133,9 +134,9 @@ const Main = cmp(async function Main(props: any) {
 # MODULE ORDER IS THE DEPENDENCY ORDER: the voxgig/plugin host, the sekreto
 # core, the shared helpers the selected kinds open, the kinds, the feature.
 
-SECRETS_INC = -I +unix -I feature -I feature/secrets/plugin \\
+FEATURE_INC = -I +unix -I feature -I feature/secrets/plugin \\
   -I feature/secrets/sekreto -I feature/secrets/plugins
-SECRETS_LIB = unix.cma
+FEATURE_LIB = unix.cma
 
 SECRETS_PLUGIN = ${build.plugin.join(' \\\n  ')}
 
@@ -145,10 +146,10 @@ SECRETS_HELPERS =${0 === build.helpers.length ? '' : ' ' + build.helpers.join(' 
 
 SECRETS_KINDS =${0 === build.kinds.length ? '' : ' ' + build.kinds.join(' \\\n  ')}
 
-SECRETS_SRC = $(SECRETS_PLUGIN) $(SECRETS_CORE) $(SECRETS_HELPERS) $(SECRETS_KINDS) \\
+FEATURE_SRC = $(SECRETS_PLUGIN) $(SECRETS_CORE) $(SECRETS_HELPERS) $(SECRETS_KINDS) \\
   feature/secrets_feature.ml
 
-SECRETS_TESTS = test/feature/secrets/t_secrets.ml
+FEATURE_TESTS = test/feature/secrets/t_secrets.ml
 `)
 
           if (build.tls) {
@@ -159,8 +160,8 @@ SECRETS_TESTS = test/feature/secrets/t_secrets.ml
 # bytecode executables are linked \`-custom\` with libssl and libcrypto.
 # The stub is fed from line four (past the provenance header, see above).
 OCAMLLIB = $(shell $(OCAMLC) -where)
-SECRETS_OBJ = feature/secrets/plugins/tls_stubs.o
-SECRETS_LINK = -custom -cclib -lssl -cclib -lcrypto
+FEATURE_OBJ = feature/secrets/plugins/tls_stubs.o
+FEATURE_LINK = -custom -cclib -lssl -cclib -lcrypto
 
 feature/secrets/plugins/tls_stubs.o: feature/secrets/plugins/tls_stubs.c
 	@command -v $(CC) >/dev/null 2>&1 || { echo "secrets: a C compiler ($(CC)) is needed to build the OpenSSL binding that this SDK's secrets plugin kinds (${build.tlsGroups.join(', ')}) run - install one, or use only the built-in provider kinds" >&2; exit 1; }
@@ -171,8 +172,8 @@ feature/secrets/plugins/tls_stubs.o: feature/secrets/plugins/tls_stubs.c
             Content(`
 # No active plugin group needs a transport, so the OpenSSL binding is not
 # compiled and nothing is linked beyond the OCaml distribution.
-SECRETS_OBJ =
-SECRETS_LINK =
+FEATURE_OBJ =
+FEATURE_LINK =
 `)
           }
         })

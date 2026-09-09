@@ -1754,7 +1754,7 @@ func TestTypesProbe(t *testing.T) {
   // ocaml SECRETS, END TO END - the only lane that BUILDS and RUNS the ocaml
   // secrets feature with the feature active, and the one place the build
   // model is proved rather than read. generate.test.ts pins what is EMITTED
-  // (secrets.mk and its module order, the trim, the accessor); only ocamlc
+  // (feature.mk and its module order, the trim, the accessor); only ocamlc
   // can say whether the vendored ocaml ports of sekreto and voxgig/plugin,
   // the feature and the generated config agree on a type, and only a link
   // whether the fragment's gating - the OpenSSL stub compiled past its
@@ -1793,8 +1793,8 @@ func TestTypesProbe(t *testing.T) {
 
     // Generated BEFORE the header probe, so a machine without the headers
     // still proves the fragment and the suite are emitted.
-    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'secrets.mk')),
-      'ocaml: the build fragment feature/secrets/secrets.mk was not generated')
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'feature.mk')),
+      'ocaml: the build fragment feature/secrets/feature.mk was not generated')
     ok(Fs.existsSync(Path.join(sdkroot, 'test', 'feature', 'secrets', 't_secrets.ml')),
       'ocaml: the gated secrets suite was not generated')
     ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'plugins', 'tls_stubs.c')),
@@ -1830,7 +1830,7 @@ func TestTypesProbe(t *testing.T) {
     const ran = /^feature\.secrets: ran (\d+) check\(s\)$/m.exec(out)
     ok(null != ran,
       'ocaml: the suite printed no `feature.secrets: ran N check(s)` line - ' +
-      'secrets.mk is not linking test/feature/secrets/t_secrets.ml into ' +
+      'feature.mk is not linking test/feature/secrets/t_secrets.ml into ' +
       'run_sdk_test, so the shipped suite never ran:\n' + tail(out))
     ok(10 < Number((ran as RegExpExecArray)[1]),
       'ocaml: the secrets suite ran only ' + (ran as RegExpExecArray)[1] +

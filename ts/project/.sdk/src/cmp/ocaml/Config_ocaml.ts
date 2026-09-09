@@ -27,7 +27,7 @@ import {
 
 
 // THE SECRETS BUILD MODEL, derived from the model ONCE and read by both the
-// Makefile fragment (Main_ocaml emits feature/secrets/secrets.mk from it)
+// Makefile fragment (Main_ocaml emits feature/secrets/feature.mk from it)
 // and the generated config (the definitions list and the bundled transport
 // below), so the two cannot disagree about which kinds are compiled.
 //
@@ -231,7 +231,7 @@ let feature_plugins (name : string) : Defs.definition list =
 
       // THE EXCHANGE TRANSPORT OF LAST RESORT (go's rawExchangeFetch): the
       // vendored sekreto HTTP client, which the active plugin groups
-      // compile and link anyway (secrets.mk adds the OpenSSL binding on
+      // compile and link anyway (feature/secrets/feature.mk adds the OpenSSL binding on
       // exactly this condition). It exists so an exchange works with
       // ordinary SDK options - requiring a custom transport for the COMMON
       // case would refuse every live token purchase before a request was
@@ -294,7 +294,7 @@ let make_feature (name : string) : feature =
     // definitions the model selected and, when a plugin group needing a
     // transport is active, the bundled exchange transport. Emitted only
     // when the feature is active: the module is not compiled otherwise
-    // (Main_ocaml's container gate, and the Makefile's secrets.mk).
+    // (Main_ocaml's container gate, and the Makefile's feature/secrets/feature.mk).
     if (null != secrets) {
       Content(`  | "secrets" -> Secrets_feature.make ~plugins:(feature_plugins "secrets")${secrets.tls ? ' ~transport:secrets_transport' : ''} ()
 `)

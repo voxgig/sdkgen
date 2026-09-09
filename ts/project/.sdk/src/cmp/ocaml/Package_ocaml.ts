@@ -19,7 +19,7 @@ import { secretsBuild } from './Config_ocaml'
 //
 // The secrets feature's build model is NOT emitted from here, unlike
 // Package_rust's rustls dependency table: the Makefile reads the generated
-// feature/secrets/secrets.mk (Main_ocaml), which lists the vendored modules
+// feature/secrets/feature.mk (Main_ocaml), which lists the vendored modules
 // in dependency order and turns the OpenSSL binding on only when a plugin
 // group needing a transport is active. What this manifest CAN state is the
 // system dependency that binding introduces - `depexts`, opam's word for a
@@ -35,7 +35,7 @@ const Package = cmp(async function Package(props: any) {
     ? `# The secrets feature's plugin groups (${secrets.tlsGroups.join(', ')}) bind
 # OpenSSL through the vendored plugins/tls_stubs.c (-lssl -lcrypto), the
 # one external dependency an ocaml SDK can have. Linked only because those
-# groups are active - see feature/secrets/secrets.mk.
+# groups are active - see feature/secrets/feature.mk.
 depexts: [
   ["libssl-dev"] {os-family = "debian"}
   ["openssl-devel"] {os-family = "rhel"}
