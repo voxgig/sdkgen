@@ -160,6 +160,9 @@ const VENDOR_DIRS = [
   'tm/zig/feature/secrets/plugin',
   'tm/zig/feature/secrets/plugins',
   'tm/zig/feature/secrets/sekreto',
+  'tm/ocaml/feature/secrets/plugin',
+  'tm/ocaml/feature/secrets/plugins',
+  'tm/ocaml/feature/secrets/sekreto',
 ]
 
 
@@ -436,6 +439,8 @@ describe('vendored', () => {
       'tm/lua/feature/secrets/sekreto/plugins.lua',
       // zig: exports every kind at once.
       'tm/zig/feature/secrets/plugins/all.zig',
+      // ocaml: references every plugin including the TLS ones.
+      'tm/ocaml/feature/secrets/plugins/allplugins.ml',
     ]
 
     for (const rel of BARRELS) {

@@ -1845,6 +1845,31 @@ const SECRETS: Record<string, {
     ],
     tests: 'zig/test/feature/secrets',
   },
+  ocaml: {
+    // ocaml's feature container is the top-level feature/ dir; sekreto/ and
+    // plugins/ are siblings, and plugins/ carries tls_stubs.c, the vendored
+    // C binding compiled by the generated secrets.mk only when a TLS group is
+    // active. plugins/allplugins.ml is the full-set barrel and is
+    // deliberately absent (pinned by vendored.test.ts).
+    feature: 'ocaml/feature/secrets_feature.ml',
+    vendor: 'ocaml/feature/secrets',
+    vendorfiles: [
+      'sekreto/json.ml', 'sekreto/provider.ml', 'sekreto/secret.ml',
+      'sekreto/sekreto.ml', 'plugins/aws.ml', 'plugins/azuresecrets.ml',
+      'plugins/boru.ml', 'plugins/crypto.ml', 'plugins/doppler.ml',
+      'plugins/gcpsecrets.ml', 'plugins/hashicorp.ml', 'plugins/http.ml',
+      'plugins/httpjson.ml', 'plugins/infisical.ml',
+      'plugins/onepassword.ml', 'plugins/runcmd.ml', 'plugins/secretspec.ml',
+      'plugins/sigv4.ml', 'plugins/tls.ml', 'plugins/tls_stubs.c',
+    ],
+    plugindir: 'ocaml/feature/secrets/plugin',
+    pluginfiles: [
+      'capability.ml', 'catalog.ml', 'config.ml', 'defs.ml', 'depend.ml',
+      'env.ml', 'export.ml', 'graph.ml', 'host.ml', 'order.ml', 'point.ml',
+      'ref.ml', 'resolve.ml', 'types.ml', 'value.ml', 'version.ml',
+    ],
+    tests: 'ocaml/test/feature/secrets',
+  },
 }
 
 

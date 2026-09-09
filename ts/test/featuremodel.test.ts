@@ -282,8 +282,8 @@ describe('feature-language-parity', () => {
     // pack (@voxgig/sdkgen-langpack); the gate lists what THIS repo ships.
     secrets: [
       'c', 'clojure', 'csharp', 'elixir', 'go', 'java', 'js', 'kotlin',
-      'lua', 'perl', 'php', 'py', 'rb', 'rust', 'scala', 'swift', 'ts',
-      'zig',
+      'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala', 'swift',
+      'ts', 'zig',
     ],
   }
 
