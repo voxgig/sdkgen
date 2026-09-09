@@ -488,6 +488,89 @@ func TestSecretsChain(t *testing.T) {
 	})
 }
 
+// A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this
+// feature used to override from the layer above.
+//
+// DEFAULT caching here, which is the whole point: `cache: true` is about
+// holding a HIT, and holding the settled resolution after a miss meant the
+// chain was never asked again for the life of the client. A secret
+// provisioned after startup (a mounted file, a vault policy granted a
+// minute late) was invisible forever, and the only workaround was giving up
+// hit caching entirely.
+func TestSecretsCachedMissIsReasked(t *testing.T) {
+	var mu sync.Mutex
+	calls := 0
+
+	w := makewire()
+	client := secretsClient(w, map[string]any{
+		"feature": map[string]any{"secrets": map[string]any{
+			"active": true,
+			"providers": []any{
+				&customProvider{
+					lookup: func(name string) (string, bool, error) {
+						mu.Lock()
+						defer mu.Unlock()
+						calls++
+						// Absent on the first ask, present on the second.
+						if 1 < calls {
+							return "LATEKEY01", true, nil
+						}
+						return "", false, nil
+					},
+				},
+			},
+		}},
+	})
+
+	driveEntityOp(t, client, w)
+	if first := w.api()[0]; first.has && "" != first.auth {
+		t.Fatalf("the first resolve missed, so no credential should go out; got %q", first.auth)
+	}
+
+	driveEntityOp(t, client, w)
+	credentialIs(t, w.api()[len(w.api())-1].auth, "LATEKEY01")
+
+	mu.Lock()
+	defer mu.Unlock()
+	if 1 >= calls {
+		t.Fatal("the chain was asked once and the MISS cached: a secret " +
+			"that appears later can never be picked up")
+	}
+}
+
+// The other half of the same rule: a HIT is still cached by default, so the
+// fix above must not turn every request into a chain walk.
+func TestSecretsCachedHitIsKept(t *testing.T) {
+	var mu sync.Mutex
+	calls := 0
+
+	w := makewire()
+	client := secretsClient(w, map[string]any{
+		"feature": map[string]any{"secrets": map[string]any{
+			"active": true,
+			"providers": []any{
+				&customProvider{
+					lookup: func(name string) (string, bool, error) {
+						mu.Lock()
+						defer mu.Unlock()
+						calls++
+						return "STABLEKEY01", true, nil
+					},
+				},
+			},
+		}},
+	})
+
+	driveEntityOp(t, client, w)
+	driveEntityOp(t, client, w)
+
+	mu.Lock()
+	defer mu.Unlock()
+	if 1 != calls {
+		t.Fatalf("a hit must be cached under the default cache: true, chain asked %d times", calls)
+	}
+}
+
 // customProvider is a sekreto.Provider built in code (the interface is
 // structural: Lookup + Describe).
 type customProvider struct {
@@ -536,6 +619,39 @@ func TestSecretsExchange(t *testing.T) {
 		credentialIs(t, api[0].auth, "ACCESS01")
 		// The retry must carry the NEW token, not the spent one.
 		credentialIs(t, api[1].auth, "ACCESS02")
+	})
+
+	// `auth: nil` SUPPRESSES THE PURCHASE, not just the retry.
+	//
+	// resolve() runs before withrefresh's suppression check, so the refresh
+	// token used to go to the token endpoint in a request body even here.
+	// Stopping the retry does not unsend it - this asserts on the token
+	// endpoint, which is the half the API-call assertions cannot see.
+	t.Run("auth nil buys no token at all", func(t *testing.T) {
+		os.Setenv(envprefix+"REFRESH_TOKEN", "REFRESH01")
+		defer os.Unsetenv(envprefix + "REFRESH_TOKEN")
+
+		w := makewire()
+		w.apistatus = []int{401}
+
+		client := secretsClient(w, map[string]any{
+			"auth": nil,
+			"feature": secretsOpts(map[string]any{
+				"name":     "refresh_token",
+				"exchange": map[string]any{"active": true},
+			}),
+		})
+
+		driveEntityOp(t, client, w)
+
+		if 0 != len(w.token()) {
+			t.Fatalf("auth nil suppressed the credential but the refresh "+
+				"token was still POSTed to the exchange endpoint (%d calls)",
+				len(w.token()))
+		}
+		if call := w.api()[0]; call.has {
+			t.Fatalf("no credential may be sent when auth is suppressed, got %q", call.auth)
+		}
 	})
 
 	t.Run("test mode buys nothing and needs no token endpoint", func(t *testing.T) {

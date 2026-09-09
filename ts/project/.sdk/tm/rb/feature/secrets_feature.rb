@@ -222,10 +222,18 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     _with_refresh(ctx, url, fetchdef, inner)
   end
 
-  # One resolution, shared by every concurrent caller. A settled SUCCESS is
+  # One resolution, shared by every concurrent caller. A settled HIT is
   # kept only when caching is on (`cache: false` means every request asks
   # the chain again); a FAILURE is never cached, so a transient vault
   # outage does not poison the client after the vault recovers.
+  #
+  # A MISS is not kept either, however caching is set. That rule is
+  # sekreto's, not this feature's: `A miss is never cached: the next read
+  # asks again`, in sekreto's own source. Keeping a settled miss here would
+  # override that from the layer above, and a secret provisioned after
+  # startup - a mounted file, a policy granted a minute late - would never
+  # be picked up for the life of the client. `cache` is about caching a
+  # HIT; it was never a promise to keep saying no.
   #
   # Answers the error rather than raising it: the caller is the transport
   # gate, whose contract is a [value, err] pair.
@@ -236,20 +244,23 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
       return nil if @resolved
 
       begin
-        _resolve_once
+        hit = _resolve_once
       rescue StandardError => e
         return e
       end
 
-      @resolved = true if @cache
+      @resolved = true if @cache && hit
       nil
     end
   end
 
   private
 
+  # Resolve once, answering whether a credential came out of it. That
+  # boolean is the whole of what resolve needs to tell a cacheable HIT from
+  # a miss it must not keep.
   def _resolve_once
-    return if @sekreto.nil?
+    return false if @sekreto.nil?
 
     # Miss-vs-error: `try` answers nil for "no store has it" and RAISES for
     # "a store could not answer" - only the miss falls through.
@@ -264,7 +275,7 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
       # the chain HITS while one is set and the miss branch is
       # unreachable.)
       _setcred(found)
-      return
+      return !found.nil?
     end
 
     # Exchanging: what the chain resolved is the REFRESH token, kept for
@@ -283,9 +294,20 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     # A starting access token was supplied. Spend it: if it is stale the
     # API answers with an expiry status and the wrapper buys another, which
     # is the same path expiry takes anyway.
-    return unless apikey.nil? || apikey.empty?
+    return true unless apikey.nil? || apikey.empty?
+
+    # `auth: nil` is the documented way to send NO credential, and a
+    # purchase is a credential-bearing call: the refresh token goes to the
+    # token endpoint in the request body. _with_refresh honours suppression
+    # for the RETRY, but it runs after this - by then the refresh token has
+    # already left the process, and no later check can call it back. The
+    # suppression has to be honoured here, before the first purchase, or it
+    # only ever half-held.
+    return false if @liveopts["auth"].nil?
 
     _buy
+
+    true
   end
 
   # Buy a token and try the request again when the API says the current one

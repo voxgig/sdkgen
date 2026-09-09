@@ -321,11 +321,19 @@ public class SecretsFeature : BaseFeature
     // ---------------------------------------------------------------
     // Resolution.
 
-    // One resolution, shared by every concurrent caller. A settled SUCCESS
-    // is kept only when caching is on (`cache: false` means every resolve
+    // One resolution, shared by every concurrent caller. A settled HIT is
+    // kept only when caching is on (`cache: false` means every resolve
     // asks the chain again); a FAILURE is always cleared, so a transient
     // vault outage never poisons the client permanently - the next
     // operation asks the chain again.
+    //
+    // A MISS is cleared too, however caching is set. That rule is
+    // sekreto's, not this feature's: `A miss is never cached: the next read
+    // asks again`, in sekreto's own source. Keeping a settled miss here
+    // would override that from the layer above, and a secret provisioned
+    // after startup - a mounted file, a policy granted a minute late -
+    // would never be picked up for the life of the client. `cache` is about
+    // caching a HIT; it was never a promise to keep saying no.
     private void Resolve()
     {
         if (null != _initerr)
@@ -361,9 +369,10 @@ public class SecretsFeature : BaseFeature
         }
 
         Exception? err = null;
+        var hit = false;
         try
         {
-            ResolveOnce();
+            hit = ResolveOnce();
         }
         catch (Exception ex)
         {
@@ -373,7 +382,7 @@ public class SecretsFeature : BaseFeature
         lock (_mu)
         {
             call.Err = err;
-            if (null != err || !_cache)
+            if (null != err || !_cache || !hit)
             {
                 _resolving = null;
             }
@@ -386,11 +395,14 @@ public class SecretsFeature : BaseFeature
         }
     }
 
-    private void ResolveOnce()
+    // Resolve once, reporting whether a credential came out of it. That
+    // bool is the whole of what Resolve() needs to tell a cacheable HIT
+    // from a miss it must not keep.
+    private bool ResolveOnce()
     {
         if (null == _sek)
         {
-            return;
+            return false;
         }
 
         // TryGet returns null on a MISS and THROWS on a provider error -
@@ -410,7 +422,7 @@ public class SecretsFeature : BaseFeature
                 // HITS while one is set and this branch is unreachable.)
                 _cred = found ?? "";
             }
-            return;
+            return null != found;
         }
 
         // Exchanging: what the chain resolved is the REFRESH token, kept
@@ -441,10 +453,24 @@ public class SecretsFeature : BaseFeature
             // stale the API answers with an expiry status and the transport
             // wrapper buys another, which is the same path expiry takes
             // anyway.
-            return;
+            return true;
+        }
+
+        // `auth: null` is the documented way to send NO credential, and a
+        // purchase is a credential-bearing call: the refresh token goes to
+        // the token endpoint in the request body. WithRefresh honours
+        // suppression for the RETRY, but it runs after this - by then the
+        // refresh token has already left the process, and no later check
+        // can call it back. The suppression has to be honoured here, before
+        // the first purchase, or it only ever half-held.
+        if (AuthSuppressed())
+        {
+            return false;
         }
 
         Buy();
+
+        return true;
     }
 
     // ---------------------------------------------------------------

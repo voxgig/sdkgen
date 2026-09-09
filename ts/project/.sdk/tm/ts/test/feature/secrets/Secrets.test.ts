@@ -260,6 +260,71 @@ describe('secrets', () => {
   })
 
 
+  // A MISS IS NOT A CACHEABLE ANSWER — sekreto's own rule, which this
+  // feature used to override from the layer above.
+  //
+  // Default caching here, deliberately: `cache: true` is about holding a
+  // HIT, and holding the settled promise after a miss meant the chain was
+  // never asked again for the life of the client. A secret provisioned
+  // after startup (a mounted file, a vault policy granted a minute late)
+  // was invisible forever, and the only workaround was giving up hit
+  // caching entirely.
+  test('active: a MISS is re-asked, so a late secret is picked up',
+    async () => {
+      let calls = 0
+      const sdk = (SDK as any).test({}, {
+        feature: {
+          secrets: {
+            active: true,
+            providers: [{
+              lookup(_name: string): string | undefined {
+                calls++
+                // Absent on the first ask, present on the second.
+                return 1 < calls ? 'LATEKEY' : undefined
+              },
+              describe() { return 'late:test' },
+            }],
+          },
+        },
+      })
+
+      const first = await sdk.prepare({ path: '/' })
+      assert.equal(first.headers['authorization'], undefined,
+        'the first resolve missed, so no credential should go out')
+
+      const second = await sdk.prepare({ path: '/' })
+      credentialIs(second.headers['authorization'], 'LATEKEY')
+
+      assert.ok(1 < calls,
+        'the chain was asked once and the MISS cached: a secret that ' +
+        'appears later can never be picked up')
+    })
+
+
+  // The other half of the same rule: a HIT is still cached by default, so
+  // the fix above must not turn every request into a chain walk.
+  test('active: a HIT is still cached by default', async () => {
+    let calls = 0
+    const sdk = (SDK as any).test({}, {
+      feature: {
+        secrets: {
+          active: true,
+          providers: [{
+            lookup(_name: string): string { calls++; return 'KEY' + calls },
+            describe() { return 'counting:test' },
+          }],
+        },
+      },
+    })
+
+    await sdk.prepare({ path: '/' })
+    await sdk.prepare({ path: '/' })
+
+    assert.equal(calls, 1,
+      'a hit must be cached under the default cache: true')
+  })
+
+
   test('active: secret name is configurable', async () => {
     process.env[ENVPREFIX + 'API_TOKEN'] = 'TOKKEY01'
     try {
@@ -679,6 +744,14 @@ describe('secrets exchange', () => {
     assert.equal(stub.api().length, 1, 'a suppressed request must not be retried')
     assert.equal(stub.api()[0].auth, undefined,
       'no credential may be sent when auth is suppressed')
+
+    // AND NO PURCHASE. This is the half the API-call assertions cannot see:
+    // resolve() runs before _withRefresh's suppression check, so the
+    // refresh token used to go to the token endpoint in a request body
+    // even here. Stopping the retry does not unsend it.
+    assert.equal(stub.token().length, 0,
+      'auth: null suppressed the credential but the refresh token was ' +
+      'still POSTed to the exchange endpoint')
   })
 
 

@@ -760,6 +760,62 @@ public class SecretsFeatureTest {
         + " the wire saw \"" + last.auth + "\"");
   }
 
+  // A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this
+  // feature used to override from the layer above.
+  //
+  // DEFAULT caching here, which is the whole point: `cache: true` is about
+  // holding a HIT, and keeping the settled resolution after a miss meant
+  // the chain was never asked again for the life of the client. A secret
+  // provisioned after startup (a mounted file, a vault policy granted a
+  // minute late) was invisible forever, and the only workaround was giving
+  // up hit caching entirely.
+  @Test
+  public void active_aCachedMissIsReasked() {
+    final boolean[] present = {false};
+    final int[] calls = {0};
+    Wire wire = new Wire();
+    ProjectNameSDK client = liveClient(wire, secretsOpts(
+        List.of(new TestProvider((name) -> {
+          calls[0]++;
+          return present[0] ? "LATEKEY01" : null;
+        }))));
+
+    client.direct(map("path", "/one"));
+    Call first = wire.api().get(0);
+    assertFalse(first.has && !"".equals(first.auth),
+        "the chain has nothing yet, so no credential should go out");
+
+    int asked = calls[0];
+    assertTrue(0 < asked);
+
+    // The secret is provisioned while the client is live.
+    present[0] = true;
+    client.direct(map("path", "/two"));
+
+    credentialIs(wire.api().get(wire.api().size() - 1).auth, "LATEKEY01");
+    assertTrue(asked < calls[0],
+        "the MISS was cached: a secret that appears later can never be picked up");
+  }
+
+  // The other half of the same rule: a HIT is still cached by default, so
+  // the fix above must not turn every request into a chain walk.
+  @Test
+  public void active_aCachedHitIsKept() {
+    final int[] calls = {0};
+    Wire wire = new Wire();
+    ProjectNameSDK client = liveClient(wire, secretsOpts(
+        List.of(new TestProvider((name) -> {
+          calls[0]++;
+          return "STABLEKEY01";
+        }))));
+
+    client.direct(map("path", "/one"));
+    client.direct(map("path", "/two"));
+
+    assertEquals(1, calls[0],
+        "a hit must be cached under the default cache: true");
+  }
+
   // `auth: null` - the documented way to disable auth outright, which
   // prepareAuth honours before it ever reads the apikey.
   //
@@ -966,6 +1022,14 @@ public class SecretsFeatureTest {
     assertFalse(wire.api().get(0).has,
         "no credential may be sent when auth is suppressed, got \""
         + wire.api().get(0).auth + "\"");
+
+    // AND NO PURCHASE. resolve() runs before withrefresh's suppression
+    // check, so the refresh token used to go to the token endpoint in a
+    // request body even here. Stopping the retry does not unsend it, and
+    // only the token endpoint can see this.
+    assertEquals(0, wire.token().size(),
+        "auth null suppressed the credential but the refresh token was still"
+        + " POSTed to the exchange endpoint");
   }
 
   @Test

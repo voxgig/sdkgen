@@ -361,10 +361,18 @@ defmodule ProjectName.Feature.Secrets do
 
   # ---- resolution ----------------------------------------------------------
 
-  # One resolution. A settled SUCCESS is kept only when caching is on
+  # One resolution. A settled HIT is kept only when caching is on
   # (`cache: false` means every resolve asks the chain again); a FAILURE is
   # never kept, so a transient vault outage cannot poison the client
   # permanently - the next operation asks the chain again.
+  #
+  # A MISS is not kept either, however caching is set. That rule is
+  # sekreto's, not this feature's: `A miss is never cached: the next read
+  # asks again`, in sekreto's own source. Keeping a settled miss here would
+  # override that from the layer above, and a secret provisioned after
+  # startup - a mounted file, a policy granted a minute late - would never
+  # be picked up for the life of the client. `cache` is about caching a
+  # HIT; it was never a promise to keep saying no.
   def resolve(f) do
     initerr = S.getprop(f, "_initerr")
 
@@ -433,7 +441,8 @@ defmodule ProjectName.Feature.Secrets do
       # - it seats FIRST in the chain as a memory provider, so the chain
       # HITS while one is set and the miss branch is unreachable.)
       S.setprop(f, "_cred", tostr(found))
-      keep(f)
+      # Only a HIT is kept: see resolve/1.
+      if found != nil, do: keep(f)
       :ok
     else
       # Exchanging: what the chain resolved is the REFRESH token, kept for
@@ -451,6 +460,12 @@ defmodule ProjectName.Feature.Secrets do
         keep(f)
         :ok
       else
+        # NO SUPPRESSION CHECK HERE, and that is deliberate: elixir's
+        # transport/5 already returns before resolve/1 when `auth: nil`, so
+        # a suppressed request never reaches this purchase at all. Every
+        # other target guards the purchase itself, because their transports
+        # resolve first. One rule, one place - and here that place is the
+        # transport.
         case buy(f, x) do
           {:ok, _token} ->
             keep(f)

@@ -612,6 +612,69 @@ object SecretsTestMain {
         "out; the wire saw \"" + w.authof(last) + "\"")
   }
 
+  // A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this
+  // feature used to override from the layer above.
+  //
+  // DEFAULT caching here, which is the whole point: `cache: true` is about
+  // holding a HIT, and keeping the settled resolution after a miss meant the
+  // chain was never asked again for the life of the client. A secret
+  // provisioned after startup (a mounted file, a vault policy granted a
+  // minute late) was invisible forever, and the only workaround was giving
+  // up hit caching entirely.
+  private def testCachedMissIsReasked(): Unit = {
+    var present = false
+    var calls = 0
+    val prov = new CodeProvider(_ => {
+      calls += 1
+      if (present) Some("LATEKEY01") else None
+    }, "late")
+
+    val w = new Wire()
+    val client = secretsClient(w, "feature" -> secretsOpts(jlist(prov)))
+
+    check("cachedmiss.drive", driveOneCall(client, w),
+      "no entity op reached the transport")
+    if (w.api().nonEmpty) {
+      val first = w.api().head
+      check("cachedmiss.nocred", !w.hasauth(first) || "" == w.authof(first),
+        "the chain has nothing yet, so no credential should go out")
+    }
+
+    val asked = calls
+    check("cachedmiss.asked", 0 < asked, "the chain was never asked")
+
+    // The secret is provisioned while the client is live.
+    present = true
+    check("cachedmiss.drive2", driveOneCall(client, w),
+      "the second op never reached the transport")
+
+    check("cachedmiss.reasked", asked < calls,
+      "the MISS was cached: a secret that appears later can never be picked up")
+    if (w.api().nonEmpty) {
+      credentialIs("cachedmiss.late", w.authof(w.api().last), "LATEKEY01")
+    }
+  }
+
+  // The other half of the same rule: a HIT is still cached by default, so
+  // the fix above must not turn every request into a chain walk.
+  private def testCachedHitIsKept(): Unit = {
+    var calls = 0
+    val prov = new CodeProvider(_ => {
+      calls += 1
+      Some("STABLEKEY01")
+    }, "counting")
+
+    val w = new Wire()
+    val client = secretsClient(w, "feature" -> secretsOpts(jlist(prov)))
+
+    check("cachedhit.drive", driveOneCall(client, w),
+      "no entity op reached the transport")
+    check("cachedhit.drive2", driveOneCall(client, w),
+      "the second op never reached the transport")
+
+    eqi("cachedhit.once", 1, calls)
+  }
+
   private def testSecretNameConfigurable(): Unit = {
     val w = new Wire()
     val client = secretsClient(w,
@@ -899,6 +962,12 @@ object SecretsTestMain {
         "no credential may be sent when auth is suppressed, got \"" +
           w.authof(w.api().head) + "\"")
     }
+
+    // AND NO PURCHASE. resolve() runs before withrefresh's suppression
+    // check, so the refresh token used to go to the token endpoint in a
+    // request body even here. Stopping the retry does not unsend it, and
+    // only the token endpoint can see this.
+    eqi("exchange.authnull.nobuy", 0, w.token().length)
   }
 
   // No refresh token anywhere is an ERROR, not an unauthenticated call.
@@ -945,6 +1014,8 @@ object SecretsTestMain {
       "failClosedUnbuildableChain" -> testFailClosedUnbuildableChain,
       "transientRecovery" -> testTransientRecovery,
       "uncachedMissRetracts" -> testUncachedMissRetracts,
+      "cachedMissIsReasked" -> testCachedMissIsReasked,
+      "cachedHitIsKept" -> testCachedHitIsKept,
       "secretNameConfigurable" -> testSecretNameConfigurable,
       "sekretoIsLive" -> testSekretoIsLive,
       "pluginVocabulary" -> testPluginVocabulary,

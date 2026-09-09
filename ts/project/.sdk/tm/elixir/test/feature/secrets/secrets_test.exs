@@ -631,6 +631,47 @@ defmodule ProjectName.SecretsTest do
       auth_is(Enum.at(api(r), 1), "KEY2")
     end
 
+    # A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this
+    # feature used to override from the layer above.
+    #
+    # DEFAULT caching here, which is the whole point: `cache: true` is about
+    # holding a HIT (the test below pins that half), and keeping the settled
+    # resolution after a miss meant the chain was never asked again for the
+    # life of the client. A secret provisioned after startup (a mounted
+    # file, a vault policy granted a minute late) was invisible forever.
+    test "active: a cached MISS is re-asked, so a late secret is picked up" do
+      n = :counters.new(1, [])
+      present = :counters.new(1, [])
+
+      late = %{
+        lookup: fn _ ->
+          :counters.add(n, 1, 1)
+          if :counters.get(present, 1) > 0, do: "LATEKEY01", else: nil
+        end,
+        describe: fn -> "late:test" end
+      }
+
+      r = recorder()
+      client = sdk(r, [{"feature", secrets([{"providers", providers([late])}])}])
+
+      ProjectName.direct(client, S.jm(["path", "/one"]))
+      assert Enum.at(api(r), 0).auth == nil,
+             "the chain has nothing yet, so no credential should go out"
+
+      asked = :counters.get(n, 1)
+      assert asked > 0
+
+      # The secret is provisioned while the client is live.
+      :counters.add(present, 1, 1)
+
+      ProjectName.direct(client, S.jm(["path", "/two"]))
+
+      assert :counters.get(n, 1) > asked,
+             "the MISS was cached: a secret that appears later can never be picked up"
+
+      auth_is(Enum.at(api(r), 1), "LATEKEY01")
+    end
+
     test "active: caching on asks the chain once" do
       n = :counters.new(1, [])
       counting = %{

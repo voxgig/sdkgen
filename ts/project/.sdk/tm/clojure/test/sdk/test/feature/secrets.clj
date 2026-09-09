@@ -461,6 +461,33 @@
              (credential-is (:auth (call-at stub 0)) "ROT01" "first")
              (credential-is (:auth (call-at stub 1)) "ROT02" "asked again"))))
 
+    ;; A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this
+    ;; feature used to override from the layer above. DEFAULT caching here,
+    ;; which is the whole point: `cache: true` is about holding a HIT (the
+    ;; test above pins that half), and keeping the settled resolution after
+    ;; a miss meant the chain was never asked again for the life of the
+    ;; client - a secret provisioned after startup was invisible forever.
+    (chk "secrets-cache-true-re-asks-after-a-miss"
+         (fn []
+           (let [present (atom false)
+                 n (atom 0)
+                 late (reify provider/Provider
+                        (lookup [_ _]
+                          (swap! n inc)
+                          (when @present "LATEKEY01"))
+                        (describe [_] "late:test"))
+                 stub (counting-fetch)
+                 sdk (live-sdk stub :secrets (sekopts "providers" (vs/jt late)))]
+             (client/direct sdk (vs/jm "path" "/thing"))
+             (t/is-nil (:auth (call-at stub 0))
+                       "the chain has nothing yet, so no credential should go out")
+             (let [asked @n]
+               (reset! present true)
+               (client/direct sdk (vs/jm "path" "/thing"))
+               (t/is-eq (< asked @n) true
+                        "the MISS was cached: a secret that appears later can never be picked up")
+               (credential-is (:auth (call-at stub 1)) "LATEKEY01" "late secret")))))
+
     ;; ---- auth: nil SUPPRESSES, chain or no chain ----
 
     (chk "secrets-auth-nil-suppresses-the-credential"
@@ -518,7 +545,7 @@
                (credential-is (:auth (call-at stub 1)) "ACCESS01" "attempt 1")
                (credential-is (:auth (call-at stub 3)) "ACCESS02" "the retry"))))
 
-      (chk "secrets-exchange-with-auth-nil-never-retries"
+      (chk "secrets-exchange-with-auth-nil-never-buys-or-retries"
            (fn []
              (let [stub (counting-fetch
                          (fn [_n url _fd]
@@ -527,11 +554,18 @@
                              [(response 401 (vs/jm "err" "expired")) nil])))
                    sdk (live-sdk stub :auth-nil true :secrets (xsecrets))]
                (client/direct sdk (vs/jm "path" "/thing"))
-               ;; The token was bought at resolution, and the API request
-               ;; went out ONCE: a deliberately unauthenticated request that
-               ;; is refused is not an expired token.
-               (t/is-eq (sent stub) 2 (str "token + one API call only: " (wire stub)))
-               (t/is-nil (:auth (call-at stub 1)) "no authorization header"))))
+               ;; NOTHING IS BOUGHT, and the API request goes out ONCE.
+               ;;
+               ;; This used to read "token + one API call only": the token
+               ;; WAS bought at resolution, because resolve! ran before
+               ;; with-refresh's suppression check. A purchase is a
+               ;; credential-bearing call - the refresh token travels to the
+               ;; token endpoint in the request body - so `auth: nil` was
+               ;; only ever half-held, and stopping the retry could not
+               ;; unsend it. The suppression is now honoured before the
+               ;; first purchase.
+               (t/is-eq (sent stub) 1 (str "one API call, no purchase: " (wire stub)))
+               (t/is-nil (:auth (call-at stub 0)) "no authorization header"))))
 
       (chk "secrets-exchange-with-no-refresh-token-fails-closed"
            (fn []

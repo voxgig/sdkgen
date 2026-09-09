@@ -989,6 +989,90 @@ fn cache_false_asks_the_chain_on_every_request() {
     credential_is(call_auth(&wire.api(), 1), "KEY2");
 }
 
+// A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this feature
+// used to override from the layer above.
+//
+// DEFAULT caching here, which is the whole point: `cache: true` is about
+// holding a HIT (the test below pins that half), and keeping the settled
+// resolution after a miss meant the chain was never asked again for the life
+// of the client. A secret provisioned after startup (a mounted file, a vault
+// policy granted a minute late) was invisible forever.
+#[test]
+fn cache_true_re_asks_after_a_miss() {
+    let wire = Wire::new();
+    let calls = Rc::new(RefCell::new(0i64));
+    let present = Rc::new(RefCell::new(false));
+    let n = calls.clone();
+    let p = present.clone();
+
+    let client = sdk(
+        &wire,
+        vec![providers(vec![callable(move |_name| {
+            *n.borrow_mut() += 1;
+            if *p.borrow() {
+                Value::str("LATEKEY01")
+            } else {
+                Value::Noval
+            }
+        })])],
+    );
+
+    client
+        .direct(jo(vec![("path", Value::str("/one"))]))
+        .expect("direct");
+    assert_eq!(
+        call_auth(&wire.api(), 0),
+        None,
+        "the chain has nothing yet, so no credential should go out: {}",
+        wire.trace()
+    );
+
+    let asked = *calls.borrow();
+    assert!(0 < asked, "the chain was never asked");
+
+    // The secret is provisioned while the client is live.
+    *present.borrow_mut() = true;
+
+    client
+        .direct(jo(vec![("path", Value::str("/two"))]))
+        .expect("direct");
+
+    assert!(
+        asked < *calls.borrow(),
+        "the MISS was cached: a secret that appears later can never be picked up"
+    );
+    credential_is(call_auth(&wire.api(), 1), "LATEKEY01");
+}
+
+// The other half of the same rule: a HIT is still cached by default, so the
+// fix above must not turn every request into a chain walk.
+#[test]
+fn cache_true_keeps_a_hit() {
+    let wire = Wire::new();
+    let calls = Rc::new(RefCell::new(0i64));
+    let n = calls.clone();
+
+    let client = sdk(
+        &wire,
+        vec![providers(vec![callable(move |_name| {
+            *n.borrow_mut() += 1;
+            Value::str("STABLEKEY01")
+        })])],
+    );
+
+    for _ in 0..2 {
+        client
+            .direct(jo(vec![("path", Value::str("/thing"))]))
+            .expect("direct");
+    }
+
+    assert_eq!(
+        *calls.borrow(),
+        1,
+        "a hit must be cached under the default cache: true"
+    );
+}
+
 // An UNCACHED miss after a hit is a revocation: the resolved value must
 // stop going out.
 #[test]
@@ -1401,6 +1485,18 @@ fn exchange_auth_null_suppresses_and_is_never_retried() {
         call_auth(&wire.api(), 0),
         None,
         "no credential may be sent when auth is suppressed: {}",
+        wire.trace()
+    );
+
+    // AND NO PURCHASE. resolve() runs before with_refresh's suppression
+    // check, so the refresh token used to go to the token endpoint in a
+    // request body even here. Stopping the retry does not unsend it, and
+    // only the token endpoint can see this.
+    assert_eq!(
+        wire.token().len(),
+        0,
+        "auth null suppressed the credential but the refresh token was still \
+         POSTed to the exchange endpoint: {}",
         wire.trace()
     );
 }

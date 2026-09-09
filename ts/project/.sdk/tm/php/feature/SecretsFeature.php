@@ -309,6 +309,14 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
     // is never cached, so a transient vault outage does not poison the
     // client after the vault recovers.
     //
+    // A MISS is not cached either, however caching is set. That rule is
+    // sekreto's, not this feature's: `A miss is never cached: the next read
+    // asks again`, in sekreto's own source. Caching a settled miss here
+    // would override that from the layer above, and a secret provisioned
+    // after startup - a mounted file, a policy granted a minute late -
+    // would never be picked up for the life of the client. `cache` is about
+    // caching a HIT; it was never a promise to keep saying no.
+    //
     // Answers the error rather than throwing it: the caller is the
     // transport gate, whose contract is a [value, err] pair.
     public function resolve(): ?\Throwable
@@ -321,22 +329,25 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
         }
 
         try {
-            $this->resolve_once();
+            $hit = $this->resolve_once();
         } catch (\Throwable $e) {
             return $e;
         }
 
-        if ($this->cache) {
+        if ($this->cache && $hit) {
             $this->resolved = true;
         }
 
         return null;
     }
 
-    private function resolve_once(): void
+    // Resolve once, answering whether a credential came out of it. That
+    // bool is the whole of what resolve() needs to tell a cacheable HIT
+    // from a miss it must not cache.
+    private function resolve_once(): bool
     {
         if (null === $this->sekreto) {
-            return;
+            return false;
         }
 
         // Miss-vs-error: `try` answers null for "no store has it" and
@@ -355,7 +366,7 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
             // chain as a memory provider, so the chain HITS while one is
             // set and the miss branch is unreachable.)
             $this->setcred($found);
-            return;
+            return null !== $found;
         }
 
         // Exchanging: what the chain resolved is the REFRESH token, kept
@@ -377,10 +388,23 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
             // A starting access token was supplied. Spend it: if it is
             // stale the API answers with an expiry status and the wrapper
             // buys another, which is the same path expiry takes anyway.
-            return;
+            return true;
+        }
+
+        // `auth: null` is the documented way to send NO credential, and a
+        // purchase is a credential-bearing call: the refresh token goes to
+        // the token endpoint in the request body. with_refresh honours
+        // suppression for the RETRY, but it runs after this - by then the
+        // refresh token has already left the process, and no later check
+        // can call it back. The suppression has to be honoured here, before
+        // the first purchase, or it only ever half-held.
+        if (null === ($this->liveopts['auth'] ?? null)) {
+            return false;
         }
 
         $this->buy();
+
+        return true;
     }
 
     // Buy a token and try the request again when the API says the current

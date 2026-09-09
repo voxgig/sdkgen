@@ -107,6 +107,18 @@ class TestSecrets(unittest.TestCase):
         self.assertEqual(1, len(transport.calls))
         return transport.calls[0]["fetchdef"].get("headers") or {}
 
+    def _lastwire(self, sdk, transport):
+        """Drive one operation and read the headers off the LAST call, so a
+        test can operate more than once on the same client."""
+        utility = sdk._utility
+        ctx = utility.make_context({"opname": "load"}, sdk.get_root_ctx())
+        utility.feature_hook(ctx, "PreSpec")
+
+        fetchdef = sdk.prepare({"path": "/"})
+        res, err = utility.fetcher(ctx, fetchdef["url"], fetchdef)
+        self.assertIsNone(err)
+        return transport.calls[-1]["fetchdef"].get("headers") or {}
+
     def assert_credential(self, headers, token):
         # The Authorization header carries the SPEC's credential prefix,
         # which a TEMPLATE cannot know - assert on the CREDENTIAL and let
@@ -196,6 +208,71 @@ class TestSecrets(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             utility.feature_hook(ctx, "PreSpec")
 
+    # --- a miss is not a cacheable answer ---
+
+    # sekreto's own rule, which this feature used to override from the
+    # layer above: `A miss is never cached: the next read asks again`.
+    #
+    # DEFAULT caching in both tests below, which is the whole point.
+    # `cache: True` is about holding a HIT; holding the settled miss meant
+    # the chain was never asked again for the life of the client, so a
+    # secret provisioned after startup (a mounted file, a vault policy
+    # granted a minute late) was invisible forever.
+    def test_a_cached_miss_is_reasked(self):
+        state = {"present": False, "calls": 0}
+
+        def lookup(name):
+            state["calls"] += 1
+            return "LATEKEY01" if state["present"] else None
+
+        sdk, transport = self._sdk({
+            "feature": {"secrets": {
+                "active": True,
+                "providers": [{"lookup": lookup, "describe": lambda: "late:test"}],
+            }},
+        })
+
+        headers = self._lastwire(sdk, transport)
+        self.assertNotIn("authorization", headers,
+                         "the chain has nothing yet, so no credential "
+                         "should go out")
+
+        asked = state["calls"]
+        self.assertLess(0, asked)
+
+        # The secret is provisioned while the client is live.
+        state["present"] = True
+
+        headers = self._lastwire(sdk, transport)
+        self.assert_credential(headers, "LATEKEY01")
+
+        self.assertLess(asked, state["calls"],
+                        "the MISS was cached: a secret that appears later "
+                        "can never be picked up")
+
+    def test_a_cached_hit_is_kept(self):
+        # The other half of the same rule: a HIT is still cached by
+        # default, so the fix above must not turn every request into a
+        # chain walk.
+        state = {"calls": 0}
+
+        def lookup(name):
+            state["calls"] += 1
+            return "STABLEKEY01"
+
+        sdk, transport = self._sdk({
+            "feature": {"secrets": {
+                "active": True,
+                "providers": [{"lookup": lookup, "describe": lambda: "counting:test"}],
+            }},
+        })
+
+        self._lastwire(sdk, transport)
+        self._lastwire(sdk, transport)
+
+        self.assertEqual(1, state["calls"],
+                         "a hit must be cached under the default cache: True")
+
     # --- auth: None suppression ---
 
     def test_auth_none_still_suppresses_the_credential(self):
@@ -279,6 +356,43 @@ class TestSecretsReviewPins(unittest.TestCase):
 
             self.assertEqual(tricky, _TokenEndpoint.refresh_seen)
             self.assertEqual("RAWTOK01", sdk.options.get("apikey"))
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+    def test_auth_none_buys_no_token_at_all(self):
+        # `auth: None` SUPPRESSES THE PURCHASE, not just the retry.
+        #
+        # resolve() runs before _with_refresh's suppression check, so the
+        # refresh token used to go to the token endpoint in a request body
+        # even here. Stopping the retry does not unsend it - and only the
+        # token endpoint can see this, which is why the API-header
+        # assertion above is not enough.
+        tricky = "REFRESH01"
+        _TokenEndpoint.refresh_seen = None
+
+        srv = http.server.HTTPServer(("127.0.0.1", 0), _TokenEndpoint)
+        thread = threading.Thread(target=srv.serve_forever, daemon=True)
+        thread.start()
+        try:
+            sdk = secrets_sdk({
+                "base": "http://127.0.0.1:%d/api" % srv.server_port,
+                "auth": None,
+                "feature": {"secrets": {
+                    "active": True,
+                    "name": "refresh_token",
+                    "exchange": {"active": True, "refresh": tricky},
+                }},
+            })
+
+            utility = sdk._utility
+            ctx = utility.make_context({"opname": "load"}, sdk.get_root_ctx())
+            utility.feature_hook(ctx, "PreSpec")
+
+            self.assertIsNone(_TokenEndpoint.refresh_seen,
+                              "auth: None suppressed the credential but the "
+                              "refresh token was still POSTed to the "
+                              "exchange endpoint")
         finally:
             srv.shutdown()
             srv.server_close()

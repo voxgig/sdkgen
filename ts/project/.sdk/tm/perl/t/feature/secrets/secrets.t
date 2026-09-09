@@ -510,6 +510,45 @@ SKIP: {
 
 # --- cache -----------------------------------------------------------------
 
+# A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this feature
+# used to override from the layer above.
+#
+# DEFAULT caching here, which is the whole point: `cache: true` is about
+# holding a HIT (the block after next pins that half), and keeping the
+# settled resolution after a miss meant the chain was never asked again for
+# the life of the client. A secret provisioned after startup (a mounted
+# file, a vault policy granted a minute late) was invisible forever.
+{
+  clear_env();
+
+  my $calls = 0;
+  my $present = 0;
+  my $late = {
+    'lookup' => sub { $calls++; return $present ? 'LATEKEY01' : undef },
+    'describe' => sub { 'late:test' },
+  };
+
+  my $stub = counting_fetch();
+  my $sdk = secrets_sdk($stub, { 'providers' => [$late] });
+
+  $sdk->direct({ 'path' => '/one' });
+  no_credential($stub->{calls}[0]{auth},
+    'the chain has nothing yet, so no credential should go out');
+
+  my $asked = $calls;
+  ok(0 < $asked, 'the chain was asked at least once');
+
+  # The secret is provisioned while the client is live.
+  $present = 1;
+
+  $sdk->direct({ 'path' => '/two' });
+
+  ok($asked < $calls,
+    'the MISS was cached: a secret that appears later can never be picked up');
+  credential_is($stub->{calls}[1]{auth}, 'LATEKEY01', 'the late secret goes out');
+}
+
+
 {
   clear_env();
 
@@ -907,6 +946,14 @@ sub exchange_sdk {
     'exchange: a suppressed request must not be retried');
   no_credential(api_calls($stub)->[0]{auth},
     'exchange: no credential may be sent when auth is suppressed');
+
+  # AND NO PURCHASE. resolve runs before _with_refresh's suppression check,
+  # so the refresh token used to go to the token endpoint in a request body
+  # even here. Stopping the retry does not unsend it, and only the token
+  # endpoint can see this.
+  is(scalar @{ token_calls($stub) }, 0,
+    'exchange: auth undef suppressed the credential but the refresh token '
+      . 'was still POSTed to the exchange endpoint');
 }
 
 {

@@ -507,9 +507,17 @@ fn secrets_call(state: &Rc<RefCell<SecretsState>>, arg: &Value) -> Value {
 
 // ---- resolution ---------------------------------------------------------
 
-// One resolution, shared by every request. A settled SUCCESS is kept only
-// when caching is on; a FAILURE is never kept, so a transient vault outage
-// never poisons the client permanently - the next operation asks again.
+// One resolution, shared by every request. A settled HIT is kept only when
+// caching is on; a FAILURE is never kept, so a transient vault outage never
+// poisons the client permanently - the next operation asks again.
+//
+// A MISS is not kept either, however caching is set. That rule is
+// sekreto's, not this feature's: `A miss is never cached: the next read
+// asks again`, in sekreto's own source. Keeping a settled miss here would
+// override that from the layer above, and a secret provisioned after
+// startup - a mounted file, a policy granted a minute late - would never be
+// picked up for the life of the client. `cache` is about caching a HIT; it
+// was never a promise to keep saying no.
 fn resolve(state: &Rc<RefCell<SecretsState>>) -> Result<(), ProjectNameError> {
     {
         let s = state.borrow();
@@ -522,9 +530,9 @@ fn resolve(state: &Rc<RefCell<SecretsState>>) -> Result<(), ProjectNameError> {
     }
 
     match resolve_once(state) {
-        Ok(()) => {
+        Ok(hit) => {
             let cache = state.borrow().cache;
-            if cache {
+            if cache && hit {
                 state.borrow_mut().resolved = true;
             }
             Ok(())
@@ -536,11 +544,14 @@ fn resolve(state: &Rc<RefCell<SecretsState>>) -> Result<(), ProjectNameError> {
     }
 }
 
-fn resolve_once(state: &Rc<RefCell<SecretsState>>) -> Result<(), ProjectNameError> {
+// Resolve once, answering whether a credential came out of it. That bool is
+// the whole of what resolve needs to tell a cacheable HIT from a miss it
+// must not keep.
+fn resolve_once(state: &Rc<RefCell<SecretsState>>) -> Result<bool, ProjectNameError> {
     let name = {
         let s = state.borrow();
         if s.sek.is_none() {
-            return Ok(());
+            return Ok(false);
         }
         s.secretname.clone()
     };
@@ -568,8 +579,9 @@ fn resolve_once(state: &Rc<RefCell<SecretsState>>) -> Result<(), ProjectNameErro
             // apikey OPTION is never lost here - it seats FIRST in the
             // chain as a memory provider, so the chain HITS while one is
             // set and the miss branch is unreachable.)
+            let hit = found.is_some();
             s.cred = found.unwrap_or_default();
-            return Ok(());
+            return Ok(hit);
         }
 
         // Exchanging: what the chain resolved is the REFRESH token, kept
@@ -589,11 +601,22 @@ fn resolve_once(state: &Rc<RefCell<SecretsState>>) -> Result<(), ProjectNameErro
             // A starting access token was supplied. Spend it: if it is
             // stale the API answers with an expiry status and the wrapper
             // buys another, which is the same path expiry takes anyway.
-            return Ok(());
+            return Ok(true);
+        }
+
+        // `auth: null` is the documented way to send NO credential, and a
+        // purchase is a credential-bearing call: the refresh token goes to
+        // the token endpoint in the request body. with_refresh honours
+        // suppression for the RETRY, but it runs after this - by then the
+        // refresh token has already left the process, and no later check
+        // can call it back. The suppression has to be honoured here, before
+        // the first purchase, or it only ever half-held.
+        if !authactive(&s.options) {
+            return Ok(false);
         }
     }
 
-    buy(state).map(|_| ())
+    buy(state).map(|_| true)
 }
 
 // ---- the transport seam -------------------------------------------------

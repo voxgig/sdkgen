@@ -264,18 +264,29 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     else withrefresh(ctx, url, fetchdef, inner)
   }
 
-  // One resolution, shared by every concurrent caller. A settled SUCCESS is
+  // One resolution, shared by every concurrent caller. A settled HIT is
   // kept only when caching is on; a FAILURE is never kept, so the next
   // operation asks the chain again.
+  //
+  // A MISS is not kept either, however caching is set. That rule is
+  // sekreto's, not this feature's: `A miss is never cached: the next read
+  // asks again`, in sekreto's own source. Keeping a settled miss here would
+  // override that from the layer above, and a secret provisioned after
+  // startup - a mounted file, a policy granted a minute late - would never
+  // be picked up for the life of the client. `cache` is about caching a
+  // HIT; it was never a promise to keep saying no.
   private def resolve(): Unit = lock.synchronized {
     if (!this.settled) {
-      resolveonce()
-      if (this.docache) this.settled = true
+      val hit = resolveonce()
+      if (this.docache && hit) this.settled = true
     }
   }
 
-  private def resolveonce(): Unit = {
-    if (this.sek == null) return
+  // Resolve once, reporting whether a credential came out of it. That
+  // boolean is the whole of what resolve() needs to tell a cacheable HIT
+  // from a miss it must not keep.
+  private def resolveonce(): Boolean = {
+    if (this.sek == null) return false
 
     // tryget returns None for a MISS and RAISES for an ERROR. That is the
     // whole miss-vs-error rule, and it is sekreto's, not this feature's.
@@ -288,7 +299,7 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
       // here - it seats FIRST in the chain as a memory provider, so the
       // chain HITS while one is set and this branch is unreachable.)
       this.cred = found.getOrElse("")
-      return
+      return found.isDefined
     }
 
     // Exchanging: what the chain resolved is the REFRESH token, kept for
@@ -302,9 +313,20 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     // A starting access token was supplied. Spend it: if it is stale the API
     // answers with an expiry status and the wrapper buys another, which is
     // the same path expiry takes anyway.
-    if ("" != this.cred) return
+    if ("" != this.cred) return true
+
+    // `auth: null` is the documented way to send NO credential, and a
+    // purchase is a credential-bearing call: the refresh token goes to the
+    // token endpoint in the request body. withrefresh honours suppression
+    // for the RETRY, but it runs after this - by then the refresh token has
+    // already left the process, and no later check can call it back. The
+    // suppression has to be honoured here, before the first purchase, or it
+    // only ever half-held.
+    if (this.liveopts == null || this.liveopts.get("auth") == null) return false
 
     buyonce()
+
+    true
   }
 
   // Buy a token and try the request again when the API says the current one

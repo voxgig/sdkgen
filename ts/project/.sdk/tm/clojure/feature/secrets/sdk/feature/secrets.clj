@@ -268,8 +268,11 @@
 ;; Resolution.
 ;; ---------------------------------------------------------------------------
 
+;; Resolve once, answering whether a credential came out of it. That
+;; boolean is the whole of what resolve! needs to tell a cacheable HIT from
+;; a miss it must not keep.
 (defn- resolve-once [fa]
-  (when-let [s (st fa :sek)]
+  (if-let [s (st fa :sek)]
     ;; tryget: nil for a MISS, THROWS for a provider ERROR.
     (let [found (sekreto/tryget s (st fa :secretname))]
       (if (nil? (st fa :exchange))
@@ -278,7 +281,9 @@
         ;; going out on the wire. (An explicit apikey OPTION is never lost
         ;; here - it seats FIRST in the chain as a memory store, so the
         ;; chain HITS while one is set and this branch is unreachable.)
-        (swap! fa assoc :cred (if (string? found) found ""))
+        (do
+          (swap! fa assoc :cred (if (string? found) found ""))
+          (string? found))
 
         ;; Exchanging: what the chain resolved is the REFRESH token, kept
         ;; for every later purchase. A miss is not fatal - an explicit
@@ -292,19 +297,41 @@
                          (let [k (vs/getprop (liveopts fa) "apikey")]
                            (if (string? k) k "")))]
             (swap! fa assoc :cred apikey)
-            (when-not (seq apikey)
+            (cond
+              (seq apikey) true
+
+              ;; `auth: nil` is the documented way to send NO credential,
+              ;; and a purchase is a credential-bearing call: the refresh
+              ;; token goes to the token endpoint in the request body.
+              ;; with-refresh honours suppression for the RETRY, but it runs
+              ;; after this - by then the refresh token has already left the
+              ;; process, and no later check can call it back. The
+              ;; suppression has to be honoured here, before the first
+              ;; purchase, or it only ever half-held.
+              (nil? (auth-of fa)) false
+
+              :else
               ;; No starting access token: buy one now. A failure here is a
               ;; failure of the operation - fail closed.
-              (buy fa))))))))
+              (do (buy fa) true))))))
+    false))
 
 
 ;; One resolution, shared by every concurrent caller.
 ;;
-;; Returns nil on success, or the Throwable that failed it. A settled
-;; SUCCESS is kept only when caching is on (`cache: false` means every
-;; request asks the chain again); a FAILURE is NEVER kept, so a transient
-;; vault outage cannot poison the client permanently - the next operation
-;; asks the chain again and recovers.
+;; Returns nil on success, or the Throwable that failed it. A settled HIT is
+;; kept only when caching is on (`cache: false` means every request asks the
+;; chain again); a FAILURE is NEVER kept, so a transient vault outage cannot
+;; poison the client permanently - the next operation asks the chain again
+;; and recovers.
+;;
+;; A MISS is not kept either, however caching is set. That rule is
+;; sekreto's, not this feature's: `A miss is never cached: the next read
+;; asks again`, in sekreto's own source. Keeping a settled miss here would
+;; override that from the layer above, and a secret provisioned after
+;; startup - a mounted file, a policy granted a minute late - would never be
+;; picked up for the life of the client. `cache` is about caching a HIT; it
+;; was never a promise to keep saying no.
 (defn- resolve! [fa]
   (if-let [e (st fa :initerr)]
     e
@@ -312,8 +339,8 @@
       (if (and (st fa :cache) (st fa :resolved))
         nil
         (try
-          (resolve-once fa)
-          (swap! fa assoc :resolved true)
+          (let [hit (resolve-once fa)]
+            (swap! fa assoc :resolved (boolean hit)))
           nil
           (catch Throwable e
             (swap! fa assoc :resolved false)

@@ -325,10 +325,18 @@ sub transport {
 }
 
 
-# One resolution, shared by every request. A settled SUCCESS is kept only
-# when caching is on (`cache: false` means every resolve asks the chain
-# again); a FAILURE is never kept, so a transient vault outage cannot
-# poison the client permanently - the next request asks the chain again.
+# One resolution, shared by every request. A settled HIT is kept only when
+# caching is on (`cache: false` means every resolve asks the chain again);
+# a FAILURE is never kept, so a transient vault outage cannot poison the
+# client permanently - the next request asks the chain again.
+#
+# A MISS is not kept either, however caching is set. That rule is
+# sekreto's, not this feature's: `A miss is never cached: the next read
+# asks again`, in sekreto's own source. Keeping a settled miss here would
+# override that from the layer above, and a secret provisioned after
+# startup - a mounted file, a policy granted a minute late - would never be
+# picked up for the life of the client. `cache` is about caching a HIT; it
+# was never a promise to keep saying no.
 #
 # Returns an error MESSAGE (a string) or undef.
 sub resolve {
@@ -337,23 +345,26 @@ sub resolve {
   return $self->{initerr} if defined $self->{initerr};
   return undef if $self->{resolved} && $self->{cache};
 
-  my $err = $self->_resolve_once();
-  $self->{resolved} = defined($err) ? 0 : 1;
+  my ($err, $hit) = $self->_resolve_once();
+  $self->{resolved} = (defined($err) || !$hit) ? 0 : 1;
 
   return $err;
 }
 
 
+# Resolve once, answering ($err, $hit): whether a credential came out of
+# it. That flag is the whole of what resolve needs to tell a cacheable HIT
+# from a miss it must not keep.
 sub _resolve_once {
   my ($self) = @_;
 
-  return undef unless defined $self->{sek};
+  return (undef, 0) unless defined $self->{sek};
 
   # sekreto's miss-vs-error rule, inherited: `try` returns undef on a MISS
   # and dies on a provider ERROR.
   my $found;
   my $ok = eval { $found = $self->{sek}->try($self->{secretname}); 1 };
-  return _trim(defined $@ && '' ne "$@" ? "$@" : 'secrets: provider failed')
+  return (_trim(defined $@ && '' ne "$@" ? "$@" : 'secrets: provider failed'), 0)
     if !$ok;
 
   if (!defined $self->{exchange}) {
@@ -363,7 +374,7 @@ sub _resolve_once {
     # way - it seats FIRST in the chain as a memory provider, so the chain
     # HITS while one is set and this branch is unreachable.)
     $self->{cred} = defined $found ? "$found" : '';
-    return undef;
+    return (undef, defined($found) ? 1 : 0);
   }
 
   # Exchanging: what the chain resolved is the REFRESH token, kept for
@@ -381,13 +392,23 @@ sub _resolve_once {
   # A starting access token was supplied. Spend it: if it is stale the API
   # answers with an expiry status and the wrapper buys another, which is
   # the same path expiry takes anyway.
-  return undef if '' ne $self->{cred};
+  return (undef, 1) if '' ne $self->{cred};
+
+  # `auth => undef` is the documented way to send NO credential, and a
+  # purchase is a credential-bearing call: the refresh token goes to the
+  # token endpoint in the request body. _with_refresh honours suppression
+  # for the RETRY, but it runs after this - by then the refresh token has
+  # already left the process, and no later check can call it back. The
+  # suppression has to be honoured here, before the first purchase, or it
+  # only ever half-held.
+  return (undef, 0)
+    if !defined ProjectNameHelpers::gp($self->{liveopts}, 'auth');
 
   my ($token, $err) = $self->_buy();
-  return $err if defined $err;
+  return ($err, 0) if defined $err;
 
   $self->{cred} = $token;
-  return undef;
+  return (undef, 1);
 }
 
 

@@ -325,10 +325,18 @@ public class SecretsFeature extends BaseFeature {
   }
 
   // resolve runs one resolution, shared by every concurrent caller. A
-  // settled SUCCESS is kept only when caching is on (`cache: false` means
-  // every resolve asks the chain again); a FAILURE is always cleared, so a
+  // settled HIT is kept only when caching is on (`cache: false` means every
+  // resolve asks the chain again); a FAILURE is always cleared, so a
   // transient vault outage never poisons the client permanently - the next
   // operation asks the chain again.
+  //
+  // A MISS is cleared too, however caching is set. That rule is sekreto's,
+  // not this feature's: `A miss is never cached: the next read asks again`,
+  // in sekreto's own source. Keeping a settled miss here would override
+  // that from the layer above, and a secret provisioned after startup - a
+  // mounted file, a policy granted a minute late - would never be picked up
+  // for the life of the client. `cache` is about caching a HIT; it was
+  // never a promise to keep saying no.
   private void resolve() {
     SecretsCall call;
     boolean mine = false;
@@ -353,8 +361,9 @@ public class SecretsFeature extends BaseFeature {
     }
 
     RuntimeException err = null;
+    boolean hit = false;
     try {
-      resolveonce();
+      hit = resolveonce();
     }
     catch (RuntimeException e) {
       err = e;
@@ -362,7 +371,7 @@ public class SecretsFeature extends BaseFeature {
 
     synchronized (this.lock) {
       call.err = err;
-      if (err != null || !this.cache) {
+      if (err != null || !this.cache || !hit) {
         this.resolving = null;
       }
     }
@@ -373,9 +382,12 @@ public class SecretsFeature extends BaseFeature {
     }
   }
 
-  private void resolveonce() {
+  // resolveonce resolves once, reporting whether a credential came out of
+  // it. That boolean is the whole of what resolve() needs to tell a
+  // cacheable HIT from a miss it must not keep.
+  private boolean resolveonce() {
     if (this.sek == null) {
-      return;
+      return false;
     }
 
     // tryget: null is a MISS (the chain had nothing), an exception is an
@@ -392,7 +404,7 @@ public class SecretsFeature extends BaseFeature {
         // unreachable.)
         this.cred = found == null ? "" : found;
       }
-      return;
+      return found != null;
     }
 
     // Exchanging: what the chain resolved is the REFRESH token, kept for
@@ -416,10 +428,23 @@ public class SecretsFeature extends BaseFeature {
       // A starting access token was supplied. Spend it: if it is stale the
       // API answers with an expiry status and the transport wrapper buys
       // another, which is the same path expiry takes anyway.
-      return;
+      return true;
+    }
+
+    // `auth: null` is the documented way to send NO credential, and a
+    // purchase is a credential-bearing call: the refresh token goes to the
+    // token endpoint in the request body. withrefresh honours suppression
+    // for the RETRY, but it runs after this - by then the refresh token has
+    // already left the process, and no later check can call it back. The
+    // suppression has to be honoured here, before the first purchase, or it
+    // only ever half-held.
+    if (this.liveopts.get("auth") == null) {
+      return false;
     }
 
     buy();
+
+    return true;
   }
 
   // withrefresh buys a token and tries the request again when the API says
