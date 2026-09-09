@@ -174,18 +174,25 @@ class SecretsFeature extends BaseFeature {
   // the op — sekreto's miss-vs-error rule: never fall through to an
   // unauthenticated request because a store was broken.
   //
-  // The promise is cleared on REJECTION, and after success when caching is
-  // off. Holding a settled promise forever would mean a transient vault
-  // outage poisoned the client permanently — every later operation failing
-  // with the original error long after the vault recovered — and it would
-  // make the documented `cache: false` a lie, since the chain would never
-  // be asked a second time.
+  // The promise is cleared on REJECTION, after success when caching is off,
+  // and after a MISS however caching is set. Holding a settled promise
+  // forever would mean a transient vault outage poisoned the client
+  // permanently — every later operation failing with the original error long
+  // after the vault recovered — and it would make the documented
+  // `cache: false` a lie, since the chain would never be asked a second time.
+  //
+  // The MISS rule is sekreto's, not this feature's: `A miss is never cached:
+  // the next read asks again`, in sekreto's own source. Retaining a settled
+  // miss here would override that from the layer above, and a secret
+  // provisioned after startup — a mounted file, a policy granted a minute
+  // late — would never be picked up for the life of the client. `cache` is
+  // about caching a HIT; it was never a promise to keep saying no.
   resolve() {
     if (null == this._resolving) {
       const inflight = this._resolveonce()
         .then(
-          () => {
-            if (!this._cache) {
+          (hit) => {
+            if (!this._cache || !hit) {
               this._resolving = undefined
             }
           },
@@ -201,9 +208,12 @@ class SecretsFeature extends BaseFeature {
   }
 
 
+  // Resolve once, reporting whether a credential came out of it. That
+  // boolean is the whole of what resolve() needs to tell a cacheable HIT
+  // from a miss it must not retain.
   async _resolveonce() {
     if (null == this._sekreto) {
-      return
+      return false
     }
 
     const found = await this._sekreto.try(this._secretname)
@@ -215,7 +225,7 @@ class SecretsFeature extends BaseFeature {
         // resolved value lands where the sync auth path already looks.
         this._client._options.apikey = found
       }
-      return
+      return undefined !== found
     }
 
     // Exchanging: what the chain resolved is the REFRESH token, kept for
@@ -229,10 +239,23 @@ class SecretsFeature extends BaseFeature {
       // A starting access token was supplied. Spend it: if it is stale the
       // API answers 401 and the transport wrapper buys another, which is
       // the same path expiry takes anyway.
-      return
+      return true
+    }
+
+    // `auth: null` is the documented way to send NO credential, and a
+    // purchase is a credential-bearing call: the refresh token goes to the
+    // token endpoint in the request body. _withRefresh honours suppression
+    // for the RETRY, but it runs after this — by then the refresh token has
+    // already left the process, and no later check can call it back. The
+    // suppression has to be honoured here, before the first purchase, or it
+    // only ever half-held.
+    if (null == this._client.options().auth) {
+      return false
     }
 
     this._client._options.apikey = await this._buy()
+
+    return true
   }
 
 

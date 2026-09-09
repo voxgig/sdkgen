@@ -265,10 +265,18 @@ func (f *SecretsFeature) Init(ctx *core.Context, options map[string]any) {
 }
 
 // resolve runs one resolution, shared by every concurrent caller. A
-// settled SUCCESS is kept only when caching is on (`cache: false` means
-// every resolve asks the chain again); a FAILURE is always cleared, so a
+// settled HIT is kept only when caching is on (`cache: false` means every
+// resolve asks the chain again); a FAILURE is always cleared, so a
 // transient vault outage never poisons the client permanently - the next
 // operation asks the chain again.
+//
+// A MISS is cleared too, however caching is set. That rule is sekreto's,
+// not this feature's: `A miss is never cached: the next read asks again`,
+// in sekreto's own source. Retaining a settled miss here would override
+// that from the layer above, and a secret provisioned after startup - a
+// mounted file, a policy granted a minute late - would never be picked up
+// for the life of the client. `cache` is about caching a HIT; it was never
+// a promise to keep saying no.
 func (f *SecretsFeature) resolve() error {
 	if nil != f.initerr {
 		return f.initerr
@@ -284,11 +292,11 @@ func (f *SecretsFeature) resolve() error {
 	f.resolving = call
 	f.mu.Unlock()
 
-	err := f.resolveonce()
+	hit, err := f.resolveonce()
 
 	f.mu.Lock()
 	call.err = err
-	if nil != err || !f.cache {
+	if nil != err || !f.cache || !hit {
 		f.resolving = nil
 	}
 	f.mu.Unlock()
@@ -297,16 +305,19 @@ func (f *SecretsFeature) resolve() error {
 	return err
 }
 
-func (f *SecretsFeature) resolveonce() error {
+// resolveonce resolves once, reporting whether a credential came out of it.
+// That bool is the whole of what resolve() needs to tell a cacheable HIT
+// from a miss it must not retain.
+func (f *SecretsFeature) resolveonce() (bool, error) {
 	if nil == f.sek {
-		return nil
+		return false, nil
 	}
 
 	found, has, err := f.sek.Try(f.secretname)
 	if nil != err {
 		// A provider ERROR fails the op (via the transport gate); only a
 		// MISS falls through.
-		return err
+		return false, err
 	}
 
 	if nil == f.exchange {
@@ -323,7 +334,7 @@ func (f *SecretsFeature) resolveonce() error {
 			f.cred = ""
 		}
 		f.mu.Unlock()
-		return nil
+		return has, nil
 	}
 
 	// Exchanging: what the chain resolved is the REFRESH token, kept for
@@ -350,11 +361,22 @@ func (f *SecretsFeature) resolveonce() error {
 		// A starting access token was supplied. Spend it: if it is stale
 		// the API answers with an expiry status and the transport wrapper
 		// buys another, which is the same path expiry takes anyway.
-		return nil
+		return true, nil
+	}
+
+	// `auth: nil` is the documented way to send NO credential, and a
+	// purchase is a credential-bearing call: the refresh token goes to the
+	// token endpoint in the request body. withrefresh honours suppression
+	// for the RETRY, but it runs after this - by then the refresh token has
+	// already left the process, and no later check can call it back. The
+	// suppression has to be honoured here, before the first purchase, or it
+	// only ever half-held.
+	if nil == f.liveopts["auth"] {
+		return false, nil
 	}
 
 	_, err = f.buy()
-	return err
+	return nil == err, err
 }
 
 // transport wraps whatever transport was current at Init.

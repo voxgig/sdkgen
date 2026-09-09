@@ -574,6 +574,69 @@ class SecretsFeatureTest < Minitest::Test
       "after the chain reports a miss the retracted credential must not go out; the wire saw #{last['auth'].inspect}")
   end
 
+  # A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this
+  # feature used to override from the layer above.
+  #
+  # DEFAULT caching here, which is the whole point: `cache: true` is about
+  # holding a HIT, and keeping the settled resolution after a miss meant the
+  # chain was never asked again for the life of the client. A secret
+  # provisioned after startup (a mounted file, a vault policy granted a
+  # minute late) was invisible forever, and the only workaround was giving
+  # up hit caching entirely.
+  def test_a_cached_miss_is_reasked
+    present = false
+    calls = 0
+    wire = Wire.new
+    client = secrets_client(wire, {
+      "feature" => { "secrets" => {
+        "active" => true,
+        "providers" => [CustomProvider.new { |_name|
+          calls += 1
+          present ? "LATEKEY01" : nil
+        }],
+      } },
+    })
+
+    drive_op(client, wire)
+    first = wire.api[0]
+    refute(first["has"] && !first["auth"].to_s.empty?,
+      "the chain has nothing yet, so no credential should go out")
+
+    asked = calls
+    assert_operator asked, :>, 0
+
+    # The secret is provisioned while the client is live.
+    present = true
+
+    drive_op(client, wire)
+    assert_credential(wire.api[-1]["auth"], "LATEKEY01")
+
+    assert_operator calls, :>, asked,
+      "the MISS was cached: a secret that appears later can never be picked up"
+  end
+
+  # The other half of the same rule: a HIT is still cached by default, so
+  # the fix above must not turn every request into a chain walk.
+  def test_a_cached_hit_is_kept
+    calls = 0
+    wire = Wire.new
+    client = secrets_client(wire, {
+      "feature" => { "secrets" => {
+        "active" => true,
+        "providers" => [CustomProvider.new { |_name|
+          calls += 1
+          "STABLEKEY01"
+        }],
+      } },
+    })
+
+    drive_op(client, wire)
+    drive_op(client, wire)
+
+    assert_equal 1, calls,
+      "a hit must be cached under the default cache: true"
+  end
+
   def test_auth_nil_suppresses_the_credential_chain_or_no_chain
     setenv("APIKEY", "ENVKEY03")
     wire = Wire.new
@@ -693,6 +756,36 @@ class SecretsFeatureTest < Minitest::Test
     assert_credential(api[0]["auth"], "ACCESS01")
     # The retry must carry the NEW token, not the spent one.
     assert_credential(api[1]["auth"], "ACCESS02")
+  ensure
+    clearenv("REFRESH_TOKEN")
+  end
+
+  # `auth: nil` SUPPRESSES THE PURCHASE, not just the retry.
+  #
+  # resolve runs before _with_refresh's suppression check, so the refresh
+  # token used to go to the token endpoint in a request body even here.
+  # Stopping the retry does not unsend it - this asserts on the token
+  # endpoint, which is the half the API-header assertions cannot see.
+  def test_auth_nil_buys_no_token_at_all
+    setenv("REFRESH_TOKEN", "REFRESH01")
+    wire = Wire.new
+    wire.apistatus = [401]
+
+    client = secrets_client(wire, {
+      "auth" => nil,
+      "feature" => secrets_opts({
+        "name" => "refresh_token",
+        "exchange" => { "active" => true },
+      }),
+    })
+
+    drive_op(client, wire)
+
+    assert_equal 0, wire.token.length,
+      "auth nil suppressed the credential but the refresh token was still " \
+      "POSTed to the exchange endpoint"
+    refute wire.api[0]["has"],
+      "no credential may be sent when auth is suppressed"
   ensure
     clearenv("REFRESH_TOKEN")
   end

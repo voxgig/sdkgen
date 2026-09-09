@@ -157,7 +157,7 @@ src/cmp/clojure/utility_clojure.ts 828e596b954d
 tm/clojure/LICENSE ed2f88b0aab8
 tm/clojure/Makefile d3ac03fe6a52
 tm/clojure/VERSION e6635045e1d2
-tm/clojure/feature/secrets/sdk/feature/secrets.clj 0197db8863d4
+tm/clojure/feature/secrets/sdk/feature/secrets.clj 39583249b368
 tm/clojure/feature/secrets/voxgig/plugin.clj 8a8059ff33a7
 tm/clojure/feature/secrets/voxgig/plugin/capability.clj 35facfa9fbac
 tm/clojure/feature/secrets/voxgig/plugin/catalog.clj 2f1c5fe7a1a1
@@ -219,7 +219,7 @@ tm/clojure/src/sdk/core.clj a9ba27206ca7
 tm/clojure/src/sdk/features.clj bb8e995c6e30
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
-tm/clojure/test/sdk/test/feature/secrets.clj 4470836c4570
+tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj eb96d122a518
@@ -1739,7 +1739,7 @@ tm/scala/feature/ProxyFeature.scala 8b4a547449fd
 tm/scala/feature/RatelimitFeature.scala 4b96e4be9fd5
 tm/scala/feature/RbacFeature.scala 978c969eccca
 tm/scala/feature/RetryFeature.scala 117b343c03a4
-tm/scala/feature/SecretsFeature.scala d9d5099dbe8f
+tm/scala/feature/SecretsFeature.scala fa18f7b1eeca
 tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala 19f19505f177
 tm/scala/feature/TestFeature.scala f6c90650e517
@@ -1783,7 +1783,7 @@ tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
 tm/scala/sdktest/SdkTestMain.scala 204bb4c0509f
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/StructCorpus.scala c6be9c1da3bb
-tm/scala/sdktest/feature/secrets/SecretsTestMain.scala d8eb722a6dd7
+tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 836d0a99fbcf
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
 tm/scala/sdktest/vendor/omni/Json.scala fa064551f926
 tm/scala/sdktest/vendor/omni/Runner.scala de094b133d01

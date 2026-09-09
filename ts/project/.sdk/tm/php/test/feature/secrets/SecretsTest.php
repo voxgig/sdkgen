@@ -595,6 +595,74 @@ class ProjectNameSecretsTest extends TestCase
             'the wire saw ' . var_export($last['auth'], true));
     }
 
+    // A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this
+    // feature used to override from the layer above.
+    //
+    // DEFAULT caching here, which is the whole point: `cache: true` is
+    // about holding a HIT, and caching the settled resolution after a miss
+    // meant the chain was never asked again for the life of the client. A
+    // secret provisioned after startup (a mounted file, a vault policy
+    // granted a minute late) was invisible forever, and the only workaround
+    // was giving up hit caching entirely.
+    public function testACachedMissIsReasked(): void
+    {
+        $present = false;
+        $calls = 0;
+        $wire = new ProjectNameSecretsWire();
+        $client = $this->secretsClient($wire, [
+            'feature' => ['secrets' => [
+                'active' => true,
+                'providers' => [$this->customProvider(
+                    function (string $_name) use (&$present, &$calls) {
+                        $calls++;
+                        return $present ? 'LATEKEY01' : null;
+                    })],
+            ]],
+        ]);
+
+        $this->driveOp($client, $wire);
+        $first = $wire->api()[0];
+        $this->assertFalse($first['has'] && '' !== (string)$first['auth'],
+            'the chain has nothing yet, so no credential should go out');
+
+        $asked = $calls;
+        $this->assertGreaterThan(0, $asked);
+
+        // The secret is provisioned while the client is live.
+        $present = true;
+
+        $this->driveOp($client, $wire);
+        $api = $wire->api();
+        $this->assertCredential($api[count($api) - 1]['auth'], 'LATEKEY01');
+
+        $this->assertGreaterThan($asked, $calls,
+            'the MISS was cached: a secret that appears later can never be picked up');
+    }
+
+    // The other half of the same rule: a HIT is still cached by default, so
+    // the fix above must not turn every request into a chain walk.
+    public function testACachedHitIsKept(): void
+    {
+        $calls = 0;
+        $wire = new ProjectNameSecretsWire();
+        $client = $this->secretsClient($wire, [
+            'feature' => ['secrets' => [
+                'active' => true,
+                'providers' => [$this->customProvider(
+                    function (string $_name) use (&$calls) {
+                        $calls++;
+                        return 'STABLEKEY01';
+                    })],
+            ]],
+        ]);
+
+        $this->driveOp($client, $wire);
+        $this->driveOp($client, $wire);
+
+        $this->assertSame(1, $calls,
+            'a hit must be cached under the default cache: true');
+    }
+
     public function testAuthNullSuppressesTheCredentialChainOrNoChain(): void
     {
         $this->setenv('APIKEY', 'ENVKEY03');
@@ -706,6 +774,36 @@ class ProjectNameSecretsTest extends TestCase
         $this->assertCredential($api[0]['auth'], 'ACCESS01');
         // The retry must carry the NEW token, not the spent one.
         $this->assertCredential($api[1]['auth'], 'ACCESS02');
+    }
+
+    // `auth: null` SUPPRESSES THE PURCHASE, not just the retry.
+    //
+    // resolve() runs before with_refresh's suppression check, so the
+    // refresh token used to go to the token endpoint in a request body even
+    // here. Stopping the retry does not unsend it - this asserts on the
+    // token endpoint, which is the half the API-header assertions cannot
+    // see.
+    public function testAuthNullBuysNoTokenAtAll(): void
+    {
+        $this->setenv('REFRESH_TOKEN', 'REFRESH01');
+        $wire = new ProjectNameSecretsWire();
+        $wire->apistatus = [401];
+
+        $client = $this->secretsClient($wire, [
+            'auth' => null,
+            'feature' => $this->secretsOpts([
+                'name' => 'refresh_token',
+                'exchange' => ['active' => true],
+            ]),
+        ]);
+
+        $this->driveOp($client, $wire);
+
+        $this->assertCount(0, $wire->token(),
+            'auth null suppressed the credential but the refresh token was ' .
+            'still POSTed to the exchange endpoint');
+        $this->assertFalse($wire->api()[0]['has'],
+            'no credential may be sent when auth is suppressed');
     }
 
     // A second refusal on a token bought moments ago is a real failure, not

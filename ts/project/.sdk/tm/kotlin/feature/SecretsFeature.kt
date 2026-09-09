@@ -270,11 +270,19 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
     ctx.utility!!.fetcher = { ctx2, url, fetchdef -> transport(ctx2, url, fetchdef, inner) }
   }
 
-  // One resolution, shared by every concurrent caller. A settled SUCCESS is
+  // One resolution, shared by every concurrent caller. A settled HIT is
   // kept only when caching is on (`cache: false` means every resolve asks
   // the chain again); a FAILURE is always cleared, so a transient vault
   // outage never poisons the client permanently - the next operation asks
   // the chain again.
+  //
+  // A MISS is cleared too, however caching is set. That rule is sekreto's,
+  // not this feature's: `A miss is never cached: the next read asks again`,
+  // in sekreto's own source. Keeping a settled miss here would override
+  // that from the layer above, and a secret provisioned after startup - a
+  // mounted file, a policy granted a minute late - would never be picked up
+  // for the life of the client. `cache` is about caching a HIT; it was
+  // never a promise to keep saying no.
   fun resolve() {
     val ie = this.initerr
     if (null != ie) {
@@ -311,8 +319,9 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
 
     val call = mine!!
     var err: RuntimeException? = null
+    var hit = false
     try {
-      resolveonce()
+      hit = resolveonce()
     } catch (e: RuntimeException) {
       err = e
     } catch (e: Exception) {
@@ -325,7 +334,7 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
     this.lock.withLock {
       call.err = err
       call.done = true
-      if (null != err || !this.cache) {
+      if (null != err || !this.cache || !hit) {
         this.resolving = null
       }
       this.settled.signalAll()
@@ -336,8 +345,11 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
     }
   }
 
-  private fun resolveonce() {
-    val s = this.sek ?: return
+  // Resolve once, reporting whether a credential came out of it. That
+  // boolean is the whole of what resolve() needs to tell a cacheable HIT
+  // from a miss it must not keep.
+  private fun resolveonce(): Boolean {
+    val s = this.sek ?: return false
 
     // A provider ERROR throws out of here and fails the op (via the
     // transport gate); only a MISS (null) falls through.
@@ -353,7 +365,7 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
         // unreachable.)
         this.cred = found ?: ""
       }
-      return
+      return null != found
     }
 
     // Exchanging: what the chain resolved is the REFRESH token, kept for
@@ -376,10 +388,23 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
       // A starting access token was supplied. Spend it: if it is stale the
       // API answers with an expiry status and the transport wrapper buys
       // another, which is the same path expiry takes anyway.
-      return
+      return true
+    }
+
+    // `auth: null` is the documented way to send NO credential, and a
+    // purchase is a credential-bearing call: the refresh token goes to the
+    // token endpoint in the request body. withrefresh honours suppression
+    // for the RETRY, but it runs after this - by then the refresh token has
+    // already left the process, and no later check can call it back. The
+    // suppression has to be honoured here, before the first purchase, or it
+    // only ever half-held.
+    if (null == this.liveopts["auth"]) {
+      return false
     }
 
     buy()
+
+    return true
   }
 
   // transport wraps whatever transport was current at init.

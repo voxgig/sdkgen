@@ -652,6 +652,82 @@ public class SecretsFeatureTest
             "out; the wire saw " + last.Auth);
     }
 
+    // A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this
+    // feature used to override from the layer above.
+    //
+    // DEFAULT caching here, which is the whole point: `cache: true` is
+    // about holding a HIT, and keeping the settled resolution after a miss
+    // meant the chain was never asked again for the life of the client. A
+    // secret provisioned after startup (a mounted file, a vault policy
+    // granted a minute late) was invisible forever, and the only workaround
+    // was giving up hit caching entirely.
+    [Fact]
+    public void CachedMissIsReasked()
+    {
+        var present = false;
+        var calls = 0;
+        var late = new ProbeProvider
+        {
+            Fn = _ =>
+            {
+                calls++;
+                return present ? "LATEKEY01" : null;
+            },
+        };
+
+        var w = new Wire();
+        var client = SecretsClient(w, new Dictionary<string, object?>
+        {
+            ["feature"] = ProviderOpts(late, null),
+        });
+
+        DriveEntityOp(client, w);
+        var first = w.Api()[0];
+        Assert.True(!first.HasAuth || "" == first.Auth,
+            "the chain has nothing yet, so no credential should go out");
+
+        var asked = calls;
+        Assert.True(0 < asked);
+
+        // The secret is provisioned while the client is live.
+        present = true;
+
+        DriveEntityOp(client, w);
+        CredentialIs(w.Api()[w.Api().Count - 1].Auth, "LATEKEY01");
+
+        Assert.True(asked < calls,
+            "the MISS was cached: a secret that appears later can never be picked up");
+    }
+
+    // The other half of the same rule: a HIT is still cached by default, so
+    // the fix above must not turn every request into a chain walk.
+    [Fact]
+    public void CachedHitIsKept()
+    {
+        var calls = 0;
+        var counting = new ProbeProvider
+        {
+            Fn = _ =>
+            {
+                calls++;
+                return "STABLEKEY01";
+            },
+        };
+
+        var w = new Wire();
+        var client = SecretsClient(w, new Dictionary<string, object?>
+        {
+            ["feature"] = ProviderOpts(counting, null),
+        });
+
+        DriveEntityOp(client, w);
+        DriveEntityOp(client, w);
+
+        Assert.True(1 == calls,
+            "a hit must be cached under the default cache: true, chain asked " +
+            calls + " times");
+    }
+
     [Fact]
     public void CacheFalseAsksTheChainOnEveryResolve()
     {
@@ -1455,6 +1531,15 @@ public class SecretsFeatureTest
             Assert.False(w.Api()[0].HasAuth,
                 "no credential may be sent when auth is suppressed, got " +
                 w.Api()[0].Auth);
+
+            // AND NO PURCHASE. Resolve() runs before WithRefresh's
+            // suppression check, so the refresh token used to go to the
+            // token endpoint in a request body even here. Stopping the
+            // retry does not unsend it, and only the token endpoint can
+            // see this.
+            Assert.True(0 == w.Token().Count,
+                "auth null suppressed the credential but the refresh token was " +
+                "still POSTed to the exchange endpoint");
         }
         finally
         {

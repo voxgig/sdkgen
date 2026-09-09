@@ -449,6 +449,67 @@ class SecretsTest {
       "a chain MISS must leave the header off, got \"" + w.api()[0].auth + "\"")
   }
 
+  // A MISS IS NOT A CACHEABLE ANSWER - sekreto's own rule, which this
+  // feature used to override from the layer above.
+  //
+  // DEFAULT caching here, which is the whole point: `cache: true` is about
+  // holding a HIT, and keeping the settled resolution after a miss meant
+  // the chain was never asked again for the life of the client. A secret
+  // provisioned after startup (a mounted file, a vault policy granted a
+  // minute late) was invisible forever, and the only workaround was giving
+  // up hit caching entirely.
+  @Test
+  fun aCachedMissIsReasked() {
+    var present = false
+    var calls = 0
+    val w = Wire()
+    val client = secretsClient(w, map(
+      "feature" to chainOpts(TestProvider({ _ ->
+        synchronized(this) {
+          calls++
+          if (present) "LATEKEY01" else null
+        }
+      }, "late:test")),
+    ))
+
+    driveEntityOp(client, w)
+    val first = w.api()[0]
+    assertFalse(first.hasAuth && "" != first.auth,
+      "the chain has nothing yet, so no credential should go out")
+
+    val asked = synchronized(this) { calls }
+    assertTrue(0 < asked)
+
+    // The secret is provisioned while the client is live.
+    synchronized(this) { present = true }
+
+    driveEntityOp(client, w)
+    credentialIs(w.api().last().auth, "LATEKEY01")
+
+    assertTrue(asked < synchronized(this) { calls },
+      "the MISS was cached: a secret that appears later can never be picked up")
+  }
+
+  // The other half of the same rule: a HIT is still cached by default, so
+  // the fix above must not turn every request into a chain walk.
+  @Test
+  fun aCachedHitIsKept() {
+    var calls = 0
+    val w = Wire()
+    val client = secretsClient(w, map(
+      "feature" to chainOpts(TestProvider({ _ ->
+        synchronized(this) { calls++ }
+        "STABLEKEY01"
+      }, "counting:test")),
+    ))
+
+    driveEntityOp(client, w)
+    driveEntityOp(client, w)
+
+    assertEquals(1, synchronized(this) { calls },
+      "a hit must be cached under the default cache: true")
+  }
+
   @Test
   fun authNullSuppressesTheCredentialChainOrNoChain() {
     val w = Wire()
@@ -1114,6 +1175,14 @@ class SecretsTest {
     assertFalse(w.api()[0].hasAuth,
       "no credential may be sent when auth is suppressed, got \"" +
         w.api()[0].auth + "\"")
+
+    // AND NO PURCHASE. resolve() runs before withrefresh's suppression
+    // check, so the refresh token used to go to the token endpoint in a
+    // request body even here. Stopping the retry does not unsend it, and
+    // only the token endpoint can see this.
+    assertEquals(0, w.token().size,
+      "auth null suppressed the credential but the refresh token was still " +
+        "POSTed to the exchange endpoint")
   }
 
   @Test
