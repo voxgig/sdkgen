@@ -474,6 +474,47 @@
   },
   {
    "lib": "plugin",
+   "port": "cpp",
+   "lang": "cpp",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/cpp/feature/secrets/plugin"
+   ],
+   "file": {
+    "cpp/src/capability.hpp": "tm/cpp/feature/secrets/plugin/capability.hpp",
+    "cpp/src/capability.cpp": "tm/cpp/feature/secrets/plugin/capability.cpp",
+    "cpp/src/catalog.hpp": "tm/cpp/feature/secrets/plugin/catalog.hpp",
+    "cpp/src/catalog.cpp": "tm/cpp/feature/secrets/plugin/catalog.cpp",
+    "cpp/src/config.hpp": "tm/cpp/feature/secrets/plugin/config.hpp",
+    "cpp/src/config.cpp": "tm/cpp/feature/secrets/plugin/config.cpp",
+    "cpp/src/depend.hpp": "tm/cpp/feature/secrets/plugin/depend.hpp",
+    "cpp/src/depend.cpp": "tm/cpp/feature/secrets/plugin/depend.cpp",
+    "cpp/src/env.hpp": "tm/cpp/feature/secrets/plugin/env.hpp",
+    "cpp/src/env.cpp": "tm/cpp/feature/secrets/plugin/env.cpp",
+    "cpp/src/export.hpp": "tm/cpp/feature/secrets/plugin/export.hpp",
+    "cpp/src/export.cpp": "tm/cpp/feature/secrets/plugin/export.cpp",
+    "cpp/src/graph.hpp": "tm/cpp/feature/secrets/plugin/graph.hpp",
+    "cpp/src/graph.cpp": "tm/cpp/feature/secrets/plugin/graph.cpp",
+    "cpp/src/host.hpp": "tm/cpp/feature/secrets/plugin/host.hpp",
+    "cpp/src/host.cpp": "tm/cpp/feature/secrets/plugin/host.cpp",
+    "cpp/src/order.hpp": "tm/cpp/feature/secrets/plugin/order.hpp",
+    "cpp/src/order.cpp": "tm/cpp/feature/secrets/plugin/order.cpp",
+    "cpp/src/point.hpp": "tm/cpp/feature/secrets/plugin/point.hpp",
+    "cpp/src/point.cpp": "tm/cpp/feature/secrets/plugin/point.cpp",
+    "cpp/src/ref.hpp": "tm/cpp/feature/secrets/plugin/ref.hpp",
+    "cpp/src/ref.cpp": "tm/cpp/feature/secrets/plugin/ref.cpp",
+    "cpp/src/resolve.hpp": "tm/cpp/feature/secrets/plugin/resolve.hpp",
+    "cpp/src/resolve.cpp": "tm/cpp/feature/secrets/plugin/resolve.cpp",
+    "cpp/src/types.hpp": "tm/cpp/feature/secrets/plugin/types.hpp",
+    "cpp/src/types.cpp": "tm/cpp/feature/secrets/plugin/types.cpp",
+    "cpp/src/value.hpp": "tm/cpp/feature/secrets/plugin/value.hpp",
+    "cpp/src/value.cpp": "tm/cpp/feature/secrets/plugin/value.cpp",
+    "cpp/src/version.hpp": "tm/cpp/feature/secrets/plugin/version.hpp",
+    "cpp/src/version.cpp": "tm/cpp/feature/secrets/plugin/version.cpp"
+   }
+  },
+  {
+   "lib": "plugin",
    "port": "clojure",
    "lang": "clojure",
    "version": "sdk-20260908-1556-0",
@@ -1036,6 +1077,101 @@
     "c/plugins/infisical.c": "tm/c/feature/secrets/plugins/infisical.c",
     "c/plugins/secretspec.c": "tm/c/feature/secrets/plugins/secretspec.c"
    }
+  },
+  {
+   "lib": "sekreto",
+   "port": "cpp",
+   "lang": "cpp",
+   "version": "sdk-20260908-1556-0",
+   "dir": [
+    "tm/cpp/feature/secrets/sekreto",
+    "tm/cpp/feature/secrets/plugins"
+   ],
+   "file": {
+    "cpp/src/Sekreto.hpp": "tm/cpp/feature/secrets/sekreto/Sekreto.hpp",
+    "cpp/src/Sekreto.cpp": "tm/cpp/feature/secrets/sekreto/Sekreto.cpp",
+    "cpp/src/Provider.hpp": "tm/cpp/feature/secrets/sekreto/Provider.hpp",
+    "cpp/src/Provider.cpp": "tm/cpp/feature/secrets/sekreto/Provider.cpp",
+    "cpp/src/Providers.hpp": "tm/cpp/feature/secrets/sekreto/Providers.hpp",
+    "cpp/src/Providers.cpp": "tm/cpp/feature/secrets/sekreto/Providers.cpp",
+    "cpp/src/Json.hpp": "tm/cpp/feature/secrets/sekreto/Json.hpp",
+    "cpp/src/Json.cpp": "tm/cpp/feature/secrets/sekreto/Json.cpp",
+    "cpp/plugins/Httpjson.hpp": "tm/cpp/feature/secrets/plugins/Httpjson.hpp",
+    "cpp/plugins/Httpjson.cpp": "tm/cpp/feature/secrets/plugins/Httpjson.cpp",
+    "cpp/plugins/Tls.hpp": "tm/cpp/feature/secrets/plugins/Tls.hpp",
+    "cpp/plugins/Tls.cpp": "tm/cpp/feature/secrets/plugins/Tls.cpp",
+    "cpp/plugins/Crypto.hpp": "tm/cpp/feature/secrets/plugins/Crypto.hpp",
+    "cpp/plugins/Crypto.cpp": "tm/cpp/feature/secrets/plugins/Crypto.cpp",
+    "cpp/plugins/Proc.hpp": "tm/cpp/feature/secrets/plugins/Proc.hpp",
+    "cpp/plugins/Proc.cpp": "tm/cpp/feature/secrets/plugins/Proc.cpp",
+    "cpp/plugins/Hashicorp.hpp": "tm/cpp/feature/secrets/plugins/Hashicorp.hpp",
+    "cpp/plugins/Hashicorp.cpp": "tm/cpp/feature/secrets/plugins/Hashicorp.cpp",
+    "cpp/plugins/Boru.hpp": "tm/cpp/feature/secrets/plugins/Boru.hpp",
+    "cpp/plugins/Boru.cpp": "tm/cpp/feature/secrets/plugins/Boru.cpp",
+    "cpp/plugins/Gcpsecrets.hpp": "tm/cpp/feature/secrets/plugins/Gcpsecrets.hpp",
+    "cpp/plugins/Gcpsecrets.cpp": "tm/cpp/feature/secrets/plugins/Gcpsecrets.cpp",
+    "cpp/plugins/Azuresecrets.hpp": "tm/cpp/feature/secrets/plugins/Azuresecrets.hpp",
+    "cpp/plugins/Azuresecrets.cpp": "tm/cpp/feature/secrets/plugins/Azuresecrets.cpp",
+    "cpp/plugins/Onepassword.hpp": "tm/cpp/feature/secrets/plugins/Onepassword.hpp",
+    "cpp/plugins/Onepassword.cpp": "tm/cpp/feature/secrets/plugins/Onepassword.cpp",
+    "cpp/plugins/Doppler.hpp": "tm/cpp/feature/secrets/plugins/Doppler.hpp",
+    "cpp/plugins/Doppler.cpp": "tm/cpp/feature/secrets/plugins/Doppler.cpp",
+    "cpp/plugins/Infisical.hpp": "tm/cpp/feature/secrets/plugins/Infisical.hpp",
+    "cpp/plugins/Infisical.cpp": "tm/cpp/feature/secrets/plugins/Infisical.cpp",
+    "cpp/plugins/Aws.hpp": "tm/cpp/feature/secrets/plugins/Aws.hpp",
+    "cpp/plugins/Aws.cpp": "tm/cpp/feature/secrets/plugins/Aws.cpp",
+    "cpp/plugins/Sigv4.hpp": "tm/cpp/feature/secrets/plugins/Sigv4.hpp",
+    "cpp/plugins/Sigv4.cpp": "tm/cpp/feature/secrets/plugins/Sigv4.cpp",
+    "cpp/plugins/Secretspec.hpp": "tm/cpp/feature/secrets/plugins/Secretspec.hpp",
+    "cpp/plugins/Secretspec.cpp": "tm/cpp/feature/secrets/plugins/Secretspec.cpp"
+   },
+   "adapt": [
+    {
+     "match": "feature/secrets/sekreto/Provider\\.hpp$",
+     "from": "#include \"catalog.hpp\"",
+     "to": "#include \"../plugin/catalog.hpp\""
+    },
+    {
+     "match": "feature/secrets/sekreto/Provider\\.hpp$",
+     "from": "#include \"host.hpp\"",
+     "to": "#include \"../plugin/host.hpp\""
+    },
+    {
+     "match": "feature/secrets/sekreto/Provider\\.hpp$",
+     "from": "#include \"value.hpp\"",
+     "to": "#include \"../plugin/value.hpp\""
+    },
+    {
+     "match": "feature/secrets/sekreto/(Provider|Sekreto)\\.cpp$",
+     "from": "#include \"ref.hpp\"",
+     "to": "#include \"../plugin/ref.hpp\""
+    },
+    {
+     "match": "feature/secrets/sekreto/(Provider|Sekreto)\\.cpp$",
+     "from": "#include \"types.hpp\"",
+     "to": "#include \"../plugin/types.hpp\""
+    },
+    {
+     "match": "feature/secrets/plugins/(?:Aws|Azuresecrets|Boru|Doppler|Gcpsecrets|Hashicorp|Infisical|Onepassword|Secretspec)\\.hpp$",
+     "from": "#include \"Provider.hpp\"",
+     "to": "#include \"../sekreto/Provider.hpp\""
+    },
+    {
+     "match": "feature/secrets/plugins/((?:Aws|Azuresecrets|Boru|Doppler|Gcpsecrets|Hashicorp|Infisical|Onepassword|Secretspec)\\.cpp|Proc\\.hpp)$",
+     "from": "#include \"Providers.hpp\"",
+     "to": "#include \"../sekreto/Providers.hpp\""
+    },
+    {
+     "match": "feature/secrets/plugins/((?:Aws|Azuresecrets|Boru|Doppler|Gcpsecrets|Hashicorp|Infisical|Onepassword|Secretspec)\\.cpp|Httpjson\\.hpp|Proc\\.hpp|Sigv4\\.hpp)$",
+     "from": "#include \"Sekreto.hpp\"",
+     "to": "#include \"../sekreto/Sekreto.hpp\""
+    },
+    {
+     "match": "feature/secrets/plugins/Httpjson\\.hpp$",
+     "from": "#include \"Json.hpp\"",
+     "to": "#include \"../sekreto/Json.hpp\""
+    }
+   ]
   },
   {
    "lib": "sekreto",

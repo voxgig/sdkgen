@@ -628,6 +628,134 @@
     }
    }
   },
+  "plugin/cpp": {
+   "repo": "https://github.com/voxgig/plugin",
+   "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/cpp/feature/secrets/plugin/capability.cpp": {
+     "sha256": "aff8bf7b29addd26ce6cb120296d3c920683af2f14957a3594e2f0f7f8faacc5",
+     "upstream": "cpp/src/capability.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/capability.hpp": {
+     "sha256": "a8673e4ae5c22ebfd769294f77f5564d5cdb77703858187c72b39405810f9620",
+     "upstream": "cpp/src/capability.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/catalog.cpp": {
+     "sha256": "3d9fc5f9f9f2b4ccdbd705e1fe989fa7da760b81841f4ec29c5069b6d0ae245a",
+     "upstream": "cpp/src/catalog.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/catalog.hpp": {
+     "sha256": "99f8936ecde52882d0c94ec72c152fdc5cdd9e1e1fba130bdb35d318a7d2337e",
+     "upstream": "cpp/src/catalog.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/config.cpp": {
+     "sha256": "bdd712ed46c00787a5e43bdc1363db4bf6cf00eb494661dd8a978b2aca84d001",
+     "upstream": "cpp/src/config.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/config.hpp": {
+     "sha256": "9f0b9e1ac9ea7e82f55410bdf3316c5e8d2e9cd70bdb7b5866b906dbb4bd183d",
+     "upstream": "cpp/src/config.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/depend.cpp": {
+     "sha256": "afeb2eaf69d51a0d11f5a1d4474627f8e9de59bcc4cce1716b65f04c415f3714",
+     "upstream": "cpp/src/depend.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/depend.hpp": {
+     "sha256": "e5daef865c83ce7ee74803d30e720c77cf80b42ef747e8dfb0276de2e368187d",
+     "upstream": "cpp/src/depend.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/env.cpp": {
+     "sha256": "e151f402718cdce4f7b6b1519a374371d9d96eb73c5b63b3b786903791024b3e",
+     "upstream": "cpp/src/env.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/env.hpp": {
+     "sha256": "70294f33e8965662885b4f86e1d3e516c21132c2dce1642a2a836f825f6efcbc",
+     "upstream": "cpp/src/env.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/export.cpp": {
+     "sha256": "0e9efb85448c176da1592fc49db795e2ba1d7be1ade75b267f8d326f993db4b3",
+     "upstream": "cpp/src/export.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/export.hpp": {
+     "sha256": "20627b3e11517314ef606a0b2831256e4b29aa456ed770d5cc71ed3c8629a00a",
+     "upstream": "cpp/src/export.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/graph.cpp": {
+     "sha256": "732473fa8d18e44ac329eab2a346ce9b8ae809ce774ca432f019880add2d7f0f",
+     "upstream": "cpp/src/graph.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/graph.hpp": {
+     "sha256": "4186641c8f39316f1cb07455368be8c43d96bd955e06a90dc7b174ded80ae437",
+     "upstream": "cpp/src/graph.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/host.cpp": {
+     "sha256": "4002af6c7350fbaa024fae1f8e3d911c90c08a3d3657bfa3335489d946db14cc",
+     "upstream": "cpp/src/host.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/host.hpp": {
+     "sha256": "fb49e5dbb5a10dcc66b966d132b0ea6da69e3ea5008fccd7977f00bfb0aa3e17",
+     "upstream": "cpp/src/host.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/order.cpp": {
+     "sha256": "906e3d7b91f0a8ad475d386120722fdcb985cee5a94304146b80d2cd18ab6f29",
+     "upstream": "cpp/src/order.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/order.hpp": {
+     "sha256": "3c12705d5304795126689c341e2da44b3154691f09bc45e11a163ce1f0f5251b",
+     "upstream": "cpp/src/order.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/point.cpp": {
+     "sha256": "4d034170b698e480576a112673cac396ca725160d1d9d84791d9d34bfec7b73c",
+     "upstream": "cpp/src/point.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/point.hpp": {
+     "sha256": "6ce47600601d8efcb0e520288034b8a25fa137c212de833a2c1978a4251ae427",
+     "upstream": "cpp/src/point.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/ref.cpp": {
+     "sha256": "6e1b6bbe8ac43653837a63807d5884b264240a6b5fc629085c98704209261e33",
+     "upstream": "cpp/src/ref.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/ref.hpp": {
+     "sha256": "f36df03033e9f932546097255666287a19c4891082331bdfe44800ba1e866604",
+     "upstream": "cpp/src/ref.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/resolve.cpp": {
+     "sha256": "493d7285d764a37adf7d36b0bd5a161785ed576593a602bbb4ea8ef8e8eb7980",
+     "upstream": "cpp/src/resolve.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/resolve.hpp": {
+     "sha256": "f4ca67c8a9c0f6fbcf03b8d8054bbc1471031ad69384fbf8cf316f801993319a",
+     "upstream": "cpp/src/resolve.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/types.cpp": {
+     "sha256": "263cfadee07d33503e38780f6541b038d0267226fcb8629712b16dcb8d6c78d7",
+     "upstream": "cpp/src/types.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/types.hpp": {
+     "sha256": "47472bd4fa573023ab87c5e10013405a27399b098fa8face4bb1d8648f96378a",
+     "upstream": "cpp/src/types.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/value.cpp": {
+     "sha256": "f0a751abf21640177fd28e3a76158151e484d4f1e46c4061e69c03f5a1a7a4ec",
+     "upstream": "cpp/src/value.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/value.hpp": {
+     "sha256": "e9f152fbf676a708264a2faaed4c8d22823c64b67024f67e23795348316d6cfa",
+     "upstream": "cpp/src/value.hpp"
+    },
+    "tm/cpp/feature/secrets/plugin/version.cpp": {
+     "sha256": "c56ef0dfdc63ee701af30b9798afb225b26473799525b371b0af5cd55af2b937",
+     "upstream": "cpp/src/version.cpp"
+    },
+    "tm/cpp/feature/secrets/plugin/version.hpp": {
+     "sha256": "12f6a8ff44f9e835c0ff5c64d251f9063bba4a70931a399ca25fe3fca91b7e68",
+     "upstream": "cpp/src/version.hpp"
+    }
+   }
+  },
   "plugin/csharp": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a",
@@ -2449,6 +2577,362 @@
     "tm/clojure/feature/secrets/voxgig/sekreto/providers.clj": {
      "sha256": "1b97a94beaf7c0deb8ad4f2276fbed67eae78f6a5a04f7d7f3988b4cb369feb8",
      "upstream": "clojure/src/voxgig/sekreto/providers.clj"
+    }
+   }
+  },
+  "sekreto/cpp": {
+   "repo": "https://github.com/voxgig/sekreto",
+   "commit": "1267ee2e5f49566bc92695bc9eb3a60ef4924998",
+   "version": "sdk-20260908-1556-0",
+   "tag": "sdk-20260908-1556-0",
+   "file": {
+    "tm/cpp/feature/secrets/plugins/Aws.cpp": {
+     "sha256": "78365256df9494b3c240cb9972380dc2acb41858f2d9dfbf9c3cb9adcb66d23a",
+     "upstream": "cpp/plugins/Aws.cpp",
+     "adapt": [
+      {
+       "from": "#include \"Providers.hpp\"",
+       "to": "#include \"../sekreto/Providers.hpp\""
+      },
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Aws.hpp": {
+     "sha256": "fc0007046ccdc0a6aac8c3cee22cac7e920012fd4f20e2fbfa70659779f0ae18",
+     "upstream": "cpp/plugins/Aws.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Provider.hpp\"",
+       "to": "#include \"../sekreto/Provider.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Azuresecrets.cpp": {
+     "sha256": "932bd63aefaa63ecf17e258d5406c1641a1074d453e7b5cbe199bdc865c4b500",
+     "upstream": "cpp/plugins/Azuresecrets.cpp",
+     "adapt": [
+      {
+       "from": "#include \"Providers.hpp\"",
+       "to": "#include \"../sekreto/Providers.hpp\""
+      },
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Azuresecrets.hpp": {
+     "sha256": "8e90c3cb28be5f8d6b69c0d53cb950a4c7ec83c3b6fd83d1934556630e481844",
+     "upstream": "cpp/plugins/Azuresecrets.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Provider.hpp\"",
+       "to": "#include \"../sekreto/Provider.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Boru.cpp": {
+     "sha256": "92cff01c302bf18d13733da05f0773a20d819de3f4dc87da9f9a5645cee4fd9f",
+     "upstream": "cpp/plugins/Boru.cpp",
+     "adapt": [
+      {
+       "from": "#include \"Providers.hpp\"",
+       "to": "#include \"../sekreto/Providers.hpp\""
+      },
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Boru.hpp": {
+     "sha256": "3a43bc5c463e9f08840458a70c3d7d175c9a7e0edc9cb1cac30bd7ecf303461e",
+     "upstream": "cpp/plugins/Boru.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Provider.hpp\"",
+       "to": "#include \"../sekreto/Provider.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Crypto.cpp": {
+     "sha256": "b8cc0200b149d97aa1d3a91b249b3d49ad664932d9df62c6810d8efdb0896c3f",
+     "upstream": "cpp/plugins/Crypto.cpp"
+    },
+    "tm/cpp/feature/secrets/plugins/Crypto.hpp": {
+     "sha256": "2cf93c4aa41104296801a5385923d3f681e33913aafba50353cb06c07ab2746b",
+     "upstream": "cpp/plugins/Crypto.hpp"
+    },
+    "tm/cpp/feature/secrets/plugins/Doppler.cpp": {
+     "sha256": "56feea24c0d3e8f4488ff1248e884b03ddbd9982b857d7cd07a88480f8fd21d7",
+     "upstream": "cpp/plugins/Doppler.cpp",
+     "adapt": [
+      {
+       "from": "#include \"Providers.hpp\"",
+       "to": "#include \"../sekreto/Providers.hpp\""
+      },
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Doppler.hpp": {
+     "sha256": "8654e58479f1f6ae8df7010c36723bb19ee613e12844175cfcca7a991efc9d89",
+     "upstream": "cpp/plugins/Doppler.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Provider.hpp\"",
+       "to": "#include \"../sekreto/Provider.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Gcpsecrets.cpp": {
+     "sha256": "a4c448fc1ed00bf9c23209a5cf46f8f9296558deeaf81c44eafc24e8204eb6ff",
+     "upstream": "cpp/plugins/Gcpsecrets.cpp",
+     "adapt": [
+      {
+       "from": "#include \"Providers.hpp\"",
+       "to": "#include \"../sekreto/Providers.hpp\""
+      },
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Gcpsecrets.hpp": {
+     "sha256": "c5210b51c74f59a71524036f1c6f6eee6da769410477c457fe31e3be4f3a452a",
+     "upstream": "cpp/plugins/Gcpsecrets.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Provider.hpp\"",
+       "to": "#include \"../sekreto/Provider.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Hashicorp.cpp": {
+     "sha256": "49e16d8118ddb28d320f574036a02c6d83d4d71d33a589ce4710c29a055e1791",
+     "upstream": "cpp/plugins/Hashicorp.cpp",
+     "adapt": [
+      {
+       "from": "#include \"Providers.hpp\"",
+       "to": "#include \"../sekreto/Providers.hpp\""
+      },
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Hashicorp.hpp": {
+     "sha256": "1427298242a167cfd9f56567292a51960e465fc90a70a0925f76a10482e649c3",
+     "upstream": "cpp/plugins/Hashicorp.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Provider.hpp\"",
+       "to": "#include \"../sekreto/Provider.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Httpjson.cpp": {
+     "sha256": "39283460ef9bd574e31a057396e8138139095a06652462cea8fce8d8fafe5e90",
+     "upstream": "cpp/plugins/Httpjson.cpp"
+    },
+    "tm/cpp/feature/secrets/plugins/Httpjson.hpp": {
+     "sha256": "bb60293c4f1d82924bbbdbc5393e99e4e70292cff581a0e53da551eaaa3d35a6",
+     "upstream": "cpp/plugins/Httpjson.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      },
+      {
+       "from": "#include \"Json.hpp\"",
+       "to": "#include \"../sekreto/Json.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Infisical.cpp": {
+     "sha256": "fb5263c29cbade8538e7d81de9dc899ef7d1e5c459a63b3bda0269703bc89412",
+     "upstream": "cpp/plugins/Infisical.cpp",
+     "adapt": [
+      {
+       "from": "#include \"Providers.hpp\"",
+       "to": "#include \"../sekreto/Providers.hpp\""
+      },
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Infisical.hpp": {
+     "sha256": "777d3eb57b5a0741421fb066b1ee5bc156dba61cc9469b0892e5ced82a3ec640",
+     "upstream": "cpp/plugins/Infisical.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Provider.hpp\"",
+       "to": "#include \"../sekreto/Provider.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Onepassword.cpp": {
+     "sha256": "c3c2cc1a29a8d7f6bac6030d4d848fd8afdd38e7fcc2724c4b71dcd812d17d27",
+     "upstream": "cpp/plugins/Onepassword.cpp",
+     "adapt": [
+      {
+       "from": "#include \"Providers.hpp\"",
+       "to": "#include \"../sekreto/Providers.hpp\""
+      },
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Onepassword.hpp": {
+     "sha256": "4d6beabee01df67607a0d2e255606eeb398ba5a7e0a007cf6153019a615404ed",
+     "upstream": "cpp/plugins/Onepassword.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Provider.hpp\"",
+       "to": "#include \"../sekreto/Provider.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Proc.cpp": {
+     "sha256": "a93f2b765559fe828ca47cd6af43dd2a53604f9b5789e3c5f11f76e4d2b82f28",
+     "upstream": "cpp/plugins/Proc.cpp"
+    },
+    "tm/cpp/feature/secrets/plugins/Proc.hpp": {
+     "sha256": "94c2d43d8c7ac384450b424160568f6430c5b78f991d39abb07e481348b1b4ff",
+     "upstream": "cpp/plugins/Proc.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Providers.hpp\"",
+       "to": "#include \"../sekreto/Providers.hpp\""
+      },
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Secretspec.cpp": {
+     "sha256": "58e4b4fdd9e481a593d55418a4db0fc41c28bbbf6ff8d6efb3fc900e34944644",
+     "upstream": "cpp/plugins/Secretspec.cpp",
+     "adapt": [
+      {
+       "from": "#include \"Providers.hpp\"",
+       "to": "#include \"../sekreto/Providers.hpp\""
+      },
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Secretspec.hpp": {
+     "sha256": "566390a92972c7244b8da0a305cfa1ab64c176eb7e5e254a26b71ce1394a49be",
+     "upstream": "cpp/plugins/Secretspec.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Provider.hpp\"",
+       "to": "#include \"../sekreto/Provider.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Sigv4.cpp": {
+     "sha256": "4c0c7fc96f8a6cd05ad73cb1aec5b8f90d9cff0bbec7d62408408b4617bccf1f",
+     "upstream": "cpp/plugins/Sigv4.cpp"
+    },
+    "tm/cpp/feature/secrets/plugins/Sigv4.hpp": {
+     "sha256": "539666bc0d0ca082f892d8a181cb7da84f8a7ab203730eee87c3b60b93ec4fd5",
+     "upstream": "cpp/plugins/Sigv4.hpp",
+     "adapt": [
+      {
+       "from": "#include \"Sekreto.hpp\"",
+       "to": "#include \"../sekreto/Sekreto.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/plugins/Tls.cpp": {
+     "sha256": "2ce87fc9f355c8d726a15140cfdfd9f2e9b190abd59c5e8afb6036529d336d57",
+     "upstream": "cpp/plugins/Tls.cpp"
+    },
+    "tm/cpp/feature/secrets/plugins/Tls.hpp": {
+     "sha256": "5e82e76b1dc8fa5823de72f013af9300fa11c9f5e996d1f6c33b0711dc54d53f",
+     "upstream": "cpp/plugins/Tls.hpp"
+    },
+    "tm/cpp/feature/secrets/sekreto/Json.cpp": {
+     "sha256": "62bf5a524d8053ba5a75548f45f8a5feb48847b3b056a5b0ac36fca901e0f3fd",
+     "upstream": "cpp/src/Json.cpp"
+    },
+    "tm/cpp/feature/secrets/sekreto/Json.hpp": {
+     "sha256": "7661306d89c7093c7650d233a019f51ec306822c018f299f6eb9853ee033aeca",
+     "upstream": "cpp/src/Json.hpp"
+    },
+    "tm/cpp/feature/secrets/sekreto/Provider.cpp": {
+     "sha256": "5626eb38f44da701a92e6533ecf1292cbe1b31591e7e2737bb4dfcc516820d09",
+     "upstream": "cpp/src/Provider.cpp",
+     "adapt": [
+      {
+       "from": "#include \"ref.hpp\"",
+       "to": "#include \"../plugin/ref.hpp\""
+      },
+      {
+       "from": "#include \"types.hpp\"",
+       "to": "#include \"../plugin/types.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/sekreto/Provider.hpp": {
+     "sha256": "8890643b23f2b11c5f21d932e3f68bf90f4d20bfec12824209b5260c594b195b",
+     "upstream": "cpp/src/Provider.hpp",
+     "adapt": [
+      {
+       "from": "#include \"catalog.hpp\"",
+       "to": "#include \"../plugin/catalog.hpp\""
+      },
+      {
+       "from": "#include \"host.hpp\"",
+       "to": "#include \"../plugin/host.hpp\""
+      },
+      {
+       "from": "#include \"value.hpp\"",
+       "to": "#include \"../plugin/value.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/sekreto/Providers.cpp": {
+     "sha256": "b1191920255a0beb3eb2e2e3feac4a3617e4fe9748d57c6224b053f0fe40aa1a",
+     "upstream": "cpp/src/Providers.cpp"
+    },
+    "tm/cpp/feature/secrets/sekreto/Providers.hpp": {
+     "sha256": "73951428704e4042fecd34d0753b0edca5b55569f89f2efbf00528128e8551fd",
+     "upstream": "cpp/src/Providers.hpp"
+    },
+    "tm/cpp/feature/secrets/sekreto/Sekreto.cpp": {
+     "sha256": "42e9355034ef53d6e469675b58efa279060e99a4bccdde4a2d9ed5e8dbcab46f",
+     "upstream": "cpp/src/Sekreto.cpp",
+     "adapt": [
+      {
+       "from": "#include \"ref.hpp\"",
+       "to": "#include \"../plugin/ref.hpp\""
+      },
+      {
+       "from": "#include \"types.hpp\"",
+       "to": "#include \"../plugin/types.hpp\""
+      }
+     ]
+    },
+    "tm/cpp/feature/secrets/sekreto/Sekreto.hpp": {
+     "sha256": "5f04aa18a47e0f578b3dc004bb1304d2c38d6c2e54f62da5c9bac0e22b0993ec",
+     "upstream": "cpp/src/Sekreto.hpp"
     }
    }
   },

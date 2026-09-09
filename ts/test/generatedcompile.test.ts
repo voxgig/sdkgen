@@ -1516,6 +1516,104 @@ func TestTypesProbe(t *testing.T) {
   })
 
 
+
+  // cpp SECRETS, END TO END - the only lane that RUNS the cpp secrets
+  // feature with the feature ACTIVE, and the first time this header-only
+  // target LINKS anything: the vendored sekreto and voxgig/plugin ports are
+  // multi-translation-unit, so the generated Makefile compiles them into
+  // libsdksecrets.a behind the generated feature/secrets/kinds.cpp wiring
+  // gate. generate.test.ts pins the wiring in the TEXT; this lane pins it in
+  // the BUILD and the RUN - a missed include adapt, a plugin header shadowing
+  // core/types.hpp, or a factory the trim removed is a compile or link error
+  // that only a compiler sees.
+  //
+  // The `vault` group is on so the lane also exercises the plugin vocabulary
+  // (kinds.cpp's sekreto::hashicorp()/boru() calls, the plugin layer and the
+  // OpenSSL link): every builtin-only assertion stays green through a broken
+  // kind file, so it needs a lane where a kind is declared. The suite's
+  // vocabulary case prints the definition count it read back, which is how
+  // this lane knows the model's choice reached the feature.
+  test('cpp: the secrets feature runs with the feature active', async (t) => {
+    const make = toolchain('make')
+    // The compiler is probed as well as make, and a configured CXX that does
+    // not resolve is a SKIP, not a substitution (the auth-null lane's rule).
+    const configured = process.env.CXX
+    const cxx = null == configured || '' === configured
+      ? (toolchain('g++') || toolchain('c++') || toolchain('clang++'))
+      : toolchain(configured)
+    if (null == make || null == cxx) {
+      return t.skip('needs make and a C++ compiler (make: ' + make + ', cxx: ' + cxx + ')')
+    }
+
+    const sdkroot = Path.join(tmp, 'cpp-secrets')
+    await generateTo('cpp', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // Generated BEFORE the header probe, so a machine without the headers
+    // still proves the wiring file and the suite are emitted.
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.cpp')),
+      'cpp: the wiring file feature/secrets/kinds.cpp was not generated')
+    const suite = Path.join('test', 'feature', 'secrets', 'secrets_test.cpp')
+    ok(Fs.existsSync(Path.join(sdkroot, suite)),
+      'cpp: the gated secrets suite was not generated')
+
+    // OpenSSL alone: unlike c, cpp's exchange transport is the vendored
+    // HTTPS client, so there is no libcurl to probe for.
+    const hdrprobe = Path.join(tmp, 'cpp-secrets-headers.cpp')
+    Fs.writeFileSync(hdrprobe, '#include <openssl/ssl.h>\nint main() { return 0; }\n')
+    const hdr = run(cxx, ['-fsyntax-only', hdrprobe], tmp)
+    if (hdr.timedOut) return t.skip('cpp: ' + hdr.out)
+    if (!hdr.ok) {
+      return t.skip('cpp: a compiler is here but the OpenSSL development ' +
+        'headers are not (libssl-dev):\n' + tail(hdr.out, 5))
+    }
+
+    // Build the ONE suite binary (the Makefile builds libsdksecrets.a for
+    // it), as the auth-null lane does; `make test` would also build every
+    // entity suite and run the corpus drivers, which need a corpus this
+    // lane does not write. -j2 because the archive is some seventy
+    // translation units and this lane shares CI with other compilers.
+    const built = run(make, ['-j2', 'CXX=' + cxx, 'test/feature/secrets/secrets_test.out'], sdkroot)
+    if (built.timedOut) return t.skip('cpp: ' + built.out)
+    ok(built.ok, 'cpp: the secrets suite did not build:\n' + tail(built.out))
+
+    const probe = run(Path.join(sdkroot, 'test', 'feature', 'secrets', 'secrets_test.out'),
+      [], sdkroot)
+    if (probe.timedOut) return t.skip('cpp: ' + probe.out)
+    const out = probe.out.replace(/\r\n/g, '\n')
+
+    // Name the failing checks: testlib's summary says how many and never
+    // which, and the FAIL lines are above it.
+    const failed = out.split('\n').filter((l: string) => /^\s*FAIL \[/.test(l))
+    ok(probe.ok, 'cpp secrets suite failed:\n' + failed.join('\n') + '\n' + tail(out))
+
+    // POSITIVE evidence the tests RAN: the case count the suite prints from
+    // its own RUN macro, and testlib's summary. A suite that `target add`
+    // trimmed, or that the Makefile never compiled, prints neither.
+    const ran = /^secrets: ran (\d+) case\(s\)$/m.exec(out)
+    ok(null != ran, 'cpp: the suite printed no case count:\n' + tail(out))
+    ok(10 < Number((ran as RegExpExecArray)[1]),
+      'cpp: the secrets suite ran only ' + (ran as RegExpExecArray)[1] +
+      ' cases - it was trimmed, not run:\n' + tail(out))
+
+    const summary = /^secrets_test: (\d+) tests, (\d+) checks, (\d+) failures$/m.exec(out)
+    ok(null != summary, 'cpp: testlib printed no summary:\n' + tail(out))
+    strictEqual((summary as RegExpExecArray)[3], '0',
+      'cpp: the secrets suite reports failures:\n' + tail(out))
+    ok(Number((ran as RegExpExecArray)[1]) < Number((summary as RegExpExecArray)[2]),
+      'cpp: the secrets suite made ' + (summary as RegExpExecArray)[2] +
+      ' checks across ' + (ran as RegExpExecArray)[1] +
+      ' cases - cases are exiting before they assert:\n' + tail(out))
+
+    // The vocabulary really is the model's: the vault group is two kinds,
+    // read back through the generated kinds.cpp and core/config.hpp.
+    ok(/^secrets: 2 plugin definition\(s\) selected by the model$/m.test(out),
+      'cpp: featurePlugins("secrets") did not answer the vault group\'s two definitions:\n' +
+      tail(out))
+  })
+
+
   // PHP HAS NO BUILD STEP, WHICH IS WHY IT NEEDED THIS.
   //
   // `php -l` parses a file without running it — the cheapest possible check,

@@ -358,12 +358,22 @@ describe('target add feature trimming', () => {
     //     build fragment Main_ocaml generates only for an active secrets
     //     feature. An optional include of an absent file is a no-op, so a
     //     trimmed tree builds with every secrets variable empty.
+    //   cpp/Makefile — names `feature/secrets` only inside the
+    //     `$(wildcard ...)` gates that decide whether the vendored secrets
+    //     payload is compiled at all (feature/secrets/kinds.cpp, the
+    //     generated wiring file, and test/feature/secrets/*.cpp). With the
+    //     feature trimmed both wildcards are empty and every derived
+    //     variable collapses to nothing, so the Makefile IS the header-only
+    //     build it was before; naming the feature is the gate, not a
+    //     coupling. The generatedcompile lanes prove the collapsed form by
+    //     building a tree without the feature.
     const PINNED = [
       /^tm\/c\/core\/sdk\.h$/,
       /^tm\/py\/test\/test_feature\.py$/,
       /^tm\/ocaml\/sdk_features\.ml$/,
       /^tm\/ocaml\/test\/harness\.ml$/,
       /^tm\/ocaml\/Makefile$/,
+      /^tm\/cpp\/Makefile$/,
     ]
 
     const available = availableFeatures(Fs, SCAFFOLD)
