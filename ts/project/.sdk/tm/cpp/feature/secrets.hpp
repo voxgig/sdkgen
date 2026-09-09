@@ -87,10 +87,11 @@
 //     active, a transport error that says so when none is (see Config_cpp).
 //
 //   * The SDK is header-only and the vendored port is not. This header
-//     declares what the port defines; tm/cpp/Makefile compiles the port into
-//     libsdksecrets.a only while kinds.cpp exists, and core/config.hpp
-//     includes this header only when the model activates the feature - so a
-//     tree without the feature never sees a sekreto declaration.
+//     declares what the port defines; the generated feature/secrets/kinds.mk
+//     (read by tm/cpp/Makefile, which names no feature) has the port
+//     compiled into libsdkfeature.a, and core/config.hpp includes this
+//     header only when the model activates the feature - so a tree without
+//     the feature never sees a sekreto declaration.
 //
 //   * cpp has no `extend` option (core/types.hpp), so the shipped suite
 //     adopts the feature two ways: the generated makeFeature("secrets") on a
@@ -114,7 +115,7 @@
 #include "options.hpp"
 
 // The vendored @voxgig/sekreto port (multi-TU; compiled by the Makefile into
-// libsdksecrets.a). Its headers reach voxgig/plugin by explicit ../plugin/
+// libsdkfeature.a through the generated kinds.mk). Its headers reach voxgig/plugin by explicit ../plugin/
 // paths, so no include path is involved and no SDK header is shadowed.
 #include "secrets/sekreto/Providers.hpp"
 #include "secrets/sekreto/Sekreto.hpp"
