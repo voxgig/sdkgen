@@ -1550,6 +1550,116 @@ func TestTypesProbe(t *testing.T) {
       'clojure: the runner exited zero without printing ALL GREEN:\n' +
       tail(probe.out))
   })
+
+
+  // ocaml SECRETS, END TO END - the only lane that BUILDS and RUNS the ocaml
+  // secrets feature with the feature active, and the one place the build
+  // model is proved rather than read. generate.test.ts pins what is EMITTED
+  // (secrets.mk and its module order, the trim, the accessor); only ocamlc
+  // can say whether the vendored ocaml ports of sekreto and voxgig/plugin,
+  // the feature and the generated config agree on a type, and only a link
+  // whether the fragment's gating - the OpenSSL stub compiled past its
+  // provenance header and linked `-custom` behind a transport-needing group
+  // - holds up.
+  //
+  // The `vault` group is on so the binding is compiled and linked: the
+  // configuration with the most that can go wrong. The OpenSSL headers are
+  // PROBED first: an image with ocamlc and a C compiler but without
+  // libssl-dev skips visibly rather than failing inside the build and being
+  // read as a secrets regression. Stock ocamlc with `-I +unix unix.cma` is
+  // the spelling - no ocamlfind, no opam, no dune - which is how the
+  // generated Makefile drives it.
+  //
+  // The suite's own lines are the evidence, LF-normalised: the
+  // `feature.secrets: ran N check(s)` count the suite prints from
+  // EXECUTIONS (a suite `target add` trimmed to nothing prints none), the
+  // harness's `SDK PASS N  FAIL 0` epilogue, and the model's own plugin
+  // count read back through Sdk_config.feature_plugins.
+  test('ocaml: the secrets feature runs with the feature active', async (t) => {
+    const ocamlc = toolchain('ocamlc')
+    const make = toolchain('make')
+    const configured = process.env.CC
+    const cc = null == configured || '' === configured
+      ? (toolchain('cc') || toolchain('gcc'))
+      : toolchain(configured)
+    if (null == ocamlc || null == make || null == cc) {
+      return t.skip('needs ocamlc, make and a C compiler (ocamlc: ' + ocamlc +
+        ', make: ' + make + ', cc: ' + cc + ')')
+    }
+
+    const sdkroot = Path.join(tmp, 'ocaml-secrets')
+    await generateTo('ocaml', sdkroot,
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // Generated BEFORE the header probe, so a machine without the headers
+    // still proves the fragment and the suite are emitted.
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'secrets.mk')),
+      'ocaml: the build fragment feature/secrets/secrets.mk was not generated')
+    ok(Fs.existsSync(Path.join(sdkroot, 'test', 'feature', 'secrets', 't_secrets.ml')),
+      'ocaml: the gated secrets suite was not generated')
+    ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'plugins', 'tls_stubs.c')),
+      'ocaml: the OpenSSL binding source was not carried')
+
+    const hdrprobe = Path.join(tmp, 'ocaml-secrets-headers.c')
+    Fs.writeFileSync(hdrprobe,
+      '#include <openssl/ssl.h>\n#include <caml/mlvalues.h>\nint main(void) { return 0; }\n')
+    const where = run(ocamlc, ['-where'], tmp)
+    if (!where.ok) return t.skip('ocaml: ocamlc -where failed: ' + tail(where.out, 3))
+    const hdr = run(cc, ['-fsyntax-only', '-I' + where.out.trim(), hdrprobe], tmp)
+    if (hdr.timedOut) return t.skip('ocaml: ' + hdr.out)
+    if (!hdr.ok) {
+      return t.skip('ocaml: a compiler is here but the OpenSSL or OCaml runtime ' +
+        'headers are not (libssl-dev, the ocaml package):\n' + tail(hdr.out, 5))
+    }
+
+    // Type-check the library first (the Makefile's `build` is `-c` over the
+    // whole ordered list), then build and run the SDK suite binary, which
+    // links the gated tier: unix.cma, the stub, -custom, OpenSSL.
+    const built = run(make, ['CC=' + cc, 'OCAMLC=' + ocamlc, 'build'], sdkroot)
+    if (built.timedOut) return t.skip('ocaml: ' + built.out)
+    ok(built.ok, 'ocaml: the generated SDK does not type-check:\n' + tail(built.out))
+
+    const probe = run(make, ['CC=' + cc, 'OCAMLC=' + ocamlc, 'test-sdk'], sdkroot)
+    if (probe.timedOut) return t.skip('ocaml: ' + probe.out)
+    const out = probe.out.replace(/\r\n/g, '\n')
+
+    // Name the failing checks: the harness prints one FAIL line each.
+    const failed = out.split('\n').filter((l: string) => /^FAIL /.test(l))
+    ok(probe.ok, 'ocaml secrets suite failed:\n' + failed.join('\n') + '\n' + tail(out))
+
+    const ran = /^feature\.secrets: ran (\d+) check\(s\)$/m.exec(out)
+    ok(null != ran,
+      'ocaml: the suite printed no `feature.secrets: ran N check(s)` line - ' +
+      'secrets.mk is not linking test/feature/secrets/t_secrets.ml into ' +
+      'run_sdk_test, so the shipped suite never ran:\n' + tail(out))
+    ok(10 < Number((ran as RegExpExecArray)[1]),
+      'ocaml: the secrets suite ran only ' + (ran as RegExpExecArray)[1] +
+      ' checks - it was trimmed, not run:\n' + tail(out))
+
+    const summary = /^SDK PASS (\d+)  FAIL (\d+)$/m.exec(out)
+    ok(null != summary, 'ocaml: the harness printed no summary:\n' + tail(out))
+    ok('0' === (summary as RegExpExecArray)[2],
+      'ocaml: the SDK suite reports failures:\n' + tail(out))
+    ok(Number((ran as RegExpExecArray)[1]) <= Number((summary as RegExpExecArray)[1]),
+      'ocaml: the summary counts fewer passes than the secrets suite ran')
+
+    // The vocabulary really is the model's: the vault group is two kinds,
+    // read back through the generated Sdk_config.feature_plugins.
+    ok(/^secrets: 2 plugin definition\(s\) selected by the model$/m.test(out),
+      'ocaml: feature_plugins "secrets" did not answer the vault group\'s two definitions:\n' +
+      tail(out))
+
+    // And the bundled transport really is the vendored client: with no
+    // system.fetch the exchange dialled the loopback port and said so in
+    // sekreto's words, rather than answering "no transport".
+    ok(/^secrets: exchange without system\.fetch -> sekreto: cannot reach /m.test(out),
+      'ocaml: the exchange did not reach the vendored HTTP client (secrets_transport):\n' +
+      tail(out))
+
+    t.diagnostic('ocaml: secrets suite ran ' + (ran as RegExpExecArray)[1] +
+      ' checks (vault group, OpenSSL binding built and linked -custom)')
+  })
 })
 
 
@@ -3034,21 +3144,40 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
     'secrets.clj ("secrets-auth-nil-suppresses-the-credential"), which the ' +
     'clojure secrets lane in this file runs through the generated runner',
 
-  // The four below were the AUTHNULL_OUTSTANDING list. They now carry the
-  // fix, but READ BY EYE ONLY: no ocaml, scala, zig or lean toolchain
-  // existed where the change was written, so not one of them has been
-  // compiled, let alone had the suppression exercised. That is a weaker
-  // position than the four above it, which at least compile in some CI: these
-  // are unproven at BOTH levels. The structural guard below is all that holds
-  // them, and a structural guard cannot see a type error or a mis-ordered
-  // statement. Whoever gets one of these toolchains should build it first and
-  // add a lane second. (clojure and elixir were the fifth and sixth, and are
-  // the worked examples of doing exactly that - check the toolchain before
-  // inheriting the claim. elixir's lane is above, and it is in
-  // AUTHNULL_STANDALONE; this list sat on "no elixir toolchain" for a machine
-  // that had one, and the stale-entry guard cannot see a false excuse that
-  // has no lane to contradict it.)
-  ocaml: 'UNVERIFIED - no ocaml toolchain; never compiled, never executed',
+  // ocaml has left the UNVERIFIED list. ocamlc 4.14.1 IS installed on this
+  // machine (/usr/bin/ocamlc; no ocamlfind or opam, and stock ocamlc with
+  // `-I +unix unix.cma` is the spelling), and the secrets rollout built a
+  // generated ocaml SDK and RAN it: the shipped
+  // tm/ocaml/test/feature/secrets/t_secrets.ml checks
+  // "auth.null_suppresses_the_credential_chain_or_no_chain" and
+  // "auth.null_suppresses_an_explicit_apikey_too" drive a LIVE client
+  // (Sdk_client.make) through system.fetch with `auth: Null` set alongside
+  // an explicit apikey AND a resolving chain, and assert no authorization
+  // header reaches the transport, plus that options.auth survives
+  // validation as a present null (getprop_raw). That suite ALSO runs in
+  // sdkgen CI: the `ocaml: the secrets feature runs with the feature
+  // active` lane above builds the SDK and requires its executed-count
+  // line. It is a secrets lane rather than an AUTHNULL_LANES row (the
+  // table's probe shape does not fit a Makefile-driven bytecode build),
+  // which is why the entry stays, as clojure's and swift's do.
+  ocaml: 'pinned by the shipped tm/ocaml/test/feature/secrets/t_secrets.ml ' +
+    '("auth.null_suppresses_the_credential_chain_or_no_chain"), which the ' +
+    'ocaml secrets lane in this file runs through the generated Makefile',
+
+  // The two below were the AUTHNULL_OUTSTANDING list. They now carry the
+  // fix, but READ BY EYE ONLY: no scala or zig toolchain existed where the
+  // change was written, so neither has been compiled, let alone had the
+  // suppression exercised. That is a weaker position than the entries above
+  // it, which at least compile in some CI: these are unproven at BOTH
+  // levels. The structural guard below is all that holds them, and a
+  // structural guard cannot see a type error or a mis-ordered statement.
+  // Whoever gets one of these toolchains should build it first and add a
+  // lane second. (clojure, elixir and ocaml were the third, fourth and
+  // fifth, and are the worked examples of doing exactly that - check the
+  // toolchain before inheriting the claim. elixir's lane is above, and it
+  // is in AUTHNULL_STANDALONE; this list sat on "no elixir toolchain" and
+  // "no ocaml toolchain" for a machine that had both, and the stale-entry
+  // guard cannot see a false excuse that has no lane to contradict it.)
   scala: 'UNVERIFIED - no scala toolchain; never compiled, never executed',
   zig: 'UNVERIFIED - no zig toolchain; never compiled, never executed',
 }

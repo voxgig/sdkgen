@@ -209,17 +209,21 @@ describe('target add feature trimming', () => {
 
     // Pinned, not muted: this is the remaining work, and a target joining
     // or leaving the list is a decision that should be reviewed.
-    //   clojure, ocaml — every feature lives in ONE module
-    //           (features.clj / sdk_features.ml); there
+    //   clojure — every feature lives in ONE module (features.clj); there
     //           is no per-feature file to leave out until that module is
     //           generated from the model. (haskell was the fourth, until it
-    //           moved to @voxgig/sdkgen-haskell.)
+    //           moved to @voxgig/sdkgen-haskell; ocaml was the third, whose
+    //           eighteen pipeline features also live in one template module
+    //           (sdk_features.ml, never a trim candidate) - it trims since
+    //           `secrets` arrived as its first CONTAINER feature, some 5.5k
+    //           vendored lines a project that never selected it must not
+    //           carry. See model/target/ocaml.aon.)
     //   scala — the cross-feature tests live inside the single test entry
     //           point, sdktest/SdkTestMain.scala.
     //   zig   — root.zig @imports every feature module, and build.zig names
     //           test/feature_test.zig explicitly.
     deepStrictEqual(untrimmable,
-      ['clojure', 'ocaml', 'scala', 'zig'],
+      ['clojure', 'scala', 'zig'],
       'the set of targets that cannot trim feature source changed')
   })
 
@@ -341,9 +345,25 @@ describe('target add feature trimming', () => {
     //     (`TestRetryFeature`) and as strings passed to the harness. It
     //     imports no feature module and constructs no feature class; every
     //     block is `pytest.mark.skipif(not has_feature(...))`.
+    //   ocaml/sdk_features.ml — the eighteen pipeline features ARE this one
+    //     template module, which is not feature source and is never trimmed;
+    //     it names every feature because it implements every feature. The
+    //     only ocaml feature that is trimmable is the `secrets` container,
+    //     and this module never names it.
+    //   ocaml/test/harness.ml — constructs netsim_feature straight from
+    //     Sdk_features (the test-only simulator is not a model feature and
+    //     has no source to trim); every model feature goes through
+    //     Sdk_config.make_feature behind has_feature.
+    //   ocaml/Makefile — `-include feature/secrets/secrets.mk`, the gated
+    //     build fragment Main_ocaml generates only for an active secrets
+    //     feature. An optional include of an absent file is a no-op, so a
+    //     trimmed tree builds with every secrets variable empty.
     const PINNED = [
       /^tm\/c\/core\/sdk\.h$/,
       /^tm\/py\/test\/test_feature\.py$/,
+      /^tm\/ocaml\/sdk_features\.ml$/,
+      /^tm\/ocaml\/test\/harness\.ml$/,
+      /^tm\/ocaml\/Makefile$/,
     ]
 
     const available = availableFeatures(Fs, SCAFFOLD)
