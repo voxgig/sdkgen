@@ -2406,6 +2406,190 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+
+  // cpp guard for the same seam. An ACTIVE secrets model must emit the
+  // plugin definitions into the GENERATED feature/secrets/kinds.cpp - the
+  // only non-header translation unit this target generates, and the
+  // Makefile's wiring gate for the vendored payload - and config.hpp's
+  // type-erased accessor must dispatch to it; the INACTIVE groups' vendored
+  // files (.cpp AND .hpp) must stay out of the tree (Main_cpp's
+  // pluginExcludes, the generate-time trim), while the four ungrouped shared
+  // helpers ship regardless.
+  //
+  // Two cpp-only shapes this pins. First, kinds.cpp names each kind's
+  // factory `sekreto::<kind>()` and includes the owning file's HEADER
+  // (plugins/Hashicorp.hpp), derived from the .cpp the def names - a header
+  // for a file the trim removed is a compile error nobody would see here.
+  // Second, the exchange transport of last resort is the VENDORED HTTPS
+  // client (sekreto::httprequest), not libcurl as in c: it is already
+  // compiled and linked on exactly the condition the transport needs, so
+  // kinds.cpp must include plugins/Httpjson.hpp when a group is active and
+  // must never reach for curl.
+  test('cpp: active secrets emits plugin defs and trims inactive groups', async () => {
+    const gencpp = async (extra: string, features: string[]) => {
+      const { fs, vol } = memfs({})
+      const sdkgen = SdkGen({
+        fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+      })
+      const res = await sdkgen.generate({
+        model: makeModel(['cpp'], undefined, extra, features),
+        root: makeRoot(),
+      })
+      strictEqual(res.ok, true, 'generation did not report ok')
+      const out: Record<string, string> = {}
+      for (const [path, content] of
+        Object.entries(vol.toJSON() as Record<string, string>)) {
+        const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+        if (rel.includes('.jostraca/')) continue
+        out[rel] = content
+      }
+      return out
+    }
+
+    const out = await gencpp(
+      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+
+    // THE WIRING FILE, and the definitions in it.
+    const kinds = findFile(out, 'cpp/feature/secrets/kinds.cpp')
+    ok(null != kinds, 'cpp: no feature/secrets/kinds.cpp generated')
+    ok(/^#include "plugins\/Boru\.hpp"$/m.test(kinds!) &&
+      /^#include "plugins\/Hashicorp\.hpp"$/m.test(kinds!),
+      'cpp: the ACTIVE vault group did not reach kinds.cpp:\n' + kinds)
+    ok(/std::static_pointer_cast<void>\(sekreto::boru\(\)\),\n    std::static_pointer_cast<void>\(sekreto::hashicorp\(\)\),/
+      .test(kinds!),
+      'cpp: secrets_plugins() is missing the vault definitions:\n' + kinds)
+    ok(!/sekreto::(gcpsecrets|azuresecrets|awssecrets|awsparams|onepassword|doppler|infisical|secretspec)\(/
+      .test(kinds!) &&
+      !/plugins\/(Gcpsecrets|Azuresecrets|Aws|Sigv4|Onepassword|Doppler|Infisical|Secretspec)\.hpp/
+        .test(kinds!),
+      'cpp: an INACTIVE group reached kinds.cpp:\n' + kinds)
+
+    // The exchange transport of last resort: the vendored HTTPS client,
+    // because a plugin group is active (the Makefile links OpenSSL on the
+    // same condition). Never libcurl - one HTTP stack.
+    ok(/^#include "plugins\/Httpjson\.hpp"$/m.test(kinds!) &&
+      /sekreto::httprequest\(/.test(kinds!) &&
+      /SecretsRawResponse secrets_rawfetch\(/.test(kinds!),
+      'cpp: a plugin-bearing model must carry the vendored-client exchange transport')
+    ok(!/#include <curl\/|curl_easy_|-lcurl/.test(kinds!),
+      'cpp: kinds.cpp must not reach for libcurl - the vendored client is the transport')
+
+    // The accessor in core/config.hpp dispatches to it, and the feature is
+    // included and constructed like every declared feature.
+    const config = findFile(out, 'cpp/core/config.hpp')
+    ok(null != config, 'cpp: no core/config.hpp generated')
+    ok(/^std::vector<std::shared_ptr<void>> secrets_plugins\(\);$/m.test(config!) &&
+      /if \(name == "secrets"\) return secrets_plugins\(\);/.test(config!),
+      'cpp: featurePlugins() does not dispatch to secrets_plugins:\n' + config)
+    ok(/^#include "\.\.\/feature\/secrets\.hpp"$/m.test(config!) &&
+      /if \(name == "secrets"\) return std::make_shared<SecretsFeature>\(\);/.test(config!),
+      'cpp: makeFeature() does not construct the secrets feature')
+
+    // The trim on disk: the active group's PAIRS and the ungrouped helpers
+    // are IN, every other group's are OUT (.hpp as well as .cpp - a header
+    // left behind is an include that compiles against nothing), and the
+    // full-set barrel is never there at all.
+    for (const kept of ['Hashicorp', 'Boru', 'Crypto', 'Httpjson', 'Proc', 'Tls']) {
+      ok(null != findFile(out, 'feature/secrets/plugins/' + kept + '.cpp') &&
+        null != findFile(out, 'feature/secrets/plugins/' + kept + '.hpp'),
+        'cpp: ' + kept + ' (active vault kind or shared helper) lost a file')
+    }
+    for (const gone of ['Gcpsecrets', 'Azuresecrets', 'Aws', 'Sigv4',
+      'Onepassword', 'Doppler', 'Infisical', 'Secretspec']) {
+      ok(null == findFile(out, 'feature/secrets/plugins/' + gone + '.cpp') &&
+        null == findFile(out, 'feature/secrets/plugins/' + gone + '.hpp'),
+        'cpp: the inactive group still ships ' + gone)
+    }
+    ok(null == findFile(out, 'feature/secrets/plugins/All.cpp') &&
+      null == findFile(out, 'feature/secrets/plugins/All.hpp'),
+      'cpp: the full-set barrel plugins/All.{cpp,hpp} must never be generated')
+
+    // The vendored cores at upstream's depth, the feature, and the gated
+    // suite in the test/feature/ container the trim drops with it.
+    ok(null != findFile(out, 'feature/secrets/sekreto/Sekreto.cpp') &&
+      null != findFile(out, 'feature/secrets/sekreto/Provider.hpp'),
+      'cpp: the vendored sekreto core was not generated')
+    ok(null != findFile(out, 'feature/secrets/plugin/host.cpp'),
+      'cpp: the vendored voxgig/plugin core was not generated')
+    ok(null != findFile(out, 'cpp/feature/secrets.hpp'),
+      'cpp: the secrets feature header was not generated')
+    ok(null != findFile(out, 'cpp/test/feature/secrets/secrets_test.cpp'),
+      'cpp: the gated secrets suite was not generated')
+
+    // The Makefile is the verbatim template, and it carries the gate: the
+    // wiring wildcard, the OpenSSL link and the gated suite glob. A Makefile
+    // without these builds the suite as a single header-only TU and fails
+    // at link, or never builds it at all.
+    const makefile = findFile(out, 'cpp/Makefile')
+    ok(null != makefile, 'cpp: no Makefile generated')
+    ok(/SEK_WIRED := \$\(wildcard feature\/secrets\/kinds\.cpp\)/.test(makefile!) &&
+      /SEK_LIBS := -lssl -lcrypto/.test(makefile!) &&
+      /\$\(wildcard test\/feature\/secrets\/\*\.cpp\)/.test(makefile!),
+      'cpp: the Makefile lost the secrets build gate')
+
+    // A DIFFERENT group alone, so a regression in the per-group def maps
+    // shows up here rather than in a generated SDK nobody compiled.
+    const saas = await gencpp(
+      'main: kit: feature: secrets: { active: true plugin: saas: active: true }',
+      ['test', 'log', 'secrets'])
+    const saaskinds = findFile(saas, 'cpp/feature/secrets/kinds.cpp')
+    ok(null != saaskinds && /sekreto::doppler\(\)/.test(saaskinds) &&
+      /sekreto::infisical\(\)/.test(saaskinds) &&
+      /sekreto::onepassword\(\)/.test(saaskinds) &&
+      !/sekreto::(hashicorp|boru)\(/.test(saaskinds),
+      'cpp: the saas group did not select exactly its three kinds:\n' + saaskinds)
+    ok(null == findFile(saas, 'feature/secrets/plugins/Hashicorp.cpp'),
+      'cpp: a saas-only model still ships the vault kind')
+    ok(null != findFile(saas, 'feature/secrets/plugins/Proc.cpp'),
+      'cpp: the shared Proc.cpp helper must survive a saas-only trim')
+
+    // The feature ACTIVE with NO group: the wiring file still exists (the
+    // sekreto core is needed for an [env, memory] chain), with an empty
+    // list and a transport that says there is none - and it must not touch
+    // Httpjson.hpp, whose .cpp the Makefile does not compile in this case.
+    const bare = await gencpp(
+      'main: kit: feature: secrets: { active: true }', ['test', 'log', 'secrets'])
+    const barekinds = findFile(bare, 'cpp/feature/secrets/kinds.cpp')
+    ok(null != barekinds, 'cpp: an active feature with no group lost its wiring file')
+    ok(/secrets_plugins\(\) \{\n  return \{\};\n\}/.test(barekinds!) &&
+      /has no HTTP transport/.test(barekinds!) &&
+      !/Httpjson\.hpp/.test(barekinds!),
+      'cpp: a group-less model must wire an empty list and no transport:\n' + barekinds)
+    ok(null == findFile(bare, 'feature/secrets/plugins/Hashicorp.cpp'),
+      'cpp: a group-less model still ships a kind file')
+
+    // THE INACTIVE FEATURE (declared, off, with a group on): no wiring file,
+    // no kind file, no include, and the accessor emitted EMPTY - it exists
+    // in every config.hpp so a caller can always ask.
+    const off = await gencpp(
+      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
+      ['test', 'log', 'secrets'])
+    ok(null == findFile(off, 'cpp/feature/secrets/kinds.cpp'),
+      'cpp: an inactive feature still generated its wiring file')
+    ok(null == findFile(off, 'feature/secrets/plugins/Hashicorp.cpp') &&
+      null == findFile(off, 'feature/secrets/plugins/Hashicorp.hpp'),
+      'cpp: an inactive feature still ships its vault kind (Main_cpp inactivePluginExcludes)')
+    const offconfig = findFile(off, 'cpp/core/config.hpp')
+    ok(!/secrets_plugins|SecretsFeature|feature\/secrets\.hpp/.test(offconfig!),
+      'cpp: an inactive feature still reached config.hpp')
+    ok(/inline std::vector<std::shared_ptr<void>> featurePlugins\(const std::string& name\) \{\n  \(void\)name;\n  return \{\};\n\}/
+      .test(offconfig!),
+      'cpp: an inactive model must emit an EMPTY featurePlugins accessor:\n' + offconfig)
+
+    // And a model that never mentions the feature: the same empty accessor
+    // and no wiring file. The vendored tree rides along in the Copy here -
+    // this harness runs no `target add`, which is where an undeclared
+    // feature is trimmed - and without kinds.cpp the Makefile compiles none
+    // of it (the generatedcompile lanes prove that with ldd).
+    const plain = await generate(['cpp'])
+    ok(null == findFile(plain, 'cpp/feature/secrets/kinds.cpp'),
+      'cpp: a model without secrets still generated the wiring file')
+    ok(!/secrets_plugins|SecretsFeature|feature\/secrets\.hpp/.test(findFile(plain, 'cpp/core/config.hpp')!),
+      'cpp: a model without secrets still reached config.hpp')
+  })
+
+
   // php guard for the same seam. An ACTIVE secrets model must emit the
   // plugin file require_onces and the definition CALLS into config.php's
   // feature_plugins accessor, and the INACTIVE groups' vendored files must

@@ -1,7 +1,7 @@
-
 import {
   Content,
   File,
+  Folder,
   cmp,
   configDefinition,
   each,
@@ -19,6 +19,248 @@ import {
 import {
   cppConfigLiterals,
 } from './utility_cpp'
+
+
+// PLUGIN DEFINITIONS PER FEATURE (the cpp peer of Config_c's
+// pluginDefinitions and Config_go's featurePlugins map).
+//
+// Upstream sekreto retired its self-registration registry for voxgig/plugin
+// definitions: a provider kind the caller did not pass in
+// `SekretoOptions::plugins` is unknown to that Sekreto. So the model's
+// choice of plugin groups IS the SDK's provider vocabulary, and the
+// generated code names each active group's factory (`def: cpp:` in
+// model/feature/secrets.aon - `hashicorp`, the `Definition hashicorp()`
+// each vendored kind header declares in namespace sekreto) and nothing
+// else. A symbol named here whose file the plugin trim removed is an
+// unresolved reference at link time - a loud failure, which is the right
+// kind. The owning file is kept per symbol because the generated
+// translation unit has to include that file's header.
+//
+// One entry per ACTIVE feature that declares a `plugin` map at all, read
+// with `only_active: false` (pluginExcludesFor's subtlety: the feature
+// object a component is handed has already been filtered, so a feature
+// whose groups are all off would otherwise look like one with no plugin
+// machinery, and its kinds.cpp - which the Makefile reads as the feature's
+// WIRING - would not be emitted).
+function pluginDefinitions(model: Model, target: any):
+  Record<string, { syms: Record<string, string>, groups: number }> {
+  const out: Record<string, { syms: Record<string, string>, groups: number }> = {}
+  const feature = targetFeatures(model, target)
+
+  each(feature, (f: any) => {
+    const declared = getModelPath(model,
+      `main.${KIT}.feature.${f.name}.plugin`,
+      { required: false, only_active: false }) || {}
+    if (0 === Object.keys(declared).length) return
+
+    const syms: Record<string, string> = {}
+    let groups = 0
+    each(declared, (plugin: any) => {
+      // Filter on `active` HERE rather than trusting the feature object to
+      // arrive filtered (Config_go's note): getting this wrong names a
+      // factory for a file the trim just deleted.
+      if (true !== plugin.active) return
+      const defs = plugin.def?.[target.name] || {}
+      if (0 < Object.keys(defs).length) groups++
+      for (const sym of Object.keys(defs)) syms[sym] = String(defs[sym])
+    })
+
+    out[f.name] = { syms, groups }
+  })
+
+  return out
+}
+
+
+// feature/<name>/kinds.cpp - GENERATED, one per plugin-bearing active
+// feature, and the ONE translation unit this otherwise header-only target
+// generates.
+//
+// It cannot live in core/config.hpp: that header is included by every test
+// translation unit, and it must not name the vendored voxgig/plugin's
+// `Definition` type - the same reason go hides its list behind []any and c
+// behind void**. So config.hpp's accessor is type-erased
+// (std::shared_ptr<void>), and this file, which may include the kind
+// headers, produces the erased list. It sits one level ABOVE the vendored
+// sekreto/, plugin/ and plugins/ directories on purpose: the vendoring
+// guard fails any non-vendored file inside a vendor dir, and this one is
+// generated.
+//
+// It is also the Makefile's WIRING GATE: tm/cpp/Makefile compiles the
+// vendored payload into libsdksecrets.a only when this file exists, so a
+// tree whose model never activated the feature compiles none of it and
+// links libstdc++ alone. That is why it is emitted for an active feature
+// with NO active group as well - an [env, memory] chain still needs the
+// sekreto core - with an empty definitions list.
+//
+// For `secrets` it additionally carries `secrets_rawfetch`, the
+// token-exchange transport of last resort (go's rawExchangeFetch). The cpp
+// core ships no HTTP client (utility/pipeline.hpp fetcher: "provide
+// options.system.fetch"), and the decision for this target - as for c - is
+// to bundle one INSIDE the gated feature, compiled in only when a plugin
+// group is active, so an SDK without secrets, or with a chain of built-ins,
+// still ships zero external dependencies. DELIBERATE DIVERGENCE from c,
+// which bundles libcurl: the cpp sekreto port exports its own HTTPS client
+// (`sekreto::httprequest`, plugins/Httpjson.cpp over plugins/Tls.cpp), and
+// it is already compiled and linked - OpenSSL and all - on exactly the
+// condition this transport needs. Reusing it means one HTTP stack and one
+// -l pair (-lssl -lcrypto) instead of two; the Makefile links OpenSSL on
+// the same condition (a kind file present), so the two cannot disagree.
+// With no group active the exchange still works through a caller-supplied
+// options.system.fetch, which every live cpp request already lives under;
+// only the fallback is missing, and it says so.
+const FeaturePlugins = cmp(async function FeaturePlugins(props: any) {
+  const ctx$ = props.ctx$
+  const target = props.target
+  const model: Model = ctx$.model
+
+  const defs = pluginDefinitions(model, target)
+  if (0 === Object.keys(defs).length) return
+
+  Folder({ name: 'feature' }, () => {
+    for (const fname of Object.keys(defs).sort()) {
+      const { syms, groups } = defs[fname]
+      const symnames = Object.keys(syms).sort()
+
+      // The header each selected kind file declares its factory in,
+      // relative to this file (feature/<fname>/): `feature/<fname>/
+      // plugins/Hashicorp.cpp` -> `plugins/Hashicorp.hpp`. Deduplicated,
+      // because aws declares two factories in one header.
+      const headers = Array.from(new Set(symnames.map((sym) =>
+        syms[sym]
+          .replace(new RegExp('^feature/' + fname + '/'), '')
+          .replace(/\.cpp$/, '.hpp')))).sort()
+
+      Folder({ name: fname }, () => {
+        File({ name: 'kinds.cpp' }, () => {
+          Content(`// Generated: the plugin definitions the model selected for the \`${fname}\`
+// feature's provider chain (the cpp peer of go's core.FeaturePlugins),
+// read back by core/config.hpp's featurePlugins("${fname}") and by the
+// feature itself through ${fname}_plugins().
+//
+// GENERATED, AND ALSO THE WIRING: tm/cpp/Makefile compiles the feature's
+// vendored payload into libsdksecrets.a only while this file exists. Do
+// not hand-edit - change the model's plugin groups and regenerate.
+//
+// The one non-header translation unit this SDK generates: it includes the
+// header-only SDK (for the declarations feature/${fname}.hpp makes) and the
+// vendored kind headers, which core/config.hpp must never name.
+
+#include "../../core/sdk.hpp"
+
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+${headers.map((h) => `#include "${h}"
+`).join('')}
+namespace sdk {
+
+${0 === symnames.length ?
+`// No plugin group is active: the chain can name the four built-in kinds
+// (env, memory, dotenv, file) and a custom provider, and nothing else.
+std::vector<std::shared_ptr<void>> ${fname}_plugins() {
+  return {};
+}
+` :
+`// One factory call per selected kind, type-erased for config.hpp (the
+// feature casts each back to plugin::DefinitionPtr).
+std::vector<std::shared_ptr<void>> ${fname}_plugins() {
+  return {
+${symnames.map((sym) => `    std::static_pointer_cast<void>(sekreto::${sym}()),
+`).join('')}  };
+}
+`}`)
+
+          if ('secrets' !== fname) {
+            Content(`
+} // namespace sdk
+`)
+            return
+          }
+
+          if (0 === groups) {
+            Content(`
+// THE EXCHANGE TRANSPORT OF LAST RESORT, when no plugin group is active:
+// there is none. The cpp core ships no HTTP client, and the vendored HTTPS
+// client (plugins/Httpjson.cpp, OpenSSL) is compiled with the plugin
+// groups only (see tm/cpp/Makefile), so a token purchase needs
+// options.system.fetch - the seam every live cpp request already uses.
+// Reached only by an exchange whose caller supplied no transport; a chain
+// that resolves a static credential never comes here.
+SecretsRawResponse secrets_rawfetch(
+    const std::string& method, const std::string& url,
+    const std::vector<std::pair<std::string, std::string>>& headers,
+    const std::string& body) {
+  (void)method; (void)headers; (void)body;
+  SecretsRawResponse out;
+  out.ok = false;
+  out.err = "secrets: the token exchange has no HTTP transport: this SDK selected "
+    "no secrets plugin group, so the vendored HTTPS client is not compiled; "
+    "supply options.system.fetch or activate a plugin group (URL was: \\"" +
+    url + "\\")";
+  return out;
+}
+
+} // namespace sdk
+`)
+            return
+          }
+
+          Content(`
+// THE EXCHANGE TRANSPORT OF LAST RESORT (go's rawExchangeFetch): the
+// vendored sekreto HTTPS client, answering the status and raw body the
+// feature turns into the transport-shaped map the system.fetch seam
+// promises. It exists so an exchange works with ordinary SDK options -
+// requiring a custom transport for the COMMON case would refuse every
+// live token purchase before a request was made. Deliberately NOT the SDK
+// transport: that is what the secrets feature wraps, and sending the
+// token request back through it would recurse on the first expiry.
+//
+// \`sekreto::httprequest\` RETURNS a non-2xx status rather than raising (a
+// 401 from a token endpoint is an answer), raises only on a transport
+// failure, follows no redirect and consults no proxy - the properties a
+// credential-bearing request wants. It is compiled because a plugin group
+// is active in this model; the Makefile links OpenSSL on exactly that
+// condition. (c bundles libcurl here instead - see the note on
+// FeaturePlugins in Config_cpp.ts for why cpp reuses the vendored client.)
+
+} // namespace sdk
+
+#include "plugins/Httpjson.hpp"
+
+namespace sdk {
+
+SecretsRawResponse secrets_rawfetch(
+    const std::string& method, const std::string& url,
+    const std::vector<std::pair<std::string, std::string>>& headers,
+    const std::string& body) {
+  SecretsRawResponse out;
+  try {
+    sekreto::Ordered h;
+    for (const auto& kv : headers) h.set(kv.first, kv.second);
+    std::optional<std::string> reqbody;
+    if (!body.empty()) reqbody = body;
+    sekreto::Response res = sekreto::httprequest(method, url, h, reqbody);
+    out.ok = true;
+    out.status = res.status;
+    out.body = res.body;
+  } catch (const std::exception& e) {
+    out.ok = false;
+    out.err = std::string("secrets: token exchange transport failed: ") + e.what() +
+      " (URL was: \\"" + url + "\\")";
+  }
+  return out;
+}
+
+} // namespace sdk
+`)
+        })
+      })
+    }
+  })
+})
 
 
 // core/config.hpp: makeConfig() rebuilds the embedded API model by parsing a
@@ -53,6 +295,7 @@ const Config = cmp(async function Config(props: any) {
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "../core/struct.hpp"
 #include "../core/types.hpp"
@@ -107,6 +350,40 @@ inline FeaturePtr makeFeature(const std::string& name) {
 
     Content(`  return std::make_shared<BaseFeature>();
 }
+`)
+
+    // The plugin-definitions accessor, EMITTED UNCONDITIONALLY so a caller
+    // can always ask, and EMPTY unless a plugin-bearing feature is active:
+    // each such feature's list lives in its generated
+    // feature/<name>/kinds.cpp (see FeaturePlugins above), which this
+    // dispatches to by name, so this header never names the vendored
+    // plugin's types - the list is type-erased (std::shared_ptr<void>; the
+    // feature casts back to plugin::DefinitionPtr), the way go returns
+    // []any and c void**. The per-feature function is an ordinary extern
+    // declaration here and in the feature header alike; kinds.cpp defines
+    // it, and the Makefile compiles kinds.cpp whenever it exists.
+    const plugged = Object.keys(pluginDefinitions(model, target)).sort()
+
+    Content(`
+// The plugin definitions the model selected per feature (type-erased; see
+// feature/<name>/kinds.cpp). Empty for a feature with none, and for a
+// model with no plugin-bearing feature active.
+`)
+    for (const fname of plugged) {
+      Content(`std::vector<std::shared_ptr<void>> ${fname}_plugins();
+`)
+    }
+
+    Content(`
+inline std::vector<std::shared_ptr<void>> featurePlugins(const std::string& name) {
+`)
+    for (const fname of plugged) {
+      Content(`  if (name == "${fname}") return ${fname}_plugins();
+`)
+    }
+    Content(`  (void)name;
+  return {};
+}
 
 } // namespace sdk
 
@@ -117,5 +394,7 @@ inline FeaturePtr makeFeature(const std::string& name) {
 
 
 export {
-  Config
+  Config,
+  FeaturePlugins,
+  pluginDefinitions,
 }
