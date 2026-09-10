@@ -38,6 +38,7 @@ import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, fail } from 'node:assert'
 
 import Fs, { existsSync, readdirSync, writeFileSync } from 'node:fs'
+import Os from 'node:os'
 import Path from 'node:path'
 
 import { Aontu } from 'aontu'
@@ -472,6 +473,67 @@ describe('generate', () => {
     ok(files.some(([n]) => /\.ts$/.test(n)), 'data path produced no ts sources')
     ok(20 < files.length, 'data path produced a suspiciously small SDK')
   })
+
+
+  // voxgig/sdkgen#128. `$action` selects WHICH POINT of an op to use; it is
+  // the SDK's own discriminator and never an API field, but the REST body
+  // path had no step to remove it, so it went out on the wire:
+  // `PUT /repos/{owner}/{repo}/pulls/{n}/merge` carried
+  // `{"$action":"merge", ...}`. GitHub ignores unknown body keys; an API
+  // that validates strictly rejects the request for a reason the caller
+  // cannot see and did not cause.
+  //
+  // EXECUTED, not pattern-matched. The generated js utility is
+  // dependency-free CommonJS whose whole context is injected, so the real
+  // emitted function can be required and called here — a text assertion
+  // would pass on a `stripAction` that was defined and never wired in.
+  test('js: the generated request transform strips $action from the body',
+    async () => {
+      const out = await generate(['js'])
+      const emitted = findFile(out, 'utility/TransformRequestUtility.js')
+      ok(null != emitted, 'the js request transform was not generated')
+
+      const tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-xreq-'))
+      const file = Path.join(tmp, 'TransformRequestUtility.js')
+      writeFileSync(file, emitted as string)
+      const { transformRequest } = require(file)
+
+      // reqform as a FUNCTION is one of the two branches; `transform` is the
+      // other. Both return through the same strip, so either proves it.
+      const run = (reqdata: any) => transformRequest({
+        spec: null,
+        reqdata,
+        point: { transform: { req: (c: any) => c.reqdata } },
+        utility: {
+          struct: { isfunc: (f: any) => 'function' === typeof f },
+          makeError: (_c: any, err: any) => { throw err },
+        },
+      })
+
+      deepStrictEqual(
+        run({ $action: 'merge', commit_title: 'Merge pull request #42' }),
+        { commit_title: 'Merge pull request #42' },
+        '$action survived into the request body')
+
+      // Narrow: nothing else is touched, and a body that is not a plain
+      // object cannot carry a selector and must pass through as it is.
+      deepStrictEqual(run({ id: 1, title: 't' }), { id: 1, title: 't' })
+      deepStrictEqual(run([1, 2]), [1, 2])
+      strictEqual(run(null), null)
+      strictEqual(run('body'), 'body')
+
+      // `__proto__` is a legal JSON key and can be a real API field. Copied
+      // with `body[key] =` it invokes the inherited setter instead: the key
+      // vanishes from the serialised request and silently becomes the body's
+      // prototype. Asserted through JSON, which is what actually goes out.
+      const proto = run(JSON.parse('{"$action":"a","__proto__":{"x":1},"k":2}'))
+      strictEqual(JSON.parse(JSON.stringify(proto)).__proto__?.x, 1,
+        '__proto__ was lost from the request body')
+      strictEqual(Object.getPrototypeOf(proto), Object.prototype,
+        '__proto__ became the body prototype instead of a field')
+
+      Fs.rmSync(tmp, { recursive: true, force: true })
+    })
 
 
   test('the same ts model pinned to literal emits a literal', async () => {

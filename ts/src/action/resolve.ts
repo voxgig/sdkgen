@@ -335,7 +335,91 @@ function nameConflict(
 
   const sameBase = normaliseBase(declared.base) === normaliseBase(source.base)
 
-  return (samePackage || sameBase) ? undefined : declared
+  if (samePackage || sameBase) {
+    return undefined
+  }
+
+  // The record names a DIFFERENT source. That is a collision only if that
+  // source still provides this name — otherwise the record is STALE and
+  // adopting the new one is a migration, not a silent clobber.
+  //
+  // A package can stop providing something it used to: `seneca-provider` left
+  // @voxgig/sdkgen for @voxgig/sdkgen-infrapack, `dart`/`haskell`/`lean` left
+  // for @voxgig/sdkgen-langpack. Every project carrying the pre-split copy
+  // still records the old package, so a check that reads only the record
+  // refuses the very add that repairs it, and names as the incumbent a
+  // package that no longer ships the thing at all. The only way through was
+  // `<kind> add <package>/<name>`, which nobody guesses from the message.
+  return providesStill(kind, declared, source, ctx$) ? declared : undefined
+}
+
+
+// Does the RECORDED source still provide this name?
+//
+// Answered from what is on disk now, not from the record. Conservative in
+// both directions: an unreadable or absent source cannot be shown to provide
+// it, so the add proceeds; anything still providing it is a real collision
+// and still refuses.
+function providesStill(
+  kind: string, declared: any, source: Source, ctx$: any,
+): boolean {
+  let fs: any
+  try {
+    fs = ctx$.fs()
+  }
+  catch (err: any) {
+    // No filesystem to check with — keep the pre-existing behaviour.
+    return true
+  }
+
+  const base = String(declared.base)
+  const folder = Path.isAbsolute(base) ?
+    Path.normalize(base) :
+    Path.normalize(Path.join(ctx$.folder, base))
+
+  if (!fs.existsSync(folder)) {
+    // Uninstalled, moved, or never fetched. Nothing there to collide with.
+    return false
+  }
+
+  // The name to look for is the one the SOURCE knows it by, which differs
+  // from the installed name only for an alias.
+  //
+  // `||`, NOT `??`. `origname` is `*'' | string` in the schema, and the model
+  // records the empty string for every unaliased item -- the convention is a
+  // falsy default, not an absent key. Nullish coalescing does not fall back
+  // for '', so a reloaded project would have every ordinary item looked up as
+  // '', found in no manifest, and declared stale: the guard would then wave
+  // through exactly the silent overwrite it exists to stop. The in-process
+  // tests could not see it, because `registerInstalled` leaves `origname`
+  // non-empty in the same context that wrote it.
+  const seek = declared.origname || source.name
+
+  // A WELL-FORMED manifest is authoritative about what its package provides:
+  // a definition file can linger in a stale node_modules tree after the
+  // package dropped it, and `provides` is the claim `package add` is itself
+  // checked against.
+  //
+  // A manifest that would fail validation is not authoritative about
+  // anything. `resolveSource` deliberately tolerates a malformed manifest on
+  // the direct-add path -- the definition, components and templates are all
+  // present, so it installs them and records `base` -- which is precisely how
+  // an installed item comes to have one. Reading `provides` out of it anyway
+  // would let a shape error (`provides: { target: 'iotgo' }`, a string where
+  // a list belongs) read as "provides nothing" and clear the way to overwrite
+  // a live target. Fall through to the definition file instead, which is what
+  // a source with no manifest at all is judged on.
+  const read = readManifest(fs, folder)
+  const manifest = read.manifest
+  if (null != manifest && 0 === checkShape(manifest, read.file).length) {
+    const names = manifest.provides?.[kind]
+    return Array.isArray(names) && names.includes(seek)
+  }
+
+  // No manifest, or one too malformed to be believed: a bare `.sdk`-shaped
+  // folder is a legal source, and its definition file is the only claim it
+  // makes.
+  return fs.existsSync(definitionPath(folder, kind, seek))
 }
 
 

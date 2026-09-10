@@ -549,6 +549,150 @@ describe('package add: collisions and hostile inputs', () => {
   })
 
 
+  test('a package that STOPPED providing the name does not block the move',
+    async () => {
+      // The migration case, and the one that sent a real project down a
+      // blind alley. `seneca-provider` left @voxgig/sdkgen for
+      // @voxgig/sdkgen-infrapack; every project holding the pre-split copy
+      // still records the old package, so a check that reads only the record
+      // refuses the very add that repairs it -- naming as the incumbent a
+      // package that no longer ships the thing at all.
+      const a = makePackage({
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+        provides: { target: ['iotgo'] },
+      })
+      const b = makePackage({
+        sdkgen: { package: 1 }, name: '@other/sdkgen-b',
+        provides: { target: ['iotgo'] },
+      })
+      try {
+        const project = await addPackage(a)
+        project.actx.flags = {}
+
+        // A ships a new version that no longer provides it.
+        Fs.writeFileSync(Path.join(a, 'sdkgen-package.json'),
+          JSON.stringify({
+            sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+            provides: { target: [] },
+          }, null, 2))
+
+        await package_add([b], project.actx)
+
+        ok(project.files().includes('model/target/iotgo.aon'),
+          'the target was not installed from its new owner')
+        strictEqual(
+          project.actx.model.main.kit.target.iotgo.package, '@other/sdkgen-b',
+          'provenance still names the package that dropped it')
+      }
+      finally {
+        Fs.rmSync(a, { recursive: true, force: true })
+        Fs.rmSync(b, { recursive: true, force: true })
+      }
+    })
+
+
+  test('a record pointing at a source that is GONE does not block the move',
+    async () => {
+      // Uninstalled rather than re-published: the recorded base is simply
+      // not there any more. Nothing on disk can collide with the new one.
+      const a = makePackage({
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+        provides: { target: ['iotgo'] },
+      })
+      const b = makePackage({
+        sdkgen: { package: 1 }, name: '@other/sdkgen-b',
+        provides: { target: ['iotgo'] },
+      })
+      try {
+        const project = await addPackage(a)
+        project.actx.flags = {}
+
+        Fs.rmSync(a, { recursive: true, force: true })
+
+        await package_add([b], project.actx)
+
+        ok(project.files().includes('model/target/iotgo.aon'),
+          'the target was not installed after its old source vanished')
+      }
+      finally {
+        Fs.rmSync(a, { recursive: true, force: true })
+        Fs.rmSync(b, { recursive: true, force: true })
+      }
+    })
+
+
+  test('an unaliased item whose model was RELOADED still collides', async () => {
+    // The regression the two tests above could not see. `origname` is
+    // `*'' | string` in the schema, so a project model loaded from disk
+    // carries '' for every unaliased item; the in-process add leaves it
+    // non-empty in the same context that wrote it. Looked up with `??` the
+    // empty string survives, no manifest lists '', and a LIVE target reads
+    // as stale -- the guard waving through the overwrite it exists to stop.
+    const a = makePackage({
+      sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+      provides: { target: ['iotgo'] },
+    })
+    const b = makePackage({
+      sdkgen: { package: 1 }, name: '@other/sdkgen-b',
+      provides: { target: ['iotgo'] },
+    })
+    try {
+      const project = await addPackage(a)
+      project.actx.flags = {}
+
+      // What a reload yields: the schema default, not the resolved name.
+      project.actx.model.main.kit.target.iotgo.origname = ''
+
+      await rejects(() => package_add([b], project.actx),
+        /Name collision, nothing installed[\s\S]*@acme\/sdkgen-a/,
+        'a live target was treated as stale because origname was empty')
+    }
+    finally {
+      Fs.rmSync(a, { recursive: true, force: true })
+      Fs.rmSync(b, { recursive: true, force: true })
+    }
+  })
+
+
+  test('a MALFORMED incumbent manifest does not read as providing nothing',
+    async () => {
+      // `resolveSource` tolerates a malformed manifest on the direct-add
+      // path -- definition, components and templates are all there, so it
+      // installs and records `base` -- which is how an installed item comes
+      // to have one. Trusting `provides` out of it anyway lets a shape error
+      // (a string where a list belongs) read as "provides nothing" and clear
+      // the way to overwrite a live target. The definition file decides
+      // instead, exactly as for a source with no manifest at all.
+      const a = makePackage({
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+        provides: { target: ['iotgo'] },
+      })
+      const b = makePackage({
+        sdkgen: { package: 1 }, name: '@other/sdkgen-b',
+        provides: { target: ['iotgo'] },
+      })
+      try {
+        const project = await addPackage(a)
+        project.actx.flags = {}
+
+        // Parseable, shape-invalid: a string where a list belongs.
+        Fs.writeFileSync(Path.join(a, 'sdkgen-package.json'),
+          JSON.stringify({
+            sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+            provides: { target: 'iotgo' },
+          }, null, 2))
+
+        await rejects(() => package_add([b], project.actx),
+          /Name collision, nothing installed/,
+          'a malformed manifest was read as providing nothing')
+      }
+      finally {
+        Fs.rmSync(a, { recursive: true, force: true })
+        Fs.rmSync(b, { recursive: true, force: true })
+      }
+    })
+
+
   test('two packages claiming one name in ONE command are caught', async () => {
     // Neither is installed yet, so each would conflict with nothing.
     const a = makePackage({
