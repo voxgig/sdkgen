@@ -416,6 +416,23 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
   each(entity, (e: any) => {
     entityDefs[e.name] = clean({
       fields: e.fields,
+      // THE ID DESCRIPTOR REACHES THE RUNTIME, not just the generators.
+      //
+      // `id.parts` / `id.sep` / `id.from` say how the API addresses one
+      // record: which path parameters name it, what joins them into the one
+      // id an SDK entity carries, and — the part only a response can
+      // answer — WHERE each parameter's value lives in a returned record.
+      // github's repo is `{owner}/{repo}`, returned as `owner.login` and
+      // `name`.
+      //
+      // Code that runs, not just code that is written, needs this. The
+      // offline test transport resolves a request parameter against a
+      // stored record, and a record whose identifying values are nested
+      // (or named differently) cannot be matched by parameter name alone —
+      // it matched nothing, so every seeded composite record was
+      // unfindable. `clean` drops the key for the ordinary entity whose
+      // model carries no descriptor, so nothing else moves.
+      id: e.id,
       name: e.name,
       op: withPointParts(e.op),
       relations: e.relations,
