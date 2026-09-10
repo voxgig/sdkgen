@@ -269,7 +269,63 @@ function nameConflict(kind, source, ctx$) {
     const samePackage = null != source.package && '' !== source.package &&
         declared.package === source.package;
     const sameBase = normaliseBase(declared.base) === normaliseBase(source.base);
-    return (samePackage || sameBase) ? undefined : declared;
+    if (samePackage || sameBase) {
+        return undefined;
+    }
+    // The record names a DIFFERENT source. That is a collision only if that
+    // source still provides this name — otherwise the record is STALE and
+    // adopting the new one is a migration, not a silent clobber.
+    //
+    // A package can stop providing something it used to: `seneca-provider` left
+    // @voxgig/sdkgen for @voxgig/sdkgen-infrapack, `dart`/`haskell`/`lean` left
+    // for @voxgig/sdkgen-langpack. Every project carrying the pre-split copy
+    // still records the old package, so a check that reads only the record
+    // refuses the very add that repairs it, and names as the incumbent a
+    // package that no longer ships the thing at all. The only way through was
+    // `<kind> add <package>/<name>`, which nobody guesses from the message.
+    return providesStill(kind, declared, source, ctx$) ? declared : undefined;
+}
+// Does the RECORDED source still provide this name?
+//
+// Answered from what is on disk now, not from the record. Conservative in
+// both directions: an unreadable or absent source cannot be shown to provide
+// it, so the add proceeds; anything still providing it is a real collision
+// and still refuses.
+function providesStill(kind, declared, source, ctx$) {
+    let fs;
+    try {
+        fs = ctx$.fs();
+    }
+    catch (err) {
+        // No filesystem to check with — keep the pre-existing behaviour.
+        return true;
+    }
+    const base = String(declared.base);
+    const folder = node_path_1.default.isAbsolute(base) ?
+        node_path_1.default.normalize(base) :
+        node_path_1.default.normalize(node_path_1.default.join(ctx$.folder, base));
+    if (!fs.existsSync(folder)) {
+        // Uninstalled, moved, or never fetched. Nothing there to collide with.
+        return false;
+    }
+    // A package with a manifest is authoritative about what it provides: the
+    // definition file can linger in a stale node_modules tree after the package
+    // dropped it, and `provides` is the claim `package add` itself is checked
+    // against.
+    const read = (0, manifest_1.readManifest)(fs, folder);
+    const provides = read.manifest?.provides;
+    if (null != provides && 'object' === typeof provides &&
+        !Array.isArray(provides)) {
+        const names = provides[kind];
+        if (Array.isArray(names)) {
+            return names.includes(declared.origname ?? source.name);
+        }
+        // A manifest that lists no names for this kind provides none of them.
+        return false;
+    }
+    // No manifest, or one too malformed to read: a bare `.sdk`-shaped folder,
+    // which is a legal source. Its definition file is the only claim it makes.
+    return fs.existsSync((0, definition_1.definitionPath)(folder, kind, declared.origname ?? source.name));
 }
 function normaliseBase(base) {
     return node_path_1.default.normalize(String(base ?? '')).split(node_path_1.default.sep).join('/');

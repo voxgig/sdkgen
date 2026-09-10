@@ -549,6 +549,78 @@ describe('package add: collisions and hostile inputs', () => {
   })
 
 
+  test('a package that STOPPED providing the name does not block the move',
+    async () => {
+      // The migration case, and the one that sent a real project down a
+      // blind alley. `seneca-provider` left @voxgig/sdkgen for
+      // @voxgig/sdkgen-infrapack; every project holding the pre-split copy
+      // still records the old package, so a check that reads only the record
+      // refuses the very add that repairs it -- naming as the incumbent a
+      // package that no longer ships the thing at all.
+      const a = makePackage({
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+        provides: { target: ['iotgo'] },
+      })
+      const b = makePackage({
+        sdkgen: { package: 1 }, name: '@other/sdkgen-b',
+        provides: { target: ['iotgo'] },
+      })
+      try {
+        const project = await addPackage(a)
+        project.actx.flags = {}
+
+        // A ships a new version that no longer provides it.
+        Fs.writeFileSync(Path.join(a, 'sdkgen-package.json'),
+          JSON.stringify({
+            sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+            provides: { target: [] },
+          }, null, 2))
+
+        await package_add([b], project.actx)
+
+        ok(project.files().includes('model/target/iotgo.aon'),
+          'the target was not installed from its new owner')
+        strictEqual(
+          project.actx.model.main.kit.target.iotgo.package, '@other/sdkgen-b',
+          'provenance still names the package that dropped it')
+      }
+      finally {
+        Fs.rmSync(a, { recursive: true, force: true })
+        Fs.rmSync(b, { recursive: true, force: true })
+      }
+    })
+
+
+  test('a record pointing at a source that is GONE does not block the move',
+    async () => {
+      // Uninstalled rather than re-published: the recorded base is simply
+      // not there any more. Nothing on disk can collide with the new one.
+      const a = makePackage({
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
+        provides: { target: ['iotgo'] },
+      })
+      const b = makePackage({
+        sdkgen: { package: 1 }, name: '@other/sdkgen-b',
+        provides: { target: ['iotgo'] },
+      })
+      try {
+        const project = await addPackage(a)
+        project.actx.flags = {}
+
+        Fs.rmSync(a, { recursive: true, force: true })
+
+        await package_add([b], project.actx)
+
+        ok(project.files().includes('model/target/iotgo.aon'),
+          'the target was not installed after its old source vanished')
+      }
+      finally {
+        Fs.rmSync(a, { recursive: true, force: true })
+        Fs.rmSync(b, { recursive: true, force: true })
+      }
+    })
+
+
   test('two packages claiming one name in ONE command are caught', async () => {
     // Neither is installed yet, so each would conflict with nothing.
     const a = makePackage({
