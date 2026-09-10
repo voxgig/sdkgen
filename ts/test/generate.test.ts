@@ -522,6 +522,16 @@ describe('generate', () => {
       strictEqual(run(null), null)
       strictEqual(run('body'), 'body')
 
+      // `__proto__` is a legal JSON key and can be a real API field. Copied
+      // with `body[key] =` it invokes the inherited setter instead: the key
+      // vanishes from the serialised request and silently becomes the body's
+      // prototype. Asserted through JSON, which is what actually goes out.
+      const proto = run(JSON.parse('{"$action":"a","__proto__":{"x":1},"k":2}'))
+      strictEqual(JSON.parse(JSON.stringify(proto)).__proto__?.x, 1,
+        '__proto__ was lost from the request body')
+      strictEqual(Object.getPrototypeOf(proto), Object.prototype,
+        '__proto__ became the body prototype instead of a field')
+
       Fs.rmSync(tmp, { recursive: true, force: true })
     })
 

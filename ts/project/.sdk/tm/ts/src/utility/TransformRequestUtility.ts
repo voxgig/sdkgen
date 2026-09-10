@@ -41,6 +41,12 @@ function transformRequest(ctx: Context) {
 //
 // Only a top-level key of a plain object: a body may legitimately be an
 // array or a scalar, and neither can carry a selector.
+//
+// `__proto__` is assigned through Object.defineProperty, never `body[key] =`.
+// It is a legal JSON key and can be a real API field, but plain assignment
+// invokes the inherited setter: the key would vanish from the serialised
+// request and silently become the body's prototype instead. Same treatment
+// as StructUtility's condenseSet, for the same reason.
 
 function stripAction(reqdata: any) {
   if (null == reqdata || 'object' !== typeof reqdata || Array.isArray(reqdata)) {
@@ -53,7 +59,18 @@ function stripAction(reqdata: any) {
 
   const body: Record<string, any> = {}
   for (const key of Object.keys(reqdata)) {
-    if ('$action' !== key) {
+    if ('$action' === key) {
+      continue
+    }
+    if ('__proto__' === key) {
+      Object.defineProperty(body, key, {
+        value: reqdata[key],
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      })
+    }
+    else {
       body[key] = reqdata[key]
     }
   }

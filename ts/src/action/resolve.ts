@@ -382,26 +382,44 @@ function providesStill(
     return false
   }
 
-  // A package with a manifest is authoritative about what it provides: the
-  // definition file can linger in a stale node_modules tree after the package
-  // dropped it, and `provides` is the claim `package add` itself is checked
-  // against.
+  // The name to look for is the one the SOURCE knows it by, which differs
+  // from the installed name only for an alias.
+  //
+  // `||`, NOT `??`. `origname` is `*'' | string` in the schema, and the model
+  // records the empty string for every unaliased item -- the convention is a
+  // falsy default, not an absent key. Nullish coalescing does not fall back
+  // for '', so a reloaded project would have every ordinary item looked up as
+  // '', found in no manifest, and declared stale: the guard would then wave
+  // through exactly the silent overwrite it exists to stop. The in-process
+  // tests could not see it, because `registerInstalled` leaves `origname`
+  // non-empty in the same context that wrote it.
+  const seek = declared.origname || source.name
+
+  // A WELL-FORMED manifest is authoritative about what its package provides:
+  // a definition file can linger in a stale node_modules tree after the
+  // package dropped it, and `provides` is the claim `package add` is itself
+  // checked against.
+  //
+  // A manifest that would fail validation is not authoritative about
+  // anything. `resolveSource` deliberately tolerates a malformed manifest on
+  // the direct-add path -- the definition, components and templates are all
+  // present, so it installs them and records `base` -- which is precisely how
+  // an installed item comes to have one. Reading `provides` out of it anyway
+  // would let a shape error (`provides: { target: 'iotgo' }`, a string where
+  // a list belongs) read as "provides nothing" and clear the way to overwrite
+  // a live target. Fall through to the definition file instead, which is what
+  // a source with no manifest at all is judged on.
   const read = readManifest(fs, folder)
-  const provides = read.manifest?.provides
-  if (null != provides && 'object' === typeof provides &&
-    !Array.isArray(provides)) {
-    const names = provides[kind]
-    if (Array.isArray(names)) {
-      return names.includes(declared.origname ?? source.name)
-    }
-    // A manifest that lists no names for this kind provides none of them.
-    return false
+  const manifest = read.manifest
+  if (null != manifest && 0 === checkShape(manifest, read.file).length) {
+    const names = manifest.provides?.[kind]
+    return Array.isArray(names) && names.includes(seek)
   }
 
-  // No manifest, or one too malformed to read: a bare `.sdk`-shaped folder,
-  // which is a legal source. Its definition file is the only claim it makes.
-  return fs.existsSync(
-    definitionPath(folder, kind, declared.origname ?? source.name))
+  // No manifest, or one too malformed to be believed: a bare `.sdk`-shaped
+  // folder is a legal source, and its definition file is the only claim it
+  // makes.
+  return fs.existsSync(definitionPath(folder, kind, seek))
 }
 
 
