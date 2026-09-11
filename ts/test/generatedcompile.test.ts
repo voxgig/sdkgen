@@ -106,6 +106,43 @@ function linkDeps(sdkroot: string) {
 // it can only fire on something genuinely stuck.
 const RUN_TIMEOUT_MS = 5 * 60 * 1000
 
+// HOW MANY EXUNIT TESTS RAN, AND HOW MANY FAILED, in either of the two
+// epilogue vocabularies ExUnit has used:
+//
+//   up to 1.19:  `38 tests, 0 failures`   (also `1 doctest, 2 tests, ...`)
+//   from 1.20:   `Result: 38 passed`
+//                `Result: 1/2 passed`     (some failed)
+//                `Result: 0 tests`        (none ran)
+//
+// Returns null when neither is present, which is the only honest answer: a
+// summary that cannot be parsed is a failure count that cannot be read.
+function exunitCount(out: string): { total: number, failed: number } | null {
+  const legacy = /(\d+) tests?, (\d+) failures?/.exec(out)
+  if (null != legacy) {
+    return { total: Number(legacy[1]), failed: Number(legacy[2]) }
+  }
+
+  const ratio = /Result: (\d+)\/(\d+) passed/.exec(out)
+  if (null != ratio) {
+    const passed = Number(ratio[1])
+    const total = Number(ratio[2])
+    return { total, failed: total - passed }
+  }
+
+  const allpass = /Result: (\d+) passed/.exec(out)
+  if (null != allpass) {
+    return { total: Number(allpass[1]), failed: 0 }
+  }
+
+  const none = /Result: (\d+) tests?\b/.exec(out)
+  if (null != none) {
+    return { total: Number(none[1]), failed: 0 }
+  }
+
+  return null
+}
+
+
 function run(
   cmd: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv,
   timeoutMs: number = RUN_TIMEOUT_MS,
@@ -1125,6 +1162,14 @@ describe('auth null', () => {
     }
     if (probe.timedOut) return t.skip('perl: ' + probe.out)
 
+    // The same environment gate the other lanes use — here it catches a core
+    // module that arrived in a LATER perl than this one (`builtin`, 5.36).
+    const gap = UNUSABLE.find((re) => re.test(probe.out))
+    if (null != gap && !probe.ok) {
+      return t.skip('perl: toolchain present but not usable (' +
+        gap.source + '):\n' + tail(probe.out))
+    }
+
     // LF-normalised before anything is matched: perl on windows writes
     // CRLF, and an anchored `$` that misses the plan line would report a
     // suite that ran as one that never did.
@@ -1915,6 +1960,19 @@ const UNUSABLE = [
   /Connection (refused|timed out)/,
   /Read timed out/,
   /Can't locate Test\/More\.pm/,
+  // A CORE MODULE THAT ARRIVED IN A LATER PERL. The secrets runtime uses
+  // `builtin`'s is_bool, which is 5.36's and is the only way this port can
+  // tell `true` from `1` — perl's own booleans ARE 1 and "". On 5.34 the
+  // interpreter is present and the module simply does not exist yet, which
+  // is a toolchain gap rather than a defect in the generated SDK, and the
+  // lane said "perl secrets suite failed" for it.
+  /Can't locate builtin\.pm/,
+  // Matched here and not stated by the runtime, because Types.pm is
+  // VENDORED from voxgig/plugin: a version check belongs upstream, where it
+  // would replace eight BEGIN failures with one line naming the
+  // requirement. A silent edit to a vendored file is what the manifest
+  // guard exists to catch, so the gap is absorbed here instead.
+  /requires perl 5\.36 or later/,
 ]
 
 
@@ -3257,16 +3315,26 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
       '\n' + tail(out))
 
     // Positive evidence the suite RAN. An ExUnit file with no test exits
-    // zero and prints "0 tests, 0 failures", and so would a suite whose
-    // module name stopped matching mix's discovery - the vacuous pass this
-    // lane exists to prevent.
-    const counted = /(\d+) tests?, (\d+) failures?/.exec(out)
+    // zero and says so, and so would a suite whose module name stopped
+    // matching mix's discovery - the vacuous pass this lane exists to
+    // prevent.
+    //
+    // BOTH EPILOGUE VOCABULARIES. ExUnit changed its wording: up to 1.19 it
+    // printed `38 tests, 0 failures`, and from 1.20 it prints
+    // `Result: 38 passed`, `Result: 1/2 passed` when some failed, and
+    // `Result: 0 tests` when there were none. Reading only the older shape
+    // made this lane fail on any current Elixir while the SDK was perfectly
+    // fine — all 38 tests passing, and the assertion reporting "printed no
+    // summary". Worse, a summary this cannot parse is a summary whose
+    // FAILURE COUNT it cannot read, so a real failure would have been
+    // reported as an unparseable epilogue rather than as a failure.
+    const counted = exunitCount(out)
     ok(null != counted, 'elixir: ExUnit printed no summary:\n' + tail(out))
-    ok(10 < Number(counted![1]),
-      'elixir: the secrets suite ran only ' + counted![1] +
+    ok(10 < counted!.total,
+      'elixir: the secrets suite ran only ' + counted!.total +
       ' tests - it was trimmed, not run:\n' + tail(out))
-    strictEqual(Number(counted![2]), 0,
-      'elixir: ' + counted![2] + ' secrets tests failed:\n' + tail(out))
+    strictEqual(counted!.failed, 0,
+      'elixir: ' + counted!.failed + ' secrets tests failed:\n' + tail(out))
 
     // The two auth-nil cases by NAME, since they are what lets this target
     // stand in AUTHNULL_STANDALONE rather than in AUTHNULL_UNCOVERED. A
