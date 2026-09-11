@@ -20,7 +20,7 @@
   "left pointing at trees this repo no longer ships, which would fail the",
   "run on a path that simply is not there."
  ],
- "tag": "sdk-20260908-1556-0",
+ "tag": "sdk-20260911-2013-0",
  "repo": {
   "struct": {
    "url": "https://github.com/voxgig/struct",

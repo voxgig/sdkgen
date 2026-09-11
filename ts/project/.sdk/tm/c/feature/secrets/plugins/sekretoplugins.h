@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/sekreto sdk-20260908-1556-0 (c/plugins/sekretoplugins.h)
-// Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260908-1556-0]
+// Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260911-2013-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* The ten provider kinds that are NOT built in, each a voxgig/plugin
  * definition, plus the transport and the SigV4 signing that come with

@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/plugin sdk-20260908-1556-0 (c/src/depend.h)
-// Source: https://github.com/voxgig/plugin @ 48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a  [tag: sdk-20260908-1556-0]
+// Source: https://github.com/voxgig/plugin @ 91c4936555a4ce198669ca2c578b91e27e92e5ec  [tag: sdk-20260911-2013-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Dependency cardinality, policy, and the restart graph (§11.3). Two
  * axes, both declared by the definition that has the requirement,

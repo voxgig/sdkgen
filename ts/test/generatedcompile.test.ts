@@ -1967,11 +1967,12 @@ const UNUSABLE = [
   // is a toolchain gap rather than a defect in the generated SDK, and the
   // lane said "perl secrets suite failed" for it.
   /Can't locate builtin\.pm/,
-  // Matched here and not stated by the runtime, because Types.pm is
-  // VENDORED from voxgig/plugin: a version check belongs upstream, where it
-  // would replace eight BEGIN failures with one line naming the
-  // requirement. A silent edit to a vendored file is what the manifest
-  // guard exists to catch, so the gap is absorbed here instead.
+  // The version check the vendored runtime now carries, which says the same
+  // thing in one line instead of eight BEGIN failures naming every module on
+  // the way down. It lives upstream in voxgig/plugin, where the file does —
+  // a silent edit to a vendored copy is what the manifest guard exists to
+  // catch. Both spellings stay matched: an SDK generated before that fix
+  // reached this vendor tag still reports the bare `Can't locate`.
   /requires perl 5\.36 or later/,
 ]
 

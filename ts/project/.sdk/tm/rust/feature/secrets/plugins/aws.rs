@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/sekreto sdk-20260908-1556-0 (rust/plugins/aws/src/lib.rs)
-// Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260908-1556-0]
+// Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260911-2013-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 //! The two AWS providers - Secrets Manager and SSM Parameter Store -
 //! and the request signing they need, as voxgig/plugin definitions.

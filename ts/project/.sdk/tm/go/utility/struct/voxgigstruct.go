@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.0 (go/voxgigstruct.go)
-// Source: https://github.com/voxgig/struct @ adda9521c828147573df5a8878408a3f2193ddf4  [tag: sdk-20260908-1556-0]
+// Source: https://github.com/voxgig/struct @ abd93227e3295151f8dcd18597c3f3f2577af8b7  [tag: sdk-20260911-2013-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025 Voxgig Ltd. MIT LICENSE. */
 

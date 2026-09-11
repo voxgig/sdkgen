@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/sekreto sdk-20260908-1556-0 (java/plugins/com/voxgig/sekreto/plugins/Httpjson.java)
-// Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260908-1556-0]
+// Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260911-2013-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // One JSON round-trip, shared by every plugin that speaks HTTP - and by
 // nothing in the core. A chain of built-ins never links this file, which
