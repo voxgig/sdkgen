@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/plugin sdk-20260908-1556-0 (perl/lib/Voxgig/Plugin/Types.pm)
-# Source: https://github.com/voxgig/plugin @ 48392f5e2b6d1434ee9b1a4a9a11f4480aaeb46a  [tag: sdk-20260908-1556-0]
+# Source: https://github.com/voxgig/plugin @ 91c4936555a4ce198669ca2c578b91e27e92e5ec  [tag: sdk-20260911-2013-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 package Voxgig::Plugin::Types;
 
@@ -22,6 +22,30 @@ use strict;
 use warnings;
 use B ();
 use Scalar::Util qw(blessed reftype);
+
+# PERL 5.36 OR LATER, SAID ONCE, HERE.
+#
+# `builtin` is core from 5.36 and does not exist before it, so on 5.34 the
+# interpreter reports `Can't locate builtin.pm` and then unwinds through a
+# BEGIN failure for every module on the way down — eight of them when the
+# library is loaded through a host — naming each file and never the
+# requirement. The README states the minimum; nothing in the code did, so
+# the one person who most needs to be told reads the least useful message.
+#
+# This is the file that depends on it: `is_bool` is the only way perl can
+# tell a true boolean from the number 1, and `jsontype` below is the whole
+# of the port's answer to having no JSON types.
+#
+# A BEGIN block rather than `use v5.36`, which would also switch on that
+# release's feature bundle and change how the rest of this file compiles.
+BEGIN {
+    if ($] < 5.036) {
+        die "Voxgig::Plugin::Types requires perl 5.36 or later (this is $]):"
+            . " it uses builtin::is_bool, the only way perl can tell a true"
+            . " boolean from the number 1.\n";
+    }
+}
+
 use builtin qw(is_bool);
 no warnings 'experimental::builtin';
 

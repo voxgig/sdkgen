@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/sekreto sdk-20260908-1556-0 (swift/plugins/Azuresecrets.swift)
-// Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260908-1556-0]
+// Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260911-2013-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // The `azuresecrets` provider kind: Azure Key Vault.
 //
