@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "4.11.0",
+  "version": "4.12.0",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "engines": {
@@ -11,7 +11,7 @@
     "THERE IS DELIBERATELY NO `exports` MAP, and adding one is not a tidy-up.",
     "",
     "`@voxgig/sdkgen/testkit` is served by the stub `testkit.js` beside this",
-    "file, resolved by ordinary CommonJS probing \u2014 the way subpath entry",
+    "file, resolved by ordinary CommonJS probing — the way subpath entry",
     "points worked before `exports` existed.",
     "",
     "The obvious alternative, an `exports` map naming './testkit', REPLACES",
@@ -24,7 +24,7 @@
     "resolution never falls back to CommonJS extension probing, so",
     "require('@voxgig/sdkgen/dist/helpers/manifest') maps to an",
     "extensionless path that does not exist and fails with MODULE_NOT_FOUND.",
-    "An array of probes ('./*', './*.js', ...) does not fix it either \u2014",
+    "An array of probes ('./*', './*.js', ...) does not fix it either —",
     "measured, not assumed. test/packaging.test.ts resolves the real",
     "subpaths through a real node_modules to keep this honest."
   ],
