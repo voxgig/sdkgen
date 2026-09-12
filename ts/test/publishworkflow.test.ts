@@ -94,6 +94,44 @@ describe('PublishWorkflow', () => {
   })
 
 
+  // EACH TARGET'S WORKFLOW NAMES ITS OWN PACKAGE.
+  //
+  // `packageName(model, 'npm')` resolves the ECOSYSTEM's primary target — ts
+  // — so resolving by ecosystem gave every npm target the ts package name:
+  // publish-js.yml claimed the ts package while `js/` publishes its own. It
+  // would have checked the wrong package on the registry and told a
+  // maintainer to trust the wrong one, while `npm publish` shipped the right
+  // one — wrong in three places, and green everywhere.
+  test('each npm target names its own package', async () => {
+    const out = await render({
+      ts: {
+        active: true, name: 'ts',
+        publish: { registry: { name: 'npm' } },
+      },
+      js: {
+        active: true, name: 'js',
+        publish: {
+          registry: { name: 'npm', package: '@acme/demo-js' },
+        },
+      },
+    })
+
+    const tswf = out['.github/workflows/publish-ts.yml']
+    const jswf = out['.github/workflows/publish-js.yml']
+    ok(null != tswf && null != jswf, 'both workflows: ' + Object.keys(out))
+
+    ok(jswf.includes('@acme/demo-js'),
+      'the js workflow does not name the js package')
+    ok(!jswf.includes('@voxgig-sdk/demo-sdk'),
+      'the js workflow names the ts package')
+
+    // And the doc's table carries each package beside its own target.
+    const doc = out['.sdk/PUBLISHING.md']
+    ok(doc.includes('@acme/demo-js'),
+      'the doc does not name the js package: ' + doc.slice(0, 600))
+  })
+
+
   // THE MAINTAINER DOC IS NOT TARGET DOCUMENTATION. The target directories
   // describe the SDK to the people who INSTALL it; how this repository
   // releases is none of their business, so it lives beside the generator.
