@@ -250,13 +250,16 @@ ${rows}
 
 ## How a release happens
 
+The worked example below uses the \`${targets[0].name}\` target; every npm
+target in the table above releases the same way, through its own workflow.
+
 Publishing runs from GitHub Actions with **no NPM_TOKEN**. npm exchanges a
 short-lived OIDC token — minted for one job in this repository — for a
 publish credential, and attaches SLSA provenance as it goes.
 
 1. Bump the version in the model, then regenerate:
 
-       main: kit: target: ts: publish: version: '<x.y.z>'
+       main: kit: target: ${targets[0].name}: publish: version: '<x.y.z>'
 
 2. Commit and push to \`main\`, and let CI go green.
 3. Run the workflow from the Actions tab, or:
