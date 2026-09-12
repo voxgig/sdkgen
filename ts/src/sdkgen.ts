@@ -38,6 +38,7 @@ import { AgentGuide } from './cmp/AgentGuide'
 import { AgentGuideFeature } from './cmp/AgentGuideFeature'
 import { License } from './cmp/License'
 import { Security } from './cmp/Security'
+import { PublishWorkflow } from './cmp/PublishWorkflow'
 import { Changelog } from './cmp/Changelog'
 import { Test } from './cmp/Test'
 import { TestControl, TEST_CONTROL_EXCLUDE } from './cmp/TestControl'
@@ -1083,6 +1084,7 @@ export {
   Deploy,
   License,
   Security,
+  PublishWorkflow,
   Changelog,
   Entity,
   Feature,
