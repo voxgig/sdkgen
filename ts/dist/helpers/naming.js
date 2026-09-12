@@ -36,6 +36,7 @@ exports.tsSafeTypeName = tsSafeTypeName;
 exports.jsProp = jsProp;
 exports.jsOptProp = jsOptProp;
 exports.jsKey = jsKey;
+exports.luaKey = luaKey;
 exports.prefixLeadingDigit = prefixLeadingDigit;
 const JS_RESERVED = new Set([
     'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
@@ -525,6 +526,26 @@ function jsProp(obj, name) {
 // 1 }` is a syntax error (TS1351) — doc examples must quote such keys.
 function jsKey(name) {
     return JS_IDENT.test(name) ? name : `'${name}'`;
+}
+const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
+// A safe Lua TABLE-CONSTRUCTOR key for a spec-derived field name: bare when the
+// name is a valid identifier that is not a keyword, bracketed and quoted
+// otherwise.
+//
+// Unlike `jsKey`, this MUST consult the keyword list. A reserved word is a legal
+// JS object key (`{ end: 1 }` is fine) but not a legal Lua one — `{ end = 1 }`
+// is a syntax error, because `end` closes a block. The trap is that a keyword
+// also matches the identifier pattern, so a shape-only test passes it through
+// looking correct.
+//
+// Real case: aareguru's /v2018 range query takes a parameter named `end`, so
+// every generated lua doc example emitted `{ ..., end = "end", ... }` and the
+// readme-examples test could not compile the block. 13 of the 626 freepublicapis
+// specs name a parameter with a lua reserved word.
+function luaKey(name) {
+    return LUA_IDENT.test(name) && !isReservedName(name, 'lua')
+        ? name
+        : `["${name}"]`;
 }
 // As `jsProp`, but optional-chained: `obj?.name` / `obj?.["3ds_session_id"]`.
 function jsOptProp(obj, name) {
