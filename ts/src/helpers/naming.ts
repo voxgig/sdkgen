@@ -564,6 +564,30 @@ function jsKey(name: string): string {
 }
 
 
+const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/
+
+
+// A safe Lua TABLE-CONSTRUCTOR key for a spec-derived field name: bare when the
+// name is a valid identifier that is not a keyword, bracketed and quoted
+// otherwise.
+//
+// Unlike `jsKey`, this MUST consult the keyword list. A reserved word is a legal
+// JS object key (`{ end: 1 }` is fine) but not a legal Lua one — `{ end = 1 }`
+// is a syntax error, because `end` closes a block. The trap is that a keyword
+// also matches the identifier pattern, so a shape-only test passes it through
+// looking correct.
+//
+// Real case: aareguru's /v2018 range query takes a parameter named `end`, so
+// every generated lua doc example emitted `{ ..., end = "end", ... }` and the
+// readme-examples test could not compile the block. 13 of the 626 freepublicapis
+// specs name a parameter with a lua reserved word.
+function luaKey(name: string): string {
+  return LUA_IDENT.test(name) && !isReservedName(name, 'lua')
+    ? name
+    : `["${name}"]`
+}
+
+
 // As `jsProp`, but optional-chained: `obj?.name` / `obj?.["3ds_session_id"]`.
 function jsOptProp(obj: string, name: string): string {
   return JS_IDENT.test(name) ? `${obj}?.${name}` : `${obj}?.[${JSON.stringify(name)}]`
@@ -589,5 +613,6 @@ export {
   jsProp,
   jsOptProp,
   jsKey,
+  luaKey,
   prefixLeadingDigit,
 }

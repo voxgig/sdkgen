@@ -26,6 +26,7 @@ import {
   installCommand,
   vendorCommand,
   goPackageIdent,
+  luaKey,
 } from '../dist/sdkgen.js'
 
 
@@ -279,6 +280,45 @@ describe('helpers', () => {
 
 
   describe('safeVarName', () => {
+
+    // A Lua TABLE key, which is a different problem from a variable name:
+    // a keyword cannot be sanitised with a trailing _ here, because the key has
+    // to keep the field name the API actually uses. It gets bracketed instead.
+    //
+    // The trap this covers: a keyword MATCHES the identifier pattern, so the
+    // shape-only test `jsKey` uses would pass `end` through as a bare key and
+    // emit `{ end = "end" }`, which does not parse. `jsKey` is right to skip the
+    // keyword check — `{ end: 1 }` is legal JS — and lua is the exception.
+    test('luaKey brackets a keyword, and any non-identifier', () => {
+      // Every Lua keyword must be bracketed, not just the memorable ones.
+      for (const kw of [
+        'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for',
+        'function', 'goto', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat',
+        'return', 'then', 'true', 'until', 'while',
+      ]) {
+        strictEqual(luaKey(kw), `["${kw}"]`)
+      }
+
+      // Plain identifiers stay bare, including ones that merely START with a
+      // keyword — `ending` is not `end`.
+      strictEqual(luaKey('city'), 'city')
+      strictEqual(luaKey('start'), 'start')
+      strictEqual(luaKey('_x'), '_x')
+      strictEqual(luaKey('a1'), 'a1')
+      strictEqual(luaKey('ending'), 'ending')
+      strictEqual(luaKey('endDate'), 'endDate')
+
+      // Not identifiers at all.
+      strictEqual(luaKey('start-date'), '["start-date"]')
+      strictEqual(luaKey('a.b'), '["a.b"]')
+      strictEqual(luaKey('2x'), '["2x"]')
+      strictEqual(luaKey('per_page[]'), '["per_page[]"]')
+      strictEqual(luaKey(''), '[""]')
+
+      // `self` is reserved in Ruby but NOT in Lua, so it is a bare key here.
+      strictEqual(luaKey('self'), 'self')
+    })
+
 
     test('sanitises reserved words per language with a trailing _', () => {
       // Ruby: `self = ...` is a SyntaxError (Cloudsmith's Self entity).
