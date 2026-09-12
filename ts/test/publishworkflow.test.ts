@@ -194,6 +194,101 @@ describe('PublishWorkflow', () => {
   })
 
 
+  // A RELEASE THAT LEAVES NO REF CANNOT BE ANSWERED LATER. 0.0.3 of the
+  // GitHub SDK published by dispatch while the repository still had only
+  // v0.0.1 and v0.0.2: nothing in git said which tree the tarball came from,
+  // and nothing downstream could pin the SDK by tag.
+  test('a successful publish is tagged', async () => {
+    const out = await render(NPM_TS)
+    const wf = out['.github/workflows/publish-ts.yml']
+
+    ok(/^  tag:$/m.test(wf), 'no tag job: ' + wf.slice(-400))
+    ok(/git push origin "refs\/tags\/\$TAG"/.test(wf), 'the tag job pushes no tag')
+
+    // AFTER the publish, not beside it. A tag cut in parallel would name a
+    // release that may never have reached the registry.
+    ok(/needs: \[verify, publish\]/.test(wf),
+      'the tag job does not wait for the publish')
+  })
+
+
+  // THE REPOSITORY-WRITE CREDENTIAL NEVER SHARES A JOB WITH PROJECT CODE.
+  // `checkout` persists its token into the git config for the whole job, so
+  // `contents: write` beside an `npm install` is the same exposure that
+  // `id-token: write` beside one would be.
+  test('only the tag job may write to the repository', async () => {
+    const out = await render(NPM_TS)
+    const wf = out['.github/workflows/publish-ts.yml']
+
+    const jobs: Record<string, string[]> = {}
+    let current: string | null = null
+    for (const line of wf.split('\n')) {
+      const m = /^  ([a-z][a-z0-9_-]*):\s*$/.exec(line)
+      if (null != m) {
+        current = m[1]
+        jobs[current] = []
+        continue
+      }
+      if (null != current) {
+        jobs[current].push(line)
+      }
+    }
+
+    const writers = Object.keys(jobs)
+      .filter((j) => jobs[j].some((l) => /contents:\s*write/.test(l)))
+
+    deepStrictEqual(writers, ['tag'],
+      'expected only the tag job to hold contents: write, got: ' +
+      writers.join(', '))
+
+    const body = jobs.tag.join('\n')
+    ok(!/run:\s*npm (install|ci)\b/.test(body),
+      'the repository-writing job installs dependencies')
+    ok(!/npm (run build|test|publish)\b/.test(body),
+      'the repository-writing job runs project code')
+  })
+
+
+  // ONE BARE TAG PER REPOSITORY. `ts/` and `js/` are separate packages on a
+  // lockstep version, so a bare `v<version>` cut by each would be two targets
+  // racing for one name — and the loser fails a release that has already
+  // published. The primary npm target owns the bare tag; the rest are
+  // prefixed, as apidef tags `go/v<version>` beside its `v<version>`.
+  test('only the primary npm target owns the bare tag', async () => {
+    const out = await render({
+      ts: {
+        active: true, name: 'ts',
+        publish: { registry: { name: 'npm' } },
+      },
+      js: {
+        active: true, name: 'js',
+        publish: { registry: { name: 'npm', package: '@acme/demo-js' } },
+      },
+    })
+
+    const tsTag = /TAG="([^"]+)"/.exec(out['.github/workflows/publish-ts.yml'])
+    const jsTag = /TAG="([^"]+)"/.exec(out['.github/workflows/publish-js.yml'])
+
+    strictEqual(tsTag && tsTag[1], 'v$VERSION', 'ts does not own the bare tag')
+    strictEqual(jsTag && jsTag[1], 'js/v$VERSION', 'js is not prefixed')
+  })
+
+
+  // A sole npm target is the primary one whatever it is called, so it takes
+  // the bare tag rather than an oddly prefixed one nothing else competes for.
+  test('a sole npm target takes the bare tag', async () => {
+    const out = await render({
+      js: {
+        active: true, name: 'js',
+        publish: { registry: { name: 'npm' } },
+      },
+    })
+
+    const m = /TAG="([^"]+)"/.exec(out['.github/workflows/publish-js.yml'])
+    strictEqual(m && m[1], 'v$VERSION', 'a sole target did not take the bare tag')
+  })
+
+
   // Every action pinned to a SHA: an org can require it, and a workflow
   // naming a tag then fails to START, with no jobs and no logs.
   test('every action is pinned to a SHA', async () => {

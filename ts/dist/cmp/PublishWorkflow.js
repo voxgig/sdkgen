@@ -20,6 +20,15 @@ const packageMeta_1 = require("../helpers/packageMeta");
 // deliberate act by someone who can see the result, which is what a release
 // should be.
 //
+// IT TAGS WHAT IT PUBLISHED. A release that reaches the registry but leaves
+// no ref behind cannot be answered later: `@voxgig-sdk/github-sdk@0.0.3` went
+// out by dispatch and the repository had only v0.0.1 and v0.0.2, so nothing
+// in git said which tree the published tarball came from, and nothing
+// downstream could pin the SDK by tag. npm's trusted publisher is bound to
+// ONE workflow file, so the tag has to be cut inside this one -- and a ref
+// pushed with GITHUB_TOKEN starts no further workflow run, so it cannot be
+// delegated to a tag-triggered publisher either.
+//
 // THE WORKFLOW FILE NAME IS PART OF THE TRUST CONFIGURATION. npm binds a
 // trusted publisher to the repository AND the workflow filename, so renaming
 // this file silently breaks publishing until the npm side is updated to
@@ -55,7 +64,7 @@ const PublishWorkflow = (0, jostraca_1.cmp)(function PublishWorkflow(props) {
         (0, jostraca_1.Folder)({ name: 'workflows' }, () => {
             for (const target of npmTargets) {
                 (0, jostraca_1.File)({ name: `publish-${target.name}.yml` }, () => {
-                    (0, jostraca_1.Content)(publishWorkflow(model, target));
+                    (0, jostraca_1.Content)(publishWorkflow(model, target, npmTargets));
                 });
             }
         });
@@ -71,8 +80,36 @@ const PublishWorkflow = (0, jostraca_1.cmp)(function PublishWorkflow(props) {
     });
 });
 exports.PublishWorkflow = PublishWorkflow;
-function publishWorkflow(model, target) {
+// WHICH TAG A TARGET'S RELEASE CARRIES.
+//
+// A repo here publishes more than one npm package -- `ts/` and `js/` are
+// separate packages from separate folders, on a lockstep version -- so a bare
+// `v<version>` cut by each would be two targets racing for one tag name, and
+// the loser would fail a release that had already published.
+//
+// The convention is the toolchain's own. @voxgig/apidef tags `v<version>` for
+// its npm package and `go/v<version>` for its Go module; the generated root
+// Makefile tags `<target>/v<version>` for every port. So: the ecosystem's
+// PRIMARY npm target owns the bare tag, and any other npm target is prefixed
+// with its own name.
+//
+// Resolved by comparing package names rather than hardcoding 'ts', so that a
+// project that renamed or replaced its primary target still gets one bare tag
+// -- and if none matches, every target is prefixed, which is wrong in no way
+// that loses a release.
+function isPrimaryNpm(model, target, npmTargets) {
+    if (1 === npmTargets.length) {
+        return true;
+    }
+    return (0, packageMeta_1.packageName)(model, target.name) === (0, packageMeta_1.packageName)(model, 'npm');
+}
+function releaseTag(model, target, npmTargets) {
+    return isPrimaryNpm(model, target, npmTargets) ?
+        'v$VERSION' : `${target.name}/v$VERSION`;
+}
+function publishWorkflow(model, target, npmTargets) {
     const name = target.name;
+    const tag = releaseTag(model, target, npmTargets);
     // BY TARGET, NOT BY ECOSYSTEM. `packageName(model, 'npm')` resolves the
     // ecosystem's PRIMARY target — ts — so every npm target's workflow named
     // the ts package: publish-js.yml claimed `@voxgig-sdk/github-sdk` while
@@ -103,14 +140,25 @@ function publishWorkflow(model, target) {
 # version by two mechanisms. Releasing is an act someone performs and
 # watches.
 #
-# TWO JOBS, BECAUSE THEY NEED DIFFERENT PRIVILEGES. A dependency lifecycle
+# THREE JOBS, BECAUSE THEY NEED DIFFERENT PRIVILEGES. A dependency lifecycle
 # script can ask the runner for any OIDC token its job is permitted to mint,
 # so a job that both installs dependencies and holds \`id-token: write\` can be
-# made to publish before its own gates finish.
+# made to publish before its own gates finish. The same reasoning keeps
+# \`contents: write\` out of both: checkout persists its token into the git
+# config for the whole job.
 #
 #   verify   contents: read, nothing else. Installs, builds and tests.
 #   publish  id-token: write. Installs no dependencies and runs no project
 #            code; it packs what is already in the tree.
+#   tag      contents: write. Runs git and nothing else.
+#
+# THE TAG IS CUT HERE BECAUSE IT CANNOT BE CUT ANYWHERE ELSE. npm binds the
+# trusted publisher to ONE workflow file, so whatever must accompany a publish
+# belongs inside it; and a ref pushed with GITHUB_TOKEN starts no further
+# workflow run, so "tag, and let a tag-triggered publisher fire" does not
+# work. A release that publishes but leaves no ref cannot be answered later:
+# nothing in git says which tree the tarball came from, and nothing
+# downstream can pin this SDK by tag.
 
 name: publish-${name}
 
@@ -222,6 +270,55 @@ jobs:
         if: steps.registry.outputs.published == 'false'
         working-directory: ${name}
         run: npm publish --access public
+
+  # Runs git and nothing else. No install, no project code — so the
+  # repository-write credential is never in scope while third-party code runs.
+  #
+  # It runs even when the publish step SKIPPED because the version was already
+  # on the registry: that is what makes re-dispatching after a partial release
+  # finish the job rather than leave a published version permanently untagged.
+  tag:
+    name: tag
+    needs: [verify, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # The ONLY job that may write to the repository, and the only one that
+    # runs no project code.
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # Tags are needed to tell "already tagged" from "not tagged yet".
+          fetch-depth: 0
+
+      - name: Tag the release
+        env:
+          VERSION: \${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="${tag}"
+          HEAD_SHA="\$(git rev-parse HEAD)"
+
+          # EXISTENCE IS NOT ENOUGH. \`--verify\` only asks whether the name
+          # resolves; a tag created between the verify job's guard and this
+          # checkout could point anywhere. Treating that as idempotent would
+          # leave a green run with a published artifact from THIS commit and a
+          # release tag on a different one.
+          AT="\$(git rev-parse -q --verify "refs/tags/\$TAG^{commit}" 2>/dev/null || true)"
+          if [ -n "\$AT" ]; then
+            if [ "\$AT" != "\$HEAD_SHA" ]; then
+              echo "::error::\$TAG exists on \$AT, not this commit (\$HEAD_SHA)"
+              exit 1
+            fi
+            echo "\$TAG already points here — nothing to do" >> "\$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git tag "\$TAG"
+          git push origin "refs/tags/\$TAG"
+          echo "pushed \$TAG" >> "\$GITHUB_STEP_SUMMARY"
 `;
 }
 function publishingDoc(model, targets, repoUrl) {
@@ -236,6 +333,12 @@ function publishingDoc(model, targets, repoUrl) {
     const owner = '' === repo ? '<owner>/<repo>' : repo;
     const rows = targets.map((t) => `| \`${t.name}/\` | ${(0, packageMeta_1.packageName)(model, t.name)} | ` +
         `\`.github/workflows/publish-${t.name}.yml\` |`).join('\n');
+    // WHICH TAG EACH TARGET CUTS. Worth a table rather than a sentence: the
+    // primary npm target owns the bare `v<version>` and every other one is
+    // prefixed, so with more than one npm target the answer differs per row.
+    const tagRows = '| target | tag |\n|---|---|\n' + targets.map((t) => `| \`${t.name}/\` | \`` +
+        releaseTag(model, t, targets).replace('$VERSION', '<version>') +
+        '\` |').join('\n');
     return `# Publishing
 
 GENERATED by @voxgig/sdkgen — regenerated on every \`npm run generate\`.
@@ -273,6 +376,26 @@ It is a DISPATCH rather than a tag push because the root \`Makefile\` also
 publishes, with a vault-injected token. A tag-triggered workflow racing it
 would publish one version by two mechanisms.
 
+## The release is tagged for you
+
+The workflow cuts the git tag itself, after a successful publish, so a
+released version always has a ref naming the tree it came from. Nothing to
+do by hand.
+
+${tagRows}
+
+Re-dispatching a version that is already on the registry skips the publish
+and still cuts a missing tag, so a partial release is finished by running it
+again rather than repaired by hand. If the tag already exists on a DIFFERENT
+commit the run fails rather than moving it: that combination means the
+published artifact and the tag disagree, and only a person should decide
+which is wrong.
+
+The tag job is the only one that may write to the repository, and it runs
+git and nothing else. \`contents: write\` never shares a job with project
+code, for the same reason \`id-token: write\` does not — \`checkout\` persists
+its token into the git config for the whole job.
+
 ## One-time set-up
 
 npm has to be told which repository and which workflow file may publish this
@@ -299,7 +422,7 @@ package goes out by hand from an authenticated machine:
 
 After that, register the publisher and every later release is a dispatch.
 
-## Why the workflow has two jobs
+## Why the workflow has three jobs
 
 A dependency lifecycle script can ask the runner for any OIDC token the job
 it runs in is permitted to mint. A job that both installs dependencies and
@@ -307,8 +430,14 @@ holds \`id-token: write\` can therefore be made to publish as this package
 before its own gates finish.
 
 So \`verify\` installs, builds and tests under \`contents: read\` and holds no
-credential, and \`publish\` holds \`id-token: write\` while installing nothing
-and running no project code.
+credential; \`publish\` holds \`id-token: write\` while installing nothing and
+running no project code; and \`tag\` holds \`contents: write\` while running
+git and nothing else.
+
+The tag cannot be moved out into its own workflow: npm binds the trusted
+publisher to ONE workflow filename, so anything that must accompany a publish
+has to live inside this file. Nor can it be left to a tag-triggered
+publisher — a ref pushed with \`GITHUB_TOKEN\` starts no further workflow run.
 `;
 }
 //# sourceMappingURL=PublishWorkflow.js.map
