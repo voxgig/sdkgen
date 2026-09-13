@@ -114,6 +114,75 @@ of the *workspace directory* on one machine and no part of the model —
 committed into the destination's README and three test files. Generation
 warns until such a project declares it.
 
+## One model, two layouts
+
+`output: path` is committed, and it describes one developer's checkout
+layout. Sometimes the same model has to be generated from a different one.
+
+The case that forced this: a provider repository that carries a tagged
+checkout of its SDK in a subfolder and regenerates itself from it. The SDK
+then sits inside its own output folder, and the path to that folder is an
+ancestor. Nothing in the SDK's committed model can say so, because the SDK
+does not know it has been cloned into another repository.
+
+A second committed value would not help. Two layouts would then each hold a
+path the other disagrees with, and whichever regenerates last wins. So the
+second layout arrives at generate time instead:
+
+```js
+// .sdk/build/sdkgen.js, or any caller holding the config
+const config = {
+  external: {
+    'seneca-provider': {
+      path: '../..',
+      sdkrel: '.sdksrc/acme-sdk',
+      enclosing: true,
+    },
+  },
+}
+```
+
+The same shape is read from `SDKGEN_EXTERNAL` as JSON, and the environment
+wins. That route exists for driving a checkout the caller does not own: a
+script regenerating a provider from a cloned SDK has no business editing
+files inside the clone, and the clone is disposable anyway.
+
+One variable holding JSON, rather than one variable per item per field.
+Item names carry hyphens, so a `SDKGEN_EXTERNAL_SENECA_PROVIDER_PATH`
+scheme needs a name mangling with no inverse: `a-b` and `a_b` arrive
+identical, and nothing can tell which was meant.
+
+An override relocates an item. It can also send an item out of tree that
+the model generates in tree, and every destination guard still runs on it.
+
+## Writing into a folder that holds the project
+
+`enclosing: true` is what lets a destination contain the SDK project. It is
+a separate flag from `path`, and only an override can set it — never the
+model.
+
+Two decisions, said separately, because the second one fails silently. One
+`..` too many fabricates a package tree over an unrelated repository,
+replacing its manifest, README, licence and CI in place, and the only trace
+is a line naming the resolved folder. Overriding a path is ordinary;
+writing over the directory holding the project is not, and the guard stays
+in front of everyone who did not ask for it.
+
+`enclosing` also stands in for `adopt`. A folder that contains the project
+always holds content, so asking whether it is empty can only ever give one
+answer — and requiring `adopt` as well would put the layout back in the
+SDK's committed model, which is the coupling the override exists to break.
+
+The derived walk back needs no warning here either. It descends rather than
+ascends: `.sdksrc/acme-sdk` names the subfolder holding the checkout and
+then the checkout. Both sit inside the output folder, and whoever asked for
+this layout chose both. Nothing sits over anything, so the preceding
+warning would be false, and its advice would write one layout's path into
+the other's model.
+
+Generation writes the files its components declare and removes nothing, so
+a checkout inside its own output folder survives its own run.
+
 ## See also
 
 - [Model reference: `output`](../reference/model.md#generating-outside-the-sdk-repo-output)

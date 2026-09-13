@@ -243,6 +243,44 @@ main: kit: target: 'seneca-provider': output: {
   targets may not claim the same folder, and a folder already holding
   content this generator did not write is refused until the project says
   `output: adopt: true`.
+
+#### Overriding the destination at generate time
+
+`output: path` is committed and describes one checkout layout. To generate
+the same model into a different one, override it on the run rather than
+committing a second value the two layouts disagree over:
+
+```js
+// the build config, in .sdk/build/sdkgen.js
+external: {
+  'seneca-provider': {
+    path: '../..',
+    sdkrel: '.sdksrc/acme-sdk',
+    enclosing: true,
+  },
+}
+```
+
+The same shape is read from the `SDKGEN_EXTERNAL` environment variable as
+JSON, and the environment wins. Use it to drive a checkout you do not own,
+where editing the build config would mean changing files inside someone
+else's repo.
+
+- `path` and `sdkrel` replace the model's values for that run only. The
+  model object is never written back to, so `target add` cannot commit the
+  override by accident.
+- An override may also send an item out of tree that the model generates in
+  tree. Every destination check listed earlier still runs on it.
+- `enclosing: true` permits a destination that **contains** the SDK project
+  — the layout where a repo carries a checkout of its SDK in a subfolder and
+  regenerates itself from it. Only an override can set it, never the model,
+  because the mistake it guards against (one `..` too many, writing a
+  package over an unrelated repo) is silent. It also stands in for `adopt`:
+  a folder containing the project always holds content, so the emptiness
+  check has nothing to say.
+
+See [Out-of-tree targets](../explanation/out-of-tree-targets.md#one-model-two-layouts)
+for why this is a run-time decision rather than a model one.
 - `active: false` on an out-of-tree target generates it **nowhere**. It
   does not relocate the target back into `<sdk-repo>/<target>/`.
 

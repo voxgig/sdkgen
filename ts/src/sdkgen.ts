@@ -181,6 +181,32 @@ type SdkGenOptions = {
   }
 
   dryrun?: boolean
+
+  // WHERE AN OUT-OF-TREE ITEM GOES, DECIDED AT GENERATE TIME RATHER THAN IN
+  // THE MODEL. Keyed by item name:
+  //
+  //   external: { 'seneca-provider': { path: '../..', sdkrel: '.sdksrc/acme-sdk', enclosing: true } }
+  //
+  // `output: path` in the model is a fact about ONE developer's checkout
+  // layout, and it is committed. The same model generated from a different
+  // layout is the same model — a different INVOCATION of it, not a second
+  // truth to encode — so the second layout belongs here and not in a second
+  // committed value that the two layouts then fight over.
+  //
+  // The case that forced it: a provider repo that carries a tagged checkout
+  // of its SDK in a subfolder and regenerates itself from it. The SDK's own
+  // committed model cannot describe that, because the SDK does not know it
+  // has been cloned into someone else's repo.
+  external?: Record<string, ExternalOverride>
+}
+
+
+// See SdkGenOptions.external. `enclosing` is separate from `path` on
+// purpose — see checkExternalFolders.
+type ExternalOverride = {
+  path?: string
+  sdkrel?: string
+  enclosing?: boolean
 }
 
 
@@ -317,12 +343,14 @@ function SdkGen(opts: SdkGenOptions) {
     // so resolve it ONCE: every destination is compared against it, and a
     // comparison between a relative and an absolute path is meaningless.
     const root = Path.resolve(folder)
+
+    const externalOverride = resolveExternalOverride(opts, log)
     // Snapshot the decision before preflight. In particular, do not check a
     // missing optional destination once for safety and AGAIN before writing:
     // if it appeared between those checks, the pass could write into content
     // that was never ownership-validated.
     const external: ExternalPlan[] =
-      externalItems(model, root, ['target', 'docs'])
+      externalItems(model, root, ['target', 'docs'], externalOverride)
         .map((ext) => ({ ...ext, skip: externalSkipReason(ext, fs) }))
 
     // Before ANY file is written, in-tree included: a destination that turns
@@ -700,6 +728,11 @@ type ExternalSpec = {
   target: any
   folder: string
   active: boolean
+
+  // The caller asked, at generate time, to write into a folder that CONTAINS
+  // the SDK project. Never read from the model — see SdkGenOptions.external
+  // and checkExternalFolders.
+  enclosing: boolean
 }
 
 
@@ -721,6 +754,74 @@ type ExternalPlan = ExternalSpec & {
 // An INACTIVE target is still listed: it must be taken out of the in-tree
 // model (see withoutExternal) so that switching it off does not silently
 // relocate it into `<sdk-repo>/<target>/`. The generate loop skips it.
+// The generate-time override of where out-of-tree items are written.
+//
+// Two ways in, merged, the environment winning:
+//
+//   opts.external     the caller holds the config — a build script it owns.
+//   SDKGEN_EXTERNAL   JSON, for driving a checkout the caller does NOT own.
+//
+// The environment matters more than it looks. The case this exists for is a
+// repository that carries a tagged checkout of its SDK and regenerates
+// itself from it: the script doing that owns neither the SDK's model nor its
+// `.sdk/build/sdkgen.js`, so any route that requires editing a file inside
+// the checkout means patching someone else's repo on every clone — and the
+// point of the exercise was that the clone is disposable.
+//
+// ONE JSON VARIABLE, not one variable per item per field. Item names carry
+// hyphens (`seneca-provider`), so a
+// `SDKGEN_EXTERNAL_SENECA_PROVIDER_PATH` scheme needs a name mangling with
+// no inverse: `a-b` and `a_b` collide, and nothing can tell which was meant.
+function resolveExternalOverride(
+  opts: SdkGenOptions, log: any,
+): Record<string, ExternalOverride> {
+  const declared = opts.external || {}
+  const raw = process.env.SDKGEN_EXTERNAL
+
+  if (null == raw || '' === raw.trim()) {
+    return declared
+  }
+
+  let parsed: any
+
+  try {
+    parsed = JSON.parse(raw)
+  }
+  catch (err: any) {
+    throw new SdkGenError(
+      'SDKGEN_EXTERNAL is not valid JSON: ' + (err?.message || err) +
+      '\n  Expected an object keyed by item name, for example:' +
+      '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
+      '\n  Got: ' + raw.slice(0, 200))
+  }
+
+  if (null == parsed || 'object' !== typeof parsed || Array.isArray(parsed)) {
+    throw new SdkGenError(
+      'SDKGEN_EXTERNAL must be a JSON OBJECT keyed by item name, for example:' +
+      '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
+      '\n  Got: ' + raw.slice(0, 200))
+  }
+
+  const merged: Record<string, ExternalOverride> = { ...declared }
+
+  for (const name of Object.keys(parsed)) {
+    merged[name] = { ...(declared[name] || {}), ...(parsed[name] || {}) }
+  }
+
+  // LOUDLY. Generation writing somewhere other than the model says is
+  // exactly the thing whose only previous trace was one INFO line naming a
+  // resolved folder, and that cost a silent green run that emitted nothing.
+  const named = Object.keys(parsed).sort()
+  log.info({
+    point: 'external-override',
+    items: named.join(','),
+    note: 'SDKGEN_EXTERNAL overrides the output of: ' + named.join(', '),
+  })
+
+  return merged
+}
+
+
 // Every item, of every kind, that generates OUTSIDE the SDK repo.
 //
 // Keyed by kind because `docs` needs exactly this and a second copy of it
@@ -733,19 +834,48 @@ type ExternalPlan = ExternalSpec & {
 // other, in whatever order the passes happen to run.
 function externalItems(
   model: any, folder: string, kinds: string[],
+  override: Record<string, ExternalOverride>,
 ): ExternalSpec[] {
   return kinds.flatMap((kind: string) => {
     const items = model?.main?.[KIT]?.[kind] || {}
 
     return Object.keys(items).sort()
-      .map((name: string) => ({ kind, name, target: items[name] }))
+      .map((name: string) => {
+        // Keyed by NAME, across kinds: a docs item and a target that share a
+        // name share an override. They already share an output folder if both
+        // are pointed at one (the claim map refuses that), so a name that
+        // means two things is a problem before it reaches here.
+        const ov = override[name] || {}
+
+        // A SHALLOW CLONE, so the override never writes back into the model.
+        // The in-tree pass still reads it, and `target add` still round-trips
+        // it to disk; an override is for THIS RUN. Nothing compares these by
+        // identity — withoutExternal keys by kind:name.
+        const output = { ...(items[name]?.output || {}) }
+
+        if (null != ov.path && '' !== ov.path) {
+          output.path = ov.path
+        }
+        if (null != ov.sdkrel && '' !== ov.sdkrel) {
+          output.sdkrel = ov.sdkrel
+        }
+
+        return { kind, name, target: { ...items[name], output }, ov }
+      })
+      // AFTER the override, so it can send an item out of tree that the
+      // model generates in tree. The machinery needs nothing else for that:
+      // withoutExternal takes it out of the in-tree pass by kind:name, and
+      // every destination guard below runs on it either way.
       .filter((t: any) => {
-        const path = t.target?.output?.path
+        const path = t.target.output.path
         return null != path && '' !== path
       })
       .map((t: any) => ({
-        ...t,
+        kind: t.kind,
+        name: t.name,
+        target: t.target,
         folder: Path.resolve(folder, String(t.target.output.path)),
+        enclosing: true === t.ov.enclosing,
         active: false !== t.target.active,
       }))
   })
@@ -848,11 +978,31 @@ function checkExternalFolders(external: ExternalPlan[], root: string, fs: any) {
         ext.name + '/.')
     }
 
-    if (folderContains(ext.folder, root)) {
+    // A DESTINATION THAT CONTAINS THE PROJECT is what `..` produces, and it
+    // is refused — UNLESS the caller said at generate time that it meant it.
+    //
+    // The legitimate case is a repository that carries a tagged checkout of
+    // its SDK in a subfolder and regenerates itself from it: the SDK then
+    // sits INSIDE its own output folder, and `output: path` resolves to an
+    // ancestor. Generation writes the files its components declare and
+    // prunes nothing, so the checkout survives its own run.
+    //
+    // `enclosing` is a separate flag from `path` on purpose, and only the
+    // override can set it — never the model. Overriding a path is one
+    // decision; writing over the directory holding the project is a second,
+    // much worse thing to get wrong, and it fails silently: a typo'd `..`
+    // fabricates a package tree over an unrelated repo, overwriting its
+    // package.json, README, LICENSE and CI in place. Saying it twice is the
+    // cost of keeping the typo caught for everyone who did not ask.
+    if (folderContains(ext.folder, root) && !ext.enclosing) {
       throw new SdkGenError(
         'External output path contains the SDK project.\n  ' + where +
         '\n  Generation would write this package over the directory holding ' +
-        'the SDK project itself.')
+        'the SDK project itself.' +
+        '\n  If that is deliberate — the SDK is checked out INSIDE its own ' +
+        'output folder, and regenerates it — say so at generate time with ' +
+        '`enclosing: true` in the ' + ext.name + ' entry of SDKGEN_EXTERNAL ' +
+        'or the `external` build option. It cannot be set in the model.')
     }
 
     // ACROSS KINDS, not within one: `docs` and `target` are separate
@@ -875,6 +1025,20 @@ function checkExternalFolders(external: ExternalPlan[], root: string, fs: any) {
     }
 
     if (true === ext.target.output.adopt) continue
+
+    // AN ENCLOSING DESTINATION ALWAYS HOLDS CONTENT: the SDK project itself
+    // is inside it, along with whatever else the repository carries. The
+    // emptiness check can therefore only ever say "yes, it has content", so
+    // it carries no information here — and requiring `output: adopt` on top
+    // of the opt-in would put the layout back in the SDK's COMMITTED model,
+    // which is the coupling the generate-time override exists to break. An
+    // SDK cloned into a repository it regenerates cannot have anticipated
+    // being cloned there.
+    //
+    // The containment check above is what guards this case, and it is
+    // stricter: it refuses unless the caller named this item and said
+    // `enclosing` for it.
+    if (ext.enclosing) continue
 
     const entries: string[] = fs.readdirSync(ext.folder)
       .map((entry: any) => String(entry))
@@ -935,6 +1099,17 @@ function externalSdkRel(ext: ExternalSpec, root: string, log: any): string {
   // down to the SDK project. The LAST is the project's own folder; any
   // earlier one is a directory ABOVE it, which nothing in the model declares.
   const named = derived.split('/').filter((seg) => '..' !== seg)
+
+  // NOT WHEN THE OUTPUT ENCLOSES THE PROJECT. There the walk back descends
+  // rather than ascends — `.sdksrc/acme-sdk` names the subfolder holding the
+  // checkout and then the checkout, both INSIDE the output folder and both
+  // chosen by whoever asked for this layout. Nothing is above anything, so
+  // the warning's complaint (directories the model does not declare) is
+  // false, and its advice (declare `output: sdkrel`) would put one layout's
+  // path into the other's committed model.
+  if (ext.enclosing) {
+    return derived
+  }
 
   if (1 < named.length) {
     log.warn({

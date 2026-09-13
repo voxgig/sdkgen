@@ -660,7 +660,13 @@ emitted broken source reached the fleet unchallenged.
   regeneration), `main.kit.test.live.strict`, `main.kit.feature` (which feature
   source ships), and per target `module.{path,package,goversion}`,
   `publish.{version,registry.package}`, `output.{path,repo,create,adopt,sdkrel}`
-  (generate into another repo). All of them are catalogued in
+  (generate into another repo). `output.path` is COMMITTED and describes one
+  checkout layout; a second layout is a different INVOCATION of the same
+  model, so it goes in the generate-time override (`external` on the build
+  config, or `SDKGEN_EXTERNAL` as JSON) rather than a second committed value
+  the two layouts then fight over — see
+  [explanation/out-of-tree-targets](./docs/explanation/out-of-tree-targets.md#one-model-two-layouts).
+  All of them are catalogued in
   [reference/model](./docs/reference/model.md#what-a-project-declares-about-itself).
   A project extends a target with `registerComponent('X')` ->
   `cmp/<t>/X_<t>.ts`, which `doctor` reports as ADDITIVE rather than drift.
