@@ -175,10 +175,10 @@ SDK's committed model, which is the coupling the override exists to break.
 
 The derived walk back needs no warning here either. It descends rather than
 ascends: `.sdksrc/acme-sdk` names the subfolder holding the checkout and
-then the checkout, both inside the output folder and both chosen by whoever
-asked for this layout. Nothing sits above anything, so the warning above
-would be false and its advice would write one layout's path into the
-other's model.
+then the checkout. Both sit inside the output folder, and whoever asked for
+this layout chose both. Nothing sits over anything, so the preceding
+warning would be false, and its advice would write one layout's path into
+the other's model.
 
 Generation writes the files its components declare and removes nothing, so
 a checkout inside its own output folder survives its own run.

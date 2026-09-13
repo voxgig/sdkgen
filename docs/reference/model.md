@@ -270,7 +270,7 @@ else's repo.
   model object is never written back to, so `target add` cannot commit the
   override by accident.
 - An override may also send an item out of tree that the model generates in
-  tree. Every destination check above still runs on it.
+  tree. Every destination check listed earlier still runs on it.
 - `enclosing: true` permits a destination that **contains** the SDK project
   — the layout where a repo carries a checkout of its SDK in a subfolder and
   regenerates itself from it. Only an override can set it, never the model,
