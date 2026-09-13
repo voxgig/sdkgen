@@ -124,6 +124,20 @@ component.* See [docs/explanation/components-and-templates](./docs/explanation/c
 - Parity tiers and the zero-case corpus guard live in `ts/test/parity.test.ts`
   — see AGENTS.md "Language parity is CRITICAL".
 
+## Releasing — OIDC dispatch, never a local publish
+
+`make publish V=x.y.z`. That bumps, stamps the version, builds, tests,
+commits, pushes `main` and **dispatches** `.github/workflows/publish.yml`,
+which publishes to npm over GitHub OIDC trusted publishing and writes the
+`v<V>` tag. By hand, the same mechanism is
+`gh workflow run publish.yml --ref main -f expect_sha=$(git rev-parse HEAD)`.
+
+Never `npm publish` or `npm run repo-publish` from a checkout — that goes out
+over a stored token, with no provenance. And never hand a release back as
+"run this locally": a release is a dispatch, so prepare the commit and
+dispatch the workflow. Pushing a `v*` tag works but is the fallback path and
+skips every guard. Full rules: AGENTS.md "Releasing".
+
 ## Related Projects
 - **apidef** (`~/Projects/voxgig/apidef`) — parses OpenAPI definitions into the model used by sdkgen
 - **create-sdkgen** (`~/Projects/voxgig/create-sdkgen`) — scaffolds new SDK projects; owns test `.aontu` data in `project/standard/.sdk/test/`
