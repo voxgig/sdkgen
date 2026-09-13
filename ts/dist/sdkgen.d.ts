@@ -73,6 +73,12 @@ type SdkGenOptions = {
         bin?: any;
     };
     dryrun?: boolean;
+    external?: Record<string, ExternalOverride>;
+};
+type ExternalOverride = {
+    path?: string;
+    sdkrel?: string;
+    enclosing?: boolean;
 };
 declare const Jostraca: typeof JostracaModule.Jostraca;
 declare function SdkGen(opts: SdkGenOptions): {

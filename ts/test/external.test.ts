@@ -84,6 +84,8 @@ type GenOpts = {
   // Collects the generator's log entries, for the warnings that are the
   // only externally visible part of a decision.
   sink?: any[]
+  // The generate-time output override, as a build script would pass it.
+  external?: Record<string, any>
 }
 
 
@@ -101,6 +103,7 @@ function setup(
     root: '',
     pino: makeLog(opts.sink),
     dryrun: opts.dryrun,
+    external: opts.external,
   })
 
   const model = makeModel(targets, undefined,
@@ -110,6 +113,7 @@ function setup(
       .join('\n') + '\n' + (opts.extra || ''))
 
   return {
+    model,
     run: () => sdkgen.generate({ model, root: makeRoot() }),
 
     // EVERY written path, `.jostraca` bookkeeping included — that is what
@@ -631,6 +635,22 @@ describe('external target', () => {
     })
 
 
+    // The enclosing case is refused by DEFAULT even when a path override
+    // produced it. Overriding a path is one decision; writing over the
+    // directory holding the project is a second, worse one, and the refusal
+    // has to say what to do about it.
+    test('an override that encloses the project is refused without the opt-in',
+      async () => {
+        const { msg } = await refuse(['go', 'go-cli'], { 'go-cli': OUT },
+          { external: { 'go-cli': { path: '..' } } })
+
+        ok(msg.includes('contains the SDK project'),
+          'unexpected refusal reason:\n' + msg)
+        ok(msg.includes('enclosing: true'),
+          'the refusal does not say how to allow it:\n' + msg)
+      })
+
+
     // Two targets, one folder: the second pass overwrites the first, in
     // target-name order, and the operator sees two "generated ok" lines.
     test('two targets claiming the same folder are refused', async () => {
@@ -726,4 +746,198 @@ describe('external target', () => {
 
   })
 
+  // GENERATE-TIME OUTPUT OVERRIDE — see SdkGenOptions.external.
+  //
+  // `output: path` is committed and describes ONE developer's checkout
+  // layout. A second layout is a different INVOCATION of the same model, not
+  // a second truth to commit, so it arrives at generate time.
+  describe('output overridden at generate time', () => {
+
+    test('the override decides the destination, not the model', async () => {
+      const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
+        { external: { 'go-cli': { path: OUT2 } } })
+      await gen.run()
+
+      const all = gen.files()
+      ok(0 < Object.keys(under(all, OUT2)).length,
+        'nothing landed at the overridden path: ' + Object.keys(all).join(', '))
+      deepStrictEqual(under(all, OUT), {},
+        'the model path was written as well as the override')
+    })
+
+
+    // ASSERTED ON THE MODEL OBJECT ITSELF, not by generating twice: setup()
+    // builds a fresh model per call, so a second run could never see a
+    // write-back and the test would pass however the override was applied.
+    //
+    // It matters because the model is the in-tree pass's input too, and
+    // `target add` round-trips it back to disk — an override that wrote into
+    // it would move the item for everything downstream of this run, and then
+    // commit the move.
+    test('the override does not write back into the model', async () => {
+      const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
+        { external: { 'go-cli': { path: OUT2, sdkrel: '.sdksrc/x' } } })
+
+      await gen.run()
+
+      const output = (gen.model as any).main.kit.target['go-cli'].output
+      strictEqual(output.path, OUT,
+        'the override overwrote the model\'s output path')
+      ok(null == output.sdkrel || '' === output.sdkrel,
+        'the override wrote an sdkrel into the model: ' + output.sdkrel)
+    })
+
+
+    // The case this exists for: the SDK is checked out INSIDE the repo it
+    // generates, and regenerates it from there. `output: path` then resolves
+    // to an ancestor of the project.
+    test('`enclosing` permits writing into a folder that holds the project',
+      async () => {
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
+          { external: { 'go-cli': { path: '..', enclosing: true } } })
+
+        const res = await gen.run()
+        strictEqual(res.ok, true, 'generation did not report ok')
+
+        const parent = norm(Path.resolve(STAGE, '..'))
+        const landed = Object.keys(gen.files())
+          .filter((f) => f.startsWith(parent + '/') && !f.includes('/.jostraca/'))
+
+        ok(0 < landed.length, 'nothing landed in the enclosing folder')
+      })
+
+
+    // Generation writes what its components declare and prunes nothing, so
+    // the checkout driving the run survives being inside its own output.
+    test('an enclosing run does not remove the project it generates from',
+      async () => {
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
+          { external: { 'go-cli': { path: '..', enclosing: true } } })
+        await gen.run()
+
+        ok(0 < Object.keys(under(gen.files(), norm(STAGE))).length,
+          'the SDK project was emptied by generating into its parent')
+      })
+
+
+    // The derived walk back DESCENDS here — it names the subfolder holding
+    // the checkout, both segments inside the output folder and both chosen
+    // by whoever asked for this layout. The undeclared-directories warning
+    // would be false, and its advice would put one layout's path into the
+    // other's committed model.
+    // TWO LEVELS UP, deliberately. The warning fires only when the derived
+    // walk back names MORE than one directory, so an enclosing layout one
+    // level up cannot exercise the suppression at all — and a test using it
+    // passes whether the suppression is there or not. This mirrors the real
+    // shape: `<repo>/<subfolder>/<sdk-checkout>` derives two segments.
+    test('an enclosing layout does not warn about the derived path back',
+      async () => {
+        const sink: any[] = []
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
+          { external: { 'go-cli': { path: '../..', enclosing: true } }, sink })
+        await gen.run()
+
+        const warn = sink.find((e: any) => 'external-sdkrel-derived' === e.point)
+        strictEqual(warn, undefined,
+          'warned about a path back that descends: ' + JSON.stringify(warn))
+      })
+
+
+    // Asserted through the log rather than through emitted text, for the
+    // reason the declared-sdkrel test above gives: whether a target prints
+    // the path back is that target's business, and the DECISION is what this
+    // is about. A declared path back is neither derived nor warned about.
+    test('the override can set the path back to the SDK project', async () => {
+      const sink: any[] = []
+      const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
+        { external: { 'go-cli': { sdkrel: '.sdksrc/acme-sdk' } }, sink })
+      await gen.run()
+
+      strictEqual(sink.find((e: any) => 'external-sdkrel-derived' === e.point),
+        undefined,
+        'an overridden path back was derived — and warned about — anyway')
+    })
+
+
+    // SDKGEN_EXTERNAL exists for driving a checkout the caller does NOT own,
+    // where editing the build script would mean patching someone else's repo.
+    describe('SDKGEN_EXTERNAL', () => {
+
+      let saved: string | undefined
+
+      before(() => { saved = process.env.SDKGEN_EXTERNAL })
+      after(() => {
+        if (undefined === saved) delete process.env.SDKGEN_EXTERNAL
+        else process.env.SDKGEN_EXTERNAL = saved
+      })
+
+      test('the environment overrides the destination', async () => {
+        process.env.SDKGEN_EXTERNAL = JSON.stringify({ 'go-cli': { path: OUT2 } })
+
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT })
+        await gen.run()
+
+        ok(0 < Object.keys(under(gen.files(), OUT2)).length,
+          'SDKGEN_EXTERNAL did not move the destination')
+      })
+
+
+      test('the environment wins over the build option', async () => {
+        process.env.SDKGEN_EXTERNAL = JSON.stringify({ 'go-cli': { path: OUT2 } })
+
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
+          { external: { 'go-cli': { path: '/elsewhere/ignored' } } })
+        await gen.run()
+
+        ok(0 < Object.keys(under(gen.files(), OUT2)).length,
+          'the build option won over the environment')
+      })
+
+
+      // Writing outside the repo at a path from an environment variable is
+      // the one thing here that must never happen quietly.
+      test('the override is logged', async () => {
+        process.env.SDKGEN_EXTERNAL = JSON.stringify({ 'go-cli': { path: OUT2 } })
+
+        const sink: any[] = []
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT }, { sink })
+        await gen.run()
+
+        const entry = sink.find((e: any) => 'external-override' === e.point)
+        ok(null != entry, 'the override was applied without a log entry')
+        ok(String(entry.items).includes('go-cli'),
+          'the log entry does not name the item: ' + JSON.stringify(entry))
+      })
+
+
+      // A malformed variable must not fall through to the model's path: that
+      // would publish a green run that generated somewhere else entirely.
+      test('malformed JSON is refused, naming the variable', async () => {
+        process.env.SDKGEN_EXTERNAL = '{not json'
+
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT })
+
+        let err: any = null
+        try { await gen.run() } catch (e: any) { err = e }
+
+        ok(null != err, 'a malformed SDKGEN_EXTERNAL was accepted')
+        ok(String(err.message).includes('SDKGEN_EXTERNAL'),
+          'the error does not name the variable: ' + err.message)
+      })
+
+
+      test('a JSON array is refused', async () => {
+        process.env.SDKGEN_EXTERNAL = '[{"path":"/elsewhere/x"}]'
+
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT })
+
+        let err: any = null
+        try { await gen.run() } catch (e: any) { err = e }
+
+        ok(null != err, 'a JSON array was accepted')
+        ok(String(err.message).includes('OBJECT'),
+          'the error does not say what was expected: ' + err.message)
+      })
+    })
+  })
 })
