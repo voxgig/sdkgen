@@ -916,19 +916,58 @@ Rules that keep it honest:
 
 ## Releasing
 
-Publishing is **tag-driven and runs in CI**: pushing a `v*` tag fires
-`.github/workflows/publish.yml`, which publishes to npm over GitHub OIDC
-trusted publishing (no token, provenance attached). That workflow's own header
-says it — do NOT run `npm run repo-publish` locally, because it publishes over
-a token and bypasses OIDC entirely.
+**NOTHING IS EVER PUBLISHED FROM A WORKSTATION. The release is performed by
+GitHub Actions over OIDC trusted publishing, and the way you start it is a
+WORKFLOW DISPATCH.**
+
+```bash
+make publish V=4.15.0
+```
+
+That is the whole release. It guards (semver, `gh` present, on `main`, clean
+tree, not behind `origin/main`, `vX.Y.Z` not already taken locally OR on
+origin), bumps `ts/package.json`, runs `embed-version`, runs `make all`,
+commits, pushes `main`, waits for the remote to actually show the pushed SHA,
+and then dispatches `publish.yml` pinned to it. The workflow publishes to npm
+and writes the `v<V>` tag.
+
+To drive the dispatch by hand — same mechanism, without the bump:
+
+```bash
+gh workflow run publish.yml --ref main -f expect_sha=$(git rev-parse HEAD)
+```
+
+### Never do these
+
+| Don't | Why |
+| --- | --- |
+| `npm publish` / `npm run repo-publish` from a checkout | Publishes over a stored token, bypassing OIDC entirely: no provenance, and a long-lived credential where a 15-minute one would do. |
+| Hand the release back as "run this locally yourself" | The release is a dispatch. If a local command is unavailable to you, prepare the commit and dispatch the workflow — do not convert a CI release into a manual one. |
+| Push a `v*` tag as the normal route | `publish.yml` does accept `push: tags: v*`, but that path is the FALLBACK for a tag pushed by hand. It skips every guard `make publish` runs, and a tag can name any commit — see docs/how-to/release-and-tag.md, "What the workflow refuses to do". |
+
+### Why a dispatch rather than a tag push
+
+A dispatch resolves `main` and checks the caller still means the commit it
+resolved (`expect_sha`). A tag push resolves whatever the pusher chose, so
+the workflow has to prove containment in `origin/main` after the fact. The
+dispatch is the path with the guards in front of it; the tag path exists so a
+release is still possible when `gh` is not.
+
+`--ref main` is a moving target, and `git push` returns BEFORE the ref is
+visible to every GitHub read path. Dispatching immediately after a push can
+resolve the commit *before* the release commit, and `expect_sha` then refuses
+by naming the very SHA you just pushed. `make publish` polls `git ls-remote`
+until the remote agrees. If you dispatch by hand, do the same.
+
+### The version must be stamped before the dispatch
 
 **The publish workflow does not run `embed-version`.** It runs `npm ci`,
 `npm run build`, `npm test`, `npm publish` — nothing else. So the version must
-already be stamped into the tree *before* you tag, or the release ships a CLI
-that reports the previous version and a scaffold manifest that disagrees with
-`package.json` (which is exactly what `package update @voxgig/sdkgen` acts on).
-
-The release sequence, in order:
+already be stamped into the tree *before* the dispatch, or the release ships a
+CLI that reports the previous version and a scaffold manifest that disagrees
+with `package.json` (which is exactly what `package update @voxgig/sdkgen`
+acts on). `make publish` runs it for you; a hand-driven release must not skip
+it:
 
 ```bash
 cd ts
@@ -936,7 +975,7 @@ npm version minor --no-git-tag-version   # or patch; see below
 npm run embed-version                    # REQUIRED — nothing else runs this
 npm run build && npm test
 cd .. && git add -A && git commit -m "vX.Y.Z" && git push
-git tag vX.Y.Z && git push origin vX.Y.Z # publish.yml takes it from here
+gh workflow run publish.yml --ref main -f expect_sha=$(git rev-parse HEAD)
 ```
 
 `embed-version` (`ts/build/version.js`) writes **two** places, both of which
