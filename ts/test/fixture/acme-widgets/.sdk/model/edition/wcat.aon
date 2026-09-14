@@ -1,0 +1,9 @@
+# Fixture documentation edition, installed through the package kind registry.
+main: kit: doc: edition: wcat: {
+  name: key()
+  title: 'Widget Catalogue'
+  kind: 'summary'
+  output: path: 'wcat'
+  active: true
+  base: 'BASE'
+}

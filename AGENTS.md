@@ -1,5 +1,24 @@
 # AGENTS.md — operating guide for AI coding agents
 
+## Temporary local tool development
+
+Prefer local symlinks to sibling tool checkouts when developing or testing
+unreleased Voxgig tools together. Link to the actual package root (for example,
+`apidef/ts` or `sdkgen/ts`), build that checkout, and verify that the consumer
+resolves the linked code. Use existing validator local-path options where
+available.
+
+Do not create or copy `.zip`, `.tgz`, or `npm pack` snapshots into SDK projects
+or ad hoc `vendor/` folders just to use local changes. Keep temporary links in
+ignored dependency directories; keep machine-specific paths and temporary
+`file:` dependencies out of committed manifests and lockfiles. Shared builds
+and CI should use published versions or explicitly check out and build the
+required source revisions.
+
+Archives are appropriate when testing package contents or installation from a
+packed release. Put those artifacts in a temporary test directory and clean
+up artifacts created by the test afterward; do not scatter them across repos.
+
 This is the manual for automated agents working in or with
 `@voxgig/sdkgen`. It is intentionally dense. Read it before making
 changes; it will save you a broken build.
@@ -43,8 +62,8 @@ Pipeline: `OpenAPI → apidef → model (.aontu) → aontu (unify) → jostraca
 ## Commands
 
 The npm package root is **`ts/`** — run npm there. The top-level
-`Makefile` wraps it (`make build`, `make test`, `make check-model`, `make
-sync-model`) and runs from the repo root.
+`Makefile` wraps it (`make build`, `make test`, `make check-model`) and
+runs from the repo root.
 
 ```bash
 cd ts && npm install
@@ -58,8 +77,11 @@ cd ts && npm run watch       # incremental compile
 `node_modules/`, `bin/`, `build/`, and the shipped `project/` scaffold all
 live under it, alongside the tool's own TypeScript (`ts/src/`, `ts/test/`,
 compiled to `ts/dist/` and `ts/dist-test/`) — mirroring a generated SDK's
-layout. The top-level holds only the shared, non-npm pieces: the canonical
-`model/`, `docs/`, and the `Makefile`. **Always build before testing** —
+layout. The authoritative base model and license live in `ts/model/` and
+`ts/LICENSE`. The top-level holds documentation and the `Makefile`.
+Keep one authoritative version of each content file; do not add mirrors
+or sync commands. `ts/README.md` is a short summary linking to the full
+top-level README. **Always build before testing** —
 tests run against compiled `ts/dist-test/`.
 
 Environment note: a transitive dep (`shape`) declares `engines.node >=24`.
@@ -70,7 +92,7 @@ The CLI a consumer runs, from its own `.sdk/` directory:
 ```bash
 voxgig-sdkgen target add <ref>       # add or resync a language target
 voxgig-sdkgen feature add <ref>      # add a feature
-voxgig-sdkgen docs add <ref>         # add a docs item (from a package)
+voxgig-sdkgen edition add <ref>         # add a docs item (from a package)
 voxgig-sdkgen package add <pkg>      # everything an sdkgen package provides
 voxgig-sdkgen package list           # what is installed, and who supplied it
 voxgig-sdkgen package update <pkg>   # fetch a newer version and refresh
@@ -335,7 +357,7 @@ Rules:
 | Change a target's deps / ext / module | `ts/project/.sdk/model/target/<lang>.aontu` | propagate |
 | Change a feature's hooks / deps | `ts/project/.sdk/model/feature/<name>.aontu` | propagate |
 | Change the **generator core** (CLI, actions, neutral components, helpers) | `ts/src/…` | `cd ts && npm run build && npm test` |
-| Change the base model schema | `model/sdkgen.aontu` (canonical) | `make sync-model` then `make build test` |
+| Change the base model schema | `ts/model/sdkgen.aon` (authoritative) | `make check-model build test` |
 | Add/remove a bundled target or feature | the trees above **and** `ts/project/sdkgen-package.json` | a guard test fails if the manifest and the directories disagree |
 | Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts |
 | Change a CLI flag | `ts/bin/voxgig-sdkgen` — parse entry, the closed `Shape`, **and** the help text | plus a row in [reference/cli](./docs/reference/cli.md); the shape is closed, so missing one of the three is a runtime rejection, and an optional flag is `Skip(String)` (see Sharp edges) |
@@ -729,8 +751,7 @@ emitted broken source reached the fleet unchallenged.
 ## Project map (this repo)
 
 ```
-model/sdkgen.aontu     canonical base model schema (mirrored to ts/model/)
-Makefile               build/test/check-model/sync-model/scan-prose (wraps ts/ npm)
+Makefile               build/test/check-model/scan-prose (wraps ts/ npm)
 docs/                  human-oriented documentation (docs/design/ is working notes)
 STYLE-GUIDE.md         the documentation style guide; normative for the pages
 tools/check_prose.py   the second prose gate, and the page set both gates read
@@ -740,7 +761,9 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
   bin/voxgig-sdkgen    CLI entry
   build/version.js     stamps the version into bin/ and the scaffold
                        manifest — run it BY HAND on a release, see Releasing
-  model/sdkgen.aontu   npm-shipped mirror of the canonical model/
+  model/sdkgen.aon     authoritative base model schema, shipped directly
+  LICENSE              authoritative license text
+  README.md            short summary linking to the top-level README
   src/                 generator core
     sdkgen.ts          SdkGen, makeBuild, public exports
     types.ts           ActionContext + model interfaces
@@ -751,14 +774,12 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       resolve.ts       ref -> source; provenance recording; name collisions
       target.ts        target add (+ trees, trim, stale prune)
       feature.ts       feature add (+ the per-target fan-out)
-      docs.ts          docs add — the third kind (items live in packages)
+      edition.ts       edition add — the third kind (items live in packages)
       package.ts       package add / list / update
       check.ts         package check — the author-side battery
       doctor.ts        the drift check every other action is guarded by
       action.ts        index maintenance
     cmp/               language-neutral components (delegate per-language)
-      Docs.ts          the in-tree docs pass + the per-item dispatch
-      ExternalDocs.ts  the out-of-tree docs Root (own generate() pass)
     helpers/           collectDeps, buildIdNames, getMatchEntries
       definition.ts    where a kind's `model/<kind>/<name>.aontu` lives
       manifest.ts      sdkgen-package.json: read + validate
@@ -767,7 +788,7 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       featureSource.ts per-feature source discovery in a target's tm tree
       modelcheck.ts    the .aontu rules: strict parse, schema unify, probes
       shipped.ts       where THIS generator's own model/ and project/ are
-  test/                Node test runner suites (+ model-mirror guard)
+  test/                Node test runner suites (including model compilation)
   dist/ (committed)    dist-test/ (gitignored)
   project/             an sdkgen package, like any other
     sdkgen-package.json   its manifest (pinned to the listings by a guard)
@@ -1038,3 +1059,13 @@ goes into `accept.txt` one entry at a time, never as a suffix pattern.
   [layout](./docs/reference/project-layout.md) ·
   [hooks](./docs/reference/hooks.md)
 - Tasks: [docs/how-to/](./docs/how-to/)
+
+## Documentation editions
+
+The `docs/apidocs` kind has been replaced by `edition`. Edition models live
+under `main.kit.doc.edition`, accessed through `helpers/kindCollection` by
+package add/update/list, resolution, and doctor. Physical paths remain
+`model/edition`, `src/cmp/edition`, and `tm/edition`. Docgen owns the schema,
+rendering, output path checks, styling, Vale rules, and Pages workflow.
+Sdkgen invokes docgen with the existing compiled model. Keep SDK README
+components separate from these editions.

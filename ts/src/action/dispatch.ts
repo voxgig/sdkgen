@@ -1,7 +1,7 @@
 // WHAT `voxgig-sdkgen <action> …` CAN BE.
 //
 // Built FROM THE KIND REGISTRY rather than hand-listed, so registering a kind
-// is the only edit a new kind needs — `docs add …` costs no dispatch code
+// is the only edit a new kind needs — `edition add …` costs no dispatch code
 // (docs/design/sdkgen-packages.md §9). The `package` and `doctor` verbs are
 // not kinds and are added beside it.
 //
@@ -25,7 +25,7 @@ import { KINDS } from './kind'
 
 import { action_target, target_add } from './target'
 import { action_feature, feature_add } from './feature'
-import { action_docs, docs_add } from './docs'
+import { action_edition, edition_add } from './edition'
 import { action_doctor } from './doctor'
 import { action_package, registerAdder } from './package'
 
@@ -41,7 +41,7 @@ const KIND_ACTIONS: Record<string, ActionFunc> = Object.assign(
   Object.create(null), {
   target: action_target,
   feature: action_feature,
-  docs: action_docs,
+  edition: action_edition,
 })
 
 
@@ -49,7 +49,7 @@ const KIND_ACTIONS: Record<string, ActionFunc> = Object.assign(
 // over. Registered rather than imported by `package.ts`, for the cycle above.
 registerAdder('target', target_add)
 registerAdder('feature', feature_add)
-registerAdder('docs', docs_add)
+registerAdder('edition', edition_add)
 
 
 function actionMap(): Record<string, ActionFunc> {

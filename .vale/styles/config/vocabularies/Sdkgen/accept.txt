@@ -131,3 +131,7 @@ rethrown
 transpiles
 unparsed
 else's
+docgen
+Slidev
+Univec
+loopback

@@ -1,3 +1,4 @@
+import { kindCollection } from '../helpers/kindCollection'
 // Where a `<kind> add <ref>` gets its definition from.
 //
 // One resolver for every KIND of thing an add can install — targets today,
@@ -59,6 +60,9 @@ function lastSegment(ref: string): string {
 
 
 function resolveSource(ref: string, kind: string, ctx$: any): Source {
+  // Registration and copying must resolve a bare resync name identically.
+  const declared = kindCollection(ctx$.model, kind)?.[ref]
+  ref = (isBare(ref) && recordedRef(declared, ref)) || ref
   const root = ctx$.folder
   const fs = ctx$.fs()
 
@@ -275,7 +279,7 @@ function registerInstalled(kind: string, refs: string[], ctx$: any) {
     return
   }
 
-  const items = kit[kind] = kit[kind] ?? {}
+  const items = kindCollection(ctx$.model, kind, true)
 
   for (const ref of refs) {
     let source: Source
@@ -317,7 +321,7 @@ function registerInstalled(kind: string, refs: string[], ctx$: any) {
 function nameConflict(
   kind: string, source: Source, ctx$: any,
 ): { package?: string, base?: string } | undefined {
-  const declared: any = ctx$.model?.main?.[KIT]?.[kind]?.[source.name]
+  const declared: any = kindCollection(ctx$.model, kind)?.[source.name]
 
   if (null == declared || 'object' !== typeof declared) {
     return undefined
@@ -423,6 +427,24 @@ function providesStill(
 }
 
 
+function recordedRef(declared: any, name: string): string | undefined {
+  if (null == declared?.base || '' === declared.base) {
+    return undefined
+  }
+
+  const origname = declared.origname || name
+
+  return Path.join(declared.base, '..', origname) +
+    (origname === name ? '' : '~' + name)
+}
+
+
+// A bare NAME, as opposed to a ref that locates a source.
+function isBare(ref: string): boolean {
+  return !ref.includes('/') && !ref.includes(Path.sep)
+}
+
+
 function normaliseBase(base: string): string {
   return Path.normalize(String(base ?? '')).split(Path.sep).join('/')
 }
@@ -439,6 +461,8 @@ export type {
 
 export {
   resolveSource,
+  recordedRef,
+  isBare,
   registerInstalled,
   nameConflict,
   lastSegment,

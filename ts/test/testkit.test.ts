@@ -138,9 +138,9 @@ describe('testkit over the fixture package', () => {
     for (const path of [
       'model/target/wtest.aon',
       'model/feature/wfeat.aon',
-      'model/docs/wcat.aon',
+      'model/edition/wcat.aon',
       'src/cmp/wtest/Main_wtest.ts',
-      'src/cmp/docs/wcat/Main_wcat.ts',
+      'src/cmp/edition/wcat/Main_wcat.ts',
       'tm/wtest/README.md',
     ]) {
       ok(installed.includes(path), 'not installed: ' + path +
@@ -151,15 +151,15 @@ describe('testkit over the fixture package', () => {
 
   // THE UPGRADE PATH FOR A NEW KIND. This consumer's `model/sdk.aontu` was
   // written with only the target and feature indexes — the state of every
-  // project scaffolded before `docs` existed. Installing a docs item has to
+  // project scaffolded before `edition` existed. Installing an edition has to
   // create that kind's index rather than assume it.
   test('a kind the project predates gets its index created', () => {
-    ok(consumer.files().includes('model/docs/docs-index.aon'),
-      'no docs index was created')
+    ok(consumer.files().includes('model/edition/edition-index.aon'),
+      'no edition index was created')
 
     const index = Fs.readFileSync(
-      Path.join(consumer.sdk, 'model', 'docs', 'docs-index.aon'), 'utf8')
-    ok(index.includes('@"wcat.aon"'), 'docs index: ' + index)
+      Path.join(consumer.sdk, 'model', 'edition', 'edition-index.aon'), 'utf8')
+    ok(index.includes('@"wcat.aon"'), 'edition index: ' + index)
   })
 
 
@@ -167,7 +167,7 @@ describe('testkit over the fixture package', () => {
     for (const rel of [
       'model/target/wtest.aon',
       'model/feature/wfeat.aon',
-      'model/docs/wcat.aon',
+      'model/edition/wcat.aon',
     ]) {
       const src = Fs.readFileSync(Path.join(consumer.sdk, rel), 'utf8')
       ok(src.includes("package: '" + PKGNAME + "'"),

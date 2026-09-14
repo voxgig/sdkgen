@@ -9,9 +9,8 @@
 // installation doing the checking, which is this one.
 //
 // `__dirname` is `dist/helpers` in the shipped package, so the package root is
-// two levels up. npm can only ship files under that root, which is why the
-// canonical `model/` is mirrored into `ts/model/` (the model-mirror guard
-// fails on drift).
+// two levels up. The authoritative schema lives directly in its model/
+// directory, in both a checkout and an installed package.
 
 import Path from 'node:path'
 

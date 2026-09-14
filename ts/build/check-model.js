@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Compile the canonical top-level aontu model through Aontu and fail if
+// Compile the authoritative aontu model in ts/model/ through Aontu and fail if
 // generation reports any error (or throws). This is the fast standalone gate
 // used by `make check-model`; the equivalent Node test lives at
 // ts/test/model-compile.test.js. Run from the ts/ package root so `aontu`
@@ -16,8 +16,7 @@ const MODEL_FILES = ['sdkgen.aon']
 let failed = false
 
 for (const file of MODEL_FILES) {
-  // The canonical model lives at the repo top level (../model), not ts/model.
-  const modelPath = path.join(__dirname, '..', '..', 'model', file)
+  const modelPath = path.join(__dirname, '..', 'model', file)
   const src = fs.readFileSync(modelPath, 'utf8')
 
   const errs = []

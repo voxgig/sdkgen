@@ -1,3 +1,4 @@
+import { kindCollection } from '../helpers/kindCollection'
 // `package check` — the AUTHOR-side battery. Design §14.
 //
 // WHAT IT IS FOR
@@ -308,11 +309,11 @@ function checkDefinition(
   //    `main: kit: target: go:` installs an item the consumer's model never
   //    sees — the exact mistake a package author makes copying a bundled
   //    target as a starting point.
-  const declared = strict.model?.main?.[KIT]?.[kind]?.[name]
+  const declared = kindCollection(strict.model, kind)?.[name]
 
   if (null == declared || 'object' !== typeof declared) {
     found.push(at('error', 'model-key-missing',
-      'declares no `main: kit: ' + kind + ': ' + name + ':` block — the file ' +
+      'declares no `main: kit: ' + (kind === 'edition' ? 'doc: edition' : kind) + ': ' + name + ':` block — the file ' +
       'is installed and included under its own name, so nothing it declares ' +
       'under another name is reachable'))
   }

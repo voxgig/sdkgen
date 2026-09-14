@@ -1,3 +1,4 @@
+import { recordedRef, isBare } from './resolve';
 import type { Source } from './resolve';
 type KindDef = {
     name: string;
@@ -24,7 +25,5 @@ declare function kindModel(props: {
     names: string[];
     content: string;
 }): void;
-declare function recordedRef(declared: any, name: string): string | undefined;
-declare function isBare(ref: string): boolean;
 export type { KindDef, TreeDef, };
 export { KINDS, recordedRef, aliasModelKey, kindTrees, escapeRe, kindDef, resolveKind, kindModel, isBare, };

@@ -1,15 +1,13 @@
 /* Copyright (c) 2024-2025 Voxgig Ltd, MIT License */
 
-// The mirror test guards that model/ and ts/model/ are byte-identical; it
-// does NOT check that the model is valid. This test compiles the canonical
-// top-level aontu model through Aontu and fails if generation reports any
-// errors — so a broken edit to model/sdkgen.aon is caught here rather than
-// downstream when a consumer SDK tries to generate.
+// Compile the authoritative model in ts/model/ through Aontu and fail if
+// generation reports any errors, before a consumer SDK tries to generate.
 
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
 
-import { readdirSync, readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import Os from 'node:os'
 import Path from 'node:path'
 
 // THE RULES LIVE IN `src`, NOT HERE.
@@ -62,7 +60,7 @@ describe('model-compile', () => {
 
   for (const file of MODEL_FILES) {
     test(`model/${file} generates without errors`, () => {
-      compile(`model/${file}`, Path.join(REPO, 'model', file))
+      compile(`model/${file}`, Path.join(REPO, 'ts', 'model', file))
     })
   }
 
@@ -221,20 +219,25 @@ describe('cli-targets-disable-agentguide', () => {
 // accepts unknown keys, so a definition of that kind unifies against nothing,
 // `package check`'s schema step imposes no constraints, and every author-side
 // guarantee for that kind is vacuous. Exactly that happened to `docs` — the
-// spread was written to the mirror instead of the canonical file and then
-// overwritten by `make sync-model`, and every test still passed.
+// spread was lost while synchronising the former duplicate model files,
+// and every test still passed.
 //
 // The probe is a WRONG-TYPED value: a spread that is being enforced rejects
 // it, and one that does not exist accepts it.
-describe('schema covers every kind', () => {
+describe('schema covers every core kind', () => {
 
   const KIND_PROBE: Record<string, string> = {
     target: "ext: 1\n  comment: line: '#'\n  module: name: 'x'",
     feature: "title: 1",
-    docs: "active: 'not a boolean'",
   }
 
+  // Edition constraints are owned and tested by @voxgig/docgen. Its installed
+  // model includes that schema; sdkgen does not depend on the edition renderer.
+  const EXTERNAL_SCHEMA: Record<string, string> = { edition: '@voxgig/docgen/model/docgen.aon' }
+
   for (const kind of Object.keys(KINDS)) {
+    assert.ok(KIND_PROBE[kind] || EXTERNAL_SCHEMA[kind], `No schema owner for ${kind}`)
+    if (EXTERNAL_SCHEMA[kind]) continue
     test(`main: kit: ${kind}: & constrains its items`, () => {
       const probe = KIND_PROBE[kind]
 
@@ -243,7 +246,7 @@ describe('schema covers every kind', () => {
         'or this guard passes vacuously for it')
 
       const src = [
-        `@'${Path.join(REPO, 'model', 'sdkgen.aon')}'`,
+        `@'${Path.join(REPO, 'ts', 'model', 'sdkgen.aon')}'`,
         `main: kit: ${kind}: probe: {`,
         '  ' + probe,
         '}',
@@ -264,4 +267,24 @@ describe('schema covers every kind', () => {
     })
   }
 
+})
+
+
+test('package schema self-references resolve from the checked model', () => {
+  const root = mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-self-schema-'))
+  try {
+    mkdirSync(Path.join(root, '.sdk/model/edition'), { recursive: true })
+    mkdirSync(Path.join(root, 'model'))
+    writeFileSync(Path.join(root, 'package.json'), JSON.stringify({
+      name: '@test/edition-schema', exports: { './model/*': './model/*' },
+    }))
+    writeFileSync(Path.join(root, 'model/doc.aon'), 'main: kit: doc: edition: &: active: boolean')
+    const file = Path.join(root, '.sdk/model/edition/summary.aon')
+    const include = '@"@test/edition-schema/model/doc.aon"\n'
+    const valid = include + 'main: kit: doc: edition: summary: active: true'
+    writeFileSync(file, valid)
+    assert.deepEqual(compileModel(valid, file).errors, [])
+    const invalid = include + 'main: kit: doc: edition: summary: active: "wrong type"'
+    assert.ok(compileModel(invalid, file).errors.length > 0)
+  } finally { rmSync(root, { recursive: true, force: true }) }
 })

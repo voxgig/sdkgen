@@ -1,4 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.cmd_package_check = cmd_package_check;
+exports.checkPackage = checkPackage;
+const kindCollection_1 = require("../helpers/kindCollection");
 // `package check` — the AUTHOR-side battery. Design §14.
 //
 // WHAT IT IS FOR
@@ -32,12 +39,6 @@
 // NO MANIFEST IS NOT A REFUSAL. `package add` requires one; here its absence
 // is the first finding and the rest of the battery still runs, because an
 // author who has not written it yet is precisely who needs the rest.
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.cmd_package_check = cmd_package_check;
-exports.checkPackage = checkPackage;
 const applicability_1 = require("../helpers/applicability");
 const node_path_1 = __importDefault(require("node:path"));
 const types_1 = require("../types");
@@ -215,9 +216,9 @@ function checkDefinition(fs, kind, name, file) {
     //    `main: kit: target: go:` installs an item the consumer's model never
     //    sees — the exact mistake a package author makes copying a bundled
     //    target as a starting point.
-    const declared = strict.model?.main?.[types_1.KIT]?.[kind]?.[name];
+    const declared = (0, kindCollection_1.kindCollection)(strict.model, kind)?.[name];
     if (null == declared || 'object' !== typeof declared) {
-        found.push(at('error', 'model-key-missing', 'declares no `main: kit: ' + kind + ': ' + name + ':` block — the file ' +
+        found.push(at('error', 'model-key-missing', 'declares no `main: kit: ' + (kind === 'edition' ? 'doc: edition' : kind) + ': ' + name + ':` block — the file ' +
             'is installed and included under its own name, so nothing it declares ' +
             'under another name is reachable'));
     }

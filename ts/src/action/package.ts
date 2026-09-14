@@ -1,3 +1,4 @@
+import { kindCollection } from '../helpers/kindCollection'
 // `package add` / `package list` — the whole-package verbs.
 //
 // See docs/design/sdkgen-packages.md §9.
@@ -78,7 +79,7 @@ const CMD_MAP: any = Object.assign(Object.create(null), {
 // reads them at generate time rather than at add time, installing it last
 // keeps the add log in the order a reader would expect and leaves the model
 // complete before anything reads it.
-const ADD_ORDER = ['target', 'feature', 'docs']
+const ADD_ORDER = ['target', 'feature', 'edition']
 
 
 async function action_package(
@@ -663,7 +664,7 @@ function installedFrom(pkgname: string, actx: ActionContext): Installed[] {
   const found: Installed[] = []
 
   for (const kind of Object.keys(KINDS).sort()) {
-    const items = kit[kind] ?? {}
+    const items = kindCollection({ main: { [KIT]: kit } }, kind)
 
     for (const name of Object.keys(items).sort()) {
       const item = items[name]
@@ -1078,7 +1079,7 @@ async function cmd_package_list(
   const groups: Record<string, any[]> = Object.create(null)
 
   for (const kind of Object.keys(KINDS).sort()) {
-    const items = kit[kind] ?? {}
+    const items = kindCollection({ main: { [KIT]: kit } }, kind)
 
     for (const name of Object.keys(items).sort()) {
       const item = items[name]

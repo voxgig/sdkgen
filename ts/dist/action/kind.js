@@ -1,4 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isBare = exports.recordedRef = exports.KINDS = void 0;
+exports.aliasModelKey = aliasModelKey;
+exports.kindTrees = kindTrees;
+exports.escapeRe = escapeRe;
+exports.kindDef = kindDef;
+exports.resolveKind = resolveKind;
+exports.kindModel = kindModel;
 // KINDS: the things an `add` can install.
 //
 // `target` and `feature` are two of them, `docs` and others are meant to
@@ -20,29 +31,17 @@
 // feature's per-target source fan-out — stays in that kind's own action. Those
 // are genuinely different work, not the same work with different strings, and
 // pretending otherwise would buy generality nobody can use.
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.KINDS = void 0;
-exports.recordedRef = recordedRef;
-exports.aliasModelKey = aliasModelKey;
-exports.kindTrees = kindTrees;
-exports.escapeRe = escapeRe;
-exports.kindDef = kindDef;
-exports.resolveKind = resolveKind;
-exports.kindModel = kindModel;
-exports.isBare = isBare;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
-const types_1 = require("../types");
 const utility_1 = require("../utility");
 const stdrep_1 = require("../helpers/stdrep");
 const resolve_1 = require("./resolve");
+Object.defineProperty(exports, "recordedRef", { enumerable: true, get: function () { return resolve_1.recordedRef; } });
+Object.defineProperty(exports, "isBare", { enumerable: true, get: function () { return resolve_1.isBare; } });
 const action_1 = require("./action");
 // Rewrite the ITEM KEY in a copied model file, for an aliased install.
 //
-// Parameterised by kind because `main: kit: docs: <n>:` is the same rewrite
+// Parameterised by kind because `main: kit: doc: edition: <n>:` is the same rewrite
 // with a different word, and a second copy of this regex is exactly the
 // same-rule-written-twice defect the registry exists to prevent.
 //
@@ -94,21 +93,21 @@ const KINDS = Object.assign(Object.create(null), {
     feature: { name: 'feature', alias: false },
     // DOCS — the third kind. See docs/design/sdkgen-packages.md §20.
     //
-    // Its trees are NESTED under the kind name (`src/cmp/docs/<n>`, not
+    // Its trees are NESTED under the kind name (`src/cmp/edition/<n>`, not
     // `src/cmp/<n>`) so a docs item and a target may share a name without
     // sharing a directory. Everything that composes those paths takes them
     // from here.
     //
-    // `tm/docs/{name}` is NOT required: a docs item whose every emitted byte
+    // `tm/edition/{name}` is NOT required: a docs item whose every emitted byte
     // depends on the API — a catalogue entry, a config file — legitimately
     // ships no template tree, while a static site needs one. So it is
     // copy-if-present, and `package check` does not demand it.
-    docs: {
-        name: 'docs', alias: true, ownedWhenAliased: true,
-        rename: aliasModelKey('docs'),
+    edition: {
+        name: 'edition', alias: true, ownedWhenAliased: true,
+        rename: aliasModelKey('edition'),
         trees: [
-            { path: 'src/cmp/docs/{name}', replace: 'none', required: true },
-            { path: 'tm/docs/{name}', replace: 'template', required: false },
+            { path: 'src/cmp/edition/{name}', replace: 'none', required: true },
+            { path: 'tm/edition/{name}', replace: 'template', required: false },
         ],
     },
 });
@@ -141,10 +140,7 @@ function kindDef(kind) {
 // source.
 function resolveKind(ref, kind, ctx$) {
     const def = kindDef(kind);
-    const model = ctx$.model;
-    const declared = model?.main?.[types_1.KIT]?.[kind]?.[ref];
-    const recorded = (isBare(ref) && recordedRef(declared, ref)) || ref;
-    const source = (0, resolve_1.resolveSource)(recorded, kind, ctx$);
+    const source = (0, resolve_1.resolveSource)(ref, kind, ctx$);
     // Asked of the RESOLVER rather than by re-reading the ref. `~` separates an
     // alias only in the last segment, and a check that looked for one anywhere
     // rejected every ref whose PATH contains a tilde — a Windows 8.3 short name
@@ -240,18 +236,6 @@ function kindModel(props) {
 // ONE definition, used by the add actions and by doctor. This reconstruction
 // was written twice and the two copies had already diverged on exactly this
 // point, which is the drift the kind spine exists to end.
-function recordedRef(declared, name) {
-    if (null == declared?.base || '' === declared.base) {
-        return undefined;
-    }
-    const origname = declared.origname || name;
-    return node_path_1.default.join(declared.base, '..', origname) +
-        (origname === name ? '' : '~' + name);
-}
-// A bare NAME, as opposed to a ref that locates a source.
-function isBare(ref) {
-    return !ref.includes('/') && !ref.includes(node_path_1.default.sep);
-}
 function capitalise(s) {
     return s.charAt(0).toUpperCase() + s.slice(1);
 }

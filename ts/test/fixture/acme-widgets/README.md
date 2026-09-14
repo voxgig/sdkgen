@@ -33,12 +33,12 @@ What it cannot cover is the thing an external package actually is:
 |---|---|
 | `.sdk/model/target/wtest.aontu` | a tiny language target — `.wt` files, `#` comments |
 | `.sdk/model/feature/wfeat.aontu` | the package's own feature |
-| `.sdk/model/docs/wcat.aontu` | a docs item (the third kind) |
+| `.sdk/model/edition/wcat.aon` | an edition (the third kind) |
 | `.sdk/src/cmp/wtest/` | `Main` / `Entity` / `Test`, the three a target must dispatch |
-| `.sdk/src/cmp/docs/wcat/` | `Main_wcat`, the docs item's emitter |
+| `.sdk/src/cmp/edition/wcat/` | `Main_wcat`, the edition's emitter |
 | `.sdk/tm/wtest/` | the target's template tree, including its feature container |
 | `.sdk/tm/ts/` | `wfeat`'s **overlay** for the bundled `ts` target |
-| `.sdk/tm/docs/wcat/` | the docs item's (optional) template tree |
+| `.sdk/tm/edition/wcat/` | the edition's (optional) template tree |
 
 Three things are deliberate:
 

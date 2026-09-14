@@ -1,3 +1,4 @@
+import { kindCollection } from '../helpers/kindCollection'
 // `voxgig-sdkgen doctor` — does this project's `.sdk/` still match the
 // scaffold?
 //
@@ -276,7 +277,7 @@ async function doctor(
 
   const counts: Record<string, number> = {}
   for (const kind of kinds) {
-    counts[kind] = Object.keys((model as any)?.main?.[KIT]?.[kind] ?? {}).length
+    counts[kind] = Object.keys(kindCollection(model, kind) ?? {}).length
   }
 
   log.info({ point: 'doctor-start', targets: counts.target ?? 0, ...counts })
@@ -303,7 +304,7 @@ async function doctor(
   }
 
   for (const kind of kinds) {
-    const items = Object.keys((model as any)?.main?.[KIT]?.[kind] ?? {}).sort()
+    const items = Object.keys(kindCollection(model, kind) ?? {}).sort()
 
     for (const name of items) {
       if (null != scope && !scope(kind, name)) {
@@ -321,8 +322,8 @@ async function doctor(
         checkTarget(actx, source, report)
       }
 
-      if ('docs' === kind) {
-        checkDocs(actx, source, report)
+      if ('edition' === kind) {
+        checkEdition(actx, source, report)
       }
 
       // Only an ACTIVE feature has source copied out; what an inactive one
@@ -433,7 +434,7 @@ function checkWiring(actx: ActionContext, report: DoctorReport) {
 function resolveDeclared(
   kind: string, name: string, actx: ActionContext,
 ): Source | undefined {
-  const declared: any = (actx.model as any)?.main?.[KIT]?.[kind]?.[name]
+  const declared: any = kindCollection(actx.model, kind)?.[name]
   const ref = recordedRef(declared, name) || name
 
   try {
@@ -659,8 +660,8 @@ function compareTrees(
 // rather than being spelled a second time.
 //
 // The optional template tree is skipped when the SOURCE does not ship one:
-// `docs add` did not copy it, so the project is right not to have it.
-function checkDocs(
+// `edition add` did not copy it, so the project is right not to have it.
+function checkEdition(
   actx: ActionContext, resolved: Source, report: DoctorReport,
 ) {
   const fs = actx.fs()
@@ -669,8 +670,8 @@ function checkDocs(
   const origname = resolved.origname
   const aliased = name !== origname
 
-  const dest = kindTrees('docs', name)
-  const from = kindTrees('docs', origname)
+  const dest = kindTrees('edition', name)
+  const from = kindTrees('edition', origname)
 
   const trees: TreeCompare[] = dest.flatMap((tree: TreeDef, i: number) => {
     const scaffold = Path.join(resolved.folder, ...from[i].path.split('/'))

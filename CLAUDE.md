@@ -37,8 +37,9 @@ wraps them.
 `ts/` is the self-contained npm package root — `package.json`,
 `package-lock.json`, `node_modules/`, `bin/`, `build/`, and the shipped
 `project/` scaffold all live under it (mirrors a generated SDK's layout).
-The top-level holds only the shared, non-npm pieces: the canonical
-`model/`, `docs/`, and the `Makefile`.
+The top-level holds documentation and the `Makefile`. Each content file
+has one authoritative location; do not mirror or synchronise copies.
+`ts/README.md` is a short summary linking to the full top-level README.
 - `ts/src/` — TypeScript source (CommonJS, ES2021 target)
   - `sdkgen.ts` — main entry point (`SdkGen`, `makeBuild`, public exports)
   - `types.ts` — `ActionContext` + model interfaces (`SdkModel`, `ModelTarget`, …)
@@ -53,10 +54,10 @@ The top-level holds only the shared, non-npm pieces: the canonical
     (the replace maps add writes and doctor re-applies)
 - `ts/test/` — tests (`*.test.ts`)
 - `ts/dist/` — compiled output (committed); `ts/dist-test/` — compiled tests (gitignored)
-- `model/sdkgen.aontu` — canonical base model schema. npm can only ship
-  files under the package root, so it is mirrored to `ts/model/sdkgen.aontu`
-  (shipped as `@voxgig/sdkgen/model/sdkgen.aontu`). Edit `model/`, then
-  `make sync-model`; a `ts/test/model-mirror.test.ts` guard fails on drift.
+- `ts/model/sdkgen.aon` — authoritative base model schema, shipped as
+  `@voxgig/sdkgen/model/sdkgen.aon`. Edit it directly; `make check-model`
+  validates it.
+- `ts/LICENSE` — authoritative license text, shipped directly.
 - `ts/project/` — an sdkgen package like any other: `sdkgen-package.json`
   (its manifest, pinned to the directory listings by a guard test) beside
   `.sdk/` — the scaffold: per-language `tm/` (templates) and `src/cmp/`

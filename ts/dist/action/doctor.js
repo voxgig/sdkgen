@@ -1,4 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.action_doctor = action_doctor;
+exports.doctor = doctor;
+const kindCollection_1 = require("../helpers/kindCollection");
 // `voxgig-sdkgen doctor` — does this project's `.sdk/` still match the
 // scaffold?
 //
@@ -29,12 +36,6 @@
 // Only sdkgen knows which replacements it applied to which files, which is
 // why this check belongs here and cannot be scripted downstream. It re-runs
 // the same substitution before comparing, so what it reports is real.
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.action_doctor = action_doctor;
-exports.doctor = doctor;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
@@ -171,7 +172,7 @@ async function doctor(actx, scope) {
     const kinds = Object.keys(kind_1.KINDS).sort();
     const counts = {};
     for (const kind of kinds) {
-        counts[kind] = Object.keys(model?.main?.[types_1.KIT]?.[kind] ?? {}).length;
+        counts[kind] = Object.keys((0, kindCollection_1.kindCollection)(model, kind) ?? {}).length;
     }
     log.info({ point: 'doctor-start', targets: counts.target ?? 0, ...counts });
     // Targets resolved ONCE, before the kind loop, because the feature checks
@@ -192,7 +193,7 @@ async function doctor(actx, scope) {
         }
     }
     for (const kind of kinds) {
-        const items = Object.keys(model?.main?.[types_1.KIT]?.[kind] ?? {}).sort();
+        const items = Object.keys((0, kindCollection_1.kindCollection)(model, kind) ?? {}).sort();
         for (const name of items) {
             if (null != scope && !scope(kind, name)) {
                 continue;
@@ -205,8 +206,8 @@ async function doctor(actx, scope) {
             if ('target' === kind) {
                 checkTarget(actx, source, report);
             }
-            if ('docs' === kind) {
-                checkDocs(actx, source, report);
+            if ('edition' === kind) {
+                checkEdition(actx, source, report);
             }
             // Only an ACTIVE feature has source copied out; what an inactive one
             // left behind is stale, and the target walk reports it as such.
@@ -300,7 +301,7 @@ function checkWiring(actx, report) {
 // A bare name falls back to the bundled scaffold, for a copy predating
 // provenance.
 function resolveDeclared(kind, name, actx) {
-    const declared = actx.model?.main?.[types_1.KIT]?.[kind]?.[name];
+    const declared = (0, kindCollection_1.kindCollection)(actx.model, kind)?.[name];
     const ref = (0, kind_1.recordedRef)(declared, name) || name;
     try {
         // WITH THE LOG. Resolution reads the source's package manifest, and an
@@ -484,15 +485,15 @@ function compareTrees(actx, report, trees, opts) {
 // rather than being spelled a second time.
 //
 // The optional template tree is skipped when the SOURCE does not ship one:
-// `docs add` did not copy it, so the project is right not to have it.
-function checkDocs(actx, resolved, report) {
+// `edition add` did not copy it, so the project is right not to have it.
+function checkEdition(actx, resolved, report) {
     const fs = actx.fs();
     const root = actx.folder;
     const name = resolved.name;
     const origname = resolved.origname;
     const aliased = name !== origname;
-    const dest = (0, kind_1.kindTrees)('docs', name);
-    const from = (0, kind_1.kindTrees)('docs', origname);
+    const dest = (0, kind_1.kindTrees)('edition', name);
+    const from = (0, kind_1.kindTrees)('edition', origname);
     const trees = dest.flatMap((tree, i) => {
         const scaffold = node_path_1.default.join(resolved.folder, ...from[i].path.split('/'));
         if (!fs.existsSync(scaffold)) {

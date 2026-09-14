@@ -166,8 +166,10 @@ cd ts && npm run watch   # incremental compile
 `build/`, `node_modules/`, and the shipped `project/` scaffold live under
 it, alongside the tool's own TypeScript (`ts/src/` source, `ts/test/`
 tests, compiled to `ts/dist/` and `ts/dist-test/`). The canonical model
-lives at top-level `model/` and is mirrored into `ts/model/` (npm can only
-ship files under the package root) — edit `model/`, then `make sync-model`.
+lives in `ts/model/` and ships directly from there. Edit that file in place.
+This README holds the full documentation; `ts/README.md` is a short
+package summary linking here. The license text lives in `ts/LICENSE`.
+Content is not mirrored between the repository and package roots.
 Always build before testing — tests run against `ts/dist-test/`. `ts/dist/`
 is committed; `ts/dist-test/` is not.
 
@@ -181,4 +183,4 @@ is committed; `ts/dist-test/` is not.
 
 ## License
 
-MIT © Richard Rodger
+[MIT](ts/LICENSE) © Richard Rodger

@@ -33,6 +33,8 @@
 //      project's own file, not the package's.
 
 import { Aontu } from 'aontu'
+import { createRequire } from 'node:module'
+import Path from 'node:path'
 
 import { schemaFile } from './shipped'
 
@@ -112,8 +114,8 @@ function slashComments(text: string): { line: number, text: string }[] {
 // A FRESH INSTANCE each time: the option call mutates the instance's jsonic,
 // so a cached one would leak its configuration into the bare compile that is
 // deliberately paired with it.
-function strictAontu(): any {
-  const aontu: any = new Aontu()
+function strictAontu(options?: any): any {
+  const aontu: any = new Aontu(options)
   aontu.lang.jsonic.options({ comment: { def: { slash: null, multi: null } } })
   return aontu
 }
@@ -186,7 +188,12 @@ function compileModel(
     includeLine(schemaFile()) + '\n' + src : src
 
   try {
-    const aontu = false === opts?.strict ? new Aontu() : strictAontu()
+    // Resolve package includes from the model being checked, including native
+    // package self-references. The SDK toolchain's dependencies are unrelated.
+    const localRequire = Object.assign(createRequire(Path.resolve(path)), { main: require.main })
+    // Aontu forwards this runtime resolver option to Lang; its public type omits it.
+    const options: any = { require: localRequire }
+    const aontu = false === opts?.strict ? new Aontu(options) : strictAontu(options)
     const model = aontu.generate(text, { path, errs })
 
     return {

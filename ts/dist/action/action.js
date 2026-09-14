@@ -85,7 +85,7 @@ function parseAddNames(args) {
 // `seed` IS THE UPGRADE PATH. A project scaffolded before a kind existed has
 // no `model/<kind>/<kind>-index.aon` — every project alive today is in
 // exactly that position for `docs` — and reading it unguarded made the FIRST
-// `docs add` in any existing project fail on ENOENT before it wrote anything.
+// `edition add` in any existing project fail on ENOENT before it wrote anything.
 //
 // Seeded per call rather than defaulted for every kind: a missing
 // `target-index.aon` in a scaffolded project is a broken project, and
@@ -109,7 +109,7 @@ function loadContent(actx, which, seed) {
 // indexes of the kinds that existed then. So a project scaffolded before a
 // kind existed — which is every project alive today, for `docs` — never
 // includes its index, and the item's model file is an orphan: it is on disk,
-// `<kind>-index.aon` includes it, and NOTHING includes that. `main.kit.docs`
+// `<kind>-index.aon` includes it, and NOTHING includes that. `main.kit.doc.edition`
 // is then absent from the compiled model, so `package list`, `package update`
 // and `doctor` cannot see the item at all.
 //

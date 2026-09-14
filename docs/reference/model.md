@@ -2,13 +2,13 @@
 
 The **model** is the single structured object that drives generation. It
 is assembled by `aontu` from several `.aontu` fragments and constrained
-by the base schema in [`model/sdkgen.aon`](../../model/sdkgen.aon).
+by the base schema in [`ts/model/sdkgen.aon`](../../ts/model/sdkgen.aon).
 
 A model is the unification of:
 
 1. **API model** — entities, operations, points, fields, flows, and API
    `info`, produced by `@voxgig/apidef` from the OpenAPI spec.
-2. **Base schema** — `model/sdkgen.aontu` (this repo): defaults and
+2. **Base schema** — `ts/model/sdkgen.aon` (this repo): defaults and
    constraints for targets, entities, features, options.
 3. **Target / feature / option definitions** — added into the project's
    `.sdk/model/` by `target add` / `feature add`.
@@ -105,7 +105,7 @@ main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com
 
 | Path | Type | Default | Description |
 | --- | --- | --- | --- |
-| `test.live.strict` | boolean | `false` | `false`: a non-2xx in a live run is an early return, not a failure (right for an SDK generated against an arbitrary third-party API). `true`: live assertions match the offline ones. Set it when the project OWNS the server it tests against — otherwise the live suite passes with nothing listening on the port. Overridable per target (`main.kit.target.<t>.test.live.strict`). |
+| `test.live.strict` | boolean | `true` | Assert live request outcomes in the TS and Go direct-test generators. Independent tests continue after failures. Explicit `false` retains legacy exploratory result handling; it does not establish full API coverage. Overridable per target (`main.kit.target.<t>.test.live.strict`). Pinned by `ts/test/generate.test.ts` and `ts/test/livegenerated.test.ts`. |
 
 ## Provenance: where a copied item came from
 
@@ -142,7 +142,7 @@ The same three keys exist on `main.kit.feature.<name>`.
 
 ## `main.kit.target.<name>`
 
-From [`model/sdkgen.aon`](../../model/sdkgen.aon) and the per-target
+From [`ts/model/sdkgen.aon`](../../ts/model/sdkgen.aon) and the per-target
 files in `ts/project/.sdk/model/target/`:
 
 | Field | Type | Default | Description |
@@ -406,3 +406,16 @@ declares no security scheme), among others. See
 - [Operation pipeline and feature hooks](./hooks.md)
 - [Project layout](./project-layout.md)
 - [Add a feature](../how-to/add-a-feature.md)
+
+## Documentation editions
+
+Docgen extends the same model under `main.kit.doc`. Its schema is supplied
+by `@voxgig/docgen/model/docgen.aon`, included by each installed edition.
+Use `style` for shared branding and `edition.<name>` for each output's
+activation, path, filters, and style overrides. Documentation settings do
+not change SDK README generation.
+
+Install an edition with `voxgig-sdkgen edition add presentation`. New
+projects include `summary` and `github-pages`. The
+[docgen guide](https://github.com/voxgig/docgen#configure-the-model)
+describes all settings and the generated text QA and deployment workflow.

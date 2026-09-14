@@ -156,38 +156,32 @@ that **aliasing is refused**: a feature's name is part of the generated
 `options.feature.<name>` config key and of the hook wiring in every
 target, so it cannot be renamed at install time.
 
-### `docs add <ref>[,<ref>...]`
+### `edition add <ref>[,<ref>...]`
 
-Install a **docs item** — a generation target whose destination is a
-documentation system rather than a language: a static site, a
-developer-portal catalogue, a hosted service's config.
+Install a documentation edition from docgen into the existing SDK setup:
 
 ```bash
-voxgig-sdkgen docs add @voxgig/docgen/apidocs
-voxgig-sdkgen docs add ../my-docs/apidocs~portal
+voxgig-sdkgen edition add summary github-pages
+voxgig-sdkgen edition add presentation
+voxgig-sdkgen edition add '@voxgig/docgen/project/summary~partner-summary'
 ```
 
-sdkgen ships the **kind** and no items; the items live in packages, so
-every ref is a package-relative or absolute path (or a bare name once one
-is installed, which resolves against the provenance already recorded).
+The built-in names resolve to `@voxgig/docgen`. Package-relative paths and
+aliases use the same provenance and resync rules as SDK targets. The
+installer copies `model/edition/<name>.aon`,
+`src/cmp/edition/<name>/`, and the optional `tm/edition/<name>/` tree.
+It includes the edition index in the project model automatically.
 
-It copies `model/docs/<n>.aontu`, `src/cmp/docs/<n>/` and — if the source
-ships one — `tm/docs/<n>/`. The trees are **nested under the kind**, so a
-docs item and a target may share a name without sharing a directory.
+Configure editions under `main.kit.doc.edition.<name>`. Shared style lives
+under `main.kit.doc.style`. `npm run generate` invokes docgen against the
+existing apidef/sdkgen model; no change to the project's root component is
+needed. Docgen owns edition output paths, content, styling, text QA, and
+GitHub Pages workflows. SDK README generation stays separate.
 
-A docs item's template tree is **optional**: an item whose every emitted
-byte depends on the API (a catalogue entry, a config file) legitimately
-ships none, and neither `package check` nor `doctor` asks for it.
-
-Aliasing works as it does for targets (`ref~alias`), including renaming
-`Main_<n>` so the component still dispatches.
-
-**Generation.** An installed item is emitted by `npm run generate`,
-through its package's `cmp/docs/<n>/Main_<n>` component. In-tree it lands
-in `<sdk-repo>/<n>/`; with `output: path` set it gets its own pass rooted
-there, which is the normal case for a documentation site. Neither needs
-any change to a project's `Root.ts` — sdkgen runs the docs pass itself,
-so `docs add` works in a project scaffolded before the kind existed.
+The summary defaults to `SUMMARY.md`, the static website to `docs/`, and
+the optional Slidev presentation to `presentation/`. See the
+[docgen configuration guide](https://github.com/voxgig/docgen#configure-the-model)
+for edition filters, local assets, authored pages, and CI.
 
 ### `package add <pkg>[,<pkg>...]`
 

@@ -89,7 +89,7 @@ declare function SdkGen(opts: SdkGenOptions): {
     }>;
     action: (args: string[], flags?: Record<string, any>) => Promise<any>;
     check: () => Promise<ActionResult>;
-    docs: {
+    edition: {
         add: (items: string[]) => Promise<ActionResult>;
     };
     target: {

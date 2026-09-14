@@ -1,8 +1,8 @@
-// `docs add` — the third kind. Design §20.
+// `edition add` — the third kind. Design §20.
 //
 // WHAT THIS SUITE IS FOR
 //
-// The docs kind ships with NO items: sdkgen supplies the mechanism and
+// The edition kind ships with NO items: sdkgen supplies the mechanism and
 // packages supply the destinations (`@voxgig/docgen` first). So the only way
 // to exercise it here is against a fixture package — which is exactly what an
 // external author's package looks like, and is therefore the right thing to
@@ -19,59 +19,59 @@ import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
 
-import { docs_add } from '../dist/action/docs.js'
+import { edition_add } from '../dist/action/edition.js'
 import { doctor } from '../dist/action/doctor.js'
 import { package_add } from '../dist/action/package.js'
 import { checkPackage } from '../dist/action/check.js'
 import { ROOT, makeProject, recordLog } from './actionharness'
 
 
-// A package providing one docs item. The components are stubs: what is under
+// A package providing one edition item. The components are stubs: what is under
 // test is the KIND's mechanism — resolution, provenance, trees, index, drift
 // — not what a documentation emitter emits, which is docgen's business.
 function makePackage(opts: {
   manifest?: any, tm?: boolean, name?: string,
 } = {}): string {
-  const name = opts.name ?? 'apidocs'
-  const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-docs-'))
+  const name = opts.name ?? 'summary'
+  const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-edition-'))
   const sdk = Path.join(dir, '.sdk')
 
-  Fs.mkdirSync(Path.join(sdk, 'model', 'docs'), { recursive: true })
-  Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'docs', name), { recursive: true })
+  Fs.mkdirSync(Path.join(sdk, 'model', 'edition'), { recursive: true })
+  Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'edition', name), { recursive: true })
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'docs', name + '.aon'),
-    `main: kit: docs: ${name}: {\n` +
-    `  title: 'API docs'\n` +
+  Fs.writeFileSync(Path.join(sdk, 'model', 'edition', name + '.aon'),
+    `main: kit: doc: edition: ${name}: {\n` +
+    `  title: 'API edition'\n` +
     `  base: 'BASE'\n` +
     `}\n`)
 
-  // Dispatched by the convention `cmp/docs/<n>/Main_<n>`, so the file name
+  // Dispatched by the convention `cmp/edition/<n>/Main_<n>`, so the file name
   // carries the item name — which is what an alias has to rewrite.
   Fs.writeFileSync(
-    Path.join(sdk, 'src', 'cmp', 'docs', name, 'Main_' + name + '.ts'),
+    Path.join(sdk, 'src', 'cmp', 'edition', name, 'Main_' + name + '.ts'),
     "import { cmp } from '@voxgig/sdkgen'\n" +
     'const Main = cmp(function Main() { })\n' +
     'export { Main }\n')
 
   if (false !== opts.tm) {
-    Fs.mkdirSync(Path.join(sdk, 'tm', 'docs', name), { recursive: true })
-    Fs.writeFileSync(Path.join(sdk, 'tm', 'docs', name, 'site.md'),
-      '# ProjectName docs\n')
+    Fs.mkdirSync(Path.join(sdk, 'tm', 'edition', name), { recursive: true })
+    Fs.writeFileSync(Path.join(sdk, 'tm', 'edition', name, 'site.md'),
+      '# ProjectName edition\n')
   }
 
   Fs.writeFileSync(Path.join(dir, 'sdkgen-package.json'),
     JSON.stringify(opts.manifest ?? {
       sdkgen: { package: 1 },
-      name: '@acme/sdkgen-docs',
+      name: '@acme/sdkgen-edition',
       version: '1.0.0',
-      provides: { docs: [name] },
+      provides: { edition: [name] },
     }, null, 2))
 
   return dir
 }
 
 
-function docsRef(pkg: string, name = 'apidocs'): string {
+function editionRef(pkg: string, name = 'summary'): string {
   return Path.join(pkg, name)
 }
 
@@ -81,22 +81,57 @@ function read(project: any, rel: string): string {
 }
 
 
-describe('docs add', () => {
+describe('edition add', () => {
+
+  test('bare names and aliases use docgen project/.sdk', async () => {
+    const pkg = makePackage({ manifest: {
+      sdkgen: { package: 1 }, name: '@voxgig/docgen', version: '1.0.0',
+      provides: { edition: ['summary'] },
+    } })
+    try {
+      for (const alias of ['', '~partner']) {
+        const project = makeProject()
+        const base = 'node_modules/@voxgig/docgen/project'
+        const copy = (dir: string, rel = '') => {
+          for (const entry of Fs.readdirSync(dir, { withFileTypes: true })) {
+            const file = Path.join(dir, entry.name)
+            const next = Path.join(rel, entry.name)
+            if (entry.isDirectory()) copy(file, next)
+            else project.vol.fromJSON({ [next]: Fs.readFileSync(file, 'utf8') }, ROOT + '/' + base)
+          }
+        }
+        copy(pkg)
+        await edition_add(['summary' + alias], project.actx)
+        const name = alias ? 'partner' : 'summary'
+        const definition = read(project, 'model/edition/' + name + '.aon')
+        ok(definition.includes("base: '" + base + "/.sdk'"), definition)
+        ok(definition.includes("package: '@voxgig/docgen'"), definition)
+        ok(project.files().includes('tm/edition/' + name + '/site.md'))
+      }
+    } finally { Fs.rmSync(pkg, { recursive: true, force: true }) }
+  })
+
+  test('a bare edition fails if the docgen scaffold is absent', async () => {
+    const project = makeProject()
+    await rejects(() => edition_add(['summary'], project.actx),
+      /Edition folder not found[\s\S]*docgen[/\\]project[/\\]\.sdk/)
+  })
+
 
   test('installs the definition, the components and the templates', async () => {
     const pkg = makePackage()
     try {
       const project = makeProject()
-      await docs_add([docsRef(pkg)], project.actx)
+      await edition_add([editionRef(pkg)], project.actx)
 
       const files = project.files()
 
-      ok(files.includes('model/docs/apidocs.aon'), files.join(','))
-      ok(files.includes('src/cmp/docs/apidocs/Main_apidocs.ts'), files.join(','))
-      ok(files.includes('tm/docs/apidocs/site.md'), files.join(','))
+      ok(files.includes('model/edition/summary.aon'), files.join(','))
+      ok(files.includes('src/cmp/edition/summary/Main_summary.ts'), files.join(','))
+      ok(files.includes('tm/edition/summary/site.md'), files.join(','))
 
       // The index, or the model never compiles the new item in at all.
-      ok(read(project, 'model/docs/docs-index.aon').includes('@"apidocs.aon"'))
+      ok(read(project, 'model/edition/edition-index.aon').includes('@"summary.aon"'))
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -105,19 +140,19 @@ describe('docs add', () => {
 
 
   test('the trees are NESTED under the kind', async () => {
-    // `src/cmp/docs/<n>`, not `src/cmp/<n>` — so a docs item and a target may
-    // share a name without sharing a directory. A docs item called `go` must
+    // `src/cmp/edition/<n>`, not `src/cmp/<n>` — so a edition item and a target may
+    // share a name without sharing a directory. A edition item called `go` must
     // not land on top of the go target's components.
     const pkg = makePackage({ name: 'go' })
     try {
       const project = makeProject()
-      await docs_add([docsRef(pkg, 'go')], project.actx)
+      await edition_add([editionRef(pkg, 'go')], project.actx)
 
       const files = project.files()
 
-      ok(files.includes('src/cmp/docs/go/Main_go.ts'), files.join(','))
+      ok(files.includes('src/cmp/edition/go/Main_go.ts'), files.join(','))
       ok(!files.some((f: string) => f.startsWith('src/cmp/go/')),
-        'a docs item landed in the target component tree: ' + files.join(','))
+        'a edition item landed in the target component tree: ' + files.join(','))
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -129,9 +164,9 @@ describe('docs add', () => {
     const pkg = makePackage()
     try {
       const project = makeProject()
-      await docs_add([docsRef(pkg)], project.actx)
+      await edition_add([editionRef(pkg)], project.actx)
 
-      const src = read(project, 'model/docs/apidocs.aon')
+      const src = read(project, 'model/edition/summary.aon')
 
       ok(src.includes("base: '"), 'no provenance stamp:\n' + src)
       ok(!src.includes("base: 'BASE'"), 'the anchor was not replaced:\n' + src)
@@ -143,18 +178,18 @@ describe('docs add', () => {
 
 
   test('a package with NO template tree installs fine', async () => {
-    // A docs item whose every emitted byte depends on the API — a catalogue
+    // A edition item whose every emitted byte depends on the API — a catalogue
     // entry, a config file — ships no `tm`. That is declared optional in the
     // registry, so it must not be an error here or in manifest validation.
     const pkg = makePackage({ tm: false })
     try {
       const project = makeProject()
-      await docs_add([docsRef(pkg)], project.actx)
+      await edition_add([editionRef(pkg)], project.actx)
 
       const files = project.files()
 
-      ok(files.includes('src/cmp/docs/apidocs/Main_apidocs.ts'))
-      ok(!files.some((f: string) => f.startsWith('tm/docs/')),
+      ok(files.includes('src/cmp/edition/summary/Main_summary.ts'))
+      ok(!files.some((f: string) => f.startsWith('tm/edition/')),
         'templates appeared from nowhere: ' + files.join(','))
 
       const report = checkPackage(pkg, project.actx)
@@ -171,19 +206,19 @@ describe('docs add', () => {
     const pkg = makePackage()
     try {
       const project = makeProject()
-      await docs_add([docsRef(pkg) + '~portal'], project.actx)
+      await edition_add([editionRef(pkg) + '~portal'], project.actx)
 
       const files = project.files()
 
-      ok(files.includes('model/docs/portal.aon'), files.join(','))
+      ok(files.includes('model/edition/portal.aon'), files.join(','))
       // Dispatch is by convention, so the component file has to move with the
       // name or nothing loads it.
-      ok(files.includes('src/cmp/docs/portal/Main_portal.ts'), files.join(','))
-      ok(files.includes('tm/docs/portal/site.md'), files.join(','))
+      ok(files.includes('src/cmp/edition/portal/Main_portal.ts'), files.join(','))
+      ok(files.includes('tm/edition/portal/site.md'), files.join(','))
 
-      const src = read(project, 'model/docs/portal.aon')
-      ok(src.includes('docs: portal:'), 'the model key was not rewritten:\n' + src)
-      ok(src.includes("origname: 'apidocs'"), 'no origname recorded:\n' + src)
+      const src = read(project, 'model/edition/portal.aon')
+      ok(src.includes('edition: portal:'), 'the model key was not rewritten:\n' + src)
+      ok(src.includes("origname: 'summary'"), 'no origname recorded:\n' + src)
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -194,27 +229,27 @@ describe('docs add', () => {
   test('a ref that resolves to nothing says where it looked', async () => {
     const project = makeProject()
     await rejects(
-      () => docs_add(['@acme/nope/apidocs'], project.actx),
-      /Docs folder not found/)
+      () => edition_add(['@acme/nope/summary'], project.actx),
+      /Edition folder not found/)
   })
 
 })
 
 
-describe('docs and the whole-package verbs', () => {
+describe('edition and the whole-package verbs', () => {
 
-  test('`package add` installs a docs item', async () => {
+  test('`package add` installs a edition item', async () => {
     const pkg = makePackage()
     try {
       const project = makeProject()
       await package_add([pkg], project.actx)
 
       const files = project.files()
-      ok(files.includes('model/docs/apidocs.aon'), files.join(','))
-      ok(files.includes('src/cmp/docs/apidocs/Main_apidocs.ts'), files.join(','))
+      ok(files.includes('model/edition/summary.aon'), files.join(','))
+      ok(files.includes('src/cmp/edition/summary/Main_summary.ts'), files.join(','))
 
-      const src = read(project, 'model/docs/apidocs.aon')
-      ok(src.includes("package: '@acme/sdkgen-docs'"),
+      const src = read(project, 'model/edition/summary.aon')
+      ok(src.includes("package: '@acme/sdkgen-edition'"),
         'no package provenance:\n' + src)
     }
     finally {
@@ -223,12 +258,12 @@ describe('docs and the whole-package verbs', () => {
   })
 
 
-  test('a manifest claiming a docs item it does not ship is refused', async () => {
+  test('a manifest claiming a edition item it does not ship is refused', async () => {
     const pkg = makePackage({
       manifest: {
         sdkgen: { package: 1 },
-        name: '@acme/sdkgen-docs',
-        provides: { docs: ['apidocs', 'ghost'] },
+        name: '@acme/sdkgen-edition',
+        provides: { edition: ['summary', 'ghost'] },
       },
     })
     try {
@@ -237,7 +272,7 @@ describe('docs and the whole-package verbs', () => {
         /does not match the package[\s\S]*ghost/)
 
       // Nothing installed: validation runs before the loop writes anything.
-      ok(!project.files().some((f: string) => f.startsWith('model/docs/')),
+      ok(!project.files().some((f: string) => f.startsWith('model/edition/')),
         'a refused package still wrote files')
     }
     finally {
@@ -246,7 +281,7 @@ describe('docs and the whole-package verbs', () => {
   })
 
 
-  test('`package check` validates a docs package', async () => {
+  test('`package check` validates a edition package', async () => {
     const pkg = makePackage()
     try {
       const project = makeProject()
@@ -261,10 +296,10 @@ describe('docs and the whole-package verbs', () => {
   })
 
 
-  test('a docs definition with no anchor is an error', async () => {
+  test('a edition definition with no anchor is an error', async () => {
     const pkg = makePackage()
     try {
-      const file = Path.join(pkg, '.sdk', 'model', 'docs', 'apidocs.aon')
+      const file = Path.join(pkg, '.sdk', 'model', 'edition', 'summary.aon')
       Fs.writeFileSync(file,
         String(Fs.readFileSync(file, 'utf8')).replace("  base: 'BASE'\n", ''))
 
@@ -282,7 +317,7 @@ describe('docs and the whole-package verbs', () => {
 })
 
 
-describe('doctor sees docs', () => {
+describe('doctor sees edition', () => {
 
   // ANYTHING AN ADD WRITES, DOCTOR MUST COMPARE (CLAUDE.md). A kind whose
   // trees nothing walks lets the next add silently revert a project's edit,
@@ -290,7 +325,7 @@ describe('doctor sees docs', () => {
 
   async function installed(pkg: string) {
     const project = makeProject()
-    await docs_add([docsRef(pkg)], project.actx)
+    await edition_add([editionRef(pkg)], project.actx)
     return project
   }
 
@@ -317,12 +352,12 @@ describe('doctor sees docs', () => {
       const project = await installed(pkg)
 
       project.fs.writeFileSync(
-        ROOT + '/src/cmp/docs/apidocs/Main_apidocs.ts',
-        '// a project edit that the next `docs add` would revert\n')
+        ROOT + '/src/cmp/edition/summary/Main_summary.ts',
+        '// a project edit that the next `edition add` would revert\n')
 
       const res: any = await doctor(project.actx)
 
-      ok(res.report.forked.includes('src/cmp/docs/apidocs/Main_apidocs.ts'),
+      ok(res.report.forked.includes('src/cmp/edition/summary/Main_summary.ts'),
         JSON.stringify(res.report))
     }
     finally {
@@ -336,11 +371,11 @@ describe('doctor sees docs', () => {
     try {
       const project = await installed(pkg)
 
-      project.fs.writeFileSync(ROOT + '/tm/docs/apidocs/site.md', '# edited\n')
+      project.fs.writeFileSync(ROOT + '/tm/edition/summary/site.md', '# edited\n')
 
       const res: any = await doctor(project.actx)
 
-      ok(res.report.edited.includes('tm/docs/apidocs/site.md'),
+      ok(res.report.edited.includes('tm/edition/summary/site.md'),
         JSON.stringify(res.report))
     }
     finally {
@@ -354,11 +389,11 @@ describe('doctor sees docs', () => {
     try {
       const project = await installed(pkg)
 
-      project.fs.unlinkSync(ROOT + '/src/cmp/docs/apidocs/Main_apidocs.ts')
+      project.fs.unlinkSync(ROOT + '/src/cmp/edition/summary/Main_summary.ts')
 
       const res: any = await doctor(project.actx)
 
-      ok(res.report.missing.includes('src/cmp/docs/apidocs/Main_apidocs.ts'),
+      ok(res.report.missing.includes('src/cmp/edition/summary/Main_summary.ts'),
         JSON.stringify(res.report))
     }
     finally {
@@ -368,9 +403,9 @@ describe('doctor sees docs', () => {
 
 
   test('a template tree the SOURCE does not ship is not missing', async () => {
-    // The optional tree again, from doctor's side: `docs add` did not copy
+    // The optional tree again, from doctor's side: `edition add` did not copy
     // it, so the project is right not to have it, and reporting it would make
-    // every catalogue-shaped docs package permanently red.
+    // every catalogue-shaped edition package permanently red.
     const pkg = makePackage({ tm: false })
     try {
       const project = await installed(pkg)
@@ -387,28 +422,28 @@ describe('doctor sees docs', () => {
 })
 
 
-describe('docs and the project model', () => {
+describe('edition and the project model', () => {
 
   // THE ITEM HAS TO REACH THE COMPILED MODEL.
   //
   // `model/sdk.aon` is written once, by create-sdkgen, and includes the
   // indexes of the kinds that existed then — so no project alive today
-  // includes `docs/docs-index.aon`. Without that line the definition is an
+  // includes `edition/edition-index.aon`. Without that line the definition is an
   // orphan: on disk, included by its index, and that index included by
-  // nothing. `main.kit.docs` is absent from the next compile, and `package
+  // nothing. `main.kit.edition` is absent from the next compile, and `package
   // list`, `package update` and `doctor` cannot see the item at all.
 
-  test('the project model gains the docs include', async () => {
+  test('the project model gains the edition include', async () => {
     const pkg = makePackage()
     try {
       const project = makeProject()
-      await docs_add([docsRef(pkg)], project.actx)
+      await edition_add([editionRef(pkg)], project.actx)
 
       const sdk = String(project.fs.readFileSync(
         ROOT + '/model/sdk.aon', 'utf8'))
 
-      ok(sdk.includes('@"docs/docs-index.aon"'),
-        'the docs index is included by nothing:\n' + sdk)
+      ok(sdk.includes('@"edition/edition-index.aon"'),
+        'the edition index is included by nothing:\n' + sdk)
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -420,14 +455,14 @@ describe('docs and the project model', () => {
     const pkg = makePackage()
     try {
       const project = makeProject()
-      await docs_add([docsRef(pkg)], project.actx)
-      await docs_add([docsRef(pkg)], project.actx)
+      await edition_add([editionRef(pkg)], project.actx)
+      await edition_add([editionRef(pkg)], project.actx)
 
       const sdk = String(project.fs.readFileSync(
         ROOT + '/model/sdk.aon', 'utf8'))
 
       strictEqual(
-        sdk.split('@"docs/docs-index.aon"').length - 1, 1,
+        sdk.split('@"edition/edition-index.aon"').length - 1, 1,
         'the include was appended twice:\n' + sdk)
     }
     finally {
@@ -438,23 +473,23 @@ describe('docs and the project model', () => {
 
   test('a required tree that is missing installs NOTHING', async () => {
     // The write pass emits the definition and its index entry before it
-    // copies the trees, so a failure partway left the project carrying a docs
+    // copies the trees, so a failure partway left the project carrying a edition
     // item with no implementation — which the next model compile reads as
     // real.
     const pkg = makePackage()
     try {
-      Fs.rmSync(Path.join(pkg, '.sdk', 'src', 'cmp', 'docs', 'apidocs'),
+      Fs.rmSync(Path.join(pkg, '.sdk', 'src', 'cmp', 'edition', 'summary'),
         { recursive: true, force: true })
 
       const project = makeProject()
 
-      await rejects(() => docs_add([docsRef(pkg)], project.actx),
+      await rejects(() => edition_add([editionRef(pkg)], project.actx),
         /required tree not found/)
 
       deepStrictEqual(
-        project.files().filter((f: string) => f.startsWith('model/docs/')),
+        project.files().filter((f: string) => f.startsWith('model/edition/')),
         [],
-        'a failed add left a docs item in the model')
+        'a failed add left a edition item in the model')
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -469,19 +504,19 @@ describe('docs and the project model', () => {
     const pkg = makePackage()
     try {
       const project = makeProject()
-      await docs_add([docsRef(pkg)], project.actx)
+      await edition_add([editionRef(pkg)], project.actx)
 
-      ok(project.files().includes('tm/docs/apidocs/site.md'))
+      ok(project.files().includes('tm/edition/summary/site.md'))
 
-      Fs.unlinkSync(Path.join(pkg, '.sdk', 'tm', 'docs', 'apidocs', 'site.md'))
+      Fs.unlinkSync(Path.join(pkg, '.sdk', 'tm', 'edition', 'summary', 'site.md'))
       Fs.writeFileSync(
-        Path.join(pkg, '.sdk', 'tm', 'docs', 'apidocs', 'index.md'), '# new\n')
+        Path.join(pkg, '.sdk', 'tm', 'edition', 'summary', 'index.md'), '# new\n')
 
-      await docs_add([docsRef(pkg)], project.actx)
+      await edition_add([editionRef(pkg)], project.actx)
 
       const files = project.files()
-      ok(files.includes('tm/docs/apidocs/index.md'), files.join(','))
-      ok(!files.includes('tm/docs/apidocs/site.md'),
+      ok(files.includes('tm/edition/summary/index.md'), files.join(','))
+      ok(!files.includes('tm/edition/summary/site.md'),
         'the retired template survived the resync: ' + files.join(','))
     }
     finally {
@@ -489,4 +524,21 @@ describe('docs and the project model', () => {
     }
   })
 
+})
+
+
+describe('edition resync by installed name', () => {
+  for (const alias of ['', '~partner']) test('preserves package provenance '+(alias || 'without alias'), async () => {
+    const pkg=makePackage(), name=alias ? 'partner' : 'summary'
+    try {
+      const project=makeProject()
+      await edition_add([editionRef(pkg)+alias],project.actx)
+      const before={...project.actx.model.main.kit.doc.edition[name]}
+      Fs.writeFileSync(Path.join(pkg,'.sdk/tm/edition/summary/site.md'),'# Updated documentation\n')
+      await edition_add([name],project.actx)
+      strictEqual(project.actx.model.main.kit.doc.edition[name].base,before.base)
+      strictEqual(project.actx.model.main.kit.doc.edition[name].package,before.package)
+      ok(read(project,'tm/edition/'+name+'/site.md').includes('Updated documentation'))
+    } finally { Fs.rmSync(pkg,{recursive:true,force:true}) }
+  })
 })

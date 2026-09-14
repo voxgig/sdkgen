@@ -1,4 +1,18 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SDKGEN_VERSION = void 0;
+exports.action_package = action_package;
+exports.package_add = package_add;
+exports.package_update = package_update;
+exports.installedFrom = installedFrom;
+exports.resolvePackage = resolvePackage;
+exports.selectItems = selectItems;
+exports.parseAliases = parseAliases;
+exports.registerAdder = registerAdder;
+const kindCollection_1 = require("../helpers/kindCollection");
 // `package add` / `package list` — the whole-package verbs.
 //
 // See docs/design/sdkgen-packages.md §9.
@@ -25,19 +39,6 @@
 // the package, the first three are already written and the project is left
 // half-installed with a partial index. Validating the whole claim up front is
 // what makes the loop safe to run at all.
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SDKGEN_VERSION = void 0;
-exports.action_package = action_package;
-exports.package_add = package_add;
-exports.package_update = package_update;
-exports.installedFrom = installedFrom;
-exports.resolvePackage = resolvePackage;
-exports.selectItems = selectItems;
-exports.parseAliases = parseAliases;
-exports.registerAdder = registerAdder;
 const node_path_1 = __importDefault(require("node:path"));
 const types_1 = require("../types");
 const utility_1 = require("../utility");
@@ -65,7 +66,7 @@ const CMD_MAP = Object.assign(Object.create(null), {
 // reads them at generate time rather than at add time, installing it last
 // keeps the add log in the order a reader would expect and leaves the model
 // complete before anything reads it.
-const ADD_ORDER = ['target', 'feature', 'docs'];
+const ADD_ORDER = ['target', 'feature', 'edition'];
 async function action_package(args, actx) {
     const cmdname = args[1];
     const cmd = CMD_MAP[cmdname];
@@ -474,7 +475,7 @@ function installedFrom(pkgname, actx) {
     const kit = actx.model?.main?.[types_1.KIT] ?? {};
     const found = [];
     for (const kind of Object.keys(kind_1.KINDS).sort()) {
-        const items = kit[kind] ?? {};
+        const items = (0, kindCollection_1.kindCollection)({ main: { [types_1.KIT]: kit } }, kind);
         for (const name of Object.keys(items).sort()) {
             const item = items[name];
             if (null == item || 'object' !== typeof item ||
@@ -791,7 +792,7 @@ async function cmd_package_list(_args, actx) {
     // package name -> kind -> [{name, base, origname}]
     const groups = Object.create(null);
     for (const kind of Object.keys(kind_1.KINDS).sort()) {
-        const items = kit[kind] ?? {};
+        const items = (0, kindCollection_1.kindCollection)({ main: { [types_1.KIT]: kit } }, kind);
         for (const name of Object.keys(items).sort()) {
             const item = items[name];
             if (null == item || 'object' !== typeof item) {

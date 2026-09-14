@@ -1,0 +1,582 @@
+{
+  "entity": {
+    "convert": {
+      "active": true,
+      "alias": {
+        "field": {}
+      },
+      "fields": [
+        {
+          "active": true,
+          "name": "bridge_model",
+          "req": true,
+          "short": "Embed model used to vectorise the text before translation.",
+          "type": "`$STRING`"
+        },
+        {
+          "active": true,
+          "name": "embeddings",
+          "req": true,
+          "short": "Translated vectors, in the target model's dimension.",
+          "type": "`$ARRAY`"
+        },
+        {
+          "active": true,
+          "name": "source_model",
+          "req": true,
+          "short": "Model space the supplied vectors are currently in.",
+          "type": "`$STRING`"
+        },
+        {
+          "active": true,
+          "name": "target_model",
+          "req": true,
+          "short": "Model space to translate into.",
+          "type": "`$STRING`"
+        },
+        {
+          "active": true,
+          "name": "texts",
+          "req": true,
+          "short": "Texts to embed and translate.",
+          "type": "`$ARRAY`"
+        }
+      ],
+      "name": "convert",
+      "op": {
+        "create": {
+          "input": "data",
+          "name": "create",
+          "points": [
+            {
+              "active": true,
+              "args": {},
+              "contract": {
+                "id": "POST /v1/convert",
+                "json": "{\"live\":{\"assert\":{\"equal\":{\"source_model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"target_model\":{\"from\":\"models\",\"path\":\"targetModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}}},\"vectors\":{\"count\":1,\"dimension\":{\"from\":\"models\",\"path\":\"targetDim\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"path\":\"embeddings\"}},\"auth\":\"account\",\"id\":\"account-convert\",\"input\":{\"embeddings\":{\"from\":\"account-embed\",\"path\":\"embeddings\"},\"source_model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"target_model\":{\"from\":\"models\",\"path\":\"targetModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}}}},\"operationId\":\"convertEmbedding\",\"parameters\":[],\"protocol\":\"http\",\"requestBody\":{\"content\":{\"application/json\":{\"example\":{\"embeddings\":[[0.01,0.02,0.03]],\"source_model\":\"alibaba-nlp-gte-large-en-v1.5\",\"target_model\":\"nomic-embed-text-v1.5\"},\"schema\":{\"properties\":{\"embeddings\":{\"description\":\"Vectors to translate. Each must match the source model's dimension exactly.\",\"items\":{\"description\":\"A single embedding vector.\",\"items\":{\"format\":\"float\",\"type\":\"number\"},\"type\":\"array\"},\"type\":\"array\"},\"source_model\":{\"description\":\"Model space the supplied vectors are currently in.\",\"example\":\"alibaba-nlp-gte-large-en-v1.5\",\"type\":\"string\"},\"target_model\":{\"description\":\"Model space to translate into. A converter must exist for the source/target pair \u2014 see listModels.\",\"example\":\"nomic-embed-text-v1.5\",\"type\":\"string\"}},\"required\":[\"source_model\",\"target_model\",\"embeddings\"],\"type\":\"object\"}}},\"required\":true},\"responses\":{\"200\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"data\":{\"properties\":{\"embeddings\":{\"description\":\"Translated vectors, in the target model's dimension.\",\"items\":{\"description\":\"A single embedding vector.\",\"items\":{\"format\":\"float\",\"type\":\"number\"},\"type\":\"array\"},\"type\":\"array\"},\"source_model\":{\"type\":\"string\"},\"target_model\":{\"type\":\"string\"}},\"required\":[\"embeddings\",\"source_model\",\"target_model\"],\"type\":\"object\"},\"success\":{\"type\":\"boolean\"}},\"required\":[\"success\",\"data\"],\"type\":\"object\"}}},\"description\":\"Translated embeddings\"},\"401\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"},\"422\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"}},\"security\":[{\"bearerAuth\":[]}],\"securitySchemes\":{\"bearerAuth\":{\"description\":\"UniVec API key, sent as `Authorization: Bearer uv_...`. Ephemeral keys use the `eph_` prefix and are restricted to the /v1/ephemeral/* routes.\",\"scheme\":\"bearer\",\"type\":\"http\"}},\"securitySource\":\"definition\"}",
+                "source": "openapi3",
+                "version": 1
+              },
+              "kind": "http",
+              "method": "POST",
+              "orig": "/v1/convert",
+              "segments": [
+                {
+                  "lit": "v1"
+                },
+                {
+                  "lit": "convert"
+                }
+              ],
+              "select": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body.data`"
+              }
+            },
+            {
+              "active": true,
+              "args": {},
+              "contract": {
+                "id": "POST /v1/embed-bridge",
+                "json": "{\"factSources\":{\"responses\":\"guide\"},\"live\":{\"assert\":{\"equal\":{\"bridge_model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"target_model\":{\"from\":\"models\",\"path\":\"targetModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}}},\"vectors\":{\"count\":1,\"dimension\":{\"from\":\"models\",\"path\":\"targetDim\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"path\":\"embeddings\"}},\"auth\":\"account\",\"id\":\"account-embed-bridge\",\"input\":{\"bridge_model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"target_model\":{\"from\":\"models\",\"path\":\"targetModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"texts\":[\"SDK live coverage test.\"]}},\"operationId\":\"embedBridge\",\"parameters\":[],\"protocol\":\"http\",\"requestBody\":{\"content\":{\"application/json\":{\"example\":{\"bridge_model\":\"alibaba-nlp-gte-large-en-v1.5\",\"target_model\":\"nomic-embed-text-v1.5\",\"texts\":[\"hello world\"]},\"schema\":{\"properties\":{\"bridge_model\":{\"description\":\"Embed model used to vectorise the text before translation.\",\"example\":\"alibaba-nlp-gte-large-en-v1.5\",\"type\":\"string\"},\"target_model\":{\"description\":\"Model space to translate into.\",\"example\":\"nomic-embed-text-v1.5\",\"type\":\"string\"},\"texts\":{\"description\":\"Texts to embed and translate.\",\"example\":[\"hello world\"],\"items\":{\"type\":\"string\"},\"type\":\"array\"}},\"required\":[\"bridge_model\",\"target_model\",\"texts\"],\"type\":\"object\"}}},\"required\":true},\"responses\":{\"200\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"data\":{\"properties\":{\"bridge_model\":{\"type\":\"string\"},\"embeddings\":{\"description\":\"Translated vectors, in the target model's dimension.\",\"items\":{\"description\":\"A single embedding vector.\",\"items\":{\"format\":\"float\",\"type\":\"number\"},\"type\":\"array\"},\"type\":\"array\"},\"model\":{\"type\":\"string\"},\"target_model\":{\"type\":\"string\"}},\"required\":[\"embeddings\",\"bridge_model\",\"target_model\"],\"type\":\"object\"},\"success\":{\"type\":\"boolean\"}},\"required\":[\"success\",\"data\"],\"type\":\"object\"}}},\"description\":\"Translated embeddings\"},\"401\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"},\"422\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"}},\"security\":[{\"bearerAuth\":[]}],\"securitySchemes\":{\"bearerAuth\":{\"description\":\"UniVec API key, sent as `Authorization: Bearer uv_...`. Ephemeral keys use the `eph_` prefix and are restricted to the /v1/ephemeral/* routes.\",\"scheme\":\"bearer\",\"type\":\"http\"}},\"securitySource\":\"definition\"}",
+                "source": "openapi3",
+                "version": 1
+              },
+              "kind": "http",
+              "method": "POST",
+              "orig": "/v1/embed-bridge",
+              "segments": [
+                {
+                  "lit": "v1"
+                },
+                {
+                  "lit": "embed-bridge"
+                }
+              ],
+              "select": {
+                "$action": "bridge"
+              },
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body.data`"
+              }
+            },
+            {
+              "active": true,
+              "args": {},
+              "contract": {
+                "id": "POST /v1/ephemeral/convert",
+                "json": "{\"live\":{\"assert\":{\"equal\":{\"source_model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"target_model\":{\"from\":\"models\",\"path\":\"targetModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}}},\"vectors\":{\"count\":1,\"dimension\":{\"from\":\"models\",\"path\":\"targetDim\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"path\":\"embeddings\"}},\"auth\":\"issued\",\"credential\":{\"from\":\"key\",\"path\":\"key\"},\"id\":\"ephemeral-convert\",\"input\":{\"embeddings\":{\"from\":\"ephemeral-embed\",\"path\":\"embeddings\"},\"source_model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"target_model\":{\"from\":\"models\",\"path\":\"targetModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}}}},\"operationId\":\"convertEphemeralEmbedding\",\"parameters\":[],\"protocol\":\"http\",\"requestBody\":{\"content\":{\"application/json\":{\"example\":{\"embeddings\":[[0.01,0.02,0.03]],\"source_model\":\"alibaba-nlp-gte-large-en-v1.5\",\"target_model\":\"nomic-embed-text-v1.5\"},\"schema\":{\"properties\":{\"embeddings\":{\"description\":\"Vectors to translate. Each must match the source model's dimension exactly.\",\"items\":{\"description\":\"A single embedding vector.\",\"items\":{\"format\":\"float\",\"type\":\"number\"},\"type\":\"array\"},\"type\":\"array\"},\"source_model\":{\"description\":\"Model space the supplied vectors are currently in.\",\"example\":\"alibaba-nlp-gte-large-en-v1.5\",\"type\":\"string\"},\"target_model\":{\"description\":\"Model space to translate into. A converter must exist for the source/target pair \u2014 see listModels.\",\"example\":\"nomic-embed-text-v1.5\",\"type\":\"string\"}},\"required\":[\"source_model\",\"target_model\",\"embeddings\"],\"type\":\"object\"}}},\"required\":true},\"responses\":{\"200\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"data\":{\"properties\":{\"embeddings\":{\"description\":\"Translated vectors, in the target model's dimension.\",\"items\":{\"description\":\"A single embedding vector.\",\"items\":{\"format\":\"float\",\"type\":\"number\"},\"type\":\"array\"},\"type\":\"array\"},\"source_model\":{\"type\":\"string\"},\"target_model\":{\"type\":\"string\"}},\"required\":[\"embeddings\",\"source_model\",\"target_model\"],\"type\":\"object\"},\"success\":{\"type\":\"boolean\"}},\"required\":[\"success\",\"data\"],\"type\":\"object\"}}},\"description\":\"Translated embeddings\"},\"401\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"},\"422\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"},\"429\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"}},\"security\":[{\"bearerAuth\":[]}],\"securitySchemes\":{\"bearerAuth\":{\"description\":\"UniVec API key, sent as `Authorization: Bearer uv_...`. Ephemeral keys use the `eph_` prefix and are restricted to the /v1/ephemeral/* routes.\",\"scheme\":\"bearer\",\"type\":\"http\"}},\"securitySource\":\"definition\"}",
+                "source": "openapi3",
+                "version": 1
+              },
+              "kind": "http",
+              "method": "POST",
+              "orig": "/v1/ephemeral/convert",
+              "segments": [
+                {
+                  "lit": "v1"
+                },
+                {
+                  "lit": "ephemeral"
+                },
+                {
+                  "lit": "convert"
+                }
+              ],
+              "select": {
+                "$action": "ephemeral"
+              },
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body.data`"
+              }
+            },
+            {
+              "active": true,
+              "args": {},
+              "contract": {
+                "id": "POST /v1/ephemeral/embed-bridge",
+                "json": "{\"factSources\":{\"responses\":\"guide\"},\"live\":{\"assert\":{\"equal\":{\"bridge_model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"target_model\":{\"from\":\"models\",\"path\":\"targetModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}}},\"vectors\":{\"count\":1,\"dimension\":{\"from\":\"models\",\"path\":\"targetDim\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"path\":\"embeddings\"}},\"auth\":\"issued\",\"credential\":{\"from\":\"key\",\"path\":\"key\"},\"id\":\"ephemeral-embed-bridge\",\"input\":{\"bridge_model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"target_model\":{\"from\":\"models\",\"path\":\"targetModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"texts\":[\"SDK live coverage test.\"]}},\"operationId\":\"embedBridgeEphemeral\",\"parameters\":[],\"protocol\":\"http\",\"requestBody\":{\"content\":{\"application/json\":{\"example\":{\"bridge_model\":\"alibaba-nlp-gte-large-en-v1.5\",\"target_model\":\"nomic-embed-text-v1.5\",\"texts\":[\"hello world\"]},\"schema\":{\"properties\":{\"bridge_model\":{\"description\":\"Embed model used to vectorise the text before translation.\",\"example\":\"alibaba-nlp-gte-large-en-v1.5\",\"type\":\"string\"},\"target_model\":{\"description\":\"Model space to translate into.\",\"example\":\"nomic-embed-text-v1.5\",\"type\":\"string\"},\"texts\":{\"description\":\"Texts to embed and translate.\",\"example\":[\"hello world\"],\"items\":{\"type\":\"string\"},\"type\":\"array\"}},\"required\":[\"bridge_model\",\"target_model\",\"texts\"],\"type\":\"object\"}}},\"required\":true},\"responses\":{\"200\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"data\":{\"properties\":{\"bridge_model\":{\"type\":\"string\"},\"embeddings\":{\"description\":\"Translated vectors, in the target model's dimension.\",\"items\":{\"description\":\"A single embedding vector.\",\"items\":{\"format\":\"float\",\"type\":\"number\"},\"type\":\"array\"},\"type\":\"array\"},\"model\":{\"type\":\"string\"},\"target_model\":{\"type\":\"string\"}},\"required\":[\"embeddings\",\"bridge_model\",\"target_model\"],\"type\":\"object\"},\"success\":{\"type\":\"boolean\"}},\"required\":[\"success\",\"data\"],\"type\":\"object\"}}},\"description\":\"Translated embeddings\"},\"401\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"},\"422\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"},\"429\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"}},\"security\":[{\"bearerAuth\":[]}],\"securitySchemes\":{\"bearerAuth\":{\"description\":\"UniVec API key, sent as `Authorization: Bearer uv_...`. Ephemeral keys use the `eph_` prefix and are restricted to the /v1/ephemeral/* routes.\",\"scheme\":\"bearer\",\"type\":\"http\"}},\"securitySource\":\"definition\"}",
+                "source": "openapi3",
+                "version": 1
+              },
+              "kind": "http",
+              "method": "POST",
+              "orig": "/v1/ephemeral/embed-bridge",
+              "segments": [
+                {
+                  "lit": "v1"
+                },
+                {
+                  "lit": "ephemeral"
+                },
+                {
+                  "lit": "embed-bridge"
+                }
+              ],
+              "select": {
+                "$action": "ephemeral_bridge"
+              },
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body.data`"
+              }
+            }
+          ]
+        }
+      },
+      "relations": {
+        "ancestors": []
+      }
+    },
+    "embed": {
+      "active": true,
+      "alias": {
+        "field": {}
+      },
+      "fields": [
+        {
+          "active": true,
+          "name": "embeddings",
+          "req": true,
+          "short": "One vector per input text, in input order.",
+          "type": "`$ARRAY`"
+        },
+        {
+          "active": true,
+          "name": "model",
+          "req": true,
+          "short": "Model that produced the vectors.",
+          "type": "`$STRING`"
+        },
+        {
+          "active": true,
+          "name": "texts",
+          "req": true,
+          "short": "Texts to embed.",
+          "type": "`$ARRAY`"
+        }
+      ],
+      "name": "embed",
+      "op": {
+        "create": {
+          "input": "data",
+          "name": "create",
+          "points": [
+            {
+              "active": true,
+              "args": {},
+              "contract": {
+                "id": "POST /v1/embed",
+                "json": "{\"live\":{\"assert\":{\"equal\":{\"model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}}},\"vectors\":{\"count\":1,\"dimension\":{\"from\":\"models\",\"path\":\"sourceDim\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"path\":\"embeddings\"}},\"auth\":\"account\",\"id\":\"account-embed\",\"input\":{\"model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"texts\":[\"SDK live coverage test.\"]}},\"operationId\":\"createEmbedding\",\"parameters\":[],\"protocol\":\"http\",\"requestBody\":{\"content\":{\"application/json\":{\"example\":{\"model\":\"baai-bge-base-en-v1.5\",\"texts\":[\"hello world\"]},\"schema\":{\"properties\":{\"model\":{\"description\":\"Name of an embed model, as returned by listModels.\",\"example\":\"baai-bge-base-en-v1.5\",\"type\":\"string\"},\"texts\":{\"description\":\"Texts to embed. One vector is returned per text, in order.\",\"example\":[\"hello world\"],\"items\":{\"type\":\"string\"},\"type\":\"array\"}},\"required\":[\"model\",\"texts\"],\"type\":\"object\"}}},\"required\":true},\"responses\":{\"200\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"data\":{\"properties\":{\"embeddings\":{\"description\":\"One vector per input text, in input order.\",\"items\":{\"description\":\"A single embedding vector.\",\"items\":{\"format\":\"float\",\"type\":\"number\"},\"type\":\"array\"},\"type\":\"array\"},\"model\":{\"description\":\"Model that produced the vectors.\",\"type\":\"string\"}},\"required\":[\"embeddings\",\"model\"],\"type\":\"object\"},\"success\":{\"type\":\"boolean\"}},\"required\":[\"success\",\"data\"],\"type\":\"object\"}}},\"description\":\"Generated embeddings\"},\"401\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"},\"422\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"}},\"security\":[{\"bearerAuth\":[]}],\"securitySchemes\":{\"bearerAuth\":{\"description\":\"UniVec API key, sent as `Authorization: Bearer uv_...`. Ephemeral keys use the `eph_` prefix and are restricted to the /v1/ephemeral/* routes.\",\"scheme\":\"bearer\",\"type\":\"http\"}},\"securitySource\":\"definition\"}",
+                "source": "openapi3",
+                "version": 1
+              },
+              "kind": "http",
+              "method": "POST",
+              "orig": "/v1/embed",
+              "segments": [
+                {
+                  "lit": "v1"
+                },
+                {
+                  "lit": "embed"
+                }
+              ],
+              "select": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body.data`"
+              }
+            },
+            {
+              "active": true,
+              "args": {},
+              "contract": {
+                "id": "POST /v1/ephemeral/embed",
+                "json": "{\"live\":{\"assert\":{\"equal\":{\"model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}}},\"vectors\":{\"count\":1,\"dimension\":{\"from\":\"models\",\"path\":\"sourceDim\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"path\":\"embeddings\"}},\"auth\":\"issued\",\"credential\":{\"from\":\"key\",\"path\":\"key\"},\"id\":\"ephemeral-embed\",\"input\":{\"model\":{\"from\":\"models\",\"path\":\"sourceModel\",\"related\":{\"foreign\":\"name\",\"from\":\"models\",\"local\":\"sourceModel\",\"where\":{\"modelType\":\"embed\"}},\"where\":{\"modelType\":\"convert\"}},\"texts\":[\"SDK live coverage test.\"]}},\"operationId\":\"createEphemeralEmbedding\",\"parameters\":[],\"protocol\":\"http\",\"requestBody\":{\"content\":{\"application/json\":{\"example\":{\"model\":\"baai-bge-base-en-v1.5\",\"texts\":[\"hello world\"]},\"schema\":{\"properties\":{\"model\":{\"description\":\"Name of an embed model, as returned by listModels.\",\"example\":\"baai-bge-base-en-v1.5\",\"type\":\"string\"},\"texts\":{\"description\":\"Texts to embed. One vector is returned per text, in order.\",\"example\":[\"hello world\"],\"items\":{\"type\":\"string\"},\"type\":\"array\"}},\"required\":[\"model\",\"texts\"],\"type\":\"object\"}}},\"required\":true},\"responses\":{\"200\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"data\":{\"properties\":{\"embeddings\":{\"description\":\"One vector per input text, in input order.\",\"items\":{\"description\":\"A single embedding vector.\",\"items\":{\"format\":\"float\",\"type\":\"number\"},\"type\":\"array\"},\"type\":\"array\"},\"model\":{\"description\":\"Model that produced the vectors.\",\"type\":\"string\"}},\"required\":[\"embeddings\",\"model\"],\"type\":\"object\"},\"success\":{\"type\":\"boolean\"}},\"required\":[\"success\",\"data\"],\"type\":\"object\"}}},\"description\":\"Generated embeddings\"},\"401\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"},\"422\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"},\"429\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"error\":{\"properties\":{\"message\":{\"description\":\"Human-readable error detail.\",\"type\":\"string\"}},\"required\":[\"message\"],\"type\":\"object\"},\"success\":{\"description\":\"Always false on an error.\",\"type\":\"boolean\"}},\"required\":[\"success\",\"error\"],\"type\":\"object\"}}},\"description\":\"Error\"}},\"security\":[{\"bearerAuth\":[]}],\"securitySchemes\":{\"bearerAuth\":{\"description\":\"UniVec API key, sent as `Authorization: Bearer uv_...`. Ephemeral keys use the `eph_` prefix and are restricted to the /v1/ephemeral/* routes.\",\"scheme\":\"bearer\",\"type\":\"http\"}},\"securitySource\":\"definition\"}",
+                "source": "openapi3",
+                "version": 1
+              },
+              "kind": "http",
+              "method": "POST",
+              "orig": "/v1/ephemeral/embed",
+              "segments": [
+                {
+                  "lit": "v1"
+                },
+                {
+                  "lit": "ephemeral"
+                },
+                {
+                  "lit": "embed"
+                }
+              ],
+              "select": {
+                "$action": "ephemeral"
+              },
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body.data`"
+              }
+            }
+          ]
+        }
+      },
+      "relations": {
+        "ancestors": []
+      }
+    },
+    "ephemeral_key": {
+      "active": true,
+      "alias": {
+        "field": {}
+      },
+      "fields": [
+        {
+          "active": true,
+          "name": "dailyLimit",
+          "req": true,
+          "short": "Calls permitted per day.",
+          "type": "`$INTEGER`"
+        },
+        {
+          "active": true,
+          "name": "dailyUsed",
+          "req": true,
+          "short": "Calls already used today.",
+          "type": "`$INTEGER`"
+        },
+        {
+          "active": true,
+          "name": "key",
+          "req": true,
+          "short": "The ephemeral API key, prefixed `eph_`.",
+          "type": "`$STRING`"
+        },
+        {
+          "active": true,
+          "format": "date-time",
+          "name": "resetsAt",
+          "req": true,
+          "short": "When the daily allowance resets.",
+          "type": "`$STRING`"
+        }
+      ],
+      "name": "ephemeral_key",
+      "op": {
+        "create": {
+          "input": "data",
+          "name": "create",
+          "points": [
+            {
+              "active": true,
+              "args": {},
+              "contract": {
+                "id": "POST /v1/ephemeral/key",
+                "json": "{\"live\":{\"assert\":{\"nonempty\":[\"key\"]},\"auth\":\"public\",\"id\":\"key\",\"input\":{},\"retention\":\"No deletion endpoint; issued key is subject to the service daily allowance\"},\"operationId\":\"createEphemeralKey\",\"parameters\":[],\"protocol\":\"http\",\"requestBody\":{\"content\":{\"application/json\":{\"example\":{},\"schema\":{\"additionalProperties\":false,\"type\":\"object\"}}},\"required\":false},\"responses\":{\"200\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"data\":{\"properties\":{\"dailyLimit\":{\"description\":\"Calls permitted per day.\",\"type\":\"integer\"},\"dailyUsed\":{\"description\":\"Calls already used today.\",\"type\":\"integer\"},\"key\":{\"description\":\"The ephemeral API key, prefixed `eph_`.\",\"type\":\"string\"},\"resetsAt\":{\"description\":\"When the daily allowance resets.\",\"format\":\"date-time\",\"type\":\"string\"}},\"required\":[\"key\",\"dailyLimit\",\"dailyUsed\",\"resetsAt\"],\"type\":\"object\"},\"success\":{\"type\":\"boolean\"}},\"required\":[\"success\",\"data\"],\"type\":\"object\"}}},\"description\":\"Issued key\"}},\"security\":[],\"securitySchemes\":{\"bearerAuth\":{\"description\":\"UniVec API key, sent as `Authorization: Bearer uv_...`. Ephemeral keys use the `eph_` prefix and are restricted to the /v1/ephemeral/* routes.\",\"scheme\":\"bearer\",\"type\":\"http\"}},\"securitySource\":\"operation\"}",
+                "source": "openapi3",
+                "version": 1
+              },
+              "kind": "http",
+              "method": "POST",
+              "orig": "/v1/ephemeral/key",
+              "segments": [
+                {
+                  "lit": "v1"
+                },
+                {
+                  "lit": "ephemeral"
+                },
+                {
+                  "lit": "key"
+                }
+              ],
+              "select": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body.data`"
+              }
+            }
+          ]
+        }
+      },
+      "relations": {
+        "ancestors": []
+      }
+    },
+    "model": {
+      "active": true,
+      "alias": {
+        "field": {}
+      },
+      "fields": [
+        {
+          "active": true,
+          "name": "eval",
+          "req": false,
+          "short": "Retrieval-fidelity metrics for a convert model.",
+          "type": "`$OBJECT`"
+        },
+        {
+          "active": true,
+          "name": "executionProvider",
+          "req": false,
+          "short": "Hardware backend, e.g.",
+          "type": "`$STRING`"
+        },
+        {
+          "active": true,
+          "name": "modelCard",
+          "req": false,
+          "short": "Convert models only: training provenance and architecture detail.",
+          "type": "`$OBJECT`"
+        },
+        {
+          "active": true,
+          "name": "modelType",
+          "req": true,
+          "short": "`embed` for text-to-vector models, `convert` for space-translation models.",
+          "type": "`$STRING`"
+        },
+        {
+          "active": true,
+          "name": "name",
+          "req": true,
+          "short": "Model identifier used in requests.",
+          "type": "`$STRING`"
+        },
+        {
+          "active": true,
+          "name": "sequenceLen",
+          "req": false,
+          "short": "Embed models only: maximum input sequence length.",
+          "type": "`$INTEGER`"
+        },
+        {
+          "active": true,
+          "name": "sourceDim",
+          "req": false,
+          "short": "Convert models only: source vector dimension.",
+          "type": "`$INTEGER`"
+        },
+        {
+          "active": true,
+          "name": "sourceModel",
+          "req": false,
+          "short": "Convert models only: the source model space.",
+          "type": "`$STRING`"
+        },
+        {
+          "active": true,
+          "name": "targetDim",
+          "req": true,
+          "short": "Dimension of the produced vectors.",
+          "type": "`$INTEGER`"
+        },
+        {
+          "active": true,
+          "name": "targetModel",
+          "req": true,
+          "short": "The model space produced.",
+          "type": "`$STRING`"
+        }
+      ],
+      "name": "model",
+      "op": {
+        "list": {
+          "input": "data",
+          "name": "list",
+          "points": [
+            {
+              "active": true,
+              "args": {},
+              "contract": {
+                "id": "GET /v1/models",
+                "json": "{\"factSources\":{\"responses\":\"guide\"},\"live\":{\"assert\":{\"nonempty\":[\"\"]},\"auth\":\"public\",\"id\":\"models\"},\"operationId\":\"listModels\",\"parameters\":[],\"protocol\":\"http\",\"responses\":{\"200\":{\"content\":{\"application/json\":{\"schema\":{\"properties\":{\"data\":{\"items\":{\"oneOf\":[{\"properties\":{\"eval\":{\"description\":\"Retrieval-fidelity metrics for a convert model.\",\"properties\":{\"cosine_mean\":{\"format\":\"float\",\"type\":\"number\"},\"cosine_median\":{\"format\":\"float\",\"type\":\"number\"},\"cosine_std\":{\"format\":\"float\",\"type\":\"number\"},\"kendall_p_value\":{\"format\":\"float\",\"type\":\"number\"},\"kendall_tau\":{\"format\":\"float\",\"type\":\"number\"},\"mrr\":{\"description\":\"Mean reciprocal rank.\",\"format\":\"float\",\"type\":\"number\"},\"p_at_1\":{\"format\":\"float\",\"type\":\"number\"},\"p_at_10\":{\"format\":\"float\",\"type\":\"number\"},\"p_at_5\":{\"format\":\"float\",\"type\":\"number\"}},\"type\":\"object\"},\"executionProvider\":{\"description\":\"Hardware backend, e.g. `cpu`.\",\"type\":\"string\"},\"modelCard\":{\"additionalProperties\":true,\"description\":\"Convert models only: training provenance and architecture detail.\",\"type\":\"object\"},\"modelType\":{\"description\":\"`embed` for text-to-vector models, `convert` for space-translation models.\",\"enum\":[\"embed\",\"convert\"],\"type\":\"string\"},\"name\":{\"description\":\"Model identifier used in requests.\",\"type\":\"string\"},\"sequenceLen\":{\"description\":\"Embed models only: maximum input sequence length.\",\"type\":\"integer\"},\"sourceDim\":{\"description\":\"Convert models only: source vector dimension.\",\"type\":\"integer\"},\"sourceModel\":{\"description\":\"Convert models only: the source model space.\",\"type\":\"string\"},\"targetDim\":{\"description\":\"Dimension of the produced vectors.\",\"type\":\"integer\"},\"targetModel\":{\"description\":\"The model space produced.\",\"type\":\"string\"}},\"required\":[\"name\",\"modelType\",\"targetModel\",\"targetDim\"],\"type\":\"object\"},{\"properties\":{\"executionProvider\":{\"type\":\"string\"},\"modelType\":{\"enum\":[\"convert-bridge\",\"embed-bridge\"],\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"restrictedTargets\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"}},\"required\":[\"name\",\"modelType\",\"executionProvider\"],\"type\":\"object\"}]},\"type\":\"array\"},\"success\":{\"type\":\"boolean\"}},\"required\":[\"success\",\"data\"],\"type\":\"object\"}}},\"description\":\"Model list\"}},\"security\":[],\"securitySchemes\":{\"bearerAuth\":{\"description\":\"UniVec API key, sent as `Authorization: Bearer uv_...`. Ephemeral keys use the `eph_` prefix and are restricted to the /v1/ephemeral/* routes.\",\"scheme\":\"bearer\",\"type\":\"http\"}},\"securitySource\":\"operation\"}",
+                "source": "openapi3",
+                "version": 1
+              },
+              "kind": "http",
+              "method": "GET",
+              "orig": "/v1/models",
+              "segments": [
+                {
+                  "lit": "v1"
+                },
+                {
+                  "lit": "models"
+                }
+              ],
+              "select": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body.data`"
+              }
+            }
+          ]
+        }
+      },
+      "relations": {
+        "ancestors": []
+      }
+    }
+  },
+  "flow": {
+    "BasicConvertFlow": {
+      "active": true,
+      "entity": "convert",
+      "key$": "BasicConvertFlow",
+      "kind": "basic",
+      "name": "BasicConvertFlow",
+      "param": {},
+      "step": [
+        {
+          "active": true,
+          "data": {},
+          "input": {
+            "ref": "convert_ref01"
+          },
+          "match": {},
+          "op": "create",
+          "spec": [],
+          "valid": []
+        }
+      ]
+    },
+    "BasicEmbedFlow": {
+      "active": true,
+      "entity": "embed",
+      "key$": "BasicEmbedFlow",
+      "kind": "basic",
+      "name": "BasicEmbedFlow",
+      "param": {},
+      "step": [
+        {
+          "active": true,
+          "data": {},
+          "input": {
+            "ref": "embed_ref01"
+          },
+          "match": {},
+          "op": "create",
+          "spec": [],
+          "valid": []
+        }
+      ]
+    },
+    "BasicEphemeralKeyFlow": {
+      "active": true,
+      "entity": "ephemeral_key",
+      "key$": "BasicEphemeralKeyFlow",
+      "kind": "basic",
+      "name": "BasicEphemeralKeyFlow",
+      "param": {},
+      "step": [
+        {
+          "active": true,
+          "data": {},
+          "input": {
+            "ref": "ephemeral_key_ref01"
+          },
+          "match": {},
+          "op": "create",
+          "spec": [],
+          "valid": []
+        }
+      ]
+    },
+    "BasicModelFlow": {
+      "active": true,
+      "entity": "model",
+      "key$": "BasicModelFlow",
+      "kind": "basic",
+      "name": "BasicModelFlow",
+      "param": {},
+      "step": [
+        {
+          "active": true,
+          "data": {},
+          "input": {},
+          "match": {},
+          "op": "list",
+          "spec": [],
+          "valid": [
+            {
+              "apply": "ItemExists",
+              "def": {
+                "ref": "model_ref01"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "info": {
+    "contact": {
+      "name": "UniVec",
+      "url": "https://univec.ai"
+    },
+    "description": "UniVec embedding interoperability API. Translate embeddings between model spaces without rebuilding a vector index, generate embeddings with open-source models, and bridge text into a target model space.\n\nUnofficial definition authored by Voxgig from UniVec's public web application and verified against the live public API. Not an official UniVec document.",
+    "security": {
+      "in": "header",
+      "name": "Authorization",
+      "prefix": "Bearer",
+      "scheme": "bearerAuth",
+      "type": "http"
+    },
+    "servers": [
+      {
+        "description": "Production",
+        "url": "https://api.univec.ai"
+      }
+    ],
+    "summary": "UniVec embedding interoperability API.",
+    "title": "UniVec API",
+    "version": "1.0.0",
+    "website": "https://univec.ai"
+  }
+}

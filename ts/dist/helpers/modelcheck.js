@@ -32,6 +32,9 @@
 //      `publish.registry.package`). Concrete-vs-concrete is a conflict in
 //      aontu, so the project cannot override it — and the failure names the
 //      project's own file, not the package's.
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PUBLISH_OVERRIDES = exports.ANCHOR_RE = exports.ANCHOR = void 0;
 exports.aontuKey = aontuKey;
@@ -42,6 +45,8 @@ exports.slashComments = slashComments;
 exports.strictAontu = strictAontu;
 exports.unquoted = unquoted;
 const aontu_1 = require("aontu");
+const node_module_1 = require("node:module");
+const node_path_1 = __importDefault(require("node:path"));
 const shipped_1 = require("./shipped");
 // The provenance anchor. The literal line a shipped definition carries so the
 // stamp has somewhere to hang (helpers/stdrep), and therefore the one thing
@@ -104,8 +109,8 @@ function slashComments(text) {
 // A FRESH INSTANCE each time: the option call mutates the instance's jsonic,
 // so a cached one would leak its configuration into the bare compile that is
 // deliberately paired with it.
-function strictAontu() {
-    const aontu = new aontu_1.Aontu();
+function strictAontu(options) {
+    const aontu = new aontu_1.Aontu(options);
     aontu.lang.jsonic.options({ comment: { def: { slash: null, multi: null } } });
     return aontu;
 }
@@ -158,7 +163,12 @@ function compileModel(src, path, opts) {
     const text = true === opts?.schema ?
         includeLine((0, shipped_1.schemaFile)()) + '\n' + src : src;
     try {
-        const aontu = false === opts?.strict ? new aontu_1.Aontu() : strictAontu();
+        // Resolve package includes from the model being checked, including native
+        // package self-references. The SDK toolchain's dependencies are unrelated.
+        const localRequire = Object.assign((0, node_module_1.createRequire)(node_path_1.default.resolve(path)), { main: require.main });
+        // Aontu forwards this runtime resolver option to Lang; its public type omits it.
+        const options = { require: localRequire };
+        const aontu = false === opts?.strict ? new aontu_1.Aontu(options) : strictAontu(options);
         const model = aontu.generate(text, { path, errs });
         return {
             model,

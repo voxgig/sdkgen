@@ -14,5 +14,7 @@ declare function nameConflict(kind: string, source: Source, ctx$: any): {
     package?: string;
     base?: string;
 } | undefined;
+declare function recordedRef(declared: any, name: string): string | undefined;
+declare function isBare(ref: string): boolean;
 export type { Source, };
-export { resolveSource, registerInstalled, nameConflict, lastSegment, BUNDLED, };
+export { resolveSource, recordedRef, isBare, registerInstalled, nameConflict, lastSegment, BUNDLED, };

@@ -1,4 +1,16 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BUNDLED = void 0;
+exports.resolveSource = resolveSource;
+exports.recordedRef = recordedRef;
+exports.isBare = isBare;
+exports.registerInstalled = registerInstalled;
+exports.nameConflict = nameConflict;
+exports.lastSegment = lastSegment;
+const kindCollection_1 = require("../helpers/kindCollection");
 // Where a `<kind> add <ref>` gets its definition from.
 //
 // One resolver for every KIND of thing an add can install — targets today,
@@ -11,15 +23,6 @@
 // It lives in its own module rather than in `target.ts` because `target.ts`
 // imports `feature_add`, so a resolver there would put `feature.ts` and
 // `target.ts` in a require cycle.
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BUNDLED = void 0;
-exports.resolveSource = resolveSource;
-exports.registerInstalled = registerInstalled;
-exports.nameConflict = nameConflict;
-exports.lastSegment = lastSegment;
 const node_path_1 = __importDefault(require("node:path"));
 const struct_1 = require("@voxgig/struct");
 const types_1 = require("../types");
@@ -37,6 +40,9 @@ function lastSegment(ref) {
     return (0, struct_1.getelem)(ref.split('/').flatMap((p) => p.split(node_path_1.default.sep)), -1);
 }
 function resolveSource(ref, kind, ctx$) {
+    // Registration and copying must resolve a bare resync name identically.
+    const declared = (0, kindCollection_1.kindCollection)(ctx$.model, kind)?.[ref];
+    ref = (isBare(ref) && recordedRef(declared, ref)) || ref;
     const root = ctx$.folder;
     const fs = ctx$.fs();
     let folder = node_path_1.default.normalize(node_path_1.default.join(root, BUNDLED));
@@ -220,7 +226,7 @@ function registerInstalled(kind, refs, ctx$) {
     if (null == kit) {
         return;
     }
-    const items = kit[kind] = kit[kind] ?? {};
+    const items = (0, kindCollection_1.kindCollection)(ctx$.model, kind, true);
     for (const ref of refs) {
         let source;
         try {
@@ -256,7 +262,7 @@ function registerInstalled(kind, refs, ctx$) {
 // Returns the conflicting record, or undefined when the name is free or is
 // the SAME source (which is a resync and must keep working).
 function nameConflict(kind, source, ctx$) {
-    const declared = ctx$.model?.main?.[types_1.KIT]?.[kind]?.[source.name];
+    const declared = (0, kindCollection_1.kindCollection)(ctx$.model, kind)?.[source.name];
     if (null == declared || 'object' !== typeof declared) {
         return undefined;
     }
@@ -344,6 +350,18 @@ function providesStill(kind, declared, source, ctx$) {
     // folder is a legal source, and its definition file is the only claim it
     // makes.
     return fs.existsSync((0, definition_1.definitionPath)(folder, kind, seek));
+}
+function recordedRef(declared, name) {
+    if (null == declared?.base || '' === declared.base) {
+        return undefined;
+    }
+    const origname = declared.origname || name;
+    return node_path_1.default.join(declared.base, '..', origname) +
+        (origname === name ? '' : '~' + name);
+}
+// A bare NAME, as opposed to a ref that locates a source.
+function isBare(ref) {
+    return !ref.includes('/') && !ref.includes(node_path_1.default.sep);
 }
 function normaliseBase(base) {
     return node_path_1.default.normalize(String(base ?? '')).split(node_path_1.default.sep).join('/');

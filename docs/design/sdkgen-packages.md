@@ -583,8 +583,8 @@ main: kit: target: 'acme-go': {
 - **`base` is universalised.** The line is added to the 24 shipped target
   models that lack it and to **all 17 feature models**, which have never
   carried provenance. All three keys are declared in the schema for both
-  blocks (`model/sdkgen.aontu`, then `make sync-model`; the model-mirror
-  guard fails otherwise) as **defaulted** slots:
+  blocks (`ts/model/sdkgen.aon`, validated by `make check-model`) as
+  **defaulted** slots:
 
   ```
   # in BOTH `main: kit: target: &:` and `main: kit: feature: &:`
@@ -1121,7 +1121,7 @@ follow the `<Cmp>_<name>.ts` export convention so the neutral dispatchers
 Two consequences worth stating, both sharpened by the intent to migrate
 bundled targets out eventually:
 
-- The npm package must keep shipping the model mirror and gain **stable
+- The npm package must keep shipping the authoritative model and gain **stable
   subpaths** the ecosystem can rely on; adding an `exports` field is part
   of this work (today any deep path is requirable, which is a compat
   hazard for a package ecosystem, but also currently the only way in).
@@ -1503,7 +1503,7 @@ because each one's SCOPE is what the deltas above are deltas from.
    registry. Byte-identical output required.
 3. **Provenance**: `base` anchor + `origname`/`package` stamping across
    all 27 target and 17 feature models; schema declarations +
-   `make sync-model`; model-first bare-name resolution; doctor resolution
+   `make check-model`; model-first bare-name resolution; doctor resolution
    and `resync-pending` tolerance.
 4. **External sources**: `resolveSource` with the kind-aware existence
    check and the per-item `missing-source` fail-safe; the manifest and

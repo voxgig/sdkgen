@@ -6,7 +6,7 @@ declare function slashComments(text: string): {
     line: number;
     text: string;
 }[];
-declare function strictAontu(): any;
+declare function strictAontu(options?: any): any;
 declare function includeLine(file: string): string;
 type CompileResult = {
     model?: any;

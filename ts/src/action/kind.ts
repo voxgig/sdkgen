@@ -1,3 +1,4 @@
+import { kindCollection } from '../helpers/kindCollection'
 // KINDS: the things an `add` can install.
 //
 // `target` and `feature` are two of them, `docs` and others are meant to
@@ -20,6 +21,7 @@
 // are genuinely different work, not the same work with different strings, and
 // pretending otherwise would buy generality nobody can use.
 
+
 import Path from 'node:path'
 
 import { File, Copy, Content, template } from 'jostraca'
@@ -30,7 +32,7 @@ import { SdkGenError } from '../utility'
 
 import { provenanceReplace } from '../helpers/stdrep'
 
-import { resolveSource } from './resolve'
+import { resolveSource, recordedRef, isBare } from './resolve'
 import type { Source } from './resolve'
 
 import { UpdateIndex } from './action'
@@ -92,7 +94,7 @@ type TreeDef = {
 
 // Rewrite the ITEM KEY in a copied model file, for an aliased install.
 //
-// Parameterised by kind because `main: kit: docs: <n>:` is the same rewrite
+// Parameterised by kind because `main: kit: doc: edition: <n>:` is the same rewrite
 // with a different word, and a second copy of this regex is exactly the
 // same-rule-written-twice defect the registry exists to prevent.
 //
@@ -156,21 +158,21 @@ const KINDS: Record<string, KindDef> = Object.assign(Object.create(null), {
 
   // DOCS — the third kind. See docs/design/sdkgen-packages.md §20.
   //
-  // Its trees are NESTED under the kind name (`src/cmp/docs/<n>`, not
+  // Its trees are NESTED under the kind name (`src/cmp/edition/<n>`, not
   // `src/cmp/<n>`) so a docs item and a target may share a name without
   // sharing a directory. Everything that composes those paths takes them
   // from here.
   //
-  // `tm/docs/{name}` is NOT required: a docs item whose every emitted byte
+  // `tm/edition/{name}` is NOT required: a docs item whose every emitted byte
   // depends on the API — a catalogue entry, a config file — legitimately
   // ships no template tree, while a static site needs one. So it is
   // copy-if-present, and `package check` does not demand it.
-  docs: {
-    name: 'docs', alias: true, ownedWhenAliased: true,
-    rename: aliasModelKey('docs'),
+  edition: {
+    name: 'edition', alias: true, ownedWhenAliased: true,
+    rename: aliasModelKey('edition'),
     trees: [
-      { path: 'src/cmp/docs/{name}', replace: 'none', required: true },
-      { path: 'tm/docs/{name}', replace: 'template', required: false },
+      { path: 'src/cmp/edition/{name}', replace: 'none', required: true },
+      { path: 'tm/edition/{name}', replace: 'template', required: false },
     ],
   },
 })
@@ -208,12 +210,7 @@ function kindDef(kind: string): KindDef {
 // source.
 function resolveKind(ref: string, kind: string, ctx$: any): Source {
   const def = kindDef(kind)
-  const model = ctx$.model
-
-  const declared: any = model?.main?.[KIT]?.[kind]?.[ref]
-  const recorded = (isBare(ref) && recordedRef(declared, ref)) || ref
-
-  const source = resolveSource(recorded, kind, ctx$)
+  const source = resolveSource(ref, kind, ctx$)
 
   // Asked of the RESOLVER rather than by re-reading the ref. `~` separates an
   // alias only in the last segment, and a check that looked for one anywhere
@@ -334,24 +331,6 @@ function kindModel(props: {
 // ONE definition, used by the add actions and by doctor. This reconstruction
 // was written twice and the two copies had already diverged on exactly this
 // point, which is the drift the kind spine exists to end.
-function recordedRef(declared: any, name: string): string | undefined {
-  if (null == declared?.base || '' === declared.base) {
-    return undefined
-  }
-
-  const origname = declared.origname || name
-
-  return Path.join(declared.base, '..', origname) +
-    (origname === name ? '' : '~' + name)
-}
-
-
-// A bare NAME, as opposed to a ref that locates a source.
-function isBare(ref: string): boolean {
-  return !ref.includes('/') && !ref.includes(Path.sep)
-}
-
-
 function capitalise(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }

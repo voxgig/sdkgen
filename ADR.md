@@ -129,9 +129,8 @@ better ones and no change in behaviour.
 - `ts/test/utility.test.ts` pins the overlay in both directions: a
   declaring feature receives the fact over its defaults, a
   non-declaring one is untouched, and `active` is never overlaid.
-- `model/sdkgen.aon` declares `spec: &: string` on a feature. It is
-  canonical there and mirrored by `make sync-model`; `make check-model`
-  fails on drift.
+- `ts/model/sdkgen.aon` declares `spec: &: string` on a feature. It is
+  the authoritative file, shipped directly; `make check-model` validates it.
 - **Grep for `x-` and for `def.paths` before adding a branch that reads
   API shape.** Neither belongs in this repository. If sdkgen needs to
   know it, apidef records it.
@@ -221,8 +220,8 @@ remains the default for a plugin whose files sdkgen owns outright.
   implementation, applied beside `srcFeatureExcludes` in each target's
   Main component. `ts/test/helpers.test.ts` pins both polarities and the
   inactive-feature case.
-- `model/sdkgen.aon` declares `plugin: &:`; canonical there, mirrored by
-  `make sync-model`.
+- `ts/model/sdkgen.aon` declares `plugin: &:`; it is the authoritative
+  file, shipped directly.
 - sekreto's own `typescript/test/lazyload.test.ts` pins the library-side
   invariant that the core surface reaches no platform-dependent
   provider. If that regresses, this ADR's mechanism still runs and

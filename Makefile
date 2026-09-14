@@ -1,4 +1,4 @@
-.PHONY: all build test clean build-ts test-ts clean-ts scan-prose reset sync-model check-model publish vendor vendor-check
+.PHONY: all build test clean build-ts test-ts clean-ts scan-prose reset check-model publish vendor vendor-check
 
 all: check-model build test
 
@@ -8,22 +8,8 @@ test: test-ts scan-prose
 
 clean: clean-ts
 
-# The aontu model. The canonical copy lives at model/; npm can only ship
-# files under the package root (ts/), so it is mirrored into ts/model/.
-# Edit model/, then `make sync-model`.
-MODEL_FILES = sdkgen.aon
-
-sync-model:
-	@for f in $(MODEL_FILES); do \
-	  cp model/$$f ts/model/$$f; \
-	done
-	@echo "synced model/ -> ts/model/"
-
+# Validate the authoritative model shipped directly from ts/model/.
 check-model:
-	@for f in $(MODEL_FILES); do \
-	  cmp -s model/$$f ts/model/$$f || { echo "DRIFT: ts/model/$$f != model/$$f (run: make sync-model)"; exit 1; }; \
-	done
-	@echo "model mirror in sync"
 	@cd ts && node build/check-model.js
 
 # Vendored libraries (struct, omni, plugin, sekreto) at the shared tag.

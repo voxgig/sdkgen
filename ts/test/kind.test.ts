@@ -43,13 +43,13 @@ function externalPackage(): string {
 describe('kind registry', () => {
 
   test('declares the kinds an add understands', () => {
-    deepStrictEqual(Object.keys(KINDS).sort(), ['docs', 'feature', 'target'])
+    deepStrictEqual(Object.keys(KINDS).sort(), ['edition', 'feature', 'target'])
 
     strictEqual(kindDef('target').alias, true,
       'a target must be installable under a new name')
     strictEqual(kindDef('feature').alias, false,
       'a feature name is part of the generated config and hook wiring')
-    strictEqual(kindDef('docs').alias, true,
+    strictEqual(kindDef('edition').alias, true,
       'two docs items from one source is the same case as two Go modules')
   })
 
@@ -66,8 +66,8 @@ describe('kind registry', () => {
     // A docs item's trees are NESTED under the kind, so a docs item and a
     // target may share a name without sharing a directory.
     deepStrictEqual(
-      kindTrees('docs', 'go').map((t: any) => t.path),
-      ['src/cmp/docs/go', 'tm/docs/go'])
+      kindTrees('edition', 'go').map((t: any) => t.path),
+      ['src/cmp/edition/go', 'tm/edition/go'])
 
     // A feature IS its definition; it owns no tree of its own.
     deepStrictEqual(kindTrees('feature', 'log'), [])
@@ -78,7 +78,7 @@ describe('kind registry', () => {
     // A docs item whose every emitted byte depends on the API — a catalogue
     // entry, a config file — legitimately ships no template tree, and a
     // manifest claiming it must still validate.
-    const trees = kindTrees('docs', 'apidocs')
+    const trees = kindTrees('edition', 'summary')
 
     strictEqual(trees.find((t: any) => t.path.startsWith('src/cmp'))?.required,
       true)
