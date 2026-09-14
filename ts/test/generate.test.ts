@@ -1184,6 +1184,53 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // CHANGELOG.md is the other generated file only people can write. The
+  // component emits a "Keep a Changelog" skeleton, and every entry added
+  // after it — every actual release — is content the generator cannot
+  // reconstruct from the model. Emitted unconditionally it rewrote the seed
+  // over the real file, which is how univec-sdk lost a committed
+  // `## [release/v0.1.2]` section to a plain `npm run generate`.
+  //
+  // Same shape of test as the control file above, and for the same reason:
+  // the claim is not "a changelog is emitted" but "a SECOND generation does
+  // not touch one that already exists".
+  test('a hand-written CHANGELOG.md survives regeneration', async () => {
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(),
+    })
+    const pass = async () => {
+      const res = await sdkgen.generate({
+        model: makeModel(['ts']), root: makeRoot(),
+      })
+      strictEqual(res.ok, true, 'generation did not report ok')
+    }
+
+    await pass()
+
+    const native = (n: string) => n.split('/').join(Path.sep)
+    const found = Object.keys(vol.toJSON())
+      .map((n) => n.split(Path.sep).join('/'))
+      .filter((n) => n.endsWith('/CHANGELOG.md'))
+      .filter((n) => !n.includes('/.jostraca/'))
+    strictEqual(found.length, 1,
+      'expected exactly one root CHANGELOG.md, got:\n' + found.join('\n'))
+    const path = found[0]
+
+    // The seed, plus a released section of the kind only a human adds.
+    const RELEASED = String(vol.readFileSync(native(path), 'utf8')).replace(
+      '## [Unreleased]',
+      '## [Unreleased]\n\n## [release/v0.1.2] - 2026-09-14\n\n' +
+      '- Exclude macOS compiler debug bundles from the repository release.')
+    vol.writeFileSync(native(path), RELEASED)
+
+    await pass()
+
+    strictEqual(String(vol.readFileSync(native(path), 'utf8')), RELEASED,
+      'regeneration overwrote a hand-written CHANGELOG.md')
+  })
+
+
   // The CONSUMER targets, each generated against the target it wraps.
   //
   // They are out of the two loops above for a good reason — standalone they
