@@ -93,7 +93,7 @@ static void pushitem(sek_pool *pool, sek_json *arr, sek_json *item) {
   arr->itemlen++;
 }
 
-static void setkey(sek_pool *pool, sek_json *obj, const char *key, sek_json *val) {
+static void sek_json_assign_member(sek_pool *pool, sek_json *obj, const char *key, sek_json *val) {
   size_t index;
 
   for (index = 0; index < obj->maplen; index++) {
@@ -128,7 +128,7 @@ void sek_json_push(sek_pool *pool, sek_json *arr, sek_json *item) {
 }
 
 void sek_json_set(sek_pool *pool, sek_json *obj, const char *key, sek_json *val) {
-  setkey(pool, obj, key, val);
+  sek_json_assign_member(pool, obj, key, val);
 }
 
 /* ---- reads --------------------------------------------------------- */
@@ -607,7 +607,7 @@ static sek_json *readobject(reader *rd) {
       return NULL;
     }
 
-    setkey(rd->pool, out, key, val);
+    sek_json_assign_member(rd->pool, out, key, val);
     skipspace(rd);
 
     if (rd->at >= rd->len) {

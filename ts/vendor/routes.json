@@ -1076,7 +1076,15 @@
     "c/plugins/doppler.c": "tm/c/feature/secrets/plugins/doppler.c",
     "c/plugins/infisical.c": "tm/c/feature/secrets/plugins/infisical.c",
     "c/plugins/secretspec.c": "tm/c/feature/secrets/plugins/secretspec.c"
-   }
+   },
+   "adapt": [
+    {
+     "note": "Namespace the internal JSON helper to avoid the macOS stdlib setkey declaration.",
+     "match": "tm/c/feature/secrets/sekreto/json\\.c$",
+     "from": "setkey(",
+     "to": "sek_json_assign_member("
+    }
+   ]
   },
   {
    "lib": "sekreto",

@@ -2475,8 +2475,14 @@
      "upstream": "c/src/internal.h"
     },
     "tm/c/feature/secrets/sekreto/json.c": {
-     "sha256": "9dbbe867e6037ce7632059ffc6619a65d3ec3ce4156187a97d818012c16ac98d",
-     "upstream": "c/src/json.c"
+     "sha256": "e1229e23cf1b123f931b00ae33f5d56b5dc0946c4108f39f00cdd001925f1b39",
+     "upstream": "c/src/json.c",
+     "adapt": [
+      {
+       "from": "setkey(",
+       "to": "sek_json_assign_member("
+      }
+     ]
     },
     "tm/c/feature/secrets/sekreto/providers.c": {
      "sha256": "5966be196edfcb2be2e4fc8ca321b55d2a7ff9de2f6ce909d54715cb161b88e6",
