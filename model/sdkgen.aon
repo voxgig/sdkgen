@@ -28,21 +28,10 @@ main: kit: config: repr: *'auto' | 'literal' | 'data'
 main: kit: test: {
 
   live: {
-    # Whether a live run ASSERTS or merely observes.
-    #
-    # false (the default, and the right answer for a fleet SDK generated
-    # against an arbitrary third-party API): a non-2xx in live mode is an
-    # early return, not a failure. Synthetic IDs 4xx constantly and list
-    # response shapes vary wildly, so asserting would mean permanent red.
-    #
-    # true: live assertions match the offline ones — a non-2xx FAILS, and a
-    # missing idmap entry fails rather than skipping. Set this when the
-    # project OWNS the server it tests against; otherwise a live suite passes
-    # with nothing listening on the port, which is what it did.
-    #
-    # Overridable per target:
-    #   main: kit: target: go: test: live: strict: true
-    strict: *false | boolean
+    # Assert live request outcomes, while continuing independent work.
+    # Explicit false retains the legacy exploratory direct-test policy.
+    # Per-target overrides remain available for migration.
+    strict: *true | boolean
 
     # The base URL a live run points at. '' derives it from the spec's first
     # declared server, but ONLY when that is a loopback address.

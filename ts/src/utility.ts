@@ -381,8 +381,14 @@ function withPointParts(op: any): any {
   each(op, (o: any, opname: string) => {
     out[opname] = null == o || null == o.points ? o : {
       ...o,
-      points: each(o.points).map((pt: any) =>
-        null == pt ? pt : { ...pt, parts: pointParts(pt) }),
+      points: each(o.points).map((pt: any) => {
+        if (null == pt) return pt
+        // Contracts feed test generation directly from the model. Keeping
+        // them in every runtime entity also retains entire request/response
+        // schemas in clones and debug output, exhausting large SDKs' memory.
+        const { contract, ...runtimePoint } = pt
+        return { ...runtimePoint, parts: pointParts(pt) }
+      }),
     }
   })
 

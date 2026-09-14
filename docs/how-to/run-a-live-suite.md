@@ -88,25 +88,29 @@ so those environment variables do nothing there. `ts/test/generate.test.ts`
 pins that list, so a target gaining a live client without the wiring fails the
 suite rather than shipping a live suite that cannot run.
 
-## Strict mode
+## Outcomes and continued execution
 
-`main.kit.test.live.strict` decides what a live non-2xx means.
+Live request assertions are enabled by default in the TS and Go direct-test
+generators through `main.kit.test.live.strict`. A failed request fails its test;
+the test framework continues the other tests. Explicit `false` retains legacy
+exploratory result handling for migration.
 
-The default is lenient, and right for a fleet SDK generated against an
-arbitrary third-party API: synthetic ids 4xx constantly and list-response
-shapes vary wildly, so a non-2xx is an early return rather than a failure —
-asserting would mean permanent red.
+The TS and JS entity flow runners also continue independent operations within
+a flow. A failed create blocks dependent writes, while independent reads still
+run. A failed update does not prevent a later load or cleanup of the resource
+created by that flow. An unavailable prerequisite is reported as blocked.
 
-Set it true when the project OWNS the server it tests against:
+Entity flows print `LIVE STEP` outcomes and a `LIVE SUMMARY` containing planned,
+attempted, passed, failed, blocked, and excluded counts. Request records contain
+methods, paths, and HTTP statuses; response bodies and credentials are omitted.
+The runner raises its final failure after the remaining operations and cleanup
+have run. A flow that attempted no requests cannot report live success.
 
-```aontu
-main: kit: test: live: strict: true
-```
-
-A live run then FAILS on a non-2xx, which is the point: without it a suite
-passes with nothing listening on the port. What strict mode does not do is
-assert the mock transport's own fixtures against a live server — the scripted ids and
-recorded calls belong to the mock transport and exist only offline.
+These execution changes do not supply valid API inputs automatically. The model,
+fixtures, and configured identifiers still determine which requests can succeed.
+Live assertions remain separate from the mock transport's synthetic identities.
+`ts/test/livegenerated.test.ts` executes generated TS and JS suites against a
+local HTTP server to check continuation, cleanup, and failure outcomes.
 
 ## `sdk-test-control.json` is write-once
 
@@ -129,3 +133,44 @@ default, delete `<lang>/test/sdk-test-control.json` and regenerate.
 
 - [`features.md#secrets`](../reference/features.md#secrets) — the credential chain and the token exchange
 - [`simulate-network.md`](./simulate-network.md) — offline failure injection
+
+## Declarative operation scenarios
+
+TS and JS also consume versioned point contracts produced by apidef. Add a
+`live` entry under a guide path's operation to activate a consolidated
+scenario suite. It includes every modelled point, records missing inputs as
+blocked, and replaces duplicate live entity invocations while retaining the
+offline tests. `npm run test:live` runs this same scenario suite separately.
+Contracts are emitted into test inputs, not runtime client configuration, so
+large request and response schemas do not inflate entity clones or debug output.
+
+A live entry has an `id`, an `input` recipe, an authentication role
+(`public`, `account`, or `issued`), and optional assertions. A recipe such as
+`{ from: 'embedding', path: 'embeddings' }` binds a previous step's output.
+A discovery recipe can select a row with `where` and require a matching row
+with `related: { from, local, foreign, where }`. An issued credential uses
+`credential: { from: 'key', path: 'key' }`; it is never included in reports.
+Literal nested input objects and arrays are retained. Response contracts,
+field equality, nonempty outputs, and vector count/dimension checks validate
+the result. Unknown required inputs and unsupported constraints block work.
+
+Declare `cleanup: true` for a modelled cleanup step and bind only resources
+created by the run. Cleanup may use a published identity after an assertion
+failure; ordinary dependants require their producer to pass. A `retention`
+note records resources for which the API provides no deletion operation.
+Requests have timeouts, retries are disabled for scenarios, and input
+payloads are bounded. Control-file exclusions and pacing still apply.
+
+Each target receives `live-coverage.json` when these recipes are present.
+It declares whether the target executes them. The new scenario interpreter
+supports TS and JS. Other targets, including the language pack, retain their
+existing tests and report these scenarios as unsupported; those tests do
+not establish equivalent operation coverage.
+
+The Univec regression model exercises eight routes with public, account,
+and issued credentials. Its conversion requests consume actual embedding
+output and catalogue-selected dimensions. Generated TS and JS clients run
+against loopback HTTP servers covering authentication errors, invalid
+payloads and responses, rate limiting, disconnection, discovery failures,
+and continued independent work. Existing CRUD and cleanup regressions run
+alongside these scenarios.

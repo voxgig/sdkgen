@@ -105,7 +105,7 @@ main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com
 
 | Path | Type | Default | Description |
 | --- | --- | --- | --- |
-| `test.live.strict` | boolean | `false` | `false`: a non-2xx in a live run is an early return, not a failure (right for an SDK generated against an arbitrary third-party API). `true`: live assertions match the offline ones. Set it when the project OWNS the server it tests against — otherwise the live suite passes with nothing listening on the port. Overridable per target (`main.kit.target.<t>.test.live.strict`). |
+| `test.live.strict` | boolean | `true` | Assert live request outcomes in the TS and Go direct-test generators. Independent tests continue after failures. Explicit `false` retains legacy exploratory result handling; it does not establish full API coverage. Overridable per target (`main.kit.target.<t>.test.live.strict`). Pinned by `ts/test/generate.test.ts` and `ts/test/livegenerated.test.ts`. |
 
 ## Provenance: where a copied item came from
 

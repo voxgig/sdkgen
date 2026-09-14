@@ -408,7 +408,7 @@ describe('generate', () => {
   // `main.kit.config.repr` exists to close that: it pins the representation
   // per SDK, so a small fixture can drive the data path for real.
   test('a full SDK generates on the data path when repr is pinned', async () => {
-    const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'")
+    const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 
     const files = filesFor(out, 'go')
     ok(0 < files.length, 'generated no files on the data path')
@@ -431,6 +431,8 @@ describe('generate', () => {
     ok(null != parsed.entity, 'embedded config has no entity block')
     ok(0 < Object.keys(parsed.entity).length, 'embedded config has no entities')
     strictEqual(parsed.main.name, 'Demo')
+    strictEqual(parsed.options.headers['X-Contract'], '\ufeffdescription\nline')
+    ok(!src.includes('\ufeff'), 'Go source contains a literal BOM')
 
     // The rest of the SDK still generates: this is a FULL build, not just a
     // config file.
@@ -1006,6 +1008,8 @@ main: kit: target: js: phase: feature: active: false
   // extension or path.
   function testFiles(out: Record<string, string>, target: string): [string, string][] {
     return filesFor(out, target)
+      // Shared execution helpers are not per-entity test entrypoints.
+      .filter(([n]) => !['ts', 'js'].includes(target) || /\.test\.(ts|js)$/.test(n))
       .filter(([n]) => /(entity|direct)/i.test(n) &&
         (/test/i.test(n) || /\.t$/.test(n)) &&
         !/\.(json|md|txt|ya?ml)$/i.test(n))
@@ -1733,7 +1737,8 @@ main: kit: target: js: phase: feature: active: false
   // public API. It is wrong for a project that owns the server it tests
   // against, and those projects had no way to say otherwise.
   test('live strictness is model-driven', async () => {
-    const lenient = await generate(['ts', 'go'])
+    const lenient = await generate(['ts', 'go'], undefined,
+      'main: kit: test: live: strict: false')
     const strict = await generate(['ts', 'go'], undefined,
       'main: kit: test: live: strict: true')
 
@@ -1768,17 +1773,17 @@ main: kit: target: js: phase: feature: active: false
 
   // No model key, no change. Every existing project must generate exactly
   // what it generated before — the whole point of a default.
-  test('live strictness defaults to today\'s output', async () => {
+  test('live strictness defaults to assertions', async () => {
     const absent = await generate(['ts', 'go'])
     const explicit = await generate(['ts', 'go'], undefined,
-      'main: kit: test: live: strict: false')
+      'main: kit: test: live: strict: true')
 
     deepStrictEqual(Object.keys(absent).sort(), Object.keys(explicit).sort(),
-      'declaring strict:false changed which files are generated')
+      'declaring strict:true changed which files are generated')
 
     for (const path of Object.keys(absent)) {
       strictEqual(explicit[path], absent[path],
-        'declaring strict:false changed ' + path)
+        'declaring strict:true changed ' + path)
     }
   })
 

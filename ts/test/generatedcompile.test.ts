@@ -334,7 +334,7 @@ describe('generated SDK compiles', () => {
     ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
 
     const sdkroot = Path.join(tmp, 'ts-data')
-    const out = await generateTo('ts', sdkroot, "main: kit: config: repr: 'data'")
+    const out = await generateTo('ts', sdkroot, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
     linkDeps(sdkroot)
 
     // Prove the data path was taken, so this cannot silently become a
@@ -376,7 +376,7 @@ describe('generated SDK compiles', () => {
     }
 
     const sdkroot = Path.join(tmp, 'go')
-    await generateTo('go', sdkroot)
+    await generateTo('go', sdkroot, 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 
     const vet = run(go, ['vet', './...'], sdkroot)
     ok(vet.ok, 'generated go does not vet clean:\n' + vet.out)
@@ -1675,6 +1675,50 @@ func TestTypesProbe(t *testing.T) {
   // The fixture is extended with a reserved-word entity for this check
   // specifically, rather than added to the shared model — every target
   // generates from that model, and this is a php question.
+  test('php: README output stays bounded and detects errors after large output', async () => {
+    const php = toolchain('php')
+    if (null == php) return
+    const sdkroot = Path.join(tmp, 'php-output')
+    await generateTo('php', sdkroot)
+    Fs.writeFileSync(Path.join(sdkroot, 'writer.php'), `<?php
+ echo "\\n@@VOXBEGIN 0\\n";
+ for ($i = 0; $i < 8192; $i++) echo str_repeat('x', 8191) . "\\n";
+ if (($argv[1] ?? '') === 'error') echo str_repeat('x', 8180) . "Call to undefined method Demo::missing()\\n";
+ echo "\\n@@VOXEND 0\\n";
+ exit(($argv[1] ?? '') === 'error' ? 7 : 0);
+`)
+    const readme = Fs.readFileSync(Path.join(sdkroot, 'README.md'), 'utf8')
+    const sample = [...readme.matchAll(/```php\n([\s\S]*?)```/g)]
+      .map(match => match[1]).find(code => code.includes('mock record'))
+    ok(sample, 'no generated mock-record example to execute')
+    Fs.writeFileSync(Path.join(sdkroot, 'sample.txt'), sample!)
+    Fs.writeFileSync(Path.join(sdkroot, 'probe.php'), `<?php
+namespace PHPUnit\\Framework { class TestCase {} }
+namespace {
+ require __DIR__ . '/test/ReadmeExamplesTest.php';
+ $suite = new ReadmeExamplesTest();
+ $run = new \\ReflectionMethod($suite, 'runOutput');
+ $segment = new \\ReflectionMethod($suite, 'batchSegment');
+ foreach (['clean', 'error'] as $kind) {
+  [$summary, $rc] = $run->invoke($suite, escapeshellarg(PHP_BINARY) . ' -d memory_limit=16M ' . escapeshellarg(__DIR__ . '/writer.php') . ' ' . $kind);
+  $text = $segment->invoke($suite, $summary, 0);
+  if ($text === null || strlen($summary) > 2048 || $rc !== ($kind === 'error' ? 7 : 0)) exit(1);
+  if (str_contains($text, 'Call to undefined method') !== ($kind === 'error')) exit(2);
+ }
+ file_put_contents(__DIR__ . '/print-record.php', (new \\ReflectionMethod($suite, 'toRunner'))->invoke($suite, file_get_contents(__DIR__ . '/sample.txt'), __DIR__ . '/demo_sdk.php'));
+ echo "streamed 128 MiB; late error detected\\n";
+}
+`)
+    const result = run(php, ['-d', 'memory_limit=16M', 'probe.php'], sdkroot)
+    ok(result.ok, 'PHP output scanner failed under a bounded heap:\n' + result.out)
+    ok(result.out.includes('streamed 128 MiB; late error detected'), result.out)
+    const printed = run(php, ['-d', 'memory_limit=16M', 'print-record.php'], sdkroot)
+    ok(printed.ok, printed.out)
+    ok(printed.out.includes('test01'), 'example did not print the mock record: ' + printed.out)
+    ok(printed.out.length < 4096, 'example printed the SDK object graph instead of record data')
+  })
+
+
   test('php: every generated file parses, reserved-word entities included',
     async () => {
       const php = toolchain('php')

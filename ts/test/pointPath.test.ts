@@ -145,7 +145,7 @@ describe('pointPath', () => {
               op: {
                 load: {
                   name: 'load',
-                  points: [{ method: 'GET', orig: '/element/{element_id}', segments: point.segments }]
+                  points: [{ method: 'GET', orig: '/element/{element_id}', segments: point.segments, contract: { version: 1, json: '{"requestBody":{}}' } }]
                 }
               }
             }
@@ -162,6 +162,9 @@ describe('pointPath', () => {
     deepStrictEqual(emitted.parts, ['element', '{id}', 'ionize'])
     // The vector is carried too, so a runtime can move over one at a time.
     deepStrictEqual(emitted.segments, point.segments)
+    strictEqual(emitted.contract, undefined, 'test contracts must not inflate runtime configuration')
+    strictEqual(model.main.kit.entity.element.op.load.points[0].contract.json,
+      '{"requestBody":{}}', 'test generators still need the original contract')
   })
 
 })

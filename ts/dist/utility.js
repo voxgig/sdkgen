@@ -335,7 +335,15 @@ function withPointParts(op) {
     (0, jostraca_1.each)(op, (o, opname) => {
         out[opname] = null == o || null == o.points ? o : {
             ...o,
-            points: (0, jostraca_1.each)(o.points).map((pt) => null == pt ? pt : { ...pt, parts: (0, pointPath_1.pointParts)(pt) }),
+            points: (0, jostraca_1.each)(o.points).map((pt) => {
+                if (null == pt)
+                    return pt;
+                // Contracts feed test generation directly from the model. Keeping
+                // them in every runtime entity also retains entire request/response
+                // schemas in clones and debug output, exhausting large SDKs' memory.
+                const { contract, ...runtimePoint } = pt;
+                return { ...runtimePoint, parts: (0, pointPath_1.pointParts)(pt) };
+            }),
         };
     });
     return out;
