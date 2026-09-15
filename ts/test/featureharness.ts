@@ -269,7 +269,7 @@ function makeClient(spec: {
     return sp.base + (sp.path || '') + (qs ? '?' + qs : '')
   }
 
-  async function populateResult(ctx: any, response: any) {
+  async function populateResult(ctx: any, response: any, o: any = {}) {
     const result: any = {
       ok: false, status: -1, statusText: '', headers: {},
       body: undefined, resdata: undefined, err: undefined,
@@ -288,7 +288,10 @@ function makeClient(spec: {
     if ('function' === typeof response.json) {
       result.body = await response.json()
     }
-    result.resdata = result.body
+    // What `makeResult` leaves behind, which is NOT always the body: for a
+    // list it is one entity INSTANCE per record (entity.make() + .data()),
+    // and a test that needs that shape supplies it directly.
+    result.resdata = (undefined === o.resdata) ? result.body : o.resdata
     if (result.status >= 400) {
       result.err = makeErr('request_status', 'request: ' + result.status + ': ' + result.statusText)
     }
@@ -311,9 +314,11 @@ function makeClient(spec: {
     headers?: any
     body?: any
     ctrl?: any
+    resdata?: any
     data?: any
     match?: any
     reqdata?: any
+    reqmatch?: any
   }): Promise<any> {
     const entity = o.entity || 'widget'
     const opname = o.op || 'load'
@@ -326,6 +331,7 @@ function makeClient(spec: {
       data: o.data,
       match: o.match,
       reqdata: o.reqdata,
+      reqmatch: o.reqmatch,
     })
 
     await featureHook(ctx, 'PostConstructEntity')
@@ -378,7 +384,7 @@ function makeClient(spec: {
       await featureHook(ctx, 'PreResponse')
 
       // makeResponse -> result.
-      await populateResult(ctx, response)
+      await populateResult(ctx, response, o)
 
       // PreResult (paging / streaming read/modify result here).
       await featureHook(ctx, 'PreResult')

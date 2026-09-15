@@ -57,7 +57,12 @@ class ValidateFeature extends BaseFeature {
     // undefined`, which silently turned every rejection into a no-op.
     this._request = false !== this._options.request
     this._response = true === this._options.response
-    this._mode = this._options.mode || 'throw'
+
+    // FAIL CLOSED. Only the exact string 'report' selects report mode, so a
+    // typo (`mode: 'thow'`) still rejects rather than silently turning
+    // enforcement off — the failure nobody would notice. The option spec
+    // rejects the typo outright; this is what happens if it ever does not.
+    this._mode = 'report' === this._options.mode ? 'report' : 'throw'
 
     // `strict` is applied ONCE, here, by rebuilding the spec tree without the
     // `$OPEN` markers — rather than per call, which would clone a spec for
@@ -83,7 +88,7 @@ class ValidateFeature extends BaseFeature {
     }
 
     const errs = this._check(ctx, this._payload(ctx, opname), opspec, 'request')
-    if (0 === errs.length || 'throw' !== this._mode) {
+    if (0 === errs.length || 'report' === this._mode) {
       return
     }
 
@@ -98,6 +103,19 @@ class ValidateFeature extends BaseFeature {
   // Inbound. PreDone rather than PreResult: the records are extracted from
   // the response body by `makeResult`, which runs between the two, so at
   // PreResult there is nothing to check but the envelope.
+  //
+  // HOOK ORDER MATTERS HERE, and the default order is not the one you want.
+  // PreDone hooks fire in feature ADD order, which defaults to `test` first
+  // and then names sorted — and `validate` sorts last, after `audit`,
+  // `cost`, `debug`, `metrics` and `telemetry`. Those observers therefore
+  // record the operation as a success before this hook has looked at it.
+  // Activating features as an ORDERED ARRAY fixes it:
+  //
+  //   feature: [{ name: 'validate', active: true, response: true },
+  //             { name: 'metrics', active: true }]
+  //
+  // What this feature can fix from here, it does: the result is marked
+  // failed and its records are cleared, so the entity absorbs nothing.
   PreDone(this: any, ctx: any) {
     if (!this.active || !this._response) {
       return
@@ -118,14 +136,20 @@ class ValidateFeature extends BaseFeature {
     const records = Array.isArray(resdata) ? resdata : [resdata]
     const errs: string[] = []
     for (const record of records) {
-      if (null != record && 'object' === typeof record) {
-        for (const e of this._check(ctx, record, spec.data, 'response')) {
-          errs.push(e)
-        }
+      if (null == record) {
+        continue
+      }
+
+      // A NON-OBJECT IS A FAILURE, not something to skip. A load that
+      // answered `42` where the entity's spec wants a record used to pass
+      // this feature silently, which is the one outcome a validator must
+      // never produce. struct rejects it with the field it could not find.
+      for (const e of this._check(ctx, unwrap(record), spec.data, 'response')) {
+        errs.push(e)
       }
     }
 
-    if (0 === errs.length || 'throw' !== this._mode) {
+    if (0 === errs.length || 'report' === this._mode) {
       return
     }
 
@@ -138,19 +162,43 @@ class ValidateFeature extends BaseFeature {
     ctx.result.ok = false
     ctx.result.err = err
 
+    // AND THE DATA GOES. The load/update fragments copy `result.resdata`
+    // into the entity's own state on any non-null value, BEFORE `done`
+    // raises — so rejecting the operation while leaving the records in place
+    // left the caller holding an entity populated from a payload this
+    // feature had just declared invalid. Clearing it is the only half of
+    // that this feature owns; see the note on hook order below.
+    ctx.result.resdata = undefined
+
     return err
   }
 
 
   // The payload an operation is about to send.
   //
-  // `data` for the ops that carry a body and `match` for the ops that address
-  // a record, with `reqdata` (the values passed to THIS call) over the top —
-  // which is the order the request builder itself resolves them in.
+  // TWO SLOTS, AND THE OP PICKS. A body op (create/update/patch) carries the
+  // caller's argument in `reqdata` over the entity's `data`; a match op
+  // (load/list/remove) carries it in `reqmatch` over `match`. That is what
+  // the Entity*Op fragments pass to makeContext and what makePoint reads
+  // (`getprop(ctx, 'req' + op.input)`) — so reading `reqdata` for every op
+  // checked a `load({ id })` against the entity's STALE stored match and
+  // rejected it for the id the caller had just supplied.
   _payload(this: any, ctx: any, opname: string): Record<string, any> {
     const body = 'create' === opname || 'update' === opname || 'patch' === opname
+
     const base = body ? ctx.data : ctx.match
-    return { ...(base || {}), ...(ctx.reqdata || {}) }
+    const req = body ? ctx.reqdata : ctx.reqmatch
+
+    const out: Record<string, any> = { ...(base || {}), ...(req || {}) }
+
+    // `$action` SELECTS A CUSTOM ENDPOINT; it is not a field of the record.
+    // makePoint reads it off this same argument and the request transformer
+    // drops it before the body is built, so a spec built from the API's own
+    // fields will never name it — and under `strict` every custom-action
+    // call would be rejected for the one key that made it reachable.
+    delete out.$action
+
+    return out
   }
 
 
@@ -191,6 +239,24 @@ class ValidateFeature extends BaseFeature {
 
     return errs
   }
+}
+
+
+// A RESULT RECORD AS DATA.
+//
+// `makeResult` turns every record of a LIST into an entity instance
+// (`entity.make()` then `ent.data(entry)`), so what reaches PreDone for a
+// list is wrappers, not records — and a wrapper checked against a field spec
+// fails on every required field while its actual data goes unchecked. A load
+// returns the record itself, so this has to handle both.
+function unwrap(record: any): any {
+  if (null != record && 'function' === typeof record.data) {
+    const data = record.data()
+    if (null != data) {
+      return data
+    }
+  }
+  return record
 }
 
 

@@ -134,6 +134,18 @@ function canonToSpec(type, optional) {
             // `$NULL` validator is undefined and every nullable field rejected the
             // one value it exists to allow. `$NIL` matches that no-value, so the
             // pair covers both readings.
+            //
+            // THE COST, stated because it is real and not an oversight: `$NIL` is
+            // also how an OPTIONAL field is spelled, and struct cannot tell a
+            // stored null from an absent key inside a union — the lookup collapses
+            // them before any alternative sees the value. So a REQUIRED nullable
+            // field (`string | null`, `req: true`) also passes when the key is
+            // missing. The alternative is worse: drop `$NIL` and a nullable field
+            // rejects null, which is the one value it is declared to hold, for
+            // EVERY such field rather than weakening presence on a subset. Closing
+            // the gap needs a presence check outside struct, i.e. a second
+            // validation mechanism beside the one this whole module exists to
+            // reuse. Revisit if struct gains a spelling that separates them.
             if (0 <= members.indexOf(S_NULL) && members.indexOf(S_NIL) < 0) {
                 members.push(S_NIL);
             }

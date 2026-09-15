@@ -48,11 +48,18 @@ main: kit: feature: validate: {
       mode: 'throw'
     }
 
-    # No default: a callback receives every failure, whatever `mode` does
-    # with it, so a client can log or count invalid payloads without
-    # changing what the SDK returns.
     optspec: {
+      # A callback receiving every failure, whatever `mode` does with it, so
+      # a client can log or count invalid payloads without changing what the
+      # SDK returns. No default: it is supplied or it is not.
       onInvalid: '`$FUNCTION`'
+
+      # CLOSED, unlike the default above. Read by example, `mode: 'throw'`
+      # is just "a string", and the runtime treats anything that is not
+      # 'report' as throw — so `mode: 'repot'` would have quietly kept
+      # enforcement on while its author believed they had turned it off.
+      # Naming the two values makes the typo a construction error.
+      mode: ['`$ONE`', ['`$EXACT`', 'throw'], ['`$EXACT`', 'report']]
     }
   }
 

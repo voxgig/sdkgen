@@ -1146,6 +1146,28 @@ neither does this. It catches a number where a string belongs, a required
 field left out, and — with `strict` — a misspelled key. It is not a
 substitute for the server's own validation.
 
+One more gap worth naming: a field that is both required and nullable
+(`string | null`) also passes when the key is absent. The validator cannot
+tell a stored null from a missing key, and a nullable field that rejects
+null would be the worse of the two failures.
+
+**Order it first if you validate responses.** Features are added in the
+order you activate them, and hooks fire in that order. Under the default —
+`test`, then names sorted — `validate` runs last, so `audit`, `cost`,
+`debug`, `metrics` and `telemetry` will already have recorded the operation
+as a success before the response is checked. Activate features as an
+ordered array to put it where you want it:
+
+```ts
+feature: [
+  { name: 'validate', active: true, response: true },
+  { name: 'metrics', active: true },
+]
+```
+
+The entity itself is safe either way: a rejected response is cleared before
+it can be absorbed into the entity's state.
+
 **Availability.** `ts` and `js`. The feature reads the generated schema
 module, so a target carries it once that module is emitted there.
 

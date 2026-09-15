@@ -289,6 +289,16 @@ describe('optionSpec: the shipped feature set', () => {
     }
   })
 
+  test("validate's mode is closed to the two values it implements", () => {
+    // Read by example, `mode: 'throw'` is only "a string", and the runtime
+    // treats anything that is not 'report' as throw — so `mode: 'repot'`
+    // would keep enforcement on while its author believed otherwise.
+    const spec = optionSpec(modelWith(shippedFeatures()))
+    ok(accepts({ feature: { validate: { active: true, mode: 'throw' } } }, spec))
+    ok(accepts({ feature: { validate: { active: true, mode: 'report' } } }, spec))
+    ok(!accepts({ feature: { validate: { active: true, mode: 'repot' } } }, spec))
+  })
+
   test('every shipped feature accepts a bare activation', () => {
     // The smallest thing a caller ever writes. A spec that rejects it is a
     // spec that breaks every project the moment it lands.
