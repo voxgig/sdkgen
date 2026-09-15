@@ -47,6 +47,25 @@ page set comes from one function, `tools/check_prose.py --files`, for the
 same reason: a gate reading a smaller set than the other is a gate that
 reports green on a page nobody checked.
 
+**Both halves run, or the gate fails.** `make scan-prose` needs vale and
+stops with an error if it is missing, because a gate that runs half of
+itself and reports ok is worse than one that does not run: it tells you
+your prose is clean when nobody checked it. Install the release CI uses:
+
+```
+make vale-install     # into .vale/bin/, no sudo, pinned to CI's version
+```
+
+A vale already on your `PATH` is used as-is. To run the house-rules half
+alone, knowing what is not being checked, say so explicitly:
+
+```
+make scan-prose PROSE_VALE=skip
+```
+
+The version is read from `.github/workflows/docs.yml`, so the local gate
+and CI's cannot drift onto different releases.
+
 A Google rule sitting at `warning` rather than `error` was tried at error
 level first and found wrong for these pages; `.vale.ini` records what it
 produced and why it was demoted.

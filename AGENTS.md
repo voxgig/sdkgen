@@ -1028,7 +1028,9 @@ CI (`.github/workflows/docs.yml`) and under `make test`:
 | `vale --minAlertLevel=error $(python3 tools/check_prose.py --files)` | Google's rules plus the banned list, at the levels in `.vale.ini` |
 | `python3 tools/check_prose.py` | the banned list across line wraps, em-dash spacing and ration, first person, no emoji, no citations of a working document, resolving relative links, a complete page set |
 
-`make scan-prose` runs both (Vale where installed). The banned list is
+`make scan-prose` runs both, and FAILS if vale is missing rather than
+running half of itself (`make vale-install` fetches CI's pinned release;
+`PROSE_VALE=skip` is the explicit opt-out). The banned list is
 `.vale/styles/config/vocabularies/Sdkgen/reject.txt`, read by both gates.
 The page set is the configuration block at the top of
 `tools/check_prose.py`; a new documentation page must be reachable from it

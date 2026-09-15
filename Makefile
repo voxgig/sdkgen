@@ -1,4 +1,4 @@
-.PHONY: all build test clean build-ts test-ts clean-ts scan-prose reset check-model publish vendor vendor-check
+.PHONY: all build test clean build-ts test-ts clean-ts scan-prose vale-install reset check-model publish vendor vendor-check
 
 all: check-model build test
 
@@ -31,21 +31,85 @@ test-ts:
 clean-ts:
 	rm -rf ts/dist-test
 
-# The prose gate over the reader-facing pages (STYLE-GUIDE.md). Vale runs
-# where it is installed, over the page set tools/check_prose.py prints,
-# so both halves read the same files; check_prose always runs, because it
-# carries the house rules .vale.ini switches Google rules OFF in favour
-# of -- skipping it silently would widen what is allowed.
+# The vale release the prose gate runs. ONE source of truth: the workflow
+# that installs it in CI. A second copy of the number here is how the local
+# gate and CI's gate come to run different versions and disagree about what
+# passes -- which is the whole failure this target exists to prevent.
+VALE_VERSION = $(shell sed -n "s/.*VALE_VERSION: *'\([0-9.]*\)'.*/\1/p" .github/workflows/docs.yml)
+
+# Where `make vale-install` puts it. Repo-local, so installing needs no sudo
+# and one checkout's vale cannot be another's.
+VALE_BIN = .vale/bin/vale
+
+# The vale on PATH wins, so a system install is used as-is; otherwise the
+# repo-local one.
+VALE = $(shell command -v vale 2>/dev/null || echo $(VALE_BIN))
+
+# The prose gate over the reader-facing pages (STYLE-GUIDE.md). Both halves
+# read the same files -- the page set tools/check_prose.py prints -- and
+# BOTH HALVES MUST RUN.
+#
+# check_prose carries the house rules .vale.ini switches Google's OFF in
+# favour of, and vale carries Google's rules plus the spelling and banned
+# lists. Skipping either widens what is allowed, so neither is optional.
+#
+# This used to print a note and carry on when vale was absent, and the note
+# was the whole defect: `make test` reported ok with half the gate unrun, so
+# a contributor without vale could only discover a prose error from a red
+# CI run on a pushed branch. It has happened. A missing tool is now a
+# failure with the command that fixes it, and `PROSE_VALE=skip` is there for
+# the case where someone genuinely means to run the other half alone --
+# loudly, and never by default.
 scan-prose:
 	@echo "======== scan: prose (vale + check_prose) ========"
-	@if command -v vale >/dev/null 2>&1; then \
-	  vale sync >/dev/null && \
-	  vale --minAlertLevel=error $$(python3 tools/check_prose.py --files); \
+	@if [ -x "$(VALE)" ] || command -v "$(VALE)" >/dev/null 2>&1; then \
+	  "$(VALE)" sync >/dev/null && \
+	  "$(VALE)" --minAlertLevel=error $$(python3 tools/check_prose.py --files); \
+	elif [ "skip" = "$(PROSE_VALE)" ]; then \
+	  echo "!! vale SKIPPED (PROSE_VALE=skip): Google's rules, the spelling"; \
+	  echo "!! check and the banned list did NOT run. CI still runs them."; \
 	else \
-	  echo "(vale not installed - skipping the Google/banned-list half;"; \
-	  echo " see .github/workflows/docs.yml for the pinned version)"; \
+	  echo "vale is not installed, and it is half of this gate." >&2; \
+	  echo "" >&2; \
+	  echo "  make vale-install     # the pinned $(VALE_VERSION), into $(VALE_BIN)" >&2; \
+	  echo "" >&2; \
+	  echo "To run the other half alone, and see what is not being checked:" >&2; \
+	  echo "" >&2; \
+	  echo "  make scan-prose PROSE_VALE=skip" >&2; \
+	  echo "" >&2; \
+	  exit 1; \
 	fi
 	@python3 tools/check_prose.py
+
+# Fetch the pinned vale into VALE_BIN. Same release CI installs, so a clean
+# local run and a clean CI run mean the same thing.
+#
+# The asset name is NOT `uname` output: vale publishes macOS builds as
+# `macOS`, where uname says `Darwin`, and calls x86_64 `64-bit`. Mapped
+# rather than interpolated, so this fails with a name a reader can check
+# against the releases page instead of a 404 from a URL nobody reads.
+vale-install:
+	@test -n "$(VALE_VERSION)" || \
+	  { echo "no VALE_VERSION in .github/workflows/docs.yml" >&2; exit 1; }
+	@set -e; \
+	os=$$(uname -s); arch=$$(uname -m); \
+	case "$$os" in \
+	  Linux)  os=Linux ;; \
+	  Darwin) os=macOS ;; \
+	  *) echo "no vale build mapped for $$os; install it yourself and put it on PATH" >&2; exit 1 ;; \
+	esac; \
+	case "$$arch" in \
+	  x86_64|amd64) arch=64-bit ;; \
+	  arm64|aarch64) arch=arm64 ;; \
+	  *) echo "no vale build mapped for $$arch; install it yourself and put it on PATH" >&2; exit 1 ;; \
+	esac; \
+	asset="vale_$(VALE_VERSION)_$${os}_$${arch}.tar.gz"; \
+	mkdir -p $(dir $(VALE_BIN)); \
+	echo "fetching $$asset -> $(VALE_BIN)"; \
+	curl -sSfL \
+	  "https://github.com/errata-ai/vale/releases/download/v$(VALE_VERSION)/$$asset" \
+	  | tar xz -C $(dir $(VALE_BIN)) vale
+	@$(VALE_BIN) --version
 
 reset:
 	cd ts && npm run reset

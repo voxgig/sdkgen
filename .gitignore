@@ -145,4 +145,7 @@ __pycache__/
 # Vale downloads the Google package here on `vale sync`; the vocabularies
 # and house rules beside it are committed.
 .vale/styles/Google/
+
+# `make vale-install` puts the pinned binary here; it is a tool, not source.
+.vale/bin/
 .handover-briefs/
