@@ -7,11 +7,11 @@
 - **[`docs/`](./docs/README.md)** — full documentation: tutorial, how-to
   guides, reference (features/CLI/API/model/layout/hooks), and explanation.
 - **[`STYLE-GUIDE.md`](./STYLE-GUIDE.md)** — normative for the reader-facing
-  pages (`README.md` and `docs/` minus `docs/design/`). `make scan-prose` runs the two gates (Vale + `tools/check_prose.py`) and
-  fails if Vale is missing — `make vale-install` fetches CI's pinned
-  release;
-  `make test` includes it. Pages never cite `AGENTS.md`, `CLAUDE.md`,
-  `ADR.md`, `NOTES.md` or `docs/design/`.
+  pages (`README.md` and `docs/` minus `docs/design/`). `make scan-prose`
+  runs the two gates (Vale + `tools/check_prose.py`), and FAILS if Vale is
+  missing rather than running half of itself — `make vale-install` fetches
+  CI's pinned release. `make test` includes it. Pages never cite
+  `AGENTS.md`, `CLAUDE.md`, `ADR.md`, `NOTES.md` or `docs/design/`.
 
 This file is the quick inline reference; `AGENTS.md` and `docs/` have the
 depth.
