@@ -1668,7 +1668,7 @@ src/cmp/scala/EntityTypes_scala.ts 8ba0e8ef8f2e
 src/cmp/scala/Entity_scala.ts 8f2825f036c8
 src/cmp/scala/Gitignore_scala.ts 4c75b5801ca5
 src/cmp/scala/MainEntity_scala.ts 911328e9d2ca
-src/cmp/scala/Main_scala.ts 62dd14be8919
+src/cmp/scala/Main_scala.ts 42d19d9c65c5
 src/cmp/scala/Package_scala.ts 8ae04e6b348b
 src/cmp/scala/ReadmeEntity_scala.ts 7a460619a1ce
 src/cmp/scala/ReadmeExamplesTest_scala.ts 1931c25f1bc8
