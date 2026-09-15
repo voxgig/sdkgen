@@ -1147,8 +1147,8 @@ field left out, and — with `strict` — a misspelled key. It is not a
 substitute for the server's own validation.
 
 One more gap worth naming: a field that is both required and nullable
-(`string | null`) also passes when the key is absent. The validator cannot
-tell a stored null from a missing key, and a nullable field that rejects
+(`string | null`) also passes when the key is absent. A stored null and a
+missing key cannot be told apart here, and a nullable field that rejects
 null would be the worse of the two failures.
 
 **Order it first if you validate responses.** Features are added in the
