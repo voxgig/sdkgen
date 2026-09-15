@@ -5,8 +5,20 @@ const jostraca_1 = require("jostraca");
 const packageMeta_1 = require("../helpers/packageMeta");
 // Root MIT LICENSE for the generated SDK repo. The copyright holder is the
 // PUBLISHER (Voxgig): this is an unofficial, generated SDK, so it is NOT
-// attributed to the upstream API owner. A non-affiliation note is appended so
-// the license file itself carries the disclosure.
+// attributed to the upstream API owner.
+//
+// THE LICENSE FILE IS THE MIT TEXT AND NOTHING ELSE. The non-affiliation note
+// used to be appended after a rule, so that the licence file itself carried
+// the disclosure. The cost of that was invisible from inside the repo and
+// obvious from outside it: GitHub's licence detection matches the file against
+// known licence texts, and the extra paragraph made every generated repo in
+// the fleet report `NOASSERTION` / "Other" in its sidebar and API. An SDK
+// offered to a prospect as "MIT licensed" that GitHub labels "Other" argues
+// against itself.
+//
+// The disclosure is not lost. It leads the README, and it now has its own
+// NOTICE file, which is the conventional home for exactly this and is not
+// parsed as a licence.
 const License = (0, jostraca_1.cmp)(function License(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
@@ -33,10 +45,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-${(0, packageMeta_1.nonAffiliation)(model)}
+`);
+    });
+    (0, jostraca_1.File)({ name: 'NOTICE' }, () => {
+        (0, jostraca_1.Content)(`${(0, packageMeta_1.nonAffiliation)(model)}
 `);
     });
 });
