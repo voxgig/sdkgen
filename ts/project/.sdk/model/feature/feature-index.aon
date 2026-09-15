@@ -21,6 +21,7 @@
 @"audit.aon"
 @"clienttrack.aon"
 @"rbac.aon"
+@"validate.aon"
 
 # Test support: network behaviour simulation
 @"netsim.aon"

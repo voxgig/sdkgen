@@ -69,13 +69,14 @@ ${f.title}.
         (0, jostraca_1.Content)(`**Configuration**
 
 `);
-        // THE TABLE IS THE MODEL'S OPTIONS, AND THE MODEL IS INCOMPLETE. Several
-        // features accept runtime-only options the model never declares — cost
-        // reads `actor` and `sink`, audit reads `sink` — so a table derived from
-        // `config.options` cannot list them. Deriving from a second hand-written
-        // list would reintroduce exactly the drift this module exists to avoid,
-        // so the honest fix is upstream: declare them in the feature model. Until
-        // then, say so rather than imply the table is exhaustive.
+        // THE TABLE IS THE MODEL'S OPTIONS, and the model now carries both
+        // halves of them. It used to carry one: `config.options` is a DEFAULTS
+        // map, so the options with no default — cost's `sink`, audit's `sink`,
+        // every injected clock — could not appear in it, and this table had to
+        // admit it was not exhaustive. `config.optspec` declares those with a
+        // type instead of a default, and they are listed below the defaults.
+        // Same declaration the generated option spec validates against, so a
+        // documented option and a validated option cannot be different sets.
         if (0 < f.options.length) {
             (0, jostraca_1.Content)(`| Option | Default |
 |---|---|
@@ -87,17 +88,26 @@ ${f.title}.
             (0, jostraca_1.Content)(`
 `);
         }
-        else {
+        else if (0 === f.extras.length) {
             (0, jostraca_1.Content)(`\`active\` only — this feature takes no further options.
 
 `);
         }
-        (0, jostraca_1.Content)(`Options above are those the model carries a default for. A feature may
-also accept callback options — a \`sink\` to receive each record, for
-instance — which have no default and are covered in the full feature
-reference.
+        if (0 < f.extras.length) {
+            (0, jostraca_1.Content)(`| Option | Type |
+|---|---|
+`);
+            for (const o of f.extras) {
+                (0, jostraca_1.Content)(`| \`${o.name}\` | ${o.type} |
+`);
+            }
+            (0, jostraca_1.Content)(`
+These take no default: the feature behaves one way when you supply them and
+another when you do not.
 
-**Usage**
+`);
+        }
+        (0, jostraca_1.Content)(`**Usage**
 
 Set \`feature.${f.name}.active\` to true in the client options${0 < f.options.length ?
             ', and override any option above in the same entry' : ''}. Every option keeps

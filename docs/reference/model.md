@@ -324,7 +324,9 @@ derives the name, so this changes nothing for a model apidef produced.
 | `active` | boolean | `false` | Whether the feature ships enabled. |
 | `title` | string | — | Human description. |
 | `version` | string | `'0.0.1'` | Feature version. |
-| `config` | object | — | Feature config (e.g. `options.active`). |
+| `config.options` | object | — | Option DEFAULTS, one key per option. Also the README's option table, and — read by example — each option's type in the generated option spec. |
+| `config.optspec` | object | `{}` | Types for options a default cannot describe: callbacks and injected values with no default, or an option whose default understates its type (netsim's `latency: 0`, which is also a `{ min, max }` map). Values are `struct.validate` sentinels. A name in both takes its type from here and its default from `config.options`. |
+| `config.strict` | boolean | `false` | Reject an option neither map declares, instead of passing it through. |
 | `hook.<Hook>.active` | boolean | `false` | Enable a pipeline/lifecycle hook. |
 | `hook.<Hook>.await` | boolean | `false` | Whether the hook is awaited. |
 | `deps.<lang>.<dep>` | object | — | Per-language runtime deps (`active`, `version`, `kind`). |
@@ -374,6 +376,39 @@ Its `config.options`, all overridable per project:
 | --- | --- | --- | --- |
 | `name` | string | `key()` | Option name. |
 | `active` | boolean | `true` | Whether the option is present. |
+
+## `main.kit.optspec`
+
+The SDK client's option schema: one declaration that every ported target
+validates against. It is a `struct.validate` spec written by example, so a
+concrete value is both the type and the default — `base:
+'http://localhost:8000'` means "a string, defaulting to that" — and a
+`` `$SENTINEL` `` constrains without defaulting.
+
+The generator writes it into each SDK as `src/Schema`, and `makeOptions`
+validates the caller's options against it at construction. Add an option
+here and every ported target accepts it; nothing else needs editing.
+
+| Key | Meaning |
+| --- | --- |
+| `apikey`, `secret` | Credentials. `auth: null` suppresses auth outright. |
+| `base`, `prefix`, `suffix` | The API base URL and path affixes. |
+| `auth.prefix`, `auth.basic` | Credential scheme. |
+| `headers` | Extra headers sent with every request. |
+| `allow.method`, `allow.op` | Comma-separated allow-lists. |
+| `entity` | Per-entity overrides. |
+| `extend` | Feature instances supplied at construction. |
+| `utility`, `system.fetch` | Platform seams. |
+| `test` | Offline test-mode settings. |
+| `clean.keys` | Keys masked in diagnostics. |
+| `server` | Values for a templated base URL. |
+
+`feature` is not declared here: it is assembled per target from each active
+feature's own `config.options` and `config.optspec`.
+
+Targets that carry the generated schema declare `provides: { schema: true }`
+— currently `ts` and `js`. The others keep a hand-written spec in their own
+`make_options` template until they are ported.
 
 ## `main.kit.info` (from apidef)
 

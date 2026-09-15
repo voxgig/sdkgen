@@ -32,6 +32,9 @@ const ENTERPRISE = [
   // above it, this one is NOT expected in every target — see the
   // feature-language-parity exemption below.
   'secrets',
+  // Gated the same way, on `schema`: the feature validates against the
+  // generated Schema module, so it applies only where one is emitted.
+  'validate',
 ]
 
 const HOOK_NAMES = [
@@ -115,6 +118,7 @@ describe('feature-model', () => {
     // at the feature's widest, not at one configuration's.
     secrets: 'wrap',
     streaming: 'none', telemetry: 'none',
+    validate: 'none',
   }
 
   test('every feature model declares its transport role', () => {
@@ -285,6 +289,13 @@ describe('feature-language-parity', () => {
       'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala', 'swift',
       'ts', 'zig',
     ],
+
+    // needs: { schema: true } — a target joins when its Main emits the
+    // generated Schema module (the model's option spec, and the per-entity
+    // specs this feature checks against) and its model declares the tag.
+    // ts and js are the reference implementation; the other eighteen keep
+    // their hand-written optspec literals until they are ported.
+    validate: ['js', 'ts'],
   }
 
   // Which targets must carry this feature: all of them, or just the ones

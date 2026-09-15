@@ -771,3 +771,321 @@ describe('feature:composition', () => {
     strictEqual(h.client._metrics.total.err, 0)
   })
 })
+
+
+describe('feature:validate', () => {
+
+  // What the generator emits into `Schema.ENTITYSPEC` for a widget whose
+  // model declares `id` (required string) and `size` (optional integer).
+  // The harness shims the generated module as empty — every SDK has its own
+  // — so each case installs the specs it is about.
+  const B = String.fromCharCode(96)
+  const T = (n: string) => B + '$' + n + B
+  const OPTSTR = [T('ONE'), T('STRING'), [T('EXACT'), ''], T('NIL')]
+
+  const WIDGET = {
+    data: {
+      [T('OPEN')]: true,
+      id: [T('ONE'), T('STRING'), [T('EXACT'), '']],
+      size: [T('ONE'), T('INTEGER'), T('NIL')],
+    },
+    op: {
+      create: {
+        [T('OPEN')]: true,
+        id: [T('ONE'), T('STRING'), [T('EXACT'), '']],
+        size: [T('ONE'), T('INTEGER'), T('NIL')],
+      },
+      load: {
+        [T('OPEN')]: true,
+        id: [T('ONE'), T('STRING'), [T('EXACT'), '']],
+      },
+    },
+  }
+
+  // Install the specs the generator would have emitted, then re-run init so
+  // `strict` is applied to them the way it is in a real client.
+  function withSpec(h: any, spec: any = { widget: WIDGET }) {
+    const f = h.feature('validate')
+    f._spec = true === f._options.strict ? closeSpec(spec) : spec
+    return h
+  }
+
+  function closeSpec(node: any): any {
+    if (Array.isArray(node)) { return node.map(closeSpec) }
+    if (null == node || 'object' !== typeof node) { return node }
+    const out: any = {}
+    for (const k of Object.keys(node)) {
+      if (T('OPEN') === k) { continue }
+      out[k] = closeSpec(node[k])
+    }
+    return out
+  }
+
+
+  test('a valid request reaches the network', async () => {
+    const rec = recordingServer()
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: {} }],
+      server: rec.server,
+    }))
+    const res = await h.op({ op: 'create', data: { id: 'w1', size: 2 } })
+    strictEqual(res.ok, true)
+    strictEqual(rec.calls.length, 1)
+  })
+
+  test('a mistyped field rejects the operation before any call', async () => {
+    const rec = recordingServer()
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: {} }],
+      server: rec.server,
+    }))
+    const res = await h.op({ op: 'create', data: { id: 'w1', size: 'two' } })
+    strictEqual(res.ok, false)
+    strictEqual(res.error.code, 'validate_failed')
+    strictEqual(rec.calls.length, 0, 'an invalid payload never reaches the network')
+    ok(/size/.test(res.error.message), 'the message names the field: ' + res.error.message)
+  })
+
+  test('a missing required field is caught', async () => {
+    const h = withSpec(makeClient({ features: [{ name: 'validate', options: {} }] }))
+    const res = await h.op({ op: 'create', data: { size: 2 } })
+    strictEqual(res.ok, false)
+    strictEqual(res.error.code, 'validate_failed')
+  })
+
+  test('an optional field may be omitted', async () => {
+    const h = withSpec(makeClient({ features: [{ name: 'validate', options: {} }] }))
+    strictEqual((await h.op({ op: 'create', data: { id: 'w1' } })).ok, true)
+  })
+
+  test('reqdata overrides the entity data, as the request builder reads it', async () => {
+    const h = withSpec(makeClient({ features: [{ name: 'validate', options: {} }] }))
+    const res = await h.op({ op: 'create', data: { id: 'w1', size: 'two' }, reqdata: { size: 3 } })
+    strictEqual(res.ok, true, 'the value actually sent is the one checked')
+  })
+
+  test('a match op is checked against match, not data', async () => {
+    const h = withSpec(makeClient({ features: [{ name: 'validate', options: {} }] }))
+    strictEqual((await h.op({ op: 'load', match: { id: 'w1' } })).ok, true)
+    strictEqual((await h.op({ op: 'load', match: { id: 7 } })).ok, false)
+  })
+
+  test('a match op reads its call argument from reqmatch, not reqdata', async () => {
+    // How a real `load({ id })` arrives: the Entity*Op fragments pass a
+    // match op's argument as `reqmatch` and only a body op's as `reqdata`.
+    // Overlaying `reqdata` for every op checked the entity's STALE stored
+    // match instead, so an ordinary load failed for the very id it was given.
+    const h = withSpec(makeClient({ features: [{ name: 'validate', options: {} }] }))
+
+    strictEqual((await h.op({ op: 'load', match: {}, reqmatch: { id: 'w1' } })).ok, true,
+      'the supplied id satisfies the required field')
+
+    strictEqual((await h.op({ op: 'load', match: { id: 'stale' }, reqmatch: { id: 7 } })).ok, false,
+      'and a bad supplied id is not waved through by a good stored one')
+  })
+
+  test('$action is stripped: a custom action survives strict mode', async () => {
+    // `$action` selects a custom endpoint (makePoint reads it off the same
+    // argument) and the request transformer drops it before the body. It is
+    // not a field of the record, so no spec names it — and under strict
+    // every custom-action call would be rejected for it.
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { strict: true } }],
+    }))
+    const res = await h.op({ op: 'create', data: { id: 'w1' }, reqdata: { $action: 'publish' } })
+    strictEqual(res.ok, true)
+  })
+
+  test('an undeclared key passes, because the record spec is open', async () => {
+    const h = withSpec(makeClient({ features: [{ name: 'validate', options: {} }] }))
+    const res = await h.op({ op: 'create', data: { id: 'w1', notInTheSpec: true } })
+    strictEqual(res.ok, true)
+  })
+
+  test('strict closes the spec and rejects the undeclared key', async () => {
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { strict: true } }],
+    }))
+    const res = await h.op({ op: 'create', data: { id: 'w1', notInTheSpec: true } })
+    strictEqual(res.ok, false)
+    strictEqual(res.error.code, 'validate_failed')
+  })
+
+  test('report mode collects the failure and lets the call proceed', async () => {
+    const seen: any[] = []
+    const rec = recordingServer()
+    const h = withSpec(makeClient({
+      features: [{
+        name: 'validate',
+        options: { mode: 'report', onInvalid: (r: any) => seen.push(r) },
+      }],
+      server: rec.server,
+    }))
+    const res = await h.op({ op: 'create', data: { id: 'w1', size: 'two' } })
+    strictEqual(res.ok, true, 'report does not reject')
+    strictEqual(rec.calls.length, 1)
+    strictEqual(seen.length, 1)
+    strictEqual(seen[0].entity, 'widget')
+    strictEqual(seen[0].op, 'create')
+    strictEqual(seen[0].direction, 'request')
+    ok(0 < seen[0].errs.length)
+  })
+
+  test('onInvalid fires in throw mode too', async () => {
+    const seen: any[] = []
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { onInvalid: (r: any) => seen.push(r) } }],
+    }))
+    await h.op({ op: 'create', data: { id: 'w1', size: 'two' } })
+    strictEqual(seen.length, 1)
+  })
+
+  test('request checking can be turned off', async () => {
+    const rec = recordingServer()
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { request: false } }],
+      server: rec.server,
+    }))
+    strictEqual((await h.op({ op: 'create', data: { id: 'w1', size: 'two' } })).ok, true)
+    strictEqual(rec.calls.length, 1)
+  })
+
+  test('an op with no spec is not checked', async () => {
+    // `remove` is not in WIDGET.op: an operation the model says nothing about
+    // must pass, not fail closed.
+    const h = withSpec(makeClient({ features: [{ name: 'validate', options: {} }] }))
+    strictEqual((await h.op({ op: 'remove', match: { id: 'w1' } })).ok, true)
+  })
+
+  test('an entity with no spec is not checked', async () => {
+    const h = withSpec(makeClient({ features: [{ name: 'validate', options: {} }] }))
+    strictEqual((await h.op({ entity: 'other', op: 'create', data: { junk: 1 } })).ok, true)
+  })
+
+  test('response checking is off by default', async () => {
+    const rec = recordingServer(() => makeResponse(200, { id: 7 }))
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: {} }],
+      server: rec.server,
+    }))
+    strictEqual((await h.op({ op: 'load', match: { id: 'w1' } })).ok, true)
+  })
+
+  test('response checking, once on, catches a record that breaks its type', async () => {
+    const rec = recordingServer(() => makeResponse(200, { id: 7 }))
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { response: true } }],
+      server: rec.server,
+    }))
+    const res = await h.op({ op: 'load', match: { id: 'w1' } })
+    strictEqual(res.ok, false)
+    strictEqual(res.error.code, 'validate_failed')
+    ok(/response/.test(res.error.message), res.error.message)
+  })
+
+  test('a list response is checked record by record', async () => {
+    const rec = recordingServer(() => makeResponse(200, [{ id: 'a' }, { id: 2 }]))
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { response: true } }],
+      server: rec.server,
+    }))
+    const res = await h.op({ op: 'list', match: {} })
+    strictEqual(res.ok, false, 'the second record breaks the spec')
+  })
+
+  // What `makeResult` actually leaves for a list: one entity INSTANCE per
+  // record, whose fields are behind `.data()`. Checked against a field spec
+  // the wrapper fails every required field while its real data goes
+  // unexamined — a validator that rejects valid lists and passes invalid
+  // ones at the same time.
+  function entityLike(data: any) {
+    return { data: () => data, _entity$: true }
+  }
+
+  test('a list of entity instances is unwrapped before checking', async () => {
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { response: true } }],
+    }))
+    const res = await h.op({
+      op: 'list',
+      match: {},
+      resdata: [entityLike({ id: 'a', size: 1 }), entityLike({ id: 'b' })],
+    })
+    strictEqual(res.ok, true, 'valid records behind the wrapper must pass')
+  })
+
+  test('and an invalid record behind the wrapper is still caught', async () => {
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { response: true } }],
+    }))
+    const res = await h.op({
+      op: 'list',
+      match: {},
+      resdata: [entityLike({ id: 'a' }), entityLike({ id: 2 })],
+    })
+    strictEqual(res.ok, false)
+    strictEqual(res.error.code, 'validate_failed')
+  })
+
+  test('a scalar where a record belongs is rejected, not skipped', async () => {
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { response: true } }],
+    }))
+    const res = await h.op({ op: 'load', match: { id: 'w1' }, resdata: 42 })
+    strictEqual(res.ok, false, 'the one outcome a validator must never produce')
+    strictEqual(res.error.code, 'validate_failed')
+  })
+
+  test('a rejected response leaves no records for the entity to absorb', async () => {
+    // The load/update fragments copy `result.resdata` into the entity's own
+    // state on any non-null value, BEFORE `done` raises — so the caller was
+    // left holding an entity populated from a payload just declared invalid.
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { response: true } }],
+    }))
+    const res = await h.op({ op: 'load', match: { id: 'w1' }, resdata: { id: 7 } })
+    strictEqual(res.ok, false)
+    strictEqual(res.result.resdata, undefined)
+  })
+
+  test('an unrecognised mode fails CLOSED', async () => {
+    // A typo must not silently turn enforcement off. (The option spec
+    // rejects it at construction too — see optspec.test.ts.)
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { mode: 'repot' } }],
+    }))
+    const res = await h.op({ op: 'create', data: { id: 'w1', size: 'two' } })
+    strictEqual(res.ok, false, 'still rejecting')
+    strictEqual(res.error.code, 'validate_failed')
+  })
+
+  test('a good response passes', async () => {
+    const rec = recordingServer(() => makeResponse(200, { id: 'w1', size: 3 }))
+    const h = withSpec(makeClient({
+      features: [{ name: 'validate', options: { response: true } }],
+      server: rec.server,
+    }))
+    const res = await h.op({ op: 'load', match: { id: 'w1' } })
+    strictEqual(res.ok, true)
+    deepStrictEqual(res.data, { id: 'w1', size: 3 })
+  })
+
+  test('an inactive feature checks nothing', async () => {
+    const h = makeClient({ features: [] })
+    const f = new (loadFeature('validate'))()
+    f.init(h.rootctx, { active: false })
+    strictEqual(f.active, false)
+  })
+
+  // `OPTSTR` documents the optional-string encoding the generator emits;
+  // referenced here so the shape is stated once and stays visible.
+  test('the optional-string encoding admits absent, empty and set', () => {
+    const h = withSpec(makeClient({ features: [{ name: 'validate', options: {} }] }),
+      { widget: { data: WIDGET.data, op: { create: { [T('OPEN')]: true, label: OPTSTR } } } })
+    return Promise.all([
+      h.op({ op: 'create', data: {} }),
+      h.op({ op: 'create', data: { label: '' } }),
+      h.op({ op: 'create', data: { label: 'set' } }),
+    ]).then((rs) => rs.forEach((r) => strictEqual(r.ok, true)))
+  })
+})

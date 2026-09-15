@@ -4,7 +4,7 @@
 //
 // A validator is only worth its noise if every check DISCRIMINATES: it must
 // fire on the defect it names and stay quiet on the shipped scaffold, which
-// exercises 27 targets and 17 features of legitimate variety. So each test
+// exercises 27 targets and 18 features of legitimate variety. So each test
 // below takes one clean package, breaks exactly one thing, and asserts both
 // halves — the finding appears, and the check that would be a false positive
 // does not.
@@ -156,7 +156,7 @@ describe('package check — the shipped scaffold', () => {
   })
 
 
-  test('no warning either, over 27 targets and 17 features', () => {
+  test('no warning either, over 27 targets and 18 features', () => {
     // Warnings are the false-positive surface: `feature-source-unrecognised`
     // walks every feature directory of every target, where the shared
     // machinery lives (`feature_options.go`, `mod.rs`, `support.rs`,

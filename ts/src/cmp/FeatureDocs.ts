@@ -20,6 +20,13 @@ type FeatureDoc = {
   transport: string
   wraps: boolean
   options: Array<{ name: string, value: string }>
+
+  // Options the feature accepts but does not default: callbacks, injected
+  // clocks, values the caller either supplies or does not. Declared in
+  // `config.optspec` because a DEFAULTS map cannot describe an option that
+  // has no default — which is why the tables built from `config.options`
+  // alone were incomplete, and had to say so.
+  extras: Array<{ name: string, type: string }>
 }
 
 
@@ -30,6 +37,27 @@ type FeatureDoc = {
 //   none  pipeline hooks only; order does not affect it
 function isWrapping(feat: any): boolean {
   return 'wrap' === feat.transport
+}
+
+
+// A struct.validate sentinel as a reader's word for it: '`$FUNCTION`' ->
+// 'function'. A union renders its members, so netsim's latency reads
+// 'number | map'. Anything unrecognised renders verbatim rather than being
+// dropped — a doc table that silently omits an option is the failure this
+// whole path exists to fix.
+function sentinelName(v: any): string {
+  if (Array.isArray(v)) {
+    const members = v.slice(1).map((m: any) => sentinelName(m))
+      .filter((m: string) => 'one' !== m)
+    return 0 === members.length ? 'any' : members.join(' | ')
+  }
+
+  if ('string' !== typeof v) {
+    return 'any'
+  }
+
+  const bare = v.replace(/[`$]/g, '').trim().toLowerCase()
+  return '' === bare ? 'any' : bare
 }
 
 
@@ -63,6 +91,15 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
         name: k,
         value: renderValue(opts[k]),
       }))
+
+      const extra = (f.config && f.config.optspec) || {}
+      const extras = Object.keys(extra)
+        // A name in both is documented by its DEFAULT; `config.optspec`
+        // only sharpened its type (netsim's `latency`, a number that is
+        // also a { min, max } map), and a reader wants the default.
+        .filter((k) => null == opts[k])
+        .sort()
+        .map((k) => ({ name: k, type: sentinelName(extra[k]) }))
       return {
         name: f.name,
         Name: f.Name || f.name,
@@ -70,6 +107,7 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
         transport: f.transport || 'none',
         wraps: isWrapping(f),
         options,
+        extras,
       }
     })
     .sort((a: FeatureDoc, b: FeatureDoc) => a.name.localeCompare(b.name))
@@ -100,6 +138,7 @@ function honoursActivationOrder(target: any): boolean {
 export {
   featureDocs,
   renderValue,
+  sentinelName,
   honoursActivationOrder,
 }
 

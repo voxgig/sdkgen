@@ -1446,6 +1446,62 @@ main: kit: target: js: phase: feature: active: false
   // ts: an entity named `console` produced `for (const console of consoles)`,
   // shadowing the global — the example's own console.log then resolved to the
   // entity and threw "console.log is not a function".
+  // THE GENERATED SCHEMA MODULE. `main.kit.optspec` plus each feature's own
+  // options, emitted as data the SDK validates its own options against —
+  // replacing the literal every make_options template used to carry.
+  test('ts and js emit src/Schema, and the unported targets do not', async () => {
+    for (const target of ['ts', 'js']) {
+      const out = await generate([target])
+      const ext = 'ts' === target ? 'ts' : 'js'
+      const schema = Object.entries(out).find(([p2]) =>
+        p2 === target + '/src/Schema.' + ext)
+
+      ok(schema, target + ': no src/Schema.' + ext + ' generated')
+      const src = String(schema![1])
+
+      ok(src.includes('OPTSPEC'), target + ': no OPTSPEC')
+      ok(src.includes('ENTITYSPEC'), target + ': no ENTITYSPEC')
+      ok(src.includes('"base"'), target + ': the standard options are missing')
+
+      // The sentinels carry backticks. A quoting slip here is silent — the
+      // module still parses, the spec just stops meaning anything.
+      ok(src.includes('"`$CHILD`"'), target + ': a sentinel lost its backticks')
+    }
+
+    // A target that has not been ported keeps its own literal, so emitting a
+    // Schema module it never imports would be dead source in every SDK.
+    const go = await generate(['go'])
+    const stray = Object.keys(go).filter((p2) => /\/Schema\.[a-z]+$/.test(p2))
+    deepStrictEqual(stray, [], 'an unported target emitted a Schema module')
+  })
+
+
+  test('the generated ts Schema is the spec makeOptions actually imports', async () => {
+    const out = await generate(['ts'])
+
+    const schema = out['ts/src/Schema.ts']
+    ok(schema, 'no Schema.ts')
+
+    // The constant is a plain object literal, so the module body is also
+    // valid JSON once the wrapper is stripped — which is the point of
+    // emitting it that way rather than as a parsed string.
+    const m = schema.match(/const OPTSPEC = ([\s\S]*?)\n\nconst ENTITYSPEC/)
+    ok(m, 'could not extract OPTSPEC')
+    const optspec = JSON.parse(m![1])
+
+    strictEqual(optspec.base, 'http://localhost:8000')
+    ok(null != optspec.feature, 'the feature half is missing')
+
+    // And the utility really reads it, rather than keeping a literal.
+    const util = out['ts/src/utility/MakeOptionsUtility.ts']
+    ok(util, 'no MakeOptionsUtility.ts')
+    ok(/import \{ OPTSPEC \} from '\.\.\/Schema'/.test(util),
+      'makeOptions does not import the generated spec')
+    ok(!/const optspec = \{/.test(util),
+      'makeOptions still carries a literal option spec')
+  })
+
+
   test('ts: example variables do not shadow language globals', async () => {
     const out = await generate(['ts'])
 
