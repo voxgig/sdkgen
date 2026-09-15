@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.featureDocs = featureDocs;
 exports.renderValue = renderValue;
+exports.sentinelName = sentinelName;
 exports.honoursActivationOrder = honoursActivationOrder;
 const applicability_1 = require("../helpers/applicability");
 const jostraca_1 = require("jostraca");
@@ -13,6 +14,23 @@ const types_1 = require("../types");
 //   none  pipeline hooks only; order does not affect it
 function isWrapping(feat) {
     return 'wrap' === feat.transport;
+}
+// A struct.validate sentinel as a reader's word for it: '`$FUNCTION`' ->
+// 'function'. A union renders its members, so netsim's latency reads
+// 'number | map'. Anything unrecognised renders verbatim rather than being
+// dropped — a doc table that silently omits an option is the failure this
+// whole path exists to fix.
+function sentinelName(v) {
+    if (Array.isArray(v)) {
+        const members = v.slice(1).map((m) => sentinelName(m))
+            .filter((m) => 'one' !== m);
+        return 0 === members.length ? 'any' : members.join(' | ');
+    }
+    if ('string' !== typeof v) {
+        return 'any';
+    }
+    const bare = v.replace(/[`$]/g, '').trim().toLowerCase();
+    return '' === bare ? 'any' : bare;
 }
 function renderValue(v) {
     if (null == v) {
@@ -47,6 +65,14 @@ function featureDocs(model, target) {
             name: k,
             value: renderValue(opts[k]),
         }));
+        const extra = (f.config && f.config.optspec) || {};
+        const extras = Object.keys(extra)
+            // A name in both is documented by its DEFAULT; `config.optspec`
+            // only sharpened its type (netsim's `latency`, a number that is
+            // also a { min, max } map), and a reader wants the default.
+            .filter((k) => null == opts[k])
+            .sort()
+            .map((k) => ({ name: k, type: sentinelName(extra[k]) }));
         return {
             name: f.name,
             Name: f.Name || f.name,
@@ -54,6 +80,7 @@ function featureDocs(model, target) {
             transport: f.transport || 'none',
             wraps: isWrapping(f),
             options,
+            extras,
         };
     })
         .sort((a, b) => a.name.localeCompare(b.name));

@@ -1,0 +1,66 @@
+
+main: kit: feature: validate: {
+
+  name: key()
+  title: "Payload validation against the model's own field types"
+  version: '0.0.1'
+  active: true
+  base: 'BASE'
+  transport: 'none'
+
+  # Applicability (docs/design/feature-tags.md): this feature is nothing
+  # without the generated `Schema` module, so it applies only to targets that
+  # emit one. ts and js today; a target joins by emitting Schema from its
+  # Main and declaring the tag.
+  needs: { schema: true }
+
+  # The one feature whose schema is not hand-written: the specs come from
+  # `fields[].type`, the canonical type sentinels apidef already records for
+  # every entity field and operation parameter, mapped into struct.validate's
+  # vocabulary at generation time (helpers/canonSpec) and emitted into the
+  # generated `Spec` module. Turning this on costs the model nothing extra;
+  # turning it off keeps those specs out of the generated source entirely.
+  config: {
+    options: {
+      active: false
+
+      # Check outbound payloads: what the caller asked to send, against the
+      # operation's request shape (the same partiality policy that decides
+      # what the generated `<Name>CreateData` type requires).
+      request: true
+
+      # Check inbound records against the entity's field types. OFF by
+      # default, and deliberately: a server that adds a field is not breaking
+      # its clients, and a spec built from a snapshot of the API would turn
+      # that into an error for every caller at once. Turn it on in tests and
+      # in staging, where an unannounced change is news rather than an
+      # outage.
+      response: false
+
+      # Reject keys the model does not declare. The generated specs are
+      # `$OPEN`, because apidef records the properties a spec declared and
+      # that is not a promise the payload carries nothing else; `strict`
+      # drops the `$OPEN` marker at init and closes them.
+      strict: false
+
+      # 'throw'  — a failure rejects the operation (a validate_failed error).
+      # 'report' — a failure is collected and the call proceeds.
+      mode: 'throw'
+    }
+
+    # No default: a callback receives every failure, whatever `mode` does
+    # with it, so a client can log or count invalid payloads without
+    # changing what the SDK returns.
+    optspec: {
+      onInvalid: '`$FUNCTION`'
+    }
+  }
+
+  hook: {
+    # Outbound, before the HTTP spec is built from the payload.
+    PreSpec: active: true
+
+    # Inbound, once the result data has been extracted from the response.
+    PreDone: active: true
+  }
+}

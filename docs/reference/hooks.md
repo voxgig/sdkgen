@@ -58,6 +58,7 @@ An empty row means the feature works at the transport seam instead.
 | Feature | Hooks |
 | --- | --- |
 | `rbac` | `PrePoint` |
+| `validate` | `PreSpec`, `PreDone` |
 | `metrics` | `PrePoint`, `PreDone`, `PreUnexpected` |
 | `telemetry` | `PrePoint`, `PreRequest`, `PreDone`, `PreUnexpected` |
 | `idempotency` | `PreRequest` |

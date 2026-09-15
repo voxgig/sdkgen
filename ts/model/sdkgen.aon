@@ -173,6 +173,10 @@ main: kit: target: &: {
   #   sekreto   a vendored sekreto port lives in this target's feature
   #             container, so a feature can resolve secrets through it
   #
+  #   schema    this target emits the generated `Schema` module — the
+  #             model's option spec and per-entity struct.validate specs —
+  #             so a feature can validate against the model's own types
+  #
   # Tags named in the design note but not yet load-bearing
   # (`per-feature-file`, `deps`, `transport-wrap`, `hooks`, `delegates`)
   # are deliberately absent until a feature actually gates on one: a tag
@@ -484,6 +488,32 @@ main: kit: feature: &: {
   # the others.
   spec: &: string
 
+  # THE FEATURE'S OWN OPTION SCHEMA.
+  #
+  # `config.options` is the DEFAULTS map: what happens when the caller says
+  # nothing. It is also the README's option table, and — read by example —
+  # the type of each option in the generated option spec.
+  #
+  # `config.optspec` is for what a default cannot say:
+  #   - an option with NO default (a `sink` callback, an injected clock, a
+  #     value the caller either supplies or does not). Undeclared, these
+  #     were invisible to the spec AND missing from the docs table.
+  #   - an option whose default understates its type. netsim's `latency: 0`
+  #     reads as "a number" while the feature also takes `{ min, max }`.
+  #
+  # Values are struct.validate sentinels — '`$FUNCTION`', '`$MAP`', or a
+  # union ['`$ONE`', '`$NUMBER`', '`$MAP`']. A name in both maps takes its
+  # TYPE from here and its default from `config.options`.
+  #
+  # `config.strict: true` closes the feature's spec, so an option neither
+  # map declares is rejected instead of passed through. Off by default: the
+  # shipped features are not fully declared yet, and rejecting a working
+  # client's option on upgrade is worse than missing a typo.
+  config: {
+    optspec: &: top
+    strict: *false | boolean
+  }
+
   # PLUGINS — a feature's optional, separately-trimmed parts.
   #
   # A feature whose implementation is a thin layer over a library with
@@ -568,6 +598,101 @@ main: kit: feature: &: {
 main: kit: option: &: {
   name: key()
   active: *true | boolean
+}
+
+
+# THE SDK CLIENT OPTION SCHEMA — one declaration, every target.
+#
+# A struct.validate SPEC, in struct's own by-example vocabulary: a concrete
+# value is BOTH the type constraint and the default (`base` here means "a
+# string, defaulting to http://localhost:8000"), and a `$SENTINEL` constrains
+# without defaulting. The generated `Spec` module carries it into the SDK,
+# where makeOptions validates the caller's options against it.
+#
+# WHY IT MOVED HERE. It used to be a literal inside every language's
+# make_options template — twenty hand-maintained copies of one schema, two of
+# them (cpp, scala) as JSON string constants. Nothing checked them against
+# each other and nothing checked them against the documented option list, so
+# the runtime contract, the twenty copies and the README were three sources
+# of truth for the same thing. A project that adds an option now adds it in
+# ONE place and every ported target validates it.
+#
+# Keys are the option names a caller passes to the constructor. Unknown
+# top-level keys are DROPPED by validate (not rejected) — that is struct's
+# behaviour, not a choice made here, and it is why `extend` needs an entry:
+# without one the constructor's feature-adoption seam silently received
+# nothing.
+main: kit: optspec: {
+
+  # Credentials. '' is the documented "not supplied" value; `auth: null`
+  # suppresses auth outright and is restored AFTER validate (a stored null
+  # reads as "no value", so the default below would otherwise refill it).
+  apikey: ''
+  secret: ''
+
+  # The API base URL. A `{name}` placeholder is resolved from `server`.
+  base: 'http://localhost:8000'
+  prefix: ''
+  suffix: ''
+
+  auth: {
+    prefix: ''
+    basic: false
+  }
+
+  # Extra headers sent with every request: any name, string values.
+  headers: {
+    '`$CHILD`': '`$STRING`'
+  }
+
+  # The operation and method allow-lists, as comma-separated strings.
+  allow: {
+    method: 'GET,PUT,POST,PATCH,DELETE,OPTIONS'
+    op: 'create,update,load,list,remove,command,direct,graphql'
+  }
+
+  # Per-entity overrides. `$OPEN` because an entity entry carries
+  # target-specific keys (aliases, test data) this schema does not enumerate.
+  entity: {
+    '`$CHILD`': {
+      '`$OPEN`': true
+      active: false
+      alias: {}
+    }
+  }
+
+  # Feature INSTANCES supplied at construction (the station adopt path):
+  # class instances, not data, so `$ANY` passes them through verbatim.
+  extend: '`$ANY`'
+
+  # Platform seams. A function value does not survive validate (struct drops
+  # it), so `system.fetch` is captured and restored around the call.
+  utility: {}
+  system: {
+    fetch: '`$ANY`'
+  }
+
+  test: {
+    active: false
+    entity: {
+      '`$OPEN`': true
+    }
+  }
+
+  clean: {
+    keys: 'key,token,id'
+  }
+
+  # Server-variable values for a templated base URL (OpenAPI server
+  # variables). Spec defaults arrive through the generated Config; these are
+  # the caller's overrides.
+  server: {
+    '`$CHILD`': ''
+  }
+
+  # `feature` is NOT declared here. It is assembled per target from each
+  # active feature's own `config.options`, which is already the feature's
+  # by-example schema — see helpers/optspec.
 }
 
 

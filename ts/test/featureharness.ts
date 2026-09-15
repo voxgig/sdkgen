@@ -90,6 +90,12 @@ function loadFeature(name: string): any {
     // construct the class with no plugin groups selected.
     '../../Config': { FEATURE_PLUGINS: {} },
 
+    // The GENERATED schema module, which exists only inside a real SDK: the
+    // validate feature reads its per-entity specs from it. Stubbed EMPTY so
+    // the structural checks construct the class, and overridden per case by
+    // the behavioural tests, which supply the specs they are about.
+    '../../Schema': { OPTSPEC: {}, ENTITYSPEC: {} },
+
     './sekreto': {
       Sekreto: class {
         constructor(_options?: any) { }
@@ -211,6 +217,15 @@ function makeClient(spec: {
       meta: {},
       op: over.op,
       entity: over.entity,
+
+      // The four payload slots the real Context carries. Defaulted to empty
+      // maps exactly as Context's constructor does, so a feature reading
+      // them (validate checks `data`/`match`/`reqdata` against the model's
+      // field types) sees the same shape it sees in a generated SDK.
+      data: over.data || {},
+      reqdata: over.reqdata || {},
+      match: over.match || {},
+      reqmatch: over.reqmatch || {},
       spec: undefined,
       response: undefined,
       result: undefined,
@@ -296,6 +311,9 @@ function makeClient(spec: {
     headers?: any
     body?: any
     ctrl?: any
+    data?: any
+    match?: any
+    reqdata?: any
   }): Promise<any> {
     const entity = o.entity || 'widget'
     const opname = o.op || 'load'
@@ -305,6 +323,9 @@ function makeClient(spec: {
       op: { name: opname, entity },
       entity: { name: entity },
       ctrl: o.ctrl || {},
+      data: o.data,
+      match: o.match,
+      reqdata: o.reqdata,
     })
 
     await featureHook(ctx, 'PostConstructEntity')
@@ -316,8 +337,15 @@ function makeClient(spec: {
         throw ctx.out.point
       }
 
-      // PreSpec.
+      // PreSpec. A feature may REJECT here by assigning an Error to
+      // ctx.out.spec: the real makeSpec short-circuits on an out.spec that is
+      // already set (`return ctx.spec = ctx.out.spec`) and the Entity*Op
+      // fragment then tests it with `instanceof Error`. Mirrored here, or a
+      // feature that rejects at this stage would appear to do nothing.
       await featureHook(ctx, 'PreSpec')
+      if (ctx.out.spec instanceof Error) {
+        throw ctx.out.spec
+      }
       ctx.spec = ctx.out.spec || {
         method, base, path: o.path || ('/' + entity),
         url: undefined, params: {},

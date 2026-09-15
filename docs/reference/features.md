@@ -47,12 +47,13 @@ is no runtime to install and no service to call.
 | [`clienttrack`](#clienttrack) | Stamps `User-Agent`, client-session and per-request ids | `PostConstruct`, `PreRequest` |
 | [`log`](#log) | Structured logging at every pipeline stage | every stage |
 | [`secrets`](#secrets) | Resolves the API credential through a provider chain, and exchanges a refresh token for short-lived access tokens | `PreSpec` + transport |
+| [`validate`](#validate) | Checks payloads against the entity field types the model already carries | `PreSpec`, `PreDone` |
 
 Loosely, they group as **resilience** (`retry`, `timeout`, `ratelimit`,
 `cache`), **correctness under retry** (`idempotency`), **large result sets**
 (`paging`, `streaming`), **observability** (`telemetry`, `metrics`, `audit`,
 `debug`, `log`, `clienttrack`), **governance** (`rbac`, `proxy`, `cost`), and
-**testing** (`test`, `netsim`), and **credentials** (`secrets`).
+**testing** (`test`, `netsim`, `validate`), and **credentials** (`secrets`).
 
 ---
 
@@ -1088,6 +1089,65 @@ credential becomes the deterministic `test-<response-field>`, the same answer
 `makeOptions` gives a required server variable, so offline suites need no
 token endpoint. `sdk.secrets()` returns the live `Sekreto` for arbitrary
 lookups and redaction.
+
+## `validate`
+
+> Payload validation against the model's own field types
+
+Checks what you are about to send, and optionally what came back, against
+the entity field types the model already carries. No schema is written for
+it: every field in the model has a canonical type — `string`, `integer`, a
+nullable union — and those are the same vocabulary the vendored `struct`
+library validates with, so the generator maps them once and emits the
+result beside the SDK.
+
+Outbound, at `PreSpec`, the payload is checked against the operation's
+request shape: the same policy that decides what the generated
+`ProductCreateData` type requires. A failure short-circuits with a
+`validate_failed` error and never reaches the network. Inbound, at
+`PreDone`, each returned record is checked against the entity's own field
+types.
+
+**Seam:** `PreSpec`, `PreDone`.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `active` | `false` | Enable the feature. |
+| `request` | `true` | Check outbound payloads. |
+| `response` | `false` | Check returned records. |
+| `strict` | `false` | Reject keys the model does not declare. |
+| `mode` | `'throw'` | `'throw'` rejects the operation; `'report'` collects and continues. |
+
+| Option | Type |
+| --- | --- |
+| `onInvalid` | function |
+
+```ts
+feature: {
+  validate: {
+    active: true,
+    response: true,
+    mode: 'report',
+    onInvalid: (r) => console.warn(r.entity, r.op, r.direction, r.errs),
+  },
+}
+```
+
+**Response checking is off by default, and that is deliberate.** A server
+that adds a field is not breaking its clients, and the model is a snapshot
+of what the API spec declared rather than a promise about every response.
+Turned on everywhere, an unannounced addition would become an error for
+every caller at once. Turn it on in tests and staging, where that is news
+worth having, and leave it off in production unless you want it.
+
+**What it does not check.** The model carries no array element types, no
+nested object schemas, and no enums, string formats or numeric bounds — so
+neither does this. It catches a number where a string belongs, a required
+field left out, and — with `strict` — a misspelled key. It is not a
+substitute for the server's own validation.
+
+**Availability.** `ts` and `js`. The feature reads the generated schema
+module, so a target carries it once that module is emitted there.
 
 ## Combining features
 

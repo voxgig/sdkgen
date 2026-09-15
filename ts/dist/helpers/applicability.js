@@ -94,6 +94,13 @@ function targetFeatures(model, target) {
 const TAGS = [
     // A vendored sekreto port lives in this target's feature container.
     'sekreto',
+    // The target emits the generated `Schema` module: the model's option spec
+    // and, when a feature asks for them, per-entity struct.validate specs.
+    // `validate` needs this, and the porting order is the reason it is a tag
+    // rather than an assumption — every target vendors a struct with
+    // `validate` in it, but only a target whose Main emits Schema has
+    // anything for that function to check against.
+    'schema',
 ];
 exports.TAGS = TAGS;
 // The tags named by `needs`/`provides` that are not in the vocabulary.
