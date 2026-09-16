@@ -422,6 +422,10 @@ struct CtxOut {
   Value point = Value::undef();
   SdkErrorPtr pointError;
   SpecPtr spec;
+  // A PreSpec hook (e.g. validate) rejecting the operation. `spec` above is
+  // a Spec, so it cannot carry the error the way go's `out["spec"]` map slot
+  // does; this is the same seam as pointError, one stage later.
+  SdkErrorPtr specError;
   ResponsePtr request;
   ResponsePtr response;
   ResultPtr result;

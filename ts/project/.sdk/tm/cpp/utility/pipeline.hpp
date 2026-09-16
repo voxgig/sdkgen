@@ -564,6 +564,12 @@ inline bool graphqlErrors(CtxPtr ctx) {
 // ---- makeSpec ---------------------------------------------------------
 
 inline SpecPtr makeSpec(CtxPtr ctx) {
+  // A PreSpec feature hook (e.g. validate) may short-circuit by storing an
+  // error; surface it before the request is built, the same way makePoint
+  // surfaces out.pointError.
+  if (ctx->out.specError) {
+    throw ctx->out.specError;
+  }
   if (ctx->out.spec) {
     ctx->spec = ctx->out.spec;
     return ctx->spec;
