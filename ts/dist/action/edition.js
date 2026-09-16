@@ -196,6 +196,13 @@ const EditionRoot = (0, jostraca_1.cmp)(function EditionRoot(props) {
             });
             log.info({ point: 'edition-done', edition: source.name, note: source.name });
         });
+        // ONCE, after the loop. See kindIndex.
+        if (0 < dnames.length) {
+            (0, jostraca_1.Folder)({ name: 'model/edition' }, () => (0, kind_1.kindIndex)({
+                kind: 'edition', names: dnames,
+                content: ctx$.meta.content.edition_index,
+            }));
+        }
     });
 });
 // One tree, copied from the origin path to the installed one.

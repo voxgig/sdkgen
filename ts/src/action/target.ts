@@ -51,7 +51,7 @@ import {
   loadContent,
 } from './action'
 
-import { kindModel, resolveKind, escapeRe } from './kind'
+import { kindModel, kindIndex, resolveKind, escapeRe } from './kind'
 
 import { BUNDLED, resolveSource, registerInstalled } from './resolve'
 
@@ -281,6 +281,16 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       })
 
     })
+
+    // ONCE, after the loop. See kindIndex: emitted per item it was one File
+    // component per target on the same output path, which jostraca 0.38
+    // refuses.
+    if (0 < tnames.length) {
+      Folder({ name: 'model/target' }, () => kindIndex({
+        kind: 'target', names: tnames,
+        content: ctx$.meta.content.target_index,
+      }))
+    }
   })
 })
 

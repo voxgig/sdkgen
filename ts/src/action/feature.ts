@@ -31,7 +31,7 @@ import { templateReplacements } from '../helpers/stdrep'
 
 import { copyOpts } from '../helpers/junk'
 
-import { resolveKind, kindModel } from './kind'
+import { resolveKind, kindModel, kindIndex } from './kind'
 
 
 import {
@@ -279,6 +279,16 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
         note: fname
       })
     })
+
+    // ONCE, after the loop, with every name this run installed. Emitted inside
+    // kindModel it was one File component per feature on the same path, which
+    // jostraca 0.38 refuses.
+    if (0 < fnames.length) {
+      Folder({ name: 'model/feature' }, () => kindIndex({
+        kind: 'feature', names: fnames,
+        content: ctx$.meta.content.feature_index,
+      }))
+    }
   })
 
 })

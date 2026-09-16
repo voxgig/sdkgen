@@ -10,6 +10,7 @@ exports.escapeRe = escapeRe;
 exports.kindDef = kindDef;
 exports.resolveKind = resolveKind;
 exports.kindModel = kindModel;
+exports.kindIndex = kindIndex;
 // KINDS: the things an `add` can install.
 //
 // `target` and `feature` are two of them, `docs` and others are meant to
@@ -179,7 +180,7 @@ function resolveKind(ref, kind, ctx$) {
 // re-rendered per item and the last render wins, so each render has to carry
 // all of them.
 function kindModel(props) {
-    const { ctx$, kind, source, names, content } = props;
+    const { ctx$, kind, source } = props;
     const def = kindDef(kind);
     const fs = ctx$.fs();
     const log = ctx$.log;
@@ -219,7 +220,24 @@ function kindModel(props) {
     else {
         (0, jostraca_1.Copy)({ from: source.model, replace });
     }
-    (0, jostraca_1.File)({ name: def.name + '-index.aon' }, () => (0, action_1.UpdateIndex)({
+}
+// The kind's include list, emitted ONCE for the whole run.
+//
+// This used to live at the end of kindModel, which is called per item, and the
+// comment there said so plainly: "the index File is re-rendered per item and
+// the last render wins, so each render has to carry all of them". jostraca
+// 0.38 added a duplicate-output-path check and now refuses that outright:
+//
+//   two File components resolve to the same output path,
+//   path=/out/model/feature/feature-index.aon
+//
+// Last-write-wins was never the intent, only the mechanism. Installing three
+// features rendered the index three times to write it once. Emitting it after
+// the loop, with the complete name list, produces the same file from one File
+// component and says what it means.
+function kindIndex(props) {
+    const { kind, names, content } = props;
+    (0, jostraca_1.File)({ name: kindDef(kind).name + '-index.aon' }, () => (0, action_1.UpdateIndex)({
         content,
         names,
     }));
