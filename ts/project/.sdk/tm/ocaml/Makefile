@@ -59,8 +59,13 @@ CORPUS = ../.sdk/test/test.json
 
 # A gated feature's modules come AFTER sdk_features.ml (a feature module
 # opens it) and BEFORE sdk_config.ml (the generated factory names them).
+# sdk_schema.ml is GENERATED (the model's option spec and entity specs) and
+# sdk_runtime.ml's make_options reads it, so it is named here rather than
+# beside sdk_config.ml: ocaml links a fixed order, and a module must be
+# compiled before the one that calls it.
 RUNTIME = utility/vregex.ml utility/voxgig_struct.ml sdk_json.ml \
-  sdk_types.ml sdk_helpers.ml sdk_runtime.ml sdk_features.ml $(FEATURE_SRC)
+  sdk_types.ml sdk_helpers.ml sdk_schema.ml sdk_runtime.ml sdk_features.ml \
+  $(FEATURE_SRC)
 
 # The vendored corpus engine plus the adapter that drives it. Order matters:
 # the adapter references the vendored module.

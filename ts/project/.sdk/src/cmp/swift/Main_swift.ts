@@ -23,6 +23,7 @@ import {
 
 import { Package } from './Package_swift'
 import { Config } from './Config_swift'
+import { Schema } from './Schema_swift'
 import { Gitignore } from './Gitignore_swift'
 import { MainEntity } from './MainEntity_swift'
 import { SdkError } from './SdkError_swift'
@@ -159,6 +160,8 @@ const Main = cmp(async function Main(props: any) {
         })
 
         Config({ target })
+
+        Schema({ target })
 
         SdkError({ target })
 

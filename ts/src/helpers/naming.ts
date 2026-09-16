@@ -217,7 +217,7 @@ function rbSafeTypeName(Name: string): string {
 const SWIFT_SDK_TYPES = new Set<string>([
   // core runtime
   'Context', 'Control', 'Entity', 'Operation', 'Point', 'Response', 'Result',
-  'SdkConfig', 'Spec', 'Utility',
+  'SdkConfig', 'SdkSchema', 'Spec', 'Utility',
   // struct library
   'Injection', 'Injector', 'JSON', 'JSONParseError', 'Modify',
   'OrderedDictionary', 'Sentinel', 'Value', 'VList', 'VMap', 'WalkApply',

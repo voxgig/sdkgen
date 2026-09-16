@@ -173,9 +173,16 @@ main: kit: target: &: {
   #   sekreto   a vendored sekreto port lives in this target's feature
   #             container, so a feature can resolve secrets through it
   #
-  #   schema    this target emits the generated `Schema` module — the
-  #             model's option spec and per-entity struct.validate specs —
-  #             so a feature can validate against the model's own types
+  #   schema    this target can VALIDATE against the generated `Schema`
+  #             module — the model's option spec and per-entity
+  #             struct.validate specs. NOT "emits Schema": every target
+  #             emits one, because make_options reads the option spec out
+  #             of it, so that claim is universal and gates nothing. This
+  #             says the `validate` FEATURE can run here, which needs
+  #             `tm/<lang>/src/feature/validate/` as well as the module.
+  #             Adding the tag without that source makes the feature apply
+  #             to a target with nothing to copy; featuremodel.test.ts
+  #             fails on it.
   #
   # Tags named in the design note but not yet load-bearing
   # (`per-feature-file`, `deps`, `transport-wrap`, `hooks`, `delegates`)

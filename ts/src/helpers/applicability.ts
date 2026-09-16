@@ -106,12 +106,17 @@ const TAGS = [
   // A vendored sekreto port lives in this target's feature container.
   'sekreto',
 
-  // The target emits the generated `Schema` module: the model's option spec
-  // and, when a feature asks for them, per-entity struct.validate specs.
-  // `validate` needs this, and the porting order is the reason it is a tag
-  // rather than an assumption — every target vendors a struct with
-  // `validate` in it, but only a target whose Main emits Schema has
-  // anything for that function to check against.
+  // The target can VALIDATE against the generated `Schema` module: the
+  // model's option spec and, when a feature asks for them, per-entity
+  // struct.validate specs.
+  //
+  // NOT "emits Schema". Every target emits one — make_options reads the
+  // option spec out of it — so that claim is universal and gates nothing.
+  // This tag is the `validate` FEATURE's `needs`, and a feature
+  // also needs its per-target source: tagging a target that has no
+  // `tm/<lang>/src/feature/validate/` makes the feature apply with nothing
+  // to copy. featuremodel.test.ts holds the two together in both
+  // directions.
   'schema',
 ]
 

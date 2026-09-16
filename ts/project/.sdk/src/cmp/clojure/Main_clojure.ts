@@ -20,6 +20,7 @@ import {
 import { extraFeatures } from './featureextra_clojure'
 import { Package } from './Package_clojure'
 import { Config } from './Config_clojure'
+import { Schema } from './Schema_clojure'
 import { Gitignore } from './Gitignore_clojure'
 import { MainEntity } from './MainEntity_clojure'
 
@@ -90,6 +91,7 @@ const Main = cmp(async function Main(props: any) {
   Folder({ name: 'src' }, () => {
     Folder({ name: 'sdk' }, () => {
       Config({ target })
+      Schema({ target })
     })
   })
 

@@ -298,41 +298,16 @@ defmodule ProjectName.Utility do
     co = S.getprop(config, "options")
     cfgopts = if S.ismap(co), do: co, else: S.jm([])
 
-    optspec =
-      H.deep(%{
-        "apikey" => "",
-        "secret" => "",
-        "base" => "http://localhost:8000",
-        "prefix" => "",
-        "suffix" => "",
-        # `basic` and `secret`: HTTP Basic Auth needs a second credential and
-        # a flag to say the pair is Basic rather than a single bearer token.
-        "auth" => %{"prefix" => "", "basic" => false},
-        "headers" => %{"`$CHILD`" => "`$STRING`"},
-        "allow" => %{
-          "method" => "GET,PUT,POST,PATCH,DELETE,OPTIONS",
-          "op" => "create,update,load,list,remove,command,direct,graphql"
-        },
-        "entity" => %{"`$CHILD`" => %{"`$OPEN`" => true, "active" => false, "alias" => %{}}},
-        "feature" => %{"`$CHILD`" => %{"`$OPEN`" => true, "active" => false}},
-        "utility" => %{},
-        # Feature INSTANCES supplied at construction (the station adopt
-        # path): consumed by the constructor's extend loop, so they are
-        # struct feature nodes, not data - `$ANY` accepts them verbatim.
-        # Without this entry the seam is dead: the constructor reads
-        # options.extend, but validate rejected the key.
-        "extend" => "`$ANY`",
-        "system" => %{},
-        "test" => %{"active" => false, "entity" => %{"`$OPEN`" => true}},
-        "clean" => %{"keys" => "key,token,id"},
-        # Server-variable values for a templated base URL (OpenAPI server
-        # variables): {name} placeholders in "base" are substituted from this
-        # map at construction. Spec defaults arrive via the generated config;
-        # user values override them. Mirrors go's make_options optspec - elixir
-        # was the only target validating options that did not accept it, so a
-        # spec with a templated server URL failed validation outright.
-        "server" => %{"`$CHILD`" => ""}
-      })
+    # THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
+    #
+    # `ProjectName.Schema.optspec/0` is built from the model:
+    # `main.kit.optspec` for the standard options, plus one entry per
+    # feature this target carries, taken from that feature's own
+    # `config.options` / `config.optspec`. Editing this file to add an
+    # option would put it back where it was — one of twenty hand-maintained
+    # copies of a schema nothing cross-checked — so add it to the model
+    # instead and every ported target validates it.
+    optspec = ProjectName.Schema.optspec()
 
     sys_fetch = S.getpath(opts0, "system.fetch")
 

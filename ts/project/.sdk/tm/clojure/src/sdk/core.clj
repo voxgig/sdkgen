@@ -14,6 +14,7 @@
 
 (ns sdk.core
   (:require [voxgig.struct :as vs]
+            [sdk.schema :as schema]
             [clojure.string :as str]))
 
 (def SDK-NAME "ProjectName")
@@ -91,6 +92,17 @@
                          (catch NumberFormatException _
                            (bigint (java.math.BigInteger. tok))))))))]
       (parse-val))))
+
+;; The option spec, parsed ONCE. sdk.schema holds the raw JSON and nothing
+;; else — it cannot parse its own data without requiring this namespace,
+;; which would close a cycle — so the parse lives here, behind a delay so it
+;; happens on first use rather than at load.
+;;
+;; sdk.schema also carries `entityspec-data`, the per-entity field specs.
+;; Nothing parses it yet: that is the `validate` feature's, and this target
+;; does not carry one (its model declares no `schema` tag). The data is
+;; emitted anyway so the module has the same shape in every target.
+(def ^:private optspec-parsed (delay (json-parse schema/optspec-data)))
 
 ;; ---------------------------------------------------------------------------
 ;; Atom-object helpers. Every mutable "object" is an atom wrapping a map.
@@ -1026,37 +1038,15 @@
                 order)))
           config (or (oget ctx :config) (vs/jm))
           cfgopts (let [c (vs/getprop config "options")] (if (vs/ismap c) c (vs/jm)))
-          optspec (vs/jm
-                   "apikey" "" "secret" "" "base" "http://localhost:8000" "prefix" "" "suffix" ""
-                   ;; `basic` and `secret`: HTTP Basic Auth needs a second
-                   ;; credential and a flag to say the pair is Basic rather
-                   ;; than a single bearer token. Absent from the shape, a
-                   ;; client passing them is refused with "Unexpected keys".
-                   "auth" (vs/jm "prefix" "" "basic" false)
-                   "headers" (vs/jm "`$CHILD`" "`$STRING`")
-                   "allow" (vs/jm "method" "GET,PUT,POST,PATCH,DELETE,OPTIONS"
-                                  "op" "create,update,load,list,remove,command,direct,graphql")
-                   "entity" (vs/jm "`$CHILD`" (vs/jm "`$OPEN`" true "active" false "alias" (vs/jm)))
-                   "feature" (vs/jm "`$CHILD`" (vs/jm "`$OPEN`" true "active" false))
-                   "utility" (vs/jm)
-                   ;; Feature INSTANCES supplied at construction (the station
-                   ;; adopt path): consumed by make-sdk's feature-add loop, so
-                   ;; they are live feature atoms, not data - `$ANY` accepts
-                   ;; them verbatim. Without this entry the seam is DEAD:
-                   ;; client.clj reads options.extend, but validate rejected
-                   ;; the key ("Unexpected keys at field <root>: extend"), so
-                   ;; every construction that used it failed outright.
-                   ;; Mirrors go's make_options.go and MakeOptionsUtility.ts.
-                   "extend" "`$ANY`"
-                   "system" (vs/jm)
-                   "test" (vs/jm "active" false "entity" (vs/jm "`$OPEN`" true))
-                   "clean" (vs/jm "keys" "key,token,id")
-                   ;; Server-variable values for a templated base URL (OpenAPI
-                   ;; server variables): {name} placeholders in "base" are
-                   ;; substituted from this map at construction. Spec defaults
-                   ;; arrive via the generated config; user values override
-                   ;; them. Mirrors go's make_options optspec.
-                   "server" (vs/jm "`$CHILD`" ""))
+          ;; THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
+          ;;
+          ;; Built from the model: main.kit.optspec for the standard
+          ;; options, plus one entry per feature this target carries, from
+          ;; that feature's own config.options / config.optspec. Editing
+          ;; this file to add an option would put it back where it was —
+          ;; one of twenty hand-maintained copies of a schema nothing
+          ;; cross-checked — so add it to the model instead.
+          optspec @optspec-parsed
           sys-fetch (vs/getpath opts0 "system.fetch")
           merged (vs/merge (vs/jt (vs/jm) cfgopts opts0))
           validated (vs/validate merged optspec)

@@ -22,6 +22,7 @@ import {
 
 import { Package } from './Package_kotlin'
 import { Config } from './Config_kotlin'
+import { Schema } from './Schema_kotlin'
 import { Gitignore } from './Gitignore_kotlin'
 import { MainEntity } from './MainEntity_kotlin'
 import { EntityBase } from './EntityBase_kotlin'
@@ -116,6 +117,7 @@ const Main = cmp(async function Main(props: any) {
     })
 
     Config({ target })
+    Schema({ target })
 
     // Generate the typed reference-model file (<Name>Types.kt) beside the
     // other generated core files. Documentation/DX shapes only — not wired

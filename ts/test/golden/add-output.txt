@@ -14,7 +14,7 @@ src/cmp/c/EntityTypes_c.ts d0c20304f410
 src/cmp/c/Entity_c.ts 9f41087a24e4
 src/cmp/c/Gitignore_c.ts 1c1cfa982fef
 src/cmp/c/MainEntity_c.ts d6e780384b49
-src/cmp/c/Main_c.ts 589a71364df9
+src/cmp/c/Main_c.ts ef9e77aba8c5
 src/cmp/c/Package_c.ts 4cf4ec335fe8
 src/cmp/c/ReadmeEntity_c.ts 7bad4f178dad
 src/cmp/c/ReadmeExamplesTest_c.ts dd12acb92a8c
@@ -29,6 +29,7 @@ src/cmp/c/ReadmeRef_c.ts 429865784db3
 src/cmp/c/ReadmeTopHowto_c.ts 53480bd63967
 src/cmp/c/ReadmeTopQuick_c.ts 38971de7faf5
 src/cmp/c/ReadmeTopTest_c.ts 94aa193c7015
+src/cmp/c/Schema_c.ts b155335a8763
 src/cmp/c/TestDirect_c.ts 8c6db9aad987
 src/cmp/c/TestEntity_c.ts 84c0cb4a54e6
 src/cmp/c/Test_c.ts 540c16c88fa8
@@ -52,7 +53,7 @@ tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
 tm/c/core/response.c 4b4096708714
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h a3ca09eb67e4
+tm/c/core/sdk.h b2970e03fc0e
 tm/c/core/spec.c b7e5d9119652
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
@@ -84,7 +85,7 @@ tm/c/utility/jsonparse.c cffd3f2ac8b1
 tm/c/utility/make_context.c 615156796cbb
 tm/c/utility/make_error.c bb1799d1c4a9
 tm/c/utility/make_fetch_def.c 08c73a9454ed
-tm/c/utility/make_options.c b6a39e145446
+tm/c/utility/make_options.c 730e0c010266
 tm/c/utility/make_point.c 684f5b7e7aa9
 tm/c/utility/make_request.c b5887e3fd94c
 tm/c/utility/make_response.c 5cb2535aec54
@@ -127,11 +128,11 @@ src/cmp/clojure/EntityOperation_clojure.ts 89f82bc53713
 src/cmp/clojure/Entity_clojure.ts 75f6ea90670b
 src/cmp/clojure/Gitignore_clojure.ts 02def6714f53
 src/cmp/clojure/MainEntity_clojure.ts 7c402f26036e
-src/cmp/clojure/Main_clojure.ts aa2c39f596bd
+src/cmp/clojure/Main_clojure.ts 26c1987ee40d
 src/cmp/clojure/Package_clojure.ts 6cd629036476
 src/cmp/clojure/ReadmeEntity_clojure.ts e310c67ce651
 src/cmp/clojure/ReadmeExamplesTest_clojure.ts 362ffe6d02ec
-src/cmp/clojure/ReadmeExplanation_clojure.ts 584805250b27
+src/cmp/clojure/ReadmeExplanation_clojure.ts 2f6eac715762
 src/cmp/clojure/ReadmeHowto_clojure.ts f09b92176c25
 src/cmp/clojure/ReadmeInstall_clojure.ts 65a443158112
 src/cmp/clojure/ReadmeIntro_clojure.ts 65a7e010201d
@@ -142,6 +143,7 @@ src/cmp/clojure/ReadmeRef_clojure.ts f42ffbc6362d
 src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopQuick_clojure.ts 8ec041215dfd
 src/cmp/clojure/ReadmeTopTest_clojure.ts 0a72b8c41e8d
+src/cmp/clojure/Schema_clojure.ts f86abb56d276
 src/cmp/clojure/TestDirect_clojure.ts 88b2122d1443
 src/cmp/clojure/TestEntity_clojure.ts a44b86d495ee
 src/cmp/clojure/Test_clojure.ts 4748eaab84d5
@@ -215,7 +217,7 @@ tm/clojure/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
-tm/clojure/src/sdk/core.clj a9ba27206ca7
+tm/clojure/src/sdk/core.clj f928b85f6b99
 tm/clojure/src/sdk/features.clj bb8e995c6e30
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
@@ -245,7 +247,7 @@ src/cmp/cpp/EntityTypes_cpp.ts 690fbf7bb9f7
 src/cmp/cpp/Entity_cpp.ts 58549e5990d6
 src/cmp/cpp/Gitignore_cpp.ts 164c931b3983
 src/cmp/cpp/MainEntity_cpp.ts e419d3bb76ae
-src/cmp/cpp/Main_cpp.ts 4f426ff9a3c0
+src/cmp/cpp/Main_cpp.ts b92fcc389449
 src/cmp/cpp/Package_cpp.ts fe9270b598ba
 src/cmp/cpp/ReadmeEntity_cpp.ts 73b806a3b452
 src/cmp/cpp/ReadmeExamplesTest_cpp.ts 9cf7d6455bcf
@@ -260,6 +262,7 @@ src/cmp/cpp/ReadmeRef_cpp.ts 955199a424e5
 src/cmp/cpp/ReadmeTopHowto_cpp.ts 4b4bbe9d899a
 src/cmp/cpp/ReadmeTopQuick_cpp.ts 4b94785fbebc
 src/cmp/cpp/ReadmeTopTest_cpp.ts 1a2decabecde
+src/cmp/cpp/Schema_cpp.ts c7fc6df74c36
 src/cmp/cpp/TestDirect_cpp.ts 3692b05a725d
 src/cmp/cpp/TestEntity_cpp.ts 23dc7977bc30
 src/cmp/cpp/Test_cpp.ts bafd48172676
@@ -299,7 +302,7 @@ tm/cpp/test/testlib.hpp f5f70c8c25b7
 tm/cpp/test/vendor/omni/json.hpp 8cf02f6dc59c
 tm/cpp/test/vendor/omni/omni.hpp 91b0f300722b
 tm/cpp/test/vendor/omni/util.hpp 5b18b0200a65
-tm/cpp/utility/pipeline.hpp 2786e368a79c
+tm/cpp/utility/pipeline.hpp 42c6b1679e29
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
@@ -317,7 +320,7 @@ src/cmp/csharp/EntityTypes_csharp.ts 1ee64f94df14
 src/cmp/csharp/Entity_csharp.ts d30ff96c3073
 src/cmp/csharp/Gitignore_csharp.ts bd603cc2c5c7
 src/cmp/csharp/MainEntity_csharp.ts 1c24807ab2fe
-src/cmp/csharp/Main_csharp.ts 41ea0f319ca0
+src/cmp/csharp/Main_csharp.ts cd05518733d4
 src/cmp/csharp/Package_csharp.ts 91f5b7824af7
 src/cmp/csharp/ReadmeEntity_csharp.ts b19f5bbda213
 src/cmp/csharp/ReadmeExamplesTest_csharp.ts 12a0e16e6c4a
@@ -332,6 +335,7 @@ src/cmp/csharp/ReadmeRef_csharp.ts b1d8efbc3579
 src/cmp/csharp/ReadmeTopHowto_csharp.ts 8c938ccb8691
 src/cmp/csharp/ReadmeTopQuick_csharp.ts e070795e3016
 src/cmp/csharp/ReadmeTopTest_csharp.ts a4e7d74be219
+src/cmp/csharp/Schema_csharp.ts cdc4bc88abcf
 src/cmp/csharp/SdkError_csharp.ts 1cd61a4cfec7
 src/cmp/csharp/TestDirect_csharp.ts 262a6f74c9bb
 src/cmp/csharp/TestEntity_csharp.ts 14ea0805eb71
@@ -389,7 +393,7 @@ tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs aa8db59afcdb
 tm/csharp/utility/MakeFetchDef.cs 89aca56837ef
-tm/csharp/utility/MakeOptions.cs 3b3e6e2ec70e
+tm/csharp/utility/MakeOptions.cs b20ba9a20fa8
 tm/csharp/utility/MakePoint.cs c0182b4343c0
 tm/csharp/utility/MakeRequest.cs 32657a32522e
 tm/csharp/utility/MakeResponse.cs 8aa004eeaeb1
@@ -424,11 +428,11 @@ src/cmp/elixir/EntityTypes_elixir.ts b30edbe49d6b
 src/cmp/elixir/Entity_elixir.ts c30a8cfd1fee
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
 src/cmp/elixir/MainEntity_elixir.ts 8f2d02c0bb9f
-src/cmp/elixir/Main_elixir.ts 8d7d78a136ff
+src/cmp/elixir/Main_elixir.ts b9e2186c7425
 src/cmp/elixir/Package_elixir.ts 6ba6aebc9cb9
 src/cmp/elixir/ReadmeEntity_elixir.ts ad6e744998b9
 src/cmp/elixir/ReadmeExamplesTest_elixir.ts ecf3160a7ca4
-src/cmp/elixir/ReadmeExplanation_elixir.ts 04a0c276ec59
+src/cmp/elixir/ReadmeExplanation_elixir.ts bff81f1dd55a
 src/cmp/elixir/ReadmeHowto_elixir.ts 3982e13bd88f
 src/cmp/elixir/ReadmeInstall_elixir.ts cb1a9867865b
 src/cmp/elixir/ReadmeIntro_elixir.ts 17c42a05f602
@@ -439,6 +443,7 @@ src/cmp/elixir/ReadmeRef_elixir.ts 353423b444f7
 src/cmp/elixir/ReadmeTopHowto_elixir.ts 90ecb763e0ad
 src/cmp/elixir/ReadmeTopQuick_elixir.ts 076794d8d4e1
 src/cmp/elixir/ReadmeTopTest_elixir.ts 5f12260e03e2
+src/cmp/elixir/Schema_elixir.ts 57f07a7ef09a
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
 src/cmp/elixir/TestEntity_elixir.ts 79f042e3436d
 src/cmp/elixir/Test_elixir.ts 840e043835e2
@@ -463,7 +468,7 @@ tm/elixir/lib/projectname/feature.ex a9f2c2609648
 tm/elixir/lib/projectname/feature/test.ex 072467e5d97f
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex b6b69d1f1fb1
+tm/elixir/lib/projectname/utility.ex ea3007289801
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -486,7 +491,7 @@ tm/elixir/test/vendor/omni/util.ex da800d72f73e
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/go.aon c705e26de99b
+model/target/go.aon c596a9581460
 model/target/target-index.aon 626b8fa31e53
 src/cmp/go/Config_go.ts 93e94a28b581
 src/cmp/go/EntityOperation_go.ts 466b87860b69
@@ -628,7 +633,7 @@ src/cmp/java/EntityTypes_java.ts f700de632a57
 src/cmp/java/Entity_java.ts 271c269aed92
 src/cmp/java/Gitignore_java.ts 549792550319
 src/cmp/java/MainEntity_java.ts 3f146ec80ca7
-src/cmp/java/Main_java.ts ccfd970034f5
+src/cmp/java/Main_java.ts 5a29580c76de
 src/cmp/java/Package_java.ts 8b6a6c2f4a0f
 src/cmp/java/ReadmeEntity_java.ts 91738cbdc727
 src/cmp/java/ReadmeExamplesTest_java.ts 54169df59e49
@@ -643,6 +648,7 @@ src/cmp/java/ReadmeRef_java.ts bdd231f20558
 src/cmp/java/ReadmeTopHowto_java.ts c3befccf0daa
 src/cmp/java/ReadmeTopQuick_java.ts 9b293b845611
 src/cmp/java/ReadmeTopTest_java.ts 798f5114294c
+src/cmp/java/Schema_java.ts a8516df83417
 src/cmp/java/SdkError_java.ts 2957202451b0
 src/cmp/java/TestDirect_java.ts 85790864e2f8
 src/cmp/java/TestEntity_java.ts 4fe8d8a8959d
@@ -707,7 +713,7 @@ tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
 tm/java/utility/MakeError.java 16bb2d80d562
 tm/java/utility/MakeFetchDef.java b83d2aed69b6
-tm/java/utility/MakeOptions.java 8385f1f51226
+tm/java/utility/MakeOptions.java eb282ff39d0a
 tm/java/utility/MakePoint.java fdef9e9657ab
 tm/java/utility/MakeRequest.java b326d47c077d
 tm/java/utility/MakeResponse.java bce6807c2f70
@@ -863,7 +869,7 @@ src/cmp/kotlin/EntityTypes_kotlin.ts 2cc19adcce0c
 src/cmp/kotlin/Entity_kotlin.ts 596b4f146780
 src/cmp/kotlin/Gitignore_kotlin.ts f164b2f3bdde
 src/cmp/kotlin/MainEntity_kotlin.ts bca2e71d5f00
-src/cmp/kotlin/Main_kotlin.ts 98df891846f6
+src/cmp/kotlin/Main_kotlin.ts 9125d60d58b6
 src/cmp/kotlin/Package_kotlin.ts 62d10ae1ef9f
 src/cmp/kotlin/ReadmeEntity_kotlin.ts ab05de9ac54b
 src/cmp/kotlin/ReadmeExamplesTest_kotlin.ts d43b6464119f
@@ -878,6 +884,7 @@ src/cmp/kotlin/ReadmeRef_kotlin.ts 0bafca108114
 src/cmp/kotlin/ReadmeTopHowto_kotlin.ts 5f8193767df5
 src/cmp/kotlin/ReadmeTopQuick_kotlin.ts b722e70958f2
 src/cmp/kotlin/ReadmeTopTest_kotlin.ts 15706807d852
+src/cmp/kotlin/Schema_kotlin.ts f58bacdc35d1
 src/cmp/kotlin/SdkError_kotlin.ts dc0cd7ddcc31
 src/cmp/kotlin/TestDirect_kotlin.ts b1b09a7992d7
 src/cmp/kotlin/TestEntity_kotlin.ts aeb207fe7a63
@@ -932,7 +939,7 @@ tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
 tm/kotlin/utility/Fetcher.kt 206114285747
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
-tm/kotlin/utility/MakeOptions.kt b7f283e2c51b
+tm/kotlin/utility/MakeOptions.kt ca984847067e
 tm/kotlin/utility/MakePoint.kt e21c75b47c95
 tm/kotlin/utility/MakeReqRes.kt a745863aa7aa
 tm/kotlin/utility/MakeSpecUrl.kt 1c80e1c64c07
@@ -945,7 +952,7 @@ tm/kotlin/utility/struct/Struct.kt 1ecfc2530803
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/lua.aon 301f6a27a0c6
+model/target/lua.aon 20149ad60ba6
 model/target/target-index.aon ea75509be8db
 src/cmp/lua/Config_lua.ts d1133e200cfb
 src/cmp/lua/EntityOperation_lua.ts daa4641b002e
@@ -957,7 +964,7 @@ src/cmp/lua/Main_lua.ts e0faf6ddd1bd
 src/cmp/lua/Package_lua.ts b678fa677f07
 src/cmp/lua/ReadmeEntity_lua.ts 886fadf6275a
 src/cmp/lua/ReadmeExamplesTest_lua.ts 5f104cb87813
-src/cmp/lua/ReadmeExplanation_lua.ts a78888656e53
+src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
 src/cmp/lua/ReadmeHowto_lua.ts bf706cc84dcc
 src/cmp/lua/ReadmeInstall_lua.ts a0104d093179
 src/cmp/lua/ReadmeIntro_lua.ts 77436fb19b31
@@ -1057,11 +1064,11 @@ src/cmp/ocaml/EntityOperation_ocaml.ts 66ee562a3531
 src/cmp/ocaml/Entity_ocaml.ts 11ce11c6299a
 src/cmp/ocaml/Gitignore_ocaml.ts 17f97d494254
 src/cmp/ocaml/MainEntity_ocaml.ts ab4c2d6c3549
-src/cmp/ocaml/Main_ocaml.ts 67d1c24966fc
+src/cmp/ocaml/Main_ocaml.ts 9fada33f72cf
 src/cmp/ocaml/Package_ocaml.ts 43b3779defba
 src/cmp/ocaml/ReadmeEntity_ocaml.ts 6db2fc990498
 src/cmp/ocaml/ReadmeExamplesTest_ocaml.ts aa083fa48fb2
-src/cmp/ocaml/ReadmeExplanation_ocaml.ts e59249a8de78
+src/cmp/ocaml/ReadmeExplanation_ocaml.ts a25d52a901d2
 src/cmp/ocaml/ReadmeHowto_ocaml.ts d35e3c20b80d
 src/cmp/ocaml/ReadmeInstall_ocaml.ts 885d5ab399fd
 src/cmp/ocaml/ReadmeIntro_ocaml.ts 3077f6652007
@@ -1072,6 +1079,7 @@ src/cmp/ocaml/ReadmeRef_ocaml.ts 5849670e35ce
 src/cmp/ocaml/ReadmeTopHowto_ocaml.ts f283dca429a5
 src/cmp/ocaml/ReadmeTopQuick_ocaml.ts 145826e324e0
 src/cmp/ocaml/ReadmeTopTest_ocaml.ts 23c39ffb5001
+src/cmp/ocaml/Schema_ocaml.ts 2fdc0fe947f9
 src/cmp/ocaml/SdkError_ocaml.ts 511cfaea3eda
 src/cmp/ocaml/TestDirect_ocaml.ts 216a29066541
 src/cmp/ocaml/TestEntity_ocaml.ts 267851e10cd7
@@ -1080,12 +1088,12 @@ src/cmp/ocaml/fragment/RunOp.fragment.ml b4ede130f1ef
 src/cmp/ocaml/tsconfig.json 720a3f229019
 src/cmp/ocaml/utility_ocaml.ts 010faa650f9e
 tm/ocaml/LICENSE c92ad97f8812
-tm/ocaml/Makefile e64109704c9c
+tm/ocaml/Makefile 1858ae416548
 tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml 1ea1bbd4b375
 tm/ocaml/sdk_helpers.ml deadcfd0d1f8
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml d46d06559c11
+tm/ocaml/sdk_runtime.ml 44a3cca3dcad
 tm/ocaml/sdk_types.ml 85ee25259c3a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
@@ -1115,11 +1123,11 @@ src/cmp/perl/EntityOperation_perl.ts 8d50a8beeb42
 src/cmp/perl/Entity_perl.ts afe325ce99f5
 src/cmp/perl/Gitignore_perl.ts cef200d91d8f
 src/cmp/perl/MainEntity_perl.ts 49d50e77add8
-src/cmp/perl/Main_perl.ts 1befabf6f542
+src/cmp/perl/Main_perl.ts 2c320cf52ce2
 src/cmp/perl/Package_perl.ts 30ee71edac37
 src/cmp/perl/ReadmeEntity_perl.ts 51d499382d84
 src/cmp/perl/ReadmeExamplesTest_perl.ts 1a2fb7a3486f
-src/cmp/perl/ReadmeExplanation_perl.ts 3eb072f47880
+src/cmp/perl/ReadmeExplanation_perl.ts 92641c9d1f5c
 src/cmp/perl/ReadmeHowto_perl.ts 562f11defd9b
 src/cmp/perl/ReadmeInstall_perl.ts fab0f9ae5188
 src/cmp/perl/ReadmeIntro_perl.ts c2d96ee2a88c
@@ -1130,6 +1138,7 @@ src/cmp/perl/ReadmeRef_perl.ts 8109ce61df0a
 src/cmp/perl/ReadmeTopHowto_perl.ts 287f685ca3bf
 src/cmp/perl/ReadmeTopQuick_perl.ts 292e04935a5a
 src/cmp/perl/ReadmeTopTest_perl.ts fd5247ab7792
+src/cmp/perl/Schema_perl.ts b1b6d3f09f28
 src/cmp/perl/TestDirect_perl.ts 5a3cc695f8e4
 src/cmp/perl/TestEntity_perl.ts 4b5ae0bf6f66
 src/cmp/perl/Test_perl.ts 1485487244ad
@@ -1148,7 +1157,7 @@ tm/perl/Makefile fa0c8f05682c
 tm/perl/core/context.pm bd9566126012
 tm/perl/core/control.pm cb6185bbc19f
 tm/perl/core/error.pm d258afc78669
-tm/perl/core/helpers.pm 183e0a337a83
+tm/perl/core/helpers.pm 8f2c49fcbb46
 tm/perl/core/operation.pm c15d6df50079
 tm/perl/core/response.pm 307c55efd2a6
 tm/perl/core/result.pm c8daeffb69ad
@@ -1184,7 +1193,7 @@ tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm b48207779329
 tm/perl/utility/make_fetch_def.pm ebb77b54060c
-tm/perl/utility/make_options.pm 00d78f935138
+tm/perl/utility/make_options.pm f88bb9b1e989
 tm/perl/utility/make_point.pm 584666550bc1
 tm/perl/utility/make_request.pm d4b1ec8cf30d
 tm/perl/utility/make_response.pm 51a842fc584b
@@ -1210,7 +1219,7 @@ tm/perl/utility/transform_response.pm 035accca42c2
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/php.aon c67f926e2601
+model/target/php.aon 7e1c484ae4ab
 model/target/target-index.aon 4bd43db1bef1
 src/cmp/php/Config_php.ts 1f6433798af4
 src/cmp/php/EntityOperation_php.ts 65b4daf2dff8
@@ -1222,7 +1231,7 @@ src/cmp/php/Main_php.ts df101d5b9eb6
 src/cmp/php/Package_php.ts 1a0ba9f94ad6
 src/cmp/php/ReadmeEntity_php.ts a4d920ba0798
 src/cmp/php/ReadmeExamplesTest_php.ts ff0c2061fc5d
-src/cmp/php/ReadmeExplanation_php.ts a7dc536552d1
+src/cmp/php/ReadmeExplanation_php.ts 452c1e096b54
 src/cmp/php/ReadmeHowto_php.ts 4294c732ff2c
 src/cmp/php/ReadmeInstall_php.ts 5f410370b03a
 src/cmp/php/ReadmeIntro_php.ts acceed78bda9
@@ -1313,7 +1322,7 @@ tm/php/utility/struct/Struct.php 9e07fc26d3fc
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/py.aon 09d3c25aa17c
+model/target/py.aon a62d902d6005
 model/target/target-index.aon 9424f27eb776
 src/cmp/py/Config_py.ts ea8801548867
 src/cmp/py/EntityOperation_py.ts 8b1b1cf28054
@@ -1325,7 +1334,7 @@ src/cmp/py/Main_py.ts 7019308e7ee8
 src/cmp/py/Package_py.ts f2b8917726e8
 src/cmp/py/ReadmeEntity_py.ts 02b2a32c0043
 src/cmp/py/ReadmeExamplesTest_py.ts abf1a0782c7d
-src/cmp/py/ReadmeExplanation_py.ts 1d1bb302dbfd
+src/cmp/py/ReadmeExplanation_py.ts d7c6b57925cf
 src/cmp/py/ReadmeHowto_py.ts 994ac64c90e2
 src/cmp/py/ReadmeInstall_py.ts aa3941eb8a77
 src/cmp/py/ReadmeIntro_py.ts 6f2920da3e2f
@@ -1445,7 +1454,7 @@ tm/py-data/test/test_frames.py 1ca04ad46a4b
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/rb.aon 7f1bdd4412de
+model/target/rb.aon 3dbf4f4a8aad
 model/target/target-index.aon ac0bc237c44c
 src/cmp/rb/Config_rb.ts 2f5bbf0bbfe6
 src/cmp/rb/EntityOperation_rb.ts 43ad5a64b0c9
@@ -1457,7 +1466,7 @@ src/cmp/rb/Main_rb.ts dd77600bf01d
 src/cmp/rb/Package_rb.ts ce128d510e7c
 src/cmp/rb/ReadmeEntity_rb.ts 03a52257bfc5
 src/cmp/rb/ReadmeExamplesTest_rb.ts b7d2352a4cc5
-src/cmp/rb/ReadmeExplanation_rb.ts 772c6cf3ce0c
+src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
 src/cmp/rb/ReadmeHowto_rb.ts e49dc5172db0
 src/cmp/rb/ReadmeInstall_rb.ts 0b486b07f788
 src/cmp/rb/ReadmeIntro_rb.ts 1c4d8e7d15d3
@@ -1558,7 +1567,7 @@ src/cmp/rust/EntityTypes_rust.ts 94cdba1aaeb3
 src/cmp/rust/Entity_rust.ts 1b071d02f17f
 src/cmp/rust/Gitignore_rust.ts 285a6decc9dd
 src/cmp/rust/MainEntity_rust.ts cfab71599f0a
-src/cmp/rust/Main_rust.ts cb11a5487f68
+src/cmp/rust/Main_rust.ts 9137138e1761
 src/cmp/rust/Package_rust.ts 7957e6cff874
 src/cmp/rust/ReadmeEntity_rust.ts 469b51440586
 src/cmp/rust/ReadmeExamplesTest_rust.ts 4da19e28b7b4
@@ -1573,6 +1582,7 @@ src/cmp/rust/ReadmeRef_rust.ts 38c8a70595d8
 src/cmp/rust/ReadmeTopHowto_rust.ts 7f66286916f9
 src/cmp/rust/ReadmeTopQuick_rust.ts fd5cbe899956
 src/cmp/rust/ReadmeTopTest_rust.ts d42ced4f735d
+src/cmp/rust/Schema_rust.ts 0650413ad06c
 src/cmp/rust/SdkError_rust.ts 44f812a8460e
 src/cmp/rust/TestDirect_rust.ts a92797568804
 src/cmp/rust/TestEntity_rust.ts a62f2f7bf893
@@ -1593,7 +1603,7 @@ tm/rust/VERSION e6635045e1d2
 tm/rust/core/context.rs 49e1e77f99cf
 tm/rust/core/control.rs 2cadde4a52aa
 tm/rust/core/helpers.rs 57e914328122
-tm/rust/core/mod.rs 7aeb9589772d
+tm/rust/core/mod.rs 88b87556e1a9
 tm/rust/core/operation.rs 3f45c0d8fee6
 tm/rust/core/point.rs 02372d91dc7e
 tm/rust/core/response.rs 0f431b10cc6d
@@ -1632,7 +1642,7 @@ tm/rust/utility/jsonparse.rs 17f7ee7b908a
 tm/rust/utility/make_context.rs 04f34b592c9c
 tm/rust/utility/make_error.rs 6a60ab3f2ab8
 tm/rust/utility/make_fetch_def.rs 6656dd09052b
-tm/rust/utility/make_options.rs c1464d3e3c02
+tm/rust/utility/make_options.rs c0a7ec326357
 tm/rust/utility/make_point.rs 9908e4c29dff
 tm/rust/utility/make_request.rs fa9eeee6d176
 tm/rust/utility/make_response.rs 87ae886eda3b
@@ -1674,7 +1684,7 @@ src/cmp/scala/EntityTypes_scala.ts 8ba0e8ef8f2e
 src/cmp/scala/Entity_scala.ts 8f2825f036c8
 src/cmp/scala/Gitignore_scala.ts 4c75b5801ca5
 src/cmp/scala/MainEntity_scala.ts 911328e9d2ca
-src/cmp/scala/Main_scala.ts 42d19d9c65c5
+src/cmp/scala/Main_scala.ts 40e83453fbbd
 src/cmp/scala/Package_scala.ts 8ae04e6b348b
 src/cmp/scala/ReadmeEntity_scala.ts 7a460619a1ce
 src/cmp/scala/ReadmeExamplesTest_scala.ts 1931c25f1bc8
@@ -1689,6 +1699,7 @@ src/cmp/scala/ReadmeRef_scala.ts 20ed60ca8638
 src/cmp/scala/ReadmeTopHowto_scala.ts 1169e3db1008
 src/cmp/scala/ReadmeTopQuick_scala.ts a8363080c879
 src/cmp/scala/ReadmeTopTest_scala.ts 8b1837c964cb
+src/cmp/scala/Schema_scala.ts f63c575c7ff3
 src/cmp/scala/TestDirect_scala.ts 7df1eeaad028
 src/cmp/scala/TestEntity_scala.ts e6bd86ddf84d
 src/cmp/scala/Test_scala.ts e88d8f87a50e
@@ -1808,7 +1819,7 @@ tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
 tm/scala/utility/Fetcher.scala a3a1073307be
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
-tm/scala/utility/Make.scala a10776b7d1dd
+tm/scala/utility/Make.scala 9ddabc5e36d8
 tm/scala/utility/MakeSpec.scala 321cd9348d4e
 tm/scala/utility/Misc.scala bf44fcc37724
 tm/scala/utility/Prepare.scala 8c0bc0c5c841
@@ -1832,7 +1843,7 @@ src/cmp/swift/EntityTypes_swift.ts 87a8a87844b8
 src/cmp/swift/Entity_swift.ts 251e4b55da25
 src/cmp/swift/Gitignore_swift.ts 335a862c06a8
 src/cmp/swift/MainEntity_swift.ts a077a33118e1
-src/cmp/swift/Main_swift.ts 8710cac7b9dc
+src/cmp/swift/Main_swift.ts 1c1ce9aa32d1
 src/cmp/swift/Package_swift.ts c144117b421d
 src/cmp/swift/ReadmeEntity_swift.ts 99ed05fdeb6f
 src/cmp/swift/ReadmeExamplesTest_swift.ts e51e1dcd2b2a
@@ -1847,6 +1858,7 @@ src/cmp/swift/ReadmeRef_swift.ts 7930b9af1938
 src/cmp/swift/ReadmeTopHowto_swift.ts e7d3f536e578
 src/cmp/swift/ReadmeTopQuick_swift.ts b0d732b88586
 src/cmp/swift/ReadmeTopTest_swift.ts e1b5bc35f382
+src/cmp/swift/Schema_swift.ts 6fb9109095b6
 src/cmp/swift/SdkError_swift.ts eb21c3a56459
 src/cmp/swift/TestDirect_swift.ts 3c38c4dfe812
 src/cmp/swift/TestEntity_swift.ts a25e69f78d45
@@ -1895,7 +1907,7 @@ tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 9bc134d98639
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 667becbbc443
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 5139e01f2b4e
-tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift e82938e642b5
+tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 9723a9cb8bae
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 157744905be9
 tm/swift/Sources/ProjectNameSDK/utility/Register.swift ce2198a186aa
 tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 0bb89feddaa3
@@ -1905,7 +1917,7 @@ tm/swift/Tests/ProjectNameSDKTests/NetsimTest.swift e290a72e79ed
 tm/swift/Tests/ProjectNameSDKTests/OmniResolver.swift 4f79581412cb
 tm/swift/Tests/ProjectNameSDKTests/OmniSmokeTest.swift 8c71b23490e1
 tm/swift/Tests/ProjectNameSDKTests/PipelineTest.swift fba6b7236be3
-tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift 98799a20de4a
+tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift ccb1928dd0c6
 tm/swift/Tests/ProjectNameSDKTests/Runner.swift 7cacfc13a4c6
 tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift df46c84a8c75
 tm/swift/Tests/vendor/omni/Json.swift e8effba5b01a
@@ -2052,7 +2064,7 @@ src/cmp/zig/EntityOperation_zig.ts 04bd390df007
 src/cmp/zig/Entity_zig.ts 03329f926393
 src/cmp/zig/Gitignore_zig.ts ec49760abeae
 src/cmp/zig/MainEntity_zig.ts d0d2ec1fe12a
-src/cmp/zig/Main_zig.ts f34804610e8d
+src/cmp/zig/Main_zig.ts 4ed0b035d379
 src/cmp/zig/Package_zig.ts 65f1bbfbfb7e
 src/cmp/zig/ReadmeEntity_zig.ts 5073f69da6fe
 src/cmp/zig/ReadmeExamplesTest_zig.ts ce6f72df0e66
@@ -2067,6 +2079,7 @@ src/cmp/zig/ReadmeRef_zig.ts 874e6f01d559
 src/cmp/zig/ReadmeTopHowto_zig.ts 77361baf4079
 src/cmp/zig/ReadmeTopQuick_zig.ts 3842318a13c0
 src/cmp/zig/ReadmeTopTest_zig.ts 854a85eef838
+src/cmp/zig/Schema_zig.ts f5f0eb493575
 src/cmp/zig/TestDirect_zig.ts 45b68b8a94ab
 src/cmp/zig/TestEntity_zig.ts 723acedc349d
 src/cmp/zig/Test_zig.ts b5e6c6744fe8
@@ -2095,7 +2108,7 @@ tm/zig/core/response.zig 4df235df5674
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 76f0cf3fd406
 tm/zig/core/types.zig ed211da482aa
-tm/zig/core/utility.zig e48973e46bb4
+tm/zig/core/utility.zig d797a721a48a
 tm/zig/feature/audit.zig 8373b1320c48
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig d7352c80c34e

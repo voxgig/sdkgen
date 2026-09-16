@@ -1091,14 +1091,18 @@ describe('config representation is chosen by size', () => {
 
 
   // Every target whose generated config can carry `options.server` must also
-  // ACCEPT it in the option spec `make_options` validates against.
+  // RESOLVE it — substitute `{name}` into the base URL.
   //
   // These are not independent: rendering options from the canonical definition
   // is what put `server` into the config, and a target that emits a key its own
   // validator rejects fails at client construction. elixir demonstrated it -
   // 75 of its 151 generated tests failed with
-  // `Unexpected keys at field <root>: server` - and the same gap is open in a
-  // dozen targets that do not emit `server` yet.
+  // `Unexpected keys at field <root>: server`.
+  //
+  // ACCEPTING it is no longer a per-target question. The option spec is
+  // generated from `main.kit.optspec`, which declares `server` once for every
+  // target; test/optspec.test.ts asserts the assembled spec takes it. What is
+  // still per-target, and still hand-written, is the SUBSTITUTION below.
   const SERVER_OPTSPEC: [string, string][] = [
     ['ts', 'src/utility/MakeOptionsUtility.ts'],
     ['js', 'src/utility/MakeOptionsUtility.js'],
@@ -1115,29 +1119,19 @@ describe('config representation is chosen by size', () => {
   ]
 
   for (const [target, file] of SERVER_OPTSPEC) {
-    test(target + ': the option spec accepts options.server', () => {
-      const path = Path.join(TM, target, file)
-      ok(existsSync(path), target + ': no ' + file)
-      const src = readFileSync(path, 'utf8')
-      // Quoted ("server" / 'server' / :server) or a bare object/table key
-      // (`server:` in ts/js, `server =` in lua) — the optspec is written in
-      // each language's own literal syntax.
-      ok(/["'`:]server["'`]|(^|[\s{,])server\s*[:=]/m.test(src),
-        target + ': make_options does not accept `server`, so a spec with a ' +
-        'templated server URL fails validation at client construction')
-    })
-
-    // ACCEPTING the option is not the same as HONOURING it, and the weaker
-    // check above is what let the two drift apart: seven targets took a
-    // `server` map and then sent every request to a URL still containing a
-    // literal `{tenant}`. Accepting an option the runtime ignores is worse
-    // than rejecting it — the SDK looks configured and silently misbehaves.
+    // ACCEPTING the option is not the same as HONOURING it, and that is not a
+    // hypothetical: seven targets took a `server` map and then sent every
+    // request to a URL still containing a literal `{tenant}`. Accepting an
+    // option the runtime ignores is worse than rejecting it — the SDK looks
+    // configured and silently misbehaves.
     //
     // The `test-<name>` fallback is the marker: it exists only inside the
     // substitution itself, so a target cannot pass this by declaring the
     // option and stopping there.
     test(target + ': make_options RESOLVES {name} into base', () => {
-      const src = readFileSync(Path.join(TM, target, file), 'utf8')
+      const path = Path.join(TM, target, file)
+      ok(existsSync(path), target + ': no ' + file)
+      const src = readFileSync(path, 'utf8')
       // The QUOTED literal, not the bare word: every one of these files says
       // "test-first" and "test-<name>" in prose, so a bare /test-/ passes
       // everywhere and proves nothing. This matches the opening quote and the
@@ -1150,6 +1144,46 @@ describe('config representation is chosen by size', () => {
         'placeholder still in it')
     })
   }
+
+  // NO TARGET MAY GROW ITS OWN OPTION SPEC AGAIN.
+  //
+  // Twenty hand-maintained copies of one schema is what `main.kit.optspec`
+  // and the generated `Schema` module replaced, and the failure that made it
+  // worth doing was never a crash: the copies simply disagreed, quietly, and
+  // an option that worked in ts was rejected in elixir. A target re-growing a
+  // literal here is the same defect returning, so it fails as soon as it is
+  // written rather than when someone notices the divergence.
+  //
+  // The METHOD allow-list is the marker. It is one string that only an option
+  // spec has a reason to hold, and unlike the op allow-list — which three
+  // targets' shipped feature suites legitimately name, passing it as an
+  // OPTION — nothing else in the tree contains it.
+  test('no template carries a hand-written option spec', () => {
+    const METHODS = 'GET,PUT,POST,PATCH,DELETE,OPTIONS'
+
+    const found: string[] = []
+
+    const walk = (dir: string) => {
+      for (const ent of readdirSync(dir, { withFileTypes: true })) {
+        const full = Path.join(dir, ent.name)
+        if (ent.isDirectory()) {
+          walk(full)
+        }
+        else if (ent.isFile() && readFileSync(full, 'utf8').includes(METHODS)) {
+          found.push(Path.relative(TM, full))
+        }
+      }
+    }
+
+    walk(TM)
+
+    deepStrictEqual(found, [],
+      'these templates hold the method allow-list, so they are carrying an ' +
+      'option spec of their own — add the option to `main: kit: optspec` in ' +
+      'ts/model/sdkgen.aon instead, and read it from the generated Schema ' +
+      'module (ts/src/helpers/optspec.ts)')
+  })
+
 
   // Targets whose config has ALWAYS been emitted as data, at every size, from
   // before rung L1 existed. They are past L1 rather than exempt from it: there

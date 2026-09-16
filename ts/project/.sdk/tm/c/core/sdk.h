@@ -446,6 +446,15 @@ voxgig_value* sdk_graphql(ProjectNameSDK* sdk, const char* query,
 // Generated config (core/config.c).
 voxgig_value* make_config(void);
 voxgig_value* shared_config(void);
+
+// Generated schemas (core/schema.c): the model's option spec, which
+// make_options validates client options against, and the per-entity field
+// specs. The shared_* accessors parse once and hand back a value that is
+// READ-ONLY to the caller, exactly as shared_config does.
+voxgig_value* make_optspec(void);
+voxgig_value* shared_optspec(void);
+voxgig_value* make_entityspec(void);
+voxgig_value* shared_entityspec(void);
 Feature* make_feature(const char* name);
 
 // The plugin DEFINITIONS the model selected for one feature's chain - the c

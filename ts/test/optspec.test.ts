@@ -72,6 +72,13 @@ describe('optionSpec: the standard options', () => {
     ok(accepts({ apikey: 'k', base: 'https://api.example.com' }, spec))
     ok(accepts({ headers: { 'X-Trace': 'abc' } }, spec))
     ok(accepts({ allow: { method: 'GET' } }, spec))
+
+    // `server` ONCE, for every target. This used to be twelve per-target
+    // greps in parity.test.ts, over each language's own literal copy of the
+    // spec, because a target that emits `options.server` in its config and
+    // rejects it in its validator fails at client construction — elixir's
+    // did, for 75 of its 151 generated tests. With one spec there is one
+    // place to assert it.
     ok(accepts({ server: { tenant_id: 'acme' } }, spec))
     ok(accepts({ clean: { keys: 'token' } }, spec))
   })

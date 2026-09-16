@@ -18,6 +18,8 @@ import { Aontu } from 'aontu'
 
 import { loadFeature, loadBase } from './featureharness'
 
+import { featureApplies } from '../dist/helpers/applicability'
+
 
 const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
 const FEATURE_MODEL = Path.join(SDK, 'model', 'feature')
@@ -33,7 +35,8 @@ const ENTERPRISE = [
   // feature-language-parity exemption below.
   'secrets',
   // Gated the same way, on `schema`: the feature validates against the
-  // generated Schema module, so it applies only where one is emitted.
+  // generated Schema module, so it applies only where the module AND this
+  // feature's own source both exist.
   'validate',
 ]
 
@@ -290,11 +293,12 @@ describe('feature-language-parity', () => {
       'ts', 'zig',
     ],
 
-    // needs: { schema: true } — a target joins when its Main emits the
-    // generated Schema module (the model's option spec, and the per-entity
-    // specs this feature checks against) and its model declares the tag.
-    // ts and js are the reference implementation; the other eighteen keep
-    // their hand-written optspec literals until they are ported.
+    // needs: { schema: true } — a target joins when it carries a
+    // ValidateFeature of its own, not merely when its Main emits the
+    // Schema module. Emitting Schema is the OPTION SPEC port, which
+    // make_options reads whether or not this feature exists there; the tag
+    // is the feature's gate, so it goes on with the feature source. ts and
+    // js are the reference implementation.
     validate: ['js', 'ts'],
   }
 
@@ -306,6 +310,33 @@ describe('feature-language-parity', () => {
   }
 
   const TARGET_MODEL = Path.join(SDK, 'model', 'target')
+
+  // What a target's model declares it PROVIDES. Read from the `.aon` text:
+  // the target models are unified per-target by the build, with no index to
+  // compile the way the feature models have one, and the only thing wanted
+  // here is the one map.
+  function declaredProvides(t: string): Record<string, boolean> {
+    const mp = Path.join(TARGET_MODEL, t + '.aon')
+    if (!existsSync(mp)) {
+      return {}
+    }
+
+    const m = readFileSync(mp, 'utf8').match(/\bprovides\s*:\s*\{([^}]*)\}/)
+    if (null == m) {
+      return {}
+    }
+
+    const out: Record<string, boolean> = {}
+    for (const part of m[1].split(',')) {
+      const kv = part.match(/([\w-]+)\s*:\s*(true|false)/)
+      if (null != kv) {
+        out[kv[1]] = 'true' === kv[2]
+      }
+    }
+
+    return out
+  }
+
 
   // Every target the scaffold actually ships, discovered rather than listed.
   function shippedTargets(): string[] {
@@ -385,6 +416,39 @@ describe('feature-language-parity', () => {
       deepStrictEqual(undeclared, [],
         `GATED.${name} names targets whose model declares no \`provides\` — ` +
         'the gate would drop the feature for them at generate time')
+    }
+  })
+
+  // The third direction, and the one that actually breaks a generated SDK.
+  //
+  // (a) and (b) both pass for a target that declares a tag it has no
+  // source for: (a) only looks at targets the list omits, and finding no
+  // source there is exactly what it calls correct. But `featureApplies`
+  // says yes, so the feature reaches that target's config, registry and
+  // imports while `feature add` has nothing to copy. This is not
+  // hypothetical — porting the option spec to seven targets tagged them
+  // `schema: true` for emitting the `Schema` module, which handed them the
+  // `validate` feature with no ValidateFeature behind it, and every check
+  // in this file stayed green.
+  //
+  // So: the set of targets the MODEL makes a gated feature apply to must
+  // be exactly the set the gate names. `featureApplies` is the real rule,
+  // not a second copy of it; only "what does this target declare" is read
+  // from the file, the target models having no index to unify through.
+  test('the targets that declare a gated feature\'s tags are exactly the gated list', () => {
+    const { model } = compileFeatureModel()
+
+    for (const [name, targets] of Object.entries(GATED)) {
+      const applies = ADD_TARGETS
+        .filter((t) => featureApplies(
+          model.main.kit.feature[name], { provides: declaredProvides(t) }))
+        .sort()
+
+      deepStrictEqual(applies, targets.slice().sort(),
+        `the model makes ${name} apply to a different set than GATED.${name} ` +
+        'names — either the target is missing the tags (the feature silently ' +
+        'vanishes there) or it declares them without carrying ' +
+        `tm/<lang>/src/feature/${name} (the feature applies with nothing to copy)`)
     }
   })
 

@@ -22,6 +22,7 @@ import {
 
 import { Package } from './Package_c'
 import { Config, FeaturePlugins } from './Config_c'
+import { Schema } from './Schema_c'
 import { Gitignore } from './Gitignore_c'
 import { MainEntity } from './MainEntity_c'
 import { EntityBase } from './EntityBase_c'
@@ -120,6 +121,8 @@ const Main = cmp(async function Main(props: any) {
     })
 
     Config({ target })
+
+    Schema({ target })
   })
 
   // feature/<name>/kinds.c — the plugin definitions an active plugin-bearing

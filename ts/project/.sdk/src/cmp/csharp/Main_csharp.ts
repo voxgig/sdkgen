@@ -22,6 +22,7 @@ import {
 
 import { Package } from './Package_csharp'
 import { Config } from './Config_csharp'
+import { Schema } from './Schema_csharp'
 import { Gitignore } from './Gitignore_csharp'
 import { MainEntity } from './MainEntity_csharp'
 import { SdkError } from './SdkError_csharp'
@@ -88,6 +89,8 @@ const Main = cmp(async function Main(props: any) {
     })
 
     Config({ target })
+
+    Schema({ target })
 
     SdkError({ target })
 

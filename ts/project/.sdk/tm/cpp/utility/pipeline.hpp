@@ -15,6 +15,11 @@
 
 #include "../core/types.hpp"
 
+// The GENERATED option spec makeOptions validates against. A leaf header
+// (it includes only core/struct.hpp), so this cannot close a cycle with
+// core/config.hpp, which pulls in the feature headers.
+#include "../core/schema.hpp"
+
 namespace sdk {
 namespace util {
 
@@ -1076,29 +1081,6 @@ inline Value transformRequest(CtxPtr ctx) {
 
 // ---- makeOptions ------------------------------------------------------
 
-inline const char* OPTSPEC_JSON() {
-  return "{"
-    "\"apikey\": \"\","
-    "\"base\": \"http://localhost:8000\","
-    "\"prefix\": \"\","
-    "\"suffix\": \"\","
-    "\"auth\": { \"prefix\": \"\" },"
-    "\"headers\": { \"`$CHILD`\": \"`$STRING`\" },"
-    "\"allow\": {"
-    "  \"method\": \"GET,PUT,POST,PATCH,DELETE,OPTIONS\","
-    "  \"op\": \"create,update,load,list,remove,command,direct,graphql\""
-    "},"
-    "\"entity\": { \"`$CHILD`\": {"
-    "  \"`$OPEN`\": true, \"active\": false, \"alias\": {} } },"
-    "\"feature\": { \"`$CHILD`\": {"
-    "  \"`$OPEN`\": true, \"active\": false } },"
-    "\"utility\": {},"
-    "\"system\": {},"
-    "\"test\": { \"active\": false, \"entity\": { \"`$OPEN`\": true } },"
-    "\"clean\": { \"keys\": \"key,token,id\" }"
-    "}";
-}
-
 inline Value makeOptions(CtxPtr ctx) {
   Value options = ctx->options;
   if (!options.is_map()) options = vmap();
@@ -1165,7 +1147,19 @@ inline Value makeOptions(CtxPtr ctx) {
   Value cfgopts = Helpers::toMapAny(getp(config, "options"));
   if (!cfgopts.is_map()) cfgopts = vmap();
 
-  Value optspec = vs::parse_json(OPTSPEC_JSON());
+  // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
+  //
+  // Built from the model: `main.kit.optspec` for the standard options, plus
+  // one entry per feature this target carries, from that feature's own
+  // `config.options` / `config.optspec`. This file used to carry its own
+  // OPTSPEC_JSON() - one of twenty hand-maintained copies of a schema nothing
+  // cross-checked, and it had already drifted (no `extend`, no `server`, no
+  // `auth.basic`). Add an option to the model instead and every ported target
+  // validates it.
+  //
+  // Parsed once and shared: makeOptions validates AGAINST the spec and writes
+  // into the options, never into the spec.
+  const Value& optspec = sharedOptspec();
 
   // Preserve system.fetch before merge/validate (a function Value may be
   // dropped by validate).

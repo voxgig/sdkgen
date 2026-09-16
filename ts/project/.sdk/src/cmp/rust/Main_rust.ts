@@ -24,6 +24,7 @@ import {
 
 import { Package } from './Package_rust'
 import { Config } from './Config_rust'
+import { Schema } from './Schema_rust'
 import { Gitignore } from './Gitignore_rust'
 import { MainEntity } from './MainEntity_rust'
 import { EntityBase } from './EntityBase_rust'
@@ -92,6 +93,8 @@ const Main = cmp(async function Main(props: any) {
     })
 
     Config({ target })
+
+    Schema({ target })
 
     SdkError({ target })
   })
