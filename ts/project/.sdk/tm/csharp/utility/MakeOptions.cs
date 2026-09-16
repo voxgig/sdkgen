@@ -174,10 +174,21 @@ public static partial class SdkUtility
             // `basic` and `secret`: HTTP Basic Auth needs a second credential
             // and a flag to say the pair is Basic rather than a single bearer
             // token.
+            //
+            // `in` and `name`: WHERE the credential goes and UNDER WHAT NAME.
+            // apidef resolves both from the spec's securityScheme into
+            // main.kit.info.security, and the generated config carries them
+            // whenever they differ from header/Authorization. This map is
+            // CLOSED - validate rejects any key it does not declare - so
+            // without these two an apiKey-in-query SDK fails to construct on
+            // its own config with "Unexpected keys at field auth: in, name".
+            // '' means "take what the spec said".
             ["auth"] = new Dictionary<string, object?>
             {
                 ["prefix"] = "",
                 ["basic"] = false,
+                ["in"] = "",
+                ["name"] = "",
             },
             ["headers"] = new Dictionary<string, object?>
             {

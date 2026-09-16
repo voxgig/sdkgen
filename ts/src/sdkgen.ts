@@ -17,7 +17,7 @@ import type {
   ActionResult,
 } from './types'
 
-import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthIn, resolveAuthName, isHttpBasicAuth,
+import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthIn, resolveAuthName, isAuthSuppressed, isHttpBasicAuth,
   CONFIG_DATA_THRESHOLD, CONFIG_REPR_VALUES, isConfigData, configRepr,
   configReprSetting, configDefinition, clean, rawStringLiteral } from './utility'
 
@@ -1222,6 +1222,7 @@ export {
   resolveAuthPrefix,
   resolveAuthIn,
   resolveAuthName,
+  isAuthSuppressed,
   isHttpBasicAuth,
   CONFIG_DATA_THRESHOLD,
   CONFIG_REPR_VALUES,

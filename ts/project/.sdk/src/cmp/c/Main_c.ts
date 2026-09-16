@@ -26,6 +26,7 @@ import { Gitignore } from './Gitignore_c'
 import { MainEntity } from './MainEntity_c'
 import { EntityBase } from './EntityBase_c'
 import { EntityTypes } from './EntityTypes_c'
+import { PrepareAuth } from './PrepareAuth_c'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -121,6 +122,20 @@ const Main = cmp(async function Main(props: any) {
 
     Config({ target })
   })
+
+  // utility/prepare_auth.c is GENERATED, not templated: where the credential
+  // goes (header / query / cookie, and under what name) is a fact about the
+  // API, and tm/ can only hold one answer. See PrepareAuth_c.
+  //
+  // AT ROOT LEVEL, and OUTSIDE the `core` Folder above. c's layout is flat at
+  // the target root (core/, utility/, feature/, entity/, tests/), the template
+  // this replaces lived at `tm/c/utility/prepare_auth.c`, and the whole-tree
+  // `Copy({from:'tm/c'})` landed it at `<root>/utility/`. The component opens
+  // `utility` itself, so calling it beside Config - inside `Folder({name:
+  // 'core'})` - would emit `core/utility/prepare_auth.c`, which the Makefile's
+  // `$(wildcard core/*.c utility/*.c ...)` does not match: nothing would
+  // compile it and `prepare_auth_util` would be unresolved at link time.
+  PrepareAuth({ target })
 
   // feature/<name>/kinds.c — the plugin definitions an active plugin-bearing
   // feature selected, and the Makefile's wiring gate for that feature's

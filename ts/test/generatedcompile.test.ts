@@ -3712,6 +3712,24 @@ describe('auth null coverage is honest', () => {
 })
 
 
+// AN AUTH PROBE NEEDS AN API THAT HAS AUTH. The shared fixture declares
+// none (`main: kit: info: { ... auth: false }` in generateharness), and
+// prepare_auth is no longer a static template that places an
+// `authorization` header regardless - it is GENERATED from the model, so
+// a no-auth API now gets a prepare_auth that correctly places nothing.
+// That makes this suite's own baseline ("an ordinary apikey IS sent")
+// unsatisfiable for every ported target, which reads as an auth-null
+// regression when it is the fixture that is wrong.
+//
+// `prefix: ''` as well as `active: true`, because every probe in the table
+// asserts the RAW key on the wire ('OPTKEY01', not 'Bearer OPTKEY01') -
+// which is what they saw when the auth block was absent from the config
+// and the optspec default supplied an empty prefix.
+const AUTHNULL_MODEL = `
+main: kit: config: auth: { active: true, prefix: '' }
+`
+
+
 describe('auth null suppresses the credential', () => {
 
   let tmp = ''
@@ -3728,7 +3746,7 @@ describe('auth null suppresses the credential', () => {
 
     test(lane.target + ': auth null beats an explicit apikey', async (t) => {
       const sdkroot = Path.join(tmp, lane.target)
-      await generateTo(lane.target, sdkroot)
+      await generateTo(lane.target, sdkroot, AUTHNULL_MODEL)
 
       const probe = Path.join(sdkroot, ...lane.probe.split('/'))
       Fs.mkdirSync(Path.dirname(probe), { recursive: true })

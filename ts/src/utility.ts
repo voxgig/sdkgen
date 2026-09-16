@@ -75,6 +75,28 @@ function resolveAuthPrefix(model: any): string {
 }
 
 
+// AUTH SUPPRESSED AT GENERATION TIME — and ONLY by an explicit opt-out.
+//
+// NOT `isAuthActive`, and the difference is load-bearing. That helper is
+// also false when `main.kit.info.auth` is false, which only means the SPEC
+// declared no security scheme. Such an SDK still carries a credential:
+// `optspec` always declares `apikey`, and makeOptions fills `options.auth`
+// from the optspec defaults, so the runtime `null == options.auth` guard
+// never fires and the credential has always been sent. Emitting a no-op
+// prepareAuth for those SDKs silently breaks a working credential — and
+// takes the secrets feature with it, since that resolves a secret into
+// `options.apikey` and prepareAuth then places nothing.
+//
+// `main.kit.config.auth.active: false` is the project saying "this SDK
+// sends no credential, ever". That is the only signal that can be honoured
+// before runtime, so it is the only one used here.
+function isAuthSuppressed(model: any): boolean {
+  const auth = getModelPath(model, `main.${KIT}.config.auth`,
+    { only_active: false, required: false })
+  return null != auth && false === auth.active
+}
+
+
 // WHERE the credential goes, and UNDER WHAT NAME. Same priority order as
 // resolveAuthPrefix: a per-SDK override first, then what apidef derived
 // from the spec's securityScheme, then the convention.
@@ -209,6 +231,7 @@ export {
   resolveAuthPrefix,
   resolveAuthIn,
   resolveAuthName,
+  isAuthSuppressed,
   resolveAuthExchange,
   isHttpBasicAuth,
   SdkGenError,
