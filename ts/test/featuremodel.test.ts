@@ -298,7 +298,14 @@ describe('feature-language-parity', () => {
     // Schema module. Emitting Schema is the OPTION SPEC port, which
     // make_options reads whether or not this feature exists there; the tag
     // is the feature's gate, so it goes on with the feature source. ts and
-    // js are the reference implementation.
+    // js are the reference implementation; every other SDK target is a port
+    // of them.
+    //
+    // This is now every SDK_TARGET, and the gate is STILL load-bearing: the
+    // CONSUMER_TARGETS (go-cli, go-mcp, py-data) are in ADD_TARGETS and are
+    // not here, so deleting the list would demand feature-add dirs they have
+    // no use for. It also stays the rule for a target added later, and for a
+    // target an external sdkgen package brings.
     validate: ['c', 'clojure', 'cpp', 'csharp', 'elixir', 'go', 'java', 'js',
       'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala',
       'swift', 'ts', 'zig'],
