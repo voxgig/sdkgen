@@ -952,7 +952,7 @@ tm/kotlin/utility/struct/Struct.kt 1ecfc2530803
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/lua.aon 20149ad60ba6
+model/target/lua.aon 301f6a27a0c6
 model/target/target-index.aon ea75509be8db
 src/cmp/lua/Config_lua.ts d1133e200cfb
 src/cmp/lua/EntityOperation_lua.ts daa4641b002e
@@ -1034,7 +1034,7 @@ tm/lua/utility/make_point.lua 392961fd8351
 tm/lua/utility/make_request.lua 4ba90ee83ff3
 tm/lua/utility/make_response.lua 6255f621011a
 tm/lua/utility/make_result.lua d9eae1b6119e
-tm/lua/utility/make_spec.lua c289f43cc0b8
+tm/lua/utility/make_spec.lua f9e02d5616da
 tm/lua/utility/make_url.lua e0136732d045
 tm/lua/utility/param.lua 3aa15d088ac3
 tm/lua/utility/prepare_auth.lua 61dcfd31d769
