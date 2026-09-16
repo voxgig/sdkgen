@@ -497,9 +497,35 @@ describe('vendored', () => {
       //
       // Together they made the union encoding the option spec uses for an
       // optional value — ['`$ONE`', <type>, '`$NIL`'] — reject an absent key,
-      // which is most of the spec. Remove all three when a struct release
-      // carries them.
-      'tm/php/utility/struct/Struct.php': 3,
+      // which is most of the spec.
+      //
+      //   4. validate_ONE wrote its trial result back with ancestor `2` where
+      //      ts uses `-2`, so it wrote through to the GRANDPARENT instead of
+      //      no-opping against the `[$ONE, ...]` list — resurrecting a key the
+      //      data did not have, and inventing a synthetic sibling carrying the
+      //      trial store's `$TOP`.
+      //
+      // Remove all four when a struct release carries them.
+      'tm/php/utility/struct/Struct.php': 4,
+
+      // THE SAME ABSENCE DEFECT, reached differently in two more ports. ts's
+      // validate_ONE replaces the `[$ONE, ...]` node with the DATA value and
+      // then writes the trial result somewhere harmless; a key the data does
+      // not have is therefore DELETED. Both of these kept it:
+      //
+      //   go: hand-rolled SetProp against a held grandparent, where SetProp
+      //       deliberately preserves nil. An omitted optional entry came back
+      //       fully materialised, `$OPEN` marker and all.
+      //   rb: setval carries a special case that SETS nil in the grandparent
+      //       branch where ts deletes in both, so an omitted entry came back
+      //       as a nil-valued key.
+      //
+      // In an SDK's option spec either one put an entry in `options.feature`
+      // for every feature the model declares — and the feature ADD ORDER is
+      // derived from those keys. Held by the per-port absence probe in
+      // test/oneabsence.test.ts.
+      'tm/go/utility/struct/voxgigstruct.go': 2,
+      'tm/rb/utility/struct/voxgig_struct.rb': 1,
     }
 
     for (const [rel, count] of Object.entries(patched)) {

@@ -590,7 +590,7 @@ tm/go/utility/register.go 9e23d34141e6
 tm/go/utility/result_basic.go 6621fff8681d
 tm/go/utility/result_body.go 26a11991a96c
 tm/go/utility/result_headers.go 1bf8bf65b390
-tm/go/utility/struct/voxgigstruct.go 774163735266
+tm/go/utility/struct/voxgigstruct.go bb9b368557d5
 tm/go/utility/transform_request.go 51b4748915c0
 tm/go/utility/transform_response.go 43096fbc05d2
 
@@ -961,7 +961,7 @@ src/cmp/lua/Entity_lua.ts e3e43269850c
 src/cmp/lua/Gitignore_lua.ts ddf4d3003936
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
 src/cmp/lua/Main_lua.ts e0faf6ddd1bd
-src/cmp/lua/Package_lua.ts b678fa677f07
+src/cmp/lua/Package_lua.ts 5d8c5b31d635
 src/cmp/lua/ReadmeEntity_lua.ts 886fadf6275a
 src/cmp/lua/ReadmeExamplesTest_lua.ts 5f104cb87813
 src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
@@ -1242,7 +1242,7 @@ src/cmp/php/ReadmeRef_php.ts 189e092943d8
 src/cmp/php/ReadmeTopHowto_php.ts a0a90593a80f
 src/cmp/php/ReadmeTopQuick_php.ts f52705d06444
 src/cmp/php/ReadmeTopTest_php.ts e602ef0b983e
-src/cmp/php/Schema_php.ts 61b15fa1fa6d
+src/cmp/php/Schema_php.ts d203a75add46
 src/cmp/php/TestDirect_php.ts 8f7b0e32a59f
 src/cmp/php/TestEntity_php.ts 7498f485aa35
 src/cmp/php/Test_php.ts ae9d9cb4d7e7
@@ -1316,7 +1316,7 @@ tm/php/utility/ResultBody.php d37f74dc5d41
 tm/php/utility/ResultHeaders.php 378a2c5bfdd9
 tm/php/utility/TransformRequest.php 632482c5939f
 tm/php/utility/TransformResponse.php 4dc432711490
-tm/php/utility/struct/Struct.php 9e07fc26d3fc
+tm/php/utility/struct/Struct.php bae6a19c1df6
 
 ## target py
 model/feature/feature-index.aon 5f0737d1060e
@@ -1550,7 +1550,7 @@ tm/rb/utility/register.rb 17360423b3c4
 tm/rb/utility/result_basic.rb 90d9f4bfb77a
 tm/rb/utility/result_body.rb 3f5453c189c1
 tm/rb/utility/result_headers.rb ee4460e396f5
-tm/rb/utility/struct/voxgig_struct.rb c06ede138ed1
+tm/rb/utility/struct/voxgig_struct.rb 41a41c327567
 tm/rb/utility/transform_request.rb 03eca2dddb49
 tm/rb/utility/transform_response.rb 13e4100890d3
 

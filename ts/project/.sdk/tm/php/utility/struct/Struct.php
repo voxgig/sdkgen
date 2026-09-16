@@ -2652,7 +2652,21 @@ class Struct
 
                 $vcurrent = self::validate($inj->dparent, $tval, $topts);
 
-                $inj->setval($vcurrent, 2);
+                // PATCH (optspec port, pending upstream fix): the ancestor is
+                // -2, not 2.
+                //
+                // ts writes the trial result back with `setval(vcurrent, -2)`.
+                // A NEGATIVE ancestor takes setval's `< 2` branch, which
+                // writes to `inj->parent` — still the `[$ONE, ...]` LIST at
+                // this point, under a string key, so the write is a no-op and
+                // the node the first setval above already put in place is what
+                // survives. With `2` this wrote through to the GRANDPARENT
+                // instead, which both resurrected a key the data did not have
+                // (an optional `['`$ONE`', <spec>, '`$NIL`']` entry the caller
+                // omitted came back materialised) and, one level out, invented
+                // a synthetic entry named after its own parent carrying the
+                // trial store's `$TOP`.
+                $inj->setval($vcurrent, -2);
 
                 // Accept current value if there was a match
                 if (0 === count((array) $topts->errs)) {

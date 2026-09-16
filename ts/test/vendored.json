@@ -5111,7 +5111,7 @@
    "tag": "sdk-20260911-2013-0",
    "file": {
     "tm/go/utility/struct/voxgigstruct.go": {
-     "sha256": "7741637352666db46e7714ad06f3ae3ba00cd339758c329817676a90fdadefd9",
+     "sha256": "bb9b368557d52d487ba734a23487cd30345787c72ccce7f781d2e330b4ec45f0",
      "upstream": "go/voxgigstruct.go"
     }
    }

@@ -52,9 +52,16 @@ class ${model.const.Name}Schema
 
     private const ENTITYSPEC_DATA = ${rawStringLiteral(JSON.stringify(entityspec))};
 
-    private static ?array $optspec = null;
+    // A UNION, not ?array. schema_decode hands back an empty stdClass for an
+    // EMPTY map - that is the whole point of decoding without the assoc flag,
+    // since php cannot otherwise tell an empty map from an empty list - and
+    // the entity specs are empty for a project with no entities, and whenever
+    // the validate feature is inactive, which is the default. Typed ?array,
+    // the first call to entityspec() threw a TypeError instead of handing
+    // back the empty map every other target returns.
+    private static array|\\stdClass|null $optspec = null;
 
-    private static ?array $entityspec = null;
+    private static array|\\stdClass|null $entityspec = null;
 
     // Decoded ONCE, on first use. The spec is read on every client
     // construction and never mutated, so decoding per call would be pure
@@ -62,7 +69,7 @@ class ${model.const.Name}Schema
     // make_options validates AGAINST it and writes into the options, never
     // into the spec. (php arrays are copy-on-write, so a caller that did
     // write would get its own copy rather than corrupt this one.)
-    public static function optspec(): array
+    public static function optspec(): array|\\stdClass
     {
         if (self::$optspec === null) {
             self::$optspec = self::schema_decode(json_decode(self::OPTSPEC_DATA));
@@ -70,7 +77,7 @@ class ${model.const.Name}Schema
         return self::$optspec;
     }
 
-    public static function entityspec(): array
+    public static function entityspec(): array|\\stdClass
     {
         if (self::$entityspec === null) {
             self::$entityspec = self::schema_decode(json_decode(self::ENTITYSPEC_DATA));
