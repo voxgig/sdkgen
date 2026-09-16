@@ -1,6 +1,7 @@
 import {
   Content,
   File,
+  Folder,
   cmp,
   entitySpecMap,
   optionSpec,
@@ -44,6 +45,15 @@ const Schema = cmp(async function Schema(props: any) {
   const optspec = optionSpec(model, target.name)
   const entityspec = entitySpecMap(model, target.name) || {}
 
+  // UNDER lib/, like config.ex and for a reason that bites immediately: mix's
+  // `elixirc_paths` is ["lib"] (plus test/ under :test), so a module at the
+  // SDK ROOT is never compiled. This file used to be emitted there, and
+  // `Schema.optspec/0` was therefore undefined in every generated elixir SDK
+  // — make_options raised UndefinedFunctionError on the first client
+  // construction. The elixir compile lane skips where no toolchain is
+  // installed, so nothing caught it.
+  Folder({ name: 'lib' }, () => {
+
   File({ name: 'schema.ex' }, () => {
     Content(`# ${Name} ${target.Name} SDK: generated schemas. Do not edit.
 #
@@ -67,6 +77,8 @@ defmodule ${Name}.Schema do
   def entityspec, do: @entityspec
 end
 `)
+  })
+
   })
 })
 

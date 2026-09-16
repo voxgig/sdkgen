@@ -421,7 +421,7 @@ tm/csharp/utility/struct/Struct.cs 8cf6094e9604
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/elixir.aon a1b50f3f04c3
+model/target/elixir.aon ed2889f2f39b
 model/target/target-index.aon c9b09d715b14
 src/cmp/elixir/Config_elixir.ts b50519825f28
 src/cmp/elixir/EntityOperation_elixir.ts 69ddad39f404
@@ -444,7 +444,7 @@ src/cmp/elixir/ReadmeRef_elixir.ts 353423b444f7
 src/cmp/elixir/ReadmeTopHowto_elixir.ts 90ecb763e0ad
 src/cmp/elixir/ReadmeTopQuick_elixir.ts 076794d8d4e1
 src/cmp/elixir/ReadmeTopTest_elixir.ts 5f12260e03e2
-src/cmp/elixir/Schema_elixir.ts 57f07a7ef09a
+src/cmp/elixir/Schema_elixir.ts 5e361b1d2d3b
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
 src/cmp/elixir/TestEntity_elixir.ts 79f042e3436d
 src/cmp/elixir/Test_elixir.ts 840e043835e2
