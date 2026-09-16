@@ -15,7 +15,9 @@ declare function repoInfo(model: any): {
     issuesUrl: string;
     changelogUrl: string;
     releasesUrl: string;
+    tagsUrl: string;
 };
+declare function docsSiteUrl(model: any): string;
 declare function goModule(model: any, target: string): string;
 declare function packageVersion(model: any, target: string): string;
 declare function goVersion(model: any, target: string, fallback?: string): string;
@@ -40,4 +42,4 @@ declare function contributorList(model: any): {
 }[];
 declare function envToken(name: any): string;
 declare function envName(model: any): string;
-export { PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, apiName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, };
+export { PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, apiName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };

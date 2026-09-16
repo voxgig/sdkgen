@@ -88,8 +88,8 @@ function consumerModel(sdk: string): any {
   const src = [
     '@"@voxgig/apidef/model/apidef.aon"',
     '@"@voxgig/sdkgen/model/sdkgen.aon"',
-    '@"target/target-index.aon"',
-    '@"feature/feature-index.aon"',
+    '@"./target/target-index.aon"',
+    '@"./feature/feature-index.aon"',
     "name: 'demo'",
     API,
   ].join('\n')
@@ -159,7 +159,7 @@ describe('testkit over the fixture package', () => {
 
     const index = Fs.readFileSync(
       Path.join(consumer.sdk, 'model', 'edition', 'edition-index.aon'), 'utf8')
-    ok(index.includes('@"wcat.aon"'), 'edition index: ' + index)
+    ok(index.includes('@"./wcat.aon"'), 'edition index: ' + index)
   })
 
 

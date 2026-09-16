@@ -144,6 +144,17 @@ ${tagline}
 Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
 
 `);
+        // THE GENERATED SITE, LINKED FROM THE TOP, because the repository was the
+        // one place it could not be found from. `docs_url` further down is the
+        // UPSTREAM API's documentation, not this, and a reader who lands on the
+        // repo rather than arriving from a link had no route to the site at all.
+        // Empty unless the project actually publishes one -- see docsSiteUrl.
+        const siteUrl = (0, packageMeta_1.docsSiteUrl)(model);
+        if (siteUrl) {
+            (0, jostraca_1.Content)(`Full documentation for this SDK: [${siteUrl}](${siteUrl})
+
+`);
+        }
         if (metaSourceLine) {
             (0, jostraca_1.Content)(`${metaSourceLine}
 
@@ -314,7 +325,7 @@ network, and no credentials:
         // its Install cell links to the git-tag releases page instead. The go
         // family resolves from the tag directly (`go get <mod>@latest`).
         if (pkgTargets.length > 0) {
-            const { releasesUrl } = (0, packageMeta_1.repoInfo)(model);
+            const { tagsUrl } = (0, packageMeta_1.repoInfo)(model);
             (0, jostraca_1.Content)(`## Packages
 
 | Language | Package | Install |
@@ -335,7 +346,7 @@ network, and no credentials:
                 }
                 else {
                     // pending / inactive: point at the git tag, never a 404 command.
-                    cell = `publish pending — [install from git tag](${releasesUrl})`;
+                    cell = `publish pending — [install from git tag](${tagsUrl})`;
                 }
                 (0, jostraca_1.Content)(`| ${tgt.title} | \`${(0, packageMeta_1.packageName)(model, tgt.name)}\` | ${cell} |
 `);

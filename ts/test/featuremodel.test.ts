@@ -147,7 +147,7 @@ describe('feature-model', () => {
       .filter((f) => f.endsWith('.aon') && 'feature-index.aon' !== f)
       .map((f) => f.replace(/\.aon$/, ''))
     for (const name of files) {
-      ok(indexSrc.includes(`"${name}.aon"`), `feature-index missing @"${name}.aon"`)
+      ok(indexSrc.includes(`"./${name}.aon"`), `feature-index missing @"./${name}.aon"`)
     }
   })
 })
