@@ -88,9 +88,13 @@ describe('aliased target add', () => {
     const index = project.fs.readFileSync(
       ROOT + '/model/target/target-index.aon', 'utf8')
 
-    ok(index.includes('@"go2.aon"'), 'index does not name the alias')
+    ok(index.includes('@"./go2.aon"'), 'index does not name the alias')
 
-    for (const m of String(index).matchAll(/@"([^"]+)"/g)) {
+    // `(?:\.\/)?` — the include carries a `./` since aontu 0.65 reads a bare
+    // single-segment name as a package. The FILE it names never did, so the
+    // prefix is stripped before the existence check rather than joined into
+    // the path.
+    for (const m of String(index).matchAll(/@"(?:\.\/)?([^"]+)"/g)) {
       ok(project.files().includes('model/target/' + m[1]),
         'target-index.aon includes ' + m[1] + ', which was never written')
     }

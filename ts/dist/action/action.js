@@ -12,24 +12,37 @@ exports.parseAddNames = parseAddNames;
 exports.loadContent = loadContent;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
-const indexEntry = (name) => `@"${name}.aon"`;
+// `./` — aontu 0.65 reads a bare single-segment include as a PACKAGE name
+// (ADR-039), so `@"go.aon"` resolves against the package stores and is
+// refused: "local files need a ./ prefix". A sibling file has to say so.
+const indexEntry = (name) => `@"./${name}.aon"`;
 // An index line that is an ACTIVE include, and the name it includes — or
 // undefined for a blank line, a comment, or anything else.
 //
 // Parsed rather than compared as a string, because both spellings around an
 // include are legal aontu and mean opposite things:
 //
-//   @"go.aon"                 -> active, name 'go'
-//   @"go.aon"  # pinned       -> active, name 'go'  (trailing comment)
-//     @"go.aon"               -> active, name 'go'  (indented)
-//   # @"go.aon"               -> NOT active
+//   @"./go.aon"               -> active, name 'go'
+//   @"go.aon"                 -> active, name 'go'  (pre-0.65 spelling)
+//   @"./go.aon"  # pinned     -> active, name 'go'  (trailing comment)
+//     @"./go.aon"             -> active, name 'go'  (indented)
+//   # @"./go.aon"             -> NOT active
 //
 // A substring test (what this used to be) reads the commented-out form as
 // present, so `target add go` on a project that had switched the target off
 // by hand appended nothing and reported success while the target stayed
 // absent from the model. A whole-line equality test fixes that but then
 // misses the trailing-comment form, and appends a SECOND active include.
-const INDEX_ENTRY_RE = /^\s*@"([^"]+)\.aon"\s*(?:#.*)?$/;
+//
+// BOTH SPELLINGS, and the `./` is not part of the name. Every index in every
+// already-generated SDK carries the bare form, and those files are the
+// project's own -- they change when the project regenerates, not when sdkgen
+// releases. Reading only the new spelling would make `target add go` on any
+// existing repo believe `go` was absent and append a second include; reading
+// only the old one would do the same the other way round once the index is
+// rewritten. Capturing the name WITHOUT the prefix is what lets the two
+// spellings compare equal, which is the whole point.
+const INDEX_ENTRY_RE = /^\s*@"(?:\.\/)?([^"]+)\.aon"\s*(?:#.*)?$/;
 function indexEntryName(line) {
     const m = line.match(INDEX_ENTRY_RE);
     return null == m ? undefined : m[1];

@@ -12,11 +12,23 @@ describe('appendIndexEntries', () => {
   test('appends a missing entry', () => {
     strictEqual(
       appendIndexEntries('a: 1', ['feat']),
-      'a: 1\n@"feat.aon"',
+      'a: 1\n@"./feat.aon"',
     )
   })
 
   test('leaves an already-present entry untouched', () => {
+    const content = '@"./feat.aon"'
+    strictEqual(appendIndexEntries(content, ['feat']), content)
+  })
+
+  // THE PRE-0.65 SPELLING IS STILL PRESENT. Every index in every
+  // already-generated SDK carries the bare form, and those files are the
+  // project's own — they change when the project regenerates, not when
+  // sdkgen releases. Reading only the new spelling would make `target add go`
+  // on an existing repo believe the target was absent and append a SECOND
+  // include, which is the one failure mode this whole function exists to
+  // prevent.
+  test('an entry in the BARE pre-0.65 spelling counts as present', () => {
     const content = '@"feat.aon"'
     strictEqual(appendIndexEntries(content, ['feat']), content)
   })
@@ -24,20 +36,20 @@ describe('appendIndexEntries', () => {
   test('appends multiple distinct entries', () => {
     strictEqual(
       appendIndexEntries('', ['a', 'b']),
-      '\n@"a.aon"\n@"b.aon"',
+      '\n@"./a.aon"\n@"./b.aon"',
     )
   })
 
   test('deduplicates repeated names within one call', () => {
     // Regression: previously each duplicate was appended because the
     // presence check ran against the original (unmodified) content.
-    strictEqual(appendIndexEntries('', ['a', 'a']), '\n@"a.aon"')
+    strictEqual(appendIndexEntries('', ['a', 'a']), '\n@"./a.aon"')
   })
 
   test('does not false-match on a name that is a prefix of an existing one', () => {
     // '@"feature.aon"' must not satisfy the check for 'feat'.
-    const out = appendIndexEntries('@"feature.aon"', ['feat'])
-    strictEqual(out, '@"feature.aon"\n@"feat.aon"')
+    const out = appendIndexEntries('@"./feature.aon"', ['feat'])
+    strictEqual(out, '@"./feature.aon"\n@"./feat.aon"')
   })
 
   test('a COMMENTED-OUT entry does not count as present', () => {
@@ -46,8 +58,8 @@ describe('appendIndexEntries', () => {
     // commented the include out appended nothing and reported success, while
     // the target stayed absent from the model. Commenting an include out is
     // the obvious way to switch a target off by hand, so projects reach this.
-    const out = appendIndexEntries('# @"go.aon"', ['go'])
-    strictEqual(out, '# @"go.aon"\n@"go.aon"')
+    const out = appendIndexEntries('# @"./go.aon"', ['go'])
+    strictEqual(out, '# @"./go.aon"\n@"./go.aon"')
   })
 
   test('an entry with a TRAILING COMMENT counts as present', () => {

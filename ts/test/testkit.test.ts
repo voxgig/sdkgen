@@ -159,7 +159,7 @@ describe('testkit over the fixture package', () => {
 
     const index = Fs.readFileSync(
       Path.join(consumer.sdk, 'model', 'edition', 'edition-index.aon'), 'utf8')
-    ok(index.includes('@"wcat.aon"'), 'edition index: ' + index)
+    ok(index.includes('@"./wcat.aon"'), 'edition index: ' + index)
   })
 
 

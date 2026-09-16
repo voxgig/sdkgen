@@ -131,7 +131,7 @@ describe('edition add', () => {
       ok(files.includes('tm/edition/summary/site.md'), files.join(','))
 
       // The index, or the model never compiles the new item in at all.
-      ok(read(project, 'model/edition/edition-index.aon').includes('@"summary.aon"'))
+      ok(read(project, 'model/edition/edition-index.aon').includes('@"./summary.aon"'))
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -442,8 +442,35 @@ describe('edition and the project model', () => {
       const sdk = String(project.fs.readFileSync(
         ROOT + '/model/sdk.aon', 'utf8'))
 
-      ok(sdk.includes('@"edition/edition-index.aon"'),
+      ok(sdk.includes('@"./edition/edition-index.aon"'),
         'the edition index is included by nothing:\n' + sdk)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  // AN EXISTING REPO'S BARE INCLUDE IS STILL THE SAME INCLUDE. Every
+  // already-generated SDK has `@"edition/edition-index.aon"` with no `./`,
+  // written before aontu 0.65 required one. If that did not compare equal to
+  // the spelling emitted now, the first `edition add` on any existing project
+  // would append a second include of the same file.
+  test('a BARE pre-0.65 include is not duplicated', async () => {
+    const pkg = makePackage()
+    try {
+      const project = makeProject()
+      const url = ROOT + '/model/sdk.aon'
+      project.fs.writeFileSync(url,
+        String(project.fs.readFileSync(url, 'utf8')) +
+        '@"edition/edition-index.aon"\n')
+
+      await edition_add([editionRef(pkg)], project.actx)
+
+      const sdk = String(project.fs.readFileSync(url, 'utf8'))
+      strictEqual(
+        (sdk.match(/@"(?:\.\/)?edition\/edition-index\.aon"/g) || []).length, 1,
+        'the include was appended alongside the bare one:\n' + sdk)
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -462,7 +489,7 @@ describe('edition and the project model', () => {
         ROOT + '/model/sdk.aon', 'utf8'))
 
       strictEqual(
-        sdk.split('@"edition/edition-index.aon"').length - 1, 1,
+        sdk.split('@"./edition/edition-index.aon"').length - 1, 1,
         'the include was appended twice:\n' + sdk)
     }
     finally {
