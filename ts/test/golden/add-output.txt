@@ -1676,7 +1676,7 @@ tm/rust/utility/voxgigstruct/value.rs 7cafa6404cbe
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/scala.aon 68ac8ea9984b
+model/target/scala.aon beb33c8f60f1
 model/target/target-index.aon 0da3132ebe91
 src/cmp/scala/Config_scala.ts 248439ddf681
 src/cmp/scala/EntityBase_scala.ts 95d5e61aa06f
@@ -1751,6 +1751,7 @@ tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala 19f19505f177
 tm/scala/feature/TestFeature.scala f6c90650e517
 tm/scala/feature/TimeoutFeature.scala 1241410229ac
+tm/scala/feature/ValidateFeature.scala 895a3c37bee7
 tm/scala/feature/secrets/plugin/Capability.scala bb4f71b3e72b
 tm/scala/feature/secrets/plugin/Config.scala 9a9533366a69
 tm/scala/feature/secrets/plugin/Depend.scala 6200c1d817c8
@@ -1816,12 +1817,13 @@ tm/scala/src/feature/streaming/.gitkeep e3b0c44298fc
 tm/scala/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/scala/src/feature/test/.gitkeep e3b0c44298fc
 tm/scala/src/feature/timeout/.gitkeep e3b0c44298fc
+tm/scala/src/feature/validate/.gitkeep e3b0c44298fc
 tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
 tm/scala/utility/Fetcher.scala a3a1073307be
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
 tm/scala/utility/Make.scala 9ddabc5e36d8
-tm/scala/utility/MakeSpec.scala 321cd9348d4e
+tm/scala/utility/MakeSpec.scala 08289e20fcf3
 tm/scala/utility/Misc.scala bf44fcc37724
 tm/scala/utility/Prepare.scala 8c0bc0c5c841
 tm/scala/utility/Register.scala 730b661b9faf
