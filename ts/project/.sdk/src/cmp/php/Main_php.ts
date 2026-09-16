@@ -23,6 +23,7 @@ import {
 
 import { Package } from './Package_php'
 import { Config } from './Config_php'
+import { Schema } from './Schema_php'
 import { Gitignore } from './Gitignore_php'
 import { MainEntity } from './MainEntity_php'
 import { EntityTypes } from './EntityTypes_php'
@@ -103,6 +104,7 @@ const Main = cmp(async function Main(props: any) {
   // Generate config module
   Folder({ name: '.' }, () => {
     Config({ target })
+    Schema({ target })
   })
 
   // Generate typed models (types/<Sdk>Types.php) — classmap-autoloaded.

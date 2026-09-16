@@ -1210,7 +1210,7 @@ tm/perl/utility/transform_response.pm 035accca42c2
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/php.aon 7e1c484ae4ab
+model/target/php.aon c67f926e2601
 model/target/target-index.aon 4bd43db1bef1
 src/cmp/php/Config_php.ts 1f6433798af4
 src/cmp/php/EntityOperation_php.ts 65b4daf2dff8
@@ -1218,8 +1218,8 @@ src/cmp/php/EntityTypes_php.ts 92945dd564fe
 src/cmp/php/Entity_php.ts 44b5f53db2e9
 src/cmp/php/Gitignore_php.ts e6379c0edbe7
 src/cmp/php/MainEntity_php.ts 29efa6a7dcd7
-src/cmp/php/Main_php.ts 3e8f5714327b
-src/cmp/php/Package_php.ts 36b8fa854584
+src/cmp/php/Main_php.ts df101d5b9eb6
+src/cmp/php/Package_php.ts 1a0ba9f94ad6
 src/cmp/php/ReadmeEntity_php.ts a4d920ba0798
 src/cmp/php/ReadmeExamplesTest_php.ts ff0c2061fc5d
 src/cmp/php/ReadmeExplanation_php.ts a7dc536552d1
@@ -1233,6 +1233,7 @@ src/cmp/php/ReadmeRef_php.ts 189e092943d8
 src/cmp/php/ReadmeTopHowto_php.ts a0a90593a80f
 src/cmp/php/ReadmeTopQuick_php.ts f52705d06444
 src/cmp/php/ReadmeTopTest_php.ts e602ef0b983e
+src/cmp/php/Schema_php.ts 61b15fa1fa6d
 src/cmp/php/TestDirect_php.ts 8f7b0e32a59f
 src/cmp/php/TestEntity_php.ts 7498f485aa35
 src/cmp/php/Test_php.ts ae9d9cb4d7e7
@@ -1285,7 +1286,7 @@ tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 5bbbbecfc3d7
 tm/php/utility/MakeFetchDef.php c76cc8f6f00e
-tm/php/utility/MakeOptions.php c88eb00d0192
+tm/php/utility/MakeOptions.php b79ecb85af7f
 tm/php/utility/MakePoint.php b17607873309
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
@@ -1306,7 +1307,7 @@ tm/php/utility/ResultBody.php d37f74dc5d41
 tm/php/utility/ResultHeaders.php 378a2c5bfdd9
 tm/php/utility/TransformRequest.php 632482c5939f
 tm/php/utility/TransformResponse.php 4dc432711490
-tm/php/utility/struct/Struct.php 1a9a54f00c8e
+tm/php/utility/struct/Struct.php 9e07fc26d3fc
 
 ## target py
 model/feature/feature-index.aon 5f0737d1060e

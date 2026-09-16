@@ -480,11 +480,31 @@ describe('vendored', () => {
   // Keep the test, not just the table: an empty map still fails loudly the
   // moment someone hand-edits a vendored file without marking it.
   test('local deviations from vendored code stay marked', () => {
-    const patched: Record<string, number> = {}
+    const patched: Record<string, number> = {
+      // THREE FIXES to the php struct port, all found porting the generated
+      // option spec to php and all divergences from the ts reference rather
+      // than php-specific behaviour. Each is marked in place with the same
+      // "(optspec port, pending upstream fix)" reason:
+      //
+      //   1. `$ERRS` merged BEFORE `$extra`, so a caller store overrode the
+      //      error collector — a $ONE alternative's trial failures landed in
+      //      the CALLER's error list.
+      //   2. validate_ONE read `count($terrs)` off a php array it had passed
+      //      BY VALUE, so the count was always 0 and the first alternative
+      //      always "matched".
+      //   3. TYPENAME spelled slot 1 'noval' where ts spells it 'nil', so
+      //      `$NIL` resolved to a 0 bitmask and rejected every value.
+      //
+      // Together they made the union encoding the option spec uses for an
+      // optional value — ['`$ONE`', <type>, '`$NIL`'] — reject an absent key,
+      // which is most of the spec. Remove all three when a struct release
+      // carries them.
+      'tm/php/utility/struct/Struct.php': 3,
+    }
 
     for (const [rel, count] of Object.entries(patched)) {
       const src = readFileSync(Path.join(SDK, rel), 'utf8')
-      const marks = src.match(/PATCH \(solardemo prototype, pending upstream fix\)/g) || []
+      const marks = src.match(/PATCH \([^)]*pending upstream fix\)/g) || []
 
       strictEqual(marks.length, count,
         rel + ': expected ' + count + ' marked PATCH block(s), found ' +
@@ -502,7 +522,7 @@ describe('vendored', () => {
       for (const rel of Object.keys(entry.file)) {
         if (null != patched[rel]) continue
         const src = readFileSync(Path.join(SDK, rel), 'utf8')
-        if (/PATCH \(solardemo prototype, pending upstream fix\)/.test(src)) {
+        if (/PATCH \([^)]*pending upstream fix\)/.test(src)) {
           unlisted.push(rel)
         }
       }
