@@ -232,7 +232,7 @@ const SWIFT_SDK_TYPES = new Set<string>([
   'MetricsBucket', 'MetricsFeature', 'NetsimFeature', 'PagingFeature',
   'ProxyFeature', 'RatelimitFeature', 'RbacFeature', 'RetryFeature',
   'SecretsFeature', 'StreamingFeature', 'TelemetryFeature', 'TestFeature',
-  'TimeoutFeature',
+  'TimeoutFeature', 'ValidateFeature',
 ])
 
 

@@ -236,7 +236,7 @@ const SWIFT_SDK_TYPES = new Set([
     'MetricsBucket', 'MetricsFeature', 'NetsimFeature', 'PagingFeature',
     'ProxyFeature', 'RatelimitFeature', 'RbacFeature', 'RetryFeature',
     'SecretsFeature', 'StreamingFeature', 'TelemetryFeature', 'TestFeature',
-    'TimeoutFeature',
+    'TimeoutFeature', 'ValidateFeature',
 ]);
 // Does `Name` collide with a type the swift SDK runtime already declares?
 function isSwiftSdkType(Name) {
