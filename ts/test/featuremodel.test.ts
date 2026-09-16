@@ -300,8 +300,8 @@ describe('feature-language-parity', () => {
     // is the feature's gate, so it goes on with the feature source. ts and
     // js are the reference implementation.
     validate: ['c', 'clojure', 'cpp', 'csharp', 'elixir', 'go', 'java', 'js',
-      'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala', 'ts',
-      'zig'],
+      'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala',
+      'swift', 'ts', 'zig'],
   }
 
   // Which targets must carry this feature: all of them, or just the ones

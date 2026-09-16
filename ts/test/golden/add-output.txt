@@ -1837,7 +1837,7 @@ tm/scala/utility/struct/voxgig_struct.scala 8fc853fd8f03
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/swift.aon de1c3efd5d17
+model/target/swift.aon 36c0e09d17d1
 model/target/target-index.aon 19a9aa80f566
 src/cmp/swift/Config_swift.ts e19f21110698
 src/cmp/swift/EntityBase_swift.ts 0e11e207fb56
@@ -1908,7 +1908,7 @@ tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 99e41163cfe8
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
 tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 9bc134d98639
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
-tm/swift/Sources/ProjectNameSDK/utility/Make.swift 667becbbc443
+tm/swift/Sources/ProjectNameSDK/utility/Make.swift 4274a98806c8
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 5139e01f2b4e
 tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 9723a9cb8bae
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 157744905be9
