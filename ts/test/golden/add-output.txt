@@ -735,7 +735,7 @@ model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/js.aon cb3e5db6c28e
 model/target/target-index.aon 66e6d039373f
-src/cmp/js/Config_js.ts 8ad6e822efcb
+src/cmp/js/Config_js.ts bcb563cc4458
 src/cmp/js/EntityBase_js.ts 69622212f72b
 src/cmp/js/EntityOperation_js.ts 6d165a88201a
 src/cmp/js/EntityTypes_js.ts 83ce997ce401
@@ -1917,7 +1917,7 @@ model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/target-index.aon 6d6ce1a6c7d8
 model/target/ts.aon 0fab5161eaba
-src/cmp/ts/Config_ts.ts 6224fe75bed0
+src/cmp/ts/Config_ts.ts cc2ead278de8
 src/cmp/ts/EntityBase_ts.ts 901c1c6f2730
 src/cmp/ts/EntityOperation_ts.ts 8e35c5f506d0
 src/cmp/ts/EntityTypes_ts.ts 7114b6e9f274
