@@ -604,25 +604,27 @@
         (oset! result :ok false)
         true))))
 
-(def HEADER-AUTH "authorization")
-(def OPTION-APIKEY "apikey")
-(def NOT-FOUND "__NOTFOUND__")
-
-(defn u-prepare-auth [ctx]
-  (let [spec (oget ctx :spec)]
-    (if (nil? spec) [nil (ctx-error ctx "auth_no_spec" "Expected context spec property to be defined.")]
-        (let [headers (oget spec :headers)
-              options (client-options-map (oget ctx :client))]
-          (if (nil? (vs/getprop options "auth"))
-            (do (vs/delprop headers HEADER-AUTH) [spec nil])
-            (let [apikey (vs/getprop options OPTION-APIKEY NOT-FOUND)]
-              (if (or (nil? apikey) (and (string? apikey) (or (= apikey NOT-FOUND) (= apikey ""))))
-                (vs/delprop headers HEADER-AUTH)
-                (let [auth-prefix (or (vs/getpath options "auth.prefix") "")
-                      apikey-val (if (string? apikey) apikey "")]
-                  (.put ^java.util.Map headers HEADER-AUTH
-                        (if (= auth-prefix "") apikey-val (str auth-prefix " " apikey-val)))))
-              [spec nil]))))))
+;; WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API, so HEADER-AUTH,
+;; OPTION-APIKEY, NOT-FOUND and u-prepare-auth are GENERATED into
+;; src/sdk/prepare_auth.clj rather than written here.
+;;
+;; apidef resolves the security scheme's `in` and `name` into
+;; main.kit.info.security - joplin's says `in: "query", name: "token"` - and
+;; this file used to hardcode an `authorization` HEADER, so an
+;; apiKey-in-query API got a header it does not read and never got the query
+;; parameter it does. Header, query and cookie need three different bodies
+;; and a hand-written file has to pick one, so cmp/clojure/PrepareAuth_
+;; clojure.ts emits the branch the API actually uses and nothing else.
+;;
+;; `load`, NOT `require`: the generated file opens with `(in-ns 'sdk.core)`
+;; and is read INTO THIS NAMESPACE, right here, where the defn used to be.
+;; A namespace of its own would need sdk.core's oget / ctx-error /
+;; client-options-map while base-utility-map below needs its u-prepare-auth -
+;; a load cycle, which Clojure refuses. This is the idiom clojure.core itself
+;; uses to split across files, every helper above is already in scope, and
+;; both `:prepare-auth u-prepare-auth` below and `core/HEADER-AUTH` (read by
+;; feature/secrets) go on resolving exactly as before.
+(load "prepare_auth")
 
 (defn u-make-point [ctx]
   (let [preset (out-get ctx "point")]
@@ -1032,7 +1034,16 @@
                    ;; credential and a flag to say the pair is Basic rather
                    ;; than a single bearer token. Absent from the shape, a
                    ;; client passing them is refused with "Unexpected keys".
-                   "auth" (vs/jm "prefix" "" "basic" false)
+                   ;; `in` and `name`: WHERE the credential goes and under what
+                   ;; name. The generated config emits them whenever the spec's
+                   ;; scheme is not the header/Authorization default, and
+                   ;; `vs/validate` REFUSES a key this spec does not name
+                   ;; ("Unexpected keys at field auth") - so without them here
+                   ;; an apiKey-in-query SDK could not even be constructed.
+                   ;; '' means "take what the spec said", which is what the
+                   ;; generated prepare_auth was built from. Mirrors
+                   ;; main.kit.optspec.auth in @voxgig/sdkgen/model/sdkgen.aon.
+                   "auth" (vs/jm "prefix" "" "basic" false "in" "" "name" "")
                    "headers" (vs/jm "`$CHILD`" "`$STRING`")
                    "allow" (vs/jm "method" "GET,PUT,POST,PATCH,DELETE,OPTIONS"
                                   "op" "create,update,load,list,remove,command,direct,graphql")

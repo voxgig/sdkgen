@@ -23,6 +23,7 @@ import {
 
 import { Package } from './Package_perl'
 import { Config } from './Config_perl'
+import { PrepareAuth } from './PrepareAuth_perl'
 import { Gitignore } from './Gitignore_perl'
 import { MainEntity } from './MainEntity_perl'
 
@@ -130,6 +131,19 @@ const Main = cmp(async function Main(props: any) {
   Folder({ name: '.' }, () => {
     Config({ target })
   })
+
+  // GENERATED, NOT COPIED. Where the credential goes is a fact about the
+  // API, and tm/ can only hold one answer. See PrepareAuth_perl.
+  //
+  // NO FOLDER OPEN HERE, deliberately. perl has no `src/` tree (the ts
+  // port's Main wraps Config and PrepareAuth in `Folder({name:'src'})`,
+  // and this one must not): Main writes `lib/`, `config.pm` and
+  // `features.pm` into the SDK root, and the blanket `Copy({from:
+  // 'tm/perl'})` above lands the utility tree at `<sdk>/utility/`. So
+  // this call sits OUTSIDE the `.` folder above and PrepareAuth opens the
+  // single `utility` folder itself, writing exactly the path the deleted
+  // template occupied.
+  PrepareAuth({ target })
 
   // Generate feature factory module
   File({ name: 'features.pm' }, () => {

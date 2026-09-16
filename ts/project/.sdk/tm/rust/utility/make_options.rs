@@ -78,7 +78,19 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         ("base", Value::str("http://localhost:8000")),
         ("prefix", Value::str("")),
         ("suffix", Value::str("")),
-        ("auth", jo(vec![("prefix", Value::str("")), ("basic", Value::Bool(false))])),
+        // CLOSED - validate rejects any key it does not declare - so without
+        // `in` and `name` an apiKey-in-query SDK fails to construct on its
+        // own config with "Unexpected keys at field auth: in, name".
+        // '' means "take what the spec said".
+        (
+            "auth",
+            jo(vec![
+                ("prefix", Value::str("")),
+                ("basic", Value::Bool(false)),
+                ("in", Value::str("")),
+                ("name", Value::str("")),
+            ]),
+        ),
         ("headers", jo(vec![("`$CHILD`", Value::str("`$STRING`"))])),
         (
             "allow",

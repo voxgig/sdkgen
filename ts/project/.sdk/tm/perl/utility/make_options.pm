@@ -128,7 +128,16 @@ $REGISTRY{make_options} = sub {
     'suffix' => '',
     # `basic` and `secret`: HTTP Basic Auth needs a second credential and a
     # flag to say the pair is Basic rather than a single bearer token.
-    'auth' => { 'prefix' => '', 'basic' => $JF },
+    #
+    # `in` and `name`: WHERE the credential goes and UNDER WHAT NAME -
+    # header (the default, `authorization`), query or cookie. This shape
+    # is CLOSED, so a config carrying a key it does not list makes every
+    # request fail validation: without these two entries an
+    # apiKey-in-query SDK (joplin's `?token=`) could not build its
+    # options at all. They mirror main.kit.optspec.auth, which the
+    # model-driven targets read directly, and '' means "whatever the
+    # spec resolved", which is what prepare_auth already baked in.
+    'auth' => { 'prefix' => '', 'basic' => $JF, 'in' => '', 'name' => '' },
     'headers' => { '`$CHILD`' => '`$STRING`' },
     'allow' => {
       'method' => 'GET,PUT,POST,PATCH,DELETE,OPTIONS',

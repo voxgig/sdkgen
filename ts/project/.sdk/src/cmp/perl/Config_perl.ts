@@ -5,6 +5,8 @@ import {
   cmp,
   configDefinition,
   each,
+  resolveAuthIn,
+  resolveAuthName,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -91,6 +93,34 @@ const Config = cmp(async function Config(props: any) {
   // in to the main slug/version/target identity fields (station
   // descriptor inputs), matching the ts/js/rb targets.
   const { def: configDef } = configDefinition(model, target.name)
+
+  // `in` and `name` TRAVEL WITH THE PREFIX NOW. apidef resolved both from
+  // the spec's securityScheme all along (joplin's says `in: "query",
+  // name: "token"`) and generation dropped them, so an apiKey-in-query
+  // SDK carried an Authorization header the API does not read. The
+  // placement is a runtime option like the prefix, so it belongs in the
+  // config the SDK loads - see PrepareAuth_perl, which bakes the same two
+  // values into prepare_auth.pm.
+  //
+  // Overlaid HERE rather than inside configDefinition because that helper
+  // is shared by every target, and the other targets' emitters do not
+  // carry the fields yet - widening it would move their output too.
+  //
+  // Emitted ONLY when they differ from the defaults, so a
+  // header/Authorization SDK's config.pm is byte-identical to what it
+  // generated before.
+  if (null != configDef.options && null != configDef.options.auth) {
+    const authIn = resolveAuthIn(model)
+    const authName = resolveAuthName(model)
+
+    if ('header' !== authIn) {
+      configDef.options.auth.in = authIn
+    }
+
+    if ('Authorization' !== authName) {
+      configDef.options.auth.name = authName
+    }
+  }
 
   const configJson = JSON.stringify(configDef, null, 2)
 

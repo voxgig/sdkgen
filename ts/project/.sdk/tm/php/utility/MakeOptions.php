@@ -153,7 +153,14 @@ class ProjectNameMakeOptions
             'base' => 'http://localhost:8000',
             'prefix' => '',
             'suffix' => '',
-            'auth' => ['prefix' => '', 'basic' => false],
+            // `in` and `name` say WHERE the credential goes and under what
+            // name (header | query | cookie). The generated config carries
+            // them whenever the spec's scheme is not the header/Authorization
+            // default, and validate REJECTS a key this spec does not declare,
+            // so an apiKey-in-query SDK cannot be constructed without them.
+            // '' means "take what the spec said", which is what prepare_auth
+            // was generated from.
+            'auth' => ['prefix' => '', 'basic' => false, 'in' => '', 'name' => ''],
             'headers' => ['`$CHILD`' => '`$STRING`'],
             'allow' => [
                 'method' => 'GET,PUT,POST,PATCH,DELETE,OPTIONS',

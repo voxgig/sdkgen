@@ -1,2 +1,2 @@
-declare const ReadmeEntity: import("jostraca").Component;
+declare const ReadmeEntity: import("jostraca").Component<any, never, never>;
 export { ReadmeEntity };

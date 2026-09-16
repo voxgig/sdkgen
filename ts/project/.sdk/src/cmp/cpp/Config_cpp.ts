@@ -5,6 +5,9 @@ import {
   cmp,
   configDefinition,
   each,
+  isAuthActive,
+  resolveAuthIn,
+  resolveAuthName,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -328,6 +331,43 @@ const Config = cmp(async function Config(props: any) {
   // the data rep (one chunked JSON literal), so this is the whole #MainMeta
   // story for this target.
   const { def: configDef } = configDefinition(model, target.name)
+
+  // `in` and `name` TRAVEL WITH THE PREFIX NOW.
+  //
+  // apidef resolved both from the spec's securityScheme all along and this
+  // generator dropped them, so an apiKey-in-query API got an `authorization`
+  // header it does not read (see PrepareAuth_cpp). The generated
+  // prepare_auth is built from the same two values, and the config carries
+  // them so the placement is a visible, overridable runtime option beside
+  // auth.prefix.
+  //
+  // IT IS INERT WITHOUT THE OPTSPEC. cpp does not build its option schema
+  // from the model: it is a JSON literal in tm/cpp/utility/pipeline.hpp
+  // (OPTSPEC_JSON), and cpp's vendored Struct::validate SILENTLY DROPS a key
+  // that literal does not declare rather than rejecting it. So the config
+  // written here reached makeOptions and was trimmed back to `prefix` on the
+  // way in, and prepareAuth read an `auth` map with no `in`, no `name` and
+  // no `basic` - measured on a generated client before the literal was
+  // extended. That literal now declares all three; changing only this file
+  // would have changed nothing a running SDK can see.
+  //
+  // Emitted ONLY when they differ from header/Authorization, so a
+  // header-based SDK's core/config.hpp is byte-identical to what it
+  // generated before. cpp has one representation - the chunked JSON literal
+  // rendered from this same def by cppConfigLiterals - so there is no second
+  // copy to keep in step.
+  const authIn = resolveAuthIn(model)
+  const authName = resolveAuthName(model)
+
+  if (isAuthActive(model) && null != configDef.options &&
+    null != configDef.options.auth) {
+    if ('header' !== authIn) {
+      configDef.options.auth.in = authIn
+    }
+    if ('Authorization' !== authName) {
+      configDef.options.auth.name = authName
+    }
+  }
 
   File({ name: 'config.' + target.ext }, () => {
 

@@ -82,10 +82,23 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
   val optspec = Json.parse(
     "{" +
       "\"apikey\": \"\"," +
+      // The SECOND credential, for the HTTP Basic scheme
+      // (base64(apikey:secret)). Named by main.kit.optspec but missing here,
+      // and validate drops what it does not name - so a caller that supplied
+      // `secret` never had it reach prepareAuth.
+      "\"secret\": \"\"," +
       "\"base\": \"http://localhost:8000\"," +
       "\"prefix\": \"\"," +
       "\"suffix\": \"\"," +
-      "\"auth\": { \"prefix\": \"\" }," +
+      // WHERE the credential goes and UNDER WHAT NAME, plus the HTTP Basic
+      // switch. This map is CLOSED - Struct.validate drops, or rejects, a key
+      // it does not declare - so without these three the generated Config's
+      // auth block is trimmed back to `prefix` on the way in and an
+      // apiKey-in-query SDK cannot see its own scheme. '' means "take what
+      // the spec said". Mirrors main.kit.optspec.auth in
+      // @voxgig/sdkgen/model/sdkgen.aon, which ts builds its OPTSPEC from.
+      "\"auth\": { \"prefix\": \"\", \"basic\": false," +
+      "          \"in\": \"\", \"name\": \"\" }," +
       "\"headers\": { \"`\$CHILD`\": \"`\$STRING`\" }," +
       "\"allow\": {" +
       "  \"method\": \"GET,PUT,POST,PATCH,DELETE,OPTIONS\"," +

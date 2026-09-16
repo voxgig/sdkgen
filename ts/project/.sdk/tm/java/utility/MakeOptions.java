@@ -96,10 +96,22 @@ final class MakeOptions {
     Map<String, Object> optspec = (Map<String, Object>) Json.parse(
         "{"
         + "\"apikey\": \"\","
+        // The SECOND credential, for the HTTP Basic scheme
+        // (base64(apikey:secret)). Named by main.kit.optspec but missing
+        // here, and validate drops what it does not name — so a caller
+        // that supplied `secret` never had it reach prepareAuth.
+        + "\"secret\": \"\","
         + "\"base\": \"http://localhost:8000\","
         + "\"prefix\": \"\","
         + "\"suffix\": \"\","
-        + "\"auth\": { \"prefix\": \"\" },"
+        // WHERE the credential goes and under what name, plus the HTTP
+        // Basic switch. `Struct.validate` DROPS a key this spec does not
+        // name, so without these three the generated Config's auth block
+        // was trimmed back to `prefix` on the way in and the SDK could not
+        // see its own scheme. Mirrors main.kit.optspec.auth in
+        // @voxgig/sdkgen/model/sdkgen.aon, which ts builds its OPTSPEC from.
+        + "\"auth\": { \"prefix\": \"\", \"basic\": false,"
+        + "          \"in\": \"\", \"name\": \"\" },"
         + "\"headers\": { \"`$CHILD`\": \"`$STRING`\" },"
         + "\"allow\": {"
         + "  \"method\": \"GET,PUT,POST,PATCH,DELETE,OPTIONS\","

@@ -27,6 +27,7 @@ import { Gitignore } from './Gitignore_scala'
 import { MainEntity } from './MainEntity_scala'
 import { EntityBase } from './EntityBase_scala'
 import { EntityTypes } from './EntityTypes_scala'
+import { PrepareAuth } from './PrepareAuth_scala'
 import { scalaPackage } from './utility_scala'
 
 
@@ -159,6 +160,19 @@ const Main = cmp(async function Main(props: any) {
 
   // Shared entity runtime (entity/EntityBase.scala).
   EntityBase({ target })
+
+  // utility/PrepareAuth.scala. WHERE the credential goes (header, query or
+  // cookie) and under what name is a fact about THIS API, and
+  // tm/scala/utility/Prepare.scala can only hold one answer - which is why
+  // its `object PrepareAuth` was removed and this generates the object
+  // instead. See PrepareAuth_scala.
+  //
+  // CALLED AT THE TOP LEVEL, NOT INSIDE `Folder({ name: 'core' })` below:
+  // the component opens `utility` itself, reproducing the path the blanket
+  // Copy above gives every other tm/scala/utility file. Nested in core/ it
+  // would write core/utility/PrepareAuth.scala, contradicting its own
+  // package declaration while Register.scala bound nothing.
+  PrepareAuth({ target })
 
   // Generate the client class and config in core/.
   Folder({ name: 'core' }, () => {

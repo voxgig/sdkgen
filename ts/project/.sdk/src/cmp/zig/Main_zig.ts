@@ -24,6 +24,7 @@ import { Config, FeaturePlugins, BUILTIN_FEATURES } from './Config_zig'
 import { Gitignore } from './Gitignore_zig'
 import { MainEntity } from './MainEntity_zig'
 import { Package } from './Package_zig'
+import { PrepareAuth } from './PrepareAuth_zig'
 
 
 // Which features ship a zig test suite under test/feature/<name>/, and the
@@ -258,6 +259,21 @@ const Main = cmp(async function Main(props: any) {
   // Generated core files: the client (sdk.zig) and the API config. The
   // branded error type (error.zig) is a plain template (copied above).
   Folder({ name: 'core' }, () => {
+
+    // core/prepare_auth.zig is GENERATED, not copied from tm/zig: where the
+    // credential goes (header / query / cookie, and under what name) is a
+    // fact about the API, and the template it was extracted from -
+    // tm/zig/core/utility.zig - could only hold one answer. See
+    // PrepareAuth_zig.
+    //
+    // INSIDE THIS `core` FOLDER, and the component opens none of its own -
+    // the Config_zig arrangement, for the same reason. The extracted body
+    // lived in core/utility.zig, which `Copy({from: 'tm/zig'})` lands at
+    // `<root>/core/`, and core/utility.zig re-exports the function with a
+    // SIBLING-relative `@import("prepare_auth.zig")`. A second Folder here
+    // would write core/core/prepare_auth.zig, which that import cannot
+    // reach and `zig build` never analyses.
+    PrepareAuth({ target })
 
     File({ name: 'sdk.' + target.ext }, () => {
 

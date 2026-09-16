@@ -3496,19 +3496,32 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
     '("auth.null_suppresses_the_credential_chain_or_no_chain"), which the ' +
     'ocaml secrets lane in this file runs through the generated Makefile',
 
-  // scala below was the AUTHNULL_OUTSTANDING list. It now carries the fix,
-  // but READ BY EYE ONLY: no scala toolchain existed where the change was
-  // written, so it has not been compiled, let alone had the suppression
-  // exercised - unproven at BOTH levels. The structural guard below is all
-  // that holds it, and a structural guard cannot see a type error or a
-  // mis-ordered statement. Whoever gets the toolchain should build it first
-  // and add a lane second. (clojure, elixir, zig and ocaml were once on this
-  // list, and are the worked examples of doing exactly that - check the
-  // toolchain before inheriting the claim: it sat on "no elixir toolchain",
-  // "no zig toolchain" and "no ocaml toolchain" for a machine that had all
-  // three, and the stale-entry guard cannot see a false excuse that has no
-  // lane to contradict it.)
-  scala: 'UNVERIFIED - no scala toolchain; never compiled, never executed',
+  // scala has left the "never compiled" claim behind, and the claim was
+  // FALSE when it was written: scala-cli 1.15.0 / Scala 3.8.4 and a JDK ARE
+  // on this machine (`command -v scala-cli scalac`), which is exactly the
+  // trap the parenthesis below warns about. The prepareAuth-placement
+  // rollout built a generated scala SDK and RAN it: the shipped Makefile's
+  // `make test` drives SdkTestMain (137), SdkEntityTestMain (20),
+  // SecretsTestMain (93) and the shared PrimaryCorpusMain (67) against a
+  // real client, all green, and the suppression itself was exercised
+  // directly - a client built with an explicit apikey AND `auth: null` put
+  // NOTHING in spec.headers or spec.query and produced a bare URL, on every
+  // placement the model can declare (header, query, cookie). So it is
+  // compiled and executed, not read by eye.
+  //
+  // It stays here rather than becoming an AUTHNULL_LANES row because no
+  // lane runs it in sdkgen CI yet: the probe was ad hoc, and the shipped
+  // suite's own auth assertions are header-shaped (see the note in
+  // SecretsTestMain). Wiring `make test` into this file is the remaining
+  // work. (clojure, elixir, zig and ocaml were once on this list and are
+  // the worked examples of doing that - check the toolchain before
+  // inheriting a claim: this row sat on "no scala toolchain", as those sat
+  // on "no elixir/zig/ocaml toolchain", for a machine that had every one,
+  // and the stale-entry guard cannot see a false excuse that has no lane to
+  // contradict it.)
+  scala: 'compiled and executed by hand on scala-cli 1.15.0 / Scala 3.8.4 ' +
+    '(the generated SDK\'s own `make test`, plus a direct auth:null probe ' +
+    'on header, query and cookie placements); no sdkgen CI lane yet',
 }
 
 
@@ -3712,6 +3725,24 @@ describe('auth null coverage is honest', () => {
 })
 
 
+// AN AUTH PROBE NEEDS AN API THAT HAS AUTH. The shared fixture declares
+// none (`main: kit: info: { ... auth: false }` in generateharness), and
+// prepare_auth is no longer a static template that places an
+// `authorization` header regardless - it is GENERATED from the model, so
+// a no-auth API now gets a prepare_auth that correctly places nothing.
+// That makes this suite's own baseline ("an ordinary apikey IS sent")
+// unsatisfiable for every ported target, which reads as an auth-null
+// regression when it is the fixture that is wrong.
+//
+// `prefix: ''` as well as `active: true`, because every probe in the table
+// asserts the RAW key on the wire ('OPTKEY01', not 'Bearer OPTKEY01') -
+// which is what they saw when the auth block was absent from the config
+// and the optspec default supplied an empty prefix.
+const AUTHNULL_MODEL = `
+main: kit: config: auth: { active: true, prefix: '' }
+`
+
+
 describe('auth null suppresses the credential', () => {
 
   let tmp = ''
@@ -3728,7 +3759,7 @@ describe('auth null suppresses the credential', () => {
 
     test(lane.target + ': auth null beats an explicit apikey', async (t) => {
       const sdkroot = Path.join(tmp, lane.target)
-      await generateTo(lane.target, sdkroot)
+      await generateTo(lane.target, sdkroot, AUTHNULL_MODEL)
 
       const probe = Path.join(sdkroot, ...lane.probe.split('/'))
       Fs.mkdirSync(Path.dirname(probe), { recursive: true })

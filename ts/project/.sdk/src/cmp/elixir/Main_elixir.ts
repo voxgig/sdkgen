@@ -17,6 +17,7 @@ import {
 
 import { Package } from './Package_elixir'
 import { Config } from './Config_elixir'
+import { PrepareAuth } from './PrepareAuth_elixir'
 import { Gitignore } from './Gitignore_elixir'
 import { MainEntity } from './MainEntity_elixir'
 import { EntityTypes } from './EntityTypes_elixir'
@@ -155,6 +156,20 @@ defmodule ${Name}.Features do
 end
 `)
     })
+
+    // WHERE THE CREDENTIAL GOES IS GENERATED, NOT COPIED. prepare_auth was
+    // the one pipeline utility whose answer is a fact about the API rather
+    // than about the language, and tm/ can only hold one answer - so it is
+    // extracted out of the copied utility.ex into its own module here. See
+    // PrepareAuth_elixir for the extraction and for why the registration in
+    // utility.ex still binds it.
+    //
+    // CALLED FROM INSIDE THIS `lib` FOLDER, and the component opens only
+    // `<name>`, so the file lands at lib/<name>/prepare_auth.ex - beside the
+    // utility.ex the Copy above puts at lib/<name>/utility.ex. Opening `lib`
+    // in the component too would write lib/lib/<name>/, which mix would
+    // compile anyway (it globs the whole tree) and no test could see.
+    PrepareAuth({ target })
   })
 
   // Config module.

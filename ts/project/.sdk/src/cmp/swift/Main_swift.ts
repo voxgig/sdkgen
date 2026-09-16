@@ -23,6 +23,7 @@ import {
 
 import { Package } from './Package_swift'
 import { Config } from './Config_swift'
+import { PrepareAuth } from './PrepareAuth_swift'
 import { Gitignore } from './Gitignore_swift'
 import { MainEntity } from './MainEntity_swift'
 import { SdkError } from './SdkError_swift'
@@ -166,6 +167,15 @@ const Main = cmp(async function Main(props: any) {
       })
     })
   })
+
+  // utility/PrepareAuth.swift — GENERATED, NOT COPIED. Where the credential
+  // goes (header, query or cookie, and under what name) is a fact about the
+  // API, and tm/ can only hold one answer; the function was extracted from
+  // the copied utility/Prepare.swift, which no longer declares it. Called at
+  // THIS level, not inside the `core` folder above: the component opens the
+  // whole `Sources/<Name>Sdk/utility` path itself, exactly as EntityTypes
+  // does for `entity`. See PrepareAuth_swift.
+  PrepareAuth({ target })
 
   // entity/<Name>Types.swift — documentary typed models (one struct per entity
   // + per op). Compiles with the SwiftPM target; nothing consumes it yet.

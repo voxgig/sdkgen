@@ -15,6 +15,19 @@
 
 #include "../core/types.hpp"
 
+// prepareAuth is GENERATED, not templated: WHERE the credential goes -
+// header, query or cookie, and under what name - is a fact about THIS API
+// (apidef resolves it into main.kit.info.security), and this file can only
+// hold one answer. It used to hold `authorization`, so an apiKey-in-query
+// API got a header it does not read. The component is
+// src/cmp/cpp/PrepareAuth_cpp.ts; the emitted header defines
+// `sdk::util::prepareAuth` exactly as this file used to, and register_all
+// below still binds it.
+//
+// Included HERE, outside the namespace: the generated header opens its own
+// `namespace sdk { namespace util {`.
+#include "prepare_auth.hpp"
+
 namespace sdk {
 namespace util {
 
@@ -1018,45 +1031,11 @@ inline std::string preparePath(CtxPtr ctx) {
 }
 
 // ---- prepareAuth ------------------------------------------------------
-
-inline SpecPtr prepareAuth(CtxPtr ctx) {
-  SpecPtr spec = ctx->spec;
-  if (!spec) throw ctx->makeError("auth_no_spec", "Expected context spec property to be defined.");
-
-  static const std::string HEADER_AUTH = "authorization";
-  static const std::string NOT_FOUND = "__NOTFOUND__";
-
-  Value headers = spec->headers;
-  Value options = ctx->client->optionsMap();
-
-  if (is_nullish(getp(options, "auth"))) {
-    map_remove(headers, HEADER_AUTH);
-    return spec;
-  }
-
-  Value apikey = getp(options, "apikey", Value(NOT_FOUND));
-
-  bool skip = false;
-  if (is_nullish(apikey)) {
-    skip = true;
-  } else if (apikey.is_string() && (apikey.as_string() == NOT_FOUND || apikey.as_string().empty())) {
-    skip = true;
-  }
-
-  if (skip) {
-    map_remove(headers, HEADER_AUTH);
-  } else {
-    std::string authPrefix = as_str(Struct::getpath(options, {"auth", "prefix"}));
-    std::string apikeyVal = apikey.is_string() ? apikey.as_string() : "";
-    if (authPrefix.empty()) {
-      map_put(headers, HEADER_AUTH, Value(apikeyVal));
-    } else {
-      map_put(headers, HEADER_AUTH, Value(authPrefix + " " + apikeyVal));
-    }
-  }
-
-  return spec;
-}
+//
+// GENERATED into utility/prepare_auth.hpp, included at the top of this file
+// (see the note there). `util::prepareAuth` keeps its name, its signature
+// and its binding in register_all below; only the three-way choice of WHERE
+// the credential goes moved out, because a template cannot make it.
 
 // ---- transformRequest -------------------------------------------------
 
@@ -1079,10 +1058,27 @@ inline Value transformRequest(CtxPtr ctx) {
 inline const char* OPTSPEC_JSON() {
   return "{"
     "\"apikey\": \"\","
+    // The SECOND credential, for the HTTP Basic scheme
+    // (base64(apikey:secret)). main.kit.optspec names it and this copy did
+    // not, and validate DROPS a top-level key this spec does not name - so a
+    // caller that supplied `secret` never had it reach prepareAuth.
+    "\"secret\": \"\","
     "\"base\": \"http://localhost:8000\","
     "\"prefix\": \"\","
     "\"suffix\": \"\","
-    "\"auth\": { \"prefix\": \"\" },"
+    // WHERE the credential goes and under what name, plus the HTTP Basic
+    // switch. `Struct::validate` SILENTLY DROPS a key this spec does not
+    // declare - it does not reject it - so without these three the generated
+    // config's own auth block was trimmed back to `prefix` on the way in and
+    // the SDK could not see its own scheme. MEASURED, not assumed: a client
+    // built from a Basic-scheme model reported `auth={prefix:Basic}` before
+    // this line and `auth={basic:true,in:,name:,prefix:Basic}` after, and an
+    // apiKey-in-query model now reports `in:query,name:token` where it used
+    // to report neither. '' means "take what the spec said", which is what
+    // prepare_auth was generated from. Mirrors main.kit.optspec.auth in
+    // @voxgig/sdkgen/model/sdkgen.aon.
+    "\"auth\": { \"prefix\": \"\", \"basic\": false,"
+    "          \"in\": \"\", \"name\": \"\" },"
     "\"headers\": { \"`$CHILD`\": \"`$STRING`\" },"
     "\"allow\": {"
     "  \"method\": \"GET,PUT,POST,PATCH,DELETE,OPTIONS\","

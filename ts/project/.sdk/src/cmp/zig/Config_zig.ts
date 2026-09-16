@@ -9,6 +9,8 @@ import {
   each,
   isAuthActive,
   isConfigData,
+  resolveAuthIn,
+  resolveAuthName,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -46,7 +48,37 @@ const Config = cmp(async function Config(props: any) {
   // omitted entirely. Passing target.name opts this target into the main
   // slug/version/target identity fields (read by station's descriptor -
   // see configDefinition).
-  const { def: config, json: configJson } = configDefinition(model, target.name)
+  const { def: config } = configDefinition(model, target.name)
+
+  // WHERE the credential goes and UNDER WHAT NAME travel with the prefix
+  // now. apidef resolved both from the spec's securityScheme all along and
+  // generation dropped them, so an apiKey-in-query API got an authorization
+  // header it does not read. Emitted ONLY when they differ from the
+  // defaults, so every header/Authorization SDK's core/config.zig is
+  // byte-identical to what it generated before.
+  //
+  // Written onto configDefinition's OWN def rather than into a hand-built
+  // options literal, and the JSON re-serialised from that same def below -
+  // so this target's two representations (the h.jo(...) literal and the
+  // embedded CONFIG_DATA string above the size threshold) cannot disagree
+  // about where the credential goes. Both render from `config`.
+  //
+  // make_options_util's optspec must declare the same two keys or this is
+  // worse than inert: validate is CLOSED and discards the whole merged
+  // options object on an undeclared key. tm/zig/core/utility.zig carries
+  // them.
+  const authIn = resolveAuthIn(model)
+  const authName = resolveAuthName(model)
+  if (null != config.options && null != config.options.auth) {
+    if ('header' !== authIn) {
+      config.options.auth.in = authIn
+    }
+    if ('Authorization' !== authName) {
+      config.options.auth.name = authName
+    }
+  }
+
+  const configJson = JSON.stringify(config)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'config.' + target.ext }, () => {

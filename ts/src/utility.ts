@@ -75,6 +75,78 @@ function resolveAuthPrefix(model: any): string {
 }
 
 
+// AUTH SUPPRESSED AT GENERATION TIME — and ONLY by an explicit opt-out.
+//
+// NOT `isAuthActive`, and the difference is load-bearing. That helper is
+// also false when `main.kit.info.auth` is false, which only means the SPEC
+// declared no security scheme. Such an SDK still carries a credential:
+// `optspec` always declares `apikey`, and makeOptions fills `options.auth`
+// from the optspec defaults, so the runtime `null == options.auth` guard
+// never fires and the credential has always been sent. Emitting a no-op
+// prepareAuth for those SDKs silently breaks a working credential — and
+// takes the secrets feature with it, since that resolves a secret into
+// `options.apikey` and prepareAuth then places nothing.
+//
+// `main.kit.config.auth.active: false` is the project saying "this SDK
+// sends no credential, ever". That is the only signal that can be honoured
+// before runtime, so it is the only one used here.
+function isAuthSuppressed(model: any): boolean {
+  const auth = getModelPath(model, `main.${KIT}.config.auth`,
+    { only_active: false, required: false })
+  return null != auth && false === auth.active
+}
+
+
+// WHERE the credential goes, and UNDER WHAT NAME. Same priority order as
+// resolveAuthPrefix: a per-SDK override first, then what apidef derived
+// from the spec's securityScheme, then the convention.
+//
+// THESE EXISTED IN THE MODEL AND WERE DROPPED AT GENERATION. apidef has
+// always resolved `in` and `name` (transform/top.ts resolveSecurity), and
+// api-info.aon records them — joplin's says `in: "query", name: "token"`.
+// But nothing read them: every target's prepare_auth template hardcoded an
+// `authorization` header, so an apiKey-in-query API got a header it does
+// not read and never got the query parameter it does. Four repos in the
+// cedar fleet ship SDKs that cannot authenticate for this reason
+// (joplin `token`, pipedrive `api_token`, trello `key`,
+// lm-umbrella `apiKey`).
+//
+// 'header' and 'Authorization' remain the defaults, so every SDK whose
+// scheme is header-based generates exactly what it generated before.
+function resolveAuthIn(model: any): string {
+  const auth = getModelPath(model, `main.${KIT}.config.auth`,
+    { only_active: false, required: false })
+  if (null != auth && null != auth.in && '' !== auth.in) {
+    return String(auth.in).toLowerCase()
+  }
+
+  const security = getModelPath(model, `main.${KIT}.info.security`,
+    { only_active: false, required: false })
+  if (null != security && null != security.in && '' !== security.in) {
+    return String(security.in).toLowerCase()
+  }
+
+  return 'header'
+}
+
+
+function resolveAuthName(model: any): string {
+  const auth = getModelPath(model, `main.${KIT}.config.auth`,
+    { only_active: false, required: false })
+  if (null != auth && null != auth.name && '' !== auth.name) {
+    return String(auth.name)
+  }
+
+  const security = getModelPath(model, `main.${KIT}.info.security`,
+    { only_active: false, required: false })
+  if (null != security && null != security.name && '' !== security.name) {
+    return String(security.name)
+  }
+
+  return 'Authorization'
+}
+
+
 // True when the spec's security scheme is genuine HTTP Basic Auth (two
 // credentials, base64-joined) rather than a single bearer-style token with
 // a prefix. Priority order mirrors resolveAuthPrefix:
@@ -157,6 +229,9 @@ export {
   requirePath,
   isAuthActive,
   resolveAuthPrefix,
+  resolveAuthIn,
+  resolveAuthName,
+  isAuthSuppressed,
   resolveAuthExchange,
   isHttpBasicAuth,
   SdkGenError,

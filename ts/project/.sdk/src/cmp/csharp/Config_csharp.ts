@@ -6,7 +6,10 @@ import {
   configDefinition,
   configReprSetting,
   each,
+  isAuthActive,
   isConfigData,
+  resolveAuthIn,
+  resolveAuthName,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -49,7 +52,45 @@ const Config = cmp(async function Config(props: any) {
   // both reps flow from this one call - the literal via formatCsMap(configDef)
   // and the data rep via csStringLiteral(configJson) - so they cannot
   // disagree on identity (mirrors Config_ts's #MainMeta block).
-  const { def: configDef, json: configJson } = configDefinition(model, target.name)
+  const { def: configDef, json: baseJson } = configDefinition(model, target.name)
+
+  // `in` and `name` TRAVEL WITH THE PREFIX NOW.
+  //
+  // apidef resolved both from the spec's securityScheme all along and this
+  // generator dropped them, so an apiKey-in-query API got an Authorization
+  // header it does not read (see PrepareAuth_csharp). The generated
+  // prepareAuth is built from the same two values, and the config carries
+  // them so the placement is a visible, overridable runtime option beside
+  // auth.prefix - which is also what stops the SDK's own MakeOptions from
+  // rejecting its own config: the auth optspec in tm/csharp/utility/
+  // MakeOptions.cs is a CLOSED map, and an undeclared key there fails
+  // validate with "Unexpected keys at field auth".
+  //
+  // Emitted ONLY when they differ from header/Authorization, so a
+  // header-based SDK's Config.cs is byte-identical to what it generated
+  // before. Both representations are patched through the one object, so
+  // the literal (formatCsMap) and the data rep (csStringLiteral) cannot
+  // disagree - the json is re-derived from the def, exactly as
+  // configDefinition derives it.
+  const authIn = resolveAuthIn(model)
+  const authName = resolveAuthName(model)
+  let configJson = baseJson
+
+  if (isAuthActive(model) && null != configDef.options && null != configDef.options.auth) {
+    let changed = false
+    if ('header' !== authIn) {
+      configDef.options.auth.in = authIn
+      changed = true
+    }
+    if ('Authorization' !== authName) {
+      configDef.options.auth.name = authName
+      changed = true
+    }
+    if (changed) {
+      configJson = JSON.stringify(configDef)
+    }
+  }
+
   const asData = isConfigData(configJson, configReprSetting(model))
 
   // THE FEATURE PLUGIN MAP (the csharp peer of Config_go's featurePlugins).

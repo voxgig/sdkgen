@@ -1,2 +1,2 @@
-declare const Changelog: import("jostraca").Component;
+declare const Changelog: import("jostraca").Component<any, never, never>;
 export { Changelog };

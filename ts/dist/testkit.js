@@ -135,8 +135,8 @@ function stageConsumer(opts = {}) {
     // consumer staged here can show what an existing project does when a new
     // kind arrives, rather than assuming every index is already wired.
     node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'sdk.aon'), "name: '" + name + "'\n" +
-        '@"target/target-index.aon"\n' +
-        '@"feature/feature-index.aon"\n' +
+        '@"./target/target-index.aon"\n' +
+        '@"./feature/feature-index.aon"\n' +
         (opts.extra ? opts.extra + '\n' : ''));
     // `@voxgig/sdkgen` has to be resolvable FROM THE CONSUMER, because the
     // feature fan-out reads the bundled feature models through the path a
