@@ -104,11 +104,11 @@ describe('package add', () => {
       // compile the new items in at all.
       const tindex = String(project.fs.readFileSync(
         ROOT + '/model/target/target-index.aon', 'utf8'))
-      ok(tindex.includes('@"iotgo.aon"'), 'target index: ' + tindex)
+      ok(tindex.includes('@"./iotgo.aon"'), 'target index: ' + tindex)
 
       const findex = String(project.fs.readFileSync(
         ROOT + '/model/feature/feature-index.aon', 'utf8'))
-      ok(findex.includes('@"retry.aon"'), 'feature index: ' + findex)
+      ok(findex.includes('@"./retry.aon"'), 'feature index: ' + findex)
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })

@@ -175,10 +175,12 @@ describe('feature add from an external package', () => {
       const index = String(project.fs.readFileSync(
         ROOT + '/model/feature/feature-index.aon', 'utf8'))
 
-      ok(index.includes('@"circuitbreaker.aon"'),
+      ok(index.includes('@"./circuitbreaker.aon"'),
         'index does not name the installed feature: ' + JSON.stringify(index))
 
-      for (const m of index.matchAll(/@"([^"]+)"/g)) {
+      // The `./` is part of the INCLUDE, not the file name — strip it
+      // before resolving the entry to a file on disk.
+      for (const m of index.matchAll(/@"(?:\.\/)?([^"]+)"/g)) {
         ok(project.files().includes('model/feature/' + m[1]),
           'feature-index.aon includes ' + m[1] + ', which was never written')
       }

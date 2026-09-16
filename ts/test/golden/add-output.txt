@@ -2,11 +2,11 @@
 # Regenerate with: npm run golden
 
 ## target c
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/c.aon d0696d765fc0
-model/target/target-index.aon a1ddf98d9368
+model/target/target-index.aon 710b8009623d
 src/cmp/c/Config_c.ts ae82ecdb06ee
 src/cmp/c/EntityBase_c.ts 70f610b1220f
 src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
@@ -117,11 +117,11 @@ tm/c/utility/transform_request.c d330249351ad
 tm/c/utility/transform_response.c 51ac106169eb
 
 ## target clojure
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/clojure.aon 591eb03ccf7a
-model/target/target-index.aon 77cd4ae8a0fb
+model/target/target-index.aon 769ed1c7df87
 src/cmp/clojure/Config_clojure.ts ff4730926d3c
 src/cmp/clojure/EntityOperation_clojure.ts 89f82bc53713
 src/cmp/clojure/Entity_clojure.ts 75f6ea90670b
@@ -233,11 +233,11 @@ tm/clojure/test/vendor/omni/voxgig/omni/runner.clj f20464c66789
 tm/clojure/test/vendor/omni/voxgig/omni/util.clj bd2a375f4796
 
 ## target cpp
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/cpp.aon e82cc3aa91bf
-model/target/target-index.aon c6799adcc977
+model/target/target-index.aon b8db1cb938e8
 src/cmp/cpp/Config_cpp.ts caf535f8edb4
 src/cmp/cpp/EntityBase_cpp.ts 8218701f0ef9
 src/cmp/cpp/EntityOperation_cpp.ts 805c7dfa4fdf
@@ -305,11 +305,11 @@ tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
 
 ## target csharp
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/csharp.aon a0f605d8d031
-model/target/target-index.aon 3ca4bfd57589
+model/target/target-index.aon 574ed7fa8b0e
 src/cmp/csharp/Config_csharp.ts b6f79ccdd1f2
 src/cmp/csharp/EntityBase_csharp.ts 89ab732c9c91
 src/cmp/csharp/EntityOperation_csharp.ts 47a53f1c1e7d
@@ -413,11 +413,11 @@ tm/csharp/utility/TransformResponse.cs 01583a33873e
 tm/csharp/utility/struct/Struct.cs e4e56ea11b86
 
 ## target elixir
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/elixir.aon a1b50f3f04c3
-model/target/target-index.aon c9b09d715b14
+model/target/target-index.aon 46fe59b4f2a9
 src/cmp/elixir/Config_elixir.ts b50519825f28
 src/cmp/elixir/EntityOperation_elixir.ts 69ddad39f404
 src/cmp/elixir/EntityTypes_elixir.ts b30edbe49d6b
@@ -483,11 +483,11 @@ tm/elixir/test/vendor/omni/runner.ex 0331605876fd
 tm/elixir/test/vendor/omni/util.ex da800d72f73e
 
 ## target go
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/go.aon c596a9581460
-model/target/target-index.aon 626b8fa31e53
+model/target/target-index.aon 2de5f77aed8f
 src/cmp/go/Config_go.ts 93e94a28b581
 src/cmp/go/EntityOperation_go.ts 466b87860b69
 src/cmp/go/EntityTypes_go.ts 79d3a2c638db
@@ -589,11 +589,11 @@ tm/go/utility/transform_request.go 51b4748915c0
 tm/go/utility/transform_response.go 43096fbc05d2
 
 ## target go-cli
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/go-cli.aon 2f5ed2f4fad5
-model/target/target-index.aon 1c02e69904e8
+model/target/target-index.aon 20bfa32b8c9f
 src/cmp/go-cli/Main_go-cli.ts c44bf5e22e3f
 src/cmp/go-cli/fragment/main.fragment.go edad9cbfb479
 src/cmp/go-cli/fragment/words.fragment.go 7901dd676a27
@@ -602,11 +602,11 @@ tm/go-cli/src/feature/base/.gitkeep e3b0c44298fc
 tm/go-cli/src/feature/test/.gitkeep e3b0c44298fc
 
 ## target go-mcp
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/go-mcp.aon 0fb3ee434862
-model/target/target-index.aon c94665487f8c
+model/target/target-index.aon 3fe6ed9cb365
 src/cmp/go-mcp/Main_go-mcp.ts 244093167174
 src/cmp/go-mcp/fragment/main.fragment.go 1034da023b94
 src/cmp/go-mcp/fragment/tools.fragment.go d87fa6256abc
@@ -615,11 +615,11 @@ tm/go-mcp/src/feature/base/.gitkeep e3b0c44298fc
 tm/go-mcp/src/feature/test/.gitkeep e3b0c44298fc
 
 ## target java
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/java.aon 51a6fc219c06
-model/target/target-index.aon cd7f19307030
+model/target/target-index.aon 252870f07c86
 src/cmp/java/Config_java.ts ba0a8374fa26
 src/cmp/java/EntityBase_java.ts ac3da23ea6f8
 src/cmp/java/EntityOperation_java.ts e66863d4a002
@@ -730,11 +730,11 @@ tm/java/utility/TransformResponse.java 1cd65d69d927
 tm/java/utility/struct/Struct.java 99d10be7881f
 
 ## target js
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/js.aon cb3e5db6c28e
-model/target/target-index.aon 66e6d039373f
+model/target/target-index.aon 95e90e67595f
 src/cmp/js/Config_js.ts bcb563cc4458
 src/cmp/js/EntityBase_js.ts 69622212f72b
 src/cmp/js/EntityOperation_js.ts 6d165a88201a
@@ -850,11 +850,11 @@ tm/js/test/vendor/omni/runner.js c059babd9d56
 tm/js/test/vendor/omni/util.js 42196965b559
 
 ## target kotlin
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/kotlin.aon dd747d8122c6
-model/target/target-index.aon 28086b55b8bd
+model/target/target-index.aon 81a733dc1ffc
 src/cmp/kotlin/Config_kotlin.ts ff87dcc53d04
 src/cmp/kotlin/EntityBase_kotlin.ts afa36713ef4c
 src/cmp/kotlin/EntityOperation_kotlin.ts b39b1c9d620a
@@ -941,11 +941,11 @@ tm/kotlin/utility/ResultTransform.kt d73a9258aced
 tm/kotlin/utility/struct/Struct.kt 1ecfc2530803
 
 ## target lua
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/lua.aon 20149ad60ba6
-model/target/target-index.aon ea75509be8db
+model/target/target-index.aon f4c948826aa7
 src/cmp/lua/Config_lua.ts d1133e200cfb
 src/cmp/lua/EntityOperation_lua.ts daa4641b002e
 src/cmp/lua/EntityTypes_lua.ts 77fba0685c63
@@ -1045,11 +1045,11 @@ tm/lua/utility/transform_request.lua ada006d60f94
 tm/lua/utility/transform_response.lua 37d0bb1f1d1f
 
 ## target ocaml
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/ocaml.aon 6fe6cf252965
-model/target/target-index.aon cfb53e5794d8
+model/target/target-index.aon b354d3354ab9
 src/cmp/ocaml/Config_ocaml.ts c9615801ae1f
 src/cmp/ocaml/EntityOperation_ocaml.ts 66ee562a3531
 src/cmp/ocaml/Entity_ocaml.ts 11ce11c6299a
@@ -1103,11 +1103,11 @@ tm/ocaml/utility/voxgig_struct.ml ff6cc38a45cc
 tm/ocaml/utility/vregex.ml 8720dd560814
 
 ## target perl
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/perl.aon a785887043ac
-model/target/target-index.aon 2ae1994a1bb7
+model/target/target-index.aon f0e8fc436b2b
 src/cmp/perl/Config_perl.ts 8ac0e1eec6c4
 src/cmp/perl/EntityOperation_perl.ts 8d50a8beeb42
 src/cmp/perl/Entity_perl.ts afe325ce99f5
@@ -1205,11 +1205,11 @@ tm/perl/utility/transform_request.pm cbe7fc991309
 tm/perl/utility/transform_response.pm 035accca42c2
 
 ## target php
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/php.aon 7e1c484ae4ab
-model/target/target-index.aon 4bd43db1bef1
+model/target/target-index.aon 2902af711639
 src/cmp/php/Config_php.ts 1f6433798af4
 src/cmp/php/EntityOperation_php.ts 65b4daf2dff8
 src/cmp/php/EntityTypes_php.ts 92945dd564fe
@@ -1307,11 +1307,11 @@ tm/php/utility/TransformResponse.php 4dc432711490
 tm/php/utility/struct/Struct.php 1a9a54f00c8e
 
 ## target py
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/py.aon a62d902d6005
-model/target/target-index.aon 9424f27eb776
+model/target/target-index.aon 1adaab2d29c6
 src/cmp/py/Config_py.ts ea8801548867
 src/cmp/py/EntityOperation_py.ts 8b1b1cf28054
 src/cmp/py/EntityTypes_py.ts eef793247b33
@@ -1417,11 +1417,11 @@ tm/py/test/voxgig_omni/runner.py 8c21503e2073
 tm/py/test/voxgig_omni/util.py 2874b6298aa9
 
 ## target py-data
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/py-data.aon 8a17439aaff7
-model/target/target-index.aon 848fb24adfe2
+model/target/target-index.aon 93aba9754ddf
 src/cmp/py-data/Main_py-data.ts 3870bfa38ec8
 tm/py-data/LICENSE ed2f88b0aab8
 tm/py-data/Makefile ad5e5089b15e
@@ -1438,11 +1438,11 @@ tm/py-data/test/test_fetch.py 2141fd295c08
 tm/py-data/test/test_frames.py 1ca04ad46a4b
 
 ## target rb
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/rb.aon 3dbf4f4a8aad
-model/target/target-index.aon ac0bc237c44c
+model/target/target-index.aon 4565c57ca491
 src/cmp/rb/Config_rb.ts 2f5bbf0bbfe6
 src/cmp/rb/EntityOperation_rb.ts 43ad5a64b0c9
 src/cmp/rb/EntityTypes_rb.ts a9958df10ebc
@@ -1541,11 +1541,11 @@ tm/rb/utility/transform_request.rb 03eca2dddb49
 tm/rb/utility/transform_response.rb 13e4100890d3
 
 ## target rust
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/rust.aon 5da659a05d3c
-model/target/target-index.aon 8a2cd44591d3
+model/target/target-index.aon dcda2fd7f149
 src/cmp/rust/Config_rust.ts 9a930e8021f2
 src/cmp/rust/EntityBase_rust.ts 252bec7e6beb
 src/cmp/rust/EntityOperation_rust.ts 9845bcd74bd4
@@ -1657,11 +1657,11 @@ tm/rust/utility/voxgigstruct/re.rs 85adb1300365
 tm/rust/utility/voxgigstruct/value.rs 7cafa6404cbe
 
 ## target scala
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/scala.aon 68ac8ea9984b
-model/target/target-index.aon 0da3132ebe91
+model/target/target-index.aon 9dff81da2570
 src/cmp/scala/Config_scala.ts 248439ddf681
 src/cmp/scala/EntityBase_scala.ts 95d5e61aa06f
 src/cmp/scala/EntityOperation_scala.ts 5de61f269ee2
@@ -1815,11 +1815,11 @@ tm/scala/utility/struct/Struct.java 5e1cee8646e5
 tm/scala/utility/struct/voxgig_struct.scala 8fc853fd8f03
 
 ## target swift
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/swift.aon de1c3efd5d17
-model/target/target-index.aon 19a9aa80f566
+model/target/target-index.aon b3a67f9f43e3
 src/cmp/swift/Config_swift.ts e19f21110698
 src/cmp/swift/EntityBase_swift.ts 0e11e207fb56
 src/cmp/swift/EntityOperation_swift.ts 2e9e71c40f4b
@@ -1912,10 +1912,10 @@ tm/swift/src/feature/base/.gitkeep e3b0c44298fc
 tm/swift/src/feature/test/.gitkeep e3b0c44298fc
 
 ## target ts
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/target-index.aon 6d6ce1a6c7d8
+model/target/target-index.aon 60e33f7bf569
 model/target/ts.aon 0fab5161eaba
 src/cmp/ts/Config_ts.ts cc2ead278de8
 src/cmp/ts/EntityBase_ts.ts 901c1c6f2730
@@ -2037,10 +2037,10 @@ tm/ts/test/vendor/omni/Util.ts 69105c28492a
 tm/ts/test/vendor/omni/index.ts 12117be1e184
 
 ## target zig
-model/feature/feature-index.aon 5f0737d1060e
+model/feature/feature-index.aon 9259f98e8125
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/target-index.aon d785f5b4bbe7
+model/target/target-index.aon 85d5834f3691
 model/target/zig.aon 2c48b418928a
 src/cmp/zig/Config_zig.ts fb51f67820b0
 src/cmp/zig/EntityOperation_zig.ts 04bd390df007
