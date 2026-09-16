@@ -88,8 +88,8 @@ function consumerModel(sdk: string): any {
   const src = [
     '@"@voxgig/apidef/model/apidef.aon"',
     '@"@voxgig/sdkgen/model/sdkgen.aon"',
-    '@"target/target-index.aon"',
-    '@"feature/feature-index.aon"',
+    '@"./target/target-index.aon"',
+    '@"./feature/feature-index.aon"',
     "name: 'demo'",
     API,
   ].join('\n')

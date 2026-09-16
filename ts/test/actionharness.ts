@@ -135,8 +135,8 @@ function makeProject(
   // arrives — which is the whole upgrade path for `docs`.
   fs.writeFileSync(ROOT + '/model/sdk.aon',
     "name: 'demo'\n" +
-    '@"target/target-index.aon"\n' +
-    '@"feature/feature-index.aon"\n')
+    '@"./target/target-index.aon"\n' +
+    '@"./feature/feature-index.aon"\n')
 
   const actx: any = {
     fs: () => layeredFs(fs),

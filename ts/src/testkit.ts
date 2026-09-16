@@ -220,8 +220,8 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
   // kind arrives, rather than assuming every index is already wired.
   Fs.writeFileSync(Path.join(sdk, 'model', 'sdk.aon'),
     "name: '" + name + "'\n" +
-    '@"target/target-index.aon"\n' +
-    '@"feature/feature-index.aon"\n' +
+    '@"./target/target-index.aon"\n' +
+    '@"./feature/feature-index.aon"\n' +
     (opts.extra ? opts.extra + '\n' : ''))
 
   // `@voxgig/sdkgen` has to be resolvable FROM THE CONSUMER, because the
