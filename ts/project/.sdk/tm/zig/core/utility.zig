@@ -682,6 +682,11 @@ pub fn make_point_util(ctx: *Context) E!Value {
 pub fn make_spec_util(ctx: *Context) E!*Spec {
     if (ctx.out_get("spec")) |ov| {
         switch (ov) {
+            // A PreSpec feature hook (e.g. validate) may short-circuit the
+            // operation by storing an error here; surface it before the
+            // request is built, the same way make_point surfaces
+            // out["point"].
+            .err => |e| return ctx.fail_err(e),
             .spec => |sp| {
                 ctx.spec = sp;
                 return sp;

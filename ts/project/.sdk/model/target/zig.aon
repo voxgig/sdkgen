@@ -17,7 +17,7 @@ main: kit: target: zig: {
   # and `sekretoplugins` by the generated build.zig (Main_zig) - and ONLY
   # when the feature is active, so an SDK without secrets declares none of
   # them and compiles nothing of it. Mirrors ts.aon / go.aon / rust.aon.
-  provides: { sekreto: true }
+  provides: { sekreto: true, schema: true }
 
   # Files earlier toolchains generated that this target has RETIRED
   # (vendor-tag rollout): the hand-written struct runner, whose engine half

@@ -2058,7 +2058,7 @@ model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
 model/target/target-index.aon d785f5b4bbe7
-model/target/zig.aon 2c48b418928a
+model/target/zig.aon f044c3b3d252
 src/cmp/zig/Config_zig.ts fb51f67820b0
 src/cmp/zig/EntityOperation_zig.ts 04bd390df007
 src/cmp/zig/Entity_zig.ts 03329f926393
@@ -2108,7 +2108,7 @@ tm/zig/core/response.zig 4df235df5674
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 76f0cf3fd406
 tm/zig/core/types.zig ed211da482aa
-tm/zig/core/utility.zig d797a721a48a
+tm/zig/core/utility.zig 3b7c2208bfaf
 tm/zig/feature/audit.zig 8373b1320c48
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig d7352c80c34e
@@ -2162,6 +2162,7 @@ tm/zig/feature/support.zig 0151996e9aab
 tm/zig/feature/telemetry.zig e24fd23fb3d5
 tm/zig/feature/test.zig 438562cd4b1e
 tm/zig/feature/timeout.zig 098ad542880b
+tm/zig/feature/validate.zig 550283d9a299
 tm/zig/src/feature/README.md f623e5e15340
 tm/zig/src/feature/audit/.gitkeep e3b0c44298fc
 tm/zig/src/feature/base/.gitkeep e3b0c44298fc
@@ -2183,6 +2184,7 @@ tm/zig/src/feature/streaming/.gitkeep e3b0c44298fc
 tm/zig/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/zig/src/feature/test/.gitkeep e3b0c44298fc
 tm/zig/src/feature/timeout/.gitkeep e3b0c44298fc
+tm/zig/src/feature/validate/.gitkeep e3b0c44298fc
 tm/zig/test/feature/secrets/secrets_test.zig a585cd52d91b
 tm/zig/test/feature_test.zig 0edc2054bb9d
 tm/zig/test/fh.zig d94a1ea8f3ac
