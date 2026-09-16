@@ -526,6 +526,16 @@ describe('vendored', () => {
       // test/oneabsence.test.ts.
       'tm/go/utility/struct/voxgigstruct.go': 2,
       'tm/rb/utility/struct/voxgig_struct.rb': 1,
+
+      // And a fourth port, reached a third way. csharp descends the data with
+      // GetProp, which answers null for a missing key where ts's getprop
+      // answers undefined — and Typify tells null (T_null) from NONE
+      // (T_noval) exactly as ts does, so the nested `$NIL` saw a null and
+      // REJECTED it. This one did not merely materialise the entry: it made
+      // validate THROW, so a default client could not be constructed at all
+      // ("to be one of …, nil, but found no value" for every feature). The
+      // patch re-validates NONE in place of null.
+      'tm/csharp/utility/struct/Struct.cs': 1,
     }
 
     for (const [rel, count] of Object.entries(patched)) {

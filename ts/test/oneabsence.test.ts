@@ -229,6 +229,70 @@ echo 'supplied=' . keys_of($SRC, ['feature' => ['log' => ['active' => true]]]) .
     },
   },
   {
+    target: 'csharp',
+    needs: 'dotnet',
+    exec: (tmp, spec) => {
+      const dotnet = toolchain('dotnet')
+      if (null == dotnet) return null
+
+      // A project around the VENDORED COPY and nothing else the target pulls
+      // in — structnull.test.ts builds its csharp probe the same way. The
+      // spec is read through System.Text.Json and converted into the loose
+      // object model the struct port validates against.
+      const dir = Path.join(tmp, 'csharp')
+      Fs.mkdirSync(dir, { recursive: true })
+      Fs.copyFileSync(
+        Path.join(TM, 'csharp', 'utility', 'struct', 'Struct.cs'),
+        Path.join(dir, 'Struct.cs'))
+      Fs.writeFileSync(Path.join(dir, 'probe.csproj'), `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>probe</AssemblyName>
+  </PropertyGroup>
+</Project>
+`)
+      Fs.writeFileSync(Path.join(dir, 'Program.cs'), `using System.Text.Json;
+using Voxgig.Struct;
+
+static object? Conv(JsonElement el) => el.ValueKind switch
+{
+  JsonValueKind.Object => new Dictionary<string, object?>(
+      el.EnumerateObject().ToDictionary(p => p.Name, p => Conv(p.Value))),
+  JsonValueKind.Array => el.EnumerateArray().Select(Conv).ToList(),
+  JsonValueKind.String => el.GetString(),
+  JsonValueKind.Number => (object)el.GetDouble(),
+  JsonValueKind.True => true,
+  JsonValueKind.False => false,
+  _ => null,
+};
+
+var src = File.ReadAllText(${JSON.stringify(spec)});
+Dictionary<string, object?> Spec() =>
+  (Dictionary<string, object?>)Conv(JsonSerializer.Deserialize<JsonElement>(src))!;
+
+string KeysOf(Dictionary<string, object?> data) {
+  var outv = StructUtils.Validate(data, Spec());
+  var m = outv as Dictionary<string, object?>;
+  var f = m != null && m.TryGetValue("feature", out var fv)
+    ? fv as Dictionary<string, object?> : null;
+  return f == null ? "" : string.Join(",", f.Keys.OrderBy(k => k));
+}
+
+Console.WriteLine("absent=" + KeysOf(new Dictionary<string, object?>()));
+Console.WriteLine("supplied=" + KeysOf(new Dictionary<string, object?> {
+  ["feature"] = new Dictionary<string, object?> {
+    ["log"] = new Dictionary<string, object?> { ["active"] = true } } }));
+`)
+      // The spec path is baked in rather than copied beside the assembly:
+      // `dotnet run` chooses its own working directory, and a .csproj.user
+      // dropped here to influence the build is read as a project file.
+      return run(dotnet, ['run', '--project', dir, '-v', 'q', '--nologo'], dir)
+    },
+  },
+  {
     target: 'go',
     needs: 'go',
     exec: (tmp, spec) => {
