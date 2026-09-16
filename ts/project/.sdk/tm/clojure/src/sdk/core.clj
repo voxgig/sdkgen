@@ -98,11 +98,15 @@
 ;; which would close a cycle — so the parse lives here, behind a delay so it
 ;; happens on first use rather than at load.
 ;;
-;; sdk.schema also carries `entityspec-data`, the per-entity field specs.
-;; Nothing parses it yet: that is the `validate` feature's, and this target
-;; does not carry one (its model declares no `schema` tag). The data is
-;; emitted anyway so the module has the same shape in every target.
+;; sdk.schema also carries `entityspec-data`, the per-entity field specs the
+;; `validate` feature checks payloads against. Parsed here for the same
+;; reason and behind the same delay; `entityspec` is public because the
+;; feature module reads it, and it is READ-ONLY — validate rebuilds the tree
+;; for `strict` rather than mutating this one.
 (def ^:private optspec-parsed (delay (json-parse schema/optspec-data)))
+(def ^:private entityspec-parsed (delay (json-parse schema/entityspec-data)))
+
+(defn entityspec [] @entityspec-parsed)
 
 ;; ---------------------------------------------------------------------------
 ;; Atom-object helpers. Every mutable "object" is an atom wrapping a map.
@@ -728,7 +732,12 @@
 
 (defn u-make-spec [ctx]
   (if (some? (out-get ctx "spec"))
-    (do (oset! ctx :spec (out-get ctx "spec")) [(oget ctx :spec) nil])
+    ;; A PreSpec feature hook (e.g. validate) may short-circuit the operation
+    ;; by storing an error here; surface it before the request is built, the
+    ;; same way u-make-point surfaces out["point"].
+    (if (sdk-error? (out-get ctx "spec"))
+      [nil (out-get ctx "spec")]
+      (do (oset! ctx :spec (out-get ctx "spec")) [(oget ctx :spec) nil]))
     (let [point (oget ctx :point)
           options (oget ctx :options)
           base (or (vs/getprop options "base") "")

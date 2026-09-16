@@ -121,7 +121,7 @@ tm/c/utility/transform_response.c 51ac106169eb
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/clojure.aon 591eb03ccf7a
+model/target/clojure.aon d4f111658bc7
 model/target/target-index.aon 77cd4ae8a0fb
 src/cmp/clojure/Config_clojure.ts ff4730926d3c
 src/cmp/clojure/EntityOperation_clojure.ts 89f82bc53713
@@ -216,9 +216,10 @@ tm/clojure/src/feature/streaming/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
+tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
-tm/clojure/src/sdk/core.clj f928b85f6b99
-tm/clojure/src/sdk/features.clj bb8e995c6e30
+tm/clojure/src/sdk/core.clj 85c5d76bfb03
+tm/clojure/src/sdk/features.clj 399a3d6b9cf2
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
 tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5

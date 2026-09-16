@@ -299,8 +299,8 @@ describe('feature-language-parity', () => {
     // make_options reads whether or not this feature exists there; the tag
     // is the feature's gate, so it goes on with the feature source. ts and
     // js are the reference implementation.
-    validate: ['c', 'cpp', 'csharp', 'go', 'java', 'js', 'kotlin', 'lua', 'perl',
-      'php', 'py', 'rb', 'rust', 'ts', 'zig'],
+    validate: ['c', 'clojure', 'cpp', 'csharp', 'go', 'java', 'js', 'kotlin',
+      'lua', 'perl', 'php', 'py', 'rb', 'rust', 'ts', 'zig'],
   }
 
   // Which targets must carry this feature: all of them, or just the ones
