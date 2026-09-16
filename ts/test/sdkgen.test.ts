@@ -440,7 +440,7 @@ main: kit: java: {}
   function makeRoot() {
     return cmp(function Root(props: any) {
       const { model } = props
-      Project({ model, folder: model.name }, () => {
+      Project({ folder: model.name }, () => {
         each(model.main.kit, (kit: any) => {
           Folder({ name: kit.name }, () => {
             File({ name: 'README.md' }, () => {

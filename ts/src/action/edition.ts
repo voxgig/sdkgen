@@ -49,7 +49,7 @@ import { templateReplacements } from '../helpers/stdrep'
 
 import { copyOpts } from '../helpers/junk'
 
-import { resolveKind, kindModel, kindTrees } from './kind'
+import { resolveKind, kindModel, kindIndex, kindTrees } from './kind'
 import type { TreeDef } from './kind'
 
 import { registerInstalled } from './resolve'
@@ -257,6 +257,14 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
 
       log.info({ point: 'edition-done', edition: source.name, note: source.name })
     })
+
+    // ONCE, after the loop. See kindIndex.
+    if (0 < dnames.length) {
+      Folder({ name: 'model/edition' }, () => kindIndex({
+        kind: 'edition', names: dnames,
+        content: ctx$.meta.content.edition_index,
+      }))
+    }
   })
 })
 

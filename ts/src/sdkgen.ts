@@ -1148,7 +1148,13 @@ type Component = (props: any, children?: any) => void
 
 
 // Prevents TS2742
-export const cmp: (component: Function) => Component = JostracaModule.cmp
+// `typeof` rather than a hand-written signature: jostraca 0.38 made cmp
+// generic, `<P, Arg, Child>(component: (props: CmpProps<P>, ...) => any) =>
+// Component<P, Arg, Child>`, and the old annotation `(component: Function) =>
+// Component` no longer matched it. Deferring to the module's own type keeps
+// this correct across jostraca versions AND still names the type, which is
+// what prevented TS2742 in the first place.
+export const cmp: typeof JostracaModule.cmp = JostracaModule.cmp
 export const names: (base: any, name: string, prop?: string) => any = JostracaModule.names
 export const each: (subject?: any, apply?: any) => any = JostracaModule.each
 export const snakify: (input: any[] | string) => string = JostracaModule.snakify
