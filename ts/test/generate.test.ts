@@ -37,7 +37,7 @@
 import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, fail } from 'node:assert'
 
-import Fs, { existsSync, readdirSync, writeFileSync } from 'node:fs'
+import Fs, { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
 
@@ -53,6 +53,27 @@ import { SdkGen } from '../dist/sdkgen.js'
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot,
 } from './generateharness'
+
+
+// Targets whose model does NOT declare `provides: { schema: true }`, i.e. the
+// ones still carrying a hand-written option spec in their own make_options.
+// Derived from the models so the list cannot go stale: a target gains the tag
+// and drops out of here in the same edit.
+function unportedTargets(): string[] {
+  const dir = Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'target')
+  return allTargets()
+    // The consumer targets cannot be generated alone — they read the sibling
+    // SDK they wrap — and emit no options of their own, so there is nothing
+    // here for them to be unported FROM.
+    .filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    .filter((t: string) => {
+      const p = Path.join(dir, t + '.aon')
+      if (!existsSync(p)) {
+        return false
+      }
+      return !/\bprovides\s*:[^\n]*\bschema\s*:\s*true/.test(readFileSync(p, 'utf8'))
+    })
+}
 
 
 function allTargets(): string[] {
@@ -1468,11 +1489,16 @@ main: kit: target: js: phase: feature: active: false
       ok(src.includes('"`$CHILD`"'), target + ': a sentinel lost its backticks')
     }
 
-    // A target that has not been ported keeps its own literal, so emitting a
-    // Schema module it never imports would be dead source in every SDK.
-    const go = await generate(['go'])
-    const stray = Object.keys(go).filter((p2) => /\/Schema\.[a-z]+$/.test(p2))
-    deepStrictEqual(stray, [], 'an unported target emitted a Schema module')
+    // And the set that emits one is exactly the set whose model declares the
+    // tag — read from the models rather than listed here, so porting a target
+    // needs no edit in this file and an UNPORTED one emitting dead source
+    // still fails.
+    for (const t of unportedTargets()) {
+      const out = await generate([t])
+      const stray = Object.keys(out).filter((p2) => /\/Schema\.[a-z]+$/i.test(p2))
+      deepStrictEqual(stray, [],
+        t + ' does not declare `provides.schema` but emitted a Schema module')
+    }
   })
 
 

@@ -24,6 +24,7 @@ import {
 
 import { Package } from './Package_py'
 import { Config } from './Config_py'
+import { Schema } from './Schema_py'
 import { Gitignore } from './Gitignore_py'
 import { MainEntity } from './MainEntity_py'
 import { EntityTypes } from './EntityTypes_py'
@@ -188,6 +189,7 @@ if TYPE_CHECKING:
   // Generate config module
   Folder({ name: '.' }, () => {
     Config({ target })
+    Schema({ target })
   })
 
   // Generate feature factory module

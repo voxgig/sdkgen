@@ -23,6 +23,7 @@ import {
 
 import { Package } from './Package_rb'
 import { Config } from './Config_rb'
+import { Schema } from './Schema_rb'
 import { Gitignore } from './Gitignore_rb'
 import { MainEntity } from './MainEntity_rb'
 import { EntityTypes } from './EntityTypes_rb'
@@ -94,6 +95,7 @@ utility.feature_hook.call(@_rootctx, "${name}")
   // Generate config module
   Folder({ name: '.' }, () => {
     Config({ target })
+    Schema({ target })
   })
 
   // Generate typed models (<Sdk>_types.rb) — required by the main SDK file.

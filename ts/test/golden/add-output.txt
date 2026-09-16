@@ -486,7 +486,7 @@ tm/elixir/test/vendor/omni/util.ex da800d72f73e
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/go.aon c596a9581460
+model/target/go.aon c705e26de99b
 model/target/target-index.aon 626b8fa31e53
 src/cmp/go/Config_go.ts 93e94a28b581
 src/cmp/go/EntityOperation_go.ts 466b87860b69
@@ -494,7 +494,7 @@ src/cmp/go/EntityTypes_go.ts 79d3a2c638db
 src/cmp/go/Entity_go.ts eda6f8bedfca
 src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts 01154abb3c65
-src/cmp/go/Main_go.ts 555ca7c78c16
+src/cmp/go/Main_go.ts a378bdc9eaef
 src/cmp/go/Package_go.ts 39d459e6b867
 src/cmp/go/ReadmeEntity_go.ts 2b9c3ca1da44
 src/cmp/go/ReadmeExamplesTest_go.ts 98a1ad664298
@@ -509,6 +509,7 @@ src/cmp/go/ReadmeRef_go.ts a9f499266c28
 src/cmp/go/ReadmeTopHowto_go.ts 2d7332aca33c
 src/cmp/go/ReadmeTopQuick_go.ts fae7ec32036b
 src/cmp/go/ReadmeTopTest_go.ts 747e3b9fc1c5
+src/cmp/go/Schema_go.ts aec9c63a90e3
 src/cmp/go/TestDirect_go.ts b88b392ac388
 src/cmp/go/TestEntity_go.ts 9742f5b80863
 src/cmp/go/Test_go.ts ef2532dbbaf1
@@ -565,7 +566,7 @@ tm/go/utility/graphql.go 213aca4b03f4
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go acc76429c4ee
 tm/go/utility/make_fetch_def.go 1b2ecd1822cf
-tm/go/utility/make_options.go d9fc087c21f2
+tm/go/utility/make_options.go a3c06dc73072
 tm/go/utility/make_point.go 1ff96089fd15
 tm/go/utility/make_request.go cf4d4f55e911
 tm/go/utility/make_response.go 57ad84a7b3be
@@ -944,7 +945,7 @@ tm/kotlin/utility/struct/Struct.kt 1ecfc2530803
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/lua.aon 20149ad60ba6
+model/target/lua.aon 301f6a27a0c6
 model/target/target-index.aon ea75509be8db
 src/cmp/lua/Config_lua.ts d1133e200cfb
 src/cmp/lua/EntityOperation_lua.ts daa4641b002e
@@ -952,7 +953,7 @@ src/cmp/lua/EntityTypes_lua.ts 77fba0685c63
 src/cmp/lua/Entity_lua.ts e3e43269850c
 src/cmp/lua/Gitignore_lua.ts ddf4d3003936
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
-src/cmp/lua/Main_lua.ts 59c20b317738
+src/cmp/lua/Main_lua.ts e0faf6ddd1bd
 src/cmp/lua/Package_lua.ts b678fa677f07
 src/cmp/lua/ReadmeEntity_lua.ts 886fadf6275a
 src/cmp/lua/ReadmeExamplesTest_lua.ts 5f104cb87813
@@ -967,6 +968,7 @@ src/cmp/lua/ReadmeRef_lua.ts 8f43adf3da45
 src/cmp/lua/ReadmeTopHowto_lua.ts 2f4ff4561460
 src/cmp/lua/ReadmeTopQuick_lua.ts 85d0dcdf6981
 src/cmp/lua/ReadmeTopTest_lua.ts e41f06e4f3d2
+src/cmp/lua/Schema_lua.ts 0f63fbd4ecd1
 src/cmp/lua/TestDirect_lua.ts dbbec3edb7be
 src/cmp/lua/TestEntity_lua.ts b1eb12ed2384
 src/cmp/lua/Test_lua.ts 2564e8eccd24
@@ -1020,7 +1022,7 @@ tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua 3234bc5e9564
 tm/lua/utility/make_fetch_def.lua f7057db76504
-tm/lua/utility/make_options.lua bba378880a54
+tm/lua/utility/make_options.lua 7036cd798b35
 tm/lua/utility/make_point.lua 392961fd8351
 tm/lua/utility/make_request.lua 4ba90ee83ff3
 tm/lua/utility/make_response.lua 6255f621011a
@@ -1310,7 +1312,7 @@ tm/php/utility/struct/Struct.php 1a9a54f00c8e
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/py.aon a62d902d6005
+model/target/py.aon 09d3c25aa17c
 model/target/target-index.aon 9424f27eb776
 src/cmp/py/Config_py.ts ea8801548867
 src/cmp/py/EntityOperation_py.ts 8b1b1cf28054
@@ -1318,7 +1320,7 @@ src/cmp/py/EntityTypes_py.ts eef793247b33
 src/cmp/py/Entity_py.ts 8106dc666873
 src/cmp/py/Gitignore_py.ts 07f7135b0381
 src/cmp/py/MainEntity_py.ts 853d7533f8fb
-src/cmp/py/Main_py.ts b34f4417cb9c
+src/cmp/py/Main_py.ts 7019308e7ee8
 src/cmp/py/Package_py.ts f2b8917726e8
 src/cmp/py/ReadmeEntity_py.ts 02b2a32c0043
 src/cmp/py/ReadmeExamplesTest_py.ts abf1a0782c7d
@@ -1333,6 +1335,7 @@ src/cmp/py/ReadmeRef_py.ts c92e6b0d56a4
 src/cmp/py/ReadmeTopHowto_py.ts 98e1b9247b51
 src/cmp/py/ReadmeTopQuick_py.ts ea8e22778b5d
 src/cmp/py/ReadmeTopTest_py.ts 5416eade0670
+src/cmp/py/Schema_py.ts 0e9cc1c235cc
 src/cmp/py/TestDirect_py.ts 67384c195ec0
 src/cmp/py/TestEntity_py.ts 50e3c615c0f8
 src/cmp/py/Test_py.ts 4b5557a0df5c
@@ -1373,7 +1376,7 @@ tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py d68358f50bc8
 tm/py/pkg/utility/make_fetch_def.py 0ad63d779a4e
-tm/py/pkg/utility/make_options.py 6492989dcdad
+tm/py/pkg/utility/make_options.py 239feef114fc
 tm/py/pkg/utility/make_point.py 72db740ca620
 tm/py/pkg/utility/make_request.py 9835b18e665b
 tm/py/pkg/utility/make_response.py 2be9c7ffdfb6
@@ -1441,7 +1444,7 @@ tm/py-data/test/test_frames.py 1ca04ad46a4b
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/rb.aon 3dbf4f4a8aad
+model/target/rb.aon 7f1bdd4412de
 model/target/target-index.aon ac0bc237c44c
 src/cmp/rb/Config_rb.ts 2f5bbf0bbfe6
 src/cmp/rb/EntityOperation_rb.ts 43ad5a64b0c9
@@ -1449,7 +1452,7 @@ src/cmp/rb/EntityTypes_rb.ts a9958df10ebc
 src/cmp/rb/Entity_rb.ts 099deec849d9
 src/cmp/rb/Gitignore_rb.ts d6ab9def4134
 src/cmp/rb/MainEntity_rb.ts a88eedc19290
-src/cmp/rb/Main_rb.ts 4e905169fd80
+src/cmp/rb/Main_rb.ts dd77600bf01d
 src/cmp/rb/Package_rb.ts ce128d510e7c
 src/cmp/rb/ReadmeEntity_rb.ts 03a52257bfc5
 src/cmp/rb/ReadmeExamplesTest_rb.ts b7d2352a4cc5
@@ -1464,6 +1467,7 @@ src/cmp/rb/ReadmeRef_rb.ts a0419ad0ebde
 src/cmp/rb/ReadmeTopHowto_rb.ts d4c1341f730d
 src/cmp/rb/ReadmeTopQuick_rb.ts ef63760e8ff6
 src/cmp/rb/ReadmeTopTest_rb.ts 0ca36d32a47b
+src/cmp/rb/Schema_rb.ts b7551f975b57
 src/cmp/rb/TestDirect_rb.ts 815de3741cb7
 src/cmp/rb/TestEntity_rb.ts da6b2d4ddb44
 src/cmp/rb/Test_rb.ts 41bb05824ffe
@@ -1517,7 +1521,7 @@ tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb abe971c81e08
 tm/rb/utility/make_fetch_def.rb b0cbc0f3b381
-tm/rb/utility/make_options.rb 02b52ad35451
+tm/rb/utility/make_options.rb 37908a150e4e
 tm/rb/utility/make_point.rb d5831921adcc
 tm/rb/utility/make_request.rb a4ef373194d8
 tm/rb/utility/make_response.rb 0ca41a876f23
