@@ -4,7 +4,7 @@ import {
   File,
   Folder,
   cmp,
-  isAuthActive,
+  isAuthSuppressed,
   isHttpBasicAuth,
   resolveAuthIn,
   resolveAuthName,
@@ -37,7 +37,14 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
 
   const javapackage = javaPackage(model)
 
-  const active = isAuthActive(model)
+  // `!isAuthSuppressed`, NOT `isAuthActive`. The latter is also false when
+  // the SPEC merely declares no security scheme (`main.kit.info.auth:
+  // false`), and those SDKs still carry a credential: optspec always
+  // declares `apikey` and makeOptions fills `options.auth` from its
+  // defaults, so the runtime guard never fired and they have always sent
+  // it. Only an explicit `main.kit.config.auth.active: false` means "no
+  // credential, ever", which is what isAuthSuppressed reads.
+  const active = !isAuthSuppressed(model)
   const where = resolveAuthIn(model)
   const name = resolveAuthName(model)
   const basic = isHttpBasicAuth(model)
@@ -226,8 +233,15 @@ ${place(spec.where)}
 // resolves the DEFAULT, so a header-based java SDK behaves byte-for-byte as
 // it did before; a spec that names a header explicitly gets that name
 // verbatim, as do query parameters and cookies.
+// EVERY header name, not just the default. java's map is a case-sensitive
+// LinkedHashMap and the generated SDK spells headers lower-case throughout
+// — Fetcher, SecretsFeature and PipelineTest all do. Special-casing only
+// the literal 'Authorization' left a spec-named header like `X-API-Key`
+// capitalised here while the other nineteen targets lower-cased it, so the
+// same model produced a header java could not find and the rest could.
+// Query parameters and cookies stay verbatim: those ARE case-sensitive.
 function credName(where: string, name: string): string {
-  return ('header' === where && 'Authorization' === name) ? 'authorization' : name
+  return 'header' === where ? name.toLowerCase() : name
 }
 
 

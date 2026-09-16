@@ -10,6 +10,12 @@ defmodule ProjectName.Utility do
   alias Voxgig.Struct, as: S
   alias ProjectName.Helpers, as: H
   alias ProjectName.{Context, Spec, Result, Response, Operation}
+  # prepare_auth IS GENERATED, not templated: where the credential goes
+  # (header | query | cookie, and under what name) is a fact about the API,
+  # which apidef resolves into main.kit.info.security and a template cannot
+  # express. It lives in ProjectName.PrepareAuth, emitted by
+  # src/cmp/elixir/PrepareAuth_elixir.ts into lib/<app>/prepare_auth.ex.
+  alias ProjectName.PrepareAuth
 
   @default_user_agent "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
 
@@ -41,7 +47,7 @@ defmodule ProjectName.Utility do
       {"make_spec", &make_spec_impl/1},
       {"make_url", &make_url_impl/1},
       {"param", &param_impl/2},
-      {"prepare_auth", &prepare_auth_impl/1},
+      {"prepare_auth", &PrepareAuth.prepare_auth_impl/1},
       {"prepare_body", &prepare_body_impl/1},
       {"prepare_headers", &prepare_headers_impl/1},
       {"prepare_method", &prepare_method_impl/1},
@@ -307,7 +313,18 @@ defmodule ProjectName.Utility do
         "suffix" => "",
         # `basic` and `secret`: HTTP Basic Auth needs a second credential and
         # a flag to say the pair is Basic rather than a single bearer token.
-        "auth" => %{"prefix" => "", "basic" => false},
+        #
+        # `in` and `name` say WHERE the credential goes and under what name
+        # (header | query | cookie). The generated config carries them
+        # whenever the spec's scheme is not the header/Authorization default,
+        # and this port's validate REJECTS a key the spec does not declare -
+        # so without them an apiKey-in-query SDK cannot be CONSTRUCTED at all:
+        #
+        #   ** (Voxgig.Struct.Error) Unexpected keys at field auth: in, name
+        #
+        # "" means "take what the spec said", which is what the generated
+        # prepare_auth was built from.
+        "auth" => %{"prefix" => "", "basic" => false, "in" => "", "name" => ""},
         "headers" => %{"`$CHILD`" => "`$STRING`"},
         "allow" => %{
           "method" => "GET,PUT,POST,PATCH,DELETE,OPTIONS",
@@ -1388,36 +1405,6 @@ defmodule ProjectName.Utility do
       S.setprop(result, "ok", false)
 
       true
-    end
-  end
-
-  def prepare_auth_impl(ctx) do
-    spec = S.getprop(ctx, "spec")
-
-    if spec == nil do
-      {nil, Context.make_error(ctx, "auth_no_spec", "Expected context spec property to be defined.")}
-    else
-      headers = S.getprop(spec, "headers")
-      options = opts_map(S.getprop(ctx, "client"))
-
-      if S.getprop(options, "auth") == nil do
-        S.delprop(headers, "authorization")
-        {spec, nil}
-      else
-        apikey = S.getprop(options, "apikey", "__NOTFOUND__")
-
-        if (is_binary(apikey) and apikey == "__NOTFOUND__") or apikey == nil or apikey == "" do
-          S.delprop(headers, "authorization")
-        else
-          ap = S.getpath(options, "auth.prefix")
-          auth_prefix = if is_binary(ap), do: ap, else: ""
-          apikey_val = if is_binary(apikey), do: apikey, else: ""
-          hv = if auth_prefix != "", do: auth_prefix <> " " <> apikey_val, else: apikey_val
-          S.setprop(headers, "authorization", hv)
-        end
-
-        {spec, nil}
-      end
     end
   end
 

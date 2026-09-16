@@ -8,6 +8,8 @@ import {
   each,
   isAuthActive,
   isConfigData,
+  resolveAuthIn,
+  resolveAuthName,
   resolveAuthPrefix,
   targetFeatures,
 } from '@voxgig/sdkgen'
@@ -148,7 +150,35 @@ const Config = cmp(async function Config(props: any) {
   // server-variable defaults), which the hand-rolled build here omitted.
   // Passing target.name opts this target into the main slug/version/target
   // identity fields (read by station's descriptor - see configDefinition).
-  const { def: config, json: configJson } = configDefinition(model, target.name)
+  const { def: config } = configDefinition(model, target.name)
+
+  // `in` and `name` TRAVEL WITH THE PREFIX NOW. apidef resolved both from the
+  // spec's securityScheme all along and generation dropped them, so an
+  // apiKey-in-query API got an `authorization` header it does not read.
+  //
+  // Added to the shared `def` here rather than in configDefinition, so this
+  // change moves ocaml and nothing else - and both representations below
+  // render from the SAME object, which is why the JSON is stringified AFTER
+  // this rather than taken from configDefinition: the data rung and the
+  // literal rung must not be able to describe different configs.
+  //
+  // ONLY WHEN THEY DIFFER from the header/Authorization default, so every
+  // header-based SDK's sdk_config.ml is byte-identical to what it generated
+  // before. `options.auth` is absent entirely when auth is inactive
+  // (configDefinition's own gate), and there is nothing to qualify then.
+  const authIn = resolveAuthIn(model)
+  const authName = resolveAuthName(model)
+  const authOpts = (config as any).options?.auth
+  if (null != authOpts) {
+    if ('header' !== authIn) {
+      authOpts.in = authIn
+    }
+    if ('Authorization' !== authName) {
+      authOpts.name = authName
+    }
+  }
+
+  const configJson = JSON.stringify(config)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'sdk_config.' + target.ext }, () => {

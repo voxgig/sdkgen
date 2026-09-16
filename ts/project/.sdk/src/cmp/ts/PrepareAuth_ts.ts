@@ -4,7 +4,7 @@ import {
   File,
   Folder,
   cmp,
-  isAuthActive,
+  isAuthSuppressed,
   isHttpBasicAuth,
   resolveAuthIn,
   resolveAuthName,
@@ -33,6 +33,11 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
+  // The ONE signal that can honestly be honoured before runtime: the
+  // project saying "this SDK sends no credential, ever". Not
+  // `isAuthActive`, which is also false when the SPEC merely declares no
+  // scheme — those SDKs have always sent options.apikey.
+  const suppressed = isAuthSuppressed(model)
   const where = resolveAuthIn(model)
   // LOWERCASED FOR A HEADER, VERBATIM OTHERWISE. HTTP header names are
   // case-insensitive on the wire, but the SDK's header map is a plain
@@ -54,14 +59,14 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   // src/utility/ keeps being used.
   Folder({ name: 'utility' }, () => {
     File({ name: 'PrepareAuthUtility.' + target.ext }, () => {
-      Content(render({ where, name, prefix, basic }))
+      Content(render({ suppressed, where, name, prefix, basic }))
     })
   })
 })
 
 
 function render(spec: {
-  where: string, name: string, prefix: string, basic: boolean
+  suppressed: boolean, where: string, name: string, prefix: string, basic: boolean
 }): string {
   const head = `
 import { Context, Spec } from '../types'
@@ -84,6 +89,28 @@ import { Context, Spec } from '../types'
   //
   // `auth: null` is the DOCUMENTED suppression, it is a runtime value,
   // and the runtime guard below is the one that honours it.
+
+  // Auth switched off outright by the project. The credential-placing
+  // body would be dead code, so it is not emitted — but the function
+  // stays, because makeSpec calls it unconditionally.
+  if (spec.suppressed) {
+    return head + `
+function prepareAuth(ctx: Context): Spec | Error {
+  const spec = ctx.spec
+
+  if (null == spec) {
+    return ctx.error('auth_no_spec', 'Expected context spec property to be defined.')
+  }
+
+  return spec
+}
+
+
+export {
+  prepareAuth
+}
+`
+  }
 
   const preamble = `
 const CRED_name = '${jsstr(spec.name)}'

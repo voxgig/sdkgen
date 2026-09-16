@@ -3496,19 +3496,32 @@ const AUTHNULL_UNCOVERED: Record<string, string> = {
     '("auth.null_suppresses_the_credential_chain_or_no_chain"), which the ' +
     'ocaml secrets lane in this file runs through the generated Makefile',
 
-  // scala below was the AUTHNULL_OUTSTANDING list. It now carries the fix,
-  // but READ BY EYE ONLY: no scala toolchain existed where the change was
-  // written, so it has not been compiled, let alone had the suppression
-  // exercised - unproven at BOTH levels. The structural guard below is all
-  // that holds it, and a structural guard cannot see a type error or a
-  // mis-ordered statement. Whoever gets the toolchain should build it first
-  // and add a lane second. (clojure, elixir, zig and ocaml were once on this
-  // list, and are the worked examples of doing exactly that - check the
-  // toolchain before inheriting the claim: it sat on "no elixir toolchain",
-  // "no zig toolchain" and "no ocaml toolchain" for a machine that had all
-  // three, and the stale-entry guard cannot see a false excuse that has no
-  // lane to contradict it.)
-  scala: 'UNVERIFIED - no scala toolchain; never compiled, never executed',
+  // scala has left the "never compiled" claim behind, and the claim was
+  // FALSE when it was written: scala-cli 1.15.0 / Scala 3.8.4 and a JDK ARE
+  // on this machine (`command -v scala-cli scalac`), which is exactly the
+  // trap the parenthesis below warns about. The prepareAuth-placement
+  // rollout built a generated scala SDK and RAN it: the shipped Makefile's
+  // `make test` drives SdkTestMain (137), SdkEntityTestMain (20),
+  // SecretsTestMain (93) and the shared PrimaryCorpusMain (67) against a
+  // real client, all green, and the suppression itself was exercised
+  // directly - a client built with an explicit apikey AND `auth: null` put
+  // NOTHING in spec.headers or spec.query and produced a bare URL, on every
+  // placement the model can declare (header, query, cookie). So it is
+  // compiled and executed, not read by eye.
+  //
+  // It stays here rather than becoming an AUTHNULL_LANES row because no
+  // lane runs it in sdkgen CI yet: the probe was ad hoc, and the shipped
+  // suite's own auth assertions are header-shaped (see the note in
+  // SecretsTestMain). Wiring `make test` into this file is the remaining
+  // work. (clojure, elixir, zig and ocaml were once on this list and are
+  // the worked examples of doing that - check the toolchain before
+  // inheriting a claim: this row sat on "no scala toolchain", as those sat
+  // on "no elixir/zig/ocaml toolchain", for a machine that had every one,
+  // and the stale-entry guard cannot see a false excuse that has no lane to
+  // contradict it.)
+  scala: 'compiled and executed by hand on scala-cli 1.15.0 / Scala 3.8.4 ' +
+    '(the generated SDK\'s own `make test`, plus a direct auth:null probe ' +
+    'on header, query and cookie placements); no sdkgen CI lane yet',
 }
 
 

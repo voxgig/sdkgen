@@ -8,6 +8,8 @@ import {
   each,
   isAuthActive,
   isConfigData,
+  resolveAuthIn,
+  resolveAuthName,
   resolveAuthPrefix,
 } from '@voxgig/sdkgen'
 
@@ -48,7 +50,37 @@ const Config = cmp(async function Config(props: any) {
   // server-variable defaults), which the hand-rolled build here omitted.
   // Passing target.name opts this target into the main slug/version/target
   // identity fields (read by station's descriptor - see configDefinition).
-  const { def: config, json: configJson } = configDefinition(model, target.name)
+  const { def: config, json: baseJson } = configDefinition(model, target.name)
+
+  // WHERE THE CREDENTIAL GOES, AND UNDER WHAT NAME, travel with the prefix
+  // now. apidef resolved `in` and `name` from the spec's securityScheme all
+  // along and generation dropped them, so an apiKey-in-query API got an
+  // Authorization header it does not read.
+  //
+  // Emitted ONLY when they differ from the header/Authorization defaults, so
+  // a header-based SDK's config.clj is byte-identical to what it generated
+  // before - the `asData` threshold included, since that is measured on the
+  // JSON built here.
+  //
+  // Both representations still render from this ONE `def` (the literal
+  // through formatCljValue, the data rep through the JSON), so they cannot
+  // describe different configs. The shared configDefinition is deliberately
+  // NOT changed: it feeds every target, and this is the clojure rollout.
+  //
+  // core.clj's optspec had to learn the two keys as well ("auth" (vs/jm
+  // "prefix" "" "basic" false "in" "" "name" "")) - `vs/validate` refuses a
+  // key it does not name, so without that an SDK carrying this block could
+  // not be constructed at all.
+  const authIn = resolveAuthIn(model)
+  const authName = resolveAuthName(model)
+  const configAuth = config?.options?.auth
+  if (null != configAuth) {
+    if ('header' !== authIn) { configAuth.in = authIn }
+    if ('Authorization' !== authName) { configAuth.name = authName }
+  }
+  const configJson = JSON.stringify(config)
+  assertHeaderIdentity(configJson, baseJson, authIn, authName)
+
   const asData = isConfigData(configJson, configReprSetting(model))
 
   // THE FEATURE WIRING (the clojure peer of Config_go's pluginImports /
@@ -132,6 +164,20 @@ ${wireBlock}`)
 ${wireBlock}`)
   })
 })
+
+
+// The augmentation above must be a NO-OP for a header/Authorization SDK, and
+// that is the whole byte-identity claim - so it is checked rather than
+// asserted in a comment. A future change to configDefinition that starts
+// emitting `in`/`name` itself would make this fire rather than silently
+// double up.
+function assertHeaderIdentity(now: string, before: string, authIn: string, authName: string) {
+  const defaults = 'header' === authIn && 'Authorization' === authName
+  if (defaults && now !== before) {
+    throw new Error('Config_clojure: the auth overlay changed a ' +
+      'header/Authorization config, which must regenerate byte-identical')
+  }
+}
 
 
 export {

@@ -24,6 +24,7 @@ import { Config, secretsBuild } from './Config_ocaml'
 import { Gitignore } from './Gitignore_ocaml'
 import { MainEntity } from './MainEntity_ocaml'
 import { SdkError } from './SdkError_ocaml'
+import { PrepareAuth } from './PrepareAuth_ocaml'
 import { entityModule, ocamlString } from './utility_ocaml'
 
 
@@ -184,6 +185,24 @@ FEATURE_LINK =
   // Generated API config + branded-error re-export.
   Config({ target })
   SdkError({ target })
+
+  // sdk_prepare_auth.ml is GENERATED, not templated: WHERE the credential
+  // goes (header / query / cookie, and under what name) is a fact about the
+  // API, and tm/ can only hold one answer. ocaml had no prepare_auth
+  // template to replace - the body was a `let` inside the monolithic
+  // tm/ocaml/sdk_runtime.ml - so this is a real extraction: the module
+  // keeps the `prepare_auth_util` name by aliasing this one, and every
+  // existing caller (the utility record, make_spec, the secrets feature's
+  // re-run, the shipped suites) resolves unchanged. See PrepareAuth_ocaml.
+  //
+  // AT ROOT LEVEL, with no Folder open. The ocaml tree is flat at the
+  // target root and the Makefile's `RUNTIME` names `sdk_prepare_auth.ml`
+  // by that exact path, between sdk_helpers.ml (which it uses) and
+  // sdk_runtime.ml (which uses it) - ocamlc compiles in the order it is
+  // handed and has no link-time reordering. Emitting it inside a Folder
+  // would put it where neither `RUNTIME` nor `-I .` looks, and
+  // sdk_runtime.ml would fail with `Unbound module Sdk_prepare_auth`.
+  PrepareAuth({ target })
 
   // sdk_client.ml — the client constructors, direct/prepare, and the
   // per-entity accessors (twin of the go root package + rust core/sdk.rs).

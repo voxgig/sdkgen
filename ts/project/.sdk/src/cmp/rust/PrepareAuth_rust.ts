@@ -4,7 +4,7 @@ import {
   File,
   Folder,
   cmp,
-  isAuthActive,
+  isAuthSuppressed,
   isHttpBasicAuth,
   resolveAuthIn,
   resolveAuthName,
@@ -42,7 +42,14 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   // the way Main_rust spells it in lib.rs's re-exports.
   const errtype = model.const.Name + 'Error'
 
-  const active = isAuthActive(model)
+  // `!isAuthSuppressed`, NOT `isAuthActive`. The latter is also false when
+  // the SPEC merely declares no security scheme (`main.kit.info.auth:
+  // false`), and those SDKs still carry a credential: optspec always
+  // declares `apikey` and makeOptions fills `options.auth` from its
+  // defaults, so the runtime guard never fired and they have always sent
+  // it. Only an explicit `main.kit.config.auth.active: false` means "no
+  // credential, ever", which is what isAuthSuppressed reads.
+  const active = !isAuthSuppressed(model)
   const where = resolveAuthIn(model)
   const name = resolveAuthName(model)
   // Resolved, and deliberately NOT baked into the source: the prefix is a

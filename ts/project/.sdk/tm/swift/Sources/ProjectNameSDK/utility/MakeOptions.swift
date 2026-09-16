@@ -4,8 +4,30 @@
 import Foundation
 
 private func buildOptSpec() -> Value {
-  let authPrefix = VMap()
-  authPrefix.entries["prefix"] = .string("")
+  // THE AUTH OPTION BLOCK, and every key the generated config can put in it.
+  //
+  // This spec is what `validate` checks the merged options against, and a key
+  // it does not name does not survive - so the generated Config's auth block
+  // was trimmed back to `prefix` on the way in and the SDK could not see its
+  // own scheme.
+  //
+  //   prefix  the credential prefix (Bearer/Basic/OAuth, or '' for a raw key)
+  //   basic   the scheme is real HTTP Basic: base64(apikey:secret), not a
+  //           single bearer token
+  //   in      WHERE the credential goes: header (the default) | query | cookie
+  //   name    the header, query parameter or cookie name it goes in under
+  //
+  // `in` and `name` mirror main.kit.optspec.auth in
+  // @voxgig/sdkgen/model/sdkgen.aon, which the model-driven targets read
+  // directly; '' means "take what the spec said", which is what the generated
+  // prepareAuth was built from, so an SDK that sets neither behaves exactly as
+  // it did before. Without them an apiKey-in-query SDK (joplin's `?token=`)
+  // cannot even construct its own options.
+  let authSpec = VMap()
+  authSpec.entries["prefix"] = .string("")
+  authSpec.entries["basic"] = .bool(false)
+  authSpec.entries["in"] = .string("")
+  authSpec.entries["name"] = .string("")
 
   let headers = VMap()
   headers.entries["`$CHILD`"] = .string("`$STRING`")
@@ -38,10 +60,15 @@ private func buildOptSpec() -> Value {
 
   let spec = VMap()
   spec.entries["apikey"] = .string("")
+  // The SECOND credential, for the HTTP Basic scheme
+  // (base64(apikey:secret)). Named by main.kit.optspec but missing here, and
+  // validate does not pass what it does not name - so a caller that supplied
+  // `secret` never had it reach prepareAuth.
+  spec.entries["secret"] = .string("")
   spec.entries["base"] = .string("http://localhost:8000")
   spec.entries["prefix"] = .string("")
   spec.entries["suffix"] = .string("")
-  spec.entries["auth"] = .map(authPrefix)
+  spec.entries["auth"] = .map(authSpec)
   spec.entries["headers"] = .map(headers)
   spec.entries["allow"] = .map(allow)
   spec.entries["entity"] = .map(entity)
