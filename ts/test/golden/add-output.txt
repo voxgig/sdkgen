@@ -5,7 +5,7 @@
 model/feature/feature-index.aon 5f0737d1060e
 model/feature/test.aon f2e74feb46e3
 model/sdk.aon c57422e2c737
-model/target/c.aon d0696d765fc0
+model/target/c.aon da82a9455b14
 model/target/target-index.aon a1ddf98d9368
 src/cmp/c/Config_c.ts ae82ecdb06ee
 src/cmp/c/EntityBase_c.ts 70f610b1220f
@@ -45,7 +45,7 @@ src/cmp/c/utility_c.ts 71800394d521
 tm/c/LICENSE ed2f88b0aab8
 tm/c/Makefile 5e3fc0c7f0d0
 tm/c/VERSION e6635045e1d2
-tm/c/core/context.c c97d0852b788
+tm/c/core/context.c d6c4b4c78683
 tm/c/core/control.c acb5a3790b08
 tm/c/core/error.c b2858b1dad79
 tm/c/core/helpers.c d35f8ba10d86
@@ -53,7 +53,7 @@ tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
 tm/c/core/response.c 4b4096708714
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h b2970e03fc0e
+tm/c/core/sdk.h 8e42eaa40f64
 tm/c/core/spec.c b7e5d9119652
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
@@ -90,7 +90,7 @@ tm/c/utility/make_point.c 684f5b7e7aa9
 tm/c/utility/make_request.c b5887e3fd94c
 tm/c/utility/make_response.c 5cb2535aec54
 tm/c/utility/make_result.c 1a912f59bee6
-tm/c/utility/make_spec.c 796776173e40
+tm/c/utility/make_spec.c abe2a56ab788
 tm/c/utility/make_url.c 076366c85234
 tm/c/utility/param.c 7bbd56d87243
 tm/c/utility/prepare_auth.c 2a1378422d31
