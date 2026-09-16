@@ -37,8 +37,10 @@ exports.goModule = goModule;
 exports.goVersion = goVersion;
 exports.goPackageIdent = goPackageIdent;
 exports.packageVersion = packageVersion;
+exports.docsSiteUrl = docsSiteUrl;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
+const kindCollection_1 = require("./kindCollection");
 const PUBLISHER = 'Voxgig';
 exports.PUBLISHER = PUBLISHER;
 const PUBLISHER_URL = 'https://voxgig.com';
@@ -117,10 +119,54 @@ function repoInfo(model) {
         repoUrl,
         issuesUrl: `${repoUrl}/issues`,
         changelogUrl: `${repoUrl}/blob/main/CHANGELOG.md`,
-        // Version-agnostic releases page: where the `<target>/vX.Y.Z` git tags
-        // that a pending (not-yet-on-registry) package is installed from live.
+        // The Releases page. Honest where a link is LABELLED "Releases", which is
+        // what the twenty per-target ReadmeInstall components do with it. Those
+        // are project-owned and install-once, so this key has to keep existing:
+        // dropping it stops every already-generated SDK compiling.
         releasesUrl: `${repoUrl}/releases`,
+        // The TAGS page: where the `<target>/vX.Y.Z` tags a pending
+        // (not-yet-on-registry) package is installed from actually live.
+        //
+        // SEPARATE FROM `releasesUrl`, because they are separate pages and only
+        // one of them holds tags. A GitHub Release is an object a human publishes;
+        // a tag is not one. This fleet pushes tags and cuts no Releases, so every
+        // pending target told the reader to install from a git tag and then linked
+        // a page reading "There aren't any releases" -- on a repository carrying
+        // 72 of them. Use this wherever the sentence promises a tag.
+        tagsUrl: `${repoUrl}/tags`,
     };
+}
+// THE GENERATED DOCUMENTATION SITE, when this project publishes one.
+//
+// `docs_url` in the OpenAPI info block is the UPSTREAM API's documentation —
+// docs.nofrixion.com and its like — so nothing in a generated README ever
+// pointed at the site docgen builds from the same model. The repository was
+// therefore the one place the documentation could not be found from: no link
+// in the README, and GitHub's `homepage` field is not ours to set.
+//
+// Derived, not declared, because a GitHub project page has exactly one
+// address: `https://<org>.github.io/<repo>/`. Reading it from the model would
+// mean a second place for it to be wrong.
+//
+// NOTHING IS RETURNED UNLESS THE SITE WILL EXIST. The edition has to be
+// declared, of kind `github-pages`, and not switched off; and the host has to
+// be github.com, since the derivation is GitHub's and holds nowhere else. A
+// link to a Pages site that was never deployed is worse than no link.
+function docsSiteUrl(model) {
+    const { host, path } = repoInfo(model);
+    if ('github.com' !== host) {
+        return '';
+    }
+    const editions = (0, kindCollection_1.kindCollection)(model, 'edition');
+    const pages = Object.values(editions || {})
+        .find((e) => 'github-pages' === e?.kind && false !== e?.active);
+    if (null == pages) {
+        return '';
+    }
+    const seg = path.split('/');
+    const org = seg[0];
+    const repo = seg[seg.length - 1];
+    return org && repo ? `https://${org}.github.io/${repo}/` : '';
 }
 // The go module path for a go-family target: the declared override, else the
 // repo path plus the target's subdirectory.
@@ -238,9 +284,9 @@ function registryName(model, target) {
 // the go family this is the canonical install (`go get <module>@latest`,
 // which the Go proxy resolves from the `<subdir>/vX.Y.Z` tag). For registry
 // ports it is a short "not yet on <registry> — install from the git tag"
-// pointer carrying the releases URL.
+// pointer carrying the tags URL.
 function vendorCommand(model, target) {
-    const { releasesUrl } = repoInfo(model);
+    const { tagsUrl } = repoInfo(model);
     switch (originName(model, target)) {
         // `target`, not the literal — the case says WHICH command, the argument
         // says whose module. Writing the literal here reintroduces the same bug
@@ -253,7 +299,7 @@ function vendorCommand(model, target) {
             return `go install ${packageName(model, target)}/cmd/${model.name}@latest`;
         default: {
             const reg = registryName(model, target);
-            return `not yet on ${reg || 'the registry'} — install from the git tag: ${releasesUrl}`;
+            return `not yet on ${reg || 'the registry'} — install from the git tag: ${tagsUrl}`;
         }
     }
 }
