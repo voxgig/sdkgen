@@ -31,7 +31,7 @@ import { templateReplacements } from '../helpers/stdrep'
 
 import { copyOpts } from '../helpers/junk'
 
-import { resolveKind, kindModel } from './kind'
+import { resolveKind, kindModel, kindIndex } from './kind'
 
 
 import {
@@ -186,8 +186,7 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
 
 
       Folder({ name: 'model/feature' }, () => kindModel({
-        ctx$, kind: 'feature', source, names: fnames,
-        content: ctx$.meta.content.feature_index,
+        ctx$, kind: 'feature', source,
       }))
 
       // Bring in the feature's source for every target already in the model.
@@ -279,6 +278,13 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
         note: fname
       })
     })
+
+    // AFTER the loop, with every installed name in hand. One index file,
+    // one File component — see action/kind.kindIndex.
+    Folder({ name: 'model/feature' }, () => kindIndex({
+      ctx$, kind: 'feature', names: fnames,
+      content: ctx$.meta.content.feature_index,
+    }))
   })
 
 })

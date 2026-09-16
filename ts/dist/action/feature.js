@@ -129,8 +129,7 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 note: fname + (fname === fref ? '' : ' ref:' + fref)
             });
             (0, jostraca_1.Folder)({ name: 'model/feature' }, () => (0, kind_1.kindModel)({
-                ctx$, kind: 'feature', source, names: fnames,
-                content: ctx$.meta.content.feature_index,
+                ctx$, kind: 'feature', source,
             }));
             // Bring in the feature's source for every target already in the model.
             // Where that source lives is language-specific — `src/feature/<name>/`
@@ -212,6 +211,12 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 note: fname
             });
         });
+        // AFTER the loop, with every installed name in hand. One index file,
+        // one File component — see action/kind.kindIndex.
+        (0, jostraca_1.Folder)({ name: 'model/feature' }, () => (0, kind_1.kindIndex)({
+            ctx$, kind: 'feature', names: fnames,
+            content: ctx$.meta.content.feature_index,
+        }));
     });
 });
 //# sourceMappingURL=feature.js.map

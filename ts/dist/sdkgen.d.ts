@@ -113,7 +113,7 @@ declare namespace SdkGen {
 export type { SdkGenOptions, ExampleLang, DepEntry, PathSegment, FeatureSource, DoctorReport, RegisterOptions, Manifest, ManifestRead, };
 export type { SdkModel, ModelKit, ModelTarget, ModelFeature, ModelEntity, ModelDep, ModelHook, } from './types';
 type Component = (props: any, children?: any) => void;
-export declare const cmp: (component: Function) => Component;
+export declare const cmp: (component: (props: any, children?: any) => any) => Component;
 export declare const names: (base: any, name: string, prop?: string) => any;
 export declare const each: (subject?: any, apply?: any) => any;
 export declare const snakify: (input: any[] | string) => string;

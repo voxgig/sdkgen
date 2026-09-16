@@ -1148,7 +1148,10 @@ type Component = (props: any, children?: any) => void
 
 
 // Prevents TS2742
-export const cmp: (component: Function) => Component = JostracaModule.cmp
+// `Function` was wide enough while jostraca's `cmp` took one, and stopped
+// being assignable once it declared the parameter it actually calls.
+export const cmp: (component: (props: any, children?: any) => any)
+  => Component = JostracaModule.cmp
 export const names: (base: any, name: string, prop?: string) => any = JostracaModule.names
 export const each: (subject?: any, apply?: any) => any = JostracaModule.each
 export const snakify: (input: any[] | string) => string = JostracaModule.snakify

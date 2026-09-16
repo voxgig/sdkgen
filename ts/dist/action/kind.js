@@ -10,6 +10,7 @@ exports.escapeRe = escapeRe;
 exports.kindDef = kindDef;
 exports.resolveKind = resolveKind;
 exports.kindModel = kindModel;
+exports.kindIndex = kindIndex;
 // KINDS: the things an `add` can install.
 //
 // `target` and `feature` are two of them, `docs` and others are meant to
@@ -172,14 +173,12 @@ function resolveKind(ref, kind, ctx$) {
     }
     return source;
 }
-// Emit the kind's definition file and its index entry.
+// Emit the kind's definition file. The index is NOT written here — see
+// `kindIndex`, which the caller invokes once when the loop is done.
 //
-// Called inside a `Folder({ name: 'model/<kind>' })`, so both land together.
-// `names` is every INSTALLED name seen so far in this run: the index File is
-// re-rendered per item and the last render wins, so each render has to carry
-// all of them.
+// Called inside a `Folder({ name: 'model/<kind>' })`.
 function kindModel(props) {
-    const { ctx$, kind, source, names, content } = props;
+    const { ctx$, kind, source } = props;
     const def = kindDef(kind);
     const fs = ctx$.fs();
     const log = ctx$.log;
@@ -218,6 +217,33 @@ function kindModel(props) {
     }
     else {
         (0, jostraca_1.Copy)({ from: source.model, replace });
+    }
+}
+// Emit the kind's index — the include list beside the definition files.
+//
+// ONCE PER RUN, after every item has been emitted, and not once per item.
+// This used to sit at the end of `kindModel`, which is called inside the
+// caller's loop: N items meant N `File` components all resolving to
+// `model/<kind>/<kind>-index.aon`, and the build relied on the last render
+// winning. jostraca refuses that now — two `File` components at one path is
+// the mistake the guard exists to catch, and it was right about this one:
+// the reliance was real but it was never the intent, only the cheapest way
+// to get a complete `names` list into the render. Hoisting the call out of
+// the loop gets the same list from the place that actually owns it, and the
+// index is now written exactly as many times as there are index files.
+//
+// Called inside a `Folder({ name: 'model/<kind>' })`, as `kindModel` is.
+//
+// NOTHING IS EMITTED FOR AN EMPTY `names`. A run in which every item failed
+// to resolve wrote no index before (no item, no render), and must not now
+// write one listing nothing — that would turn a run that installed nothing
+// into a model compile with an empty include list, silently emptying the
+// index the project already had.
+function kindIndex(props) {
+    const { kind, names, content } = props;
+    const def = kindDef(kind);
+    if (0 === names.length) {
+        return;
     }
     (0, jostraca_1.File)({ name: def.name + '-index.aon' }, () => (0, action_1.UpdateIndex)({
         content,

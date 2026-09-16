@@ -149,9 +149,8 @@ const EditionRoot = (0, jostraca_1.cmp)(function EditionRoot(props) {
     const { ctx$, edition } = props;
     const { log } = ctx$;
     (0, jostraca_1.Project)({}, () => {
-        // Every installed name seen so far in this run: the index File is
-        // re-rendered per item and the last render wins, so each render has to
-        // carry all of them.
+        // Every installed name in this run, accumulated for the one index
+        // render that follows the loop.
         const dnames = [];
         (0, jostraca_1.each)(edition, (n) => {
             const dref = n.val$;
@@ -169,8 +168,7 @@ const EditionRoot = (0, jostraca_1.cmp)(function EditionRoot(props) {
                     ' from:' + source.folder
             });
             (0, jostraca_1.Folder)({ name: 'model/edition' }, () => (0, kind_1.kindModel)({
-                ctx$, kind: 'edition', source, names: dnames,
-                content: ctx$.meta.content.edition_index,
+                ctx$, kind: 'edition', source,
             }));
             // Both ends of every tree come from the registry's ONE declaration,
             // resolved twice: the source carries the ORIGIN name, the destination
@@ -196,6 +194,12 @@ const EditionRoot = (0, jostraca_1.cmp)(function EditionRoot(props) {
             });
             log.info({ point: 'edition-done', edition: source.name, note: source.name });
         });
+        // AFTER the loop, with every installed name in hand. One index file,
+        // one File component — see action/kind.kindIndex.
+        (0, jostraca_1.Folder)({ name: 'model/edition' }, () => (0, kind_1.kindIndex)({
+            ctx$, kind: 'edition', names: dnames,
+            content: ctx$.meta.content.edition_index,
+        }));
     });
 });
 // One tree, copied from the origin path to the installed one.

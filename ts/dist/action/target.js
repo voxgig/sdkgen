@@ -127,9 +127,8 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
     // TODO: jostraca - make from value easier to specify 
     // const tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
     (0, jostraca_1.Project)({}, () => {
-        // Resolved names of every target in this run. The index File is
-        // re-rendered per target and the last render wins, so each render must
-        // carry all names seen so far, not just its own.
+        // Resolved names of every target in this run, accumulated for the one
+        // index render that follows the loop.
         const tnames = [];
         (0, jostraca_1.each)(targets, (n) => {
             const tref = n.val$;
@@ -159,8 +158,7 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
             // The definition file and the index entry: the same for every kind, so
             // they are emitted once, in action/kind.
             (0, jostraca_1.Folder)({ name: 'model/target' }, () => (0, kind_1.kindModel)({
-                ctx$, kind: 'target', source, names: tnames,
-                content: ctx$.meta.content.target_index,
+                ctx$, kind: 'target', source,
             }));
             if (aliased) {
                 // Components are dispatched by CONVENTION — `cmp/<t>/Main_<t>` — so
@@ -210,6 +208,12 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 point: 'target-done', target: tref, note: targetNote
             });
         });
+        // AFTER the loop, with every installed name in hand. One index file,
+        // one File component — see action/kind.kindIndex.
+        (0, jostraca_1.Folder)({ name: 'model/target' }, () => (0, kind_1.kindIndex)({
+            ctx$, kind: 'target', names: tnames,
+            content: ctx$.meta.content.target_index,
+        }));
     });
 });
 // `<Cmp>_<origname>.<ext>` -> `<Cmp>_<tname>.<ext>`, for an aliased install.

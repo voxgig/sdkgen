@@ -22,8 +22,12 @@ declare function kindModel(props: {
     ctx$: any;
     kind: string;
     source: Source;
+}): void;
+declare function kindIndex(props: {
+    ctx$: any;
+    kind: string;
     names: string[];
     content: string;
 }): void;
 export type { KindDef, TreeDef, };
-export { KINDS, recordedRef, aliasModelKey, kindTrees, escapeRe, kindDef, resolveKind, kindModel, isBare, };
+export { KINDS, recordedRef, aliasModelKey, kindTrees, escapeRe, kindDef, resolveKind, kindModel, kindIndex, isBare, };

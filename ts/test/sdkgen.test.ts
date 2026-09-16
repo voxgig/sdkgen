@@ -440,7 +440,9 @@ main: kit: java: {}
   function makeRoot() {
     return cmp(function Root(props: any) {
       const { model } = props
-      Project({ model, folder: model.name }, () => {
+      // No `model` prop: Project never read one, and the children below
+      // close over `model` rather than taking it as an argument.
+      Project({ folder: model.name }, () => {
         each(model.main.kit, (kit: any) => {
           Folder({ name: kit.name }, () => {
             File({ name: 'README.md' }, () => {

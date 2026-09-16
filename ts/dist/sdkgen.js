@@ -981,6 +981,8 @@ function clear(path) {
     }
 }
 // Prevents TS2742
+// `Function` was wide enough while jostraca's `cmp` took one, and stopped
+// being assignable once it declared the parameter it actually calls.
 exports.cmp = JostracaModule.cmp;
 exports.names = JostracaModule.names;
 exports.each = JostracaModule.each;

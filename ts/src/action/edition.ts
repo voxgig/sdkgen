@@ -49,7 +49,7 @@ import { templateReplacements } from '../helpers/stdrep'
 
 import { copyOpts } from '../helpers/junk'
 
-import { resolveKind, kindModel, kindTrees } from './kind'
+import { resolveKind, kindModel, kindIndex, kindTrees } from './kind'
 import type { TreeDef } from './kind'
 
 import { registerInstalled } from './resolve'
@@ -198,9 +198,8 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
   const { log } = ctx$
 
   Project({}, () => {
-    // Every installed name seen so far in this run: the index File is
-    // re-rendered per item and the last render wins, so each render has to
-    // carry all of them.
+    // Every installed name in this run, accumulated for the one index
+    // render that follows the loop.
     const dnames: string[] = []
 
     each(edition, (n: any) => {
@@ -224,8 +223,7 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
       })
 
       Folder({ name: 'model/edition' }, () => kindModel({
-        ctx$, kind: 'edition', source, names: dnames,
-        content: ctx$.meta.content.edition_index,
+        ctx$, kind: 'edition', source,
       }))
 
       // Both ends of every tree come from the registry's ONE declaration,
@@ -257,6 +255,13 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
 
       log.info({ point: 'edition-done', edition: source.name, note: source.name })
     })
+
+    // AFTER the loop, with every installed name in hand. One index file,
+    // one File component — see action/kind.kindIndex.
+    Folder({ name: 'model/edition' }, () => kindIndex({
+      ctx$, kind: 'edition', names: dnames,
+      content: ctx$.meta.content.edition_index,
+    }))
   })
 })
 

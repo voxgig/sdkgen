@@ -51,7 +51,7 @@ import {
   loadContent,
 } from './action'
 
-import { kindModel, resolveKind, escapeRe } from './kind'
+import { kindModel, kindIndex, resolveKind, escapeRe } from './kind'
 
 import { BUNDLED, resolveSource, registerInstalled } from './resolve'
 
@@ -184,9 +184,8 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
   // const tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
 
   Project({}, () => {
-    // Resolved names of every target in this run. The index File is
-    // re-rendered per target and the last render wins, so each render must
-    // carry all names seen so far, not just its own.
+    // Resolved names of every target in this run, accumulated for the one
+    // index render that follows the loop.
     const tnames: string[] = []
 
     each(targets, (n) => {
@@ -222,8 +221,7 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       // The definition file and the index entry: the same for every kind, so
       // they are emitted once, in action/kind.
       Folder({ name: 'model/target' }, () => kindModel({
-        ctx$, kind: 'target', source, names: tnames,
-        content: ctx$.meta.content.target_index,
+        ctx$, kind: 'target', source,
       }))
 
       if (aliased) {
@@ -281,6 +279,13 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       })
 
     })
+
+    // AFTER the loop, with every installed name in hand. One index file,
+    // one File component — see action/kind.kindIndex.
+    Folder({ name: 'model/target' }, () => kindIndex({
+      ctx$, kind: 'target', names: tnames,
+      content: ctx$.meta.content.target_index,
+    }))
   })
 })
 
