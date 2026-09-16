@@ -210,6 +210,15 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 point: 'target-done', target: tref, note: targetNote
             });
         });
+        // ONCE, after the loop. See kindIndex: emitted per item it was one File
+        // component per target on the same output path, which jostraca 0.38
+        // refuses.
+        if (0 < tnames.length) {
+            (0, jostraca_1.Folder)({ name: 'model/target' }, () => (0, kind_1.kindIndex)({
+                kind: 'target', names: tnames,
+                content: ctx$.meta.content.target_index,
+            }));
+        }
     });
 });
 // `<Cmp>_<origname>.<ext>` -> `<Cmp>_<tname>.<ext>`, for an aliased install.

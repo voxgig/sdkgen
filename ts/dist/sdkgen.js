@@ -981,6 +981,12 @@ function clear(path) {
     }
 }
 // Prevents TS2742
+// `typeof` rather than a hand-written signature: jostraca 0.38 made cmp
+// generic, `<P, Arg, Child>(component: (props: CmpProps<P>, ...) => any) =>
+// Component<P, Arg, Child>`, and the old annotation `(component: Function) =>
+// Component` no longer matched it. Deferring to the module's own type keeps
+// this correct across jostraca versions AND still names the type, which is
+// what prevented TS2742 in the first place.
 exports.cmp = JostracaModule.cmp;
 exports.names = JostracaModule.names;
 exports.each = JostracaModule.each;

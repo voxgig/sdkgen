@@ -93,7 +93,7 @@
     "@voxgig/struct": ">=0.2",
     "@voxgig/util": ">=0.5",
     "aontu": ">=0.52",
-    "jostraca": ">=0.33.1",
-    "shape": ">=10"
+    "jostraca": "^0.33.1",
+    "shape": "^11.4.1"
   }
 }

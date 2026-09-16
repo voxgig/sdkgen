@@ -212,6 +212,15 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 note: fname
             });
         });
+        // ONCE, after the loop, with every name this run installed. Emitted inside
+        // kindModel it was one File component per feature on the same path, which
+        // jostraca 0.38 refuses.
+        if (0 < fnames.length) {
+            (0, jostraca_1.Folder)({ name: 'model/feature' }, () => (0, kind_1.kindIndex)({
+                kind: 'feature', names: fnames,
+                content: ctx$.meta.content.feature_index,
+            }));
+        }
     });
 });
 //# sourceMappingURL=feature.js.map
