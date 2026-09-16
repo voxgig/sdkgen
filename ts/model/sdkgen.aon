@@ -638,6 +638,16 @@ main: kit: optspec: {
   auth: {
     prefix: ''
     basic: false
+
+    # WHERE the credential goes and UNDER WHAT NAME. apidef resolves both
+    # from the spec's securityScheme into main.kit.info.security; these are
+    # the per-SDK override, and they are what the generated prepareAuth is
+    # built from. '' means "take what the spec said", so an SDK that does
+    # not set them behaves exactly as it did before.
+    #   in:   header | query | cookie
+    #   name: the header, query parameter or cookie name
+    in: ''
+    name: ''
   }
 
   # Extra headers sent with every request: any name, string values.
