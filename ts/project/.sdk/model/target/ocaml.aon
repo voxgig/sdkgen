@@ -24,7 +24,7 @@ main: kit: target: ocaml: {
   # and links OpenSSL ONLY when a plugin group that needs a transport is
   # active, so an SDK without secrets, or with the built-in chain alone,
   # or with `secretspec` alone, runs no C compiler and links no OpenSSL.
-  provides: { sekreto: true }
+  provides: { sekreto: true, schema: true }
 
   # Files earlier toolchains generated that this target has RETIRED
   # (vendor-tag rollout): the hand-written corpus engine, replaced by
