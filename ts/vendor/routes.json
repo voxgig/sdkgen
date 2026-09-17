@@ -1547,7 +1547,7 @@
      "to": "require('feature.secrets.plugin')"
     },
     {
-     "match": "feature/secrets/(sekreto\\.lua|sekreto/(addr|name|providers)\\.lua|sekreto/plugins/(aws|azuresecrets|boru|doppler|gcpsecrets|hashicorp|httpjson|infisical|net|onepassword|secretspec|sigv4)\\.lua)$",
+     "match": "feature/secrets/(sekreto\\.lua|sekreto/(addr|name|providers)\\.lua|sekreto/plugins/(aws|azuresecrets|boru|doppler|gcpsecrets|hashicorp|httpjson|infisical|minivault|net|onepassword|secretspec|sigv4)\\.lua)$",
      "from": "require('sekreto.",
      "to": "require('feature.secrets.sekreto."
     },
@@ -1560,6 +1560,18 @@
      "match": "sekreto/plugins/net\\.lua$",
      "from": "build/sekreto-net",
      "to": "feature/secrets/native/sekreto-net"
+    },
+    {
+     "note": "The vault module finds its crypto .so from its OWN path, the way net.lua finds the transport helper - and the vendored depth is not upstream's.",
+     "match": "sekreto/plugins/minivault\\.lua$",
+     "from": "'^(.*)/src/sekreto/plugins/minivault%.lua$'",
+     "to": "'^(.*)/feature/secrets/sekreto/plugins/minivault%.lua$'"
+    },
+    {
+     "note": "Where Main_lua's native.mk puts the built module, which is not upstream's build/ directory.",
+     "match": "sekreto/plugins/minivault\\.lua$",
+     "from": "build/sekretovault.so",
+     "to": "feature/secrets/native/sekretovault.so"
     }
    ]
   },

@@ -573,6 +573,22 @@ main: kit: feature: &: {
     # awsparams), which is why the inner level is a map and not one name.
     def: &: &: string
 
+    # C SOURCES THIS PLUGIN CANNOT WORK WITHOUT, keyed by TARGET.
+    #
+    # Keyed by target and not derived from `path`, because `path` is one
+    # flat list across every target and the same directory and stem appear
+    # in several: ocaml's `feature/secrets/plugins/minivault_stubs.c` sits
+    # beside c's `feature/secrets/plugins/boru.c`, and a filter on either
+    # hands ocaml's build the C port's files. Deriving this was tried and
+    # did exactly that.
+    #
+    # A target whose build must compile something more than its own
+    # language names it here; the target's build emitter decides how. The
+    # mini vault is the first: ocaml compiles minivault_stubs.c to an
+    # object and links libcrypto, lua compiles sekretovault.c to a
+    # loadable module the interpreter opens.
+    stub: &: [&: string]
+
     # PACKAGE DEPENDENCIES THIS PLUGIN NEEDS, keyed by target, in the same
     # shape a feature's `deps` uses — and gated one level deeper.
     #

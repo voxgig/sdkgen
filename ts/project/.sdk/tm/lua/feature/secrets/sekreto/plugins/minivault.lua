@@ -59,10 +59,10 @@
 -- bytes are pinned by the vaults in test/fixture rather than left to
 -- agreement between implementations.
 
-local err = require('sekreto.err')
-local name = require('sekreto.name')
-local providers = require('sekreto.providers')
-local json = require('sekreto.plugins.json')
+local err = require('feature.secrets.sekreto.err')
+local name = require('feature.secrets.sekreto.name')
+local providers = require('feature.secrets.sekreto.providers')
+local json = require('feature.secrets.sekreto.plugins.json')
 
 local fail = err.fail
 local checkname = name.checkname
@@ -79,13 +79,13 @@ local function vaultlib()
   local source = debug.getinfo(1, 'S').source
 
   if '@' == source:sub(1, 1) then
-    local dir = source:sub(2):match('^(.*)/src/sekreto/plugins/minivault%.lua$')
+    local dir = source:sub(2):match('^(.*)/feature/secrets/sekreto/plugins/minivault%.lua$')
     if nil ~= dir then
-      return dir .. '/build/sekretovault.so'
+      return dir .. '/feature/secrets/native/sekretovault.so'
     end
   end
 
-  return 'build/sekretovault.so'
+  return 'feature/secrets/native/sekretovault.so'
 end
 
 M.VAULTLIB = vaultlib()

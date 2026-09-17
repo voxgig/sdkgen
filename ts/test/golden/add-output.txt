@@ -966,7 +966,7 @@ src/cmp/lua/EntityTypes_lua.ts 77fba0685c63
 src/cmp/lua/Entity_lua.ts e3e43269850c
 src/cmp/lua/Gitignore_lua.ts ddf4d3003936
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
-src/cmp/lua/Main_lua.ts 694d43f1d3cb
+src/cmp/lua/Main_lua.ts 09af27c9b37a
 src/cmp/lua/Package_lua.ts 5d8c5b31d635
 src/cmp/lua/PrepareAuth_lua.ts 7535a7fad08e
 src/cmp/lua/ReadmeEntity_lua.ts 886fadf6275a
@@ -1065,12 +1065,12 @@ model/feature/test.aon f2e74feb46e3
 model/sdk.aon 42c69a6e9924
 model/target/ocaml.aon d9a3691397c2
 model/target/target-index.aon b354d3354ab9
-src/cmp/ocaml/Config_ocaml.ts ce2e20bc8e5f
+src/cmp/ocaml/Config_ocaml.ts f5f035527b8c
 src/cmp/ocaml/EntityOperation_ocaml.ts 66ee562a3531
 src/cmp/ocaml/Entity_ocaml.ts 11ce11c6299a
 src/cmp/ocaml/Gitignore_ocaml.ts 17f97d494254
 src/cmp/ocaml/MainEntity_ocaml.ts ab4c2d6c3549
-src/cmp/ocaml/Main_ocaml.ts 1388522e20ee
+src/cmp/ocaml/Main_ocaml.ts 1741071c5a91
 src/cmp/ocaml/Package_ocaml.ts 43b3779defba
 src/cmp/ocaml/PrepareAuth_ocaml.ts 989d5dd74c44
 src/cmp/ocaml/ReadmeEntity_ocaml.ts 6db2fc990498

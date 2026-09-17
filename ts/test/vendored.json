@@ -4067,8 +4067,22 @@
      "upstream": "lua/src/sekreto/plugins/json.lua"
     },
     "tm/lua/feature/secrets/sekreto/plugins/minivault.lua": {
-     "sha256": "b4b73eaaae7ba086229b25ae9ee13dc64ac30848aa974262ce8af7a72d3d4ebe",
-     "upstream": "lua/src/sekreto/plugins/minivault.lua"
+     "sha256": "c00de2c8a88de777e6e851dcfb78dc9c12ece4b24f71348ad4f21e7d772abf99",
+     "upstream": "lua/src/sekreto/plugins/minivault.lua",
+     "adapt": [
+      {
+       "from": "require('sekreto.",
+       "to": "require('feature.secrets.sekreto."
+      },
+      {
+       "from": "'^(.*)/src/sekreto/plugins/minivault%.lua$'",
+       "to": "'^(.*)/feature/secrets/sekreto/plugins/minivault%.lua$'"
+      },
+      {
+       "from": "build/sekretovault.so",
+       "to": "feature/secrets/native/sekretovault.so"
+      }
+     ]
     },
     "tm/lua/feature/secrets/sekreto/plugins/net.lua": {
      "sha256": "57f707287e85241e6449d5cf925c93357d2dec4690b7bdf6cb096d6ee4c9f001",
