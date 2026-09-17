@@ -2438,6 +2438,10 @@
      "sha256": "c892b971abcb679fc32dd2d0efee9ab8eec55c3682908373c544cac87b2aafbb",
      "upstream": "c/plugins/infisical.c"
     },
+    "tm/c/feature/secrets/plugins/minivault.c": {
+     "sha256": "1aef9d4b59fd813d344ad9e01244e115bfe0e6e6f7ec6ba838a7bfd807f77b68",
+     "upstream": "c/plugins/minivault.c"
+    },
     "tm/c/feature/secrets/plugins/onepassword.c": {
      "sha256": "40e1ce2fd089c90f6b4dcaedf9b5a922c77590c3621f228359e49001d5afd331",
      "upstream": "c/plugins/onepassword.c"
@@ -2553,6 +2557,10 @@
     "tm/clojure/feature/secrets/voxgig/sekreto/plugins/infisical.clj": {
      "sha256": "1dfa3b09c0f3b01cd93d0c339328c87d71f202c614af5fc715ed9c9616cf54c9",
      "upstream": "clojure/plugins/voxgig/sekreto/plugins/infisical.clj"
+    },
+    "tm/clojure/feature/secrets/voxgig/sekreto/plugins/minivault.clj": {
+     "sha256": "8a1fbebfa0e9e96bdf8ef6bba697a8923288bb5f9e6a618a84362e0941fd4a7a",
+     "upstream": "clojure/plugins/voxgig/sekreto/plugins/minivault.clj"
     },
     "tm/clojure/feature/secrets/voxgig/sekreto/plugins/onepassword.clj": {
      "sha256": "9528f4877888333c515c4666d29b239dccbc190670da9b844f7f811f702c4bd0",
@@ -2780,6 +2788,14 @@
       }
      ]
     },
+    "tm/cpp/feature/secrets/plugins/Minivault.cpp": {
+     "sha256": "b4060f2c8036e80d908bbc90566b55b082f8c497d7657b4e7109098a77d4e92d",
+     "upstream": "cpp/plugins/Minivault.cpp"
+    },
+    "tm/cpp/feature/secrets/plugins/Minivault.hpp": {
+     "sha256": "9d494970f8db3b000b7a01f0d0faa7e57dc2f16c6f7313bdefa02ba2618b7936",
+     "upstream": "cpp/plugins/Minivault.hpp"
+    },
     "tm/cpp/feature/secrets/plugins/Onepassword.cpp": {
      "sha256": "920c312be6031ff8061e36ba7a046d6605635b28e16e148f1f88b0e4ab190521",
      "upstream": "cpp/plugins/Onepassword.cpp",
@@ -2978,6 +2994,10 @@
      "sha256": "7ca8935c8e35c72325dda5b2900ba01b78a9c758c6381205f3349087c227a6ba",
      "upstream": "csharp/plugins/Infisical.cs"
     },
+    "tm/csharp/feature/secrets/plugins/MiniVault.cs": {
+     "sha256": "6517fa31424a6069e81b05172499a5f8ba2ba1c080f7471c8eab3c4fcb5f1e6a",
+     "upstream": "csharp/plugins/MiniVault.cs"
+    },
     "tm/csharp/feature/secrets/plugins/OnePassword.cs": {
      "sha256": "2bf7ccc4f34eac0c0ef3af24d7830da55e215fad5e4299116640ef06f4f10310",
      "upstream": "csharp/plugins/OnePassword.cs"
@@ -3049,6 +3069,10 @@
     "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/infisical.ex": {
      "sha256": "9db3c9690528a01baafb6e1e2eba38d27d05247ca192dd040c08cc5992ecdd1b",
      "upstream": "elixir/plugins/infisical.ex"
+    },
+    "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/minivault.ex": {
+     "sha256": "d4c7845b48bae8ddc1de0663cc10eb2e3347a152e56187d60c78824e3b243ac9",
+     "upstream": "elixir/plugins/minivault.ex"
     },
     "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/onepassword.ex": {
      "sha256": "c697dd09132059710230eca07b518ea3f15384e0cbe1bd25cdd82916b23f89e7",
@@ -3205,6 +3229,30 @@
       {
        "from": "\"github.com/voxgig/sekreto/go/plugins/httpjson\"",
        "to": "\"GOMODULE/feature/secrets/plugins/httpjson\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/minivault/format.go": {
+     "sha256": "e5c159cdc1a6d869c387b247b11f8a08d280a0d4b0f715ed40178017dabfe951",
+     "upstream": "go/plugins/minivault/format.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
+      }
+     ]
+    },
+    "tm/go/feature/secrets/plugins/minivault/minivault.go": {
+     "sha256": "9e371b87c87a4ec2816c7df163e053cdd20636bf9b2e8888093b58331d6e6776",
+     "upstream": "go/plugins/minivault/minivault.go",
+     "adapt": [
+      {
+       "from": "\"github.com/voxgig/plugin/go/plugin\"",
+       "to": "\"GOMODULE/feature/secrets/plugin\""
+      },
+      {
+       "from": "\"github.com/voxgig/sekreto/go/sekreto\"",
+       "to": "\"GOMODULE/feature/secrets/sekreto\""
       }
      ]
     },
@@ -3406,6 +3454,20 @@
       }
      ]
     },
+    "tm/java/feature/secrets/sekreto/plugins/Minivault.java": {
+     "sha256": "4dba2a9935ff2a7886b58f27b6c9099bce0d6b8107ee430607eca72a4d1e6701",
+     "upstream": "java/plugins/com/voxgig/sekreto/plugins/Minivault.java",
+     "adapt": [
+      {
+       "from": "com.voxgig.sekreto",
+       "to": "JAVAPACKAGE.feature.secrets.sekreto"
+      },
+      {
+       "from": "voxgig.plugin",
+       "to": "JAVAPACKAGE.feature.secrets.plugin"
+      }
+     ]
+    },
     "tm/java/feature/secrets/sekreto/plugins/Onepassword.java": {
      "sha256": "baa4e10e4fa4bd4782adab4a9a46f6776398e87f1ef7b5187d30ecadf9d4fef9",
      "upstream": "java/plugins/com/voxgig/sekreto/plugins/Onepassword.java",
@@ -3584,6 +3646,16 @@
       }
      ]
     },
+    "tm/js/src/feature/secrets/sekreto/plugins/minivault.js": {
+     "sha256": "6a7451730218c0370cccfb1b6ca2231ffd5f98b4b68afec5e6a06c04454c6ff9",
+     "upstream": "javascript/plugins/minivault.js",
+     "adapt": [
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
     "tm/js/src/feature/secrets/sekreto/plugins/onepassword.js": {
      "sha256": "214341a2bd4c164f75ffc25965efbf4be24185d2240c0489619a8fbfcc267bab",
      "upstream": "javascript/plugins/onepassword.js",
@@ -3750,6 +3822,20 @@
       }
      ]
     },
+    "tm/kotlin/feature/secrets/sekreto/plugins/Minivault.kt": {
+     "sha256": "89ff5781c0c7d65e29606a4ca43cb363da0a93de404449460d6f2449ab170efb",
+     "upstream": "kotlin/plugins/Minivault.kt",
+     "adapt": [
+      {
+       "from": "com.voxgig.sekreto",
+       "to": "KOTLINPACKAGE.feature.secrets.sekreto"
+      },
+      {
+       "from": "voxgig.plugin",
+       "to": "KOTLINPACKAGE.feature.secrets.plugin"
+      }
+     ]
+    },
     "tm/kotlin/feature/secrets/sekreto/plugins/Onepassword.kt": {
      "sha256": "00739d6528f16bf31be8c6c75b7665f7988761930e71d09dbe0ce5013f13baf5",
      "upstream": "kotlin/plugins/Onepassword.kt",
@@ -3849,6 +3935,10 @@
     "tm/lua/feature/secrets/native/sekretonet.c": {
      "sha256": "919b3a7dbe4ea8391ffc88fcf0e1d62ee80b07603a500268d5072c4603389191",
      "upstream": "lua/native/sekretonet.c"
+    },
+    "tm/lua/feature/secrets/native/sekretovault.c": {
+     "sha256": "9bb573471c405c90d782fecea583fd34e503ad64416151e75596e873bd472775",
+     "upstream": "lua/native/sekretovault.c"
     },
     "tm/lua/feature/secrets/sekreto.lua": {
      "sha256": "d85903c7dedbd66a08380311c82119b60f21b7884616657cd5cce2026dab74d8",
@@ -3976,6 +4066,10 @@
      "sha256": "108d2e2e21807847b0c9c865fb8f96dea86df1feebcb50cfb50d4816413bd43d",
      "upstream": "lua/src/sekreto/plugins/json.lua"
     },
+    "tm/lua/feature/secrets/sekreto/plugins/minivault.lua": {
+     "sha256": "b4b73eaaae7ba086229b25ae9ee13dc64ac30848aa974262ce8af7a72d3d4ebe",
+     "upstream": "lua/src/sekreto/plugins/minivault.lua"
+    },
     "tm/lua/feature/secrets/sekreto/plugins/net.lua": {
      "sha256": "57f707287e85241e6449d5cf925c93357d2dec4690b7bdf6cb096d6ee4c9f001",
      "upstream": "lua/src/sekreto/plugins/net.lua",
@@ -4090,6 +4184,14 @@
      "sha256": "1f9f1cf2023c012c5b97d0c7c3c763e5cf2b699186e4471d48a1afbba37268b0",
      "upstream": "ocaml/plugins/infisical.ml"
     },
+    "tm/ocaml/feature/secrets/plugins/minivault_stubs.c": {
+     "sha256": "7f27234184d6be350c231b2b0082232bfeab8b246498c06427e1153ad0265a01",
+     "upstream": "ocaml/plugins/minivault_stubs.c"
+    },
+    "tm/ocaml/feature/secrets/plugins/minivault.ml": {
+     "sha256": "1438a414aea3274576f0f38c1f946321c02b2a9e9862e6b8d58b85e1681bf277",
+     "upstream": "ocaml/plugins/minivault.ml"
+    },
     "tm/ocaml/feature/secrets/plugins/onepassword.ml": {
      "sha256": "8869e2845563819501a096399f0d86cd92621544ebffbbd332103e6b278cdcee",
      "upstream": "ocaml/plugins/onepassword.ml"
@@ -4170,6 +4272,10 @@
      "sha256": "9f50990813a6b3ea5b94beaa4f2ef21b4908de776d36f04a3982fe938ab534da",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Infisical.pm"
     },
+    "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Minivault.pm": {
+     "sha256": "8ea5279587bce7844fd727658228491a8e66a0f605804ff34d2864494c44bebb",
+     "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Minivault.pm"
+    },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Onepassword.pm": {
      "sha256": "a6a4d5738b5941e040cc22a704b9e0802b9e5bb6278bb8412e12dcc150cb9a08",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Onepassword.pm"
@@ -4237,6 +4343,10 @@
     "tm/php/feature/secrets/sekreto/plugins/infisical.php": {
      "sha256": "8eb35db1c1c4b0b2b8b1c365db88f3f6154940164f1df7a08a6fc0cf34587454",
      "upstream": "php/plugins/infisical.php"
+    },
+    "tm/php/feature/secrets/sekreto/plugins/minivault.php": {
+     "sha256": "64c2ea8e365e503eeb735eb68bd9897d96d8e4099902af4ea1f878906965b6c3",
+     "upstream": "php/plugins/minivault.php"
     },
     "tm/php/feature/secrets/sekreto/plugins/onepassword.php": {
      "sha256": "73cbd034ab8aa77ca1cafecad13f6aa8de8bc218e81b1e14b31abfad5aa728e0",
@@ -4326,6 +4436,16 @@
      "sha256": "37220527c808559a4e73873d7f824f1fc91601ee3f8960bc9a0044cfadef03dc",
      "upstream": "python/voxgig_sekreto/plugins/infisical.py"
     },
+    "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/minivault.py": {
+     "sha256": "b7ce0b45c752b82d9c34c91bccc771d852780ec723f355dea98150d5b45eca9b",
+     "upstream": "python/voxgig_sekreto/plugins/minivault.py",
+     "adapt": [
+      {
+       "from": "from voxgig_plugin import",
+       "to": "from ...voxgig_plugin import"
+      }
+     ]
+    },
     "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/onepassword.py": {
      "sha256": "fc8c82ae04ddd4eed66230542691fd48aa236543adf6092ceade82e303b467f1",
      "upstream": "python/voxgig_sekreto/plugins/onepassword.py"
@@ -4405,6 +4525,10 @@
     "tm/rb/feature/secrets/voxgig_sekreto/plugins/infisical.rb": {
      "sha256": "27e4d32ec0eb6e0aa67a7c7a85adc821ef114b1ad5173e936a10e4c20ac3bbb7",
      "upstream": "ruby/lib/voxgig_sekreto/plugins/infisical.rb"
+    },
+    "tm/rb/feature/secrets/voxgig_sekreto/plugins/minivault.rb": {
+     "sha256": "a3a8b8dcf346e55388f45c0293c22e6807fa27baf8877d7e1c2e6f5881ef5bc3",
+     "upstream": "ruby/lib/voxgig_sekreto/plugins/minivault.rb"
     },
     "tm/rb/feature/secrets/voxgig_sekreto/plugins/onepassword.rb": {
      "sha256": "182e14b81f61a1f70688e9121f3e02bdf343711905ec363d8deaecd7e5da0988",
@@ -4610,6 +4734,34 @@
       }
      ]
     },
+    "tm/rust/feature/secrets/plugins/minivault.rs": {
+     "sha256": "304279f3547ee89574c852e539978c8c8fd70764a3dde01ffbeb8bf64c8369d8",
+     "upstream": "rust/plugins/minivault/src/lib.rs",
+     "adapt": [
+      {
+       "from": "use voxgig_plugin::",
+       "to": "use crate::feature::secrets::plugin::"
+      },
+      {
+       "from": "use voxgig_sekreto::",
+       "to": "use crate::feature::secrets::sekreto::"
+      },
+      {
+       "from": "use format::",
+       "to": "use self::format::"
+      }
+     ]
+    },
+    "tm/rust/feature/secrets/plugins/minivault/format.rs": {
+     "sha256": "25d7c408454473fc285a525327abcee787ddad5086a7e31aca05ad95f5d6cadb",
+     "upstream": "rust/plugins/minivault/src/format.rs",
+     "adapt": [
+      {
+       "from": "use voxgig_sekreto::",
+       "to": "use crate::feature::secrets::sekreto::"
+      }
+     ]
+    },
     "tm/rust/feature/secrets/plugins/onepassword.rs": {
      "sha256": "1e5c6a0e684f9ffe7e034757732dd05670568ba887210364b2f14319947b923c",
      "upstream": "rust/plugins/onepassword/src/lib.rs",
@@ -4737,6 +4889,10 @@
     "tm/scala/feature/secrets/sekreto/plugins/Infisical.scala": {
      "sha256": "487354aae4e5de880f6555c74e6348af5ba096de8b783eb57b5de38f69beda64",
      "upstream": "scala/plugins/Infisical.scala"
+    },
+    "tm/scala/feature/secrets/sekreto/plugins/Minivault.scala": {
+     "sha256": "3b181a82ec9f90790fd1c04e0179a536b28ee20d2f696791897eca631b6dff7b",
+     "upstream": "scala/plugins/Minivault.scala"
     },
     "tm/scala/feature/secrets/sekreto/plugins/Onepassword.scala": {
      "sha256": "0a4708760a0a4f4d44e69bf119a0a55f182d72f7f1f26edb1c2fed662a4bd763",
@@ -4948,6 +5104,20 @@
       }
      ]
     },
+    "tm/ts/src/feature/secrets/sekreto/plugins/minivault.ts": {
+     "sha256": "b38da648023628bf6eeaa2312f0927ce97cb2fab66e8c262b1c2171b9699719a",
+     "upstream": "typescript/plugins/minivault.ts",
+     "adapt": [
+      {
+       "from": "'@voxgig/plugin'",
+       "to": "'../../plugin'"
+      },
+      {
+       "from": "'../src/provider/",
+       "to": "'../provider/"
+      }
+     ]
+    },
     "tm/ts/src/feature/secrets/sekreto/plugins/onepassword.ts": {
      "sha256": "53784a2818c2b7f7471582ea002cf242de27663812c0ef0d51bc7743b27e6931",
      "upstream": "typescript/plugins/onepassword.ts",
@@ -5055,6 +5225,10 @@
     "tm/zig/feature/secrets/plugins/infisical.zig": {
      "sha256": "6e7924e79e620c454e530de696af3544509340319933656ac6e75fe49a2a9474",
      "upstream": "zig/plugins/infisical.zig"
+    },
+    "tm/zig/feature/secrets/plugins/minivault.zig": {
+     "sha256": "4a4a92b29c50490756401c68f4476910638fea9cbcc378c78b88023bfc1cc882",
+     "upstream": "zig/plugins/minivault.zig"
     },
     "tm/zig/feature/secrets/plugins/onepassword.zig": {
      "sha256": "272cee692c3d4ab39b490d6eb2136a999884354c1dc093ed242598164b453537",

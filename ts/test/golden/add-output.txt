@@ -190,6 +190,7 @@ tm/clojure/feature/secrets/voxgig/sekreto/plugins/gcpsecrets.clj 6258772dde9a
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/hashicorp.clj c649df3066d9
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/httpjson.clj 0976abc1c1ca
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/infisical.clj 1dfa3b09c0f3
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/minivault.clj 8a1fbebfa0e9
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/onepassword.clj 9528f4877888
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/proc.clj 8b74dcd5b841
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/secretspec.clj fbb629a03a63
@@ -1788,6 +1789,7 @@ tm/scala/feature/secrets/sekreto/plugins/Gcpsecrets.scala cdf4d1fd0938
 tm/scala/feature/secrets/sekreto/plugins/Hashicorp.scala 8266c065947f
 tm/scala/feature/secrets/sekreto/plugins/Httpjson.scala 7bf59ae57bb4
 tm/scala/feature/secrets/sekreto/plugins/Infisical.scala 487354aae4e5
+tm/scala/feature/secrets/sekreto/plugins/Minivault.scala 3b181a82ec9f
 tm/scala/feature/secrets/sekreto/plugins/Onepassword.scala 0a4708760a0a
 tm/scala/feature/secrets/sekreto/plugins/Secretspec.scala 561418614bc3
 tm/scala/feature/secrets/sekreto/plugins/Sigv4.scala b1a46c966fda
@@ -2161,6 +2163,7 @@ tm/zig/feature/secrets/plugins/gcpsecrets.zig fa931992f110
 tm/zig/feature/secrets/plugins/hashicorp.zig 07eef12bc74e
 tm/zig/feature/secrets/plugins/httpjson.zig c9ca2a170a62
 tm/zig/feature/secrets/plugins/infisical.zig 6e7924e79e62
+tm/zig/feature/secrets/plugins/minivault.zig 4a4a92b29c50
 tm/zig/feature/secrets/plugins/onepassword.zig 272cee692c3d
 tm/zig/feature/secrets/plugins/secretspec.zig 05b47a2b8b07
 tm/zig/feature/secrets/plugins/sigv4.zig 163ee1794973
