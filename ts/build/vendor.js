@@ -325,14 +325,32 @@ function runaudit(routes, selected, repodir, tag) {
     const srcdirs = new Set(
       Object.keys(route.file).map((src) => Path.posix.dirname(src)))
 
+    // A PORT THAT GIVES EACH KIND ITS OWN DIRECTORY hides an addition from
+    // a scan of routed directories alone: go vendors
+    // `go/plugins/hashicorp/hashicorp.go` and rust
+    // `rust/plugins/aws/src/lib.rs`, so a NEW kind is a NEW DIRECTORY, and
+    // no routed directory contains it. That is not hypothetical - it is how
+    // this audit first reported the mini vault in 17 ports when the real
+    // number was 19.
+    //
+    // `sweep` names the containers to walk WHOLE, declared per route rather
+    // than derived. Derivation was tried: "an ancestor holding two or more
+    // routed directories" also matches `typescript/` (src and plugins), and
+    // swept the CLI, the tests and the eslint config into the report - 133
+    // findings instead of 19. The route table is explicit everywhere else
+    // for the same reason, and a container is a fact about upstream's
+    // layout that someone should state rather than a program should guess.
+    const sweep = route.sweep || []
+
     const seen = new Set()
-    for (const d of srcdirs) {
+    for (const d of [...srcdirs, ...sweep]) {
       const listed = gitq(dir, ['ls-tree', '-r', '--name-only', tag, '--', d + '/'])
         .split('\n').map((l) => l.trim()).filter(Boolean)
       for (const f of listed) {
-        // Only the routed directories themselves, not their subtrees: a
-        // subdirectory a route does not draw from is a routing decision.
-        if (!srcdirs.has(Path.posix.dirname(f))) continue
+        // Inside a routed directory itself, or anywhere under a swept
+        // container. Everything else is a routing decision, not a surprise.
+        if (!srcdirs.has(Path.posix.dirname(f)) &&
+          !sweep.some((r) => f.startsWith(r + '/'))) continue
         if (routed.has(route.lib + ':' + f)) continue
         if (ignore.some((re) => re.test(f))) continue
         seen.add(f)

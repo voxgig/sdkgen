@@ -32,7 +32,13 @@
   "that repository — recorded, not silent. haskell was already out; dart",
   "and lean left with it, and their routes were REMOVED here rather than",
   "left pointing at trees this repo no longer ships, which would fail the",
-  "run on a path that simply is not there."
+  "run on a path that simply is not there.",
+  "",
+  "`sweep` names upstream directories --audit walks WHOLE, for ports",
+  "that give each provider kind its own directory (go, rust): there, a",
+  "NEW kind is a new directory, so scanning only the directories already",
+  "routed cannot see it. Declared, not derived - deriving it swept each",
+  "port's CLI and tests in too."
  ],
  "tag": "sdk-20260917-1242-0",
  "ignorenote": [
@@ -61,7 +67,14 @@
   "for something already beside it.",
   "",
   "omni's fib example (Fib.cs, fib.ex) is the runner's demonstration",
-  "subject, not the runner."
+  "subject, not the runner.",
+  "",
+  "rust's `plugins/all` crate is the ALL aggregate again, in cargo's",
+  "spelling - one crate depending on every plugin crate. Same decision as",
+  "`plugins/index.ts` and `Plugins.java` above, and the same reason.",
+  "",
+  "examples/, tests/ and cli/ under a swept container are upstream's own,",
+  "not library code an SDK vendors."
  ],
  "ignore": [
   "(^|/)(Makefile|Dockerfile|LICENSE|VERSION)$",
@@ -82,7 +95,11 @@
   "(^|/)src/sekreto/plugins\\.lua$",
   "(^|/)php/src/Plugin\\.php$",
   "(^|/)voxgig_struct/__init__\\.py$",
-  "(^|/)(src/Fib\\.cs|lib/fib\\.ex)$"
+  "(^|/)(src/Fib\\.cs|lib/fib\\.ex)$",
+  "(^|/)plugins/all/",
+  "(^|/)examples?/",
+  "(^|/)tests?/",
+  "(^|/)cli/"
  ],
  "repo": {
   "struct": {
@@ -1339,6 +1356,9 @@
      "to": "\"GOMODULE/feature/secrets/plugins/httpjson\"",
      "optional": true
     }
+   ],
+   "sweep": [
+    "go/plugins"
    ]
   },
   {
@@ -1802,6 +1822,9 @@
      "from": "pub use voxgig_plugin;",
      "to": "pub use super::plugin as voxgig_plugin;"
     }
+   ],
+   "sweep": [
+    "rust/plugins"
    ]
   },
   {
