@@ -190,6 +190,7 @@ tm/clojure/feature/secrets/voxgig/sekreto/plugins/gcpsecrets.clj 6258772dde9a
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/hashicorp.clj c649df3066d9
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/httpjson.clj 0976abc1c1ca
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/infisical.clj 1dfa3b09c0f3
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/minivault.clj 8a1fbebfa0e9
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/onepassword.clj 9528f4877888
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/proc.clj 8b74dcd5b841
 tm/clojure/feature/secrets/voxgig/sekreto/plugins/secretspec.clj fbb629a03a63
@@ -965,7 +966,7 @@ src/cmp/lua/EntityTypes_lua.ts 77fba0685c63
 src/cmp/lua/Entity_lua.ts e3e43269850c
 src/cmp/lua/Gitignore_lua.ts ddf4d3003936
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
-src/cmp/lua/Main_lua.ts 694d43f1d3cb
+src/cmp/lua/Main_lua.ts 09af27c9b37a
 src/cmp/lua/Package_lua.ts 5d8c5b31d635
 src/cmp/lua/PrepareAuth_lua.ts 7535a7fad08e
 src/cmp/lua/ReadmeEntity_lua.ts 886fadf6275a
@@ -1064,12 +1065,12 @@ model/feature/test.aon f2e74feb46e3
 model/sdk.aon 42c69a6e9924
 model/target/ocaml.aon d9a3691397c2
 model/target/target-index.aon b354d3354ab9
-src/cmp/ocaml/Config_ocaml.ts ce2e20bc8e5f
+src/cmp/ocaml/Config_ocaml.ts f5f035527b8c
 src/cmp/ocaml/EntityOperation_ocaml.ts 66ee562a3531
 src/cmp/ocaml/Entity_ocaml.ts 11ce11c6299a
 src/cmp/ocaml/Gitignore_ocaml.ts 17f97d494254
 src/cmp/ocaml/MainEntity_ocaml.ts ab4c2d6c3549
-src/cmp/ocaml/Main_ocaml.ts 1388522e20ee
+src/cmp/ocaml/Main_ocaml.ts 1741071c5a91
 src/cmp/ocaml/Package_ocaml.ts 43b3779defba
 src/cmp/ocaml/PrepareAuth_ocaml.ts 989d5dd74c44
 src/cmp/ocaml/ReadmeEntity_ocaml.ts 6db2fc990498
@@ -1788,6 +1789,7 @@ tm/scala/feature/secrets/sekreto/plugins/Gcpsecrets.scala cdf4d1fd0938
 tm/scala/feature/secrets/sekreto/plugins/Hashicorp.scala 8266c065947f
 tm/scala/feature/secrets/sekreto/plugins/Httpjson.scala 7bf59ae57bb4
 tm/scala/feature/secrets/sekreto/plugins/Infisical.scala 487354aae4e5
+tm/scala/feature/secrets/sekreto/plugins/Minivault.scala 3b181a82ec9f
 tm/scala/feature/secrets/sekreto/plugins/Onepassword.scala 0a4708760a0a
 tm/scala/feature/secrets/sekreto/plugins/Secretspec.scala 561418614bc3
 tm/scala/feature/secrets/sekreto/plugins/Sigv4.scala b1a46c966fda
@@ -2161,6 +2163,7 @@ tm/zig/feature/secrets/plugins/gcpsecrets.zig fa931992f110
 tm/zig/feature/secrets/plugins/hashicorp.zig 07eef12bc74e
 tm/zig/feature/secrets/plugins/httpjson.zig c9ca2a170a62
 tm/zig/feature/secrets/plugins/infisical.zig 6e7924e79e62
+tm/zig/feature/secrets/plugins/minivault.zig 4a4a92b29c50
 tm/zig/feature/secrets/plugins/onepassword.zig 272cee692c3d
 tm/zig/feature/secrets/plugins/secretspec.zig 05b47a2b8b07
 tm/zig/feature/secrets/plugins/sigv4.zig 163ee1794973

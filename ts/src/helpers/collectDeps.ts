@@ -3,7 +3,16 @@
 // template was hand-rolling identically:
 //
 //   - feature deps  : included when `dep.active === true`  (default off)
+//   - plugin  deps  : the same, and only for an ACTIVE plugin of that feature
 //   - target  deps  : included when `dep.active !== false` (default on)
+//
+// THE PLUGIN LEVEL IS GATED ONE STEP DEEPER THAN THE FEATURE. A feature's
+// deps flow as soon as the feature is active; a plugin is a trimmable part
+// within an active feature, so a dependency only its files use must not
+// reach the manifest until that plugin is active too. rust's mini vault is
+// the case: it takes `ring` for AES-256-GCM, and at feature level that
+// would land in every secrets-enabled rust SDK, including the ones whose
+// chain is `[env, dotenv]` and which never compile a vault.
 //
 // The two sources are kept distinct via the `source` field so callers can
 // apply their own version defaults / formatting (e.g. go uses `v0.0.0`,
@@ -74,11 +83,27 @@ function collectDeps(
 
   each(feature, (f: any) => {
     const langDeps = f?.deps?.[targetName]
-    if (!langDeps) return
-    each(langDeps, (dep: any) => {
-      if (dep?.active) {
-        add(dep, 'feature', f.name)
-      }
+    if (langDeps) {
+      each(langDeps, (dep: any) => {
+        if (dep?.active) {
+          add(dep, 'feature', f.name)
+        }
+      })
+    }
+
+    // An inactive plugin's deps are not this SDK's deps. `true ===` rather
+    // than truthiness, matching the trim: the trim drops a plugin unless it
+    // is explicitly on, and the manifest must agree with the tree it
+    // describes or the build asks for a crate whose files were removed.
+    each(f?.plugin, (plugin: any) => {
+      if (true !== plugin?.active) return
+      const pluginDeps = plugin?.deps?.[targetName]
+      if (!pluginDeps) return
+      each(pluginDeps, (dep: any) => {
+        if (dep?.active) {
+          add(dep, 'feature', f.name + '.' + plugin.name)
+        }
+      })
     })
   })
 

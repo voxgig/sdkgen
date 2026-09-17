@@ -154,25 +154,44 @@ FEATURE_SRC = $(SECRETS_PLUGIN) $(SECRETS_CORE) $(SECRETS_HELPERS) $(SECRETS_KIN
 FEATURE_TESTS = test/feature/secrets/t_secrets.ml
 `)
 
-          if (build.tls) {
-            Content(`
-# THE ONE EXTERNAL DEPENDENCY, behind the plugin groups that need a
-# transport (${build.tlsGroups.join(', ')}): plugins/tls.ml's externals live in
-# plugins/tls_stubs.c against OpenSSL, so the stub is compiled here and the
-# bytecode executables are linked \`-custom\` with libssl and libcrypto.
-# The stub is fed from line four (past the provenance header, see above).
-OCAMLLIB = $(shell $(OCAMLC) -where)
-FEATURE_OBJ = feature/secrets/plugins/tls_stubs.o
-FEATURE_LINK = -custom -cclib -lssl -cclib -lcrypto
+          // EVERY C OBJECT THIS CHAIN NEEDS, from two different owners.
+          // tls_stubs.c belongs to the transport HELPER, which no group
+          // owns and which any kind reaching the network pulls in;
+          // minivault_stubs.c belongs to the KIND, and is listed in that
+          // group's own `path`. Both link against libcrypto and only the
+          // transport needs libssl, so the link line is assembled rather
+          // than written twice - an SDK with both gets each library once.
+          const objs = [
+            ...(build.tls ? ['feature/secrets/plugins/tls_stubs.o'] : []),
+            ...build.stubs.map((one) => one.replace(/\.c$/, '.o')),
+          ]
+          const libs = [
+            ...(build.tls ? ['-cclib', '-lssl'] : []),
+            ...(build.tls || 0 < build.stubs.length ? ['-cclib', '-lcrypto'] : []),
+          ]
 
-feature/secrets/plugins/tls_stubs.o: feature/secrets/plugins/tls_stubs.c
-	@command -v $(CC) >/dev/null 2>&1 || { echo "secrets: a C compiler ($(CC)) is needed to build the OpenSSL binding that this SDK's secrets plugin kinds (${build.tlsGroups.join(', ')}) run - install one, or use only the built-in provider kinds" >&2; exit 1; }
+          if (0 < objs.length) {
+            Content(`
+# THE C OBJECTS THIS CHAIN NEEDS${build.tls ? `, and the one external
+# dependency behind the plugin groups that need a transport
+# (${build.tlsGroups.join(', ')}): plugins/tls.ml's externals live in
+# plugins/tls_stubs.c against OpenSSL` : ''}${0 < build.stubs.length ? `${build.tls ? '. ' : `,
+# behind `}the mini vault's own stub (${build.stubGroups.join(', ')}), whose
+# AES-256-GCM and PBKDF2 come from libcrypto` : ''}. Each stub is compiled
+# here and the bytecode executables are linked \`-custom\`, and each is fed
+# to the compiler from line four (past the provenance header, see above).
+OCAMLLIB = $(shell $(OCAMLC) -where)
+FEATURE_OBJ = ${objs.join(' ')}
+FEATURE_LINK = -custom ${libs.join(' ')}
+${objs.map((obj) => `
+${obj}: ${obj.replace(/\.o$/, '.c')}
+	@command -v $(CC) >/dev/null 2>&1 || { echo "secrets: a C compiler ($(CC)) is needed to build the C stub that this SDK's secrets plugin kinds (${build.groups.join(', ')}) run - install one, or use only the built-in provider kinds" >&2; exit 1; }
 	tail -n +4 $< | $(CC) -std=c11 -O2 -Wall -Wextra -I$(OCAMLLIB) -x c - -c -o $@
-`)
+`).join('')}`)
           }
           else {
             Content(`
-# No active plugin group needs a transport, so the OpenSSL binding is not
+# No active plugin group needs a transport or a C stub, so nothing is
 # compiled and nothing is linked beyond the OCaml distribution.
 FEATURE_OBJ =
 FEATURE_LINK =

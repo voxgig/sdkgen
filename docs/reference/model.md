@@ -331,8 +331,45 @@ derives the name, so this changes nothing for a model apidef produced.
 | `hook.<Hook>.await` | boolean | `false` | Whether the hook is awaited. |
 | `deps.<lang>.<dep>` | object | — | Per-language runtime deps (`active`, `version`, `kind`). |
 | `target.<lang>.deps.<dep>` | object | — | Target-scoped dep overrides. |
+| `plugin.<name>.active` | boolean | `false` | Enable one of a feature's separately-trimmed parts. |
+| `plugin.<name>.deps.<lang>.<dep>` | object | — | Deps only that plugin's files need. Taken when the PLUGIN is active, not merely the feature. |
 
 The available hook names are listed in the [hooks reference](./hooks.md).
+
+#### Where dependencies come from, and what gates each one
+
+A generated manifest — `package.json`, `go.mod`, `Cargo.toml` — is
+assembled from three sources, each with its own gate:
+
+| source | declared at | taken when |
+| --- | --- | --- |
+| target | `target.<lang>.deps.<dep>` | `active` is not `false` (default ON) |
+| feature | `feature.<f>.deps.<lang>.<dep>` | the feature is active, applies to this target, AND the dep says `active: true` |
+| plugin | `feature.<f>.plugin.<p>.deps.<lang>.<dep>` | everything the feature row requires, AND the plugin itself is active |
+
+Feature and plugin deps are opt-in (`active: true`) while target deps are
+opt-out, because a target's own deps describe the language and a feature's
+describe a choice. An inactive feature contributes nothing at all, and
+neither does a feature whose `needs` the target does not `provide`.
+
+**The plugin level is gated one step deeper on purpose.** A plugin is a
+removable part inside an ACTIVE feature: its templates are dropped unless
+the project selects it, so a dependency only its files use must not reach
+the manifest until then. rust's mini vault is the case — it takes `ring`
+for AES-256-GCM, and declaring that at feature level would put ring in the
+Cargo.toml of every secrets-enabled rust SDK, including the ones whose
+chain is `[env, dotenv]` and which never compile a vault. The manifest has
+to agree with the tree the trim leaves behind, or the build asks for a
+package whose files are gone.
+
+Most plugins need nothing here: `node:crypto`, go's `crypto/aes` and
+python's `ctypes`-loaded OpenSSL are all standard library.
+
+Packages are collapsed by name across every source, first occurrence
+winning, and a second declaration with a different version is reported
+rather than silently dropped — a duplicate key is a hard parse error in
+`go.mod` and `Cargo.toml`, and silently last-wins in `package.json`.
+
 Example (`ts/project/.sdk/model/feature/log.aontu`):
 
 ```jsonic

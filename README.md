@@ -125,6 +125,7 @@ per language rather than once per API.
 | **Large result sets** | `paging` `streaming` |
 | **Observability** | `telemetry` `metrics` `audit` `debug` `log` `clienttrack` |
 | **Governance** | `rbac` `proxy` `cost` |
+| **Credentials** | `secrets` `validate` |
 | **Testing** | `test` `netsim` |
 
 ```bash
@@ -148,6 +149,54 @@ same thing in Go as it does in TypeScript.
 **→ [The feature catalogue](./docs/reference/features.md)** documents each
 one in full: options, defaults, hooks, what it records, and how they
 compose.
+
+### Credentials: every sekreto provider is available, and you choose
+
+`secrets` resolves the API credential through a
+[sekreto](https://github.com/voxgig/sekreto) provider chain rather than from
+a hard-coded `apikey`. **A generated SDK can reach every provider kind
+sekreto ships** — the chain is a project decision, made in the model, not a
+limit built into the generator.
+
+Four kinds are BUILT IN and always present: `env`, `memory`, `dotenv`,
+`file`. Everything else is a **plugin group** — a set of provider modules
+that ships only when the project asks for it, because each carries a real
+platform cost:
+
+| group | provider kinds | needs |
+| --- | --- | --- |
+| `vault` | `hashicorp` `boru` | `fs`, `fetch` |
+| `cloud` | `gcpsecrets` `azuresecrets` | `fetch` |
+| `saas` | `onepassword` `doppler` `infisical` | `fetch` |
+| `aws` | `awssecrets` `awsparams` (SigV4 signing) | `fetch`, `crypto` |
+| `secretspec` | `secretspec` CLI bridge | `fs` |
+
+Everything is off until asked for. Turn the feature on, activate the groups
+your chain names, and declare the chain — all three in `.sdk/model/project.aon`,
+the model file that is yours and survives regeneration:
+
+```
+main: kit: feature: secrets: {
+  active: true
+  plugin: vault: active: true
+  config: options: {
+    name: 'univec'
+    providers: [{ kind: 'boru', namespace: 'sdk' }]
+  }
+}
+```
+
+**Why groups rather than everything, always.** Before the split, one import
+reached all of them, so an SDK whose chain was `[dotenv, env]` still linked
+AWS request signing and seven HTTP vault clients. The trim removes an
+inactive group exactly as it removes an inactive feature. A group your chain
+names but you did not activate is the one mistake to watch for: the kind is
+then unknown to the SDK at run time.
+
+An inactive group costs nothing, and a target that cannot meet a group's
+`needs` is refused at generation rather than at the consumer's first lookup.
+The feature reaches every target whose container carries a vendored sekreto
+— **20 of them** today, and no longer TypeScript alone.
 
 ## Develop this package
 

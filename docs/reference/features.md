@@ -1052,12 +1052,74 @@ from a RESPONSE, which is why the exchange needs the transport seam as well.
 
 **Applicability:** `needs: { sekreto: true }` — the feature is a thin layer
 over a vendored sekreto port, so it reaches only targets whose feature
-container carries one (`ts` today).
+container carries one. That is **20 targets**: c, clojure, cpp, csharp,
+elixir, go, java, js, kotlin, lua, ocaml, perl, php, py, rb, rust, scala,
+swift, ts, zig.
+
+### Provider kinds: the built-ins, and the plugin groups
+
+**Every provider kind sekreto ships is available to a generated SDK.** Which
+ones are actually built in is a project decision, taken in the model.
+
+Four kinds are BUILT IN and always present when the feature is active:
+`env`, `memory`, `dotenv`, `file`. They ship with the feature core because
+the vendored sekreto imports them unconditionally — they could not be
+trimmed without breaking the compile.
+
+Every other kind belongs to a **plugin group**, and a group ships only when
+it is activated:
+
+| group | provider kinds | `needs` |
+| --- | --- | --- |
+| `vault` | `hashicorp`, `boru` | `fs`, `fetch` |
+| `cloud` | `gcpsecrets`, `azuresecrets` | `fetch` |
+| `saas` | `onepassword`, `doppler`, `infisical` | `fetch` |
+| `aws` | `awssecrets`, `awsparams` — with SigV4 request signing | `fetch`, `crypto` |
+| `secretspec` | `secretspec` — a CLI bridge over a child process | `fs` |
+
+A group is activated in `.sdk/model/project.aon` — the model file a project
+owns, which regeneration does not overwrite — alongside the chain itself:
+
+```
+main: kit: feature: secrets: {
+  active: true
+  plugin: vault: active: true
+  config: options: {
+    name: 'univec'
+    providers: [{ kind: 'boru', namespace: 'sdk' }]
+  }
+}
+```
+
+**The two are separate on purpose, and that is the one trap.** `providers`
+says what the chain asks, in order; `plugin.<group>.active` says what the SDK
+carries. Name a kind in the chain whose group is not active and the SDK has
+no code for it — the failure is at run time, when the chain is built, not at
+generation.
+
+**Why not ship everything.** Before the split, one import reached every
+provider, so an SDK whose chain was `[dotenv, env]` still linked AWS request
+signing and seven HTTP vault clients. The feature trim removes an inactive
+group exactly as it removes an inactive feature — the same walk, one level
+deeper — so an inactive group costs nothing at all. In `c` and `ocaml` the
+trim reaches the build itself: an `[env, memory]` chain compiles the sekreto
+and voxgig/plugin cores alone, and links the C standard library alone, with
+no OpenSSL.
+
+A group also declares what it needs of the runtime (`fs`, `fetch`,
+`crypto`), so a target that cannot provide it is refused at generation
+rather than at the consumer's first lookup.
+
+Some files belong to NO group and always ship with the feature core — the
+shared HTTP helper eight kinds import, and in `java`, `scala`, `c` and
+`ocaml` a handful of helpers whose symbols cross group boundaries. Each one
+is listed in the model, with the reason beside it; the cost is stated there
+rather than hidden.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `active` | `false` | Enable the feature. |
-| `providers` | `[]` | The chain, in first-hit order. Each entry is a sekreto `ProviderSpec` (`{ kind, name, ... }`) or a provider object. |
+| `providers` | `[]` | The chain, in first-hit order. Each entry is a sekreto `ProviderSpec` (`{ kind, name, ... }`) or a provider object. A kind outside the built-in four needs its plugin group activated too — see [Provider kinds](#provider-kinds-the-built-ins-and-the-plugin-groups). |
 | `name` | `'apikey'` | The secret to resolve. Set to the refresh secret when exchanging. |
 | `cache` | `true` | Off means every `resolve()` asks the chain again. |
 | `exchange.active` | `false` | Turn the access-token exchange on. Inert when off: the feature then behaves exactly as it always did. |

@@ -62,6 +62,14 @@ type SecretsBuild = {
   groups: string[],
   tlsGroups: string[],
   tls: boolean,
+  // C stubs an active group brings with it, keyed by the group that
+  // brought them, in the order the groups sort. tls_stubs.c is NOT here:
+  // it belongs to the tls HELPER, which no group owns - these are stubs a
+  // KIND owns, declared in its own `path` list. The mini vault is the
+  // first, and the shape is general: a kind whose implementation needs C
+  // says so by listing a .c file, and the build compiles what it lists.
+  stubs: string[],
+  stubGroups: string[],
   plugin: string[],
   core: string[],
   helpers: string[],
@@ -93,6 +101,8 @@ function secretsBuild(model: Model, target: any): SecretsBuild | null {
 
   const groups: string[] = []
   const tlsGroups: string[] = []
+  const stubGroups: string[] = []
+  const stubs = new Set<string>()
   const syms = new Set<string>()
   const kinds = new Set<string>()
 
@@ -105,6 +115,17 @@ function secretsBuild(model: Model, target: any): SecretsBuild | null {
     if (0 === Object.keys(defs).length) return
     groups.push(plugin.name)
     if (true === plugin.needs?.fetch) tlsGroups.push(plugin.name)
+
+    // `stub`, keyed by TARGET - not a filter over `path`, which is one flat
+    // list across every target: ocaml's minivault_stubs.c sits beside c's
+    // boru.c and hashicorp.c, and a prefix filter handed this build both of
+    // them. Declared per target, so what ocaml compiles is what the model
+    // says ocaml compiles.
+    const own = (plugin.stub?.[target.name] || []).map((one: any) => String(one))
+    if (0 < own.length) {
+      stubGroups.push(plugin.name)
+      for (const one of own) stubs.add(one)
+    }
     for (const [sym, path] of Object.entries(defs)) {
       syms.add(sym)
       kinds.add(String(path))
@@ -116,6 +137,8 @@ function secretsBuild(model: Model, target: any): SecretsBuild | null {
     groups: groups.sort(),
     tlsGroups: tlsGroups.sort(),
     tls,
+    stubs: Array.from(stubs).sort(),
+    stubGroups: stubGroups.sort(),
     plugin: SECRETS_PLUGIN_MODULES,
     core: SECRETS_CORE_MODULES,
     helpers: [

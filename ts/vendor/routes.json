@@ -32,9 +32,75 @@
   "that repository — recorded, not silent. haskell was already out; dart",
   "and lean left with it, and their routes were REMOVED here rather than",
   "left pointing at trees this repo no longer ships, which would fail the",
-  "run on a path that simply is not there."
+  "run on a path that simply is not there.",
+  "",
+  "`sweep` names upstream directories --audit walks WHOLE, for ports",
+  "that give each provider kind its own directory (go, rust): there, a",
+  "NEW kind is a new directory, so scanning only the directories already",
+  "routed cannot see it. Declared, not derived - deriving it swept each",
+  "port's CLI and tests in too."
  ],
  "tag": "sdk-20260917-1242-0",
+ "ignorenote": [
+  "What a routed directory is EXPECTED to hold that is not vendored.",
+  "--audit reports every OTHER unrouted file, so this list is what keeps a",
+  "clean audit meaningful: each pattern is a decision already taken, and",
+  "anything not matching one is a decision still to take. Patterns are JS",
+  "regexes matched against the upstream path.",
+  "",
+  "THE ALL-PLUGINS AGGREGATE IS DELIBERATELY NOT VENDORED. Every sekreto",
+  "port ships one (`plugins/index.ts`, `Plugins.java`, `all.zig`,",
+  "`allplugins.ml`, ...) and importing it reaches EVERY provider kind -",
+  "which is exactly the cost the feature's plugin groups exist to remove.",
+  "A generated SDK imports the kinds its project activated, by name, from",
+  "the Config the generator emits. Vendoring the aggregate would give the",
+  "trim something it could not trim.",
+  "",
+  "python/voxgig_sekreto/plugins/__init__.py is the same decision in",
+  "python's spelling: it carries the PEP 562 `__getattr__` that builds ALL",
+  "on demand. Omitting it leaves a namespace package, which imports by",
+  "module path exactly as the generated Config does.",
+  "",
+  "php/src/Plugin.php is upstream's voxgig/plugin CHECKOUT FINDER, and an",
+  "`adapt` rewrites the require that reaches it to the vendored plugin",
+  "copy's own path - so vendoring the finder would be vendoring a search",
+  "for something already beside it.",
+  "",
+  "omni's fib example (Fib.cs, fib.ex) is the runner's demonstration",
+  "subject, not the runner.",
+  "",
+  "rust's `plugins/all` crate is the ALL aggregate again, in cargo's",
+  "spelling - one crate depending on every plugin crate. Same decision as",
+  "`plugins/index.ts` and `Plugins.java` above, and the same reason.",
+  "",
+  "examples/, tests/ and cli/ under a swept container are upstream's own,",
+  "not library code an SDK vendors."
+ ],
+ "ignore": [
+  "(^|/)(Makefile|Dockerfile|LICENSE|VERSION)$",
+  "(^|/)(README|DOCS|AGENTS|CLAUDE|NOTES|CHANGELOG)\\.md$",
+  "(^|/)\\.[^/]+$",
+  "(^|/)(go\\.mod|go\\.sum|package\\.json|package-lock\\.json|tsconfig[^/]*\\.json|global\\.json)$",
+  "(^|/)[^/]*\\.(csproj|fsproj|vbproj|sln|cabal|opam|gemspec|podspec|nimble)$",
+  "(^|/)(Cargo\\.toml|Cargo\\.lock|pyproject\\.toml|setup\\.py|composer\\.json|build\\.gradle[^/]*|pom\\.xml|mix\\.exs|dune|dune-project|rockspec|build\\.zig|build\\.zig\\.zon|deps\\.edn|project\\.clj|Package\\.swift|build\\.sbt)$",
+  "(^|/)[^/]*[._-][Tt]est[s]?\\.[a-z]+$",
+  "(^|/)[Tt]est[s]?[._-][^/]*$",
+  "_test\\.(go|py|rb|lua|ex|exs)$",
+  "(^|/)test_[^/]*$",
+  "(^|/)plugins/(all|All|index|plugins|allplugins|Plugins|SekretoPlugins)\\.[a-z]+$",
+  "(^|/)plugins/All\\.(cpp|hpp)$",
+  "(^|/)plugins/com/voxgig/sekreto/plugins/Plugins\\.java$",
+  "(^|/)voxgig_sekreto/plugins/__init__\\.py$",
+  "(^|/)lib/voxgig_sekreto/plugins\\.rb$",
+  "(^|/)src/sekreto/plugins\\.lua$",
+  "(^|/)php/src/Plugin\\.php$",
+  "(^|/)voxgig_struct/__init__\\.py$",
+  "(^|/)(src/Fib\\.cs|lib/fib\\.ex)$",
+  "(^|/)plugins/all/",
+  "(^|/)examples?/",
+  "(^|/)tests?/",
+  "(^|/)cli/"
+ ],
  "repo": {
   "struct": {
    "url": "https://github.com/voxgig/struct",
@@ -1055,7 +1121,8 @@
     "c/plugins/onepassword.c": "tm/c/feature/secrets/plugins/onepassword.c",
     "c/plugins/doppler.c": "tm/c/feature/secrets/plugins/doppler.c",
     "c/plugins/infisical.c": "tm/c/feature/secrets/plugins/infisical.c",
-    "c/plugins/secretspec.c": "tm/c/feature/secrets/plugins/secretspec.c"
+    "c/plugins/secretspec.c": "tm/c/feature/secrets/plugins/secretspec.c",
+    "c/plugins/minivault.c": "tm/c/feature/secrets/plugins/minivault.c"
    }
   },
   {
@@ -1102,7 +1169,9 @@
     "cpp/plugins/Sigv4.hpp": "tm/cpp/feature/secrets/plugins/Sigv4.hpp",
     "cpp/plugins/Sigv4.cpp": "tm/cpp/feature/secrets/plugins/Sigv4.cpp",
     "cpp/plugins/Secretspec.hpp": "tm/cpp/feature/secrets/plugins/Secretspec.hpp",
-    "cpp/plugins/Secretspec.cpp": "tm/cpp/feature/secrets/plugins/Secretspec.cpp"
+    "cpp/plugins/Secretspec.cpp": "tm/cpp/feature/secrets/plugins/Secretspec.cpp",
+    "cpp/plugins/Minivault.cpp": "tm/cpp/feature/secrets/plugins/Minivault.cpp",
+    "cpp/plugins/Minivault.hpp": "tm/cpp/feature/secrets/plugins/Minivault.hpp"
    },
    "adapt": [
     {
@@ -1180,7 +1249,8 @@
     "clojure/plugins/voxgig/sekreto/plugins/onepassword.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/onepassword.clj",
     "clojure/plugins/voxgig/sekreto/plugins/doppler.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/doppler.clj",
     "clojure/plugins/voxgig/sekreto/plugins/infisical.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/infisical.clj",
-    "clojure/plugins/voxgig/sekreto/plugins/secretspec.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/secretspec.clj"
+    "clojure/plugins/voxgig/sekreto/plugins/secretspec.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/secretspec.clj",
+    "clojure/plugins/voxgig/sekreto/plugins/minivault.clj": "tm/clojure/feature/secrets/voxgig/sekreto/plugins/minivault.clj"
    }
   },
   {
@@ -1206,7 +1276,8 @@
     "csharp/plugins/Infisical.cs": "tm/csharp/feature/secrets/plugins/Infisical.cs",
     "csharp/plugins/Aws.cs": "tm/csharp/feature/secrets/plugins/Aws.cs",
     "csharp/plugins/Sigv4.cs": "tm/csharp/feature/secrets/plugins/Sigv4.cs",
-    "csharp/plugins/SecretSpec.cs": "tm/csharp/feature/secrets/plugins/SecretSpec.cs"
+    "csharp/plugins/SecretSpec.cs": "tm/csharp/feature/secrets/plugins/SecretSpec.cs",
+    "csharp/plugins/MiniVault.cs": "tm/csharp/feature/secrets/plugins/MiniVault.cs"
    }
   },
   {
@@ -1234,7 +1305,8 @@
     "elixir/plugins/infisical.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/infisical.ex",
     "elixir/plugins/secretspec.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/secretspec.ex",
     "elixir/plugins/aws.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/aws.ex",
-    "elixir/plugins/sigv4.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/sigv4.ex"
+    "elixir/plugins/sigv4.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/sigv4.ex",
+    "elixir/plugins/minivault.ex": "tm/elixir/lib/projectname/feature/secrets/sekreto/plugins/minivault.ex"
    }
   },
   {
@@ -1253,7 +1325,8 @@
     "tm/go/feature/secrets/plugins/httpjson",
     "tm/go/feature/secrets/plugins/infisical",
     "tm/go/feature/secrets/plugins/onepassword",
-    "tm/go/feature/secrets/plugins/secretspec"
+    "tm/go/feature/secrets/plugins/secretspec",
+    "tm/go/feature/secrets/plugins/minivault"
    ],
    "file": {
     "go/sekreto/sekreto.go": "tm/go/feature/secrets/sekreto/sekreto.go",
@@ -1269,14 +1342,17 @@
     "go/plugins/httpjson/httpjson.go": "tm/go/feature/secrets/plugins/httpjson/httpjson.go",
     "go/plugins/infisical/infisical.go": "tm/go/feature/secrets/plugins/infisical/infisical.go",
     "go/plugins/onepassword/onepassword.go": "tm/go/feature/secrets/plugins/onepassword/onepassword.go",
-    "go/plugins/secretspec/secretspec.go": "tm/go/feature/secrets/plugins/secretspec/secretspec.go"
+    "go/plugins/secretspec/secretspec.go": "tm/go/feature/secrets/plugins/secretspec/secretspec.go",
+    "go/plugins/minivault/minivault.go": "tm/go/feature/secrets/plugins/minivault/minivault.go",
+    "go/plugins/minivault/format.go": "tm/go/feature/secrets/plugins/minivault/format.go"
    },
    "adapt": [
     {
-     "match": "/(providers\\.go|sekreto\\.go)$",
+     "match": "/(providers\\.go|sekreto\\.go|minivault\\.go)$",
      "from": "\"github.com/voxgig/plugin/go/plugin\"",
      "to": "\"GOMODULE/feature/secrets/plugin\"",
-     "optional": true
+     "optional": true,
+     "note": "minivault.go is the one PLUGIN file that names voxgig/plugin directly: it writes its Definition out rather than calling ProviderPlugin, because the kind publishes two exports."
     },
     {
      "match": "feature/secrets/plugins/",
@@ -1290,6 +1366,9 @@
      "to": "\"GOMODULE/feature/secrets/plugins/httpjson\"",
      "optional": true
     }
+   ],
+   "sweep": [
+    "go/plugins"
    ]
   },
   {
@@ -1318,7 +1397,8 @@
     "java/plugins/com/voxgig/sekreto/plugins/Onepassword.java": "tm/java/feature/secrets/sekreto/plugins/Onepassword.java",
     "java/plugins/com/voxgig/sekreto/plugins/Doppler.java": "tm/java/feature/secrets/sekreto/plugins/Doppler.java",
     "java/plugins/com/voxgig/sekreto/plugins/Infisical.java": "tm/java/feature/secrets/sekreto/plugins/Infisical.java",
-    "java/plugins/com/voxgig/sekreto/plugins/Secretspec.java": "tm/java/feature/secrets/sekreto/plugins/Secretspec.java"
+    "java/plugins/com/voxgig/sekreto/plugins/Secretspec.java": "tm/java/feature/secrets/sekreto/plugins/Secretspec.java",
+    "java/plugins/com/voxgig/sekreto/plugins/Minivault.java": "tm/java/feature/secrets/sekreto/plugins/Minivault.java"
    },
    "adapt": [
     {
@@ -1362,7 +1442,8 @@
     "javascript/plugins/infisical.js": "tm/js/src/feature/secrets/sekreto/plugins/infisical.js",
     "javascript/plugins/secretspec.js": "tm/js/src/feature/secrets/sekreto/plugins/secretspec.js",
     "javascript/plugins/aws.js": "tm/js/src/feature/secrets/sekreto/plugins/aws.js",
-    "javascript/plugins/sigv4.js": "tm/js/src/feature/secrets/sekreto/plugins/sigv4.js"
+    "javascript/plugins/sigv4.js": "tm/js/src/feature/secrets/sekreto/plugins/sigv4.js",
+    "javascript/plugins/minivault.js": "tm/js/src/feature/secrets/sekreto/plugins/minivault.js"
    },
    "adapt": [
     {
@@ -1408,7 +1489,8 @@
     "kotlin/plugins/Infisical.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Infisical.kt",
     "kotlin/plugins/Secretspec.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Secretspec.kt",
     "kotlin/plugins/Aws.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Aws.kt",
-    "kotlin/plugins/Sigv4.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Sigv4.kt"
+    "kotlin/plugins/Sigv4.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Sigv4.kt",
+    "kotlin/plugins/Minivault.kt": "tm/kotlin/feature/secrets/sekreto/plugins/Minivault.kt"
    },
    "adapt": [
     {
@@ -1454,7 +1536,9 @@
     "lua/src/sekreto/plugins/secretspec.lua": "tm/lua/feature/secrets/sekreto/plugins/secretspec.lua",
     "lua/src/sekreto/plugins/sigv4.lua": "tm/lua/feature/secrets/sekreto/plugins/sigv4.lua",
     "lua/src/sekreto/plugins/support.lua": "tm/lua/feature/secrets/sekreto/plugins/support.lua",
-    "lua/native/sekretonet.c": "tm/lua/feature/secrets/native/sekretonet.c"
+    "lua/native/sekretonet.c": "tm/lua/feature/secrets/native/sekretonet.c",
+    "lua/src/sekreto/plugins/minivault.lua": "tm/lua/feature/secrets/sekreto/plugins/minivault.lua",
+    "lua/native/sekretovault.c": "tm/lua/feature/secrets/native/sekretovault.c"
    },
    "adapt": [
     {
@@ -1463,7 +1547,7 @@
      "to": "require('feature.secrets.plugin')"
     },
     {
-     "match": "feature/secrets/(sekreto\\.lua|sekreto/(addr|name|providers)\\.lua|sekreto/plugins/(aws|azuresecrets|boru|doppler|gcpsecrets|hashicorp|httpjson|infisical|net|onepassword|secretspec|sigv4)\\.lua)$",
+     "match": "feature/secrets/(sekreto\\.lua|sekreto/(addr|name|providers)\\.lua|sekreto/plugins/(aws|azuresecrets|boru|doppler|gcpsecrets|hashicorp|httpjson|infisical|minivault|net|onepassword|secretspec|sigv4)\\.lua)$",
      "from": "require('sekreto.",
      "to": "require('feature.secrets.sekreto."
     },
@@ -1476,6 +1560,18 @@
      "match": "sekreto/plugins/net\\.lua$",
      "from": "build/sekreto-net",
      "to": "feature/secrets/native/sekreto-net"
+    },
+    {
+     "note": "The vault module finds its crypto .so from its OWN path, the way net.lua finds the transport helper - and the vendored depth is not upstream's.",
+     "match": "sekreto/plugins/minivault\\.lua$",
+     "from": "'^(.*)/src/sekreto/plugins/minivault%.lua$'",
+     "to": "'^(.*)/feature/secrets/sekreto/plugins/minivault%.lua$'"
+    },
+    {
+     "note": "Where Main_lua's native.mk puts the built module, which is not upstream's build/ directory.",
+     "match": "sekreto/plugins/minivault\\.lua$",
+     "from": "build/sekretovault.so",
+     "to": "feature/secrets/native/sekretovault.so"
     }
    ]
   },
@@ -1507,7 +1603,9 @@
     "ocaml/plugins/doppler.ml": "tm/ocaml/feature/secrets/plugins/doppler.ml",
     "ocaml/plugins/infisical.ml": "tm/ocaml/feature/secrets/plugins/infisical.ml",
     "ocaml/plugins/secretspec.ml": "tm/ocaml/feature/secrets/plugins/secretspec.ml",
-    "ocaml/plugins/tls_stubs.c": "tm/ocaml/feature/secrets/plugins/tls_stubs.c"
+    "ocaml/plugins/tls_stubs.c": "tm/ocaml/feature/secrets/plugins/tls_stubs.c",
+    "ocaml/plugins/minivault.ml": "tm/ocaml/feature/secrets/plugins/minivault.ml",
+    "ocaml/plugins/minivault_stubs.c": "tm/ocaml/feature/secrets/plugins/minivault_stubs.c"
    }
   },
   {
@@ -1538,7 +1636,8 @@
     "perl/plugins/Voxgig/Sekreto/Plugins/Onepassword.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Onepassword.pm",
     "perl/plugins/Voxgig/Sekreto/Plugins/Doppler.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Doppler.pm",
     "perl/plugins/Voxgig/Sekreto/Plugins/Infisical.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Infisical.pm",
-    "perl/plugins/Voxgig/Sekreto/Plugins/Secretspec.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Secretspec.pm"
+    "perl/plugins/Voxgig/Sekreto/Plugins/Secretspec.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Secretspec.pm",
+    "perl/plugins/Voxgig/Sekreto/Plugins/Minivault.pm": "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Minivault.pm"
    }
   },
   {
@@ -1564,7 +1663,8 @@
     "php/plugins/onepassword.php": "tm/php/feature/secrets/sekreto/plugins/onepassword.php",
     "php/plugins/doppler.php": "tm/php/feature/secrets/sekreto/plugins/doppler.php",
     "php/plugins/infisical.php": "tm/php/feature/secrets/sekreto/plugins/infisical.php",
-    "php/plugins/secretspec.php": "tm/php/feature/secrets/sekreto/plugins/secretspec.php"
+    "php/plugins/secretspec.php": "tm/php/feature/secrets/sekreto/plugins/secretspec.php",
+    "php/plugins/minivault.php": "tm/php/feature/secrets/sekreto/plugins/minivault.php"
    },
    "adapt": [
     {
@@ -1598,7 +1698,8 @@
     "python/voxgig_sekreto/plugins/httpjson.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/httpjson.py",
     "python/voxgig_sekreto/plugins/infisical.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/infisical.py",
     "python/voxgig_sekreto/plugins/onepassword.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/onepassword.py",
-    "python/voxgig_sekreto/plugins/secretspec.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/secretspec.py"
+    "python/voxgig_sekreto/plugins/secretspec.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/secretspec.py",
+    "python/voxgig_sekreto/plugins/minivault.py": "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/minivault.py"
    },
    "adapt": [
     {
@@ -1657,7 +1758,8 @@
     "ruby/lib/voxgig_sekreto/plugins/infisical.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/infisical.rb",
     "ruby/lib/voxgig_sekreto/plugins/secretspec.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/secretspec.rb",
     "ruby/lib/voxgig_sekreto/plugins/aws.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/aws.rb",
-    "ruby/lib/voxgig_sekreto/plugins/sigv4.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/sigv4.rb"
+    "ruby/lib/voxgig_sekreto/plugins/sigv4.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/sigv4.rb",
+    "ruby/lib/voxgig_sekreto/plugins/minivault.rb": "tm/rb/feature/secrets/voxgig_sekreto/plugins/minivault.rb"
    },
    "adapt": [
     {
@@ -1675,7 +1777,8 @@
     "tm/rust/feature/secrets/sekreto",
     "tm/rust/feature/secrets/plugins",
     "tm/rust/feature/secrets/plugins/aws",
-    "tm/rust/feature/secrets/plugins/httpjson"
+    "tm/rust/feature/secrets/plugins/httpjson",
+    "tm/rust/feature/secrets/plugins/minivault"
    ],
    "file": {
     "rust/src/lib.rs": "tm/rust/feature/secrets/sekreto/mod.rs",
@@ -1695,7 +1798,9 @@
     "rust/plugins/onepassword/src/lib.rs": "tm/rust/feature/secrets/plugins/onepassword.rs",
     "rust/plugins/doppler/src/lib.rs": "tm/rust/feature/secrets/plugins/doppler.rs",
     "rust/plugins/infisical/src/lib.rs": "tm/rust/feature/secrets/plugins/infisical.rs",
-    "rust/plugins/secretspec/src/lib.rs": "tm/rust/feature/secrets/plugins/secretspec.rs"
+    "rust/plugins/secretspec/src/lib.rs": "tm/rust/feature/secrets/plugins/secretspec.rs",
+    "rust/plugins/minivault/src/lib.rs": "tm/rust/feature/secrets/plugins/minivault.rs",
+    "rust/plugins/minivault/src/format.rs": "tm/rust/feature/secrets/plugins/minivault/format.rs"
    },
    "adapt": [
     {
@@ -1729,14 +1834,15 @@
      "to": "use super::super::plugin::"
     },
     {
-     "match": "(?!.*/crypto\\.rs$)(?!.*/sigv4\\.rs$)(?!.*/json\\.rs$)(?!.*/http\\.rs$)(?!.*/httpjson\\.rs$)feature/secrets/plugins/",
+     "match": "(?!.*/minivault/)(?!.*/crypto\\.rs$)(?!.*/sigv4\\.rs$)(?!.*/json\\.rs$)(?!.*/http\\.rs$)(?!.*/httpjson\\.rs$)feature/secrets/plugins/",
      "from": "use voxgig_plugin::",
      "to": "use crate::feature::secrets::plugin::"
     },
     {
-     "match": "(?!.*/secretspec\\.rs$)(?!.*/crypto\\.rs$)(?!.*/sigv4\\.rs$)(?!.*/json\\.rs$)(?!.*/http\\.rs$)(?!.*/httpjson\\.rs$)feature/secrets/plugins/",
+     "match": "(?!.*/secretspec\\.rs$)(?!.*/minivault\\.rs$)(?!.*/minivault/)(?!.*/crypto\\.rs$)(?!.*/sigv4\\.rs$)(?!.*/json\\.rs$)(?!.*/http\\.rs$)(?!.*/httpjson\\.rs$)feature/secrets/plugins/",
      "from": "use voxgig_sekreto_httpjson::",
-     "to": "use super::httpjson::"
+     "to": "use super::httpjson::",
+     "note": "The kinds that speak no HTTP: secretspec shells out, and the mini vault is a local file. Neither imports the shared client."
     },
     {
      "match": "feature/secrets/plugins/httpjson\\.rs$",
@@ -1752,7 +1858,16 @@
      "match": "feature/secrets/sekreto/mod\\.rs$",
      "from": "pub use voxgig_plugin;",
      "to": "pub use super::plugin as voxgig_plugin;"
+    },
+    {
+     "note": "`mod format;` becomes a submodule of plugins/minivault.rs here, so its sibling-module imports need `self::`. The bare `format::FORMAT` path expressions already resolve that way and are left alone.",
+     "match": "feature/secrets/plugins/minivault\\.rs$",
+     "from": "use format::",
+     "to": "use self::format::"
     }
+   ],
+   "sweep": [
+    "rust/plugins"
    ]
   },
   {
@@ -1780,7 +1895,8 @@
     "scala/plugins/Onepassword.scala": "tm/scala/feature/secrets/sekreto/plugins/Onepassword.scala",
     "scala/plugins/Doppler.scala": "tm/scala/feature/secrets/sekreto/plugins/Doppler.scala",
     "scala/plugins/Infisical.scala": "tm/scala/feature/secrets/sekreto/plugins/Infisical.scala",
-    "scala/plugins/Secretspec.scala": "tm/scala/feature/secrets/sekreto/plugins/Secretspec.scala"
+    "scala/plugins/Secretspec.scala": "tm/scala/feature/secrets/sekreto/plugins/Secretspec.scala",
+    "scala/plugins/Minivault.scala": "tm/scala/feature/secrets/sekreto/plugins/Minivault.scala"
    }
   },
   {
@@ -1842,7 +1958,8 @@
     "typescript/plugins/infisical.ts": "tm/ts/src/feature/secrets/sekreto/plugins/infisical.ts",
     "typescript/plugins/onepassword.ts": "tm/ts/src/feature/secrets/sekreto/plugins/onepassword.ts",
     "typescript/plugins/secretspec.ts": "tm/ts/src/feature/secrets/sekreto/plugins/secretspec.ts",
-    "typescript/plugins/sigv4.ts": "tm/ts/src/feature/secrets/sekreto/plugins/sigv4.ts"
+    "typescript/plugins/sigv4.ts": "tm/ts/src/feature/secrets/sekreto/plugins/sigv4.ts",
+    "typescript/plugins/minivault.ts": "tm/ts/src/feature/secrets/sekreto/plugins/minivault.ts"
    },
    "adapt": [
     {
@@ -1862,7 +1979,7 @@
      "optional": true
     },
     {
-     "match": "/(aws\\.ts|azuresecrets\\.ts|boru\\.ts|doppler\\.ts|gcpsecrets\\.ts|hashicorp\\.ts|httpjson\\.ts|infisical\\.ts|onepassword\\.ts|secretspec\\.ts)$",
+     "match": "/(aws\\.ts|azuresecrets\\.ts|boru\\.ts|doppler\\.ts|gcpsecrets\\.ts|hashicorp\\.ts|httpjson\\.ts|infisical\\.ts|onepassword\\.ts|minivault\\.ts|secretspec\\.ts)$",
      "from": "'../src/provider/",
      "to": "'../provider/",
      "optional": true
@@ -1892,7 +2009,8 @@
     "zig/plugins/onepassword.zig": "tm/zig/feature/secrets/plugins/onepassword.zig",
     "zig/plugins/doppler.zig": "tm/zig/feature/secrets/plugins/doppler.zig",
     "zig/plugins/infisical.zig": "tm/zig/feature/secrets/plugins/infisical.zig",
-    "zig/plugins/secretspec.zig": "tm/zig/feature/secrets/plugins/secretspec.zig"
+    "zig/plugins/secretspec.zig": "tm/zig/feature/secrets/plugins/secretspec.zig",
+    "zig/plugins/minivault.zig": "tm/zig/feature/secrets/plugins/minivault.zig"
    }
   },
   {
