@@ -57,6 +57,11 @@ function write(project: any, rel: string, content: string) {
 }
 
 
+function read(project: any, rel: string): string {
+  return project.fs.readFileSync(Path.join(ROOT, rel), 'utf8')
+}
+
+
 describe('doctor', () => {
 
   // THE test. Substitution artefacts must not read as drift.
@@ -99,6 +104,35 @@ describe('doctor', () => {
 
     const after = await check(project)
     deepStrictEqual(after.superseded, [], 'after prune the finding clears')
+  })
+
+
+  // MODEL INPUT NOTHING READS. The failure this exists for is silent by
+  // construction: aontu follows includes from an entry point, so a file
+  // nothing includes is never opened and there is no error to raise.
+  // voxgig-solardemo-sdk carried `sdk-base.aontu` pinning its npm scope,
+  // repo name and Go version for a month after the generate path stopped
+  // including it - the pins read as authoritative and applied to nothing.
+  test('a model file nothing includes is a finding', async () => {
+    const project = await addedProject()
+
+    write(project, 'model/orphan.aon', 'main: kit: name: "ignored"\n')
+    const stray = await check(project)
+    strictEqual(stray.ok, false, 'an unincluded model file must fail the check')
+    deepStrictEqual(stray.orphanModel, ['orphan.aon'])
+
+    // REACHABILITY, not a mention scan: including it from another orphan
+    // leaves both unreachable, and both must still be reported.
+    write(project, 'model/alsoorphan.aon', '@"./orphan.aon"\n')
+    const pair = await check(project)
+    deepStrictEqual(pair.orphanModel.sort(), ['alsoorphan.aon', 'orphan.aon'])
+
+    // Included from the entry point, it is model input like any other.
+    const sdk = read(project, 'model/sdk.aon')
+    write(project, 'model/sdk.aon', '@"./orphan.aon"\n' + sdk)
+    const wired = await check(project)
+    strictEqual(wired.orphanModel.includes('orphan.aon'), false,
+      'a file the entry point includes is not an orphan')
   })
 
 

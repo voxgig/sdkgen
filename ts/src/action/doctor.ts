@@ -138,6 +138,22 @@ type DoctorReport = {
   // wiring never calls. Informational: opting out is legitimate.
   unwired: string[]
 
+  // MODEL FILES NOTHING INCLUDES. A `.aon` on disk that no other model
+  // file `@`-includes, reachable from no entry point: it looks
+  // authoritative, it is read by nobody, and NOTHING reports it.
+  //
+  // voxgig-solardemo-sdk lost a month to this. `model/sdk-base.aontu`
+  // still pinned the npm scope, the repo name, the Go version and
+  // `test.live.strict: true`, but the generate path moved to
+  // `sdk.aon -> project.aon` and included it nowhere. The pins silently
+  // stopped applying while the file sat there saying otherwise, and the
+  // generated SDK went out with a derived npm name that did not match
+  // the one publishing used and GitHub URLs that 404.
+  //
+  // The same shape as `superseded`, one layer up: that is generated
+  // output nothing writes any more, this is model INPUT nothing reads.
+  orphanModel: string[]
+
   // A copy that differs from the scaffold ONLY in its provenance lines —
   // written before `base`/`origname` were stamped, so the project changed
   // nothing and `target add` will bring it up to date. Informational: this
@@ -241,6 +257,86 @@ type DoctorScope = (kind: string, name: string) => boolean
 
 // Code API. Returns the report; the CLI turns a non-ok report into a
 // non-zero exit so this can gate CI.
+// MODEL FILES NOTHING INCLUDES.
+//
+// aontu assembles one model by following `@"..."` includes from an entry
+// point. A `.aon` or `.aontu` that no reachable file includes is inert: it
+// is on disk, it reads as authoritative, and it contributes nothing. There
+// is no error, because there is nothing to error about - the file is simply
+// never opened.
+//
+// REACHABILITY, not a bare "is it mentioned anywhere". A file included only
+// by another orphan is still an orphan, which a mention-scan would miss, so
+// this walks OUT from the entry points and reports what it never arrives at.
+//
+// The entry points are the ones the project's own scripts run - model/sdk.aon
+// and model/test/test.aon - plus the config build under .model-config, which
+// is what registers the generator actions. A package include (`@voxgig/...`)
+// leaves this tree and is not followed; a local include is resolved relative
+// to the including file, which is how aontu resolves it.
+function orphanModelFiles(actx: ActionContext): string[] {
+  const fs = actx.fs()
+  const modeldir = Path.join(actx.folder, 'model')
+
+  if (!fs.existsSync(modeldir)) {
+    return []
+  }
+
+  // TWO TREES ARE NOT MODEL INPUT and would be reported as orphans by a
+  // plain walk, measured against voxgig-solardemo-sdk rather than guessed:
+  //
+  // - `.jostraca/generated/` is jostraca's own bookkeeping copy of what it
+  //   wrote. Nothing includes it because nothing should.
+  // - `guide/` belongs to apidef, which opens those files by PATH rather
+  //   than through an `@`-include, so they are read without ever being
+  //   reachable from this entry chain.
+  const all = walk(fs, modeldir)
+    .filter((rel) => rel.endsWith('.aon') || rel.endsWith('.aontu'))
+    .filter((rel) => !rel.includes('.jostraca/') && !rel.startsWith('guide/'))
+
+  const ENTRY = [
+    'sdk.aon', 'sdk.aontu',
+    'test/test.aon', 'test/test.aontu',
+    '.model-config/model-config.aon', '.model-config/model-config.aontu',
+  ]
+
+  const seen = new Set<string>()
+  const queue = ENTRY.filter((rel) => all.includes(rel))
+
+  while (0 < queue.length) {
+    const rel = queue.shift() as string
+    if (seen.has(rel)) {
+      continue
+    }
+    seen.add(rel)
+
+    let src = ''
+    try {
+      src = fs.readFileSync(Path.join(modeldir, rel), 'utf8')
+    }
+    catch (e) {
+      continue
+    }
+
+    for (const m of src.matchAll(/@"([^"]+)"/g)) {
+      const ref = m[1]
+      // A package include leaves this tree.
+      if (ref.startsWith('@')) {
+        continue
+      }
+      const from = Path.posix.dirname(rel)
+      const next = Path.posix.normalize(
+        Path.posix.join('.' === from ? '' : from, ref.replace(/^\.\//, '')))
+      if (all.includes(next) && !seen.has(next)) {
+        queue.push(next)
+      }
+    }
+  }
+
+  return all.filter((rel) => !seen.has(rel)).sort()
+}
+
+
 async function doctor(
   actx: ActionContext, scope?: DoctorScope,
 ): Promise<ActionResult> {
@@ -251,13 +347,17 @@ async function doctor(
 
   const report: DoctorReport = {
     forked: [], edited: [], stale: [], missing: [], additive: [],
-    superseded: [], unwired: [], resyncPending: [], aliasedDiff: [], ok: true,
+    superseded: [], unwired: [], orphanModel: [],
+    resyncPending: [], aliasedDiff: [], ok: true,
   }
 
   // Retired-output leftovers first: purely model-driven, and a finding —
   // two copies of the same machinery, one stale, is exactly the state the
   // migration guide had to clean up by hand three times.
   report.superseded = supersededFiles(actx)
+
+  // Model INPUT nothing reads — see `orphanModel` on the report type.
+  report.orphanModel = orphanModelFiles(actx)
 
   // EVERY KIND, not just targets.
   //
@@ -345,8 +445,14 @@ async function doctor(
     checkWiring(actx, report)
   }
 
+  // orphanModel counts, and `unwired` does not. Not skipping a root
+  // component is a legitimate project choice that doctor only mentions; a
+  // model file nothing reads is never a choice - it is either a file that
+  // should be included, or one that should be deleted, and it reads as
+  // authoritative either way.
   report.ok = 0 === report.forked.length + report.edited.length +
-    report.stale.length + report.missing.length + report.superseded.length
+    report.stale.length + report.missing.length + report.superseded.length +
+    report.orphanModel.length
 
   for (const [kind, note] of [
     ['forked', 'FORKED (will be reverted by `target add`)'],
@@ -356,6 +462,7 @@ async function doctor(
     ['additive', 'additive (project-owned, not drift)'],
     ['superseded', 'SUPERSEDED generated output (run `doctor prune` to delete)'],
     ['unwired', 'NOT WIRED IN (root capability this project is missing)'],
+    ['orphanModel', 'ORPHAN MODEL FILE (on disk, included by nothing, read by nobody)'],
     ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
     ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
   ] as [keyof DoctorReport, string][]) {
@@ -374,6 +481,7 @@ async function doctor(
     additive: report.additive.length,
     superseded: report.superseded.length,
     unwired: report.unwired.length,
+    orphanModel: report.orphanModel.length,
     resyncPending: report.resyncPending.length,
     aliasedDiff: report.aliasedDiff.length,
     note: report.ok ?
