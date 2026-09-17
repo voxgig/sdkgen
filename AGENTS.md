@@ -1068,6 +1068,19 @@ goes into `accept.txt` one entry at a time, never as a suffix pattern.
   [hooks](./docs/reference/hooks.md)
 - Tasks: [docs/how-to/](./docs/how-to/)
 
+### The sibling checkouts, and what each one is for
+
+Several things here are only testable against a repository beside this one,
+so a working machine usually has all of them checked out as siblings:
+
+| repo | what it is |
+| --- | --- |
+| `apidef` | parses an OpenAPI definition into the model sdkgen consumes |
+| `create-sdkgen` | scaffolds a new SDK project, and OWNS the test `.aontu` data in `project/standard/.sdk/test/` |
+| `voxgig-solardemo-sdk` | the reference generated SDK: `ts/` is the SDK, `.sdk/` the build tooling |
+| `voxgig-elementdemo-sdk` | the reference for CUSTOMIZATION: its `ext/` package adds an entirely custom `bash` target and an `elementcard` feature across five languages, with project-owned corpus cases driving all of them |
+| `struct`, `omni`, `plugin`, `sekreto` | the four vendored libraries, taken at a shared tag rather than as packages |
+
 ## Documentation editions
 
 The `docs/apidocs` kind has been replaced by `edition`. Edition models live
