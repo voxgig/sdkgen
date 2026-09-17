@@ -1,4 +1,4 @@
-.PHONY: all build test clean build-ts test-ts clean-ts scan-prose vale-install reset check-model publish vendor vendor-check
+.PHONY: all build test clean build-ts test-ts clean-ts scan-prose vale-install reset check-model publish vendor vendor-check vendor-audit
 
 all: check-model build test
 
@@ -20,6 +20,12 @@ vendor:
 
 vendor-check:
 	cd ts && node build/vendor.js --check $(V)
+
+# What upstream has, at the tag, that no route takes. Run it when cutting a
+# new shared tag: a resync refreshes the files already routed and picks up
+# NOTHING new by itself, so this is where an added upstream file is seen.
+vendor-audit:
+	cd ts && node build/vendor.js --audit $(V)
 
 # TypeScript
 build-ts:

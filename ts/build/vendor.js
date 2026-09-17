@@ -16,7 +16,29 @@
 //
 //   node build/vendor.js               # execute every route
 //   node build/vendor.js --check      # verify only; exit 1 on any drift
+//   node build/vendor.js --audit      # what upstream has that no route takes
 //   node build/vendor.js --lib=omni --lang=ts   # filter routes
+//
+// THE ROUTE MAP IS EXPLICIT, FILE BY FILE, and that is a deliberate
+// trade: a glob would vendor whatever upstream happened to add, into a
+// tree whose trim groups and relative imports are hand-reasoned. The cost
+// is that upstream ADDING a file is invisible — a resync refreshes the
+// files already listed and takes nothing new, silently. sekreto's mini
+// vault landed in 22 ports and reached no SDK for exactly that reason.
+//
+// `--audit` is the answer to that: for every route it lists what exists
+// upstream, at the tag, in a directory the route already draws from, and
+// which no route names. Build and documentation files are expected to be
+// unrouted, so `routes.json` carries an `ignore` list; anything else is
+// reported, and a clean audit means "nothing new to decide about".
+//
+// REMOVAL is handled on the other side. A file this tool stops producing
+// is not deleted by the route map going quiet — it just stops being
+// tracked, and lingers in the template tree being shipped into every SDK.
+// So orphans are computed GLOBALLY (routes share destination directories:
+// clojure's plugin and sekreto routes both write into
+// `feature/secrets/voxgig`), reported by --check, and deleted by a write
+// run.
 //
 // Routes not selected by a filter keep their existing manifest entries, so
 // the rollout can land one library or language at a time.
@@ -36,6 +58,7 @@ const CACHE = Path.join(ROOT, 'vendor', '.cache')
 function main() {
   const args = process.argv.slice(2)
   const check = args.includes('--check')
+  const audit = args.includes('--audit')
   const libsel = args.filter((a) => a.startsWith('--lib=')).map((a) => a.slice(6))
   const langsel = args.filter((a) => a.startsWith('--lang=')).map((a) => a.slice(7))
 
@@ -65,6 +88,10 @@ function main() {
     repodir[lib] = dir
     repocommit[lib] = null == dir ? null :
       gitq(dir, ['rev-parse', tag + '^{commit}']).trim()
+  }
+
+  if (audit) {
+    return runaudit(routes, selected, repodir, tag)
   }
 
   let drift = 0
@@ -212,9 +239,19 @@ function main() {
   const stale = !wholeRun ? [] :
     Object.keys(manifest.library).filter((k) => !produced.has(k))
 
+  // Same wholeRun condition as the stale sections above, and for the same
+  // reason: a filtered run cannot tell "not selected" from "no longer
+  // produced", and this one DELETES.
+  const orphan = !wholeRun ? [] : orphans(routes)
+
   if (check) {
     for (const key of stale) {
       console.error('MANIFEST ' + key + ' has no route — stale section, run `make vendor`')
+      drift++
+    }
+
+    for (const rel of orphan) {
+      console.error('ORPHAN  ' + rel + ' — vendored, but no route produces it')
       drift++
     }
 
@@ -233,6 +270,14 @@ function main() {
     delete manifest.library[key]
     console.log('pruned ' + key + ' (no route)')
   }
+  // A vendored file the routes stopped producing is DELETED, not left to
+  // rot: it is a template, so every SDK generated from here would go on
+  // shipping it. This is the one place the tool removes a file, which is
+  // why it is bounded by the declared `dir` list and by wholeRun.
+  for (const rel of orphan) {
+    Fs.unlinkSync(Path.join(SDK, rel))
+    console.log('removed ' + rel + ' (no route produces it)')
+  }
   manifest.library = Object.fromEntries(
     Object.entries(manifest.library).sort(([a], [b]) => a.localeCompare(b)))
   manifest.note = manifest.note ||
@@ -240,6 +285,102 @@ function main() {
   Fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 1) + '\n')
   console.log('wrote test/vendored.json (' + selected.length + ' route(s) at ' + tag + ')')
 }
+
+// UPSTREAM ADDED SOMETHING NO ROUTE TAKES.
+//
+// Only directories a route ALREADY draws from are looked in: a library
+// gaining a whole new port is a routing decision, not a resync surprise,
+// and walking the whole repo would report every file in it. So the
+// question this answers is narrow and the one that goes wrong quietly —
+// "upstream put a new file next to files we vendor, and we did not
+// notice".
+//
+// Everything is read with `git ls-tree` at the TAG, never from a working
+// tree, for the same reason the vendoring itself is.
+function runaudit(routes, selected, repodir, tag) {
+  const ignore = (routes.ignore || []).map((p) => new RegExp(p))
+  const routed = new Set()
+  for (const r of routes.route) {
+    for (const src of Object.keys(r.file)) routed.add(r.lib + ':' + src)
+  }
+
+  let found = 0
+  for (const route of selected) {
+    const dir = repodir[route.lib]
+    if (null == dir) {
+      console.error('SKIP  ' + route.lib + '/' + route.lang + ': no repo for ' + tag)
+      continue
+    }
+
+    const srcdirs = new Set(
+      Object.keys(route.file).map((src) => Path.posix.dirname(src)))
+
+    const seen = new Set()
+    for (const d of srcdirs) {
+      const listed = gitq(dir, ['ls-tree', '-r', '--name-only', tag, '--', d + '/'])
+        .split('\n').map((l) => l.trim()).filter(Boolean)
+      for (const f of listed) {
+        // Only the routed directories themselves, not their subtrees: a
+        // subdirectory a route does not draw from is a routing decision.
+        if (!srcdirs.has(Path.posix.dirname(f))) continue
+        if (routed.has(route.lib + ':' + f)) continue
+        if (ignore.some((re) => re.test(f))) continue
+        seen.add(f)
+      }
+    }
+
+    if (0 < seen.size) {
+      found += seen.size
+      console.log(route.lib + '/' + route.lang + '  (' + seen.size + ')')
+      for (const f of [...seen].sort()) console.log('    ' + f)
+    }
+  }
+
+  if (0 === found) {
+    console.log('vendor --audit: nothing unrouted (' + selected.length + ' route(s) at ' + tag + ')')
+    return
+  }
+
+  console.log('')
+  console.log('vendor --audit: ' + found + ' upstream file(s) no route takes, at ' + tag + '.')
+  console.log('Each is a DECISION, not a defect: add it to routes.json (and to a')
+  console.log('feature plugin group, if it is a trimmable provider kind), or add a')
+  console.log('pattern to routes.ignore to say it is deliberately not vendored.')
+  process.exitCode = 1
+}
+
+
+// VENDORED FILES NO ROUTE PRODUCES ANY MORE.
+//
+// Computed across EVERY route, not per route, because destination
+// directories are shared: clojure's `feature/secrets/voxgig` holds
+// plugin.clj from the plugin route and sekreto.clj from the sekreto one,
+// and a per-route sweep would call each the other's orphan and delete it.
+//
+// Scoped to the declared `dir` list, which is exactly the set of
+// directories whose contents are vendored outright - verified across all
+// 70 routes: every file in a routed dir is produced by some route.
+function orphans(routes) {
+  const produced = new Set()
+  const dirs = new Set()
+  for (const r of routes.route) {
+    for (const dest of Object.values(r.file)) produced.add(dest)
+    for (const d of r.dir || []) dirs.add(d)
+  }
+
+  const out = []
+  for (const d of [...dirs].sort()) {
+    const abs = Path.join(SDK, d)
+    if (!Fs.existsSync(abs)) continue
+    for (const name of Fs.readdirSync(abs).sort()) {
+      const rel = Path.posix.join(d, name)
+      if (!Fs.statSync(Path.join(abs, name)).isFile()) continue
+      if (!produced.has(rel)) out.push(rel)
+    }
+  }
+  return out
+}
+
 
 // A git dir that resolves the tag: the local sibling checkout when it can,
 // else a shallow clone into the cache. The tag is resolved in the chosen
