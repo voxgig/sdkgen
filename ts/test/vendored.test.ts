@@ -580,6 +580,40 @@ describe('vendored', () => {
 // feature just vanishes from every generated SDK with no diagnostic.
 describe('applicability tags', () => {
 
+  // THE DOCUMENTATION PATH MUST USE THE SAME GATE AS THE CODE PATH.
+  //
+  // A feature applies where its `needs` are a subset of the target's
+  // `provides`, and `targetFeatures` is the one place that rule lives.
+  // Config and Main have always called it; every ReadmeRef_<lang> read the
+  // RAW active-feature map instead, so a target's README reference
+  // advertised features that target cannot carry - `secrets` on a target
+  // whose container has no vendored sekreto, and a reader who set the
+  // option got nothing back.
+  //
+  // The symptom is latent today: every target with a ReadmeRef now provides
+  // both `sekreto` and `schema`, so the two gated features happen to apply
+  // everywhere. That is the reason to hold it with a test rather than to
+  // leave it - the next feature with a `needs` some target lacks would
+  // reintroduce it silently, and the output would look plausible.
+  test('no ReadmeRef reads the feature map past the applicability gate', () => {
+    const raw = 'getModelPath(model, `main.${KIT}.feature`)'
+    const bad: string[] = []
+
+    const cmpdir = Path.join(SDK, 'src', 'cmp')
+    for (const lang of readdirSync(cmpdir)) {
+      const dir = Path.join(cmpdir, lang)
+      if (!statSync(dir).isDirectory()) continue
+      for (const f of readdirSync(dir).filter((n) => n.startsWith('ReadmeRef_'))) {
+        const src = readFileSync(Path.join(dir, f), 'utf8')
+        if (src.includes(raw)) bad.push(lang + '/' + f)
+      }
+    }
+
+    deepStrictEqual(bad, [],
+      'these list features without gating them by the target: ' + bad.join(', '))
+  })
+
+
   test('every tag the shipped scaffold declares is in the vocabulary', () => {
     const bad: string[] = []
 

@@ -7,6 +7,7 @@ type DoctorReport = {
     additive: string[];
     superseded: string[];
     unwired: string[];
+    orphanModel: string[];
     resyncPending: string[];
     aliasedDiff: string[];
     ok: boolean;
