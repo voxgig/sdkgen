@@ -20,6 +20,19 @@
 // core/config.hpp, which pulls in the feature headers.
 #include "../core/schema.hpp"
 
+// prepareAuth is GENERATED, not templated: WHERE the credential goes -
+// header, query or cookie, and under what name - is a fact about THIS API
+// (apidef resolves it into main.kit.info.security), and this file can only
+// hold one answer. It used to hold `authorization`, so an apiKey-in-query
+// API got a header it does not read. The component is
+// src/cmp/cpp/PrepareAuth_cpp.ts; the emitted header defines
+// `sdk::util::prepareAuth` exactly as this file used to, and register_all
+// below still binds it.
+//
+// Included HERE, outside the namespace: the generated header opens its own
+// `namespace sdk { namespace util {`.
+#include "prepare_auth.hpp"
+
 namespace sdk {
 namespace util {
 
