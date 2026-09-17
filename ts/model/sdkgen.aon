@@ -572,6 +572,29 @@ main: kit: feature: &: {
     # and one file may export several (ts aws.ts exports awssecrets AND
     # awsparams), which is why the inner level is a map and not one name.
     def: &: &: string
+
+    # PACKAGE DEPENDENCIES THIS PLUGIN NEEDS, keyed by target, in the same
+    # shape a feature's `deps` uses — and gated one level deeper.
+    #
+    # A feature's deps flow when the FEATURE is active. A plugin is a
+    # trimmable part WITHIN an active feature, so a dependency only its
+    # files use must not reach the manifest until that plugin is active:
+    # the template is inert until the project selects it, and an inert
+    # template has no dependencies.
+    #
+    # rust's mini vault is the case that needs this. It takes `ring` for
+    # AES-256-GCM, and declaring that at feature level would put ring in
+    # the Cargo.toml of every secrets-enabled rust SDK — including the ones
+    # whose chain is `[env, dotenv]` and which never compile a vault. Most
+    # ports need nothing here: node:crypto, go's crypto/aes and python's
+    # ctypes-loaded libcrypto are all standard library.
+    #
+    # `active` behaves as it does for a feature dep: explicit opt-in, so a
+    # dep left at the default is declared but not taken.
+    deps: &: &: {
+      active: *false | boolean
+      version: *'*' | string
+    }
   }
 
   hook: &: {

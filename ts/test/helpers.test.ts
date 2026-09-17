@@ -82,6 +82,43 @@ describe('helpers', () => {
       strictEqual(names.includes('github.com/x/nope'), false)
     })
 
+    // A PLUGIN IS TRIMMABLE INSIDE AN ACTIVE FEATURE, so its deps are gated
+    // one step deeper: the manifest must agree with the tree the trim
+    // leaves behind, or the build asks for a package whose files are gone.
+    function pluginModel(active: boolean) {
+      const model: any = makeModel()
+      model.main.kit.feature.secrets = {
+        active: true,
+        name: 'secrets',
+        plugin: {
+          minivault: {
+            name: 'minivault',
+            active,
+            deps: { rust: { ring: { active: true, version: '0.17' } } },
+          },
+        },
+      }
+      return model
+    }
+
+    test('an active plugin contributes its deps', () => {
+      const out = collectDeps(pluginModel(true), 'rust', undefined)
+      deepStrictEqual(out.map((d) => d.name), ['ring'])
+      strictEqual(out[0].version, '0.17')
+      strictEqual(out[0].source, 'feature')
+    })
+
+    test('an inactive plugin contributes nothing, though its feature is on', () => {
+      const out = collectDeps(pluginModel(false), 'rust', undefined)
+      deepStrictEqual(out.map((d) => d.name), [])
+    })
+
+    test('a plugin dep left at the default is declared, not taken', () => {
+      const model = pluginModel(true)
+      model.main.kit.feature.secrets.plugin.minivault.deps.rust.ring = { version: '0.17' }
+      deepStrictEqual(collectDeps(model, 'rust', undefined).map((d) => d.name), [])
+    })
+
     test('a package required by two features appears once', () => {
       // Duplicate manifest keys are a hard parse error in go.mod / Cargo.toml
       // and silently last-wins in package.json, so the same package required

@@ -4,7 +4,16 @@
 // template was hand-rolling identically:
 //
 //   - feature deps  : included when `dep.active === true`  (default off)
+//   - plugin  deps  : the same, and only for an ACTIVE plugin of that feature
 //   - target  deps  : included when `dep.active !== false` (default on)
+//
+// THE PLUGIN LEVEL IS GATED ONE STEP DEEPER THAN THE FEATURE. A feature's
+// deps flow as soon as the feature is active; a plugin is a trimmable part
+// within an active feature, so a dependency only its files use must not
+// reach the manifest until that plugin is active too. rust's mini vault is
+// the case: it takes `ring` for AES-256-GCM, and at feature level that
+// would land in every secrets-enabled rust SDK, including the ones whose
+// chain is `[env, dotenv]` and which never compile a vault.
 //
 // The two sources are kept distinct via the `source` field so callers can
 // apply their own version defaults / formatting (e.g. go uses `v0.0.0`,
@@ -55,12 +64,28 @@ function collectDeps(model, targetName, targetDeps, log) {
     };
     (0, jostraca_1.each)(feature, (f) => {
         const langDeps = f?.deps?.[targetName];
-        if (!langDeps)
-            return;
-        (0, jostraca_1.each)(langDeps, (dep) => {
-            if (dep?.active) {
-                add(dep, 'feature', f.name);
-            }
+        if (langDeps) {
+            (0, jostraca_1.each)(langDeps, (dep) => {
+                if (dep?.active) {
+                    add(dep, 'feature', f.name);
+                }
+            });
+        }
+        // An inactive plugin's deps are not this SDK's deps. `true ===` rather
+        // than truthiness, matching the trim: the trim drops a plugin unless it
+        // is explicitly on, and the manifest must agree with the tree it
+        // describes or the build asks for a crate whose files were removed.
+        (0, jostraca_1.each)(f?.plugin, (plugin) => {
+            if (true !== plugin?.active)
+                return;
+            const pluginDeps = plugin?.deps?.[targetName];
+            if (!pluginDeps)
+                return;
+            (0, jostraca_1.each)(pluginDeps, (dep) => {
+                if (dep?.active) {
+                    add(dep, 'feature', f.name + '.' + plugin.name);
+                }
+            });
         });
     });
     if (targetDeps) {
