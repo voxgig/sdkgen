@@ -62,11 +62,15 @@ clienttrack
 idempotently
 apikey
 scaffolded
-resync(ed)?
+resync(ed|ing)?
 retargeted
 templated
 vendor(ed|ing)
 [Vv]endoring
+[Rr]evendor
+[Uu]ntracked
+SHAs
+coursier
 [Ii]njectable
 [Uu]ntyped
 [Oo]verridable

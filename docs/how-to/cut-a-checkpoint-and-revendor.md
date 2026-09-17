@@ -5,9 +5,10 @@ a single shared git tag, so "what is this SDK vendoring" has one answer.
 Moving to newer upstream code is two steps in two repositories: cut a
 checkpoint in `voxgig/admin`, then resync here against it.
 
-This is the procedure. For why it is shaped this way, read
-`../design/vendor-tag-rollout.md`; for the rules that keep it honest, read
-the "Vendored libraries: one tag, one tool" section of `AGENTS.md`.
+This is the procedure, and it is enough to run one. Two rules sit behind
+it and hold whatever happens: every vendored file keeps the `VENDORED:`
+header naming its upstream path and commit, and a local deviation from
+upstream is a marked `PATCH` block or an `adapt` rule, never a quiet edit.
 
 ## Before you start
 
@@ -60,7 +61,7 @@ repositories is worse than none, because it looks like one.
 
 The tag is `sdk-<yyyymmdd>-<hhmm>-<n>` in UTC, the same name everywhere.
 Each tag's message lists all four commit SHAs, so `git show <tag>` in any
-one repository tells you what the other three were pinned at.
+one repository records what the other three were pinned at.
 
 Useful variants:
 
@@ -123,7 +124,7 @@ Four guards matter here, and they fail in different ways:
   resync that silently lost a fix, which is the failure this exists to stop.
 - **`structnull.test.ts`** — characterizes each port's null semantics, so a
   resync that moves a port between auth-null failure classes fails rather
-  than passing quietly.
+  than passing without a sound.
 - **`make vendor-check`** — byte-level drift against the tag.
 
 Then regenerate a real SDK and run its suite. Generation compiling is not
@@ -135,5 +136,5 @@ defect more than once.
 `@voxgig/sdkgen-langpack` (dart, haskell, lean) is outside this tool's write
 root. Its vendored sekreto and plugin trees keep their `VENDORED:` headers
 but have no route table, no manifest and no guard of their own — resyncing
-them is a manual copy. That gap is recorded in the routes.json note and in
-`../design/pack-repositories.md`, not silently absent.
+them is a manual copy. That gap is recorded in the routes.json note, and
+is a known limit rather than an oversight.
