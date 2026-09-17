@@ -1,0 +1,298 @@
+
+import {
+  Content,
+  File,
+  Folder,
+  cmp,
+  isAuthSuppressed,
+  isHttpBasicAuth,
+  resolveAuthIn,
+  resolveAuthName,
+} from '@voxgig/sdkgen'
+
+
+import { javaPackage } from './utility_java'
+
+
+// WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API, so it is generated
+// rather than templated.
+//
+// This was a static file in `tm/java/utility/` that hardcoded
+// `authorization` and a header. apidef has always resolved the scheme's
+// `in` and `name` into `main.kit.info.security` — joplin's says
+// `in: "query", name: "token"` — and generation dropped both. The result
+// was an SDK that sent a header the API does not read and never sent the
+// query parameter it does, so it could not authenticate at all. Four
+// repos in the cedar fleet shipped that way: joplin (`token`), pipedrive
+// (`api_token`), trello (`key`), lm-umbrella (`apiKey`).
+//
+// A template cannot fix this, because the three placements need three
+// different bodies and a template has to pick one. A component emits the
+// branch this API actually uses and nothing else — no dead query code in
+// a bearer-token SDK, and no runtime `if` on a value that is fixed at
+// generation time. The ts port (PrepareAuth_ts) is the donor.
+const PrepareAuth = cmp(async function PrepareAuth(props: any) {
+  const { target } = props
+  const { model } = props.ctx$
+
+  const javapackage = javaPackage(model)
+
+  // `!isAuthSuppressed`, NOT `isAuthActive`. The latter is also false when
+  // the SPEC merely declares no security scheme (`main.kit.info.auth:
+  // false`), and those SDKs still carry a credential: optspec always
+  // declares `apikey` and makeOptions fills `options.auth` from its
+  // defaults, so the runtime guard never fired and they have always sent
+  // it. Only an explicit `main.kit.config.auth.active: false` means "no
+  // credential, ever", which is what isAuthSuppressed reads.
+  const active = !isAuthSuppressed(model)
+  const where = resolveAuthIn(model)
+  const name = resolveAuthName(model)
+  const basic = isHttpBasicAuth(model)
+
+  // FOLDER NESTING. The java target is FLAT: Main opens no `src` folder at
+  // all, and the blanket `Copy({ from: 'tm/java' })` lands core/, utility/,
+  // feature/ and test/ straight at the target root (pom.xml declares
+  // `sourceDirectory` as the project base and includes `utility/**`). So
+  // `utility` is opened HERE — the same shape EntityBase_java uses for
+  // `entity` — and this component must be called from Main's TOP level,
+  // NOT from inside its `Folder({ name: 'core' })`. Nested there it would
+  // write core/utility/PrepareAuth.java, which javac would compile into
+  // the wrong package while Register.java kept calling the stale
+  // utility/PrepareAuth.java.
+  Folder({ name: 'utility' }, () => {
+    File({ name: 'PrepareAuth.' + target.ext }, () => {
+      Content(render({ javapackage, active, where, name, basic }))
+    })
+  })
+})
+
+
+function render(spec: {
+  javapackage: string, active: boolean, where: string, name: string,
+  basic: boolean
+}): string {
+  const jp = spec.javapackage
+
+  // NO AUTH AT ALL. A public API's SDK gets a prepareAuth that is honest
+  // about it rather than one that deletes a header nobody set.
+  if (!spec.active) {
+    return `package ${jp}.utility;
+
+import ${jp}.core.Context;
+import ${jp}.core.Spec;
+
+// This API declares no authentication, so there is no credential to place.
+// The class stays in the pipeline because Register wires prepareAuth
+// unconditionally and MakeSpec calls it on every request.
+final class PrepareAuth {
+
+  private PrepareAuth() {}
+
+  static Spec prepareAuth(Context ctx) {
+    Spec spec = ctx.spec;
+    if (spec == null) {
+      throw ctx.makeError("auth_no_spec",
+          "Expected context spec property to be defined.");
+    }
+
+    return spec;
+  }
+}
+`
+  }
+
+  const header = 'header' === spec.where
+  const query = 'query' === spec.where
+  const cookie = 'cookie' === spec.where
+
+  // HTTP Basic is header-only by definition: the scheme is
+  // `Authorization: Basic base64(user:pass)`. It cannot be expressed as a
+  // query parameter or a cookie, so the branch is emitted only where it
+  // can mean something.
+  const basicBranch = spec.basic && header
+
+  // The bag the credential lands in, per placement. Cookies ride the
+  // header bag because a cookie IS a header.
+  const bag = query ? 'query' : 'headers'
+
+  const imports = [
+    ...(basicBranch ? [
+      'import java.nio.charset.StandardCharsets;',
+      'import java.util.Base64;',
+    ] : []),
+    // `List.of("auth", "prefix")` is the only use of java.util.List, and a
+    // prefix is a HEADER convention — the query and cookie branches drop it,
+    // so neither needs the import.
+    ...(header ? ['import java.util.List;'] : []),
+    'import java.util.Map;',
+  ].join('\n')
+
+  const consts = [
+    `  static final String CRED_NAME = "${javastr(credName(spec.where, spec.name))}";`,
+    ...(cookie ? ['  static final String COOKIE_HEADER = "cookie";'] : []),
+    '  static final String OPTION_APIKEY = "apikey";',
+    ...(basicBranch ? ['  static final String OPTION_SECRET = "secret";'] : []),
+    '  static final String NOT_FOUND = "__NOTFOUND__";',
+  ].join('\n')
+
+  const basicBlock = basicBranch ? `
+    // True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+    // token in the header (the branch below) can never authenticate against
+    // an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+    if (Boolean.TRUE.equals(Struct.getpath(options, List.of("auth", "basic")))) {
+      Object secret = Struct.getprop(options, OPTION_SECRET, NOT_FOUND);
+      boolean noApikey = !(apikey instanceof String)
+          || NOT_FOUND.equals(apikey) || "".equals(apikey);
+      boolean noSecret = !(secret instanceof String)
+          || NOT_FOUND.equals(secret) || "".equals(secret);
+
+      if (noApikey || noSecret) {
+        headers.remove(CRED_NAME);
+      }
+      else {
+        String basicPrefix = "";
+        Object bp = Struct.getpath(options, List.of("auth", "prefix"));
+        if (bp instanceof String) {
+          basicPrefix = (String) bp;
+        }
+        String b64 = Base64.getEncoder().encodeToString(
+            ((String) apikey + ":" + (String) secret).getBytes(StandardCharsets.UTF_8));
+        if ("".equals(basicPrefix)) {
+          headers.put(CRED_NAME, b64);
+        }
+        else {
+          headers.put(CRED_NAME, basicPrefix + " " + b64);
+        }
+      }
+
+      return spec;
+    }
+` : ''
+
+  return `package ${jp}.utility;
+
+${imports}
+
+import ${jp}.core.Context;
+import ${jp}.core.Spec;
+import ${jp}.utility.struct.Struct;
+
+final class PrepareAuth {
+
+  private PrepareAuth() {}
+
+${consts}
+
+  static Spec prepareAuth(Context ctx) {
+    Spec spec = ctx.spec;
+    if (spec == null) {
+      throw ctx.makeError("auth_no_spec",
+          "Expected context spec property to be defined.");
+    }
+
+    Map<String, Object> ${bag} = spec.${bag};
+    Map<String, Object> options = ctx.client.optionsMap();
+
+    // Public APIs that need no auth omit the options.auth block entirely.
+    if (options.get("auth") == null) {
+      ${clear(spec.where)}
+      return spec;
+    }
+
+    Object apikey = Struct.getprop(options, OPTION_APIKEY, NOT_FOUND);
+${basicBlock}
+    boolean skip = false;
+    if (apikey == null) {
+      skip = true;
+    }
+    else if (apikey instanceof String
+        && (NOT_FOUND.equals(apikey) || "".equals(apikey))) {
+      skip = true;
+    }
+
+    if (skip) {
+      ${clear(spec.where)}
+    }
+    else {
+${place(spec.where)}
+    }
+
+    return spec;
+  }
+}
+`
+}
+
+
+// THE CREDENTIAL NAME AS THIS TARGET SPELLS IT.
+//
+// java's header map is a plain case-sensitive LinkedHashMap and the whole
+// generated SDK — Fetcher, SecretsFeature, and the SDK's own PipelineTest —
+// spells the default header `authorization`, exactly as the deleted
+// tm/java/utility/PrepareAuth.java did. Keep that spelling when the model
+// resolves the DEFAULT, so a header-based java SDK behaves byte-for-byte as
+// it did before; a spec that names a header explicitly gets that name
+// verbatim, as do query parameters and cookies.
+// EVERY header name, not just the default. java's map is a case-sensitive
+// LinkedHashMap and the generated SDK spells headers lower-case throughout
+// — Fetcher, SecretsFeature and PipelineTest all do. Special-casing only
+// the literal 'Authorization' left a spec-named header like `X-API-Key`
+// capitalised here while the other nineteen targets lower-cased it, so the
+// same model produced a header java could not find and the rest could.
+// Query parameters and cookies stay verbatim: those ARE case-sensitive.
+function credName(where: string, name: string): string {
+  return 'header' === where ? name.toLowerCase() : name
+}
+
+
+function clear(where: string): string {
+  return 'query' === where ? 'query.remove(CRED_NAME);' : 'headers.remove(CRED_NAME);'
+}
+
+
+function place(where: string): string {
+  if ('query' === where) {
+    // NO PREFIX IN A QUERY STRING. `?token=Bearer%20abc` is not a thing any
+    // API reads; the prefix is a header convention and is dropped here
+    // deliberately rather than silently concatenated.
+    return `      String apikeyVal = apikey instanceof String ? (String) apikey : "";
+      // NO PREFIX IN A QUERY STRING: ?name=Bearer%20abc is not a thing any
+      // API reads, so the auth.prefix option is dropped here deliberately.
+      query.put(CRED_NAME, apikeyVal);`
+  }
+
+  if ('cookie' === where) {
+    return `      String apikeyVal = apikey instanceof String ? (String) apikey : "";
+      // A cookie IS a header, but the request may already carry others, so
+      // the pair is APPENDED rather than replacing the whole cookie header.
+      // No prefix, for the same reason a query parameter carries none.
+      Object existing = Struct.getprop(headers, COOKIE_HEADER, "");
+      String cookie = existing instanceof String ? (String) existing : "";
+      String pair = CRED_NAME + "=" + apikeyVal;
+      headers.put(COOKIE_HEADER, "".equals(cookie) ? pair : cookie + "; " + pair);`
+  }
+
+  return `      String authPrefix = "";
+      Object ap = Struct.getpath(options, List.of("auth", "prefix"));
+      if (ap instanceof String) {
+        authPrefix = (String) ap;
+      }
+      String apikeyVal = apikey instanceof String ? (String) apikey : "";
+      // Empty prefix (raw apiKey credential) must not add a leading space.
+      if ("".equals(authPrefix)) {
+        headers.put(CRED_NAME, apikeyVal);
+      }
+      else {
+        headers.put(CRED_NAME, authPrefix + " " + apikeyVal);
+      }`
+}
+
+
+function javastr(s: string): string {
+  return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+
+export {
+  PrepareAuth
+}

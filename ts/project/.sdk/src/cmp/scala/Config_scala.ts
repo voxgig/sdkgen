@@ -5,6 +5,9 @@ import {
   cmp,
   each,
   isAuthActive,
+  isHttpBasicAuth,
+  resolveAuthIn,
+  resolveAuthName,
   resolveAuthPrefix,
   targetFeatures,
   configDefinition,
@@ -84,6 +87,13 @@ const Config = cmp(async function Config(props: any) {
 
   const authActive = isAuthActive(model)
   const authPrefix = resolveAuthPrefix(model)
+  const authBasic = isHttpBasicAuth(model)
+  // WHERE the credential goes and under what name, as apidef resolved them
+  // from the spec's security scheme. Emitted below only when they DIFFER
+  // from the defaults, so every header-based SDK's Config.scala stays
+  // byte-identical.
+  const authIn = resolveAuthIn(model)
+  const authName = resolveAuthName(model)
 
   let baseUrl = ''
   try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
@@ -102,7 +112,17 @@ const Config = cmp(async function Config(props: any) {
     base: baseUrl,
   }
   if (authActive) {
-    options.auth = { prefix: authPrefix }
+    const auth: Record<string, any> = { prefix: authPrefix }
+    // ONLY WHEN THEY DIFFER FROM THE DEFAULT. `in: 'header'` and
+    // `name: 'Authorization'` are what resolveAuthIn/resolveAuthName answer
+    // for a spec that says nothing, and what the generated
+    // utility/PrepareAuth.scala assumes, so emitting them would be pure
+    // payload AND would move every existing header SDK's Config.scala. An
+    // apiKey-in-query API (joplin's `?token=`) is the case that needs them.
+    if (authBasic) auth.basic = true
+    if ('header' !== authIn) auth.in = authIn
+    if ('Authorization' !== authName) auth.name = authName
+    options.auth = auth
   }
   options.headers = headers
   options.entity = optionsEntity

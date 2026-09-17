@@ -28,6 +28,7 @@ import { Gitignore } from './Gitignore_cpp'
 import { MainEntity } from './MainEntity_cpp'
 import { EntityBase } from './EntityBase_cpp'
 import { EntityTypes } from './EntityTypes_cpp'
+import { PrepareAuth } from './PrepareAuth_cpp'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -136,6 +137,22 @@ const Main = cmp(async function Main(props: any) {
         })
     })
   })
+
+  // utility/prepare_auth.hpp is GENERATED, not templated: where the
+  // credential goes (header / query / cookie, and under what name) is a fact
+  // about the API, and tm/ can only hold one answer. See PrepareAuth_cpp.
+  //
+  // cpp had no prepare_auth template to replace - the logic was EMBEDDED in
+  // tm/cpp/utility/pipeline.hpp. It now lives in its own header, which
+  // pipeline.hpp includes; register_all still binds
+  // `u.prepareAuth = util::prepareAuth`, so every call site is unchanged.
+  //
+  // AT ROOT LEVEL, and OUTSIDE the `core` Folder above. The component opens
+  // `utility` itself, mirroring where `Copy({from:'tm/cpp'})` lands
+  // utility/pipeline.hpp; calling it beside Config would write
+  // `core/utility/prepare_auth.hpp`, which pipeline.hpp's
+  // `#include "prepare_auth.hpp"` does not resolve.
+  PrepareAuth({ target })
 
   // feature/<name>/kinds.cpp — the plugin definitions an active
   // plugin-bearing feature selected, and the Makefile's wiring gate for that

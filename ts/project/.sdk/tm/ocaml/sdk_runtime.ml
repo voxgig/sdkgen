@@ -239,9 +239,6 @@ let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
 (* utilities                                                           *)
 (* ------------------------------------------------------------------ *)
 
-let client_options_map (client : sdk_client) : value =
-  match clone client.cl_options with Map _ as m -> m | _ -> empty_map ()
-
 let clean_util (_ctx : ctx) (v : value) : value = v
 
 let make_error_util (ctx : ctx) (err_opt : sdk_error option) : value =
@@ -537,26 +534,24 @@ let graphql_errors_util (ctx : ctx) : bool =
         true
       end
 
-let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
-  match ctx.c_spec with
-  | None -> (None, Some (ctx_make_error ctx "auth_no_spec" "Expected context spec property to be defined."))
-  | Some spec ->
-    let headers = spec.sp_headers in
-    let options = client_options_map (cc ctx) in
-    (match getp options "auth" with
-     | Noval | Null -> ignore (delprop headers (Str "authorization")); (Some spec, None)
-     | _ ->
-       let apikey = getprop ~alt:(Str "__NOTFOUND__") options (Str "apikey") in
-       let is_notfound = (match apikey with Str "__NOTFOUND__" -> true | _ -> false) in
-       if is_notfound || is_noval apikey || apikey = Str "" then
-         ignore (delprop headers (Str "authorization"))
-       else begin
-         let auth_prefix = match getpath_s options "auth.prefix" with Str s -> s | _ -> "" in
-         let apikey_val = match apikey with Str s -> s | _ -> "" in
-         let authval = if auth_prefix <> "" then auth_prefix ^ " " ^ apikey_val else apikey_val in
-         setp headers "authorization" (Str authval)
-       end;
-       (Some spec, None))
+(* prepare_auth lives in its own GENERATED module, Sdk_prepare_auth
+ * (src/cmp/ocaml/PrepareAuth_ocaml.ts), and this is the binding every caller
+ * still reaches it by.
+ *
+ * WHY IT LEFT THIS FILE. WHERE the credential goes - a header, a query
+ * parameter or a cookie, and under what name - is a fact about the API, which
+ * apidef resolves into main.kit.info.security. A template can hold only one
+ * answer, so this one hardcoded an `authorization` header and an
+ * apiKey-in-query API (joplin's `?token=`) got a header it does not read and
+ * never got the parameter it does. The three placements need three different
+ * bodies, so the body is generated and the name stays here.
+ *
+ * The alias is not cosmetic: `new_utility`/`register` below bind
+ * `u_prepare_auth` to this name, make_spec_util calls it through the utility
+ * record, the secrets feature re-runs it the same way, and
+ * test/primary_utility_test.ml reaches `prepare_auth_util` by `open
+ * Sdk_runtime` to drive the shared corpus section. All of that is unchanged. *)
+let prepare_auth_util = Sdk_prepare_auth.prepare_auth_util
 
 (* ----- transforms / result helpers ----- *)
 

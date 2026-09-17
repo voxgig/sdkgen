@@ -9,6 +9,8 @@ import {
   each,
   isAuthActive,
   isConfigData,
+  resolveAuthIn,
+  resolveAuthName,
   resolveAuthPrefix,
   targetFeatures,
 } from '@voxgig/sdkgen'
@@ -44,6 +46,14 @@ const Config = cmp(async function Config(props: any) {
 
   const authActive = isAuthActive(model)
   const authPrefix = resolveAuthPrefix(model)
+  // `in` and `name` travel with the prefix now. apidef resolved both from
+  // the spec's securityScheme all along (joplin's says `in: "query",
+  // name: "token"`) and generation dropped them, so an apiKey-in-query API
+  // got an Authorization header it does not read. Emitted below ONLY when
+  // they differ from the header/Authorization defaults, so a header SDK's
+  // config.ex is byte-identical to what it generated before.
+  const authIn = resolveAuthIn(model)
+  const authName = resolveAuthName(model)
 
   let baseUrl = ''
   try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
@@ -127,7 +137,32 @@ const Config = cmp(async function Config(props: any) {
     // fields (station descriptor input, mirrors Config_ts) - both reps below
     // render from this same def, so the data and literal branches pick the
     // fields up together.
-    const { def: configDef, json: configJson } = configDefinition(model, target.name)
+    const { def: configDef } = configDefinition(model, target.name)
+
+    // THE PLACEMENT, ONTO THE CANONICAL DEFINITION RATHER THAN INTO ONE
+    // BRANCH. Both reps below render from `configDef` - the literal through
+    // formatElixir, the data through JSON - so overlaying the fact here is
+    // what keeps them the same config either side of the threshold. (Targets
+    // whose literal is a hand-assembled fragment had to emit the block twice
+    // and only did it once; elixir renders `options` whole, so it cannot
+    // drift.)
+    //
+    // The optspec in utility.ex's make_options declares `in` and `name` for
+    // exactly this reason: this port's validate REJECTS a key the spec does
+    // not list, so a config carrying a placement the optspec has never heard
+    // of does not degrade quietly - the client cannot be constructed at all
+    // (`** (Voxgig.Struct.Error) Unexpected keys at field auth: in, name`,
+    // measured by removing the optspec entry from a generated query SDK).
+    if (authActive && null != configDef.options && null != configDef.options.auth) {
+      if ('header' !== authIn) configDef.options.auth.in = authIn
+      if ('Authorization' !== authName) configDef.options.auth.name = authName
+    }
+
+    // Re-stringified AFTER the overlay, so the size the threshold is measured
+    // on is the size of the config actually emitted. For a header SDK the
+    // overlay adds nothing and this is byte-identical to configDefinition's
+    // own json.
+    const configJson = JSON.stringify(configDef)
     const asData = isConfigData(configJson, configReprSetting(model))
 
     // configDefinition's `def.entity` verbatim, NOT rebuilt here. The reduce

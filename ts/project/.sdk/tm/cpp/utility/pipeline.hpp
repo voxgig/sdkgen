@@ -1029,45 +1029,11 @@ inline std::string preparePath(CtxPtr ctx) {
 }
 
 // ---- prepareAuth ------------------------------------------------------
-
-inline SpecPtr prepareAuth(CtxPtr ctx) {
-  SpecPtr spec = ctx->spec;
-  if (!spec) throw ctx->makeError("auth_no_spec", "Expected context spec property to be defined.");
-
-  static const std::string HEADER_AUTH = "authorization";
-  static const std::string NOT_FOUND = "__NOTFOUND__";
-
-  Value headers = spec->headers;
-  Value options = ctx->client->optionsMap();
-
-  if (is_nullish(getp(options, "auth"))) {
-    map_remove(headers, HEADER_AUTH);
-    return spec;
-  }
-
-  Value apikey = getp(options, "apikey", Value(NOT_FOUND));
-
-  bool skip = false;
-  if (is_nullish(apikey)) {
-    skip = true;
-  } else if (apikey.is_string() && (apikey.as_string() == NOT_FOUND || apikey.as_string().empty())) {
-    skip = true;
-  }
-
-  if (skip) {
-    map_remove(headers, HEADER_AUTH);
-  } else {
-    std::string authPrefix = as_str(Struct::getpath(options, {"auth", "prefix"}));
-    std::string apikeyVal = apikey.is_string() ? apikey.as_string() : "";
-    if (authPrefix.empty()) {
-      map_put(headers, HEADER_AUTH, Value(apikeyVal));
-    } else {
-      map_put(headers, HEADER_AUTH, Value(authPrefix + " " + apikeyVal));
-    }
-  }
-
-  return spec;
-}
+//
+// GENERATED into utility/prepare_auth.hpp, included at the top of this file
+// (see the note there). `util::prepareAuth` keeps its name, its signature
+// and its binding in register_all below; only the three-way choice of WHERE
+// the credential goes moved out, because a template cannot make it.
 
 // ---- transformRequest -------------------------------------------------
 

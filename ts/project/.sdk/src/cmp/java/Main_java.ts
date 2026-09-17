@@ -29,6 +29,7 @@ import { MainEntity } from './MainEntity_java'
 import { EntityBase } from './EntityBase_java'
 import { EntityTypes } from './EntityTypes_java'
 import { SdkError } from './SdkError_java'
+import { PrepareAuth } from './PrepareAuth_java'
 import { javaPackage } from './utility_java'
 
 
@@ -72,6 +73,19 @@ const Main = cmp(async function Main(props: any) {
 
   // Shared entity runtime (entity/EntityBase.java).
   EntityBase({ target })
+
+  // utility/PrepareAuth.java. WHERE the credential goes (header, query
+  // parameter or cookie) and UNDER WHAT NAME are facts about the API, so
+  // the file is generated from the model rather than copied from tm/ —
+  // which is why tm/java/utility/PrepareAuth.java was deleted: the blanket
+  // Copy above and this component would otherwise both claim that path and
+  // jostraca refuses a duplicate output path.
+  //
+  // Called HERE, at Main's top level, and NOT inside the `core` Folder
+  // below. The java target is flat — utility/ is a SIBLING of core/, not a
+  // child — and the component opens `utility` itself, exactly as
+  // EntityBase opens `entity`.
+  PrepareAuth({ target })
 
   // Generate the client class and config in core/.
   Folder({ name: 'core' }, () => {

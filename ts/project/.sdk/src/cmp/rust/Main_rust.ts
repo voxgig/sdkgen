@@ -25,6 +25,7 @@ import {
 import { Package } from './Package_rust'
 import { Config } from './Config_rust'
 import { Schema } from './Schema_rust'
+import { PrepareAuth } from './PrepareAuth_rust'
 import { Gitignore } from './Gitignore_rust'
 import { MainEntity } from './MainEntity_rust'
 import { EntityBase } from './EntityBase_rust'
@@ -67,6 +68,21 @@ const Main = cmp(async function Main(props: any) {
       RUSTCRATE: rustcrate,
     }
   })
+
+  // utility/prepare_auth.rs is GENERATED, not templated: where the
+  // credential goes (header / query / cookie, and under what name) is a
+  // fact about the API, and tm/ can only hold one answer. See
+  // PrepareAuth_rust.
+  //
+  // AT ROOT LEVEL, and outside the `core` Folder below. The rust crate root
+  // IS the target root - lib.rs, core/, feature/ and utility/ all sit there
+  // - the component opens `utility` itself, and that is the same path
+  // `Copy({from:'tm/rust'})` used for the template it replaces. Calling it
+  // beside Config, inside `Folder({name:'core'})`, would emit
+  // core/utility/prepare_auth.rs instead: a file no module declares, so
+  // rustc never compiles it, while utility/mod.rs's `pub mod prepare_auth;`
+  // keeps binding whatever utility/ actually holds.
+  PrepareAuth({ target })
 
   // Generated core files: the client (sdk.rs), the API config and the
   // branded error type.

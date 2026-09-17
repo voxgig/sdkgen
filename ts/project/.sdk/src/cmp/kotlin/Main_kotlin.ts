@@ -28,6 +28,7 @@ import { MainEntity } from './MainEntity_kotlin'
 import { EntityBase } from './EntityBase_kotlin'
 import { EntityTypes } from './EntityTypes_kotlin'
 import { SdkError } from './SdkError_kotlin'
+import { PrepareAuth } from './PrepareAuth_kotlin'
 import { kotlinPackage } from './utility_kotlin'
 
 
@@ -88,6 +89,25 @@ const Main = cmp(async function Main(props: any) {
 
   // Shared entity runtime (entity/EntityBase.kt).
   EntityBase({ target })
+
+  // utility/PrepareAuth.kt. GENERATED, NOT COPIED: where the credential
+  // goes - header, query parameter or cookie, under the name the spec gives
+  // - is a fact about the API, and tm/ can only hold one answer. It was
+  // embedded in tm/kotlin/utility/Prepare.kt among the other prepare*
+  // helpers, hardcoding an `authorization` header; that one function has
+  // moved out into its own compilation unit in the same package, so
+  // Register.kt's `u.prepareAuth = ::prepareAuth` binds it unchanged.
+  //
+  // Called HERE, at Main's TOP LEVEL, and deliberately NOT inside the
+  // `core` Folder below. The kotlin tree is FLAT: build.gradle.kts declares
+  // core/, utility/, feature/ and entity/ as four sibling source roots, and
+  // the Copy above lands tm/kotlin/utility/* at <out>/utility/. The
+  // component opens `utility` itself, exactly as EntityBase opens `entity`.
+  // Nested in `core` it would write core/utility/PrepareAuth.kt - which
+  // still COMPILES, because core/ is scanned recursively and the package
+  // declaration is what resolves the symbol, so the misfiling would be
+  // invisible to every check. See PrepareAuth_kotlin.
+  PrepareAuth({ target })
 
   // Generate the client class and config in core/.
   Folder({ name: 'core' }, () => {

@@ -28,6 +28,7 @@ import { Schema } from './Schema_js'
 import { Gitignore } from './Gitignore_js'
 import { MainEntity } from './MainEntity_js'
 import { SdkError } from './SdkError_js'
+import { PrepareAuth } from './PrepareAuth_js'
 import { EntityBase } from './EntityBase_js'
 import { EntityTypes } from './EntityTypes_js'
 
@@ -194,6 +195,11 @@ if (fres instanceof Promise) { await fres }
     })
 
     Config({ target })
+
+    // GENERATED, NOT COPIED. Where the credential goes is a fact about the
+    // API, and tm/ can only hold one answer. See PrepareAuth_js.
+    PrepareAuth({ target })
+
     Schema({ target })
 
     EntityBase({ target })

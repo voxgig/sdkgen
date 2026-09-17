@@ -620,25 +620,27 @@
         (oset! result :ok false)
         true))))
 
-(def HEADER-AUTH "authorization")
-(def OPTION-APIKEY "apikey")
-(def NOT-FOUND "__NOTFOUND__")
-
-(defn u-prepare-auth [ctx]
-  (let [spec (oget ctx :spec)]
-    (if (nil? spec) [nil (ctx-error ctx "auth_no_spec" "Expected context spec property to be defined.")]
-        (let [headers (oget spec :headers)
-              options (client-options-map (oget ctx :client))]
-          (if (nil? (vs/getprop options "auth"))
-            (do (vs/delprop headers HEADER-AUTH) [spec nil])
-            (let [apikey (vs/getprop options OPTION-APIKEY NOT-FOUND)]
-              (if (or (nil? apikey) (and (string? apikey) (or (= apikey NOT-FOUND) (= apikey ""))))
-                (vs/delprop headers HEADER-AUTH)
-                (let [auth-prefix (or (vs/getpath options "auth.prefix") "")
-                      apikey-val (if (string? apikey) apikey "")]
-                  (.put ^java.util.Map headers HEADER-AUTH
-                        (if (= auth-prefix "") apikey-val (str auth-prefix " " apikey-val)))))
-              [spec nil]))))))
+;; WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API, so HEADER-AUTH,
+;; OPTION-APIKEY, NOT-FOUND and u-prepare-auth are GENERATED into
+;; src/sdk/prepare_auth.clj rather than written here.
+;;
+;; apidef resolves the security scheme's `in` and `name` into
+;; main.kit.info.security - joplin's says `in: "query", name: "token"` - and
+;; this file used to hardcode an `authorization` HEADER, so an
+;; apiKey-in-query API got a header it does not read and never got the query
+;; parameter it does. Header, query and cookie need three different bodies
+;; and a hand-written file has to pick one, so cmp/clojure/PrepareAuth_
+;; clojure.ts emits the branch the API actually uses and nothing else.
+;;
+;; `load`, NOT `require`: the generated file opens with `(in-ns 'sdk.core)`
+;; and is read INTO THIS NAMESPACE, right here, where the defn used to be.
+;; A namespace of its own would need sdk.core's oget / ctx-error /
+;; client-options-map while base-utility-map below needs its u-prepare-auth -
+;; a load cycle, which Clojure refuses. This is the idiom clojure.core itself
+;; uses to split across files, every helper above is already in scope, and
+;; both `:prepare-auth u-prepare-auth` below and `core/HEADER-AUTH` (read by
+;; feature/secrets) go on resolving exactly as before.
+(load "prepare_auth")
 
 (defn u-make-point [ctx]
   (let [preset (out-get ctx "point")]

@@ -23,6 +23,7 @@ import { Config } from './Config_clojure'
 import { Schema } from './Schema_clojure'
 import { Gitignore } from './Gitignore_clojure'
 import { MainEntity } from './MainEntity_clojure'
+import { PrepareAuth } from './PrepareAuth_clojure'
 
 
 // Features that ship a top-level `feature/<name>/` container in
@@ -87,11 +88,20 @@ const Main = cmp(async function Main(props: any) {
     }
   })
 
-  // Generated config namespace (src/sdk/config.clj).
+  // Generated config namespace (src/sdk/config.clj), and the generated
+  // credential placement (src/sdk/prepare_auth.clj).
+  //
+  // BOTH SIT IN THIS ONE src/sdk PAIR, and neither opens a folder of its own.
+  // The Copy above roots tm/clojure at the target root, so the copied
+  // core.clj lands at src/sdk/core.clj; prepare_auth.clj has to be its
+  // SIBLING, because core.clj reads it with `(load "prepare_auth")` and that
+  // resolves to the classpath resource `sdk/prepare_auth.clj` under
+  // deps.edn's `:paths ["src"]`.
   Folder({ name: 'src' }, () => {
     Folder({ name: 'sdk' }, () => {
       Config({ target })
       Schema({ target })
+      PrepareAuth({ target })
     })
   })
 

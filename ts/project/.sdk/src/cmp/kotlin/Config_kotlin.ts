@@ -6,6 +6,9 @@ import {
   configDefinition,
   each,
   isAuthActive,
+  isHttpBasicAuth,
+  resolveAuthIn,
+  resolveAuthName,
   resolveAuthPrefix,
   targetFeatures,
 } from '@voxgig/sdkgen'
@@ -46,6 +49,17 @@ const Config = cmp(async function Config(props: any) {
 
   const authActive = isAuthActive(model)
   const authPrefix = resolveAuthPrefix(model)
+  const authBasic = isHttpBasicAuth(model)
+  // `in` and `name` travel with the prefix now. apidef resolved both all
+  // along, into main.kit.info.security, and this emitter dropped them - so
+  // an apiKey-in-query API got an Authorization header it does not read.
+  // The generated utility/PrepareAuth.kt is built from the same two values.
+  //
+  // Emitted only when they DIFFER from the defaults, so a
+  // header/Authorization SDK's Config.kt is byte-identical to what it
+  // generated before.
+  const authIn = resolveAuthIn(model)
+  const authName = resolveAuthName(model)
 
   let baseUrl = ''
   try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
@@ -74,7 +88,15 @@ const Config = cmp(async function Config(props: any) {
     base: baseUrl,
   }
   if (authActive) {
-    options.auth = { prefix: authPrefix }
+    const auth: Record<string, any> = { prefix: authPrefix }
+    // `basic` joins them for the same reason: the generated prepareAuth
+    // emits the base64(user:pass) branch only for a spec-declared HTTP
+    // Basic scheme, and that branch reads this option at runtime - without
+    // it the branch could never fire.
+    if (authBasic) { auth.basic = true }
+    if ('header' !== authIn) { auth.in = authIn }
+    if ('Authorization' !== authName) { auth.name = authName }
+    options.auth = auth
   }
   options.headers = headers
   options.entity = optionsEntity

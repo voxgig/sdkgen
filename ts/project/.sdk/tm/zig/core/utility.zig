@@ -1295,50 +1295,31 @@ pub fn graphql_errors_util(ctx: *Context) bool {
     return true;
 }
 
-const HEADER_AUTH = "authorization";
-const OPTION_APIKEY = "apikey";
-const NOT_FOUND = "__NOTFOUND__";
+// prepare_auth IS GENERATED (src/cmp/zig/PrepareAuth_zig.ts), not templated.
+//
+// WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API. apidef resolves the
+// security scheme's `in` and `name` into main.kit.info.security - joplin's
+// says `in: "query", name: "token"` - and this file could hold only one
+// answer, which was `const HEADER_AUTH = "authorization"`. So an
+// apiKey-in-query API was sent a header it does not read and never sent the
+// query parameter it does. Header, query and cookie need three different
+// bodies; a component emits the one this API uses and nothing else.
+//
+// RE-EXPORTED, NOT REWIRED. Every caller keeps naming the same symbol:
+// `Utility.prepare_auth` above, `make_spec_util`'s unqualified
+// `try prepare_auth_util(ctx)`, and `sdk.utilmod.prepare_auth_util` - the
+// path root.zig publishes and test/primary_utility_test.zig drives the
+// shared corpus's `prepareAuth` section through. A file-scope const bound to
+// the generated function is the whole of the binding change.
+pub const prepare_auth_util = @import("prepare_auth.zig").prepare_auth_util;
 
-pub fn prepare_auth_util(ctx: *Context) E!*Spec {
-    const spec = ctx.spec orelse return ctx.fail("auth_no_spec", "Expected context spec property to be defined.");
-
-    const headers = spec.headers;
-    const options: Value = if (ctx.client) |client| client.options_map() else ctx.options;
-
-    const auth = h.getp(options, "auth");
-    if (h.is_noval(auth)) {
-        h.del_prop(headers, h.vstr(HEADER_AUTH));
-        return spec;
-    }
-
-    const apikey = vs.getprop(h.A(), options, h.vstr(OPTION_APIKEY), h.vstr(NOT_FOUND)) catch h.vstr(NOT_FOUND);
-
-    const skip = switch (apikey) {
-        .null => true,
-        .string => |s| std.mem.eql(u8, s, NOT_FOUND) or s.len == 0,
-        else => false,
-    };
-
-    if (skip) {
-        h.del_prop(headers, h.vstr(HEADER_AUTH));
-    } else {
-        const auth_prefix: []const u8 = switch (h.getpath(&.{ "auth", "prefix" }, options)) {
-            .string => |s| s,
-            else => "",
-        };
-        const apikey_val: []const u8 = switch (apikey) {
-            .string => |s| s,
-            else => "",
-        };
-        if (auth_prefix.len == 0) {
-            h.setp(headers, HEADER_AUTH, h.vstr(apikey_val));
-        } else {
-            h.setp(headers, HEADER_AUTH, h.vstr(fmt("{s} {s}", .{ auth_prefix, apikey_val })));
-        }
-    }
-
-    return spec;
-}
+// The two comptime FACTS the generated file decided: where this SDK puts its
+// credential ("header" | "query" | "cookie" | "none"), and whether the scheme
+// is genuine HTTP Basic. Re-exported on the same path as the function, so
+// test/pipeline_test.zig can reach both as `sdk.utilmod.<name>` and skip the
+// header-shape cases on an SDK that has no header credential to assert on.
+pub const prepare_auth_placement = @import("prepare_auth.zig").PLACEMENT;
+pub const prepare_auth_basic = @import("prepare_auth.zig").BASIC;
 
 pub fn result_basic_util(ctx: *Context) ?*SdkResult {
     const response = ctx.response;

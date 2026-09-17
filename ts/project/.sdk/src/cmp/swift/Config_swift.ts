@@ -5,6 +5,8 @@ import {
   cmp,
   configDefinition,
   each,
+  resolveAuthIn,
+  resolveAuthName,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -37,7 +39,41 @@ const Config = cmp(async function Config(props: any) {
   // into main.slug / main.version / main.target (the three station
   // descriptor identity fields, station design §4); swift has only the
   // JSON-literal rep, so that one call covers every rep this target emits.
-  const { json } = configDefinition(model, target.name)
+  //
+  // `def` rather than the helper's own `json`, because `in` and `name` are
+  // added to the auth block below and the JSON has to be re-serialised over
+  // that. When nothing is added, `JSON.stringify(def)` IS the helper's
+  // `json` - same object, same key order - so a header SDK's config is
+  // byte-identical to what it was.
+  const { def } = configDefinition(model, target.name)
+
+  // `in` and `name` TRAVEL WITH THE PREFIX NOW. apidef resolved both from
+  // the spec's securityScheme all along (main.kit.info.security - joplin's
+  // says `in: "query", name: "token"`) and generation dropped them, so an
+  // apiKey-in-query API got an Authorization header it does not read.
+  //
+  // Emitted ONLY when they differ from the header/Authorization defaults, so
+  // every header-based SDK regenerates byte-identical. The generated
+  // prepareAuth bakes the placement in at generation time (see
+  // PrepareAuth_swift); these carry it in the config so a running SDK, and
+  // anything reading its descriptor, can say what its scheme actually is.
+  //
+  // THE OPTSPEC HAS TO NAME THEM TOO. `main.kit.optspec.auth` does, but
+  // swift does not read the model for its option spec - buildOptSpec() in
+  // tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift is written out
+  // by hand - so both were added there in the same change. Without that this
+  // block is inert at best: makeOptions merges the config's options and
+  // validates the result against that spec, and a key the spec does not name
+  // is dropped or rejected.
+  const authIn = resolveAuthIn(model)
+  const authName = resolveAuthName(model)
+  const authOpt: any = (def as any)?.options?.auth
+  if (null != authOpt) {
+    if ('header' !== authIn) authOpt.in = authIn
+    if ('Authorization' !== authName) authOpt.name = authName
+  }
+
+  const json = JSON.stringify(def)
 
   // Model-data defaults may carry the ProjectName placeholder (e.g. the
   // clienttrack clientName); resolve it to the API name so the embedded JSON

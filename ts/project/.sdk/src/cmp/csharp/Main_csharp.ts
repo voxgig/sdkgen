@@ -23,6 +23,7 @@ import {
 import { Package } from './Package_csharp'
 import { Config } from './Config_csharp'
 import { Schema } from './Schema_csharp'
+import { PrepareAuth } from './PrepareAuth_csharp'
 import { Gitignore } from './Gitignore_csharp'
 import { MainEntity } from './MainEntity_csharp'
 import { SdkError } from './SdkError_csharp'
@@ -57,6 +58,23 @@ const Main = cmp(async function Main(props: any) {
       ...props.ctx$.stdrep,
     }
   })
+
+  // GENERATED, NOT COPIED. Where the credential goes is a fact about the
+  // API, and tm/ can only hold one answer. See PrepareAuth_csharp.
+  //
+  // CALLED HERE, AT THE ROOT, and NOT inside the core/ Folder below. The
+  // template it replaces lived at `tm/csharp/utility/PrepareAuth.cs`, so
+  // the blanket Copy above put it at `<out>/utility/PrepareAuth.cs` -
+  // beside Register.cs, which wires `u.PrepareAuth = PrepareAuthUtil` from
+  // the same `partial class SdkUtility`. The component opens its own
+  // `utility` Folder; moving this call next to Config would nest it under
+  // core/ and write `core/utility/PrepareAuth.cs`, where nothing compiles
+  // it into the utility partial.
+  //
+  // The template MUST be deleted for the same reason it is generated: the
+  // Copy above and this component would otherwise both claim
+  // `utility/PrepareAuth.cs`, and jostraca refuses a duplicate output path.
+  PrepareAuth({ target })
 
   // Generated files live in core/ beside the copied runtime.
   Folder({ name: 'core' }, () => {
