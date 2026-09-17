@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -47,7 +47,13 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const ident = cIdent(model)
   const Name = model.const.Name
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = getModelPath(model, `main.${KIT}.feature`)
+  // GATED BY THE TARGET, not the raw active-feature map. A feature applies
+  // where its `needs` are a subset of the target's `provides`, and the code
+  // path has always honoured that - Config and Main take targetFeatures. The
+  // REFERENCE did not, so every target's README advertised `secrets` whether
+  // or not that target's container carries a vendored sekreto, and a reader
+  // who set the option got nothing back.
+  const feature = targetFeatures(model, target)
 
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
