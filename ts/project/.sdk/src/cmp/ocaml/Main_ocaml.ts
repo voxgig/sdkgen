@@ -21,6 +21,7 @@ import {
 
 import { Package } from './Package_ocaml'
 import { Config, secretsBuild } from './Config_ocaml'
+import { Schema } from './Schema_ocaml'
 import { Gitignore } from './Gitignore_ocaml'
 import { MainEntity } from './MainEntity_ocaml'
 import { SdkError } from './SdkError_ocaml'
@@ -183,6 +184,7 @@ FEATURE_LINK =
   }
 
   // Generated API config + branded-error re-export.
+  Schema({ target })
   Config({ target })
   SdkError({ target })
 

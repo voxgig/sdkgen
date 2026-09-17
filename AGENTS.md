@@ -358,7 +358,7 @@ Rules:
 | Change a feature's hooks / deps | `ts/project/.sdk/model/feature/<name>.aontu` | propagate |
 | Change the **generator core** (CLI, actions, neutral components, helpers) | `ts/src/…` | `cd ts && npm run build && npm test` |
 | Change the base model schema | `ts/model/sdkgen.aon` (authoritative) | `make check-model build test` |
-| Add or retype an **SDK client option** | `main: kit: optspec` in `ts/model/sdkgen.aon` | one place, not twenty: the generated `Schema` module carries it into every ported target. Unported targets keep the literal in their own `make_options` template |
+| Add or retype an **SDK client option** | `main: kit: optspec` in `ts/model/sdkgen.aon` | one place, not twenty: the generated `Schema` module carries it into every SDK target. No `make_options` template holds a spec of its own any more — if you find one, it is a regression |
 | Add or retype a **feature option** | that feature's `config.options` (with a default) or `config.optspec` (a type, for a callback or an option whose default understates it) | the option spec, the README table and the REFERENCE table all derive from these two — see `ts/src/helpers/optspec.ts` and `ts/src/cmp/FeatureDocs.ts` |
 | Add/remove a bundled target or feature | the trees above **and** `ts/project/sdkgen-package.json` | a guard test fails if the manifest and the directories disagree |
 | Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts |

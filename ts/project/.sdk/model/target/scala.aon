@@ -10,7 +10,7 @@ main: kit: target: scala: {
   # Applicability (docs/design/feature-tags.md). A vendored sekreto port
   # lives in this target's feature container, so a feature that resolves
   # secrets through sekreto can apply here.
-  provides: { sekreto: true }
+  provides: { sekreto: true, schema: true }
 
   # Retired by the move to the vendored @voxgig/omni corpus runner
   # (vendor-tag rollout): NOTHING, deliberately, and the empty list says so

@@ -16,7 +16,7 @@ main: kit: target: clojure: {
   # `(require 'voxgig.sekreto.chain)` to voxgig/sekreto/chain.clj searched
   # from each :paths entry, never by relative import, so Package_clojure
   # adds `feature/secrets` to :paths whenever this feature is active.
-  provides: { sekreto: true }
+  provides: { sekreto: true, schema: true }
 
   deps: &: {
     kind: *'prod' | string

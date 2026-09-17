@@ -15,6 +15,11 @@
 
 #include "../core/types.hpp"
 
+// The GENERATED option spec makeOptions validates against. A leaf header
+// (it includes only core/struct.hpp), so this cannot close a cycle with
+// core/config.hpp, which pulls in the feature headers.
+#include "../core/schema.hpp"
+
 // prepareAuth is GENERATED, not templated: WHERE the credential goes -
 // header, query or cookie, and under what name - is a fact about THIS API
 // (apidef resolves it into main.kit.info.security), and this file can only
@@ -572,6 +577,12 @@ inline bool graphqlErrors(CtxPtr ctx) {
 // ---- makeSpec ---------------------------------------------------------
 
 inline SpecPtr makeSpec(CtxPtr ctx) {
+  // A PreSpec feature hook (e.g. validate) may short-circuit by storing an
+  // error; surface it before the request is built, the same way makePoint
+  // surfaces out.pointError.
+  if (ctx->out.specError) {
+    throw ctx->out.specError;
+  }
   if (ctx->out.spec) {
     ctx->spec = ctx->out.spec;
     return ctx->spec;
@@ -1055,46 +1066,6 @@ inline Value transformRequest(CtxPtr ctx) {
 
 // ---- makeOptions ------------------------------------------------------
 
-inline const char* OPTSPEC_JSON() {
-  return "{"
-    "\"apikey\": \"\","
-    // The SECOND credential, for the HTTP Basic scheme
-    // (base64(apikey:secret)). main.kit.optspec names it and this copy did
-    // not, and validate DROPS a top-level key this spec does not name - so a
-    // caller that supplied `secret` never had it reach prepareAuth.
-    "\"secret\": \"\","
-    "\"base\": \"http://localhost:8000\","
-    "\"prefix\": \"\","
-    "\"suffix\": \"\","
-    // WHERE the credential goes and under what name, plus the HTTP Basic
-    // switch. `Struct::validate` SILENTLY DROPS a key this spec does not
-    // declare - it does not reject it - so without these three the generated
-    // config's own auth block was trimmed back to `prefix` on the way in and
-    // the SDK could not see its own scheme. MEASURED, not assumed: a client
-    // built from a Basic-scheme model reported `auth={prefix:Basic}` before
-    // this line and `auth={basic:true,in:,name:,prefix:Basic}` after, and an
-    // apiKey-in-query model now reports `in:query,name:token` where it used
-    // to report neither. '' means "take what the spec said", which is what
-    // prepare_auth was generated from. Mirrors main.kit.optspec.auth in
-    // @voxgig/sdkgen/model/sdkgen.aon.
-    "\"auth\": { \"prefix\": \"\", \"basic\": false,"
-    "          \"in\": \"\", \"name\": \"\" },"
-    "\"headers\": { \"`$CHILD`\": \"`$STRING`\" },"
-    "\"allow\": {"
-    "  \"method\": \"GET,PUT,POST,PATCH,DELETE,OPTIONS\","
-    "  \"op\": \"create,update,load,list,remove,command,direct,graphql\""
-    "},"
-    "\"entity\": { \"`$CHILD`\": {"
-    "  \"`$OPEN`\": true, \"active\": false, \"alias\": {} } },"
-    "\"feature\": { \"`$CHILD`\": {"
-    "  \"`$OPEN`\": true, \"active\": false } },"
-    "\"utility\": {},"
-    "\"system\": {},"
-    "\"test\": { \"active\": false, \"entity\": { \"`$OPEN`\": true } },"
-    "\"clean\": { \"keys\": \"key,token,id\" }"
-    "}";
-}
-
 inline Value makeOptions(CtxPtr ctx) {
   Value options = ctx->options;
   if (!options.is_map()) options = vmap();
@@ -1161,7 +1132,19 @@ inline Value makeOptions(CtxPtr ctx) {
   Value cfgopts = Helpers::toMapAny(getp(config, "options"));
   if (!cfgopts.is_map()) cfgopts = vmap();
 
-  Value optspec = vs::parse_json(OPTSPEC_JSON());
+  // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
+  //
+  // Built from the model: `main.kit.optspec` for the standard options, plus
+  // one entry per feature this target carries, from that feature's own
+  // `config.options` / `config.optspec`. This file used to carry its own
+  // OPTSPEC_JSON() - one of twenty hand-maintained copies of a schema nothing
+  // cross-checked, and it had already drifted (no `extend`, no `server`, no
+  // `auth.basic`). Add an option to the model instead and every ported target
+  // validates it.
+  //
+  // Parsed once and shared: makeOptions validates AGAINST the spec and writes
+  // into the options, never into the spec.
+  const Value& optspec = sharedOptspec();
 
   // Preserve system.fetch before merge/validate (a function Value may be
   // dropped by validate).

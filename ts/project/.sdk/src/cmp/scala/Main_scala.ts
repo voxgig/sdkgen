@@ -23,6 +23,7 @@ import {
 
 import { Package } from './Package_scala'
 import { Config } from './Config_scala'
+import { Schema } from './Schema_scala'
 import { Gitignore } from './Gitignore_scala'
 import { MainEntity } from './MainEntity_scala'
 import { EntityBase } from './EntityBase_scala'
@@ -200,6 +201,8 @@ const Main = cmp(async function Main(props: any) {
     })
 
     Config({ target })
+
+    Schema({ target })
 
     // Generate the typed reference-model file (<Name>Types.scala) beside the
     // other generated core files. Documentation/DX shapes only — not wired

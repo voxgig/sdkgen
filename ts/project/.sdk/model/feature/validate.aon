@@ -10,8 +10,9 @@ main: kit: feature: validate: {
 
   # Applicability (docs/design/feature-tags.md): this feature is nothing
   # without the generated `Schema` module, so it applies only to targets that
-  # emit one. ts and js today; a target joins by emitting Schema from its
-  # Main and declaring the tag.
+  # emit one AND carry an implementation of the feature. Every bundled
+  # language target does today; the tag is what a target added later, or an
+  # external package's target, declares to join.
   needs: { schema: true }
 
   # The one feature whose schema is not hand-written: the specs come from

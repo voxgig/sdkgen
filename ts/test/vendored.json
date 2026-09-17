@@ -5099,7 +5099,7 @@
    "tag": "sdk-20260911-2013-0",
    "file": {
     "tm/csharp/utility/struct/Struct.cs": {
-     "sha256": "e4e56ea11b86075025790a17661087c4851d7f7c0e9adb65e1700c8d15d4873e",
+     "sha256": "8cf6094e9604b82ac6d0acb6fd84eaef02a064b0f7a4dbfaa514fca5a905b0c8",
      "upstream": "csharp/Struct.cs"
     }
    }
@@ -5111,7 +5111,7 @@
    "tag": "sdk-20260911-2013-0",
    "file": {
     "tm/go/utility/struct/voxgigstruct.go": {
-     "sha256": "7741637352666db46e7714ad06f3ae3ba00cd339758c329817676a90fdadefd9",
+     "sha256": "bb9b368557d52d487ba734a23487cd30345787c72ccce7f781d2e330b4ec45f0",
      "upstream": "go/voxgigstruct.go"
     }
    }

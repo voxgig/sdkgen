@@ -14,7 +14,7 @@ main: kit: target: cpp: {
   # applies. The port is a multi-translation-unit library where the SDK
   # itself is header-only; tm/cpp/Makefile compiles it into an archive only
   # through the generated feature/secrets/kinds.mk it `-include`s.
-  provides: { sekreto: true }
+  provides: { sekreto: true, schema: true }
 
   # Files earlier toolchains generated that this target has RETIRED
   # (vendor-tag rollout): the struct-corpus runner header

@@ -378,6 +378,180 @@ let rbac_feature () : feature =
   f
 
 (* ------------------------------------------------------------------ *)
+(* validate (PreSpec / PreDone payload checks)                         *)
+(* ------------------------------------------------------------------ *)
+(* Payload validation against the model's own field types. The ocaml port
+ * of tm/ts/src/feature/validate/ValidateFeature.ts.
+ *
+ * The specs are NOT written here and not written in the model either: every
+ * entity field already carries a canonical type sentinel (`$STRING`,
+ * `$INTEGER`, the `$ONE` union for an OpenAPI multi-type), which is the same
+ * vocabulary validate speaks. The generator maps them once
+ * (helpers/canonSpec) and emits Sdk_schema.entity_spec_value, so a field
+ * whose type changes in the API spec changes what this feature enforces with
+ * no edit anywhere.
+ *
+ * WHAT IS CHECKED
+ *   outbound (PreSpec)  the payload the caller asked to send, against
+ *                       spec.op[opname] - the operation's request shape.
+ *   inbound  (PreDone)  each record the operation returned, against
+ *                       spec.data - the entity's own field types.
+ *
+ * WHAT IS NOT. The model carries no array element types, no nested object
+ * schemas, no enums, formats or bounds, so this checks the shape the model
+ * knows and nothing more.
+ *
+ * Short-circuit mechanism: the failure error goes into ctx.c_out "spec" as
+ * an OErr, which make_spec_util already returns as the operation's error
+ * rather than using as a spec - the same seam rbac uses one stage earlier
+ * through "point". *)
+
+(* Built rather than written, so the backticks cannot be lost in an edit. *)
+let validate_open = String.make 1 (Char.chr 96) ^ "$OPEN" ^ String.make 1 (Char.chr 96)
+
+(* The spec tree with every `$OPEN` marker removed, so an undeclared key is an
+ * error rather than a pass. Rebuilt rather than mutated: the schema module
+ * memoises one value every client in the process reads. *)
+let rec validate_close (node : value) : value =
+  match node with
+  | List r -> lst (List.map validate_close !r)
+  | Map m ->
+    let out = empty_map () in
+    List.iter (fun (k, v) ->
+        if k <> validate_open then ignore (setp out k (validate_close v))) m.entries;
+    out
+  | v -> v
+
+let validate_feature () : feature =
+  let options = ref (empty_map ()) in
+  let spec = ref (empty_map ()) in
+  let request = ref true in
+  let response = ref false in
+  let mode = ref "throw" in
+  let f = { f_name = "validate"; f_version = "0.0.1"; f_active = true; f_options = Noval;
+            f_init = (fun _ _ -> ()); f_hook = (fun _ _ -> ()) } in
+
+  let entname ctx =
+    match ctx.c_entity with
+    | Some e when e.e_name <> "" && e.e_name <> "_" -> e.e_name
+    | _ -> ctx.c_op.op_entity in
+
+  let entity_spec ctx = getp !spec (entname ctx) in
+
+  (* The payload an operation is about to send.
+   *
+   * TWO SLOTS, AND THE OP PICKS. A body op (create/update/patch) carries the
+   * caller's argument in c_reqdata over the entity's c_data; a match op
+   * (load/list/remove) carries it in c_reqmatch over c_match. So reading
+   * c_reqdata for every op would check a load against the entity's STALE
+   * stored match and reject it for the id the caller had just supplied. *)
+  let payload ctx opname =
+    let body = opname = "create" || opname = "update" || opname = "patch" in
+    let base = if body then ctx.c_data else ctx.c_match in
+    let req = if body then ctx.c_reqdata else ctx.c_reqmatch in
+    let out = empty_map () in
+    List.iter (fun src ->
+        match src with
+        | Map m -> List.iter (fun (k, v) -> ignore (setp out k v)) m.entries
+        | _ -> ()) [base; req];
+    (* `$action` SELECTS A CUSTOM ENDPOINT; it is not a field of the record,
+     * and under `strict` every custom-action call would be rejected for the
+     * one key that made it reachable. *)
+    ignore (delprop out (Str "$action"));
+    out in
+
+  (* One validate call. Errors are COLLECTED, never raised: validate raises on
+   * the first failure unless given an errs list, and a caller fixing a
+   * payload wants every problem with it, not the first one.
+   *
+   * NO `onInvalid` IN THIS PORT, and deliberately: the model types it a
+   * `$FUNCTION`, but `value`'s Func constructor holds an INJECTOR
+   * (inj -> value -> string -> value -> value), which is not a callback a
+   * report can be handed to. Every failure still reaches the caller through
+   * the operation's error; a port that grows a callback slot on the feature
+   * record can add it here. *)
+  let check ctx data sp =
+    ignore ctx;
+    let errs = empty_list () in
+    let idef = { (default_injdef ()) with d_errs = errs } in
+    (try ignore (validate ~inj:(IDef idef) data sp) with
+     | Struct_error m ->
+       (* A spec this port cannot run at all (rather than a payload that fails
+        * it) must not take the operation down with it: report it like any
+        * other failure and let `mode` decide. *)
+       if size errs = 0 then ignore (setprop errs (Num 0.) (Str m))
+     | _ -> if size errs = 0 then ignore (setprop errs (Num 0.) (Str "validate failed")));
+    (match errs with
+     | List r -> List.map (fun e -> match e with Str s -> s | v -> stringify v) !r
+     | _ -> []) in
+
+  f.f_init <- (fun _ctx opts ->
+      options := (match to_map opts with Map _ -> opts | _ -> empty_map ());
+      f.f_active <- opt_active opts;
+      (* DEFAULTS ARE APPLIED HERE, not by the option spec. The model's
+       * config.options documents them and types them; it does not inject
+       * them, because each feature entry in the spec is optional and struct
+       * fills in nothing through an optional union. *)
+      request := getp !options "request" <> Bool false;
+      response := getp !options "response" = Bool true;
+      (* FAIL CLOSED. Only the exact string "report" selects report mode, so a
+       * typo still rejects rather than silently turning enforcement off. *)
+      mode := (if opt_str !options "mode" ~default:"throw" = "report" then "report" else "throw");
+      (* `strict` is applied ONCE, here, rather than per call. *)
+      let entityspec = Sdk_schema.entity_spec_value () in
+      spec := (if getp !options "strict" = Bool true then validate_close entityspec
+               else entityspec));
+
+  f.f_hook <- (fun name ctx ->
+      if name = "PreSpec" && f.f_active && !request then begin
+        let opname = ctx.c_op.op_name in
+        let opspec = getp (getp (entity_spec ctx) "op") opname in
+        if not (is_nullish opspec) then begin
+          let errs = check ctx (payload ctx opname) opspec in
+          if errs <> [] && !mode <> "report" then
+            let err = ctx_make_error ctx "validate_failed"
+                ("Invalid " ^ opname ^ " request for entity \"" ^ entname ctx ^ "\": "
+                 ^ String.concat "; " errs) in
+            Hashtbl.replace ctx.c_out "spec" (OErr err)
+        end
+      end
+      else if name = "PreDone" && f.f_active && !response then begin
+        let dataspec = getp (entity_spec ctx) "data" in
+        match ctx.c_result with
+        | Some result when not (is_nullish dataspec) && not (is_nullish result.rt_resdata) ->
+          (* A list op returns many records and a load returns one; both are
+           * checked against the same record spec, because they are the same
+           * entity.
+           *
+           * NO UNWRAP STEP, unlike the ts and go ports: make_result_util
+           * already stores a list entry as the record itself rather than as
+           * the entity object. *)
+          let records = (match result.rt_resdata with
+              | List r -> !r
+              | v -> [v]) in
+          let errs = List.concat_map (fun record ->
+              (* A NON-OBJECT IS A FAILURE, not something to skip: a load that
+               * answered 42 where the entity's spec wants a record must not
+               * pass this feature silently. *)
+              if is_nullish record then [] else check ctx record dataspec)
+              records in
+          if errs <> [] && !mode <> "report" then begin
+            let err = ctx_make_error ctx "validate_failed"
+                ("Invalid response for entity \"" ^ entname ctx ^ "\": "
+                 ^ String.concat "; " errs) in
+            (* BOTH, and rt_ok is the load-bearing half: done returns
+             * rt_resdata whenever rt_ok is true and never looks at rt_err.
+             * AND THE DATA GOES: the load/update paths copy rt_resdata into
+             * the entity's own state BEFORE done raises. *)
+            result.rt_ok <- false;
+            result.rt_err <- Some err;
+            result.rt_resdata <- Noval
+          end
+        | _ -> ()
+      end);
+  f
+
+(* ------------------------------------------------------------------ *)
 (* metrics                                                             *)
 (* ------------------------------------------------------------------ *)
 

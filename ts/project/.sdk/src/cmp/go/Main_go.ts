@@ -24,6 +24,7 @@ import {
 import { goFeatureName } from './utility_go'
 import { Package } from './Package_go'
 import { Config } from './Config_go'
+import { Schema } from './Schema_go'
 import { Gitignore } from './Gitignore_go'
 import { MainEntity } from './MainEntity_go'
 import { EntityTypes } from './EntityTypes_go'
@@ -131,6 +132,7 @@ s.utility.FeatureHook(s.rootctx, "${name}")
     })
 
     Config({ target })
+    Schema({ target })
 
     // Generate registry.go with all constructor function vars
     File({ name: 'registry.' + target.ext }, () => {

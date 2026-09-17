@@ -21,6 +21,7 @@ import {
 
 
 import { Config, FeaturePlugins, BUILTIN_FEATURES } from './Config_zig'
+import { Schema } from './Schema_zig'
 import { Gitignore } from './Gitignore_zig'
 import { MainEntity } from './MainEntity_zig'
 import { Package } from './Package_zig'
@@ -294,6 +295,8 @@ const Main = cmp(async function Main(props: any) {
     })
 
     Config({ target })
+
+    Schema({ target })
   })
 
 })

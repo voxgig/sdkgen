@@ -308,7 +308,7 @@ let make_feature (name : string) : feature =
     const OCAML_FEATURES = [
       'audit', 'cache', 'clienttrack', 'cost', 'debug', 'idempotency', 'log',
       'metrics', 'netsim', 'paging', 'proxy', 'ratelimit', 'rbac',
-      'retry', 'streaming', 'telemetry', 'test', 'timeout',
+      'retry', 'streaming', 'telemetry', 'test', 'timeout', 'validate',
     ]
 
     each(feature, (f: any) => {

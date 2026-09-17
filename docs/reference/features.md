@@ -1168,8 +1168,10 @@ feature: [
 The entity itself is safe either way: a rejected response is cleared before
 it can be absorbed into the entity's state.
 
-**Availability.** `ts` and `js`. The feature reads the generated schema
-module, so a target carries it once that module is emitted there.
+**Availability.** Every bundled language target. The generated schema module
+this feature reads is emitted everywhere — it is what each SDK validates its
+own options against — and each target now carries an implementation of the
+feature beside it.
 
 ## Combining features
 

@@ -12,7 +12,7 @@ main: kit: target: kotlin: {
   # whose `needs` is exactly this tag — applies here. Without it
   # featureApplies() refuses the feature and Config emits neither the
   # import nor the registry entry.
-  provides: { sekreto: true }
+  provides: { sekreto: true, schema: true }
 
   # Files earlier toolchains generated that this target has RETIRED
   # (vendor-tag rollout): the struct-corpus runner class
