@@ -3,6 +3,51 @@
 local vs = require("utility.struct.struct")
 local schema = require("schema")
 
+-- See the call site in make_options for why this exists.
+local function densify_lists(v, seen)
+  if type(v) ~= 'table' then
+    return v
+  end
+
+  seen = seen or {}
+  if seen[v] then
+    return v
+  end
+  seen[v] = true
+
+  local count, max, intonly = 0, 0, true
+  for k in pairs(v) do
+    count = count + 1
+    if math.type(k) == 'integer' and 0 < k then
+      if k > max then
+        max = k
+      end
+    else
+      intonly = false
+    end
+  end
+
+  -- A hole is the only case worth rebuilding for: every key an integer, and
+  -- a highest key past the number of entries.
+  if intonly and 0 < count and max > count then
+    local out = {}
+    for i = 1, max do
+      local e = v[i]
+      if e == nil then
+        out[i] = false
+      else
+        out[i] = densify_lists(e, seen)
+      end
+    end
+    return out
+  end
+
+  for k, e in pairs(v) do
+    v[k] = densify_lists(e, seen)
+  end
+  return v
+end
+
 local function make_options_util(ctx)
   local options = ctx.options or {}
 
@@ -106,6 +151,20 @@ local function make_options_util(ctx)
   -- tables as merge TARGETS — one instance's options (server, headers, ...)
   -- would contaminate every instance constructed after it.
   local merged = vs.merge({ {}, vs.clone(cfgopts), opts })
+
+  -- LUA CANNOT STORE NIL, so `{ a, nil, b }` is a table holding keys 1 and 3
+  -- and no 2 -- not a sequence. struct classifies it as a MAP and refuses it
+  -- against a `list` spec, so a caller's sparse list became an uncatchable
+  -- construction error naming the whole option shape, instead of the feature's
+  -- own message about the one entry that is wrong.
+  --
+  -- Densify first: a table whose keys are ALL positive integers is meant as a
+  -- list, so walk 1..max and fill each hole with `false`. The hole stays
+  -- PRESENT -- dropping it would silently shorten a provider chain, which is
+  -- the failure the secrets suite pins -- and `false` is not a table, so the
+  -- feature reading it refuses it by its own rule, with its own message.
+  merged = densify_lists(merged)
+
   local validated = vs.validate(merged, optspec)
   if type(validated) ~= "table" then
     validated = {}
