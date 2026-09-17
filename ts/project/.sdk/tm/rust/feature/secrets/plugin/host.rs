@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20260908-1556-0 (rust/src/host.rs)
-// Source: https://github.com/voxgig/plugin @ 91c4936555a4ce198669ca2c578b91e27e92e5ec  [tag: sdk-20260911-2013-0]
+// VENDORED: @voxgig/plugin sdk-20260917-1242-0 (rust/src/host.rs)
+// Source: https://github.com/voxgig/plugin @ 721de3a1bb5ac879b5c118dd9fc55c474a8730c4  [tag: sdk-20260917-1242-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 //! The host: the lifecycle state machine (§5), extension points (§6), and
 //! resource capture (§8).
@@ -1528,6 +1528,28 @@ impl Inst {
             .borrow_mut()
             .exports
             .insert(key.to_string(), value);
+    }
+
+    /// WHICH provider this instance is bound to for `name` (§11.1), as a
+    /// ref, or None when nothing provides it.
+    ///
+    /// The host's own `capability` answers with the live providers
+    /// RANKED, not with the one THIS instance took; §11.4's reluctant
+    /// rebinding makes those differ. A REF, not the instance: every port
+    /// can return a string and a corpus entry can assert on one. The
+    /// selection is REMEMBERED, because this is the instance asking.
+    pub fn capability(&self, name: &str) -> Option<String> {
+        // THE BORROW ENDS BEFORE `chosen` DOES. `chosen` remembers the
+        // selection, which takes `borrow_mut` on the same entry -- so
+        // reading the requirements inline held a shared borrow across it
+        // and panicked at the write. Rust is the only port that says so.
+        let reqs = requirements(&self.entry.borrow().options);
+        for req in reqs {
+            if req.get("name").as_str() == Some(name) {
+                return self.host.chosen(&self.entry, &req, true);
+            }
+        }
+        None
     }
 
     /// What this instance can do for others (§11.1).

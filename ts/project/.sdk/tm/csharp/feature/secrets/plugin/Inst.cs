@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20260908-1556-0 (csharp/src/Inst.cs)
-// Source: https://github.com/voxgig/plugin @ 91c4936555a4ce198669ca2c578b91e27e92e5ec  [tag: sdk-20260911-2013-0]
+// VENDORED: @voxgig/plugin sdk-20260917-1242-0 (csharp/src/Inst.cs)
+// Source: https://github.com/voxgig/plugin @ 721de3a1bb5ac879b5c118dd9fc55c474a8730c4  [tag: sdk-20260917-1242-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 using System;
 using System.Collections.Generic;
@@ -140,6 +140,25 @@ namespace Voxgig.Plugin
         }
 
         /// What this instance can do for others (§11.1).
+        /// <summary>WHICH provider this instance is bound to for
+        /// <c>name</c> (§11.1), as a ref, or null when nothing provides
+        /// it. The host's own Capability answers with the live providers
+        /// RANKED, not with the one THIS instance took; §11.4's
+        /// reluctant rebinding makes those differ. A REF, not the
+        /// instance. The selection is REMEMBERED, because this is the
+        /// instance asking.</summary>
+        public string Capability(string name)
+        {
+            foreach (var req in Depend.Requirements(entry.Options))
+            {
+                if (name == Types.Str(Types.Get(req, "name")))
+                {
+                    return HostRef.InstCapability(entry, req);
+                }
+            }
+            return null;
+        }
+
         public void Provides(object prov)
         {
             entry.Provides.Add(prov);

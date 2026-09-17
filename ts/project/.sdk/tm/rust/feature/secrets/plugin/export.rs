@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20260908-1556-0 (rust/src/export.rs)
-// Source: https://github.com/voxgig/plugin @ 91c4936555a4ce198669ca2c578b91e27e92e5ec  [tag: sdk-20260911-2013-0]
+// VENDORED: @voxgig/plugin sdk-20260917-1242-0 (rust/src/export.rs)
+// Source: https://github.com/voxgig/plugin @ 721de3a1bb5ac879b5c118dd9fc55c474a8730c4  [tag: sdk-20260917-1242-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 //! Exports (§11).
 //!
@@ -26,7 +26,7 @@ pub struct Exported {
 }
 
 pub fn resolve_export(spec: &str, exported: &[Exported]) -> Result<Value, PluginError> {
-    let cut = match spec.find('/') {
+    let cut = match spec.rfind('/') {
         Some(c) => c,
         None => {
             return fail(

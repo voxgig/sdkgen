@@ -37,6 +37,7 @@ that matches what you are trying to do right now:
 - [Debug a failing generated target](./how-to/debug-generation.md)
 - [Drive generation from code (the API)](./how-to/use-the-api.md)
 - [Release and tag](./how-to/release-and-tag.md)
+- [Cut a checkpoint and revendor](./how-to/cut-a-checkpoint-and-revendor.md)
 
 ### Reference
 - [The feature catalogue](./reference/features.md) — all 18 shipped

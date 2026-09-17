@@ -926,6 +926,10 @@ run), stamps a three-line provenance header in each language's comment
 syntax, and regenerates `ts/test/vendored.json`. `make vendor-check` is the
 no-write verification CI can run.
 
+The procedure for moving to newer upstream code — cutting the checkpoint in
+`voxgig/admin`, then resyncing here — is
+[docs/how-to/cut-a-checkpoint-and-revendor](./docs/how-to/cut-a-checkpoint-and-revendor.md).
+
 Rules that keep it honest:
 - **Never edit a vendored file.** An intentional change is an upstream PR +
   a resync at a new tag; an emergency local fix is a marked

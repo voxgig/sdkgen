@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/sekreto sdk-20260908-1556-0 (go/sekreto/providers.go)
-// Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260911-2013-0]
+// VENDORED: @voxgig/sekreto sdk-20260917-1242-0 (go/sekreto/providers.go)
+// Source: https://github.com/voxgig/sekreto @ 108c4a914bee7b6534c30d1c68c25cd1b9377696  [tag: sdk-20260917-1242-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // What a provider is, what its declarative form looks like, how a provider
 // kind becomes a voxgig/plugin definition - and the four BUILT-IN kinds.
@@ -127,6 +127,17 @@ type ProviderSpec struct {
 	// infisical: the environment slug and secret path.
 	Environment string `json:"environment,omitempty"`
 	Path        string `json:"path,omitempty"`
+	// Passphrase is the minivault passphrase that unwraps VaultKey.
+	Passphrase string `json:"passphrase,omitempty"`
+	// VaultKey is which key in a minivault file to open with, defaulting
+	// to `master`. Named apart from Key and KeyID because those already
+	// mean a secret name and an AWS access key id.
+	VaultKey string `json:"vaultkey,omitempty"`
+	// Iterations is minivault's PBKDF2 round count, used only when a key
+	// is created.
+	Iterations int `json:"iterations,omitempty"`
+	// Create makes a minivault file if it is not there.
+	Create bool `json:"create,omitempty"`
 
 	// Provider is a provider already built, joining the chain as it is.
 	// Never serialized: a live provider is not data.
@@ -438,5 +449,6 @@ var Kinds = struct {
 	Plugin: []string{
 		"hashicorp", "boru", "awssecrets", "awsparams", "gcpsecrets",
 		"azuresecrets", "onepassword", "doppler", "infisical", "secretspec",
+		"minivault",
 	},
 }
