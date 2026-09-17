@@ -37,7 +37,7 @@
 import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, fail } from 'node:assert'
 
-import Fs, { existsSync, readdirSync, writeFileSync } from 'node:fs'
+import Fs, { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
 
@@ -53,6 +53,42 @@ import { SdkGen } from '../dist/sdkgen.js'
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot,
 } from './generateharness'
+
+
+// The generated schema module's file name, whatever the target spells it:
+// `src/Schema.ts`, `core/schema.go`, `sdk_schema.ml`. ocaml prefixes every
+// module with `sdk_` because ocaml links a flat module namespace and the
+// files sit at the package root.
+const SCHEMA_FILE = /(^|\/)(sdk_)?schema\.[a-z]+$/i
+
+
+// Has this target been ported to the generated Schema module? Answered by
+// the presence of its `Schema_<lang>` component, so porting a target needs
+// no edit in this file.
+//
+// NOT by the `provides.schema` model tag, which looks like the same
+// question and is not: that tag gates the `validate` FEATURE, which needs
+// per-target feature source on top of the module (helpers/applicability).
+// Every target emits Schema — make_options reads the option spec out of it
+// whether or not that feature exists there.
+//
+// The consumer targets cannot be generated alone — they read the sibling
+// SDK they wrap — and emit no options of their own, so there is nothing
+// here for them to be ported FROM.
+function portedTargets(): string[] {
+  const dir = Path.resolve(__dirname, '..', 'project', '.sdk', 'src', 'cmp')
+  return allTargets()
+    .filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    .filter((t: string) => existsSync(Path.join(dir, t, 'Schema_' + t + '.ts')))
+}
+
+
+function unportedTargets(): string[] {
+  const ported = portedTargets()
+  return allTargets()
+    .filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    .filter((t: string) => !ported.includes(t))
+}
 
 
 function allTargets(): string[] {
@@ -1449,7 +1485,7 @@ main: kit: target: js: phase: feature: active: false
   // THE GENERATED SCHEMA MODULE. `main.kit.optspec` plus each feature's own
   // options, emitted as data the SDK validates its own options against —
   // replacing the literal every make_options template used to carry.
-  test('ts and js emit src/Schema, and the unported targets do not', async () => {
+  test('every ported target emits a Schema module, and the rest do not', async () => {
     for (const target of ['ts', 'js']) {
       const out = await generate([target])
       const ext = 'ts' === target ? 'ts' : 'js'
@@ -1468,11 +1504,41 @@ main: kit: target: js: phase: feature: active: false
       ok(src.includes('"`$CHILD`"'), target + ': a sentinel lost its backticks')
     }
 
-    // A target that has not been ported keeps its own literal, so emitting a
-    // Schema module it never imports would be dead source in every SDK.
-    const go = await generate(['go'])
-    const stray = Object.keys(go).filter((p2) => /\/Schema\.[a-z]+$/.test(p2))
-    deepStrictEqual(stray, [], 'an unported target emitted a Schema module')
+    // Every OTHER ported target emits one too. ts and js hold the spec as a
+    // native literal; the rest embed it as JSON and parse at load, so the
+    // shared assertion is the one thing both shapes must carry — the spec
+    // itself, sentinels intact.
+    for (const t of portedTargets()) {
+      if ('ts' === t || 'js' === t) {
+        continue
+      }
+
+      const out = await generate([t])
+      const schema = Object.entries(out).find(([p2]) => SCHEMA_FILE.test(p2))
+
+      ok(schema, t + ': ships a Schema component but generated no module')
+
+      // The optional backslashes are each target's own escaping, not slack in
+      // the check: clojure carries the JSON as a string literal rather than a
+      // heredoc, so every quote in it is escaped, and kotlin escapes `$`
+      // because a bare one opens a string template. Both still have to carry
+      // the sentinel's BACKTICKS — losing those is the silent failure this
+      // guards, since the module still parses and the spec just stops meaning
+      // anything.
+      const src = String(schema![1])
+      ok(/\\?"base\\?"/.test(src), t + ': the standard options are missing')
+      ok(/`\\?\$CHILD`/.test(src), t + ': a sentinel lost its backticks')
+    }
+
+    // And an UNPORTED target emitting dead source still fails. Read from the
+    // components rather than listed here, so porting one needs no edit in
+    // this file.
+    for (const t of unportedTargets()) {
+      const out = await generate([t])
+      const stray = Object.keys(out).filter((p2) => SCHEMA_FILE.test(p2))
+      deepStrictEqual(stray, [],
+        t + ' ships no Schema component but emitted a Schema module')
+    }
   })
 
 

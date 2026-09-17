@@ -929,42 +929,6 @@ let fetcher_util (ctx : ctx) (fullurl : string) (fetchdef : value) : (value * sd
 (* make_options                                                        *)
 (* ------------------------------------------------------------------ *)
 
-let opt_spec_value () : value =
-  jo [
-    ("apikey", Str "");
-    ("secret", Str "");
-    ("base", Str "http://localhost:8000");
-    ("prefix", Str "");
-    ("suffix", Str "");
-    (* `basic` and `secret`: HTTP Basic Auth needs a second credential and a
-       flag to say the pair is Basic rather than a single bearer token.
-
-       `in` and `name`: WHERE the credential goes and UNDER WHAT NAME -
-       header (the default, `authorization`), query or cookie. This shape is
-       CLOSED, so a config carrying a key it does not list fails validation
-       and the client cannot be constructed at all: without these two an
-       apiKey-in-query SDK could not build its options, because the generated
-       sdk_config.ml now carries them whenever the spec's scheme is not the
-       header/Authorization default. They mirror main.kit.optspec.auth in
-       @voxgig/sdkgen/model/sdkgen.aon, and '' means "whatever the spec
-       resolved", which is what the generated prepare_auth was built from. *)
-    ("auth", jo [("prefix", Str ""); ("basic", Bool false);
-                 ("in", Str ""); ("name", Str "")]);
-    ("headers", jo [("`$CHILD`", Str "`$STRING`")]);
-    ("allow", jo [("method", Str "GET,PUT,POST,PATCH,DELETE,OPTIONS");
-                  ("op", Str "create,update,load,list,remove,command,direct,graphql")]);
-    ("entity", jo [("`$CHILD`", jo [("`$OPEN`", Bool true); ("active", Bool false); ("alias", empty_map ())])]);
-    ("feature", jo [("`$CHILD`", jo [("`$OPEN`", Bool true); ("active", Bool false)])]);
-    ("utility", empty_map ());
-    ("system", empty_map ());
-    ("test", jo [("active", Bool false); ("entity", jo [("`$OPEN`", Bool true)])]);
-    ("clean", jo [("keys", Str "key,token,id")]);
-      (* Server-variable values for a templated base URL (OpenAPI server
-       * variables): {name} placeholders in "base" are substituted from this
-       * map at construction. Spec defaults arrive via the generated config;
-       * user values override them. Mirrors go's make_options optspec. *)
-      ("server", jo [("`$CHILD`", Str "")]);
-  ]
 
 let make_options_util (ctx : ctx) : value =
   let options = match ctx.c_options with Noval -> empty_map () | v -> v in
@@ -1009,7 +973,18 @@ let make_options_util (ctx : ctx) : value =
     | _ -> None in
   let config = match ctx.c_config with Map _ as m -> m | _ -> empty_map () in
   let cfgopts = match to_map (getp config "options") with Map _ as m -> m | _ -> empty_map () in
-  let optspec = opt_spec_value () in
+  (* THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
+
+     Built from the model: main.kit.optspec for the standard options, plus one
+     entry per feature this target carries, from that feature's own
+     config.options / config.optspec. This file used to carry its own
+     opt_spec_value - one of twenty hand-maintained copies of a schema nothing
+     cross-checked - so add an option to the model instead and every ported
+     target validates it.
+
+     Parsed once and memoised by Sdk_schema: validate reads the spec and
+     writes into the options, never into the spec. *)
+  let optspec = Sdk_schema.opt_spec_value () in
   let sys_fetch = getpath_s opts "system.fetch" in
   let merged = merge (ja [empty_map (); cfgopts; opts]) in
   let validated = validate merged optspec in

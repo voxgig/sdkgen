@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/sekreto 0.2.0 (python/voxgig_sekreto/plugins/aws.py)
-# Source: https://github.com/voxgig/sekreto @ 1267ee2e5f49566bc92695bc9eb3a60ef4924998  [tag: sdk-20260911-2013-0]
+# Source: https://github.com/voxgig/sekreto @ 108c4a914bee7b6534c30d1c68c25cd1b9377696  [tag: sdk-20260917-1242-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # The aws plugin: Secrets Manager and SSM Parameter Store, with requests
 # SigV4-signed in-tree (sigv4.py, beside this file). Needs HTTPS and

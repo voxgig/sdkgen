@@ -23,6 +23,7 @@ import {
 
 import { Package } from './Package_cpp'
 import { Config, FeaturePlugins } from './Config_cpp'
+import { Schema } from './Schema_cpp'
 import { Gitignore } from './Gitignore_cpp'
 import { MainEntity } from './MainEntity_cpp'
 import { EntityBase } from './EntityBase_cpp'
@@ -111,6 +112,8 @@ const Main = cmp(async function Main(props: any) {
   Folder({ name: 'core' }, () => {
 
     Config({ target })
+
+    Schema({ target })
 
     // core/client.hpp — the generated client class with entity accessors.
     File({ name: 'client.' + target.ext }, () => {

@@ -23,6 +23,7 @@ import {
 
 import { Package } from './Package_rb'
 import { Config } from './Config_rb'
+import { Schema } from './Schema_rb'
 import { PrepareAuth } from './PrepareAuth_rb'
 import { Gitignore } from './Gitignore_rb'
 import { MainEntity } from './MainEntity_rb'
@@ -95,6 +96,7 @@ utility.feature_hook.call(@_rootctx, "${name}")
   // Generate config module
   Folder({ name: '.' }, () => {
     Config({ target })
+    Schema({ target })
   })
 
   // GENERATED, NOT COPIED. Where the credential goes is a fact about the

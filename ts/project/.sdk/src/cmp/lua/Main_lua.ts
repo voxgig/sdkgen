@@ -22,6 +22,7 @@ import {
 
 import { Package } from './Package_lua'
 import { Config } from './Config_lua'
+import { Schema } from './Schema_lua'
 import { PrepareAuth } from './PrepareAuth_lua'
 import { Gitignore } from './Gitignore_lua'
 import { MainEntity } from './MainEntity_lua'
@@ -194,6 +195,7 @@ self._utility.feature_hook(self._rootctx, "${name}")
   // Generate config module
   Folder({ name: '.' }, () => {
     Config({ target })
+    Schema({ target })
   })
 
   // GENERATED, NOT COPIED. Where the credential goes is a fact about the

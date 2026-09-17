@@ -24,6 +24,7 @@ import {
 
 import { Package } from './Package_py'
 import { Config } from './Config_py'
+import { Schema } from './Schema_py'
 import { PrepareAuth } from './PrepareAuth_py'
 import { Gitignore } from './Gitignore_py'
 import { MainEntity } from './MainEntity_py'
@@ -189,6 +190,7 @@ if TYPE_CHECKING:
   // Generate config module
   Folder({ name: '.' }, () => {
     Config({ target })
+    Schema({ target })
   })
 
   // GENERATED, NOT COPIED. Where the credential goes is a fact about the

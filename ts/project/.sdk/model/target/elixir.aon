@@ -12,7 +12,7 @@ main: kit: target: elixir: {
   # lives in this target's feature container
   # (tm/elixir/lib/projectname/feature/secrets/), so a feature that resolves
   # secrets through sekreto can apply here.
-  provides: { sekreto: true }
+  provides: { sekreto: true, schema: true }
 
   # Files earlier toolchains generated that this target has RETIRED
   # (vendor-tag rollout): the hand-written corpus engine, replaced by the

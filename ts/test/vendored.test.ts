@@ -480,11 +480,67 @@ describe('vendored', () => {
   // Keep the test, not just the table: an empty map still fails loudly the
   // moment someone hand-edits a vendored file without marking it.
   test('local deviations from vendored code stay marked', () => {
-    const patched: Record<string, number> = {}
+    const patched: Record<string, number> = {
+      // THREE FIXES to the php struct port, all found porting the generated
+      // option spec to php and all divergences from the ts reference rather
+      // than php-specific behaviour. Each is marked in place with the same
+      // "(optspec port, pending upstream fix)" reason:
+      //
+      //   1. `$ERRS` merged BEFORE `$extra`, so a caller store overrode the
+      //      error collector — a $ONE alternative's trial failures landed in
+      //      the CALLER's error list.
+      //   2. validate_ONE read `count($terrs)` off a php array it had passed
+      //      BY VALUE, so the count was always 0 and the first alternative
+      //      always "matched".
+      //   3. TYPENAME spelled slot 1 'noval' where ts spells it 'nil', so
+      //      `$NIL` resolved to a 0 bitmask and rejected every value.
+      //
+      // Together they made the union encoding the option spec uses for an
+      // optional value — ['`$ONE`', <type>, '`$NIL`'] — reject an absent key,
+      // which is most of the spec.
+      //
+      //   4. validate_ONE wrote its trial result back with ancestor `2` where
+      //      ts uses `-2`, so it wrote through to the GRANDPARENT instead of
+      //      no-opping against the `[$ONE, ...]` list — resurrecting a key the
+      //      data did not have, and inventing a synthetic sibling carrying the
+      //      trial store's `$TOP`.
+      //
+      // Remove all four when a struct release carries them.
+      'tm/php/utility/struct/Struct.php': 4,
+
+      // THE SAME ABSENCE DEFECT, reached differently in two more ports. ts's
+      // validate_ONE replaces the `[$ONE, ...]` node with the DATA value and
+      // then writes the trial result somewhere harmless; a key the data does
+      // not have is therefore DELETED. Both of these kept it:
+      //
+      //   go: hand-rolled SetProp against a held grandparent, where SetProp
+      //       deliberately preserves nil. An omitted optional entry came back
+      //       fully materialised, `$OPEN` marker and all.
+      //   rb: setval carries a special case that SETS nil in the grandparent
+      //       branch where ts deletes in both, so an omitted entry came back
+      //       as a nil-valued key.
+      //
+      // In an SDK's option spec either one put an entry in `options.feature`
+      // for every feature the model declares — and the feature ADD ORDER is
+      // derived from those keys. Held by the per-port absence probe in
+      // test/oneabsence.test.ts.
+      'tm/go/utility/struct/voxgigstruct.go': 2,
+      'tm/rb/utility/struct/voxgig_struct.rb': 1,
+
+      // And a fourth port, reached a third way. csharp descends the data with
+      // GetProp, which answers null for a missing key where ts's getprop
+      // answers undefined — and Typify tells null (T_null) from NONE
+      // (T_noval) exactly as ts does, so the nested `$NIL` saw a null and
+      // REJECTED it. This one did not merely materialise the entry: it made
+      // validate THROW, so a default client could not be constructed at all
+      // ("to be one of …, nil, but found no value" for every feature). The
+      // patch re-validates NONE in place of null.
+      'tm/csharp/utility/struct/Struct.cs': 1,
+    }
 
     for (const [rel, count] of Object.entries(patched)) {
       const src = readFileSync(Path.join(SDK, rel), 'utf8')
-      const marks = src.match(/PATCH \(solardemo prototype, pending upstream fix\)/g) || []
+      const marks = src.match(/PATCH \([^)]*pending upstream fix\)/g) || []
 
       strictEqual(marks.length, count,
         rel + ': expected ' + count + ' marked PATCH block(s), found ' +
@@ -502,7 +558,7 @@ describe('vendored', () => {
       for (const rel of Object.keys(entry.file)) {
         if (null != patched[rel]) continue
         const src = readFileSync(Path.join(SDK, rel), 'utf8')
-        if (/PATCH \(solardemo prototype, pending upstream fix\)/.test(src)) {
+        if (/PATCH \([^)]*pending upstream fix\)/.test(src)) {
           unlisted.push(rel)
         }
       }

@@ -17,6 +17,7 @@ import {
 
 import { Package } from './Package_elixir'
 import { Config } from './Config_elixir'
+import { Schema } from './Schema_elixir'
 import { PrepareAuth } from './PrepareAuth_elixir'
 import { Gitignore } from './Gitignore_elixir'
 import { MainEntity } from './MainEntity_elixir'
@@ -174,6 +175,7 @@ end
 
   // Config module.
   Config({ target })
+  Schema({ target })
 })
 
 

@@ -23,6 +23,7 @@ import {
 
 import { Package } from './Package_php'
 import { Config } from './Config_php'
+import { Schema } from './Schema_php'
 import { PrepareAuth } from './PrepareAuth_php'
 import { Gitignore } from './Gitignore_php'
 import { MainEntity } from './MainEntity_php'
@@ -104,6 +105,7 @@ const Main = cmp(async function Main(props: any) {
   // Generate config module
   Folder({ name: '.' }, () => {
     Config({ target })
+    Schema({ target })
   })
 
   // GENERATED, NOT COPIED. Where the credential goes is a fact about the

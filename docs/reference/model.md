@@ -379,15 +379,17 @@ Its `config.options`, all overridable per project:
 
 ## `main.kit.optspec`
 
-The SDK client's option schema: one declaration that every ported target
-validates against. It is a `struct.validate` spec written by example, so a
-concrete value is both the type and the default — `base:
+The SDK client's option schema: one declaration that every target validates
+against. It is a `struct.validate` spec written by example, so a concrete
+value is both the type and the default — `base:
 'http://localhost:8000'` means "a string, defaulting to that" — and a
 `` `$SENTINEL` `` constrains without defaulting.
 
-The generator writes it into each SDK as `src/Schema`, and `makeOptions`
-validates the caller's options against it at construction. Add an option
-here and every ported target accepts it; nothing else needs editing.
+The generator writes it into each SDK as a `Schema` module — `src/Schema.ts`
+in TypeScript, `core/schema.go` in Go, `sdk_schema.ml` in OCaml — and the
+SDK's own `makeOptions` validates the caller's options against it at
+construction. Add an option here and every target accepts it; nothing else
+needs editing.
 
 | Key | Meaning |
 | --- | --- |
@@ -406,9 +408,9 @@ here and every ported target accepts it; nothing else needs editing.
 `feature` is not declared here: it is assembled per target from each active
 feature's own `config.options` and `config.optspec`.
 
-Targets that carry the generated schema declare `provides: { schema: true }`
-— currently `ts` and `js`. The others keep a hand-written spec in their own
-`make_options` template until they are ported.
+A target's `provides: { schema: true }` tag is a narrower claim, and not the
+one this section describes: it says the target can also run the `validate`
+feature, which needs a per-target implementation on top of the module.
 
 ## `main.kit.info` (from apidef)
 

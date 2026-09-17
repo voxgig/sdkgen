@@ -19,6 +19,9 @@ const result_mod = @import("result.zig");
 const operation_mod = @import("operation.zig");
 const jsonparse = @import("../utility/jsonparse.zig");
 const sdk = @import("sdk.zig");
+// The GENERATED option spec make_options validates against. A leaf module
+// (it imports only helpers and jsonparse), so this closes no cycle.
+const schema = @import("schema.zig");
 
 const Value = h.Value;
 const Context = ctxmod.Context;
@@ -367,50 +370,18 @@ pub fn make_options_util(ctx: *Context) Value {
         else => h.omap(),
     };
 
-    const optspec = h.jo(&.{
-        .{ "apikey", h.vstr("") },
-        .{ "base", h.vstr("http://localhost:8000") },
-        .{ "prefix", h.vstr("") },
-        .{ "suffix", h.vstr("") },
-        // CLOSED - validate REJECTS any key this spec does not declare - so
-        // without `in` and `name` an apiKey-in-query SDK fails validation on
-        // its OWN generated config (Config_zig emits them whenever the
-        // scheme is not the header/Authorization default), and the whole
-        // merged options object is discarded. '' means "take what the spec
-        // said", which is what the generated prepare_auth was built from.
-        .{ "auth", h.jo(&.{
-            .{ "prefix", h.vstr("") },
-            .{ "basic", h.vbool(false) },
-            .{ "in", h.vstr("") },
-            .{ "name", h.vstr("") },
-        }) },
-        .{ "headers", h.jo(&.{.{ "`$CHILD`", h.vstr("`$STRING`") }}) },
-        .{ "allow", h.jo(&.{
-            .{ "method", h.vstr("GET,PUT,POST,PATCH,DELETE,OPTIONS") },
-            .{ "op", h.vstr("create,update,load,list,remove,command,direct,graphql") },
-        }) },
-        .{ "entity", h.jo(&.{.{ "`$CHILD`", h.jo(&.{
-            .{ "`$OPEN`", h.vbool(true) },
-            .{ "active", h.vbool(false) },
-            .{ "alias", h.omap() },
-        }) }}) },
-        .{ "feature", h.jo(&.{.{ "`$CHILD`", h.jo(&.{
-            .{ "`$OPEN`", h.vbool(true) },
-            .{ "active", h.vbool(false) },
-        }) }}) },
-        .{ "utility", h.omap() },
-        .{ "system", h.omap() },
-        .{ "test", h.jo(&.{
-            .{ "active", h.vbool(false) },
-            .{ "entity", h.jo(&.{.{ "`$OPEN`", h.vbool(true) }}) },
-        }) },
-        .{ "clean", h.jo(&.{.{ "keys", h.vstr("key,token,id") }}) },
-        // Server-variable values for a templated base URL (OpenAPI server
-        // variables): {name} placeholders in "base" are substituted from this
-        // map at construction. Spec defaults arrive via the generated config;
-        // user values override them. Mirrors go's make_options optspec.
-        .{ "server", h.jo(&.{.{ "`$CHILD`", h.vstr("") }}) },
-    });
+    // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
+    //
+    // Built from the model: `main.kit.optspec` for the standard options, plus
+    // one entry per feature this target carries, from that feature's own
+    // `config.options` / `config.optspec`. Editing this file to add an option
+    // would put it back where it was - one of twenty hand-maintained copies of
+    // a schema nothing cross-checked - so add it to the model instead and
+    // every ported target validates it.
+    //
+    // Parsed once and shared: make_options validates AGAINST the spec and
+    // writes into the options, never into the spec.
+    const optspec = schema.shared_optspec();
 
     // Preserve system.fetch before merge/validate (validation strips it).
     const sys_fetch = h.getpath(&.{ "system", "fetch" }, opts);
@@ -711,6 +682,11 @@ pub fn make_point_util(ctx: *Context) E!Value {
 pub fn make_spec_util(ctx: *Context) E!*Spec {
     if (ctx.out_get("spec")) |ov| {
         switch (ov) {
+            // A PreSpec feature hook (e.g. validate) may short-circuit the
+            // operation by storing an error here; surface it before the
+            // request is built, the same way make_point surfaces
+            // out["point"].
+            .err => |e| return ctx.fail_err(e),
             .spec => |sp| {
                 ctx.spec = sp;
                 return sp;

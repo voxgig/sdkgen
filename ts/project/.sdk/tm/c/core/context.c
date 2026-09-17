@@ -32,6 +32,9 @@ void ctx_out_set_point_err(Context* ctx, PNError* e) {
   ctx->out_point_err = e;
   ctx->out_point_val = NULL;
 }
+void ctx_out_set_spec_err(Context* ctx, PNError* e) {
+  ctx->out_spec_err = e;
+}
 voxgig_value* ctx_out_extra_get(Context* ctx, const char* key) {
   return getp(ctx->out_extra, key);
 }

@@ -303,47 +303,18 @@ object MakeOptions {
     var cfgopts = Helpers.toMapAny(config.get("options"))
     if (cfgopts == null) cfgopts = new LinkedHashMap[String, Object]()
 
-    val optspec = Json.parse(
-      "{"
-        + "\"apikey\": \"\","
-        // The SECOND credential, for the HTTP Basic scheme
-        // (base64(apikey:secret)). Named by main.kit.optspec but missing
-        // here, and validate drops what it does not name - so a caller
-        // that supplied `secret` never had it reach prepareAuth.
-        + "\"secret\": \"\","
-        + "\"base\": \"http://localhost:8000\","
-        + "\"prefix\": \"\","
-        + "\"suffix\": \"\","
-        // WHERE the credential goes and under what name, plus the HTTP
-        // Basic switch. `Struct.validate` DROPS a key this spec does not
-        // name, so without these three the generated Config's auth block
-        // was trimmed back to `prefix` on the way in and the SDK could not
-        // see its own scheme - which made Config_scala's `in`/`name`
-        // emission inert. Mirrors main.kit.optspec.auth in
-        // @voxgig/sdkgen/model/sdkgen.aon, which ts builds its OPTSPEC from.
-        + "\"auth\": { \"prefix\": \"\", \"basic\": false,"
-        + "          \"in\": \"\", \"name\": \"\" },"
-        + "\"headers\": { \"`$CHILD`\": \"`$STRING`\" },"
-        + "\"allow\": {"
-        + "  \"method\": \"GET,PUT,POST,PATCH,DELETE,OPTIONS\","
-        + "  \"op\": \"create,update,load,list,remove,command,direct,graphql\""
-        + "},"
-        + "\"entity\": { \"`$CHILD`\": {"
-        + "  \"`$OPEN`\": true, \"active\": false, \"alias\": {} } },"
-        + "\"feature\": { \"`$CHILD`\": {"
-        + "  \"`$OPEN`\": true, \"active\": false } },"
-        + "\"utility\": {},"
-        // `extend` carries LIVE Feature objects a caller hands in, and an
-        // optspec with no entry for a key makes Struct.validate DROP it -
-        // silently, so `new Client(Map.of("extend", List.of(feature)))`
-        // built a client with no such feature and nothing said so. `$ANY`
-        // passes the list through untouched, which is what go's optspec
-        // does (tm/go/utility/make_options.go).
-        + "\"extend\": \"`$ANY`\","
-        + "\"system\": {},"
-        + "\"test\": { \"active\": false, \"entity\": { \"`$OPEN`\": true } },"
-        + "\"clean\": { \"keys\": \"key,token,id\" }"
-        + "}").asInstanceOf[JMap[String, Object]]
+    // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
+    //
+    // Built from the model: `main.kit.optspec` for the standard options, plus
+    // one entry per feature this target carries, from that feature's own
+    // `config.options` / `config.optspec`. Editing this file to add an option
+    // would put it back where it was - one of twenty hand-maintained copies of
+    // a schema nothing cross-checked - so add it to the model instead and
+    // every ported target validates it.
+    //
+    // Already parsed, and shared: makeOptions validates AGAINST the spec and
+    // writes into the options, never into the spec.
+    val optspec = Schema.optspec
 
     // Preserve system.fetch before merge/validate.
     var sysFetch = Struct.getpath(opts, java.util.List.of("system", "fetch"))

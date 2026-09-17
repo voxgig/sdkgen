@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/plugin 0.1.6 (go/plugin/host.go)
-// Source: https://github.com/voxgig/plugin @ 91c4936555a4ce198669ca2c578b91e27e92e5ec  [tag: sdk-20260911-2013-0]
+// Source: https://github.com/voxgig/plugin @ 721de3a1bb5ac879b5c118dd9fc55c474a8730c4  [tag: sdk-20260917-1242-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* The host: the lifecycle state machine (§5), extension points (§6), and
  * resource capture (§8).
@@ -392,6 +392,30 @@ func (i *Inst) Export(key string, value any) { i.e.exports[key] = value }
 
 // Provides declares what this instance can do for others (§11.1).
 func (i *Inst) Provides(p Provided) { i.e.provides = append(i.e.provides, p) }
+
+// Capability is WHICH provider this instance is bound to for name
+// (§11.1), as a ref, or "" when nothing provides it.
+//
+// §11.1 says "the first is bound, and inst.capability(name) returns it",
+// and §11.3 gives the case that needs it: a plugin that works without
+// metrics and uses metrics when it is there has to be able to ask.
+// Host.Capability answers with the live providers RANKED -- not with the
+// one THIS instance took, and §11.4's reluctant rebinding makes those
+// differ: a better-ranked newcomer tops the ranking while the consumer
+// keeps what it had.
+//
+// A REF, not the instance: every port can return a string and a corpus
+// entry can assert on one. The selection is REMEMBERED, because this is
+// the instance asking; `remember` is false only for questions asked
+// ABOUT an instance, where answering must not create a binding.
+func (i *Inst) Capability(name string) string {
+	for _, req := range Requirements(i.e.Options) {
+		if req.Name == name {
+			return i.h.chosen(i.e, req, true)
+		}
+	}
+	return ""
+}
 
 type Position struct {
 	Index     int  `json:"index"`

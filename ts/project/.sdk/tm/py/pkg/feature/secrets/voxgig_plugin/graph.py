@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/plugin 0.1.6 (python/voxgig_plugin/graph.py)
-# Source: https://github.com/voxgig/plugin @ 91c4936555a4ce198669ca2c578b91e27e92e5ec  [tag: sdk-20260911-2013-0]
+# Source: https://github.com/voxgig/plugin @ 721de3a1bb5ac879b5c118dd9fc55c474a8730c4  [tag: sdk-20260917-1242-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 """Whole-graph resolution (section 11.4) - a phase, not a discovery.
 

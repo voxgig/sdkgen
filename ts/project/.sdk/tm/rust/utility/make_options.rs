@@ -73,69 +73,18 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         _ => Value::empty_map(),
     };
 
-    let optspec = jo(vec![
-        ("apikey", Value::str("")),
-        ("base", Value::str("http://localhost:8000")),
-        ("prefix", Value::str("")),
-        ("suffix", Value::str("")),
-        // CLOSED - validate rejects any key it does not declare - so without
-        // `in` and `name` an apiKey-in-query SDK fails to construct on its
-        // own config with "Unexpected keys at field auth: in, name".
-        // '' means "take what the spec said".
-        (
-            "auth",
-            jo(vec![
-                ("prefix", Value::str("")),
-                ("basic", Value::Bool(false)),
-                ("in", Value::str("")),
-                ("name", Value::str("")),
-            ]),
-        ),
-        ("headers", jo(vec![("`$CHILD`", Value::str("`$STRING`"))])),
-        (
-            "allow",
-            jo(vec![
-                ("method", Value::str("GET,PUT,POST,PATCH,DELETE,OPTIONS")),
-                ("op", Value::str("create,update,load,list,remove,command,direct,graphql")),
-            ]),
-        ),
-        (
-            "entity",
-            jo(vec![(
-                "`$CHILD`",
-                jo(vec![
-                    ("`$OPEN`", Value::Bool(true)),
-                    ("active", Value::Bool(false)),
-                    ("alias", Value::empty_map()),
-                ]),
-            )]),
-        ),
-        (
-            "feature",
-            jo(vec![(
-                "`$CHILD`",
-                jo(vec![
-                    ("`$OPEN`", Value::Bool(true)),
-                    ("active", Value::Bool(false)),
-                ]),
-            )]),
-        ),
-        ("utility", Value::empty_map()),
-        ("system", Value::empty_map()),
-        (
-            "test",
-            jo(vec![
-                ("active", Value::Bool(false)),
-                ("entity", jo(vec![("`$OPEN`", Value::Bool(true))])),
-            ]),
-        ),
-        ("clean", jo(vec![("keys", Value::str("key,token,id"))])),
-        // Server-variable values for a templated base URL (OpenAPI server
-        // variables): {name} placeholders in "base" are substituted from this
-        // map at construction. Spec defaults arrive via the generated config;
-        // user values override them. Mirrors go's make_options optspec.
-        ("server", jo(vec![("`$CHILD`", Value::str(""))])),
-    ]);
+    // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
+    //
+    // Built from the model: `main.kit.optspec` for the standard options, plus
+    // one entry per feature this target carries, from that feature's own
+    // `config.options` / `config.optspec`. Editing this file to add an option
+    // would put it back where it was - one of twenty hand-maintained copies of
+    // a schema nothing cross-checked - so add it to the model instead and
+    // every ported target validates it.
+    //
+    // Parsed once per thread and shared: make_options validates AGAINST the
+    // spec and writes into the options, never into the spec.
+    let optspec = crate::core::schema::optspec();
 
     // Preserve system.fetch before merge/validate (validation strips it).
     let sys_fetch = getpath(&["system", "fetch"], &opts);
