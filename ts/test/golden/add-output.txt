@@ -370,7 +370,7 @@ tm/csharp/core/Spec.cs 6187a7f30150
 tm/csharp/core/Types.cs d3790b5cfad6
 tm/csharp/core/Utility.cs 149e714543ac
 tm/csharp/feature/BaseFeature.cs 2f5da25c6dea
-tm/csharp/feature/FeatureOptions.cs baed8ec12f82
+tm/csharp/feature/FeatureOptions.cs 98b2222e9728
 tm/csharp/feature/TestFeature.cs 3a085eb504ac
 tm/csharp/src/feature/README.md ddb1daf8f8fe
 tm/csharp/src/feature/base/.gitkeep e3b0c44298fc
@@ -549,7 +549,7 @@ tm/go/core/target.go 535cbde898dc
 tm/go/core/types.go 4d9b2a5316a4
 tm/go/core/utility_type.go bd2f3498448f
 tm/go/feature/base_feature.go d0afce22fc61
-tm/go/feature/feature_options.go 149c931d083b
+tm/go/feature/feature_options.go 5fa5adf56434
 tm/go/feature/test_feature.go 30fa3adbf1d1
 tm/go/src/feature/README.md efebfaa50be0
 tm/go/src/feature/base/.gitkeep e3b0c44298fc
@@ -577,7 +577,7 @@ tm/go/utility/graphql.go f0e6b8fef4a8
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go acc76429c4ee
 tm/go/utility/make_fetch_def.go 1b2ecd1822cf
-tm/go/utility/make_options.go 752cdce40804
+tm/go/utility/make_options.go 1969908aaa65
 tm/go/utility/make_point.go 0d61c98c9993
 tm/go/utility/make_request.go cf4d4f55e911
 tm/go/utility/make_response.go 57ad84a7b3be

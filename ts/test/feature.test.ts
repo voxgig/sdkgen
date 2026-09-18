@@ -735,40 +735,50 @@ describe('feature:test-mintid', () => {
   })
 
   test('every target mints the id in the same form', () => {
-    // The other targets cannot be loaded here, so their form is pinned.
+    // One id form across the fleet, each target expressing it in its own syntax.
     const TM = Path.join(__dirname, '..', 'project', '.sdk', 'tm')
-    const sites: [string, string][] = [
-      ['c', 'feature/test.c'],
-      ['cpp', 'feature/test.hpp'],
-      ['clojure', 'src/sdk/features.clj'],
-      ['go', 'feature/test_feature.go'],
-      ['java', 'feature/TestFeature.java'],
-      ['kotlin', 'feature/TestFeature.kt'],
-      ['lua', 'feature/test_feature.lua'],
-      ['perl', 'feature/test_feature.pm'],
-      ['php', 'feature/TestFeature.php'],
-      ['py', 'pkg/feature/test_feature.py'],
-      ['rb', 'feature/test_feature.rb'],
-      ['scala', 'feature/TestFeature.scala'],
-      ['swift', 'Sources/ProjectNameSDK/feature/TestFeature.swift'],
+    const HEX4X4 = /%04x%04x%04x%04x/
+    const PADSTART = /0x10000[\s\S]{0,80}padStart\(4, '0'\)/
+    const sites: [string, string, RegExp][] = [
+      ['c', 'feature/test.c', HEX4X4],
+      ['clojure', 'src/sdk/features.clj', HEX4X4],
+      ['cpp', 'feature/test.hpp', HEX4X4],
+      ['csharp', 'feature/TestFeature.cs', /\{0:x4\}\{1:x4\}\{2:x4\}\{3:x4\}/],
+      ['elixir', 'lib/projectname/feature/test.ex',
+        /strong_rand_bytes\(8\)[\s\S]{0,40}encode16\(case: :lower\)/],
+      ['go', 'feature/test_feature.go', HEX4X4],
+      ['java', 'feature/TestFeature.java', HEX4X4],
+      ['js', 'src/feature/test/TestFeature.js', PADSTART],
+      ['kotlin', 'feature/TestFeature.kt', HEX4X4],
+      ['lua', 'feature/test_feature.lua', HEX4X4],
+      ['ocaml', 'sdk_runtime.ml',
+        /random_hex4 \(\) = Printf\.sprintf "%04x"[\s\S]{0,120}(random_hex4 \(\)\s*\^?\s*){4}/],
+      ['perl', 'feature/test_feature.pm', HEX4X4],
+      ['php', 'feature/TestFeature.php', HEX4X4],
+      ['py', 'pkg/feature/test_feature.py', HEX4X4],
+      ['rb', 'feature/test_feature.rb', HEX4X4],
+      ['rust', 'feature/test.rs', /\{:04x\}\{:04x\}\{:04x\}\{:04x\}/],
+      ['scala', 'feature/TestFeature.scala', HEX4X4],
+      ['swift', 'Sources/ProjectNameSDK/feature/TestFeature.swift', HEX4X4],
+      ['ts', 'src/feature/test/TestFeature.ts', PADSTART],
+      ['zig', 'feature/test.zig', /\{x:0>4\}\{x:0>4\}\{x:0>4\}\{x:0>4\}/],
     ]
 
-    for (const [target, rel] of sites) {
+    for (const [target, rel, form] of sites) {
       const file = Path.join(TM, target, rel)
-      if (!Fs.existsSync(file)) continue
-      const src = Fs.readFileSync(file, 'utf8')
-      ok(src.includes('%04x%04x%04x%04x'),
-        target + ' no longer mints the id as %04x%04x%04x%04x (' + rel + ')')
+      // A moved file fails here rather than quietly dropping that target.
+      ok(Fs.existsSync(file), target + ': ' + rel + ' is gone — repoint this guard')
+      ok(form.test(Fs.readFileSync(file, 'utf8')),
+        target + ' no longer mints sixteen lowercase hex digits (' + rel + ')')
     }
 
-    for (const [target, rel] of [
-      ['ts', 'src/feature/test/TestFeature.ts'],
-      ['js', 'src/feature/test/TestFeature.js'],
-    ] as [string, string][]) {
-      const src = Fs.readFileSync(Path.join(TM, target, rel), 'utf8')
-      ok(/0x10000[\s\S]{0,80}padStart\(4, '0'\)/.test(src),
-        target + ' does not mint four padded 16-bit groups (' + rel + ')')
-    }
+    const NON_SDK = ['go-cli', 'go-mcp', 'py-data']
+    const shipped = Fs.readdirSync(TM)
+      .filter((n) => Fs.statSync(Path.join(TM, n)).isDirectory())
+      .filter((n) => !NON_SDK.includes(n))
+      .sort()
+    deepStrictEqual(sites.map(([t]) => t).sort(), shipped,
+      'every SDK target mints a create id: add the new one to this guard')
   })
 
 })

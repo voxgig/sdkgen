@@ -316,9 +316,11 @@ describe('generated SDK compiles', () => {
         tail(ran.out))
 
       // `go test -run` matching nothing exits zero having run nothing.
-      ok(/--- PASS: TestFeatureOptionNumericTypes\/json.Number/.test(ran.out),
-        'the json.Number case did not run - the suite matched nothing:\n' +
-        tail(ran.out))
+      for (const sub of ['json.Number', 'defined_int', 'survives-the-real-makeoptions']) {
+        ok(ran.out.includes('--- PASS: TestFeatureOptionNumericTypes/' + sub),
+          'the ' + sub + ' case did not run - the suite matched nothing:\n' +
+          tail(ran.out))
+      }
     })
 
 

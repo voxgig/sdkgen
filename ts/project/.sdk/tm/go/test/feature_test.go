@@ -15,6 +15,20 @@ import (
 
 // --- option coercion --------------------------------------------------------
 
+type fhRetries int
+
+func vsGetPath(node any, keys ...string) any {
+	cur := node
+	for _, k := range keys {
+		m, ok := cur.(map[string]any)
+		if !ok {
+			return nil
+		}
+		cur = m[k]
+	}
+	return cur
+}
+
 // go read a closed type switch and silently used the DEFAULT for any other
 // numeric type. `retry` makes the budget observable as a call count, so a
 // dropped option shows as the default of 2 rather than the 4 asked for.
@@ -45,6 +59,7 @@ func TestFeatureOptionNumericTypes(t *testing.T) {
 		{"float32", float32(4)},
 		{"float64", float64(4)},
 		{"json.Number", jsonNum["retries"]},
+		{"defined int", fhRetries(4)},
 	}
 
 	const want = 5
@@ -64,6 +79,29 @@ func TestFeatureOptionNumericTypes(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("survives-the-real-makeoptions", func(t *testing.T) {
+		// fhMake calls Init directly, so the cases above never meet the option
+		// VALIDATOR. To reflect a json.Number is a string, and an option the
+		// validator judges by a rule the readers do not is the same defect
+		// one layer up.
+		client := sdk.TestSDK(nil, nil)
+		utility := client.GetUtility()
+		ctx := utility.MakeContext(map[string]any{
+			"client": client, "utility": utility,
+		}, client.GetRootCtx())
+		ctx.Options = map[string]any{
+			"feature": map[string]any{
+				"retry": map[string]any{"active": true, "retries": jsonNum["retries"]},
+			},
+		}
+		ctx.Config = map[string]any{"options": map[string]any{}}
+
+		got := vsGetPath(utility.MakeOptions(ctx), "feature", "retry", "retries")
+		if n, ok := got.(int64); !ok || n != 4 {
+			t.Fatalf("MakeOptions did not canonicalise the option: %v (%T), want int64(4)", got, got)
+		}
+	})
 
 	t.Run("a-non-number-still-falls-back", func(t *testing.T) {
 		// A string is not a Number in java either.

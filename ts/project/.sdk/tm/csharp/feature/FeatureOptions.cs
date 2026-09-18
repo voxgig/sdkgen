@@ -34,7 +34,9 @@ internal static class FeatureOptions
             byte n => n,
             double n => (int)n,
             float n => (int)n,
-            decimal n => (int)n,
+            // Via double: decimal->int is the one conversion C# range-checks
+            // even unchecked, and no other target throws on an oversized option.
+            decimal n => (int)(double)n,
             _ => def,
         };
     }

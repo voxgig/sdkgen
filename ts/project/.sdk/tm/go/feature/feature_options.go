@@ -2,6 +2,7 @@ package feature
 
 import (
 	"encoding/json"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -56,6 +57,22 @@ func fnumInt(v any) (int, bool) {
 			return int(f), true
 		}
 	}
+	return rnumInt(v)
+}
+
+// A DEFINED numeric type (`type Retries int`) matches no type-switch arm, yet
+// the option validator classifies it by reflect.Kind and passes it through.
+// Reader and validator must agree on what counts as a number.
+func rnumInt(v any) (int, bool) {
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return int(rv.Int()), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return int(rv.Uint()), true
+	case reflect.Float32, reflect.Float64:
+		return int(rv.Float()), true
+	}
 	return 0, false
 }
 
@@ -89,6 +106,19 @@ func fnumFloat(v any) (float64, bool) {
 		if f, err := n.Float64(); err == nil {
 			return f, true
 		}
+	}
+	return rnumFloat(v)
+}
+
+func rnumFloat(v any) (float64, bool) {
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return float64(rv.Int()), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return float64(rv.Uint()), true
+	case reflect.Float32, reflect.Float64:
+		return rv.Float(), true
 	}
 	return 0, false
 }
