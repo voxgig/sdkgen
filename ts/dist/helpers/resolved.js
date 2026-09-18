@@ -5,8 +5,8 @@ exports.resolvedFor = resolvedFor;
 exports.liveHint = liveHint;
 exports.pointFacts = pointFacts;
 exports.hasLiveScenarios = hasLiveScenarios;
-// The resolved definition apidef published for this build, as seen by a
-// component. See apidef docs/design/resolved-spec-capability.md
+// The resolved definition apidef published for this build, as a
+// component sees it.
 function resolvedFor(ctx$) {
     return ctx$?.meta?.apidef;
 }

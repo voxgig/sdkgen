@@ -8,9 +8,7 @@ const TestLive = cmp(function TestLive(props: any) {
     if (entity.active === false) continue
     for (const [op, operation] of Object.entries(entity.op || {}) as any[]) {
       for (const point of operation.points || []) {
-        // ONLY WHAT THE RUNNER READS. The whole contract used to be inlined
-        // here, so every point's request and response schemas were written
-        // into generated source, pretty-printed, to serve four fields.
+        // Only what the runner reads, not the whole point.
         const all: any = pointFacts(props.ctx$, point)
         const facts: any = {
           live: liveHint(point),
