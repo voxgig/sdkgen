@@ -1,25 +1,3 @@
-// The vendored-library guard (migration guide Phase 4.2).
-//
-// WHY THIS EXISTS, given `doctor` and the golden manifest already exist
-//
-// `doctor` compares a CONSUMER's copies against sdkgen's templates, so an
-// edit made INSIDE the templates is invisible to it: after the next `add`,
-// source and project agree again and the drift is gone. The golden
-// add-output manifest does hash template content, but it records no
-// VERSION — so a file could be resynced to a different upstream release
-// with its stamp left behind, and the only thing that changed would be a
-// hash nobody can read.
-//
-// The prototype report names the failure this prevents: the runner,
-// StructUtility and the struct corpus test all carried matching `0.0.10`
-// stamps and all had to move in step. A stamp that lags is worse than no
-// stamp, because it is believed.
-//
-// So: vendored.json is the single record of what version, from which
-// commit, each vendored file came from — and this test holds the file
-// content, the manifest, and the file's own provenance header to each
-// other. An intentional resync updates all three together; anything else
-// fails here.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -33,26 +11,13 @@ import { TAGS, unknownTags } from '../dist/sdkgen'
 
 const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
 
-// From the SOURCE tree: this file runs compiled out of dist-test/, and the
-// manifest is data that tsc does not copy.
 const MANIFEST = JSON.parse(
   readFileSync(Path.resolve(__dirname, '..', 'test', 'vendored.json'), 'utf8'))
 
 
-// Every directory that holds nothing but vendored files. Listed so a file
-// ADDED to one is caught: a hash check alone only sees files the manifest
-// already names, which makes an unlisted addition invisible.
 const VENDOR_DIRS = [
   'tm/ts/test/vendor/omni',
   'tm/ts/src/feature/secrets/sekreto',
-  // sekreto's providers are a module each, so the vendored tree has a
-  // second level. Listed explicitly rather than walked recursively: the
-  // list is the thing that makes an ADDED file visible, and a recursive
-  // walk that discovers its own directories would quietly accept a new
-  // one. Only DIRECTORY-valued vendoring destinations belong here — a
-  // single vendored file inside a shared template directory (ts/js
-  // StructUtility) is covered by its manifest hash, and listing its
-  // parent would report every ordinary sibling as unlisted.
   'tm/ts/src/feature/secrets/sekreto/provider',
   'tm/ts/src/feature/secrets/sekreto/plugins',
   'tm/ts/src/feature/secrets/plugin',
@@ -111,9 +76,6 @@ const VENDOR_DIRS = [
   // simply replace it.
   'tm/zig/utility/voxgigstruct',
   'tm/zig/test/vendor/omni',
-  // The secrets expansion: sekreto and voxgig/plugin, vendored INSIDE
-  // each target's feature container so the feature trim removes both
-  // with the feature. Every level is listed, per the rule above.
   'tm/clojure/feature/secrets/voxgig/plugin',
   'tm/clojure/feature/secrets/voxgig/sekreto',
   'tm/clojure/feature/secrets/voxgig/sekreto/plugins',
@@ -182,16 +144,6 @@ function sha256(path: string): string {
 }
 
 
-// The convention every vendored file carries, as three lines at the top,
-// in that language's comment syntax (see LANG_COMMENT):
-//
-//   // VENDORED: @voxgig/<lib> <version> (<upstream path>)
-//   // Source: <repo> @ <commit>  [tag: <tag>]
-//   // License: MIT ... Do not edit: resync from upstream.
-//
-// The `[tag: ...]` suffix is OPTIONAL so pre-tag vendored files still
-// parse; when present it must agree with the manifest's tag, which the
-// tag-agreement test below asserts.
 
 // Comment prefix per template language, keyed by the tm/<lang>/ segment of
 // the destination path. A vendored file in a language not listed here is a
@@ -203,9 +155,6 @@ const LANG_COMMENT: Record<string, string> = {
   java: '//', kotlin: '//', csharp: '//',
   c: '//', cpp: '//', swift: '//', rust: '//', scala: '//',
   clojure: ';;', elixir: '#', zig: '//',
-  // OCaml has no LINE comment at all, so its header is three BLOCK
-  // comments and the token is regex metacharacters — see escape() below,
-  // and `commentend` in build/vendor.js for the closing half.
   ocaml: '(*',
 }
 
@@ -219,9 +168,6 @@ function escape(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-// Languages whose files must OPEN with a fixed line (php's `<?php`): the
-// provenance header sits immediately after it, so the guard reads from
-// this offset. Mirrors the `prologue` declaration in vendor/routes.json.
 const LANG_HEADER_OFFSET: Record<string, number> = {
   php: 1,
 }
@@ -237,9 +183,6 @@ function provenance(path: string, rel: string): any {
   const lang = /^tm\/([^/]+)\//.exec(rel.split(Path.sep).join('/'))?.[1]
   const offset = (lang && LANG_HEADER_OFFSET[lang]) || 0
 
-  // Same reason as sha256 above: a CRLF checkout would leave a trailing
-  // '\r' on every line, which the anchored patterns below would still
-  // match but the licence/resync checks would read oddly.
   const head = readFileSync(path, 'utf8').split(/\r?\n/).slice(offset, offset + 3)
 
   const c = escape(commentFor(rel))
@@ -297,8 +240,6 @@ describe('vendored', () => {
 
         strictEqual(p.repo, entry.repo, rel + ': header repo disagrees')
 
-        // The upstream path is what a resync reads FROM. A wrong one sends
-        // the next resync to the wrong file, silently.
         ok(p.upstream.startsWith(spec.upstream),
           rel + ': header upstream path ' + p.upstream +
           ' does not match the manifest ' + spec.upstream)
@@ -310,9 +251,6 @@ describe('vendored', () => {
   }
 
 
-  // ONE TAG. The whole point of the shared tag is that "what is this SDK
-  // vendoring" has a single answer, so an entry resynced at a different
-  // tag than the manifest's is a failure even when its hashes are fine.
   test('every tagged entry agrees with the manifest tag', () => {
     for (const [lib, entry] of Object.entries<any>(MANIFEST.library)) {
       if (null == entry.tag) continue
@@ -330,9 +268,6 @@ describe('vendored', () => {
   })
 
 
-  // A hash check only covers files the manifest names, so without this a
-  // new file dropped into a vendored directory is unstamped, unhashed and
-  // completely unguarded.
   test('no unlisted file sits in a vendored directory', () => {
     const listed = new Set<string>()
     for (const entry of Object.values<any>(MANIFEST.library)) {
@@ -371,18 +306,6 @@ describe('vendored', () => {
   })
 
 
-  // IMPORT ADAPTATIONS, declared as data rather than as prose.
-  //
-  // A vendored file is sometimes not usable verbatim: omni's
-  // `compat/struct.ts` imports `../src`, which resolves inside omni's own
-  // repo and nowhere in a vendored tree. The adaptation was recorded only
-  // in that file's provenance header — human-readable, and enforced by
-  // nothing.
-  //
-  // So a resync silently reverted it, the manifest hash updated cleanly
-  // because the resync wrote both, and the break surfaced two steps later
-  // as a generated SDK that would not compile. Prose in a header is not a
-  // guard. `adapt` in the manifest is.
   test('declared import adaptations survive a resync', () => {
     for (const [lib, entry] of Object.entries<any>(MANIFEST.library)) {
       for (const [rel, spec] of Object.entries<any>(entry.file)) {
@@ -395,8 +318,6 @@ describe('vendored', () => {
           const src = readFileSync(Path.join(SDK, rel), 'utf8')
             .replace(/\r\n/g, '\n')
 
-          // Skip the provenance header (and any language prologue before
-          // it), which NAMES the `from` string.
           const lang = /^tm\/([^/]+)\//.exec(rel)?.[1]
           const skip = 3 + ((lang && LANG_HEADER_OFFSET[lang]) || 0)
           const body = src.split('\n').slice(skip).join('\n')
@@ -413,18 +334,7 @@ describe('vendored', () => {
   })
 
 
-  // The FULL-SET BARREL is deliberately not vendored.
-  //
-  // sekreto's `Providers.ts` exists to re-export every provider kind at
-  // once — which is precisely what an SDK must not contain. Vendoring it
-  // would import all thirteen modules, so the plugin trim would remove a
-  // provider's file and leave the barrel importing it: the SDK does not
-  // get leaner, it stops compiling. That is not hypothetical; it is what
-  // happened on the first generated build.
   test('the full-set barrel is not vendored into SDKs', () => {
-    // One entry per port as it lands: each names the file that imports (or
-    // lazily reaches) EVERY plugin at once. `Providers.ts` was the
-    // pre-reshape ts barrel; `plugins/index.ts` is the reshaped one.
     const BARRELS = [
       'tm/ts/src/feature/secrets/sekreto/Providers.ts',
       'tm/ts/src/feature/secrets/sekreto/plugins/index.ts',
@@ -434,19 +344,11 @@ describe('vendored', () => {
       // breakage is at attribute access, which a compile-only check
       // cannot see. The one shape that can SHIP broken; pinned absent.
       'tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/__init__.py',
-      // swift: `allplugins` lists every Definition - the same shape as
-      // ts's plugins/index.ts, as one file in the SekretoPlugins module.
       'tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/All.swift',
-      // c: names every sek_plugin_* symbol, so linking it pulls every
-      // plugin object, the TLS binding and the child-process launcher.
       'tm/c/feature/secrets/plugins/all.c',
-      // lua: requires every kind module at once.
       'tm/lua/feature/secrets/sekreto/plugins.lua',
-      // zig: exports every kind at once.
       'tm/zig/feature/secrets/plugins/all.zig',
-      // ocaml: references every plugin including the TLS ones.
       'tm/ocaml/feature/secrets/plugins/allplugins.ml',
-      // cpp: one pair declaring and defining every kind's factory.
       'tm/cpp/feature/secrets/plugins/All.hpp',
       'tm/cpp/feature/secrets/plugins/All.cpp',
     ]
@@ -465,78 +367,14 @@ describe('vendored', () => {
   })
 
 
-  // Local deviations from upstream must stay LOUD: an unmarked one is
-  // indistinguishable from a resync that silently lost a fix.
-  //
-  // The table is EMPTY, and that is the finished state of the migration
-  // guide's Phase 0. It carried three entries — two in Runner.ts, one in
-  // Util.ts — for the patches the solardemo prototype made while waiting on
-  // upstream: `match()` cloning its base, `jsonstr()` without a cycle guard,
-  // and `errify`/`errmessage` collapsing error-shaped maps to
-  // '[object Object]'. omni has since absorbed all three (`seen` in
-  // Util.jsonstr, "Read the base DIRECTLY" in Runner.match, and an errify
-  // that spreads a plain object), so the resync to 5956cc4 removed the
-  // patches and this expectation together — which is exactly the sequence
-  // the assertion below demands.
-  //
-  // Keep the test, not just the table: an empty map still fails loudly the
-  // moment someone hand-edits a vendored file without marking it.
   test('local deviations from vendored code stay marked', () => {
     const patched: Record<string, number> = {
-      // THREE FIXES to the php struct port, all found porting the generated
-      // option spec to php and all divergences from the ts reference rather
-      // than php-specific behaviour. Each is marked in place with the same
-      // "(optspec port, pending upstream fix)" reason:
-      //
-      //   1. `$ERRS` merged BEFORE `$extra`, so a caller store overrode the
-      //      error collector — a $ONE alternative's trial failures landed in
-      //      the CALLER's error list.
-      //   2. validate_ONE read `count($terrs)` off a php array it had passed
-      //      BY VALUE, so the count was always 0 and the first alternative
-      //      always "matched".
-      //   3. TYPENAME spelled slot 1 'noval' where ts spells it 'nil', so
-      //      `$NIL` resolved to a 0 bitmask and rejected every value.
-      //
-      // Together they made the union encoding the option spec uses for an
-      // optional value — ['`$ONE`', <type>, '`$NIL`'] — reject an absent key,
-      // which is most of the spec.
-      //
-      //   4. validate_ONE wrote its trial result back with ancestor `2` where
-      //      ts uses `-2`, so it wrote through to the GRANDPARENT instead of
-      //      no-opping against the `[$ONE, ...]` list — resurrecting a key the
-      //      data did not have, and inventing a synthetic sibling carrying the
-      //      trial store's `$TOP`.
-      //
-      // Remove all four when a struct release carries them.
       'tm/php/utility/struct/Struct.php': 4,
 
-      // THE SAME ABSENCE DEFECT, reached differently in two more ports. ts's
-      // validate_ONE replaces the `[$ONE, ...]` node with the DATA value and
-      // then writes the trial result somewhere harmless; a key the data does
-      // not have is therefore DELETED. Both of these kept it:
-      //
       //   go: hand-rolled SetProp against a held grandparent, where SetProp
-      //       deliberately preserves nil. An omitted optional entry came back
-      //       fully materialised, `$OPEN` marker and all.
-      //   rb: setval carries a special case that SETS nil in the grandparent
-      //       branch where ts deletes in both, so an omitted entry came back
-      //       as a nil-valued key.
-      //
-      // In an SDK's option spec either one put an entry in `options.feature`
-      // for every feature the model declares — and the feature ADD ORDER is
-      // derived from those keys. Held by the per-port absence probe in
-      // test/oneabsence.test.ts.
       'tm/go/utility/struct/voxgigstruct.go': 2,
       'tm/rb/utility/struct/voxgig_struct.rb': 1,
 
-      // And a fourth port, reached a third way. csharp descends the data with
-      // GetProp, which answers null for a missing key where ts's getprop
-      // answers undefined — and Typify tells null (T_null) from NONE
-      // (T_noval) exactly as ts does, so the nested `$NIL` saw a null and
-      // REJECTED it. This one did not merely materialise the entry: it made
-      // validate THROW, so a default client could not be constructed at all
-      // ("to be one of …, nil, but found no value" for every feature). The
-      // patch re-validates NONE in place of null.
       'tm/csharp/utility/struct/Struct.cs': 1,
     }
 
@@ -580,21 +418,6 @@ describe('vendored', () => {
 // feature just vanishes from every generated SDK with no diagnostic.
 describe('applicability tags', () => {
 
-  // THE DOCUMENTATION PATH MUST USE THE SAME GATE AS THE CODE PATH.
-  //
-  // A feature applies where its `needs` are a subset of the target's
-  // `provides`, and `targetFeatures` is the one place that rule lives.
-  // Config and Main have always called it; every ReadmeRef_<lang> read the
-  // RAW active-feature map instead, so a target's README reference
-  // advertised features that target cannot carry - `secrets` on a target
-  // whose container has no vendored sekreto, and a reader who set the
-  // option got nothing back.
-  //
-  // The symptom is latent today: every target with a ReadmeRef now provides
-  // both `sekreto` and `schema`, so the two gated features happen to apply
-  // everywhere. That is the reason to hold it with a test rather than to
-  // leave it - the next feature with a `needs` some target lacks would
-  // reintroduce it silently, and the output would look plausible.
   test('no ReadmeRef reads the feature map past the applicability gate', () => {
     const raw = 'getModelPath(model, `main.${KIT}.feature`)'
     const bad: string[] = []
@@ -623,7 +446,6 @@ describe('applicability tags', () => {
         const src = readFileSync(Path.join(dir, f), 'utf8')
         const key = 'feature' === kind ? 'needs' : 'provides'
 
-        // `needs: { sekreto: true }` — the map form the schema takes.
         const m = new RegExp(key + '\\s*:\\s*\\{([^}]*)\\}').exec(src)
         if (null == m) continue
 
@@ -643,51 +465,25 @@ describe('applicability tags', () => {
   })
 
 
-  // The vocabulary is only worth having if something rejects a stranger.
   test('unknownTags rejects a tag outside the vocabulary', () => {
     deepStrictEqual(unknownTags({ sekreto: true }), [])
     deepStrictEqual(unknownTags({ sekrreto: true }), ['sekrreto'])
     deepStrictEqual(unknownTags({}), [])
     deepStrictEqual(unknownTags(undefined), [])
 
-    // A tag set to false is not declared, so it is not an unknown tag.
     deepStrictEqual(unknownTags({ sekrreto: false }), [])
   })
 })
 
 
-// A resync can change a vendored function's ARGUMENT ORDER, and go will not
-// say a word: `GetPath(path, store)` became `GetPath(store, path)` in struct
-// go 0.1.3 — both parameters are `any`, so all 35 call sites in the go
-// templates kept compiling and started returning nil at runtime.
-//
-// Nothing cheap caught that. `go vet` compiles, so it saw nothing; the
-// golden manifest hashes content, so it reported 14 changed files and no
-// reason; only the feature-corpus lane went red, three layers away from the
-// cause, saying "no declared operation completed against a plain 200"
-// because `allow.op` had silently resolved to "".
-//
-// So the signatures the templates actually DEPEND ON are pinned here, at the
-// point where a resync happens. This is deliberately not a full API check:
-// it lists the few functions whose misuse is SILENT — the ones whose
-// parameters share a type, so the compiler cannot tell them apart.
 describe('vendored signature drift', () => {
 
-  // Each entry: the exact `func` line the templates' call sites assume.
-  // Written out in full rather than matched loosely, so a change to the
-  // return type is caught alongside a change to the order.
   const PINNED: Record<string, string[]> = {
     'tm/csharp/utility/struct/Struct.cs': [
-      // store/path share a type; a resync that reorders them compiles
-      // and returns junk - the exact go trap, C#-spelled.
-      // Pinned WITH the file's indentation: the check is a literal
-      // line-match, and C# nests inside a class.
       '        public static object? SetPath(object? store, object? path, object? val)',
       '        public static object? GetPath(object? store, object? path,',
     ],
     'tm/go/utility/struct/voxgigstruct.go': [
-      // Call sites pass (store, path) — the same order as SetPath. Reversing
-      // these two `any` parameters compiles and yields nil.
       'func GetPath(store any, path any, injdefs ...*Injection) any {',
       'func SetPath(store any, path any, val any, injdefs ...map[string]any) any {',
     ],
@@ -701,12 +497,8 @@ describe('vendored signature drift', () => {
       const src = readFileSync(path, 'utf8').replace(/\r\n/g, '\n')
 
       for (const want of lines) {
-        // go spells it `func Name(`, C# `... object? Name(` - take the
-        // identifier immediately before the first open paren.
         const name = /(\w+)\s*\(/.exec(want)?.[1]
 
-        // Report what it IS, not just that it is missing — the whole point
-        // is that the reader needs to see the new order to fix call sites.
         const actual = new RegExp('^.*\\b' + name + '\\s*\\(.*$', 'm').exec(src)
 
         ok(src.includes('\n' + want) || src.startsWith(want),

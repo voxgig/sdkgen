@@ -1,22 +1,3 @@
-// THE JUNK FILTER — what a developer's machine leaves in a tree, and what
-// sdkgen must therefore refuse to see.
-//
-// The incident: a `tm/py/utility/__pycache__/make_options.cpython-314.pyc`,
-// created by running that module in place, copied verbatim by `target add py`,
-// and caught only by the golden manifest. Everything below is one of the two
-// halves of the fix.
-//
-// THE FIRST HALF is that every walk drops it — the tree Copy, the aliased
-// component walk that stands in for a Copy, the prune, doctor's drift walk, the
-// feature scan, the definition listing. A filter applied by four of six places
-// is worse than none: the writer and the reader then disagree about what a tree
-// contains, which is the shape of drift doctor exists to report.
-//
-// THE SECOND HALF, and the reason the first test here matters most, is that the
-// list must never match a file somebody meant. It is checked against every name
-// in the shipped scaffold — 2,000-odd files across 27 targets — so a pattern
-// broad enough to eat a template fails here, loudly, rather than silently
-// dropping one file out of one language's SDK.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -47,9 +28,6 @@ const PLANTED: Record<string, string> = {
 }
 
 
-// A package holding the real `go` target under its own name, with junk in it.
-// The real target, as `packagecheck.test.ts` argues: a hand-built stub would
-// pass what the shipped trees fail.
 function makePackage(): string {
   const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-junk-'))
   const sdk = Path.join(dir, '.sdk')
@@ -144,7 +122,6 @@ describe('junk filter', () => {
   })
 
 
-  // The distinction the two lists exist for.
   test('build output is junk to copy and content to find', () => {
     strictEqual(isJunk('node_modules'), true)
     strictEqual(isNoise('node_modules'), false,
@@ -155,11 +132,6 @@ describe('junk filter', () => {
   })
 
 
-  // jostraca ≤0.31.0 merges this list over its own default with `deep()`,
-  // which recursed into index 0 and kept the default there. Index 0 was
-  // therefore a hole, and `copyOpts` fills it with the value already in it —
-  // still pinned, because sdkgen runs against whatever jostraca a consumer
-  // has installed.
   test('the copy ignore list survives jostracas merge', () => {
     const { ignore } = copyOpts().Copy
 
@@ -223,7 +195,6 @@ describe('junk filter', () => {
       project.fs.mkdirSync(ROOT + '/tm/go/__pycache__', { recursive: true })
       project.fs.writeFileSync(own, 'the users own\n')
 
-      // A resync: the prune runs and removes what the scaffold no longer has.
       await target_add([Path.join(dir, 'go')], project.actx)
 
       ok(project.fs.existsSync(own),

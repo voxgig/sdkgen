@@ -1,52 +1,10 @@
 "use strict";
-// Canonical type-sentinel -> language primitive type mapper.
-//
-// SOURCE OF TRUTH for the sentinel set: @voxgig/apidef (`VALID_CANON` +
-// `CANON_ONE`, exported from the package). VALID_CANON maps an OpenAPI type
-// NAME -> a `$SENTINEL` string (e.g. 'string' -> `$STRING`). The model stores
-// those sentinels on every `fields[].type` and op `points[].args.params[].type`.
-// A multi-type (OpenAPI `type: [a, b]`) is stored as the ARRAY-shaped union
-// sentinel `['`$ONE`', [member, ...]]` (see canonToType below).
-//
-// This table maps the SENTINEL the other way -> a concrete primitive type in
-// each target language, so the typed-model generators (EntityTypes_<lang>.ts)
-// and the README type columns (ReadmeRef_<lang>.ts / ReadmeEntity_<lang>.ts)
-// can turn the model's field/param sentinels into real language types. It is
-// the SINGLE mapping per language: components must not keep local copies.
-//
-// Kept as a small mirror here (rather than importing VALID_CANON at runtime)
-// because apidef is a peer dependency and the table is the INVERSE direction.
-//
-// `ts/test/canonsync.test.ts` guards it two ways: the vocabulary and every
-// language column are pinned LOCALLY (that check always runs), and the table
-// is cross-checked against apidef's exported VALID_CANON/CANON_ONE when the
-// installed apidef exports them. Note that the currently published apidef
-// (6.3.1) does NOT export them, so the cross-check skips — do not rely on it
-// alone; add a new sentinel to the local list in the same change.
-//
-// KNOWN GAPS (papered over sanely, documented for the port):
-//  - Unknown / missing sentinel  -> the language's "any" (never throws).
-//  - Array element typing is not in the model: $ARRAY maps to an untyped
-//    list/array. `list` ops return T[] via op-kind inference in the op
-//    fragment, NOT via a field sentinel.
-//  - Object/nested field schemas are not in the corpus: $OBJECT maps to the
-//    language's open record/map type.
-//  - No enum/format/nullability beyond the `req` flag.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PANDAS_DTYPE = exports.CANON_UNION_JOIN = exports.CANON_ANY = exports.CANON_TYPE = void 0;
 exports.canonToType = canonToType;
 exports.canonToDtype = canonToDtype;
 exports.canonKey = canonKey;
 exports.canonScalarKey = canonScalarKey;
-// Bare sentinel key (backticks + leading `$` stripped, upper-cased)
-// -> per-language primitive type name.
-//
-// Column notes:
-//  - kotlin: every type is nullable (`?`) — the kotlin emitter drops
-//    per-member optionality because the column is already-nullable.
-//  - java/scala: boxed JVM types (nullable), so optionality needs no marker.
-//  - rust/c/cpp/swift: `Value`/`voxgig_value*`/`VMap` are the vendored
-//    dynamic value types those runtimes ship.
 const CANON_TYPE = {
     STRING: {
         ts: 'string', js: 'string', py: 'str', php: 'string', rb: 'String',
@@ -111,11 +69,6 @@ const CANON_ANY = {
     rust: 'Value', c: 'voxgig_value*', cpp: 'Value', elixir: 'any()',
 };
 exports.CANON_ANY = CANON_ANY;
-// Union ($ONE) member separator for languages with a native union/sum type
-// syntax. Languages absent here have no way to express an anonymous union in
-// a type position, so a $ONE sentinel degrades to that language's "any".
-// (php 8 unions exist but cannot combine with the `?` optional prefix the
-// emitters use, so php deliberately degrades to `mixed`.)
 const CANON_UNION_JOIN = {
     ts: ' | ',
     js: '|',
@@ -124,23 +77,6 @@ const CANON_UNION_JOIN = {
     elixir: ' | ',
 };
 exports.CANON_UNION_JOIN = CANON_UNION_JOIN;
-// Canonical sentinel -> pandas dtype, for the `py-data` target's generated
-// DataFrame accessors. Deliberately NOT a CanonLang column: py-data is a
-// consumer target layered on `py`, not a language, and these are storage
-// dtypes rather than type-annotation names.
-//
-// NULLABLE dtypes throughout ('Int64' not 'int64', 'boolean' not 'bool').
-// The model carries no nullability beyond the `req` flag, and API payloads
-// omit optional fields freely, so a column that looks integral in one page
-// can arrive with nulls in the next. NumPy's int64/bool cannot hold NA and
-// would silently upcast to float64/object mid-fetch, changing a column's
-// dtype based on which rows came back — the pandas nullable extension types
-// keep it stable.
-//
-// There is no $DATE / $DATETIME sentinel in apidef's vocabulary (the model
-// carries no string formats), so date handling is NOT inferred here. It is
-// an explicit runtime opt-in via the accessor's `parse_dates=` kwarg. Do not
-// add a DATE row unless apidef starts emitting the sentinel.
 const PANDAS_DTYPE = {
     STRING: 'string',
     INTEGER: 'Int64',
@@ -174,21 +110,6 @@ function canonKey(sentinel) {
     }
     return String(sentinel).replace(/[`$]/g, '').trim().toUpperCase();
 }
-// The bare key of the sentinel a VALUE of this type must satisfy, resolving
-// the union sentinel `['`$ONE`', [member, ...]]` to its first non-NULL member
-// (recursively — a member may itself be a union).
-//
-// canonKey alone cannot do this: given an array it stringifies it, so a
-// nullable `['`$ONE`', ['`$NUMBER`','`$NULL`']]` field yields neither NUMBER
-// nor anything else recognizable and every caller falls through to its
-// "unknown, use a string" branch. canonToType meanwhile renders that same
-// sentinel as `number | null`, so the doc example said `'..._id'` while the
-// generated type said `number` — a TS2322 in the SDK's own README, which is
-// exactly the disagreement the example helpers exist to prevent.
-//
-// A union of nothing but NULL resolves to NULL; an unrecognized array shape,
-// or an empty member list, resolves to '' (unknown) like any missing
-// sentinel.
 function canonScalarKey(sentinel) {
     if (Array.isArray(sentinel)) {
         if ('ONE' !== canonKey(sentinel[0]) || !Array.isArray(sentinel[1])) {
@@ -209,14 +130,6 @@ function canonScalarKey(sentinel) {
     }
     return canonKey(sentinel);
 }
-// Map a field/param type sentinel to a target-language primitive type.
-// Unknown or missing sentinel -> that language's "any" (never throws).
-//
-// The union sentinel `['`$ONE`', [member, ...]]` (apidef CANON_ONE, produced
-// for OpenAPI multi-types) renders as a joined member union in languages with
-// union syntax (see CANON_UNION_JOIN); elsewhere it degrades to "any".
-// Members may themselves be unions (handled recursively) or the literal
-// 'Any' apidef emits for an unknown member name (canonKey maps it to ANY).
 function canonToType(sentinel, lang) {
     const l = lang;
     const fallback = CANON_ANY[l] ?? 'any';

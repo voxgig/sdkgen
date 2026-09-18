@@ -1,13 +1,3 @@
-// Shared prose for the generated agent guides (AGENTS.md files emitted at the
-// project top level, per target language, and per feature). The workflow, the
-// two-layer template/component model, and the aontu primer are identical for
-// every generated SDK, so they live here once and the three AgentGuide
-// components (AgentGuideTop / AgentGuide / AgentGuideFeature) render them.
-//
-// IMPORTANT: these guides ship INSIDE a generated SDK project, so every path is
-// consumer-relative (`.sdk/tm/<lang>/`, `.sdk/src/cmp/<lang>/`,
-// `.sdk/model/...`) — NOT the `project/.sdk/...` form used by the sdkgen repo's
-// own developer docs.
 
 import { featureApplies } from '../helpers/applicability'
 
@@ -70,10 +60,7 @@ function langCommandsBlock(name: string): string {
 }
 
 
-// --- feature layout helpers (targets differ) --------------------------------
 
-// Whether a target generates per-feature output at all. go-cli / go-mcp
-// disable the feature phase (`phase.feature.active: false`).
 function featuresEnabled(target: any): boolean {
   return target?.phase?.feature?.active !== false
 }
@@ -89,8 +76,6 @@ function featureBase(target: any): string {
   return isDirLayout(target) ? 'src/feature' : 'feature'
 }
 
-// The generated runtime file for a feature in a flat-layout target:
-// `<name>_feature.<ext>` (go/py/rb/lua) or `<Name>Feature.php` (php).
 function featureRuntimeFile(target: any, feature: any): string {
   const ext = target?.ext || target?.name || ''
   if ('php' === target?.name) {
@@ -99,8 +84,6 @@ function featureRuntimeFile(target: any, feature: any): string {
   return feature.name + '_feature.' + ext
 }
 
-// A feature's active hook-stage names (feature.hook.<Stage>.active === true),
-// sorted (each() marks map keys as key$).
 function featureHooks(feature: any): string[] {
   return each(feature.hook || {})
     .filter((h: any) => h && h.active)
@@ -109,7 +92,6 @@ function featureHooks(feature: any): string[] {
 }
 
 
-// --- model readers (mirror the active-item pattern in ReadmeTop.ts) ---
 
 function activeTargets(model: any): any[] {
   const target = getModelPath(model, `main.${KIT}.target`) || {}
@@ -136,9 +118,7 @@ function projectName(model: any): string {
 }
 
 
-// --- shared markdown sections -----------------------------------------------
 
-// (a) basic generation & updating.
 function workflowSection(): string {
   return `## Generating and updating the SDK
 
@@ -201,7 +181,6 @@ regeneration in place cannot see stale output at all.
 }
 
 
-// (b) adding a new generated feature.
 function featureSection(): string {
   return `## Adding a feature
 
@@ -231,7 +210,6 @@ To author a **new** feature:
 }
 
 
-// (c) customising the model and templates (the two-layer mental model).
 function customiseSection(): string {
   return `## Customising: model, templates, components
 
@@ -257,7 +235,6 @@ deps live in \`.sdk/model/target/<lang>.aon\`; features in
 }
 
 
-// (d) how the aontu model language works.
 function aontuSection(): string {
   return `## The model language (aontu, \`.aon\` files)
 
@@ -296,7 +273,6 @@ do not "fix" these into literal disjunctions.
 }
 
 
-// A thin CLAUDE.md that points at the sibling AGENTS.md (same directory).
 function claudePointer(title: string): string {
   return `# ${title}
 

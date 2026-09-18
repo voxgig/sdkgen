@@ -19,12 +19,6 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		options = map[string]any{}
 	}
 
-	// Merge custom utility overrides onto the utility object.
-	// Read from original options before clone, since vs.Clone strips functions.
-	//
-	// A key naming a real utility member REPLACES it (overrideUtil); anything
-	// else is attached as a custom extra. This mirrors ts, where the utility is
-	// an open object and `setprop` does both at once.
 	if customUtils := core.ToMapAny(options["utility"]); customUtils != nil {
 		utility := ctx.Utility
 		if utility != nil {
@@ -36,28 +30,11 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
-	// `auth: nil` is the documented way to disable auth outright, and
-	// prepareAuth honours it before it ever reads the apikey. But validate
-	// treats a stored nil as "no value", so the optspec's `auth` default
-	// fires and the suppression silently becomes "use default auth" —
-	// transmitting a credential the caller explicitly asked not to send.
-	//
-	// Suppliedness cannot be recovered after validate, hence here. The
-	// two-value form is required: options["auth"] reads nil both when the
-	// key is ABSENT and when it is present and nil, and only the second is
-	// a suppression. (ts gets this for free — `null === options.auth` is
-	// false for an omitted key, since that reads undefined.)
 	authval, authgiven := options["auth"]
 	authsuppressed := authgiven && authval == nil
 
 	opts := vs.Clone(options).(map[string]any)
 
-	// Feature add-order (feature #2). options.feature may be given as an ordered
-	// ARRAY of {name, active, ...opts} entries (the array position IS the order
-	// in which features are added), or as a {name:{opts}} map. Normalize an
-	// array to a map (so merge/validate/init are unchanged) and remember the
-	// explicit order; a map defaults to test-first so the `test` mock transport
-	// is installed as the base of the transport wrapper chain.
 	var featureorder []any
 	if farr, ok := opts["feature"].([]any); ok {
 		fmap := map[string]any{}
@@ -93,18 +70,6 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
-	// THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
-	//
-	// core.OPTSPEC is built from the model: `main.kit.optspec` for the
-	// standard options, plus one entry per feature this target carries, taken
-	// from that feature's own `config.options` / `config.optspec`. Editing
-	// this file to add an option would put it back where it was — one of
-	// twenty hand-maintained copies of a schema nothing cross-checked — so
-	// add it to the model instead and every ported target validates it.
-	//
-	// NOT MUTATED. It is a package-level map shared by every client this
-	// process constructs; the platform default below is applied to the
-	// RESULT, never to the spec.
 	optspec := core.OPTSPEC
 
 	// Preserve system.fetch before merge/validate.
@@ -126,14 +91,6 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		opts["auth"] = nil
 	}
 
-	// Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
-	// Every placeholder must resolve to a non-empty value: from
-	// options["server"] (user), else the config default. A placeholder that
-	// resolves to "" is a construction error in live mode — the URL cannot
-	// work — but in test mode substitutes the deterministic value
-	// "test-<name>" so offline tests need no configuration. The SDK
-	// constructor has no error return, so a missing required variable
-	// PANICS (construction-time misconfiguration, as regexp.MustCompile).
 	if base, ok := opts["base"].(string); ok && strings.Contains(base, "{") {
 		testmode := false
 		if ta, ok := vs.GetPath(opts, []any{"test", "active"}).(bool); ok && ta {
@@ -219,12 +176,6 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		} else {
 			ordered = append(ordered, names...)
 		}
-		// Station special case, mirroring test's: its transport wrap must
-		// sit immediately outside the base transport (inside retry/cache/
-		// netsim), so map-form activation hoists it to just after test -
-		// or first, when no test entry exists. Without this the sorted
-		// default would init station last and wrap OUTSIDE the recording
-		// features, turning its wire-truth events into fiction.
 		si := -1
 		for i, n := range ordered {
 			if n == "station" {

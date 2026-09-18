@@ -1,10 +1,3 @@
-// The KIND spine: what `target add` and `feature add` share.
-//
-// They were two hand-written pipelines that had already drifted — only one
-// took path refs, only one applied a replace map, only one recorded
-// provenance — and each drift was found the hard way. What is common now runs
-// once (action/kind), so a third kind cannot re-introduce the same gaps and
-// the two existing ones cannot diverge again.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, rejects } from 'node:assert'
@@ -19,8 +12,6 @@ import {
 } from './actionharness'
 
 
-// A package providing one target and one feature, so both kinds can be
-// exercised against the same external source.
 function externalPackage(): string {
   const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-kind-'))
   const sdk = Path.join(dir, '.sdk')
@@ -55,29 +46,19 @@ describe('kind registry', () => {
 
 
   test('a kind declares its trees ONCE, and everything reads them there', () => {
-    // The add composes these paths, doctor walks them, and manifest
-    // validation requires them. Three readers, one declaration — the
-    // alternative is the same-rule-written-twice defect this registry exists
-    // to prevent.
     deepStrictEqual(
       kindTrees('target', 'go').map((t: any) => t.path),
       ['src/cmp/go', 'tm/go'])
 
-    // A docs item's trees are NESTED under the kind, so a docs item and a
-    // target may share a name without sharing a directory.
     deepStrictEqual(
       kindTrees('edition', 'go').map((t: any) => t.path),
       ['src/cmp/edition/go', 'tm/edition/go'])
 
-    // A feature IS its definition; it owns no tree of its own.
     deepStrictEqual(kindTrees('feature', 'log'), [])
   })
 
 
   test("a docs item's templates are OPTIONAL, its components are not", () => {
-    // A docs item whose every emitted byte depends on the API — a catalogue
-    // entry, a config file — legitimately ships no template tree, and a
-    // manifest claiming it must still validate.
     const trees = kindTrees('edition', 'summary')
 
     strictEqual(trees.find((t: any) => t.path.startsWith('src/cmp'))?.required,
@@ -95,9 +76,6 @@ describe('kind registry', () => {
 
 
   test('the registry has no inherited members', () => {
-    // A plain object literal would make `kindDef('toString')` return
-    // Object.prototype.toString and dispatch into it — the same hole
-    // ACTION_MAP had.
     let msg = ''
     try { kindDef('toString') } catch (e: any) { msg = e.message }
     ok(msg.includes('Unknown kind: toString'), 'got: ' + msg)
@@ -203,7 +181,6 @@ describe('bare names follow recorded provenance', () => {
 
 
   test('an explicit ref still wins over the record', async () => {
-    // That is how something is moved to a new source.
     const project = makeProject({})
     await target_add([targetRef('go')], project.actx)
 

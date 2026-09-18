@@ -1,14 +1,5 @@
 /* Copyright (c) 2024-2026 Richard Rodger, MIT License */
 
-// The "Open types" README section reports fields that could not be narrowed
-// because the API definition describes them with UNTAGGED unions —
-// `oneOf`/`anyOf` with no `discriminator`. apidef records the widest such union
-// per field (ModelField.union); this section explains the resulting open type
-// so it does not read as a modelling failure.
-//
-// The live case is the Typebot Builder spec: `groups` carries a 19-branch
-// untagged union 14 levels down, which is why that SDK types it as a bare
-// array.
 
 import { describe, test } from 'node:test'
 import { equal, match, doesNotMatch } from 'node:assert'
@@ -40,8 +31,6 @@ function selectRows(entities: any) {
 describe('readme-unions', () => {
 
   test('reports only unions at or above the threshold', () => {
-    // A two-branch union is a routine either/or; reporting every one would
-    // bury the cases that matter.
     equal(MIN_REPORTED_BRANCHES, 3)
 
     const rows = selectRows({

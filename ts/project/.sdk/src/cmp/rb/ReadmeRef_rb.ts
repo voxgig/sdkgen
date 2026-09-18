@@ -55,12 +55,6 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  // GATED BY THE TARGET, not the raw active-feature map. A feature applies
-  // where its `needs` are a subset of the target's `provides`, and the code
-  // path has always honoured that - Config and Main take targetFeatures. The
-  // REFERENCE did not, so every target's README advertised `secrets` whether
-  // or not that target's container carries a vendored sekreto, and a reader
-  // who set the option got nothing back.
   const feature = targetFeatures(model, target)
 
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
@@ -203,7 +197,6 @@ ${eVar} = client.${ent.Name}
 `)
 
 
-      // Field schema
       if (fields.length > 0) {
         Content(`### Fields
 
@@ -250,7 +243,6 @@ ${eVar} = client.${ent.Name}
       }
 
 
-      // Operation details
       if (opnames.length > 0) {
         Content(`### Operations
 
@@ -266,7 +258,6 @@ ${info.desc}
 
 `)
 
-          // Show example
           if ('load' === opname || 'remove' === opname) {
             // The id key plus every REQUIRED match key (parent path params
             // like page_id) — the same shape the runtime resolves path
@@ -335,7 +326,6 @@ ${updateLines}  # Fields to update
       }
 
 
-      // Common methods
       Content(`### Common Methods
 
 #### \`data_get -> Hash\`
@@ -367,7 +357,6 @@ Return the entity name.
     })
 
 
-    // Features section
     const activeFeatures = each(feature).filter((f: any) => f.active)
     if (activeFeatures.length > 0) {
       Content(`
@@ -403,9 +392,6 @@ client = ${model.const.Name}SDK.new({
 \`\`\`
 
 `)
-      // The shared feature reference: options, defaults, usage and the
-      // considerations. Model facts, identical in every target, so they are
-      // written once in cmp/ReadmeRefFeatures.ts rather than here.
       ReadmeRefFeatures({ target })
     }
 

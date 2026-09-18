@@ -12,29 +12,6 @@ import {
 } from '@voxgig/apidef'
 
 
-// THE GENERATED SCHEMA MODULE: the model's schemas, as data the SDK can run.
-//
-// The zig peer of src/cmp/ts/Schema_ts.ts. Same two members, same source:
-// optspec from `main.kit.optspec` plus each feature's own `config.options`,
-// entityspec from the entity field sentinels — both built by the shared
-// helpers, so what zig validates against and what ts validates against cannot
-// drift.
-//
-// EMBEDDED AS JSON, PARSED AT LOAD, where ts emits an object literal: JSON is
-// a subset of TypeScript's own literal syntax and is not a subset of zig's.
-// A string constant, exactly as config.zig carries its data rep above the
-// size threshold, and for the same reason — a nested `h.jo(...)` literal is
-// one expression zig's comptime evaluator walks in full at every build. The
-// spec has no threshold of its own because it is bounded by the option list
-// and the feature set rather than by the API.
-//
-// The escaping is JSON.stringify's, which is valid Zig: it escapes every
-// backslash, so the JSON's own `\uXXXX` reaches the file as `\\uXXXX` and no
-// Zig escape sequence is ever formed from it.
-//
-// The round-trip is exact because the spec holds only strings and booleans:
-// pinned by "strings and booleans only, so the JSON round-trip is lossless"
-// in ts/test/optspec.test.ts.
 const Schema = cmp(async function Schema(props: any) {
   const ctx$ = props.ctx$
   const target = props.target

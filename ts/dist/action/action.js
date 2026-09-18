@@ -12,36 +12,7 @@ exports.parseAddNames = parseAddNames;
 exports.loadContent = loadContent;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
-// `./` — aontu 0.65 reads a bare single-segment include as a PACKAGE name
-// (ADR-039), so `@"go.aon"` resolves against the package stores and is
-// refused: "local files need a ./ prefix". A sibling file has to say so.
 const indexEntry = (name) => `@"./${name}.aon"`;
-// An index line that is an ACTIVE include, and the name it includes — or
-// undefined for a blank line, a comment, or anything else.
-//
-// Parsed rather than compared as a string, because both spellings around an
-// include are legal aontu and mean opposite things:
-//
-//   @"./go.aon"               -> active, name 'go'
-//   @"go.aon"                 -> active, name 'go'  (pre-0.65 spelling)
-//   @"./go.aon"  # pinned     -> active, name 'go'  (trailing comment)
-//     @"./go.aon"             -> active, name 'go'  (indented)
-//   # @"./go.aon"             -> NOT active
-//
-// A substring test (what this used to be) reads the commented-out form as
-// present, so `target add go` on a project that had switched the target off
-// by hand appended nothing and reported success while the target stayed
-// absent from the model. A whole-line equality test fixes that but then
-// misses the trailing-comment form, and appends a SECOND active include.
-//
-// BOTH SPELLINGS, and the `./` is not part of the name. Every index in every
-// already-generated SDK carries the bare form, and those files are the
-// project's own -- they change when the project regenerates, not when sdkgen
-// releases. Reading only the new spelling would make `target add go` on any
-// existing repo believe `go` was absent and append a second include; reading
-// only the old one would do the same the other way round once the index is
-// rewritten. Capturing the name WITHOUT the prefix is what lets the two
-// spellings compare equal, which is the whole point.
 const INDEX_ENTRY_RE = /^\s*@"(?:\.\/)?([^"]+)\.aon"\s*(?:#.*)?$/;
 function indexEntryName(line) {
     const m = line.match(INDEX_ENTRY_RE);
@@ -64,12 +35,6 @@ function appendIndexEntries(content, names) {
     }
     return out;
 }
-// Drop the `@"<name>.aon"` line for each name — the inverse of
-// appendIndexEntries, matching line-exact for the same reasons.
-//
-// Nothing calls this yet: a `remove` action is the fast-follow this exists
-// for (see docs/design/sdkgen-packages.md), and it is written here beside its
-// inverse so the two cannot drift on how an entry is recognised.
 function removeIndexEntries(content, names) {
     const drop = new Set(names);
     return content
@@ -84,26 +49,11 @@ const UpdateIndex = (0, jostraca_1.cmp)(function UpdateIndex(props) {
     (0, jostraca_1.Content)(appendIndexEntries(props.content, props.names));
 });
 exports.UpdateIndex = UpdateIndex;
-// Names given to an `add` action: every positional after the subcommand is
-// a name, each possibly comma-separated — `target add ts,py,go` and
-// `target add ts py go` are equivalent (space-separated extras used to be
-// silently dropped).
 function parseAddNames(args) {
     return args.slice(2)
         .flatMap((a) => 'string' === typeof a ? a.split(',') : a)
         .filter((n) => null != n && '' !== n);
 }
-// The current index file for each kind, which `UpdateIndex` appends to.
-//
-// `seed` IS THE UPGRADE PATH. A project scaffolded before a kind existed has
-// no `model/<kind>/<kind>-index.aon` — every project alive today is in
-// exactly that position for `docs` — and reading it unguarded made the FIRST
-// `edition add` in any existing project fail on ENOENT before it wrote anything.
-//
-// Seeded per call rather than defaulted for every kind: a missing
-// `target-index.aon` in a scaffolded project is a broken project, and
-// quietly recreating it would hide that. A kind the project has never used is
-// a different thing, and only its own action knows which case it is in.
 function loadContent(actx, which, seed) {
     which = Array.isArray(which) ? which : [which];
     const content = {};
@@ -116,21 +66,6 @@ function loadContent(actx, which, seed) {
     });
     return content;
 }
-// ENSURE THE PROJECT'S OWN MODEL INCLUDES A KIND'S INDEX.
-//
-// `model/sdk.aontu` is written once, by create-sdkgen, and includes the
-// indexes of the kinds that existed then. So a project scaffolded before a
-// kind existed — which is every project alive today, for `docs` — never
-// includes its index, and the item's model file is an orphan: it is on disk,
-// `<kind>-index.aon` includes it, and NOTHING includes that. `main.kit.doc.edition`
-// is then absent from the compiled model, so `package list`, `package update`
-// and `doctor` cannot see the item at all.
-//
-// Appending one include line is additive and idempotent, and it is the only
-// way an existing project can adopt a new kind without hand-editing. The
-// entry is parsed, not substring-matched, for the reason `hasIndexEntry`
-// documents: a commented-out include means the project switched it OFF, and
-// re-adding it would override that.
 function ensureModelInclude(actx, kind) {
     const fs = actx.fs();
     const url = actx.url;

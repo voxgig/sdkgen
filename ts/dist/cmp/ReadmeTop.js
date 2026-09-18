@@ -27,33 +27,19 @@ function tsExampleLiteral(type) {
         return '{}';
     return `'example'`;
 }
-// Per-language install commands rendered in the top-level "Try it"
-// section. The per-language `ReadmeInstall_<lang>.ts` templates exist
-// but emit extra prose ("Or install from source: ..."); for the
-// landing-page README we want a single copy-paste line per language.
 function installCommand(target, model) {
-    // Delegate to the single source of truth so the README install command can
-    // never drift from the real published package name (see helpers/packageMeta).
     return (0, packageMeta_1.installCommand)(model, target.name);
 }
-// Pick the language we lead the README with — first entry from the
-// docs-ordered SDK targets. Returns undefined if there are no targets.
 function pickLeadTarget(sdkTargets) {
     return sdkTargets[0];
 }
 const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
-    // Ensure the Name/NAME case variants exist (apidef usually sets these,
-    // but guard so the header never renders "undefined SDK"). Entity/feature
-    // names are guarded the same way below.
     if (model.name && !model.Name)
         (0, jostraca_1.names)(model, model.name);
     const info = (model.main && model.main[types_1.KIT] && model.main[types_1.KIT].info) || {};
     const def = (model.main && model.main.def) || {};
-    // Plain-text title — prefer the OpenAPI `info.title` when it's
-    // recognisably the product name (e.g. "Aare.guru API"), fall back
-    // to the normalised SDK Name.
     const productName = info.title || `${model.Name} API`;
     const tagline = info.tagline
         || def.tagline
@@ -64,10 +50,6 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const homepage = info.homepage || '';
     const docsUrl = info.docs_url || '';
     const entityDesc = info.entity_desc || {};
-    // Spec-derived (apidef): a short "what this API is" blurb and a link back
-    // to the API's own website. Both surface right under the title, before
-    // the unofficial-SDK disclosure, so a reader immediately sees what the
-    // underlying API is and where it comes from.
     const apiSummary = (info.summary || '').trim();
     const apiWebsite = (info.website || '').trim();
     const websiteLine = apiWebsite
@@ -94,16 +76,11 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const activeTargets = (0, jostraca_1.each)(target).filter((t) => t.active !== false);
     const hasCli = activeTargets.some((t) => t.name === 'go-cli');
     const hasMcp = activeTargets.some((t) => t.name === 'go-mcp');
-    // Canonical docs order from main.kit.config.docs_order (with a
-    // schema-supplied default of ['ts','py','php','go','rb','lua']).
-    // Targets present but not listed get appended in spec-defined order,
-    // so adding a new target never silently disappears from the docs.
     const docsOrder = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.config.docs_order`, { only_active: false, required: false }) || [];
     const orderOf = (name) => {
         const i = docsOrder.indexOf(name);
         if (i !== -1)
             return i;
-        // Unlisted targets go after the languages; keep the CLI then MCP last.
         if (name === 'go-cli')
             return docsOrder.length + 1;
         if (name === 'go-mcp')
@@ -114,16 +91,12 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
         .filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp')
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
-    // Every installable port for the Packages table — including the go-cli and
-    // go-mcp binaries, which publish as Go modules via git tags.
     const pkgTargets = activeTargets
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
     const langList = sdkTargets.map((t) => t.title).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
-        // 1. H1 + one-line value prop, then the API's own purpose + website
-        // (spec-derived), then the unofficial / non-affiliation disclosure.
         (0, jostraca_1.Content)(`# ${model.Name} SDK
 
 ${tagline}
@@ -160,20 +133,9 @@ Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
 
 `);
         }
-        // Positioning line, only when we actually have multiple SDK targets.
         if (sdkTargets.length > 1) {
             const surfaces = [];
             surfaces.push(`${langList} SDKs`);
-            // Only surfaces a target actually GENERATES, each gated on the target
-            // that generates it.
-            //
-            // The REPL entry used to be gated on hasJsLike — a ts or js target merely
-            // EXISTING — which is wrong twice over: a ts/js SDK is a library and
-            // ships no REPL, so every project with one advertised a surface it did
-            // not have; and the target that really does emit a REPL is go-cli
-            // (cmp/go-cli/fragment/main.fragment.go: `func repl(...)`, a prompt, and
-            // /help and /quit), so a project WITH a REPL and without ts/js was not
-            // credited for it. Gating it on hasCli fixes both directions.
             if (hasCli)
                 surfaces.push('a CLI with an interactive REPL');
             if (hasMcp)
@@ -198,7 +160,6 @@ Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
 
 `);
         }
-        // 2. About / what the API is
         if (aboutMd) {
             (0, jostraca_1.Content)(`## About ${productName}
 
@@ -211,19 +172,12 @@ ${aboutMd.trim()}
 
 `);
         }
-        // 2b. Entities-first framing: the API surface is a small set of semantic,
-        // Capitalised entities — NOT raw URL paths/queries — which is the core
-        // mental model the SDK is built around (model-driven; lists real entities).
         if (activeEntities.length > 0) {
             const entNames = activeEntities.map((e) => e.Name);
             const entCount = entNames.length;
             const entList = entCount > 1
                 ? entNames.slice(0, -1).join(', ') + ' and ' + entNames[entNames.length - 1]
                 : entNames[0];
-            // Only enumerate the entity names inline when the set is small enough that
-            // the list clarifies the mental model rather than becoming a wall of names
-            // at the top of the README. Larger APIs get a count and a pointer to the
-            // Entities table below — and we never assert a "small set" when it isn't.
             const NAME_INLINE_MAX = 6;
             const inlineNames = entCount <= NAME_INLINE_MAX;
             const surface = inlineNames
@@ -242,11 +196,6 @@ ${aboutMd.trim()}
             // only remove (or nothing), the op line is omitted entirely.
             const primaryOp = (0, opShape_1.entityPrimaryOp)(exEnt);
             let exCall = '';
-            // A `list()` on a NESTED entity needs its parent path params — the
-            // quickstart used to emit `client.Moon().list()` for an entity at
-            // `/planet/{planet_id}/moon`, which 404s against a live server from a
-            // half-built URL. The model knows which params are required; matchArg
-            // renders exactly those.
             const exIdField = (0, opShape_1.entityIdField)(exEnt);
             const exListArg = (0, opExample_1.matchArg)('ts', exEnt, 'list', exIdField, (0, opExample_1.idLiteral)(exEnt, 'list', exIdField));
             const exLoadArg = (0, opExample_1.matchArg)('ts', exEnt, 'load', exIdField, (0, opExample_1.idLiteral)(exEnt, 'load', exIdField));
@@ -265,15 +214,11 @@ ${aboutMd.trim()}
                 const shapeItems = (0, opShape_1.opRequestShape)(exEnt, primaryOp).items
                     .filter((it) => (it.name !== exIdF && it.name !== 'id') || !it.optional);
                 const required = shapeItems.filter((it) => !it.optional);
-                // ALL required fields must appear or the literal is not assignable to
-                // the typed CreateData/UpdateData; cap only the optional fallback.
                 const chosen = required.length ? required : shapeItems.slice(0, 3);
                 const bodyLines = chosen.map((it) => `  ${it.name}: ${tsExampleLiteral(it.type)},`);
                 const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : '';
                 exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`;
             }
-            // Model-driven op list — only the operations the entities actually expose
-            // (advice may be list+load only; never claim create/update/remove exist).
             const CANON_OPS = ['list', 'load', 'create', 'update', 'remove'];
             const opSet = new Set();
             activeEntities.forEach((e) => Object.keys(e.op || {})
@@ -297,8 +242,6 @@ rather than reasoning about raw HTTP routes and query parameters.
 
 `);
         }
-        // 2c. Offline unit testing — a headline feature: every SDK ships a mock
-        // transport, so it belongs high up, right after the entity model.
         if (sdkTargets.length > 0) {
             (0, jostraca_1.Content)(`## Offline unit testing
 
@@ -341,11 +284,9 @@ network, and no credentials:
                     cell = '`' + cmd + '`';
                 }
                 else if ('tag' === state) {
-                    // Tag-only port (go): the vendor command IS the real install.
                     cell = '`' + (0, packageMeta_1.vendorCommand)(model, tgt.name) + '`';
                 }
                 else {
-                    // pending / inactive: point at the git tag, never a 404 command.
                     cell = `publish pending — [install from git tag](${tagsUrl})`;
                 }
                 (0, jostraca_1.Content)(`| ${tgt.title} | \`${(0, packageMeta_1.packageName)(model, tgt.name)}\` | ${cell} |
@@ -354,7 +295,6 @@ network, and no credentials:
             (0, jostraca_1.Content)(`
 `);
         }
-        // 4. Quickstart in the lead language
         if (leadTarget) {
             (0, jostraca_1.Content)(`## Quickstart
 
@@ -370,7 +310,6 @@ See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full 
 
 `);
         }
-        // 5. Surface table
         if (sdkTargets.length > 0 || hasCli || hasMcp) {
             (0, jostraca_1.Content)(`## Surfaces
 
@@ -393,7 +332,6 @@ See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full 
             (0, jostraca_1.Content)(`
 `);
         }
-        // 6. MCP / agent usage — only if MCP target is enabled
         if (hasMcp) {
             (0, jostraca_1.Content)(`## Use it from an AI agent (MCP)
 
@@ -419,7 +357,6 @@ Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
 
 `);
         }
-        // 7. Entities table
         if (activeEntities.length > 0) {
             (0, jostraca_1.Content)(`## Entities
 
@@ -431,13 +368,8 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
             activeEntities.map((ent) => {
                 const ops = ent.op || {};
                 const opNames = Object.keys(ops).filter((o) => ops[o]?.active !== false);
-                // Never emit a blank description cell: fall back to an ops-derived line.
                 const entdesc = entityDesc[ent.name] || ent.short || ent.desc ||
                     `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`;
-                // The entity's canonical route — never a folded-in custom action.
-                // Ops iterate in sorted-key order, so this used to take `create`'s
-                // first point, and an entity with a `/{id}/forbid` action route
-                // advertised THAT as its API path.
                 const path = (0, opShape_1.entityPath)(ent);
                 (0, jostraca_1.Content)(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
 `);
@@ -454,7 +386,6 @@ own list above for exactly which it supports.
 
 `);
         }
-        // 8. Quickstart in the other languages (lead is already covered above)
         const otherTargets = sdkTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
         if (otherTargets.length > 0) {
             (0, jostraca_1.Content)(`## Quickstart in other languages
@@ -472,8 +403,6 @@ own list above for exactly which it supports.
                 }
             });
         }
-        // 10. Direct and prepare — a common everyday task (the low-level
-        // escape hatch for endpoints the entity model doesn't cover).
         (0, jostraca_1.Content)(`## Direct and prepare
 
 For endpoints the entity model doesn't cover, use the low-level methods:
@@ -485,7 +414,6 @@ Both accept a map with \`path\`, \`method\`, \`params\`, \`query\`,
 \`headers\`, and \`body\`. See the [How-to guides](#how-to-guides) below.
 
 `);
-        // 11. How-to guides — keep, useful for the engineer reader
         (0, jostraca_1.Content)(`## How-to guides
 
 ### Make a direct API call
@@ -499,9 +427,6 @@ When the entity interface does not cover an endpoint, use \`direct\`:
                 Howto['ReadmeTopHowto']({ target: tgt });
             }
         });
-        // 11b. Advanced — the pipeline model and feature hooks are internal
-        // machinery: useful when extending the SDK, but not part of everyday
-        // use, so they live below the task-focused sections above.
         (0, jostraca_1.Content)(`## Advanced
 
 > Everyday use only needs the sections above. This explains the internals
@@ -568,7 +493,6 @@ How-to: [customize and propagate templates](https://github.com/voxgig/sdkgen/blo
 The full story: [voxgig.com/sdk/custom](https://voxgig.com/sdk/custom).
 
 `);
-        // 12. Per-language docs links
         if (sdkTargets.length > 0) {
             (0, jostraca_1.Content)(`## Per-language documentation
 
@@ -580,8 +504,6 @@ The full story: [voxgig.com/sdk/custom](https://voxgig.com/sdk/custom).
             (0, jostraca_1.Content)(`
 `);
         }
-        // 13. Upstream API — always disclose the OpenAPI origin and where the
-        // spec(s) live; contact/servers links come from the OpenAPI info block.
         const upstreamUrl = (info.contact && info.contact.url)
             || (info.servers && info.servers[0] && info.servers[0].url)
             || homepage;
@@ -613,14 +535,12 @@ The OpenAPI spec(s) this SDK was generated from are kept in the
         }
         (0, jostraca_1.Content)(`
 `);
-        // 13b. Security
         (0, jostraca_1.Content)(`## Security
 
 Please report security issues to ${packageMeta_1.SECURITY_EMAIL}. See [SECURITY.md](SECURITY.md).
 Do not open public issues for suspected vulnerabilities.
 
 `);
-        // 14. Provenance footer
         (0, jostraca_1.Content)(`---
 
 Generated from the ${productName} OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).

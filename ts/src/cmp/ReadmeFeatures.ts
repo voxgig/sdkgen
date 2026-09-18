@@ -5,16 +5,6 @@ import { featureDocs, honoursActivationOrder } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
 
-// The `## Features` section of a target README: one subsection per feature
-// the SDK actually ships.
-//
-// WHY IT IS SHARED AND NOT PER-LANGUAGE. Every target activates features the
-// same way — a `feature` entry in the client options — and the options and
-// their defaults come from the model, so the substance is identical in all
-// twenty-five languages. Only the literal syntax of the options map differs,
-// and that is already shown once, in the Options section above. A per-target
-// `ReadmeFeatures_<lang>.ts` may override this to add idiomatic snippets;
-// none is required for the section to be correct.
 const ReadmeFeatures = cmp(function ReadmeFeatures(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$

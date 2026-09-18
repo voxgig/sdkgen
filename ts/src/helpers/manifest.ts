@@ -1,39 +1,3 @@
-// THE PACKAGE MANIFEST: `sdkgen-package.json`, beside the package's `.sdk`.
-//
-// See docs/design/sdkgen-packages.md §2.
-//
-//   <package-root>/
-//   ├── sdkgen-package.json      <- this
-//   └── .sdk/                    <- shaped exactly like ts/project/.sdk
-//
-// WHY JSON RATHER THAN AONTU
-//
-// Consumer models compile under `@voxgig/model`'s strictly-configured parser,
-// which accepts `#` comments only — a `//` line is a parse error, and seven
-// shipped targets once broke on exactly that (ts/test/model-compile.test.ts
-// exists because of it). The manifest is read by the CLI and never unified
-// into the model, so JSON keeps it outside that trap entirely.
-//
-// WHAT IT IS FOR
-//
-// A package's CLAIM about what it provides, so that:
-//
-//   - `package add <pkg>` knows what to install without guessing from
-//     directory listings;
-//   - a typo'd ref fails naming what the package actually provides, rather
-//     than resolving to a folder that exists and failing later on a missing
-//     file;
-//   - an item records WHICH PACKAGE supplied it (`package:` provenance), so a
-//     project can be resynced against a newer version of that package.
-//
-// A claim is worth nothing unless it is checked, so `validateManifest`
-// compares it against the trees actually on disk, in both directions: a
-// manifest that lies is an error, on-disk extras are a warning.
-//
-// THE MANIFEST IS OPTIONAL FOR A DIRECT REF. `target add ../pkg/iot-go`
-// against a bare `.sdk`-shaped folder keeps working exactly as it does today
-// — that is what every existing consumer fixture is — and simply records no
-// `package` provenance. Requiring one is `package add`'s business.
 
 import Path from 'node:path'
 
@@ -54,58 +18,26 @@ type Manifest = {
   name: string
   version?: string
 
-  // DECLARATIVE ONLY, so far. Nothing reads this range yet: the engine gate
-  // belongs with `package add` (design §9), which is the next phase, and
-  // there is no semver implementation here to compare with — this package has
-  // no runtime dependencies. Until then a package declaring an incompatible
-  // range installs anyway. Stated here rather than left to be discovered,
-  // because a field that looks enforced and is not is worse than an absent
-  // one.
   engines?: { sdkgen?: string }
 
-  // Keyed BY KIND, so a new kind (docs, …) needs no schema change.
   provides: Record<string, string[]>
 
   // Optional: which targets a feature ships source for, so a missing overlay
   // is reported as out-of-declared-coverage rather than broken.
   targetsSupported?: Record<string, string[]>
 
-  // Optional: the author's declared parity tier per target, in
-  // ts/test/parity.test.ts's vocabulary plus CONSUMER — see PARITY below.
   parity?: Record<string, string>
 }
 
 
-// THE CLOSED PARITY VOCABULARY.
-//
-// The first three are `ts/test/parity.test.ts`'s tiers, which grade a
-// language target against the shared `.aontu` corpus. `CONSUMER` is the
-// fourth and grades nothing: a consumer target wraps another target's SDK and
-// has no primary-utility surface to measure, so `parity.test.ts` keeps the
-// bundled ones in NON_SDK_TARGETS rather than in a tier. A package holding
-// one needs a way to say the same thing, and saying nothing is not it — an
-// absent field cannot be told apart from an author who did not know the field
-// existed, which is the silently-absent shape every other guard in this repo
-// exists to prevent.
-//
-// Closed, and checked, because a declaration nothing checks is the failure
-// `engines.sdkgen` documents about itself two fields up: a typo would
-// otherwise be indistinguishable from a considered choice.
 const PARITY = ['FULL', 'MIRRORED', 'UNCOVERED', 'CONSUMER']
 
 
-// What `readManifest` found. THREE outcomes, deliberately distinct: a
-// manifest, no manifest, or a manifest that could not be read. Collapsing the
-// last two into "no manifest" is what would let a typo in a package's own
-// JSON silently downgrade `package add` into a no-op.
 type ManifestRead = {
-  // Where it was looked for, always — the value an error message needs.
   file: string
 
-  // Present only when one was found AND parsed.
   manifest?: Manifest
 
-  // Present only when one was found and could NOT be parsed.
   err?: string
 }
 
@@ -226,12 +158,6 @@ function checkShape(manifest: Manifest, file: string): Finding[] {
         continue
       }
 
-      // A NAME, not a path. `missingPaths` joins these onto the package root,
-      // so `../../outside` would send every existence check out of the
-      // package entirely and let a manifest validate clean against unrelated
-      // files. `~` is excluded for a different reason: it is the alias
-      // separator, so a name containing one could never be resolved back to
-      // this item.
       for (const name of names as string[]) {
         if (!ITEM_NAME_RE.test(name)) {
           found.push({
@@ -263,31 +189,9 @@ function checkShape(manifest: Manifest, file: string): Finding[] {
 }
 
 
-// What may name a target, feature, or any other item.
-//
-// Deliberately narrow: these become directory names, aontu model keys,
-// generated config keys (`options.feature.<name>`) and component filename
-// suffixes, so the intersection of what all of those accept is the real
-// constraint. The shipped names — `go-cli`, `py-data`, `seneca-provider`,
-// `clienttrack` — all fit.
 const ITEM_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 
 
-// Does the package's disk match its claim?
-//
-// BOTH DIRECTIONS, because they fail differently and neither implies the
-// other:
-//
-//   claim without disk  -> ERROR. `package add` would try to install it and
-//                          break partway through, having already written the
-//                          items listed before it.
-//   disk without claim  -> WARN. Everything works; the author has shipped
-//                          something nobody can discover, which is nearly
-//                          always a forgotten manifest edit.
-//
-// `kindRequires` is supplied by the caller rather than imported, because the
-// kind registry lives in `action/` and this is a helper — the dependency has
-// to point that way, not this way.
 function validateManifest(
   fs: any,
   sdkfolder: string,
@@ -319,16 +223,6 @@ function validateManifest(
       continue
     }
 
-    // ONE ORACLE FOR BOTH DIRECTIONS. The unclaimed-extras loop below reads
-    // the directory listing; if this loop asked the filesystem instead
-    // (`existsSync`/`statSync`), the two would disagree on a case-insensitive
-    // filesystem — APFS and NTFS by default, which is most package authors'
-    // machines. A manifest claiming `IoTGo` beside a `model/target/iotgo.aon`
-    // then validated CLEAN for the author and failed for every Linux consumer,
-    // which is precisely the "validated package that cannot install" this
-    // function exists to prevent. It also makes the duplicate check above
-    // meaningful: `['retry','Retry']` are two names to a Set and one file to
-    // the filesystem.
     const defined = new Set(definitionNames(fs, sdkfolder, kind))
 
     for (const name of names) {
@@ -351,30 +245,6 @@ function validateManifest(
   const targets = new Set(provides.target ?? [])
   const graded = new Set(Object.keys(manifest.parity ?? {}))
 
-  // A PROVIDED TARGET THE MANIFEST GRADES NOTHING FOR, when it grades OTHERS.
-  //
-  // Checking only the values leaves the weaker half undone: a typo'd tier is
-  // caught while an absent one passes, and absent is the failure mode the
-  // closed sets in this repo exist for — indistinguishable from an author who
-  // did not know the field was there.
-  //
-  // SCOPED TO A PARTIAL DECLARATION, and the scope is a real constraint
-  // rather than timidity. An ENTIRELY absent `parity` is the BUNDLED
-  // manifest's deliberate state: design §18.4a refused to duplicate
-  // parity.test.ts's tier map into ts/project/sdkgen-package.json, because
-  // the intended direction is the reverse — the manifest becomes the source
-  // and the suite reads it. Warning on a wholly absent field would fire on
-  // the shipped scaffold's 25 targets and demand that duplication now, which
-  // is the decision §18.4a made, not one to reverse from inside a validator.
-  //
-  // What IS unambiguous is inconsistency: a manifest that grades some of its
-  // targets and not others has no second reading. Nobody decides to grade two
-  // of three.
-  //
-  // WARNING, not error, and the level is the argument. The package works — a
-  // missing coverage declaration installs and generates correctly — so
-  // refusing it would be a worse outcome than saying so, the same call
-  // `manifest-item-unclaimed` makes for a tree nothing claims.
   for (const name of (0 === graded.size ? [] : [...targets].sort())) {
     if (!graded.has(name as string)) {
       found.push({
@@ -404,10 +274,6 @@ function validateManifest(
     }
   }
 
-  // The other direction. Only for kinds the manifest MENTIONS plus the ones
-  // this generator knows — a directory named after a kind nobody registered
-  // is already reported above if claimed, and is not this check's business if
-  // not.
   for (const kind of Object.keys(kinds)) {
     const claimed = new Set(provides[kind] ?? [])
 
@@ -427,22 +293,6 @@ function validateManifest(
 }
 
 
-// Every path an item of this kind needs, that is not there AS THE RIGHT KIND
-// OF THING.
-//
-// The definition file is implied for every kind; the kind's REQUIRED trees
-// add whatever else it needs (a target's component and template trees, a docs
-// item's components). An optional tree — a docs item's templates — is not
-// checked here, because a package that legitimately ships none must validate.
-//
-// FILE vs DIRECTORY is checked, not merely existence. A regular file at
-// `src/cmp/<t>` satisfies `existsSync` and satisfies nothing else: `target
-// add` walks both of those paths as trees, so a package validated on
-// existence alone could still be incapable of installing a usable target —
-// which is the one thing validation is supposed to rule out.
-//
-// Returned as package-relative strings, because that is what an error message
-// should say: the absolute path is this machine's business, not the author's.
 function missingPaths(
   fs: any,
   sdkfolder: string,
@@ -453,8 +303,6 @@ function missingPaths(
 ): string[] {
   const missing: string[] = []
 
-  // The definition, by EXACT NAME from the directory listing — see the note
-  // at the call site about the two directions needing one oracle.
   if (!defined.has(name)) {
     missing.push('model/' + kind + '/' + name + '.aon')
   }
@@ -473,9 +321,6 @@ function missingPaths(
 }
 
 
-// What is at a path: a file, a directory, or nothing. `statSync` FOLLOWS
-// symlinks, deliberately — a package may legitimately symlink a shared tree,
-// and what matters is what `target add` will find when it walks it.
 function entryKind(fs: any, path: string): 'file' | 'dir' | 'none' {
   try {
     const stat = fs.statSync(path)
@@ -487,20 +332,6 @@ function entryKind(fs: any, path: string): 'file' | 'dir' | 'none' {
 }
 
 
-// WHERE A PACKAGE ROOT IS, given a ref.
-//
-// The same probe chain `resolveSource` uses for an ITEM, one level up: an
-// installed npm package first, then a path relative to the project, then an
-// absolute path. A package root is the folder HOLDING `.sdk`, which is what
-// makes `<root>/<item>` the item ref — so the two resolvers agree by
-// construction about what a package is.
-//
-// It reports rather than throws, and it does not require a manifest, because
-// its two callers want different things from the same probe: `package add`
-// refuses a folder with no manifest (that is the verb's whole subject), while
-// `package check` reports the absence as its first finding and carries on
-// checking the `.sdk` — an author who has not written the manifest yet is
-// exactly who needs the rest of the battery.
 type PackageProbe = {
   ref: string
   root: string

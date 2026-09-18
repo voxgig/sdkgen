@@ -9,30 +9,11 @@ import {
 import { envName, packageName } from '../helpers/packageMeta'
 
 
-// The "Use with Station" README section (station design §9.4): rendered
-// ONLY when the project's model carries the station feature (installed
-// via `package add @voxgig/sdkgen-station`) — a project without it sees
-// nothing. Leads with the DECLARATIVE flow — a `station.json` block and
-// `station.sdk()` (declarative design §11 item 3) — keeps the imperative
-// `connect()` form as the retrofit path, and documents the
-// instance-derived secret/env-var name (declarative design §3.4, §5.1:
-// the same envtoken grammar as sdkgen's envName, applied to the INSTANCE
-// name, so the untagged instance keeps the env var this README already
-// documents to the byte). Store configuration is sekreto's
-// documentation, deliberately not restated here (one canonical source);
-// the error codes live in sdkgen's one catalog page, linked rather than
-// restated for the same reason.
 
 // Targets where station.connect(SDK) is the idiomatic binding; everything
 // else uses inverted binding through the SDK's own constructor.
 const CONNECT_TARGETS = ['ts', 'js', 'py', 'rb', 'php', 'lua', 'perl']
 
-// Targets whose module system has an init hook that actually runs
-// (station design §6.2 path 1): there, linking the generated package
-// fills the process-global factory table and `station.sdk()` needs no
-// application code. Everywhere else the README must say
-// `Station.provide` (path 2) plainly rather than imply an import is
-// enough — a Java import is a compile-time alias that runs nothing.
 const SELF_REGISTER_TARGETS =
   ['ts', 'js', 'go', 'py', 'rb', 'php', 'lua', 'perl', 'elixir', 'clojure']
 

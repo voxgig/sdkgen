@@ -44,14 +44,11 @@ const Package = cmp(async function Package(props: any) {
   const only = (kind: string, deps: any) =>
     omap(deps, ([k, v]: any) => [v.active && kind === v.kind ? k : undefined, v.version])
 
-  // merge target and feature deps, by kind
   const deps =
     each(feature, (feature: any) =>
       omap(feature.deps?.[target.name], ([k, v]: any) =>
         [v.active ? k : undefined, v]))
 
-      // TODO: sort by version; rules for version choice?
-      // TODO: non-node dep kinds
       .reduce((a: any, deps: any) => (each(deps, (dep: any) =>
         a[dep.kind][dep.key$] = dep.version), a),
         {
@@ -64,8 +61,6 @@ const Package = cmp(async function Package(props: any) {
   const { repoUrl, issuesUrl } = repoInfo(model)
 
   const pkg = {
-    // The ts target publishes the canonical scoped npm name; the js target
-    // appends `-js` so the two never collide on npm.
     name: packageName(model, target.name),
     version: packageVersion(model, target.name),
     description: pkgDescription(model, target.name),
@@ -95,7 +90,6 @@ const Package = cmp(async function Package(props: any) {
     },
     author,
 
-    // TODO: needs to be config
     license: 'MIT',
 
     dependencies: deps.prod,

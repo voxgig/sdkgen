@@ -33,9 +33,6 @@ import {
 import { formatPhpValue } from './utility_php'
 
 
-// PHP's GenCtx mirrors the shared shape (see TestEntity_ts.ts) plus an
-// `accessor` slot used to mangle the entity factory name when it collides
-// with PHP's case-insensitive `test()` static constructor.
 type GenCtx = {
   model: Model
   entity: ModelEntity
@@ -66,12 +63,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  // The accessor may be mangled to avoid colliding with an SDK class member.
-  // This used to carry its own copy of the rule, which only knew about `test`
-  // — so an entity named `graph_ql` emitted `$client->GraphQl(null)` here,
-  // which PHP resolves (case-insensitively) to the SDK's own
-  // `graphql(string $query)` and fails with "Argument #1 must be of type
-  // string, null given". One helper, one answer.
   const entName = nom(entity, 'Name')
   const accessor = phpEntityAccessor(entName)
 

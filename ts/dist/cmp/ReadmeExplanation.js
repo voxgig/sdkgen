@@ -200,8 +200,6 @@ const ReadmeExplanation = (0, jostraca_1.cmp)(function ReadmeExplanation(props) 
     let eName = 'Entity', eLower = 'entity', stateArg = '', matchIdF = null, idLit = '';
     if (hasEntityExample) {
         eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1));
-        // Sanitise against the target's reserved words (a `Delete` entity must
-        // not bind `const delete = ...`).
         eLower = (0, naming_1.exampleVarName)(eName.toLowerCase(), target.name);
         const idF = (0, opShape_1.entityIdField)(ex);
         const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp;
@@ -255,7 +253,6 @@ to the caller — see [Error handling](#error-handling) for how that looks
 in this language.
 
 `);
-    // Features and hooks
     (0, jostraca_1.Content)(`### Features and hooks
 
 `);
@@ -277,7 +274,6 @@ Features are initialized in order. Hooks fire in the order features
 were added, so later features can override earlier ones.
 
 `);
-    // Target-specific explanation
     const ReadmeExplanation_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeExplanation_${target.name}`, { ignore: true });
     if (ReadmeExplanation_sdk) {
         ReadmeExplanation_sdk['ReadmeExplanation']({ target });
@@ -289,7 +285,6 @@ were added, so later features can override earlier ones.
 `);
         (0, jostraca_1.Content)(lang.entityState(eName, eLower, primaryOp, stateArg, matchIdF, idLit));
     }
-    // Direct vs entity access
     (0, jostraca_1.Content)(`### Direct vs entity access
 
 The entity interface handles URL construction, parameter placement,

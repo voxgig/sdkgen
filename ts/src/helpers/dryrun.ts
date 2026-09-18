@@ -1,11 +1,3 @@
-// Report what a dry run WOULD have done.
-//
-// `@voxgig/util`'s showChanges only lists merged and conflicted files, which
-// on a fresh `target add` is nothing at all — so `-y target add ts` printed
-// `** DRY RUN **`, listed no files, and (before the control fix) wrote them
-// anyway. A preview that shows nothing is indistinguishable from a preview of
-// nothing, which is exactly the wrong answer for the command whose whole job
-// is to overwrite a project's vendored scaffold.
 
 // Subset of jostraca's result: the per-outcome file lists.
 type FileLists = {

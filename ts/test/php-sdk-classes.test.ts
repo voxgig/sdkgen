@@ -7,43 +7,17 @@ import Fs from 'node:fs'
 import { isPhpReservedType, isPhpSdkClass } from '../dist/sdkgen.js'
 
 
-// PHP_SDK_CLASSES (helpers/naming.ts) must list every UNNAMESPACED class the
-// php target declares, because the generated PHP SDK uses no namespaces and
-// composer classmaps both the runtime (`types/`) and the tests (`test/`, via
-// autoload-dev). One class name mapped to two files fatals on redeclaration.
-//
-// This is the SECOND half of "already taken". `PHP_RESERVED_TYPES` covers what
-// the LANGUAGE owns; this covers what OUR OWN generated scaffolding claims,
-// which is the half a keyword list can never catch.
-//
-// The rb equivalent (rb-sdk-constants.test.ts) exists for the reported
-// gitlab-sdk collision, where an entity named `Runner` silently replaced the
-// test harness. Ruby warns and carries on; PHP is fatal, so the same hazard is
-// strictly worse here.
-//
-// A hand-maintained list silently rots — the swift equivalent proved that,
-// missing three names on its first cut, one declared by a component rather
-// than a template. So this re-derives from both sources and fails on drift.
 
 const SCAFFOLD = Path.join(__dirname, '..', 'project', '.sdk')
 const TM_PHP = Path.join(SCAFFOLD, 'tm', 'php')
 const CMP_PHP = Path.join(SCAFFOLD, 'src', 'cmp', 'php')
 
 
-// A PHP type declaration: `class Foo`, and the three that share the same
-// namespace as classes do (`interface`, `trait`, `enum`).
 const DECL =
   /^(?:abstract +|final +)?(?:class|interface|trait|enum) +([A-Za-z_][A-Za-z0-9_]*)/gm
 
-// A file that declares a namespace puts everything in it out of reach of the
-// global name an entity type takes. This is php's equivalent of the rb guard's
-// column-0 rule.
 const NAMESPACED = /^namespace\s+[A-Za-z_\\]/m
 
-// `ProjectName` substitutes to the SDK's own name, so `ProjectNameUtility`
-// becomes `<Sdk>Utility` — which a bare entity type name cannot equal. Only
-// the unprefixed declarations are reachable, and listing the prefixed ones
-// would bloat the guard with names that can never collide.
 const PLACEHOLDER = /^ProjectName/
 
 
@@ -68,7 +42,6 @@ function declaredClasses(): Set<string> {
     }
   }
 
-  // Templates: real PHP, so the match is exact.
   for (const f of walk(TM_PHP).filter((f) => f.endsWith('.php'))) {
     collect(Fs.readFileSync(f, 'utf8'))
   }
@@ -118,9 +91,6 @@ describe('php SDK class guard', () => {
 
 
   test('it does not claim names that are merely prefixed or namespaced', () => {
-    // `ProjectNameUtility` -> `<Sdk>Utility`, which no bare entity type can
-    // equal; `Struct` and `Runner` are declared inside a namespace. Guarding
-    // any of them would rename entities that never collided.
     deepStrictEqual(
       ['Utility', 'Context', 'Response', 'Result', 'Operation', 'Spec',
         'Struct', 'Runner', 'ListRef', 'Injection']

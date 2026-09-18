@@ -1,42 +1,3 @@
-// CHARACTERIZATION: exactly what `target add` and `feature add` write today.
-//
-// WHY THIS EXISTS
-//
-// The add pipeline is about to be rebuilt on a kind registry — `target` and
-// `feature` become data, and one `add(kind, ...)` action replaces the two
-// hand-written pipelines (docs/design/sdkgen-packages.md §8, delivery phase
-// 2). That refactor touches the two most incident-scarred functions in the
-// repo (the OptionsShape dry-run trap; the pruneStaleTemplates history), and
-// its whole promise is that the OUTPUT does not move.
-//
-// Nothing could have checked that promise. The action suites assert on file
-// LISTS and on a handful of contents; a refactor could have changed the bytes
-// of any of ~2,800 copied files in any of 27 targets and stayed green.
-//
-// So: a manifest of `<path> <hash>` for every file each add writes, captured
-// before the refactor and required to reproduce exactly after it. Same
-// technique `generate.test.ts` uses for components, and the discipline
-// AGENTS.md demands whenever generated output changes ("characterize it
-// first").
-//
-// WHEN THIS FAILS
-//
-// A failure is not automatically a bug — a deliberate scaffold change moves
-// these hashes, and that is exactly what the manifest is for: the diff shows
-// which targets a change reached. Re-read the diff, satisfy yourself it is
-// what you meant, then regenerate:
-//
-//     npm run golden
-//
-// MACHINE-INDEPENDENCE
-//
-// The manifest must be identical on every machine, in a worktree and in CI,
-// so nothing in it may depend on where the checkout lives. That is why the
-// harness references targets the way a consumer does
-// (`node_modules/@voxgig/sdkgen/project/<t>`) rather than by absolute path:
-// `base` is recorded relative to the project root, so the `'BASE'`
-// substitution no longer writes this checkout's location into the copied
-// target model. A guard below fails if any absolute path leaks back in.
 
 import { test, describe } from 'node:test'
 import { ok, deepStrictEqual } from 'node:assert'
@@ -56,8 +17,6 @@ const GOLDEN = Path.resolve(__dirname, '..', 'test', 'golden', 'add-output.txt')
 const UPDATE = '1' === process.env.SDKGEN_GOLDEN_UPDATE
 
 
-// Every target and feature the scaffold ships, discovered rather than listed,
-// so a new one is characterized without anyone remembering to add it here.
 function shipped(kind: string): string[] {
   return Fs.readdirSync(Path.join(SCAFFOLD, 'model', kind))
     .filter((f: string) => f.endsWith('.aon') && !f.includes('-index'))
@@ -66,15 +25,6 @@ function shipped(kind: string): string[] {
 }
 
 
-// Short but ample: a 12-hex-char prefix over ~3,000 files leaves collision
-// odds negligible, and keeps the manifest readable in a diff.
-//
-// LINE ENDINGS ARE NORMALISED FIRST. This repo has no `.gitattributes`, so a
-// Windows checkout may materialise the scaffold with CRLF — which would flip
-// every hash in the manifest and fail this suite on the Windows CI job for a
-// reason that has nothing to do with the add pipeline. What the goldens are
-// for is detecting output changes caused by a REFACTOR, so the checkout's
-// line-ending policy is noise here.
 function hash(content: Buffer): string {
   const lf = Buffer.from(content.toString('binary').replace(/\r\n/g, '\n'), 'binary')
   return createHash('sha256').update(lf).digest('hex').slice(0, 12)
@@ -101,10 +51,6 @@ async function targetSection(target: string): Promise<string[]> {
 }
 
 
-// A feature's output depends on which targets are present to fan out over, so
-// the target set is FIXED here — two languages that keep feature source in
-// different places (`src/feature/<name>/` for ts, `feature/<name>_feature.go`
-// for go), which is the discovery the fan-out has to get right.
 async function featureSection(feature: string): Promise<string[]> {
   const project = makeProject({
     target: { ts: { name: 'ts' }, go: { name: 'go' } },
@@ -117,8 +63,6 @@ async function featureSection(feature: string): Promise<string[]> {
   const before = new Set(manifest(project))
   await feature_add([feature], project.actx)
 
-  // Only what the FEATURE add contributed — the two target trees are already
-  // characterized by their own sections.
   return manifest(project).filter((line: string) => !before.has(line))
 }
 
@@ -160,11 +104,6 @@ describe('characterize add output', () => {
     ok(Fs.existsSync(GOLDEN),
       'no golden manifest at ' + GOLDEN + ' — generate it with: npm run golden')
 
-    // Split on CRLF *or* LF. Without `\r?` the golden read on a Windows
-    // checkout keeps a trailing carriage return on every line, so every
-    // comparison fails while the two sides print identically — the same path
-    // and the same hash listed as both added and removed, which is what this
-    // looked like before the `\r` was the answer.
     const want = Fs.readFileSync(GOLDEN, 'utf8').split(/\r?\n/)
       .filter((l: string) => '' !== l.trim())
     const have = got.filter((l: string) => '' !== l.trim())

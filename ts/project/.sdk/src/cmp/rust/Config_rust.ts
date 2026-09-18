@@ -52,34 +52,8 @@ const Config = cmp(async function Config(props: any) {
   let baseUrl = ''
   try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
 
-  // The canonical config OBJECT and its JSON, from the shared helper. Both
-  // representations render from the same `def`, so they cannot describe
-  // different configs - and this target picks up `options.server` (the
-  // OpenAPI server-variable defaults), which the hand-rolled build here
-  // omitted entirely. Passing target.name opts into the main
-  // slug/version/target identity fields (station descriptor input, mirrors
-  // Config_ts) - both reps below render from this same def, so the data
-  // and literal branches pick the fields up together.
   const { def: config, json: baseJson } = configDefinition(model, target.name)
 
-  // `in` and `name` TRAVEL WITH THE PREFIX NOW.
-  //
-  // apidef resolved both from the spec's securityScheme all along and this
-  // generator dropped them, so an apiKey-in-query API got an `authorization`
-  // header it does not read (see PrepareAuth_rust). The generated
-  // prepare_auth is built from the same two values, and the config carries
-  // them so the placement is a visible, overridable runtime option beside
-  // auth.prefix - which is also what keeps the SDK from rejecting its own
-  // config: the auth optspec in tm/rust/utility/make_options.rs is a CLOSED
-  // map, and an undeclared key there fails validate with "Unexpected keys at
-  // field auth".
-  //
-  // Emitted ONLY when they differ from header/Authorization, so a
-  // header-based SDK's config.rs is byte-identical to what it generated
-  // before. Both representations are patched through the one object, so the
-  // literal (formatRustValue) and the data rep (rustRawString) cannot
-  // disagree - the json is re-derived from the def, exactly as
-  // configDefinition derives it.
   const authIn = resolveAuthIn(model)
   const authName = resolveAuthName(model)
   let configJson = baseJson
@@ -103,15 +77,6 @@ const Config = cmp(async function Config(props: any) {
 
   File({ name: 'config.' + target.ext }, () => {
 
-    // ABOVE THE THRESHOLD: emit the model as DATA.
-    //
-    // The literal is one deeply nested expression. rustc type-checks and
-    // monomorphises it as a single item, so compile time and memory grow with
-    // the whole model at once; a string constant is one token, and json_parse
-    // builds the same Value tree at runtime.
-    //
-    // No number-type question here, unlike Go: `Value::Num` is f64 in both
-    // representations, so there is nothing for the two paths to disagree about.
     if (asData) {
       Content(`// Generated API configuration (mirrors go core/config.go).
 

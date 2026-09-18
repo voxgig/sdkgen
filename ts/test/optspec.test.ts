@@ -1,9 +1,3 @@
-// The client option spec, assembled from the model.
-//
-// Checked by RUNNING it: a spec is only worth having if it accepts the
-// options a caller legitimately passes and rejects the ones it should. The
-// shipped model is the subject wherever possible, so a schema edit that
-// breaks a documented option fails here rather than in a generated SDK.
 
 import { test, describe } from 'node:test'
 import { strictEqual, deepStrictEqual, ok } from 'node:assert'
@@ -73,12 +67,6 @@ describe('optionSpec: the standard options', () => {
     ok(accepts({ headers: { 'X-Trace': 'abc' } }, spec))
     ok(accepts({ allow: { method: 'GET' } }, spec))
 
-    // `server` ONCE, for every target. This used to be twelve per-target
-    // greps in parity.test.ts, over each language's own literal copy of the
-    // spec, because a target that emits `options.server` in its config and
-    // rejects it in its validator fails at client construction — elixir's
-    // did, for 75 of its 151 generated tests. With one spec there is one
-    // place to assert it.
     ok(accepts({ server: { tenant_id: 'acme' } }, spec))
     ok(accepts({ clean: { keys: 'token' } }, spec))
   })
@@ -268,26 +256,6 @@ describe('entitySpecMap: gated on the feature', () => {
 })
 
 
-// THE JSON ROUND-TRIP CONTRACT.
-//
-// Every target except ts and js carries the spec into the SDK as an embedded
-// JSON STRING that its own runtime parses — the same mechanism each
-// Config_<lang> already uses — because JSON is not a subset of most of these
-// languages' literal syntax. That is only lossless while the spec holds
-// nothing JSON cannot carry exactly.
-//
-// NUMBERS ARE THE HAZARD, and the reason this is pinned rather than assumed.
-// JSON has one number type: go's json.Unmarshal hands back float64 for every
-// one, java's parser a Double, and struct reads a spec by EXAMPLE — so a
-// `5000` that survives as an integer in the ts literal and arrives as
-// 5000.0 elsewhere is the same spec meaning two different things in two
-// targets. The assembled spec has no numbers today (feature defaults are
-// widened to sentinels by byExampleSpec, and main.kit.optspec declares
-// none), and this keeps it that way.
-//
-// If this test fails, a number reached the spec. Either widen it to a
-// sentinel, or teach every target's Schema emitter to normalise numbers the
-// way Config_go's configNormalise already has to.
 describe('optionSpec: what the spec may contain', () => {
 
   function scalars(node: any, path: string, out: Array<{ path: string, value: any }>) {

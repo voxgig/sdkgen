@@ -269,9 +269,6 @@ describe('opRequestShape — multi-point param merging', () => {
   })
 
 
-  // Vehicle is `remove`, a params-win op. It used to be `create`, but a body
-  // op no longer takes its shape from params (see the body-op suite below),
-  // which would make this assert nothing about $action filtering.
   test('$action points are excluded from the canonical shape', () => {
     const { items } = opRequestShape(makeNestedEntity(), 'remove')
     const opt = optionalByName(items)
@@ -354,15 +351,6 @@ describe('pickExampleEntity', () => {
 })
 
 
-// A body op's declared params are path/query identifiers, not body fields.
-// `PUT /v1/todo/item/{id}` declares `id`; the SDK resolves it from the entity
-// match (`sdk.entity.todoitem({id}).update({...})`) while the request DATA
-// becomes the body verbatim via the `reqdata` transform.
-//
-// Letting params win there produced `<Name>UpdateData = { id }` — the one
-// field a closed server shape rejects in a PUT body, and none of the fields
-// the caller wants to change. Every update came back 400 against a strict
-// API, and the type gave no way to send anything else.
 describe('opRequestShape — body ops take fields, not path params', () => {
 
   function makeItemEntity() {
@@ -374,7 +362,6 @@ describe('opRequestShape — body ops take fields, not path params', () => {
         title: { name: 'title', type: '`$STRING`', req: true },
       },
       op: {
-        // PUT /v1/todo/item/{id} — id in the path, entity in the body.
         update: { points: [
           { args: { params: { id: { name: 'id', type: '`$STRING`', reqd: true } } } },
         ] },
@@ -385,7 +372,6 @@ describe('opRequestShape — body ops take fields, not path params', () => {
             project_id: { name: 'project_id', type: '`$STRING`', reqd: true },
           } } },
         ] },
-        // GET /v1/todo/item/{id} — params ARE the request here, unchanged.
         load: { points: [
           { args: { params: { id: { name: 'id', type: '`$STRING`', reqd: true } } } },
         ] },

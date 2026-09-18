@@ -13,7 +13,6 @@ import { Result } from './Result'
 import { Spec } from './Spec'
 
 
-// TODO: move to own file
 class Context {
 
   id = 'C' + ('' + Math.random()).substring(2, 10)
@@ -86,10 +85,6 @@ class Context {
 
 
   resolveOp(opname: string): Operation {
-    // Cache key is `<entity>:<opname>` so two entities with the same op
-    // (e.g. both have a "list") get distinct cached Operations. Keying on
-    // opname alone caused the first-resolved entity's points to be served
-    // to every subsequent entity's call.
     const entname = getprop(this.entity, 'name', '')
     const cacheKey = entname + ':' + opname
     let op: Operation = getprop(this.opmap, cacheKey)

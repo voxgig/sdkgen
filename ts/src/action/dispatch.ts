@@ -1,20 +1,3 @@
-// WHAT `voxgig-sdkgen <action> …` CAN BE.
-//
-// Built FROM THE KIND REGISTRY rather than hand-listed, so registering a kind
-// is the only edit a new kind needs — `edition add …` costs no dispatch code
-// (docs/design/sdkgen-packages.md §9). The `package` and `doctor` verbs are
-// not kinds and are added beside it.
-//
-// It lives in its own module because `package.ts` needs the per-kind add
-// functions and `target.ts` imports `feature.ts` which imports `kind.ts`;
-// wiring them together anywhere in that chain is a require cycle. Here,
-// nothing imports back.
-//
-// NULL-PROTOTYPE, and this is not decoration. A plain object literal inherits
-// Object.prototype, so `voxgig-sdkgen toString` (or `constructor`, `valueOf`,
-// …) resolved to an inherited function, passed the `null == actionFunc`
-// guard, and got CALLED with the action arguments instead of reporting an
-// unknown action.
 
 import type {
   ActionContext,
@@ -78,16 +61,6 @@ function actionNames(): string[] {
 }
 
 
-// Does this invocation need the PROJECT's model?
-//
-// Every verb but one operates on a project, and compiling `model/sdk.aontu`
-// before dispatch is what makes them fail early and clearly when run from the
-// wrong directory. `package check` is the exception on purpose: it operates
-// on a PACKAGE, and an author runs it in their package root, where there is
-// no project model to compile and nothing is wrong with that.
-//
-// Stated here, with the verb table, rather than in the CLI or in `sdkgen.ts`:
-// it is a fact about the verb.
 function needsModel(args: string[]): boolean {
   return !('package' === args[0] && 'check' === args[1])
 }

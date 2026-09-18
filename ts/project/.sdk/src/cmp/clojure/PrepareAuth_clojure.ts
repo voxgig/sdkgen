@@ -16,66 +16,10 @@ import {
 } from '@voxgig/apidef'
 
 
-// WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API, so it is generated
-// rather than templated. The clojure port of cmp/ts/PrepareAuth_ts.ts; see
-// that file for the full account of the defect.
-//
-// apidef has always resolved the scheme's `in` and `name` into
-// `main.kit.info.security` — joplin's says `in: "query", name: "token"` —
-// and generation dropped both, so the SDK sent a header the API does not
-// read and never sent the query parameter it does. Four repos in the cedar
-// fleet ship that way: joplin (`token`), pipedrive (`api_token`), trello
-// (`key`), lm-umbrella (`apiKey`).
-//
-// CLOJURE HAD NO prepare_auth TEMPLATE TO REPLACE. The other twelve targets
-// each had a standalone file; here the logic was EMBEDDED in
-// tm/clojure/src/sdk/core.clj as `u-prepare-auth`, three constants above it,
-// and the `:prepare-auth u-prepare-auth` entry in `base-utility-map`.
-//
-// THE EXTRACTION SHAPE: its own FILE, still inside the sdk.core NAMESPACE.
-//
-// A separate namespace is not available, and not for a stylistic reason.
-// `u-prepare-auth` calls `oget`, `ctx-error` and `client-options-map`, all
-// defined in sdk.core, while sdk.core's `base-utility-map` must reference
-// `u-prepare-auth` — so `(:require [sdk.prepare-auth])` from sdk.core plus
-// `(:require [sdk.core])` back is a load cycle, which Clojure refuses
-// outright ("Cyclic load dependency"). The alternatives are worse: passing
-// four core functions in as arguments, or late-binding through an atom the
-// way kotlin's `lateinit var prepareAuth` does, would both restructure the
-// runtime to work around a problem Clojure already has an answer for.
-//
-// That answer is `load`, the idiom clojure.core itself uses to split across
-// files (core.clj does `(load "core_deftype")`, `(load "core_print")`, …).
-// The generated file opens with `(in-ns 'sdk.core)` and is READ INTO sdk.core
-// at the exact point the defn used to sit, so:
-//
-//   - every helper it calls is already defined above it, unchanged;
-//   - the symbol `u-prepare-auth` resolves in `base-utility-map` exactly as
-//     before, so the `:prepare-auth` binding is untouched;
-//   - `core/HEADER-AUTH`, which feature/secrets/sdk/feature/secrets.clj
-//     reads, is still a public var of sdk.core;
-//   - and the call sites — `(ucall ctx :prepare-auth)` in core.clj's
-//     `u-make-spec`, `((core/uget ctx :prepare-auth) ctx)` in client.clj's
-//     `prepare`, and the same spelling in test/sdk/test/pipeline.clj and
-//     test/sdk/test/primary.clj — all still go through the utility map.
-//
-// A template cannot fix the defect, because the three placements need three
-// different bodies and a template has to pick one. This emits the branch the
-// API actually uses and nothing else — no dead query code in a bearer-token
-// SDK, and no runtime `if` on a value that is fixed at generation time.
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const model: Model = props.ctx$.model
 
-  // NO FOLDER IS OPENED HERE, and that is the whole of the placement
-  // decision. Main_clojure calls this inside its `Folder({name:'src'}) >
-  // Folder({name:'sdk'})` pair — the same pair Config sits in, and Config
-  // opens no folder of its own either. The file has to land beside the
-  // copied core.clj at `src/sdk/prepare_auth.clj`, because deps.edn declares
-  // `:paths ["src"]` and `(load "prepare_auth")` from the namespace sdk.core
-  // resolves to the CLASSPATH RESOURCE `sdk/prepare_auth.clj`. Opening a
-  // second `src`/`sdk` here would write `src/sdk/src/sdk/prepare_auth.clj`,
-  // which is not that resource.
   File({ name: 'prepare_auth.' + target.ext }, () => {
     Content(render({
       Name: model.const.Name,
@@ -83,9 +27,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
       where: resolveAuthIn(model),
       name: resolveAuthName(model),
       basic: isHttpBasicAuth(model),
-      // Read so the resolution is visible at generation time even though the
-      // emitted code takes the prefix from options at runtime (the secrets
-      // feature rewrites it there).
       prefix: resolveAuthPrefix(model),
     }))
   })
@@ -122,45 +63,16 @@ function render(spec: AuthSpec): string {
 }
 
 
-// HEADER NAMES ARE LOWER-CASED; QUERY PARAMETER AND COOKIE NAMES ARE NOT.
-//
-// `resolveAuthName` answers 'Authorization' by default, but the whole clojure
-// runtime spells header names in lower case: the template this replaces held
-// `(def HEADER-AUTH "authorization")`, the shipped
-// test/sdk/test/feature/secrets.clj reads `(vs/getprop headers
-// "authorization")`, test/sdk/test/pipeline.clj asserts on the same key, and
-// the shared corpus asserts `ctx:spec:headers:authorization`. The spec's
-// headers are a java.util.LinkedHashMap, whose keys are case-SENSITIVE, so
-// emitting "Authorization" would put the credential under a key nothing
-// reads. HTTP header names are case-insensitive on the wire, so lower-casing
-// costs nothing. A query parameter and a cookie ARE case-sensitive (`?Token=`
-// is not `?token=`), so those go in verbatim.
 function headerName(name: string): string {
   return String(name).toLowerCase()
 }
 
 
-// `core/HEADER-AUTH` IS PART OF sdk.core's PUBLIC SURFACE, so it is emitted
-// for every placement: feature/secrets/sdk/feature/secrets.clj writes the
-// re-authenticated credential with `(.put ^java.util.Map headers
-// core/HEADER-AUTH ...)`, and an SDK that resolves secrets would not compile
-// without the var.
-//
-// For a header scheme it is the header this SDK actually uses, so the two
-// writers agree by construction. For a query or cookie scheme the secrets
-// feature has no header of its own to name — its re-auth is an Authorization
-// rewrite, and the shipped suite asserts that literal — so the var keeps the
-// value it has always had rather than being pointed at a query parameter
-// name that means nothing in a header.
 function headerAuthConst(spec: AuthSpec): string {
   return 'header' === spec.where ? headerName(spec.name) : 'authorization'
 }
 
 
-// HEADER. Byte-for-byte the block that was in core.clj when the scheme
-// resolves to the defaults (header / Authorization), so every header-based
-// SDK regenerates unchanged — only the constant's VALUE moves with the model,
-// plus the HTTP Basic branch, which is emitted only for a basic scheme.
 function renderHeader(spec: AuthSpec, head: string): string {
   return head + `(def HEADER-AUTH ${cljstr(headerName(spec.name))})
 (def OPTION-APIKEY "apikey")
@@ -182,9 +94,6 @@ ${spec.basic ? basicBlock() : headerPlace(14)}
 }
 
 
-// The template's own body, unchanged: an empty prefix (a raw apiKey
-// credential) must not add a leading space, and a missing credential deletes
-// whatever was there rather than leaving a stale value behind.
 function headerPlace(col: number): string {
   const p = ' '.repeat(col)
   return `${p}(if (or (nil? apikey) (and (string? apikey) (or (= apikey NOT-FOUND) (= apikey ""))))
@@ -196,11 +105,6 @@ ${p}          (if (= auth-prefix "") apikey-val (str auth-prefix " " apikey-val)
 }
 
 
-// HTTP Basic is header-only by definition: the scheme is
-// `Authorization: Basic base64(user:pass)`. It cannot be expressed as a query
-// parameter or a cookie, so the branch is emitted only where it can mean
-// something — and only when the model says the scheme IS basic, so an
-// ordinary bearer SDK carries no dead code.
 function basicBlock(): string {
   return `              ;; True HTTP Basic Auth needs TWO credentials, base64-joined - a
               ;; single token in the header (the branch below) can never
@@ -221,9 +125,6 @@ ${headerPlace(16)})`
 }
 
 
-// QUERY. The credential is a query parameter, so it goes in the spec's query
-// map (which u-make-url turns into the query string) and the headers are
-// never touched.
 function renderQuery(spec: AuthSpec, head: string): string {
   return head + `;; Retained for feature/secrets, whose re-auth writes an Authorization
 ;; header; this SDK's own credential is a query parameter (see QUERY-AUTH).
@@ -253,11 +154,6 @@ function renderQuery(spec: AuthSpec, head: string): string {
 }
 
 
-// COOKIE. A cookie IS a header, so the credential rides the header bag — but
-// the `cookie` header is SHARED with whatever cookies the caller set, so our
-// own pair is spliced in and out rather than the header being assigned over.
-// Splicing also makes this idempotent: a retried request cannot end up
-// carrying the credential twice.
 function renderCookie(spec: AuthSpec, head: string): string {
   return head + `;; Retained for feature/secrets, whose re-auth writes an Authorization
 ;; header; this SDK's own credential is a cookie (see COOKIE-AUTH).
@@ -331,30 +227,6 @@ function renderInactive(spec: AuthSpec, head: string): string {
 }
 
 
-// NOT `isAuthActive`, AND THE DIFFERENCE IS LOAD-BEARING (the py and rb ports
-// found this first; same reasoning, same fix).
-//
-// `isAuthActive` is false whenever the SPEC declares no security scheme
-// (`main.kit.info.auth: false`). That is a statement about the DEFINITION,
-// not a ban on ever sending a credential: apidef writes it for every spec
-// with no securitySchemes block — GitHub's official OpenAPI included, and
-// sdkgen's own generate fixture — and those SDKs are still expected to honour
-// an `apikey` the caller passes. core.clj's optspec ALWAYS declares `apikey`
-// and `auth`, and make-options fills `options.auth` from those defaults, so
-// the runtime `(nil? (vs/getprop options "auth"))` guard never fires and the
-// credential has always gone out.
-//
-// Gating the body on `isAuthActive` therefore does not trim dead code, it
-// deletes working authentication — and takes the secrets feature with it,
-// since that resolves a secret into `options.apikey` and prepare-auth then
-// places nothing. The shipped tm/clojure/test/sdk/test/feature/secrets.clj
-// suite, which sdkgen's own `clojure: the secrets feature runs with the
-// feature active` lane runs, is what catches it.
-//
-// So the no-op is emitted only when the PROJECT says so:
-// `main.kit.config.auth.active: false`, an explicit per-SDK switch nobody
-// sets by accident. A spec that is merely silent keeps the credential path it
-// has always had.
 function authSwitchedOn(model: any): boolean {
   const auth = getModelPath(model, `main.${KIT}.config.auth`,
     { only_active: false, required: false })
@@ -362,8 +234,6 @@ function authSwitchedOn(model: any): boolean {
 }
 
 
-// A Clojure string literal. The reader's escapes are backslash-led, so only
-// the backslash and the double quote need handling.
 function cljstr(s: string): string {
   return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'
 }

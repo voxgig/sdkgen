@@ -31,23 +31,11 @@ describe('PrimaryUtility', async () => {
   }
 
 
-  // Sections deliberately left empty in the shared corpus
-  // (.sdk/test/primary/<name>.aon carries a PENDING header). Everything
-  // else MUST contribute cases.
   const PENDING = new Set([
     'fetcher', 'makeFetchDef', 'makeResult',
     'featureAdd', 'featureHook', 'featureInit',
   ])
 
-  // Run one corpus section, failing loudly when it would run ZERO cases.
-  // A renamed section or a fixture that compiled to an empty `set` used to
-  // pass silently, which defeats the point of a shared oracle. (The guard
-  // lives here rather than in runner.ts, which is vendored verbatim from
-  // @voxgig/struct and must stay byte-identical to upstream.)
-  //
-  // EVERY corpus-backed test goes through here — a guard that only some
-  // sections opt into leaves the rest able to run zero assertions, which is
-  // the exact hole it was added to close.
   async function runsection(name: string, subject: Function) {
     const section = spec[name]
     ok(null != section,
@@ -70,10 +58,6 @@ describe('PrimaryUtility', async () => {
     spec = run.spec
     runset = run.runset
     runsetflags = run.runsetflags
-    // Under the old hand-vendored runner, run.client WAS the SDK; under
-    // omni it is the provider wrapping it. This suite treats the client as
-    // the SDK — including ASSIGNING to client._features, which prototype
-    // delegation cannot forward — so unwrap the real instance.
     client = (run.client as any).sdk
     utility = client.utility()
     struct = utility.struct
@@ -111,29 +95,7 @@ describe('PrimaryUtility', async () => {
   })
 
 
-  // WHERE THE CREDENTIAL GOES IS THE API'S DECISION, NOT THE CORPUS'S.
-  //
-  // .sdk/test/primary/prepareAuth.aon is a FIXED scaffold file, identical in
-  // every SDK, and it asserts `ctx.spec.headers.authorization`. That is only
-  // right when the spec's chosen security scheme is a header credential.
-  //
-  // HubSpot lists `developer_hapikey` (in: query) first, Orbit lists
-  // `api_key` (in: query) first — so their generated prepareAuth writes
-  // `spec.query.<name>`, correctly, and the corpus asserted a header the SDK
-  // was never going to set. The corpus is language-agnostic, so this failed in
-  // every target, not just ts.
-  //
-  // The container and credential name are PROBED from the generated utility,
-  // and the corpus cases are retargeted onto them. Nothing is skipped: the
-  // same assertion runs, against the place this API actually puts its
-  // credential.
   function credential() {
-    // A FAKE client, not SDK.test(): the SDK's own options are shaped by the
-    // model, so an `auth` block handed to SDK.test is not guaranteed to come
-    // back out of client.options(). prepareAuth reads exactly three things —
-    // ctx.utility.struct, ctx.client.options() and ctx.spec — so supplying
-    // those directly is what makes the probe say something about the
-    // generated code rather than about the options schema.
     const ctx: any = {
       utility,
       client: { options: () => ({ apikey: 'PROBE', auth: { prefix: '' } }) },
@@ -306,7 +268,6 @@ describe('PrimaryUtility', async () => {
       body: 'present',
     })
     const reqClient = new (SDK as any)({
-      // Concrete base: a live construction must satisfy any server variables a templated base URL declares; a literal base sidesteps the requirement.
       base: 'http://localhost:8080',
       system: { fetch: mockFetch }
     })
@@ -356,13 +317,6 @@ describe('PrimaryUtility', async () => {
   })
 
 
-  // Was one hand-written case (the single-point path) covering one of this
-  // utility's seven branches, which is how the corpus fixture came to be
-  // marked deferred as "needs a real client". It does not: Context rebuilds
-  // `op` from opname + entity + config, and `options` can be supplied
-  // literally, so allow.op, the empty-points error, exist-selection,
-  // $action selection and the invalid-$action error are all expressible.
-  // Driven from the corpus now, so every port asserts the same branches.
   test('makePoint-basic', async () => {
     await runsection('makePoint', utility.makePoint)
   })

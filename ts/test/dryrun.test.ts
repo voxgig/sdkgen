@@ -1,22 +1,3 @@
-// `-y` / `--dryrun` must not write.
-//
-// WHAT WENT WRONG
-//
-// `voxgig-sdkgen -y target add ts` printed `** DRY RUN **` and wrote every
-// file. The flag reached the Jostraca INSTANCE (`SdkGen` sets
-// `control.dryrun` in its constructor options), but jostraca's `generate`
-// runs its own per-call options through OptionsShape FIRST — which fills in
-// `control.dryrun: false` — and only then merges
-// `deep({}, gOpts.control, opts.control)`. The shape default won every time.
-// (jostraca.js carries a `FIX:` note about the same trap for `existing`.)
-//
-// It matters because `target add` OVERWRITES a project's vendored scaffold. A
-// dry run is exactly how a maintainer previews that blast radius, and the
-// preview was the damage.
-//
-// A preview that lists nothing is also useless, so the actions report the
-// files they would have touched — showChanges only lists merged/conflicted
-// files, which on a fresh add is none of them.
 
 import { test, describe } from 'node:test'
 import { ok, deepStrictEqual } from 'node:assert'
@@ -39,7 +20,6 @@ describe('dry run', () => {
   test('target add writes nothing', async () => {
     const log = recordLog()
     const project = makeProject({ dryrun: true, log })
-    // The two index files every project starts with, seeded by the harness.
     const before = project.files()
 
     await target_add([targetRef('go')], project.actx)
@@ -58,8 +38,6 @@ describe('dry run', () => {
     const files = reported(log)
     ok(0 < files.length, 'a dry run reported no files at all')
 
-    // The three things `target add` touches: the target model, the vendored
-    // components, and the template tree.
     for (const want of ['model/target/go.aon', 'src/cmp/go/', 'tm/go/']) {
       ok(files.some((f: string) => f.includes(want)),
         'dry run did not report ' + want + ' (reported ' + files.length + ' files)')
@@ -72,14 +50,6 @@ describe('dry run', () => {
 
 
   test('target add DELETES nothing', async () => {
-    // Regression: the stale-template prune calls fs.unlinkSync directly, and
-    // jostraca enforces control.dryrun only inside its own write layer — so
-    // `-y target add <t>` previewed the copies and really removed every stale
-    // template. The earlier "writes nothing" test could not catch it: a fresh
-    // project has no stale templates to remove.
-    //
-    // Deletion is the worst case for this flag. A dry run is how a maintainer
-    // inspects the blast radius of an add BEFORE it touches a vendored tree.
     const project = makeProject({ dryrun: true, log: recordLog() })
     const stale = 'tm/lua/STALE_MARKER.lua'
 

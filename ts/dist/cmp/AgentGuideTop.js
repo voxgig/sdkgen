@@ -3,10 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentGuideTop = void 0;
 const jostraca_1 = require("jostraca");
 const AgentGuideContent_1 = require("./AgentGuideContent");
-// Top-level agent guide for a generated SDK project. Emitted once at the
-// project root (no enclosing Folder), alongside README.md/Makefile. Teaches a
-// coding agent how to operate the whole project: regenerate, add features,
-// customise the model/templates, and read the aontu model language.
 const AgentGuideTop = (0, jostraca_1.cmp)(function AgentGuideTop(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
@@ -32,7 +28,6 @@ There are companion guides deeper in the tree: one per language
 ## Project map
 
 `);
-        // Targets
         if (0 < targets.length) {
             (0, jostraca_1.Content)(`**Targets** (${targets.length}):
 
@@ -47,7 +42,6 @@ There are companion guides deeper in the tree: one per language
             (0, jostraca_1.Content)(`
 `);
         }
-        // Features
         if (0 < features.length) {
             (0, jostraca_1.Content)(`**Features** (${features.length}): `);
             (0, jostraca_1.Content)(features.map((f) => `\`${f.name}\``).join(', ') + `.
@@ -58,7 +52,6 @@ package (other languages). Each target's guide documents its features.
 
 `);
         }
-        // Entities
         if (0 < entities.length) {
             (0, jostraca_1.Content)(`**Entities** (${entities.length}): `);
             (0, jostraca_1.Content)(entities.map((e) => `\`${e.Name || e.name}\``).join(', ') + `.

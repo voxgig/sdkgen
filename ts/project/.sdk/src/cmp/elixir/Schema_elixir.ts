@@ -18,23 +18,6 @@ import {
 } from './utility_elixir'
 
 
-// THE GENERATED SCHEMA MODULE: the model's schemas, as data the SDK can run.
-//
-// The elixir peer of src/cmp/ts/Schema_ts.ts. Same two exports, same source —
-// OPTSPEC from `main.kit.optspec` plus each feature's own `config.options`,
-// ENTITYSPEC from the entity field sentinels — built by the shared helpers,
-// so what elixir validates against and what ts validates against cannot
-// drift.
-//
-// EMBEDDED AS JSON IN A MODULE ATTRIBUTE, PARSED AT COMPILE TIME, exactly as
-// config.ex carries the model. `elixirString` escapes every `#` for the
-// reason recorded there: elixir interpolates `#{...}` inside a double-quoted
-// string, so an unescaped one would be evaluated as code rather than emitted
-// as text.
-//
-// The round-trip is exact because the spec holds only strings and booleans —
-// pinned by "strings and booleans only, so the JSON round-trip is lossless"
-// in ts/test/optspec.test.ts.
 const Schema = cmp(async function Schema(props: any) {
   const ctx$ = props.ctx$
   const target = props.target
@@ -45,13 +28,6 @@ const Schema = cmp(async function Schema(props: any) {
   const optspec = optionSpec(model, target.name)
   const entityspec = entitySpecMap(model, target.name) || {}
 
-  // UNDER lib/, like config.ex and for a reason that bites immediately: mix's
-  // `elixirc_paths` is ["lib"] (plus test/ under :test), so a module at the
-  // SDK ROOT is never compiled. This file used to be emitted there, and
-  // `Schema.optspec/0` was therefore undefined in every generated elixir SDK
-  // — make_options raised UndefinedFunctionError on the first client
-  // construction. The elixir compile lane skips where no toolchain is
-  // installed, so nothing caught it.
   Folder({ name: 'lib' }, () => {
 
   File({ name: 'schema.ex' }, () => {

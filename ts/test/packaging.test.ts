@@ -1,29 +1,3 @@
-// WHAT THE REGISTRY ACTUALLY RECEIVES.
-//
-// The repo and the published package are not the same set of files, and the
-// gap is invisible from inside a checkout: every test in this suite, every
-// local `add-target`, and every manual smoke run reads the working tree, so a
-// file that npm silently drops is present for all of them and absent for
-// every real consumer.
-//
-// That is not hypothetical. `project/.sdk/tm/seneca-provider/.gitignore` was
-// shipped as a template for as long as the target existed and reached nobody
-// who installed from npm: `.gitignore` is on npm's OWN always-excluded list,
-// which naming the parent directory in `files` does not override. Generated
-// provider repos came out with no ignore file, so the first regeneration
-// buried them in the `.jostraca/` output duplicate that file exists to hide.
-// The 23 language targets were unaffected only because they emit theirs from
-// a component.
-//
-// NPM IS ASKED, NOT RESTATED
-//
-// The obvious cheap version of this test is a list of names npm is known to
-// strip. That would be npm's rules written down a second time, in a repo
-// whose recurring defect is exactly that (AGENTS.md, "Sharp edges"), and it
-// would go stale the day npm adds an exclusion. So this runs `npm pack
-// --dry-run --json` and believes the answer.
-//
-// COST: the pack takes a few seconds — it walks ~2,900 files. It runs once.
 
 import { test, describe } from 'node:test'
 import { ok, equal, deepStrictEqual } from 'node:assert'
@@ -49,12 +23,6 @@ function npmPacked(): Set<string> {
 
   equal(res.status, 0, 'npm pack failed: ' + res.stderr)
 
-  // npm changed this payload's shape at 12: up to 11 it is an array of
-  // per-package results, from 12 it is an object keyed by package name. The
-  // per-package entry is identical either way, so take the first one and let
-  // both npms answer the same question. Indexing [0] unconditionally is what
-  // broke here — on npm 12 it yields undefined, and the failure reads as
-  // "cannot read properties of undefined", which says nothing about npm.
   const packed = JSON.parse(res.stdout)
   const entry = Array.isArray(packed) ? packed[0] : Object.values(packed)[0]
 
@@ -68,14 +36,6 @@ function npmPacked(): Set<string> {
 }
 
 
-// Everything COMMITTED under the directories package.json ships.
-//
-// Tracked rather than "what is on disk": the working tree also holds
-// dist-test/, node_modules/ and whatever a developer left lying around, and
-// npm is right to drop those.
-//
-// The `files` entries are read from package.json rather than listed here, so
-// a newly shipped directory is covered without anyone remembering to.
 function trackedShipped(): string[] {
   const res = spawnSync('git', ['ls-files', '--', ...Pkg.files], {
     cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
@@ -114,15 +74,6 @@ describe('npm packaging', () => {
 
 
   test('the scaffold ships no file npm is entitled to drop', () => {
-    // The rule above states the SYMPTOM. This states the CAUSE, and fails one
-    // step earlier — at the moment a dotfile is added to the scaffold, rather
-    // than when someone notices consumers are missing it.
-    //
-    // Deliberately narrow: only `.gitignore` and `.npmignore` are checked,
-    // because those are the two npm always strips AND the two anybody would
-    // reasonably try to ship as a template. A dotfile that packs fine (the
-    // scaffold has several) is not this test's business — which is why the
-    // check above, the one that asks npm, is the authority.
     const risky = trackedShipped().filter((p: string) =>
       /(^|\/)\.(gitignore|npmignore)$/.test(p))
 
@@ -132,27 +83,6 @@ describe('npm packaging', () => {
   })
 
 
-  // DEEP IMPORTS MUST KEEP RESOLVING — VERIFIED BY RESOLVING THEM.
-  //
-  // This package intentionally has no `exports` map: `@voxgig/sdkgen/testkit`
-  // is a stub file resolved by ordinary CommonJS probing. The reason is
-  // recorded in package.json, and it is worth restating where the test lives,
-  // because the mistake is so easy to make twice.
-  //
-  // A map naming `./testkit` REPLACES the deep-import freedom a package has
-  // without one, and consumers depend on that freedom where nothing here would
-  // notice: every generated model file includes
-  // `@voxgig/sdkgen/model/sdkgen.aon`, and the scaffold is reached as
-  // `@voxgig/sdkgen/project/<lang>`. A `./*` catch-all looks like it restores
-  // that and does not — exports resolution never falls back to CommonJS
-  // extension probing, so `require('.../dist/helpers/manifest')` maps to an
-  // extensionless path that does not exist.
-  //
-  // THIS TEST RESOLVES FOR REAL, in a child process, through a real
-  // `node_modules` entry. An earlier version emulated the resolution rules in
-  // TypeScript and passed while extensionless requires were broken — which is
-  // exactly the failure mode a hand-written model of someone else's resolver
-  // has. Ask Node, like the pack test above asks npm.
   test('every deep import consumers use still resolves', () => {
     const dir = mkdtempSync(Path.join(tmpdir(), 'sdkgen-resolve-'))
 
@@ -161,8 +91,6 @@ describe('npm packaging', () => {
       mkdirSync(scope, { recursive: true })
       symlinkSync(ROOT, Path.join(scope, 'sdkgen'), 'junction')
 
-      // Extensionless and directory forms are listed DELIBERATELY: they are
-      // the ones an `exports` map silently drops.
       const subpaths = [
         '@voxgig/sdkgen',
         '@voxgig/sdkgen/testkit',

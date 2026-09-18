@@ -1,18 +1,3 @@
-// Single source of truth for a generated SDK's PUBLISHED identity and its
-// descriptive metadata, shared by the per-language Package_<lang>.ts manifest
-// generators AND the README install/heading components — so the install
-// command a README prints can never drift from the real published package name
-// (the #1 defect the publishing recommendations call out).
-//
-// The recommendations require, for every package:
-//   - install commands that match the real package name EXACTLY;
-//   - description "Unofficial generated <Lang> SDK for the <API> public API.";
-//   - a generic non-affiliation statement (upstream owner names are unreliable);
-//   - homepage / repository / issues under github.com/<origin>/<slug>-sdk;
-//   - the fixed keyword set [voxgig sdk generated-sdk openapi api-client <slug>].
-//
-// Every value here is derived from the resolved model (model.name, model.origin,
-// main.kit.info.title) — no new inputs required.
 
 import { each } from 'jostraca'
 
@@ -43,40 +28,11 @@ function langLabel(target: string): string {
 }
 
 
-// THE NAME WHOSE LANGUAGE RULES APPLY.
-//
-// A target name does two unrelated jobs in this file, and conflating them is
-// the defect this exists to end. `go~go2` installs a SECOND Go SDK: its
-// CONFIG lives under `main.kit.target.go2` (its own module path, its own
-// registry state), but it is still Go — the same go.mod shape, the same
-// `go get` install line, the same "Go" label.
-//
-// So: look config up by the target's OWN name, and select behaviour by this.
-// `origname` is stamped at add time precisely for aliased installs and is
-// empty when a target was installed under its own name, which makes the
-// unaliased case identical to what it was.
-//
-// Ecosystem keys ('npm', 'gem', 'composer') pass through untouched: there is
-// no target node under those names, so they answer for themselves.
 function originName(model: any, target: string): string {
   const orig = model?.main?.[KIT]?.target?.[target]?.origname
   return (null != orig && '' !== orig) ? String(orig) : target
 }
 
-// Git host, org/repo path, and the canonical repo URLs.
-//
-// `<origin>/<slug>-sdk` is a DERIVATION, not a law. A project whose repo is
-// named anything else — `voxgig-sdk/voxgig-solardemo-sdk`, say, where the slug
-// is `solardemo` — used to have no way to say so, and got a `go.mod` module
-// path that 404s on `go get` plus `homepage`/`repository`/`bugs` URLs pointing
-// at a repo that does not exist. The only escape was renaming the slug, which
-// also renames the SDK classes: a public-API break, and no help at all to a
-// project that has already published.
-//
-//   main: kit: repo: {
-//     path: 'voxgig-sdk/voxgig-solardemo-sdk'   # overrides <origin>/<slug>-sdk
-//     host: 'github.com'                        # default
-//   }
 function repoInfo(model: any) {
   const slug = model.name
   const origin = model.origin || 'voxgig-sdk'
@@ -86,8 +42,6 @@ function repoInfo(model: any) {
   const host = '' === (declared.host || '') ? 'github.com' : (declared.host || 'github.com')
   const path = '' === (declared.path || '') ? `${origin}/${slug}-sdk` : String(declared.path)
 
-  // Last segment is the repo; everything before it is the org (which may
-  // itself contain slashes on hosts that allow subgroups, e.g. GitLab).
   const seg = path.split('/')
   const repo = seg[seg.length - 1]
 
@@ -97,47 +51,17 @@ function repoInfo(model: any) {
     slug,
     origin,
     host,
-    // 'org/repo' — the path under the host, and the base of a go module path.
     path,
     repo,
     repoUrl,
     issuesUrl: `${repoUrl}/issues`,
     changelogUrl: `${repoUrl}/blob/main/CHANGELOG.md`,
-    // The Releases page. Honest where a link is LABELLED "Releases", which is
-    // what the twenty per-target ReadmeInstall components do with it. Those
-    // are project-owned and install-once, so this key has to keep existing:
-    // dropping it stops every already-generated SDK compiling.
     releasesUrl: `${repoUrl}/releases`,
-    // The TAGS page: where the `<target>/vX.Y.Z` tags a pending
-    // (not-yet-on-registry) package is installed from actually live.
-    //
-    // SEPARATE FROM `releasesUrl`, because they are separate pages and only
-    // one of them holds tags. A GitHub Release is an object a human publishes;
-    // a tag is not one. This fleet pushes tags and cuts no Releases, so every
-    // pending target told the reader to install from a git tag and then linked
-    // a page reading "There aren't any releases" -- on a repository carrying
-    // 72 of them. Use this wherever the sentence promises a tag.
     tagsUrl: `${repoUrl}/tags`,
   }
 }
 
 
-// THE GENERATED DOCUMENTATION SITE, when this project publishes one.
-//
-// `docs_url` in the OpenAPI info block is the UPSTREAM API's documentation —
-// docs.nofrixion.com and its like — so nothing in a generated README ever
-// pointed at the site docgen builds from the same model. The repository was
-// therefore the one place the documentation could not be found from: no link
-// in the README, and GitHub's `homepage` field is not ours to set.
-//
-// Derived, not declared, because a GitHub project page has exactly one
-// address: `https://<org>.github.io/<repo>/`. Reading it from the model would
-// mean a second place for it to be wrong.
-//
-// NOTHING IS RETURNED UNLESS THE SITE WILL EXIST. The edition has to be
-// declared, of kind `github-pages`, and not switched off; and the host has to
-// be github.com, since the derivation is GitHub's and holds nowhere else. A
-// link to a Pages site that was never deployed is worse than no link.
 function docsSiteUrl(model: any): string {
   const { host, path } = repoInfo(model)
 
@@ -161,16 +85,6 @@ function docsSiteUrl(model: any): string {
 }
 
 
-// The go module path for a go-family target: the declared override, else the
-// repo path plus the target's subdirectory.
-//
-//   main: kit: target: go: module: path: 'github.com/acme/legacy-sdk/go'
-//
-// THE ONLY implementation. Twelve go components used to re-derive
-// `github.com/${origin}/${name}-sdk/go` inline, so fixing the path in one
-// place fixed nothing — and `ReadmeTop`, which prints the module in the root
-// README's package table, lives inside node_modules where a consumer cannot
-// patch it at all.
 function goModule(model: any, target: string): string {
   const declared = model?.main?.[KIT]?.target?.[target]?.module?.path
   if (null != declared && '' !== declared) {
@@ -182,30 +96,12 @@ function goModule(model: any, target: string): string {
 }
 
 
-// The SDK's OWN release version, for this target's manifest and release tag.
-//
-//   main: kit: target: ts: publish: version: '0.0.2'
-//
-// Defaults to '0.0.1' (the schema default), which is what every manifest
-// emitter used to HARDCODE. That is why regeneration reset a published
-// version: the value lived only in the generated output, so overwriting the
-// output threw it away, and a project that had shipped 0.0.2 silently got a
-// 0.0.1 manifest back. Declaring it in the model makes the manifest, the
-// install docs and the port's VERSION file agree, and survive.
 function packageVersion(model: any, target: string): string {
   const declared = model?.main?.[KIT]?.target?.[target]?.publish?.version
   return null != declared && '' !== declared ? String(declared) : '0.0.1'
 }
 
 
-// The Go language version for a go-family target's go.mod.
-//
-//   main: kit: target: go: module: goversion: '1.23'
-//
-// Defaults to 1.21, the release that introduced `log/slog` — which sdkgen's
-// own `log` feature template imports. The previous hardcoded `go 1.20` meant a
-// generated SDK could not compile the feature source sdkgen had just written
-// into it.
 function goVersion(model: any, target: string, fallback?: string): string {
   const declared = model?.main?.[KIT]?.target?.[target]?.module?.goversion
   if (null != declared && '' !== declared) {
@@ -215,21 +111,6 @@ function goVersion(model: any, target: string, fallback?: string): string {
 }
 
 
-// The root Go package IDENTIFIER — `package voxgigsolardemosdk`. Go requires
-// a plain identifier here, so unlike the module path it must be concatenated
-// from the slug rather than taken from the repo.
-//
-//   main: kit: target: go: module: package: 'acmesdk'
-//
-// The default concatenates `<origin><slug>sdk`, which DOUBLES the org prefix
-// whenever the slug already carries it: slug `voxgig-solardemo` under origin
-// `voxgig-sdk` produced `package voxgigvoxgigsolardemosdk`. A slug repeating
-// its org is the natural shape for a repo named `<org>-<product>`, so the
-// default now drops a leading origin prefix instead of restating it.
-//
-// This was the last of the four things the slug derives that had no override,
-// and the only one that came out wrong — see the identity note at the top of
-// model/sdkgen.aon.
 function goPackageIdent(model: any, target: string): string {
   const declared = model?.main?.[KIT]?.target?.[target]?.module?.package
   if (null != declared && '' !== declared) {
@@ -249,23 +130,12 @@ function goPackageIdent(model: any, target: string): string {
 }
 
 
-// Publication state of a target's package registry, tri-state + tag-only:
-//   'tag'      — no registry (the go family); resolved from the git tag.
-//   'pending'  — registry declared but the package is not uploaded yet
-//                (the fleet default): install from the git tag.
-//   'active'   — package is live on the registry: show the real install cmd.
-//   'inactive' — registry deliberately disabled (tag-only, like pending).
-// Reads main.kit.target.<t>.publish.registry.state (default 'pending').
-// The legacy boolean `registry.active: true` is honoured as a back-compat
-// alias for state === 'active'.
 function registryState(model: any, target: string): 'tag' | 'pending' | 'active' | 'inactive' {
-  // Tag-only is a property of the Go toolchain, not of one target name, so
-  // an aliased `go~go2` must be tag-only too.
   const eco = originName(model, target)
   if ('go' === eco || 'go-cli' === eco || 'go-mcp' === eco) return 'tag'
   const reg = model?.main?.[KIT]?.target?.[target]?.publish?.registry
   if (null == reg || '' === (reg.name || '')) return 'tag'
-  if (true === reg.active) return 'active' // legacy alias
+  if (true === reg.active) return 'active'
   const s = reg.state
   if ('active' === s || 'inactive' === s || 'pending' === s) return s
   return 'pending'
@@ -309,10 +179,6 @@ function vendorCommand(model: any, target: string): string {
   }
 }
 
-// API display name for descriptions, e.g. "Aare.guru". Uses the OpenAPI
-// info.title (present for ~98% of the fleet), stripping a trailing " API" so
-// we don't render "... Aare.guru API public API". Falls back to the normalised
-// SDK Name, then the slug.
 function apiName(model: any): string {
   const info = (model.main && model.main[KIT] && model.main[KIT].info) || {}
   const raw = (null != info.title ? String(info.title) : '').trim()
@@ -320,23 +186,12 @@ function apiName(model: any): string {
   return stripped || nom(model, 'Name') || model.name
 }
 
-// The REAL published package name per ecosystem — mirrors the exact formula in
-// each Package_<lang>.ts. This is the one canonical implementation.
 function packageName(model: any, eco: string): string {
   const slug = model.name
   const origin = model.origin || 'voxgig-sdk'
   const base = origin.endsWith('-sdk') ? slug : `${slug}-sdk`
   const npmScoped = `@${origin}/${slug}${origin.endsWith('-sdk') ? '' : '-sdk'}`
 
-  // A target may name its published package outright — the escape hatch for a
-  // project whose registry name is not what the slug derives, and which cannot
-  // rename the slug without renaming its SDK classes:
-  //
-  //   main: kit: target: ts: publish: registry: package: '@acme/legacy-client'
-  //
-  // The key already existed in the schema ("registry package name ('' ->
-  // derived)") and was simply never read. Keyed by TARGET, so the ecosystem
-  // aliases ('npm', 'pypi', ...) resolve to the target that publishes to them.
   const ECO_TARGET: Record<string, string> = {
     npm: 'ts', pypi: 'py', gem: 'rb', luarocks: 'lua', composer: 'php',
   }
@@ -374,8 +229,6 @@ function packageName(model: any, eco: string): string {
     case 'go-cli':
     case 'go-mcp':
       return goModule(model, eco)
-    // The notebook/analyst package layered on `py`. Distinct PyPI name so it
-    // can version and publish independently of the SDK it wraps.
     case 'py-data':
       return `${origin}-${base}-data`
     default:
@@ -392,12 +245,6 @@ function installCommand(model: any, target: string): string {
   if (!isPublished(model, target)) {
     return vendorCommand(model, target)
   }
-  // WHICH package manager is the language's business, so the switch follows
-  // the origin; WHICH package name is this target's own, so every arm passes
-  // `target` rather than a hardcoded ecosystem key. Before, an aliased
-  // `ts~ts2` matched no case and returned '' — a README with an empty install
-  // line — and even had it matched, `packageName(model, 'npm')` would have
-  // printed the ORIGIN's package.
   switch (originName(model, target)) {
     case 'ts':
     case 'js':
@@ -420,8 +267,6 @@ function installCommand(model: any, target: string): string {
   }
 }
 
-// The standard one-line package description (with the generic non-affiliation
-// statement inline) used in every manifest.
 function pkgDescription(model: any, target: string): string {
   return `Unofficial generated ${langLabel(originName(model, target))} SDK` +
     ` for the ${apiName(model)} public API.` +
@@ -442,29 +287,6 @@ function keywords(model: any): string[] {
 }
 
 
-// WHO WROTE THE PACKAGE — `main: kit: author` / `main: kit: contributor`.
-//
-// Attribution cannot be derived: it is not a function of the slug, the repo or
-// the API. And because generated output is OVERWRITTEN, a name hand-edited
-// into a manifest is deleted by the next regeneration — silently, because no
-// build step can tell that a person is missing. The seneca-provider target
-// dropped a hand-written provider's author and both its named contributors
-// exactly that way. So attribution is declared in the model and read here.
-//
-// An unset author is the PUBLISHER, which is what every generated SDK manifest
-// has always carried (Package_ts hardcoded it); a project that has never
-// thought about authorship keeps the previous behaviour.
-//
-// PER TARGET, falling back to the model-wide value. One model can produce
-// packages with different authors: the SDK is a generated artefact of the
-// publisher, while a Seneca provider is an independently released package with
-// its own human maintainers. A single model-wide name cannot be right for
-// both — and it was not: the solardemo model named a person, the target that
-// read it credited them, and the SDK's own manifest went on saying Voxgig
-// because it read nothing at all.
-//
-//   main: kit: author: { ... }                    # every package from this model
-//   main: kit: target: ts: author: { ... }        # ...except this one
 function authorInfo(model: any, target?: string): { name: string, url: string } {
   const perTarget = null == target ? null :
     model?.main?.[KIT]?.target?.[target]?.author
@@ -475,8 +297,6 @@ function authorInfo(model: any, target?: string): { name: string, url: string } 
   const name = null != declared.name && '' !== declared.name ?
     String(declared.name) : PUBLISHER
 
-  // A declared author with no url gets none — inventing PUBLISHER_URL for a
-  // named human would credit them to Voxgig's homepage.
   const url = null != declared.url && '' !== declared.url ? String(declared.url) :
     (PUBLISHER === name ? PUBLISHER_URL : '')
 
@@ -484,13 +304,6 @@ function authorInfo(model: any, target?: string): { name: string, url: string } 
 }
 
 
-// Contributors, in sorted-key order so the manifest is byte-stable. `each`
-// rather than Object.keys: the model is an aontu map and carries metadata
-// keys alongside its entries.
-//
-// An entry with no name is DROPPED rather than rendered as `{}` — the schema
-// makes `name` required, but a partially-unified model can still reach here
-// during a dry run.
 function contributorList(model: any): { name: string, url: string }[] {
   return each(model?.main?.[KIT]?.contributor || {})
     .filter((c: any) => null != c && null != c.name && '' !== c.name)
@@ -500,23 +313,11 @@ function contributorList(model: any): { name: string, url: string }[] {
     }))
 }
 
-// A VALID uppercase env-var token: 'unsolicited-advice' -> 'UNSOLICITED_ADVICE'.
-//
-// THE ONLY WAY to build an env-var name segment. There used to be three
-// spellings of this in the components — `envToken(name)`,
-// `nom(x, 'NAME')` (the camel form uppercased, which SWALLOWS the hyphen) and
-// `x.name.toUpperCase().replace(...)` — and they agree only while the name has
-// no hyphen in it. A slug like `voxgig-solardemo` produced both
-// `VOXGIG_SOLARDEMO_TEST_LIVE` and `VOXGIGSOLARDEMO_TEST_LIVE` in the SAME
-// generated SDK: `test/utility.ts` read one, `PlanetEntity.test.ts` the other,
-// so setting either sent half the suite live and left the rest mocked — with
-// the suite reporting green either way.
 function envToken(name: any): string {
   return String(name || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '')
 }
 
 
-// The env-var base for this SDK: <NAME>_APIKEY, <NAME>_TEST_LIVE, ...
 function envName(model: any): string {
   return envToken(model.name)
 }

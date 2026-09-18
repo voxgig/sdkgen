@@ -107,7 +107,6 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const loadOp = entity.op?.load
   const listOp = entity.op?.list
 
-  // Get load point info
   const loadPoint = loadOp?.points?.[0]
   const loadIsGraphql = 'graphql' === (loadPoint as any)?.kind
   const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.args?.params || [], loadPoint?.rename?.param) : ''
@@ -134,14 +133,11 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const loadParams = allLoadParams.filter((p: any) =>
     _renamedPlaceholders.has(p.name) || _renamedPlaceholders.has(p.orig))
 
-  // Get list point info
   const listPoint = listOp?.points?.[0]
   const listIsGraphql = 'graphql' === (listPoint as any)?.kind
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.args?.params || [], listPoint?.rename?.param) : ''
   const listParams = listPoint?.args?.params || []
 
-  // Required query params with spec-provided examples — needed in live mode
-  // to satisfy API contracts (e.g. /v2018/history requires city/start/end).
   const loadQuery = loadPoint?.args?.query || []
   const loadLiveQueryEntries = loadQuery
     .filter((q: any) => q.reqd && undefined !== q.example && null !== q.example)
@@ -168,7 +164,6 @@ const TestDirect = cmp(function TestDirect(props: any) {
     ? loadParams.map((p: any) => `\t\t\tparams["${p.name}"] = ${JSON.stringify(p.example)}`).join('\n')
     : ''
 
-  // Build the ENTID env var name for this entity
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
 
   File({ name: entity.name + '_direct_test.' + target.ext }, () => {
@@ -188,7 +183,6 @@ import (
 func Test${entity.Name}Direct(t *testing.T) {
 `)
 
-    // Generate list test first (load needs list results in live mode)
     if (hasList && listPoint && listIsGraphql) {
       generateDirectGraphqlGo('list', entity, listPoint, liveFail)
     }
@@ -199,7 +193,6 @@ func Test${entity.Name}Direct(t *testing.T) {
           `"${p.name}": "direct0${i + 1}"`).join(', ')
         : ''
 
-      // Build live params for list
       const listLiveParams = listParams.map((p: any) => {
         const key = p.name === 'id'
           ? entity.name + '01'
@@ -252,9 +245,6 @@ ${listSkipBlock}		client := setup.client
         Content(`		params := map[string]any{}
 `)
         listLiveParams.forEach((lp: any, i: number) => {
-          // Each path param gets its own placeholder ("direct01", "direct02", ...)
-          // in non-live mode so URL-shape assertions can verify the params
-          // landed in distinct positions in the URL.
           const placeholder = 'direct0' + (i + 1)
           Content(`		if setup.live {
 			params["${lp.name}"] = setup.idmap["${lp.key}"]
@@ -357,16 +347,8 @@ ${listSkipBlock}		client := setup.client
           `"${p.name}": "direct0${i + 1}"`).join(', ')
         : ''
 
-      // Identify ancestor params (not 'id') for live mode
       const ancestorParams = loadParams.filter((p: any) => p.name !== 'id')
 
-      // Determine which idmap keys this load test will consume in live mode.
-      // - allHaveExamples: spec provides example values for every load
-      //   path-param, so live mode uses them — no idmap needed.
-      // - hasList: we list-bootstrap, so we need the keys for the list call's
-      //   path params (ancestors of the list path).
-      // - synthetic-only: we'd use idmap for load path-params; without an
-      //   override they're undefined and the live request 4xx's.
       let loadLiveIdKeys: string[] = []
       if (loadParams.length > 0 && !loadAllHaveExamples) {
         if (hasList) {
@@ -419,16 +401,13 @@ ${loadSkipBlock}		client := setup.client
         Content(`		if setup.live {
 `)
 
-        // Required-query setup (e.g. /v2018/history needs city/start/end).
         if (loadLiveQueryLines) {
           Content(loadLiveQueryLines + '\n')
         }
 
         if (loadAllHaveExamples) {
-          // Use spec-provided path-param examples — no list bootstrap needed.
           Content(loadExampleLines + '\n')
         } else if (hasList && loadParams.length > 0) {
-          // List-bootstrap: first call list, take id from response.
           Content(`			listParams := map[string]any{}
 `)
           for (const p of listParams) {
@@ -459,7 +438,6 @@ ${loadSkipBlock}		client := setup.client
 			firstEnt := core.ToMapAny(listData[0])
 			params["id"] = firstEnt["id"]
 `)
-          // Set ancestor params from idmap
           for (const p of ancestorParams) {
             const key = p.name.replace(/_id$/, '') + '01'
             Content(`			params["${p.name}"] = setup.idmap["${key}"]
@@ -632,7 +610,6 @@ func ${entity.name}DirectSetup(mockres any) *${entity.name}DirectSetupResult {
 }
 `)
 
-    // Suppress unused import warnings
     Content(`
 var _ = os.Getenv
 var _ = json.Unmarshal

@@ -21,68 +21,20 @@ import {
 } from './utility_ocaml'
 
 
-// WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API, so it is generated
-// rather than templated. The ocaml peer of PrepareAuth_ts / PrepareAuth_py;
-// read PrepareAuth_ts first, it carries the full account of the defect.
-//
-// apidef has always resolved the scheme's `in` and `name` into
-// `main.kit.info.security` - joplin's says `in: "query", name: "token"` -
-// and generation dropped both, so the SDK sent a header the API does not
-// read and never sent the query parameter it does. Four repos in the cedar
-// fleet ship SDKs that cannot authenticate for this reason: joplin
-// (`token`), pipedrive (`api_token`), trello (`key`), lm-umbrella
-// (`apiKey`).
-//
-// OCAML IS THE ODD ONE OUT: it had no prepare_auth TEMPLATE to replace.
-// The body was one `let` inside tm/ocaml/sdk_runtime.ml, the 1200-line
-// module that holds every `*_util` and the registrar that binds them. So
-// the extraction is a real one, and the shape was chosen rather than
-// inherited - see EXTRACTION SHAPE below.
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
   const where = resolveAuthIn(model)
 
-  // A HEADER NAME IS LOWER-CASED HERE; A QUERY OR COOKIE NAME IS NOT.
-  // apidef writes `name: "Authorization"`, the extracted body hardcoded
-  // `"authorization"`, and the whole ocaml runtime keys headers in lower
-  // case: make_spec writes "content-type", header_ci lower-cases before it
-  // looks up, the secrets feature rewrites `headers.authorization`, and the
-  // SHARED corpus asserts `ctx:spec:headers:authorization` - which
-  // test/primary_utility_test.ml drives through this very function. A
-  // struct map key is case-SENSITIVE, so emitting "Authorization" verbatim
-  // would put the credential under a key nothing in the SDK reads.
-  //
-  // A query parameter and a cookie name are case-sensitive ON THE WIRE:
-  // lm-umbrella's `apiKey` is not `apikey`, and lower-casing it would break
-  // exactly the APIs this change exists to fix. So they keep the spec's
-  // spelling, byte for byte.
   const resolved = resolveAuthName(model)
   const name = 'header' === where ? resolved.toLowerCase() : resolved
 
-  // Read so the resolution is visible at generation time, even though the
-  // emitted code takes the prefix from options at runtime (the secrets
-  // feature rewrites it there, and `auth.prefix` is a documented option).
   const prefix = resolveAuthPrefix(model)
 
   const basic = isHttpBasicAuth(model)
   const active = authSwitchedOn(model)
 
-  // FOLDER NESTING. Main_ocaml calls this with NO Folder open: its own
-  // Config, SdkError and `sdk_client.ml` all write straight to the target
-  // root, and the only Folder it opens (`feature/secrets` for feature.mk)
-  // is scoped to that one block and closed before this call. The ocaml tree
-  // is FLAT at the root - sdk_types.ml, sdk_helpers.ml, sdk_runtime.ml,
-  // sdk_features.ml, sdk_config.ml all sit there, and the Makefile names
-  // each by that exact path in `RUNTIME`.
-  //
-  // So this component opens NO folder. Opening one (`utility`, say, copying
-  // the c and lua ports) would write `<root>/utility/sdk_prepare_auth.ml`,
-  // which is NOT what `RUNTIME` lists and NOT where `-I .` looks: ocamlc
-  // would report `Unbound module Sdk_prepare_auth` while compiling
-  // sdk_runtime.ml, and `utility/` already holds the vendored struct port,
-  // which the Copy owns.
   File({ name: 'sdk_prepare_auth.' + target.ext }, () => {
     Content(render({
       project: model.const.Name, active, where, name, prefix, basic,
@@ -91,30 +43,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
 })
 
 
-// NOT `isAuthActive`, AND THE DIFFERENCE IS LOAD-BEARING (the py port found
-// this first; six of the eleven ports found it independently).
-//
-// `isAuthActive` is false whenever the SPEC declares no security scheme
-// (`main.kit.info.auth: false`). That is a statement about the DEFINITION,
-// not a ban on ever sending a credential: apidef writes it for every spec
-// with no securitySchemes block - GitHub's official OpenAPI included - and
-// those SDKs are still expected to honour an `apikey` the caller passes.
-// `optspec` always declares `apikey`, and make_options fills `options.auth`
-// from the optspec defaults, so the runtime `auth = Noval | Null` guard
-// never fired and every such SDK has ALWAYS sent the credential.
-//
-// Gating the body on `isAuthActive` therefore does not trim dead code, it
-// deletes working authentication - and takes the secrets feature with it,
-// since that resolves a secret into `options.apikey` and prepare_auth then
-// places nothing. generatedcompile's own fixture is one of these
-// (`main: kit: info: { ... auth: false }` in generateharness), and the
-// shipped tm/ocaml/test/feature/secrets/t_secrets.ml drives a LIVE client
-// on it.
-//
-// `main.kit.config.auth.active: false` is the project saying "this SDK
-// sends no credential, ever" - an explicit per-SDK switch nobody sets by
-// accident, and the only signal that can honestly be honoured before
-// runtime. So it is the only one used here.
 function authSwitchedOn(model: any): boolean {
   const auth = getModelPath(model, `main.${KIT}.config.auth`,
     { only_active: false, required: false })
@@ -132,42 +60,6 @@ type AuthSpec = {
 }
 
 
-// EXTRACTION SHAPE: ITS OWN COMPILATION UNIT, and the module keeps calling
-// it.
-//
-// The preferred shape, and it fits: `sdk_prepare_auth.ml` is module
-// `Sdk_prepare_auth`, compiled between sdk_helpers.ml and sdk_runtime.ml -
-// the Makefile's `RUNTIME` is an explicit ORDERED list (ocamlc compiles a
-// module before anything that uses it and has no link-time reordering), so
-// the position is stated there rather than discovered.
-//
-// THE BINDING IS PRESERVED EXACTLY. sdk_runtime.ml keeps
-//
-//   let prepare_auth_util = Sdk_prepare_auth.prepare_auth_util
-//
-// so every existing call site resolves at the same name it always did:
-//   - `u_prepare_auth = prepare_auth_util` in new_utility, and
-//     `u.u_prepare_auth <- prepare_auth_util` in register - the closure
-//     record that IS the ocaml registrar (sdk_types.ml declares the field);
-//   - `u.u_prepare_auth ctx` in make_spec_util (sdk_runtime.ml) and in the
-//     secrets feature's re-run of the pipeline (sdk_features.ml);
-//   - `prepare_auth_util c` in test/primary_utility_test.ml, which reaches
-//     it through `open Sdk_runtime` and drives the SHARED corpus section
-//     through it - the parity suite requires ocaml to execute `prepareAuth`
-//     (parity.test.ts FULL tier), so that name had to keep resolving;
-//   - `cl.cl_utility.u_prepare_auth ctx` in the four t_pipeline.ml cases.
-// Nothing in the tree was re-pointed at the new module, and nothing needed
-// to be.
-//
-// THE ONE THING THAT HAD TO MOVE. The body reads the client's options
-// through `client_options_map`, which was defined in sdk_runtime.ml - i.e.
-// AFTER this module in compile order, so it could not be called from here.
-// It is a one-line accessor over `sdk_client.cl_options` with no dependency
-// on anything else in that module, so it moved DOWN into sdk_helpers.ml,
-// where `cc`, `cu`, `getp` and every other shared accessor already live.
-// sdk_runtime.ml opens Sdk_helpers, so its own three call sites are
-// unchanged. The alternative - re-deriving the options map here - would
-// fork a definition that must not drift.
 function render(spec: AuthSpec): string {
   const head = `(* ${spec.project} SDK utility: prepare_auth.
  *
@@ -234,20 +126,6 @@ function placement(spec: AuthSpec): string {
 }
 
 
-// HEADER. Behaviourally what sdk_runtime.ml's `prepare_auth_util` did, line
-// for line and idiom for idiom: the same `auth_no_spec` error, the same
-// `__NOTFOUND__` sentinel read through `getprop ~alt`, the same
-// missing-credential handling (delete the header), the same empty-prefix
-// rule. Only the credential NAME moves with the model - and it resolves to
-// "authorization" for every header SDK, so those regenerate unchanged.
-//
-// The HTTP Basic block is the one addition, and it is emitted ONLY when the
-// model says the scheme IS basic (`isHttpBasicAuth`). An ordinary
-// bearer/apiKey SDK carries no dead code and no behaviour change. ocaml's
-// extracted body never had this branch: a basic scheme resolved
-// `auth.prefix` to "Basic" and sent `Basic <apikey>` - a single token where
-// the scheme demands `base64(user:pass)`, which cannot authenticate. The
-// other eleven ports added the same branch for the same reason.
 function renderHeader(spec: AuthSpec, head: string): string {
   return head + `
 let option_apikey = "apikey"
@@ -318,12 +196,6 @@ let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
 }
 
 
-// COOKIE. A cookie IS a header, so the credential rides the header bag -
-// but the \`cookie\` header is SHARED with whatever cookies the caller set
-// through options.headers, so our pair is SPLICED in and out rather than
-// the header assigned over. Splicing also makes this idempotent: the
-// secrets feature re-runs the pipeline on a retried request, and an
-// assignment would leave the credential in the header twice.
 function renderCookie(spec: AuthSpec, head: string): string {
   return head + `
 let cookie_header = "cookie"
@@ -382,17 +254,6 @@ let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
 }
 
 
-// True HTTP Basic Auth: TWO credentials, base64-joined. Emitted only for a
-// HEADER placement, because the scheme IS a header -
-// \`Authorization: Basic base64(user:pass)\` cannot be expressed as a query
-// parameter or a cookie pair, so renderQuery and renderCookie never carry
-// it.
-//
-// It is the FIRST of three `unit` branches - basic, no-credential,
-// single-token - and the shared \`(Some spec, None)\` after them is the one
-// result. Written that way rather than as an early return because OCaml
-// sequences with \`;\`: a branch returning the tuple could not sit beside
-// two returning unit.
 const BASIC = `       if (match getpath_s options "auth.basic" with Bool b -> b | _ -> false) then begin
          (* True HTTP Basic Auth needs TWO credentials, base64-joined - a
           * single token in the header (the branch below) can never
@@ -417,12 +278,6 @@ const BASIC = `       if (match getpath_s options "auth.basic" with Bool b -> b 
 `
 
 
-// OCaml's stdlib has no base64 (4.14 ships none, and the SDK is
-// dependency-free: stock ocamlc, no opam, no dune). The vendored sekreto
-// port has one, but it lives inside the OPTIONAL secrets feature - an SDK
-// that never asked for secrets does not compile it - so an HTTP Basic SDK
-// carries its own. Emitted only in that branch, so nothing else pays for
-// it. The lua port carries the same encoder for the same reason.
 const BASE64 = `
 let b64_alphabet =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"

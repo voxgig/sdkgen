@@ -16,48 +16,6 @@ import {
 } from '@voxgig/apidef'
 
 
-// WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API, so it is generated
-// rather than templated. The zig peer of PrepareAuth_ts; read that one
-// first, it carries the full account of the defect.
-//
-// zig differs from the other twelve ports in ONE way: it had no
-// prepare_auth template to delete. The logic was EMBEDDED in
-// `tm/zig/core/utility.zig` — three file-scope constants and a
-// `pub fn prepare_auth_util` in the middle of a 1500-line module that also
-// holds make_spec, make_url, the result builders and the Utility bundle
-// itself. So this is an EXTRACTION, not a replacement:
-//
-//   core/prepare_auth.zig   GENERATED here, one function.
-//   core/utility.zig        keeps
-//                             pub const prepare_auth_util =
-//                                 @import("prepare_auth.zig").prepare_auth_util;
-//
-// THE OWN-FILE SHAPE, not the whole-module-as-a-component fallback. A zig
-// file IS a struct, so a function in its own file is a first-class
-// compilation unit reached by a relative `@import` — no build.zig entry, no
-// module declaration, nothing to register. Generating the whole of
-// utility.zig instead would turn 1500 lines of hand-maintained template
-// into a TypeScript string for the sake of 40, which is the opposite of the
-// trade the other targets made.
-//
-// THE BINDING DOES NOT MOVE. Three call sites name this symbol and all three
-// keep resolving to it through the re-export:
-//   - `Utility.prepare_auth` (core/utility.zig) — the method the pipeline
-//     dispatches through, called by core/sdk.zig (Main.fragment.zig line
-//     `self.sdkUtility.prepare_auth(ctx)`) and asserted on by
-//     test/pipeline_test.zig.
-//   - `make_spec_util` (core/utility.zig) — `try prepare_auth_util(ctx)`,
-//     unqualified, so the file-scope const is what it finds.
-//   - `sdk.utilmod.prepare_auth_util` — root.zig exports core/utility.zig as
-//     `utilmod`, and test/primary_utility_test.zig drives the shared
-//     corpus's `prepareAuth` section through it.
-//
-// A template cannot fix the defect, because the three placements need three
-// different bodies and a template has to pick one. A component emits the
-// branch this API actually uses and nothing else — and zig makes that
-// stricter than most: an unused LOCAL is a compile error, so a file that
-// bound `auth_prefix` and then dropped it for a query placement would not
-// build at all.
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -65,35 +23,9 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const active = isAuthActive_zig(model)
   const where = resolveAuthIn(model)
   const name = resolveAuthName(model)
-  // Read so the resolution is visible at generation time even though the
-  // emitted code takes the prefix from `options.auth.prefix` at RUNTIME -
-  // it has to, because the secrets feature rewrites it there.
   const prefix = resolveAuthPrefix(model)
   const basic = isHttpBasicAuth(model)
 
-  // FOLDER NESTING — NO Folder IS OPENED HERE, and that is worked out from
-  // two facts, not assumed.
-  //
-  // 1. The template this extracts from is `tm/zig/core/utility.zig`, and
-  //    Main_zig's `Copy({from: 'tm/zig'})` runs at the TARGET ROOT with no
-  //    folder open (zig's layout is flat there: core/, feature/, utility/,
-  //    entity/, test/ — Main_zig's own comment says the idiomatic src/ is
-  //    deliberately not used). So that template lands at `<root>/core/`,
-  //    and the extracted function must land in the same directory for
-  //    `@import("prepare_auth.zig")` — a SIBLING-relative path — to resolve.
-  //
-  // 2. Main_zig ALREADY opens `Folder({name: 'core'})` for core/sdk.zig and
-  //    for Config, and that is where this component is called. Config_zig
-  //    writes `File({name: 'config.zig'})` with no Folder of its own for
-  //    exactly this reason.
-  //
-  // Opening a second `core` here would write `core/core/prepare_auth.zig`:
-  // a file no `@import` names, invisible to `zig build` (which analyses only
-  // what a module root reaches), while core/utility.zig's re-export fails to
-  // resolve — or, worse in the ts port's version of this trap, silently
-  // keeps using a stale sibling. Verified by generating the target and
-  // running `zig build test` against the result, not by eye: a file zig
-  // never reaches produces no error at all.
   File({ name: 'prepare_auth.' + target.ext }, () => {
     Content(render({ active, where, name, prefix, basic }))
   })
@@ -124,9 +56,6 @@ const HEAD = `// prepare_auth — GENERATED from the model (src/cmp/zig/PrepareA
 
 
 function render(spec: AuthSpec): string {
-  // NO GENERATION-TIME GATE ON WHETHER TO PLACE A CREDENTIAL AT ALL, beyond
-  // the project's own explicit switch — see isAuthActive_zig below for why
-  // `isAuthActive` is the wrong predicate here.
   if (!spec.active) return renderInactive()
 
   if ('query' === spec.where) return renderQuery(spec)
@@ -136,11 +65,6 @@ function render(spec: AuthSpec): string {
 }
 
 
-// AUTH SWITCHED OFF BY THE PROJECT (`main.kit.config.auth.active: false`).
-// The SDK gets a prepare_auth that is honest about it rather than one that
-// deletes a header nobody set. Nothing but the Context and Spec types is
-// imported: zig tolerates an unused file-scope const, but a reader should
-// not have to decide whether `vs` here means something.
 function renderInactive(): string {
   return HEAD + `//
 // THIS SDK SENDS NO CREDENTIAL: the project set
@@ -164,10 +88,6 @@ pub fn prepare_auth_util(ctx: *Context) E!*Spec {
 }
 
 
-// HEADER — the default, and BYTE-FOR-BYTE the body that was in
-// core/utility.zig when the scheme resolves to header/Authorization. Only
-// the constant's VALUE moves with the model, plus the HTTP Basic block,
-// which is emitted only for a basic scheme.
 function renderHeader(spec: AuthSpec): string {
   const withBasic = spec.basic
 
@@ -225,10 +145,6 @@ pub fn prepare_auth_util(ctx: *Context) E!*Spec {
 }
 
 
-// QUERY — the credential is a query parameter, so it goes in spec.query and
-// the header bag is never touched. No `fmt`, because nothing is joined:
-// zig would accept an unused file-scope helper, but emitting one invites the
-// reader to look for the concatenation that is deliberately absent.
 function renderQuery(spec: AuthSpec): string {
   return HEAD + imports({ vs: true, fmt: false }) +
     facts(spec.where, false, true) + `
@@ -367,10 +283,6 @@ pub fn prepare_auth_util(ctx: *Context) E!*Spec {
 }
 
 
-// The imports and type aliases, in core/utility.zig's own order and
-// spelling. `E` comes from helpers rather than error.zig on purpose:
-// error.zig's type is `ProjectNameError`, and the placeholder rewrite is
-// applied by Copy, which this GENERATED file never travels through.
 function imports(need: { vs: boolean, fmt: boolean }): string {
   return `
 const std = @import("std");
@@ -391,8 +303,6 @@ fn fmt(comptime f: []const u8, args: anytype) []const u8 {
 }
 
 
-// Emitted only for a basic scheme in a HEADER placement, so an ordinary
-// bearer SDK carries neither the base64 encoder nor the boolean coercion.
 function basicHelpers(): string {
   return `
 // Boolean-or-absent: an option that is unset, null or a non-boolean is false
@@ -461,40 +371,11 @@ function basicBlock(): string {
 }
 
 
-// The credential's key, as it goes into the bag.
-//
-// A HEADER name is LOWERCASED. HTTP header names are case-insensitive on the
-// wire (RFC 9110 5.1), but this SDK's header bag is a plain Value map and
-// object keys are case-SENSITIVE: the extracted template said
-// `const HEADER_AUTH = "authorization";`, the shared corpus asserts
-// `ctx:spec:headers:authorization`, tm/zig/test/pipeline_test.zig reads
-// `h.getp(ctx.spec.?.headers, "authorization")`, and feature/secrets.zig
-// rewrites the same lowercase key. apidef writes `name: "Authorization"`, so
-// emitting it verbatim would put the credential where none of those look.
-//
-// A QUERY parameter and a COOKIE name are case-SENSITIVE to the API itself,
-// so those go in exactly as the spec spells them: `?token=` is not `?Token=`.
 function credLiteral(where: string, name: string): string {
   return 'header' === where ? String(name).toLowerCase() : String(name)
 }
 
 
-// NOT `isAuthActive`, AND THE DIFFERENCE IS LOAD-BEARING. That helper is also
-// false whenever the SPEC declares no security scheme
-// (`main.kit.info.auth: false`) — a statement about the DEFINITION, not a ban
-// on ever sending a credential. Such an SDK still carries one: `optspec`
-// always declares `apikey`, and make_options_util fills `options.auth` from
-// the optspec defaults (tm/zig/core/utility.zig), so the runtime
-// `h.is_noval(auth)` guard never fired and every such SDK has always sent
-// `options.apikey`. Gating the body on `isAuthActive` does not trim dead
-// code, it silently removes working authentication — and takes the secrets
-// feature with it, since that resolves a secret into `options.apikey` and
-// prepare_auth then places nothing. zig's own gated suite
-// (`zig build test-secrets`) pins exactly that.
-//
-// `main.kit.config.auth.active: false` is the project saying "this SDK sends
-// no credential, ever". It is the only signal that can honestly be honoured
-// before runtime, so it is the only one used here.
 function isAuthActive_zig(model: any): boolean {
   const auth = getModelPath(model, `main.${KIT}.config.auth`,
     { only_active: false, required: false })
@@ -502,23 +383,6 @@ function isAuthActive_zig(model: any): boolean {
 }
 
 
-// THE PLACEMENT AS A COMPTIME FACT, exported beside the function.
-//
-// The generated body has exactly ONE branch, chosen here at generation time,
-// and nothing downstream can tell which by looking at the options: a query
-// SDK's `options.auth.in` says "query", but an auth-OFF SDK is
-// indistinguishable from a header one there (Config omits `options.auth`
-// entirely when auth is inactive, and make_options' optspec then supplies the
-// same empty defaults either way).
-//
-// tm/zig/test/pipeline_test.zig needs to tell them apart. Its prepare_auth
-// cases assert the HEADER shape - `spec.headers["authorization"]` - which is
-// the right assertion for the default and the wrong one for the other three,
-// where the SDK correctly places nothing there. Rather than let a query SDK
-// ship four red tests (or delete the coverage that every header SDK does
-// want), the suite reads these two constants and skips what does not apply.
-//
-// core/utility.zig re-exports both, so the path is `sdk.utilmod.<name>`.
 function facts(where: string, basic: boolean, active: boolean): string {
   const placement = active ? where : 'none'
 

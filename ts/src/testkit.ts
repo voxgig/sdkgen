@@ -1,44 +1,5 @@
 /* Copyright (c) 2024-2026 Voxgig Ltd, MIT License */
 
-// THE TEST KIT: `@voxgig/sdkgen/testkit`.
-//
-// See §14 of docs/design/sdkgen-packages.md.
-//
-// WHY THIS EXISTS
-//
-// sdkgen's own suites are CLOSED. `parity.test.ts` and `featuremodel.test.ts`
-// derive their sets from `ts/project/.sdk` listings; `generate.test.ts` runs
-// the per-language components out of a staged copy of that same tree. All of
-// it is excellent coverage that an external package gets exactly none of —
-// and an external package is where the coverage is needed most, because its
-// content reaches a consumer through the same add pipeline with none of the
-// same review.
-//
-// So the machinery is parameterised rather than reimplemented: this module is
-// the staging in `build/scaffold-stage.js` and the generation harness in
-// `ts/test/generateharness.ts`, with the paths taken as arguments instead of
-// hardcoded to the bundled scaffold.
-//
-// WHAT A PACKAGE AUTHOR DOES WITH IT
-//
-//   const consumer = stageConsumer()
-//   await consumer.addPackage(__dirname + '/..')   // the package under test
-//   consumer.compile()                             // as a consumer's build does
-//   const { files, leaks } = await generateInto(consumer, { model })
-//
-// A target with `output: path` writes outside the consumer root, so declare
-// its destinations and read them back per destination:
-//
-//   const { outside } = await generateInto(
-//     consumer, { model, outside: ['../acme-provider'] })
-//
-// That runs the REAL add pipeline and the REAL generation, so provenance,
-// index handling, the feature fan-out and the trim catalogue are all exercised
-// against the package as published rather than as described.
-//
-// NO RUNTIME DEPENDENCIES. This package has none and the test kit does not
-// introduce any: `compile()` reaches for a transpiler at call time and says
-// which ones it looked for if it finds none.
 
 import Fs from 'node:fs'
 import Os from 'node:os'
@@ -61,45 +22,19 @@ import { KIT } from './types'
 const SDKGEN_ROOT = Path.resolve(__dirname, '..')
 
 
-// The placeholder tokens template substitution is supposed to replace. One
-// surviving into generated output means a replace map did not reach a file —
-// the failure mode `generate.test.ts` scans the bundled targets for, made
-// available to packages that ship template trees of their own.
-//
-// KEPT IN STEP WITH `generate.test.ts` DELIBERATELY. `PROJECTENV` and
-// `PROJECTVERSION` are added by `ensureStdrep` / `templateReplacements`, not
-// by the name map, and a kit that scanned only for the name tokens would let a
-// package ship an unsubstituted version string and still report `leaks: []`.
 const PLACEHOLDERS = [
   'ProjectName', 'PROJECTNAME', 'PROJECTENV', 'PROJECTVERSION', 'GOMODULE',
 ]
 
 
-// A MODEL PATH between the delimiters — identifiers and dots — not any `$$`
-// pair. A surviving `$$model.path$$` means a Fragment or Copy whose model
-// interpolation never ran, which the token list above cannot see.
-//
-// Constrained on purpose, and this is the same pattern `generate.test.ts`
-// settled on: in a Makefile `$$` is how you write a literal `$`, so a loose
-// pattern reported py-data's `$${GITHUB_TOKEN:-$$(gh auth token)}` — a correct
-// recipe — as a leak.
 const PLACEHOLDER_REF = /\$\$[A-Za-z_][A-Za-z0-9_.]*\$\$/
 
 
 type StageOptions = {
-  // Where to build the consumer. A fresh temp directory by default.
   dir?: string
 
-  // The project's API name, which every derived name comes from.
   name?: string
 
-  // The project's OWN model text, appended to `model/sdk.aon`.
-  //
-  // THIS WRITES A FILE. It does NOT reach the action context — see
-  // `setModel` on the consumer, and use that if an add needs to SEE what is
-  // declared here. The two are separate on purpose rather than by oversight:
-  // nothing recompiles a model mid-process, so there is no honest way to make
-  // a string written here appear in an action's `actx.model` automatically.
   extra?: string
 
   // Record log lines instead of discarding them, for assertions about what an
@@ -118,29 +53,14 @@ type Consumer = {
   actx: any
   log: any
 
-  // Install a package by ref, through the real `package add`.
   addPackage: (ref: string, flags?: any) => Promise<any>
 
-  // Install one item of one kind, through the real `<kind> add`.
   add: (kind: string, ref: string, flags?: any) => Promise<any>
 
   // A bundled target/feature ref, for a consumer that wants one alongside the
   // package's own content — `wfeat`'s overlay for `ts` needs `ts` present.
   bundledRef: (kind: string, name: string) => string
 
-  // Install a compiled model as the one the ADD ACTIONS see.
-  //
-  // Needed because an action reads `actx.model`, which is compiled from
-  // `model/sdk.aon` BEFORE the run — nothing recompiles mid-process. The
-  // CLI does that compile per invocation; a kit staging several adds in one
-  // process does not, so a feature declared in the project's model is
-  // invisible to a later `target add` unless it is installed here. That
-  // matters: `target add` TRIMS feature source down to what the model
-  // selects, so a target added against an empty model ships none of it.
-  //
-  // `package add` handles its own within-run sequencing (it teaches the
-  // in-memory model about each kind's items as it installs them), so this is
-  // for adds the caller sequences itself.
   setModel: (model: any) => void
 
   // Run `fn` with the working directory set to `.sdk`, which is where a
@@ -153,7 +73,6 @@ type Consumer = {
   // consumer's own `npm run build` does and what `requirePath` reads.
   compile: (opts?: { transform?: (src: string, file: string) => string }) => number
 
-  // Paths written so far, relative to `.sdk`, sorted.
   files: () => string[]
 
   cleanup: () => void
@@ -176,31 +95,7 @@ function makeLog(lines?: any[]): any {
 }
 
 
-// A CONSUMER PROJECT ON REAL DISK, not in memfs.
-//
-// It has to be real: `requirePath` resolves a component with an actual Node
-// `require` against `<root>/.sdk/dist/cmp/...`, and components read sibling
-// fragment files off disk relative to their own `__dirname`. A memfs project
-// can exercise the add pipeline (sdkgen's own action suites do) but can never
-// RUN what it installed, which is the half a package author most needs.
 function stageConsumer(opts: StageOptions = {}): Consumer {
-  // THE ROOT IS USED VERBATIM. Do not "canonicalise" it.
-  //
-  // This exact string is handed to `generate()` as its output folder, and
-  // `generateInto` strips it back off to key the result. Those two uses only
-  // agree while it is ONE string, so any transformation here would have to be
-  // one jostraca performs too — and `realpathSync` is not.
-  //
-  // It WAS resolved here briefly, added as hardening for a macOS case
-  // (`/var/folders` vs `/private/var/folders`) that was measured beforehand
-  // and does not arise: jostraca realpaths a copy's SOURCE, not the output
-  // folder. Hardening against a hazard that was not there is its own reason
-  // to revert.
-  //
-  // (It was also blamed, wrongly, for the Windows failure that followed. That
-  // was the drive letter — see `volkey` in generateInto — and the short name
-  // in `C:\Users\RUNNER~1\…` was a coincidence of the runner's paths, present
-  // on both sides of the comparison and never the difference.)
   const root = opts.dir ?? Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-consumer-'))
   const sdk = Path.join(root, '.sdk')
 
@@ -214,44 +109,15 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
 
   const name = opts.name ?? 'demo'
 
-  // The project's OWN model, written once by create-sdkgen at init. It
-  // includes the indexes of the kinds that existed THEN — which is why a
-  // consumer staged here can show what an existing project does when a new
-  // kind arrives, rather than assuming every index is already wired.
   Fs.writeFileSync(Path.join(sdk, 'model', 'sdk.aon'),
     "name: '" + name + "'\n" +
     '@"./target/target-index.aon"\n' +
     '@"./feature/feature-index.aon"\n' +
     (opts.extra ? opts.extra + '\n' : ''))
 
-  // `@voxgig/sdkgen` has to be resolvable FROM THE CONSUMER, because the
-  // feature fan-out reads the bundled feature models through the path a
-  // consumer sees them at (`node_modules/@voxgig/sdkgen/...`, relative to the
-  // project) and scaffold components `require('@voxgig/sdkgen')` by name.
-  //
-  // 'junction' is the portable spelling: on Windows it creates a directory
-  // junction, which needs no elevation, and on POSIX the type argument is
-  // ignored and an ordinary symlink results. A copy would work too and costs
-  // the whole 27-target template tree per staged consumer.
-  // NODE_MODULES LIVES INSIDE `.sdk`, NOT BESIDE IT.
-  //
-  // A generated SDK's `.sdk` is itself an npm package root — it has its own
-  // package.json and its own install — so that is where a consumer's
-  // `@voxgig/sdkgen` actually sits. It matters because the feature fan-out
-  // composes the path from the ACTION FOLDER (`<.sdk>/node_modules/...`)
-  // rather than resolving it upward; put the link one level too high and
-  // every bundled feature reports `feature-source-unresolved` while
-  // `require('@voxgig/sdkgen')` from a component keeps working, because
-  // Node's upward search finds either. One of the two readers is forgiving
-  // and the other is not.
   const modules = Path.join(sdk, 'node_modules')
   const links = [linkModule(modules, '@voxgig/sdkgen', SDKGEN_ROOT)]
 
-  // ...and sdkgen's PEERS, because the base model schema a consumer compiles
-  // against pulls in `@voxgig/apidef/model/apidef.aon` by package name. A
-  // consumer that really installed sdkgen has these; a staged one has to be
-  // given them, or every model compile here fails on an include that resolves
-  // fine everywhere else.
   for (const dep of peerNames()) {
     const from = peerRoot(dep)
     if (null != from) {
@@ -300,33 +166,14 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
           ' (known: ' + Object.keys(ACTION_MAP).sort().join(', ') + ')')
       }
       actx.flags = flags
-      // `[kind, cmd, ...refs]` — the CLI's own argv shape, which is what
-      // `action_<kind>` parses (it reads the verb at args[1]).
       return action([kind, 'add', ref], actx)
     },
 
-    // CONSUMER-RELATIVE, not absolute, and that is not a stylistic choice.
-    //
-    // `target add` records `base` as the resolved source folder, so an
-    // absolute ref writes THIS MACHINE'S path into the installed model. Two
-    // things then go wrong at once: the copy is not reproducible across
-    // machines, and the feature fan-out compares the target's own tm folder
-    // against the one it reaches through `node_modules` — textually different
-    // paths for the same tree, which it reports as a shadowing overlay. Both
-    // disappear when the ref is spelled the way a consumer spells it.
     bundledRef: (kind: string, name: string) =>
       'target' === kind ? 'node_modules/@voxgig/sdkgen/project/' + name : name,
 
     setModel: (model: any) => { actx.model = model },
 
-    // AWAITS A PROMISE-RETURNING CALLBACK before restoring the directory.
-    //
-    // A synchronous `finally` would put the cwd back the moment `fn` RETURNS,
-    // which for an async callback is its first `await` — so the generation it
-    // was wrapping would do most of its work, including every CWD-relative
-    // template copy and the later docs and out-of-tree passes, from the
-    // caller's directory. The wrapper would look correct and protect almost
-    // nothing.
     inSdk: (fn: any): any => {
       const prev = process.cwd()
       process.chdir(sdk)
@@ -371,21 +218,6 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
 }
 
 
-// REMOVE A LINK, WHICHEVER KIND IT TURNED OUT TO BE.
-//
-// `linkModule` makes a symlink on POSIX and a directory JUNCTION on Windows,
-// and falls back to a real directory holding a re-export shim. `unlinkSync`
-// removes the first, fails with EPERM on the second, and cannot remove the
-// third.
-//
-// WHAT THIS IS AND IS NOT FOR. Node's recursive `rmSync` does NOT follow a
-// symlink or a junction — it removes the link itself — so the tree walk that
-// follows is not going to reach through into the sdkgen checkout. That was
-// measured, not assumed. What this function buys is narrower and still worth
-// having: cleanup that does not throw on Windows (a junction refuses
-// `unlink`, and `force: true` forgives only ENOENT), and not depending on
-// that `rmSync` behaviour holding forever for an operation whose blast radius
-// would be a developer's checkout.
 function unlink(link: string): void {
   let stat: any
   try {
@@ -395,39 +227,19 @@ function unlink(link: string): void {
     return
   }
 
-  // A LINK OF SOME KIND — never recurse. `lstat` reports a Windows junction as
-  // a symbolic link, which is exactly the case a recursive remove must not
-  // reach: it would delete the sdkgen checkout on the other side.
-  //
-  // `unlink` removes a POSIX symlink and refuses a junction (EPERM); `rmdir`
-  // removes a junction and refuses a symlink. Try both rather than branch on
-  // the platform.
   if (stat.isSymbolicLink()) {
-    try { Fs.unlinkSync(link); return } catch (err) { /* junction */ }
-    try { Fs.rmdirSync(link) } catch (err) { /* already gone */ }
+    try { Fs.unlinkSync(link); return } catch (err) {   }
+    try { Fs.rmdirSync(link) } catch (err) {   }
     return
   }
 
-  // Not a link: the re-export shim `linkModule` writes when symlinking is
-  // refused. A real directory we created, so removing its contents is safe.
   try {
     Fs.rmSync(link, { recursive: true, force: true })
   }
-  catch (err) { /* already gone */ }
+  catch (err) {   }
 }
 
 
-// A path as an in-memory VOLUME spells it: forward slashes, no drive letter.
-//
-// memfs stores `/a/b`, never `C:/a/b`, so a Windows path has to lose both its
-// separators and its drive before it can be compared with a volume key. This
-// has now caused two Windows failures — the second one silently, because
-// `Path.relative` between a drive-less key and a real root does not fail, it
-// resolves the key against the CWD and returns a confidently wrong answer.
-//
-// Backslashes are replaced unconditionally rather than via `Path.sep`, so the
-// rule is the same function on every platform and can be tested anywhere. A
-// Windows filename cannot contain a backslash, so nothing legitimate is lost.
 function volumeKey(p: string): string {
   return p.replace(/\\/g, '/').replace(/^[A-Za-z]:/, '')
 }
@@ -448,19 +260,6 @@ function peerNames(): string[] {
 }
 
 
-// WHERE A PEER ACTUALLY LIVES — asked of Node, not guessed from a path.
-//
-// The tempting version is `<SDKGEN_ROOT>/node_modules/<dep>`, and it is right
-// only in this checkout. npm HOISTS: in a real installation sdkgen's peers are
-// siblings of `@voxgig/sdkgen` under the host project's `node_modules`, not
-// children of it. So the guessed path exists here, misses everywhere else, and
-// the failure is silent — the peer is skipped, the staged consumer has no
-// `@voxgig/apidef`, and the model compile fails on an include that resolves
-// fine in every other context.
-//
-// `require.resolve` with `paths` walks the real chain, hoisted or not. The
-// package.json is resolved rather than the entry point because a peer may not
-// export one, and its directory is what has to be linked.
 function peerRoot(dep: string): string | undefined {
   try {
     return Path.dirname(
@@ -478,19 +277,13 @@ function peerRoot(dep: string): string | undefined {
         dir = parent
       }
     }
-    catch (err2) { /* genuinely not installed */ }
+    catch (err2) {   }
 
     return undefined
   }
 }
 
 
-// One `node_modules/<name>` entry pointing at an existing package directory.
-//
-// 'junction' is the portable spelling: on Windows it creates a directory
-// junction, which needs no elevation, and on POSIX the type argument is
-// ignored and an ordinary symlink results. A copy would work too and costs the
-// whole 27-target template tree per staged consumer.
 function linkModule(modules: string, name: string, from: string): string {
   const link = Path.join(modules, ...name.split('/'))
   Fs.mkdirSync(Path.dirname(link), { recursive: true })
@@ -501,9 +294,6 @@ function linkModule(modules: string, name: string, from: string): string {
     Fs.symlinkSync(from, link, 'junction')
   }
   catch (err: any) {
-    // Last resort: a re-export shim. It satisfies `require('<name>')` but NOT
-    // deep file reads under the package, so a model include would still fail
-    // — which is why this is the fallback and not the mechanism.
     Fs.mkdirSync(link, { recursive: true })
     Fs.writeFileSync(Path.join(link, 'package.json'),
       JSON.stringify({ name, version: '0.0.0', main: 'index.js' }) + '\n')
@@ -527,17 +317,6 @@ function walk(dir: string): string[] {
 }
 
 
-// TRANSPILE, DO NOT TYPE-CHECK.
-//
-// Type-checking a package's components is a BUILD-time gate (the package runs
-// `tsc --noEmit` over its own `src/cmp/**`, the way this repo's
-// `check-scaffold` does). Doing it again per staged consumer would add seconds
-// to every test for an answer the build already has. What the kit needs here
-// is only executable JS at the path `requirePath` reads.
-//
-// Neither transpiler is a dependency of this package, which has none. They are
-// looked up at call time, and if neither is present the error names both
-// rather than failing later as a missing module inside `requirePath`.
 function compileComponents(
   sdk: string,
   transform?: (src: string, file: string) => string,
@@ -561,8 +340,6 @@ function compileComponents(
     Fs.mkdirSync(Path.dirname(out), { recursive: true })
 
     if (!file.endsWith('.ts')) {
-      // Components read sibling non-TS files (fragments, docs) relative to
-      // their own __dirname, so those have to arrive in dist too.
       Fs.copyFileSync(file, Path.join(outdir, rel))
       continue
     }
@@ -586,7 +363,7 @@ function defaultTransform(): (src: string, file: string) => string {
       filePath: file,
     }).code
   }
-  catch (err) { /* fall through to typescript */ }
+  catch (err) {   }
 
   try {
     tried.push('typescript')
@@ -600,7 +377,7 @@ function defaultTransform(): (src: string, file: string) => string {
       },
     }).outputText
   }
-  catch (err) { /* fall through to the error */ }
+  catch (err) {   }
 
   throw new Error(
     'testkit: no TypeScript transpiler found (looked for: ' +
@@ -614,36 +391,15 @@ type GenerateOptions = {
   // the kit does not choose a model-compilation strategy for a package.
   model: any
 
-  // The Root component. Defaults to one that renders every active target the
-  // way a create-sdkgen consumer's Root does.
   root?: any
 
-  // Placeholder mentions that are NOT leaks, exactly as `parity.test.ts`
-  // keeps its list: a stated policy, not a mute button.
   allowPlaceholder?: (path: string, token: string) => boolean
 
-  // OUT-OF-TREE DESTINATIONS THE CALLER EXPECTS — the `output: path` of every
-  // external target in the model, exactly as the model spells it.
-  //
-  // Needed because a target with `output: path` writes OUTSIDE the consumer
-  // root, and the check below treats a path outside the root as a bug rather
-  // than a result. That check is worth keeping (see it for what it catches),
-  // so the way to express out-of-tree output is to DECLARE the destination
-  // rather than to loosen it: a path under neither the root nor a declared
-  // destination is still a bug and still throws.
-  //
-  // Without this a package shipping an out-of-tree target — which is what
-  // `seneca-provider` is, and the reason it was the first consumer target to
-  // migrate — could not test its defining mode at all.
-  //
-  // A relative destination resolves against the consumer ROOT, which is what
-  // `output: path` itself resolves against: the SDK project, not the CWD.
   outside?: string[]
 }
 
 
 type GenerateResult = {
-  // Every generated path, relative to the consumer root, mapped to content.
   files: Record<string, string>
 
   // Files written OUTSIDE the consumer root, one map per destination declared
@@ -667,7 +423,6 @@ type GenerateResult = {
 async function generateInto(
   consumer: Consumer, opts: GenerateOptions,
 ): Promise<GenerateResult> {
-  // memfs is a devDependency of whoever is testing, not of this package.
   let memfs: any
   try {
     memfs = require('memfs').memfs
@@ -685,17 +440,6 @@ async function generateInto(
     pino: consumer.log,
   })
 
-  // GENERATION RUNS FROM `.sdk`.
-  //
-  // Components copy their template tree with a CWD-RELATIVE path
-  // (`Copy({ from: 'tm/<lang>' })`), because that is how a consumer runs it —
-  // `npm run generate` from the `.sdk` directory. Run it from anywhere else
-  // and the first feature copy fails on a `tm/...` path that does not exist
-  // relative to the caller's cwd, naming the template rather than the reason.
-  //
-  // The chdir is restored even when generation throws, because a test runner
-  // shares one process across suites and a leaked cwd breaks whatever runs
-  // next, somewhere else entirely.
   const prevcwd = process.cwd()
   process.chdir(consumer.sdk)
 
@@ -714,30 +458,8 @@ async function generateInto(
     throw new Error('testkit: generation failed: ' + JSON.stringify(res))
   }
 
-  // KEYS ARE COMPARED AS THE VOLUME SPELLS THEM, NOT AS THE OS DOES.
-  //
-  // memfs is a POSIX volume: it stores `/a/b`, never `C:/a/b`. So a generated
-  // path comes back with its DRIVE LETTER DROPPED, while `consumer.root` — a
-  // real Windows path — still has one. `Path.relative` between the two does
-  // not merely fail; it resolves the drive-less path against the CWD and
-  // returns something confidently wrong (`D:\Users\…` for a root on `C:`).
-  //
-  // `external.test.ts` hit this first and its `norm` is the rule being reused
-  // here: lose the separators AND the drive letter before comparing. Prefix
-  // arithmetic rather than `Path.relative`, because the whole problem is that
-  // these are volume keys and not OS paths.
-  //
-  // On POSIX both transformations are identity, so this changes nothing there.
   const rootkey = volumeKey(consumer.root)
 
-  // The declared out-of-tree destinations, resolved the way `output: path` is
-  // — against the consumer root — and reduced to volume keys so they compare
-  // with generated paths on the same terms as the root does.
-  //
-  // LONGEST KEY FIRST. A destination nested inside another would otherwise be
-  // matched by whichever came first in the array, silently filing its files
-  // under the wrong one; sorting makes the most specific destination win, the
-  // same rule a router uses.
   const declared = (opts.outside ?? [])
     .map((dest) => ({ dest, key: volumeKey(Path.resolve(consumer.root, dest)) }))
     .sort((a, b) => b.key.length - a.key.length)
@@ -773,18 +495,6 @@ async function generateInto(
       continue
     }
 
-    // A KEY OUTSIDE THE ROOT AND EVERY DECLARED DESTINATION IS A BUG HERE,
-    // NOT A RESULT.
-    //
-    // It means the string generation wrote under and the string being stripped
-    // off have diverged, and the caller would otherwise get a file map keyed
-    // by absolute path — which reads as "my component never ran" rather than
-    // as a path problem, and is exactly how this presented on Windows.
-    //
-    // An out-of-tree target is the one legitimate way to be outside the root,
-    // and it is legitimate only because the caller SAID SO: pass its
-    // `output: path` in `outside`. A path under neither still throws, so a
-    // package cannot get here by accident.
     throw new Error(
       'testkit: generated path is not under the consumer root or any ' +
       'declared out-of-tree destination, so the result cannot be keyed.' +
@@ -834,7 +544,6 @@ async function generateInto(
 }
 
 
-// Write to memfs, read through to the real project.
 function layeredFs(mem: any): any {
   const readThrough = (name: string) => (path: any, ...rest: any[]) => {
     const target = mem.existsSync(path) ? mem : Fs
@@ -852,13 +561,6 @@ function layeredFs(mem: any): any {
 }
 
 
-// The Root a create-sdkgen consumer has: per target, a folder holding the
-// entity, feature, main, readme, agentguide and test phases.
-//
-// Deliberately minimal. A package author testing their own target wants to
-// know that THEIR components ran, not to re-test the scaffold's Root — and a
-// kit that shipped an elaborate Root would make its own behaviour part of
-// every package's test result.
 function defaultRoot(): any {
   const { cmp, each, names, Project, Folder } = require('jostraca')
   const { Main, Entity, Feature, Test, Readme, AgentGuide } = require('./sdkgen')
@@ -919,14 +621,6 @@ function defaultRoot(): any {
 }
 
 
-// THE PARITY TIER A PACKAGE DECLARES, from its manifest.
-//
-// `ts/test/parity.test.ts` owns the tier declaration for BUNDLED targets, and
-// §18.4a refused to duplicate that map into the bundled manifest for exactly
-// the reason this function exists to eventually resolve: the manifest should
-// become the source and the parity suite should read it, not the reverse. For
-// an EXTERNAL package there is no such conflict — its manifest is the only
-// place its tier can live, so reading it here is the whole mechanism.
 function manifestParity(pkgRoot: string): Record<string, string> {
   const file = Path.join(pkgRoot, 'sdkgen-package.json')
   if (!Fs.existsSync(file)) return {}

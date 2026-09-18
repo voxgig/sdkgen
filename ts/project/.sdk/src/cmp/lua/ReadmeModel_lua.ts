@@ -13,10 +13,6 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const entityList = each(entity).filter((e: any) => e.active !== false)
 
-  // Model-driven op rows for the shared entity interface: emit a
-  // load/list/create/update/remove row only for operations at least one active
-  // entity actually exposes (a read-only entity has just list+load) — never
-  // document an operation no entity has.
   const opUnion = new Set<string>()
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
@@ -30,9 +26,6 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const opRows = ['load', 'list', 'create', 'update', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
-  // Model-driven Result-shape rows: only describe the operations that
-  // actually exist. Record-returning ops (load/create/update/remove) share
-  // one row; list has its own — never name a missing op.
   const recordOps = ['load', 'create', 'update', 'remove'].filter((o) => opUnion.has(o))
     .map((o) => '`' + o + '`')
   const resultRows: string[] = []
@@ -50,8 +43,6 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const eName = exEnt.Name || 'Entity'
   const eLower = String(exEnt.name || 'entity').toLowerCase()
   const hasLoad = null != (exEnt.op || {}).load
-  // Model-driven id key: null when the example entity has no id-like field, so
-  // the Result-shape load illustration takes no match argument.
   const idF = entityIdField(exEnt)
 
   const apikeyOptionRow = isAuthActive(model)
@@ -136,7 +127,6 @@ Only \`direct()\` returns a response envelope — a \`table\` with \`ok\`,
 
 `)
 
-  // Entities summary
   Content(`### Entities
 
 `)

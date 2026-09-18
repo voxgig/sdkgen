@@ -1,18 +1,3 @@
-// Regressions for the entity-naming contract shared by every language target.
-//
-// Three defects this pins down, all of which produced silently-broken
-// generated source rather than an error:
-//
-//   1. `Name` is derived lazily by jostraca's names(). The class-name and
-//      collision helpers MEMOISE, so one read before derivation cached
-//      `undefinedEntity` / an empty collision list for the whole run.
-//   2. entityClassNames() built its "taken" set from ACTIVE entities only,
-//      while every EntityTypes_<lang> emits data types for ALL entities
-//      (only_active:false) — so an active entity's class could collide with
-//      an inactive entity's emitted data type (a redeclaration in Go).
-//   3. Every Entity_<lang>.ts read `Object.keys(entity.op)` unguarded, so an
-//      op-less entity (the model schema does not require `op`) aborted the
-//      whole generation run for every target.
 
 import { test, describe } from 'node:test'
 import { strictEqual, deepStrictEqual, ok } from 'node:assert'
@@ -154,9 +139,6 @@ describe('entityCollection resolves once, unfiltered', () => {
   }
 
   test('returns a STABLE object so the class-name memo actually hits', () => {
-    // getModelPath rebuilds its container on every call when filtering, which
-    // defeated the WeakMap memo and made class-name assignment quadratic
-    // (~15s at 500 entities x 22 targets).
     const model = makeModel()
     strictEqual(entityCollection(model), entityCollection(model))
   })

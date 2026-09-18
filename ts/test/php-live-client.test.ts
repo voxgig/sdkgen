@@ -5,20 +5,6 @@ import Path from 'node:path'
 import Fs from 'node:fs'
 
 
-// The php entity test builds its LIVE client by merging three option maps and
-// handing the result to the SDK constructor, which takes a non-nullable
-// `array $options = []`.
-//
-// `Vs::merge` answers with a stdClass whenever every contributing entry is an
-// EMPTY map, and `Helpers::to_map` returns null for anything that is not a PHP
-// array — so the constructor received null and every such SDK died with
-// "must be of type array, null given". An SDK with no apikey and no server
-// variables generates an empty middle entry, which makes that the COMMON case:
-// it broke the live php suite for the whole freepublicapis fleet.
-//
-// Offline mode never enters this branch, so the offline suite stayed green and
-// only a live run could surface it. That is exactly why this guard is a source
-// assertion rather than a test that runs php.
 const CMP_PHP = Path.join(__dirname, '..', 'project', '.sdk', 'src', 'cmp', 'php')
 
 

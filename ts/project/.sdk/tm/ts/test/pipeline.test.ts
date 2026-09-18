@@ -1,10 +1,4 @@
 
-// Direct unit tests for the operation-pipeline utilities. The generated
-// entity tests exercise the happy path; these drive the error and edge
-// branches (missing spec/response/result, 4xx handling, transport
-// failures, feature ordering, auth header shaping) that a normal
-// success-path op never reaches. All utilities are reached through
-// `stdutil`, so this suite is API-agnostic.
 
 import { test, describe } from 'node:test'
 import { strictEqual, ok, deepStrictEqual } from 'node:assert'
@@ -325,21 +319,6 @@ describe('pipeline:feature order', () => {
 
 describe('pipeline:prepareAuth', () => {
 
-  // WHERE THE CREDENTIAL GOES IS THE API'S DECISION, NOT THIS TEST'S.
-  //
-  // This file is a verbatim template — the same bytes in every generated SDK
-  // — and its own header claims the suite is API-agnostic. This block was
-  // not: it asserted `spec.headers.authorization`, which is only right when
-  // the spec's chosen security scheme is a header credential.
-  //
-  // Orbit's OpenAPI document lists an `api_key` scheme with `in: query`
-  // first, so the generated prepareAuth writes `spec.query.api_key`. Five
-  // tests then failed in every regeneration, asserting a header the SDK was
-  // never going to set, and the SDK could not go green.
-  //
-  // So the container and the credential name are PROBED from the generated
-  // utility rather than assumed, and the behaviour is asserted against
-  // whatever it reports.
   function authCtx(options: any, spec: any) {
     return base({ client: { options: () => options }, spec })
   }

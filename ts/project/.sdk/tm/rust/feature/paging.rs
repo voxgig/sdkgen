@@ -1,13 +1,3 @@
-// Pagination support for list operations (mirrors go
-// feature/paging_feature.go). On the way out (PreRequest) it stamps
-// page/limit (or a cursor) into the request query; on the way back
-// (PreResult) it reads the server's pagination signals — a `Link:
-// rel="next"` header, `X-Page`/`X-Next-Page`/`X-Total-Count` headers, or
-// `next`/`cursor`/`nextCursor`/`hasMore` fields in the body — and records
-// them on `result.paging`. A per-call cursor/page from ctrl takes priority
-// (used by auto-iteration). Parameter names (`pageParam`, `limitParam`,
-// `cursorParam`), the page size (`limit`) and the start page (`startPage`,
-// default 1) are configurable.
 
 use std::cell::RefCell;
 use std::rc::Rc;

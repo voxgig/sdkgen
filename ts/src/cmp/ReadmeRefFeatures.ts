@@ -4,17 +4,6 @@ import { featureDocs, honoursActivationOrder } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
 
-// The feature reference, appended to every REFERENCE.md.
-//
-// REFERENCE.md is otherwise generated per-language, because the constructor
-// signature, op spelling and code fence differ. Feature CONFIGURATION does
-// not: the option names and defaults are model facts, identical in every
-// target. So this section is written once and appended to all of them, rather
-// than copied into twenty-five ReadmeRef_<lang>.ts files where it would drift.
-//
-// Covers what a reference has to cover and a README does not: every option
-// with its default, what the feature does at runtime, and the considerations
-// — ordering, interaction, and cost — that decide whether to switch it on.
 const ReadmeRefFeatures = cmp(function ReadmeRefFeatures(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
@@ -78,14 +67,6 @@ ${f.title}.
 
 `)
 
-    // THE TABLE IS THE MODEL'S OPTIONS, and the model now carries both
-    // halves of them. It used to carry one: `config.options` is a DEFAULTS
-    // map, so the options with no default — cost's `sink`, audit's `sink`,
-    // every injected clock — could not appear in it, and this table had to
-    // admit it was not exhaustive. `config.optspec` declares those with a
-    // type instead of a default, and they are listed below the defaults.
-    // Same declaration the generated option spec validates against, so a
-    // documented option and a validated option cannot be different sets.
 
 
     if (0 < f.options.length) {

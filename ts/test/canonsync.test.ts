@@ -1,22 +1,3 @@
-// CANON_TYPE <-> @voxgig/apidef sentinel-vocabulary sync check.
-//
-// apidef is the source of truth for the sentinel set; sdkgen's CANON_TYPE is
-// the per-language inverse table, and the two are kept in sync by hand.
-//
-// The cross-check against apidef's exported VALID_CANON/CANON_ONE SKIPS when
-// the installed apidef predates those exports — which is the case today
-// (6.3.1 exports neither), so for a long time this file's guard was inert
-// while canonType.ts claimed "drift fails the suite". Two things follow:
-//
-//   * The vocabulary is now ALSO pinned locally (EXPECTED_SENTINELS below),
-//     so the table is checked on every run whether or not apidef exports
-//     anything. That check is the one that actually runs today.
-//   * Every language column is checked for completeness, so a half-added
-//     language (a row missing an entry) fails instead of silently degrading
-//     that language to "any" at generation time.
-//
-// The apidef cross-check remains as the drift detector for the day apidef
-// ships the exports; it reports its skip loudly rather than silently.
 
 import { test, describe } from 'node:test'
 import { ok, deepStrictEqual } from 'node:assert'
@@ -39,7 +20,6 @@ try {
   apidef = require('@voxgig/apidef')
 }
 catch {
-  // peer dep not installed — skip below
 }
 
 
@@ -69,8 +49,6 @@ describe('CANON_TYPE is internally complete', () => {
   })
 
   test('every row covers every language column', () => {
-    // CANON_ANY enumerates the supported columns; a row missing one silently
-    // degrades that language to "any" in generated typed models.
     const langs = Object.keys(CANON_ANY).sort()
     const gaps: string[] = []
     for (const key of Object.keys(CANON_TYPE)) {
@@ -102,9 +80,6 @@ describe('CANON_TYPE covers the apidef sentinel vocabulary', () => {
 
   test('every VALID_CANON sentinel has a CANON_TYPE row', (t) => {
     if (null == apidef || null == apidef.VALID_CANON) {
-      // NOTE: this is the CURRENT state on a stock install — apidef 6.3.1
-      // does not export VALID_CANON. The local EXPECTED_SENTINELS check
-      // above is what guards the table until it does.
       t.skip('@voxgig/apidef ' + apidefVersion() +
         ' does not export VALID_CANON — local vocabulary check applies instead')
       return
@@ -136,7 +111,6 @@ describe('CANON_TYPE covers the apidef sentinel vocabulary', () => {
     const u = ['`$ONE`', ['`$STRING`', '`$INTEGER`']]
     ok('string | number' === canonToType(u, 'ts'), 'ts union')
     ok('str | int' === canonToType(u, 'py'), 'py union')
-    // A language with no anonymous-union syntax degrades to its "any".
     ok(CANON_ANY.go === canonToType(u, 'go'), 'go degrades to any')
   })
 })

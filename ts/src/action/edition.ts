@@ -1,40 +1,4 @@
 import { kindCollection } from '../helpers/kindCollection'
-// `edition add <ref>` — the third kind. See edition/design/sdkgen-packages.md §20.
-//
-// WHAT A DOCS ITEM IS
-//
-// A generation target whose destination is a DOCUMENTATION SYSTEM rather than
-// a language: a static site, a developer-portal catalogue, a hosted service's
-// config. sdkgen ships the kind and no items; the items live in packages
-// (`@voxgig/docgen` first), which is what makes the destinations someone
-// else's business rather than a list this repo has to guess at.
-//
-// WHY IT IS NOT A TARGET
-//
-// Three reasons, argued in §20.2 and worth restating where the code is:
-//
-//   - a edition item's INPUT is the target collection — a page per SDK, the
-//     package table, per-language tabs — so a edition item inside
-//     `main.kit.target` would enumerate itself;
-//   - `action/feature.ts` fans out with `each(target, …)` and warns
-//     `feature-source-missing` per target with no source, so a edition item in
-//     that collection would collect one warning per feature, forever
-//     (`srcfeature: false` does not help — that flag is read at generate time
-//     and never by the add-time fan-out);
-//   - `ext`, `comment: line` and `module: name` are required, non-defaulted
-//     strings in the target spread, and a site emitting `.md`, `.yml`, `.css`
-//     and `.svg` at once has no honest value for `comment.line`.
-//
-// WHAT THIS ACTION DOES, AND WHAT IT DELIBERATELY DOES NOT
-//
-// It installs the definition — through the shared spine, so provenance,
-// aliasing and the index come along unchanged — and the kind's trees, whose
-// paths come from the registry rather than being spelled here.
-//
-// It does NOT fan out over targets, trim, or prune. A edition item reads the
-// target collection at GENERATE time, not at add time: the opposite direction
-// and the opposite moment from a feature's fan-out, so sharing that machinery
-// would have been a false economy.
 
 import { cmp, each, Copy, Folder, Project } from 'jostraca'
 
@@ -101,7 +65,6 @@ async function cmd_edition_add(
 }
 
 
-// Code API.
 async function edition_add(
   edition: string[], actx: ActionContext,
 ): Promise<ActionResult> {
@@ -115,20 +78,12 @@ async function edition_add(
     log: actx.log.child({ cmp: 'jostraca' }),
     meta: {
       url: actx.url,
-      // Seeded: no project scaffolded before the edition kind existed has a
-      // edition index, and every project alive today is in that position.
       content: loadContent(actx, 'edition', { edition: '# Docs\n' }),
     },
     model: actx.model,
-    // Per-call, never left to the Jostraca instance: `generate` runs its own
-    // options through OptionsShape first, which fills `control.dryrun: false`
-    // and would override the instance flag. The same trap target_add
-    // documents.
     control: {
       dryrun: !!actx.opts.dryrun
     },
-    // Per-call for the same reason, and covering the same accident: see
-    // helpers/junk.
     cmp: copyOpts(),
   }
 
@@ -137,26 +92,11 @@ async function edition_add(
     note: (actx.opts.dryrun ? '** DRY RUN **' : '')
   })
 
-  // PREFLIGHT, before a single file is written.
-  //
-  // The write pass emits the definition and its index entry before it copies
-  // the trees, so a ref whose definition exists but whose required components
-  // do not left the command failed AND the project carrying a edition item with
-  // no implementation — which the next model compile then reads as real.
-  // `package add` already validates a whole package up front for exactly this
-  // reason; a direct `edition add` needs the same guarantee.
   preflight(edition, actx)
 
-  // The project's own model must INCLUDE the edition index, or everything below
-  // is invisible: no project scaffolded before this kind existed includes it,
-  // and `main.kit.edition` would simply be absent from the next compile.
   ensureModelInclude(actx, 'edition')
 
-  // Into the IN-MEMORY model before anything reads it. Nothing recompiles
-  // `model/sdk.aontu` mid-process, so without this a second edition item in the
-  // same command — and anything else later in it — behaves as if the first
-  // was never installed. One definition of what gets recorded, shared with
-  // `target add` and `package add`.
+  // Later items in the command read this in-memory registration.
   registerInstalled('edition', edition, actx)
 
   const jres = await jostraca.generate(opts, () =>
@@ -166,9 +106,6 @@ async function edition_add(
 }
 
 
-// Resolve every ref and check every REQUIRED tree, throwing before anything
-// is written. Resolution itself is the other half: a ref that names no
-// definition fails here rather than partway through the pass.
 function preflight(edition: string[], actx: ActionContext) {
   const fs = actx.fs()
 
@@ -198,9 +135,6 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
   const { log } = ctx$
 
   Project({}, () => {
-    // Every installed name seen so far in this run: the index File is
-    // re-rendered per item and the last render wins, so each render has to
-    // carry all of them.
     const dnames: string[] = []
 
     each(edition, (n: any) => {
@@ -208,9 +142,6 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
 
       log.info({ point: 'edition-build', edition: dref, note: dref })
 
-      // The shared spine: a BARE name resolves against what the model
-      // RECORDS, so a edition item installed from a package resolves back to
-      // that package on its next add rather than to the bundled scaffold.
       const source = resolveKind(dref, 'edition', ctx$)
 
       dnames.push(source.name)
@@ -237,15 +168,6 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
       const from = kindTrees('edition', source.origname)
 
       dest.forEach((tree: TreeDef, i: number) => {
-        // Copy only ADDS and overwrites. A newer version of the package that
-        // RETIRED a template would leave the old one behind, generating from
-        // it forever — the failure `pruneStaleTemplates` exists for, and the
-        // reason 30 repos once carried a superseded harness file.
-        //
-        // Templates only, exactly as `target add` prunes only `tm`: extra
-        // files under a component tree are the project's own (doctor calls
-        // them `additive`, and adding a component is the supported way to
-        // extend an item), so pruning there would delete supported work.
         if ('template' === tree.replace) {
           pruneStaleTemplates(
             ctx$, source.folder + '/' + from[i].path, tree.path, [],
@@ -258,7 +180,6 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
       log.info({ point: 'edition-done', edition: source.name, note: source.name })
     })
 
-    // ONCE, after the loop. See kindIndex.
     if (0 < dnames.length) {
       Folder({ name: 'model/edition' }, () => kindIndex({
         kind: 'edition', names: dnames,
@@ -292,12 +213,6 @@ function copyTree(ctx$: any, source: any, tree: TreeDef, frompath: string) {
     return
   }
 
-  // An ALIASED component tree cannot be copied verbatim: components are
-  // dispatched by the convention `cmp/edition/<n>/Main_<n>`, so files keeping
-  // the origin suffix resolve nothing — `Main_summary.ts` is invisible to a
-  // lookup for `Main_portal`. Same rule as a target's, so the same function
-  // does it; jostraca's tree Copy has no per-entry rename hook, which is why
-  // an aliased tree is emitted file by file.
   if (source.name !== source.origname && 'none' === tree.replace) {
     aliasCmpTree(ctx$, from, tree.path, source.origname, source.name,
       cmpBase())
@@ -307,7 +222,6 @@ function copyTree(ctx$: any, source: any, tree: TreeDef, frompath: string) {
   Folder({ name: tree.path }, () => {
     Copy({
       from,
-      // Shared with doctor, which re-applies them before comparing.
       ...('template' === tree.replace ?
         { replace: templateReplacements(ctx$.model, source.name) } : {}),
     })

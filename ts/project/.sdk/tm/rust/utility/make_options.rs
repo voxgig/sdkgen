@@ -23,17 +23,6 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         }
     }
 
-    // `auth: null` is the documented way to disable auth outright, and
-    // prepare_auth honours it before it ever reads the apikey. It cannot
-    // survive validate: depending on the struct port a stored null is either
-    // REPLACED by the optspec default - transmitting the credential the
-    // caller withheld - or REJECTED outright. Withhold the key for validate,
-    // then put the null back. Same fix as ts/js/go make_options.
-    //
-    // Read the map DIRECTLY rather than through get_prop: get_prop applies
-    // the Group A rule and returns the alt for a stored null, so it cannot
-    // tell an absent auth from a suppressed one - and only the latter is a
-    // suppression.
     let auth_suppressed = match &options {
         Value::Map(m) => matches!(m.borrow().get("auth"), Some(Value::Null)),
         _ => false,
@@ -45,12 +34,6 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         opts = vs::del_prop(opts, &Value::str("auth"));
     }
 
-    // Feature add-order. `options.feature` may be an ordered List of
-    // { name, active, ...opts } entries (the List position IS the order in
-    // which features are added), or a { name: {opts} } map. Normalize a List
-    // to a map (so merge/validate are unchanged) and remember the explicit
-    // order; a map defaults to test-first so the `test` mock transport is
-    // installed as the base of the transport wrapper chain.
     let mut feature_order: Vec<String> = Vec::new();
     if let Value::List(fl) = getp(&opts, "feature") {
         let fmap = Value::empty_map();
@@ -73,17 +56,6 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         _ => Value::empty_map(),
     };
 
-    // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
-    //
-    // Built from the model: `main.kit.optspec` for the standard options, plus
-    // one entry per feature this target carries, from that feature's own
-    // `config.options` / `config.optspec`. Editing this file to add an option
-    // would put it back where it was - one of twenty hand-maintained copies of
-    // a schema nothing cross-checked - so add it to the model instead and
-    // every ported target validates it.
-    //
-    // Parsed once per thread and shared: make_options validates AGAINST the
-    // spec and writes into the options, never into the spec.
     let optspec = crate::core::schema::optspec();
 
     // Preserve system.fetch before merge/validate (validation strips it).
@@ -106,16 +78,6 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         setp(&opts, "auth", Value::Null);
     }
 
-    // Resolve a templated base URL (e.g. https://{tenant_id}.hanko.io).
-    // Every placeholder must resolve to a non-empty value: from options.server
-    // (user), else the Config default. A placeholder that resolves to "" is a
-    // construction ERROR in live mode - the URL cannot work - but in test mode
-    // substitutes the deterministic value "test-<name>" so offline tests need
-    // no configuration. The SDK constructor has no error return, so a missing
-    // required variable PANICS: construction-time misconfiguration.
-    //
-    // Scanned by hand rather than with vs::re_replace, whose replacement is a
-    // fixed string and cannot vary per placeholder.
     if let Value::Str(base) = getp(&opts, "base") {
         if base.contains('{') {
             let testmode = matches!(getpath(&["test", "active"], &opts), Value::Bool(true))
@@ -174,7 +136,6 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         }
     }
 
-    // Restore system.fetch.
     if !sys_fetch.is_noval() {
         let sys = getp(&opts, "system");
         if let Value::Map(_) = sys {
@@ -184,7 +145,6 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         }
     }
 
-    // Derived clean config.
     let clean_keys = match getpath(&["clean", "keys"], &opts) {
         Value::Str(s) => s,
         _ => "key,token,id".to_string(),
@@ -214,12 +174,6 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
             } else {
                 feature_order = names;
             }
-            // Station special case, mirroring test's: its transport wrap must
-            // sit immediately outside the base transport (inside retry/cache/
-            // netsim), so map-form activation hoists it to just after test -
-            // or first, when no test entry exists. Without this the sorted
-            // default would init station last and wrap OUTSIDE the recording
-            // features, turning its wire-truth events into fiction.
             if let Some(si) = feature_order.iter().position(|n| n == "station") {
                 feature_order.remove(si);
                 let at = feature_order

@@ -14,51 +14,17 @@ import {
 import { javaPackage } from './utility_java'
 
 
-// WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API, so it is generated
-// rather than templated.
-//
-// This was a static file in `tm/java/utility/` that hardcoded
-// `authorization` and a header. apidef has always resolved the scheme's
-// `in` and `name` into `main.kit.info.security` — joplin's says
-// `in: "query", name: "token"` — and generation dropped both. The result
-// was an SDK that sent a header the API does not read and never sent the
-// query parameter it does, so it could not authenticate at all. Four
-// repos in the cedar fleet shipped that way: joplin (`token`), pipedrive
-// (`api_token`), trello (`key`), lm-umbrella (`apiKey`).
-//
-// A template cannot fix this, because the three placements need three
-// different bodies and a template has to pick one. A component emits the
-// branch this API actually uses and nothing else — no dead query code in
-// a bearer-token SDK, and no runtime `if` on a value that is fixed at
-// generation time. The ts port (PrepareAuth_ts) is the donor.
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
   const javapackage = javaPackage(model)
 
-  // `!isAuthSuppressed`, NOT `isAuthActive`. The latter is also false when
-  // the SPEC merely declares no security scheme (`main.kit.info.auth:
-  // false`), and those SDKs still carry a credential: optspec always
-  // declares `apikey` and makeOptions fills `options.auth` from its
-  // defaults, so the runtime guard never fired and they have always sent
-  // it. Only an explicit `main.kit.config.auth.active: false` means "no
-  // credential, ever", which is what isAuthSuppressed reads.
   const active = !isAuthSuppressed(model)
   const where = resolveAuthIn(model)
   const name = resolveAuthName(model)
   const basic = isHttpBasicAuth(model)
 
-  // FOLDER NESTING. The java target is FLAT: Main opens no `src` folder at
-  // all, and the blanket `Copy({ from: 'tm/java' })` lands core/, utility/,
-  // feature/ and test/ straight at the target root (pom.xml declares
-  // `sourceDirectory` as the project base and includes `utility/**`). So
-  // `utility` is opened HERE — the same shape EntityBase_java uses for
-  // `entity` — and this component must be called from Main's TOP level,
-  // NOT from inside its `Folder({ name: 'core' })`. Nested there it would
-  // write core/utility/PrepareAuth.java, which javac would compile into
-  // the wrong package while Register.java kept calling the stale
-  // utility/PrepareAuth.java.
   Folder({ name: 'utility' }, () => {
     File({ name: 'PrepareAuth.' + target.ext }, () => {
       Content(render({ javapackage, active, where, name, basic }))
@@ -73,8 +39,6 @@ function render(spec: {
 }): string {
   const jp = spec.javapackage
 
-  // NO AUTH AT ALL. A public API's SDK gets a prepareAuth that is honest
-  // about it rather than one that deletes a header nobody set.
   if (!spec.active) {
     return `package ${jp}.utility;
 
@@ -224,22 +188,6 @@ ${place(spec.where)}
 }
 
 
-// THE CREDENTIAL NAME AS THIS TARGET SPELLS IT.
-//
-// java's header map is a plain case-sensitive LinkedHashMap and the whole
-// generated SDK — Fetcher, SecretsFeature, and the SDK's own PipelineTest —
-// spells the default header `authorization`, exactly as the deleted
-// tm/java/utility/PrepareAuth.java did. Keep that spelling when the model
-// resolves the DEFAULT, so a header-based java SDK behaves byte-for-byte as
-// it did before; a spec that names a header explicitly gets that name
-// verbatim, as do query parameters and cookies.
-// EVERY header name, not just the default. java's map is a case-sensitive
-// LinkedHashMap and the generated SDK spells headers lower-case throughout
-// — Fetcher, SecretsFeature and PipelineTest all do. Special-casing only
-// the literal 'Authorization' left a spec-named header like `X-API-Key`
-// capitalised here while the other nineteen targets lower-cased it, so the
-// same model produced a header java could not find and the rest could.
-// Query parameters and cookies stay verbatim: those ARE case-sensitive.
 function credName(where: string, name: string): string {
   return 'header' === where ? name.toLowerCase() : name
 }
@@ -252,9 +200,6 @@ function clear(where: string): string {
 
 function place(where: string): string {
   if ('query' === where) {
-    // NO PREFIX IN A QUERY STRING. `?token=Bearer%20abc` is not a thing any
-    // API reads; the prefix is a header convention and is dropped here
-    // deliberately rather than silently concatenated.
     return `      String apikeyVal = apikey instanceof String ? (String) apikey : "";
       // NO PREFIX IN A QUERY STRING: ?name=Bearer%20abc is not a thing any
       // API reads, so the auth.prefix option is dropped here deliberately.

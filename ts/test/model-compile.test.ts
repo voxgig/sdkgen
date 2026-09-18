@@ -1,7 +1,5 @@
 /* Copyright (c) 2024-2025 Voxgig Ltd, MIT License */
 
-// Compile the authoritative model in ts/model/ through Aontu and fail if
-// generation reports any errors, before a consumer SDK tries to generate.
 
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
@@ -10,12 +8,6 @@ import { readdirSync, readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSyn
 import Os from 'node:os'
 import Path from 'node:path'
 
-// THE RULES LIVE IN `src`, NOT HERE.
-//
-// This suite enforces them on the BUNDLED scaffold; `package check` enforces
-// the same ones on anybody's package (see packagecheck.test.ts). They were
-// written here first, and a second copy in `src` would have drifted from this
-// one — so there is one copy and two callers.
 import { KINDS } from '../dist/action/kind.js'
 
 import {
@@ -67,19 +59,12 @@ describe('model-compile', () => {
 })
 
 
-// The target models are copied verbatim into a consumer project by the
-// scaffold, so a syntax error in one of them only surfaces when someone runs
-// `voxgig-model` in that project — the model-compile test above covers
-// model/sdkgen.aon alone. Compile every target here. Note aontu accepts `#`
-// comments ONLY: a `//` line is a parse error, and that is exactly how the
-// go/go-cli/go-mcp/java/kotlin/scala/cpp targets shipped broken.
 describe('target-compile', () => {
 
   const targets = readdirSync(TARGET_DIR)
     .filter((f: string) => f.endsWith('.aon'))
     .sort()
 
-  // A miswired path would make the loop below vacuously pass.
   assert.ok(0 < targets.length, `no target models found in ${TARGET_DIR}`)
 
   for (const file of targets) {
@@ -91,14 +76,6 @@ describe('target-compile', () => {
 })
 
 
-// A project OVERRIDES publication values from its own model — `target add <t>`
-// overwrites model/target/<t>.aon, so anything set there is wiped on the
-// next resync, and voxgig-solardemo-sdk lost its pinned npm package name that
-// way. The override only works if the shipped target model leaves those keys
-// UNSET: aontu resolves default-then-concrete to the concrete value, but
-// concrete-then-concrete (and default-then-default) is a CONFLICT that fails
-// the whole model. So the schema holds the default and the target file must
-// not repeat it.
 describe('target-publish-overridable', () => {
 
   const targets = readdirSync(TARGET_DIR)
@@ -107,14 +84,11 @@ describe('target-publish-overridable', () => {
 
   for (const file of targets) {
     const tname = file.replace(/\.aon$/, '')
-    // A hyphenated key has to be quoted in aontu, the way the shipped model
-    // writes it (`main: kit: target: 'go-cli': ...`).
     const tkey = aontuKey(tname)
     const path = Path.join(TARGET_DIR, file)
     const src = readFileSync(path, 'utf8')
 
     test(`target/${file} lets a project override its publish values`, () => {
-      // The same probe `package check` runs on anybody's target model.
       const { model, errors } = compileModel(
         [src, ...PUBLISH_OVERRIDES.map(
           ([k, v]) => `main: kit: target: ${tkey}: ${k}: ${v}`)].join('\n'),
@@ -187,14 +161,6 @@ describe('project-model-syntax', () => {
 })
 
 
-// The consumer targets (go-cli / go-mcp consume the sibling Go SDK; py-data
-// consumes the sibling Python SDK) are not SDKs themselves, so they switch
-// every standard generation phase off and emit only Main (see Root.ts).
-// `agentguide` is one of those phases: if its `active: false` entry is dropped
-// from a target model, the Root's inclusive default silently re-enables it and
-// these targets get a stray AGENTS.md that overwrites the one Main emits.
-// Guard the intent here so a missing phase key fails a test rather than
-// shipping.
 describe('cli-targets-disable-agentguide', () => {
 
   for (const target of ['go-cli', 'go-mcp', 'py-data']) {
@@ -212,18 +178,6 @@ describe('cli-targets-disable-agentguide', () => {
 })
 
 
-// EVERY REGISTERED KIND HAS A SCHEMA SPREAD.
-//
-// The registry and the base schema are edited in different files, and a kind
-// registered without a `main: kit: <kind>: &:` spread fails SILENTLY: aontu
-// accepts unknown keys, so a definition of that kind unifies against nothing,
-// `package check`'s schema step imposes no constraints, and every author-side
-// guarantee for that kind is vacuous. Exactly that happened to `docs` — the
-// spread was lost while synchronising the former duplicate model files,
-// and every test still passed.
-//
-// The probe is a WRONG-TYPED value: a spread that is being enforced rejects
-// it, and one that does not exist accepts it.
 describe('schema covers every core kind', () => {
 
   const KIND_PROBE: Record<string, string> = {

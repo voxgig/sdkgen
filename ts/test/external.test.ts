@@ -1,40 +1,3 @@
-// Generating a target OUTSIDE the SDK repo — `output: path`.
-//
-// WHY THIS NEEDS ITS OWN SUITE
-//
-// Every other target writes into `<sdk-repo>/<target>/`, arranged by the
-// consumer's Root.ts with `Folder({ name: target.name })`. Two things make
-// "somewhere else" a different mechanism rather than a different folder name:
-//
-//   - jostraca REFUSES a `..` segment in a Folder name, deliberately;
-//   - the output root is `folder` on the generate() CALL, not a node in the
-//     tree.
-//
-// So an out-of-tree target gets a SECOND generate() pass at its own root, and
-// the things that can go wrong are structural rather than textual: the target
-// leaking into the in-tree pass as well, the SDK repo's own root files
-// following it out, or per-target components being looked for under the
-// destination (they live in the project, and the pass has just moved what
-// `requirePath` resolves against).
-//
-// And it is the ONE code path that writes outside the repo it was pointed at,
-// at a path taken verbatim from the model, by overwrite — so where a
-// destination is REFUSED matters as much as where it is written. This suite
-// once covered only an absolute path, one target, all of it succeeding; the
-// forms every real project uses (a relative path, more than one target, a
-// dry run) went untested, and so did every guard.
-//
-// THE TARGET HERE IS A VEHICLE, NOT THE SUBJECT. Everything below is about
-// the MECHANISM — placement, partition, resolution, refusal — so the target
-// driving it only has to be one with an `output: path`. It was
-// `seneca-provider` for as long as that was the only such target; that target
-// now lives in packages/sdkgen-seneca-provider and its own suite covers what
-// it EMITS. `go-cli` took its place because the shape is what matters: a
-// consumer target emitting a small package with its own README and manifest
-// and no AGENTS.md, which is what makes "the SDK repo's own root files did
-// not follow it out" a statement about the mechanism rather than about one
-// target's file list. It needs `go` in the model, as every consumer target
-// needs the target it wraps.
 
 import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -48,50 +11,26 @@ import { SdkGen } from '../dist/sdkgen.js'
 import { makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD } from './generateharness'
 
 
-// Somewhere that is emphatically not under STAGE, so "did it land outside?"
-// is unambiguous.
 const OUT = '/elsewhere/acme-cli'
 
-// A second destination, for the multi-target case.
 const OUT2 = '/elsewhere/acme-sdk'
 
-// The form every real project actually declares: relative, resolved against
-// the SDK project rather than the working directory. The suite runs chdir'd
-// to SCAFFOLD (see below), so the two bases give different answers here —
-// which is the point.
 const REL = '../elsewhere/rel-cli'
 
 
-// A path as the in-memory VOLUME spells it. memfs is a POSIX volume: it
-// stores '/a/b', never 'D:/a/b'. So a path built with Path.resolve has to
-// lose its drive letter as well as its separators before it can be compared
-// with a volume key — without which every destination assertion in this file
-// passed on POSIX and failed on Windows, looking for 'D:/a/.../provider'
-// among keys that all began '/a/...'.
-//
-// NOT for comparing against an ERROR MESSAGE: those carry the real resolved
-// path, drive and backslashes included, because that is what an operator has
-// to recognise. Compare messages against the raw Path.resolve value.
 const norm = (path: string) =>
   path.split(Path.sep).join('/').replace(/^[A-Za-z]:/, '')
 
 
 type GenOpts = {
-  // Files already present at the destination before generation.
   seed?: Record<string, string>
   dryrun?: boolean
   extra?: string
-  // Collects the generator's log entries, for the warnings that are the
-  // only externally visible part of a decision.
   sink?: any[]
-  // The generate-time output override, as a build script would pass it.
   external?: Record<string, any>
 }
 
 
-// One generator over one fresh memfs volume. The volume is handed back
-// SEPARATELY from the run, so a test can assert on what was — or was not —
-// written when generation is refused.
 function setup(
   targets: string[], paths: Record<string, string>, opts: GenOpts = {}
 ) {
@@ -131,8 +70,6 @@ function setup(
 }
 
 
-// The files under `folder`, keyed relative to it. Bookkeeping is dropped
-// here: these views answer "what package landed where".
 function under(all: Record<string, string>, folder: string) {
   const out: Record<string, string> = {}
   for (const [path, content] of Object.entries(all)) {
@@ -145,9 +82,6 @@ function under(all: Record<string, string>, folder: string) {
 }
 
 
-// Generate `targets`, with `external` pointed at OUT (or a name -> path map),
-// and split the resulting volume into what landed in the SDK repo and what
-// landed outside it.
 async function generate(
   targets: string[],
   external: string | Record<string, string>,
@@ -167,9 +101,6 @@ async function generate(
 }
 
 
-// Generation must be REFUSED — and refused as an SdkGenError naming both the
-// destination and the SDK project, because the whole point of the guard is
-// that the operator can see which of the two paths is wrong.
 async function refuse(
   targets: string[], paths: Record<string, string>, opts: GenOpts = {}
 ) {
@@ -208,19 +139,15 @@ describe('external target', () => {
   })
 
 
-  // An ABSOLUTE output path, which is the unambiguous case.
   test('its files land at the output path, not in the SDK repo', async () => {
     const { inside, outside } = await generate(['go', 'go-cli'], 'go-cli')
 
     ok(0 < Object.keys(outside).length, 'nothing was written to the output path')
 
-    // The package is written at the ROOT of the destination: the destination
-    // IS the package, so a `go-cli/` subfolder there would be wrong.
     ok(null != outside['go.mod'],
       'no go.mod at the output root — files landed under a subfolder:\n  ' +
       Object.keys(outside).join('\n  '))
 
-    // ...and nothing of it stayed behind.
     const strays = Object.keys(inside).filter((p) => p.startsWith('go-cli/'))
     deepStrictEqual(strays, [],
       'the external target ALSO generated into the SDK repo — the in-tree ' +
@@ -228,14 +155,6 @@ describe('external target', () => {
   })
 
 
-  // The RELATIVE form, which is what every real project declares
-  // (voxgig-solardemo-sdk points its provider at
-  // '../../seneca/solardemo-provider'). It resolves
-  // against the SDK project, NOT the working directory — a generation is run
-  // from the project's `.sdk`, and a model path that moved with the caller's
-  // CWD would put the package somewhere different depending on where the
-  // command was typed. Nothing else in this suite can catch a base swap: an
-  // absolute path resolves the same against either.
   test('a relative output path resolves against the SDK project, not the CWD',
     async () => {
       const gen = setup(['go', 'go-cli'], { 'go-cli': REL })
@@ -271,12 +190,6 @@ describe('external target', () => {
       .filter((p) => !p.includes('/'))
       .sort()
 
-    // Whatever the target itself emits at its root is fine; what must NOT
-    // appear is the SDK's. Both are checked by CONTENT, not by filename: a
-    // target that emits a README of its own — this one does — makes "no
-    // README out there" the wrong assertion, and asserting the filename is
-    // absent would pass for the wrong reason the moment the SDK's README
-    // stopped being called README.md.
     const readme = outside['README.md']
     if (null != readme) {
       ok(!readme.includes('# Demo SDK'),
@@ -286,8 +199,6 @@ describe('external target', () => {
         'the external target got a byte-identical copy of the SDK README')
     }
 
-    // The SDK repo's agent guides are emitted once per repo by the consumer
-    // Root and belong to the repo, not to any target.
     for (const name of ['AGENTS.md', 'CLAUDE.md']) {
       const out = outside[name]
       if (null != out && null != inside[name]) {
@@ -299,8 +210,6 @@ describe('external target', () => {
   })
 
 
-  // The in-tree targets must be untouched by the partition — a bug here would
-  // drop them from the model the consumer Root is handed.
   test('the other targets still generate normally', async () => {
     const { inside } = await generate(['ts', 'go', 'go-cli'], 'go-cli')
 
@@ -311,9 +220,6 @@ describe('external target', () => {
   })
 
 
-  // More than one target out of tree. Each pass is rooted at its own
-  // destination, so nothing of one may appear in the other, and the in-tree
-  // model must lose BOTH.
   test('two external targets each generate into their own repo', async () => {
     const { inside, all } = await generate(['ts', 'go', 'go-cli'],
       { 'go-cli': OUT, go: OUT2 })
@@ -321,11 +227,6 @@ describe('external target', () => {
     const cli = under(all, OUT)
     const sdk = under(all, OUT2)
 
-    // BOTH are Go modules, so `go.mod` cannot tell them apart and the
-    // discriminator is a file only one of them emits: `main.go` from
-    // Main_go-cli, `core/config.go` from the SDK's own components. Picking
-    // the manifest here would assert nothing — each destination would hold
-    // one either way.
     ok(null != cli['main.go'],
       'the cli did not land at its own destination:\n  ' +
       Object.keys(cli).join('\n  '))
@@ -365,8 +266,6 @@ describe('external target', () => {
     })
 
 
-  // An unset path is the ordinary in-tree case. This is the default every
-  // existing target has, so it is the regression that would hurt most.
   test('an unset output path generates in-tree as before', async () => {
     const { fs, vol } = memfs({})
 
@@ -452,10 +351,6 @@ describe('external target', () => {
     })
 
 
-  // `active: false` is the model's off switch. For an in-tree target it only
-  // decides whether a subfolder of the SDK repo is written; for this one it
-  // is the only lever a project has to stop the generator writing into a repo
-  // it does not own. It used to gate nothing at all.
   test('an inactive external target generates nowhere', async () => {
     const { inside, all } = await generate(['go', 'go-cli'],
       'go-cli',
@@ -512,20 +407,8 @@ describe('external target', () => {
   })
 
 
-  // `sdkrelpath` — the walk BACK from the destination to the SDK project,
-  // which a target writes into files such as its README and its live-test
-  // scripts (the companion test server lives in the SDK repo and is not
-  // published). Those files are COMMITTED in the destination repo, so
-  // anything machine-local that gets into this value becomes a tracked diff
-  // on the next developer's machine. That is why the derivation WARNS rather
-  // than quietly emitting a path only this checkout has.
   describe('path back to the SDK project', () => {
 
-    // Derived by inverting the two resolved folders. That is exact only
-    // while the walk back crosses nothing the model names — true of
-    // '../<repo>', false of anything ascending further, where the segments
-    // in between are directories that exist only on this machine
-    // ('../../voxgig-sdk/voxgig-solardemo-sdk', committed).
     test('a derivation that names undeclared directories warns', async () => {
       const sink: any[] = []
       await generate(['go', 'go-cli'], 'go-cli', '', { sink })
@@ -539,8 +422,6 @@ describe('external target', () => {
     })
 
 
-    // ...and the one-level case does NOT warn, or the warning is noise every
-    // ordinary sibling layout emits.
     test('a sibling destination derives cleanly', async () => {
       const sink: any[] = []
       const gen = setup(['go', 'go-cli'], { 'go-cli': REL },
@@ -553,25 +434,6 @@ describe('external target', () => {
     })
 
 
-    // A declared value takes over from the derivation: the project states
-    // the layout instead of the filesystem implying it, so the generator
-    // stops deriving and stops warning.
-    //
-    // SPLIT AT THE SEAM, DELIBERATELY. This used to also assert that the
-    // declared string reached generated CONTENT. It cannot here, and the
-    // reason is worth stating rather than working around: the core's job
-    // ends at handing `ctx$.sdkrelpath` to the pass, and reading it is a
-    // COMPONENT's job. The only component that ever did was
-    // Main_seneca-provider, which now lives in
-    // packages/sdkgen-seneca-provider — and its suite asserts the content
-    // half, against the component that consumes the value. Substituting a
-    // target that ignores `sdkrelpath` would have left an assertion that
-    // passes without testing anything.
-    //
-    // What stays here is the whole of `externalSdkRel`'s decision surface,
-    // which is observable in the log without any target's cooperation:
-    // derive-and-warn (above), derive-cleanly (above), and declared-so-do-
-    // neither (here).
     test('a declared `output: sdkrel` replaces the derivation', async () => {
       const sink: any[] = []
       const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
@@ -651,8 +513,6 @@ describe('external target', () => {
       })
 
 
-    // Two targets, one folder: the second pass overwrites the first, in
-    // target-name order, and the operator sees two "generated ok" lines.
     test('two targets claiming the same folder are refused', async () => {
       const { msg } = await refuse(['ts', 'go', 'go-cli'],
         { 'go-cli': OUT, go: OUT })
@@ -699,8 +559,6 @@ describe('external target', () => {
       })
 
 
-    // ...and the escape hatch, which is a model DECLARATION rather than a
-    // flag on the command line: the destination is a property of the project.
     test('`output: adopt` writes into a destination holding other content',
       async () => {
         const { outside } = await generate(['go', 'go-cli'],
@@ -733,8 +591,6 @@ describe('external target', () => {
       })
 
 
-    // A freshly created repo holds only `.git`, and that is precisely the
-    // destination a FIRST generation is aimed at.
     test('an empty destination is accepted', async () => {
       const { outside } = await generate(['go', 'go-cli'],
         'go-cli', '',
@@ -746,11 +602,6 @@ describe('external target', () => {
 
   })
 
-  // GENERATE-TIME OUTPUT OVERRIDE — see SdkGenOptions.external.
-  //
-  // `output: path` is committed and describes ONE developer's checkout
-  // layout. A second layout is a different INVOCATION of the same model, not
-  // a second truth to commit, so it arrives at generate time.
   describe('output overridden at generate time', () => {
 
     test('the override decides the destination, not the model', async () => {
@@ -766,14 +617,6 @@ describe('external target', () => {
     })
 
 
-    // ASSERTED ON THE MODEL OBJECT ITSELF, not by generating twice: setup()
-    // builds a fresh model per call, so a second run could never see a
-    // write-back and the test would pass however the override was applied.
-    //
-    // It matters because the model is the in-tree pass's input too, and
-    // `target add` round-trips it back to disk — an override that wrote into
-    // it would move the item for everything downstream of this run, and then
-    // commit the move.
     test('the override does not write back into the model', async () => {
       const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
         { external: { 'go-cli': { path: OUT2, sdkrel: '.sdksrc/x' } } })
@@ -788,9 +631,6 @@ describe('external target', () => {
     })
 
 
-    // The case this exists for: the SDK is checked out INSIDE the repo it
-    // generates, and regenerates it from there. `output: path` then resolves
-    // to an ancestor of the project.
     test('`enclosing` permits writing into a folder that holds the project',
       async () => {
         const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
@@ -807,8 +647,6 @@ describe('external target', () => {
       })
 
 
-    // Generation writes what its components declare and prunes nothing, so
-    // the checkout driving the run survives being inside its own output.
     test('an enclosing run does not remove the project it generates from',
       async () => {
         const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
@@ -820,16 +658,6 @@ describe('external target', () => {
       })
 
 
-    // The derived walk back DESCENDS here — it names the subfolder holding
-    // the checkout, both segments inside the output folder and both chosen
-    // by whoever asked for this layout. The undeclared-directories warning
-    // would be false, and its advice would put one layout's path into the
-    // other's committed model.
-    // TWO LEVELS UP, deliberately. The warning fires only when the derived
-    // walk back names MORE than one directory, so an enclosing layout one
-    // level up cannot exercise the suppression at all — and a test using it
-    // passes whether the suppression is there or not. This mirrors the real
-    // shape: `<repo>/<subfolder>/<sdk-checkout>` derives two segments.
     test('an enclosing layout does not warn about the derived path back',
       async () => {
         const sink: any[] = []
@@ -843,10 +671,6 @@ describe('external target', () => {
       })
 
 
-    // Asserted through the log rather than through emitted text, for the
-    // reason the declared-sdkrel test above gives: whether a target prints
-    // the path back is that target's business, and the DECISION is what this
-    // is about. A declared path back is neither derived nor warned about.
     test('the override can set the path back to the SDK project', async () => {
       const sink: any[] = []
       const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },
@@ -859,8 +683,6 @@ describe('external target', () => {
     })
 
 
-    // SDKGEN_EXTERNAL exists for driving a checkout the caller does NOT own,
-    // where editing the build script would mean patching someone else's repo.
     describe('SDKGEN_EXTERNAL', () => {
 
       let saved: string | undefined
@@ -894,8 +716,6 @@ describe('external target', () => {
       })
 
 
-      // Writing outside the repo at a path from an environment variable is
-      // the one thing here that must never happen quietly.
       test('the override is logged', async () => {
         process.env.SDKGEN_EXTERNAL = JSON.stringify({ 'go-cli': { path: OUT2 } })
 

@@ -16,30 +16,6 @@ import {
 } from '@voxgig/apidef'
 
 
-// WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API, so it is generated
-// rather than templated.
-//
-// This was a static file at `tm/csharp/utility/PrepareAuth.cs` that
-// hardcoded `authorization` and a header. apidef has always resolved the
-// scheme's `in` and `name` into `main.kit.info.security` - joplin's says
-// `in: "query", name: "token"` - and generation dropped both. The result
-// was an SDK that sent a header the API does not read and never sent the
-// query parameter it does, so it could not authenticate at all. Four
-// repos in the cedar fleet shipped that way: joplin (`token`), pipedrive
-// (`api_token`), trello (`key`), lm-umbrella (`apiKey`).
-//
-// A template cannot fix this, because the three placements need three
-// different bodies and a template has to pick one. A component emits the
-// branch this API actually uses and nothing else - no dead query code in
-// a bearer-token SDK, and no runtime `if` on a value that is fixed at
-// generation time.
-//
-// This is the csharp port of PrepareAuth_ts, and it keeps the C# file's
-// own idioms (lazy prefix read, `TryGetValue` for a suppressed auth
-// block, `Remove` rather than a struct delprop): the credential MOVES,
-// nothing else changes. For the default header placement the rendered
-// file is BYTE-IDENTICAL to the template it replaces, so every
-// header-based csharp SDK regenerates with no diff at all.
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -49,19 +25,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const name = resolveAuthName(model)
   const basic = isHttpBasicAuth(model)
 
-  // `utility`, opened HERE, and the call site in Main_csharp is at the
-  // ROOT - deliberately outside `Folder({ name: 'core' })`.
-  //
-  // csharp's layout is not ts's. Main_csharp copies `tm/csharp` at the
-  // root, so the template this replaces landed at `<out>/utility/
-  // PrepareAuth.cs`, beside MakeSpec.cs and Register.cs - which is the
-  // one path that compiles, since Register.cs wires `u.PrepareAuth =
-  // PrepareAuthUtil` from the same `partial class SdkUtility`. The
-  // generated files (Config, SdkError, EntityBase, EntityTypes) sit one
-  // level down in `core/` because Main opens that Folder around them; a
-  // call from inside it would write `core/utility/PrepareAuth.cs`, which
-  // nothing compiles into the utility partial and which would leave the
-  // stale copy at `utility/` being used instead.
   Folder({ name: 'utility' }, () => {
     File({ name: 'PrepareAuth.' + target.ext }, () => {
       Content(render({
@@ -76,30 +39,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
 })
 
 
-// DELIBERATELY NARROWER THAN isAuthActive, and measured rather than assumed.
-//
-// isAuthActive answers TWO different questions with one boolean:
-//
-//   1. `main.kit.config.auth.active: false` - this SDK is deliberately
-//      built WITHOUT auth. A per-SDK decision.
-//   2. `main.kit.info.auth: false`          - the SPEC declares no security
-//      scheme. A fact about the API.
-//
-// Only (1) may silence prepareAuth. (2) says nothing about whether the
-// CALLER holds a credential, and csharp has always let one through: the
-// optspec in tm/csharp/utility/MakeOptions.cs supplies an `auth` default
-// map whether or not the generated config carries one, so `options.auth` is
-// non-null at runtime and the old template placed `options.apikey` in the
-// authorization header regardless of what the spec declared. The generated
-// secrets feature and the auth-null probe both depend on exactly that.
-//
-// Gating the no-op on isAuthActive instead turns two csharp tests red -
-// `csharp: auth null beats an explicit apikey` ("baseline broken: an
-// ordinary apikey was not sent") and `csharp: the secrets feature runs with
-// the feature active` - because the generate harness model IS case (2)
-// (`main: kit: info: { ..., auth: false }`). Losing the ability to
-// authenticate is the defect this whole change exists to fix, so it is not
-// worth re-introducing at the other end.
 function authSwitchedOff(model: any): boolean {
   const auth = getModelPath(model, `main.${KIT}.config.auth`,
     { only_active: false, required: false })
@@ -112,9 +51,6 @@ function render(spec: {
 }): string {
   const Name = spec.Name
 
-  // AUTH SWITCHED OFF FOR THIS SDK (`config.auth.active: false`). The
-  // project has said it wants no credential placed, so prepareAuth places
-  // none - rather than one that deletes a header nobody set.
   if (!spec.active) {
     return `// ${Name} SDK utility: prepareAuth - this SDK is built with auth
 // switched off, so there is no credential to place.
@@ -142,22 +78,10 @@ public static partial class SdkUtility
     return renderCookie(Name, csstr(spec.name))
   }
 
-  // HEADER NAMES ARE LOWERCASED, and the rest of the generated C# is why.
-  // `spec.Headers` is a plain Dictionary<string, object?> - case-SENSITIVE -
-  // and every other writer of an auth header in this target spells it
-  // lowercase: SecretsFeature re-writes `headers["authorization"]` on a
-  // refresh, MakeSpec sets `headers["content-type"]`, and the generated
-  // tests assert `Headers["authorization"]`. An `Authorization` key here
-  // would sit BESIDE those rather than replace them and go out as a second
-  // header. Header names are case-insensitive on the wire (RFC 7230) and
-  // lowercase on HTTP/2, so nothing is lost. Query parameter and cookie
-  // names, which ARE case-sensitive, are emitted verbatim above.
   return renderHeader(Name, csstr(String(spec.name).toLowerCase()), spec.basic)
 }
 
 
-// HEADER. Byte-identical to the template it replaces whenever the resolved
-// name is the default (`authorization`) and the scheme is not HTTP Basic.
 function renderHeader(Name: string, cred: string, basic: boolean): string {
   // HTTP Basic is header-only by definition: the scheme is
   // `Authorization: Basic base64(user:pass)`. It cannot be expressed as a
@@ -320,9 +244,6 @@ public static partial class SdkUtility
 }
 
 
-// COOKIE. A cookie IS a header, so the credential rides in the shared
-// `cookie` header - APPENDED to whatever options.headers (or an earlier
-// feature) already put there, never assigned over it.
 function renderCookie(Name: string, cred: string): string {
   return `// ${Name} SDK utility: prepareAuth - carry the API credential in the
 // ${cred} cookie, from the client options.
@@ -380,8 +301,6 @@ public static partial class SdkUtility
 }
 
 
-// A C# double-quoted string literal body. These names come from the API's
-// own securityScheme, so they are not guaranteed to be bare identifiers.
 function csstr(s: string): string {
   return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
 }

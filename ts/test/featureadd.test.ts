@@ -1,22 +1,3 @@
-// `feature add <name>` — the per-target source fan-out.
-//
-// WHAT WENT WRONG
-//
-// The fan-out copied a feature's per-target source with NO replace map, while
-// `target add` copies the same target's `tm/<t>` tree WITH
-// `templateReplacements`. So a feature source file carrying `ProjectName`
-// arrived substituted or raw depending only on which action wrote it last:
-//
-//   target add ts   -> tm/ts/src/feature/log/LogFeature.ts   (substituted)
-//   feature add log -> tm/ts/src/feature/log/LogFeature.ts   (RAW, overwrites)
-//
-// leaving `import type { ProjectNameSDK } from '../../ProjectNameSDK'` in a
-// project whose SDK class is `DemoSDK` — a file that cannot compile, from a
-// placeholder the toolchain is supposed to have consumed.
-//
-// This is the exact writer/writer disagreement `helpers/stdrep.ts` exists to
-// prevent ("ONE definition, because two consumers must agree exactly"); the
-// fan-out was the one writer that did not share the map.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -61,7 +42,6 @@ function externalFeaturePackage(name: string): string {
 }
 
 
-// A ts feature whose source names the SDK class, so substitution is visible.
 const FEATURE = 'log'
 const SOURCE = 'tm/ts/src/feature/log/LogFeature.ts'
 
@@ -95,8 +75,6 @@ describe('feature add fan-out', () => {
 
 
   test('the fan-out agrees with what target add wrote', async () => {
-    // The real invariant: whichever action writes the file last, the bytes
-    // are the same. Previously the second writer undid the first.
     const first = makeProject({
       target: { ts: { name: 'ts' } },
       feature: { [FEATURE]: { name: FEATURE, active: true } },
@@ -178,8 +156,6 @@ describe('feature add from an external package', () => {
       ok(index.includes('@"./circuitbreaker.aon"'),
         'index does not name the installed feature: ' + JSON.stringify(index))
 
-      // The `./` is part of the INCLUDE, not the file name — strip it
-      // before resolving the entry to a file on disk.
       for (const m of index.matchAll(/@"(?:\.\/)?([^"]+)"/g)) {
         ok(project.files().includes('model/feature/' + m[1]),
           'feature-index.aon includes ' + m[1] + ', which was never written')

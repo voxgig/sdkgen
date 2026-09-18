@@ -56,7 +56,6 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
     const fields = entity.fields || []
-    // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
     // Sanitise the local variable name — a camelCased C# keyword gets a
     // trailing underscore (csVarName) so the snippet compiles.

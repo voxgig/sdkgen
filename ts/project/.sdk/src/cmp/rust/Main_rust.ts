@@ -45,8 +45,6 @@ const Main = cmp(async function Main(props: any) {
   // helpers/applicability.
   const feature = targetFeatures(model, target)
 
-  // The rust crate identifier (RUSTCRATE placeholder), e.g. solar_sdk —
-  // used in every `use <crate>::...` path in the test templates.
   const rustcrate = crateIdent(model)
 
   Package({ target })
@@ -69,23 +67,8 @@ const Main = cmp(async function Main(props: any) {
     }
   })
 
-  // utility/prepare_auth.rs is GENERATED, not templated: where the
-  // credential goes (header / query / cookie, and under what name) is a
-  // fact about the API, and tm/ can only hold one answer. See
-  // PrepareAuth_rust.
-  //
-  // AT ROOT LEVEL, and outside the `core` Folder below. The rust crate root
-  // IS the target root - lib.rs, core/, feature/ and utility/ all sit there
-  // - the component opens `utility` itself, and that is the same path
-  // `Copy({from:'tm/rust'})` used for the template it replaces. Calling it
-  // beside Config, inside `Folder({name:'core'})`, would emit
-  // core/utility/prepare_auth.rs instead: a file no module declares, so
-  // rustc never compiles it, while utility/mod.rs's `pub mod prepare_auth;`
-  // keeps binding whatever utility/ actually holds.
   PrepareAuth({ target })
 
-  // Generated core files: the client (sdk.rs), the API config and the
-  // branded error type.
   Folder({ name: 'core' }, () => {
 
     File({ name: 'sdk.' + target.ext }, () => {
@@ -98,7 +81,6 @@ const Main = cmp(async function Main(props: any) {
           }
         },
 
-        // Entity accessors - injected at SLOT
         () => {
           each(entity, (entity: ModelEntity) => {
             const entitySDK = getModelPath(model, `main.${KIT}.entity.${entity.name}`)
@@ -115,12 +97,6 @@ const Main = cmp(async function Main(props: any) {
     SdkError({ target })
   })
 
-  // feature/mod.rs — the feature module index.
-  //
-  // GENERATED, not templated: rust needs every module declared, and
-  // `target add` only copies source for the features the model selects. A
-  // static index listing all eighteen shipped features stops the crate from
-  // compiling the moment the set is trimmed.
   Folder({ name: 'feature' }, () => {
     File({ name: 'mod.' + target.ext }, () => {
       Content(`// ${model.const.Name} SDK feature modules (mirrors tm/go/feature).
@@ -134,29 +110,7 @@ pub mod base;
       each(feature, (feat: any) => Content(`pub mod ${feat.name};\n`))
     })
 
-    // feature/<name>/plugins.rs - a feature's PLUGIN module index.
-    //
-    // GENERATED, and it has no go/py analogue: rust compiles only the
-    // modules a parent DECLARES, and the declared set varies with the
-    // plugin trim, so a static index would either name a file the trim
-    // just deleted or leave an active kind out of the build.
-    //
-    // It sits one level ABOVE the vendored `plugins/` directory on
-    // purpose: the vendoring guard fails any non-vendored file inside a
-    // vendor dir. Nothing is lost by that - an .rs file no module
-    // declares is not compiled at all, so an inactive group's vendored
-    // file left on disk is inert whether or not the trim reached it.
-    //
-    // This is rust's replacement for go's core-emitted FeaturePlugins map
-    // (Config_go), and it is better placed: core/config.rs never has to
-    // name a feature's types.
     each(feature, (feat: any) => {
-      // `only_active: false`, the same subtlety pluginExcludesFor
-      // documents: the feature object a component is handed has already
-      // been filtered, so a feature whose plugins are ALL inactive would
-      // arrive with nothing here and the index would not be emitted at
-      // all - leaving `pub mod plugins;` in the feature source pointing
-      // at a file that does not exist.
       const declared = getModelPath(model,
         `main.${KIT}.feature.${feat.name}.plugin`,
         { required: false, only_active: false }) || {}
@@ -175,18 +129,11 @@ pub mod base;
         if (true !== plugin.active) return
 
         for (const [sym, one] of Object.entries(plugin.def?.rust || {})) {
-          // 'feature/secrets/plugins/aws.rs' -> the module `aws`.
           mods.add(String(one).replace(/^.*\//, '').replace(/\.rs$/, ''))
           syms.add(sym)
         }
       })
 
-      // The shared HTTP client the vendored vault kinds import
-      // (`use super::httpjson::...`) belongs to NO plugin group - trimming
-      // it with any one group would delete a file the others compile
-      // against - so it ships with the feature core and is DECLARED here
-      // only when something reaches for it. That is what keeps rustls out
-      // of a chain that is [dotenv, env] or [secretspec].
       const NOHTTP = ['secretspec']
       const http = Array.from(mods).some((m: string) => !NOHTTP.includes(m))
 
@@ -228,15 +175,10 @@ pub fn definitions() -> Vec<Definition> {
     })
   })
 
-  // entity/mod.rs — the entity module index.
   EntityBase({ target })
 
-  // entity/types.rs — the documentary typed models (one struct per entity +
-  // per op). Declared as a module by EntityBase so it compiles with the crate.
   EntityTypes({ target })
 
-  // lib.rs — the crate root: module declarations plus the public API
-  // re-exports (twin of the go root package file).
   File({ name: 'lib.' + target.ext }, () => {
     Content(`// ${model.const.Name} SDK for Rust (generated by @voxgig/sdkgen).
 //

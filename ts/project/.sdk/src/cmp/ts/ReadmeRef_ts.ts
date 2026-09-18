@@ -10,11 +10,6 @@ import {
 import { exampleValue } from './utility_ts'
 
 
-// A `list()` on a NESTED entity needs its parent path params. The
-// quickstart used to emit `client.Moon().list()` for an entity at
-// `/planet/{planet_id}/moon`, which 404s against a live server from a
-// half-built URL — indistinguishable from "no such record". The model
-// already marks those params `reqd: true`; matchArg renders exactly them.
 function listMatchArg(ent: any): string {
   const idF = entityIdField(ent)
   return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
@@ -55,12 +50,6 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  // GATED BY THE TARGET, not the raw active-feature map. A feature applies
-  // where its `needs` are a subset of the target's `provides`, and the code
-  // path has always honoured that - Config and Main take targetFeatures. The
-  // REFERENCE did not, so every target's README advertised `secrets` whether
-  // or not that target's container carries a vendored sekreto, and a reader
-  // who set the option got nothing back.
   const feature = targetFeatures(model, target)
 
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
@@ -202,7 +191,6 @@ Alias for \`${model.Name}SDK.test()\`.
       // Model-driven id key: null when this entity has no id-like field, in
       // which case load/remove match on no argument and update omits the id.
       const idF = entityIdField(ent)
-      // Variable-safe lowercase name (a `Delete` entity must not bind `delete`).
       const eVar = exampleVarName(ent.name, target.name)
 
       Content(`
@@ -272,15 +260,6 @@ const ${eVar} = client.${ent.Name}()
       }
 
 
-      // Custom actions.
-      //
-      // A POST route like `/api/planet/{id}/terraform` is folded into the
-      // `create` op as an alternative point, selected at call time by
-      // `$action`. The mechanism was implemented and documented NOWHERE — so
-      // for an API with two such routes, two of its six endpoints were
-      // unreachable by anyone reading the docs. A user who wanted `terraform`
-      // had to fall back to `direct()` and rebuild the URL by hand, which is
-      // exactly what the entity model exists to spare them.
       const actions = entityActions(ent)
       if (0 < actions.length) {
         Content(`### Actions
@@ -461,9 +440,6 @@ const client = new ${model.Name}SDK({
 \`\`\`
 
 `)
-      // The shared feature reference: options, defaults, usage and the
-      // considerations. Model facts, identical in every target, so they are
-      // written once in cmp/ReadmeRefFeatures.ts rather than here.
       ReadmeRefFeatures({ target })
     }
 

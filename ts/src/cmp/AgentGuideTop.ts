@@ -15,10 +15,6 @@ import {
 } from './AgentGuideContent'
 
 
-// Top-level agent guide for a generated SDK project. Emitted once at the
-// project root (no enclosing Folder), alongside README.md/Makefile. Teaches a
-// coding agent how to operate the whole project: regenerate, add features,
-// customise the model/templates, and read the aontu model language.
 const AgentGuideTop = cmp(function AgentGuideTop(props: any) {
   const { ctx$ } = props
   const { model } = ctx$
@@ -47,7 +43,6 @@ There are companion guides deeper in the tree: one per language
 
 `)
 
-    // Targets
     if (0 < targets.length) {
       Content(`**Targets** (${targets.length}):
 
@@ -63,7 +58,6 @@ There are companion guides deeper in the tree: one per language
 `)
     }
 
-    // Features
     if (0 < features.length) {
       Content(`**Features** (${features.length}): `)
       Content(features.map((f: any) => `\`${f.name}\``).join(', ') + `.
@@ -75,7 +69,6 @@ package (other languages). Each target's guide documents its features.
 `)
     }
 
-    // Entities
     if (0 < entities.length) {
       Content(`**Entities** (${entities.length}): `)
       Content(entities.map((e: any) => `\`${e.Name || e.name}\``).join(', ') + `.

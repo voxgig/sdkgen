@@ -7,44 +7,15 @@ import Fs from 'node:fs'
 import { isRbCoreConstant, isRbSdkConstant } from '../dist/sdkgen.js'
 
 
-// RB_SDK_CONSTANTS (helpers/naming.ts) must list every UNPREFIXED top-level
-// constant the rb target declares, because Ruby has one constant namespace and
-// reassigning a constant is not an error — it silently replaces it, with a
-// warning nobody reads.
-//
-// The reported case: an entity named `Runner` emits `class Runner` in
-// `<Sdk>_types.rb`, and `tm/rb/test/runner.rb` then does
-// `Runner = ProjectNameTestRunner`. Inside the test process the entity type IS
-// the test runner from that point on. `rb` stayed green because nothing in the
-// suite touches the type (issue #64).
-//
-// This is the SECOND half of "already taken". `RB_CORE_CONSTANTS` covers what
-// the LANGUAGE owns; this covers what OUR OWN generated scaffolding claims,
-// which is the half a language-keyword list can never catch.
-//
-// A hand-maintained list silently rots — the swift equivalent already proved
-// that, missing three names on its first cut, one of them declared by a
-// component rather than a template. So this re-derives from both sources and
-// fails on drift.
 
 const SCAFFOLD = Path.join(__dirname, '..', 'project', '.sdk')
 const TM_RB = Path.join(SCAFFOLD, 'tm', 'rb')
 const CMP_RB = Path.join(SCAFFOLD, 'src', 'cmp', 'rb')
 
 
-// A top-level Ruby declaration: `class Foo`, `module Foo`, or a constant
-// assignment `FOO = ...`, all at column 0.
-//
-// Column 0 is the whole test. An indented `class` is nested inside a module
-// and namespaced by it; only a declaration at the left margin lands in the
-// global namespace where an entity type could meet it.
 const DECL = /^(?:class|module) ([A-Z][A-Za-z0-9_]*)|^([A-Z][A-Za-z0-9_]*) *=/gm
 
 
-// `ProjectName` substitutes to the SDK's own name, so `ProjectNameUtility`
-// becomes `<Sdk>Utility` — which a bare entity type name cannot equal. Only
-// the unprefixed declarations are reachable, and listing the prefixed ones
-// would bloat the guard with names that can never collide.
 const PLACEHOLDER = /^ProjectName/
 
 
@@ -107,8 +78,6 @@ describe('rb SDK constant guard', () => {
 
 
   test('the guard covers the reported collision', () => {
-    // `Runner` is the one that surfaced this (gitlab-sdk), and its two
-    // neighbours in the same harness alias block are equally exposed.
     deepStrictEqual(
       ['Runner', 'Helpers', 'Vs'].filter((n) => !isRbSdkConstant(n)),
       [])
@@ -116,8 +85,6 @@ describe('rb SDK constant guard', () => {
 
 
   test('it does not claim names that are merely prefixed', () => {
-    // `ProjectNameUtility` -> `<Sdk>Utility`, which no bare entity type can
-    // equal. Guarding it would rename entities that never collided.
     deepStrictEqual(
       ['Utility', 'Context', 'Response', 'Result', 'Operation', 'Spec']
         .filter((n) => isRbSdkConstant(n)),
