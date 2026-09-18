@@ -755,7 +755,7 @@ src/cmp/js/Entity_js.ts 9993def32681
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
 src/cmp/js/Main_js.ts 62fbe68dd405
-src/cmp/js/Package_js.ts 0861a0722f48
+src/cmp/js/Package_js.ts 2e03f876d5ba
 src/cmp/js/PrepareAuth_js.ts ba748bd7f9db
 src/cmp/js/ReadmeEntity_js.ts ae43abf1da32
 src/cmp/js/ReadmeExplanation_js.ts e35423942ff1
@@ -771,9 +771,9 @@ src/cmp/js/ReadmeTopQuick_js.ts 279f98ea3310
 src/cmp/js/ReadmeTopTest_js.ts 1fa9a087871f
 src/cmp/js/Schema_js.ts fa9945d3d937
 src/cmp/js/SdkError_js.ts c3c526f2b624
-src/cmp/js/TestDirect_js.ts 6f2ac8d4a01f
-src/cmp/js/TestEntity_js.ts 99d46961f879
-src/cmp/js/TestLive_js.ts 676397ca4d84
+src/cmp/js/TestDirect_js.ts 0b13e291b138
+src/cmp/js/TestEntity_js.ts 15a0f68e6e81
+src/cmp/js/TestLive_js.ts efbad3d896aa
 src/cmp/js/TestMain_js.ts 8b45d4d8db1a
 src/cmp/js/Test_js.ts f0355b263a10
 src/cmp/js/fragment/Config.data.fragment.js 6fa799d1949c

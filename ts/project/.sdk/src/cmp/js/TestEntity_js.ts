@@ -34,7 +34,8 @@ import {
   serverVariables,
   entityDataIdField, envName, envToken,
   jsKey,
-  jsProp
+  jsProp,
+  hasLiveScenarios,
 } from '@voxgig/sdkgen'
 
 
@@ -208,7 +209,7 @@ function basicSetup(extra) {
           )
 
           Content(`
-    ${Object.values(model.main.kit.entity || {}).some((e: any) => Object.values(e.op || {}).some((o: any) => (o.points || []).some((p: any) => p.contract && JSON.parse(p.contract.json).live))) ? `if (process.env.${PROJENVNAME}_TEST_LIVE === 'TRUE') { t.skip('Covered by live operation scenarios'); return }` : ''}
+    ${hasLiveScenarios(model) ? `if (process.env.${PROJENVNAME}_TEST_LIVE === 'TRUE') { t.skip('Covered by live operation scenarios'); return }` : ''}
     const setup = basicSetup()
     if (setup.live) {
       return runLiveEntity(setup, ${JSON.stringify(entity)}, ${JSON.stringify(basicflow)}, '${nom(entity, 'Name')}')
