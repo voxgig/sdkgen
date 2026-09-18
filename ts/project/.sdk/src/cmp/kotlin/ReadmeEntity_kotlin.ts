@@ -11,7 +11,6 @@ import { kotlinVarName } from './utility_kotlin'
 
 // Type names come from the shared canonToType 'kotlin' column (single source of truth).
 
-// A type-correct Kotlin literal for a field's canonical type.
 function kotlinLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
   if ('INTEGER' === k) return '1L'

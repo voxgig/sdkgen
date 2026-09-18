@@ -13,12 +13,6 @@ main: kit: target: rust: {
   # a feature that resolves secrets through sekreto can apply here.
   provides: { sekreto: true, schema: true }
 
-  # Files earlier toolchains generated that this target has RETIRED
-  # (vendor-tag rollout): the hand-written struct corpus runner, superseded
-  # by the vendored @voxgig/omni engine driven through
-  # tests/omni_resolver/mod.rs. `doctor` reports leftovers; `doctor prune`
-  # deletes them. (tests/common/mod.rs is NOT listed: it kept its name and
-  # its support half, and only the corpus engine inside it was retired.)
   superseded: [
     'tests/struct_runner/mod.rs'
   ]
@@ -27,8 +21,6 @@ main: kit: target: rust: {
     kind: *'prod' | string
   }
 
-  # struct is vendored under utility/voxgigstruct — no external dep.
-  # ureq is the blocking HTTP transport (the whole pipeline is synchronous).
   deps: {
     'ureq': { active: true, version: '2', kind: prod }
   }
@@ -40,23 +32,6 @@ main: kit: feature: &: target: rust: deps: &: {
 }
 
 
-# Publication: crates.io registry (declared, publish pending — git-tag only).
-#
-# `target add <t>` OVERWRITES this file, so a project must never set its
-# publication values here — voxgig-solardemo-sdk lost its pinned npm package
-# name exactly that way. Set them in the project's own overlay
-# (`model/project.aon`), which create-sdkgen creates once and never
-# overwrites — NOT `model/sdk.aon`, which it rewrites on every scaffold.
-#
-# For that to work this file must LEAVE THOSE KEYS UNSET: in aontu a concrete
-# value does not yield to another concrete value, it CONFLICTS, and two
-# defaults conflict too. The schema (@voxgig/sdkgen/model/sdkgen.aon)
-# already defaults `tag.active`, `registry.state`, `registry.active` and
-# `registry.package`, so a project's concrete value wins over the default and
-# repeating them here would only take that away.
-#
-# What remains below is per-target registry IDENTITY, which is not a project
-# choice and stays concrete.
 main: kit: target: rust: publish: {
   registry: {
     name: 'crates.io'

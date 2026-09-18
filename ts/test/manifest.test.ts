@@ -1,12 +1,3 @@
-// THE PACKAGE MANIFEST — `sdkgen-package.json`.
-//
-// A manifest is a CLAIM, and a claim nobody checks is worse than no claim:
-// `package add` would install the items it lists until it hit one that is not
-// there, leaving the project half-installed. So the validator compares the
-// claim against the trees on disk in both directions, and the bundled
-// scaffold's own manifest is pinned to its directory listings by the guard at
-// the bottom of this file — the same discipline every other closed set in
-// `ts/test/` gets.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -65,11 +56,6 @@ function errors(found: any[]): string[] {
 }
 
 
-// An fs that resolves paths case-INSENSITIVELY, the way APFS and NTFS do by
-// default — so the platform this suite happens to run on stops deciding what
-// it measures. Only the lookups the validator makes are folded; `readdirSync`
-// still returns the real on-disk names, which is exactly the asymmetry that
-// made the two validation directions disagree.
 function caseFoldingFs(root: string): any {
   const resolve = (p: string): string => {
     if (Fs.existsSync(p)) return p
@@ -270,10 +256,6 @@ describe('validateManifest', () => {
 
 
   test('a FEATURE needs only its definition', () => {
-    // Deliberately not its per-target source: a feature package ships
-    // overlays only for the targets it supports, and declaring that coverage
-    // is `targetsSupported`'s job. Requiring source for every target would
-    // make a correct feature package unpublishable.
     const dir = makePackage(
       {
         sdkgen: { package: 1 }, name: '@acme/sdkgen-cb',
@@ -292,12 +274,6 @@ describe('validateManifest', () => {
   })
 
 
-  // THE PARITY VOCABULARY IS CLOSED — see PARITY in helpers/manifest.
-  //
-  // A tier travels with a migrated target, and it is the only place an
-  // external package can state its coverage. That makes a typo indistinct
-  // from a decision unless something reads it, which is the same reasoning
-  // every other closed set in this repo rests on.
   test('a parity tier outside the vocabulary is an ERROR', () => {
     const dir = makePackage(
       {
@@ -354,14 +330,6 @@ describe('validateManifest', () => {
   })
 
 
-  // GRADING SOME TARGETS AND NOT OTHERS.
-  //
-  // The value check above catches a typo'd tier; this catches the other half,
-  // an absent one. Scoped to a PARTIAL declaration on purpose: a wholly
-  // absent `parity` is the bundled manifest's deliberate state (design §18.4a
-  // keeps the tier map in parity.test.ts rather than duplicating it here), so
-  // warning on that would fire on the shipped scaffold. A manifest that
-  // grades two of three targets has no such second reading.
   test('a provided target with no tier, when others have one, is a WARNING', () => {
     const dir = makePackage(
       {
@@ -623,10 +591,6 @@ describe('validateManifest', () => {
 
 
   test('the name grammar agrees with the RESOLVER', () => {
-    // Two notions of "a name" that can drift is the defect this workstream
-    // keeps removing. Anything the grammar admits must survive the resolver's
-    // own parse unchanged, or the manifest would validate a name that cannot
-    // be installed under that name.
     for (const name of [
       'go', 'go-cli', 'py-data', 'seneca-provider', 'clienttrack', 'x9', 'a.b',
     ]) {
@@ -656,14 +620,6 @@ describe('validateManifest', () => {
 
 
   test('a MIS-CASED claim fails on the author machine too', () => {
-    // The two directions must use ONE oracle. The forward direction used to
-    // ask the filesystem and the reverse a directory listing, and on a
-    // case-insensitive filesystem — APFS and NTFS by default, so most package
-    // authors — those disagree: `IoTGo` beside `model/target/iotgo.aon`
-    // validated clean for the author and failed for every Linux consumer.
-    //
-    // Simulated rather than assumed, so the test means the same thing on
-    // every CI platform.
     const dir = makePackage(
       {
         sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
@@ -724,9 +680,6 @@ describe('the bundled manifest', () => {
 
 
   test('provides EXACTLY what the scaffold ships', () => {
-    // The validator above catches a claim with nothing behind it and an
-    // unclaimed extra, which is the same set — stated directly here so a
-    // failure reads as a diff of two lists rather than as a pile of findings.
     const manifest: any = manifestOf(SCAFFOLD)
 
     for (const kind of ['target', 'feature']) {
@@ -754,13 +707,6 @@ describe('the bundled manifest', () => {
 
 
   test('it is in the npm tarball, not just the checkout', () => {
-    // The design rests on a CONSUMER finding this file at
-    // node_modules/@voxgig/sdkgen/project/. Asserting it exists in the working
-    // tree does not check that. Narrowing package.json `files` from "project"
-    // to "project/.sdk" — a plausible slimming change, since `.sdk` is what
-    // resolveSource probes — would keep every test green, ship a package with
-    // no bundled manifest, and silently stop every consumer recording
-    // `package:` provenance.
     const pkg = JSON.parse(Fs.readFileSync(
       Path.resolve(__dirname, '..', 'package.json'), 'utf8'))
 

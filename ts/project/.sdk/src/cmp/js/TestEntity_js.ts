@@ -74,16 +74,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
         apikey: env.${PROJENVNAME}_APIKEY,`
     : ''
 
-  // A templated server URL (OpenAPI server variables) makes a LIVE client
-  // impossible to construct without values: makeOptions raises rather than
-  // request a URL with a literal `{account_id}` in it. So the live suite
-  // takes them from the environment the same way it takes the apikey.
-  //
-  // Keys are quoted and the env read is bracketed via jsKey/jsProp: a server
-  // variable name is spec-derived and need not be a JS identifier — the URL
-  // grammar admits a leading digit ({2fa}), and a declared-but-unreferenced
-  // variable ({edge-zone}) is not constrained at all. Bare `name:` and
-  // `env.PROJ_SERVER_EDGE-ZONE` are both syntax errors.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
     .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
@@ -93,7 +83,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
           ${jsKey(v.name)}: ${jsProp('env', serverVarEnv(PROJENVNAME, v.name))},`).join('')}
         },`
 
-  // TODO: should be a utility function
   const ff = projectPath('src/cmp/js/fragment/')
 
   Folder({ name: entity.name }, () => {

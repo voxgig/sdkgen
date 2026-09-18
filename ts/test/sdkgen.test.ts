@@ -13,7 +13,6 @@ import {
 } from '../dist/sdkgen.js'
 
 
-// 2025-01-01T00:00:00.000Z
 const START_TIME = 1735689600000
 
 
@@ -36,7 +35,6 @@ describe('sdkgen', () => {
 
     const root = makeRoot()
     const model = makeModel()
-    // console.log('MODEL', model)
 
     const spec = {
       model,
@@ -106,7 +104,6 @@ describe('sdkgen', () => {
     fs.writeFileSync('/top/foo/js/README.md', '\n# foo js SDK\n# EXTRA\n# index=0\n')
 
     let res1 = await sdkgen.generate(spec)
-    // console.log('RES1', res1)
     strictEqual(res1.ok, true)
 
     const voljson1: any = vol.toJSON()

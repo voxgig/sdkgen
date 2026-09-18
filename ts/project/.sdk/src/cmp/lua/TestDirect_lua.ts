@@ -251,8 +251,6 @@ ${listSkipBlock}    local client = setup.client
     }
 
     if (hasLoad && loadPoint) {
-      // Skip live direct-load only when we can't fill path params:
-      // no spec examples and no list-bootstrap. Spec examples win first.
       const loadSkipBlock = (loadParams.length > 0 && !loadAllHaveExamples)
         ? `    if setup.live then
       pending("live direct-load needs real ID — set *_ENTID env var with real IDs to run")

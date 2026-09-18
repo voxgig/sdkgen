@@ -8,21 +8,8 @@ import { BaseFeature } from '../base/BaseFeature'
 const S_NOT_FOUND = 'Not found'
 
 
-// Which param is entity X's own identifier, as opposed to a parent key —
-// the load op's canonical point's LAST path segment, by construction (a
-// route addresses parents first, the record last). Mirrors recordKey in
-// sdkgen's Main_seneca-provider.ts; written again here because a template
-// ships standalone, outside that package. A renamed id (e.g. Airtable's
-// record_id) needs its own seeded field: matching only ever happens
-// against the API's real param names, never a bare 'id' the API itself
-// does not use.
-// A mock identifier: four full 16-bit groups, each padded to four hex digits.
-//
-// The form is `%04x%04x%04x%04x`, which is what the other thirteen targets
-// emit. It is written out here rather than left inline because the thing that
-// matters about it is that it MATCHES THEM: a consumer holding its ports to
-// identical output cannot use an id whose shape depends on which language
-// answered.
+// The `%04x%04x%04x%04x` every other target mints, so the id's shape does not
+// depend on which language answered.
 function mintId(): string {
   let out = ''
   for (let i = 0; i < 4; i++) {
@@ -30,6 +17,7 @@ function mintId(): string {
   }
   return out
 }
+
 
 function ownIdField(config: any, getpath: any, entityName: string): string {
   let fallback = ''
@@ -47,17 +35,6 @@ function ownIdField(config: any, getpath: any, entityName: string): string {
       if (ptterm !== bestterm ? ptterm : pt.parts.length < best.parts.length) best = pt
     }
     const parts: string[] = (best && best.parts) || []
-    // THE LAST PART, not the last param anywhere in the path. A record route
-    // ENDS in its key: /orgs/{org}/private-registries/{secret_name} does,
-    // /orgs/{org}/private-registries/public-key does not. Reading the last
-    // param wherever it fell returned `{org}` for that second path — a PARENT
-    // reference — and the seeding walk then stamped the record's own key over
-    // org_id, destroying the ORG01 the fixture set and the test looks up from
-    // idmap. github's private_registry failed its update with a 404 that named
-    // nothing to do with orgs.
-    //
-    // A point that does not end in a param says nothing about this entity's
-    // key, so move on to the next op rather than guess from it.
     const lastPart = 0 < parts.length ? String(parts[parts.length - 1]) : ''
     if (lastPart.startsWith('{')) return lastPart.slice(1, -1)
 
@@ -81,23 +58,6 @@ function ownIdField(config: any, getpath: any, entityName: string): string {
     }
   }
 
-  // ONLY AFTER EVERY OP, because an op whose routes all end in a literal
-  // says nothing while another op may still name the key outright.
-  // github's `private_registry` reads
-  // `/orgs/{org}/private-registries/public-key` under `load` and writes
-  // `/orgs/{org}/private-registries/{secret_name}` under `update`:
-  // returning the load route's last parameter made the key `org`, and its
-  // update answered 404 for want of a registry named after an
-  // organisation.
-  //
-  // Reached at all only by an entity with no record-terminal route
-  // anywhere — github's `copilot` is read from
-  // `/orgs/{org_id}/members/{username}/copilot`, whose key is plainly
-  // `username`. Abstaining left the mock stamping no key on a created
-  // record while the provider addressed it by `username`, so the load
-  // straight after a create found nothing. The provider's recordKey has
-  // always used this fallback; matching it removes a disagreement rather
-  // than adding a guess.
   if ('' !== fallback) {
     return fallback
   }
@@ -156,22 +116,11 @@ class TestFeature extends BaseFeature {
       const delprop = struct.delprop
       const getdef = struct.getdef
 
-      // Shape the mock payload the way the real API would, so the op's
-      // response transform recovers the entity from it. A point carrying
-      // `transform.res: \`body.item\`` describes an API that answers
-      // `{item: {...}}`; handing back the bare entity means the transform
-      // unwraps a property that is not there and the caller gets undefined.
-      // The mock has to agree with the model, or it only ever simulates APIs
-      // whose responses happen to be unwrapped.
       function envelope(data: any) {
         const restf = getprop(getprop(ctx.point, 'transform', {}), 'res')
         if (null == data || 'string' !== typeof restf) {
           return data
         }
-        // Rebuild whatever nesting the op's response transform unwraps, so
-        // the mock agrees with the model. Multi-segment on purpose: GraphQL
-        // ops unwrap `body.data.<field>` (and `body.data.<field>.<entity>`
-        // for mutation payloads), not just a single envelope property.
         const m = restf.match(/^`body\.(.+)`$/)
         if (null == m) {
           return data
@@ -268,16 +217,6 @@ class TestFeature extends BaseFeature {
         const args = self.buildArgs(ctx, op, ctx.reqdata)
         let id = param(ctx, 'id')
         if (null == id) {
-          // FOUR FULL 16-BIT GROUPS, EACH PADDED TO FOUR HEX DIGITS - the
-          // `%04x%04x%04x%04x` that the other thirteen targets emit.
-          //
-          // This used to draw `1e4 * Math.random()`, which covers 0x0000-
-          // 0x270F rather than the full range, render each group UNPADDED,
-          // and pad the whole string at the end. So a group below 0x1000
-          // contributed fewer than four characters and every later digit
-          // shifted: ts and js were the only two targets whose minted id had
-          // a different shape, which no consumer holding its ports to
-          // identical output could use.
           id = mintId()
         }
 
@@ -412,20 +351,6 @@ class TestFeature extends BaseFeature {
     const qand: any[] = []
     const q = { '`$AND`': qand }
 
-    // WHERE A PATH PARAMETER'S VALUE ACTUALLY LIVES IN A RECORD.
-    //
-    // A request addresses a record by path parameter; a stored record carries
-    // whatever the API's response carries. Those are not always the same
-    // name, and are not always at the same depth: github addresses a repo by
-    // `{owner}/{repo}` and returns the owner as an OBJECT (`owner.login`)
-    // with the repository under `name`. Matching by parameter name alone
-    // found nothing for such a record, so a seeded composite record was
-    // unfindable and every read of it came back 404.
-    //
-    // `id.from` in the model says where each parameter is carried, as a
-    // dotted path. `select` matches a NESTED query shape but not a dotted
-    // key, so the path is expanded into one — `owner.login` becomes
-    // `{ owner: { login: value } }`.
     const idfrom = getpath(ctx.config, [
       'entity', getprop(ctx.entity, 'name'), 'id', 'from']) || {}
 
@@ -438,29 +363,6 @@ class TestFeature extends BaseFeature {
       return out
     }
 
-    // THE COMPOSITE PARTS FROM THE ENTITY MATCH TOO.
-    //
-    // A path parameter does not have to travel with the body. The seneca
-    // provider puts a composite record's parts in the ENTITY MATCH and
-    // leaves the body as the caller wrote it, because a path parameter is
-    // not a field — so `update`, which builds its query from `reqdata`,
-    // never looked at them. The query then matched every repo and
-    // `Repo({match:{owner,repo}}).update(...)` answered 404 while the same
-    // call with the parts in the body succeeded.
-    //
-    // EXACTLY THE PARTS, and only when nothing else addresses the record.
-    //
-    // Not every key the match holds: the match ACCRETES across calls on one
-    // entity instance, so after a create and an update it carries that
-    // record's parent scope as well — and the create branch below stamps the
-    // record's OWN key over the field it was seeded with, so a later read
-    // constrained on an accreted value finds nothing. Twenty-five of this
-    // SDK's own entity tests failed that way.
-    //
-    // And not when the call already carries an `id`: a direct id IS the
-    // address, and an accreted part then only narrows it wrongly — this
-    // SDK's own activity test updates `id: ACTIVITY00` on an entity whose
-    // match still holds the `repo` a previous list used.
     const match = ctx.match || {}
     const names: any[] = [...keysof(args)]
 

@@ -21,13 +21,6 @@ describe('appendIndexEntries', () => {
     strictEqual(appendIndexEntries(content, ['feat']), content)
   })
 
-  // THE PRE-0.65 SPELLING IS STILL PRESENT. Every index in every
-  // already-generated SDK carries the bare form, and those files are the
-  // project's own — they change when the project regenerates, not when
-  // sdkgen releases. Reading only the new spelling would make `target add go`
-  // on an existing repo believe the target was absent and append a SECOND
-  // include, which is the one failure mode this whole function exists to
-  // prevent.
   test('an entry in the BARE pre-0.65 spelling counts as present', () => {
     const content = '@"feat.aon"'
     strictEqual(appendIndexEntries(content, ['feat']), content)
@@ -41,8 +34,6 @@ describe('appendIndexEntries', () => {
   })
 
   test('deduplicates repeated names within one call', () => {
-    // Regression: previously each duplicate was appended because the
-    // presence check ran against the original (unmodified) content.
     strictEqual(appendIndexEntries('', ['a', 'a']), '\n@"./a.aon"')
   })
 
@@ -53,11 +44,6 @@ describe('appendIndexEntries', () => {
   })
 
   test('a COMMENTED-OUT entry does not count as present', () => {
-    // Regression: the check was a substring test, and '# @"go.aon"'
-    // CONTAINS '@"go.aon"' — so `target add go` on a project that had
-    // commented the include out appended nothing and reported success, while
-    // the target stayed absent from the model. Commenting an include out is
-    // the obvious way to switch a target off by hand, so projects reach this.
     const out = appendIndexEntries('# @"./go.aon"', ['go'])
     strictEqual(out, '# @"./go.aon"\n@"./go.aon"')
   })
@@ -132,7 +118,6 @@ describe('parseAddNames', () => {
   })
 
   test('space-separated names as extra positionals', () => {
-    // Regression: extras after args[2] used to be silently dropped.
     deepStrictEqual(parseAddNames(['target', 'add', 'ts', 'py', 'go']), ['ts', 'py', 'go'])
   })
 

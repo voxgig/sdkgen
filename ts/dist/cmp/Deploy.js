@@ -3,27 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Deploy = void 0;
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
-// Generate the SDK root deployment Makefile from the model's per-target
-// `publish` sections (see model/sdkgen.aon):
-//
-//   publish.tag       — git release tag `<prefix>/vX.Y.Z`; every port has
-//                       one, pushed with a token from the boru key vault
-//                       (--for recipe + alias, default github/github).
-//   publish.registry  — package registry details (name, url, vault
-//                       credential recipe or raw env mapping) plus a
-//                       `state` (pending | active | inactive; the legacy
-//                       `active: true` bool is honoured as an alias for
-//                       state === 'active'). While a registry is NOT
-//                       active (publish pending) a real deploy publishes
-//                       the git tag only; the package upload starts when
-//                       state flips to 'active'. Tag-only ports (go
-//                       family) have no registry.
-//
-// Follows the voxgig/struct root Makefile conventions: per-target deploy
-// targets, deliberately no all-targets real deploy (each upload is
-// irreversible), and an everything-at-once DRY run leaning on
-// `boru vault exec --dry-run` filler-token cooperation in each target's
-// publish recipe.
 const Deploy = (0, jostraca_1.cmp)(function Deploy(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
@@ -57,7 +36,7 @@ function regIsActive(reg) {
     if (null == reg)
         return false;
     if (true === reg.active)
-        return true; // legacy alias
+        return true;
     return 'active' === reg.state;
 }
 function aliasVarName(name) {
@@ -75,7 +54,6 @@ function vaultExecArgs(t) {
     const regVault = reg?.vault || {};
     const regVar = reg ? aliasVarName(reg.name) : '';
     if (reg && '' === (regVault.recipe || '') && '' !== (regVault.env || '')) {
-        // Raw env mapping style: every credential as alias=ENV_VAR.
         return `'$(${regVar})=${regVault.env},$(${ghVar})=GITHUB_TOKEN'`;
     }
     const flags = [];
@@ -86,8 +64,6 @@ function vaultExecArgs(t) {
     return flags.join(' ');
 }
 function makeDeployMakefile(model, targets) {
-    // Alias variables: one per distinct vault credential, defaulting to the
-    // model's alias (or the registry/recipe name).
     const aliasVars = new Map();
     for (const t of targets) {
         const tagVault = t.publish?.tag?.vault || {};
@@ -109,15 +85,12 @@ function makeDeployMakefile(model, targets) {
     }).join('\n');
     const deployRules = targets.map((t) => {
         const reg = registryOf(t);
-        // The github token is the only credential a tag-only deploy needs.
         const tagVault = t.publish?.tag?.vault || {};
         const ghRecipe = tagVault.recipe || 'github';
         const ghArgs = `--for=${ghRecipe}=$(${aliasVarName(ghRecipe)})`;
         const args = vaultExecArgs(t);
         const via = t.publish?.tag?.via || 'port';
         if (!reg && 'root' === via) {
-            // Tag-only port with no Makefile of its own (e.g. go-cli): the
-            // root tag-push recipe is the whole deploy.
             return `
 deploy-${t.name}:
 \t@echo "deploy-${t.name}: tag-only port — publishing the git tag."
@@ -129,9 +102,6 @@ ${tagPushRecipe(t.name, 'tag-only port')}
 `;
         }
         if (reg && !regIsActive(reg)) {
-            // Publish pending: deploying this target publishes its git tag
-            // only. The package upload turns on by flipping
-            // publish.registry.state to 'active' in the model and regenerating.
             return `
 deploy-${t.name}:
 \t@echo "deploy-${t.name}: ${reg.name} publication is pending — publishing the git tag only."

@@ -1,14 +1,5 @@
 package sdktest
 
-// Behavioural tests for the enterprise features shipped with this SDK
-// (retry, cache, rbac, telemetry, ...). Each block runs only when its
-// feature is present (see fhSkipWithout in feature_harness_test.go, which
-// also holds the fh* pipeline harness these tests drive).
-//
-// This file constructs every shipped feature type by name, so it only
-// compiles with the COMPLETE feature set — it is listed in the go target's
-// `feature.fullset` and dropped when a project trims its features.
-
 import (
 	"encoding/json"
 	"os"
@@ -24,28 +15,12 @@ import (
 
 // --- option coercion --------------------------------------------------------
 
-// A feature option must reach the feature whatever numeric type it arrives as.
-//
-// THIS IS A PARITY TEST, not a unit test of a helper. java, kotlin and scala
-// accept anything that `instanceof Number`; ts coerces with `| 0`, py with
-// `int()`, rb with `.to_i`. go read a closed set of four types and silently
-// substituted the DEFAULT for anything else - so an option the other targets
-// honour was dropped here with no error and no log.
-//
-// `json.Number` is the case that made it urgent: it is what encoding/json
-// produces for every number when a decoder has UseNumber() set, which is the
-// ordinary way to read a config file without turning integers into float64.
-// A retry budget, a rate limit or a timeout read that way became the default.
-//
-// The assertion is behavioural on purpose, and it drives `retry` rather than a
-// helper: the retry budget is observable as a CALL COUNT, so a dropped option
-// shows up as the default budget of 2 rather than the 4 that was asked for.
-// Reading the helper back would pass for a coercion that is right in isolation
-// and unused on the real path.
+// go read a closed type switch and silently used the DEFAULT for any other
+// numeric type. `retry` makes the budget observable as a call count, so a
+// dropped option shows as the default of 2 rather than the 4 asked for.
 func TestFeatureOptionNumericTypes(t *testing.T) {
 	fhSkipWithout(t, "retry")
 
-	// Every representation of 4 that a caller can plausibly hand over.
 	var jsonNum map[string]any
 	dec := json.NewDecoder(strings.NewReader(`{"retries":4}`))
 	dec.UseNumber()
@@ -72,8 +47,6 @@ func TestFeatureOptionNumericTypes(t *testing.T) {
 		{"json.Number", jsonNum["retries"]},
 	}
 
-	// One attempt plus four retries. The default budget is 2, so a dropped
-	// option lands on 3 and is never mistaken for a pass.
 	const want = 5
 
 	for _, c := range cases {
@@ -93,8 +66,7 @@ func TestFeatureOptionNumericTypes(t *testing.T) {
 	}
 
 	t.Run("a-non-number-still-falls-back", func(t *testing.T) {
-		// The breadth is over NUMBERS, matching `instanceof Number`. A string
-		// is not a number in java either, so it must still take the default.
+		// A string is not a Number in java either.
 		rec := &fhRecorder{reply: func(_ int, _ map[string]any) (any, error) {
 			return fhResponse(500, nil, nil), nil
 		}}

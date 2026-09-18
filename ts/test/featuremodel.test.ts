@@ -1,12 +1,4 @@
 
-// Model + template consistency for the shipped feature set.
-//
-// Guards three things that must stay in lockstep or a generated SDK breaks:
-//   1. every feature's model unifies through aontu without error,
-//   2. the feature-index registers every model file,
-//   3. each template's implemented pipeline hooks exactly match the hooks
-//      its model marks `active` (a drift here means a hook silently never
-//      fires, or fires with no implementation).
 
 import { test, describe } from 'node:test'
 import { strictEqual, ok, deepStrictEqual } from 'node:assert'
@@ -25,7 +17,6 @@ const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
 const FEATURE_MODEL = Path.join(SDK, 'model', 'feature')
 const FEATURE_TM = Path.join(SDK, 'tm', 'ts', 'src', 'feature')
 
-// The enterprise features added on top of the core log/test pair.
 const ENTERPRISE = [
   'retry', 'timeout', 'ratelimit', 'cache', 'cost', 'idempotency', 'paging',
   'streaming', 'proxy', 'telemetry', 'metrics', 'debug', 'audit',
@@ -78,9 +69,6 @@ describe('feature-model', () => {
   })
 
   test('Config generator comma-separates the feature maps', () => {
-    // With two or more features, the generated Config's FEATURE_CLASS map and
-    // `feature = {}` config map must be comma-separated or the SDK will not
-    // compile. This was latent while only a single feature shipped.
     const cfg = readFileSync(
       Path.resolve(SDK, 'src', 'cmp', 'ts', 'Config_ts.ts'), 'utf8')
     ok(/Feature,`/.test(cfg),
@@ -90,35 +78,13 @@ describe('feature-model', () => {
       'configDefinition\'s def (which carries the transport role)')
   })
 
-  // Every shipped feature model declares its transport ROLE explicitly
-  // (station design §8.4, sdkgen tranche §11 item 6). `test` alone is
-  // 'base' - it REPLACES ctx.utility.fetcher - the transport wrappers are
-  // 'wrap', and the hook-only features are 'none'. The role is DECLARED,
-  // never inferred: the obvious signal, an empty `hook: {}`, is wrong for
-  // a feature that both wraps and dispatches hooks (station's own, in
-  // sdkgen-station, is exactly that). configDefinition carries the role
-  // into every generated SDK's embedded config, where station's
-  // descriptor reads it to validate the resolved feature order.
-  //
-  // The map is exhaustive on purpose: a NEW feature model fails here until
-  // its role is decided, rather than silently defaulting.
   const TRANSPORT_ROLE: Record<string, string> = {
     test: 'base',
     cache: 'wrap', netsim: 'wrap', proxy: 'wrap', ratelimit: 'wrap',
     retry: 'wrap', timeout: 'wrap',
-    // Both seams: wraps the transport to price each attempt AND dispatches
-    // hooks to gate on budget and attribute the spend. The first bundled
-    // feature to need both, which is why the role is declared, not inferred
-    // from an empty hook block.
     cost: 'wrap',
     audit: 'none', clienttrack: 'none', debug: 'none', idempotency: 'none',
     log: 'none', metrics: 'none', paging: 'none', rbac: 'none',
-    // Both seams, like `cost`. The PreSpec hook writes the resolved
-    // credential into the live options where the synchronous prepareAuth
-    // reads it; the transport wrap exists for the access-token exchange,
-    // where a SPENT token is only ever discovered from a response. The
-    // wrap installs only when `exchange.active`, but the role is declared
-    // at the feature's widest, not at one configuration's.
     secrets: 'wrap',
     streaming: 'none', telemetry: 'none',
     validate: 'none',
@@ -162,7 +128,6 @@ describe('feature-template-consistency', () => {
   for (const name of ENTERPRISE) {
 
     test(`${name}: template class matches its model`, () => {
-      // Template exists, is named <Name>Feature, extends BaseFeature.
       const cls = loadFeature(name)
       ok('function' === typeof cls, `${name} class not exported`)
       const inst = new cls()
@@ -170,8 +135,6 @@ describe('feature-template-consistency', () => {
       strictEqual(inst.name, name, `${name}.name mismatch`)
       ok('string' === typeof inst.version, `${name}.version missing`)
 
-      // Implemented pipeline hooks (own prototype methods, minus what the
-      // base defines) must equal the model's active hooks.
       const implemented = Object.getOwnPropertyNames(cls.prototype)
         .filter((m) => HOOK_NAMES.indexOf(m) >= 0)
         .sort()
@@ -197,10 +160,6 @@ describe('feature-template-consistency', () => {
 })
 
 
-// Every language target must ship the same feature set. ts/js keep features
-// under src/feature/<name>/<Name>Feature.<ext>; the other languages keep a
-// flat feature/ package (e.g. tm/go/feature/retry_feature.go) plus
-// src/feature/<name>/ copy-target dirs for `feature add`.
 describe('feature-language-parity', () => {
 
   const TM = Path.join(SDK, 'tm')
@@ -238,8 +197,6 @@ describe('feature-language-parity', () => {
     elixir: (n) => Path.join('elixir', 'lib', 'projectname', 'feature', n + '.ex'),
   }
 
-  // Every SDK target (per-feature-file and single-module alike). Each must
-  // have a target definition and a feature-add copy dir per enterprise feature.
   const SDK_TARGETS = [
     'ts', 'js', 'go', 'py', 'php', 'rb', 'lua',
     'csharp', 'java', 'kotlin', 'scala', 'swift', 'rust', 'c', 'cpp',
@@ -252,17 +209,6 @@ describe('feature-language-parity', () => {
   // has moved to packages/sdkgen-seneca-provider.
   const CONSUMER_TARGETS = ['go-cli', 'go-mcp', 'py-data']
 
-  // Targets that ship NO tm/<t>/src/feature/<name>/ dirs, and why.
-  //
-  // EMPTY, and that is a statement rather than an oversight: the only entry
-  // was `seneca-provider`, which has left the scaffold. `feature add` copies
-  // per-target feature source and that target had none to copy — Main emits
-  // the whole package and every standard phase, `feature` included, is off in
-  // its model. Note that `srcfeature: false` was NOT the reason: 23 targets
-  // set that (go, py, rb, lua, perl, …) and all of them ship the dirs —
-  // srcfeature gates the GENERATED layout (src/cmp/Feature.ts), not the
-  // template tree. Declared rather than inferred, so a target that gains
-  // feature source fails the accuracy test below until it is moved.
   const NO_FEATURE_DIRS: string[] = []
 
   // Every SDK target plus the non-SDK consumer surfaces need a
@@ -272,47 +218,18 @@ describe('feature-language-parity', () => {
     .concat(CONSUMER_TARGETS)
     .filter((t) => !NO_FEATURE_DIRS.includes(t))
 
-  // Features gated by applicability tags (docs/design/feature-tags.md) are
-  // NOT expected in every target — only in those whose model declares what
-  // the feature needs. Every other feature stays universal, so the parity
-  // rule below is unchanged for all sixteen of them.
-  //
-  // Declared rather than inferred, and kept honest by the accuracy test
-  // below, exactly like NO_FEATURE_DIRS: a list that can silently grow
-  // stale is a mute button.
   const GATED: Record<string, string[]> = {
-    // needs: ['sekreto'] — a target joins when it vendors its sekreto
-    // port and declares `provides: ['sekreto']` together (the vendor-tag
-    // rollout added go and py; js, rb and php followed, then the nine of
-    // tranche B at sdk-20260907-0029-0).
-    // `dart` gained secrets in tranche B and then left with the language
-    // pack (@voxgig/sdkgen-langpack); the gate lists what THIS repo ships.
     secrets: [
       'c', 'clojure', 'cpp', 'csharp', 'elixir', 'go', 'java', 'js', 'kotlin',
       'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala', 'swift',
       'ts', 'zig',
     ],
 
-    // needs: { schema: true } — a target joins when it carries a
-    // ValidateFeature of its own, not merely when its Main emits the
-    // Schema module. Emitting Schema is the OPTION SPEC port, which
-    // make_options reads whether or not this feature exists there; the tag
-    // is the feature's gate, so it goes on with the feature source. ts and
-    // js are the reference implementation; every other SDK target is a port
-    // of them.
-    //
-    // This is now every SDK_TARGET, and the gate is STILL load-bearing: the
-    // CONSUMER_TARGETS (go-cli, go-mcp, py-data) are in ADD_TARGETS and are
-    // not here, so deleting the list would demand feature-add dirs they have
-    // no use for. It also stays the rule for a target added later, and for a
-    // target an external sdkgen package brings.
     validate: ['c', 'clojure', 'cpp', 'csharp', 'elixir', 'go', 'java', 'js',
       'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala',
       'swift', 'ts', 'zig'],
   }
 
-  // Which targets must carry this feature: all of them, or just the ones
-  // the gate names.
   function expectedTargets(name: string, all: string[]): string[] {
     const gated = GATED[name]
     return null == gated ? all : all.filter((t) => gated.includes(t))
@@ -347,7 +264,6 @@ describe('feature-language-parity', () => {
   }
 
 
-  // Every target the scaffold actually ships, discovered rather than listed.
   function shippedTargets(): string[] {
     return readdirSync(TARGET_MODEL)
       .filter((f) => f.endsWith('.aon') && 'target-index.aon' !== f)
@@ -367,14 +283,6 @@ describe('feature-language-parity', () => {
     })
   }
 
-  // The lists above are HAND-WRITTEN, so until this test existed a new target
-  // was simply absent from all of them and every check in this file quietly
-  // skipped it — which is how `lean` (an SDK target with a full set of
-  // src/feature dirs, since moved to @voxgig/sdkgen-langpack) and
-  // `seneca-provider` both came to be exempt without anyone deciding they
-  // should be. Mirrors parity.test.ts's tier manifest:
-  // the list is the stated policy, and a target added without a decision
-  // fails here.
   test('the target lists cover every shipped target exactly once', () => {
     const declared = SDK_TARGETS.concat(CONSUMER_TARGETS).sort()
 
@@ -400,8 +308,6 @@ describe('feature-language-parity', () => {
   })
 
 
-  // The gate must stay TRUE in both directions, or it becomes the same mute
-  // button NO_FEATURE_DIRS guards against.
   test('gated features match the targets that declare the tags they need', () => {
     for (const [name, targets] of Object.entries(GATED)) {
       // (a) every target NOT named must really lack the source, otherwise
@@ -414,9 +320,6 @@ describe('feature-language-parity', () => {
         `these targets gained ${name} source — add them to GATED.${name} ` +
         'in test/featuremodel.test.ts (and give their model the tags it needs)')
 
-      // (b) every target named must declare the tags in its own model, so
-      // the test list and the model cannot drift apart. The model is the
-      // source of truth; this list only says what we expect it to say.
       const undeclared = targets.filter((t) => {
         const mp = Path.join(TARGET_MODEL, t + '.aon')
         return !existsSync(mp) || !/\bprovides\s*:/.test(readFileSync(mp, 'utf8'))
@@ -428,22 +331,6 @@ describe('feature-language-parity', () => {
     }
   })
 
-  // The third direction, and the one that actually breaks a generated SDK.
-  //
-  // (a) and (b) both pass for a target that declares a tag it has no
-  // source for: (a) only looks at targets the list omits, and finding no
-  // source there is exactly what it calls correct. But `featureApplies`
-  // says yes, so the feature reaches that target's config, registry and
-  // imports while `feature add` has nothing to copy. This is not
-  // hypothetical — porting the option spec to seven targets tagged them
-  // `schema: true` for emitting the `Schema` module, which handed them the
-  // `validate` feature with no ValidateFeature behind it, and every check
-  // in this file stayed green.
-  //
-  // So: the set of targets the MODEL makes a gated feature apply to must
-  // be exactly the set the gate names. `featureApplies` is the real rule,
-  // not a second copy of it; only "what does this target declare" is read
-  // from the file, the target models having no index to unify through.
   test('the targets that declare a gated feature\'s tags are exactly the gated list', () => {
     const { model } = compileFeatureModel()
 
@@ -473,7 +360,6 @@ describe('feature-language-parity', () => {
       'these targets gained feature-add copy dirs — drop them from ' +
       'NO_FEATURE_DIRS so the per-feature check covers them')
 
-    // ...and every name on it is a target that exists.
     deepStrictEqual(NO_FEATURE_DIRS.filter((t) => !shippedTargets().includes(t)), [],
       'NO_FEATURE_DIRS names a target the scaffold does not ship')
   })

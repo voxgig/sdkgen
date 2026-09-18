@@ -26,34 +26,11 @@ const applicability_1 = require("./helpers/applicability");
 const serverVars_1 = require("./helpers/serverVars");
 const pointPath_1 = require("./helpers/pointPath");
 const packageMeta_1 = require("./helpers/packageMeta");
-// Where a per-target component is loaded from: `<project>/.sdk/dist/<path>`.
-//
-// `ctx$.folder` is jostraca's OUTPUT folder, which is the project for an
-// ordinary target but the destination repo for one generating out of tree
-// (`output: path`). Components always live in the project that owns the
-// model, never in the place its files land, so an external pass sets
-// `ctx$.cmpfolder` and this prefers it. Without that, generating out of tree
-// looks for `<destination>/.sdk/dist/cmp/...` and fails to resolve.
 function resolvePath(ctx$, path) {
     const base = null == ctx$.cmpfolder ? ctx$.folder : ctx$.cmpfolder;
     const fullpath = node_path_1.default.join(base, '.sdk', 'dist', path);
     return fullpath;
 }
-// True unless the model declares auth off. Templates use this to gate
-// apikey-related code, docs, and examples for public APIs that need no
-// authentication.
-//
-// The project's own word comes first: `main.kit.config.auth.active` set
-// EXPLICITLY (true or false) decides. GitHub's official OpenAPI declares no
-// securitySchemes, so apidef faithfully writes `info.auth: false` and every
-// generated client sent no credential; the only override lived in a
-// generated file. A project that knows its API takes a bearer token says so
-// once in its own config and that wins over the spec's silence.
-//
-// Otherwise the spec-derived signal governs:
-//   1. main.kit.config.auth.active: true|false  (per-SDK, in config.aon)
-//   2. main.kit.info.auth: false                (apidef: the spec declares
-//                                               no authentication)
 function isAuthActive(model) {
     const auth = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.auth`, { only_active: false, required: false });
     if (null != auth && 'boolean' === typeof auth.active)
@@ -61,15 +38,6 @@ function isAuthActive(model) {
     const info = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.info`, { only_active: false, required: false });
     return !(info && false === info.auth);
 }
-// The credential prefix for the Authorization header value, resolved in
-// priority order:
-//   1. main.kit.config.auth.prefix   (per-SDK user override)
-//   2. main.kit.info.security.prefix (spec-derived, set by apidef from the
-//      API's securityScheme — e.g. 'OAuth' for Statuspage)
-//   3. 'Bearer'                      (conventional fallback)
-// '' is a valid resolved value: it means a raw credential with no prefix
-// (e.g. an apiKey scheme in a custom header). Config generators for every
-// language target must use this instead of hardcoding 'Bearer'.
 function resolveAuthPrefix(model) {
     const auth = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.auth`, { only_active: false, required: false });
     if (null != auth && null != auth.prefix)
@@ -79,41 +47,10 @@ function resolveAuthPrefix(model) {
         return String(security.prefix);
     return 'Bearer';
 }
-// AUTH SUPPRESSED AT GENERATION TIME — and ONLY by an explicit opt-out.
-//
-// NOT `isAuthActive`, and the difference is load-bearing. That helper is
-// also false when `main.kit.info.auth` is false, which only means the SPEC
-// declared no security scheme. Such an SDK still carries a credential:
-// `optspec` always declares `apikey`, and makeOptions fills `options.auth`
-// from the optspec defaults, so the runtime `null == options.auth` guard
-// never fires and the credential has always been sent. Emitting a no-op
-// prepareAuth for those SDKs silently breaks a working credential — and
-// takes the secrets feature with it, since that resolves a secret into
-// `options.apikey` and prepareAuth then places nothing.
-//
-// `main.kit.config.auth.active: false` is the project saying "this SDK
-// sends no credential, ever". That is the only signal that can be honoured
-// before runtime, so it is the only one used here.
 function isAuthSuppressed(model) {
     const auth = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.auth`, { only_active: false, required: false });
     return null != auth && false === auth.active;
 }
-// WHERE the credential goes, and UNDER WHAT NAME. Same priority order as
-// resolveAuthPrefix: a per-SDK override first, then what apidef derived
-// from the spec's securityScheme, then the convention.
-//
-// THESE EXISTED IN THE MODEL AND WERE DROPPED AT GENERATION. apidef has
-// always resolved `in` and `name` (transform/top.ts resolveSecurity), and
-// api-info.aon records them — joplin's says `in: "query", name: "token"`.
-// But nothing read them: every target's prepare_auth template hardcoded an
-// `authorization` header, so an apiKey-in-query API got a header it does
-// not read and never got the query parameter it does. Four repos in the
-// cedar fleet ship SDKs that cannot authenticate for this reason
-// (joplin `token`, pipedrive `api_token`, trello `key`,
-// lm-umbrella `apiKey`).
-//
-// 'header' and 'Authorization' remain the defaults, so every SDK whose
-// scheme is header-based generates exactly what it generated before.
 function resolveAuthIn(model) {
     const auth = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.auth`, { only_active: false, required: false });
     if (null != auth && null != auth.in && '' !== auth.in) {
@@ -136,12 +73,6 @@ function resolveAuthName(model) {
     }
     return 'Authorization';
 }
-// True when the spec's security scheme is genuine HTTP Basic Auth (two
-// credentials, base64-joined) rather than a single bearer-style token with
-// a prefix. Priority order mirrors resolveAuthPrefix:
-//   1. main.kit.config.auth.basic     (per-SDK user override)
-//   2. main.kit.info.security, spec-derived: type 'http' + a 'basic' prefix
-//      (apidef sets prefix from the OpenAPI `scheme: basic` value, title-cased)
 function isHttpBasicAuth(model) {
     const auth = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.auth`, { only_active: false, required: false });
     if (null != auth && null != auth.basic)
@@ -150,21 +81,6 @@ function isHttpBasicAuth(model) {
     return null != security && 'http' === security.type &&
         'basic' === String(security.prefix || '').toLowerCase();
 }
-// The API's ACCESS-TOKEN EXCHANGE, as apidef recorded it from the spec
-// (main.kit.info.security.exchange): where the token endpoint lives, and the
-// field names it sends and answers with. Null when the spec describes none,
-// which is the common case.
-//
-// These are FACTS ABOUT THE API, so they belong in the generated config
-// rather than in a project's hand-written model: an SDK whose spec says the
-// exchange is at `auth/token` should not need to be told so again. A feature
-// opts in to receiving them with `spec: { authexchange: '<options-key>' }`;
-// configDefinition does the overlay.
-//
-// Deliberately NOT included: `active`. Whether a client performs the
-// exchange is the project's decision (some resolve a static credential
-// through the same feature on an API that also has a token endpoint), so
-// apidef records only what the exchange IS, never that it should run.
 function resolveAuthExchange(model) {
     const security = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.info.security`, { only_active: false, required: false });
     const exchange = security?.exchange;
@@ -199,56 +115,8 @@ class SdkGenError extends Error {
     }
 }
 exports.SdkGenError = SdkGenError;
-// CONFIG REPRESENTATION (design rung L1, threshold from design Q7).
-//
-// Above a size threshold the API model is emitted as DATA - a JSON string
-// constant parsed once - rather than as a composite literal. Below it the
-// literal stays, because for a small model the literal is smaller, simpler,
-// faster to load and far easier to debug, and a symbol table would be pure
-// complexity.
-//
-// The threshold is on the JSON, not the emitted source, because the emitted
-// source size varies by language while the model does not. It is measured in
-// UTF-8 BYTES rather than string length: `.length` counts UTF-16 code units,
-// so a CJK-heavy model would read as roughly a third of its real size and
-// stay on the expensive literal path well past the point where it hurts.
-//
-// Measured on the real gitlab model (923.5 KB of JSON), Go, cold cache,
-// recompiling only the config package:
-//
-//                       composite literal   JSON string constant
-//   compile+link wall        30.80 s              0.34 s     91x faster
-//   peak compiler RSS         2.49 GB             0.06 GB    39x less
-//   binary                    7.44 MB             3.51 MB    2.1x smaller
-//
-// The reader side is unchanged either way: make_config returns the same map,
-// so nothing downstream can tell which representation it got.
-//
-// For two targets the literal is not merely expensive but IMPOSSIBLE past a
-// point, which is what fixes the threshold rather than leaving it a taste
-// question:
-//
-//   haskell  GHC 9.4.7 refuses a large static structure outright -
-//            "sorry! (unimplemented feature or known bug) ... Trying to
-//            allocate more than 129024 bytes ... Suggestion: read data from a
-//            file instead of having large static data structures in code"
-//            (GHC issue 4505). Measured: the CV literal compiles at 828 KB of
-//            model and fails at 1.4 MB, so 256 KB clears it by more than 3x.
-//
-//   clojure  a string literal is a constant-pool UTF-8 entry capped at 65,535
-//            bytes, so the DATA constant has to be chunked - see cljStringChunks.
-//
-// Anything above the threshold therefore takes the data path in every target,
-// and the languages with a hard ceiling are the ones with the most margin.
 const CONFIG_DATA_THRESHOLD = 256 * 1024;
 exports.CONFIG_DATA_THRESHOLD = CONFIG_DATA_THRESHOLD;
-// Should this model be emitted as data rather than as a literal?
-//
-// `repr` is the per-SDK override from `main.kit.config.repr`: 'auto' (the
-// default) decides by size, 'data' and 'literal' pin it. The override is what
-// lets a small fixture exercise the data path - by size alone no test model
-// comes near the threshold, so the branch every large SDK depends on would
-// never be generated, compiled or run in CI.
 const CONFIG_REPR_VALUES = ['auto', 'data', 'literal'];
 exports.CONFIG_REPR_VALUES = CONFIG_REPR_VALUES;
 function isConfigData(configJson, repr) {
@@ -285,26 +153,6 @@ function configReprSetting(model) {
         return 'auto';
     }
 }
-// L0 NORMALISATION: strip what the emitted config must not carry.
-//
-// Three kinds of noise, and the distinction between them matters:
-//
-//   MODEL_META      jostraca's `each` injects index$/key$/val$ into every node
-//                   it iterates. Pure bookkeeping, and it leaked into every
-//                   generated SDK for years (5,231 occurrences in gitlab
-//                   alone) because this helper deleted keys during a walk that
-//                   assigned them straight back.
-//
-//   CONFIG_DEFAULT  a key whose value equals the default the reader already
-//                   applies. Emitting it is pure bulk. Only these three names
-//                   are dropped, and only at their default value - `entity$`
-//                   is real Seneca data, so no blanket suffix rule.
-//
-//   PAYLOAD_KEYS    the boundary. Under `default`/`example`/`examples` the
-//                   value is API DATA, not config, and an example that happens
-//                   to contain `active: true` must survive intact. Below one of
-//                   these keys default-dropping stops; metadata stripping does
-//                   not, because jostraca's bookkeeping is never payload.
 const MODEL_META = ['index$', 'key$', 'val$'];
 const CONFIG_DEFAULT = {
     active: true,
@@ -324,15 +172,6 @@ function clean(o, dropDefaults) {
             for (const k of Object.keys(node)) {
                 if (MODEL_META.includes(k))
                     continue;
-                // An ABSENT optional member, dropped rather than carried as undefined.
-                //
-                // Callers build `{fields, name, op, relations}` from an entity, and
-                // `op` and `relations` are optional - so the key exists with value
-                // undefined. JSON.stringify silently omits such a key, while the
-                // literal formatters emit it as None/nil/null, and the two
-                // representations would describe different configs for any entity
-                // without an `op`. Dropping it here fixes both branches at once,
-                // because both reach the emitter through this function.
                 if (undefined === node[k])
                     continue;
                 if (defaults && k in CONFIG_DEFAULT && CONFIG_DEFAULT[k] === node[k])
@@ -345,16 +184,6 @@ function clean(o, dropDefaults) {
     };
     return prune(o, true === dropDefaults);
 }
-// The JSON as a source-level string literal, for a language whose SINGLE
-// quoted literal neither interpolates nor processes escapes beyond the quote
-// and the backslash - Ruby, PHP, Perl, Lua.
-//
-// Reproducing the JSON text VERBATIM is all that is needed, because the JSON
-// already encodes control characters and non-ASCII itself. That is why this is
-// preferred over the double-quoted form in those languages: Ruby and PHP
-// interpolate (`#{...}`, `$var`) and Lua does not understand `\uXXXX` at all,
-// so a double-quoted literal would need a language-specific escape table and
-// would get it wrong for exactly the inputs nobody tests.
 function rawStringLiteral(s) {
     return "'" + s.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
 }
@@ -365,28 +194,6 @@ function rawStringLiteral(s) {
 const SPEC_FACTS = {
     authexchange: resolveAuthExchange,
 };
-// THE CANONICAL CONFIG OBJECT, and the JSON the threshold is measured on.
-//
-// Every target builds its config from this one function, so the literal a
-// target emits and the data that replaces it above the threshold cannot
-// describe different configs - which is the entire promise of rung L1. Before
-// this existed each target assembled its own, and they had already drifted:
-// `feature.<name>` came out as `{}` in Go and as nothing at all in ts when a
-// feature declared no config.
-//
-// Key order is `each`'s order, which is sorted, so the JSON is byte-stable
-// across runs exactly like the literal it replaces.
-// The embedded config still speaks the braced-string path form
-// (`['element', '{id}']`) that every generated runtime reads. apidef now
-// emits the resolved vector instead (its ADR-003), so the old shape is
-// reconstructed HERE — the single point at which a point reaches generated
-// output — via the single reconstruction in helpers/pointPath.
-//
-// Both are written: `parts` for the runtimes as they stand, `segments`
-// alongside it so a runtime can be moved over one language at a time. That
-// duplication is deliberate and temporary, and it lives in GENERATED output,
-// not in the model — which is what ADR-003 forbids. It ends when the last
-// runtime reads segments and `parts` is dropped from this function.
 function withPointParts(op) {
     if (null == op) {
         return op;
@@ -410,11 +217,6 @@ function withPointParts(op) {
 }
 function configDefinition(model, targetname) {
     const entity = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.entity`);
-    // Gated by the target when one is named, so the embedded config cannot
-    // advertise a feature this target has no implementation for — the exact
-    // hybrid state the applicability gate exists to prevent. With no
-    // targetname (a caller that cannot say which target it is building) the
-    // helper returns every active feature, i.e. the old behaviour.
     const feature = (0, applicability_1.targetFeatures)(model, targetname);
     const headers = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.headers`) || {};
     const authActive = isAuthActive(model);
@@ -431,22 +233,6 @@ function configDefinition(model, targetname) {
     (0, jostraca_1.each)(entity, (e) => {
         entityDefs[e.name] = clean({
             fields: e.fields,
-            // THE ID DESCRIPTOR REACHES THE RUNTIME, not just the generators.
-            //
-            // `id.parts` / `id.sep` / `id.from` say how the API addresses one
-            // record: which path parameters name it, what joins them into the one
-            // id an SDK entity carries, and — the part only a response can
-            // answer — WHERE each parameter's value lives in a returned record.
-            // github's repo is `{owner}/{repo}`, returned as `owner.login` and
-            // `name`.
-            //
-            // Code that runs, not just code that is written, needs this. The
-            // offline test transport resolves a request parameter against a
-            // stored record, and a record whose identifying values are nested
-            // (or named differently) cannot be matched by parameter name alone —
-            // it matched nothing, so every seeded composite record was
-            // unfindable. `clean` drops the key for the ordinary entity whose
-            // model carries no descriptor, so nothing else moves.
             id: e.id,
             name: e.name,
             op: withPointParts(e.op),
@@ -456,32 +242,10 @@ function configDefinition(model, targetname) {
     });
     const featureDefs = {};
     (0, jostraca_1.each)(feature, (f) => {
-        // The feature's declared config (its `options` key set with typed
-        // defaults) PLUS its transport role (station design §8.4): 'base'
-        // replaces the transport slot, 'wrap' wraps it, 'none' is hook-only.
-        // Station's descriptor (normalizeDescriptor in voxgig/station) reads
-        // `transport` beside `options` to validate the resolved feature order.
-        // The role is DECLARED in the feature model, never inferred - an empty
-        // `hook: {}` is wrong for station, which both wraps and dispatches
-        // hooks. Additive: a model unified without the schema's `transport`
-        // default simply omits the key, which station tolerates by degrading
-        // its role checks to nothing.
         const fdef = { ...(f.config || {}) };
         if (null != f.transport && '' !== f.transport) {
             fdef.transport = String(f.transport);
         }
-        // SPEC-DERIVED OPTIONS. A feature declares `spec: { <fact>: <options
-        // key> }` to receive facts apidef recorded from the OpenAPI spec — the
-        // same declare-never-infer rule `needs` and `transport` follow, and for
-        // the same reason: the alternative is this function knowing feature
-        // names, which is exactly the coupling the generic feature loop exists
-        // to avoid.
-        //
-        // The fact overlays the feature's DECLARED DEFAULTS, and rightly: a
-        // default like `path: 'auth/token'` is a generic guess, while the spec
-        // states where this API's endpoint actually is. A project that needs
-        // something else still overrides at runtime through `options.feature`,
-        // which beats the embedded config either way.
         for (const factname of Object.keys(f.spec || {}).sort()) {
             const optkey = f.spec[factname];
             const fact = SPEC_FACTS[factname]?.(model);
@@ -502,13 +266,6 @@ function configDefinition(model, targetname) {
     }
     options.headers = headers;
     options.entity = entityStubs;
-    // Identity beyond the camel Name: the hyphenated slug is CARRIED, never
-    // derived from the camel form downstream (deriving swallows hyphens - the
-    // packageMeta envToken defect), and version/target let a running SDK say
-    // what it is. Station's descriptor (voxgig/station) reads all three.
-    // Gated on targetname so a target that does not pass its name emits the
-    // exact config it always has - each target opts in when its literal
-    // emitter learns the fields too, keeping data and literal reps in step.
     const main = { name: model.const.Name };
     if (null != targetname) {
         main.slug = model.name;

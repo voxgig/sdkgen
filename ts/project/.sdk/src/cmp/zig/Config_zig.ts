@@ -41,32 +41,8 @@ const Config = cmp(async function Config(props: any) {
   // helpers/applicability.
   const feature = targetFeatures(model, target)
 
-  // The canonical config OBJECT and its JSON, from the shared helper. Both
-  // representations render from the same `def`, so they cannot describe
-  // different configs - and this target picks up `options.server` (the
-  // OpenAPI server-variable defaults), which the hand-rolled build here
-  // omitted entirely. Passing target.name opts this target into the main
-  // slug/version/target identity fields (read by station's descriptor -
-  // see configDefinition).
   const { def: config } = configDefinition(model, target.name)
 
-  // WHERE the credential goes and UNDER WHAT NAME travel with the prefix
-  // now. apidef resolved both from the spec's securityScheme all along and
-  // generation dropped them, so an apiKey-in-query API got an authorization
-  // header it does not read. Emitted ONLY when they differ from the
-  // defaults, so every header/Authorization SDK's core/config.zig is
-  // byte-identical to what it generated before.
-  //
-  // Written onto configDefinition's OWN def rather than into a hand-built
-  // options literal, and the JSON re-serialised from that same def below -
-  // so this target's two representations (the h.jo(...) literal and the
-  // embedded CONFIG_DATA string above the size threshold) cannot disagree
-  // about where the credential goes. Both render from `config`.
-  //
-  // make_options_util's optspec must declare the same two keys or this is
-  // worse than inert: validate is CLOSED and discards the whole merged
-  // options object on an undeclared key. tm/zig/core/utility.zig carries
-  // them.
   const authIn = resolveAuthIn(model)
   const authName = resolveAuthName(model)
   if (null != config.options && null != config.options.auth) {
@@ -83,16 +59,6 @@ const Config = cmp(async function Config(props: any) {
 
   File({ name: 'config.' + target.ext }, () => {
 
-    // ABOVE THE THRESHOLD: emit the model as DATA.
-    //
-    // The literal is one nested expression that Zig's comptime evaluator has
-    // to walk in full at every build; a string constant is one token, and
-    // `json_parse` (std.json at the boundary, then fromStdJson) builds the
-    // same Value at runtime.
-    //
-    // The escaping is JSON.stringify's, which is valid Zig: it escapes every
-    // backslash, so the JSON's own `\uXXXX` reaches the file as `\\uXXXX` and
-    // no Zig escape sequence is ever formed from it.
     if (asData) {
       Content(`// Generated API configuration (mirrors go/rust core/config).
 
@@ -183,16 +149,6 @@ pub fn make_feature(name: []const u8) Feature {
 `)
     }
 
-    // The factory must be able to instantiate any built-in feature by name,
-    // not just the ones the current API model configures — a caller can enable
-    // a shipped feature (e.g. netsim) purely through runtime options even when
-    // the API def does not list it. The built-in set mirrors the feature
-    // templates in tm/zig/feature/ (excluding `base`, the fallback, and
-    // `support`, a helper module). Any model feature not already built in is
-    // appended so bespoke features still resolve - and so does a GATED one
-    // (`secrets`), whose source ships with the tree but whose `@import`s name
-    // build modules that exist only when the model activates it: naming it
-    // here unconditionally would make every zig SDK fail to build.
     const featureNames: string[] = [...BUILTIN_FEATURES]
     each(feature, (f: any) => {
       if (f.name !== 'base' && !featureNames.includes(f.name)) {
@@ -224,27 +180,6 @@ const BUILTIN_FEATURES = [
 ]
 
 
-// THE PLUGIN DEFINITIONS, as the root of the `sekretoplugins` build module:
-// feature/<name>/plugins.zig (the zig peer of Config_go's featurePlugins map
-// and of the plugins.rs index Main_rust emits).
-//
-// Upstream sekreto's contract since its registry was retired: a provider
-// kind not handed to the constructor is unknown to that Sekreto. So this
-// file IS the SDK's provider vocabulary - and in zig it is also what makes
-// the plugin trim REAL: a module root reaches only what it names, so a kind
-// missing here is neither in the vocabulary nor compiled, and a kind named
-// here whose file the trim removed is a compile error rather than a silent
-// one. That is exactly the shape upstream recommends for a lean consumer
-// (plugins/all.zig: "roots its plugins module at the one file it needs").
-//
-// It sits one level ABOVE the vendored `plugins/` directory, deliberately:
-// the vendoring guard fails any non-vendored file inside a vendored dir, and
-// a zig module root reaches its whole SUBTREE, so `plugins/<kind>.zig` is
-// within reach from here while the file itself is outside the guarded tree.
-//
-// Emitted only for a feature that is ACTIVE for this target (targetFeatures),
-// which is also exactly when build.zig declares the module that roots here -
-// an inactive model gets neither, so nothing dangles.
 const FeaturePlugins = cmp(async function FeaturePlugins(props: any) {
   const ctx$ = props.ctx$
   const target = props.target
@@ -265,12 +200,9 @@ const FeaturePlugins = cmp(async function FeaturePlugins(props: any) {
       return
     }
 
-    // symbol -> the file (target-root-relative) that exports it.
     const defs: Record<string, string> = {}
 
     each(declared, (plugin: any) => {
-      // Filter on `active` HERE (Config_go's note): getting this wrong names
-      // a file the trim just removed, which is a compile error.
       if (true !== plugin.active) return
 
       for (const [sym, one] of Object.entries(plugin.def?.zig || {})) {
@@ -302,8 +234,6 @@ pub const httpjson = @import("plugins/httpjson.zig");
           const syms = Object.keys(defs).sort()
 
           for (const sym of syms) {
-            // 'feature/secrets/plugins/aws.zig' -> 'plugins/aws.zig', relative
-            // to this file's directory (feature/<name>/).
             const rel = defs[sym].replace(new RegExp('^feature/' +
               feat.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/'), '')
             Content(`pub const ${sym} = @import("${rel}").${sym};

@@ -3,8 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Security = void 0;
 const jostraca_1 = require("jostraca");
 const packageMeta_1 = require("../helpers/packageMeta");
-// Root SECURITY.md: a responsible-disclosure policy pointing at the Voxgig
-// security contact, with the generated / unofficial disclosure inline.
 const Security = (0, jostraca_1.cmp)(function Security(props) {
     const { ctx$ } = props;
     const { model } = ctx$;

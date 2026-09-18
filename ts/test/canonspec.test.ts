@@ -1,10 +1,3 @@
-// canonSpec: apidef's field-type sentinels -> struct.validate specs.
-//
-// The mapping is checked against the REAL struct, not against an expected
-// spec shape: what matters is that the spec a field produces accepts the
-// values that field can hold and rejects the ones it cannot. Asserting the
-// literal spec would pass just as well for a spec struct cannot run — which
-// is exactly how the nested `$ONE` form got as far as it did.
 
 import { test, describe } from 'node:test'
 import { strictEqual, deepStrictEqual, ok } from 'node:assert'
@@ -214,7 +207,6 @@ describe('canonSpec: entity specs', () => {
   })
 
   test('an op spec follows opRequestShape, not the raw field list', () => {
-    // create: required iff `req`, so `id` is required and the rest are not.
     const create = entityOpSpec(ENT, 'create')
     ok(null != create)
     ok(accepts({ id: 'w1' }, create))

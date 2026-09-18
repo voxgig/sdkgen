@@ -9,27 +9,6 @@ import (
 	"GOMODULE/core"
 )
 
-// Payload validation against the model's own field types. The go port of
-// tm/ts/src/feature/validate/ValidateFeature.ts.
-//
-// The specs are NOT written here and not written in the model either: every
-// entity field already carries a canonical type sentinel (`$STRING`,
-// `$INTEGER`, the `$ONE` union for an OpenAPI multi-type), which is the same
-// vocabulary struct.Validate speaks. The generator maps them once
-// (helpers/canonSpec) and emits `core.ENTITYSPEC`, so a field whose type
-// changes in the API spec changes what this feature enforces with no edit
-// anywhere.
-//
-// WHAT IS CHECKED
-//
-//	outbound (PreSpec)  the payload the caller asked to send, against
-//	                    `spec.op[<opname>]` - the operation's request shape.
-//	inbound  (PreDone)  each record the operation returned, against
-//	                    `spec.data` - the entity's own field types.
-//
-// WHAT IS NOT. The model carries no array element types, no nested object
-// schemas, no enums, formats or bounds, so this checks the shape the model
-// knows and nothing more.
 type ValidateFeature struct {
 	BaseFeature
 	client  *core.ProjectNameSDK
@@ -63,18 +42,11 @@ func (f *ValidateFeature) Init(ctx *core.Context, options map[string]any) {
 	f.request = foptBool(options, "request", true)
 	f.response = foptBool(options, "response", false)
 
-	// FAIL CLOSED. Only the exact string "report" selects report mode, so a
-	// typo (`mode: "thow"`) still rejects rather than silently turning
-	// enforcement off. The option spec rejects the typo outright; this is
-	// what happens if it ever does not.
 	f.mode = "throw"
 	if "report" == foptStr(options, "mode", "throw") {
 		f.mode = "report"
 	}
 
-	// `strict` is applied ONCE, here, by rebuilding the spec tree without the
-	// `$OPEN` markers - rather than per call, which would clone a spec for
-	// every request an SDK ever makes.
 	f.spec = core.ENTITYSPEC
 	if foptBool(options, "strict", false) {
 		if closed, ok := validateClose(core.ENTITYSPEC).(map[string]any); ok {
@@ -83,9 +55,6 @@ func (f *ValidateFeature) Init(ctx *core.Context, options map[string]any) {
 	}
 }
 
-// Outbound. MakeSpec short-circuits on a `ctx.Out["spec"]` that is already
-// set, so assigning the error here rejects the operation before the request
-// is built - the same seam rbac uses one stage earlier.
 func (f *ValidateFeature) PreSpec(ctx *core.Context) {
 	if !f.Active || !f.request {
 		return
@@ -111,16 +80,6 @@ func (f *ValidateFeature) PreSpec(ctx *core.Context) {
 			strings.Join(errs, "; "))
 }
 
-// Inbound. PreDone rather than PreResult: the records are extracted from the
-// response body by MakeResult, which runs between the two, so at PreResult
-// there is nothing to check but the envelope.
-//
-// HOOK ORDER MATTERS HERE, and the default order is not the one you want.
-// PreDone hooks fire in feature ADD order, which defaults to `test` first and
-// then names sorted - and `validate` sorts last, after audit, cost, debug,
-// metrics and telemetry. Those observers therefore record the operation as a
-// success before this hook has looked at it. Activating features as an
-// ORDERED LIST fixes it.
 func (f *ValidateFeature) PreDone(ctx *core.Context) {
 	if !f.Active || !f.response {
 		return
@@ -168,9 +127,6 @@ func (f *ValidateFeature) PreDone(ctx *core.Context) {
 		"Invalid response for entity \""+validateEntName(ctx)+"\": "+
 			strings.Join(errs, "; "))
 
-	// BOTH, and `Ok` is the load-bearing half: Done returns Resdata whenever
-	// Result.Ok is true and never looks at Err, so setting the error alone
-	// would hand the caller the very records that failed the spec.
 	ctx.Result.Ok = false
 	ctx.Result.Err = err
 
@@ -182,14 +138,6 @@ func (f *ValidateFeature) PreDone(ctx *core.Context) {
 	ctx.Result.Resdata = nil
 }
 
-// The payload an operation is about to send.
-//
-// TWO SLOTS, AND THE OP PICKS. A body op (create/update/patch) carries the
-// caller's argument in Reqdata over the entity's Data; a match op
-// (load/list/remove) carries it in Reqmatch over Match. That is what the
-// entity operations pass to NewContext and what MakePoint reads - so reading
-// Reqdata for every op would check a `Load({id})` against the entity's STALE
-// stored match and reject it for the id the caller had just supplied.
 func (f *ValidateFeature) payload(ctx *core.Context, opname string) map[string]any {
 	body := "create" == opname || "update" == opname || "patch" == opname
 
@@ -226,9 +174,6 @@ func (f *ValidateFeature) entitySpec(ctx *core.Context) map[string]any {
 	return espec
 }
 
-// One Validate call. Errors are COLLECTED, never returned as one: struct
-// stops at the first failure unless given an errs collector, and a caller
-// fixing a payload wants every problem with it, not the first one.
 func (f *ValidateFeature) check(
 	ctx *core.Context, data any, spec any, direction string,
 ) []string {
@@ -294,12 +239,6 @@ func validateEntName(ctx *core.Context) string {
 	return ""
 }
 
-// A RESULT RECORD AS DATA.
-//
-// MakeResult turns every record of a LIST into an entity instance, so what
-// reaches PreDone for a list is wrappers, not records - and a wrapper checked
-// against a field spec fails on every required field while its actual data
-// goes unchecked. A load returns the record itself, so this handles both.
 func validateUnwrap(record any) any {
 	if ent, ok := record.(core.Entity); ok && ent != nil {
 		if data := ent.Data(); data != nil {
@@ -309,9 +248,6 @@ func validateUnwrap(record any) any {
 	return record
 }
 
-// The spec tree with every `$OPEN` marker removed, so an undeclared key is an
-// error rather than a pass. Rebuilt rather than mutated: core.ENTITYSPEC is a
-// package constant shared by every client in the process.
 func validateClose(node any) any {
 	switch n := node.(type) {
 	case []any:
@@ -322,8 +258,6 @@ func validateClose(node any) any {
 		return out
 
 	case map[string]any:
-		// Sorted, so a rebuilt spec is byte-stable when it is printed in an
-		// error - go map order is randomised per run.
 		keys := make([]string, 0, len(n))
 		for k := range n {
 			if validateOpenKey != k {

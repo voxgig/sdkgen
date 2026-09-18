@@ -42,15 +42,6 @@ const Main = cmp(async function Main(props: any) {
 
   Gitignore({})
 
-  // Copy tm/csharp files with replacements. `src/` holds only the
-  // per-feature extension folders (not shipped into the SDK output).
-  //
-  // pluginExcludes: the generate-time plugin trim (a DECLARED-but-INACTIVE
-  // plugin group's files are never copied). Without it every group's files
-  // ship regardless of the model, and an SDK whose chain is [dotenv, env]
-  // carries AWS request signing and seven HTTP vault clients - the whole
-  // point of the trim. Feature-level trimming happens at `target add`
-  // time; this is the per-plugin cut inside a feature that IS selected.
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, TEST_CONTROL_EXCLUDE, ...pluginExcludes(model)],
@@ -59,21 +50,6 @@ const Main = cmp(async function Main(props: any) {
     }
   })
 
-  // GENERATED, NOT COPIED. Where the credential goes is a fact about the
-  // API, and tm/ can only hold one answer. See PrepareAuth_csharp.
-  //
-  // CALLED HERE, AT THE ROOT, and NOT inside the core/ Folder below. The
-  // template it replaces lived at `tm/csharp/utility/PrepareAuth.cs`, so
-  // the blanket Copy above put it at `<out>/utility/PrepareAuth.cs` -
-  // beside Register.cs, which wires `u.PrepareAuth = PrepareAuthUtil` from
-  // the same `partial class SdkUtility`. The component opens its own
-  // `utility` Folder; moving this call next to Config would nest it under
-  // core/ and write `core/utility/PrepareAuth.cs`, where nothing compiles
-  // it into the utility partial.
-  //
-  // The template MUST be deleted for the same reason it is generated: the
-  // Copy above and this component would otherwise both claim
-  // `utility/PrepareAuth.cs`, and jostraca refuses a duplicate output path.
   PrepareAuth({ target })
 
   // Generated files live in core/ beside the copied runtime.

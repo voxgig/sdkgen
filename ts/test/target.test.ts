@@ -7,18 +7,9 @@ import Path from 'node:path'
 import { resolveTarget } from '../dist/action/target.js'
 
 
-// resolveTarget builds paths with node:path, so separators differ by OS
-// (forward slash on POSIX, backslash on Windows). Keep the test portable
-// by normalising paths on both sides: the fake fs normalises what it
-// stores and what it is queried with, and assertions compare in a
-// separator-insensitive form. Root is '.' to mirror production, where
-// resolveActionContext sets folder: '.'.
 const ROOT = '.'
 const posix = (p: string) => p.replace(/\\/g, '/')
 
-// resolveTarget only touches the fs via existsSync, so a fake fs whose
-// existsSync consults a known set lets us exercise every search branch
-// without real directories.
 function makeCtx(existing: string[]) {
   const set = new Set(existing.map((p) => Path.normalize(p)))
   return {
@@ -58,7 +49,6 @@ describe('resolveTarget', () => {
 
   test('scoped path ref falls back to a sibling project dir', () => {
     const folder = 'acme/widgets/.sdk'
-    // node_modules variant intentionally absent → fallback path is used.
     const out = resolveTarget('acme/widgets/go', makeCtx([folder]))
     strictEqual(posix(out.tfolder), folder)
     strictEqual(posix(out.base), folder)
@@ -87,13 +77,6 @@ describe('resolveTarget', () => {
 })
 
 
-// A `~` in the PATH is not an alias separator.
-//
-// Windows 8.3 short names contain one routinely — the CI runner's temp
-// directory is `C:\Users\RUNNER~1\AppData\Local\Temp` — and splitting the
-// whole ref on `~` read that as "install `C:\Users\RUNNER` under the alias
-// `1\AppData\...`", which then searched for `C:\Users\.sdk`. Legal on POSIX
-// too: a directory may simply be called `foo~bar`.
 describe('resolveTarget with a tilde in the path', () => {
 
   test('a tilde in a directory name is part of the path', () => {

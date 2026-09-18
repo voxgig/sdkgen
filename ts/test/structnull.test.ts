@@ -1,61 +1,3 @@
-// What each vendored struct does with a STORED null — pinned per port.
-//
-// WHY THIS EXISTS
-//
-// `auth: null` is the documented way to suppress auth outright, and the bug
-// family it produced across a dozen targets came from one question nothing
-// asked: when a key is present and holds a JSON null, is that "no value" or
-// is it a value? Every port answers, none was asked, and they do not agree.
-//
-// They do not agree TODAY, in this tree:
-//
-//   port   stamp    getprop({x:null},'x','ALT')   haskey   validate({auth:null},…)
-//   ────   ──────   ───────────────────────────   ──────   ───────────────────────
-//   go     0.1.3    'ALT'                         false    returns the default
-//   py     —        'ALT'                         false    returns the default
-//   perl   —        'ALT'                         false    returns the default
-//   js     0.3.2    'ALT'                         false    returns the default
-//   rb     —        null                          true     returns the default
-//   php    —        null                          true     THROWS
-//
-// Still three behaviours, now across six ports. js used to be the sixth row
-// of the bottom group, on struct 0.0.10, which put it and `ts` (0.3.2) - the
-// two targets every other language is held in parity WITH - in DIFFERENT
-// classes. Resyncing js's vendored struct to the same commit ts came from is
-// what moved it, and this test is what noticed: the row above was written
-// from the old measurement and failed the moment the file changed.
-//
-// The remaining split is not subtle; it is the direct cause of the two
-// auth-null failure modes catalogued in the migration guide. Where validate
-// returns the default, the suppression silently becomes "use the default
-// auth" and the withheld credential goes out (fail-open). Where it throws,
-// construction dies instead (fail-closed).
-//
-// WHY THE SHARED CORPUS CANNOT DO THIS
-//
-// The corpus runs `minor.getprop` and `minor.haskey` on every port and sees
-// none of it, because not one case stores a null: every entry is either an
-// absent key or a non-null value. A case that DID store one would go red on
-// half the tree - correctly, but it would gate the corpus on finishing the
-// struct migration everywhere first. So the divergence is pinned HERE, per
-// port, at its current value, and the corpus keeps its job.
-//
-// This is a CHARACTERIZATION test. The table is not a statement that these
-// answers are right - three of them are on their way out. It fails when an
-// answer CHANGES, which is the point: a resync that quietly moves a port
-// between classes moves it between auth-null failure modes too, and the
-// vendored signature pin next door cannot see a behaviour change at all.
-//
-// FORMER KNOWN DEFECT, now resynced away
-//
-// py used to answer correctly for a MAP and incorrectly for a LIST:
-// `getprop([null], 0, 'ALT')` handed back the null where canonical gives
-// 'ALT' (its list branch did `return val[key]`, an early return skipping
-// the null rule). The tag resync (sdk-20260904-1610-0, struct python
-// 0.1.1) brought upstream's isnode-shaped getprop, and the list case now
-// answers 'ALT' — measured at the resync, and pinned by create-sdkgen's
-// opt-in `struct/nullsem.aon` corpus section, which py can now opt into.
-// py's MAP-question class below is unchanged by the resync.
 
 import { test, describe, before, after } from 'node:test'
 import { strictEqual } from 'node:assert'
@@ -90,19 +32,11 @@ function run(cmd: string, args: string[], cwd?: string) {
 }
 
 
-// The three questions, as one line each, in a format every language can print
-// without a JSON encoder: parsing `getprop=alt` is the same work in six
-// languages and cannot disagree about how to spell `null`.
 type Answers = {
-  // Does getprop hand back the ALT (a stored null counts as "no value") or
-  // the null itself (a stored null is a value)?
   getprop: 'alt' | 'null',
 
-  // Does a key holding a null count as present?
   haskey: 'true' | 'false',
 
-  // And the case that started this: validating {auth: null} against a spec
-  // whose `auth` carries a default.
   validate: 'default' | 'throws',
 }
 
@@ -123,8 +57,6 @@ const PORTS: {
       const py = toolchain('python3') || toolchain('python')
       if (null == py) return null
 
-      // -B, or importing from the template tree writes a __pycache__ INTO the
-      // shipped scaffold - which then ships, until junk.test.ts catches it.
       return run(py, ['-B', '-c', `
 import sys
 sys.path.insert(0, ${JSON.stringify(Path.join(TM, 'py', 'pkg', 'utility'))})
@@ -147,8 +79,6 @@ except Exception:
     exec: () => {
       const pl = toolchain('perl')
       if (null == pl) return null
-      // perl models JSON null as a blessed singleton, not undef, so the
-      // stored null has to be JNULL - `undef` would be a different question.
       return run(pl, ['-e', `
 use lib ${JSON.stringify(Path.join(TM, 'perl', 'lib'))};
 use Voxgig::Struct;
@@ -205,10 +135,6 @@ catch (\\Throwable $e) { echo 'validate=throws' . PHP_EOL; }
     },
   },
   {
-    // The go/py READER class combined with the php VALIDATE class - a
-    // combination no other port pins: getprop/haskey answer the new way
-    // while validate on a stored null THROWS (fail-closed). Resynced to
-    // struct 0.1.1 at the vendor tag.
     target: 'csharp',
     stamp: '0.1.1',
     needs: 'dotnet',
@@ -264,9 +190,6 @@ catch (Exception)
     needs: 'node (always present - this suite runs on it)',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: (tmp) => {
-      // Node >=23.6 strips erasable TS syntax from FILES natively, which
-      // is exactly enough for the vendored utility (typescript-the-package
-      // is v7 here and no longer exposes transpileModule).
       const dir = Fs.mkdtempSync(Path.join(tmp || Os.tmpdir(), 'structnull-ts-'))
       Fs.copyFileSync(
         Path.join(TM, 'ts', 'src', 'utility', 'StructUtility.ts'),

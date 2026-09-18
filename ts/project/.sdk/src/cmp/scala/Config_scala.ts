@@ -41,29 +41,10 @@ const Config = cmp(async function Config(props: any) {
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const { def: configDef } = configDefinition(model, target.name)
-  // Gated by the applicability tags, so this target never imports or
-  // registers a feature it has no source for. One rule, one place:
-  // helpers/applicability.
   const feature = targetFeatures(model, target)
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
-  // PLUGIN DEFINITIONS, per feature (the scala peer of Config_go's
-  // featurePlugins map and Config_ts's pluginDefs).
-  //
-  // Since sekreto retired its import-time registry, provider kinds are
-  // voxgig/plugin definitions: a kind the caller did not pass in via
-  // `plugins` is unknown to that Sekreto. So the config names each active
-  // plugin's exported Definition and hands the list to the feature.
-  //
-  // The scala symbols are fully-qualified top-level `val`s
-  // (`com.voxgig.sekreto.plugins.hashicorp`), so unlike go there is no
-  // import to emit - and an inactive group therefore leaves no reference at
-  // all behind for the generate-time plugin trim to dangle.
-  //
-  // Typed List[Any], never List[Definition]: core must not name a vendored
-  // type, or a tree carrying the feature source without the feature selected
-  // would fail to compile.
   const featurePlugins: Record<string, string[]> = {}
   each(feature, (f: any) => {
     const syms: string[] = []
@@ -113,12 +94,6 @@ const Config = cmp(async function Config(props: any) {
   }
   if (authActive) {
     const auth: Record<string, any> = { prefix: authPrefix }
-    // ONLY WHEN THEY DIFFER FROM THE DEFAULT. `in: 'header'` and
-    // `name: 'Authorization'` are what resolveAuthIn/resolveAuthName answer
-    // for a spec that says nothing, and what the generated
-    // utility/PrepareAuth.scala assumes, so emitting them would be pure
-    // payload AND would move every existing header SDK's Config.scala. An
-    // apiKey-in-query API (joplin's `?token=`) is the case that needs them.
     if (authBasic) auth.basic = true
     if ('header' !== authIn) auth.in = authIn
     if ('Authorization' !== authName) auth.name = authName
@@ -127,12 +102,6 @@ const Config = cmp(async function Config(props: any) {
   options.headers = headers
   options.entity = optionsEntity
 
-  // configDefinition's `def.entity` verbatim, NOT rebuilt here. This reduce
-  // was one of fourteen copies of that function's entityDefs loop, and when
-  // configDefinition started reconstructing a point's `parts` from apidef's
-  // segment vector (its ADR-003), only the copies that read `configDef` got
-  // it — this target's literal config emitted paths with no parts at all
-  // while its data config had them. One rule, one place.
   const entityConfig = configDef.entity
 
   const config = {

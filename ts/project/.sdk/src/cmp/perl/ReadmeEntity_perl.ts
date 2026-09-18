@@ -32,8 +32,6 @@ function perlType(type: any): string {
 }
 
 
-// Operation method spelling for Perl: lowercase methods called on the entity
-// instance, taking a hashref match/data argument.
 const OP_DESC: Record<string, { method: string, desc: string }> = {
   load:   { method: 'load($match)',  desc: 'Load a single entity by match criteria.' },
   list:   { method: 'list()',        desc: 'List entities, optionally matching the given criteria.' },
@@ -65,7 +63,6 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
     const fields = entity.fields || []
-    // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
     const eVar = entity.name
 

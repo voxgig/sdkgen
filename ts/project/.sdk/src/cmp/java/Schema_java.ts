@@ -18,25 +18,6 @@ import {
 } from './utility_java'
 
 
-// THE GENERATED SCHEMA MODULE: the model's schemas, as data the SDK can run.
-//
-// The java peer of src/cmp/ts/Schema_ts.ts. Same two members, same source:
-// OPTSPEC from `main.kit.optspec` plus each feature's own `config.options`,
-// ENTITYSPEC from the entity field sentinels — both built by the shared
-// helpers, so what java validates against and what ts validates against
-// cannot drift.
-//
-// EMBEDDED AS JSON, PARSED AT LOAD, where ts emits an object literal: JSON is
-// a subset of TypeScript's own literal syntax and is not a subset of java's.
-// Chunked StringBuilder appends, exactly as Config.java carries its config,
-// keep every string constant far below the JVM's 64KB limit no matter how
-// many features or entities the model grows.
-//
-// The round-trip is exact because the spec holds only strings and booleans:
-// pinned by "strings and booleans only, so the JSON round-trip is lossless"
-// in ts/test/optspec.test.ts. That is not incidental — Json.parse decodes a
-// JSON number to one java type and struct reads a spec BY EXAMPLE, so one
-// number in here would mean something different in java than in ts.
 const Schema = cmp(async function Schema(props: any) {
   const ctx$ = props.ctx$
   const target = props.target

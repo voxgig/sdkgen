@@ -1,25 +1,3 @@
-// Cross-language parity coverage, made VISIBLE and enforced.
-//
-// The value of sdkgen is that every target behaves identically, and the
-// mechanism for proving that is the shared test corpus: language-neutral
-// `.aon` fixtures (create-sdkgen project/standard/.sdk/test/primary/) that
-// compile to a test.json each target's own suite executes. A target whose
-// suite does NOT drive that corpus is only ever checked against
-// hand-written cases it wrote for itself, so it can drift from the reference
-// without anything failing.
-//
-// Before this file, the only cross-language test asserted file EXISTENCE
-// (featuremodel.test.ts), so the coverage tiers below were invisible: you had
-// to grep the template tree to discover that five targets mirrored the corpus
-// by hand and four had no primary-utility suite at all.
-//
-// Those gaps are now CLOSED: every target drives the corpus, and MIRRORED and
-// UNCOVERED are empty. Driving it is what found the defects — the same
-// prepare_method "GET" catch-all in six independent ports, among others.
-// The manifest stays as the stated policy: a target that loses its
-// corpus-driven suite, or a new target added without a decision about its
-// tier, fails here. Adding a name to MIRRORED or UNCOVERED is a deliberate
-// regression and should be argued for in the commit that does it.
 
 import { test, describe } from 'node:test'
 import { ok, deepStrictEqual, strictEqual } from 'node:assert'
@@ -32,17 +10,6 @@ const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
 const TM = Path.join(SDK, 'tm')
 
 
-// The 22 corpus sections every FULL-tier target must execute. Kept explicit
-// (rather than read from the sibling create-sdkgen checkout, which is not
-// guaranteed to be present) so this suite is self-contained.
-//
-// NOT the whole corpus. `clean` and the deferred sections are excluded, and
-// so is `makePoint` — it was promoted from deferred to seven real cases, but
-// only ts and go drive it so far. Adding it here makes it mandatory for all
-// 16 FULL targets at once, which is the work to do next, one target at a
-// time: each needs its context builder to honour a fixture-supplied
-// `options` and `config` (lean's overwrites both, which is why lean does not
-// drive this section yet).
 const CORPUS_SECTIONS = [
   'done', 'makeContext', 'makeError', 'makeOptions', 'makeRequest',
   'makeResponse', 'makeSpec', 'makeUrl', 'operator', 'param', 'prepareAuth',
@@ -52,19 +19,6 @@ const CORPUS_SECTIONS = [
 ]
 
 
-// Targets that are not language SDKs: they CONSUME another target's SDK
-// (go-cli/go-mcp consume `go`; py-data consumes `py`) and switch the standard
-// generation phases off, so they have no primary-utility surface of their own.
-// Their own behaviour is covered by their generated tests, not by the
-// cross-language corpus.
-//
-// `seneca-provider` was the fourth and has MOVED to
-// packages/sdkgen-seneca-provider, where its manifest declares
-// `parity: CONSUMER` — the same statement this list makes, in the only place
-// an external package can make it. It went first among the four because every
-// bundled LANGUAGE target is now FULL tier, and a FULL-tier target that
-// migrates is silently capped until the corpus is published; a target in no
-// tier set has no tier to cap.
 const NON_SDK_TARGETS = ['go-cli', 'go-mcp', 'py-data']
 
 
@@ -157,20 +111,6 @@ function corpusSources(lang: string): string[] {
 const CORPUS_LOADERS =
   /test\.json|test_json|testJson|TEST_JSON|loadTestSpec|load_test_spec|LoadTestSpec|makeRunner|getSpec|resolveSpec/
 
-// Tokens that look up a section IN the corpus, in each language's idiom.
-// A section counts as driven only when its name appears on a line that also
-// contains one of these — i.e. the name is being PASSED to the corpus lookup.
-//
-// A bare `src.includes(section)` is not enough and was actively misleading:
-// every suite lists all 22 section names in its "these utilities exist"
-// assertion, so ten FULL-tier targets passed while running preparePath through
-// private hand-written contexts. That is the same "green while checking
-// nothing" failure this file exists to catch, reproduced in the checker.
-//
-// `_sec(` is dart's: closing the empty-section hole meant wrapping
-// `_runset(_g('x.basic'), fn)` in a helper that asserts the section is
-// non-empty first, so the lookup now happens one level in. The token has to
-// name the wrapper, or a target gets punished for adding a guard.
 const SECTION_LOOKUP =
   /getSpec|get_spec|GetSpec|getspec|spec\.|spec\[|primary|runsection|runset|runSet|_runset|_g\(|_sec\(/
 
@@ -192,10 +132,6 @@ describe('cross-language corpus coverage', () => {
       const p = primaryTestFile(lang)
       ok(p, `${lang}: no primary-utility test file found under tm/${lang}`)
 
-      // Read the suite AND any corpus-harness file beside it: elixir keeps its
-      // section drivers in test/support/struct_corpus.ex and the *_test.exs is
-      // a three-line delegate, so scanning one file called the target's 22
-      // sections missing when every one of them runs.
       const src = corpusSources(lang).map((f) => readFileSync(f, 'utf8')).join('\n')
 
       ok(CORPUS_LOADERS.test(src),
@@ -229,17 +165,6 @@ describe('cross-language corpus coverage', () => {
 })
 
 
-// GraphQL is a second TRANSPORT, not a second SDK surface: apidef emits
-// `kind: 'graphql'` points carrying a precomputed document, and every target
-// must branch on that kind in makeSpec and lift the top-level `errors` array
-// in makeResponse. A target that ships the REST path only produces an SDK
-// that silently posts REST-shaped requests at a GraphQL endpoint and reports
-// server-side failures as success (GraphQL errors ride HTTP 200).
-//
-// Twelve of the twenty-three targets have no toolchain in CI, so a compile
-// cannot catch a target left behind — this manifest can. It is a DRIFT guard,
-// not a proof of correctness: it asserts each target still carries the four
-// pieces of the transport, in whatever the language's idiom names them.
 describe('graphql transport parity', () => {
 
   // Comment lines are stripped before matching, so a target cannot satisfy
@@ -305,15 +230,6 @@ describe('graphql transport parity', () => {
     })
   }
 
-  // Paging is a separate hook and drifted separately: the kind branch clears
-  // spec.query, so a REST-only paging feature writes cursor/limit into a
-  // query string that is then discarded, and reads only top-level body
-  // cursors — so a Relay connection stops after page one.
-  //
-  // EMPTY: `lean` was the only exemption — its paging feature stamps
-  // size/page and counts pages, with no cursor pagination, Link header or
-  // hasMore for REST — and it has moved to @voxgig/sdkgen-langpack. Every
-  // bundled target now mirrors the cursor branch.
   const NO_CURSOR_PAGING: string[] = []
 
   for (const lang of sdkTargets()) {
@@ -353,19 +269,6 @@ describe('graphql transport parity', () => {
 })
 
 
-// The raw-access escape hatch — `direct()` for arbitrary HTTP, `graphql()`
-// for arbitrary documents — reaches the API endpoint outside the operation
-// surface, so it is operator-controllable like every entity op: both tokens
-// are checked against allow.op before anything is sent. An ungated escape
-// hatch makes allow.op advisory, since a caller denied `remove` can still
-// DELETE through `direct`.
-//
-// One target ships no raw-access surface at all. It is listed rather than
-// inferred, so adding `direct` to it fails here until its gate lands with it.
-// EMPTY, and that is a statement rather than an oversight: `lean` was the
-// only entry, and it has moved to @voxgig/sdkgen-langpack. Every bundled
-// target now exposes the raw-access escape hatch, so the closed-set check
-// below asserts RAW_ACCESS alone covers the shipped list.
 const NO_RAW_ACCESS: string[] = []
 
 describe('raw-access gate parity', () => {
@@ -410,13 +313,6 @@ describe('raw-access gate parity', () => {
   })
 
   test('targets without raw access really have none', () => {
-    // Search the TEMPLATE tree only: the component tree carries `direct(`
-    // inside README and test string literals, which are not a surface.
-    // Match a call OR an ML-style signature. Found on haskell (now
-    // @voxgig/sdkgen-haskell), which declares
-    // `direct :: Client -> Value -> IO Value` with no paren anywhere, so a
-    // call-syntax regex silently cleared a target whose escape hatch was wide
-    // open. The shape still matters here: ocaml is ML-style too.
     const nowRaw = NO_RAW_ACCESS.filter((lang) => {
       const dir = Path.join(TM, lang)
       const hits: string[] = []
@@ -493,8 +389,6 @@ describe('reference-target invariants', () => {
   })
 
   test('the go runner fails loudly on an empty or missing corpus section', () => {
-    // It used to `return` silently, so a renamed section or a fixture that
-    // compiled to an empty set reported PASS while running zero assertions.
     const runner = readFileSync(Path.join(TM, 'go', 'test', 'primary_utility_test.go'), 'utf8')
     ok(/t\.Fatalf\(/.test(runner), 'runset must fail, not return')
     ok(/is EMPTY/.test(runner), 'runset must reject a zero-case section')
@@ -510,16 +404,6 @@ describe('reference-target invariants', () => {
 })
 
 
-// The scaffold components (project/.sdk/src/cmp/**) are TypeScript that only
-// ever compiles inside a CONSUMER project, so `tsc --build src test` never
-// sees them: a missing import there is invisible here and fatal there (every
-// generated SDK of that language fails to build). tsconfig.scaffold.json
-// type-checks them against this package's own source; `npm run build` runs it.
-//
-// A source-level approximation was tried first and abandoned — the components
-// EMIT target-language source, so identifiers like `cmap(`, `names(` and
-// `template(` appear inside string literals and comments and cannot be told
-// apart from real call sites by regex. Only a real compile is sound.
 describe('scaffold components are type-checked', () => {
 
   test('the scaffold typecheck is wired into the build', () => {
@@ -543,17 +427,6 @@ describe('scaffold components are type-checked', () => {
 })
 
 
-// Identifiers that one component DECLARES and another REFERENCES must be
-// derived in exactly one place. Two copies agree until one is fixed alone.
-// A target whose config is a process-wide singleton MUST clone the config
-// side before merging client options into it. `merge([{}, cfgopts, opts])`
-// uses cfgopts' nested maps as merge TARGETS, so without the clone the first
-// client's options (headers, server, ...) are written into the shared config
-// and inherited by every client constructed afterwards.
-//
-// ts/js carried this guard from the day their config became a module
-// singleton. go/py/rb/lua only became singletons when L2 landed, and the
-// omission was a silent cross-client data leak until then.
 const CLONES_CFGOPTS = [
   'c', 'cpp', 'csharp', 'elixir', 'go', 'java', 'js', 'kotlin', 'lua', 'perl',
   'py', 'rb', 'rust', 'scala', 'swift', 'ts', 'zig',
@@ -596,7 +469,6 @@ function makeOptionsFile(lang: string): string | undefined {
 }
 
 
-// Does this target emit a shared/singleton config accessor?
 function sharesConfig(lang: string): boolean {
   const cmp = Path.join(TM, '..', 'src', 'cmp', lang)
   if (!existsSync(cmp)) {
@@ -607,9 +479,6 @@ function sharesConfig(lang: string): boolean {
       continue
     }
     const src = readFileSync(Path.join(cmp, e), 'utf8')
-    // Three spellings across the fleet: shared_config (go/py/rb/lua/rust/zig/
-    // elixir/c/perl), SharedConfig (csharp), sharedConfig (cpp/java/kotlin/
-    // scala/swift).
     if (/shared_config|SharedConfig|sharedConfig|config_shared/.test(src)) {
       return true
     }
@@ -637,14 +506,6 @@ describe('shared config cannot leak across clients', () => {
       ok(undefined !== file, `${lang}: no make_options template found`)
       const src = readFileSync(file as string, 'utf8')
 
-      // cfgopts must reach the merge THROUGH a clone. Matched across the
-      // whole file rather than on one line: csharp, java, kotlin and scala
-      // build the merge list over several lines, so a single-line match
-      // reported "no line merges cfgopts" and silently checked nothing.
-      //
-      // The window is deliberately tight, so `clone` and `cfgopts` have to be
-      // part of one expression - Clone(cfgopts), clone(&cfgopts),
-      // voxgig_clone(cfgopts), clone(.map(cfgopts)), clone($cfgopts).
       ok(/clone[^\n]{0,24}cfgopts/i.test(src),
         `${lang}: make_options merges the SHARED config without cloning it. ` +
         'One client\'s options will contaminate every client built after it.')
@@ -661,15 +522,6 @@ describe('shared config cannot leak across clients', () => {
 })
 
 
-// clean() strips emission-only noise from the model before it is written into
-// a generated config. It was broken from the day it was written and nothing
-// noticed: it walked a clone calling `delete p[k]`, but walk() assigns its
-// callback's result back over the child, so every delete was undone on the way
-// out. Returning `undefined` instead is NOT the fix either — setprop stores
-// undefined rather than removing the key, and it emits as a null.
-//
-// These assert the OUTPUT, not the mechanism, so any future rewrite is free as
-// long as the keys actually go away.
 describe('clean() removes what it claims to remove', () => {
 
   const subject = () => ({
@@ -715,22 +567,16 @@ describe('clean() removes what it claims to remove', () => {
     // Only the DEFAULT value goes. The opposite value is meaningful and stays.
     strictEqual(dropped.inactive.active, false, 'active:false is meaningful')
     strictEqual(dropped.inactive.reqd, true, 'reqd:true is load-bearing (Select)')
-    // `req` is also a transform spec, not only a boolean flag.
     strictEqual(dropped.inactive.req, '`reqdata`', 'req as a string must survive')
   })
 
   test('every target asks for default-dropping on its entity subtree', () => {
-    // The helper doing the right thing is only half of it — each Config
-    // component has to PASS dropDefaults at the entity call site. Two targets
-    // (perl, swift) name the entity `ent` rather than `n` and were silently
-    // missed by a sweep that assumed one spelling.
     const CMP = Path.join(TM, '..', 'src', 'cmp')
     const missing: string[] = []
     for (const lang of sdkTargets()) {
       const file = Path.join(CMP, lang, `Config_${lang}.ts`)
       if (!existsSync(file)) continue
       const src = readFileSync(file, 'utf8')
-      // The entity subtree is the call that carries fields/op/relations.
       if (!/relations:\s*\w+\.relations/.test(src)) continue
       if (!/relations:\s*\w+\.relations,\s*\n\s*\},\s*true\)/.test(src)) {
         missing.push(lang)
@@ -741,11 +587,6 @@ describe('clean() removes what it claims to remove', () => {
   })
 
   test('no typed Point reader defaults active to false', () => {
-    // Emission drops `active: true` as a default, so a reader that defaults a
-    // missing `active` to FALSE reports every active point as inactive. Eight
-    // targets model a Point this way — java, kotlin, swift and csharp were the
-    // obvious ones; dart, c, scala and zig were missed on the first pass and
-    // caught in review. Scan rather than list, so target nine is caught too.
     const wrong: string[] = []
     for (const lang of sdkTargets()) {
       const root = Path.join(TM, lang)
@@ -785,7 +626,6 @@ describe('clean() removes what it claims to remove', () => {
   })
 
   test('default pruning stops at payload subtrees', () => {
-    // `active: true` inside an OpenAPI example is DATA, not a default.
     const { clean } = loadGoUtility()
     const out = clean({
       active: true,
@@ -801,8 +641,6 @@ describe('clean() removes what it claims to remove', () => {
   })
 
   test('every target strips $-keys, so no config ships jostraca metadata', () => {
-    // Cheap structural check across the other 22: the helper must not be the
-    // old delete-during-walk shape.
     const CMP = Path.join(TM, '..', 'src', 'cmp')
     const stale: string[] = []
     for (const lang of sdkTargets()) {
@@ -826,13 +664,6 @@ describe('go feature identifiers are derived once', () => {
   const GO = Path.join(TM, '..', 'src', 'cmp', 'go')
 
   test('Main_go and Config_go share goFeatureName', () => {
-    // Main_go DECLARES New<F>FeatureFunc (registry.go + root init()); Config_go
-    // REFERENCES it (makeFeature). Both used to hand-roll
-    // `name.charAt(0).toUpperCase() + name.slice(1)` — consistently wrong for a
-    // name needing real normalisation, but at least agreeing. Fixing Main_go
-    // alone made `rate_limit` NewRateLimitFeatureFunc in the registry and
-    // NewRate_limitFeatureFunc in config: an undefined identifier in the
-    // generated Go, i.e. worse than the bug it replaced.
     for (const file of ['Main_go.ts', 'Config_go.ts']) {
       const src = readFileSync(Path.join(GO, file), 'utf8')
       ok(/goFeatureName\(/.test(src),
@@ -846,8 +677,6 @@ describe('go feature identifiers are derived once', () => {
   test('goFeatureName normalises a multi-word feature name', () => {
     const { goFeatureName } = loadGoUtility()
     strictEqual(goFeatureName({ name: 'ratelimit' }), 'Ratelimit')
-    // The cases that broke: hyphen and underscore must yield a LEGAL Go
-    // identifier, identical on both sides.
     strictEqual(goFeatureName({ name: 'rate_limit' }), 'RateLimit')
     strictEqual(goFeatureName({ name: 'rate-limit' }), 'RateLimit')
   })
@@ -893,22 +722,11 @@ describe('config representation is chosen by size', () => {
 
   test('the threshold counts UTF-8 bytes, not UTF-16 code units', () => {
     const { CONFIG_DATA_THRESHOLD, isConfigData } = require('../dist/sdkgen.js')
-    // A CJK character is 3 bytes but ONE UTF-16 code unit, so a `.length`
-    // comparison reads a multilingual model as a third of its real size and
-    // keeps it on the expensive literal path well past the point it hurts.
     const cjk = '\u4e16'.repeat(Math.ceil((CONFIG_DATA_THRESHOLD + 3) / 3))
     strictEqual(cjk.length < CONFIG_DATA_THRESHOLD, true, 'fixture proves nothing')
     strictEqual(isConfigData(cjk), true, 'threshold measured in code units')
   })
 
-  // An ABSENT optional member must not become a key in either representation.
-  //
-  // Callers build `{fields, name, op, relations}` from an entity, and `op` is
-  // optional - so the key exists with value undefined. JSON.stringify omits
-  // such a key while the py/rb/php literal formatters emit None/nil/null, so
-  // an entity with no `op` would describe a DIFFERENT config depending on
-  // which side of the threshold it fell. The equivalence tests missed it
-  // because every entity in the fixture has an `op`.
   test('clean drops an absent optional member rather than carrying undefined', () => {
     const { clean } = require('../dist/sdkgen.js')
     const out = clean({ fields: [{ name: 'a' }], name: 'x', op: undefined }, true)
@@ -917,7 +735,6 @@ describe('config representation is chosen by size', () => {
       'representations disagree about whether it exists')
     strictEqual(Object.prototype.hasOwnProperty.call(out, 'op'), false)
 
-    // A real null is DATA, not absence, and must survive.
     const kept = clean({ name: 'x', note: null }, true)
     strictEqual(Object.prototype.hasOwnProperty.call(kept, 'note'), true)
     strictEqual(kept.note, null)
@@ -961,19 +778,6 @@ describe('config representation is chosen by size', () => {
     ['csharp', 'Config_csharp.ts', 'JsonSerializer\\.Deserialize', 'formatCsMap'],
   ]
 
-  // The clojure data constant must be CHUNKED under the JVM limit.
-  //
-  // A Clojure string literal becomes a constant-pool UTF-8 entry, capped at
-  // 65,535 bytes — so one constant cannot hold a config large enough to select
-  // the data representation at all (the threshold is 256 KB). The failure is
-  // AOT-only, which is why nothing here caught it: loading from source is fine
-  // and `clojure -M:test-compile` only requires. Compiling a 70,000-character
-  // literal gives:
-  //
-  //   Execution error (IllegalArgumentException)
-  //     at clojure.asm.ByteVector/putUTF8 (ByteVector.java:245)
-  //
-  // java/kotlin/scala already chunk for the same reason.
   test('clojure: the data constant is chunked under the JVM 64KB limit', () => {
     const { cljStringChunks } = require(
       Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
@@ -1000,15 +804,6 @@ describe('config representation is chosen by size', () => {
   })
 
 
-  // The csharp literal's BOXED NUMERIC TYPE must match what parsing the JSON
-  // produces, because boxed numerics compare by exact type - (object)5L does
-  // not Equals (object)5 - and MakeConfig is public API consumers read numbers
-  // out of.
-  //
-  // Unsuffixed C# integer literals take the first of int/uint/long/ulong that
-  // fits, so `3000000000` used to box as a uint nothing else in the SDK ever
-  // produces, while the JSON side gave a long. Verified by compiling both
-  // forms under .NET 8: before this, every whole number disagreed.
   test('csharp: the literal number ladder matches the JSON parser', () => {
     const { formatCsMap } = require(
       Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
@@ -1029,12 +824,6 @@ describe('config representation is chosen by size', () => {
       [1e21, '1e+21D'],
       [1.5, '1.5D'],
       [-0.25, '-0.25D'],
-      // THE LOWER BOUNDARY, and the reason the range test is on the emitted
-      // text rather than the JS value. `String(-9223372036854775808)` is
-      // "-9223372036854776000", which is BELOW long.MinValue - TryGetInt64
-      // refuses it, so the data branch gives a double and the literal has to
-      // as well. Emitting `long.MinValue` here made the two disagree at
-      // exactly this value (verified: literal=Int64 data=Double).
       [-9223372036854775808, '-9223372036854776000D'],
     ]
     for (const [val, expected] of cases) {
@@ -1053,16 +842,6 @@ describe('config representation is chosen by size', () => {
   })
 
 
-  // C# forbids its NEW-LINE CHARACTERS inside a regular quoted string, and
-  // that set is wider than the two everyone escapes: U+000D, U+000A, U+0085
-  // (NEL), U+2028 (LINE SEPARATOR), U+2029 (PARAGRAPH SEPARATOR).
-  //
-  // JSON.stringify leaves the last three RAW - they are ordinary characters in
-  // JSON and in every other target language - so a model string carrying one
-  // (an OpenAPI description or example pasted from a word processor) emitted a
-  // C# file that would not compile. Confirmed against .NET 8:
-  // `error CS1010: Newline in constant`. Both the data blob and the literal's
-  // own strings go through the escape.
   test('csharp: C# line terminators are escaped in both branches', () => {
     const { csStringLiteral, formatCsString, formatCsMap } = require(
       Path.join(SDK, '..', '..', 'dist-test-scaffold', '.sdk', 'dist',
@@ -1090,19 +869,6 @@ describe('config representation is chosen by size', () => {
 
 
 
-  // Every target whose generated config can carry `options.server` must also
-  // RESOLVE it — substitute `{name}` into the base URL.
-  //
-  // These are not independent: rendering options from the canonical definition
-  // is what put `server` into the config, and a target that emits a key its own
-  // validator rejects fails at client construction. elixir demonstrated it -
-  // 75 of its 151 generated tests failed with
-  // `Unexpected keys at field <root>: server`.
-  //
-  // ACCEPTING it is no longer a per-target question. The option spec is
-  // generated from `main.kit.optspec`, which declares `server` once for every
-  // target; test/optspec.test.ts asserts the assembled spec takes it. What is
-  // still per-target, and still hand-written, is the SUBSTITUTION below.
   const SERVER_OPTSPEC: [string, string][] = [
     ['ts', 'src/utility/MakeOptionsUtility.ts'],
     ['js', 'src/utility/MakeOptionsUtility.js'],
@@ -1119,25 +885,10 @@ describe('config representation is chosen by size', () => {
   ]
 
   for (const [target, file] of SERVER_OPTSPEC) {
-    // ACCEPTING the option is not the same as HONOURING it, and that is not a
-    // hypothetical: seven targets took a `server` map and then sent every
-    // request to a URL still containing a literal `{tenant}`. Accepting an
-    // option the runtime ignores is worse than rejecting it — the SDK looks
-    // configured and silently misbehaves.
-    //
-    // The `test-<name>` fallback is the marker: it exists only inside the
-    // substitution itself, so a target cannot pass this by declaring the
-    // option and stopping there.
     test(target + ': make_options RESOLVES {name} into base', () => {
       const path = Path.join(TM, target, file)
       ok(existsSync(path), target + ': no ' + file)
       const src = readFileSync(path, 'utf8')
-      // The QUOTED literal, not the bare word: every one of these files says
-      // "test-first" and "test-<name>" in prose, so a bare /test-/ passes
-      // everywhere and proves nothing. This matches the opening quote and the
-      // character that closes or interpolates it - "test-", 'test-',
-      // "test-{}" (rust format), "test-#{name}" (ruby) - which only the
-      // substitution itself produces.
       ok(/["']test-["'{#]/.test(src),
         target + ': make_options accepts `server` but never substitutes it ' +
         'into `base`, so a templated server URL reaches the wire with the ' +
@@ -1145,19 +896,6 @@ describe('config representation is chosen by size', () => {
     })
   }
 
-  // NO TARGET MAY GROW ITS OWN OPTION SPEC AGAIN.
-  //
-  // Twenty hand-maintained copies of one schema is what `main.kit.optspec`
-  // and the generated `Schema` module replaced, and the failure that made it
-  // worth doing was never a crash: the copies simply disagreed, quietly, and
-  // an option that worked in ts was rejected in elixir. A target re-growing a
-  // literal here is the same defect returning, so it fails as soon as it is
-  // written rather than when someone notices the divergence.
-  //
-  // The METHOD allow-list is the marker. It is one string that only an option
-  // spec has a reason to hold, and unlike the op allow-list — which three
-  // targets' shipped feature suites legitimately name, passing it as an
-  // OPTION — nothing else in the tree contains it.
   test('no template carries a hand-written option spec', () => {
     const METHODS = 'GET,PUT,POST,PATCH,DELETE,OPTIONS'
 
@@ -1222,18 +960,6 @@ describe('config representation is chosen by size', () => {
 })
 
 
-// Vendored-library rollout parity (migration guide Phases 2 and 3).
-//
-// Both rollouts are PER-LANGUAGE, so for a while some targets have migrated
-// and some have not. The failure worth catching is the half-migrated one:
-// a resolver with no vendored tree behind it, a feature class with no
-// vendored library, or the superseded runner left in place as a second,
-// stale copy of the same thing. Each is individually plausible and none of
-// them shows up as a missing file at the language's own build.
-//
-// The lists are DECLARED and then checked in both directions, the pattern
-// the tier manifest above already uses: a target that is migrated but not
-// listed fails just as loudly as a listed one that is incomplete.
 
 // Targets running the vendored omni corpus runner instead of the
 // hand-vendored per-target one.
@@ -1261,8 +987,6 @@ const OMNI_RUNNER: Record<string, {
     vendor: 'js/test/vendor/omni',
     vendorfiles: ['runner.js', 'util.js', 'index.js'],
     smoke: 'js/test/omni.test.js',
-    // js's ONE runner file drove BOTH corpora; its support half was
-    // already split into the retained test/utility.js.
     superseded: ['js/test/runner.js'],
   },
   go: {
@@ -1308,11 +1032,8 @@ const OMNI_RUNNER: Record<string, {
   lua: {
     resolver: 'lua/test/omni.lua',
     vendor: 'lua/test/vendor/omni',
-    // The lua port is self-contained by design: it carries its own
-    // json/regex modules, so the vendored runner is four files.
     vendorfiles: ['json.lua', 'regex.lua', 'runner.lua', 'util.lua'],
     smoke: 'lua/test/omni_smoke_test.lua',
-    // lua's runner.lua is support-ONLY and RETAINED (py shape).
     superseded: ['lua/test/struct_runner.lua'],
   },
   java: {
@@ -1330,7 +1051,6 @@ const OMNI_RUNNER: Record<string, {
     vendor: 'perl/t/vendor/omni',
     vendorfiles: ['Voxgig/Omni.pm', 'Voxgig/Omni/Runner.pm', 'Voxgig/Omni/Util.pm'],
     smoke: 'perl/t/omni_smoke.t',
-    // perl's t/runner.pm is support-ONLY and RETAINED (py shape).
     superseded: ['perl/t/struct_runner.pm'],
   },
   kotlin: {
@@ -1338,8 +1058,6 @@ const OMNI_RUNNER: Record<string, {
     vendor: 'kotlin/test/vendor/omni',
     vendorfiles: ['Json.kt', 'Runner.kt', 'Util.kt'],
     smoke: 'kotlin/test/OmniSmokeTest.kt',
-    // RunnerSupport.kt KEEPS ITS NAME with the engine stripped out (the
-    // class-scoped zero-churn rule, as java).
     superseded: ['kotlin/test/StructRunner.kt'],
   },
   csharp: {
@@ -1352,9 +1070,6 @@ const OMNI_RUNNER: Record<string, {
     // the emitted call sites need zero churn.
     superseded: ['csharp/test/StructRunner.cs'],
   },
-  // ---- Tranche 3: the last ten. Between them they complete the rollout
-  // for every SDK target except zig, whose omni port at the tag is written
-  // for Zig 0.16 while this target is pinned to 0.13.
   c: {
     // c has no modules: the resolver is a header the corpus drivers
     // include, and the vendored .c files build into their own archive so
@@ -1447,11 +1162,6 @@ const SECRETS: Record<string, {
   pluginfiles?: string[],
   tests: string,
 }> = {
-  // ---- The checkpoint expansion. sekreto's ports were reshaped one at a
-  // time; at sdk-20260904-1610-0 only four had the provider/ + plugins/
-  // shape, which is why secrets stopped at ts/go/py. At
-  // sdk-20260907-0029-0 all twenty-three do, and js — deferred since the
-  // pilot for exactly this reason — is first through.
   js: {
     feature: 'js/src/feature/secrets/SecretsFeature.js',
     vendor: 'js/src/feature/secrets/sekreto',
@@ -1472,11 +1182,6 @@ const SECRETS: Record<string, {
     // its vendored trees carry the voxgig_ prefix a ruby require path needs.
     feature: 'rb/feature/secrets_feature.rb',
     vendor: 'rb/feature/secrets/voxgig_sekreto',
-    // ruby's reshape is NOT ts's: the built-ins stay in one aggregate
-    // `providers.rb` rather than a `provider/` directory, and only the
-    // gated kinds are split into `plugins/`. `plugins.rb` is the full-set
-    // barrel and is deliberately absent — vendoring a barrel would defeat
-    // the plugin trim by importing every kind.
     vendorfiles: [
       'sekreto.rb', 'addr.rb', 'providers.rb',
       'plugins/aws.rb', 'plugins/sigv4.rb', 'plugins/httpjson.rb',
@@ -1489,7 +1194,6 @@ const SECRETS: Record<string, {
   php: {
     feature: 'php/feature/SecretsFeature.php',
     vendor: 'php/feature/secrets/sekreto',
-    // php keeps the core under src/ and the gated kinds beside it.
     vendorfiles: [
       'src/Sekreto.php', 'src/Providers.php', 'src/Addr.php',
       'plugins/aws.php', 'plugins/sigv4.php', 'plugins/httpjson.php',
@@ -1502,13 +1206,6 @@ const SECRETS: Record<string, {
   ts: {
     feature: 'ts/src/feature/secrets/SecretsFeature.ts',
     vendor: 'ts/src/feature/secrets/sekreto',
-    // The RESHAPED sekreto (vendor-tag rollout): `src/provider/` holds the
-    // built-ins the core imports unconditionally (env, memory, dotenv,
-    // file, via builtin.ts), and `plugins/` holds the gated definitions.
-    // `plugins/index.ts` — the full-set barrel — is deliberately NOT here:
-    // vendored.test.ts asserts its absence directly. `plugins/sigv4.ts` is
-    // owned by the `aws` PLUGIN; what reaches a generated SDK is decided
-    // per project by the plugin trim.
     vendorfiles: [
       'Sekreto.ts', 'index.ts',
       'provider/support.ts', 'provider/builtin.ts', 'provider/addr.ts',
@@ -1562,14 +1259,7 @@ const SECRETS: Record<string, {
     pluginfiles: ['__init__.py', 'catalog.py', 'host.py', 'types.py'],
     tests: 'py/test/feature/secrets',
   },
-  // ---- Tranche B: the nine targets that joined at sdk-20260907-0029-0.
-  // Each row is written from the tree ON DISK, not from the ts shape:
-  // every port reshaped sekreto in its own idiom.
   java: {
-    // java's feature container is the top-level feature/ dir. Two files
-    // under plugins/ are SHARED, not grouped: Httpjson and Proc, and Sigv4
-    // whose package-private uriescape three saas kinds call - the plugin
-    // trim must never remove them (see model/feature/secrets.aon).
     feature: 'java/feature/SecretsFeature.java',
     vendor: 'java/feature/secrets/sekreto',
     vendorfiles: [
@@ -1632,10 +1322,6 @@ const SECRETS: Record<string, {
     tests: 'kotlin/test/feature/secrets',
   },
   scala: {
-    // scala's suite lives in sdktest/ (its test roots are named, not
-    // discovered), and Sigv4.scala ships ungrouped for the same reason
-    // as java's: its private[plugins] uriescape has four callers outside
-    // the aws group.
     feature: 'scala/feature/SecretsFeature.scala',
     vendor: 'scala/feature/secrets/sekreto',
     vendorfiles: [
@@ -1766,11 +1452,6 @@ const SECRETS: Record<string, {
     tests: 'elixir/test/feature/secrets',
   },
   swift: {
-    // swift vendors THREE SwiftPM modules (Sekreto, SekretoPlugins,
-    // VoxgigPlugin) under one gated folder: sekreto/ and plugins/ are
-    // SIBLINGS, as upstream lays them out, and Package_swift names each as
-    // its own target. plugins/All.swift is the full-set barrel and is
-    // deliberately absent (pinned by vendored.test.ts).
     feature: 'swift/Sources/ProjectNameSDK/feature/SecretsFeature.swift',
     vendor: 'swift/Sources/ProjectNameSDK/feature/secrets',
     vendorfiles: [
@@ -1793,13 +1474,6 @@ const SECRETS: Record<string, {
     tests: 'swift/Tests/ProjectNameSDKTests/feature/secrets',
   },
   c: {
-    // c's feature is the flat secrets.c (+ secrets.h) beside a same-named
-    // directory holding both vendored libraries; sekreto/ and plugins/ are
-    // siblings as upstream lays them out, and every include is a bare
-    // basename resolved by -I, so there are no adapts. plugins/all.c is the
-    // full-set barrel and is deliberately absent (pinned by vendored.test.ts).
-    // The generated feature/secrets/kinds.c (definitions + the gated libcurl
-    // transport) is NOT vendored and lives outside these three dirs.
     feature: 'c/feature/secrets.c',
     vendor: 'c/feature/secrets',
     vendorfiles: [
@@ -1824,13 +1498,6 @@ const SECRETS: Record<string, {
     tests: 'c/tests/feature/secrets',
   },
   lua: {
-    // lua's feature container is the top-level feature/ dir. The two library
-    // entry modules (sekreto.lua, plugin.lua) sit at the container root
-    // because `require` resolves them by that path; sekreto/ holds the core
-    // and its plugins/, plugin/ the voxgig/plugin runtime, and native/ the
-    // vendored C source of sekreto's socket helper, compiled by the generated
-    // Makefile only when a plugin group is active. sekreto/plugins.lua is the
-    // full-set barrel and is deliberately absent (pinned by vendored.test.ts).
     feature: 'lua/feature/secrets_feature.lua',
     vendor: 'lua/feature/secrets',
     vendorfiles: [
@@ -1854,12 +1521,6 @@ const SECRETS: Record<string, {
     tests: 'lua/test/feature/secrets',
   },
   zig: {
-    // zig's feature is the flat secrets.zig beside a same-named directory
-    // holding both libraries as sibling sekreto/ and plugins/ module trees.
-    // The generated feature/secrets/plugins.zig (the sekretoplugins module
-    // root, listing the selected kinds) sits ABOVE the vendored plugins/ dir
-    // on purpose, so no vendored-guard exemption is needed. plugins/all.zig
-    // is the full-set barrel and is deliberately absent.
     feature: 'zig/feature/secrets.zig',
     vendor: 'zig/feature/secrets',
     vendorfiles: [
@@ -1880,11 +1541,6 @@ const SECRETS: Record<string, {
     tests: 'zig/test/feature/secrets',
   },
   ocaml: {
-    // ocaml's feature container is the top-level feature/ dir; sekreto/ and
-    // plugins/ are siblings, and plugins/ carries tls_stubs.c, the vendored
-    // C binding compiled by the generated secrets.mk only when a TLS group is
-    // active. plugins/allplugins.ml is the full-set barrel and is
-    // deliberately absent (pinned by vendored.test.ts).
     feature: 'ocaml/feature/secrets_feature.ml',
     vendor: 'ocaml/feature/secrets',
     vendorfiles: [
@@ -1905,11 +1561,6 @@ const SECRETS: Record<string, {
     tests: 'ocaml/test/feature/secrets',
   },
   cpp: {
-    // cpp's feature is the header secrets.hpp beside a same-named directory
-    // holding both libraries as sibling sekreto/ and plugins/ trees, each
-    // file a .hpp/.cpp pair compiled into libsdksecrets.a only while the
-    // generated feature/secrets/kinds.cpp exists. plugins/All.{hpp,cpp} is
-    // the full-set barrel and is deliberately absent.
     feature: 'cpp/feature/secrets.hpp',
     vendor: 'cpp/feature/secrets',
     vendorfiles: [
@@ -1984,9 +1635,6 @@ describe('vendored-library rollout parity', () => {
       // perl keeps its tests in t/, not test/ — a candidate list that
       // only knew test/ would let a rowless perl vendor pass unseen.
       ['t', 'vendor', 'omni'],
-      // Tranche 3 brought three more test-directory spellings, and each
-      // was invisible here until it was listed: c and rust use tests/
-      // (plural), scala sdktest/, swift Tests/.
       ['tests', 'vendor', 'omni'],
       ['sdktest', 'vendor', 'omni'],
       ['Tests', 'vendor', 'omni'],
@@ -2034,7 +1682,6 @@ describe('vendored-library rollout parity', () => {
       // dart keeps its feature under lib/, elixir under the mix module root.
       ['lib', 'feature', 'secrets'],
       ['lib', 'projectname', 'feature', 'secrets'],
-      // swift's SwiftPM source root.
       ['Sources', 'ProjectNameSDK', 'feature', 'secrets'],
     ]
 
@@ -2055,17 +1702,6 @@ describe('vendored-library rollout parity', () => {
 })
 
 
-// A zig file belongs to exactly ONE module. `build.zig` makes
-// `utility/voxgigstruct/struct.zig` the root of the `voxgig-struct` module
-// and hands that import to every test module by name, so a test that ALSO
-// reaches those files by relative path puts them in two modules at once —
-// `error: file exists in multiple modules`, raised whether or not the
-// path-imported decl is ever used, and it gives the importer a second copy
-// of the file with distinct types besides.
-//
-// Two test templates did exactly that. CI caught it once and then passed on
-// a re-run of the same tree, which is the worst way to learn about a rule:
-// the pin is here so the next one fails on the first run instead.
 describe('zig test templates reach modules by name', () => {
 
   test('no zig template path-imports a file the struct module owns', () => {
@@ -2088,11 +1724,6 @@ describe('zig test templates reach modules by name', () => {
 
 
   test('the runner still has a regex path', () => {
-    // Originally this read the hand-written struct_runner.zig, which owned
-    // the /pattern/ branch. That file is retired: the engine is vendored
-    // omni now, and the regex path is ITS regex path. Same risk, new home —
-    // losing the call would leave every /pattern/ corpus check falling
-    // through to a substring comparison and quietly passing.
     const src = readFileSync(
       Path.join(TM, 'zig', 'test', 'vendor', 'omni', 'omni.zig'), 'utf8')
 

@@ -53,10 +53,6 @@ function getpath(config: any, path: string[]): any {
 
 describe('ownIdField', () => {
 
-  // Airtable's real shape: base_id, table_id, record_id ALPHABETIZE with
-  // table_id last — the old opParams-based heuristic in
-  // Main_seneca-provider.ts picked that as "the record's own key" and the
-  // mock seeded the wrong field entirely. parts preserves true path order.
   test('a 3-param route picks the terminal path param, not the alphabetically last one', () => {
     const config = {
       entity: {

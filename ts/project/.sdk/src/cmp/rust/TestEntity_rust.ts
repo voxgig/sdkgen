@@ -26,8 +26,6 @@ import {
 import { rustVarName, rustMethodName } from './utility_rust'
 
 
-// Rust's GenCtx mirrors the shared shape (see TestEntity_ts.ts) plus the
-// crate ident used to build qualified paths in emitted code.
 type GenCtx = {
   model: Model
   entity: ModelEntity
@@ -64,13 +62,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
     ? `("apikey", getp(&env, "${PROJUPPER}_APIKEY"))`
     : ''
 
-  // A templated server URL (OpenAPI server variables) makes a LIVE client
-  // impossible to construct without values: makeOptions raises rather than
-  // request a URL with a literal `{account_id}` in it. So the live suite
-  // takes them from the environment the same way it takes the apikey.
-  //
-  // Emitted as a jo() tuple entry, so it carries its own leading comma only
-  // when an apikey entry precedes it - otherwise `jo(vec![, ...])`.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
     .map((v: any) => `\n        ("${serverVarEnv(PROJUPPER, v.name)}", Value::str(${JSON.stringify(v.dflt)})),`).join('')

@@ -1,10 +1,3 @@
-// Shared fixture and wiring for the suites that GENERATE an SDK.
-//
-// `generate.test.ts` asserts on the generated TEXT; `generatedcompile.test.ts`
-// hands the same output to a real compiler. Both must generate exactly the
-// same thing, so the fixture, the miniature Root and the memfs layering live
-// here rather than being copied — a fixture that drifts between them would
-// mean the compiled SDK is not the one being asserted on.
 
 import Fs, { writeFileSync } from 'node:fs'
 import Path from 'node:path'
@@ -23,8 +16,6 @@ import {
 
 const KIT = 'kit'
 
-// The staging consumer built by `npm run build` (build/scaffold-stage.js).
-// `folder` — where requirePath looks for compiled components.
 const STAGE = Path.resolve(__dirname, '..', 'dist-test-scaffold')
 
 // Components copy their template tree with a CWD-RELATIVE path
@@ -49,8 +40,6 @@ const makeLog = (sink?: any[]): any => {
 }
 
 
-// Every target shipped in the scaffold, discovered from the model directory so
-// a newly added target is generated here without anyone remembering to.
 function layeredFs(mem: any): any {
   const readThrough = (name: string) => (path: any, ...rest: any[]) => {
     const target = mem.existsSync(path) ? mem : Fs
@@ -68,21 +57,6 @@ function layeredFs(mem: any): any {
 }
 
 
-// Placeholder mentions that are NOT defects, pinned explicitly so that a NEW
-// leak still fails. Following parity.test.ts: the manifest is the stated
-// policy, not a mute button.
-//
-//   swift — the target ships literal `Sources/ProjectNameSDK` /
-//     `Tests/ProjectNameSDKTests` DIRECTORIES. Substitution rewrites file
-//     CONTENT, never path segments, so Package.swift and the README have to
-//     name the directories as they actually exist on disk. Cosmetically wrong
-//     (the module is ProjectNameSDK rather than <Name>SDK) but internally
-//     consistent, and fixing it means renaming template directories at copy
-//     time — a pipeline change, not a component fix.
-//
-//   */src/feature/*/AGENTS.md — the feature guides tell the reader what a
-//     LEAKED placeholder looks like ("shows a literal FEATURE_Name/
-//     ProjectName, delete it and regenerate"). Naming it is the point.
 const API_MODEL = `
 name: 'demo'
 
@@ -400,18 +374,6 @@ main: kit: flow: BasicHistoryFlow: {
 `
 
 
-// Compile the fixture the way a consumer's `.sdk` compiles model/sdk.aontu:
-// base models first, then the targets and features under test, then the API.
-//
-// Aontu resolves `@"..."` imports against a REAL path, so the assembled source
-// is written into the staging model directory (gitignored, rebuilt by
-// `npm run build`) next to the scaffold's own target/ and feature/ models.
-// `name` overrides the fixture slug — the SDK identity every derived name
-// (package, module, env-var prefix, class prefix) hangs off.
-// `features` selects which feature models are unified in. Defaults to
-// test + log; the COMPILE suite passes ['test'] only, because `log` pulls in
-// pino/pino-pretty and this repo does not install a generated SDK's
-// third-party runtime deps.
 function makeModel(
   targetNames: string[], name?: string, extra?: string, features?: string[],
 ): any {
@@ -445,10 +407,6 @@ const RegisteredQuick = registerComponent('ReadmeTopQuick')
 const RegisteredAbsent = registerComponent('NoSuchThing')
 
 
-// A miniature of the Root component create-sdkgen scaffolds into a consumer
-// (project/standard/.sdk/src/Root.ts): per target, a folder holding the entity,
-// feature, main, readme, agentguide and test phases. Kept minimal on purpose —
-// the point is to drive the per-language components, not to re-test Root.
 function makeRoot(): any {
   return cmp(function Root(props: any) {
     const { model, ctx$ } = props
@@ -503,9 +461,6 @@ function makeRoot(): any {
 
           Main({ target })
 
-          // Gap 6: a project adds a per-target component through the
-          // registration API rather than by hand-wiring `if (target.name
-          // === 'ts')` branches in its Root.
           RegisteredQuick({ target })
           RegisteredAbsent({ target })
 
@@ -519,7 +474,6 @@ function makeRoot(): any {
 }
 
 
-// Generate `targetNames` into a fresh memfs volume and return the file map.
 
 export {
   KIT,

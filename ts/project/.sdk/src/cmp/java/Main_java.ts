@@ -44,8 +44,6 @@ const Main = cmp(async function Main(props: any) {
   // helpers/applicability.
   const feature = targetFeatures(model, target)
 
-  // The Java package root for every runtime piece (like GOMODULE for go):
-  // e.g. voxgig.solardemosdk -> voxgig.solardemosdk.core etc.
   const javapackage = javaPackage(model)
 
   Package({ target })
@@ -56,14 +54,6 @@ const Main = cmp(async function Main(props: any) {
   // token used throughout the templates (package/import statements).
   Copy({
     from: 'tm/' + target.name,
-    // pluginExcludes: the generate-time plugin trim (an INACTIVE plugin
-    // group's declared files stay out of the tree - the model's `path`
-    // entries are target-root-relative, which is this Copy's root).
-    // javac performs no dead-code elimination and the trim deletes whole
-    // .java files, so a surviving reference to a trimmed class is a hard
-    // build failure - which is why Config_java imports only the ACTIVE
-    // plugin symbols. The FEATURE-level trim stays an add-time concern
-    // (vendor-tag rollout, Decision 5), as it does for go and py.
     exclude: [/src\//, TEST_CONTROL_EXCLUDE, ...pluginExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
@@ -71,23 +61,10 @@ const Main = cmp(async function Main(props: any) {
     }
   })
 
-  // Shared entity runtime (entity/EntityBase.java).
   EntityBase({ target })
 
-  // utility/PrepareAuth.java. WHERE the credential goes (header, query
-  // parameter or cookie) and UNDER WHAT NAME are facts about the API, so
-  // the file is generated from the model rather than copied from tm/ —
-  // which is why tm/java/utility/PrepareAuth.java was deleted: the blanket
-  // Copy above and this component would otherwise both claim that path and
-  // jostraca refuses a duplicate output path.
-  //
-  // Called HERE, at Main's top level, and NOT inside the `core` Folder
-  // below. The java target is flat — utility/ is a SIBLING of core/, not a
-  // child — and the component opens `utility` itself, exactly as
-  // EntityBase opens `entity`.
   PrepareAuth({ target })
 
-  // Generate the client class and config in core/.
   Folder({ name: 'core' }, () => {
 
     SdkError({ target })
@@ -109,7 +86,6 @@ this.utility.featureHook.apply(this.rootctx, "${name}");
           }
         },
 
-        // Entities - injected at SLOT
         () => {
           each(entity, (entity: ModelEntity) => {
             const entitySDK = getModelPath(model, `main.${KIT}.entity.${entity.name}`)

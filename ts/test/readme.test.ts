@@ -22,14 +22,6 @@ function makeModel() {
     name: 'demo',
     main: { kit: {
       entity: {
-        // An id-bearing entity: the id-like key drives the load-example match
-        // (`{ id: ... }` / `map[string]any{"id": ...}`). An entity with no id
-        // field would instead degrade to a no-argument load (entityIdField ->
-        // null), which is exercised end-to-end by the id-less SDK targets.
-        // A realistic id-bearing entity: a load op whose match carries the id
-        // param (so entityIdField resolves the load-MATCH key, and the examples
-        // key load on `{ id: ... }`). An entity whose load match lacks id would
-        // degrade to a no-argument load (exercised by the id-less SDK targets).
         moon: {
           active: true, name: 'moon', fields: { id: { name: 'id' } },
           op: { load: { active: true, points: [{ args: { params: [{ name: 'id', type: '$INTEGER' }] } }] } },
@@ -75,8 +67,6 @@ describe('ReadmeExplanation', () => {
   test('renders the shared scaffolding for every language', async () => {
     for (const lang of ['py', 'php', 'rb', 'lua', 'go', 'ts', 'js', 'java']) {
       const out = await renderExplanation(lang)
-      // The pipeline + feature hooks are demoted to an advanced/internal
-      // section, no longer a prominent "Explanation".
       ok(out.includes('## Advanced'), `${lang}: advanced heading`)
       ok(!out.includes('## Explanation'), `${lang}: no explanation heading`)
       ok(out.includes('### The operation pipeline'), `${lang}: pipeline heading`)

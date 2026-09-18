@@ -38,28 +38,6 @@ const Main = cmp(async function Main(props: any) {
 
   const entity: ModelEntity = getModelPath(model, `main.${KIT}.entity`)
 
-  // THE PLUGIN TRIM FOR A FEATURE THAT IS ITSELF OFF (Main_c's and
-  // Main_scala's inactivePluginExcludes, for the same reason).
-  //
-  // pluginExcludes(model) below walks only the model's ACTIVE features, so
-  // a `secrets` declared `active: false` keeps every declared group's
-  // vendored kind file in the tree. For cpp that is not merely untidy: the
-  // Makefile decides whether to compile the plugin layer - and to link
-  // OpenSSL - from whether a KIND FILE is present under
-  // feature/secrets/plugins/, so the files have to go. Every declared group
-  // of an inactive feature goes, not only the groups marked inactive: a
-  // feature that is off has no active plugins whatever its `plugin` map
-  // says (targetFeatures drops it before Config ever reads a group). The
-  // feature's own header and the vendored cores are left to the Makefile's
-  // wiring gate (feature/secrets/kinds.cpp is generated only for an active
-  // feature; without it nothing of the feature is compiled, and
-  // core/config.hpp includes no feature/secrets.hpp) and to `target add`,
-  // which trims the whole container for a real project.
-  //
-  // Rooting matches pluginExcludes': cpp's declared paths are
-  // target-root-relative, which is this Copy's root, and the other
-  // targets' paths in the same list cannot match anything in a cpp tree
-  // (every pattern is anchored at its own extension).
   const feature = targetFeatures(model, target)
   const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const allfeature = getModelPath(model, `main.${KIT}.feature`,
@@ -82,17 +60,6 @@ const Main = cmp(async function Main(props: any) {
 
   Gitignore({})
 
-  // Copy tm/cpp verbatim (with placeholder substitution). The tm src/ subtree
-  // only stages the per-feature custom-source dirs (target add), so exclude it.
-  //
-  // pluginExcludes: the generate-time plugin trim (an INACTIVE plugin
-  // group's declared files stay out of the tree - the model's `path`
-  // entries are target-root-relative, which is this Copy's root). cpp has
-  // `srcfeature: false`, so the per-feature Copy in cmp/Feature.ts - where
-  // pluginExcludesFor normally applies this trim - never runs for it, and
-  // this whole-tree Copy is the ONLY copy the target has: without the
-  // exclude an active secrets feature would ship every inactive kind, and
-  // the Makefile would compile and link them all (Main_go.ts precedent).
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, TEST_CONTROL_EXCLUDE,
@@ -138,20 +105,6 @@ const Main = cmp(async function Main(props: any) {
     })
   })
 
-  // utility/prepare_auth.hpp is GENERATED, not templated: where the
-  // credential goes (header / query / cookie, and under what name) is a fact
-  // about the API, and tm/ can only hold one answer. See PrepareAuth_cpp.
-  //
-  // cpp had no prepare_auth template to replace - the logic was EMBEDDED in
-  // tm/cpp/utility/pipeline.hpp. It now lives in its own header, which
-  // pipeline.hpp includes; register_all still binds
-  // `u.prepareAuth = util::prepareAuth`, so every call site is unchanged.
-  //
-  // AT ROOT LEVEL, and OUTSIDE the `core` Folder above. The component opens
-  // `utility` itself, mirroring where `Copy({from:'tm/cpp'})` lands
-  // utility/pipeline.hpp; calling it beside Config would write
-  // `core/utility/prepare_auth.hpp`, which pipeline.hpp's
-  // `#include "prepare_auth.hpp"` does not resolve.
   PrepareAuth({ target })
 
   // feature/<name>/kinds.cpp — the plugin definitions an active

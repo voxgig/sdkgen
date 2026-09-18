@@ -1,23 +1,4 @@
 
-// Offline feature-runtime harness.
-//
-// Enterprise feature behaviour lives in the shipped TEMPLATE files under
-// project/.sdk/tm/ts/src/feature/<name>/. Those files use placeholder
-// imports (ProjectNameSDK, ../../types) and only ever compile inside a
-// GENERATED SDK, so they are outside sdkgen's own tsconfig. To unit test
-// the real template source here — offline and deterministically — this
-// harness:
-//
-//   1. reads the template .ts,
-//   2. transpiles it with the TypeScript compiler (type-only imports are
-//      erased, so the ProjectNameSDK/types placeholders vanish),
-//   3. loads it in a sandbox whose `require` shims the base class,
-//   4. drives it through a faithful miniature of the generated operation
-//      pipeline (the same hook order and short-circuit rules as the
-//      Entity*Op fragments), against a configurable simulated transport.
-//
-// The result: the exact code that ships to users is exercised against
-// simulated network conditions without generating a full SDK.
 
 import { readFileSync } from 'node:fs'
 import Path from 'node:path'
@@ -71,12 +52,6 @@ function loadBase(): any {
 }
 
 
-// Load the WHOLE module a feature template exports, by name.
-//
-// `loadFeature` below returns the class, which is what nearly every test
-// wants. A module-level helper the class delegates to - `mintId`,
-// `ownIdField` - is reachable only through the module, and testing the real
-// exported binding beats re-implementing it in the test.
 function loadFeatureModule(name: string): any {
   const Base = loadBase()
   const file = Path.join(FEATURE_DIR, name, cap(name) + 'Feature.ts')
@@ -85,14 +60,6 @@ function loadFeatureModule(name: string): any {
     '../../types': {},
     '../../ProjectNameSDK': {},
 
-    // The vendored sekreto barrel, which the secrets feature imports from
-    // its own container. It is TypeScript that this sandbox would have to
-    // transpile along with the whole vendored tree; the structural checks
-    // here only CONSTRUCT the class and read its hooks, so stubbing the two
-    // symbols the template names is enough. A test that exercised
-    // resolution would load the real thing instead.
-    // FEATURE_PLUGINS is generated into Config; the structural checks
-    // construct the class with no plugin groups selected.
     '../../Config': { FEATURE_PLUGINS: {} },
 
     // The GENERATED schema module, which exists only inside a real SDK: the
@@ -155,8 +122,6 @@ function makeResponse(status: number, data?: any, headers?: Record<string, any>)
 type ServerFn = (ctx: any, url: string, fetchdef: any) => any
 
 
-// A default transport: 200 for reads, echoing simple data. Override per
-// harness for op-specific payloads.
 function defaultServer(): ServerFn {
   return (_ctx: any, _url: string, fetchdef: any) => {
     const method = (fetchdef.method || 'GET').toUpperCase()
@@ -228,10 +193,6 @@ function makeClient(spec: {
       op: over.op,
       entity: over.entity,
 
-      // The four payload slots the real Context carries. Defaulted to empty
-      // maps exactly as Context's constructor does, so a feature reading
-      // them (validate checks `data`/`match`/`reqdata` against the model's
-      // field types) sees the same shape it sees in a generated SDK.
       data: over.data || {},
       reqdata: over.reqdata || {},
       match: over.match || {},
@@ -390,16 +351,13 @@ function makeClient(spec: {
       }
       ctx.response = response
 
-      // PreResponse.
       await featureHook(ctx, 'PreResponse')
 
-      // makeResponse -> result.
       await populateResult(ctx, response, o)
 
       // PreResult (paging / streaming read/modify result here).
       await featureHook(ctx, 'PreResult')
 
-      // PreDone.
       await featureHook(ctx, 'PreDone')
 
       // done(): success returns resdata; failure throws (like makeError).

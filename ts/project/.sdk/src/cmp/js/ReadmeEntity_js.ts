@@ -9,14 +9,6 @@ import {
 import { exampleValue } from './utility_js'
 
 
-// Operation method spelling differs between Go and other languages — Go
-// uses PascalCase methods with explicit ctrl arg, others use lowercase
-// methods with optional ctrl. The op descriptions are language-agnostic.
-// A `list()` on a NESTED entity needs its parent path params. The
-// quickstart used to emit `client.Moon().list()` for an entity at
-// `/planet/{planet_id}/moon`, which 404s against a live server from a
-// half-built URL — indistinguishable from "no such record". The model
-// already marks those params `reqd: true`; matchArg renders exactly them.
 function listMatchArg(ent: any): string {
   const idF = entityIdField(ent)
   return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
@@ -56,7 +48,6 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     const fields = entity.fields || []
     // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
-    // Variable-safe lowercase name (a `Delete` entity must not bind `delete`).
     const eVar = exampleVarName(entity.name, 'js')
 
     Content(`

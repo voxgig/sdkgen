@@ -1090,3 +1090,11 @@ package add/update/list, resolution, and doctor. Physical paths remain
 rendering, output path checks, styling, Vale rules, and Pages workflow.
 Sdkgen invokes docgen with the existing compiled model. Keep SDK README
 components separate from these editions.
+
+## Source code comments
+
+Follow [COMMENT-POLICY.md](COMMENT-POLICY.md): comments are sparse and terse,
+only for intricate or surprising code. Names carry intent; documents carry
+requirements. Run `make comments comments-test` after editing source.
+
+Durable implementation rationale is in [COMMENT-NOTES.md](COMMENT-NOTES.md).

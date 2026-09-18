@@ -54,7 +54,6 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
     const fields = entity.fields || []
-    // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
 
     Content(`
@@ -108,9 +107,6 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     }
 
     if (opnames.includes('load')) {
-      // The id key plus every REQUIRED match key (parent path params like
-      // page_id) — the same shape the runtime resolves path params from, so
-      // the example always works.
       const loadItems = opRequestShape(entity, 'load').items
         .filter((it: any) => !it.optional || it.name === idF)
         .sort((a: any, b: any) =>

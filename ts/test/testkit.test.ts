@@ -1,22 +1,3 @@
-// THE TEST KIT, over the CHECKED-IN FIXTURE PACKAGE.
-//
-// See §14 and §15 of docs/design/sdkgen-packages.md.
-//
-// WHAT IS DIFFERENT ABOUT THIS SUITE
-//
-// Every other action suite runs against memfs and a fixture synthesized at
-// runtime. That is the right trade for testing the add pipeline, and it has
-// one thing it structurally cannot do: RUN what it installed. `requirePath`
-// does a real Node `require` against `<root>/.sdk/dist/cmp/...`, so a project
-// that exists only in a memfs volume can be added to and never generated
-// from.
-//
-// So this suite stages a consumer on real disk, installs
-// `test/fixture/acme-widgets` through the real `package add`, compiles its
-// components the way a consumer's own build does, and generates. The package
-// is a hand-written tree rather than a copy of the bundled scaffold, which is
-// the only way to find out whether the published contract is enough to write
-// a package against.
 
 import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -33,20 +14,12 @@ import {
 import { checkPackage } from '../dist/action/check.js'
 
 
-// From the PACKAGE ROOT, not from `__dirname`: this file runs compiled out of
-// `dist-test/`, and the fixture is a source tree that is never compiled or
-// copied there — it is input to the add pipeline, not to tsc.
 const FIXTURE = Path.resolve(__dirname, '..', 'test', 'fixture', 'acme-widgets')
 const PKGNAME = '@acme/sdkgen-widgets'
 
-// This package's own root — what a staged consumer links `@voxgig/sdkgen` to,
-// and therefore what teardown must never delete.
 const SDKGEN = Path.resolve(__dirname, '..')
 
 
-// A small API, and deliberately one with an INACTIVE entity in it: `active`
-// filtering is a whole-pipeline property, and a package's own components are
-// exactly as able to get it wrong as a bundled target was.
 const API = `
 main: kit: info: { title: 'Demo', version: '1.0.0', auth: false }
 main: kit: config: headers: { 'content-type': 'application/json' }
@@ -81,9 +54,6 @@ main: kit: entity: hidden: {
 `
 
 
-// Compile the consumer's model the way its own `generate` does: the base
-// schemas by package name (which is what the staged `node_modules` links
-// exist for), then the indexes the adds have been writing into.
 function consumerModel(sdk: string): any {
   const src = [
     '@"@voxgig/apidef/model/apidef.aon"',
@@ -110,9 +80,6 @@ function consumerModel(sdk: string): any {
 
 describe('testkit over the fixture package', () => {
 
-  // ONE staged consumer for the whole suite. Staging links node_modules and
-  // transpiles components, so a fresh one per test would pay that repeatedly
-  // for a project none of these tests mutate after setup.
   let consumer: any
   let files: Record<string, string> = {}
   let leaks: string[] = []
@@ -149,10 +116,6 @@ describe('testkit over the fixture package', () => {
   })
 
 
-  // THE UPGRADE PATH FOR A NEW KIND. This consumer's `model/sdk.aontu` was
-  // written with only the target and feature indexes — the state of every
-  // project scaffolded before `edition` existed. Installing an edition has to
-  // create that kind's index rather than assume it.
   test('a kind the project predates gets its index created', () => {
     ok(consumer.files().includes('model/edition/edition-index.aon'),
       'no edition index was created')
@@ -235,18 +198,6 @@ describe('testkit over the fixture package', () => {
 })
 
 
-// THE VOLUME-KEY RULE, TESTED WITH WINDOWS SHAPES ON EVERY PLATFORM.
-//
-// memfs stores `/a/b`, never `C:/a/b`. Keying a generation result therefore
-// means comparing a drive-less, forward-slashed volume key against a real
-// filesystem root — and getting that wrong does not fail loudly by itself:
-// `Path.relative` between the two resolves the drive-less path against the CWD
-// and returns a confidently wrong answer. That cost two Windows CI runs.
-//
-// These inputs are Windows-shaped strings, which is the point: the rule is
-// written to be the same function on every platform (it replaces backslashes
-// unconditionally rather than consulting `Path.sep`) precisely so a Linux
-// machine can prove it.
 describe('testkit: volume keys', () => {
 
   test('drops the drive letter and normalises separators', () => {
@@ -259,15 +210,11 @@ describe('testkit: volume keys', () => {
   })
 
   test('leaves a POSIX path untouched', () => {
-    // The no-op case has to stay a no-op, or the platforms that were green
-    // become the ones that break.
     strictEqual(volumeKey('/tmp/sdkgen-consumer-x'), '/tmp/sdkgen-consumer-x')
     strictEqual(volumeKey('/var/folders/ab/cd/T/x'), '/var/folders/ab/cd/T/x')
   })
 
   test('a root and a volume key for the same place now agree', () => {
-    // The exact comparison that failed: root as Windows spells it, path as
-    // memfs stored it.
     const root = 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\sdkgen-consumer-UsnHPV'
     const path = '/Users/RUNNER~1/AppData/Local/Temp/sdkgen-consumer-UsnHPV/wtest/entity/planet.wt'
 
@@ -281,22 +228,6 @@ describe('testkit: volume keys', () => {
 })
 
 
-// CLEANUP MUST NOT REACH THROUGH ITS OWN LINKS.
-//
-// A staged consumer holds `node_modules/@voxgig/*` entries pointing at this
-// checkout — a symlink on POSIX, a directory JUNCTION on Windows — and
-// teardown then runs a recursive remove over the staged tree.
-//
-// Node's recursive `rmSync` does not follow such a link (measured: it removes
-// the link itself), so this is not the repo-deleting hazard it first looks
-// like. It is pinned anyway, because the property is one line of someone
-// else's implementation away from changing and the blast radius is a
-// developer's working tree.
-//
-// Only the POSIX half runs here. `unlinkSync` removes a symlink and refuses a
-// junction with EPERM; `rmdirSync` is the reverse, which is why the
-// implementation tries both — but the junction branch has never executed on
-// Windows, and this comment says so rather than implying otherwise.
 describe('testkit: staging teardown', () => {
 
   test('removes the staged tree and leaves the checkout untouched', () => {
@@ -311,8 +242,6 @@ describe('testkit: staging teardown', () => {
     const link = Path.join(
       staged.sdk, 'node_modules', '@voxgig', 'sdkgen')
 
-    // The precondition that makes this test mean anything: teardown really is
-    // about to recurse over a tree containing a live link into the checkout.
     ok(Fs.lstatSync(link).isSymbolicLink(),
       'the sdkgen entry is not a link, so this proves nothing about following one')
     strictEqual(Fs.realpathSync(link), Fs.realpathSync(SDKGEN),
@@ -365,18 +294,12 @@ describe('testkit: a package feature overlaying a bundled target', () => {
   })
 
 
-  // ...and reaches `wtest` through the target's own tree, because the same
-  // package ships both and there is nothing to overlay onto. Two branches of
-  // `action/feature.ts`, one fixture.
   test('and in its own target\'s tree, by the other branch', () => {
     ok(consumer.files().includes('tm/wtest/feature/wfeat.wt'),
       'the feature source is missing from its own target')
   })
 
 
-  // No `feature-source-shadowed` warning: both trees provide `wfeat` for
-  // exactly one target each. That warning firing here would mean the resolver
-  // had decided the package was fighting with itself.
   test('and neither is reported as shadowing the other', () => {
     const shadowed = consumer.log.lines
       .filter((l: any) => 'feature-source-shadowed' === l.point)

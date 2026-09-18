@@ -8,33 +8,11 @@ import Fs from 'node:fs'
 import { isSwiftSdkType } from '../dist/sdkgen.js'
 
 
-// SWIFT_SDK_TYPES (helpers/naming.ts) must list every type the swift target
-// declares in the SDK module, because Swift has no intra-module namespacing:
-// a generated entity type sharing a name with one of ours is an
-// `invalid redeclaration` build failure, not a shadowing.
-//
-// A hand-maintained list silently rots. It already did once: the first cut of
-// the guard was collected with a `^public ...` grep, which missed
-// `open class BaseFeature`, `public indirect enum Value`, and `SdkConfig`
-// (declared by a component rather than a template) — so three names stayed
-// exposed to exactly the bug the guard exists to prevent.
-//
-// This test re-derives the list from the sources of truth and fails on drift,
-// so adding a type to a swift template cannot silently reopen it.
 
 const SCAFFOLD = Path.join(__dirname, '..', 'project', '.sdk')
 const TM_SWIFT = Path.join(SCAFFOLD, 'tm', 'swift', 'Sources')
 const CMP_SWIFT = Path.join(SCAFFOLD, 'src', 'cmp', 'swift')
 
-// Any top-level type declaration, at ANY access level. `internal` is Swift's
-// default and is still module-wide, and `open` is not `public` — filtering on
-// `public` is what caused the original miss.
-//
-// The trailing `(?=...)` is load-bearing: component files embed Swift inside
-// TS template literals alongside README prose, and lines like
-// "struct library is inlined under `Struct/`" would otherwise read as
-// declarations. A real declaration continues into a body (`{`) or, for a
-// typealias, an assignment (`=`), so require one of those on the same line.
 const DECL =
   /^(?:public |open |internal |fileprivate |private |final |indirect )*(?:class|struct|enum|actor|protocol|typealias) ([A-Za-z_][A-Za-z0-9_]*)(?=[^\n/]*[{=])/gm
 
@@ -42,15 +20,6 @@ const DECL =
 // module's namespace, so these cannot collide.
 const TEST_MODULE_ONLY = new Set(['ReadmeExamplesTest'])
 
-// The vendored @voxgig/plugin, @voxgig/sekreto and sekreto-plugins trees
-// under feature/secrets/ are SEPARATE SwiftPM modules (VoxgigPlugin,
-// Sekreto, SekretoPlugins - Package_swift declares them and excludes the
-// directory from the SDK target), so their types live in other namespaces
-// and cannot redeclare anything in the SDK module. Walking them would
-// demand every upstream type - including plugin's own `Value` and `Point`,
-// which coexist with the SDK's precisely BECAUSE of the module split - be
-// added to a guard about the SDK module. Skipped by directory, not by
-// name: a file added upstream lands in the same three modules.
 const SEPARATE_MODULE_DIRS = [Path.join('feature', 'secrets') + Path.sep]
 
 function walk(dir: string, out: string[] = []): string[] {

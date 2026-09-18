@@ -1,12 +1,5 @@
 package sdktest
 
-// Direct unit tests for the operation-pipeline utilities. The generated
-// entity tests exercise the happy path; these drive the error and edge
-// branches (missing spec/response/result, 4xx handling, transport
-// failures, feature add semantics, auth header shaping) that a normal
-// success-path op never reaches. All utilities are reached through the
-// client utility, so this suite is API-agnostic. Reuses the fh* helpers
-// from feature_test.go (same package).
 
 import (
 	"testing"
@@ -417,9 +410,6 @@ func TestPipelineFeatureAdd(t *testing.T) {
 	})
 }
 
-// Feature #2: options.feature accepts an ordered ARRAY (developer add-order)
-// or a map (defaults test-first); MakeOptions records the resolved order in
-// __derived__.featureorder.
 func TestPipelineFeatureOrder(t *testing.T) {
 	resolve := func(feature any) string {
 		client, utility := plClient(t, nil)

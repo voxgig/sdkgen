@@ -3,21 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MIN_REPORTED_BRANCHES = exports.ReadmeUnions = void 0;
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
-// Fields whose type could not be narrowed because the API definition describes
-// them with an UNTAGGED union: `oneOf`/`anyOf` branches carrying no
-// `discriminator`, so the specification never states which variant a given
-// value is. apidef records the widest such union it finds beneath each field
-// (see ModelField.union); this section reports them.
-//
-// Without this, those fields read as a modelling failure — a `groups` field
-// typed as a bare array looks like the generator gave up, when in fact the
-// definition offers nothing to narrow it to. Saying so is the difference
-// between an SDK that looks unfinished and one that documents the API it was
-// given.
-//
-// Two-branch unions are NOT reported: `oneOf: [string, number]` is a routine
-// either/or, an open type for it surprises nobody, and listing every one would
-// bury the cases that matter.
 const MIN_REPORTED_BRANCHES = 3;
 exports.MIN_REPORTED_BRANCHES = MIN_REPORTED_BRANCHES;
 const ReadmeUnions = (0, jostraca_1.cmp)(function ReadmeUnions(props) {

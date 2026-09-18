@@ -55,15 +55,6 @@ const Main = cmp(async function Main(props: any) {
 
   Copy({
     from: 'tm/' + target.name,
-    // Root copies src/feature/<name>/ per ACTIVE feature; keep this blanket
-    // copy from restoring one that was switched off after `target add`.
-    // A feature's inactive plugins go too - same rule, one level
-    // deeper. See helpers/featureSource.pluginExcludes.
-    //
-    // pluginExcludes is REQUIRED, not cosmetic: Feature() renders before
-    // Main(), so its per-feature Copy applies pluginExcludesFor and then
-    // this blanket copy runs — and without the same patterns here it puts
-    // every trimmed plugin straight back.
     exclude: [
       ...srcFeatureExcludes(model),
       ...pluginExcludes(model),
@@ -93,14 +84,6 @@ const Main = cmp(async function Main(props: any) {
           replace: {
             ...props.ctx$.stdrep,
 
-            // SECRETS. All five slots are emitted only when the secrets
-            // feature applies to this target AND the model activates it.
-            // An unconditional edit here would land in every generated SDK
-            // and break the inactive-output gate: a model without the
-            // feature must generate byte-identically to pre-migration.
-            //
-            // `feature` is already gated by targetFeatures, so a target
-            // that does not provide 'sekreto' never reaches these.
             '// #SecretsImport': () => secrets ?
               Line(`const sekreto = require('./feature/secrets/sekreto')`) : undefined,
 
@@ -117,15 +100,6 @@ secrets() {
 }
 `) : undefined,
 
-            // prepare() bypasses the feature hook pipeline, so the PreSpec
-            // hook that resolves the secret for entity ops never runs on
-            // this path and the resolve has to be explicit. This is also
-            // what defends direct() and graphql(), which run no feature
-            // hooks at all and reach the wire through prepare().
-            //
-            // It RETURNS the Error rather than rejecting: _rawRequest
-            // awaits prepare() outside its try, and direct()/graphql() are
-            // documented to return a value or an Error, never reject.
             '// #SecretsResolve': ({ indent }: any) => secrets ?
               Content({ indent }, `
 if (null != this._secrets) {
@@ -174,13 +148,6 @@ if (fres instanceof Promise) { await fres }
           })
         })
 
-      // Station self-registration (station design §6.2 path 1;
-      // station-declarative-config §11 item 2): emitted ONLY when the model
-      // carries an ACTIVE station feature (installed via
-      // `package add @voxgig/sdkgen-station`). The library package name
-      // comes from the feature model's own `deps.js` block — the same entry
-      // collectDeps flows into package.json — so the manifest dependency
-      // and the emitted require cannot disagree.
       const stationPkg = stationLibrary(model, target.name)
       if (null != stationPkg) {
         Fragment({

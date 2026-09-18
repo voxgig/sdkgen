@@ -12,26 +12,6 @@ import {
 } from '@voxgig/sdkgen'
 
 
-// WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API, so it is generated
-// rather than templated. This is the rust peer of PrepareAuth_ts; read that
-// one first, it carries the full account of the defect.
-//
-// This was a static file at `tm/rust/utility/prepare_auth.rs` that hardcoded
-//
-//   const HEADER_AUTH: &str = "authorization";
-//
-// apidef has always resolved the scheme's `in` and `name` into
-// `main.kit.info.security` — joplin's says `in: "query", name: "token"` —
-// and generation dropped both, so the SDK sent a header the API does not
-// read and never sent the query parameter it does.
-//
-// A template cannot fix this, because the three placements need three
-// different bodies and a template has to pick one. A component emits the
-// branch this API actually uses and nothing else — no dead query code in a
-// bearer-token SDK, and no runtime `if` on a value that is fixed at
-// generation time. Rust makes that worth doing carefully: an import the
-// emitted body never reaches is a warning on every build of the crate, so
-// the `use` lines are chosen per placement too.
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -42,41 +22,12 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   // the way Main_rust spells it in lib.rs's re-exports.
   const errtype = model.const.Name + 'Error'
 
-  // `!isAuthSuppressed`, NOT `isAuthActive`. The latter is also false when
-  // the SPEC merely declares no security scheme (`main.kit.info.auth:
-  // false`), and those SDKs still carry a credential: optspec always
-  // declares `apikey` and makeOptions fills `options.auth` from its
-  // defaults, so the runtime guard never fired and they have always sent
-  // it. Only an explicit `main.kit.config.auth.active: false` means "no
-  // credential, ever", which is what isAuthSuppressed reads.
   const active = !isAuthSuppressed(model)
   const where = resolveAuthIn(model)
   const name = resolveAuthName(model)
-  // Resolved, and deliberately NOT baked into the source: the prefix is a
-  // runtime option (`options.auth.prefix`), and the template this replaces
-  // read it from the options map so a caller could override it per client.
-  // Only the PLACEMENT is fixed at generation time.
   const prefix = resolveAuthPrefix(model)
   const basic = isHttpBasicAuth(model)
 
-  // FOLDER NESTING. Main_rust opens NO folder around this call: the rust
-  // crate root IS the target root (lib.rs, core/, feature/, utility/ all sit
-  // there — see the `[lib] path` in tm/rust/Cargo.toml), the template this
-  // replaces lived at `tm/rust/utility/prepare_auth.rs`, and
-  // `Copy({from:'tm/rust'})` lands it at `<root>/utility/`. So the `utility`
-  // folder is opened HERE, exactly as EntityBase_rust opens `entity`.
-  //
-  // The call site matters as much. Config_rust runs inside
-  // `Folder({name:'core'})`, and putting PrepareAuth beside it would write
-  // `core/utility/prepare_auth.rs` — a path no module declares, so rustc
-  // never compiles it, while `utility/mod.rs`'s `pub mod prepare_auth;`
-  // keeps binding whatever `utility/` actually holds. Main_rust calls this
-  // at ROOT level.
-  //
-  // The file NAME is not free either: `utility/mod.rs` declares the module
-  // `prepare_auth`, and `make_spec` calls
-  // `crate::utility::prepare_auth::prepare_auth_util`. The generated file
-  // has to answer to that name.
   Folder({ name: 'utility' }, () => {
     File({ name: 'prepare_auth.' + target.ext }, () => {
       Content(render({ errtype, active, where, name, prefix, basic }))
@@ -97,10 +48,6 @@ type AuthSpec = {
 
 function render(spec: AuthSpec): string {
 
-  // NO AUTH AT ALL. A public API's SDK gets a prepare_auth that is honest
-  // about it rather than one that deletes a header nobody set. `vs`, `Value`
-  // and the helpers are left out of the imports deliberately — rustc warns
-  // on an unused import, on every build, forever.
   if (!spec.active) {
     return `// prepare_auth utility.
 //
@@ -134,9 +81,6 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
   // where it can mean something.
   const withBasic = spec.basic && 'header' === spec.where
 
-  // `getpath` reads `options.auth.prefix`, and only a header placement has a
-  // prefix to read: a query parameter drops it, and a cookie pair has no
-  // room for one.
   const withGetpath = 'header' === spec.where
 
   const bag = bagName(spec.where)
@@ -248,8 +192,6 @@ ${place(spec.where)}
 }
 `
 
-  // The encoder goes AFTER prepare_auth_util, so the function a reader opens
-  // this file for is the first one they meet.
   const encoder = !withBasic ? '' : `
 /// Standard base64, for the \`Authorization: Basic base64(user:pass)\` value.
 ///
@@ -294,19 +236,6 @@ fn base64_encode(input: &[u8]) -> String {
 }
 
 
-// The credential's key, as it goes into the bag.
-//
-// A HEADER name is lowercased. HTTP header names are case-insensitive
-// (RFC 9110 5.1) and the fetcher writes them out as given, so nothing
-// changes on the wire — but this SDK's own header map is keyed in lowercase
-// throughout (`content-type`, and the `authorization` that tm/rust/tests/
-// pipeline_test.rs asserts on), and the shipped `prepare_auth.rs` said
-// `"authorization"`. Emitting the resolver's title-cased default here would
-// have left every header SDK's own test suite failing on a purely cosmetic
-// difference.
-//
-// A QUERY parameter and a COOKIE name are case-SENSITIVE, so those go in
-// verbatim: `?token=` is not `?Token=`.
 function credLiteral(where: string, name: string): string {
   return 'header' === where ? String(name).toLowerCase() : String(name)
 }
@@ -323,29 +252,18 @@ function credComment(where: string): string {
 }
 
 
-// The bag the credential lands in, per placement — and, in rust, the `Spec`
-// field it is read from, which is spelled the same. Cookies ride the header
-// bag because a cookie IS a header.
 function bagName(where: string): string {
   return 'query' === where ? 'query' : 'headers'
 }
 
 
 function clear(where: string): string {
-  // COOKIE clears the header named for the credential, NOT the cookie
-  // header: the cookie header may carry pairs this SDK never set, and
-  // deleting it to remove one pair would drop them all. Removing a header
-  // that placement never writes is a no-op, which is the honest outcome
-  // when there is no credential to place.
   return `vs::del_prop(${bagName(where)}, &Value::str(CRED_NAME))`
 }
 
 
 function place(where: string): string {
   if ('query' === where) {
-    // NO PREFIX IN A QUERY STRING. `?token=Bearer%20abc` is not a thing any
-    // API reads; the prefix is a header convention and is dropped here
-    // deliberately rather than silently concatenated.
     return `        let apikey_val = match &apikey {
             Value::Str(s) => s.clone(),
             _ => String::new(),
@@ -355,8 +273,6 @@ function place(where: string): string {
   }
 
   if ('cookie' === where) {
-    // Append, never replace: the cookie header may already carry pairs this
-    // SDK did not set, and clobbering it would drop them.
     return `        let apikey_val = match &apikey {
             Value::Str(s) => s.clone(),
             _ => String::new(),

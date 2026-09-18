@@ -65,10 +65,6 @@ pub fn make_spec_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ProjectNam
     };
 
     if "graphql" == kind {
-        // GraphQL addresses one endpoint: no path parts, no query string,
-        // and the body carries the operation. prepare_body is skipped
-        // deliberately — it only emits a body for data-input ops, whereas
-        // every GraphQL op posts one, including load/list/remove.
         let body = crate::utility::graphql::graphql_body_util(ctx);
         spec.borrow_mut().body = body;
         spec.borrow_mut().path = String::new();

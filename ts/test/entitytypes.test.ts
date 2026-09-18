@@ -1,21 +1,3 @@
-// Typed-model emitter (EntityTypes_<lang>) output tests.
-//
-// The emitters live in the shipped scaffold (project/.sdk/src/cmp/<lang>/)
-// and only ever compile inside a generated SDK project, so — like
-// featureharness.ts does for feature templates — they are sucrase-transpiled
-// and sandbox-loaded here with '@voxgig/sdkgen' shimmed to the real dist
-// build and '@voxgig/apidef' to the KIT/getModelPath equivalents. Each
-// emitter then renders a fixture model through a real Jostraca generate into
-// memfs, and the emitted types file is asserted on.
-//
-// The fixture exercises the edge cases the emitters must survive:
-//   - an INACTIVE entity (must still be emitted: the consumer scaffold
-//     generates entity code for every entity),
-//   - a fieldless placeholder entity (lazy Name derivation),
-//   - a non-identifier field name (skipped-with-warning in csharp/java/...),
-//   - a $NULL field (php must not emit `?null`),
-//   - a $ONE union field (union syntax where the language has one),
-//   - $OBJECT/$ARRAY fields (rust/cpp concrete container mapping).
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual } from 'node:assert'
@@ -34,9 +16,6 @@ const { KIT, getModelPath } = require('../dist/types.js')
 const CMP_DIR = Path.resolve(__dirname, '..', 'project', '.sdk', 'src', 'cmp')
 
 
-// Transpile + evaluate a scaffold component file, resolving its relative
-// requires (./utility_<lang> etc.) recursively from the scaffold tree and
-// shimming the two package imports the scaffold expects.
 const _modCache: Record<string, any> = {}
 
 function scaffoldLoad(file: string): any {
@@ -272,12 +251,6 @@ describe('EntityTypes emitters — fixture model output', () => {
     ok(out.includes('String.t() | integer()'), 'union renders as typespec union')
   })
 
-  // A nameless field reaches a target when a spec carries a parameter with
-  // no name -- a dangling `$ref` is the way that happens. apidef now drops
-  // those, but Ruby is the target that cannot survive one: `Struct.new(:"")`
-  // raises `NameError: cannot make operator ID : attrset` at load, so the
-  // whole SDK fails to require over a single junk field. Quoting is not the
-  // answer; the empty symbol is the only one Ruby rejects here.
   test('rb: a nameless field is dropped, not emitted as an empty symbol', async () => {
     const model = makeModel()
     const sun: any = model.main[KIT].entity.sun
@@ -303,8 +276,6 @@ describe('EntityTypes emitters — fixture model output', () => {
     ok(out.includes('type Pluto struct {'), 'fieldless Pluto present')
   })
 
-  // The remaining emitters share the same policy plumbing; smoke-check that
-  // each renders all three entities (the include-all filter) without error.
   for (const [lang, target, re] of [
     ['rb', { name: 'rb', ext: 'rb' }, /Demo_types\.rb$/],
     ['lua', { name: 'lua', ext: 'lua' }, /demo_types\.lua$/],

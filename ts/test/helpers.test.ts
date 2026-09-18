@@ -55,7 +55,6 @@ describe('helpers', () => {
               log: {
                 active: true,
                 deps: {
-                  // No `active` → feature deps default OFF, so excluded.
                   go: { 'github.com/x/log': { version: 'v2.0.0' } },
                 },
               },
@@ -77,7 +76,6 @@ describe('helpers', () => {
     })
 
     test('inactive features are excluded entirely', () => {
-      // `disabled` is active:false → never contributes its deps.
       const names = collectDeps(makeModel(), 'go', undefined).map((d) => d.name)
       strictEqual(names.includes('github.com/x/nope'), false)
     })
@@ -162,14 +160,13 @@ describe('helpers', () => {
 
     test('target deps included unless active===false', () => {
       const targetDeps = {
-        'github.com/t/a': { version: 'v5' }, // default on
-        'github.com/t/b': { active: false, version: 'v6' }, // off
-        'github.com/t/c': { active: true, version: 'v7' }, // on
+        'github.com/t/a': { version: 'v5' },
+        'github.com/t/b': { active: false, version: 'v6' },
+        'github.com/t/c': { active: true, version: 'v7' },
       }
       const out = collectDeps(makeModel(), 'go', targetDeps)
       const byName = Object.fromEntries(out.map((d) => [d.name, d]))
 
-      // feature dep + the two active target deps
       deepStrictEqual(
         out.map((d) => d.name).sort(),
         ['github.com/t/a', 'github.com/t/c', 'github.com/x/auth'],
@@ -318,14 +315,6 @@ describe('helpers', () => {
 
   describe('safeVarName', () => {
 
-    // A Lua TABLE key, which is a different problem from a variable name:
-    // a keyword cannot be sanitised with a trailing _ here, because the key has
-    // to keep the field name the API actually uses. It gets bracketed instead.
-    //
-    // The trap this covers: a keyword MATCHES the identifier pattern, so the
-    // shape-only test `jsKey` uses would pass `end` through as a bare key and
-    // emit `{ end = "end" }`, which does not parse. `jsKey` is right to skip the
-    // keyword check — `{ end: 1 }` is legal JS — and lua is the exception.
     test('luaKey brackets a keyword, and any non-identifier', () => {
       // Every Lua keyword must be bracketed, not just the memorable ones.
       for (const kw of [
@@ -345,7 +334,6 @@ describe('helpers', () => {
       strictEqual(luaKey('ending'), 'ending')
       strictEqual(luaKey('endDate'), 'endDate')
 
-      // Not identifiers at all.
       strictEqual(luaKey('start-date'), '["start-date"]')
       strictEqual(luaKey('a.b'), '["a.b"]')
       strictEqual(luaKey('2x'), '["2x"]')
@@ -358,15 +346,11 @@ describe('helpers', () => {
 
 
     test('sanitises reserved words per language with a trailing _', () => {
-      // Ruby: `self = ...` is a SyntaxError (Cloudsmith's Self entity).
       strictEqual(safeVarName('self', 'rb'), 'self_')
       strictEqual(safeVarName('end', 'rb'), 'end_')
-      // Python keyword.
       strictEqual(safeVarName('class', 'py'), 'class_')
-      // Lua keyword — but `self` is NOT reserved in Lua.
       strictEqual(safeVarName('end', 'lua'), 'end_')
       strictEqual(safeVarName('self', 'lua'), 'self')
-      // Existing languages still work.
       strictEqual(safeVarName('delete', 'ts'), 'delete_')
       strictEqual(safeVarName('type', 'go'), 'type_')
     })
@@ -406,7 +390,6 @@ describe('helpers', () => {
     })
 
     test('matches exactly — case-sensitive, no partial hits', () => {
-      // Only the exact constant is owned by Ruby; compounds are free.
       strictEqual(rbSafeTypeName('FileUpload'), 'FileUpload')
       strictEqual(rbSafeTypeName('TimeSeries'), 'TimeSeries')
       strictEqual(rbSafeTypeName('Filetype'), 'Filetype')
@@ -424,11 +407,6 @@ describe('helpers', () => {
     // THE SECOND HALF OF "ALREADY TAKEN": names the SDK'S OWN SCAFFOLDING
     // claims, which a language-keyword list can never catch.
     test('suffixes constants the generated SDK itself declares', () => {
-      // gitlab-sdk has a `Runner` entity. `<Sdk>_types.rb` declared
-      // `class Runner`, and tm/rb/test/runner.rb then does
-      // `Runner = ProjectNameTestRunner` — so in the test process the entity
-      // type silently BECAME the test runner. Ruby warns and carries on,
-      // which is why `rb` stayed green (issue #64).
       strictEqual(rbSafeTypeName('Runner'), 'RunnerType')
       strictEqual(rbSafeTypeName('Helpers'), 'HelpersType')
       strictEqual(rbSafeTypeName('Vs'), 'VsType')
@@ -444,9 +422,6 @@ describe('helpers', () => {
     })
 
     test('does not claim names that are merely PREFIXED', () => {
-      // `ProjectNameUtility` substitutes to `<Sdk>Utility`, which a bare
-      // entity type cannot equal — guarding it would rename entities that
-      // never collided. The fleet must not churn.
       strictEqual(rbSafeTypeName('Utility'), 'Utility')
       strictEqual(rbSafeTypeName('Context'), 'Context')
       strictEqual(rbSafeTypeName('Response'), 'Response')
@@ -457,13 +432,6 @@ describe('helpers', () => {
 
   describe('phpSafeTypeName', () => {
 
-    // THE CASE THAT MATTERS MOST, because it is the one a case-sensitive
-    // implementation gets wrong while looking correct.
-    //
-    // PHP class names are case-insensitive, so `Namespace` IS `namespace` —
-    // and the generated name is PascalCase while the reserved word is
-    // lowercase. A `Set.has('Namespace')` against a lowercase list matches
-    // nothing, and `class Namespace` ships again.
     test('folds case, as PHP does', () => {
       strictEqual(phpSafeTypeName('Namespace'), 'NamespaceType')
       strictEqual(phpSafeTypeName('namespace'), 'namespaceType')
@@ -474,9 +442,6 @@ describe('helpers', () => {
     })
 
     test('suffixes words PHP will not accept as a class name', () => {
-      // The gitlab-sdk regression (#64): a `Namespace` entity emitted
-      // `class Namespace`, which is a parse error, so types/<Sdk>Types.php
-      // could never be loaded.
       strictEqual(phpSafeTypeName('List'), 'ListType')
       strictEqual(phpSafeTypeName('Array'), 'ArrayType')
       strictEqual(phpSafeTypeName('Class'), 'ClassType')
@@ -511,11 +476,6 @@ describe('helpers', () => {
   describe('swiftSafeTypeName', () => {
 
     test('suffixes names the swift SDK runtime already declares', () => {
-      // The Hook0 regression: their spec has a `Response` schema, so the
-      // generated `public struct Response` landed in the same module as
-      // core/Response.swift's `public final class Response` — Swift has no
-      // intra-module namespacing, so this was `invalid redeclaration of
-      // 'Response'` plus an ambiguous-lookup error in every core file.
       strictEqual(swiftSafeTypeName('Response'), 'ResponseType')
       strictEqual(swiftSafeTypeName('Context'), 'ContextType')
       strictEqual(swiftSafeTypeName('Result'), 'ResultType')
@@ -532,8 +492,6 @@ describe('helpers', () => {
       strictEqual(swiftSafeTypeName('Subscription'), 'Subscription')
       strictEqual(swiftSafeTypeName('Event'), 'Event')
       strictEqual(swiftSafeTypeName('Organization'), 'Organization')
-      // Ruby core constants are NOT swift SDK types, and vice versa — the two
-      // guards are deliberately independent.
       strictEqual(swiftSafeTypeName('File'), 'File')
       strictEqual(rbSafeTypeName('Response'), 'Response')
     })
@@ -564,7 +522,6 @@ describe('helpers', () => {
     })
 
     test('a templated URL yields its variables in URL order', () => {
-      // The Hanko shape: one variable, empty default -> required.
       const vars = serverVariables(model('https://{tenant_id}.hanko.io', {
         tenant_id: { default: '', description: 'The tenant.' },
       }))
@@ -620,20 +577,6 @@ describe('helpers', () => {
   })
 
 
-  // AN ALIASED TARGET IS ITS OWN TARGET, IN ITS ORIGIN'S LANGUAGE.
-  //
-  // `target add go~go2` installs a SECOND Go SDK. Its CONFIG is its own — its
-  // module path, its registry state, its published name — but the LANGUAGE
-  // rules are still Go's: the same go.mod shape, the same `go get` line.
-  //
-  // These helpers took one string for both jobs, so a component that wrote
-  // `goModule(model, 'go')` silently rendered the ORIGIN's module path into
-  // the alias's output, defeating the one use aliasing is documented for
-  // (design doc section 16.12). The naive repair — passing `target.name`
-  // everywhere — swaps the defect rather than fixing it: `packageName` would
-  // stop matching its own switch and fall to `default`, so `ts~ts2` would
-  // publish under a non-npm name. Hence `originName`, and hence this suite
-  // asserting BOTH halves for every helper that had a switch.
   describe('an aliased target', () => {
 
     // `origname` is what `target add` stamps for an alias, and '' when the
@@ -697,7 +640,6 @@ describe('helpers', () => {
       strictEqual(packageName(model, 'ts2'), packageName(model, 'ts'),
         'an aliased ts must still publish an npm-scoped name')
 
-      // ...and a per-target override is still the alias's own.
       const declared: any = makeModel()
       declared.main.kit.target.ts2.publish = {
         registry: { package: '@acme/second' },
@@ -709,12 +651,6 @@ describe('helpers', () => {
 
 
     test('registryState applies the go family rule to a go alias', () => {
-      // The alias DECLARES a live registry, and that is the point of the
-      // fixture: with no registry declared, `registryState` returns 'tag'
-      // through the "no registry configured" path and the assertion passes
-      // whether or not the family rule ran. Only a declared-active registry
-      // isolates the rule — go is tag-only whatever the model says, because
-      // the Go toolchain installs from a tag.
       const model: any = makeModel()
       model.main.kit.target.go2.publish = {
         registry: { name: 'npm', state: 'active' },
@@ -776,11 +712,6 @@ describe('helpers', () => {
 })
 
 
-// A feature's PLUGINS are its optional parts, trimmed one level deeper
-// than the feature itself. This is the mechanism that keeps a generated
-// SDK lean: the `secrets` feature over sekreto has a plugin per provider
-// kind, and a project whose chain is `[dotenv, env]` must carry neither
-// AWS request signing nor the seven HTTP vault clients.
 describe('pluginExcludes', () => {
 
   const model = (plugins: any) => ({

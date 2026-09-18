@@ -1,17 +1,3 @@
-// `package check` — the author-side battery. Design §14.
-//
-// WHAT THIS SUITE IS REALLY TESTING
-//
-// A validator is only worth its noise if every check DISCRIMINATES: it must
-// fire on the defect it names and stay quiet on the shipped scaffold, which
-// exercises 27 targets and 18 features of legitimate variety. So each test
-// below takes one clean package, breaks exactly one thing, and asserts both
-// halves — the finding appears, and the check that would be a false positive
-// does not.
-//
-// The bundled `ts/project` is the anchor: it is itself an sdkgen package, so
-// the battery runs on it here, and any rule that cannot survive the shipped
-// scaffold is a rule that would have cried wolf at every author.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, throws } from 'node:assert'
@@ -67,8 +53,6 @@ function makePackage(edit?: (dir: string) => void): string {
   Fs.cpSync(Path.join(SCAFFOLD, 'tm', 'go'),
     Path.join(sdk, 'tm', 'iotgo'), { recursive: true })
 
-  // The target model, renamed the way an author must rename it: EVERY
-  // `target: go:` key, not only the first.
   Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'iotgo.aon'),
     Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aon'), 'utf8')
       .replace(/target: go:/g, 'target: iotgo:'))
@@ -92,7 +76,6 @@ function makePackage(edit?: (dir: string) => void): string {
 }
 
 
-// Run the battery over a package built by `edit`, then clean up.
 function check(edit?: (dir: string) => void): any {
   const dir = makePackage(edit)
   try {
@@ -188,8 +171,6 @@ describe('package check — a well-formed package', () => {
 
 
   test('`package check` is the one verb that runs without a project model', () => {
-    // An author runs it in their package root, where there is no
-    // `model/sdk.aontu` — and every other verb must keep failing without one.
     strictEqual(needsModel(['package', 'check']), false)
     strictEqual(needsModel(['package', 'add', '@acme/sdkgen-iot']), true)
     strictEqual(needsModel(['target', 'add', 'go']), true)
@@ -211,8 +192,6 @@ describe('package check — the model rules', () => {
     ok(/: \d+: `\/\/ a consumer cannot parse this`/.test(
       noted(report, 'model-slash-comment')), noted(report, 'model-slash-comment'))
 
-    // The parse failure IS the slash comment. Reporting both reads as two
-    // problems and buries the line number in aontu's phrasing.
     ok(!points(report).includes('model-parse'), points(report).join(','))
     strictEqual(report.ok, false)
   })
@@ -259,8 +238,6 @@ describe('package check — the model rules', () => {
 
 
   test('a key the base schema requires and the file omits', () => {
-    // `ext` compiles fine on its own — it only fails once the consumer
-    // unifies the whole model, which is the failure this moves forward.
     const report = check((dir) =>
       editModel(dir, 'target', 'iotgo', (src) =>
         src.replace(/^\s*ext:.*$/m, '')))
@@ -296,9 +273,6 @@ describe('package check — the model rules', () => {
   test('a target that pins a publication value the project owns', () => {
     const report = check((dir) =>
       editModel(dir, 'target', 'iotgo', (src) =>
-        // NOT the probe's own value: aontu unifies two equal scalars happily,
-        // so a package pinning exactly what the probe sets is the one case
-        // this technique cannot see.
         src.replace('main: kit: target: iotgo: {',
           "main: kit: target: iotgo: {\n  publish: registry: package: '@acme/pinned-by-the-package'")))
 
@@ -308,10 +282,6 @@ describe('package check — the model rules', () => {
 
 
   test('a pin that EQUALS the probe value is still caught', () => {
-    // aontu unifies two equal concrete scalars happily, so a single sentinel
-    // misses any key whose pinned value happens to be the one probed —
-    // `tag.active: false` is one of only two values that key can take. Two
-    // sentinels per key: a pin can equal one or the other, never both.
     for (const [key, value] of [
       ['publish: tag: active', 'false'],
       ['publish: tag: active', 'true'],
@@ -329,9 +299,6 @@ describe('package check — the model rules', () => {
 
 
   test('a valid `#` comment that MENTIONS a slash comment is fine', () => {
-    // The strict parser ignores everything after `#`, so a comment saying
-    // `// comments` is not a slash comment — and reporting it would exit
-    // non-zero on a correct package.
     const report = check((dir) =>
       editModel(dir, 'target', 'iotgo', (src) =>
         '# some generated languages use // and /* */ comments\n' + src))
@@ -344,9 +311,6 @@ describe('package check — the model rules', () => {
 
 
   test('a `#` inside a STRING does not hide a real slash comment', () => {
-    // The other direction: blanking quoted spans has to happen before the
-    // `#` cut, or `'#'` in a value would truncate the line and hide what
-    // follows it.
     const report = check((dir) =>
       editModel(dir, 'target', 'iotgo', (src) =>
         src.replace('main: kit: target: iotgo: {',
@@ -370,15 +334,11 @@ describe('package check — the model rules', () => {
     ok(/deps: iotgo:/.test(noted(report, 'feature-deps-misplaced')),
       noted(report, 'feature-deps-misplaced'))
 
-    // A warning: what is there works, it just does nothing.
     strictEqual(report.ok, true)
   })
 
 
   test('the deps SLOT every target model declares is not a finding', () => {
-    // `main: kit: feature: &: target: <t>: deps: &: {…}` declares the type of
-    // a slot. Reading it as a misplaced dependency would fire on every
-    // package that ships a target.
     const report = check()
 
     ok(!points(report).includes('feature-deps-misplaced'))
@@ -416,8 +376,6 @@ describe('package check — the manifest', () => {
 
 
   test('no manifest is a warning, and the battery still runs', () => {
-    // An author who has not written the manifest yet is precisely who needs
-    // the rest of the checks.
     const report = check((dir) => {
       Fs.rmSync(Path.join(dir, 'sdkgen-package.json'))
       editModel(dir, 'feature', 'retry', (src) => src.replace("base: 'BASE'", ''))
@@ -485,8 +443,6 @@ describe('package check — feature source', () => {
       targetsSupported: { retry: ['iotgo', 'rb'] },
     }))
 
-    // `iotgo` HAS retry source (it is the bundled go tree); `rb` is not in
-    // the package at all, so the claim is unbacked.
     const note = noted(report, 'feature-source-undelivered')
     ok(/rb/.test(note), note)
     ok(!/iotgo/.test(note), note)
@@ -527,11 +483,9 @@ describe('package check — feature source', () => {
     // them.
     const dir = makePackage()
     try {
-      // The fixture provides `retry` and nothing else...
       ok(!Fs.existsSync(Path.join(dir, '.sdk', 'model', 'feature', 'log.aon')),
         'fixture assumption: the package does not provide log')
 
-      // ...and its copied `go` tree ships log source regardless.
       ok(Fs.existsSync(
         Path.join(SCAFFOLD, 'tm', 'go', 'feature', 'log_feature.go')),
         'fixture assumption: go ships log source')

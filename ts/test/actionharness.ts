@@ -1,10 +1,3 @@
-// Shared harness for the ACTION suites (`target add`, `feature add`,
-// `doctor`), which the unit suites cannot reach: an action reads the shipped
-// scaffold off disk and writes a project tree, so testing one means running it
-// for real.
-//
-// Writes go to memfs; reads fall through to the real scaffold. Nothing here
-// can touch the working tree.
 
 import Fs from 'node:fs'
 import Path from 'node:path'
@@ -16,15 +9,12 @@ import { target_add } from '../dist/action/target.js'
 import { feature_add } from '../dist/action/feature.js'
 
 
-// The shipped scaffold: what a consumer's
-// node_modules/@voxgig/sdkgen/project/.sdk resolves to.
 const SCAFFOLD = Path.resolve(__dirname, '..', 'project', '.sdk')
 const PROJECT = Path.resolve(__dirname, '..', 'project')
 const PACKAGE_ROOT = Path.resolve(__dirname, '..')
 
 const KIT = 'kit'
 
-// Where a project's model tree lives inside the memfs volume.
 const ROOT = '/out'
 
 
@@ -39,7 +29,6 @@ function makeLog(): any {
 }
 
 
-// A log that RECORDS, for assertions about what an action reported.
 function recordLog(): any {
   const lines: any[] = []
   const push = (level: string) => (entry: any) => lines.push({ level, ...entry })
@@ -59,16 +48,6 @@ function recordLog(): any {
 // it in rather than creating one on disk.
 const CONSUMER_BASE = 'node_modules/@voxgig/sdkgen'
 
-// The same standing-in, for the path RESOLVED against the project root:
-// `/out/node_modules/@voxgig/sdkgen/...`. Targets are referenced the way a
-// consumer references them (see targetRef), which sends resolveTarget down
-// its relative branch, and that branch joins the ref onto `folder` — so the
-// mounted absolute form has to resolve as well as the relative one.
-//
-// BOTH mappings are needed, and the relative one cannot be dropped:
-// `feature_add` hardcodes `BASE = 'node_modules/@voxgig/sdkgen'` and reads it
-// relative to the CWD, so the feature fan-out that runs after every target
-// add would fail without it.
 const MOUNTED_BASE = ROOT + '/' + CONSUMER_BASE
 
 function realpath(path: any): any {
@@ -86,7 +65,6 @@ function realpath(path: any): any {
 }
 
 
-// WRITE to memfs, READ through to disk.
 function layeredFs(mem: any): any {
   const readThrough = (name: string) => (path: any, ...rest: any[]) => {
     const real = realpath(path)
@@ -112,13 +90,10 @@ type Project = {
   fs: any
   vol: any
   actx: any
-  // Paths written so far, relative to the project root, sorted.
   files: () => string[]
 }
 
 
-// A fresh empty project: the two index files `loadContent` needs, and an
-// action context wired to memfs.
 function makeProject(
   opts: { feature?: Record<string, any>, target?: Record<string, any>, dryrun?: boolean, log?: any } = {},
 ): Project {
@@ -166,29 +141,11 @@ function makeProject(
 }
 
 
-// Targets are referenced the way a CONSUMER references them: package-relative
-// (`node_modules/@voxgig/sdkgen/project/<lang>`), resolved against the project
-// root by resolveTarget's relative branch and mapped back to the shipped
-// scaffold by realpath above.
-//
-// It used to be an ABSOLUTE path (`<...>/project/<lang>`). That works, but it
-// makes the output MACHINE-DEPENDENT: resolveTarget records `base` as the
-// resolved folder with the project root stripped, and an absolute source is
-// not under the project root, so `base` stayed absolute and the `'BASE'`
-// substitution wrote this checkout's location into the copied target model.
-// Harmless while nothing compared bytes; fatal to the golden trees in
-// characterize.test.ts, which have to be identical on every machine, in a
-// worktree, and in CI.
-//
-// The absolute branch is still exercised, deliberately, by
-// `absoluteTargetRef` below — see target.test.ts and characterize.test.ts.
 function targetRef(target: string): string {
   return CONSUMER_BASE + '/project/' + target
 }
 
 
-// The out-of-tree form: an absolute path to a target scaffold. Kept so the
-// branch targetRef no longer takes still has coverage.
 function absoluteTargetRef(target: string): string {
   return PROJECT + '/' + target
 }

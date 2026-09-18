@@ -1,21 +1,3 @@
-// PROVENANCE: where a copied target or feature came from.
-//
-// WHY THIS EXISTS
-//
-// `feature add` needs each target's template tree, and `doctor` needs the
-// scaffold a copy should be compared against. Both find it through the
-// target model's `base` — and only three of the 27 shipped target models
-// carried that line, so for the other 24, and for EVERY feature, both
-// silently fell back to the bundled scaffold.
-//
-// That is right only while everything ships inside @voxgig/sdkgen. The moment
-// a target or feature can come from somewhere else, a fallback to the bundled
-// scaffold is a wrong answer rather than a missing one: doctor compares a copy
-// against a scaffold it never came from, and the feature fan-out looks for
-// source in a tree that does not have it.
-//
-// `base` alone is also not enough for an ALIAS, which is why `origname` is
-// recorded beside it — see alias.test.ts.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, rejects } from 'node:assert'
@@ -81,7 +63,6 @@ describe('provenance', () => {
     strictEqual(keys.base, SCAFFOLD_BASE, 'wrong or missing base')
     ok(!src.includes("'BASE'"), 'the raw anchor shipped into the project')
 
-    // Not stamped when it does not apply.
     strictEqual(keys.origname, undefined, 'origname stamped for a plain add')
 
     // The bundled scaffold is itself an sdkgen package now, so every bundled
@@ -121,12 +102,6 @@ describe('provenance', () => {
 
 
   test('a STRUCTURALLY invalid manifest records no package', async () => {
-    // It parses and it has a name, so the name was believed — even though
-    // `validateManifest` would reject the same file for declaring no schema
-    // version and no `provides`. `package:` provenance is what
-    // `package update` later acts on, so recording a project as belonging to
-    // a package that cannot be added at all points a future update at
-    // nothing. Tolerant is not the same as credulous.
     const pkg = externalGoPackage({ name: '@acme/sdkgen-iot' })
     try {
       const log = recordLog()
@@ -145,11 +120,6 @@ describe('provenance', () => {
 
 
   test('an item the manifest does not CLAIM records no package', async () => {
-    // A package may carry a definition it deliberately does not list — that
-    // is what `manifest-item-unclaimed` is about, "nothing will install it".
-    // Stamping the package name onto one anyway would record that the package
-    // supplied something `package add <pkg>` would never install, breaking
-    // the very equivalence that justifies reading the manifest here at all.
     const pkg = externalGoPackage({
       sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
       provides: { target: ['somethingelse'] },
@@ -283,9 +253,6 @@ describe('provenance', () => {
 
 
   test('the base is `/`-normalised', async () => {
-    // It is written into a COMMITTED file, so it must not depend on the OS
-    // that ran the add — otherwise the same project resynced on Windows and
-    // on Linux records two different values and each churns the other.
     const project = makeProject({})
     await target_add([targetRef('ts')], project.actx)
 
@@ -344,7 +311,6 @@ function externalGoPackage(manifest: any): string {
 }
 
 
-// Review findings on #49, each pinned.
 describe('provenance edge cases', () => {
 
   test('a quote in a path does not break the model', async () => {
@@ -390,7 +356,6 @@ describe('provenance edge cases', () => {
       await target_add([targetRef('ts')], project.actx)
       await feature_add([Path.join(pkg, 'ext')], project.actx)
 
-      // Now the model knows about it, the way a reloaded project would.
       const base = (String(project.fs.readFileSync(
         ROOT + '/model/feature/ext.aon', 'utf8'))
         .match(/^\s*base:\s*'([^']*)'/m) || [])[1]
@@ -398,7 +363,6 @@ describe('provenance edge cases', () => {
         ext: { name: 'ext', active: true, base },
       }
 
-      // The BARE name, as target_add would pass it.
       await feature_add(['ext'], project.actx)
 
       ok(project.files().includes('model/feature/ext.aon'),
@@ -411,12 +375,6 @@ describe('provenance edge cases', () => {
 
 
   test('a tilde in the package PATH is not an alias', async () => {
-    // The Windows runner's temp directory is an 8.3 short name
-    // (`C:\Users\RUNNER~1\...`), so every external-feature test ran with a
-    // tilde in the path. A check that looked for `~` anywhere in the ref
-    // rejected all of them as aliases — the same defect the resolver had,
-    // reintroduced in the same commit that fixed it, because the ref was
-    // being parsed in two places.
     const parent = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-tilde-'))
     try {
       const pkg = Path.join(parent, 'RUNNER~1', 'pkg')

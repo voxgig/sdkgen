@@ -6,39 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.cmd_package_check = cmd_package_check;
 exports.checkPackage = checkPackage;
 const kindCollection_1 = require("../helpers/kindCollection");
-// `package check` — the AUTHOR-side battery. Design §14.
-//
-// WHAT IT IS FOR
-//
-// Every other verb here acts on a project. This one acts on a PACKAGE, before
-// anyone installs it, and its whole value is moving a failure from the
-// consumer's build back to the author's terminal. The failures worth moving
-// are the ones a package cannot detect by using itself:
-//
-//   - a model file that compiles for the author and not for a consumer (the
-//     `//` comment asymmetry — seven shipped targets went out that way);
-//   - a key the base schema requires and the file omits, which nothing
-//     notices until a consumer unifies the whole model;
-//   - a key the PROJECT owns that the package pinned, which fails in the
-//     consumer's own file and reads as the consumer's mistake;
-//   - a manifest that disagrees with the disk, in either direction;
-//   - feature source the trim step will never recognise, so it ships to every
-//     project whatever the model selected.
-//
-// WHY IT REUSES EVERYTHING
-//
-// The battery asserts nothing of its own. Manifest agreement is
-// `validateManifest`, the trees a kind needs are the kind registry's
-// `requires`, the feature catalogue is `availableFeatures`, the source walk is
-// `findFeatureEntries`, the model rules are `helpers/modelcheck`. A check that
-// restated any of those would be a second copy of a rule the installer
-// already has — and this workstream's most repeated defect is exactly that,
-// two copies of one rule drifting apart. Where the check and the installer
-// disagree, the check is wrong by construction.
-//
-// NO MANIFEST IS NOT A REFUSAL. `package add` requires one; here its absence
-// is the first finding and the rest of the battery still runs, because an
-// author who has not written it yet is precisely who needs the rest.
 const applicability_1 = require("../helpers/applicability");
 const node_path_1 = __importDefault(require("node:path"));
 const types_1 = require("../types");
@@ -49,21 +16,7 @@ const modelcheck_1 = require("../helpers/modelcheck");
 const featureSource_1 = require("../helpers/featureSource");
 const shipped_1 = require("../helpers/shipped");
 const kind_1 = require("./kind");
-// How many lines of one file's worth of the same problem to name before
-// saying "and N more". A file with a hundred `//` lines is one mistake, and
-// printing a hundred findings buries the other nine checks.
 const SAME_FILE_LIMIT = 5;
-// A LIST OF NAMES from a manifest map, or nothing.
-//
-// The manifest is the one input here that is neither this generator's nor
-// validated before it is read: `provides: { target: 42 }` is a manifest a
-// person can write, `checkShape` already reports it, and spreading it then
-// threw `TypeError: claimed is not iterable` — turning an actionable finding
-// into a stack trace, from the verb whose entire job is actionable findings.
-//
-// Malformed reads as EMPTY rather than as its own finding: the shape checks
-// have already said what is wrong with it, and saying so twice in different
-// words helps nobody.
 function claims(map, key) {
     const value = map?.[key];
     return Array.isArray(value) ?
@@ -72,8 +25,6 @@ function claims(map, key) {
 async function cmd_package_check(args, actx) {
     const refs = args.slice(2).flatMap((a) => 'string' === typeof a ? a.split(',') : a)
         .filter((r) => null != r && '' !== r);
-    // No ref means "the package I am standing in", which is where an author
-    // runs it.
     const reports = (0 === refs.length ? ['.'] : refs)
         .map((ref) => checkPackage(ref, actx));
     const ok = reports.every((r) => r.ok);
@@ -94,8 +45,6 @@ function checkPackage(ref, actx) {
     const fs = actx.fs();
     const log = actx.log;
     const { found, search } = (0, manifest_1.probePackage)(fs, actx.folder ?? '.', ref);
-    // Nothing to check is not a finding — it is a wrong invocation, and the
-    // caller needs to know which paths were tried.
     if (null == found) {
         throw new utility_1.SdkGenError('Package not found: ' + ref + '\n  looked for a `.sdk` folder in:\n    ' +
             search.join('\n    '));
@@ -125,7 +74,6 @@ function checkPackage(ref, actx) {
     });
     return { ok: 0 === errors, ref, root, errors, warnings, findings, summary };
 }
-// The manifest, and its agreement with the disk in both directions.
 function checkManifest(fs, sdk, read) {
     if (null != read.err) {
         return [{
@@ -145,13 +93,6 @@ function checkManifest(fs, sdk, read) {
     }
     return (0, manifest_1.validateManifest)(fs, sdk, read.manifest, kind_1.KINDS);
 }
-// Every item's definition file: the anchor, the comment dialect, the parse,
-// the schema, and the kind-specific probes.
-//
-// The items are the manifest's claims UNION what is on disk, so a definition
-// nobody claims is still checked (its being unclaimed is `validateManifest`'s
-// finding, not a reason to skip it) and a claim with no file is skipped here
-// (its absence is also already reported, and there is nothing to compile).
 function checkItems(fs, sdk, manifest) {
     const found = [];
     for (const kind of Object.keys(kind_1.KINDS).sort()) {
@@ -179,8 +120,6 @@ function checkDefinition(fs, kind, name, file) {
         found.push(at('error', 'model-anchor-missing', 'no `' + modelcheck_1.ANCHOR + '` line — the copy would record no provenance, so ' +
             '`package update` and `doctor` could never locate its source'));
     }
-    // 2. The comment dialect. Reported before the parse so the finding names
-    //    the LINE rather than aontu's view of where the parse gave up.
     const slashes = (0, modelcheck_1.slashComments)(src);
     for (const s of slashes.slice(0, SAME_FILE_LIMIT)) {
         found.push(at('error', 'model-slash-comment', s.line + ': `' + s.text + '` — aontu takes `#` comments only; a `//` ' +
@@ -190,14 +129,9 @@ function checkDefinition(fs, kind, name, file) {
     if (SAME_FILE_LIMIT < slashes.length) {
         found.push(at('error', 'model-slash-comment', 'and ' + (slashes.length - SAME_FILE_LIMIT) + ' more slash-comment line(s)'));
     }
-    // A slash comment IS the parse failure below, and saying it twice — once
-    // with the line, once as aontu's `unexpected character(s): //` — reads as
-    // two problems. Everything after it would be reporting on a file the author
-    // is about to change anyway.
     if (0 < slashes.length) {
         return found;
     }
-    // 3. The parse, as a CONSUMER's parser sees it.
     const strict = (0, modelcheck_1.compileModel)(src, file);
     if (0 < strict.errors.length) {
         // Which parser rejected it changes what the author must do, so say. A
@@ -208,14 +142,8 @@ function checkDefinition(fs, kind, name, file) {
             (0 === bare.errors.length ?
                 '  (it DOES compile under a bare Aontu() — the difference is the ' +
                     'comment dialect a consumer configures)' : '')));
-        // Nothing below can run on a file that does not compile.
         return found;
     }
-    // 4. Does it declare the key its FILENAME promises? `model/target/iot-go.aon`
-    //    is copied to that name and included by it, so a file still declaring
-    //    `main: kit: target: go:` installs an item the consumer's model never
-    //    sees — the exact mistake a package author makes copying a bundled
-    //    target as a starting point.
     const declared = (0, kindCollection_1.kindCollection)(strict.model, kind)?.[name];
     if (null == declared || 'object' !== typeof declared) {
         found.push(at('error', 'model-key-missing', 'declares no `main: kit: ' + (kind === 'edition' ? 'doc: edition' : kind) + ': ' + name + ':` block — the file ' +
@@ -229,12 +157,6 @@ function checkDefinition(fs, kind, name, file) {
     for (const err of unified.errors.slice(0, SAME_FILE_LIMIT)) {
         found.push(at('error', 'model-schema', err + '  (unified with the base schema — this is what a consumer compiles)'));
     }
-    // 5b. APPLICABILITY TAGS come from a CLOSED vocabulary (see
-    //     helpers/applicability). `provides: &: boolean` accepts any key, so
-    //     without this a typo — `sekrreto` for `sekreto` — compiles cleanly
-    //     and silently makes the feature apply to NO target at all. That is
-    //     the worst shape a mistake can take here: the feature simply
-    //     vanishes from every generated SDK with no diagnostic anywhere.
     const tagkey = 'feature' === kind ? 'needs' : 'provides';
     const unknown = null == declared ? [] : (0, applicability_1.unknownTags)(declared[tagkey]);
     if (0 < unknown.length) {
@@ -283,8 +205,6 @@ function checkFeatureModel(model, name, at) {
         if (null == deps || 'object' !== typeof deps) {
             continue;
         }
-        // The SLOT itself is legal and empty; only concrete entries are the
-        // mistake. An entry is concrete when it declares anything of its own.
         const named = Object.keys(deps).filter((d) => null != deps[d] && 'object' === typeof deps[d] &&
             0 < Object.keys(deps[d]).length);
         if (0 === named.length) {
@@ -326,14 +246,6 @@ function checkFeatureSource(fs, sdk, manifest) {
             }
         }
     }
-    // Strays: feature-shaped entries in a provided TARGET's tree whose name is
-    // in no catalogue. They are copied into every project regardless of what
-    // its model selects, because trim only drops what it can recognise.
-    //
-    // NOT REPORTED AT ALL if this generator's own feature definitions cannot be
-    // read: every bundled feature's source would then look like a stray, and a
-    // check that fires on a correct package because of a problem at ITS end is
-    // worse than one that stays quiet.
     if (0 === bundled.length) {
         return found;
     }

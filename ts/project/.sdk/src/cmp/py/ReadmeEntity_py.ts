@@ -7,11 +7,6 @@ import {
 } from '@voxgig/apidef'
 
 
-// A type-correct, JSON-serialisable Python literal for a field's canonical
-// type. The create example is EXECUTED by the doc test (the body is
-// JSON-serialised), so an Ellipsis (`...`) placeholder would raise
-// "Object of type ellipsis is not JSON serializable" — use a real value.
-// Strings render the quoted placeholder.
 function pyLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
@@ -22,14 +17,6 @@ function pyLit(type: any, placeholder: string = 'example'): string {
 }
 
 
-// Operation method spelling differs between Go and other languages — Go
-// uses PascalCase methods with explicit ctrl arg, others use lowercase
-// methods with optional ctrl. The op descriptions are language-agnostic.
-// A `list()` on a NESTED entity needs its parent path params. The
-// quickstart used to emit `client.Moon().list()` for an entity at
-// `/planet/{planet_id}/moon`, which 404s against a live server from a
-// half-built URL — indistinguishable from "no such record". The model
-// already marks those params `reqd: true`; matchArg renders exactly them.
 function listMatchArg(ent: any): string {
   const idF = entityIdField(ent)
   return matchArg('py', ent, 'list', idF, idLiteral(ent, 'list', idF))

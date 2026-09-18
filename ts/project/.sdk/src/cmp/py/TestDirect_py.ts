@@ -127,8 +127,6 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.args?.params || [], listPoint?.rename?.param) : ''
   const listParams = listPoint?.args?.params || []
 
-  // Required query params with spec-provided examples — needed in live mode
-  // to satisfy API contracts (e.g. /v2018/history requires city/start/end).
   const loadQuery = loadPoint?.args?.query || []
   const loadLiveQueryEntries = loadQuery
     .filter((q: any) => q.reqd && undefined !== q.example && null !== q.example)

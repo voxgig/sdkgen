@@ -1,18 +1,6 @@
 // ProjectName SDK - shared option readers for the feature implementations.
-// Feature options arrive as Dictionary<string, object?> (from SDK options or
-// test harnesses), so a numeric value may be any of the numeric types and
-// callbacks arrive as typed delegates. These helpers normalise access and
-// supply defaults, mirroring the `null == opts.x ? def : opts.x` pattern of
-// the ts features.
-//
-// THE NUMERIC READERS ACCEPT THE WHOLE NUMERIC FAMILY, which is the parity
-// requirement rather than a convenience. java, kotlin and scala test
-// `instanceof Number`, so every width and every JSON library's chosen
-// representation works there. A closed type switch here made a value the
-// other targets accept get REPLACED BY THE DEFAULT, silently and with no
-// error - `decimal` in particular, which is what System.Text.Json hands back
-// for a number read as `object` through a JsonElement conversion, and which
-// a configuration loader is entirely likely to produce.
+// Options arrive as Dictionary<string, object?>, so a numeric value may be any
+// numeric type; `decimal` is what System.Text.Json yields through JsonElement.
 
 namespace ProjectNameSdk.Feature;
 

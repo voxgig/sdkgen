@@ -358,7 +358,6 @@ describe('feature:cost', () => {
     strictEqual(h.client._cost.total.amount, 5)
   })
 
-  // --- regressions from the Codex review on PR #95 -------------------------
 
   test('charges attempts when the transport throws, so retry cannot spend free', async () => {
     const clock = makeClock()
@@ -705,18 +704,6 @@ describe('feature:proxy', () => {
 
 describe('feature:test-mintid', () => {
 
-  // THE MINTED ID MUST HAVE THE SAME SHAPE IN EVERY TARGET.
-  //
-  // Thirteen targets render `%04x%04x%04x%04x` - four full 16-bit groups, each
-  // padded to four hex digits. ts and js used to draw `1e4 * Math.random()`,
-  // which covers 0x0000-0x270F rather than the full range, render each group
-  // UNPADDED, and pad the whole string at the end. A group below 0x1000 then
-  // contributed fewer than four characters and every later digit shifted.
-  //
-  // A consumer holding its ports to identical bytes cannot use an id whose
-  // shape depends on which language answered, so this is a parity defect
-  // rather than a cosmetic one.
-
   const SAMPLES = 2000
 
   test('a minted id is sixteen lowercase hex digits, always', () => {
@@ -728,21 +715,9 @@ describe('feature:test-mintid', () => {
     }
   })
 
-  // The character class alone does NOT separate the two forms - `padEnd(16)`
-  // also yields sixteen hex digits, which is why the first version of this
-  // test passed against the defect. What separates them is WHERE the digits
-  // fall.
-  //
-  // Under `%04x%04x%04x%04x` every position is uniform, so the final character
-  // is '0' about one time in sixteen. Under the old form the string was
-  // usually shorter than sixteen and padded with trailing zeros, so the final
-  // character was '0' almost nine times in ten. Measured over 200k samples:
-  // 6.3% for the correct form against 88.7% for the old one.
-  //
-  // The threshold sits between those, far from both: at p=1/16 and n=2000 the
-  // standard deviation is about 1.1 percentage points, so 25% is some fifteen
-  // deviations above the correct rate and the defect lands sixty above it.
-  // This is a statistical assertion, but not a close one.
+  // The character class alone does not separate the forms; `padEnd` yields it
+  // too. Under `%04x` every position is uniform, so a trailing '0' is rare,
+  // where end-padding makes it the common case.
   test('a minted id is not zero-padded at the end', () => {
     const { mintId } = loadFeatureModule('test')
 
@@ -760,9 +735,7 @@ describe('feature:test-mintid', () => {
   })
 
   test('every target mints the id in the same form', () => {
-    // The source-level half. ts and js are checked behaviourally above; the
-    // other targets cannot be loaded here, so their FORM is pinned instead -
-    // which is what drifted, and in the direction of ts/js rather than away.
+    // The other targets cannot be loaded here, so their form is pinned.
     const TM = Path.join(__dirname, '..', 'project', '.sdk', 'tm')
     const sites: [string, string][] = [
       ['c', 'feature/test.c'],
@@ -788,7 +761,6 @@ describe('feature:test-mintid', () => {
         target + ' no longer mints the id as %04x%04x%04x%04x (' + rel + ')')
     }
 
-    // And the two that cannot use a printf format say so the same way.
     for (const [target, rel] of [
       ['ts', 'src/feature/test/TestFeature.ts'],
       ['js', 'src/feature/test/TestFeature.js'],

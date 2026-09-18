@@ -1,38 +1,3 @@
-// What each vendored struct does with an OPTIONAL key the caller OMITTED —
-// pinned per port.
-//
-// WHY THIS EXISTS
-//
-// The generated option spec (helpers/optspec) names every feature the target
-// carries and gives each one the union
-//
-//   ['`$ONE`', <that feature's option spec>, '`$NIL`']
-//
-// because a spec value is also the value validate INSERTS when the key is
-// absent. A bare map there would put an entry in `options.feature` for every
-// feature the MODEL declares, not the ones the CALLER asked for — and
-// `makeOptions` derives the feature ADD ORDER from that map's keys. The union
-// is what keeps an omitted feature omitted.
-//
-// It only does that where the port agrees on what "omitted" means. Three did
-// not, each in its own way, and none of it was visible until the spec started
-// naming features:
-//
-//   go   materialised the whole entry, `$OPEN` marker and all, because it
-//        wrote the trial result through a held grandparent with SetProp,
-//        which deliberately preserves nil where setval deletes.
-//   rb   left a nil-valued key, because setval carries a special case that
-//        SETS nil in the grandparent branch where ts deletes in both.
-//   php  wrote with ancestor `2` where ts uses `-2`, so it resurrected the
-//        key AND invented a synthetic sibling carrying the trial store.
-//
-// All three are patched in place (see ts/test/vendored.test.ts's table) and
-// this is what holds them. It is the same discipline as structnull.test.ts
-// next door: a question every port answers, that nothing else asks.
-//
-// Unlike that file this is NOT a characterization test. There is one right
-// answer — ts's, which is the reference — and a port that gives a different
-// one is broken, not merely different.
 
 import { test, describe, before, after } from 'node:test'
 import { strictEqual } from 'node:assert'
@@ -62,15 +27,6 @@ function run(cmd: string, args: string[], cwd?: string) {
 }
 
 
-// THE SPEC, as JSON, shaped like the generated option spec's `feature`
-// block: the generic `$CHILD` entry the shipped spec has always had, plus one
-// NAMED optional entry.
-//
-// Written to a FILE and read by every probe, rather than pasted into each
-// one's source. Not only so six copies cannot drift: the sentinels are
-// `$`-prefixed, and php and perl both INTERPOLATE `$CHILD` inside a
-// double-quoted literal — the spec arrived with every sentinel blanked, and
-// the probe then measured nothing.
 const SPEC_JSON = JSON.stringify({
   feature: {
     '`$CHILD`': { '`$OPEN`': true, active: false },
@@ -83,9 +39,6 @@ const SPEC_JSON = JSON.stringify({
 })
 
 
-// Two lines, in a format every language can print without a JSON encoder.
-// The keys are sorted and comma-joined, so `absent=` is the empty answer and
-// `absent=log` is the defect.
 type Answers = {
   // Validating `{}`: the omitted `log` entry must not appear.
   absent: string,

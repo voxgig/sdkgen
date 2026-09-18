@@ -1,6 +1,3 @@
-// Operation context (mirrors go core/context.go). Fields use interior
-// mutability (RefCell) since the pipeline mutates the context in place;
-// contexts are shared as Rc<Context>.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -236,8 +233,6 @@ impl Context {
     }
 
     fn resolve_op(&self, opname: &str) -> Rc<Operation> {
-        // Cache key is `<entity>:<opname>` so two entities with the same op
-        // (e.g. both have a "list") get distinct cached Operations.
         let entname = self
             .entity
             .borrow()

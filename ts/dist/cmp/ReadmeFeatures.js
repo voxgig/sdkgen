@@ -4,16 +4,6 @@ exports.ReadmeFeatures = void 0;
 const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
 const FeatureDocs_1 = require("./FeatureDocs");
-// The `## Features` section of a target README: one subsection per feature
-// the SDK actually ships.
-//
-// WHY IT IS SHARED AND NOT PER-LANGUAGE. Every target activates features the
-// same way — a `feature` entry in the client options — and the options and
-// their defaults come from the model, so the substance is identical in all
-// twenty-five languages. Only the literal syntax of the options map differs,
-// and that is already shown once, in the Options section above. A per-target
-// `ReadmeFeatures_<lang>.ts` may override this to add idiomatic snippets;
-// none is required for the section to be correct.
 const ReadmeFeatures = (0, jostraca_1.cmp)(function ReadmeFeatures(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;

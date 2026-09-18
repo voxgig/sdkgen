@@ -10,9 +10,6 @@ import { FeatureHook } from '../dist/sdkgen.js'
 
 describe('FeatureHook', () => {
 
-  // Render a single PrePoint hook and count how many times its children
-  // fire. build:false keeps this to the define phase (no file I/O) — the
-  // hook children run during define, so the count is what we assert on.
   async function firings(model: any): Promise<number> {
     const { fs } = memfs({})
     const jostraca = Jostraca()

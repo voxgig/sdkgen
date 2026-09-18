@@ -14,21 +14,13 @@ import {
 type FsUtil = typeof Fs
 
 
-// The model is produced by aontu/apidef and carries dynamic metadata
-// (key$, val$, index$, and the Name/NAME case variants injected by
-// jostraca's names()). These interfaces document the fields sdkgen relies
-// on while the index signatures keep the genuinely-dynamic remainder
-// accessible — a pragmatic middle ground until the model is shaped with
-// `shape`.
 
-// Case variants injected by jostraca's names() helper.
 type NameCases = {
   name?: string
   Name?: string
   NAME?: string
 }
 
-// A dependency entry inside a target or feature `deps` block.
 type ModelDep = {
   key$?: string
   version?: string
@@ -64,15 +56,6 @@ type ModelTarget = NameCases & {
   module?: { name?: string, path?: string, package?: string, goversion?: string }
   srcfeature?: boolean
 
-  // Where this target's files land. Present means OUT OF TREE: the target
-  // gets its own generate() pass rooted at `path` rather than a folder inside
-  // the SDK repo — see cmp/ExternalTarget and
-  // docs/explanation/out-of-tree-targets.
-  //
-  // Typed rather than left to the index signature because `externalItems()`
-  // decides from these keys whether to write OUTSIDE the repo, and a
-  // destination path read off a bare `any` is one a rename can silently
-  // change to undefined.
   output?: {
     path?: string
     repo?: string
@@ -136,28 +119,16 @@ type ActionContext = {
   // make a second `action()` call on the same instance inherit them.
   flags?: Record<string, any>
 
-  // How `package update` fetches a new version. Injectable so tests do not
-  // shell out, and so a caller with its own dependency management (a
-  // monorepo, a vendored checkout) can supply one. Defaults to npm.
   fetchPackage?: (pkgname: string, actx: ActionContext) => Promise<void>
 }
 
 
-// An action either WROTE something or REPORTED something, and the two kinds
-// of verb return different things: `target add` returns jostraca's result,
-// while `doctor` and `package check` return a report the CLI turns into an
-// exit code. Both optional, because neither verb has anything to say about
-// the other's field — a check that invented an empty `jres` would be lying
-// about having generated nothing.
 type ActionResult = {
   jres?: JostracaResult
   report?: ActionReport
 }
 
 
-// What a CHECKING verb returns. `ok` is the contract — `bin/voxgig-sdkgen`
-// exits non-zero on `false` — and `summary` is the one line it prints, so the
-// binary never has to know what any particular verb's findings look like.
 type ActionReport = {
   ok: boolean
   summary?: string

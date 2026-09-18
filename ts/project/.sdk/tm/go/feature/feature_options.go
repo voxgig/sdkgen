@@ -7,24 +7,9 @@ import (
 	"time"
 )
 
-// Shared option readers for the feature implementations. Feature options
-// arrive as map[string]any (from SDK options or test harnesses), so a numeric
-// value may be any of Go's numeric types and callbacks arrive as typed Go
-// funcs. These helpers normalise access and supply defaults, mirroring the
-// `null == opts.x ? def : opts.x` pattern of the ts features.
-//
-// THE NUMERIC READERS ACCEPT THE WHOLE NUMERIC FAMILY, which is the parity
-// requirement rather than a convenience. java, kotlin and scala test
-// `instanceof Number`, so every width and every JSON library's chosen
-// representation works there; ts coerces with `| 0`, py with `int()`, rb with
-// `.to_i`. A closed type switch here made go the one target where a value the
-// others accept is REPLACED BY THE DEFAULT, silently and with no error.
-//
-// `json.Number` is the case that made this urgent: it is what encoding/json
-// produces for every number when a decoder has UseNumber() set, which is the
-// ordinary way to read a config file without turning integers into float64.
-// A retry budget, a rate limit or a timeout read that way became the default
-// with nothing to say so.
+// Shared option readers for the feature implementations. Options arrive as
+// map[string]any, so a numeric value may be any numeric type; `json.Number` is
+// what encoding/json produces under UseNumber().
 
 func foptBool(options map[string]any, key string, def bool) bool {
 	if options == nil {
@@ -36,10 +21,7 @@ func foptBool(options map[string]any, key string, def bool) bool {
 	return def
 }
 
-// fnumInt reads any numeric representation as an int, exactly where the value
-// is integral. Integers are NOT routed through float64: beyond 2^53 that loses
-// digits, and a cursor or a byte count is exactly the kind of option that
-// reaches it.
+// Integers do not route through float64, which cannot hold large ones exactly.
 func fnumInt(v any) (int, bool) {
 	switch n := v.(type) {
 	case int:
@@ -70,8 +52,6 @@ func fnumInt(v any) (int, bool) {
 		if i, err := n.Int64(); err == nil {
 			return int(i), true
 		}
-		// A JSON number written as `1.5` or `1e3` still answers here, matching
-		// the float cases above rather than refusing what they accept.
 		if f, err := n.Float64(); err == nil {
 			return int(f), true
 		}
@@ -79,7 +59,6 @@ func fnumInt(v any) (int, bool) {
 	return 0, false
 }
 
-// fnumFloat reads any numeric representation as a float64.
 func fnumFloat(v any) (float64, bool) {
 	switch n := v.(type) {
 	case int:
