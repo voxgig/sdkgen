@@ -702,6 +702,56 @@ describe('feature:proxy', () => {
 })
 
 
+describe('feature:test-envelope', () => {
+
+  test('every target rebuilds a multi-segment response envelope', () => {
+    // A GraphQL op unwraps `body.data.<field>`, so a mock that wraps only one
+    // level answers with a payload the response transform cannot reach, and
+    // offline test mode is unusable for the whole SDK.
+    const TM = Path.join(__dirname, '..', 'project', '.sdk', 'tm')
+    const sites: [string, string, string][] = [
+      ['c', 'feature/test.c', String.raw`'.' != inner[start - 1]`],
+      ['clojure', 'src/sdk/features.clj', String.raw`(str/split (second m) #"\." -1)`],
+      ['cpp', 'feature/test.hpp', String.raw`inner.find('.', at)`],
+      ['csharp', 'feature/TestFeature.cs', String.raw`inner.Split('.')`],
+      ['elixir', 'lib/projectname/feature/test.ex', String.raw`String.split(".")`],
+      ['go', 'feature/test_feature.go', String.raw`strings.Split(m[1], ".")`],
+      ['java', 'feature/TestFeature.java', String.raw`inner.split("\\.", -1)`],
+      ['js', 'src/feature/test/TestFeature.js', String.raw`m[1].split('.')`],
+      ['kotlin', 'feature/TestFeature.kt', String.raw`inner.split(".").reversed()`],
+      ['lua', 'feature/test_feature.lua', String.raw`string.gmatch(path, "[^.]+")`],
+      ['ocaml', 'sdk_features.ml', String.raw`String.split_on_char '.' inner`],
+      ['perl', 'feature/test_feature.pm', String.raw`split /\./, $1, -1`],
+      ['php', 'feature/TestFeature.php', String.raw`array_reverse(explode('.', $m[1]))`],
+      ['py', 'pkg/feature/test_feature.py', String.raw`reversed(m.group(1).split("."))`],
+      ['rb', 'feature/test_feature.rb', String.raw`m[1].split('.', -1)`],
+      ['rust', 'feature/test.rs', String.raw`inner.split('.').rev()`],
+      ['scala', 'feature/TestFeature.scala', String.raw`inner.split("\\.", -1).reverse`],
+      ['swift', 'Sources/ProjectNameSDK/feature/TestFeature.swift',
+        String.raw`inner.split(separator: ".", omittingEmptySubsequences: false)`],
+      ['ts', 'src/feature/test/TestFeature.ts', String.raw`m[1].split('.')`],
+      ['zig', 'feature/test.zig', String.raw`lastIndexOfScalar(u8, inner[0..end], '.')`],
+    ]
+
+    for (const [target, rel, form] of sites) {
+      const file = Path.join(TM, target, rel)
+      ok(Fs.existsSync(file), target + ': ' + rel + ' is gone — repoint this guard')
+      ok(Fs.readFileSync(file, 'utf8').includes(form),
+        target + ' no longer splits the envelope path on "." (' + rel + ')')
+    }
+
+    const NON_SDK = ['go-cli', 'go-mcp', 'py-data']
+    const shipped = Fs.readdirSync(TM)
+      .filter((n) => Fs.statSync(Path.join(TM, n)).isDirectory())
+      .filter((n) => !NON_SDK.includes(n))
+      .sort()
+    deepStrictEqual(sites.map(([t]) => t).sort(), shipped,
+      'every SDK target synthesises the envelope: add the new one to this guard')
+  })
+
+})
+
+
 describe('feature:test-mintid', () => {
 
   const SAMPLES = 2000

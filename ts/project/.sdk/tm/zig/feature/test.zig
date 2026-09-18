@@ -109,15 +109,22 @@ fn envelope(ctx: *Context, data: Value) Value {
     const restf = h.getpath(&.{ "transform", "res" }, ctx.point);
     if (restf != .string) return data;
     const spec = restf.string;
-    // Exactly `body.<key>`; a deeper path is not an envelope this mock can
-    // synthesise, so it is left alone rather than guessed at.
+    // Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
+    // GraphQL ops unwrap `body.data.<field>`, not just one envelope property.
     if (spec.len < 8) return data;
     if (!std.mem.startsWith(u8, spec, "`body.")) return data;
     if (!std.mem.endsWith(u8, spec, "`")) return data;
     const inner = spec[6 .. spec.len - 1];
     if (inner.len == 0) return data;
-    if (std.mem.indexOfScalar(u8, inner, '.') != null) return data;
-    return h.jo(&.{.{ inner, data }});
+    var out = data;
+    var end: usize = inner.len;
+    while (true) {
+        const cut = std.mem.lastIndexOfScalar(u8, inner[0..end], '.');
+        const start = if (cut) |c| c + 1 else 0;
+        out = h.jo(&.{.{ inner[start..end], out }});
+        if (cut) |c| end = c else break;
+    }
+    return out;
 }
 
 fn respond(ctx: *Context, status: i64, data: Value, extra: []const h.Pair) Value {

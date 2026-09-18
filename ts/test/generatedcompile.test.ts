@@ -811,6 +811,39 @@ describe('auth null', () => {
   })
 
 
+  // An SDL-derived SDK unwraps `body.data.<field>`. The probe sets that shape
+  // on the real generated config and drives the real mock.
+  test('rb: the mock synthesises a multi-segment response envelope', async () => {
+    const rb = toolchain('ruby')
+    if (null == rb) return
+
+    const sdkroot = Path.join(tmp, 'rb-envelope')
+    await generateTo('rb', sdkroot, undefined, ['test', 'log'])
+
+    Fs.writeFileSync(Path.join(sdkroot, 'envelope_probe.rb'), `
+require_relative "Demo_sdk"
+
+point = DemoConfig.shared_config["entity"]["planet"]["op"]["list"]["points"][0]
+point["transform"]["res"] = "\`body.data.planets\`"
+
+seed = { "entity" => { "planet" => {
+  "s1" => { "id" => "s1" }, "s2" => { "id" => "s2" }, "s3" => { "id" => "s3" },
+} } }
+
+got = DemoSDK.test(seed, nil).Planet(nil).list(nil, nil)
+n = got.respond_to?(:length) ? got.length : -1
+puts "ENVELOPE n=#{n}"
+abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") unless 3 == n
+`)
+
+    const probe = run(rb, ['-I.', 'envelope_probe.rb'], sdkroot)
+    ok(probe.ok, 'rb: ' + tail(probe.out))
+    // The probe exits zero if it never reached the assertion.
+    ok(/ENVELOPE n=3/.test(probe.out),
+      'rb: the probe did not run the list op:\n' + tail(probe.out))
+  })
+
+
   test('c: the secrets feature runs with the feature active', async (t) => {
     const make = toolchain('make')
     const configured = process.env.CC

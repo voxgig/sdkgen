@@ -50,14 +50,18 @@ class TestFeature extends BaseFeature("test", "0.0.1", true) {
     val tm = Struct.getprop(ctx.point, "transform")
     Struct.getprop(tm, "res") match {
       case spec: String =>
-        // Exactly `body.<key>`; a deeper path is not an envelope this mock
-        // can synthesise, so it is left alone rather than guessed at.
+        // Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
+        // GraphQL ops unwrap `body.data.<field>`, not just one envelope property.
         if (!spec.startsWith("`body.") || !spec.endsWith("`") || spec.length < 8) return data
         val inner = spec.substring(6, spec.length - 1)
-        if (inner.isEmpty || inner.contains(".")) return data
-        val wrapped = new java.util.LinkedHashMap[String, Object]()
-        wrapped.put(inner, data)
-        wrapped
+        if (inner.isEmpty) return data
+        var out: Object = data
+        for (seg <- inner.split("\\.", -1).reverse) {
+          val wrapped = new java.util.LinkedHashMap[String, Object]()
+          wrapped.put(seg, out)
+          out = wrapped
+        }
+        out
       case _ => data
     }
   }

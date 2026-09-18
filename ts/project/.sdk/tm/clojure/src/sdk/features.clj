@@ -124,11 +124,13 @@
                        (let [envelope (fn [data]
                                         (let [tm (vs/getprop (core/oget fctx :point) "transform")
                                               spec (vs/getprop tm "res")]
-                                          ;; Exactly `body.<key>`; a deeper path is not an
-                                          ;; envelope this mock can synthesise.
+                                          ;; Rebuild whatever nesting the transform unwraps;
+                                          ;; GraphQL ops unwrap `body.data.<field>`.
                                           (if (and (some? data) (string? spec))
-                                            (if-let [m (re-matches #"`body\.([^`.]+)`" spec)]
-                                              (vs/jm (second m) data)
+                                            (if-let [m (re-matches #"`body\.(.+)`" spec)]
+                                              (reduce (fn [out seg] (vs/jm seg out))
+                                                      data
+                                                      (reverse (str/split (second m) #"\." -1)))
                                               data)
                                             data)))
                              respond (fn [status data extra]
