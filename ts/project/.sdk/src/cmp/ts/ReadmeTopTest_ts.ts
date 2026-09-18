@@ -74,12 +74,30 @@ const client = ${model.const.Name}SDK.test({
             it.name === idF ? 'test01' : 'example_' + it.name)}`).join(', ')} }`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
+      // DROP THE ID ONLY WHEN THE OP SAYS IT IS OPTIONAL.
+      //
+      // A create usually lets the server assign the id, so leaving it out of
+      // the example is right. But the op's request shape is what generates
+      // the argument TYPE, and some specs make the id required there:
+      // Branch's Quick Links bulk create has `id` as its ONLY required field,
+      // so dropping it left the example calling `create({  })` against a type
+      // that demands `id` —
+      //
+      //   error TS2345: Argument of type '{}' is not assignable to parameter
+      //   of type 'BulkCreateData'
+      //
+      // and the README example test failed on an SDK that was otherwise
+      // correct. The example has to satisfy the type it is calling.
+      const isIdField = (it: any) => it.name === idF || it.name === 'id'
       const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => it.name !== idF && it.name !== 'id')
+        .filter((it: any) => !isIdField(it) || !it.optional)
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `{ ${chosen.map((it: any) =>
-        `${jsKey(it.name)}: ${exampleValue(exampleEntity, primaryOpDef, it.name, 'example_' + it.name)}`).join(', ')} }`
+        // A required id matches the record seeded into the mock above, so the
+        // example reads as one coherent story rather than two.
+        `${jsKey(it.name)}: ${exampleValue(exampleEntity, primaryOpDef, it.name,
+          isIdField(it) ? seedId : 'example_' + it.name)}`).join(', ')} }`
     }
     Content(`const ${eVar} = await client.${eName}().${primaryOp}(${arg})
 // ${eVar} is ${'list' === primaryOp ? `an array of ${eName} entities` : `the ${eName} entity`}, populated with mock data

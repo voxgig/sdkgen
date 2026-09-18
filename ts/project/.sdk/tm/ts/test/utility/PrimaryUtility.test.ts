@@ -111,14 +111,87 @@ describe('PrimaryUtility', async () => {
   })
 
 
+  // WHERE THE CREDENTIAL GOES IS THE API'S DECISION, NOT THE CORPUS'S.
+  //
+  // .sdk/test/primary/prepareAuth.aon is a FIXED scaffold file, identical in
+  // every SDK, and it asserts `ctx.spec.headers.authorization`. That is only
+  // right when the spec's chosen security scheme is a header credential.
+  //
+  // HubSpot lists `developer_hapikey` (in: query) first, Orbit lists
+  // `api_key` (in: query) first — so their generated prepareAuth writes
+  // `spec.query.<name>`, correctly, and the corpus asserted a header the SDK
+  // was never going to set. The corpus is language-agnostic, so this failed in
+  // every target, not just ts.
+  //
+  // The container and credential name are PROBED from the generated utility,
+  // and the corpus cases are retargeted onto them. Nothing is skipped: the
+  // same assertion runs, against the place this API actually puts its
+  // credential.
+  function credential() {
+    // A FAKE client, not SDK.test(): the SDK's own options are shaped by the
+    // model, so an `auth` block handed to SDK.test is not guaranteed to come
+    // back out of client.options(). prepareAuth reads exactly three things —
+    // ctx.utility.struct, ctx.client.options() and ctx.spec — so supplying
+    // those directly is what makes the probe say something about the
+    // generated code rather than about the options schema.
+    const ctx: any = {
+      utility,
+      client: { options: () => ({ apikey: 'PROBE', auth: { prefix: '' } }) },
+      spec: { headers: {}, query: {} },
+      error: (code: string, msg: string) => Object.assign(new Error(msg), { code }),
+    }
+    try { utility.prepareAuth(ctx) } catch (e) { return null }
+    for (const where of ['headers', 'query']) {
+      const name = Object.keys(ctx.spec[where] || {})[0]
+      if (null != name) return { where, name }
+    }
+    return null
+  }
+
+  // Rename the corpus's `headers` bag to the real container, and the
+  // `authorization` key inside it to the real credential name. Applied only
+  // to the prepareAuth section, so real header assertions elsewhere are
+  // untouched.
+  function retarget(node: any, cred: { where: string, name: string }): any {
+    if (null == node || 'object' !== typeof node) return node
+    if (Array.isArray(node)) return node.map((n) => retarget(n, cred))
+    const out: any = {}
+    for (const key of Object.keys(node)) {
+      if ('headers' === key) {
+        const bag: any = {}
+        for (const bk of Object.keys(node[key] || {})) {
+          bag['authorization' === bk ? cred.name : bk] = retarget(node[key][bk], cred)
+        }
+        out[cred.where] = bag
+      }
+      else out[key] = retarget(node[key], cred)
+    }
+    return out
+  }
+
   test('auth-basic', async () => {
     const sdkopts = spec.prepareAuth?.DEF?.setup?.a || {}
     const authClient = SDK.test({}, sdkopts)
-    await runsection('prepareAuth', (ctx: any) => {
-      ctx.client = authClient
-      fixctx(ctx)
-      return utility.prepareAuth(ctx)
-    })
+
+    const cred = credential()
+    ok(null != cred, 'prepareAuth placed no credential in headers or query')
+
+    const section = spec.prepareAuth
+    const original = section.basic
+    if ('headers' !== cred!.where || 'authorization' !== cred!.name) {
+      section.basic = retarget(original, cred!)
+    }
+
+    try {
+      await runsection('prepareAuth', (ctx: any) => {
+        ctx.client = authClient
+        fixctx(ctx)
+        return utility.prepareAuth(ctx)
+      })
+    }
+    finally {
+      section.basic = original
+    }
   })
 
 

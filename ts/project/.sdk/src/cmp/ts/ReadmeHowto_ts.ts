@@ -48,12 +48,22 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
       return `{ ${pairs.join(', ')} }`
     }
     // create / update: a body of the required writable fields.
+    //
+    // DROP THE ID ONLY WHEN THE OP SAYS IT IS OPTIONAL. A create usually lets
+    // the server assign the id, but the op's request shape is what generates
+    // the argument TYPE, and some specs make the id required there — Branch's
+    // Quick Links bulk create has `id` as its ONLY required field. Dropping it
+    // left the example calling `create({  })` against a type that demands
+    // `id`, and the README example test failed on an SDK that was otherwise
+    // correct. The example has to satisfy the type it is calling.
+    const isIdField = (it: any) => it.name === idF || it.name === 'id'
     const items = opRequestShape(exampleEntity, primaryOp).items
-      .filter((it: any) => it.name !== idF && it.name !== 'id')
+      .filter((it: any) => !isIdField(it) || !it.optional)
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
     const pairs = chosen.map((it: any) =>
-      `${jsKey(it.name)}: ${exampleValue(exampleEntity, primaryOpDef, it.name, 'example_' + it.name)}`)
+      `${jsKey(it.name)}: ${exampleValue(exampleEntity, primaryOpDef, it.name,
+        isIdField(it) ? idPlaceholder : 'example_' + it.name)}`)
     return `{ ${pairs.join(', ')} }`
   }
   const testCallArg = primaryArg('test01')
