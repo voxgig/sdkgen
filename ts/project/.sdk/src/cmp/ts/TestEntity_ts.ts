@@ -35,7 +35,8 @@ import {
   isHttpBasicAuth,
   entityDataIdField, envName, envToken,
   jsKey,
-  jsProp
+  jsProp,
+  hasLiveScenarios,
 } from '@voxgig/sdkgen'
 
 
@@ -227,7 +228,7 @@ function basicSetup(extra?: any) {
       if (!live && maybeSkipControl(t, 'entityOp', '${entity.name}.' + op, live)) return
     }
 
-    ${Object.values(model.main.kit.entity || {}).some((e: any) => Object.values(e.op || {}).some((o: any) => (o.points || []).some((p: any) => p.contract && JSON.parse(p.contract.json).live))) ? `if (live) { t.skip('Covered by live operation scenarios'); return }` : ''}
+    ${hasLiveScenarios(model) ? `if (live) { t.skip('Covered by live operation scenarios'); return }` : ''}
     const setup = basicSetup()
     if (setup.live) {
       return runLiveEntity(setup, ${JSON.stringify(entity)}, ${JSON.stringify(basicflow)}, '${nom(entity, 'Name')}')

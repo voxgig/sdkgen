@@ -24,6 +24,7 @@ import {
   jsOptProp, envName, envToken, liveStrict,
   jsKey,
   pointParts,
+  hasLiveScenarios,
 } from '@voxgig/sdkgen'
 
 
@@ -93,7 +94,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
         Slot({ name: 'directSetup' }, () => {
           Content(`
-function liveScenariosActive() { return ${Object.values(model.main.kit.entity || {}).some((e: any) => Object.values(e.op || {}).some((o: any) => (o.points || []).some((p: any) => p.contract && JSON.parse(p.contract.json).live)))} && process.env.${PROJECTNAME}_TEST_LIVE === 'TRUE' }
+function liveScenariosActive() { return ${hasLiveScenarios(model)} && process.env.${PROJECTNAME}_TEST_LIVE === 'TRUE' }
 function directSetup(mockres?: any) {
   const calls: any[] = []
 
