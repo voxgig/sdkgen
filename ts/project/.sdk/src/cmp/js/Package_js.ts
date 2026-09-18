@@ -14,6 +14,7 @@ import {
   packageVersion,
   authorInfo,
   targetFeatures, envName,
+  hasLiveScenarios,
 } from '@voxgig/sdkgen'
 
 
@@ -76,7 +77,7 @@ const Package = cmp(async function Package(props: any) {
     // directly (no build step), so that is the whole package.
     files: ['src'],
     scripts: {
-      ...(Object.values(model.main.kit.entity || {}).some((e: any) => Object.values(e.op || {}).some((o: any) => (o.points || []).some((p: any) => p.contract && JSON.parse(p.contract.json).live))) ? {
+      ...(hasLiveScenarios(model) ? {
         'test:live': `${envName(model)}_TEST_LIVE=TRUE node --test test/live.test.js`,
       } : {}),
 

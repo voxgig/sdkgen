@@ -755,7 +755,7 @@ src/cmp/js/Entity_js.ts 9993def32681
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
 src/cmp/js/Main_js.ts 2cf0c266ab75
-src/cmp/js/Package_js.ts 6fd82642e8fc
+src/cmp/js/Package_js.ts e82f86b0f4f2
 src/cmp/js/PrepareAuth_js.ts 90939bfcb447
 src/cmp/js/ReadmeEntity_js.ts 078508c69dac
 src/cmp/js/ReadmeExplanation_js.ts e35423942ff1
@@ -771,9 +771,9 @@ src/cmp/js/ReadmeTopQuick_js.ts 7ab59b7dc87d
 src/cmp/js/ReadmeTopTest_js.ts 1fa9a087871f
 src/cmp/js/Schema_js.ts 338c42ab0276
 src/cmp/js/SdkError_js.ts c3c526f2b624
-src/cmp/js/TestDirect_js.ts f61f3cd12367
-src/cmp/js/TestEntity_js.ts 4fdf949b95ff
-src/cmp/js/TestLive_js.ts 676397ca4d84
+src/cmp/js/TestDirect_js.ts 785c05de1ce0
+src/cmp/js/TestEntity_js.ts 1a5d15a8a2bc
+src/cmp/js/TestLive_js.ts efbad3d896aa
 src/cmp/js/TestMain_js.ts 8b45d4d8db1a
 src/cmp/js/Test_js.ts f0355b263a10
 src/cmp/js/fragment/Config.data.fragment.js 6fa799d1949c
@@ -1954,7 +1954,7 @@ src/cmp/ts/Entity_ts.ts f06e9476d5a6
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
 src/cmp/ts/Main_ts.ts fcb39dadee1f
-src/cmp/ts/Package_ts.ts 01c93a2cf87f
+src/cmp/ts/Package_ts.ts 65e98ed1bffa
 src/cmp/ts/PrepareAuth_ts.ts af251c6b92bc
 src/cmp/ts/ReadmeEntity_ts.ts d766666dda91
 src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
@@ -1972,9 +1972,9 @@ src/cmp/ts/ReadmeTopQuick_ts.ts 74b733b901e7
 src/cmp/ts/ReadmeTopTest_ts.ts 791abb1924cf
 src/cmp/ts/Schema_ts.ts b39223b9712f
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
-src/cmp/ts/TestDirect_ts.ts 73c3b92a9414
-src/cmp/ts/TestEntity_ts.ts 4485093123fc
-src/cmp/ts/TestLive_ts.ts 3dd61f3d7767
+src/cmp/ts/TestDirect_ts.ts a2cf2c4211eb
+src/cmp/ts/TestEntity_ts.ts fe9fba1eed26
+src/cmp/ts/TestLive_ts.ts 890c6c86c275
 src/cmp/ts/TestMain_ts.ts 8b45d4d8db1a
 src/cmp/ts/Test_ts.ts 43eb436e2d27
 src/cmp/ts/fragment/Config.data.fragment.ts 8689b1457f2f

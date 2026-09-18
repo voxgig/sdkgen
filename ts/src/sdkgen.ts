@@ -25,7 +25,7 @@ import { Main } from './cmp/Main'
 import { featureApplies, targetFeatures, featureTags, unknownTags, TAGS } from './helpers/applicability'
 import { ExternalTarget } from './cmp/ExternalTarget'
 
-import { KIT } from '@voxgig/apidef'
+import { KIT, resolvedSpec } from '@voxgig/apidef'
 import { Deploy } from './cmp/Deploy'
 import { Entity } from './cmp/Entity'
 import { Feature } from './cmp/Feature'
@@ -53,6 +53,8 @@ import { ReadmeRef } from './cmp/ReadmeRef'
 import { ReadmeRefFeatures } from './cmp/ReadmeRefFeatures'
 import { FeatureHook } from './cmp/FeatureHook'
 import { registerComponent } from './cmp/Registered'
+
+import { resolvedFor, liveHint, pointFacts, hasLiveScenarios } from './helpers/resolved'
 import type { RegisterOptions } from './cmp/Registered'
 
 import { buildIdNames } from './helpers/buildIdNames'
@@ -249,6 +251,7 @@ function SdkGen(opts: SdkGenOptions) {
     const start = Date.now()
     const { model, config } = spec
 
+
     log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' })
     log.debug({ point: 'generate-spec', spec })
 
@@ -271,7 +274,10 @@ function SdkGen(opts: SdkGenOptions) {
       fs: () => fs,
       folder,
       log: log.child({ cmp: 'jostraca' }),
-      meta: { spec },
+      // apidef publishes the resolved definition on the model build's
+      // context; jostraca merges `meta` into every component's ctx$, and
+      // docgen is handed these same options.
+      meta: { spec, apidef: resolvedSpec(spec.buildctx) },
       debug: opts.debug,
       existing: opts.existing,
       // Per-call, for the same reason the actions pass it: jostraca applies
@@ -543,7 +549,7 @@ SdkGen.makeBuild = async function(opts: SdkGenOptions) {
       })
     }
 
-    return await sdkgen.generate({ model, build, config })
+    return await sdkgen.generate({ model, build, config, buildctx: ctx })
   }
 }
 
@@ -957,6 +963,10 @@ export {
   ReadmeRefFeatures,
   FeatureHook,
   registerComponent,
+  resolvedFor,
+  liveHint,
+  pointFacts,
+  hasLiveScenarios,
 
   Jostraca,
   SdkGen,
