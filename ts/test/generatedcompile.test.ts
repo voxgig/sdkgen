@@ -295,6 +295,35 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // go read a closed type switch and silently used the DEFAULT for any other
+  // numeric type; `retry` makes the budget observable as a call count.
+  test('go: a feature option is honoured whatever numeric type it arrives as',
+    async (t) => {
+      const go = toolchain('go')
+      if (null == go) {
+        return t.skip('no go toolchain here')
+      }
+
+      const sdkroot = Path.join(tmp, 'go-optnum')
+      const files = await generateTo('go', sdkroot, undefined, ['retry'])
+      ok(null != files['test/feature_test.go'],
+        'the feature suite was not generated into the SDK')
+
+      const ran = run(go,
+        ['test', './test/', '-run', 'TestFeatureOptionNumericTypes', '-v'],
+        sdkroot)
+      ok(ran.ok, 'a numeric feature option was dropped by the go SDK:\n' +
+        tail(ran.out))
+
+      // `go test -run` matching nothing exits zero having run nothing.
+      for (const sub of ['json.Number', 'defined_int', 'survives-the-real-makeoptions']) {
+        ok(ran.out.includes('--- PASS: TestFeatureOptionNumericTypes/' + sub),
+          'the ' + sub + ' case did not run - the suite matched nothing:\n' +
+          tail(ran.out))
+      }
+    })
+
+
   test('go: the module vets clean with the config emitted as DATA', async () => {
     const go = toolchain('go')
     if (null == go) {

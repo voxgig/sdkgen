@@ -52,10 +52,10 @@ function loadBase(): any {
 }
 
 
-function loadFeature(name: string): any {
+function loadFeatureModule(name: string): any {
   const Base = loadBase()
   const file = Path.join(FEATURE_DIR, name, cap(name) + 'Feature.ts')
-  const exp = sandboxLoad(file, {
+  return sandboxLoad(file, {
     '../base/BaseFeature': { BaseFeature: Base },
     '../../types': {},
     '../../ProjectNameSDK': {},
@@ -76,7 +76,12 @@ function loadFeature(name: string): any {
       envkey: (name: string) => String(name).toUpperCase(),
     },
   })
-  return exp[cap(name) + 'Feature']
+}
+
+
+// Load a feature class from its shipped template by name.
+function loadFeature(name: string): any {
+  return loadFeatureModule(name)[cap(name) + 'Feature']
 }
 
 
@@ -383,6 +388,7 @@ function makeClient(spec: {
 
 export {
   loadFeature,
+  loadFeatureModule,
   loadBase,
   makeClient,
   makeClock,

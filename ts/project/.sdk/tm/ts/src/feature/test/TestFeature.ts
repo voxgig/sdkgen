@@ -8,6 +8,17 @@ import { BaseFeature } from '../base/BaseFeature'
 const S_NOT_FOUND = 'Not found'
 
 
+// The `%04x%04x%04x%04x` every other target mints, so the id's shape does not
+// depend on which language answered.
+function mintId(): string {
+  let out = ''
+  for (let i = 0; i < 4; i++) {
+    out += ((Math.random() * 0x10000) | 0).toString(16).padStart(4, '0')
+  }
+  return out
+}
+
+
 function ownIdField(config: any, getpath: any, entityName: string): string {
   let fallback = ''
 
@@ -206,10 +217,7 @@ class TestFeature extends BaseFeature {
         const args = self.buildArgs(ctx, op, ctx.reqdata)
         let id = param(ctx, 'id')
         if (null == id) {
-          id = ((1e4 * Math.random() | 0).toString(16) +
-            (1e4 * Math.random() | 0).toString(16) +
-            (1e4 * Math.random() | 0).toString(16) +
-            (1e4 * Math.random() | 0).toString(16)).padEnd(16, '0')
+          id = mintId()
         }
 
         const ent = clone(ctx.reqdata)
@@ -404,6 +412,7 @@ class TestFeature extends BaseFeature {
 export {
   TestFeature,
   ownIdField,
+  mintId,
 }
 
 

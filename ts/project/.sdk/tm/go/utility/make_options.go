@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"encoding/json"
 	"regexp"
 	"sort"
 	"strings"
@@ -12,6 +13,37 @@ import (
 
 // {name} placeholders in a templated server URL (OpenAPI server variables).
 var serverVarRe = regexp.MustCompile(`\{[A-Za-z0-9_]+\}`)
+
+func canonNumbers(node any) {
+	switch n := node.(type) {
+	case map[string]any:
+		for k, v := range n {
+			if num, ok := v.(json.Number); ok {
+				n[k] = canonNumber(num)
+			} else {
+				canonNumbers(v)
+			}
+		}
+	case []any:
+		for i, v := range n {
+			if num, ok := v.(json.Number); ok {
+				n[i] = canonNumber(num)
+			} else {
+				canonNumbers(v)
+			}
+		}
+	}
+}
+
+func canonNumber(n json.Number) any {
+	if i, err := n.Int64(); err == nil {
+		return i
+	}
+	if f, err := n.Float64(); err == nil {
+		return f
+	}
+	return n
+}
 
 func makeOptionsUtil(ctx *core.Context) map[string]any {
 	options := ctx.Options
@@ -83,6 +115,12 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 	// nested maps as merge TARGETS — one instance's options (server, headers,
 	// ...) would contaminate every instance constructed after it.
 	merged := vs.Merge([]any{map[string]any{}, vs.Clone(cfgopts), opts})
+
+	// To reflect a json.Number is a string, so the validator refuses one where
+	// the feature readers accept it. Canonicalise first: options decoded with
+	// UseNumber() are otherwise judged by a rule nothing else applies.
+	canonNumbers(merged)
+
 	validated, _ := vs.Validate(merged, optspec)
 	opts = validated.(map[string]any)
 

@@ -7,7 +7,12 @@
 import { test, describe } from 'node:test'
 import { strictEqual, ok, deepStrictEqual } from 'node:assert'
 
-import { makeClient, makeClock, makeResponse, loadFeature } from './featureharness'
+import Path from 'node:path'
+import Fs from 'node:fs'
+
+import {
+  makeClient, makeClock, makeResponse, loadFeature, loadFeatureModule,
+} from './featureharness'
 
 
 // A transport that records every request and replies from a scripted queue
@@ -694,6 +699,88 @@ describe('feature:proxy', () => {
     await h.op({ op: 'load' })
     strictEqual(rec.calls[0].fetchdef.proxy, undefined, 'bypassed for noProxy host')
   })
+})
+
+
+describe('feature:test-mintid', () => {
+
+  const SAMPLES = 2000
+
+  test('a minted id is sixteen lowercase hex digits, always', () => {
+    const { mintId } = loadFeatureModule('test')
+    for (let i = 0; i < SAMPLES; i++) {
+      const id = mintId()
+      ok(/^[0-9a-f]{16}$/.test(id),
+        'minted id is not sixteen lowercase hex digits: ' + JSON.stringify(id))
+    }
+  })
+
+  // The character class alone does not separate the forms; `padEnd` yields it
+  // too. Under `%04x` every position is uniform, so a trailing '0' is rare,
+  // where end-padding makes it the common case.
+  test('a minted id is not zero-padded at the end', () => {
+    const { mintId } = loadFeatureModule('test')
+
+    let trailingZero = 0
+    for (let i = 0; i < SAMPLES; i++) {
+      if ('0' === mintId()[15]) trailingZero++
+    }
+
+    const rate = trailingZero / SAMPLES
+    ok(rate < 0.25,
+      'the final character is "0" in ' + (100 * rate).toFixed(1) + '% of ' +
+      'minted ids, where a uniform draw gives about 6%. The id is being ' +
+      'padded at the END rather than per group, so its digits do not line up ' +
+      'with the %04x%04x%04x%04x the other targets emit.')
+  })
+
+  test('every target mints the id in the same form', () => {
+    // One id form across the fleet, each target expressing it in its own syntax.
+    const TM = Path.join(__dirname, '..', 'project', '.sdk', 'tm')
+    const HEX4X4 = /%04x%04x%04x%04x/
+    const PADSTART = /0x10000[\s\S]{0,80}padStart\(4, '0'\)/
+    const sites: [string, string, RegExp][] = [
+      ['c', 'feature/test.c', HEX4X4],
+      ['clojure', 'src/sdk/features.clj', HEX4X4],
+      ['cpp', 'feature/test.hpp', HEX4X4],
+      ['csharp', 'feature/TestFeature.cs', /\{0:x4\}\{1:x4\}\{2:x4\}\{3:x4\}/],
+      ['elixir', 'lib/projectname/feature/test.ex',
+        /strong_rand_bytes\(8\)[\s\S]{0,40}encode16\(case: :lower\)/],
+      ['go', 'feature/test_feature.go', HEX4X4],
+      ['java', 'feature/TestFeature.java', HEX4X4],
+      ['js', 'src/feature/test/TestFeature.js', PADSTART],
+      ['kotlin', 'feature/TestFeature.kt', HEX4X4],
+      ['lua', 'feature/test_feature.lua', HEX4X4],
+      ['ocaml', 'sdk_runtime.ml',
+        /random_hex4 \(\) = Printf\.sprintf "%04x"[\s\S]{0,120}(random_hex4 \(\)\s*\^?\s*){4}/],
+      ['perl', 'feature/test_feature.pm', HEX4X4],
+      ['php', 'feature/TestFeature.php', HEX4X4],
+      ['py', 'pkg/feature/test_feature.py', HEX4X4],
+      ['rb', 'feature/test_feature.rb', HEX4X4],
+      ['rust', 'feature/test.rs', /\{:04x\}\{:04x\}\{:04x\}\{:04x\}/],
+      ['scala', 'feature/TestFeature.scala', HEX4X4],
+      ['swift', 'Sources/ProjectNameSDK/feature/TestFeature.swift', HEX4X4],
+      ['ts', 'src/feature/test/TestFeature.ts', PADSTART],
+      ['zig', 'feature/test.zig', /\{x:0>4\}\{x:0>4\}\{x:0>4\}\{x:0>4\}/],
+    ]
+
+    for (const [target, rel, form] of sites) {
+      const file = Path.join(TM, target, rel)
+      // A moved file fails here rather than quietly dropping that target.
+      ok(Fs.existsSync(file), target + ': ' + rel + ' is gone — repoint this guard')
+      ok(form.test(Fs.readFileSync(file, 'utf8')),
+        target + ' no longer mints sixteen lowercase hex digits (' + rel + ')')
+    }
+
+    const NON_SDK = ['go-cli', 'go-mcp', 'py-data']
+    const shipped = Fs.readdirSync(TM)
+      .filter((n) => Fs.statSync(Path.join(TM, n)).isDirectory())
+      .filter((n) => !NON_SDK.includes(n))
+      .sort()
+    deepStrictEqual(sites.map(([t]) => t).sort(), shipped,
+      'every SDK target mints a create id: add the new one to this guard')
+  })
+
 })
 
 

@@ -1,7 +1,7 @@
 package sdktest
 
-
 import (
+	"encoding/json"
 	"os"
 	"reflect"
 	"regexp"
@@ -12,6 +12,112 @@ import (
 	sdk "GOMODULE"
 	feat "GOMODULE/feature"
 )
+
+// --- option coercion --------------------------------------------------------
+
+type fhRetries int
+
+func vsGetPath(node any, keys ...string) any {
+	cur := node
+	for _, k := range keys {
+		m, ok := cur.(map[string]any)
+		if !ok {
+			return nil
+		}
+		cur = m[k]
+	}
+	return cur
+}
+
+// go read a closed type switch and silently used the DEFAULT for any other
+// numeric type. `retry` makes the budget observable as a call count, so a
+// dropped option shows as the default of 2 rather than the 4 asked for.
+func TestFeatureOptionNumericTypes(t *testing.T) {
+	fhSkipWithout(t, "retry")
+
+	var jsonNum map[string]any
+	dec := json.NewDecoder(strings.NewReader(`{"retries":4}`))
+	dec.UseNumber()
+	if err := dec.Decode(&jsonNum); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	cases := []struct {
+		name string
+		val  any
+	}{
+		{"int", 4},
+		{"int8", int8(4)},
+		{"int16", int16(4)},
+		{"int32", int32(4)},
+		{"int64", int64(4)},
+		{"uint", uint(4)},
+		{"uint8", uint8(4)},
+		{"uint16", uint16(4)},
+		{"uint32", uint32(4)},
+		{"uint64", uint64(4)},
+		{"float32", float32(4)},
+		{"float64", float64(4)},
+		{"json.Number", jsonNum["retries"]},
+		{"defined int", fhRetries(4)},
+	}
+
+	const want = 5
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			rec := &fhRecorder{reply: func(_ int, _ map[string]any) (any, error) {
+				return fhResponse(500, nil, nil), nil
+			}}
+			h := fhMake(rec.fetch, fhF(feat.NewRetryFeature(), map[string]any{
+				"retries": c.val, "minDelay": 0, "jitter": false,
+			}))
+			h.op(fhOpSpec{op: "load"})
+			if len(rec.calls) != want {
+				t.Fatalf("%s: retries was not honoured - %d call(s), want %d "+
+					"(the default budget of 2 gives 3)", c.name, len(rec.calls), want)
+			}
+		})
+	}
+
+	t.Run("survives-the-real-makeoptions", func(t *testing.T) {
+		// fhMake calls Init directly, so the cases above never meet the option
+		// VALIDATOR. To reflect a json.Number is a string, and an option the
+		// validator judges by a rule the readers do not is the same defect
+		// one layer up.
+		client := sdk.TestSDK(nil, nil)
+		utility := client.GetUtility()
+		ctx := utility.MakeContext(map[string]any{
+			"client": client, "utility": utility,
+		}, client.GetRootCtx())
+		ctx.Options = map[string]any{
+			"feature": map[string]any{
+				"retry": map[string]any{"active": true, "retries": jsonNum["retries"]},
+			},
+		}
+		ctx.Config = map[string]any{"options": map[string]any{}}
+
+		got := vsGetPath(utility.MakeOptions(ctx), "feature", "retry", "retries")
+		if n, ok := got.(int64); !ok || n != 4 {
+			t.Fatalf("MakeOptions did not canonicalise the option: %v (%T), want int64(4)", got, got)
+		}
+	})
+
+	t.Run("a-non-number-still-falls-back", func(t *testing.T) {
+		// A string is not a Number in java either.
+		rec := &fhRecorder{reply: func(_ int, _ map[string]any) (any, error) {
+			return fhResponse(500, nil, nil), nil
+		}}
+		h := fhMake(rec.fetch, fhF(feat.NewRetryFeature(), map[string]any{
+			"retries": "4", "minDelay": 0, "jitter": false,
+		}))
+		h.op(fhOpSpec{op: "load"})
+		if len(rec.calls) != 3 {
+			t.Fatalf("a string option was coerced: %d call(s), want 3 (the default budget)",
+				len(rec.calls))
+		}
+	})
+}
 
 // --- netsim -----------------------------------------------------------------
 
