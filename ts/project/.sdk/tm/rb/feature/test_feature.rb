@@ -4,9 +4,10 @@ require_relative '../utility/struct/voxgig_struct'
 require_relative 'base_feature'
 
 class ProjectNameTestFeature < ProjectNameBaseFeature
-  # The `body.<key>` form of an op's response transform: the mock wraps its
-  # payload in <key> so the transform can unwrap it again.
-  ENVELOPE_RES_RE = /\A`body\.([^`.]+)`\z/
+  # The `body.<path>` form of an op's response transform: the mock rebuilds
+  # whatever nesting the transform unwraps. Multi-segment on purpose: GraphQL
+  # ops unwrap body.data.<field>, not just one level.
+  ENVELOPE_RES_RE = /\A`body\.(.+)`\z/
 
   def initialize
     super
@@ -52,7 +53,8 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         restf = transform["res"]
         next data unless restf.is_a?(String)
         m = ENVELOPE_RES_RE.match(restf)
-        m.nil? ? data : { m[1] => data }
+        next data if m.nil?
+        m[1].split('.', -1).reverse.reduce(data) { |out, seg| { seg => out } }
       }
 
       respond = ->(status, data, extra) {

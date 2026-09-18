@@ -68,16 +68,27 @@ private:
     Value restf = getp(tm, "res");
     if (!restf.is_string()) return data;
     std::string spec = restf.as_string();
-    // Exactly `body.<key>`; a deeper path is not an envelope this mock can
-    // synthesise, so it is left alone rather than guessed at.
+    // Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
+    // GraphQL ops unwrap `body.data.<field>`, not just one envelope property.
     if (spec.size() < 8) return data;
     if (0 != spec.compare(0, 6, "`body.")) return data;
     if ('`' != spec[spec.size() - 1]) return data;
     std::string inner = spec.substr(6, spec.size() - 7);
-    if (inner.empty() || std::string::npos != inner.find('.')) return data;
-    Value wrapped = vmap();
-    map_put(wrapped, inner, data);
-    return wrapped;
+    if (inner.empty()) return data;
+    std::vector<std::string> segs;
+    for (size_t at = 0;;) {
+      size_t dot = inner.find('.', at);
+      if (std::string::npos == dot) { segs.push_back(inner.substr(at)); break; }
+      segs.push_back(inner.substr(at, dot - at));
+      at = dot + 1;
+    }
+    Value out = data;
+    for (size_t i = segs.size(); i > 0; i--) {
+      Value wrapped = vmap();
+      map_put(wrapped, segs[i - 1], out);
+      out = wrapped;
+    }
+    return out;
   }
 
   Value respond(CtxPtr ctx, int status, const Value& data, const Value& extra) {

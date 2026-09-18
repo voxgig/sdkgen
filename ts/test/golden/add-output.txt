@@ -59,7 +59,7 @@ tm/c/core/spec.c b7e5d9119652
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
 tm/c/feature/support.c 2b580e6c7fc3
-tm/c/feature/test.c c4db3192474d
+tm/c/feature/test.c f0ade6446fd4
 tm/c/src/feature/README.md c29c0aa3eaa0
 tm/c/src/feature/base/.gitkeep e3b0c44298fc
 tm/c/src/feature/test/.gitkeep e3b0c44298fc
@@ -221,7 +221,7 @@ tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
 tm/clojure/src/sdk/core.clj 3548daa9f704
-tm/clojure/src/sdk/features.clj 399a3d6b9cf2
+tm/clojure/src/sdk/features.clj 689ba5efb435
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
 tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5
@@ -287,7 +287,7 @@ tm/cpp/core/struct.hpp 0be0006d1389
 tm/cpp/core/types.hpp c575b5237c2f
 tm/cpp/feature/base.hpp 09bbe326cadb
 tm/cpp/feature/options.hpp 74561793d626
-tm/cpp/feature/test.hpp 6e2016953e9d
+tm/cpp/feature/test.hpp 6f646381369b
 tm/cpp/src/feature/README.md 3f39917d4bcf
 tm/cpp/src/feature/base/.gitkeep e3b0c44298fc
 tm/cpp/src/feature/test/.gitkeep e3b0c44298fc
@@ -371,7 +371,7 @@ tm/csharp/core/Types.cs d3790b5cfad6
 tm/csharp/core/Utility.cs 149e714543ac
 tm/csharp/feature/BaseFeature.cs 2f5da25c6dea
 tm/csharp/feature/FeatureOptions.cs 98b2222e9728
-tm/csharp/feature/TestFeature.cs 3a085eb504ac
+tm/csharp/feature/TestFeature.cs 35fd924bb9ac
 tm/csharp/src/feature/README.md ddb1daf8f8fe
 tm/csharp/src/feature/base/.gitkeep e3b0c44298fc
 tm/csharp/src/feature/test/.gitkeep e3b0c44298fc
@@ -470,7 +470,7 @@ tm/elixir/lib/projectname/core.ex 54ae320f3c39
 tm/elixir/lib/projectname/entity_base.ex a1bebbb71a2b
 tm/elixir/lib/projectname/error.ex 163684739447
 tm/elixir/lib/projectname/feature.ex a9f2c2609648
-tm/elixir/lib/projectname/feature/test.ex 072467e5d97f
+tm/elixir/lib/projectname/feature/test.ex b04128587880
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
 tm/elixir/lib/projectname/utility.ex 8fa8202dffb5
@@ -689,7 +689,7 @@ tm/java/core/Spec.java 81d19a708e1f
 tm/java/core/Utility.java 505be13ba84f
 tm/java/feature/BaseFeature.java de43ff62c7d8
 tm/java/feature/FeatureOptions.java 157f46620462
-tm/java/feature/TestFeature.java c466d0ee0e9d
+tm/java/feature/TestFeature.java 9f16a269c5ae
 tm/java/src/feature/README.md fe95b0698ffe
 tm/java/src/feature/base/.gitkeep e3b0c44298fc
 tm/java/src/feature/test/.gitkeep e3b0c44298fc
@@ -922,7 +922,7 @@ tm/kotlin/core/Spec.kt 2058ce6c6295
 tm/kotlin/core/Utility.kt abb795f2aa68
 tm/kotlin/feature/BaseFeature.kt 7c6e6ca6dbb1
 tm/kotlin/feature/FeatureOptions.kt 3e80a9bbd671
-tm/kotlin/feature/TestFeature.kt 7ec418fcfcbf
+tm/kotlin/feature/TestFeature.kt 6887f6b2cc60
 tm/kotlin/src/feature/README.md 9f8bde3f12e0
 tm/kotlin/src/feature/base/.gitkeep e3b0c44298fc
 tm/kotlin/src/feature/test/.gitkeep e3b0c44298fc
@@ -1097,7 +1097,7 @@ src/cmp/ocaml/utility_ocaml.ts ee3a24786063
 tm/ocaml/LICENSE c92ad97f8812
 tm/ocaml/Makefile 4d2500a53550
 tm/ocaml/VERSION e6635045e1d2
-tm/ocaml/sdk_features.ml a6d9bd7ad925
+tm/ocaml/sdk_features.ml bbd7e1f33dc9
 tm/ocaml/sdk_helpers.ml d08f5f1dca3c
 tm/ocaml/sdk_json.ml 7514a4177ebb
 tm/ocaml/sdk_runtime.ml 404ff2e4c3f5
@@ -1172,7 +1172,7 @@ tm/perl/core/result.pm c8daeffb69ad
 tm/perl/core/spec.pm 117513d65c20
 tm/perl/core/utility_type.pm ae99fdaaf3fb
 tm/perl/feature/base_feature.pm af88f71c0bd9
-tm/perl/feature/test_feature.pm c82b6a2e4693
+tm/perl/feature/test_feature.pm 13072c2b1e25
 tm/perl/lib/Voxgig/Struct.pm ba12c5b66cfd
 tm/perl/src/feature/README.md 74fc01b8a34f
 tm/perl/src/feature/base/.gitkeep e3b0c44298fc
@@ -1512,7 +1512,7 @@ tm/rb/core/result.rb c5a2738849ce
 tm/rb/core/spec.rb 9f39aa2f6198
 tm/rb/core/utility_type.rb 80d662fd4b4a
 tm/rb/feature/base_feature.rb 9d4c4d6ec5a8
-tm/rb/feature/test_feature.rb ad5f05068afd
+tm/rb/feature/test_feature.rb 724f308105f0
 tm/rb/src/feature/README.md 74fc01b8a34f
 tm/rb/src/feature/base/.gitkeep e3b0c44298fc
 tm/rb/src/feature/test/.gitkeep e3b0c44298fc
@@ -1621,7 +1621,7 @@ tm/rust/core/types.rs 4044c994ec5a
 tm/rust/core/utility_type.rs f77fc720e364
 tm/rust/feature/base.rs 8f5e41de2dc6
 tm/rust/feature/support.rs 7a1c1d32aa08
-tm/rust/feature/test.rs 70f0b3a9fbb2
+tm/rust/feature/test.rs 43aa1ff40a72
 tm/rust/src/feature/README.md f623e5e15340
 tm/rust/src/feature/base/.gitkeep e3b0c44298fc
 tm/rust/src/feature/test/.gitkeep e3b0c44298fc
@@ -1756,7 +1756,7 @@ tm/scala/feature/RetryFeature.scala 117b343c03a4
 tm/scala/feature/SecretsFeature.scala fa18f7b1eeca
 tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala 19f19505f177
-tm/scala/feature/TestFeature.scala f6c90650e517
+tm/scala/feature/TestFeature.scala 390cdea0cb3a
 tm/scala/feature/TimeoutFeature.scala 1241410229ac
 tm/scala/feature/ValidateFeature.scala 895a3c37bee7
 tm/scala/feature/secrets/plugin/Capability.scala e7f2d8d26c49
@@ -1913,7 +1913,7 @@ tm/swift/Sources/ProjectNameSDK/core/Types.swift b9ccbf883682
 tm/swift/Sources/ProjectNameSDK/core/Utility.swift b1174e305cae
 tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
 tm/swift/Sources/ProjectNameSDK/feature/FeatureOptions.swift 38f8fd8fc149
-tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 99e41163cfe8
+tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 391580de0fd4
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
 tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 9bc134d98639
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
@@ -2174,7 +2174,7 @@ tm/zig/feature/secrets/sekreto/sekreto.zig 1d2c38d51d6f
 tm/zig/feature/streaming.zig 05fa89649a72
 tm/zig/feature/support.zig 0151996e9aab
 tm/zig/feature/telemetry.zig e24fd23fb3d5
-tm/zig/feature/test.zig 438562cd4b1e
+tm/zig/feature/test.zig ea8e73ce04df
 tm/zig/feature/timeout.zig 098ad542880b
 tm/zig/feature/validate.zig 550283d9a299
 tm/zig/src/feature/README.md f623e5e15340

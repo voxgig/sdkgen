@@ -55,16 +55,22 @@ defmodule ProjectName.Feature.Test do
   defp envelope(fctx, data) do
     spec = S.getprop(S.getprop(S.getprop(fctx, "point"), "transform"), "res")
 
-    # Exactly `body.<key>`; a deeper path is not an envelope this mock can
-    # synthesise, so it is left alone rather than guessed at.
+    # Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
+    # GraphQL ops unwrap `body.data.<field>`, not just one envelope property.
     case {data, spec} do
       {nil, _} ->
         data
 
       {_, s} when is_binary(s) ->
-        case Regex.run(~r/^`body\.([^`.]+)`$/, s) do
-          [_, inner] -> S.jm([inner, data])
-          _ -> data
+        case Regex.run(~r/^`body\.(.+)`$/, s) do
+          [_, inner] ->
+            inner
+            |> String.split(".")
+            |> Enum.reverse()
+            |> Enum.reduce(data, fn seg, out -> S.jm([seg, out]) end)
+
+          _ ->
+            data
         end
 
       _ ->

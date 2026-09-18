@@ -30,20 +30,36 @@ static voxgig_value* envelope(Context* ctx, voxgig_value* data) {
   if (NULL == spec) {
     return data;
   }
-  // Exactly `body.<key>`; a deeper path is not an envelope this mock can
-  // synthesise, so it is left alone rather than guessed at.
+  // Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
+  // GraphQL ops unwrap `body.data.<field>` (and `body.data.<field>.<entity>`
+  // for mutation payloads), not just a single envelope property.
   size_t n = strlen(spec);
   if (n < 8 || 0 != strncmp(spec, "`body.", 6) || '`' != spec[n - 1]) {
     return data;
   }
   size_t inner_len = n - 7;
-  if (0 == inner_len || NULL != memchr(spec + 6, '.', inner_len)) {
+  if (0 == inner_len) {
     return data;
   }
   char* inner = (char*)malloc(inner_len + 1);
   memcpy(inner, spec + 6, inner_len);
   inner[inner_len] = '\0';
-  voxgig_value* out = cmap(1, inner, data);
+  // Innermost segment first, so walk back from the end, terminating each
+  // segment in place as it is consumed. cmap copies the key.
+  voxgig_value* out = data;
+  size_t pos = inner_len;
+  while (1) {
+    size_t start = pos;
+    while (start > 0 && '.' != inner[start - 1]) {
+      start--;
+    }
+    inner[pos] = '\0';
+    out = cmap(1, inner + start, out);
+    if (0 == start) {
+      break;
+    }
+    pos = start - 1;
+  }
   free(inner);
   return out;
 }

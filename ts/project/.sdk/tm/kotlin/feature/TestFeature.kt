@@ -63,12 +63,16 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
     if (null == data || null == ctx) return data
     val tm = Struct.getprop(ctx.point, "transform")
     val restf = Struct.getprop(tm, "res") as? String ?: return data
-    // Exactly `body.<key>`; a deeper path is not an envelope this mock can
-    // synthesise, so it is left alone rather than guessed at.
+    // Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
+    // GraphQL ops unwrap `body.data.<field>`, not just one envelope property.
     if (!restf.startsWith("`body.") || !restf.endsWith("`") || restf.length < 8) return data
     val inner = restf.substring(6, restf.length - 1)
-    if (inner.isEmpty() || inner.contains(".")) return data
-    return linkedMapOf<String, Any?>(inner to data)
+    if (inner.isEmpty()) return data
+    var out: Any? = data
+    for (seg in inner.split(".").reversed()) {
+      out = linkedMapOf<String, Any?>(seg to out)
+    }
+    return out
   }
 
   private fun respond(ctx: Context?, status: Int, data: Any?, extra: MutableMap<String, Any?>?): MutableMap<String, Any?> {

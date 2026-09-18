@@ -109,18 +109,23 @@ public class TestFeature extends BaseFeature {
       return data;
     }
     String spec = (String) restf;
-    // Exactly `body.<key>`; a deeper path is not an envelope this mock can
-    // synthesise, so it is left alone rather than guessed at.
+    // Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
+    // GraphQL ops unwrap `body.data.<field>`, not just one envelope property.
     if (!spec.startsWith("`body.") || !spec.endsWith("`") || spec.length() < 8) {
       return data;
     }
     String inner = spec.substring(6, spec.length() - 1);
-    if (inner.isEmpty() || inner.contains(".")) {
+    if (inner.isEmpty()) {
       return data;
     }
-    Map<String, Object> wrapped = new LinkedHashMap<>();
-    wrapped.put(inner, data);
-    return wrapped;
+    String[] segs = inner.split("\\.", -1);
+    Object out = data;
+    for (int i = segs.length - 1; 0 <= i; i--) {
+      Map<String, Object> wrapped = new LinkedHashMap<>();
+      wrapped.put(segs[i], out);
+      out = wrapped;
+    }
+    return out;
   }
 
   private Map<String, Object> respond(Context ctx, int status, Object data, Map<String, Object> extra) {

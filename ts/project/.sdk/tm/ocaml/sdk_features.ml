@@ -1394,12 +1394,14 @@ let test_feature () : feature =
       match getp (getp ctx.c_point "transform") "res" with
       | Str spec ->
         let n = String.length spec in
-        (* Exactly `body.<key>`; a deeper path is not an envelope this mock
-           can synthesise, so it is left alone rather than guessed at. *)
+        (* Rebuild whatever nesting the transform unwraps. Multi-segment on
+           purpose: GraphQL ops unwrap `body.data.<field>`. *)
         if n > 7 && String.sub spec 0 6 = "`body." && spec.[n - 1] = '`' then
           let inner = String.sub spec 6 (n - 7) in
-          if String.length inner = 0 || String.contains inner '.' then data
-          else jo [(inner, data)]
+          if String.length inner = 0 then data
+          else
+            List.fold_left (fun out seg -> jo [(seg, out)]) data
+              (List.rev (String.split_on_char '.' inner))
         else data
       | _ -> data in
   let respond ctx status data extra =

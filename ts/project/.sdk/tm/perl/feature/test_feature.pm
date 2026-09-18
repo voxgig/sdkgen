@@ -66,10 +66,12 @@ sub init {
     my $tm = ProjectNameHelpers::gp($fctx->{point}, 'transform');
     my $spec = ProjectNameHelpers::gp($tm, 'res');
     return $data unless defined $spec && !ref($spec);
-    # Exactly `body.<key>`; a deeper path is not an envelope this mock can
-    # synthesise, so it is left alone rather than guessed at.
-    return $data unless $spec =~ /^`body\.([^`.]+)`$/;
-    return { $1 => $data };
+    # Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
+    # GraphQL ops unwrap `body.data.<field>`, not just one envelope property.
+    return $data unless $spec =~ /^`body\.(.+)`$/;
+    my $out = $data;
+    $out = { $_ => $out } for reverse split /\./, $1, -1;
+    return $out;
   };
 
   my $respond = sub {

@@ -59,15 +59,21 @@ public class TestFeature : BaseFeature
                 if (data == null || ctx2.Point == null) { return data; }
                 var tm = StructUtils.GetProp(ctx2.Point, "transform");
                 if (StructUtils.GetProp(tm, "res") is not string spec) { return data; }
-                // Exactly `body.<key>`; a deeper path is not an envelope this
-                // mock can synthesise, so it is left alone.
+                // Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
+                // GraphQL ops unwrap `body.data.<field>`, not just one envelope property.
                 if (!spec.StartsWith("`body.") || !spec.EndsWith("`") || spec.Length < 8)
                 {
                     return data;
                 }
                 var inner = spec.Substring(6, spec.Length - 7);
-                if (inner.Length == 0 || inner.Contains('.')) { return data; }
-                return new Dictionary<string, object?> { [inner] = data };
+                if (inner.Length == 0) { return data; }
+                var segs = inner.Split('.');
+                object? built = data;
+                for (var i = segs.Length - 1; 0 <= i; i--)
+                {
+                    built = new Dictionary<string, object?> { [segs[i]] = built };
+                }
+                return built;
             }
 
             Dictionary<string, object?> Respond(int status, object? data,

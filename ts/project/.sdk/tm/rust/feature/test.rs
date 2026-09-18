@@ -34,11 +34,15 @@ fn envelope(ctx: &Rc<Context>, data: Value) -> Value {
     }
     let restf = crate::core::helpers::getpath(&["transform", "res"], &ctx.point.borrow());
     if let Value::Str(spec) = restf {
-        // Exactly `body.<key>` — a deeper path is not an envelope this mock
-        // can synthesise, so it is left alone rather than guessed at.
+        // Rebuild whatever nesting the transform unwraps: a GraphQL op unwraps
+        // `body.data.<field>`, not just one envelope property.
         if let Some(inner) = spec.strip_prefix("`body.").and_then(|r| r.strip_suffix('`')) {
-            if !inner.is_empty() && !inner.contains('.') {
-                return jo(vec![(inner, data)]);
+            if !inner.is_empty() {
+                let mut out = data;
+                for seg in inner.split('.').rev() {
+                    out = jo(vec![(seg, out)]);
+                }
+                return out;
             }
         }
     }
