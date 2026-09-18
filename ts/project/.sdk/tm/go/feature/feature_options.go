@@ -1,16 +1,30 @@
 package feature
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
 )
 
 // Shared option readers for the feature implementations. Feature options
-// arrive as map[string]any (from SDK options or test harnesses), so numeric
-// values may be int, int64 or float64 and callbacks arrive as typed Go
+// arrive as map[string]any (from SDK options or test harnesses), so a numeric
+// value may be any of Go's numeric types and callbacks arrive as typed Go
 // funcs. These helpers normalise access and supply defaults, mirroring the
 // `null == opts.x ? def : opts.x` pattern of the ts features.
+//
+// THE NUMERIC READERS ACCEPT THE WHOLE NUMERIC FAMILY, which is the parity
+// requirement rather than a convenience. java, kotlin and scala test
+// `instanceof Number`, so every width and every JSON library's chosen
+// representation works there; ts coerces with `| 0`, py with `int()`, rb with
+// `.to_i`. A closed type switch here made go the one target where a value the
+// others accept is REPLACED BY THE DEFAULT, silently and with no error.
+//
+// `json.Number` is the case that made this urgent: it is what encoding/json
+// produces for every number when a decoder has UseNumber() set, which is the
+// ordinary way to read a config file without turning integers into float64.
+// A retry budget, a rate limit or a timeout read that way became the default
+// with nothing to say so.
 
 func foptBool(options map[string]any, key string, def bool) bool {
 	if options == nil {
@@ -22,19 +36,90 @@ func foptBool(options map[string]any, key string, def bool) bool {
 	return def
 }
 
+// fnumInt reads any numeric representation as an int, exactly where the value
+// is integral. Integers are NOT routed through float64: beyond 2^53 that loses
+// digits, and a cursor or a byte count is exactly the kind of option that
+// reaches it.
+func fnumInt(v any) (int, bool) {
+	switch n := v.(type) {
+	case int:
+		return n, true
+	case int8:
+		return int(n), true
+	case int16:
+		return int(n), true
+	case int32:
+		return int(n), true
+	case int64:
+		return int(n), true
+	case uint:
+		return int(n), true
+	case uint8:
+		return int(n), true
+	case uint16:
+		return int(n), true
+	case uint32:
+		return int(n), true
+	case uint64:
+		return int(n), true
+	case float32:
+		return int(n), true
+	case float64:
+		return int(n), true
+	case json.Number:
+		if i, err := n.Int64(); err == nil {
+			return int(i), true
+		}
+		// A JSON number written as `1.5` or `1e3` still answers here, matching
+		// the float cases above rather than refusing what they accept.
+		if f, err := n.Float64(); err == nil {
+			return int(f), true
+		}
+	}
+	return 0, false
+}
+
+// fnumFloat reads any numeric representation as a float64.
+func fnumFloat(v any) (float64, bool) {
+	switch n := v.(type) {
+	case int:
+		return float64(n), true
+	case int8:
+		return float64(n), true
+	case int16:
+		return float64(n), true
+	case int32:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case uint:
+		return float64(n), true
+	case uint8:
+		return float64(n), true
+	case uint16:
+		return float64(n), true
+	case uint32:
+		return float64(n), true
+	case uint64:
+		return float64(n), true
+	case float32:
+		return float64(n), true
+	case float64:
+		return n, true
+	case json.Number:
+		if f, err := n.Float64(); err == nil {
+			return f, true
+		}
+	}
+	return 0, false
+}
+
 func foptInt(options map[string]any, key string, def int) int {
 	if options == nil {
 		return def
 	}
-	switch n := options[key].(type) {
-	case int:
+	if n, ok := fnumInt(options[key]); ok {
 		return n
-	case int64:
-		return int(n)
-	case float64:
-		return int(n)
-	case float32:
-		return int(n)
 	}
 	return def
 }
@@ -43,15 +128,8 @@ func foptNum(options map[string]any, key string, def float64) float64 {
 	if options == nil {
 		return def
 	}
-	switch n := options[key].(type) {
-	case int:
-		return float64(n)
-	case int64:
-		return float64(n)
-	case float64:
+	if n, ok := fnumFloat(options[key]); ok {
 		return n
-	case float32:
-		return float64(n)
 	}
 	return def
 }

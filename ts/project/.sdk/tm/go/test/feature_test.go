@@ -10,6 +10,7 @@ package sdktest
 // `feature.fullset` and dropped when a project trims its features.
 
 import (
+	"encoding/json"
 	"os"
 	"reflect"
 	"regexp"
@@ -20,6 +21,93 @@ import (
 	sdk "GOMODULE"
 	feat "GOMODULE/feature"
 )
+
+// --- option coercion --------------------------------------------------------
+
+// A feature option must reach the feature whatever numeric type it arrives as.
+//
+// THIS IS A PARITY TEST, not a unit test of a helper. java, kotlin and scala
+// accept anything that `instanceof Number`; ts coerces with `| 0`, py with
+// `int()`, rb with `.to_i`. go read a closed set of four types and silently
+// substituted the DEFAULT for anything else - so an option the other targets
+// honour was dropped here with no error and no log.
+//
+// `json.Number` is the case that made it urgent: it is what encoding/json
+// produces for every number when a decoder has UseNumber() set, which is the
+// ordinary way to read a config file without turning integers into float64.
+// A retry budget, a rate limit or a timeout read that way became the default.
+//
+// The assertion is behavioural on purpose, and it drives `retry` rather than a
+// helper: the retry budget is observable as a CALL COUNT, so a dropped option
+// shows up as the default budget of 2 rather than the 4 that was asked for.
+// Reading the helper back would pass for a coercion that is right in isolation
+// and unused on the real path.
+func TestFeatureOptionNumericTypes(t *testing.T) {
+	fhSkipWithout(t, "retry")
+
+	// Every representation of 4 that a caller can plausibly hand over.
+	var jsonNum map[string]any
+	dec := json.NewDecoder(strings.NewReader(`{"retries":4}`))
+	dec.UseNumber()
+	if err := dec.Decode(&jsonNum); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	cases := []struct {
+		name string
+		val  any
+	}{
+		{"int", 4},
+		{"int8", int8(4)},
+		{"int16", int16(4)},
+		{"int32", int32(4)},
+		{"int64", int64(4)},
+		{"uint", uint(4)},
+		{"uint8", uint8(4)},
+		{"uint16", uint16(4)},
+		{"uint32", uint32(4)},
+		{"uint64", uint64(4)},
+		{"float32", float32(4)},
+		{"float64", float64(4)},
+		{"json.Number", jsonNum["retries"]},
+	}
+
+	// One attempt plus four retries. The default budget is 2, so a dropped
+	// option lands on 3 and is never mistaken for a pass.
+	const want = 5
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			rec := &fhRecorder{reply: func(_ int, _ map[string]any) (any, error) {
+				return fhResponse(500, nil, nil), nil
+			}}
+			h := fhMake(rec.fetch, fhF(feat.NewRetryFeature(), map[string]any{
+				"retries": c.val, "minDelay": 0, "jitter": false,
+			}))
+			h.op(fhOpSpec{op: "load"})
+			if len(rec.calls) != want {
+				t.Fatalf("%s: retries was not honoured - %d call(s), want %d "+
+					"(the default budget of 2 gives 3)", c.name, len(rec.calls), want)
+			}
+		})
+	}
+
+	t.Run("a-non-number-still-falls-back", func(t *testing.T) {
+		// The breadth is over NUMBERS, matching `instanceof Number`. A string
+		// is not a number in java either, so it must still take the default.
+		rec := &fhRecorder{reply: func(_ int, _ map[string]any) (any, error) {
+			return fhResponse(500, nil, nil), nil
+		}}
+		h := fhMake(rec.fetch, fhF(feat.NewRetryFeature(), map[string]any{
+			"retries": "4", "minDelay": 0, "jitter": false,
+		}))
+		h.op(fhOpSpec{op: "load"})
+		if len(rec.calls) != 3 {
+			t.Fatalf("a string option was coerced: %d call(s), want 3 (the default budget)",
+				len(rec.calls))
+		}
+	})
+}
 
 // --- netsim -----------------------------------------------------------------
 

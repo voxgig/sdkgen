@@ -7,7 +7,12 @@
 import { test, describe } from 'node:test'
 import { strictEqual, ok, deepStrictEqual } from 'node:assert'
 
-import { makeClient, makeClock, makeResponse, loadFeature } from './featureharness'
+import Path from 'node:path'
+import Fs from 'node:fs'
+
+import {
+  makeClient, makeClock, makeResponse, loadFeature, loadFeatureModule,
+} from './featureharness'
 
 
 // A transport that records every request and replies from a scripted queue
@@ -695,6 +700,105 @@ describe('feature:proxy', () => {
     await h.op({ op: 'load' })
     strictEqual(rec.calls[0].fetchdef.proxy, undefined, 'bypassed for noProxy host')
   })
+})
+
+
+describe('feature:test-mintid', () => {
+
+  // THE MINTED ID MUST HAVE THE SAME SHAPE IN EVERY TARGET.
+  //
+  // Thirteen targets render `%04x%04x%04x%04x` - four full 16-bit groups, each
+  // padded to four hex digits. ts and js used to draw `1e4 * Math.random()`,
+  // which covers 0x0000-0x270F rather than the full range, render each group
+  // UNPADDED, and pad the whole string at the end. A group below 0x1000 then
+  // contributed fewer than four characters and every later digit shifted.
+  //
+  // A consumer holding its ports to identical bytes cannot use an id whose
+  // shape depends on which language answered, so this is a parity defect
+  // rather than a cosmetic one.
+
+  const SAMPLES = 2000
+
+  test('a minted id is sixteen lowercase hex digits, always', () => {
+    const { mintId } = loadFeatureModule('test')
+    for (let i = 0; i < SAMPLES; i++) {
+      const id = mintId()
+      ok(/^[0-9a-f]{16}$/.test(id),
+        'minted id is not sixteen lowercase hex digits: ' + JSON.stringify(id))
+    }
+  })
+
+  // The character class alone does NOT separate the two forms - `padEnd(16)`
+  // also yields sixteen hex digits, which is why the first version of this
+  // test passed against the defect. What separates them is WHERE the digits
+  // fall.
+  //
+  // Under `%04x%04x%04x%04x` every position is uniform, so the final character
+  // is '0' about one time in sixteen. Under the old form the string was
+  // usually shorter than sixteen and padded with trailing zeros, so the final
+  // character was '0' almost nine times in ten. Measured over 200k samples:
+  // 6.3% for the correct form against 88.7% for the old one.
+  //
+  // The threshold sits between those, far from both: at p=1/16 and n=2000 the
+  // standard deviation is about 1.1 percentage points, so 25% is some fifteen
+  // deviations above the correct rate and the defect lands sixty above it.
+  // This is a statistical assertion, but not a close one.
+  test('a minted id is not zero-padded at the end', () => {
+    const { mintId } = loadFeatureModule('test')
+
+    let trailingZero = 0
+    for (let i = 0; i < SAMPLES; i++) {
+      if ('0' === mintId()[15]) trailingZero++
+    }
+
+    const rate = trailingZero / SAMPLES
+    ok(rate < 0.25,
+      'the final character is "0" in ' + (100 * rate).toFixed(1) + '% of ' +
+      'minted ids, where a uniform draw gives about 6%. The id is being ' +
+      'padded at the END rather than per group, so its digits do not line up ' +
+      'with the %04x%04x%04x%04x the other targets emit.')
+  })
+
+  test('every target mints the id in the same form', () => {
+    // The source-level half. ts and js are checked behaviourally above; the
+    // other targets cannot be loaded here, so their FORM is pinned instead -
+    // which is what drifted, and in the direction of ts/js rather than away.
+    const TM = Path.join(__dirname, '..', 'project', '.sdk', 'tm')
+    const sites: [string, string][] = [
+      ['c', 'feature/test.c'],
+      ['cpp', 'feature/test.hpp'],
+      ['clojure', 'src/sdk/features.clj'],
+      ['go', 'feature/test_feature.go'],
+      ['java', 'feature/TestFeature.java'],
+      ['kotlin', 'feature/TestFeature.kt'],
+      ['lua', 'feature/test_feature.lua'],
+      ['perl', 'feature/test_feature.pm'],
+      ['php', 'feature/TestFeature.php'],
+      ['py', 'pkg/feature/test_feature.py'],
+      ['rb', 'feature/test_feature.rb'],
+      ['scala', 'feature/TestFeature.scala'],
+      ['swift', 'Sources/ProjectNameSDK/feature/TestFeature.swift'],
+    ]
+
+    for (const [target, rel] of sites) {
+      const file = Path.join(TM, target, rel)
+      if (!Fs.existsSync(file)) continue
+      const src = Fs.readFileSync(file, 'utf8')
+      ok(src.includes('%04x%04x%04x%04x'),
+        target + ' no longer mints the id as %04x%04x%04x%04x (' + rel + ')')
+    }
+
+    // And the two that cannot use a printf format say so the same way.
+    for (const [target, rel] of [
+      ['ts', 'src/feature/test/TestFeature.ts'],
+      ['js', 'src/feature/test/TestFeature.js'],
+    ] as [string, string][]) {
+      const src = Fs.readFileSync(Path.join(TM, target, rel), 'utf8')
+      ok(/0x10000[\s\S]{0,80}padStart\(4, '0'\)/.test(src),
+        target + ' does not mint four padded 16-bit groups (' + rel + ')')
+    }
+  })
+
 })
 
 

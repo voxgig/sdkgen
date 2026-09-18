@@ -16,6 +16,21 @@ const S_NOT_FOUND = 'Not found'
 // record_id) needs its own seeded field: matching only ever happens
 // against the API's real param names, never a bare 'id' the API itself
 // does not use.
+// A mock identifier: four full 16-bit groups, each padded to four hex digits.
+//
+// The form is `%04x%04x%04x%04x`, which is what the other thirteen targets
+// emit. It is written out here rather than left inline because the thing that
+// matters about it is that it MATCHES THEM: a consumer holding its ports to
+// identical output cannot use an id whose shape depends on which language
+// answered.
+function mintId(): string {
+  let out = ''
+  for (let i = 0; i < 4; i++) {
+    out += ((Math.random() * 0x10000) | 0).toString(16).padStart(4, '0')
+  }
+  return out
+}
+
 function ownIdField(config: any, getpath: any, entityName: string): string {
   let fallback = ''
 
@@ -253,10 +268,17 @@ class TestFeature extends BaseFeature {
         const args = self.buildArgs(ctx, op, ctx.reqdata)
         let id = param(ctx, 'id')
         if (null == id) {
-          id = ((1e4 * Math.random() | 0).toString(16) +
-            (1e4 * Math.random() | 0).toString(16) +
-            (1e4 * Math.random() | 0).toString(16) +
-            (1e4 * Math.random() | 0).toString(16)).padEnd(16, '0')
+          // FOUR FULL 16-BIT GROUPS, EACH PADDED TO FOUR HEX DIGITS - the
+          // `%04x%04x%04x%04x` that the other thirteen targets emit.
+          //
+          // This used to draw `1e4 * Math.random()`, which covers 0x0000-
+          // 0x270F rather than the full range, render each group UNPADDED,
+          // and pad the whole string at the end. So a group below 0x1000
+          // contributed fewer than four characters and every later digit
+          // shifted: ts and js were the only two targets whose minted id had
+          // a different shape, which no consumer holding its ports to
+          // identical output could use.
+          id = mintId()
         }
 
         const ent = clone(ctx.reqdata)
@@ -488,6 +510,7 @@ class TestFeature extends BaseFeature {
 export {
   TestFeature,
   ownIdField,
+  mintId,
 }
 
 

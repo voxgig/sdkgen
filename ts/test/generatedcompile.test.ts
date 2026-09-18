@@ -383,6 +383,49 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // A FEATURE OPTION MUST REACH THE FEATURE WHATEVER NUMERIC TYPE IT ARRIVES
+  // AS, and this runs the generated suite that proves it rather than reading
+  // the helper back.
+  //
+  // java, kotlin and scala accept anything that `instanceof Number`; ts
+  // coerces with `| 0`, py with `int()`, rb with `.to_i`. go read a closed
+  // set of four types and silently substituted the DEFAULT for anything else,
+  // so an option the other targets honour was dropped here with no error and
+  // no log. `json.Number` - what encoding/json produces for every number when
+  // a decoder has UseNumber() set - was the case that made it urgent: a retry
+  // budget, a rate limit or a timeout read from a config file the ordinary
+  // careful way became the default.
+  //
+  // It generates WITH `retry`, because the suite skips a feature the SDK does
+  // not carry - and a skipped suite exits zero, which is why the PASS line is
+  // asserted below rather than the exit status alone.
+  test('go: a feature option is honoured whatever numeric type it arrives as',
+    async (t) => {
+      const go = toolchain('go')
+      if (null == go) {
+        return t.skip('no go toolchain here')
+      }
+
+      const sdkroot = Path.join(tmp, 'go-optnum')
+      const files = await generateTo('go', sdkroot, undefined, ['retry'])
+      ok(null != files['test/feature_test.go'],
+        'the feature suite was not generated into the SDK')
+
+      const ran = run(go,
+        ['test', './test/', '-run', 'TestFeatureOptionNumericTypes', '-v'],
+        sdkroot)
+      ok(ran.ok, 'a numeric feature option was dropped by the go SDK:\n' +
+        tail(ran.out))
+
+      // Exit zero is not enough: `go test -run` on a name that matches nothing
+      // exits zero having run nothing at all, which is exactly how a renamed
+      // or dropped test would pass here forever.
+      ok(/--- PASS: TestFeatureOptionNumericTypes\/json.Number/.test(ran.out),
+        'the json.Number case did not run - the suite matched nothing:\n' +
+        tail(ran.out))
+    })
+
+
   // THE SAME BUILD, ON THE DATA PATH (design rung L1).
   //
   // Above a size threshold the config is emitted as a parsed JSON constant
