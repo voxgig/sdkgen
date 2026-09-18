@@ -1,7 +1,3 @@
-// `SdkGen().action(args)` — the CLI dispatch boundary.
-//
-// Two defects lived here, and neither had any coverage: the CLI path was
-// exercised by nothing (target.test.ts calls the resolver directly).
 
 import { test, describe, before, after } from 'node:test'
 import { ok, match, doesNotMatch, strictEqual } from 'node:assert'
@@ -14,9 +10,6 @@ import Path from 'node:path'
 import { SdkGen } from '../dist/sdkgen.js'
 
 
-// A minimal project to run the action from: `resolveActionContext` loads
-// `./model/sdk.aon` relative to the CWD before any action runs, so an
-// action can only be reached from inside one.
 let dir = ''
 let cwd = ''
 
@@ -25,9 +18,6 @@ before(() => {
   dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cli-'))
   Fs.mkdirSync(Path.join(dir, 'model', 'target'), { recursive: true })
   Fs.mkdirSync(Path.join(dir, 'model', 'feature'), { recursive: true })
-  // Enough model for an action to get as far as resolving its ref: the name
-  // every derived value hangs off, and the three kit collections target_add
-  // reads before it looks at the filesystem.
   Fs.writeFileSync(Path.join(dir, 'model', 'sdk.aon'),
     "name: 'demo'\nmain: kit: { target: {}, feature: {}, entity: {} }\n")
   Fs.writeFileSync(
@@ -57,14 +47,6 @@ async function actionError(args: string[]): Promise<string> {
 describe('cli dispatch', () => {
 
   test('a ref reaches the action as a RAW STRING', async () => {
-    // Regression: every positional used to be mapped through `Jsonic(arg)`,
-    // which parses it as relaxed JSON — so a Windows absolute ref arrived as
-    // an OBJECT (`Jsonic('C:\\pkg\\go')` is `{ C: '\\pkg\\go' }`) and the
-    // first thing resolveTarget does with it (`tref.split`) blew up on a
-    // type error, nowhere near the actual mistake.
-    //
-    // The ref below cannot resolve either way; what is under test is HOW it
-    // fails — a path that was looked for, not a value that was parsed.
     const msg = await actionError(['target', 'add', 'C:\\pkg\\go'])
 
     ok('' !== msg, 'a nonexistent target ref was accepted')
@@ -109,18 +91,6 @@ describe('cli dispatch', () => {
 })
 
 
-// THE BINARY ITSELF, spawned.
-//
-// Everything above enters at `SdkGen().action(...)`, which is one layer
-// inside `bin/voxgig-sdkgen` — and the layer it skips is where the CLI's own
-// option validation lives. That validation rejected EVERY invocation that did
-// not pass both `--only` and `--alias`: the optional flags were spelled
-// `One(String, undefined)` in a closed shape, which makes a property
-// required, so `voxgig-sdkgen target add ts` failed before dispatch. Nothing
-// caught it because nothing ran the file.
-//
-// `package check` is the invocation used here because it is the one verb that
-// needs no project model, so a failure is the binary's and nothing else's.
 describe('the binary', () => {
 
   const BIN = Path.resolve(__dirname, '..', 'bin', 'voxgig-sdkgen')
@@ -166,23 +136,8 @@ describe('the binary', () => {
   })
 
 
-  // A BROKEN PROJECT MODEL IS THE USER'S FILE, NOT AN SDKGEN CRASH.
-  //
-  // `resolveModel` hands aontu an `errs` array and used to report only from
-  // that. aontu never fills it — every failure throws instead — so the
-  // reporting branch was unreachable and the raw AontuError travelled all the
-  // way out. `handleError` prints the whole error object for anything that is
-  // not an SdkGenError, so the user saw aontu's (good) diagnostic followed by
-  // a stack trace through sdkgen's `dist/` and a dump of the error's own
-  // fields, which reads as a bug in the tool rather than a typo in their file.
-  //
-  // Spawned rather than called in-process, because the defect was entirely in
-  // what reached the TERMINAL: the throw was always correct, its presentation
-  // was not.
   describe('a broken project model', () => {
 
-    // The three ways aontu fails, which are three different code paths inside
-    // it and were all equally raw before.
     const BROKEN: [string, string, RegExp][] = [
       ['a syntax error', 'main: kit: {\n  broken\n', /unexpected character/],
       ['an unresolved path', 'main: x: $.nope.missing\n', /Cannot resolve value/],
@@ -202,7 +157,6 @@ describe('the binary', () => {
 
           strictEqual(res.status, 1, 'expected a non-zero exit: ' + out)
 
-          // Named as a model problem, and WHOSE model.
           match(out, /Model Error: \.\/model\/sdk\.aon/, out)
 
           // aontu's own diagnostic is the useful half and is passed through

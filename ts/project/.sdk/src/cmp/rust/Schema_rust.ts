@@ -17,24 +17,6 @@ import {
 } from './utility_rust'
 
 
-// THE GENERATED SCHEMA MODULE: the model's schemas, as data the SDK can run.
-//
-// The rust peer of src/cmp/ts/Schema_ts.ts. Same two members, same source:
-// optspec from `main.kit.optspec` plus each feature's own `config.options`,
-// entityspec from the entity field sentinels — both built by the shared
-// helpers, so what rust validates against and what ts validates against
-// cannot drift.
-//
-// EMBEDDED AS JSON, PARSED AT LOAD, where ts emits an object literal: JSON is
-// a subset of TypeScript's own literal syntax and is not a subset of rust's.
-// A raw string, exactly as config.rs carries its data rep above the size
-// threshold; the spec has no threshold because it is bounded by the option
-// list and the feature set rather than by the API.
-//
-// No number-type question here, unlike Go: `Value::Num` is f64 whichever way
-// it is built. The spec holds only strings and booleans anyway, pinned by
-// "strings and booleans only, so the JSON round-trip is lossless" in
-// ts/test/optspec.test.ts.
 const Schema = cmp(async function Schema(props: any) {
   const ctx$ = props.ctx$
   const target = props.target

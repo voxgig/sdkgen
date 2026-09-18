@@ -1,31 +1,3 @@
-// `target add <ref>~<alias>` — installing a target under a different name.
-//
-// WHAT WENT WRONG
-//
-// An alias renamed the two FOLDERS and nothing else, so every other thing
-// that carries the name disagreed, and an aliased project did not work at
-// all:
-//
-//   - the model file kept the ORIGIN basename (jostraca defaults a
-//     single-file Copy's destination to the source's, and target add passed
-//     no `to`), so `target add go~go2` wrote model/target/go.aon while
-//     target-index.aon gained `@"go2.aon"` — an include of a file that
-//     does not exist, which fails the whole model compile, not just the
-//     alias;
-//   - the copied model still declared `main: kit: target: go:`, so the alias
-//     either collided with its origin or declared a target nothing else
-//     referenced;
-//   - components kept the origin suffix (`src/cmp/go2/Main_go.ts`), and
-//     components are dispatched by CONVENTION — `cmp/<t>/Main_<t>` — so
-//     nothing in the aliased tree resolved;
-//   - components name their origin INSIDE the file too: sibling imports
-//     (`from './Package_go'`) and the fragment directory read through
-//     __dirname (`/../../../src/cmp/go/fragment/`, in 67 shipped components).
-//
-// The alias is the documented escape hatch for two variants of one language
-// (docs/how-to/add-a-target.md) and, going forward, for a name collision
-// between an external package and a bundled target — so it has to produce a
-// target that actually builds.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -38,7 +10,6 @@ import { Aontu } from 'aontu'
 import { makeProject, targetRef, target_add, SCAFFOLD, ROOT } from './actionharness'
 
 
-// Every file the scaffold ships for a target, relative to its cmp folder.
 function scaffoldCmpFiles(target: string): string[] {
   const root = Path.join(SCAFFOLD, 'src', 'cmp', target)
   const out: string[] = []
@@ -82,18 +53,12 @@ describe('aliased target add', () => {
 
 
   test('the index names a file that EXISTS', async () => {
-    // The defect that broke the whole model, not just the alias: an index
-    // entry with no file behind it.
     const project = await addAlias('go', 'go2')
     const index = project.fs.readFileSync(
       ROOT + '/model/target/target-index.aon', 'utf8')
 
     ok(index.includes('@"./go2.aon"'), 'index does not name the alias')
 
-    // `(?:\.\/)?` — the include carries a `./` since aontu 0.65 reads a bare
-    // single-segment name as a package. The FILE it names never did, so the
-    // prefix is stripped before the existence check rather than joined into
-    // the path.
     for (const m of String(index).matchAll(/@"(?:\.\/)?([^"]+)"/g)) {
       ok(project.files().includes('model/target/' + m[1]),
         'target-index.aon includes ' + m[1] + ', which was never written')
@@ -125,8 +90,6 @@ describe('aliased target add', () => {
 
 
   test('a QUOTED target key is rewritten too', async () => {
-    // go-cli declares `main: kit: target: 'go-cli': {`. A rewrite that only
-    // handled the bare form would leave a hyphenated target undeclared.
     const project = await addAlias('go-cli', 'cli2')
     const src = project.fs.readFileSync(ROOT + '/model/target/cli2.aon', 'utf8')
 
@@ -162,11 +125,6 @@ describe('aliased target add', () => {
 
 
   test('an existing aliased model is PRESERVED on resync', async () => {
-    // The alias model is the one target model a project owns: an alias
-    // exists to be differentiated (a second Go module needs its own module
-    // name and deps), which is why doctor exempts it from the model
-    // comparison and add-a-target tells the project to edit it. Overwriting
-    // it on the next `target add` would silently revert exactly those edits.
     const project = makeProject({})
     await target_add([targetRef('go') + '~go2'], project.actx)
 
@@ -175,7 +133,6 @@ describe('aliased target add', () => {
       "\nmain: kit: target: go2: module: path: 'example.com/second/go2'\n"
     project.fs.writeFileSync(ROOT + '/model/target/go2.aon', edited)
 
-    // Resync.
     await target_add([targetRef('go') + '~go2'], project.actx)
 
     const after = project.fs.readFileSync(
@@ -225,7 +182,6 @@ describe('aliased target add', () => {
       .map((f) => f.slice('src/cmp/go2/'.length))
       .sort()
 
-    // The whole tree arrives, with `_go` -> `_go2` on the file NAME only.
     const want = scaffoldCmpFiles('go')
       .map((f) => f.replace(/_go(\.[^.]+)$/, '_go2$1'))
       .sort()
@@ -240,8 +196,6 @@ describe('aliased target add', () => {
 
 
   test('the fragment folder is preserved, and its files are NOT renamed', async () => {
-    // `Main.fragment.go` is language source, not a component: its `.go` is a
-    // file extension, and renaming it would break the fragment reads.
     const project = await addAlias('go', 'go2')
     const frags = project.files()
       .filter((f) => f.startsWith('src/cmp/go2/fragment/'))
@@ -335,13 +289,10 @@ describe('aliased target add', () => {
     ok(null != targets.go2, 'compiled model has no `go2` target')
     ok(null == targets.go, 'compiled model still carries the origin `go` target')
 
-    // And the values came through intact, not just the key.
     strictEqual(targets.go2.ext, 'go', 'the alias lost its `ext`')
   })
 
 
-  // The control: an UNALIASED add is untouched by any of this — the goldens
-  // in characterize.test.ts pin the byte-level version of this claim.
   test('an unaliased add still writes the origin names', async () => {
     const project = makeProject({})
     await target_add([targetRef('go')], project.actx)

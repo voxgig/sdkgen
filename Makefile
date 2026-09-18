@@ -185,3 +185,15 @@ publish:
 	@target=$$(git rev-parse HEAD); 	for i in 1 2 3 4 5 6 7 8 9 10; do 	  remote=$$(git ls-remote origin refs/heads/main | cut -f1); 	  if [ "$$remote" = "$$target" ]; then break; fi; 	  echo "waiting for origin/main to reach $$target (saw $$remote)"; 	  sleep 3; 	done; 	gh workflow run publish.yml --ref main -f expect_sha=$$target
 	@echo
 	@echo "dispatched. watch with:  gh run list --workflow=publish.yml --limit 1"
+
+.PHONY: comments comments-test hooks
+comments:
+	node tools/comment-gate.cjs
+
+comments-test:
+	node --test tools/comment-gate.test.cjs
+
+hooks:
+	git config core.hooksPath .githooks
+
+test: comments

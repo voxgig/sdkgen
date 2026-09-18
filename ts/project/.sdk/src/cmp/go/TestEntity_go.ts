@@ -36,8 +36,6 @@ function goVar(name: string): string {
 }
 
 
-// Go's GenCtx mirrors the shared shape (see TestEntity_ts.ts) plus a
-// `gomodule` slot used to build qualified package paths in emitted code.
 type GenCtx = {
   model: Model
   entity: ModelEntity
@@ -281,12 +279,6 @@ ${allSteps.length > 0 ? '\t\tclient := setup.client\n\n' : ''}`)
 
 `)
 
-    // Generate idmap via vs.Transform.
-    //
-    // The error return Transform gained in struct go 0.1.3 is discarded
-    // deliberately: this transforms the entity's own id names, which the
-    // generator produced, so an error would be a generator bug rather than
-    // anything the generated test can act on.
     Content('\t// Generate idmap via transform, matching TS pattern.\n')
     Content('\tidmap, _ := vs.Transform(\n')
     Content('\t\t[]any{' + idnamesStr + '},\n')

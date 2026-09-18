@@ -1,18 +1,3 @@
-// `package add` / `package list`.
-//
-// WHAT THIS VERB HAS TO GET RIGHT
-//
-// It installs several things in a loop, so its failure mode is the
-// HALF-INSTALLED project: item four turns out not to be in the package, and
-// the first three are already written with a partial index. Everything below
-// is ultimately about that — validate the whole claim before writing
-// anything, and refuse a typo'd `--only` rather than quietly installing less
-// than asked.
-//
-// It is deliberately NOT a new copy pipeline: it builds the same refs a hand
-// typed `target add` would take and hands them to the same action, so
-// provenance, index handling, the feature fan-out and dry run come along
-// unchanged. The tests check that equivalence directly.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, rejects } from 'node:assert'
@@ -100,8 +85,6 @@ describe('package add', () => {
       ok(files.some((f: string) => f.startsWith('tm/iotgo/')),
         'no templates were copied')
 
-      // Both index files list what was installed, or the model will not
-      // compile the new items in at all.
       const tindex = String(project.fs.readFileSync(
         ROOT + '/model/target/target-index.aon', 'utf8'))
       ok(tindex.includes('@"./iotgo.aon"'), 'target index: ' + tindex)
@@ -143,7 +126,6 @@ describe('package add', () => {
     try {
       const viaPackage = await addPackage(pkg)
 
-      // The same two items, in the same order, as a user would type them.
       const byHand = makeProject({})
       await target_add([Path.join(pkg, 'iotgo')], byHand.actx)
       byHand.actx.model.main.kit.target = {
@@ -379,8 +361,6 @@ describe('package add --only / --alias', () => {
 
 
   test('aliasing a FEATURE is refused with the reason', async () => {
-    // The same refusal `feature add` gives, so the two entry points cannot
-    // disagree about what is allowed.
     const pkg = makePackage()
     try {
       const project = makeProject({})
@@ -496,7 +476,6 @@ describe('package list', () => {
 })
 
 
-// Review findings on #53, each pinned.
 describe('package add: collisions and hostile inputs', () => {
 
   test('it REFUSES to overwrite a name from another source', async () => {
@@ -551,12 +530,6 @@ describe('package add: collisions and hostile inputs', () => {
 
   test('a package that STOPPED providing the name does not block the move',
     async () => {
-      // The migration case, and the one that sent a real project down a
-      // blind alley. `seneca-provider` left @voxgig/sdkgen for
-      // @voxgig/sdkgen-infrapack; every project holding the pre-split copy
-      // still records the old package, so a check that reads only the record
-      // refuses the very add that repairs it -- naming as the incumbent a
-      // package that no longer ships the thing at all.
       const a = makePackage({
         sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
         provides: { target: ['iotgo'] },
@@ -569,7 +542,6 @@ describe('package add: collisions and hostile inputs', () => {
         const project = await addPackage(a)
         project.actx.flags = {}
 
-        // A ships a new version that no longer provides it.
         Fs.writeFileSync(Path.join(a, 'sdkgen-package.json'),
           JSON.stringify({
             sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
@@ -593,8 +565,6 @@ describe('package add: collisions and hostile inputs', () => {
 
   test('a record pointing at a source that is GONE does not block the move',
     async () => {
-      // Uninstalled rather than re-published: the recorded base is simply
-      // not there any more. Nothing on disk can collide with the new one.
       const a = makePackage({
         sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
         provides: { target: ['iotgo'] },
@@ -622,12 +592,6 @@ describe('package add: collisions and hostile inputs', () => {
 
 
   test('an unaliased item whose model was RELOADED still collides', async () => {
-    // The regression the two tests above could not see. `origname` is
-    // `*'' | string` in the schema, so a project model loaded from disk
-    // carries '' for every unaliased item; the in-process add leaves it
-    // non-empty in the same context that wrote it. Looked up with `??` the
-    // empty string survives, no manifest lists '', and a LIVE target reads
-    // as stale -- the guard waving through the overwrite it exists to stop.
     const a = makePackage({
       sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
       provides: { target: ['iotgo'] },
@@ -656,13 +620,6 @@ describe('package add: collisions and hostile inputs', () => {
 
   test('a MALFORMED incumbent manifest does not read as providing nothing',
     async () => {
-      // `resolveSource` tolerates a malformed manifest on the direct-add
-      // path -- definition, components and templates are all there, so it
-      // installs and records `base` -- which is how an installed item comes
-      // to have one. Trusting `provides` out of it anyway lets a shape error
-      // (a string where a list belongs) read as "provides nothing" and clear
-      // the way to overwrite a live target. The definition file decides
-      // instead, exactly as for a source with no manifest at all.
       const a = makePackage({
         sdkgen: { package: 1 }, name: '@acme/sdkgen-a',
         provides: { target: ['iotgo'] },
@@ -766,8 +723,6 @@ describe('package add: collisions and hostile inputs', () => {
 
 
   test('a path-like alias is refused on the DIRECT path too', async () => {
-    // Same hole, reached by `target add <ref>~<alias>`. Checked in the
-    // resolver so the two entry points cannot disagree.
     const project = makeProject({})
 
     await rejects(
@@ -821,13 +776,6 @@ describe('package add: collisions and hostile inputs', () => {
 })
 
 
-// `package update` — see design §13.
-//
-// THE ORDER IS THE SAFETY PROPERTY: check, then fetch, then re-add. Measured
-// before the source moves, a copy that differs means the project changed it.
-// Fetch first and every item legitimately differs, the gate fires on all of
-// them, and the operator learns to pass --force every time — which would make
-// the gate worse than not having one.
 describe('package update', () => {
 
   // A project with the fixture package installed, and its model carrying the
@@ -1113,10 +1061,6 @@ describe('package update', () => {
 
 
   test('the FETCHED version is validated before it is installed', async () => {
-    // Step 1 measured a different package from the one step 3 installs. If
-    // the new release raises `engines.sdkgen` beyond this generator,
-    // `package add` would refuse it — an update that skipped the check would
-    // overwrite `.sdk` with components written for a generator this is not.
     const pkg = makePackage()
     try {
       const project = await installed(pkg)
@@ -1142,12 +1086,6 @@ describe('package update', () => {
 
 
   test('a LOCAL source is not fetched with npm', async () => {
-    // npm can only update what npm installed. A package added from a
-    // checkout records that base, and the re-add reads from it — so an
-    // `npm install` would write a fresh copy into node_modules, leave the
-    // recorded source untouched, and the command would recopy the OLD
-    // content while reporting success and having changed the project's
-    // dependencies.
     const pkg = makePackage()
     try {
       const project = await installed(pkg)
@@ -1196,13 +1134,6 @@ describe('package update', () => {
 
 
   test('a feature package cannot overwrite its own overlay unasked', async () => {
-    // The gate must cover a feature's PER-TARGET SOURCE, not only its model
-    // file: `feature_add` rewrites `tm/<target>/…` from the package's
-    // overlay, and scoping doctor to the feature means no target is walked.
-    // Verified before the fix: the update succeeded and the edit was gone.
-    // A FEATURE package with an overlay for `go` — a target this project got
-    // from the bundled scaffold, not from here. `makePackage` ships
-    // `tm/iotgo` for its own target and so has nothing to overlay onto `go`.
     const pkg = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cbpkg-'))
     try {
       const sdk = Path.join(pkg, '.sdk')
@@ -1260,8 +1191,6 @@ describe('package update', () => {
     try {
       const project = await installed(pkg)
 
-      // Two packages: A supplied the FEATURE, B the target. A has no target,
-      // so its scope does not pull the features in and it checks clean.
       project.actx.model.main.kit.feature.retry.package = '@acme/sdkgen-a'
       project.actx.model.main.kit.target.iotgo.package = '@other/sdkgen-b'
 
@@ -1300,8 +1229,6 @@ describe('the action map', () => {
 
 
   test('inherited Object properties are NOT actions', () => {
-    // `voxgig-sdkgen toString` used to resolve to Object.prototype.toString,
-    // pass the null check, and get CALLED with the action arguments.
     for (const name of ['toString', 'constructor', 'valueOf', 'hasOwnProperty']) {
       strictEqual((ACTION_MAP as any)[name], undefined,
         name + ' resolved to an inherited function')

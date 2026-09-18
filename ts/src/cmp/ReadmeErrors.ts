@@ -12,21 +12,6 @@ import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { safeVarName, exampleVarName } from '../helpers/naming'
 
 
-// Error handling is one of the everyday developer tasks, so it gets its
-// own user-facing section rather than being buried in the pipeline
-// explanation. The convention differs by language in two ways:
-//
-//   1. Entity operations (load/list/create/update/remove) either THROW
-//      (ts, js, py, php, rb) or return an error value (go, lua).
-//   2. The low-level `direct()`/`prepare()` escape hatch does NOT always
-//      follow the entity-op convention. In go/lua it returns (value, err);
-//      in ts/js it returns the value or an `Error`; in py/php/rb it returns
-//      the result envelope — branch on `ok`, and read `err` on failure.
-//
-// The entity-op snippet is rendered from the entity's PRIMARY op (never a
-// hardcoded `load`, which a create-only entity lacks) with a type-correct
-// match id (a numeric id renders `1`, not "example_id"). Targets not listed
-// here (ts, js) use DEFAULT_LANG.
 type LangErrors = {
   // prose + snippet for the entity-op convention, given the pre-rendered
   // primary-op invocation and its op name.
@@ -239,8 +224,6 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
 
   if (ex && primaryOp) {
     const eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))
-    // Sanitise the variable name against the target's reserved words (a
-    // `Delete` entity must not bind `const delete = ...`).
     const eLower = exampleVarName(eName.toLowerCase(), target.name)
     const idF = entityIdField(ex)
     const call = primaryOpCall(target.name as ExampleLang, eName, eLower, primaryOp, idF, ex)

@@ -17,24 +17,6 @@ import {
 } from './utility_csharp'
 
 
-// THE GENERATED SCHEMA MODULE: the model's schemas, as data the SDK can run.
-//
-// The csharp peer of src/cmp/ts/Schema_ts.ts. Same two members, same source:
-// Optspec from `main.kit.optspec` plus each feature's own `config.options`,
-// Entityspec from the entity field sentinels — both built by the shared
-// helpers, so what csharp validates against and what ts validates against
-// cannot drift.
-//
-// A COLLECTION LITERAL, not embedded JSON, where go and the JVM targets
-// parse a string. SdkConfig switches to a JSON constant above a size
-// threshold because a large composite literal is slow for the compiler to
-// bind and the JIT to run; the spec has no such spread. It is bounded by the
-// option list and the feature set — a few hundred entries whatever the API
-// looks like — and in C# the literal is also the SAFER rep: a `false` here
-// stays `false` rather than arriving as a JsonElement to be mapped back, and
-// the number ladder SdkConfig's ConfigValue exists to reproduce is a question
-// the spec never asks (it holds only strings and booleans, pinned by "strings
-// and booleans only" in ts/test/optspec.test.ts).
 const Schema = cmp(async function Schema(props: any) {
   const ctx$ = props.ctx$
   const target = props.target

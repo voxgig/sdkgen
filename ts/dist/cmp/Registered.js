@@ -1,34 +1,4 @@
 "use strict";
-// `registerComponent` — add a per-target component of your own.
-//
-// WHY THIS EXISTS
-//
-// Every built-in resolves its per-language half by convention:
-// `Main` loads `cmp/<target>/Main_<target>`, `Test` loads
-// `cmp/<target>/Test_<target>`, and `ReadmeTop` loads
-// `cmp/<target>/ReadmeTopQuick_<target>` with `{ ignore: true }` so a target
-// that has not implemented it is simply skipped.
-//
-// A PROJECT had no way into that mechanism. voxgig-solardemo-sdk wanted a
-// per-target `AGENTS.md` and had to hand-wire the dispatch in its own
-// `Root.ts`:
-//
-//   if ('ts' === target.name) { AgentsTs({ target }) }
-//   else if ('go' === target.name) { AgentsGo({ target }) }
-//
-// which duplicates the internal dispatch, does not scale past a couple of
-// targets, and — because the branches live inline in Root.ts — is exactly
-// what stops a project's root wiring from being resynced with the scaffold.
-//
-// With this, the same thing is one line and target-agnostic:
-//
-//   const Agents = registerComponent('Agents')
-//   ...
-//   Agents({ target })
-//
-// resolving `cmp/<target>/Agents_<target>` and doing nothing for a target
-// that has no such file. `doctor` reports those files as ADDITIVE — the
-// project's own work — rather than as drift.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerComponent = registerComponent;
 const jostraca_1 = require("jostraca");

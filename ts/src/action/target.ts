@@ -82,7 +82,6 @@ async function cmd_target_add(args: string[], actx: ActionContext): Promise<Acti
 
 // Code API
 async function target_add(targets: string[], actx: ActionContext): Promise<ActionResult> {
-  // const jostraca = Jostraca()
   const jostraca = actx.jostraca
 
   const opts = {
@@ -96,13 +95,6 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
       content: loadContent(actx, 'target')
     },
     model: actx.model,
-    // Dry run must be passed per-call, not left to the Jostraca instance.
-    // jostraca's `generate` runs its own options through OptionsShape FIRST,
-    // which fills in `control.dryrun: false`, and only then merges
-    // `deep({}, gOpts.control, opts.control)` — so the shape default silently
-    // OVERRIDES the instance-level flag. `-y target add ts` printed
-    // ** DRY RUN ** and wrote every file. (Same trap as the `existing` FIX
-    // note in jostraca.js.)
     control: {
       dryrun: !!actx.opts.dryrun
     },
@@ -118,15 +110,6 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
   })
 
 
-  // The `test` feature is required by every generated target (SDK.test()
-  // depends on it), so ensure it is added even if the model does not yet
-  // declare it.
-  //
-  // Everything else has to be BOTH declared and active: `active` defaults to
-  // false in the schema, and a feature the model has switched off should not
-  // have its source land in the project. This used to be a plain
-  // Object.keys(), so `retry: { active: false }` still shipped every retry
-  // source file.
   const featuremodel: any = actx.model.main[KIT]?.feature ?? {}
   const features = Array.from(new Set([
     'test',
@@ -142,17 +125,6 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
     showDryrun(opts.log, 'target-result', jres, actx.folder)
   }
 
-  // The targets just written are not in the in-memory model — nothing
-  // recompiles `model/sdk.aontu` mid-process — so put them there before the
-  // fan-out below.
-  //
-  // TargetRoot copies each new target's feature source from ITS OWN TREE,
-  // which is the whole story only while every feature ships in the same
-  // package as every target. For a feature supplied by a DIFFERENT package,
-  // the source lives in that package's overlay, and only `feature_add`'s
-  // two-tree lookup consults it — for targets in the model. So a target added
-  // while such a feature was already active got no source for it at all:
-  // TargetRoot could not find it, and the fan-out could not see the target.
   registerInstalled('target', targets, actx)
 
   // feature_add copies feature templates for every target in the model,
@@ -180,8 +152,6 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
   // jostraca, so it has to be told about the dry run itself.
   const dryrun = !!actx?.opts?.dryrun
 
-  // TODO: jostraca - make from value easier to specify 
-  // const tfolder = 'node_modules/@voxgig/sdkgen/project/.sdk'
 
   Project({}, () => {
     // Resolved names of every target in this run. The index File is
@@ -215,8 +185,6 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
         note: tname + (tname != torigname ? 'original' + torigname : '') + ' from:' + tfolder
       })
 
-      // An ALIASED add (`target add go~go2`) installs the target under a new
-      // name, and every one of the three trees has to agree about that name.
       const aliased = tname !== torigname
 
       // The definition file and the index entry: the same for every kind, so
@@ -227,11 +195,6 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       }))
 
       if (aliased) {
-        // Components are dispatched by CONVENTION — `cmp/<t>/Main_<t>` — so
-        // an aliased tree whose files keep the origin suffix resolves
-        // nothing: `src/cmp/go2/Main_go.ts` is invisible to a lookup for
-        // `cmp/go2/Main_go2`. jostraca's tree Copy has no per-entry rename
-        // hook, so an aliased tree is emitted file by file instead.
         aliasCmpTree(ctx$, tfolder + '/src/cmp/' + torigname,
           'src/cmp/' + tname, torigname, tname)
       }
@@ -244,26 +207,8 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
         })
       }
 
-      // Copy the whole template tree MINUS the source of every feature the
-      // model did not ask for. Which files those are is discovered from the
-      // tree rather than assumed (see helpers/featureSource), because each
-      // language puts feature source somewhere different.
       const trim = trimFeatures(ctx$, tfolder, torigname, tname, features)
 
-      // Copy only ADDS and overwrites — it never removes, and it never even
-      // looks at a file the trim excludes. So a template that this SDK should
-      // NOT have lived on at whatever revision it was first copied at, and
-      // kept being generated from.
-      //
-      // That is how 30 cedar repos ended up with tm/go/test/feature_test.go
-      // still declaring the nine fh* harness helpers after upstream moved them
-      // into feature_harness_test.go: feature_test.go is feature-source, so it
-      // is trimmed for an SDK without those features, so Copy skipped it, so
-      // the pre-move revision survived every `target add go` those repos ever
-      // ran. Generation then emitted it alongside the new harness and the go
-      // package failed to compile — "fhHasFeature redeclared in this block".
-      //
-      // The invariant this restores: tm/<target> == source tree MINUS trim.
       pruneStaleTemplates(
         ctx$, tfolder + '/tm/' + torigname, 'tm/' + tname, trim, dryrun)
 
@@ -282,9 +227,6 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
 
     })
 
-    // ONCE, after the loop. See kindIndex: emitted per item it was one File
-    // component per target on the same output path, which jostraca 0.38
-    // refuses.
     if (0 < tnames.length) {
       Folder({ name: 'model/target' }, () => kindIndex({
         kind: 'target', names: tnames,
@@ -297,36 +239,12 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
 
 
 
-// `<Cmp>_<origname>.<ext>` -> `<Cmp>_<tname>.<ext>`, for an aliased install.
-// Anything not carrying the suffix (tsconfig.json, the fragment sources)
-// keeps its name — the `.<ext>` anchor is what keeps this off
-// `Main.fragment.go`, whose `go` is a file extension.
-//
-// Shared with doctor for the same reason as aliasCmpText: doctor walks the
-// ORIGIN tree to decide what should be present, so it has to land each file
-// under the same name the writer gave it, or it reports the whole tree as
-// missing.
 function aliasCmpName(name: string, torigname: string, tname: string): string {
   return name.replace(
     new RegExp('_' + escapeRe(torigname) + '(\\.[^.]+)$'), '_' + tname + '$1')
 }
 
 
-// The origin name a component carries INSIDE its source, rewritten for an
-// aliased install. Shared with doctor, which re-applies it before comparing —
-// same discipline as templateReplacements: a writer and a reader that
-// disagree by a character make every file read as a fork.
-//
-// Rewritten here rather than through jostraca's `replace` map, because that
-// map canonicalises each key into a regex group NAME — `_go'` and `_go"` both
-// reduce to the same name, so the later entry silently won and every
-// single-quoted import came out as `from './Package_go2"`. One explicit regex
-// keeps the quote it matched.
-// `cmpbase` is the component tree's PREFIX — `src/cmp/` for a target,
-// `src/cmp/docs/` for a docs item. Taken from the caller rather than fixed
-// here: a docs item's components live one level deeper, and a rewrite that
-// looked for `src/cmp/<orig>/` left an aliased docs component pointing at the
-// ORIGIN's fragments — reading them silently when both are installed.
 function aliasCmpText(
   src: string, torigname: string, tname: string, cmpbase = 'src/cmp/',
 ): string {
@@ -344,20 +262,6 @@ function aliasCmpText(
 }
 
 
-// Emit an aliased `src/cmp` tree: every file renamed from the origin suffix
-// to the installed one, and its CONTENT rewritten to match.
-//
-// Renaming alone would break the tree, because a component names its origin
-// twice over: sibling imports (`from './Package_go'`) and the fragment
-// directory it reads through `__dirname` (`/../../../src/cmp/go/fragment/`,
-// in 67 of the shipped components). Both are rewritten here — the fragment
-// path because the fragments are copied to the ALIAS's folder, so the origin
-// path would either miss or, worse, silently read the origin target's
-// fragments if that target is also installed.
-//
-// Files are emitted through jostraca (`File`/`Content`) rather than copied
-// with `fs`, so a dry run reports them and writes nothing, exactly as the
-// tree Copy on the unaliased path does.
 function aliasCmpTree(
   ctx$: any,
   fromDir: string,
@@ -401,9 +305,6 @@ function aliasCmpTree(
 
       const renamed = aliasCmpName(name, torigname, tname)
 
-      // `template` against the model with no replace map, matching what Copy
-      // does for the unaliased tree — jostraca's Copy always interpolates
-      // `$$ref$$` against the model, so an aliased tree must too.
       const src = fs.readFileSync(child, 'utf8')
 
       File({ name: renamed }, () => Content(template(aliasText(src), ctx$.model)))
@@ -416,34 +317,6 @@ function aliasCmpTree(
 
 
 
-// Path patterns that keep a target's unwanted feature source out of the
-// project: the source of every AVAILABLE feature the model did not select,
-// plus the templates that only compile with the complete feature set.
-//
-// Returns an empty list — copy the whole tree, as before — when the target
-// opts out with `feature: { trim: false }`, or when its model cannot be
-// read. Trimming a target whose templates are not ready for it produces a
-// project that does not build, so an unreadable declaration must fail safe
-// rather than fail tidy.
-// Bring the consumer's `tm/<target>` back to the invariant that Copy alone
-// cannot maintain: it must contain EXACTLY the source tree minus the files
-// this SDK's feature set trims away.
-//
-// Copy adds and overwrites. It does not remove, and it does not touch an
-// excluded file at all — so both of these persist silently forever:
-//
-//   - a template the toolchain has RETIRED (absent from the source tree);
-//   - a template this SDK should not have (present in source, but trimmed),
-//     frozen at whatever revision it was first copied at.
-//
-// The second is the one that bit: tm/go/test/feature_test.go is feature
-// source, so it is trimmed for an SDK without those features, so it was never
-// refreshed after upstream moved the fh* harness helpers out of it.
-//
-// tm/ is toolchain-owned — the scaffold rewrites it on every add-target, and
-// model/guide/guide.aon is the one file a user owns (merged separately by
-// create-sdkgen) — so removing what the toolchain says should not be there is
-// consistent with how the rest of that tree is already treated.
 function pruneStaleTemplates(
   ctx$: any,
   fromDir: string,
@@ -467,12 +340,6 @@ function pruneStaleTemplates(
         return
       }
       for (const ent of entries) {
-        // Junk is invisible to this listing on BOTH sides, and it has to be
-        // both. In the source it is never copied, so counting it would want a
-        // file that can never arrive. In the destination it was never written
-        // by this toolchain, so counting it as stale would have `target add`
-        // delete a maintainer's own `__pycache__` out of their SDK repo —
-        // this prune's remit is the tree it writes, not the tree it finds.
         if (isJunk(ent.name)) {
           continue
         }
@@ -510,12 +377,6 @@ function pruneStaleTemplates(
     return
   }
 
-  // A DRY RUN must not delete. This prune calls `fs.unlinkSync` directly, and
-  // jostraca enforces `control.dryrun` only inside its own write layer — so
-  // `-y target add <t>` previewed the copies and then really removed every
-  // stale template, which is the opposite of what the flag promises and
-  // exactly the blast radius a maintainer runs `-y` to inspect. Report the
-  // deletions instead, in the same shape the copies are reported.
   if (dryrun) {
     log.info({
       point: 'target-template-prune', target: toRel, count: stale.length,
@@ -558,38 +419,6 @@ function pruneStaleTemplates(
 }
 
 
-// WHICH NAMES COUNT AS FEATURE SOURCE, when deciding what to trim.
-//
-// This used to be the SOURCE folder's own `model/feature/` listing, which is
-// right only while every target ships in the same package as every feature.
-// An external target package declares no feature models of its own — it has
-// no reason to — so nothing was discovered, nothing was trimmed, and the
-// consumer received the target's source for EVERY feature regardless of what
-// its model selected. Measured on a target copied from the bundled `go`: the
-// bundled one keeps 2 feature source files, the external one kept all 18.
-//
-// That is the failure `helpers/featureSource` was written to end (272 stray
-// files in one repo), arriving again by the one route it did not cover.
-//
-// The catalogue is therefore the union of every place a feature this project
-// could select can come from:
-//
-//   - the bundled scaffold, which is what a bare `feature add <name>` means;
-//   - the source package's own declarations, for a package shipping both;
-//   - the consumer's OWN installed feature models, which is how an EXTERNAL
-//     feature's source becomes trimmable at all.
-//
-// Every term is a place feature DEFINITIONS live, deliberately. Taking the
-// third from the model's feature KEYS instead would make any name a project
-// happens to declare a trim candidate — and a file in a `feature/` directory
-// is not necessarily a feature. `tm/rust/feature/support.rs` and its siblings
-// are shared machinery that `Main_rust` emits unconditionally (`pub mod
-// support`), so a project that declared a feature called `support` would have
-// had that file pruned and produced a crate that cannot compile. A definition
-// file is evidence that the name really denotes a feature; a model key is not.
-//
-// For a bundled add this is `bundled ∪ bundled ∪ (⊆ bundled)`, so the trim is
-// byte-identical to what it always was — the goldens hold it to that.
 function featureCatalogue(ctx$: any, tfolder: string): string[] {
   const fs = ctx$.fs()
   const root = ctx$.folder ?? '.'
@@ -651,12 +480,6 @@ function trimFeatures(
 }
 
 
-// Load a target's `feature` declaration from its own model file.
-//
-// The target being added is not in the in-memory model yet (that is what
-// `target add` is for), so this reads the very file that is about to be
-// copied into `model/target/`. Each shipped target model is self-contained,
-// so Aontu can resolve it on its own.
 function readTargetFeature(
   ctx$: any,
   tfolder: string,

@@ -1,16 +1,3 @@
-// `edition add` — the third kind. Design §20.
-//
-// WHAT THIS SUITE IS FOR
-//
-// The edition kind ships with NO items: sdkgen supplies the mechanism and
-// packages supply the destinations (`@voxgig/docgen` first). So the only way
-// to exercise it here is against a fixture package — which is exactly what an
-// external author's package looks like, and is therefore the right thing to
-// test against rather than a convenience.
-//
-// The invariant under test throughout is the one in CLAUDE.md: anything an
-// add WRITES, doctor must COMPARE. A kind whose trees nothing walks would let
-// the next add silently revert a project's edit.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, rejects } from 'node:assert'
@@ -26,9 +13,6 @@ import { checkPackage } from '../dist/action/check.js'
 import { ROOT, makeProject, recordLog } from './actionharness'
 
 
-// A package providing one edition item. The components are stubs: what is under
-// test is the KIND's mechanism — resolution, provenance, trees, index, drift
-// — not what a documentation emitter emits, which is docgen's business.
 function makePackage(opts: {
   manifest?: any, tm?: boolean, name?: string,
 } = {}): string {
@@ -130,7 +114,6 @@ describe('edition add', () => {
       ok(files.includes('src/cmp/edition/summary/Main_summary.ts'), files.join(','))
       ok(files.includes('tm/edition/summary/site.md'), files.join(','))
 
-      // The index, or the model never compiles the new item in at all.
       ok(read(project, 'model/edition/edition-index.aon').includes('@"./summary.aon"'))
     }
     finally {
@@ -424,14 +407,6 @@ describe('doctor sees edition', () => {
 
 describe('edition and the project model', () => {
 
-  // THE ITEM HAS TO REACH THE COMPILED MODEL.
-  //
-  // `model/sdk.aon` is written once, by create-sdkgen, and includes the
-  // indexes of the kinds that existed then — so no project alive today
-  // includes `edition/edition-index.aon`. Without that line the definition is an
-  // orphan: on disk, included by its index, and that index included by
-  // nothing. `main.kit.edition` is absent from the next compile, and `package
-  // list`, `package update` and `doctor` cannot see the item at all.
 
   test('the project model gains the edition include', async () => {
     const pkg = makePackage()
@@ -451,11 +426,6 @@ describe('edition and the project model', () => {
   })
 
 
-  // AN EXISTING REPO'S BARE INCLUDE IS STILL THE SAME INCLUDE. Every
-  // already-generated SDK has `@"edition/edition-index.aon"` with no `./`,
-  // written before aontu 0.65 required one. If that did not compare equal to
-  // the spelling emitted now, the first `edition add` on any existing project
-  // would append a second include of the same file.
   test('a BARE pre-0.65 include is not duplicated', async () => {
     const pkg = makePackage()
     try {
@@ -525,9 +495,6 @@ describe('edition and the project model', () => {
 
 
   test('a template retired upstream is pruned on resync', async () => {
-    // Copy only adds and overwrites. A newer package version that removed a
-    // template would otherwise leave the old one behind, generating from it
-    // forever.
     const pkg = makePackage()
     try {
       const project = makeProject()

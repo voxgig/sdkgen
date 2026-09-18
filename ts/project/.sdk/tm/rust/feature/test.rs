@@ -1,8 +1,3 @@
-// The offline `test` feature (mirrors go feature/test_feature.go): an
-// in-memory mock transport that serves entity CRUD from a fixture, so
-// generated tests run with no live server. An optional `net` block wraps
-// the mock with simulated network conditions (latency, first-N failures,
-// connection errors, offline) — see make_netsim below.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -33,17 +28,6 @@ impl TestFeature {
     }
 }
 
-// THE MOCK HAS TO AGREE WITH THE MODEL.
-//
-// A point carrying `transform.res: `body.item`` describes an API that answers
-// {"item": {...}}, and the response transform unwraps that key on the way
-// back. Handing back the bare payload means the transform unwraps a property
-// that is not there, and the caller gets nothing — a mock that only ever
-// simulates APIs whose responses happen to be unwrapped.
-//
-// univec's list op declares `body.data`, so every list returned zero items
-// while the fixture plainly held two. Mirrors the go/ts/lua/php mocks, which
-// already wrap; rust, c and zig were the three that did not.
 fn envelope(ctx: &Rc<Context>, data: Value) -> Value {
     if data.is_noval() || data.is_null() {
         return data;
@@ -206,9 +190,6 @@ fn test_fetch(
         }
 
         "update" => {
-            // Match the existing entity by id only (or its alias). Reqdata
-            // also contains the new field values, which would otherwise
-            // cause select to filter out the entity we want to update.
             let reqdata = ctx.reqdata.borrow().clone();
             let update_match = Value::empty_map();
             if let Value::Map(_) = reqdata {

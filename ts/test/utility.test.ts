@@ -70,12 +70,6 @@ describe('utility', () => {
   })
 
 
-  // apidef recognises an API's access-token exchange in the spec and records
-  // it as model facts; a feature receives them by declaring
-  // `spec: { authexchange: '<options-key>' }`. Pinned here because the whole
-  // point is that a project does NOT restate its own API's token endpoint —
-  // if the overlay silently stops happening, the generated config keeps the
-  // generic default and nothing fails loudly.
   describe('resolveAuthExchange', () => {
 
     test('null when the spec describes no exchange', () => {
@@ -156,8 +150,6 @@ describe('utility', () => {
     test('spec facts overlay the declared defaults', () => {
       const { def } = configDefinition(modelWith({ spec: { authexchange: 'exchange' } }))
       const ex = def.feature.secrets.options.exchange
-      // The spec says where THIS API's endpoint is; the declared
-      // 'oauth/token' was only ever a generic guess.
       strictEqual(ex.path, 'auth/token')
       strictEqual(ex.method, 'POST')
       strictEqual(ex.request, 'refresh_token')

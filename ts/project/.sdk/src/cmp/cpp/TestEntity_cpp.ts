@@ -231,9 +231,6 @@ ${flowHasList ? `  T_RUN(${evar}_entity_stream);\n` : ''}  T_RUN(${evar}_entity_
 })
 
 
-// declare a data var (C++ needs declaration); track declared vars per file is
-// hard across generators, so each op declares with `Value` unless it's a known
-// pre-declared ref. We use a simple convention: the first use declares it.
 function decl(varname: string, declared: Set<string>): string {
   if (declared.has(varname)) return ''
   declared.add(varname)

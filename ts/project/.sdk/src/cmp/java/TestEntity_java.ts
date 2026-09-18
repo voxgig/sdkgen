@@ -179,10 +179,6 @@ ${allSteps.length > 0 ? `    ${SDK} client = setup.client;\n\n` : ''}`)
 
 `)
 
-    // Stream test (PR #4): the entity `stream` method runs the op pipeline and
-    // returns a Stream. With the streaming feature active it yields from the
-    // feature's incremental iterator; otherwise it falls back to the
-    // materialised items. Only emitted for entities whose flow lists.
     const flowHasList = allSteps.some((s: any) => s.op === 'list')
     if (flowHasList) {
       Content(`  @Test

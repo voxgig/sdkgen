@@ -1,18 +1,3 @@
-// `doctor` — the check that keeps every other fix from silently rotting.
-//
-// WHAT IT HAS TO GET RIGHT
-//
-// A naive `diff -r` against the scaffold is useless here: `target add` writes
-// template masters with substitution PARTLY applied, and inconsistently.
-// `tm/go/core/error.go` arrives substituted (`DemoError` where the scaffold
-// says `ProjectNameError`); `tm/ts/test/utility.ts` arrives raw, because its
-// placeholders are substituted later at generate time. On
-// voxgig-solardemo-sdk a plain diff reported 20 edited files, of which 19
-// were substitution artefacts and exactly ONE was a hand-edit.
-//
-// So the headline test here is the CLEAN one: a project straight out of
-// `target add` must report zero drift. Anything less and the report is noise
-// and nobody will run it.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -28,9 +13,6 @@ import {
 } from './actionharness'
 
 
-// A project with `go` added and registered in the model, the way a real
-// `.sdk` looks after `target add` (the action writes the target model; the
-// consumer's next run picks it up through model/target/target-index.aon).
 async function addedProject(feature: Record<string, any> = {}) {
   const project = makeProject({ feature })
 
@@ -76,11 +58,6 @@ describe('doctor', () => {
   })
 
 
-  // Retired generated output. jostraca writes and never deletes, so a
-  // template retirement leaves the old file in every consumer beside its
-  // replacement - hand-pruned three times during the vendor-tag rollout
-  // before this existed. The list is the TARGET MODEL's own declaration
-  // (`superseded`), so external packages get the same treatment.
   test('superseded output is a finding, and prune deletes exactly it', async () => {
     const project = await addedProject()
 
@@ -95,7 +72,6 @@ describe('doctor', () => {
     deepStrictEqual(report.superseded.map((p: string) => p.split(/[\\/]/).pop()),
       ['old_runner.go'])
 
-    // Prune deletes the declared file and NOTHING else.
     await action_doctor(['doctor', 'prune'], project.actx)
     strictEqual(project.fs.existsSync(Path.join(ROOT, '../go/test/old_runner.go')), false,
       'prune must delete the declared superseded file')
@@ -107,12 +83,6 @@ describe('doctor', () => {
   })
 
 
-  // MODEL INPUT NOTHING READS. The failure this exists for is silent by
-  // construction: aontu follows includes from an entry point, so a file
-  // nothing includes is never opened and there is no error to raise.
-  // voxgig-solardemo-sdk carried `sdk-base.aontu` pinning its npm scope,
-  // repo name and Go version for a month after the generate path stopped
-  // including it - the pins read as authoritative and applied to nothing.
   test('a model file nothing includes is a finding', async () => {
     const project = await addedProject()
 
@@ -136,7 +106,6 @@ describe('doctor', () => {
   })
 
 
-  // The check would also pass if it looked at nothing at all.
   test('it actually compared the trees', async () => {
     const project = await addedProject()
 
@@ -152,10 +121,6 @@ describe('doctor', () => {
   })
 
 
-  // Gap 5's detection half. `utility/make_target.go` (superseded upstream by
-  // `make_point.go`, leaving a duplicate symbol) and `utility/struct/go.mod`
-  // (a nested module that made the package unimportable) each broke the
-  // solardemo Go build, and nothing reported either.
   test('it finds a file the scaffold no longer ships', async () => {
     const project = await addedProject()
 
@@ -205,7 +170,6 @@ describe('doctor', () => {
   test('it names root capabilities the project never wired in', async () => {
     const project = await addedProject()
 
-    // Root wiring that calls some root components and not others.
     write(project, 'src/Top.ts', `
 import { ReadmeTop, License } from '@voxgig/sdkgen'
 
@@ -232,9 +196,6 @@ const Top = () => {
   })
 
 
-  // Feature trimming and doctor have to agree. A project that added its
-  // targets before trimming existed carries source for features its model
-  // never declared — dead code that `target add` would no longer write.
   test('unmodelled feature source reads as stale', async () => {
     const project = await addedProject()
 
@@ -247,8 +208,6 @@ const Top = () => {
   })
 
 
-  // ...and once the model DOES declare it, the same file is expected, not
-  // stale. Without this the two halves could disagree and nobody would know.
   test('modelled feature source is expected', async () => {
     const project = await addedProject({ retry: { name: 'retry', active: true } })
 
@@ -261,11 +220,6 @@ const Top = () => {
   })
 
 
-  // `model/target/<t>.aon` is OWNED by `target add` — it is overwritten
-  // from the scaffold on every resync — and doctor did not look at it. So a
-  // project that put a decision there (a pinned npm package name, in the case
-  // that prompted this) had it silently reverted, with the only report of the
-  // fork being the regression itself, later.
   test('a hand-edited target model reads as forked', async () => {
     const project = await addedProject()
 
@@ -293,13 +247,6 @@ const Top = () => {
   })
 
 
-  // The clean case for a target whose scaffold carries `$$ref$$`
-  // placeholders. `differs()` used to skip interpolation whenever the replace
-  // map was empty — which it is for the whole `src/cmp` tree — while
-  // jostraca's Copy ALWAYS interpolates. So
-  // `src/cmp/ts/fragment/Config.fragment.ts` (`$$const.Name$$`) read as
-  // FORKED straight out of `target add`, in every project with ts, js or
-  // dart. `go` cannot catch this: it has no such fragment.
   test('a freshly added ts target reports no drift either', async () => {
     const project = makeProject({})
 
@@ -313,12 +260,6 @@ const Top = () => {
     strictEqual(report.ok, true, 'fresh ts project is not ok')
   })
 
-  // ALIASED TARGETS. Before `origname` was recorded, doctor rebuilt the ref
-  // as `<base>/../<installed name>` — so `ts~ts2` sent it looking for a `ts2`
-  // scaffold that does not exist. Both trees walked empty, so every component
-  // read as `additive` and every template as `stale` (a FAILING category):
-  // real edits were undetectable AND doctor went red on pure noise, for every
-  // project carrying an alias.
   test('an aliased target is CHECKED, against the tree it came from', async () => {
     const project = makeProject({})
 
@@ -393,12 +334,6 @@ const Top = () => {
 
 
   test('a copy missing only a LATER provenance key is resync-pending', async () => {
-    // The keys arrived in stages — `base`/`origname` first, `package` with
-    // the manifest — so a project that resynced between two of them holds a
-    // copy that IS stamped and is still missing a later key. Treating
-    // "stamped at all" as the test made every one of those a fork: on the
-    // released 3.4.8 scaffold only ts, csharp and swift carried the anchor,
-    // and `ts` is in essentially every consumer SDK.
     const project = makeProject({})
     await target_add([targetRef('go')], project.actx)
     project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
@@ -418,8 +353,6 @@ const Top = () => {
 
 
   test('a CHANGED provenance value is still a fork', async () => {
-    // The narrowness the previous rollout's review required: the copy keeps
-    // the old line, so it is unmatched and the tolerance does not apply.
     const project = makeProject({})
     await target_add([targetRef('go')], project.actx)
     project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
@@ -438,13 +371,6 @@ const Top = () => {
 })
 
 
-// EVERY KIND'S COPIED MODEL FILE, not just targets'.
-//
-// `add` writes `model/feature/<f>.aon` exactly as it writes
-// `model/target/<t>.aon`, and overwrites it on every resync — `target add`
-// re-runs `feature add` for every active feature. Only the target one was
-// compared, so a hand-edit to an installed feature definition read as
-// perfectly in sync and was reverted with nothing said.
 describe('doctor: feature model files', () => {
 
   async function withFeature() {
@@ -524,14 +450,6 @@ describe('doctor: feature model files', () => {
 })
 
 
-// A FEATURE PACKAGE'S PER-TARGET SOURCE — design §12.3.
-//
-// A feature supplied by a different package than the target ships its
-// per-target source in its OWN `tm/<target>/` overlay, and `feature add`
-// copies that into the project. Compared against the target's scaffold alone,
-// those files are present in the project and absent upstream — so every one
-// of them was reported STALE, a FAILING category. Any project using an
-// external feature had a red `doctor` and nothing wrong with it.
 describe('doctor: a feature package\'s overlay for someone else\'s target', () => {
 
   const FEATURE = `
@@ -705,23 +623,8 @@ main: kit: feature: circuitbreaker: {
 })
 
 
-// `base`, `origname` and `package` ARE NOT RESERVED WORDS.
-//
-// `main: kit: target: <t>: module: package` (the Go root package identifier)
-// and `publish: registry: package` (the published package name) are declared
-// model slots — see model/sdkgen.aon — and a target model may write either
-// in block form, on its own line, indistinguishable from a provenance line to
-// any regex that matches on the key alone.
-//
-// Such a regex got BOTH directions wrong, which is why the tolerance now
-// compares against the exact lines `provenanceReplace` emits.
 describe('doctor: a model key that merely LOOKS like provenance', () => {
 
-  // A third-party target whose model sets `module: package` as a BLOCK — a
-  // declared schema slot (`main: kit: target: &: module: package`), holding
-  // the Go root package identifier. Shipped from a package with a manifest,
-  // so the provenance stamp carries a `package:` line of its own and the two
-  // are genuinely ambiguous to a key-only match.
   const MODEL = `
 main: kit: target: 'acme-go': {
 
@@ -811,11 +714,6 @@ main: kit: target: 'acme-go': {
 
 
   test('the lookalike is still COMPARED, so deleting it is a fork', async () => {
-    // The mirror, and the worse half: a key-only match stripped the real
-    // `module: package:` line from both sides, so deleting it — a genuine
-    // fork, silently reverted by the next `target add` — passed the check.
-    // That is precisely the class of hidden fork the previous review round
-    // required be caught.
     const report = await acmeReport((src: string) =>
       dropProvenancePackage(src)
         .split('\n')

@@ -1,10 +1,3 @@
-// Behavioural tests for the enterprise features shipped with this SDK
-// (mirrors tm/go/test/feature_test.go). Feature behaviour is unit-tested
-// by driving each feature through a faithful miniature of the real
-// operation pipeline against a configurable mock transport — the same hook
-// order and short-circuit rules as the generated entity op code, but with
-// no live server and no API-specific fixtures. Each block runs only when
-// its feature is present in this SDK (see common::fh_present).
 
 mod common;
 
@@ -1828,15 +1821,6 @@ fn feature_proxy_inactive_does_not_wrap() {
 
 // --- station --------------------------------------------------------------------
 
-// The station adapter (installed by @voxgig/sdkgen-station) with NO open
-// station must be an inert no-op that emits nothing and fails nothing
-// (station design 3.1). Constructed through the generated make_feature
-// factory - never a compile-time module reference - so this file stays
-// compilable both with and without the station feature installed: absent,
-// the factory answers with the inert BaseFeature and fh_present skips the
-// assertions. Bound behaviour (registration, injection, wire events) is
-// exercised by the station library's own suite and the consumer-side
-// station validation, not here.
 #[test]
 fn feature_station_inert_without_open_station() {
     if !fh_present(&["station"]) {

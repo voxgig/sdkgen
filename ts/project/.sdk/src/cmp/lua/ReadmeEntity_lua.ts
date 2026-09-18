@@ -19,12 +19,8 @@ function luaLit(type: any, placeholder: string = 'example'): string {
   return `"${placeholder}"`
 }
 
-// Non-identifier table keys use bracket syntax.
 
 
-// Operation method spelling differs between Go and other languages — Go
-// uses PascalCase methods with explicit ctrl arg, others use lowercase
-// methods with optional ctrl. The op descriptions are language-agnostic.
 const OP_DESC: Record<string, { method: string, desc: string }> = {
   load:   { method: 'load(match)',   desc: 'Load a single entity by match criteria.' },
   list:   { method: 'list(match)',   desc: 'List entities matching the criteria.' },
@@ -56,7 +52,6 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
     const fields = entity.fields || []
-    // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
     // Sanitise the local variable name — an entity whose lowercased name is a
     // Lua keyword (e.g. `end`) would otherwise emit uncompilable code.
@@ -113,9 +108,6 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     }
 
     if (opnames.includes('load')) {
-      // The id key plus every REQUIRED match key (parent path params like
-      // page_id) — the same shape the runtime resolves path params from, so
-      // the example always works.
       const loadItems = opRequestShape(entity, 'load').items
         .filter((it: any) => !it.optional || it.name === idF)
         .sort((a: any, b: any) =>

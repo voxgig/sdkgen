@@ -16,52 +16,6 @@ import {
 } from '@voxgig/apidef'
 
 
-// WHERE THE CREDENTIAL GOES IS A FACT ABOUT THE API, so it is generated
-// rather than templated. This is the cpp peer of PrepareAuth_ts,
-// PrepareAuth_c and PrepareAuth_go; read PrepareAuth_ts first, it carries
-// the full account of the defect.
-//
-// apidef has always resolved the scheme's `in` and `name` into
-// `main.kit.info.security` — joplin's says `in: "query", name: "token"` —
-// and generation dropped both, hardcoding
-//
-//   static const std::string HEADER_AUTH = "authorization";
-//
-// so the SDK sent a header the API does not read and never sent the query
-// parameter it does.
-//
-// A template cannot fix this, because the three placements need three
-// different bodies and a template has to pick one. A component emits the
-// branch this API actually uses and nothing else — no dead query code in a
-// bearer-token SDK, and no runtime `if` on a value fixed at generation
-// time. In cpp it also keeps the includes honest: the base64 encoder the
-// Basic branch needs (the cpp core ships none) is emitted only by the one
-// placement that can use it.
-//
-// CPP IS THE ONE TARGET WITH NO prepare_auth TEMPLATE TO DELETE. The logic
-// was EMBEDDED in `tm/cpp/utility/pipeline.hpp`, between preparePath and
-// transformRequest, and the extraction shape is the PREFERRED one rather
-// than the whole-module fallback:
-//
-//   - the SDK runtime is HEADER-ONLY, so "its own compilation unit" is its
-//     own HEADER — `utility/prepare_auth.hpp`. Nothing has to move to a
-//     .cpp, nothing new has to be compiled or linked, and the Makefile's
-//     `SDK_HDRS := $(wildcard ... utility/*.hpp ...)` already lists it as a
-//     rebuild dependency of every test binary.
-//
-//   - the BINDING is untouched. `prepareAuth` stays `inline SpecPtr
-//     prepareAuth(CtxPtr)` in `namespace sdk::util`; pipeline.hpp includes
-//     this header at the top (beside `../core/types.hpp`, outside any
-//     namespace) and its `register_all` still binds
-//     `u.prepareAuth = util::prepareAuth;`. Every call site therefore
-//     resolves exactly as before: `utility->prepareAuth(ctx)` in
-//     pipeline.hpp's own makeSpec, `u->prepareAuth(ctx)` in
-//     core/types.hpp, and `utility->prepareAuth(ctx)` in the shipped
-//     test/pipeline_test.cpp and test/primary_utility_test.cpp.
-//
-// Generating the whole of pipeline.hpp instead would have turned 1300 lines
-// of hand-maintained runtime — every other pipeline step, makeOptions, the
-// feature hooks — into a generator string literal to buy one function.
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -72,20 +26,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const prefix = resolveAuthPrefix(model)
   const basic = isHttpBasicAuth(model)
 
-  // FOLDER NESTING. Main_cpp calls this at ROOT level — after the
-  // `Folder({name:'core'})` that wraps Config and client.hpp has closed —
-  // so `utility` is opened HERE and the file lands at
-  // `<root>/utility/prepare_auth.hpp`, the sibling of the
-  // `utility/pipeline.hpp` that `Copy({from:'tm/cpp'})` brings in and that
-  // `#include "prepare_auth.hpp"`s it by that relative name.
-  //
-  // The call site matters as much as the folder. Putting this beside Config
-  // would write `core/utility/prepare_auth.hpp`: pipeline.hpp's include
-  // would not resolve and the build would fail — loudly, which is the good
-  // case. The bad case is the ts port's: opening a redundant second folder
-  // (`src` there, `utility` here — `utility/utility/prepare_auth.hpp`)
-  // emits a file nothing includes while a stale copy keeps being compiled,
-  // and no test can see it.
   Folder({ name: 'utility' }, () => {
     File({ name: 'prepare_auth.' + target.ext }, () => {
       Content(render({ active, where, name, prefix, basic }))
@@ -94,31 +34,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
 })
 
 
-// NOT `isAuthActive`, AND THE DIFFERENCE IS LOAD-BEARING (the py port found
-// this first; six of the twelve ports found it independently).
-//
-// `isAuthActive` is false whenever the SPEC declares no security scheme
-// (`main.kit.info.auth: false`). That is a statement about the DEFINITION,
-// not a ban on ever sending a credential: apidef writes it for every spec
-// with no securitySchemes block, and those SDKs are still expected to
-// honour an `apikey` the caller passes. `optspec` always declares `apikey`,
-// makeOptions fills `options.auth` from the optspec defaults, so the
-// template's `is_nullish(getp(options, "auth"))` guard never actually fired
-// and every such SDK has always sent `options.apikey`.
-//
-// Gating the body on `isAuthActive` therefore does not trim dead code, it
-// deletes working authentication — and takes the secrets feature with it,
-// since that resolves a secret into `options.apikey` and prepareAuth then
-// places nothing. This target has a lane that catches it: generatedcompile's
-// `cpp: auth null beats an explicit apikey` builds test/authnull_probe.cpp
-// against a fixture whose model says `main: kit: info: { ... auth: false }`
-// and requires the baseline `{apikey: 'OPTKEY01'}` to reach
-// `spec->headers["authorization"]`.
-//
-// So the no-op is emitted only when the PROJECT says so:
-// `main.kit.config.auth.active: false`, an explicit per-SDK switch nobody
-// sets by accident. A spec that is merely silent keeps the credential path
-// it has always had.
 function authSwitchedOn(model: any): boolean {
   const auth = getModelPath(model, `main.${KIT}.config.auth`,
     { only_active: false, required: false })
@@ -222,10 +137,6 @@ inline std::string authBase64(const std::string& in) {
 
 `
 
-  // The template's body, unchanged except for WHICH bag the credential
-  // lands in and under what name. Same option keys (`auth`, `apikey`,
-  // `auth.prefix`), same NOT_FOUND sentinel, same `skip` test, same
-  // `throw ctx->makeError("auth_no_spec", ...)`, same Group A reads.
   const preamble = `inline SpecPtr prepareAuth(CtxPtr ctx) {
   SpecPtr spec = ctx->spec;
   if (!spec) throw ctx->makeError("auth_no_spec", "Expected context spec property to be defined.");
@@ -298,15 +209,6 @@ ${place(spec.where)}
 }
 
 
-// COOKIE SPLICING. A cookie IS a header, so the credential rides the header
-// bag — but the `cookie` header is SHARED with whatever cookies the caller
-// set, so our pair is spliced in and out rather than the header assigned
-// over. Splicing also makes this idempotent: a retried request cannot end
-// up carrying the credential twice.
-//
-// `cred` is a parameter rather than a file-scope constant so the one
-// constant in this file stays where the template put it — a function-local
-// static inside prepareAuth.
 function cookieHelpers(): string {
   return `// The cookie header minus our own pair, every other cookie untouched.
 inline std::string authCookieRest(const Value& headers, const std::string& cred) {
@@ -361,35 +263,16 @@ inline void authCookieApply(const Value& headers, const std::string& cred,
 }
 
 
-// The credential's key, as it goes into the bag.
-//
-// A HEADER name is LOWERCASED. HTTP header names are case-insensitive
-// (RFC 9110 5.1), and this SDK's own header map is keyed in lowercase
-// throughout — `content-type` in makeSpec, the `authorization` the shipped
-// test/pipeline_test.cpp and test/primary_utility_test.cpp assert on, the
-// `authorization` feature/secrets.hpp injects and retracts, and the
-// `authorization` generatedcompile's cpp auth-null probe reads — while the
-// template this replaces said `"authorization"` outright. apidef writes
-// `name: "Authorization"`, so emitting the resolver's value verbatim would
-// put the credential under a key nothing in this runtime reads.
-//
-// A QUERY parameter and a COOKIE name are case-SENSITIVE, so those go in
-// verbatim: `?token=` is not `?Token=`.
 function credLiteral(where: string, name: string): string {
   return 'header' === where ? String(name).toLowerCase() : String(name)
 }
 
 
-// The bag the credential lands in, per placement. It is both the local
-// variable name and the Spec field, which in cpp are spelled the same
-// (spec->headers / spec->query). Cookies ride the header bag because a
-// cookie IS a header.
 function bagName(where: string): string {
   return 'query' === where ? 'query' : 'headers'
 }
 
 
-// Drop any stale credential.
 function clear(where: string, indent: number): string {
   const pad = ' '.repeat(indent)
 
@@ -403,22 +286,14 @@ function clear(where: string, indent: number): string {
 
 function place(where: string): string {
   if ('query' === where) {
-    // NO PREFIX IN A QUERY STRING. `?token=Bearer%20abc` is not a thing any
-    // API reads; the prefix is a header convention and is dropped here
-    // deliberately rather than silently concatenated. makeUrl appends
-    // spec->query to the URL after this runs, so the parameter reaches the
-    // wire escaped by the same escurl every other query parameter uses.
     return `    map_put(query, CRED_NAME, Value(apikey.is_string() ? apikey.as_string() : ""));`
   }
 
   if ('cookie' === where) {
-    // NO PREFIX IN A COOKIE either — a cookie carries a bare `name=value`
-    // pair, not a header's scheme-prefixed credential.
     return `    authCookieApply(headers, CRED_NAME,
       apikey.is_string() ? apikey.as_string() : "", false);`
   }
 
-  // The template's header body, unchanged.
   return `    std::string authPrefix = as_str(Struct::getpath(options, {"auth", "prefix"}));
     std::string apikeyVal = apikey.is_string() ? apikey.as_string() : "";
     // A raw credential (empty prefix, e.g. an apiKey scheme) must go in

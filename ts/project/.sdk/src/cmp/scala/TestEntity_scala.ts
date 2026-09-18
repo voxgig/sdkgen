@@ -24,11 +24,6 @@ import {
 import { scalaVarName } from './utility_scala'
 
 
-// Scala GenCtx mirrors the java donor's shape (see TestEntity_java.ts). The
-// scala per-entity test is a dependency-free scala-cli object (default
-// package) exposing run(rep) — driven by the generated SdkEntityTestMain
-// aggregator. Only the offline unit path is emitted: the in-memory test
-// transport serves the fixtures, so there is no live/env/synthetic machinery.
 type GenCtx = {
   model: Model
   entity: ModelEntity
@@ -217,9 +212,6 @@ const generateList: OpGen = (ctx, step, index) => {
 `)
   }
 
-  // Select-by-id assertions require the DATA type to carry an id field
-  // (entityDataIdField); an entity keyed only on a load-MATCH id it does not
-  // return as data has no `.get("id")` to compare, so skip them.
   const hasDataId = null != entityDataIdField(entity)
   const allSteps = Object.values(flow.step) as any[]
   const listvarUsed = hasDataId && !!step.valid?.some((v: any) => {

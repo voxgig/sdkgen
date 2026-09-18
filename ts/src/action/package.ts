@@ -1,30 +1,4 @@
 import { kindCollection } from '../helpers/kindCollection'
-// `package add` / `package list` — the whole-package verbs.
-//
-// See docs/design/sdkgen-packages.md §9.
-//
-// WHAT `package add` IS
-//
-// Not a new copy pipeline. It resolves a package ROOT, validates its manifest,
-// and then runs the SAME per-kind add that `target add` / `feature add` run,
-// once per provided item. Index handling, provenance stamping, feature
-// fan-out, dry run and logging all come along unchanged, because they are not
-// reimplemented. The value it adds over typing the individual adds is:
-//
-//   - the manifest is REQUIRED and validated first, so a package that lies
-//     about what it provides fails before anything is written rather than
-//     halfway through;
-//   - the engine range is checked once, for the package, rather than never;
-//   - ordering: targets before features, because `feature add` fans a
-//     feature's source out across the targets already in the model, so a
-//     feature installed first would find none of the package's own targets.
-//
-// WHY VALIDATION COMES FIRST, ALL OF IT
-//
-// The items are installed in a loop. If the fourth one turns out not to be in
-// the package, the first three are already written and the project is left
-// half-installed with a partial index. Validating the whole claim up front is
-// what makes the loop safe to run at all.
 
 import Path from 'node:path'
 
@@ -67,18 +41,6 @@ const CMD_MAP: any = Object.assign(Object.create(null), {
 })
 
 
-// The kinds `package add` installs, IN ORDER.
-//
-// Targets first. `feature add` copies a feature's per-target source into every
-// target already in the model, so a feature installed before the package's own
-// targets would silently ship no source for them — the `feature-source-missing`
-// warning, once per target, and a feature that does nothing.
-//
-// Docs LAST, for the mirror-image reason: a docs item is ABOUT the targets and
-// features a project has (a page per SDK, a page per feature), and while it
-// reads them at generate time rather than at add time, installing it last
-// keeps the add log in the order a reader would expect and leaves the model
-// complete before anything reads it.
 const ADD_ORDER = ['target', 'feature', 'edition']
 
 
@@ -98,13 +60,6 @@ async function action_package(
 }
 
 
-// Where a package ROOT is, given a ref.
-//
-// The same probe chain `resolveSource` uses for an item, one level up: an
-// installed npm package first, then a path relative to the project, then an
-// absolute path. A package root is the folder HOLDING `.sdk`, which is what
-// makes `<root>/<item>` the item ref — so the two resolvers agree by
-// construction about what a package is.
 type PackageSource = {
   ref: string
   root: string
@@ -124,10 +79,6 @@ function resolvePackage(ref: string, actx: ActionContext): PackageSource {
 
   const { root, sdk, read } = found
 
-  // A `.sdk` folder with no manifest is a legal source for a DIRECT ref and
-  // is what every pre-manifest fixture is — but `package add` is the verb
-  // that acts on a manifest, so here its absence is the error, and it says
-  // which of the two commands the user wants.
   if (null == read.manifest) {
     throw new SdkGenError(
       'No package manifest: ' + read.file +
@@ -166,12 +117,6 @@ function refuse(src: PackageSource, found: Finding[], log: any) {
 }
 
 
-// Is this generator new enough for the package?
-//
-// `undefined` from `satisfies` means the range is outside the subset it
-// understands — see helpers/semver. That is reported and ALLOWED: refusing on
-// a range nobody could parse would block a package that works, which is worse
-// than the incompatibility being guarded against.
 function checkEngine(src: PackageSource, actx: ActionContext) {
   const range = src.manifest.engines?.sdkgen
 
@@ -213,24 +158,11 @@ const SDKGEN_VERSION: string = (() => {
 })()
 
 
-// The items to install, as `<kind>` -> names, after `--only` is applied.
-//
-// `--only target:iot-go,feature:circuitbreaker` — a subset of what the
-// manifest provides, named the same way the manifest keys them. A name that
-// the package does not provide is an ERROR listing what it does, rather than
-// a silent no-op: a typo'd `--only` that installed nothing and reported
-// success is the failure this whole verb exists to remove.
 function selectItems(
   src: PackageSource, only: string | undefined, log: any,
 ): Record<string, string[]> {
   const provides = src.manifest.provides ?? {}
 
-  // ABSENT means "everything"; EXPLICITLY EMPTY does not.
-  //
-  // `--only=` and `{ only: '' }` are what a script gets when it builds the
-  // flag from an empty variable, and treating that as absent installs the
-  // whole package — the opposite of what the operator asked for, at the one
-  // moment nobody is watching.
   if (null == only) {
     return provides
   }
@@ -288,10 +220,6 @@ function describeProvides(provides: Record<string, string[]>): string {
 }
 
 
-// `--alias iot-go=acme-go,other=thing` — the install-time renames, by ORIGIN
-// name. Only kinds that permit aliasing may appear; a feature alias is
-// refused here with the same explanation `feature add` gives, so the two
-// entry points cannot disagree about what is allowed.
 function parseAliases(
   alias: string | undefined, wanted: Record<string, string[]>,
 ): Record<string, string> {
@@ -318,13 +246,6 @@ function parseAliases(
     const from = spec.slice(0, eq)
     const to = spec.slice(eq + 1)
 
-    // Checked HERE as well as in the resolver, because the two catch
-    // different things. The resolver sees whatever survives ref parsing, so
-    // it catches `iotgo=..`; but `iotgo=../../elsewhere` is concatenated into
-    // `<root>/iotgo~../../elsewhere`, whose last segment is `elsewhere` and
-    // which therefore stops looking like an alias at all — it resolves as a
-    // ref to a different item and fails confusingly instead. Same grammar in
-    // both places, so they cannot disagree about what a name is.
     if (!ITEM_NAME_RE.test(to)) {
       throw new SdkGenError(
         'Invalid alias in --alias ' + JSON.stringify(spec) + ': ' +
@@ -388,14 +309,6 @@ async function package_add(
       ' were given: ' + refs.join(', '))
   }
 
-  // PREFLIGHT EVERY PACKAGE BEFORE INSTALLING ANY OF THEM.
-  //
-  // The same argument that makes this verb validate a manifest in full before
-  // writing anything applies across refs: `package add good,bad` that
-  // installed `good` and then failed would leave exactly the half-completed
-  // command the guarantee is about. Resolution, the engine gate, manifest
-  // validation, `--only` selection and the name-collision check all happen
-  // here, for all of them, before the first file is written.
   const plan = refs.map((ref: string) => plan_one(ref, flags, actx))
 
   checkCollisions(plan, actx)
@@ -485,16 +398,6 @@ function plan_one(
 }
 
 
-// Would any of this REPLACE something the project got from elsewhere?
-//
-// `add` is overwrite, deliberately — that is how a resync works. But
-// overwriting one package's `go` with a different package's `go` is not a
-// resync: it silently replaces a working target's model, components and
-// templates. The project asked for a package, not for that.
-//
-// Checked across the WHOLE plan, so two packages in one command claiming the
-// same name are caught too — the second would otherwise conflict with nothing,
-// because the first is not installed yet either.
 function checkCollisions(plan: Planned[], actx: ActionContext) {
   const claimed = new Map<string, string>()
   const clashes: string[] = []
@@ -570,22 +473,6 @@ function registerAdder(
 }
 
 
-// The adder for a kind, LOADING THE REGISTRATIONS IF NOBODY HAS YET.
-//
-// `dispatch` is what calls `registerAdder`, and until this, whether it had
-// been loaded depended on the importer: `sdkgen.ts` pulls it in, so the CLI
-// worked, but anything importing this module directly got an empty table —
-// and `package add` / `package update` then skipped every item with a
-// `package-kind-unsupported` warning and reported success. It silently did
-// nothing.
-//
-// Found the hard way: a throwaway script written to reproduce a review
-// finding imported this module alone, and the "update" it performed was a
-// no-op that looked like a passing result. A capability that depends on some
-// other module having been imported first is not a capability.
-//
-// Required lazily rather than at the top, because `dispatch` imports THIS
-// module; by call time the cycle has resolved.
 function adderFor(
   kind: string,
 ): ((refs: string[], actx: ActionContext) => Promise<any>) | undefined {
@@ -597,34 +484,6 @@ function adderFor(
 }
 
 
-// `package update <pkg>` — refresh everything a package supplied.
-//
-// See docs/design/sdkgen-packages.md §13.
-//
-// THE ORDER IS THE SAFETY PROPERTY, which is why this command owns the fetch
-// instead of telling the operator to run `npm update` first:
-//
-//   1. CHECK the project's copies against the source AS CURRENTLY INSTALLED
-//   2. FETCH the new version
-//   3. RE-ADD each item
-//
-// Measured at step 1, a copy that differs from its source means the project
-// changed it. Run the other way round — fetch first, then check — every item
-// legitimately differs from the new source, the gate fires on all of them,
-// and the operator learns to pass `--force` every time. That ordering bug
-// would make the gate worse than useless, because the same signal (copy
-// differs from source) carries both meanings and only sequence separates
-// them.
-//
-// WHAT THE GATE CANNOT DO, and says so
-//
-// It cannot prove which meaning applies. If the operator already ran
-// `npm update` in another shell, step 1 is measuring against the NEW source
-// and a difference means "stale", not "forked" — and nothing recorded in the
-// project distinguishes the two. So the refusal states both readings and
-// gives a runnable out for each, rather than asserting a fork it cannot
-// diagnose. (A per-file digest recorded at add time would make it exact;
-// deferred, design §17.9.)
 async function cmd_package_update(
   args: string[], actx: ActionContext,
 ): Promise<ActionResult> {
@@ -652,13 +511,6 @@ type Installed = {
 }
 
 
-// Everything the model says came from `pkgname`.
-//
-// By RECORDED PROVENANCE, not by asking the package what it provides: what
-// this refreshes is what the project actually installed, which may be a
-// subset (`--only`) or carry aliases the package never mentions. Asking the
-// package would refresh things the project does not have and miss the ones it
-// renamed.
 function installedFrom(pkgname: string, actx: ActionContext): Installed[] {
   const kit: any = (actx.model as any)?.main?.[KIT] ?? {}
   const found: Installed[] = []
@@ -749,21 +601,6 @@ async function package_update(
 }
 
 
-// EVERYTHING THE RE-ADD WILL WRITE, not just the package's own items.
-//
-// The gate is only worth having if it covers what step 3 actually touches,
-// and step 3 touches more than it is asked to: `target_add` re-runs
-// `feature_add` for EVERY active feature in the model, whoever supplied it.
-// So updating a target package rewrites the model file of a feature that came
-// from somewhere else — and a scope of "this package's items" never looked at
-// it, so a local edit there was overwritten without `--force`, by the command
-// whose whole promise is that it asks first.
-//
-// The features are added to the scope, not the fan-out narrowed: what the
-// re-add does is `target add`'s long-standing behaviour, and changing it here
-// would make `package update` write something different from what a
-// hand-typed add writes — the equivalence every other part of this verb is
-// built on.
 function blastRadius(
   installed: Installed[], actx: ActionContext,
 ): Set<string> {
@@ -802,10 +639,6 @@ async function preCheck(
 
   const report = res.report
 
-  // `forked` and `edited` only. `missing` means the project is short of what
-  // add would write, which an update FIXES; `resyncPending` is provenance
-  // catching up, which an update also fixes; `aliasedDiff` is the project's
-  // own differentiation of an alias, which step 3 does not touch anyway.
   const changed = [...report.forked, ...report.edited]
 
   if (0 === changed.length) {
@@ -837,13 +670,6 @@ async function preCheck(
 }
 
 
-// STEP 2: fetch. Injectable, so tests do not shell out and a caller with its
-// own dependency management can supply one.
-//
-// `--no-fetch` covers the operator who has already fetched deliberately and
-// accepts that step 1 measured against the new source. It is not the default
-// because then this command would only ever re-apply the source it already
-// has, which is `package add`.
 async function fetchPackage(
   pkgname: string, installed: Installed[], actx: ActionContext,
 ) {
@@ -857,13 +683,6 @@ async function fetchPackage(
     return
   }
 
-  // A DRY RUN MUST NOT FETCH. The adders honour `actx.opts.dryrun` and write
-  // nothing, but an unconditional `npm install --save-dev` rewrites
-  // package.json, the lockfile and node_modules — mutating dependency state
-  // in the one mode whose entire promise is that nothing changes. This
-  // workstream has already fixed one dry-run defect (pruneStaleTemplates
-  // deleting files during a dry run); the fetch is the same failure in a
-  // louder place, because it reaches outside the project.
   if (true === actx.opts?.dryrun) {
     actx.log.info({
       point: 'package-update-dryrun-fetch', package: pkgname,
@@ -875,12 +694,6 @@ async function fetchPackage(
 
   const fetch = actx.fetchPackage ?? npmFetch
 
-  // npm CAN ONLY UPDATE WHAT NPM INSTALLED. A package added by a local path
-  // or an absolute checkout records that base, and the re-add reads from it —
-  // so an `npm install` would write a fresh copy into `node_modules`, leave
-  // the recorded source untouched, and the command would then recopy the OLD
-  // content while reporting success and having changed the project's
-  // dependencies. Refused rather than half-done, naming the way to do it.
   if (null == actx.fetchPackage) {
     const local = installed.find((i: Installed) =>
       '' !== i.base && !isNodeModules(i.base))
@@ -909,12 +722,6 @@ function isNodeModules(base: string): boolean {
 }
 
 
-// The default fetch: hand it to npm, in the project's own directory.
-//
-// SHELLING OUT IS DELIBERATE and is the one place this generator runs another
-// tool. The alternative — telling the operator to fetch first — is what makes
-// the pre-check unable to distinguish a fork from a stale copy, which is the
-// entire point of the ordering above.
 async function npmFetch(pkgname: string, actx: ActionContext) {
   const { execFile } = require('node:child_process')
   const { promisify } = require('node:util')
@@ -928,18 +735,6 @@ async function npmFetch(pkgname: string, actx: ActionContext) {
   })
 
   try {
-    // `npm.cmd` ON WINDOWS. `execFile` does no PATHEXT resolution, so plain
-    // `npm` — which is a `.cmd` shim there — fails with ENOENT. Not caught by
-    // CI, because every test injects its own fetcher and this function never
-    // runs; found by reading it rather than by it breaking.
-    //
-    // Arguments as an ARRAY and no `shell: true`, so a package name is never
-    // interpreted by a shell.
-    //
-    // maxBuffer raised well past execFile's 1MB default: `npm install` output
-    // for a large tree exceeds it, and the resulting ENOBUFS would be caught
-    // below and reported as a failed fetch — after npm had in fact SUCCEEDED,
-    // leaving the project's dependencies updated and its `.sdk` not.
     const out = await run(
       'win32' === process.platform ? 'npm.cmd' : 'npm',
       ['install', '--save-dev', pkgname + '@latest'],
@@ -960,17 +755,6 @@ async function npmFetch(pkgname: string, actx: ActionContext) {
 }
 
 
-// STEP 2b: the fetched package is a DIFFERENT package from the one checked.
-//
-// Resolved from a recorded base rather than by name, because that is where
-// the re-add will read from — validating some other copy of the package would
-// be validating the wrong thing.
-//
-// A source with no manifest is not an error here, unlike in `package add`:
-// the project demonstrably installed from it once, and refusing to refresh it
-// now would strand a project whose package predates the manifest. Nothing is
-// validated in that case, which is the same amount as before this command
-// existed.
 function validateFetched(
   pkgname: string, installed: Installed[], actx: ActionContext,
 ) {
@@ -1004,14 +788,6 @@ function validateFetched(
 }
 
 
-// STEP 3: re-add each item from its recorded base.
-//
-// An ALIASED item's model file is left alone, and that is not special-cased
-// here: `kindModel` already creates it `exclude: true` for a kind whose
-// aliased definition is project-owned, so a re-add refreshes `src/cmp` and
-// `tm` from the new origin and leaves the file the project is MEANT to edit
-// untouched. Reported, so the author knows to port upstream model changes by
-// hand rather than discovering later that they were never applied.
 async function reAdd(
   pkgname: string, installed: Installed[], actx: ActionContext,
 ): Promise<any[]> {
@@ -1065,9 +841,6 @@ async function reAdd(
 }
 
 
-// `package list` — what this project has installed, and where each item came
-// from. Read entirely from the MODEL's recorded provenance (§4), which is why
-// there is no lockfile to consult and nothing that can disagree with it.
 async function cmd_package_list(
   _args: string[], actx: ActionContext,
 ): Promise<ActionResult> {
@@ -1075,7 +848,6 @@ async function cmd_package_list(
   const fs = actx.fs()
   const kit: any = (actx.model as any)?.main?.[KIT] ?? {}
 
-  // package name -> kind -> [{name, base, origname}]
   const groups: Record<string, any[]> = Object.create(null)
 
   for (const kind of Object.keys(KINDS).sort()) {

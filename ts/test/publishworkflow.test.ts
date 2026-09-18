@@ -94,14 +94,6 @@ describe('PublishWorkflow', () => {
   })
 
 
-  // EACH TARGET'S WORKFLOW NAMES ITS OWN PACKAGE.
-  //
-  // `packageName(model, 'npm')` resolves the ECOSYSTEM's primary target — ts
-  // — so resolving by ecosystem gave every npm target the ts package name:
-  // publish-js.yml claimed the ts package while `js/` publishes its own. It
-  // would have checked the wrong package on the registry and told a
-  // maintainer to trust the wrong one, while `npm publish` shipped the right
-  // one — wrong in three places, and green everywhere.
   test('each npm target names its own package', async () => {
     const out = await render({
       ts: {
@@ -132,9 +124,6 @@ describe('PublishWorkflow', () => {
   })
 
 
-  // THE MAINTAINER DOC IS NOT TARGET DOCUMENTATION. The target directories
-  // describe the SDK to the people who INSTALL it; how this repository
-  // releases is none of their business, so it lives beside the generator.
   test('the set-up doc goes to .sdk, not into the target', async () => {
     const out = await render(NPM_TS)
 
@@ -194,10 +183,6 @@ describe('PublishWorkflow', () => {
   })
 
 
-  // A RELEASE THAT LEAVES NO REF CANNOT BE ANSWERED LATER. 0.0.3 of the
-  // GitHub SDK published by dispatch while the repository still had only
-  // v0.0.1 and v0.0.2: nothing in git said which tree the tarball came from,
-  // and nothing downstream could pin the SDK by tag.
   test('a successful publish is tagged', async () => {
     const out = await render(NPM_TS)
     const wf = out['.github/workflows/publish-ts.yml']
@@ -249,11 +234,6 @@ describe('PublishWorkflow', () => {
   })
 
 
-  // ONE BARE TAG PER REPOSITORY. `ts/` and `js/` are separate packages on a
-  // lockstep version, so a bare `v<version>` cut by each would be two targets
-  // racing for one name — and the loser fails a release that has already
-  // published. The primary npm target owns the bare tag; the rest are
-  // prefixed, as apidef tags `go/v<version>` beside its `v<version>`.
   test('only the primary npm target owns the bare tag', async () => {
     const out = await render({
       ts: {

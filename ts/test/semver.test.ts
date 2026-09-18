@@ -1,14 +1,3 @@
-// THE ENGINE-RANGE CHECK, and the direction it is allowed to be wrong in.
-//
-// `satisfies` has THREE outcomes: true, false, and `undefined` for "this
-// range is outside the subset I understand". That third one is the whole
-// design. Getting a range check wrong in the strict direction refuses a
-// package that would have worked — a worse failure than the incompatibility
-// it guards against — so anything unparsed must come back undefined and let
-// the caller proceed, never false.
-//
-// This exists instead of node-semver because the package has no runtime
-// dependencies and the field being read is one optional manifest key.
 
 import { test, describe } from 'node:test'
 import { strictEqual, deepStrictEqual } from 'node:assert'
@@ -84,7 +73,6 @@ describe('satisfies', () => {
     strictEqual(satisfies('3.4.0', '<3.4'), false)
     strictEqual(satisfies('3.3.9', '<3.4'), true)
 
-    // A FULL version keeps exact-comparison semantics.
     strictEqual(satisfies('3.4.8', '>3.4.0'), true)
     strictEqual(satisfies('3.4.8', '<=3.4.8'), true)
     strictEqual(satisfies('3.4.9', '<=3.4.8'), false)
@@ -92,8 +80,6 @@ describe('satisfies', () => {
 
 
   test('caret narrows to the first NON-ZERO component', () => {
-    // npm treats a leading zero as unstable. Getting this wrong would admit
-    // 0.3.0 for ^0.2.3 — a breaking change by that convention.
     strictEqual(satisfies('1.9.9', '^1.2.3'), true)
     strictEqual(satisfies('2.0.0', '^1.2.3'), false)
     strictEqual(satisfies('1.2.2', '^1.2.3'), false)
@@ -152,8 +138,6 @@ describe('satisfies: what it refuses to guess at', () => {
 
 
   test('a hyphen range is rejected EXPLICITLY', () => {
-    // Read as a conjunction of two bare versions it would be unsatisfiable —
-    // a false refusal — so it is caught before the split rather than after.
     strictEqual(satisfies('2.0.0', '1.2.3 - 2.3.4'), undefined)
   })
 
@@ -172,7 +156,6 @@ describe('satisfies: what it refuses to guess at', () => {
     // checked only half the range.
     strictEqual(satisfies('4.0.0', '^3 || latest'), undefined)
 
-    // ...but an alternative that MATCHES still wins, whatever the rest says.
     strictEqual(satisfies('3.1.0', '^3 || latest'), true)
   })
 

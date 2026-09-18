@@ -29,16 +29,6 @@ import { PrepareAuth } from './PrepareAuth_ocaml'
 import { entityModule, ocamlString } from './utility_ocaml'
 
 
-// Features whose source is a CONTAINER under the top-level feature/ dir,
-// beside the single template module (sdk_features.ml) every other ocaml
-// feature lives in. Today that is `secrets`: feature/secrets_feature.ml,
-// feature/secrets/ (the vendored @voxgig/sekreto port, the voxgig/plugin
-// host and the provider kinds - some forty modules of key-store,
-// request-signing and child-process code that an SDK which never asked for
-// secrets must not ship) and its shipped suite under test/feature/secrets/.
-// Anything named here is EXCLUDED from the verbatim copy unless the model
-// SELECTS the feature (see the Copy below). The lua and clojure targets gate
-// their containers the same way (Main_lua.ts, Main_clojure.ts).
 const CONTAINED = ['secrets']
 
 
@@ -52,16 +42,6 @@ const Main = cmp(async function Main(props: any) {
   // it has no source for. One rule, one place: helpers/applicability.
   const feature = targetFeatures(model, target)
 
-  // THE feature/<name>/ CONTAINER IS GATED HERE, at generate time - the
-  // top-level-container peer of the `srcFeatureExcludes` gate ts and js
-  // apply to src/feature/<name>/. `target add` keeps an unselected
-  // feature out of a project's tm/ in the first place (ocaml.aon has
-  // `feature: { trim: true }`); this covers a feature switched off after
-  // it was added, and the generator suite, which copies the whole scaffold
-  // tree. An inactive feature's vendored kind files go with it - every
-  // declared group's, not only the groups marked inactive, because
-  // pluginExcludes below walks only ACTIVE features (Main_c's
-  // inactivePluginExcludes, for the same reason one target over).
   const containerExcludes = CONTAINED
     .filter((name: string) => null == (feature as any)[name])
     .flatMap((name: string) => [
@@ -74,22 +54,6 @@ const Main = cmp(async function Main(props: any) {
 
   Gitignore({})
 
-  // Copy tm/ocaml verbatim with ProjectName replacement. The src/ subtree
-  // only stages per-feature custom-source dirs (srcfeature: false, so unused),
-  // excluded like the go/rust targets. Stray compiled artifacts and built
-  // test binaries are excluded defensively. test/vendor/omni (the vendored
-  // @voxgig/omni corpus engine) rides along verbatim - the replacements are
-  // ProjectName-shaped and the port names nothing project-specific, so it
-  // lands byte-identical to its recorded vendored.json digest.
-  //
-  // pluginExcludes: the generate-time plugin trim (an ACTIVE feature's
-  // INACTIVE plugin group's declared files stay out of the tree). The
-  // model's ocaml `path` entries are target-root-relative, which is this
-  // Copy's root - helpers/featureSource documents that getting the root
-  // wrong makes the trim a silent no-op. ocaml has `srcfeature: false`, so
-  // the per-feature Copy in cmp/Feature.ts - where pluginExcludesFor
-  // normally applies this trim - never runs for it, and this whole-tree
-  // Copy is the ONLY copy the target has (Main_go.ts precedent).
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, /\.(cmi|cmo|cmx|cma|cmxa|o|a)$/, /a\.out$/,
@@ -100,26 +64,6 @@ const Main = cmp(async function Main(props: any) {
     }
   })
 
-  // THE BUILD SEAM: feature/secrets/feature.mk, GENERATED only when the
-  // model activates `secrets` for this target. It is what only the model
-  // knows and only a Makefile can say in OCaml - the module list in
-  // DEPENDENCY ORDER (ocamlc compiles a module before anything that uses
-  // it and has no link-time reordering, so a wildcard over the vendored
-  // directories would not build), the -I paths, unix.cma for the dotenv
-  // and file built-ins, the gated suite, and, ONLY when an active plugin
-  // group declares `needs.fetch`, the OpenSSL binding: plugins/tls_stubs.c
-  // compiled and linked with `-custom -cclib -lssl -cclib -lcrypto`. The
-  // template Makefile includes `$(wildcard feature/*/feature.mk)` - it names
-  // no feature itself - and every variable a fragment sets is empty without
-  // one, so an SDK without secrets - or with the built-in
-  // chain alone, or with `secretspec` alone - runs no C compiler and links
-  // no OpenSSL. The shape lua's native.mk and c's kinds.c take.
-  //
-  // The vendored stub opens with the vendoring tool's three-line `(* *)`
-  // provenance header (every file under tm/ocaml is stamped in ocaml's
-  // comment syntax; the guard holds that), which a C compiler cannot
-  // read - so the rule feeds the compiler from line four, as lua's does.
-  // Compiler line numbers are therefore three lower than in the file.
   const build = secretsBuild(model, target)
   if (null != build) {
     Folder({ name: 'feature' }, () => {
@@ -154,13 +98,6 @@ FEATURE_SRC = $(SECRETS_PLUGIN) $(SECRETS_CORE) $(SECRETS_HELPERS) $(SECRETS_KIN
 FEATURE_TESTS = test/feature/secrets/t_secrets.ml
 `)
 
-          // EVERY C OBJECT THIS CHAIN NEEDS, from two different owners.
-          // tls_stubs.c belongs to the transport HELPER, which no group
-          // owns and which any kind reaching the network pulls in;
-          // minivault_stubs.c belongs to the KIND, and is listed in that
-          // group's own `path`. Both link against libcrypto and only the
-          // transport needs libssl, so the link line is assembled rather
-          // than written twice - an SDK with both gets each library once.
           const objs = [
             ...(build.tls ? ['feature/secrets/plugins/tls_stubs.o'] : []),
             ...build.stubs.map((one) => one.replace(/\.c$/, '.o')),
@@ -202,30 +139,16 @@ FEATURE_LINK =
     })
   }
 
-  // Generated API config + branded-error re-export.
   Schema({ target })
   Config({ target })
   SdkError({ target })
 
   // sdk_prepare_auth.ml is GENERATED, not templated: WHERE the credential
   // goes (header / query / cookie, and under what name) is a fact about the
-  // API, and tm/ can only hold one answer. ocaml had no prepare_auth
-  // template to replace - the body was a `let` inside the monolithic
-  // tm/ocaml/sdk_runtime.ml - so this is a real extraction: the module
-  // keeps the `prepare_auth_util` name by aliasing this one, and every
   // existing caller (the utility record, make_spec, the secrets feature's
   // re-run, the shipped suites) resolves unchanged. See PrepareAuth_ocaml.
-  //
-  // AT ROOT LEVEL, with no Folder open. The ocaml tree is flat at the
-  // target root and the Makefile's `RUNTIME` names `sdk_prepare_auth.ml`
-  // by that exact path, between sdk_helpers.ml (which it uses) and
-  // sdk_runtime.ml (which uses it) - ocamlc compiles in the order it is
-  // handed and has no link-time reordering. Emitting it inside a Folder
-  // would put it where neither `RUNTIME` nor `-I .` looks, and
-  // sdk_runtime.ml would fail with `Unbound module Sdk_prepare_auth`.
   PrepareAuth({ target })
 
-  // sdk_client.ml — the client constructors, direct/prepare, and the
   // per-entity accessors (twin of the go root package + rust core/sdk.rs).
   File({ name: 'sdk_client.' + target.ext }, () => {
 
@@ -285,7 +208,6 @@ let prepare (client : sdk_client) (fetchargs : value) : value =
     // rather than naming a generated accessor - the shipped feature suites
     // are templates and know no project's entity names - has no way to reach
     // one without this. The go peer is the untyped interface go-cli/go-mcp
-    // dispatch through. None for a name this SDK did not generate.
     const names = each(entity).map((e: ModelEntity) => e.name).sort()
     if (0 === names.length) {
       Content(`

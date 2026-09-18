@@ -1,15 +1,3 @@
-// Build the list of placeholder ID names that the test setup populates into
-// `setup.idmap`. The set is the union of:
-//   - the entity's own ids (`<entity>01..03`)
-//   - every ancestor entity's ids (`<anc>01..03`)
-//   - every literal string value referenced by `step.match` across the flow
-//     (e.g. path-parameter aliases like `year01` for `/{year}/domain` — apidef
-//     doesn't always populate `relations.ancestors` when the parent in the
-//     path is a bare parameter rather than an entity, so we have to mine the
-//     flow steps directly to avoid KeyError-ing the idmap from generated test
-//     code)
-//
-// Identical helper was previously inlined in TestEntity_{go,py,lua,rb,php}.ts.
 
 const COUNT = 3 // 3 ids per name: <name>01, <name>02, <name>03
 

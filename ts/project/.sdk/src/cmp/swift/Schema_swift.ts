@@ -12,24 +12,6 @@ import {
 } from '@voxgig/apidef'
 
 
-// THE GENERATED SCHEMA MODULE: the model's schemas, as data the SDK can run.
-//
-// The swift peer of src/cmp/ts/Schema_ts.ts. Same two members, same source:
-// optspec from `main.kit.optspec` plus each feature's own `config.options`,
-// entityspec from the entity field sentinels — both built by the shared
-// helpers, so what swift validates against and what ts validates against
-// cannot drift.
-//
-// EMBEDDED AS JSON, PARSED AT LOAD, where ts emits an object literal: JSON is
-// a subset of TypeScript's own literal syntax and is not a subset of swift's.
-// A raw string literal, exactly as Config.swift carries its config — raw
-// (`#"""`) so the spec's own backslashes and quotes need no re-escaping.
-//
-// The round-trip is exact because the spec holds only strings and booleans:
-// pinned by "strings and booleans only, so the JSON round-trip is lossless"
-// in ts/test/optspec.test.ts. That is not incidental — JSON.parse decodes a
-// JSON number to one Value case and struct reads a spec BY EXAMPLE, so one
-// number in here would mean something different in swift than in ts.
 const Schema = cmp(async function Schema(props: any) {
   const ctx$ = props.ctx$
   const target = props.target

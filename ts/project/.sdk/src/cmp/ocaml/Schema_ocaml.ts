@@ -17,29 +17,6 @@ import {
 } from './utility_ocaml'
 
 
-// THE GENERATED SCHEMA MODULE: the model's schemas, as data the SDK can run.
-//
-// The ocaml peer of src/cmp/ts/Schema_ts.ts. Same two members, same source:
-// optspec from `main.kit.optspec` plus each feature's own `config.options`,
-// entityspec from the entity field sentinels — both built by the shared
-// helpers, so what ocaml validates against and what ts validates against
-// cannot drift.
-//
-// EMBEDDED AS JSON, PARSED AT LOAD, where ts emits an object literal: JSON is
-// a subset of TypeScript's own literal syntax and is not a subset of ocaml's.
-// A string constant read by `Sdk_json.json_read`, exactly as sdk_config.ml
-// carries its data rep above the size threshold.
-//
-// COMPILE ORDER. ocaml links a fixed module list, and sdk_runtime.ml's
-// make_options reads this, so sdk_schema.ml is named in RUNTIME (the
-// Makefile) between sdk_helpers.ml and sdk_runtime.ml. It opens nothing of
-// the SDK beyond Voxgig_struct and Sdk_json, so it cannot close a cycle.
-//
-// The round-trip is exact because the spec holds only strings and booleans:
-// pinned by "strings and booleans only, so the JSON round-trip is lossless"
-// in ts/test/optspec.test.ts. json_read yields `Num (float)` for any number,
-// and struct reads a spec BY EXAMPLE, so one number in here would mean
-// something different in ocaml than in ts.
 const Schema = cmp(async function Schema(props: any) {
   const ctx$ = props.ctx$
   const target = props.target

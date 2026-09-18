@@ -1,35 +1,3 @@
-// Entity operations return ENTITIES.
-//
-// THE CONTRACT
-//
-// Every entity operation resolves to the Entity INSTANCE — `load`, `list`,
-// `create`, `update` and `remove` alike. `remove` returns the entity marked
-// as deleted. `.data()` gives back the entity data container instance.
-//
-// This is a fundamental design of the SDK, not a trade-off: entities are
-// stateful (every generated README says so), the operation RESULT is the
-// entity, and the record is reached through it.
-//
-// WHAT WAS WRONG
-//
-// The generated code half-implemented it, and the two halves disagreed:
-//
-//   - `done()` returned `ctx.result.resdata`, so `load`/`create`/`update`
-//     resolved to plain data.
-//   - `makeResult` re-wrapped `list` results into entity instances, so `list`
-//     resolved to entities — while its DECLARED type said `Promise<Planet[]>`,
-//     the data interface. The signature was a lie the compiler cannot catch,
-//     and it is what broke the first downstream integration.
-//
-// Converging on plain records would have INVERTED the design. The fix runs
-// the other way: `done()` returns the entity, and the declared types name the
-// CLASS (`Promise<PlanetEntity>`).
-//
-// WHAT THIS PINS
-//
-// `done` and `makeResult` are TEMPLATES: they ship to users verbatim and are
-// outside sdkgen's own tsconfig, so nothing here compiled them, let alone ran
-// them. This suite transpiles the real shipped files and drives them.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -116,10 +84,6 @@ function makeCtx(opname: string, resdata: any, entity?: any) {
 
 describe('list result shaping', () => {
 
-  // `list` is the one op whose result is a COLLECTION, and makeResult builds
-  // it: one entity instance per record. The op fragment then returns that
-  // array unchanged, which is why `list` is the single exception to
-  // "operations return this entity".
   test('makeResult wraps each list record in an entity instance', () => {
     const made: any[] = []
     const records = [{ id: 'mercury' }, { id: 'venus' }]
@@ -162,14 +126,6 @@ describe('list result shaping', () => {
 })
 
 
-// `done` is the pipeline's TERMINAL step, and it returns the result DATA.
-//
-// The entity contract lives one level up, in the op fragment: it runs `done`
-// to finish the pipeline (and to raise on failure), then returns the entity.
-// That is deliberate — `done` is also driven by `direct()`/`prepare()` and by
-// the streaming path, none of which have an entity to return, and the
-// closed-Value ports (rust, zig, c, cpp) cannot express an entity through the
-// pipeline's Value type at all.
 describe('done', () => {
 
   function doneCtx(ok: boolean, resdata: any) {
@@ -197,13 +153,6 @@ describe('done', () => {
 })
 
 
-// HTTP status, reachable without spelunking.
-//
-// The status used to live only at `err.result.status` — two levels into an
-// object that reads as internal — so every consumer of every generated SDK
-// wrote the same `404 === e?.result?.status` branch and coupled itself to
-// the internal shape of `result`. Mapping "not found" to a null result is
-// table stakes for a client integration.
 describe('error contract', () => {
 
   const { makeError } = loadTemplate('ts/src/utility/MakeErrorUtility.ts', {
@@ -255,7 +204,6 @@ describe('error contract', () => {
     strictEqual(err.status, 404, 'err.status was not promoted')
     strictEqual(err.notFound, true, 'err.notFound did not derive from the status')
 
-    // And the old path still works, so this is additive.
     strictEqual(err.result.status, 404)
   })
 
@@ -267,8 +215,6 @@ describe('error contract', () => {
   })
 
 
-  // A transport failure never got a response, so there is no status to
-  // report — and -1 says that, where `undefined` would look like a bug.
   test('a request with no response reports -1', () => {
     const err = thrown(errorCtx(undefined))
     strictEqual(err.status, -1)

@@ -5,14 +5,6 @@ import type { ProjectNameSDK } from '../../ProjectNameSDK'
 import { BaseFeature } from '../base/BaseFeature'
 
 
-// Pagination support for list operations. On the way out (PreRequest) it
-// stamps page/limit (or a cursor) into the request query; on the way back
-// (PreResult) it reads the server's pagination signals — a `Link:
-// rel="next"` header, `X-Next-Page`/`X-Total-Count` headers, or `next`/
-// `cursor`/`hasMore` fields in the body — and records them on
-// `ctx.result.paging`. Generated SDKs build auto-iteration on top of this
-// (advance the cursor/page and re-issue the list call until `hasMore` is
-// false). Parameter names and page size are configurable.
 class PagingFeature extends BaseFeature {
   version = '0.0.1'
   name = 'paging'
@@ -45,7 +37,6 @@ class PagingFeature extends BaseFeature {
     const limitParam = this._options.limitParam || 'limit'
     const cursorParam = this._options.cursorParam || 'cursor'
 
-    // A per-call cursor/page from ctrl takes priority (used by auto-iteration).
     const paging = (ctx.ctrl && ctx.ctrl.paging) || {}
 
     // GraphQL paginates through operation VARIABLES, not the query string.
@@ -94,7 +85,6 @@ class PagingFeature extends BaseFeature {
       hasMore: false,
     }
 
-    // Link: <...>; rel="next"
     const link = this._header(headers, 'link')
     if (null != link) {
       const m = /<([^>]+)>\s*;\s*rel="?next"?/i.exec(link)
@@ -126,7 +116,6 @@ class PagingFeature extends BaseFeature {
       }
     }
 
-    // Body-level cursors.
     if (body && 'object' === typeof body) {
       if (null != body.next) { paging.next = paging.next || body.next }
       if (null != body.cursor) { paging.cursor = body.cursor }
@@ -171,8 +160,6 @@ class PagingFeature extends BaseFeature {
     const afterVar = this._options.afterVar || 'after'
     const firstVar = this._options.firstVar || 'first'
 
-    // Only bind variables the operation actually declares, or the server
-    // rejects the document.
     const declared: Record<string, boolean> = {}
     for (const v of ((point.graphql && point.graphql.vars) || [])) {
       declared[v.name] = true

@@ -14,10 +14,6 @@ const log: any = {
   child() { return log },
 }
 
-// Target fixtures exercising the three feature layouts:
-//   ts     — dir layout (per-feature src/feature/<name>/), srcfeature default
-//   go     — flat layout (feature/<name>_feature.go), srcfeature:false
-//   go-cli — feature phase disabled (no feature output at all)
 const T_TS = { name: 'ts', title: 'TypeScript', ext: 'ts' }
 const T_GO = { name: 'go', title: 'Go', ext: 'go', srcfeature: false }
 const T_GOCLI = { name: 'go-cli', title: 'Go CLI', ext: 'go', phase: { feature: { active: false } } }

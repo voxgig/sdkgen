@@ -1,12 +1,5 @@
 /* Copyright (c) 2024-2026 Voxgig Ltd, MIT License */
 
-// GraphQL transport tests.
-//
-// The transport lives in a shipped TEMPLATE (project/.sdk/tm/ts/src/utility/
-// GraphqlUtility.ts) that only compiles inside a generated SDK, so it is
-// outside sdkgen's own tsconfig. Load it the way featureharness.ts loads
-// feature templates: transpile the real file and evaluate it, so these tests
-// exercise exactly the code that ships.
 
 import { readFileSync } from 'node:fs'
 import Path from 'node:path'

@@ -57,13 +57,6 @@ const Main = cmp(async function Main(props: any) {
   // Copy tm/perl files with replacements
   Copy({
     from: 'tm/' + target.name,
-    // An ACTIVE feature's INACTIVE plugins do not ship. perl has no
-    // src/feature layout (srcfeature: false), so this blanket copy is the
-    // one place the generate-time plugin trim can act; the model's
-    // `plugin.<group>.path` entries name their files relative to THIS
-    // copy's root ('feature/secrets/plugins/Voxgig/Sekreto/Plugins/
-    // <Kind>.pm'). See helpers/featureSource.pluginExcludes, and
-    // Main_go.ts / Main_py.ts, which do the same.
     exclude: [/src\//, TEST_CONTROL_EXCLUDE, ...pluginExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
@@ -87,19 +80,6 @@ const Main = cmp(async function Main(props: any) {
               ({ name, indent }: any) =>
                 `${indent}$utility->{feature_hook}->($ctx, "${name}");\n`,
 
-            // SECRETS. The accessor is emitted only when the secrets
-            // feature applies to this target AND the model activates it -
-            // with the feature off the marker line is REMOVED, so the
-            // inactive output is byte-identical to pre-migration.
-            //
-            // The LIVE Sekreto, not a clone: sekreto holds provider and
-            // cache state, so a clone would resolve into a copy nothing
-            // else can see.
-            //
-            // There is deliberately NO resolve seam here. Unlike ts and
-            // py, this port resolves at the TRANSPORT (see
-            // feature/secrets_feature.pm), which every wire path -
-            // entity ops, direct() and graphql() - already crosses.
             '/(?<indent>[ \\t]*)#[ \\t]*#SecretsAccessor[ \\t]*\\n?/':
               ({ indent }: any) => !secrets ? '' :
                 `${indent}# The LIVE Sekreto instance: for arbitrary secrets and redaction.\n` +
@@ -117,7 +97,6 @@ const Main = cmp(async function Main(props: any) {
           }
         },
 
-        // Entities - injected at SLOT
         () => {
           each(entity, (entity: ModelEntity) => {
             const entitySDK = getModelPath(model, `main.${KIT}.entity.${entity.name}`)
@@ -128,23 +107,11 @@ const Main = cmp(async function Main(props: any) {
     })
   })
 
-  // Generate config module
   Folder({ name: '.' }, () => {
     Config({ target })
     Schema({ target })
   })
 
-  // GENERATED, NOT COPIED. Where the credential goes is a fact about the
-  // API, and tm/ can only hold one answer. See PrepareAuth_perl.
-  //
-  // NO FOLDER OPEN HERE, deliberately. perl has no `src/` tree (the ts
-  // port's Main wraps Config and PrepareAuth in `Folder({name:'src'})`,
-  // and this one must not): Main writes `lib/`, `config.pm` and
-  // `features.pm` into the SDK root, and the blanket `Copy({from:
-  // 'tm/perl'})` above lands the utility tree at `<sdk>/utility/`. So
-  // this call sits OUTSIDE the `.` folder above and PrepareAuth opens the
-  // single `utility` folder itself, writing exactly the path the deleted
-  // template occupied.
   PrepareAuth({ target })
 
   // Generate feature factory module

@@ -12,24 +12,6 @@ import {
 } from '@voxgig/apidef'
 
 
-// THE GENERATED SCHEMA MODULE: the model's schemas, as data the SDK can run.
-//
-// The perl peer of src/cmp/ts/Schema_ts.ts. Same two members, same source:
-// optspec from `main.kit.optspec` plus each feature's own `config.options`,
-// entityspec from the entity field sentinels — both built by the shared
-// helpers, so what perl validates against and what ts validates against
-// cannot drift.
-//
-// EMBEDDED AS JSON, PARSED AT LOAD, in a heredoc, exactly as config.pm
-// carries its config — and here the parse is not merely convenient, it is the
-// point. Perl has no native boolean scalar, so a spec written as a perl
-// literal has to name Voxgig::Struct::JTRUE/JFALSE by hand at every boolean
-// slot (the hand-written optspec this replaces did); parse_json produces
-// those singletons itself, which is what `$BOOLEAN` matches against.
-//
-// The round-trip is exact because the spec holds only strings and booleans:
-// pinned by "strings and booleans only, so the JSON round-trip is lossless"
-// in ts/test/optspec.test.ts.
 const Schema = cmp(async function Schema(props: any) {
   const ctx$ = props.ctx$
   const target = props.target

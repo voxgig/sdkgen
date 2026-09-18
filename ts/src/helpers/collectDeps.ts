@@ -1,24 +1,3 @@
-// Collect target-language dependencies from features and from the target's
-// own `deps` block, applying the active-flag semantics that every Package_*.ts
-// template was hand-rolling identically:
-//
-//   - feature deps  : included when `dep.active === true`  (default off)
-//   - plugin  deps  : the same, and only for an ACTIVE plugin of that feature
-//   - target  deps  : included when `dep.active !== false` (default on)
-//
-// THE PLUGIN LEVEL IS GATED ONE STEP DEEPER THAN THE FEATURE. A feature's
-// deps flow as soon as the feature is active; a plugin is a trimmable part
-// within an active feature, so a dependency only its files use must not
-// reach the manifest until that plugin is active too. rust's mini vault is
-// the case: it takes `ring` for AES-256-GCM, and at feature level that
-// would land in every secrets-enabled rust SDK, including the ones whose
-// chain is `[env, dotenv]` and which never compile a vault.
-//
-// The two sources are kept distinct via the `source` field so callers can
-// apply their own version defaults / formatting (e.g. go uses `v0.0.0`,
-// python `0.0`). The original dep object is exposed as `raw` for callers that
-// need extra fields like `dep.replace` (go module replace directives) or
-// `dep.kind` (prod/dev/peer).
 
 import { targetFeatures } from './applicability'
 
@@ -45,12 +24,6 @@ function collectDeps(
   // dependency into its generated manifest.
   const feature = targetFeatures(model, targetName)
 
-  // Deduplicate by package name. Two features can require the same package
-  // (or a feature and the target itself can), and every Package_<lang>.ts
-  // renders one manifest line per entry — a duplicate key is a hard parse
-  // error in go.mod and Cargo.toml, and silently last-wins in package.json.
-  // FIRST occurrence wins, so the deterministic (sorted-key) feature order
-  // decides; a conflicting version is reported rather than silently dropped.
   const seen: Record<string, DepEntry> = {}
 
   const add = (dep: any, source: 'feature' | 'target', owner: string) => {

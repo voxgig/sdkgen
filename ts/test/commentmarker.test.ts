@@ -1,21 +1,3 @@
-// Emitted comments must use the comment marker of the language they land in.
-//
-// This guards two defects that shipped in v3.0.0 and were only caught by a
-// generated SDK's own doc tests, one layer downstream — by which point the
-// bad output was already on its way into every repo in the fleet:
-//
-//   * A two-line comment in the "entity ops return the ENTITY" example had
-//     `#` on the first line and `//` on the second, in the py, rb AND perl
-//     README components. A `//` line is a SyntaxError in all three, so every
-//     generated SDK's README-snippet test failed.
-//   * rb/core/error.rb declared no `status` accessor while make_error.rb
-//     assigned `sdk_err.status`. In Python and Lua that silently creates the
-//     field; in Ruby it is a NoMethodError, so error handling raised while
-//     reporting an error.
-//
-// Both are the same shape of mistake: language-neutral text pasted into a
-// language-specific emitter. These checks read the scaffold sources, so they
-// run without generating anything.
 
 import { test, describe } from 'node:test'
 import { ok, deepStrictEqual } from 'node:assert'
@@ -41,12 +23,6 @@ function sourceFiles(dir: string): string[] {
     .map((f: string) => Path.join(dir, f))
 }
 
-// Lines that are EMITTED — inside a template literal — rather than
-// TypeScript source comments. Indentation cannot tell them apart (plenty of
-// sdkgen's own comments sit at column 0), so this scans the file tracking
-// string, comment and template state, and reports `//` lines only where the
-// scanner is inside a template literal. `${…}` re-enters normal code, so an
-// interpolated expression's own comments are not flagged.
 function emittedCommentLines(src: string): string[] {
   const out: string[] = []
   // Stack of contexts: 'code' | 'template'. `${` pushes code, `}` pops.
@@ -64,15 +40,6 @@ function emittedCommentLines(src: string): string[] {
       if ('//' === c2) { while (i < src.length && '\n' !== src[i]) i++; continue }
       if ('/*' === c2) { i = src.indexOf('*/', i + 2); i = -1 === i ? src.length : i + 2; continue }
 
-      // A REGEX LITERAL. Without this the scanner reads the quote inside
-      // /"/g as opening a string, swallows the rest of the interpolation, and
-      // never returns to depth 1 — after which the next `}` at module scope
-      // pops it into `template` and every following `//` comment is reported
-      // as emitted. utility_py/rb/lua all contain such a regex, so the bug was
-      // latent until a module-scope object literal was added below one.
-      //
-      // Regex vs division is decided by the previous significant character:
-      // a regex can only start where a value is expected.
       if ('/' === c) {
         let j = i - 1
         while (0 <= j && /\s/.test(src[j])) j--

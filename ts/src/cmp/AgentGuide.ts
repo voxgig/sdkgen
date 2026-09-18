@@ -32,8 +32,6 @@ const AgentGuide = cmp(function AgentGuide(props: any) {
   const surface = langCmd(lang).note
 
   const features = activeFeatures(model, target)
-  // go-cli/go-mcp disable the feature phase; ts/js lay features out as
-  // per-feature directories, the other SDK targets as flat files.
   const featuresOn = featuresEnabled(target)
   const dirLayout = isDirLayout(target)
 
@@ -78,7 +76,6 @@ component.* After editing a component run \`npm run build\` before
 
 `)
       if (dirLayout) {
-        // ts/js: each feature is a directory under src/feature/ with its own guide.
         features.forEach((f: any) => {
           const t = f.title ? ' — ' + f.title : ''
           Content(`- [\`${f.name}\`](./src/feature/${f.name}/AGENTS.md)${t}
@@ -90,8 +87,6 @@ Each feature's runtime and its own guide live in \`src/feature/<name>/\`.
 `)
       }
       else {
-        // go/py/php/rb/lua: flat files in the shared \`feature/\` package — no
-        // per-feature directory, so features are documented inline here.
         Content(`Each feature is a flat file in the \`feature/\` package. Its hooks and
 default activation come from \`.sdk/model/feature/<name>.aon\`; customise
 the runtime under \`.sdk/tm/${lang}/feature/\` and regenerate.
@@ -112,8 +107,6 @@ the runtime under \`.sdk/tm/${lang}/feature/\` and regenerate.
       }
     }
 
-    // Optional per-language enrichment (build/test specifics, idioms). Neutral
-    // content above stands alone; a language may add an AgentGuide_<lang>.
     const AgentGuide_sdk =
       requirePath(ctx$, `./cmp/${lang}/AgentGuide_${lang}`, { ignore: true })
     if (AgentGuide_sdk) {

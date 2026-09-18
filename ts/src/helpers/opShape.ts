@@ -1,30 +1,3 @@
-// Per-op request-payload shape + partiality policy for the typed-model
-// generators (EntityTypes_<lang>.ts).
-//
-// SINGLE SOURCE OF TRUTH for two things every language generator needs:
-//   1. The type-name scheme: <Name>{Load,List,Remove}Match /
-//      <Name>{Create,Update}Data (OP_SUFFIX + opTypeName).
-//   2. Which fields make up an op's request payload, and whether each is
-//      required or optional (opRequestShape) — i.e. the partiality policy.
-//
-// PARTIALITY POLICY
-//   Op-declared params win: if the op declares params
-//   (op.<name>.points[].args.params[]), the payload is built from them and a
-//   param is optional iff `reqd === false` (this is how path/query params such
-//   as {id} become required). `fromParams` is true in that case.
-//
-//   Otherwise the payload mirrors the entity's fields, filtered to those active
-//   for the op (field.op[opname].active !== false; absent -> participates), and
-//   optionality is decided per-op:
-//     create -> required iff `field.req` (server-shaped required fields);
-//     update -> all optional (patch);
-//     load / remove -> a field named `id` is required, the rest optional
-//       (best-effort key convention; degrades to all-optional if no `id`);
-//     list -> all optional (filter).
-//
-// The generators consume `items` (each already carrying its final `optional`
-// flag) and render them in the target language's struct/interface/TypedDict
-// syntax; the policy itself is language-neutral and tested in isolation.
 
 import { each, names } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
@@ -32,23 +5,6 @@ import { KIT, getModelPath } from '@voxgig/apidef'
 import { pointSegments, pointTerminalParam, pointPathKey } from './pointPath'
 
 
-// THE entity collection for a model — resolved once, with a stable identity.
-//
-// Two problems this solves, both caused by every component calling
-// `getModelPath(model, 'main.<KIT>.entity')` for itself:
-//
-//   * CORRECTNESS. getModelPath drops `active: false` entries by default, but
-//     the consumer scaffold (create-sdkgen Root.ts) generates entity code for
-//     EVERY entity and every EntityTypes_<lang> emits data types with
-//     `only_active: false`. Class-name assignment done against the filtered
-//     view cannot see the inactive entities whose data types it must avoid.
-//     This resolver always returns the unfiltered collection.
-//
-//   * PERFORMANCE. getModelPath REBUILDS the container object on every call
-//     when filtering, so the WeakMap memos below never hit across callers —
-//     the O(n·ops) class-name assignment re-ran per entity per target. At 500
-//     entities x 22 targets that was ~15s of pure recomputation; caching the
-//     resolved collection on the model makes it ~3ms.
 const _entityCollCache = new WeakMap<object, any>()
 
 function entityCollection(model: any): any {
@@ -67,16 +23,6 @@ function entityCollection(model: any): any {
 }
 
 
-// Derive the PascalCase `Name` on every entity in a collection.
-//
-// `Name` is injected LAZILY by jostraca's names(), historically by whichever
-// component happened to run first (create-sdkgen Root.ts, or an EntityTypes
-// emitter). Anything reading `e.Name` before that ran saw `undefined` — and
-// because the helpers below MEMOISE, one early read poisoned the result for
-// the whole run (`undefinedEntity` class names; a permanently empty collision
-// list). The helpers therefore derive `Name` themselves, up front, so they
-// never depend on component ordering. Idempotent: names() is only called for
-// an entity that lacks `Name`.
 function deriveEntityNames(entityColl: any): any[] {
   const ents = each(entityColl).filter((e: any) => e && null != e.name)
   ents.forEach((e: any) => { if (null == e.Name) names(e, e.name) })
@@ -100,14 +46,11 @@ function cap(s: string): string {
 }
 
 
-// The generated type name for an op's request payload, e.g. AdviceLoadMatch.
 function opTypeName(Name: string, opname: string): string {
   return Name + cap(opname) + (OP_SUFFIX[opname] || 'Match')
 }
 
 
-// One request-payload member: a model field or op param, with the final
-// required/optional decision already applied per the partiality policy.
 type OpShapeItem = {
   name: string
   type: any     // canonical type sentinel (e.g. `$STRING`); render via canonToType
@@ -115,28 +58,6 @@ type OpShapeItem = {
 }
 
 
-// Collect an op's params, deduped by name across its points.
-//
-// Points tagged with `select.$action` are sub-resource/action routes folded
-// into the op (e.g. POST .../components/{component_id}/page_access_groups on
-// the create op); they do not describe the op's canonical request payload,
-// so they are excluded — unless the op consists only of action points.
-//
-// Requiredness merges by INTERSECTION: with several alternative canonical
-// points, a param the caller must always supply is one required by every
-// point; a param only some routes use is optional in the merged shape.
-// (Union-required makes the common route untypeable — e.g. a plain
-// list-by-parent-id call failing because sibling routes' ids are demanded —
-// and steers callers into passing keys that flip runtime point dispatch to
-// the wrong route.)
-// The action names an op multiplexes, from its points' `select.$action`.
-//
-// A custom POST route like `/api/planet/{id}/terraform` is folded into the
-// `create` op as an alternative point, discriminated at call time by
-// `$action` in the data argument. The mechanism worked and was documented
-// NOWHERE — not in the README, not in the reference — so for an API with two
-// such routes, two of its six endpoints were unreachable by anyone using the
-// documented interface. Generated docs list them via this helper.
 function opActions(op: any): { action: string, path: string }[] {
   const points: any[] = op && op.points ? each(op.points) : []
 
@@ -150,7 +71,6 @@ function opActions(op: any): { action: string, path: string }[] {
 }
 
 
-// True when any of the entity's ops multiplexes a custom action.
 function entityActions(entity: any): { op: string, action: string, path: string }[] {
   const out: { op: string, action: string, path: string }[] = []
 
@@ -162,12 +82,6 @@ function entityActions(entity: any): { op: string, action: string, path: string 
 }
 
 
-// The entity's own API path — the route a reader should recognise it by.
-//
-// NOT `points[0]` across every op flattened. Ops iterate in sorted-key order,
-// so `create` came first, and an entity whose create op folds in a custom
-// action (`/api/planet/{id}/forbid`) advertised THAT as its path. The
-// canonical route is the collection or record route, and never an action.
 function entityPath(entity: any): string {
   const ops: any = (entity && entity.op) || {}
 
@@ -191,34 +105,6 @@ function entityPath(entity: any): string {
 }
 
 
-// The entity's OWN endpoint among an op's points.
-//
-// The other notion of canonical above — "not a `$action` route" — separates a
-// folded-in custom action from the real op. This one separates the entity's
-// own route from a CROSS-REFERENCE: another resource's route that happens to
-// return this entity (`/notifications/{id}/board` for a board). Both are
-// plain GETs with no `$action`, so the path itself is all there is to go on.
-//
-// Two signals, in order:
-//
-//   1. A record route ends in the record's identifier (`/boards/{id}`,
-//      `/accounts/{account_id}/users/{id}`); a cross-reference ends in the
-//      relationship's name (`/posts/{id}/author`). A terminal parameter is
-//      the stronger signal, and unlike depth alone it survives an entity
-//      nested more deeply than the route that points at it — depth by itself
-//      picked `/posts/{id}/author` over `/accounts/{account_id}/users/{id}`
-//      and then generated that op's required params from the wrong route.
-//   2. Failing that, fewest path segments — the shallower route is the one
-//      the entity is named for, which is what settles a `list` op where
-//      neither route ends in an id (`/boards` over `/members/{id}/boards`).
-//
-// Ties keep the earlier point, so the sorted-key order of the model decides
-// and the output stays byte-stable.
-//
-// The same rule runs at RUNTIME, in each language's makePoint template, when
-// no point's `select.exist` matches. It cannot be shared with them — a
-// template ships standalone, outside this package — so it is written twice on
-// purpose, and both sides must move together.
 function ownPoint(points: any[]): any {
   let best = points[0]
 
@@ -275,7 +161,6 @@ function opParams(op: any): any[] {
         requiredHere[p.name] = false !== p.reqd
         if (!seen[p.name]) {
           seen[p.name] = { ...p }
-          // A param first seen on a later point was absent earlier: optional.
           requiredOnAll[p.name] = 0 === pointIndex
           out.push(seen[p.name])
         }
@@ -292,21 +177,6 @@ function opParams(op: any): any[] {
     p.reqd = true === requiredOnAll[p.name]
   })
 
-  // Unrelated cross-references share no param, so the intersection came out
-  // empty and NOTHING is required — which generates a `load({})` that drops
-  // the id. Fall back to the entity's own point and take its params whole.
-  //
-  // Two guards, and both are load-bearing:
-  //
-  //   - only when the intersection produced nothing, so a genuine set of
-  //     alternative routes with a shared param still merges (a `page_id` on
-  //     every route stays required, per-route siblings stay optional);
-  //   - only when the points describe DIFFERENT routes. Points on one path
-  //     that differ solely by optional query params (`/users?email=` and
-  //     `/users?name=`) legitimately require nothing, and are not
-  //     cross-references — collapsing them to one point would drop the
-  //     other's fields from the generated request type, so a caller could
-  //     not express them at all.
   if (1 < points.length && !out.some((p: any) => p.reqd) && !samePath(points)) {
     return opParams({ points: [ownPoint(points)] })
   }
@@ -315,30 +185,23 @@ function opParams(op: any): any[] {
 }
 
 
-// Does a field participate in an op? Absent op-entry -> participates; only an
-// explicit `active: false` excludes it.
 function fieldInOp(field: any, opname: string): boolean {
   const fop = field && field.op && field.op[opname]
   return null == fop || fop.active !== false
 }
 
 
-// Decide optionality for a field in a no-params request payload, per op.
 function fieldOptional(field: any, opname: string): boolean {
   switch (opname) {
     case 'create':
-      // Respect the model's required flag: required unless req === false.
       return false === field.req
     case 'update':
-      // Patch semantics — every field optional.
       return true
     case 'load':
     case 'remove':
-      // Best-effort key convention: the `id` field is required, rest optional.
       return 'id' !== field.name
     case 'list':
     default:
-      // Filter — every field optional.
       return true
   }
 }
@@ -355,17 +218,6 @@ function opRequestShape(ent: any, opname: string):
     return { items: [], fromParams: false }
   }
 
-  // Ops that carry a BODY are the exception to "op-declared params win":
-  // their request payload is BOTH. `PUT /v1/todo/item/{id}` declares the path
-  // param `id`, which the SDK resolves out of reqdata (see the param
-  // utility's reqmatch -> match -> reqdata search), while the fields the
-  // caller wants to change come from the entity. Params alone produced
-  // `<Name>UpdateData = { id }` — no way to send anything to update.
-  //
-  // The param stays in the payload because the path needs it; keeping it out
-  // of the request BODY is the model's job, via the op's `transform.req`
-  // (@voxgig/apidef restricts the body to a closed request schema's declared
-  // properties).
   const isbodyop = 'create' === opname || 'update' === opname || 'patch' === opname
 
   const params = opParams(op)
@@ -402,13 +254,6 @@ function opRequestShape(ent: any, opname: string):
 }
 
 
-// The entity's id-like key field, or null when it has none. Used by the doc
-// generators to decide whether an example may key a load/remove on `{ id: ... }`
-// and access `.id` on a returned entity, OR must degrade to `load()` with no
-// argument (some APIs model an entity whose load match carries no id — e.g. a
-// response-wrapped spec, where AqiLoadMatch is { code, data, msg }). Prefers the
-// model's declared id field name, then a literal `id`, checking the load-match
-// shape first and the entity's own fields as a fallback.
 function entityIdField(ent: any): string | null {
   if (null == ent) {
     return null
@@ -460,29 +305,6 @@ function entityPrimaryOp(ent: any): string | null {
 }
 
 
-// Collision-free target-language CLASS name for an entity. The natural
-// class name is `<Name>Entity`, but that can equal another entity's
-// canonical DATA-type name `<Name'>` when Name' === Name + 'Entity' (e.g.
-// GitLab's `project` -> class `ProjectEntity` collides with `project_entity`
-// -> data type `ProjectEntity`), which redeclares a type in Go and merges/
-// shadows it in ts/py/rb. This assigns each entity a class name that is
-// unique across ALL emitted top-level type names (every entity's data type
-// and per-op Match/Data types, plus already-assigned class names): the
-// natural `<Name>Entity` when free, else `<Name>EntityClient`, `...Client2`,
-// … The DATA type keeps its canonical `<Name>` — only the suffixed class
-// yields. Deterministic (sorted-key iteration) and stable across runs.
-//
-// Covers EVERY entity, active or not: the consumer scaffold (create-sdkgen
-// Root.ts) iterates the RAW entity collection, and every EntityTypes_<lang>
-// emits with `only_active: false`, so an inactive entity still contributes a
-// generated data type AND still needs a class name. Filtering to actives here
-// left inactive entities on the un-deduped `<Name>Entity` fallback and left
-// their data types out of `taken` — so an ACTIVE entity's class could collide
-// with an INACTIVE entity's emitted data type (e.g. active `project` ->
-// class `ProjectEntity` vs inactive `project-entity` -> type `ProjectEntity`,
-// a redeclaration in Go).
-//
-// Memoised per entity-collection object so the O(n) assignment runs once.
 const _classNameCache = new WeakMap<object, Record<string, string>>()
 
 function entityClassNames(entityColl: any): Record<string, string> {
@@ -493,7 +315,6 @@ function entityClassNames(entityColl: any): Record<string, string> {
 
   const ents = deriveEntityNames(entityColl)
 
-  // 1. Every top-level DATA-type name the target emits.
   const taken: Record<string, boolean> = {}
   ents.forEach((e: any) => {
     taken[e.Name] = true
@@ -537,19 +358,6 @@ function entityClassName(ent: any, entityColl: any): string {
 }
 
 
-// Cross-entity TYPE-name collision detection. entityClassNames keeps CLASS
-// names collision-free, but the DATA/op type names are the raw `<Name>` /
-// opTypeName(...) — two entities whose PascalCase Name coincides (e.g.
-// `foo-bar` vs `foo_bar`), or a data-type name equal to another entity's
-// op-type name, emit DUPLICATE top-level type declarations: a redeclaration
-// compile error in go/rust/c/cpp/csharp and the JVM containers, silent
-// merging in ts. The names cannot be auto-renamed here — the generated
-// entity classes and op fragments reference them by token — so the guard
-// surfaces the collision loudly instead. Returns the sorted duplicate names
-// (empty when clean). `Name` is derived here (deriveEntityNames), so the
-// guard cannot be silently disabled by running before an emitter.
-//
-// Memoised per entity-collection object, like entityClassNames.
 const _typeCollisionCache = new WeakMap<object, string[]>()
 
 function entityTypeCollisions(entityColl: any): string[] {
@@ -594,14 +402,6 @@ function warnEntityTypeCollisions(entityColl: any, log: any, lang: string): stri
 }
 
 
-// Pick a representative entity for a single illustrative snippet (e.g. the
-// README's test-mode example): the first ACTIVE entity that exposes a read
-// op (list/load) so the snippet is meaningful, else the first with ANY
-// active op, else the first active entity. Returns { entity, primaryOp }
-// where primaryOp is null only when NO entity has an op — so callers never
-// fabricate an op the entity lacks (the cause of `.load()` on an op-less
-// entity like Cloudsmith's `Abort`). Entities iterate in sorted-key order
-// for deterministic output.
 function pickExampleEntity(entity: any): { entity: any, primaryOp: string | null } {
   const actives = each(entity).filter((e: any) => e && e.active !== false)
   const readable = actives.filter((e: any) => {

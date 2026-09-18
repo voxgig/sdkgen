@@ -10,7 +10,6 @@ declare function isTsReservedType(Name: string): boolean;
 declare function tsSafeTypeName(Name: string): string;
 declare function isReservedName(name: string, lang: string): boolean;
 declare function safeVarName(name: string, lang: string): string;
-/** The PHP accessor method for an entity: `$client-><Name>()`. */
 declare function phpEntityAccessor(Name: string): string;
 /**
  * The backing field for an entity accessor's cache slot (`$this->_<name>`,

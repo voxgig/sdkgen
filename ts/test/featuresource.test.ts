@@ -1,31 +1,3 @@
-// Feature source only reaches a project when the model asks for it.
-//
-// WHAT WENT WRONG
-//
-// `target add` copied a target's whole template tree with one exclusion,
-// `/src\/feature/`, and then copied back the features the model declared.
-// Two targets keep feature source at `src/feature/<name>/`. The other
-// seventeen keep it at `feature/`, `pkg/feature/`, `lib/feature/`,
-// `Sources/ProjectNameSDK/feature/` — paths that exclusion never matched. So
-// every shipped feature was copied into every project regardless of the
-// model: 272 stray source files for a project declaring no features at all.
-// The gate looked like it worked because for those targets
-// `src/feature/<name>/` exists as a `.gitkeep` placeholder — it was gating
-// empty directories.
-//
-// A second leak, independent of layout: the feature list came from a plain
-// `Object.keys(model.main.kit.feature)`, so `retry: { active: false }` still
-// shipped every retry source file. That one hit ts and js too.
-//
-// WHAT THIS SUITE PINS
-//
-// The discovery rules (featureOf / findFeatureSources), that discovery finds
-// real source for every target that has any, and — the test that would have
-// caught the bug — that `target add` with a zero-feature model puts NO
-// unselected feature source in the project, for every target that declares
-// itself trimmable.
-//
-// Output goes to memfs; reads fall through to the real scaffold.
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
@@ -41,7 +13,6 @@ import {
 import { SCAFFOLD, PROJECT, KIT, addTarget } from './actionharness'
 
 
-// Every target the scaffold ships.
 function allTargets(): string[] {
   return Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'target'))
     .filter((f: string) => f.endsWith('.aon') && 'target-index.aon' !== f)
@@ -50,7 +21,6 @@ function allTargets(): string[] {
 }
 
 
-// A target's own `feature` declaration, read the way target_add reads it.
 function targetFeature(name: string): any {
   const path = Path.join(SCAFFOLD, 'model', 'target', name + '.aon')
   const errs: any[] = []
@@ -63,13 +33,9 @@ function targetFeature(name: string): any {
 describe('featureOf', () => {
 
   test('maps a file name back to its feature, per language convention', () => {
-    // go, py, rb, lua, perl
     strictEqual(featureOf('retry_feature.go', false), 'retry')
-    // csharp, java, kotlin, scala, swift, php
     strictEqual(featureOf('RetryFeature.cs', false), 'retry')
-    // rust, c, cpp, zig, elixir
     strictEqual(featureOf('retry.rs', false), 'retry')
-    // ts, js — the whole feature is a directory
     strictEqual(featureOf('retry', true), 'retry')
   })
 
@@ -139,10 +105,6 @@ describe('findFeatureSources', () => {
 })
 
 
-// The generate-time half of the same guard, for the ts/js layout. Root
-// renders a Feature component per ACTIVE feature, but Main copies the whole
-// tm tree afterwards — which used to put a deactivated feature's source
-// straight back, silently undoing the filter.
 describe('srcFeatureExcludes', () => {
 
   const model = {
@@ -207,30 +169,12 @@ describe('target add feature trimming', () => {
       }
     }
 
-    // Pinned, not muted: this is the remaining work, and a target joining
-    // or leaving the list is a decision that should be reviewed.
-    //   clojure — every feature lives in ONE module (features.clj); there
-    //           is no per-feature file to leave out until that module is
-    //           generated from the model. (haskell was the fourth, until it
-    //           moved to @voxgig/sdkgen-haskell; ocaml was the third, whose
-    //           eighteen pipeline features also live in one template module
-    //           (sdk_features.ml, never a trim candidate) - it trims since
-    //           `secrets` arrived as its first CONTAINER feature, some 5.5k
-    //           vendored lines a project that never selected it must not
-    //           carry. See model/target/ocaml.aon.)
-    //   scala — the cross-feature tests live inside the single test entry
-    //           point, sdktest/SdkTestMain.scala.
-    //   zig   — root.zig @imports every feature module, and build.zig names
-    //           test/feature_test.zig explicitly.
     deepStrictEqual(untrimmable,
       ['clojure', 'scala', 'zig'],
       'the set of targets that cannot trim feature source changed')
   })
 
 
-  // THE REGRESSION TEST. A model that declares no features gets no feature
-  // source beyond the two every SDK needs: `base` (the foundation every
-  // feature builds on) and `test` (SDK.test() depends on it).
   test('a zero-feature model gets no unselected feature source', async () => {
     const available = availableFeatures(Fs, SCAFFOLD)
     const selected = new Set(['base', 'test'])
@@ -254,8 +198,6 @@ describe('target add feature trimming', () => {
       deepStrictEqual(stray.map((s: any) => s.path), [],
         target + ': copied source for features the model never declared')
 
-      // And the selected ones DID arrive, so this is not passing by
-      // copying nothing at all.
       const kept = sources.filter((s: any) => 'test' === s.name)
       if (0 < kept.length) {
         ok(written.some((p: string) =>
@@ -284,8 +226,6 @@ describe('target add feature trimming', () => {
 
       ok(/cache/.test(joined), target + ': active feature cache was not copied')
 
-      // The model file follows the source: an inactive feature is not
-      // written into model/feature either.
       ok(!written.includes('model/feature/retry.aon'),
         target + ': inactive feature retry was added to the model')
       ok(written.includes('model/feature/cache.aon'),
@@ -328,7 +268,6 @@ describe('target add feature trimming', () => {
   // ships is scanned, so a new template that hardcodes a feature is caught
   // here rather than by a downstream compiler.
   test('nothing left behind names a dropped feature', async () => {
-    // Feature identifiers as each language spells them.
     const spellings = (name: string) => {
       const Name = name[0].toUpperCase() + name.slice(1)
       return [
@@ -337,23 +276,6 @@ describe('target add feature trimming', () => {
       ]
     }
 
-    // Pinned, not muted — each one audited, not merely quiet.
-    //   c/core/sdk.h — declares a constructor prototype per feature. C is
-    //     happy to declare a function that is never defined; the only caller
-    //     was tests/feature_test.c, which trimming drops.
-    //   py/test/test_feature.py — names features only as test CLASS names
-    //     (`TestRetryFeature`) and as strings passed to the harness. It
-    //     imports no feature module and constructs no feature class; every
-    //     block is `pytest.mark.skipif(not has_feature(...))`.
-    //   ocaml/sdk_features.ml — the eighteen pipeline features ARE this one
-    //     template module, which is not feature source and is never trimmed;
-    //     it names every feature because it implements every feature. The
-    //     only ocaml feature that is trimmable is the `secrets` container,
-    //     and this module never names it.
-    //   ocaml/test/harness.ml — constructs netsim_feature straight from
-    //     Sdk_features (the test-only simulator is not a model feature and
-    //     has no source to trim); every model feature goes through
-    //     Sdk_config.make_feature behind has_feature.
     const PINNED = [
       /^tm\/c\/core\/sdk\.h$/,
       /^tm\/py\/test\/test_feature\.py$/,
@@ -376,7 +298,6 @@ describe('target add feature trimming', () => {
       for (const path of written) {
         if (!path.startsWith('tm/' + target + '/')) continue
         if (PINNED.some((re) => re.test(path))) continue
-        // Feature source naturally names its own feature.
         if (sourcePaths.some((p: string) => path === p || path.startsWith(p + '/'))) continue
 
         // `path` is already scaffold-relative (`tm/<target>/...`); the copy

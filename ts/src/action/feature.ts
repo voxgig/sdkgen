@@ -92,13 +92,6 @@ async function feature_add(features: string[], actx: ActionContext): Promise<Act
       content: loadContent(actx, 'feature')
     },
     model: actx.model,
-    // Dry run must be passed per-call, not left to the Jostraca instance.
-    // jostraca's `generate` runs its own options through OptionsShape FIRST,
-    // which fills in `control.dryrun: false`, and only then merges
-    // `deep({}, gOpts.control, opts.control)` — so the shape default silently
-    // OVERRIDES the instance-level flag. `-y target add ts` printed
-    // ** DRY RUN ** and wrote every file. (Same trap as the `existing` FIX
-    // note in jostraca.js.)
     control: {
       dryrun: !!actx.opts.dryrun
     },
@@ -147,16 +140,7 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
 
     each(features, (n) => {
       const fref = n.val$
-      // TODO: validate feature is a-z0-9-_. only
 
-      // Resolution, the alias policy, and the bare-name fallback to what the
-      // model records are the same for every kind — see action/kind.
-      //
-      // A name that no longer resolves must not abort the RUN: `target add`
-      // re-runs this action for every active feature, so one feature whose
-      // source has moved (package uninstalled, checkout relocated) would
-      // otherwise stop every other feature — including `test`, which every
-      // generated target needs — from being copied at all.
       let source: any
       try {
         source = resolveKind(fref, 'feature', ctx$)
@@ -190,13 +174,6 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
         content: ctx$.meta.content.feature_index,
       }))
 
-      // Bring in the feature's source for every target already in the model.
-      // Where that source lives is language-specific — `src/feature/<name>/`
-      // for ts and js, `feature/<name>_feature.go` for go,
-      // `lib/feature/<name>/` for dart, and so on — so discover it in the
-      // target's template tree instead of assuming one layout. Assuming
-      // `src/feature/<name>` meant `feature add` silently added nothing for
-      // every target that keeps feature source elsewhere.
       each(target, (t) => {
         // The target's OWN tree, under the name it has in ITS source — an
         // aliased target's templates live at `tm/<origname>`, so searching
@@ -205,14 +182,6 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
         const torigname = t.origname || t.name
         const owntm = Path.join(sdkfolder, 'tm', torigname)
 
-        // Two places a feature's per-target source can live, in order:
-        // the FEATURE package's own overlay for this target, then the
-        // target's own tree. A feature shipped by one package for a target
-        // shipped by another has nowhere else to put it.
-        //
-        // First hit wins at DISCOVERY rather than by copy order: jostraca
-        // writes last-write-wins, so copying both would silently invert the
-        // precedence.
         const featuretm = Path.join(source.folder, 'tm', torigname)
         const overlay = featuretm === owntm ? [] :
           findFeatureSources(fs, featuretm, [fname])
@@ -220,13 +189,6 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
         const own = 0 < overlay.length ?
           findFeatureSources(fs, owntm, [fname]) : []
 
-        // Both trees carrying source for one feature means two packages claim
-        // the same name. The overlay wins, but the target's own files were
-        // already copied by `target add` and Copy never removes, so the
-        // project is left holding BOTH — duplicate symbols, or stale feature
-        // code that still runs. Detecting the name collision at add time is
-        // what actually fixes this (it belongs with manifest validation); say
-        // so loudly until then, rather than leaving a silent hybrid.
         if (0 < own.length) {
           log.warn({
             point: 'feature-source-shadowed', feature: fname, target: t.name,
@@ -261,13 +223,6 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
           Folder({ name: 'tm/' + t.name + '/' + dest }, () => {
             Copy({
               from: Path.join(tmfolder, source.path),
-              // The SAME map `target add` writes `tm/<t>` with. Without it
-              // this copy laid RAW template text over files the target add
-              // had already substituted, so `ProjectName` / `PROJECTVERSION`
-              // survived into the project depending only on which action
-              // wrote the file last — the writer/writer disagreement
-              // helpers/stdrep.ts exists to prevent, in the one place that
-              // did not share the map.
               replace: templateReplacements(model, t.name),
             })
           })
@@ -280,9 +235,6 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
       })
     })
 
-    // ONCE, after the loop, with every name this run installed. Emitted inside
-    // kindModel it was one File component per feature on the same path, which
-    // jostraca 0.38 refuses.
     if (0 < fnames.length) {
       Folder({ name: 'model/feature' }, () => kindIndex({
         kind: 'feature', names: fnames,

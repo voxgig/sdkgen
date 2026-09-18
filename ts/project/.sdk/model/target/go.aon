@@ -13,9 +13,6 @@ main: kit: target: go: {
   # a feature that resolves secrets through sekreto can apply here.
   provides: { sekreto: true, schema: true }
 
-  # Files earlier toolchains generated that this target has RETIRED
-  # (vendor-tag rollout): both fused runners. `doctor` reports leftovers;
-  # `doctor prune` deletes them.
   superseded: [
     'test/runner_test.go'
     'test/struct_runner_test.go'
@@ -25,7 +22,6 @@ main: kit: target: go: {
     kind: *'prod' | string
   }
 
-  # struct is inlined under <gomodule>/utility/struct — no external dep.
   deps: {}
 }
 
@@ -35,11 +31,6 @@ main: kit: feature: &: target: go: deps: &: {
 }
 
 
-# Publication: a go/vX.Y.Z GitHub tag only — the Go proxy resolves from tags,
-# so there is no package registry to upload to. Nothing is set here: every
-# value is defaulted by the schema, and a project that needs to change one
-# sets it in its own model (`model/sdk.aon`), which `target add <t>` does
-# not overwrite.
 
 
 # Feature source may be trimmed to the model's selection. The one template

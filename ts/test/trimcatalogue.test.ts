@@ -1,19 +1,3 @@
-// WHICH NAMES COUNT AS FEATURE SOURCE, when `target add` decides what to trim.
-//
-// WHAT WENT WRONG
-//
-// The catalogue was the SOURCE folder's own `model/feature/` listing, which
-// is right only while every target ships in the same package as every
-// feature. An external target package declares no feature models of its own —
-// it has no reason to — so `findFeatureSources` was handed an empty
-// catalogue, discovered nothing, dropped nothing, and the consumer received
-// that target's source for EVERY feature regardless of what its model
-// selected.
-//
-// Measured on a target copied from the bundled `go`: the bundled one keeps
-// two feature source files, the external one kept all eighteen. That is the
-// failure helpers/featureSource was written to end — 272 stray files in one
-// repo — arriving again by the one route it did not cover.
 
 import { test, describe } from 'node:test'
 import { ok, deepStrictEqual } from 'node:assert'
@@ -63,7 +47,6 @@ function externalTargetPackage(): string {
 }
 
 
-// The feature source files a target add left in the project.
 function featureSource(project: any): string[] {
   return project.files()
     .filter((f: string) => f.includes('/feature/') && f.endsWith('_feature.go'))
@@ -117,10 +100,6 @@ describe('feature trim catalogue', () => {
 
 
   test('the catalogue unions DEFINITIONS from every source', () => {
-    // Three terms, each a place feature definition files live: the bundled
-    // scaffold, the target package being added, and the consumer's own
-    // `model/feature/` — the last is how an EXTERNAL feature's source becomes
-    // trimmable at all, since neither of the other two has ever heard of it.
     const consumer = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cat-'))
     try {
       Fs.mkdirSync(Path.join(consumer, 'model', 'feature'), { recursive: true })
@@ -165,13 +144,6 @@ describe('feature trim catalogue', () => {
 
 
   test('shared machinery named like a feature is NOT trimmed', async () => {
-    // `tm/rust/feature/support.rs` is not a feature — no
-    // `model/feature/support.aon` declares one — it is shared machinery that
-    // `Main_rust` emits unconditionally (`pub mod support;`). If a project
-    // declaring a feature called `support` could put that name in the
-    // catalogue, the file would be discovered as that feature's source, found
-    // unselected (the project's own `support` has no rust source), and pruned
-    // — leaving a crate that names a module it does not have.
     const project = makeProject({
       feature: { support: { name: 'support', active: true } },
     })

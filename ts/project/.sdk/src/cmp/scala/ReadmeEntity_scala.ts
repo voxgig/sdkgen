@@ -11,7 +11,6 @@ import { scalaVarName } from './utility_scala'
 
 // Type names come from the shared canonToType 'scala' column (single source of truth).
 
-// A type-correct Scala literal for a field's canonical type.
 function scalaLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
   if ('INTEGER' === k) return '1L'

@@ -3,8 +3,6 @@ import { cmp, Content, File } from 'jostraca'
 import { SECURITY_EMAIL, apiName, repoInfo } from '../helpers/packageMeta'
 
 
-// Root SECURITY.md: a responsible-disclosure policy pointing at the Voxgig
-// security contact, with the generated / unofficial disclosure inline.
 const Security = cmp(function Security(props: any) {
   const { ctx$ } = props
   const { model } = ctx$

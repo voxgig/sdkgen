@@ -1,34 +1,4 @@
 import { kindCollection } from '../helpers/kindCollection'
-// `voxgig-sdkgen doctor` — does this project's `.sdk/` still match the
-// scaffold?
-//
-// WHY THIS EXISTS
-//
-// Nothing told a project that its `.sdk/` had drifted. `target add`
-// OVERWRITES the vendored components, the template masters AND the per-target
-// model file, so any hand-edit there is silently reverted on the next run —
-// and any file the scaffold has since stopped shipping just stays, compiling
-// into the output forever. In voxgig-solardemo-sdk two such orphans broke the
-// Go build in a single session: `utility/make_target.go` (replaced upstream by
-// `make_point.go`, leaving a duplicate symbol) and `utility/struct/go.mod` (a
-// nested module that made `utility/struct` unimportable).
-//
-// Every divergence in that repo was found by hand-diffing. Without a check,
-// fixing it once guarantees nothing about next month.
-//
-// WHY A NAIVE `diff -r` DOES NOT WORK
-//
-// `target add` writes template masters with substitution PARTLY applied, and
-// inconsistently: `tm/go/core/error.go` arrives substituted (`SolardemoError`
-// where the scaffold says `ProjectNameError`), `tm/ts/test/utility.ts` arrives
-// raw (its placeholders are substituted later, at generate time), and
-// `tm/go/LICENSE` has the year filled in. A plain `diff -r` against the
-// scaffold reported 20 edited files in that repo; 19 were substitution
-// artefacts and exactly ONE was a real hand-edit.
-//
-// Only sdkgen knows which replacements it applied to which files, which is
-// why this check belongs here and cannot be scripted downstream. It re-runs
-// the same substitution before comparing, so what it reports is real.
 
 import Path from 'node:path'
 
@@ -53,9 +23,6 @@ import {
   aliasCmpName,
 } from './target'
 
-// `aliasModelText` is no longer named here: the model-file comparison asks
-// the registry for the kind's own `rename`, so a kind that renames
-// differently is handled without this file knowing how.
 import { recordedRef, KINDS, kindDef, kindTrees } from './kind'
 import type { TreeDef } from './kind'
 
@@ -69,13 +36,6 @@ import { findFeatureSources } from '../helpers/featureSource'
 import { isJunk } from '../helpers/junk'
 
 
-// jostraca's Copy walk skips these (IGNORED_RE in CopyOp) — editor backups and
-// deliberately-disabled templates never reach a project, so they are not drift.
-//
-// `isJunk` is the other half of the same statement: what the WRITER refuses to
-// copy, this reader must refuse to miss. A `__pycache__` in the scaffold would
-// otherwise be reported as missing from every project on earth, and one in a
-// project as an unexplained extra file. See helpers/junk.
 const IGNORED_RE = /(~|-jostraca-off)$/
 
 function ignoredEntry(name: string): boolean {
@@ -87,16 +47,6 @@ function ignoredEntry(name: string): boolean {
 const BINARY_RE = /\.(png|jpg|jpeg|gif|ico|pdf|zip|gz|woff2?|ttf|eot|wasm)$/i
 
 
-// Root-level components sdkgen provides, and what a project loses by not
-// wiring one in. A project's `Root.ts` / `Top.ts` come from create-sdkgen at
-// init and are then FROZEN — `target add` never touches them — so a
-// capability added to sdkgen afterwards is invisible to every existing
-// project. solardemo's `Top.ts`, written before `ReadmeTop` existed, kept
-// hand-rolling a 9-line stub root README with an empty mermaid diagram for
-// months, and no number of `target add` runs would ever have said so.
-//
-// Not wiring one in is a legitimate choice, so this is REPORTED, never a
-// failure.
 const ROOT_COMPONENTS: [string, string][] = [
   ['ReadmeTop', 'the assembled root README (quickstart, howto, test, package table)'],
   ['AgentGuideTop', 'the root AGENTS.md / CLAUDE.md agent guides'],
@@ -119,39 +69,18 @@ type DoctorReport = {
   // `target add` applies.
   edited: string[]
 
-  // Present in the project, but `target add` would no longer write it. Stale
-  // output — the category that broke the Go build twice.
   stale: string[]
 
-  // `target add` would write it and the project does not have it.
   missing: string[]
 
-  // Project-owned components the scaffold never shipped. NOT drift.
   additive: string[]
 
-  // Generated files the model declares RETIRED (`target.superseded`) that
-  // still sit in the target output directories — the old runner beside its
-  // replacement. `doctor prune` deletes exactly these.
   superseded: string[]
 
   // Root-level components this sdkgen provides that the project's root
   // wiring never calls. Informational: opting out is legitimate.
   unwired: string[]
 
-  // MODEL FILES NOTHING INCLUDES. A `.aon` on disk that no other model
-  // file `@`-includes, reachable from no entry point: it looks
-  // authoritative, it is read by nobody, and NOTHING reports it.
-  //
-  // voxgig-solardemo-sdk lost a month to this. `model/sdk-base.aontu`
-  // still pinned the npm scope, the repo name, the Go version and
-  // `test.live.strict: true`, but the generate path moved to
-  // `sdk.aon -> project.aon` and included it nowhere. The pins silently
-  // stopped applying while the file sat there saying otherwise, and the
-  // generated SDK went out with a derived npm name that did not match
-  // the one publishing used and GitHub URLs that 404.
-  //
-  // The same shape as `superseded`, one layer up: that is generated
-  // output nothing writes any more, this is model INPUT nothing reads.
   orphanModel: string[]
 
   // A copy that differs from the scaffold ONLY in its provenance lines —
@@ -166,7 +95,6 @@ type DoctorReport = {
   // it is what an alias is FOR.
   aliasedDiff: string[]
 
-  // True when nothing in the first four categories was found.
   ok: boolean
 }
 
@@ -196,10 +124,6 @@ async function cmd_doctor_check(_args: string[], actx: ActionContext): Promise<A
 }
 
 
-// `doctor prune` — the ONE write doctor performs, and only ever of files a
-// target's model DECLARES superseded (retired templates jostraca cannot
-// delete from a consumer: the old runner beside its replacement, a
-// pre-reshape vendored file). Everything else doctor does stays read-only.
 async function cmd_doctor_prune(_args: string[], actx: ActionContext): Promise<ActionResult> {
   const log = actx.log
   const fs = actx.fs()
@@ -223,10 +147,6 @@ async function cmd_doctor_prune(_args: string[], actx: ActionContext): Promise<A
 }
 
 
-// Generated files the model says this toolchain NO LONGER writes, that
-// still exist in the project's target output directories. Paths in the
-// model are relative to each target's output dir (a sibling of `.sdk/`,
-// named for the target).
 function supersededFiles(actx: ActionContext): string[] {
   const fs = actx.fs()
   const model = actx.model
@@ -255,25 +175,6 @@ function supersededFiles(actx: ActionContext): string[] {
 type DoctorScope = (kind: string, name: string) => boolean
 
 
-// Code API. Returns the report; the CLI turns a non-ok report into a
-// non-zero exit so this can gate CI.
-// MODEL FILES NOTHING INCLUDES.
-//
-// aontu assembles one model by following `@"..."` includes from an entry
-// point. A `.aon` or `.aontu` that no reachable file includes is inert: it
-// is on disk, it reads as authoritative, and it contributes nothing. There
-// is no error, because there is nothing to error about - the file is simply
-// never opened.
-//
-// REACHABILITY, not a bare "is it mentioned anywhere". A file included only
-// by another orphan is still an orphan, which a mention-scan would miss, so
-// this walks OUT from the entry points and reports what it never arrives at.
-//
-// The entry points are the ones the project's own scripts run - model/sdk.aon
-// and model/test/test.aon - plus the config build under .model-config, which
-// is what registers the generator actions. A package include (`@voxgig/...`)
-// leaves this tree and is not followed; a local include is resolved relative
-// to the including file, which is how aontu resolves it.
 function orphanModelFiles(actx: ActionContext): string[] {
   const fs = actx.fs()
   const modeldir = Path.join(actx.folder, 'model')
@@ -282,14 +183,6 @@ function orphanModelFiles(actx: ActionContext): string[] {
     return []
   }
 
-  // TWO TREES ARE NOT MODEL INPUT and would be reported as orphans by a
-  // plain walk, measured against voxgig-solardemo-sdk rather than guessed:
-  //
-  // - `.jostraca/generated/` is jostraca's own bookkeeping copy of what it
-  //   wrote. Nothing includes it because nothing should.
-  // - `guide/` belongs to apidef, which opens those files by PATH rather
-  //   than through an `@`-include, so they are read without ever being
-  //   reachable from this entry chain.
   const all = walk(fs, modeldir)
     .filter((rel) => rel.endsWith('.aon') || rel.endsWith('.aontu'))
     .filter((rel) => !rel.includes('.jostraca/') && !rel.startsWith('guide/'))
@@ -320,7 +213,6 @@ function orphanModelFiles(actx: ActionContext): string[] {
 
     for (const m of src.matchAll(/@"([^"]+)"/g)) {
       const ref = m[1]
-      // A package include leaves this tree.
       if (ref.startsWith('@')) {
         continue
       }
@@ -351,28 +243,10 @@ async function doctor(
     resyncPending: [], aliasedDiff: [], ok: true,
   }
 
-  // Retired-output leftovers first: purely model-driven, and a finding —
-  // two copies of the same machinery, one stale, is exactly the state the
-  // migration guide had to clean up by hand three times.
   report.superseded = supersededFiles(actx)
 
-  // Model INPUT nothing reads — see `orphanModel` on the report type.
   report.orphanModel = orphanModelFiles(actx)
 
-  // EVERY KIND, not just targets.
-  //
-  // `add` writes a copied model file for each kind — `model/target/<t>.aon`
-  // and `model/feature/<f>.aon` alike — and overwrites it on every resync.
-  // Only the target one was ever compared, so a hand-edit to an installed
-  // FEATURE definition read as perfectly in sync and was silently reverted by
-  // the next `target add` (which re-runs `feature add` for every active
-  // feature). That is exactly the failure `checkTargetModel` was added for,
-  // left open for the other half of what add owns.
-  //
-  // Driven off the registry, so a kind added later is checked without
-  // anything here changing. The per-kind EXTRAS — a target's `src/cmp` and
-  // `tm` trees — stay in that kind's own check, because they are genuinely
-  // different work rather than the same work with different strings.
   const kinds = Object.keys(KINDS).sort()
 
   const counts: Record<string, number> = {}
@@ -382,16 +256,6 @@ async function doctor(
 
   log.info({ point: 'doctor-start', targets: counts.target ?? 0, ...counts })
 
-  // Targets resolved ONCE, before the kind loop, because the feature checks
-  // need them too: a feature's per-target source lives under the name the
-  // target has in its own source, so finding it means knowing where each
-  // target came from. Resolving per (feature, target) pair would re-read
-  // every package manifest dozens of times and warn repeatedly about the
-  // same unresolvable target.
-  //
-  // Resolved even when the run is SCOPED past them — a scoped check of one
-  // feature still has to look in every target's tree for that feature's
-  // files.
   const targets = new Map<string, Source>()
 
   for (const tname of
@@ -437,10 +301,6 @@ async function doctor(
     }
   }
 
-  // Root-component wiring is a property of the PROJECT, not of any item, so a
-  // scoped run has no business reporting on it — `package update` asking "is
-  // this package's copy clean" should not also say the project never wired in
-  // `ReadmeTop`.
   if (null == scope) {
     checkWiring(actx, report)
   }
@@ -526,19 +386,6 @@ function checkWiring(actx: ActionContext, report: DoctorReport) {
 }
 
 
-// Where one declared item came from, or undefined with the reason said out
-// loud.
-//
-// The model records `base` and `origname` (written by add), and `origname` is
-// what makes an ALIAS checkable: the ref used to be rebuilt as
-// `<base>/../<name>`, which names the INSTALLED item — so `target add ts~ts2`
-// sent doctor looking for a `ts2` scaffold that does not exist, both trees
-// walked empty, and every component read as `additive` while every template
-// read as `stale` (a FAILING category). Real edits were undetectable and
-// doctor went red on noise.
-//
-// A bare name falls back to the bundled scaffold, for a copy predating
-// provenance.
 function resolveDeclared(
   kind: string, name: string, actx: ActionContext,
 ): Source | undefined {
@@ -546,13 +393,6 @@ function resolveDeclared(
   const ref = recordedRef(declared, name) || name
 
   try {
-    // WITH THE LOG. Resolution reads the source's package manifest, and an
-    // unusable one is reported only through `ctx$.log`. Without it doctor
-    // silently lost the package name — and then reported every item from that
-    // package as FORKED, because the expected text no longer carries the
-    // `package:` line the copy has, with nothing anywhere saying why. That is
-    // accurate (the next add really would strip the line) but unactionable,
-    // which is the same defect as being wrong.
     return resolveSource(
       ref, kind, { folder: actx.folder, fs: actx.fs, log: actx.log })
   }
@@ -577,18 +417,6 @@ function checkTarget(
   const model = actx.model
   const root = actx.folder
 
-  // The two TREES `target add` owns, and the substitution it applies to each.
-  // (It owns one FILE as well — see checkTargetModel, below.)
-  //
-  //   src/cmp — copied verbatim, so a byte compare is the truth.
-  //   tm      — copied through jostraca's template(), with ProjectName.
-  // An ALIASED install renames every `<Cmp>_<origname>` component to
-  // `<Cmp>_<alias>` and rewrites the origin name inside the file (sibling
-  // imports, the __dirname-relative fragment path), because components are
-  // dispatched by the convention `cmp/<t>/Main_<t>`. doctor has to apply the
-  // same two transforms or it expects the ORIGIN names in the alias's folder
-  // and reports the entire tree as missing — 25 files for `go~go2`, none of
-  // them a real finding.
   const aliased = tname !== torigname
 
   const renameCmp = aliased ?
@@ -634,24 +462,12 @@ function checkTarget(
 
   compareTrees(actx, report, trees, {
     excludes,
-    // Only a TARGET has foreign feature source landing in its tree.
     foreign: (kind: string) => 'edited' === kind ?
       foreignFeatureSource(actx, resolved) : [],
   })
 }
 
 
-// COMPARE A SET OF TREES against the sources they were copied from.
-//
-// Extracted from `checkTarget` unchanged, because the docs kind needs exactly
-// this and a second copy of it is the defect this workstream keeps producing.
-// What differs per kind stays in the caller: which trees, what the copy
-// substituted, whether a trim excludes part of the source, and whether
-// anything foreign is expected to land in the tree.
-//
-// This is the mechanism behind the rule in CLAUDE.md — anything an add
-// writes, doctor must compare, or the next add silently reverts a project's
-// edit. A kind that declares trees and is not walked here would break it.
 function compareTrees(
   actx: ActionContext,
   report: DoctorReport,
@@ -675,32 +491,12 @@ function compareTrees(
       walk(fs, tree.scaffold).filter((rel) => !excluded(rel, excludes)) :
       walk(fs, tree.scaffold)
 
-    // Where each file the project should have COMES FROM: the name it lands
-    // under, mapped to the absolute path of the file it was copied from.
-    //
-    // An absolute path rather than a tree-relative one, because not every
-    // expected file comes from THIS tree — see the foreign-feature union
-    // below.
     const landed = new Map<string, string>(scaffoldFiles.map(
       (rel: string) => [
         null == tree.rename ? rel : tree.rename(rel),
         Path.join(tree.scaffold, rel),
       ]))
 
-    // FOREIGN FEATURE SOURCE.
-    //
-    // A feature supplied by a different package than the target ships its
-    // per-target source in ITS OWN `tm/<target>/` overlay, and `feature add`
-    // copies that into the project. Compared against the target's scaffold
-    // alone, those files are present in the project and absent upstream — so
-    // every one of them was reported STALE, a FAILING category. Any project
-    // using an external feature had a red `doctor` and nothing wrong with it.
-    //
-    // They are not stale, they are expected — just expected from somewhere
-    // else. Adding them here rather than suppressing them keeps them
-    // CHECKED: a hand-edit to a foreign feature's source is still reported,
-    // which is what `package update`'s gate needs in order to cover
-    // everything the re-add writes.
     const foreign = new Set<string>()
 
     for (const [rel, from] of (opts?.foreign?.(tree.kind) ?? [])) {
@@ -758,17 +554,6 @@ function compareTrees(
 }
 
 
-// A DOCS item's trees.
-//
-// Simpler than a target's in every way that matters here: no trim (a docs
-// item has no per-feature source to leave out), and nothing foreign lands in
-// them (a feature package's overlay targets a TARGET's tree). What is the
-// same is the alias handling — docs components are dispatched by the same
-// `Main_<n>` convention — and the tree paths, which come from the registry
-// rather than being spelled a second time.
-//
-// The optional template tree is skipped when the SOURCE does not ship one:
-// `edition add` did not copy it, so the project is right not to have it.
 function checkEdition(
   actx: ActionContext, resolved: Source, report: DoctorReport,
 ) {
@@ -821,20 +606,6 @@ type TreeCompare = {
 }
 
 
-// Per-target source that a FEATURE package supplies for this target, as
-// `project-relative path -> the file it was copied from`.
-//
-// Only for features whose source folder is not the target's own: everything
-// the target ships for itself is already in the tree being walked, and
-// listing it twice would compare it against itself.
-//
-// Only for ACTIVE features, because that is what `feature add` copies. A
-// feature switched off later leaves its files behind, and those really are
-// stale — reporting them is the point.
-//
-// Discovered with `findFeatureSources`, the same function the fan-out and the
-// trim use, so doctor's idea of which files belong to a feature cannot drift
-// from the one that put them there.
 function foreignFeatureSource(
   actx: ActionContext, target: Source,
 ): Map<string, string> {
@@ -862,18 +633,6 @@ function foreignFeatureSource(
 }
 
 
-// One feature's per-target source, as `tm-relative path -> the file it was
-// copied from`, for source the FEATURE package supplies rather than the
-// target.
-//
-// ONE enumerator, used from both directions: the target walk needs these to
-// know they are expected, and the feature check needs them to compare. Two
-// enumerations would be two ideas of which files a feature owns, and the
-// pair would drift — which is the failure this codebase keeps producing.
-//
-// Empty when the feature's source IS the target's own tree: those files are
-// already in the tree being walked, and listing them would compare them
-// against themselves.
 function overlayFiles(
   actx: ActionContext, feature: Source, target: Source,
 ): Map<string, string> {
@@ -908,18 +667,6 @@ function overlayFiles(
 }
 
 
-// A FEATURE's per-target source, checked from the feature's side.
-//
-// This is where those files are COMPARED. The target walk only marks them
-// expected, so that each is compared exactly once — by the feature that owns
-// it, which is also the only scope in which `feature add` will rewrite it.
-//
-// Doing it the other way round — leaving the comparison in the target walk —
-// left the gate open in the case it was built for: `package update` on a
-// FEATURE package scopes doctor to that feature, no target is walked, and so
-// nothing compared the very overlay the feature package supplies. Verified
-// before fixing: the update succeeded without asking, and the local edit was
-// destroyed.
 function checkFeatureSource(
   actx: ActionContext,
   feature: Source,
@@ -950,24 +697,6 @@ function checkFeatureSource(
 }
 
 
-// The copied MODEL FILE — `model/<kind>/<name>.aon`, written by add with
-// the `'BASE'` replacement, and overwritten on every resync exactly as
-// `src/cmp` and `tm` are.
-//
-// It is not scaffolding trivia. A target's carries its dependency set, its
-// `phase` gates, `srcfeature`, `feature.trim` / `feature.fullset` and its
-// publish-registry identity; a feature's carries its version, `active`
-// default, `config` defaults and hook wiring. So a maintainer who fixes a dep
-// version there loses the fix on the next resync with nothing said (the SDK
-// regresses with nobody touching it, which is the failure the "a project
-// decision belongs in the MODEL" rule exists to prevent), and a project whose
-// copy predates a scaffold change carries the old declaration forever while
-// doctor reports it in sync.
-//
-// KIND-NEUTRAL, because the file is the same kind of thing for every kind:
-// one definition, copied, stamped with provenance, optionally renamed for an
-// alias. Only the alias rewrite is kind-specific, and the registry already
-// says which kinds can be aliased at all.
 function checkItemModel(
   actx: ActionContext, kind: string, source: Source, report: DoctorReport,
 ) {
@@ -978,28 +707,10 @@ function checkItemModel(
 
   const scaffold = definitionPath(source.folder, kind, origname)
 
-  // Nothing to compare against — a source that no longer ships this item.
   if (!fs.existsSync(scaffold)) {
     return
   }
 
-  // An ALIAS's model file is PROJECT-OWNED: `target add go~go2` creates it and
-  // never overwrites it again, because differentiating it is the whole point
-  // of an alias (a second Go module needs its own module name and deps), and
-  // add-a-target tells the project to edit it. So a difference here is not a
-  // fork — `target add` will not revert it — and must not fail the check.
-  //
-  // It is still worth REPORTING, which it never was before: the origin was
-  // unrecoverable, so doctor skipped the file entirely and an alias that had
-  // drifted far from a moved-on upstream said nothing. With `origname`
-  // recorded the comparison is possible, so it runs, with the same key
-  // rewrite the add applied — and anything left over is the project's own
-  // differentiation, reported as informational.
-  //
-  // Only for a kind that CAN be aliased. A feature cannot, so for features
-  // this is always false and the ownership argument never applies — the
-  // registry says which, rather than this inferring it from the names
-  // happening to match.
   const aliased = kindDef(kind).alias && name !== origname
 
   const project = definitionPath(actx.folder, kind, name)
@@ -1010,24 +721,9 @@ function checkItemModel(
     return
   }
 
-  // The substitution the add applied on the way in: jostraca's template()
-  // against the model (so `module: name: '$$name$$'` arrives as the project
-  // slug) plus the provenance block recording where the scaffold was.
-  //
-  // NOT templateReplacements() — that is the tm/ tree's map. The two writers
-  // pass different maps, so doctor has to as well, or every project reads as
-  // forked on the `base:` line alone. The map itself is shared with the
-  // writer (helpers/stdrep) so the two cannot drift.
-  //
-  // `package` comes from the SOURCE's manifest, not from what the copy
-  // records, for the same reason `base` does: what this compares is what the
-  // add would write NOW. A package that renamed itself therefore reads as
-  // forked, which is accurate — the next add would rewrite the line.
   const provenance = provenanceReplace(
     { base, origname, name, package: source.package })
 
-  // For an alias, compare against what the origin WOULD produce under the new
-  // name, so the rename itself is not the difference.
   const rename = kindDef(kind).rename
 
   const rewrite = (aliased && null != rename) ?
@@ -1042,19 +738,6 @@ function checkItemModel(
     return
   }
 
-  // A copy written before the toolchain stamped some provenance key differs
-  // from the scaffold by exactly the lines carrying that key. That is not a
-  // fork — the project changed nothing — and reporting it as one would turn
-  // every existing consumer's CI red on upgrade.
-  //
-  // PER KEY, not all-or-nothing. The keys arrived in stages — `base` and
-  // `origname` first, `package` with the manifest — so a project that
-  // resynced between two of them holds a copy that IS stamped (it has `base`)
-  // and is still missing a later key. An all-or-nothing "is it stamped at
-  // all" test called every one of those a fork: on the released 3.4.8
-  // scaffold only ts, csharp and swift carried the anchor, and `ts` is in
-  // essentially every consumer SDK, so that was close to the whole installed
-  // base going red on a file nobody touched.
   if (stampOnly(fs, scaffold, project, actx.model, provenance, rewrite)) {
     report.resyncPending.push(label)
     return
@@ -1064,33 +747,6 @@ function checkItemModel(
 }
 
 
-// Is the ONLY difference a provenance line the copy has not been given yet?
-//
-// MATCHED AGAINST THE EXACT LINES THE STAMP PRODUCES, never against a pattern
-// for "a line that looks like provenance". `base`, `origname` and `package`
-// are not reserved words: `main: kit: target: <t>: module: package` (the Go
-// root package identifier) and `publish: registry: package` (the published
-// package name) are declared model slots that a target model may write in
-// block form, on their own line, looking exactly like a provenance line to
-// any regex. A generic pattern got BOTH directions wrong on such a model —
-// it read the copy's `module: package:` as proof the copy was already
-// stamped, so an untouched pre-manifest file was reported as forked; and it
-// stripped that same real line from the comparison, so DELETING it — an
-// actual fork, silently reverted by the next `target add` — was reported as
-// a pending resync and passed the check.
-//
-// Comparing against `provenanceReplace`'s own output has no such ambiguity,
-// and keeps the reader tied to the writer, which is the whole point of
-// helpers/stdrep.
-//
-// The rule, once the two are known to differ:
-//
-//   - every line the EXPECTED has and the copy lacks must be a stamp line;
-//   - the copy must have NO line the expected lacks.
-//
-// The second half is what keeps the tolerance narrow, as the previous
-// rollout's review required: a changed `package:` value leaves the old line
-// in the copy and unmatched, so it is a fork and is reported as one.
 function stampOnly(
   fs: any, scaffoldPath: string, projectPath: string, model: any,
   provenance: Record<string, string>,
@@ -1115,7 +771,6 @@ function stampOnly(
 }
 
 
-// Lines of `a` that `b` does not have, counting duplicates.
 function lineDiff(a: string, b: string): string[] {
   const pool = new Map<string, number>()
 
@@ -1180,14 +835,6 @@ function excluded(rel: string, excludes: RegExp[]): boolean {
 }
 
 
-// Compare a scaffold file with a project file, applying the SAME substitution
-// `target add` applied on the way in. Without this the comparison reports
-// every substituted placeholder as an edit.
-// `ignore` drops matching lines from BOTH sides before comparing, for a
-// difference that is known not to be a fork (see the provenance rollout in
-// checkTargetModel). It is deliberately a second, narrower question asked
-// only after a plain comparison has already found a difference — so a file
-// that matches exactly never depends on it.
 function differs(
   fs: any, scaffoldPath: string, projectPath: string, model: any, replace: any,
   ignore?: (line: string) => boolean,
@@ -1211,20 +858,6 @@ function differs(
 }
 
 
-// What `target add` WOULD write, beside what the project actually has.
-//
-// One definition, shared by the byte comparison and the stamp-only tolerance,
-// so the two can never disagree about what the expected text is.
-//
-// template() runs even when there is nothing to REPLACE, because jostraca's
-// Copy always interpolates `$$ref$$` against the model as well — the replace
-// map is an extra, not the whole substitution. Skipping it for the src/cmp
-// tree (whose Copy passes no replace map) meant the three Config fragments
-// that carry `$$const.Name$$` / `$$main.kit.info.servers.0.url$$` arrived
-// substituted and compared as bytes: every project with ts, js or dart
-// reported `src/cmp/<t>/fragment/Config.fragment.<ext>` as FORKED straight
-// out of `target add`, which is precisely the noise this exists to remove.
-// With no `$$` refs and no replace keys, template() is the identity.
 function renderPair(
   fs: any, scaffoldPath: string, projectPath: string, model: any, replace: any,
   rewrite?: (src: string) => string,
@@ -1239,7 +872,6 @@ function renderPair(
 }
 
 
-// trimFeatures logs its decisions; doctor is a report, not a run.
 function quietLog(log: any): any {
   const noop = () => { }
   const quiet: any = { info: noop, debug: noop, warn: log.warn.bind(log), error: noop, trace: noop, fatal: noop }

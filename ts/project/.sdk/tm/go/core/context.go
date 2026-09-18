@@ -21,11 +21,6 @@ type Context struct {
 	Entopts map[string]any
 	Options map[string]any
 	Opmap   map[string]*Operation
-	// Opmu guards Opmap. The map is a CACHE shared by inheritance across
-	// every context derived from the same root (see the Opmap block in
-	// NewContext), so two entity operations running on separate
-	// goroutines otherwise race resolveOp's read-then-write - the mutex
-	// travels WITH the map, inherited from the same base context.
 	Opmu     *sync.Mutex
 	Response *Response
 	Result   *Result
@@ -238,10 +233,6 @@ func NewContext(ctxmap map[string]any, basectx *Context) *Context {
 }
 
 func (ctx *Context) resolveOp(opname string) *Operation {
-	// Cache key is `<entity>:<opname>` so two entities with the same op
-	// (e.g. both have a "list") get distinct cached Operations. Keying on
-	// opname alone caused the first-resolved entity's points to be served
-	// to every subsequent entity's call.
 	entname := ""
 	if ctx.Entity != nil {
 		entname = ctx.Entity.GetName()

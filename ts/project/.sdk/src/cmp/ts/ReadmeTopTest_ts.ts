@@ -18,13 +18,6 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
   // `load` on an op-less entity like Cloudsmith's `Abort`.
   const { entity: exampleEntity, primaryOp } = pickExampleEntity(entity)
 
-  // The mock SEEDS NOTHING on its own.
-  //
-  // `SDK.test()` with no argument used to be shown alongside "populated with
-  // mock data" — and returned an empty array. The seed shape
-  // (`{ entity: { <name>: { <id>: {...} } } }`) was documented nowhere; the
-  // only way to find it was to read TestFeature.ts. Offline test mode is a
-  // headline feature of these SDKs, so its one worked example has to run.
   const seedEntity = exampleEntity ? nom(exampleEntity, 'name') : ''
   const seedFields = exampleEntity ?
     opRequestShape(exampleEntity, 'create').items
@@ -74,20 +67,6 @@ const client = ${model.const.Name}SDK.test({
             it.name === idF ? 'test01' : 'example_' + it.name)}`).join(', ')} }`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
-      // DROP THE ID ONLY WHEN THE OP SAYS IT IS OPTIONAL.
-      //
-      // A create usually lets the server assign the id, so leaving it out of
-      // the example is right. But the op's request shape is what generates
-      // the argument TYPE, and some specs make the id required there:
-      // Branch's Quick Links bulk create has `id` as its ONLY required field,
-      // so dropping it left the example calling `create({  })` against a type
-      // that demands `id` —
-      //
-      //   error TS2345: Argument of type '{}' is not assignable to parameter
-      //   of type 'BulkCreateData'
-      //
-      // and the README example test failed on an SDK that was otherwise
-      // correct. The example has to satisfy the type it is calling.
       const isIdField = (it: any) => it.name === idF || it.name === 'id'
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => !isIdField(it) || !it.optional)

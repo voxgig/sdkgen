@@ -44,10 +44,6 @@ import {
 } from './utility_ts'
 
 
-// GenCtx is the per-language generation context passed to every OpGen.
-// Languages with extra needs (Go's `gomodule`, PHP's `accessor`) extend
-// this shape locally. The signature `(ctx, step, index)` is now uniform
-// across all seven language tracks (Phase 1 of the templates refactor).
 type GenCtx = {
   model: Model
   entity: ModelEntity
@@ -79,16 +75,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
         secret: env.${PROJENVNAME}_SECRET,` : ''}`
     : ''
 
-  // A templated server URL (OpenAPI server variables) makes a LIVE client
-  // impossible to construct without values: makeOptions raises rather than
-  // request a URL with a literal `{account_id}` in it. So the live suite
-  // takes them from the environment the same way it takes the apikey.
-  //
-  // Keys are quoted and the env read is bracketed via jsKey/jsProp: a server
-  // variable name is spec-derived and need not be a JS identifier — the URL
-  // grammar admits a leading digit ({2fa}), and a declared-but-unreferenced
-  // variable ({edge-zone}) is not constrained at all. Bare `name:` and
-  // `env.PROJ_SERVER_EDGE-ZONE` are both syntax errors.
   const svars = serverVariables(model)
   const serverEnvEntry = svars
     .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
@@ -98,7 +84,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
           ${jsKey(v.name)}: ${jsProp('env', serverVarEnv(PROJENVNAME, v.name))},`).join('')}
         },`
 
-  // TODO: should be a utility function
   const ff = projectPath('src/cmp/ts/fragment/')
 
   Folder({ name: entity.name }, () => {
@@ -381,12 +366,6 @@ const generateList: OpGen = (ctx, step, index) => {
     const hasRefData = validRef && allSteps.some(s => 'create' === s.op &&
       ((s.input.ref ?? entity.name + '_ref01') === validRef))
 
-    // Guard on a DATA id field (entityDataIdField), NOT entity.id (the load-MATCH
-    // key): an entity can have a match id in its path while its RESPONSE record
-    // has no `id` field (e.g. Multichannel's Template — data fields meta/status/…,
-    // no id). Then `${validRef}_data.id` is undefined and select(list, { id:
-    // undefined }) spuriously matches id-less records, so ItemExists/ItemNotExists
-    // are meaningless. Emit them only when `.id` is a real data field.
     if ('ItemExists' === validator.apply && hasRefData && hasDataId) {
       Content(`
     assert(!isempty(select(${listvar}, { id: ${validRef}_data.id })))
@@ -502,14 +481,6 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const hasEntId = null != entity.id
 
-  // When the entity has no id model field but the load operation requires
-  // path parameters (e.g. cotizacion needs {casa}/{fecha}), calling
-  // load({}) leaves the URL with literal {param} placeholders and the live
-  // API returns 404 HTML, which the SDK then fails to parse as JSON. There
-  // is no synthetic identifier to substitute, so skip emitting the load
-  // step's call in that case — but still declare the entity-var if no
-  // prior step has, so that later flow steps (e.g. remove) referencing
-  // ${entvar} compile.
   const loadOp = entity.op?.load
   const loadPoint = loadOp?.points?.[0]
   const loadPathParams = loadPoint?.args?.params || []

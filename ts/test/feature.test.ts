@@ -353,7 +353,6 @@ describe('feature:cost', () => {
     strictEqual(h.client._cost.total.amount, 5)
   })
 
-  // --- regressions from the Codex review on PR #95 -------------------------
 
   test('charges attempts when the transport throws, so retry cannot spend free', async () => {
     const clock = makeClock()

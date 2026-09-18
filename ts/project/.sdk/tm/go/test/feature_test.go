@@ -1,13 +1,5 @@
 package sdktest
 
-// Behavioural tests for the enterprise features shipped with this SDK
-// (retry, cache, rbac, telemetry, ...). Each block runs only when its
-// feature is present (see fhSkipWithout in feature_harness_test.go, which
-// also holds the fh* pipeline harness these tests drive).
-//
-// This file constructs every shipped feature type by name, so it only
-// compiles with the COMPLETE feature set — it is listed in the go target's
-// `feature.fullset` and dropped when a project trims its features.
 
 import (
 	"os"
