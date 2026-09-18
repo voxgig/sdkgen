@@ -8,6 +8,8 @@ import { requirePath } from '../utility'
 import { ensureStdrep } from '../helpers/stdrep'
 
 
+import { liveHint } from '../helpers/resolved'
+
 import {
   KIT,
   getModelPath
@@ -21,7 +23,7 @@ const Test = cmp(function Test(props: any) {
 
   const points = Object.values(model.main.kit.entity || {}).flatMap((entity: any) =>
     Object.values(entity.op || {}).flatMap((op: any) => op.points || [])) as any[]
-  if (points.some(point => point.contract && JSON.parse(point.contract.json).live)) {
+  if (points.some(point => liveHint(point))) {
     const supported = ['ts', 'js'].includes(target.name)
     File({ name: 'live-coverage.json' }, () => Content(JSON.stringify({
       version: 1, target: target.name, scenarios: supported ? 'supported' : 'unsupported',

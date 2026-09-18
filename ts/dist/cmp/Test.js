@@ -4,12 +4,13 @@ exports.Test = void 0;
 const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
 const stdrep_1 = require("../helpers/stdrep");
+const resolved_1 = require("../helpers/resolved");
 const Test = (0, jostraca_1.cmp)(function Test(props) {
     const { target, ctx$ } = props;
     const { model, log } = ctx$;
     const stdrep = (0, stdrep_1.ensureStdrep)(ctx$);
     const points = Object.values(model.main.kit.entity || {}).flatMap((entity) => Object.values(entity.op || {}).flatMap((op) => op.points || []));
-    if (points.some(point => point.contract && JSON.parse(point.contract.json).live)) {
+    if (points.some(point => (0, resolved_1.liveHint)(point))) {
         const supported = ['ts', 'js'].includes(target.name);
         (0, jostraca_1.File)({ name: 'live-coverage.json' }, () => (0, jostraca_1.Content)(JSON.stringify({
             version: 1, target: target.name, scenarios: supported ? 'supported' : 'unsupported',
