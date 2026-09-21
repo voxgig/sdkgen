@@ -69,6 +69,12 @@ function main() {
     JSON.parse(Fs.readFileSync(MANIFEST, 'utf8')) : { library: {} }
   manifest.tag = manifest.tag || tag
 
+  // Every destination the COMMITTED manifest names, read before the loop
+  // below rewrites entries: a destination dropped from a route is only
+  // visible by comparing against what was there before.
+  const previousDests = new Set(
+    Object.values(manifest.library).flatMap((e) => Object.keys(e.file || {})))
+
   const selected = routes.route.filter((r) =>
     (0 === libsel.length || libsel.includes(r.lib)) &&
     (0 === langsel.length || langsel.includes(r.lang)))
@@ -115,6 +121,14 @@ function main() {
         console.error('MANIFEST ' + key + ' has no entry to verify offline')
         drift++
         continue
+      }
+      // What routes.json and the manifest say about each other needs no
+      // upstream content, so offline decides it too; only "is the content
+      // still what upstream says" waits for the repo.
+      for (const problem of routeDrift(have, route, routes, tag)) {
+        console.error('MANIFEST ' + key + ' does not match routes at ' + tag +
+          ': ' + problem)
+        drift++
       }
       for (const [dest, spec] of Object.entries(have.file)) {
         const abs = Path.join(SDK, dest)
@@ -252,6 +266,12 @@ function main() {
   // produced", and this one DELETES.
   const orphan = !wholeRun ? [] : orphans(routes)
 
+  // A destination the manifest vendored earlier that no route names now,
+  // still on disk. The stale-section prune removed the manifest entry and
+  // left the file, unhashed and still shipped; the orphan scan sees only
+  // the declared `dir` list. Same wholeRun bound, for the same reason.
+  const dropped = !wholeRun ? [] : droppedFiles(routes, previousDests, orphan)
+
   if (check) {
     for (const key of stale) {
       console.error('MANIFEST ' + key + ' has no route — stale section, run `make vendor`')
@@ -260,6 +280,11 @@ function main() {
 
     for (const rel of orphan) {
       console.error('ORPHAN  ' + rel + ' — vendored, but no route produces it')
+      drift++
+    }
+
+    for (const rel of dropped) {
+      console.error('DROPPED ' + rel + ' — vendored earlier, no route produces it now')
       drift++
     }
 
@@ -286,6 +311,10 @@ function main() {
   for (const rel of orphan) {
     Fs.unlinkSync(Path.join(SDK, rel))
     console.log('removed ' + rel + ' (no route produces it)')
+  }
+  for (const rel of dropped) {
+    Fs.unlinkSync(Path.join(SDK, rel))
+    console.log('removed ' + rel + ' (dropped from its route)')
   }
   manifest.library = Object.fromEntries(
     Object.entries(manifest.library).sort(([a], [b]) => a.localeCompare(b)))
@@ -407,6 +436,45 @@ function orphans(routes) {
     }
   }
   return out
+}
+
+
+// Where a manifest entry disagrees with its route on the facts both files
+// hold: tag, repo, version, the destination set and each destination's
+// upstream path. Empty when they agree.
+function routeDrift(have, route, routes, tag) {
+  const out = []
+  const url = routes.repo[route.lib].url
+  const ver = version(route, tag)
+
+  if (have.tag !== tag) out.push('tag ' + have.tag + ' (routes: ' + tag + ')')
+  if (have.repo !== url) out.push('repo ' + have.repo + ' (routes: ' + url + ')')
+  if (have.version !== ver) out.push('version ' + have.version + ' (routes: ' + ver + ')')
+
+  const routed = new Map(Object.entries(route.file).map(([src, dest]) => [dest, src]))
+  const listed = have.file || {}
+
+  for (const [dest, src] of routed) {
+    if (null == listed[dest]) out.push('destination never vendored: ' + dest)
+    else if (listed[dest].upstream !== src) {
+      out.push('upstream of ' + dest + ' is ' + listed[dest].upstream +
+        ' (routes: ' + src + ')')
+    }
+  }
+  for (const dest of Object.keys(listed)) {
+    if (!routed.has(dest)) out.push('destination no longer routed: ' + dest)
+  }
+
+  return out
+}
+
+
+function droppedFiles(routes, previousDests, orphan) {
+  const produced = new Set(routes.route.flatMap((r) => Object.values(r.file)))
+  const seen = new Set(orphan)
+
+  return [...previousDests].sort().filter((rel) =>
+    !produced.has(rel) && !seen.has(rel) && Fs.existsSync(Path.join(SDK, rel)))
 }
 
 
