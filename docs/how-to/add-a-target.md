@@ -63,15 +63,15 @@ voxgig-sdkgen target add go~go2
 ```
 
 This creates a `go2` target whose templates come from `go`. Edit
-`.sdk/model/target/go2.aontu` to differentiate it (module name, deps).
+`.sdk/model/target/go2.aon` to differentiate it (module name, deps).
 
 An ALIAS is the one target model file a project is meant to edit: nothing
 in the scaffold is named `go2`, so `target add` never rewrites it. For a
 target added under its own name, the opposite holds — `target add`
-OVERWRITES `.sdk/model/target/<t>.aontu` along with `.sdk/src/cmp/<t>/`
+OVERWRITES `.sdk/model/target/<t>.aon` along with `.sdk/src/cmp/<t>/`
 and `.sdk/tm/<t>/`, so an edit there is silently reverted on the next
 resync. Put project-specific values in the project's own model
-(`.sdk/model/sdk.aontu`) instead; see
+(`.sdk/model/sdk.aon`) instead; see
 [what a project declares about itself](../reference/model.md#what-a-project-declares-about-itself).
 `voxgig-sdkgen doctor` reports the three trees, the target model file
 included.

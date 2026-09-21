@@ -48,7 +48,7 @@ that matches what you are trying to do right now:
 - [CLI: `voxgig-sdkgen`](./reference/cli.md)
 - [Typed models (entity data typing)](./reference/typed-models.md)
 - [Programmatic API](./reference/api.md)
-- [Model schema (`.aontu`)](./reference/model.md)
+- [Model schema (`.aon`)](./reference/model.md)
 - [Station error codes](./reference/station-errors.md)
 - [Project layout](./reference/project-layout.md)
 - [Operation pipeline and feature hooks](./reference/hooks.md)

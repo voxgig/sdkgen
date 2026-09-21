@@ -54,8 +54,8 @@ once.
 Scaffold one or more language targets into `.sdk/`. This copies, for each
 target:
 
-- the target model (`.sdk/model/target/<name>.aontu`) and registers it
-  in `target-index.aontu`;
+- the target model (`.sdk/model/target/<name>.aon`) and registers it
+  in `target-index.aon`;
 - the generator components (`.sdk/src/cmp/<name>/`);
 - the templates (`.sdk/tm/<name>/`).
 
@@ -115,13 +115,13 @@ voxgig-sdkgen doctor
 ```
 
 It compares the three things `target add` owns and overwrites:
-`.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aontu`.
+`.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aon`.
 
 Six categories:
 
 | Category | Meaning |
 | --- | --- |
-| **forked** | A file in `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aontu`, differs from the scaffold. `target add` will silently revert it. |
+| **forked** | A file in `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aon`, differs from the scaffold. `target add` will silently revert it. |
 | **edited** | A template master in `.sdk/tm/**` differs — compared *after* applying the same substitutions `target add` applied, so placeholder replacement is not reported as an edit. |
 | **stale** | Present in the project, but `target add` would no longer write it. Orphaned output. |
 | **missing** | `target add` would write it and the project does not have it. |
@@ -134,14 +134,14 @@ applied and inconsistently, so most of what a naive diff reports is not an
 edit at all.
 
 An ALIASED target (`target add go~go2`) is exempt from the model-file
-comparison: the scaffold ships no `go2.aontu` to compare against, and
+comparison: the scaffold ships no `go2.aon` to compare against, and
 editing that file is how an alias is differentiated in the first place.
 
 ### `feature add <name>[,<name>...]`
 
 Scaffold one or more features into `.sdk/`. This copies the feature model
-(`.sdk/model/feature/<name>.aontu`), registers it in
-`feature-index.aontu`, and copies the per-target feature templates
+(`.sdk/model/feature/<name>.aon`), registers it in
+`feature-index.aon`, and copies the per-target feature templates
 (`.sdk/tm/<target>/src/feature/<name>/`) for every active target.
 
 ```bash
@@ -225,7 +225,7 @@ never a silent no-op.
 
 Validate a package you are **authoring**, before anyone installs it.
 Every other verb acts on a project; this one acts on a package, so it is
-the one command that runs where there is no `model/sdk.aontu` — an
+the one command that runs where there is no `model/sdk.aon` — an
 author's package root, which is the default `path`.
 
 ```bash
@@ -245,12 +245,12 @@ gate. What it checks:
 | `model-anchor-missing` | error | A definition with no `base: 'BASE'` line. The copy would record no provenance, so `package update` and `doctor` could never find its source. |
 | `model-slash-comment` | error | A `//` or `/* */` line, named by line number. Aontu takes `#` comments only, and a consumer's parser is configured strictly even though a bare `Aontu()` accepts them. |
 | `model-parse` | error | The definition does not compile. Says so explicitly when it compiles under a bare `Aontu()` and not the strict one. |
-| `model-key-missing` | error | `model/<kind>/<name>.aontu` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
+| `model-key-missing` | error | `model/<kind>/<name>.aon` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
 | `model-schema` | error | It does not unify with the base schema: a non-defaulted key is missing (`ext`, `comment.line`, `module.name`, a feature's `title`). This is what a consumer compiles. |
 | `target-publish-pinned` | error | The target model sets a publication value the *project* owns, so the project can no longer set it (concrete-vs-concrete is a conflict) — and the failure would name the project's file. |
 | `feature-deps-misplaced` | warn | Dependencies under `feature.<f>.target.<t>.deps`, which nothing reads. They go directly under the feature: `deps: <target>: {…}`. |
 | `feature-source-undelivered` | warn | `targetsSupported` claims a target for which no feature source can be found. |
-| `feature-source-unrecognised` | warn | A file named like feature source (`<name>_feature.<ext>`, `<Name>Feature.<ext>`, a directory) that no `model/feature/<name>.aontu` declares — so the trim cannot recognise it and every project receives it whatever its model selects. |
+| `feature-source-unrecognised` | warn | A file named like feature source (`<name>_feature.<ext>`, `<Name>Feature.<ext>`, a directory) that no `model/feature/<name>.aon` declares — so the trim cannot recognise it and every project receives it whatever its model selects. |
 
 The blind spot is deliberate: a bare `<name>.<ext>` inside a `feature`
 directory (rust's `retry.rs`) is written exactly like shared machinery
@@ -311,7 +311,7 @@ the project distinguishes them:
 ```
 @acme/sdkgen-iot: 1 file(s) differ from the installed source, so updating
 would overwrite them:
-  model/target/iot-go.aontu
+  model/target/iot-go.aon
 
   This means one of two things, and nothing recorded in the project tells
   them apart:

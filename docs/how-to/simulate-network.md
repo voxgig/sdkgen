@@ -61,7 +61,7 @@ const sdk = new SDK({
 
 `netsim` options additionally include `failEvery`, `rateLimitTimes` +
 `retryAfter` (HTTP 429), `failRate` + `seed` (seeded random failures), and
-`latency`. See `model/feature/netsim.aontu` for the full list.
+`latency`. See `model/feature/netsim.aon` for the full list.
 
 > **Ordering:** transport features wrap `ctx.utility.fetcher` in `init()`,
 > so a feature initialised later wraps one initialised earlier. To make

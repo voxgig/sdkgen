@@ -65,7 +65,7 @@ generates a Node package.
 Declare what remains, minus `@voxgig/sdkgen` itself. The set is per target:
 `haskell` needs `@voxgig/struct`, `seneca-provider` does not.
 
-**Check its parity tier.** A FULL-tier target drives the shared `.aontu`
+**Check its parity tier.** A FULL-tier target drives the shared `.aon`
 corpus, which today lives in create-sdkgen and is reachable only from
 inside voxgig's own repos. Until `@voxgig/sdkgen-corpus` is published, a
 migrated FULL-tier target is silently capped below its tier. MIRRORED and
@@ -101,7 +101,7 @@ throw report it at generation.
 ### 1. The three trees, moved (not copied)
 
 ```
-ts/project/.sdk/model/target/<t>.aontu  ->  <pkg>/.sdk/model/target/<t>.aontu
+ts/project/.sdk/model/target/<t>.aon  ->  <pkg>/.sdk/model/target/<t>.aon
 ts/project/.sdk/src/cmp/<t>/            ->  <pkg>/.sdk/src/cmp/<t>/
 ts/project/.sdk/tm/<t>/                 ->  <pkg>/.sdk/tm/<t>/
 ```
@@ -152,7 +152,7 @@ claiming files the tree no longer had — which the guard reported as
 stale manifest. `build/vendor.js` now prunes a section no route produces,
 on an unfiltered run, and `--check` reports one as drift.
 
-There is **no `target-index.aontu` in the bundled scaffold** — the index is
+There is **no `target-index.aon` in the bundled scaffold** — the index is
 created per consumer project by the `loadContent` bootstrap, so there is
 nothing to edit there. (An earlier draft of this page said otherwise.)
 
