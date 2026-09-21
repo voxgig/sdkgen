@@ -30,8 +30,9 @@ than acting on a project, and so runs where there is no project model.
 | `--dryrun` | `-y` | flag | off | Plan the work and log it, but write no files. |
 | `--only <items>` | — | string | everything | `package add` only: install a subset, as `<kind>:<name>` entries. |
 | `--alias <map>` | — | string | — | `package add` only: install under different names, as `<name>=<alias>` entries. |
-| `--force` | — | flag | off | `package update` only: overwrite locally-changed files, listing what it discarded. |
+| `--force` | — | flag | off | `package update`: overwrite locally-changed files, listing what it discarded. `<kind> remove`: delete forked, edited, stale and project-owned files too. |
 | `--no-fetch` | — | flag | off | `package update` only: skip the fetch and use the source already installed. |
+| `--delete-output` | — | flag | off | `target remove` only: also delete the generated output directory beside `.sdk/`. |
 
 `--only` and `--alias` are arguments to one *command*, not generator
 configuration — unlike `--debug` and `--dryrun`, which describe the
@@ -44,10 +45,10 @@ detail.
 
 ## Actions
 
-The verbs are built from the kind registry (`target`, `feature`, `docs`)
-plus `package` and `doctor`, so registering a new kind adds its `add`
-command with no dispatch code. Names may be comma-separated to add several at
-once.
+The verbs are built from the kind registry (`target`, `feature`, `edition`)
+plus `package` and `doctor`, so registering a new kind adds its `add` and
+`remove` commands with no dispatch code. Names may be comma-separated to
+add or remove several at once.
 
 ### `target add <ref>[,<ref>...]`
 
@@ -182,6 +183,51 @@ The summary defaults to `SUMMARY.md`, the static website to `docs/`, and
 the optional Slidev presentation to `presentation/`. See the
 [docgen configuration guide](https://github.com/voxgig/docgen#configure-the-model)
 for edition filters, local assets, authored pages, and CI.
+
+### `target remove`, `feature remove`, `edition remove`
+
+The opposite of `add`: delete what `add` wrote for an item, and nothing
+else.
+
+```bash
+voxgig-sdkgen target remove go
+voxgig-sdkgen feature remove log,audit
+voxgig-sdkgen edition remove summary
+voxgig-sdkgen -y target remove go           # list what would go, write nothing
+voxgig-sdkgen target remove go --delete-output
+```
+
+What goes, per kind:
+
+| Kind | Deleted |
+| --- | --- |
+| `target` | `src/cmp/<name>/`, `tm/<name>/`, `model/target/<name>.aon`, its line in `target-index.aon` |
+| `feature` | the feature's source in every target's `tm/<t>/` tree (found the way `feature add` finds it), `model/feature/<name>.aon`, its line in `feature-index.aon` |
+| `edition` | `src/cmp/edition/<name>/`, `tm/edition/<name>/`, `model/edition/<name>.aon`, its line in `edition-index.aon` |
+
+Before anything is deleted the item is compared with its source the way
+`doctor` compares it. A forked component, an edited template master, a
+stale file or a project-owned addition in a tree the item owns stops the
+whole removal and is listed; move any project decision into `.sdk/model/`
+first, or pass `--force` to delete those files too. An item whose source
+can no longer be found (a package that was uninstalled) cannot be
+compared, so it also needs `--force`.
+
+Three things `remove` deliberately leaves alone, and says so:
+
+- **Generated output.** `<name>/` beside `.sdk/` stays unless
+  `--delete-output` is passed: a retired port often wants its last
+  generated state kept in history rather than deleted in the same commit.
+  A target that generates out of tree (`output.path`) is never touched.
+- **The project's own declarations.** A `main: kit: target: <name>:` block
+  in `.sdk/model/sdk.aon` is the project's, not the toolchain's; `remove`
+  reports the file that still carries it.
+- **Cross-feature test suites.** After `feature remove`, `target add <t>`
+  re-applies each target's feature trim, which drops the suites that named
+  the removed feature.
+
+The `test` feature cannot be removed: every target's generated suite
+depends on it, and `target add` installs it unconditionally.
 
 ### `package add <pkg>[,<pkg>...]`
 

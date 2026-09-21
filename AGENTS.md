@@ -91,8 +91,11 @@ The CLI a consumer runs, from its own `.sdk/` directory:
 
 ```bash
 voxgig-sdkgen target add <ref>       # add or resync a language target
+voxgig-sdkgen target remove <name>   # the exact inverse; refuses drift
 voxgig-sdkgen feature add <ref>      # add a feature
-voxgig-sdkgen edition add <ref>         # add a docs item (from a package)
+voxgig-sdkgen feature remove <name>  # and its source from every target
+voxgig-sdkgen edition add <ref>      # add a docs item (from a package)
+voxgig-sdkgen edition remove <name>
 voxgig-sdkgen package add <pkg>      # everything an sdkgen package provides
 voxgig-sdkgen package list           # what is installed, and who supplied it
 voxgig-sdkgen package update <pkg>   # fetch a newer version and refresh
@@ -361,7 +364,7 @@ Rules:
 | Add or retype an **SDK client option** | `main: kit: optspec` in `ts/model/sdkgen.aon` | one place, not twenty: the generated `Schema` module carries it into every SDK target. No `make_options` template holds a spec of its own any more — if you find one, it is a regression |
 | Add or retype a **feature option** | that feature's `config.options` (with a default) or `config.optspec` (a type, for a callback or an option whose default understates it) | the option spec, the README table and the REFERENCE table all derive from these two — see `ts/src/helpers/optspec.ts` and `ts/src/cmp/FeatureDocs.ts` |
 | Add/remove a bundled target or feature | the trees above **and** `ts/project/sdkgen-package.json` | a guard test fails if the manifest and the directories disagree |
-| Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts |
+| Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts; `remove` (`action/remove.ts`) plans from the same trees and refuses on doctor's findings, so it follows for free |
 | Change a CLI flag | `ts/bin/voxgig-sdkgen` — parse entry, the closed `Shape`, **and** the help text | plus a row in [reference/cli](./docs/reference/cli.md); the shape is closed, so missing one of the three is a runtime rejection, and an optional flag is `Skip(String)` (see Sharp edges) |
 | Add a rule about a package's `.aon` files | `ts/src/helpers/modelcheck.ts` | `package check` and `ts/test/model-compile.test.ts` are both callers — the bundled scaffold is checked by the same battery an author runs |
 | Ignore another build/editor dropping (`__pycache__`, `.DS_Store`, …) | `ts/src/helpers/junk.ts` | every walk already consults it — copy, prune, doctor, feature scan; `ts/test/junk.test.ts` guards the list against the shipped scaffold |
@@ -780,6 +783,7 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       package.ts       package add / list / update
       check.ts         package check — the author-side battery
       doctor.ts        the drift check every other action is guarded by
+      remove.ts        target/feature/edition remove — the inverse of add
       action.ts        index maintenance
     cmp/               language-neutral components (delegate per-language)
     helpers/           collectDeps, buildIdNames, getMatchEntries

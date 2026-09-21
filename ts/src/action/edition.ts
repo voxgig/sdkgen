@@ -39,6 +39,7 @@ function cmpBase(): string {
 
 const CMD_MAP: any = Object.assign(Object.create(null), {
   add: cmd_edition_add,
+  remove: cmd_edition_remove,
 })
 
 
@@ -62,6 +63,13 @@ async function cmd_edition_add(
   args: string[], actx: ActionContext,
 ): Promise<ActionResult> {
   return edition_add(parseAddNames(args), actx)
+}
+
+
+async function cmd_edition_remove(
+  args: string[], actx: ActionContext,
+): Promise<ActionResult> {
+  return require('./remove').kind_remove('edition', parseAddNames(args), actx)
 }
 
 

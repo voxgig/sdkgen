@@ -64,6 +64,7 @@ async function operate(options) {
     alias: options.alias,
     force: options.force,
     nofetch: options.nofetch,
+    deleteOutput: options.deleteOutput,
   })
 
   // A CHECKING verb (`doctor`, `package check`) must fail the process so CI
@@ -135,6 +136,10 @@ function resolveOptions() {
         type: 'boolean',
       },
 
+      'delete-output': {
+        type: 'boolean',
+      },
+
     }
   })
 
@@ -147,6 +152,7 @@ function resolveOptions() {
     alias: args.values.alias,
     force: !!args.values.force,
     nofetch: !!args.values['no-fetch'],
+    deleteOutput: !!args.values['delete-output'],
     args: args.positionals,
   }
 
@@ -175,6 +181,7 @@ function validateOptions(rawOptions) {
     alias: Skip(String),
     force: Boolean,
     nofetch: Boolean,
+    deleteOutput: Boolean,
     args: [String]
   })
 
@@ -204,8 +211,14 @@ function help() {
 
 Actions:
   target add <ref>      Add (or resync) a language target
+  target remove <name>  Remove a target: its components, templates, model
+                        file and index entry; refuses anything add did not
+                        write unless --force; keeps generated output unless
+                        --delete-output
   feature add <ref>     Add a feature
+  feature remove <name> Remove a feature and its source from every target
   edition add <ref>     Add (or resync) a documentation edition
+  edition remove <name> Remove a documentation edition
   package add <pkg>     Add everything an sdkgen package provides
   package check [path]  Validate a package you are AUTHORING (default: .);
                         exits non-zero on any error finding
@@ -228,7 +241,10 @@ Options:
                         <kind>:<name>,... (default: everything provided)
       --alias <map>     package add: install under different names, as
                         <name>=<alias>,...
-      --force           package update: overwrite locally-changed files
+      --force           package update: overwrite locally-changed files;
+                        <kind> remove: delete forked, edited or stale files too
+      --delete-output   target remove: also delete the generated output
+                        directory beside .sdk/
       --no-fetch        package update: skip the fetch and use the source
                         already installed
 `

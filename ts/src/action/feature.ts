@@ -42,7 +42,8 @@ import {
 
 
 const CMD_MAP: any = {
-  add: cmd_feature_add
+  add: cmd_feature_add,
+  remove: cmd_feature_remove,
 }
 
 const BASE = 'node_modules/@voxgig/sdkgen'
@@ -71,6 +72,11 @@ async function action_feature(args: string[], actx: ActionContext): Promise<Acti
 
 async function cmd_feature_add(args: string[], actx: ActionContext): Promise<ActionResult> {
   return feature_add(parseAddNames(args), actx)
+}
+
+
+async function cmd_feature_remove(args: string[], actx: ActionContext): Promise<ActionResult> {
+  return require('./remove').kind_remove('feature', parseAddNames(args), actx)
 }
 
 

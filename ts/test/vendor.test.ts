@@ -157,8 +157,8 @@ describe('vendor.js', () => {
   describe('offline', () => {
 
     before(() => {
-      // No local checkout and an unreachable URL: the check has only the
-      // two committed files to go on.
+      // No local checkout and an unreachable URL: the check can read only
+      // routes.json and the manifest.
       w.routes.repo.omni.local = Path.join(w.root, 'absent')
     })
 

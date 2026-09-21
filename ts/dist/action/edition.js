@@ -23,6 +23,7 @@ function cmpBase() {
 }
 const CMD_MAP = Object.assign(Object.create(null), {
     add: cmd_edition_add,
+    remove: cmd_edition_remove,
 });
 async function action_edition(args, actx) {
     const cmdname = args[1];
@@ -35,6 +36,9 @@ async function action_edition(args, actx) {
 }
 async function cmd_edition_add(args, actx) {
     return edition_add((0, action_1.parseAddNames)(args), actx);
+}
+async function cmd_edition_remove(args, actx) {
+    return require('./remove').kind_remove('edition', (0, action_1.parseAddNames)(args), actx);
 }
 async function edition_add(edition, actx) {
     edition = edition.map(ref => !ref.includes('/') && !ref.includes('\\') &&
