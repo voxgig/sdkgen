@@ -177,7 +177,7 @@ on error.
     // Entity reference sections
     publishedEntities.map((ent: any) => {
       const opnames = Object.keys(ent.op || {})
-      const fields = ent.fields || []
+      const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
       const fn = ocamlVarName(ent.name)
 
@@ -209,9 +209,9 @@ let ${fn} = Sdk_client.${fn} client Noval
 | --- | --- | --- | --- |
 `)
         each(fields, (field: any) => {
-          const req = field.req ? 'Yes' : 'No'
-          const desc = field.short || ''
-          Content(`| \`${field.name}\` | \`${ocamlType(field.type)}\` | ${req} | ${desc} |
+          const req = field.r ? 'Yes' : 'No'
+          const desc = field.sh || ''
+          Content(`| \`${field.n}\` | \`${ocamlType(field.t)}\` | ${req} | ${desc} |
 `)
         })
 
@@ -236,7 +236,7 @@ let ${fn} = Sdk_client.${fn} client Noval
               if (fop.active === false) return '-'
               return 'Yes'
             })
-            Content(`| \`${field.name}\` | ${cols.join(' | ')} |
+            Content(`| \`${field.n}\` | ${cols.join(' | ')} |
 `)
           })
 

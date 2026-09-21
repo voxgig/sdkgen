@@ -60,10 +60,10 @@ function opTypeName(Name, opname) {
 function opActions(op) {
     const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
     return points
-        .filter((pt) => null != (pt && pt.select && pt.select['$action']))
+        .filter((pt) => null != (pt && pt.q && pt.q['$action']))
         .map((pt) => ({
-        action: String(pt.select['$action']),
-        path: String(pt.orig || ''),
+        action: String(pt.q['$action']),
+        path: String(pt.o || ''),
     }))
         .sort((a, b) => a.action < b.action ? -1 : a.action > b.action ? 1 : 0);
 }
@@ -82,10 +82,10 @@ function entityPath(entity) {
             continue;
         }
         const points = op.points ? (0, jostraca_1.each)(op.points) : [];
-        const canonical = points.filter((pt) => null == (pt && pt.select && pt.select['$action']));
+        const canonical = points.filter((pt) => null == (pt && pt.q && pt.q['$action']));
         const pick = (0 < canonical.length ? canonical : points)[0];
-        if (null != pick && null != pick.orig && '' !== pick.orig) {
-            return String(pick.orig);
+        if (null != pick && null != pick.o && '' !== pick.o) {
+            return String(pick.o);
         }
     }
     return '';
@@ -93,7 +93,7 @@ function entityPath(entity) {
 function ownPoint(points) {
     let best = points[0];
     for (const pt of points) {
-        if (null == pt || null == pt.segments || null == best || null == best.segments) {
+        if (null == pt || null == pt.s || null == best || null == best.s) {
             continue;
         }
         const ptterm = (0, pointPath_1.pointTerminalParam)(pt);
@@ -114,7 +114,7 @@ function samePath(points) {
 }
 function opParams(op) {
     let points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
-    const canonical = points.filter((pt) => null == (pt && pt.select && pt.select['$action']));
+    const canonical = points.filter((pt) => null == (pt && pt.q && pt.q['$action']));
     if (0 < canonical.length) {
         points = canonical;
     }
@@ -124,17 +124,17 @@ function opParams(op) {
     points.forEach((pt, pointIndex) => {
         // Path AND query: a path-param-only read misses e.g. GET /result?trace_id=,
         // which has no path param at all but still addresses one record.
-        const pathParams = pt && pt.args && pt.args.params ? (0, jostraca_1.each)(pt.args.params) : [];
-        const queryParams = pt && pt.args && pt.args.query ? (0, jostraca_1.each)(pt.args.query) : [];
+        const pathParams = pt && pt.g && pt.g.params ? (0, jostraca_1.each)(pt.g.params) : [];
+        const queryParams = pt && pt.g && pt.g.query ? (0, jostraca_1.each)(pt.g.query) : [];
         const params = [...pathParams, ...queryParams];
         const requiredHere = {};
         params.forEach((p) => {
-            if (p && null != p.name) {
-                requiredHere[p.name] = false !== p.reqd;
-                if (!seen[p.name]) {
-                    seen[p.name] = { ...p };
-                    requiredOnAll[p.name] = 0 === pointIndex;
-                    out.push(seen[p.name]);
+            if (p && null != p.n) {
+                requiredHere[p.n] = false !== p.r;
+                if (!seen[p.n]) {
+                    seen[p.n] = { ...p };
+                    requiredOnAll[p.n] = 0 === pointIndex;
+                    out.push(seen[p.n]);
                 }
             }
         });
@@ -145,9 +145,9 @@ function opParams(op) {
         });
     });
     out.forEach((p) => {
-        p.reqd = true === requiredOnAll[p.name];
+        p.r = true === requiredOnAll[p.n];
     });
-    if (1 < points.length && !out.some((p) => p.reqd) && !samePath(points)) {
+    if (1 < points.length && !out.some((p) => p.r) && !samePath(points)) {
         return opParams({ points: [ownPoint(points)] });
     }
     return out;
@@ -159,12 +159,12 @@ function fieldInOp(field, opname) {
 function fieldOptional(field, opname) {
     switch (opname) {
         case 'create':
-            return false === field.req;
+            return false === field.r;
         case 'update':
             return true;
         case 'load':
         case 'remove':
-            return 'id' !== field.name;
+            return 'id' !== field.n;
         case 'list':
         default:
             return true;
@@ -182,26 +182,26 @@ function opRequestShape(ent, opname) {
     const params = opParams(op);
     if (0 < params.length && !isbodyop) {
         const items = params.map((p) => ({
-            name: p.name,
-            type: p.type,
-            optional: false === p.reqd,
+            name: p.n,
+            type: p.t,
+            optional: false === p.r,
         }));
         return { items, fromParams: true };
     }
     const paramItems = isbodyop ? params.map((p) => ({
-        name: p.name,
-        type: p.type,
-        optional: false === p.reqd,
+        name: p.n,
+        type: p.t,
+        optional: false === p.r,
     })) : [];
     const paramNames = new Set(paramItems.map((p) => p.name));
     const fields = (ent.fields ? (0, jostraca_1.each)(ent.fields) : [])
-        .filter((f) => f.active !== false)
+        .filter((f) => f.a !== false)
         .filter((f) => fieldInOp(f, opname));
     const items = paramItems.concat(fields
-        .filter((f) => !paramNames.has(f.name))
+        .filter((f) => !paramNames.has(f.n))
         .map((f) => ({
-        name: f.name,
-        type: f.type,
+        name: f.n,
+        type: f.t,
         optional: fieldOptional(f, opname),
     })));
     return { items, fromParams: false };
@@ -376,7 +376,7 @@ function medianOf(xs) {
     const m = Math.floor(s.length / 2);
     return 0 === s.length ? 0 : (s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2);
 }
-// The id field on the entity's DATA type (its fields[]), or null. DISTINCT from
+// The id field on the entity's DATA type (its fields{}), or null. DISTINCT from
 // entityIdField (the load-MATCH key): an API can model a load match that carries
 // an `id` param while the response entity itself has no `id` field, so `.id`
 // access on a RETURNED record must be guarded on this, not on the match key.
@@ -386,10 +386,10 @@ function entityDataIdField(ent) {
     }
     const idName = (ent.id && ent.id.field) || 'id';
     const fields = ent.fields ? (0, jostraca_1.each)(ent.fields) : [];
-    if (fields.some((f) => f && f.name === idName)) {
+    if (fields.some((f) => f && f.n === idName)) {
         return idName;
     }
-    if (fields.some((f) => f && f.name === 'id')) {
+    if (fields.some((f) => f && f.n === 'id')) {
         return 'id';
     }
     return null;

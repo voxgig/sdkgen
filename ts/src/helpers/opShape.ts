@@ -62,10 +62,10 @@ function opActions(op: any): { action: string, path: string }[] {
   const points: any[] = op && op.points ? each(op.points) : []
 
   return points
-    .filter((pt: any) => null != (pt && pt.select && pt.select['$action']))
+    .filter((pt: any) => null != (pt && pt.q && pt.q['$action']))
     .map((pt: any) => ({
-      action: String(pt.select['$action']),
-      path: String(pt.orig || ''),
+      action: String(pt.q['$action']),
+      path: String(pt.o || ''),
     }))
     .sort((a, b) => a.action < b.action ? -1 : a.action > b.action ? 1 : 0)
 }
@@ -93,11 +93,11 @@ function entityPath(entity: any): string {
 
     const points: any[] = op.points ? each(op.points) : []
     const canonical = points.filter((pt: any) =>
-      null == (pt && pt.select && pt.select['$action']))
+      null == (pt && pt.q && pt.q['$action']))
 
     const pick = (0 < canonical.length ? canonical : points)[0]
-    if (null != pick && null != pick.orig && '' !== pick.orig) {
-      return String(pick.orig)
+    if (null != pick && null != pick.o && '' !== pick.o) {
+      return String(pick.o)
     }
   }
 
@@ -109,7 +109,7 @@ function ownPoint(points: any[]): any {
   let best = points[0]
 
   for (const pt of points) {
-    if (null == pt || null == pt.segments || null == best || null == best.segments) {
+    if (null == pt || null == pt.s || null == best || null == best.s) {
       continue
     }
 
@@ -140,7 +140,7 @@ function opParams(op: any): any[] {
   let points: any[] = op && op.points ? each(op.points) : []
 
   const canonical = points.filter((pt: any) =>
-    null == (pt && pt.select && pt.select['$action']))
+    null == (pt && pt.q && pt.q['$action']))
   if (0 < canonical.length) {
     points = canonical
   }
@@ -152,17 +152,17 @@ function opParams(op: any): any[] {
   points.forEach((pt: any, pointIndex: number) => {
     // Path AND query: a path-param-only read misses e.g. GET /result?trace_id=,
     // which has no path param at all but still addresses one record.
-    const pathParams = pt && pt.args && pt.args.params ? each(pt.args.params) : []
-    const queryParams = pt && pt.args && pt.args.query ? each(pt.args.query) : []
+    const pathParams = pt && pt.g && pt.g.params ? each(pt.g.params) : []
+    const queryParams = pt && pt.g && pt.g.query ? each(pt.g.query) : []
     const params = [...pathParams, ...queryParams]
     const requiredHere: Record<string, boolean> = {}
     params.forEach((p: any) => {
-      if (p && null != p.name) {
-        requiredHere[p.name] = false !== p.reqd
-        if (!seen[p.name]) {
-          seen[p.name] = { ...p }
-          requiredOnAll[p.name] = 0 === pointIndex
-          out.push(seen[p.name])
+      if (p && null != p.n) {
+        requiredHere[p.n] = false !== p.r
+        if (!seen[p.n]) {
+          seen[p.n] = { ...p }
+          requiredOnAll[p.n] = 0 === pointIndex
+          out.push(seen[p.n])
         }
       }
     })
@@ -174,10 +174,10 @@ function opParams(op: any): any[] {
   })
 
   out.forEach((p: any) => {
-    p.reqd = true === requiredOnAll[p.name]
+    p.r = true === requiredOnAll[p.n]
   })
 
-  if (1 < points.length && !out.some((p: any) => p.reqd) && !samePath(points)) {
+  if (1 < points.length && !out.some((p: any) => p.r) && !samePath(points)) {
     return opParams({ points: [ownPoint(points)] })
   }
 
@@ -194,12 +194,12 @@ function fieldInOp(field: any, opname: string): boolean {
 function fieldOptional(field: any, opname: string): boolean {
   switch (opname) {
     case 'create':
-      return false === field.req
+      return false === field.r
     case 'update':
       return true
     case 'load':
     case 'remove':
-      return 'id' !== field.name
+      return 'id' !== field.n
     case 'list':
     default:
       return true
@@ -223,30 +223,30 @@ function opRequestShape(ent: any, opname: string):
   const params = opParams(op)
   if (0 < params.length && !isbodyop) {
     const items = params.map((p: any) => ({
-      name: p.name,
-      type: p.type,
-      optional: false === p.reqd,
+      name: p.n,
+      type: p.t,
+      optional: false === p.r,
     }))
     return { items, fromParams: true }
   }
 
   const paramItems = isbodyop ? params.map((p: any) => ({
-    name: p.name,
-    type: p.type,
-    optional: false === p.reqd,
+    name: p.n,
+    type: p.t,
+    optional: false === p.r,
   })) : []
   const paramNames = new Set(paramItems.map((p: any) => p.name))
 
   const fields = (ent.fields ? each(ent.fields) : [])
-    .filter((f: any) => f.active !== false)
+    .filter((f: any) => f.a !== false)
     .filter((f: any) => fieldInOp(f, opname))
 
   const items = paramItems.concat(
     fields
-      .filter((f: any) => !paramNames.has(f.name))
+      .filter((f: any) => !paramNames.has(f.n))
       .map((f: any) => ({
-        name: f.name,
-        type: f.type,
+        name: f.n,
+        type: f.t,
         optional: fieldOptional(f, opname),
       })))
 
@@ -453,7 +453,7 @@ function medianOf(xs: number[]): number {
 }
 
 
-// The id field on the entity's DATA type (its fields[]), or null. DISTINCT from
+// The id field on the entity's DATA type (its fields{}), or null. DISTINCT from
 // entityIdField (the load-MATCH key): an API can model a load match that carries
 // an `id` param while the response entity itself has no `id` field, so `.id`
 // access on a RETURNED record must be guarded on this, not on the match key.
@@ -463,10 +463,10 @@ function entityDataIdField(ent: any): string | null {
   }
   const idName = (ent.id && ent.id.field) || 'id'
   const fields = ent.fields ? each(ent.fields) : []
-  if (fields.some((f: any) => f && f.name === idName)) {
+  if (fields.some((f: any) => f && f.n === idName)) {
     return idName
   }
-  if (fields.some((f: any) => f && f.name === 'id')) {
+  if (fields.some((f: any) => f && f.n === 'id')) {
     return 'id'
   }
   return null

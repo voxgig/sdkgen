@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.guardModelNames = guardModelNames;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
+const buildIdNames_1 = require("./buildIdNames");
 const naming_1 = require("./naming");
 function guardModelNames(model, log) {
     const entity = model?.main?.[apidef_1.KIT]?.entity;
@@ -131,7 +132,10 @@ function renameReferences(model, renames) {
             return;
         }
         ent.relations.ancestors = ancestors.map((a) => Array.isArray(a)
-            ? a.map((n) => map.get(n) ?? n)
+            ? a.map((n) => {
+                const renamed = map.get((0, buildIdNames_1.entityRelationName)(n));
+                return renamed == null ? n : n.startsWith('$.') ? '$.main.kit.entity.' + renamed : renamed;
+            })
             : (map.get(a) ?? a));
     });
 }

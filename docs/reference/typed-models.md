@@ -7,8 +7,8 @@ the result.
 ## The pipeline
 
 1. **apidef** normalizes every OpenAPI field/param type to a canonical
-   **sentinel** stored on `fields[].type` and op
-   `points[].args.params[].type`. The vocabulary is exported by
+   **sentinel** stored on `fields.<name>.t` and op
+   `points[].g.params[].t`. The vocabulary is exported by
    `@voxgig/apidef` as `VALID_CANON` (name → sentinel) plus `CANON_ONE`:
 
    | Sentinel | Meaning |

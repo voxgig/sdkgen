@@ -83,15 +83,15 @@ describe('generated live tests continue after failures', () => {
     for (const target of ['ts', 'js']) {
       const model = makeModel([target], undefined,
         `main: kit: info: servers: [{ url: 'http://127.0.0.1:${port}' }]`, ['test'])
-      delete model.main.kit.entity.planet.op.load.points[0].args.params[0].example
+      delete model.main.kit.entity.planet.op.load.points[0].g.params[0].ex
       // The first route needs an unavailable parent; the singleton route
       // remains usable and must still be exercised without ENTID.
       const ambient = model.main.kit.entity.ambient.op.load.points
       ambient.unshift({ ...ambient[0],
-        orig: '/account/{account_id}/ambient',
-        segments: [{ lit: 'account' }, { var: 'account_id' }, { lit: 'ambient' }],
-        select: { exist: ['account_id'] },
-        args: { params: [{ name: 'account_id', orig: 'account_id', kind: 'param', reqd: true, type: '`$STRING`' }] },
+        o: '/account/{account_id}/ambient',
+        s: [{ lit: 'account' }, { var: 'account_id' }, { lit: 'ambient' }],
+        q: { exist: ['account_id'] },
+        g: { params: [{ n: 'account_id', or: 'account_id', k: 'param', r: true, t: '`$STRING`' }] },
       })
       const { fs, vol } = memfs({})
       const generator = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })

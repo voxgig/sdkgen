@@ -162,7 +162,7 @@ same parameters as \`Direct()\`.
       // ACTIVE ops only — an inactive op generates no method, so an example
       // calling it would not compile.
       const opnames = entityOps(ent)
-      const fields = ent.fields || []
+      const fields = Object.values(ent.fields || {})
       // Model-driven id key: null when this entity has no id-like field, in
       // which case load/remove pass a nil match and update omits the id.
       const idF = entityIdField(ent)
@@ -196,9 +196,9 @@ fmt.Println(${eVar}.GetName()) // "${ent.name}"
 | --- | --- | --- | --- |
 `)
         each(fields, (field: any) => {
-          const req = field.req ? 'Yes' : 'No'
-          const desc = field.short || ''
-          Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${req} | ${desc} |
+          const req = field.r ? 'Yes' : 'No'
+          const desc = field.sh || ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
 `)
         })
 
@@ -225,7 +225,7 @@ fmt.Println(${eVar}.GetName()) // "${ent.name}"
               if (fop.active === false) return '-'
               return 'Yes'
             })
-            Content(`| \`${field.name}\` | ${cols.join(' | ')} |
+            Content(`| \`${field.n}\` | ${cols.join(' | ')} |
 `)
           })
 

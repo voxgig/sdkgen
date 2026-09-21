@@ -263,13 +263,19 @@ function withPointParts(op: any): any {
   each(op, (o: any, opname: string) => {
     out[opname] = null == o || null == o.points ? o : {
       ...o,
-      points: each(o.points).map((pt: any) => {
+      points: each(o.points).filter((pt: any) => false !== pt?.a).map((pt: any) => {
         if (null == pt) return pt
-        // Contracts feed test generation directly from the model. Keeping
-        // them in every runtime entity also retains entire request/response
-        // schemas in clones and debug output, exhausting large SDKs' memory.
-        const { contract, ...runtimePoint } = pt
-        return { ...runtimePoint, parts: pointParts(pt) }
+        const args = Object.fromEntries(Object.entries(pt.g || {}).map(([kind, values]) =>
+          [kind, each(values as any).filter((arg: any) => false !== arg.a).map((arg: any) => ({
+            name: arg.n, orig: arg.or, type: arg.t, kind: arg.k,
+            reqd: arg.r, example: arg.ex,
+          }))]))
+        // Runtime hooks expose descriptive names independently of the model schema.
+        return {
+          active: pt.a, kind: pt.k, method: pt.m, orig: pt.o,
+          segments: pt.s, parts: pointParts(pt), rename: pt.r,
+          transform: pt.t, args, select: pt.q, live: pt.li, graphql: pt.gq,
+        }
       }),
     }
   })
@@ -298,7 +304,10 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
   const entityStubs: any = {}
   each(entity, (e: any) => {
     entityDefs[e.name] = clean({
-      fields: e.fields,
+      fields: each(e.fields || {}).filter((f: any) => false !== f.a).map((f: any) => ({
+        name: f.n, title: f.h, type: f.t, req: f.r, op: f.op,
+        short: f.sh, readOnly: f.ro, writeOnly: f.wo, deprecated: f.de, format: f.fo,
+      })),
       id: e.id,
       name: e.name,
       op: withPointParts(e.op),

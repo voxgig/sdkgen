@@ -64,13 +64,13 @@ $client = ${ctor};
     // Model-driven display field: the entity's first non-id string field
     // (falling back to any non-id field), so the list example prints a real
     // column instead of a hardcoded "name" the entity may not have.
-    const fields = exampleEntity.fields || []
+    const fields: any[] = Object.values(exampleEntity.fields || {})
     const displayField =
-      fields.find((f: any) => f && f.name !== 'id' && f.type === '$STRING') ||
-      fields.find((f: any) => f && f.name !== 'id') ||
+      fields.find((f: any) => f && f.n !== 'id' && f.t === '$STRING') ||
+      fields.find((f: any) => f && f.n !== 'id') ||
       null
     const idCol = dataIdF ? `$item[${JSON.stringify(dataIdF)}]` : null
-    const dispCol = displayField ? `$item[${JSON.stringify(displayField.name)}]` : null
+    const dispCol = displayField ? `$item[${JSON.stringify(displayField.n)}]` : null
     const itemPrint = [idCol, dispCol].filter(Boolean).join(' . " " . ') || 'json_encode($item)'
 
     if (opnames.includes('list')) {

@@ -57,7 +57,7 @@ import { registerComponent } from './cmp/Registered'
 import { resolvedFor, liveHint, pointFacts, hasLiveScenarios } from './helpers/resolved'
 import type { RegisterOptions } from './cmp/Registered'
 
-import { buildIdNames } from './helpers/buildIdNames'
+import { buildIdNames, entityRelationName, flowSteps } from './helpers/buildIdNames'
 import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import { guardModelNames } from './helpers/modelNames'
@@ -992,6 +992,8 @@ export {
   SdkGenError,
 
   buildIdNames,
+  entityRelationName,
+  flowSteps,
   getMatchEntries,
   collectDeps,
 

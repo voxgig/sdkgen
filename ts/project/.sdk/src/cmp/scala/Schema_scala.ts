@@ -41,7 +41,7 @@ import ${scalapackage}.utility.Json
 // ${model.const.Name} ${target.Name} SDK: generated schemas. Do not edit.
 //
 // Generated from the model: \`main.kit.optspec\` and each feature's
-// \`config.options\` for the option spec; entity \`fields[].type\` for the
+// \`config.options\` for the option spec; entity \`fields{}.type\` for the
 // entity specs.
 object Schema {
 

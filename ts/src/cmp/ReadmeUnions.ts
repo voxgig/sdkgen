@@ -28,7 +28,7 @@ const ReadmeUnions = cmp(function ReadmeUnions(props: any) {
       }
       rows.push({
         entity: ent.name,
-        field: field.name,
+        field: field.n,
         branches: union.branches,
         depth: union.depth,
       })

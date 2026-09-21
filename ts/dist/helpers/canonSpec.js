@@ -85,10 +85,10 @@ function entityDataSpec(ent) {
     const spec = { [S_OPEN]: true };
     const fields = (ent && ent.fields) ? (0, jostraca_1.each)(ent.fields) : [];
     for (const f of fields) {
-        if (null == f || null == f.name || false === f.active) {
+        if (null == f || null == f.n || false === f.a) {
             continue;
         }
-        spec[f.name] = canonToSpec(f.type, false === f.req);
+        spec[f.n] = canonToSpec(f.t, false === f.r);
     }
     return spec;
 }

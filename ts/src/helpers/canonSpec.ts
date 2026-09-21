@@ -101,10 +101,10 @@ function entityDataSpec(ent: any): Record<string, any> {
 
   const fields = (ent && ent.fields) ? each(ent.fields) : []
   for (const f of fields) {
-    if (null == f || null == f.name || false === f.active) {
+    if (null == f || null == f.n || false === f.a) {
       continue
     }
-    spec[f.name] = canonToSpec(f.type, false === f.req)
+    spec[f.n] = canonToSpec(f.t, false === f.r)
   }
 
   return spec

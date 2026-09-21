@@ -32,13 +32,13 @@ main: kit: entity: planet: {
     id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
     title: { name: "title", kind: "field", type: "\`$STRING\`", required: true }
   }
-  fields: [
-    { name: "id",    req: true, type: "\`$STRING\`" }
-    { name: "title", req: true, type: "\`$STRING\`" }
-  ]
+  fields: {
+    "id": { h: 'Id', n: "id",    r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: true, t: "\`$STRING\`" }
+  }
   op: { list: { name: "list", points: [ {
-    args: {}, method: "GET", orig: "/planet", segments: [{ lit: "planet" }]
-    transform: { req: "\`reqdata\`", res: "\`body\`" } } ] } }
+    g: {}, m: "GET", o: "/planet", s: [{ lit: "planet" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] } }
 }
 
 main: kit: entity: hidden: {
@@ -46,10 +46,10 @@ main: kit: entity: hidden: {
   name: "hidden"
   active: false
   field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
-  fields: [ { name: "id", req: true, type: "\`$STRING\`" } ]
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
   op: { list: { name: "list", points: [ {
-    args: {}, method: "GET", orig: "/hidden", segments: [{ lit: "hidden" }]
-    transform: { req: "\`reqdata\`", res: "\`body\`" } } ] } }
+    g: {}, m: "GET", o: "/hidden", s: [{ lit: "hidden" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] } }
 }
 `
 

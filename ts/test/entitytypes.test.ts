@@ -80,19 +80,19 @@ function makeModel() {
           sun: {
             active: true, name: 'sun',
             fields: {
-              id: { name: 'id', type: '`$STRING`' },
-              size: { name: 'size', type: '`$INTEGER`', req: false },
-              hot: { name: 'hot', type: '`$BOOLEAN`' },
-              'wave-len': { name: 'wave-len', type: '`$NUMBER`', req: false },
-              nil0: { name: 'nil0', type: '`$NULL`', req: false },
-              uni: { name: 'uni', type: ['`$ONE`', ['`$STRING`', '`$INTEGER`']], req: false },
-              meta: { name: 'meta', type: '`$OBJECT`', req: false },
-              tags: { name: 'tags', type: '`$ARRAY`', req: false },
+              id: { n: 'id', t: '`$STRING`' },
+              size: { n: 'size', t: '`$INTEGER`', r: false },
+              hot: { n: 'hot', t: '`$BOOLEAN`' },
+              'wave-len': { n: 'wave-len', t: '`$NUMBER`', r: false },
+              nil0: { n: 'nil0', t: '`$NULL`', r: false },
+              uni: { n: 'uni', t: ['`$ONE`', ['`$STRING`', '`$INTEGER`']], r: false },
+              meta: { n: 'meta', t: '`$OBJECT`', r: false },
+              tags: { n: 'tags', t: '`$ARRAY`', r: false },
             },
             op: {
               load: {
                 active: true,
-                points: [{ args: { params: [{ name: 'id', type: '`$STRING`' }] } }],
+                points: [{ g: { params: [{ n: 'id', t: '`$STRING`' }] } }],
               },
               list: { active: true, points: [] },
               create: { active: true, points: [] },
@@ -102,10 +102,10 @@ function makeModel() {
           // so the typed model MUST include it.
           moon: {
             active: false, name: 'moon',
-            fields: { id: { name: 'id', type: '`$STRING`' } },
+            fields: { id: { n: 'id', t: '`$STRING`' } },
             op: {
               load: {
-                points: [{ args: { params: [{ name: 'id', type: '`$STRING`' }] } }],
+                points: [{ g: { params: [{ n: 'id', t: '`$STRING`' }] } }],
               },
             },
           },
@@ -254,8 +254,8 @@ describe('EntityTypes emitters — fixture model output', () => {
   test('rb: a nameless field is dropped, not emitted as an empty symbol', async () => {
     const model = makeModel()
     const sun: any = model.main[KIT].entity.sun
-    sun.fields[''] = { name: '', type: '`$STRING`', req: false }
-    sun.op.load.points[0].args.params.push({ name: '', type: '`$STRING`' })
+    sun.fields[''] = { n: '', t: '`$STRING`', r: false }
+    sun.op.load.points[0].g.params.push({ n: '', t: '`$STRING`' })
 
     const { files } = await render('rb', { name: 'rb', ext: 'rb' }, model)
     const out = findFile(files, /Demo_types\.rb$/)

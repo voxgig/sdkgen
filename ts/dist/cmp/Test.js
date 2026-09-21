@@ -14,7 +14,7 @@ const Test = (0, jostraca_1.cmp)(function Test(props) {
         const supported = ['ts', 'js'].includes(target.name);
         (0, jostraca_1.File)({ name: 'live-coverage.json' }, () => (0, jostraca_1.Content)(JSON.stringify({
             version: 1, target: target.name, scenarios: supported ? 'supported' : 'unsupported',
-            points: points.map(point => point.contract?.id || point.method + ' ' + point.orig),
+            points: points.map(point => point.co?.id || point.m + ' ' + point.o),
             ...(!supported ? { reason: 'This target does not yet execute declarative live recipes. Its existing tests do not establish full operation coverage.' } : {}),
         }, null, 2)));
         if (!supported)

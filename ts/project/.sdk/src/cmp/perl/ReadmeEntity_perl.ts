@@ -62,7 +62,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
-    const fields = entity.fields || []
+    const fields = Object.values(entity.fields || {})
     const idF = entityIdField(entity)
     const eVar = entity.name
 
@@ -107,8 +107,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
       each(fields, (field: any) => {
-        const desc = field.short || ''
-        Content(`| \`${field.name}\` | \`${perlType(field.type)}\` | ${desc} |
+        const desc = field.sh || ''
+        Content(`| \`${field.n}\` | \`${perlType(field.t)}\` | ${desc} |
 `)
       })
 

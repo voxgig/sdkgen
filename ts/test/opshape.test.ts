@@ -13,10 +13,10 @@ function makeEntity() {
     Name: 'Advice',
     name: 'advice',
     fields: {
-      id:     { name: 'id', type: '`$STRING`', req: true },
-      note:   { name: 'note', type: '`$STRING`', req: false },
-      code:   { name: 'code', type: '`$INTEGER`' },              // req undefined -> required
-      secret: { name: 'secret', type: '`$STRING`', op: { create: { active: false } } },
+      id:     { n: 'id', t: '`$STRING`', r: true },
+      note:   { n: 'note', t: '`$STRING`', r: false },
+      code:   { n: 'code', t: '`$INTEGER`' },              // req undefined -> required
+      secret: { n: 'secret', t: '`$STRING`', op: { create: { active: false } } },
     },
     op: {
       load:   {},
@@ -25,9 +25,9 @@ function makeEntity() {
       update: {},
       remove: {},
       // params take precedence over the field fallback
-      search: { points: [ { args: { params: {
-        q:    { name: 'q', type: '`$STRING`', reqd: false },
-        kind: { name: 'kind', type: '`$STRING`', reqd: true },
+      search: { points: [ { g: { params: {
+        q:    { n: 'q', t: '`$STRING`', r: false },
+        kind: { n: 'kind', t: '`$STRING`', r: true },
       } } } ] },
     },
   }
@@ -108,7 +108,7 @@ describe('opRequestShape — partiality policy', () => {
   test('load with no id field degrades to fully-optional (never over-constrains)', () => {
     const ent = {
       Name: 'Tag', name: 'tag',
-      fields: { label: { name: 'label', type: '`$STRING`', req: true } },
+      fields: { label: { n: 'label', t: '`$STRING`', r: true } },
       op: { load: {} },
     }
     const { items } = opRequestShape(ent, 'load')
@@ -130,32 +130,32 @@ describe('opRequestShape — multi-point param merging', () => {
       op: {
         // Alternative list routes: by page, by page+group, by page+user.
         list: { points: [
-          { args: { params: {
-            page_access_group_id: { name: 'page_access_group_id', type: '`$STRING`', reqd: true },
-            page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
+          { g: { params: {
+            page_access_group_id: { n: 'page_access_group_id', t: '`$STRING`', r: true },
+            page_id: { n: 'page_id', t: '`$STRING`', r: true },
           } } },
-          { args: { params: {
-            page_access_user_id: { name: 'page_access_user_id', type: '`$STRING`', reqd: true },
-            page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
+          { g: { params: {
+            page_access_user_id: { n: 'page_access_user_id', t: '`$STRING`', r: true },
+            page_id: { n: 'page_id', t: '`$STRING`', r: true },
           } } },
-          { args: { params: {
-            page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
+          { g: { params: {
+            page_id: { n: 'page_id', t: '`$STRING`', r: true },
           } } },
         ] },
         // A real remove route plus folded-in sub-resource action routes.
         remove: { points: [
-          { select: { '$action': 'page_access_group' }, args: { params: {
-            id: { name: 'id', type: '`$STRING`', reqd: true },
-            page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
+          { q: { '$action': 'page_access_group' }, g: { params: {
+            id: { n: 'id', t: '`$STRING`', r: true },
+            page_id: { n: 'page_id', t: '`$STRING`', r: true },
           } } },
-          { args: { params: {
-            page_id: { name: 'page_id', type: '`$STRING`', reqd: true },
+          { g: { params: {
+            page_id: { n: 'page_id', t: '`$STRING`', r: true },
           } } },
         ] },
         // Only action points: they are all that exists, so they are kept.
         invoke: { points: [
-          { select: { '$action': 'resend' }, args: { params: {
-            id: { name: 'id', type: '`$STRING`', reqd: true },
+          { q: { '$action': 'resend' }, g: { params: {
+            id: { n: 'id', t: '`$STRING`', r: true },
           } } },
         ] },
       },
@@ -183,14 +183,14 @@ describe('opRequestShape — multi-point param merging', () => {
       op: {
         load: { points: [
           {
-            segments: [{ lit: 'notifications' }, { var: 'id' }, { lit: 'board' }],
-            args: { params: {
-              notification_id: { name: 'notification_id', type: '`$STRING`', reqd: true },
+            s: [{ lit: 'notifications' }, { var: 'id' }, { lit: 'board' }],
+            g: { params: {
+              notification_id: { n: 'notification_id', t: '`$STRING`', r: true },
             } },
           },
           {
-            segments: [{ lit: 'boards' }, { var: 'id' }],
-            args: { params: { id: { name: 'id', type: '`$STRING`', reqd: true } } },
+            s: [{ lit: 'boards' }, { var: 'id' }],
+            g: { params: { id: { n: 'id', t: '`$STRING`', r: true } } },
           },
         ] },
       },
@@ -214,15 +214,15 @@ describe('opRequestShape — multi-point param merging', () => {
       op: {
         load: { points: [
           {
-            segments: [{ lit: 'users' }],
-            args: { params: {
-              email: { name: 'email', type: '`$STRING`', reqd: false },
+            s: [{ lit: 'users' }],
+            g: { params: {
+              email: { n: 'email', t: '`$STRING`', r: false },
             } },
           },
           {
-            segments: [{ lit: 'users' }],
-            args: { params: {
-              name: { name: 'name', type: '`$STRING`', reqd: false },
+            s: [{ lit: 'users' }],
+            g: { params: {
+              name: { n: 'name', t: '`$STRING`', r: false },
             } },
           },
         ] },
@@ -246,16 +246,16 @@ describe('opRequestShape — multi-point param merging', () => {
       op: {
         load: { points: [
           {
-            segments: [{ lit: 'posts' }, { var: 'id' }, { lit: 'author' }],
-            args: { params: {
-              post_id: { name: 'post_id', type: '`$STRING`', reqd: false },
+            s: [{ lit: 'posts' }, { var: 'id' }, { lit: 'author' }],
+            g: { params: {
+              post_id: { n: 'post_id', t: '`$STRING`', r: false },
             } },
           },
           {
-            segments: [{ lit: 'accounts' }, { var: 'account_id' }, { lit: 'users' }, { var: 'id' }],
-            args: { params: {
-              account_id: { name: 'account_id', type: '`$STRING`', reqd: true },
-              id: { name: 'id', type: '`$STRING`', reqd: true },
+            s: [{ lit: 'accounts' }, { var: 'account_id' }, { lit: 'users' }, { var: 'id' }],
+            g: { params: {
+              account_id: { n: 'account_id', t: '`$STRING`', r: true },
+              id: { n: 'id', t: '`$STRING`', r: true },
             } },
           },
         ] },
@@ -357,23 +357,23 @@ describe('opRequestShape — body ops take fields, not path params', () => {
     return {
       Name: 'Todoitem', name: 'todoitem',
       fields: {
-        done: { name: 'done', type: '`$BOOLEAN`', req: false },
-        id: { name: 'id', type: '`$STRING`', req: false },
-        title: { name: 'title', type: '`$STRING`', req: true },
+        done: { n: 'done', t: '`$BOOLEAN`', r: false },
+        id: { n: 'id', t: '`$STRING`', r: false },
+        title: { n: 'title', t: '`$STRING`', r: true },
       },
       op: {
         update: { points: [
-          { args: { params: { id: { name: 'id', type: '`$STRING`', reqd: true } } } },
+          { g: { params: { id: { n: 'id', t: '`$STRING`', r: true } } } },
         ] },
         // POST /v1/proj/{project_id}/item — sub-resource create: the parent
         // id is a path param too, so the same rule has to hold.
         create: { points: [
-          { args: { params: {
-            project_id: { name: 'project_id', type: '`$STRING`', reqd: true },
+          { g: { params: {
+            project_id: { n: 'project_id', t: '`$STRING`', r: true },
           } } },
         ] },
         load: { points: [
-          { args: { params: { id: { name: 'id', type: '`$STRING`', reqd: true } } } },
+          { g: { params: { id: { n: 'id', t: '`$STRING`', r: true } } } },
         ] },
       },
     }

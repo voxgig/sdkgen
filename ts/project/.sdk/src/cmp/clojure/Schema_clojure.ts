@@ -33,7 +33,7 @@ const Schema = cmp(async function Schema(props: any) {
     Content(`;; ${model.const.Name} ${target.Name} SDK: generated schemas. Do not edit.
 ;;
 ;; Generated from the model: main.kit.optspec and each feature's
-;; config.options for the option spec; entity fields[].type for the entity
+;; config.options for the option spec; entity fields{}.type for the entity
 ;; specs. Parsed by sdk.core — see the note in Schema_clojure.ts for why the
 ;; parse cannot live here.
 (ns sdk.schema)

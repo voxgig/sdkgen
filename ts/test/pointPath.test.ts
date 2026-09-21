@@ -13,7 +13,7 @@ import {
 describe('pointPath', () => {
 
   const point = {
-    segments: [{ lit: 'element' }, { var: 'id' }, { lit: 'ionize' }]
+    s: [{ lit: 'element' }, { var: 'id' }, { lit: 'ionize' }]
   }
 
 
@@ -26,16 +26,16 @@ describe('pointPath', () => {
   // or malformed vector is empty, never a crash — this helper runs inside
   // every component that touches a route.
   test('pointParts: no path is empty, not a fault', () => {
-    deepStrictEqual(pointParts({ segments: [] }), [])
+    deepStrictEqual(pointParts({ s: [] }), [])
     deepStrictEqual(pointParts({}), [])
     deepStrictEqual(pointParts(null), [])
-    deepStrictEqual(pointParts({ segments: 'nonsense' }), [])
+    deepStrictEqual(pointParts({ s: 'nonsense' }), [])
     deepStrictEqual(pointSegments(undefined), [])
   })
 
 
   test('pointSegments: a stale `parts` model is refused, not read as pathless', () => {
-    const stale = { orig: '/element/{element_id}', parts: ['element', '{id}'] }
+    const stale = { o: '/element/{element_id}', parts: ['element', '{id}'] }
 
     let msg = ''
     try {
@@ -49,7 +49,7 @@ describe('pointPath', () => {
     ok(msg.includes('segments'), 'names what is missing: ' + msg)
     ok(msg.includes('npm run generate'), 'says how to fix it: ' + msg)
 
-    deepStrictEqual(pointSegments({ orig: '', segments: [] }), [])
+    deepStrictEqual(pointSegments({ o: '', s: [] }), [])
     deepStrictEqual(pointSegments({}), [])
   })
 
@@ -59,15 +59,15 @@ describe('pointPath', () => {
   // reconstruction must not promote it back into one.
   test('pointParts: a literal containing braces stays literal', () => {
     deepStrictEqual(
-      pointParts({ segments: [{ lit: 'x' }, { lit: '{a}.{b}' }] }),
+      pointParts({ s: [{ lit: 'x' }, { lit: '{a}.{b}' }] }),
       ['x', '{a}.{b}'])
   })
 
 
   test('pointTerminalParam: does the route end in a parameter?', () => {
-    strictEqual(pointTerminalParam({ segments: [{ lit: 'a' }, { var: 'id' }] }), true)
-    strictEqual(pointTerminalParam({ segments: [{ var: 'id' }, { lit: 'a' }] }), false)
-    strictEqual(pointTerminalParam({ segments: [] }), false)
+    strictEqual(pointTerminalParam({ s: [{ lit: 'a' }, { var: 'id' }] }), true)
+    strictEqual(pointTerminalParam({ s: [{ var: 'id' }, { lit: 'a' }] }), false)
+    strictEqual(pointTerminalParam({ s: [] }), false)
     strictEqual(pointTerminalParam(null), false)
   })
 
@@ -80,20 +80,20 @@ describe('pointPath', () => {
     }
 
     const points = [
-      { segments: [{ lit: 'a' }, { var: 'id' }] },
-      { segments: [{ var: 'id' }, { lit: 'a' }] },
-      { segments: [{ lit: 'reports' }, { lit: '{id}.json' }] },
-      { segments: [{ lit: 'v{version}' }] },
-      { segments: [] },
+      { s: [{ lit: 'a' }, { var: 'id' }] },
+      { s: [{ var: 'id' }, { lit: 'a' }] },
+      { s: [{ lit: 'reports' }, { lit: '{id}.json' }] },
+      { s: [{ lit: 'v{version}' }] },
+      { s: [] },
     ]
 
     for (const pt of points) {
       strictEqual(pointTerminalParam(pt), runtime(pt),
-        'diverged from the runtime on ' + JSON.stringify(pt.segments))
+        'diverged from the runtime on ' + JSON.stringify(pt.s))
     }
 
     strictEqual(
-      pointTerminalParam({ segments: [{ lit: 'reports' }, { lit: '{id}.json' }] }), true)
+      pointTerminalParam({ s: [{ lit: 'reports' }, { lit: '{id}.json' }] }), true)
   })
 
 
@@ -101,8 +101,8 @@ describe('pointPath', () => {
   // spelled `{id}` is not the same route as a PARAMETER named `id`, but
   // joining the reconstructed strings makes them identical.
   test('pointPathKey: a literal never collides with a parameter', () => {
-    const asParam = { segments: [{ lit: 'a' }, { var: 'id' }] }
-    const asLiteral = { segments: [{ lit: 'a' }, { lit: '{id}' }] }
+    const asParam = { s: [{ lit: 'a' }, { var: 'id' }] }
+    const asLiteral = { s: [{ lit: 'a' }, { lit: '{id}' }] }
 
     deepStrictEqual(pointParts(asParam), pointParts(asLiteral))
     strictEqual(pointPathKey(asParam) === pointPathKey(asLiteral), false)
@@ -124,7 +124,7 @@ describe('pointPath', () => {
               op: {
                 load: {
                   name: 'load',
-                  points: [{ method: 'GET', orig: '/element/{element_id}', segments: point.segments, contract: { version: 1, json: '{"requestBody":{}}' } }]
+                  points: [{ m: 'GET', o: '/element/{element_id}', s: point.s, co: { version: 2, id: 'loadElement', source: 'openapi' } }]
                 }
               }
             }
@@ -139,10 +139,10 @@ describe('pointPath', () => {
     const emitted = def.entity.element.op.load.points[0]
 
     deepStrictEqual(emitted.parts, ['element', '{id}', 'ionize'])
-    deepStrictEqual(emitted.segments, point.segments)
+    deepStrictEqual(emitted.segments, point.s)
     strictEqual(emitted.contract, undefined, 'test contracts must not inflate runtime configuration')
-    strictEqual(model.main.kit.entity.element.op.load.points[0].contract.json,
-      '{"requestBody":{}}', 'test generators still need the original contract')
+    strictEqual(model.main.kit.entity.element.op.load.points[0].co.id,
+      'loadElement', 'source operation identity stays in the model')
   })
 
 })

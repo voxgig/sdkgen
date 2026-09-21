@@ -52,9 +52,9 @@ export async function runLiveScenarios(SDK: any, plan: any[], envPrefix: string,
         const explicit = hint.input === undefined ? request.example : resolveRecipe(hint.input, ctx.values)
         let input = request.schema ? synthesizeInput(request.schema, explicit) : explicit ?? {}
         for (const kind of ['params', 'query', 'header', 'cookie']) for (const arg of point.args?.[kind] || []) {
-          if (arg.reqd && input[arg.name] === undefined) {
-            if (arg.example === undefined) throw new LiveBlocked('Missing required argument: ' + arg.name)
-            input[arg.name] = arg.example
+          if (arg.r && input[arg.n] === undefined) {
+            if (arg.ex === undefined) throw new LiveBlocked('Missing required argument: ' + arg.n)
+            input[arg.n] = arg.ex
           }
         }
         const role = hint.auth || (point.facts.security?.length === 0 || point.facts.securitySource === 'unspecified' ? 'public' : 'account')

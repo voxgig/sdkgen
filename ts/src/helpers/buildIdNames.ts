@@ -26,24 +26,24 @@ function buildIdNames(entity: EntityLike, flow: FlowLike): string[] {
 
   const ancestors: string[] = (entity.relations?.ancestors || []).flat()
   for (const anc of ancestors) {
-    for (let i = 1; i <= COUNT; i++) push(`${anc}0${i}`)
+    for (let i = 1; i <= COUNT; i++) push(`${entityRelationName(anc)}0${i}`)
   }
 
   const steps = Array.isArray(flow?.step)
     ? flow.step
     : Object.values(flow?.step || {})
-  for (const step of steps) {
-    if (step?.match) {
-      for (const v of Object.values(step.match)) {
+  for (const step of steps.filter((s: any) => false !== s.a)) {
+    if (step?.m) {
+      for (const v of Object.values(step.m)) {
         if (typeof v === 'string' && v && !v.endsWith('$')) push(v)
       }
     }
-    // step.data values can also be aliased via setup (e.g. update step.data
+    // step.d values can also be aliased via setup (e.g. update step.d
     // = {data_type_id: 'data_type01'} → setup adds idmap[data_type_id] =
     // idmap[data_type01]). The right-hand side `data_type01` must be in the
     // idmap or the alias resolves to undefined.
-    if (step?.data) {
-      for (const v of Object.values(step.data)) {
+    if (step?.d) {
+      for (const v of Object.values(step.d)) {
         if (typeof v === 'string' && v && !v.endsWith('$')) push(v)
       }
     }
@@ -53,6 +53,16 @@ function buildIdNames(entity: EntityLike, flow: FlowLike): string[] {
 }
 
 
+function entityRelationName(ref: string): string {
+  return ref.startsWith('$.main.kit.entity.') ? ref.slice('$.main.kit.entity.'.length) : ref
+}
+
+function flowSteps(flow: FlowLike): any[] {
+  return Object.values(flow?.step || {}).filter((step: any) => false !== step.a)
+}
+
 export {
   buildIdNames,
+  entityRelationName,
+  flowSteps,
 }

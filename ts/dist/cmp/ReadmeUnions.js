@@ -21,7 +21,7 @@ const ReadmeUnions = (0, jostraca_1.cmp)(function ReadmeUnions(props) {
             }
             rows.push({
                 entity: ent.name,
-                field: field.name,
+                field: field.n,
                 branches: union.branches,
                 depth: union.depth,
             });

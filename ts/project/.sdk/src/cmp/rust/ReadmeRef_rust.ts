@@ -166,7 +166,7 @@ Prepare a fetch definition without sending. Returns the fetchdef on \`Ok\`.
     // Entity reference sections
     publishedEntities.map((ent: any) => {
       const opnames = Object.keys(ent.op || {})
-      const fields = ent.fields || []
+      const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
       const eVar = rustVarName(ent.name)
       const method = rustMethodName(ent.name)
@@ -199,9 +199,9 @@ let ${eVar} = client.${method}(Value::Noval);
 | --- | --- | --- | --- |
 `)
         each(fields, (field: any) => {
-          const req = field.req ? 'Yes' : 'No'
-          const desc = field.short || ''
-          Content(`| \`${field.name}\` | \`${canonToType(field.type, target.name)}\` | ${req} | ${desc} |
+          const req = field.r ? 'Yes' : 'No'
+          const desc = field.sh || ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
 `)
         })
 
@@ -226,7 +226,7 @@ let ${eVar} = client.${method}(Value::Noval);
               if (fop.active === false) return '-'
               return 'Yes'
             })
-            Content(`| \`${field.name}\` | ${cols.join(' | ')} |
+            Content(`| \`${field.n}\` | ${cols.join(' | ')} |
 `)
           })
 

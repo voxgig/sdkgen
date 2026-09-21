@@ -81,7 +81,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
     Content(`// Typed reference models for the ${model.const.Name} SDK (C++).
 //
-// GENERATED from the API model: main.${KIT}.entity.<e>.fields[] and per-op
+// GENERATED from the API model: main.${KIT}.entity.<e>.fields{} and per-op
 // params. The C++ SDK runtime is Value-based, so these structs are
 // DOCUMENTATION / convenience types only — the SDK neither includes nor
 // requires this header. Array fields surface as std::vector<Value>, object
@@ -107,10 +107,10 @@ namespace types {
     entityList.forEach((ent: any) => {
       const Name = ent.Name
       const fields = (ent.fields ? each(ent.fields) : [])
-        .filter((f: any) => f.active !== false)
+        .filter((f: any) => f.a !== false)
 
       emitStruct(Name, fields.map((f: any) => ({
-        name: f.name, type: f.type, optional: false === f.req,
+        name: f.n, type: f.t, optional: false === f.r,
       })), log)
 
       const ops = ent.op || {}

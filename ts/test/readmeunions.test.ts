@@ -16,10 +16,10 @@ function selectRows(entities: any) {
   const rows: any[] = []
   for (const ent of Object.values<any>(entities)) {
     if (false === ent.active) continue
-    for (const field of ent.fields ?? []) {
+    for (const field of Object.values<any>(ent.fields ?? {})) {
       const union = field?.union
       if (null == union || union.branches < MIN_REPORTED_BRANCHES) continue
-      rows.push({ entity: ent.name, field: field.name, ...union })
+      rows.push({ entity: ent.name, field: field.n, ...union })
     }
   }
   rows.sort((a, b) => b.branches - a.branches || a.entity.localeCompare(b.entity) ||
@@ -35,12 +35,12 @@ describe('readme-unions', () => {
 
     const rows = selectRows({
       typebot: {
-        name: 'typebot', fields: [
-          { name: 'groups', union: { count: 31, branches: 19, depth: 14 } },
-          { name: 'events', union: { count: 1, branches: 3, depth: 1 } },
-          { name: 'theme', union: { count: 2, branches: 2, depth: 6 } },
-          { name: 'name' },
-        ]
+        name: 'typebot', fields: {
+          'groups': { n: 'groups', union: { count: 31, branches: 19, depth: 14 } },
+          'events': { n: 'events', union: { count: 1, branches: 3, depth: 1 } },
+          'theme': { n: 'theme', union: { count: 2, branches: 2, depth: 6 } },
+          'name': { n: 'name' },
+        }
       },
     })
 
@@ -51,8 +51,8 @@ describe('readme-unions', () => {
 
   test('widest union first', () => {
     const rows = selectRows({
-      a: { name: 'a', fields: [{ name: 'small', union: { count: 1, branches: 3, depth: 1 } }] },
-      b: { name: 'b', fields: [{ name: 'big', union: { count: 9, branches: 19, depth: 14 } }] },
+      a: { name: 'a', fields: {'small': { n: 'small', union: { count: 1, branches: 3, depth: 1 } }} },
+      b: { name: 'b', fields: {'big': { n: 'big', union: { count: 9, branches: 19, depth: 14 } }} },
     })
     equal(rows[0].field, 'big')
     equal(rows[1].field, 'small')
@@ -63,7 +63,7 @@ describe('readme-unions', () => {
     const rows = selectRows({
       hidden: {
         name: 'hidden', active: false,
-        fields: [{ name: 'groups', union: { count: 1, branches: 19, depth: 3 } }],
+        fields: {'groups': { n: 'groups', union: { count: 1, branches: 19, depth: 3 } }},
       },
     })
     equal(rows.length, 0)
@@ -72,7 +72,7 @@ describe('readme-unions', () => {
 
   test('no rows when every field is resolvable', () => {
     const rows = selectRows({
-      a: { name: 'a', fields: [{ name: 'id' }, { name: 'name' }] },
+      a: { name: 'a', fields: {'id': { n: 'id' }, 'name': { n: 'name' }} },
     })
     equal(rows.length, 0)
   })

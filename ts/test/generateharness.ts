@@ -83,35 +83,35 @@ main: kit: entity: planet: {
   # The ORDERED field list the typed-model emitters read. Without it every
   # generated interface is empty, and a test asserting on a typed field
   # compiles against an empty object type instead of the real shape.
-  fields: [
-    { name: "id",     req: true,  type: "\`$STRING\`" }
-    { name: "radius", req: false, type: "\`$NUMBER\`" }
-    { name: "title",  req: true,  type: "\`$STRING\`" }
-  ]
+  fields: {
+    "id": { h: 'Id', n: "id",     r: true,  t: "\`$STRING\`" }
+    "radius": { h: 'Radius', n: "radius", r: false, t: "\`$NUMBER\`" }
+    "title": { h: 'Title', n: "title",  r: true,  t: "\`$STRING\`" }
+  }
   op: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/planet", segments: [{ lit: "planet" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        g: {}, m: "GET", o: "/planet", s: [{ lit: "planet" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
     load: {
       name: "load"
       points: [ {
-        args: { params: [
-          { kind: "param", name: "id", orig: "id", reqd: true, type: "\`$STRING\`", example: "p01" }
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "p01" }
         ] }
-        method: "GET", orig: "/planet/{id}", segments: [{ lit: "planet" }, { var: "id" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        m: "GET", o: "/planet/{id}", s: [{ lit: "planet" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
     create: {
       name: "create"
       points: [
         {
-          args: {}, method: "POST", orig: "/planet", segments: [{ lit: "planet" }]
-          transform: { req: "\`reqdata\`", res: "\`body\`" }
+          g: {}, m: "POST", o: "/planet", s: [{ lit: "planet" }]
+          t: { req: "\`reqdata\`", res: "\`body\`" }
         }
         # A CUSTOM ACTION folded into create, selected by \`$action\` at call
         # time. apidef produces these for POST routes that are not the
@@ -119,33 +119,33 @@ main: kit: entity: planet: {
         # FIRST — which is how the root README came to advertise an action
         # route as the entity's API path.
         {
-          args: { params: [
-            { kind: "param", name: "id", orig: "id", reqd: true, type: "\`$STRING\`", example: "p01" }
+          g: { params: [
+            { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "p01" }
           ] }
-          method: "POST", orig: "/planet/{id}/terraform", segments: [{ lit: "planet" }, { var: "id" }, { lit: "terraform" }]
-          select: { "$action": "terraform", exist: ["id"] }
-          transform: { req: "\`reqdata\`", res: "\`body\`" }
+          m: "POST", o: "/planet/{id}/terraform", s: [{ lit: "planet" }, { var: "id" }, { lit: "terraform" }]
+          q: { "$action": "terraform", exist: ["id"] }
+          t: { req: "\`reqdata\`", res: "\`body\`" }
         }
       ]
     }
     update: {
       name: "update"
       points: [ {
-        args: { params: [
-          { kind: "param", name: "id", orig: "id", reqd: true, type: "\`$STRING\`", example: "p01" }
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "p01" }
         ] }
-        method: "PUT", orig: "/planet/{id}", segments: [{ lit: "planet" }, { var: "id" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        m: "PUT", o: "/planet/{id}", s: [{ lit: "planet" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
     remove: {
       name: "remove"
       points: [ {
-        args: { params: [
-          { kind: "param", name: "id", orig: "id", reqd: true, type: "\`$STRING\`", example: "p01" }
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "p01" }
         ] }
-        method: "DELETE", orig: "/planet/{id}", segments: [{ lit: "planet" }, { var: "id" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        m: "DELETE", o: "/planet/{id}", s: [{ lit: "planet" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
   }
@@ -160,16 +160,16 @@ main: kit: entity: ambient: {
     temperature: { name: "temperature", kind: "field", type: "\`$NUMBER\`" }
     flow:        { name: "flow",        kind: "field", type: "\`$NUMBER\`" }
   }
-  fields: [
-    { name: "flow",        req: false, type: "\`$NUMBER\`" }
-    { name: "temperature", req: false, type: "\`$NUMBER\`" }
-  ]
+  fields: {
+    "flow": { h: 'Flow', n: "flow",        r: false, t: "\`$NUMBER\`" }
+    "temperature": { h: 'Temperature', n: "temperature", r: false, t: "\`$NUMBER\`" }
+  }
   op: {
     load: {
       name: "load"
       points: [ {
-        args: {}, method: "GET", orig: "/ambient", segments: [{ lit: "ambient" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        g: {}, m: "GET", o: "/ambient", s: [{ lit: "ambient" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
   }
@@ -184,16 +184,16 @@ main: kit: entity: history: {
     id:   { name: "id",   kind: "field", type: "\`$STRING\`", required: true }
     year: { name: "year", kind: "field", type: "\`$INTEGER\`" }
   }
-  fields: [
-    { name: "id",   req: true,  type: "\`$STRING\`" }
-    { name: "year", req: false, type: "\`$INTEGER\`" }
-  ]
+  fields: {
+    "id": { h: 'Id', n: "id",   r: true,  t: "\`$STRING\`" }
+    "year": { h: 'Year', n: "year", r: false, t: "\`$INTEGER\`" }
+  }
   op: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/history", segments: [{ lit: "history" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        g: {}, m: "GET", o: "/history", s: [{ lit: "history" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
   }
@@ -226,16 +226,16 @@ main: kit: entity: utility: {
     id:   { name: "id",   kind: "field", type: "\`$STRING\`", required: true }
     tool: { name: "tool", kind: "field", type: "\`$STRING\`" }
   }
-  fields: [
-    { name: "id",   req: true,  type: "\`$STRING\`" }
-    { name: "tool", req: false, type: "\`$STRING\`" }
-  ]
+  fields: {
+    "id": { h: 'Id', n: "id",   r: true,  t: "\`$STRING\`" }
+    "tool": { h: 'Tool', n: "tool", r: false, t: "\`$STRING\`" }
+  }
   op: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/utility", segments: [{ lit: "utility" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        g: {}, m: "GET", o: "/utility", s: [{ lit: "utility" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
   }
@@ -248,16 +248,16 @@ main: kit: entity: graph_ql: {
     id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
     query: { name: "query", kind: "field", type: "\`$STRING\`" }
   }
-  fields: [
-    { name: "id",    req: true,  type: "\`$STRING\`" }
-    { name: "query", req: false, type: "\`$STRING\`" }
-  ]
+  fields: {
+    "id": { h: 'Id', n: "id",    r: true,  t: "\`$STRING\`" }
+    "query": { h: 'Query', n: "query", r: false, t: "\`$STRING\`" }
+  }
   op: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/graphql", segments: [{ lit: "graphql" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        g: {}, m: "GET", o: "/graphql", s: [{ lit: "graphql" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
   }
@@ -270,16 +270,16 @@ main: kit: entity: console: {
     id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
     maker: { name: "maker", kind: "field", type: "\`$STRING\`" }
   }
-  fields: [
-    { name: "id",    req: true,  type: "\`$STRING\`" }
-    { name: "maker", req: false, type: "\`$STRING\`" }
-  ]
+  fields: {
+    "id": { h: 'Id', n: "id",    r: true,  t: "\`$STRING\`" }
+    "maker": { h: 'Maker', n: "maker", r: false, t: "\`$STRING\`" }
+  }
   op: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/console", segments: [{ lit: "console" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        g: {}, m: "GET", o: "/console", s: [{ lit: "console" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
   }
@@ -294,16 +294,16 @@ main: kit: entity: record: {
     id:     { name: "id",     kind: "field", type: "\`$STRING\`", required: true }
     fields: { name: "fields", kind: "field", type: "\`$OBJECT\`" }
   }
-  fields: [
-    { name: "id",     req: true,  type: "\`$STRING\`" }
-    { name: "fields", req: false, type: "\`$OBJECT\`" }
-  ]
+  fields: {
+    "id": { h: 'Id', n: "id",     r: true,  t: "\`$STRING\`" }
+    "fields": { h: 'Fields', n: "fields", r: false, t: "\`$OBJECT\`" }
+  }
   op: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/record", segments: [{ lit: "record" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        g: {}, m: "GET", o: "/record", s: [{ lit: "record" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
   }
@@ -313,28 +313,28 @@ main: kit: entity: record: {
 main: kit: flow: BasicUtilityFlow: {
   entity: "utility", kind: "basic", name: "BasicUtilityFlow"
   step: [
-    { op: "list", input: { ref: "utility_ref01", srcdatavar: "utility_ref01_data", suffix: "_dt0" } }
+    { o: "list", i: { ref: "utility_ref01", srcdatavar: "utility_ref01_data", suffix: "_dt0" } }
   ]
 }
 
 main: kit: flow: BasicGraphQlFlow: {
   entity: "graph_ql", kind: "basic", name: "BasicGraphQlFlow"
   step: [
-    { op: "list", input: { ref: "graph_ql_ref01", srcdatavar: "graph_ql_ref01_data", suffix: "_dt0" } }
+    { o: "list", i: { ref: "graph_ql_ref01", srcdatavar: "graph_ql_ref01_data", suffix: "_dt0" } }
   ]
 }
 
 main: kit: flow: BasicConsoleFlow: {
   entity: "console", kind: "basic", name: "BasicConsoleFlow"
   step: [
-    { op: "list", input: { ref: "console_ref01", srcdatavar: "console_ref01_data", suffix: "_dt0" } }
+    { o: "list", i: { ref: "console_ref01", srcdatavar: "console_ref01_data", suffix: "_dt0" } }
   ]
 }
 
 main: kit: flow: BasicRecordFlow: {
   entity: "record", kind: "basic", name: "BasicRecordFlow"
   step: [
-    { op: "list", input: { ref: "record_ref01", srcdatavar: "record_ref01_data", suffix: "_dt0" } }
+    { o: "list", i: { ref: "record_ref01", srcdatavar: "record_ref01_data", suffix: "_dt0" } }
   ]
 }
 
@@ -347,28 +347,28 @@ main: kit: flow: BasicPlanetFlow: {
     # load, remove, with the srcdatavar/suffix bindings apidef actually
     # emits. A weaker fixture generated a weaker test, and missed a
     # regression that broke every consumer's flow suite.
-    { op: "create", input: { ref: "planet_ref01" } }
-    { op: "list" }
-    { op: "update", input: {
+    { o: "create", i: { ref: "planet_ref01" } }
+    { o: "list" }
+    { o: "update", i: {
         ref: "planet_ref01", srcdatavar: "planet_ref01_data",
         suffix: "_up0", textfield: "kind" } }
-    { op: "load", input: {
+    { o: "load", i: {
         ref: "planet_ref01", srcdatavar: "planet_ref01_data", suffix: "_dt0" } }
-    { op: "remove", input: { ref: "planet_ref01", suffix: "_rm0" } }
+    { o: "remove", i: { ref: "planet_ref01", suffix: "_rm0" } }
   ]
 }
 
 main: kit: flow: BasicAmbientFlow: {
   entity: "ambient", kind: "basic", name: "BasicAmbientFlow"
   step: [
-    { op: "load", input: { ref: "ambient_ref01", srcdatavar: "ambient_ref01_data", suffix: "_dt0" } }
+    { o: "load", i: { ref: "ambient_ref01", srcdatavar: "ambient_ref01_data", suffix: "_dt0" } }
   ]
 }
 
 main: kit: flow: BasicHistoryFlow: {
   entity: "history", kind: "basic", name: "BasicHistoryFlow"
   step: [
-    { op: "list", input: { ref: "history_ref01", srcdatavar: "history_ref01_data", suffix: "_dt0" } }
+    { o: "list", i: { ref: "history_ref01", srcdatavar: "history_ref01_data", suffix: "_dt0" } }
   ]
 }
 `
