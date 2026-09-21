@@ -317,11 +317,11 @@ class EntityFrames:
 // and the doc table the docstring shows.
 function entFields(ent: any): { name: string, dtype: string, req: boolean }[] {
   return each(ent.fields)
-    .filter((f: any) => f && null != f.name && false !== f.active)
+    .filter((f: any) => f && null != f.n && false !== f.a)
     .map((f: any) => ({
-      name: String(f.name),
-      dtype: canonToDtype(f.type),
-      req: true === f.req,
+      name: String(f.n),
+      dtype: canonToDtype(f.t),
+      req: true === f.r,
     }))
 }
 

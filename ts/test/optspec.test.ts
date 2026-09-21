@@ -213,7 +213,7 @@ describe('entitySpecMap: gated on the feature', () => {
   const ENTITY = {
     widget: {
       name: 'widget',
-      fields: { id: { name: 'id', type: sentinel('STRING'), req: true } },
+      fields: { id: { n: 'id', t: sentinel('STRING'), r: true } },
       op: { load: { name: 'load' } },
     },
   }

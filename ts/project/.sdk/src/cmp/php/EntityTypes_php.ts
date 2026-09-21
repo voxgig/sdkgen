@@ -60,8 +60,8 @@ declare(strict_types=1);
 
 // Typed models for the ${model.const.Name} SDK.
 //
-// GENERATED from the API model: main.${KIT}.entity.<e>.fields[] and per-op
-// params (op.<name>.points[].args.params[]). Field/param types come from the
+// GENERATED from the API model: main.${KIT}.entity.<e>.fields{} and per-op
+// params (op.<name>.points[].g.params[]). Field/param types come from the
 // canonical type sentinels via @voxgig/sdkgen canonToType (source of truth:
 // @voxgig/apidef VALID_CANON). Do not edit by hand.
 //
@@ -74,7 +74,7 @@ declare(strict_types=1);
       entityList.forEach((ent: any) => {
         const Name = ent.Name
         const fields = (ent.fields ? each(ent.fields) : [])
-          .filter((f: any) => f.active !== false && validName(f.name))
+          .filter((f: any) => f.a !== false && validName(f.n))
 
         const TypeName = phpSafeTypeName(Name)
 
@@ -83,7 +83,7 @@ class ${TypeName}
 {
 `)
         fields.forEach((f: any) => {
-          Content(propLine(f.name, f.type, false === f.req))
+          Content(propLine(f.n, f.t, false === f.r))
         })
         Content(`}
 

@@ -32,7 +32,7 @@ const Schema = cmp(async function Schema(props: any) {
 // do not edit by hand.
 //
 // Built from the model: \`main.kit.optspec\` and each feature's
-// \`config.options\` for optspec; entity \`fields[].type\` for entityspec.
+// \`config.options\` for optspec; entity \`fields{}.type\` for entityspec.
 
 import Foundation
 

@@ -174,7 +174,7 @@ try {
 
       const dataFields: any[] = exampleEntity.fields ? each(exampleEntity.fields) : []
       const dataIdType = dataIdF
-        ? (dataFields.find((f: any) => f && f.name === dataIdF) || {}).type
+        ? (dataFields.find((f: any) => f && f.n === dataIdF) || {}).type
         : null
       const usesCreatedId = (opname: string): boolean => {
         if (null == dataIdF || !opnames.includes('create')) {

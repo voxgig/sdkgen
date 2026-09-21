@@ -13,11 +13,12 @@ for (const target of ['ts','js']) test('generated ' + target + ' eight-route sce
   try {
     const model = makeModel([target], undefined, undefined, ['test'])
     const fixture = JSON.parse(Fs.readFileSync(Path.join(PKG,'test/live-univec-model.json'),'utf8'))
+    const facts = JSON.parse(Fs.readFileSync(Path.join(PKG, 'test/live-univec-facts.json'), 'utf8'))
     Object.assign(model.main.kit, fixture)
     const { fs, vol } = memfs({})
     const generator = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
     const cwd = process.cwd()
-    try { process.chdir(SCAFFOLD); await generator.generate({ model, root: makeRoot() }) }
+    try { process.chdir(SCAFFOLD); await generator.generate({ model, root: makeRoot(), buildctx: { resolved: { operation: (method: string, path: string) => facts[method + ' ' + path] } } }) }
     finally { process.chdir(cwd) }
     const root = Path.join(tmp,target)
     for (const [file, content] of Object.entries(vol.toJSON())) {

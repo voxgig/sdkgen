@@ -33,7 +33,7 @@ const Schema = cmp(async function Schema(props: any) {
     Content(`// ${model.const.Name} SDK: generated schemas. Do not edit.
 //
 // Built from the model: \`main.kit.optspec\` and each feature's
-// \`config.options\` for the option spec; entity \`fields[].type\` for the
+// \`config.options\` for the option spec; entity \`fields{}.type\` for the
 // entity specs.
 
 use crate::utility::jsonparse::json_parse;

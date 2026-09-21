@@ -64,10 +64,10 @@ async function runLiveScenarios(SDK, plan, envPrefix, liveDefaults = {}) {
                 let input = request.schema ? (0, live_contract_1.synthesizeInput)(request.schema, explicit) : explicit ?? {};
                 for (const kind of ['params', 'query', 'header', 'cookie'])
                     for (const arg of point.args?.[kind] || []) {
-                        if (arg.reqd && input[arg.name] === undefined) {
-                            if (arg.example === undefined)
-                                throw new live_runner_1.LiveBlocked('Missing required argument: ' + arg.name);
-                            input[arg.name] = arg.example;
+                        if (arg.r && input[arg.n] === undefined) {
+                            if (arg.ex === undefined)
+                                throw new live_runner_1.LiveBlocked('Missing required argument: ' + arg.n);
+                            input[arg.n] = arg.ex;
                         }
                     }
                 const role = hint.auth || (point.facts.security?.length === 0 || point.facts.securitySource === 'unspecified' ? 'public' : 'account');

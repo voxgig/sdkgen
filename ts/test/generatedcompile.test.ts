@@ -3140,16 +3140,16 @@ main: kit: entity: namespace: {
     id:   { name: "id",   kind: "field", type: "\`$STRING\`", required: true }
     path: { name: "path", kind: "field", type: "\`$STRING\`", required: true }
   }
-  fields: [
-    { name: "id",   req: true, type: "\`$STRING\`" }
-    { name: "path", req: true, type: "\`$STRING\`" }
-  ]
+  fields: {
+    "id": { h: 'Id', n: "id",   r: true, t: "\`$STRING\`" }
+    "path": { h: 'Path', n: "path", r: true, t: "\`$STRING\`" }
+  }
   op: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/namespace", segments: [{ lit: "namespace" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        g: {}, m: "GET", o: "/namespace", s: [{ lit: "namespace" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
   }
@@ -3158,7 +3158,7 @@ main: kit: entity: namespace: {
 main: kit: flow: BasicNamespaceFlow: {
   entity: "namespace", kind: "basic", name: "BasicNamespaceFlow"
   step: [
-    { op: "list" }
+    { o: "list" }
   ]
 }
 `

@@ -35,10 +35,10 @@ function normalizePathParams(
       // original name was renamed to another param's current name (e.g. badge
       // load: param 'group_id' has orig 'id', and another param has name 'id').
       const param = params.find((p: any) =>
-          p.name === snaked || p.name === depluralized) ||
+          p.n === snaked || p.n === depluralized) ||
         params.find((p: any) =>
-          p.orig === snaked || p.orig === depluralized)
-      if (param) return '{' + param.name + '}'
+          p.or === snaked || p.or === depluralized)
+      if (param) return '{' + param.n + '}'
 
       if (rename) {
         for (const [origCamel, renamedTo] of Object.entries(rename)) {
@@ -46,10 +46,10 @@ function normalizePathParams(
             const origSnaked = snakify(origCamel)
             const origDepluralized = depluralize(origSnaked)
             const renamedParam = params.find(
-              (p: any) => p.orig === origSnaked || p.name === origSnaked ||
-                p.orig === origDepluralized || p.name === origDepluralized
+              (p: any) => p.or === origSnaked || p.n === origSnaked ||
+                p.or === origDepluralized || p.n === origDepluralized
             )
-            if (renamedParam) return '{' + renamedParam.name + '}'
+            if (renamedParam) return '{' + renamedParam.n + '}'
           }
         }
       }
@@ -109,8 +109,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const loadPoint = loadOp?.points?.[0]
   const loadIsGraphql = 'graphql' === (loadPoint as any)?.kind
-  const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.args?.params || [], loadPoint?.rename?.param) : ''
-  const allLoadParams = loadPoint?.args?.params || []
+  const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.g?.params || [], loadPoint?.r?.param) : ''
+  const allLoadParams = loadPoint?.g?.params || []
   // Some upstream OpenAPI specs declare a parameter as `in: path` even when
   // that path has no `{name}` placeholder for it. Only path params that
   // actually appear in the URL template should drive direct-test path-param
@@ -122,7 +122,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
       _pathPlaceholders.add(part.slice(1, -1))
     }
   }
-  const _renameMap = (loadPoint?.rename?.param || {}) as Record<string, string>
+  const _renameMap = (loadPoint?.r?.param || {}) as Record<string, string>
   const _renamedPlaceholders = new Set<string>()
   for (const ph of _pathPlaceholders) {
     _renamedPlaceholders.add(ph)
@@ -131,25 +131,25 @@ const TestDirect = cmp(function TestDirect(props: any) {
     }
   }
   const loadParams = allLoadParams.filter((p: any) =>
-    _renamedPlaceholders.has(p.name) || _renamedPlaceholders.has(p.orig))
+    _renamedPlaceholders.has(p.n) || _renamedPlaceholders.has(p.or))
 
   const listPoint = listOp?.points?.[0]
   const listIsGraphql = 'graphql' === (listPoint as any)?.kind
-  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.args?.params || [], listPoint?.rename?.param) : ''
-  const listParams = listPoint?.args?.params || []
+  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) : ''
+  const listParams = listPoint?.g?.params || []
 
-  const loadQuery = loadPoint?.args?.query || []
+  const loadQuery = loadPoint?.g?.query || []
   const loadLiveQueryEntries = loadQuery
-    .filter((q: any) => q.reqd && undefined !== q.example && null !== q.example)
+    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
   const loadLiveQueryLines = loadLiveQueryEntries
-    .map((q: any) => `\t\t\tquery["${q.name}"] = ${JSON.stringify(q.example)}`)
+    .map((q: any) => `\t\t\tquery["${q.n}"] = ${JSON.stringify(q.ex)}`)
     .join('\n')
 
-  const listQuery = listPoint?.args?.query || []
+  const listQuery = listPoint?.g?.query || []
   const listLiveQueryEntries = listQuery
-    .filter((q: any) => q.reqd && undefined !== q.example && null !== q.example)
+    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
   const listLiveQueryLines = listLiveQueryEntries
-    .map((q: any) => `\t\t\tquery["${q.name}"] = ${JSON.stringify(q.example)}`)
+    .map((q: any) => `\t\t\tquery["${q.n}"] = ${JSON.stringify(q.ex)}`)
     .join('\n')
 
   // Path params with spec-provided examples — when ALL load params have
@@ -159,9 +159,9 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // semantic mismatch.
   const loadAllHaveExamples =
     loadParams.length > 0 &&
-    loadParams.every((p: any) => undefined !== p.example && null !== p.example)
+    loadParams.every((p: any) => undefined !== p.ex && null !== p.ex)
   const loadExampleLines = loadAllHaveExamples
-    ? loadParams.map((p: any) => `\t\t\tparams["${p.name}"] = ${JSON.stringify(p.example)}`).join('\n')
+    ? loadParams.map((p: any) => `\t\t\tparams["${p.n}"] = ${JSON.stringify(p.ex)}`).join('\n')
     : ''
 
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
@@ -190,14 +190,14 @@ func Test${entity.Name}Direct(t *testing.T) {
     if (hasList && listPoint && !listIsGraphql) {
       const listParamStr = listParams.length > 0
         ? listParams.map((p: any, i: number) =>
-          `"${p.name}": "direct0${i + 1}"`).join(', ')
+          `"${p.n}": "direct0${i + 1}"`).join(', ')
         : ''
 
       const listLiveParams = listParams.map((p: any) => {
-        const key = p.name === 'id'
+        const key = p.n === 'id'
           ? entity.name + '01'
-          : p.name.replace(/_id$/, '') + '01'
-        return { name: p.name, key }
+          : p.n.replace(/_id$/, '') + '01'
+        return { name: p.n, key }
       })
 
       // Track idmap keys this test consumes in live mode. If any are
@@ -344,21 +344,21 @@ ${listSkipBlock}		client := setup.client
     if (hasLoad && loadPoint && !loadIsGraphql) {
       const loadParamStr = loadParams.length > 0
         ? loadParams.map((p: any, i: number) =>
-          `"${p.name}": "direct0${i + 1}"`).join(', ')
+          `"${p.n}": "direct0${i + 1}"`).join(', ')
         : ''
 
-      const ancestorParams = loadParams.filter((p: any) => p.name !== 'id')
+      const ancestorParams = loadParams.filter((p: any) => p.n !== 'id')
 
       let loadLiveIdKeys: string[] = []
       if (loadParams.length > 0 && !loadAllHaveExamples) {
         if (hasList) {
           loadLiveIdKeys = listParams.map((p: any) => {
-            return p.name === 'id'
+            return p.n === 'id'
               ? entity.name + '01'
-              : p.name.replace(/_id$/, '') + '01'
+              : p.n.replace(/_id$/, '') + '01'
           })
         } else {
-          loadLiveIdKeys = loadParams.map((p: any) => p.name + '01')
+          loadLiveIdKeys = loadParams.map((p: any) => p.n + '01')
         }
       }
       const loadSkipBlock = loadLiveIdKeys.length > 0
@@ -411,10 +411,10 @@ ${loadSkipBlock}		client := setup.client
           Content(`			listParams := map[string]any{}
 `)
           for (const p of listParams) {
-            const key = p.name === 'id'
+            const key = p.n === 'id'
               ? entity.name + '01'
-              : p.name.replace(/_id$/, '') + '01'
-            Content(`			listParams["${p.name}"] = setup.idmap["${key}"]
+              : p.n.replace(/_id$/, '') + '01'
+            Content(`			listParams["${p.n}"] = setup.idmap["${key}"]
 `)
           }
 
@@ -439,8 +439,8 @@ ${loadSkipBlock}		client := setup.client
 			params["id"] = firstEnt["id"]
 `)
           for (const p of ancestorParams) {
-            const key = p.name.replace(/_id$/, '') + '01'
-            Content(`			params["${p.name}"] = setup.idmap["${key}"]
+            const key = p.n.replace(/_id$/, '') + '01'
+            Content(`			params["${p.n}"] = setup.idmap["${key}"]
 `)
           }
         }
@@ -449,7 +449,7 @@ ${loadSkipBlock}		client := setup.client
           Content(`		} else {
 `)
           for (let i = 0; i < loadParams.length; i++) {
-            Content(`			params["${loadParams[i].name}"] = "direct0${i + 1}"
+            Content(`			params["${loadParams[i].n}"] = "direct0${i + 1}"
 `)
           }
         }
@@ -619,7 +619,7 @@ var _ = json.Unmarshal
 
 
 // GraphQL-backed op needs POST+body, not a REST-shaped GET+params Direct()
-// call — reuse apidef's own point.graphql.doc via the SDK's Graphql() hatch.
+// call — reuse apidef's own point.gq.doc via the SDK's Graphql() hatch.
 // Mirrors TestDirect_ts.ts's generateDirectGraphql.
 function generateDirectGraphqlGo(
   opname: 'load' | 'list',
@@ -627,8 +627,8 @@ function generateDirectGraphqlGo(
   point: any,
   liveFail: string,
 ) {
-  const doc: string = point.graphql.doc
-  const vars: any[] = point.graphql.vars || []
+  const doc: string = point.gq.doc
+  const vars: any[] = point.gq.vars || []
 
   const mockVarLines = vars.map((v: any, i: number) =>
     `\t\tvariables["${v.name}"] = "direct0${i + 1}"`).join('\n')

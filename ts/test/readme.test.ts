@@ -23,8 +23,8 @@ function makeModel() {
     main: { kit: {
       entity: {
         moon: {
-          active: true, name: 'moon', fields: { id: { name: 'id' } },
-          op: { load: { active: true, points: [{ args: { params: [{ name: 'id', type: '$INTEGER' }] } }] } },
+          active: true, name: 'moon', fields: { id: { n: 'id' } },
+          op: { load: { active: true, points: [{ g: { params: [{ n: 'id', t: '$INTEGER' }] } }] } },
         },
       },
       feature: {

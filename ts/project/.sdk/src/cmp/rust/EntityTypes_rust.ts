@@ -67,8 +67,8 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
       Content(`// Typed models for the ${model.const.Name} SDK.
 //
-// GENERATED from the API model: main.${KIT}.entity.<e>.fields[] and per-op
-// params (op.<name>.points[].args.params[]). Field/param types are mapped
+// GENERATED from the API model: main.${KIT}.entity.<e>.fields{} and per-op
+// params (op.<name>.points[].g.params[]). Field/param types are mapped
 // from the canonical type sentinels. Do not edit by hand.
 //
 // These are DOCUMENTARY: the SDK runtime is dynamic (ops take/return the
@@ -83,12 +83,12 @@ use crate::utility::voxgigstruct::Value;
       entityList.forEach((ent: any) => {
         const Name = ent.Name
         const fields = (ent.fields ? each(ent.fields) : [])
-          .filter((f: any) => f.active !== false)
+          .filter((f: any) => f.a !== false)
 
         emitStruct(
           `/// ${Name} is the typed data model for the ${ent.name} entity.`,
           Name,
-          fields.map((f: any) => ({ name: f.name, type: f.type, optional: false === f.req }))
+          fields.map((f: any) => ({ name: f.n, type: f.t, optional: false === f.r }))
         )
 
         const ops = ent.op || {}

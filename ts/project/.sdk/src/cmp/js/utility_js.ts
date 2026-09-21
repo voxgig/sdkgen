@@ -17,18 +17,18 @@ import {
 
 
 // The declared canon-type sentinel of a named parameter of an op — looked up
-// in the op's `points[].args.params[]` exactly as the typed-model generator
+// in the op's `points[].g.params[]` exactly as the typed-model generator
 // does. Falls back to the entity field of the same name (used when the op
 // has no params). Returns undefined when neither is present.
 function paramCanonType(entity: any, op: any, paramName: string): unknown {
   const params = op ? each(opParams(op)) : []
-  const found = (params as any[]).find((p: any) => p && p.name === paramName)
+  const found = (params as any[]).find((p: any) => p && p.n === paramName)
   if (found) {
-    return found.type
+    return found.t
   }
   const field = (entity && entity.fields ? each(entity.fields) : [])
-    .find((f: any) => f && f.name === paramName) as any
-  return field && field.type
+    .find((f: any) => f && f.n === paramName) as any
+  return field && field.t
 }
 
 

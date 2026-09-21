@@ -71,8 +71,8 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
 # Typed models for the ${model.const.Name} SDK.
 #
-# GENERATED from the API model: main.${KIT}.entity.<e>.fields[] and per-op
-# params (op.<name>.points[].args.params[]). Member types come from the
+# GENERATED from the API model: main.${KIT}.entity.<e>.fields{} and per-op
+# params (op.<name>.points[].g.params[]). Member types come from the
 # canonical type sentinels via @voxgig/sdkgen canonToType (source of truth:
 # @voxgig/apidef VALID_CANON). Ruby types are unenforced; these YARD
 # annotations document the shapes. Do not edit by hand.
@@ -83,12 +83,12 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
       const Name = ent.Name
       const TypeName = rbSafeTypeName(Name)
       const fields = (ent.fields ? each(ent.fields) : [])
-        .filter((f: any) => f.active !== false)
+        .filter((f: any) => f.a !== false)
 
       emitStruct(
         TypeName,
         `${Name} entity data model.`,
-        fields.map((f: any) => ({ name: f.name, type: f.type, optional: false === f.req })),
+        fields.map((f: any) => ({ name: f.n, type: f.t, optional: false === f.r })),
       )
 
       const ops = ent.op || {}

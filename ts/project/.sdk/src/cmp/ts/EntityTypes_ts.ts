@@ -42,8 +42,8 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
     Content(`// Typed models for the ${model.const.Name} SDK.
 //
-// GENERATED from the API model: main.${KIT}.entity.<e>.fields[] and per-op
-// params (op.<name>.points[].args.params[]). Field/param types come from the
+// GENERATED from the API model: main.${KIT}.entity.<e>.fields{} and per-op
+// params (op.<name>.points[].g.params[]). Field/param types come from the
 // canonical type sentinels via @voxgig/sdkgen canonToType (source of truth:
 // @voxgig/apidef VALID_CANON). Do not edit by hand.
 
@@ -53,13 +53,13 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
       const Name = ent.Name
       const TypeName = tsSafeTypeName(Name)
       const fields = (ent.fields ? each(ent.fields) : [])
-        .filter((f: any) => f.active !== false)
+        .filter((f: any) => f.a !== false)
 
       Content(`export interface ${TypeName} {
 `)
       fields.forEach((f: any) => {
-        const opt = false === f.req ? '?' : ''
-        Content(`  ${propKey(f.name)}${opt}: ${canonToType(f.type, LANG)}
+        const opt = false === f.r ? '?' : ''
+        Content(`  ${propKey(f.n)}${opt}: ${canonToType(f.t, LANG)}
 `)
       })
       Content(`}

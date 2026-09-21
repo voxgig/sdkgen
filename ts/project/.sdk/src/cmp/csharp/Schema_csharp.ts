@@ -34,7 +34,7 @@ const Schema = cmp(async function Schema(props: any) {
 // do not edit by hand.
 //
 // Built from the model: \`main.kit.optspec\` and each feature's
-// \`config.options\` for Optspec; entity \`fields[].type\` for Entityspec.
+// \`config.options\` for Optspec; entity \`fields{}.type\` for Entityspec.
 
 namespace ${model.const.Name}Sdk;
 

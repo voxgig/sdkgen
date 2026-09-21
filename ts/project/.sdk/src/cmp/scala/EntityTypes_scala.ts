@@ -101,8 +101,8 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
 // Typed reference models for the ${model.const.Name} SDK.
 //
-// GENERATED from the API model: main.${KIT}.entity.<e>.fields[] and per-op
-// params (op.<name>.points[].args.params[]). Field/param types come from the
+// GENERATED from the API model: main.${KIT}.entity.<e>.fields{} and per-op
+// params (op.<name>.points[].g.params[]). Field/param types come from the
 // canonical type sentinels (source of truth: @voxgig/apidef VALID_CANON). Do
 // not edit by hand.
 //
@@ -120,10 +120,10 @@ object ${model.const.Name}Types {
     entityList.forEach((ent: any) => {
       const Name = ent.Name
       const fields = (ent.fields ? each(ent.fields) : [])
-        .filter((f: any) => f.active !== false)
+        .filter((f: any) => f.a !== false)
 
       emitCaseClass(Name, fields.map((f: any) => ({
-        name: f.name, type: f.type,
+        name: f.n, type: f.t,
       })), log)
 
       const ops = ent.op || {}

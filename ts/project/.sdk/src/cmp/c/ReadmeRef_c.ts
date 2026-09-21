@@ -174,7 +174,7 @@ Prepare a fetch definition without sending. Returns the fetchdef and sets
     // Entity reference sections
     publishedEntities.map((ent: any) => {
       const opnames = Object.keys(ent.op || {})
-      const fields = ent.fields || []
+      const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
       const evar = cVarName(ent.name)
       const acc = `${ident}_${evar}`
@@ -207,9 +207,9 @@ Entity* ${evar} = ${acc}(client, NULL);
 | --- | --- | --- | --- |
 `)
         each(fields, (field: any) => {
-          const req = field.req ? 'Yes' : 'No'
-          const desc = field.short || ''
-          Content(`| \`${field.name}\` | \`${cType(field.type)}\` | ${req} | ${desc} |
+          const req = field.r ? 'Yes' : 'No'
+          const desc = field.sh || ''
+          Content(`| \`${field.n}\` | \`${cType(field.t)}\` | ${req} | ${desc} |
 `)
         })
 
@@ -234,7 +234,7 @@ Entity* ${evar} = ${acc}(client, NULL);
               if (fop.active === false) return '-'
               return 'Yes'
             })
-            Content(`| \`${field.name}\` | ${cols.join(' | ')} |
+            Content(`| \`${field.n}\` | ${cols.join(' | ')} |
 `)
           })
 

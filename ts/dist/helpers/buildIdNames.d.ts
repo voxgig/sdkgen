@@ -8,4 +8,6 @@ type EntityLike = {
     };
 };
 declare function buildIdNames(entity: EntityLike, flow: FlowLike): string[];
-export { buildIdNames, };
+declare function entityRelationName(ref: string): string;
+declare function flowSteps(flow: FlowLike): any[];
+export { buildIdNames, entityRelationName, flowSteps, };

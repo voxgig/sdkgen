@@ -253,11 +253,11 @@ describe('helpers', () => {
   describe('buildIdNames', () => {
 
     test('entity ids plus ancestor ids plus match/data aliases', () => {
-      const entity = { name: 'moon', relations: { ancestors: ['planet'] } }
+      const entity = { name: 'moon', relations: { ancestors: [['$.main.kit.entity.planet']] } }
       const flow = {
         step: {
-          s1: { match: { year: 'year01', id: 'self$' } },
-          s2: { data: { type_id: 'data_type01' } },
+          s1: { m: { year: 'year01', id: 'self$' } },
+          s2: { d: { type_id: 'data_type01' } },
         },
       }
       deepStrictEqual(buildIdNames(entity, flow), [
@@ -273,14 +273,14 @@ describe('helpers', () => {
       const flow = {
         step: {
           // 'moon01' duplicate must not be repeated; 'x$' is a sentinel.
-          s1: { match: { a: 'moon01', b: 'x$' } },
+          s1: { m: { a: 'moon01', b: 'x$' } },
         },
       }
       deepStrictEqual(buildIdNames(entity, flow), ['moon01', 'moon02', 'moon03'])
     })
 
     test('flattens nested ancestor arrays', () => {
-      const entity = { name: 'leaf', relations: { ancestors: [['root'], ['branch']] } }
+      const entity = { name: 'leaf', relations: { ancestors: [['$.main.kit.entity.root'], ['$.main.kit.entity.branch']] } }
       const out = buildIdNames(entity, { step: {} })
       strictEqual(out.includes('root01'), true)
       strictEqual(out.includes('branch03'), true)
@@ -288,7 +288,7 @@ describe('helpers', () => {
 
     test('accepts array-form flow steps', () => {
       const entity = { name: 'moon' }
-      const flow = { step: [{ match: { year: 'year01' } }] }
+      const flow = { step: [{ m: { year: 'year01' } }] }
       strictEqual(buildIdNames(entity, flow).includes('year01'), true)
     })
 
@@ -301,14 +301,14 @@ describe('helpers', () => {
   describe('getMatchEntries', () => {
 
     test('returns non-sentinel entries only', () => {
-      const step = { match: { a: 1, b$: 2, c: 'x' } }
+      const step = { m: { a: 1, b$: 2, c: 'x' } }
       deepStrictEqual(getMatchEntries(step), [['a', 1], ['c', 'x']])
     })
 
     test('empty / missing match returns empty array', () => {
       deepStrictEqual(getMatchEntries({}), [])
       deepStrictEqual(getMatchEntries(undefined), [])
-      deepStrictEqual(getMatchEntries({ match: {} }), [])
+      deepStrictEqual(getMatchEntries({ m: {} }), [])
     })
   })
 

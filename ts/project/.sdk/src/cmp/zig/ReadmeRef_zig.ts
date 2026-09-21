@@ -175,7 +175,7 @@ Prepare a fetch definition without sending. Returns the fetchdef (use
     // Entity reference sections
     publishedEntities.map((ent: any) => {
       const opnames = Object.keys(ent.op || {})
-      const fields = ent.fields || []
+      const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
       const eVar = zigVarName(ent.name)
       const method = zigVarName(ent.name)
@@ -208,9 +208,9 @@ const ${eVar} = client.${method}(h.vnull());
 | --- | --- | --- | --- |
 `)
         each(fields, (field: any) => {
-          const req = field.req ? 'Yes' : 'No'
-          const desc = field.short || ''
-          Content(`| \`${field.name}\` | \`${zigType(field.type)}\` | ${req} | ${desc} |
+          const req = field.r ? 'Yes' : 'No'
+          const desc = field.sh || ''
+          Content(`| \`${field.n}\` | \`${zigType(field.t)}\` | ${req} | ${desc} |
 `)
         })
 
@@ -235,7 +235,7 @@ const ${eVar} = client.${method}(h.vnull());
               if (fop.active === false) return '-'
               return 'Yes'
             })
-            Content(`| \`${field.name}\` | ${cols.join(' | ')} |
+            Content(`| \`${field.n}\` | ${cols.join(' | ')} |
 `)
           })
 

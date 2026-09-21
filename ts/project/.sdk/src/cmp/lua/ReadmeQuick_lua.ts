@@ -70,12 +70,12 @@ local client = ${ctor}
     // `id`, matching the load example and the seeded test fixture.
     const idNames = new Set<string>(['id',
       (exampleEntity.id && exampleEntity.id.field) || 'id'])
-    const fields: any[] = Array.isArray(exampleEntity.fields) ? exampleEntity.fields : []
+    const fields: any[] = Object.values(exampleEntity.fields || {})
     const isStringField = (f: any) =>
-      f && typeof f.type === 'string' && /STRING/i.test(f.type)
+      f && typeof f.t === 'string' && /STRING/i.test(f.t)
     const displayFieldObj =
-      fields.find((f: any) => f && !idNames.has(f.name) && isStringField(f)) ||
-      fields.find((f: any) => f && !idNames.has(f.name))
+      fields.find((f: any) => f && !idNames.has(f.n) && isStringField(f)) ||
+      fields.find((f: any) => f && !idNames.has(f.n))
     const displayField = displayFieldObj ? displayFieldObj.name : null
     const idCol = dataIdF ? `item["${dataIdF}"]` : null
     const dispCol = displayField ? `item["${displayField}"]` : null

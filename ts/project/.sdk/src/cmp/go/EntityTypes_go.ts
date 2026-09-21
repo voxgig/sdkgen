@@ -128,8 +128,8 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
       Content(`// Typed models for the ${model.const.Name} SDK.
 //
-// GENERATED from the API model: main.${KIT}.entity.<e>.fields[] and per-op
-// params (op.<name>.points[].args.params[]). Field/param types come from the
+// GENERATED from the API model: main.${KIT}.entity.<e>.fields{} and per-op
+// params (op.<name>.points[].g.params[]). Field/param types come from the
 // canonical type sentinels via @voxgig/sdkgen canonToType (source of truth:
 // @voxgig/apidef VALID_CANON). Do not edit by hand.
 package entity
@@ -145,7 +145,7 @@ import (
       entityList.forEach((ent: any) => {
         const Name = ent.Name
         const fields = (ent.fields ? each(ent.fields) : [])
-          .filter((f: any) => f.active !== false)
+          .filter((f: any) => f.a !== false)
 
         Content(`// ${Name} is the typed data model for the ${ent.name} entity.
 type ${Name} struct {
@@ -154,7 +154,7 @@ type ${Name} struct {
           (f: any) => skipUntaggable(f, Name, log))
         const fieldIdents = uniqueGoFields(taggable)
         taggable.forEach((f: any, i: number) => {
-          Content(fieldLine(f.name, f.type, false === f.req, fieldIdents[i]))
+          Content(fieldLine(f.n, f.t, false === f.r, fieldIdents[i]))
         })
         Content(`}
 

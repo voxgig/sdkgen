@@ -202,14 +202,19 @@ function withPointParts(op) {
     (0, jostraca_1.each)(op, (o, opname) => {
         out[opname] = null == o || null == o.points ? o : {
             ...o,
-            points: (0, jostraca_1.each)(o.points).map((pt) => {
+            points: (0, jostraca_1.each)(o.points).filter((pt) => false !== pt?.a).map((pt) => {
                 if (null == pt)
                     return pt;
-                // Contracts feed test generation directly from the model. Keeping
-                // them in every runtime entity also retains entire request/response
-                // schemas in clones and debug output, exhausting large SDKs' memory.
-                const { contract, ...runtimePoint } = pt;
-                return { ...runtimePoint, parts: (0, pointPath_1.pointParts)(pt) };
+                const args = Object.fromEntries(Object.entries(pt.g || {}).map(([kind, values]) => [kind, (0, jostraca_1.each)(values).filter((arg) => false !== arg.a).map((arg) => ({
+                        name: arg.n, orig: arg.or, type: arg.t, kind: arg.k,
+                        reqd: arg.r, example: arg.ex,
+                    }))]));
+                // Runtime hooks expose descriptive names independently of the model schema.
+                return {
+                    active: pt.a, kind: pt.k, method: pt.m, orig: pt.o,
+                    segments: pt.s, parts: (0, pointPath_1.pointParts)(pt), rename: pt.r,
+                    transform: pt.t, args, select: pt.q, live: pt.li, graphql: pt.gq,
+                };
             }),
         };
     });
@@ -232,7 +237,10 @@ function configDefinition(model, targetname) {
     const entityStubs = {};
     (0, jostraca_1.each)(entity, (e) => {
         entityDefs[e.name] = clean({
-            fields: e.fields,
+            fields: (0, jostraca_1.each)(e.fields || {}).filter((f) => false !== f.a).map((f) => ({
+                name: f.n, title: f.h, type: f.t, req: f.r, op: f.op,
+                short: f.sh, readOnly: f.ro, writeOnly: f.wo, deprecated: f.de, format: f.fo,
+            })),
             id: e.id,
             name: e.name,
             op: withPointParts(e.op),

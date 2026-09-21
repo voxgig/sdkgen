@@ -13,6 +13,30 @@ A model is the unification of:
 3. **Target / feature / option definitions** — added into the project's
    `.sdk/model/` by `target add` / `feature add`.
 
+## API model attributes
+
+Entity `fields` is a map keyed by each field's `n` (name). A field has `h`
+(human title), `t` (validation shape), `r` (required), and `a` (active).
+Optional metadata uses `sh`, `ro`, `wo`, `de`, and `fo` for short description,
+read-only, write-only, deprecated, and format.
+
+Operation points use `a` (active), `k` (transport), `m` (method), `o` (source
+path), `s` (segments), `r` (renames), `t` (transforms), `g` (arguments), and
+`q` (selectors). Optional `co` identifies the source operation, `li` supplies
+live-test hints, and `gq` describes GraphQL. Arguments use `a`, `k`, `n`, `r`,
+and `t`; `or` preserves the original name and `ex` supplies an example.
+
+Flow steps use `a`, `o`, `i`, `m`, `d`, `s`, and `v` for activation,
+operation, inputs, match, data, mutations, and assertions. Inactive steps
+are omitted from generated tests. Ancestor chains contain checked entity
+addresses such as `path($.main.kit.entity.planet)`.
+
+Components read this compact model directly. `configDefinition` projects
+it into the descriptive attribute names used by runtime hooks. Live-test
+schema facts come from the resolved specification supplied by Apidef;
+points contain no embedded JSON contracts. Regenerate older API models
+before using these templates.
+
 ## `.aontu` / aontu syntax primer
 
 `.aontu` is a relaxed JSON; `aontu` adds unification semantics:

@@ -36,7 +36,7 @@ import (
 // ${model.const.Name} ${target.Name} SDK: generated schemas. Do not edit.
 //
 // Generated from the model: \`main.kit.optspec\` and each feature's
-// \`config.options\` for OPTSPEC; entity \`fields[].type\` for ENTITYSPEC.
+// \`config.options\` for OPTSPEC; entity \`fields{}.type\` for ENTITYSPEC.
 
 const optspecJSON = ${formatGoString(JSON.stringify(optspec))}
 

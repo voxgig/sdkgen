@@ -31,7 +31,7 @@ const Schema = cmp(async function Schema(props: any) {
     Content(`(* ${model.const.Name} SDK: generated schemas. Do not edit.
  *
  * Built from the model: main.kit.optspec and each feature's config.options
- * for the option spec; entity fields[].type for the entity specs.
+ * for the option spec; entity fields{}.type for the entity specs.
  *
  * opt_spec_value () - the option spec make_options validates client options
  * against. entity_spec_value () - per-entity data and request specs, keyed by

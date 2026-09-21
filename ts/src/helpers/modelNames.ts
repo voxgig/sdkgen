@@ -4,6 +4,8 @@
 import { each, names } from 'jostraca'
 import { KIT } from '@voxgig/apidef'
 
+import { entityRelationName } from './buildIdNames'
+
 import { prefixLeadingDigit } from './naming'
 
 
@@ -172,7 +174,10 @@ function renameReferences(model: any, renames: Rename[]): void {
     }
     ent.relations.ancestors = ancestors.map((a: any) =>
       Array.isArray(a)
-        ? a.map((n: any) => map.get(n) ?? n)
+        ? a.map((n: string) => {
+          const renamed = map.get(entityRelationName(n))
+          return renamed == null ? n : n.startsWith('$.') ? '$.main.kit.entity.' + renamed : renamed
+        })
         : (map.get(a) ?? a))
   })
 }

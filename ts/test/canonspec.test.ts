@@ -170,10 +170,10 @@ describe('canonSpec: by-example defaults', () => {
 const ENT = {
   name: 'widget',
   fields: {
-    id: { name: 'id', type: S('STRING'), req: true },
-    size: { name: 'size', type: S('INTEGER'), req: false },
-    label: { name: 'label', type: S('STRING'), req: false },
-    retired: { name: 'retired', type: S('BOOLEAN'), req: false, active: false },
+    id: { n: 'id', t: S('STRING'), r: true },
+    size: { n: 'size', t: S('INTEGER'), r: false },
+    label: { n: 'label', t: S('STRING'), r: false },
+    retired: { n: 'retired', t: S('BOOLEAN'), r: false, a: false },
   },
   op: {
     create: { name: 'create' },

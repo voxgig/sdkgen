@@ -192,7 +192,7 @@ Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
     // Named here, in one line, with the detail left to each target's README.
     const features = featureDocs(model)
     if (0 < features.length) {
-      Content(`> **Features:** ${features.map((f: any) => '`' + f.name + '`').join(', ')} — opt-in,
+      Content(`> **Features:** ${features.map((f: any) => '`' + f.n + '`').join(', ')} — opt-in,
 > inactive until switched on, and configured per client. See the Features
 > section of any SDK README below for what each one does.
 

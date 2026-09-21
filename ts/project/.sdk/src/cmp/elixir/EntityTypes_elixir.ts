@@ -68,8 +68,8 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
       Content(`# Typed models for the ${Name} SDK.
 #
-# GENERATED from the API model: main.${KIT}.entity.<e>.fields[] and per-op
-# params (op.<name>.points[].args.params[]). Member types come from the
+# GENERATED from the API model: main.${KIT}.entity.<e>.fields{} and per-op
+# params (op.<name>.points[].g.params[]). Member types come from the
 # canonical type sentinels. The SDK carries data as string-keyed struct value
 # nodes, so each alias is an open string-keyed map; the @typedoc member lists
 # document the concrete shapes. Do not edit by hand.
@@ -89,12 +89,12 @@ defmodule ${Name}.Types do
         const EName = ent.Name
         const ename = ent.name
         const fields = (ent.fields ? each(ent.fields) : [])
-          .filter((f: any) => f.active !== false)
+          .filter((f: any) => f.a !== false)
 
         emitType(
           ename,
           `${EName} entity data model.`,
-          fields.map((f: any) => ({ name: f.name, type: f.type, optional: false === f.req })),
+          fields.map((f: any) => ({ name: f.n, type: f.t, optional: false === f.r })),
         )
 
         const ops = ent.op || {}

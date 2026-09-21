@@ -72,14 +72,14 @@ main: kit: entity: 3ds_session: {
   field: {
     id: { name: "id", kind: "field", type: "\`$STRING\`", required: true }
   }
-  fields: [ { name: "id", req: true, type: "\`$STRING\`" } ]
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
   op: {
     list: {
       name: "list"
       points: [ {
-        args: {}, method: "GET", orig: "/3ds-sessions"
-        segments: [{ lit: "3ds-sessions" }]
-        transform: { req: "\`reqdata\`", res: "\`body\`" }
+        g: {}, m: "GET", o: "/3ds-sessions"
+        s: [{ lit: "3ds-sessions" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
   }
@@ -87,7 +87,7 @@ main: kit: entity: 3ds_session: {
 
 main: kit: flow: Basic3dsSessionFlow: {
   entity: "3ds_session", kind: "basic", name: "Basic3dsSessionFlow"
-  step: [ { name: "list", op: "list", match: {} } ]
+  step: [ { name: "list", o: "list", m: {} } ]
 }
 `
 
@@ -191,6 +191,17 @@ describe('generate', () => {
 
   after(() => {
     if ('' !== cwd) process.chdir(cwd)
+  })
+
+
+  test('py-data preserves compact field metadata', async () => {
+    const out = await generate(['py', 'py-data'])
+    const frames = Object.entries(out).find(([path]) =>
+      path.startsWith('py-data/') && path.endsWith('/entity_frames.py'))
+    ok(frames, 'missing entity frame accessors')
+    ok(frames[1].includes('id (string, required)'))
+    ok(frames[1].includes('radius (Float64)'))
+    ok(frames[1].includes('title (string, required)'))
   })
 
 

@@ -42,7 +42,7 @@ import ${javapackage}.utility.Json;
  * ${model.const.Name} ${target.Name} SDK: generated schemas. Do not edit.
  *
  * <p>Generated from the model: {@code main.kit.optspec} and each feature's
- * {@code config.options} for OPTSPEC; entity {@code fields[].type} for
+ * {@code config.options} for OPTSPEC; entity {@code fields{}.type} for
  * ENTITYSPEC.
  */
 @SuppressWarnings({"unchecked"})

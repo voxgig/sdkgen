@@ -22,7 +22,7 @@ function digitModel(): any {
         op: {
           list: {
             name: 'list',
-            points: [{ method: 'GET', orig: '/3ds-sessions' }],
+            points: [{ m: 'GET', o: '/3ds-sessions' }],
           },
         },
       },
@@ -84,7 +84,7 @@ describe('guard-model-names', () => {
     guardModelNames(model)
 
     const point = model.main[KIT].entity.n3ds_session.op.list.points[0]
-    equal(point.orig, '/3ds-sessions')
+    equal(point.o, '/3ds-sessions')
   })
 
 
