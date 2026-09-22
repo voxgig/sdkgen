@@ -15,16 +15,26 @@ package ProjectNameUtilities;
 
 our %REGISTRY;
 
+# `$action` selects the point (see make_point); it is never an API field, so
+# the body is a copy without it. The caller's hash is left untouched.
+my $strip_action = sub {
+  my ($reqdata) = @_;
+  return $reqdata unless 'HASH' eq ref $reqdata && exists $reqdata->{'$action'};
+  my %body = %$reqdata;
+  delete $body{'$action'};
+  return \%body;
+};
+
 $REGISTRY{transform_request} = sub {
   my ($ctx) = @_;
   my $spec = $ctx->{spec};
   my $point = $ctx->{point};
   $spec->{step} = 'reqform' if $spec;
   my $transform = ProjectNameHelpers::to_map(ProjectNameHelpers::gp($point, 'transform'));
-  return $ctx->{reqdata} unless $transform;
+  return $strip_action->($ctx->{reqdata}) unless $transform;
   my $reqform = ProjectNameHelpers::gp($transform, 'req');
-  return $ctx->{reqdata} unless ProjectNameHelpers::rb_truthy($reqform);
-  return Voxgig::Struct::transform({ 'reqdata' => $ctx->{reqdata} }, $reqform);
+  return $strip_action->($ctx->{reqdata}) unless ProjectNameHelpers::rb_truthy($reqform);
+  return $strip_action->(Voxgig::Struct::transform({ 'reqdata' => $ctx->{reqdata} }, $reqform));
 };
 
 1;

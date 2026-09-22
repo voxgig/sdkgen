@@ -16,12 +16,12 @@ func transformRequestUtil(ctx *core.Context) any {
 
 	transform := core.ToMapAny(vs.GetProp(point, "transform"))
 	if transform == nil {
-		return ctx.Reqdata
+		return stripAction(ctx.Reqdata)
 	}
 
 	reqform := vs.GetProp(transform, "req")
 	if reqform == nil {
-		return ctx.Reqdata
+		return stripAction(ctx.Reqdata)
 	}
 
 	reqdata, terr := vs.Transform(map[string]any{
@@ -36,5 +36,24 @@ func transformRequestUtil(ctx *core.Context) any {
 		return terr
 	}
 
-	return reqdata
+	return stripAction(reqdata)
+}
+
+// `$action` selects the point (see makePointUtil); it is never an API field,
+// so the body is a copy without it. The caller's map is left untouched.
+func stripAction(reqdata any) any {
+	src, ok := reqdata.(map[string]any)
+	if !ok {
+		return reqdata
+	}
+	if _, has := src["$action"]; !has {
+		return reqdata
+	}
+	body := make(map[string]any, len(src))
+	for k, v := range src {
+		if k != "$action" {
+			body[k] = v
+		}
+	}
+	return body
 }

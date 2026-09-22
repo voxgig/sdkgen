@@ -71,7 +71,7 @@ func prepareQueryUtil(_ ctx: Context) -> VMap {
   for item in items(.map(reqmatch)) {
     let key = item[0].asString ?? ""
     let val = item[1]
-    if !isNil(val) && !containsStr(paramnames, key) {
+    if !isNil(val) && "$action" != key && !containsStr(paramnames, key) {
       query.entries[key] = val
     }
   }

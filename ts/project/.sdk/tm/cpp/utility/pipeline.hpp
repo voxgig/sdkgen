@@ -1026,7 +1026,7 @@ inline Value prepareQuery(CtxPtr ctx) {
   for (const auto& item : Struct::items(reqmatch)) {
     std::string key = as_str(pair_key(item));
     Value val = pair_val(item);
-    if (!is_nullish(val) && !contains_str(params, key)) {
+    if (!is_nullish(val) && "$action" != key && !contains_str(params, key)) {
       map_put(out, key, val);
     }
   }
@@ -1050,18 +1050,30 @@ inline std::string preparePath(CtxPtr ctx) {
 
 // ---- transformRequest -------------------------------------------------
 
+// `$action` selects the point (see makePoint); it is never an API field, so
+// the body is a copy without it. The caller's map is left untouched.
+inline Value stripAction(const Value& reqdata) {
+  if (!map_contains(reqdata, "$action")) return reqdata;
+  Value body = vmap();
+  for (const auto& item : Struct::items(reqdata)) {
+    std::string key = as_str(pair_key(item));
+    if ("$action" != key) map_put(body, key, pair_val(item));
+  }
+  return body;
+}
+
 inline Value transformRequest(CtxPtr ctx) {
   if (ctx->spec) ctx->spec->step = "reqform";
 
   Value transform = Helpers::toMapAny(getp(ctx->point, "transform"));
-  if (!transform.is_map()) return ctx->reqdata;
+  if (!transform.is_map()) return stripAction(ctx->reqdata);
 
   Value reqform = getp(transform, "req");
-  if (is_nullish(reqform)) return ctx->reqdata;
+  if (is_nullish(reqform)) return stripAction(ctx->reqdata);
 
   Value data = vmap();
   map_put(data, "reqdata", ctx->reqdata);
-  return Struct::transform(data, reqform);
+  return stripAction(Struct::transform(data, reqform));
 }
 
 // ---- makeOptions ------------------------------------------------------

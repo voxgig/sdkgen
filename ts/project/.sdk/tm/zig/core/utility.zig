@@ -1120,7 +1120,7 @@ pub fn prepare_query_util(ctx: *Context) Value {
                     }
                 }
             }
-            if (!h.is_noval(val) and !contained) h.setp(out, key, val);
+            if (!h.is_noval(val) and !std.mem.eql(u8, key, "$action") and !contained) h.setp(out, key, val);
         }
     }
     return out;
@@ -1375,6 +1375,20 @@ pub fn result_body_util(ctx: *Context) ?*SdkResult {
     return result;
 }
 
+// `$action` selects the point (see make_point_util); it is never an API
+// field, so the body is a copy without it. The caller's map is left untouched.
+fn strip_action(reqdata: Value) Value {
+    if (reqdata != .object) return reqdata;
+    if (reqdata.object.get("$action") == null) return reqdata;
+    const body = h.omap();
+    var it = reqdata.object.iterator();
+    while (it.next()) |kv| {
+        const key = kv.key_ptr.*;
+        if (!std.mem.eql(u8, key, "$action")) h.setp(body, key, kv.value_ptr.*);
+    }
+    return body;
+}
+
 pub fn transform_request_util(ctx: *Context) Value {
     const spec = ctx.spec;
     const point = ctx.point;
@@ -1382,16 +1396,16 @@ pub fn transform_request_util(ctx: *Context) Value {
     if (spec) |sp| sp.step = "reqform";
 
     const transform = h.to_map(h.getp(point, "transform"));
-    if (h.is_noval(transform)) return ctx.reqdata;
+    if (h.is_noval(transform)) return strip_action(ctx.reqdata);
 
     const reqform = h.getp(transform, "req");
-    if (h.is_noval(reqform)) return ctx.reqdata;
+    if (h.is_noval(reqform)) return strip_action(ctx.reqdata);
 
     const store = h.jo(&.{.{ "reqdata", ctx.reqdata }});
     // transform now reports collected injection errors beside the value; .out
     // is what it used to return on its own, errors or not.
-    const tres = vs.transform(h.A(), store, reqform) catch return ctx.reqdata;
-    return tres.out;
+    const tres = vs.transform(h.A(), store, reqform) catch return strip_action(ctx.reqdata);
+    return strip_action(tres.out);
 }
 
 pub fn transform_response_util(ctx: *Context) Value {
