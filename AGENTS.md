@@ -32,12 +32,15 @@ Two rules, and they pull in opposite directions on purpose:
 So state what the CODE requires and cite what enforces it, rather than what
 some past run found. `ts/package.json` declares `engines.node: >=24`; the
 operating systems and Node versions the suite is run on live in
-`.github/workflows/build.yml`, and the Vale version the prose gate measures
-against is pinned by the `@vvago/vale` devDependency — read those rather than
-copying them here, where a copy goes stale unnoticed. A resolved version and
-an absolute path are the same kind of fact: `git status`, `node --version`,
-`npm ls <pkg>` and `command -v <tool>` are the answers, and a path written in
-a note is that run's path.
+`.github/workflows/build.yml`; and the Vale release the prose gate measures
+against is `VALE_VERSION` in `.github/workflows/docs.yml`, which the
+`Makefile` reads out of that file rather than restating, so `make
+vale-install` fetches exactly what CI ran. Read those rather than copying
+them here, where a copy goes stale unnoticed — and note that `VALE` prefers a
+`vale` already on `PATH`, so a system install is used as-is and may not be
+that version. A resolved version and an absolute path are the same kind of
+fact: `git status`, `node --version`, `npm ls <pkg>` and `command -v <tool>`
+are the answers, and a path written in a note is that run's path.
 
 Where a gate genuinely cannot run where you are, name it and say so, rather
 than letting the checks that did run stand in for the whole.
