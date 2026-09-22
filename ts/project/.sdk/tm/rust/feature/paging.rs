@@ -7,6 +7,7 @@ use crate::core::spec::Spec;
 use crate::core::helpers::{get_bool, getp, getpath, setp};
 use crate::core::types::Feature;
 use crate::feature::support::*;
+use crate::utility::voxgigstruct::ordered_map::OrderedMap;
 use crate::utility::voxgigstruct::Value;
 
 pub struct PagingFeature {
@@ -193,7 +194,12 @@ impl Feature for PagingFeature {
         if !cursor.is_noval() && !cursor.is_null() {
             setp(&query, &cursor_param, cursor);
         } else if getp(&query, &page_param).is_noval() {
-            let page = getp(&paging, "page");
+            // A record written back by pre_result holds the page just fetched
+            // as "page" and the one to fetch as "nextPage", so nextPage wins.
+            let mut page = getp(&paging, "nextPage");
+            if page.is_noval() || page.is_null() {
+                page = getp(&paging, "page");
+            }
             if !page.is_noval() && !page.is_null() {
                 setp(&query, &page_param, page);
             } else {
@@ -281,11 +287,15 @@ impl Feature for PagingFeature {
             }
         }
 
-        // Body-level cursors.
+        // Body-level signals; snake_case forms are read first so camelCase wins.
         if let Value::Map(_) = body {
             let next = getp(&body, "next");
             if !next.is_noval() && !next.is_null() && getp(&paging, "next").is_noval() {
                 setp(&paging, "next", next);
+            }
+            let snake_cursor = getp(&body, "next_cursor");
+            if !snake_cursor.is_noval() && !snake_cursor.is_null() {
+                setp(&paging, "cursor", snake_cursor);
             }
             let cursor = getp(&body, "cursor");
             if !cursor.is_noval() && !cursor.is_null() {
@@ -294,6 +304,19 @@ impl Feature for PagingFeature {
             let next_cursor = getp(&body, "nextCursor");
             if !next_cursor.is_noval() && !next_cursor.is_null() {
                 setp(&paging, "cursor", next_cursor);
+            }
+            if getp(&paging, "nextPage").is_noval() {
+                let mut np = getp(&body, "nextPage");
+                if np.is_noval() || np.is_null() {
+                    np = getp(&body, "next_page");
+                }
+                if matches!(np, Value::Num(_) | Value::Str(_)) {
+                    setp(&paging, "nextPage", np);
+                }
+            }
+            if let Some(has_more) = get_bool(&body, "has_more") {
+                setp(&paging, "hasMore", Value::Bool(has_more));
+                explicit_more = true;
             }
             if let Some(has_more) = get_bool(&body, "hasMore") {
                 setp(&paging, "hasMore", Value::Bool(has_more));
@@ -316,6 +339,24 @@ impl Feature for PagingFeature {
         }
 
         result.borrow_mut().paging = paging.clone();
-        self.last = paging;
+        self.last = paging.clone();
+
+        // Value::Map is Rc-shared, so the caller's map is refilled in place;
+        // a fresh map on ctrl never reaches the caller.
+        let ctrl = ctx.ctrl.borrow().clone();
+        let shared = ctrl.borrow().paging.clone();
+        if let Value::Map(m) = &shared {
+            let entries: Vec<(String, Value)> = match &paging {
+                Value::Map(pm) => pm.borrow().iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+                _ => Vec::new(),
+            };
+            let mut mm = m.borrow_mut();
+            *mm = OrderedMap::new();
+            for (k, v) in entries {
+                mm.insert(k, v);
+            }
+        } else {
+            ctrl.borrow_mut().paging = paging;
+        }
     }
 }

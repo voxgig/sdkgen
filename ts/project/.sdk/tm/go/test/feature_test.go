@@ -5,6 +5,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1039,6 +1040,59 @@ func TestFeaturePaging(t *testing.T) {
 		}
 		if res.result.Paging["hasMore"] != true {
 			t.Errorf("expected hasMore, got %v", res.result.Paging["hasMore"])
+		}
+	})
+
+	t.Run("snake-case-signals-and-ctrl-write-back", func(t *testing.T) {
+		rec := &fhRecorder{reply: func(n int, _ map[string]any) (any, error) {
+			if n == 1 {
+				return fhResponse(200, map[string]any{"has_more": true, "next_cursor": "c2"}, nil), nil
+			}
+			return fhResponse(200, map[string]any{"has_more": false}, nil), nil
+		}}
+		h := fhMake(rec.fetch, fhF(feat.NewPagingFeature(), nil))
+		pg := map[string]any{}
+		ctrl := map[string]any{"paging": pg}
+		res := h.op(fhOpSpec{op: "list", path: "/w", ctrl: ctrl})
+		if res.result.Paging["hasMore"] != true {
+			t.Errorf("expected has_more read, got %v", res.result.Paging["hasMore"])
+		}
+		if res.result.Paging["cursor"] != "c2" {
+			t.Errorf("expected next_cursor read, got %v", res.result.Paging["cursor"])
+		}
+		if pg["cursor"] != "c2" || pg["hasMore"] != true {
+			t.Errorf("expected record written back into ctrl, got %v", pg)
+		}
+		h.op(fhOpSpec{op: "list", path: "/w", ctrl: ctrl})
+		if !strings.Contains(rec.url(1), "cursor=c2") {
+			t.Errorf("expected written-back cursor sent, got %s", rec.url(1))
+		}
+		if pg["hasMore"] != false || pg["cursor"] != nil {
+			t.Errorf("expected ctrl to carry the last record, got %v", pg)
+		}
+	})
+
+	t.Run("continues-from-written-back-next-page", func(t *testing.T) {
+		rec := &fhRecorder{reply: func(n int, _ map[string]any) (any, error) {
+			body := map[string]any{}
+			if n == 1 {
+				body["next_page"] = 2
+			}
+			return fhResponse(200, body, map[string]any{"x-page": strconv.Itoa(n)}), nil
+		}}
+		h := fhMake(rec.fetch, fhF(feat.NewPagingFeature(), nil))
+		pg := map[string]any{}
+		ctrl := map[string]any{"paging": pg}
+		h.op(fhOpSpec{op: "list", path: "/w", ctrl: ctrl})
+		if pg["page"] != 1 || pg["nextPage"] != 2 || pg["hasMore"] != true {
+			t.Errorf("expected next_page read and written back, got %v", pg)
+		}
+		h.op(fhOpSpec{op: "list", path: "/w", ctrl: ctrl})
+		if !strings.Contains(rec.url(1), "page=2") {
+			t.Errorf("expected written-back next page sent, got %s", rec.url(1))
+		}
+		if pg["hasMore"] != false {
+			t.Errorf("expected no more pages, got %v", pg)
 		}
 	})
 

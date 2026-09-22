@@ -55,6 +55,9 @@ class ProjectNameContext
             if (array_key_exists('actor', $ctrl_raw)) {
                 $this->ctrl->actor = $ctrl_raw['actor'];
             }
+            if (isset($ctrl_raw['paging']) && is_array($ctrl_raw['paging'])) {
+                $this->ctrl->paging = $ctrl_raw['paging'];
+            }
         } elseif ($basectx !== null && $basectx->ctrl !== null) {
             $this->ctrl = $basectx->ctrl;
         }

@@ -49,6 +49,12 @@ function Context.new(ctxmap, basectx)
     if type(ctrl_raw.explain) == "table" then
       self.ctrl.explain = ctrl_raw.explain
     end
+    if ctrl_raw.actor ~= nil then
+      self.ctrl.actor = ctrl_raw.actor
+    end
+    if type(ctrl_raw.paging) == "table" then
+      self.ctrl.paging = ctrl_raw.paging
+    end
   elseif basectx ~= nil and basectx.ctrl ~= nil then
     self.ctrl = basectx.ctrl
   end

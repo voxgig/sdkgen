@@ -868,6 +868,48 @@ public class FeatureTest {
   }
 
   @Test
+  public void paging_snakeCaseSignalsAndCtrlWriteBack() {
+    assumeFeatures("paging");
+    FhRecorder rec = new FhRecorder();
+    rec.reply = (n, fetchdef) -> 1 == n
+        ? fhResponse(200, fhMap("has_more", true, "next_cursor", "c2"), null)
+        : fhResponse(200, fhMap("has_more", false), null);
+    FhHarness h = fhMake(rec::fetch, fhF(new PagingFeature(), null));
+    Map<String, Object> pg = new LinkedHashMap<>();
+    Map<String, Object> ctrl = fhMap("paging", pg);
+    FhOpResult res = h.op(fhOp("list").path("/w").ctrl(ctrl));
+    assertEquals(true, res.result.paging.get("hasMore"), "expected has_more read");
+    assertEquals("c2", res.result.paging.get("cursor"), "expected next_cursor read");
+    assertEquals("c2", pg.get("cursor"), "expected record written back into ctrl");
+    assertEquals(true, pg.get("hasMore"), "expected record written back into ctrl");
+    h.op(fhOp("list").path("/w").ctrl(ctrl));
+    assertTrue(rec.url(1).contains("cursor=c2"),
+        "expected written-back cursor sent: " + rec.url(1));
+    assertEquals(false, pg.get("hasMore"), "expected ctrl to carry the last record");
+    assertNull(pg.get("cursor"), "expected ctrl to carry the last record");
+  }
+
+  @Test
+  public void paging_continuesFromWrittenBackNextPage() {
+    assumeFeatures("paging");
+    FhRecorder rec = new FhRecorder();
+    rec.reply = (n, fetchdef) -> fhResponse(200,
+        1 == n ? fhMap("next_page", 2) : fhMap(),
+        fhMap("x-page", String.valueOf(n)));
+    FhHarness h = fhMake(rec::fetch, fhF(new PagingFeature(), null));
+    Map<String, Object> pg = new LinkedHashMap<>();
+    Map<String, Object> ctrl = fhMap("paging", pg);
+    h.op(fhOp("list").path("/w").ctrl(ctrl));
+    assertEquals(1, pg.get("page"), "expected x-page written back");
+    assertEquals(2, pg.get("nextPage"), "expected next_page written back");
+    assertEquals(true, pg.get("hasMore"), "expected hasMore inferred from next_page");
+    h.op(fhOp("list").path("/w").ctrl(ctrl));
+    assertTrue(rec.url(1).contains("page=2"),
+        "expected written-back next page sent: " + rec.url(1));
+    assertEquals(false, pg.get("hasMore"), "expected no more pages");
+  }
+
+  @Test
   public void paging_nonListNotPaged() {
     assumeFeatures("paging");
     FhRecorder rec = new FhRecorder();

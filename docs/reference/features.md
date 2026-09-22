@@ -717,11 +717,19 @@ Signals understood:
 
 - `Link: <...>; rel="next"`
 - `X-Page`, `X-Total-Count`, `X-Next-Page` headers
-- `next`, `cursor`, `nextCursor`, `hasMore` in the body
+- `next`, `cursor`, `nextCursor`, `nextPage`, `hasMore` in the body, and
+  the snake_case spellings `next_cursor`, `next_page`, `has_more`; when a
+  body carries both spellings, the camelCase one wins
 - GraphQL Relay connections, read from the `pageInfo` path the model
   recorded for the operation
 
 Normalised result: `{ page, totalCount, nextPage, next, cursor, hasMore }`.
+
+After every list operation the record is written back into the call's
+control argument as `ctrl.paging`, so the object the caller passed in
+carries it once the call returns. Passing the same control object to the
+next call continues from where the last one stopped: a `cursor` is sent as
+the cursor parameter, otherwise `nextPage` as the page parameter.
 
 **Seam:** `PreRequest`, `PreResult`.
 
@@ -740,23 +748,34 @@ Normalised result: `{ page, totalCount, nextPage, next, cursor, hasMore }`.
 ```ts
 feature: { paging: { active: true, limit: 100 } }
 
-const items = await client.Product().list({})
-const paging = client._paging.last
+const ctrl = { paging: {} }
+const items = await client.Product().list({}, ctrl)
+ctrl.paging
 // { page: 1, totalCount: 240, nextPage: 2, next, cursor, hasMore: true }
 ```
 
 An operation returns its items, so the normalised signals are read from
-`client._paging.last` (they are also on the internal `result.paging`).
-Advance a page by passing the cursor back through the call's **control**
-argument, which is the second parameter of every operation:
+the **control** argument, the second parameter of every operation. Pass
+the same object again to fetch the next page; the loop ends when the
+server reports no more:
 
 ```ts
-while (client._paging.last?.hasMore) {
-  const more = await client.Product().list(
-    {}, { paging: { cursor: client._paging.last.cursor } })
-  items.push(...more)
+while (ctrl.paging.hasMore) {
+  items.push(...await client.Product().list({}, ctrl))
 }
 ```
+
+Targets that copy the control argument into a typed `Control` (go, java,
+kotlin, scala, csharp, swift, rust, c, cpp, zig, elixir, lua, perl, py, rb)
+share the `paging` map by reference and refill it in place, so the caller
+must supply one, as `paging: {}` above, to receive the record. PHP passes
+arrays by value, so there the record is read from
+`$client->_paging['last']` and passed on by hand as `['paging' => $last]`.
+
+In the dynamically typed targets (ts, js, py, rb, lua, perl, php, elixir)
+`client._paging.last` still holds the record from the most recent call on
+the client, whichever entity made it; `py-data` reads it for its
+auto-iteration.
 
 **Notes.** `hasMore` distinguishes a *stated* answer from an *inferred*
 one. A final page typically carries both an end cursor and
