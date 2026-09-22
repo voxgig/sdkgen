@@ -1,5 +1,47 @@
 # AGENTS.md — operating guide for AI coding agents
 
+`CLAUDE.md` is a symlink to this file, so one document serves both names and
+there is nothing to keep in step. Edit this one.
+
+## The environment is not a property of this repository
+
+This repository is worked on from MORE THAN ONE MACHINE, and from ephemeral
+containers whose installed software differs from each other and from any
+developer's workstation. A toolchain, a path or a version present in one is
+routinely absent in the next. That matters more here than in most
+repositories, because this one generates source for twenty-three targets and
+a claim about any of them rests on a compiler somebody happened to have.
+
+Two rules, and they pull in opposite directions on purpose:
+
+- **Never record an inventory of what is installed as though the repository
+  owned it.** A list of available compilers describes one machine at one
+  moment, and it is wrong the moment it is read anywhere else. This very
+  section replaced such a list, which had gone from useful to actively
+  misleading in the ordinary course of things.
+- **Never conclude that something cannot be built, run or verified without
+  checking the CURRENT environment first.** The loop under
+  [Verify on the real toolchain](#verify-on-the-real-toolchain--a-structural-guard-is-not-a-build)
+  settles it in a second. The converse is the half that goes unsaid: a note
+  anywhere in this repository — a design document, a commit message, a pull
+  request, a comment — saying a tool "was not available" is a fact about the
+  environment that note was written in, and never about yours. A target
+  recorded as unverified because an earlier machine lacked its compiler can
+  often just be verified.
+
+So state what the CODE requires and cite what enforces it, rather than what
+some past run found. `ts/package.json` declares `engines.node: >=24`; the
+operating systems and Node versions the suite is run on live in
+`.github/workflows/build.yml`, and the Vale version the prose gate measures
+against is pinned by the `@vvago/vale` devDependency — read those rather than
+copying them here, where a copy goes stale unnoticed. A resolved version and
+an absolute path are the same kind of fact: `git status`, `node --version`,
+`npm ls <pkg>` and `command -v <tool>` are the answers, and a path written in
+a note is that run's path.
+
+Where a gate genuinely cannot run where you are, name it and say so, rather
+than letting the checks that did run stand in for the whole.
+
 ## Temporary local tool development
 
 Prefer local symlinks to sibling tool checkouts when developing or testing
@@ -84,8 +126,11 @@ or sync commands. `ts/README.md` is a short summary linking to the full
 top-level README. **Always build before testing** —
 tests run against compiled `ts/dist-test/`.
 
-Environment note: a transitive dep (`shape`) declares `engines.node >=24`.
-Builds/tests pass on Node 22 with an `EBADENGINE` warning; ignore it.
+Environment note: the Node floor is this package's own —
+`ts/package.json` declares `engines.node: >=24`; the pinned `shape` does not
+ask for it (`shape@11.4.1` declares `>=20`). Builds and tests pass on Node 22
+with an `EBADENGINE` warning, so the floor is CI's rather than a hard
+requirement of the code; `node --version` is how you find out which you have.
 
 The CLI a consumer runs, from its own `.sdk/` directory:
 
@@ -257,15 +302,17 @@ Rules:
   shape and fix every one. Enumerate the targets — don't fix the language in
   front of you and move on.
 - **CHECK THE TOOLCHAIN, DON'T ASSUME IT.** Before you conclude a target
-  cannot be built, run, benchmarked or verified here, run the check — a
-  `command -v` loop over the target compilers takes a second. This machine
-  has the full matrix (zig, lean, ocaml, ghc, clojure, elixir, dart, swift,
-  go, rust, dotnet, kotlin, java, php, perl, ruby, lua, python, node,
-  gcc/g++); only `scalac` is absent, and `sbt` resolves it per project.
-  A "no X compiler was available" line in one of this repo's design notes
-  is a fact about the environment THAT work happened in — never about
-  yours. Reading it as a live constraint is how six targets ended up
-  marked "plausible, not proven" and stayed that way.
+  cannot be built, run, benchmarked or verified where you are, run the
+  check — the `command -v` loop under
+  [Verify on the real toolchain](#verify-on-the-real-toolchain--a-structural-guard-is-not-a-build)
+  takes a second. What this guide deliberately does NOT say is which
+  compilers are installed: that varies per machine and per container, so see
+  [The environment is not a property of this repository](#the-environment-is-not-a-property-of-this-repository).
+  A "no X compiler was available" line in one of this repo's design notes is
+  a fact about the environment THAT work happened in — never about yours.
+  Reading it as a live constraint is how six targets ended up marked
+  "plausible, not proven" and stayed that way; reading its opposite as a
+  live guarantee is how a target gets claimed on a compiler nobody ran.
 - **`ts`/`js` are the reference implementation.** Bring a change to `ts`/`js`
   first, then port to the rest; check the others against them.
 - **Parity is testable.** `ts/test/parity.test.ts` states the coverage TIERS
@@ -459,8 +506,9 @@ structural check stand in silently.
 
 ```bash
 # settle it in one second, before claiming a target is unverifiable
-for c in zig lean ocaml ghc clojure elixir dart swift go rustc dotnet \
-         kotlinc javac php perl ruby lua5.4 python3 node g++ sbt; do
+for c in zig lean lake ocamlc ghc cabal clojure elixir dart swift go rustc \
+         dotnet kotlinc javac php perl ruby lua5.4 python3 node g++ sbt \
+         busted composer bundle mvn; do
   command -v $c >/dev/null && echo "$c $( $c --version 2>&1 | head -1 )" \
                            || echo "$c MISSING"
 done
@@ -469,8 +517,11 @@ done
 `docs/design/vendoring-upgrade-migration.md` records six targets — clojure,
 elixir, lean, ocaml, scala, zig — as "read by eye: nothing, never compiled,
 never run", because no compiler for them existed where that change was made.
-Those compilers DO exist here. Anything still resting on that tier can be
-promoted by building it, and should be.
+That is a fact about that machine and is neither a live constraint nor a live
+guarantee. Run the loop: where a compiler turns out to be present, the target
+can be promoted off that tier by building it, and should be; where it is
+absent, say so in the pull request instead of letting a structural check pass
+for a build.
 
 Validation sequence for a template/component change:
 
