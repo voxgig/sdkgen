@@ -11,7 +11,6 @@ package JAVAPACKAGE.sdktest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -529,11 +528,62 @@ public class PipelineTest {
 
   // --- prepareAuth --------------------------------------------------------------
 
-  static Spec authSpec(Map<String, Object> headers) {
+  static Spec authSpec() {
     Map<String, Object> m = new LinkedHashMap<>();
-    m.put("headers", headers == null ? new LinkedHashMap<>() : headers);
+    m.put("headers", new LinkedHashMap<String, Object>());
+    m.put("query", new LinkedHashMap<String, Object>());
     m.put("step", "s");
     return new Spec(m);
+  }
+
+  // Where this SDK's prepareAuth actually puts the credential. The name is
+  // the API's OWN scheme name, not always "authorization", so it is
+  // discovered rather than asserted.
+  record AuthCred(String where, String name, Object value) {
+  }
+
+  // A cookie credential rides the header bag, because a cookie IS a header.
+  static Map<String, Object> authBag(Spec spec, String where) {
+    return "query".equals(where) ? spec.query : spec.headers;
+  }
+
+  // Run prepareAuth with both containers present and see which one the
+  // generated utility writes to, and under what name. Null means this SDK
+  // places no credential at all - a public API - which is a legitimate
+  // shape, and the tests below assert exactly that instead.
+  static AuthCred authCredential() {
+    ProjectNameSDK client = plClient(fhMap(
+        "apikey", "K",
+        "auth", fhMap("prefix", "Bearer")));
+    Utility utility = client.getUtility();
+    Context ctx = plCtx(client, utility, null);
+    ctx.spec = authSpec();
+    utility.prepareAuth.apply(ctx);
+    for (String where : new String[] { "headers", "query" }) {
+      for (Map.Entry<String, Object> entry : authBag(ctx.spec, where).entrySet()) {
+        return new AuthCred(where, entry.getKey(), entry.getValue());
+      }
+    }
+    return null;
+  }
+
+  // Runs prepareAuth over a fresh spec, seeding the credential slot first
+  // when seed is non-null, and reports what is left there.
+  static Object[] authPlaced(Map<String, Object> sdkopts, Object seed) {
+    AuthCred cred = authCredential();
+    ProjectNameSDK client = plClient(sdkopts);
+    Utility utility = client.getUtility();
+    Context ctx = plCtx(client, utility, null);
+    ctx.spec = authSpec();
+    if (cred != null && seed != null) {
+      authBag(ctx.spec, cred.where()).put(cred.name(), seed);
+    }
+    utility.prepareAuth.apply(ctx);
+    if (cred == null) {
+      return new Object[] { null, Boolean.FALSE };
+    }
+    Map<String, Object> bag = authBag(ctx.spec, cred.where());
+    return new Object[] { bag.get(cred.name()), bag.containsKey(cred.name()) };
   }
 
   @Test
@@ -546,73 +596,64 @@ public class PipelineTest {
   }
 
   @Test
-  public void prepareAuth_apikeyWithPrefixSpaceJoined() {
-    ProjectNameSDK client = plClient(fhMap(
-        "apikey", "K",
-        "auth", fhMap("prefix", "Bearer")));
-    Utility utility = client.getUtility();
-    Context ctx = plCtx(client, utility, null);
-    ctx.spec = authSpec(null);
-    utility.prepareAuth.apply(ctx);
-    assertEquals("Bearer K", ctx.spec.headers.get("authorization"));
+  public void prepareAuth_placedWhereThisApiPutsIt() {
+    AuthCred cred = authCredential();
+    if (cred == null) {
+      // A public API places nothing, and that is the whole assertion.
+      Object[] got = authPlaced(fhMap(
+          "apikey", "K",
+          "auth", fhMap("prefix", "Bearer")), null);
+      assertFalse((Boolean) got[1], "expected no credential placed at all");
+      return;
+    }
+    assertTrue("headers".equals(cred.where()) || "query".equals(cred.where()),
+        "unexpected credential container " + cred.where());
+    // A header credential is prefix-joined; a query credential is the raw
+    // key, because a query parameter has nowhere to put a scheme name.
+    assertEquals("query".equals(cred.where()) ? "K" : "Bearer K", cred.value());
   }
 
   @Test
   public void prepareAuth_rawApikeyEmptyPrefixAsIs() {
-    ProjectNameSDK client = plClient(fhMap(
+    Object[] got = authPlaced(fhMap(
         "apikey", "K",
-        "auth", fhMap("prefix", "")));
-    Utility utility = client.getUtility();
-    Context ctx = plCtx(client, utility, null);
-    ctx.spec = authSpec(null);
-    utility.prepareAuth.apply(ctx);
-    assertEquals("K", ctx.spec.headers.get("authorization"));
+        "auth", fhMap("prefix", "")), null);
+    if (authCredential() == null) {
+      assertFalse((Boolean) got[1], "expected no credential placed at all");
+      return;
+    }
+    assertEquals("K", got[0]);
   }
 
   @Test
-  public void prepareAuth_emptyApikeyDropsHeader() {
-    ProjectNameSDK client = plClient(fhMap(
+  public void prepareAuth_emptyApikeyDropsCredential() {
+    Object[] got = authPlaced(fhMap(
         "apikey", "",
-        "auth", fhMap("prefix", "Bearer")));
-    Utility utility = client.getUtility();
-    Context ctx = plCtx(client, utility, null);
-    ctx.spec = authSpec(fhMap("authorization", "stale"));
-    utility.prepareAuth.apply(ctx);
-    assertFalse(ctx.spec.headers.containsKey("authorization"),
-        "expected authorization dropped");
+        "auth", fhMap("prefix", "Bearer")), "stale");
+    assertFalse((Boolean) got[1], "expected the credential dropped");
   }
 
   @Test
-  public void prepareAuth_missingApikeyDropsHeader() {
-    ProjectNameSDK client = plClient(fhMap(
-        "auth", fhMap("prefix", "Bearer")));
-    Map<String, Object> options = client.optionsMap();
-    Object apikey = options.get("apikey");
+  public void prepareAuth_missingApikeyDropsCredential() {
+    Map<String, Object> sdkopts = fhMap("auth", fhMap("prefix", "Bearer"));
+    Object apikey = plClient(sdkopts).optionsMap().get("apikey");
     if (apikey instanceof String && !"".equals(apikey)) {
       // SDK options carry a configured apikey; case not reproducible here.
       return;
     }
-    Utility utility = client.getUtility();
-    Context ctx = plCtx(client, utility, null);
-    ctx.spec = authSpec(fhMap("authorization", "stale"));
-    utility.prepareAuth.apply(ctx);
-    assertFalse(ctx.spec.headers.containsKey("authorization"),
-        "expected authorization dropped");
+    Object[] got = authPlaced(sdkopts, "stale");
+    assertFalse((Boolean) got[1], "expected the credential dropped");
   }
 
   @Test
-  public void prepareAuth_publicApiNoAuthBlockDropsHeader() {
-    ProjectNameSDK client = plClient(fhMap("apikey", "K"));
-    Map<String, Object> options = client.optionsMap();
-    if (options.get("auth") != null) {
+  public void prepareAuth_publicApiNoAuthBlockDropsCredential() {
+    Map<String, Object> sdkopts = fhMap("apikey", "K");
+    if (plClient(sdkopts).optionsMap().get("auth") != null) {
       // Option validation supplies an auth shape for this SDK, so a truly
       // auth-less client cannot be constructed here.
       return;
     }
-    Utility utility = client.getUtility();
-    Context ctx = plCtx(client, utility, null);
-    ctx.spec = authSpec(fhMap("authorization", "stale"));
-    utility.prepareAuth.apply(ctx);
-    assertNull(ctx.spec.headers.get("authorization"), "expected authorization dropped");
+    Object[] got = authPlaced(sdkopts, "stale");
+    assertFalse((Boolean) got[1], "expected the credential dropped");
   }
 }

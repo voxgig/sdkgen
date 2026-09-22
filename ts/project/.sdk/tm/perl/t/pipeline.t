@@ -552,16 +552,56 @@ sub named_feature {
 # === prepare_auth ===
 
 sub auth_ctx {
-  my ($options, $headers) = @_;
+  my ($options, $spec) = @_;
   my $ctx = ProjectNameContext->new({
     'client' => PipelineOptClient->new($options),
     'utility' => $utility,
     'opname' => 'load',
   }, undef);
-  $ctx->{spec} = defined $headers
-    ? ProjectNameSpec->new({ 'headers' => $headers, 'step' => 's' })
-    : undef;
+  $ctx->{spec} = $spec;
   return $ctx;
+}
+
+sub auth_bags {
+  return ProjectNameSpec->new({ 'headers' => {}, 'query' => {}, 'step' => 's' });
+}
+
+# A cookie credential rides the header bag, because a cookie IS a header.
+sub auth_bag {
+  my ($spec, $where) = @_;
+  return 'query' eq $where ? $spec->{query} : $spec->{headers};
+}
+
+# Run prepare_auth with both containers present and see which one the
+# generated utility writes to, and under what name. undef means this SDK
+# places no credential at all - a public API - which is a legitimate shape,
+# and the tests below assert exactly that instead.
+sub auth_credential {
+  my $ctx = auth_ctx({ 'apikey' => 'K', 'auth' => { 'prefix' => 'Bearer' } },
+    auth_bags());
+  $utility->{prepare_auth}->($ctx);
+  for my $where ('headers', 'query') {
+    my $bag = auth_bag($ctx->{spec}, $where);
+    for my $name (keys %{ $bag || {} }) {
+      return { 'where' => $where, 'name' => $name, 'value' => $bag->{$name} };
+    }
+  }
+  return undef;
+}
+
+# Returns the value left in the credential slot, and whether it is there.
+sub auth_placed {
+  my ($options, $seed) = @_;
+  my $cred = auth_credential();
+  my $spec = auth_bags();
+  if (defined $cred && defined $seed) {
+    auth_bag($spec, $cred->{where})->{ $cred->{name} } = $seed;
+  }
+  my $ctx = auth_ctx($options, $spec);
+  $utility->{prepare_auth}->($ctx);
+  return (undef, 0) if !defined $cred;
+  my $bag = auth_bag($ctx->{spec}, $cred->{where});
+  return ($bag->{ $cred->{name} }, exists $bag->{ $cred->{name} } ? 1 : 0);
 }
 
 {
@@ -571,40 +611,47 @@ sub auth_ctx {
 }
 
 {
-  my $ctx = auth_ctx({ 'apikey' => 'K', 'auth' => { 'prefix' => 'Bearer' } }, {});
-  my (undef, $err) = $utility->{prepare_auth}->($ctx);
-  ok(!defined $err, 'prepare_auth prefix: no error');
-  is($ctx->{spec}{headers}{authorization}, 'Bearer K',
-    'prepare_auth an apikey with a prefix is space-joined');
+  my $cred = auth_credential();
+  if (!defined $cred) {
+    # A public API places nothing, and that is the whole assertion.
+    my (undef, $has) =
+      auth_placed({ 'apikey' => 'K', 'auth' => { 'prefix' => 'Bearer' } });
+    ok(!$has, 'prepare_auth places no credential for a public API');
+  }
+  else {
+    ok('headers' eq $cred->{where} || 'query' eq $cred->{where},
+      'prepare_auth places the credential in headers or query');
+    # A header credential is prefix-joined; a query credential is the raw
+    # key, because a query parameter has nowhere to put a scheme name.
+    is($cred->{value}, 'query' eq $cred->{where} ? 'K' : 'Bearer K',
+      'prepare_auth places the apikey where this API puts it');
+  }
 }
 
 {
-  my $ctx = auth_ctx({ 'apikey' => 'K', 'auth' => { 'prefix' => '' } }, {});
-  $utility->{prepare_auth}->($ctx);
-  is($ctx->{spec}{headers}{authorization}, 'K', 'prepare_auth a raw apikey goes in as-is');
+  my ($value, $has) = auth_placed({ 'apikey' => 'K', 'auth' => { 'prefix' => '' } });
+  if (defined auth_credential()) {
+    is($value, 'K', 'prepare_auth a raw apikey goes in as-is');
+  }
+  else {
+    ok(!$has, 'prepare_auth a raw apikey places nothing for a public API');
+  }
 }
 
 {
-  my $ctx = auth_ctx({ 'apikey' => '', 'auth' => { 'prefix' => 'Bearer' } },
-    { 'authorization' => 'stale' });
-  $utility->{prepare_auth}->($ctx);
-  ok(!exists $ctx->{spec}{headers}{authorization},
-    'prepare_auth an empty apikey drops the header');
+  my (undef, $has) =
+    auth_placed({ 'apikey' => '', 'auth' => { 'prefix' => 'Bearer' } }, 'stale');
+  ok(!$has, 'prepare_auth an empty apikey drops the credential');
 }
 
 {
-  my $ctx = auth_ctx({ 'apikey' => 'K' }, { 'authorization' => 'stale' });
-  $utility->{prepare_auth}->($ctx);
-  ok(!exists $ctx->{spec}{headers}{authorization},
-    'prepare_auth a public api drops the header');
+  my (undef, $has) = auth_placed({ 'apikey' => 'K' }, 'stale');
+  ok(!$has, 'prepare_auth a public api drops the credential');
 }
 
 {
-  my $ctx = auth_ctx({ 'auth' => { 'prefix' => 'Bearer' } },
-    { 'authorization' => 'stale' });
-  $utility->{prepare_auth}->($ctx);
-  ok(!exists $ctx->{spec}{headers}{authorization},
-    'prepare_auth a missing apikey option drops the header');
+  my (undef, $has) = auth_placed({ 'auth' => { 'prefix' => 'Bearer' } }, 'stale');
+  ok(!$has, 'prepare_auth a missing apikey option drops the credential');
 }
 
 

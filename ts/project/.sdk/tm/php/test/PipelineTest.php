@@ -611,13 +611,63 @@ class PipelineTest extends TestCase
 
     // --- prepare_auth ------------------------------------------------------------
 
-    private static function auth_ctx(array $options, ?array $headers): ProjectNameContext
+    private static function auth_ctx(array $options, ?ProjectNameSpec $spec): ProjectNameContext
     {
         $client = new PlClient($options);
         return self::ctx([
             'client' => $client,
-            'spec' => $headers === null ? null : new ProjectNameSpec(['headers' => $headers]),
+            'spec' => $spec,
         ]);
+    }
+
+    private static function auth_bags(): ProjectNameSpec
+    {
+        return new ProjectNameSpec(['headers' => [], 'query' => []]);
+    }
+
+    /**
+     * Run prepare_auth with both containers present and see which one the
+     * generated utility writes to, and under what name. Null means this SDK
+     * places no credential at all - a public API - which is a legitimate
+     * shape, and the tests below assert exactly that instead.
+     *
+     * @return array{where:string,name:string,value:mixed}|null
+     */
+    private static function auth_credential(): ?array
+    {
+        $ctx = self::auth_ctx(
+            ['apikey' => 'K', 'auth' => ['prefix' => 'Bearer']], self::auth_bags());
+        ProjectNamePrepareAuth::call($ctx);
+        foreach (['headers', 'query'] as $where) {
+            // A cookie credential rides the header bag, because a cookie IS
+            // a header.
+            $bag = 'query' === $where ? $ctx->spec->query : $ctx->spec->headers;
+            foreach ($bag as $name => $value) {
+                return ['where' => $where, 'name' => $name, 'value' => $value];
+            }
+        }
+        return null;
+    }
+
+    /** @return array{0:mixed,1:bool} the value left in the credential slot, and whether it is there */
+    private static function auth_placed(array $options, $seed = null): array
+    {
+        $cred = self::auth_credential();
+        $spec = self::auth_bags();
+        if (null !== $cred && null !== $seed) {
+            if ('query' === $cred['where']) {
+                $spec->query[$cred['name']] = $seed;
+            } else {
+                $spec->headers[$cred['name']] = $seed;
+            }
+        }
+        $ctx = self::auth_ctx($options, $spec);
+        ProjectNamePrepareAuth::call($ctx);
+        if (null === $cred) {
+            return [null, false];
+        }
+        $bag = 'query' === $cred['where'] ? $ctx->spec->query : $ctx->spec->headers;
+        return [$bag[$cred['name']] ?? null, array_key_exists($cred['name'], $bag)];
     }
 
     public function test_prepare_auth_guards_a_missing_spec(): void
@@ -627,43 +677,48 @@ class PipelineTest extends TestCase
         $this->assertSame('auth_no_spec', self::code($err));
     }
 
-    public function test_prepare_auth_an_apikey_with_a_prefix_is_space_joined(): void
+    public function test_prepare_auth_places_the_apikey_where_this_api_puts_it(): void
     {
-        $ctx = self::auth_ctx(['apikey' => 'K', 'auth' => ['prefix' => 'Bearer']], []);
-        [, $err] = ProjectNamePrepareAuth::call($ctx);
-        $this->assertNull($err);
-        $this->assertSame('Bearer K', $ctx->spec->headers['authorization']);
+        $cred = self::auth_credential();
+        if (null === $cred) {
+            // A public API places nothing, and that is the whole assertion.
+            [, $has] = self::auth_placed(['apikey' => 'K', 'auth' => ['prefix' => 'Bearer']]);
+            $this->assertFalse($has);
+            return;
+        }
+        $this->assertContains($cred['where'], ['headers', 'query']);
+        // A header credential is prefix-joined; a query credential is the raw
+        // key, because a query parameter has nowhere to put a scheme name.
+        $this->assertSame('query' === $cred['where'] ? 'K' : 'Bearer K', $cred['value']);
     }
 
     public function test_prepare_auth_a_raw_apikey_goes_in_as_is(): void
     {
-        $ctx = self::auth_ctx(['apikey' => 'K', 'auth' => ['prefix' => '']], []);
-        ProjectNamePrepareAuth::call($ctx);
-        $this->assertSame('K', $ctx->spec->headers['authorization']);
+        [$value, $has] = self::auth_placed(['apikey' => 'K', 'auth' => ['prefix' => '']]);
+        if (null === self::auth_credential()) {
+            $this->assertFalse($has);
+            return;
+        }
+        $this->assertSame('K', $value);
     }
 
-    public function test_prepare_auth_an_empty_apikey_drops_the_header(): void
+    public function test_prepare_auth_an_empty_apikey_drops_the_credential(): void
     {
-        $ctx = self::auth_ctx(
-            ['apikey' => '', 'auth' => ['prefix' => 'Bearer']],
-            ['authorization' => 'stale']
-        );
-        ProjectNamePrepareAuth::call($ctx);
-        $this->assertArrayNotHasKey('authorization', $ctx->spec->headers);
+        [, $has] = self::auth_placed(
+            ['apikey' => '', 'auth' => ['prefix' => 'Bearer']], 'stale');
+        $this->assertFalse($has);
     }
 
-    public function test_prepare_auth_a_public_api_drops_the_header(): void
+    public function test_prepare_auth_a_public_api_drops_the_credential(): void
     {
-        $ctx = self::auth_ctx(['apikey' => 'K'], ['authorization' => 'stale']);
-        ProjectNamePrepareAuth::call($ctx);
-        $this->assertArrayNotHasKey('authorization', $ctx->spec->headers);
+        [, $has] = self::auth_placed(['apikey' => 'K'], 'stale');
+        $this->assertFalse($has);
     }
 
-    public function test_prepare_auth_a_missing_apikey_option_drops_the_header(): void
+    public function test_prepare_auth_a_missing_apikey_option_drops_the_credential(): void
     {
-        $ctx = self::auth_ctx(['auth' => ['prefix' => 'Bearer']], ['authorization' => 'stale']);
-        ProjectNamePrepareAuth::call($ctx);
-        $this->assertArrayNotHasKey('authorization', $ctx->spec->headers);
+        [, $has] = self::auth_placed(['auth' => ['prefix' => 'Bearer']], 'stale');
+        $this->assertFalse($has);
     }
 
 

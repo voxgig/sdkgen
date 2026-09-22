@@ -3438,3 +3438,385 @@ main: kit: flow: BasicNamespaceFlow: {
   ]
 }
 `
+
+
+// A credential the API names itself, rather than `authorization`. apidef
+// takes the name from a spec's own security scheme, so a generated test that
+// asserts the literal name fails for every such API while the SDK places the
+// credential correctly.
+const CREDNAME_MODEL = `
+main: kit: config: auth: { active: true, prefix: '', in: 'header', name: 'X-Api-Key' }
+`
+
+
+// The prepareAuth corpus section, in the shape create-sdkgen compiles. The
+// `authorization` name here is the PLACEHOLDER each runner must retarget onto
+// the container and name its own API uses; a runner that reads it literally
+// fails against the model above. It mirrors the shared corpus case rather
+// than copying the corpus, so a changed placeholder leaves it stale.
+const CREDNAME_CORPUS = {
+  primary: {
+    prepareAuth: {
+      DEF: { setup: { a: { apikey: 'APIKEY01', auth: { basic: false, prefix: '' } } } },
+      basic: {
+        set: [
+          {
+            ctx: { spec: { headers: {} } },
+            match: { ctx: { spec: { headers: { authorization: 'APIKEY01' } } } },
+          },
+        ],
+      },
+    },
+  },
+}
+
+
+type CredNameStep = {
+  // What the step proves, for the failure message.
+  name: string,
+  cmd: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // A line the run must PRINT. Exit zero is not enough: a filtered run that
+  // matches nothing is a fully-skipped suite, which every one of these
+  // frameworks reports as a pass.
+  ran: RegExp,
+  // Set where the exit code cannot be read: perl's Test::More has no
+  // per-test filter, so the whole primary suite runs against a fixture that
+  // carries ONE section and legitimately fails the rest. The TAP line for
+  // the section under test is the verdict there.
+  byline?: boolean,
+}
+
+type CredNameLane = {
+  target: string,
+  needs: string,
+  prepare?: (sdkroot: string) => string | null,
+  steps: CredNameStep[],
+}
+
+
+const CREDNAME_LANES: CredNameLane[] = [
+  {
+    target: 'ts',
+    needs: 'the local typescript (run `npm install`)',
+    prepare: (sdkroot) => {
+      linkDeps(sdkroot)
+      if (!Fs.existsSync(TSC)) return 'typescript is not installed here'
+      const src = tsc(sdkroot, 'src')
+      if (!src.ok) return 'generated src does not compile:\n' + tail(src.out)
+      const suite = tsc(sdkroot, 'test')
+      return suite.ok
+        ? null
+        : 'the generated test suite does not compile:\n' + tail(suite.out)
+    },
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => Fs.existsSync(TSC)
+          ? {
+            bin: process.execPath,
+            args: ['--test', '--test-reporter=tap',
+              Path.join('dist-test', 'pipeline.test.js')],
+            env: nestedTestEnv(),
+          }
+          : null,
+        ran: /^\s*ok \d+ - pipeline:prepareAuth/m,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: () => Fs.existsSync(TSC)
+          ? {
+            bin: process.execPath,
+            args: ['--test', '--test-reporter=tap', '--test-name-pattern=auth-basic',
+              Path.join('dist-test', 'utility', 'PrimaryUtility.test.js')],
+            env: nestedTestEnv(),
+          }
+          : null,
+        ran: /^\s*ok \d+ - auth-basic/m,
+      },
+    ],
+  },
+  {
+    target: 'js',
+    needs: 'node',
+    prepare: (sdkroot) => {
+      linkDeps(sdkroot)
+      return null
+    },
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => ({
+          bin: process.execPath,
+          args: ['--test', '--test-reporter=tap', Path.join('test', 'pipeline.test.js')],
+          env: nestedTestEnv(),
+        }),
+        ran: /^\s*ok \d+ - pipeline:prepareAuth/m,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: () => ({
+          bin: process.execPath,
+          args: ['--test', '--test-reporter=tap', '--test-name-pattern=auth-basic',
+            Path.join('test', 'utility', 'PrimaryUtility.test.js')],
+          env: nestedTestEnv(),
+        }),
+        ran: /^\s*ok \d+ - auth-basic/m,
+      },
+    ],
+  },
+  {
+    target: 'go',
+    needs: 'go',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => {
+          const go = toolchain('go')
+          return null == go ? null : {
+            bin: go,
+            args: ['test', './test/', '-run', 'TestPipelinePrepareAuth', '-v'],
+          }
+        },
+        ran: /--- PASS: TestPipelinePrepareAuth\b/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: () => {
+          const go = toolchain('go')
+          return null == go ? null : {
+            bin: go,
+            args: ['test', './test/', '-run',
+              'TestPrimaryUtility/prepareAuth-basic', '-v'],
+          }
+        },
+        ran: /--- PASS: TestPrimaryUtility\/prepareAuth-basic/,
+      },
+    ],
+  },
+  {
+    target: 'py',
+    needs: 'python3 with pytest',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => pytest(['test/test_pipeline.py', '-k', 'PrepareAuth', '-q']),
+        ran: /(\d+) passed/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: () => pytest(['test/test_primary_utility.py', '-k', 'prepare_auth', '-q']),
+        ran: /1 passed/,
+      },
+    ],
+  },
+  {
+    target: 'rb',
+    needs: 'ruby with minitest',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => minitest(['test/pipeline_test.rb', '-n', '/prepare_auth/']),
+        ran: /[1-9]\d* runs, \d+ assertions, 0 failures, 0 errors/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: () => minitest(['test/primary_utility_test.rb', '-n', 'test_prepare_auth_basic']),
+        ran: /1 runs, \d+ assertions, 0 failures, 0 errors/,
+      },
+    ],
+  },
+  {
+    target: 'php',
+    needs: 'php with phpunit (on PATH, or PHPUNIT=<path to phpunit.phar>)',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => phpunit(['--filter', 'prepare_auth', 'test/PipelineTest.php']),
+        ran: /OK \([1-9]\d* tests?/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: () => phpunit(['--filter', 'test_prepare_auth_basic', 'test/PrimaryUtilityTest.php']),
+        ran: /OK \(1 test/,
+      },
+    ],
+  },
+  {
+    target: 'lua',
+    needs: 'lua with busted',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        // busted's --filter is a LUA PATTERN, where `-` is a quantifier, so
+        // the section name is given without its `-basic` suffix.
+        cmd: () => busted(['--filter', 'prepareAuth', 'test/pipeline_test.lua']),
+        ran: /[1-9]\d* success(es)? \/ 0 failures \/ 0 errors/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: () => busted(['--filter', 'prepareAuth', 'test/primary_utility_test.lua']),
+        ran: /1 success \/ 0 failures \/ 0 errors/,
+      },
+    ],
+  },
+  {
+    target: 'perl',
+    needs: 'perl',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => {
+          const perl = toolchain('perl')
+          return null == perl ? null : { bin: perl, args: ['-Ilib', 't/pipeline.t'] }
+        },
+        ran: /^ok \d+ - prepare_auth places the apikey where this API puts it/m,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: () => {
+          const perl = toolchain('perl')
+          return null == perl
+            ? null
+            : { bin: perl, args: ['-Ilib', 't/primary_utility.t'] }
+        },
+        ran: /^ok \d+ - prepareAuth\.basic/m,
+        byline: true,
+      },
+    ],
+  },
+  {
+    target: 'java',
+    needs: 'java and maven',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => maven(['-Dtest=PipelineTest#prepareAuth_*']),
+        ran: /Tests run: [1-9]\d*, Failures: 0, Errors: 0/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: () => maven(['-Dtest=PrimaryUtilityTest#prepareAuthBasic']),
+        ran: /Tests run: 1, Failures: 0, Errors: 0/,
+      },
+    ],
+  },
+]
+
+
+function pytest(args: string[]) {
+  const py = toolchain('python3') || toolchain('python')
+  if (null == py) return null
+  if (!probeOk(py, ['-m', 'pytest', '--version'])) return null
+  return { bin: py, args: ['-m', 'pytest', ...args] }
+}
+
+
+function minitest(args: string[]) {
+  const rb = toolchain('ruby')
+  if (null == rb) return null
+  if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
+  return { bin: rb, args }
+}
+
+
+function phpunit(args: string[]) {
+  const php = toolchain('php')
+  if (null == php) return null
+  const phar = process.env.PHPUNIT
+  if (null != phar && '' !== phar && Fs.existsSync(phar)) {
+    return { bin: php, args: [phar, '--no-configuration', ...args] }
+  }
+  const bin = toolchain('phpunit')
+  return null == bin ? null : { bin, args: ['--no-configuration', ...args] }
+}
+
+
+function busted(args: string[]) {
+  const bin = toolchain('busted')
+  return null == bin ? null : { bin, args }
+}
+
+
+// NOT `-q`, unlike the feature-corpus lane: that one reads a line the
+// generated runner prints itself, while this one reads surefire's
+// `Tests run:` summary, which quiet mode suppresses.
+function maven(args: string[]) {
+  const mvn = toolchain('mvn')
+  if (null == mvn || null == toolchain('java')) return null
+  return { bin: mvn, args: ['-B', 'test', ...args, '-DfailIfNoSpecifiedTests=false'] }
+}
+
+
+// A generated test that asserts the literal `authorization` passes here
+// while every consumer whose API names its credential otherwise gets a red
+// suite. These lanes close that gap: generate an SDK whose credential is not
+// named `authorization`, then run the shipped tests against it.
+describe('generated auth tests discover the credential name', () => {
+
+  let tmp = ''
+  let cwd = ''
+
+  before(() => {
+    cwd = process.cwd()
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-credname-'))
+    const testdir = Path.join(tmp, '.sdk', 'test')
+    Fs.mkdirSync(testdir, { recursive: true })
+    Fs.writeFileSync(Path.join(testdir, 'test.json'),
+      JSON.stringify(CREDNAME_CORPUS, null, 2))
+  })
+
+  after(() => {
+    if ('' !== cwd) process.chdir(cwd)
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of CREDNAME_LANES) {
+
+    test(lane.target + ': a credential named by the API, not `authorization`',
+      async (t) => {
+        const sdkroot = Path.join(tmp, lane.target)
+        await generateTo(lane.target, sdkroot, CREDNAME_MODEL)
+
+        const cmds = lane.steps.map((step) => step.cmd())
+        if (cmds.some((cmd) => null == cmd)) {
+          return t.skip(
+            'no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+        }
+
+        const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+        if (null != notready) {
+          return t.skip(lane.target + ': ' + notready)
+        }
+
+        for (let at = 0; at < lane.steps.length; at++) {
+          const step = lane.steps[at]
+          const cmd = cmds[at]!
+          const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+
+          if (ran.unlaunchable) {
+            return t.skip(lane.target + ': the toolchain could not be started ' +
+              'here: ' + tail(ran.out, 3))
+          }
+
+          const gap = UNUSABLE.find((re) => re.test(ran.out))
+          if (null != gap && !ran.ok) {
+            return t.skip(lane.target + ': toolchain present but not usable (' +
+              gap.source + '):\n' + tail(ran.out))
+          }
+
+          ok(true === step.byline || ran.ok,
+            lane.target + ': ' + step.name + ' FAILED against a credential ' +
+            'named `X-Api-Key` - the generated test asserts a credential ' +
+            'name instead of discovering where prepareAuth put it (#178):\n' +
+            tail(ran.out))
+
+          ok(step.ran.test(ran.out),
+            lane.target + ': ' + step.name + ' did not report a passing ' +
+            'prepareAuth case (' + step.ran.source + ') - it matched nothing ' +
+            'and skipped, which every one of these frameworks exits zero ' +
+            'for:\n' + tail(ran.out))
+        }
+      })
+  }
+
+})

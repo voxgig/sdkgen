@@ -513,14 +513,48 @@ class PipelineTest < Minitest::Test
 
   # === prepare_auth ===
 
-  def auth_ctx(options, headers)
+  def auth_ctx(options, spec)
     ctx = ProjectNameContext.new({
       "client" => OptClient.new(options),
       "utility" => @utility,
       "opname" => "load",
     }, nil)
-    ctx.spec = headers.nil? ? nil : ProjectNameSpec.new({ "headers" => headers, "step" => "s" })
+    ctx.spec = spec
     ctx
+  end
+
+  def auth_bags
+    ProjectNameSpec.new({ "headers" => {}, "query" => {}, "step" => "s" })
+  end
+
+  # A cookie credential rides the header bag, because a cookie IS a header.
+  def auth_bag(spec, where)
+    "query" == where ? spec.query : spec.headers
+  end
+
+  # Run prepare_auth with both containers present and see which one the
+  # generated utility writes to, and under what name. nil means this SDK
+  # places no credential at all - a public API - which is a legitimate
+  # shape, and the tests below assert exactly that instead.
+  def auth_credential
+    ctx = auth_ctx({ "apikey" => "K", "auth" => { "prefix" => "Bearer" } }, auth_bags)
+    @utility.prepare_auth.call(ctx)
+    ["headers", "query"].each do |where|
+      bag = auth_bag(ctx.spec, where)
+      bag.each do |name, value|
+        return { "where" => where, "name" => name, "value" => value }
+      end
+    end
+    nil
+  end
+
+  def auth_placed(options, seed = nil)
+    cred = auth_credential
+    spec = auth_bags
+    auth_bag(spec, cred["where"])[cred["name"]] = seed if !cred.nil? && !seed.nil?
+    ctx = auth_ctx(options, spec)
+    @utility.prepare_auth.call(ctx)
+    cred.nil? ? nil : auth_bag(ctx.spec, cred["where"])[cred["name"]]
   end
 
   def test_prepare_auth_guards_a_missing_spec
@@ -529,36 +563,34 @@ class PipelineTest < Minitest::Test
     assert_equal "auth_no_spec", err.code
   end
 
-  def test_prepare_auth_an_apikey_with_a_prefix_is_space_joined
-    ctx = auth_ctx({ "apikey" => "K", "auth" => { "prefix" => "Bearer" } }, {})
-    _, err = @utility.prepare_auth.call(ctx)
-    assert_nil err
-    assert_equal "Bearer K", ctx.spec.headers["authorization"]
+  def test_prepare_auth_places_the_apikey_where_this_api_puts_it
+    cred = auth_credential
+    if cred.nil?
+      # A public API places nothing, and that is the whole assertion.
+      assert_nil auth_placed({ "apikey" => "K", "auth" => { "prefix" => "Bearer" } })
+      return
+    end
+    assert_includes ["headers", "query"], cred["where"]
+    # A header credential is prefix-joined; a query credential is the raw
+    # key, because a query parameter has nowhere to put a scheme name.
+    assert_equal("query" == cred["where"] ? "K" : "Bearer K", cred["value"])
   end
 
   def test_prepare_auth_a_raw_apikey_goes_in_as_is
-    ctx = auth_ctx({ "apikey" => "K", "auth" => { "prefix" => "" } }, {})
-    @utility.prepare_auth.call(ctx)
-    assert_equal "K", ctx.spec.headers["authorization"]
+    expected = auth_credential.nil? ? nil : "K"
+    assert_equal expected, auth_placed({ "apikey" => "K", "auth" => { "prefix" => "" } })
   end
 
-  def test_prepare_auth_an_empty_apikey_drops_the_header
-    ctx = auth_ctx({ "apikey" => "", "auth" => { "prefix" => "Bearer" } },
-      { "authorization" => "stale" })
-    @utility.prepare_auth.call(ctx)
-    assert_nil ctx.spec.headers["authorization"]
+  def test_prepare_auth_an_empty_apikey_drops_the_credential
+    assert_nil auth_placed({ "apikey" => "", "auth" => { "prefix" => "Bearer" } }, "stale")
   end
 
-  def test_prepare_auth_a_public_api_drops_the_header
-    ctx = auth_ctx({ "apikey" => "K" }, { "authorization" => "stale" })
-    @utility.prepare_auth.call(ctx)
-    assert_nil ctx.spec.headers["authorization"]
+  def test_prepare_auth_a_public_api_drops_the_credential
+    assert_nil auth_placed({ "apikey" => "K" }, "stale")
   end
 
-  def test_prepare_auth_a_missing_apikey_option_drops_the_header
-    ctx = auth_ctx({ "auth" => { "prefix" => "Bearer" } }, { "authorization" => "stale" })
-    @utility.prepare_auth.call(ctx)
-    assert_nil ctx.spec.headers["authorization"]
+  def test_prepare_auth_a_missing_apikey_option_drops_the_credential
+    assert_nil auth_placed({ "auth" => { "prefix" => "Bearer" } }, "stale")
   end
 
 

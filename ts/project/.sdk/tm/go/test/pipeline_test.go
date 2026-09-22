@@ -464,13 +464,68 @@ func TestPipelineFeatureOrder(t *testing.T) {
 	})
 }
 
+// plAuthCred is where this SDK's PrepareAuth actually puts the credential.
+// The name is the API's own scheme name, not always "authorization", so the
+// cases below read it from a probe run instead of asserting a name.
+type plAuthCred struct {
+	where string
+	name  string
+	value any
+}
+
+// plAuthBag picks the container by placement. A cookie credential rides the
+// header bag, because a cookie IS a header.
+func plAuthBag(spec *sdk.Spec, where string) map[string]any {
+	if "query" == where {
+		return spec.Query
+	}
+	return spec.Headers
+}
+
+// plAuthCredential runs PrepareAuth once with both containers present and
+// reports which one it wrote to, and under what name. Nil means this SDK
+// places no credential at all - a public API - which is a legitimate shape.
+func plAuthCredential(t *testing.T) *plAuthCred {
+	t.Helper()
+	client, utility := plClient(t, map[string]any{
+		"apikey": "K",
+		"auth":   map[string]any{"prefix": "Bearer"},
+	})
+	ctx := plCtx(client, utility, nil)
+	ctx.Spec = sdk.NewSpec(map[string]any{"step": "s"})
+	if _, err := utility.PrepareAuth(ctx); err != nil {
+		return nil
+	}
+	for _, where := range []string{"headers", "query"} {
+		for name, value := range plAuthBag(ctx.Spec, where) {
+			return &plAuthCred{where: where, name: name, value: value}
+		}
+	}
+	return nil
+}
+
 func TestPipelinePrepareAuth(t *testing.T) {
 
-	authSpec := func(headers map[string]any) *sdk.Spec {
-		if headers == nil {
-			headers = map[string]any{}
+	cred := plAuthCredential(t)
+
+	// placed runs PrepareAuth over a fresh spec, seeding the credential slot
+	// first when seed is non-nil, and reports what is left there.
+	placed := func(t *testing.T, sdkopts map[string]any, seed any) (any, bool) {
+		t.Helper()
+		client, utility := plClient(t, sdkopts)
+		ctx := plCtx(client, utility, nil)
+		ctx.Spec = sdk.NewSpec(map[string]any{"step": "s"})
+		if cred != nil && seed != nil {
+			plAuthBag(ctx.Spec, cred.where)[cred.name] = seed
 		}
-		return sdk.NewSpec(map[string]any{"headers": headers, "step": "s"})
+		if _, err := utility.PrepareAuth(ctx); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if cred == nil {
+			return nil, false
+		}
+		value, has := plAuthBag(ctx.Spec, cred.where)[cred.name]
+		return value, has
 	}
 
 	t.Run("guards-missing-spec", func(t *testing.T) {
@@ -482,86 +537,81 @@ func TestPipelinePrepareAuth(t *testing.T) {
 		}
 	})
 
-	t.Run("apikey-with-prefix-space-joined", func(t *testing.T) {
-		client, utility := plClient(t, map[string]any{
-			"apikey": "K",
-			"auth":   map[string]any{"prefix": "Bearer"},
-		})
-		ctx := plCtx(client, utility, nil)
-		ctx.Spec = authSpec(nil)
-		if _, err := utility.PrepareAuth(ctx); err != nil {
-			t.Fatalf("unexpected error: %v", err)
+	t.Run("apikey-placed-where-this-api-puts-it", func(t *testing.T) {
+		if cred == nil {
+			// A public API places nothing, and that is the whole assertion.
+			if _, has := placed(t, map[string]any{
+				"apikey": "K",
+				"auth":   map[string]any{"prefix": "Bearer"},
+			}, nil); has {
+				t.Errorf("expected no credential placed at all")
+			}
+			return
 		}
-		if ctx.Spec.Headers["authorization"] != "Bearer K" {
-			t.Errorf("expected 'Bearer K', got %v", ctx.Spec.Headers["authorization"])
+		if cred.where != "headers" && cred.where != "query" {
+			t.Fatalf("unexpected credential container %q", cred.where)
+		}
+		// A header credential is prefix-joined; a query credential is the raw
+		// key, because a query parameter has nowhere to put a scheme name.
+		want := "Bearer K"
+		if "query" == cred.where {
+			want = "K"
+		}
+		if cred.value != want {
+			t.Errorf("expected %q in %s[%q], got %v",
+				want, cred.where, cred.name, cred.value)
 		}
 	})
 
 	t.Run("raw-apikey-empty-prefix-as-is", func(t *testing.T) {
-		client, utility := plClient(t, map[string]any{
+		value, has := placed(t, map[string]any{
 			"apikey": "K",
 			"auth":   map[string]any{"prefix": ""},
-		})
-		ctx := plCtx(client, utility, nil)
-		ctx.Spec = authSpec(nil)
-		if _, err := utility.PrepareAuth(ctx); err != nil {
-			t.Fatalf("unexpected error: %v", err)
+		}, nil)
+		if cred == nil {
+			if has {
+				t.Errorf("expected no credential placed at all")
+			}
+			return
 		}
-		if ctx.Spec.Headers["authorization"] != "K" {
-			t.Errorf("expected raw 'K', got %v", ctx.Spec.Headers["authorization"])
+		if value != "K" {
+			t.Errorf("expected raw 'K', got %v", value)
 		}
 	})
 
-	t.Run("empty-apikey-drops-header", func(t *testing.T) {
-		client, utility := plClient(t, map[string]any{
+	t.Run("empty-apikey-drops-credential", func(t *testing.T) {
+		if _, has := placed(t, map[string]any{
 			"apikey": "",
 			"auth":   map[string]any{"prefix": "Bearer"},
-		})
-		ctx := plCtx(client, utility, nil)
-		ctx.Spec = authSpec(map[string]any{"authorization": "stale"})
-		if _, err := utility.PrepareAuth(ctx); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if _, has := ctx.Spec.Headers["authorization"]; has {
-			t.Errorf("expected authorization dropped, got %v", ctx.Spec.Headers["authorization"])
+		}, "stale"); has {
+			t.Errorf("expected the credential dropped")
 		}
 	})
 
-	t.Run("missing-apikey-drops-header", func(t *testing.T) {
-		client, utility := plClient(t, map[string]any{
-			"auth": map[string]any{"prefix": "Bearer"},
-		})
+	t.Run("missing-apikey-drops-credential", func(t *testing.T) {
+		sdkopts := map[string]any{"auth": map[string]any{"prefix": "Bearer"}}
+		client, _ := plClient(t, sdkopts)
 		options := client.OptionsMap()
 		if apikey, _ := options["apikey"].(string); apikey != "" {
 			t.Skip("SDK options carry a configured apikey; case not reproducible here")
 		}
-		ctx := plCtx(client, utility, nil)
-		ctx.Spec = authSpec(map[string]any{"authorization": "stale"})
-		if _, err := utility.PrepareAuth(ctx); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if _, has := ctx.Spec.Headers["authorization"]; has {
-			t.Errorf("expected authorization dropped, got %v", ctx.Spec.Headers["authorization"])
+		if _, has := placed(t, sdkopts, "stale"); has {
+			t.Errorf("expected the credential dropped")
 		}
 	})
 
-	t.Run("public-api-no-auth-block-drops-header", func(t *testing.T) {
-		client, utility := plClient(t, map[string]any{"apikey": "K"})
-		options := client.OptionsMap()
-		if options["auth"] != nil {
+	t.Run("public-api-no-auth-block-drops-credential", func(t *testing.T) {
+		sdkopts := map[string]any{"apikey": "K"}
+		client, _ := plClient(t, sdkopts)
+		if client.OptionsMap()["auth"] != nil {
 			// Option validation supplies an auth shape for this SDK, so a
 			// truly auth-less client cannot be constructed here (the ts test
 			// fakes the client object; Go's prepareAuth reads the concrete
 			// client options).
 			t.Skip("options always carry an auth block in this SDK")
 		}
-		ctx := plCtx(client, utility, nil)
-		ctx.Spec = authSpec(map[string]any{"authorization": "stale"})
-		if _, err := utility.PrepareAuth(ctx); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if _, has := ctx.Spec.Headers["authorization"]; has {
-			t.Errorf("expected authorization dropped, got %v", ctx.Spec.Headers["authorization"])
+		if _, has := placed(t, sdkopts, "stale"); has {
+			t.Errorf("expected the credential dropped")
 		}
 	})
 }
