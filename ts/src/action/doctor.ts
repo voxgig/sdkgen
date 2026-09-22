@@ -230,7 +230,7 @@ function orphanModelFiles(actx: ActionContext): string[] {
 
 
 async function doctor(
-  actx: ActionContext, scope?: DoctorScope,
+  actx: ActionContext, scope?: DoctorScope, selected?: string[],
 ): Promise<ActionResult> {
   const log = actx.log
   const fs = actx.fs()
@@ -283,7 +283,7 @@ async function doctor(
       }
 
       if ('target' === kind) {
-        checkTarget(actx, source, report)
+        checkTarget(actx, source, report, selected)
       }
 
       if ('edition' === kind) {
@@ -291,9 +291,12 @@ async function doctor(
       }
 
       // Only an ACTIVE feature has source copied out; what an inactive one
-      // left behind is stale, and the target walk reports it as such.
+      // left behind is stale, and the target walk reports it as such —
+      // unless the caller named it in `selected`, which says it is acting on
+      // that feature and wants its copies compared rather than written off.
       if ('feature' === kind &&
-        false !== (model as any)?.main?.[KIT]?.feature?.[name]?.active) {
+        (false !== (model as any)?.main?.[KIT]?.feature?.[name]?.active ||
+          true === selected?.includes(name))) {
         checkFeatureSource(actx, source, targets, report)
       }
 
@@ -409,6 +412,7 @@ function resolveDeclared(
 
 function checkTarget(
   actx: ActionContext, resolved: Source, report: DoctorReport,
+  selected?: string[],
 ) {
   const tname = resolved.name
   const tfolder = resolved.folder
@@ -446,10 +450,19 @@ function checkTarget(
   // added its targets before feature trimming existed carries source for
   // features its model never declared — expected here as STALE, which is
   // exactly what it is.
+  //
+  // `selected` adds a feature the CALLER is acting on, whatever its model
+  // says. `feature remove <n>` of a feature the project had DEACTIVATED was
+  // refused by its own removal: deactivated means unselected, unselected
+  // means the source is unexpected, and every file the removal was about to
+  // delete came back as stale drift. Naming it here compares those files
+  // with what `feature add` wrote instead, so a project EDIT still refuses
+  // and a merely deactivated feature removes cleanly.
   const featuremodel: any = model?.main?.[KIT]?.feature ?? {}
   const features = Array.from(new Set([
     'test',
     ...Object.keys(featuremodel).filter((n: string) => false !== featuremodel[n]?.active),
+    ...(selected ?? []),
   ]))
 
   // `folder` and `model` matter: the trim catalogue is resolved consumer-side

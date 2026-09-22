@@ -354,6 +354,47 @@ describe('feature remove', () => {
   })
 
 
+  // Deactivating a feature is how a project stops shipping it without
+  // deleting it, so `feature remove` is the next thing anyone runs. It used
+  // to refuse: doctor's selected set is the ACTIVE features, an unselected
+  // feature's source is unexpected, and every file the removal was about to
+  // delete came back as stale drift on its own removal.
+  test('removes a feature the project deactivated', async () => {
+    const project = await addedProject({ feature: { log: { active: true } } })
+    await feature_add(['log'], project.actx)
+    ok(has(project, 'tm/go/feature/log_feature.go'))
+
+    project.actx.model.main[KIT].feature.log.active = false
+
+    await kind_remove('feature', ['log'], project.actx)
+
+    strictEqual(has(project, 'tm/go/feature/log_feature.go'), false)
+    strictEqual(has(project, 'model/feature/log.aon'), false)
+    ok(has(project, 'tm/go/feature/base_feature.go'), 'base went too')
+  })
+
+
+  // And the protection survives: deactivated is not a way past the edit
+  // check, or a project's own work would go silently on the next remove.
+  test('still refuses an edited source in a deactivated feature', async () => {
+    const project = await addedProject({ feature: { log: { active: true } } })
+    await feature_add(['log'], project.actx)
+
+    write(project, 'tm/go/feature/log_feature.go', '// project customization\n')
+    project.actx.model.main[KIT].feature.log.active = false
+    const before = project.vol.toJSON()
+
+    await rejects(
+      () => kind_remove('feature', ['log'], project.actx),
+      /tm\/go\/feature\/log_feature\.go/)
+    deepStrictEqual(project.vol.toJSON(), before)
+
+    project.actx.flags = { force: true }
+    await kind_remove('feature', ['log'], project.actx)
+    strictEqual(has(project, 'tm/go/feature/log_feature.go'), false)
+  })
+
+
   test('refuses an edited feature source', async () => {
     const project = await addedProject({ feature: { log: { active: true } } })
     await feature_add(['log'], project.actx)

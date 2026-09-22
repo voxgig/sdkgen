@@ -184,8 +184,10 @@ async function planRemove(
       ' `' + kind + ' add` wrote; every file below is deleted only under --force)')
   }
 
+  // The feature being removed counts as selected, so its own source is
+  // compared rather than written off as stale — see checkTarget.
   const findings = null == source ? [] :
-    await driftFindings(actx, inScope)
+    await driftFindings(actx, inScope, 'feature' === kind ? [name] : undefined)
 
   if ('feature' === kind) {
     planFeature(plan, actx)
@@ -302,9 +304,10 @@ function resolveDeclared(
 
 async function driftFindings(
   actx: ActionContext, scope: (kind: string, name: string) => boolean,
+  selected?: string[],
 ): Promise<string[]> {
   const quiet = quietLog(actx.log)
-  const res: any = await doctor({ ...actx, log: quiet }, scope)
+  const res: any = await doctor({ ...actx, log: quiet }, scope, selected)
   const report = res.report
 
   return [

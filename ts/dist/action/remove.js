@@ -114,8 +114,10 @@ async function planRemove(kind, name, actx, deleteOutput) {
         plan.refused.push('(source not found: the copy cannot be compared with what' +
             ' `' + kind + ' add` wrote; every file below is deleted only under --force)');
     }
+    // The feature being removed counts as selected, so its own source is
+    // compared rather than written off as stale — see checkTarget.
     const findings = null == source ? [] :
-        await driftFindings(actx, inScope);
+        await driftFindings(actx, inScope, 'feature' === kind ? [name] : undefined);
     if ('feature' === kind) {
         planFeature(plan, actx);
     }
@@ -202,9 +204,9 @@ function resolveDeclared(kind, name, declared, actx) {
         return undefined;
     }
 }
-async function driftFindings(actx, scope) {
+async function driftFindings(actx, scope, selected) {
     const quiet = quietLog(actx.log);
-    const res = await (0, doctor_1.doctor)({ ...actx, log: quiet }, scope);
+    const res = await (0, doctor_1.doctor)({ ...actx, log: quiet }, scope, selected);
     const report = res.report;
     return [
         ...report.forked,
