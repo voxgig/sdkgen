@@ -265,6 +265,73 @@ describe('package add: refusing before writing', () => {
   })
 
 
+  test('incompatible spaced engine ranges fail without changing project files', async () => {
+    for (const range of ['>= 99', '< 0.0.0', '>= 0.0.0 < 0.0.0']) {
+      const pkg = makePackage({
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        engines: { sdkgen: range },
+        provides: { target: ['iotgo'], feature: ['retry'] },
+      })
+      try {
+        const log = recordLog()
+        const project = makeProject({ log })
+        project.actx.flags = {}
+        const before = project.vol.toJSON()
+
+        await rejects(() => package_add([pkg], project.actx), (err: any) => {
+          ok(err.message.includes('needs @voxgig/sdkgen ' + range + ', this is '))
+          return true
+        })
+        deepStrictEqual(project.vol.toJSON(), before, range)
+        ok(!log.lines.some((l: any) => 'package-engine-unparsed' === l.point), range)
+      }
+      finally {
+        Fs.rmSync(pkg, { recursive: true, force: true })
+      }
+    }
+  })
+
+
+  test('a compatible spaced engine range installs without an unparsed warning', async () => {
+    const pkg = makePackage({
+      sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+      engines: { sdkgen: '>=\t1 < 99' },
+      provides: { target: ['iotgo'] },
+    })
+    try {
+      const log = recordLog()
+      const project = await addPackage(pkg, {}, { log })
+
+      ok(project.files().includes('model/target/iotgo.aon'))
+      ok(!log.lines.some((l: any) => 'package-engine-unparsed' === l.point))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('unsupported spaced engine ranges still warn and proceed', async () => {
+    for (const range of ['> = 1', '~> 1']) {
+      const pkg = makePackage({
+        sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
+        engines: { sdkgen: range },
+        provides: { target: ['iotgo'] },
+      })
+      try {
+        const log = recordLog()
+        const project = await addPackage(pkg, {}, { log })
+
+        ok(project.files().includes('model/target/iotgo.aon'), range)
+        ok(log.lines.some((l: any) => 'package-engine-unparsed' === l.point), range)
+      }
+      finally {
+        Fs.rmSync(pkg, { recursive: true, force: true })
+      }
+    }
+  })
+
+
   test('a satisfied engine range installs quietly', async () => {
     const pkg = makePackage({
       sdkgen: { package: 1 }, name: '@acme/sdkgen-iot',
