@@ -259,6 +259,41 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // The shared-client cookie store, in the two targets whose platform turns
+  // it on by default. Neither toolchain is on a GitHub runner, so the lane
+  // reads the generated transport first and only the RUN is conditional.
+  for (const [target, file, needles] of [
+    ['csharp', 'utility/Fetcher.cs', ['UseCookies = false', 'CookielessHandler']],
+    ['swift', 'utility/Fetcher.swift',
+      ['httpCookieStorage = nil', 'httpShouldSetCookies = false',
+        'httpShouldHandleCookies = false']],
+  ] as [string, string, string[]][]) {
+    test(target + ': the shared transport stores no cookies', async (t) => {
+      const sdkroot = Path.join(tmp, target + '-cookies')
+      const out = await generateTo(target, sdkroot)
+
+      // By tail, not by full path: swift's tree carries the substituted
+      // project name (Sources/<Name>SDK/...).
+      const found = Object.keys(out).filter((p) => p.endsWith(file))
+      strictEqual(found.length, 1,
+        target + ': expected one ' + file + ', got ' + JSON.stringify(found))
+      const src = out[found[0]]
+      for (const needle of needles) {
+        ok(src.includes(needle), target + ': ' + file + ' is missing ' + needle)
+      }
+      // Every client/session the transport hands out, not just the first.
+      strictEqual(/URLSession\.shared|new HttpClient\(\)/.test(src), false,
+        target + ': a cookie-storing default client survives in ' + file)
+
+      const bin = toolchain('csharp' === target ? 'dotnet' : 'swift')
+      if (null == bin) {
+        return t.skip('generated source checked; no ' +
+          ('csharp' === target ? 'dotnet' : 'swift') + ' toolchain to run it')
+      }
+    })
+  }
+
+
   test('rb: pooled HTTP connections do not replay unsafe requests', async (t) => {
     const rb = toolchain('ruby')
     if (null == rb) return t.skip('needs Ruby')

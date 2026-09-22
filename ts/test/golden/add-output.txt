@@ -393,7 +393,7 @@ tm/csharp/utility/Done.cs b88b63239852
 tm/csharp/utility/FeatureAdd.cs 5a5f0fd34beb
 tm/csharp/utility/FeatureHook.cs 923e6654ee06
 tm/csharp/utility/FeatureInit.cs 8e81f5a41870
-tm/csharp/utility/Fetcher.cs 5aa53b446cdb
+tm/csharp/utility/Fetcher.cs c5f7c5b6d64d
 tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs aa8db59afcdb
@@ -1915,7 +1915,7 @@ tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
 tm/swift/Sources/ProjectNameSDK/feature/FeatureOptions.swift 38f8fd8fc149
 tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 6bb7c2363df3
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
-tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 9bc134d98639
+tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 7a4eb79b80b6
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 4274a98806c8
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 5139e01f2b4e

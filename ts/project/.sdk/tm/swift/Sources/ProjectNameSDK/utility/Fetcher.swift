@@ -6,7 +6,24 @@ import Foundation
 import FoundationNetworking
 #endif
 
-// Non-following twin of URLSession.shared. The station feature's
+// Cookies OFF on both sessions. The process-wide session Foundation hands
+// out carries the process-wide cookie storage, which persists, so one call's
+// Set-Cookie would come back on the next — a different caller, under a
+// different credential. A storage-free configuration also keeps the store
+// from augmenting a Cookie header the caller set, which is how an
+// `apiKey in: cookie` scheme travels. Connection pooling is per
+// configuration and is unaffected.
+private func cookielessConfiguration() -> URLSessionConfiguration {
+  let cfg = URLSessionConfiguration.default
+  cfg.httpCookieStorage = nil
+  cfg.httpShouldSetCookies = false
+  cfg.httpCookieAcceptPolicy = .never
+  return cfg
+}
+
+private let defaultSession = URLSession(configuration: cookielessConfiguration())
+
+// Non-following twin of defaultSession. The station feature's
 // middleware sets `redirect: manual` on the fetch definition under a
 // hosts egress policy: a 3xx must come back as a response like any
 // other, because an automatic follow would carry injected credentials
@@ -25,7 +42,8 @@ private final class ManualRedirectDelegate: NSObject, URLSessionTaskDelegate {
 }
 
 private let manualRedirectSession = URLSession(
-  configuration: .default, delegate: ManualRedirectDelegate(), delegateQueue: nil)
+  configuration: cookielessConfiguration(),
+  delegate: ManualRedirectDelegate(), delegateQueue: nil)
 
 func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   guard let url = URL(string: fullurl) else {
@@ -66,8 +84,12 @@ func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   }
   let box = FetchBox()
   let sem = DispatchSemaphore(value: 0)
+  // Belt to the configuration's braces: the per-request switch, so no store
+  // reached by any other route can touch the Cookie header set above.
+  req.httpShouldHandleCookies = false
+
   let session = gp(fetchdef, "redirect").asString == "manual"
-    ? manualRedirectSession : URLSession.shared
+    ? manualRedirectSession : defaultSession
   let task = session.dataTask(with: req) { d, r, e in
     box.data = d; box.resp = r; box.err = e; sem.signal()
   }
