@@ -43,7 +43,7 @@ what it *does* provide — never a silent no-op.
 voxgig-sdkgen package add @acme/sdkgen-iot --alias iot-go=acme-go
 ```
 
-The alias becomes the target's name everywhere: `model/target/acme-go.aon`,
+The alias becomes the target's name everywhere: `model/target/acme-go.aontu`,
 `src/cmp/acme-go/`, `tm/acme-go/`. That model file is then **yours** —
 `add` creates it once and never overwrites it again, because
 differentiating it is what an alias is for.
@@ -85,7 +85,7 @@ which of two things they are:
 ```
 @acme/sdkgen-iot: 1 file(s) differ from the installed source, so updating
 would overwrite them:
-  model/target/iot-go.aon
+  model/target/iot-go.aontu
 
   This means one of two things, and nothing recorded in the project tells
   them apart:
@@ -118,7 +118,7 @@ including a feature package's per-target source. It exits non-zero on
 drift, so it works as a CI gate.
 
 The rule it enforces: **`add` overwrites**, so a project decision belongs
-in the project's own model (`.sdk/model/sdk.aon`), never as a hand-edit
+in the project's own model (`.sdk/model/sdk.aontu`), never as a hand-edit
 to a copied file.
 
 ## What can go wrong

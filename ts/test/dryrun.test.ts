@@ -38,7 +38,7 @@ describe('dry run', () => {
     const files = reported(log)
     ok(0 < files.length, 'a dry run reported no files at all')
 
-    for (const want of ['model/target/go.aon', 'src/cmp/go/', 'tm/go/']) {
+    for (const want of ['model/target/go.aontu', 'src/cmp/go/', 'tm/go/']) {
       ok(files.some((f: string) => f.includes(want)),
         'dry run did not report ' + want + ' (reported ' + files.length + ' files)')
     }
@@ -120,6 +120,6 @@ describe('dry run', () => {
 
     const files = project.files()
     ok(10 < files.length, 'target add wrote almost nothing: ' + files.length)
-    ok(files.includes('model/target/go.aon'), 'target add wrote no target model')
+    ok(files.includes('model/target/go.aontu'), 'target add wrote no target model')
   })
 })

@@ -1139,7 +1139,7 @@ it is activated:
 | `aws` | `awssecrets`, `awsparams` — with SigV4 request signing | `fetch`, `crypto` |
 | `secretspec` | `secretspec` — a CLI bridge over a child process | `fs` |
 
-A group is activated in `.sdk/model/project.aon` — the model file a project
+A group is activated in `.sdk/model/project.aontu` — the model file a project
 owns, which regeneration does not overwrite — alongside the chain itself:
 
 ```
@@ -1335,7 +1335,7 @@ seventeen. See
 A cross-feature suite written per language proves each language against
 itself. What proves them against *each other* is the **shared corpus**:
 language-neutral cases in create-sdkgen's
-`project/standard/.sdk/test/feature/<name>.aon`, compiled into the
+`project/standard/.sdk/test/feature/<name>.aontu`, compiled into the
 `test.json` that ships with every project, and executed by each target's
 own runner against a real generated SDK.
 

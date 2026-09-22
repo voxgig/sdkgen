@@ -35,7 +35,7 @@ ADR-NNN**, so the reasoning that led there stays readable.
 ### Context
 
 sdkgen generates from a **model**, not from a spec. The pipeline is
-`OpenAPI → apidef → model (.aon) → aontu → jostraca → SDK source`, and
+`OpenAPI → apidef → model (.aontu) → aontu → jostraca → SDK source`, and
 sdkgen enters at the model. That boundary has been quietly under
 pressure from both ends.
 
@@ -74,7 +74,7 @@ of operations to suppress.**
 
 When sdkgen needs to know something about the API, the answer is a
 **model fact** that apidef records, and the request goes to apidef.
-Correction of that fact happens in `guide.aon`, on apidef's side of the
+Correction of that fact happens in `guide.aontu`, on apidef's side of the
 boundary, where the inference was made.
 
 A feature receives spec-derived facts by **declaring** which it wants:
@@ -105,7 +105,7 @@ better ones and no change in behaviour.
   TS-and-Go parity work. That is slower than reading the spec here, and
   it is the price of one pipeline rather than two.
 - **sdkgen cannot fix a misclassification.** If apidef calls something
-  an entity and it is not, the SDK carries it until `guide.aon` says
+  an entity and it is not, the SDK carries it until `guide.aontu` says
   otherwise. There is deliberately no override on this side — a second
   correction surface is how the two drift out of agreement.
 - **Facts overlay a feature's declared defaults, so a default is a
@@ -129,7 +129,7 @@ better ones and no change in behaviour.
 - `ts/test/utility.test.ts` pins the overlay in both directions: a
   declaring feature receives the fact over its defaults, a
   non-declaring one is untouched, and `active` is never overlaid.
-- `ts/model/sdkgen.aon` declares `spec: &: string` on a feature. It is
+- `ts/model/sdkgen.aontu` declares `spec: &: string` on a feature. It is
   the authoritative file, shipped directly; `make check-model` validates it.
 - **Grep for `x-` and for `def.paths` before adding a branch that reads
   API shape.** Neither belongs in this repository. If sdkgen needs to
@@ -220,7 +220,7 @@ remains the default for a plugin whose files sdkgen owns outright.
   implementation, applied beside `srcFeatureExcludes` in each target's
   Main component. `ts/test/helpers.test.ts` pins both polarities and the
   inactive-feature case.
-- `ts/model/sdkgen.aon` declares `plugin: &:`; it is the authoritative
+- `ts/model/sdkgen.aontu` declares `plugin: &:`; it is the authoritative
   file, shipped directly.
 - sekreto's own `typescript/test/lazyload.test.ts` pins the library-side
   invariant that the core surface reaches no platform-dependent

@@ -57,7 +57,7 @@ ok(Voxgig::Struct::ismap($spec), 'primary section found in test.json');
 
 
 # Sections deliberately left empty in the shared corpus
-# (.sdk/test/primary/<name>.aon carries a PENDING header). Everything else
+# (.sdk/test/primary/<name>.aontu carries a PENDING header). Everything else
 # MUST contribute cases.
 my %PENDING = map { $_ => 1 } qw(
   fetcher makeFetchDef makeResult featureAdd featureHook featureInit

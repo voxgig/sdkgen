@@ -173,7 +173,7 @@ platform cost:
 | `secretspec` | `secretspec` CLI bridge | `fs` |
 
 Everything is off until asked for. Turn the feature on, activate the groups
-your chain names, and declare the chain — all three in `.sdk/model/project.aon`,
+your chain names, and declare the chain — all three in `.sdk/model/project.aontu`,
 the model file that is yours and survives regeneration:
 
 ```

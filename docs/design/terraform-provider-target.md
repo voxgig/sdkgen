@@ -21,8 +21,8 @@ So the model follows `seneca-provider`:
 - every standard generation phase off (`phase.<name>.active: false`), with
   `Main_terraform-provider` emitting the whole package, as all four consumer
   targets do;
-- `output: path` left **unset** in the target's own `.aon` and declared per
-  project, for the reason `seneca-provider.aon` gives at length: in aontu a
+- `output: path` left **unset** in the target's own `.aontu` and declared per
+  project, for the reason `seneca-provider.aontu` gives at length: in aontu a
   concrete value does not yield to another concrete value, it conflicts, so
   a default here would take the choice away rather than offer one;
 - the SDK consumed as a **published** module (`require` on the SDK's module
@@ -66,7 +66,7 @@ drift-detecting `Read`, and an import path.
 ## What the model carries today — verified, and less than hoped
 
 Verified against `@voxgig/apidef` 8.2.2 as installed
-(`ts/node_modules/@voxgig/apidef/model/apidef.aon`) and against
+(`ts/node_modules/@voxgig/apidef/model/apidef.aontu`) and against
 `ts/src/helpers/opShape.ts`.
 
 Available:
@@ -206,7 +206,7 @@ marked as such rather than blended in.
 
 ### Tier 3 — explicit override, and where it goes
 
-**Not in apidef's `guide.aon`.** Verified: `guide.aon` is keyed
+**Not in apidef's `guide.aontu`.** Verified: `guide.aontu` is keyed
 entity → path → op, with `rename`, `active` and `transform` slots and no
 per-attribute slot at all. Adding one would be the smaller problem. The
 larger one is that "this attribute forces replacement" is a fact about one
@@ -225,17 +225,17 @@ main: kit: target: 'terraform-provider': entity: <Name>: field: <name>: {
 }
 ```
 
-That lands in `model/project.aon`, which create-sdkgen creates once and never
-overwrites, so an override survives `target add` — unlike `model/sdk.aon`,
-which is rewritten on every scaffold, and unlike the target's own `.aon`,
+That lands in `model/project.aontu`, which create-sdkgen creates once and never
+overwrites, so an override survives `target add` — unlike `model/sdk.aontu`,
+which is rewritten on every scaffold, and unlike the target's own `.aontu`,
 which `target add` overwrites (the mistake that cost voxgig-solardemo-sdk its
 pinned npm package name).
 
-**The target's own `.aon` must leave those three keys UNSET, not defaulted.**
+**The target's own `.aontu` must leave those three keys UNSET, not defaulted.**
 In aontu two concrete values conflict, and two defaults conflict too, so a
 `*false` here would not lose to a project's `true` — it would fail the
 unify. The schema defaults that already exist for `publish.registry.*` are
-the pattern to copy: default in `model/sdkgen.aon`, silent in the target.
+the pattern to copy: default in `model/sdkgen.aontu`, silent in the target.
 
 ## Report the derivation: `SCHEMA.md`
 

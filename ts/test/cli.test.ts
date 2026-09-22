@@ -18,12 +18,12 @@ before(() => {
   dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cli-'))
   Fs.mkdirSync(Path.join(dir, 'model', 'target'), { recursive: true })
   Fs.mkdirSync(Path.join(dir, 'model', 'feature'), { recursive: true })
-  Fs.writeFileSync(Path.join(dir, 'model', 'sdk.aon'),
+  Fs.writeFileSync(Path.join(dir, 'model', 'sdk.aontu'),
     "name: 'demo'\nmain: kit: { target: {}, feature: {}, entity: {} }\n")
   Fs.writeFileSync(
-    Path.join(dir, 'model', 'target', 'target-index.aon'), '# Targets\n')
+    Path.join(dir, 'model', 'target', 'target-index.aontu'), '# Targets\n')
   Fs.writeFileSync(
-    Path.join(dir, 'model', 'feature', 'feature-index.aon'), '# Features\n')
+    Path.join(dir, 'model', 'feature', 'feature-index.aontu'), '# Features\n')
   process.chdir(dir)
 })
 
@@ -119,7 +119,7 @@ describe('the binary', () => {
     try {
       Fs.mkdirSync(Path.join(pkg, '.sdk', 'model', 'feature'), { recursive: true })
       Fs.writeFileSync(
-        Path.join(pkg, '.sdk', 'model', 'feature', 'broken.aon'),
+        Path.join(pkg, '.sdk', 'model', 'feature', 'broken.aontu'),
         '// a consumer cannot parse this\nmain: kit: feature: broken: {}\n')
 
       const res = run(['package', 'check', pkg], PACKAGE_ROOT)
@@ -150,14 +150,14 @@ describe('the binary', () => {
         const proj = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-badmodel-'))
         try {
           Fs.mkdirSync(Path.join(proj, 'model'), { recursive: true })
-          Fs.writeFileSync(Path.join(proj, 'model', 'sdk.aon'), model)
+          Fs.writeFileSync(Path.join(proj, 'model', 'sdk.aontu'), model)
 
           const res = run(['doctor'], proj)
           const out = String(res.stdout) + String(res.stderr)
 
           strictEqual(res.status, 1, 'expected a non-zero exit: ' + out)
 
-          match(out, /Model Error: \.\/model\/sdk\.aon/, out)
+          match(out, /Model Error: \.\/model\/sdk\.aontu/, out)
 
           // aontu's own diagnostic is the useful half and is passed through
           // untouched — wrapping it must not swallow it.

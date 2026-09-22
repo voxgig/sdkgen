@@ -97,7 +97,7 @@ function kindModel(props) {
     if (aliased) {
         const owned = true === def.ownedWhenAliased;
         if (owned) {
-            const dest = node_path_1.default.join(ctx$.folder ?? '.', 'model', kind, source.name + '.aon');
+            const dest = node_path_1.default.join(ctx$.folder ?? '.', 'model', kind, source.name + '.aontu');
             if (fs.existsSync(dest)) {
                 log.info({
                     point: kind + '-alias-model-kept', [kind]: source.name, file: dest,
@@ -109,7 +109,7 @@ function kindModel(props) {
         const src = fs.readFileSync(source.model, 'utf8');
         const text = null == def.rename ? src :
             def.rename(src, source.origname, source.name);
-        (0, jostraca_1.File)({ name: source.name + '.aon', exclude: owned }, () => (0, jostraca_1.Content)((0, jostraca_1.template)(text, ctx$.model, { replace })));
+        (0, jostraca_1.File)({ name: source.name + '.aontu', exclude: owned }, () => (0, jostraca_1.Content)((0, jostraca_1.template)(text, ctx$.model, { replace })));
     }
     else {
         (0, jostraca_1.Copy)({ from: source.model, replace });
@@ -117,7 +117,7 @@ function kindModel(props) {
 }
 function kindIndex(props) {
     const { kind, names, content } = props;
-    (0, jostraca_1.File)({ name: kindDef(kind).name + '-index.aon' }, () => (0, action_1.UpdateIndex)({
+    (0, jostraca_1.File)({ name: kindDef(kind).name + '-index.aontu' }, () => (0, action_1.UpdateIndex)({
         content,
         names,
     }));

@@ -39,7 +39,7 @@ const HOOK_NAMES = [
 
 
 function compileFeatureModel(): any {
-  const p = Path.join(FEATURE_MODEL, 'feature-index.aon')
+  const p = Path.join(FEATURE_MODEL, 'feature-index.aontu')
   const src = readFileSync(p, 'utf8')
   const errs: any[] = []
   const model: any = new Aontu().generate(src, { path: p, errs })
@@ -107,13 +107,13 @@ describe('feature-model', () => {
     }
   })
 
-  test('feature-index.aon includes every model file', () => {
-    const indexSrc = readFileSync(Path.join(FEATURE_MODEL, 'feature-index.aon'), 'utf8')
+  test('feature-index.aontu includes every model file', () => {
+    const indexSrc = readFileSync(Path.join(FEATURE_MODEL, 'feature-index.aontu'), 'utf8')
     const files = readdirSync(FEATURE_MODEL)
-      .filter((f) => f.endsWith('.aon') && 'feature-index.aon' !== f)
-      .map((f) => f.replace(/\.aon$/, ''))
+      .filter((f) => f.endsWith('.aontu') && 'feature-index.aontu' !== f)
+      .map((f) => f.replace(/\.aontu$/, ''))
     for (const name of files) {
-      ok(indexSrc.includes(`"./${name}.aon"`), `feature-index missing @"./${name}.aon"`)
+      ok(indexSrc.includes(`"./${name}.aontu"`), `feature-index missing @"./${name}.aontu"`)
     }
   })
 })
@@ -237,12 +237,12 @@ describe('feature-language-parity', () => {
 
   const TARGET_MODEL = Path.join(SDK, 'model', 'target')
 
-  // What a target's model declares it PROVIDES. Read from the `.aon` text:
+  // What a target's model declares it PROVIDES. Read from the `.aontu` text:
   // the target models are unified per-target by the build, with no index to
   // compile the way the feature models have one, and the only thing wanted
   // here is the one map.
   function declaredProvides(t: string): Record<string, boolean> {
-    const mp = Path.join(TARGET_MODEL, t + '.aon')
+    const mp = Path.join(TARGET_MODEL, t + '.aontu')
     if (!existsSync(mp)) {
       return {}
     }
@@ -266,8 +266,8 @@ describe('feature-language-parity', () => {
 
   function shippedTargets(): string[] {
     return readdirSync(TARGET_MODEL)
-      .filter((f) => f.endsWith('.aon') && 'target-index.aon' !== f)
-      .map((f) => f.replace(/\.aon$/, ''))
+      .filter((f) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
+      .map((f) => f.replace(/\.aontu$/, ''))
       .sort()
   }
 
@@ -321,7 +321,7 @@ describe('feature-language-parity', () => {
         'in test/featuremodel.test.ts (and give their model the tags it needs)')
 
       const undeclared = targets.filter((t) => {
-        const mp = Path.join(TARGET_MODEL, t + '.aon')
+        const mp = Path.join(TARGET_MODEL, t + '.aontu')
         return !existsSync(mp) || !/\bprovides\s*:/.test(readFileSync(mp, 'utf8'))
       })
 
@@ -366,8 +366,8 @@ describe('feature-language-parity', () => {
 
   test('every SDK target has a target definition', () => {
     for (const t of SDK_TARGETS) {
-      const p = Path.join(TARGET_MODEL, t + '.aon')
-      ok(existsSync(p), `missing target definition: model/target/${t}.aon`)
+      const p = Path.join(TARGET_MODEL, t + '.aontu')
+      ok(existsSync(p), `missing target definition: model/target/${t}.aontu`)
     }
   })
 })

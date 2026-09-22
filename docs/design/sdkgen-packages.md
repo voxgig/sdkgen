@@ -583,7 +583,7 @@ main: kit: target: 'acme-go': {
 - **`base` is universalised.** The line is added to the 24 shipped target
   models that lack it and to **all 17 feature models**, which have never
   carried provenance. All three keys are declared in the schema for both
-  blocks (`ts/model/sdkgen.aon`, validated by `make check-model`) as
+  blocks (`ts/model/sdkgen.aontu`, validated by `make check-model`) as
   **defaulted** slots:
 
   ```

@@ -282,7 +282,7 @@ function validateManifest(
         found.push({
           level: 'warn', point: 'manifest-item-unclaimed', file, kind, name,
           note: file + ': model/' + kind + '/' + name +
-            '.aon is in the package but not listed in `provides.' + kind +
+            '.aontu is in the package but not listed in `provides.' + kind +
             '` — nothing will install it'
         })
       }
@@ -304,7 +304,7 @@ function missingPaths(
   const missing: string[] = []
 
   if (!defined.has(name)) {
-    missing.push('model/' + kind + '/' + name + '.aon')
+    missing.push('model/' + kind + '/' + name + '.aontu')
   }
 
   for (const tree of (def.trees ?? []).filter((t) => t.required)) {

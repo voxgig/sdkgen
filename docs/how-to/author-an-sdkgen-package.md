@@ -16,8 +16,8 @@ my-sdkgen-package/
 ├── sdkgen-package.json     # the manifest
 └── .sdk/
     ├── model/
-    │   ├── target/iot-go.aon
-    │   └── feature/circuitbreaker.aon
+    │   ├── target/iot-go.aontu
+    │   └── feature/circuitbreaker.aontu
     ├── src/cmp/iot-go/     # per-target components
     └── tm/
         ├── iot-go/         # your target's templates
@@ -68,7 +68,7 @@ with nothing behind it is an **error**; something on disk nobody claims
 is a **warning** (it works, it is just undiscoverable — usually a
 forgotten manifest edit).
 
-A **target** needs all three of `model/target/<t>.aon`,
+A **target** needs all three of `model/target/<t>.aontu`,
 `src/cmp/<t>/` and `tm/<t>/`, the last two as directories. A **feature**
 needs only its definition — per-target source is optional, because a
 feature package supports the targets it chooses to.
@@ -84,8 +84,8 @@ implementation:
 ```bash
 cp -r node_modules/@voxgig/sdkgen/project/.sdk/src/cmp/go   .sdk/src/cmp/iot-go
 cp -r node_modules/@voxgig/sdkgen/project/.sdk/tm/go        .sdk/tm/iot-go
-cp node_modules/@voxgig/sdkgen/project/.sdk/model/target/go.aon \
-   .sdk/model/target/iot-go.aon
+cp node_modules/@voxgig/sdkgen/project/.sdk/model/target/go.aontu \
+   .sdk/model/target/iot-go.aontu
 ```
 
 Then, and this is the step that is easy to miss: **components are
@@ -95,7 +95,7 @@ them, or nothing will load.
 
 Three more things carry the origin's name, and none of them moves itself:
 
-- **Every target key in the model file** — `go.aon` has three: the
+- **Every target key in the model file** — `go.aontu` has three: the
   target block, the per-target feature-deps slot
   (`main: kit: feature: &: target: go:`) and the feature-trim block. A
   key that is not a bare identifier must be **quoted**

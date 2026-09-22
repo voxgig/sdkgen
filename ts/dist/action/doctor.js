@@ -89,12 +89,13 @@ function orphanModelFiles(actx) {
         return [];
     }
     const all = walk(fs, modeldir)
-        .filter((rel) => rel.endsWith('.aon') || rel.endsWith('.aontu'))
+        .filter((rel) => rel.endsWith('.aontu') || rel.endsWith('.aon'))
         .filter((rel) => !rel.includes('.jostraca/') && !rel.startsWith('guide/'));
+    // Both extensions: doctor reports what a project HAS, not what add writes.
     const ENTRY = [
-        'sdk.aon', 'sdk.aontu',
-        'test/test.aon', 'test/test.aontu',
-        '.model-config/model-config.aon', '.model-config/model-config.aontu',
+        'sdk.aontu', 'sdk.aon',
+        'test/test.aontu', 'test/test.aon',
+        '.model-config/model-config.aontu', '.model-config/model-config.aon',
     ];
     const seen = new Set();
     const queue = ENTRY.filter((rel) => all.includes(rel));
@@ -475,7 +476,7 @@ function checkItemModel(actx, kind, source, report) {
     }
     const aliased = (0, kind_1.kindDef)(kind).alias && name !== origname;
     const project = (0, definition_1.definitionPath)(actx.folder, kind, name);
-    const label = 'model/' + kind + '/' + name + '.aon';
+    const label = 'model/' + kind + '/' + name + '.aontu';
     if (!fs.existsSync(project)) {
         report.missing.push(label);
         return;

@@ -771,7 +771,7 @@ let audit_feature () : feature =
 (* ------------------------------------------------------------------ *)
 (* Prices every transport ATTEMPT and commits the spend once per
    OPERATION. Mirrors tm/ts/src/feature/cost/CostFeature.ts; the corpus
-   cases are .sdk/test/feature/cost.aon.
+   cases are .sdk/test/feature/cost.aontu.
 
    ORDER MATTERS. Cost must sit INSIDE the cache, or a response served from
    cache is charged for money that was never spent. Activate in array form

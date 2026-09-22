@@ -405,7 +405,7 @@ function checkFeatureSource(
       level: 'warn', point: 'feature-source-unrecognised', file,
       kind: 'target', name: tname,
       note: 'tm/' + tname + ': ' + strays.map((e) => e.path).join(', ') +
-        ' — named like feature source, but no `model/feature/<name>.aon` ' +
+        ' — named like feature source, but no `model/feature/<name>.aontu` ' +
         'declares ' + strays.map((e) => e.name).join(', ') +
         ', so the trim cannot recognise them and every project gets them ' +
         'whatever its model selects'

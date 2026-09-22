@@ -80,7 +80,7 @@ declares `output: adopt: true`.
 ## What a consumer project has to declare
 
 ```jsonic
-# .sdk/model/sdk.aon
+# .sdk/model/sdk.aontu
 main: kit: target: 'seneca-provider': output: {
   path: '../../seneca/seneca-acme-provider'
   repo: 'senecajs/seneca-acme-provider'
@@ -97,7 +97,7 @@ destination-safety checks still apply. The default is `true`, which preserves
 the original behaviour of creating a missing destination and its parents.
 
 In the project's OWN model — never in
-`.sdk/model/target/seneca-provider.aon`, which `target add` overwrites
+`.sdk/model/target/seneca-provider.aontu`, which `target add` overwrites
 (and which `voxgig-sdkgen doctor` now reports when it has been edited).
 That holds whether the target came from the box or from a package: a
 `package update` refreshes the installed copy the same way.

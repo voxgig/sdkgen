@@ -378,15 +378,15 @@ function makeModel(
   targetNames: string[], name?: string, extra?: string, features?: string[],
 ): any {
   const src = [
-    '@"@voxgig/apidef/model/apidef.aon"',
-    '@"../../../model/sdkgen.aon"',
-    ...targetNames.map((t) => `@"target/${t}.aon"`),
-    ...(features || ['test', 'log']).map((f) => `@"feature/${f}.aon"`),
+    '@"@voxgig/apidef/model/apidef.aontu"',
+    '@"../../../model/sdkgen.aontu"',
+    ...targetNames.map((t) => `@"target/${t}.aontu"`),
+    ...(features || ['test', 'log']).map((f) => `@"feature/${f}.aontu"`),
     null == name ? API_MODEL : API_MODEL.replace(/^name: '[^']*'/m, `name: '${name}'`),
     extra || '',
   ].join('\n')
 
-  const path = Path.join(STAGE, '.sdk', 'model', 'generate-test.aon')
+  const path = Path.join(STAGE, '.sdk', 'model', 'generate-test.aontu')
   writeFileSync(path, src)
 
   const errs: any[] = []

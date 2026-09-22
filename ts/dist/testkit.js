@@ -47,12 +47,12 @@ function stageConsumer(opts = {}) {
     const sdk = node_path_1.default.join(root, '.sdk');
     node_fs_1.default.mkdirSync(node_path_1.default.join(sdk, 'model', 'target'), { recursive: true });
     node_fs_1.default.mkdirSync(node_path_1.default.join(sdk, 'model', 'feature'), { recursive: true });
-    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'target', 'target-index.aon'), '# Targets\n');
-    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'feature', 'feature-index.aon'), '# Features\n');
+    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'target', 'target-index.aontu'), '# Targets\n');
+    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'feature', 'feature-index.aontu'), '# Features\n');
     const name = opts.name ?? 'demo';
-    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'sdk.aon'), "name: '" + name + "'\n" +
-        '@"./target/target-index.aon"\n' +
-        '@"./feature/feature-index.aon"\n' +
+    node_fs_1.default.writeFileSync(node_path_1.default.join(sdk, 'model', 'sdk.aontu'), "name: '" + name + "'\n" +
+        '@"./target/target-index.aontu"\n' +
+        '@"./feature/feature-index.aontu"\n' +
         (opts.extra ? opts.extra + '\n' : ''));
     const modules = node_path_1.default.join(sdk, 'node_modules');
     const links = [linkModule(modules, '@voxgig/sdkgen', SDKGEN_ROOT)];
@@ -74,7 +74,7 @@ function stageConsumer(opts = {}) {
                 [types_1.KIT]: { feature: {}, entity: {}, target: {} },
             },
         },
-        url: node_path_1.default.join(sdk, 'model', 'sdk.aon'),
+        url: node_path_1.default.join(sdk, 'model', 'sdk.aontu'),
         jostraca: (0, jostraca_1.Jostraca)({ existing: { txt: { write: true, merge: false } } }),
         opts: { dryrun: false },
     };

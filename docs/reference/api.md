@@ -149,7 +149,7 @@ True unless the model opts out of auth. The project's own config decides
 when it says so explicitly; otherwise the spec-derived signal governs:
 
 1. `main.kit.config.auth.active` set to `true` or `false` (per-SDK, in
-   `config.aon`)
+   `config.aontu`)
 2. `main.kit.info.auth === false` (apidef: the spec declares no
    authentication)
 

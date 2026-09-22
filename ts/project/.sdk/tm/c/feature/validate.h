@@ -5,8 +5,8 @@
 // option value cannot hold - so it is set on the feature after construction,
 // the way the retry port takes its injectable sleep.
 //
-// The feature is GATED (model/feature/validate.aon `needs: { schema: true }`
-// and model/target/c.aon `provides`), so its constructor is NOT in sdk.h's
+// The feature is GATED (model/feature/validate.aontu `needs: { schema: true }`
+// and model/target/c.aontu `provides`), so its constructor is NOT in sdk.h's
 // bundled list: core/config.c emits the prototype for a project that selected
 // it, and this header repeats it for a caller that includes only this file.
 

@@ -102,17 +102,17 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
   Fs.mkdirSync(Path.join(sdk, 'model', 'target'), { recursive: true })
   Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'target-index.aon'),
+  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'target-index.aontu'),
     '# Targets\n')
-  Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'feature-index.aon'),
+  Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'feature-index.aontu'),
     '# Features\n')
 
   const name = opts.name ?? 'demo'
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'sdk.aon'),
+  Fs.writeFileSync(Path.join(sdk, 'model', 'sdk.aontu'),
     "name: '" + name + "'\n" +
-    '@"./target/target-index.aon"\n' +
-    '@"./feature/feature-index.aon"\n' +
+    '@"./target/target-index.aontu"\n' +
+    '@"./feature/feature-index.aontu"\n' +
     (opts.extra ? opts.extra + '\n' : ''))
 
   const modules = Path.join(sdk, 'node_modules')
@@ -138,7 +138,7 @@ function stageConsumer(opts: StageOptions = {}): Consumer {
         [KIT]: { feature: {}, entity: {}, target: {} },
       },
     },
-    url: Path.join(sdk, 'model', 'sdk.aon'),
+    url: Path.join(sdk, 'model', 'sdk.aontu'),
     jostraca: Jostraca({ existing: { txt: { write: true, merge: false } } }),
     opts: { dryrun: false },
   }

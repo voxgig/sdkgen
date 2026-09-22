@@ -89,8 +89,8 @@ A feature is defined by a model file plus per-language template code.
 
 ### 1. Define the model
 
-Create `ts/project/.sdk/model/feature/retry.aon` (in this repo) or
-`.sdk/model/feature/retry.aon` (in a project):
+Create `ts/project/.sdk/model/feature/retry.aontu` (in this repo) or
+`.sdk/model/feature/retry.aontu` (in a project):
 
 ```jsonic
 main: kit: feature: retry: {
@@ -117,14 +117,14 @@ marked `active: true` fire.
 
 ### 2. Register it
 
-`feature add` appends the include to `feature-index.aon` automatically.
+`feature add` appends the include to `feature-index.aontu` automatically.
 If you created the model by hand, add the line yourself:
 
 ```jsonic
 # Features
-@"test.aon"
-@"log.aon"
-@"retry.aon"
+@"test.aontu"
+@"log.aontu"
+@"retry.aontu"
 ```
 
 ### 3. Provide the per-language implementation
@@ -158,8 +158,8 @@ Use the `log` feature's files as the closest reference.
 Feature behaviour is pinned by the **shared corpus**, the same mechanism
 the primary utilities use: language-neutral cases that every target runs
 against a real generated SDK. Add a section for the new feature in
-create-sdkgen, at `project/standard/.sdk/test/feature/<name>.aon`, and
-register it in `feature-test-index.aon`:
+create-sdkgen, at `project/standard/.sdk/test/feature/<name>.aontu`, and
+register it in `feature-test-index.aontu`:
 
 ```
 basic: set: [

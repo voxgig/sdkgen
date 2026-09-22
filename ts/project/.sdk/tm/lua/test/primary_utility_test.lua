@@ -129,7 +129,7 @@ end
 
 
 -- Sections deliberately left empty in the shared corpus
--- (.sdk/test/primary/<name>.aon carries a PENDING header). Everything else
+-- (.sdk/test/primary/<name>.aontu carries a PENDING header). Everything else
 -- MUST contribute cases.
 local PENDING = {
   fetcher = true,

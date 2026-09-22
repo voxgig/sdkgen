@@ -20,7 +20,7 @@ function externalPackage(): string {
   Fs.mkdirSync(Path.join(sdk, 'tm', 'ts', 'src', 'feature', 'ext'),
     { recursive: true })
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'ext.aon'),
+  Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'ext.aontu'),
     '\nmain: kit: feature: ext: {\n  name: key()\n  title: "x"\n' +
     "  version: '0.0.1'\n  active: true\n  base: 'BASE'\n" +
     '  config: options: active: false\n  hook: {}\n}\n')
@@ -109,7 +109,7 @@ describe('bare names follow recorded provenance', () => {
       await feature_add([Path.join(pkg, 'ext')], project.actx)
 
       const base = (String(project.fs.readFileSync(
-        ROOT + '/model/feature/ext.aon', 'utf8'))
+        ROOT + '/model/feature/ext.aontu', 'utf8'))
         .match(/^\s*base:\s*'([^']*)'/m) || [])[1]
       project.actx.model.main.kit.feature = {
         ext: { name: 'ext', active: true, base },
@@ -117,7 +117,7 @@ describe('bare names follow recorded provenance', () => {
 
       await feature_add(['ext'], project.actx)
 
-      ok(project.files().includes('model/feature/ext.aon'),
+      ok(project.files().includes('model/feature/ext.aontu'),
         'the bare name did not resolve to the recorded source')
     }
     finally {
@@ -135,7 +135,7 @@ describe('bare names follow recorded provenance', () => {
     await target_add([targetRef('go')], project.actx)
 
     const base = (String(project.fs.readFileSync(
-      ROOT + '/model/target/go.aon', 'utf8'))
+      ROOT + '/model/target/go.aontu', 'utf8'))
       .match(/^\s*base:\s*'([^']*)'/m) || [])[1]
 
     const resolved = resolveKind('go', 'target', {
@@ -160,7 +160,7 @@ describe('bare names follow recorded provenance', () => {
     await target_add([targetRef('go') + '~go2'], project.actx)
 
     const src = String(project.fs.readFileSync(
-      ROOT + '/model/target/go2.aon', 'utf8'))
+      ROOT + '/model/target/go2.aontu', 'utf8'))
     const base = (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1]
     const origname = (src.match(/^\s*origname:\s*'([^']*)'/m) || [])[1]
 
