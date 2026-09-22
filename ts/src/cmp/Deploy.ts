@@ -1,5 +1,7 @@
 import { cmp, each, Content, File } from 'jostraca'
 
+import { packageVersion } from '../helpers/packageMeta'
+
 import {
   KIT,
   getModelPath
@@ -119,7 +121,7 @@ deploy-${t.name}:
 
 deploy-dry-${t.name}:
 \tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, 'tag-only port')}
+${tagPushRecipe(t.name, packageVersion(model, t.name), 'tag-only port')}
 `
     }
 
@@ -131,7 +133,7 @@ deploy-${t.name}:
 
 deploy-dry-${t.name}:
 \tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, reg.name + ' publication pending — tag-only deploy')}
+${tagPushRecipe(t.name, packageVersion(model, t.name), reg.name + ' publication pending — tag-only deploy')}
 `
     }
 
@@ -175,8 +177,6 @@ SHELL := /bin/bash
 
 ${varLines}
 
-# Lockstep SDK version, read from the canonical ts manifest.
-VERSION := $(shell node -p "require('./ts/package.json').version" 2>/dev/null || echo 0.0.0)
 BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 
 TARGETS := ${targets.map((t: any) => t.name).join(' ')}
@@ -206,10 +206,15 @@ ${deployRules}`
 // The root-level tag creation + push recipe for a target: boru --dry-run
 // filler cooperation, idempotent tag creation, token-authenticated https
 // push (works from an ssh-remote clone without ssh keys).
-function tagPushRecipe(name: string, note: string): string {
+function tagPushRecipe(name: string, version: string, note: string): string {
+  // The version is embedded in both Make and shell syntax.
+  if (!/^[0-9A-Za-z][0-9A-Za-z.+-]*$/.test(version)) {
+    throw new Error('Deploy: invalid publish.version for target "' + name + '": ' + JSON.stringify(version))
+  }
+
   return `
 tag-push-${name}:
-\t@set -e; tag="${name}/v$(VERSION)"; \\
+\t@set -e; tag="${name}/v${version}"; \\
 \ttoken="\$\${GITHUB_TOKEN:-$$GH_TOKEN}"; \\
 \tif [ "$$token" = "$(BORU_DRY_RUN_FILLER)" ]; then \\
 \t  echo "[dry-run] boru filler token detected: would create (if missing) and push tag $$tag; nothing pushed."; exit 0; fi; \\

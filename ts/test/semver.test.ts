@@ -124,6 +124,45 @@ describe('satisfies', () => {
     strictEqual(satisfies('4.1.0', '^3 || ^4'), true)
     strictEqual(satisfies('5.0.0', '^3 || ^4'), false)
   })
+
+
+  test('whitespace after supported operators preserves their bounds', () => {
+    const cases: [string, string, boolean][] = [
+      ['>=', '3.4.8', true], ['>=', '3.5', false],
+      ['>', '3.4.7', true], ['>', '3.4.8', false],
+      ['<=', '3.4.8', true], ['<=', '3.4.7', false],
+      ['<', '3.4.9', true], ['<', '3.4.8', false],
+      ['=', '3.4.8', true], ['=', '3.4.7', false],
+      ['^', '3.4', true], ['^', '4', false],
+      ['~', '3.4', true], ['~', '3.5', false],
+      ['>', '3', false], ['<=', '3', true],
+      ['>', '3.4', false], ['<=', '3.4', true],
+    ]
+
+    for (const [op, version, expected] of cases) {
+      for (const space of [' ', '   ', '\t', ' \t ', '\n', '\r\n']) {
+        for (const prefix of ['', 'v']) {
+          const range = '  ' + op + space + prefix + version + '  '
+          strictEqual(satisfies('3.4.8', range), expected, JSON.stringify(range))
+        }
+      }
+    }
+  })
+
+
+  test('spaced comparators combine with conjunctions and alternatives', () => {
+    for (const range of ['>= 3.5 < 4', '>=3.5\t<\t4', '>=\n3.5\r\n<4']) {
+      strictEqual(satisfies('3.6.0', range), true, range)
+      strictEqual(satisfies('3.4.0', range), false, range)
+      strictEqual(satisfies('4.0.0', range), false, range)
+    }
+
+    for (const range of ['^ 3 || ^ 4', '^ 3||^ 4', '>= 3 <4 || >=4 < 5']) {
+      strictEqual(satisfies('3.9.0', range), true, range)
+      strictEqual(satisfies('4.1.0', range), true, range)
+      strictEqual(satisfies('5.0.0', range), false, range)
+    }
+  })
 })
 
 
@@ -143,9 +182,23 @@ describe('satisfies: what it refuses to guess at', () => {
 
 
   test('an unknown comparator does not become a refusal', () => {
-    for (const range of ['~>3.5', '>=3.5.x', 'latest', '>= 3.5']) {
+    for (const range of ['~>3.5', '>=3.5.x', 'latest']) {
       strictEqual(satisfies('3.4.8', range), undefined,
         JSON.stringify(range) + ' produced a verdict it could not justify')
+    }
+  })
+
+
+  test('whitespace does not repair malformed or unsupported comparators', () => {
+    for (const range of [
+      '> = 3.4.8', '< = 3.4.8', '^ > 3.4.8', '~ > 3.4.8', '~> 3.4.8',
+      '>=', '>= || <', '>= *', '>= v 3.4.8', '>= 3.4 .8',
+      '>= 3.4.x', '>= 3.4.8-beta.1', '>= 3.4.8+build',
+      '>= 3.4.8< 4', '>= 3.4.8 <', 'latest >= 3.4.8',
+    ]) {
+      for (const version of ['3.4.8', '5.0.0']) {
+        strictEqual(satisfies(version, range), undefined, JSON.stringify(range))
+      }
     }
   })
 
@@ -157,10 +210,15 @@ describe('satisfies: what it refuses to guess at', () => {
     strictEqual(satisfies('4.0.0', '^3 || latest'), undefined)
 
     strictEqual(satisfies('3.1.0', '^3 || latest'), true)
+    strictEqual(satisfies('4.0.0', '^ 3 || latest'), undefined)
+    strictEqual(satisfies('3.1.0', '^ 3 || latest'), true)
+    strictEqual(satisfies('3.1.0', 'latest || ^ 3'), true)
   })
 
 
   test('a partially understood CONJUNCTION is undecidable', () => {
     strictEqual(satisfies('3.6.0', '>=3.5 ~>4'), undefined)
+    strictEqual(satisfies('3.6.0', '>= 3.5 ~> 4'), undefined)
+    strictEqual(satisfies('3.4.0', '>= 3.5 ~> 4'), undefined)
   })
 })

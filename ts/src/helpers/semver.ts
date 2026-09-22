@@ -114,7 +114,9 @@ function satisfies(version: string, range: string): boolean | undefined {
   let unknown = false
 
   for (const alt of text.split('||')) {
-    const comparators = alt.trim().split(/\s+/).filter((s) => '' !== s)
+    const comparators = alt.trim()
+      .replace(/(^|\s)(>=|<=|>|<|=|\^|~)\s+(?=v?\d)/g, '$1$2')
+      .split(/\s+/).filter((s) => '' !== s)
 
     if (0 === comparators.length) {
       unknown = true

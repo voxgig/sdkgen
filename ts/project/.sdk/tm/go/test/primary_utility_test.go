@@ -618,6 +618,23 @@ func TestPrimaryUtility(t *testing.T) {
 		authClient := sdk.TestSDK(nil, setupOpts)
 		authUtility := authClient.GetUtility()
 
+		// The corpus writes the credential as `headers.authorization`: a
+		// PLACEHOLDER each runner points at the container and name this API
+		// actually uses. plAuthCredential (pipeline_test.go, same package)
+		// discovers both by running PrepareAuth once.
+		cred := plAuthCredential(t)
+		if cred == nil {
+			t.Fatal("prepareAuth placed no credential in headers or query")
+		}
+
+		// An absent section is runsection's report to make, not a nil-map write.
+		if section, has := primary["prepareAuth"].(map[string]any); has &&
+			("headers" != cred.where || "authorization" != cred.name) {
+			original := section["basic"]
+			section["basic"] = retargetAuth(original, cred)
+			defer func() { section["basic"] = original }()
+		}
+
 		runsection(t, "prepareAuth", func(args ...any) (any, error) {
 			ctx := omniCtx(args[0], authClient, authUtility)
 
@@ -823,3 +840,39 @@ func makeTestFullCtx(client *sdk.ProjectNameSDK, utility *sdk.Utility) *sdk.Cont
 
 // useVS prevents unused import error
 var _ = vs.Clone
+
+
+// retargetAuth rewrites the corpus's `headers` bag to the container this
+// SDK's PrepareAuth writes to, and the `authorization` key inside it to the
+// API's own credential name. Applied only to the prepareAuth section, so
+// real header assertions elsewhere are untouched.
+func retargetAuth(node any, cred *plAuthCred) any {
+	switch value := node.(type) {
+	case map[string]any:
+		out := map[string]any{}
+		for key, child := range value {
+			if "headers" == key {
+				bag := map[string]any{}
+				inner, _ := child.(map[string]any)
+				for bagkey, bagvalue := range inner {
+					name := bagkey
+					if "authorization" == bagkey {
+						name = cred.name
+					}
+					bag[name] = retargetAuth(bagvalue, cred)
+				}
+				out[cred.where] = bag
+			} else {
+				out[key] = retargetAuth(child, cred)
+			}
+		}
+		return out
+	case []any:
+		out := make([]any, len(value))
+		for index, child := range value {
+			out[index] = retargetAuth(child, cred)
+		}
+		return out
+	}
+	return node
+}

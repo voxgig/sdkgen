@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Deploy = void 0;
 const jostraca_1 = require("jostraca");
+const packageMeta_1 = require("../helpers/packageMeta");
 const types_1 = require("../types");
 const Deploy = (0, jostraca_1.cmp)(function Deploy(props) {
     const { ctx$ } = props;
@@ -98,7 +99,7 @@ deploy-${t.name}:
 
 deploy-dry-${t.name}:
 \tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, 'tag-only port')}
+${tagPushRecipe(t.name, (0, packageMeta_1.packageVersion)(model, t.name), 'tag-only port')}
 `;
         }
         if (reg && !regIsActive(reg)) {
@@ -109,7 +110,7 @@ deploy-${t.name}:
 
 deploy-dry-${t.name}:
 \tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, reg.name + ' publication pending — tag-only deploy')}
+${tagPushRecipe(t.name, (0, packageMeta_1.packageVersion)(model, t.name), reg.name + ' publication pending — tag-only deploy')}
 `;
         }
         return `
@@ -150,8 +151,6 @@ SHELL := /bin/bash
 
 ${varLines}
 
-# Lockstep SDK version, read from the canonical ts manifest.
-VERSION := $(shell node -p "require('./ts/package.json').version" 2>/dev/null || echo 0.0.0)
 BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 
 TARGETS := ${targets.map((t) => t.name).join(' ')}
@@ -178,10 +177,14 @@ ${deployRules}`;
 // The root-level tag creation + push recipe for a target: boru --dry-run
 // filler cooperation, idempotent tag creation, token-authenticated https
 // push (works from an ssh-remote clone without ssh keys).
-function tagPushRecipe(name, note) {
+function tagPushRecipe(name, version, note) {
+    // The version is embedded in both Make and shell syntax.
+    if (!/^[0-9A-Za-z][0-9A-Za-z.+-]*$/.test(version)) {
+        throw new Error('Deploy: invalid publish.version for target "' + name + '": ' + JSON.stringify(version));
+    }
     return `
 tag-push-${name}:
-\t@set -e; tag="${name}/v$(VERSION)"; \\
+\t@set -e; tag="${name}/v${version}"; \\
 \ttoken="\$\${GITHUB_TOKEN:-$$GH_TOKEN}"; \\
 \tif [ "$$token" = "$(BORU_DRY_RUN_FILLER)" ]; then \\
 \t  echo "[dry-run] boru filler token detected: would create (if missing) and push tag $$tag; nothing pushed."; exit 0; fi; \\
