@@ -812,6 +812,14 @@ In the dynamically typed targets (ts, js, py, rb, lua, perl, php, elixir)
 the client, whichever entity made it; `py-data` reads it for its
 auto-iteration.
 
+**The control object is per operation.** Every operation that is not given
+one builds a fresh control of its own, so the record written back reaches
+the caller exactly when the caller supplied the object to receive it, and
+two independent calls never share a cursor. Continuation is therefore
+something a caller opts into by passing the same control twice, in every
+target and whatever its control is made of. A call that passes none starts
+from the first page.
+
 **Notes.** `hasMore` distinguishes a *stated* answer from an *inferred*
 one. A final page typically carries both an end cursor and
 `hasNextPage: false`; inferring "more" from the cursor there would loop
