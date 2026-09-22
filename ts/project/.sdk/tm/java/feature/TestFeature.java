@@ -228,19 +228,12 @@ public class TestFeature extends BaseFeature {
       Object args = buildArgs(ctx, op, updateMatch);
       List<Object> found = Struct.select(entmap, args);
       Object ent = Struct.getelem(found, 0);
-      if (ent == null && entmap != null) {
-        for (Object e : entmap.values()) {
-          if (e instanceof Map) {
-            ent = e;
-            break;
-          }
-        }
-      }
       if (ent == null) {
+        // update miss: 404, never another record
         return respond(ctx, 404, null, extra("statusText", "Not found"));
       }
       if (ent instanceof Map && ctx.reqdata != null) {
-        ((Map<String, Object>) ent).putAll(ctx.reqdata);
+        Struct.merge(Struct.jt(ent, ctx.reqdata));
       }
       Struct.delprop(ent, "$KEY");
       Object out = Struct.clone(ent);
@@ -374,10 +367,14 @@ public class TestFeature extends BaseFeature {
       }
     }
 
-    // Get required params.
-    Object paramsPath = Struct.getpath(point, List.of("args", "params"));
-    Object reqdParams = Struct.select(paramsPath, Struct.jm("reqd", true));
-    Object reqd = Struct.transform(reqdParams,
+    // Path AND query: a path-only read misses a query-addressed record
+    // (e.g. GET /result?trace_id=), which has no path param at all.
+    List<Object> reqdArgs = Struct.jt();
+    for (String kind : new String[] { "params", "query" }) {
+      Object argsPath = Struct.getpath(point, List.of("args", kind));
+      reqdArgs.addAll(Struct.select(argsPath, Struct.jm("reqd", true)));
+    }
+    Object reqd = Struct.transform(reqdArgs,
         Struct.jt("`$EACH`", "", "`$KEY.name`"));
 
     List<Object> qand = Struct.jt();

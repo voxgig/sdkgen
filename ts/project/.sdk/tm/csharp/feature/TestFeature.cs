@@ -188,30 +188,17 @@ public class TestFeature : BaseFeature
                 var args = BuildArgs(ctx2, op, updateMatch);
                 var found = StructUtils.Select(entmap, args);
                 var ent = StructUtils.GetElem(found, 0);
-                if (ent == null && entmap != null)
-                {
-                    foreach (var e in entmap.Values)
-                    {
-                        if (e is Dictionary<string, object?>)
-                        {
-                            ent = e;
-                            break;
-                        }
-                    }
-                }
                 if (ent == null)
                 {
+                    // update miss: 404, never another record
                     return Respond(404, null, new Dictionary<string, object?>
                     {
                         ["statusText"] = "Not found",
                     });
                 }
-                if (ent is Dictionary<string, object?> entm && ctx2.Reqdata != null)
+                if (ent is Dictionary<string, object?> && ctx2.Reqdata != null)
                 {
-                    foreach (var kv in ctx2.Reqdata)
-                    {
-                        entm[kv.Key] = kv.Value;
-                    }
+                    StructUtils.Merge(new List<object?> { ent, ctx2.Reqdata });
                 }
                 StructUtils.DelProp(ent, "$KEY");
                 var outval = StructUtils.Clone(ent);
@@ -384,11 +371,16 @@ public class TestFeature : BaseFeature
             }
         }
 
-        // Get required params.
-        var paramsPath = StructUtils.GetPath(point, StructUtils.Jt("args", "params"));
-        var reqdParams = StructUtils.Select(paramsPath,
-            new Dictionary<string, object?> { ["reqd"] = true });
-        var reqd = StructUtils.Transform(reqdParams,
+        // Path AND query: a path-only read misses a query-addressed record
+        // (e.g. GET /result?trace_id=), which has no path param at all.
+        var reqdArgs = new List<object?>();
+        foreach (var kind in new[] { "params", "query" })
+        {
+            var argsPath = StructUtils.GetPath(point, StructUtils.Jt("args", kind));
+            reqdArgs.AddRange(StructUtils.Select(argsPath,
+                new Dictionary<string, object?> { ["reqd"] = true }));
+        }
+        var reqd = StructUtils.Transform(reqdArgs,
             StructUtils.Jt("`$EACH`", "", "`$KEY.name`"));
 
         var qand = new List<object?>();

@@ -177,14 +177,11 @@
                              (let [update-match (if (zero? (vs/size update-match)) (resolve-match (vs/jm)) update-match)
                                    args (test-build-args fctx op update-match)
                                    found (vs/select entmap args)
-                                   ent0 (vs/getelem found 0)
-                                   ent (if (and (nil? ent0) (vs/ismap entmap) (pos? (vs/size entmap)))
-                                         (first (filter vs/ismap (map #(vs/getprop entmap %) (vs/keysof entmap))))
-                                         ent0)]
+                                   ent (vs/getelem found 0)]
+                               ;; update miss: 404, never another record
                                (if (nil? ent) (respond 404 nil (vs/jm "statusText" "Not found"))
-                                   (do (when (and (vs/ismap ent) reqdata)
-                                         (doseq [item (or (vs/items reqdata) [])]
-                                           (.put ^java.util.Map ent (vs/getprop item 0) (vs/getprop item 1))))
+                                   (do (when (and (vs/ismap ent) (vs/ismap reqdata))
+                                         (vs/merge (vs/jt ent reqdata)))
                                        (vs/delprop ent "$KEY")
                                        (respond 200 (vs/clone ent) nil)))))
                            (= opn "remove")
@@ -210,20 +207,47 @@
                              (if (nil? net) test-fetcher (make-netsim fa net test-fetcher)))))))
     fa))
 
+(defn- point-terminal? [p]
+  (let [parts (vs/getprop p "parts")
+        n (if (vs/islist parts) (vs/size parts) 0)
+        last-part (when (pos? n) (vs/getelem parts (dec n)))]
+    (and (string? last-part) (str/starts-with? last-part "{"))))
+
+(defn- point-depth [p]
+  (let [parts (vs/getprop p "parts")]
+    (if (vs/islist parts) (vs/size parts) 0)))
+
+;; The entity's own endpoint: a terminal `{param}` marks a record route, and
+;; among equals the shallower path wins (the same rule as make-point).
+(defn- pick-point [points]
+  (when (and (vs/islist points) (pos? (vs/size points)))
+    (reduce (fn [point cand]
+              (cond
+                (not= (point-terminal? cand) (point-terminal? point)) (if (point-terminal? cand) cand point)
+                (< (point-depth cand) (point-depth point)) cand
+                :else point))
+            (vs/getelem points 0)
+            (map #(vs/getelem points %) (range 1 (vs/size points))))))
+
+(defn- reqd-names [point kind]
+  (vs/transform (vs/select (vs/getpath point (str "args." kind)) (vs/jm "reqd" true))
+                (vs/jt "`$EACH`" "" "`$KEY.name`")))
+
 (defn- test-build-args [ctx op args]
   (let [opname (core/op-name op)
         points (vs/getpath (core/oget ctx :config)
                            (str "entity." (core/entity-get-name (core/oget ctx :entity)) ".op." opname ".points"))
-        point (vs/getelem points -1)
-        params-path (vs/getpath point "args.params")
-        reqd-params (vs/select params-path (vs/jm "reqd" true))
-        reqd (vs/transform reqd-params (vs/jt "`$EACH`" "" "`$KEY.name`"))
+        point (pick-point points)
+        ;; Path AND query: a path-only read misses a query-addressed record
+        ;; (e.g. GET /result?trace_id=), which has no path param at all.
+        reqd-params (reqd-names point "params")
+        reqd-query (reqd-names point "query")
         qand (vs/jt)]
     (when args
       (doseq [key (or (vs/keysof args) [])]
         (let [is-id (= key "id")
-              selected (vs/select reqd key)
-              is-reqd (not (vs/isempty selected))]
+              is-reqd (or (not (vs/isempty (vs/select reqd-params key)))
+                          (not (vs/isempty (vs/select reqd-query key))))]
           (when (or is-id is-reqd)
             (let [v ((core/uget ctx :param) ctx key)
                   ka (when (core/op-alias op) (vs/getprop (core/op-alias op) key))

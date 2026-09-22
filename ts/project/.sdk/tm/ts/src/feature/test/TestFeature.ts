@@ -193,6 +193,7 @@ class TestFeature extends BaseFeature {
         const found = select(entmap, args)
         const ent = getelem(found, 0)
         if (null == ent) {
+          // update miss: 404, never another record
           return respond(404, undefined, { statusText: S_NOT_FOUND })
         }
         else {
@@ -237,6 +238,8 @@ class TestFeature extends BaseFeature {
         const out = clone(ent)
         return respond(200, out)
       }
+
+      return respond(404, undefined, { statusText: 'Unknown operation' })
     }
 
     // Optional network behaviour simulation over the mock transport. Enable
