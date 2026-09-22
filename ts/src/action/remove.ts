@@ -15,6 +15,8 @@ import { definitionPath, definitionFolder, indexName } from '../helpers/definiti
 
 import { findFeatureSources, BASE_FEATURE } from '../helpers/featureSource'
 
+import { ITEM_NAME_RE } from '../helpers/manifest'
+
 import { isJunk } from '../helpers/junk'
 
 import { kindDef, kindTrees } from './kind'
@@ -136,6 +138,17 @@ async function planRemove(
   const fs = actx.fs()
   const root = actx.folder
   const model: any = actx.model
+
+  // A name, never a path. `remove` derives file paths from it the way `add`
+  // does, and Path.join normalises a traversal away rather than refusing it,
+  // so `go/../go` reached planning as `go` and `../../model/target/go` would
+  // have planned deletions outside the project. Same grammar as the add side
+  // (helpers/manifest), checked before anything is derived from it.
+  if (!ITEM_NAME_RE.test(name)) {
+    throw new SdkGenError(
+      'Invalid ' + kind + ' name: ' + JSON.stringify(name) +
+      '\n  a name matches ' + ITEM_NAME_RE.source + ' — it is not a path')
+  }
 
   const declared: any = kindCollection(model, kind)?.[name]
   const modelfile = definitionPath(root, kind, name)

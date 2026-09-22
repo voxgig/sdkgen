@@ -48,6 +48,44 @@ function write(project: any, rel: string, content: string) {
 
 describe('target remove', () => {
 
+  // A name, never a path. Path.join NORMALISES a traversal instead of
+  // refusing it, so `go/../go` arrived at planning indistinguishable from
+  // `go` and would have deleted the real target under a name nobody typed;
+  // the second shape points outside the project altogether.
+  for (const bad of ['go/../go', '../../model/target/go']) {
+    test('refuses a name that is a path: ' + bad, async () => {
+      const project = await addedProject()
+      const before = project.vol.toJSON()
+
+      await rejects(
+        () => kind_remove('target', [bad], project.actx),
+        (err: any) => {
+          match(String(err.message), /Invalid target name/)
+          match(String(err.message), /it is not a path/)
+          return true
+        })
+
+      // Nothing planned, so nothing gone — the real target included.
+      deepStrictEqual(project.vol.toJSON(), before)
+      ok(has(project, 'tm/go/Makefile'))
+    })
+  }
+
+
+  // --force is not a way past the grammar: it governs what may be DELETED,
+  // and this name never reaches a plan to force.
+  test('--force does not excuse a name that is a path', async () => {
+    const project = await addedProject()
+    project.actx.flags = { force: true }
+    const before = project.vol.toJSON()
+
+    await rejects(
+      () => kind_remove('target', ['go/../go'], project.actx),
+      /Invalid target name/)
+    deepStrictEqual(project.vol.toJSON(), before)
+  })
+
+
   test('refuses an edited alias model, and --force deletes it', async () => {
     const project = makeProject()
     await target_add([targetRef('go') + '~custom'], project.actx)

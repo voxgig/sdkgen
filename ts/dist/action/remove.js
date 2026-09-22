@@ -12,6 +12,7 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const definition_1 = require("../helpers/definition");
 const featureSource_1 = require("../helpers/featureSource");
+const manifest_1 = require("../helpers/manifest");
 const junk_1 = require("../helpers/junk");
 const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
@@ -80,6 +81,15 @@ async function planRemove(kind, name, actx, deleteOutput) {
     const fs = actx.fs();
     const root = actx.folder;
     const model = actx.model;
+    // A name, never a path. `remove` derives file paths from it the way `add`
+    // does, and Path.join normalises a traversal away rather than refusing it,
+    // so `go/../go` reached planning as `go` and `../../model/target/go` would
+    // have planned deletions outside the project. Same grammar as the add side
+    // (helpers/manifest), checked before anything is derived from it.
+    if (!manifest_1.ITEM_NAME_RE.test(name)) {
+        throw new utility_1.SdkGenError('Invalid ' + kind + ' name: ' + JSON.stringify(name) +
+            '\n  a name matches ' + manifest_1.ITEM_NAME_RE.source + ' — it is not a path');
+    }
     const declared = (0, kindCollection_1.kindCollection)(model, kind)?.[name];
     const modelfile = (0, definition_1.definitionPath)(root, kind, name);
     const hasModel = fs.existsSync(modelfile);
