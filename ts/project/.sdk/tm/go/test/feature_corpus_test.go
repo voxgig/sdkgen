@@ -428,6 +428,7 @@ func TestFeatureCorpus(t *testing.T) {
 				"feature": []any{map[string]any{"name": name, "active": true}},
 			})
 			if fcRecord(probe, name) == nil {
+				t.Logf("feature.%s: inert (this SDK does not generate the feature)", name)
 				t.Skipf("this SDK was generated without the %s feature", name)
 			}
 

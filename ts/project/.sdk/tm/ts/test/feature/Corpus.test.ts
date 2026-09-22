@@ -206,6 +206,7 @@ describe('FeatureCorpus', () => {
 
       const probe: any = makeClient({})
       if (!probe._rootctx.config.hasFeature(name)) {
+        t.diagnostic(`feature.${name}: inert (this SDK does not generate the feature)`)
         return t.skip(`this SDK was generated without the ${name} feature`)
       }
 
