@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "4.24.1",
+  "version": "4.24.2",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "engines": {
@@ -43,7 +43,7 @@
     "voxgig-sdkgen": "bin/voxgig-sdkgen"
   },
   "scripts": {
-    "test": "node ../tools/comment-gate.cjs && node --enable-source-maps --test dist-test/**/*.test.js",
+    "test": "node ../tools/comment-gate.cjs && node ../tools/dep-gate.cjs && node --enable-source-maps --test dist-test/**/*.test.js",
     "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test dist-test/**/*.test.js",
     "golden": "npm run build && SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js",
     "watch": "tsc --build src test -w",
@@ -92,7 +92,7 @@
     "@voxgig/apidef": ">=8.14.0",
     "@voxgig/struct": ">=0.2",
     "@voxgig/util": ">=0.5",
-    "aontu": ">=0.71",
+    "aontu": ">=0.71.0 <0.73.0",
     "jostraca": ">=0.38.1",
     "shape": ">=11.4.1"
   }

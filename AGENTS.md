@@ -64,6 +64,20 @@ Archives are appropriate when testing package contents or installation from a
 packed release. Put those artifacts in a temporary test directory and clean
 up artifacts created by the test afterward; do not scatter them across repos.
 
+**`make deps` is the gate on all of that**, and it judges only what git
+TRACKS, so local wiring stays legal right up to the moment it is staged. A
+committed dependency must name a published npm package or a GitHub reference;
+`file:`, `link:`, `portal:`, `workspace:`, `catalog:`, a bare filesystem path,
+a packed `.tgz`/`.zip`, a git reference to a host other than github.com, an
+off-registry `overrides`/`resolutions`, a lockfile entry resolving from a path
+or a foreign registry, a Go `replace` or `go.work` reaching outside the repo, a
+Cargo `path` dependency leaving it, a committed symlink escaping it or pointing
+into `node_modules`, a committed archive and a `.npmrc` naming another registry
+are all findings. It runs in `make test`, in `npm test`, in `.githooks/pre-push`
+and in CI. An exception goes in `tools/dep-gate.json` WITH a reason; the gate
+reports an entry that has stopped matching anything, so the list cannot outlive
+what it excused. `make deps-test` is its own suite.
+
 This is the manual for automated agents working in or with
 `@voxgig/sdkgen`. It is intentionally dense. Read it before making
 changes; it will save you a broken build.
@@ -825,6 +839,7 @@ Makefile               build/test/check-model/scan-prose (wraps ts/ npm)
 docs/                  human-oriented documentation (docs/design/ is working notes)
 STYLE-GUIDE.md         the documentation style guide; normative for the pages
 tools/check_prose.py   the second prose gate, and the page set both gates read
+tools/dep-gate.cjs     the dependency-source gate (allowlist: tools/dep-gate.json)
 .vale.ini .vale/       the Vale half of the gate: rule levels, vocabulary, banned list
 ts/                    the self-contained npm package root (@voxgig/sdkgen)
   package.json         the npm manifest (main: dist/sdkgen.js)
