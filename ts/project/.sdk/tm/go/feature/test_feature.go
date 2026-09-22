@@ -164,24 +164,12 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			args := self.buildArgs(ctx, op, updateMatch)
 			found := vs.Select(entmap, args)
 			ent := vs.GetElem(found, 0)
-			if ent == nil && entmap != nil {
-				for _, e := range entmap {
-					if _, ok := e.(map[string]any); ok {
-						ent = e
-						break
-					}
-				}
-			}
 			if ent == nil {
+				// update miss: 404, never another record
 				return respond(404, nil, map[string]any{"statusText": "Not found"}), nil
 			}
-			if entm, ok := ent.(map[string]any); ok {
-				reqdata := ctx.Reqdata
-				if reqdata != nil {
-					for k, v := range reqdata {
-						entm[k] = v
-					}
-				}
+			if _, ok := ent.(map[string]any); ok && ctx.Reqdata != nil {
+				vs.Merge([]any{ent, ctx.Reqdata})
 			}
 			vs.DelProp(ent, "$KEY")
 			out := vs.Clone(ent)

@@ -31,8 +31,8 @@ What it cannot cover is the thing an external package actually is:
 
 | | |
 |---|---|
-| `.sdk/model/target/wtest.aontu` | a tiny language target — `.wt` files, `#` comments |
-| `.sdk/model/feature/wfeat.aontu` | the package's own feature |
+| `.sdk/model/target/wtest.aon` | a tiny language target — `.wt` files, `#` comments |
+| `.sdk/model/feature/wfeat.aon` | the package's own feature |
 | `.sdk/model/edition/wcat.aon` | an edition (the third kind) |
 | `.sdk/src/cmp/wtest/` | `Main` / `Entity` / `Test`, the three a target must dispatch |
 | `.sdk/src/cmp/edition/wcat/` | `Main_wcat`, the edition's emitter |

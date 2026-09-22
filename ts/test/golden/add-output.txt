@@ -59,7 +59,7 @@ tm/c/core/spec.c b7e5d9119652
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
 tm/c/feature/support.c 2b580e6c7fc3
-tm/c/feature/test.c f0ade6446fd4
+tm/c/feature/test.c 28dfd8fb6a79
 tm/c/src/feature/README.md c29c0aa3eaa0
 tm/c/src/feature/base/.gitkeep e3b0c44298fc
 tm/c/src/feature/test/.gitkeep e3b0c44298fc
@@ -99,7 +99,7 @@ tm/c/utility/prepare_headers.c 2e520316e7b9
 tm/c/utility/prepare_method.c 27871feb22c1
 tm/c/utility/prepare_params.c 0f1d76eee944
 tm/c/utility/prepare_path.c e9d7ffaa4851
-tm/c/utility/prepare_query.c 7b2ca7919d8d
+tm/c/utility/prepare_query.c 225a6eb60b46
 tm/c/utility/result_basic.c 0f1b53dd5eb9
 tm/c/utility/result_body.c 7080de45ae8d
 tm/c/utility/result_headers.c 3eaca35dfcb8
@@ -114,7 +114,7 @@ tm/c/utility/struct/value.h b38fb4ce4dfb
 tm/c/utility/struct/value_io.c ad154dab653a
 tm/c/utility/struct/value_io.h d322b6e9d6d8
 tm/c/utility/struct/voxgig_struct.h 71de4f01ea7b
-tm/c/utility/transform_request.c d330249351ad
+tm/c/utility/transform_request.c 3cc7bcc06abf
 tm/c/utility/transform_response.c 51ac106169eb
 
 ## target clojure
@@ -220,8 +220,8 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
-tm/clojure/src/sdk/core.clj 3548daa9f704
-tm/clojure/src/sdk/features.clj 689ba5efb435
+tm/clojure/src/sdk/core.clj 6377c0826698
+tm/clojure/src/sdk/features.clj 34b4e7501f4e
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
 tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5
@@ -287,7 +287,7 @@ tm/cpp/core/struct.hpp 0be0006d1389
 tm/cpp/core/types.hpp c575b5237c2f
 tm/cpp/feature/base.hpp 09bbe326cadb
 tm/cpp/feature/options.hpp 74561793d626
-tm/cpp/feature/test.hpp 6f646381369b
+tm/cpp/feature/test.hpp 211a03feba59
 tm/cpp/src/feature/README.md 3f39917d4bcf
 tm/cpp/src/feature/base/.gitkeep e3b0c44298fc
 tm/cpp/src/feature/test/.gitkeep e3b0c44298fc
@@ -306,7 +306,7 @@ tm/cpp/test/testlib.hpp f5f70c8c25b7
 tm/cpp/test/vendor/omni/json.hpp e2a99148e224
 tm/cpp/test/vendor/omni/omni.hpp c4a1ed1ca8b7
 tm/cpp/test/vendor/omni/util.hpp 298752832af3
-tm/cpp/utility/pipeline.hpp a80a2e5e39c5
+tm/cpp/utility/pipeline.hpp 65f3296a87d4
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
@@ -371,7 +371,7 @@ tm/csharp/core/Types.cs d3790b5cfad6
 tm/csharp/core/Utility.cs 149e714543ac
 tm/csharp/feature/BaseFeature.cs 2f5da25c6dea
 tm/csharp/feature/FeatureOptions.cs 98b2222e9728
-tm/csharp/feature/TestFeature.cs 35fd924bb9ac
+tm/csharp/feature/TestFeature.cs 341b86cb7e96
 tm/csharp/src/feature/README.md ddb1daf8f8fe
 tm/csharp/src/feature/base/.gitkeep e3b0c44298fc
 tm/csharp/src/feature/test/.gitkeep e3b0c44298fc
@@ -411,12 +411,12 @@ tm/csharp/utility/PrepareHeaders.cs 58f9d96fb1c5
 tm/csharp/utility/PrepareMethod.cs a79cca84546b
 tm/csharp/utility/PrepareParams.cs e900c068560e
 tm/csharp/utility/PreparePath.cs 231686f6cd6b
-tm/csharp/utility/PrepareQuery.cs c77142cf2f46
+tm/csharp/utility/PrepareQuery.cs 20c4cc18602e
 tm/csharp/utility/Register.cs a54df48d21bc
 tm/csharp/utility/ResultBasic.cs d1a00426fafd
 tm/csharp/utility/ResultBody.cs 5e641c84a4fa
 tm/csharp/utility/ResultHeaders.cs e593a27709b5
-tm/csharp/utility/TransformRequest.cs 1d3946fa6d77
+tm/csharp/utility/TransformRequest.cs 107ecc6d7e9b
 tm/csharp/utility/TransformResponse.cs 01583a33873e
 tm/csharp/utility/struct/Struct.cs 060d6630aea5
 
@@ -470,10 +470,10 @@ tm/elixir/lib/projectname/core.ex 54ae320f3c39
 tm/elixir/lib/projectname/entity_base.ex a1bebbb71a2b
 tm/elixir/lib/projectname/error.ex 163684739447
 tm/elixir/lib/projectname/feature.ex a9f2c2609648
-tm/elixir/lib/projectname/feature/test.ex b04128587880
+tm/elixir/lib/projectname/feature/test.ex 2de50e8b1581
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 8fa8202dffb5
+tm/elixir/lib/projectname/utility.ex 1ca26f5b61a0
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -550,12 +550,12 @@ tm/go/core/types.go 4d9b2a5316a4
 tm/go/core/utility_type.go bd2f3498448f
 tm/go/feature/base_feature.go d0afce22fc61
 tm/go/feature/feature_options.go 5fa5adf56434
-tm/go/feature/test_feature.go 30fa3adbf1d1
+tm/go/feature/test_feature.go 623132d3d527
 tm/go/src/feature/README.md efebfaa50be0
 tm/go/src/feature/base/.gitkeep e3b0c44298fc
 tm/go/src/feature/test/.gitkeep e3b0c44298fc
 tm/go/test/custom_utility_test.go 34f8ce224b2e
-tm/go/test/feature_corpus_test.go b6938c671c92
+tm/go/test/feature_corpus_test.go 15a480b6027b
 tm/go/test/feature_harness_test.go b408114ef8b6
 tm/go/test/netsim_test.go 30f992e9d5c0
 tm/go/test/omni/omni.go 9312154b1d5d
@@ -572,7 +572,7 @@ tm/go/utility/done.go fe9239675864
 tm/go/utility/feature_add.go 0b62e5d1c8db
 tm/go/utility/feature_hook.go 7efab96be0c6
 tm/go/utility/feature_init.go e2d9a7381261
-tm/go/utility/fetcher.go 3f2c016f9971
+tm/go/utility/fetcher.go dfe379e9db93
 tm/go/utility/graphql.go f0e6b8fef4a8
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go acc76429c4ee
@@ -590,13 +590,13 @@ tm/go/utility/prepare_headers.go 58c569d88cdd
 tm/go/utility/prepare_method.go 1f56fb598c7f
 tm/go/utility/prepare_params.go cc1327507f18
 tm/go/utility/prepare_path.go 9abb91c60ce8
-tm/go/utility/prepare_query.go 9d2341258061
+tm/go/utility/prepare_query.go 597748f01b52
 tm/go/utility/register.go b43e90a4bd86
 tm/go/utility/result_basic.go 6621fff8681d
 tm/go/utility/result_body.go 26a11991a96c
 tm/go/utility/result_headers.go 1bf8bf65b390
 tm/go/utility/struct/voxgigstruct.go a2dc9ca77b79
-tm/go/utility/transform_request.go fe670d592c04
+tm/go/utility/transform_request.go 842e96882406
 tm/go/utility/transform_response.go 3c0e1101ed39
 
 ## target go-cli
@@ -689,13 +689,13 @@ tm/java/core/Spec.java 81d19a708e1f
 tm/java/core/Utility.java 505be13ba84f
 tm/java/feature/BaseFeature.java de43ff62c7d8
 tm/java/feature/FeatureOptions.java 157f46620462
-tm/java/feature/TestFeature.java 9f16a269c5ae
+tm/java/feature/TestFeature.java 5ab3ab51359e
 tm/java/src/feature/README.md fe95b0698ffe
 tm/java/src/feature/base/.gitkeep e3b0c44298fc
 tm/java/src/feature/test/.gitkeep e3b0c44298fc
 tm/java/test/CustomUtilityTest.java 92703abdc486
 tm/java/test/ExistsTest.java 6b1f749bac90
-tm/java/test/FeatureCorpusTest.java 4ac0376d0da0
+tm/java/test/FeatureCorpusTest.java 1b91e6d5fdb2
 tm/java/test/FeatureHarness.java 31048303f744
 tm/java/test/NetsimTest.java 9969f77c3cb3
 tm/java/test/OmniResolver.java 54333ccce204
@@ -713,7 +713,7 @@ tm/java/utility/Done.java ae80cc7cadf2
 tm/java/utility/FeatureAdd.java 77fd1ce39d5a
 tm/java/utility/FeatureHookUtil.java c0a61e00148f
 tm/java/utility/FeatureInit.java b7ee152fc808
-tm/java/utility/Fetcher.java cd96a53b257c
+tm/java/utility/Fetcher.java 6eafed679025
 tm/java/utility/Graphql.java 375386544b43
 tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
@@ -732,12 +732,12 @@ tm/java/utility/PrepareHeaders.java 902f63f998dd
 tm/java/utility/PrepareMethod.java 16cb97cb8cdf
 tm/java/utility/PrepareParams.java d69032e840df
 tm/java/utility/PreparePath.java 023b8a22f18e
-tm/java/utility/PrepareQuery.java a813f3a94aac
+tm/java/utility/PrepareQuery.java ef44cd2252b0
 tm/java/utility/Register.java 8e0a61724333
 tm/java/utility/ResultBasic.java ef96b4823075
 tm/java/utility/ResultBody.java d462ac5d1c65
 tm/java/utility/ResultHeaders.java 9fab31e3503b
-tm/java/utility/TransformRequest.java 9d3a2a81920f
+tm/java/utility/TransformRequest.java c3d6cfd3ba68
 tm/java/utility/TransformResponse.java 1cd65d69d927
 tm/java/utility/struct/Struct.java 5d9f9f568c03
 
@@ -804,7 +804,7 @@ tm/js/src/Result.js f5ca4fe99283
 tm/js/src/Spec.js 3479116d0990
 tm/js/src/feature/README.md 630422c5567f
 tm/js/src/feature/base/BaseFeature.js 29d380a635f6
-tm/js/src/feature/test/TestFeature.js 53a7c1aa3e14
+tm/js/src/feature/test/TestFeature.js 64cd93422162
 tm/js/src/types.js f49c15c403b4
 tm/js/src/utility/CleanUtility.js d19a9fd4a0eb
 tm/js/src/utility/DoneUtility.js d1457eb69ac8
@@ -829,7 +829,7 @@ tm/js/src/utility/PrepareHeadersUtility.js 27c5040ad84d
 tm/js/src/utility/PrepareMethodUtility.js 926fc700f8cb
 tm/js/src/utility/PrepareParamsUtility.js 56e72e646448
 tm/js/src/utility/PreparePathUtility.js 3f15ca0aaa03
-tm/js/src/utility/PrepareQueryUtility.js ceb1c9b7e4c3
+tm/js/src/utility/PrepareQueryUtility.js 832f904c7ff5
 tm/js/src/utility/README.md 443e45445e95
 tm/js/src/utility/ResultBasicUtility.js 5cbbeb7567d8
 tm/js/src/utility/ResultBodyUtility.js 0a7226de89f0
@@ -841,7 +841,7 @@ tm/js/src/utility/Utility.js 63c0e87a03bb
 tm/js/test/README.md e621bcce9282
 tm/js/test/exists.test.js ba7655664d5c
 tm/js/test/feature.test.js 59bed7b5b2c7
-tm/js/test/feature/Corpus.test.js 3851a0b9ee4d
+tm/js/test/feature/Corpus.test.js 660f9dc0a2d3
 tm/js/test/feature/harness.js ec64607a8bb4
 tm/js/test/live-contract.js 07a8529d19cf
 tm/js/test/live-entity.js f10261248a5b
@@ -922,7 +922,7 @@ tm/kotlin/core/Spec.kt 2058ce6c6295
 tm/kotlin/core/Utility.kt abb795f2aa68
 tm/kotlin/feature/BaseFeature.kt 7c6e6ca6dbb1
 tm/kotlin/feature/FeatureOptions.kt 3e80a9bbd671
-tm/kotlin/feature/TestFeature.kt 6887f6b2cc60
+tm/kotlin/feature/TestFeature.kt aea1f13dfcaa
 tm/kotlin/src/feature/README.md 9f8bde3f12e0
 tm/kotlin/src/feature/base/.gitkeep e3b0c44298fc
 tm/kotlin/src/feature/test/.gitkeep e3b0c44298fc
@@ -942,16 +942,16 @@ tm/kotlin/test/vendor/omni/Runner.kt ceb11341d1e2
 tm/kotlin/test/vendor/omni/Util.kt 2584ef88d48b
 tm/kotlin/utility/CoreUtil.kt 52bbe387017d
 tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
-tm/kotlin/utility/Fetcher.kt 206114285747
+tm/kotlin/utility/Fetcher.kt dca90881c23d
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
 tm/kotlin/utility/MakeOptions.kt ca984847067e
 tm/kotlin/utility/MakePoint.kt e21c75b47c95
 tm/kotlin/utility/MakeReqRes.kt a745863aa7aa
 tm/kotlin/utility/MakeSpecUrl.kt 7aaeccdececc
-tm/kotlin/utility/Prepare.kt 504ea23922fd
+tm/kotlin/utility/Prepare.kt b2f661f1dfc2
 tm/kotlin/utility/Register.kt 9512b29a6007
-tm/kotlin/utility/ResultTransform.kt d73a9258aced
+tm/kotlin/utility/ResultTransform.kt 4a4c24d98b4e
 tm/kotlin/utility/struct/Struct.kt aa88bedd8e66
 
 ## target lua
@@ -998,8 +998,8 @@ src/cmp/lua/tsconfig.json 720a3f229019
 src/cmp/lua/utility_lua.ts 216f2c0aab05
 tm/lua/LICENSE ed2f88b0aab8
 tm/lua/Makefile 0cdb4b35ad7d
-tm/lua/core/context.lua a1819bc6852f
-tm/lua/core/control.lua 0c2b17f93f43
+tm/lua/core/context.lua 58bddea7fc78
+tm/lua/core/control.lua bcd4e848f7f2
 tm/lua/core/error.lua 943180f73775
 tm/lua/core/helpers.lua 03f9203a9327
 tm/lua/core/operation.lua dc1ee0de0695
@@ -1008,7 +1008,7 @@ tm/lua/core/result.lua 62e6251e1970
 tm/lua/core/spec.lua 36d7249c24db
 tm/lua/core/utility_type.lua 61cec681f945
 tm/lua/feature/base_feature.lua 324bcbfd0836
-tm/lua/feature/test_feature.lua b41d3ffe0c7f
+tm/lua/feature/test_feature.lua 351452a4c5a8
 tm/lua/src/feature/README.md 74fc01b8a34f
 tm/lua/src/feature/base/.gitkeep e3b0c44298fc
 tm/lua/src/feature/test/.gitkeep e3b0c44298fc
@@ -1049,14 +1049,14 @@ tm/lua/utility/prepare_headers.lua 4b82b3b862ea
 tm/lua/utility/prepare_method.lua e6a1c13a4a8d
 tm/lua/utility/prepare_params.lua dc5a15383e6b
 tm/lua/utility/prepare_path.lua fce3455e363c
-tm/lua/utility/prepare_query.lua a1e889edebc7
+tm/lua/utility/prepare_query.lua 43184f75adb0
 tm/lua/utility/register.lua 20146815cb3f
 tm/lua/utility/result_basic.lua 891e11848ea9
 tm/lua/utility/result_body.lua 53d05debf9f2
 tm/lua/utility/result_headers.lua 33df8d29e12f
 tm/lua/utility/struct/regex.lua a168e0f941f5
 tm/lua/utility/struct/struct.lua e9c554b04cf4
-tm/lua/utility/transform_request.lua ada006d60f94
+tm/lua/utility/transform_request.lua c3299df44e76
 tm/lua/utility/transform_response.lua 37d0bb1f1d1f
 
 ## target ocaml
@@ -1097,10 +1097,10 @@ src/cmp/ocaml/utility_ocaml.ts ee3a24786063
 tm/ocaml/LICENSE c92ad97f8812
 tm/ocaml/Makefile 4d2500a53550
 tm/ocaml/VERSION e6635045e1d2
-tm/ocaml/sdk_features.ml bbd7e1f33dc9
+tm/ocaml/sdk_features.ml f97c74de8e81
 tm/ocaml/sdk_helpers.ml d08f5f1dca3c
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml 404ff2e4c3f5
+tm/ocaml/sdk_runtime.ml d9165f2db0c1
 tm/ocaml/sdk_types.ml 85ee25259c3a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
@@ -1172,13 +1172,13 @@ tm/perl/core/result.pm c8daeffb69ad
 tm/perl/core/spec.pm 117513d65c20
 tm/perl/core/utility_type.pm ae99fdaaf3fb
 tm/perl/feature/base_feature.pm af88f71c0bd9
-tm/perl/feature/test_feature.pm 13072c2b1e25
+tm/perl/feature/test_feature.pm d3f0ddeb005b
 tm/perl/lib/Voxgig/Struct.pm ba12c5b66cfd
 tm/perl/src/feature/README.md 74fc01b8a34f
 tm/perl/src/feature/base/.gitkeep e3b0c44298fc
 tm/perl/src/feature/test/.gitkeep e3b0c44298fc
 tm/perl/t/feature.t e6a0b4e0e51e
-tm/perl/t/feature_corpus.t bd20185c411e
+tm/perl/t/feature_corpus.t 98cbd528c034
 tm/perl/t/netsim.t e5829249c5e9
 tm/perl/t/omni.pm 81be0c35e598
 tm/perl/t/omni_smoke.t 5b5284fad82f
@@ -1196,7 +1196,7 @@ tm/perl/utility/done.pm 0d55a57ab911
 tm/perl/utility/feature_add.pm 1904c2689cad
 tm/perl/utility/feature_hook.pm e28b546e5fd1
 tm/perl/utility/feature_init.pm 669f03c56f25
-tm/perl/utility/fetcher.pm dd71576cbf3f
+tm/perl/utility/fetcher.pm 0590d6eda1a8
 tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm b48207779329
@@ -1214,12 +1214,12 @@ tm/perl/utility/prepare_headers.pm ea99891efead
 tm/perl/utility/prepare_method.pm 5da6c3590a70
 tm/perl/utility/prepare_params.pm b66117cb952a
 tm/perl/utility/prepare_path.pm b0e6082fd75b
-tm/perl/utility/prepare_query.pm efa5df153df9
+tm/perl/utility/prepare_query.pm 9447b49b6d68
 tm/perl/utility/register.pm 25d6ab80f137
 tm/perl/utility/result_basic.pm 6dcc7e8f1dd2
 tm/perl/utility/result_body.pm e4a5cfea71a3
 tm/perl/utility/result_headers.pm 79b7d0f73ff3
-tm/perl/utility/transform_request.pm cbe7fc991309
+tm/perl/utility/transform_request.pm cfced2f94649
 tm/perl/utility/transform_response.pm 035accca42c2
 
 ## target php
@@ -1267,8 +1267,8 @@ src/cmp/php/utility_php.ts c65bddbe5deb
 tm/php/LICENSE ed2f88b0aab8
 tm/php/Makefile 1df8eadc6f78
 tm/php/VERSION e6635045e1d2
-tm/php/core/Context.php 6ba465e83593
-tm/php/core/Control.php 4805a4f31b9c
+tm/php/core/Context.php 96a1c9758742
+tm/php/core/Control.php 6cb0e03bea15
 tm/php/core/Error.php 632c49dd3cb4
 tm/php/core/Helpers.php 75cc7fb2f06c
 tm/php/core/Operation.php dde7df1447a3
@@ -1277,12 +1277,12 @@ tm/php/core/Result.php b64c27a0b2ea
 tm/php/core/Spec.php 52af8a2308aa
 tm/php/core/UtilityType.php 69ccbf6da0a0
 tm/php/feature/BaseFeature.php 19116b364fc2
-tm/php/feature/TestFeature.php ae8988fa248a
+tm/php/feature/TestFeature.php 2f949f95b364
 tm/php/src/feature/README.md 74fc01b8a34f
 tm/php/src/feature/base/.gitkeep e3b0c44298fc
 tm/php/src/feature/test/.gitkeep e3b0c44298fc
-tm/php/test/FeatureCorpusTest.php 8c572211d7d8
-tm/php/test/FeatureTest.php 1317c160eeb7
+tm/php/test/FeatureCorpusTest.php 2bd44eaaab1f
+tm/php/test/FeatureTest.php 93fd7363b3d9
 tm/php/test/NetsimTest.php fac241d6b75a
 tm/php/test/Omni.php a5fdc0be95cc
 tm/php/test/OmniSmokeTest.php cad939a73897
@@ -1298,7 +1298,7 @@ tm/php/utility/Done.php 012b31fe19fc
 tm/php/utility/FeatureAdd.php 7729798603cf
 tm/php/utility/FeatureHook.php 7f333010aba1
 tm/php/utility/FeatureInit.php d2ae3102173f
-tm/php/utility/Fetcher.php 41e0e8389313
+tm/php/utility/Fetcher.php 710d22e307bc
 tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 5bbbbecfc3d7
@@ -1316,12 +1316,12 @@ tm/php/utility/PrepareHeaders.php 76e64676b8d6
 tm/php/utility/PrepareMethod.php b77464feb55e
 tm/php/utility/PrepareParams.php cb242a1ea1ea
 tm/php/utility/PreparePath.php cb65b1f7db12
-tm/php/utility/PrepareQuery.php 6c0831f1c47c
+tm/php/utility/PrepareQuery.php 1759797a5a1d
 tm/php/utility/Register.php a6252046b779
 tm/php/utility/ResultBasic.php d87abb6e80d7
 tm/php/utility/ResultBody.php d37f74dc5d41
 tm/php/utility/ResultHeaders.php 378a2c5bfdd9
-tm/php/utility/TransformRequest.php 632482c5939f
+tm/php/utility/TransformRequest.php 945b61df3b2f
 tm/php/utility/TransformResponse.php 4dc432711490
 tm/php/utility/struct/Struct.php bae6a19c1df6
 
@@ -1382,14 +1382,14 @@ tm/py/pkg/core/utility_type.py 04bf25ffebe7
 tm/py/pkg/entity/__init__.py e3b0c44298fc
 tm/py/pkg/feature/__init__.py e3b0c44298fc
 tm/py/pkg/feature/base_feature.py a2f222f0d8c3
-tm/py/pkg/feature/test_feature.py 4b4decf8d276
+tm/py/pkg/feature/test_feature.py e82bb169ea26
 tm/py/pkg/utility/__init__.py e3b0c44298fc
 tm/py/pkg/utility/clean.py 7ee83fa80aaf
 tm/py/pkg/utility/done.py 6066fb832758
 tm/py/pkg/utility/feature_add.py f85e86961cec
 tm/py/pkg/utility/feature_hook.py a77281b3d944
 tm/py/pkg/utility/feature_init.py 56df64ac9bd6
-tm/py/pkg/utility/fetcher.py 956b351846e2
+tm/py/pkg/utility/fetcher.py ff22ad643694
 tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py d68358f50bc8
@@ -1407,12 +1407,12 @@ tm/py/pkg/utility/prepare_headers.py d612c6707d74
 tm/py/pkg/utility/prepare_method.py c038d3d6a4c2
 tm/py/pkg/utility/prepare_params.py 76b7c4ce4770
 tm/py/pkg/utility/prepare_path.py 1a91e58bfbed
-tm/py/pkg/utility/prepare_query.py 6c410aec9781
+tm/py/pkg/utility/prepare_query.py 917fa4524e32
 tm/py/pkg/utility/register.py a0447f027153
 tm/py/pkg/utility/result_basic.py 1c73ca93f75e
 tm/py/pkg/utility/result_body.py c4b44160f9d8
 tm/py/pkg/utility/result_headers.py 682e8c1eb0b7
-tm/py/pkg/utility/transform_request.py 479ec7a39343
+tm/py/pkg/utility/transform_request.py 2be0c7033b78
 tm/py/pkg/utility/transform_response.py b695fb4ac29d
 tm/py/pkg/utility/voxgig_struct/__init__.py 1608e9ae60d8
 tm/py/pkg/utility/voxgig_struct/voxgig_struct.py 75d10c43b22a
@@ -1425,8 +1425,8 @@ tm/py/test/feature_harness.py d5c7f1617f87
 tm/py/test/omni.py 96a115b97dbe
 tm/py/test/runner.py 52a32ea178ab
 tm/py/test/sdk-test-control.json ea9bf9046c8a
-tm/py/test/test_feature.py 437bb9183a85
-tm/py/test/test_feature_corpus.py db4e626223cc
+tm/py/test/test_feature.py 98d235a207ee
+tm/py/test/test_feature_corpus.py e1fab3619ca5
 tm/py/test/test_netsim.py 1583f97d2c84
 tm/py/test/test_omni_smoke.py abeaa5fc717b
 tm/py/test/test_pipeline.py 682034aad244
@@ -1512,12 +1512,12 @@ tm/rb/core/result.rb c5a2738849ce
 tm/rb/core/spec.rb 9f39aa2f6198
 tm/rb/core/utility_type.rb 80d662fd4b4a
 tm/rb/feature/base_feature.rb 9d4c4d6ec5a8
-tm/rb/feature/test_feature.rb 724f308105f0
+tm/rb/feature/test_feature.rb 762b996ca940
 tm/rb/src/feature/README.md 74fc01b8a34f
 tm/rb/src/feature/base/.gitkeep e3b0c44298fc
 tm/rb/src/feature/test/.gitkeep e3b0c44298fc
-tm/rb/test/feature_corpus_test.rb f600346015a5
-tm/rb/test/feature_test.rb 0a9e28cb82e2
+tm/rb/test/feature_corpus_test.rb 9ce72d90d15b
+tm/rb/test/feature_test.rb a9d36f28a883
 tm/rb/test/netsim_test.rb bc7d9265bec9
 tm/rb/test/omni.rb 55153c959df6
 tm/rb/test/omni_smoke_test.rb b39afea20e26
@@ -1534,7 +1534,7 @@ tm/rb/utility/done.rb 127c1eff2e8b
 tm/rb/utility/feature_add.rb 56c05f79aaf6
 tm/rb/utility/feature_hook.rb ae80d8f1f9c8
 tm/rb/utility/feature_init.rb 025a7a843acb
-tm/rb/utility/fetcher.rb b46d81675237
+tm/rb/utility/fetcher.rb 9b0c889f93a6
 tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb abe971c81e08
@@ -1552,13 +1552,13 @@ tm/rb/utility/prepare_headers.rb 8685ce331366
 tm/rb/utility/prepare_method.rb e61dd16f0199
 tm/rb/utility/prepare_params.rb 37802f5d2d95
 tm/rb/utility/prepare_path.rb 09b8af0293bc
-tm/rb/utility/prepare_query.rb 4c7bff68aabe
+tm/rb/utility/prepare_query.rb 65f3fbb0f194
 tm/rb/utility/register.rb 17360423b3c4
 tm/rb/utility/result_basic.rb 90d9f4bfb77a
 tm/rb/utility/result_body.rb 3f5453c189c1
 tm/rb/utility/result_headers.rb ee4460e396f5
 tm/rb/utility/struct/voxgig_struct.rb 41a41c327567
-tm/rb/utility/transform_request.rb 03eca2dddb49
+tm/rb/utility/transform_request.rb df7253b61557
 tm/rb/utility/transform_response.rb 13e4100890d3
 
 ## target rust
@@ -1621,7 +1621,7 @@ tm/rust/core/types.rs 4044c994ec5a
 tm/rust/core/utility_type.rs f77fc720e364
 tm/rust/feature/base.rs 8f5e41de2dc6
 tm/rust/feature/support.rs 7a1c1d32aa08
-tm/rust/feature/test.rs 43aa1ff40a72
+tm/rust/feature/test.rs 8e01186558c2
 tm/rust/src/feature/README.md f623e5e15340
 tm/rust/src/feature/base/.gitkeep e3b0c44298fc
 tm/rust/src/feature/test/.gitkeep e3b0c44298fc
@@ -1644,7 +1644,7 @@ tm/rust/utility/done.rs 96ba46533100
 tm/rust/utility/feature_add.rs 17f2d1fcb7c3
 tm/rust/utility/feature_hook.rs 6d794f025b57
 tm/rust/utility/feature_init.rs 66f96bd2cf0d
-tm/rust/utility/fetcher.rs 457da5039b2d
+tm/rust/utility/fetcher.rs b5beea3cc542
 tm/rust/utility/graphql.rs 5115a012964e
 tm/rust/utility/jsonparse.rs 17f7ee7b908a
 tm/rust/utility/make_context.rs 04f34b592c9c
@@ -1664,11 +1664,11 @@ tm/rust/utility/prepare_headers.rs faba89a3827a
 tm/rust/utility/prepare_method.rs e5a08fa100d5
 tm/rust/utility/prepare_params.rs f12962afea3a
 tm/rust/utility/prepare_path.rs 0d867b7b42aa
-tm/rust/utility/prepare_query.rs 3424f2c5b706
+tm/rust/utility/prepare_query.rs d99706c72c05
 tm/rust/utility/result_basic.rs 0e0124bdde99
 tm/rust/utility/result_body.rs 00dd87d051bc
 tm/rust/utility/result_headers.rs 58e9bdefa347
-tm/rust/utility/transform_request.rs b3ed3a3231ba
+tm/rust/utility/transform_request.rs e36925015d52
 tm/rust/utility/transform_response.rs 236bdb7a35a5
 tm/rust/utility/voxgigstruct/consts.rs ce664523dacf
 tm/rust/utility/voxgigstruct/major.rs 7aae2b4153ce
@@ -1748,7 +1748,7 @@ tm/scala/feature/IdempotencyFeature.scala 02a3f77337cd
 tm/scala/feature/LogFeature.scala 835aacbdb6bb
 tm/scala/feature/MetricsFeature.scala 78ed7846446d
 tm/scala/feature/NetsimFeature.scala a0efa611eeee
-tm/scala/feature/PagingFeature.scala f8ead950b336
+tm/scala/feature/PagingFeature.scala 505873a38817
 tm/scala/feature/ProxyFeature.scala 8b4a547449fd
 tm/scala/feature/RatelimitFeature.scala 4b96e4be9fd5
 tm/scala/feature/RbacFeature.scala 978c969eccca
@@ -1756,7 +1756,7 @@ tm/scala/feature/RetryFeature.scala 117b343c03a4
 tm/scala/feature/SecretsFeature.scala fa18f7b1eeca
 tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala 19f19505f177
-tm/scala/feature/TestFeature.scala 390cdea0cb3a
+tm/scala/feature/TestFeature.scala 752447b049d0
 tm/scala/feature/TimeoutFeature.scala 1241410229ac
 tm/scala/feature/ValidateFeature.scala 895a3c37bee7
 tm/scala/feature/secrets/plugin/Capability.scala e7f2d8d26c49
@@ -1827,17 +1827,17 @@ tm/scala/src/feature/test/.gitkeep e3b0c44298fc
 tm/scala/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/scala/src/feature/validate/.gitkeep e3b0c44298fc
 tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
-tm/scala/utility/Fetcher.scala a3a1073307be
+tm/scala/utility/Fetcher.scala 04226d1f9cf1
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
 tm/scala/utility/Make.scala 9ddabc5e36d8
 tm/scala/utility/MakeSpec.scala 08289e20fcf3
 tm/scala/utility/Misc.scala bf44fcc37724
-tm/scala/utility/Prepare.scala 62e1dd7b3e52
+tm/scala/utility/Prepare.scala 243bcafaba12
 tm/scala/utility/Register.scala 730b661b9faf
 tm/scala/utility/Results.scala eaf1c9bb3189
 tm/scala/utility/StructUtility.scala 2dc27377f838
-tm/scala/utility/Transform.scala 0b54cf299ccc
+tm/scala/utility/Transform.scala a0f8eceea66d
 tm/scala/utility/struct/Struct.java 5e1cee8646e5
 tm/scala/utility/struct/voxgig_struct.scala 8fc853fd8f03
 
@@ -1913,16 +1913,16 @@ tm/swift/Sources/ProjectNameSDK/core/Types.swift b9ccbf883682
 tm/swift/Sources/ProjectNameSDK/core/Utility.swift b1174e305cae
 tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
 tm/swift/Sources/ProjectNameSDK/feature/FeatureOptions.swift 38f8fd8fc149
-tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 391580de0fd4
+tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 6bb7c2363df3
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
 tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 9bc134d98639
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 4274a98806c8
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 5139e01f2b4e
 tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 9723a9cb8bae
-tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 97466acef81a
+tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 1024dcf38da0
 tm/swift/Sources/ProjectNameSDK/utility/Register.swift ce2198a186aa
-tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 0bb89feddaa3
+tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift c3786c838b8e
 tm/swift/Tests/ProjectNameSDKTests/CustomUtilityTest.swift d761ef0813c8
 tm/swift/Tests/ProjectNameSDKTests/ExistsTest.swift b003ca8c07eb
 tm/swift/Tests/ProjectNameSDKTests/NetsimTest.swift e290a72e79ed
@@ -2005,7 +2005,7 @@ tm/ts/src/Result.ts 45a656e9d5df
 tm/ts/src/Spec.ts 318854e8cb05
 tm/ts/src/feature/README.md 630422c5567f
 tm/ts/src/feature/base/BaseFeature.ts 4c0e468f5313
-tm/ts/src/feature/test/TestFeature.ts b6789f290233
+tm/ts/src/feature/test/TestFeature.ts 37983ab82fef
 tm/ts/src/tsconfig.json c1b52cc621fb
 tm/ts/src/types.ts 5e1f5518bba6
 tm/ts/src/utility/CleanUtility.ts 0f54d4835a31
@@ -2031,7 +2031,7 @@ tm/ts/src/utility/PrepareHeadersUtility.ts 6dc31eaf6aea
 tm/ts/src/utility/PrepareMethodUtility.ts d375298ef1cb
 tm/ts/src/utility/PrepareParamsUtility.ts ed716d38ff21
 tm/ts/src/utility/PreparePathUtility.ts 536ac7f6c6aa
-tm/ts/src/utility/PrepareQueryUtility.ts 3c87d1fa6d43
+tm/ts/src/utility/PrepareQueryUtility.ts abebfe8dfd62
 tm/ts/src/utility/README.md b5e4e3a70bcd
 tm/ts/src/utility/ResultBasicUtility.ts 76208bbfaf7d
 tm/ts/src/utility/ResultBodyUtility.ts d43174454495
@@ -2043,7 +2043,7 @@ tm/ts/src/utility/Utility.ts c1f6d3ed23dd
 tm/ts/test/README.md 087d364e7b4f
 tm/ts/test/exists.test.ts 0b0e94cf2d76
 tm/ts/test/feature.test.ts b7cbad866e0d
-tm/ts/test/feature/Corpus.test.ts bf10db0e2d42
+tm/ts/test/feature/Corpus.test.ts c2778c773852
 tm/ts/test/feature/harness.ts 1eb7465da345
 tm/ts/test/live-contract.ts 82fd421e40a1
 tm/ts/test/live-entity.ts 2bf74bbdedf2
@@ -2121,7 +2121,7 @@ tm/zig/core/response.zig 4df235df5674
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 76f0cf3fd406
 tm/zig/core/types.zig ed211da482aa
-tm/zig/core/utility.zig aae0ae8ce441
+tm/zig/core/utility.zig c91d44e391b0
 tm/zig/feature/audit.zig 8373b1320c48
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig d7352c80c34e
@@ -2132,7 +2132,7 @@ tm/zig/feature/idempotency.zig 73f7630ca257
 tm/zig/feature/log.zig 15db6f7b1bf0
 tm/zig/feature/metrics.zig f7a0d681b9b8
 tm/zig/feature/netsim.zig 0473052a37d0
-tm/zig/feature/paging.zig 55de9e3b5dcf
+tm/zig/feature/paging.zig a3b0f20a873b
 tm/zig/feature/proxy.zig d8ba5c0cf4b9
 tm/zig/feature/ratelimit.zig 635710bddb9a
 tm/zig/feature/rbac.zig 4d095a24a6d9
@@ -2174,7 +2174,7 @@ tm/zig/feature/secrets/sekreto/sekreto.zig 1d2c38d51d6f
 tm/zig/feature/streaming.zig 05fa89649a72
 tm/zig/feature/support.zig 0151996e9aab
 tm/zig/feature/telemetry.zig e24fd23fb3d5
-tm/zig/feature/test.zig ea8e73ce04df
+tm/zig/feature/test.zig 7a51784f1a48
 tm/zig/feature/timeout.zig 098ad542880b
 tm/zig/feature/validate.zig 550283d9a299
 tm/zig/src/feature/README.md f623e5e15340

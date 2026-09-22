@@ -194,7 +194,7 @@ fun prepareQuery(ctx: Context): MutableMap<String, Any?> {
   for (item in Struct.items(reqmatch)) {
     val key = if (item[0] is String) item[0] as String else ""
     val v = item[1]
-    if (v != null && !containsStr(params, key)) {
+    if (v != null && "\$action" != key && !containsStr(params, key)) {
       out[key] = v
     }
   }

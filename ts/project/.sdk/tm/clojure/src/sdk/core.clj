@@ -502,18 +502,30 @@
         out (vs/jm)]
     (doseq [item (or (vs/items reqmatch) [])]
       (let [k (vs/getprop item 0) v (vs/getprop item 1)]
-        (when (and (some? v) (string? k) (not (contains? pset k)))
+        (when (and (some? v) (string? k) (not= "$action" k) (not (contains? pset k)))
           (.put ^java.util.Map out k v))))
     out))
+
+;; `$action` selects the point (see u-make-point); it is never an API field,
+;; so the body is a copy without it. The caller's map is left untouched.
+(defn- strip-action [reqdata]
+  (if (and (vs/ismap reqdata) (.containsKey ^java.util.Map reqdata "$action"))
+    (let [body (vs/jm)]
+      (doseq [item (or (vs/items reqdata) [])]
+        (let [k (vs/getprop item 0) v (vs/getprop item 1)]
+          (when (not= "$action" k) (.put ^java.util.Map body k v))))
+      body)
+    reqdata))
 
 (defn u-transform-request [ctx]
   (let [spec (oget ctx :spec) point (oget ctx :point)]
     (when spec (oset! spec :step "reqform"))
     (let [transform (to-map (vs/getprop point "transform"))]
-      (if (nil? transform) (oget ctx :reqdata)
-          (let [reqform (vs/getprop transform "req")]
-            (if (nil? reqform) (oget ctx :reqdata)
-                (vs/transform (vs/jm "reqdata" (oget ctx :reqdata)) reqform)))))))
+      (strip-action
+       (if (nil? transform) (oget ctx :reqdata)
+           (let [reqform (vs/getprop transform "req")]
+             (if (nil? reqform) (oget ctx :reqdata)
+                 (vs/transform (vs/jm "reqdata" (oget ctx :reqdata)) reqform))))))))
 
 (defn u-prepare-body [ctx]
   (if (= "data" (op-input (oget ctx :op))) (ucall ctx :transform-request) nil))

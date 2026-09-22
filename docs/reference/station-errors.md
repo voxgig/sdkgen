@@ -11,6 +11,15 @@ station library's own code list
 **29 codes**, and the `errors` section of station's conformance corpus
 pins the exact strings — known and unknown alike — in every language.
 
+Station's own documentation of these codes is a design document in
+that repository, not a reader-facing reference, so this page is the
+contract the generated SDKs implement against: the code list here and
+the strings in station's conformance corpus are the two normative
+sources, and a code that appears in one and not the other is a defect
+in whichever is behind. When station publishes a reader-facing
+reference for its error codes and configuration, this page and
+[use station](../how-to/use-station.md) will point to it.
+
 Five codes are **reserved for the proxy**, marked below: defined and
 corpus-pinned now so the catalog is stable across ports, but raised by
 nothing until the optional companion proxy ships. Solo-mode libraries

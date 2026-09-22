@@ -30,8 +30,9 @@ than acting on a project, and so runs where there is no project model.
 | `--dryrun` | `-y` | flag | off | Plan the work and log it, but write no files. |
 | `--only <items>` | — | string | everything | `package add` only: install a subset, as `<kind>:<name>` entries. |
 | `--alias <map>` | — | string | — | `package add` only: install under different names, as `<name>=<alias>` entries. |
-| `--force` | — | flag | off | `package update` only: overwrite locally-changed files, listing what it discarded. |
+| `--force` | — | flag | off | `package update`: overwrite locally-changed files, listing what it discarded. `<kind> remove`: delete forked, edited, stale and project-owned files too. |
 | `--no-fetch` | — | flag | off | `package update` only: skip the fetch and use the source already installed. |
+| `--delete-output` | — | flag | off | `target remove` only: also delete the generated output directory beside `.sdk/`. |
 
 `--only` and `--alias` are arguments to one *command*, not generator
 configuration — unlike `--debug` and `--dryrun`, which describe the
@@ -44,18 +45,18 @@ detail.
 
 ## Actions
 
-The verbs are built from the kind registry (`target`, `feature`, `docs`)
-plus `package` and `doctor`, so registering a new kind adds its `add`
-command with no dispatch code. Names may be comma-separated to add several at
-once.
+The verbs are built from the kind registry (`target`, `feature`, `edition`)
+plus `package` and `doctor`, so registering a new kind adds its `add` and
+`remove` commands with no dispatch code. Names may be comma-separated to
+add or remove several at once.
 
 ### `target add <ref>[,<ref>...]`
 
 Scaffold one or more language targets into `.sdk/`. This copies, for each
 target:
 
-- the target model (`.sdk/model/target/<name>.aontu`) and registers it
-  in `target-index.aontu`;
+- the target model (`.sdk/model/target/<name>.aon`) and registers it
+  in `target-index.aon`;
 - the generator components (`.sdk/src/cmp/<name>/`);
 - the templates (`.sdk/tm/<name>/`).
 
@@ -115,13 +116,13 @@ voxgig-sdkgen doctor
 ```
 
 It compares the three things `target add` owns and overwrites:
-`.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aontu`.
+`.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aon`.
 
 Six categories:
 
 | Category | Meaning |
 | --- | --- |
-| **forked** | A file in `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aontu`, differs from the scaffold. `target add` will silently revert it. |
+| **forked** | A file in `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aon`, differs from the scaffold. `target add` will silently revert it. |
 | **edited** | A template master in `.sdk/tm/**` differs — compared *after* applying the same substitutions `target add` applied, so placeholder replacement is not reported as an edit. |
 | **stale** | Present in the project, but `target add` would no longer write it. Orphaned output. |
 | **missing** | `target add` would write it and the project does not have it. |
@@ -134,14 +135,14 @@ applied and inconsistently, so most of what a naive diff reports is not an
 edit at all.
 
 An ALIASED target (`target add go~go2`) is exempt from the model-file
-comparison: the scaffold ships no `go2.aontu` to compare against, and
+comparison: the scaffold ships no `go2.aon` to compare against, and
 editing that file is how an alias is differentiated in the first place.
 
 ### `feature add <name>[,<name>...]`
 
 Scaffold one or more features into `.sdk/`. This copies the feature model
-(`.sdk/model/feature/<name>.aontu`), registers it in
-`feature-index.aontu`, and copies the per-target feature templates
+(`.sdk/model/feature/<name>.aon`), registers it in
+`feature-index.aon`, and copies the per-target feature templates
 (`.sdk/tm/<target>/src/feature/<name>/`) for every active target.
 
 ```bash
@@ -182,6 +183,51 @@ The summary defaults to `SUMMARY.md`, the static website to `docs/`, and
 the optional Slidev presentation to `presentation/`. See the
 [docgen configuration guide](https://github.com/voxgig/docgen#configure-the-model)
 for edition filters, local assets, authored pages, and CI.
+
+### `target remove`, `feature remove`, `edition remove`
+
+The opposite of `add`: delete what `add` wrote for an item, and nothing
+else.
+
+```bash
+voxgig-sdkgen target remove go
+voxgig-sdkgen feature remove log,audit
+voxgig-sdkgen edition remove summary
+voxgig-sdkgen -y target remove go           # list what would go, write nothing
+voxgig-sdkgen target remove go --delete-output
+```
+
+What goes, per kind:
+
+| Kind | Deleted |
+| --- | --- |
+| `target` | `src/cmp/<name>/`, `tm/<name>/`, `model/target/<name>.aon`, its line in `target-index.aon` |
+| `feature` | the feature's source in every target's `tm/<t>/` tree (found the way `feature add` finds it), `model/feature/<name>.aon`, its line in `feature-index.aon` |
+| `edition` | `src/cmp/edition/<name>/`, `tm/edition/<name>/`, `model/edition/<name>.aon`, its line in `edition-index.aon` |
+
+Before anything is deleted the item is compared with its source the way
+`doctor` compares it. A forked component, an edited template master, a
+stale file or a project-owned addition in a tree the item owns stops the
+whole removal and is listed; move any project decision into `.sdk/model/`
+first, or pass `--force` to delete those files too. An item whose source
+can no longer be found (a package that was uninstalled) cannot be
+compared, so it also needs `--force`.
+
+Three things `remove` deliberately leaves alone, and says so:
+
+- **Generated output.** `<name>/` beside `.sdk/` stays unless
+  `--delete-output` is passed: a retired port often wants its last
+  generated state kept in history rather than deleted in the same commit.
+  A target that generates out of tree (`output.path`) is never touched.
+- **The project's own declarations.** A `main: kit: target: <name>:` block
+  in `.sdk/model/sdk.aon` is the project's, not the toolchain's; `remove`
+  reports the file that still carries it.
+- **Cross-feature test suites.** After `feature remove`, `target add <t>`
+  re-applies each target's feature trim, which drops the suites that named
+  the removed feature.
+
+The `test` feature cannot be removed: every target's generated suite
+depends on it, and `target add` installs it unconditionally.
 
 ### `package add <pkg>[,<pkg>...]`
 
@@ -225,7 +271,7 @@ never a silent no-op.
 
 Validate a package you are **authoring**, before anyone installs it.
 Every other verb acts on a project; this one acts on a package, so it is
-the one command that runs where there is no `model/sdk.aontu` — an
+the one command that runs where there is no `model/sdk.aon` — an
 author's package root, which is the default `path`.
 
 ```bash
@@ -245,12 +291,12 @@ gate. What it checks:
 | `model-anchor-missing` | error | A definition with no `base: 'BASE'` line. The copy would record no provenance, so `package update` and `doctor` could never find its source. |
 | `model-slash-comment` | error | A `//` or `/* */` line, named by line number. Aontu takes `#` comments only, and a consumer's parser is configured strictly even though a bare `Aontu()` accepts them. |
 | `model-parse` | error | The definition does not compile. Says so explicitly when it compiles under a bare `Aontu()` and not the strict one. |
-| `model-key-missing` | error | `model/<kind>/<name>.aontu` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
+| `model-key-missing` | error | `model/<kind>/<name>.aon` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
 | `model-schema` | error | It does not unify with the base schema: a non-defaulted key is missing (`ext`, `comment.line`, `module.name`, a feature's `title`). This is what a consumer compiles. |
 | `target-publish-pinned` | error | The target model sets a publication value the *project* owns, so the project can no longer set it (concrete-vs-concrete is a conflict) — and the failure would name the project's file. |
 | `feature-deps-misplaced` | warn | Dependencies under `feature.<f>.target.<t>.deps`, which nothing reads. They go directly under the feature: `deps: <target>: {…}`. |
 | `feature-source-undelivered` | warn | `targetsSupported` claims a target for which no feature source can be found. |
-| `feature-source-unrecognised` | warn | A file named like feature source (`<name>_feature.<ext>`, `<Name>Feature.<ext>`, a directory) that no `model/feature/<name>.aontu` declares — so the trim cannot recognise it and every project receives it whatever its model selects. |
+| `feature-source-unrecognised` | warn | A file named like feature source (`<name>_feature.<ext>`, `<Name>Feature.<ext>`, a directory) that no `model/feature/<name>.aon` declares — so the trim cannot recognise it and every project receives it whatever its model selects. |
 
 The blind spot is deliberate: a bare `<name>.<ext>` inside a `feature`
 directory (rust's `retry.rs`) is written exactly like shared machinery
@@ -311,7 +357,7 @@ the project distinguishes them:
 ```
 @acme/sdkgen-iot: 1 file(s) differ from the installed source, so updating
 would overwrite them:
-  model/target/iot-go.aontu
+  model/target/iot-go.aon
 
   This means one of two things, and nothing recorded in the project tells
   them apart:

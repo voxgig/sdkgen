@@ -93,9 +93,14 @@ private func testBuildArgs(_ ctx: Context, _ op: Operation, _ args: VMap?) -> Va
     }
   }
 
-  let paramsPath = getpath(point, jtp("args", "params"))
-  let reqdParams = select(paramsPath, .map(vm(("reqd", .bool(true)))))
-  let reqd = transform(reqdParams, jtp("`$EACH`", "", "`$KEY.name`"))
+  // Path AND query: a path-only read misses a query-addressed record
+  // (e.g. GET /result?trace_id=), which has no path param at all.
+  let reqdArgs = VList()
+  for kind in ["params", "query"] {
+    let argsPath = getpath(point, jtp("args", kind))
+    reqdArgs.items.append(contentsOf: select(argsPath, .map(vm(("reqd", .bool(true))))).asList?.items ?? [])
+  }
+  let reqd = transform(.list(reqdArgs), jtp("`$EACH`", "", "`$KEY.name`"))
 
   let qand = VList()
   let q = VMap()
@@ -206,17 +211,15 @@ public final class TestFeature: BaseFeature {
         }
         let args = testBuildArgs(ctx2, op, updateMatch)
         let found = select(.map(entmap), args)
-        var ent = getelem(found, .int(0))
+        let ent = getelem(found, .int(0))
         if isNil(ent) {
-          for (_, e) in entmap.entries where e.isMap { ent = e; break }
-        }
-        if isNil(ent) {
+          // update miss: 404, never another record
           let extra = VMap()
           extra.entries["statusText"] = .string("Not found")
           return testRespond(ctx2, 404, .noval, extra)
         }
-        if let entm = ent.asMap {
-          for (k, v) in ctx2.reqdata.entries { entm.entries[k] = v }
+        if ent.isMap {
+          _ = merge(.list(VList([ent, .map(ctx2.reqdata)])))
         }
         delprop(ent, .string("$KEY"))
         return testRespond(ctx2, 200, clone(ent), nil)

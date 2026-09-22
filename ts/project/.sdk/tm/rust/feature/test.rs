@@ -80,6 +80,61 @@ fn resolve_match(ctx: &Rc<Context>, explicit: &Value) -> Value {
     Value::empty_map()
 }
 
+fn point_terminal(p: &Value) -> bool {
+    match getp(p, "parts") {
+        Value::List(l) => match l.borrow().last() {
+            Some(Value::Str(s)) => s.starts_with('{'),
+            _ => false,
+        },
+        _ => false,
+    }
+}
+
+fn point_depth(p: &Value) -> usize {
+    match getp(p, "parts") {
+        Value::List(l) => l.borrow().len(),
+        _ => 0,
+    }
+}
+
+// The entity's own endpoint: a terminal `{param}` marks a record route, and
+// among equals the shallower path wins (the same rule as make_point).
+fn pick_point(points: &Value) -> Value {
+    let list: Vec<Value> = match points {
+        Value::List(l) => l.borrow().clone(),
+        _ => return Value::Noval,
+    };
+    let mut point = match list.first() {
+        Some(p) => p.clone(),
+        None => return Value::Noval,
+    };
+    for cand in list.iter().skip(1) {
+        if point_terminal(cand) != point_terminal(&point) {
+            if point_terminal(cand) {
+                point = cand.clone();
+            }
+        } else if point_depth(cand) < point_depth(&point) {
+            point = cand.clone();
+        }
+    }
+    point
+}
+
+fn reqd_names(point: &Value, kind: &str) -> Value {
+    let args_path = crate::core::helpers::getpath(&["args", kind], point);
+    let reqd_args = vs::select(&args_path, &jo(vec![("reqd", Value::Bool(true))]));
+    vs::transform(
+        &reqd_args,
+        &ja(vec![
+            Value::str("`$EACH`"),
+            Value::str(""),
+            Value::str("`$KEY.name`"),
+        ]),
+        None,
+    )
+    .unwrap_or_else(|_| Value::empty_list())
+}
+
 fn build_args(ctx: &Rc<Context>, args: &Value) -> Value {
     let op = ctx.op.borrow().clone();
     let opname = op.name.clone();
@@ -88,26 +143,16 @@ fn build_args(ctx: &Rc<Context>, args: &Value) -> Value {
         None => op.entity.clone(),
     };
 
-    // Get last point from config.
     let points = crate::core::helpers::getpath(
         &["entity", &entname, "op", &opname, "points"],
         &ctx.config.borrow(),
     );
-    let point = vs::get_elem(&points, &Value::Num(-1.0), Value::Noval);
+    let point = pick_point(&points);
 
-    // Get required params.
-    let params_path = crate::core::helpers::getpath(&["args", "params"], &point);
-    let reqd_params = vs::select(&params_path, &jo(vec![("reqd", Value::Bool(true))]));
-    let reqd = vs::transform(
-        &reqd_params,
-        &ja(vec![
-            Value::str("`$EACH`"),
-            Value::str(""),
-            Value::str("`$KEY.name`"),
-        ]),
-        None,
-    )
-    .unwrap_or_else(|_| Value::empty_list());
+    // Path AND query: a path-only read misses a query-addressed record
+    // (e.g. GET /result?trace_id=), which has no path param at all.
+    let reqd_params = reqd_names(&point, "params");
+    let reqd_query = reqd_names(&point, "query");
 
     let qand = Value::empty_list();
     let q = jo(vec![("`$AND`", qand.clone())]);
@@ -116,8 +161,8 @@ fn build_args(ctx: &Rc<Context>, args: &Value) -> Value {
         let keys = vs::keysof_vec(args);
         for key in keys {
             let is_id = key == "id";
-            let selected = vs::select(&reqd, &Value::str(key.clone()));
-            let is_reqd = !vs::is_empty(&selected);
+            let is_reqd = !vs::is_empty(&vs::select(&reqd_params, &Value::str(key.clone())))
+                || !vs::is_empty(&vs::select(&reqd_query, &Value::str(key.clone())));
 
             if is_id || is_reqd {
                 let v = ctx.util().param(ctx, &Value::str(key.clone()));
@@ -215,28 +260,16 @@ fn test_fetch(
             };
             let args = build_args(ctx, &update_match);
             let found = vs::select(&entmap, &args);
-            let mut ent = vs::get_elem(&found, &Value::Num(0.0), Value::Noval);
-            if (ent.is_noval() || ent.is_null()) && vs::size(&entmap) > 0 {
-                // Fall back to any entity in the fixture.
-                for (_k, e) in vs::items_vec(&entmap) {
-                    if let Value::Map(_) = e {
-                        ent = e;
-                        break;
-                    }
-                }
-            }
+            let ent = vs::get_elem(&found, &Value::Num(0.0), Value::Noval);
             if ent.is_noval() || ent.is_null() {
+                // update miss: 404, never another record
                 return Ok(respond(ctx, 404,
                     Value::Noval,
                     vec![("statusText", Value::str("Not found"))],
                 ));
             }
-            if let Value::Map(_) = &ent {
-                if let Value::Map(rm) = &reqdata {
-                    for (k, v) in rm.borrow().iter() {
-                        setp(&ent, k, v.clone());
-                    }
-                }
+            if let (Value::Map(_), Value::Map(_)) = (&ent, &reqdata) {
+                vs::merge(&Value::list(vec![ent.clone(), reqdata.clone()]), None);
             }
             vs::del_prop(ent.clone(), &Value::str("$KEY"));
             Ok(respond(ctx, 200, vs::clone(&ent), vec![]))

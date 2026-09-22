@@ -1209,7 +1209,8 @@ defmodule ProjectName.Utility do
     out = S.jm([])
 
     Enum.each(H.entries(reqmatch), fn {key, val} ->
-      if val != nil and is_binary(key) and not Enum.member?(param_strs, key) do
+      if val != nil and is_binary(key) and key != "$action" and
+           not Enum.member?(param_strs, key) do
         S.setprop(out, key, val)
       end
     end)
@@ -1446,6 +1447,23 @@ defmodule ProjectName.Utility do
 
   # ---- transform_* ---------------------------------------------------------
 
+  # `$action` selects the point (see make_point_impl); it is never an API
+  # field, so the body is a copy without it. The caller's map is left
+  # untouched.
+  defp strip_action(reqdata) do
+    if S.ismap(reqdata) and S.haskey(reqdata, "$action") do
+      body = S.jm([])
+
+      Enum.each(H.entries(reqdata), fn {key, val} ->
+        if key != "$action", do: S.setprop(body, key, val)
+      end)
+
+      body
+    else
+      reqdata
+    end
+  end
+
   def transform_request_impl(ctx) do
     spec = S.getprop(ctx, "spec")
     point = S.getprop(ctx, "point")
@@ -1453,17 +1471,20 @@ defmodule ProjectName.Utility do
 
     transform = H.to_map(S.getprop(point, "transform"))
 
-    if transform == nil do
-      S.getprop(ctx, "reqdata")
-    else
-      reqform = S.getprop(transform, "req")
-
-      if reqform == nil do
+    reqdata =
+      if transform == nil do
         S.getprop(ctx, "reqdata")
       else
-        S.transform(S.jm(["reqdata", S.getprop(ctx, "reqdata")]), reqform)
+        reqform = S.getprop(transform, "req")
+
+        if reqform == nil do
+          S.getprop(ctx, "reqdata")
+        else
+          S.transform(S.jm(["reqdata", S.getprop(ctx, "reqdata")]), reqform)
+        end
       end
-    end
+
+    strip_action(reqdata)
   end
 
   def transform_response_impl(ctx) do

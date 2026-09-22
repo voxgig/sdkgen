@@ -29,7 +29,7 @@ broke toolchain upgrades in three ways:
    generator exits 0; the break only surfaces at `go build`/parse time.
 
 2. **Conflict-marker injection.** When a generated/index file is legitimately
-   changed out-of-band (e.g. editing `model/target/target-index.aontu` to drop a
+   changed out-of-band (e.g. editing `model/target/target-index.aon` to drop a
    target) it diverges from the base, and diff3 writes literal `<<<<<<<` /
    `>>>>>>>` markers **into the file**. Generation still succeeds; the corrupted
    file then blows up the next consumer (aontu parse error, compile error).
@@ -51,7 +51,7 @@ enterprise-feature work produced non-compiling Go (`undefined: Gon2`,
 - **Regeneration is safe and idempotent.** No need to wipe output dirs or clear
   `.jostraca` before regenerating to dislodge stale merges — overwrite handles it.
 - **Adding/removing a target is clean.** `target add` overwrites the target
-  files and rewrites `target-index.aontu` without diff3 markers. (A dedicated
+  files and rewrites `target-index.aon` without diff3 markers. (A dedicated
   `target remove` is still worth adding so the index is never hand-edited.)
 - **If a repo ever needs a genuinely hand-owned file**, protect *that path*
   specifically (per-file `existing.txt` policy / guarded regions) rather than

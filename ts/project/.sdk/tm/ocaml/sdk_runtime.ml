@@ -413,7 +413,7 @@ let prepare_query_util (ctx : ctx) : value =
   let out = empty_map () in
   List.iter (fun k ->
       let v = getp reqmatch k in
-      if not (is_noval v) && not (contains_param k) then setp out k v)
+      if not (is_noval v) && k <> "$action" && not (contains_param k) then setp out k v)
     (keysof reqmatch);
   out
 
@@ -555,14 +555,27 @@ let prepare_auth_util = Sdk_prepare_auth.prepare_auth_util
 
 (* ----- transforms / result helpers ----- *)
 
+(* `$action` selects the point (see make_point_util); it is never an API
+   field, so the body is a copy without it. The caller's map is left
+   untouched. *)
+let strip_action (reqdata : value) : value =
+  match reqdata with
+  | Map _ when List.mem "$action" (keysof reqdata) ->
+    let body = empty_map () in
+    List.iter (fun k -> if k <> "$action" then setp body k (getp reqdata k))
+      (keysof reqdata);
+    body
+  | _ -> reqdata
+
 let transform_request_util (ctx : ctx) : value =
   (match ctx.c_spec with Some s -> s.sp_step <- "reqform" | None -> ());
-  match to_map (getp ctx.c_point "transform") with
-  | Map _ as tr ->
-    (match getp tr "req" with
-     | Noval -> ctx.c_reqdata
-     | reqform -> transform (jo [("reqdata", ctx.c_reqdata)]) reqform)
-  | _ -> ctx.c_reqdata
+  strip_action
+    (match to_map (getp ctx.c_point "transform") with
+     | Map _ as tr ->
+       (match getp tr "req" with
+        | Noval -> ctx.c_reqdata
+        | reqform -> transform (jo [("reqdata", ctx.c_reqdata)]) reqform)
+     | _ -> ctx.c_reqdata)
 
 let transform_response_util (ctx : ctx) : value =
   (match ctx.c_spec with Some s -> s.sp_step <- "resform" | None -> ());

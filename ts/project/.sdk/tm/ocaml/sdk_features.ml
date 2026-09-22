@@ -1408,21 +1408,43 @@ let test_feature () : feature =
     let out = jo [("status", vint_of status); ("statusText", Str "OK"); ("json", json_thunk (envelope ctx data)); ("body", Str "not-used")] in
     (match extra with Some (Map _ as e) -> List.iter (fun k -> setp out k (getp e k)) (keysof e) | _ -> ());
     (out, None) in
+  let point_terminal p =
+    match getp p "parts" with
+    | List r -> (match List.rev !r with Str s :: _ -> String.length s > 0 && s.[0] = '{' | _ -> false)
+    | _ -> false in
+  let point_depth p = match getp p "parts" with List r -> List.length !r | _ -> 0 in
+  (* The entity's own endpoint: a terminal `{param}` marks a record route, and
+     among equals the shallower path wins (the same rule as make_point). *)
+  let pick_point points =
+    match points with
+    | List r ->
+      (match !r with
+       | [] -> Noval
+       | first :: rest ->
+         List.fold_left (fun point cand ->
+             if point_terminal cand <> point_terminal point then (if point_terminal cand then cand else point)
+             else if point_depth cand < point_depth point then cand
+             else point) first rest)
+    | _ -> Noval in
+  let reqd_names point kind =
+    let reqd_args = select (getpath_s point ("args." ^ kind)) (jo [("reqd", Bool true)]) in
+    transform reqd_args (ja [Str "`$EACH`"; Str ""; Str "`$KEY.name`"]) in
   let build_args ctx (op : operation) args =
     let opname = op.op_name in
     let entname = match ctx.c_entity with Some e -> e.e_name | None -> "_" in
     let points = getpath_s ctx.c_config ("entity." ^ entname ^ ".op." ^ opname ^ ".points") in
-    let point = getelem points (Num (-1.0)) in
-    let params_path = getpath_s point "args.params" in
-    let reqd_params = select params_path (jo [("reqd", Bool true)]) in
-    let reqd = transform reqd_params (ja [Str "`$EACH`"; Str ""; Str "`$KEY.name`"]) in
+    let point = pick_point points in
+    (* Path AND query: a path-only read misses a query-addressed record
+       (e.g. GET /result?trace_id=), which has no path param at all. *)
+    let reqd_params = reqd_names point "params" in
+    let reqd_query = reqd_names point "query" in
     let qand = ref [] in
     (match args with
      | Map _ ->
        List.iter (fun key ->
            let is_id = key = "id" in
-           let selected = select reqd (Str key) in
-           let is_reqd = not (isempty selected) in
+           let is_reqd = not (isempty (select reqd_params (Str key)))
+                         || not (isempty (select reqd_query (Str key))) in
            if is_id || is_reqd then begin
              let v = (cu ctx).u_param ctx (Str key) in
              let ka = (match op.op_alias with Map _ -> (match getp op.op_alias key with Str s -> Some s | _ -> None) | _ -> None) in
@@ -1463,18 +1485,22 @@ let test_feature () : feature =
          end
        | "update" ->
          let update_match = empty_map () in
-         (match fctx.c_reqdata with Map _ -> (match getp fctx.c_reqdata "id" with Noval -> () | v -> setp update_match "id" v) | _ -> ());
+         (match fctx.c_reqdata with
+          | Map _ ->
+            (match getp fctx.c_reqdata "id" with Noval -> () | v -> setp update_match "id" v);
+            (match getp op.op_alias "id" with
+             | Str alias_id -> (match getp fctx.c_reqdata alias_id with Noval -> () | v -> setp update_match alias_id v)
+             | _ -> ())
+          | _ -> ());
          let update_match = if size update_match > 0 then update_match else resolve_match fctx (empty_map ()) in
          let args = build_args fctx op update_match in
-         let ent = ref (getelem (select entmap args) (Num 0.0)) in
-         (if is_nullish !ent then match entmap with
-           | Map m -> (try (match List.find (fun (_, v) -> match v with Map _ -> true | _ -> false) m.entries with (_, v) -> ent := v) with Not_found -> ())
-           | _ -> ());
-         if is_nullish !ent then respond fctx 404 Noval (Some (jo [("statusText", Str "Not found")]))
+         let ent = getelem (select entmap args) (Num 0.0) in
+         (* update miss: 404, never another record *)
+         if is_nullish ent then respond fctx 404 Noval (Some (jo [("statusText", Str "Not found")]))
          else begin
-           (match !ent with Map _ -> (match fctx.c_reqdata with Map _ -> List.iter (fun k -> setp !ent k (getp fctx.c_reqdata k)) (keysof fctx.c_reqdata) | _ -> ()) | _ -> ());
-           ignore (delprop !ent (Str "$KEY"));
-           respond fctx 200 (clone !ent) None
+           (match ent, fctx.c_reqdata with Map _, Map _ -> ignore (merge (ja [ent; fctx.c_reqdata])) | _ -> ());
+           ignore (delprop ent (Str "$KEY"));
+           respond fctx 200 (clone ent) None
          end
        | "remove" ->
          let args = build_args fctx op (resolve_match fctx fctx.c_reqmatch) in

@@ -652,6 +652,66 @@ describe('feature:paging', () => {
     strictEqual(res.result.paging.nextPage, 2)
     strictEqual(res.result.paging.totalCount, 5)
   })
+
+  test('reads snake_case body signals and writes the record back into ctrl', async () => {
+    let calls = 0
+    const rec = recordingServer(() => 1 === ++calls ?
+      makeResponse(200, { items: [1], has_more: true, next_cursor: 'c2' }) :
+      makeResponse(200, { items: [2], has_more: false }))
+    const h = makeClient({ features: [{ name: 'paging' }], server: rec.server })
+    const ctrl: any = {}
+    const res = await h.op({ op: 'list', path: '/widget', ctrl })
+    strictEqual(res.result.paging.hasMore, true)
+    strictEqual(res.result.paging.cursor, 'c2')
+    strictEqual(ctrl.paging.hasMore, true, 'record written back into ctrl')
+    strictEqual(ctrl.paging.cursor, 'c2')
+    strictEqual(h.client._paging.last, res.result.paging)
+
+    // Reusing the ctrl continues from the cursor.
+    await h.op({ op: 'list', path: '/widget', ctrl })
+    ok(/[?&]cursor=c2(&|$)/.test(rec.calls[1].url), 'cursor sent: ' + rec.calls[1].url)
+    strictEqual(ctrl.paging.hasMore, false)
+    strictEqual(ctrl.paging.cursor, undefined)
+  })
+
+  test('continues from the written-back next page when there is no cursor', async () => {
+    let calls = 0
+    const rec = recordingServer(() => 1 === ++calls ?
+      makeResponse(200, { items: [1], next_page: 2 }, { 'x-page': '1' }) :
+      makeResponse(200, { items: [2] }, { 'x-page': '2' }))
+    const h = makeClient({ features: [{ name: 'paging' }], server: rec.server })
+    const ctrl: any = {}
+    await h.op({ op: 'list', path: '/widget', ctrl })
+    strictEqual(ctrl.paging.page, 1)
+    strictEqual(ctrl.paging.nextPage, 2)
+    strictEqual(ctrl.paging.hasMore, true, 'inferred from next_page')
+    await h.op({ op: 'list', path: '/widget', ctrl })
+    ok(/[?&]page=2(&|$)/.test(rec.calls[1].url), 'next page sent: ' + rec.calls[1].url)
+    strictEqual(ctrl.paging.hasMore, false)
+  })
+
+  test('camelCase wins when both spellings are present', async () => {
+    const rec = recordingServer(() =>
+      makeResponse(200, { has_more: true, hasMore: false, next_cursor: 's', nextCursor: 'c' }))
+    const h = makeClient({ features: [{ name: 'paging' }], server: rec.server })
+    const res = await h.op({ op: 'list', path: '/widget' })
+    strictEqual(res.result.paging.hasMore, false)
+    strictEqual(res.result.paging.cursor, 'c')
+  })
+
+  test('inactive feature leaves the request and ctrl untouched', async () => {
+    const rec = recordingServer(() => makeResponse(200, { items: [], has_more: true }))
+    const h = makeClient({
+      features: [{ name: 'paging', options: { active: false } }],
+      server: rec.server,
+    })
+    const ctrl: any = {}
+    const res = await h.op({ op: 'list', path: '/widget', ctrl })
+    ok(!/[?&]page=/.test(rec.calls[0].url), 'no page param: ' + rec.calls[0].url)
+    strictEqual(res.result.paging, undefined)
+    deepStrictEqual(ctrl, {})
+    strictEqual(h.client._paging, undefined)
+  })
 })
 
 

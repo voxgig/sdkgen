@@ -28,7 +28,8 @@ const action_1 = require("./action");
 const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
 const CMD_MAP = {
-    add: cmd_target_add
+    add: cmd_target_add,
+    remove: cmd_target_remove,
 };
 async function action_target(args, actx) {
     const cmdname = args[1];
@@ -40,6 +41,10 @@ async function action_target(args, actx) {
 }
 async function cmd_target_add(args, actx) {
     return target_add((0, action_1.parseAddNames)(args), actx);
+}
+// Loaded on use: remove reaches doctor, and doctor reaches this module.
+async function cmd_target_remove(args, actx) {
+    return require('./remove').kind_remove('target', (0, action_1.parseAddNames)(args), actx);
 }
 // Code API
 async function target_add(targets, actx) {

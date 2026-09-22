@@ -4,8 +4,8 @@
 # stamps page/limit (or a cursor) into the request query; on the way back
 # (PreResult) it reads the server's pagination signals - a Link rel="next"
 # header, X-Page/X-Next-Page/X-Total-Count headers, or next/cursor/
-# nextCursor/hasMore fields in the body - and records them on
-# result.paging. A per-call ctrl paging value (page or cursor) takes
+# nextCursor/hasMore fields in the body (snake_case forms too) - and records
+# them on result.paging and the caller's ctrl paging. A per-call ctrl paging value (page or cursor) takes
 # priority. Parameter names ("pageParam", "limitParam", "cursorParam"),
 # "startPage" (default 1) and page size ("limit") are configurable.
 
@@ -76,8 +76,11 @@ sub PreRequest {
     $spec->{query}{$cursor_param} = $paging->{cursor};
   }
   elsif (!defined $spec->{query}{$page_param}) {
-    $spec->{query}{$page_param} = defined $paging->{page}
-      ? $paging->{page}
+    # A record written back by PreResult holds the page just fetched as
+    # "page" and the one to fetch as "nextPage", so nextPage wins.
+    my $page = defined $paging->{nextPage} ? $paging->{nextPage} : $paging->{page};
+    $spec->{query}{$page_param} = defined $page
+      ? $page
       : (defined $self->{options}{startPage} ? $self->{options}{startPage} : 1);
   }
 
@@ -186,15 +189,27 @@ sub PreResult {
     }
   }
 
-  # Body-level cursors.
+  # Body-level signals; snake_case forms are read first so camelCase wins.
   if (Voxgig::Struct::ismap($body)) {
     my $bnext = ProjectNameHelpers::gp($body, 'next');
     $paging->{next} = defined $paging->{next} ? $paging->{next} : $bnext
       if defined $bnext;
+    my $bsnakecursor = ProjectNameHelpers::gp($body, 'next_cursor');
+    $paging->{cursor} = $bsnakecursor if defined $bsnakecursor;
     my $bcursor = ProjectNameHelpers::gp($body, 'cursor');
     $paging->{cursor} = $bcursor if defined $bcursor;
     my $bnextcursor = ProjectNameHelpers::gp($body, 'nextCursor');
     $paging->{cursor} = $bnextcursor if defined $bnextcursor;
+    unless (defined $paging->{nextPage}) {
+      my $np = ProjectNameHelpers::gp($body, 'nextPage');
+      $np = ProjectNameHelpers::gp($body, 'next_page') unless defined $np;
+      $paging->{nextPage} = $np if defined $np && !ref($np);
+    }
+    my $bsnakemore = $body->{has_more};
+    if (ProjectNameHelpers::is_true($bsnakemore) || ProjectNameHelpers::is_false($bsnakemore)) {
+      $paging->{hasMore} = ProjectNameHelpers::is_true($bsnakemore) ? 1 : 0;
+      $explicit_more = 1;
+    }
     my $bhasmore = $body->{hasMore};
     if (ProjectNameHelpers::is_true($bhasmore) || ProjectNameHelpers::is_false($bhasmore)) {
       $paging->{hasMore} = ProjectNameHelpers::is_true($bhasmore) ? 1 : 0;
@@ -214,6 +229,17 @@ sub PreResult {
   }
 
   $result->{paging} = $paging;
+
+  if ($ctx->{ctrl}) {
+    # The Context shares the caller's paging hash by reference, so refill it
+    # in place; a fresh hash on ctrl never reaches the caller.
+    if (Voxgig::Struct::ismap($ctx->{ctrl}{paging})) {
+      %{ $ctx->{ctrl}{paging} } = %$paging;
+    }
+    else {
+      $ctx->{ctrl}{paging} = $paging;
+    }
+  }
 
   $self->{client}{_paging} = { 'last' => $paging };
   return;

@@ -57,7 +57,8 @@ import { BUNDLED, resolveSource, registerInstalled } from './resolve'
 
 
 const CMD_MAP: any = {
-  add: cmd_target_add
+  add: cmd_target_add,
+  remove: cmd_target_remove,
 }
 
 
@@ -77,6 +78,12 @@ async function action_target(args: string[], actx: ActionContext): Promise<Actio
 
 async function cmd_target_add(args: string[], actx: ActionContext): Promise<ActionResult> {
   return target_add(parseAddNames(args), actx)
+}
+
+
+// Loaded on use: remove reaches doctor, and doctor reaches this module.
+async function cmd_target_remove(args: string[], actx: ActionContext): Promise<ActionResult> {
+  return require('./remove').kind_remove('target', parseAddNames(args), actx)
 }
 
 

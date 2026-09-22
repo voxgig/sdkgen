@@ -79,7 +79,7 @@ object PrepareQuery {
       val item = it.next()
       val key = item.get(0) match { case s: String => s; case _ => "" }
       val v = item.get(1)
-      if (v != null && !containsStr(params, key)) out.put(key, v)
+      if (v != null && "$action" != key && !containsStr(params, key)) out.put(key, v)
     }
     out
   }

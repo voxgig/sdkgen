@@ -1,7 +1,7 @@
-# Reference: the model schema (`.aontu`)
+# Reference: the model schema (`.aon`)
 
 The **model** is the single structured object that drives generation. It
-is assembled by `aontu` from several `.aontu` fragments and constrained
+is assembled by `aontu` from several `.aon` fragments and constrained
 by the base schema in [`ts/model/sdkgen.aon`](../../ts/model/sdkgen.aon).
 
 A model is the unification of:
@@ -37,9 +37,9 @@ schema facts come from the resolved specification supplied by Apidef;
 points contain no embedded JSON contracts. Regenerate older API models
 before using these templates.
 
-## `.aontu` / aontu syntax primer
+## `.aon` / aontu syntax primer
 
-`.aontu` is a relaxed JSON; `aontu` adds unification semantics:
+`.aon` is a relaxed JSON; `aontu` adds unification semantics:
 
 | Syntax | Meaning |
 | --- | --- |
@@ -48,7 +48,7 @@ before using these templates.
 | `*default \| type` | A default value, unified against a type (e.g. `*true \| boolean`). |
 | `name: key()` | Bind the field to the map key (so `feature: log: {}` gets `name: 'log'`). |
 | `'$$name$$'` | Interpolate the model `name` into a string. |
-| `@"file.aontu"` | Include another fragment (how index files work). |
+| `@"file.aon"` | Include another fragment (how index files work). |
 | `x: .y` | Reference another path's value (e.g. `deps: ts: .js`). |
 
 ## Top level
@@ -75,9 +75,9 @@ before using these templates.
 ## What a project declares about ITSELF
 
 `target add` overwrites `.sdk/src/cmp/**`, `.sdk/tm/**` and
-`.sdk/model/target/<t>.aontu`, and `generate` overwrites the SDK source.
+`.sdk/model/target/<t>.aon`, and `generate` overwrites the SDK source.
 So anything a project wants to say about itself has to be said in the
-project's OWN model (`.sdk/model/sdk.aontu`) — a hand-edit anywhere else
+project's OWN model (`.sdk/model/sdk.aon`) — a hand-edit anywhere else
 is reverted on the next resync, silently. These are the keys that exist
 for that purpose:
 
@@ -133,7 +133,7 @@ main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com
 
 ## Provenance: where a copied item came from
 
-Every copied `model/<kind>/<name>.aontu` records its own origin. There is
+Every copied `model/<kind>/<name>.aon` records its own origin. There is
 no lockfile and no second record — the model **is** the record, which is
 why nothing can disagree with it.
 
@@ -202,7 +202,7 @@ files in `ts/project/.sdk/model/target/`:
 | `deps.<dep>.version` | string | `'*'` | Version constraint. |
 | `deps.<dep>.kind` | string | `'prod'` | Manifest sections. Target-defined, and a COMMA-SEPARATED LIST where a package belongs in two (`'peer,dev'`) — the map is keyed by package name, so it cannot be declared twice. |
 
-Example (`ts/project/.sdk/model/target/ts.aontu`):
+Example (`ts/project/.sdk/model/target/ts.aon`):
 
 ```jsonic
 main: kit: target: ts: {
@@ -394,7 +394,7 @@ winning, and a second declaration with a different version is reported
 rather than silently dropped — a duplicate key is a hard parse error in
 `go.mod` and `Cargo.toml`, and silently last-wins in `package.json`.
 
-Example (`ts/project/.sdk/model/feature/log.aontu`):
+Example (`ts/project/.sdk/model/feature/log.aon`):
 
 ```jsonic
 main: kit: feature: log: {
@@ -489,14 +489,14 @@ declares no security scheme), among others. See
 
 ## Index files
 
-`feature-index.aontu` and `target-index.aontu` are plain include lists.
-`feature add` / `target add` append `@"<name>.aontu"` lines (idempotently
+`feature-index.aon` and `target-index.aon` are plain include lists.
+`feature add` / `target add` append `@"<name>.aon"` lines (idempotently
 — a name already present is not added again):
 
 ```jsonic
 # Features
-@"test.aontu"
-@"log.aontu"
+@"test.aon"
+@"log.aon"
 ```
 
 ## See also

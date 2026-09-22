@@ -35,7 +35,7 @@ ADR-NNN**, so the reasoning that led there stays readable.
 ### Context
 
 sdkgen generates from a **model**, not from a spec. The pipeline is
-`OpenAPI → apidef → model (.aontu) → aontu → jostraca → SDK source`, and
+`OpenAPI → apidef → model (.aon) → aontu → jostraca → SDK source`, and
 sdkgen enters at the model. That boundary has been quietly under
 pressure from both ends.
 

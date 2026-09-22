@@ -56,7 +56,8 @@ npm install @voxgig/sdkgen
 This package is normally consumed through a scaffolded project (created
 with `create-sdkgen`) rather than installed directly. It provides:
 
-- the **`voxgig-sdkgen`** CLI (`target add`, `feature add`);
+- the **`voxgig-sdkgen`** CLI (`target add`, `feature add`, and their
+  `remove` opposites);
 - the **generation engine** (`SdkGen.makeBuild`, used by `@voxgig/model`);
 - the **component toolkit** that per-language generators are written
   against.

@@ -17,7 +17,8 @@ const junk_1 = require("../helpers/junk");
 const kind_1 = require("./kind");
 const action_1 = require("./action");
 const CMD_MAP = {
-    add: cmd_feature_add
+    add: cmd_feature_add,
+    remove: cmd_feature_remove,
 };
 const BASE = 'node_modules/@voxgig/sdkgen';
 // The `.sdk` folder a bundled feature comes from — the value recorded as its
@@ -35,6 +36,9 @@ async function action_feature(args, actx) {
 }
 async function cmd_feature_add(args, actx) {
     return feature_add((0, action_1.parseAddNames)(args), actx);
+}
+async function cmd_feature_remove(args, actx) {
+    return require('./remove').kind_remove('feature', (0, action_1.parseAddNames)(args), actx);
 }
 async function feature_add(features, actx) {
     // Reuse the caller's Jostraca instance so feature generation honours the

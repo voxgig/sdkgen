@@ -160,20 +160,13 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
         }
         val args = buildArgs(ctx, op, updateMatch)
         val found = Struct.select(entmap, args)
-        var ent = Struct.getelem(found, 0, null)
+        val ent = Struct.getelem(found, 0, null)
         if (ent == null) {
-          for (e in entmap.values) {
-            if (e is MutableMap<*, *>) {
-              ent = e
-              break
-            }
-          }
-        }
-        if (ent == null) {
+          // update miss: 404, never another record
           return respond(ctx, 404, null, extra("statusText", "Not found"))
         }
         if (ent is MutableMap<*, *>) {
-          (ent as MutableMap<String, Any?>).putAll(reqdata)
+          Struct.merge(Struct.jt(ent, reqdata))
         }
         Struct.delprop(ent, "\$KEY")
         val out = Struct.clone(ent)
@@ -320,10 +313,14 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
       }
     }
 
-    // Get required params.
-    val paramsPath = Struct.getpath(point, listOf("args", "params"))
-    val reqdParams = Struct.select(paramsPath, Struct.jm("reqd", true))
-    val reqd = Struct.transform(reqdParams, Struct.jt("`\$EACH`", "", "`\$KEY.name`"))
+    // Path AND query: a path-only read misses a query-addressed record
+    // (e.g. GET /result?trace_id=), which has no path param at all.
+    val reqdArgs = Struct.jt()
+    for (kind in listOf("params", "query")) {
+      val argsPath = Struct.getpath(point, listOf("args", kind))
+      reqdArgs.addAll(Struct.select(argsPath, Struct.jm("reqd", true)))
+    }
+    val reqd = Struct.transform(reqdArgs, Struct.jt("`\$EACH`", "", "`\$KEY.name`"))
 
     val qand = Struct.jt()
     val q = Struct.jm("`\$AND`", qand)

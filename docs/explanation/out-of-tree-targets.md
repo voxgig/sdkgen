@@ -80,7 +80,7 @@ declares `output: adopt: true`.
 ## What a consumer project has to declare
 
 ```jsonic
-# .sdk/model/sdk.aontu
+# .sdk/model/sdk.aon
 main: kit: target: 'seneca-provider': output: {
   path: '../../seneca/seneca-acme-provider'
   repo: 'senecajs/seneca-acme-provider'
