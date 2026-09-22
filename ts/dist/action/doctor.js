@@ -167,10 +167,8 @@ async function doctor(actx, scope, selected) {
             if ('edition' === kind) {
                 checkEdition(actx, source, report);
             }
-            // Only an ACTIVE feature has source copied out; what an inactive one
-            // left behind is stale, and the target walk reports it as such —
-            // unless the caller named it in `selected`, which says it is acting on
-            // that feature and wants its copies compared rather than written off.
+            // Only an ACTIVE feature has source copied out; an inactive one's
+            // leftovers are stale. `selected` overrides that for the caller's own.
             if ('feature' === kind &&
                 (false !== model?.main?.[types_1.KIT]?.feature?.[name]?.active ||
                     true === selected?.includes(name))) {
@@ -295,18 +293,10 @@ function checkTarget(actx, resolved, report, selected) {
             kind: 'edited',
         },
     ];
-    // The feature set `target add` would select right now. A project that
-    // added its targets before feature trimming existed carries source for
-    // features its model never declared — expected here as STALE, which is
-    // exactly what it is.
-    //
-    // `selected` adds a feature the CALLER is acting on, whatever its model
-    // says. `feature remove <n>` of a feature the project had DEACTIVATED was
-    // refused by its own removal: deactivated means unselected, unselected
-    // means the source is unexpected, and every file the removal was about to
-    // delete came back as stale drift. Naming it here compares those files
-    // with what `feature add` wrote instead, so a project EDIT still refuses
-    // and a merely deactivated feature removes cleanly.
+    // The feature set `target add` would select right now, plus any the CALLER
+    // is acting on (`selected`, see COMMENT-NOTES.md). A project that added its
+    // targets before feature trimming existed carries source for features its
+    // model never declared — expected here as STALE, which is what it is.
     const featuremodel = model?.main?.[types_1.KIT]?.feature ?? {};
     const features = Array.from(new Set([
         'test',

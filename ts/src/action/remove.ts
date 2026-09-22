@@ -50,12 +50,13 @@ type RemovePlan = {
   // project-owned. The removal refuses on any of these unless forced.
   refused: string[]
 
+  // The subset of `refused` that is an ALIASED item's own model file. Same
+  // refusal, different advice — see the message in kindRemove.
+  aliased: string[]
+
   // Things the caller must finish by hand.
   notes: string[]
 }
-
-
-const KIND_ORDER = ['edition', 'feature', 'target']
 
 
 async function kind_remove(
@@ -86,10 +87,19 @@ async function kind_remove(
   const refused = plans.filter((p) => 0 < p.refused.length)
 
   if (0 < refused.length && !force) {
+    // Differentiating an alias's model file is what an alias is for, so the
+    // standard advice names the place that file already is.
+    const aliased = refused.flatMap((p) => p.aliased)
+
     throw new SdkGenError(
       kind + ' remove: refusing to delete what `' + kind + ' add` did not write' +
       refused.map((p) => '\n  ' + p.name + ':' +
         p.refused.map((r) => '\n    ' + r).join('')).join('') +
+      (0 < aliased.length ?
+        ('\n  ' + aliased.join(', ') + ' is an ALIAS\'s own model file: the' +
+          ' scaffold has none to compare it with, so differentiating it is' +
+          ' expected and there is nowhere else to move it. Pass --force to' +
+          ' delete it with the alias.') : '') +
       '\n  move any project decision into .sdk/model/, then run again;' +
       ' or pass --force to delete these too')
   }
@@ -139,11 +149,9 @@ async function planRemove(
   const root = actx.folder
   const model: any = actx.model
 
-  // A name, never a path. `remove` derives file paths from it the way `add`
-  // does, and Path.join normalises a traversal away rather than refusing it,
-  // so `go/../go` reached planning as `go` and `../../model/target/go` would
-  // have planned deletions outside the project. Same grammar as the add side
-  // (helpers/manifest), checked before anything is derived from it.
+  // A name, never a path: Path.join NORMALISES a traversal rather than
+  // refusing it, so `go/../go` is indistinguishable from `go` once joined.
+  // Same grammar as the add side, checked before any path is derived.
   if (!ITEM_NAME_RE.test(name)) {
     throw new SdkGenError(
       'Invalid ' + kind + ' name: ' + JSON.stringify(name) +
@@ -168,7 +176,8 @@ async function planRemove(
   }
 
   const plan: RemovePlan = {
-    kind, name, files: [], dirs: [], indexed: false, refused: [], notes: [],
+    kind, name, files: [], dirs: [], indexed: false,
+    refused: [], aliased: [], notes: [],
   }
 
   // Feature overlays belong to both the feature and the target's tree.
@@ -186,7 +195,7 @@ async function planRemove(
 
   // The feature being removed counts as selected, so its own source is
   // compared rather than written off as stale — see checkTarget.
-  const findings = null == source ? [] :
+  const findings = null == source ? { all: [], aliased: new Set<string>() } :
     await driftFindings(actx, inScope, 'feature' === kind ? [name] : undefined)
 
   if ('feature' === kind) {
@@ -208,9 +217,12 @@ async function planRemove(
   }
 
   const wanted = new Set(plan.files)
-  for (const f of findings) {
+  for (const f of findings.all) {
     if (wanted.has(f)) {
       plan.refused.push(f)
+      if (findings.aliased.has(f)) {
+        plan.aliased.push(f)
+      }
     }
   }
 
@@ -305,18 +317,22 @@ function resolveDeclared(
 async function driftFindings(
   actx: ActionContext, scope: (kind: string, name: string) => boolean,
   selected?: string[],
-): Promise<string[]> {
+): Promise<{ all: string[], aliased: Set<string> }> {
   const quiet = quietLog(actx.log)
   const res: any = await doctor({ ...actx, log: quiet }, scope, selected)
   const report = res.report
 
-  return [
-    ...report.forked,
-    ...report.edited,
-    ...report.stale,
-    ...report.additive,
-    ...report.aliasedDiff,
-  ]
+  return {
+    all: [
+      ...report.forked,
+      ...report.edited,
+      ...report.stale,
+      ...report.additive,
+      ...report.aliasedDiff,
+    ],
+    // Kept apart because it needs different advice — see kindRemove.
+    aliased: new Set<string>(report.aliasedDiff),
+  }
 }
 
 
@@ -471,7 +487,6 @@ export type {
 }
 
 export {
-  KIND_ORDER,
   kind_remove,
   planRemove,
 }

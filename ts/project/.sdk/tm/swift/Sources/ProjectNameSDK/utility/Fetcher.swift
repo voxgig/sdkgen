@@ -6,13 +6,10 @@ import Foundation
 import FoundationNetworking
 #endif
 
-// Cookies OFF on both sessions. The process-wide session Foundation hands
-// out carries the process-wide cookie storage, which persists, so one call's
-// Set-Cookie would come back on the next — a different caller, under a
-// different credential. A storage-free configuration also keeps the store
-// from augmenting a Cookie header the caller set, which is how an
-// `apiKey in: cookie` scheme travels. Connection pooling is per
-// configuration and is unaffected.
+// Cookies OFF on both sessions: the process-wide session carries the
+// process-wide cookie storage, so one call's Set-Cookie would come back on
+// the next, under a different credential. Pooling is per configuration and
+// is unaffected.
 private func cookielessConfiguration() -> URLSessionConfiguration {
   let cfg = URLSessionConfiguration.default
   cfg.httpCookieStorage = nil
@@ -77,6 +74,10 @@ func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
     req.setValue("Mozilla/5.0 (compatible; ProjectNameSDK/1.0)", forHTTPHeaderField: "User-Agent")
   }
 
+  // Also per request, so no store reached another way can rewrite the
+  // Cookie header set above — an `apiKey in: cookie` scheme sets one.
+  req.httpShouldHandleCookies = false
+
   final class FetchBox: @unchecked Sendable {
     var data: Data?
     var resp: URLResponse?
@@ -84,10 +85,6 @@ func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   }
   let box = FetchBox()
   let sem = DispatchSemaphore(value: 0)
-  // Belt to the configuration's braces: the per-request switch, so no store
-  // reached by any other route can touch the Cookie header set above.
-  req.httpShouldHandleCookies = false
-
   let session = gp(fetchdef, "redirect").asString == "manual"
     ? manualRedirectSession : defaultSession
   let task = session.dataTask(with: req) { d, r, e in

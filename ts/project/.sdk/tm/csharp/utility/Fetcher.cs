@@ -12,12 +12,10 @@ namespace ProjectNameSdk.Util;
 public static partial class SdkUtility
 {
     // Cookies OFF on every handler. The clients are process-wide, so a
-    // handler's CookieContainer would keep one call's Set-Cookie and send it
-    // on the next — a different caller, under a different credential. .NET
-    // also ADDS container cookies to a request that already carries a Cookie
-    // header, which is how an `apiKey in: cookie` scheme travels, so leaving
-    // them on corrupts that header as well as leaking. Connection pooling is
-    // the handler's own and is unaffected.
+    // CookieContainer would send one call's Set-Cookie on the next, under a
+    // different credential — and .NET ADDS container cookies to a request
+    // that already carries a Cookie header, which an `apiKey in: cookie`
+    // scheme does. Pooling is the handler's own and is unaffected.
     private static HttpClientHandler CookielessHandler(bool allowRedirect) =>
         new HttpClientHandler
         {

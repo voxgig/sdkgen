@@ -100,7 +100,13 @@ describe('target remove', () => {
 
     await rejects(
       () => kind_remove('target', ['custom'], project.actx),
-      /model\/target\/custom\.aon/)
+      (err: any) => {
+        match(String(err.message), /model\/target\/custom\.aon/)
+        // Its own advice: the standard line names .sdk/model/, which is
+        // where this file already is.
+        match(String(err.message), /ALIAS's own model file/)
+        return true
+      })
     deepStrictEqual(project.vol.toJSON(), before)
 
     project.actx.flags = { force: true }
@@ -355,10 +361,7 @@ describe('feature remove', () => {
 
 
   // Deactivating a feature is how a project stops shipping it without
-  // deleting it, so `feature remove` is the next thing anyone runs. It used
-  // to refuse: doctor's selected set is the ACTIVE features, an unselected
-  // feature's source is unexpected, and every file the removal was about to
-  // delete came back as stale drift on its own removal.
+  // deleting it, so `feature remove` is the next thing anyone runs.
   test('removes a feature the project deactivated', async () => {
     const project = await addedProject({ feature: { log: { active: true } } })
     await feature_add(['log'], project.actx)
