@@ -572,7 +572,7 @@ tm/go/utility/done.go fe9239675864
 tm/go/utility/feature_add.go 0b62e5d1c8db
 tm/go/utility/feature_hook.go 7efab96be0c6
 tm/go/utility/feature_init.go e2d9a7381261
-tm/go/utility/fetcher.go dfe379e9db93
+tm/go/utility/fetcher.go 842e6a52d26e
 tm/go/utility/graphql.go f0e6b8fef4a8
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go acc76429c4ee

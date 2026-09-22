@@ -24,7 +24,16 @@ func clientFor(fetchdef map[string]any) *http.Client {
 		if cached, ok := proxyClients.Load(proxy); ok {
 			client = cached.(*http.Client)
 		} else if proxyURL, perr := url.Parse(proxy); perr == nil {
-			transport := http.DefaultTransport.(*http.Transport).Clone()
+			// http.DefaultTransport is a package variable the host program can
+			// replace, and an unchecked assertion on it panics the SDK inside
+			// whatever called it. Clone the real one where it is there, and
+			// build a plain transport where it is not.
+			var transport *http.Transport
+			if def, ok := http.DefaultTransport.(*http.Transport); ok {
+				transport = def.Clone()
+			} else {
+				transport = &http.Transport{}
+			}
 			transport.Proxy = http.ProxyURL(proxyURL)
 			cached, _ := proxyClients.LoadOrStore(proxy, &http.Client{Transport: transport})
 			client = cached.(*http.Client)
