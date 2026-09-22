@@ -95,13 +95,10 @@ async function planRemove(kind, name, actx, deleteOutput) {
     const plan = {
         kind, name, files: [], dirs: [], indexed: false, refused: [], notes: [],
     };
-    // What add wrote, as it stands: the same comparison doctor makes, scoped
-    // to this item. A feature's files live in every target's tree, so the
-    // targets are in scope too and the findings are filtered to the files
-    // this removal would delete.
-    const inScope = 'feature' === kind ?
-        (k, n) => ('feature' === k && n === name) || 'target' === k :
-        (k, n) => k === kind && n === name;
+    // Feature overlays belong to both the feature and the target's tree.
+    const inScope = (k, n) => (k === kind && n === name) ||
+        ('feature' === kind && 'target' === k) ||
+        ('target' === kind && 'feature' === k);
     const source = resolveDeclared(kind, name, declared, actx);
     if (null == source) {
         plan.refused.push('(source not found: the copy cannot be compared with what' +
@@ -204,6 +201,7 @@ async function driftFindings(actx, scope) {
         ...report.edited,
         ...report.stale,
         ...report.additive,
+        ...report.aliasedDiff,
     ];
 }
 // Model files outside the item's own that still name it: a project's

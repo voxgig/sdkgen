@@ -95,7 +95,7 @@ Context* context_new(CtxSpec cs, Context* basectx) {
     ctx->ctrl = c;
   } else if (cs.ctrl_obj) {
     ctx->ctrl = cs.ctrl_obj;
-  } else if (basectx) {
+  } else if (basectx && !cs.opname) {
     ctx->ctrl = basectx->ctrl;
   } else {
     ctx->ctrl = control_new();

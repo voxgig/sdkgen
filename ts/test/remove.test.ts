@@ -48,6 +48,78 @@ function write(project: any, rel: string, content: string) {
 
 describe('target remove', () => {
 
+  test('refuses an edited alias model, and --force deletes it', async () => {
+    const project = makeProject()
+    await target_add([targetRef('go') + '~custom'], project.actx)
+    project.actx.model.main[KIT].target.custom = {
+      name: 'custom', origname: 'go', base: SCAFFOLD_BASE,
+    }
+
+    const model = 'model/target/custom.aon'
+    write(project, model, read(project, model) +
+      '\nmain: kit: target: custom: publish: version: "9.9.9"\n')
+    const before = project.vol.toJSON()
+
+    await rejects(
+      () => kind_remove('target', ['custom'], project.actx),
+      /model\/target\/custom\.aon/)
+    deepStrictEqual(project.vol.toJSON(), before)
+
+    project.actx.flags = { force: true }
+    await kind_remove('target', ['custom'], project.actx)
+    strictEqual(has(project, model), false)
+  })
+
+
+  for (const edited of [false, true]) {
+    test('external feature source: ' + (edited ? 'refuses edits' : 'removes clean copies'),
+      async () => {
+        const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-remove-feature-'))
+        const sdk = Path.join(dir, '.sdk')
+        try {
+          Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
+          Fs.mkdirSync(Path.join(sdk, 'tm', 'go', 'feature'), { recursive: true })
+          Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'external.aon'),
+            'main: kit: feature: external: { name: external, active: true, base: "BASE" }\n')
+          Fs.writeFileSync(Path.join(sdk, 'tm', 'go', 'feature', 'external_feature.go'),
+            'package feature\n')
+          Fs.writeFileSync(Path.join(dir, 'sdkgen-package.json'), JSON.stringify({
+            sdkgen: { package: 1 }, name: '@acme/sdkgen-external', version: '1.0.0',
+            provides: { feature: ['external'] },
+          }))
+
+          const project = await addedProject()
+          await feature_add([Path.join(dir, 'external')], project.actx)
+          project.actx.model.main[KIT].feature.external = {
+            name: 'external', origname: 'external', base: sdk, active: true,
+          }
+          const source = 'tm/go/feature/external_feature.go'
+          ok(has(project, source))
+
+          const model = 'model/feature/external.aon'
+          write(project, model, read(project, model) + '\n# project customization\n')
+          const keptModel = read(project, model)
+
+          if (edited) {
+            write(project, source, read(project, source) + '// project customization\n')
+            const before = project.vol.toJSON()
+            await rejects(
+              () => kind_remove('target', ['go'], project.actx),
+              /tm\/go\/feature\/external_feature\.go/)
+            deepStrictEqual(project.vol.toJSON(), before)
+            project.actx.flags = { force: true }
+          }
+
+          await kind_remove('target', ['go'], project.actx)
+          strictEqual(has(project, source), false)
+          strictEqual(read(project, model), keptModel)
+        }
+        finally {
+          Fs.rmSync(dir, { recursive: true, force: true })
+        }
+      })
+  }
+
   test('removes exactly what target add wrote', async () => {
     const project = await addedProject()
 

@@ -9,18 +9,18 @@ import (
 )
 
 type Context struct {
-	Id      string
-	Out     map[string]any
-	Ctrl    *Control
-	Meta    map[string]any
-	Client  *ProjectNameSDK
-	Utility *Utility
-	Op      *Operation
-	Point   map[string]any
-	Config  map[string]any
-	Entopts map[string]any
-	Options map[string]any
-	Opmap   map[string]*Operation
+	Id       string
+	Out      map[string]any
+	Ctrl     *Control
+	Meta     map[string]any
+	Client   *ProjectNameSDK
+	Utility  *Utility
+	Op       *Operation
+	Point    map[string]any
+	Config   map[string]any
+	Entopts  map[string]any
+	Options  map[string]any
+	Opmap    map[string]*Operation
 	Opmu     *sync.Mutex
 	Response *Response
 	Result   *Result
@@ -86,7 +86,7 @@ func NewContext(ctxmap map[string]any, basectx *Context) *Context {
 		} else if ctrl, ok := c.(*Control); ok {
 			ctx.Ctrl = ctrl
 		}
-	} else if basectx != nil && basectx.Ctrl != nil {
+	} else if basectx != nil && basectx.Ctrl != nil && getCtxProp(ctxmap, "opname") == nil {
 		ctx.Ctrl = basectx.Ctrl
 	}
 

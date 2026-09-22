@@ -189,7 +189,9 @@ let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
       (match getp cr "actor" with Noval -> () | a -> c.ctrl_actor <- a);
       (match getp cr "paging" with Map _ as m -> c.ctrl_paging <- m | _ -> ());
       c
-    | _ -> (match basectx with Some b -> b.c_ctrl | None -> new_control ())
+    | _ -> (match basectx with
+        | Some b when cs.cs_opname = None -> b.c_ctrl
+        | _ -> new_control ())
   in
   let meta =
     match cs.cs_meta with Some (Map _ as m) -> m

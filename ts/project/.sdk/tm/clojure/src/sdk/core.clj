@@ -305,7 +305,6 @@
         cprop (fn [k] (mget ctxmap k))
         client (or (cprop "client") (bget :client))
         utility (or (cprop "utility") (bget :utility))
-        ;; ctrl: explicit ctrl map -> fresh control; else share base ctrl.
         ctrl-raw (cprop "ctrl")
         ctrl (cond
                (vs/ismap ctrl-raw)
@@ -315,7 +314,7 @@
                  (when (contains? (into #{} (vs/keysof ctrl-raw)) "actor") (oset! c :actor (mget ctrl-raw "actor")))
                  (when (vs/ismap (mget ctrl-raw "paging")) (oset! c :paging (mget ctrl-raw "paging")))
                  c)
-               (bget :ctrl) (bget :ctrl)
+               (and (nil? (cprop "opname")) (bget :ctrl)) (bget :ctrl)
                :else (make-control))
         meta (let [m (cprop "meta")] (if (vs/ismap m) m (or (bget :meta) (vs/jm))))
         config (let [c (cprop "config")] (if (vs/ismap c) c (bget :config)))

@@ -158,13 +158,11 @@ async function planRemove(
     kind, name, files: [], dirs: [], indexed: false, refused: [], notes: [],
   }
 
-  // What add wrote, as it stands: the same comparison doctor makes, scoped
-  // to this item. A feature's files live in every target's tree, so the
-  // targets are in scope too and the findings are filtered to the files
-  // this removal would delete.
-  const inScope = 'feature' === kind ?
-    (k: string, n: string) => ('feature' === k && n === name) || 'target' === k :
-    (k: string, n: string) => k === kind && n === name
+  // Feature overlays belong to both the feature and the target's tree.
+  const inScope = (k: string, n: string) =>
+    (k === kind && n === name) ||
+    ('feature' === kind && 'target' === k) ||
+    ('target' === kind && 'feature' === k)
 
   const source = resolveDeclared(kind, name, declared, actx)
 
@@ -301,6 +299,7 @@ async function driftFindings(
     ...report.edited,
     ...report.stale,
     ...report.additive,
+    ...report.aliasedDiff,
   ]
 }
 

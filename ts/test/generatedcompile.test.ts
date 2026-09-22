@@ -223,6 +223,79 @@ describe('generated SDK compiles', () => {
   })
 
 
+  for (const target of ['ts', 'js']) {
+    test(target + ': paging isolates independent operations', async () => {
+      const sdkroot = Path.join(tmp, target + '-paging')
+      await generateTo(target, sdkroot, undefined, ['paging'])
+      linkDeps(sdkroot)
+      if ('ts' === target) {
+        const compiled = tsc(sdkroot, 'src')
+        ok(compiled.ok, compiled.out)
+      }
+      const probe = Path.join(sdkroot, 'paging.cjs')
+      Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport/paging.js'), probe)
+      const result = run(process.execPath,
+        [probe, './' + ('ts' === target ? 'dist' : 'src')], sdkroot)
+      ok(result.ok, result.out)
+      ok(result.out.includes('explicit continuation preserved'), result.out)
+    })
+  }
+
+
+  test('py: pooled HTTP connections do not share cookies', async (t) => {
+    const py = toolchain('python3') || toolchain('python')
+    if (null == py || !probeOk(py, ['-c', 'import requests'])) {
+      return t.skip('needs Python with requests')
+    }
+    const sdkroot = Path.join(tmp, 'py-cookies')
+    await generateTo('py', sdkroot)
+    Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport/cookies.py'),
+      Path.join(sdkroot, 'cookies.py'))
+    const result = run(py, ['-B', 'cookies.py'], sdkroot, {
+      ...process.env, NO_PROXY: '127.0.0.1', no_proxy: '127.0.0.1',
+    })
+    ok(result.ok, result.out)
+    ok(result.out.includes('cookies: isolated; connection: reused'), result.out)
+  })
+
+
+  test('rb: pooled HTTP connections do not replay unsafe requests', async (t) => {
+    const rb = toolchain('ruby')
+    if (null == rb) return t.skip('needs Ruby')
+    const sdkroot = Path.join(tmp, 'rb-replay')
+    await generateTo('rb', sdkroot)
+    Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport/replay.rb'),
+      Path.join(sdkroot, 'replay.rb'))
+    const result = run(rb, ['replay.rb'], sdkroot, {
+      ...process.env, NO_PROXY: '127.0.0.1', no_proxy: '127.0.0.1',
+    })
+    ok(result.ok, result.out)
+    ok(result.out.includes('POST: 1 request(s)'), result.out)
+    ok(result.out.includes('PATCH: 1 request(s)'), result.out)
+    ok(result.out.includes('GET: 2 request(s)'), result.out)
+  })
+
+
+  for (const [target, tool, file] of [
+    ['py', 'python3', 'context.py'],
+    ['rb', 'ruby', 'context.rb'],
+    ['php', 'php', 'context.php'],
+    ['perl', 'perl', 'context.pl'],
+  ]) {
+    test(target + ': operation controls are isolated', async (t) => {
+      const bin = toolchain(tool)
+      if (null == bin) return t.skip('needs ' + tool)
+      const sdkroot = Path.join(tmp, target + '-context')
+      await generateTo(target, sdkroot)
+      Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport', file),
+        Path.join(sdkroot, file))
+      const result = run(bin, [file], sdkroot)
+      ok(result.ok, result.out)
+      ok(result.out.includes('explicit and nested controls preserved'), result.out)
+    })
+  }
+
+
   // The headline: src AND test. `--build src` first, because the test tree
   // imports the package root, which resolves through the emitted dist/.
   test('typescript: src and the generated test suite both type-check', async () => {

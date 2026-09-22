@@ -1,4 +1,3 @@
-
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -101,7 +100,7 @@ impl Context {
             Rc::new(RefCell::new(c))
         } else if let Some(co) = ctxspec.ctrl_obj {
             co
-        } else if let Some(b) = basectx {
+        } else if let Some(b) = basectx.filter(|_| ctxspec.opname.is_none()) {
             b.ctrl.borrow().clone()
         } else {
             Rc::new(RefCell::new(Control::new()))
@@ -249,10 +248,7 @@ impl Context {
             return Rc::new(Operation::new(&Value::empty_map()));
         }
 
-        let opcfg = getpath(
-            &["entity", &entname, "op", opname],
-            &self.config.borrow(),
-        );
+        let opcfg = getpath(&["entity", &entname, "op", opname], &self.config.borrow());
 
         let input = if opname == "update" || opname == "create" {
             "data"

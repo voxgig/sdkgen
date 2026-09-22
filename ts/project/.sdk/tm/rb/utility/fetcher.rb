@@ -72,26 +72,15 @@ module ProjectNameUtilities
       request['User-Agent'] = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)' unless has_ua
       request.body = body_str if body_str.is_a?(String)
 
-      resp = nil
-      stale = false
-      loop do
-        http = ProjectNameUtilities.http_checkout(key, uri, proxy)
-        begin
-          resp = http.request(request)
-        rescue EOFError, Errno::ECONNRESET, Errno::EPIPE, IOError => e
-          # A pooled connection the server closed while idle: drop it and
-          # send once more on a fresh one.
-          ProjectNameUtilities.http_discard(http)
-          raise e if stale
-          stale = true
-          next
-        rescue StandardError
-          ProjectNameUtilities.http_discard(http)
-          raise
-        end
-        ProjectNameUtilities.http_checkin(key, http)
-        break
+      http = ProjectNameUtilities.http_checkout(key, uri, proxy)
+      begin
+        # Net::HTTP retries idempotent requests; an EOF can follow a committed POST.
+        resp = http.request(request)
+      rescue StandardError
+        ProjectNameUtilities.http_discard(http)
+        raise
       end
+      ProjectNameUtilities.http_checkin(key, http)
 
       resp_headers = {}
       resp.each_header { |k, v| resp_headers[k.downcase] = v }
