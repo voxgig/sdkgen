@@ -70,8 +70,8 @@ committed dependency must name a published npm package or a GitHub reference;
 `file:`, `link:`, `portal:`, `workspace:`, `catalog:`, a bare filesystem path,
 a packed `.tgz`/`.zip`, a git reference to a host other than github.com, an
 off-registry `overrides`/`resolutions`, a lockfile entry resolving from a path
-or a foreign registry, a Go `replace` or `go.work` reaching outside the repo, a
-Cargo `path` dependency leaving it, a committed symlink escaping it or pointing
+or a foreign registry, a Go `replace` reaching outside the repo, a committed
+`go.work` at all, a Cargo `path` dependency leaving it, a committed symlink escaping it or pointing
 into `node_modules`, a committed archive and a `.npmrc` naming another registry
 are all findings. It runs in `make test`, in `npm test`, in `.githooks/pre-push`
 and in CI. An exception goes in `tools/dep-gate.json` WITH a reason; the gate
