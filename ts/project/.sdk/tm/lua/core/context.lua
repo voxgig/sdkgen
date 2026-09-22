@@ -55,7 +55,8 @@ function Context.new(ctxmap, basectx)
     if type(ctrl_raw.paging) == "table" then
       self.ctrl.paging = ctrl_raw.paging
     end
-  elseif basectx ~= nil and basectx.ctrl ~= nil then
+  elseif basectx ~= nil and basectx.ctrl ~= nil
+      and helpers.get_ctx_prop(ctxmap, "opname") == nil then
     self.ctrl = basectx.ctrl
   end
 

@@ -58,7 +58,8 @@ class ProjectNameContext
             if (isset($ctrl_raw['paging']) && is_array($ctrl_raw['paging'])) {
                 $this->ctrl->paging = $ctrl_raw['paging'];
             }
-        } elseif ($basectx !== null && $basectx->ctrl !== null) {
+        } elseif ($basectx !== null && $basectx->ctrl !== null
+            && ProjectNameHelpers::get_ctx_prop($ctxmap, "opname") === null) {
             $this->ctrl = $basectx->ctrl;
         }
 

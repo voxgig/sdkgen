@@ -690,7 +690,7 @@ inline Context::Context(const CtxSpec& cs, const CtxPtr& basectx) {
     if (a.is_string()) ctrl->actor = a.as_string();
     Value p = getp(cs.ctrlMap, "paging");
     if (p.is_map()) ctrl->paging = p;
-  } else if (basectx && basectx->ctrl) {
+  } else if (basectx && basectx->ctrl && cs.opname.empty()) {
     ctrl = basectx->ctrl;
   }
 

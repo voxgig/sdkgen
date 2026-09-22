@@ -3,6 +3,7 @@
 from __future__ import annotations
 import json
 import threading
+from http.cookiejar import DefaultCookiePolicy
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 
 
@@ -19,14 +20,15 @@ _SESSION_LOCK = threading.Lock()
 
 
 def _session():
-    # One requests.Session per process: its pool keeps connections alive
-    # across calls, where urllib opened one per request.
+    # Pool connections without retaining response cookies between calls.
     global _SESSION
     if _SESSION is None:
         import requests
         with _SESSION_LOCK:
             if _SESSION is None:
-                _SESSION = requests.Session()
+                session = requests.Session()
+                session.cookies.set_policy(DefaultCookiePolicy(allowed_domains=[]))
+                _SESSION = session
     return _SESSION
 
 

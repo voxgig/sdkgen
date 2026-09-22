@@ -46,7 +46,7 @@ src/cmp/c/utility_c.ts a29d995a9ce0
 tm/c/LICENSE ed2f88b0aab8
 tm/c/Makefile 5e3fc0c7f0d0
 tm/c/VERSION e6635045e1d2
-tm/c/core/context.c d6c4b4c78683
+tm/c/core/context.c 6e2c169f9a08
 tm/c/core/control.c acb5a3790b08
 tm/c/core/error.c b2858b1dad79
 tm/c/core/helpers.c d35f8ba10d86
@@ -220,7 +220,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
-tm/clojure/src/sdk/core.clj 6377c0826698
+tm/clojure/src/sdk/core.clj 30be1595572c
 tm/clojure/src/sdk/features.clj 34b4e7501f4e
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
@@ -284,7 +284,7 @@ tm/cpp/Makefile 4b73fb1987a5
 tm/cpp/VERSION e6635045e1d2
 tm/cpp/core/sdk.hpp 29180a8846ed
 tm/cpp/core/struct.hpp 0be0006d1389
-tm/cpp/core/types.hpp c575b5237c2f
+tm/cpp/core/types.hpp 91a00cca1255
 tm/cpp/feature/base.hpp 09bbe326cadb
 tm/cpp/feature/options.hpp 74561793d626
 tm/cpp/feature/test.hpp 211a03feba59
@@ -359,7 +359,7 @@ src/cmp/csharp/utility_csharp.ts 0f589be03efc
 tm/csharp/LICENSE ed2f88b0aab8
 tm/csharp/Makefile a45af645d7c0
 tm/csharp/VERSION e6635045e1d2
-tm/csharp/core/Context.cs 213a52bbcd23
+tm/csharp/core/Context.cs e59793206e5b
 tm/csharp/core/Control.cs eac6511c1bd1
 tm/csharp/core/Helpers.cs 3253002b6356
 tm/csharp/core/Operation.cs 518c7424a8a9
@@ -465,7 +465,7 @@ src/cmp/elixir/utility_elixir.ts d2ac9a3d5427
 tm/elixir/LICENSE c92ad97f8812
 tm/elixir/Makefile 411daea82111
 tm/elixir/VERSION e6635045e1d2
-tm/elixir/lib/projectname/context.ex 94647566076f
+tm/elixir/lib/projectname/context.ex e5e4157bbf71
 tm/elixir/lib/projectname/core.ex 54ae320f3c39
 tm/elixir/lib/projectname/entity_base.ex a1bebbb71a2b
 tm/elixir/lib/projectname/error.ex 163684739447
@@ -537,7 +537,7 @@ src/cmp/go/utility_go.ts 91ead607f691
 tm/go/LICENSE ed2f88b0aab8
 tm/go/Makefile 72a251a943a5
 tm/go/VERSION e6635045e1d2
-tm/go/core/context.go 3c39a28dc25a
+tm/go/core/context.go e1739f10efff
 tm/go/core/control.go e5f055beb2f1
 tm/go/core/error.go 543d20339a60
 tm/go/core/helpers.go b6a4ff51a034
@@ -673,7 +673,7 @@ src/cmp/java/utility_java.ts 19662d345ec3
 tm/java/LICENSE ed2f88b0aab8
 tm/java/Makefile def672a803b0
 tm/java/VERSION e6635045e1d2
-tm/java/core/Context.java 64869a9bef27
+tm/java/core/Context.java c917c26c1271
 tm/java/core/Control.java 565185ed2b10
 tm/java/core/Entity.java 50d3208bc31e
 tm/java/core/Feature.java 41a6d3c2ba09
@@ -794,7 +794,7 @@ src/cmp/js/utility_js.ts 5e5e18cd0239
 tm/js/LICENSE ed2f88b0aab8
 tm/js/Makefile 52c2788fd05a
 tm/js/jsconfig.json 2a568c53a9fc
-tm/js/src/Context.js 691148657822
+tm/js/src/Context.js 5a6979dce83c
 tm/js/src/Control.js 02b60dd9450e
 tm/js/src/Operation.js 6bfeaa721d05
 tm/js/src/Point.js 2313658ea193
@@ -909,7 +909,7 @@ src/cmp/kotlin/utility_kotlin.ts 6f2c66003df3
 tm/kotlin/LICENSE ed2f88b0aab8
 tm/kotlin/Makefile 5102e29f09a6
 tm/kotlin/VERSION e6635045e1d2
-tm/kotlin/core/Context.kt 07a939286cf6
+tm/kotlin/core/Context.kt 353f5f453c62
 tm/kotlin/core/Control.kt 49fe61178ad1
 tm/kotlin/core/Helpers.kt abcf1405cf21
 tm/kotlin/core/Interfaces.kt 36f2ce7f02ff
@@ -998,7 +998,7 @@ src/cmp/lua/tsconfig.json 720a3f229019
 src/cmp/lua/utility_lua.ts 216f2c0aab05
 tm/lua/LICENSE ed2f88b0aab8
 tm/lua/Makefile 0cdb4b35ad7d
-tm/lua/core/context.lua 58bddea7fc78
+tm/lua/core/context.lua fb1bed78dd0d
 tm/lua/core/control.lua bcd4e848f7f2
 tm/lua/core/error.lua 943180f73775
 tm/lua/core/helpers.lua 03f9203a9327
@@ -1100,7 +1100,7 @@ tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml f97c74de8e81
 tm/ocaml/sdk_helpers.ml d08f5f1dca3c
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml d9165f2db0c1
+tm/ocaml/sdk_runtime.ml 1c1253c6b238
 tm/ocaml/sdk_types.ml 85ee25259c3a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
@@ -1162,7 +1162,7 @@ src/cmp/perl/tsconfig.json 720a3f229019
 src/cmp/perl/utility_perl.ts ee9d6fd2791c
 tm/perl/LICENSE ed2f88b0aab8
 tm/perl/Makefile fa0c8f05682c
-tm/perl/core/context.pm bd9566126012
+tm/perl/core/context.pm c0af85924f01
 tm/perl/core/control.pm cb6185bbc19f
 tm/perl/core/error.pm d258afc78669
 tm/perl/core/helpers.pm 8f2c49fcbb46
@@ -1267,7 +1267,7 @@ src/cmp/php/utility_php.ts c65bddbe5deb
 tm/php/LICENSE ed2f88b0aab8
 tm/php/Makefile 1df8eadc6f78
 tm/php/VERSION e6635045e1d2
-tm/php/core/Context.php 96a1c9758742
+tm/php/core/Context.php 46329f34881d
 tm/php/core/Control.php 6cb0e03bea15
 tm/php/core/Error.php 632c49dd3cb4
 tm/php/core/Helpers.php 75cc7fb2f06c
@@ -1370,7 +1370,7 @@ src/cmp/py/utility_py.ts dcadf423b5da
 tm/py/LICENSE ed2f88b0aab8
 tm/py/Makefile 6f02e3364cd8
 tm/py/pkg/core/__init__.py e3b0c44298fc
-tm/py/pkg/core/context.py ff2365afa2c0
+tm/py/pkg/core/context.py b44b5ad9a58f
 tm/py/pkg/core/control.py a446b5eeb88b
 tm/py/pkg/core/error.py decc48a5c573
 tm/py/pkg/core/helpers.py afe9d5c57fcc
@@ -1389,7 +1389,7 @@ tm/py/pkg/utility/done.py 6066fb832758
 tm/py/pkg/utility/feature_add.py f85e86961cec
 tm/py/pkg/utility/feature_hook.py a77281b3d944
 tm/py/pkg/utility/feature_init.py 56df64ac9bd6
-tm/py/pkg/utility/fetcher.py ff22ad643694
+tm/py/pkg/utility/fetcher.py 194e66654ac7
 tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py d68358f50bc8
@@ -1502,7 +1502,7 @@ src/cmp/rb/utility_rb.ts 1ac35bdc3695
 tm/rb/Gemfile 2cf46ddd24ec
 tm/rb/LICENSE ed2f88b0aab8
 tm/rb/Makefile 89567ce533f0
-tm/rb/core/context.rb eae3a9e84941
+tm/rb/core/context.rb 31202549d99b
 tm/rb/core/control.rb 14d11fa63c1f
 tm/rb/core/error.rb 7c29bfdfca9c
 tm/rb/core/helpers.rb 2c5a92707620
@@ -1534,7 +1534,7 @@ tm/rb/utility/done.rb 127c1eff2e8b
 tm/rb/utility/feature_add.rb 56c05f79aaf6
 tm/rb/utility/feature_hook.rb ae80d8f1f9c8
 tm/rb/utility/feature_init.rb 025a7a843acb
-tm/rb/utility/fetcher.rb 9b0c889f93a6
+tm/rb/utility/fetcher.rb ff56b18ef776
 tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb abe971c81e08
@@ -1608,7 +1608,7 @@ src/cmp/rust/utility_rust.ts 5f7342556051
 tm/rust/LICENSE ed2f88b0aab8
 tm/rust/Makefile 9c20bdb47565
 tm/rust/VERSION e6635045e1d2
-tm/rust/core/context.rs 07b19b6bf1c9
+tm/rust/core/context.rs a8f60bee2602
 tm/rust/core/control.rs ef87c0e6b6fd
 tm/rust/core/helpers.rs 2a46d6c638f5
 tm/rust/core/mod.rs 88b87556e1a9
@@ -1724,7 +1724,7 @@ src/cmp/scala/utility_scala.ts 0f8b6c6f8f64
 tm/scala/LICENSE ed2f88b0aab8
 tm/scala/Makefile 910ccb288682
 tm/scala/VERSION e6635045e1d2
-tm/scala/core/Context.scala 548bd774a9ed
+tm/scala/core/Context.scala 96a14d2410bc
 tm/scala/core/Contracts.scala caa9f20bf5be
 tm/scala/core/Control.scala 1adcb3343fe0
 tm/scala/core/Helpers.scala 753a5ed374e0
@@ -1901,7 +1901,7 @@ tm/swift/Sources/ProjectNameSDK/Struct/Transform.swift 02e1ffa744a2
 tm/swift/Sources/ProjectNameSDK/Struct/Validate.swift 3bcd5d2abafa
 tm/swift/Sources/ProjectNameSDK/Struct/Value.swift f0d0dca819f6
 tm/swift/Sources/ProjectNameSDK/Struct/Walk.swift d63ad6ea0f46
-tm/swift/Sources/ProjectNameSDK/core/Context.swift 89da09945b63
+tm/swift/Sources/ProjectNameSDK/core/Context.swift 75aebc628e6c
 tm/swift/Sources/ProjectNameSDK/core/Control.swift 0a8b7e2e8afd
 tm/swift/Sources/ProjectNameSDK/core/Operation.swift a4a46f1b329e
 tm/swift/Sources/ProjectNameSDK/core/Point.swift a9edf1830201
@@ -1995,7 +1995,7 @@ src/cmp/ts/tsconfig.json 720a3f229019
 src/cmp/ts/utility_ts.ts 41f452fb44f7
 tm/ts/LICENSE ed2f88b0aab8
 tm/ts/Makefile bc2ea6423c83
-tm/ts/src/Context.ts 96c31ffd1254
+tm/ts/src/Context.ts 3fb74796b0a1
 tm/ts/src/Control.ts 7d0890e548c3
 tm/ts/src/Operation.ts ca7fe2dc17d6
 tm/ts/src/Point.ts 7c23cad045dc
@@ -2110,7 +2110,7 @@ src/cmp/zig/utility_zig.ts 7506671de1bc
 tm/zig/LICENSE 0f0188120aad
 tm/zig/Makefile 623289c8876a
 tm/zig/VERSION e6635045e1d2
-tm/zig/core/context.zig a9278c59f184
+tm/zig/core/context.zig fdca0fecfecf
 tm/zig/core/control.zig 6b36b44b2ee7
 tm/zig/core/error.zig 60014c2c9da5
 tm/zig/core/helpers.zig 4031ddac213f
