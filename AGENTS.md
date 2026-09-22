@@ -129,11 +129,16 @@ or sync commands. `ts/README.md` is a short summary linking to the full
 top-level README. **Always build before testing** —
 tests run against compiled `ts/dist-test/`.
 
-Environment note: the Node floor is this package's own —
-`ts/package.json` declares `engines.node: >=24`; the pinned `shape` does not
-ask for it (`shape@11.4.1` declares `>=20`). Builds and tests pass on Node 22
-with an `EBADENGINE` warning, so the floor is CI's rather than a hard
-requirement of the code; `node --version` is how you find out which you have.
+Environment note on the Node floor, which is DECLARED in many places and
+ENFORCED in none. `ts/package.json` declares `engines.node: >=24`, and so do
+seventeen of the installed dependencies — the whole `@tabnas` set, `aontu`
+included, and among them the direct peers `@tabnas/parser` and `aontu`
+themselves. What does NOT ask for it is `shape`, which an earlier version of
+this note named as the reason: `shape@11.4.1` declares `>=20`. Count them
+where you are (`node -e` over `node_modules/*/package.json` `engines.node`)
+rather than trusting either list. Builds and tests nonetheless pass on Node 22,
+with an `EBADENGINE` warning per declaring package, so nothing enforces the
+floor locally; `node --version` is how you find out which Node you have.
 
 The CLI a consumer runs, from its own `.sdk/` directory:
 
