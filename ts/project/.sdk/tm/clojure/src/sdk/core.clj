@@ -305,6 +305,9 @@
         cprop (fn [k] (mget ctxmap k))
         client (or (cprop "client") (bget :client))
         utility (or (cprop "utility") (bget :utility))
+        ;; ctrl: explicit ctrl map -> fresh control; an OPERATION (one named by
+        ;; opname) also gets its own, so a paging cursor cannot leak into the
+        ;; next call; anything else shares the base ctrl.
         ctrl-raw (cprop "ctrl")
         ctrl (cond
                (vs/ismap ctrl-raw)

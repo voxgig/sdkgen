@@ -230,7 +230,7 @@ function orphanModelFiles(actx: ActionContext): string[] {
 
 
 async function doctor(
-  actx: ActionContext, scope?: DoctorScope,
+  actx: ActionContext, scope?: DoctorScope, selected?: string[],
 ): Promise<ActionResult> {
   const log = actx.log
   const fs = actx.fs()
@@ -283,17 +283,18 @@ async function doctor(
       }
 
       if ('target' === kind) {
-        checkTarget(actx, source, report)
+        checkTarget(actx, source, report, selected)
       }
 
       if ('edition' === kind) {
         checkEdition(actx, source, report)
       }
 
-      // Only an ACTIVE feature has source copied out; what an inactive one
-      // left behind is stale, and the target walk reports it as such.
+      // Only an ACTIVE feature has source copied out; an inactive one's
+      // leftovers are stale. `selected` overrides that for the caller's own.
       if ('feature' === kind &&
-        false !== (model as any)?.main?.[KIT]?.feature?.[name]?.active) {
+        (false !== (model as any)?.main?.[KIT]?.feature?.[name]?.active ||
+          true === selected?.includes(name))) {
         checkFeatureSource(actx, source, targets, report)
       }
 
@@ -409,6 +410,7 @@ function resolveDeclared(
 
 function checkTarget(
   actx: ActionContext, resolved: Source, report: DoctorReport,
+  selected?: string[],
 ) {
   const tname = resolved.name
   const tfolder = resolved.folder
@@ -442,14 +444,15 @@ function checkTarget(
       },
     ]
 
-  // The feature set `target add` would select right now. A project that
-  // added its targets before feature trimming existed carries source for
-  // features its model never declared — expected here as STALE, which is
-  // exactly what it is.
+  // The feature set `target add` would select right now, plus any the CALLER
+  // is acting on (`selected`, see COMMENT-NOTES.md). A project that added its
+  // targets before feature trimming existed carries source for features its
+  // model never declared — expected here as STALE, which is what it is.
   const featuremodel: any = model?.main?.[KIT]?.feature ?? {}
   const features = Array.from(new Set([
     'test',
     ...Object.keys(featuremodel).filter((n: string) => false !== featuremodel[n]?.active),
+    ...(selected ?? []),
   ]))
 
   // `folder` and `model` matter: the trim catalogue is resolved consumer-side

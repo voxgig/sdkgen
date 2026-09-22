@@ -95,7 +95,9 @@ Context* context_new(CtxSpec cs, Context* basectx) {
     ctx->ctrl = c;
   } else if (cs.ctrl_obj) {
     ctx->ctrl = cs.ctrl_obj;
-  } else if (basectx && !cs.opname) {
+    // An empty opname is no operation, exactly as resolve_op reads it below
+    // and as the cpp port's cs.opname.empty() reads it.
+  } else if (basectx && (!cs.opname || cs.opname[0] == '\0')) {
     ctx->ctrl = basectx->ctrl;
   } else {
     ctx->ctrl = control_new();

@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.KIND_ORDER = void 0;
 exports.kind_remove = kind_remove;
 exports.planRemove = planRemove;
 const kindCollection_1 = require("../helpers/kindCollection");
@@ -12,13 +11,12 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const definition_1 = require("../helpers/definition");
 const featureSource_1 = require("../helpers/featureSource");
+const manifest_1 = require("../helpers/manifest");
 const junk_1 = require("../helpers/junk");
 const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
 const action_1 = require("./action");
 const doctor_1 = require("./doctor");
-const KIND_ORDER = ['edition', 'feature', 'target'];
-exports.KIND_ORDER = KIND_ORDER;
 async function kind_remove(kind, names, actx) {
     const log = actx.log;
     const dryrun = !!actx.opts?.dryrun;
@@ -39,9 +37,17 @@ async function kind_remove(kind, names, actx) {
     }
     const refused = plans.filter((p) => 0 < p.refused.length);
     if (0 < refused.length && !force) {
+        // Differentiating an alias's model file is what an alias is for, so the
+        // standard advice names the place that file already is.
+        const aliased = refused.flatMap((p) => p.aliased);
         throw new utility_1.SdkGenError(kind + ' remove: refusing to delete what `' + kind + ' add` did not write' +
             refused.map((p) => '\n  ' + p.name + ':' +
                 p.refused.map((r) => '\n    ' + r).join('')).join('') +
+            (0 < aliased.length ?
+                ('\n  ' + aliased.join(', ') + ' is an ALIAS\'s own model file: the' +
+                    ' scaffold has none to compare it with, so differentiating it is' +
+                    ' expected and there is nowhere else to move it. Pass --force to' +
+                    ' delete it with the alias.') : '') +
             '\n  move any project decision into .sdk/model/, then run again;' +
             ' or pass --force to delete these too');
     }
@@ -80,6 +86,13 @@ async function planRemove(kind, name, actx, deleteOutput) {
     const fs = actx.fs();
     const root = actx.folder;
     const model = actx.model;
+    // A name, never a path: Path.join NORMALISES a traversal rather than
+    // refusing it, so `go/../go` is indistinguishable from `go` once joined.
+    // Same grammar as the add side, checked before any path is derived.
+    if (!manifest_1.ITEM_NAME_RE.test(name)) {
+        throw new utility_1.SdkGenError('Invalid ' + kind + ' name: ' + JSON.stringify(name) +
+            '\n  a name matches ' + manifest_1.ITEM_NAME_RE.source + ' — it is not a path');
+    }
     const declared = (0, kindCollection_1.kindCollection)(model, kind)?.[name];
     const modelfile = (0, definition_1.definitionPath)(root, kind, name);
     const hasModel = fs.existsSync(modelfile);
@@ -93,7 +106,8 @@ async function planRemove(kind, name, actx, deleteOutput) {
             ' installs it unconditionally');
     }
     const plan = {
-        kind, name, files: [], dirs: [], indexed: false, refused: [], notes: [],
+        kind, name, files: [], dirs: [], indexed: false,
+        refused: [], aliased: [], notes: [],
     };
     // Feature overlays belong to both the feature and the target's tree.
     const inScope = (k, n) => (k === kind && n === name) ||
@@ -104,8 +118,10 @@ async function planRemove(kind, name, actx, deleteOutput) {
         plan.refused.push('(source not found: the copy cannot be compared with what' +
             ' `' + kind + ' add` wrote; every file below is deleted only under --force)');
     }
-    const findings = null == source ? [] :
-        await driftFindings(actx, inScope);
+    // The feature being removed counts as selected, so its own source is
+    // compared rather than written off as stale — see checkTarget.
+    const findings = null == source ? { all: [], aliased: new Set() } :
+        await driftFindings(actx, inScope, 'feature' === kind ? [name] : undefined);
     if ('feature' === kind) {
         planFeature(plan, actx);
     }
@@ -123,9 +139,12 @@ async function planRemove(kind, name, actx, deleteOutput) {
         plan.files.push('model/' + kind + '/' + name + '.aon');
     }
     const wanted = new Set(plan.files);
-    for (const f of findings) {
+    for (const f of findings.all) {
         if (wanted.has(f)) {
             plan.refused.push(f);
+            if (findings.aliased.has(f)) {
+                plan.aliased.push(f);
+            }
         }
     }
     const index = node_path_1.default.join((0, definition_1.definitionFolder)(root, kind), (0, definition_1.indexName)(kind));
@@ -192,17 +211,21 @@ function resolveDeclared(kind, name, declared, actx) {
         return undefined;
     }
 }
-async function driftFindings(actx, scope) {
+async function driftFindings(actx, scope, selected) {
     const quiet = quietLog(actx.log);
-    const res = await (0, doctor_1.doctor)({ ...actx, log: quiet }, scope);
+    const res = await (0, doctor_1.doctor)({ ...actx, log: quiet }, scope, selected);
     const report = res.report;
-    return [
-        ...report.forked,
-        ...report.edited,
-        ...report.stale,
-        ...report.additive,
-        ...report.aliasedDiff,
-    ];
+    return {
+        all: [
+            ...report.forked,
+            ...report.edited,
+            ...report.stale,
+            ...report.additive,
+            ...report.aliasedDiff,
+        ],
+        // Kept apart because it needs different advice — see kindRemove.
+        aliased: new Set(report.aliasedDiff),
+    };
 }
 // Model files outside the item's own that still name it: a project's
 // declarations are the project's, so they are reported, never edited.

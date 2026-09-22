@@ -48,6 +48,44 @@ function write(project: any, rel: string, content: string) {
 
 describe('target remove', () => {
 
+  // A name, never a path. Path.join NORMALISES a traversal instead of
+  // refusing it, so `go/../go` arrived at planning indistinguishable from
+  // `go` and would have deleted the real target under a name nobody typed;
+  // the second shape points outside the project altogether.
+  for (const bad of ['go/../go', '../../model/target/go']) {
+    test('refuses a name that is a path: ' + bad, async () => {
+      const project = await addedProject()
+      const before = project.vol.toJSON()
+
+      await rejects(
+        () => kind_remove('target', [bad], project.actx),
+        (err: any) => {
+          match(String(err.message), /Invalid target name/)
+          match(String(err.message), /it is not a path/)
+          return true
+        })
+
+      // Nothing planned, so nothing gone — the real target included.
+      deepStrictEqual(project.vol.toJSON(), before)
+      ok(has(project, 'tm/go/Makefile'))
+    })
+  }
+
+
+  // --force is not a way past the grammar: it governs what may be DELETED,
+  // and this name never reaches a plan to force.
+  test('--force does not excuse a name that is a path', async () => {
+    const project = await addedProject()
+    project.actx.flags = { force: true }
+    const before = project.vol.toJSON()
+
+    await rejects(
+      () => kind_remove('target', ['go/../go'], project.actx),
+      /Invalid target name/)
+    deepStrictEqual(project.vol.toJSON(), before)
+  })
+
+
   test('refuses an edited alias model, and --force deletes it', async () => {
     const project = makeProject()
     await target_add([targetRef('go') + '~custom'], project.actx)
@@ -62,7 +100,13 @@ describe('target remove', () => {
 
     await rejects(
       () => kind_remove('target', ['custom'], project.actx),
-      /model\/target\/custom\.aon/)
+      (err: any) => {
+        match(String(err.message), /model\/target\/custom\.aon/)
+        // Its own advice: the standard line names .sdk/model/, which is
+        // where this file already is.
+        match(String(err.message), /ALIAS's own model file/)
+        return true
+      })
     deepStrictEqual(project.vol.toJSON(), before)
 
     project.actx.flags = { force: true }
@@ -313,6 +357,44 @@ describe('feature remove', () => {
     ok(has(project, 'tm/go/feature/test_feature.go'), 'another feature went too')
     ok(has(project, 'tm/go/feature/base_feature.go'), 'base went too')
     strictEqual(project.actx.model.main[KIT].feature.log, undefined)
+  })
+
+
+  // Deactivating a feature is how a project stops shipping it without
+  // deleting it, so `feature remove` is the next thing anyone runs.
+  test('removes a feature the project deactivated', async () => {
+    const project = await addedProject({ feature: { log: { active: true } } })
+    await feature_add(['log'], project.actx)
+    ok(has(project, 'tm/go/feature/log_feature.go'))
+
+    project.actx.model.main[KIT].feature.log.active = false
+
+    await kind_remove('feature', ['log'], project.actx)
+
+    strictEqual(has(project, 'tm/go/feature/log_feature.go'), false)
+    strictEqual(has(project, 'model/feature/log.aon'), false)
+    ok(has(project, 'tm/go/feature/base_feature.go'), 'base went too')
+  })
+
+
+  // And the protection survives: deactivated is not a way past the edit
+  // check, or a project's own work would go silently on the next remove.
+  test('still refuses an edited source in a deactivated feature', async () => {
+    const project = await addedProject({ feature: { log: { active: true } } })
+    await feature_add(['log'], project.actx)
+
+    write(project, 'tm/go/feature/log_feature.go', '// project customization\n')
+    project.actx.model.main[KIT].feature.log.active = false
+    const before = project.vol.toJSON()
+
+    await rejects(
+      () => kind_remove('feature', ['log'], project.actx),
+      /tm\/go\/feature\/log_feature\.go/)
+    deepStrictEqual(project.vol.toJSON(), before)
+
+    project.actx.flags = { force: true }
+    await kind_remove('feature', ['log'], project.actx)
+    strictEqual(has(project, 'tm/go/feature/log_feature.go'), false)
   })
 
 

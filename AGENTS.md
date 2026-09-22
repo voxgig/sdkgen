@@ -709,7 +709,13 @@ emitted broken source reached the fleet unchallenged.
   exit on forked / edited / stale / missing. An ALIASED target
   (`target add go~go2`) is exempt from the model-file comparison — the
   scaffold ships nothing to compare it against, and editing it is how an alias
-  is differentiated.
+  is differentiated. The exemption is doctor's ALONE: the difference lands in
+  `aliasedDiff`, which is reported and does not count towards `report.ok`, but
+  `remove` still refuses on it, because that file carries a decision no
+  scaffold holds a copy of. It says so in its own words rather than repeating
+  the standard "move it into `.sdk/model/`", which names the place the file
+  already is; `--force` is the only way past it. Do not "fix" one half to
+  match the other — they answer different questions.
 - **Derive an env-var name with `envToken`/`envName`, never from the camel
   form.** `nom(model, 'Name').toUpperCase()` swallows a hyphen, so a slug like
   `voxgig-solardemo` produced BOTH `VOXGIG_SOLARDEMO_TEST_LIVE` and

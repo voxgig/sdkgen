@@ -207,6 +207,19 @@ async function generateTo(
 }
 
 
+// One generated file, by the tail of its path: several template trees carry
+// a placeholder directory (py's `pkg`, swift's `Sources/<Name>SDK`) that the
+// generated tree spells with the project's own name.
+function pick(
+  out: Record<string, string>, target: string, tail: string,
+): string {
+  const found = Object.keys(out).filter((p) => p.endsWith(tail))
+  strictEqual(found.length, 1,
+    target + ': expected one ' + tail + ', got ' + JSON.stringify(found))
+  return out[found[0]]
+}
+
+
 describe('generated SDK compiles', () => {
 
   let tmp = ''
@@ -243,12 +256,20 @@ describe('generated SDK compiles', () => {
 
 
   test('py: pooled HTTP connections do not share cookies', async (t) => {
+    const sdkroot = Path.join(tmp, 'py-cookies')
+    const out = await generateTo('py', sdkroot)
+
+    // Read the transport BEFORE consulting the toolchain: `requests` is not
+    // installed on a GitHub runner, so a lane that skipped first proved
+    // nothing anywhere.
+    const fetcher = pick(out, 'py', 'utility/fetcher.py')
+    ok(fetcher.includes('DefaultCookiePolicy(allowed_domains=[])'),
+      'py: the shared session does not refuse cookies')
+
     const py = toolchain('python3') || toolchain('python')
     if (null == py || !probeOk(py, ['-c', 'import requests'])) {
-      return t.skip('needs Python with requests')
+      return t.skip('generated source checked; needs Python with requests to run it')
     }
-    const sdkroot = Path.join(tmp, 'py-cookies')
-    await generateTo('py', sdkroot)
     Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport/cookies.py'),
       Path.join(sdkroot, 'cookies.py'))
     const result = run(py, ['-B', 'cookies.py'], sdkroot, {
@@ -259,11 +280,48 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // The shared-client cookie store, where the platform turns it on by
+  // default. Neither toolchain is on a GitHub runner, so the lane reads the
+  // generated transport first and only the RUN is conditional.
+  for (const [target, file, needles] of [
+    ['csharp', 'utility/Fetcher.cs', ['UseCookies = false', 'CookielessHandler']],
+    ['swift', 'utility/Fetcher.swift',
+      ['httpCookieStorage = nil', 'httpShouldSetCookies = false',
+        'httpShouldHandleCookies = false']],
+  ] as [string, string, string[]][]) {
+    test(target + ': the shared transport stores no cookies', async (t) => {
+      const sdkroot = Path.join(tmp, target + '-cookies')
+      const out = await generateTo(target, sdkroot)
+
+      const src = pick(out, target, file)
+      for (const needle of needles) {
+        ok(src.includes(needle), target + ': ' + file + ' is missing ' + needle)
+      }
+      // Every client/session the transport hands out, not just the first.
+      strictEqual(/URLSession\.shared|new HttpClient\(\)/.test(src), false,
+        target + ': a cookie-storing default client survives in ' + file)
+
+      const bin = toolchain('csharp' === target ? 'dotnet' : 'swift')
+      if (null == bin) {
+        return t.skip('generated source checked; no ' +
+          ('csharp' === target ? 'dotnet' : 'swift') + ' toolchain to run it')
+      }
+    })
+  }
+
+
   test('rb: pooled HTTP connections do not replay unsafe requests', async (t) => {
-    const rb = toolchain('ruby')
-    if (null == rb) return t.skip('needs Ruby')
     const sdkroot = Path.join(tmp, 'rb-replay')
-    await generateTo('rb', sdkroot)
+    const out = await generateTo('rb', sdkroot)
+
+    // The replay was a retry loop around http.request; its absence is what
+    // the lane proves where Ruby is missing.
+    const fetcher = pick(out, 'rb', 'utility/fetcher.rb')
+    strictEqual(/rescue EOFError|raise e if stale/.test(fetcher), false,
+      'rb: the connection-error replay loop is back in the fetcher')
+
+    const rb = toolchain('ruby')
+    if (null == rb) return t.skip('generated source checked; needs Ruby to run it')
     Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport/replay.rb'),
       Path.join(sdkroot, 'replay.rb'))
     const result = run(rb, ['replay.rb'], sdkroot, {
@@ -276,17 +334,26 @@ describe('generated SDK compiles', () => {
   })
 
 
-  for (const [target, tool, file] of [
-    ['py', 'python3', 'context.py'],
-    ['rb', 'ruby', 'context.rb'],
-    ['php', 'php', 'context.php'],
-    ['perl', 'perl', 'context.pl'],
+  for (const [target, tool, file, ctxfile] of [
+    ['py', 'python3', 'context.py', 'core/context.py'],
+    ['rb', 'ruby', 'context.rb', 'core/context.rb'],
+    ['php', 'php', 'context.php', 'core/Context.php'],
+    ['perl', 'perl', 'context.pl', 'core/context.pm'],
   ]) {
     test(target + ': operation controls are isolated', async (t) => {
-      const bin = toolchain(tool)
-      if (null == bin) return t.skip('needs ' + tool)
       const sdkroot = Path.join(tmp, target + '-context')
-      await generateTo(target, sdkroot)
+      const out = await generateTo(target, sdkroot)
+
+      // The condition first, so the lane still says something on a runner
+      // without this interpreter.
+      const ctx = pick(out, target, ctxfile)
+      ok(/opname/.test(ctx) && /ctrl/i.test(ctx),
+        target + ': the control inheritance is not gated on opname')
+
+      const bin = toolchain(tool)
+      if (null == bin) {
+        return t.skip('generated source checked; needs ' + tool + ' to run it')
+      }
       Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport', file),
         Path.join(sdkroot, file))
       const result = run(bin, [file], sdkroot)

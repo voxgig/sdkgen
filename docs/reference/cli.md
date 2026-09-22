@@ -213,6 +213,13 @@ first, or pass `--force` to delete those files too. An item whose source
 can no longer be found (a package that was uninstalled) cannot be
 compared, so it also needs `--force`.
 
+An **aliased** item is the one case where the advice does not apply. The
+scaffold ships no model file to compare an alias against, so `doctor`
+reports a difference there as project-owned rather than drift and stays
+green; `remove` still stops, because the file carries a decision nobody
+else holds a copy of, and says so in its own words. There is nowhere to
+move it, so `--force` is the way to delete it with the alias.
+
 Three things `remove` deliberately leaves alone, and says so:
 
 - **Generated output.** `<name>/` beside `.sdk/` stays unless

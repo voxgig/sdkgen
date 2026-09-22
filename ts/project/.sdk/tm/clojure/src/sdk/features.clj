@@ -588,7 +588,14 @@
                          (cond
                            (some? (mget paging "cursor")) (.put ^java.util.Map q cursor-param (mget paging "cursor"))
                            (nil? (mget q page-param))
-                           (.put ^java.util.Map q page-param (if (nil? (mget paging "page")) (opt fa "startPage" 1) (mget paging "page"))))
+                           ;; A record written back by PreResult holds the page
+                           ;; just fetched as `page` and the one to fetch as
+                           ;; `nextPage`, so nextPage wins.
+                           (.put ^java.util.Map q page-param
+                                 (cond
+                                   (some? (mget paging "nextPage")) (mget paging "nextPage")
+                                   (some? (mget paging "page")) (mget paging "page")
+                                   :else (opt fa "startPage" 1))))
                          (when (and (some? (opt fa "limit")) (nil? (mget q limit-param)))
                            (.put ^java.util.Map q limit-param (opt fa "limit"))))))))))
            "PreResult"
@@ -633,12 +640,21 @@
                                  (reset! explicit-more true))))))
                        (when (vs/ismap body)
                          (when (some? (mget body "next")) (when (nil? (mget paging "next")) (.put ^java.util.Map paging "next" (mget body "next"))))
+                         ;; Both spellings, camelCase last so it wins when a
+                         ;; body carries the two.
+                         (when (some? (mget body "next_cursor")) (.put ^java.util.Map paging "cursor" (mget body "next_cursor")))
                          (when (some? (mget body "cursor")) (.put ^java.util.Map paging "cursor" (mget body "cursor")))
                          (when (some? (mget body "nextCursor")) (.put ^java.util.Map paging "cursor" (mget body "nextCursor")))
-                         (let [hm (mget body "hasMore")]
-                           (when (or (= hm true) (= hm false))
-                             (.put ^java.util.Map paging "hasMore" hm)
-                             (reset! explicit-more true))))
+                         (when (nil? (mget paging "nextPage"))
+                           (let [np (if (some? (mget body "nextPage"))
+                                      (mget body "nextPage") (mget body "next_page"))]
+                             (when (or (number? np) (string? np))
+                               (.put ^java.util.Map paging "nextPage" np))))
+                         (doseq [k ["has_more" "hasMore"]]
+                           (let [hm (mget body k)]
+                             (when (or (= hm true) (= hm false))
+                               (.put ^java.util.Map paging "hasMore" hm)
+                               (reset! explicit-more true)))))
                        ;; Cursor presence only INFERS another page. When the
                        ;; server stated the answer outright — relay's
                        ;; `hasNextPage: false`, or a body `hasMore` — that
@@ -651,6 +667,16 @@
                                (boolean (or (mget paging "hasMore") (some? (mget paging "next"))
                                             (some? (mget paging "cursor")) (some? (mget paging "nextPage")))))))
                      (core/oset! result :paging paging)
+                     (when-let [ctrl (core/oget ctx :ctrl)]
+                       (let [held (core/oget ctrl :paging)]
+                         (if (vs/ismap held)
+                           ;; The caller holds this map, so refill it in place
+                           ;; as the other typed ports do; a fresh map on ctrl
+                           ;; would never reach them. Every key of the record
+                           ;; is written, so no key of an earlier page lives on.
+                           (doseq [k (vec (vs/keysof paging))]
+                             (.put ^java.util.Map held k (mget paging k)))
+                           (core/oset! ctrl :paging paging))))
                      (track-set! fa "_paging" (vs/jm "last" paging)))))))
            )
     fa))
