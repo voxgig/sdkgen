@@ -85,7 +85,9 @@ func prepareAuthUtil(ctx *core.Context) (*core.Spec, error) {
   const head = `package utility
 
 import (
-${withBasic ? `	"encoding/base64"
+${'cookie' === spec.where ? `	"strings"
+
+` : ''}${withBasic ? `	"encoding/base64"
 
 ` : ''}	vs "${spec.gomodule}/utility/struct"
 
@@ -98,7 +100,7 @@ ${'cookie' === spec.where ? `const cookieHeader = "cookie"
 ${withBasic ? `const optionSecret = "secret"
 ` : ''}const notFound = "__NOTFOUND__"
 
-func prepareAuthUtil(ctx *core.Context) (*core.Spec, error) {
+${'cookie' === spec.where ? cookieHelper() : ''}func prepareAuthUtil(ctx *core.Context) (*core.Spec, error) {
 	spec := ctx.Spec
 	if spec == nil {
 		return nil, ctx.MakeError("auth_no_spec",
@@ -176,6 +178,30 @@ ${place(spec.where)}
 }
 
 
+function cookieHelper(): string {
+  return `func applyAuthCookie(headers map[string]any, value *string) {
+	existing, _ := headers[cookieHeader].(string)
+	pairs := []string{}
+	for _, part := range strings.Split(existing, ";") {
+		pair := strings.TrimSpace(part)
+		if pair != "" && pair != credName && !strings.HasPrefix(pair, credName+"=") {
+			pairs = append(pairs, pair)
+		}
+	}
+	if value != nil {
+		pairs = append(pairs, credName+"="+*value)
+	}
+	if len(pairs) == 0 {
+		delete(headers, cookieHeader)
+	} else {
+		headers[cookieHeader] = strings.Join(pairs, "; ")
+	}
+}
+
+`
+}
+
+
 function credLiteral(where: string, name: string): string {
   return 'header' === where ? String(name).toLowerCase() : String(name)
 }
@@ -194,6 +220,7 @@ function bagField(where: string): string {
 
 
 function clear(where: string): string {
+  if ('cookie' === where) return 'applyAuthCookie(headers, nil)'
   return `delete(${bagName(where)}, credName)`
 }
 
@@ -212,16 +239,7 @@ function place(where: string): string {
 		if av, ok := apikey.(string); ok {
 			apikeyVal = av
 		}
-		pair := credName + "=" + apikeyVal
-		existing := ""
-		if ec, ok := headers[cookieHeader].(string); ok {
-			existing = ec
-		}
-		if existing == "" {
-			headers[cookieHeader] = pair
-		} else {
-			headers[cookieHeader] = existing + "; " + pair
-		}`
+		applyAuthCookie(headers, &apikeyVal)`
   }
 
   return `		authPrefix := ""

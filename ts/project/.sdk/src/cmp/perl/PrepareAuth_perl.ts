@@ -120,6 +120,22 @@ our %REGISTRY;
 ${placementNote(spec)}my $CRED_NAME = ${cred};
 my $OPTION_APIKEY = 'apikey';
 ${secretConst}my $NOT_FOUND = '__NOTFOUND__';
+${'cookie' === spec.where ? `
+sub apply_auth_cookie {
+  my ($headers, $value) = @_;
+  my $existing = $headers->{'cookie'};
+  $existing = '' unless defined $existing && !ref $existing;
+  my @pairs;
+  for my $pair (split /;/, $existing) {
+    $pair =~ s/^\\s+|\\s+$//g;
+    push @pairs, $pair if $pair ne '' && $pair ne $CRED_NAME
+      && index($pair, "$CRED_NAME=") != 0;
+  }
+  push @pairs, "$CRED_NAME=$value" if defined $value;
+  if (@pairs) { $headers->{'cookie'} = join('; ', @pairs); }
+  else { delete $headers->{'cookie'}; }
+}
+` : ''}
 
 $REGISTRY{prepare_auth} = sub {
   my ($ctx) = @_;
@@ -130,7 +146,7 @@ $REGISTRY{prepare_auth} = sub {
 ${bag(spec)}  my $options = $ctx->{client}->options_map;
 
   # Public APIs that need no auth omit the options.auth block entirely.
-${noCredNote(spec)}  if (!defined ${spec.Name}Helpers::gp($options, 'auth')) {
+  if (!defined ${spec.Name}Helpers::gp($options, 'auth')) {
 ${clear(spec, '    ')}    return ($spec, undef);
   }
 
@@ -154,32 +170,11 @@ const MISSING = `  if (!defined $apikey || Voxgig::Struct::is_none($apikey)
 
 
 function credBlock(spec: AuthSpec): string {
-  if ('cookie' === spec.where) {
-    return `
-${MISSING}
-    return ($spec, undef);
-  }
-
-${place(spec).replace(/^ {4}/gm, '  ')}`
-  }
-
   return `
 ${MISSING}
 ${clear(spec, '    ')}  }
   else {
 ${place(spec)}  }
-`
-}
-
-
-function noCredNote(spec: AuthSpec): string {
-  if ('cookie' !== spec.where) {
-    return ''
-  }
-
-  return `  # Nothing of OURS to remove either way: this SDK appends its pair to
-  # whatever cookie header the caller set and never stores one, and
-  # prepare_headers rebuilds that header from options on every request.
 `
 }
 
@@ -221,7 +216,7 @@ function clear(spec: AuthSpec, ind: string): string {
   }
 
   if ('cookie' === spec.where) {
-    return ''
+    return `${ind}apply_auth_cookie($headers, undef);\n`
   }
 
   return `${ind}delete $headers->{$CRED_NAME};\n`
@@ -240,13 +235,7 @@ function place(spec: AuthSpec): string {
 
   if ('cookie' === spec.where) {
     return `    my $apikey_val = (!ref $apikey) ? "$apikey" : '';
-    my $pair = "$CRED_NAME=$apikey_val";
-    # APPEND, never clobber: the caller's own cookie header may already
-    # carry a session or consent pair that the API needs alongside this
-    # credential.
-    my $cookie = $headers->{'cookie'};
-    $cookie = '' unless defined $cookie && !ref $cookie;
-    $headers->{'cookie'} = ('' eq $cookie) ? $pair : "$cookie; $pair";
+    apply_auth_cookie($headers, $apikey_val);
 `
   }
 

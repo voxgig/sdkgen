@@ -232,7 +232,35 @@ fn base64_encode(input: &[u8]) -> String {
 }
 `
 
-  return head + basicBlock + tail + encoder
+  return head + basicBlock + tail + encoder +
+    ('cookie' === spec.where ? cookieHelper() : '')
+}
+
+
+function cookieHelper(): string {
+  return `
+fn apply_auth_cookie(headers: &Value, value: Option<&str>) {
+    let existing = match getp(headers, COOKIE_HEADER) {
+        Value::Str(s) => s,
+        _ => String::new(),
+    };
+    let prefix = format!("{}=", CRED_NAME);
+    let mut pairs: Vec<String> = existing
+        .split(';')
+        .map(str::trim)
+        .filter(|pair| !pair.is_empty() && *pair != CRED_NAME && !pair.starts_with(&prefix))
+        .map(str::to_owned)
+        .collect();
+    if let Some(value) = value {
+        pairs.push(format!("{}={}", CRED_NAME, value));
+    }
+    if pairs.is_empty() {
+        vs::del_prop(headers.clone(), &Value::str(COOKIE_HEADER));
+    } else {
+        setp(headers, COOKIE_HEADER, Value::str(pairs.join("; ")));
+    }
+}
+`
 }
 
 
@@ -258,6 +286,7 @@ function bagName(where: string): string {
 
 
 function clear(where: string): string {
+  if ('cookie' === where) return 'apply_auth_cookie(&headers, None)'
   return `vs::del_prop(${bagName(where)}, &Value::str(CRED_NAME))`
 }
 
@@ -277,22 +306,7 @@ function place(where: string): string {
             Value::Str(s) => s.clone(),
             _ => String::new(),
         };
-        let pair = format!("{}={}", CRED_NAME, apikey_val);
-        // APPEND: the cookie header may already carry pairs this SDK did not
-        // set, and replacing it outright would drop them.
-        let existing = match getp(&headers, COOKIE_HEADER) {
-            Value::Str(s) => s,
-            _ => String::new(),
-        };
-        if existing.is_empty() {
-            setp(&headers, COOKIE_HEADER, Value::str(pair));
-        } else {
-            setp(
-                &headers,
-                COOKIE_HEADER,
-                Value::str(format!("{}; {}", existing, pair)),
-            );
-        }`
+        apply_auth_cookie(&headers, Some(&apikey_val));`
   }
 
   return `        let auth_prefix = match getpath(&["auth", "prefix"], &options) {

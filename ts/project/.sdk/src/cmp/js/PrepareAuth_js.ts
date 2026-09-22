@@ -86,7 +86,18 @@ function prepareAuth(ctx) {
 
   const ${bag(spec.where)} = spec.${bag(spec.where)}
 
-  const options = client.options()
+${'cookie' === spec.where ? `  const applyCookie = (value) => {
+    const existing = getprop(headers, 'cookie', '')
+    const pairs = ('string' === typeof existing ? existing : '').split(';')
+      .map((pair) => pair.trim())
+      .filter((pair) => '' !== pair && pair !== CRED_name &&
+        !pair.startsWith(CRED_name + '='))
+    if (null !== value) pairs.push(CRED_name + '=' + value)
+    if (0 < pairs.length) setprop(headers, 'cookie', pairs.join('; '))
+    else delprop(headers, 'cookie')
+  }
+
+` : ''}  const options = client.options()
 
   // Public APIs that need no auth omit the options.auth block entirely.
   if (null == options.auth) {
@@ -149,6 +160,7 @@ function bag(where: string): string {
 
 
 function clear(where: string): string {
+  if ('cookie' === where) return 'applyCookie(null)'
   return 'query' === where ? 'delprop(query, CRED_name)' : 'delprop(headers, CRED_name)'
 }
 
@@ -159,9 +171,7 @@ function place(where: string): string {
   }
 
   if ('cookie' === where) {
-    return `    const existing = getprop(headers, 'cookie', '')
-    const pair = CRED_name + '=' + apikey
-    setprop(headers, 'cookie', existing ? existing + '; ' + pair : pair)`
+    return `    applyCookie(String(apikey))`
   }
 
   return `    // Empty prefix (raw apiKey credential) must not add a leading space.

@@ -97,7 +97,7 @@ Spec* prepare_auth_util(Context* ctx, PNError** err) {
 #include "sdk.h"
 
 ${withStdio ? `#include <stdio.h>
-` : ''}#include <string.h>
+` : ''}${'cookie' === spec.where ? `#include <stdlib.h>\n` : ''}#include <string.h>
 
 #define CRED_NAME "${cstr(credLiteral(spec.where, spec.name))}"
 ${'cookie' === spec.where ? `#define COOKIE_HEADER "cookie"
@@ -126,7 +126,7 @@ static void b64_encode(const char* in, char* out, size_t outcap) {
   }
   out[o] = '\\0';
 }
-` : ''}
+` : ''}${'cookie' === spec.where ? cookieHelper() : ''}
 Spec* prepare_auth_util(Context* ctx, PNError** err) {
   *err = NULL;
   Spec* spec = ctx->spec;
@@ -221,6 +221,63 @@ ${place(spec.where)}
 }
 
 
+function cookieCall(value: string, pad: string): string {
+  return `${pad}if (!apply_auth_cookie(headers, ${value})) {
+${pad}  *err = context_make_error(ctx, "auth_cookie_alloc", "Could not allocate cookie header.");
+${pad}  return NULL;
+${pad}}`
+}
+
+
+function cookieHelper(): string {
+  return `
+static bool apply_auth_cookie(voxgig_value* headers, const char* value) {
+  const char* existing = get_str(headers, COOKIE_HEADER);
+  if (!existing) existing = "";
+  size_t name_len = strlen(CRED_NAME);
+  size_t capacity = strlen(existing) * 2 + name_len + (value ? strlen(value) : 0) + 4;
+  char* result = malloc(capacity);
+  if (!result) return false;
+  size_t used = 0;
+  for (const char* part = existing; *part;) {
+    const char* end = strchr(part, ';');
+    if (!end) end = part + strlen(part);
+    const char* next = *end ? end + 1 : end;
+    while (part < end && (*part == ' ' || *part == '\\t')) part++;
+    while (end > part && (end[-1] == ' ' || end[-1] == '\\t')) end--;
+    size_t len = (size_t)(end - part);
+    bool owned = len >= name_len && !strncmp(part, CRED_NAME, name_len)
+      && (len == name_len || part[name_len] == '=');
+    if (len && !owned) {
+      if (used) { result[used++] = ';'; result[used++] = ' '; }
+      memcpy(result + used, part, len);
+      used += len;
+    }
+    part = next;
+  }
+  if (value) {
+    if (used) { result[used++] = ';'; result[used++] = ' '; }
+    memcpy(result + used, CRED_NAME, name_len);
+    used += name_len;
+    result[used++] = '=';
+    size_t value_len = strlen(value);
+    memcpy(result + used, value, value_len);
+    used += value_len;
+  }
+  result[used] = '\\0';
+  if (used) setp(headers, COOKIE_HEADER, v_str(result));
+  else {
+    voxgig_value* key = v_str(COOKIE_HEADER);
+    voxgig_delprop(headers, key);
+    voxgig_release(key);
+  }
+  free(result);
+  return true;
+}
+`
+}
+
+
 function credLiteral(where: string, name: string): string {
   return 'header' === where ? String(name).toLowerCase() : String(name)
 }
@@ -237,6 +294,7 @@ function bagName(where: string): string {
 
 function clear(where: string, indent: number): string {
   const pad = ' '.repeat(indent)
+  if ('cookie' === where) return cookieCall('NULL', pad)
   return `${pad}voxgig_value* k = voxgig_new_string(CRED_NAME);
 ${pad}voxgig_delprop(${bagName(where)}, k);
 ${pad}voxgig_release(k);`
@@ -251,14 +309,7 @@ function place(where: string): string {
 
   if ('cookie' === where) {
     return `    const char* apikey_val = voxgig_is_string(apikey) ? voxgig_as_string(apikey) : "";
-    const char* existing = get_str(headers, COOKIE_HEADER);
-    char buf[2048];
-    if (existing && existing[0] != '\\0') {
-      snprintf(buf, sizeof(buf), "%s; %s=%s", existing, CRED_NAME, apikey_val);
-    } else {
-      snprintf(buf, sizeof(buf), "%s=%s", CRED_NAME, apikey_val);
-    }
-    setp(headers, COOKIE_HEADER, v_str(buf));`
+${cookieCall('apikey_val', '    ')}`
   }
 
   return `    voxgig_value* prefix_v = getpath2(options, "auth", "prefix");

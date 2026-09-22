@@ -146,7 +146,22 @@ final class PrepareAuth {
   private PrepareAuth() {}
 
 ${consts}
-
+${cookie ? `
+  private static void applyCookie(Map<String, Object> headers, String value) {
+    Object existing = headers.get(COOKIE_HEADER);
+    String cookie = existing instanceof String ? (String) existing : "";
+    java.util.List<String> pairs = new java.util.ArrayList<>();
+    for (String part : cookie.split(";")) {
+      String pair = part.trim();
+      if (!pair.isEmpty() && !pair.equals(CRED_NAME) && !pair.startsWith(CRED_NAME + "=")) {
+        pairs.add(pair);
+      }
+    }
+    if (value != null) pairs.add(CRED_NAME + "=" + value);
+    if (pairs.isEmpty()) headers.remove(COOKIE_HEADER);
+    else headers.put(COOKIE_HEADER, String.join("; ", pairs));
+  }
+` : ''}
   static Spec prepareAuth(Context ctx) {
     Spec spec = ctx.spec;
     if (spec == null) {
@@ -194,6 +209,7 @@ function credName(where: string, name: string): string {
 
 
 function clear(where: string): string {
+  if ('cookie' === where) return 'applyCookie(headers, null);'
   return 'query' === where ? 'query.remove(CRED_NAME);' : 'headers.remove(CRED_NAME);'
 }
 
@@ -208,13 +224,7 @@ function place(where: string): string {
 
   if ('cookie' === where) {
     return `      String apikeyVal = apikey instanceof String ? (String) apikey : "";
-      // A cookie IS a header, but the request may already carry others, so
-      // the pair is APPENDED rather than replacing the whole cookie header.
-      // No prefix, for the same reason a query parameter carries none.
-      Object existing = Struct.getprop(headers, COOKIE_HEADER, "");
-      String cookie = existing instanceof String ? (String) existing : "";
-      String pair = CRED_NAME + "=" + apikeyVal;
-      headers.put(COOKIE_HEADER, "".equals(cookie) ? pair : cookie + "; " + pair);`
+      applyCookie(headers, apikeyVal);`
   }
 
   return `      String authPrefix = "";

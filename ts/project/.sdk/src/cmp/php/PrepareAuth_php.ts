@@ -86,7 +86,7 @@ class ${Name}PrepareAuth
 
   return head + `class ${Name}PrepareAuth
 {
-${constants(spec)}
+${constants(spec)}${'cookie' === spec.where ? cookieHelper() : ''}
     public static function call(${Name}Context $ctx): array
     {
         $spec = $ctx->spec;
@@ -107,6 +107,27 @@ ${basicBlock(spec)}${placeBlock(spec)}
         return [$spec, null];
     }
 }
+`
+}
+
+
+function cookieHelper(): string {
+  return `
+    private static function applyCookie(array &$headers, ?string $value): void
+    {
+        $existing = $headers[self::HEADER_COOKIE] ?? '';
+        $pairs = [];
+        foreach (explode(';', is_string($existing) ? $existing : '') as $part) {
+            $pair = trim($part);
+            if ($pair !== '' && $pair !== self::COOKIE_AUTH
+                && !str_starts_with($pair, self::COOKIE_AUTH . '=')) {
+                $pairs[] = $pair;
+            }
+        }
+        if ($value !== null) $pairs[] = self::COOKIE_AUTH . '=' . $value;
+        if ($pairs === []) unset($headers[self::HEADER_COOKIE]);
+        else $headers[self::HEADER_COOKIE] = implode('; ', $pairs);
+    }
 `
 }
 
@@ -141,10 +162,7 @@ ${secretConst}    private const NOT_FOUND = '__NOTFOUND__';
 
 function suppressed(where: string): string {
   if ('cookie' === where) {
-    // NOTHING TO CLEAR. The cookie header may carry the caller's own
-    // cookies, and this SDK has not written a pair of its own into this
-    // spec, so removing the header would throw away someone else's state.
-    return ''
+    return `            self::applyCookie($headers, null);\n`
   }
   return `            unset($${bagVar(where)}[self::${credConst(where)}]);\n`
 }
@@ -197,16 +215,7 @@ function placeBlock(spec: AuthSpec): string {
     return `
         $missing = ${missing};
 
-        if (!$missing) {
-            // A COOKIE IS APPENDED, NEVER ASSIGNED: the header may already
-            // carry the caller's own cookies, and one \`Cookie:\` header
-            // holds all of them, separated by '; '.
-            $apikey_val = is_string($apikey) ? $apikey : '';
-            $existing = $headers[self::HEADER_COOKIE] ?? '';
-            $pair = self::COOKIE_AUTH . '=' . $apikey_val;
-            $headers[self::HEADER_COOKIE] = $existing === ''
-                ? $pair : "{$existing}; {$pair}";
-        }
+        self::applyCookie($headers, $missing ? null : (is_string($apikey) ? $apikey : ''));
 `
   }
 

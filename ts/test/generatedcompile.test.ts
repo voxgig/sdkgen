@@ -24,6 +24,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 
 import { makeModel, makeRoot, layeredFs, makeLog } from './generateharness'
+import { COOKIE_CASES, COOKIE_PROBES } from './cookieauthprobes'
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -3438,3 +3439,99 @@ main: kit: flow: BasicNamespaceFlow: {
   ]
 }
 `
+
+
+describe('cookie auth replaces and clears only its own credential', () => {
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cookie-auth-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const target of ['ts', 'js', 'go', 'py', 'rb', 'php', 'perl', 'java', 'rust', 'c', 'csharp']) {
+    test(target + ': cookie auth cleanup and replacement', async (t) => {
+      const sdkroot = Path.join(tmp, target)
+      await generateTo(target, sdkroot,
+        "main: kit: config: auth: { active: true, in: cookie, name: session, prefix: '' }")
+      Fs.writeFileSync(Path.join(sdkroot, 'cookie-cases.json'), JSON.stringify(COOKIE_CASES))
+      const write = (name: string, source: string) => {
+        const path = Path.join(sdkroot, name)
+        Fs.mkdirSync(Path.dirname(path), { recursive: true })
+        Fs.writeFileSync(path, source)
+      }
+      let ran: ReturnType<typeof run> | null = null
+      if ('ts' === target || 'js' === target) {
+        linkDeps(sdkroot)
+        if ('ts' === target) {
+          const built = tsc(sdkroot, 'src')
+          ok(built.ok, built.out)
+        }
+        write('cookie-auth.cjs', COOKIE_PROBES.node.replace('PREPARE_AUTH',
+          ('ts' === target ? 'dist' : 'src') + '/utility/PrepareAuthUtility'))
+        ran = run(process.execPath, ['cookie-auth.cjs'], sdkroot)
+      }
+      else if (['py', 'rb', 'php', 'perl'].includes(target)) {
+        const command = { py: 'python3', rb: 'ruby', php: 'php', perl: 'perl' }[target]!
+        const exe = toolchain(command)
+        if (null == exe) return t.skip('no ' + command + ' toolchain')
+        const name = 'cookie_auth.' + ({ perl: 'pl' }[target] || target)
+        write(name, COOKIE_PROBES[target])
+        ran = run(exe, [name], sdkroot)
+      }
+      else if ('go' === target) {
+        const exe = toolchain('go')
+        if (null == exe) return t.skip('no go toolchain')
+        const mod = Fs.readFileSync(Path.join(sdkroot, 'go.mod'), 'utf8').match(/^module (.+)$/m)![1]
+        write('test/cookie_auth_test.go', COOKIE_PROBES.go.replace('GOMODULE', mod))
+        ran = run(exe, ['test', '-v', './test', '-run', '^TestCookieAuth$'], sdkroot)
+      }
+      else if ('java' === target) {
+        const javac = toolchain('javac'), java = toolchain('java')
+        if (null == javac || null == java) return t.skip('no Java toolchain')
+        write('CookieAuthProbe.java', COOKIE_PROBES.java)
+        const classes = Path.join(sdkroot, 'zz-classes')
+        Fs.mkdirSync(classes)
+        const sources = listFiles(sdkroot, '.java').filter((f) => !f.split(Path.sep).includes('test'))
+        const built = run(javac, ['-d', classes, ...sources], sdkroot)
+        ok(built.ok, built.out)
+        ran = run(java, ['-cp', classes, 'CookieAuthProbe'], sdkroot)
+      }
+      else if ('rust' === target) {
+        const cargo = toolchain('cargo')
+        if (null == cargo) return t.skip('no Rust toolchain')
+        write('tests/cookie_auth.rs', COOKIE_PROBES.rust)
+        ran = run(cargo, ['test', '--test', 'cookie_auth', '--', '--nocapture'], sdkroot)
+      }
+      else if ('c' === target) {
+        const make = toolchain('make'), cc = toolchain(process.env.CC || 'cc')
+        if (null == make || null == cc) return t.skip('no C toolchain')
+        write('tests/cookie_auth.c', COOKIE_PROBES.c)
+        const built = run(make, ['CC=' + cc, 'tests/cookie_auth.out'], sdkroot)
+        ok(built.ok, built.out)
+        ran = run(Path.join(sdkroot, 'tests/cookie_auth.out'), [], sdkroot)
+      }
+      else if ('csharp' === target) {
+        const dotnet = toolchain('dotnet')
+        if (null == dotnet) return t.skip('no .NET toolchain')
+        const sdkproj = Fs.readdirSync(sdkroot).find((n) => n.endsWith('.csproj'))!
+        const tfm = Fs.readFileSync(Path.join(sdkroot, sdkproj), 'utf8')
+          .match(/<TargetFramework>([^<]+)<\/TargetFramework>/)![1]
+        write('test/CookieAuthProbe.cs', COOKIE_PROBES.csharp)
+        write('zz-cookie/CookieAuthProbe.csproj',
+          '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>' +
+          '<OutputType>Exe</OutputType><TargetFramework>' + tfm + '</TargetFramework>' +
+          '<Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>' +
+          '<EnableDefaultCompileItems>false</EnableDefaultCompileItems>' +
+          '</PropertyGroup><ItemGroup><Compile Include="../test/CookieAuthProbe.cs" />' +
+          '<ProjectReference Include="../' + sdkproj + '" /></ItemGroup></Project>')
+        ran = run(dotnet, ['run', '--project', 'zz-cookie/CookieAuthProbe.csproj'], sdkroot)
+      }
+      ok(ran && ran.ok, target + ': ' + ran?.out)
+      ok(ran.out.includes('cookie-auth: ran ' + COOKIE_CASES.length + ' cases'), ran.out)
+    })
+  }
+})
