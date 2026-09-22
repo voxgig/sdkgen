@@ -2,6 +2,7 @@ package sdktest
 
 
 import (
+	"regexp"
 	"testing"
 
 	sdk "GOMODULE"
@@ -464,13 +465,21 @@ func TestPipelineFeatureOrder(t *testing.T) {
 	})
 }
 
+// plAuthCookiePair matches a cookie credential as PrepareAuth writes it:
+// `<scheme>=K` for the probe key, with no scheme prefix and nothing else in
+// the bag.
+var plAuthCookiePair = regexp.MustCompile(`^[^=;]+=K$`)
+
 // plAuthCred is where this SDK's PrepareAuth actually puts the credential.
 // The name is the API's own scheme name, not always "authorization", so the
-// cases below read it from a probe run instead of asserting a name.
+// cases below read it from a probe run instead of asserting a name. Pair is
+// the `<scheme>=` lead-in of a COOKIE credential, which rides the header bag
+// under the key "cookie" instead of taking a header of its own.
 type plAuthCred struct {
 	where string
 	name  string
 	value any
+	pair  string
 }
 
 // plAuthBag picks the container by placement. A cookie credential rides the
@@ -482,15 +491,21 @@ func plAuthBag(spec *sdk.Spec, where string) map[string]any {
 	return spec.Headers
 }
 
+// plAuth is the options auth block every case passes. `basic: false` is
+// explicit: an HTTP Basic API's generated config carries `auth.basic: true`,
+// and a client that merges it in takes a branch needing a secret as well.
+// With none supplied that branch writes nothing, which the probe would then
+// read as a public API.
+func plAuth(prefix string) map[string]any {
+	return map[string]any{"prefix": prefix, "basic": false}
+}
+
 // plAuthCredential runs PrepareAuth once with both containers present and
 // reports which one it wrote to, and under what name. Nil means this SDK
 // places no credential at all - a public API - which is a legitimate shape.
-func plAuthCredential(t *testing.T) *plAuthCred {
+func plAuthProbe(t *testing.T, sdkopts map[string]any) *plAuthCred {
 	t.Helper()
-	client, utility := plClient(t, map[string]any{
-		"apikey": "K",
-		"auth":   map[string]any{"prefix": "Bearer"},
-	})
+	client, utility := plClient(t, sdkopts)
 	ctx := plCtx(client, utility, nil)
 	ctx.Spec = sdk.NewSpec(map[string]any{"step": "s"})
 	if _, err := utility.PrepareAuth(ctx); err != nil {
@@ -498,10 +513,33 @@ func plAuthCredential(t *testing.T) *plAuthCred {
 	}
 	for _, where := range []string{"headers", "query"} {
 		for name, value := range plAuthBag(ctx.Spec, where) {
-			return &plAuthCred{where: where, name: name, value: value}
+			pair := ""
+			text, is := value.(string)
+			if "headers" == where && "cookie" == name && is &&
+				plAuthCookiePair.MatchString(text) {
+				pair = text[:len(text)-1]
+			}
+			return &plAuthCred{where: where, name: name, value: value, pair: pair}
 		}
 	}
 	return nil
+}
+
+func plAuthCredential(t *testing.T) *plAuthCred {
+	t.Helper()
+	return plAuthProbe(t, map[string]any{"apikey": "K", "auth": plAuth("Bearer")})
+}
+
+// plAuthAnyCredential is every credential this SDK could possibly place: both
+// credentials and Basic switched on, so whichever branch the API has,
+// something lands unless the API is public.
+func plAuthAnyCredential(t *testing.T) *plAuthCred {
+	t.Helper()
+	return plAuthProbe(t, map[string]any{
+		"apikey": "K",
+		"secret": "S",
+		"auth":   map[string]any{"prefix": "Bearer", "basic": true},
+	})
 }
 
 func TestPipelinePrepareAuth(t *testing.T) {
@@ -537,12 +575,21 @@ func TestPipelinePrepareAuth(t *testing.T) {
 		}
 	})
 
+	// Without this the cases below cannot fail for an SDK whose credential the
+	// probe misses: every one of them takes the public-API path instead.
+	t.Run("probe-finds-the-credential-this-sdk-places", func(t *testing.T) {
+		if (cred == nil) != (plAuthAnyCredential(t) == nil) {
+			t.Error("the probe missed a credential this SDK places, so every " +
+				"case below takes the public-API path")
+		}
+	})
+
 	t.Run("apikey-placed-where-this-api-puts-it", func(t *testing.T) {
 		if cred == nil {
 			// A public API places nothing, and that is the whole assertion.
 			if _, has := placed(t, map[string]any{
 				"apikey": "K",
-				"auth":   map[string]any{"prefix": "Bearer"},
+				"auth":   plAuth("Bearer"),
 			}, nil); has {
 				t.Errorf("expected no credential placed at all")
 			}
@@ -550,6 +597,15 @@ func TestPipelinePrepareAuth(t *testing.T) {
 		}
 		if cred.where != "headers" && cred.where != "query" {
 			t.Fatalf("unexpected credential container %q", cred.where)
+		}
+		if "" != cred.pair {
+			// A cookie credential is a `<scheme>=<key>` pair, and the scheme
+			// name leaves no room for the option's prefix.
+			text, _ := cred.value.(string)
+			if !plAuthCookiePair.MatchString(text) {
+				t.Errorf("expected a cookie pair, got %v", cred.value)
+			}
+			return
 		}
 		// A header credential is prefix-joined; a query credential is the raw
 		// key, because a query parameter has nowhere to put a scheme name.
@@ -566,7 +622,7 @@ func TestPipelinePrepareAuth(t *testing.T) {
 	t.Run("raw-apikey-empty-prefix-as-is", func(t *testing.T) {
 		value, has := placed(t, map[string]any{
 			"apikey": "K",
-			"auth":   map[string]any{"prefix": ""},
+			"auth":   plAuth(""),
 		}, nil)
 		if cred == nil {
 			if has {
@@ -574,22 +630,22 @@ func TestPipelinePrepareAuth(t *testing.T) {
 			}
 			return
 		}
-		if value != "K" {
-			t.Errorf("expected raw 'K', got %v", value)
+		if value != cred.pair+"K" {
+			t.Errorf("expected %q, got %v", cred.pair+"K", value)
 		}
 	})
 
 	t.Run("empty-apikey-drops-credential", func(t *testing.T) {
 		if _, has := placed(t, map[string]any{
 			"apikey": "",
-			"auth":   map[string]any{"prefix": "Bearer"},
+			"auth":   plAuth("Bearer"),
 		}, "stale"); has {
 			t.Errorf("expected the credential dropped")
 		}
 	})
 
 	t.Run("missing-apikey-drops-credential", func(t *testing.T) {
-		sdkopts := map[string]any{"auth": map[string]any{"prefix": "Bearer"}}
+		sdkopts := map[string]any{"auth": plAuth("Bearer")}
 		client, _ := plClient(t, sdkopts)
 		options := client.OptionsMap()
 		if apikey, _ := options["apikey"].(string); apikey != "" {

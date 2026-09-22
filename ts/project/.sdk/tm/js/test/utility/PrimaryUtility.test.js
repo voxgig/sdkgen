@@ -82,7 +82,9 @@ describe('PrimaryUtility', async () => {
   function credential() {
     const ctx = {
       utility,
-      client: { options: () => ({ apikey: 'PROBE', auth: { prefix: '' } }) },
+      // `basic: false`: a Basic API's config defaults it true, and the
+      // branch it selects needs a secret, so the probe would find nothing.
+      client: { options: () => ({ apikey: 'PROBE', auth: { prefix: '', basic: false } }) },
       spec: { headers: {}, query: {} },
       error: (code, msg) => Object.assign(new Error(msg), { code }),
     }

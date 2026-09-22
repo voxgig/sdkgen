@@ -58,7 +58,9 @@ class _AuthProbeClient:
     apikey places no credential to find."""
 
     def options_map(self):
-        return {"apikey": "PROBE", "auth": {"prefix": ""}}
+        # `basic: False`: a Basic API's config defaults it true, and the branch
+        # it selects needs a secret, so the probe would find nothing.
+        return {"apikey": "PROBE", "auth": {"prefix": "", "basic": False}}
 
 
 def _auth_credential():

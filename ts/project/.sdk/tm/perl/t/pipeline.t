@@ -551,6 +551,13 @@ sub named_feature {
 
 # === prepare_auth ===
 
+# A cookie credential as prepare_auth writes it: `<scheme>=K` for the probe
+# key, with no scheme prefix and nothing else in the bag.
+sub _is_cookie_pair {
+  my ($value) = @_;
+  return (defined $value && !ref $value && $value =~ m{^[^=;]+=K$}) ? 1 : 0;
+}
+
 sub auth_ctx {
   my ($options, $spec) = @_;
   my $ctx = ProjectNameContext->new({
@@ -572,21 +579,50 @@ sub auth_bag {
   return 'query' eq $where ? $spec->{query} : $spec->{headers};
 }
 
+# `basic: false` is explicit: an HTTP Basic API's generated config carries
+# `auth.basic: true`, and a client that merges it in takes a branch that needs
+# a secret as well. With none supplied that branch deliberately writes
+# nothing, which the probe would read as a public API.
+sub auth_block {
+  my ($prefix) = @_;
+  return { 'prefix' => $prefix, 'basic' => 0 };
+}
+
 # Run prepare_auth with both containers present and see which one the
 # generated utility writes to, and under what name. undef means this SDK
 # places no credential at all - a public API - which is a legitimate shape,
-# and the tests below assert exactly that instead.
-sub auth_credential {
-  my $ctx = auth_ctx({ 'apikey' => 'K', 'auth' => { 'prefix' => 'Bearer' } },
-    auth_bags());
+# and the tests below assert exactly that instead. `pair` is the `<scheme>=`
+# lead-in of a COOKIE credential, which rides the header bag under the key
+# `cookie` instead of taking a header of its own.
+sub auth_probe {
+  my ($options) = @_;
+  my $ctx = auth_ctx($options, auth_bags());
   $utility->{prepare_auth}->($ctx);
   for my $where ('headers', 'query') {
     my $bag = auth_bag($ctx->{spec}, $where);
     for my $name (keys %{ $bag || {} }) {
-      return { 'where' => $where, 'name' => $name, 'value' => $bag->{$name} };
+      my $value = $bag->{$name};
+      my $pair = '';
+      if ('headers' eq $where && 'cookie' eq $name && _is_cookie_pair($value)) {
+        $pair = substr($value, 0, -1);
+      }
+      return { 'where' => $where, 'name' => $name,
+        'value' => $value, 'pair' => $pair };
     }
   }
   return undef;
+}
+
+sub auth_credential {
+  return auth_probe({ 'apikey' => 'K', 'auth' => auth_block('Bearer') });
+}
+
+# Every credential this SDK could possibly place: both credentials and Basic
+# switched on, so whichever branch the API has, something lands unless the API
+# is public.
+sub auth_any_credential {
+  return auth_probe({ 'apikey' => 'K', 'secret' => 'S',
+    'auth' => { 'prefix' => 'Bearer', 'basic' => 1 } });
 }
 
 # Returns the value left in the credential slot, and whether it is there.
@@ -605,9 +641,16 @@ sub auth_placed {
 }
 
 {
-  my $ctx = auth_ctx({ 'auth' => { 'prefix' => '' }, 'apikey' => 'K' }, undef);
+  my $ctx = auth_ctx({ 'auth' => auth_block(''), 'apikey' => 'K' }, undef);
   my (undef, $err) = $utility->{prepare_auth}->($ctx);
   is($err->{code}, 'auth_no_spec', 'prepare_auth guards a missing spec');
+}
+
+# Without this the cases below cannot fail for an SDK whose credential the
+# probe misses: every one of them takes the public-API path instead.
+{
+  is(defined auth_credential() ? 1 : 0, defined auth_any_credential() ? 1 : 0,
+    'prepare_auth probe finds the credential this SDK places');
 }
 
 {
@@ -615,8 +658,14 @@ sub auth_placed {
   if (!defined $cred) {
     # A public API places nothing, and that is the whole assertion.
     my (undef, $has) =
-      auth_placed({ 'apikey' => 'K', 'auth' => { 'prefix' => 'Bearer' } });
+      auth_placed({ 'apikey' => 'K', 'auth' => auth_block('Bearer') });
     ok(!$has, 'prepare_auth places no credential for a public API');
+  }
+  elsif ('' ne $cred->{pair}) {
+    # A cookie credential is a `<scheme>=<key>` pair, and the scheme name
+    # leaves no room for the option's prefix.
+    ok(_is_cookie_pair($cred->{value}),
+      'prepare_auth places the apikey as a cookie pair');
   }
   else {
     ok('headers' eq $cred->{where} || 'query' eq $cred->{where},
@@ -629,9 +678,10 @@ sub auth_placed {
 }
 
 {
-  my ($value, $has) = auth_placed({ 'apikey' => 'K', 'auth' => { 'prefix' => '' } });
-  if (defined auth_credential()) {
-    is($value, 'K', 'prepare_auth a raw apikey goes in as-is');
+  my ($value, $has) = auth_placed({ 'apikey' => 'K', 'auth' => auth_block('') });
+  my $cred = auth_credential();
+  if (defined $cred) {
+    is($value, $cred->{pair} . 'K', 'prepare_auth a raw apikey goes in as-is');
   }
   else {
     ok(!$has, 'prepare_auth a raw apikey places nothing for a public API');
@@ -640,7 +690,7 @@ sub auth_placed {
 
 {
   my (undef, $has) =
-    auth_placed({ 'apikey' => '', 'auth' => { 'prefix' => 'Bearer' } }, 'stale');
+    auth_placed({ 'apikey' => '', 'auth' => auth_block('Bearer') }, 'stale');
   ok(!$has, 'prepare_auth an empty apikey drops the credential');
 }
 
@@ -650,7 +700,7 @@ sub auth_placed {
 }
 
 {
-  my (undef, $has) = auth_placed({ 'auth' => { 'prefix' => 'Bearer' } }, 'stale');
+  my (undef, $has) = auth_placed({ 'auth' => auth_block('Bearer') }, 'stale');
   ok(!$has, 'prepare_auth a missing apikey option drops the credential');
 }
 

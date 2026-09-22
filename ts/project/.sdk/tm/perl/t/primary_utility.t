@@ -211,6 +211,8 @@ sub _auth_credential {
     'utility' => $auth_utility,
     'opname' => 'load',
   }, undef);
+  # The DEF setup this client is built from carries `auth.basic: false`, so
+  # the single-token branch runs and there is a credential to find.
   $ctx->{spec} = ProjectNameSpec->new({
     'headers' => {}, 'query' => {}, 'step' => 's' });
   my (undef, $err) = $auth_utility->{prepare_auth}->($ctx);

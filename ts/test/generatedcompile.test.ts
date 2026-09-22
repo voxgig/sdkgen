@@ -3440,13 +3440,32 @@ main: kit: flow: BasicNamespaceFlow: {
 `
 
 
-// A credential the API names itself, rather than `authorization`. apidef
-// takes the name from a spec's own security scheme, so a generated test that
-// asserts the literal name fails for every such API while the SDK places the
-// credential correctly.
-const CREDNAME_MODEL = `
+// APIs whose credential a generated test cannot name in advance. apidef takes
+// the name from the spec's own security scheme, so a test asserting the
+// literal `authorization` fails while the SDK places the credential rightly.
+
+// The Basic entry selects the HTTP Basic branch, whose generated config
+// carries `auth.basic: true`: a probe supplying no secret sees nothing placed
+// and reads an auth-active SDK as a public one, which leaves every assertion
+// after it unable to fail.
+
+// A cookie credential is not here. Its placement cases pass, but the SDK
+// clears a cookie credential by the scheme name while it lives under
+// `headers.cookie`, so the drop cases fail on the SDK, not on the test.
+const CREDNAME_MODELS: { name: string, extra: string }[] = [
+  {
+    name: 'a credential named by the API, not `authorization`',
+    extra: `
 main: kit: config: auth: { active: true, prefix: '', in: 'header', name: 'X-Api-Key' }
-`
+`,
+  },
+  {
+    name: 'an HTTP Basic API, where a secretless probe places nothing',
+    extra: `
+main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'X-Api-Key' }
+`,
+  },
+]
 
 
 // The prepareAuth corpus section, in the shape create-sdkgen compiles. The
@@ -3771,11 +3790,13 @@ describe('generated auth tests discover the credential name', () => {
   })
 
   for (const lane of CREDNAME_LANES) {
+    for (const model of CREDNAME_MODELS) {
 
-    test(lane.target + ': a credential named by the API, not `authorization`',
+    test(lane.target + ': ' + model.name,
       async (t) => {
         const sdkroot = Path.join(tmp, lane.target)
-        await generateTo(lane.target, sdkroot, CREDNAME_MODEL)
+        Fs.rmSync(sdkroot, { recursive: true, force: true })
+        await generateTo(lane.target, sdkroot, model.extra)
 
         const cmds = lane.steps.map((step) => step.cmd())
         if (cmds.some((cmd) => null == cmd)) {
@@ -3805,10 +3826,9 @@ describe('generated auth tests discover the credential name', () => {
           }
 
           ok(true === step.byline || ran.ok,
-            lane.target + ': ' + step.name + ' FAILED against a credential ' +
-            'named `X-Api-Key` - the generated test asserts a credential ' +
-            'name instead of discovering where prepareAuth put it (#178):\n' +
-            tail(ran.out))
+            lane.target + ': ' + step.name + ' FAILED for ' + model.name +
+            ' - the generated test names the credential instead of reading ' +
+            'where prepareAuth put it:\n' + tail(ran.out))
 
           ok(step.ran.test(ran.out),
             lane.target + ': ' + step.name + ' did not report a passing ' +
@@ -3817,6 +3837,7 @@ describe('generated auth tests discover the credential name', () => {
             'for:\n' + tail(ran.out))
         }
       })
+    }
   }
 
 })

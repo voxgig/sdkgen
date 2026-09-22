@@ -130,6 +130,8 @@ class PrimaryUtilityTest extends TestCase
         $ctx = self::make_test_ctx($client, $utility);
         $ctx->spec = new ProjectNameSpec(['headers' => [], 'query' => []]);
         [, $err] = ($utility->prepare_auth)($ctx);
+        // The DEF setup this client is built from carries `auth.basic: false`,
+        // so the single-token branch runs and there is a credential to find.
         if ($err !== null) {
             return null;
         }
