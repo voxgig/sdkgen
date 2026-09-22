@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "4.24.1",
+  "version": "4.24.2",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "engines": {
@@ -92,7 +92,7 @@
     "@voxgig/apidef": ">=8.14.0",
     "@voxgig/struct": ">=0.2",
     "@voxgig/util": ">=0.5",
-    "aontu": ">=0.71",
+    "aontu": ">=0.71.0 <0.73.0",
     "jostraca": ">=0.38.1",
     "shape": ">=11.4.1"
   }
