@@ -221,7 +221,7 @@ tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj c1ceccc01f30
 tm/clojure/src/sdk/core.clj 30be1595572c
-tm/clojure/src/sdk/features.clj 34b4e7501f4e
+tm/clojure/src/sdk/features.clj cd529399d40a
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 12babd1efcd1
 tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5
@@ -1097,7 +1097,7 @@ src/cmp/ocaml/utility_ocaml.ts ee3a24786063
 tm/ocaml/LICENSE c92ad97f8812
 tm/ocaml/Makefile 4d2500a53550
 tm/ocaml/VERSION e6635045e1d2
-tm/ocaml/sdk_features.ml f97c74de8e81
+tm/ocaml/sdk_features.ml 09338ff05a67
 tm/ocaml/sdk_helpers.ml d08f5f1dca3c
 tm/ocaml/sdk_json.ml 7514a4177ebb
 tm/ocaml/sdk_runtime.ml 1c1253c6b238

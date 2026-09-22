@@ -1121,9 +1121,15 @@ let paging_feature () : feature =
                 | Noval | Null ->
                   (match getp q page_param with
                    | Noval ->
-                     let page = (match getp paging "page" with
-                         | Noval | Null -> (match getp !options "startPage" with Num n -> Num n | _ -> Num 1.)
-                         | p -> p) in
+                     (* A record written back by PreResult holds the page just
+                      * fetched as `page` and the one to fetch as `nextPage`,
+                      * so nextPage wins. *)
+                     let page = (match getp paging "nextPage" with
+                         | Noval | Null ->
+                           (match getp paging "page" with
+                            | Noval | Null -> (match getp !options "startPage" with Num n -> Num n | _ -> Num 1.)
+                            | p -> p)
+                         | np -> np) in
                      setp q page_param page
                    | _ -> ())
                 | c -> setp q cursor_param c);
@@ -1176,11 +1182,20 @@ let paging_feature () : feature =
              (match body with
               | Map _ ->
                 (match getp body "next" with Noval | Null -> () | n -> if is_nullish (getp paging "next") then setp paging "next" n);
+                (* Both spellings, camelCase last so it wins when a body
+                 * carries the two. *)
+                (match getp body "next_cursor" with Noval | Null -> () | c -> setp paging "cursor" c);
                 (match getp body "cursor" with Noval | Null -> () | c -> setp paging "cursor" c);
                 (match getp body "nextCursor" with Noval | Null -> () | c -> setp paging "cursor" c);
-                (match getp body "hasMore" with
-                 | Bool b -> setp paging "hasMore" (Bool b); explicit_more := true
-                 | _ -> ())
+                if is_nullish (getp paging "nextPage") then begin
+                  let np = (match getp body "nextPage" with
+                      | Noval | Null -> getp body "next_page"
+                      | v -> v) in
+                  (match np with Num _ | Str _ -> setp paging "nextPage" np | _ -> ())
+                end;
+                List.iter (fun k -> match getp body k with
+                    | Bool b -> setp paging "hasMore" (Bool b); explicit_more := true
+                    | _ -> ()) ["has_more"; "hasMore"]
               | _ -> ());
              (* Cursor presence only INFERS another page. When the server
               * stated the answer outright — relay's `hasNextPage: false`, or
@@ -1196,6 +1211,16 @@ let paging_feature () : feature =
                setp paging "hasMore" (Bool hm)
              end;
              result.rt_paging <- paging;
+             (* The record reached the caller through ctrl in every other typed
+              * port and through nothing here, so a caller who asked for paging
+              * got the pages and never the signals to continue. *)
+             (match ctx.c_ctrl.ctrl_paging with
+              | Map _ as held ->
+                (* The caller holds this map: refill it in place. Every key of
+                 * the record is written, so no key of an earlier page lives on. *)
+                List.iter (fun k -> setp held k (getp paging k))
+                  ["page"; "totalCount"; "nextPage"; "next"; "cursor"; "hasMore"]
+              | _ -> ctx.c_ctrl.ctrl_paging <- paging);
              track_set (cc ctx) "paging" (jo [("last", paging)]))
         | _ -> ());
   f
