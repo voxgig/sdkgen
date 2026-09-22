@@ -200,6 +200,40 @@ it took).
 Only hooks the feature's model marks `active: true` are dispatched. See
 [the hooks reference](./hooks.md).
 
+### Connections are reused
+
+Every default transport that can keep a connection open does so. The
+generated SDK holds one client, or a small pool of started connections,
+for the life of the process, so a run of requests to the same host pays
+for the TCP and TLS handshake once rather than on every call.
+
+| Targets | Default transport |
+| --- | --- |
+| `ts`, `js` | The global `fetch` of the runtime, which pools connections on its own. |
+| `go` | `http.DefaultClient`, plus one cached client per proxy URL. |
+| `java`, `kotlin`, `scala`, `csharp` | One `HttpClient` per redirect policy and proxy, built once. |
+| `rust` | One `ureq::Agent` for the plain case, plus one per proxy or manual-redirect setting. |
+| `py` | One `requests.Session`. |
+| `rb` | A pool of started `Net::HTTP` connections keyed by scheme, host, port and proxy. A connection the server closed while it sat idle is dropped and the request is sent once more on a fresh one. |
+| `php` | One cURL handle, reset between calls so its connection cache survives. |
+| `perl` | One `HTTP::Tiny` per proxy and redirect setting, which keeps its connection alive. |
+| `swift`, `clojure`, `elixir` | `URLSession.shared`, the JVM keep-alive cache and the `:httpc` default profile pool on their own. |
+| `lua` | LuaSocket opens a connection per request; it has no keep-alive to reuse. |
+| `c`, `cpp`, `zig`, `ocaml` | No default transport: the SDK sends nothing until `system.fetch` is supplied. |
+
+The pool is per process, not per SDK instance, so two clients constructed
+in one process share it, and it is never closed explicitly: an idle
+connection is dropped by the library's own timeout or by the server.
+
+To use a client of your own, whether to tune its pool, share it with the
+rest of an application or replace it in a test, set `options.system.fetch`
+to a function taking `(url, fetchdef)` and returning the response map
+(`status`, `statusText`, `headers`, `json`, `body`). Every live request then
+goes through that function and the SDK opens no connection of its own. The
+`fetchdef` carries `method`, `headers` and `body`, plus the `proxy` and
+`redirect` annotations a transport feature adds, which a supplied client
+is expected to honour the same way the default one does.
+
 ---
 
 ## Inspecting what a feature did
@@ -718,8 +752,8 @@ Signals understood:
 - `Link: <...>; rel="next"`
 - `X-Page`, `X-Total-Count`, `X-Next-Page` headers
 - `next`, `cursor`, `nextCursor`, `nextPage`, `hasMore` in the body, and
-  the snake_case spellings `next_cursor`, `next_page`, `has_more`; when a
-  body carries both spellings, the camelCase one wins
+  the underscore spellings `next_cursor`, `next_page`, `has_more`; when a
+  body carries both spellings, the first form wins
 - GraphQL Relay connections, read from the `pageInfo` path the model
   recorded for the operation
 
@@ -768,7 +802,8 @@ while (ctrl.paging.hasMore) {
 Targets that copy the control argument into a typed `Control` (go, java,
 kotlin, scala, csharp, swift, rust, c, cpp, zig, elixir, lua, perl, py, rb)
 share the `paging` map by reference and refill it in place, so the caller
-must supply one, as `paging: {}` above, to receive the record. PHP passes
+must supply one, as `paging: {}` in the preceding example, to receive the
+record. PHP passes
 arrays by value, so there the record is read from
 `$client->_paging['last']` and passed on by hand as `['paging' => $last]`.
 

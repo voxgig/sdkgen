@@ -754,7 +754,7 @@ fn raw_exchange_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectN
         .filter(|m| !m.is_empty())
         .unwrap_or_else(|| "POST".to_string());
 
-    let agent = ureq::AgentBuilder::new().build();
+    let agent = crate::utility::fetcher::default_agent();
     let mut req = agent.request(&method, fullurl);
 
     if let Value::Map(m) = getp(fetchdef, "headers") {
