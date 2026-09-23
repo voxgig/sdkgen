@@ -102,7 +102,8 @@ function requirePath(ctx$, path, flags) {
             require.resolve(fullpath);
         }
         catch (err) {
-            ctx$.log.warn({ point: 'require-missing', path, note: path });
+            if (!flags?.quiet)
+                ctx$.log.warn({ point: 'require-missing', path, note: path });
             return undefined;
         }
     }

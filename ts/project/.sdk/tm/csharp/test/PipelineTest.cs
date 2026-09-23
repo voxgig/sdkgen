@@ -528,75 +528,71 @@ public class PipelineTest
     [Fact]
     public void PrepareAuthApikeyWithPrefixSpaceJoined()
     {
+        var cred = AuthCredential.Discover();
         var (client, utility) = PlClient(new Dictionary<string, object?>
         {
             ["apikey"] = "K",
-            ["auth"] = new Dictionary<string, object?> { ["prefix"] = "Bearer" },
+            ["auth"] = new Dictionary<string, object?> { ["prefix"] = "Bearer", ["basic"] = false },
         });
         var ctx = PlCtx(client, utility, null);
         ctx.Spec = AuthSpec(null);
         utility.PrepareAuth(ctx);
-        Assert.Equal("Bearer K", ctx.Spec!.Headers["authorization"]);
+        Assert.Equal(AuthCredential.Expected(cred, "Bearer", "K"), AuthCredential.Actual(ctx.Spec!, cred));
     }
 
     [Fact]
     public void PrepareAuthRawApikeyEmptyPrefixAsIs()
     {
+        var cred = AuthCredential.Discover();
         var (client, utility) = PlClient(new Dictionary<string, object?>
         {
             ["apikey"] = "K",
-            ["auth"] = new Dictionary<string, object?> { ["prefix"] = "" },
+            ["auth"] = new Dictionary<string, object?> { ["prefix"] = "", ["basic"] = false },
         });
         var ctx = PlCtx(client, utility, null);
         ctx.Spec = AuthSpec(null);
         utility.PrepareAuth(ctx);
-        Assert.Equal("K", ctx.Spec!.Headers["authorization"]);
+        Assert.Equal(AuthCredential.Expected(cred, "", "K"), AuthCredential.Actual(ctx.Spec!, cred));
     }
 
     [Fact]
     public void PrepareAuthEmptyApikeyDropsHeader()
     {
+        var cred = AuthCredential.Discover();
         var (client, utility) = PlClient(new Dictionary<string, object?>
         {
             ["apikey"] = "",
-            ["auth"] = new Dictionary<string, object?> { ["prefix"] = "Bearer" },
+            ["auth"] = new Dictionary<string, object?> { ["prefix"] = "Bearer", ["basic"] = false },
         });
         var ctx = PlCtx(client, utility, null);
-        ctx.Spec = AuthSpec(new Dictionary<string, object?>
-        {
-            ["authorization"] = "stale",
-        });
+        ctx.Spec = AuthCredential.Seed(cred);
         utility.PrepareAuth(ctx);
-        Assert.False(ctx.Spec!.Headers.ContainsKey("authorization"),
-            "expected authorization dropped");
+        Assert.False(AuthCredential.Contains(ctx.Spec!, cred),
+            "expected credential dropped");
     }
 
     [Fact]
     public void PrepareAuthMissingApikeyDropsHeader()
     {
+        var cred = AuthCredential.Discover();
         var (client, utility) = PlClient(new Dictionary<string, object?>
         {
-            ["auth"] = new Dictionary<string, object?> { ["prefix"] = "Bearer" },
+            ["apikey"] = "",
+            ["auth"] = new Dictionary<string, object?> { ["prefix"] = "Bearer", ["basic"] = false },
         });
-        var options = client.OptionsMap();
-        if (options.TryGetValue("apikey", out var apikey) &&
-            apikey is string s && s != "")
-        {
-            return; // SDK options carry a configured apikey; case not reproducible.
-        }
+        client.GetRootCtx().Options.Remove("apikey");
+        Assert.False(client.OptionsMap().ContainsKey("apikey"));
         var ctx = PlCtx(client, utility, null);
-        ctx.Spec = AuthSpec(new Dictionary<string, object?>
-        {
-            ["authorization"] = "stale",
-        });
+        ctx.Spec = AuthCredential.Seed(cred);
         utility.PrepareAuth(ctx);
-        Assert.False(ctx.Spec!.Headers.ContainsKey("authorization"),
-            "expected authorization dropped");
+        Assert.False(AuthCredential.Contains(ctx.Spec!, cred),
+            "expected credential dropped");
     }
 
     [Fact]
     public void PrepareAuthPublicApiNoAuthBlockDropsHeader()
     {
+        var cred = AuthCredential.Discover();
         var (client, utility) = PlClient(new Dictionary<string, object?>
         {
             ["apikey"] = "K",
@@ -609,12 +605,9 @@ public class PipelineTest
             return;
         }
         var ctx = PlCtx(client, utility, null);
-        ctx.Spec = AuthSpec(new Dictionary<string, object?>
-        {
-            ["authorization"] = "stale",
-        });
+        ctx.Spec = AuthCredential.Seed(cred);
         utility.PrepareAuth(ctx);
-        Assert.False(ctx.Spec!.Headers.ContainsKey("authorization"),
-            "expected authorization dropped");
+        Assert.False(AuthCredential.Contains(ctx.Spec!, cred),
+            "expected credential dropped");
     }
 }

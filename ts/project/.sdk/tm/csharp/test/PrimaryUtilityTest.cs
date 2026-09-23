@@ -61,7 +61,7 @@ public class PrimaryUtilityTest
         {
             if (RUN == null)
             {
-                CLIENT = ProjectNameSDK.TestSDK(null, null);
+                CLIENT = ProjectNameSDK.TestSDK(null, new Dictionary<string, object?> { ["apikey"] = "" });
                 UTILITY = CLIENT.GetUtility();
                 RUN = OmniResolver.MakeRunner(StructRunner.TestJsonPath(), CLIENT)("primary");
                 Assert.True(0 < RUN.Spec.Count,
@@ -108,6 +108,8 @@ public class PrimaryUtilityTest
                 "zero cases would run; add cases, or mark the fixture " +
                 "PENDING in .sdk/test/primary/");
         }
+        if (name == "prepareAuth")
+            basic = (Dictionary<string, object?>)AuthCredential.Retarget(basic, AuthCredential.Discover())!;
         run.RunSet(basic, subject);
     }
 

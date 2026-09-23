@@ -8,6 +8,7 @@
 #include "feature_harness.h" // fh_response + Fetcher helpers + ctest.h
 
 #include <stdio.h>
+#include "auth_credential.h"
 
 static int TESTS = 0;
 #define RUN(fn)                                                                 \
@@ -403,36 +404,40 @@ static void test_prepare_auth_guards_missing_spec(void) {
 }
 
 static void test_prepare_auth_apikey_with_prefix_space_joined(void) {
-  pl_client(cmap(2, "apikey", v_str("K"), "auth", cmap(1, "prefix", v_str("Bearer"))));
+  AuthCredential cred = auth_credential();
+  pl_client(cmap(2, "apikey", v_str("K"), "auth", cmap(2, "prefix", v_str("Bearer"), "basic", v_bool(false))));
   Context* ctx = pl_ctx(NULL);
   ctx->spec = auth_spec(v_undef());
   PNError* err = NULL;
   prepare_auth_util(ctx, &err);
-  CHECK_STR_EQ(get_str(ctx->spec->headers, "authorization"), "Bearer K",
+  CHECK(voxgig_equals(auth_actual(ctx->spec, cred), auth_expected(cred, "Bearer", "K")),
                "prepare_auth: prefix space-joined");
 }
 
 static void test_prepare_auth_raw_apikey_empty_prefix_as_is(void) {
-  pl_client(cmap(2, "apikey", v_str("K"), "auth", cmap(1, "prefix", v_str(""))));
+  AuthCredential cred = auth_credential();
+  pl_client(cmap(2, "apikey", v_str("K"), "auth", cmap(2, "prefix", v_str(""), "basic", v_bool(false))));
   Context* ctx = pl_ctx(NULL);
   ctx->spec = auth_spec(v_undef());
   PNError* err = NULL;
   prepare_auth_util(ctx, &err);
-  CHECK_STR_EQ(get_str(ctx->spec->headers, "authorization"), "K", "prepare_auth: raw apikey");
+  CHECK(voxgig_equals(auth_actual(ctx->spec, cred), auth_expected(cred, "", "K")), "prepare_auth: raw apikey");
 }
 
 static void test_prepare_auth_empty_apikey_drops_header(void) {
-  pl_client(cmap(2, "apikey", v_str(""), "auth", cmap(1, "prefix", v_str("Bearer"))));
+  AuthCredential cred = auth_credential();
+  pl_client(cmap(2, "apikey", v_str(""), "auth", cmap(2, "prefix", v_str("Bearer"), "basic", v_bool(false))));
   Context* ctx = pl_ctx(NULL);
-  ctx->spec = auth_spec(cmap(1, "authorization", v_str("stale")));
+  ctx->spec = auth_seed(cred);
   PNError* err = NULL;
   prepare_auth_util(ctx, &err);
-  CHECK(v_is_noval(getp(ctx->spec->headers, "authorization")),
+  CHECK(v_is_noval(auth_actual(ctx->spec, cred)),
         "prepare_auth: empty apikey drops header");
 }
 
 static void test_prepare_auth_missing_apikey_drops_header(void) {
-  pl_client(cmap(1, "auth", cmap(1, "prefix", v_str("Bearer"))));
+  AuthCredential cred = auth_credential();
+  pl_client(cmap(1, "auth", cmap(2, "prefix", v_str("Bearer"), "basic", v_bool(false))));
   voxgig_value* options = sdk_options_map(PL_CLIENT);
   const char* k = get_str(options, "apikey");
   if (k && k[0] != '\0') {
@@ -440,14 +445,15 @@ static void test_prepare_auth_missing_apikey_drops_header(void) {
     return;
   }
   Context* ctx = pl_ctx(NULL);
-  ctx->spec = auth_spec(cmap(1, "authorization", v_str("stale")));
+  ctx->spec = auth_seed(cred);
   PNError* err = NULL;
   prepare_auth_util(ctx, &err);
-  CHECK(v_is_noval(getp(ctx->spec->headers, "authorization")),
+  CHECK(v_is_noval(auth_actual(ctx->spec, cred)),
         "prepare_auth: missing apikey drops header");
 }
 
 static void test_prepare_auth_public_api_no_auth_block_drops_header(void) {
+  AuthCredential cred = auth_credential();
   pl_client(cmap(1, "apikey", v_str("K")));
   voxgig_value* options = sdk_options_map(PL_CLIENT);
   if (!v_is_noval(getp(options, "auth"))) {
@@ -455,10 +461,10 @@ static void test_prepare_auth_public_api_no_auth_block_drops_header(void) {
     return;
   }
   Context* ctx = pl_ctx(NULL);
-  ctx->spec = auth_spec(cmap(1, "authorization", v_str("stale")));
+  ctx->spec = auth_seed(cred);
   PNError* err = NULL;
   prepare_auth_util(ctx, &err);
-  CHECK(v_is_noval(getp(ctx->spec->headers, "authorization")),
+  CHECK(v_is_noval(auth_actual(ctx->spec, cred)),
         "prepare_auth: public api drops header");
 }
 
