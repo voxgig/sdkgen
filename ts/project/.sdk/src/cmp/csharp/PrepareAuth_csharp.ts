@@ -259,6 +259,24 @@ public static partial class SdkUtility
     private const string OptionApikey = "apikey";
     private const string NotFound = "__NOTFOUND__";
 
+    private static void ApplyAuthCookie(Dictionary<string, object?> headers, string? value)
+    {
+        var existing = StructUtils.GetProp(headers, HeaderCookie, "") as string ?? "";
+        var pairs = new List<string>();
+        foreach (var part in existing.Split(';'))
+        {
+            var pair = part.Trim();
+            if (pair != "" && pair != CookieAuth &&
+                !pair.StartsWith(CookieAuth + "=", StringComparison.Ordinal))
+            {
+                pairs.Add(pair);
+            }
+        }
+        if (value != null) pairs.Add(CookieAuth + "=" + value);
+        if (pairs.Count == 0) headers.Remove(HeaderCookie);
+        else headers[HeaderCookie] = string.Join("; ", pairs);
+    }
+
     internal static Spec PrepareAuthUtil(Context ctx)
     {
         var spec = ctx.Spec ?? throw ctx.MakeError("auth_no_spec",
@@ -270,9 +288,7 @@ public static partial class SdkUtility
         // Public APIs that need no auth omit the options.auth block entirely.
         if (!options.TryGetValue("auth", out var auth) || auth == null)
         {
-            // Nothing of ours to remove: the credential rides INSIDE the
-            // shared cookie header, which this function only ever appends to.
-            // Returning here is what withholds it.
+            ApplyAuthCookie(headers, null);
             return spec;
         }
 
@@ -281,18 +297,7 @@ public static partial class SdkUtility
         var skip = apikey == null ||
             (apikey is string apikeyStr && (apikeyStr == NotFound || apikeyStr == ""));
 
-        if (!skip)
-        {
-            var apikeyVal = apikey as string ?? "";
-            // Append, never assign: a cookie header set by options.headers
-            // would otherwise be clobbered by the credential. No prefix - a
-            // cookie value is the credential itself.
-            var existing = StructUtils.GetProp(headers, HeaderCookie, "") as string ?? "";
-            var pair = CookieAuth + "=" + apikeyVal;
-            headers[HeaderCookie] = existing == ""
-                ? pair
-                : existing + "; " + pair;
-        }
+        ApplyAuthCookie(headers, skip ? null : (apikey as string ?? ""));
 
         return spec;
     }

@@ -16,7 +16,7 @@ src/cmp/c/Gitignore_c.ts 1c1cfa982fef
 src/cmp/c/MainEntity_c.ts d6e780384b49
 src/cmp/c/Main_c.ts e4157d34104f
 src/cmp/c/Package_c.ts e1fcd4b774ba
-src/cmp/c/PrepareAuth_c.ts 5299cbb872dd
+src/cmp/c/PrepareAuth_c.ts 75cd96afb715
 src/cmp/c/ReadmeEntity_c.ts b6d4fde34d49
 src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
 src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
@@ -326,7 +326,7 @@ src/cmp/csharp/Gitignore_csharp.ts bd603cc2c5c7
 src/cmp/csharp/MainEntity_csharp.ts 1c24807ab2fe
 src/cmp/csharp/Main_csharp.ts e7ff276c24b3
 src/cmp/csharp/Package_csharp.ts 403c86c3e8f8
-src/cmp/csharp/PrepareAuth_csharp.ts 09d343df56e3
+src/cmp/csharp/PrepareAuth_csharp.ts faea5690049b
 src/cmp/csharp/ReadmeEntity_csharp.ts 05356d2b0bd6
 src/cmp/csharp/ReadmeExamplesTest_csharp.ts ee7a79c93f15
 src/cmp/csharp/ReadmeExplanation_csharp.ts 007d1a894315
@@ -506,7 +506,7 @@ src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts 01154abb3c65
 src/cmp/go/Main_go.ts c86c9492fb7b
 src/cmp/go/Package_go.ts 111b2b904994
-src/cmp/go/PrepareAuth_go.ts f078711811b0
+src/cmp/go/PrepareAuth_go.ts 17dc58a31a59
 src/cmp/go/ReadmeEntity_go.ts 76467eb192a5
 src/cmp/go/ReadmeExamplesTest_go.ts f190781dd76e
 src/cmp/go/ReadmeExplanation_go.ts 702c211cf5bb
@@ -640,7 +640,7 @@ src/cmp/java/Gitignore_java.ts 549792550319
 src/cmp/java/MainEntity_java.ts 3f146ec80ca7
 src/cmp/java/Main_java.ts 096274899c8d
 src/cmp/java/Package_java.ts 8b6a6c2f4a0f
-src/cmp/java/PrepareAuth_java.ts 65a036143fd8
+src/cmp/java/PrepareAuth_java.ts fcf954c164cc
 src/cmp/java/ReadmeEntity_java.ts 9ec4399cbc63
 src/cmp/java/ReadmeExamplesTest_java.ts 40e3f79a3fa0
 src/cmp/java/ReadmeExplanation_java.ts e2c006f92e81
@@ -756,7 +756,7 @@ src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
 src/cmp/js/Main_js.ts 2cf0c266ab75
 src/cmp/js/Package_js.ts e82f86b0f4f2
-src/cmp/js/PrepareAuth_js.ts 90939bfcb447
+src/cmp/js/PrepareAuth_js.ts 356ce48ffb35
 src/cmp/js/ReadmeEntity_js.ts c7b481415ab3
 src/cmp/js/ReadmeExplanation_js.ts e35423942ff1
 src/cmp/js/ReadmeHowto_js.ts 07db2d3614ee
@@ -1132,7 +1132,7 @@ src/cmp/perl/Gitignore_perl.ts cef200d91d8f
 src/cmp/perl/MainEntity_perl.ts 49d50e77add8
 src/cmp/perl/Main_perl.ts d48e950b6b69
 src/cmp/perl/Package_perl.ts 2ebfd41530af
-src/cmp/perl/PrepareAuth_perl.ts 10fe4d904433
+src/cmp/perl/PrepareAuth_perl.ts 2c82a2e67401
 src/cmp/perl/ReadmeEntity_perl.ts 28642f172828
 src/cmp/perl/ReadmeExamplesTest_perl.ts 2a88b0478f32
 src/cmp/perl/ReadmeExplanation_perl.ts 92641c9d1f5c
@@ -1236,7 +1236,7 @@ src/cmp/php/Gitignore_php.ts e6379c0edbe7
 src/cmp/php/MainEntity_php.ts 7546376a4b42
 src/cmp/php/Main_php.ts dbd3cdb22fcf
 src/cmp/php/Package_php.ts 1a0ba9f94ad6
-src/cmp/php/PrepareAuth_php.ts 34bfd5fac3ee
+src/cmp/php/PrepareAuth_php.ts ff804e121546
 src/cmp/php/ReadmeEntity_php.ts fc1191440ab8
 src/cmp/php/ReadmeExamplesTest_php.ts 76256c55c6ba
 src/cmp/php/ReadmeExplanation_php.ts 452c1e096b54
@@ -1471,7 +1471,7 @@ src/cmp/rb/Gitignore_rb.ts d6ab9def4134
 src/cmp/rb/MainEntity_rb.ts a88eedc19290
 src/cmp/rb/Main_rb.ts 7525d2565c75
 src/cmp/rb/Package_rb.ts 378770b209d8
-src/cmp/rb/PrepareAuth_rb.ts 4b558f0bb796
+src/cmp/rb/PrepareAuth_rb.ts d5094f73c404
 src/cmp/rb/ReadmeEntity_rb.ts 3cdc2c1073b4
 src/cmp/rb/ReadmeExamplesTest_rb.ts e57ac3f92fca
 src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
@@ -1576,7 +1576,7 @@ src/cmp/rust/Gitignore_rust.ts 285a6decc9dd
 src/cmp/rust/MainEntity_rust.ts cfab71599f0a
 src/cmp/rust/Main_rust.ts 2f22e63791e1
 src/cmp/rust/Package_rust.ts 2803ef7d34a0
-src/cmp/rust/PrepareAuth_rust.ts a0e835659ff7
+src/cmp/rust/PrepareAuth_rust.ts 66ac9f170ca9
 src/cmp/rust/ReadmeEntity_rust.ts 7f8faa7c795f
 src/cmp/rust/ReadmeExamplesTest_rust.ts fe0bd437773e
 src/cmp/rust/ReadmeExplanation_rust.ts c5fc0dca76a9
@@ -1955,7 +1955,7 @@ src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
 src/cmp/ts/Main_ts.ts fcb39dadee1f
 src/cmp/ts/Package_ts.ts 65e98ed1bffa
-src/cmp/ts/PrepareAuth_ts.ts af251c6b92bc
+src/cmp/ts/PrepareAuth_ts.ts 81ff0b33ee26
 src/cmp/ts/ReadmeEntity_ts.ts a15c2fdf8490
 src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
 src/cmp/ts/ReadmeExamplesTest_ts.ts 433df12bf3ce

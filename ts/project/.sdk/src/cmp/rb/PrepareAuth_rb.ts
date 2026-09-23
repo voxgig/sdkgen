@@ -98,7 +98,9 @@ end
     drop_cookie = ->(hs) {
       cookie = hs[HEADER_COOKIE]
       return unless cookie.is_a?(String)
-      rest = cookie.split("; ").reject { |pair| pair.start_with?("#{COOKIE_AUTH}=") }
+      rest = cookie.split(";").map(&:strip).reject { |pair|
+        pair.empty? || pair == COOKIE_AUTH || pair.start_with?("#{COOKIE_AUTH}=")
+      }
       if rest.empty?
         hs.delete(HEADER_COOKIE)
       else
