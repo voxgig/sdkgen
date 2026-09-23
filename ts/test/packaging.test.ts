@@ -3,7 +3,7 @@ import { test, describe } from 'node:test'
 import { ok, equal, deepStrictEqual } from 'node:assert'
 
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, symlinkSync, rmSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, symlinkSync, rmSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import Path from 'node:path'
 
@@ -48,6 +48,58 @@ function trackedShipped(): string[] {
 
 
 describe('npm packaging', () => {
+
+  for (const [version, status] of [[undefined, 0], ['0.10.0', 0], ['0.9.2', 1]] as const) {
+    test('npm validates the docgen peer: ' + (version ?? 'absent'), () => {
+      const dir = mkdtempSync(Path.join(tmpdir(), 'sdkgen-peer-'))
+      const docgen = '@voxgig/docgen'
+      const writePackage = (folder: string, pkg: object) => {
+        mkdirSync(folder, { recursive: true })
+        writeFileSync(Path.join(folder, 'package.json'), JSON.stringify(pkg))
+      }
+
+      try {
+        writePackage(dir, {
+          name: 'sdkgen-peer-consumer', version: '1.0.0',
+          dependencies: {
+            [Pkg.name]: Pkg.version,
+            ...(version ? { [docgen]: version } : {}),
+          },
+        })
+        writePackage(Path.join(dir, 'node_modules', Pkg.name), Pkg)
+
+        for (const name of Object.keys(Pkg.peerDependencies)) {
+          if (name === docgen) continue
+          const installed = JSON.parse(readFileSync(
+            Path.join(ROOT, 'node_modules', name, 'package.json'), 'utf8'))
+          writePackage(Path.join(dir, 'node_modules', name), {
+            name, version: installed.version,
+          })
+        }
+        if (version) {
+          writePackage(Path.join(dir, 'node_modules', docgen), { name: docgen, version })
+        }
+
+        const res = spawnSync('npm', ['ls', '--all', '--json', '--offline'], {
+          cwd: dir, encoding: 'utf8', shell: true,
+        })
+        equal(res.status, status, res.stdout + res.stderr)
+        const tree = JSON.parse(res.stdout)
+        if (status === 0) {
+          deepStrictEqual(tree.problems ?? [], [])
+          equal(tree.dependencies[Pkg.name].dependencies[docgen]?.version, version)
+        }
+        else {
+          equal(tree.error.code, 'ELSPROBLEMS')
+          ok(tree.dependencies[Pkg.name].dependencies[docgen].invalid, res.stdout)
+        }
+      }
+      finally {
+        rmSync(dir, { recursive: true, force: true })
+      }
+    })
+  }
+
 
   test('every committed file under `files` reaches the tarball', () => {
     const tracked = trackedShipped()

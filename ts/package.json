@@ -90,10 +90,16 @@
     "@tabnas/jsonic": ">=0.6.0",
     "@tabnas/parser": ">=0.8.0 <0.11.0 || >=0.11.1",
     "@voxgig/apidef": ">=8.14.0",
+    "@voxgig/docgen": ">=0.10.0",
     "@voxgig/struct": ">=0.2",
     "@voxgig/util": ">=0.5",
     "aontu": ">=0.71.0 <0.73.0",
     "jostraca": ">=0.38.1",
     "shape": ">=11.4.1"
+  },
+  "peerDependenciesMeta": {
+    "@voxgig/docgen": {
+      "optional": true
+    }
   }
 }
