@@ -1,4 +1,5 @@
 
+mod auth_credential;
 mod common;
 mod omni_resolver;
 
@@ -34,6 +35,14 @@ where
     F: FnMut(&mut Vec<Value>) -> Result<Value, ProjectNameError> + 'static,
 {
     let basic = run.set(&[name, "basic"]);
+    let basic = if name == "prepareAuth" {
+        omni_resolver::toomni(&auth_credential::retarget(
+            &tostruct(&basic),
+            &auth_credential::credential(),
+        ))
+    } else {
+        basic
+    };
     assert!(
         basic.ismap(),
         "test corpus section {:?} missing — check the name against .sdk/test/primary/",
@@ -760,7 +769,10 @@ fn primary_prepare_auth_basic() {
             setp(
                 &ctxmap,
                 "spec",
-                jo(vec![("headers", spec.borrow().headers.clone())]),
+                jo(vec![
+                    ("headers", spec.borrow().headers.clone()),
+                    ("query", spec.borrow().query.clone()),
+                ]),
             );
         }
 

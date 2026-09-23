@@ -1,4 +1,5 @@
 
+mod auth_credential;
 mod common;
 
 use std::cell::RefCell;
@@ -597,57 +598,76 @@ fn pipeline_prepare_auth_guards_missing_spec() {
 
 #[test]
 fn pipeline_prepare_auth_apikey_with_prefix_space_joined() {
+    let cred = auth_credential::credential();
     let (client, utility) = pl_client(jo(vec![
         ("apikey", Value::str("K")),
-        ("auth", jo(vec![("prefix", Value::str("Bearer"))])),
+        (
+            "auth",
+            jo(vec![
+                ("prefix", Value::str("Bearer")),
+                ("basic", Value::Bool(false)),
+            ]),
+        ),
     ]));
     let ctx = pl_ctx(&client, &utility, None);
     *ctx.spec.borrow_mut() = Some(auth_spec(Value::Noval));
     utility.prepare_auth(&ctx).expect("no error");
     let spec = ctx.spec.borrow().clone().unwrap();
-    let headers = spec.borrow().headers.clone();
-    assert_eq!(getp(&headers, "authorization"), Value::str("Bearer K"));
+    let actual = auth_credential::actual(&spec.borrow(), &cred);
+    assert_eq!(actual, auth_credential::expected(&cred, "Bearer", "K"));
 }
 
 #[test]
 fn pipeline_prepare_auth_raw_apikey_empty_prefix_as_is() {
+    let cred = auth_credential::credential();
     let (client, utility) = pl_client(jo(vec![
         ("apikey", Value::str("K")),
-        ("auth", jo(vec![("prefix", Value::str(""))])),
+        (
+            "auth",
+            jo(vec![
+                ("prefix", Value::str("")),
+                ("basic", Value::Bool(false)),
+            ]),
+        ),
     ]));
     let ctx = pl_ctx(&client, &utility, None);
     *ctx.spec.borrow_mut() = Some(auth_spec(Value::Noval));
     utility.prepare_auth(&ctx).expect("no error");
     let spec = ctx.spec.borrow().clone().unwrap();
-    let headers = spec.borrow().headers.clone();
-    assert_eq!(getp(&headers, "authorization"), Value::str("K"));
+    let actual = auth_credential::actual(&spec.borrow(), &cred);
+    assert_eq!(actual, auth_credential::expected(&cred, "", "K"));
 }
 
 #[test]
 fn pipeline_prepare_auth_empty_apikey_drops_header() {
+    let cred = auth_credential::credential();
     let (client, utility) = pl_client(jo(vec![
         ("apikey", Value::str("")),
-        ("auth", jo(vec![("prefix", Value::str("Bearer"))])),
+        (
+            "auth",
+            jo(vec![
+                ("prefix", Value::str("Bearer")),
+                ("basic", Value::Bool(false)),
+            ]),
+        ),
     ]));
     let ctx = pl_ctx(&client, &utility, None);
-    *ctx.spec.borrow_mut() = Some(auth_spec(jo(vec![(
-        "authorization",
-        Value::str("stale"),
-    )])));
+    *ctx.spec.borrow_mut() = Some(auth_credential::seed(&cred));
     utility.prepare_auth(&ctx).expect("no error");
     let spec = ctx.spec.borrow().clone().unwrap();
-    let headers = spec.borrow().headers.clone();
-    assert!(
-        getp(&headers, "authorization").is_noval(),
-        "expected authorization dropped"
-    );
+    let actual = auth_credential::actual(&spec.borrow(), &cred);
+    assert!(actual.is_noval(), "expected credential dropped");
 }
 
 #[test]
 fn pipeline_prepare_auth_missing_apikey_drops_header() {
+    let cred = auth_credential::credential();
     let (client, utility) = pl_client(jo(vec![(
         "auth",
-        jo(vec![("prefix", Value::str("Bearer"))]),
+        jo(vec![
+            ("prefix", Value::str("Bearer")),
+            ("basic", Value::Bool(false)),
+        ]),
     )]));
     let options = client.options_map();
     if get_str(&options, "apikey")
@@ -658,21 +678,16 @@ fn pipeline_prepare_auth_missing_apikey_drops_header() {
         return;
     }
     let ctx = pl_ctx(&client, &utility, None);
-    *ctx.spec.borrow_mut() = Some(auth_spec(jo(vec![(
-        "authorization",
-        Value::str("stale"),
-    )])));
+    *ctx.spec.borrow_mut() = Some(auth_credential::seed(&cred));
     utility.prepare_auth(&ctx).expect("no error");
     let spec = ctx.spec.borrow().clone().unwrap();
-    let headers = spec.borrow().headers.clone();
-    assert!(
-        getp(&headers, "authorization").is_noval(),
-        "expected authorization dropped"
-    );
+    let actual = auth_credential::actual(&spec.borrow(), &cred);
+    assert!(actual.is_noval(), "expected credential dropped");
 }
 
 #[test]
 fn pipeline_prepare_auth_public_api_no_auth_block_drops_header() {
+    let cred = auth_credential::credential();
     let (client, utility) = pl_client(jo(vec![("apikey", Value::str("K"))]));
     let options = client.options_map();
     if !getp(&options, "auth").is_noval() {
@@ -682,17 +697,11 @@ fn pipeline_prepare_auth_public_api_no_auth_block_drops_header() {
         return;
     }
     let ctx = pl_ctx(&client, &utility, None);
-    *ctx.spec.borrow_mut() = Some(auth_spec(jo(vec![(
-        "authorization",
-        Value::str("stale"),
-    )])));
+    *ctx.spec.borrow_mut() = Some(auth_credential::seed(&cred));
     utility.prepare_auth(&ctx).expect("no error");
     let spec = ctx.spec.borrow().clone().unwrap();
-    let headers = spec.borrow().headers.clone();
-    assert!(
-        getp(&headers, "authorization").is_noval(),
-        "expected authorization dropped"
-    );
+    let actual = auth_credential::actual(&spec.borrow(), &cred);
+    assert!(actual.is_noval(), "expected credential dropped");
 }
 
 // (get_str used by the auth guards above)

@@ -89,7 +89,7 @@ the runtime under \`.sdk/tm/${lang}/feature/\` and regenerate.
 `);
             }
         }
-        const AgentGuide_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${lang}/AgentGuide_${lang}`, { ignore: true });
+        const AgentGuide_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${lang}/AgentGuide_${lang}`, { ignore: true, quiet: true });
         if (AgentGuide_sdk) {
             AgentGuide_sdk['AgentGuide']({ target });
         }

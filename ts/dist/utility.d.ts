@@ -8,6 +8,7 @@ declare function isHttpBasicAuth(model: any): boolean;
 declare function resolveAuthExchange(model: any): Record<string, any> | null;
 declare function requirePath(ctx$: any, path: string, flags?: {
     ignore?: boolean;
+    quiet?: boolean;
 }): any;
 declare class SdkGenError extends Error {
     constructor(...args: any[]);

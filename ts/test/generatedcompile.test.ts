@@ -3449,10 +3449,14 @@ main: kit: flow: BasicNamespaceFlow: {
 // and reads an auth-active SDK as a public one, which leaves every assertion
 // after it unable to fail.
 
-// A cookie credential is not here. Its placement cases pass, but the SDK
-// clears a cookie credential by the scheme name while it lives under
-// `headers.cookie`, so the drop cases fail on the SDK, not on the test.
-const CREDNAME_MODELS: { name: string, extra: string }[] = [
+// Cookie cleanup is a separate runtime defect; the cookie model exercises
+// corpus placement without running the pipeline's cleanup cases.
+const CREDNAME_MODELS: {
+  name: string,
+  extra: string,
+  targets?: string[],
+  corpusOnly?: boolean,
+}[] = [
   {
     name: 'a credential named by the API, not `authorization`',
     extra: `
@@ -3464,6 +3468,27 @@ main: kit: config: auth: { active: true, prefix: '', in: 'header', name: 'X-Api-
     extra: `
 main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'X-Api-Key' }
 `,
+  },
+  {
+    name: 'a query credential preserves its case',
+    extra: "main: kit: config: auth: { active: true, in: 'query', name: 'ApiToken' }",
+    targets: ['c', 'cpp', 'rust', 'csharp'],
+  },
+  {
+    name: 'a header named cookie is not a cookie credential',
+    extra: "main: kit: config: auth: { active: true, in: 'header', name: 'cookie' }",
+    targets: ['c', 'cpp', 'rust', 'csharp'],
+  },
+  {
+    name: 'a public API places no credential',
+    extra: "main: kit: config: auth: { active: false }",
+    targets: ['c', 'cpp', 'rust', 'csharp'],
+  },
+  {
+    name: 'a cookie credential retargets the corpus value',
+    extra: "main: kit: config: auth: { active: true, in: 'cookie', name: 'session' }",
+    targets: ['c', 'cpp', 'rust', 'csharp'],
+    corpusOnly: true,
   },
 ]
 
@@ -3491,6 +3516,7 @@ const CREDNAME_CORPUS = {
 
 
 type CredNameStep = {
+  corpus?: boolean,
   // What the step proves, for the failure message.
   name: string,
   cmd: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
@@ -3514,6 +3540,96 @@ type CredNameLane = {
 
 
 const CREDNAME_LANES: CredNameLane[] = [
+  {
+    target: 'c',
+    needs: 'make and a c compiler',
+    prepare: (sdkroot) => {
+      if ('win32' === process.platform) return 'the C corpus requires POSIX regex.h'
+      const make = toolchain('make')
+      if (null == make || null == toolchain('cc')) return 'compiler or make is unavailable'
+      const built = run(make, ['tests/pipeline_test.out', 'tests/primary_corpus_test.out'], sdkroot)
+      ok(built.ok, 'c credential suites did not compile:\n' + tail(built.out))
+      return null
+    },
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => ({ bin: './tests/pipeline_test.out', args: [] }),
+        ran: /pipeline: [1-9]\d* checks, 0 failed/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        corpus: true,
+        cmd: () => ({ bin: './tests/primary_corpus_test.out', args: ['--prepare-auth'] }),
+        ran: /PRIMARY CORPUS: [1-9]\d* cases in 1 sections, 0 section\(s\) FAILED/,
+      },
+    ],
+  },
+  {
+    target: 'cpp',
+    needs: 'make and a cpp compiler',
+    prepare: (sdkroot) => {
+      const make = toolchain('make')
+      if (null == make || null == toolchain('c++')) return 'compiler or make is unavailable'
+      const built = run(make, ['test/pipeline_test.out', 'test/primary_utility_test.out'], sdkroot)
+      ok(built.ok, 'cpp credential suites did not compile:\n' + tail(built.out))
+      return null
+    },
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => ({ bin: './test/pipeline_test.out', args: [] }),
+        ran: /[1-9]\d* checks, 0 failures/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        corpus: true,
+        cmd: () => ({ bin: './test/primary_utility_test.out', args: ['--prepare-auth'] }),
+        ran: /1 tests, [1-9]\d* checks, 0 failures/,
+      },
+    ],
+  },
+  {
+    target: 'csharp',
+    needs: 'dotnet',
+    steps: [
+      ...['PipelineTest.PrepareAuth', 'PrimaryUtilityTest.PrepareAuthBasic'].map((filter) => ({
+        name: filter,
+        corpus: filter.startsWith('PrimaryUtilityTest'),
+        cmd: () => {
+          const dotnet = toolchain('dotnet')
+          return null == dotnet ? null : {
+            bin: dotnet,
+            args: ['test', 'test/DemoSDKTest.csproj', '--nologo', '-v', 'quiet', '--filter', 'FullyQualifiedName~' + filter],
+          }
+        },
+        ran: /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+[1-9]\d*,\s+Skipped:\s+0/,
+      })),
+    ],
+  },
+  {
+    target: 'rust',
+    needs: 'cargo',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => {
+          const cargo = toolchain('cargo')
+          return null == cargo ? null : { bin: cargo, args: ['test', '--test', 'pipeline_test', 'pipeline_prepare_auth'] }
+        },
+        ran: /test result: ok\. [1-9]\d* passed; 0 failed/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        corpus: true,
+        cmd: () => {
+          const cargo = toolchain('cargo')
+          return null == cargo ? null : { bin: cargo, args: ['test', '--test', 'primary_utility_test', 'primary_prepare_auth_basic'] }
+        },
+        ran: /test result: ok\. 1 passed; 0 failed/,
+      },
+    ],
+  },
   {
     target: 'ts',
     needs: 'the local typescript (run `npm install`)',
@@ -3791,14 +3907,26 @@ describe('generated auth tests discover the credential name', () => {
 
   for (const lane of CREDNAME_LANES) {
     for (const model of CREDNAME_MODELS) {
+      if (model.targets && !model.targets.includes(lane.target)) continue
 
     test(lane.target + ': ' + model.name,
       async (t) => {
         const sdkroot = Path.join(tmp, lane.target)
+        const corpus = structuredClone(CREDNAME_CORPUS)
+        if (['c', 'cpp', 'rust', 'csharp'].includes(lane.target)) {
+          const entry = corpus.primary.prepareAuth.basic.set[0]
+          for (const spec of [entry.ctx.spec, entry.match.ctx.spec]) {
+            Object.assign(spec.headers, { 'x-extra': 'header' })
+            Object.assign(spec, { query: { keep: 'query' } })
+          }
+        }
+        Fs.writeFileSync(Path.join(tmp, '.sdk', 'test', 'test.json'), JSON.stringify(corpus))
         Fs.rmSync(sdkroot, { recursive: true, force: true })
         await generateTo(lane.target, sdkroot, model.extra)
 
-        const cmds = lane.steps.map((step) => step.cmd())
+        const steps = lane.steps.filter((step) => !model.corpusOnly || step.corpus)
+        ok(0 < steps.length, lane.target + ': no credential checks selected')
+        const cmds = steps.map((step) => step.cmd())
         if (cmds.some((cmd) => null == cmd)) {
           return t.skip(
             'no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
@@ -3809,8 +3937,8 @@ describe('generated auth tests discover the credential name', () => {
           return t.skip(lane.target + ': ' + notready)
         }
 
-        for (let at = 0; at < lane.steps.length; at++) {
-          const step = lane.steps[at]
+        for (let at = 0; at < steps.length; at++) {
+          const step = steps[at]
           const cmd = cmds[at]!
           const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
 
