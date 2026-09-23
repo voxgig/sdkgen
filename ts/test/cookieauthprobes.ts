@@ -272,7 +272,6 @@ int main(void) {
 `,
   csharp: String.raw`
 using DemoSdk;
-using Voxgig.Struct;
 using System.Text.Json;
 
 public static class CookieAuthProbe
@@ -290,14 +289,25 @@ public static class CookieAuthProbe
 
     public static void Main()
     {
-        var cases = (List<object?>)Value(JsonDocument.Parse(File.ReadAllText("cookie-cases.json")).RootElement)!;
-        foreach (Dictionary<string, object?> c in cases)
+        using var fixture = JsonDocument.Parse(File.ReadAllText("cookie-cases.json"));
+        var cases = (List<object?>)Value(fixture.RootElement)!;
+        foreach (var c in cases.Cast<Dictionary<string, object?>>())
         {
             var spec = new Spec(new() { ["headers"] = c["headers"],
                 ["query"] = new Dictionary<string, object?> { ["session"] = "unrelated-query" } });
-            foreach (Dictionary<string, object?> s in (List<object?>)c["steps"]!)
+            foreach (var s in ((List<object?>)c["steps"]!).Cast<Dictionary<string, object?>>())
             {
-                var client = new DemoSDK((Dictionary<string, object?>)s["options"]!);
+                var options = (Dictionary<string, object?>)s["options"]!;
+                var hasKey = options.TryGetValue("apikey", out var apikey);
+                // Construct with a valid key, then exercise raw missing/null values in prepareAuth.
+                var client = new DemoSDK(new(options) { ["apikey"] = apikey ?? "" });
+                var resolved = client.GetRootCtx().Options
+                    ?? throw new Exception("Expected resolved client options");
+                if (hasKey) resolved["apikey"] = apikey;
+                else resolved.Remove("apikey");
+                var actual = client.OptionsMap();
+                if (actual.TryGetValue("apikey", out var actualKey) != hasKey || !Equals(actualKey, apikey))
+                    throw new Exception("API key fixture was not applied: " + c["name"]);
                 var ctx = new Context(new() { ["client"] = client, ["spec"] = spec }, null);
                 var result = client.GetUtility().PrepareAuth(ctx);
                 var expected = (Dictionary<string, object?>)s["headers"]!;
