@@ -108,7 +108,7 @@ the runtime under \`.sdk/tm/${lang}/feature/\` and regenerate.
     }
 
     const AgentGuide_sdk =
-      requirePath(ctx$, `./cmp/${lang}/AgentGuide_${lang}`, { ignore: true })
+      requirePath(ctx$, `./cmp/${lang}/AgentGuide_${lang}`, { ignore: true, quiet: true })
     if (AgentGuide_sdk) {
       AgentGuide_sdk['AgentGuide']({ target })
     }

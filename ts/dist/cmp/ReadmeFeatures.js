@@ -7,7 +7,7 @@ const FeatureDocs_1 = require("./FeatureDocs");
 const ReadmeFeatures = (0, jostraca_1.cmp)(function ReadmeFeatures(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
-    const override = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeFeatures_${target.name}`, { ignore: true });
+    const override = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeFeatures_${target.name}`, { ignore: true, quiet: true });
     if (override) {
         override['ReadmeFeatures']({ target });
         return;

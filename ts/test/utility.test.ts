@@ -262,6 +262,13 @@ describe('utility', () => {
       strictEqual(warns[0].point, 'require-missing')
     })
 
+    test('an optional fallback can suppress only the missing-module warning', () => {
+      const { ctx$, warns } = makeCtx()
+      strictEqual(requirePath(ctx$, 'nope', { ignore: true, quiet: true }), undefined)
+      throws(() => requirePath(ctx$, 'boom', { ignore: true, quiet: true }), /load failure/)
+      strictEqual(warns.length, 0)
+    })
+
     test('missing module without ignore throws', () => {
       const { ctx$ } = makeCtx()
       throws(() => requirePath(ctx$, 'nope'))

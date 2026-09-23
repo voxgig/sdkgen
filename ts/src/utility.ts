@@ -109,7 +109,7 @@ function resolveAuthExchange(model: any): Record<string, any> | null {
 }
 
 
-function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any {
+function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean, quiet?: boolean }): any {
   const fullpath = resolvePath(ctx$, path)
   const ignore = null == flags?.ignore ? false : flags.ignore
 
@@ -123,7 +123,7 @@ function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any
       require.resolve(fullpath)
     }
     catch (err: any) {
-      ctx$.log.warn({ point: 'require-missing', path, note: path })
+      if (!flags?.quiet) ctx$.log.warn({ point: 'require-missing', path, note: path })
       return undefined
     }
   }

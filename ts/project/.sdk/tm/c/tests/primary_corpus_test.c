@@ -31,6 +31,7 @@
 #include "feature_harness.h" /* test_sdk + Fetcher helpers + ctest.h */
 #include "omni_resolver.h"   /* vendored omni + the voxgig<->omni bridge */
 #include "voxgig_struct.h"
+#include "auth_credential.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -43,6 +44,40 @@
 
 static omni_pool* POOL = NULL;
 static omni_runner* RUNNER = NULL;
+
+static omni_json* retarget_auth(const omni_json* node, AuthCredential cred) {
+  if (node->type == OMNI_LIST) {
+    omni_json* out = omni_list(POOL);
+    for (size_t i = 0; i < node->listlen; i++)
+      omni_list_push(out, retarget_auth(node->list[i], cred));
+    return out;
+  }
+  if (!omni_ismap(node)) return omni_clone(POOL, node);
+  omni_json* out = omni_map(POOL);
+  for (size_t i = 0; i < node->maplen; i++) {
+    const char* key = node->keys[i];
+    const omni_json* val = node->vals[i];
+    if (strcmp(key, "headers") == 0 && omni_ismap(val)) {
+      omni_json* headers = omni_map(POOL);
+      for (size_t j = 0; j < val->maplen; j++) {
+        if (strcmp(val->keys[j], "authorization") != 0)
+          omni_map_set(headers, val->keys[j], omni_clone(POOL, val->vals[j]));
+      }
+      omni_map_set(out, "headers", headers);
+    } else omni_map_set(out, key, retarget_auth(val, cred));
+  }
+  const omni_json* headers = omni_map_get(node, "headers");
+  const omni_json* value = omni_ismap(headers) ? omni_map_get(headers, "authorization") : NULL;
+  if (value && cred.name) {
+    omni_json* bag = omni_map_get(out, cred.bag);
+    if (!omni_ismap(bag)) { bag = omni_map(POOL); omni_map_set(out, cred.bag, bag); }
+    omni_json* placed = omni_clone(POOL, value);
+    if (*cred.pair && value->type == OMNI_STR)
+      placed = omnivx_tomni(POOL, auth_expected(cred, "", value->strval));
+    omni_map_set(bag, cred.name, placed);
+  }
+  return out;
+}
 
 /* Section scoreboard. omni stops a set at its FIRST failing entry, so a
  * row is pass/fail plus the number of cases the section HOLDS — the count
@@ -266,6 +301,8 @@ static void runset(const char* name, ctxfn cf, argfn af) {
   p->af = af;
   p->cl = client_for(omni_spec(pack));
 
+  if (strcmp(name, "prepareAuth") == 0) basic = retarget_auth(basic, auth_credential());
+
   failed = omni_runsetflags(pack, basic, omnivx_flags(1, name),
                             omnivx_rawsubject(POOL, primary_call, p), &err);
   row_add(name, cases, failed, err);
@@ -426,7 +463,7 @@ static voxgig_value* s_operator(voxgig_value* a, char** e) {
 }
 /* ---- main --------------------------------------------------------------- */
 
-int main(void) {
+int main(int argc, char** argv) {
   char* err = NULL;
   size_t cases = 0;
   int failed = 0;
@@ -442,28 +479,32 @@ int main(void) {
 
   SHARED = test_sdk(v_undef(), v_undef());
 
-  runset("done", s_done, NULL);
-  runset("makeUrl", s_make_url, NULL);
-  runset("makeRequest", s_make_request, NULL);
-  runset("makeResponse", s_make_response, NULL);
-  runset("makeSpec", s_make_spec, NULL);
-  runset("prepareAuth", s_prepare_auth, NULL);
-  runset("prepareBody", s_prepare_body, NULL);
-  runset("prepareHeaders", s_prepare_headers, NULL);
-  runset("prepareMethod", s_prepare_method, NULL);
-  runset("prepareParams", s_prepare_params, NULL);
-  runset("preparePath", s_prepare_path, NULL);
-  runset("prepareQuery", s_prepare_query, NULL);
-  runset("resultBasic", s_result_basic, NULL);
-  runset("resultBody", s_result_body, NULL);
-  runset("resultHeaders", s_result_headers, NULL);
-  runset("transformRequest", s_transform_request, NULL);
-  runset("transformResponse", s_transform_response, NULL);
-  runset("param", s_param, NULL);
-  runset("makeError", s_make_error, NULL);
-  runset("makeContext", NULL, s_make_context);
-  runset("makeOptions", NULL, s_make_options);
-  runset("operator", NULL, s_operator);
+  if (argc == 2 && strcmp(argv[1], "--prepare-auth") == 0) {
+    runset("prepareAuth", s_prepare_auth, NULL);
+  } else {
+    runset("done", s_done, NULL);
+    runset("makeUrl", s_make_url, NULL);
+    runset("makeRequest", s_make_request, NULL);
+    runset("makeResponse", s_make_response, NULL);
+    runset("makeSpec", s_make_spec, NULL);
+    runset("prepareAuth", s_prepare_auth, NULL);
+    runset("prepareBody", s_prepare_body, NULL);
+    runset("prepareHeaders", s_prepare_headers, NULL);
+    runset("prepareMethod", s_prepare_method, NULL);
+    runset("prepareParams", s_prepare_params, NULL);
+    runset("preparePath", s_prepare_path, NULL);
+    runset("prepareQuery", s_prepare_query, NULL);
+    runset("resultBasic", s_result_basic, NULL);
+    runset("resultBody", s_result_body, NULL);
+    runset("resultHeaders", s_result_headers, NULL);
+    runset("transformRequest", s_transform_request, NULL);
+    runset("transformResponse", s_transform_response, NULL);
+    runset("param", s_param, NULL);
+    runset("makeError", s_make_error, NULL);
+    runset("makeContext", NULL, s_make_context);
+    runset("makeOptions", NULL, s_make_options);
+    runset("operator", NULL, s_operator);
+  }
 
   for (i = 0; i < NROWS; i++) {
     cases += ROWS[i].cases;
@@ -482,5 +523,5 @@ int main(void) {
     free(ROWS[i].err);
   }
 
-  return 0 == failed ? 0 : 1;
+  return 0 == failed && 0 == CT_FAILS ? 0 : 1;
 }

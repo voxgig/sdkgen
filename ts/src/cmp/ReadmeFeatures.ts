@@ -10,7 +10,7 @@ const ReadmeFeatures = cmp(function ReadmeFeatures(props: any) {
   const { model } = ctx$
 
   const override =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeFeatures_${target.name}`, { ignore: true })
+    requirePath(ctx$, `./cmp/${target.name}/ReadmeFeatures_${target.name}`, { ignore: true, quiet: true })
 
   if (override) {
     override['ReadmeFeatures']({ target })
