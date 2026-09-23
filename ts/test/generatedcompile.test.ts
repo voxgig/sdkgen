@@ -2740,6 +2740,30 @@ public static class AuthNullProbe
     {
         var fail = new List<string>();
 
+        foreach (var explicitNull in new[] { false, true })
+        {
+            var options = new Dictionary<string, object?>
+            {
+                ["auth"] = new Dictionary<string, object?>(),
+                ["base"] = "http://localhost:8000",
+            };
+            var keys = new[] { "apikey", "secret", "prefix", "suffix" };
+            if (explicitNull)
+            {
+                foreach (var key in keys) options[key] = null;
+            }
+            var normalized = new DemoSDK(options).OptionsMap();
+            foreach (var key in keys)
+            {
+                if (!normalized.TryGetValue(key, out var value) || !Equals(value, ""))
+                    fail.Add(key + " did not receive its scalar default");
+            }
+            if (!Equals(normalized["base"], "http://localhost:8000"))
+                fail.Add("base override was lost");
+            Wire(options);
+            if (!called || had) fail.Add("credential-free request did not reach the transport");
+        }
+
         Wire(new Dictionary<string, object?> { ["apikey"] = "OPTKEY01" });
         if (!had || "OPTKEY01" != seen)
         {
