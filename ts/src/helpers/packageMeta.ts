@@ -70,8 +70,9 @@ function docsSiteUrl(model: any): string {
   }
 
   const editions = kindCollection(model, 'edition')
+  // published, not active: serving is per-repository state, not generation.
   const pages: any = Object.values(editions || {})
-    .find((e: any) => 'github-pages' === e?.kind && false !== e?.active)
+    .find((e: any) => 'github-pages' === e?.kind && false !== e?.active && true === e?.published)
 
   if (null == pages) {
     return ''
