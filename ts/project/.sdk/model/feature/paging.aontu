@@ -2,7 +2,8 @@
 main: kit: feature: paging: {
 
   name: key()
-  title: "Pagination signals for list operations"
+  title: "Paging"
+  description: "Pagination signals for list operations"
   version: '0.0.1'
   active: true
   base: 'BASE'

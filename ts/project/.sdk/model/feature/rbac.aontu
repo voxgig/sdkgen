@@ -2,7 +2,8 @@
 main: kit: feature: rbac: {
 
   name: key()
-  title: "Client-side role/permission enforcement"
+  title: "Access control"
+  description: "Client-side role/permission enforcement"
   version: '0.0.1'
   active: true
   base: 'BASE'
