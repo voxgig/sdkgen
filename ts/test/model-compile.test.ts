@@ -19,7 +19,7 @@ import {
 
 
 const REPO = Path.resolve(__dirname, '..', '..')
-const MODEL_FILES = ['sdkgen.aon']
+const MODEL_FILES = ['sdkgen.aontu']
 
 const PROJECT_MODEL = Path.join(REPO, 'ts', 'project', '.sdk', 'model')
 const TARGET_DIR = Path.join(PROJECT_MODEL, 'target')
@@ -42,7 +42,7 @@ function compile(label: string, path: string): any {
 function aontuFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
     e.isDirectory() ? aontuFiles(Path.join(dir, e.name)) :
-      e.name.endsWith('.aon') ? [Path.join(dir, e.name)] : [])
+      e.name.endsWith('.aontu') ? [Path.join(dir, e.name)] : [])
 }
 
 
@@ -62,7 +62,7 @@ describe('model-compile', () => {
 describe('target-compile', () => {
 
   const targets = readdirSync(TARGET_DIR)
-    .filter((f: string) => f.endsWith('.aon'))
+    .filter((f: string) => f.endsWith('.aontu'))
     .sort()
 
   assert.ok(0 < targets.length, `no target models found in ${TARGET_DIR}`)
@@ -79,11 +79,11 @@ describe('target-compile', () => {
 describe('target-publish-overridable', () => {
 
   const targets = readdirSync(TARGET_DIR)
-    .filter((f: string) => f.endsWith('.aon'))
+    .filter((f: string) => f.endsWith('.aontu'))
     .sort()
 
   for (const file of targets) {
-    const tname = file.replace(/\.aon$/, '')
+    const tname = file.replace(/\.aontu$/, '')
     const tkey = aontuKey(tname)
     const path = Path.join(TARGET_DIR, file)
     const src = readFileSync(path, 'utf8')
@@ -138,7 +138,7 @@ describe('project-model-syntax', () => {
   const files = aontuFiles(PROJECT_MODEL)
 
   test('the scaffold has model files to check', () => {
-    assert.ok(0 < files.length, `no .aon files under ${PROJECT_MODEL}`)
+    assert.ok(0 < files.length, `no .aontu files under ${PROJECT_MODEL}`)
   })
 
   test('no scaffolded model uses a slash comment', () => {
@@ -166,12 +166,12 @@ describe('cli-targets-disable-agentguide', () => {
   for (const target of ['go-cli', 'go-mcp', 'py-data']) {
     test(`${target} switches the agentguide phase off`, () => {
       const model: any = compile(
-        `target/${target}.aon`, Path.join(TARGET_DIR, target + '.aon'))
+        `target/${target}.aontu`, Path.join(TARGET_DIR, target + '.aontu'))
 
       const phase = model?.main?.kit?.target?.[target]?.phase
       assert.strictEqual(
         phase?.agentguide?.active, false,
-        `${target}.aon must set phase.agentguide.active = false`)
+        `${target}.aontu must set phase.agentguide.active = false`)
     })
   }
 
@@ -187,7 +187,7 @@ describe('schema covers every core kind', () => {
 
   // Edition constraints are owned and tested by @voxgig/docgen. Its installed
   // model includes that schema; sdkgen does not depend on the edition renderer.
-  const EXTERNAL_SCHEMA: Record<string, string> = { edition: '@voxgig/docgen/model/docgen.aon' }
+  const EXTERNAL_SCHEMA: Record<string, string> = { edition: '@voxgig/docgen/model/docgen.aontu' }
 
   for (const kind of Object.keys(KINDS)) {
     assert.ok(KIND_PROBE[kind] || EXTERNAL_SCHEMA[kind], `No schema owner for ${kind}`)
@@ -200,7 +200,7 @@ describe('schema covers every core kind', () => {
         'or this guard passes vacuously for it')
 
       const src = [
-        `@'${Path.join(REPO, 'ts', 'model', 'sdkgen.aon')}'`,
+        `@'${Path.join(REPO, 'ts', 'model', 'sdkgen.aontu')}'`,
         `main: kit: ${kind}: probe: {`,
         '  ' + probe,
         '}',
@@ -212,7 +212,7 @@ describe('schema covers every core kind', () => {
       // the schema itself throws `source includes itself` — either way
       // "compiling failed" is true no matter what the schema says.
       const { errors } = compileModel(
-        src, Path.join(TARGET_DIR, 'go.aon'))
+        src, Path.join(TARGET_DIR, 'go.aontu'))
 
       assert.ok(0 < errors.length,
         `the base schema does not constrain main.kit.${kind} — a definition ` +
@@ -232,9 +232,9 @@ test('package schema self-references resolve from the checked model', () => {
     writeFileSync(Path.join(root, 'package.json'), JSON.stringify({
       name: '@test/edition-schema', exports: { './model/*': './model/*' },
     }))
-    writeFileSync(Path.join(root, 'model/doc.aon'), 'main: kit: doc: edition: &: active: boolean')
-    const file = Path.join(root, '.sdk/model/edition/summary.aon')
-    const include = '@"@test/edition-schema/model/doc.aon"\n'
+    writeFileSync(Path.join(root, 'model/doc.aontu'), 'main: kit: doc: edition: &: active: boolean')
+    const file = Path.join(root, '.sdk/model/edition/summary.aontu')
+    const include = '@"@test/edition-schema/model/doc.aontu"\n'
     const valid = include + 'main: kit: doc: edition: summary: active: true'
     writeFileSync(file, valid)
     assert.deepEqual(compileModel(valid, file).errors, [])

@@ -163,7 +163,7 @@ is closed.
 
 | Linkable | Because |
 |---|---|
-| source and tests: `ts/src/`, `ts/test/`, the scaffold under `ts/project/.sdk/`, the base model `ts/model/sdkgen.aon` | code is the thing a claim is pinned to |
+| source and tests: `ts/src/`, `ts/test/`, the scaffold under `ts/project/.sdk/`, the base model `ts/model/sdkgen.aontu` | code is the thing a claim is pinned to |
 | `.github/workflows/` | the release and CI definitions are what the release how-to describes, and a reader can act on them |
 | this guide | normative rather than exploratory, and it names the working documents in order to ban them |
 | the other READMEs, and the root of a sibling repository (`create-sdkgen`, `station`, `sekreto`) | documentation themselves; a repository root is a doorway, where a design note inside it is not |
@@ -311,7 +311,7 @@ leaves the rest at warning.
 
 | Not banned | Because |
 |---|---|
-| `canonical` | It is this project's word for the base model in `ts/model/sdkgen.aon`, and for the `ts` target every other target is checked against. |
+| `canonical` | It is this project's word for the base model in `ts/model/sdkgen.aontu`, and for the `ts` target every other target is checked against. |
 | `model` | The unified object generation reads, and the only input it has. There is no other word for it. |
 | `surface` | The public API surface a feature must keep out of the way of, and the MCP agent surface station hosts. |
 | `real` | `ts/test/generate.test.ts` runs the components for real; the corpus lanes build a real SDK with a real toolchain, as opposed to a simulated pipeline. |
@@ -371,7 +371,7 @@ The rest:
   runner but climbs out of the checkout resolves nowhere on GitHub or in a
   published package, so it fails too. The day the check was written it
   found two broken links, both in the model reference and both to
-  `model/sdkgen.aontu`, a file that had been renamed `sdkgen.aon`; they
+  `model/sdkgen.aontu`, a file that had been renamed `sdkgen.aontu`; they
   were retargeted.
 - No emoji in documentation.
 - Sentence-style capitalisation in headings (Google style), except where

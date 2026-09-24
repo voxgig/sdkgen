@@ -53,12 +53,12 @@ function makePackage(edit?: (dir: string) => void): string {
   Fs.cpSync(Path.join(SCAFFOLD, 'tm', 'go'),
     Path.join(sdk, 'tm', 'iotgo'), { recursive: true })
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'iotgo.aon'),
-    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aon'), 'utf8')
+  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'iotgo.aontu'),
+    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'), 'utf8')
       .replace(/target: go:/g, 'target: iotgo:'))
 
-  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'feature', 'retry.aon'),
-    Path.join(sdk, 'model', 'feature', 'retry.aon'))
+  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'feature', 'retry.aontu'),
+    Path.join(sdk, 'model', 'feature', 'retry.aontu'))
 
   Fs.writeFileSync(Path.join(dir, 'sdkgen-package.json'),
     JSON.stringify({
@@ -102,7 +102,7 @@ function noted(report: any, point: string): string {
 
 
 function modelFile(dir: string, kind: string, name: string): string {
-  return Path.join(dir, '.sdk', 'model', kind, name + '.aon')
+  return Path.join(dir, '.sdk', 'model', kind, name + '.aontu')
 }
 
 
@@ -204,7 +204,7 @@ describe('package check — the model rules', () => {
     const report = check()
 
     ok(/comment: line: ["']\/\/["']/.test(String(Fs.readFileSync(
-      Path.join(SCAFFOLD, 'model', 'target', 'go.aon'), 'utf8'))),
+      Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'), 'utf8'))),
       'fixture assumption: go declares a // line-comment token')
 
     ok(!points(report).includes('model-slash-comment'))
@@ -483,7 +483,7 @@ describe('package check — feature source', () => {
     // them.
     const dir = makePackage()
     try {
-      ok(!Fs.existsSync(Path.join(dir, '.sdk', 'model', 'feature', 'log.aon')),
+      ok(!Fs.existsSync(Path.join(dir, '.sdk', 'model', 'feature', 'log.aontu')),
         'fixture assumption: the package does not provide log')
 
       ok(Fs.existsSync(

@@ -496,7 +496,7 @@ function readTargetFeature(
   const { log } = ctx$
   const fs = ctx$.fs()
 
-  const path = tfolder + '/model/target/' + torigname + '.aon'
+  const path = tfolder + '/model/target/' + torigname + '.aontu'
 
   try {
     const errs: any[] = []

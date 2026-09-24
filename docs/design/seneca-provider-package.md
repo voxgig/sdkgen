@@ -35,7 +35,7 @@ target of any kind that already generates into **its own repository**
 A target whose output is already a separate release artifact with its own
 cadence is the one whose *definition* has the least to lose by living in a
 separate package with its own cadence. The long comment at the top of
-`ts/project/.sdk/model/target/seneca-provider.aon` makes that case in the
+`ts/project/.sdk/model/target/seneca-provider.aontu` makes that case in the
 target's own words.
 
 ## Verified before the move: generation is byte-identical
@@ -99,7 +99,7 @@ is at `Extras_seneca-provider.ts:382`, inside the `Content(\`…\`)` template
 literal that emits the *generated provider's* test file. The component does
 not require it; the code the component writes does. It is already declared
 where it belongs — as a `prod` dependency of the generated package, in
-`model/target/seneca-provider.aon`'s `deps` block — and it must not appear
+`model/target/seneca-provider.aontu`'s `deps` block — and it must not appear
 in the sdkgen package's manifest in any role.
 
 The grep cannot tell the two apart, because a generator's components are

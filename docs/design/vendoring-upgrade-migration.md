@@ -251,11 +251,11 @@ first, as its own design and PR; do not rely on the warning.
    - The secret name defaults to `apikey`, configurable via
      `feature.secrets.name`.
 3. Registration — in the bundled feature CATALOGUE, not the base
-   schema: add `ts/project/.sdk/model/feature/secrets.aon`, include it
-   from `feature-index.aon`, and advertise it in
+   schema: add `ts/project/.sdk/model/feature/secrets.aontu`, include it
+   from `feature-index.aontu`, and advertise it in
    `ts/project/sdkgen-package.json`'s `feature` list (the manifest is
    pinned to the directory listings by a guard test, so it fails
-   loudly if forgotten). `model/sdkgen.aon` changes only if the
+   loudly if forgotten). `model/sdkgen.aontu` changes only if the
    feature needs new schema keys. With the catalogue entry in place,
    the generic Config emission (`#ImportFeatures` /
    `#FeatureClasses` / `configDefinition`) produces the registry and
@@ -346,7 +346,7 @@ the pre-merge proof is sdkgen's own suite plus a local
 **A feature cannot be generated for a subset of targets.** This is the
 applicability gate, and it is a hard prerequisite for Phase 3 rather
 than a nicety. Building the secrets feature as a project-owned sdkgen
-package (manifest + `model/feature/secrets.aon` +
+package (manifest + `model/feature/secrets.aontu` +
 `tm/ts/src/feature/secrets/`, modelled on elementdemo's `elementcard`)
 passes `package check` cleanly and wires in correctly with `package
 add` + `feature add` — and then generation aborts:
@@ -479,13 +479,13 @@ shape the schema already recommends for `contributor`.
 value does not yield to another concrete value — it conflicts. A shipped
 `active: false` makes a project's `active: true` fail to unify, naming two
 files and offering no way to reconcile them. Leave the key unset and let
-the schema default it. This is the defect `model/target/ts.aon` already
+the schema default it. This is the defect `model/target/ts.aontu` already
 warns about for publication keys.
 
 **4. Activation belongs in the project overlay.** `target add` re-runs
 `feature add` for every selected feature, and add is overwrite — so an
-activation written into `model/feature/<name>.aon` silently reverts on the
-next target resync. It goes in `model/project.aon`.
+activation written into `model/feature/<name>.aontu` silently reverts on the
+next target resync. It goes in `model/project.aontu`.
 
 **5. Deleting a template does not delete generated output.** jostraca
 writes; it never removes. `test/runner.ts` survived Phase 2 in the consumer
@@ -789,7 +789,7 @@ Two things follow for the other targets:
   unless the section runs with the `null: false` flag. So a corpus case
   written the obvious way passes the STRING `'__NULL__'` as the stored value
   and asserts nothing about null at all.
-  **create-sdkgen#26** adds `struct/nullsem.aon` — 33 cases across getprop,
+  **create-sdkgen#26** adds `struct/nullsem.aontu` — 33 cases across getprop,
   getelem, getpath, haskey and keysof, all verified against upstream 0.3.2 —
   which runs with that flag and is OPT-IN, so it becomes each target's null
   gate as it migrates rather than reddening the half of the tree that has

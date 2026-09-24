@@ -60,7 +60,7 @@ const ROOT_COMPONENTS: [string, string][] = [
 // What the check found, by category. Categories 1-3 are drift; `additive` is
 // the project's own work and is reported separately, never as a problem.
 type DoctorReport = {
-  // `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aon`, that
+  // `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aontu`, that
   // differs from the scaffold. `target add` will silently revert every one of
   // these.
   forked: string[]
@@ -184,13 +184,14 @@ function orphanModelFiles(actx: ActionContext): string[] {
   }
 
   const all = walk(fs, modeldir)
-    .filter((rel) => rel.endsWith('.aon') || rel.endsWith('.aontu'))
+    .filter((rel) => rel.endsWith('.aontu') || rel.endsWith('.aon'))
     .filter((rel) => !rel.includes('.jostraca/') && !rel.startsWith('guide/'))
 
+  // Both extensions: doctor reports what a project HAS, not what add writes.
   const ENTRY = [
-    'sdk.aon', 'sdk.aontu',
-    'test/test.aon', 'test/test.aontu',
-    '.model-config/model-config.aon', '.model-config/model-config.aontu',
+    'sdk.aontu', 'sdk.aon',
+    'test/test.aontu', 'test/test.aon',
+    '.model-config/model-config.aontu', '.model-config/model-config.aon',
   ]
 
   const seen = new Set<string>()
@@ -717,7 +718,7 @@ function checkItemModel(
   const aliased = kindDef(kind).alias && name !== origname
 
   const project = definitionPath(actx.folder, kind, name)
-  const label = 'model/' + kind + '/' + name + '.aon'
+  const label = 'model/' + kind + '/' + name + '.aontu'
 
   if (!fs.existsSync(project)) {
     report.missing.push(label)

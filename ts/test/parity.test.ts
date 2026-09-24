@@ -918,7 +918,7 @@ describe('config representation is chosen by size', () => {
     deepStrictEqual(found, [],
       'these templates hold the method allow-list, so they are carrying an ' +
       'option spec of their own — add the option to `main: kit: optspec` in ' +
-      'ts/model/sdkgen.aon instead, and read it from the generated Schema ' +
+      'ts/model/sdkgen.aontu instead, and read it from the generated Schema ' +
       'module (ts/src/helpers/optspec.ts)')
   })
 

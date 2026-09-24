@@ -11,7 +11,9 @@ import type {
 
 import { SdkGenError } from '../utility'
 
-import { definitionPath, definitionFolder, indexName } from '../helpers/definition'
+import {
+  definitionPathAny, definitionFolder, indexName,
+} from '../helpers/definition'
 
 import { findFeatureSources, BASE_FEATURE } from '../helpers/featureSource'
 
@@ -159,7 +161,7 @@ async function planRemove(
   }
 
   const declared: any = kindCollection(model, kind)?.[name]
-  const modelfile = definitionPath(root, kind, name)
+  const modelfile = definitionPathAny(fs, root, kind, name)
   const hasModel = fs.existsSync(modelfile)
 
   if (null == declared && !hasModel) {
@@ -213,7 +215,7 @@ async function planRemove(
   }
 
   if (hasModel) {
-    plan.files.push('model/' + kind + '/' + name + '.aon')
+    plan.files.push('model/' + kind + '/' + Path.basename(modelfile))
   }
 
   const wanted = new Set(plan.files)
@@ -353,7 +355,7 @@ function projectMentions(kind: string, name: string, actx: ActionContext): strin
 
   const out: string[] = []
   for (const r of walk(fs, modeldir)) {
-    if (!r.endsWith('.aon') || r.startsWith(own)) {
+    if (!/\.(aontu|aon)$/.test(r) || r.startsWith(own)) {
       continue
     }
     let src = ''

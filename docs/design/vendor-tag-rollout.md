@@ -184,7 +184,7 @@ the rollout rather than discover later:
   inactive proof must assert on the ADD output, not merely on a
   regenerated tree.
 - Making the trim real for all targets (teaching `Main_go`/`Main_py` the
-  helpers, and making `plugin.path` per-target in `model/sdkgen.aon`)
+  helpers, and making `plugin.path` per-target in `model/sdkgen.aontu`)
   stays the right end state. It is **deferred to its own PR**, not
   abandoned.
 
@@ -333,7 +333,7 @@ unknown to that Sekreto.
 The draft called this "three edits beyond the copy". It is at least
 **seven**, and two of them are guard repairs:
 
-1. **The `dotenv` group in `secrets.aon` must be DELETED, not
+1. **The `dotenv` group in `secrets.aontu` must be DELETED, not
    re-pathed.** Upstream has no `plugins/dotenv.ts` or `plugins/file.ts`
    — both are BUILT-INS, imported at module scope by
    `src/provider/builtin.ts` and instantiated in `BUILTINS`, which
@@ -509,8 +509,8 @@ Not uniform, and the draft budgeted nothing for it:
 **BLOCKER — the pilot cannot generate at all today.** Repointing `.sdk`
 at the local sdkgen is not sufficient and not even self-correcting:
 
-- solardemo's entity models are pre-ADR-003 — `planet.aon` and
-  `moon.aon` describe paths as `parts`, with zero `segments`.
+- solardemo's entity models are pre-ADR-003 — `planet.aontu` and
+  `moon.aontu` describe paths as `parts`, with zero `segments`.
 - Local sdkgen throws `SdkGenError` on exactly that shape in
   `helpers/pointPath.ts`, reached from `utility.ts`, `opShape.ts` and
   every `TestDirect_<lang>` component. All four pilot targets fail.

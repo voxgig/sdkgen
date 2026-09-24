@@ -19,8 +19,8 @@ const UPDATE = '1' === process.env.SDKGEN_GOLDEN_UPDATE
 
 function shipped(kind: string): string[] {
   return Fs.readdirSync(Path.join(SCAFFOLD, 'model', kind))
-    .filter((f: string) => f.endsWith('.aon') && !f.includes('-index'))
-    .map((f: string) => f.replace(/\.aon$/, ''))
+    .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
+    .map((f: string) => f.replace(/\.aontu$/, ''))
     .sort()
 }
 

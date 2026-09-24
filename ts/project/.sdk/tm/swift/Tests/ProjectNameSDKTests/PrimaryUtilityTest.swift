@@ -36,7 +36,7 @@ final class TestInitFeature: BaseFeature {
 
 final class PrimaryUtilityTest: XCTestCase {
   // PENDING sections are the ones deliberately left EMPTY in the shared
-  // corpus (.sdk/test/primary/<name>.aon). Everything else MUST contribute
+  // corpus (.sdk/test/primary/<name>.aontu). Everything else MUST contribute
   // cases: a renamed section or a fixture that failed to compile used to
   // report PASS while running zero assertions.
   private static let PENDING: Set<String> = [

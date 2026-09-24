@@ -17,7 +17,7 @@ import {
 
 function provenanceOf(project: any, kind: string, name: string) {
   const src = project.fs.readFileSync(
-    ROOT + '/model/' + kind + '/' + name + '.aon', 'utf8')
+    ROOT + '/model/' + kind + '/' + name + '.aontu', 'utf8')
 
   const out: Record<string, string> = {}
   for (const m of String(src).matchAll(
@@ -39,7 +39,7 @@ describe('provenance', () => {
     for (const kind of ['target', 'feature']) {
       const dir = Path.join(SCAFFOLD, 'model', kind)
       for (const f of Fs.readdirSync(dir).sort()) {
-        if (!f.endsWith('.aon') || f.includes('-index')) continue
+        if (!f.endsWith('.aontu') || f.includes('-index')) continue
         const src = Fs.readFileSync(Path.join(dir, f), 'utf8')
         if (!src.includes("base: 'BASE'")) {
           missing.push(kind + '/' + f)
@@ -81,8 +81,8 @@ describe('provenance', () => {
     const pkg = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-nomanifest-'))
     try {
       const sdk = Path.join(pkg, '.sdk')
-      Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aon'),
-        Path.join(sdk, 'model', 'target', 'go.aon'))
+      Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'),
+        Path.join(sdk, 'model', 'target', 'go.aontu'))
       Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'go'), { recursive: true })
       Fs.mkdirSync(Path.join(sdk, 'tm', 'go'), { recursive: true })
 
@@ -173,8 +173,8 @@ describe('provenance', () => {
     const pkg = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-badmanifest-'))
     try {
       const sdk = Path.join(pkg, '.sdk')
-      Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aon'),
-        Path.join(sdk, 'model', 'target', 'go.aon'))
+      Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'),
+        Path.join(sdk, 'model', 'target', 'go.aontu'))
       Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'go'), { recursive: true })
       Fs.mkdirSync(Path.join(sdk, 'tm', 'go'), { recursive: true })
       Fs.writeFileSync(
@@ -242,7 +242,7 @@ describe('provenance', () => {
     const { src } = provenanceOf(project, 'target', 'go2')
     const errs: any[] = []
     const model = new Aontu().generate(src, {
-      path: Path.join(SCAFFOLD, 'model', 'target', 'go2.aon'), errs,
+      path: Path.join(SCAFFOLD, 'model', 'target', 'go2.aontu'), errs,
     })
 
     strictEqual(errs.length, 0, 'stamped model did not compile: ' +
@@ -297,8 +297,8 @@ function externalGoPackage(manifest: any): string {
   const sdk = Path.join(pkg, '.sdk')
 
   Fs.mkdirSync(Path.join(sdk, 'model', 'target'), { recursive: true })
-  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aon'),
-    Path.join(sdk, 'model', 'target', 'go.aon'))
+  Fs.cpSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'),
+    Path.join(sdk, 'model', 'target', 'go.aontu'))
   Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'go'), { recursive: true })
   Fs.mkdirSync(Path.join(sdk, 'tm', 'go'), { recursive: true })
 
@@ -323,7 +323,7 @@ describe('provenance edge cases', () => {
     const errs: any[] = []
     const model = new Aontu().generate(
       'main: kit: target: x: {\n  ' + line + '\n}\n',
-      { path: '/t.aon', errs })
+      { path: '/t.aontu', errs })
 
     strictEqual(errs.length, 0,
       'a quoted path did not compile: ' +
@@ -345,7 +345,7 @@ describe('provenance edge cases', () => {
       Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
       Fs.mkdirSync(Path.join(sdk, 'tm', 'ts', 'src', 'feature', 'ext'),
         { recursive: true })
-      Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'ext.aon'),
+      Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'ext.aontu'),
         '\nmain: kit: feature: ext: {\n  name: key()\n' +
         '  title: "x"\n  version: \'0.0.1\'\n  active: true\n' +
         "  base: 'BASE'\n  config: options: active: false\n  hook: {}\n}\n")
@@ -357,7 +357,7 @@ describe('provenance edge cases', () => {
       await feature_add([Path.join(pkg, 'ext')], project.actx)
 
       const base = (String(project.fs.readFileSync(
-        ROOT + '/model/feature/ext.aon', 'utf8'))
+        ROOT + '/model/feature/ext.aontu', 'utf8'))
         .match(/^\s*base:\s*'([^']*)'/m) || [])[1]
       project.actx.model.main.kit.feature = {
         ext: { name: 'ext', active: true, base },
@@ -365,7 +365,7 @@ describe('provenance edge cases', () => {
 
       await feature_add(['ext'], project.actx)
 
-      ok(project.files().includes('model/feature/ext.aon'),
+      ok(project.files().includes('model/feature/ext.aontu'),
         'the bare name did not resolve to the recorded source')
     }
     finally {
@@ -382,7 +382,7 @@ describe('provenance edge cases', () => {
       Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
       Fs.mkdirSync(Path.join(sdk, 'tm', 'ts', 'src', 'feature', 'ext'),
         { recursive: true })
-      Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'ext.aon'),
+      Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'ext.aontu'),
         '\nmain: kit: feature: ext: {\n  name: key()\n' +
         '  title: "x"\n  version: \'0.0.1\'\n  active: true\n' +
         "  base: 'BASE'\n  config: options: active: false\n  hook: {}\n}\n")
@@ -394,7 +394,7 @@ describe('provenance edge cases', () => {
       await target_add([targetRef('ts')], project.actx)
       await feature_add([Path.join(pkg, 'ext')], project.actx)
 
-      ok(project.files().includes('model/feature/ext.aon'),
+      ok(project.files().includes('model/feature/ext.aontu'),
         'a package path containing a tilde was rejected as an alias')
     }
     finally {

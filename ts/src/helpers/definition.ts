@@ -6,7 +6,23 @@ import { isJunk } from './junk'
 
 // The definition file for one item.
 function definitionPath(sdkfolder: string, kind: string, name: string): string {
-  return Path.join(sdkfolder, 'model', kind, name + '.aon')
+  return Path.join(sdkfolder, 'model', kind, name + '.aontu')
+}
+
+
+// The file an item ACTUALLY has: `.aontu`, else the pre-rename `.aon`. Without
+// the fallback a remove reports success and leaves the file behind.
+function definitionPathAny(
+  fs: any, sdkfolder: string, kind: string, name: string,
+): string {
+  const current = definitionPath(sdkfolder, kind, name)
+  if (fs.existsSync(current)) {
+    return current
+  }
+
+  const legacy = Path.join(sdkfolder, 'model', kind, name + '.aon')
+
+  return fs.existsSync(legacy) ? legacy : current
 }
 
 
@@ -18,7 +34,7 @@ function definitionFolder(sdkfolder: string, kind: string): string {
 
 // The include list beside them.
 function indexName(kind: string): string {
-  return kind + '-index.aon'
+  return kind + '-index.aontu'
 }
 
 
@@ -34,19 +50,20 @@ function definitionNames(fs: any, sdkfolder: string, kind: string): string[] {
     return []
   }
 
-  // The `.aon` suffix is not enough on its own: an emacs lock link is named
-  // `.#target.aon` and a merge leaves `target.aon.orig`, so an editor open
-  // in the wrong window invents an item called `.#target`, which then fails to
-  // resolve everywhere it is named. See helpers/junk.
-  return entries
-    .filter((n: string) => n.endsWith('.aon') && index !== n && !isJunk(n))
-    .map((n: string) => n.replace(/\.aon$/, ''))
-    .sort()
+  // The suffix alone is not enough: `.#target.aontu` is an emacs lock link and
+  // `target.aontu.orig` a merge leftover, either of which would invent an item
+  // that then resolves nowhere. See helpers/junk. Both extensions, deduped.
+  const names = new Set<string>(entries
+    .filter((n: string) => /\.(aontu|aon)$/.test(n) && index !== n && !isJunk(n))
+    .map((n: string) => n.replace(/\.(aontu|aon)$/, '')))
+
+  return [...names].sort()
 }
 
 
 export {
   definitionPath,
+  definitionPathAny,
   definitionFolder,
   definitionNames,
   indexName,

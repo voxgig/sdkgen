@@ -19,11 +19,11 @@ target language.
         ▼
   ┌───────────────┐   parse + transform     entities, operations,
   │  @voxgig/apidef│ ─────────────────────▶  points, fields, flows
-  └───────────────┘                          as .aon model fragments
+  └───────────────┘                          as .aontu model fragments
         │
         │  +  target/feature/option definitions
         │     (added by `voxgig-sdkgen target add` / `feature add`)
-        │  +  the sdkgen base schema (model/sdkgen.aon)
+        │  +  the sdkgen base schema (model/sdkgen.aontu)
         ▼
   ┌───────────────┐   unify (CUE-like)
   │     aontu      │ ─────────────────────▶  one coherent model object
@@ -59,7 +59,7 @@ rooted at that path, which is a mode any target can be put in. See
 | Package | Role | Why it's separate |
 | --- | --- | --- |
 | **`@voxgig/apidef`** | Parses an OpenAPI definition into the model (entities, operations, points, fields, flows). Owns `KIT`, `getModelPath`. | Spec parsing is a large concern with its own heuristics; SDK generation should not care how the model was produced. |
-| **`aontu`** | Unifies many `.aon` fragments into one model, applying defaults and constraints (CUE-like data unification). | Lets the model be assembled from independent files (API model + per-target + per-feature) that each contribute and constrain fields. |
+| **`aontu`** | Unifies many `.aontu` fragments into one model, applying defaults and constraints (CUE-like data unification). | Lets the model be assembled from independent files (API model + per-target + per-feature) that each contribute and constrain fields. |
 | **`jostraca`** | The code-generation engine: the `Project/Folder/File/Content/Copy` component tree, the `generate()` run, and the 3-way merge with existing files. | Generation mechanics (filesystem, merge, dry-run) are generic and reusable beyond SDKs. |
 | **`@voxgig/sdkgen`** (this repo) | The SDK-specific layer: the base model schema, the per-language **templates** and **components**, and the `target add` / `feature add` / `generate` actions. | The opinionated "what an SDK looks like" lives here. |
 | **`shape`** | Options and value validation. | Shared validation primitive. |
@@ -69,7 +69,7 @@ rooted at that path, which is a mode any target can be put in. See
 
 | Project | Role |
 | --- | --- |
-| **`create-sdkgen`** | Scaffolds a new SDK project (`npm create @voxgig/sdkgen`). Owns the build tooling (`.sdk/` scripts like `add-target`, `generate`) and the test `.aon` data. |
+| **`create-sdkgen`** | Scaffolds a new SDK project (`npm create @voxgig/sdkgen`). Owns the build tooling (`.sdk/` scripts like `add-target`, `generate`) and the test `.aontu` data. |
 | **`@voxgig/model`** | Orchestrates a build. It calls `SdkGen.makeBuild(...)` to run the generation step as part of a larger model build. |
 | **an sdkgen package** (anyone's) | Supplies targets and/or features of its own. Shaped like this repo's `ts/project/` and installed with `package add`. |
 
@@ -82,7 +82,7 @@ compares, or updates them. That is the point: the bundled path is the
 external path, so the external one cannot rot from disuse.
 
 What holds it together is **provenance in the model**. Each copied
-`model/<kind>/<name>.aon` records the `.sdk` folder it came from, the
+`model/<kind>/<name>.aontu` records the `.sdk` folder it came from, the
 name it had there, and the package that supplied it. There is no lockfile
 and no side record — so nothing can disagree with it, and a single
 `target add @acme/pkg/iot-go` remains a complete, coherent operation that

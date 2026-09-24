@@ -40,7 +40,7 @@ function makePackage(
 function def(sdk: string, kind: string, name: string) {
   const dir = Path.join(sdk, 'model', kind)
   Fs.mkdirSync(dir, { recursive: true })
-  Fs.writeFileSync(Path.join(dir, name + '.aon'), '\n')
+  Fs.writeFileSync(Path.join(dir, name + '.aontu'), '\n')
 }
 
 

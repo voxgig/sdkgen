@@ -29,8 +29,8 @@ function externalTargetPackage(): string {
   Fs.cpSync(Path.join(SCAFFOLD, 'tm', 'go'),
     Path.join(sdk, 'tm', 'iotgo'), { recursive: true })
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'iotgo.aon'),
-    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aon'), 'utf8')
+  Fs.writeFileSync(Path.join(sdk, 'model', 'target', 'iotgo.aontu'),
+    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', 'go.aontu'), 'utf8')
       .replace(/target: go:/g, 'target: iotgo:'))
 
   // Components are dispatched by convention, so their names have to match the
@@ -104,7 +104,7 @@ describe('feature trim catalogue', () => {
     try {
       Fs.mkdirSync(Path.join(consumer, 'model', 'feature'), { recursive: true })
       Fs.writeFileSync(
-        Path.join(consumer, 'model', 'feature', 'homegrown.aon'), '\n')
+        Path.join(consumer, 'model', 'feature', 'homegrown.aontu'), '\n')
 
       const ctx = {
         fs: () => Fs,

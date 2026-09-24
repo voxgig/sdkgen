@@ -167,7 +167,7 @@ function kindModel(props: {
 
     if (owned) {
       const dest = Path.join(
-        ctx$.folder ?? '.', 'model', kind, source.name + '.aon')
+        ctx$.folder ?? '.', 'model', kind, source.name + '.aontu')
 
       if (fs.existsSync(dest)) {
         log.info({
@@ -182,7 +182,7 @@ function kindModel(props: {
     const text = null == def.rename ? src :
       def.rename(src, source.origname, source.name)
 
-    File({ name: source.name + '.aon', exclude: owned }, () =>
+    File({ name: source.name + '.aontu', exclude: owned }, () =>
       Content(template(text, ctx$.model, { replace })))
   }
   else {
@@ -198,7 +198,7 @@ function kindIndex(props: {
   content: string,
 }) {
   const { kind, names, content } = props
-  File({ name: kindDef(kind).name + '-index.aon' }, () => UpdateIndex({
+  File({ name: kindDef(kind).name + '-index.aontu' }, () => UpdateIndex({
     content,
     names,
   }))

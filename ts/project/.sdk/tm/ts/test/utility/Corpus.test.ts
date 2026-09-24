@@ -31,7 +31,7 @@ describe('Corpus', () => {
     })
     equal(undeclared.join(','), '',
       'these sections compile to ZERO cases and carry no `basic: pending` ' +
-      'reason — add cases, or state the blocker in .sdk/test/primary/<name>.aon')
+      'reason — add cases, or state the blocker in .sdk/test/primary/<name>.aontu')
   })
 
 
