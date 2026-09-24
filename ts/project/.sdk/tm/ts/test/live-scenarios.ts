@@ -41,6 +41,12 @@ export async function runLiveScenarios(SDK: any, plan: any[], envPrefix: string,
       excluded: control.skip ? control.reason || 'Excluded by test control' : hint.excluded,
       run: async (ctx: any) => {
         transport.enter(ctx)
+        // Every operation point is planned, not only the hinted ones; a hint
+        // only decides whether this file is generated. Absent a recipe there
+        // is no consent to call the operation, so block rather than
+        // synthesize input for it. Blocked fails assertLiveReport, so an
+        // omission surfaces instead of passing quietly.
+        if (!point.facts.live) throw new LiveBlocked('No live recipe: add a live hint for this operation in the guide, or give it an explicit excluded reason')
         if (point.contractVersion && point.contractVersion !== 1) throw new LiveBlocked('Unsupported operation contract version')
         if (point.op === 'remove' || hint.cleanup) {
           const owned = recipeNeeds(hint.input).some(id => plan.some(source =>
