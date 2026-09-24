@@ -2,7 +2,8 @@
 main: kit: feature: idempotency: {
 
   name: key()
-  title: "Idempotency keys for safe retries of mutating operations"
+  title: "Idempotency"
+  description: "Idempotency keys for safe retries of mutating operations"
   version: '0.0.1'
   active: true
   base: 'BASE'

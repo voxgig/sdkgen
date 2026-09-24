@@ -2,7 +2,8 @@
 main: kit: feature: proxy: {
 
   name: key()
-  title: "Outbound HTTP(S) proxy routing"
+  title: "Proxy"
+  description: "Outbound HTTP(S) proxy routing"
   version: '0.0.1'
   active: true
   base: 'BASE'

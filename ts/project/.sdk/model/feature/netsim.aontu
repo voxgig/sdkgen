@@ -2,7 +2,8 @@
 main: kit: feature: netsim: {
 
   name: key()
-  title: "Network behaviour simulation for offline testing (latency, failures, outages)"
+  title: "Network simulation"
+  description: "Network behaviour simulation for offline testing (latency, failures, outages)"
   version: '0.0.1'
   active: true
   base: 'BASE'

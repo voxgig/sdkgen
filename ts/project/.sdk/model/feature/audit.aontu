@@ -2,7 +2,8 @@
 main: kit: feature: audit: {
 
   name: key()
-  title: "Structured audit trail of operations"
+  title: "Audit trail"
+  description: "Structured audit trail of operations"
   version: '0.0.1'
   active: true
   base: 'BASE'

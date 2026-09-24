@@ -2,7 +2,8 @@
 main: kit: feature: telemetry: {
 
   name: key()
-  title: "Distributed tracing spans with W3C trace-context propagation"
+  title: "Telemetry"
+  description: "Distributed tracing spans with W3C trace-context propagation"
   version: '0.0.1'
   active: true
   base: 'BASE'

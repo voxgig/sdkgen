@@ -2,7 +2,8 @@
 main: kit: feature: log: {
 
   name: key()
-  title: "Structured request and response logging"
+  title: "Logging"
+  description: "Structured request and response logging"
   version: '0.0.1'
   active: true
   base: 'BASE'

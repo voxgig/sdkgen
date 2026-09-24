@@ -2,7 +2,8 @@
 main: kit: feature: debug: {
 
   name: key()
-  title: "Request/response capture ring buffer for debugging"
+  title: "Debug capture"
+  description: "Request/response capture ring buffer for debugging"
   version: '0.0.1'
   active: true
   base: 'BASE'

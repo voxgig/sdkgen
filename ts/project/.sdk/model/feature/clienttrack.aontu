@@ -2,7 +2,8 @@
 main: kit: feature: clienttrack: {
 
   name: key()
-  title: "Client identity and per-request correlation headers"
+  title: "Client tracking"
+  description: "Client identity and per-request correlation headers"
   version: '0.0.1'
   active: true
   base: 'BASE'
