@@ -1,7 +1,7 @@
 
 import Path from 'node:path'
 
-import { definitionNames } from './definition'
+import { definitionNames, definitionPathAny } from './definition'
 
 
 const MANIFEST = 'sdkgen-package.json'
@@ -281,8 +281,9 @@ function validateManifest(
       if (!claimed.has(name)) {
         found.push({
           level: 'warn', point: 'manifest-item-unclaimed', file, kind, name,
-          note: file + ': model/' + kind + '/' + name +
-            '.aontu is in the package but not listed in `provides.' + kind +
+          note: file + ': model/' + kind + '/' +
+            Path.basename(definitionPathAny(fs, sdkfolder, kind, name)) +
+            ' is in the package but not listed in `provides.' + kind +
             '` — nothing will install it'
         })
       }

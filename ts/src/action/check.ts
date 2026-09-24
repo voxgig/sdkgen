@@ -20,7 +20,11 @@ import {
 
 import type { Finding, Manifest } from '../helpers/manifest'
 
-import { definitionPath, definitionNames } from '../helpers/definition'
+import type { CompileResult } from '../helpers/modelcheck'
+
+import {
+  definitionNames, definitionPathAny, isLegacyPath, migrateIncludes,
+} from '../helpers/definition'
 
 import {
   ANCHOR,
@@ -43,6 +47,14 @@ import { KINDS } from './kind'
 
 
 const SAME_FILE_LIMIT = 5
+
+
+const UNRESOLVED_INCLUDE = ['multisource_not_found', 'include_extension']
+
+function unresolvedIncludeOnly(result: CompileResult): boolean {
+  return 0 < result.why.length &&
+    result.why.every((w: string) => UNRESOLVED_INCLUDE.includes(w))
+}
 
 
 function claims(map: any, key: string): string[] {
@@ -170,7 +182,7 @@ function checkItems(fs: any, sdk: string, manifest?: Manifest): Finding[] {
     const names = Array.from(new Set([...claimed, ...ondisk])).sort()
 
     for (const name of names) {
-      const file = definitionPath(sdk, kind, name)
+      const file = definitionPathAny(fs, sdk, kind, name)
 
       if (!fs.existsSync(file)) {
         continue
@@ -188,10 +200,28 @@ function checkDefinition(
   fs: any, kind: string, name: string, file: string,
 ): Finding[] {
   const found: Finding[] = []
-  const src = String(fs.readFileSync(file, 'utf8'))
+  const raw = String(fs.readFileSync(file, 'utf8'))
+
+  // Checked as a project receives it: `add` renames `.aon` includes.
+  const src = migrateIncludes(raw)
+  const legacyFile = isLegacyPath(file)
+  const legacy = legacyFile || src !== raw
 
   const at = (level: 'error' | 'warn', point: string, note: string): Finding =>
     ({ level, point, kind, name, file, note: file + ': ' + note })
+
+  if (legacy) {
+    const where = [
+      ...(legacyFile ? ['its file name'] : []),
+      ...(src !== raw ? ['its includes'] : []),
+    ].join(' and ')
+
+    found.push(at('warn', 'model-legacy-aon',
+      'uses the retired `.aon` extension in ' + where + ' — `add` installs ' +
+      'it as `' + name + '.aontu` with every include renamed to `.aontu`, ' +
+      'the only extension aontu reads; rename them in the package so it ' +
+      'holds what a project is given'))
+  }
 
   // 1. The provenance anchor. Its absence costs nothing at add time and
   //    everything afterwards: the copy records no source, so `doctor` and
@@ -221,6 +251,15 @@ function checkDefinition(
   }
 
   const strict = compileModel(src, file)
+
+  if (legacy && unresolvedIncludeOnly(strict)) {
+    found.push(at('warn', 'model-legacy-unresolved',
+      strict.errors.join(' | ') + '  (an include renamed to `.aontu` ' +
+      'resolves only once what it names ships as `.aontu`; until then a ' +
+      'project that installs this cannot compile it)'))
+
+    return found
+  }
 
   if (0 < strict.errors.length) {
     // Which parser rejected it changes what the author must do, so say. A

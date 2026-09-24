@@ -1,6 +1,6 @@
 
 import { test, describe } from 'node:test'
-import { ok, strictEqual, deepStrictEqual } from 'node:assert'
+import { ok, strictEqual, deepStrictEqual, match } from 'node:assert'
 
 import Fs from 'node:fs'
 import Os from 'node:os'
@@ -14,6 +14,7 @@ import {
 import { appendIndexEntries } from '../dist/action/action.js'
 import { edition_add } from '../dist/action/edition.js'
 import { doctor } from '../dist/action/doctor.js'
+import { checkPackage } from '../dist/action/check.js'
 import { readTargetFeature } from '../dist/action/target.js'
 import { ROOT, makeProject } from './actionharness'
 
@@ -70,6 +71,13 @@ function legacyPackage(opts: {
   }, null, 2))
 
   return dir
+}
+
+
+function points(report: any, level: string): string[] {
+  return report.findings
+    .filter((f: any) => level === f.level)
+    .map((f: any) => f.point)
 }
 
 
@@ -242,6 +250,78 @@ describe('an item from a package that still ships .aon', () => {
       const res: any = await doctor(project.actx)
       ok(res.report.forked.includes('model/edition/summary.aontu'),
         JSON.stringify(res.report))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+  test('package check compiles it as installed, and only warns', () => {
+    const pkg = legacyPackage()
+    try {
+      const report = checkPackage(pkg, {
+        fs: () => Fs, log: silentLog(), folder: '.', model: { main: {} },
+      } as any)
+
+      deepStrictEqual(points(report, 'error'), [], JSON.stringify(report.findings))
+      deepStrictEqual(points(report, 'warn'), ['model-legacy-aon'],
+        JSON.stringify(report.findings))
+      strictEqual(report.ok, true)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+  test('an include that exists only as .aon is a warning, not an error', () => {
+    const pkg = legacyPackage({ sharedExt: '.aon' })
+    try {
+      const report = checkPackage(pkg, {
+        fs: () => Fs, log: silentLog(), folder: '.', model: { main: {} },
+      } as any)
+
+      deepStrictEqual(points(report, 'error'), [], JSON.stringify(report.findings))
+      deepStrictEqual(points(report, 'warn'),
+        ['model-legacy-aon', 'model-legacy-unresolved'],
+        JSON.stringify(report.findings))
+      match(report.findings[1].note, /base\.aontu/)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+  test('being legacy excuses nothing else', () => {
+    const pkg = legacyPackage({ anchor: false })
+    try {
+      const report = checkPackage(pkg, {
+        fs: () => Fs, log: silentLog(), folder: '.', model: { main: {} },
+      } as any)
+
+      ok(points(report, 'error').includes('model-anchor-missing'),
+        JSON.stringify(report.findings))
+      strictEqual(report.ok, false)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+  test('an unresolved include in a .aontu item stays an error', () => {
+    const pkg = legacyPackage()
+    try {
+      const model = Path.join(pkg, '.sdk', 'model', 'edition')
+      Fs.renameSync(Path.join(model, 'summary.aon'), Path.join(model, 'summary.aontu'))
+      Fs.writeFileSync(Path.join(model, 'summary.aontu'),
+        Fs.readFileSync(Path.join(model, 'summary.aontu'), 'utf8')
+          .replace('../shared/base.aon', '../shared/absent.aontu'))
+
+      const report = checkPackage(pkg, {
+        fs: () => Fs, log: silentLog(), folder: '.', model: { main: {} },
+      } as any)
+
+      deepStrictEqual(points(report, 'error'), ['model-parse'],
+        JSON.stringify(report.findings))
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })

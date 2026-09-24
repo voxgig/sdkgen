@@ -67,6 +67,10 @@ function includeLine(file: string): string {
 type CompileResult = {
   model?: any
   errors: string[]
+
+  // aontu's code for each error that carries one, such as
+  // `multisource_not_found` for an include that did not resolve.
+  why: string[]
 }
 
 
@@ -104,11 +108,20 @@ function compileModel(
       model,
       errors: errs.map((e: any) =>
         tidy((null == e.why ? '' : '[' + e.why + '] ') + (e.msg ?? String(e)))),
+      why: whyOf(errs),
     }
   }
   catch (err: any) {
-    return { errors: [tidy(err.message ?? String(err))] }
+    return {
+      errors: [tidy(err.message ?? String(err))],
+      why: whyOf('function' === typeof err?.errs ? err.errs() : []),
+    }
   }
+}
+
+
+function whyOf(errs: any[]): string[] {
+  return errs.map((e: any) => e?.why).filter((w: any) => 'string' === typeof w)
 }
 
 
@@ -141,6 +154,7 @@ function publishOverrideProbe(
   return {
     model: first.model ?? second.model,
     errors: [...first.errors, ...second.errors],
+    why: [...first.why, ...second.why],
   }
 }
 

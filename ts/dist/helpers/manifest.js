@@ -212,8 +212,9 @@ function validateManifest(fs, sdkfolder, manifest, kinds) {
             if (!claimed.has(name)) {
                 found.push({
                     level: 'warn', point: 'manifest-item-unclaimed', file, kind, name,
-                    note: file + ': model/' + kind + '/' + name +
-                        '.aontu is in the package but not listed in `provides.' + kind +
+                    note: file + ': model/' + kind + '/' +
+                        node_path_1.default.basename((0, definition_1.definitionPathAny)(fs, sdkfolder, kind, name)) +
+                        ' is in the package but not listed in `provides.' + kind +
                         '` — nothing will install it'
                 });
             }

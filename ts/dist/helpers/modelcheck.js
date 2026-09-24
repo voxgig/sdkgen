@@ -77,11 +77,18 @@ function compileModel(src, path, opts) {
         return {
             model,
             errors: errs.map((e) => tidy((null == e.why ? '' : '[' + e.why + '] ') + (e.msg ?? String(e)))),
+            why: whyOf(errs),
         };
     }
     catch (err) {
-        return { errors: [tidy(err.message ?? String(err))] };
+        return {
+            errors: [tidy(err.message ?? String(err))],
+            why: whyOf('function' === typeof err?.errs ? err.errs() : []),
+        };
     }
+}
+function whyOf(errs) {
+    return errs.map((e) => e?.why).filter((w) => 'string' === typeof w);
 }
 const PUBLISH_OVERRIDES = [
     ['publish: version', "'9.9.9'", "'8.8.8'"],
@@ -102,6 +109,7 @@ function publishOverrideProbe(src, path, tname) {
     return {
         model: first.model ?? second.model,
         errors: [...first.errors, ...second.errors],
+        why: [...first.why, ...second.why],
     };
 }
 //# sourceMappingURL=modelcheck.js.map
