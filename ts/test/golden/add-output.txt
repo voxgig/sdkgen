@@ -846,7 +846,7 @@ tm/js/test/feature/harness.js ec64607a8bb4
 tm/js/test/live-contract.js 07a8529d19cf
 tm/js/test/live-entity.js f10261248a5b
 tm/js/test/live-runner.js 5956b8798cde
-tm/js/test/live-scenarios.js f3dbfce71de2
+tm/js/test/live-scenarios.js 28bf7209183d
 tm/js/test/netsim.test.js 11a4e4a385fa
 tm/js/test/omni.js 4cbe528e8289
 tm/js/test/omni.test.js 0ddeaba756b9
@@ -2048,7 +2048,7 @@ tm/ts/test/feature/harness.ts 1eb7465da345
 tm/ts/test/live-contract.ts 82fd421e40a1
 tm/ts/test/live-entity.ts 2bf74bbdedf2
 tm/ts/test/live-runner.ts 5ad89ea5290f
-tm/ts/test/live-scenarios.ts ab5cf5349c83
+tm/ts/test/live-scenarios.ts 395f8e50b630
 tm/ts/test/netsim.test.ts 350539c6a30b
 tm/ts/test/omni.test.ts 3a59ba8a1d8c
 tm/ts/test/omni.ts 8ddc16d6c9ce
