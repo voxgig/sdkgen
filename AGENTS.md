@@ -192,7 +192,7 @@ installed from npm, a checkout, or a local path. `ts/project/` is itself
 one, manifest and all, which is what keeps the bundled path and the
 external path the same code.
 
-Three consequences you must hold when changing anything in `ts/src/action/`:
+Four consequences you must hold when changing anything in `ts/src/action/`:
 
 1. **Never assume the bundled scaffold.** Where an item came from is
    recorded in its own copied model file as `base` / `origname` /
@@ -211,6 +211,18 @@ Three consequences you must hold when changing anything in `ts/src/action/`:
    twice defect five separate times; if you find yourself spelling out
    `model/<kind>/<name>.aontu` or "what a valid name looks like", there is
    already a function for it.
+4. **A package may still ship `.aon`; a project may not.** aontu reads only
+   `.aontu` (the peer range is `>=0.75.0`), and packages rename on their own
+   schedule. So a SOURCE item resolves as `<name>.aontu`, else
+   `<name>.aon` (`definitionPathAny`), and installs as `<name>.aontu` with
+   its `.aon` includes renamed, including package includes
+   (`migrateIncludes`, reached through `installedModelText`). Doctor compares
+   through `installedModelText` as well, or every such item reads as forked
+   and `remove` refuses it. `package check` compiles the renamed text and
+   reports the old extension as a warning. A PROJECT whose `sdk.aon` or
+   `<kind>-index.aon` has no `.aontu` beside it is refused by every verb
+   that reads its model (`assertMigrated`), with the fix: re-scaffold it
+   with the current create-sdkgen.
 
 Design and rationale: [docs/design/sdkgen-packages.md](./docs/design/sdkgen-packages.md).
 
@@ -867,7 +879,8 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       action.ts        index maintenance
     cmp/               language-neutral components (delegate per-language)
     helpers/           collectDeps, buildIdNames, getMatchEntries
-      definition.ts    where a kind's `model/<kind>/<name>.aontu` lives
+      definition.ts    where a kind's `model/<kind>/<name>.aontu` lives, and
+                       the `.aon` fallback and include rename
       manifest.ts      sdkgen-package.json: read + validate
       semver.ts        the engines.sdkgen subset (true/false/UNDEFINED)
       stdrep.ts        the replace maps add writes with and doctor re-applies

@@ -51,6 +51,13 @@ before using these templates.
 | `@"file.aontu"` | Include another fragment (how index files work). |
 | `x: .y` | Reference another path's value (e.g. `deps: ts: .js`). |
 
+`.aontu` is the only extension aontu reads: an include naming a file with
+the older `.aon` extension is refused. A project still holding
+`model/sdk.aon` is refused by the CLI with the fix (run the current
+create-sdkgen over it), and an item from a package that still ships
+`.aon` is installed as `.aontu`; see the
+[CLI reference](./cli.md#target-references).
+
 ## Top level
 
 | Path | Type | Description |

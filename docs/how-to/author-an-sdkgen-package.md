@@ -256,6 +256,11 @@ compares against the source on disk.
   `target: 'iot-go':`.
 - **Keep `base: 'BASE'`** in every definition, or the copy records no
   provenance and `package update` cannot find it later.
+- **Name every model file `.aontu`**, including any base model your
+  definitions include. aontu reads no other extension. A definition still
+  named `.aon`, or including a `.aon` file, installs with its includes
+  renamed to `.aontu` and draws a `package check` warning; an include of a
+  file you still ship only as `.aon` then resolves in no project.
 - **Rename the components** to match the target name, including the
   imports inside them and the target name they pass to model lookups
   (`goModule(model, 'go')`).

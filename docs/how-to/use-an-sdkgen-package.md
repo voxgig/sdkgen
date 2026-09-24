@@ -27,6 +27,13 @@ voxgig-sdkgen package add ../acme-sdkgen-iot
 voxgig-sdkgen package add /abs/path/to/acme-sdkgen-iot
 ```
 
+A package released before aontu's `.aontu` rename still ships its items as
+`<name>.aon`. They install all the same, as `<name>.aontu`, with each
+`.aon` include inside them renamed to `.aontu`, because that is the only
+extension aontu reads. An include of the package's own base model then
+resolves only against a release of the package that ships that model as
+`.aontu`, so upgrade the package when one exists.
+
 ## Install part of one
 
 ```bash
@@ -130,6 +137,7 @@ to a copied file.
 | `package manifest does not match the package` | The package claims something it does not ship. An author bug — nothing was installed. |
 | `needs @voxgig/sdkgen >=X` | The package requires a newer generator. Upgrade, or install an earlier version of the package. |
 | `Name collision, nothing installed` | Something of that name is already installed from a *different* source. Install this one under an alias, or install the one you want by its own ref. |
+| `This project predates .aontu model files` | The project's `model/sdk.aon`, or one of its `<kind>-index.aon` files, has no `.aontu` file beside it, and aontu reads only `.aontu`. Run the current create-sdkgen over the project (`npm create @voxgig/sdkgen@latest`, with the arguments it was created with), which migrates it. |
 | `which npm does not manage` | The package was installed from a local path, so `npm install` would update a different copy. Update that source yourself, then re-run with `--no-fetch` (see below). |
 
 ### Updating from a local checkout

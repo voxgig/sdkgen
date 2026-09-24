@@ -20,6 +20,15 @@ generated SDK project's `.sdk/` directory). The one exception is
 [`package check`](#package-check-path), which validates a package rather
 than acting on a project, and so runs where there is no project model.
 
+aontu reads only `.aontu` files. A project created before that rename,
+whose `model/sdk.aon` or `model/<kind>/<kind>-index.aon` has no `.aontu`
+file beside it, is refused by every action that reads its model. The
+message names the old files and the fix: run the current create-sdkgen
+over the project (`npm create @voxgig/sdkgen@latest`, with the arguments
+the project was created with), which migrates it. Nothing is written
+first, so no new `.aontu` index appears that the old entry file never
+includes.
+
 ## Options
 
 | Option | Short | Type | Default | Description |
@@ -90,6 +99,15 @@ different options).
 If the source `.sdk` folder cannot be found, the CLI fails and lists the
 locations it searched.
 
+A source's definition is `model/target/<name>.aontu`. A package that has
+not yet renamed its files may still ship `<name>.aon`, and `add` reads
+that instead: the project copy is always `<name>.aontu`, with each `.aon`
+include inside it renamed to `.aontu`. Only include directives change;
+a `.aon` in a string or a comment stays as it is. Features and editions
+follow the same rule. The copy compiles once everything its renamed
+includes name also ships as `.aontu`, which for a package's own base
+model means a release of that package.
+
 The built-in SDK targets are: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
 `csharp`, `java`, `kotlin`, `scala`, `swift`, `rust`, `c`, `cpp`,
 `zig`, `perl`, `clojure`, `elixir`, `ocaml`. Every one
@@ -137,6 +155,10 @@ edit at all.
 An ALIASED target (`target add go~go2`) is exempt from the model-file
 comparison: the scaffold ships no `go2.aontu` to compare against, and
 editing that file is how an alias is differentiated in the first place.
+
+A model file installed from a source that still ships `<name>.aon` is
+compared after the same include renaming `add` applied, so the renaming
+alone is never reported as drift.
 
 ### `feature add <name>[,<name>...]`
 
@@ -298,6 +320,8 @@ gate. What it checks:
 | `model-anchor-missing` | error | A definition with no `base: 'BASE'` line. The copy would record no provenance, so `package update` and `doctor` could never find its source. |
 | `model-slash-comment` | error | A `//` or `/* */` line, named by line number. Aontu takes `#` comments only, and a consumer's parser is configured strictly even though a bare `Aontu()` accepts them. |
 | `model-parse` | error | The definition does not compile. Says so explicitly when it compiles under a bare `Aontu()` and not the strict one. |
+| `model-legacy-aon` | warn | The definition is named `<name>.aon`, or includes a `.aon` file. `add` installs it as `<name>.aontu` with those includes renamed, and every check here compiles that renamed text, which is what a project receives. Rename the files in the package. |
+| `model-legacy-unresolved` | warn | A definition from the previous row whose renamed include does not resolve, usually because the file it names still ships only as `.aon`. A project that installs it cannot compile it until that file ships as `.aontu`. The schema checks that need a compiled model are skipped. |
 | `model-key-missing` | error | `model/<kind>/<name>.aontu` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
 | `model-schema` | error | It does not unify with the base schema: a non-defaulted key is missing (`ext`, `comment.line`, `module.name`, a feature's `title`). This is what a consumer compiles. |
 | `target-publish-pinned` | error | The target model sets a publication value the *project* owns, so the project can no longer set it (concrete-vs-concrete is a conflict) — and the failure would name the project's file. |
