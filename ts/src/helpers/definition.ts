@@ -174,7 +174,7 @@ function definitionNames(fs: any, sdkfolder: string, kind: string): string[] {
 function assertMigrated(fs: any, paths: string[]): void {
   const stale = paths
     .filter((p: string) => !fs.existsSync(p) && fs.existsSync(legacyPath(p)))
-    .map((p: string) => Path.normalize(legacyPath(p)))
+    .map((p: string) => Path.normalize(legacyPath(p)).split(Path.sep).join('/'))
 
   if (0 === stale.length) {
     return

@@ -133,7 +133,7 @@ function definitionNames(fs, sdkfolder, kind) {
 function assertMigrated(fs, paths) {
     const stale = paths
         .filter((p) => !fs.existsSync(p) && fs.existsSync(legacyPath(p)))
-        .map((p) => node_path_1.default.normalize(legacyPath(p)));
+        .map((p) => node_path_1.default.normalize(legacyPath(p)).split(node_path_1.default.sep).join('/'));
     if (0 === stale.length) {
         return;
     }
