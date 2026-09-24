@@ -418,7 +418,7 @@ tm/csharp/utility/ResultBody.cs 5e641c84a4fa
 tm/csharp/utility/ResultHeaders.cs e593a27709b5
 tm/csharp/utility/TransformRequest.cs 107ecc6d7e9b
 tm/csharp/utility/TransformResponse.cs 01583a33873e
-tm/csharp/utility/struct/Struct.cs 060d6630aea5
+tm/csharp/utility/struct/Struct.cs 87d6deffe2fe
 
 ## target elixir
 model/feature/feature-index.aontu 0351fe150e6a

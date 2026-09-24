@@ -375,7 +375,7 @@ describe('vendored', () => {
       'tm/go/utility/struct/voxgigstruct.go': 2,
       'tm/rb/utility/struct/voxgig_struct.rb': 1,
 
-      'tm/csharp/utility/struct/Struct.cs': 1,
+      'tm/csharp/utility/struct/Struct.cs': 2,
     }
 
     for (const [rel, count] of Object.entries(patched)) {
