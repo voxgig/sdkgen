@@ -87,9 +87,11 @@ import {
 import type { FeatureSource } from './helpers/featureSource'
 import { stationLibrary } from './helpers/station'
 import {
+  assertMigrated,
   definitionPath,
   definitionFolder,
   definitionNames,
+  indexPath,
 } from './helpers/definition'
 import { isNoise, copyOpts } from './helpers/junk'
 import {
@@ -156,6 +158,7 @@ import { edition_add } from './action/edition'
 
 // The verbs, built from the kind registry — see action/dispatch.
 import { ACTION_MAP, actionNames, needsModel } from './action/dispatch'
+import { KINDS } from './action/kind'
 
 
 
@@ -408,6 +411,9 @@ function SdkGen(opts: SdkGenOptions) {
     if (!wanted && !fs.existsSync(path)) {
       return { model: { main: {} } as any, url: path }
     }
+
+    assertMigrated(fs, [
+      path, ...Object.keys(KINDS).map((kind: string) => indexPath('.', kind))])
 
     if (null == aontu) {
       aontu = new Aontu()

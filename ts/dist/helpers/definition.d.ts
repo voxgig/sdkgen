@@ -7,4 +7,5 @@ declare function definitionFolder(sdkfolder: string, kind: string): string;
 declare function indexName(kind: string): string;
 declare function indexPath(sdkfolder: string, kind: string): string;
 declare function definitionNames(fs: any, sdkfolder: string, kind: string): string[];
-export { definitionFileName, definitionPath, definitionPathAny, definitionFolder, definitionNames, indexName, indexPath, isLegacyPath, migrateIncludes, };
+declare function assertMigrated(fs: any, paths: string[]): void;
+export { assertMigrated, definitionFileName, definitionPath, definitionPathAny, definitionFolder, definitionNames, indexName, indexPath, isLegacyPath, migrateIncludes, };

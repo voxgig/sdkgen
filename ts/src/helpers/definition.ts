@@ -1,6 +1,8 @@
 
 import Path from 'node:path'
 
+import { SdkGenError } from '../utility'
+
 import { isJunk } from './junk'
 
 
@@ -154,7 +156,30 @@ function definitionNames(fs: any, sdkfolder: string, kind: string): string[] {
 }
 
 
+// A project from before the rename has the `.aon` file and no `.aontu`: aontu
+// reads neither it nor a new `.aontu` written beside it that nothing includes.
+function assertMigrated(fs: any, paths: string[]): void {
+  const stale = paths
+    .filter((p: string) => !fs.existsSync(p) && fs.existsSync(legacyPath(p)))
+    .map((p: string) => Path.normalize(legacyPath(p)))
+
+  if (0 === stale.length) {
+    return
+  }
+
+  throw new SdkGenError(
+    'This project predates .aontu model files: ' + stale.join(', ') +
+    (1 === stale.length ? ' has' : ' have') + ' no .aontu counterpart, ' +
+    'and aontu reads only .aontu.' +
+    '\n  Re-scaffold the project with the current create-sdkgen, which ' +
+    'migrates it:' +
+    '\n    npm create @voxgig/sdkgen@latest ...   (run over this project, ' +
+    'with the arguments it was created with)')
+}
+
+
 export {
+  assertMigrated,
   definitionFileName,
   definitionPath,
   definitionPathAny,

@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.assertMigrated = assertMigrated;
 exports.definitionFileName = definitionFileName;
 exports.definitionPath = definitionPath;
 exports.definitionPathAny = definitionPathAny;
@@ -13,6 +14,7 @@ exports.indexPath = indexPath;
 exports.isLegacyPath = isLegacyPath;
 exports.migrateIncludes = migrateIncludes;
 const node_path_1 = __importDefault(require("node:path"));
+const utility_1 = require("../utility");
 const junk_1 = require("./junk");
 const EXT = '.aontu';
 // Pre-rename aontu files: read from a package not yet renamed, never written.
@@ -118,5 +120,22 @@ function definitionNames(fs, sdkfolder, kind) {
         .filter((n) => SOURCE_RE.test(n) && !indexes.includes(n) && !(0, junk_1.isJunk)(n))
         .map((n) => n.replace(SOURCE_RE, '')));
     return [...names].sort();
+}
+// A project from before the rename has the `.aon` file and no `.aontu`: aontu
+// reads neither it nor a new `.aontu` written beside it that nothing includes.
+function assertMigrated(fs, paths) {
+    const stale = paths
+        .filter((p) => !fs.existsSync(p) && fs.existsSync(legacyPath(p)))
+        .map((p) => node_path_1.default.normalize(legacyPath(p)));
+    if (0 === stale.length) {
+        return;
+    }
+    throw new utility_1.SdkGenError('This project predates .aontu model files: ' + stale.join(', ') +
+        (1 === stale.length ? ' has' : ' have') + ' no .aontu counterpart, ' +
+        'and aontu reads only .aontu.' +
+        '\n  Re-scaffold the project with the current create-sdkgen, which ' +
+        'migrates it:' +
+        '\n    npm create @voxgig/sdkgen@latest ...   (run over this project, ' +
+        'with the arguments it was created with)');
 }
 //# sourceMappingURL=definition.js.map

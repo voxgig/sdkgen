@@ -1,6 +1,6 @@
 
 import { test, describe } from 'node:test'
-import { ok, strictEqual, deepStrictEqual, match } from 'node:assert'
+import { ok, strictEqual, deepStrictEqual, match, rejects } from 'node:assert'
 
 import Fs from 'node:fs'
 import Os from 'node:os'
@@ -13,9 +13,11 @@ import {
 } from '../dist/helpers/definition.js'
 import { appendIndexEntries } from '../dist/action/action.js'
 import { edition_add } from '../dist/action/edition.js'
+import { kind_remove } from '../dist/action/remove.js'
 import { doctor } from '../dist/action/doctor.js'
 import { checkPackage } from '../dist/action/check.js'
 import { readTargetFeature } from '../dist/action/target.js'
+import { SdkGen } from '../dist/sdkgen.js'
 import { ROOT, makeProject } from './actionharness'
 
 
@@ -322,6 +324,111 @@ describe('an item from a package that still ships .aon', () => {
 
       deepStrictEqual(points(report, 'error'), ['model-parse'],
         JSON.stringify(report.findings))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+})
+
+
+describe('a project that predates .aontu', () => {
+
+  const FIX = /predates \.aontu[\s\S]*npm create @voxgig\/sdkgen@latest/
+
+  // The CLI reads the project model relative to the working directory.
+  async function inProject(
+    layout: Record<string, string>, args: string[],
+  ): Promise<{ msg: string, files: string[] }> {
+    const dir = tmpdir()
+    const cwd = process.cwd()
+    try {
+      for (const [rel, text] of Object.entries(layout)) {
+        Fs.mkdirSync(Path.dirname(Path.join(dir, rel)), { recursive: true })
+        Fs.writeFileSync(Path.join(dir, rel), text)
+      }
+      process.chdir(dir)
+
+      let msg = ''
+      try {
+        await SdkGen({ folder: dir, fs: Fs } as any).action(args)
+      }
+      catch (err: any) {
+        msg = String(err?.message ?? err)
+      }
+
+      const files = Fs.readdirSync(dir, { recursive: true } as any)
+        .map((f: any) => String(f).split(Path.sep).join('/')).sort()
+
+      return { msg, files }
+    }
+    finally {
+      process.chdir(cwd)
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  }
+
+  test('an entry still named sdk.aon is refused by name', async () => {
+    for (const args of [['doctor'], ['target', 'add', 'ts'], ['package', 'list']]) {
+      const { msg } = await inProject({
+        'model/sdk.aon': "name: 'demo'\n@\"./target/target-index.aon\"\n",
+        'model/target/target-index.aon': '# Targets\n',
+      }, args)
+
+      match(msg, FIX, args.join(' ') + ': ' + msg)
+      match(msg, /model\/sdk\.aon/, msg)
+      ok(!/ENOENT|no such file/.test(msg), msg)
+    }
+  })
+
+  test('an index still named <kind>-index.aon is refused, and none is written', async () => {
+    const pkg = legacyPackage()
+    try {
+      const { msg, files } = await inProject({
+        'model/sdk.aontu': "name: 'demo'\n",
+        'model/edition/edition-index.aon': '# Docs\n',
+      }, ['edition', 'add', Path.join(pkg, 'summary')])
+
+      match(msg, FIX, msg)
+      match(msg, /model\/edition\/edition-index\.aon\b/, msg)
+      ok(!files.includes('model/edition/edition-index.aontu'), files.join(','))
+      ok(!files.includes('model/edition/summary.aontu'), files.join(','))
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+  test('the index guard holds without the CLI, for add and remove', async () => {
+    const pkg = legacyPackage()
+    try {
+      const project = makeProject()
+      project.fs.mkdirSync(ROOT + '/model/edition', { recursive: true })
+      project.fs.writeFileSync(ROOT + '/model/edition/edition-index.aon', '# Docs\n')
+
+      await rejects(() => edition_add([Path.join(pkg, 'summary')], project.actx), FIX)
+      ok(!project.files().includes('model/edition/edition-index.aontu'),
+        project.files().join(','))
+
+      project.fs.renameSync(ROOT + '/model/target/target-index.aontu',
+        ROOT + '/model/target/target-index.aon')
+
+      await rejects(() => kind_remove('target', ['go'], project.actx), FIX)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+  test('package check does not need the project model', async () => {
+    const pkg = legacyPackage()
+    try {
+      const { msg } = await inProject({
+        'model/sdk.aon': "name: 'demo'\n",
+      }, ['package', 'check', pkg])
+
+      strictEqual(msg, '')
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })

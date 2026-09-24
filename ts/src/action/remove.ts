@@ -12,7 +12,7 @@ import type {
 import { SdkGenError } from '../utility'
 
 import {
-  definitionPathAny, indexName, indexPath,
+  assertMigrated, definitionPathAny, indexName, indexPath,
 } from '../helpers/definition'
 
 import { findFeatureSources, BASE_FEATURE } from '../helpers/featureSource'
@@ -159,6 +159,8 @@ async function planRemove(
       'Invalid ' + kind + ' name: ' + JSON.stringify(name) +
       '\n  a name matches ' + ITEM_NAME_RE.source + ' — it is not a path')
   }
+
+  assertMigrated(fs, [indexPath(root, kind)])
 
   const declared: any = kindCollection(model, kind)?.[name]
   const modelfile = definitionPathAny(fs, root, kind, name)

@@ -93,6 +93,7 @@ async function planRemove(kind, name, actx, deleteOutput) {
         throw new utility_1.SdkGenError('Invalid ' + kind + ' name: ' + JSON.stringify(name) +
             '\n  a name matches ' + manifest_1.ITEM_NAME_RE.source + ' — it is not a path');
     }
+    (0, definition_1.assertMigrated)(fs, [(0, definition_1.indexPath)(root, kind)]);
     const declared = (0, kindCollection_1.kindCollection)(model, kind)?.[name];
     const modelfile = (0, definition_1.definitionPathAny)(fs, root, kind, name);
     const hasModel = fs.existsSync(modelfile);

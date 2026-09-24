@@ -64,6 +64,7 @@ function loadContent(actx, which, seed) {
     const modelfolder = node_path_1.default.dirname(actx.url);
     which.map((w) => {
         const indexfile = node_path_1.default.join(modelfolder, w, (0, definition_1.indexName)(w));
+        (0, definition_1.assertMigrated)(fs, [indexfile]);
         content[`${w}_index`] = (null != seed?.[w] && !fs.existsSync(indexfile)) ?
             seed[w] : fs.readFileSync(indexfile, 'utf8');
     });

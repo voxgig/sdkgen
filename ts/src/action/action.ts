@@ -11,7 +11,9 @@ import type {
   ActionContext,
 } from '../types'
 
-import { indexName, migrateIncludes } from '../helpers/definition'
+import {
+  assertMigrated, indexName, migrateIncludes,
+} from '../helpers/definition'
 
 
 const indexEntry = (name: string) => `@"./${name}.aontu"`
@@ -87,6 +89,8 @@ function loadContent(
 
   which.map((w: string) => {
     const indexfile = Path.join(modelfolder, w, indexName(w))
+
+    assertMigrated(fs, [indexfile])
 
     content[`${w}_index`] = (null != seed?.[w] && !fs.existsSync(indexfile)) ?
       seed[w] : fs.readFileSync(indexfile, 'utf8')
