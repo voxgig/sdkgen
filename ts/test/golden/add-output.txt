@@ -1012,9 +1012,9 @@ tm/lua/feature/test_feature.lua 351452a4c5a8
 tm/lua/src/feature/README.md 74fc01b8a34f
 tm/lua/src/feature/base/.gitkeep e3b0c44298fc
 tm/lua/src/feature/test/.gitkeep e3b0c44298fc
+tm/lua/test/entity_defaults_test.lua af379e905823
 tm/lua/test/extend_test.lua 35b3bac8ebbd
 tm/lua/test/feature_test.lua b90154d60678
-tm/lua/test/make_options_test.lua caec4e2da203
 tm/lua/test/netsim_test.lua 1b5b020902a3
 tm/lua/test/omni.lua 61f834f4f623
 tm/lua/test/omni_smoke_test.lua f889b585f462
@@ -1037,7 +1037,7 @@ tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua 3234bc5e9564
 tm/lua/utility/make_fetch_def.lua f7057db76504
-tm/lua/utility/make_options.lua d600bc1a3fa9
+tm/lua/utility/make_options.lua 9238926780ab
 tm/lua/utility/make_point.lua 392961fd8351
 tm/lua/utility/make_request.lua 4ba90ee83ff3
 tm/lua/utility/make_response.lua 6255f621011a

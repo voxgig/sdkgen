@@ -1,4 +1,4 @@
--- ProjectName SDK make_options test
+-- ProjectName SDK entity defaults test
 --
 -- make_options validates the configured entity defaults once per Lua state
 -- rather than per client: struct's lua getprop scans the parent to classify

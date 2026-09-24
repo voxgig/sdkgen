@@ -189,18 +189,18 @@ local function make_options_util(ctx)
   local split = type(cfgentity) == 'table' and vs.ismap(cfgentity)
     and (userentity == nil or vs.ismap(userentity))
 
-  local cfgside = cfgopts
   if split then
-    cfgside = {}
+    local rest = {}
     for k, v in pairs(cfgopts) do
       if k ~= "entity" then
-        cfgside[k] = v
+        rest[k] = v
       end
     end
+    cfgopts = rest
     opts["entity"] = nil
   end
 
-  local merged = vs.merge({ {}, vs.clone(cfgside), opts })
+  local merged = vs.merge({ {}, vs.clone(cfgopts), opts })
 
   -- LUA CANNOT STORE NIL, so `{ a, nil, b }` is a table holding keys 1 and 3
   -- and no 2 -- not a sequence. struct classifies it as a MAP and refuses it
