@@ -8,7 +8,7 @@ import {
 } from '../dist/sdkgen'
 
 test('compact schema preserves field, argument, point, flow and relation semantics', () => {
-  const schema = Fs.readFileSync(require.resolve('@voxgig/apidef/model/apidef.aon'), 'utf8')
+  const schema = Fs.readFileSync(require.resolve('@voxgig/apidef/model/apidef.aontu'), 'utf8')
   const model = new Aontu().generate(schema + `
     const: Name: Demo
     main: kit: config: headers: {}
