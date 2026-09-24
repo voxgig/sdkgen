@@ -997,7 +997,7 @@ src/cmp/lua/fragment/SdkError.fragment.lua dd1669f801e7
 src/cmp/lua/tsconfig.json 720a3f229019
 src/cmp/lua/utility_lua.ts 216f2c0aab05
 tm/lua/LICENSE ed2f88b0aab8
-tm/lua/Makefile 0cdb4b35ad7d
+tm/lua/Makefile 2687d4bd2f37
 tm/lua/core/context.lua fb1bed78dd0d
 tm/lua/core/control.lua bcd4e848f7f2
 tm/lua/core/error.lua 943180f73775
@@ -1012,12 +1012,12 @@ tm/lua/feature/test_feature.lua 351452a4c5a8
 tm/lua/src/feature/README.md 74fc01b8a34f
 tm/lua/src/feature/base/.gitkeep e3b0c44298fc
 tm/lua/src/feature/test/.gitkeep e3b0c44298fc
-tm/lua/test/entity_defaults_test.lua af379e905823
 tm/lua/test/extend_test.lua 35b3bac8ebbd
 tm/lua/test/feature_test.lua b90154d60678
 tm/lua/test/netsim_test.lua 1b5b020902a3
 tm/lua/test/omni.lua 61f834f4f623
 tm/lua/test/omni_smoke_test.lua f889b585f462
+tm/lua/test/option_defaults_test.lua b3c002d12dee
 tm/lua/test/pipeline_test.lua 7ea6b2e32918
 tm/lua/test/primary_utility_test.lua 9ae463cb4ad4
 tm/lua/test/runner.lua 57482767f8bf
