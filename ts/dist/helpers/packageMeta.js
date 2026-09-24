@@ -82,8 +82,9 @@ function docsSiteUrl(model) {
         return '';
     }
     const editions = (0, kindCollection_1.kindCollection)(model, 'edition');
+    // published, not active: serving is per-repository state, not generation.
     const pages = Object.values(editions || {})
-        .find((e) => 'github-pages' === e?.kind && false !== e?.active);
+        .find((e) => 'github-pages' === e?.kind && false !== e?.active && true === e?.published);
     if (null == pages) {
         return '';
     }
