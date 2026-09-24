@@ -106,6 +106,18 @@ describe('doctor', () => {
   })
 
 
+  test('a pre-rename entry left beside the .aontu one is an orphan', async () => {
+    const project = await addedProject()
+
+    write(project, 'model/sdk.aon', '@"./target/old-index.aon"\n')
+    write(project, 'model/target/old-index.aon', '@"./go.aon"\n')
+
+    const report = await check(project)
+    strictEqual(report.ok, false, 'nothing reads a .aon entry any more')
+    deepStrictEqual(report.orphanModel.sort(), ['sdk.aon', 'target/old-index.aon'])
+  })
+
+
   test('it actually compared the trees', async () => {
     const project = await addedProject()
 

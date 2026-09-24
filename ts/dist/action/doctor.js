@@ -91,11 +91,11 @@ function orphanModelFiles(actx) {
     const all = walk(fs, modeldir)
         .filter((rel) => rel.endsWith('.aontu') || rel.endsWith('.aon'))
         .filter((rel) => !rel.includes('.jostraca/') && !rel.startsWith('guide/'));
-    // Both extensions: doctor reports what a project HAS, not what add writes.
+    // Walked, never an entry: aontu reads no `.aon`, so a leftover is an orphan.
     const ENTRY = [
-        'sdk.aontu', 'sdk.aon',
-        'test/test.aontu', 'test/test.aon',
-        '.model-config/model-config.aontu', '.model-config/model-config.aon',
+        'sdk.aontu',
+        'test/test.aontu',
+        '.model-config/model-config.aontu',
     ];
     const seen = new Set();
     const queue = ENTRY.filter((rel) => all.includes(rel));
