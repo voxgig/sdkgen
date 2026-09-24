@@ -378,7 +378,7 @@ function makeModel(
   targetNames: string[], name?: string, extra?: string, features?: string[],
 ): any {
   const src = [
-    '@"@voxgig/apidef/model/apidef.aon"',
+    '@"@voxgig/apidef/model/apidef.aontu"',
     '@"../../../model/sdkgen.aon"',
     ...targetNames.map((t) => `@"target/${t}.aon"`),
     ...(features || ['test', 'log']).map((f) => `@"feature/${f}.aon"`),

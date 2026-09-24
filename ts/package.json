@@ -89,7 +89,7 @@
   "peerDependencies": {
     "@tabnas/jsonic": ">=0.6.0",
     "@tabnas/parser": ">=0.8.0 <0.11.0 || >=0.11.1",
-    "@voxgig/apidef": ">=8.14.0",
+    "@voxgig/apidef": ">=8.16.0",
     "@voxgig/struct": ">=0.2",
     "@voxgig/util": ">=0.5",
     "aontu": ">=0.71.0 <0.73.0",

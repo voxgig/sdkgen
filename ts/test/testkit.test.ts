@@ -56,7 +56,7 @@ main: kit: entity: hidden: {
 
 function consumerModel(sdk: string): any {
   const src = [
-    '@"@voxgig/apidef/model/apidef.aon"',
+    '@"@voxgig/apidef/model/apidef.aontu"',
     '@"@voxgig/sdkgen/model/sdkgen.aon"',
     '@"./target/target-index.aon"',
     '@"./feature/feature-index.aon"',
