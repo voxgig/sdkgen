@@ -12,7 +12,7 @@ import type {
 import { SdkGenError } from '../utility'
 
 import {
-  definitionPathAny, definitionFolder, indexName,
+  definitionPathAny, indexName, indexPath,
 } from '../helpers/definition'
 
 import { findFeatureSources, BASE_FEATURE } from '../helpers/featureSource'
@@ -228,7 +228,7 @@ async function planRemove(
     }
   }
 
-  const index = Path.join(definitionFolder(root, kind), indexName(kind))
+  const index = indexPath(root, kind)
   plan.indexed = fs.existsSync(index) &&
     removeIndexEntries(String(fs.readFileSync(index, 'utf8')), [name]) !==
     String(fs.readFileSync(index, 'utf8'))
@@ -406,7 +406,7 @@ function applyRemove(plan: RemovePlan, actx: ActionContext, dryrun: boolean): st
   }
 
   if (plan.indexed) {
-    const index = Path.join(definitionFolder(root, kind), indexName(kind))
+    const index = indexPath(root, kind)
     say('model/' + kind + '/' + indexName(kind), 'the index entry for ' + name)
     if (!dryrun) {
       fs.writeFileSync(index,

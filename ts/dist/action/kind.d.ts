@@ -18,6 +18,7 @@ declare const KINDS: Record<string, KindDef>;
 declare function kindTrees(kind: string, name: string): TreeDef[];
 declare function kindDef(kind: string): KindDef;
 declare function resolveKind(ref: string, kind: string, ctx$: any): Source;
+declare function installedModelText(kind: string, source: Source, src: string): string;
 declare function kindModel(props: {
     ctx$: any;
     kind: string;
@@ -31,4 +32,4 @@ declare function kindIndex(props: {
     content: string;
 }): void;
 export type { KindDef, TreeDef, };
-export { KINDS, recordedRef, aliasModelKey, kindTrees, escapeRe, kindDef, resolveKind, kindModel, kindIndex, isBare, };
+export { KINDS, recordedRef, aliasModelKey, kindTrees, escapeRe, kindDef, resolveKind, kindModel, kindIndex, installedModelText, isBare, };

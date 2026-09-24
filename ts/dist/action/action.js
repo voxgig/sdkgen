@@ -12,11 +12,11 @@ exports.parseAddNames = parseAddNames;
 exports.loadContent = loadContent;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
+const definition_1 = require("../helpers/definition");
 const indexEntry = (name) => `@"./${name}.aontu"`;
 // Either extension, so a legacy index is READ as naming its items. `.aontu`
-// is the only one written; see migrateIndexEntries.
+// is the only one written; see helpers/definition `migrateIncludes`.
 const INDEX_ENTRY_RE = /^\s*@"(?:\.\/)?([^"]+)\.(?:aontu|aon)"\s*(?:#.*)?$/;
-const LEGACY_INDEX_ENTRY_RE = /^(\s*@"(?:\.\/)?[^"]+)\.aon"(\s*(?:#.*)?)$/;
 function indexEntryName(line) {
     const m = line.match(INDEX_ENTRY_RE);
     return null == m ? undefined : m[1];
@@ -26,20 +26,11 @@ function hasIndexEntry(content, name) {
     return content.split('\n')
         .some((line) => indexEntryName(line) === name);
 }
-// A legacy entry names the item by a filename nothing writes any more, so
-// recognising it is not enough — aontu cannot resolve it. Only the extension
-// is rewritten, leaving every other line byte-identical.
-function migrateIndexEntries(content) {
-    return content
-        .split('\n')
-        .map((line) => line.replace(LEGACY_INDEX_ENTRY_RE, '$1.aontu"$2'))
-        .join('\n');
-}
 // Append `@"<name>.aontu"` import lines for each name not already present in
 // the index content. Checking against the accumulating result (not the
 // original) means duplicate names in the same call are added at most once.
 function appendIndexEntries(content, names) {
-    let out = migrateIndexEntries(content);
+    let out = (0, definition_1.migrateIncludes)(content);
     for (const n of names) {
         if (!hasIndexEntry(out, n)) {
             out += '\n' + indexEntry(n);
@@ -72,7 +63,7 @@ function loadContent(actx, which, seed) {
     const fs = actx.fs();
     const modelfolder = node_path_1.default.dirname(actx.url);
     which.map((w) => {
-        const indexfile = node_path_1.default.join(modelfolder, w, w + '-index.aontu');
+        const indexfile = node_path_1.default.join(modelfolder, w, (0, definition_1.indexName)(w));
         content[`${w}_index`] = (null != seed?.[w] && !fs.existsSync(indexfile)) ?
             seed[w] : fs.readFileSync(indexfile, 'utf8');
     });

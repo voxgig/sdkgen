@@ -1,7 +1,4 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isBare = exports.recordedRef = exports.KINDS = void 0;
 exports.aliasModelKey = aliasModelKey;
@@ -11,10 +8,11 @@ exports.kindDef = kindDef;
 exports.resolveKind = resolveKind;
 exports.kindModel = kindModel;
 exports.kindIndex = kindIndex;
-const node_path_1 = __importDefault(require("node:path"));
+exports.installedModelText = installedModelText;
 const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
 const stdrep_1 = require("../helpers/stdrep");
+const definition_1 = require("../helpers/definition");
 const resolve_1 = require("./resolve");
 Object.defineProperty(exports, "recordedRef", { enumerable: true, get: function () { return resolve_1.recordedRef; } });
 Object.defineProperty(exports, "isBare", { enumerable: true, get: function () { return resolve_1.isBare; } });
@@ -82,42 +80,42 @@ function resolveKind(ref, kind, ctx$) {
     }
     return source;
 }
+// What `add` writes as an item's model file, and doctor re-derives to compare.
+function installedModelText(kind, source, src) {
+    const rename = kindDef(kind).rename;
+    const aliased = source.name !== source.origname;
+    return (0, definition_1.migrateIncludes)((aliased && null != rename) ?
+        rename(src, source.origname, source.name) : src);
+}
 function kindModel(props) {
     const { ctx$, kind, source } = props;
     const def = kindDef(kind);
     const fs = ctx$.fs();
     const log = ctx$.log;
     const aliased = source.name !== source.origname;
+    const owned = aliased && true === def.ownedWhenAliased;
     const replace = (0, stdrep_1.provenanceReplace)({
         base: source.base,
         origname: source.origname,
         name: source.name,
         package: source.package,
     });
-    if (aliased) {
-        const owned = true === def.ownedWhenAliased;
-        if (owned) {
-            const dest = node_path_1.default.join(ctx$.folder ?? '.', 'model', kind, source.name + '.aontu');
-            if (fs.existsSync(dest)) {
-                log.info({
-                    point: kind + '-alias-model-kept', [kind]: source.name, file: dest,
-                    note: source.name + ': keeping the existing aliased ' + kind +
-                        ' model (project-owned — an alias is differentiated by editing it)'
-                });
-            }
+    if (owned) {
+        const dest = (0, definition_1.definitionPath)(ctx$.folder ?? '.', kind, source.name);
+        if (fs.existsSync(dest)) {
+            log.info({
+                point: kind + '-alias-model-kept', [kind]: source.name, file: dest,
+                note: source.name + ': keeping the existing aliased ' + kind +
+                    ' model (project-owned — an alias is differentiated by editing it)'
+            });
         }
-        const src = fs.readFileSync(source.model, 'utf8');
-        const text = null == def.rename ? src :
-            def.rename(src, source.origname, source.name);
-        (0, jostraca_1.File)({ name: source.name + '.aontu', exclude: owned }, () => (0, jostraca_1.Content)((0, jostraca_1.template)(text, ctx$.model, { replace })));
     }
-    else {
-        (0, jostraca_1.Copy)({ from: source.model, replace });
-    }
+    const src = fs.readFileSync(source.model, 'utf8');
+    (0, jostraca_1.File)({ name: (0, definition_1.definitionFileName)(source.name), exclude: owned }, () => (0, jostraca_1.Content)({ src: installedModelText(kind, source, src), replace }));
 }
 function kindIndex(props) {
     const { kind, names, content } = props;
-    (0, jostraca_1.File)({ name: kindDef(kind).name + '-index.aontu' }, () => (0, action_1.UpdateIndex)({
+    (0, jostraca_1.File)({ name: (0, definition_1.indexName)(kindDef(kind).name) }, () => (0, action_1.UpdateIndex)({
         content,
         names,
     }));

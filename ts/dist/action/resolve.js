@@ -92,7 +92,7 @@ function resolveSource(ref, kind, ctx$) {
         // Path.join, not concatenation: an absolute Windows ref makes `folder`
         // backslash-separated, and appending '/model/...' produced a mixed-
         // separator path that some readers handle and others do not.
-        model: (0, definition_1.definitionPath)(folder, kind, origname),
+        model: (0, definition_1.definitionPathAny)(fs, folder, kind, origname),
         package: sourcePackage(fs, folder, kind, origname, ctx$),
     };
 }
@@ -205,7 +205,7 @@ function providesStill(kind, declared, source, ctx$) {
     // No manifest, or one too malformed to be believed: a bare `.sdk`-shaped
     // folder is a legal source, and its definition file is the only claim it
     // makes.
-    return fs.existsSync((0, definition_1.definitionPath)(folder, kind, seek));
+    return fs.existsSync((0, definition_1.definitionPathAny)(fs, folder, kind, seek));
 }
 function recordedRef(declared, name) {
     if (null == declared?.base || '' === declared.base) {

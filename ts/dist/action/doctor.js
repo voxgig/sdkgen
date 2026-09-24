@@ -470,21 +470,19 @@ function checkItemModel(actx, kind, source, report) {
     const origname = source.origname;
     const base = source.base;
     const fs = actx.fs();
-    const scaffold = (0, definition_1.definitionPath)(source.folder, kind, origname);
+    const scaffold = source.model;
     if (!fs.existsSync(scaffold)) {
         return;
     }
     const aliased = (0, kind_1.kindDef)(kind).alias && name !== origname;
     const project = (0, definition_1.definitionPath)(actx.folder, kind, name);
-    const label = 'model/' + kind + '/' + name + '.aontu';
+    const label = 'model/' + kind + '/' + node_path_1.default.basename(project);
     if (!fs.existsSync(project)) {
         report.missing.push(label);
         return;
     }
     const provenance = (0, stdrep_1.provenanceReplace)({ base, origname, name, package: source.package });
-    const rename = (0, kind_1.kindDef)(kind).rename;
-    const rewrite = (aliased && null != rename) ?
-        (src) => rename(src, origname, name) : undefined;
+    const rewrite = (src) => (0, kind_1.installedModelText)(kind, source, src);
     if (!differs(fs, scaffold, project, actx.model, provenance, undefined, rewrite)) {
         return;
     }

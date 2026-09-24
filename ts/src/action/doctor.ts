@@ -23,7 +23,9 @@ import {
   aliasCmpName,
 } from './target'
 
-import { recordedRef, KINDS, kindDef, kindTrees } from './kind'
+import {
+  recordedRef, KINDS, kindDef, kindTrees, installedModelText,
+} from './kind'
 import type { TreeDef } from './kind'
 
 import { resolveSource } from './resolve'
@@ -709,7 +711,7 @@ function checkItemModel(
   const base = source.base
   const fs = actx.fs()
 
-  const scaffold = definitionPath(source.folder, kind, origname)
+  const scaffold = source.model
 
   if (!fs.existsSync(scaffold)) {
     return
@@ -718,7 +720,7 @@ function checkItemModel(
   const aliased = kindDef(kind).alias && name !== origname
 
   const project = definitionPath(actx.folder, kind, name)
-  const label = 'model/' + kind + '/' + name + '.aontu'
+  const label = 'model/' + kind + '/' + Path.basename(project)
 
   if (!fs.existsSync(project)) {
     report.missing.push(label)
@@ -728,10 +730,7 @@ function checkItemModel(
   const provenance = provenanceReplace(
     { base, origname, name, package: source.package })
 
-  const rename = kindDef(kind).rename
-
-  const rewrite = (aliased && null != rename) ?
-    (src: string) => rename(src, origname, name) : undefined
+  const rewrite = (src: string) => installedModelText(kind, source, src)
 
   if (!differs(fs, scaffold, project, actx.model, provenance, undefined, rewrite)) {
     return
