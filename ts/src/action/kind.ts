@@ -1,15 +1,17 @@
 import { kindCollection } from '../helpers/kindCollection'
 
 
-import Path from 'node:path'
-
-import { File, Copy, Content, template } from 'jostraca'
+import { File, Content } from 'jostraca'
 
 import { KIT } from '../types'
 
 import { SdkGenError } from '../utility'
 
 import { provenanceReplace } from '../helpers/stdrep'
+
+import {
+  definitionFileName, definitionPath, indexName, migrateIncludes,
+} from '../helpers/definition'
 
 import { resolveSource, recordedRef, isBare } from './resolve'
 import type { Source } from './resolve'
@@ -22,9 +24,8 @@ type KindDef = {
 
   alias: boolean
 
-  // Rewrite the definition's own text when it is installed under a different
-  // name (targets rewrite their `main: kit: target: <name>:` key). Only
-  // reached when `alias` is true.
+  // Rewrite the definition's text when an ALIAS installs it under another
+  // name (targets rewrite their `main: kit: target: <name>:` key).
   rename?: (src: string, origname: string, name: string) => string
 
   // Is the copied definition PROJECT-OWNED once written? An alias exists to
@@ -141,6 +142,16 @@ function resolveKind(ref: string, kind: string, ctx$: any): Source {
 }
 
 
+// What `add` writes as an item's model file, and doctor re-derives to compare.
+function installedModelText(kind: string, source: Source, src: string): string {
+  const rename = kindDef(kind).rename
+  const aliased = source.name !== source.origname
+
+  return migrateIncludes((aliased && null != rename) ?
+    rename(src, source.origname, source.name) : src)
+}
+
+
 function kindModel(props: {
   ctx$: any,
   kind: string,
@@ -154,6 +165,7 @@ function kindModel(props: {
   const log = ctx$.log
 
   const aliased = source.name !== source.origname
+  const owned = aliased && true === def.ownedWhenAliased
 
   const replace = provenanceReplace({
     base: source.base,
@@ -162,33 +174,22 @@ function kindModel(props: {
     package: source.package,
   })
 
-  if (aliased) {
-    const owned = true === def.ownedWhenAliased
+  if (owned) {
+    const dest = definitionPath(ctx$.folder ?? '.', kind, source.name)
 
-    if (owned) {
-      const dest = Path.join(
-        ctx$.folder ?? '.', 'model', kind, source.name + '.aon')
-
-      if (fs.existsSync(dest)) {
-        log.info({
-          point: kind + '-alias-model-kept', [kind]: source.name, file: dest,
-          note: source.name + ': keeping the existing aliased ' + kind +
-            ' model (project-owned — an alias is differentiated by editing it)'
-        })
-      }
+    if (fs.existsSync(dest)) {
+      log.info({
+        point: kind + '-alias-model-kept', [kind]: source.name, file: dest,
+        note: source.name + ': keeping the existing aliased ' + kind +
+          ' model (project-owned — an alias is differentiated by editing it)'
+      })
     }
-
-    const src = fs.readFileSync(source.model, 'utf8')
-    const text = null == def.rename ? src :
-      def.rename(src, source.origname, source.name)
-
-    File({ name: source.name + '.aon', exclude: owned }, () =>
-      Content(template(text, ctx$.model, { replace })))
-  }
-  else {
-    Copy({ from: source.model, replace })
   }
 
+  const src = fs.readFileSync(source.model, 'utf8')
+
+  File({ name: definitionFileName(source.name), exclude: owned }, () =>
+    Content({ src: installedModelText(kind, source, src), replace }))
 }
 
 
@@ -198,7 +199,7 @@ function kindIndex(props: {
   content: string,
 }) {
   const { kind, names, content } = props
-  File({ name: kindDef(kind).name + '-index.aon' }, () => UpdateIndex({
+  File({ name: indexName(kindDef(kind).name) }, () => UpdateIndex({
     content,
     names,
   }))
@@ -225,5 +226,6 @@ export {
   resolveKind,
   kindModel,
   kindIndex,
+  installedModelText,
   isBare,
 }

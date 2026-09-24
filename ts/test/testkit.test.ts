@@ -57,14 +57,14 @@ main: kit: entity: hidden: {
 function consumerModel(sdk: string): any {
   const src = [
     '@"@voxgig/apidef/model/apidef.aontu"',
-    '@"@voxgig/sdkgen/model/sdkgen.aon"',
-    '@"./target/target-index.aon"',
-    '@"./feature/feature-index.aon"',
+    '@"@voxgig/sdkgen/model/sdkgen.aontu"',
+    '@"./target/target-index.aontu"',
+    '@"./feature/feature-index.aontu"',
     "name: 'demo'",
     API,
   ].join('\n')
 
-  const path = Path.join(sdk, 'model', 'generate-test.aon')
+  const path = Path.join(sdk, 'model', 'generate-test.aontu')
   Fs.writeFileSync(path, src)
 
   const errs: any[] = []
@@ -103,9 +103,9 @@ describe('testkit over the fixture package', () => {
     const installed = consumer.files()
 
     for (const path of [
-      'model/target/wtest.aon',
-      'model/feature/wfeat.aon',
-      'model/edition/wcat.aon',
+      'model/target/wtest.aontu',
+      'model/feature/wfeat.aontu',
+      'model/edition/wcat.aontu',
       'src/cmp/wtest/Main_wtest.ts',
       'src/cmp/edition/wcat/Main_wcat.ts',
       'tm/wtest/README.md',
@@ -117,20 +117,20 @@ describe('testkit over the fixture package', () => {
 
 
   test('a kind the project predates gets its index created', () => {
-    ok(consumer.files().includes('model/edition/edition-index.aon'),
+    ok(consumer.files().includes('model/edition/edition-index.aontu'),
       'no edition index was created')
 
     const index = Fs.readFileSync(
-      Path.join(consumer.sdk, 'model', 'edition', 'edition-index.aon'), 'utf8')
-    ok(index.includes('@"./wcat.aon"'), 'edition index: ' + index)
+      Path.join(consumer.sdk, 'model', 'edition', 'edition-index.aontu'), 'utf8')
+    ok(index.includes('@"./wcat.aontu"'), 'edition index: ' + index)
   })
 
 
   test('every installed item records the package as provenance', () => {
     for (const rel of [
-      'model/target/wtest.aon',
-      'model/feature/wfeat.aon',
-      'model/edition/wcat.aon',
+      'model/target/wtest.aontu',
+      'model/feature/wfeat.aontu',
+      'model/edition/wcat.aontu',
     ]) {
       const src = Fs.readFileSync(Path.join(consumer.sdk, rel), 'utf8')
       ok(src.includes("package: '" + PKGNAME + "'"),

@@ -11,7 +11,7 @@ function packageRoot() {
     return node_path_1.default.resolve(__dirname, '..', '..');
 }
 function schemaFile() {
-    return node_path_1.default.join(packageRoot(), 'model', 'sdkgen.aon');
+    return node_path_1.default.join(packageRoot(), 'model', 'sdkgen.aontu');
 }
 // The bundled scaffold — the `.sdk` of `ts/project`, which is itself an
 // sdkgen package.

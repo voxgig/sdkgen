@@ -38,7 +38,7 @@ class PrimaryUtilityTest extends TestCase
     private const TEST_JSON_FILE = '../../.sdk/test/test.json';
 
     // Sections deliberately left empty in the shared corpus
-    // (.sdk/test/primary/<name>.aon carries a PENDING header). Everything
+    // (.sdk/test/primary/<name>.aontu carries a PENDING header). Everything
     // else MUST contribute cases.
     private const PENDING = [
         'fetcher', 'makeFetchDef', 'makeResult',

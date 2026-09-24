@@ -23,7 +23,7 @@ function makePackage(opts: {
   Fs.mkdirSync(Path.join(sdk, 'model', 'edition'), { recursive: true })
   Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'edition', name), { recursive: true })
 
-  Fs.writeFileSync(Path.join(sdk, 'model', 'edition', name + '.aon'),
+  Fs.writeFileSync(Path.join(sdk, 'model', 'edition', name + '.aontu'),
     `main: kit: doc: edition: ${name}: {\n` +
     `  title: 'API edition'\n` +
     `  base: 'BASE'\n` +
@@ -87,7 +87,7 @@ describe('edition add', () => {
         copy(pkg)
         await edition_add(['summary' + alias], project.actx)
         const name = alias ? 'partner' : 'summary'
-        const definition = read(project, 'model/edition/' + name + '.aon')
+        const definition = read(project, 'model/edition/' + name + '.aontu')
         ok(definition.includes("base: '" + base + "/.sdk'"), definition)
         ok(definition.includes("package: '@voxgig/docgen'"), definition)
         ok(project.files().includes('tm/edition/' + name + '/site.md'))
@@ -110,11 +110,11 @@ describe('edition add', () => {
 
       const files = project.files()
 
-      ok(files.includes('model/edition/summary.aon'), files.join(','))
+      ok(files.includes('model/edition/summary.aontu'), files.join(','))
       ok(files.includes('src/cmp/edition/summary/Main_summary.ts'), files.join(','))
       ok(files.includes('tm/edition/summary/site.md'), files.join(','))
 
-      ok(read(project, 'model/edition/edition-index.aon').includes('@"./summary.aon"'))
+      ok(read(project, 'model/edition/edition-index.aontu').includes('@"./summary.aontu"'))
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
@@ -149,7 +149,7 @@ describe('edition add', () => {
       const project = makeProject()
       await edition_add([editionRef(pkg)], project.actx)
 
-      const src = read(project, 'model/edition/summary.aon')
+      const src = read(project, 'model/edition/summary.aontu')
 
       ok(src.includes("base: '"), 'no provenance stamp:\n' + src)
       ok(!src.includes("base: 'BASE'"), 'the anchor was not replaced:\n' + src)
@@ -193,13 +193,13 @@ describe('edition add', () => {
 
       const files = project.files()
 
-      ok(files.includes('model/edition/portal.aon'), files.join(','))
+      ok(files.includes('model/edition/portal.aontu'), files.join(','))
       // Dispatch is by convention, so the component file has to move with the
       // name or nothing loads it.
       ok(files.includes('src/cmp/edition/portal/Main_portal.ts'), files.join(','))
       ok(files.includes('tm/edition/portal/site.md'), files.join(','))
 
-      const src = read(project, 'model/edition/portal.aon')
+      const src = read(project, 'model/edition/portal.aontu')
       ok(src.includes('edition: portal:'), 'the model key was not rewritten:\n' + src)
       ok(src.includes("origname: 'summary'"), 'no origname recorded:\n' + src)
     }
@@ -228,10 +228,10 @@ describe('edition and the whole-package verbs', () => {
       await package_add([pkg], project.actx)
 
       const files = project.files()
-      ok(files.includes('model/edition/summary.aon'), files.join(','))
+      ok(files.includes('model/edition/summary.aontu'), files.join(','))
       ok(files.includes('src/cmp/edition/summary/Main_summary.ts'), files.join(','))
 
-      const src = read(project, 'model/edition/summary.aon')
+      const src = read(project, 'model/edition/summary.aontu')
       ok(src.includes("package: '@acme/sdkgen-edition'"),
         'no package provenance:\n' + src)
     }
@@ -282,7 +282,7 @@ describe('edition and the whole-package verbs', () => {
   test('a edition definition with no anchor is an error', async () => {
     const pkg = makePackage()
     try {
-      const file = Path.join(pkg, '.sdk', 'model', 'edition', 'summary.aon')
+      const file = Path.join(pkg, '.sdk', 'model', 'edition', 'summary.aontu')
       Fs.writeFileSync(file,
         String(Fs.readFileSync(file, 'utf8')).replace("  base: 'BASE'\n", ''))
 
@@ -415,9 +415,9 @@ describe('edition and the project model', () => {
       await edition_add([editionRef(pkg)], project.actx)
 
       const sdk = String(project.fs.readFileSync(
-        ROOT + '/model/sdk.aon', 'utf8'))
+        ROOT + '/model/sdk.aontu', 'utf8'))
 
-      ok(sdk.includes('@"./edition/edition-index.aon"'),
+      ok(sdk.includes('@"./edition/edition-index.aontu"'),
         'the edition index is included by nothing:\n' + sdk)
     }
     finally {
@@ -430,16 +430,16 @@ describe('edition and the project model', () => {
     const pkg = makePackage()
     try {
       const project = makeProject()
-      const url = ROOT + '/model/sdk.aon'
+      const url = ROOT + '/model/sdk.aontu'
       project.fs.writeFileSync(url,
         String(project.fs.readFileSync(url, 'utf8')) +
-        '@"edition/edition-index.aon"\n')
+        '@"edition/edition-index.aontu"\n')
 
       await edition_add([editionRef(pkg)], project.actx)
 
       const sdk = String(project.fs.readFileSync(url, 'utf8'))
       strictEqual(
-        (sdk.match(/@"(?:\.\/)?edition\/edition-index\.aon"/g) || []).length, 1,
+        (sdk.match(/@"(?:\.\/)?edition\/edition-index\.aontu"/g) || []).length, 1,
         'the include was appended alongside the bare one:\n' + sdk)
     }
     finally {
@@ -456,10 +456,10 @@ describe('edition and the project model', () => {
       await edition_add([editionRef(pkg)], project.actx)
 
       const sdk = String(project.fs.readFileSync(
-        ROOT + '/model/sdk.aon', 'utf8'))
+        ROOT + '/model/sdk.aontu', 'utf8'))
 
       strictEqual(
-        sdk.split('@"./edition/edition-index.aon"').length - 1, 1,
+        sdk.split('@"./edition/edition-index.aontu"').length - 1, 1,
         'the include was appended twice:\n' + sdk)
     }
     finally {

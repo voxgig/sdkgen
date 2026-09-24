@@ -93,7 +93,7 @@ describe('target remove', () => {
       name: 'custom', origname: 'go', base: SCAFFOLD_BASE,
     }
 
-    const model = 'model/target/custom.aon'
+    const model = 'model/target/custom.aontu'
     write(project, model, read(project, model) +
       '\nmain: kit: target: custom: publish: version: "9.9.9"\n')
     const before = project.vol.toJSON()
@@ -101,7 +101,7 @@ describe('target remove', () => {
     await rejects(
       () => kind_remove('target', ['custom'], project.actx),
       (err: any) => {
-        match(String(err.message), /model\/target\/custom\.aon/)
+        match(String(err.message), /model\/target\/custom\.aontu/)
         // Its own advice: the standard line names .sdk/model/, which is
         // where this file already is.
         match(String(err.message), /ALIAS's own model file/)
@@ -123,7 +123,7 @@ describe('target remove', () => {
         try {
           Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
           Fs.mkdirSync(Path.join(sdk, 'tm', 'go', 'feature'), { recursive: true })
-          Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'external.aon'),
+          Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'external.aontu'),
             'main: kit: feature: external: { name: external, active: true, base: "BASE" }\n')
           Fs.writeFileSync(Path.join(sdk, 'tm', 'go', 'feature', 'external_feature.go'),
             'package feature\n')
@@ -140,7 +140,7 @@ describe('target remove', () => {
           const source = 'tm/go/feature/external_feature.go'
           ok(has(project, source))
 
-          const model = 'model/feature/external.aon'
+          const model = 'model/feature/external.aontu'
           write(project, model, read(project, model) + '\n# project customization\n')
           const keptModel = read(project, model)
 
@@ -169,17 +169,17 @@ describe('target remove', () => {
 
     ok(has(project, 'src/cmp/go/Main_go.ts'))
     ok(has(project, 'tm/go/core/error.go'))
-    ok(has(project, 'model/target/go.aon'))
-    match(read(project, 'model/target/target-index.aon'), /go\.aon/)
+    ok(has(project, 'model/target/go.aontu'))
+    match(read(project, 'model/target/target-index.aontu'), /go\.aontu/)
 
     const res: any = await kind_remove('target', ['go'], project.actx)
 
     strictEqual(has(project, 'src/cmp/go'), false, 'components remain')
     strictEqual(has(project, 'tm/go'), false, 'templates remain')
-    strictEqual(has(project, 'model/target/go.aon'), false, 'model file remains')
-    ok(!/go\.aon/.test(read(project, 'model/target/target-index.aon')),
+    strictEqual(has(project, 'model/target/go.aontu'), false, 'model file remains')
+    ok(!/go\.aontu/.test(read(project, 'model/target/target-index.aontu')),
       'the index entry remains')
-    ok(has(project, 'model/feature/test.aon'), 'the test feature must stay')
+    ok(has(project, 'model/feature/test.aontu'), 'the test feature must stay')
 
     strictEqual(project.actx.model.main[KIT].target.go, undefined,
       'the in-memory model still declares the target')
@@ -210,13 +210,13 @@ describe('target remove', () => {
 
     ok(has(project, 'src/cmp/go/Main_go.ts'), 'a refusal must delete nothing')
     ok(has(project, 'tm/go/core/error.go'), 'a refusal must delete nothing')
-    ok(has(project, 'model/target/go.aon'), 'a refusal must delete nothing')
+    ok(has(project, 'model/target/go.aontu'), 'a refusal must delete nothing')
 
     project.actx.flags = { force: true }
     await kind_remove('target', ['go'], project.actx)
 
     strictEqual(has(project, 'src/cmp/go'), false)
-    strictEqual(has(project, 'model/target/go.aon'), false)
+    strictEqual(has(project, 'model/target/go.aontu'), false)
   })
 
 
@@ -253,14 +253,14 @@ describe('target remove', () => {
 
     ok(has(project, 'src/cmp/go/Main_go.ts'))
     ok(has(project, 'tm/go/core/error.go'))
-    ok(has(project, 'model/target/go.aon'))
-    match(read(project, 'model/target/target-index.aon'), /go\.aon/)
+    ok(has(project, 'model/target/go.aontu'))
+    match(read(project, 'model/target/target-index.aontu'), /go\.aontu/)
     ok(null != project.actx.model.main[KIT].target.go,
       'a dry run must not touch the in-memory model')
 
     ok(res.report.dryrun)
     ok(res.report.removed.includes('src/cmp/go/Main_go.ts'))
-    ok(res.report.removed.includes('model/target/go.aon'))
+    ok(res.report.removed.includes('model/target/go.aontu'))
 
     const listed = log.lines.filter((l: any) => 'remove-file' === l.point)
     ok(listed.every((l: any) => true === l.dryrun && /^would remove/.test(l.note)))
@@ -311,22 +311,22 @@ describe('target remove', () => {
 
     project.actx.flags = { force: true }
     await kind_remove('target', ['go'], project.actx)
-    strictEqual(has(project, 'model/target/go.aon'), false)
+    strictEqual(has(project, 'model/target/go.aontu'), false)
   })
 
 
   test('the project model is reported when it still declares the target', async () => {
     const project = await addedProject()
 
-    write(project, 'model/sdk.aon',
+    write(project, 'model/sdk.aontu',
       "name: 'demo'\n" +
-      '@"./target/target-index.aon"\n' +
-      '@"./feature/feature-index.aon"\n' +
+      '@"./target/target-index.aontu"\n' +
+      '@"./feature/feature-index.aontu"\n' +
       "main: kit: target: go: publish: version: '1.0.0'\n")
 
     const res: any = await kind_remove('target', ['go'], project.actx)
     ok(res.report.notes.some((n: string) =>
-      /model\/sdk\.aon still declares main\.kit\.target\.go/.test(n)), res.report.notes)
+      /model\/sdk\.aontu still declares main\.kit\.target\.go/.test(n)), res.report.notes)
   })
 
 
@@ -334,7 +334,7 @@ describe('target remove', () => {
     const project = await addedProject()
 
     await action_target(['target', 'remove', 'go'], project.actx)
-    strictEqual(has(project, 'model/target/go.aon'), false)
+    strictEqual(has(project, 'model/target/go.aontu'), false)
   })
 })
 
@@ -346,14 +346,14 @@ describe('feature remove', () => {
     await feature_add(['log'], project.actx)
 
     ok(has(project, 'tm/go/feature/log_feature.go'))
-    ok(has(project, 'model/feature/log.aon'))
-    match(read(project, 'model/feature/feature-index.aon'), /log\.aon/)
+    ok(has(project, 'model/feature/log.aontu'))
+    match(read(project, 'model/feature/feature-index.aontu'), /log\.aontu/)
 
     await kind_remove('feature', ['log'], project.actx)
 
     strictEqual(has(project, 'tm/go/feature/log_feature.go'), false)
-    strictEqual(has(project, 'model/feature/log.aon'), false)
-    ok(!/log\.aon/.test(read(project, 'model/feature/feature-index.aon')))
+    strictEqual(has(project, 'model/feature/log.aontu'), false)
+    ok(!/log\.aontu/.test(read(project, 'model/feature/feature-index.aontu')))
     ok(has(project, 'tm/go/feature/test_feature.go'), 'another feature went too')
     ok(has(project, 'tm/go/feature/base_feature.go'), 'base went too')
     strictEqual(project.actx.model.main[KIT].feature.log, undefined)
@@ -372,7 +372,7 @@ describe('feature remove', () => {
     await kind_remove('feature', ['log'], project.actx)
 
     strictEqual(has(project, 'tm/go/feature/log_feature.go'), false)
-    strictEqual(has(project, 'model/feature/log.aon'), false)
+    strictEqual(has(project, 'model/feature/log.aontu'), false)
     ok(has(project, 'tm/go/feature/base_feature.go'), 'base went too')
   })
 
@@ -408,7 +408,7 @@ describe('feature remove', () => {
       () => kind_remove('feature', ['log'], project.actx),
       /tm\/go\/feature\/log_feature\.go/)
 
-    ok(has(project, 'model/feature/log.aon'))
+    ok(has(project, 'model/feature/log.aontu'))
   })
 
 
@@ -419,7 +419,7 @@ describe('feature remove', () => {
       () => kind_remove('feature', ['test'], project.actx),
       /`test` cannot be removed/)
 
-    ok(has(project, 'model/feature/test.aon'))
+    ok(has(project, 'model/feature/test.aontu'))
   })
 
 
@@ -428,7 +428,7 @@ describe('feature remove', () => {
     await feature_add(['log'], project.actx)
 
     await action_feature(['feature', 'remove', 'log'], project.actx)
-    strictEqual(has(project, 'model/feature/log.aon'), false)
+    strictEqual(has(project, 'model/feature/log.aontu'), false)
   })
 })
 
@@ -444,7 +444,7 @@ describe('edition remove', () => {
     Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'edition', name), { recursive: true })
     Fs.mkdirSync(Path.join(sdk, 'tm', 'edition', name), { recursive: true })
 
-    Fs.writeFileSync(Path.join(sdk, 'model', 'edition', name + '.aon'),
+    Fs.writeFileSync(Path.join(sdk, 'model', 'edition', name + '.aontu'),
       `main: kit: doc: edition: ${name}: {\n  title: 'API edition'\n  base: 'BASE'\n}\n`)
     Fs.writeFileSync(
       Path.join(sdk, 'src', 'cmp', 'edition', name, 'Main_' + name + '.ts'),
@@ -468,14 +468,14 @@ describe('edition remove', () => {
 
       ok(has(project, 'src/cmp/edition/summary/Main_summary.ts'))
       ok(has(project, 'tm/edition/summary/site.md'))
-      ok(has(project, 'model/edition/summary.aon'))
+      ok(has(project, 'model/edition/summary.aontu'))
 
       await action_edition(['edition', 'remove', 'summary'], project.actx)
 
       strictEqual(has(project, 'src/cmp/edition/summary'), false)
       strictEqual(has(project, 'tm/edition/summary'), false)
-      strictEqual(has(project, 'model/edition/summary.aon'), false)
-      ok(!/summary\.aon/.test(read(project, 'model/edition/edition-index.aon')))
+      strictEqual(has(project, 'model/edition/summary.aontu'), false)
+      ok(!/summary\.aontu/.test(read(project, 'model/edition/edition-index.aontu')))
       strictEqual(project.actx.model.main[KIT].doc.edition.summary, undefined)
     }
     finally {

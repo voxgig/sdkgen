@@ -11,6 +11,7 @@ declare function includeLine(file: string): string;
 type CompileResult = {
     model?: any;
     errors: string[];
+    why: string[];
 };
 declare function compileModel(src: string, path: string, opts?: {
     strict?: boolean;

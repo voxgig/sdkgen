@@ -8,7 +8,7 @@ function packageRoot(): string {
 
 
 function schemaFile(): string {
-  return Path.join(packageRoot(), 'model', 'sdkgen.aon')
+  return Path.join(packageRoot(), 'model', 'sdkgen.aontu')
 }
 
 

@@ -20,7 +20,12 @@ import {
 
 import type { Finding, Manifest } from '../helpers/manifest'
 
-import { definitionPath, definitionNames } from '../helpers/definition'
+import type { CompileResult } from '../helpers/modelcheck'
+
+import {
+  definitionNames, definitionPathAny, dropLegacyIncludes, isLegacyPath,
+  migrateIncludes,
+} from '../helpers/definition'
 
 import {
   ANCHOR,
@@ -43,6 +48,14 @@ import { KINDS } from './kind'
 
 
 const SAME_FILE_LIMIT = 5
+
+
+const UNRESOLVED_INCLUDE = ['multisource_not_found', 'include_extension']
+
+function unresolvedIncludeOnly(result: CompileResult): boolean {
+  return 0 < result.why.length &&
+    result.why.every((w: string) => UNRESOLVED_INCLUDE.includes(w))
+}
 
 
 function claims(map: any, key: string): string[] {
@@ -170,7 +183,7 @@ function checkItems(fs: any, sdk: string, manifest?: Manifest): Finding[] {
     const names = Array.from(new Set([...claimed, ...ondisk])).sort()
 
     for (const name of names) {
-      const file = definitionPath(sdk, kind, name)
+      const file = definitionPathAny(fs, sdk, kind, name)
 
       if (!fs.existsSync(file)) {
         continue
@@ -188,10 +201,28 @@ function checkDefinition(
   fs: any, kind: string, name: string, file: string,
 ): Finding[] {
   const found: Finding[] = []
-  const src = String(fs.readFileSync(file, 'utf8'))
+  const raw = String(fs.readFileSync(file, 'utf8'))
+
+  // Checked as a project receives it: `add` renames `.aon` includes.
+  const src = migrateIncludes(raw)
+  const legacyFile = isLegacyPath(file)
+  const legacy = legacyFile || src !== raw
 
   const at = (level: 'error' | 'warn', point: string, note: string): Finding =>
     ({ level, point, kind, name, file, note: file + ': ' + note })
+
+  if (legacy) {
+    const where = [
+      ...(legacyFile ? ['its file name'] : []),
+      ...(src !== raw ? ['its includes'] : []),
+    ].join(' and ')
+
+    found.push(at('warn', 'model-legacy-aon',
+      'uses the retired `.aon` extension in ' + where + ' — `add` installs ' +
+      'it as `' + name + '.aontu` with every include renamed to `.aontu`, ' +
+      'the only extension aontu reads; rename them in the package so it ' +
+      'holds what a project is given'))
+  }
 
   // 1. The provenance anchor. Its absence costs nothing at add time and
   //    everything afterwards: the copy records no source, so `doctor` and
@@ -220,13 +251,26 @@ function checkDefinition(
     return found
   }
 
-  const strict = compileModel(src, file)
+  let checked = src
+  let strict = compileModel(checked, file)
+
+  // The warning does not end the check: what the file itself declares is
+  // still checked, without the includes that cannot resolve.
+  if (legacy && unresolvedIncludeOnly(strict)) {
+    found.push(at('warn', 'model-legacy-unresolved',
+      strict.errors.join(' | ') + '  (an include renamed to `.aontu` ' +
+      'resolves only once what it names ships as `.aontu`; until then a ' +
+      'project that installs this cannot compile it)'))
+
+    checked = dropLegacyIncludes(raw)
+    strict = compileModel(checked, file)
+  }
 
   if (0 < strict.errors.length) {
     // Which parser rejected it changes what the author must do, so say. A
     // file that a bare Aontu() accepts and the strict one rejects is almost
     // always the comment dialect above.
-    const bare = compileModel(src, file, { strict: false })
+    const bare = compileModel(checked, file, { strict: false })
 
     found.push(at('error', 'model-parse',
       strict.errors.join(' | ') +
@@ -249,7 +293,7 @@ function checkDefinition(
   // 5. The base schema. A non-defaulted key the file omits (`ext`,
   //    `comment.line`, `module.name`, a feature's `title`) compiles fine
   //    alone and fails the consumer's whole model.
-  const unified = compileModel(src, file, { schema: true })
+  const unified = compileModel(checked, file, { schema: true })
 
   for (const err of unified.errors.slice(0, SAME_FILE_LIMIT)) {
     found.push(at('error', 'model-schema',
@@ -268,7 +312,7 @@ function checkDefinition(
   }
 
   if ('target' === kind) {
-    found.push(...checkTargetModel(src, name, file, at))
+    found.push(...checkTargetModel(checked, name, file, at))
   }
 
   if ('feature' === kind) {
@@ -405,7 +449,7 @@ function checkFeatureSource(
       level: 'warn', point: 'feature-source-unrecognised', file,
       kind: 'target', name: tname,
       note: 'tm/' + tname + ': ' + strays.map((e) => e.path).join(', ') +
-        ' — named like feature source, but no `model/feature/<name>.aon` ' +
+        ' — named like feature source, but no `model/feature/<name>.aontu` ' +
         'declares ' + strays.map((e) => e.name).join(', ') +
         ', so the trim cannot recognise them and every project gets them ' +
         'whatever its model selects'

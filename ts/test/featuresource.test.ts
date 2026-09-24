@@ -15,14 +15,14 @@ import { SCAFFOLD, PROJECT, KIT, addTarget } from './actionharness'
 
 function allTargets(): string[] {
   return Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'target'))
-    .filter((f: string) => f.endsWith('.aon') && 'target-index.aon' !== f)
-    .map((f: string) => f.replace(/\.aon$/, ''))
+    .filter((f: string) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
+    .map((f: string) => f.replace(/\.aontu$/, ''))
     .sort()
 }
 
 
 function targetFeature(name: string): any {
-  const path = Path.join(SCAFFOLD, 'model', 'target', name + '.aon')
+  const path = Path.join(SCAFFOLD, 'model', 'target', name + '.aontu')
   const errs: any[] = []
   const model = new Aontu().generate(Fs.readFileSync(path, 'utf8'), { path, errs })
   strictEqual(errs.length, 0, name + ': target model did not compile')
@@ -226,9 +226,9 @@ describe('target add feature trimming', () => {
 
       ok(/cache/.test(joined), target + ': active feature cache was not copied')
 
-      ok(!written.includes('model/feature/retry.aon'),
+      ok(!written.includes('model/feature/retry.aontu'),
         target + ': inactive feature retry was added to the model')
-      ok(written.includes('model/feature/cache.aon'),
+      ok(written.includes('model/feature/cache.aontu'),
         target + ': active feature cache was not added to the model')
     }
   })

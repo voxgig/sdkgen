@@ -442,7 +442,7 @@ describe('applicability tags', () => {
 
     for (const kind of ['feature', 'target']) {
       const dir = Path.join(SDK, 'model', kind)
-      for (const f of readdirSync(dir).filter((n) => n.endsWith('.aon'))) {
+      for (const f of readdirSync(dir).filter((n) => n.endsWith('.aontu'))) {
         const src = readFileSync(Path.join(dir, f), 'utf8')
         const key = 'feature' === kind ? 'needs' : 'provides'
 
@@ -461,7 +461,7 @@ describe('applicability tags', () => {
     deepStrictEqual(bad, [],
       'these files declare a tag outside the closed vocabulary (' +
       TAGS.join(', ') + ') — add it to TAGS in helpers/applicability and ' +
-      'document it in model/sdkgen.aon, or fix the typo')
+      'document it in model/sdkgen.aontu, or fix the typo')
   })
 
 

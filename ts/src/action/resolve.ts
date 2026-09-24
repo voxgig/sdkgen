@@ -6,7 +6,7 @@ import { getelem } from '@voxgig/struct'
 
 import { KIT } from '../types'
 
-import { definitionPath } from '../helpers/definition'
+import { definitionPathAny } from '../helpers/definition'
 import { readManifest, checkShape, ITEM_NAME_RE } from '../helpers/manifest'
 
 
@@ -123,7 +123,7 @@ function resolveSource(ref: string, kind: string, ctx$: any): Source {
     // Path.join, not concatenation: an absolute Windows ref makes `folder`
     // backslash-separated, and appending '/model/...' produced a mixed-
     // separator path that some readers handle and others do not.
-    model: definitionPath(folder, kind, origname),
+    model: definitionPathAny(fs, folder, kind, origname),
 
     package: sourcePackage(fs, folder, kind, origname, ctx$),
   }
@@ -276,7 +276,7 @@ function providesStill(
   // No manifest, or one too malformed to be believed: a bare `.sdk`-shaped
   // folder is a legal source, and its definition file is the only claim it
   // makes.
-  return fs.existsSync(definitionPath(folder, kind, seek))
+  return fs.existsSync(definitionPathAny(fs, folder, kind, seek))
 }
 
 

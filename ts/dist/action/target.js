@@ -19,6 +19,7 @@ const util_1 = require("@voxgig/util");
 const dryrun_1 = require("../helpers/dryrun");
 const stdrep_1 = require("../helpers/stdrep");
 const junk_1 = require("../helpers/junk");
+const definition_1 = require("../helpers/definition");
 const aontu_1 = require("aontu");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
@@ -347,10 +348,11 @@ function trimFeatures(ctx$, tfolder, torigname, tname, features) {
 function readTargetFeature(ctx$, tfolder, torigname, tname) {
     const { log } = ctx$;
     const fs = ctx$.fs();
-    const path = tfolder + '/model/target/' + torigname + '.aon';
+    const path = (0, definition_1.definitionPathAny)(fs, tfolder, 'target', torigname);
     try {
         const errs = [];
-        const model = new aontu_1.Aontu().generate(fs.readFileSync(path, 'utf8'), { path, errs });
+        const src = (0, definition_1.migrateIncludes)(fs.readFileSync(path, 'utf8'));
+        const model = new aontu_1.Aontu().generate(src, { path, errs });
         if (0 < errs.length) {
             throw new Error(errs.map((e) => e.msg || String(e)).join('\n'));
         }

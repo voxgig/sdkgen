@@ -11,7 +11,9 @@ import type {
 
 import { SdkGenError } from '../utility'
 
-import { definitionPath, definitionFolder, indexName } from '../helpers/definition'
+import {
+  assertMigrated, definitionPathAny, indexName, indexPath,
+} from '../helpers/definition'
 
 import { findFeatureSources, BASE_FEATURE } from '../helpers/featureSource'
 
@@ -158,8 +160,10 @@ async function planRemove(
       '\n  a name matches ' + ITEM_NAME_RE.source + ' — it is not a path')
   }
 
+  assertMigrated(fs, [indexPath(root, kind)])
+
   const declared: any = kindCollection(model, kind)?.[name]
-  const modelfile = definitionPath(root, kind, name)
+  const modelfile = definitionPathAny(fs, root, kind, name)
   const hasModel = fs.existsSync(modelfile)
 
   if (null == declared && !hasModel) {
@@ -213,7 +217,7 @@ async function planRemove(
   }
 
   if (hasModel) {
-    plan.files.push('model/' + kind + '/' + name + '.aon')
+    plan.files.push('model/' + kind + '/' + Path.basename(modelfile))
   }
 
   const wanted = new Set(plan.files)
@@ -226,7 +230,7 @@ async function planRemove(
     }
   }
 
-  const index = Path.join(definitionFolder(root, kind), indexName(kind))
+  const index = indexPath(root, kind)
   plan.indexed = fs.existsSync(index) &&
     removeIndexEntries(String(fs.readFileSync(index, 'utf8')), [name]) !==
     String(fs.readFileSync(index, 'utf8'))
@@ -353,7 +357,7 @@ function projectMentions(kind: string, name: string, actx: ActionContext): strin
 
   const out: string[] = []
   for (const r of walk(fs, modeldir)) {
-    if (!r.endsWith('.aon') || r.startsWith(own)) {
+    if (!/\.(aontu|aon)$/.test(r) || r.startsWith(own)) {
       continue
     }
     let src = ''
@@ -404,7 +408,7 @@ function applyRemove(plan: RemovePlan, actx: ActionContext, dryrun: boolean): st
   }
 
   if (plan.indexed) {
-    const index = Path.join(definitionFolder(root, kind), indexName(kind))
+    const index = indexPath(root, kind)
     say('model/' + kind + '/' + indexName(kind), 'the index entry for ' + name)
     if (!dryrun) {
       fs.writeFileSync(index,

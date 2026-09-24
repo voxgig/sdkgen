@@ -42,8 +42,8 @@ function unportedTargets(): string[] {
 function allTargets(): string[] {
   const dir = Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'target')
   return readdirSync(dir)
-    .filter((f: string) => f.endsWith('.aon') && 'target-index.aon' !== f)
-    .map((f: string) => f.replace(/\.aon$/, ''))
+    .filter((f: string) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
+    .map((f: string) => f.replace(/\.aontu$/, ''))
     .sort()
 }
 
@@ -2916,7 +2916,7 @@ main: kit: target: js: phase: feature: active: false
     ok(null != findFile(off, 'feature/SecretsFeature.scala') &&
       null != findFile(off, 'feature/secrets/sekreto/Sekreto.scala') &&
       null != findFile(off, 'feature/secrets/sekreto/plugins/Sigv4.scala'),
-      'scala: model/target/scala.aon documents that a secrets-OFF SDK still ' +
+      'scala: model/target/scala.aontu documents that a secrets-OFF SDK still ' +
       'carries the feature, the vendored cores and the two ungrouped plugin ' +
       'files - it no longer does, so update that note (and this test)')
   })

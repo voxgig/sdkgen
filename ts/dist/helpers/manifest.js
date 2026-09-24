@@ -212,8 +212,9 @@ function validateManifest(fs, sdkfolder, manifest, kinds) {
             if (!claimed.has(name)) {
                 found.push({
                     level: 'warn', point: 'manifest-item-unclaimed', file, kind, name,
-                    note: file + ': model/' + kind + '/' + name +
-                        '.aon is in the package but not listed in `provides.' + kind +
+                    note: file + ': model/' + kind + '/' +
+                        node_path_1.default.basename((0, definition_1.definitionPathAny)(fs, sdkfolder, kind, name)) +
+                        ' is in the package but not listed in `provides.' + kind +
                         '` — nothing will install it'
                 });
             }
@@ -224,7 +225,7 @@ function validateManifest(fs, sdkfolder, manifest, kinds) {
 function missingPaths(fs, sdkfolder, kind, name, def, defined) {
     const missing = [];
     if (!defined.has(name)) {
-        missing.push('model/' + kind + '/' + name + '.aon');
+        missing.push('model/' + kind + '/' + name + '.aontu');
     }
     for (const tree of (def.trees ?? []).filter((t) => t.required)) {
         const rel = tree.path.split('{name}').join(name);

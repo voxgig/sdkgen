@@ -20,6 +20,15 @@ generated SDK project's `.sdk/` directory). The one exception is
 [`package check`](#package-check-path), which validates a package rather
 than acting on a project, and so runs where there is no project model.
 
+aontu reads only `.aontu` files. A project created before that rename,
+whose `model/sdk.aon` or `model/<kind>/<kind>-index.aon` has no `.aontu`
+file beside it, is refused by every action that reads its model. The
+message names the old files and the fix: run the current create-sdkgen
+over the project (`npm create @voxgig/sdkgen@latest`, with the arguments
+the project was created with), which migrates it. Nothing is written
+first, so no new `.aontu` index appears that the old entry file never
+includes.
+
 ## Options
 
 | Option | Short | Type | Default | Description |
@@ -55,8 +64,8 @@ add or remove several at once.
 Scaffold one or more language targets into `.sdk/`. This copies, for each
 target:
 
-- the target model (`.sdk/model/target/<name>.aon`) and registers it
-  in `target-index.aon`;
+- the target model (`.sdk/model/target/<name>.aontu`) and registers it
+  in `target-index.aontu`;
 - the generator components (`.sdk/src/cmp/<name>/`);
 - the templates (`.sdk/tm/<name>/`).
 
@@ -90,6 +99,15 @@ different options).
 If the source `.sdk` folder cannot be found, the CLI fails and lists the
 locations it searched.
 
+A source's definition is `model/target/<name>.aontu`. A package that has
+not yet renamed its files may still ship `<name>.aon`, and `add` reads
+that instead: the project copy is always `<name>.aontu`, with each `.aon`
+include inside it renamed to `.aontu`. Only include directives change;
+a `.aon` in a string or a comment stays as it is. Features and editions
+follow the same rule. The copy compiles once everything its renamed
+includes name also ships as `.aontu`, which for a package's own base
+model means a release of that package.
+
 The built-in SDK targets are: `ts`, `js`, `go`, `py`, `php`, `rb`, `lua`,
 `csharp`, `java`, `kotlin`, `scala`, `swift`, `rust`, `c`, `cpp`,
 `zig`, `perl`, `clojure`, `elixir`, `ocaml`. Every one
@@ -116,13 +134,13 @@ voxgig-sdkgen doctor
 ```
 
 It compares the three things `target add` owns and overwrites:
-`.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aon`.
+`.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aontu`.
 
 Six categories:
 
 | Category | Meaning |
 | --- | --- |
-| **forked** | A file in `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aon`, differs from the scaffold. `target add` will silently revert it. |
+| **forked** | A file in `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aontu`, differs from the scaffold. `target add` will silently revert it. |
 | **edited** | A template master in `.sdk/tm/**` differs — compared *after* applying the same substitutions `target add` applied, so placeholder replacement is not reported as an edit. |
 | **stale** | Present in the project, but `target add` would no longer write it. Orphaned output. |
 | **missing** | `target add` would write it and the project does not have it. |
@@ -135,14 +153,18 @@ applied and inconsistently, so most of what a naive diff reports is not an
 edit at all.
 
 An ALIASED target (`target add go~go2`) is exempt from the model-file
-comparison: the scaffold ships no `go2.aon` to compare against, and
+comparison: the scaffold ships no `go2.aontu` to compare against, and
 editing that file is how an alias is differentiated in the first place.
+
+A model file installed from a source that still ships `<name>.aon` is
+compared after the same include renaming `add` applied, so the renaming
+alone is never reported as drift.
 
 ### `feature add <name>[,<name>...]`
 
 Scaffold one or more features into `.sdk/`. This copies the feature model
-(`.sdk/model/feature/<name>.aon`), registers it in
-`feature-index.aon`, and copies the per-target feature templates
+(`.sdk/model/feature/<name>.aontu`), registers it in
+`feature-index.aontu`, and copies the per-target feature templates
 (`.sdk/tm/<target>/src/feature/<name>/`) for every active target.
 
 ```bash
@@ -169,7 +191,7 @@ voxgig-sdkgen edition add '@voxgig/docgen/project/summary~partner-summary'
 
 The built-in names resolve to `@voxgig/docgen`. Package-relative paths and
 aliases use the same provenance and resync rules as SDK targets. The
-installer copies `model/edition/<name>.aon`,
+installer copies `model/edition/<name>.aontu`,
 `src/cmp/edition/<name>/`, and the optional `tm/edition/<name>/` tree.
 It includes the edition index in the project model automatically.
 
@@ -201,9 +223,9 @@ What goes, per kind:
 
 | Kind | Deleted |
 | --- | --- |
-| `target` | `src/cmp/<name>/`, `tm/<name>/`, `model/target/<name>.aon`, its line in `target-index.aon` |
-| `feature` | the feature's source in every target's `tm/<t>/` tree (found the way `feature add` finds it), `model/feature/<name>.aon`, its line in `feature-index.aon` |
-| `edition` | `src/cmp/edition/<name>/`, `tm/edition/<name>/`, `model/edition/<name>.aon`, its line in `edition-index.aon` |
+| `target` | `src/cmp/<name>/`, `tm/<name>/`, `model/target/<name>.aontu`, its line in `target-index.aontu` |
+| `feature` | the feature's source in every target's `tm/<t>/` tree (found the way `feature add` finds it), `model/feature/<name>.aontu`, its line in `feature-index.aontu` |
+| `edition` | `src/cmp/edition/<name>/`, `tm/edition/<name>/`, `model/edition/<name>.aontu`, its line in `edition-index.aontu` |
 
 Before anything is deleted the item is compared with its source the way
 `doctor` compares it. A forked component, an edited template master, a
@@ -227,7 +249,7 @@ Three things `remove` deliberately leaves alone, and says so:
   generated state kept in history rather than deleted in the same commit.
   A target that generates out of tree (`output.path`) is never touched.
 - **The project's own declarations.** A `main: kit: target: <name>:` block
-  in `.sdk/model/sdk.aon` is the project's, not the toolchain's; `remove`
+  in `.sdk/model/sdk.aontu` is the project's, not the toolchain's; `remove`
   reports the file that still carries it.
 - **Cross-feature test suites.** After `feature remove`, `target add <t>`
   re-applies each target's feature trim, which drops the suites that named
@@ -278,7 +300,7 @@ never a silent no-op.
 
 Validate a package you are **authoring**, before anyone installs it.
 Every other verb acts on a project; this one acts on a package, so it is
-the one command that runs where there is no `model/sdk.aon` — an
+the one command that runs where there is no `model/sdk.aontu` — an
 author's package root, which is the default `path`.
 
 ```bash
@@ -298,12 +320,14 @@ gate. What it checks:
 | `model-anchor-missing` | error | A definition with no `base: 'BASE'` line. The copy would record no provenance, so `package update` and `doctor` could never find its source. |
 | `model-slash-comment` | error | A `//` or `/* */` line, named by line number. Aontu takes `#` comments only, and a consumer's parser is configured strictly even though a bare `Aontu()` accepts them. |
 | `model-parse` | error | The definition does not compile. Says so explicitly when it compiles under a bare `Aontu()` and not the strict one. |
-| `model-key-missing` | error | `model/<kind>/<name>.aon` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
+| `model-legacy-aon` | warn | The definition is named `<name>.aon`, or includes a `.aon` file. `add` installs it as `<name>.aontu` with those includes renamed, and every check here compiles that renamed text, which is what a project receives. Rename the files in the package. |
+| `model-legacy-unresolved` | warn | A definition from the previous row whose renamed include does not resolve, usually because the file it names still ships only as `.aon`. A project that installs it cannot compile it until that file ships as `.aontu`. The schema checks that need a compiled model are skipped. |
+| `model-key-missing` | error | `model/<kind>/<name>.aontu` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
 | `model-schema` | error | It does not unify with the base schema: a non-defaulted key is missing (`ext`, `comment.line`, `module.name`, a feature's `title`). This is what a consumer compiles. |
 | `target-publish-pinned` | error | The target model sets a publication value the *project* owns, so the project can no longer set it (concrete-vs-concrete is a conflict) — and the failure would name the project's file. |
 | `feature-deps-misplaced` | warn | Dependencies under `feature.<f>.target.<t>.deps`, which nothing reads. They go directly under the feature: `deps: <target>: {…}`. |
 | `feature-source-undelivered` | warn | `targetsSupported` claims a target for which no feature source can be found. |
-| `feature-source-unrecognised` | warn | A file named like feature source (`<name>_feature.<ext>`, `<Name>Feature.<ext>`, a directory) that no `model/feature/<name>.aon` declares — so the trim cannot recognise it and every project receives it whatever its model selects. |
+| `feature-source-unrecognised` | warn | A file named like feature source (`<name>_feature.<ext>`, `<Name>Feature.<ext>`, a directory) that no `model/feature/<name>.aontu` declares — so the trim cannot recognise it and every project receives it whatever its model selects. |
 
 The blind spot is deliberate: a bare `<name>.<ext>` inside a `feature`
 directory (rust's `retry.rs`) is written exactly like shared machinery
@@ -364,7 +388,7 @@ the project distinguishes them:
 ```
 @acme/sdkgen-iot: 1 file(s) differ from the installed source, so updating
 would overwrite them:
-  model/target/iot-go.aon
+  model/target/iot-go.aontu
 
   This means one of two things, and nothing recorded in the project tells
   them apart:

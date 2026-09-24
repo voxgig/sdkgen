@@ -23,7 +23,9 @@ import {
   aliasCmpName,
 } from './target'
 
-import { recordedRef, KINDS, kindDef, kindTrees } from './kind'
+import {
+  recordedRef, KINDS, kindDef, kindTrees, installedModelText,
+} from './kind'
 import type { TreeDef } from './kind'
 
 import { resolveSource } from './resolve'
@@ -60,7 +62,7 @@ const ROOT_COMPONENTS: [string, string][] = [
 // What the check found, by category. Categories 1-3 are drift; `additive` is
 // the project's own work and is reported separately, never as a problem.
 type DoctorReport = {
-  // `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aon`, that
+  // `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aontu`, that
   // differs from the scaffold. `target add` will silently revert every one of
   // these.
   forked: string[]
@@ -184,13 +186,14 @@ function orphanModelFiles(actx: ActionContext): string[] {
   }
 
   const all = walk(fs, modeldir)
-    .filter((rel) => rel.endsWith('.aon') || rel.endsWith('.aontu'))
+    .filter((rel) => rel.endsWith('.aontu') || rel.endsWith('.aon'))
     .filter((rel) => !rel.includes('.jostraca/') && !rel.startsWith('guide/'))
 
+  // Walked, never an entry: aontu reads no `.aon`, so a leftover is an orphan.
   const ENTRY = [
-    'sdk.aon', 'sdk.aontu',
-    'test/test.aon', 'test/test.aontu',
-    '.model-config/model-config.aon', '.model-config/model-config.aontu',
+    'sdk.aontu',
+    'test/test.aontu',
+    '.model-config/model-config.aontu',
   ]
 
   const seen = new Set<string>()
@@ -708,7 +711,7 @@ function checkItemModel(
   const base = source.base
   const fs = actx.fs()
 
-  const scaffold = definitionPath(source.folder, kind, origname)
+  const scaffold = source.model
 
   if (!fs.existsSync(scaffold)) {
     return
@@ -717,7 +720,7 @@ function checkItemModel(
   const aliased = kindDef(kind).alias && name !== origname
 
   const project = definitionPath(actx.folder, kind, name)
-  const label = 'model/' + kind + '/' + name + '.aon'
+  const label = 'model/' + kind + '/' + Path.basename(project)
 
   if (!fs.existsSync(project)) {
     report.missing.push(label)
@@ -727,10 +730,7 @@ function checkItemModel(
   const provenance = provenanceReplace(
     { base, origname, name, package: source.package })
 
-  const rename = kindDef(kind).rename
-
-  const rewrite = (aliased && null != rename) ?
-    (src: string) => rename(src, origname, name) : undefined
+  const rewrite = (src: string) => installedModelText(kind, source, src)
 
   if (!differs(fs, scaffold, project, actx.model, provenance, undefined, rewrite)) {
     return

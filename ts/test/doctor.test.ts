@@ -86,23 +86,35 @@ describe('doctor', () => {
   test('a model file nothing includes is a finding', async () => {
     const project = await addedProject()
 
-    write(project, 'model/orphan.aon', 'main: kit: name: "ignored"\n')
+    write(project, 'model/orphan.aontu', 'main: kit: name: "ignored"\n')
     const stray = await check(project)
     strictEqual(stray.ok, false, 'an unincluded model file must fail the check')
-    deepStrictEqual(stray.orphanModel, ['orphan.aon'])
+    deepStrictEqual(stray.orphanModel, ['orphan.aontu'])
 
     // REACHABILITY, not a mention scan: including it from another orphan
     // leaves both unreachable, and both must still be reported.
-    write(project, 'model/alsoorphan.aon', '@"./orphan.aon"\n')
+    write(project, 'model/alsoorphan.aontu', '@"./orphan.aontu"\n')
     const pair = await check(project)
-    deepStrictEqual(pair.orphanModel.sort(), ['alsoorphan.aon', 'orphan.aon'])
+    deepStrictEqual(pair.orphanModel.sort(), ['alsoorphan.aontu', 'orphan.aontu'])
 
     // Included from the entry point, it is model input like any other.
-    const sdk = read(project, 'model/sdk.aon')
-    write(project, 'model/sdk.aon', '@"./orphan.aon"\n' + sdk)
+    const sdk = read(project, 'model/sdk.aontu')
+    write(project, 'model/sdk.aontu', '@"./orphan.aontu"\n' + sdk)
     const wired = await check(project)
-    strictEqual(wired.orphanModel.includes('orphan.aon'), false,
+    strictEqual(wired.orphanModel.includes('orphan.aontu'), false,
       'a file the entry point includes is not an orphan')
+  })
+
+
+  test('a pre-rename entry left beside the .aontu one is an orphan', async () => {
+    const project = await addedProject()
+
+    write(project, 'model/sdk.aon', '@"./target/old-index.aon"\n')
+    write(project, 'model/target/old-index.aon', '@"./go.aon"\n')
+
+    const report = await check(project)
+    strictEqual(report.ok, false, 'nothing reads a .aon entry any more')
+    deepStrictEqual(report.orphanModel.sort(), ['sdk.aon', 'target/old-index.aon'])
   })
 
 
@@ -223,12 +235,12 @@ const Top = () => {
   test('a hand-edited target model reads as forked', async () => {
     const project = await addedProject()
 
-    write(project, 'model/target/go.aon',
+    write(project, 'model/target/go.aontu',
       'main: kit: target: go: publish: registry: package: "pinned"\n')
 
     const report = await check(project)
 
-    ok(report.forked.includes('model/target/go.aon'),
+    ok(report.forked.includes('model/target/go.aontu'),
       'edited target model not reported forked: ' + report.forked.join(', '))
     strictEqual(report.ok, false)
   })
@@ -237,11 +249,11 @@ const Top = () => {
   test('a deleted target model reads as missing', async () => {
     const project = await addedProject()
 
-    project.fs.unlinkSync(Path.join(ROOT, 'model/target/go.aon'))
+    project.fs.unlinkSync(Path.join(ROOT, 'model/target/go.aontu'))
 
     const report = await check(project)
 
-    ok(report.missing.includes('model/target/go.aon'),
+    ok(report.missing.includes('model/target/go.aontu'),
       'deleted target model not reported missing: ' + report.missing.join(', '))
     strictEqual(report.ok, false)
   })
@@ -296,7 +308,7 @@ const Top = () => {
     // at all. Stripping only `base:` does not model that — a copy left
     // carrying `package:` is stamped, just inconsistently, and doctor is
     // right to call that a fork rather than a pending resync.
-    const path = Path.join(ROOT, 'model/target/go.aon')
+    const path = Path.join(ROOT, 'model/target/go.aontu')
     const old = String(project.fs.readFileSync(path, 'utf8'))
       .split('\n')
       .filter((l: string) => !/^\s*(base|origname|package):/.test(l))
@@ -307,7 +319,7 @@ const Top = () => {
 
     deepStrictEqual(report.forked, [],
       'a copy predating provenance was reported as a fork')
-    ok(report.resyncPending.includes('model/target/go.aon'),
+    ok(report.resyncPending.includes('model/target/go.aontu'),
       'no resync-pending finding: ' + JSON.stringify(report.resyncPending))
     strictEqual(report.ok, true, 'resync-pending must not fail the check')
   })
@@ -321,13 +333,13 @@ const Top = () => {
     await target_add([targetRef('go')], project.actx)
     project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
 
-    const path = Path.join(ROOT, 'model/target/go.aon')
+    const path = Path.join(ROOT, 'model/target/go.aontu')
     project.fs.writeFileSync(path,
       String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
 
     const report = await check(project)
 
-    ok(report.forked.includes('model/target/go.aon'),
+    ok(report.forked.includes('model/target/go.aontu'),
       'a hand-edited target model was not reported as forked')
     strictEqual(report.ok, false)
   })
@@ -338,7 +350,7 @@ const Top = () => {
     await target_add([targetRef('go')], project.actx)
     project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
 
-    const path = Path.join(ROOT, 'model/target/go.aon')
+    const path = Path.join(ROOT, 'model/target/go.aontu')
     project.fs.writeFileSync(path,
       String(project.fs.readFileSync(path, 'utf8'))
         .split('\n').filter((l: string) => !/^\s*package:/.test(l)).join('\n'))
@@ -347,7 +359,7 @@ const Top = () => {
 
     deepStrictEqual(report.forked, [],
       'a copy predating the `package` stamp was reported as a fork')
-    ok(report.resyncPending.includes('model/target/go.aon'))
+    ok(report.resyncPending.includes('model/target/go.aontu'))
     strictEqual(report.ok, true)
   })
 
@@ -357,14 +369,14 @@ const Top = () => {
     await target_add([targetRef('go')], project.actx)
     project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
 
-    const path = Path.join(ROOT, 'model/target/go.aon')
+    const path = Path.join(ROOT, 'model/target/go.aontu')
     project.fs.writeFileSync(path,
       String(project.fs.readFileSync(path, 'utf8'))
         .replace(/package: '[^']*'/, "package: '@evil/other'"))
 
     const report = await check(project)
 
-    ok(report.forked.includes('model/target/go.aon'),
+    ok(report.forked.includes('model/target/go.aontu'),
       'a rewritten `package:` value was not reported as forked')
     strictEqual(report.ok, false)
   })
@@ -405,13 +417,13 @@ describe('doctor: feature model files', () => {
     // of them.
     const project = await withFeature()
 
-    const path = Path.join(ROOT, 'model/feature/retry.aon')
+    const path = Path.join(ROOT, 'model/feature/retry.aontu')
     project.fs.writeFileSync(path,
       String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
 
     const report = await check(project)
 
-    ok(report.forked.includes('model/feature/retry.aon'),
+    ok(report.forked.includes('model/feature/retry.aontu'),
       'an edited feature model was not reported: ' +
       JSON.stringify(report.forked))
     strictEqual(report.ok, false)
@@ -421,11 +433,11 @@ describe('doctor: feature model files', () => {
   test('a deleted feature model reads as MISSING', async () => {
     const project = await withFeature()
 
-    project.fs.unlinkSync(Path.join(ROOT, 'model/feature/retry.aon'))
+    project.fs.unlinkSync(Path.join(ROOT, 'model/feature/retry.aontu'))
 
     const report = await check(project)
 
-    ok(report.missing.includes('model/feature/retry.aon'))
+    ok(report.missing.includes('model/feature/retry.aontu'))
     strictEqual(report.ok, false)
   })
 
@@ -436,7 +448,7 @@ describe('doctor: feature model files', () => {
     // comes along free because the comparison is kind-neutral.
     const project = await withFeature()
 
-    const path = Path.join(ROOT, 'model/feature/retry.aon')
+    const path = Path.join(ROOT, 'model/feature/retry.aontu')
     project.fs.writeFileSync(path,
       String(project.fs.readFileSync(path, 'utf8'))
         .split('\n').filter((l: string) => !/^\s*package:/.test(l)).join('\n'))
@@ -444,7 +456,7 @@ describe('doctor: feature model files', () => {
     const report = await check(project)
 
     deepStrictEqual(report.forked, [])
-    ok(report.resyncPending.includes('model/feature/retry.aon'))
+    ok(report.resyncPending.includes('model/feature/retry.aontu'))
     strictEqual(report.ok, true)
   })
 })
@@ -472,7 +484,7 @@ main: kit: feature: circuitbreaker: {
 
     Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
     Fs.writeFileSync(
-      Path.join(sdk, 'model', 'feature', 'circuitbreaker.aon'), FEATURE)
+      Path.join(sdk, 'model', 'feature', 'circuitbreaker.aontu'), FEATURE)
 
     Fs.mkdirSync(Path.join(sdk, 'tm', 'go', 'feature'), { recursive: true })
     Fs.writeFileSync(
@@ -494,7 +506,7 @@ main: kit: feature: circuitbreaker: {
     await feature_add([Path.join(pkg, 'circuitbreaker')], project.actx)
 
     const src = String(project.fs.readFileSync(
-      ROOT + '/model/feature/circuitbreaker.aon', 'utf8'))
+      ROOT + '/model/feature/circuitbreaker.aontu', 'utf8'))
 
     project.actx.model.main[KIT].feature.circuitbreaker = {
       name: 'circuitbreaker', active: true,
@@ -651,7 +663,7 @@ main: kit: target: 'acme-go': {
 
     Fs.mkdirSync(Path.join(sdk, 'model', 'target'), { recursive: true })
     Fs.writeFileSync(
-      Path.join(sdk, 'model', 'target', 'acme-go.aon'), MODEL)
+      Path.join(sdk, 'model', 'target', 'acme-go.aontu'), MODEL)
     Fs.mkdirSync(Path.join(sdk, 'src', 'cmp', 'acme-go'), { recursive: true })
     Fs.writeFileSync(
       Path.join(sdk, 'src', 'cmp', 'acme-go', 'Main_acme-go.ts'), 'export {}\n')
@@ -674,7 +686,7 @@ main: kit: target: 'acme-go': {
       })
       await target_add([Path.join(pkg, 'acme-go')], project.actx)
 
-      const path = Path.join(ROOT, 'model/target/acme-go.aon')
+      const path = Path.join(ROOT, 'model/target/acme-go.aontu')
       const src = mutate(String(project.fs.readFileSync(path, 'utf8')))
       project.fs.writeFileSync(path, src)
 
@@ -707,7 +719,7 @@ main: kit: target: 'acme-go': {
 
     deepStrictEqual(report.forked, [],
       "a target model's own `module: package:` line was read as provenance")
-    ok(report.resyncPending.includes('model/target/acme-go.aon'),
+    ok(report.resyncPending.includes('model/target/acme-go.aontu'),
       'no resync-pending finding: ' + JSON.stringify(report.resyncPending))
     strictEqual(report.ok, true)
   })
@@ -720,7 +732,7 @@ main: kit: target: 'acme-go': {
         .filter((l: string) => !/^\s*package: 'acmesdk'/.test(l))
         .join('\n'))
 
-    ok(report.forked.includes('model/target/acme-go.aon'),
+    ok(report.forked.includes('model/target/acme-go.aontu'),
       'deleting a real `module: package:` line was not reported as a fork: ' +
       JSON.stringify(report))
     strictEqual(report.ok, false)

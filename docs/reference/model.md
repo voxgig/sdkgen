@@ -1,14 +1,14 @@
-# Reference: the model schema (`.aon`)
+# Reference: the model schema (`.aontu`)
 
 The **model** is the single structured object that drives generation. It
-is assembled by `aontu` from several `.aon` fragments and constrained
-by the base schema in [`ts/model/sdkgen.aon`](../../ts/model/sdkgen.aon).
+is assembled by `aontu` from several `.aontu` fragments and constrained
+by the base schema in [`ts/model/sdkgen.aontu`](../../ts/model/sdkgen.aontu).
 
 A model is the unification of:
 
 1. **API model** — entities, operations, points, fields, flows, and API
    `info`, produced by `@voxgig/apidef` from the OpenAPI spec.
-2. **Base schema** — `ts/model/sdkgen.aon` (this repo): defaults and
+2. **Base schema** — `ts/model/sdkgen.aontu` (this repo): defaults and
    constraints for targets, entities, features, options.
 3. **Target / feature / option definitions** — added into the project's
    `.sdk/model/` by `target add` / `feature add`.
@@ -37,9 +37,9 @@ schema facts come from the resolved specification supplied by Apidef;
 points contain no embedded JSON contracts. Regenerate older API models
 before using these templates.
 
-## `.aon` / aontu syntax primer
+## `.aontu` / aontu syntax primer
 
-`.aon` is a relaxed JSON; `aontu` adds unification semantics:
+`.aontu` is a relaxed JSON; `aontu` adds unification semantics:
 
 | Syntax | Meaning |
 | --- | --- |
@@ -48,8 +48,15 @@ before using these templates.
 | `*default \| type` | A default value, unified against a type (e.g. `*true \| boolean`). |
 | `name: key()` | Bind the field to the map key (so `feature: log: {}` gets `name: 'log'`). |
 | `'$$name$$'` | Interpolate the model `name` into a string. |
-| `@"file.aon"` | Include another fragment (how index files work). |
+| `@"file.aontu"` | Include another fragment (how index files work). |
 | `x: .y` | Reference another path's value (e.g. `deps: ts: .js`). |
+
+`.aontu` is the only extension aontu reads: an include naming a file with
+the older `.aon` extension is refused. A project still holding
+`model/sdk.aon` is refused by the CLI with the fix (run the current
+create-sdkgen over it), and an item from a package that still ships
+`.aon` is installed as `.aontu`; see the
+[CLI reference](./cli.md#target-references).
 
 ## Top level
 
@@ -75,9 +82,9 @@ before using these templates.
 ## What a project declares about ITSELF
 
 `target add` overwrites `.sdk/src/cmp/**`, `.sdk/tm/**` and
-`.sdk/model/target/<t>.aon`, and `generate` overwrites the SDK source.
+`.sdk/model/target/<t>.aontu`, and `generate` overwrites the SDK source.
 So anything a project wants to say about itself has to be said in the
-project's OWN model (`.sdk/model/sdk.aon`) — a hand-edit anywhere else
+project's OWN model (`.sdk/model/sdk.aontu`) — a hand-edit anywhere else
 is reverted on the next resync, silently. These are the keys that exist
 for that purpose:
 
@@ -133,7 +140,7 @@ main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com
 
 ## Provenance: where a copied item came from
 
-Every copied `model/<kind>/<name>.aon` records its own origin. There is
+Every copied `model/<kind>/<name>.aontu` records its own origin. There is
 no lockfile and no second record — the model **is** the record, which is
 why nothing can disagree with it.
 
@@ -166,7 +173,7 @@ The same three keys exist on `main.kit.feature.<name>`.
 
 ## `main.kit.target.<name>`
 
-From [`ts/model/sdkgen.aon`](../../ts/model/sdkgen.aon) and the per-target
+From [`ts/model/sdkgen.aontu`](../../ts/model/sdkgen.aontu) and the per-target
 files in `ts/project/.sdk/model/target/`:
 
 | Field | Type | Default | Description |
@@ -202,7 +209,7 @@ files in `ts/project/.sdk/model/target/`:
 | `deps.<dep>.version` | string | `'*'` | Version constraint. |
 | `deps.<dep>.kind` | string | `'prod'` | Manifest sections. Target-defined, and a COMMA-SEPARATED LIST where a package belongs in two (`'peer,dev'`) — the map is keyed by package name, so it cannot be declared twice. |
 
-Example (`ts/project/.sdk/model/target/ts.aon`):
+Example (`ts/project/.sdk/model/target/ts.aontu`):
 
 ```jsonic
 main: kit: target: ts: {
@@ -394,7 +401,7 @@ winning, and a second declaration with a different version is reported
 rather than silently dropped — a duplicate key is a hard parse error in
 `go.mod` and `Cargo.toml`, and silently last-wins in `package.json`.
 
-Example (`ts/project/.sdk/model/feature/log.aon`):
+Example (`ts/project/.sdk/model/feature/log.aontu`):
 
 ```jsonic
 main: kit: feature: log: {
@@ -489,14 +496,14 @@ declares no security scheme), among others. See
 
 ## Index files
 
-`feature-index.aon` and `target-index.aon` are plain include lists.
-`feature add` / `target add` append `@"<name>.aon"` lines (idempotently
+`feature-index.aontu` and `target-index.aontu` are plain include lists.
+`feature add` / `target add` append `@"<name>.aontu"` lines (idempotently
 — a name already present is not added again):
 
 ```jsonic
 # Features
-@"test.aon"
-@"log.aon"
+@"test.aontu"
+@"log.aontu"
 ```
 
 ## See also
@@ -508,7 +515,7 @@ declares no security scheme), among others. See
 ## Documentation editions
 
 Docgen extends the same model under `main.kit.doc`. Its schema is supplied
-by `@voxgig/docgen/model/docgen.aon`, included by each installed edition.
+by `@voxgig/docgen/model/docgen.aontu`, included by each installed edition.
 Use `style` for shared branding and `edition.<name>` for each output's
 activation, path, filters, and style overrides. Documentation settings do
 not change SDK README generation.

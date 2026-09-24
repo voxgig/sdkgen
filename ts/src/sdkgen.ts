@@ -87,9 +87,11 @@ import {
 import type { FeatureSource } from './helpers/featureSource'
 import { stationLibrary } from './helpers/station'
 import {
+  assertMigrated,
   definitionPath,
   definitionFolder,
   definitionNames,
+  indexPath,
 } from './helpers/definition'
 import { isNoise, copyOpts } from './helpers/junk'
 import {
@@ -156,6 +158,7 @@ import { edition_add } from './action/edition'
 
 // The verbs, built from the kind registry — see action/dispatch.
 import { ACTION_MAP, actionNames, needsModel } from './action/dispatch'
+import { KINDS } from './action/kind'
 
 
 
@@ -398,7 +401,7 @@ function SdkGen(opts: SdkGenOptions) {
 
 
   function resolveModel(wanted: boolean) {
-    const path = './model/sdk.aon'
+    const path = './model/sdk.aontu'
     const errs: any[] = []
 
     // A verb that does not act on a project (see `needsModel`) is run where
@@ -408,6 +411,9 @@ function SdkGen(opts: SdkGenOptions) {
     if (!wanted && !fs.existsSync(path)) {
       return { model: { main: {} } as any, url: path }
     }
+
+    assertMigrated(fs, [
+      path, ...Object.keys(KINDS).map((kind: string) => indexPath('.', kind))])
 
     if (null == aontu) {
       aontu = new Aontu()
@@ -536,7 +542,7 @@ SdkGen.makeBuild = async function(opts: SdkGenOptions) {
     root: opts.root,
     def: opts.def || 'no-def',
     kind: 'openapi-3',
-    model: opts.model ? (opts.model.folder + '/api.aon') : 'no-model',
+    model: opts.model ? (opts.model.folder + '/api.aontu') : 'no-model',
     meta: opts.meta || {},
   }
 

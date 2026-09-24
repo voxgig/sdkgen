@@ -98,6 +98,16 @@ change it — start at
 spec → scaffold → generate → test → publish guide. This file is for
 working *on* the generator itself.
 
+## Status output from long-running work
+
+Every transient task reports its status at least every 30 seconds, even if
+the report is one line, with a percentage-complete estimate wherever one can
+be computed (items done of items total, phases done of phases). That covers a
+build, a test or validation run, a script, a background agent, and a wait on
+CI or a release. It covers an agent's own updates to the person it works for
+too: relay progress at the same cadence rather than going quiet until the
+work is done. Silence longer than that cannot be told apart from a hang.
+
 ---
 
 ## What this tool is
@@ -113,7 +123,7 @@ OpenAPI-derived **model**. It is a **library + CLI**, consumed three ways:
    public API (`cmp`, `File`, `Content`, `Copy`, `each`, `FeatureHook`,
    `getModelPath`, …).
 
-Pipeline: `OpenAPI → apidef → model (.aon) → aontu (unify) → jostraca
+Pipeline: `OpenAPI → apidef → model (.aontu) → aontu (unify) → jostraca
 (+ sdkgen components/templates) → SDK source`.
 
 ---
@@ -170,7 +180,7 @@ voxgig-sdkgen doctor                 # report .sdk/ drift; non-zero on drift
 ```
 
 And one an AUTHOR runs, from a package root rather than a project — the
-only verb that runs where there is no `model/sdk.aon`:
+only verb that runs where there is no `model/sdk.aontu`:
 
 ```bash
 voxgig-sdkgen package check [path]   # validate a package; non-zero on error
@@ -192,7 +202,7 @@ installed from npm, a checkout, or a local path. `ts/project/` is itself
 one, manifest and all, which is what keeps the bundled path and the
 external path the same code.
 
-Three consequences you must hold when changing anything in `ts/src/action/`:
+Four consequences you must hold when changing anything in `ts/src/action/`:
 
 1. **Never assume the bundled scaffold.** Where an item came from is
    recorded in its own copied model file as `base` / `origname` /
@@ -209,8 +219,20 @@ Three consequences you must hold when changing anything in `ts/src/action/`:
    (`helpers/definition`, `helpers/manifest`, `action/kind`,
    `action/resolve`). This subsystem has produced the same-rule-written-
    twice defect five separate times; if you find yourself spelling out
-   `model/<kind>/<name>.aon` or "what a valid name looks like", there is
+   `model/<kind>/<name>.aontu` or "what a valid name looks like", there is
    already a function for it.
+4. **A package may still ship `.aon`; a project may not.** aontu reads only
+   `.aontu` (the peer range is `>=0.75.0`), and packages rename on their own
+   schedule. So a SOURCE item resolves as `<name>.aontu`, else
+   `<name>.aon` (`definitionPathAny`), and installs as `<name>.aontu` with
+   its `.aon` includes renamed, including package includes
+   (`migrateIncludes`, reached through `installedModelText`). Doctor compares
+   through `installedModelText` as well, or every such item reads as forked
+   and `remove` refuses it. `package check` compiles the renamed text and
+   reports the old extension as a warning. A PROJECT whose `sdk.aon` or
+   `<kind>-index.aon` has no `.aontu` beside it is refused by every verb
+   that reads its model (`assertMigrated`), with the fix: re-scaffold it
+   with the current create-sdkgen.
 
 Design and rationale: [docs/design/sdkgen-packages.md](./docs/design/sdkgen-packages.md).
 
@@ -338,7 +360,7 @@ Rules:
 - **`ts`/`js` are the reference implementation.** Bring a change to `ts`/`js`
   first, then port to the rest; check the others against them.
 - **Parity is testable.** `ts/test/parity.test.ts` states the coverage TIERS
-  as data and enforces them: FULL (drives the shared `.aon` corpus),
+  as data and enforces them: FULL (drives the shared `.aontu` corpus),
   MIRRORED (hand-written mirror, free to drift), UNCOVERED (no primary-utility
   suite). Adding or removing a target fails until its tier is declared.
   `ts/test/feature.test.ts` / `featuremodel.test.ts` cover feature behaviour
@@ -350,7 +372,7 @@ Rules:
   headers on the fixtures in create-sdkgen. Nine fixtures once shipped empty
   and every language "passed" them.
 - **The corpus is compiled.** Targets execute `.sdk/test/test.json`, not the
-  `.aon` fixtures. Edit a fixture and you MUST recompile (`npm run
+  `.aontu` fixtures. Edit a fixture and you MUST recompile (`npm run
   test-model` in a scaffolded project) and copy back only the changed
   sections — create-sdkgen's `test/corpus.test.ts` fails on drift between the
   two.
@@ -426,16 +448,16 @@ Rules:
 | --- | --- | --- |
 | Fix generated **runtime** source (HTTP, base feature, utility) | `ts/project/.sdk/tm/<lang>/…` | propagate (below) |
 | Fix generated **API-specific** source (entity, main, readme, tests) | `ts/project/.sdk/src/cmp/<lang>/…` | propagate (below) |
-| Change a target's deps / ext / module | `ts/project/.sdk/model/target/<lang>.aon` | propagate |
-| Change a feature's hooks / deps | `ts/project/.sdk/model/feature/<name>.aon` | propagate |
+| Change a target's deps / ext / module | `ts/project/.sdk/model/target/<lang>.aontu` | propagate |
+| Change a feature's hooks / deps | `ts/project/.sdk/model/feature/<name>.aontu` | propagate |
 | Change the **generator core** (CLI, actions, neutral components, helpers) | `ts/src/…` | `cd ts && npm run build && npm test` |
-| Change the base model schema | `ts/model/sdkgen.aon` (authoritative) | `make check-model build test` |
-| Add or retype an **SDK client option** | `main: kit: optspec` in `ts/model/sdkgen.aon` | one place, not twenty: the generated `Schema` module carries it into every SDK target. No `make_options` template holds a spec of its own any more — if you find one, it is a regression |
+| Change the base model schema | `ts/model/sdkgen.aontu` (authoritative) | `make check-model build test` |
+| Add or retype an **SDK client option** | `main: kit: optspec` in `ts/model/sdkgen.aontu` | one place, not twenty: the generated `Schema` module carries it into every SDK target. No `make_options` template holds a spec of its own any more — if you find one, it is a regression |
 | Add or retype a **feature option** | that feature's `config.options` (with a default) or `config.optspec` (a type, for a callback or an option whose default understates it) | the option spec, the README table and the REFERENCE table all derive from these two — see `ts/src/helpers/optspec.ts` and `ts/src/cmp/FeatureDocs.ts` |
 | Add/remove a bundled target or feature | the trees above **and** `ts/project/sdkgen-package.json` | a guard test fails if the manifest and the directories disagree |
 | Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts; `remove` (`action/remove.ts`) plans from the same trees and refuses on doctor's findings, so it follows for free |
 | Change a CLI flag | `ts/bin/voxgig-sdkgen` — parse entry, the closed `Shape`, **and** the help text | plus a row in [reference/cli](./docs/reference/cli.md); the shape is closed, so missing one of the three is a runtime rejection, and an optional flag is `Skip(String)` (see Sharp edges) |
-| Add a rule about a package's `.aon` files | `ts/src/helpers/modelcheck.ts` | `package check` and `ts/test/model-compile.test.ts` are both callers — the bundled scaffold is checked by the same battery an author runs |
+| Add a rule about a package's `.aontu` files | `ts/src/helpers/modelcheck.ts` | `package check` and `ts/test/model-compile.test.ts` are both callers — the bundled scaffold is checked by the same battery an author runs |
 | Ignore another build/editor dropping (`__pycache__`, `.DS_Store`, …) | `ts/src/helpers/junk.ts` | every walk already consults it — copy, prune, doctor, feature scan; `ts/test/junk.test.ts` guards the list against the shipped scaffold |
 
 ### Never edit generated output
@@ -750,7 +772,7 @@ emitted broken source reached the fleet unchallenged.
   undocumented action is an endpoint no reader can call.
 - **A project decision belongs in the MODEL, never in a forked component.**
   `target add` overwrites `.sdk/src/cmp/**`, `.sdk/tm/**` AND
-  `.sdk/model/target/<t>.aon`, so any hand-edit in those three is silently
+  `.sdk/model/target/<t>.aontu`, so any hand-edit in those three is silently
   reverted on the next run — the SDK regresses with nobody touching it. When a
   project needs to say something about itself, add a model key and read it; do
   not make the project fork. The surfaces that exist for this:
@@ -772,7 +794,7 @@ emitted broken source reached the fleet unchallenged.
   `cmp/<t>/X_<t>.ts`, which `doctor` reports as ADDITIVE rather than drift.
 - **`voxgig-sdkgen doctor` is the check that keeps all of this true.** It
   compares all THREE things `target add` owns — `src/cmp/<t>/`, `tm/<t>/` and
-  `model/target/<t>.aon` — against the scaffold *after* re-applying the
+  `model/target/<t>.aontu` — against the scaffold *after* re-applying the
   substitutions `target add` applied (jostraca's Copy always interpolates
   `$$ref$$` against the model, and passes a DIFFERENT replace map per tree:
   `templateReplacements` for `tm`, `'BASE'` for the model file, none for
@@ -846,7 +868,7 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
   bin/voxgig-sdkgen    CLI entry
   build/version.js     stamps the version into bin/ and the scaffold
                        manifest — run it BY HAND on a release, see Releasing
-  model/sdkgen.aon     authoritative base model schema, shipped directly
+  model/sdkgen.aontu     authoritative base model schema, shipped directly
   LICENSE              authoritative license text
   README.md            short summary linking to the top-level README
   src/                 generator core
@@ -867,12 +889,13 @@ ts/                    the self-contained npm package root (@voxgig/sdkgen)
       action.ts        index maintenance
     cmp/               language-neutral components (delegate per-language)
     helpers/           collectDeps, buildIdNames, getMatchEntries
-      definition.ts    where a kind's `model/<kind>/<name>.aon` lives
+      definition.ts    where a kind's `model/<kind>/<name>.aontu` lives, and
+                       the `.aon` fallback and include rename
       manifest.ts      sdkgen-package.json: read + validate
       semver.ts        the engines.sdkgen subset (true/false/UNDEFINED)
       stdrep.ts        the replace maps add writes with and doctor re-applies
       featureSource.ts per-feature source discovery in a target's tm tree
-      modelcheck.ts    the .aon rules: strict parse, schema unify, probes
+      modelcheck.ts    the .aontu rules: strict parse, schema unify, probes
       shipped.ts       where THIS generator's own model/ and project/ are
   test/                Node test runner suites (including model compilation)
   dist/ (committed)    dist-test/ (gitignored)
@@ -955,7 +978,7 @@ model↔template consistency.
 
 Both of those simulate. The check that does not is the shared **feature
 corpus** — language-neutral cases in create-sdkgen's
-`.sdk/test/feature/<name>.aon`, run by a generated SDK's own
+`.sdk/test/feature/<name>.aontu`, run by a generated SDK's own
 `test/feature/Corpus.test.*` against the compiled feature, the generated
 config and a real entity operation. Prefer it for anything expressible as
 data; it is what caught `error is not a function` on every ts/js pipeline
@@ -1160,7 +1183,7 @@ so a working machine usually has all of them checked out as siblings:
 | repo | what it is |
 | --- | --- |
 | `apidef` | parses an OpenAPI definition into the model sdkgen consumes |
-| `create-sdkgen` | scaffolds a new SDK project, and OWNS the test `.aon` data in `project/standard/.sdk/test/` |
+| `create-sdkgen` | scaffolds a new SDK project, and OWNS the test `.aontu` data in `project/standard/.sdk/test/` |
 | `voxgig-solardemo-sdk` | the reference generated SDK: `ts/` is the SDK, `.sdk/` the build tooling |
 | `voxgig-elementdemo-sdk` | the reference for CUSTOMIZATION: its `ext/` package adds an entirely custom `bash` target and an `elementcard` feature across five languages, with project-owned corpus cases driving all of them |
 | `struct`, `omni`, `plugin`, `sekreto` | the four vendored libraries, taken at a shared tag rather than as packages |

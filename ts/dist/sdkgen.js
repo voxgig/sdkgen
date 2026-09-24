@@ -271,6 +271,7 @@ const check_1 = require("./action/check");
 const edition_1 = require("./action/edition");
 // The verbs, built from the kind registry — see action/dispatch.
 const dispatch_1 = require("./action/dispatch");
+const kind_1 = require("./action/kind");
 const { Jostraca } = JostracaModule;
 exports.Jostraca = Jostraca;
 function modelError(path, cause, rooterrs) {
@@ -420,7 +421,7 @@ function SdkGen(opts) {
         return ctx;
     }
     function resolveModel(wanted) {
-        const path = './model/sdk.aon';
+        const path = './model/sdk.aontu';
         const errs = [];
         // A verb that does not act on a project (see `needsModel`) is run where
         // there is no project model, so its absence is not an error there. Its
@@ -429,6 +430,9 @@ function SdkGen(opts) {
         if (!wanted && !fs.existsSync(path)) {
             return { model: { main: {} }, url: path };
         }
+        (0, definition_1.assertMigrated)(fs, [
+            path, ...Object.keys(kind_1.KINDS).map((kind) => (0, definition_1.indexPath)('.', kind))
+        ]);
         if (null == aontu) {
             aontu = new aontu_1.Aontu();
         }
@@ -525,7 +529,7 @@ SdkGen.makeBuild = async function (opts) {
         root: opts.root,
         def: opts.def || 'no-def',
         kind: 'openapi-3',
-        model: opts.model ? (opts.model.folder + '/api.aon') : 'no-model',
+        model: opts.model ? (opts.model.folder + '/api.aontu') : 'no-model',
         meta: opts.meta || {},
     };
     return async function build(model, build, ctx) {

@@ -12,7 +12,7 @@ import { optionSpec, featureOptionSpec, entitySpecMap } from '../dist/helpers/op
 import { sentinel } from '../dist/helpers/canonSpec'
 
 
-const MODEL = Path.resolve(__dirname, '..', 'model', 'sdkgen.aon')
+const MODEL = Path.resolve(__dirname, '..', 'model', 'sdkgen.aontu')
 
 
 // The shipped schema, unified the way a project's model unifies it.
@@ -299,7 +299,7 @@ describe('optionSpec: what the spec may contain', () => {
 
   function shippedFeatures(): Record<string, any> {
     const dir = Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'feature')
-    const index = Path.join(dir, 'feature-index.aon')
+    const index = Path.join(dir, 'feature-index.aontu')
     const errs: any[] = []
     const fmodel: any = new Aontu().generate(readFileSync(index, 'utf8'),
       { path: index, errs })
@@ -317,7 +317,7 @@ describe('optionSpec: the shipped feature set', () => {
   // type made the feature reject its own documented usage.
   function shippedFeatures(): Record<string, any> {
     const dir = Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'feature')
-    const index = Path.join(dir, 'feature-index.aon')
+    const index = Path.join(dir, 'feature-index.aontu')
     const errs: any[] = []
     const fmodel: any = new Aontu().generate(readFileSync(index, 'utf8'),
       { path: index, errs })

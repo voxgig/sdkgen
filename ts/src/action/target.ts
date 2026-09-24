@@ -20,6 +20,8 @@ import { templateReplacements, provenanceReplace } from '../helpers/stdrep'
 
 import { isJunk, copyOpts } from '../helpers/junk'
 
+import { definitionPathAny, migrateIncludes } from '../helpers/definition'
+
 import { Aontu } from 'aontu'
 
 import {
@@ -496,11 +498,12 @@ function readTargetFeature(
   const { log } = ctx$
   const fs = ctx$.fs()
 
-  const path = tfolder + '/model/target/' + torigname + '.aon'
+  const path = definitionPathAny(fs, tfolder, 'target', torigname)
 
   try {
     const errs: any[] = []
-    const model = new Aontu().generate(fs.readFileSync(path, 'utf8'), { path, errs })
+    const src = migrateIncludes(fs.readFileSync(path, 'utf8'))
+    const model = new Aontu().generate(src, { path, errs })
 
     if (0 < errs.length) {
       throw new Error(errs.map((e: any) => e.msg || String(e)).join('\n'))

@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "4.24.3",
+  "version": "4.25.0",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "engines": {
@@ -17,7 +17,7 @@
     "The obvious alternative, an `exports` map naming './testkit', REPLACES",
     "the deep-import freedom a package has without one. Consumers depend on",
     "that freedom in places nothing here would notice: every generated model",
-    "file includes '@voxgig/sdkgen/model/sdkgen.aon', and the scaffold is",
+    "file includes '@voxgig/sdkgen/model/sdkgen.aontu', and the scaffold is",
     "reached as '@voxgig/sdkgen/project/<lang>'.",
     "",
     "A './*' catch-all looks like it restores that, and does not: exports",
@@ -92,7 +92,7 @@
     "@voxgig/apidef": ">=8.16.0",
     "@voxgig/struct": ">=0.2",
     "@voxgig/util": ">=0.5",
-    "aontu": ">=0.71.0 <0.73.0",
+    "aontu": ">=0.75.0",
     "jostraca": ">=0.38.1",
     "shape": ">=11.4.1"
   }
