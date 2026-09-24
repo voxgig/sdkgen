@@ -371,8 +371,8 @@ The rest:
   runner but climbs out of the checkout resolves nowhere on GitHub or in a
   published package, so it fails too. The day the check was written it
   found two broken links, both in the model reference and both to
-  `model/sdkgen.aontu`, a file that had been renamed `sdkgen.aontu`; they
-  were retargeted.
+  `model/sdkgen.aontu`, a file then named `sdkgen.aon`; they were
+  retargeted.
 - No emoji in documentation.
 - Sentence-style capitalisation in headings (Google style), except where
   the heading names a proper noun or a code identifier: `CLI:
