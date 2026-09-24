@@ -997,7 +997,7 @@ src/cmp/lua/fragment/SdkError.fragment.lua dd1669f801e7
 src/cmp/lua/tsconfig.json 720a3f229019
 src/cmp/lua/utility_lua.ts 216f2c0aab05
 tm/lua/LICENSE ed2f88b0aab8
-tm/lua/Makefile 0cdb4b35ad7d
+tm/lua/Makefile 2687d4bd2f37
 tm/lua/core/context.lua fb1bed78dd0d
 tm/lua/core/control.lua bcd4e848f7f2
 tm/lua/core/error.lua 943180f73775
@@ -1017,6 +1017,7 @@ tm/lua/test/feature_test.lua b90154d60678
 tm/lua/test/netsim_test.lua 1b5b020902a3
 tm/lua/test/omni.lua 61f834f4f623
 tm/lua/test/omni_smoke_test.lua f889b585f462
+tm/lua/test/option_defaults_test.lua b3c002d12dee
 tm/lua/test/pipeline_test.lua 7ea6b2e32918
 tm/lua/test/primary_utility_test.lua 9ae463cb4ad4
 tm/lua/test/runner.lua 57482767f8bf
@@ -1036,7 +1037,7 @@ tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua 3234bc5e9564
 tm/lua/utility/make_fetch_def.lua f7057db76504
-tm/lua/utility/make_options.lua 9811567f88aa
+tm/lua/utility/make_options.lua 9238926780ab
 tm/lua/utility/make_point.lua 392961fd8351
 tm/lua/utility/make_request.lua 4ba90ee83ff3
 tm/lua/utility/make_response.lua 6255f621011a
