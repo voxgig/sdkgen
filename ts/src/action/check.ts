@@ -23,7 +23,8 @@ import type { Finding, Manifest } from '../helpers/manifest'
 import type { CompileResult } from '../helpers/modelcheck'
 
 import {
-  definitionNames, definitionPathAny, isLegacyPath, migrateIncludes,
+  definitionNames, definitionPathAny, dropLegacyIncludes, isLegacyPath,
+  migrateIncludes,
 } from '../helpers/definition'
 
 import {
@@ -250,22 +251,26 @@ function checkDefinition(
     return found
   }
 
-  const strict = compileModel(src, file)
+  let checked = src
+  let strict = compileModel(checked, file)
 
+  // The warning does not end the check: what the file itself declares is
+  // still checked, without the includes that cannot resolve.
   if (legacy && unresolvedIncludeOnly(strict)) {
     found.push(at('warn', 'model-legacy-unresolved',
       strict.errors.join(' | ') + '  (an include renamed to `.aontu` ' +
       'resolves only once what it names ships as `.aontu`; until then a ' +
       'project that installs this cannot compile it)'))
 
-    return found
+    checked = dropLegacyIncludes(raw)
+    strict = compileModel(checked, file)
   }
 
   if (0 < strict.errors.length) {
     // Which parser rejected it changes what the author must do, so say. A
     // file that a bare Aontu() accepts and the strict one rejects is almost
     // always the comment dialect above.
-    const bare = compileModel(src, file, { strict: false })
+    const bare = compileModel(checked, file, { strict: false })
 
     found.push(at('error', 'model-parse',
       strict.errors.join(' | ') +
@@ -288,7 +293,7 @@ function checkDefinition(
   // 5. The base schema. A non-defaulted key the file omits (`ext`,
   //    `comment.line`, `module.name`, a feature's `title`) compiles fine
   //    alone and fails the consumer's whole model.
-  const unified = compileModel(src, file, { schema: true })
+  const unified = compileModel(checked, file, { schema: true })
 
   for (const err of unified.errors.slice(0, SAME_FILE_LIMIT)) {
     found.push(at('error', 'model-schema',
@@ -307,7 +312,7 @@ function checkDefinition(
   }
 
   if ('target' === kind) {
-    found.push(...checkTargetModel(src, name, file, at))
+    found.push(...checkTargetModel(checked, name, file, at))
   }
 
   if ('feature' === kind) {

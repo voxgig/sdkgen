@@ -293,6 +293,29 @@ describe('an item from a package that still ships .aon', () => {
     }
   })
 
+  test('an unresolved legacy include still leaves the rest of the file checked', () => {
+    const pkg = legacyPackage({ sharedExt: '.aon' })
+    try {
+      const file = Path.join(pkg, '.sdk', 'model', 'edition', 'summary.aon')
+      Fs.writeFileSync(file, Fs.readFileSync(file, 'utf8')
+        .replace('edition: summary: {', 'edition: other: {'))
+
+      const report = checkPackage(pkg, {
+        fs: () => Fs, log: silentLog(), folder: '.', model: { main: {} },
+      } as any)
+
+      deepStrictEqual(points(report, 'error'), ['model-key-missing'],
+        JSON.stringify(report.findings))
+      deepStrictEqual(points(report, 'warn'),
+        ['model-legacy-aon', 'model-legacy-unresolved'],
+        JSON.stringify(report.findings))
+      strictEqual(report.ok, false)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
   test('being legacy excuses nothing else', () => {
     const pkg = legacyPackage({ anchor: false })
     try {

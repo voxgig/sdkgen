@@ -151,18 +151,22 @@ function checkDefinition(fs, kind, name, file) {
     if (0 < slashes.length) {
         return found;
     }
-    const strict = (0, modelcheck_1.compileModel)(src, file);
+    let checked = src;
+    let strict = (0, modelcheck_1.compileModel)(checked, file);
+    // The warning does not end the check: what the file itself declares is
+    // still checked, without the includes that cannot resolve.
     if (legacy && unresolvedIncludeOnly(strict)) {
         found.push(at('warn', 'model-legacy-unresolved', strict.errors.join(' | ') + '  (an include renamed to `.aontu` ' +
             'resolves only once what it names ships as `.aontu`; until then a ' +
             'project that installs this cannot compile it)'));
-        return found;
+        checked = (0, definition_1.dropLegacyIncludes)(raw);
+        strict = (0, modelcheck_1.compileModel)(checked, file);
     }
     if (0 < strict.errors.length) {
         // Which parser rejected it changes what the author must do, so say. A
         // file that a bare Aontu() accepts and the strict one rejects is almost
         // always the comment dialect above.
-        const bare = (0, modelcheck_1.compileModel)(src, file, { strict: false });
+        const bare = (0, modelcheck_1.compileModel)(checked, file, { strict: false });
         found.push(at('error', 'model-parse', strict.errors.join(' | ') +
             (0 === bare.errors.length ?
                 '  (it DOES compile under a bare Aontu() — the difference is the ' +
@@ -178,7 +182,7 @@ function checkDefinition(fs, kind, name, file) {
     // 5. The base schema. A non-defaulted key the file omits (`ext`,
     //    `comment.line`, `module.name`, a feature's `title`) compiles fine
     //    alone and fails the consumer's whole model.
-    const unified = (0, modelcheck_1.compileModel)(src, file, { schema: true });
+    const unified = (0, modelcheck_1.compileModel)(checked, file, { schema: true });
     for (const err of unified.errors.slice(0, SAME_FILE_LIMIT)) {
         found.push(at('error', 'model-schema', err + '  (unified with the base schema — this is what a consumer compiles)'));
     }
@@ -191,7 +195,7 @@ function checkDefinition(fs, kind, name, file) {
             ' match nothing rather than failing loudly'));
     }
     if ('target' === kind) {
-        found.push(...checkTargetModel(src, name, file, at));
+        found.push(...checkTargetModel(checked, name, file, at));
     }
     if ('feature' === kind) {
         found.push(...checkFeatureModel(strict.model, name, at));

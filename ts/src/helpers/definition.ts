@@ -59,6 +59,20 @@ const LEGACY_INCLUDE_RE =
 // Renames each `.aon` include to `.aontu`, the only extension aontu reads.
 // Strings and comments are skipped whole, so a `.aon` that is only text stays.
 function migrateIncludes(src: string): string {
+  return mapLegacyIncludes(src, (gap: string, quote: string, path: string) =>
+    '@' + gap + quote + path + '.aontu' + quote)
+}
+
+
+// Removes each `.aon` include instead, leaving what the file itself declares.
+function dropLegacyIncludes(src: string): string {
+  return mapLegacyIncludes(src, () => '')
+}
+
+
+function mapLegacyIncludes(
+  src: string, replace: (gap: string, quote: string, path: string) => string,
+): string {
   let out = ''
   let at = 0
 
@@ -68,8 +82,7 @@ function migrateIncludes(src: string): string {
 
     if (null != include) {
       const [, gap, dq, sq] = include
-      out += '@' + gap +
-        (null != dq ? '"' + dq + '.aontu"' : "'" + sq + ".aontu'")
+      out += null != dq ? replace(gap, '"', dq) : replace(gap, "'", sq)
       at = LEGACY_INCLUDE_RE.lastIndex
       continue
     }
@@ -184,6 +197,7 @@ export {
   definitionPath,
   definitionPathAny,
   definitionFolder,
+  dropLegacyIncludes,
   definitionNames,
   indexName,
   indexPath,

@@ -3,9 +3,10 @@ declare function definitionPath(sdkfolder: string, kind: string, name: string): 
 declare function isLegacyPath(path: string): boolean;
 declare function definitionPathAny(fs: any, sdkfolder: string, kind: string, name: string): string;
 declare function migrateIncludes(src: string): string;
+declare function dropLegacyIncludes(src: string): string;
 declare function definitionFolder(sdkfolder: string, kind: string): string;
 declare function indexName(kind: string): string;
 declare function indexPath(sdkfolder: string, kind: string): string;
 declare function definitionNames(fs: any, sdkfolder: string, kind: string): string[];
 declare function assertMigrated(fs: any, paths: string[]): void;
-export { assertMigrated, definitionFileName, definitionPath, definitionPathAny, definitionFolder, definitionNames, indexName, indexPath, isLegacyPath, migrateIncludes, };
+export { assertMigrated, definitionFileName, definitionPath, definitionPathAny, definitionFolder, dropLegacyIncludes, definitionNames, indexName, indexPath, isLegacyPath, migrateIncludes, };
