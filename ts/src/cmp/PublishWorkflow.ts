@@ -55,14 +55,12 @@ const PublishWorkflow = cmp(function PublishWorkflow(props: any) {
       Content(publishingDoc(model, npmTargets, repository))
     })
 
-    if (null != repository) {
-      Folder({ name: 'admin' }, () => {
-        File({ name: 'setup-npm-trust.sh', mode: 0o755 }, () => {
-          Content(npmTrustScript(repository, npmTargets.map((t: any) =>
-            ({ pkg: packageName(model, t.name), file: workflowFile(t) }))))
-        })
+    Folder({ name: 'admin' }, () => {
+      File({ name: 'setup-npm-trust.sh', mode: 0o755 }, () => {
+        Content(npmTrustScript(repository, npmTargets.map((t: any) =>
+          ({ pkg: packageName(model, t.name), file: workflowFile(t) }))))
       })
-    }
+    })
   })
 
   ctx$.log.info({

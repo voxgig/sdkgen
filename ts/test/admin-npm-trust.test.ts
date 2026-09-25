@@ -4,7 +4,9 @@ import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, throws } from 'node:assert'
 
 import { spawnSync } from 'node:child_process'
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import Path from 'node:path'
 
@@ -68,6 +70,7 @@ describe('admin npm-trust', () => {
       ['--repository', REPO, '--publish', PKG],
       ['--repository', REPO, '--publish', 'Not A Package=publish-ts.yml'],
       [...ARGS, '--publish', `${PKG}=publish-js.yml`],
+      [...ARGS, '--repository', 'evil/repo'],
       [...ARGS, '--check', '--dry-run'],
       [...ARGS, '--check', '--replace'],
       [...ARGS, '--otp'],
@@ -203,6 +206,23 @@ describe('admin npm-trust', () => {
         '@acme/demo-js-sdk: npm trust github @acme/demo-js-sdk --repository ' +
         `${REPO} --file publish-js.yml --allow-publish`,
       ])
+
+      const moved = spawnSync('bash', [script, '--repository', 'evil/repo', '--dry-run'],
+        { encoding: 'utf8' })
+      strictEqual(moved.status, 2, 'a caller replaced the generated repository')
+      ok(moved.stderr.includes('given twice'), moved.stderr)
+
+      writeFileSync(script, npmTrustScript("acme/x'$(touch pwned)'", [
+        { pkg: "@acme/y'$(touch pwned)'", file: 'publish-ts.yml' },
+      ]))
+      const hostile = spawnSync('bash', [script, '--dry-run'], { cwd: root, encoding: 'utf8' })
+      strictEqual(hostile.status, 2, hostile.stdout)
+      ok(!existsSync(Path.join(root, 'pwned')), 'a quote in a model value ran a command')
+
+      writeFileSync(script, npmTrustScript(null, [PUB]))
+      const elsewhere = spawnSync('bash', [script, '--dry-run'], { encoding: 'utf8' })
+      strictEqual(elsewhere.status, 1)
+      ok(elsewhere.stderr.includes('github.com'), elsewhere.stderr)
     }
     finally {
       rmSync(root, { recursive: true, force: true })

@@ -186,10 +186,11 @@ creates or updates the Pages configuration. It does not commit, push, merge,
 or deploy.
 
 Sdkgen generates `.sdk/admin/setup-npm-trust.sh` when a target publishes to
-npm and the repository is on `github.com`. It registers each
+npm. For a repository on `github.com`, it registers each
 `publish-<target>.yml` workflow as the trusted publisher of its package, using
 the package name and repository that the workflow was generated from, so the
-two cannot disagree. `--check` compares the configuration npm holds with those
+two cannot disagree. npm cannot trust GitHub Actions for a repository hosted
+anywhere else, so there the script says so and exits non-zero. `--check` compares the configuration npm holds with those
 workflows and exits non-zero on any difference. `--dry-run` prints the
 `npm trust` commands without contacting npm. Running it without either option
 creates a missing configuration and leaves a matching one alone, and

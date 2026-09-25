@@ -33,7 +33,7 @@ declare function assess(pub: Publication, repository: string, entries: TrustEntr
 declare function trustCommand(repository: string, pub: Publication): string;
 declare function run(spec: TrustSpec, npm: NpmPort, out: (line: string) => void): number;
 declare function npmFailure(action: string, stderr: string): string;
-declare function npmTrustScript(repository: string, publish: Publication[]): string;
+declare function npmTrustScript(repository: string | null, publish: Publication[]): string;
 declare function main(argv: string[]): number;
 export type { Assessment, NpmPort, Publication, TrustEntry, TrustSpec, };
 export { assess, main, npmFailure, npmTrustScript, parseArgs, parseTrustList, run, trustCommand, };

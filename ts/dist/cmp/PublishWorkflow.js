@@ -42,13 +42,11 @@ const PublishWorkflow = (0, jostraca_1.cmp)(function PublishWorkflow(props) {
         (0, jostraca_1.File)({ name: 'PUBLISHING.md' }, () => {
             (0, jostraca_1.Content)(publishingDoc(model, npmTargets, repository));
         });
-        if (null != repository) {
-            (0, jostraca_1.Folder)({ name: 'admin' }, () => {
-                (0, jostraca_1.File)({ name: 'setup-npm-trust.sh', mode: 0o755 }, () => {
-                    (0, jostraca_1.Content)((0, npm_trust_1.npmTrustScript)(repository, npmTargets.map((t) => ({ pkg: (0, packageMeta_1.packageName)(model, t.name), file: workflowFile(t) }))));
-                });
+        (0, jostraca_1.Folder)({ name: 'admin' }, () => {
+            (0, jostraca_1.File)({ name: 'setup-npm-trust.sh', mode: 0o755 }, () => {
+                (0, jostraca_1.Content)((0, npm_trust_1.npmTrustScript)(repository, npmTargets.map((t) => ({ pkg: (0, packageMeta_1.packageName)(model, t.name), file: workflowFile(t) }))));
             });
-        }
+        });
     });
     ctx$.log.info({
         point: 'generate-publish-workflow',

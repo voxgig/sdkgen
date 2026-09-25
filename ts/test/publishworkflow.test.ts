@@ -200,10 +200,14 @@ describe('PublishWorkflow', () => {
   })
 
 
-  // npm trusts GitHub Actions only for a repository on github.com.
-  test('no trust script for a repository hosted elsewhere', async () => {
+  // npm trusts GitHub Actions only for a repository on github.com. The script
+  // is still written, refusing, so a copy from before a move cannot linger.
+  test('a repository hosted elsewhere gets a script that refuses to run', async () => {
     const out = await render(NPM_TS, 'gitlab.example.com')
-    strictEqual(out['.sdk/admin/setup-npm-trust.sh'], undefined)
+    const script = out['.sdk/admin/setup-npm-trust.sh']
+    ok(null != script, 'no script, so an earlier github.com one would survive')
+    ok(!/--repository|--publish|npm-trust\.js/.test(script), script)
+    ok(/^exit 1$/m.test(script), script)
     ok(out['.github/workflows/publish-ts.yml'].includes('--repository <owner>/<repo>'))
 
     const cased = await render(NPM_TS, 'GitHub.com')
