@@ -73,6 +73,11 @@ describe('npm packaging', () => {
   })
 
 
+  test('`files` names the README', () => {
+    ok(Pkg.files.includes('README.md'), 'package.json `files` omits README.md')
+  })
+
+
   test('the scaffold ships no file npm is entitled to drop', () => {
     const risky = trackedShipped().filter((p: string) =>
       /(^|\/)\.(gitignore|npmignore)$/.test(p))

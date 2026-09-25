@@ -74,7 +74,8 @@
     "dist",
     "testkit.js",
     "testkit.d.ts",
-    "LICENSE"
+    "LICENSE",
+    "README.md"
   ],
   "devDependencies": {
     "@types/js-yaml": "4.0.9",
