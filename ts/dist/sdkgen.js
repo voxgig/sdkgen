@@ -40,7 +40,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeRef = exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeErrors = exports.ReadmeQuick = exports.ReadmeInstall = exports.AgentGuideFeature = exports.AgentGuide = exports.AgentGuideTop = exports.ReadmeTop = exports.Readme = exports.TEST_CONTROL_EXCLUDE = exports.TestControl = exports.Test = exports.Feature = exports.Entity = exports.Changelog = exports.PublishWorkflow = exports.Security = exports.License = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.entityActions = exports.opActions = exports.ownPoint = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonScalarKey = exports.canonKey = exports.canonToDtype = exports.entitySpecMap = exports.featureOptionSpec = exports.optionSpec = exports.entitySpecs = exports.entityOpSpec = exports.entityDataSpec = exports.canonToSpec = exports.canonToType = exports.pointPathKey = exports.pointTerminalParam = exports.pointParts = exports.pointSegments = exports.collectDeps = exports.getMatchEntries = exports.flowSteps = exports.entityRelationName = exports.buildIdNames = exports.SdkGenError = exports.rawStringLiteral = exports.clean = exports.configDefinition = exports.configReprSetting = exports.configRepr = exports.isConfigData = exports.CONFIG_REPR_VALUES = exports.CONFIG_DATA_THRESHOLD = exports.isHttpBasicAuth = exports.isAuthSuppressed = exports.resolveAuthName = exports.resolveAuthIn = exports.resolveAuthPrefix = exports.isAuthActive = exports.requirePath = exports.Jostraca = exports.hasLiveScenarios = exports.pointFacts = exports.liveHint = exports.resolvedFor = exports.registerComponent = exports.FeatureHook = exports.ReadmeRefFeatures = void 0;
 exports.unknownTags = exports.featureTags = exports.targetFeatures = exports.featureApplies = exports.stationLibrary = exports.pluginExcludesFor = exports.pluginExcludes = exports.srcFeatureExcludes = exports.fullsetExcludes = exports.featureExcludes = exports.findFeatureSources = exports.availableFeatures = exports.featureOf = exports.litFor = exports.dataArg = exports.matchArg = exports.idLiteral = exports.primaryOpCall = exports.liveStrict = exports.serverVarEnv = exports.hasServerVariables = exports.serverVariables = exports.tsSafeTypeName = exports.isTsReservedType = exports.phpSafeTypeName = exports.isPhpSdkClass = exports.isPhpReservedType = exports.swiftSafeTypeName = exports.isSwiftSdkType = exports.rbSafeTypeName = exports.isRbSdkConstant = exports.isRbCoreConstant = exports.entityCacheField = exports.phpEntityAccessor = exports.exampleVarName = exports.safeVarName = exports.isReservedName = exports.guardModelNames = exports.entityCollection = exports.deriveEntityNames = exports.warnEntityTypeCollisions = exports.entityTypeCollisions = exports.entityClassName = exports.pickExampleEntity = exports.entityPrimaryOp = exports.entityOps = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.entityPath = void 0;
-exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.originName = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.contributorList = exports.authorInfo = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.packageName = exports.prefixLeadingDigit = exports.luaKey = exports.jsKey = exports.jsOptProp = exports.jsProp = exports.validateManifest = exports.readManifest = exports.manifestPath = exports.MANIFEST = exports.definitionNames = exports.definitionFolder = exports.definitionPath = exports.TAGS = void 0;
+exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.originName = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.contributorList = exports.authorInfo = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.sdkName = exports.packageName = exports.prefixLeadingDigit = exports.luaKey = exports.jsKey = exports.jsOptProp = exports.jsProp = exports.validateManifest = exports.readManifest = exports.manifestPath = exports.MANIFEST = exports.definitionNames = exports.definitionFolder = exports.definitionPath = exports.TAGS = void 0;
 exports.SdkGen = SdkGen;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -239,6 +239,7 @@ Object.defineProperty(exports, "readManifest", { enumerable: true, get: function
 Object.defineProperty(exports, "validateManifest", { enumerable: true, get: function () { return manifest_1.validateManifest; } });
 const packageMeta_1 = require("./helpers/packageMeta");
 Object.defineProperty(exports, "packageName", { enumerable: true, get: function () { return packageMeta_1.packageName; } });
+Object.defineProperty(exports, "sdkName", { enumerable: true, get: function () { return packageMeta_1.sdkName; } });
 Object.defineProperty(exports, "installCommand", { enumerable: true, get: function () { return packageMeta_1.installCommand; } });
 Object.defineProperty(exports, "registryState", { enumerable: true, get: function () { return packageMeta_1.registryState; } });
 Object.defineProperty(exports, "isPublished", { enumerable: true, get: function () { return packageMeta_1.isPublished; } });
@@ -595,6 +596,8 @@ function externalItems(model, folder, kinds, override) {
             const output = { ...(items[name]?.output || {}) };
             if (null != ov.path && '' !== ov.path) {
                 output.path = ov.path;
+                // The override relocates this run's output, root placement included.
+                delete output.root;
             }
             if (null != ov.sdkrel && '' !== ov.sdkrel) {
                 output.sdkrel = ov.sdkrel;
@@ -644,6 +647,12 @@ function checkExternalFolders(external, root, fs) {
         const where = label + ' "' + ext.name + '" has output path "' +
             ext.target.output.path + '", which resolves to: ' + ext.folder +
             '\n  (SDK project: ' + root + ')';
+        if (true === ext.target.output.root) {
+            throw new utility_1.SdkGenError(label + ' "' + ext.name + '" declares both `output: path` and ' +
+                '`output: root: true`.\n  ' + where +
+                '\n  `path` generates it into another repository and `root` at the ' +
+                'root of this one. Keep one.');
+        }
         if (ext.folder === root || folderContains(root, ext.folder)) {
             throw new utility_1.SdkGenError('External output path is inside the SDK project.\n  ' + where +
                 '\n  An item generating into the SDK project must leave `output: ' +

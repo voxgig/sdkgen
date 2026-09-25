@@ -4,6 +4,8 @@ import {
   walk,
 } from '@voxgig/struct'
 
+import { sdkName } from '@voxgig/sdkgen'
+
 
 // OCaml keywords that are illegal as a lowercase identifier. sdkgen's shared
 // safeVarName has no ocaml entry, so the guard lives here.
@@ -36,7 +38,7 @@ function entityModule(name: string): string {
 // module naming: org prefix from model.origin).
 function packageName(model: any): string {
   const org = (model.origin || 'voxgig-sdk').replace(/-sdk$/, '')
-  return `${org}-${model.name}-sdk`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+  return `${org}-${sdkName(model.name)}`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
 }
 
 

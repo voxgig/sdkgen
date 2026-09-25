@@ -788,7 +788,12 @@ emitted broken source reached the fleet unchallenged.
   config, or `SDKGEN_EXTERNAL` as JSON) rather than a second committed value
   the two layouts then fight over — see
   [explanation/out-of-tree-targets](./docs/explanation/out-of-tree-targets.md#one-model-two-layouts).
-  All of them are catalogued in
+  What the project's Root writes is decided the same way, by the standard
+  Root create-sdkgen scaffolds: `main.kit.phase.{top,build}.active` (the SDK
+  repository's own root files; the per-entity test data), per target
+  `active: false` (kept in the model, not generated) and `output.root: true`
+  (generated at the project root — a repository that is one package, with
+  its own `.sdk/`, rather than an SDK). All of them are catalogued in
   [reference/model](./docs/reference/model.md#what-a-project-declares-about-itself).
   A project extends a target with `registerComponent('X')` ->
   `cmp/<t>/X_<t>.ts`, which `doctor` reports as ADDITIVE rather than drift.

@@ -399,7 +399,7 @@ function layeredFs(mem) {
 }
 function defaultRoot() {
     const { cmp, each, names, Project, Folder } = require('jostraca');
-    const { Main, Entity, Feature, Test, Readme, AgentGuide } = require('./sdkgen');
+    const { Main, Entity, Feature, Test, Readme, AgentGuide, SdkGenError, } = require('./sdkgen');
     return cmp(function Root(props) {
         const { model, ctx$ } = props;
         model.const = model.const || { name: model.name };
@@ -413,14 +413,18 @@ function defaultRoot() {
         const target = model.main[types_1.KIT].target || {};
         const feature = model.main[types_1.KIT].feature || {};
         const entity = model.main[types_1.KIT].entity || {};
+        const active = each(target).filter((t) => t && false !== t.active);
+        const atRoot = active.filter((t) => true === t.output?.root);
+        if (1 < atRoot.length) {
+            throw new SdkGenError('Only one target can be generated at the ' +
+                'project root: ' + atRoot.map((t) => t.name).join(', '));
+        }
         Project({}, () => {
-            each(target)
-                .filter((t) => t && false !== t.active)
-                .map((t) => {
+            active.map((t) => {
                 names(t, t.name);
                 const phase = t.phase || {};
                 const on = (n) => false !== (phase[n] && phase[n].active);
-                Folder({ name: t.name }, () => {
+                const phases = () => {
                     if (on('entity')) {
                         each(entity)
                             .filter((e) => e && false !== e.active)
@@ -444,7 +448,13 @@ function defaultRoot() {
                         AgentGuide({ target: t });
                     if (on('test'))
                         Test({ target: t });
-                });
+                };
+                if (true === t.output?.root) {
+                    phases();
+                }
+                else {
+                    Folder({ name: t.name }, phases);
+                }
             });
         });
     });

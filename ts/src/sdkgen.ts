@@ -103,6 +103,7 @@ import {
 import type { Manifest, ManifestRead } from './helpers/manifest'
 import {
   packageName,
+  sdkName,
   installCommand,
   registryState,
   isPublished,
@@ -656,6 +657,8 @@ function externalItems(
 
         if (null != ov.path && '' !== ov.path) {
           output.path = ov.path
+          // The override relocates this run's output, root placement included.
+          delete output.root
         }
         if (null != ov.sdkrel && '' !== ov.sdkrel) {
           output.sdkrel = ov.sdkrel
@@ -717,6 +720,14 @@ function checkExternalFolders(external: ExternalPlan[], root: string, fs: any) {
     const where = label + ' "' + ext.name + '" has output path "' +
       ext.target.output.path + '", which resolves to: ' + ext.folder +
       '\n  (SDK project: ' + root + ')'
+
+    if (true === ext.target.output.root) {
+      throw new SdkGenError(
+        label + ' "' + ext.name + '" declares both `output: path` and ' +
+        '`output: root: true`.\n  ' + where +
+        '\n  `path` generates it into another repository and `root` at the ' +
+        'root of this one. Keep one.')
+    }
 
     if (ext.folder === root || folderContains(root, ext.folder)) {
       throw new SdkGenError(
@@ -1094,6 +1105,7 @@ export {
   prefixLeadingDigit,
 
   packageName,
+  sdkName,
   installCommand,
   registryState,
   isPublished,

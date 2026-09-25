@@ -4,6 +4,8 @@ import {
   walk,
 } from '@voxgig/struct'
 
+import { sdkName } from '@voxgig/sdkgen'
+
 
 // C reserved keywords illegal as identifiers.
 const C_RESERVED = new Set<string>([
@@ -31,7 +33,7 @@ function cIdent(model: any): string {
 // Package-ish name (used in comments only), e.g. voxgig-solar-sdk.
 function cName(model: any): string {
   const org = (model.origin || 'voxgig-sdk').replace(/-sdk$/, '')
-  return `${org}-${model.name}-sdk`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+  return `${org}-${sdkName(model.name)}`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
 }
 
 

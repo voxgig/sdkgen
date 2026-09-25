@@ -21,6 +21,8 @@ import {
   originName,
   goModule,
   packageName,
+  sdkName,
+  repoInfo,
   registryState,
   isPublished,
   installCommand,
@@ -707,6 +709,55 @@ describe('helpers', () => {
         'an aliased ts returned an empty install line')
     })
 
+  })
+
+
+  describe('derived package names end in -sdk', () => {
+
+    const names = (model: any) => Object.fromEntries(
+      ['ts', 'js', 'py', 'rb', 'lua', 'php', 'py-data']
+        .map((t: string) => [t, packageName(model, t)]))
+
+    test('under a scope that already ends in -sdk', () => {
+      deepStrictEqual(names({ name: 'brontie', origin: 'voxgig-sdk' }), {
+        ts: '@voxgig-sdk/brontie-sdk',
+        js: '@voxgig-sdk/brontie-sdk-js',
+        py: 'voxgig-sdk-brontie-sdk',
+        rb: 'voxgig-sdk-brontie-sdk',
+        lua: 'voxgig-sdk-brontie-sdk',
+        php: 'voxgig-sdk/brontie-sdk',
+        'py-data': 'voxgig-sdk-brontie-sdk-data',
+      })
+    })
+
+    test('under any other scope', () => {
+      deepStrictEqual(names({ name: 'demo', origin: 'acme' }), {
+        ts: '@acme/demo-sdk',
+        js: '@acme/demo-sdk-js',
+        py: 'acme-demo-sdk',
+        rb: 'acme-demo-sdk',
+        lua: 'acme-demo-sdk',
+        php: 'acme/demo-sdk',
+        'py-data': 'acme-demo-sdk-data',
+      })
+    })
+
+    test('once, for a name that already ends in -sdk', () => {
+      strictEqual(packageName({ name: 'github-sdk', origin: 'voxgig-sdk' }, 'ts'),
+        '@voxgig-sdk/github-sdk')
+      strictEqual(sdkName('github-sdk'), 'github-sdk')
+      strictEqual(sdkName('github'), 'github-sdk')
+      strictEqual(repoInfo({ name: 'github-sdk', origin: 'voxgig-sdk' }).path,
+        'voxgig-sdk/github-sdk')
+    })
+
+    test('a declared name is taken as given', () => {
+      const model = {
+        name: 'brontie', origin: 'voxgig-sdk',
+        main: { kit: { target: { ts: { publish: { registry: { package: '@b/c' } } } } } },
+      }
+      strictEqual(packageName(model, 'ts'), '@b/c')
+    })
   })
 
 })

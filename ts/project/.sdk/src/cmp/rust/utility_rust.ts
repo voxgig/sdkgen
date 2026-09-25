@@ -4,6 +4,8 @@ import {
   walk,
 } from '@voxgig/struct'
 
+import { sdkName } from '@voxgig/sdkgen'
+
 
 // Rust keywords (strict + reserved) that are illegal as an identifier.
 // sdkgen's shared safeVarName has no rust entry, so the guard lives here.
@@ -44,7 +46,7 @@ function rustVarName(name: string): string {
 
 function crateName(model: any): string {
   const org = (model.origin || 'voxgig-sdk').replace(/-sdk$/, '')
-  return `${org}-${model.name}-sdk`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+  return `${org}-${sdkName(model.name)}`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
 }
 
 

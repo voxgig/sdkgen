@@ -28,8 +28,6 @@ const Package = cmp(async function Package(props: any) {
   // constant here did.
   const author = authorInfo(model, target.name)
 
-  const ns = model.origin || 'voxgig-sdk'
-  const pkgBase = ns.endsWith('-sdk') ? model.name : `${model.name}-sdk`
   const gemName = packageName(model, target.name)
   const { repoUrl, issuesUrl, changelogUrl } = repoInfo(model)
 

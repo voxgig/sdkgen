@@ -96,6 +96,8 @@ for that purpose:
 | `main.kit.test.live.strict` | Whether a live test run asserts or merely observes. |
 | `main.kit.target.<t>.module.path` / `.package` / `.goversion` | Go-family module identity and the `go` directive. |
 | `main.kit.target.<t>.output.path` / `.repo` / `.create` | Generate this target into ANOTHER repo and optionally require that repo to exist already (see [below](#generating-outside-the-sdk-repo-output)). |
+| `main.kit.target.<t>.active` | Whether the target is generated. `false` keeps it in the model, where a target wrapping it can still read it. |
+| `main.kit.target.<t>.output.root` / `main.kit.phase` | A repository that is one package rather than an SDK: generate that target at the project root, and none of the SDK repository's own files (see [below](#generating-at-the-project-root-outputroot)). |
 | `main.kit.target.<t>.publish.version` | The port's own release version. Every manifest emitter used to hardcode `0.0.1`, so a project that had published `0.0.2` got its manifest reset on the next run. |
 | `main.kit.target.<t>.publish.registry.package` | The published package name, when it is not the derived one. |
 | `main.kit.feature.<name>.active` | Which features ship. |
@@ -138,6 +140,17 @@ main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com
 | --- | --- | --- | --- |
 | `test.live.strict` | boolean | `true` | Assert live request outcomes in the TS and Go direct-test generators. Independent tests continue after failures. Explicit `false` retains legacy exploratory result handling; it does not establish full API coverage. Overridable per target (`main.kit.target.<t>.test.live.strict`). Pinned by `ts/test/generate.test.ts` and `ts/test/livegenerated.test.ts`. |
 
+## `main.kit.phase`
+
+What the project's `Root` writes besides its targets. The standard `Root`
+that create-sdkgen scaffolds reads these; a project turns them off in
+`.sdk/model/project.aontu`.
+
+| Path | Type | Default | Description |
+| --- | --- | --- | --- |
+| `phase.top.active` | boolean | `true` | The SDK repository's own files at the project root: the README, the agent guides, LICENSE, SECURITY.md, CHANGELOG.md, the release Makefile and the publish workflows. |
+| `phase.build.active` | boolean | `true` | The per-entity test data under `.sdk/test/entity/`, which only the SDK targets' own generated tests read. |
+
 ## Provenance: where a copied item came from
 
 Every copied `model/<kind>/<name>.aontu` records its own origin. There is
@@ -179,7 +192,7 @@ files in `ts/project/.sdk/model/target/`:
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
 | `name` | string | `key()` | Target name (e.g. `ts`). |
-| `active` | boolean | `true` | Whether the target is generated. |
+| `active` | boolean | `true` | Whether the target is generated. An inactive target stays in the model. |
 | `title` | string | — | Display name (e.g. `TypeScript`). |
 | `ext` | string | — | Source file extension. |
 | `comment.line` | string | — | Line-comment token (e.g. `//`). |
@@ -195,6 +208,7 @@ files in `ts/project/.sdk/model/target/`:
 | `feature.trim` | boolean | `true` | Whether `target add` trims feature source to the model's selection. `false` keeps the complete set (see below). |
 | `feature.fullset` | string[] | `[]` | Templates that only compile with the COMPLETE feature set (the cross-feature test suite), as paths under the target template root. Dropped whenever the set is trimmed. |
 | `output.path` | string | `''` | Generate this target into ANOTHER repo (see below). `''` is the ordinary `<sdk-repo>/<target>/`. |
+| `output.root` | boolean | `false` | Generate this target at the project root instead of `<project>/<target>/` (see [below](#generating-at-the-project-root-outputroot)). |
 | `output.repo` | string | `''` | `'<org>/<repo>'` for that other repo, so its manifest's homepage/repository/bugs point there and not at the SDK's own repo. |
 | `output.create` | boolean | `true` | Whether sdkgen may create a missing out-of-tree destination. `false` keeps the target active but skips it until the destination folder exists. |
 | `output.adopt` | boolean | `false` | Allow a destination that already holds content this generator did not write. Generation refuses one otherwise — it overwrites, and the path is taken verbatim from the model. |
@@ -204,7 +218,7 @@ files in `ts/project/.sdk/model/target/`:
 | `publish.tag.prefix` | string | `''` | `''` uses the target name. |
 | `publish.registry.state` | string | `'pending'` | `pending` (declared + git-tag-published, not yet uploaded) / `active` / `inactive`. Omit `registry` entirely for tag-only ports (the go family). |
 | `publish.registry.name` / `.url` | string | `''` | Registry identity (`npm`, `pypi`, …). |
-| `publish.registry.package` | string | `''` | Published package name. `''` derives one. |
+| `publish.registry.package` | string | `''` | Published package name. `''` derives one that ends in `-sdk`, whatever the origin: `@<origin>/<name>-sdk` on npm (`-js` after it for the `js` target), `<origin>-<name>-sdk` on PyPI, RubyGems and LuaRocks, and `<origin>/<name>-sdk` on Packagist. A name that already ends in `-sdk` gets no second one. |
 | `deps.<dep>.active` | boolean | `false` | Include this dependency. |
 | `deps.<dep>.version` | string | `'*'` | Version constraint. |
 | `deps.<dep>.kind` | string | `'prod'` | Manifest sections. Target-defined, and a COMMA-SEPARATED LIST where a package belongs in two (`'peer,dev'`) — the map is keyed by package name, so it cannot be declared twice. |
@@ -321,6 +335,34 @@ refuses a `..` segment in a `Folder` name, and the output root is the
 tree. See
 [out-of-tree targets](../explanation/out-of-tree-targets.md) for the
 mechanism and what it means for a consumer project.
+
+### Generating at the project root (`output.root`)
+
+A target normally goes into `<project>/<target>/`. With `output: root: true`
+it is written at the project root instead, so the repository holding `.sdk/`
+is that target's package. This is the layout of a repository that carries
+its own builder: a Seneca provider generated in its own repository, depending
+on an SDK released from another one.
+
+```jsonic
+# .sdk/model/project.aontu
+main: kit: phase: top: active: false
+main: kit: phase: build: active: false
+main: kit: doc: active: false
+main: kit: target: 'seneca-provider': output: root: true
+```
+
+- `phase: top: active: false` is required. Otherwise the SDK repository's
+  own files (README, LICENSE, the release Makefile) would overwrite the
+  target's, so the standard `Root` refuses to generate.
+- One target at most may declare it.
+- It applies in-tree only. A target that also declares `output: path` is
+  refused, because `path` sends it into another repository and `root` keeps
+  it in this one. A path given at generate time, through `external` or
+  `SDKGEN_EXTERNAL`, relocates it for that run like any other target.
+- `phase: build` and `doc` are off because nothing in such a repository
+  reads them. The entity test data serves the SDK targets' own tests, and the
+  documentation site describes an SDK.
 
 ## `main.kit.entity.<name>`
 

@@ -183,6 +183,23 @@ the other's model.
 Generation writes the files its components declare and removes nothing, so
 a checkout inside its own output folder survives its own run.
 
+## A package that carries its own builder
+
+Both preceding layouts generate the package from the SDK project's model, so the
+SDK project has to carry the target. The alternative is for the package's
+repository to hold a `.sdk/` of its own, which generates only that package
+and depends on the SDK like any other consumer. Nothing is out of tree in
+that layout: the target declares
+[`output: root: true`](../reference/model.md#generating-at-the-project-root-outputroot)
+and is generated at the root of the project that builds it, while
+`main: kit: phase: top: active: false` keeps the SDK repository's own files
+out of it.
+
+The cost is a second project with its own copy of the API definition, which
+has to stay in step with the SDK version the package depends on. A target
+generated this way states that version itself, and should check the copy
+against the SDK before trusting it.
+
 ## See also
 
 - [Model reference: `output`](../reference/model.md#generating-outside-the-sdk-repo-output)

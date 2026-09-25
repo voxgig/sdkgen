@@ -62,6 +62,7 @@ type ModelTarget = NameCases & {
     create?: boolean
     adopt?: boolean
     sdkrel?: string
+    root?: boolean
   }
 
   // Per-generation-phase activation. A consumer target (go-cli, go-mcp,

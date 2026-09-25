@@ -54,7 +54,7 @@ main: kit: entity: hidden: {
 `
 
 
-function consumerModel(sdk: string): any {
+function consumerModel(sdk: string, extra = ''): any {
   const src = [
     '@"@voxgig/apidef/model/apidef.aontu"',
     '@"@voxgig/sdkgen/model/sdkgen.aontu"',
@@ -62,6 +62,7 @@ function consumerModel(sdk: string): any {
     '@"./feature/feature-index.aontu"',
     "name: 'demo'",
     API,
+    extra,
   ].join('\n')
 
   const path = Path.join(sdk, 'model', 'generate-test.aontu')
@@ -157,6 +158,22 @@ describe('testkit over the fixture package', () => {
       'the entity file did not describe the entity: ' +
       files['wtest/entity/planet.wt'])
   })
+
+
+  // The placement the standard Root gives the same declaration.
+  test('a target declaring `output: root` is generated at the project root',
+    async () => {
+      const out = await generateInto(consumer, {
+        model: consumerModel(consumer.sdk,
+          'main: kit: target: wtest: output: root: true'),
+      })
+
+      ok(null != out.files['src/client.wt'],
+        'not generated at the root; got:\n  ' + Object.keys(out.files).join('\n  '))
+      deepStrictEqual(
+        Object.keys(out.files).filter((p) => p.startsWith('wtest/')), [],
+        'still generated under wtest/')
+    })
 
 
   // The same property the bundled targets are now held to, for an EXTERNAL

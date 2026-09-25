@@ -45,6 +45,7 @@ type ModelTarget = NameCases & {
         create?: boolean;
         adopt?: boolean;
         sdkrel?: string;
+        root?: boolean;
     };
     phase?: Record<string, {
         active?: boolean;

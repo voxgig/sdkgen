@@ -513,6 +513,32 @@ describe('external target', () => {
       })
 
 
+    test('`output: root` together with `output: path` is refused', async () => {
+      const { msg, files } = await refuse(['go', 'go-cli'], { 'go-cli': OUT },
+        { extra: "main: kit: target: 'go-cli': output: root: true" })
+
+      ok(msg.includes('`output: path` and `output: root: true`'),
+        'unexpected refusal reason:\n' + msg)
+      ok(msg.includes('go-cli'), 'the message does not name the target:\n' + msg)
+
+      deepStrictEqual(Object.keys(files), [],
+        'the refusal came too late — the in-tree pass had already written')
+    })
+
+
+    // An override is for this run, and relocates a root target like any other.
+    test('an override relocates a target the model generates at the root', async () => {
+      const gen = setup(['go', 'go-cli'], {}, {
+        external: { 'go-cli': { path: OUT2 } },
+        extra: "main: kit: target: 'go-cli': output: root: true",
+      })
+      await gen.run()
+
+      ok(0 < Object.keys(under(gen.files(), OUT2)).length,
+        'nothing landed at the overridden path')
+    })
+
+
     test('two targets claiming the same folder are refused', async () => {
       const { msg } = await refuse(['ts', 'go', 'go-cli'],
         { 'go-cli': OUT, go: OUT })

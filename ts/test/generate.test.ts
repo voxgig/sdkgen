@@ -205,6 +205,24 @@ describe('generate', () => {
   })
 
 
+  // The suffix every derived name carries is added once, whichever emitter
+  // builds the name.
+  test('a model already named -sdk is not suffixed again', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const doubled: string[] = []
+
+    for (const target of targets) {
+      for (const [path, content] of filesFor(await generate([target], 'demo-sdk'), target)) {
+        if (String(content).includes('demo-sdk-sdk')) {
+          doubled.push(path)
+        }
+      }
+    }
+
+    deepStrictEqual(doubled, [], 'files that name the SDK demo-sdk-sdk')
+  })
+
+
   test('every target generates', async () => {
     const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
     ok(5 < targets.length, 'expected the full target set, got ' + targets.length)
@@ -483,7 +501,7 @@ main: kit: target: js: phase: feature: active: false
       ok(src.includes('"sdk": { "demo": {'),
         target + ': README has no station.json block keyed by the slug')
       ok(src.includes('"package": "' + ('ts' === target ?
-        '@voxgig-sdk/demo' : '@voxgig-sdk/demo-js') + '"'),
+        '@voxgig-sdk/demo-sdk' : '@voxgig-sdk/demo-sdk-js') + '"'),
         target + ': README quickstart declares no package for station to load')
       ok(src.includes("station.sdk('demo')"),
         target + ': README has no station.sdk() quickstart')
