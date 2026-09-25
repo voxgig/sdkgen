@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/sekreto 0.2.0 (typescript/plugins/doppler.ts)
-// Source: https://github.com/voxgig/sekreto @ 108c4a914bee7b6534c30d1c68c25cd1b9377696  [tag: sdk-20260917-1242-0]
+// Source: https://github.com/voxgig/sekreto @ 163f537960de6813cc393b89843949ca3afa8cfc  [tag: sdk-20260925-1316-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025 Voxgig Ltd, MIT License */
 
@@ -7,12 +7,6 @@ import { ProviderSpec, Provider, SekretoError, envkey, providerplugin } from '..
 import { checkaddr } from '../provider/addr'
 import { fetchjson } from './httpjson'
 
-/** Doppler.
- *
- * The whole config is downloaded once - Doppler's own bulk endpoint -
- * and answered from memory, like a remote .env: `api.token` is the
- * `API_TOKEN` entry. A service token is config-scoped, so project and
- * config are only needed with broader tokens. */
 export function dopplerprovider(options?: {
   token?: string
   project?: string

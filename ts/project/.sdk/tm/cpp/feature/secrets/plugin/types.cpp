@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20260917-1242-0 (cpp/src/types.cpp)
-// Source: https://github.com/voxgig/plugin @ 721de3a1bb5ac879b5c118dd9fc55c474a8730c4  [tag: sdk-20260917-1242-0]
+// VENDORED: @voxgig/plugin sdk-20260925-1316-0 (cpp/src/types.cpp)
+// Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20260925-1316-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Errors and the raise mechanism. See types.hpp for why exceptions. */
 

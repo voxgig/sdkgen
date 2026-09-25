@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20260917-1242-0 (c/src/resolve.h)
-// Source: https://github.com/voxgig/plugin @ 721de3a1bb5ac879b5c118dd9fc55c474a8730c4  [tag: sdk-20260917-1242-0]
+// VENDORED: @voxgig/plugin sdk-20260925-1316-0 (c/src/resolve.h)
+// Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20260925-1316-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Dynamic resolution (§10.2) — name to candidate module ids. Pure: it
  * returns the ids a host WOULD try, in order, and loads nothing. That

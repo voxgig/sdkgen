@@ -1,17 +1,6 @@
 // VENDORED: @voxgig/plugin 0.1.6 (typescript/src/Export.ts)
-// Source: https://github.com/voxgig/plugin @ 721de3a1bb5ac879b5c118dd9fc55c474a8730c4  [tag: sdk-20260917-1242-0]
+// Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20260925-1316-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
-/* Exports (§11).
- *
- * An instance publishes values for other plugins and for the
- * application. Read with `host.exports('retry$fast/client')`.
- *
- * THE UNQUALIFIED ALIAS IS THE INTERESTING PART. `retry/client`
- * resolves to the UNTAGGED instance if one exists; if not, and exactly
- * one tagged instance exports that key, it resolves to that one; if two
- * do, it is `plugin_export_ambiguous` — deliberately diverging from
- * seneca's silent last-wins, because with multi-instance as a headline
- * feature an ambiguous alias is a defect waiting for production. */
 
 import { fail } from './Types'
 import { parseref, canonref } from './Ref'
@@ -19,17 +8,6 @@ import { parseref, canonref } from './Ref'
 export type Exported = { ref: string, key: string, value: any }
 
 export function resolveexport(spec: string, exported: Exported[]): any {
-  // THE LAST SLASH, not the first. §4's `checkname` permits `/` in a
-  // NAME — `@acme/store` is legal, and `resolvecandidates` has a branch
-  // for resolving a scoped name verbatim — so splitting at the first one
-  // read `@acme/store/client` as the ref `@acme` with the key
-  // `store/client`, which matches nothing. A scoped definition had no
-  // spelling for its exports at all, and said so by answering absent.
-  //
-  // The cost is that an export KEY may not contain `/`. Nothing declares
-  // one, no port shipped one, and the two cannot both be reachable with
-  // one separator: a name may hold slashes because §4 says so, a key
-  // holds them because nobody stopped it.
   const cut = spec.lastIndexOf('/')
   if (-1 === cut) {
     fail('plugin_export_ambiguous', 'export spec needs a key: ' + spec, { spec })

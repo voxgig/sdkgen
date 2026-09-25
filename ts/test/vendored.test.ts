@@ -368,14 +368,11 @@ describe('vendored', () => {
 
 
   test('local deviations from vendored code stay marked', () => {
+    // go and csharp are absent because a resync carried their fixes upstream and
+    // removed the patches. php and rb are not routed, so they stay hand-patched.
     const patched: Record<string, number> = {
       'tm/php/utility/struct/Struct.php': 4,
-
-      //   go: hand-rolled SetProp against a held grandparent, where SetProp
-      'tm/go/utility/struct/voxgigstruct.go': 2,
       'tm/rb/utility/struct/voxgig_struct.rb': 1,
-
-      'tm/csharp/utility/struct/Struct.cs': 1,
     }
 
     for (const [rel, count] of Object.entries(patched)) {

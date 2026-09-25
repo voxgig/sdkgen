@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (kotlin/src/main/kotlin/voxgig/struct/Struct.kt)
-// Source: https://github.com/voxgig/struct @ 3110e839a3f35b2fbdb047bf0c24f29d144027ea  [tag: sdk-20260917-1242-0]
+// Source: https://github.com/voxgig/struct @ 3a42881b1d26c75ebbed9f1897f0ba94cf3cf780  [tag: sdk-20260925-1316-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 package KOTLINPACKAGE.utility.struct
 

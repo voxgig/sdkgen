@@ -1,16 +1,6 @@
 // VENDORED: @voxgig/plugin 0.1.6 (go/plugin/util.go)
-// Source: https://github.com/voxgig/plugin @ 721de3a1bb5ac879b5c118dd9fc55c474a8730c4  [tag: sdk-20260917-1242-0]
+// Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20260925-1316-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
-/* The handful of helpers the port needs that the canonical gets from
- * JavaScript for free: sorted map keys (Object.keys(x).sort()), a
- * JSON.stringify-equivalent marshal, and deep clone.
- *
- * `each(...) in sorted-key order` is a house rule across voxgig
- * because it makes output BYTE-STABLE. Go's map iteration is
- * deliberately randomized, so every traversal here goes through
- * sortedkeys — an unsorted `for k := range m` is a bug that passes its
- * own tests most of the time. */
-
 package plugin
 
 import (

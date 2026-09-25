@@ -631,7 +631,9 @@ sub auth_placed {
   my $cred = auth_credential();
   my $spec = auth_bags();
   if (defined $cred && defined $seed) {
-    auth_bag($spec, $cred->{where})->{ $cred->{name} } = $seed;
+    # Seed what prepare_auth would have written: pair is the "<scheme>="
+    # lead-in for a cookie and '' for a header or query credential.
+    auth_bag($spec, $cred->{where})->{ $cred->{name} } = $cred->{pair} . $seed;
   }
   my $ctx = auth_ctx($options, $spec);
   $utility->{prepare_auth}->($ctx);

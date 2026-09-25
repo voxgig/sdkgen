@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/sekreto 0.2.0 (python/voxgig_sekreto/plugins/httpjson.py)
-# Source: https://github.com/voxgig/sekreto @ 108c4a914bee7b6534c30d1c68c25cd1b9377696  [tag: sdk-20260917-1242-0]
+# Source: https://github.com/voxgig/sekreto @ 163f537960de6813cc393b89843949ca3afa8cfc  [tag: sdk-20260925-1316-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # The HTTP half of every plugin that speaks to a store over the wire, in
 # one place and OUTSIDE the core: a chain of built-ins never imports this

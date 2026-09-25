@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (csharp/Struct.cs)
-// Source: https://github.com/voxgig/struct @ 3110e839a3f35b2fbdb047bf0c24f29d144027ea  [tag: sdk-20260917-1242-0]
+// Source: https://github.com/voxgig/struct @ 3a42881b1d26c75ebbed9f1897f0ba94cf3cf780  [tag: sdk-20260925-1316-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE. */
 
@@ -2941,7 +2941,6 @@ namespace Voxgig.Struct
 
             inj.SetVal(inj.DParent, 2);
             inj.Path = (List<object?>)Slice(inj.Path, -1)!;
-            inj.Key = StrKey(GetElem(inj.Path, -1)) ?? S_MT;
 
             var tvals = (List<object?>)Slice(inj.Parent, 1)!;
             if (0 == Size(tvals))
@@ -2952,25 +2951,9 @@ namespace Voxgig.Struct
                 return null;
             }
 
-            // PATCH (optspec port, pending upstream fix): re-validate NONE, not
-            // null, when the data has no value here.
-            //
-            // ts hands validate_ONE's nested call `inj.dparent`, which is
-            // `undefined` for a key the data does not have — so `$NIL` matches
-            // and the alternative succeeds. Here DParent is descended with
-            // GetProp, which answers null for a missing key, and Typify tells
-            // null (T_null) from NONE (T_noval) exactly as ts does: the nested
-            // `$NIL` therefore saw a null and REJECTED it. Every optional entry
-            // the caller omitted — `['`$ONE`', <spec>, '`$NIL`']`, which is how
-            // the generated option spec writes every feature — failed with
-            // "to be one of …, nil, but found no value", and a default client
-            // could not be constructed at all.
-            //
-            // The cost is that a STORED null under a $ONE now reads as absent,
-            // where ts would reject it. GetProp has already conflated the two
-            // by the time this runs, so that is not recoverable here; it is the
-            // same compromise the rb port's patch documents, and the permissive
-            // direction of it.
+            // GetProp answers null for a missing key where ts hands the nested
+            // call `undefined`, so `$NIL` rejected every optional entry the
+            // caller omitted and no default client could be constructed.
             object? dval = inj.DParent ?? NONE;
 
             foreach (object? tval in tvals)

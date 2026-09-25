@@ -63,7 +63,9 @@ module.exports = {
 
   const preamble = `
 const CRED_name = '${jsstr(spec.name)}'
-
+${'cookie' === spec.where ? `
+const COOKIE_header = 'cookie'
+` : ''}
 const OPTION_apikey = 'apikey'${spec.basic && 'header' === spec.where ? `
 const OPTION_secret = 'secret'` : ''}
 
@@ -85,7 +87,7 @@ function prepareAuth(ctx) {
   }
 
   const ${bag(spec.where)} = spec.${bag(spec.where)}
-
+${cookieHelper(spec.where)}
   const options = client.options()
 
   // Public APIs that need no auth omit the options.auth block entirely.
@@ -148,8 +150,54 @@ function bag(where: string): string {
 }
 
 
+// A cookie has no header of its own: place() writes it into `cookie` as
+// `CRED_name=value`, so clear() must free that slot, not CRED_name.
 function clear(where: string): string {
-  return 'query' === where ? 'delprop(query, CRED_name)' : 'delprop(headers, CRED_name)'
+  if ('query' === where) {
+    return 'delprop(query, CRED_name)'
+  }
+
+  if ('cookie' === where) {
+    return 'cookieSet(headers, null)'
+  }
+
+  return 'delprop(headers, CRED_name)'
+}
+
+
+// Splicing keeps the caller's other cookies and makes placement idempotent.
+function cookieHelper(where: string): string {
+  if ('cookie' !== where) {
+    return ''
+  }
+
+  return `
+  function cookieSet(headers, value) {
+    const existing = getprop(headers, COOKIE_header, '')
+    const kept = []
+
+    if ('string' === typeof existing && '' !== existing) {
+      for (const part of existing.split(';')) {
+        const piece = part.trim()
+        if ('' === piece || piece === CRED_name || piece.startsWith(CRED_name + '=')) {
+          continue
+        }
+        kept.push(piece)
+      }
+    }
+
+    if (null != value) {
+      kept.push(CRED_name + '=' + value)
+    }
+
+    if (0 === kept.length) {
+      delprop(headers, COOKIE_header)
+    }
+    else {
+      setprop(headers, COOKIE_header, kept.join('; '))
+    }
+  }
+`
 }
 
 
@@ -159,9 +207,7 @@ function place(where: string): string {
   }
 
   if ('cookie' === where) {
-    return `    const existing = getprop(headers, 'cookie', '')
-    const pair = CRED_name + '=' + apikey
-    setprop(headers, 'cookie', existing ? existing + '; ' + pair : pair)`
+    return `    cookieSet(headers, apikey)`
   }
 
   return `    // Empty prefix (raw apiKey credential) must not add a leading space.

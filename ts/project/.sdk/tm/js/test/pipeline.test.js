@@ -379,7 +379,15 @@ describe('pipeline:prepareAuth', () => {
 
   function placed(options, seed) {
     const spec = bags()
-    if (null != CRED && null != seed) spec[CRED.where][CRED.name] = seed
+    // SEED WHAT prepareAuth WOULD ACTUALLY HAVE WRITTEN. A cookie credential
+    // does not occupy a header of its own: it rides `cookie` as
+    // `CRED_name=value` alongside whatever else the caller put there. An
+    // opaque seed is therefore not a leftover credential, it is a stranger's
+    // cookie, and demanding its removal asks prepareAuth to discard data it
+    // never owned. CRED.pair is the `<scheme>=` lead-in the probe already
+    // derived, and it is '' for a header or query credential, so those cases
+    // seed exactly as before.
+    if (null != CRED && null != seed) spec[CRED.where][CRED.name] = CRED.pair + seed
     const ctx = authCtx(options, spec)
     stdutil.prepareAuth(ctx)
     return null == CRED ? undefined : ctx.spec[CRED.where][CRED.name]
