@@ -194,8 +194,10 @@ workflows and exits non-zero on any difference. `--dry-run` prints the
 `npm trust` commands without contacting npm. Running it without either option
 creates a missing configuration and leaves a matching one alone, and
 `--replace` also revokes trusted publishers that no workflow names. It needs
-an npm login with publish rights. These scripts require the project's `.sdk`
-dependencies.
+an npm login with publish rights. npm offers trusted publishing only once a
+package has a version, so a new package's first version is published by hand,
+as `.sdk/PUBLISHING.md` describes, and the script runs straight after. These
+scripts require the project's `.sdk` dependencies.
 
 Keep project administration scripts in this directory with different names.
 
