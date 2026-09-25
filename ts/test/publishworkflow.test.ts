@@ -2,6 +2,7 @@
 
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
+import Path from 'node:path'
 
 import { Jostraca, Project } from 'jostraca'
 import { memfs } from 'memfs'
@@ -16,13 +17,13 @@ const log: any = {
 }
 
 
-function makeModel(targets: any) {
+function makeModel(targets: any, host: string) {
   return {
     name: 'demo',
     origin: 'voxgig-sdk',
     main: {
       kit: {
-        repo: { host: 'github.com', org: 'acme', name: 'demo-sdk' },
+        repo: { host, org: 'acme', name: 'demo-sdk' },
         target: targets,
       },
     },
@@ -30,12 +31,12 @@ function makeModel(targets: any) {
 }
 
 
-async function render(targets: any): Promise<Record<string, string>> {
+async function renderFs(targets: any, host = 'github.com') {
   const { fs, vol } = memfs({})
   const jostraca = Jostraca()
 
   await jostraca.generate(
-    { fs: () => fs, folder: '/x', model: makeModel(targets), log },
+    { fs: () => fs, folder: '/x', model: makeModel(targets, host), log },
     () => {
       Project({ folder: 'p' }, () => {
         PublishWorkflow({})
@@ -48,7 +49,12 @@ async function render(targets: any): Promise<Record<string, string>> {
   for (const k of Object.keys(json)) {
     out[k.replace(/^.*\/p\//, '')] = json[k]
   }
-  return out
+  return { out, fs }
+}
+
+
+async function render(targets: any, host?: string): Promise<Record<string, string>> {
+  return (await renderFs(targets, host)).out
 }
 
 
@@ -146,6 +152,59 @@ describe('PublishWorkflow', () => {
     ok(doc.includes('--file publish-ts.yml'),
       'the doc does not name publish-ts.yml: ' + doc.slice(0, 400))
     ok(doc.includes('--allow-publish'), 'the trust command grants nothing')
+  })
+
+
+  // THE SCRIPT AND THE WORKFLOWS COME FROM ONE MODEL, so npm is configured
+  // for exactly the workflow files that exist, under the packages they name.
+  test('the trust script registers exactly the workflows generated', async () => {
+    const out = await render({
+      ts: { active: true, name: 'ts', publish: { registry: { name: 'npm' } } },
+      js: {
+        active: true, name: 'js',
+        publish: { registry: { name: 'npm', package: '@acme/demo-js' } },
+      },
+    })
+
+    const script = out['.sdk/admin/setup-npm-trust.sh']
+    ok(null != script, 'no trust script: ' + Object.keys(out).join(', '))
+    ok(script.includes("--repository 'voxgig-sdk/demo-sdk'"), script)
+
+    const wanted = Object.keys(out)
+      .filter((p) => p.startsWith('.github/workflows/'))
+      .map((p) => {
+        const pkg = out[p].match(/^# Publishes (\S+) /m)![1]
+        return `--publish '${pkg}=${Path.basename(p)}'`
+      })
+    deepStrictEqual(script.match(/--publish '[^']+'/g)!.sort(), wanted.sort())
+    strictEqual(wanted.length, 2)
+  })
+
+
+  test('the workflow and the doc name the repository and the script', async () => {
+    const out = await render(NPM_TS)
+    const wf = out['.github/workflows/publish-ts.yml']
+    const doc = out['.sdk/PUBLISHING.md']
+
+    ok(wf.includes('--repository voxgig-sdk/demo-sdk'), wf.slice(0, 900))
+    ok(!wf.includes('<owner>/<repo>'), 'the workflow still carries a placeholder')
+    ok(wf.includes('.sdk/admin/setup-npm-trust.sh'), 'the workflow does not name the script')
+    ok(doc.includes('.sdk/admin/setup-npm-trust.sh') && doc.includes('--check'),
+      'the doc does not explain the script: ' + doc)
+  })
+
+
+  test('the trust script is executable', async () => {
+    const { fs } = await renderFs(NPM_TS)
+    strictEqual(fs.statSync('/x/p/.sdk/admin/setup-npm-trust.sh').mode & 0o777, 0o755)
+  })
+
+
+  // npm trusts GitHub Actions only for a repository on github.com.
+  test('no trust script for a repository hosted elsewhere', async () => {
+    const out = await render(NPM_TS, 'gitlab.example.com')
+    strictEqual(out['.sdk/admin/setup-npm-trust.sh'], undefined)
+    ok(out['.github/workflows/publish-ts.yml'].includes('--repository <owner>/<repo>'))
   })
 
 
