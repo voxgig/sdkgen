@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LANG_LABEL = exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = void 0;
+exports.sdkName = sdkName;
 exports.langLabel = langLabel;
 exports.originName = originName;
 exports.repoInfo = repoInfo;
@@ -54,12 +55,15 @@ function originName(model, target) {
     const orig = model?.main?.[apidef_1.KIT]?.target?.[target]?.origname;
     return (null != orig && '' !== orig) ? String(orig) : target;
 }
+function sdkName(slug) {
+    return slug.endsWith('-sdk') ? slug : `${slug}-sdk`;
+}
 function repoInfo(model) {
     const slug = model.name;
     const origin = model.origin || 'voxgig-sdk';
     const declared = (model && model.main && model.main[apidef_1.KIT] && model.main[apidef_1.KIT].repo) || {};
     const host = '' === (declared.host || '') ? 'github.com' : (declared.host || 'github.com');
-    const path = '' === (declared.path || '') ? `${origin}/${slug}-sdk` : String(declared.path);
+    const path = '' === (declared.path || '') ? `${origin}/${sdkName(slug)}` : String(declared.path);
     const seg = path.split('/');
     const repo = seg[seg.length - 1];
     const repoUrl = `https://${host}/${path}`;
@@ -183,7 +187,7 @@ function apiName(model) {
 function packageName(model, eco) {
     const slug = model.name;
     const origin = model.origin || 'voxgig-sdk';
-    const base = slug.endsWith('-sdk') ? slug : `${slug}-sdk`;
+    const base = sdkName(slug);
     const npmScoped = `@${origin}/${base}`;
     const ECO_TARGET = {
         npm: 'ts', pypi: 'py', gem: 'rb', luarocks: 'lua', composer: 'php',

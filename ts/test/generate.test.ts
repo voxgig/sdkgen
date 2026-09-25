@@ -205,6 +205,24 @@ describe('generate', () => {
   })
 
 
+  // The suffix every derived name carries is added once, whichever emitter
+  // builds the name.
+  test('a model already named -sdk is not suffixed again', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const doubled: string[] = []
+
+    for (const target of targets) {
+      for (const [path, content] of filesFor(await generate([target], 'demo-sdk'), target)) {
+        if (String(content).includes('demo-sdk-sdk')) {
+          doubled.push(path)
+        }
+      }
+    }
+
+    deepStrictEqual(doubled, [], 'files that name the SDK demo-sdk-sdk')
+  })
+
+
   test('every target generates', async () => {
     const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
     ok(5 < targets.length, 'expected the full target set, got ' + targets.length)

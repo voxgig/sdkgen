@@ -358,7 +358,8 @@ main: kit: target: 'seneca-provider': output: root: true
 - One target at most may declare it.
 - It applies in-tree only. A target that also declares `output: path` is
   refused, because `path` sends it into another repository and `root` keeps
-  it in this one.
+  it in this one. A path given at generate time, through `external` or
+  `SDKGEN_EXTERNAL`, relocates it for that run like any other target.
 - `phase: build` and `doc` are off because nothing in such a repository
   reads them. The entity test data serves the SDK targets' own tests, and the
   documentation site describes an SDK.

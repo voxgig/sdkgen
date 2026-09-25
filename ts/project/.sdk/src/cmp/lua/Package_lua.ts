@@ -67,7 +67,7 @@ const Package = cmp(async function Package(props: any) {
   // no real namespaces, so the parts are hyphen-joined. The Lua module name
   // (`${model.name}_sdk`) used by `require` is unchanged.
   const rockName = packageName(model, target.name)
-  const { repoUrl, issuesUrl } = repoInfo(model)
+  const { repo, repoUrl, issuesUrl } = repoInfo(model)
   const labels = keywords(model).map((k) => `"${k}"`).join(', ')
 
   // Single source for the version so the rockspec version and the source.tag
@@ -82,7 +82,7 @@ source = {
   -- tag pushed by \`make publish\`, and point at the lua/ subdir of the monorepo.
   url = "git+${repoUrl}.git",
   tag = "lua/v${rockVersion}",
-  dir = "${model.name}-sdk/lua"
+  dir = "${repo}/lua"
 }
 description = {
   summary = "${pkgDescription(model, target.name)}",

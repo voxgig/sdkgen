@@ -33,6 +33,11 @@ function originName(model: any, target: string): string {
   return (null != orig && '' !== orig) ? String(orig) : target
 }
 
+function sdkName(slug: string): string {
+  return slug.endsWith('-sdk') ? slug : `${slug}-sdk`
+}
+
+
 function repoInfo(model: any) {
   const slug = model.name
   const origin = model.origin || 'voxgig-sdk'
@@ -40,7 +45,7 @@ function repoInfo(model: any) {
   const declared = (model && model.main && model.main[KIT] && model.main[KIT].repo) || {}
 
   const host = '' === (declared.host || '') ? 'github.com' : (declared.host || 'github.com')
-  const path = '' === (declared.path || '') ? `${origin}/${slug}-sdk` : String(declared.path)
+  const path = '' === (declared.path || '') ? `${origin}/${sdkName(slug)}` : String(declared.path)
 
   const seg = path.split('/')
   const repo = seg[seg.length - 1]
@@ -190,7 +195,7 @@ function apiName(model: any): string {
 function packageName(model: any, eco: string): string {
   const slug = model.name
   const origin = model.origin || 'voxgig-sdk'
-  const base = slug.endsWith('-sdk') ? slug : `${slug}-sdk`
+  const base = sdkName(slug)
   const npmScoped = `@${origin}/${base}`
 
   const ECO_TARGET: Record<string, string> = {
@@ -324,6 +329,7 @@ function envName(model: any): string {
 }
 
 export {
+  sdkName,
   PUBLISHER,
   PUBLISHER_URL,
   SECURITY_EMAIL,

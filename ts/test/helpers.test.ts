@@ -21,6 +21,8 @@ import {
   originName,
   goModule,
   packageName,
+  sdkName,
+  repoInfo,
   registryState,
   isPublished,
   installCommand,
@@ -743,6 +745,10 @@ describe('helpers', () => {
     test('once, for a name that already ends in -sdk', () => {
       strictEqual(packageName({ name: 'github-sdk', origin: 'voxgig-sdk' }, 'ts'),
         '@voxgig-sdk/github-sdk')
+      strictEqual(sdkName('github-sdk'), 'github-sdk')
+      strictEqual(sdkName('github'), 'github-sdk')
+      strictEqual(repoInfo({ name: 'github-sdk', origin: 'voxgig-sdk' }).path,
+        'voxgig-sdk/github-sdk')
     })
 
     test('a declared name is taken as given', () => {

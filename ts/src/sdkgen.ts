@@ -103,6 +103,7 @@ import {
 import type { Manifest, ManifestRead } from './helpers/manifest'
 import {
   packageName,
+  sdkName,
   installCommand,
   registryState,
   isPublished,
@@ -656,6 +657,8 @@ function externalItems(
 
         if (null != ov.path && '' !== ov.path) {
           output.path = ov.path
+          // The override relocates this run's output, root placement included.
+          delete output.root
         }
         if (null != ov.sdkrel && '' !== ov.sdkrel) {
           output.sdkrel = ov.sdkrel
@@ -1102,6 +1105,7 @@ export {
   prefixLeadingDigit,
 
   packageName,
+  sdkName,
   installCommand,
   registryState,
   isPublished,

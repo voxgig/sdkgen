@@ -526,6 +526,19 @@ describe('external target', () => {
     })
 
 
+    // An override is for this run, and relocates a root target like any other.
+    test('an override relocates a target the model generates at the root', async () => {
+      const gen = setup(['go', 'go-cli'], {}, {
+        external: { 'go-cli': { path: OUT2 } },
+        extra: "main: kit: target: 'go-cli': output: root: true",
+      })
+      await gen.run()
+
+      ok(0 < Object.keys(under(gen.files(), OUT2)).length,
+        'nothing landed at the overridden path')
+    })
+
+
     test('two targets claiming the same folder are refused', async () => {
       const { msg } = await refuse(['ts', 'go', 'go-cli'],
         { 'go-cli': OUT, go: OUT })
