@@ -718,6 +718,14 @@ function checkExternalFolders(external: ExternalPlan[], root: string, fs: any) {
       ext.target.output.path + '", which resolves to: ' + ext.folder +
       '\n  (SDK project: ' + root + ')'
 
+    if (true === ext.target.output.root) {
+      throw new SdkGenError(
+        label + ' "' + ext.name + '" declares both `output: path` and ' +
+        '`output: root: true`.\n  ' + where +
+        '\n  `path` generates it into another repository and `root` at the ' +
+        'root of this one. Keep one.')
+    }
+
     if (ext.folder === root || folderContains(root, ext.folder)) {
       throw new SdkGenError(
         'External output path is inside the SDK project.\n  ' + where +

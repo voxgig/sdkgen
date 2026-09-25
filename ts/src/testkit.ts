@@ -563,7 +563,9 @@ function layeredFs(mem: any): any {
 
 function defaultRoot(): any {
   const { cmp, each, names, Project, Folder } = require('jostraca')
-  const { Main, Entity, Feature, Test, Readme, AgentGuide } = require('./sdkgen')
+  const {
+    Main, Entity, Feature, Test, Readme, AgentGuide, SdkGenError,
+  } = require('./sdkgen')
 
   return cmp(function Root(props: any) {
     const { model, ctx$ } = props
@@ -581,41 +583,54 @@ function defaultRoot(): any {
     const feature = model.main[KIT].feature || {}
     const entity = model.main[KIT].entity || {}
 
+    const active = each(target).filter((t: any) => t && false !== t.active)
+
+    const atRoot = active.filter((t: any) => true === t.output?.root)
+    if (1 < atRoot.length) {
+      throw new SdkGenError('Only one target can be generated at the ' +
+        'project root: ' + atRoot.map((t: any) => t.name).join(', '))
+    }
+
     Project({}, () => {
-      each(target)
-        .filter((t: any) => t && false !== t.active)
-        .map((t: any) => {
-          names(t, t.name)
+      active.map((t: any) => {
+        names(t, t.name)
 
-          const phase = t.phase || {}
-          const on = (n: string) => false !== (phase[n] && phase[n].active)
+        const phase = t.phase || {}
+        const on = (n: string) => false !== (phase[n] && phase[n].active)
 
-          Folder({ name: t.name }, () => {
-            if (on('entity')) {
-              each(entity)
-                .filter((e: any) => e && false !== e.active)
-                .map((e: any) => {
-                  names(e, e.name)
-                  Entity({ target: t, entity: e })
-                })
-            }
+        const phases = () => {
+          if (on('entity')) {
+            each(entity)
+              .filter((e: any) => e && false !== e.active)
+              .map((e: any) => {
+                names(e, e.name)
+                Entity({ target: t, entity: e })
+              })
+          }
 
-            if (on('feature')) {
-              each(feature)
-                .filter((f: any) => f && f.active)
-                .map((f: any) => {
-                  names(f, f.name)
-                  Feature({ target: t, feature: f })
-                })
-            }
+          if (on('feature')) {
+            each(feature)
+              .filter((f: any) => f && f.active)
+              .map((f: any) => {
+                names(f, f.name)
+                Feature({ target: t, feature: f })
+              })
+          }
 
-            Main({ target: t })
+          Main({ target: t })
 
-            if (on('readme')) Readme({ target: t })
-            if (on('agentguide')) AgentGuide({ target: t })
-            if (on('test')) Test({ target: t })
-          })
-        })
+          if (on('readme')) Readme({ target: t })
+          if (on('agentguide')) AgentGuide({ target: t })
+          if (on('test')) Test({ target: t })
+        }
+
+        if (true === t.output?.root) {
+          phases()
+        }
+        else {
+          Folder({ name: t.name }, phases)
+        }
+      })
     })
   })
 }

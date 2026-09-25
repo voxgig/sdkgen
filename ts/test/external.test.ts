@@ -513,6 +513,19 @@ describe('external target', () => {
       })
 
 
+    test('`output: root` together with `output: path` is refused', async () => {
+      const { msg, files } = await refuse(['go', 'go-cli'], { 'go-cli': OUT },
+        { extra: "main: kit: target: 'go-cli': output: root: true" })
+
+      ok(msg.includes('`output: path` and `output: root: true`'),
+        'unexpected refusal reason:\n' + msg)
+      ok(msg.includes('go-cli'), 'the message does not name the target:\n' + msg)
+
+      deepStrictEqual(Object.keys(files), [],
+        'the refusal came too late — the in-tree pass had already written')
+    })
+
+
     test('two targets claiming the same folder are refused', async () => {
       const { msg } = await refuse(['ts', 'go', 'go-cli'],
         { 'go-cli': OUT, go: OUT })
