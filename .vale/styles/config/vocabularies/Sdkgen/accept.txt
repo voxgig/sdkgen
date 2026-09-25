@@ -139,3 +139,4 @@ docgen
 Slidev
 Univec
 loopback
+Packagist

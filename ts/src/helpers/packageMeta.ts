@@ -190,8 +190,8 @@ function apiName(model: any): string {
 function packageName(model: any, eco: string): string {
   const slug = model.name
   const origin = model.origin || 'voxgig-sdk'
-  const base = origin.endsWith('-sdk') ? slug : `${slug}-sdk`
-  const npmScoped = `@${origin}/${slug}${origin.endsWith('-sdk') ? '' : '-sdk'}`
+  const base = slug.endsWith('-sdk') ? slug : `${slug}-sdk`
+  const npmScoped = `@${origin}/${base}`
 
   const ECO_TARGET: Record<string, string> = {
     npm: 'ts', pypi: 'py', gem: 'rb', luarocks: 'lua', composer: 'php',

@@ -967,7 +967,7 @@ src/cmp/lua/Entity_lua.ts ae1915c8f58b
 src/cmp/lua/Gitignore_lua.ts ddf4d3003936
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
 src/cmp/lua/Main_lua.ts bd521b9f657b
-src/cmp/lua/Package_lua.ts 2ab6525b784f
+src/cmp/lua/Package_lua.ts 99b9eb2f3190
 src/cmp/lua/PrepareAuth_lua.ts 90f4bb60b7f8
 src/cmp/lua/ReadmeEntity_lua.ts 65abbe121f16
 src/cmp/lua/ReadmeExamplesTest_lua.ts 859a83243921
@@ -1236,7 +1236,7 @@ src/cmp/php/Entity_php.ts 44b5f53db2e9
 src/cmp/php/Gitignore_php.ts e6379c0edbe7
 src/cmp/php/MainEntity_php.ts 7546376a4b42
 src/cmp/php/Main_php.ts dbd3cdb22fcf
-src/cmp/php/Package_php.ts 1a0ba9f94ad6
+src/cmp/php/Package_php.ts 807fc4e5a993
 src/cmp/php/PrepareAuth_php.ts 34bfd5fac3ee
 src/cmp/php/ReadmeEntity_php.ts fc1191440ab8
 src/cmp/php/ReadmeExamplesTest_php.ts 76256c55c6ba
@@ -1339,7 +1339,7 @@ src/cmp/py/Entity_py.ts 882145a9c936
 src/cmp/py/Gitignore_py.ts 07f7135b0381
 src/cmp/py/MainEntity_py.ts 853d7533f8fb
 src/cmp/py/Main_py.ts c8090bc018ef
-src/cmp/py/Package_py.ts 4de58fba2dbb
+src/cmp/py/Package_py.ts f64acebbf344
 src/cmp/py/PrepareAuth_py.ts 6a16bd5ad876
 src/cmp/py/ReadmeEntity_py.ts fd64bff3c546
 src/cmp/py/ReadmeExamplesTest_py.ts 734a3cfd4d03
@@ -1443,7 +1443,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/py-data.aontu 255883bf8af3
 model/target/target-index.aontu fab6a58fafb8
-src/cmp/py-data/Main_py-data.ts 1e43d8e02334
+src/cmp/py-data/Main_py-data.ts d72a81b2ade0
 tm/py-data/LICENSE ed2f88b0aab8
 tm/py-data/Makefile ad5e5089b15e
 tm/py-data/pkg/auth.py a84c020b8eb1
@@ -1471,7 +1471,7 @@ src/cmp/rb/Entity_rb.ts c1e1f85b9859
 src/cmp/rb/Gitignore_rb.ts d6ab9def4134
 src/cmp/rb/MainEntity_rb.ts a88eedc19290
 src/cmp/rb/Main_rb.ts 7525d2565c75
-src/cmp/rb/Package_rb.ts 378770b209d8
+src/cmp/rb/Package_rb.ts 8f9f3d6e5220
 src/cmp/rb/PrepareAuth_rb.ts 4b558f0bb796
 src/cmp/rb/ReadmeEntity_rb.ts 3cdc2c1073b4
 src/cmp/rb/ReadmeExamplesTest_rb.ts e57ac3f92fca

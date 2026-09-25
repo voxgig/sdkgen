@@ -218,7 +218,7 @@ files in `ts/project/.sdk/model/target/`:
 | `publish.tag.prefix` | string | `''` | `''` uses the target name. |
 | `publish.registry.state` | string | `'pending'` | `pending` (declared + git-tag-published, not yet uploaded) / `active` / `inactive`. Omit `registry` entirely for tag-only ports (the go family). |
 | `publish.registry.name` / `.url` | string | `''` | Registry identity (`npm`, `pypi`, …). |
-| `publish.registry.package` | string | `''` | Published package name. `''` derives one. |
+| `publish.registry.package` | string | `''` | Published package name. `''` derives one that ends in `-sdk`, whatever the origin: `@<origin>/<name>-sdk` on npm (`-js` after it for the `js` target), `<origin>-<name>-sdk` on PyPI, RubyGems and LuaRocks, and `<origin>/<name>-sdk` on Packagist. A name that already ends in `-sdk` gets no second one. |
 | `deps.<dep>.active` | boolean | `false` | Include this dependency. |
 | `deps.<dep>.version` | string | `'*'` | Version constraint. |
 | `deps.<dep>.kind` | string | `'prod'` | Manifest sections. Target-defined, and a COMMA-SEPARATED LIST where a package belongs in two (`'peer,dev'`) — the map is keyed by package name, so it cannot be declared twice. |

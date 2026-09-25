@@ -483,7 +483,7 @@ main: kit: target: js: phase: feature: active: false
       ok(src.includes('"sdk": { "demo": {'),
         target + ': README has no station.json block keyed by the slug')
       ok(src.includes('"package": "' + ('ts' === target ?
-        '@voxgig-sdk/demo' : '@voxgig-sdk/demo-js') + '"'),
+        '@voxgig-sdk/demo-sdk' : '@voxgig-sdk/demo-sdk-js') + '"'),
         target + ': README quickstart declares no package for station to load')
       ok(src.includes("station.sdk('demo')"),
         target + ': README has no station.sdk() quickstart')

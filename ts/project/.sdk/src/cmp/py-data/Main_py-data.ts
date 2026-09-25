@@ -99,9 +99,7 @@ const Package = cmp(function Package(props: any) {
   const { target, model, lower, dataModule } = props
   const ctx$ = props.ctx$
 
-  const ns = model.origin || 'voxgig-sdk'
-  const pkgBase = ns.endsWith('-sdk') ? model.name : `${model.name}-sdk`
-  const distName = `${ns}-${pkgBase}-data`
+  const distName = packageName(model, target.name)
   // The `py` SDK this package WRAPS — a different target, so it keeps its
   // own name and does not follow this target's alias.
   const sdkDist = packageName(model, 'py')
