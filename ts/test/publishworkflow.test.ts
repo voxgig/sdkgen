@@ -205,6 +205,10 @@ describe('PublishWorkflow', () => {
     const out = await render(NPM_TS, 'gitlab.example.com')
     strictEqual(out['.sdk/admin/setup-npm-trust.sh'], undefined)
     ok(out['.github/workflows/publish-ts.yml'].includes('--repository <owner>/<repo>'))
+
+    const cased = await render(NPM_TS, 'GitHub.com')
+    ok(null != cased['.sdk/admin/setup-npm-trust.sh'],
+      'a host name is case-insensitive, but GitHub.com lost the script')
   })
 
 

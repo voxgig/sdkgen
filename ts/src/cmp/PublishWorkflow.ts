@@ -38,7 +38,7 @@ const PublishWorkflow = cmp(function PublishWorkflow(props: any) {
 
   // npm trusts GitHub Actions only for a repository on github.com.
   const { host, path } = repoInfo(model)
-  const repository = 'github.com' === host ? path : null
+  const repository = 'github.com' === host.toLowerCase() ? path : null
 
   Folder({ name: '.github' }, () => {
     Folder({ name: 'workflows' }, () => {

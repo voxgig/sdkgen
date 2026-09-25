@@ -28,7 +28,7 @@ const PublishWorkflow = (0, jostraca_1.cmp)(function PublishWorkflow(props) {
     }
     // npm trusts GitHub Actions only for a repository on github.com.
     const { host, path } = (0, packageMeta_1.repoInfo)(model);
-    const repository = 'github.com' === host ? path : null;
+    const repository = 'github.com' === host.toLowerCase() ? path : null;
     (0, jostraca_1.Folder)({ name: '.github' }, () => {
         (0, jostraca_1.Folder)({ name: 'workflows' }, () => {
             for (const target of npmTargets) {
