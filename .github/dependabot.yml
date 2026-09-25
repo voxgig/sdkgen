@@ -1,0 +1,26 @@
+# Version updates for the solardemo test fixture, and nothing else.
+#
+# The fixture's exact versions carry no meaning: it is a Fastify app the doctor
+# and generate harnesses drive, and it ships nowhere. ts/package.json's `files`
+# whitelist keeps test/ out of the tarball, and the scaffold a generated SDK
+# copies is project/. Fourteen advisories accumulated in its lockfile while
+# nobody was triaging it, all fixed by `npm update` alone.
+#
+# ts/ is deliberately absent. Its peer ranges are open-ended and chosen against
+# each other; a bot proposing the latest of each in turn would fight decisions
+# the release process makes on purpose.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /ts/test/solardemo/app
+    schedule:
+      interval: weekly
+    # One pull request for the lot: the versions are not individually
+    # interesting, so per-dependency pull requests would be pure noise.
+    groups:
+      solardemo:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: fixture
+    open-pull-requests-limit: 2
