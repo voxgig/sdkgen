@@ -37,6 +37,7 @@ import { AgentGuideFeature } from './cmp/AgentGuideFeature'
 import { License } from './cmp/License'
 import { Security } from './cmp/Security'
 import { PublishWorkflow } from './cmp/PublishWorkflow'
+import { npmTrustScript } from './admin/npm-trust'
 import { Changelog } from './cmp/Changelog'
 import { Test } from './cmp/Test'
 import { TestControl, TEST_CONTROL_EXCLUDE } from './cmp/TestControl'
@@ -956,6 +957,7 @@ export {
   License,
   Security,
   PublishWorkflow,
+  npmTrustScript,
   Changelog,
   Entity,
   Feature,

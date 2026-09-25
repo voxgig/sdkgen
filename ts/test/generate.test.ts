@@ -1289,6 +1289,50 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  test('the Ruby gemspec asks only for gems the SDK loads', async () => {
+    const out = await generate(['rb'])
+    const gemspec = findFile(out, 'rb/Demo_sdk.gemspec')
+    ok(null != gemspec, 'no Demo_sdk.gemspec generated')
+
+    const deps = [...gemspec!.matchAll(
+      /^\s*spec\.add_dependency\s+"([^"]+)"(?:,\s*"([^"]+)")?\s*$/gm)]
+      .map((m) => ({ name: m[1], requirement: m[2] ?? null }))
+
+    // Every runtime dependency is one `gem install` must resolve, so it has
+    // to be a gem the shipped source loads. The SDK vendors struct, and the
+    // voxgig-struct gem it once declared does not exist.
+    const shipped = filesFor(out, 'rb')
+      .filter(([p]) => p.endsWith('.rb') && !p.startsWith('rb/test/'))
+      .map(([, c]) => c).join('\n')
+    const unloaded = deps.filter((d) =>
+      !new RegExp(`^\\s*require\\s+['"]${d.name}['"]`, 'm').test(shipped))
+    deepStrictEqual(unloaded, [], 'runtime dependencies the SDK never requires')
+
+    deepStrictEqual(deps, [{ name: 'json', requirement: null }])
+  })
+
+
+  test('a Ruby dependency with no real version is left unconstrained', async () => {
+    // `~> 0` admits only 0.x releases, which is how an absent or zero
+    // version once shut out every current json.
+    const out = await generate(['rb'], undefined, [
+      "main: kit: target: rb: deps: bare: { active: true }",
+      "main: kit: target: rb: deps: zero: { active: true, version: '0' }",
+      "main: kit: target: rb: deps: pinned: { active: true, version: '1.2' }",
+    ].join('\n'))
+
+    const gemspec = findFile(out, 'rb/Demo_sdk.gemspec')
+    ok(null != gemspec, 'no Demo_sdk.gemspec generated')
+    const lines = gemspec!.split('\n').map((l) => l.trim())
+    const missing = [
+      'spec.add_dependency "bare"',
+      'spec.add_dependency "zero"',
+      'spec.add_dependency "pinned", "~> 1.2"',
+    ].filter((want) => !lines.includes(want))
+    deepStrictEqual(missing, [])
+  })
+
+
   test('a declared repo path drives every published identity', async () => {
     const out = await generate(['go', 'ts'], undefined,
       "main: kit: repo: path: 'acme/legacy-client-sdk'")
@@ -1507,8 +1551,8 @@ main: kit: target: js: phase: feature: active: false
     const out = await generate(['ts', 'js'])
 
     for (const [target, wanted] of [
-      ['ts', ['dist', 'src']],
-      ['js', ['src']],
+      ['ts', ['dist', 'src', 'README.md']],
+      ['js', ['src', 'README.md']],
     ] as [string, string[]][]) {
       const manifest = findFile(out, target + '/package.json')
       ok(null != manifest, target + ': no package.json generated')
@@ -1518,6 +1562,8 @@ main: kit: target: js: phase: feature: active: false
         target + ': package.json has no `files` entry — npm would publish ' +
         'the test suite and build scaffolding')
       deepStrictEqual(pkg.files, wanted, target + ': unexpected `files` entry')
+      ok(null != out[target + '/README.md'],
+        target + ': `files` lists a README.md that is not generated')
 
       for (const never of ['test', 'dist-test']) {
         ok(!pkg.files.includes(never),
