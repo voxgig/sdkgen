@@ -55,7 +55,7 @@ import { ReadmeRefFeatures } from './cmp/ReadmeRefFeatures'
 import { FeatureHook } from './cmp/FeatureHook'
 import { registerComponent } from './cmp/Registered'
 
-import { resolvedFor, liveHint, pointFacts, hasLiveScenarios } from './helpers/resolved'
+import { resolvedFor, liveHint, pointFacts, boundedFacts, hasLiveScenarios } from './helpers/resolved'
 import type { RegisterOptions } from './cmp/Registered'
 
 import { buildIdNames, entityRelationName, flowSteps } from './helpers/buildIdNames'
@@ -985,6 +985,7 @@ export {
   resolvedFor,
   liveHint,
   pointFacts,
+  boundedFacts,
   hasLiveScenarios,
 
   Jostraca,

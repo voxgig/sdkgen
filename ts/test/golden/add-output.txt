@@ -772,7 +772,7 @@ src/cmp/js/ReadmeTopTest_js.ts 1fa9a087871f
 src/cmp/js/Schema_js.ts 557790433a08
 src/cmp/js/SdkError_js.ts c3c526f2b624
 src/cmp/js/TestDirect_js.ts 825e6fd48af9
-src/cmp/js/TestEntity_js.ts 59e1e81e44f0
+src/cmp/js/TestEntity_js.ts 47daa51d19ce
 src/cmp/js/TestLive_js.ts 0d06058733f9
 src/cmp/js/TestMain_js.ts 8b45d4d8db1a
 src/cmp/js/Test_js.ts f0355b263a10
@@ -1974,7 +1974,7 @@ src/cmp/ts/ReadmeTopTest_ts.ts 791abb1924cf
 src/cmp/ts/Schema_ts.ts 28d8eedbb21a
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
 src/cmp/ts/TestDirect_ts.ts e23c500cadc1
-src/cmp/ts/TestEntity_ts.ts 8af607b2f12e
+src/cmp/ts/TestEntity_ts.ts fc92d6169a52
 src/cmp/ts/TestLive_ts.ts 0aa6fa009776
 src/cmp/ts/TestMain_ts.ts 8b45d4d8db1a
 src/cmp/ts/Test_ts.ts 43eb436e2d27

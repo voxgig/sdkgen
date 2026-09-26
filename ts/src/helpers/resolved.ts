@@ -30,10 +30,41 @@ function pointFacts(ctx$: any, point: any): any {
 }
 
 
+// What the live runner reads; see tm/<lang>/test/live-contract requestContract.
+const LIVE_FACT_KEYS = ['protocol', 'requestBody', 'parameters']
+
+
+// A resolved operation is a shared GRAPH; JSON.stringify writes a TREE, so a
+// schema reached from many places is written once per path. Identity on the
+// current path bounds that; maxDepth bounds breadth it cannot catch.
+function boundedFacts(facts: any, maxDepth = 8): any {
+  const path = new Set<any>()
+
+  const bound = (node: any, depth: number): any => {
+    if (null == node || 'object' !== typeof node) return node
+    if (path.has(node)) return Array.isArray(node) ? [] : {}
+    if (depth > maxDepth) return Array.isArray(node) ? [] : {}
+
+    path.add(node)
+    const out: any = Array.isArray(node) ? node.map((v) => bound(v, depth + 1))
+      : Object.fromEntries(Object.entries(node).map(([k, v]) => [k, bound(v, depth + 1)]))
+    path.delete(node)
+    return out
+  }
+
+  const kept: any = {}
+  for (const key of LIVE_FACT_KEYS) {
+    if (undefined !== facts?.[key]) kept[key] = bound(facts[key], 0)
+  }
+  return kept
+}
+
+
 
 export {
   resolvedFor,
   liveHint,
   pointFacts,
+  boundedFacts,
   hasLiveScenarios,
 }

@@ -52,3 +52,47 @@ test('GraphQL HTTP 200 errors fail while independent operations continue', async
     assert.deepEqual(calls,['bad','good'])
   } finally {globalThis.fetch=savedFetch}
 })
+
+// A resolved operation is a shared graph. Stringifying it writes a tree, and a
+// HubSpot flows POST exceeded the maximum string length V8 allocates, killing
+// generation inside the generated test rather than near the cause.
+test('embedded live facts are bounded, and keep the request schema', () => {
+  const { boundedFacts } = require('../dist/sdkgen.js')
+
+  // One leaf shared from many places at each of several levels: the graph is
+  // small, its tree form is not.
+  const share = (child: any, width: number) => {
+    const node: any = { type: 'object', properties: {} }
+    for (let i = 0; i < width; i++) node.properties['p' + i] = child
+    return node
+  }
+  let schema: any = { type: 'string' }
+  for (let d = 0; d < 6; d++) schema = share(schema, 6)
+
+  const facts = {
+    protocol: 'http',
+    operationId: 'createFlow',
+    responses: { '200': { content: { 'application/json': { schema } } } },
+    requestBody: { required: true, content: { 'application/json': { schema } } },
+    parameters: [{ name: 'body', in: 'body', schema }],
+  }
+
+  const bounded = boundedFacts(facts)
+
+  // Only what the runner reads survives.
+  assert.deepEqual(Object.keys(bounded).sort(), ['parameters', 'protocol', 'requestBody'])
+  assert.equal(bounded.protocol, 'http')
+  assert.ok(bounded.requestBody.content['application/json'].schema, 'request schema dropped')
+  assert.equal(bounded.requestBody.required, true)
+
+  // The bound has to BITE: the tree form is far larger than the graph.
+  const full = JSON.stringify(facts).length
+  const cut = JSON.stringify(bounded).length
+  assert.ok(cut * 10 < full, `bound did not reduce the embed: ${full} -> ${cut}`)
+
+  // And it must terminate on a true cycle, which sharing alone does not cover.
+  const cyclic: any = { type: 'object', properties: {} }
+  cyclic.properties.self = cyclic
+  const bc = boundedFacts({ requestBody: { content: { 'application/json': { schema: cyclic } } } })
+  assert.ok(JSON.stringify(bc).length < 4096, 'cyclic schema was not bounded')
+})
