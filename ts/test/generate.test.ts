@@ -990,6 +990,84 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // Only active entities generate: each active one must produce a source file,
+  // and one switched off must leave nothing behind. A name matched anywhere in
+  // the output is inert, since flow and test paths carry it too, so the check
+  // is scoped to the source directory, derived from the paths that vanish.
+  test('the active entities are exactly what every target generates', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+
+    const entities = makeModel(targets).main[KIT].entity || {}
+    const active = Object.keys(entities).filter((k) => false !== entities[k].active)
+    ok(2 < active.length, 'expected several active entities, got ' + active.length)
+
+    // A plain entity: switching a reserved-name one off can rename another.
+    const OFF = 'history'
+    ok(active.includes(OFF), OFF + ' is not an active entity in the fixture')
+
+    const flat = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const dirOf = (path: string) => path.slice(0, path.lastIndexOf('/'))
+    const isTest = (path: string) => /test/i.test(path)
+
+    const full = await generate(targets)
+    const less = await generate(targets, undefined,
+      `main: kit: entity: ${OFF}: active: false\n`)
+
+    const bad: string[] = []
+    const inert: string[] = []
+
+    for (const target of targets) {
+      const before = filesFor(full, target).map(([p]) => p)
+      const after = filesFor(less, target).map(([p]) => p)
+      const kept = new Set(after)
+
+      // A source file must go, not only the tests.
+      const gone = before.filter((p) => !kept.has(p))
+      const srcGone = gone.filter((p) => !isTest(p))
+      if (0 === srcGone.length) {
+        bad.push(`${target}: switching '${OFF}' off removed no source file` +
+          (0 === gone.length ? '' : ', only: ' + gone.join(', ')))
+        continue
+      }
+      for (const p of gone.filter((p) => !flat(p).includes(flat(OFF)))) {
+        bad.push(`${target}: unrelated file vanished: ${p}`)
+      }
+      for (const p of after.filter((p) => flat(p).includes(flat(OFF)))) {
+        bad.push(`${target}: '${OFF}' is switched off but still generated: ${p}`)
+      }
+      for (const p of after.filter((p) => !before.includes(p))) {
+        bad.push(`${target}: appeared only when '${OFF}' was switched off: ${p}`)
+      }
+
+      const srcDirs = [...new Set(srcGone.map(dirOf))]
+      const sources = before.filter((p) => srcDirs.includes(dirOf(p)))
+      for (const name of active) {
+        if (!sources.some((p) => flat(p).includes(flat(name)))) {
+          bad.push(`${target}: active entity '${name}' generated no source in ` +
+            srcDirs.join(', ') + ' — has: ' +
+            sources.map((p) => p.slice(dirOf(p).length + 1)).join(', '))
+        }
+      }
+
+      // Exactly one absence here is what proves the match still discriminates.
+      const stillThere = after.filter((p) => srcDirs.includes(dirOf(p)))
+      const absent = active
+        .filter((n) => !stillThere.some((p) => flat(p).includes(flat(n))))
+      if (1 !== absent.length || OFF !== absent[0]) {
+        inert.push(`${target}: expected exactly [${OFF}] absent, got ` +
+          '[' + absent.join(', ') + ']')
+      }
+    }
+
+    strictEqual(bad.length, 0,
+      'active entities and generated output disagree:\n  ' + bad.join('\n  '))
+
+    strictEqual(inert.length, 0,
+      'the source match no longer discriminates, so this test proves ' +
+      'nothing:\n  ' + inert.join('\n  '))
+  })
+
+
   test('elixir: no empty argument in a singleton load example', async () => {
     const out = await generate(['elixir'])
 
