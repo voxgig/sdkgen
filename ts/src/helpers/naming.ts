@@ -7,6 +7,8 @@ const JS_RESERVED = new Set<string>([
   'typeof', 'var', 'void', 'while', 'with', 'yield',
   'await', 'implements', 'interface', 'let', 'package', 'private',
   'protected', 'public', 'static',
+  // Not keywords, but strict mode forbids binding them.
+  'arguments', 'eval',
 ])
 
 const GO_RESERVED = new Set<string>([
@@ -180,12 +182,22 @@ function isTsReservedType(Name: string): boolean {
 }
 
 
+const TS_SDK_TYPES = new Set<string>([
+  'Context', 'Control', 'Operation',
+])
+
+
+function isTsSdkType(Name: string): boolean {
+  return TS_SDK_TYPES.has(Name)
+}
+
+
 // A collision-free TS type name for a generated type: unchanged, unless it
-// shadows a TS/JS global, in which case `Type` is appended (`Record` ->
-// `RecordType`). Mirrors rbSafeTypeName / swiftSafeTypeName. Applied ONLY
-// to the bare entity data type, for the same reason as both of those.
+// shadows a TS/JS global or an SDK type the entity file imports, in which case
+// `Type` is appended (`Record` -> `RecordType`). Mirrors swiftSafeTypeName and,
+// like it, applies ONLY to the bare entity data type.
 function tsSafeTypeName(Name: string): string {
-  return isTsReservedType(Name) ? Name + 'Type' : Name
+  return isTsReservedType(Name) || isTsSdkType(Name) ? Name + 'Type' : Name
 }
 
 
@@ -306,6 +318,7 @@ export {
   isPhpSdkClass,
   phpSafeTypeName,
   isTsReservedType,
+  isTsSdkType,
   tsSafeTypeName,
   jsProp,
   jsOptProp,

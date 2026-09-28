@@ -727,7 +727,12 @@ emitted broken source reached the fleet unchallenged.
   register it. Do not hand-maintain the list: the swift one missed three names
   on its first cut, one declared by a component rather than a template. Ruby
   only warns on a collision and carries on (issue #64, gitlab-sdk's `Runner`);
-  PHP fatals on redeclaration, so the same hazard is worse there.
+  PHP fatals on redeclaration, so the same hazard is worse there. ts scopes
+  names per file, so its set (`TS_SDK_TYPES`) is only what the entity file
+  imports beside the entity's own types — `Operation`, `Context`, `Control` —
+  re-derived from `Entity.fragment.ts` by `test/ts-sdk-types.test.ts`. Neon's
+  `operation` entity and Novu's `context` failed the ts build with TS2300
+  before it existed.
 - **`ts/test/fixture/**` has its OWN compile lane.** `check-scaffold` covers
   `ts/project/.sdk/src/cmp/**` and nothing else, so the fixture PACKAGE's
   components — which are what an external author's components look like — had

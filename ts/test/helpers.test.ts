@@ -357,6 +357,14 @@ describe('helpers', () => {
       strictEqual(safeVarName('type', 'go'), 'type_')
     })
 
+    test('sanitises the names strict mode forbids binding in ts and js', () => {
+      for (const lang of ['ts', 'js']) {
+        strictEqual(safeVarName('eval', lang), 'eval_')
+        strictEqual(safeVarName('arguments', lang), 'arguments_')
+      }
+      strictEqual(safeVarName('eval', 'py'), 'eval')
+    })
+
     test('leaves non-reserved names untouched', () => {
       strictEqual(safeVarName('component', 'rb'), 'component')
       strictEqual(safeVarName('cargo', 'py'), 'cargo')
