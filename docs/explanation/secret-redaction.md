@@ -8,10 +8,11 @@ that works and where its edges are.
 ## Two layers
 
 **The value registry.** The SDK registers every secret it handles at the
-moment it sees it: the `apikey` and `secret` options, any option whose key
+moment it receives it: the `apikey` and `secret` options, any option whose key
 name is sensitive (a custom auth header, a feature credential), every value
 in `clean.values`, the Basic credential it composes, every value the
-`secrets` feature resolves or exchanges, and the userinfo of a proxy URL.
+`secrets` feature resolves or exchanges, and the credentials embedded in a
+proxy URL.
 Each value is stored with its base64, percent-encoded and JSON-escaped
 forms. Wherever a registered form appears in a string that leaves the SDK,
 it is replaced by the mask. The SDK never has to guess what a secret looks
@@ -30,7 +31,7 @@ header the SDK never issued.
 The `clean` utility applies both layers, and every egress calls it: the
 error's message, stack, result and spec; the `ctrl.explain` record; the
 default serialisation of the context, the error and the client; and the
-record each diagnostic feature hands to its sink, buffer or logger.
+record each diagnostic feature hands to its sink, buffer, or logger.
 
 Inside the pipeline data stays raw. A hook must see the real header to add
 its own beside it, and a transport wrapper must send the real credential.
@@ -39,7 +40,7 @@ The contract is about what leaves, not what exists.
 What leaves is a plain-data copy. `err.result` and `err.spec` are masked
 copies rather than the live objects, so masking them can never mask the
 pipeline's own request. The context stays reachable on the error for a
-debugger and is excluded from every serialiser.
+debugger and is excluded from everything that prints it.
 
 ## Configuration
 
@@ -86,7 +87,7 @@ feature the SDK carries with a capturing sink, drives a real operation
 through success, a 404, a 500, a transport failure and a body that is not
 JSON, and searches every string that leaves for the canaries and their
 encoded forms. It then switches `clean` off and confirms the canary shows,
-so a sweep that could not see a leak fails rather than passing quietly. The
+so a sweep that could not see a leak fails instead of passing. The
 suite prints one line, `clean: swept N surface(s), 0 leak(s)`, and the
 generator's own compile lanes require it.
 
