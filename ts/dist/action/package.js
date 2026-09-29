@@ -508,8 +508,9 @@ async function npmFetch(pkgname, actx) {
 }
 // The saved range is a tilde, as the scaffold writes it: a caret would let
 // the next minor float in, and a scaffold contract can change in a minor.
+// An .npmrc `save-exact` outranks the prefix, so it is switched off here.
 function npmFetchArgs(pkgname) {
-    return ['install', '--save-dev', '--save-prefix=~', pkgname + '@latest'];
+    return ['install', '--save-dev', '--save-exact=false', '--save-prefix=~', pkgname + '@latest'];
 }
 function validateFetched(pkgname, installed, actx) {
     const base = installed.find((i) => '' !== i.base)?.base;

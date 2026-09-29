@@ -1153,8 +1153,9 @@ describe('package update', () => {
 
 
   test('a fetch saves the tilde range the scaffold writes', () => {
-    deepStrictEqual(npmFetchArgs('@voxgig/sdkgen'),
-      ['install', '--save-dev', '--save-prefix=~', '@voxgig/sdkgen@latest'])
+    deepStrictEqual(npmFetchArgs('@voxgig/sdkgen'), [
+      'install', '--save-dev', '--save-exact=false', '--save-prefix=~', '@voxgig/sdkgen@latest',
+    ])
   })
 
 
