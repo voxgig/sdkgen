@@ -11,6 +11,7 @@ class ProjectNameUtility:
 
         # All utility functions are set by the register module
         self.clean = None
+        self.clean_add = None
         self.done = None
         self.make_error = None
         self.feature_add = None
@@ -50,6 +51,7 @@ class ProjectNameUtility:
     def copy(cls, src):
         u = cls()
         u.clean = src.clean
+        u.clean_add = src.clean_add
         u.done = src.done
         u.make_error = src.make_error
         u.feature_add = src.feature_add

@@ -1,0 +1,356 @@
+import {
+  cmp,
+  File,
+  Content,
+  isAuthSuppressed,
+  isHttpBasicAuth,
+  resolveAuthIn,
+  resolveAuthName,
+} from '@voxgig/sdkgen'
+
+
+// The canary sweep: every credential slot holds a distinctive value, every
+// diagnostic feature this SDK ships is switched on with a capturing sink, a
+// real operation runs through every outcome, and every string that leaves
+// the SDK is searched for the canaries and their encoded forms. It also
+// proves its own sensitivity: with clean switched off the canary MUST show.
+const TestClean = cmp(function TestClean(props: any) {
+  const { model } = props.ctx$
+  const { target } = props
+
+  const auth = {
+    suppressed: isAuthSuppressed(model),
+    where: resolveAuthIn(model),
+    name: 'header' === resolveAuthIn(model)
+      ? resolveAuthName(model).toLowerCase() : resolveAuthName(model),
+    basic: isHttpBasicAuth(model),
+  }
+
+  File({ name: 'test_clean.' + target.ext }, () => Content(render(model.const.Name, auth)))
+})
+
+
+function render(Name: string, auth: {
+  suppressed: boolean, where: string, name: string, basic: boolean
+}): string {
+  const pkg = Name.toLowerCase() + '_sdk'
+
+  return `# ${Name} SDK clean test
+#
+# The canary sweep: no credential leaves the SDK in any form.
+
+import base64
+import json
+import traceback
+from urllib.parse import quote
+
+import pytest
+
+from ${pkg} import ${Name}SDK
+from ${pkg}.feature.base_feature import ${Name}BaseFeature
+from test.feature_harness import has_feature
+
+
+# Generated: the credential's wire placement is fixed when the SDK is built.
+AUTH = ${JSON.stringify(auth)
+    .replace(/true/g, 'True').replace(/false/g, 'False')}
+
+CANARY = {
+    "apikey": "CANARY-APIKEY-k9x2m7q4p1",
+    "secret": "CANARY-SECRET-w3e8r5t2y6",
+    "header": "CANARY-HEADER-z1x4c7v0b3",
+    "value": "CANARY-VALUE-n5m8b2v9c4",
+}
+
+MASK = "[redacted]"
+
+
+def _b64(s):
+    return base64.b64encode(s.encode("utf-8")).decode("ascii")
+
+
+# Every form a canary can travel in.
+FORMS = []
+for _v in CANARY.values():
+    FORMS.extend([_v, _b64(_v), quote(_v, safe="")])
+FORMS.append(_b64(CANARY["apikey"] + ":" + CANARY["secret"]))
+
+
+# Header maps keep the caller's spelling; the assertion should not care.
+def _header(m, name):
+    for k in (m or {}):
+        if str(k).lower() == name.lower():
+            return m[k]
+    return None
+
+
+def _leaks(text):
+    return [f for f in FORMS if f in text]
+
+
+def _plain(v):
+    return v if isinstance(v, dict) or v is None else vars(v)
+
+
+# Every default print of a value: json, str and repr, plus what an
+# exception shows a traceback and an attribute dump.
+def _forms(name, val):
+    out = []
+
+    def push(kind, fn):
+        try:
+            out.append((name + ":" + kind, fn()))
+        except Exception:
+            pass
+
+    push("json", lambda: json.dumps(val, default=str))
+    push("str", lambda: str(val))
+    push("repr", lambda: repr(val))
+    if isinstance(val, BaseException):
+        push("message", lambda: str(val.args))
+        push("traceback", lambda: "".join(traceback.format_exception(val)))
+        push("vars", lambda: json.dumps(vars(val), default=str))
+        push("spec", lambda: json.dumps(_plain(getattr(val, "spec", None)), default=str))
+        push("result", lambda: json.dumps(_plain(getattr(val, "result", None)), default=str))
+    if callable(getattr(val, "to_json", None)):
+        push("to_json", lambda: json.dumps(val.to_json(), default=str))
+    if callable(getattr(val, "data_get", None)):
+        push("data", lambda: json.dumps(val.data_get(), default=str))
+    return out
+
+
+# Captures the serialised context from inside the pipeline: what a hook
+# author would hand to a logger.
+class _CaptureFeature(${Name}BaseFeature):
+    def __init__(self, sinks):
+        super().__init__()
+        self.name = "capture"
+        self.version = "0.0.1"
+        self.active = True
+        self._sinks = sinks
+
+    def init(self, ctx, options):
+        pass
+
+    def PreRequest(self, ctx):
+        self._sinks.extend(_forms("ctx@PreRequest", ctx))
+
+    def PreResponse(self, ctx):
+        self._sinks.extend(_forms("ctx@PreResponse", ctx))
+
+    def PreUnexpected(self, ctx):
+        self._sinks.extend(_forms("ctx@PreUnexpected", ctx))
+
+
+def _response(status, data, headers=None):
+    h = {"content-type": "application/json"}
+    h.update(headers or {})
+    return {
+        "status": status,
+        "statusText": "OK" if status < 400 else "ERR",
+        "headers": h,
+        "json": lambda: data,
+        "body": json.dumps(data),
+    }
+
+
+def _notjson():
+    def raise_json():
+        raise ValueError("Unexpected token < in JSON")
+    return {
+        "status": 200,
+        "statusText": "OK",
+        "headers": {},
+        "json": raise_json,
+        "body": "<html>",
+    }
+
+
+# The transport answers a (response, error) pair; a transport error is the
+# pair with the error set, and its message quotes the URL.
+SCENARIOS = [
+    ("ok", lambda url, fetchdef: (_response(200, {"id": "i1", "name": "n1"},
+                                            {"x-session-token": "RESP-TOKEN-a1b2c3d4e5"}), None)),
+    ("notfound", lambda url, fetchdef: (_response(404, {"error": "no such record"}), None)),
+    ("server", lambda url, fetchdef: (_response(500, {"error": "boom"}), None)),
+    ("transport", lambda url, fetchdef: (None, RuntimeError('socket hang up (URL was: "' + url + '")'))),
+    ("notjson", lambda url, fetchdef: (_notjson(), None)),
+]
+
+
+def _make_sdk(respond, sinks, cleanopts=None):
+    def capture(name):
+        return lambda rec, *a: sinks.extend(_forms(name, rec))
+
+    feature = {}
+    if has_feature("log"):
+        logger = {}
+        for level in ["trace", "debug", "info", "warn", "error", "fatal"]:
+            logger[level] = capture("log." + level)
+        feature["log"] = {"active": True, "logger": logger}
+    if has_feature("debug"):
+        feature["debug"] = {"active": True, "onEntry": capture("debug")}
+    if has_feature("audit"):
+        feature["audit"] = {"active": True, "sink": capture("audit")}
+    if has_feature("telemetry"):
+        feature["telemetry"] = {"active": True, "exporter": capture("telemetry")}
+    if has_feature("cost"):
+        feature["cost"] = {"active": True, "sink": capture("cost")}
+    if has_feature("metrics"):
+        feature["metrics"] = {"active": True}
+    if has_feature("clienttrack"):
+        feature["clienttrack"] = {"active": True}
+
+    clean = {"values": CANARY["value"]}
+    clean.update(cleanopts or {})
+
+    return ${Name}SDK({
+        "apikey": CANARY["apikey"],
+        "secret": CANARY["secret"],
+        "headers": {"X-Custom-Token": CANARY["header"]},
+        "clean": clean,
+        "feature": feature,
+        "extend": [_CaptureFeature(sinks)],
+        "utility": {"fetcher": lambda ctx, url, fetchdef: respond(url, fetchdef)},
+    })
+
+
+# The first operation that completes against a plain 200 with no arguments
+# (a required path parameter would fail before the request is built).
+def _usable_op():
+    def plain():
+        return ${Name}SDK({
+            "apikey": CANARY["apikey"],
+            "utility": {"fetcher": lambda ctx, url, fetchdef: (_response(200, {"id": "i1"}), None)},
+        })
+
+    client = plain()
+    found = {}
+    for attr in dir(client):
+        if not attr[:1].isupper():
+            continue
+        acc = getattr(client, attr, None)
+        if not callable(acc):
+            continue
+        try:
+            ent = acc()
+        except Exception:
+            continue
+        getname = getattr(ent, "get_name", None)
+        if not callable(getname):
+            continue
+        name = getname()
+        if isinstance(name, str) and name != "":
+            found[name] = (attr, ent)
+
+    safe = {"list": 0, "load": 1}
+    for name in sorted(found):
+        accessor, ent = found[name]
+        ops = [op for op in ["list", "load", "create", "update", "remove"]
+               if callable(getattr(ent, op, None))]
+        ops.sort(key=lambda o: safe.get(o, 2))
+        for op in ops:
+            try:
+                getattr(getattr(plain(), accessor)(), op)({}, {})
+                return (accessor, op)
+            except Exception:
+                continue
+    return None
+
+
+def _drive(sdk, target, ctrl, sinks):
+    out = None
+    err = None
+    try:
+        out = getattr(getattr(sdk, target[0])(), target[1])({}, ctrl)
+    except Exception as e:
+        err = e
+    if err is not None:
+        sinks.extend(_forms("error", err))
+    if out is not None:
+        sinks.extend(_forms("result", out))
+    if ctrl.get("explain") is not None:
+        sinks.extend(_forms("explain", ctrl["explain"]))
+    return err
+
+
+class TestClean:
+
+    def test_no_credential_leaves_the_sdk_in_any_form(self):
+        target = _usable_op()
+        assert target is not None, "no operation completes without arguments; nothing to sweep"
+
+        sinks = []
+        errors = {}
+        explains = {}
+
+        for sname, respond in SCENARIOS:
+            for vname, make_ctrl in [
+                ("throw", lambda: {}),
+                ("explain", lambda: {"explain": {}}),
+                ("nothrow", lambda: {"throw": False, "explain": {}}),
+            ]:
+                sdk = _make_sdk(respond, sinks)
+                ctrl = make_ctrl()
+                err = _drive(sdk, target, ctrl, sinks)
+                key = sname + "/" + vname
+                if err is not None:
+                    errors[key] = err
+                if ctrl.get("explain") is not None:
+                    explains[key] = ctrl["explain"]
+                sinks.extend(_forms("sdk", sdk))
+                sinks.append(("sdk:vars", json.dumps(vars(sdk), default=repr)))
+
+        leaked = [(name, _leaks(text)) for name, text in sinks]
+        leaked = [(name, found) for name, found in leaked if 0 < len(found)]
+
+        print("clean: swept " + str(len(sinks)) + " surface(s), " + str(len(leaked)) + " leak(s)")
+
+        assert len(leaked) == 0, "credential leaked through: " + "; ".join(
+            name + " [" + ", ".join(found) + "]" for name, found in leaked)
+
+        # The positive half: the slot the credential travelled in is masked,
+        # and an unregistered token in a response header is masked by name.
+        notfound = errors.get("notfound/throw")
+        assert notfound is not None, "the 404 scenario must raise"
+        assert notfound.status == 404
+        spec = notfound.spec or {}
+        if not AUTH["suppressed"]:
+            if "query" == AUTH["where"]:
+                assert _header(spec.get("query"), AUTH["name"]) == MASK
+            elif "cookie" == AUTH["where"]:
+                cookie = str(_header(spec.get("headers"), "cookie"))
+                assert MASK in cookie, "cookie: " + cookie
+            else:
+                cred = str(_header(spec.get("headers"), AUTH["name"]))
+                assert cred.endswith(MASK), AUTH["name"] + ": " + cred
+        assert _header(spec.get("headers"), "x-custom-token") == MASK
+
+        explained = explains.get("ok/explain") or {}
+        assert explained.get("result") is not None, "the explain record should carry the result"
+        assert _header(explained["result"].get("headers"), "x-session-token") == MASK
+
+    def test_the_sweep_can_see_a_leak_with_clean_switched_off(self):
+        target = _usable_op()
+        assert target is not None
+
+        sinks = []
+        sdk = _make_sdk(SCENARIOS[1][1], sinks, {"active": False})
+        err = _drive(sdk, target, {}, sinks)
+        assert err is not None
+
+        leaked = [name for name, text in sinks if 0 < len(_leaks(text))]
+        assert 0 < len(leaked), "with clean off, nothing showed the canary: the sweep is blind"
+
+        if not AUTH["suppressed"]:
+            text = json.dumps(_plain(err.spec), default=str)
+            assert CANARY["apikey"] in text or \\
+                _b64(CANARY["apikey"] + ":" + CANARY["secret"]) in text, \\
+                "the raw spec should carry the credential when clean is off"
+`
+}
+
+
+export {
+  TestClean
+}

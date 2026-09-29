@@ -3,6 +3,30 @@
 from __future__ import annotations
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.schema import OPTSPEC
+from projectname_sdk.utility.clean import (
+    clean_util, clean_add_util, clean_key, make_clean_config, split_values)
+
+
+# A context carrying only the derived clean block, for the registry that
+# exists before the real options do.
+class _CleanCtx:
+    def __init__(self, cleancfg):
+        self.options = {"__derived__": {"clean": cleancfg}}
+
+
+# Every string under a sensitive name anywhere in the options - a custom
+# auth header, a feature credential - is a secret the SDK now handles.
+def _register_sensitive(ctx, node, key=None):
+    if isinstance(node, str):
+        if clean_key(ctx, key):
+            clean_add_util(ctx, node)
+    elif isinstance(node, dict):
+        for k, v in node.items():
+            if k != "__derived__":
+                _register_sensitive(ctx, v, k)
+    elif isinstance(node, list):
+        for v in node:
+            _register_sensitive(ctx, v, key)
 
 
 
@@ -83,6 +107,15 @@ def make_options_util(ctx):
     if not isinstance(opts, dict):
         opts = {}
 
+    # The secret registry exists BEFORE validation, fed from the raw input,
+    # so the constructor's own rejection of a mistyped credential is clean
+    # too.
+    rawclean = opts.get("clean") if isinstance(opts.get("clean"), dict) else {}
+    cleancfg = make_clean_config(vs.merge([{}, vs.clone(OPTSPEC.get("clean")), rawclean]))
+    cleanctx = _CleanCtx(cleancfg)
+    for raw in [opts.get("apikey"), opts.get("secret")] + split_values(rawclean.get("values")):
+        clean_add_util(cleanctx, raw)
+
     if authsuppressed:
         opts.pop("auth", None)
 
@@ -134,7 +167,12 @@ def make_options_util(ctx):
     # nested dicts as merge TARGETS — one instance's options (server, headers,
     # ...) would contaminate every instance constructed after it.
     merged = vs.merge([{}, vs.clone(cfgopts), opts])
-    validated = vs.validate(merged, optspec)
+    try:
+        validated = vs.validate(merged, optspec)
+    except Exception as err:
+        # The message quotes the offending value.
+        clean_util(cleanctx, err)
+        raise
     if not isinstance(validated, dict):
         validated = {}
     opts = validated
@@ -185,19 +223,6 @@ def make_options_util(ctx):
         else:
             opts["system"] = {"fetch": sys_fetch}
 
-    # Derived clean config.
-    clean_keys = "key,token,id"
-    ck = vs.getpath(opts, "clean.keys")
-    if isinstance(ck, str):
-        clean_keys = ck
-
-    parts = []
-    for part in clean_keys.split(","):
-        trimmed = part.strip()
-        if trimmed != "":
-            parts.append(vs.escre(trimmed))
-    keyre = "|".join(parts)
-
     # Resolve the feature add-order: an explicit list order (above) wins;
     # otherwise order the map test-first, then the remaining names sorted, so
     # the outcome is deterministic and `test` is always the base transport.
@@ -219,10 +244,13 @@ def make_options_util(ctx):
             at = featureorder.index("test") + 1 if "test" in featureorder else 0
             featureorder.insert(at, "station")
 
-    derived = {"clean": {}}
-    if keyre != "":
-        derived["clean"] = {"keyre": keyre}
-    derived["featureorder"] = featureorder
-    opts["__derived__"] = derived
+    # The clean block stays MUTABLE: features register what they resolve
+    # after construction.
+    opts["__derived__"] = {
+        "clean": cleancfg,
+        "featureorder": featureorder,
+    }
+
+    _register_sensitive(_CleanCtx(cleancfg), opts)
 
     return opts

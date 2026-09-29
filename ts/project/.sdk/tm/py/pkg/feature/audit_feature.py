@@ -67,7 +67,7 @@ class ProjectNameAuditFeature(ProjectNameBaseFeature):
         if actor is None:
             actor = "anonymous"
 
-        record = {
+        record = ctx.utility.clean(ctx, {
             "seq": self.seq,
             "ts": self._now(),
             "actor": actor,
@@ -76,7 +76,7 @@ class ProjectNameAuditFeature(ProjectNameBaseFeature):
             "outcome": outcome,
             "status": ctx.result.status if ctx.result is not None else None,
             "correlationId": ctx.id,
-        }
+        })
 
         records = self.client._audit["records"]
         records.append(record)

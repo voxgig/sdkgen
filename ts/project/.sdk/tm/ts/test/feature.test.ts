@@ -384,7 +384,7 @@ describe('feature', () => {
       const entries = h.client._debug.entries
       strictEqual(entries.length, 1) // ring buffer capped at max
       strictEqual(seen.length, 2)
-      strictEqual(seen[0].headers.authorization, '<redacted>')
+      strictEqual(seen[0].headers.authorization, '[redacted]')
     })
 
     test('captures failures', { skip: skipWithout('netsim') }, async () => {
@@ -763,7 +763,7 @@ describe('feature', () => {
     const h = makeClient({ features: [{ name: 'debug', options: { now: () => 7, redact: ['x-secret'] } }] })
     await h.op({ op: 'load', headers: { 'x-secret': 'hide', 'x-ok': 'show' } })
     const e = h.client._debug.entries[0]
-    strictEqual(e.headers['x-secret'], '<redacted>')
+    strictEqual(e.headers['x-secret'], '[redacted]')
     strictEqual(e.headers['x-ok'], 'show')
   })
 

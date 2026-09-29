@@ -2,9 +2,18 @@
 
 
 def done_util(ctx):
-    if ctx.ctrl.explain is not None:
-        ctx.ctrl.explain = ctx.utility.clean(ctx, ctx.ctrl.explain)
-        explain_result = ctx.ctrl.explain.get("result") if isinstance(ctx.ctrl.explain, dict) else None
+    explain = ctx.ctrl.explain
+    if explain is not None:
+        cleaned = ctx.utility.clean(ctx, explain)
+        # In place: the caller holds this very dict (ctrl is built from it),
+        # so a reassignment would leave the raw record in their hands.
+        if isinstance(explain, dict) and isinstance(cleaned, dict) and cleaned is not explain:
+            explain.clear()
+            explain.update(cleaned)
+        else:
+            ctx.ctrl.explain = cleaned
+        explain = ctx.ctrl.explain
+        explain_result = explain.get("result") if isinstance(explain, dict) else None
         if isinstance(explain_result, dict):
             explain_result.pop("err", None)
 

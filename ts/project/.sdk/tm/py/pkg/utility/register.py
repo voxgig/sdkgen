@@ -2,7 +2,7 @@
 
 from projectname_sdk.core.utility_type import ProjectNameUtility
 
-from projectname_sdk.utility.clean import clean_util
+from projectname_sdk.utility.clean import clean_util, clean_add_util
 from projectname_sdk.utility.done import done_util
 from projectname_sdk.utility.make_error import make_error_util
 from projectname_sdk.utility.feature_add import feature_add_util
@@ -36,6 +36,7 @@ from projectname_sdk.utility.transform_response import transform_response_util
 
 def register_all(u):
     u.clean = clean_util
+    u.clean_add = clean_add_util
     u.done = done_util
     u.make_error = make_error_util
     u.feature_add = feature_add_util

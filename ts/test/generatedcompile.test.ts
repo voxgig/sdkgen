@@ -3919,6 +3919,12 @@ const CLEAN_LANES: CleanLane[] = [
       env: nestedTestEnv(),
     }),
   },
+  {
+    target: 'py',
+    runner: 'test/test_clean.py',
+    needs: 'python3 with pytest',
+    command: () => pytest(['test/test_clean.py', '-q', '-s']),
+  },
 ]
 
 
