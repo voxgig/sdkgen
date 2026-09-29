@@ -1003,12 +1003,23 @@ defmodule ProjectName.Utility do
         {"", Context.make_error(ctx, "url_no_result", "Expected context result property to be defined.")}
 
       true ->
-        url0 =
+        joined =
           S.join(
             S.jt([S.getprop(spec, "base"), S.getprop(spec, "prefix"), S.getprop(spec, "path"), S.getprop(spec, "suffix")]),
             "/",
             true
           )
+
+        # A route the definition ends with a slash keeps it: a server such as a
+        # Django REST one redirects or refuses the route without it.
+        orig = S.getprop(S.getprop(ctx, "point"), "orig")
+        suffix = S.getprop(spec, "suffix")
+
+        url0 =
+          if is_binary(orig) and String.ends_with?(orig, "/") and (suffix == nil or suffix == "") and
+               not String.ends_with?(joined, "/"),
+             do: joined <> "/",
+             else: joined
 
         resmatch = S.jm([])
 
@@ -1134,7 +1145,8 @@ defmodule ProjectName.Utility do
       end
 
     # A header parameter travels as a header, under the name the definition
-    # gives it, and only from this call's own arguments.
+    # gives it, and only from this call's own arguments. It replaces a default
+    # of the same name, whatever its case.
     point = S.getprop(ctx, "point")
     aheader = if point != nil, do: S.getpath(point, "args.header"), else: nil
 
@@ -1148,7 +1160,15 @@ defmodule ProjectName.Utility do
           wire = if is_binary(orig) and orig != "", do: orig, else: name
           val = S.getprop(S.getprop(ctx, "reqmatch"), name)
           val = if val == nil, do: S.getprop(S.getprop(ctx, "reqdata"), name), else: val
-          if val != nil, do: S.setprop(out, String.downcase(wire), S.stringify(val))
+          if val != nil do
+            key = String.downcase(wire)
+
+            Enum.each(H.entries(out), fn {k, _} ->
+              if is_binary(k) and String.downcase(k) == key, do: S.delprop(out, k)
+            end)
+
+            S.setprop(out, key, S.stringify(val))
+          end
         end
       end)
     end
@@ -1510,12 +1530,27 @@ defmodule ProjectName.Utility do
   # `$action` selects the point (see make_point_impl); it is never an API
   # field, so the body is a copy without it. The caller's map is left
   # untouched.
-  defp strip_action(reqdata) do
-    if S.ismap(reqdata) and S.haskey(reqdata, "$action") do
+  defp strip_action(reqdata), do: omit_keys(reqdata, ["$action"])
+
+  # A header argument travels as a header, which prepare_headers_impl sends, so
+  # the body is built from the request data without it.
+  defp header_arg_names(point) do
+    aheader = if point != nil, do: S.getpath(point, "args.header"), else: nil
+
+    if S.islist(aheader) and S.size(aheader) > 0 do
+      Enum.map(0..(S.size(aheader) - 1), &S.getprop(S.getelem(aheader, &1), "name"))
+      |> Enum.filter(&(is_binary(&1) and &1 != ""))
+    else
+      []
+    end
+  end
+
+  defp omit_keys(reqdata, names) do
+    if S.ismap(reqdata) and Enum.any?(names, &S.haskey(reqdata, &1)) do
       body = S.jm([])
 
       Enum.each(H.entries(reqdata), fn {key, val} ->
-        if key != "$action", do: S.setprop(body, key, val)
+        if key not in names, do: S.setprop(body, key, val)
       end)
 
       body
@@ -1529,18 +1564,19 @@ defmodule ProjectName.Utility do
     point = S.getprop(ctx, "point")
     if spec != nil, do: S.setprop(spec, "step", "reqform")
 
+    data = omit_keys(S.getprop(ctx, "reqdata"), header_arg_names(point))
     transform = H.to_map(S.getprop(point, "transform"))
 
     reqdata =
       if transform == nil do
-        S.getprop(ctx, "reqdata")
+        data
       else
         reqform = S.getprop(transform, "req")
 
         if reqform == nil do
-          S.getprop(ctx, "reqdata")
+          data
         else
-          S.transform(S.jm(["reqdata", S.getprop(ctx, "reqdata")]), reqform)
+          S.transform(S.jm(["reqdata", data]), reqform)
         end
       end
 

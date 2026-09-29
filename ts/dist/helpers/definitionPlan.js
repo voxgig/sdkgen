@@ -6,6 +6,7 @@ const apidef_1 = require("@voxgig/apidef");
 const opShape_1 = require("./opShape");
 const pointPath_1 = require("./pointPath");
 const resolved_1 = require("./resolved");
+const utility_1 = require("../utility");
 // The operations every target generates a method for. The model may hold
 // others, such as a patch beside an update, which no SDK can be called with.
 const GENERATED_OPS = ['load', 'list', 'create', 'update', 'remove'];
@@ -17,6 +18,11 @@ function definitionPlan(ctx$) {
     const plan = [];
     const unchecked = false === model?.main?.[apidef_1.KIT]?.config?.auth?.active ||
         false === model?.main?.[apidef_1.KIT]?.info?.auth;
+    // A generated SDK sends one credential, under the scheme apidef chose for it.
+    const own = model?.main?.[apidef_1.KIT]?.info?.security?.scheme;
+    // The credential's own header, which LearnWorlds also declares as a parameter.
+    const ownHeader = !unchecked && (0, utility_1.isAuthActive)(model) && 'header' === (0, utility_1.resolveAuthIn)(model) ?
+        (0, utility_1.resolveAuthName)(model).toLowerCase() : null;
     for (const entity of Object.values((0, opShape_1.entityCollection)(model))) {
         if (false === entity.active)
             continue;
@@ -46,7 +52,8 @@ function definitionPlan(ctx$) {
                 // A header argument is sent too, and must arrive as a header under
                 // the definition's name, never in the query.
                 const headers = (point.g?.header || [])
-                    .filter((arg) => false !== arg.a)
+                    .filter((arg) => false !== arg.a &&
+                    ![ownHeader, 'content-type'].includes(String(arg.or || arg.n).toLowerCase()))
                     .map((arg, i) => {
                     const wire = String(arg.or || arg.n);
                     const def = params.find((p) => 'header' === p?.in &&
@@ -84,9 +91,9 @@ function definitionPlan(ctx$) {
                     select: selected,
                     headers,
                     query: params.filter((p) => 'query' === p?.in).map((p) => p.name),
-                    auth: unchecked ? null : credentialSets(facts),
+                    auth: unchecked ? null : credentialSets(facts, own),
                     status: success?.status ?? 200,
-                    sample: null == media ? null : boundedSample(sampleOf(media)),
+                    sample: null == media ? null : boundedSample(fitting(sampleOf(media), media.schema)),
                     idField: entity.id?.field || 'id',
                 });
             }
@@ -142,6 +149,18 @@ function sampleOf(media) {
     if (undefined !== media.schema?.example)
         return media.schema.example;
     return synthesize(media.schema, 0);
+}
+// An example whose top level contradicts its own schema proves nothing, such
+// as GitHub's page of deployment rule apps written as a list of its halves.
+function fitting(sample, schema) {
+    const type = Array.isArray(schema?.type) ?
+        schema.type.find((t) => 'null' !== t) : schema?.type;
+    const object = 'object' === type || (null == type && null != schema?.properties);
+    const array = 'array' === type || (null == type && null != schema?.items);
+    if (object && (Array.isArray(sample) || null == sample || 'object' !== typeof sample)) {
+        return undefined;
+    }
+    return array && !Array.isArray(sample) ? undefined : sample;
 }
 // Schema-shaped data where the definition gives no example: every property,
 // one item per array, the first branch of a union.
@@ -199,16 +218,19 @@ function boundedSample(sample) {
     return undefined === out || MAX_SAMPLE < JSON.stringify(out).length ? null : out;
 }
 // Alternatives of credentials, every one of a set needed together. Empty is a
-// public operation; null is one whose schemes no SDK option can express.
-function credentialSets(facts) {
+// public operation; null is one whose schemes no SDK option can express. Only
+// those the SDK's one scheme meets count, so Petstore's OAuth pets are null.
+function credentialSets(facts, own) {
     const security = facts.security;
     if (!Array.isArray(security) || 0 === security.length)
         return [];
     if (security.some((req) => null == req || 0 === Object.keys(req).length))
         return [];
+    const reqs = 'string' === typeof own && '' !== own ?
+        security.filter((req) => Object.keys(req).every((name) => name === own)) : security;
     const schemes = facts.securitySchemes || {};
     const sets = [];
-    for (const req of security) {
+    for (const req of reqs) {
         const set = Object.keys(req).map((name) => credentialOf(schemes[name]));
         if (set.every((c) => null != c))
             sets.push(set);

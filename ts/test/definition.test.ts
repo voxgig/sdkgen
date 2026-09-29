@@ -213,6 +213,86 @@ describe('definitionPlan', () => {
     deepStrictEqual(definitionPlan({ model: MODEL, meta: {} }), [])
   })
 
+  // LearnWorlds declares no security scheme, and an Authorization header
+  // parameter on every operation. The SDK's credential goes in that header.
+  test('a header parameter in the credential header is left to the credential', () => {
+    const def = { ...DEF, security: undefined, components: {}, paths: { '/courses': { get: {
+      parameters: [
+        { in: 'header', name: 'Authorization', schema: { type: 'string' } },
+        { in: 'header', name: 'Lw-Client', schema: { type: 'string' } },
+      ],
+      responses: { '200': { content: { 'application/json': { example: [] } } } },
+    } } } }
+    const model = { main: { kit: { entity: { course: {
+      name: 'course', id: { field: 'id' }, op: { list: { points: [{ m: 'GET', o: '/courses',
+        g: { header: [{ n: 'authorization', or: 'Authorization' }, { n: 'lw_client', or: 'Lw-Client' }] },
+      }] } },
+    } } } } }
+    const [list] = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(list.headers, [{ name: 'lw_client', wire: 'Lw-Client', value: 'h1' }])
+  })
+
+  // Petstore secures its pets with OAuth and its store with an API key, and
+  // its SDK sends the API key. A pet operation cannot be checked for OAuth.
+  test('only the alternatives the SDK scheme meets are checked', () => {
+    const def = { ...DEF, security: undefined,
+      components: { securitySchemes: {
+        api_key: { type: 'apiKey', in: 'header', name: 'api_key' },
+        petstore_auth: { type: 'oauth2', flows: {} },
+      } },
+      paths: {
+        '/pet': { get: { security: [{ petstore_auth: [] }],
+          responses: { '200': { content: { 'application/json': { example: [] } } } } } },
+        '/store': { get: { security: [{ api_key: [] }],
+          responses: { '200': { content: { 'application/json': { example: [] } } } } } },
+        '/either': { get: { security: [{ petstore_auth: [] }, { api_key: [] }],
+          responses: { '200': { content: { 'application/json': { example: [] } } } } } },
+      } }
+    const list = (o: string) => ({ list: { points: [{ m: 'GET', o }] } })
+    const model = { main: { kit: {
+      info: { security: { scheme: 'api_key', type: 'apiKey', in: 'header', name: 'api_key' } },
+      entity: {
+        pet: { name: 'pet', id: { field: 'id' }, op: list('/pet') },
+        store: { name: 'store', id: { field: 'id' }, op: list('/store') },
+        either: { name: 'either', id: { field: 'id' }, op: list('/either') },
+      },
+    } } }
+    const plan = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    const api = [[{ in: 'header', name: 'api_key' }]]
+    deepStrictEqual(Object.fromEntries(plan.map((p: any) => [p.entity, p.auth])),
+      { pet: null, store: api, either: api })
+  })
+
+  // GitHub writes the example of its page of deployment rule apps as a list
+  // of the page's parts, where the schema is an object.
+  test('an example that contradicts its schema is no sample', () => {
+    const page = { type: 'object', properties: { total_count: { type: 'integer' },
+      apps: { type: 'array', items: { type: 'object' } } } }
+    const def = { ...DEF, paths: { '/apps': { get: { responses: { '200': { content: {
+      'application/json': { schema: page, example: [{ total_count: 1 }, { apps: [{ id: 1 }] }] },
+    } } } } }, '/apps/{id}': {
+      parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+      get: { responses: { '200': { content: { 'application/json': {
+        schema: { type: 'array', items: { type: 'object' } }, example: { id: 1 },
+      } } } } },
+    } } }
+    const model = { main: { kit: { entity: { app: {
+      name: 'app', id: { field: 'id' }, op: {
+        list: { points: [{ m: 'GET', o: '/apps' }] },
+        load: { points: [{ m: 'GET', o: '/apps/{id}', q: { exist: ['id'] },
+          g: { params: [{ n: 'id', or: 'id' }] } }] },
+      },
+    } } } } }
+    const plan = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(plan.map((p: any) => p.sample), [null, null])
+  })
+
   test('a model that switches auth off is not checked for it', () => {
     const off = { ...MODEL, main: { kit: { ...MODEL.main.kit, config: { auth: { active: false } } } } }
     ok(definitionPlan({ ...ctx$, model: off }).every((p: any) => null === p.auth))
@@ -340,7 +420,8 @@ for (const [lang, runner] of [
 
     // Neon wraps a branch beside the operations the change started.
     test('catches a record read at its envelope', async () => {
-      const p = { ...point('load'), sample: { branch: { id: 'br_1' }, operations: [{ id: 'op_1' }] } }
+      const p = { ...point('load'), entity: 'branch',
+        sample: { branch: { id: 'br_1' }, operations: [{ id: 'op_1' }] } }
       await rejects(runDefinitionPoint(fakeSDK(''), p),
         /the entity does not hold the record the definition example returns/)
     })
@@ -356,6 +437,40 @@ for (const [lang, runner] of [
     test('a record that holds a list is not a page', async () => {
       const p = { ...point('list'), sample: { sync_state: 'IDLE', errors: [{ detail: 'x' }] } }
       await runDefinitionPoint(fakeSDK(''), p)
+    })
+
+    // A key that only contains a paging word is data, not paging.
+    test('a record whose fields mention paging is not a page', async () => {
+      const p = { ...point('list'), sample: { homepage: 'h', preview: 'p', errors: [{ detail: 'x' }] } }
+      await runDefinitionPoint(fakeSDK(''), p)
+    })
+
+    // GitHub's check suite preferences hold the repository they belong to,
+    // which has an `id` of its own.
+    test('an object beside other data is not read as an envelope', async () => {
+      const p = { ...point('load'), entity: 'check_suite_preference',
+        sample: { preferences: { auto_trigger_checks: [] }, repository: { id: 7 } } }
+      await runDefinitionPoint(fakeSDK(''), p)
+    })
+
+    // GitLab writes a NuGet route as `Packages\(\)`, which the URL parser
+    // turns into slashes on the way out, for every client alike.
+    test('a route is compared as the URL parser reads it', async () => {
+      const p = { ...point('load'), path: '/packages\\(\\)', args: [], select: {}, sample: null }
+      const sdk = (path: string) => class {
+        opts: any
+        constructor(opts: any) { this.opts = opts }
+        Address() {
+          return { load: async () => {
+            const auth = 'Basic ' + Buffer.from(this.opts.apikey + ':').toString('base64')
+            await this.opts.system.fetch(this.opts.base + path,
+              { method: 'GET', headers: { authorization: auth } })
+            return { data: () => ({}) }
+          } }
+        }
+      }
+      await runDefinitionPoint(sdk('/packages\\(\\)'), p)
+      await rejects(runDefinitionPoint(sdk('/packages'), p), /route/)
     })
   })
 }

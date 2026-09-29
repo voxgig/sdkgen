@@ -104,7 +104,8 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
     (if (headers == null) null else Helpers.toMapAny(Struct.clone(headers))) ?: linkedMapOf()
 
   // A header parameter travels as a header, under the name the definition
-  // gives it, and only from this call's own arguments.
+  // gives it, and only from this call's own arguments. It replaces a default
+  // of the same name, whatever its case.
   val point = ctx.point
   val hl = if (point == null) null else Struct.getpath(point, listOf("args", "header"))
   if (hl is List<*>) {
@@ -117,7 +118,9 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
       val wire = if (orig is String && orig.isNotEmpty()) orig else name
       val v = Struct.getprop(ctx.reqmatch, name, null) ?: Struct.getprop(ctx.reqdata, name, null)
       if (v != null) {
-        out[wire.lowercase()] = Struct.stringify(v)
+        val key = wire.lowercase()
+        out.keys.removeAll { it.lowercase() == key }
+        out[key] = Struct.stringify(v)
       }
     }
   }

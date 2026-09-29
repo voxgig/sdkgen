@@ -22,7 +22,8 @@ pub fn prepare_headers_util(ctx: &Rc<Context>) -> Value {
     };
 
     // A header parameter travels as a header, under the name the definition
-    // gives it, and only from this call's own arguments.
+    // gives it, and only from this call's own arguments. It replaces a default
+    // of the same name, whatever its case.
     let point = ctx.point.borrow().clone();
     if let Value::List(hl) = getp(&getp(&point, "args"), "header") {
         let reqmatch = ctx.reqmatch.borrow().clone();
@@ -41,7 +42,15 @@ pub fn prepare_headers_util(ctx: &Rc<Context>) -> Value {
                 val = getp(&reqdata, &name);
             }
             if !val.is_noval() && !val.is_null() {
-                setp(&out, &wire.to_lowercase(), Value::Str(vs::stringify(&val, None, false)));
+                let key = wire.to_lowercase();
+                if let Value::Map(m) = &out {
+                    let same: Vec<String> =
+                        m.borrow().keys().filter(|k| k.to_lowercase() == key).cloned().collect();
+                    for k in same {
+                        m.borrow_mut().shift_remove(&k);
+                    }
+                }
+                setp(&out, &key, Value::Str(vs::stringify(&val, None, false)));
             }
         }
     }

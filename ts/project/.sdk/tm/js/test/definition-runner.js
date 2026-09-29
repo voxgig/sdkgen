@@ -54,7 +54,9 @@ async function runDefinitionPoint(SDK, point) {
     const arg = point.args.find((a) => a.wire === name)
     return null == arg ? '{' + name + '}' : encodeURIComponent(String(arg.value))
   })
-  assert.equal(url.pathname, route, 'route')
+  // Read as the request was, so a backslash in the definition's path, as in
+  // GitLab's `Packages\(\)`, is the slash the URL parser makes it.
+  assert.equal(url.pathname, new URL(BASE + route).pathname, 'route')
 
   // Only what the definition declares, so never a path parameter again.
   const credentialQuery = (point.auth || []).flat()
@@ -101,7 +103,7 @@ async function runDefinitionPoint(SDK, point) {
     }
   }
   else if ('load' === point.op || 'create' === point.op || 'update' === point.op) {
-    const record = recordOf(point.sample, point.idField)
+    const record = recordOf(point.sample, point.idField, point.entity)
     if (null != record) {
       assert.equal(result?.data?.()?.[point.idField], record[point.idField],
         'the entity does not hold the record the definition example returns')
@@ -141,16 +143,31 @@ function placed(cred, headers, url) {
 }
 
 
-// What an envelope may hold beside what it carries: status and paging,
-// compared without case, `_` or `-`. Any other value is data of the body's
-// own, which makes the body a record rather than an envelope.
-const ENVELOPE_KEY = /^(success|status|ok|message|code|error|errorcode|errormessage|requestid|timestamp|took|version|apiversion|object|url)$|count$|total|page|cursor|next|prev|limit|offset|more|size$/
+// What an envelope may hold beside what it carries, compared without case,
+// `_` or `-`: status, paging and the page's own metadata, each by its whole
+// name, so a record's homepage or preview is data of its own.
+const ENVELOPE_KEYS = new Set([
+  'success', 'status', 'ok', 'message', 'code', 'error', 'errorcode', 'errormessage',
+  'requestid', 'timestamp', 'took', 'version', 'apiversion', 'object', 'url',
+  'count', 'total', 'totalcount', 'totalhits', 'totalitems', 'totalpages', 'totalresults',
+  'totalrecords', 'totalrowcount', 'totalentries', 'itemcount', 'resultcount', 'rowcount',
+  'page', 'pages', 'pagecount', 'pagenumber', 'pageindex', 'pagesize', 'perpage',
+  'currentpage', 'lastpage', 'limit', 'offset', 'cursor', 'nextcursor', 'prevcursor',
+  'previouscursor', 'next', 'nextpage', 'nexturl', 'nextlink', 'nextpagetoken', 'nexttoken',
+  'pagetoken', 'continuationtoken', 'prev', 'previous', 'prevpage', 'previouspage',
+  'prevurl', 'previousurl', 'prevlink', 'hasmore', 'hasnext', 'hasnextpage', 'hasprevious',
+  'haspreviouspage', 'more', 'meta', 'metadata', 'pagination', 'paging', 'pageinfo', 'links',
+])
+
+
+function envelopeKey(key) {
+  return ENVELOPE_KEYS.has(squash(key))
+}
 
 
 function ownData(sample) {
   return Object.entries(sample).some(([key, value]) =>
-    null != value && 'object' !== typeof value &&
-    !ENVELOPE_KEY.test(key.toLowerCase().replace(/[_-]/g, '')))
+    null != value && 'object' !== typeof value && !envelopeKey(key))
 }
 
 
@@ -175,21 +192,30 @@ function recordsOf(sample) {
 }
 
 
-// The record a single-item response returns: the body, or the one object an
-// envelope carries with the identity field. A body with data of its own is
-// the record itself, whatever it names its identity.
-function recordOf(sample, idField) {
+// The record a single-item response returns: the body, or the one object
+// with the identity field that an envelope carries, under the entity's name
+// or beside envelope keys alone. Otherwise the body is the record itself,
+// such as GitHub's check suite preferences beside their repository.
+function recordOf(sample, idField, entity) {
   if (!isRecord(sample)) {
     return null
   }
   if (null != sample[idField]) {
     return sample
   }
-  if (ownData(sample)) {
+  const keys = Object.keys(sample)
+  const inner = keys.filter((key) => isRecord(sample[key]) && null != sample[key][idField])
+  if (1 !== inner.length) {
     return null
   }
-  const inner = Object.values(sample).filter((v) => isRecord(v) && null != v[idField])
-  return 1 === inner.length ? inner[0] : null
+  const named = null != entity && squash(inner[0]) === squash(entity) && !ownData(sample)
+  const alone = keys.every((key) => key === inner[0] || envelopeKey(key))
+  return named || alone ? sample[inner[0]] : null
+}
+
+
+function squash(name) {
+  return name.toLowerCase().replace(/[_-]/g, '')
 }
 
 

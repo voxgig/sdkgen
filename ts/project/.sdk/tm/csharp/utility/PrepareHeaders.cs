@@ -15,7 +15,8 @@ public static partial class SdkUtility
             ?? new Dictionary<string, object?>();
 
         // A header parameter travels as a header, under the name the
-        // definition gives it, and only from this call's own arguments.
+        // definition gives it, and only from this call's own arguments. It
+        // replaces a default of the same name, whatever its case.
         if (ctx.Point != null &&
             StructUtils.GetPath(ctx.Point, StructUtils.Jt("args", "header")) is List<object?> hl)
         {
@@ -33,7 +34,15 @@ public static partial class SdkUtility
                 }
                 if (val != null)
                 {
-                    result[wire.ToLowerInvariant()] = StructUtils.Stringify(val);
+                    var key = wire.ToLowerInvariant();
+                    foreach (var k in new List<string>(result.Keys))
+                    {
+                        if (k.ToLowerInvariant() == key)
+                        {
+                            result.Remove(k);
+                        }
+                    }
+                    result[key] = StructUtils.Stringify(val);
                 }
             }
         }

@@ -17,21 +17,23 @@ public static partial class SdkUtility
             spec.Step = "reqform";
         }
 
+        var data = OmitKeys(ctx.Reqdata, HeaderArgNames(point));
+
         var transform = Helpers.ToMapAny(StructUtils.GetProp(point, "transform"));
         if (transform == null)
         {
-            return StripAction(ctx.Reqdata);
+            return StripAction(data);
         }
 
         var reqform = StructUtils.GetProp(transform, "req");
         if (reqform == null)
         {
-            return StripAction(ctx.Reqdata);
+            return StripAction(data);
         }
 
         var reqdata = StructUtils.Transform(new Dictionary<string, object?>
         {
-            ["reqdata"] = ctx.Reqdata,
+            ["reqdata"] = data,
         }, reqform);
 
         return StripAction(reqdata);
@@ -42,14 +44,38 @@ public static partial class SdkUtility
     // untouched.
     private static object? StripAction(object? reqdata)
     {
-        if (reqdata is not IDictionary<string, object?> src || !src.ContainsKey("$action"))
+        return OmitKeys(reqdata, new List<string> { "$action" });
+    }
+
+    // A header argument travels as a header, which PrepareHeadersUtil sends,
+    // so the body is built from the request data without it.
+    private static List<string> HeaderArgNames(object? point)
+    {
+        var names = new List<string>();
+        if (point != null &&
+            StructUtils.GetPath(point, StructUtils.Jt("args", "header")) is List<object?> hl)
+        {
+            foreach (var hd in hl)
+            {
+                if (StructUtils.GetProp(hd, "name") is string name && name != "")
+                {
+                    names.Add(name);
+                }
+            }
+        }
+        return names;
+    }
+
+    private static object? OmitKeys(object? reqdata, List<string> names)
+    {
+        if (reqdata is not IDictionary<string, object?> src || !names.Exists(src.ContainsKey))
         {
             return reqdata;
         }
         var body = new Dictionary<string, object?>();
         foreach (var kv in src)
         {
-            if ("$action" != kv.Key)
+            if (!names.Contains(kv.Key))
             {
                 body[kv.Key] = kv.Value;
             }

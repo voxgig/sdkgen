@@ -57,9 +57,25 @@ func resultHeadersUtil(_ ctx: Context) -> Result {
 // `$action` selects the point (see makePointUtil); it is never an API field,
 // so the body is a copy without it. The caller's map is left untouched.
 private func stripAction(_ reqdata: Value) -> Value {
-  guard let src = reqdata.asMap, src.entries["$action"] != nil else { return reqdata }
+  return omitKeys(reqdata, ["$action"])
+}
+
+// A header argument travels as a header, which prepareHeadersUtil sends, so
+// the body is built from the request data without it.
+private func headerArgNames(_ ctx: Context) -> [String] {
+  guard let ahl = gpath(ctx.point, "args", "header").asList else { return [] }
+  return ahl.items.compactMap { hd in
+    guard let name = gp(hd, "name").asString, !name.isEmpty else { return nil }
+    return name
+  }
+}
+
+private func omitKeys(_ reqdata: Value, _ names: [String]) -> Value {
+  guard let src = reqdata.asMap, names.contains(where: { src.entries[$0] != nil }) else {
+    return reqdata
+  }
   let body = VMap()
-  for (key, val) in src.entries where "$action" != key {
+  for (key, val) in src.entries where !names.contains(key) {
     body.entries[key] = val
   }
   return .map(body)
@@ -68,11 +84,13 @@ private func stripAction(_ reqdata: Value) -> Value {
 func transformRequestUtil(_ ctx: Context) -> Value {
   if let sp = ctx.spec { sp.step = "reqform" }
 
-  guard let tfm = gp(ctx.point, "transform").asMap else { return stripAction(.map(ctx.reqdata)) }
-  let reqform = gp(tfm, "req")
-  if isNil(reqform) { return stripAction(.map(ctx.reqdata)) }
+  let reqdata = omitKeys(.map(ctx.reqdata), headerArgNames(ctx))
 
-  return stripAction(transform(.map(vm(("reqdata", .map(ctx.reqdata)))), reqform))
+  guard let tfm = gp(ctx.point, "transform").asMap else { return stripAction(reqdata) }
+  let reqform = gp(tfm, "req")
+  if isNil(reqform) { return stripAction(reqdata) }
+
+  return stripAction(transform(.map(vm(("reqdata", reqdata))), reqform))
 }
 
 func transformResponseUtil(_ ctx: Context) -> Value {

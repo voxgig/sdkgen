@@ -14,7 +14,8 @@ class ProjectNamePrepareHeaders
             $out = [];
         }
         // A header parameter travels as a header, under the name the
-        // definition gives it, and only from this call's own arguments.
+        // definition gives it, and only from this call's own arguments. It
+        // replaces a default of the same name, whatever its case.
         $hl = $ctx->point ? \Voxgig\Struct\Struct::getpath($ctx->point, 'args.header') : null;
         if (is_array($hl)) {
             foreach ($hl as $hd) {
@@ -31,7 +32,13 @@ class ProjectNamePrepareHeaders
                     $val = \Voxgig\Struct\Struct::getprop($ctx->reqdata ?? [], $name);
                 }
                 if (null !== $val) {
-                    $out[strtolower($orig)] = \Voxgig\Struct\Struct::stringify($val);
+                    $wire = strtolower($orig);
+                    foreach (array_keys($out) as $key) {
+                        if (is_string($key) && strtolower($key) === $wire) {
+                            unset($out[$key]);
+                        }
+                    }
+                    $out[$wire] = \Voxgig\Struct\Struct::stringify($val);
                 }
             }
         }

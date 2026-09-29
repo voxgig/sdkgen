@@ -15,7 +15,8 @@ local function prepare_headers_util(ctx)
   end
 
   -- A header parameter travels as a header, under the name the definition
-  -- gives it, and only from this call's own arguments.
+  -- gives it, and only from this call's own arguments. It replaces a default
+  -- of the same name, whatever its case.
   local hl = ctx.point ~= nil and vs.getpath(ctx.point, "args.header") or nil
   if type(hl) == "table" then
     for _, hd in ipairs(hl) do
@@ -30,7 +31,13 @@ local function prepare_headers_util(ctx)
           val = vs.getprop(ctx.reqdata or {}, name)
         end
         if val ~= nil then
-          out[string.lower(orig)] = vs.stringify(val)
+          local wire = string.lower(orig)
+          for key in pairs(out) do
+            if type(key) == "string" and string.lower(key) == wire then
+              out[key] = nil
+            end
+          end
+          out[wire] = vs.stringify(val)
         end
       end
     end

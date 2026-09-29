@@ -24,7 +24,8 @@ final class PrepareHeaders {
     }
 
     // A header parameter travels as a header, under the name the definition
-    // gives it, and only from this call's own arguments.
+    // gives it, and only from this call's own arguments. It replaces a default
+    // of the same name, whatever its case.
     Object hl = ctx.point == null ? null : Struct.getpath(ctx.point, List.of("args", "header"));
     if (hl instanceof List) {
       for (Object hd : (List<Object>) hl) {
@@ -39,7 +40,9 @@ final class PrepareHeaders {
           val = Struct.getprop(ctx.reqdata, name, null);
         }
         if (val != null) {
-          out.put(wire.toLowerCase(Locale.ROOT), Struct.stringify(val));
+          String key = wire.toLowerCase(Locale.ROOT);
+          out.keySet().removeIf(k -> k != null && k.toLowerCase(Locale.ROOT).equals(key));
+          out.put(key, Struct.stringify(val));
         }
       }
     }

@@ -281,6 +281,14 @@ inline std::string makeUrl(CtxPtr ctx) {
   Value joinParts = vlist({Value(spec->base), Value(spec->prefix), Value(spec->path), Value(spec->suffix)});
   std::string url = Struct::join(joinParts, "/", true);
 
+  // A route the definition ends with a slash keeps it: a server such as a
+  // Django REST one redirects or refuses the route without it.
+  Value orig = ctx->point.is_map() ? getp(ctx->point, "orig") : Value::undef();
+  if (orig.is_string() && !orig.as_string().empty() && '/' == orig.as_string().back() &&
+      spec->suffix.empty() && (url.empty() || '/' != url.back())) {
+    url += "/";
+  }
+
   Value resmatch = vmap();
 
   for (const auto& item : Struct::items(spec->params)) {
@@ -925,19 +933,27 @@ inline Value prepareHeaders(CtxPtr ctx) {
   if (!out.is_map()) out = vmap();
 
   // A header parameter travels as a header, under the name the definition
-  // gives it, and only from this call's own arguments.
+  // gives it, and only from this call's own arguments. It replaces a default
+  // of the same name, whatever its case.
+  auto lower = [](std::string s) {
+    for (auto& ch : s) ch = (char)std::tolower((unsigned char)ch);
+    return s;
+  };
   Value aheader = ctx->point.is_map() ? getp(getp(ctx->point, "args"), "header") : Value::undef();
   if (aheader.is_list()) {
     for (const auto& hd : *aheader.as_list()) {
       Value name = getp(hd, "name");
       if (!name.is_string() || name.as_string().empty()) continue;
       Value orig = getp(hd, "orig");
-      std::string wire = orig.is_string() && !orig.as_string().empty() ?
-        orig.as_string() : name.as_string();
+      std::string wire = lower(orig.is_string() && !orig.as_string().empty() ?
+        orig.as_string() : name.as_string());
       Value val = getp(ctx->reqmatch, name.as_string(), Value(nullptr));
       if (val.is_null()) val = getp(ctx->reqdata, name.as_string(), Value(nullptr));
       if (is_nullish(val)) continue;
-      for (auto& ch : wire) ch = (char)std::tolower((unsigned char)ch);
+      for (const auto& item : Struct::items(out)) {
+        std::string key = as_str(pair_key(item));
+        if (lower(key) == wire) out.as_map()->erase(key);
+      }
       map_put(out, wire, Value(Struct::stringify(val)));
     }
   }
@@ -1100,29 +1116,49 @@ inline std::string preparePath(CtxPtr ctx) {
 
 // ---- transformRequest -------------------------------------------------
 
-// `$action` selects the point (see makePoint); it is never an API field, so
-// the body is a copy without it. The caller's map is left untouched.
-inline Value stripAction(const Value& reqdata) {
-  if (!map_contains(reqdata, "$action")) return reqdata;
+inline Value omitKeys(const Value& reqdata, const std::vector<std::string>& names) {
+  bool has = false;
+  for (const auto& name : names) has = has || map_contains(reqdata, name);
+  if (!has) return reqdata;
   Value body = vmap();
   for (const auto& item : Struct::items(reqdata)) {
     std::string key = as_str(pair_key(item));
-    if ("$action" != key) map_put(body, key, pair_val(item));
+    if (std::find(names.begin(), names.end(), key) == names.end()) map_put(body, key, pair_val(item));
   }
   return body;
+}
+
+// `$action` selects the point (see makePoint); it is never an API field, so
+// the body is a copy without it. The caller's map is left untouched.
+inline Value stripAction(const Value& reqdata) { return omitKeys(reqdata, {"$action"}); }
+
+// A header argument travels as a header, which prepareHeaders sends, so the
+// body is built from the request data without it.
+inline std::vector<std::string> headerArgNames(CtxPtr ctx) {
+  std::vector<std::string> names;
+  Value aheader = ctx->point.is_map() ? getp(getp(ctx->point, "args"), "header") : Value::undef();
+  if (aheader.is_list()) {
+    for (const auto& hd : *aheader.as_list()) {
+      Value name = getp(hd, "name");
+      if (name.is_string() && !name.as_string().empty()) names.push_back(name.as_string());
+    }
+  }
+  return names;
 }
 
 inline Value transformRequest(CtxPtr ctx) {
   if (ctx->spec) ctx->spec->step = "reqform";
 
+  Value reqdata = omitKeys(ctx->reqdata, headerArgNames(ctx));
+
   Value transform = Helpers::toMapAny(getp(ctx->point, "transform"));
-  if (!transform.is_map()) return stripAction(ctx->reqdata);
+  if (!transform.is_map()) return stripAction(reqdata);
 
   Value reqform = getp(transform, "req");
-  if (is_nullish(reqform)) return stripAction(ctx->reqdata);
+  if (is_nullish(reqform)) return stripAction(reqdata);
 
   Value data = vmap();
-  map_put(data, "reqdata", ctx->reqdata);
+  map_put(data, "reqdata", reqdata);
   return stripAction(Struct::transform(data, reqform));
 }
 

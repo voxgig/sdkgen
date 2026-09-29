@@ -15,7 +15,8 @@ def prepare_headers_util(ctx):
             out = cloned
 
     # A header parameter travels as a header, under the name the definition
-    # gives it, and only from this call's own arguments.
+    # gives it, and only from this call's own arguments. It replaces a default
+    # of the same name, whatever its case.
     hl = vs.getpath(ctx.point, "args.header") if ctx.point is not None else None
     if isinstance(hl, list):
         for hd in hl:
@@ -29,6 +30,9 @@ def prepare_headers_util(ctx):
             if val is None:
                 val = vs.getprop(ctx.reqdata or {}, name)
             if val is not None:
-                out[orig.lower()] = vs.stringify(val)
+                wire = orig.lower()
+                for key in [k for k in out if isinstance(k, str) and k.lower() == wire]:
+                    del out[key]
+                out[wire] = vs.stringify(val)
 
     return out

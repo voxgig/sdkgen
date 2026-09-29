@@ -22,7 +22,8 @@ $REGISTRY{prepare_headers} = sub {
   my $out = ProjectNameHelpers::rb_truthy($headers) ? Voxgig::Struct::clone($headers) : {};
   $out = {} unless Voxgig::Struct::ismap($out);
   # A header parameter travels as a header, under the name the definition
-  # gives it, and only from this call's own arguments.
+  # gives it, and only from this call's own arguments. It replaces a default
+  # of the same name, whatever its case.
   my $hl = $ctx->{point} ? ProjectNameHelpers::gpath($ctx->{point}, 'args.header') : undef;
   if (Voxgig::Struct::islist($hl)) {
     for my $hd (@$hl) {
@@ -32,7 +33,10 @@ $REGISTRY{prepare_headers} = sub {
       $orig = $name unless defined $orig && !ref $orig && '' ne $orig;
       my $val = ProjectNameHelpers::gp($ctx->{reqmatch} || {}, $name);
       $val = ProjectNameHelpers::gp($ctx->{reqdata} || {}, $name) unless defined $val;
-      $out->{lc $orig} = Voxgig::Struct::stringify($val) if defined $val;
+      next unless defined $val;
+      my $wire = lc $orig;
+      delete $out->{$_} for grep { lc $_ eq $wire } keys %$out;
+      $out->{$wire} = Voxgig::Struct::stringify($val);
     }
   }
   return $out;

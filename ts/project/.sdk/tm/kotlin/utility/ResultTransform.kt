@@ -60,13 +60,23 @@ fun resultHeaders(ctx: Context): KOTLINPACKAGE.core.Result {
 
 // `$action` selects the point (see makePoint); it is never an API field, so
 // the body is a copy without it. The caller's map is left untouched.
-private fun stripAction(reqdata: Any?): Any? {
-  if (reqdata !is Map<*, *> || !reqdata.containsKey("\$action")) {
+private fun stripAction(reqdata: Any?): Any? = omitKeys(reqdata, listOf("\$action"))
+
+// A header argument travels as a header, which prepareHeaders sends, so the
+// body is built from the request data without it.
+private fun headerArgNames(ctx: Context): List<String> {
+  val point = ctx.point ?: return emptyList()
+  val hl = Struct.getpath(point, listOf("args", "header")) as? List<*> ?: return emptyList()
+  return hl.mapNotNull { hd -> (Struct.getprop(hd, "name", null) as? String)?.takeIf { it.isNotEmpty() } }
+}
+
+private fun omitKeys(reqdata: Any?, names: List<String>): Any? {
+  if (reqdata !is Map<*, *> || names.none { reqdata.containsKey(it) }) {
     return reqdata
   }
   val body = linkedMapOf<String, Any?>()
   for ((k, v) in reqdata) {
-    if ("\$action" != k) {
+    if (k.toString() !in names) {
       body[k.toString()] = v
     }
   }
@@ -78,14 +88,16 @@ fun transformRequest(ctx: Context): Any? {
     ctx.spec!!.step = "reqform"
   }
 
+  val reqdata = omitKeys(ctx.reqdata, headerArgNames(ctx))
+
   val transform = Helpers.toMapAny(Struct.getprop(ctx.point, "transform"))
-    ?: return stripAction(ctx.reqdata)
+    ?: return stripAction(reqdata)
 
   val reqform = Struct.getprop(transform, "req", null)
-    ?: return stripAction(ctx.reqdata)
+    ?: return stripAction(reqdata)
 
   val data = linkedMapOf<String, Any?>()
-  data["reqdata"] = ctx.reqdata
+  data["reqdata"] = reqdata
 
   return stripAction(Struct.transform(data, reqform))
 }

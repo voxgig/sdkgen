@@ -137,7 +137,8 @@ object PrepareHeaders {
     val out: JMap[String, Object] = if (cloned != null) cloned else new LinkedHashMap[String, Object]()
 
     // A header parameter travels as a header, under the name the definition
-    // gives it, and only from this call's own arguments.
+    // gives it, and only from this call's own arguments. It replaces a default
+    // of the same name, whatever its case.
     if (ctx.point != null) {
       Struct.getpath(ctx.point, java.util.List.of("args", "header")) match {
         case l: JList[_] =>
@@ -152,7 +153,11 @@ object PrepareHeaders {
                 }
                 var v: Object = if (ctx.reqmatch == null) null else Struct.getprop(ctx.reqmatch, name, null)
                 if (v == null && ctx.reqdata != null) v = Struct.getprop(ctx.reqdata, name, null)
-                if (v != null) out.put(wire.toLowerCase(java.util.Locale.ROOT), Struct.stringify(v))
+                if (v != null) {
+                  val key = wire.toLowerCase(java.util.Locale.ROOT)
+                  out.keySet().removeIf(k => k != null && k.toLowerCase(java.util.Locale.ROOT) == key)
+                  out.put(key, Struct.stringify(v))
+                }
               case _ =>
             }
           }

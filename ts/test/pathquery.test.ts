@@ -206,6 +206,12 @@ describe('prepareHeaders', () => {
     test(lang + ': an absent or null header argument is not sent', () => {
       deepStrictEqual(prepareHeaders(hctx(point, { idempotency_key: null }, {})), {})
     })
+
+    test(lang + ': a header argument replaces a default of the same name in any case', () => {
+      deepStrictEqual(prepareHeaders(hctx(point, { idempotency_key: 'call' }, {},
+        { 'Idempotency-Key': 'default', 'user-agent': 'sdk' })),
+      { 'user-agent': 'sdk', 'idempotency-key': 'call' })
+    })
   }
 
 
@@ -247,5 +253,109 @@ describe('prepareHeaders', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets whose prepareHeaders never sends a header argument')
+  })
+
+  // Source again: a default of the same name, in another case, is removed
+  // before the argument is set, or both values go out for one header.
+  test('every target replaces a default header whatever its case', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const body = src.slice(src.indexOf(def), src.indexOf(def) + 2500)
+      if (!/\bdelete\b|\bdel\b|delete_if|[Rr]emove|erase|unset|delprop|=\s*nil\b/.test(body)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose prepareHeaders keeps a differently cased default')
+  })
+})
+
+
+const urlStruct = {
+  escre: (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+  escurl: (v: any) => encodeURIComponent(String(v)),
+  items: (o: any) => Object.entries(o ?? {}),
+  join: (arr: any[], sep: string) => arr.filter((s) => 'string' === typeof s && '' !== s)
+    .map((s, i, a) => (0 < i ? s.replace(/^\/+/, '') : s).replace(i < a.length - 1 ? /\/+$/ : /$^/, ''))
+    .join(sep),
+}
+
+function uctx(orig: string, spec: any) {
+  return {
+    utility: { struct: urlStruct },
+    point: { orig },
+    spec: { base: 'https://api.test', prefix: '', suffix: '', params: {}, query: {}, ...spec },
+    result: {},
+    error: (code: string) => new Error(code),
+  }
+}
+
+
+// PokeAPI declares every route with a trailing slash, as a Django REST server
+// does, and redirects or refuses one without it.
+describe('makeUrl', () => {
+
+  const impls: Record<string, any> = {
+    ts: loadTemplate('ts/src/utility/MakeUrlUtility.ts').makeUrl,
+    js: require(Path.join(TM, 'js', 'src', 'utility', 'MakeUrlUtility.js')).makeUrl,
+  }
+
+  for (const [lang, makeUrl] of Object.entries(impls)) {
+    test(lang + ': a trailing slash the definition declares is kept', () => {
+      const url = makeUrl(uctx('/api/v2/ability/{id}/',
+        { path: 'api/v2/ability/{id}', params: { id: 1 } }))
+      deepStrictEqual(url, 'https://api.test/api/v2/ability/1/')
+    })
+
+    test(lang + ': a route without one gains none', () => {
+      deepStrictEqual(makeUrl(uctx('/pets/{id}', { path: 'pets/{id}', params: { id: 'p1' } })),
+        'https://api.test/pets/p1')
+    })
+
+    test(lang + ': a suffix wins over the slash', () => {
+      deepStrictEqual(makeUrl(uctx('/pets/', { path: 'pets', suffix: '.json' })),
+        'https://api.test/pets/.json')
+    })
+  }
+
+
+  const TEMPLATES: Record<string, [string, string]> = {
+    c: ['c/utility/make_url.c', 'char* make_url_util('],
+    clojure: ['clojure/src/sdk/core.clj', '(defn u-make-url '],
+    cpp: ['cpp/utility/pipeline.hpp', 'inline std::string makeUrl('],
+    csharp: ['csharp/utility/MakeUrl.cs', 'MakeUrlUtil(Context ctx)'],
+    elixir: ['elixir/lib/projectname/utility.ex', 'def make_url_impl('],
+    go: ['go/utility/make_url.go', 'func makeUrlUtil('],
+    java: ['java/utility/MakeUrl.java', 'static String makeUrl('],
+    js: ['js/src/utility/MakeUrlUtility.js', 'function makeUrl('],
+    kotlin: ['kotlin/utility/MakeSpecUrl.kt', 'fun makeUrl('],
+    lua: ['lua/utility/make_url.lua', 'local function make_url_util('],
+    ocaml: ['ocaml/sdk_runtime.ml', 'let make_url_util'],
+    perl: ['perl/utility/make_url.pm', '$REGISTRY{make_url}'],
+    php: ['php/utility/MakeUrl.php', 'public static function call('],
+    py: ['py/pkg/utility/make_url.py', 'def make_url_util('],
+    rb: ['rb/utility/make_url.rb', 'MakeUrl = ->'],
+    rust: ['rust/utility/make_url.rs', 'pub fn make_url_util('],
+    scala: ['scala/utility/Make.scala', 'def makeUrl('],
+    swift: ['swift/Sources/ProjectNameSDK/utility/Make.swift', 'func makeUrlUtil('],
+    ts: ['ts/src/utility/MakeUrlUtility.ts', 'function makeUrl('],
+    zig: ['zig/core/utility.zig', 'pub fn make_url_util('],
+  }
+
+  // Source, so it proves the check is there, not that it runs: the point's
+  // orig and a test of its last character.
+  test('every target keeps a trailing slash the definition declares', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      ok(-1 !== at, lang + ': no makeUrl definition in ' + rel)
+      const body = src.slice(at, at + 2000)
+      if (!/\borig\b/.test(body) ||
+        !/[Ee]nds?[-_]?[Ww]ith|[Hh]asSuffix|sub\(-1\)|ends_slash|back\(\)|\/\\z|olen - 1/.test(body)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose makeUrl drops a trailing slash')
   })
 })

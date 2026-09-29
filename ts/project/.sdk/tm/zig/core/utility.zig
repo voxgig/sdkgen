@@ -764,6 +764,15 @@ pub fn make_url_util(ctx: *Context) E![]const u8 {
         h.vstr(spec.suffix),
     }), "/", true) catch "";
 
+    // A route the definition ends with a slash keeps it: a server such as a
+    // Django REST one redirects or refuses the route without it.
+    const orig = h.getp(ctx.point, "orig");
+    if (orig == .string and std.mem.endsWith(u8, orig.string, "/") and spec.suffix.len == 0 and
+        !std.mem.endsWith(u8, url, "/"))
+    {
+        url = std.mem.concat(h.A(), u8, &.{ url, "/" }) catch url;
+    }
+
     const resmatch = h.omap();
 
     if (spec.params == .object) {
@@ -1049,7 +1058,8 @@ pub fn prepare_headers_util(ctx: *Context) Value {
     };
 
     // A header parameter travels as a header, under the name the definition
-    // gives it, and only from this call's own arguments.
+    // gives it, and only from this call's own arguments. It replaces a default
+    // of the same name, whatever its case.
     const aheader: Value = h.getpath(&.{ "args", "header" }, ctx.point);
     if (aheader == .array) {
         for (aheader.array.data.items) |hd| {
@@ -1061,6 +1071,13 @@ pub fn prepare_headers_util(ctx: *Context) Value {
             if (h.is_noval(val)) val = h.getp(ctx.reqdata, name.string);
             if (h.is_noval(val)) continue;
             const key = std.ascii.allocLowerString(h.A(), wire) catch wire;
+            while (true) {
+                var kit = out.object.iterator();
+                const same: ?[]const u8 = while (kit.next()) |kv| {
+                    if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, key)) break kv.key_ptr.*;
+                } else null;
+                _ = out.object.fetchOrderedRemove(same orelse break);
+            }
             h.setp(out, key, h.vstr(h.stringify(val)));
         }
     }
@@ -1427,13 +1444,33 @@ pub fn result_body_util(ctx: *Context) ?*SdkResult {
 // `$action` selects the point (see make_point_util); it is never an API
 // field, so the body is a copy without it. The caller's map is left untouched.
 fn strip_action(reqdata: Value) Value {
+    return omit_keys(reqdata, h.vnull(), true);
+}
+
+// A header argument travels as a header, which prepare_headers_util sends, so
+// the body is built from the request data without it.
+fn dropped(key: []const u8, point: Value, action: bool) bool {
+    if (action) return std.mem.eql(u8, key, "$action");
+    const aheader: Value = h.getpath(&.{ "args", "header" }, point);
+    if (aheader != .array) return false;
+    for (aheader.array.data.items) |hd| {
+        const name = h.getp(hd, "name");
+        if (name == .string and std.mem.eql(u8, name.string, key)) return true;
+    }
+    return false;
+}
+
+fn omit_keys(reqdata: Value, point: Value, action: bool) Value {
     if (reqdata != .object) return reqdata;
-    if (reqdata.object.get("$action") == null) return reqdata;
-    const body = h.omap();
+    var found = false;
     var it = reqdata.object.iterator();
-    while (it.next()) |kv| {
+    while (it.next()) |kv| found = found or dropped(kv.key_ptr.*, point, action);
+    if (!found) return reqdata;
+    const body = h.omap();
+    var bit = reqdata.object.iterator();
+    while (bit.next()) |kv| {
         const key = kv.key_ptr.*;
-        if (!std.mem.eql(u8, key, "$action")) h.setp(body, key, kv.value_ptr.*);
+        if (!dropped(key, point, action)) h.setp(body, key, kv.value_ptr.*);
     }
     return body;
 }
@@ -1444,16 +1481,18 @@ pub fn transform_request_util(ctx: *Context) Value {
 
     if (spec) |sp| sp.step = "reqform";
 
+    const reqdata = omit_keys(ctx.reqdata, point, false);
+
     const transform = h.to_map(h.getp(point, "transform"));
-    if (h.is_noval(transform)) return strip_action(ctx.reqdata);
+    if (h.is_noval(transform)) return strip_action(reqdata);
 
     const reqform = h.getp(transform, "req");
-    if (h.is_noval(reqform)) return strip_action(ctx.reqdata);
+    if (h.is_noval(reqform)) return strip_action(reqdata);
 
-    const store = h.jo(&.{.{ "reqdata", ctx.reqdata }});
+    const store = h.jo(&.{.{ "reqdata", reqdata }});
     // transform now reports collected injection errors beside the value; .out
     // is what it used to return on its own, errors or not.
-    const tres = vs.transform(h.A(), store, reqform) catch return strip_action(ctx.reqdata);
+    const tres = vs.transform(h.A(), store, reqform) catch return strip_action(reqdata);
     return strip_action(tres.out);
 }
 

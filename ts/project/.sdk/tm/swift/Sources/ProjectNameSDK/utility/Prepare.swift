@@ -42,7 +42,8 @@ func prepareHeadersUtil(_ ctx: Context) -> VMap {
   let out = isNil(headers) ? VMap() : (clone(headers).asMap ?? VMap())
 
   // A header parameter travels as a header, under the name the definition
-  // gives it, and only from this call's own arguments.
+  // gives it, and only from this call's own arguments. It replaces a default
+  // of the same name, whatever its case.
   if let ahl = gpath(ctx.point, "args", "header").asList {
     for hd in ahl.items {
       guard let name = gp(hd, "name").asString, !name.isEmpty else { continue }
@@ -51,7 +52,11 @@ func prepareHeadersUtil(_ ctx: Context) -> VMap {
       var val = gp(ctx.reqmatch, name)
       if isNil(val) { val = gp(ctx.reqdata, name) }
       if !isNil(val) {
-        out.entries[wire.lowercased()] = .string(stringify(val))
+        let key = wire.lowercased()
+        for k in out.entries.keys where k.lowercased() == key {
+          _ = out.entries.removeValue(forKey: k)
+        }
+        out.entries[key] = .string(stringify(val))
       }
     }
   }
