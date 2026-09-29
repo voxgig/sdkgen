@@ -11,7 +11,16 @@ decisions are required.
 ## What you'll need
 
 - Node.js (a recent LTS).
-- An OpenAPI 3 spec file (`.yaml` or `.json`).
+- An OpenAPI 3 spec file (`.yaml` or `.json`) with a top-level `servers`
+  entry naming the base URL of your API. apidef refuses a spec without one,
+  and a spec written by a framework such as FastAPI omits it unless the app
+  declares it, so add one before you start:
+
+  ```yaml
+  servers:
+    - url: https://api.example.com
+  ```
+
 - Network access to install npm packages.
 
 ## Step 1 — scaffold a project

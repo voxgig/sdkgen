@@ -22,4 +22,5 @@ type Installed = {
 };
 declare function installedFrom(pkgname: string, actx: ActionContext): Installed[];
 declare function package_update(names: string[], actx: ActionContext): Promise<ActionResult>;
-export { action_package, package_add, package_update, installedFrom, resolvePackage, selectItems, parseAliases, registerAdder, SDKGEN_VERSION, };
+declare function npmFetchArgs(pkgname: string): string[];
+export { action_package, package_add, package_update, installedFrom, npmFetchArgs, resolvePackage, selectItems, parseAliases, registerAdder, SDKGEN_VERSION, };
