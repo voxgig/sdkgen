@@ -16,6 +16,11 @@ type DefinitionPoint = {
         value: any;
     }[];
     select: Record<string, any>;
+    headers: {
+        name: string;
+        wire: string;
+        value: any;
+    }[];
     query: string[];
     auth: Credential[][] | null;
     status: number;

@@ -5,6 +5,7 @@ import { KIT, nom } from '@voxgig/apidef'
 import { entityCollection } from './opShape'
 import { pointSegments } from './pointPath'
 import { pointFacts } from './resolved'
+import { isAuthSuppressed, resolveAuthIn, resolveAuthName } from '../utility'
 
 
 // What a generated definition test checks an operation against: the API
@@ -23,6 +24,7 @@ type DefinitionPoint = {
   action?: string
   args: { name: string, wire: string, value: any }[]
   select: Record<string, any>
+  headers: { name: string, wire: string, value: any }[]
   query: string[]
   auth: Credential[][] | null
   status: number
@@ -30,6 +32,10 @@ type DefinitionPoint = {
   idField: string
 }
 
+
+// The operations every target generates a method for. The model may hold
+// others, such as a patch beside an update, which no SDK can be called with.
+const GENERATED_OPS = ['load', 'list', 'create', 'update', 'remove']
 
 const MAX_ITEMS = 3
 const MAX_DEPTH = 8
@@ -41,13 +47,19 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
   const plan: DefinitionPoint[] = []
   const unchecked = false === model?.main?.[KIT]?.config?.auth?.active ||
     false === model?.main?.[KIT]?.info?.auth
+  // A generated SDK sends one credential, under the scheme apidef chose for it.
+  const own = model?.main?.[KIT]?.info?.security?.scheme
+  // The header the SDK puts any key in, as its prepareAuth does, though the
+  // definition declares no scheme: LearnWorlds declares it as a parameter.
+  const ownHeader = !isAuthSuppressed(model) && 'header' === resolveAuthIn(model) ?
+    resolveAuthName(model).toLowerCase() : null
 
   for (const entity of Object.values(entityCollection(model)) as any[]) {
     if (false === entity.active) continue
 
     for (const [op, operation] of Object.entries(entity.op || {}) as any[]) {
       // An inactive operation stays in the model but gets no method.
-      if (false === operation?.active) continue
+      if (false === operation?.active || !GENERATED_OPS.includes(op)) continue
 
       const points = (operation?.points || []).filter((p: any) => false !== p.a)
 
@@ -71,9 +83,21 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           return { name: arg.n, wire, value: scalar(def?.example ?? def?.schema?.example) ?? 'p' + (i + 1) }
         })
 
+        // A header argument is sent too, and must arrive as a header under
+        // the definition's name, never in the query.
+        const headers = (point.g?.header || [])
+          .filter((arg: any) => false !== arg.a &&
+            ![ownHeader, 'content-type'].includes(String(arg.or || arg.n).toLowerCase()))
+          .map((arg: any, i: number) => {
+            const wire = String(arg.or || arg.n)
+            const def = params.find((p: any) => 'header' === p?.in &&
+              wire.toLowerCase() === String(p?.name).toLowerCase())
+            return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) }
+          })
+
         const selected: Record<string, any> = {}
         for (const key of select.exist || []) {
-          if (args.some((a: any) => a.name === key)) continue
+          if (args.some((a: any) => a.name === key) || headers.some((h: any) => h.name === key)) continue
           const def = params.find((p: any) => key === p?.name)
           selected[key] = scalar(def?.example ?? def?.schema?.example) ?? 'v1'
         }
@@ -101,10 +125,11 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           ...(null == select.$action ? {} : { action: select.$action }),
           args,
           select: selected,
+          headers,
           query: params.filter((p: any) => 'query' === p?.in).map((p: any) => p.name),
-          auth: unchecked ? null : credentialSets(facts),
+          auth: unchecked ? null : credentialSets(facts, own),
           status: success?.status ?? 200,
-          sample: null == media ? null : boundedSample(sampleOf(media)),
+          sample: null == media ? null : boundedSample(fitting(sampleOf(media), media.schema)),
           idField: entity.id?.field || 'id',
         })
       }
@@ -168,6 +193,20 @@ function sampleOf(media: any): any {
 }
 
 
+// An example whose top level contradicts its own schema proves nothing, such
+// as GitHub's page of deployment rule apps written as a list of its halves.
+function fitting(sample: any, schema: any): any {
+  const type = Array.isArray(schema?.type) ?
+    schema.type.find((t: string) => 'null' !== t) : schema?.type
+  const object = 'object' === type || (null == type && null != schema?.properties)
+  const array = 'array' === type || (null == type && null != schema?.items)
+  if (object && (Array.isArray(sample) || null == sample || 'object' !== typeof sample)) {
+    return undefined
+  }
+  return array && !Array.isArray(sample) ? undefined : sample
+}
+
+
 // Schema-shaped data where the definition gives no example: every property,
 // one item per array, the first branch of a union.
 function synthesize(schema: any, depth: number): any {
@@ -222,15 +261,18 @@ function boundedSample(sample: any): any {
 
 
 // Alternatives of credentials, every one of a set needed together. Empty is a
-// public operation; null is one whose schemes no SDK option can express.
-function credentialSets(facts: any): Credential[][] | null {
+// public operation; null is one whose schemes no SDK option can express. Only
+// those the SDK's one scheme meets count, so Petstore's OAuth pets are null.
+function credentialSets(facts: any, own?: string): Credential[][] | null {
   const security = facts.security
   if (!Array.isArray(security) || 0 === security.length) return []
   if (security.some((req: any) => null == req || 0 === Object.keys(req).length)) return []
 
+  const reqs = 'string' === typeof own && '' !== own ?
+    security.filter((req: any) => Object.keys(req).every((name) => name === own)) : security
   const schemes = facts.securitySchemes || {}
   const sets: Credential[][] = []
-  for (const req of security) {
+  for (const req of reqs) {
     const set = Object.keys(req).map((name) => credentialOf(schemes[name]))
     if (set.every((c) => null != c)) sets.push(set as Credential[])
   }

@@ -27,6 +27,17 @@ class ProjectNamePrepareQuery
                     }
                 }
             }
+            // A header parameter travels in the headers, which prepareHeaders
+            // fills.
+            $hl = \Voxgig\Struct\Struct::getpath($point, 'args.header');
+            if (is_array($hl)) {
+                foreach ($hl as $hd) {
+                    $name = \Voxgig\Struct\Struct::getprop($hd, 'name');
+                    if (is_string($name)) {
+                        $params[] = $name;
+                    }
+                }
+            }
         }
         // A query parameter travels under the name the definition gives it,
         // its orig, which the model may have renamed for the caller.

@@ -109,6 +109,20 @@ describe('actionstrip: the $action selector never reaches the wire', () => {
     })
 
 
+    test(lang + ': transformRequest keeps a header argument out of the body', () => {
+      const reqdata = { name: 'n', idempotency_key: 'k' }
+      const before = JSON.stringify(reqdata)
+      const args = { header: [{ name: 'idempotency_key', orig: 'Idempotency-Key' }] }
+      const plain: any = bodyCtx(reqdata)
+      plain.point.args = args
+      deepStrictEqual(transformRequest(plain), { name: 'n' })
+      const wrapped: any = bodyCtx(reqdata, { thing: '`reqdata`' })
+      wrapped.point.args = args
+      deepStrictEqual(transformRequest(wrapped), { thing: { name: 'n' } })
+      strictEqual(JSON.stringify(reqdata), before, 'reqdata was mutated')
+    })
+
+
     test(lang + ': transformRequest leaves a body without $action alone', () => {
       const same = (ctx: any) => ctx.reqdata
       const reqdata = { name: 'n' }
@@ -239,6 +253,11 @@ describe('actionstrip: every SDK target strips the selector', () => {
 
 
   for (const lang of SDK_TARGETS) {
+    test(lang + ': transform-request builds the body without the header arguments', () => {
+      ok(/\bheader\b/.test(siteText(SITES[lang].body)),
+        lang + ': ' + SITES[lang].body[0] + ' never reads the header arguments')
+    })
+
     test(lang + ': prepare-query and transform-request both mention $action', () => {
       const site = SITES[lang]
       ok(siteText(site.query).includes('$action'),

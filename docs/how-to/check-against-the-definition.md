@@ -8,20 +8,34 @@ definition suite reads the API definition instead.
 ## What it checks
 
 `test/definition.test.ts` (`test/definition.test.js` in the js target) holds
-one test per HTTP operation. Each test builds the client with an `apikey`
-alone, answers the one request it sends from a mock transport, and checks
-four things against the definition:
+one test per HTTP operation that the SDK has a method for, so a model's
+`patch` beside an `update` has none. Each test builds the client with an
+`apikey` alone, answers the one request it sends from a mock transport, and
+checks these against the definition:
 
 | Check | Fails when |
 | --- | --- |
-| Route and method | the request goes to a path or method the definition does not declare for the operation |
-| Query | a query parameter is not one the definition declares, such as a path parameter sent twice, or a model name sent in place of the definition's (`resource_id` for Lob's `resource_ids`) |
-| Credential | the request lacks the credential the security scheme names: an HTTP Basic pair with the key as the user, a bearer token, or an API key in its header, query or cookie |
+| Route and method | the request goes to a path or method the definition does not declare for the operation, including a path that drops the trailing slash a Django REST server's routes carry. The path is compared as the URL parser reads it, so a backslash in the definition, as in GitLab's `Packages\(\)`, is the slash every client sends |
+| Query | a query parameter is not one the definition declares, such as a path parameter sent twice, a header parameter sent as a query parameter, or a model name sent in place of the definition's (`resource_id` for Lob's `resource_ids`) |
+| Headers | a header parameter the test passes does not arrive as a header under the definition's name. The credential check owns the header the security scheme names and the header the SDK's own credential goes in, and the SDK sets the content type from the body it sends |
+| Credential | the request lacks the credential the security scheme names: an HTTP Basic pair with the key as the user, a bearer token, or an API key in its header, query or cookie. A generated SDK sends one credential, under the scheme its model chose, so an operation secured only by another scheme is not checked for one |
 | Response | the SDK reads a different number of records, or a different record, than the definition's response example holds |
+
+The response check compares only what the example proves. A list compares
+the body when it is an array, or the one list of objects in a page, whose
+other properties are paging or status, each known by its whole name, so a
+record's `homepage` or `preview` is data of its own. A body with data of its
+own beside a list is a record that happens to hold one, and proves nothing
+about a list. A single record is the body, or the one object with the
+identity field that an envelope carries, under the entity's name or beside
+paging and status alone. Any other body is the record itself, such as
+GitHub's check suite preferences beside the repository they belong to.
 
 The mock answers with the definition's own response example. Where the
 definition gives none, it answers with data built from the response schema:
-every property, and one item per list.
+every property, and one item per list. An example whose top level
+contradicts its own schema, such as a list where the schema is an object,
+proves nothing, and the test checks the request alone.
 
 ## Run it
 

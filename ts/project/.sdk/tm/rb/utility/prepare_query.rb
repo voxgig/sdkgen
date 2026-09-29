@@ -17,6 +17,14 @@ module ProjectNameUtilities
           params << name if name.is_a?(String)
         end
       end
+      # A header parameter travels in the headers, which prepare_headers fills.
+      hl = VoxgigStruct.getpath(point, "args.header")
+      if hl.is_a?(Array)
+        hl.each do |hd|
+          name = VoxgigStruct.getprop(hd, "name")
+          params << name if name.is_a?(String)
+        end
+      end
     end
     # A query parameter travels under the name the definition gives it, its
     # orig, which the model may have renamed for the caller.

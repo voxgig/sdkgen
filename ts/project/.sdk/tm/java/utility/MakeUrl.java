@@ -34,6 +34,14 @@ final class MakeUrl {
     joinParts.add(spec.suffix);
     String url = Struct.join(joinParts, "/", true);
 
+    // A route the definition ends with a slash keeps it: a server such as a
+    // Django REST one redirects or refuses the route without it.
+    Object orig = ctx.point == null ? null : Struct.getprop(ctx.point, "orig", null);
+    if (orig instanceof String && ((String) orig).endsWith("/") &&
+        (spec.suffix == null || spec.suffix.isEmpty()) && !url.endsWith("/")) {
+      url = url + "/";
+    }
+
     Map<String, Object> resmatch = new LinkedHashMap<>();
 
     Map<String, Object> params = spec.params;

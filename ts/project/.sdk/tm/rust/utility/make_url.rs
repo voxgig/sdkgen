@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
-use crate::core::helpers::setp;
+use crate::core::helpers::{getp, setp};
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
@@ -26,6 +26,7 @@ pub fn make_url_util(ctx: &Rc<Context>) -> Result<String, ProjectNameError> {
         )
     };
 
+    let suffixless = suffix.is_empty();
     let mut url = vs::join(
         &Value::list(vec![
             Value::str(base),
@@ -36,6 +37,14 @@ pub fn make_url_util(ctx: &Rc<Context>) -> Result<String, ProjectNameError> {
         Some("/"),
         true,
     );
+
+    // A route the definition ends with a slash keeps it: a server such as a
+    // Django REST one redirects or refuses the route without it.
+    if let Value::Str(orig) = getp(&ctx.point.borrow().clone(), "orig") {
+        if orig.ends_with('/') && suffixless && !url.ends_with('/') {
+            url.push('/');
+        }
+    }
 
     let resmatch = Value::empty_map();
 

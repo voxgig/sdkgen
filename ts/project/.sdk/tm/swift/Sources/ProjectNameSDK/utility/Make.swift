@@ -208,6 +208,13 @@ func makeUrlUtil(_ ctx: Context) throws -> String {
   var url = join(jtp(spec.base, spec.prefix, spec.path, spec.suffix), "/", true)
   let resmatch = VMap()
 
+  // A route the definition ends with a slash keeps it: a server such as a
+  // Django REST one redirects or refuses the route without it.
+  if let orig = gp(ctx.point, "orig").asString, orig.hasSuffix("/"), spec.suffix.isEmpty,
+     !url.hasSuffix("/") {
+    url += "/"
+  }
+
   for item in items(.map(spec.params)) {
     let key = item[0].asString ?? ""
     let val = item[1]

@@ -34,6 +34,16 @@ local function prepare_query_util(ctx)
         end
       end
     end
+    -- A header parameter travels in the headers, which prepare_headers fills.
+    local hl = vs.getpath(point, "args.header")
+    if type(hl) == "table" then
+      for _, hd in ipairs(hl) do
+        local name = vs.getprop(hd, "name")
+        if type(name) == "string" then
+          table.insert(params, name)
+        end
+      end
+    end
   end
 
   -- A query parameter travels under the name the definition gives it, its

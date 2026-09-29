@@ -36,6 +36,17 @@ char* make_url_util(Context* ctx, PNError** err) {
   char* url = str_append(NULL, joined ? joined : "");
   free(joined);
 
+  // A route the definition ends with a slash keeps it: a server such as a
+  // Django REST one redirects or refuses the route without it.
+  voxgig_value* orig = getp(ctx->point, "orig");
+  if (voxgig_is_string(orig) && (NULL == spec->suffix || '\0' == spec->suffix[0])) {
+    const char* o = voxgig_as_string(orig);
+    size_t olen = strlen(o), ulen = strlen(url);
+    if (0 < olen && '/' == o[olen - 1] && (0 == ulen || '/' != url[ulen - 1])) {
+      url = str_append(url, "/");
+    }
+  }
+
   voxgig_value* resmatch = voxgig_new_map();
 
   // Path params substitution.

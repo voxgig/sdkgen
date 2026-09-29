@@ -29,6 +29,12 @@ $REGISTRY{make_url} = sub {
     [$spec->{base}, $spec->{prefix}, $spec->{path}, $spec->{suffix}], '/', 1);
   my $resmatch = {};
 
+  # A route the definition ends with a slash keeps it: a server such as a
+  # Django REST one redirects or refuses the route without it.
+  my $orig = $ctx->{point} ? ProjectNameHelpers::gp($ctx->{point}, 'orig') : undef;
+  $url .= '/' if defined $orig && !ref $orig && $orig =~ m{/\z}
+    && !(defined $spec->{suffix} && '' ne $spec->{suffix}) && $url !~ m{/\z};
+
   my $param_items = Voxgig::Struct::items($spec->{params});
   if ($param_items) {
     for my $item (@$param_items) {

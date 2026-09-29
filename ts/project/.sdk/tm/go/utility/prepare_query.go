@@ -37,6 +37,17 @@ func prepareQueryUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
+	// A header parameter travels in the headers, which prepareHeaders fills.
+	if point != nil {
+		if hl, ok := vs.GetPath(point, []any{"args", "header"}).([]any); ok {
+			for _, hd := range hl {
+				if name, ok := vs.GetProp(hd, "name").(string); ok {
+					params = append(params, name)
+				}
+			}
+		}
+	}
+
 	// A query parameter travels under the name the definition gives it, its
 	// orig, which the model may have renamed for the caller.
 	wire := map[string]string{}

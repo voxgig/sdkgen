@@ -450,9 +450,30 @@
 
 (defn u-prepare-headers [ctx]
   (let [options (client-options-map (oget ctx :client))
-        headers (vs/getprop options "headers")]
-    (if (nil? headers) (vs/jm)
-        (let [o (vs/clone headers)] (if (vs/ismap o) o (vs/jm))))))
+        headers (vs/getprop options "headers")
+        out (if (nil? headers) (vs/jm)
+                (let [o (vs/clone headers)] (if (vs/ismap o) o (vs/jm))))
+        point (oget ctx :point)
+        args (when point (vs/getprop point "args"))
+        aheader (let [h (when (vs/ismap args) (vs/getprop args "header"))]
+                  (if (vs/islist h) h (vs/jt)))]
+    ;; A header parameter travels as a header, under the name the definition
+    ;; gives it, and only from this call's own arguments. It replaces a default
+    ;; of the same name, whatever its case.
+    (doseq [hd (vec aheader)]
+      (let [name (when (vs/ismap hd) (vs/getprop hd "name"))]
+        (when (and (string? name) (seq name))
+          (let [orig (vs/getprop hd "orig")
+                wire (if (and (string? orig) (seq orig)) orig name)
+                v (vs/getprop (oget ctx :reqmatch) name)
+                v (if (nil? v) (vs/getprop (oget ctx :reqdata) name) v)]
+            (when (some? v)
+              (let [key (str/lower-case wire)]
+                (doseq [k (vec (.keySet ^java.util.Map out))]
+                  (when (and (string? k) (= key (str/lower-case k)))
+                    (.remove ^java.util.Map out k)))
+                (.put ^java.util.Map out key (vs/stringify v))))))))
+    out))
 
 (defn u-param [ctx paramdef]
   (let [point (oget ctx :point)
@@ -506,8 +527,14 @@
         aparams (let [args (when point (vs/getprop point "args"))
                       p (when (vs/ismap args) (vs/getprop args "params"))]
                   (if (vs/islist p) p (vs/jt)))
-        pset (into (into #{} (vec params))
-                   (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
+        ;; A header parameter travels in the headers, which u-prepare-headers
+        ;; fills.
+        aheader (let [args (when point (vs/getprop point "args"))
+                      h (when (vs/ismap args) (vs/getprop args "header"))]
+                  (if (vs/islist h) h (vs/jt)))
+        pset (into (into (into #{} (vec params))
+                         (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
+                   (keep (fn [hd] (when (vs/ismap hd) (vs/getprop hd "name"))) (vec aheader)))
         ;; A query parameter travels under the name the definition gives it,
         ;; its orig, which the model may have renamed for the caller.
         aquery (let [args (when point (vs/getprop point "args"))
@@ -526,26 +553,39 @@
           (.put ^java.util.Map out (get wire k k) v))))
     out))
 
-;; `$action` selects the point (see u-make-point); it is never an API field,
-;; so the body is a copy without it. The caller's map is left untouched.
-(defn- strip-action [reqdata]
-  (if (and (vs/ismap reqdata) (.containsKey ^java.util.Map reqdata "$action"))
+(defn- omit-keys [reqdata names]
+  (if (and (vs/ismap reqdata) (some #(.containsKey ^java.util.Map reqdata %) names))
     (let [body (vs/jm)]
       (doseq [item (or (vs/items reqdata) [])]
         (let [k (vs/getprop item 0) v (vs/getprop item 1)]
-          (when (not= "$action" k) (.put ^java.util.Map body k v))))
+          (when-not (some #(= k %) names) (.put ^java.util.Map body k v))))
       body)
     reqdata))
 
+;; `$action` selects the point (see u-make-point); it is never an API field,
+;; so the body is a copy without it. The caller's map is left untouched.
+(defn- strip-action [reqdata] (omit-keys reqdata ["$action"]))
+
+;; A header argument travels as a header, which u-prepare-headers sends, so the
+;; body is built from the request data without it.
+(defn- header-arg-names [point]
+  (let [args (when point (vs/getprop point "args"))
+        h (when (vs/ismap args) (vs/getprop args "header"))]
+    (if (vs/islist h)
+      (filterv #(and (string? %) (seq %))
+               (map #(when (vs/ismap %) (vs/getprop % "name")) (vec h)))
+      [])))
+
 (defn u-transform-request [ctx]
-  (let [spec (oget ctx :spec) point (oget ctx :point)]
+  (let [spec (oget ctx :spec) point (oget ctx :point)
+        data (omit-keys (oget ctx :reqdata) (header-arg-names point))]
     (when spec (oset! spec :step "reqform"))
     (let [transform (to-map (vs/getprop point "transform"))]
       (strip-action
-       (if (nil? transform) (oget ctx :reqdata)
+       (if (nil? transform) data
            (let [reqform (vs/getprop transform "req")]
-             (if (nil? reqform) (oget ctx :reqdata)
-                 (vs/transform (vs/jm "reqdata" (oget ctx :reqdata)) reqform))))))))
+             (if (nil? reqform) data
+                 (vs/transform (vs/jm "reqdata" data) reqform))))))))
 
 (defn u-prepare-body [ctx]
   (if (= "data" (op-input (oget ctx :op))) (ucall ctx :transform-request) nil))
@@ -817,7 +857,14 @@
       (nil? result) ["" (ctx-error ctx "url_no_result" "Expected context result property to be defined.")]
       :else
       (let [url (atom (vs/join (vs/jt (oget spec :base) (oget spec :prefix) (oget spec :path) (oget spec :suffix)) "/" true))
-            resmatch (vs/jm)]
+            resmatch (vs/jm)
+            point (oget ctx :point)
+            orig (when point (vs/getprop point "orig"))]
+        ;; A route the definition ends with a slash keeps it: a server such as a
+        ;; Django REST one redirects or refuses the route without it.
+        (when (and (string? orig) (str/ends-with? orig "/") (empty? (str (oget spec :suffix)))
+                   (not (str/ends-with? @url "/")))
+          (swap! url str "/"))
         (doseq [item (or (vs/items (oget spec :params)) [])]
           (let [k (vs/getprop item 0) v (vs/getprop item 1)]
             (when (and (some? v) (string? k))

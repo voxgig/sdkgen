@@ -355,9 +355,35 @@ let prepare_method_util (ctx : ctx) : string =
 
 let prepare_headers_util (ctx : ctx) : value =
   let options = client_options_map (cc ctx) in
-  match getp options "headers" with
-  | Noval -> empty_map ()
-  | h -> (match clone h with Map _ as m -> m | _ -> empty_map ())
+  let out =
+    match getp options "headers" with
+    | Noval -> empty_map ()
+    | h -> (match clone h with Map _ as m -> m | _ -> empty_map ())
+  in
+  (* A header parameter travels as a header, under the name the definition
+   * gives it, and only from this call's own arguments. It replaces a default
+   * of the same name, whatever its case. *)
+  (match getp (getp ctx.c_point "args") "header" with
+   | List r ->
+     List.iter (fun hd ->
+         match getp hd "name" with
+         | Str name when name <> "" ->
+           let wire = match getp hd "orig" with Str o when o <> "" -> o | _ -> name in
+           let v = match getp ctx.c_reqmatch name with
+             | Noval | Null -> getp ctx.c_reqdata name
+             | v -> v
+           in
+           (match v with
+            | Noval | Null -> ()
+            | v ->
+              let key = String.lowercase_ascii wire in
+              List.iter (fun k ->
+                  if String.lowercase_ascii k = key then ignore (delprop out (Str k)))
+                (keysof out);
+              setp out key (Str (stringify v)))
+         | _ -> ()) !r
+   | _ -> ());
+  out
 
 let param_util (ctx : ctx) (paramdef : value) : value =
   let point = ctx.c_point and spec = ctx.c_spec in
@@ -418,7 +444,13 @@ let prepare_query_util (ctx : ctx) : value =
     | List r -> List.map (fun pd -> getp pd "name") !r
     | _ -> []
   in
-  let params = params @ arg_names in
+  (* A header parameter travels in the headers, which prepare_headers fills. *)
+  let header_names =
+    match getp (getp ctx.c_point "args") "header" with
+    | List r -> List.map (fun hd -> getp hd "name") !r
+    | _ -> []
+  in
+  let params = params @ arg_names @ header_names in
   let contains_param s = List.exists (fun v -> match v with Str x -> x = s | _ -> false) params in
   (* A query parameter travels under the name the definition gives it, its
    * orig, which the model may have renamed for the caller. *)
@@ -578,27 +610,39 @@ let prepare_auth_util = Sdk_prepare_auth.prepare_auth_util
 
 (* ----- transforms / result helpers ----- *)
 
-(* `$action` selects the point (see make_point_util); it is never an API
-   field, so the body is a copy without it. The caller's map is left
-   untouched. *)
-let strip_action (reqdata : value) : value =
+let omit_keys (reqdata : value) (names : string list) : value =
   match reqdata with
-  | Map _ when List.mem "$action" (keysof reqdata) ->
+  | Map _ when List.exists (fun n -> List.mem n (keysof reqdata)) names ->
     let body = empty_map () in
-    List.iter (fun k -> if k <> "$action" then setp body k (getp reqdata k))
+    List.iter (fun k -> if not (List.mem k names) then setp body k (getp reqdata k))
       (keysof reqdata);
     body
   | _ -> reqdata
 
+(* `$action` selects the point (see make_point_util); it is never an API
+   field, so the body is a copy without it. The caller's map is left
+   untouched. *)
+let strip_action (reqdata : value) : value = omit_keys reqdata ["$action"]
+
+(* A header argument travels as a header, which prepare_headers_util sends,
+   so the body is built from the request data without it. *)
+let header_arg_names (point : value) : string list =
+  match getp (getp point "args") "header" with
+  | List r ->
+    List.filter_map (fun hd ->
+        match getp hd "name" with Str n when n <> "" -> Some n | _ -> None) !r
+  | _ -> []
+
 let transform_request_util (ctx : ctx) : value =
   (match ctx.c_spec with Some s -> s.sp_step <- "reqform" | None -> ());
+  let data = omit_keys ctx.c_reqdata (header_arg_names ctx.c_point) in
   strip_action
     (match to_map (getp ctx.c_point "transform") with
      | Map _ as tr ->
        (match getp tr "req" with
-        | Noval -> ctx.c_reqdata
-        | reqform -> transform (jo [("reqdata", ctx.c_reqdata)]) reqform)
-     | _ -> ctx.c_reqdata)
+        | Noval -> data
+        | reqform -> transform (jo [("reqdata", data)]) reqform)
+     | _ -> data)
 
 let transform_response_util (ctx : ctx) : value =
   (match ctx.c_spec with Some s -> s.sp_step <- "resform" | None -> ());
@@ -804,6 +848,12 @@ let make_url_util (ctx : ctx) : (string * sdk_error option) =
   | _, None -> ("", Some (ctx_make_error ctx "url_no_result" "Expected context result property to be defined."))
   | Some spec, Some result ->
     let url = ref (join ~sep:(Str "/") ~url:true (ja [Str spec.sp_base; Str spec.sp_prefix; Str spec.sp_path; Str spec.sp_suffix])) in
+    (* A route the definition ends with a slash keeps it: a server such as a
+     * Django REST one redirects or refuses the route without it. *)
+    let ends_slash s = String.length s > 0 && '/' = s.[String.length s - 1] in
+    (match getp ctx.c_point "orig" with
+     | Str o when ends_slash o && spec.sp_suffix = "" && not (ends_slash !url) -> url := !url ^ "/"
+     | _ -> ());
     let resmatch = empty_map () in
     List.iter (fun key ->
         let v = getp spec.sp_params key in
