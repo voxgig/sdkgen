@@ -8,6 +8,7 @@ exports.action_package = action_package;
 exports.package_add = package_add;
 exports.package_update = package_update;
 exports.installedFrom = installedFrom;
+exports.npmFetchArgs = npmFetchArgs;
 exports.resolvePackage = resolvePackage;
 exports.selectItems = selectItems;
 exports.parseAliases = parseAliases;
@@ -492,7 +493,7 @@ async function npmFetch(pkgname, actx) {
         note: pkgname + ': npm install ' + pkgname + '@latest'
     });
     try {
-        const out = await run('win32' === process.platform ? 'npm.cmd' : 'npm', ['install', '--save-dev', pkgname + '@latest'], { cwd, maxBuffer: 64 * 1024 * 1024 });
+        const out = await run('win32' === process.platform ? 'npm.cmd' : 'npm', npmFetchArgs(pkgname), { cwd, maxBuffer: 64 * 1024 * 1024 });
         actx.log.debug({
             point: 'package-update-fetched', package: pkgname,
             stdout: out.stdout, stderr: out.stderr
@@ -504,6 +505,11 @@ async function npmFetch(pkgname, actx) {
             '--no-fetch, or fix the install and try again.' +
             (null == err.stderr ? '' : '\n\n' + err.stderr));
     }
+}
+// The saved range is a tilde, as the scaffold writes it: a caret would let
+// the next minor float in, and a scaffold contract can change in a minor.
+function npmFetchArgs(pkgname) {
+    return ['install', '--save-dev', '--save-prefix=~', pkgname + '@latest'];
 }
 function validateFetched(pkgname, installed, actx) {
     const base = installed.find((i) => '' !== i.base)?.base;
