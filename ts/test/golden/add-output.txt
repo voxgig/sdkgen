@@ -800,7 +800,7 @@ tm/js/src/Control.js 02b60dd9450e
 tm/js/src/Operation.js 6bfeaa721d05
 tm/js/src/Point.js 2313658ea193
 tm/js/src/README.md 595588a11ce3
-tm/js/src/Response.js 367b38f2ef0a
+tm/js/src/Response.js 014e75616728
 tm/js/src/Result.js f5ca4fe99283
 tm/js/src/Spec.js 3479116d0990
 tm/js/src/feature/README.md 630422c5567f
@@ -856,7 +856,7 @@ tm/js/test/pipeline.test.js 44fc311f0e45
 tm/js/test/sdk-test-control.json 91aad509f363
 tm/js/test/utility.js d99ed5715804
 tm/js/test/utility/Custom.test.js deeb256f75c3
-tm/js/test/utility/PrimaryUtility.test.js 7cc091afa657
+tm/js/test/utility/PrimaryUtility.test.js ac9afba1b7a7
 tm/js/test/utility/StructUtility.test.js 7014600e8ff7
 tm/js/test/utility/index.js 18fa1acfe694
 tm/js/test/vendor/omni/index.js 4e9617ae934e
@@ -2004,7 +2004,7 @@ tm/ts/src/Control.ts 7d0890e548c3
 tm/ts/src/Operation.ts ca7fe2dc17d6
 tm/ts/src/Point.ts 7c23cad045dc
 tm/ts/src/README.md 595588a11ce3
-tm/ts/src/Response.ts 50e2cc1e063d
+tm/ts/src/Response.ts a7d4e32411cd
 tm/ts/src/Result.ts 45a656e9d5df
 tm/ts/src/Spec.ts 318854e8cb05
 tm/ts/src/feature/README.md 630422c5567f
@@ -2063,7 +2063,7 @@ tm/ts/test/tsconfig.json 0da68e0cde47
 tm/ts/test/utility.ts e06cdfb75ea6
 tm/ts/test/utility/Corpus.test.ts e7efaa88df0f
 tm/ts/test/utility/Custom.test.ts a8780a38b0ea
-tm/ts/test/utility/PrimaryUtility.test.ts 1bbe688eb10e
+tm/ts/test/utility/PrimaryUtility.test.ts 4ec2bf470312
 tm/ts/test/utility/StructUtility.test.ts 52897a756525
 tm/ts/test/utility/index.ts 477889c43d3e
 tm/ts/test/vendor/omni/Runner.ts 768e85fa469e
