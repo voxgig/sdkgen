@@ -11,7 +11,7 @@ public static partial class SdkUtility
         var options = ctx.Client!.OptionsMap();
 
         var headers = StructUtils.GetProp(options, "headers");
-        var out = (headers == null ? null : StructUtils.Clone(headers) as Dictionary<string, object?>)
+        var result = (headers == null ? null : StructUtils.Clone(headers) as Dictionary<string, object?>)
             ?? new Dictionary<string, object?>();
 
         // A header parameter travels as a header, under the name the
@@ -33,11 +33,11 @@ public static partial class SdkUtility
                 }
                 if (val != null)
                 {
-                    out[wire.ToLowerInvariant()] = StructUtils.Stringify(val);
+                    result[wire.ToLowerInvariant()] = StructUtils.Stringify(val);
                 }
             }
         }
 
-        return out;
+        return result;
     }
 }
