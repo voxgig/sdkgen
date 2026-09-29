@@ -40,13 +40,15 @@ const FIXED: Row[] = [
     log: 'py/pkg/feature/log_feature.py', debug: 'py/pkg/feature/debug_feature.py', call: CLEAN_CALL },
   { target: 'rb', error: 'rb/utility/make_error.rb', done: 'rb/utility/done.rb',
     log: 'rb/feature/log_feature.rb', debug: 'rb/feature/debug_feature.rb', call: CLEAN_CALL },
+  { target: 'java', error: 'java/utility/MakeError.java', done: 'java/utility/Done.java',
+    log: 'java/feature/LogFeature.java', debug: 'java/feature/DebugFeature.java', call: CLEAN_CALL },
 ]
 
 // A target here has not been ported yet, with the reason; it must be empty
 // before a release that carries ADR-003 for the whole fleet.
 const OUTSTANDING: Record<string, string> = {
   go: 'port in progress',
-  php: 'port in progress', perl: 'port in progress', java: 'port in progress',
+  php: 'port in progress', perl: 'port in progress',
   csharp: 'port in progress', kotlin: 'port in progress', scala: 'port in progress',
   swift: 'port in progress', lua: 'port in progress', c: 'port in progress',
   cpp: 'port in progress', zig: 'port in progress', rust: 'port in progress',

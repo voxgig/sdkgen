@@ -123,6 +123,9 @@ final class PrepareAuth {
         }
         String b64 = Base64.getEncoder().encodeToString(
             ((String) apikey + ":" + (noSecret ? "" : (String) secret)).getBytes(StandardCharsets.UTF_8));
+        // The joined, encoded pair is a wire form neither credential's own
+        // registration covers.
+        ctx.utility.cleanAdd.apply(ctx, b64);
         if ("".equals(basicPrefix)) {
           headers.put(CRED_NAME, b64);
         }

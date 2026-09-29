@@ -47,7 +47,11 @@ final class MakeError {
 
     Spec spec = ctx.spec;
 
+    // Reached from runOp's catch as well as from done, and only done cleans
+    // the explain record, so a stage that threw would otherwise leave the
+    // live spec in it.
     if (ctx.ctrl.explain != null) {
+      Clean.cleanExplain(ctx);
       Map<String, Object> errRecord = new LinkedHashMap<>();
       errRecord.put("message", msg);
       ctx.ctrl.explain.put("err", errRecord);

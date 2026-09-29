@@ -681,7 +681,7 @@ public class FeatureTest {
     assertEquals(1, f.entries.size(), "expected ring buffer capped at 1");
     assertEquals(2, seen.size(), "expected onEntry for both ops");
     Map<String, Object> headers = (Map<String, Object>) seen.get(0).get("headers");
-    assertEquals("<redacted>", headers.get("authorization"),
+    assertEquals("[redacted]", headers.get("authorization"),
         "expected redacted authorization");
   }
 
@@ -710,7 +710,7 @@ public class FeatureTest {
     h.op(fhOp("load").headers(fhMap("x-secret", "hide", "x-ok", "show")));
     Map<String, Object> headers =
         (Map<String, Object>) f.entries.get(0).get("headers");
-    assertEquals("<redacted>", headers.get("x-secret"), "expected x-secret redacted");
+    assertEquals("[redacted]", headers.get("x-secret"), "expected x-secret redacted");
     assertEquals("show", headers.get("x-ok"), "expected x-ok kept");
   }
 

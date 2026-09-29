@@ -3936,6 +3936,19 @@ const CLEAN_LANES: CleanLane[] = [
       return { bin: rb, args: ['test/clean_test.rb'] }
     },
   },
+  {
+    target: 'java',
+    runner: 'test/CleanTest.java',
+    needs: 'java and maven',
+    command: () => {
+      const mvn = toolchain('mvn')
+      if (null == mvn || null == toolchain('java')) return null
+      return {
+        bin: mvn,
+        args: ['-q', '-B', 'test', '-Dtest=CleanTest', '-DfailIfNoSpecifiedTests=false'],
+      }
+    },
+  },
 ]
 
 

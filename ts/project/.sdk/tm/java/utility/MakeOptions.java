@@ -60,6 +60,23 @@ final class MakeOptions {
       opts.remove("auth");
     }
 
+    // The secret registry exists BEFORE validation, fed from the raw input, so
+    // the constructor's own rejection of a mistyped credential is clean too.
+    List<Object> cleanmerge = new ArrayList<>();
+    cleanmerge.add(new LinkedHashMap<String, Object>());
+    cleanmerge.add(Struct.clone(Schema.optspec().get("clean")));
+    Map<String, Object> rawclean = Helpers.toMapAny(options.get("clean"));
+    if (rawclean != null) {
+      cleanmerge.add(Struct.clone(rawclean));
+    }
+    final Map<String, Object> cleancfg =
+        Clean.makeCleanConfig(Helpers.toMapAny(Struct.merge(cleanmerge)));
+    Clean.add(cleancfg, options.get("apikey"));
+    Clean.add(cleancfg, options.get("secret"));
+    for (String raw : Clean.splitvalues(rawclean == null ? null : rawclean.get("values"))) {
+      Clean.add(cleancfg, raw);
+    }
+
     // Feature add-order. options.feature may be given as an ordered LIST of
     // { name, active, ...opts } entries (the list position IS the order in
     // which features are added), or as a { name: {opts} } map. Normalize a
@@ -125,7 +142,16 @@ final class MakeOptions {
 
     Map<String, Object> vopts = new LinkedHashMap<>();
     vopts.put("errs", new ArrayList<>());
-    Object validated = Struct.validate(merged, optspec, vopts);
+    Object validated;
+    try {
+      validated = Struct.validate(merged, optspec, vopts);
+    }
+    catch (IllegalArgumentException err) {
+      // The message quotes the offending value; a rewrite is the only way to
+      // clean a JDK exception, so the type is kept and the text replaced.
+      throw new IllegalArgumentException(
+          (String) Clean.cleanWith(cleancfg, String.valueOf(err.getMessage())), err.getCause());
+    }
     opts = (Map<String, Object>) validated;
 
     // Restore the suppression the optspec default would otherwise erase.
@@ -198,22 +224,6 @@ final class MakeOptions {
       opts.put("base", resolved.toString());
     }
 
-    // Derived clean config.
-    String cleanKeys = "key,token,id";
-    Object ck = Struct.getpath(opts, List.of("clean", "keys"));
-    if (ck instanceof String) {
-      cleanKeys = (String) ck;
-    }
-
-    List<String> filtered = new ArrayList<>();
-    for (String p : cleanKeys.split(",")) {
-      p = p.trim();
-      if (!"".equals(p)) {
-        filtered.add(Struct.escre(p));
-      }
-    }
-    String keyre = String.join("|", filtered);
-
     // Resolve the feature add-order: an explicit list order (above) wins;
     // otherwise order the map test-first, then the remaining names sorted, so
     // the outcome is deterministic and `test` is always the base transport.
@@ -249,13 +259,20 @@ final class MakeOptions {
     }
 
     Map<String, Object> derived = new LinkedHashMap<>();
-    Map<String, Object> derivedClean = new LinkedHashMap<>();
-    if (!"".equals(keyre)) {
-      derivedClean.put("keyre", keyre);
-    }
-    derived.put("clean", derivedClean);
+    derived.put("clean", cleancfg);
     derived.put("featureorder", featureorder);
     opts.put("__derived__", derived);
+
+    // Every string under a sensitive name anywhere in the options - a custom
+    // auth header, a feature credential - is a secret the SDK now handles.
+    Map<String, Object> walked = (Map<String, Object>) Struct.clone(opts);
+    walked.remove("__derived__");
+    Struct.walk(walked, (key, val, parent, path) -> {
+      if (val instanceof String && Clean.sensitive(cleancfg, key)) {
+        Clean.add(cleancfg, val);
+      }
+      return val;
+    });
 
     return opts;
   }
