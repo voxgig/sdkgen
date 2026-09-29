@@ -19,8 +19,7 @@ const CONSUMER_TARGETS = ['go-cli', 'go-mcp', 'py-data']
 
 type Row = {
   target: string
-  // Files that must call clean: make_error, done, the log feature, the debug
-  // feature. One file may serve several roles.
+  // The files that must call clean; one file may serve several roles.
   error: string
   done: string
   log: string
@@ -44,8 +43,7 @@ const FIXED: Row[] = [
     log: 'java/feature/LogFeature.java', debug: 'java/feature/DebugFeature.java', call: CLEAN_CALL },
 ]
 
-// A target here has not been ported yet, with the reason; it must be empty
-// before a release that carries ADR-003 for the whole fleet.
+// Not yet ported, with the reason; empty before a fleet-wide release.
 const OUTSTANDING: Record<string, string> = {
   go: 'port in progress',
   php: 'port in progress', perl: 'port in progress',
