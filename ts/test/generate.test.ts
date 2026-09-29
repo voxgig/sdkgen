@@ -1097,7 +1097,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
       const header = (options: any) => {
         const spec: any = { headers: {} }
-        mod.exports.prepareAuth({ utility: { struct }, client: { options: () => options }, spec })
+        mod.exports.prepareAuth({
+          utility: { struct, cleanAdd() { } }, client: { options: () => options }, spec })
         return spec.headers.authorization
       }
 

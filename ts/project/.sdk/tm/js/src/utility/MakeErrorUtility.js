@@ -19,8 +19,16 @@ function makeError(ctx, err) {
   err = err || ctx.error('unknown', 'unknown error')
 
   const errmsg = err.message || 'unknown error'
-  const msg = 'ProjectNameSDK: ' + op.name + ': ' + errmsg
-  err.message = clean(ctx, msg)
+  err.message = 'ProjectNameSDK: ' + op.name + ': ' + errmsg
+
+  // The context stays reachable for a debugger, but not for a serialiser:
+  // a transport error carries none, and a pipeline error's is enumerable
+  // only until here.
+  if (null != err.ctx) {
+    Object.defineProperty(err, 'ctx', { value: err.ctx, enumerable: false, writable: true })
+  }
+
+  clean(ctx, err)
 
   if (result.err) {
     delprop(result, 'err')

@@ -3843,10 +3843,10 @@ describe('generated auth tests discover the credential name', () => {
 
 
 // The canary sweep every SDK ships (test/clean.test.<ext>), run for real:
-// generate the SDK three ways, since the credential's wire placement is
-// fixed at generation time, build it, run the sweep, and read the line it
-// prints. Exit zero is not enough - a suite that found no operation to drive
-// skips, and every framework reports that as a pass.
+// generate the SDK per credential placement, since that is fixed at
+// generation time, build it, run the sweep, and read the line it prints.
+// Exit zero is not enough - a suite that found no operation to drive skips,
+// and every framework reports that as a pass.
 const CLEAN_FEATURES = [
   'test', 'log', 'debug', 'audit', 'telemetry', 'metrics', 'cost', 'clienttrack',
 ]

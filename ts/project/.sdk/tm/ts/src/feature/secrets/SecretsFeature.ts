@@ -89,8 +89,6 @@ class SecretsFeature extends BaseFeature {
   }
 
 
-  // Every value this feature resolves or buys is a secret the SDK handles,
-  // and none arrives under an option key the intake registration saw.
   _register(value: any): void {
     const ctx = this._client._rootctx
     if (null != ctx && null != ctx.utility && 'function' === typeof ctx.utility.cleanAdd) {

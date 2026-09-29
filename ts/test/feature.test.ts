@@ -1285,3 +1285,68 @@ describe('feature:validate', () => {
     ]).then((rs) => rs.forEach((r) => strictEqual(r.ok, true)))
   })
 })
+
+
+// The egress contract (ADR-003), driven through the REAL feature source: a
+// canary credential goes in, every sink is captured, and nothing that any
+// diagnostic feature emits carries the canary or its encoded forms.
+describe('feature:clean', () => {
+
+  const CANARY = 'CANARY-SECRET-k9x2m7q4p1'
+  const FORMS = [CANARY, Buffer.from(CANARY).toString('base64'), encodeURIComponent(CANARY)]
+
+  function leaks(val: any): string[] {
+    let text = require('node:util').inspect(val, { depth: 8 })
+    try { text += ' ' + JSON.stringify(val) } catch (_e) { }
+    return FORMS.filter((f) => text.includes(f))
+  }
+
+  test('log, debug, audit, telemetry and cost emit nothing carrying the credential', async () => {
+    const sinks: any[] = []
+    const logger: any = {}
+    for (const level of ['trace', 'debug', 'info', 'warn', 'error', 'fatal']) {
+      logger[level] = (rec: any) => sinks.push(rec)
+    }
+    const h = makeClient({
+      options: { apikey: CANARY, headers: { 'X-Custom-Token': CANARY } },
+      features: [
+        { name: 'log', options: { logger } },
+        { name: 'debug', options: { onEntry: (e: any) => sinks.push(e) } },
+        { name: 'audit', options: { sink: (r: any) => sinks.push(r) } },
+        { name: 'telemetry', options: { exporter: (s: any) => sinks.push(s) } },
+        { name: 'cost', options: { sink: (r: any) => sinks.push(r) } },
+      ],
+    })
+    await h.op({ op: 'load', headers: { authorization: 'Bearer ' + CANARY }, query: { api_key: CANARY } })
+    await h.op({ op: 'load', path: '/widget/' + CANARY, headers: { authorization: 'Bearer ' + CANARY } })
+
+    ok(0 < sinks.length, 'nothing was emitted, so nothing was proved')
+    sinks.push(h.client._debug.entries, h.client._audit.records, h.client._telemetry.spans, h.client._cost)
+    const leaked = sinks.map((s, i) => ({ i, found: leaks(s) })).filter((s) => 0 < s.found.length)
+    deepStrictEqual(leaked, [], 'a feature emitted the credential')
+  })
+
+  test('the debug redact list adds names on top of the core rules', async () => {
+    const h = makeClient({
+      options: { apikey: CANARY },
+      features: [{ name: 'debug', options: { redact: ['x-trace'] } }],
+    })
+    await h.op({ op: 'load', headers: { authorization: 'Bearer ' + CANARY, 'x-trace': 'abc', 'x-plain': 'kept' } })
+    const entry = h.client._debug.entries[0]
+    strictEqual(entry.headers.authorization, '[redacted]')
+    strictEqual(entry.headers['x-trace'], '[redacted]')
+    strictEqual(entry.headers['x-plain'], 'kept')
+  })
+
+  test('with clean off the log line carries the credential, so the check above is not vacuous', async () => {
+    const sinks: any[] = []
+    const logger: any = { info: (rec: any) => sinks.push(rec) }
+    for (const level of ['trace', 'debug', 'warn', 'error', 'fatal']) logger[level] = logger.info
+    const h = makeClient({
+      options: { apikey: CANARY, clean: { active: false } },
+      features: [{ name: 'log', options: { logger } }],
+    })
+    await h.op({ op: 'load', headers: { authorization: 'Bearer ' + CANARY } })
+    ok(sinks.some((s) => 0 < leaks(s).length), 'clean off should show the canary')
+  })
+})

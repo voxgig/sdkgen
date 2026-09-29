@@ -1,6 +1,8 @@
 
 const { OPTSPEC } = require('../Schema')
 
+const { clean, cleanAdd, cleanKey, makeCleanConfig, splitvalues } = require('./CleanUtility')
+
 
 function makeOptions(ctx) {
   const utility = ctx.utility
@@ -10,7 +12,7 @@ function makeOptions(ctx) {
   const setprop = struct.setprop
   const merge = struct.merge
   const validate = struct.validate
-  const escre = struct.escre
+  const walk = struct.walk
 
   // `auth: null` is the documented way to disable auth outright, and
   // prepareAuth honours it before it ever reads the apikey. But it cannot
@@ -31,6 +33,14 @@ function makeOptions(ctx) {
 
   if (authsuppressed) {
     delete opts.auth
+  }
+
+  // The secret registry exists BEFORE validation, fed from the raw input, so
+  // the constructor's own rejection of a mistyped credential is clean too.
+  const cleancfg = makeCleanConfig(merge([{}, OPTSPEC.clean, opts.clean]))
+  const cleanctx = { options: { __derived__: { clean: cleancfg } } }
+  for (const raw of [opts.apikey, opts.secret].concat(splitvalues(opts.clean?.values))) {
+    cleanAdd(cleanctx, raw)
   }
 
   // Feature add-order. `options.feature` may be given as an ordered ARRAY of
@@ -80,7 +90,12 @@ function makeOptions(ctx) {
   // contaminate every instance constructed after it.
   opts = merge([{}, struct.clone(cfgopts), opts])
 
-  opts = validate(opts, optspec)
+  try {
+    opts = validate(opts, optspec)
+  }
+  catch (err) {
+    throw clean(cleanctx, err)
+  }
 
   // The platform fetch, supplied AFTER validate rather than as a spec
   // default. `system.fetch` is declared `$ANY`, which passes a caller's own
@@ -147,20 +162,19 @@ function makeOptions(ctx) {
   }
 
   opts.__derived__ = {
-    clean: {
-      keyre: undefined
-    },
+    clean: cleancfg,
     featureorder,
   }
 
-  const keyre = opts.clean.keys
-    .split(/\s*,\s*/)
-    .filter((s) => null != s && '' !== s)
-    .map((key) => escre(key)).join('|')
-
-  if ('' != keyre) {
-    opts.__derived__.clean.keyre = keyre
-  }
+  // Every string under a sensitive name anywhere in the options - a custom
+  // auth header, a feature credential - is a secret the SDK now handles.
+  const optctx = { options: opts }
+  walk(struct.clone({ ...opts, __derived__: undefined }), (key, val) => {
+    if ('string' === typeof val && cleanKey(optctx, key)) {
+      cleanAdd(optctx, val)
+    }
+    return val
+  })
 
   return opts
 }

@@ -3,12 +3,9 @@ import { Context } from '../types'
 import { OPTSPEC } from '../Schema'
 
 
-// Everything that leaves the pipeline passes through clean: the error, the
-// explain record, the serialised context, and whatever a feature emits.
-// Two layers: every registered secret VALUE (and its encoded forms) is
-// replaced wherever it appears in a string, and every value under a
-// sensitive KEY name is masked whatever it holds. Inside the pipeline data
-// stays raw, so a hook can still read the header it must add to.
+// Everything that leaves the pipeline passes through clean; inside it data
+// stays raw, so a hook can still read the header it must add to. See
+// docs/explanation/secret-redaction.md.
 
 const MAXDEPTH = 32
 const CIRCULAR = '[circular]'
@@ -37,8 +34,6 @@ function splitkeys(keys: any): string[] {
 }
 
 
-// The comma-separated literal values a caller registers; a list is taken
-// as-is for a caller that has one.
 function splitvalues(values: any): string[] {
   if (Array.isArray(values)) {
     return values.filter((v: any) => 'string' === typeof v)
@@ -49,16 +44,14 @@ function splitvalues(values: any): string[] {
 }
 
 
-// The spec carries numbers as strings, so every target reads it alike.
 function count(val: any, dflt: number): number {
   const n = Math.floor(Number(val))
   return Number.isFinite(n) && 0 <= n ? n : dflt
 }
 
 
-// The derived block makeOptions builds; a context without options (makeError
-// is reached with a bare one) falls back to the schema defaults, so nothing
-// leaves raw for want of a constructor.
+// A context without options (makeError accepts a bare one) still masks by
+// the schema defaults.
 function cleanConfig(ctx: any): CleanConfig {
   const derived = ctx?.options?.__derived__?.clean
   if (null != derived) {
@@ -81,8 +74,7 @@ function makeCleanConfig(cleanopts: any): CleanConfig {
 }
 
 
-// The encoded forms a value travels in: Basic and Bearer both carry base64,
-// a query credential is percent-encoded, and a JSON dump escapes it.
+// The encoded forms a value travels in.
 function forms(value: string): string[] {
   const out = [value]
   const add = (s: string) => { if ('' !== s && !out.includes(s)) out.push(s) }
@@ -93,8 +85,6 @@ function forms(value: string): string[] {
 }
 
 
-// Register a secret value. Idempotent; shorter than `min` is not a secret
-// the SDK can mask without blanking ordinary text.
 function cleanAdd(ctx: Context, value: any): void {
   const cfg = cleanConfig(ctx)
   if ('string' !== typeof value || value.length < cfg.min) {
@@ -146,10 +136,8 @@ function sensitiveKey(cfg: CleanConfig, key: any): boolean {
 }
 
 
-// A plain-data copy of what is about to leave: toJSON is honoured (an entity
-// serialises as its data, a context as its record), functions are dropped,
-// cycles are cut, and no live object is shared with the copy - masking the
-// copy must never mask the pipeline's own spec.
+// A masked plain-data copy: toJSON honoured, functions dropped, cycles cut,
+// and nothing shared with the live value, whose spec must stay raw.
 function snapshot(cfg: CleanConfig, val: any, key: any, depth: number, seen: any[]): any {
   if (null == val) {
     return val
@@ -222,9 +210,7 @@ function plain(cfg: CleanConfig, val: any, depth: number, seen: any[]): any {
 }
 
 
-// Clean a value on its way out. A string is redacted; an Error is redacted
-// IN PLACE (it is about to be thrown, and its identity matters to the
-// caller); anything else comes back as a masked plain-data copy.
+// An Error is cleaned in place, since it is about to be thrown.
 function clean(ctx: Context, val: any) {
   const cfg = cleanConfig(ctx)
 
@@ -257,7 +243,6 @@ function clean(ctx: Context, val: any) {
 }
 
 
-// Is this key name sensitive under the context's clean configuration?
 function cleanKey(ctx: Context, key: any): boolean {
   return sensitiveKey(cleanConfig(ctx), key)
 }
