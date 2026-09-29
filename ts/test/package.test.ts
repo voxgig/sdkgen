@@ -7,7 +7,7 @@ import Os from 'node:os'
 import Path from 'node:path'
 
 import {
-  package_add, package_update, action_package,
+  package_add, package_update, action_package, npmFetchArgs,
 } from '../dist/action/package.js'
 import { ACTION_MAP, actionNames } from '../dist/action/dispatch.js'
 import {
@@ -1149,6 +1149,13 @@ describe('package update', () => {
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
     }
+  })
+
+
+  test('a fetch saves the tilde range the scaffold writes', () => {
+    deepStrictEqual(npmFetchArgs('@voxgig/sdkgen'), [
+      'install', '--save-dev', '--save-exact=false', '--save-prefix=~', '@voxgig/sdkgen@latest',
+    ])
   })
 
 
