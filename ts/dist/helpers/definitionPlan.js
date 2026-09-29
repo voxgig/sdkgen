@@ -20,8 +20,9 @@ function definitionPlan(ctx$) {
         false === model?.main?.[apidef_1.KIT]?.info?.auth;
     // A generated SDK sends one credential, under the scheme apidef chose for it.
     const own = model?.main?.[apidef_1.KIT]?.info?.security?.scheme;
-    // The credential's own header, which LearnWorlds also declares as a parameter.
-    const ownHeader = !unchecked && (0, utility_1.isAuthActive)(model) && 'header' === (0, utility_1.resolveAuthIn)(model) ?
+    // The header the SDK puts any key in, as its prepareAuth does, though the
+    // definition declares no scheme: LearnWorlds declares it as a parameter.
+    const ownHeader = !(0, utility_1.isAuthSuppressed)(model) && 'header' === (0, utility_1.resolveAuthIn)(model) ?
         (0, utility_1.resolveAuthName)(model).toLowerCase() : null;
     for (const entity of Object.values((0, opShape_1.entityCollection)(model))) {
         if (false === entity.active)

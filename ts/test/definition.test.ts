@@ -223,7 +223,7 @@ describe('definitionPlan', () => {
       ],
       responses: { '200': { content: { 'application/json': { example: [] } } } },
     } } } }
-    const model = { main: { kit: { entity: { course: {
+    const model = { main: { kit: { info: { auth: false }, entity: { course: {
       name: 'course', id: { field: 'id' }, op: { list: { points: [{ m: 'GET', o: '/courses',
         g: { header: [{ n: 'authorization', or: 'Authorization' }, { n: 'lw_client', or: 'Lw-Client' }] },
       }] } },

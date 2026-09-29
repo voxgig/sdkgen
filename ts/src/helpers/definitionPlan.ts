@@ -5,7 +5,7 @@ import { KIT, nom } from '@voxgig/apidef'
 import { entityCollection } from './opShape'
 import { pointSegments } from './pointPath'
 import { pointFacts } from './resolved'
-import { isAuthActive, resolveAuthIn, resolveAuthName } from '../utility'
+import { isAuthSuppressed, resolveAuthIn, resolveAuthName } from '../utility'
 
 
 // What a generated definition test checks an operation against: the API
@@ -49,8 +49,9 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
     false === model?.main?.[KIT]?.info?.auth
   // A generated SDK sends one credential, under the scheme apidef chose for it.
   const own = model?.main?.[KIT]?.info?.security?.scheme
-  // The credential's own header, which LearnWorlds also declares as a parameter.
-  const ownHeader = !unchecked && isAuthActive(model) && 'header' === resolveAuthIn(model) ?
+  // The header the SDK puts any key in, as its prepareAuth does, though the
+  // definition declares no scheme: LearnWorlds declares it as a parameter.
+  const ownHeader = !isAuthSuppressed(model) && 'header' === resolveAuthIn(model) ?
     resolveAuthName(model).toLowerCase() : null
 
   for (const entity of Object.values(entityCollection(model)) as any[]) {
