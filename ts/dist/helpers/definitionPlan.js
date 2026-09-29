@@ -1,0 +1,205 @@
+"use strict";
+/* Copyright (c) 2026 Voxgig Ltd, MIT License */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.definitionPlan = definitionPlan;
+const apidef_1 = require("@voxgig/apidef");
+const opShape_1 = require("./opShape");
+const pointPath_1 = require("./pointPath");
+const resolved_1 = require("./resolved");
+const MAX_ITEMS = 3;
+const MAX_DEPTH = 8;
+const MAX_SAMPLE = 32 * 1024;
+function definitionPlan(ctx$) {
+    const model = ctx$?.model;
+    const plan = [];
+    const unchecked = false === model?.main?.[apidef_1.KIT]?.config?.auth?.active ||
+        false === model?.main?.[apidef_1.KIT]?.info?.auth;
+    for (const entity of Object.values((0, opShape_1.entityCollection)(model))) {
+        if (false === entity.active)
+            continue;
+        for (const [op, operation] of Object.entries(entity.op || {})) {
+            const points = (operation?.points || []).filter((p) => false !== p.a);
+            for (const point of points) {
+                if ('graphql' === point.k)
+                    continue;
+                const facts = (0, resolved_1.pointFacts)(ctx$, point);
+                if ('http' !== facts?.protocol)
+                    continue;
+                // Points the SDK cannot tell apart are selected by order, not input.
+                const select = point.q || {};
+                const same = points.filter((p) => JSON.stringify(p.q || {}) === JSON.stringify(select));
+                if (1 !== same.length)
+                    continue;
+                const params = Array.isArray(facts.parameters) ? facts.parameters : [];
+                const placed = pathPlaceholders(point);
+                const args = (point.g?.params || []).map((arg, i) => {
+                    const wire = placed[arg.n] ?? (arg.or || arg.n);
+                    const def = params.find((p) => 'path' === p?.in && wire === p?.name);
+                    return { name: arg.n, wire, value: scalar(def?.example ?? def?.schema?.example) ?? 'p' + (i + 1) };
+                });
+                const selected = {};
+                for (const key of select.exist || []) {
+                    if (args.some((a) => a.name === key))
+                        continue;
+                    const def = params.find((p) => key === p?.name);
+                    selected[key] = scalar(def?.example ?? def?.schema?.example) ?? 'v1';
+                }
+                const success = successResponse(facts.responses);
+                const media = null == success ? undefined : jsonMedia(success.response);
+                plan.push({
+                    entity: entity.name,
+                    accessor: (0, apidef_1.nom)(entity, 'Name'),
+                    op,
+                    method: String(point.m).toUpperCase(),
+                    path: point.o,
+                    ...(null == select.$action ? {} : { action: select.$action }),
+                    args,
+                    select: selected,
+                    query: params.filter((p) => 'query' === p?.in).map((p) => p.name),
+                    auth: unchecked ? null : credentialSets(facts),
+                    status: success?.status ?? 200,
+                    sample: null == media ? null : boundedSample(sampleOf(media)),
+                    idField: entity.id?.field || 'id',
+                });
+            }
+        }
+    }
+    return plan;
+}
+// The definition's name for each path parameter, keyed by the model's. The
+// model may rename a placeholder, but it keeps the placeholder's place in the
+// path, so position pairs each with its model name whatever `or` holds.
+function pathPlaceholders(point) {
+    const orig = String(point.o || '').split('/').filter((part) => '' !== part);
+    const segments = (0, pointPath_1.pointSegments)(point);
+    const out = {};
+    if (orig.length !== segments.length)
+        return out;
+    segments.forEach((seg, i) => {
+        const m = /^\{([^}]+)\}$/.exec(orig[i]);
+        if (null != seg.var && null != m)
+            out[seg.var] = m[1];
+    });
+    return out;
+}
+function scalar(value) {
+    return 'string' === typeof value || 'number' === typeof value ? value : undefined;
+}
+function successResponse(responses) {
+    if (null == responses || 'object' !== typeof responses)
+        return undefined;
+    const code = Object.keys(responses).filter((c) => /^2\d\d$/.test(c)).sort()[0] ??
+        (null != responses['2XX'] ? '2XX' : undefined);
+    return null == code ? undefined :
+        { status: '2XX' === code ? 200 : Number(code), response: responses[code] };
+}
+function jsonMedia(response) {
+    const content = response?.content;
+    if (null != content && 'object' === typeof content) {
+        const type = Object.keys(content).find((t) => /json/i.test(t) || '*/*' === t);
+        return null == type ? undefined : content[type];
+    }
+    // Swagger puts the schema and examples on the response itself.
+    if (null != response?.schema || null != response?.examples) {
+        return { schema: response.schema, example: response.examples?.['application/json'] };
+    }
+    return undefined;
+}
+function sampleOf(media) {
+    if (undefined !== media.example)
+        return media.example;
+    const named = Object.values(media.examples || {}).find((e) => undefined !== e?.value);
+    if (null != named)
+        return named.value;
+    if (undefined !== media.schema?.example)
+        return media.schema.example;
+    return synthesize(media.schema, 0);
+}
+// Schema-shaped data where the definition gives no example: every property,
+// one item per array, the first branch of a union.
+function synthesize(schema, depth) {
+    if (null == schema || 'object' !== typeof schema || depth > 6)
+        return undefined;
+    if (undefined !== schema.example)
+        return schema.example;
+    if (Array.isArray(schema.enum) && 0 < schema.enum.length)
+        return schema.enum[0];
+    if (Array.isArray(schema.allOf)) {
+        const parts = schema.allOf.map((s) => synthesize(s, depth + 1))
+            .filter((v) => null != v && 'object' === typeof v && !Array.isArray(v));
+        return Object.assign({}, ...parts);
+    }
+    const union = schema.oneOf ?? schema.anyOf;
+    if (Array.isArray(union) && 0 < union.length)
+        return synthesize(union[0], depth + 1);
+    const type = Array.isArray(schema.type) ?
+        schema.type.find((t) => 'null' !== t) : schema.type;
+    if ('array' === type || null != schema.items) {
+        const item = synthesize(schema.items, depth + 1);
+        return undefined === item ? [] : [item];
+    }
+    if ('object' === type || null != schema.properties) {
+        const out = {};
+        for (const [key, prop] of Object.entries(schema.properties || {})) {
+            const value = synthesize(prop, depth + 1);
+            if (undefined !== value)
+                out[key] = value;
+        }
+        return out;
+    }
+    if ('integer' === type || 'number' === type)
+        return 1;
+    if ('boolean' === type)
+        return true;
+    if ('string' === type) {
+        return 'date-time' === schema.format ? '2026-01-01T00:00:00Z' :
+            'date' === schema.format ? '2026-01-01' : 'x';
+    }
+    return undefined;
+}
+function boundedSample(sample) {
+    const bound = (node, depth) => {
+        if (null == node || 'object' !== typeof node)
+            return node;
+        if (depth > MAX_DEPTH)
+            return null;
+        if (Array.isArray(node))
+            return node.slice(0, MAX_ITEMS).map((v) => bound(v, depth + 1));
+        return Object.fromEntries(Object.entries(node).map(([k, v]) => [k, bound(v, depth + 1)]));
+    };
+    const out = bound(sample, 0);
+    return undefined === out || MAX_SAMPLE < JSON.stringify(out).length ? null : out;
+}
+// Alternatives of credentials, every one of a set needed together. Empty is a
+// public operation; null is one whose schemes no SDK option can express.
+function credentialSets(facts) {
+    const security = facts.security;
+    if (!Array.isArray(security) || 0 === security.length)
+        return [];
+    if (security.some((req) => null == req || 0 === Object.keys(req).length))
+        return [];
+    const schemes = facts.securitySchemes || {};
+    const sets = [];
+    for (const req of security) {
+        const set = Object.keys(req).map((name) => credentialOf(schemes[name]));
+        if (set.every((c) => null != c))
+            sets.push(set);
+    }
+    return 0 === sets.length ? null : sets;
+}
+function credentialOf(scheme) {
+    const type = String(scheme?.type || '').toLowerCase();
+    const http = String(scheme?.scheme || '').toLowerCase();
+    if (('http' === type && 'basic' === http) || 'basic' === type) {
+        return { in: 'header', name: 'authorization', scheme: 'basic' };
+    }
+    if (('http' === type && 'bearer' === http) || 'oauth2' === type || 'openidconnect' === type) {
+        return { in: 'header', name: 'authorization', scheme: 'bearer' };
+    }
+    if ('apikey' === type && 'string' === typeof scheme.name &&
+        ['header', 'query', 'cookie'].includes(scheme.in)) {
+        return { in: scheme.in, name: 'header' === scheme.in ? scheme.name.toLowerCase() : scheme.name };
+    }
+    return undefined;
+}
+//# sourceMappingURL=definitionPlan.js.map
