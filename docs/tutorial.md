@@ -27,7 +27,7 @@ decisions are required.
 
 - Network access to install npm packages.
 
-## Step 1 — scaffold a project
+## Scaffold project
 
 A new SDK project is created with `create-sdkgen`. It produces a project
 directory containing a `.sdk/` build folder wired up to `@voxgig/sdkgen`:
@@ -52,7 +52,7 @@ cd solardemo-sdk/.sdk
 Everything below runs from this `.sdk/` directory unless stated
 otherwise.
 
-## Step 2 — add a language target
+## Add language target
 
 Add the TypeScript target. This copies the `ts` model, components, and
 templates into your project (and ensures the `test` feature is present):
@@ -62,30 +62,21 @@ npm run add-target ts
 # equivalently: voxgig-sdkgen target add ts
 ```
 
-## Step 3 — add the test feature
+## Generate SDK
+
+Generate the SDK:
 
 ```bash
-npm run add-feature test
+npm run generate    # compile, then emit the SDK into ../ts
 ```
 
-The `test` feature swaps the HTTP transport for an in-memory mock so the
-generated SDK's unit tests run offline.
+`generate` compiles the generator components and walks the unified model,
+writing the SDK source into the `ts/` directory next to `.sdk/`. Open
+`solardemo-sdk/ts/` and look around: you'll find one class per entity, a
+generated `README.md` and `REFERENCE.md`, the feature runtime, and a test
+suite.
 
-## Step 4 — generate the SDK
-
-Compile the generator components, then run generation:
-
-```bash
-npm run build       # compile .sdk/src/cmp → .sdk/dist
-npm run generate    # emit the SDK into ../ts
-```
-
-`generate` walks the unified model and writes the SDK source into the
-`ts/` directory next to `.sdk/`. Open `solardemo-sdk/ts/` and look around:
-you'll find one class per entity, a generated `README.md` and
-`REFERENCE.md`, the feature runtime, and a test suite.
-
-## Step 5 — build and test the generated SDK
+## Build and test
 
 ```bash
 cd ../ts
@@ -97,34 +88,48 @@ npm test
 The tests run against the in-memory mock, so they pass with no server
 running. You now have a working SDK.
 
-## Step 6 — make a change and regenerate
+## Change and regenerate
 
 Let's prove the generator is the source of truth. Suppose you want to
 tweak wording in the generated README's explanation section.
 
-1. Within the newly created SDK repo (in this case `solardemo-sdk`),
-  edit the language-specific explanation `.sdk/src/cmp/<lang>/ReadmeExplanation_<lang>.ts`.
-  **Never** edit the generated `ts/README.md`, which is overwritten on the next generation.
+1. Edit the language-specific README prose in
+   `.sdk/src/cmp/ts/ReadmeExplanation_ts.ts`.
 
-2. Propagate the change into your project:
+   Never edit the generated `ts/README.md`. it is overwritten
+   on the next generate.
+
+   The language-neutral component (`ReadmeExplanation.ts`) lives inside the
+   installed `@voxgig/sdkgen` package, not in your project, so it isn't
+   editable from here.
+
+2. Regenerate:
 
    ```bash
    cd solardemo-sdk/.sdk
    npm run generate          # regenerate
    ```
+3. Open `solardemo-sdk/ts/README.md` and you'll see your wording in the
+generated output. The generated files are disposable; the component you
+edited is the source of truth.
 
-3. If a generated file shows a literal placeholder (like `ProjectName`)
-   after a merge, delete that file and regenerate it fresh — see
-   [Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md)
-   for why.
+> To change sdkgen itself rather than your project's copy, note that a
+> scaffolded project consumes the published `@voxgig/sdkgen` package.
+> Editing the sdkgen repo doesn't reach the project until the package is
+> rebuilt and republished (or linked into the project).
+
+If a generated file shows a literal placeholder (like `ProjectName`) after
+you merge changes, delete that file and regenerate it fresh — see
+[Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md)
+for why.
 
 ## What you learned
 
 - A project is scaffolded by `create-sdkgen` and built from its `.sdk/`.
 - `target add` / `feature add` bring a language and features into the
   project; `generate` turns the model into SDK source.
-- The generated output is disposable — the **generator** (`ts/project/.sdk/`
-  templates and components) is the source of truth.
+- The generated output is disposable — the **generator** (the templates and
+  components under `.sdk/`) is the source of truth.
 
 ## Where to go next
 
