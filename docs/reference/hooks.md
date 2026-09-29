@@ -133,6 +133,16 @@ runtime the feature-hook utility calls each feature's matching method by
 name, collecting any returned promises. A feature that does not implement
 a stage is simply skipped.
 
+## What a feature emits, it cleans
+
+Inside a hook the context is raw: the spec holds the real credential, so a
+feature can add a header beside it or rewrite it. Anything the feature
+sends OUT, to a logger, a sink, an exporter, a buffer a caller reads, or a
+record on the client, passes through `ctx.utility.clean(ctx, value)` first.
+The shipped `log`, `debug`, `audit`, `telemetry`, `cost` and `proxy`
+features do this; a feature you add must too. See
+[secret redaction](../explanation/secret-redaction.md).
+
 ## Idiomatic error returns
 
 When a stage returns an error, the pipeline short-circuits. How the error

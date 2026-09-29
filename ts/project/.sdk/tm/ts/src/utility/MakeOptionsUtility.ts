@@ -2,6 +2,8 @@
 import { Context } from '../types'
 import { OPTSPEC } from '../Schema'
 
+import { clean, cleanAdd, cleanKey, makeCleanConfig, splitvalues } from './CleanUtility'
+
 
 function makeOptions(ctx: Context) {
   const utility = ctx.utility
@@ -11,11 +13,19 @@ function makeOptions(ctx: Context) {
   const setprop = struct.setprop
   const merge = struct.merge
   const validate = struct.validate
-  const escre = struct.escre
+  const walk = struct.walk
 
   let opts = { ...(options || {}) }
 
   const authSuppressed = null === (options || {}).auth
+
+  // The secret registry exists BEFORE validation, fed from the raw input, so
+  // the constructor's own rejection of a mistyped credential is clean too.
+  const cleancfg = makeCleanConfig(merge([{}, (OPTSPEC as any).clean, opts.clean]))
+  const cleanctx: any = { options: { __derived__: { clean: cleancfg } } }
+  for (const raw of [opts.apikey, opts.secret].concat(splitvalues(opts.clean?.values))) {
+    cleanAdd(cleanctx, raw)
+  }
 
   let featureorder: string[] = []
   if (Array.isArray(opts.feature)) {
@@ -46,7 +56,12 @@ function makeOptions(ctx: Context) {
   // contaminate every instance constructed after it.
   opts = merge([{}, struct.clone(cfgopts), opts])
 
-  opts = validate(opts, optspec)
+  try {
+    opts = validate(opts, optspec)
+  }
+  catch (err: any) {
+    throw clean(cleanctx, err)
+  }
 
   opts.system = opts.system || {}
   if (null == opts.system.fetch) {
@@ -96,20 +111,19 @@ function makeOptions(ctx: Context) {
   }
 
   opts.__derived__ = {
-    clean: {
-      keyre: undefined
-    },
+    clean: cleancfg,
     featureorder,
   }
 
-  const keyre = opts.clean.keys
-    .split(/\s*,\s*/)
-    .filter((s: string) => null != s && '' !== s)
-    .map((key: string) => escre(key)).join('|')
-
-  if ('' != keyre) {
-    opts.__derived__.clean.keyre = keyre
-  }
+  // Every string under a sensitive name anywhere in the options - a custom
+  // auth header, a feature credential - is a secret the SDK now handles.
+  const optctx: any = { options: opts }
+  walk(struct.clone({ ...opts, __derived__: undefined }), (key: any, val: any) => {
+    if ('string' === typeof val && cleanKey(optctx, key)) {
+      cleanAdd(optctx, val)
+    }
+    return val
+  })
 
   return opts
 }

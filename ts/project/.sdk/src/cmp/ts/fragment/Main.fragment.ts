@@ -35,6 +35,14 @@ class ProjectNameSDK {
 
     this._options = this._utility.makeOptions(this._rootctx)
 
+    // Both hold the credential. toJSON and inspect already leave them out;
+    // a spread or a structured logger walking own properties must too.
+    for (const key of ['_options', '_rootctx']) {
+      Object.defineProperty(this, key, {
+        value: (this as any)[key], enumerable: false, writable: true, configurable: true
+      })
+    }
+
     const struct = this._utility.struct
     const getpath = struct.getpath
 

@@ -279,8 +279,22 @@ main: kit: optspec: {
     }
   }
 
+  # Diagnostics are redacted by default (ADR-003). `keys` names the option,
+  # header, query and body fields whose values are masked wherever they
+  # appear; a name matches when the normalised field name contains it.
+  # `values` adds literal secrets to the registry the SDK fills itself from
+  # every credential it handles. `active: false` is the one opt-out.
+  # `values` is comma-separated like `keys`, and `hint` (trailing characters
+  # left visible) and `min` (the shortest value registered) are numbers
+  # written as strings: the spec holds only strings and booleans, so every
+  # target reads it alike.
   clean: {
-    keys: 'key,token,id'
+    active: true
+    keys: 'key,secret,token,password,passwd,authorization,cookie,credential,signature'
+    values: ''
+    mask: '[redacted]'
+    hint: '0'
+    min: '4'
   }
 
   server: {

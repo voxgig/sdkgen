@@ -3840,3 +3840,141 @@ describe('generated auth tests discover the credential name', () => {
   }
 
 })
+
+
+// The canary sweep every SDK ships (test/clean.test.<ext>), run for real:
+// generate the SDK three ways, since the credential's wire placement is
+// fixed at generation time, build it, run the sweep, and read the line it
+// prints. Exit zero is not enough - a suite that found no operation to drive
+// skips, and every framework reports that as a pass.
+const CLEAN_FEATURES = [
+  'test', 'log', 'debug', 'audit', 'telemetry', 'metrics', 'cost', 'clienttrack',
+]
+
+const CLEAN_LINE = /clean: swept (\d+) surface\(s\), (\d+) leak\(s\)/
+
+const CLEAN_MODELS: { name: string, extra: string }[] = [
+  {
+    name: 'header',
+    extra: `
+main: kit: config: auth: { active: true, prefix: 'Bearer', in: 'header', name: 'Authorization' }
+`,
+  },
+  {
+    name: 'query',
+    extra: `
+main: kit: config: auth: { active: true, prefix: '', in: 'query', name: 'api_key' }
+`,
+  },
+  {
+    name: 'basic',
+    extra: `
+main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'Authorization' }
+`,
+  },
+]
+
+type CleanLane = {
+  target: string,
+  runner: string,
+  needs: string,
+  prepare?: (sdkroot: string) => string | null,
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+}
+
+const CLEAN_LANES: CleanLane[] = [
+  {
+    target: 'ts',
+    runner: 'test/clean.test.ts',
+    needs: 'the local typescript (run `npm install`)',
+    prepare: (sdkroot) => {
+      linkDeps(sdkroot)
+      const src = tsc(sdkroot, 'src')
+      if (!src.ok) return 'generated src does not compile:\n' + tail(src.out)
+      const suite = tsc(sdkroot, 'test')
+      if (!suite.ok) {
+        return 'the generated test suite does not compile:\n' + tail(suite.out)
+      }
+      return null
+    },
+    command: () => Fs.existsSync(TSC)
+      ? {
+        bin: process.execPath,
+        args: ['--test', '--test-reporter=tap', Path.join('dist-test', 'clean.test.js')],
+        env: nestedTestEnv(),
+      }
+      : null,
+  },
+  {
+    target: 'js',
+    runner: 'test/clean.test.js',
+    needs: 'node',
+    prepare: (sdkroot) => {
+      linkDeps(sdkroot)
+      return null
+    },
+    command: () => ({
+      bin: process.execPath,
+      args: ['--test', '--test-reporter=tap', Path.join('test', 'clean.test.js')],
+      env: nestedTestEnv(),
+    }),
+  },
+]
+
+
+describe('the canary sweep runs from a generated SDK', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-clean-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of CLEAN_LANES) {
+    for (const auth of CLEAN_MODELS) {
+      test(lane.target + ': no credential leaves the SDK (' + auth.name + ' auth)',
+        async (t) => {
+          const sdkroot = Path.join(tmp, lane.target + '-' + auth.name)
+          const files = await generateTo(lane.target, sdkroot, auth.extra, CLEAN_FEATURES)
+
+          ok(null != files[lane.runner],
+            'the sweep was not generated into the SDK: expected ' + lane.runner +
+            ' among ' + Object.keys(files).length + ' files')
+
+          const cmd = lane.command()
+          if (null == cmd) {
+            return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+          }
+
+          const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+          ok(null == notready, lane.target + ': ' + notready)
+
+          const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+
+          if (ran.unlaunchable) {
+            return t.skip(lane.target + ': the toolchain could not be started here: ' +
+              tail(ran.out, 3))
+          }
+
+          const gap = UNUSABLE.find((re) => re.test(ran.out))
+          if (null != gap && !ran.ok) {
+            return t.skip(lane.target + ': toolchain present but not usable (' +
+              gap.source + '):\n' + tail(ran.out))
+          }
+
+          ok(ran.ok, 'the canary sweep FAILED against the generated ' + lane.target +
+            ' SDK (' + auth.name + ' auth):\n' + tail(ran.out, 60))
+
+          const swept = ran.out.match(CLEAN_LINE)
+          ok(null != swept, 'the ' + lane.target + ' sweep did not report what it swept:\n' +
+            tail(ran.out))
+          ok(0 < Number(swept![1]), 'the ' + lane.target + ' sweep swept nothing')
+          strictEqual(Number(swept![2]), 0, 'the ' + lane.target + ' sweep found leaks')
+        })
+    }
+  }
+})

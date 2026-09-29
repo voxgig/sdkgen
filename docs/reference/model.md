@@ -512,7 +512,7 @@ needs editing.
 | `extend` | Feature instances supplied at construction. |
 | `utility`, `system.fetch` | Platform seams. |
 | `test` | Offline test-mode settings. |
-| `clean.keys` | Keys masked in diagnostics. |
+| `clean` | Redaction of everything the SDK emits: `active`, `keys`, `values`, `mask`, `hint`, `min`. See [secret redaction](../explanation/secret-redaction.md). |
 | `server` | Values for a templated base URL. |
 
 `feature` is not declared here: it is assembled per target from each active

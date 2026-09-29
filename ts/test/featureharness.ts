@@ -8,6 +8,19 @@ import * as struct from '@voxgig/struct'
 
 
 const FEATURE_DIR = Path.resolve(__dirname, '..', 'project', '.sdk', 'tm', 'ts', 'src', 'feature')
+const UTILITY_DIR = Path.resolve(FEATURE_DIR, '..', 'utility')
+
+
+// The model's `main.kit.optspec.clean` defaults, restated for the sandbox
+// (which has no generated Schema module); clean.test.ts pins the two equal.
+const CLEAN_DEFAULTS = {
+  active: true,
+  keys: 'key,secret,token,password,passwd,authorization,cookie,credential,signature',
+  values: '',
+  mask: '[redacted]',
+  hint: '0',
+  min: '4',
+}
 
 
 function cap(name: string): string {
@@ -150,14 +163,23 @@ function makeClient(spec: {
   mode?: string
   base?: string
   headers?: Record<string, any>
+  options?: Record<string, any>
 }) {
   const base = spec.base || 'http://api.test'
   const server: ServerFn = spec.server || defaultServer()
+
+  // The real clean utility: every feature emits through it.
+  const cleanmod = sandboxLoad(Path.join(UTILITY_DIR, 'CleanUtility.ts'), {
+    '../types': {},
+    '../Schema': { OPTSPEC: { clean: CLEAN_DEFAULTS } },
+  })
 
   // Shared utility singleton (features wrap `utility.fetcher` in init).
   const utility: any = {
     struct,
     fetcher: server,
+    clean: cleanmod.clean,
+    cleanAdd: cleanmod.cleanAdd,
     param: (ctx: any, name: string) => {
       const p = (ctx.spec && ctx.spec.params) || {}
       const q = (ctx.spec && ctx.spec.query) || {}
@@ -168,9 +190,17 @@ function makeClient(spec: {
   const client: any = {
     _mode: spec.mode || 'test',
     _features: [],
-    _options: { base, headers: spec.headers || {}, feature: {} },
+    _options: {
+      base, headers: spec.headers || {}, feature: {},
+      ...(spec.options || {}),
+      __derived__: { clean: cleanmod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...((spec.options || {}).clean || {}) }) },
+    },
     options() { return this._options },
     utility() { return utility },
+  }
+  for (const raw of [client._options.apikey, client._options.secret]
+    .concat(cleanmod.splitvalues(client._options.clean?.values))) {
+    cleanmod.cleanAdd({ options: client._options }, raw)
   }
 
   function makeErr(code: string, msg: string): any {
@@ -187,6 +217,7 @@ function makeClient(spec: {
       id: 'C' + idseq,
       client,
       utility,
+      options: client._options,
       out: {},
       ctrl: over.ctrl || {},
       meta: {},
@@ -387,6 +418,8 @@ function makeClient(spec: {
 
 
 export {
+  CLEAN_DEFAULTS,
+  sandboxLoad,
   loadFeature,
   loadFeatureModule,
   loadBase,

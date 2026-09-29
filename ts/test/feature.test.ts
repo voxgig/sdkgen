@@ -583,7 +583,7 @@ describe('feature:debug', () => {
     await h.op({ op: 'load', headers: { authorization: 'Bearer secret' } })
     const entry = h.client._debug.entries[0]
     strictEqual(entry.status, 200)
-    strictEqual(entry.headers.authorization, '<redacted>')
+    strictEqual(entry.headers.authorization, '[redacted]')
     strictEqual(entry.op, 'widget.load')
     ok(entry.durationMs >= 0)
   })
