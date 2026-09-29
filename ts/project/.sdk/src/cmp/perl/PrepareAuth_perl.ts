@@ -266,9 +266,11 @@ function basicBlock(spec: AuthSpec, wantBasic: boolean): string {
   }
 
   return `
-  # True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+  # True HTTP Basic Auth joins the two credentials, base64-encoded - a single
   # token in the header (the branch below) can never authenticate against
   # an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+  # The password may be empty (RFC 7617): Lob, for one, documents the key as
+  # the user with a blank password (\`curl -u key:\`).
   if (${spec.Name}Helpers::is_true(${spec.Name}Helpers::gpath($options, 'auth.basic'))) {
     my $secret = Voxgig::Struct::getprop($options, $OPTION_SECRET, $NOT_FOUND);
 
@@ -279,7 +281,7 @@ function basicBlock(spec: AuthSpec, wantBasic: boolean): string {
       || Voxgig::Struct::is_jnull($secret)
       || (!ref $secret && ($secret eq $NOT_FOUND || $secret eq ''));
 
-    if ($no_apikey || $no_secret) {
+    if ($no_apikey) {
       delete $headers->{$CRED_NAME};
     }
     else {
@@ -287,7 +289,8 @@ function basicBlock(spec: AuthSpec, wantBasic: boolean): string {
       $auth_prefix = '' unless defined $auth_prefix && !ref $auth_prefix;
       # '' as the eol: encode_base64 wraps at 76 columns by default, and a
       # newline inside a header value is not a header value.
-      my $b64 = MIME::Base64::encode_base64("$apikey:$secret", '');
+      my $pass = $no_secret ? '' : $secret;
+      my $b64 = MIME::Base64::encode_base64("$apikey:$pass", '');
       $headers->{$CRED_NAME} =
         ('' eq $auth_prefix) ? $b64 : "$auth_prefix $b64";
     }

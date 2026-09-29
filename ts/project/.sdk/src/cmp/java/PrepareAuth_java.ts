@@ -100,9 +100,11 @@ final class PrepareAuth {
   ].join('\n')
 
   const basicBlock = basicBranch ? `
-    // True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+    // True HTTP Basic Auth joins the two credentials, base64-encoded - a single
     // token in the header (the branch below) can never authenticate against
     // an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+    // The password may be empty (RFC 7617): Lob, for one, documents the key as
+    // the user with a blank password (\`curl -u key:\`).
     if (Boolean.TRUE.equals(Struct.getpath(options, List.of("auth", "basic")))) {
       Object secret = Struct.getprop(options, OPTION_SECRET, NOT_FOUND);
       boolean noApikey = !(apikey instanceof String)
@@ -110,7 +112,7 @@ final class PrepareAuth {
       boolean noSecret = !(secret instanceof String)
           || NOT_FOUND.equals(secret) || "".equals(secret);
 
-      if (noApikey || noSecret) {
+      if (noApikey) {
         headers.remove(CRED_NAME);
       }
       else {
@@ -120,7 +122,7 @@ final class PrepareAuth {
           basicPrefix = (String) bp;
         }
         String b64 = Base64.getEncoder().encodeToString(
-            ((String) apikey + ":" + (String) secret).getBytes(StandardCharsets.UTF_8));
+            ((String) apikey + ":" + (noSecret ? "" : (String) secret)).getBytes(StandardCharsets.UTF_8));
         if ("".equals(basicPrefix)) {
           headers.put(CRED_NAME, b64);
         }

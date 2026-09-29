@@ -179,15 +179,39 @@ fun prepareQuery(ctx: Context): MutableMap<String, Any?> {
   val point = ctx.point
   val reqmatch = ctx.reqmatch
 
-  var params: MutableList<Any?>? = null
+  val params: MutableList<Any?> = mutableListOf()
   if (point != null) {
     val p = Struct.getprop(point, "params")
     if (p is MutableList<*>) {
-      params = p as MutableList<Any?>
+      params.addAll(p as MutableList<Any?>)
+    }
+    // A path parameter travels in the path. The generated config lists them
+    // as args.params, which prepareParams reads; params is the older list.
+    val pl = Struct.getpath(point, listOf("args", "params"))
+    if (pl is List<*>) {
+      for (pd in pl) {
+        val name = Struct.getprop(pd, "name")
+        if (name is String) {
+          params.add(name)
+        }
+      }
     }
   }
-  if (params == null) {
-    params = mutableListOf()
+
+  // A query parameter travels under the name the definition gives it, its
+  // orig, which the model may have renamed for the caller.
+  val wire = mutableMapOf<String, String>()
+  if (point != null) {
+    val ql = Struct.getpath(point, listOf("args", "query"))
+    if (ql is List<*>) {
+      for (qd in ql) {
+        val name = Struct.getprop(qd, "name")
+        val orig = Struct.getprop(qd, "orig")
+        if (name is String && orig is String && orig.isNotEmpty()) {
+          wire[name] = orig
+        }
+      }
+    }
   }
 
   val out = linkedMapOf<String, Any?>()
@@ -195,7 +219,7 @@ fun prepareQuery(ctx: Context): MutableMap<String, Any?> {
     val key = if (item[0] is String) item[0] as String else ""
     val v = item[1]
     if (v != null && "\$action" != key && !containsStr(params, key)) {
-      out[key] = v
+      out[wire[key] ?: key] = v
     }
   }
 

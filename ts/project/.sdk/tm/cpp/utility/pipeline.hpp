@@ -1022,12 +1022,41 @@ inline Value prepareQuery(CtxPtr ctx) {
     return false;
   };
 
+  // A path parameter travels in the path. The generated config lists them as
+  // args.params, which prepareParams reads; params is the older list of names.
+  Value aparams = point.is_map() ? getp(getp(point, "args"), "params") : Value::undef();
+  auto in_args = [&](const std::string& s) {
+    if (!aparams.is_list()) return false;
+    for (const auto& pd : *aparams.as_list()) {
+      Value name = getp(pd, "name");
+      if (name.is_string() && name.as_string() == s) return true;
+    }
+    return false;
+  };
+
+  // A query parameter travels under the name the definition gives it, its
+  // orig, which the model may have renamed for the caller.
+  Value aquery = point.is_map() ? getp(getp(point, "args"), "query") : Value::undef();
+  auto wire_name = [&](const std::string& s) {
+    if (aquery.is_list()) {
+      for (const auto& qd : *aquery.as_list()) {
+        Value name = getp(qd, "name");
+        Value orig = getp(qd, "orig");
+        if (name.is_string() && orig.is_string() && name.as_string() == s &&
+            !orig.as_string().empty()) {
+          return orig.as_string();
+        }
+      }
+    }
+    return s;
+  };
+
   Value out = vmap();
   for (const auto& item : Struct::items(reqmatch)) {
     std::string key = as_str(pair_key(item));
     Value val = pair_val(item);
-    if (!is_nullish(val) && "$action" != key && !contains_str(params, key)) {
-      map_put(out, key, val);
+    if (!is_nullish(val) && "$action" != key && !contains_str(params, key) && !in_args(key)) {
+      map_put(out, wire_name(key), val);
     }
   }
   return out;

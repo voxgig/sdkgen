@@ -1104,6 +1104,12 @@ pub fn prepare_query_util(ctx: *Context) Value {
         .array => h.getp(point, "params"),
         else => h.olist(),
     };
+    // A path parameter travels in the path. The generated config lists them
+    // as args.params, which prepare_params reads; params is the older list.
+    const aparams: Value = h.getpath(&.{ "args", "params" }, point);
+    // A query parameter travels under the name the definition gives it, its
+    // orig, which the model may have renamed for the caller.
+    const aquery: Value = h.getpath(&.{ "args", "query" }, point);
 
     const out = h.omap();
     if (reqmatch == .object) {
@@ -1120,7 +1126,29 @@ pub fn prepare_query_util(ctx: *Context) Value {
                     }
                 }
             }
-            if (!h.is_noval(val) and !std.mem.eql(u8, key, "$action") and !contained) h.setp(out, key, val);
+            if (!contained and aparams == .array) {
+                for (aparams.array.data.items) |pd| {
+                    const name = h.getp(pd, "name");
+                    if (name == .string and std.mem.eql(u8, name.string, key)) {
+                        contained = true;
+                        break;
+                    }
+                }
+            }
+            var wire: []const u8 = key;
+            if (aquery == .array) {
+                for (aquery.array.data.items) |qd| {
+                    const name = h.getp(qd, "name");
+                    const orig = h.getp(qd, "orig");
+                    if (name == .string and orig == .string and orig.string.len != 0 and
+                        std.mem.eql(u8, name.string, key))
+                    {
+                        wire = orig.string;
+                        break;
+                    }
+                }
+            }
+            if (!h.is_noval(val) and !std.mem.eql(u8, key, "$action") and !contained) h.setp(out, wire, val);
         }
     }
     return out;

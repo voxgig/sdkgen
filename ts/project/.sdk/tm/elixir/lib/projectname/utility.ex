@@ -1206,12 +1206,46 @@ defmodule ProjectName.Utility do
         Enum.map(0..(S.size(params) - 1), fn i -> S.getelem(params, i) end)
       end
 
+    # A path parameter travels in the path. The generated config lists them
+    # as args.params, which prepare_params reads; params is the older list.
+    aparams = if point != nil, do: S.getpath(point, "args.params"), else: nil
+
+    arg_strs =
+      if S.islist(aparams) and S.size(aparams) > 0 do
+        Enum.map(0..(S.size(aparams) - 1), fn i ->
+          S.getprop(S.getelem(aparams, i), "name")
+        end)
+      else
+        []
+      end
+
+    param_strs = param_strs ++ arg_strs
+
+    # A query parameter travels under the name the definition gives it, its
+    # orig, which the model may have renamed for the caller.
+    aquery = if point != nil, do: S.getpath(point, "args.query"), else: nil
+
+    wire =
+      if S.islist(aquery) and S.size(aquery) > 0 do
+        Enum.reduce(0..(S.size(aquery) - 1), %{}, fn i, acc ->
+          qd = S.getelem(aquery, i)
+          name = S.getprop(qd, "name")
+          orig = S.getprop(qd, "orig")
+
+          if is_binary(name) and is_binary(orig) and orig != "",
+            do: Map.put(acc, name, orig),
+            else: acc
+        end)
+      else
+        %{}
+      end
+
     out = S.jm([])
 
     Enum.each(H.entries(reqmatch), fn {key, val} ->
       if val != nil and is_binary(key) and key != "$action" and
            not Enum.member?(param_strs, key) do
-        S.setprop(out, key, val)
+        S.setprop(out, Map.get(wire, key, key), val)
       end
     end)
 

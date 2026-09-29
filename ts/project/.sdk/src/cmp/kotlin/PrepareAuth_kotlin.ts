@@ -156,9 +156,11 @@ function basicBlock(spec: AuthSpec): string {
   if (!spec.basic) return ''
 
   return `
-  // True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+  // True HTTP Basic Auth joins the two credentials, base64-encoded - a single
   // token in the header (the branch below) can never authenticate against
   // an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+  // The password may be empty (RFC 7617): Lob, for one, documents the key as
+  // the user with a blank password (\`curl -u key:\`).
   val basicOpt = Struct.getpath(options, listOf("auth", "basic"))
   if (basicOpt is Boolean && basicOpt) {
     val secret = Struct.getprop(options, OPTION_SECRET, NOT_FOUND)
@@ -167,7 +169,7 @@ function basicBlock(spec: AuthSpec): string {
     val noSecret = secret == null ||
       (secret is String && (NOT_FOUND == secret || "" == secret))
 
-    if (noApikey || noSecret) {
+    if (noApikey) {
       headers.remove(HEADER_AUTH)
     } else {
       var basicPrefix = ""
@@ -176,7 +178,7 @@ function basicBlock(spec: AuthSpec): string {
         basicPrefix = bp
       }
       val b64 = Base64.getEncoder().encodeToString(
-        (apikey.toString() + ":" + secret.toString()).toByteArray(Charsets.UTF_8))
+        (apikey.toString() + ":" + (if (noSecret) "" else secret.toString())).toByteArray(Charsets.UTF_8))
       if ("" == basicPrefix) {
         headers[HEADER_AUTH] = b64
       } else {

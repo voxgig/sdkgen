@@ -64,22 +64,40 @@ func prepareParamsUtil(_ ctx: Context) -> VMap {
 func prepareQueryUtil(_ ctx: Context) -> VMap {
   let reqmatch = ctx.reqmatch
 
-  var paramnames: VList = VList()
-  if let pl = gp(ctx.point, "params").asList { paramnames = pl }
+  var paramnames: [Value] = []
+  if let pl = gp(ctx.point, "params").asList { paramnames.append(contentsOf: pl.items) }
+  // A path parameter travels in the path. The generated config lists them as
+  // args.params, which prepareParams reads; params is the older list of names.
+  if let apl = gpath(ctx.point, "args", "params").asList {
+    for pd in apl.items {
+      paramnames.append(gp(pd, "name"))
+    }
+  }
+
+  // A query parameter travels under the name the definition gives it, its
+  // orig, which the model may have renamed for the caller.
+  var wire: [String: String] = [:]
+  if let aql = gpath(ctx.point, "args", "query").asList {
+    for qd in aql.items {
+      if let name = gp(qd, "name").asString, let orig = gp(qd, "orig").asString, !orig.isEmpty {
+        wire[name] = orig
+      }
+    }
+  }
 
   let query = VMap()
   for item in items(.map(reqmatch)) {
     let key = item[0].asString ?? ""
     let val = item[1]
     if !isNil(val) && "$action" != key && !containsStr(paramnames, key) {
-      query.entries[key] = val
+      query.entries[wire[key] ?? key] = val
     }
   }
   return query
 }
 
-private func containsStr(_ list: VList, _ s: String) -> Bool {
-  return list.items.contains { $0.asString == s }
+private func containsStr(_ list: [Value], _ s: String) -> Bool {
+  return list.contains { $0.asString == s }
 }
 
 func prepareBodyUtil(_ ctx: Context) -> Value {

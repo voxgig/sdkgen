@@ -92,10 +92,12 @@ function renderHeader(Name: string, cred: string, basic: boolean): string {
     private const string OptionSecret = "secret";` : ''
 
   const basicBlock = basic ? `
-        // True HTTP Basic Auth needs TWO credentials, base64-joined - a
+        // True HTTP Basic Auth joins the two credentials, base64-encoded - a
         // single token in the header (the branch below) can never
         // authenticate against an API that actually checks
-        // \`Authorization: Basic base64(user:pass)\`.
+        // \`Authorization: Basic base64(user:pass)\`. The password may be
+        // empty (RFC 7617): Lob, for one, documents the key as the user with
+        // a blank password (\`curl -u key:\`).
         if (StructUtils.GetPath(options, StructUtils.Jt("auth", "basic")) is bool isBasic &&
             isBasic)
         {
@@ -106,7 +108,7 @@ function renderHeader(Name: string, cred: string, basic: boolean): string {
             var noSecret = secret == null ||
                 (secret is string skStr && (skStr == NotFound || skStr == ""));
 
-            if (noApikey || noSecret)
+            if (noApikey)
             {
                 headers.Remove(HeaderAuth);
             }
@@ -118,7 +120,7 @@ function renderHeader(Name: string, cred: string, basic: boolean): string {
                     basicPrefix = bp;
                 }
                 var b64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(
-                    (apikey as string ?? "") + ":" + (secret as string ?? "")));
+                    (apikey as string ?? "") + ":" + (noSecret ? "" : secret as string ?? "")));
                 headers[HeaderAuth] = basicPrefix == ""
                     ? b64
                     : basicPrefix + " " + b64;

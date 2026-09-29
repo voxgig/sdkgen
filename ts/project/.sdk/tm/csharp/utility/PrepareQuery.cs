@@ -12,12 +12,40 @@ public static partial class SdkUtility
         var point = ctx.Point;
         var reqmatch = ctx.Reqmatch ?? new Dictionary<string, object?>();
 
-        List<object?>? paramnames = null;
+        var paramnames = new List<object?>();
         if (point != null && StructUtils.GetProp(point, "params") is List<object?> pl)
         {
-            paramnames = pl;
+            paramnames.AddRange(pl);
         }
-        paramnames ??= new List<object?>();
+        // A path parameter travels in the path. The generated config lists them
+        // as args.params, which PrepareParams reads; params is the older list.
+        if (point != null &&
+            StructUtils.GetPath(point, StructUtils.Jt("args", "params")) is List<object?> apl)
+        {
+            foreach (var pd in apl)
+            {
+                if (StructUtils.GetProp(pd, "name") is string name)
+                {
+                    paramnames.Add(name);
+                }
+            }
+        }
+
+        // A query parameter travels under the name the definition gives it,
+        // its orig, which the model may have renamed for the caller.
+        var wire = new Dictionary<string, string>();
+        if (point != null &&
+            StructUtils.GetPath(point, StructUtils.Jt("args", "query")) is List<object?> aql)
+        {
+            foreach (var qd in aql)
+            {
+                if (StructUtils.GetProp(qd, "name") is string qname &&
+                    StructUtils.GetProp(qd, "orig") is string qorig && qorig != "")
+                {
+                    wire[qname] = qorig;
+                }
+            }
+        }
 
         var query = new Dictionary<string, object?>();
         foreach (var item in StructUtils.Items(reqmatch))
@@ -26,7 +54,7 @@ public static partial class SdkUtility
             var val = item[1];
             if (val != null && "$action" != key && !ContainsStr(paramnames, key))
             {
-                query[key] = val;
+                query[wire.TryGetValue(key, out var wkey) ? wkey : key] = val;
             }
         }
 

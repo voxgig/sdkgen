@@ -500,12 +500,30 @@
   (let [point (oget ctx :point)
         reqmatch (or (oget ctx :reqmatch) (vs/jm))
         params (let [p (when point (vs/getprop point "params"))] (if (vs/islist p) p (vs/jt)))
-        pset (into #{} (vec params))
+        ;; A path parameter travels in the path. The generated config lists
+        ;; them as args.params, which u-prepare-params reads; params is the
+        ;; older list of names.
+        aparams (let [args (when point (vs/getprop point "args"))
+                      p (when (vs/ismap args) (vs/getprop args "params"))]
+                  (if (vs/islist p) p (vs/jt)))
+        pset (into (into #{} (vec params))
+                   (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
+        ;; A query parameter travels under the name the definition gives it,
+        ;; its orig, which the model may have renamed for the caller.
+        aquery (let [args (when point (vs/getprop point "args"))
+                     q (when (vs/ismap args) (vs/getprop args "query"))]
+                 (if (vs/islist q) q (vs/jt)))
+        wire (into {}
+                   (keep (fn [qd]
+                           (when (vs/ismap qd)
+                             (let [n (vs/getprop qd "name") o (vs/getprop qd "orig")]
+                               (when (and (string? n) (string? o) (not= "" o)) [n o]))))
+                         (vec aquery)))
         out (vs/jm)]
     (doseq [item (or (vs/items reqmatch) [])]
       (let [k (vs/getprop item 0) v (vs/getprop item 1)]
         (when (and (some? v) (string? k) (not= "$action" k) (not (contains? pset k)))
-          (.put ^java.util.Map out k v))))
+          (.put ^java.util.Map out (get wire k k) v))))
     out))
 
 ;; `$action` selects the point (see u-make-point); it is never an API field,

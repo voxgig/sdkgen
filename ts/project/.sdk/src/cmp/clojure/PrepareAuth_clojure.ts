@@ -106,19 +106,21 @@ ${p}          (if (= auth-prefix "") apikey-val (str auth-prefix " " apikey-val)
 
 
 function basicBlock(): string {
-  return `              ;; True HTTP Basic Auth needs TWO credentials, base64-joined - a
-              ;; single token in the header (the branch below) can never
+  return `              ;; True HTTP Basic Auth joins the two credentials, base64-encoded -
+              ;; a single token in the header (the branch below) can never
               ;; authenticate against an API that actually checks
-              ;; \`Authorization: Basic base64(user:pass)\`.
+              ;; \`Authorization: Basic base64(user:pass)\`. The password may
+              ;; be empty (RFC 7617): Lob, for one, documents the key as the
+              ;; user with a blank password (\`curl -u key:\`).
               (if (= true (vs/getpath options "auth.basic"))
                 (let [secret (vs/getprop options OPTION-SECRET NOT-FOUND)
                       missing? (fn [v] (or (nil? v)
                                            (and (string? v) (or (= v NOT-FOUND) (= v "")))))]
-                  (if (or (missing? apikey) (missing? secret))
+                  (if (missing? apikey)
                     (vs/delprop headers HEADER-AUTH)
                     (let [auth-prefix (or (vs/getpath options "auth.prefix") "")
                           b64 (.encodeToString (java.util.Base64/getEncoder)
-                                               (.getBytes ^String (str apikey ":" secret) "UTF-8"))]
+                                               (.getBytes ^String (str apikey ":" (if (missing? secret) "" secret)) "UTF-8"))]
                       (.put ^java.util.Map headers HEADER-AUTH
                             (if (= auth-prefix "") b64 (str auth-prefix " " b64))))))
 ${headerPlace(16)})`

@@ -330,9 +330,11 @@ fn base64_std(text: []const u8) []const u8 {
 // something — and only when the model says the scheme IS basic.
 function basicBlock(): string {
   return `
-    // True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+    // True HTTP Basic Auth joins the two credentials, base64-encoded - a single
     // token in the header (the branch below) can never authenticate against
     // an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+    // The password may be empty (RFC 7617): Lob, for one, documents the key as
+    // the user with a blank password (\`curl -u key:\`).
     if (is_true(h.getpath(&.{ "auth", "basic" }, options))) {
         const secret = vs.getprop(h.A(), options, h.vstr(OPTION_SECRET), h.vstr(NOT_FOUND)) catch h.vstr(NOT_FOUND);
 
@@ -342,7 +344,7 @@ function basicBlock(): string {
             else => false,
         };
 
-        if (skip or no_secret) {
+        if (skip) {
             h.del_prop(headers, h.vstr(CRED_NAME));
         } else {
             const basic_prefix: []const u8 = switch (h.getpath(&.{ "auth", "prefix" }, options)) {
@@ -353,7 +355,7 @@ function basicBlock(): string {
                 .string => |s| s,
                 else => "",
             };
-            const secret_val: []const u8 = switch (secret) {
+            const secret_val: []const u8 = if (no_secret) "" else switch (secret) {
                 .string => |s| s,
                 else => "",
             };

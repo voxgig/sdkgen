@@ -136,9 +136,11 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
 `
 
   const basicBlock = !withBasic ? '' : `
-    // True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+    // True HTTP Basic Auth joins the two credentials, base64-encoded - a single
     // token in the header (the branch below) can never authenticate against
     // an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+    // The password may be empty (RFC 7617): Lob, for one, documents the key as
+    // the user with a blank password (\`curl -u key:\`).
     if let Value::Bool(true) = getpath(&["auth", "basic"], &options) {
         let secret = vs::get_prop(&options, &Value::str(OPTION_SECRET), Value::str(NOT_FOUND));
 
@@ -148,7 +150,7 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
             _ => false,
         };
 
-        if skip || no_secret {
+        if skip {
             vs::del_prop(headers, &Value::str(CRED_NAME));
         } else {
             let apikey_val = match &apikey {
@@ -156,7 +158,7 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
                 _ => String::new(),
             };
             let secret_val = match &secret {
-                Value::Str(s) => s.clone(),
+                Value::Str(s) if !no_secret => s.clone(),
                 _ => String::new(),
             };
             let b64 = base64_encode(format!("{}:{}", apikey_val, secret_val).as_bytes());

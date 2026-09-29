@@ -67,11 +67,38 @@ object PrepareQuery {
     var reqmatch = ctx.reqmatch
     if (reqmatch == null) reqmatch = new LinkedHashMap[String, Object]()
 
-    var params: JList[Object] = null
+    val params: JList[Object] = new ArrayList[Object]()
     if (point != null) {
-      Struct.getprop(point, "params") match { case l: JList[_] => params = l.asInstanceOf[JList[Object]]; case _ => }
+      Struct.getprop(point, "params") match { case l: JList[_] => params.addAll(l.asInstanceOf[JList[Object]]); case _ => }
+      // A path parameter travels in the path. The generated config lists them
+      // as args.params, which prepareParams reads; params is the older list.
+      Struct.getpath(point, java.util.List.of("args", "params")) match {
+        case l: JList[_] =>
+          val pit = l.iterator()
+          while (pit.hasNext) {
+            Struct.getprop(pit.next(), "name") match { case s: String => params.add(s); case _ => }
+          }
+        case _ =>
+      }
     }
-    if (params == null) params = new ArrayList[Object]()
+
+    // A query parameter travels under the name the definition gives it, its
+    // orig, which the model may have renamed for the caller.
+    val wire = new LinkedHashMap[String, String]()
+    if (point != null) {
+      Struct.getpath(point, java.util.List.of("args", "query")) match {
+        case l: JList[_] =>
+          val qit = l.iterator()
+          while (qit.hasNext) {
+            val qd = qit.next()
+            (Struct.getprop(qd, "name"), Struct.getprop(qd, "orig")) match {
+              case (n: String, o: String) if o.nonEmpty => wire.put(n, o)
+              case _ =>
+            }
+          }
+        case _ =>
+      }
+    }
 
     val out = new LinkedHashMap[String, Object]()
     val it = Struct.items(reqmatch).iterator()
@@ -79,7 +106,7 @@ object PrepareQuery {
       val item = it.next()
       val key = item.get(0) match { case s: String => s; case _ => "" }
       val v = item.get(1)
-      if (v != null && "$action" != key && !containsStr(params, key)) out.put(key, v)
+      if (v != null && "$action" != key && !containsStr(params, key)) out.put(wire.getOrDefault(key, key), v)
     }
     out
   }
