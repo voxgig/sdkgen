@@ -16,6 +16,7 @@ type DefinitionPoint = {
   action?: string
   args: { name: string, wire: string, value: any }[]
   select: Record<string, any>
+  headers?: { name: string, wire: string, value: any }[]
   query: string[]
   auth: Credential[][] | null
   status: number
@@ -49,6 +50,7 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
 
   const input: any = { ...point.select }
   for (const arg of point.args) input[arg.name] = arg.value
+  for (const h of point.headers || []) input[h.name] = h.value
   if (null != point.action) input.$action = point.action
 
   let result: any
@@ -85,6 +87,18 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
     const headers = new Headers(init.headers)
     assert(point.auth.some((set) => set.every((c) => placed(c, headers, url))),
       'credential not sent as the definition declares it: ' + JSON.stringify(point.auth))
+  }
+
+  // A header parameter goes out as a header. The credential check above owns
+  // any header the security scheme names, and the SDK sets the content type
+  // from the body it sends.
+  const credentialHeaders = (point.auth || []).flat()
+    .filter((c) => 'header' === c.in).map((c) => c.name.toLowerCase())
+  for (const h of point.headers || []) {
+    const wire = h.wire.toLowerCase()
+    if (credentialHeaders.includes(wire) || 'content-type' === wire) continue
+    assert.equal(new Headers(init.headers).get(wire), String(h.value),
+      'header parameter not sent as a header: ' + h.wire)
   }
 
   if (null != error) {
@@ -145,32 +159,54 @@ function placed(cred: Credential, headers: Headers, url: URL): boolean {
 }
 
 
-// The records a list response holds: the body itself, or its one property
-// that is a non-empty list of objects. Anything else proves nothing.
+// What an envelope may hold beside what it carries: status and paging,
+// compared without case, `_` or `-`. Any other value is data of the body's
+// own, which makes the body a record rather than an envelope.
+const ENVELOPE_KEY = /^(success|status|ok|message|code|error|errorcode|errormessage|requestid|timestamp|took|version|apiversion|object|url)$|count$|total|page|cursor|next|prev|limit|offset|more|size$/
+
+
+function ownData(sample: any): boolean {
+  return Object.entries(sample).some(([key, value]) =>
+    null != value && 'object' !== typeof value &&
+    !ENVELOPE_KEY.test(key.toLowerCase().replace(/[_-]/g, '')))
+}
+
+
+function isRecord(value: any): boolean {
+  return null != value && 'object' === typeof value && !Array.isArray(value)
+}
+
+
+// The records a list response holds: the body itself, or the one non-empty
+// list of objects in a page. Anything else, such as a record that happens to
+// hold a list, proves nothing.
 function recordsOf(sample: any): any[] | null {
   if (Array.isArray(sample)) {
     return sample
   }
-  if (null == sample || 'object' !== typeof sample) {
+  if (!isRecord(sample) || ownData(sample)) {
     return null
   }
   const lists = Object.values(sample).filter((v: any) => Array.isArray(v) && 0 < v.length &&
-    v.every((x: any) => null != x && 'object' === typeof x && !Array.isArray(x)))
+    v.every(isRecord))
   return 1 === lists.length ? lists[0] as any[] : null
 }
 
 
-// The record a single-item response returns: the body, or its one property
-// holding an object with the identity field.
+// The record a single-item response returns: the body, or the one object an
+// envelope carries with the identity field. A body with data of its own is
+// the record itself, whatever it names its identity.
 function recordOf(sample: any, idField: string): any {
-  if (null == sample || 'object' !== typeof sample || Array.isArray(sample)) {
+  if (!isRecord(sample)) {
     return null
   }
   if (null != sample[idField]) {
     return sample
   }
-  const inner = Object.values(sample).filter((v: any) => null != v && 'object' === typeof v &&
-    !Array.isArray(v) && null != v[idField])
+  if (ownData(sample)) {
+    return null
+  }
+  const inner = Object.values(sample).filter((v: any) => isRecord(v) && null != v[idField])
   return 1 === inner.length ? inner[0] : null
 }
 

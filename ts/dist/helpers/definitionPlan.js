@@ -6,6 +6,9 @@ const apidef_1 = require("@voxgig/apidef");
 const opShape_1 = require("./opShape");
 const pointPath_1 = require("./pointPath");
 const resolved_1 = require("./resolved");
+// The operations every target generates a method for. The model may hold
+// others, such as a patch beside an update, which no SDK can be called with.
+const GENERATED_OPS = ['load', 'list', 'create', 'update', 'remove'];
 const MAX_ITEMS = 3;
 const MAX_DEPTH = 8;
 const MAX_SAMPLE = 32 * 1024;
@@ -19,7 +22,7 @@ function definitionPlan(ctx$) {
             continue;
         for (const [op, operation] of Object.entries(entity.op || {})) {
             // An inactive operation stays in the model but gets no method.
-            if (false === operation?.active)
+            if (false === operation?.active || !GENERATED_OPS.includes(op))
                 continue;
             const points = (operation?.points || []).filter((p) => false !== p.a);
             for (const point of points) {
@@ -40,9 +43,19 @@ function definitionPlan(ctx$) {
                     const def = params.find((p) => 'path' === p?.in && wire === p?.name);
                     return { name: arg.n, wire, value: scalar(def?.example ?? def?.schema?.example) ?? 'p' + (i + 1) };
                 });
+                // A header argument is sent too, and must arrive as a header under
+                // the definition's name, never in the query.
+                const headers = (point.g?.header || [])
+                    .filter((arg) => false !== arg.a)
+                    .map((arg, i) => {
+                    const wire = String(arg.or || arg.n);
+                    const def = params.find((p) => 'header' === p?.in &&
+                        wire.toLowerCase() === String(p?.name).toLowerCase());
+                    return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) };
+                });
                 const selected = {};
                 for (const key of select.exist || []) {
-                    if (args.some((a) => a.name === key))
+                    if (args.some((a) => a.name === key) || headers.some((h) => h.name === key))
                         continue;
                     const def = params.find((p) => key === p?.name);
                     selected[key] = scalar(def?.example ?? def?.schema?.example) ?? 'v1';
@@ -69,6 +82,7 @@ function definitionPlan(ctx$) {
                     ...(null == select.$action ? {} : { action: select.$action }),
                     args,
                     select: selected,
+                    headers,
                     query: params.filter((p) => 'query' === p?.in).map((p) => p.name),
                     auth: unchecked ? null : credentialSets(facts),
                     status: success?.status ?? 200,

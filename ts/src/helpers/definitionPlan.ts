@@ -23,6 +23,7 @@ type DefinitionPoint = {
   action?: string
   args: { name: string, wire: string, value: any }[]
   select: Record<string, any>
+  headers: { name: string, wire: string, value: any }[]
   query: string[]
   auth: Credential[][] | null
   status: number
@@ -30,6 +31,10 @@ type DefinitionPoint = {
   idField: string
 }
 
+
+// The operations every target generates a method for. The model may hold
+// others, such as a patch beside an update, which no SDK can be called with.
+const GENERATED_OPS = ['load', 'list', 'create', 'update', 'remove']
 
 const MAX_ITEMS = 3
 const MAX_DEPTH = 8
@@ -47,7 +52,7 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
 
     for (const [op, operation] of Object.entries(entity.op || {}) as any[]) {
       // An inactive operation stays in the model but gets no method.
-      if (false === operation?.active) continue
+      if (false === operation?.active || !GENERATED_OPS.includes(op)) continue
 
       const points = (operation?.points || []).filter((p: any) => false !== p.a)
 
@@ -71,9 +76,20 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           return { name: arg.n, wire, value: scalar(def?.example ?? def?.schema?.example) ?? 'p' + (i + 1) }
         })
 
+        // A header argument is sent too, and must arrive as a header under
+        // the definition's name, never in the query.
+        const headers = (point.g?.header || [])
+          .filter((arg: any) => false !== arg.a)
+          .map((arg: any, i: number) => {
+            const wire = String(arg.or || arg.n)
+            const def = params.find((p: any) => 'header' === p?.in &&
+              wire.toLowerCase() === String(p?.name).toLowerCase())
+            return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) }
+          })
+
         const selected: Record<string, any> = {}
         for (const key of select.exist || []) {
-          if (args.some((a: any) => a.name === key)) continue
+          if (args.some((a: any) => a.name === key) || headers.some((h: any) => h.name === key)) continue
           const def = params.find((p: any) => key === p?.name)
           selected[key] = scalar(def?.example ?? def?.schema?.example) ?? 'v1'
         }
@@ -101,6 +117,7 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           ...(null == select.$action ? {} : { action: select.$action }),
           args,
           select: selected,
+          headers,
           query: params.filter((p: any) => 'query' === p?.in).map((p: any) => p.name),
           auth: unchecked ? null : credentialSets(facts),
           status: success?.status ?? 200,

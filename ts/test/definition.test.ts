@@ -158,6 +158,47 @@ describe('definitionPlan', () => {
     deepStrictEqual(uploads({ active: false, points: [{ m: 'GET', o: '/uploads' }] }), [])
   })
 
+  // Novu's workflow has a patch beside its update, and no target generates a
+  // patch method to call.
+  test('an operation no target generates is left out', () => {
+    const def = { ...DEF, paths: { '/workflows/{id}': {
+      parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+      put: { responses: { '200': { content: { 'application/json': { example: { id: 'w1' } } } } } },
+      patch: { responses: { '200': { content: { 'application/json': { example: { id: 'w1' } } } } } },
+    } } }
+    const g = { params: [{ n: 'id', or: 'id' }] }
+    const model = { main: { kit: { entity: { workflow: {
+      name: 'workflow', id: { field: 'id', name: 'id' }, op: {
+        update: { points: [{ m: 'PUT', o: '/workflows/{id}', q: { exist: ['id'] }, g }] },
+        patch: { points: [{ m: 'PATCH', o: '/workflows/{id}', q: { exist: ['id'] }, g }] },
+      },
+    } } } } }
+    const plan = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(plan.map((p: any) => p.op), ['update'])
+  })
+
+  // Novu selects every point on its `idempotency-key` header. The argument
+  // is sent, as a header, never as a selector in the query.
+  test('a header argument is planned under its definition name', () => {
+    const def = { ...DEF, paths: { '/uploads': { get: {
+      parameters: [{ in: 'header', name: 'Idempotency-Key', example: 'k-1' }],
+      responses: { '200': { content: { 'application/json': { example: [] } } } },
+    } } } }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: { list: { points: [{
+        m: 'GET', o: '/uploads', q: { exist: ['idempotency_key'] },
+        g: { header: [{ n: 'idempotency_key', or: 'Idempotency-Key' }] },
+      }] } },
+    } } } } }
+    const [list] = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(list.headers, [{ name: 'idempotency_key', wire: 'Idempotency-Key', value: 'k-1' }])
+    deepStrictEqual(list.select, {})
+  })
+
   test('the example is the sample, three items at most', () => {
     strictEqual(point('list').sample.data.length, 3)
     deepStrictEqual(point('list').query, ['limit'])
@@ -190,7 +231,8 @@ function loadRunner(): any {
 
 // An SDK stand-in whose behaviour is a switch, so each defect the runner
 // exists to catch can be switched on alone.
-function fakeSDK(defect: '' | 'basic-blank' | 'basic-password' | 'unwrap' | 'query-echo' | 'query-name') {
+function fakeSDK(defect: '' | 'basic-blank' | 'basic-password' | 'unwrap' | 'query-echo' |
+  'query-name' | 'header-query' | 'header-drop') {
   return class {
     opts: any
     constructor(opts: any) { this.opts = opts }
@@ -202,6 +244,10 @@ function fakeSDK(defect: '' | 'basic-blank' | 'basic-password' | 'unwrap' | 'que
         if ('basic-blank' !== defect) {
           const pass = 'basic-password' === defect ? 'x' : ''
           headers.authorization = 'Basic ' + Buffer.from(opts.apikey + ':' + pass).toString('base64')
+        }
+        if (undefined !== match.idempotency_key) {
+          if ('header-query' === defect) query = { ...query, idempotency_key: match.idempotency_key }
+          else if ('header-drop' !== defect) headers['idempotency-key'] = match.idempotency_key
         }
         const qs = new URLSearchParams(Object.entries(query)
           .filter(([, v]) => undefined !== v) as [string, string][]).toString()
@@ -273,6 +319,43 @@ for (const [lang, runner] of [
     test('catches a path parameter echoed into the query', async () => {
       await rejects(runDefinitionPoint(fakeSDK('query-echo'), point('load')),
         /query parameter not in the definition: id/)
+    })
+
+    const withHeader = () => ({ ...point('load'),
+      headers: [{ name: 'idempotency_key', wire: 'Idempotency-Key', value: 'k1' }] })
+
+    test('a header parameter sent as a header passes', async () => {
+      await runDefinitionPoint(fakeSDK(''), withHeader())
+    })
+
+    test('catches a header parameter sent in the query', async () => {
+      await rejects(runDefinitionPoint(fakeSDK('header-query'), withHeader()),
+        /query parameter not in the definition: idempotency_key/)
+    })
+
+    test('catches a header parameter never sent', async () => {
+      await rejects(runDefinitionPoint(fakeSDK('header-drop'), withHeader()),
+        /header parameter not sent as a header: Idempotency-Key/)
+    })
+
+    // Neon wraps a branch beside the operations the change started.
+    test('catches a record read at its envelope', async () => {
+      const p = { ...point('load'), sample: { branch: { id: 'br_1' }, operations: [{ id: 'op_1' }] } }
+      await rejects(runDefinitionPoint(fakeSDK(''), p),
+        /the entity does not hold the record the definition example returns/)
+    })
+
+    // Novu's channel connection names its identity `identifier` and holds a
+    // workspace with an `id` of its own, which is not the record's.
+    test('a record with data of its own is not read through an inner object', async () => {
+      const p = { ...point('load'), sample: { identifier: 'cc_1', workspace: { id: 'T1' } } }
+      await runDefinitionPoint(fakeSDK(''), p)
+    })
+
+    // Apicurio's GitOps status is one record that holds a list of errors.
+    test('a record that holds a list is not a page', async () => {
+      const p = { ...point('list'), sample: { sync_state: 'IDLE', errors: [{ detail: 'x' }] } }
+      await runDefinitionPoint(fakeSDK(''), p)
     })
   })
 }
