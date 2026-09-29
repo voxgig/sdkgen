@@ -121,6 +121,43 @@ describe('definitionPlan', () => {
     deepStrictEqual(load.args, [{ name: 'id', wire: 'campaignId', value: 'cmp_1' }])
   })
 
+  // Lob's uploads, where a list point selected by `campaign_id` sits beside
+  // one selected by nothing. The latter's test leaves `campaign_id` out.
+  const uploads = (listOp: any) => {
+    const def = { ...DEF, paths: { '/uploads': { get: {
+      parameters: [{ in: 'query', name: 'campaignId' }, { in: 'query', name: 'resource_ids' }],
+      responses: { '200': { content: { 'application/json': { example: [] } } } },
+    } } } }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: { list: listOp },
+    } } } } }
+    return definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+  }
+  const query = [{ n: 'campaign_id', or: 'campaignId' }, { n: 'resource_id', or: 'resource_ids' }]
+
+  test('every query argument is sent, in the model spelling', () => {
+    const [list] = uploads({ points: [{ m: 'GET', o: '/uploads', g: { query } }] })
+    deepStrictEqual(list.select, { campaign_id: 'v1', resource_id: 'v1' })
+    deepStrictEqual(list.query, ['campaignId', 'resource_ids'])
+  })
+
+  test('a query argument another point selects on stays out', () => {
+    const plan = uploads({ points: [
+      { m: 'GET', o: '/uploads', q: { exist: ['campaign_id'] }, g: { query } },
+      { m: 'GET', o: '/uploads', g: { query } },
+    ] })
+    deepStrictEqual(plan.map((p: any) => p.select), [
+      { campaign_id: 'v1', resource_id: 'v1' },
+      { resource_id: 'v1' },
+    ])
+  })
+
+  test('an inactive operation is left out', () => {
+    deepStrictEqual(uploads({ active: false, points: [{ m: 'GET', o: '/uploads' }] }), [])
+  })
+
   test('the example is the sample, three items at most', () => {
     strictEqual(point('list').sample.data.length, 3)
     deepStrictEqual(point('list').query, ['limit'])
@@ -153,7 +190,7 @@ function loadRunner(): any {
 
 // An SDK stand-in whose behaviour is a switch, so each defect the runner
 // exists to catch can be switched on alone.
-function fakeSDK(defect: '' | 'basic-blank' | 'unwrap' | 'query-echo') {
+function fakeSDK(defect: '' | 'basic-blank' | 'basic-password' | 'unwrap' | 'query-echo' | 'query-name') {
   return class {
     opts: any
     constructor(opts: any) { this.opts = opts }
@@ -163,9 +200,11 @@ function fakeSDK(defect: '' | 'basic-blank' | 'unwrap' | 'query-echo') {
       const send = async (method: string, path: string, match: any, query: any) => {
         const headers: any = {}
         if ('basic-blank' !== defect) {
-          headers.authorization = 'Basic ' + Buffer.from(opts.apikey + ':').toString('base64')
+          const pass = 'basic-password' === defect ? 'x' : ''
+          headers.authorization = 'Basic ' + Buffer.from(opts.apikey + ':' + pass).toString('base64')
         }
-        const qs = new URLSearchParams(query).toString()
+        const qs = new URLSearchParams(Object.entries(query)
+          .filter(([, v]) => undefined !== v) as [string, string][]).toString()
         const res = await opts.system.fetch(opts.base + path + (qs ? '?' + qs : ''),
           { method, headers })
         return res.json()
@@ -173,7 +212,9 @@ function fakeSDK(defect: '' | 'basic-blank' | 'unwrap' | 'query-echo') {
       const wrap = (rec: any) => ({ data: () => rec })
       return {
         list: async (match: any) => {
-          const body = await send('GET', '/addresses', match, { limit: match.limit })
+          const name = 'query-name' === defect ? 'resource_id' : 'resource_ids'
+          const body = await send('GET', '/addresses', match,
+            { limit: match.limit, [name]: match.resource_id })
           const records = 'unwrap' === defect ? body : body.data
           return Array.isArray(records) ? records.map(wrap) : []
         },
@@ -209,6 +250,19 @@ for (const [lang, runner] of [
     test('catches Basic auth dropped for a blank password', async () => {
       await rejects(runDefinitionPoint(fakeSDK('basic-blank'), point('load')),
         /credential not sent as the definition declares it/)
+    })
+
+    test('catches a password the client was never given', async () => {
+      await rejects(runDefinitionPoint(fakeSDK('basic-password'), point('load')),
+        /credential not sent as the definition declares it/)
+    })
+
+    test('catches a query parameter sent in the model spelling', async () => {
+      const p = { ...point('list'), select: { limit: 2, resource_id: 'r1' },
+        query: ['limit', 'resource_ids'] }
+      await runDefinitionPoint(fakeSDK(''), p)
+      await rejects(runDefinitionPoint(fakeSDK('query-name'), p),
+        /query parameter not in the definition: resource_id/)
     })
 
     test('catches a list read at the envelope instead of its records', async () => {

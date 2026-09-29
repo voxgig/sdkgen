@@ -46,6 +46,9 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
     if (false === entity.active) continue
 
     for (const [op, operation] of Object.entries(entity.op || {}) as any[]) {
+      // An inactive operation stays in the model but gets no method.
+      if (false === operation?.active) continue
+
       const points = (operation?.points || []).filter((p: any) => false !== p.a)
 
       for (const point of points) {
@@ -73,6 +76,17 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           if (args.some((a: any) => a.name === key)) continue
           const def = params.find((p: any) => key === p?.name)
           selected[key] = scalar(def?.example ?? def?.schema?.example) ?? 'v1'
+        }
+
+        // Every query argument is sent too, so a name that goes out in the
+        // model's spelling fails even where no point selects on it. One that
+        // another point selects on would move the SDK to that point.
+        const elsewhere = new Set(points.filter((p: any) => p !== point)
+          .flatMap((p: any) => p.q?.exist || []))
+        for (const arg of point.g?.query || []) {
+          if (false === arg.a || undefined !== selected[arg.n] || elsewhere.has(arg.n)) continue
+          const def = params.find((p: any) => 'query' === p?.in && (arg.or || arg.n) === p?.name)
+          selected[arg.n] = scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1'
         }
 
         const success = successResponse(facts.responses)

@@ -114,9 +114,10 @@ function placed(cred, headers, url) {
 
   const [kind, token] = value.split(' ')
 
+  // The client carries no secret, so the password must be empty.
   if ('basic' === cred.scheme) {
     return 'basic' === String(kind).toLowerCase() &&
-      Buffer.from(String(token), 'base64').toString('utf8').startsWith(KEY + ':')
+      Buffer.from(String(token), 'base64').toString('utf8') === KEY + ':'
   }
 
   if ('bearer' === cred.scheme) {
