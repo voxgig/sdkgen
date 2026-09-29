@@ -154,7 +154,7 @@ Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
         // Named here, in one line, with the detail left to each target's README.
         const features = (0, FeatureDocs_1.featureDocs)(model);
         if (0 < features.length) {
-            (0, jostraca_1.Content)(`> **Features:** ${features.map((f) => '`' + f.n + '`').join(', ')} — opt-in,
+            (0, jostraca_1.Content)(`> **Features:** ${features.map((f) => '`' + f.name + '`').join(', ')} — opt-in,
 > inactive until switched on, and configured per client. See the Features
 > section of any SDK README below for what each one does.
 
@@ -265,10 +265,9 @@ network, and no credentials:
         // 3. Packages — real published package name + install command per
         // ecosystem. A package that is NOT yet live on its registry (the fleet
         // default: 'pending') must NOT advertise a `npm install ...` that 404s —
-        // its Install cell links to the git-tag releases page instead. The go
-        // family resolves from the tag directly (`go get <mod>@latest`).
+        // its Install cell links to the target README's install section instead.
+        // The go family resolves from the default branch (`go get <mod>@latest`).
         if (pkgTargets.length > 0) {
-            const { tagsUrl } = (0, packageMeta_1.repoInfo)(model);
             (0, jostraca_1.Content)(`## Packages
 
 | Language | Package | Install |
@@ -287,7 +286,9 @@ network, and no credentials:
                     cell = '`' + (0, packageMeta_1.vendorCommand)(model, tgt.name) + '`';
                 }
                 else {
-                    cell = `publish pending — [install from git tag](${tagsUrl})`;
+                    // The target README always gives a route that works without a
+                    // tag, which a repository may not have.
+                    cell = `publish pending — [install from source](${tgt.name}/README.md#install)`;
                 }
                 (0, jostraca_1.Content)(`| ${tgt.title} | \`${(0, packageMeta_1.packageName)(model, tgt.name)}\` | ${cell} |
 `);

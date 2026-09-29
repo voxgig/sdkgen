@@ -1068,6 +1068,63 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // An empty password is valid Basic auth (RFC 7617), and Lob documents its
+  // key as the user with a blank password (`curl -u key:`). Dropping the header whenever the
+  // password was blank sent no credential at all to an API used as documented.
+  test('ts/js: HTTP Basic sends the key with a blank password', async () => {
+    const out = await generate(['ts', 'js'], undefined, `
+main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'Authorization' }
+`)
+
+    const struct = {
+      getprop: (o: any, k: string, alt?: any) => (null != o && undefined !== o[k] ? o[k] : alt),
+      setprop: (o: any, k: string, v: any) => { o[k] = v },
+      delprop: (o: any, k: string) => { delete o[k] },
+    }
+    const b64 = (s: string) => Buffer.from(s).toString('base64')
+
+    for (const [lang, file] of [
+      ['ts', 'ts/src/utility/PrepareAuthUtility.ts'],
+      ['js', 'js/src/utility/PrepareAuthUtility.js'],
+    ]) {
+      const src = out[file]
+      ok(null != src, lang + ': no ' + file)
+      const js = 'ts' === lang
+        ? sucrase.transform(src, { transforms: ['typescript', 'imports'] }).code
+        : src
+      const mod: any = { exports: {} }
+      new Function('exports', 'require', 'module', js)(mod.exports, () => ({}), mod)
+
+      const header = (options: any) => {
+        const spec: any = { headers: {} }
+        mod.exports.prepareAuth({ utility: { struct }, client: { options: () => options }, spec })
+        return spec.headers.authorization
+      }
+
+      const basic = { prefix: 'Basic', basic: true }
+      strictEqual(header({ apikey: 'K', auth: basic }), 'Basic ' + b64('K:'), lang + ': no secret')
+      strictEqual(header({ apikey: 'K', secret: '', auth: basic }), 'Basic ' + b64('K:'), lang + ': blank')
+      strictEqual(header({ apikey: 'K', secret: 'S', auth: basic }), 'Basic ' + b64('K:S'), lang + ': both')
+      strictEqual(header({ apikey: '', secret: 'S', auth: basic }), undefined, lang + ': no key')
+      strictEqual(header({ auth: basic }), undefined, lang + ': nothing')
+    }
+  })
+
+
+  // The Features line printed `undefined` once per feature: it read `f.n`
+  // from featureDocs, whose entries carry `name`.
+  test('the root readme names each active feature', async () => {
+    const out = await generate(['ts'])
+    const readme = out['README.md']
+    ok(null != readme, 'no root readme was generated')
+
+    const line = readme.split('\n').find((l: string) => l.startsWith('> **Features:**'))
+    ok(null != line, 'the root readme has no Features line')
+    ok(!line!.includes('undefined'), 'the Features line prints undefined: ' + line)
+    ok(line!.includes('`test`'), 'the Features line does not name the test feature: ' + line)
+  })
+
+
   test('elixir: no empty argument in a singleton load example', async () => {
     const out = await generate(['elixir'])
 

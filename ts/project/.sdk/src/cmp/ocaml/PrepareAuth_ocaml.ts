@@ -255,20 +255,22 @@ let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
 
 
 const BASIC = `       if (match getpath_s options "auth.basic" with Bool b -> b | _ -> false) then begin
-         (* True HTTP Basic Auth needs TWO credentials, base64-joined - a
-          * single token in the header (the branch below) can never
+         (* True HTTP Basic Auth joins the two credentials, base64-encoded -
+          * a single token in the header (the branch below) can never
           * authenticate against an API that actually checks
-          * \`Authorization: Basic base64(user:pass)\`. *)
+          * \`Authorization: Basic base64(user:pass)\`. The password may be
+          * empty (RFC 7617): Lob, for one, documents the key as the user
+          * with a blank password (\`curl -u key:\`). *)
          let secret = getprop ~alt:(Str not_found) options (Str option_secret) in
          let no_secret =
            (match secret with Str s -> s = not_found | _ -> false)
            || is_noval secret || secret = Str "" in
-         if no_apikey || no_secret then
+         if no_apikey then
            ignore (delprop headers (Str cred_name))
          else begin
            let auth_prefix = match getpath_s options "auth.prefix" with Str s -> s | _ -> "" in
            let apikey_val = match apikey with Str s -> s | _ -> "" in
-           let secret_val = match secret with Str s -> s | _ -> "" in
+           let secret_val = if no_secret then "" else match secret with Str s -> s | _ -> "" in
            let joined = base64_encode (apikey_val ^ ":" ^ secret_val) in
            setp headers cred_name
              (Str (if auth_prefix <> "" then auth_prefix ^ " " ^ joined else joined))

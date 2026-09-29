@@ -162,9 +162,11 @@ ${clear(spec.where, 4)}
 `
 
   const basicBlock = !withBasic ? '' : `
-  // True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+  // True HTTP Basic Auth joins the two credentials, base64-encoded - a single
   // token in the header (the branch below) can never authenticate against
   // an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+  // The password may be empty (RFC 7617): Lob, for one, documents the key as
+  // the user with a blank password (\`curl -u key:\`).
   bool want_basic = false;
   get_bool(auth, "basic", &want_basic);
   if (want_basic) {
@@ -184,7 +186,7 @@ ${clear(spec.where, 4)}
       no_secret = false;
     }
 
-    if (skip || no_secret) {
+    if (skip) {
 ${clear(spec.where, 6)}
     } else {
       voxgig_value* prefix_v = getpath2(options, "auth", "prefix");
@@ -193,7 +195,7 @@ ${clear(spec.where, 6)}
       char b64[1400];
       snprintf(pair, sizeof(pair), "%s:%s",
                voxgig_is_string(apikey) ? voxgig_as_string(apikey) : "",
-               voxgig_is_string(secret) ? voxgig_as_string(secret) : "");
+               !no_secret && voxgig_is_string(secret) ? voxgig_as_string(secret) : "");
       b64_encode(pair, b64, sizeof(b64));
       if (auth_prefix[0] == '\\0') {
         setp(headers, CRED_NAME, v_str(b64));

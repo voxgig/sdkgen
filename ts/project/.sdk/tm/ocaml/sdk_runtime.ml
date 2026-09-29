@@ -411,11 +411,32 @@ let prepare_query_util (ctx : ctx) : value =
   let params =
     match getp ctx.c_point "params" with List r -> !r | _ -> []
   in
+  (* A path parameter travels in the path. The generated config lists them as
+   * args.params, which prepare_params reads; params is the older list. *)
+  let arg_names =
+    match getp (getp ctx.c_point "args") "params" with
+    | List r -> List.map (fun pd -> getp pd "name") !r
+    | _ -> []
+  in
+  let params = params @ arg_names in
   let contains_param s = List.exists (fun v -> match v with Str x -> x = s | _ -> false) params in
+  (* A query parameter travels under the name the definition gives it, its
+   * orig, which the model may have renamed for the caller. *)
+  let wire =
+    match getp (getp ctx.c_point "args") "query" with
+    | List r ->
+      List.filter_map (fun qd ->
+          match getp qd "name", getp qd "orig" with
+          | Str n, Str o when o <> "" -> Some (n, o)
+          | _ -> None) !r
+    | _ -> []
+  in
+  let wire_name k = match List.assoc_opt k wire with Some o -> o | None -> k in
   let out = empty_map () in
   List.iter (fun k ->
       let v = getp reqmatch k in
-      if not (is_noval v) && k <> "$action" && not (contains_param k) then setp out k v)
+      if not (is_noval v) && k <> "$action" && not (contains_param k) then
+        setp out (wire_name k) v)
     (keysof reqmatch);
   out
 

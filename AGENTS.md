@@ -1024,6 +1024,13 @@ Every generated ts SDK ships its own coverage-oriented tests:
 - `test/pipeline.test.ts` — direct unit tests of the operation-pipeline
   utilities' error/edge branches (missing spec/response, 4xx, transport
   failure, feature ordering, auth shaping) reached via `stdutil`.
+- `test/definition.test.ts` + `test/definition-runner.ts` — every HTTP
+  operation checked against the API DEFINITION, not the model: route,
+  declared query parameters, the credential its security scheme names, and
+  the records its own response example holds. The plan comes from
+  `definitionPlan` (resolved facts apidef publishes); ts and js only, like
+  the live suite. It is the suite that sees a wrong unwrap, a dropped Basic
+  credential and an echoed path parameter, which model-derived tests pass.
 - `npm run test-coverage` (or `make coverage`) enforces a coverage floor on
   the SDK source (test files excluded); thresholds live in the generated
   `package.json`. Note: `--enable-source-maps` (used by `npm test`) maps

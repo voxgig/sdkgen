@@ -9,7 +9,7 @@ each piece belongs.
 
 | Input | Where it comes from | Why not somewhere else |
 | --- | --- | --- |
-| **Credential** | `<PROJ>_APIKEY` (and `<PROJ>_SECRET` for HTTP Basic) | A secret. It belongs in the environment, never in the repo. |
+| **Credential** | `<PROJ>_APIKEY` (and `<PROJ>_SECRET` for an HTTP Basic API that takes a password, sent as empty when unset) | A secret. It belongs in the environment, never in the repo. |
 | **Server variables** | `<PROJ>_SERVER_<NAME>` | Not a secret, but per-run: a tenant or account id identifies *which* deployment this run points at. |
 | **Everything else** | `test/sdk-test-control.json`, under `test.client.options` | Configuration: it describes the API, is the same on every run, and belongs in the repo next to the API it describes. |
 

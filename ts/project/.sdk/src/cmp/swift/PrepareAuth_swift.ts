@@ -148,9 +148,11 @@ function basicBlock(spec: AuthSpec): string {
   if (!spec.basic) return ''
 
   return `
-  // True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+  // True HTTP Basic Auth joins the two credentials, base64-encoded - a single
   // token in the header (the branch below) can never authenticate against
   // an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+  // The password may be empty (RFC 7617): Lob, for one, documents the key as
+  // the user with a blank password (\`curl -u key:\`).
   if true == gpath(options, "auth", "basic").asBool {
     let secret = getprop(.map(options), .string(optionSecret), .string(notFound))
 
@@ -159,12 +161,12 @@ function basicBlock(spec: AuthSpec): string {
       noSecret = true
     }
 
-    if skip || noSecret {
+    if skip {
       headers.entries.removeValue(forKey: headerAuth)
     } else {
       var authPrefix = ""
       if let ap = gpath(options, "auth", "prefix").asString { authPrefix = ap }
-      let joined = (apikey.asString ?? "") + ":" + (secret.asString ?? "")
+      let joined = (apikey.asString ?? "") + ":" + (noSecret ? "" : (secret.asString ?? ""))
       let b64 = Data(joined.utf8).base64EncodedString()
       // Empty prefix (raw credential) must not add a leading space.
       headers.entries[headerAuth] = .string(authPrefix == "" ? b64 : authPrefix + " " + b64)

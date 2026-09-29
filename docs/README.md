@@ -32,6 +32,7 @@ that matches what you are trying to do right now:
 - [Migrate a bundled target into a package](./how-to/migrate-a-bundled-target.md)
 - [Simulate network conditions in offline tests](./how-to/simulate-network.md)
 - [Run a generated SDK's live suite](./how-to/run-a-live-suite.md)
+- [Check a generated SDK against its API definition](./how-to/check-against-the-definition.md)
 - [Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md)
 - [Author a brand-new language target](./how-to/author-a-new-language.md)
 - [Debug a failing generated target](./how-to/debug-generation.md)

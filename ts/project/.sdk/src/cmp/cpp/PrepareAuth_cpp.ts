@@ -165,9 +165,11 @@ ${clear(spec.where, 4)}
 `
 
   const basicBlock = !withBasic ? '' : `
-  // True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+  // True HTTP Basic Auth joins the two credentials, base64-encoded - a single
   // token in the header (the branch below) can never authenticate against
   // an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+  // The password may be empty (RFC 7617): Lob, for one, documents the key as
+  // the user with a blank password (\`curl -u key:\`).
   if (is_true(Struct::getpath(options, {"auth", "basic"}))) {
     Value secret = getp(options, "secret", Value(NOT_FOUND));
 
@@ -178,13 +180,13 @@ ${clear(spec.where, 4)}
       noSecret = true;
     }
 
-    if (skip || noSecret) {
+    if (skip) {
 ${clear(spec.where, 6)}
     } else {
       std::string authPrefix = as_str(Struct::getpath(options, {"auth", "prefix"}));
       std::string b64 = authBase64(
         (apikey.is_string() ? apikey.as_string() : "") + ":" +
-        (secret.is_string() ? secret.as_string() : ""));
+        (!noSecret && secret.is_string() ? secret.as_string() : ""));
       if (authPrefix.empty()) {
         map_put(headers, CRED_NAME, Value(b64));
       } else {

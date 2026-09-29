@@ -3445,9 +3445,8 @@ main: kit: flow: BasicNamespaceFlow: {
 // literal `authorization` fails while the SDK places the credential rightly.
 
 // The Basic entry selects the HTTP Basic branch, whose generated config
-// carries `auth.basic: true`: a probe supplying no secret sees nothing placed
-// and reads an auth-active SDK as a public one, which leaves every assertion
-// after it unable to fail.
+// carries `auth.basic: true`: a probe that left the branch on would read a
+// base64 pair where it expects the key it passed, so the probes switch it off.
 
 // A cookie credential is not here. Its placement cases pass, but the SDK
 // clears a cookie credential by the scheme name while it lives under
@@ -3460,7 +3459,7 @@ main: kit: config: auth: { active: true, prefix: '', in: 'header', name: 'X-Api-
 `,
   },
   {
-    name: 'an HTTP Basic API, where a secretless probe places nothing',
+    name: 'an HTTP Basic API, whose config takes the Basic branch',
     extra: `
 main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'X-Api-Key' }
 `,

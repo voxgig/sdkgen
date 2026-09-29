@@ -146,22 +146,24 @@ function basicBlock(spec: AuthSpec): string {
   if (!spec.basic) return ''
 
   return `
-    // True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+    // True HTTP Basic Auth joins the two credentials, base64-encoded - a single
     // token in the header (the branch below) can never authenticate against
     // an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+    // The password may be empty (RFC 7617): Lob, for one, documents the key as
+    // the user with a blank password (\`curl -u key:\`).
     if (java.lang.Boolean.TRUE == Struct.getpath(options, java.util.List.of("auth", "basic"))) {
       val secret = Struct.getprop(options, OPTION_SECRET, NOT_FOUND)
       val noApikey = apikey == null || (apikey match { case s: String => NOT_FOUND == s || "" == s; case _ => false })
       val noSecret = secret == null || (secret match { case s: String => NOT_FOUND == s || "" == s; case _ => false })
 
-      if (noApikey || noSecret) {
+      if (noApikey) {
         headers.remove(CRED_NAME)
       } else {
         var basicPrefix = ""
         Struct.getpath(options, java.util.List.of("auth", "prefix")) match { case s: String => basicPrefix = s; case _ => }
         val b64 = Base64.getEncoder.encodeToString(
           ((apikey match { case s: String => s; case _ => "" }) + ":" +
-            (secret match { case s: String => s; case _ => "" })).getBytes(StandardCharsets.UTF_8))
+            (if (noSecret) "" else secret match { case s: String => s; case _ => "" })).getBytes(StandardCharsets.UTF_8))
         if ("" == basicPrefix) headers.put(CRED_NAME, b64)
         else headers.put(CRED_NAME, basicPrefix + " " + b64)
       }

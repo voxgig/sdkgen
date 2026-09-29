@@ -139,21 +139,23 @@ ${bag}
 `
 
   const body = basicHere
-    ? `        # True HTTP Basic Auth needs TWO credentials, base64-joined - a single
-        # token in the header (the branch below) can never authenticate
-        # against an API that actually checks
-        # \`Authorization: Basic base64(user:pass)\`.
+    ? `        # True HTTP Basic Auth joins the two credentials, base64-encoded - a
+        # single token in the header (the branch below) can never
+        # authenticate against an API that actually checks
+        # \`Authorization: Basic base64(user:pass)\`. The password may be
+        # empty (RFC 7617): Lob, for one, documents the key as the user with
+        # a blank password (\`curl -u key:\`).
         if S.getpath(options, "auth.basic") == true do
           secret = S.getprop(options, @option_secret, @not_found)
           no_apikey = not is_binary(apikey) or apikey == @not_found or apikey == ""
           no_secret = not is_binary(secret) or secret == @not_found or secret == ""
 
-          if no_apikey or no_secret do
+          if no_apikey do
             S.delprop(headers, @cred_name)
           else
             ap = S.getpath(options, "auth.prefix")
             auth_prefix = if is_binary(ap), do: ap, else: ""
-            b64 = Base.encode64(apikey <> ":" <> secret)
+            b64 = Base.encode64(apikey <> ":" <> if(no_secret, do: "", else: secret))
             hv = if auth_prefix != "", do: auth_prefix <> " " <> b64, else: b64
             S.setprop(headers, @cred_name, hv)
           end
