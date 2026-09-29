@@ -11,10 +11,14 @@ decisions are required.
 ## What you'll need
 
 - Node.js (a recent LTS).
-- An OpenAPI 3 spec file (`.yaml` or `.json`) with a top-level `servers`
-  entry naming the base URL of your API. apidef refuses a spec without one,
-  and a spec written by a framework such as FastAPI omits it unless the app
-  declares it, so add one before you start:
+- An OpenAPI 3 spec file (`.yaml` or `.json`). A top-level `servers` entry
+  names the base URL of your API. A spec without one still builds (apidef
+  8.20.0 or later): the SDK then takes the base URL as its `base` server
+  variable, passed at construction as `server: { base: 'https://api.example.com' }`,
+  or the project fixes one with the `server` build option in
+  `.sdk/build/apidef.js`. A spec written by a framework such as FastAPI omits
+  the entry unless the app declares it. To fix the URL in the spec instead,
+  add one before you start:
 
   ```yaml
   servers:
