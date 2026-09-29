@@ -1111,6 +1111,20 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // The Features line printed `undefined` once per feature: it read `f.n`
+  // from featureDocs, whose entries carry `name`.
+  test('the root readme names each active feature', async () => {
+    const out = await generate(['ts'])
+    const readme = out['README.md']
+    ok(null != readme, 'no root readme was generated')
+
+    const line = readme.split('\n').find((l: string) => l.startsWith('> **Features:**'))
+    ok(null != line, 'the root readme has no Features line')
+    ok(!line!.includes('undefined'), 'the Features line prints undefined: ' + line)
+    ok(line!.includes('`test`'), 'the Features line does not name the test feature: ' + line)
+  })
+
+
   test('elixir: no empty argument in a singleton load example', async () => {
     const out = await generate(['elixir'])
 
