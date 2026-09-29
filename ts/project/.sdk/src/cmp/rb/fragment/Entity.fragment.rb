@@ -34,6 +34,21 @@ class EntyClass
     @_name
   end
 
+  # The entity serialises and prints as its data (clean honours `to_h`),
+  # never as the client it holds or the match it absorbed: a query
+  # credential comes back in resmatch.
+  def to_h
+    VoxgigStruct.clone(@_data)
+  end
+
+  def to_s
+    "EntityName " + VoxgigStruct.jsonify(@_data)
+  end
+
+  def inspect
+    to_s
+  end
+
   # Every operation resolves to the entity; `remove` additionally marks
   # it. The instance KEEPS the data it held — a caller can still read what
   # was deleted — but it is no longer a live record. See AGENTS.md.
@@ -239,9 +254,34 @@ class EntyClass
 
       out
     rescue StandardError => operr
+      ctx.ctrl.err = operr
+
       # #PreUnexpected-Hook
 
-      raise operr
+      e = _unexpected(ctx, operr)
+      raise e unless e.nil?
+      nil
     end
+  end
+
+  # An exception the pipeline did not build still leaves through the
+  # caller: it is cleaned, and so is the explain record it interrupted.
+  # Answers nil when throwing is disabled, as the pipeline's own errors do.
+  def _unexpected(ctx, err)
+    clean = @_utility.clean
+    if ctx.ctrl.explain.is_a?(Hash)
+      cleaned = clean.call(ctx, ctx.ctrl.explain)
+      ctx.ctrl.explain.replace(cleaned) if cleaned.is_a?(Hash) && !cleaned.equal?(ctx.ctrl.explain)
+      er = ctx.ctrl.explain["result"]
+      er.delete("err") if er.is_a?(Hash)
+      cleanerr = clean.call(ctx, { "message" => err.message.to_s, "class" => err.class.name })
+      if ctx.ctrl.explain["err"].nil?
+        ctx.ctrl.explain["err"] = cleanerr
+      elsif ctx.ctrl.explain["err"]["message"] != cleanerr["message"]
+        ctx.ctrl.explain["unexpected"] = cleanerr
+      end
+    end
+    return nil if ctx.ctrl.throw_err == false
+    clean.call(ctx, err)
   end
 end

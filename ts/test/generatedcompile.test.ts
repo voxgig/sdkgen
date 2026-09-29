@@ -3925,6 +3925,17 @@ const CLEAN_LANES: CleanLane[] = [
     needs: 'python3 with pytest',
     command: () => pytest(['test/test_clean.py', '-q', '-s']),
   },
+  {
+    target: 'rb',
+    runner: 'test/clean_test.rb',
+    needs: 'ruby with minitest',
+    command: () => {
+      const rb = toolchain('ruby')
+      if (null == rb) return null
+      if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
+      return { bin: rb, args: ['test/clean_test.rb'] }
+    },
+  },
 ]
 
 

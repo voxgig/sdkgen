@@ -1,9 +1,11 @@
 # ProjectName SDK utility: make_options
 require_relative 'struct/voxgig_struct'
 require_relative '../schema'
+require_relative 'clean'
 module ProjectNameUtilities
   MakeOptions = ->(ctx) {
     options = ctx.options || {}
+    options = {} unless options.is_a?(Hash)
 
     # Merge custom utility overrides.
     #
@@ -58,6 +60,16 @@ module ProjectNameUtilities
 
     opts.delete('auth') if authsuppressed
 
+    # The secret registry exists BEFORE validation, fed from the raw input, so
+    # the constructor's own rejection of a mistyped credential is clean too.
+    cleancfg = CleanSupport.make_config(VoxgigStruct.merge(
+      [{}, ProjectNameSchema::OPTSPEC["clean"], opts["clean"]].select { |c| c.is_a?(Hash) }))
+    cleanctx = { "options" => { "__derived__" => { "clean" => cleancfg } } }
+    ([opts["apikey"], opts["secret"]] +
+      CleanSupport.splitvalues(VoxgigStruct.getpath(opts, "clean.values"))).each do |raw|
+      CleanSupport.add(cleanctx, raw)
+    end
+
     # Feature add-order. options["feature"] may be given as an ordered ARRAY of
     # { "name" => ..., "active" => ..., ... } entries (the array position IS the
     # order in which features are added), or as a { "name" => {opts} } map.
@@ -103,7 +115,11 @@ module ProjectNameUtilities
     # nested hashes as merge TARGETS — one instance's options (server,
     # headers, ...) would contaminate every instance constructed after it.
     merged = VoxgigStruct.merge([{}, VoxgigStruct.clone(cfgopts), opts])
-    validated = VoxgigStruct.validate(merged, optspec)
+    begin
+      validated = VoxgigStruct.validate(merged, optspec)
+    rescue StandardError => e
+      raise CleanSupport.clean(cleanctx, e)
+    end
     opts = validated.is_a?(Hash) ? validated : {}
 
     # Restore the suppression the optspec default would otherwise erase.
@@ -146,11 +162,6 @@ module ProjectNameUtilities
       opts["system"]["fetch"] = sys_fetch
     end
 
-    clean_keys = VoxgigStruct.getpath(opts, "clean.keys")
-    clean_keys = "key,token,id" unless clean_keys.is_a?(String)
-    parts = clean_keys.split(",").map(&:strip).reject(&:empty?).map { |p| VoxgigStruct.escre(p) }
-    keyre = parts.join("|")
-
     # Resolve the feature add-order: an explicit array order (above) wins;
     # otherwise order the map test-first, then the remaining names sorted, so
     # the outcome is deterministic and `test` is always the base transport.
@@ -176,9 +187,19 @@ module ProjectNameUtilities
       end
     end
 
-    derived = { "clean" => keyre.empty? ? {} : { "keyre" => keyre } }
-    derived["featureorder"] = featureorder
-    opts["__derived__"] = derived
+    opts["__derived__"] = {
+      "clean" => cleancfg,
+      "featureorder" => featureorder,
+    }
+
+    # Every string under a sensitive name anywhere in the options - a custom
+    # auth header, a feature credential - is a secret the SDK now handles.
+    optctx = { "options" => opts }
+    VoxgigStruct.walk(VoxgigStruct.clone(opts.reject { |k, _| k == "__derived__" }),
+      ->(key, val, _parent, _path) {
+        CleanSupport.add(optctx, val) if val.is_a?(String) && CleanSupport.key?(optctx, key)
+        val
+      })
 
     opts
   }

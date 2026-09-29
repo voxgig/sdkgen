@@ -1,0 +1,346 @@
+import {
+  cmp,
+  File,
+  Content,
+  isAuthSuppressed,
+  isHttpBasicAuth,
+  resolveAuthIn,
+  resolveAuthName,
+} from '@voxgig/sdkgen'
+
+
+// The canary sweep: every credential slot holds a distinctive value, every
+// diagnostic feature this SDK ships is switched on with a capturing sink, a
+// real operation runs through every outcome, and every string that leaves
+// the SDK is searched for the canaries and their encoded forms. It also
+// proves its own sensitivity: with clean switched off the canary MUST show.
+const TestClean = cmp(function TestClean(props: any) {
+  const { model } = props.ctx$
+  const { target } = props
+
+  const auth = {
+    suppressed: isAuthSuppressed(model),
+    where: resolveAuthIn(model),
+    name: 'header' === resolveAuthIn(model)
+      ? resolveAuthName(model).toLowerCase() : resolveAuthName(model),
+    basic: isHttpBasicAuth(model),
+  }
+
+  File({ name: 'clean_test.' + target.ext }, () => Content(render(model.const.Name, auth)))
+})
+
+
+function rbstr(s: string): string {
+  return JSON.stringify(String(s)).replace(/#\{/g, '\\#{')
+}
+
+
+// The class name carries the project prefix, and every helper sits inside
+// it: the target's constant guard reads top-level declarations.
+function render(Name: string, auth: {
+  suppressed: boolean, where: string, name: string, basic: boolean
+}): string {
+  return `# ${Name} SDK clean test
+#
+# The canary sweep: every credential slot holds a distinctive value, every
+# diagnostic feature this SDK ships is switched on with a capturing sink, a
+# real operation runs through every outcome, and every string that leaves
+# the SDK is searched for the canaries and their encoded forms. It also
+# proves its own sensitivity: with clean switched off the canary MUST show.
+
+require "minitest/autorun"
+require "json"
+require "pp"
+require_relative "../${Name}_sdk"
+
+class ${Name}CleanTest < Minitest::Test
+  # Generated: the credential's wire placement is fixed when the SDK is built.
+  AUTH = {
+    "suppressed" => ${auth.suppressed},
+    "where" => ${rbstr(auth.where)},
+    "name" => ${rbstr(auth.name)},
+    "basic" => ${auth.basic},
+  }.freeze
+
+  CANARY = {
+    "apikey" => "CANARY-APIKEY-k9x2m7q4p1",
+    "secret" => "CANARY-SECRET-w3e8r5t2y6",
+    "header" => "CANARY-HEADER-z1x4c7v0b3",
+    "value" => "CANARY-VALUE-n5m8b2v9c4",
+  }.freeze
+
+  MASK = "[redacted]"
+
+  # encodeURIComponent, the form a query credential travels in.
+  def self.pct(value)
+    value.gsub(/[^A-Za-z0-9\\-_.!~*'()]/) { |c| c.bytes.map { |b| format("%%%02X", b) }.join }
+  end
+
+  # Every form a canary can travel in.
+  FORMS = (CANARY.values.flat_map { |v| [v, [v].pack("m0"), pct(v)] } +
+    [["#{CANARY['apikey']}:#{CANARY['secret']}"].pack("m0")]).freeze
+
+  module Sweep
+    module_function
+
+    # Header maps keep the caller's spelling; the assertion should not care.
+    def header(map, name)
+      return nil unless map.is_a?(Hash)
+      map.each { |k, v| return v if k.to_s.downcase == name.downcase }
+      nil
+    end
+
+    def leaks(text)
+      FORMS.select { |f| text.include?(f) }
+    end
+
+    # Every printed form of a value that left the SDK.
+    def forms(name, val)
+      out = []
+      surface(out, name, "json") { JSON.generate(val) }
+      surface(out, name, "string") { val.to_s }
+      surface(out, name, "inspect") { val.inspect }
+      surface(out, name, "pp") { PP.pp(val, +"") }
+      if val.is_a?(Exception)
+        surface(out, name, "message") { val.message.to_s }
+        surface(out, name, "full") { val.full_message(highlight: false) }
+        surface(out, name, "ivars") do
+          val.instance_variables.map { |v| [v, val.instance_variable_get(v)] }.inspect
+        end
+      end
+      out
+    end
+
+    def surface(out, name, kind)
+      out << { "name" => "#{name}:#{kind}", "text" => yield.to_s }
+    rescue StandardError
+      nil
+    end
+
+    def response(status, data, headers = nil)
+      h = { "content-type" => "application/json" }.merge(headers || {})
+      {
+        "status" => status,
+        "statusText" => status < 400 ? "OK" : "ERR",
+        "headers" => h,
+        "json" => -> { data },
+        "body" => JSON.generate(data),
+      }
+    end
+  end
+
+  # Captures the serialised context from inside the pipeline: what a hook
+  # author would hand to a logger.
+  class CaptureFeature < ${Name}BaseFeature
+    def initialize(sinks)
+      super()
+      @name = "capture"
+      @version = "0.0.1"
+      @active = true
+      @sinks = sinks
+    end
+
+    def PreRequest(ctx); @sinks.concat(Sweep.forms("ctx@PreRequest", ctx)); end
+    def PreResponse(ctx); @sinks.concat(Sweep.forms("ctx@PreResponse", ctx)); end
+    def PreUnexpected(ctx); @sinks.concat(Sweep.forms("ctx@PreUnexpected", ctx)); end
+  end
+
+  class CaptureLogger
+    def initialize(sinks)
+      @sinks = sinks
+    end
+
+    def puts(line)
+      @sinks << { "name" => "log", "text" => line.to_s }
+    end
+  end
+
+  # Each scenario answers the transport's [response, err] pair.
+  SCENARIOS = [
+    ["ok", ->(_url, _fd) {
+      [Sweep.response(200, { "id" => "i1", "name" => "n1" },
+        { "x-session-token" => "RESP-TOKEN-a1b2c3d4e5" }), nil]
+    }],
+    ["notfound", ->(_url, _fd) { [Sweep.response(404, { "error" => "no such record" }), nil] }],
+    ["server", ->(_url, _fd) { [Sweep.response(500, { "error" => "boom" }), nil] }],
+    ["transport", ->(url, _fd) {
+      [nil, RuntimeError.new("socket hang up (URL was: \\"#{url}\\")")]
+    }],
+    ["notjson", ->(_url, _fd) {
+      [{
+        "status" => 200, "statusText" => "OK", "headers" => {},
+        "json" => -> { raise "Unexpected token < in JSON" },
+        "body" => "<html>",
+      }, nil]
+    }],
+  ].freeze
+
+  VARIANTS = [
+    ["throw", -> { {} }],
+    ["explain", -> { { "explain" => {} } }],
+    ["nothrow", -> { { "throw" => false, "explain" => {} } }],
+  ].freeze
+
+  # True when this SDK was generated with the named feature.
+  def has_feature?(name)
+    f = ${Name}Config.shared_config["feature"]
+    f.is_a?(Hash) && !f[name].nil?
+  end
+
+  def make_sdk(scenario, sinks, cleanopts = nil)
+    capture = ->(name) { ->(rec) { sinks.concat(Sweep.forms(name, rec)) } }
+    feature = {}
+    feature["log"] = { "active" => true, "logger" => CaptureLogger.new(sinks) } if has_feature?("log")
+    feature["debug"] = { "active" => true, "on_entry" => capture.call("debug") } if has_feature?("debug")
+    feature["audit"] = { "active" => true, "sink" => capture.call("audit") } if has_feature?("audit")
+    feature["telemetry"] = { "active" => true, "exporter" => capture.call("telemetry") } if has_feature?("telemetry")
+    feature["cost"] = { "active" => true, "sink" => capture.call("cost") } if has_feature?("cost")
+    feature["metrics"] = { "active" => true } if has_feature?("metrics")
+    feature["clienttrack"] = { "active" => true } if has_feature?("clienttrack")
+
+    respond = scenario[1]
+    ${Name}SDK.new({
+      "apikey" => CANARY["apikey"],
+      "secret" => CANARY["secret"],
+      "headers" => { "X-Custom-Token" => CANARY["header"] },
+      "clean" => { "values" => CANARY["value"] }.merge(cleanopts || {}),
+      "feature" => feature,
+      "extend" => [CaptureFeature.new(sinks)],
+      "utility" => { "fetcher" => ->(_ctx, url, fetchdef) { respond.call(url, fetchdef) } },
+    })
+  end
+
+  # The first operation that completes against a plain 200 with no
+  # arguments (a required path parameter would fail before the request is
+  # built). An entity accessor is a capitalised client method whose result
+  # answers get_name, as the feature corpus runner finds them.
+  def usable_op
+    plain = ${Name}SDK.new({
+      "apikey" => CANARY["apikey"],
+      "utility" => { "fetcher" => ->(_ctx, _url, _fd) { [Sweep.response(200, { "id" => "i1" }), nil] } },
+    })
+
+    found = {}
+    plain.public_methods(false).each do |m|
+      name = m.to_s
+      next unless name[0] =~ /[A-Z]/
+      ent = begin
+        plain.public_send(m)
+      rescue StandardError
+        next
+      end
+      next unless ent.respond_to?(:get_name)
+      found[ent.get_name.to_s] = name
+    end
+
+    found.keys.sort.each do |entname|
+      accessor = found[entname]
+      %w[list load create update remove].each do |op|
+        next unless plain.public_send(accessor).respond_to?(op)
+        begin
+          plain.public_send(accessor).public_send(op, {}, {})
+          return { "accessor" => accessor, "op" => op }
+        rescue StandardError
+          next
+        end
+      end
+    end
+    nil
+  end
+
+  def drive(sdk, target, ctrl, sinks)
+    out = nil
+    err = nil
+    begin
+      out = sdk.public_send(target["accessor"]).public_send(target["op"], {}, ctrl)
+    rescue StandardError => e
+      err = e
+    end
+    sinks.concat(Sweep.forms("error", err)) unless err.nil?
+    sinks.concat(Sweep.forms("result", out)) unless out.nil?
+    sinks.concat(Sweep.forms("explain", ctrl["explain"])) unless ctrl["explain"].nil?
+    err
+  end
+
+  def test_no_credential_leaves_the_sdk_in_any_form
+    target = usable_op
+    refute_nil target, "no operation completes without arguments; nothing to sweep"
+
+    sinks = []
+    errors = {}
+    explains = {}
+
+    SCENARIOS.each do |scenario|
+      VARIANTS.each do |vname, make_ctrl|
+        sdk = make_sdk(scenario, sinks)
+        ctrl = make_ctrl.call
+        err = drive(sdk, target, ctrl, sinks)
+        key = "#{scenario[0]}/#{vname}"
+        errors[key] = err unless err.nil?
+        explains[key] = ctrl["explain"] unless ctrl["explain"].nil?
+        sinks.concat(Sweep.forms("sdk", sdk))
+      end
+    end
+
+    leaked = sinks
+      .map { |s| [s["name"], Sweep.leaks(s["text"])] }
+      .reject { |_, found| found.empty? }
+
+    puts "clean: swept #{sinks.length} surface(s), #{leaked.length} leak(s)"
+
+    assert_equal 0, leaked.length, "credential leaked through: " +
+      leaked.map { |name, found| "#{name} [#{found.join(', ')}]" }.join("; ")
+
+    # The positive half: the slot the credential travelled in is masked,
+    # and an unregistered token in a response header is masked by name.
+    notfound = errors["notfound/throw"]
+    refute_nil notfound, "the 404 scenario must raise"
+    assert_equal 404, notfound.status
+    unless AUTH["suppressed"]
+      spec = notfound.spec.is_a?(Hash) ? notfound.spec : {}
+      if AUTH["where"] == "query"
+        assert_equal MASK, Sweep.header(spec["query"], AUTH["name"])
+      elsif AUTH["where"] == "cookie"
+        cookie = Sweep.header(spec["headers"], "cookie").to_s
+        assert cookie.include?(MASK), "cookie: #{cookie}"
+      else
+        got = Sweep.header(spec["headers"], AUTH["name"]).to_s
+        assert got.end_with?(MASK), "#{AUTH['name']}: #{got}"
+      end
+    end
+    assert_equal MASK, Sweep.header(notfound.spec["headers"], "x-custom-token")
+
+    explained = explains["ok/explain"] || {}
+    refute_nil explained["result"], "the explain record should carry the result"
+    assert_equal MASK, Sweep.header(explained["result"]["headers"], "x-session-token")
+  end
+
+  def test_the_sweep_can_see_a_leak_clean_switched_off_shows_the_credential
+    target = usable_op
+    refute_nil target
+
+    sinks = []
+    sdk = make_sdk(SCENARIOS[1], sinks, { "active" => false })
+    err = drive(sdk, target, {}, sinks)
+    refute_nil err
+
+    leaked = sinks.select { |s| !Sweep.leaks(s["text"]).empty? }
+    assert !leaked.empty?, "with clean off, nothing showed the canary: the sweep is blind"
+
+    unless AUTH["suppressed"]
+      # With clean off the spec is the live object; its default print shows
+      # every field.
+      text = err.spec.inspect
+      pair = ["#{CANARY['apikey']}:#{CANARY['secret']}"].pack("m0")
+      assert text.include?(CANARY["apikey"]) || text.include?(pair),
+        "the raw spec should carry the credential when clean is off"
+    end
+  end
+end
+`
+}
+
+
+export {
+  TestClean
+}

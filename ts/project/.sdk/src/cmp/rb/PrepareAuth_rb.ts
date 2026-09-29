@@ -141,6 +141,9 @@ end
         # \`pack("m0")\` rather than \`Base64.strict_encode64\`: base64 left
         # Ruby's default gems in 3.4, and pack is core.
         b64 = ["#{apikey}:#{no_secret ? "" : secret}"].pack("m0")
+        # The joined, encoded pair is a wire form neither credential's own
+        # registration covers.
+        ctx.utility.clean_add.call(ctx, b64)
         headers[HEADER_AUTH] =
           auth_prefix.empty? ? b64 : "#{auth_prefix} #{b64}"
       end
