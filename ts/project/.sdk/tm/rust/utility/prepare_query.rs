@@ -45,6 +45,21 @@ pub fn prepare_query_util(ctx: &Rc<Context>) -> Value {
         false
     };
 
+    // A header parameter travels in the headers, which prepare_headers fills.
+    let aheader = getp(&getp(&point, "args"), "header");
+    let in_header = |key: &str| -> bool {
+        if let Value::List(hl) = &aheader {
+            for hd in hl.borrow().iter() {
+                if let Value::Str(s) = getp(hd, "name") {
+                    if s == key {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    };
+
     // A query parameter travels under the name the definition gives it, its
     // orig, which the model may have renamed for the caller.
     let aquery = getp(&getp(&point, "args"), "query");
@@ -69,7 +84,9 @@ pub fn prepare_query_util(ctx: &Rc<Context>) -> Value {
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect();
         for (key, val) in entries {
-            if !val.is_noval() && !val.is_null() && "$action" != key && !contains(&key) && !in_args(&key) {
+            if !val.is_noval() && !val.is_null() && "$action" != key && !contains(&key) && !in_args(&key)
+                && !in_header(&key)
+            {
                 setp(&out, &wire_name(&key), val);
             }
         }

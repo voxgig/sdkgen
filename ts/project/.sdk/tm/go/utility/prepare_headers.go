@@ -1,6 +1,8 @@
 package utility
 
 import (
+	"strings"
+
 	vs "github.com/voxgig/struct"
 
 	"GOMODULE/core"
@@ -9,14 +11,34 @@ import (
 func prepareHeadersUtil(ctx *core.Context) map[string]any {
 	options := ctx.Client.OptionsMap()
 
-	headers := vs.GetProp(options, "headers")
-	if headers == nil {
-		return map[string]any{}
+	out := map[string]any{}
+	if headers := vs.GetProp(options, "headers"); headers != nil {
+		if om, ok := vs.Clone(headers).(map[string]any); ok {
+			out = om
+		}
 	}
 
-	out := vs.Clone(headers)
-	if om, ok := out.(map[string]any); ok {
-		return om
+	// A header parameter travels as a header, under the name the definition
+	// gives it, and only from this call's own arguments.
+	if hl, ok := vs.GetPath(ctx.Point, []any{"args", "header"}).([]any); ok {
+		for _, hd := range hl {
+			name, _ := vs.GetProp(hd, "name").(string)
+			orig, _ := vs.GetProp(hd, "orig").(string)
+			if "" == name {
+				continue
+			}
+			if "" == orig {
+				orig = name
+			}
+			val := vs.GetProp(ctx.Reqmatch, name)
+			if val == nil {
+				val = vs.GetProp(ctx.Reqdata, name)
+			}
+			if val != nil {
+				out[strings.ToLower(orig)] = vs.Stringify(val)
+			}
+		}
 	}
-	return map[string]any{}
+
+	return out
 }

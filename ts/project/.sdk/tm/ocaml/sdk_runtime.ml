@@ -355,9 +355,29 @@ let prepare_method_util (ctx : ctx) : string =
 
 let prepare_headers_util (ctx : ctx) : value =
   let options = client_options_map (cc ctx) in
-  match getp options "headers" with
-  | Noval -> empty_map ()
-  | h -> (match clone h with Map _ as m -> m | _ -> empty_map ())
+  let out =
+    match getp options "headers" with
+    | Noval -> empty_map ()
+    | h -> (match clone h with Map _ as m -> m | _ -> empty_map ())
+  in
+  (* A header parameter travels as a header, under the name the definition
+   * gives it, and only from this call's own arguments. *)
+  (match getp (getp ctx.c_point "args") "header" with
+   | List r ->
+     List.iter (fun hd ->
+         match getp hd "name" with
+         | Str name when name <> "" ->
+           let wire = match getp hd "orig" with Str o when o <> "" -> o | _ -> name in
+           let v = match getp ctx.c_reqmatch name with
+             | Noval | Null -> getp ctx.c_reqdata name
+             | v -> v
+           in
+           (match v with
+            | Noval | Null -> ()
+            | v -> setp out (String.lowercase_ascii wire) (Str (stringify v)))
+         | _ -> ()) !r
+   | _ -> ());
+  out
 
 let param_util (ctx : ctx) (paramdef : value) : value =
   let point = ctx.c_point and spec = ctx.c_spec in
@@ -418,7 +438,13 @@ let prepare_query_util (ctx : ctx) : value =
     | List r -> List.map (fun pd -> getp pd "name") !r
     | _ -> []
   in
-  let params = params @ arg_names in
+  (* A header parameter travels in the headers, which prepare_headers fills. *)
+  let header_names =
+    match getp (getp ctx.c_point "args") "header" with
+    | List r -> List.map (fun hd -> getp hd "name") !r
+    | _ -> []
+  in
+  let params = params @ arg_names @ header_names in
   let contains_param s = List.exists (fun v -> match v with Str x -> x = s | _ -> false) params in
   (* A query parameter travels under the name the definition gives it, its
    * orig, which the model may have renamed for the caller. *)

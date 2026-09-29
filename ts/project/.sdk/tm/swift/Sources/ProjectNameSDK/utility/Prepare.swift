@@ -39,8 +39,23 @@ func preparePathUtil(_ ctx: Context) -> String {
 func prepareHeadersUtil(_ ctx: Context) -> VMap {
   let options = ctx.client!.optionsMap()
   let headers = gp(options, "headers")
-  if isNil(headers) { return VMap() }
-  return clone(headers).asMap ?? VMap()
+  let out = isNil(headers) ? VMap() : (clone(headers).asMap ?? VMap())
+
+  // A header parameter travels as a header, under the name the definition
+  // gives it, and only from this call's own arguments.
+  if let ahl = gpath(ctx.point, "args", "header").asList {
+    for hd in ahl.items {
+      guard let name = gp(hd, "name").asString, !name.isEmpty else { continue }
+      let orig = gp(hd, "orig").asString ?? ""
+      let wire = orig.isEmpty ? name : orig
+      var val = gp(ctx.reqmatch, name)
+      if isNil(val) { val = gp(ctx.reqdata, name) }
+      if !isNil(val) {
+        out.entries[wire.lowercased()] = .string(stringify(val))
+      }
+    }
+  }
+  return out
 }
 
 func prepareParamsUtil(_ ctx: Context) -> VMap {
@@ -71,6 +86,12 @@ func prepareQueryUtil(_ ctx: Context) -> VMap {
   if let apl = gpath(ctx.point, "args", "params").asList {
     for pd in apl.items {
       paramnames.append(gp(pd, "name"))
+    }
+  }
+  // A header parameter travels in the headers, which prepareHeaders fills.
+  if let ahl = gpath(ctx.point, "args", "header").asList {
+    for hd in ahl.items {
+      paramnames.append(gp(hd, "name"))
     }
   }
 

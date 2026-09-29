@@ -8,10 +8,27 @@ def prepare_headers_util(ctx):
     options = ctx.client.options_map()
     headers = vs.getprop(options, "headers")
 
-    if headers is None:
-        return {}
+    out = {}
+    if headers is not None:
+        cloned = vs.clone(headers)
+        if isinstance(cloned, dict):
+            out = cloned
 
-    out = vs.clone(headers)
-    if isinstance(out, dict):
-        return out
-    return {}
+    # A header parameter travels as a header, under the name the definition
+    # gives it, and only from this call's own arguments.
+    hl = vs.getpath(ctx.point, "args.header") if ctx.point is not None else None
+    if isinstance(hl, list):
+        for hd in hl:
+            name = vs.getprop(hd, "name")
+            if not isinstance(name, str) or name == "":
+                continue
+            orig = vs.getprop(hd, "orig")
+            if not isinstance(orig, str) or orig == "":
+                orig = name
+            val = vs.getprop(ctx.reqmatch or {}, name)
+            if val is None:
+                val = vs.getprop(ctx.reqdata or {}, name)
+            if val is not None:
+                out[orig.lower()] = vs.stringify(val)
+
+    return out

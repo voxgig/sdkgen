@@ -31,6 +31,20 @@ public static partial class SdkUtility
             }
         }
 
+        // A header parameter travels in the headers, which PrepareHeaders
+        // fills.
+        if (point != null &&
+            StructUtils.GetPath(point, StructUtils.Jt("args", "header")) is List<object?> ahl)
+        {
+            foreach (var hd in ahl)
+            {
+                if (StructUtils.GetProp(hd, "name") is string hname)
+                {
+                    paramnames.Add(hname);
+                }
+            }
+        }
+
         // A query parameter travels under the name the definition gives it,
         // its orig, which the model may have renamed for the caller.
         var wire = new Dictionary<string, string>();

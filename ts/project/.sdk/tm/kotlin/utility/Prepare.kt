@@ -100,12 +100,29 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
   val options = ctx.client!!.optionsMap()
 
   val headers = Struct.getprop(options, "headers", null)
-  if (headers == null) {
-    return linkedMapOf()
+  val out: MutableMap<String, Any?> =
+    (if (headers == null) null else Helpers.toMapAny(Struct.clone(headers))) ?: linkedMapOf()
+
+  // A header parameter travels as a header, under the name the definition
+  // gives it, and only from this call's own arguments.
+  val point = ctx.point
+  val hl = if (point == null) null else Struct.getpath(point, listOf("args", "header"))
+  if (hl is List<*>) {
+    for (hd in hl) {
+      val name = Struct.getprop(hd, "name")
+      if (name !is String || name.isEmpty()) {
+        continue
+      }
+      val orig = Struct.getprop(hd, "orig")
+      val wire = if (orig is String && orig.isNotEmpty()) orig else name
+      val v = Struct.getprop(ctx.reqmatch, name, null) ?: Struct.getprop(ctx.reqdata, name, null)
+      if (v != null) {
+        out[wire.lowercase()] = Struct.stringify(v)
+      }
+    }
   }
 
-  val out = Helpers.toMapAny(Struct.clone(headers))
-  return out ?: linkedMapOf()
+  return out
 }
 
 fun prepareMethod(ctx: Context): String? {
@@ -191,6 +208,16 @@ fun prepareQuery(ctx: Context): MutableMap<String, Any?> {
     if (pl is List<*>) {
       for (pd in pl) {
         val name = Struct.getprop(pd, "name")
+        if (name is String) {
+          params.add(name)
+        }
+      }
+    }
+    // A header parameter travels in the headers, which prepareHeaders fills.
+    val hl = Struct.getpath(point, listOf("args", "header"))
+    if (hl is List<*>) {
+      for (hd in hl) {
+        val name = Struct.getprop(hd, "name")
         if (name is String) {
           params.add(name)
         }

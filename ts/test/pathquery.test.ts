@@ -76,6 +76,16 @@ describe('prepareQuery', () => {
       deepStrictEqual(prepareQuery(ctx(point, { q: 1, constructor: 'c', other: 'o' })),
         { q: 1, constructor: 'c', other: 'o' })
     })
+
+    // Novu's `idempotency-key` and Maxio's `Authorization` went out as
+    // `?idempotency_key=` and `?authorization=`.
+    test(lang + ': a header argument stays out of the query', () => {
+      const point = { args: {
+        header: [{ name: 'idempotency_key', orig: 'idempotency-key', kind: 'header' }],
+        query: [{ name: 'limit', orig: 'limit', kind: 'query' }],
+      } }
+      deepStrictEqual(prepareQuery(ctx(point, { idempotency_key: 'k1', limit: 2 })), { limit: 2 })
+    })
   }
 
 
@@ -120,6 +130,19 @@ describe('prepareQuery', () => {
 
   // The query name, checked the same way. Only punctuation may sit between
   // `args` and `query`, so a nearby comment cannot pass.
+  test('every target keeps a header argument out of the query', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      ok(-1 !== at, lang + ': no prepareQuery definition in ' + rel)
+      if (!/\bargs\b\W{1,12}header\b/.test(src.slice(at, at + 4000))) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose prepareQuery never reads args.header')
+  })
+
   test('every target sends a query argument under its orig', () => {
     const missing: string[] = []
     for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
@@ -134,5 +157,95 @@ describe('prepareQuery', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets whose prepareQuery never maps a query argument to its orig')
+  })
+})
+
+
+const headerStruct = {
+  clone: (v: any) => JSON.parse(JSON.stringify(v)),
+  getprop: (o: any, k: string) => null == o ? undefined : o[k],
+  stringify: (v: any) => 'string' === typeof v ? v : JSON.stringify(v).replace(/"/g, ''),
+}
+
+function hctx(point: any, reqmatch: any, reqdata: any, headers: any = {}) {
+  return {
+    utility: { struct: headerStruct },
+    client: { options: () => ({ headers }) },
+    point, reqmatch, reqdata,
+  }
+}
+
+
+// A header parameter goes out as a header, under the definition's name,
+// lowercased so the credential the auth step sets under the same name wins.
+describe('prepareHeaders', () => {
+
+  const impls: Record<string, any> = {
+    ts: loadTemplate('ts/src/utility/PrepareHeadersUtility.ts').prepareHeaders,
+    js: require(Path.join(TM, 'js', 'src', 'utility', 'PrepareHeadersUtility.js')).prepareHeaders,
+  }
+
+  const point = { args: { header: [
+    { name: 'idempotency_key', orig: 'Idempotency-Key', kind: 'header' },
+    { name: 'x_trace', orig: 'X-Trace', kind: 'header' },
+    { name: 'page_size', orig: 'Page-Size', kind: 'header' },
+  ] } }
+
+  for (const [lang, prepareHeaders] of Object.entries(impls)) {
+    test(lang + ': a header argument from the match goes out under its orig', () => {
+      deepStrictEqual(prepareHeaders(hctx(point, { idempotency_key: 'k1', page_size: 3 }, {},
+        { 'user-agent': 'sdk' })),
+      { 'user-agent': 'sdk', 'idempotency-key': 'k1', 'page-size': '3' })
+    })
+
+    test(lang + ': a header argument from the data goes out too', () => {
+      deepStrictEqual(prepareHeaders(hctx(point, {}, { x_trace: 't1', name: 'n' })),
+        { 'x-trace': 't1' })
+    })
+
+    test(lang + ': an absent or null header argument is not sent', () => {
+      deepStrictEqual(prepareHeaders(hctx(point, { idempotency_key: null }, {})), {})
+    })
+  }
+
+
+  const TEMPLATES: Record<string, [string, string]> = {
+    c: ['c/utility/prepare_headers.c', 'voxgig_value* prepare_headers_util('],
+    clojure: ['clojure/src/sdk/core.clj', '(defn u-prepare-headers'],
+    cpp: ['cpp/utility/pipeline.hpp', 'inline Value prepareHeaders('],
+    csharp: ['csharp/utility/PrepareHeaders.cs', 'PrepareHeadersUtil(Context ctx)'],
+    elixir: ['elixir/lib/projectname/utility.ex', 'def prepare_headers_impl('],
+    go: ['go/utility/prepare_headers.go', 'func prepareHeadersUtil('],
+    java: ['java/utility/PrepareHeaders.java', 'static Map<String, Object> prepareHeaders('],
+    js: ['js/src/utility/PrepareHeadersUtility.js', 'function prepareHeaders('],
+    kotlin: ['kotlin/utility/Prepare.kt', 'fun prepareHeaders('],
+    lua: ['lua/utility/prepare_headers.lua', 'local function prepare_headers_util('],
+    ocaml: ['ocaml/sdk_runtime.ml', 'let prepare_headers_util'],
+    perl: ['perl/utility/prepare_headers.pm', '$REGISTRY{prepare_headers}'],
+    php: ['php/utility/PrepareHeaders.php', 'public static function call('],
+    py: ['py/pkg/utility/prepare_headers.py', 'def prepare_headers_util('],
+    rb: ['rb/utility/prepare_headers.rb', 'PrepareHeaders = ->'],
+    rust: ['rust/utility/prepare_headers.rs', 'pub fn prepare_headers_util('],
+    scala: ['scala/utility/Prepare.scala', 'def prepareHeaders('],
+    swift: ['swift/Sources/ProjectNameSDK/utility/Prepare.swift', 'func prepareHeadersUtil('],
+    ts: ['ts/src/utility/PrepareHeadersUtility.ts', 'function prepareHeaders('],
+    zig: ['zig/core/utility.zig', 'pub fn prepare_headers_util('],
+  }
+
+  // Source, so it proves the shape is read, not that it runs: the header
+  // list, its orig, and a lowercased name.
+  test('every target sends a header argument as a header', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      ok(-1 !== at, lang + ': no prepareHeaders definition in ' + rel)
+      const body = src.slice(at, at + 2500)
+      if (!/\bargs\b\W{1,12}header\b/.test(body) || !/\borig\b/.test(body) ||
+        !/lower|downcase|\blc\b/i.test(body)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose prepareHeaders never sends a header argument')
   })
 })

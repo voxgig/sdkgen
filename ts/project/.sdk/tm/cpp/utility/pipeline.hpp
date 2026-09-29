@@ -921,9 +921,27 @@ inline Value prepareBody(CtxPtr ctx) {
 inline Value prepareHeaders(CtxPtr ctx) {
   Value options = ctx->client->optionsMap();
   Value headers = getp(options, "headers");
-  if (is_nullish(headers)) return vmap();
-  Value out = Helpers::toMapAny(Struct::clone(headers));
-  return out.is_map() ? out : vmap();
+  Value out = is_nullish(headers) ? vmap() : Helpers::toMapAny(Struct::clone(headers));
+  if (!out.is_map()) out = vmap();
+
+  // A header parameter travels as a header, under the name the definition
+  // gives it, and only from this call's own arguments.
+  Value aheader = ctx->point.is_map() ? getp(getp(ctx->point, "args"), "header") : Value::undef();
+  if (aheader.is_list()) {
+    for (const auto& hd : *aheader.as_list()) {
+      Value name = getp(hd, "name");
+      if (!name.is_string() || name.as_string().empty()) continue;
+      Value orig = getp(hd, "orig");
+      std::string wire = orig.is_string() && !orig.as_string().empty() ?
+        orig.as_string() : name.as_string();
+      Value val = getp(ctx->reqmatch, name.as_string(), Value(nullptr));
+      if (val.is_null()) val = getp(ctx->reqdata, name.as_string(), Value(nullptr));
+      if (is_nullish(val)) continue;
+      for (auto& ch : wire) ch = (char)std::tolower((unsigned char)ch);
+      map_put(out, wire, Value(Struct::stringify(val)));
+    }
+  }
+  return out;
 }
 
 // ---- param ------------------------------------------------------------
@@ -1024,10 +1042,12 @@ inline Value prepareQuery(CtxPtr ctx) {
 
   // A path parameter travels in the path. The generated config lists them as
   // args.params, which prepareParams reads; params is the older list of names.
+  // A header parameter travels in the headers, which prepareHeaders fills.
   Value aparams = point.is_map() ? getp(getp(point, "args"), "params") : Value::undef();
-  auto in_args = [&](const std::string& s) {
-    if (!aparams.is_list()) return false;
-    for (const auto& pd : *aparams.as_list()) {
+  Value aheader = point.is_map() ? getp(getp(point, "args"), "header") : Value::undef();
+  auto named = [&](const Value& defs, const std::string& s) {
+    if (!defs.is_list()) return false;
+    for (const auto& pd : *defs.as_list()) {
       Value name = getp(pd, "name");
       if (name.is_string() && name.as_string() == s) return true;
     }
@@ -1055,7 +1075,8 @@ inline Value prepareQuery(CtxPtr ctx) {
   for (const auto& item : Struct::items(reqmatch)) {
     std::string key = as_str(pair_key(item));
     Value val = pair_val(item);
-    if (!is_nullish(val) && "$action" != key && !contains_str(params, key) && !in_args(key)) {
+    if (!is_nullish(val) && "$action" != key && !contains_str(params, key) &&
+        !named(aparams, key) && !named(aheader, key)) {
       map_put(out, wire_name(key), val);
     }
   }

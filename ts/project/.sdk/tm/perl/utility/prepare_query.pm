@@ -32,6 +32,14 @@ $REGISTRY{prepare_query} = sub {
         push @$params, $name if defined $name && !ref $name;
       }
     }
+    # A header parameter travels in the headers, which prepare_headers fills.
+    my $hl = ProjectNameHelpers::gpath($point, 'args.header');
+    if (Voxgig::Struct::islist($hl)) {
+      for my $hd (@$hl) {
+        my $name = ProjectNameHelpers::gp($hd, 'name');
+        push @$params, $name if defined $name && !ref $name;
+      }
+    }
   }
   # A query parameter travels under the name the definition gives it, its
   # orig, which the model may have renamed for the caller.

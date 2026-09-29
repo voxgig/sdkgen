@@ -1125,12 +1125,35 @@ defmodule ProjectName.Utility do
     options = opts_map(S.getprop(ctx, "client"))
     headers = S.getprop(options, "headers")
 
-    if headers == nil do
-      S.jm([])
-    else
-      out = S.clone(headers)
-      if S.ismap(out), do: out, else: S.jm([])
+    out =
+      if headers == nil do
+        S.jm([])
+      else
+        cloned = S.clone(headers)
+        if S.ismap(cloned), do: cloned, else: S.jm([])
+      end
+
+    # A header parameter travels as a header, under the name the definition
+    # gives it, and only from this call's own arguments.
+    point = S.getprop(ctx, "point")
+    aheader = if point != nil, do: S.getpath(point, "args.header"), else: nil
+
+    if S.islist(aheader) and S.size(aheader) > 0 do
+      Enum.each(0..(S.size(aheader) - 1), fn i ->
+        hd = S.getelem(aheader, i)
+        name = S.getprop(hd, "name")
+
+        if is_binary(name) and name != "" do
+          orig = S.getprop(hd, "orig")
+          wire = if is_binary(orig) and orig != "", do: orig, else: name
+          val = S.getprop(S.getprop(ctx, "reqmatch"), name)
+          val = if val == nil, do: S.getprop(S.getprop(ctx, "reqdata"), name), else: val
+          if val != nil, do: S.setprop(out, String.downcase(wire), S.stringify(val))
+        end
+      end)
     end
+
+    out
   end
 
   def prepare_body_impl(ctx) do
@@ -1187,6 +1210,19 @@ defmodule ProjectName.Utility do
     S.join(parts, "/", true)
   end
 
+  # The names in one of a point's lists of argument definitions.
+  defp arg_names(nil, _path), do: []
+
+  defp arg_names(point, path) do
+    defs = S.getpath(point, path)
+
+    if S.islist(defs) and S.size(defs) > 0 do
+      Enum.map(0..(S.size(defs) - 1), fn i -> S.getprop(S.getelem(defs, i), "name") end)
+    else
+      []
+    end
+  end
+
   def prepare_query_impl(ctx) do
     point = S.getprop(ctx, "point")
     reqmatch = H.or_(S.getprop(ctx, "reqmatch"), S.jm([]))
@@ -1208,18 +1244,8 @@ defmodule ProjectName.Utility do
 
     # A path parameter travels in the path. The generated config lists them
     # as args.params, which prepare_params reads; params is the older list.
-    aparams = if point != nil, do: S.getpath(point, "args.params"), else: nil
-
-    arg_strs =
-      if S.islist(aparams) and S.size(aparams) > 0 do
-        Enum.map(0..(S.size(aparams) - 1), fn i ->
-          S.getprop(S.getelem(aparams, i), "name")
-        end)
-      else
-        []
-      end
-
-    param_strs = param_strs ++ arg_strs
+    # A header parameter travels in the headers, which prepare_headers fills.
+    param_strs = param_strs ++ arg_names(point, "args.params") ++ arg_names(point, "args.header")
 
     # A query parameter travels under the name the definition gives it, its
     # orig, which the model may have renamed for the caller.

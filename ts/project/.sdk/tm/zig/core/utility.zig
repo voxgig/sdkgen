@@ -1043,12 +1043,29 @@ pub fn prepare_headers_util(ctx: *Context) Value {
     const options: Value = if (ctx.client) |client| client.options_map() else ctx.options;
 
     const headers = h.getp(options, "headers");
-    if (h.is_noval(headers)) return h.omap();
-
-    return switch (h.clone(headers)) {
+    const out: Value = if (h.is_noval(headers)) h.omap() else switch (h.clone(headers)) {
         .object => h.clone(headers),
         else => h.omap(),
     };
+
+    // A header parameter travels as a header, under the name the definition
+    // gives it, and only from this call's own arguments.
+    const aheader: Value = h.getpath(&.{ "args", "header" }, ctx.point);
+    if (aheader == .array) {
+        for (aheader.array.data.items) |hd| {
+            const name = h.getp(hd, "name");
+            if (name != .string or name.string.len == 0) continue;
+            const orig = h.getp(hd, "orig");
+            const wire: []const u8 = if (orig == .string and orig.string.len != 0) orig.string else name.string;
+            var val = h.getp(ctx.reqmatch, name.string);
+            if (h.is_noval(val)) val = h.getp(ctx.reqdata, name.string);
+            if (h.is_noval(val)) continue;
+            const key = std.ascii.allocLowerString(h.A(), wire) catch wire;
+            h.setp(out, key, h.vstr(h.stringify(val)));
+        }
+    }
+
+    return out;
 }
 
 pub fn prepare_body_util(ctx: *Context) Value {
@@ -1094,6 +1111,16 @@ pub fn prepare_path_util(ctx: *Context) []const u8 {
     return vs.join(h.A(), parts, "/", true) catch "";
 }
 
+// Whether a list of argument definitions names this key.
+fn names_key(defs: Value, key: []const u8) bool {
+    if (defs != .array) return false;
+    for (defs.array.data.items) |d| {
+        const name = h.getp(d, "name");
+        if (name == .string and std.mem.eql(u8, name.string, key)) return true;
+    }
+    return false;
+}
+
 pub fn prepare_query_util(ctx: *Context) Value {
     const point = ctx.point;
     const reqmatch: Value = switch (ctx.reqmatch) {
@@ -1107,6 +1134,8 @@ pub fn prepare_query_util(ctx: *Context) Value {
     // A path parameter travels in the path. The generated config lists them
     // as args.params, which prepare_params reads; params is the older list.
     const aparams: Value = h.getpath(&.{ "args", "params" }, point);
+    // A header parameter travels in the headers, which prepare_headers fills.
+    const aheader: Value = h.getpath(&.{ "args", "header" }, point);
     // A query parameter travels under the name the definition gives it, its
     // orig, which the model may have renamed for the caller.
     const aquery: Value = h.getpath(&.{ "args", "query" }, point);
@@ -1126,15 +1155,7 @@ pub fn prepare_query_util(ctx: *Context) Value {
                     }
                 }
             }
-            if (!contained and aparams == .array) {
-                for (aparams.array.data.items) |pd| {
-                    const name = h.getp(pd, "name");
-                    if (name == .string and std.mem.eql(u8, name.string, key)) {
-                        contained = true;
-                        break;
-                    }
-                }
-            }
+            if (!contained) contained = names_key(aparams, key) or names_key(aheader, key);
             var wire: []const u8 = key;
             if (aquery == .array) {
                 for (aquery.array.data.items) |qd| {

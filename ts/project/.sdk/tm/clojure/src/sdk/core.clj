@@ -450,9 +450,25 @@
 
 (defn u-prepare-headers [ctx]
   (let [options (client-options-map (oget ctx :client))
-        headers (vs/getprop options "headers")]
-    (if (nil? headers) (vs/jm)
-        (let [o (vs/clone headers)] (if (vs/ismap o) o (vs/jm))))))
+        headers (vs/getprop options "headers")
+        out (if (nil? headers) (vs/jm)
+                (let [o (vs/clone headers)] (if (vs/ismap o) o (vs/jm))))
+        point (oget ctx :point)
+        args (when point (vs/getprop point "args"))
+        aheader (let [h (when (vs/ismap args) (vs/getprop args "header"))]
+                  (if (vs/islist h) h (vs/jt)))]
+    ;; A header parameter travels as a header, under the name the definition
+    ;; gives it, and only from this call's own arguments.
+    (doseq [hd (vec aheader)]
+      (let [name (when (vs/ismap hd) (vs/getprop hd "name"))]
+        (when (and (string? name) (seq name))
+          (let [orig (vs/getprop hd "orig")
+                wire (if (and (string? orig) (seq orig)) orig name)
+                v (vs/getprop (oget ctx :reqmatch) name)
+                v (if (nil? v) (vs/getprop (oget ctx :reqdata) name) v)]
+            (when (some? v)
+              (.put ^java.util.Map out (str/lower-case wire) (vs/stringify v)))))))
+    out))
 
 (defn u-param [ctx paramdef]
   (let [point (oget ctx :point)
@@ -506,8 +522,14 @@
         aparams (let [args (when point (vs/getprop point "args"))
                       p (when (vs/ismap args) (vs/getprop args "params"))]
                   (if (vs/islist p) p (vs/jt)))
-        pset (into (into #{} (vec params))
-                   (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
+        ;; A header parameter travels in the headers, which u-prepare-headers
+        ;; fills.
+        aheader (let [args (when point (vs/getprop point "args"))
+                      h (when (vs/ismap args) (vs/getprop args "header"))]
+                  (if (vs/islist h) h (vs/jt)))
+        pset (into (into (into #{} (vec params))
+                         (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
+                   (keep (fn [hd] (when (vs/ismap hd) (vs/getprop hd "name"))) (vec aheader)))
         ;; A query parameter travels under the name the definition gives it,
         ;; its orig, which the model may have renamed for the caller.
         aquery (let [args (when point (vs/getprop point "args"))
