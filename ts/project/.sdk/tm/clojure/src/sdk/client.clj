@@ -117,15 +117,17 @@
         fetchargs (or fetchargs (vs/jm))
         pr (try {:fd (prepare client fetchargs)}
                 (catch clojure.lang.ExceptionInfo e {:err (core/ex->sdk e)}))]
+    ;; The error is returned rather than passed through make-error, so it is
+    ;; cleaned here.
     (if (:err pr)
-      (vs/jm "ok" false "err" (:err pr))
+      (vs/jm "ok" false "err" (core/ucall (core/client-root-ctx client) :clean (:err pr)))
       (let [fetchdef (:fd pr)
             ctrl (let [c (core/to-map (vs/getprop fetchargs "ctrl"))] (if c c (vs/jm)))
             ctx (core/make-context (vs/jm "opname" "direct" "ctrl" ctrl) (core/client-root-ctx client))
             url (or (vs/getprop fetchdef "url") "")
             [fetched fetch-err] ((core/uget ctx :fetcher) ctx url fetchdef)]
         (cond
-          fetch-err (vs/jm "ok" false "err" fetch-err)
+          fetch-err (vs/jm "ok" false "err" (core/ucall ctx :clean fetch-err))
           (nil? fetched) (vs/jm "ok" false "err" (core/ctx-error ctx "direct_no_response" "response: undefined"))
           (vs/ismap fetched)
           (let [status (core/to-int (vs/getprop fetched "status"))

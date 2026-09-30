@@ -290,6 +290,12 @@ ${candidates(entity)}
                 err (drive codedhook target (vs/jm) sinks)]
             (t/is-some err "the coded hook should fail the operation")
             (swap! errors assoc "codedhook" err))
+          ;; direct() returns its error rather than throwing it.
+          (doseq [scenario [(nth SCENARIOS 3) (nth SCENARIOS 4)]]
+            (let [raw (api/direct (make-sdk scenario sinks nil) (vs/jm "path" "raw"))]
+              (t/is-eq (vs/getprop raw "ok") false (str (:name scenario) ": direct() fails"))
+              (swap! errors assoc (str "direct/" (:name scenario)) (vs/getprop raw "err"))
+              (swap! sinks into (forms "direct" (vs/getprop raw "err")))))
           ;; The generated config's own clean block is read beside the
           ;; caller's, and is not changed by it.
           (let [config (vs/jm "options" (vs/jm "clean" (vs/jm "keys" "zzsens" "values" (:config CANARY))))
@@ -332,6 +338,9 @@ ${candidates(entity)}
           (doseq [key ["coded/throw" "codedhook"]]
             (t/is-eq (:code (core/ex->sdk (get @errors key))) (str "denied_" MASK)
                      (str key ": the error keeps its code, masked")))
+          (t/is-eq (:code (get @errors "direct/transport")) "transport" "direct() returns the fetcher's error")
+          (t/is-eq (:code (get @errors "direct/coded")) (str "denied_" MASK)
+                   "direct() returns the fetcher's error, its code masked")
           (let [explained (get @explains "ok/explain")
                 result (vs/getprop explained "result")]
             (t/is-some result "the explain record should carry the result")
