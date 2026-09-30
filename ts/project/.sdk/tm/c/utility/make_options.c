@@ -84,6 +84,22 @@ voxgig_value* make_options_util(Context* ctx) {
    * writes into the options, never into the spec. */
   voxgig_value* optspec = shared_optspec();
 
+  /* The secret registry exists BEFORE validation, fed from the raw input.
+   * Its block is shared by pointer: what is registered into `cleanopts`
+   * here is what `opts.__derived__.clean` carries out below. */
+  voxgig_value* cleancfg = clean_make_config(voxgig_merge(
+    clist(3, v_map(), voxgig_clone(getp(optspec, "clean")), voxgig_clone(getp(opts, "clean"))),
+    VOXGIG_MAXDEPTH));
+  voxgig_value* cleanopts = cmap(1, "__derived__", cmap(1, "clean", v_share(cleancfg)));
+  clean_add_opts(cleanopts, get_str(opts, "apikey"));
+  clean_add_opts(cleanopts, get_str(opts, "secret"));
+  {
+    voxgig_list* rawvals = voxgig_as_list(clean_split_values(getpath2(opts, "clean", "values")));
+    for (size_t i = 0; i < rawvals->len; i++) {
+      clean_add_opts(cleanopts, voxgig_as_string(rawvals->items[i]));
+    }
+  }
+
   // Preserve system.fetch before merge/validate (validation strips it).
   voxgig_value* sys_fetch = getpath2(opts, "system", "fetch");
 
@@ -112,50 +128,6 @@ voxgig_value* make_options_util(Context* ctx) {
       setp(opts, "system", cmap(1, "fetch", v_share(sys_fetch)));
     }
   }
-
-  // Derived clean config.
-  voxgig_value* clean_keys_v = getpath2(opts, "clean", "keys");
-  const char* clean_keys = voxgig_is_string(clean_keys_v) ? voxgig_as_string(clean_keys_v)
-                                                          : "key,token,id";
-
-  // Split on ',', trim, filter empty, esc_re each, join with '|'.
-  char* keyre = (char*)malloc(1);
-  keyre[0] = '\0';
-  size_t keyre_len = 0;
-  bool first = true;
-  const char* p = clean_keys;
-  while (1) {
-    const char* comma = strchr(p, ',');
-    size_t seglen = comma ? (size_t)(comma - p) : strlen(p);
-    // trim
-    const char* start = p;
-    const char* end = p + seglen;
-    while (start < end && (*start == ' ' || *start == '\t')) start++;
-    while (end > start && (end[-1] == ' ' || end[-1] == '\t')) end--;
-    if (end > start) {
-      char* seg = (char*)malloc((size_t)(end - start) + 1);
-      memcpy(seg, start, (size_t)(end - start));
-      seg[end - start] = '\0';
-      char* esc = voxgig_escre(v_str(seg));
-      free(seg);
-      const char* e = esc ? esc : "";
-      size_t elen = strlen(e);
-      size_t extra = elen + (first ? 0 : 1);
-      keyre = (char*)realloc(keyre, keyre_len + extra + 1);
-      if (!first) keyre[keyre_len++] = '|';
-      memcpy(keyre + keyre_len, e, elen);
-      keyre_len += elen;
-      keyre[keyre_len] = '\0';
-      free(esc);
-      first = false;
-    }
-    if (!comma) break;
-    p = comma + 1;
-  }
-
-  voxgig_value* derived_clean = (keyre_len == 0) ? v_map()
-                                                 : cmap(1, "keyre", v_str(keyre));
-  free(keyre);
 
   // Resolve the feature add-order: an explicit list order (above) wins;
   // otherwise order the map test-first, then the remaining names sorted, so
@@ -198,7 +170,11 @@ voxgig_value* make_options_util(Context* ctx) {
   }
 
   setp(opts, "__derived__",
-       cmap(2, "clean", derived_clean, "featureorder", feature_order));
+       cmap(2, "clean", v_share(cleancfg), "featureorder", feature_order));
+
+  /* Every string under a sensitive name anywhere in the options - a custom
+   * auth header, a feature credential - is a secret the SDK now handles. */
+  clean_register_sensitive(opts, opts);
 
   return opts;
 }

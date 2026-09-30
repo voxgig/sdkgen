@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::helpers::{get_str, getp, getpath, ja, jo, setp, to_map};
+use crate::utility::clean;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
@@ -57,6 +58,29 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
     };
 
     let optspec = crate::core::schema::optspec();
+
+    // The secret registry exists BEFORE validation, fed from the raw input.
+    // Its block is Rc-shared: what is registered into `cleanopts` here is
+    // what `opts.__derived__.clean` carries out below.
+    let cleancfg = clean::make_clean_config(&vs::merge(
+        &ja(vec![
+            Value::empty_map(),
+            vs::clone(&getp(&optspec, "clean")),
+            vs::clone(&getp(&opts, "clean")),
+        ]),
+        None,
+    ));
+    let cleanopts = jo(vec![("__derived__", jo(vec![("clean", cleancfg.clone())]))]);
+    let mut raw: Vec<String> = Vec::new();
+    for key in ["apikey", "secret"] {
+        if let Value::Str(s) = getp(&opts, key) {
+            raw.push(s);
+        }
+    }
+    raw.extend(clean::splitvalues(&getpath(&["clean", "values"], &opts)));
+    for value in raw {
+        clean::clean_add_opts(&cleanopts, &value);
+    }
 
     // Preserve system.fetch before merge/validate (validation strips it).
     let sys_fetch = getpath(&["system", "fetch"], &opts);
@@ -145,19 +169,6 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         }
     }
 
-    let clean_keys = match getpath(&["clean", "keys"], &opts) {
-        Value::Str(s) => s,
-        _ => "key,token,id".to_string(),
-    };
-
-    let filtered: Vec<String> = clean_keys
-        .split(',')
-        .map(|p| p.trim())
-        .filter(|p| !p.is_empty())
-        .map(|p| vs::esc_re(&Value::str(p)))
-        .collect();
-    let keyre = filtered.join("|");
-
     // Resolve the feature add-order: an explicit List order (above) wins;
     // otherwise order the map test-first, then the remaining names sorted, so
     // the outcome is deterministic and `test` is always the base transport.
@@ -188,16 +199,15 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
     let order_list =
         Value::list(feature_order.into_iter().map(|n| Value::str(n)).collect());
 
-    let derived_clean = if keyre.is_empty() {
-        Value::empty_map()
-    } else {
-        jo(vec![("keyre", Value::str(keyre))])
-    };
     setp(
         &opts,
         "__derived__",
-        jo(vec![("clean", derived_clean), ("featureorder", order_list)]),
+        jo(vec![("clean", cleancfg), ("featureorder", order_list)]),
     );
+
+    // Every string under a sensitive name anywhere in the options - a custom
+    // auth header, a feature credential - is a secret the SDK now handles.
+    clean::register_sensitive(&opts, &opts);
 
     opts
 }

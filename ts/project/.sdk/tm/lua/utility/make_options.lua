@@ -2,6 +2,7 @@
 
 local vs = require("utility.struct.struct")
 local schema = require("schema")
+local cleanmod = require("utility.clean")
 
 -- See the call site in make_options for why this exists.
 local function densify_lists(v, seen)
@@ -121,6 +122,22 @@ local function make_options_util(ctx)
     opts = {}
   end
 
+  -- The secret registry exists BEFORE validation, fed from the raw input, so
+  -- the constructor's own rejection of a mistyped credential is clean too.
+  local specclean = type(schema.OPTSPEC) == "table" and schema.OPTSPEC.clean or nil
+  local rawclean = type(opts.clean) == "table" and opts.clean or {}
+  local cleancfg = cleanmod.make_clean_config(vs.merge({
+    {},
+    type(specclean) == "table" and vs.clone(specclean) or {},
+    vs.clone(rawclean),
+  }))
+  local cleanctx = { options = { __derived__ = { clean = cleancfg } } }
+  cleanmod.clean_add(cleanctx, opts.apikey)
+  cleanmod.clean_add(cleanctx, opts.secret)
+  for _, raw in ipairs(cleanmod.splitvalues(rawclean.values)) do
+    cleanmod.clean_add(cleanctx, raw)
+  end
+
   -- Feature add-order. options.feature may be given as an ordered LIST of
   -- { name = ..., active = ..., ... } entries (the list position IS the order
   -- in which features are added), or as a { name = {opts} } map. Normalize a
@@ -215,7 +232,10 @@ local function make_options_util(ctx)
   -- feature reading it refuses it by its own rule, with its own message.
   merged = densify_lists(merged)
 
-  local validated = vs.validate(merged, optspec)
+  local vok, validated = pcall(vs.validate, merged, optspec)
+  if not vok then
+    error(cleanmod.clean(cleanctx, validated), 0)
+  end
   if type(validated) ~= "table" then
     validated = {}
   end
@@ -282,22 +302,6 @@ local function make_options_util(ctx)
     opts["extend"] = extend
   end
 
-  -- Derived clean config.
-  local clean_keys = "key,token,id"
-  local ck = vs.getpath(opts, "clean.keys")
-  if type(ck) == "string" then
-    clean_keys = ck
-  end
-
-  local parts = {}
-  for part in string.gmatch(clean_keys, "[^,]+") do
-    local trimmed = part:match("^%s*(.-)%s*$")
-    if trimmed ~= "" then
-      table.insert(parts, vs.escre(trimmed))
-    end
-  end
-  local keyre = table.concat(parts, "|")
-
   -- Resolve the feature add-order: an explicit list order (above) wins;
   -- otherwise order the map test-first, then the remaining names sorted, so
   -- the outcome is deterministic and `test` is always the base transport.
@@ -354,12 +358,29 @@ local function make_options_util(ctx)
     end
   end
 
-  local derived = { clean = {} }
-  if keyre ~= "" then
-    derived.clean = { keyre = keyre }
+  opts["__derived__"] = {
+    clean = cleancfg,
+    featureorder = featureorder,
+  }
+
+  -- Every string under a sensitive name anywhere in the options - a custom
+  -- auth header, a feature credential - is a secret the SDK now handles.
+  local optctx = { options = opts }
+  local function register(val, key, depth, seen)
+    if type(val) == "string" then
+      if cleanmod.clean_key(optctx, key) then
+        cleanmod.clean_add(optctx, val)
+      end
+    elseif type(val) == "table" and depth < 32 and not seen[val] then
+      seen[val] = true
+      for k, v in pairs(val) do
+        if k ~= "__derived__" then
+          register(v, k, depth + 1, seen)
+        end
+      end
+    end
   end
-  derived.featureorder = featureorder
-  opts["__derived__"] = derived
+  register(opts, nil, 0, {})
 
   return opts
 end

@@ -40,23 +40,29 @@ func makeErrorUtil(ctx *core.Context, err error) (any, error) {
 
 	spec := ctx.Spec
 
-	if ctx.Ctrl.Explain != nil {
-		ctx.Ctrl.Explain["err"] = map[string]any{
-			"message": msg,
-		}
-	}
-
+	// The context stays reachable on the error for a debugger; its result and
+	// spec are masked copies, so masking them never masks the pipeline's own.
 	sdkErr := &core.ProjectNameError{
 		IsProjectNameError: true,
-		Sdk:              "ProjectName",
-		Code:             "",
-		Msg:              msg,
-		Ctx:              ctx,
-		Result:           cleanUtil(ctx, result),
-		Spec:             cleanUtil(ctx, spec),
+		Sdk:                "ProjectName",
+		Code:               "",
+		Msg:                msg,
+		Ctx:                ctx,
+		Result:             cleanUtil(ctx, result),
+		Spec:               cleanUtil(ctx, spec),
 	}
 	if se, ok := err.(*core.ProjectNameError); ok {
 		sdkErr.Code = se.Code
+	}
+
+	if ctx.Ctrl.Explain != nil {
+		ctx.Ctrl.Explain["err"] = map[string]any{
+			"message": msg,
+			"code":    sdkErr.Code,
+		}
+		// A failure before done() (makeSpec after prepareAuth, say) leaves the
+		// explain record raw otherwise; ts reaches done() on every such path.
+		cleanExplain(ctx)
 	}
 
 	ctx.Ctrl.Err = sdkErr

@@ -238,6 +238,40 @@ pub const Context = struct {
         return self.utility orelse unreachable;
     }
 
+    // The record a logger or an error dump sees, cleaned; the live fields
+    // stay raw for the pipeline's own use.
+    pub fn to_value(self: *Context) Value {
+        const record = h.omap();
+        h.setp(record, "id", h.vstr(self.id));
+        h.setp(record, "op", h.jo(&.{
+            .{ "entity", h.vstr(self.op.entity) },
+            .{ "name", h.vstr(self.op.name) },
+            .{ "input", h.vstr(self.op.input) },
+        }));
+        if (self.spec) |sp| h.setp(record, "spec", sp.to_value());
+        if (self.entity) |e| h.setp(record, "entity", h.vstr(e.get_name()));
+        if (self.result) |r| h.setp(record, "result", r.to_value());
+        if (self.response) |rp| {
+            h.setp(record, "response", h.jo(&.{
+                .{ "status", h.vnum(rp.status) },
+                .{ "statusText", h.vstr(rp.status_text) },
+                .{ "headers", rp.headers },
+                .{ "body", rp.body },
+            }));
+        }
+        h.setp(record, "meta", self.meta);
+        return utility_mod.clean_util(self, record);
+    }
+
+    pub fn to_json(self: *Context) []const u8 {
+        return h.jsonify_compact(self.to_value());
+    }
+
+    pub fn format(self: *const Context, writer: *std.Io.Writer) std.Io.Writer.Error!void {
+        try writer.writeAll("Context ");
+        try writer.writeAll(@constCast(self).to_json());
+    }
+
     // --- ctx.out staging helpers ---
 
     pub fn out_get(self: *Context, key: []const u8) ?OutVal {

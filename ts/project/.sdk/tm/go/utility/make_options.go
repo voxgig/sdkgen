@@ -67,6 +67,27 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 
 	opts := vs.Clone(options).(map[string]any)
 
+	// The secret registry exists BEFORE validation, fed from the raw input, so
+	// the constructor's own rejection of a mistyped credential is clean too.
+	cleanraw := map[string]any{}
+	if spec, ok := core.OPTSPEC["clean"].(map[string]any); ok {
+		for k, v := range spec {
+			cleanraw[k] = v
+		}
+	}
+	for k, v := range core.ToMapAny(opts["clean"]) {
+		cleanraw[k] = v
+	}
+	cleancfg := makeCleanConfig(cleanraw)
+	for _, raw := range []any{opts["apikey"], opts["secret"]} {
+		if s, ok := raw.(string); ok {
+			cleancfg.add(s)
+		}
+	}
+	for _, s := range cleanSplit(vs.GetPath(opts, []any{"clean", "values"})) {
+		cleancfg.add(s)
+	}
+
 	var featureorder []any
 	if farr, ok := opts["feature"].([]any); ok {
 		fmap := map[string]any{}
@@ -169,24 +190,6 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
-	// Derived clean config.
-	cleanKeys := "key,token,id"
-	if ck := vs.GetPath(opts, []any{"clean", "keys"}); ck != nil {
-		if cks, ok := ck.(string); ok {
-			cleanKeys = cks
-		}
-	}
-
-	parts := strings.Split(cleanKeys, ",")
-	var filtered []string
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			filtered = append(filtered, vs.EscRe(p))
-		}
-	}
-	keyre := strings.Join(filtered, "|")
-
 	// Resolve the feature add-order: an explicit array order (above) wins;
 	// otherwise order the map test-first, then the remaining names sorted, so
 	// the outcome is deterministic and `test` is always the base transport.
@@ -238,14 +241,21 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
-	derived := map[string]any{
-		"clean": map[string]any{},
+	opts["__derived__"] = map[string]any{
+		"clean":        cleancfg,
+		"featureorder": featureorder,
 	}
-	if keyre != "" {
-		derived["clean"] = map[string]any{"keyre": keyre}
-	}
-	derived["featureorder"] = featureorder
-	opts["__derived__"] = derived
+
+	// Every string under a sensitive name anywhere in the options - a custom
+	// auth header, a feature credential - is a secret the SDK now handles.
+	scan := vs.Clone(opts).(map[string]any)
+	delete(scan, "__derived__")
+	vs.Walk(scan, func(key *string, val any, _ any, _ []string) any {
+		if s, ok := val.(string); ok && key != nil && cleancfg.sensitive(*key) {
+			cleancfg.add(s)
+		}
+		return val
+	})
 
 	return opts
 }

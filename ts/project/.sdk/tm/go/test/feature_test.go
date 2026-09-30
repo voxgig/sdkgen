@@ -812,7 +812,7 @@ func TestFeatureDebug(t *testing.T) {
 			t.Errorf("expected onEntry for both ops, got %d", len(seen))
 		}
 		headers, _ := seen[0]["headers"].(map[string]any)
-		if headers["authorization"] != "<redacted>" {
+		if headers["authorization"] != "[redacted]" {
 			t.Errorf("expected redacted authorization, got %v", headers["authorization"])
 		}
 	})
@@ -839,7 +839,7 @@ func TestFeatureDebug(t *testing.T) {
 		}))
 		h.op(fhOpSpec{op: "load", headers: map[string]any{"x-secret": "hide", "x-ok": "show"}})
 		headers, _ := f.Entries[0]["headers"].(map[string]any)
-		if headers["x-secret"] != "<redacted>" {
+		if headers["x-secret"] != "[redacted]" {
 			t.Errorf("expected x-secret redacted, got %v", headers["x-secret"])
 		}
 		if headers["x-ok"] != "show" {

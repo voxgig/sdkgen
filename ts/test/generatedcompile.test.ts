@@ -3882,6 +3882,55 @@ type CleanLane = {
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
 }
 
+// phpunit is a dev dependency of the generated SDK, not a system tool: when
+// none is on PATH or named by PHPUNIT, composer installs one, once per
+// process, into a scratch project every php lane shares. Composer reads its
+// CA bundle from COMPOSER_CAFILE alone, so a session that trusts a proxy
+// through the generic variables hands that bundle on.
+let composerPhpunit: { bin: string, args: string[] } | null | undefined
+
+function phpunitViaComposer(args: string[]) {
+  const ready = phpunit(args)
+  if (null != ready) return ready
+  if (undefined === composerPhpunit) {
+    composerPhpunit = null
+    const php = toolchain('php')
+    const composer = toolchain('composer')
+    if (null != php && null != composer) {
+      const root = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-phpunit-'))
+      Fs.writeFileSync(Path.join(root, 'composer.json'), JSON.stringify({
+        name: 'sdkgen/phpunit-lane', type: 'project',
+        require: { php: '>=8.2' }, 'require-dev': { 'phpunit/phpunit': '^11.0' },
+      }))
+      const cafile = process.env.COMPOSER_CAFILE || process.env.SSL_CERT_FILE ||
+        process.env.CURL_CA_BUNDLE
+      const got = run(composer,
+        ['install', '--no-interaction', '--no-plugins', '--no-progress'], root, {
+          ...process.env,
+          COMPOSER_ALLOW_SUPERUSER: '1',
+          ...(null == cafile ? {} : { COMPOSER_CAFILE: cafile }),
+        }, 15 * 60 * 1000)
+      const phar = Path.join(root, 'vendor', 'bin', 'phpunit')
+      if (got.ok && Fs.existsSync(phar)) {
+        composerPhpunit = { bin: php, args: [phar, '--no-configuration'] }
+      }
+    }
+  }
+  return null == composerPhpunit
+    ? null
+    : { bin: composerPhpunit.bin, args: [...composerPhpunit.args, ...args] }
+}
+
+// Same reasoning as the cpp auth-null lane: a configured CXX that does not
+// resolve is a SKIP rather than a silent substitution.
+function cleanCxx(): string | null {
+  const configured = process.env.CXX
+  return null == configured || '' === configured
+    ? (toolchain('g++') || toolchain('c++') || toolchain('clang++'))
+    : toolchain(configured)
+}
+
+
 const CLEAN_LANES: CleanLane[] = [
   {
     target: 'ts',
@@ -3947,6 +3996,98 @@ const CLEAN_LANES: CleanLane[] = [
         bin: mvn,
         args: ['-q', '-B', 'test', '-Dtest=CleanTest', '-DfailIfNoSpecifiedTests=false'],
       }
+    },
+  },
+  {
+    target: 'php',
+    runner: 'test/CleanTest.php',
+    needs: 'php with phpunit (on PATH, PHPUNIT=<path to phpunit.phar>, or composer to install it)',
+    command: () => phpunitViaComposer(['test/CleanTest.php']),
+  },
+{
+    target: 'cpp',
+    runner: 'test/clean_test.cpp',
+    needs: 'make and a C++ compiler',
+    // Header-only: the sweep binary alone is built, by the SDK's own Makefile
+    // (the same rule `make test` uses), with the compiler that was probed.
+    prepare: (sdkroot) => {
+      const make = toolchain('make')
+      const cxx = cleanCxx()
+      if (null == make || null == cxx) return 'no make or C++ compiler'
+      const built = run(make, ['CXX=' + cxx, Path.join('test', 'clean_test.out')], sdkroot)
+      return built.ok ? null : 'the generated sweep does not compile:\n' + tail(built.out)
+    },
+    command: () => {
+      if (null == toolchain('make') || null == cleanCxx()) return null
+      return { bin: Path.join('test', 'clean_test.out'), args: [] }
+    },
+  },
+  {
+    target: 'go',
+    runner: 'test/clean_test.go',
+    needs: 'go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go
+        ? null
+        : { bin: go, args: ['test', './test/', '-run', 'TestClean', '-v'] }
+    },
+  },
+  {
+    target: 'c',
+    runner: 'tests/clean_test.c',
+    needs: 'make and a C compiler',
+    prepare: (sdkroot) => {
+      const make = toolchain('make')
+      const configured = process.env.CC
+      const cc = null == configured || '' === configured
+        ? (toolchain('cc') || toolchain('gcc'))
+        : toolchain(configured)
+      if (null == make || null == cc) return null
+      const built = run(make, ['CC=' + cc, 'tests/clean_test.out'], sdkroot)
+      return built.ok ? null : 'the generated sweep does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const make = toolchain('make')
+      const sh = toolchain('sh')
+      const cc = toolchain(process.env.CC || 'cc') || toolchain('gcc')
+      return null == make || null == cc || null == sh ? null
+        : { bin: sh, args: ['-c', './tests/clean_test.out'] }
+    },
+  },
+  {
+    target: 'rust',
+    runner: 'tests/clean_test.rs',
+    needs: 'cargo',
+    // cargo hides a passing test's stdout; the swept line must reach the lane.
+    command: () => {
+      const cargo = toolchain('cargo')
+      return null == cargo ? null
+        : { bin: cargo, args: ['test', '--test', 'clean_test', '--', '--nocapture'] }
+    },
+  },
+  {
+    target: 'lua',
+    runner: 'test/clean_test.lua',
+    needs: 'lua 5.4 with busted and the dkjson rock',
+    command: () => {
+      const lua = toolchain('lua5.4') || toolchain('lua')
+      if (null == lua || !probeOk(lua, ['-e', 'require "dkjson"'])) return null
+      return busted(['test/clean_test.lua'])
+    },
+  },
+  {
+    target: 'zig',
+    runner: 'test/clean_test.zig',
+    needs: 'zig 0.16',
+    command: () => {
+      const zig = toolchain('zig')
+      if (null == zig) return null
+      const version = run(zig, ['version'], process.cwd())
+      if (!version.ok || !/^0\.16\./.test(version.out.trim())) return null
+      // The sweep prints its line with std.debug.print; `run` merges stderr
+      // into the output it hands back, so the line is read either way.
+      return { bin: zig, args: ['build', 'test-clean', '--summary', 'all'] }
     },
   },
 ]

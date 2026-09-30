@@ -50,6 +50,22 @@ class EntyClass
         return $this->_name;
     }
 
+    // What print_r shows: the record, cleaned. The client and utility this
+    // instance holds print every feature's state through their closures,
+    // credentials included.
+    public function __debugInfo(): array
+    {
+        $record = [
+            'name' => $this->_name,
+            'data' => $this->_data,
+            'match' => $this->_match,
+            'deleted' => $this->_deleted,
+        ];
+        $clean = $this->_utility->clean ?? null;
+        $cleaned = is_callable($clean) ? $clean($this->_entctx, $record) : $record;
+        return is_array($cleaned) ? $cleaned : $record;
+    }
+
     /**
      * A `remove` marks the entity deleted. The instance KEEPS the data it
      * held — a caller can still read what was removed — but it is no longer a

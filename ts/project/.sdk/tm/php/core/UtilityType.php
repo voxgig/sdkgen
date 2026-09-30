@@ -6,6 +6,7 @@ declare(strict_types=1);
 class ProjectNameUtility
 {
     public mixed $clean = null;
+    public mixed $clean_add = null;
     public mixed $done = null;
     public mixed $make_error = null;
     public mixed $feature_add = null;
@@ -57,6 +58,7 @@ class ProjectNameUtility
     {
         $u = new ProjectNameUtility();
         $u->clean = $src->clean;
+        $u->clean_add = $src->clean_add;
         $u->done = $src->done;
         $u->make_error = $src->make_error;
         $u->feature_add = $src->feature_add;

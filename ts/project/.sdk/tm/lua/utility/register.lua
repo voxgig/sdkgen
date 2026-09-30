@@ -35,7 +35,8 @@ local transform_response = require("utility.transform_response")
 
 
 local function register_all(u)
-  u.clean = clean
+  u.clean = clean.clean
+  u.clean_add = clean.clean_add
   u.done = done
   u.make_error = make_error
   u.feature_add = feature_add

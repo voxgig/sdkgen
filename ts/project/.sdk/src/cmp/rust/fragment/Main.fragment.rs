@@ -345,6 +345,22 @@ impl ProjectNameSDK {
     // <[SLOT]>
 }
 
+// The client holds the credential in its options; its default print is the
+// name and the mode, never the options.
+impl std::fmt::Debug for ProjectNameSDK {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ProjectNameSDK")
+            .field("mode", &*self.mode.borrow())
+            .finish()
+    }
+}
+
+impl std::fmt::Display for ProjectNameSDK {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ProjectNameSDK({})", self.mode.borrow())
+    }
+}
+
 pub fn test_sdk(testopts: Value, sdkopts: Value) -> Rc<ProjectNameSDK> {
     let sdkopts = match sdkopts {
         Value::Map(_) => vs::clone(&sdkopts),

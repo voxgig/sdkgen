@@ -2,6 +2,7 @@ package core
 
 type Utility struct {
 	Clean             func(ctx *Context, val any) any
+	CleanAdd          func(ctx *Context, val any)
 	Done              func(ctx *Context) (any, error)
 	MakeError         func(ctx *Context, err error) (any, error)
 	FeatureAdd        func(ctx *Context, f Feature)

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -82,6 +83,22 @@ func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {
 	sdk.utility.FeatureHook(sdk.rootctx, "PostConstruct")
 
 	return sdk
+}
+
+// The client holds the credential in its options, so a print or a JSON dump
+// carries the name alone. Value receivers: a dereferenced client prints the
+// same way.
+func (sdk ProjectNameSDK) String() string {
+	return "ProjectName " + vs.Jsonify(map[string]any{"name": "ProjectName"},
+		map[string]any{"indent": 0})
+}
+
+func (sdk ProjectNameSDK) GoString() string {
+	return sdk.String()
+}
+
+func (sdk ProjectNameSDK) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]any{"name": "ProjectName"})
 }
 
 func (sdk *ProjectNameSDK) OptionsMap() map[string]any {

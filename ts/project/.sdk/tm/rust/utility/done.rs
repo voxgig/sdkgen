@@ -16,7 +16,17 @@ pub fn done_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
                 let rm = to_map(&getp(&explain, "result"));
                 vs::del_prop(rm, &Value::str("err"));
             }
-            c.explain = explain;
+            // The explain map is the CALLER's own (Control copies the Rc, not
+            // the ctrl object ts reassigns a field on), so the cleaned copy is
+            // written back into it entry by entry rather than swapped in.
+            if let (Value::Map(orig), Value::Map(cleaned)) = (&c.explain, &explain) {
+                let mut o = orig.borrow_mut();
+                for (k, v) in cleaned.borrow().iter() {
+                    o.insert(k.clone(), v.clone());
+                }
+            } else {
+                c.explain = explain;
+            }
         }
     }
 

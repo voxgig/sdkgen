@@ -28,7 +28,7 @@ type Row = {
   call: RegExp
 }
 
-const CLEAN_CALL = /\bclean\w*\s*\(|\bclean_\w+\s*\(|\bClean\.\w*clean\w*\s*\(|\(:clean\b|:clean\)|\bu-clean\b|\bu_clean\b|\bcleanUtil\b|clean_util\b|\bclean\b.*\bctx\b/i
+const CLEAN_CALL = /clean\w*\s*\(|\bclean_\w+\s*\(|\bClean\.\w*clean\w*\s*\(|\(:clean\b|:clean\)|\bu-clean\b|\bu_clean\b|\bcleanUtil\b|clean_util\b|\bclean\b.*\bctx\b/i
 
 const FIXED: Row[] = [
   { target: 'ts', error: 'ts/src/utility/MakeErrorUtility.ts', done: 'ts/src/utility/DoneUtility.ts',
@@ -41,15 +41,26 @@ const FIXED: Row[] = [
     log: 'rb/feature/log_feature.rb', debug: 'rb/feature/debug_feature.rb', call: CLEAN_CALL },
   { target: 'java', error: 'java/utility/MakeError.java', done: 'java/utility/Done.java',
     log: 'java/feature/LogFeature.java', debug: 'java/feature/DebugFeature.java', call: CLEAN_CALL },
+  { target: 'php', error: 'php/utility/MakeError.php', done: 'php/utility/Done.php',
+    log: 'php/feature/LogFeature.php', debug: 'php/feature/DebugFeature.php', call: CLEAN_CALL },
+  { target: 'cpp', error: 'cpp/utility/pipeline.hpp', done: 'cpp/utility/pipeline.hpp',
+    log: 'cpp/feature/log.hpp', debug: 'cpp/feature/debug.hpp', call: CLEAN_CALL },
+  { target: 'go', error: 'go/utility/make_error.go', done: 'go/utility/done.go',
+    log: 'go/feature/log_feature.go', debug: 'go/feature/debug_feature.go', call: CLEAN_CALL },
+  { target: 'c', error: 'c/utility/make_error.c', done: 'c/utility/done.c',
+    log: 'c/feature/log.c', debug: 'c/feature/debug.c', call: CLEAN_CALL },
+  { target: 'rust', error: 'rust/utility/make_error.rs', done: 'rust/utility/done.rs',
+    log: 'rust/feature/log.rs', debug: 'rust/feature/debug.rs', call: CLEAN_CALL },
+  { target: 'lua', error: 'lua/utility/make_error.lua', done: 'lua/utility/done.lua',
+    log: 'lua/feature/log_feature.lua', debug: 'lua/feature/debug_feature.lua', call: CLEAN_CALL },
+  { target: 'zig', error: 'zig/core/utility.zig', done: 'zig/core/utility.zig',
+    log: 'zig/feature/log.zig', debug: 'zig/feature/debug.zig', call: CLEAN_CALL },
 ]
 
 // Not yet ported, with the reason; empty before a fleet-wide release.
-const OUTSTANDING: Record<string, string> = {
-  go: 'port in progress',
-  php: 'port in progress', perl: 'port in progress',
+const OUTSTANDING: Record<string, string> = { perl: 'port in progress',
   csharp: 'port in progress', kotlin: 'port in progress', scala: 'port in progress',
-  swift: 'port in progress', lua: 'port in progress', c: 'port in progress',
-  cpp: 'port in progress', zig: 'port in progress', rust: 'port in progress',
+  swift: 'port in progress',
   clojure: 'port in progress', elixir: 'port in progress', ocaml: 'port in progress',
 }
 

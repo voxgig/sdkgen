@@ -27,6 +27,41 @@ class ProjectNameMakeOptions
     {
         $options = $ctx->options ?? [];
 
+        // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
+        //
+        // `ProjectNameSchema::optspec()` is built from the model:
+        // `main.kit.optspec` for the standard options, plus one entry per
+        // feature this target carries, taken from that feature's own
+        // `config.options` / `config.optspec`. Editing this file to add an
+        // option would put it back where it was — one of twenty
+        // hand-maintained copies of a schema nothing cross-checked — so add
+        // it to the model instead and every ported target validates it.
+        //
+        // Required explicitly rather than left to the classmap: the generated
+        // SDK is exercised (README examples, the compile checks) without a
+        // dumped composer autoload.
+        require_once __DIR__ . '/../schema.php';
+        require_once __DIR__ . '/../core/Context.php';
+        $optspec = ProjectNameSchema::optspec();
+
+        // The secret registry exists BEFORE validation, fed from the raw
+        // input, so the constructor's own rejection of a mistyped credential
+        // is clean too.
+        $rawclean = $options['clean'] ?? null;
+        $rawclean = is_object($rawclean) ? get_object_vars($rawclean)
+            : (is_array($rawclean) ? $rawclean : []);
+        $specclean = \Voxgig\Struct\Struct::getprop($optspec, 'clean');
+        $specclean = is_object($specclean) ? get_object_vars($specclean)
+            : (is_array($specclean) ? $specclean : []);
+        $cleancfg = ProjectNameClean::config(array_merge($specclean, $rawclean));
+        $cleanctx = new ProjectNameContext([
+            'options' => ['__derived__' => ['clean' => $cleancfg]],
+        ], null);
+        $rawsecrets = [$options['apikey'] ?? null, $options['secret'] ?? null];
+        foreach (array_merge($rawsecrets, ProjectNameClean::splitvalues($rawclean['values'] ?? null)) as $raw) {
+            ProjectNameClean::add($cleanctx, $raw);
+        }
+
         // Merge custom utility overrides.
         //
         // A key naming a real utility member REPLACES it; anything else is
@@ -147,28 +182,17 @@ class ProjectNameMakeOptions
         $config = $ctx->config ?? [];
         $cfgopts = isset($config['options']) && is_array($config['options']) ? $config['options'] : [];
 
-        // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
-        //
-        // `ProjectNameSchema::optspec()` is built from the model:
-        // `main.kit.optspec` for the standard options, plus one entry per
-        // feature this target carries, taken from that feature's own
-        // `config.options` / `config.optspec`. Editing this file to add an
-        // option would put it back where it was — one of twenty
-        // hand-maintained copies of a schema nothing cross-checked — so add
-        // it to the model instead and every ported target validates it.
-        //
-        // Required explicitly rather than left to the classmap: the generated
-        // SDK is exercised (README examples, the compile checks) without a
-        // dumped composer autoload.
-        require_once __DIR__ . '/../schema.php';
-        $optspec = ProjectNameSchema::optspec();
-
         // Empty [] would be treated as a list and clobber the map under merge;
         // substitute an empty stdClass to preserve map semantics.
         $cfgopts_merge = empty($cfgopts) ? new \stdClass() : $cfgopts;
         $opts_merge = empty($opts) ? new \stdClass() : $opts;
         $merged = \Voxgig\Struct\Struct::merge([(object)[], $cfgopts_merge, $opts_merge]);
-        $validated = \Voxgig\Struct\Struct::validate($merged, $optspec);
+        try {
+            $validated = \Voxgig\Struct\Struct::validate($merged, $optspec);
+        } catch (\Throwable $err) {
+            ProjectNameClean::call($cleanctx, $err);
+            throw $err;
+        }
         $opts = self::to_array_deep($validated);
         if (!is_array($opts)) {
             $opts = [];
@@ -243,18 +267,6 @@ class ProjectNameMakeOptions
             $opts['system']['fetch'] = $sys_fetch;
         }
 
-        $clean_keys = \Voxgig\Struct\Struct::getpath($opts, 'clean.keys');
-        if (!is_string($clean_keys)) {
-            $clean_keys = 'key,token,id';
-        }
-        $parts = array_filter(array_map('trim', explode(',', $clean_keys)), function ($p) {
-            return $p !== '';
-        });
-        $parts = array_map(function ($p) {
-            return \Voxgig\Struct\Struct::escre($p);
-        }, $parts);
-        $keyre = implode('|', $parts);
-
         // Resolve the feature add-order: an explicit list order (above) wins;
         // otherwise order the map test-first, then the remaining names sorted,
         // so the outcome is deterministic and `test` is always the base.
@@ -286,10 +298,33 @@ class ProjectNameMakeOptions
             }
         }
 
-        $derived = ['clean' => $keyre === '' ? [] : ['keyre' => $keyre]];
-        $derived['featureorder'] = $featureorder;
-        $opts['__derived__'] = $derived;
+        $opts['__derived__'] = [
+            'clean' => $cleancfg,
+            'featureorder' => $featureorder,
+        ];
+
+        // Every string under a sensitive name anywhere in the options - a
+        // custom auth header, a feature credential - is a secret the SDK now
+        // handles.
+        self::register_sensitive($cleanctx, $opts, null);
 
         return $opts;
+    }
+
+    private static function register_sensitive(ProjectNameContext $ctx, mixed $node, mixed $key): void
+    {
+        if (is_string($node)) {
+            if (ProjectNameClean::key($ctx, $key)) {
+                ProjectNameClean::add($ctx, $node);
+            }
+            return;
+        }
+        if (is_array($node) || $node instanceof \stdClass) {
+            foreach ((array)$node as $k => $v) {
+                if ('__derived__' !== $k) {
+                    self::register_sensitive($ctx, $v, $k);
+                }
+            }
+        }
     }
 }

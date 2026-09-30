@@ -37,6 +37,7 @@ require_once __DIR__ . '/TransformResponse.php';
 
 ProjectNameUtility::setRegistrar(function (ProjectNameUtility $u): void {
     $u->clean = [ProjectNameClean::class, 'call'];
+    $u->clean_add = [ProjectNameClean::class, 'add'];
     $u->done = [ProjectNameDone::class, 'call'];
     $u->make_error = [ProjectNameMakeError::class, 'call'];
     $u->feature_add = [ProjectNameFeatureAdd::class, 'call'];

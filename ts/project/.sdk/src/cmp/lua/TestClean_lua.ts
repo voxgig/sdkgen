@@ -1,0 +1,505 @@
+import {
+  cmp,
+  File,
+  Content,
+  isAuthSuppressed,
+  isHttpBasicAuth,
+  resolveAuthIn,
+  resolveAuthName,
+} from '@voxgig/sdkgen'
+
+
+// The canary sweep (the lua port of TestClean_ts): every credential slot
+// holds a distinctive value, every diagnostic feature this SDK ships is
+// switched on with a capturing sink, a real operation runs through every
+// outcome, and every string that leaves the SDK is searched for the
+// canaries and their encoded forms. It also proves its own sensitivity: with
+// clean switched off the canary MUST show.
+const TestClean = cmp(function TestClean(props: any) {
+  const { model } = props.ctx$
+  const { target } = props
+
+  const auth = {
+    suppressed: isAuthSuppressed(model),
+    where: resolveAuthIn(model),
+    name: 'header' === resolveAuthIn(model)
+      ? resolveAuthName(model).toLowerCase() : resolveAuthName(model),
+    basic: isHttpBasicAuth(model),
+  }
+
+  File({ name: 'clean_test.' + target.ext }, () => Content(render(model, auth)))
+})
+
+
+function luabool(b: boolean): string {
+  return b ? 'true' : 'false'
+}
+
+
+function luastr(s: string): string {
+  return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'
+}
+
+
+function render(model: any, auth: {
+  suppressed: boolean, where: string, name: string, basic: boolean
+}): string {
+  return `-- ${model.const.Name} SDK clean test
+--
+-- The canary sweep: every credential slot holds a distinctive value, every
+-- diagnostic feature this SDK ships is switched on with a capturing sink, a
+-- real operation runs through every outcome, and every string that leaves
+-- the SDK is searched for the canaries and their encoded forms. It also
+-- proves its own sensitivity: with clean switched off the canary MUST show.
+
+local json = require("dkjson")
+local sdk = require("${model.name}_sdk")
+local BaseFeature = require("feature.base_feature")
+
+
+-- Generated: the credential's wire placement is fixed when the SDK is built.
+local AUTH = {
+  suppressed = ${luabool(auth.suppressed)},
+  where = ${luastr(auth.where)},
+  name = ${luastr(auth.name)},
+  basic = ${luabool(auth.basic)},
+}
+
+local CANARY = {
+  apikey = "CANARY-APIKEY-k9x2m7q4p1",
+  secret = "CANARY-SECRET-w3e8r5t2y6",
+  header = "CANARY-HEADER-z1x4c7v0b3",
+  value = "CANARY-VALUE-n5m8b2v9c4",
+}
+
+local MASK = "[redacted]"
+
+
+local B64_ALPHABET =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+local function base64(text)
+  local out = {}
+  local size = #text
+  local index = 1
+  while index <= size do
+    local rest = size - index + 1
+    local a = string.byte(text, index)
+    local b = string.byte(text, index + 1) or 0
+    local c = string.byte(text, index + 2) or 0
+    local word = (a << 16) | (b << 8) | c
+    local chunk = {}
+    for shift = 18, 0, -6 do
+      local at = (word >> shift) & 0x3f
+      chunk[#chunk + 1] = string.sub(B64_ALPHABET, at + 1, at + 1)
+    end
+    if rest == 1 then
+      chunk[3] = "="
+      chunk[4] = "="
+    elseif rest == 2 then
+      chunk[4] = "="
+    end
+    out[#out + 1] = table.concat(chunk)
+    index = index + 3
+  end
+  return table.concat(out)
+end
+
+
+local function percent(text)
+  return (string.gsub(text, "[^%w%-_%.~!%*'%(%)]", function(c)
+    return string.format("%%%02X", string.byte(c))
+  end))
+end
+
+
+-- Every form a canary can travel in.
+local FORMS = {}
+for _, v in ipairs({ CANARY.apikey, CANARY.secret, CANARY.header, CANARY.value }) do
+  FORMS[#FORMS + 1] = v
+  FORMS[#FORMS + 1] = base64(v)
+  FORMS[#FORMS + 1] = percent(v)
+end
+FORMS[#FORMS + 1] = base64(CANARY.apikey .. ":" .. CANARY.secret)
+
+
+-- Header tables keep the caller's spelling; the assertion should not care.
+local function header(map, name)
+  for k, v in pairs(map or {}) do
+    if type(k) == "string" and string.lower(k) == string.lower(name) then
+      return v
+    end
+  end
+  return nil
+end
+
+
+local function leaks(text)
+  local found = {}
+  for _, f in ipairs(FORMS) do
+    if string.find(text, f, 1, true) ~= nil then
+      found[#found + 1] = f
+    end
+  end
+  return found
+end
+
+
+local function tojson(val)
+  local ok, text = pcall(json.encode, val, {
+    exception = function() return "null" end,
+  })
+  if ok and type(text) == "string" then
+    return text
+  end
+  return "<json failed: " .. tostring(text) .. ">"
+end
+
+
+-- A generic table dump, the way a REPL or a logger prints a value: it
+-- honours __tostring, as print does, and otherwise walks every field.
+local function dump(val, depth, seen)
+  depth = depth or 0
+  seen = seen or {}
+  if type(val) == "string" then
+    return string.format("%q", val)
+  end
+  if type(val) ~= "table" then
+    return tostring(val)
+  end
+  local mt = getmetatable(val)
+  if type(mt) == "table" and mt.__tostring ~= nil then
+    return tostring(val)
+  end
+  if seen[val] or depth > 8 then
+    return "{...}"
+  end
+  seen[val] = true
+  local parts = {}
+  for k, v in pairs(val) do
+    parts[#parts + 1] = tostring(k) .. "=" .. dump(v, depth + 1, seen)
+  end
+  seen[val] = nil
+  return "{" .. table.concat(parts, ", ") .. "}"
+end
+
+
+local function append(sinks, more)
+  for _, s in ipairs(more) do
+    sinks[#sinks + 1] = s
+  end
+end
+
+
+-- Every default form a value leaves in: the SDK's JSON encoding, tostring,
+-- a table dump, and an error's own fields.
+local function surfaces(name, val)
+  local out = {}
+  local function push(kind, fn)
+    local ok, text = pcall(fn)
+    if ok and text ~= nil then
+      out[#out + 1] = { name = name .. ":" .. kind, text = tostring(text) }
+    end
+  end
+  push("json", function() return tojson(val) end)
+  push("string", function() return tostring(val) end)
+  push("dump", function() return dump(val) end)
+  if type(val) == "table" then
+    if type(val.to_json) == "function" then
+      push("tojson", function() return val:to_json() end)
+    end
+    if val.is_sdk_error == true then
+      push("msg", function() return val.msg end)
+      push("result", function() return dump(val.result) end)
+      push("spec", function() return dump(val.spec) end)
+    end
+  end
+  return out
+end
+
+
+-- Captures the serialised context from inside the pipeline: what a hook
+-- author would hand to a logger.
+local CaptureFeature = {}
+CaptureFeature.__index = CaptureFeature
+setmetatable(CaptureFeature, { __index = BaseFeature })
+
+function CaptureFeature.new(sinks)
+  local self = setmetatable(BaseFeature.new(), CaptureFeature)
+  self.name = "capture"
+  self.version = "0.0.1"
+  self.active = true
+  self.sinks = sinks
+  return self
+end
+
+function CaptureFeature:init(_ctx, _options) end
+function CaptureFeature:PreRequest(ctx) append(self.sinks, surfaces("ctx@PreRequest", ctx)) end
+function CaptureFeature:PreResponse(ctx) append(self.sinks, surfaces("ctx@PreResponse", ctx)) end
+function CaptureFeature:PreUnexpected(ctx) append(self.sinks, surfaces("ctx@PreUnexpected", ctx)) end
+
+
+local function response(status, data, headers)
+  local h = { ["content-type"] = "application/json" }
+  for k, v in pairs(headers or {}) do
+    h[string.lower(k)] = v
+  end
+  return {
+    status = status,
+    statusText = status < 400 and "OK" or "ERR",
+    headers = h,
+    json = function() return data end,
+    body = tojson(data),
+  }, nil
+end
+
+
+local SCENARIOS = {
+  { name = "ok", respond = function()
+    return response(200, { id = "i1", name = "n1" },
+      { ["x-session-token"] = "RESP-TOKEN-a1b2c3d4e5" })
+  end },
+  { name = "notfound", respond = function()
+    return response(404, { error = "no such record" })
+  end },
+  { name = "server", respond = function()
+    return response(500, { error = "boom" })
+  end },
+  { name = "transport", respond = function(url)
+    return nil, 'socket hang up (URL was: "' .. url .. '")'
+  end },
+  { name = "notjson", respond = function()
+    return {
+      status = 200,
+      statusText = "OK",
+      headers = {},
+      json = function() error("Unexpected token < in JSON") end,
+      body = "<html>",
+    }, nil
+  end },
+}
+
+
+-- True when this SDK was generated with the named feature.
+local function has_feature(name)
+  local ok, features = pcall(require, "features")
+  return ok and type(features) == "table" and features[name] ~= nil
+end
+
+
+local function make_sdk(scenario, sinks, cleanopts)
+  local function capture(name)
+    return function(rec) append(sinks, surfaces(name, rec)) end
+  end
+
+  local feature = {}
+  if has_feature("log") then
+    local logger = {}
+    for _, level in ipairs({ "trace", "debug", "info", "warn", "error", "fatal" }) do
+      logger[level] = function(_, msg) append(sinks, surfaces("log." .. level, msg)) end
+    end
+    feature.log = { active = true, logger = logger }
+  end
+  if has_feature("debug") then
+    feature.debug = { active = true, onEntry = capture("debug") }
+  end
+  if has_feature("audit") then
+    feature.audit = { active = true, sink = capture("audit") }
+  end
+  if has_feature("telemetry") then
+    feature.telemetry = { active = true, exporter = capture("telemetry") }
+  end
+  if has_feature("cost") then
+    feature.cost = { active = true, sink = capture("cost") }
+  end
+  if has_feature("metrics") then
+    feature.metrics = { active = true }
+  end
+  if has_feature("clienttrack") then
+    feature.clienttrack = { active = true }
+  end
+
+  local clean = { values = CANARY.value }
+  for k, v in pairs(cleanopts or {}) do
+    clean[k] = v
+  end
+
+  return sdk.new({
+    apikey = CANARY.apikey,
+    secret = CANARY.secret,
+    headers = { ["X-Custom-Token"] = CANARY.header },
+    clean = clean,
+    feature = feature,
+    extend = { CaptureFeature.new(sinks) },
+    utility = {
+      fetcher = function(_ctx, url, fetchdef) return scenario.respond(url, fetchdef) end,
+    },
+  })
+end
+
+
+-- The first operation that completes against a plain 200 with no arguments
+-- (a required path parameter would fail before the request is built).
+local function usable_op()
+  local plain = sdk.new({
+    apikey = CANARY.apikey,
+    utility = { fetcher = function() return response(200, { id = "i1" }) end },
+  })
+  local config = require("config_shared")()
+  local entities = type(config.entity) == "table" and config.entity or {}
+
+  local accessors = {}
+  for k, v in pairs(getmetatable(plain)) do
+    if type(k) == "string" and string.match(k, "^%u") and type(v) == "function" then
+      accessors[#accessors + 1] = k
+    end
+  end
+  table.sort(accessors)
+
+  local rank = { list = 0, load = 1 }
+  for _, accessor in ipairs(accessors) do
+    local ok, inst = pcall(plain[accessor], plain)
+    if ok and type(inst) == "table" and type(inst.get_name) == "function"
+      and type(entities[inst:get_name()]) == "table"
+    then
+      local ops = {}
+      for op in pairs(entities[inst:get_name()].op or {}) do
+        ops[#ops + 1] = op
+      end
+      table.sort(ops, function(a, b)
+        return (rank[a] or 2) < (rank[b] or 2) or ((rank[a] or 2) == (rank[b] or 2) and a < b)
+      end)
+      for _, op in ipairs(ops) do
+        if type(inst[op]) == "function" then
+          local cok, out, err = pcall(inst[op], plain[accessor](plain), {}, {})
+          if cok and err == nil and out ~= nil then
+            return { accessor = accessor, op = op }
+          end
+        end
+      end
+    end
+  end
+  return nil
+end
+
+
+local function drive(client, target, ctrl, sinks)
+  local ent = client[target.accessor](client)
+  local ok, out, err = pcall(ent[target.op], ent, {}, ctrl)
+  if not ok then
+    err = out
+    out = nil
+  end
+  if err ~= nil then
+    append(sinks, surfaces("error", err))
+  end
+  if out ~= nil then
+    append(sinks, surfaces("result", out))
+  end
+  if ctrl.explain ~= nil then
+    append(sinks, surfaces("explain", ctrl.explain))
+  end
+  return err
+end
+
+
+describe("clean", function()
+
+  it("no credential leaves the SDK in any form", function()
+    local target = usable_op()
+    assert.is_not_nil(target, "no operation completes without arguments; nothing to sweep")
+
+    local sinks = {}
+    local errors = {}
+    local explains = {}
+
+    for _, scenario in ipairs(SCENARIOS) do
+      for _, variant in ipairs({
+        { name = "throw", ctrl = function() return {} end },
+        { name = "explain", ctrl = function() return { explain = {} } end },
+        { name = "nothrow", ctrl = function() return { throw = false, explain = {} } end },
+      }) do
+        local client = make_sdk(scenario, sinks)
+        local ctrl = variant.ctrl()
+        local err = drive(client, target, ctrl, sinks)
+        local key = scenario.name .. "/" .. variant.name
+        if err ~= nil then
+          errors[key] = err
+        end
+        if ctrl.explain ~= nil then
+          explains[key] = ctrl.explain
+        end
+        append(sinks, surfaces("sdk", client))
+      end
+    end
+
+    local leaked = {}
+    for _, s in ipairs(sinks) do
+      local found = leaks(s.text)
+      if 0 < #found then
+        leaked[#leaked + 1] = s.name .. " [" .. table.concat(found, ", ") .. "]"
+      end
+    end
+
+    print("clean: swept " .. #sinks .. " surface(s), " .. #leaked .. " leak(s)")
+
+    assert.are.equal(0, #leaked, "credential leaked through: " .. table.concat(leaked, "; "))
+
+    -- The positive half: the slot the credential travelled in is masked,
+    -- and an unregistered token in a response header is masked by name.
+    local notfound = errors["notfound/throw"]
+    assert.is_not_nil(notfound, "the 404 scenario must fail")
+    assert.are.equal(404, notfound.status)
+    local spec = notfound.spec or {}
+    if not AUTH.suppressed then
+      if AUTH.where == "query" then
+        assert.are.equal(MASK, header(spec.query, AUTH.name))
+      elseif AUTH.where == "cookie" then
+        local cookie = tostring(header(spec.headers, "cookie"))
+        assert.is_truthy(string.find(cookie, MASK, 1, true), "cookie: " .. cookie)
+      else
+        local cred = tostring(header(spec.headers, AUTH.name))
+        assert.is_truthy(string.sub(cred, -#MASK) == MASK, AUTH.name .. ": " .. cred)
+      end
+    end
+    assert.are.equal(MASK, header(spec.headers, "x-custom-token"))
+
+    local explained = explains["ok/explain"] or {}
+    assert.is_not_nil(explained.result, "the explain record should carry the result")
+    assert.are.equal(MASK, header(explained.result.headers, "x-session-token"))
+  end)
+
+
+  it("the sweep can see a leak: clean switched off shows the credential", function()
+    local target = usable_op()
+    assert.is_not_nil(target)
+
+    local sinks = {}
+    local client = make_sdk(SCENARIOS[2], sinks, { active = false })
+    local err = drive(client, target, {}, sinks)
+    assert.is_not_nil(err)
+
+    local seen = 0
+    for _, s in ipairs(sinks) do
+      if 0 < #leaks(s.text) then
+        seen = seen + 1
+      end
+    end
+    assert.is_true(0 < seen, "with clean off, nothing showed the canary: the sweep is blind")
+
+    if not AUTH.suppressed then
+      local text = tojson(err.spec)
+      assert.is_true(
+        string.find(text, CANARY.apikey, 1, true) ~= nil
+          or string.find(text, base64(CANARY.apikey .. ":" .. CANARY.secret), 1, true) ~= nil,
+        "the raw spec should carry the credential when clean is off")
+    end
+  end)
+end)
+`
+}
+
+
+export {
+  TestClean
+}

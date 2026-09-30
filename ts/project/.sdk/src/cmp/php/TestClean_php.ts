@@ -1,0 +1,495 @@
+import {
+  cmp,
+  File,
+  Content,
+  isAuthSuppressed,
+  isHttpBasicAuth,
+  resolveAuthIn,
+  resolveAuthName,
+} from '@voxgig/sdkgen'
+
+
+// The canary sweep, as TestClean_ts emits it: every credential slot holds a
+// distinctive value, every diagnostic feature this SDK ships is switched on
+// with a capturing sink, a real operation runs through every outcome, and
+// every string that leaves the SDK is searched for the canaries and their
+// encoded forms. With clean switched off the canary MUST show.
+const TestClean = cmp(function TestClean(props: any) {
+  const { model } = props.ctx$
+  const { target } = props
+
+  const auth = {
+    suppressed: isAuthSuppressed(model),
+    where: resolveAuthIn(model),
+    name: 'header' === resolveAuthIn(model)
+      ? resolveAuthName(model).toLowerCase() : resolveAuthName(model),
+    basic: isHttpBasicAuth(model),
+  }
+
+  File({ name: 'CleanTest.' + target.ext }, () => Content(render(model.const.Name, auth)))
+})
+
+
+function phpstr(s: string): string {
+  return "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'"
+}
+
+
+function render(Name: string, auth: {
+  suppressed: boolean, where: string, name: string, basic: boolean
+}): string {
+  const lower = Name.toLowerCase()
+
+  return `<?php
+declare(strict_types=1);
+
+// ${Name} SDK clean test
+//
+// The canary sweep: every credential slot holds a distinctive value, every
+// diagnostic feature this SDK ships is switched on with a capturing sink, a
+// real operation runs through every outcome, and every string that leaves
+// the SDK is searched for the canaries and their encoded forms. It also
+// proves its own sensitivity: with clean switched off the canary MUST show.
+
+require_once __DIR__ . '/../${lower}_sdk.php';
+
+use PHPUnit\\Framework\\TestCase;
+
+class CleanTest extends TestCase
+{
+    // Generated: the credential's wire placement is fixed when the SDK is
+    // built.
+    private const AUTH = [
+        'suppressed' => ${auth.suppressed ? 'true' : 'false'},
+        'where' => ${phpstr(auth.where)},
+        'name' => ${phpstr(auth.name)},
+        'basic' => ${auth.basic ? 'true' : 'false'},
+    ];
+
+    private const CANARY = [
+        'apikey' => 'CANARY-APIKEY-k9x2m7q4p1',
+        'secret' => 'CANARY-SECRET-w3e8r5t2y6',
+        'header' => 'CANARY-HEADER-z1x4c7v0b3',
+        'value' => 'CANARY-VALUE-n5m8b2v9c4',
+    ];
+
+    private const MASK = '[redacted]';
+
+    // Every form a canary can travel in.
+    private static function forms(): array
+    {
+        $out = [];
+        foreach (self::CANARY as $v) {
+            $out[] = $v;
+            $out[] = base64_encode($v);
+            $out[] = rawurlencode($v);
+        }
+        $out[] = base64_encode(self::CANARY['apikey'] . ':' . self::CANARY['secret']);
+        return $out;
+    }
+
+    // Header maps keep the caller's spelling; the assertion should not care.
+    private static function header(mixed $map, string $name): mixed
+    {
+        if (is_object($map)) {
+            $map = get_object_vars($map);
+        }
+        if (!is_array($map)) {
+            return null;
+        }
+        foreach ($map as $k => $v) {
+            if (strtolower((string)$k) === strtolower($name)) {
+                return $v;
+            }
+        }
+        return null;
+    }
+
+    private static function leaks(string $text): array
+    {
+        $found = [];
+        foreach (self::forms() as $f) {
+            if (str_contains($text, $f)) {
+                $found[] = $f;
+            }
+        }
+        return $found;
+    }
+
+    // Every way a caller renders a value: json and print_r for all of them,
+    // var_export where it walks the whole graph (a record, an error), and
+    // the error's own message and string form.
+    public static function surfaces(string $name, mixed $val): array
+    {
+        $out = [];
+        $push = function (string $kind, callable $fn) use (&$out, $name): void {
+            try {
+                $text = $fn();
+                if (is_string($text)) {
+                    $out[] = ['name' => $name . ':' . $kind, 'text' => $text];
+                }
+            } catch (\\Throwable $_e) {
+                // A renderer that refuses the value is not a surface.
+            }
+        };
+        $push('json', fn () => json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $push('print_r', fn () => print_r($val, true));
+        if (is_array($val) || $val instanceof \\Throwable) {
+            $push('var_export', fn () => var_export($val, true));
+        }
+        if ($val instanceof \\Throwable) {
+            $push('message', fn () => $val->getMessage());
+            $push('string', fn () => (string)$val);
+        }
+        return $out;
+    }
+
+    private static function response(int $status, mixed $data, array $headers = []): array
+    {
+        $h = ['content-type' => 'application/json'];
+        foreach ($headers as $k => $v) {
+            $h[strtolower((string)$k)] = $v;
+        }
+        return [
+            'status' => $status,
+            'statusText' => $status < 400 ? 'OK' : 'ERR',
+            'headers' => $h,
+            'json' => function () use ($data) { return $data; },
+            'body' => json_encode($data),
+        ];
+    }
+
+    // Each scenario is a transport answering the [response, err] pair the
+    // fetcher contract names.
+    private static function scenarios(): array
+    {
+        return [
+            'ok' => function (string $_url, array $_fetchdef): array {
+                return [self::response(200, ['id' => 'i1', 'name' => 'n1'],
+                    ['x-session-token' => 'RESP-TOKEN-a1b2c3d4e5']), null];
+            },
+            'notfound' => function (string $_url, array $_fetchdef): array {
+                return [self::response(404, ['error' => 'no such record']), null];
+            },
+            'server' => function (string $_url, array $_fetchdef): array {
+                return [self::response(500, ['error' => 'boom']), null];
+            },
+            // A transport failure quotes the URL, query credential included.
+            'transport' => function (string $url, array $_fetchdef): array {
+                return [null, new \\RuntimeException('socket hang up (URL was: "' . $url . '")')];
+            },
+            // A body that is not JSON: the fetcher answers no parsed body.
+            'notjson' => function (string $_url, array $_fetchdef): array {
+                return [[
+                    'status' => 200,
+                    'statusText' => 'OK',
+                    'headers' => [],
+                    'json' => function () { return null; },
+                    'body' => '<html>',
+                ], null];
+            },
+        ];
+    }
+
+    // True when this SDK was generated with the named feature.
+    private static function has_feature(string $name): bool
+    {
+        $config = ${Name}Config::shared_config();
+        $f = $config['feature'] ?? [];
+        return is_array($f) && isset($f[$name]);
+    }
+
+    // Captures the serialised context from inside the pipeline: what a hook
+    // author would hand to a logger. It also keeps the operation context,
+    // the one place the explain record can be read back from.
+    private static function capture_feature(\\ArrayObject $sinks): ${Name}BaseFeature
+    {
+        return new class ($sinks) extends ${Name}BaseFeature {
+            public mixed $last = null;
+
+            public function __construct(private \\ArrayObject $sinks)
+            {
+                parent::__construct();
+                $this->name = 'capture';
+                $this->version = '0.0.1';
+                $this->active = true;
+            }
+
+            private function take(string $name, ${Name}Context $ctx): void
+            {
+                foreach (CleanTest::surfaces($name, $ctx) as $s) {
+                    $this->sinks[] = $s;
+                }
+            }
+
+            public function PrePoint(${Name}Context $ctx): void
+            {
+                $this->last = $ctx;
+            }
+
+            public function PreRequest(${Name}Context $ctx): void
+            {
+                $this->take('ctx@PreRequest', $ctx);
+            }
+
+            public function PreResponse(${Name}Context $ctx): void
+            {
+                $this->take('ctx@PreResponse', $ctx);
+            }
+
+            public function PreUnexpected(${Name}Context $ctx): void
+            {
+                $this->take('ctx@PreUnexpected', $ctx);
+            }
+        };
+    }
+
+    private static function make_sdk(callable $respond, \\ArrayObject $sinks, ?array $cleanopts = null): array
+    {
+        $capture = function (string $name) use ($sinks): callable {
+            return function (mixed $rec) use ($name, $sinks): void {
+                foreach (self::surfaces($name, $rec) as $s) {
+                    $sinks[] = $s;
+                }
+            };
+        };
+
+        $feature = [];
+        if (self::has_feature('log')) {
+            $feature['log'] = ['active' => true, 'logger' => $capture('log')];
+        }
+        if (self::has_feature('debug')) {
+            $feature['debug'] = ['active' => true, 'onEntry' => $capture('debug')];
+        }
+        if (self::has_feature('audit')) {
+            $feature['audit'] = ['active' => true, 'sink' => $capture('audit')];
+        }
+        if (self::has_feature('telemetry')) {
+            $feature['telemetry'] = ['active' => true, 'exporter' => $capture('telemetry')];
+        }
+        if (self::has_feature('cost')) {
+            $feature['cost'] = ['active' => true, 'sink' => $capture('cost')];
+        }
+        if (self::has_feature('metrics')) {
+            $feature['metrics'] = ['active' => true];
+        }
+        if (self::has_feature('clienttrack')) {
+            $feature['clienttrack'] = ['active' => true];
+        }
+
+        $watcher = self::capture_feature($sinks);
+
+        $opts = [
+            'apikey' => self::CANARY['apikey'],
+            'secret' => self::CANARY['secret'],
+            'headers' => ['X-Custom-Token' => self::CANARY['header']],
+            'clean' => array_merge(['values' => self::CANARY['value']], $cleanopts ?? []),
+            'extend' => [$watcher],
+            'utility' => [
+                'fetcher' => function (${Name}Context $_ctx, string $url, array $fetchdef) use ($respond): array {
+                    return $respond($url, $fetchdef);
+                },
+            ],
+        ];
+        if (0 < count($feature)) {
+            $opts['feature'] = $feature;
+        }
+
+        return [new ${Name}SDK($opts), $watcher];
+    }
+
+    // The first operation that completes against a plain 200 with no
+    // arguments (a required path parameter would fail before the request is
+    // built). An entity accessor is a capitalised client method whose result
+    // answers get_name(), as the feature corpus runner finds them.
+    private static function usable_op(): ?array
+    {
+        $plain = new ${Name}SDK([
+            'apikey' => self::CANARY['apikey'],
+            'utility' => [
+                'fetcher' => function (${Name}Context $_ctx, string $_url, array $_fetchdef): array {
+                    return [self::response(200, ['id' => 'i1']), null];
+                },
+            ],
+        ]);
+
+        $found = [];
+        foreach (get_class_methods($plain) as $m) {
+            if (!preg_match('/^[A-Z]/', $m)) {
+                continue;
+            }
+            try {
+                $ent = $plain->$m();
+            } catch (\\Throwable $_e) {
+                continue;
+            }
+            if (!is_object($ent) || !method_exists($ent, 'get_name')) {
+                continue;
+            }
+            $found[$ent->get_name()] = $m;
+        }
+        ksort($found);
+
+        $rank = ['list' => 0, 'load' => 1];
+        foreach ($found as $accessor) {
+            $ent = $plain->$accessor();
+            $ops = array_values(array_filter(['list', 'load', 'create', 'update', 'remove'],
+                function (string $op) use ($ent): bool {
+                    return method_exists($ent, $op);
+                }));
+            usort($ops, function (string $a, string $b) use ($rank): int {
+                return ($rank[$a] ?? 2) <=> ($rank[$b] ?? 2);
+            });
+            foreach ($ops as $op) {
+                try {
+                    $plain->$accessor()->$op([], []);
+                    return ['accessor' => $accessor, 'op' => $op];
+                } catch (\\Throwable $_e) {
+                    continue;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static function drive(object $sdk, object $watcher, array $target, array $ctrl, \\ArrayObject $sinks): array
+    {
+        $out = null;
+        $err = null;
+        try {
+            $accessor = $target['accessor'];
+            $op = $target['op'];
+            $out = $sdk->$accessor()->$op([], $ctrl);
+        } catch (\\Throwable $e) {
+            $err = $e;
+        }
+
+        if (null !== $err) {
+            foreach (self::surfaces('error', $err) as $s) {
+                $sinks[] = $s;
+            }
+        }
+        if (null !== $out) {
+            foreach (self::surfaces('result', $out) as $s) {
+                $sinks[] = $s;
+            }
+        }
+
+        $explain = null;
+        $last = $watcher->last;
+        if (null !== $last && is_array($last->ctrl->explain)) {
+            $explain = $last->ctrl->explain;
+            foreach (self::surfaces('explain', $explain) as $s) {
+                $sinks[] = $s;
+            }
+        }
+
+        return [$err, $explain];
+    }
+
+    public function test_no_credential_leaves_the_sdk_in_any_form(): void
+    {
+        $target = self::usable_op();
+        $this->assertNotNull($target, 'no operation completes without arguments; nothing to sweep');
+
+        $sinks = new \\ArrayObject();
+        $errors = [];
+        $explains = [];
+
+        $variants = [
+            'throw' => [],
+            'explain' => ['explain' => ['on' => true]],
+            'nothrow' => ['throw' => false, 'explain' => ['on' => true]],
+        ];
+
+        foreach (self::scenarios() as $sname => $respond) {
+            foreach ($variants as $vname => $ctrl) {
+                [$sdk, $watcher] = self::make_sdk($respond, $sinks);
+                [$err, $explain] = self::drive($sdk, $watcher, $target, $ctrl, $sinks);
+                $key = $sname . '/' . $vname;
+                if (null !== $err) {
+                    $errors[$key] = $err;
+                }
+                if (null !== $explain) {
+                    $explains[$key] = $explain;
+                }
+                foreach (self::surfaces('sdk', $sdk) as $s) {
+                    $sinks[] = $s;
+                }
+            }
+        }
+
+        $leaked = [];
+        foreach ($sinks as $s) {
+            $found = self::leaks($s['text']);
+            if (0 < count($found)) {
+                $leaked[] = $s['name'] . ' [' . implode(', ', $found) . ']';
+            }
+        }
+
+        // The one line the generator's compile lane reads.
+        fwrite(STDERR, sprintf("clean: swept %d surface(s), %d leak(s)\\n",
+            count($sinks), count($leaked)));
+
+        $this->assertSame([], $leaked, 'credential leaked through: ' . implode('; ', $leaked));
+
+        // The positive half: the slot the credential travelled in is masked,
+        // and an unregistered token in a response header is masked by name.
+        $notfound = $errors['notfound/throw'] ?? null;
+        $this->assertInstanceOf(${Name}Error::class, $notfound, 'the 404 scenario must throw');
+        $this->assertSame(404, $notfound->status);
+        $spec = $notfound->spec;
+        if (!self::AUTH['suppressed']) {
+            if ('query' === self::AUTH['where']) {
+                $this->assertSame(self::MASK,
+                    self::header(self::header($spec, 'query'), self::AUTH['name']));
+            } elseif ('cookie' === self::AUTH['where']) {
+                $this->assertStringContainsString(self::MASK,
+                    (string)self::header(self::header($spec, 'headers'), 'cookie'));
+            } else {
+                $this->assertStringEndsWith(self::MASK,
+                    (string)self::header(self::header($spec, 'headers'), self::AUTH['name']));
+            }
+        }
+        $this->assertSame(self::MASK, self::header(self::header($spec, 'headers'), 'x-custom-token'));
+
+        $explained = $explains['ok/explain'] ?? [];
+        $this->assertNotNull($explained['result'] ?? null, 'the explain record should carry the result');
+        $this->assertSame(self::MASK,
+            self::header(self::header($explained['result'], 'headers'), 'x-session-token'));
+    }
+
+    public function test_the_sweep_can_see_a_leak_clean_switched_off_shows_the_credential(): void
+    {
+        $target = self::usable_op();
+        $this->assertNotNull($target);
+
+        $sinks = new \\ArrayObject();
+        [$sdk, $watcher] = self::make_sdk(self::scenarios()['notfound'], $sinks, ['active' => false]);
+        [$err, $_explain] = self::drive($sdk, $watcher, $target, [], $sinks);
+        $this->assertNotNull($err);
+
+        $leaked = 0;
+        foreach ($sinks as $s) {
+            if (0 < count(self::leaks($s['text']))) {
+                $leaked++;
+            }
+        }
+        $this->assertGreaterThan(0, $leaked, 'with clean off, nothing showed the canary: the sweep is blind');
+
+        if (!self::AUTH['suppressed']) {
+            $text = (string)json_encode($err instanceof ${Name}Error ? $err->spec : null);
+            $this->assertTrue(
+                str_contains($text, self::CANARY['apikey'])
+                || str_contains($text, base64_encode(self::CANARY['apikey'] . ':' . self::CANARY['secret'])),
+                'the raw spec should carry the credential when clean is off');
+        }
+    }
+}
+`
+}
+
+
+export {
+  TestClean
+}

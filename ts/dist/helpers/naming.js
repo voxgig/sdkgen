@@ -144,7 +144,7 @@ function isPhpReservedType(Name) {
     return PHP_RESERVED_TYPES.has(String(Name).toLowerCase());
 }
 const PHP_SDK_CLASSES = new Set([
-    'existstest', 'featurecorpustest', 'featuretest', 'netsimtest',
+    'cleantest', 'existstest', 'featurecorpustest', 'featuretest', 'netsimtest',
     'omnismoketest', 'pipelinetest', 'primaryutilitytest',
     'readmeexamplestest', 'structutilitytest',
     'ftclient', 'ftclock', 'ftctrl', 'ftentity', 'ftharness', 'ftrecorder',

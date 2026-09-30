@@ -211,6 +211,9 @@ const BASIC = `
         auth_prefix = ap
       end
       local joined = base64(tostring(apikey) .. ":" .. tostring(secret))
+      -- The joined, encoded pair is a wire form neither credential's own
+      -- registration covers.
+      ctx.utility.clean_add(ctx, joined)
       if auth_prefix == "" then
         headers[HEADER_AUTH] = joined
       else

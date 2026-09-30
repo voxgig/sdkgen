@@ -134,7 +134,7 @@ static ${entity.Name}Setup ${evar}_basic_setup(const Value& extra) {
 
   ${entity.Name}Setup s;
   s.client = client;
-  s.d = entity_data;
+  s.data = entity_data;
   s.idmap = idmap_resolved;
   s.env = env;
   s.live = live;
