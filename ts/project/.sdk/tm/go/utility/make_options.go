@@ -67,24 +67,34 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 
 	opts := vs.Clone(options).(map[string]any)
 
+	config := ctx.Config
+	if config == nil {
+		config = map[string]any{}
+	}
+	cfgopts := map[string]any{}
+	if co, ok := config["options"]; ok && co != nil {
+		if cm, ok := co.(map[string]any); ok {
+			cfgopts = cm
+		}
+	}
+
 	// The secret registry exists BEFORE validation, fed from the raw input, so
 	// the constructor's own rejection of a mistyped credential is clean too.
 	cleanraw := map[string]any{}
-	if spec, ok := core.OPTSPEC["clean"].(map[string]any); ok {
-		for k, v := range spec {
+	for _, layer := range []any{core.OPTSPEC["clean"], cfgopts["clean"], opts["clean"]} {
+		for k, v := range core.ToMapAny(layer) {
 			cleanraw[k] = v
 		}
-	}
-	for k, v := range core.ToMapAny(opts["clean"]) {
-		cleanraw[k] = v
 	}
 	cleancfg := makeCleanConfig(cleanraw)
 	cleanctx := &core.Context{Options: map[string]any{
 		"__derived__": map[string]any{"clean": cleancfg},
 	}}
 	cleanAddSensitive(cleanctx, cleanOmit(opts, "clean"))
-	for _, s := range cleanSplit(vs.GetPath(opts, []any{"clean", "values"})) {
-		cleancfg.add(s)
+	for _, block := range []map[string]any{cfgopts, opts} {
+		for _, s := range cleanSplit(vs.GetPath(block, []any{"clean", "values"})) {
+			cleancfg.add(s)
+		}
 	}
 
 	var featureorder []any
@@ -109,17 +119,6 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 			featureorder = append(featureorder, name)
 		}
 		opts["feature"] = fmap
-	}
-
-	config := ctx.Config
-	if config == nil {
-		config = map[string]any{}
-	}
-	cfgopts := map[string]any{}
-	if co, ok := config["options"]; ok && co != nil {
-		if cm, ok := co.(map[string]any); ok {
-			cfgopts = cm
-		}
 	}
 
 	optspec := core.OPTSPEC

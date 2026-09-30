@@ -64,6 +64,7 @@ var cleanCanary = map[string]string{
 	"secret": "CANARY-SECRET-w3e8r5t2y6",
 	"header": "CANARY-HEADER-z1x4c7v0b3",
 	"value":  "CANARY-VALUE-n5m8b2v9c4",
+	"config": "CANARY-CONFIG-h6j3k8l2m5",
 }
 
 const cleanMask = "[redacted]"
@@ -71,7 +72,7 @@ const cleanMask = "[redacted]"
 // Every form a canary can travel in.
 var cleanForms = func() []string {
 	out := []string{}
-	for _, k := range []string{"apikey", "secret", "header", "value"} {
+	for _, k := range []string{"apikey", "secret", "header", "value", "config"} {
 		v := cleanCanary[k]
 		out = append(out, v, base64.StdEncoding.EncodeToString([]byte(v)), url.QueryEscape(v))
 	}
@@ -141,9 +142,19 @@ func (f *cleanCapture) take(name string, ctx *sdk.Context) {
 	*f.sinks = append(*f.sinks, cleanSurfaces(name, ctx)...)
 }
 
-func (f *cleanCapture) PreRequest(ctx *sdk.Context)    { f.take("ctx@PreRequest", ctx) }
-func (f *cleanCapture) PreResponse(ctx *sdk.Context)   { f.take("ctx@PreResponse", ctx) }
-func (f *cleanCapture) PreUnexpected(ctx *sdk.Context) { f.take("ctx@PreUnexpected", ctx) }
+func (f *cleanCapture) PreRequest(ctx *sdk.Context)  { f.take("ctx@PreRequest", ctx) }
+func (f *cleanCapture) PreResponse(ctx *sdk.Context) { f.take("ctx@PreResponse", ctx) }
+
+// The SDK's own error as a hook reads it, which an observability feature logs.
+func (f *cleanCapture) PreUnexpected(ctx *sdk.Context) {
+	f.take("ctx@PreUnexpected", ctx)
+	if ctx.Ctrl == nil {
+		return
+	}
+	if sdkerr, ok := ctx.Ctrl.Err.(*sdk.${Name}Error); ok {
+		*f.sinks = append(*f.sinks, cleanSurfaces("ctrl.err@PreUnexpected", sdkerr)...)
+	}
+}
 
 // A slog handler that keeps every record, attributes included.
 type cleanLogHandler struct {
@@ -215,6 +226,10 @@ var cleanScenarios = []cleanScenario{
 	}},
 	{"transport", func(url string, _ map[string]any) (any, error) {
 		return nil, fmt.Errorf("socket hang up (URL was: %q)", url)
+	}},
+	// The SDK's own error, its code quoting a registered value.
+	{"coded", func(string, map[string]any) (any, error) {
+		return nil, core.New${Name}Error("denied_"+cleanCanary["apikey"], "coded failure", nil)
 	}},
 	{"notjson", func(string, map[string]any) (any, error) {
 		return map[string]any{
@@ -498,6 +513,28 @@ func TestCleanSweep(t *testing.T) {
 		t.Errorf("property names: expected %v, got %v", want, named)
 	}
 
+	// The generated config's own clean block is read beside the caller's,
+	// and is not changed by it.
+	cfgclean := map[string]any{"keys": "zzsens", "values": cleanCanary["config"]}
+	util := probe.GetUtility()
+	cfgctx := &core.Context{Options: util.MakeOptions(&core.Context{
+		Utility: util,
+		Config:  map[string]any{"options": map[string]any{"clean": cfgclean}},
+		Options: map[string]any{"clean": map[string]any{"values": cleanCanary["value"]}},
+	})}
+	seeded, _ := util.Clean(cfgctx, "config "+cleanCanary["config"]+" caller "+cleanCanary["value"]).(string)
+	sinks = append(sinks, cleanSink{"config-clean", seeded})
+	if want := "config " + cleanMask + " caller " + cleanMask; seeded != want {
+		t.Errorf("config clean values: expected %q, got %q", want, seeded)
+	}
+	bykey, _ := util.Clean(cfgctx, map[string]any{"my_zzsens": "x", "other": "y"}).(map[string]any)
+	if want := map[string]any{"my_zzsens": cleanMask, "other": "y"}; !reflect.DeepEqual(bykey, want) {
+		t.Errorf("config clean keys: expected %v, got %v", want, bykey)
+	}
+	if cfgclean["keys"] != "zzsens" || cfgclean["values"] != cleanCanary["config"] {
+		t.Errorf("the config's own clean block was changed: %v", cfgclean)
+	}
+
 	leaked := []string{}
 	for _, s := range sinks {
 		if found := cleanLeaks(s.text); 0 < len(found) {
@@ -542,6 +579,11 @@ func TestCleanSweep(t *testing.T) {
 	}
 	if got := cleanHeader(spec["headers"], "x-custom-token"); got != cleanMask {
 		t.Errorf("x-custom-token: expected the mask, got %v", got)
+	}
+
+	coded, _ := errs["coded/throw"].(*sdk.${Name}Error)
+	if coded == nil || coded.Code != "denied_"+cleanMask {
+		t.Errorf("the coded error keeps its code, masked: got %#v", errs["coded/throw"])
 	}
 
 	explained := explains["ok/explain"]

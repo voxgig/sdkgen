@@ -52,7 +52,7 @@ func makeErrorUtil(ctx *core.Context, err error) (any, error) {
 		Spec:               cleanUtil(ctx, spec),
 	}
 	if se, ok := err.(*core.ProjectNameError); ok {
-		sdkErr.Code = se.Code
+		sdkErr.Code = cleanUtil(ctx, se.Code).(string)
 	}
 
 	if ctx.Ctrl.Explain != nil {
