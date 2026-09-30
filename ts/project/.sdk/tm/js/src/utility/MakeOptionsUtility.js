@@ -39,8 +39,10 @@ function makeOptions(ctx) {
   let config = ctx.config || {}
   let cfgopts = config.options || {}
 
+  // An absent block is left out, or merge would erase the defaults.
+  const layer = (b) => null != b && 'object' === typeof b && !Array.isArray(b) ? b : {}
   const cleancfg = makeCleanConfig(merge([{}, OPTSPEC.clean,
-    struct.clone(cfgopts.clean || {}), opts.clean]))
+    struct.clone(layer(cfgopts.clean)), layer(opts.clean)]))
   const cleanctx = { options: { __derived__: { clean: cleancfg } } }
   cleanAddSensitive(cleanctx, { ...opts, clean: undefined })
   for (const raw of [...splitvalues(cfgopts.clean?.values), ...splitvalues(opts.clean?.values)]) {

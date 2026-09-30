@@ -241,6 +241,19 @@ describe('clean: the shipped ts utility', () => {
   })
 
 
+  test('a feature name is not a field name: the secrets feature settings stay plain', () => {
+    const mod = loadClean()
+    const ctx = ctxWith(mod)
+    mod.cleanAddSensitive(ctx, {
+      feature: { secrets: { provider: 'filestore', path: '/etc/app', token: 'FEATURE-TOKEN-4' } },
+    })
+    const values = ctx.options.__derived__.clean.values
+    ok(!values.includes('filestore'))
+    ok(!values.includes('/etc/app'))
+    ok(values.includes('FEATURE-TOKEN-4'))
+  })
+
+
   test('splitvalues reads the comma-separated option and a list alike', () => {
     const mod = loadClean()
     deepStrictEqual(mod.splitvalues('a1234, b5678,,'), ['a1234', 'b5678'])
@@ -252,7 +265,7 @@ describe('clean: the shipped ts utility', () => {
 
 describe('clean: the registry makeOptions builds', () => {
 
-  test('the generated config\'s own clean block is honoured', () => {
+  function loadOptions(): { cleanmod: any, makeOptions: any } {
     const errs: any[] = []
     const base: any = new Aontu().generate(readFileSync(MODEL, 'utf8'), { path: MODEL, errs })
     const OPTSPEC = base.main.kit.optspec
@@ -263,6 +276,25 @@ describe('clean: the registry makeOptions builds', () => {
         '../Schema': { OPTSPEC },
         './CleanUtility': cleanmod,
       })
+    return { cleanmod, makeOptions }
+  }
+
+
+  test('with no clean block the defaults still register and mask', () => {
+    const { cleanmod, makeOptions } = loadOptions()
+    for (const block of [{}, { clean: null }]) {
+      const ctx: any = { utility: { struct }, config: {}, options: {
+        apikey: 'NOCLEAN-KEY-12345', headers: { 'x-api-key': 'NOCLEAN-HDR-67890' }, ...block,
+      } }
+      ctx.options = makeOptions(ctx)
+      strictEqual(cleanmod.clean(ctx, 'a NOCLEAN-KEY-12345 b NOCLEAN-HDR-67890'), 'a ' + MASK + ' b ' + MASK)
+      deepStrictEqual(cleanmod.clean(ctx, { authorization: 'Bearer zz' }), { authorization: MASK })
+    }
+  })
+
+
+  test('the generated config\'s own clean block is honoured', () => {
+    const { cleanmod, makeOptions } = loadOptions()
     const config = { options: { clean: { keys: 'zzsens', values: 'CONFIG-SEEDED-1' } } }
     const ctx: any = { utility: { struct }, config, options: { clean: { values: 'CALLER-SEEDED-2' } } }
     ctx.options = makeOptions(ctx)

@@ -158,13 +158,14 @@ function makeSdk(scenario, sinks, cleanopts, extra) {
     apikey: CANARY.apikey,
     secret: CANARY.secret,
     headers: { 'X-Custom-Token': CANARY.header },
-    clean: { values: CANARY.value, ...(cleanopts || {}) },
     feature,
     extend: [new CaptureFeature(sinks), ...(extra || [])],
     utility: {
       fetcher: async (_ctx, url, fetchdef) => scenario.respond(url, fetchdef),
     },
   }
+  // null builds the client with no clean block at all, as most callers do.
+  if (null !== cleanopts) opts.clean = { values: CANARY.value, ...(cleanopts || {}) }
   return new SDK(opts)
 }
 
@@ -263,21 +264,30 @@ describe('clean', () => {
     }
 
     // A credential mistyped as an object is rejected by validation, whose
-    // message quotes the value it rejected.
-    let rejected = undefined
-    try {
-      new SDK({ apikey: { value: CANARY.apikey }, clean: { values: CANARY.value } })
+    // message quotes the value it rejected; with and without a clean block.
+    for (const cleanblock of [{ clean: { values: CANARY.value } }, {}]) {
+      let rejected = undefined
+      try {
+        new SDK({ apikey: { value: CANARY.apikey }, ...cleanblock })
+      }
+      catch (e) {
+        rejected = e
+      }
+      ok(null != rejected, 'a credential mistyped as an object should be rejected')
+      sinks.push(...forms('rejected', rejected))
     }
-    catch (e) {
-      rejected = e
-    }
-    ok(null != rejected, 'a credential mistyped as an object should be rejected')
-    sinks.push(...forms('rejected', rejected))
 
     // An error a feature hook throws, quoting the request, skips makeError.
     const hooked = makeSdk(SCENARIOS[0], sinks, undefined, [new ThrowFeature()])
     const hookerr = await drive(hooked, target, {}, sinks)
     ok(null != hookerr, 'the throwing hook should fail the operation')
+
+    // Most callers pass no clean block; the defaults alone must mask.
+    for (const scenario of [SCENARIOS[1], SCENARIOS[3]]) {
+      const bare = makeSdk(scenario, sinks, null)
+      await drive(bare, target, { explain: {} }, sinks)
+      sinks.push(...forms('bare', bare))
+    }
 
     // The raw path returns its failure rather than throwing it.
     const raw = await makeSdk(SCENARIOS[3], sinks).direct({ path: 'raw' })

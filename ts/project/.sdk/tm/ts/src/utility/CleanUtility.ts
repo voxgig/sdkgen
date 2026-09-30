@@ -270,7 +270,7 @@ function cleanKey(ctx: Context, key: any): boolean {
 // credential mistyped as an object or a number is still a credential, and
 // the validation error that rejects it quotes it.
 function cleanAddSensitive(
-  ctx: Context, val: any, under = false, depth = 0, seen: any[] = []
+  ctx: Context, val: any, under = false, depth = 0, seen: any[] = [], parent?: string
 ): void {
   if (null == val || MAXDEPTH <= depth) {
     return
@@ -284,8 +284,10 @@ function cleanAddSensitive(
     return
   }
   seen.push(val)
+  // The keys under `feature` name features, not fields: `secrets` is no secret.
+  const named = !(1 === depth && 'feature' === parent)
   for (const k of Object.keys(val)) {
-    cleanAddSensitive(ctx, val[k], under || cleanKey(ctx, k), depth + 1, seen)
+    cleanAddSensitive(ctx, val[k], under || (named && cleanKey(ctx, k)), depth + 1, seen, k)
   }
 }
 

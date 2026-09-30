@@ -21,10 +21,11 @@ function makeOptions(ctx: Context) {
   let config = ctx.config || {}
   let cfgopts = config.options || {}
 
-  // The secret registry exists BEFORE validation, fed from the raw input, so
-  // the constructor's own rejection of a mistyped credential is clean too.
+  // The registry exists BEFORE validation, so rejecting a mistyped credential
+  // is clean too. An absent block is left out, or merge would erase the defaults.
+  const layer = (b: any) => null != b && 'object' === typeof b && !Array.isArray(b) ? b : {}
   const cleancfg = makeCleanConfig(merge([{}, (OPTSPEC as any).clean,
-    struct.clone(cfgopts.clean || {}), opts.clean]))
+    struct.clone(layer(cfgopts.clean)), layer(opts.clean)]))
   const cleanctx: any = { options: { __derived__: { clean: cleancfg } } }
   cleanAddSensitive(cleanctx, { ...opts, clean: undefined })
   for (const raw of [...splitvalues(cfgopts.clean?.values), ...splitvalues(opts.clean?.values)]) {
