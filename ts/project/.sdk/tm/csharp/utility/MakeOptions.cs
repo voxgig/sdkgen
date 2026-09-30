@@ -1,6 +1,7 @@
 // ProjectName SDK utility: makeOptions - merge, validate and derive the
 // client options.
 
+using System.Collections;
 using System.Text.RegularExpressions;
 
 using Voxgig.Struct;
@@ -160,7 +161,7 @@ public static partial class SdkUtility
                 ["__derived__"] = new Dictionary<string, object?> { ["clean"] = cleancfg },
             },
         }, null);
-        CleanAddSensitive(cleanctx, CleanOmit(opts, "clean"));
+        CleanAddOptions(cleanctx, opts, "clean");
         foreach (var raw in CleanSplitValues(
                 StructUtils.GetPath(cfgopts, StructUtils.Jt("clean", "values")))
             .Concat(CleanSplitValues(StructUtils.GetPath(opts, StructUtils.Jt("clean", "values")))))
@@ -358,9 +359,29 @@ public static partial class SdkUtility
         };
 
         // Again over the merged result: the config's own defaults can carry one.
-        CleanAddSensitive(cleanctx, CleanOmit(opts, "clean", "__derived__"));
+        CleanAddOptions(cleanctx, opts, "clean", "__derived__");
 
         return opts;
+    }
+
+    // A feature's name is not a field name: a feature called `secrets` does
+    // not make every one of its options a secret.
+    private static void CleanAddOptions(Context cleanctx, Dictionary<string, object?> opts,
+        params string[] omit)
+    {
+        CleanAddSensitive(cleanctx, CleanOmit(opts, omit.Append("feature").ToArray()));
+        var feature = opts.GetValueOrDefault("feature");
+        if (feature is IDictionary fmap)
+        {
+            foreach (DictionaryEntry kv in fmap)
+            {
+                CleanAddSensitive(cleanctx, kv.Value);
+            }
+        }
+        else
+        {
+            CleanAddSensitive(cleanctx, feature);
+        }
     }
 
     private static Dictionary<string, object?> CleanOmit(Dictionary<string, object?> opts,
