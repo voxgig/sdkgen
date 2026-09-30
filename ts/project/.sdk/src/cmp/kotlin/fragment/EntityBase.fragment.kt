@@ -142,9 +142,18 @@ abstract class EntityBase(nm: String, clientIn: SdkClient, entoptsIn: MutableMap
       if (err === ctx.ctrl.err) {
         throw err
       }
-      return utility.makeError(ctx, err)
+      try {
+        return utility.makeError(ctx, err)
+      } catch (unexpected: RuntimeException) {
+        throw if (unexpected === ctx.ctrl.err) unexpected else cleanError(ctx, unexpected)
+      }
     }
   }
+
+  // makeError fires PreUnexpected; an error a hook throws there escapes it,
+  // even under throw false, so it is cleaned here.
+  private fun cleanError(ctx: Context, err: RuntimeException): RuntimeException =
+    this.utility.clean(ctx, err) as? RuntimeException ?: err
 
   /**
    * Streaming operations. Runs `action` through the full pipeline and returns

@@ -59,7 +59,7 @@ final class MakeError {
 
     String code = "";
     if (err instanceof SdkError) {
-      code = ((SdkError) err).code;
+      code = (String) Clean.clean(ctx, ((SdkError) err).code);
     }
 
     SdkError sdkErr = new SdkError(code, msg, ctx);

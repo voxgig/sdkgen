@@ -66,6 +66,7 @@ import java.util.logging.Logger
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 
 import ${kotlinpackage}.core.Config
@@ -76,6 +77,7 @@ import ${kotlinpackage}.core.Result
 import ${kotlinpackage}.core.SdkEntity
 import ${kotlinpackage}.core.SdkError
 import ${kotlinpackage}.core.Spec
+import ${kotlinpackage}.core.Utility
 import ${kotlinpackage}.feature.BaseFeature
 import ${kotlinpackage}.sdktest.FeatureHarness.fhHasFeature
 import ${kotlinpackage}.utility.struct.Struct
@@ -94,6 +96,8 @@ class CleanTest {
   private val canaryValue = "CANARY-VALUE-n5m8b2v9c4"
 
   private val mask = "[redacted]"
+
+  private val noOp = "no operation of this SDK completes against a plain 200; nothing to sweep"
 
   private fun b64(s: String): String =
     Base64.getEncoder().encodeToString(s.toByteArray(StandardCharsets.UTF_8))
@@ -177,6 +181,24 @@ class CleanTest {
     override fun preUnexpected(ctx: Context) { sinks.addAll(surfaces("ctx@PreUnexpected", ctx)) }
   }
 
+  // A feature that fails from inside the pipeline, quoting the request it
+  // saw in the code and the message. makeError cleans a failed stage, but
+  // PreUnexpected fires inside makeError: what a hook throws there does not
+  // pass through it.
+  inner class ThrowFeature(private val unexpected: Boolean) :
+    BaseFeature("throwhook", "0.0.1", true) {
+    private fun saw(ctx: Context): RuntimeException {
+      val saw = "hook saw " + Struct.jsonify(plain(ctx.spec))
+      return ctx.makeError(saw, saw)
+    }
+    override fun preResponse(ctx: Context) { throw saw(ctx) }
+    override fun preUnexpected(ctx: Context) {
+      if (unexpected) {
+        throw saw(ctx)
+      }
+    }
+  }
+
   class Scenario(val name: String, val respond: (String, MutableMap<String, Any?>) -> Any?)
 
   private fun response(status: Int, data: Any?, headers: Map<String, String>?): MutableMap<String, Any?> {
@@ -216,7 +238,8 @@ class CleanTest {
     },
   )
 
-  private fun makeSdk(scenario: Scenario, sinks: MutableList<Sink>, cleanopts: Map<String, Any?>?): ${SDK} {
+  private fun makeSdk(scenario: Scenario, sinks: MutableList<Sink>, cleanopts: Map<String, Any?>?,
+    vararg extra: BaseFeature): ${SDK} {
     val capture = { name: String -> Consumer<Any?> { rec -> sinks.addAll(surfaces(name, rec)) } }
 
     val feature = linkedMapOf<String, Any?>()
@@ -262,12 +285,12 @@ class CleanTest {
     opts["headers"] = linkedMapOf<String, Any?>("X-Custom-Token" to canaryHeader)
     opts["clean"] = clean
     opts["feature"] = feature
-    opts["extend"] = mutableListOf<Any?>(CaptureFeature(sinks))
+    opts["extend"] = mutableListOf<Any?>(CaptureFeature(sinks), *extra)
     opts["utility"] = linkedMapOf<String, Any?>("fetcher" to fetcher)
     return ${SDK}(opts)
   }
 
-  class Target(val accessor: Method, val op: String)
+  class Target(val accessor: Method, val op: String, val match: Map<String, Any?>)
 
   private fun accessors(): List<Method> =
     ${SDK}::class.java.methods
@@ -284,17 +307,42 @@ class CleanTest {
       null
     }
 
-  private fun call(ent: SdkEntity, op: String, ctrl: MutableMap<String, Any?>?): Any? = when (op) {
-    "list" -> ent.list(linkedMapOf(), ctrl)
-    "load" -> ent.load(linkedMapOf(), ctrl)
-    "create" -> ent.create(linkedMapOf(), ctrl)
-    "update" -> ent.update(linkedMapOf(), ctrl)
-    "remove" -> ent.remove(linkedMapOf(), ctrl)
-    else -> throw IllegalArgumentException("no such op: " + op)
+  private fun call(ent: SdkEntity, op: String, match: Map<String, Any?>,
+    ctrl: MutableMap<String, Any?>?): Any? {
+    val arg = LinkedHashMap<String, Any?>(match)
+    return when (op) {
+      "list" -> ent.list(arg, ctrl)
+      "load" -> ent.load(arg, ctrl)
+      "create" -> ent.create(arg, ctrl)
+      "update" -> ent.update(arg, ctrl)
+      "remove" -> ent.remove(arg, ctrl)
+      else -> throw IllegalArgumentException("no such op: " + op)
+    }
   }
 
-  // The first operation that completes against a plain 200 with no arguments
-  // (a required path parameter would fail before the request is built).
+  // Every path parameter an operation's points declare, filled in.
+  private fun filled(entname: String, opname: String): Map<String, Any?> {
+    val out = linkedMapOf<String, Any?>()
+    val points = Struct.getpath(Config.sharedConfig(), listOf("entity", entname, "op", opname, "points"))
+    if (points !is List<*>) {
+      return out
+    }
+    for (point in points) {
+      val params = Struct.getpath(point, listOf("args", "params"))
+      if (params is List<*>) {
+        for (param in params) {
+          val name = Struct.getprop(param, "name")
+          if (name is String) {
+            out[name] = "p1"
+          }
+        }
+      }
+    }
+    return out
+  }
+
+  // The first operation that completes against a plain 200: with no
+  // arguments, else with every path parameter its points declare filled in.
   private fun usableOp(): Target? {
     val plainFetch: (Context, String, MutableMap<String, Any?>) -> Any? =
       { _, _, _ -> response(200, linkedMapOf<String, Any?>("id" to "i1"), null) }
@@ -308,22 +356,34 @@ class CleanTest {
       val ecfg = Helpers.toMapAny(entities[inst.name]) ?: continue
       val ops = (Helpers.toMapAny(ecfg["op"]) ?: linkedMapOf()).keys.sortedBy { rank[it] ?: 2 }
       for (op in ops) {
-        try {
-          call(entityOf(plain, m)!!, op, null)
-          return Target(m, op)
-        } catch (e: Throwable) {
-          continue
+        for (match in listOf(linkedMapOf<String, Any?>(), filled(inst.name, op))) {
+          try {
+            call(entityOf(plain, m)!!, op, match, null)
+            return Target(m, op, match)
+          } catch (e: Throwable) {
+            continue
+          }
         }
       }
     }
     return null
   }
 
+  // Nothing usable is a visible skip; the lane then misses the swept line.
+  private fun usableOrSkip(): Target {
+    val target = usableOp()
+    if (target == null) {
+      println("clean: skipped: " + noOp)
+    }
+    assumeTrue(target != null, noOp)
+    return target!!
+  }
+
   private fun drive(sdk: ${SDK}, target: Target, ctrl: MutableMap<String, Any?>?, sinks: MutableList<Sink>): Throwable? {
     var out: Any? = null
     var err: Throwable? = null
     try {
-      out = call(entityOf(sdk, target.accessor)!!, target.op, ctrl)
+      out = call(entityOf(sdk, target.accessor)!!, target.op, target.match, ctrl)
     } catch (e: Throwable) {
       err = e
     }
@@ -342,8 +402,7 @@ class CleanTest {
 
   @Test
   fun noCredentialLeavesTheSdkInAnyForm() {
-    val target = usableOp()
-    assertNotNull(target, "no operation completes without arguments; nothing to sweep")
+    val target = usableOrSkip()
 
     val sinks = mutableListOf<Sink>()
     val errors = linkedMapOf<String, Throwable>()
@@ -357,7 +416,7 @@ class CleanTest {
           "explain" -> linkedMapOf<String, Any?>("explain" to linkedMapOf<String, Any?>())
           else -> linkedMapOf<String, Any?>("throw" to false, "explain" to linkedMapOf<String, Any?>())
         }
-        val err = drive(sdk, target!!, ctrl, sinks)
+        val err = drive(sdk, target, ctrl, sinks)
         val key = scenario.name + "/" + variant
         if (err != null) {
           errors[key] = err
@@ -370,6 +429,53 @@ class CleanTest {
       }
     }
 
+    // No clean option at all: the schema defaults still apply.
+    val bareFetch: (Context, String, MutableMap<String, Any?>) -> Any? =
+      { _, url, fetchdef -> scenarios[1].respond(url, fetchdef) }
+    val bare = ${SDK}(linkedMapOf<String, Any?>(
+      "apikey" to canaryApikey,
+      "secret" to canarySecret,
+      "headers" to linkedMapOf<String, Any?>("X-Custom-Token" to canaryHeader),
+      "utility" to linkedMapOf<String, Any?>("fetcher" to bareFetch)))
+    assertNotNull(drive(bare, target, null, sinks), "the 404 should fail")
+
+    // A credential mistyped as a map. The kotlin validator collects its
+    // errors and substitutes the default rather than rejecting, so there is
+    // no rejection to sweep: sweep the client, and what clean makes of the
+    // value should anything quote it.
+    try {
+      val mistyped = ${SDK}(linkedMapOf<String, Any?>(
+        "apikey" to linkedMapOf<String, Any?>("value" to canaryApikey),
+        "clean" to linkedMapOf<String, Any?>("values" to canaryValue)))
+      sinks.addAll(surfaces("mistyped", mistyped))
+      sinks.addAll(surfaces("mistyped:quoted",
+        mistyped.getUtility().clean(mistyped.getRootCtx(), "found map: " + canaryApikey)))
+    } catch (e: RuntimeException) {
+      sinks.addAll(surfaces("mistyped:rejected", e))
+    }
+
+    // A number is registered as the text a message quotes it in.
+    val numeric = ${SDK}(linkedMapOf<String, Any?>("apikey" to 918273645))
+    val numbered = numeric.getUtility().clean(numeric.getRootCtx(), "found 918273645")
+
+    for (unexpected in listOf(false, true)) {
+      val hooked = makeSdk(scenarios[0], sinks, null, ThrowFeature(unexpected))
+      assertNotNull(drive(hooked, target, null, sinks), "the throwing hook should fail the operation")
+    }
+
+    // The raw path returns its failure rather than throwing it.
+    val raw = makeSdk(scenarios[3], sinks, null).direct(linkedMapOf<String, Any?>("path" to "raw"))
+    assertTrue(false == raw["ok"] && raw["err"] is Throwable,
+      "a transport failure should fail direct() with an error")
+    sinks.addAll(surfaces("direct", raw["err"]))
+
+    // A registered value used as a property name is masked; names that mask
+    // alike are kept apart.
+    val probe = makeSdk(scenarios[0], sinks, null)
+    val named = probe.getUtility().clean(probe.getRootCtx(),
+      linkedMapOf<String, Any?>(canaryValue to 1, canaryHeader to 2, "plain" to 3))
+    sinks.addAll(surfaces("named", named))
+
     val leaked = sinks
       .map { Pair(it.name, leaks(it.text)) }
       .filter { it.second.isNotEmpty() }
@@ -378,6 +484,9 @@ class CleanTest {
 
     assertEquals(0, leaked.size, "credential leaked through: " +
       leaked.joinToString("; ") { it.first + " [" + it.second.joinToString(", ") + "]" })
+
+    assertEquals("found " + mask, numbered)
+    assertEquals(linkedMapOf<String, Any?>(mask to 1, mask + "#1" to 2, "plain" to 3), named)
 
     // The positive half: the slot the credential travelled in is masked,
     // and an unregistered token in a response header is masked by name.
@@ -408,12 +517,11 @@ class CleanTest {
 
   @Test
   fun theSweepCanSeeALeakCleanSwitchedOffShowsTheCredential() {
-    val target = usableOp()
-    assertNotNull(target)
+    val target = usableOrSkip()
 
     val sinks = mutableListOf<Sink>()
     val sdk = makeSdk(scenarios[1], sinks, mapOf("active" to false))
-    val err = drive(sdk, target!!, null, sinks)
+    val err = drive(sdk, target, null, sinks)
     assertNotNull(err)
 
     val leaked = sinks.filter { leaks(it.text).isNotEmpty() }
@@ -424,6 +532,34 @@ class CleanTest {
       assertTrue(text.contains(canaryApikey) || text.contains(b64(canaryApikey + ":" + canarySecret)),
         "the raw spec should carry the credential when clean is off")
     }
+  }
+
+  @Test
+  fun aFeatureNameDoesNotMakeItsSettingsSecret() {
+    val sdk = ${SDK}(linkedMapOf<String, Any?>(
+      "apikey" to canaryApikey,
+      "feature" to linkedMapOf<String, Any?>("secrets" to linkedMapOf<String, Any?>(
+        "active" to false, "kind" to "SETTING-KIND-4829", "token" to canarySecret))))
+    assertEquals("SETTING-KIND-4829 " + mask,
+      sdk.getUtility().clean(sdk.getRootCtx(), "SETTING-KIND-4829 " + canarySecret))
+  }
+
+  @Test
+  fun theGeneratedConfigsOwnCleanBlockIsHonoured() {
+    val cfgclean = linkedMapOf<String, Any?>("keys" to "zzsens", "values" to "CONFIG-SEEDED-1")
+    val utility = Utility()
+    val ctx = utility.makeContext(linkedMapOf<String, Any?>(
+      "utility" to utility,
+      "config" to linkedMapOf<String, Any?>("options" to linkedMapOf<String, Any?>("clean" to cfgclean)),
+      "options" to linkedMapOf<String, Any?>(
+        "clean" to linkedMapOf<String, Any?>("values" to "CALLER-SEEDED-2"))), null)
+    ctx.options = utility.makeOptions(ctx)
+
+    assertEquals("a " + mask + " b " + mask,
+      utility.clean(ctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"))
+    assertEquals(linkedMapOf<String, Any?>("my_zzsens" to mask, "other" to "y"),
+      utility.clean(ctx, linkedMapOf<String, Any?>("my_zzsens" to "x", "other" to "y")))
+    assertEquals("CONFIG-SEEDED-1", cfgclean["values"])
   }
 }
 `

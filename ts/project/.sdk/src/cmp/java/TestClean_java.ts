@@ -41,6 +41,7 @@ function render(jp: string, sdk: string, auth: {
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -51,6 +52,7 @@ import java.lang.reflect.Modifier;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -93,6 +95,9 @@ public class CleanTest {
   static final String CANARY_VALUE = "CANARY-VALUE-n5m8b2v9c4";
 
   static final String MASK = "[redacted]";
+
+  static final String NO_OP =
+      "no operation of this SDK completes against a plain 200; nothing to sweep";
 
   // The logger the log feature builds when handed none.
   static final String LOGGER_NAME = "${sdk}.log";
@@ -165,6 +170,7 @@ public class CleanTest {
   // sweep reads every other object the way a reflective serialiser would:
   // its public fields, plus its own toString. This is what lets the negative
   // control see the raw spec: with clean off the error carries the live Spec.
+  // A context is read as its serialised record, which is what it prints.
   static Object plain(Object v, int depth, IdentityHashMap<Object, Boolean> seen) {
     if (v == null || v instanceof String || v instanceof Number || v instanceof Boolean
         || v instanceof Character || v instanceof Enum) {
@@ -193,7 +199,7 @@ public class CleanTest {
         return out;
       }
       if (v instanceof Context) {
-        return plain(((Context) v).record(), depth + 1, seen);
+        return plain(((Context) v).toMap(), depth + 1, seen);
       }
       Map<String, Object> out = new LinkedHashMap<>();
       out.put("$string", String.valueOf(v));
@@ -280,8 +286,9 @@ public class CleanTest {
   }
 
   // Captures the serialised context from inside the pipeline: what a hook
-  // author would hand to a logger.
-  static final class CaptureFeature extends BaseFeature {
+  // author would hand to a logger. Public, as hook dispatch is reflective
+  // and skips a method it cannot access.
+  public static final class CaptureFeature extends BaseFeature {
     final List<Sink> sinks;
 
     CaptureFeature(List<Sink> sinks) {
@@ -302,6 +309,36 @@ public class CleanTest {
     @Override
     public void preUnexpected(Context ctx) {
       forms(this.sinks, "ctx@PreUnexpected", ctx);
+    }
+  }
+
+  // A feature that fails from inside the pipeline, quoting the request it
+  // saw in the code and the message. makeError cleans a failed stage, but
+  // PreUnexpected fires inside makeError: what a hook throws there does not
+  // pass through it.
+  public static final class ThrowFeature extends BaseFeature {
+    final boolean unexpected;
+
+    ThrowFeature(boolean unexpected) {
+      super("throwhook", "0.0.1", true);
+      this.unexpected = unexpected;
+    }
+
+    static RuntimeException saw(Context ctx) {
+      String saw = "hook saw " + Struct.jsonify(plain(ctx.spec, 0, new IdentityHashMap<>()));
+      return ctx.makeError(saw, saw);
+    }
+
+    @Override
+    public void preResponse(Context ctx) {
+      throw saw(ctx);
+    }
+
+    @Override
+    public void preUnexpected(Context ctx) {
+      if (this.unexpected) {
+        throw saw(ctx);
+      }
     }
   }
 
@@ -354,7 +391,8 @@ public class CleanTest {
           },
           "body", "<html>")));
 
-  static ${sdk} makeSdk(Scenario scenario, List<Sink> sinks, Map<String, Object> cleanopts) {
+  static ${sdk} makeSdk(Scenario scenario, List<Sink> sinks, Map<String, Object> cleanopts,
+      BaseFeature... extra) {
     Map<String, Object> feature = new LinkedHashMap<>();
     if (hasFeature("log")) {
       feature.put("log", jm("active", true));
@@ -385,6 +423,7 @@ public class CleanTest {
 
     List<Object> extend = new ArrayList<>();
     extend.add(new CaptureFeature(sinks));
+    extend.addAll(Arrays.asList(extra));
 
     Map<String, Object> opts = jm(
         "apikey", CANARY_APIKEY,
@@ -421,21 +460,23 @@ public class CleanTest {
     Logger.getLogger(LOGGER_NAME).removeHandler(handler);
   }
 
-  /** One discovered operation: the client accessor plus the entity method. */
+  /** One discovered operation: the client accessor, the entity method, and its match. */
   static final class Op {
     final Method accessor;
     final Method call;
+    final Map<String, Object> match;
 
-    Op(Method accessor, Method call) {
+    Op(Method accessor, Method call, Map<String, Object> match) {
       this.accessor = accessor;
       this.call = call;
+      this.match = match;
     }
   }
 
   static Object invoke(${sdk} client, Op op, Map<String, Object> ctrl) throws Exception {
     Object ent = op.accessor.invoke(client, new Object[] {null});
     try {
-      return op.call.invoke(ent, new LinkedHashMap<String, Object>(), ctrl);
+      return op.call.invoke(ent, new LinkedHashMap<String, Object>(op.match), ctrl);
     }
     catch (InvocationTargetException ite) {
       Throwable cause = ite.getCause();
@@ -446,8 +487,30 @@ public class CleanTest {
     }
   }
 
-  // The first operation that completes against a plain 200 with no arguments
-  // (a required path parameter would fail before the request is built).
+  // Every path parameter an operation's points declare, filled in.
+  static Map<String, Object> filled(String entname, String opname) {
+    Map<String, Object> out = new LinkedHashMap<>();
+    Object points = Struct.getpath(Config.sharedConfig(),
+        List.of("entity", entname, "op", opname, "points"));
+    if (!(points instanceof List)) {
+      return out;
+    }
+    for (Object point : (List<Object>) points) {
+      Object params = Struct.getpath(point, List.of("args", "params"));
+      if (params instanceof List) {
+        for (Object param : (List<Object>) params) {
+          Object name = Struct.getprop(param, "name");
+          if (name instanceof String) {
+            out.put((String) name, "p1");
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  // The first operation that completes against a plain 200: with no
+  // arguments, else with every path parameter its points declare filled in.
   static Op usableOp() {
     Utility.FetcherFn ok = (ctx, url, fetchdef) -> response(200, jm("id", "i1"), null);
     Map<String, Object> plainOpts = jm("apikey", CANARY_APIKEY, "utility", jm("fetcher", ok));
@@ -489,17 +552,31 @@ public class CleanTest {
         catch (NoSuchMethodException ex) {
           continue;
         }
-        Op op = new Op(e.getValue(), call);
-        try {
-          invoke(new ${sdk}(plainOpts), op, new LinkedHashMap<>());
-          return op;
-        }
-        catch (Exception ex) {
-          continue;
+        List<Map<String, Object>> matches =
+            List.of(new LinkedHashMap<>(), filled(e.getKey(), opname));
+        for (Map<String, Object> match : matches) {
+          Op op = new Op(e.getValue(), call, match);
+          try {
+            invoke(new ${sdk}(plainOpts), op, new LinkedHashMap<>());
+            return op;
+          }
+          catch (Exception ex) {
+            continue;
+          }
         }
       }
     }
     return null;
+  }
+
+  // Nothing usable is a visible skip; the lane then misses the swept line.
+  static Op usableOrSkip() {
+    Op op = usableOp();
+    if (op == null) {
+      System.out.println("clean: skipped: " + NO_OP);
+    }
+    assumeTrue(op != null, NO_OP);
+    return op;
   }
 
   static Exception drive(${sdk} sdk, Op op, Map<String, Object> ctrl, List<Sink> sinks) {
@@ -525,12 +602,13 @@ public class CleanTest {
 
   @Test
   public void noCredentialLeavesTheSdkInAnyForm() {
-    Op op = usableOp();
-    assertNotNull(op, "no operation completes without arguments; nothing to sweep");
+    Op op = usableOrSkip();
 
     List<Sink> sinks = new ArrayList<>();
     Map<String, Exception> errors = new LinkedHashMap<>();
     Map<String, Map<String, Object>> explains = new LinkedHashMap<>();
+    Object numbered = null;
+    Object named = null;
 
     Handler handler = capture(sinks);
     try {
@@ -555,6 +633,52 @@ public class CleanTest {
           forms(sinks, "sdk", sdk);
         }
       }
+
+      // No clean option at all: the schema defaults still apply.
+      ${sdk} bare = new ${sdk}(jm(
+          "apikey", CANARY_APIKEY,
+          "secret", CANARY_SECRET,
+          "headers", jm("X-Custom-Token", CANARY_HEADER),
+          "utility", jm("fetcher", SCENARIOS.get(1).respond)));
+      assertNotNull(drive(bare, op, new LinkedHashMap<>(), sinks), "the 404 should fail");
+
+      // A credential mistyped as a map. The java validator collects its
+      // errors and substitutes the default rather than rejecting, so there
+      // is no rejection to sweep: sweep the client, and what clean makes of
+      // the value should anything quote it.
+      try {
+        ${sdk} mistyped = new ${sdk}(jm(
+            "apikey", jm("value", CANARY_APIKEY), "clean", jm("values", CANARY_VALUE)));
+        forms(sinks, "mistyped", mistyped);
+        forms(sinks, "mistyped:quoted", mistyped.getUtility().clean.apply(
+            mistyped.getRootCtx(), "found map: " + CANARY_APIKEY));
+      }
+      catch (RuntimeException e) {
+        forms(sinks, "mistyped:rejected", e);
+      }
+
+      // A number is registered as the text a message quotes it in.
+      ${sdk} numeric = new ${sdk}(jm("apikey", 918273645));
+      numbered = numeric.getUtility().clean.apply(numeric.getRootCtx(), "found 918273645");
+
+      for (boolean unexpected : new boolean[] {false, true}) {
+        ${sdk} hooked = makeSdk(SCENARIOS.get(0), sinks, null, new ThrowFeature(unexpected));
+        assertNotNull(drive(hooked, op, new LinkedHashMap<>(), sinks),
+            "the throwing hook should fail the operation");
+      }
+
+      // The raw path returns its failure rather than throwing it.
+      Map<String, Object> raw = makeSdk(SCENARIOS.get(3), sinks, null).direct(jm("path", "raw"));
+      assertTrue(Boolean.FALSE.equals(raw.get("ok")) && raw.get("err") instanceof Throwable,
+          "a transport failure should fail direct() with an error");
+      forms(sinks, "direct", raw.get("err"));
+
+      // A registered value used as a property name is masked; names that
+      // mask alike are kept apart.
+      ${sdk} probe = makeSdk(SCENARIOS.get(0), sinks, null);
+      named = probe.getUtility().clean.apply(probe.getRootCtx(),
+          jm(CANARY_VALUE, 1, CANARY_HEADER, 2, "plain", 3));
+      forms(sinks, "named", named);
     }
     finally {
       release(handler);
@@ -571,6 +695,9 @@ public class CleanTest {
     System.out.println("clean: swept " + sinks.size() + " surface(s), " + leaked.size() + " leak(s)");
 
     assertEquals(0, leaked.size(), "credential leaked through: " + String.join("; ", leaked));
+
+    assertEquals("found " + MASK, numbered);
+    assertEquals(jm(MASK, 1, MASK + "#1", 2, "plain", 3), named);
 
     // The positive half: the slot the credential travelled in is masked,
     // and an unregistered token in a response header is masked by name.
@@ -605,8 +732,7 @@ public class CleanTest {
 
   @Test
   public void theSweepCanSeeALeakCleanSwitchedOffShowsTheCredential() {
-    Op op = usableOp();
-    assertNotNull(op);
+    Op op = usableOrSkip();
 
     List<Sink> sinks = new ArrayList<>();
     ${sdk} sdk = makeSdk(SCENARIOS.get(1), sinks, jm("active", false));
@@ -628,6 +754,33 @@ public class CleanTest {
           || text.contains(base64(CANARY_APIKEY + ":" + CANARY_SECRET)),
           "the raw spec should carry the credential when clean is off");
     }
+  }
+
+  @Test
+  public void aFeatureNameDoesNotMakeItsSettingsSecret() {
+    ${sdk} sdk = new ${sdk}(jm(
+        "apikey", CANARY_APIKEY,
+        "feature", jm("secrets", jm(
+            "active", false, "kind", "SETTING-KIND-4829", "token", CANARY_SECRET))));
+    assertEquals("SETTING-KIND-4829 " + MASK,
+        sdk.getUtility().clean.apply(sdk.getRootCtx(), "SETTING-KIND-4829 " + CANARY_SECRET));
+  }
+
+  @Test
+  public void theGeneratedConfigsOwnCleanBlockIsHonoured() {
+    Map<String, Object> cfgclean = jm("keys", "zzsens", "values", "CONFIG-SEEDED-1");
+    Utility utility = new Utility();
+    Context ctx = utility.makeContext.apply(jm(
+        "utility", utility,
+        "config", jm("options", jm("clean", cfgclean)),
+        "options", jm("clean", jm("values", "CALLER-SEEDED-2"))), null);
+    ctx.options = utility.makeOptions.apply(ctx);
+
+    assertEquals("a " + MASK + " b " + MASK,
+        utility.clean.apply(ctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"));
+    assertEquals(jm("my_zzsens", MASK, "other", "y"),
+        utility.clean.apply(ctx, jm("my_zzsens", "x", "other", "y")));
+    assertEquals("CONFIG-SEEDED-1", cfgclean.get("values"));
   }
 }
 `

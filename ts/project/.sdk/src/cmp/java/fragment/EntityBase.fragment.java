@@ -168,8 +168,20 @@ public abstract class EntityBase implements SdkEntity {
       if (err == ctx.ctrl.err) {
         throw err;
       }
-      return utility.makeError.apply(ctx, err);
+      try {
+        return utility.makeError.apply(ctx, err);
+      }
+      catch (RuntimeException unexpected) {
+        throw unexpected == ctx.ctrl.err ? unexpected : cleanError(ctx, unexpected);
+      }
     }
+  }
+
+  // makeError fires PreUnexpected; an error a hook throws there escapes it,
+  // even under throw false, so it is cleaned here.
+  private RuntimeException cleanError(Context ctx, RuntimeException err) {
+    Object cleaned = this.utility.clean.apply(ctx, err);
+    return cleaned instanceof RuntimeException ? (RuntimeException) cleaned : err;
   }
 
   /**

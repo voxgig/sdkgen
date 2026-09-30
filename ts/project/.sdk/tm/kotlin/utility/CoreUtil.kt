@@ -155,6 +155,52 @@ fun cleanAdd(ctx: Context, value: Any?) {
   registerValue(cleanConfig(ctx), value)
 }
 
+// Every scalar under a sensitive name in the options, at any depth and of any
+// shape: a credential mistyped as a map or a number is still one, and a
+// message can quote it. A key under `feature` names a feature, not a field,
+// so a feature called secrets does not make its settings secret.
+internal fun registerSensitive(cfg: CleanConfig, opts: Map<String, Any?>) {
+  val seen = mutableListOf<Any>()
+  for ((k, v) in opts) {
+    val under = sensitiveKey(cfg, k)
+    if ("feature" == k && v is Map<*, *>) {
+      for (fopts in v.values) {
+        addSensitive(cfg, fopts, under, 2, seen)
+      }
+    } else {
+      addSensitive(cfg, v, under, 1, seen)
+    }
+  }
+}
+
+private fun addSensitive(cfg: CleanConfig, v: Any?, under: Boolean, depth: Int, seen: MutableList<Any>) {
+  if (v == null || MAXDEPTH <= depth) {
+    return
+  }
+  if (v is String || v is Number) {
+    if (under) {
+      registerValue(cfg, v.toString())
+      registerValue(cfg, Struct.stringify(v))
+    }
+    return
+  }
+  if (seen.any { it === v }) {
+    return
+  }
+  seen.add(v)
+  when (v) {
+    is Map<*, *> -> for ((k, item) in v) {
+      addSensitive(cfg, item, under || sensitiveKey(cfg, k), depth + 1, seen)
+    }
+    is Collection<*> -> for (item in v) {
+      addSensitive(cfg, item, under, depth + 1, seen)
+    }
+    is Array<*> -> for (item in v) {
+      addSensitive(cfg, item, under, depth + 1, seen)
+    }
+  }
+}
+
 private fun maskValue(cfg: CleanConfig, value: String): String {
   if (0 < cfg.hint && value.length > 2 * cfg.hint) {
     return cfg.mask + value.substring(value.length - cfg.hint)
@@ -327,10 +373,24 @@ private fun plain(cfg: CleanConfig, v: Map<*, *>, depth: Int, seen: MutableList<
   for ((k, item) in v) {
     val s = snapshot(cfg, item, k, depth + 1, seen)
     if (s !== DROP) {
-      out[k.toString()] = s
+      out[cleanName(cfg, out, k.toString())] = s
     }
   }
   return out
+}
+
+// A registered value used as a property name is masked like any other
+// string; names that mask alike take a counter, so none is lost.
+private fun cleanName(cfg: CleanConfig, out: Map<String, Any?>, key: String): String {
+  val name = cleanString(cfg, key)
+  if (name == key || !out.containsKey(name)) {
+    return name
+  }
+  var i = 1
+  while (out.containsKey(name + "#" + i)) {
+    i++
+  }
+  return name + "#" + i
 }
 
 internal fun cleanWith(cfg: CleanConfig, value: Any?): Any? {
@@ -345,9 +405,19 @@ internal fun cleanWith(cfg: CleanConfig, value: Any?): Any? {
   // An SdkError is cleaned in place, since it is about to be thrown.
   if (value is SdkError) {
     value.msg = cleanString(cfg, value.msg)
+    value.code = cleanString(cfg, value.code)
     value.result = snapshot(cfg, value.result, "result", 1, mutableListOf())
     value.spec = snapshot(cfg, value.spec, "spec", 1, mutableListOf())
     return value
+  }
+
+  // A foreign exception's message cannot be rewritten, so it is replaced by
+  // an SdkError with the cleaned message and the original frames; the
+  // original is not attached, as a printed stack trace would show it.
+  if (value is Throwable) {
+    val out = SdkError("", cleanString(cfg, value.message ?: value.toString()), null)
+    out.stackTrace = value.stackTrace
+    return out
   }
 
   val out = snapshot(cfg, value, null, 0, mutableListOf())
@@ -360,10 +430,6 @@ fun clean(ctx: Context, value: Any?): Any? {
 
 fun cleanKey(ctx: Context, key: Any?): Boolean {
   return sensitiveKey(cleanConfig(ctx), key)
-}
-
-internal fun cleanKeyWith(cfg: CleanConfig, key: Any?): Boolean {
-  return sensitiveKey(cfg, key)
 }
 
 // The caller holds the explain map, so the cleaned copy is written back into
@@ -433,7 +499,7 @@ fun makeError(ctx: Context, errIn: RuntimeException?): Any? {
 
   var code = ""
   if (err is SdkError) {
-    code = err.code
+    code = clean(ctx, err.code) as String
   }
 
   val sdkErr = SdkError(code, msg, ctx)

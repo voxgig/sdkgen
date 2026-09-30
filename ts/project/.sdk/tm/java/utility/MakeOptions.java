@@ -1,6 +1,7 @@
 package JAVAPACKAGE.utility;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,21 +61,36 @@ final class MakeOptions {
       opts.remove("auth");
     }
 
+    Map<String, Object> config = ctx.config;
+    if (config == null) {
+      config = new LinkedHashMap<>();
+    }
+    Map<String, Object> cfgopts = Helpers.toMapAny(config.get("options"));
+    if (cfgopts == null) {
+      cfgopts = new LinkedHashMap<>();
+    }
+
     // The secret registry exists BEFORE validation, fed from the raw input, so
     // the constructor's own rejection of a mistyped credential is clean too.
+    // Both clean blocks are cloned for the reason the options merge below is,
+    // and an absent one is left out: merge lets a null replace everything.
+    List<Map<String, Object>> cleanblocks = Arrays.asList(
+        Helpers.toMapAny(cfgopts.get("clean")), Helpers.toMapAny(options.get("clean")));
     List<Object> cleanmerge = new ArrayList<>();
     cleanmerge.add(new LinkedHashMap<String, Object>());
     cleanmerge.add(Struct.clone(Schema.optspec().get("clean")));
-    Map<String, Object> rawclean = Helpers.toMapAny(options.get("clean"));
-    if (rawclean != null) {
-      cleanmerge.add(Struct.clone(rawclean));
+    for (Map<String, Object> block : cleanblocks) {
+      if (block != null) {
+        cleanmerge.add(Struct.clone(block));
+      }
     }
     final Map<String, Object> cleancfg =
         Clean.makeCleanConfig(Helpers.toMapAny(Struct.merge(cleanmerge)));
-    Clean.add(cleancfg, options.get("apikey"));
-    Clean.add(cleancfg, options.get("secret"));
-    for (String raw : Clean.splitvalues(rawclean == null ? null : rawclean.get("values"))) {
-      Clean.add(cleancfg, raw);
+    Clean.addSensitiveOptions(cleancfg, without(options, "clean"));
+    for (Map<String, Object> block : cleanblocks) {
+      for (String raw : Clean.splitvalues(block == null ? null : block.get("values"))) {
+        Clean.add(cleancfg, raw);
+      }
     }
 
     // Feature add-order. options.feature may be given as an ordered LIST of
@@ -100,15 +116,6 @@ final class MakeOptions {
         }
       }
       opts.put("feature", fmap);
-    }
-
-    Map<String, Object> config = ctx.config;
-    if (config == null) {
-      config = new LinkedHashMap<>();
-    }
-    Map<String, Object> cfgopts = Helpers.toMapAny(config.get("options"));
-    if (cfgopts == null) {
-      cfgopts = new LinkedHashMap<>();
     }
 
     // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
@@ -263,17 +270,17 @@ final class MakeOptions {
     derived.put("featureorder", featureorder);
     opts.put("__derived__", derived);
 
-    // Every string under a sensitive name anywhere in the options - a custom
-    // auth header, a feature credential - is a secret the SDK now handles.
-    Map<String, Object> walked = (Map<String, Object>) Struct.clone(opts);
-    walked.remove("__derived__");
-    Struct.walk(walked, (key, val, parent, path) -> {
-      if (val instanceof String && Clean.sensitive(cleancfg, key)) {
-        Clean.add(cleancfg, val);
-      }
-      return val;
-    });
+    // Again over the merged result: the config's own defaults can carry one.
+    Clean.addSensitiveOptions(cleancfg, without(opts, "clean", "__derived__"));
 
     return opts;
+  }
+
+  private static Map<String, Object> without(Map<String, Object> map, String... keys) {
+    Map<String, Object> out = new LinkedHashMap<>(map);
+    for (String key : keys) {
+      out.remove(key);
+    }
+    return out;
   }
 }

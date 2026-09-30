@@ -42,16 +42,30 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
   // check on the value, which cannot distinguish them.
   val authSuppressed = options.containsKey("auth") && null == options["auth"]
 
+  var config = ctx.config
+  if (config == null) {
+    config = linkedMapOf()
+  }
+  var cfgopts = Helpers.toMapAny(config["options"])
+  if (cfgopts == null) {
+    cfgopts = linkedMapOf()
+  }
+
   // The secret registry exists BEFORE validation, fed from the raw input, so
   // the constructor's own rejection of a mistyped credential is clean too.
-  val cleancfg = makeCleanConfig(Struct.merge(mutableListOf<Any?>(
-    linkedMapOf<String, Any?>(),
-    Struct.clone(Schema.optspec["clean"]),
-    Struct.clone(options["clean"]),
-  )))
-  for (raw in listOf(options["apikey"], options["secret"]) +
-    splitvalues(Helpers.toMapAny(options["clean"])?.get("values"))) {
-    registerValue(cleancfg, raw)
+  // Both clean blocks are cloned for the reason the options merge below is,
+  // and an absent one is left out: merge lets a null replace everything.
+  val cleanblocks = listOf(Helpers.toMapAny(cfgopts["clean"]), Helpers.toMapAny(options["clean"]))
+  val cleanmerge = mutableListOf<Any?>(linkedMapOf<String, Any?>(), Struct.clone(Schema.optspec["clean"]))
+  for (block in cleanblocks.filterNotNull()) {
+    cleanmerge.add(Struct.clone(block))
+  }
+  val cleancfg = makeCleanConfig(Struct.merge(cleanmerge))
+  registerSensitive(cleancfg, options - "clean")
+  for (block in cleanblocks) {
+    for (raw in splitvalues(block?.get("values"))) {
+      registerValue(cleancfg, raw)
+    }
   }
 
   var opts = Struct.clone(options) as MutableMap<String, Any?>
@@ -82,15 +96,6 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
       }
     }
     opts["feature"] = fmap
-  }
-
-  var config = ctx.config
-  if (config == null) {
-    config = linkedMapOf()
-  }
-  var cfgopts = Helpers.toMapAny(config["options"])
-  if (cfgopts == null) {
-    cfgopts = linkedMapOf()
   }
 
   // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
@@ -184,16 +189,8 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
   derived["featureorder"] = featureorder
   opts["__derived__"] = derived
 
-  // Every string under a sensitive name anywhere in the options - a custom
-  // auth header, a feature credential - is a secret the SDK now handles.
-  val walked = Struct.clone(opts) as MutableMap<String, Any?>
-  walked.remove("__derived__")
-  Struct.walk(walked, Struct.WalkApply { key, v, _, _ ->
-    if (v is String && key != null && cleanKeyWith(cleancfg, key)) {
-      registerValue(cleancfg, v)
-    }
-    v
-  })
+  // Again over the merged result: the config's own defaults can carry one.
+  registerSensitive(cleancfg, opts - "clean" - "__derived__")
 
   return opts
 }

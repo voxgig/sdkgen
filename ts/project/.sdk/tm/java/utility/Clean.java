@@ -215,6 +215,54 @@ final class Clean {
     add(cleanConfig(ctx), value);
   }
 
+  // Every scalar under a sensitive name in the options, at any depth and of
+  // any shape: a credential mistyped as a map or a number is still one, and
+  // a message can quote it. A key under `feature` names a feature, not a
+  // field, so a feature called secrets does not make its settings secret.
+  static void addSensitiveOptions(Map<String, Object> cfg, Map<String, Object> opts) {
+    IdentityHashMap<Object, Boolean> seen = new IdentityHashMap<>();
+    for (Map.Entry<String, Object> e : opts.entrySet()) {
+      boolean under = sensitive(cfg, e.getKey());
+      if ("feature".equals(e.getKey()) && e.getValue() instanceof Map) {
+        for (Object fopts : ((Map<?, ?>) e.getValue()).values()) {
+          addSensitive(cfg, fopts, under, 2, seen);
+        }
+      }
+      else {
+        addSensitive(cfg, e.getValue(), under, 1, seen);
+      }
+    }
+  }
+
+  private static void addSensitive(Map<String, Object> cfg, Object val, boolean under,
+      int depth, IdentityHashMap<Object, Boolean> seen) {
+    if (val == null || MAXDEPTH <= depth) {
+      return;
+    }
+    if (val instanceof String || val instanceof Number) {
+      if (under) {
+        add(cfg, String.valueOf(val));
+        add(cfg, Struct.stringify(val));
+      }
+      return;
+    }
+    if (seen.containsKey(val)) {
+      return;
+    }
+    seen.put(val, Boolean.TRUE);
+    if (val instanceof Map) {
+      for (Map.Entry<?, ?> e : ((Map<?, ?>) val).entrySet()) {
+        addSensitive(cfg, e.getValue(), under || sensitive(cfg, e.getKey()), depth + 1, seen);
+      }
+    }
+    else if (val instanceof Collection || val instanceof Object[]) {
+      Object[] items = val instanceof Object[] ? (Object[]) val : ((Collection<?>) val).toArray();
+      for (Object item : items) {
+        addSensitive(cfg, item, under, depth + 1, seen);
+      }
+    }
+  }
+
   private static String maskValue(Map<String, Object> cfg, String value) {
     int hint = hint(cfg);
     if (0 < hint && value.length() > 2 * hint) {
@@ -308,7 +356,7 @@ final class Clean {
           String k = String.valueOf(e.getKey());
           Object v = snapshot(cfg, e.getValue(), k, depth + 1, seen);
           if (v != DROP) {
-            out.put(k, v);
+            out.put(cleanName(cfg, out, k), v);
           }
         }
         return out;
@@ -371,17 +419,32 @@ final class Clean {
       }
       Object v = snapshot(cfg, fv, f.getName(), depth + 1, seen);
       if (v != DROP) {
-        out.put(f.getName(), v);
+        out.put(cleanName(cfg, out, f.getName()), v);
       }
     }
     return out;
   }
 
+  // A registered value used as a property name is masked like any other
+  // string; names that mask alike take a counter, so none is lost.
+  private static String cleanName(Map<String, Object> cfg, Map<String, Object> out, String key) {
+    String name = cleanString(cfg, key);
+    if (name.equals(key) || !out.containsKey(name)) {
+      return name;
+    }
+    int i = 1;
+    while (out.containsKey(name + "#" + i)) {
+      i++;
+    }
+    return name + "#" + i;
+  }
+
   // Clean a value on its way out. A string is redacted; the SDK's own error
   // is redacted IN PLACE (it is about to be thrown, and its identity matters
   // to the caller); anything else comes back as a masked plain-data copy.
-  // A foreign exception's message cannot be rewritten, and is never thrown
-  // raw: makeError wraps it with a cleaned message.
+  // A foreign exception's message cannot be rewritten, so it is replaced by
+  // an SDK error with the cleaned message and the original frames; the
+  // original is not attached, as a printed stack trace would show it.
   static Object cleanWith(Map<String, Object> cfg, Object val) {
     if (!active(cfg)) {
       return val;
@@ -394,13 +457,20 @@ final class Clean {
     if (val instanceof SdkError) {
       SdkError err = (SdkError) val;
       err.msg = cleanString(cfg, String.valueOf(err.msg));
+      if (err.code != null) {
+        err.code = cleanString(cfg, err.code);
+      }
       err.result = cleanField(cfg, "result", err.result);
       err.spec = cleanField(cfg, "spec", err.spec);
       return err;
     }
 
     if (val instanceof Throwable) {
-      return val;
+      Throwable err = (Throwable) val;
+      String msg = err.getMessage() == null ? String.valueOf(err) : err.getMessage();
+      SdkError out = new SdkError("", cleanString(cfg, msg), null);
+      out.setStackTrace(err.getStackTrace());
+      return out;
     }
 
     Object out = snapshot(cfg, val, null, 0, new IdentityHashMap<>());
