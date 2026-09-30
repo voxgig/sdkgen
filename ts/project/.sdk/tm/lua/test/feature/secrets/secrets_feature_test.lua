@@ -195,9 +195,10 @@ end
 
 -- The entity accessors this SDK generated, found from the client's own
 -- config: this file is a TEMPLATE and no project's entity names are known
--- here. Accessors are PascalCase methods on the SDK class.
+-- here. Accessors are PascalCase methods on the SDK class, which is the
+-- client's metatable: its __index is a function that hides the options.
 local function entity_accessors(client)
-  local class = getmetatable(client).__index
+  local class = getmetatable(client)
   local out = {}
   for name, _ in pairs(client:options_map().entity or {}) do
     local flat = name:gsub("_", ""):lower()
@@ -525,9 +526,11 @@ describe("secrets", function()
 
     local NOTAPROVIDER = "not a provider or a provider spec"
 
+    -- Clean is off: a refusal quotes the secrets options, and clean
+    -- registers every value under them.
     local function refused_with(providers, fragment)
       local w = make_wire()
-      local client = secrets_client(w, { feature = chain(providers) })
+      local client = secrets_client(w, { feature = chain(providers), clean = { active = false } })
 
       local sf = secrets_feature_of(client)
       assert.is_not_nil(sf:init_error(), "construction must record the failure")
@@ -615,12 +618,14 @@ describe("secrets", function()
         -- "connection refused", httpjson raises sekreto's `cannot reach`,
         -- and the request is refused with zero calls. A helper that was
         -- never built answers "did not answer" instead - a different
-        -- message, so the assertion tells the two apart.
+        -- message, so the assertion tells the two apart. Clean is off, as
+        -- for refused_with: the message quotes the provider's options.
         local w = make_wire()
         local client = secrets_client(w, {
           feature = chain({
             { kind = "hashicorp", addr = "http://127.0.0.1:9", token = "t0" },
           }),
+          clean = { active = false },
         })
         local res = client:direct({ path = "/probe" })
         assert.is_false(res.ok)
@@ -640,6 +645,7 @@ describe("secrets", function()
           feature = chain({
             { kind = "hashicorp", addr = "http://127.0.0.1:9", token = "t0" },
           }),
+          clean = { active = false },
         })
         local res = client:direct({ path = "/probe" })
         assert.is_false(res.ok)
