@@ -73,6 +73,10 @@ impl Utility {
         u::done::done_util(ctx)
     }
 
+    pub fn clean_explain(&self, ctx: &Rc<Context>) {
+        u::done::clean_explain_util(ctx)
+    }
+
     pub fn make_error(
         &self,
         ctx: &Rc<Context>,

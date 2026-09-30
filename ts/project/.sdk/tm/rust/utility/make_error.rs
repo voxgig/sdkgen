@@ -46,6 +46,8 @@ pub fn make_error_util(
         None => Value::Noval,
     };
 
+    crate::utility::done::clean_explain_util(ctx);
+
     let ctrl = ctx.ctrl.borrow().clone();
     {
         let c = ctrl.borrow();

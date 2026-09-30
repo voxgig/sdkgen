@@ -181,8 +181,12 @@ impl EntyClass {
         }
 
         // Run the same pipeline as run_op. A step's error does not pass
-        // through make_error here, so it is cleaned on the way out.
-        let fail = |e: ProjectNameError| crate::utility::clean::clean_error(&ctx, e);
+        // through make_error here, so it and the explain record are cleaned
+        // on the way out.
+        let fail = |e: ProjectNameError| {
+            self.utility.clean_explain(&ctx);
+            crate::utility::clean::clean_error(&ctx, e)
+        };
         self.utility.feature_hook(&ctx, "PrePoint");
         let point = self.utility.make_point(&ctx).map_err(fail)?;
         ctx.out_set("point", crate::core::types::OutVal::Val(point));
@@ -211,6 +215,8 @@ impl EntyClass {
         if let Some(res) = &cur {
             let streamfn = res.borrow().stream.clone();
             if let Some(sf) = streamfn {
+                // done() does not run on this path, so its record is cleaned here.
+                self.utility.clean_explain(&ctx);
                 return Ok(sf().into_iter());
             }
         }

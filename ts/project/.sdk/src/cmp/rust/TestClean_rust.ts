@@ -59,7 +59,8 @@ const TestClean = cmp(function TestClean(props: any) {
       .sort((a, b) => CRUD.indexOf(a) - CRUD.indexOf(b))
     for (const op of ops) {
       candidates.push({
-        name: entity.name + '.' + op, fn: 'drive_' + method + '_' + op, method, op,
+        name: entity.name + '.' + op, fn: 'drive_' + method + '_' + op,
+        sfn: 'stream_' + method + '_' + op, method, op,
         params: pointParams(configEntity[entity.name]?.op?.[op]),
       })
     }
@@ -71,7 +72,9 @@ const TestClean = cmp(function TestClean(props: any) {
 })
 
 
-type Candidate = { name: string, fn: string, method: string, op: string, params: string[] }
+type Candidate = {
+  name: string, fn: string, sfn: string, method: string, op: string, params: string[]
+}
 
 
 // Every path parameter an operation's points declare, as the generated
@@ -108,9 +111,13 @@ function render(spec: {
         .${c.op}(mtch, ctrl)
         .map(|e| e.data(None))
 }
+`).join('\n') + '\n' + candidates.map((c) =>
+    `fn ${c.sfn}(sdk: &Rc<${Name}SDK>, mtch: Value, callopts: Value) -> Result<Vec<Value>, ${Name}Error> {
+    sdk.${c.method}(Value::Noval).stream("${c.op}", mtch, callopts).map(|items| items.collect())
+}
 `).join('\n')
 
-  const table = candidates.map((c) => `    ("${c.name}", ${c.fn}, &[${
+  const table = candidates.map((c) => `    ("${c.name}", ${c.fn}, ${c.sfn}, &[${
     c.params.map((p) => '"' + ruststr(p) + '"').join(', ')}]),`).join('\n')
 
   return `// Generated canary sweep (see TestClean_rust): no credential leaves the
@@ -253,7 +260,9 @@ impl Feature for CaptureFeature {
 
 // A feature that fails the operation from inside the pipeline, quoting the
 // request it saw. A rust hook has no error return, so it fails the result:
-// an error make_error receives from a hook, not from the pipeline.
+// an error make_error receives from a hook, not from the pipeline. For the
+// same reason there is no variant failing in PreUnexpected: make_error has
+// built and cleaned the error it returns before that hook runs.
 struct ThrowFeature;
 
 impl Feature for ThrowFeature {
@@ -271,6 +280,30 @@ impl Feature for ThrowFeature {
         let err = ctx.make_error("hook", &format!("hook saw {}", vs::jsonify(&spec, None)));
         if let Some(res) = ctx.result.borrow().clone() {
             res.borrow_mut().err = Some(err);
+        }
+    }
+}
+
+// A stream that succeeds, so the pipeline's terminal step never runs. A rust
+// stream producer has no error channel, so no stream fails.
+struct StreamOkFeature;
+
+impl Feature for StreamOkFeature {
+    fn name(&self) -> String {
+        "streamok".to_string()
+    }
+    fn active(&self) -> bool {
+        true
+    }
+    fn pre_done(&mut self, ctx: &Rc<Context>) {
+        if let Some(res) = ctx.result.borrow().clone() {
+            let items: Vec<Value> = match res.borrow().resdata.clone() {
+                Value::List(l) => l.borrow().clone(),
+                Value::Noval | Value::Null => Vec::new(),
+                other => vec![other],
+            };
+            let stream: ${rustcrate}::core::result::StreamFn = Rc::new(move || items.clone());
+            res.borrow_mut().stream = Some(stream);
         }
     }
 }
@@ -425,17 +458,19 @@ fn make_sdk(
 }
 
 type Drive = fn(&Rc<${Name}SDK>, Value, Value) -> Result<Value, ${Name}Error>;
+type Stream = fn(&Rc<${Name}SDK>, Value, Value) -> Result<Vec<Value>, ${Name}Error>;
 
 ${drivers}
 // Generated: every CRUD operation of every active entity, list and load
 // first (they need no body), with the path parameters its points declare.
-const CANDIDATES: &[(&str, Drive, &[&str])] = &[
+const CANDIDATES: &[(&str, Drive, Stream, &[&str])] = &[
 ${table}
 ];
 
 #[derive(Clone)]
 struct Target {
     drive: Drive,
+    stream: Stream,
     mtch: Value,
 }
 
@@ -446,14 +481,14 @@ fn usable_op() -> Option<Target> {
         ("apikey", Value::str(CANARY_APIKEY)),
         ("system", jo(vec![("fetch", transport(Scenario::Ok))])),
     ]));
-    for (_name, drive, params) in CANDIDATES {
+    for (_name, drive, stream, params) in CANDIDATES {
         let filled = Value::empty_map();
         for p in params.iter() {
             setp(&filled, p, Value::str("p1"));
         }
         for mtch in [Value::empty_map(), filled] {
             if drive(&plain, vs::clone(&mtch), Value::Noval).is_ok() {
-                return Some(Target { drive: *drive, mtch });
+                return Some(Target { drive: *drive, stream: *stream, mtch });
             }
         }
     }
@@ -463,8 +498,17 @@ fn usable_op() -> Option<Target> {
 const NOTHING_TO_SWEEP: &str =
     "SKIP: no operation of this SDK completes against a plain 200; nothing to sweep";
 
+fn same_node(a: &Value, b: &Value) -> bool {
+    match (a, b) {
+        (Value::Map(x), Value::Map(y)) => Rc::ptr_eq(x, y),
+        _ => false,
+    }
+}
+
 fn drive(sdk: &Rc<${Name}SDK>, target: &Target, ctrl: Value, sinks: &Sinks) -> Option<${Name}Error> {
-    match (target.drive)(sdk, vs::clone(&target.mtch), ctrl) {
+    // A caller may keep the record it passed rather than read ctrl.explain.
+    let held = getp(&ctrl, "explain");
+    let out = match (target.drive)(sdk, vs::clone(&target.mtch), ctrl.clone()) {
         Ok(out) => {
             push_value(sinks, "result", &out);
             None
@@ -473,7 +517,17 @@ fn drive(sdk: &Rc<${Name}SDK>, target: &Target, ctrl: Value, sinks: &Sinks) -> O
             push_error(sinks, "error", &err);
             Some(err)
         }
+    };
+    let explain = getp(&ctrl, "explain");
+    if let Value::Map(_) = explain {
+        push_value(sinks, "explain", &explain);
     }
+    if let Value::Map(_) = held {
+        if !same_node(&held, &explain) {
+            push_value(sinks, "explain:held", &held);
+        }
+    }
+    out
 }
 
 // Header maps keep the caller's spelling; the assertion should not care.
@@ -520,7 +574,6 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
                 errors.push((key.clone(), err));
             }
             if "throw" != variant {
-                push_value(&sinks, "explain", &explain);
                 explains.push((key, explain));
             }
             push(&sinks, "sdk:debug", format!("{:?}", sdk));
@@ -547,15 +600,34 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
         ),
     );
 
-    // An error a feature hook raises, quoting the request.
+    // An error a feature hook raises, quoting the request, with explain on.
     let hooked = make_sdk(
         Scenario::Ok,
         &sinks,
         None,
         vec![Rc::new(RefCell::new(ThrowFeature)) as FeatureRef],
     );
-    let hookerr = drive(&hooked, &target, Value::Noval, &sinks);
+    let hookerr = drive(&hooked, &target, jo(vec![("explain", Value::empty_map())]), &sinks);
     assert!(hookerr.is_some(), "the throwing hook should fail the operation");
+
+    // The explain record a stream call is passed is cleaned however the
+    // stream ends: from a feature's producer, or materialised by done.
+    for (name, extra) in [
+        ("stream-ok", vec![Rc::new(RefCell::new(StreamOkFeature)) as FeatureRef]),
+        ("stream-plain", Vec::new()),
+    ] {
+        let streamed = make_sdk(Scenario::Ok, &sinks, None, extra);
+        let explain = Value::empty_map();
+        let callopts = jo(vec![("ctrl", jo(vec![("explain", explain.clone())]))]);
+        let items = (target.stream)(&streamed, vs::clone(&target.mtch), callopts);
+        assert!(items.is_ok(), "{}: only a failing stream raises", name);
+        assert!(
+            matches!(&explain, Value::Map(m) if 0 < m.borrow().len()),
+            "{}: the explain record was not filled",
+            name
+        );
+        push_value(&sinks, &format!("{}:explain", name), &explain);
+    }
 
     // A feature's own error keeps its code, which is cleaned like the
     // message: returned, handed to a hook, and cleaned where a step's error
