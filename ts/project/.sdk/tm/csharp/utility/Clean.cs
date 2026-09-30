@@ -4,6 +4,7 @@
 // docs/explanation/secret-redaction.md.
 
 using System.Collections;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
@@ -142,7 +143,11 @@ public static partial class SdkUtility
 
     internal static void CleanAddUtil(Context ctx, object? value)
     {
-        var cfg = CleanConfigOf(ctx);
+        CleanRegister(CleanConfigOf(ctx), value);
+    }
+
+    private static void CleanRegister(CleanConfig cfg, object? value)
+    {
         if (value is not string s || s.Length < cfg.Min)
         {
             return;
@@ -206,6 +211,29 @@ public static partial class SdkUtility
         return name == "" ? name : char.ToLowerInvariant(name[0]) + name.Substring(1);
     }
 
+    private static bool CleanIsNumber(object val)
+    {
+        return val is int or long or double or float or short or byte or decimal or
+            sbyte or ushort or uint or ulong;
+    }
+
+    // A registered value used as a map key is masked like any other string;
+    // keys that mask alike take a counter, so none is lost.
+    private static string CleanName(CleanConfig cfg, Dictionary<string, object?> out_, string key)
+    {
+        var name = CleanString(cfg, key);
+        if (name == key || !out_.ContainsKey(name))
+        {
+            return name;
+        }
+        var i = 1;
+        while (out_.ContainsKey(name + "#" + i))
+        {
+            i++;
+        }
+        return name + "#" + i;
+    }
+
     // A masked plain-data copy: functions dropped, cycles cut, and nothing
     // shared with the live value, whose spec must stay raw. A typed pipeline
     // product (Spec, Result, a feature record) reads through its public
@@ -257,7 +285,7 @@ public static partial class SdkUtility
                     var v = CleanSnapshot(cfg, kv.Value, k, depth + 1, seen);
                     if (!ReferenceEquals(v, CleanDrop))
                     {
-                        out_[k] = v;
+                        out_[CleanName(cfg, out_, k)] = v;
                     }
                 }
                 return out_;
@@ -284,7 +312,7 @@ public static partial class SdkUtility
                 if (err is ProjectNameError se)
                 {
                     out_["sdk"] = se.Sdk;
-                    out_["code"] = se.Code;
+                    out_["code"] = CleanString(cfg, se.Code);
                     out_["status"] = se.Status;
                     out_["result"] = CleanSnapshot(cfg, se.ResultVal, "result", depth + 1, seen);
                     out_["spec"] = CleanSnapshot(cfg, se.SpecVal, "spec", depth + 1, seen);
@@ -343,6 +371,7 @@ public static partial class SdkUtility
         if (val is ProjectNameError err)
         {
             err.SetMessage(CleanString(cfg, err.Message));
+            err.Code = CleanString(cfg, err.Code);
             if (err.ResultVal != null && err.ResultVal is not string)
             {
                 err.ResultVal = CleanSnapshot(cfg, err.ResultVal, "result", 1, new List<object>());
@@ -354,9 +383,11 @@ public static partial class SdkUtility
             return err;
         }
 
-        if (val is Exception)
+        // Exception's message is read-only, so a foreign exception leaves as a
+        // cleaned copy of the SDK's own error, without the raw one as its cause.
+        if (val is Exception ex)
         {
-            return val;
+            return new ProjectNameError("", CleanString(cfg, ex.Message), null);
         }
 
         var out_ = CleanSnapshot(cfg, val, null, 0, new List<object>());
@@ -366,5 +397,53 @@ public static partial class SdkUtility
     internal static bool CleanKeyUtil(Context ctx, object? key)
     {
         return CleanSensitiveKey(CleanConfigOf(ctx), key);
+    }
+
+    // Every scalar under a sensitive name, at any depth and of any shape: a
+    // credential mistyped as a map or a number is still a credential, and the
+    // validation error that rejects it quotes it.
+    internal static void CleanAddSensitive(Context ctx, object? val)
+    {
+        CleanAddSensitiveIn(CleanConfigOf(ctx), val, false, 0, new List<object>());
+    }
+
+    private static void CleanAddSensitiveIn(CleanConfig cfg, object? val, bool under,
+        int depth, List<object> seen)
+    {
+        if (val == null || CleanMaxDepth <= depth)
+        {
+            return;
+        }
+        if (val is string s)
+        {
+            if (under) CleanRegister(cfg, s);
+            return;
+        }
+        if (CleanIsNumber(val))
+        {
+            if (under) CleanRegister(cfg, Convert.ToString(val, CultureInfo.InvariantCulture));
+            return;
+        }
+        if (seen.Any(o => ReferenceEquals(o, val)))
+        {
+            return;
+        }
+        if (val is IDictionary dict)
+        {
+            seen.Add(val);
+            foreach (DictionaryEntry kv in dict)
+            {
+                CleanAddSensitiveIn(cfg, kv.Value,
+                    under || CleanSensitiveKey(cfg, Convert.ToString(kv.Key)), depth + 1, seen);
+            }
+        }
+        else if (val is IList list)
+        {
+            seen.Add(val);
+            foreach (var item in list)
+            {
+                CleanAddSensitiveIn(cfg, item, under, depth + 1, seen);
+            }
+        }
     }
 }

@@ -113,7 +113,7 @@ public class CleanTest
 
     private sealed record Candidate(string Name, Func<${Name}SDK, ${Name}EntityBase> Accessor, string[] Ops);
 
-    private sealed record Target(Candidate Candidate, string Op);
+    private sealed record Target(Candidate Candidate, string Op, Dictionary<string, object?> Match);
 
     // Header maps keep the caller's spelling; the assertion should not care.
     private static object? Header(object? map, string name)
@@ -250,6 +250,21 @@ public class CleanTest
         public override void PreUnexpected(Context ctx) => _sinks.AddRange(FormsOf("ctx@PreUnexpected", ctx));
     }
 
+    // A feature that throws from inside the pipeline, quoting the request it
+    // saw: an exception MakeError never handled.
+    private sealed class ThrowFeature : BaseFeature
+    {
+        public ThrowFeature()
+        {
+            Name = "throwhook";
+            Version = "0.0.1";
+            Active = true;
+        }
+
+        public override void PreResponse(Context ctx) =>
+            throw new Exception("hook saw " + Render(ctx.Spec));
+    }
+
     private sealed record Scenario(string Name, Func<string, Dictionary<string, object?>, object?> Respond);
 
     private static Dictionary<string, object?> Response(int status, object? data,
@@ -292,7 +307,7 @@ public class CleanTest
     };
 
     private static ${Name}SDK MakeSdk(Scenario scenario, List<Sink> sinks,
-        Dictionary<string, object?>? cleanopts = null)
+        Dictionary<string, object?>? cleanopts = null, BaseFeature? extra = null)
     {
         Action<Dictionary<string, object?>> Capture(string name) =>
             rec => sinks.AddRange(FormsOf(name, rec));
@@ -354,6 +369,12 @@ public class CleanTest
         var fetcher = (Context _ctx, string url, Dictionary<string, object?> fetchdef) =>
             scenario.Respond(url, fetchdef);
 
+        var extend = new List<object?> { new CaptureFeature(sinks) };
+        if (null != extra)
+        {
+            extend.Add(extra);
+        }
+
         return new ${Name}SDK(new Dictionary<string, object?>
         {
             ["apikey"] = CanaryApikey,
@@ -361,7 +382,7 @@ public class CleanTest
             ["headers"] = new Dictionary<string, object?> { ["X-Custom-Token"] = CanaryHeader },
             ["clean"] = clean,
             ["feature"] = feature,
-            ["extend"] = new List<object?> { new CaptureFeature(sinks) },
+            ["extend"] = extend,
             ["utility"] = new Dictionary<string, object?> { ["fetcher"] = fetcher },
         });
     }
@@ -373,9 +394,10 @@ public class CleanTest
 ${candidateLines}
     };
 
-    private static object? Invoke(${Name}EntityBase ent, string op, Dictionary<string, object?>? ctrl)
+    private static object? Invoke(${Name}EntityBase ent, string op,
+        Dictionary<string, object?> match, Dictionary<string, object?>? ctrl)
     {
-        var args = new Dictionary<string, object?>();
+        var args = new Dictionary<string, object?>(match);
         return op switch
         {
             "list" => ent.List(args, ctrl),
@@ -387,8 +409,28 @@ ${candidateLines}
         };
     }
 
-    // The first operation that completes against a plain 200 with no arguments
-    // (a required path parameter would fail before the request is built).
+    // Every path parameter an op's points declare, filled in.
+    private static Dictionary<string, object?> Filled(${Name}SDK sdk, string entity, string op)
+    {
+        var filled = new Dictionary<string, object?>();
+        var points = StructUtils.GetPath(sdk.GetRootCtx().Config,
+            StructUtils.Jt("entity", entity, "op", op, "points")) as List<object?>;
+        foreach (var point in points ?? new List<object?>())
+        {
+            var ps = StructUtils.GetPath(point, StructUtils.Jt("args", "params")) as List<object?>;
+            foreach (var p in ps ?? new List<object?>())
+            {
+                if (StructUtils.GetProp(p, "name") is string pname)
+                {
+                    filled[pname] = "p1";
+                }
+            }
+        }
+        return filled;
+    }
+
+    // The first operation that completes against a plain 200: with no
+    // arguments, else with every path parameter its points declare filled in.
     private static Target? UsableOp()
     {
         var fetcher = (Context _ctx, string _url, Dictionary<string, object?> _def) =>
@@ -402,19 +444,24 @@ ${candidateLines}
         {
             foreach (var op in candidate.Ops)
             {
-                try
+                foreach (var match in new[] { new Dictionary<string, object?>(), Filled(plain, candidate.Name, op) })
                 {
-                    Invoke(candidate.Accessor(plain), op, null);
-                    return new Target(candidate, op);
-                }
-                catch (Exception)
-                {
-                    continue;
+                    try
+                    {
+                        Invoke(candidate.Accessor(plain), op, match, null);
+                        return new Target(candidate, op, match);
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
                 }
             }
         }
         return null;
     }
+
+    private const string NoOp = "no operation of this SDK completes against a plain 200; nothing to sweep";
 
     private static Exception? Drive(${Name}SDK sdk, Target target,
         Dictionary<string, object?> ctrl, List<Sink> sinks)
@@ -423,7 +470,7 @@ ${candidateLines}
         Exception? err = null;
         try
         {
-            out_ = Invoke(target.Candidate.Accessor(sdk), target.Op, ctrl);
+            out_ = Invoke(target.Candidate.Accessor(sdk), target.Op, target.Match, ctrl);
         }
         catch (Exception e)
         {
@@ -449,7 +496,12 @@ ${candidateLines}
     public void NoCredentialLeavesTheSdkInAnyForm()
     {
         var target = UsableOp();
-        Assert.True(null != target, "no operation completes without arguments; nothing to sweep");
+        if (null == target)
+        {
+            // xunit 2 has no runtime skip, so the skip is a printed reason.
+            Report("clean: skipped: " + NoOp);
+            return;
+        }
 
         var sinks = new List<Sink>();
         var errors = new Dictionary<string, Exception>();
@@ -475,7 +527,7 @@ ${candidateLines}
             {
                 var sdk = MakeSdk(scenario, sinks);
                 var ctrl = variant.Ctrl();
-                var err = Drive(sdk, target!, ctrl, sinks);
+                var err = Drive(sdk, target, ctrl, sinks);
                 var key = scenario.Name + "/" + variant.Name;
                 if (null != err) errors[key] = err;
                 if (ctrl.TryGetValue("explain", out var ex) && ex is Dictionary<string, object?> exm)
@@ -485,6 +537,49 @@ ${candidateLines}
                 sinks.AddRange(FormsOf("sdk", sdk));
             }
         }
+
+        // A credential mistyped as a map is rejected by validation, whose
+        // message quotes the value it rejected.
+        Exception? rejected = null;
+        try
+        {
+            new ${Name}SDK(new Dictionary<string, object?>
+            {
+                ["apikey"] = new Dictionary<string, object?> { ["value"] = CanaryApikey },
+                ["clean"] = new Dictionary<string, object?> { ["values"] = CanaryValue },
+            });
+        }
+        catch (Exception e)
+        {
+            rejected = e;
+        }
+        Assert.True(null != rejected, "a credential mistyped as a map should be rejected");
+        sinks.AddRange(FormsOf("rejected", rejected));
+
+        // An exception a feature hook throws, quoting the request, skips MakeError.
+        var hooked = MakeSdk(Scenarios[0], sinks, null, new ThrowFeature());
+        var hookerr = Drive(hooked, target, new Dictionary<string, object?>(), sinks);
+        Assert.True(null != hookerr, "the throwing hook should fail the operation");
+
+        // The raw path returns its failure rather than throwing it.
+        var raw = MakeSdk(Scenarios[3], sinks).Direct(new Dictionary<string, object?> { ["path"] = "raw" });
+        Assert.True(Equals(false, raw.GetValueOrDefault("ok")) && null != raw.GetValueOrDefault("err"),
+            "a transport failure should fail Direct()");
+        sinks.AddRange(FormsOf("direct", raw["err"]));
+
+        // A registered value used as a map key is masked; keys that mask alike
+        // are kept apart.
+        var probe = MakeSdk(Scenarios[0], sinks);
+        var named = probe.GetUtility().Clean(probe.GetRootCtx(), new Dictionary<string, object?>
+        {
+            [CanaryValue] = 1, [CanaryHeader] = 2, ["plain"] = 3,
+        }) as Dictionary<string, object?> ?? new Dictionary<string, object?>();
+        sinks.AddRange(FormsOf("named", named));
+
+        // An error's code is cleaned like its message.
+        var coded = probe.GetUtility().Clean(probe.GetRootCtx(),
+            new ${Name}Error("code_" + CanaryValue, "coded", null));
+        sinks.AddRange(FormsOf("coded", coded));
 
         var leaked = sinks
             .Select(s => (s.Name, Found: Leaks(s.Text)))
@@ -525,17 +620,26 @@ ${candidateLines}
         var result = explained!.GetValueOrDefault("result") as Dictionary<string, object?>;
         Assert.True(null != result, "the explain record should carry the result");
         Assert.Equal(Mask, Header(result!.GetValueOrDefault("headers"), "x-session-token"));
+
+        Assert.True(3 == named.Count && Equals(1, named.GetValueOrDefault(Mask)) &&
+            Equals(2, named.GetValueOrDefault(Mask + "#1")) && Equals(3, named.GetValueOrDefault("plain")),
+            "map keys: " + Render(named));
+        Assert.Equal("code_" + Mask, (coded as ${Name}Error)?.Code);
     }
 
     [Fact]
     public void TheSweepCanSeeALeakCleanSwitchedOffShowsTheCredential()
     {
         var target = UsableOp();
-        Assert.True(null != target, "no operation completes without arguments");
+        if (null == target)
+        {
+            Report("clean: skipped: " + NoOp);
+            return;
+        }
 
         var sinks = new List<Sink>();
         var sdk = MakeSdk(Scenarios[1], sinks, new Dictionary<string, object?> { ["active"] = false });
-        var err = Drive(sdk, target!, new Dictionary<string, object?>(), sinks);
+        var err = Drive(sdk, target, new Dictionary<string, object?>(), sinks);
         Assert.True(null != err, "the 404 scenario must throw");
 
         var leaked = sinks.Where(s => 0 < Leaks(s.Text).Count).ToList();
@@ -548,6 +652,63 @@ ${candidateLines}
                 text.Contains(Convert.ToBase64String(Encoding.UTF8.GetBytes(CanaryApikey + ":" + CanarySecret))),
                 "the raw spec should carry the credential when clean is off");
         }
+    }
+
+    [Fact]
+    public void TheGeneratedConfigsOwnCleanBlockIsHonoured()
+    {
+        var utility = new ${Name}SDK(new Dictionary<string, object?>()).GetUtility();
+        var config = new Dictionary<string, object?>
+        {
+            ["options"] = new Dictionary<string, object?>
+            {
+                ["clean"] = new Dictionary<string, object?>
+                {
+                    ["keys"] = "zzsens",
+                    ["values"] = "CONFIG-SEEDED-1",
+                },
+            },
+        };
+        var ctx = utility.MakeContext(new Dictionary<string, object?>
+        {
+            ["utility"] = utility,
+            ["config"] = config,
+            ["options"] = new Dictionary<string, object?>
+            {
+                ["clean"] = new Dictionary<string, object?> { ["values"] = "CALLER-SEEDED-2" },
+            },
+        }, null);
+        ctx.Options = utility.MakeOptions(ctx);
+
+        Assert.Equal("a " + Mask + " b " + Mask, utility.Clean(ctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"));
+        var masked = utility.Clean(ctx, new Dictionary<string, object?>
+        {
+            ["my_zzsens"] = "x",
+            ["other"] = "y",
+        }) as Dictionary<string, object?>;
+        Assert.Equal(Mask, masked?.GetValueOrDefault("my_zzsens"));
+        Assert.Equal("y", masked?.GetValueOrDefault("other"));
+        Assert.Equal("CONFIG-SEEDED-1",
+            StructUtils.GetPath(config, StructUtils.Jt("options", "clean", "values")));
+    }
+
+    [Fact]
+    public void WithNoCleanBlockTheSchemaDefaultsApply()
+    {
+        var utility = new ${Name}SDK(new Dictionary<string, object?>()).GetUtility();
+        var ctx = utility.MakeContext(new Dictionary<string, object?>
+        {
+            ["utility"] = utility,
+            ["options"] = new Dictionary<string, object?> { ["apikey"] = "NOBLOCK-APIKEY-k3j5h7" },
+        }, null);
+        ctx.Options = utility.MakeOptions(ctx);
+
+        Assert.Equal("failed with " + Mask, utility.Clean(ctx, "failed with NOBLOCK-APIKEY-k3j5h7"));
+        var masked = utility.Clean(ctx, new Dictionary<string, object?>
+        {
+            ["x-session-token"] = "RESP-TOKEN-a1b2c3d4e5",
+        }) as Dictionary<string, object?>;
+        Assert.Equal(Mask, masked?.GetValueOrDefault("x-session-token"));
     }
 }
 `

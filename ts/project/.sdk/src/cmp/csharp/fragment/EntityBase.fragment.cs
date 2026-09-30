@@ -3,6 +3,7 @@
 // unsupported-op implementations of every CRUD method. Generated entity
 // classes derive from this and override the operations their API defines.
 
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 using Voxgig.Struct;
@@ -118,6 +119,21 @@ public abstract class ProjectNameEntityBase : IEntity
         => throw Helpers.UnsupportedOp("remove", name);
 
     protected object? RunOp(Context ctx, Action postDone)
+    {
+        try
+        {
+            return RunPipeline(ctx, postDone);
+        }
+        // A hook's exception never passed through MakeError, and can quote the
+        // request. FeatureHook invokes by reflection, which wraps it.
+        catch (Exception err) when (!ReferenceEquals(err, ctx.Ctrl.Err))
+        {
+            return utility.MakeError(ctx,
+                err is TargetInvocationException { InnerException: { } inner } ? inner : err);
+        }
+    }
+
+    private object? RunPipeline(Context ctx, Action postDone)
     {
         // #PrePoint-Hook
 

@@ -134,6 +134,11 @@ public static partial class SdkUtility
             opts.Remove("auth");
         }
 
+        var config = ctx.Config ?? new Dictionary<string, object?>();
+        var cfgopts = config.TryGetValue("options", out var co) &&
+            co is Dictionary<string, object?> cm
+            ? cm : new Dictionary<string, object?>();
+
         // The secret registry exists BEFORE validation, fed from the raw
         // input, so the constructor's own rejection of a mistyped credential
         // is clean too.
@@ -141,6 +146,7 @@ public static partial class SdkUtility
         {
             new Dictionary<string, object?>(),
             StructUtils.Clone(StructUtils.GetProp(SdkSchema.Optspec, "clean")),
+            StructUtils.Clone(StructUtils.GetProp(cfgopts, "clean")) ?? new Dictionary<string, object?>(),
         };
         if (opts.TryGetValue("clean", out var cleanraw) && cleanraw != null)
         {
@@ -154,14 +160,10 @@ public static partial class SdkUtility
                 ["__derived__"] = new Dictionary<string, object?> { ["clean"] = cleancfg },
             },
         }, null);
-        var rawsecrets = new List<object?>
-        {
-            opts.TryGetValue("apikey", out var rawapikey) ? rawapikey : null,
-            opts.TryGetValue("secret", out var rawsecret) ? rawsecret : null,
-        };
-        rawsecrets.AddRange(CleanSplitValues(
-            StructUtils.GetPath(opts, StructUtils.Jt("clean", "values"))));
-        foreach (var raw in rawsecrets)
+        CleanAddSensitive(cleanctx, CleanOmit(opts, "clean"));
+        foreach (var raw in CleanSplitValues(
+                StructUtils.GetPath(cfgopts, StructUtils.Jt("clean", "values")))
+            .Concat(CleanSplitValues(StructUtils.GetPath(opts, StructUtils.Jt("clean", "values")))))
         {
             CleanAddUtil(cleanctx, raw);
         }
@@ -190,11 +192,6 @@ public static partial class SdkUtility
             }
             opts["feature"] = fmap;
         }
-
-        var config = ctx.Config ?? new Dictionary<string, object?>();
-        var cfgopts = config.TryGetValue("options", out var co) &&
-            co is Dictionary<string, object?> cm
-            ? cm : new Dictionary<string, object?>();
 
         // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
         //
@@ -360,22 +357,20 @@ public static partial class SdkUtility
             ["featureorder"] = featureorder,
         };
 
-        // Every string under a sensitive name anywhere in the options - a
-        // custom auth header, a feature credential - is a secret the SDK now
-        // handles.
-        var optctx = new Context(new Dictionary<string, object?> { ["options"] = opts }, null);
-        var scan = StructUtils.Clone(opts) as Dictionary<string, object?>
-            ?? new Dictionary<string, object?>();
-        scan.Remove("__derived__");
-        StructUtils.Walk(scan, (key, val, _parent, _path) =>
-        {
-            if (val is string sval && CleanKeyUtil(optctx, key))
-            {
-                CleanAddUtil(optctx, sval);
-            }
-            return val;
-        });
+        // Again over the merged result: the config's own defaults can carry one.
+        CleanAddSensitive(cleanctx, CleanOmit(opts, "clean", "__derived__"));
 
         return opts;
+    }
+
+    private static Dictionary<string, object?> CleanOmit(Dictionary<string, object?> opts,
+        params string[] keys)
+    {
+        var out_ = new Dictionary<string, object?>(opts);
+        foreach (var key in keys)
+        {
+            out_.Remove(key);
+        }
+        return out_;
     }
 }

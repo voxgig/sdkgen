@@ -224,7 +224,7 @@ public class ProjectNameSDK
             return new Dictionary<string, object?>
             {
                 ["ok"] = false,
-                ["err"] = err,
+                ["err"] = CleanErr(_rootctx, err),
             };
         }
 
@@ -251,7 +251,7 @@ public class ProjectNameSDK
             return new Dictionary<string, object?>
             {
                 ["ok"] = false,
-                ["err"] = fetchErr,
+                ["err"] = CleanErr(ctx, fetchErr),
             };
         }
 
@@ -300,6 +300,12 @@ public class ProjectNameSDK
             ["ok"] = false,
             ["err"] = ctx.MakeError("direct_invalid", "invalid response type"),
         };
+    }
+
+    // A raw request returns its error rather than passing it through MakeError.
+    private Exception CleanErr(Context ctx, Exception err)
+    {
+        return _utility.Clean(ctx, err) as Exception ?? err;
     }
 
     // Raw GraphQL access: the pressure valve that makes the generated
