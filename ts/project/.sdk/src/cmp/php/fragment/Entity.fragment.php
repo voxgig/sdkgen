@@ -188,72 +188,78 @@ class EntyClass
             return false;
         };
 
-        ($utility->feature_hook)($ctx, "PrePoint");
-        [$point, $err] = ($utility->make_point)($ctx);
-        $ctx->out["point"] = $point;
-        if ($err) {
-            return;
-        }
+        // The pipeline runs as the caller iterates, so its errors leave
+        // through the same catch path as an operation's.
+        try {
+            ($utility->feature_hook)($ctx, "PrePoint");
+            [$point, $err] = ($utility->make_point)($ctx);
+            $ctx->out["point"] = $point;
+            if ($err) {
+                return;
+            }
 
-        ($utility->feature_hook)($ctx, "PreSpec");
-        [$spec, $err] = ($utility->make_spec)($ctx);
-        $ctx->out["spec"] = $spec;
-        if ($err) {
-            return;
-        }
+            ($utility->feature_hook)($ctx, "PreSpec");
+            [$spec, $err] = ($utility->make_spec)($ctx);
+            $ctx->out["spec"] = $spec;
+            if ($err) {
+                return;
+            }
 
-        ($utility->feature_hook)($ctx, "PreRequest");
-        [$resp, $err] = ($utility->make_request)($ctx);
-        $ctx->out["request"] = $resp;
-        if ($err) {
-            return;
-        }
+            ($utility->feature_hook)($ctx, "PreRequest");
+            [$resp, $err] = ($utility->make_request)($ctx);
+            $ctx->out["request"] = $resp;
+            if ($err) {
+                return;
+            }
 
-        ($utility->feature_hook)($ctx, "PreResponse");
-        [$resp2, $err] = ($utility->make_response)($ctx);
-        $ctx->out["response"] = $resp2;
-        if ($err) {
-            return;
-        }
+            ($utility->feature_hook)($ctx, "PreResponse");
+            [$resp2, $err] = ($utility->make_response)($ctx);
+            $ctx->out["response"] = $resp2;
+            if ($err) {
+                return;
+            }
 
-        ($utility->feature_hook)($ctx, "PreResult");
-        [$result, $err] = ($utility->make_result)($ctx);
-        $ctx->out["result"] = $result;
-        if ($err) {
-            return;
-        }
+            ($utility->feature_hook)($ctx, "PreResult");
+            [$result, $err] = ($utility->make_result)($ctx);
+            $ctx->out["result"] = $result;
+            if ($err) {
+                return;
+            }
 
-        ($utility->feature_hook)($ctx, "PreDone");
+            ($utility->feature_hook)($ctx, "PreDone");
 
-        $result = $ctx->result;
+            $result = $ctx->result;
 
-        // Inbound: prefer the streaming feature's incremental generator; else
-        // fall back to the materialised items so stream always yields.
-        $streamfn = ($result !== null && isset($result->stream) && is_callable($result->stream))
-            ? $result->stream : null;
-        if ($streamfn !== null) {
-            foreach ($streamfn() as $item) {
+            // Inbound: prefer the streaming feature's incremental generator;
+            // else fall back to the materialised items so stream always yields.
+            $streamfn = ($result !== null && isset($result->stream) && is_callable($result->stream))
+                ? $result->stream : null;
+            if ($streamfn !== null) {
+                foreach ($streamfn() as $item) {
+                    if ($aborted()) {
+                        return;
+                    }
+                    yield $item;
+                }
+                return;
+            }
+
+            $data = ($utility->done)($ctx);
+            if (is_array($data) && array_is_list($data)) {
+                $items = $data;
+            } elseif ($data === null) {
+                $items = [];
+            } else {
+                $items = [$data];
+            }
+            foreach ($items as $item) {
                 if ($aborted()) {
                     return;
                 }
                 yield $item;
             }
-            return;
-        }
-
-        $data = ($utility->done)($ctx);
-        if (is_array($data) && array_is_list($data)) {
-            $items = $data;
-        } elseif ($data === null) {
-            $items = [];
-        } else {
-            $items = [$data];
-        }
-        foreach ($items as $item) {
-            if ($aborted()) {
-                return;
-            }
-            yield $item;
+        } catch (\Throwable $err) {
+            throw $this->_unexpected($ctx, $err);
         }
     }
 
@@ -272,13 +278,18 @@ class EntyClass
         try {
             return $this->_run_steps($ctx, $post_done);
         } catch (\Throwable $err) {
-            // A hook, fetcher or parser threw: make_error never saw it.
-            $ctx->ctrl->err = $err;
-            if ($ctx->ctrl->explain) {
-                $ctx->ctrl->explain = ($this->_utility->clean)($ctx, $ctx->ctrl->explain);
-            }
-            throw ($this->_utility->clean)($ctx, $err);
+            throw $this->_unexpected($ctx, $err);
         }
+    }
+
+    // A hook, fetcher or parser threw: make_error never saw it.
+    private function _unexpected($ctx, \Throwable $err): \Throwable
+    {
+        $ctx->ctrl->err = $err;
+        if ($ctx->ctrl->explain) {
+            $ctx->ctrl->explain = ($this->_utility->clean)($ctx, $ctx->ctrl->explain);
+        }
+        return ($this->_utility->clean)($ctx, $err);
     }
 
     private function _run_steps($ctx, callable $post_done): mixed

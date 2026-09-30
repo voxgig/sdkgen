@@ -316,6 +316,30 @@ class CleanTest extends TestCase
         };
     }
 
+    // A feature whose stream fails while the caller iterates it, quoting a
+    // credential.
+    private static function stream_throw_feature(string $key): ${Name}BaseFeature
+    {
+        return new class ($key) extends ${Name}BaseFeature {
+            public function __construct(private string $key)
+            {
+                parent::__construct();
+                $this->name = 'streamthrow';
+                $this->version = '0.0.1';
+                $this->active = true;
+            }
+
+            public function PreDone(${Name}Context $ctx): void
+            {
+                $key = $this->key;
+                $ctx->result->stream = function () use ($key): \\Generator {
+                    throw new \\RuntimeException('stream saw ' . $key);
+                    yield null;
+                };
+            }
+        };
+    }
+
     private static function make_sdk(
         callable $respond, \\ArrayObject $sinks, ?array $cleanopts = null, array $extra = []
     ): array
@@ -541,6 +565,22 @@ class CleanTest extends TestCase
         [$hookerr, $_hexplain] = self::drive($hooked, $hwatcher, $target, [], $sinks);
         $this->assertNotNull($hookerr, 'the throwing hook should fail the operation');
 
+        // Iterating a stream runs inside the same catch path as the operation.
+        [$streamed, $_swatcher] = self::make_sdk(self::scenarios()['ok'], $sinks, null,
+            [self::stream_throw_feature(self::CANARY['apikey'])]);
+        $streamerr = null;
+        try {
+            $accessor = $target['accessor'];
+            foreach ($streamed->$accessor()->stream($target['op'], ['reqmatch' => $target['match']]) as $_item) {
+            }
+        } catch (\\Throwable $e) {
+            $streamerr = $e;
+        }
+        $this->assertNotNull($streamerr, 'the failing stream should throw');
+        foreach (self::surfaces('stream', $streamerr) as $s) {
+            $sinks[] = $s;
+        }
+
         // A registered value used as a property name is masked; names that
         // mask alike are all kept.
         $named = ($hooked->get_utility()->clean)($hooked->get_root_ctx(),
@@ -592,17 +632,23 @@ class CleanTest extends TestCase
         $this->assertNotNull($bareerr, 'the 404 should fail');
 
         // A feature's name is not a field name: only the sensitive names
-        // inside its settings register.
+        // inside its settings register. An entity block, of per-entity
+        // settings or seeded records keyed by entity name and id, is not read.
         $featured = new ${Name}SDK([
             'apikey' => self::CANARY['apikey'],
             'feature' => [
                 'zzsecrets' => ['active' => false, 'kind' => 'PLAINSETTING-q8w2e4r6'],
                 'zzfeat' => ['active' => false, 'apitoken' => 'FEATTOKEN-z9y8x7w6'],
+                'test' => ['active' => false, 'entity' => [
+                    'zztoken' => ['ZZTOKEN01' => ['note' => 'PLAINRECORD-t5r3e1w9']]]],
             ],
+            'entity' => ['zztoken' => ['alias' => ['zzkey' => 'PLAINALIAS-m2n4b6v8']]],
         ]);
         $fclean = $featured->get_utility()->clean;
         $fplain = $fclean($featured->get_root_ctx(), 'kind PLAINSETTING-q8w2e4r6');
         $ftoken = $fclean($featured->get_root_ctx(), 'token FEATTOKEN-z9y8x7w6');
+        $frecord = $fclean($featured->get_root_ctx(), 'record PLAINRECORD-t5r3e1w9');
+        $falias = $fclean($featured->get_root_ctx(), 'alias PLAINALIAS-m2n4b6v8');
 
         $leaked = [];
         $excerpt = '';
@@ -652,6 +698,8 @@ class CleanTest extends TestCase
 
         $this->assertSame('kind PLAINSETTING-q8w2e4r6', $fplain);
         $this->assertSame('token ' . self::MASK, $ftoken);
+        $this->assertSame('record PLAINRECORD-t5r3e1w9', $frecord);
+        $this->assertSame('alias PLAINALIAS-m2n4b6v8', $falias);
 
         $explained = $explains['ok/explain'] ?? [];
         $this->assertNotNull($explained['result'] ?? null, 'the explain record should carry the result');
@@ -670,6 +718,12 @@ class CleanTest extends TestCase
         [$sdk, $watcher] = self::make_sdk(self::scenarios()['notfound'], $sinks, ['active' => false]);
         [$err, $_explain] = self::drive($sdk, $watcher, $target, [], $sinks);
         $this->assertNotNull($err);
+
+        // Explaining a failure must not cost it its error.
+        $discard = new \\ArrayObject();
+        [$esdk, $ewatcher] = self::make_sdk(self::scenarios()['notfound'], $discard, ['active' => false]);
+        [$explained, $_eexplain] = self::drive($esdk, $ewatcher, $target, ['explain' => ['on' => true]], $discard);
+        $this->assertSame($err->getMessage(), $explained?->getMessage(), 'with clean off, explain lost the error');
 
         $leaked = 0;
         foreach ($sinks as $s) {
