@@ -177,17 +177,24 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
 }
 
 // A feature's name is not a field name: only the sensitive names inside its
-// settings count, so `secrets` does not make every setting a secret.
+// settings count, so `secrets` does not make every setting a secret. Entity
+// blocks hold entity settings and seeded records, never a credential.
 private func cleanAddOptions(_ ctx: Context, _ opts: VMap) {
-  cleanAddSensitiveUtil(ctx, .map(cleanOmit(opts, ["feature"])))
-  let feature = opts.entries["feature"] ?? .noval
-  if let fmap = feature.asMap {
-    for (_, fopts) in fmap.entries {
-      cleanAddSensitiveUtil(ctx, fopts)
-    }
-  } else {
-    cleanAddSensitiveUtil(ctx, feature)
+  let top = cleanOmit(opts, ["feature", "entity"])
+  if let test = top.entries["test"] {
+    top.entries["test"] = cleanWithoutEntity(test)
   }
+  cleanAddSensitiveUtil(ctx, .map(top))
+  let feature = opts.entries["feature"] ?? .noval
+  let settings: [Value] = feature.asMap?.entries.values ?? feature.asList?.items ?? [feature]
+  for fopts in settings {
+    cleanAddSensitiveUtil(ctx, cleanWithoutEntity(fopts))
+  }
+}
+
+private func cleanWithoutEntity(_ block: Value) -> Value {
+  guard let m = block.asMap else { return block }
+  return .map(cleanOmit(m, ["entity"]))
 }
 
 private func cleanOmit(_ src: VMap, _ names: [String]) -> VMap {

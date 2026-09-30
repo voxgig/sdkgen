@@ -505,15 +505,22 @@ ${candidateLines}
     }
 
     // A feature's name is not a field name: only the sensitive names inside
-    // its settings register.
+    // its settings register. An entity block, of entity settings or seeded
+    // records keyed by entity name and id, is not read at all.
+    let record = vm(("zztoken", .map(vm(("ZZTOKEN01", .map(vm(("note", .string("PLAINRECORD-t5r3e1w9")))))))))
+    let alias = vm(("zztoken", .map(vm(("alias", .map(vm(("zzkey", .string("PLAINALIAS-m2n4b6v8")))))))))
     let featopts = VMap()
     featopts.entries["apikey"] = .string(canaryApikey)
     featopts.entries["feature"] = .map(vm(
       ("zzsecrets", .map(vm(("active", .bool(false)), ("kind", .string("PLAINSETTING-q8w2e4r6"))))),
-      ("zzfeat", .map(vm(("active", .bool(false)), ("apitoken", .string("FEATTOKEN-z9y8x7w6")))))))
+      ("zzfeat", .map(vm(("active", .bool(false)), ("apitoken", .string("FEATTOKEN-z9y8x7w6"))))),
+      ("test", .map(vm(("active", .bool(false)), ("entity", .map(record)))))))
+    featopts.entries["entity"] = .map(alias)
     let fctx = Context(["options": makeOptionsUtil(Context(["options": featopts], nil))], nil)
     let fplain = cleanUtil(fctx, .string("kind PLAINSETTING-q8w2e4r6")).asString
     let ftoken = cleanUtil(fctx, .string("token FEATTOKEN-z9y8x7w6")).asString
+    let frecord = cleanUtil(fctx, .string("record PLAINRECORD-t5r3e1w9")).asString
+    let falias = cleanUtil(fctx, .string("alias PLAINALIAS-m2n4b6v8")).asString
 
     // direct() returns its error rather than throwing it. Only the SDK's own
     // error can be cleaned in place, so the coded transport is the one used.
@@ -556,6 +563,8 @@ ${candidateLines}
 
     XCTAssertEqual(fplain, "kind PLAINSETTING-q8w2e4r6")
     XCTAssertEqual(ftoken, "token " + mask)
+    XCTAssertEqual(frecord, "record PLAINRECORD-t5r3e1w9")
+    XCTAssertEqual(falias, "alias PLAINALIAS-m2n4b6v8")
     XCTAssertEqual(rawerr?.code, "denied_" + mask)
 
     let explained = explains["ok/explain"] ?? VMap()
@@ -573,6 +582,13 @@ ${candidateLines}
     let sdk = ${Name}CleanTest.makeSdk(${Name}CleanTest.scenarios[1], box, vm(("active", .bool(false))))
     let err = ${Name}CleanTest.drive(sdk, target, VMap(), box)
     XCTAssertNotNil(err, "the 404 scenario must throw")
+
+    // Explaining a failure must not cost it its error.
+    let explained = ${Name}CleanTest.drive(
+      ${Name}CleanTest.makeSdk(${Name}CleanTest.scenarios[1], SinkBox(), vm(("active", .bool(false)))),
+      target, vm(("explain", .map(VMap()))), SinkBox())
+    XCTAssertEqual(explained.map { errMessage($0) }, err.map { errMessage($0) },
+      "with clean off, explain lost the error")
 
     let leaked = box.sinks.filter { !leaks($0.text).isEmpty }
     XCTAssertTrue(!leaked.isEmpty, "with clean off, nothing showed the canary: the sweep is blind")
