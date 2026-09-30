@@ -1257,6 +1257,18 @@ let fetcher_util (ctx : ctx) (fullurl : string) (fetchdef : value) : (value * sd
 (* ------------------------------------------------------------------ *)
 
 
+(* The options to scan for secrets. The feature map is keyed by feature
+ * names, not field names, so it is scanned as a list: `secrets` must not
+ * make every setting of that feature a secret. *)
+let secret_scan (opts : value) (names : string list) : value =
+  let out = empty_map () in
+  List.iter (fun k ->
+      if not (List.mem k names) then
+        match k, getp opts k with
+        | "feature", (Map _ as fm) -> setp out k (ja (List.map (getp fm) (keysof fm)))
+        | _, v -> setp out k v) (keysof opts);
+  out
+
 let make_options_util (ctx : ctx) : value =
   let options = match ctx.c_options with Noval -> empty_map () | v -> v in
   (match getp options "utility" with
@@ -1321,7 +1333,7 @@ let make_options_util (ctx : ctx) : value =
       | _ -> ()) [getp optspec "clean"; getp cfgopts "clean"; getp opts "clean"];
   let cleancfg = make_clean_config cleanraw in
   let cleanctx = { ctx with c_options = jo [("__derived__", jo [("clean", cleancfg)])] } in
-  clean_add_sensitive cleanctx (omit_keys opts ["clean"]);
+  clean_add_sensitive cleanctx (secret_scan opts ["clean"]);
   List.iter (fun src -> List.iter (clean_add_util cleanctx) (splitvalues (getpath_s src "clean.values")))
     [cfgopts; opts];
   let sys_fetch = getpath_s opts "system.fetch" in
@@ -1405,7 +1417,7 @@ let make_options_util (ctx : ctx) : value =
                     ("featureorder", ja (List.map (fun s -> Str s) feature_order))] in
   setp opts "__derived__" derived;
   (* Again over the merged result: the config's own defaults can carry one. *)
-  clean_add_sensitive { ctx with c_options = opts } (omit_keys opts ["clean"; "__derived__"]);
+  clean_add_sensitive { ctx with c_options = opts } (secret_scan opts ["clean"; "__derived__"]);
   opts
 
 (* ------------------------------------------------------------------ *)

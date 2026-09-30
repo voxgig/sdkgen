@@ -328,6 +328,14 @@ let () =
           target (empty_map ()) sinks in
       let raised = drive (make_sdk ~extra:[raise_feature ()] (List.hd scenarios) sinks [])
           target (empty_map ()) sinks in
+      (* A client given no clean block at all masks by the schema defaults. *)
+      let bare = Sdk_client.make (jo [
+          ("apikey", Str (canary_of "apikey")); ("secret", Str (canary_of "secret"));
+          ("headers", jo [("X-Custom-Token", Str (canary_of "header"))]);
+          ("system", jo [("fetch", Func (fun _ args _ _ ->
+               let url = match getelem args (Num 0.) with Str s -> s | _ -> "" in
+               (List.nth scenarios 1).s_respond url (getelem args (Num 1.))))])]) in
+      let barerr = drive bare target (empty_map ()) sinks in
       let leaked = List.filter (fun (_, text) -> leaks text <> []) !sinks in
       Printf.printf "clean: swept %d surface(s), %d leak(s)\\n%!" (List.length !sinks) (List.length leaked);
       if leaked <> [] then
@@ -351,6 +359,10 @@ let () =
       check_vstr "custom token masked" (header (getp spec "headers") "x-custom-token") mask;
       check ("the refusal's code is masked: " ^ code_of denied) (code_of denied = "denied:" ^ mask);
       check ("the raised code is masked: " ^ code_of raised) (code_of raised = "raised:" ^ mask);
+      (match barerr with
+       | Some (Sdk_error_exc e) ->
+         check_vstr "no clean block: custom token masked" (header (getp e.err_spec "headers") "x-custom-token") mask
+       | _ -> failwith "the 404 scenario must throw without a clean block");
       let explained = match List.assoc_opt "ok/explain" !explains with
         | Some ex -> ex
         | None -> failwith "the ok scenario recorded no explain" in
@@ -394,6 +406,20 @@ let () =
       check_vnum "a colliding masked name is numbered" (getp out (mask ^ "#1")) 2.;
       check_vnum "a plain name is kept" (getp out "plain") 3.;
       check "the registered name is gone" (not (List.mem "ZZVAL-abc123" (keysof out))))
+
+(* A feature's name is not a field name: a feature called secrets does not
+ * make its settings secret, though a sensitive field inside it still is. *)
+let () =
+  test "clean.a_feature_name_is_read_as_a_name" (fun () ->
+      let client = Sdk_client.make (jo [
+          ("apikey", Str (canary_of "apikey"));
+          ("feature", jo [("secrets", jo [("active", Bool false); ("name", Str "ZZNAME-feat123");
+                                          ("token", Str "ZZTOKEN-feat456")])])]) in
+      match client.cl_rootctx with
+      | Some ctx ->
+        check_vstr "only the sensitive field is masked"
+          (clean_util ctx (Str "ZZNAME-feat123 ZZTOKEN-feat456")) ("ZZNAME-feat123 " ^ mask)
+      | None -> failwith "the client has no root context")
 
 let () =
   test "clean.the_generated_configs_own_clean_block_is_honoured" (fun () ->
